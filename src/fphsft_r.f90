@@ -44,7 +44,6 @@
  integer :: ll,kap,mmax,npsh,mch
  real(dp) :: rr(mmax),vv(mmax)
  real(dp) :: depsh,epsh2,zz
- logical :: srel
 
 !Output variables
  real(dp) :: pshf(npsh)

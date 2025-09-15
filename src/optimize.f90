@@ -39,7 +39,6 @@
 !uunorm  all-electron charge inside rc
 !ps0norm  ps0 charge inside rc
 !pswfopt_sb optimized pseudowavefunction sbf coefficients
-!orbasis_it  transformation matrix from sb to or basis
 !pswfopt_or optimized pseudowavefunction or basis coefficients
 !ekin_anal  total pswf kinetic energy calculated analytically from E_resid
 !eresq(nqout)  E_resid for optimized pswf as a function of cutoff
@@ -52,24 +51,22 @@
  real(dp) :: pswf0_sb(nbas),pswfnull_sb(nbas,nnull)
  real(dp) :: pswf0_or(nbas),pswfnull_or(nbas,nnull)
  real(dp) :: eresid0(nqout),eresiddot(nnull,nqout),eresidmat(nnull,nnull,nqout)
- real(dp) :: orbasis_it(nbas,nbas)
  real(dp) :: qout(nqout),eresq(nqout)
  real(dp) :: uunorm,ps0norm
 
 !Output variables
  real(dp) :: eresidmin,ekin_anal
  real(dp) :: pswfopt_sb(nbas),pswfopt_or(nbas)
- real(dp) :: eres(nqout)
 
 !Local variables
- real(dp) :: yy,tt,emin,rtsgn,sn
- real(dp) :: emin0,emin1,x1,x1min,x1max
+ real(dp) :: yy,tt,emin,rtsgn
+ real(dp) :: x1,x1min,x1max
  real(dp), allocatable :: work(:),wmat(:,:),wev(:),wvec(:)
  real(dp), allocatable :: eresidevec_nu(:,:)
  real(dp), allocatable :: pswfopt(:),pswfopt_nu(:)
  real(dp), allocatable :: eresiddot_ev(:),eresideval(:)
  real(dp), parameter :: eps=1.d-10
- integer :: ii,iter,jj,kk,ll,nn,info
+ integer :: ii,iter,jj,kk,info
  integer, parameter :: niter=100
  logical :: converged
 
@@ -230,4 +227,3 @@
  deallocate(pswfopt,pswfopt_nu)
  return
  end subroutine optimize
-

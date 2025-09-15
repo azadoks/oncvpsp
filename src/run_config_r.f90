@@ -57,7 +57,6 @@
  real(dp) :: etot,epstot,rcmax,zz
  real(dp) :: facnf(30,5),ea(30,2),rhov(mmax),rr(mmax)
  real(dp) :: vpuns(mmax,5),vkb(mmax,mxprj,4,2),evkb(mxprj,4,2),rhomod(mmax,5)
- logical :: srel
 
 !Output variables  only printing
  
@@ -66,7 +65,7 @@
  integer :: ikap,kap,mkap
  integer :: nat(30),lat(30),natp(30),latp(30),nav(4)
  integer ::  indxr(30),indxe(30)
- real(dp) :: et,eaetst,etsttot,fj,zval
+ real(dp) :: et,eaetst,etsttot,fj
  real(dp) :: eat(30,2,3),fat(30,3),rpk(30,2),eatp(30,2),fatp(30,3)
 
  real(dp),allocatable :: rho(:),rhoc(:),rhocps(:),vi(:),vfull(:)

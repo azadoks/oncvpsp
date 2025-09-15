@@ -92,7 +92,6 @@
  real(dp),allocatable :: rhotael(:),rhocl(:)
  real(dp), allocatable :: vsrl(:,:,:),vsol(:,:,:)
  character*2 :: pspd(3)
- logical :: nonzero
 
  allocate(rhol(nrl),rl(nrl),vpl(nrl,5),rhomodl(nrl,5))
  allocate(rhotael(nrl),rhocl(nrl))

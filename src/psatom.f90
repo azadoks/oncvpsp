@@ -46,7 +46,7 @@
 
 !Input variables
  
- integer :: mmax,mxprj,iexc,nv,lloc,okb
+ integer :: mmax,mxprj,iexc,nv,lloc
  integer :: na(nv),la(nv),nproj(5)
  real(dp) :: rcmax
  real(dp) :: fat(30,2),rr(mmax)
@@ -57,7 +57,6 @@
  real(dp) :: etot
  real(dp) :: ea(nv)
  real(dp) :: rho(mmax),rhoc(mmax),vi(mmax)
- real(dp) :: uua(mmax,nv)
 
 !Local variables
  integer :: nin,mch
@@ -65,7 +64,7 @@
  real(dp) :: dr,eeel,eexc,et,emin,emax,rl,rl1,sd,sn,sls,eeig
  real(dp) :: thl,vn,zval,dfa
  real(dp) :: fa(30)
- integer :: ii,jj,l1,ierr,icx,nprj
+ integer :: ii,l1,ierr,icx,nprj
  logical :: convg
 
  real(dp), allocatable :: uu(:),up(:)

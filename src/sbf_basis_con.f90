@@ -52,7 +52,7 @@
 !Local variables
  integer :: ii,jj,kk,ll1,ibas,info
  real(dp) :: al,amesh,ro,rc,sn,xx,tt
- real(dp) :: sb_out(10),sbfder(5),tder(6)
+ real(dp) :: sb_out(10),sbfder(5)
  real(dp), allocatable :: sbfar(:,:),sev(:),work(:),sovlp(:,:)
  real(dp), allocatable :: sbf_or(:,:)
 

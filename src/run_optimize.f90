@@ -60,17 +60,15 @@
 
 !Local variables
  real(dp) :: uord(6)
- real(dp) :: al,rc,ulgd,tt
- real(dp) :: sn,ps0norm,amesh,ro
- real(dp) :: err,lerr,qerr,ehaerr,eeverr
- real(dp) :: sbf(mmax)
+ real(dp) :: al,rc,ulgd
+ real(dp) :: ps0norm
+ real(dp) :: err,lerr,qerr
  real(dp) :: cons(6),cvgplt(2,7,mxprj)
  real(dp), allocatable :: orbasis(:,:)
  real(dp), allocatable :: orbasis_der(:,:),pswf0_sb(:),pswfnull_sb(:,:)
  real(dp), allocatable :: pswf0_or(:),pswfnull_or(:,:)
  real(dp), allocatable :: work(:)
- integer :: ii,iprj,jj,l1,lmax,nbas,ncon,nconmx
- logical :: found_root
+ integer :: ii,iprj,jj,l1,nbas,ncon,nconmx
 
  integer :: nnull,nqout
 
@@ -153,7 +151,7 @@
    qmax=max(qmax,20.0d0)
 
 
-   nqout=2 + 0.75d0*qmax/dqout
+   nqout=int(2 + 0.75d0*qmax/dqout)
 
    allocate(qout(nqout),eresq(nqout),leresq(nqout),eresid0(nqout))
    allocate(eresiddot(nnull,nqout),eresidmat(nnull,nnull,nqout))

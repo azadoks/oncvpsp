@@ -38,7 +38,6 @@
 !Input variables
  integer :: mmax,mch
  real(dp) :: rr(mmax),vv(mmax)
- real(dp) :: zz
  integer :: nn,ll
  
 !Output variables
@@ -50,7 +49,7 @@
 !Local variables
  real(dp) :: amesh,al
  real(dp) :: aeo, aio, als, cn
- real(dp) :: ro, xx
+ real(dp) :: ro
  real(dp) :: sls, sn, uout, upout
  integer :: ii, it
 

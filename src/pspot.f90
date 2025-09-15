@@ -59,7 +59,7 @@
  real(dp), allocatable :: work(:,:)
  real(dp) :: sbfder(5)
  real(dp) :: amesh,tt,ddt,ske,ro
- integer :: ii,jj,kk,ll1
+ integer :: ii,jj,ll1
  integer :: ixp(4)
 
  allocate(work(mmax,5))

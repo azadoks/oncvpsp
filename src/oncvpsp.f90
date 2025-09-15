@@ -38,37 +38,32 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !
- integer :: ii,ierr,iexc,iexct,ios,iprint,irps,it,icmod,lpopt
- integer :: jj,kk,ll,l1,lloc,lmax,lt,inline
- integer :: mch,mchf,mmax,n1,n2,nc,nlim,nlloc,nlmax,irpsh,nrl
- integer :: nv,irct,ncnf,nvt
+ integer :: ii,ierr,iexc,ios,irps,it,icmod,lpopt
+ integer :: jj,kk,ll,l1,lloc,lmax,inline
+ integer :: mch,mmax,nc,nlim,nrl
+ integer :: nv,irct,ncnf
  integer :: iprj,mxprj
  integer,allocatable :: npa(:,:)
 !
- integer :: dtime(8),na(30),la(30),np(6)
+ integer :: na(30),la(30)
  integer :: nacnf(30,5),lacnf(30,5),nvcnf(5)
- integer :: nat(30),lat(30),indxr(30),indxe(30)
  integer :: irc(6),nodes(4)
- integer :: nproj(6),npx(6),lpx(6)
+ integer :: nproj(6)
  integer :: ncon(6),nbas(6)
 
- real(dp) :: al,amesh,csc,csc1,deblt,depsh,depsht,drl,eeel
+ real(dp) :: al,amesh,depsh,drl,eeel
  real(dp) :: eeig,eexc
- real(dp) :: emax,epsh1,epsh1t,epsh2,epsh2t,rxpsh
- real(dp) :: et,etest,emin,sls
+ real(dp) :: emax,epsh1,epsh2,rxpsh
+ real(dp) :: et,emin
  real(dp) :: fcfact,rcfact,dvloc0
  real(dp) :: fcfact_min,fcfact_max,fcfact_step
  real(dp) :: rcfact_min,rcfact_max,rcfact_step
- real(dp) :: rr1,rcion,rciont,rcmax,rct,rlmax,rpkt
- real(dp) :: sf,zz,zion,zval,etot
- real(dp) :: xdummy
+ real(dp) :: rr1,rcmax,rct,rlmax
+ real(dp) :: zz,zion,zval,etot
 !
- real(dp) :: cl(6),debl(6),ea(30),ep(6),fa(30),facnf(30,5)
- real(dp) :: fat(30,2)
- real(dp) :: fnp(6),fp(6)
+ real(dp) :: debl(6),ea(30),ep(6),fa(30),facnf(30,5)
  real(dp) :: qcut(6),qmsbf(6),rc(6),rc0(6)
  real(dp) :: rpk(30)
- real(dp) :: epx(6),fpx(6)
  real(dp) :: epstot
  real(dp), parameter :: eps=1.0d-8
 
@@ -89,10 +84,10 @@
  character*2 :: atsym
  character*4 :: psfile
  character*256 :: arg
- character*1024 :: infile
+ character*1024 :: infile = ''
  integer :: inunit
 
- logical :: srel,cset
+ logical :: srel
 
  write(6,'(a/a//)') &
 &      'ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
@@ -173,10 +168,10 @@ end if
 
  mxprj=5
 
- al=dlog(amesh)
+ al=log(amesh)
  rr1=0.0005d0/zz
- rr1=dmin1(rr1,0.0005d0/10)
- mmax=dlog(45.0d0 /rr1)/al
+ rr1=min(rr1,0.0005d0/10)
+ mmax=int(log(45.0d0 /rr1)/al)
 
 !calculate zion for output
  zion=zz

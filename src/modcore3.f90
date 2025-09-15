@@ -56,7 +56,6 @@
  real(dp) :: zion,fcfact,rcfact
  real(dp) :: fcfact_min,fcfact_max,fcfact_step
  real(dp) :: rcfact_min,rcfact_max,rcfact_step
- logical :: srel
 
 !Output variables
  real(dp) :: rhomod(mmax,5)
@@ -66,14 +65,14 @@
  real(dp), parameter :: blend=2.0d0
 
 !Local variables
- real(dp) :: al,eeel,eexc
+ real(dp) :: al
  real(dp) :: d2diff,iminus,metric,rmatch,rhocmatch,r0,rcross
  real(dp) :: gg,tt,yy
  real(dp) :: drint,rtst,rint(20),fint(20) !ad-hoc smoothing variables
  real(dp), allocatable :: vxcae(:),vxcpsp(:),vo(:),d2excae(:,:),d2excps(:,:)
  real(dp), allocatable :: dvxcae(:,:),dvxcps(:,:),vxct(:)
  real(dp), allocatable :: d2diff_array(:,:), iminus_array(:,:), metric_array(:,:), fta(:)
- integer :: ii,ierr,ircc,ircross,irmod,iter,jj,kk
+ integer :: ii,ircc,ircross,irmod,jj,kk
  integer :: iint !ad-hoc smoothing variables
  integer :: nfcfact, nrcfact
  character(len=32) :: headerfmt, rowfmt

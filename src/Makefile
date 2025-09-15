@@ -45,15 +45,14 @@ m_psmlout.o: wxml m_libxc_list.o
 INCLUDE_WXML=-I./xmlf90-wxml
 
 
-
 oncvpsp:	$(OBJS_OPSP)
-		$(FLINKER) -o oncvpsp.x $(OBJS_OPSP) $(LIBS) $(WXML_LIB)
+		$(FLINKER) $(FFLAGS) -o oncvpsp.x $(OBJS_OPSP) $(LIBS) $(WXML_LIB)
 
 oncvpspnr:	$(OBJS_OPSPNR)
-		$(FLINKER) -o oncvpspnr.x $(OBJS_OPSPNR) $(LIBS) $(WXML_LIB)
+		$(FLINKER) $(FFLAGS) -o oncvpspnr.x $(OBJS_OPSPNR) $(LIBS) $(WXML_LIB)
 
 oncvpspr:	$(OBJS_OPSPR)
-		$(FLINKER) -o oncvpspr.x $(OBJS_OPSPR) $(LIBS) $(WXML_LIB)
+		$(FLINKER) $(FFLAGS) -o oncvpspr.x $(OBJS_OPSPR) $(LIBS) $(WXML_LIB)
 
 .SUFFIXES: 
 .SUFFIXES: .c .o .f .f90 .F90

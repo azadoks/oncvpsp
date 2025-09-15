@@ -107,7 +107,6 @@ module m_psmlout
 
   character(len=100)    :: line
   character*4      :: polattrib, coreattrib
-  character*1      :: pscode, char_dummy
   character(len=2) :: nameat
   character(len=40):: psflavor
 
@@ -123,7 +122,7 @@ module m_psmlout
   integer :: nr
   character(len=10)     :: datestr
 
-  logical :: tdopsp, nonrel, polarized, there_is_core, found
+  logical :: polarized, there_is_core, found
   integer :: lun, stat
 
 !---
@@ -588,7 +587,6 @@ end subroutine psmlout
 
   character(len=100)    :: line
   character*4      :: polattrib, coreattrib
-  character*1      :: pscode, char_dummy
   character(len=2) :: nameat
   character(len=40):: psflavor
 
@@ -604,7 +602,7 @@ end subroutine psmlout
   integer :: nr
   character(len=10)     :: datestr
 
-  logical :: tdopsp, nonrel, polarized, there_is_core, found
+  logical :: polarized, there_is_core, found
   integer :: lun, stat
 
 !---

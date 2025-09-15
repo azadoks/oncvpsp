@@ -31,7 +31,7 @@ c
 c
       real*8 rho(*),vxc(*),exc(*),r(*)
       real*8 amesh,al
-      real*8 fk,sk,g,ec,ecrs,eczet
+      real*8 fk,sk,g,ec
       integer i, mmax
 c
 c      common/GAS/fk,sk,g,ec,ecrs,eczet
@@ -43,7 +43,7 @@ c
       real(dp) :: thrd
       real(dp) :: conf,conrs
       real(dp) :: s,u,v,ex,vx
-      real(dp) :: rs,zet,vcup,vcdn,zlfc
+      real(dp) :: rs,zet,vcup,vcdn
       real(dp) :: t,uu,vv,ww,h,dvcup,dvcdn
 c
       al = 0.01d0 * dlog(r(101) / r(1))
