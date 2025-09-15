@@ -24,7 +24,8 @@
 ! Teter, Phys. Rev. B 48, 5031 (1993) , Appendix, as 
 
  subroutine modcore3(icmod,rhops,rhotps,rhoc,rhoae,rhotae,rhomod, &
-&                   fcfact,rcfact,irps,mmax,rr,nc,nv,la,zion,iexc)
+&                   fcfact,fcfact_min,fcfact_max,fcfact_step,rcfact,rcfact_min,rcfact_max,rcfact_step, &
+                    irps,mmax,rr,nc,nv,la,zion,iexc)
 
 !icmod  3 coefficient optimizaion, 4 for specivied fcfact and rfact
 !rhops  state-by-state pseudocharge density
@@ -53,6 +54,8 @@
  real(dp) :: rhoae(mmax,nv),rhops(mmax,nv),rhotae(mmax)
  real(dp) :: rhotps(mmax),rhoc(mmax),rr(mmax)
  real(dp) :: zion,fcfact,rcfact
+ real(dp) :: fcfact_min,fcfact_max,fcfact_step
+ real(dp) :: rcfact_min,rcfact_max,rcfact_step
  logical :: srel
 
 !Output variables
@@ -71,6 +74,8 @@
  real(dp), allocatable :: dvxcae(:,:),dvxcps(:,:),vxct(:)
  integer :: ii,ierr,ircc,ircross,irmod,iter,jj,kk
  integer :: iint !ad-hoc smoothing variables
+ integer :: nfcfact, nrcfact
+ character(len=32) :: headerfmt, rowfmt
 
 !2-dimensional Nelder-Mead variables
  real(dp), parameter :: alpha_nm=1.0d0
@@ -148,18 +153,22 @@
  fcfact=1.0d0
 
 !Coarse-grid search for minimum
+ nfcfact = nint((fcfact_max - fcfact_min)/fcfact_step) + 1
+ nrcfact = nint((rcfact_max - rcfact_min)/rcfact_step) + 1
 
  write(6,'(/a)') 'Coarse scan for minimum error'
  write(6,'(a)') '  matrix elements: rms 2nd-derivative errors (mHa)'
  write(6,'(a)') '  column index : amplitude prefactor to rhocmatch'
  write(6,'(a)') '  row index : scale prefactor to rmatch'
 
- d2min=10.0d0
- write(6,'(/7x,10f7.3/)') (1.5d0+0.5d0*(jj-1), jj=1,10)
- do  kk=1,10
-  xt(2)=(1.0d0+0.1d0*(kk-1))*rmatch
-  do jj=1,10
-   xt(1)=(1.5d0+0.5d0*(jj-1))*rhocmatch
+ d2min=huge(d2min)
+ write(headerfmt, '(a,i4,a)') '(/7x,', nfcfact, 'f7.3/)'
+ write(rowfmt, '(a,i4,a)') '(f5.1,f9.3,', nfcfact-1, 'f7.3)'
+ write(6,headerfmt) (fcfact_min+fcfact_step*(jj-1), jj=1,nfcfact)
+ do  kk=1,nrcfact
+  xt(2)=(rcfact_min+rcfact_step*(kk-1))*rmatch
+  do jj=1,nfcfact
+   xt(1)=(fcfact_min+fcfact_step*(jj-1))*rhocmatch
 
    r0=1.5d0*xt(2)
    do ii=mmax,1,-1
@@ -188,7 +197,7 @@
    end if
 
   end do
-  write(6,'(f5.1,f9.3,9f7.3)') 1.0d0+0.1d0*(kk-1),(fta(jj),jj=1,10)
+  write(6,rowfmt) rcfact_min+rcfact_step*(kk-1),(fta(jj),jj=1,nfcfact)
  end do
 
 !Initial Nelder-Mead simplex from coarse-search minimum

@@ -459,7 +459,8 @@
 
  else if(icmod>=3) then
    call modcore3(icmod,rhops,rho,rhoc,rhoae,rhotae,rhomod, &
-&               fcfact,rcfact,irps,mmax,rr,nc,nv,la,zion,iexc)
+&               fcfact,fcfact_min,fcfact_max,fcfact_step,rcfact,rcfact_min,rcfact_max,rcfact_step, &
+&               irps,mmax,rr,nc,nv,la,zion,iexc)
 
  end if
 
@@ -522,7 +523,7 @@
 
 
  call run_phsft(lmax,lloc,nproj,epa,epsh1,epsh2,depsh,vkb,evkb, &
-&               rr,vfull,vp,zz,mmax,mxprj,irc,srel)
+&               rr,vfull,vp,zz,mmax,mxprj,irc,rxpsh,srel)
  
  call gnu_script(epa,evkb,lmax,lloc,mxprj,nproj)
 

@@ -32,6 +32,7 @@
 !
 !   Output format for ABINIT pspcod=8 and upf format for quantumespresso
 !
+ use m_read_input, only: read_input_r
  use m_psmlout, only: psmlout_r
  implicit none
  integer, parameter :: dp=kind(1.0d0)
@@ -54,9 +55,11 @@
 
  real(dp) :: al,amesh,csc,csc1,depsh,depsht,drl,eeel,fj
  real(dp) :: eeig,eexc
- real(dp) :: emax,epsh1,epsh1t,epsh2,epsh2t
+ real(dp) :: emax,epsh1,epsh1t,epsh2,epsh2t,rxpsh
  real(dp) :: et,etest,emin,sls
  real(dp) :: fcfact,rcfact,dvloc0,soscale
+ real(dp) :: fcfact_min,fcfact_max,fcfact_step
+ real(dp) :: rcfact_min,rcfact_max,rcfact_step
  real(dp) :: rr1,rcion,rciont,rcmax,rct,rlmax,rpkt
  real(dp) :: sf,zz,zion,zval,etot
  real(dp) :: cnorm,ebar,eprmin
@@ -107,82 +110,11 @@
  rc(:)=0.0d0
  ep(:,:)=0.0d0
 
-! read input data
- inline=0
-
-! atom and reference configuration
- call cmtskp(inline)
- read(5,*,iostat=ios) atsym,zz,nc,nv,iexc,psfile
- call read_error(ios,inline)
-
- call cmtskp(inline)
- do ii=1,nc+nv
-   read(5,*,iostat=ios) na(ii),la(ii),fa(ii)
-   call read_error(ios,inline)
- end do
-
-! pseudopotential and optimization
- call cmtskp(inline)
- read(5,*,iostat=ios) lmax
- call read_error(ios,inline)
-
- call cmtskp(inline)
- do l1=1,lmax+1
-   read(5,*,iostat=ios) lt,rc(l1),ep(l1,1),ncon(l1),nbas(l1),qcut(l1)
-   if(lt/=l1-1) ios=999
-   call read_error(ios,inline)
-   ep(l1,2)=ep(l1,1)
- end do
-
-! local potential
- call cmtskp(inline)
- read(5,*, iostat=ios) lloc,lpopt,rc(5),dvloc0
- call read_error(ios,inline)
-
-! Vanderbilt-Kleinman-Bylander projectors
- call cmtskp(inline)
- do l1=1,lmax+1
-   read(5,*,iostat=ios) lt,nproj(l1),debl(l1)
-   if(lt/=l1-1) ios=999
-   call read_error(ios,inline)
- end do
-
-! model core charge
- call cmtskp(inline)
- read(5,*, iostat=ios) icmod, fcfact
- if(ios==0 .and. icmod==3) then
-  backspace(5)
-  read(5,*, iostat=ios) icmod, fcfact, rcfact
- end if
- call read_error(ios,inline)
-
-! log derivative analysis
- call cmtskp(inline)
- read(5,*,iostat=ios) epsh1, epsh2, depsh
- call read_error(ios,inline)
-
-! output grid
- call cmtskp(inline)
- read(5,*,iostat=ios) rlmax,drl
- call read_error(ios,inline)
-
-! test configurations
- call cmtskp(inline)
- read(5,*,iostat=ios) ncnf
- call read_error(ios,inline)
-
- do jj=2,ncnf+1
-   call cmtskp(inline)
-   read(5,*,iostat=ios) nvcnf(jj)
-   call read_error(ios,inline)
-   do ii=nc+1,nc+nvcnf(jj)
-     call cmtskp(inline)
-     read(5,*,iostat=ios) nacnf(ii,jj),lacnf(ii,jj),facnf(ii,jj)
-     call read_error(ios,inline)
-   end do
- end do
-
-! end of reading input data
+ call read_input_r(5,inline,atsym,zz,nc,nv,iexc,psfile,na,la,fa,lmax,rc,ep, &
+&                       ncon,nbas,qcut,lloc,lpopt,dvloc0,nproj,debl,icmod,fcfact, &
+&                       rcfact,fcfact_min,fcfact_max,fcfact_step,rcfact_min, &
+&                       rcfact_max,rcfact_step,epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
+&                       ncnf,nvcnf,nacnf,lacnf,facnf)
 
  nvcnf(1)=nv
  do ii=1,nc+nv
@@ -634,7 +566,8 @@
 
  else if(icmod>=3) then
    call modcore3(icmod,rhops,rho,rhoc,rhoae,rhotae,rhomod, &
-&               fcfact,rcfact,irps,mmax,rr,nc,nv,la,zion,iexc)
+&               fcfact,fcfact_min,fcfact_max,fcfact_step,rcfact,rcfact_min,rcfact_max,rcfact_step, &
+&               irps,mmax,rr,nc,nv,la,zion,iexc)
 
  end if
 
@@ -724,7 +657,7 @@
 &                    rho,rhoc,rhomod,cvgplt)
 
  call run_phsft_r(lmax,lloc,nproj,ep,epsh1,epsh2,depsh,vkb,evkb, &
-&               rr,vfull,vp,zz,mmax,mxprj,irc)
+&               rr,vfull,vp,zz,mmax,mxprj,rxpsh,irc)
 
  call gnu_script_r(epa,evkb,lmax,lloc,mxprj,nproj)
 
@@ -762,42 +695,3 @@
 
  stop
  end program oncvpsp_r
-
-
- subroutine cmtskp(inline)
-! skips lines of standard input (file 5) whose first character is #
- implicit none
-
-!In/Out variable
- integer :: inline
-
-!Local variable
- character*1 tst
-
- tst='#'
- do while (tst=='#')
-  read(5,*) tst
-  inline=inline+1
- end do
- backspace(5)
- inline=inline-1
-
- return
- end subroutine cmtskp
-
- subroutine read_error(ios,inline)
-! report data read error and stop
- implicit none
-
-!Input variables
- integer :: ios,inline
-
- inline=inline+1
- if(ios/=0) then
-  write(6,'(a,i4)') 'Read error, input data file line',inline
-  write(6,'(a)') 'Program will stop'
-  stop
- end if
-
- return
- end subroutine read_error

@@ -128,6 +128,7 @@ The main program is oncvpsp.f90, and has the following major sections:
 9) The routine *run_phsft* compares the log derivatives of the all-electron
    and pseudo wave functions (bound or scattering) at the maximum *r_c*.
    (When shallow cores are included, this value shifts to max(rc)+1.)
+   (When rxpsh is provided in the input, the nearest point on rr is used.)
    Since simple plots of log derivatives contain multiple divergences, and 
    are difficult to interpret visually, I plot atan(r * ((d psi(r)/dr)/psi(r)))
    at this radius, which is akin but not equal to a scattering phase shift.

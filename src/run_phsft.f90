@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
  subroutine run_phsft(lmax,lloc,nproj,epa,epsh1,epsh2,depsh,vkb,evkb, &
-&                     rr,vfull,vp,zz,mmax,mxprj,irc,srel)
+&                     rr,vfull,vp,zz,mmax,mxprj,irc,rxpsh,srel)
 
 ! computes log derivatives, actually atan(r * ((d psi(r)/dr)/psi(r)))
 ! at rr(irphs) comparing all-electron with Vanderbilt-Kleinman-Bylander
@@ -49,7 +49,7 @@
 !Input variables
  integer :: lmax,lloc,mmax,mxprj
  integer :: nproj(6),irc(6)
- real(dp) :: epsh1,epsh2,depsh,zz
+ real(dp) :: epsh1,epsh2,depsh,zz,rxpsh
  real(dp) :: rr(mmax),vp(mmax,5),epa(mxprj,6)
  real(dp) :: vfull(mmax),vkb(mmax,mxprj,4),evkb(mxprj,4)
  logical :: srel
@@ -57,7 +57,7 @@
 !Output variables - printing only
 
 !Local variables
- integer :: ii,irphs,ll,l1,npsh
+ integer :: ii,irphs,ll,l1,npsh,xirphs
  real(dp) :: epsh
 
  real(dp),allocatable :: pshf(:),pshp(:)
@@ -77,6 +77,16 @@
    else
      irphs=irc(lloc+1)
    end if
+
+   if (rxpsh > 0.d0) then
+    xirphs = minloc(abs(rr - rxpsh), dim=1)
+    if (xirphs < irphs) then
+      write(6, '(a,f6.2)') 'run_phsft: ERROR rxpsh for logder analysis too small (~< rc(l)) : ', rxpsh
+      stop
+    else
+      irphs = xirphs
+    end if
+  end if
 
    call fphsft(ll,epsh2,depsh,pshf,rr,vfull,zz,mmax,irphs,npsh,srel)
    if(ll .eq. lloc) then  
