@@ -345,7 +345,7 @@ contains
         fcfact = 0.d0
         rcfact = 0.d0
         rc(:) = 0.d0
-        ep(:,:) = 0.d0
+        ep(:, :) = 0.d0
         rxpsh = -1.d0  ! negative value for auto setting of radius
         ! default values for icmod=4 optimization ranges
         fcfact_min = 1.5d0
