@@ -72,7 +72,7 @@
  real(dp) :: drint,rtst,rint(20),fint(20) !ad-hoc smoothing variables
  real(dp), allocatable :: vxcae(:),vxcpsp(:),vo(:),d2excae(:,:),d2excps(:,:)
  real(dp), allocatable :: dvxcae(:,:),dvxcps(:,:),vxct(:)
- real(dp), allocatable :: d2diff_array(:,:), iminus_array(:,:), metric_array(:,:)
+ real(dp), allocatable :: d2diff_array(:,:), iminus_array(:,:), metric_array(:,:), fta(:)
  integer :: ii,ierr,ircc,ircross,irmod,iter,jj,kk
  integer :: iint !ad-hoc smoothing variables
  integer :: nfcfact, nrcfact
@@ -85,7 +85,7 @@
  real(dp), parameter :: rho_nm=-0.5d0
  real(dp), parameter :: sigma_nm=0.5d0
  real(dp) :: xx(2,3),ff(3),xt(2),ft,x0(2),xr(2),fr,xe(2),fe,xc(2),fc
- real(dp) :: d2ref,iminusref,metricref,fta(10),metric_min
+ real(dp) :: d2ref,iminusref,metricref,metric_min
 
 
  allocate(vxcae(mmax),vxcpsp(mmax),vo(mmax))
@@ -167,6 +167,7 @@
  nrcfact = nint((rcfact_max - rcfact_min)/rcfact_step) + 1
 
  allocate(d2diff_array(nrcfact,nfcfact))  ! Hartree
+ allocate(fta(nfcfact))  ! mHa
  allocate(iminus_array(nrcfact,nfcfact))
  allocate(metric_array(nrcfact,nfcfact))
 
@@ -261,9 +262,10 @@
   end do
  end if  ! icmod == 5
 
- if (allocated(d2diff_array)) deallocate(d2diff_array)
- if (allocated(iminus_array)) deallocate(iminus_array)
- if (allocated(metric_array)) deallocate(metric_array)
+ deallocate(d2diff_array)
+ deallocate(fta)
+ deallocate(iminus_array)
+ deallocate(metric_array)
 
 !Initial Nelder-Mead simplex from coarse-search minimum
 
@@ -667,18 +669,9 @@ write(6,'(/a/)') 'd2excps - pseudofunction derivatives with core correction'
 
  call dpnint(rint,fint,8,rr,rhomod(1,5),iint-1)
 
- flush(6)
- write(6,'(a)') 'modcore3: deallocate(vxcae,vxcpsp,vo)'
- flush(6)
  deallocate(vxcae,vxcpsp,vo)
- write(6,'(a)') 'modcore3: deallocate(dvxcae,dvxcps)'
- flush(6)
  deallocate(dvxcae,dvxcps)
- write(6,'(a)') 'modcore3: deallocate(d2excae,d2excps)'
- flush(6)
  deallocate(d2excae,d2excps)
- write(6,'(a)') 'modcore3: done'
- flush(6)
  return
 end subroutine modcore3
 
