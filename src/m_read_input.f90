@@ -173,18 +173,18 @@ contains
         read (unit, '(a)', iostat=ios) line
         ! icmod=0,1,2,4[default grid] : icmod, fcfact
         read (line, *, iostat=ios) icmod, fcfact
-        ! icmod=3 : icmod, fcfact, rcfact
+        ! icmod==3 : icmod, fcfact, rcfact
         if (ios == 0 .and. icmod == 3) then
             read (line, *, iostat=ios) icmod, fcfact, rcfact
         end if
-        ! icmod=4[explicit grid]: icmod, fcfact(ignored), rcfact(ignored),
+        ! icmod==4[explicit grid]: icmod, fcfact(ignored), rcfact(ignored),
         !   fcfact_min, fcfact_max, fcfact_step,
         !   rcfact_min, rcfact_max, rcfact_step
-        if (ios == 0 .and. icmod == 4) then
+        if (ios == 0 .and. icmod >= 4) then
             read (line, *, iostat=ios) icmod, fcfact, rcfact, &
                 fcfact_min, fcfact_max, fcfact_step, &
                 rcfact_min, rcfact_max, rcfact_step
-            ! icmod 4 *_min, *_max, *_step not provided, fall back to defaults
+            ! icmod==4[implicit grid]: *_min, *_max, *_step not provided, fall back to defaults
             if (ios /= 0) then
                 read (line, *, iostat=ios) icmod, fcfact
                 rcfact = 0.d0
@@ -196,17 +196,6 @@ contains
                 rcfact_step = 0.1d0
             end if
         end if
-        ! read (unit, *, iostat=ios) icmod, fcfact
-        ! if (ios == 0 .and. icmod == 3) then
-        !     backspace (5)
-        !     read (unit, *, iostat=ios) icmod, fcfact, rcfact
-        ! end if
-        ! if (ios == 0 .and. icmod ) then
-        !     backspace (5)
-        !     read (unit, *, iostat=ios) icmod, fcfact, rcfact, &
-        !         fcfact_min, fcfact_max, fcfact_step, &
-        !         rcfact_min, rcfact_max, rcfact_step
-        ! end if
         call read_error(ios, inline)
 
         ! log derivative analysis
@@ -359,7 +348,6 @@ contains
         ep(:,:) = 0.d0
         rxpsh = -1.d0  ! negative value for auto setting of radius
         ! default values for icmod=4 optimization ranges
-        ! overriden by input values if icmod=5
         fcfact_min = 1.5d0
         fcfact_max = 6.0d0
         fcfact_step = 0.5d0
@@ -409,16 +397,31 @@ contains
 
         ! model core charge
         call cmtskp(unit, inline)
-        read (unit, *, iostat=ios) icmod, fcfact
+        read (unit, '(a)', iostat=ios) line
+        ! icmod=0,1,2,4[default grid] : icmod, fcfact
+        read (line, *, iostat=ios) icmod, fcfact
+        ! icmod==3 : icmod, fcfact, rcfact
         if (ios == 0 .and. icmod == 3) then
-            backspace (5)
-            read (unit, *, iostat=ios) icmod, fcfact, rcfact
+            read (line, *, iostat=ios) icmod, fcfact, rcfact
         end if
-        if (ios == 0 .and. icmod == 5) then
-            backspace (5)
-            read (unit, *, iostat=ios) icmod, fcfact, rcfact, &
+        ! icmod==4[explicit grid]: icmod, fcfact(ignored), rcfact(ignored),
+        !   fcfact_min, fcfact_max, fcfact_step,
+        !   rcfact_min, rcfact_max, rcfact_step
+        if (ios == 0 .and. icmod >= 4) then
+            read (line, *, iostat=ios) icmod, fcfact, rcfact, &
                 fcfact_min, fcfact_max, fcfact_step, &
                 rcfact_min, rcfact_max, rcfact_step
+            ! icmod==4[implicit grid]: *_min, *_max, *_step not provided, fall back to defaults
+            if (ios /= 0) then
+                read (line, *, iostat=ios) icmod, fcfact
+                rcfact = 0.d0
+                fcfact_min = 1.5d0
+                fcfact_max = 6.0d0
+                fcfact_step = 0.5d0
+                rcfact_min = 1.0d0
+                rcfact_max = 1.9d0
+                rcfact_step = 0.1d0
+            end if
         end if
         call read_error(ios, inline)
 

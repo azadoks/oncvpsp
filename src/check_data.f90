@@ -181,8 +181,8 @@
   end if
  end do
 
- if(icmod<0 .or. icmod>4) then
-  write(6,'(a)') 'test_data: must have 0<= icmod <=4'
+ if(icmod<0 .or. icmod>5) then
+  write(6,'(a)') 'test_data: must have 0<= icmod <=5'
   ierr=ierr+1
  end if
 
@@ -262,4 +262,3 @@
 
  return
  end subroutine check_data
-

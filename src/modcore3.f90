@@ -67,15 +67,17 @@
 
 !Local variables
  real(dp) :: al,eeel,eexc
- real(dp) :: d2mdiff,rmatch,rhocmatch,r0,rcross
+ real(dp) :: d2diff,iminus,metric,rmatch,rhocmatch,r0,rcross
  real(dp) :: gg,tt,yy
  real(dp) :: drint,rtst,rint(20),fint(20) !ad-hoc smoothing variables
  real(dp), allocatable :: vxcae(:),vxcpsp(:),vo(:),d2excae(:,:),d2excps(:,:)
  real(dp), allocatable :: dvxcae(:,:),dvxcps(:,:),vxct(:)
+ real(dp), allocatable :: d2diff_array(:,:), iminus_array(:,:), metric_array(:,:)
  integer :: ii,ierr,ircc,ircross,irmod,iter,jj,kk
  integer :: iint !ad-hoc smoothing variables
  integer :: nfcfact, nrcfact
  character(len=32) :: headerfmt, rowfmt
+ logical :: dostop
 
 !2-dimensional Nelder-Mead variables
  real(dp), parameter :: alpha_nm=1.0d0
@@ -83,7 +85,7 @@
  real(dp), parameter :: rho_nm=-0.5d0
  real(dp), parameter :: sigma_nm=0.5d0
  real(dp) :: xx(2,3),ff(3),xt(2),ft,x0(2),xr(2),fr,xe(2),fe,xc(2),fc
- real(dp) :: d2ref,fta(10),d2min
+ real(dp) :: d2ref,iminusref,metricref,fta(10),metric_min
 
 
  allocate(vxcae(mmax),vxcpsp(mmax),vo(mmax))
@@ -99,7 +101,7 @@
  write(6,'(/a/a)') 'Model core correction analysis',&
 &                  '  based on d2Exc/dn_idn_j'
 
- call der2exc(rhotae,rhoc,rhoae,rr,d2excae,d2excps,d2mdiff, &
+ call der2exc(rhotae,rhoc,rhoae,rr,d2excae,d2excps,d2diff, &
 &                   zion,iexc,nc,nv,la,irmod,mmax)
 
  write(6,'(/a/)') 'd2excae - all-electron derivatives'
@@ -114,16 +116,24 @@
 ! compute d2excps with no core correction
  rhomod(:,:)=0.0d0
 
- call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
+ call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2diff, &
 &                   zion,iexc,nc,nv,la,irmod,mmax)
+ call compute_iminus(rhoc, rhomod, rr, mmax, iminus)
+ call compute_combined_metric(d2diff, iminus, metric)
 
  write(6,'(/a/)') 'd2excps - pseudofunction derivatives with no core correction'
  do kk=1,nv
    write(6,'(1p,4d16.6)') (d2excps(kk,jj),jj=1,nv)
  end do
- write(6,'(/a,1p,e16.6)') 'rms 2nd derivative error',d2mdiff
+ write(6,'(/a,1p,e16.6)') 'rms 2nd derivative error',d2diff
+ if (icmod == 5) then
+  write(6,'(a,1p,e16.6)') 'I-',iminus
+  write(6,'(a,1p,e16.6)') 'combined metric',metric
+ end if
 
- d2ref=d2mdiff
+ d2ref=d2diff
+ iminusref=iminus
+ metricref=metric
 
 ! find valence pseudocharge - core charge crossover
  ircc = 0
@@ -148,7 +158,7 @@
  yy=0.d0
 
 !option for optimization
- if(icmod==4) then
+ if(icmod>=4) then
 
  fcfact=1.0d0
 
@@ -156,12 +166,16 @@
  nfcfact = nint((fcfact_max - fcfact_min)/fcfact_step) + 1
  nrcfact = nint((rcfact_max - rcfact_min)/rcfact_step) + 1
 
+ allocate(d2diff_array(nrcfact,nfcfact))  ! Hartree
+ allocate(iminus_array(nrcfact,nfcfact))
+ allocate(metric_array(nrcfact,nfcfact))
+
  write(6,'(/a)') 'Coarse scan for minimum error'
  write(6,'(a)') '  matrix elements: rms 2nd-derivative errors (mHa)'
  write(6,'(a)') '  column index : amplitude prefactor to rhocmatch'
  write(6,'(a)') '  row index : scale prefactor to rmatch'
 
- d2min=huge(d2min)
+ metric_min=huge(metric_min)
  write(headerfmt, '(a,i4,a)') '(/7x,', nfcfact, 'f7.3/)'
  write(rowfmt, '(a,i4,a)') '(f5.1,f9.3,', nfcfact-1, 'f7.3)'
  write(6,headerfmt) (fcfact_min+fcfact_step*(jj-1), jj=1,nfcfact)
@@ -187,18 +201,69 @@
     rhomod(ii,1)= xt(1)*gg
    end do
 
-   call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
+   call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2diff, &
 &                     zion,iexc,nc,nv,la,irmod,mmax)
-   fta(jj)=1.0d3*d2mdiff
+   fta(jj)=1.0d3*d2diff  ! mHa
+   call compute_iminus(rhoc, rhomod, rr, mmax, iminus)
+   call compute_combined_metric(d2diff, iminus, metric)
 
-   if(d2mdiff<d2min) then
-    xx(:,1)=xt(:)
-    d2min=d2mdiff
+   d2diff_array(kk,jj)=d2diff
+   iminus_array(kk,jj)=iminus
+   metric_array(kk,jj)=metric
+
+   if (icmod == 4) then
+    if(d2diff<metric_min) then
+      xx(:,1)=xt(:)
+      metric_min=d2diff
+    end if
+   else if (icmod == 5) then
+    if(metric_array(kk,jj)<metric_min) then
+      xx(:,1)=xt(:)
+      metric_min=metric_array(kk,jj)
+    end if
+   else
+    write(6,'(/a)') 'modcore3: ERROR icmod not 4 or 5'
+    stop
    end if
 
   end do
   write(6,rowfmt) rcfact_min+rcfact_step*(kk-1),(fta(jj),jj=1,nfcfact)
  end do
+
+ ! Write out log10(I-) and the combined metric
+ if (icmod == 5) then
+  ! store log10(I-) for output
+  do kk=1,nrcfact
+   do jj=1,nfcfact
+    if(iminus_array(kk,jj)>eps) then
+      iminus_array(kk,jj)=log10(iminus_array(kk,jj))
+    else
+      iminus_array(kk,jj)=-9.999d0
+    end if
+   end do
+  end do
+  write(6,'(/a)') 'Coarse scan for minimum error'
+  write(6,'(a)') '  matrix elements: log10(I-)'
+  write(6,'(a)') '  column index : amplitude prefactor to rhocmatch'
+  write(6,'(a)') '  row index : scale prefactor to rmatch'
+  write(6,headerfmt) (fcfact_min+fcfact_step*(jj-1), jj=1,nfcfact)
+  do  kk=1,nrcfact
+   write(6,rowfmt) rcfact_min+rcfact_step*(kk-1),(iminus_array(kk,jj),jj=1,nfcfact)
+  end do
+
+  write(6,'(/a)') 'Coarse scan for minimum error'
+  write(6,'(a)') '  matrix elements: combined metric (rms 2nd-derivative, I-)'
+  write(6,'(a)') '  column index : amplitude prefactor to rhocmatch'
+  write(6,'(a)') '  row index : scale prefactor to rmatch'
+  write(6,headerfmt) (fcfact_min+fcfact_step*(jj-1), jj=1,nfcfact)
+  do  kk=1,nrcfact
+   write(6,rowfmt) rcfact_min+rcfact_step*(kk-1),(metric_array(kk,jj),jj=1,nfcfact)
+  end do
+ end if  ! icmod == 5
+
+ if (allocated(d2diff_array)) deallocate(d2diff_array)
+ if (allocated(iminus_array)) deallocate(iminus_array)
+ if (allocated(metric_array)) deallocate(metric_array)
 
 !Initial Nelder-Mead simplex from coarse-search minimum
 
@@ -233,9 +298,18 @@
     rhomod(ii,1)= xt(1)*gg
    end do
 
-   call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
+   call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2diff, &
  &                    zion,iexc,nc,nv,la,irmod,mmax)
-   ff(kk)=d2mdiff
+   if (icmod == 4) then
+    ff(kk) = d2diff
+   else if (icmod == 5) then
+    call compute_iminus(rhoc, rhomod, rr, mmax, iminus)
+    call compute_combined_metric(d2diff, iminus, metric)
+    ff(kk)=metric
+   else
+    write(6,'(/a)') 'modcore3: ERROR icmod not 4 or 5'
+    stop
+   end if
 
 !  write(6,'(i4,a,2f10.4,1p,e14.4)') kk,'  xt',xt(1),xt(2),ff(kk)
  end do
@@ -259,7 +333,15 @@
   end do
 
 !stopping criterion
-  if(ff(3)-ff(1)<1.0d-4*d2ref) then
+  if (icmod == 4) then
+    dostop = (ff(3) - ff(1) < 1.0d-4*d2ref)
+  else if (icmod == 5) then
+    dostop = (ff(3) - ff(1) < 1.0d-4*metricref)
+  else
+    write(6,'(/a)') 'modcore3: ERROR icmod not 4 or 5'
+    stop
+  end if
+  if(dostop) then
     write(6,'(a,i4,a)') ' converged in',kk-1,' steps'
     write(6,'(a)') 'amplitude prefactor, scale prefactor'
     write(6,'(2f10.4)') xx(1,1)/rhocmatch,xx(2,1)/rmatch
@@ -296,9 +378,18 @@
     rhomod(ii,1)= xr(1)*gg
    end do
 
-  call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
-&                    zion,iexc,nc,nv,la,irmod,mmax)
-  fr=d2mdiff
+   call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2diff, &
+ &                    zion,iexc,nc,nv,la,irmod,mmax)
+   if (icmod == 4) then
+    fr = d2diff
+   else if (icmod == 5) then
+    call compute_iminus(rhoc, rhomod, rr, mmax, iminus)
+    call compute_combined_metric(d2diff, iminus, metric)
+    fr=metric
+   else
+    write(6,'(/a)') 'modcore3: ERROR icmod not 4 or 5'
+    stop
+   end if
 ! write(6,'(i4,a,2f10.4,1p,e14.4)') kk,'  xr',xr(1),xr(2),fr
 
   if(ff(1)<= fr .and. fr<ff(2)) then
@@ -328,9 +419,18 @@
     rhomod(ii,1)= xe(1)*gg
    end do
 
-   call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
-&                     zion,iexc,nc,nv,la,irmod,mmax)
-   fe=d2mdiff
+   call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2diff, &
+ &                    zion,iexc,nc,nv,la,irmod,mmax)
+   if (icmod == 4) then
+    fe = d2diff
+   else if (icmod == 5) then
+    call compute_iminus(rhoc, rhomod, rr, mmax, iminus)
+    call compute_combined_metric(d2diff, iminus, metric)
+    fe=metric
+   else
+    write(6,'(/a)') 'modcore3: ERROR icmod not 4 or 5'
+    stop
+   end if
 ! write(6,'(i4,a,2f10.4,1p,e14.4)') kk,'  xe',xe(1),xe(2),fe
 
    if(fe<fr) then
@@ -364,9 +464,18 @@
     rhomod(ii,1)= xc(1)*gg
    end do
 
-  call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
-&                    zion,iexc,nc,nv,la,irmod,mmax)
-  fc=d2mdiff
+   call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2diff, &
+ &                    zion,iexc,nc,nv,la,irmod,mmax)
+   if (icmod == 4) then
+    fc = d2diff
+   else if (icmod == 5) then
+    call compute_iminus(rhoc, rhomod, rr, mmax, iminus)
+    call compute_combined_metric(d2diff, iminus, metric)
+    fc=metric
+   else
+    write(6,'(/a)') 'modcore3: ERROR icmod not 4 or 5'
+    stop
+   end if
 !  write(6,'(i4,a,2f10.4,1p,e14.4)') kk,'  xc',xc(1),xc(2),fc
   if(fc<ff(3)) then
    ff(3)=fc ; xx(:,3)=xc(:)
@@ -395,9 +504,18 @@
     rhomod(ii,1)= xx(1,jj)*gg
    end do
 
-   call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
-&                     zion,iexc,nc,nv,la,irmod,mmax)
-   ff(jj)=d2mdiff
+   call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2diff, &
+ &                    zion,iexc,nc,nv,la,irmod,mmax)
+   if (icmod == 4) then
+    ff(jj) = d2diff
+   else if (icmod == 5) then
+    call compute_iminus(rhoc, rhomod, rr, mmax, iminus)
+    call compute_combined_metric(d2diff, iminus, metric)
+    ff(jj)=metric
+   else
+    write(6,'(/a)') 'modcore3: ERROR icmod not 4 or 5'
+    stop
+   end if
 !  write(6,'(i4,a,2f10.4,1p,e14.4)') kk,' xrd',xx(1,jj),xx(2,jj),ff(jj)
   end do !jj
 
@@ -443,14 +561,20 @@
   end if
  end do
 
- call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
+ call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2diff, &
 &                   zion,iexc,nc,nv,la,irmod,mmax)
+ call compute_iminus(rhoc, rhomod, rr, mmax, iminus)
+ call compute_combined_metric(d2diff, iminus, metric)
  
 write(6,'(/a/)') 'd2excps - pseudofunction derivatives with core correction' 
  do kk=1,nv
    write(6,'(1p,4d16.6)') (d2excps(kk,jj),jj=1,nv)
  end do
- write(6,'(/a,1p,e16.6)') 'rms 2nd derivative error',d2mdiff
+ write(6,'(/a,1p,e16.6)') 'rms 2nd derivative error',d2diff
+ if (icmod == 5) then
+  write(6,'(a,1p,e16.6)') 'I-',iminus
+  write(6,'(a,1p,e16.6)') 'combined metric',metric
+ end if
 
 !7-point numerical first derivatives applied successively
 !skip non-blended section for 1st and 2nd derivatives
@@ -543,9 +667,80 @@ write(6,'(/a/)') 'd2excps - pseudofunction derivatives with core correction'
 
  call dpnint(rint,fint,8,rr,rhomod(1,5),iint-1)
 
+ flush(6)
+ write(6,'(a)') 'modcore3: deallocate(vxcae,vxcpsp,vo)'
+ flush(6)
  deallocate(vxcae,vxcpsp,vo)
+ write(6,'(a)') 'modcore3: deallocate(dvxcae,dvxcps)'
+ flush(6)
  deallocate(dvxcae,dvxcps)
+ write(6,'(a)') 'modcore3: deallocate(d2excae,d2excps)'
+ flush(6)
  deallocate(d2excae,d2excps)
-
+ write(6,'(a)') 'modcore3: done'
+ flush(6)
  return
 end subroutine modcore3
+
+ subroutine compute_combined_metric(d2mdiff, iminus, metric)
+     implicit none
+     integer, parameter :: dp = kind(1.0d0)
+
+     ! Input variables
+     real(dp), intent(in) :: d2mdiff, iminus
+     ! Output variables
+     real(dp) :: metric
+     ! Local variables
+     real(dp) :: mu, sigma, iminus_shift
+     mu = -3.d0
+     sigma = 1.d0
+     iminus_shift = 1.0d-1
+
+     metric = dlog10(d2mdiff) * 1.d0 / (1.d0 + dexp((dlog10(iminus + iminus_shift) - mu) / sigma))    ! fermi_dirac(dlog10(iminus + 1.0d-1), -3.d0, 1.0d0)
+
+     return
+ end subroutine compute_combined_metric
+
+ subroutine compute_iminus(rhoc, rhomod, rr, mmax, iminus)
+     implicit none
+     integer, parameter :: dp = kind(1.0d0)
+
+     ! Input variables
+     integer :: mmax
+     real(dp) :: rhoc(mmax), rhomod(mmax, 5), rr(mmax)
+
+     ! Output variables
+     real(dp) :: iminus
+
+     ! Local variables
+     integer :: ii
+     real(dp) :: integrand(mmax)
+
+     do ii = 1, mmax
+         integrand(ii) = max(0.d0, rr(ii)**2 * rhomod(ii, 1) - rr(ii)**2 * rhoc(ii))
+     end do
+     iminus = 0.d0
+     call nonuniform_trapezoidal(integrand, rr, mmax, iminus)
+     return
+ end subroutine compute_iminus
+
+ subroutine nonuniform_trapezoidal(fx, xx, nn, integral)
+     implicit none
+     integer, parameter :: dp = kind(1.0d0)
+
+     ! Input variables
+     integer :: nn
+     real(dp) :: fx(nn), xx(nn)
+
+     ! Output variables
+     real(dp) :: integral
+
+     ! Local variables
+     integer :: ii
+
+     integral = 0.d0
+     do ii = 1, nn - 1
+         integral = integral + 0.5d0 * (fx(ii) + fx(ii + 1)) * (xx(ii + 1) - xx(ii))
+     end do
+     return
+ end subroutine nonuniform_trapezoidal

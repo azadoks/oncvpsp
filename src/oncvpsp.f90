@@ -88,6 +88,9 @@
 
  character*2 :: atsym
  character*4 :: psfile
+ character*256 :: arg
+ character*1024 :: infile
+ integer :: inunit
 
  logical :: srel,cset
 
@@ -103,7 +106,31 @@
  srel=.true.
 !srel=.false.
 
- call read_input(5,inline,atsym,zz,nc,nv,iexc,psfile,na,la,fa,lmax,rc,ep, &
+ do ii = 1, command_argument_count()
+  call get_command_argument(ii, arg)
+  select case (arg)
+  case ('-i', '--input')
+    if (ii + 1 > command_argument_count()) then
+      write (6, '(a)') 'Error: --input requires a filename argument'
+      stop 1
+    end if
+    call get_command_argument(ii + 1, infile)
+  case default
+    ! Ignore unknown arguments for now
+  end select
+end do
+
+ if (trim(infile) == '') then
+  inunit=5
+ else
+  open(newunit=inunit, file=trim(infile), status='old', action='read', iostat=ios)
+  if (ios /= 0) then
+    write (6, '(a,a)') 'Error: Could not open input file ', trim(infile)
+    stop 1
+  end if
+end if
+
+ call read_input(inunit,inline,atsym,zz,nc,nv,iexc,psfile,na,la,fa,lmax,rc,ep, &
 &                       ncon,nbas,qcut,lloc,lpopt,dvloc0,nproj,debl,icmod,fcfact, &
 &                       rcfact,fcfact_min,fcfact_max,fcfact_step,rcfact_min, &
 &                       rcfact_max,rcfact_step,epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
