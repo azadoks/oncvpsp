@@ -20,11 +20,11 @@ OBJS_NRSR =	fphsft.o fpovlp.o gnu_script.o linout.o psatom.o \
 		relatom.o run_config.o run_diag.o run_phsft.o run_plot.o \
 		run_vkb.o sratom.o upfout.o wellstate.o
 
-OBJS_SR =	m_psmlout.o oncvpsp.o
+OBJS_SR =	m_psmlout.o m_read_input.o oncvpsp.o
 
-OBJS_NR =	m_psmlout.o oncvpsp_nr.o
+OBJS_NR =	m_psmlout.o m_read_input.o oncvpsp_nr.o
 
-OBJS_R =	m_psmlout.o oncvpsp_r.o fphsft_r.o fpovlp.o gnu_script_r.o linout_r.o \
+OBJS_R =	m_psmlout.o m_read_input.o oncvpsp_r.o fphsft_r.o fpovlp.o gnu_script_r.o linout_r.o \
 		psatom_r.o relatom.o renorm_r.o run_config_r.o run_diag_r.o \
 		run_diag_sr_so_r.o run_phsft_r.o run_plot_r.o run_vkb_r.o \
 		sr_so_r.o upfout_r.o wellstate_r.o
@@ -73,4 +73,3 @@ oncvpspr:	$(OBJS_OPSPR)
 
 clean:
 	 /bin/rm -f *.o  *.d  *.mod *.log *_cpp.f90
-
