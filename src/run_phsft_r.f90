@@ -120,8 +120,8 @@ subroutine run_phsft_r(lmax, lloc, nproj, ep, epsh1, epsh2, depsh, vkb, evkb, &
                     write (6, '(a, i6, 3f12.6)') '! ', ll, epsh, pshf(ii), pshp(ii)
                 end if
             end do
-        end do !ikap
-    end do !l1
+        end do  !ikap
+    end do  !l1
     deallocate (pshf, pshp)
     return
 end subroutine run_phsft_r

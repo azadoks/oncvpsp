@@ -34,21 +34,23 @@ subroutine gg1cc(gg1cc_xx, xx)
     implicit none
     integer, parameter :: dp = kind(1.0d0)
     real(dp), parameter :: pi = 3.141592653589793238462643383279502884197_dp
+    !The cs are coefficients for Taylor expansion of the analytic form near xx=0, 1/2, and 1.
+    real(dp), parameter :: c21 = 4.d0 / 9.d0
+    real(dp), parameter :: c22 = -40.d0 / 27.d0
+    real(dp), parameter :: c23 = 20.d0 / 3.d0 - 16.d0 * pi**2 / 27.d0
+    real(dp), parameter :: c24 = -4160.d0 / 243.d0 + 160.d0 * pi**2 / 81.d0
+    real(dp), parameter :: c31 = 1.d0 / 36.d0
+    real(dp), parameter :: c32 = -25.d0 / 108.d0
+    real(dp), parameter :: c33 = 485.d0 / 432.d0 - pi**2 / 27.d0
+    real(dp), parameter :: c34 = -4055.d0 / 972.d0 + 25.d0 * pi**2 / 81.d0
 
     !Arguments ------------------------------------
-    !scalars
     real(dp), intent(in) :: xx
     real(dp), intent(out) :: gg1cc_xx
 
     !Local variables -------------------------------------------
-    !The c s are coefficients for Taylor expansion of the analytic
-    !form near xx=0, 1/2, and 1.
-    !scalars
-    real(dp) :: c21 = 4.d0 / 9.d0, c22 = -40.d0 / 27.d0, c23 = 20.d0 / 3.d0 - 16.d0 * pi**2 / 27.d0
-    real(dp) :: c24 = -4160.d0 / 243.d0 + 160.d0 * pi**2 / 81.d0, c31 = 1.d0 / 36.d0
-    real(dp) :: c32 = -25.d0 / 108.d0, c33 = 485.d0 / 432.d0 - pi**2 / 27.d0
-    real(dp) :: c34 = -4055.d0 / 972.d0 + 25.d0 * pi**2 / 81.d0
-    real(dp) :: sox, yy
+    real(dp) :: sox
+    real(dp) :: yy
 
     ! *************************************************************************
 

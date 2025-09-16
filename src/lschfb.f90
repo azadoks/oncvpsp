@@ -51,7 +51,7 @@ subroutine lschfb(nn, ll, ierr, ee, rr, vv, uu, up, zz, mmax, mch, srel)
 
     !Local variables
 
-    real(dp) :: aei, aeo, aii, aio, als !functions in aeo.f90
+    real(dp) :: aei, aeo, aii, aio, als  !functions in aeo.f90
     real(dp) :: de, emax, emin
     real(dp) :: eps, fss, tfss, gamma, ro, sc
     real(dp) :: sls, sn, cn, uout, upin, upout, xkap

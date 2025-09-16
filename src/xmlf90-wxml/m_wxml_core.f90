@@ -4,13 +4,14 @@ use m_wxml_buffer
 use m_wxml_elstack
 use m_wxml_dictionary
 
+implicit none
+private
+
 logical, private, save  :: pcdata_advance_line_default = .false.
 logical, private, save  :: pcdata_advance_space_default = .false.
 
 integer, private, parameter ::  sp = selected_real_kind(6,30)
 integer, private, parameter ::  dp = selected_real_kind(14,100)
-
-private
 
 type, public :: xmlf_t
    integer            :: lun
@@ -53,7 +54,7 @@ integer :: iostat
 call get_unit(xf%lun,iostat)
 if (iostat /= 0) stop "cannot open file"
 open(unit=xf%lun, file=filename, form="formatted", status="replace", &
-     action="write", position="rewind") ! , recl=65536)
+     action="write", position="rewind")  ! , recl=65536)
 
 call reset_elstack(xf%stack)
 call reset_dict(xf%dict)
@@ -133,12 +134,12 @@ logical :: advance_line , advance_space
 integer :: n, i, jmax
 integer, parameter   :: chunk_size = 128
 
-advance_line = pcdata_advance_line_default 
+advance_line = pcdata_advance_line_default
 if (present(line_feed)) then
    advance_line = line_feed
 endif
 
-advance_space = pcdata_advance_space_default 
+advance_space = pcdata_advance_space_default
 if (present(space)) then
    advance_space = space
 endif
@@ -377,4 +378,3 @@ end subroutine write_attributes
     end subroutine xml_AddArray_real_sp
 
 end module m_wxml_core
-

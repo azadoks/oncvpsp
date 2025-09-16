@@ -39,11 +39,11 @@ subroutine vkboutwf(ll, nvkb, ep, vkb, evkb, rr, vloc, uu, up, node, mmax, mch)
     !Input variables
     real(dp) :: rr(mmax), vloc(mmax), vkb(mmax, nvkb), evkb(nvkb)
     real(dp) :: ep
-    integer nvkb, ll, mmax, mch
+    integer :: nvkb, ll, mmax, mch
 
     !Output variables
     real(dp) :: uu(mmax), up(mmax)
-    integer node
+    integer :: node
 
     !Local variables
     real(dp) :: rc, rn
@@ -51,7 +51,7 @@ subroutine vkboutwf(ll, nvkb, ep, vkb, evkb, rr, vloc, uu, up, node, mmax, mch)
     real(dp), allocatable :: gg0(:), gg(:, :)
     integer, allocatable :: ipiv(:)
 
-    integer ii, jj, ierr, info
+    integer :: ii, jj, ierr, info
 
     uu(:) = 0.0d0
     up(:) = 0.0d0

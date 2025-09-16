@@ -49,7 +49,7 @@ subroutine vout(mode, rho, rhoc, vo, vxc, zion, eeel, eexc, &
     real(dp) :: eeel, eexc
 
     !Local variables
-    integer ii
+    integer :: ii
     real(dp) :: al, tv
 
     !Function

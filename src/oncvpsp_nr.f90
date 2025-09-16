@@ -76,7 +76,7 @@ program oncvpsp
     real(dp), allocatable :: vpuns(:, :)
     real(dp), allocatable :: vo(:), vxc(:)
     real(dp), allocatable :: rhomod(:, :), rhoae(:, :), rhops(:, :), rhotae(:)
-    real(dp), allocatable :: uupsa(:, :) !pseudo-atomic orbitals array
+    real(dp), allocatable :: uupsa(:, :)  !pseudo-atomic orbitals array
     real(dp), allocatable :: epa(:, :), fpa(:, :)
     real(dp), allocatable :: uua(:, :), upa(:, :)
     real(dp), allocatable :: vr(:, :, :)
@@ -297,7 +297,7 @@ program oncvpsp
         npa(1, l1) = l1
         do kk = 1, nc
             if (la(kk) == l1 - 1) npa(1, l1) = na(kk) + 1
-        end do !kk
+        end do  !kk
 
         !get all-electron bound states for projectors
         if (nv /= 0) then
@@ -316,10 +316,10 @@ program oncvpsp
                     npa(iprj, l1) = na(kk)
                     uua(:, iprj) = uu(:)
                     upa(:, iprj) = up(:)
-                end if !la(kk)==l1-1
+                end if  !la(kk)==l1-1
                 if (iprj == nproj(l1)) exit
-            end do !kk
-        end if !nv/=0
+            end do  !kk
+        end if  !nv/=0
 
         !get all-electron well states for projectors
         !if there were no valence states, use ep from input data for 1st well state
@@ -343,8 +343,8 @@ program oncvpsp
                 &                     vfull, uu, up, zz, mmax, mch, srel)
                 uua(:, iprj) = uu(:)
                 upa(:, iprj) = up(:)
-            end do !kk
-        end if !iprj<nproj(l1)
+            end do  !kk
+        end if  !iprj<nproj(l1)
 
         do iprj = 1, nproj(l1)
 
@@ -366,7 +366,7 @@ program oncvpsp
         &                    irc(l1), qcut(l1), qmsbf(l1), ncon(l1), nbas(l1), nproj(l1), &
         &                    pswf(1, 1, l1), vp(1, l1), vkb(1, 1, l1), vfull, cvgplt(1, 1, 1, l1))
 
-    end do !l1
+    end do  !l1
 
     ! construct Vanderbilt / Kleinman-Bylander projectors
 
@@ -434,7 +434,7 @@ program oncvpsp
         zval = zval + fa(nc + kk)
         nodes(l1) = nodes(l1) + 1
         irps = max(irps, irc(l1))
-    end do !kk
+    end do  !kk
 
     allocate (rhomod(mmax, 5))
 
@@ -507,7 +507,7 @@ program oncvpsp
         &                  rcmax, mmax, mxprj, iexc, ea, etot, epstot, nproj, vpuns, &
         &                  lloc, vkb, evkb, srel)
 
-    end do !jj
+    end do  !jj
 
     call run_plot(lmax, npa, epa, lloc, irc, &
     &                    vkb, evkb, nproj, rr, vfull, vp, vpuns, zz, mmax, mxprj, drl, nrl, &
@@ -559,7 +559,7 @@ subroutine cmtskp(inline)
     integer :: inline
 
     !Local variable
-    character * 1 tst
+    character * 1 :: tst
 
     tst = '#'
     do while (tst == '#')

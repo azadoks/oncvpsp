@@ -182,8 +182,8 @@ subroutine psatom_r(na, la, ea, fat, nv, it, rhoc, rho, &
                 ! accumulate charge and eigenvalues
                 eeig = eeig + fj * ea(ii, ikap)
                 rho(:) = rho(:) + fj * (uu(:) / rr(:))**2
-            end do !ikap
-        end do !ii
+            end do  !ikap
+        end do  !ii
 
         if (ierr /= 0) exit
 
@@ -238,7 +238,7 @@ subroutine psatom_r(na, la, ea, fat, nv, it, rhoc, rho, &
             end if
         end do
 
-    end do !it
+    end do  !it
 
     ! total energy output
     ! output potential for e-e interactions

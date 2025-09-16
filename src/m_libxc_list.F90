@@ -1,4 +1,5 @@
 module m_libxc_list
+    implicit none
     !
     ! List of selected functionals in libxc, wrapped
     ! in a derived type record.

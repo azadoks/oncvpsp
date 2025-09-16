@@ -198,7 +198,7 @@ subroutine relatom(na, la, ea, fa, rpk, nc, ncv, it, rhoc, rho, &
             write (6, '(/a)') 'relatom: WARNING failed to converge'
         end if
 
-    end do !it
+    end do  !it
 
     if (.not. convg .and. ierr == 0) then
         ierr = 100

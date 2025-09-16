@@ -1,5 +1,5 @@
 module m_wxml_elstack
-
+implicit none
 private
 
 !

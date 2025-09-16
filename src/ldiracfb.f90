@@ -50,7 +50,7 @@ subroutine ldiracfb(nn, ll, kap, ierr, ee, rr, zz, vv, uu, up, mmax, mch)
 
     real(dp), allocatable :: gu(:), fu(:), gup(:), fup(:), cf(:)
 
-    real(dp) :: aei, aeo, aii, aio !functions in aeo.f90
+    real(dp) :: aei, aeo, aii, aio  !functions in aeo.f90
     real(dp) :: cc, cci, gam, cof
     real(dp) :: de, emax, emin
     real(dp) :: eps, ro, sc

@@ -18,7 +18,6 @@ subroutine read_input( &
                        rlmax, drl, &
                        ncnf, nvcnf, nacnf, lacnf, facnf &
                        )
-    implicit none
     !> File unit number for input
     integer, intent(in) :: unit
     !> Current line number in input file
@@ -35,7 +34,7 @@ subroutine read_input( &
     !> Exchange-correlation functional code
     integer, intent(out) :: iexc
     !> Pseudopotential output file format flag
-    character(*), intent(out) :: psfile
+    character(*), intent(inout) :: psfile
     !> Principal quantum number array
     integer, intent(inout) :: na(:)
     !> Orbital angular momentum quantum number array
@@ -244,16 +243,15 @@ subroutine read_input( &
 end subroutine read_input
 
 subroutine read_input_r( &
-                         unit, inline, & ! atom and reference configuration
-                         atsym, zz, nc, nv, iexc, psfile, na, la, fa, & ! pseudopotential and optimization
-                         lmax, rc, ep, ncon, nbas, qcut, & ! local potential
-                         lloc, lpopt, dvloc0, nproj, debl, & ! Vanderbilt-Kleinman-Bylander projectors
-                         icmod, fcfact, rcfact, fcfact_min, fcfact_max, fcfact_step, rcfact_min, rcfact_max, rcfact_step, & ! model core charge
-                         epsh1, epsh2, depsh, rxpsh, & ! log derivative analysis
-                         rlmax, drl, & ! output grid
-                         ncnf, nvcnf, nacnf, lacnf, facnf & ! test configurations
+                         unit, inline, &  ! atom and reference configuration
+                         atsym, zz, nc, nv, iexc, psfile, na, la, fa, &  ! pseudopotential and optimization
+                         lmax, rc, ep, ncon, nbas, qcut, &  ! local potential
+                         lloc, lpopt, dvloc0, nproj, debl, &  ! Vanderbilt-Kleinman-Bylander projectors
+                         icmod, fcfact, rcfact, fcfact_min, fcfact_max, fcfact_step, rcfact_min, rcfact_max, rcfact_step, &  ! model core charge
+                         epsh1, epsh2, depsh, rxpsh, &  ! log derivative analysis
+                         rlmax, drl, &  ! output grid
+                         ncnf, nvcnf, nacnf, lacnf, facnf &  ! test configurations
                          )
-    implicit none
     !> File unit number for input
     integer, intent(in) :: unit
     !> Current line number in input file
@@ -472,14 +470,13 @@ end subroutine read_input_r
 
 subroutine cmtskp(unit, inline)
     ! skips lines of standard input (file 5) whose first character is #
-    implicit none
 
     !In/Out variable
     integer :: inline
     integer, intent(in) :: unit
 
     !Local variable
-    character * 1 tst
+    character * 1 :: tst
 
     tst = '#'
     do while (tst == '#')
@@ -494,7 +491,6 @@ end subroutine cmtskp
 
 subroutine read_error(ios, inline)
     ! report data read error and stop
-    implicit none
 
     !Input variables
     integer :: ios, inline

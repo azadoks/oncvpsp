@@ -1,4 +1,4 @@
-exclude: '(scripts|tests|doc)/.*'
+exclude: "(scripts|tests|doc)/.*"
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -7,14 +7,14 @@ repos:
       - id: check-added-large-files
         args: ["--maxkb=5000"]
       - id: end-of-file-fixer
-        exclude: '(scripts|tests|doc)/.*'
+        exclude: "(scripts|tests|doc)/.*"
       - id: check-case-conflict
       - id: detect-private-key
       - id: check-docstring-first
       - id: mixed-line-ending
-        exclude: '(scripts|tests|doc)/.*'
+        exclude: "(scripts|tests|doc)/.*"
       - id: trailing-whitespace
-        exclude: '(scripts|tests|doc)/.*'
+        exclude: "(scripts|tests|doc)/.*"
   - repo: https://github.com/commitizen-tools/commitizen
     rev: v4.9.1
     hooks:
@@ -35,3 +35,12 @@ repos:
             --align_paren,
           ]
         additional_dependencies: [findent==4.3.1]
+  - repo: local
+    hooks:
+      - id: fortitude-lint
+        name: Run Fortitude linter
+        entry: fortitude check
+        language: system
+        pass_filenames: true
+        always_run: true
+        files: \.[fF](90|95|03|08)$

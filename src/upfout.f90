@@ -362,7 +362,7 @@ subroutine upfout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     &        'number_of_wfc="', nv, '"'
 
     write (6, '(t8,a,i1,a)') &
-    &        'number_of_proj="', ntotproj, '"/>' !end of PP_HEADER
+    &        'number_of_proj="', ntotproj, '"/>'  !end of PP_HEADER
 
     write (6, '(t2,a)') &
     &        '<PP_MESH>'
@@ -407,7 +407,7 @@ subroutine upfout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
         if (l1 == lloc + 1) cycle
         do jj = 1, nproj(l1)
             iproj = iproj + 1
-            dmat(iproj, iproj) = 2.0d0 * evkb(jj, l1) !2 for Rydbergs
+            dmat(iproj, iproj) = 2.0d0 * evkb(jj, l1)  !2 for Rydbergs
             if (iproj <= 9) then
                 write (6, '(t4,a,i1)') &
                 &            '<PP_BETA.', iproj

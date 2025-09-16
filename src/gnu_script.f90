@@ -37,7 +37,7 @@ subroutine gnu_script(epa, evkb, lmax, lloc, mxprj, nproj)
     !Output -- printing only
 
     !Local variables
-    integer ii, iprj, jj, l1, ll
+    integer :: ii, iprj, jj, l1, ll
 
     character(len=2), parameter :: cbs = ',\'
 
@@ -184,7 +184,7 @@ subroutine gnu_script(epa, evkb, lmax, lloc, mxprj, nproj)
 
             write (6, '(/a/)') trim(pse)
 
-        end do !iprj
+        end do  !iprj
 
         !orthonormal projector plot
         ll = l1 - 1
@@ -217,7 +217,7 @@ subroutine gnu_script(epa, evkb, lmax, lloc, mxprj, nproj)
 
         write (6, '(/a/)') trim(pse)
 
-    end do !l1
+    end do  !l1
 
     ! log derivatives for angular momenta for which no pseudopotentials
     ! were created

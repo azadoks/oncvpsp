@@ -125,9 +125,9 @@ subroutine sbf_basis_con(ll, rr, mmax, irc, nbas, qroot, psopt, orbasis, orbasis
 
     !find rc derivatives of basis funtction
     orbasis_der(:, :) = 0.0d0
-    do jj = 1, nbas !sbf loop
+    do jj = 1, nbas  !sbf loop
         call sbf_rc_der(ll, qroot(jj), rc, sbfder)
-        do ibas = 1, nbas !orbasis loop
+        do ibas = 1, nbas  !orbasis loop
             do ii = 1, ncon_in
                 orbasis_der(ii, ibas) = orbasis_der(ii, ibas) + orbasis(jj, ibas) * sbfder(ii)
             end do
@@ -136,8 +136,8 @@ subroutine sbf_basis_con(ll, rr, mmax, irc, nbas, qroot, psopt, orbasis, orbasis
 
     !find orthogonal basis radial functiona
     sbf_or(:, :) = 0.0d0
-    do jj = 1, nbas !sbf loop
-        do ibas = 1, nbas !orbasis loop
+    do jj = 1, nbas  !sbf loop
+        do ibas = 1, nbas  !orbasis loop
             sbf_or(:, ibas) = sbf_or(:, ibas) + orbasis(jj, ibas) * sbfar(:, jj)
         end do
     end do
@@ -162,9 +162,9 @@ subroutine sbf_basis_con(ll, rr, mmax, irc, nbas, qroot, psopt, orbasis, orbasis
                 &            + 9.0d0 * rr(irc) * psopt(irc, kk) * sbf_or(irc, jj)) / 24.0d0
 
                 orbasis_der(ncon_in + kk, jj) = sn
-            end do !jj
-        end do !kk
-    end if !iprj>=2
+            end do  !jj
+        end do  !kk
+    end if  !iprj>=2
 
     deallocate (sbfar, sbf_or, sev, work, sovlp)
 

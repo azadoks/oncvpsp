@@ -180,7 +180,7 @@ subroutine linout_r(lmax, lloc, rc, vsr, esr, vso, eso, nproj, rr, vpuns, rho, r
     &  '    zatom,zion,pspd'
     write (6, '(i6,i8,i4,3i6, a)') 8, ixc_abinit, lmax, lloc, &
     &  nrl, 0, '    pspcod,pspxc,lmax,lloc,mmax,r2well'
-    write (6, '(3f12.8, a)') rl(nrl), fcfact, 0.0,  &
+    write (6, '(3f12.8, a)') rl(nrl), fcfact, 0.d0,  &
     &  '    rchrg fchrg qchrg'
     write (6, '(4i6, a)') npr_sr(1:4), '    nproj'
 

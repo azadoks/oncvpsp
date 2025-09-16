@@ -119,8 +119,8 @@ subroutine run_vkb_r(lmax, lloc, lpopt, dvloc0, irc, nproj, rr, mmax, mxprj, psw
                     vkb(ii, jj, l1, ikap) = 0.0d0
                 end do
             end do
-        end do !ikap
-    end do !l1
+        end do  !ikap
+    end do  !l1
 
     ! Vanderbilt B-matrix construction
 
@@ -186,7 +186,7 @@ subroutine run_vkb_r(lmax, lloc, lpopt, dvloc0, irc, nproj, rr, mmax, mxprj, psw
                     end do
                 end do
 
-            end if !nproj>=2
+            end if  !nproj>=2
 
             ! normalize projectors
             do jj = 1, np
@@ -326,7 +326,7 @@ subroutine run_vkb_r(lmax, lloc, lpopt, dvloc0, irc, nproj, rr, mmax, mxprj, psw
                     end if
                 end do
 
-            end if !nproj(l1)>=2
+            end if  !nproj(l1)>=2
 
             if (nproj(l1) < mxprj) then
                 do jj = nproj(l1) + 1, mxprj
@@ -334,8 +334,8 @@ subroutine run_vkb_r(lmax, lloc, lpopt, dvloc0, irc, nproj, rr, mmax, mxprj, psw
                     vkb(:, jj, l1, ikap) = 0.0d0
                 end do
             end if
-        end do !ikap
-    end do !l1
+        end do  !ikap
+    end do  !l1
 
     deallocate (vloc, vkbt, vkbst, work)
 

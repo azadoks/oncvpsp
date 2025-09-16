@@ -127,9 +127,9 @@ subroutine sbf_basis(ll, rr, mmax, irc, nbas, qroot, sbasis, orbasis, orbasis_de
 
     !find rc derivatives of basis funtction
     orbasis_der(:, :) = 0.0d0
-    do jj = 1, nbas !sbf loop
+    do jj = 1, nbas  !sbf loop
         call sbf_rc_der(ll, qroot(jj), rc, sbfder)
-        do ibas = 1, nbas !orbasis loop
+        do ibas = 1, nbas  !orbasis loop
             do ii = 1, nconmx
                 orbasis_der(ii, ibas) = orbasis_der(ii, ibas) + orbasis(jj, ibas) * sbfder(ii)
             end do

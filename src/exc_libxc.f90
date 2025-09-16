@@ -63,7 +63,7 @@ subroutine exc_libxc(iexc, al, rho, vxc, exc, rr, mmax)
     id(1) = abs(iexc) / 1000
     id(2) = abs(iexc) - id(1) * 1000
     nspin = 1
-    irel = 0 !XC_NON_RELATIVISTIC
+    irel = 0  !XC_NON_RELATIVISTIC
     !deriv_method = XC_DERIV_ANALYTICAL
     deriv_method = XC_DERIV_NUMERICAL
     ! call xc_functl_init(functls(1),nspin)

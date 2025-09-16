@@ -1,5 +1,5 @@
 module m_wxml_dictionary
-
+implicit none
 private
 !
 ! A very rough implementation for now
@@ -9,7 +9,7 @@ private
 integer, parameter, private    :: MAX_ITEMS = 30
 type, public :: wxml_dictionary_t
 private
-      integer                               :: number_of_items ! = 0
+      integer                               :: number_of_items  ! = 0
       character(len=100), dimension(MAX_ITEMS)  :: key
       character(len=100), dimension(MAX_ITEMS)  :: value
 end type wxml_dictionary_t
@@ -68,7 +68,7 @@ end function has_key
 subroutine wxml_get_value(dict,key,value,status)
 type(wxml_dictionary_t), intent(in)            :: dict
 character(len=*), intent(in)              :: key
-character(len=*), intent(out)             :: value
+character(len=*), intent(inout)             :: value
 integer, intent(out)                      :: status
 !
 integer  :: n, i
@@ -92,7 +92,7 @@ subroutine get_key(dict,i,key,status)
 !
 type(wxml_dictionary_t), intent(in)            :: dict
 integer, intent(in)                       :: i
-character(len=*), intent(out)             :: key
+character(len=*), intent(inout)             :: key
 integer, intent(out)                      :: status
 
 if (i <= dict%number_of_items) then

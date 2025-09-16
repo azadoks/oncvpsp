@@ -80,7 +80,7 @@ subroutine der2exc(rhotot, rhoc, rho, rr, d2exc, d2ref, d2mdiff, &
         call vout(1, rhot, rhoc, vo, vxct, zion, eeel, eexc, rr, mmax, iexc)
         dvxc(:, kk) = dvxc(:, kk) + (-2.0d0 / (24.0d0 * hh)) * vxct(:)
 
-    end do !kk
+    end do  !kk
 
     ! compute Exc 2nd-derivative wrt occupation numbers matrix
 
@@ -89,8 +89,8 @@ subroutine der2exc(rhotot, rhoc, rho, rr, d2exc, d2ref, d2mdiff, &
         rhot(:) = rho(:, kk) * rr(:)**2
         do jj = 1, nv
             call vpinteg(rhot, dvxc(1, jj), ircut, 2 * l1, d2exc(kk, jj), rr)
-        end do !jj
-    end do !kk
+        end do  !jj
+    end do  !kk
 
     ss = 0.0d0
     do kk = 1, nv

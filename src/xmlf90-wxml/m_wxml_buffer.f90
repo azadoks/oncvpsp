@@ -1,7 +1,8 @@
 module m_wxml_buffer
-
+implicit none
+private
 !
-! At this point we use a fixed-size buffer. 
+! At this point we use a fixed-size buffer.
 ! Note however that buffer overflows will only be
 ! triggered by overly long *unbroken* pcdata values, or
 ! by overly long attribute values. Hopefully
@@ -68,7 +69,7 @@ equal = ((a%size == b%size) .and. (a%str(1:a%size) == b%str(1:b%size)))
 end function compare_buffers
 
 !----------------------------------------------------------------
-function compare_buffer_str(buffer,str) result(equal) ! .equal. generic
+function compare_buffer_str(buffer,str) result(equal)  ! .equal. generic
 type(buffer_t), intent(in)   :: buffer
 character(len=*), intent(in) :: str
 logical                      :: equal
@@ -78,7 +79,7 @@ equal = (buffer%str(1:buffer%size) == trim(str))
 end function compare_buffer_str
 
 !----------------------------------------------------------------
-function compare_str_buffer(str,buffer) result(equal) ! .equal. generic
+function compare_str_buffer(str,buffer) result(equal)  ! .equal. generic
 character(len=*), intent(in) :: str
 type(buffer_t), intent(in)   :: buffer
 logical                     :: equal
@@ -150,7 +151,7 @@ function buffer_length(buffer) result(length)
 type(buffer_t), intent(in)          :: buffer
 integer                             :: length
 
-length = buffer%size 
+length = buffer%size
 
 end function buffer_length
 

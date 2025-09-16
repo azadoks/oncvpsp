@@ -51,7 +51,7 @@ subroutine vrel(ll, ee, rr, vv, vr, uu, up, zz, mmax, irc, srel)
 
     !Local variables
 
-    real(dp) :: als !functions in aeo.f90
+    real(dp) :: als  !functions in aeo.f90
     real(dp) :: eps, fss, tfss, gamma
     real(dp) :: sls
     real(dp) :: amesh, al

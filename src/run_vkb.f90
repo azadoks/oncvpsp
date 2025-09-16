@@ -153,7 +153,7 @@ subroutine run_vkb(lmax, lloc, lpopt, dvloc0, irc, nproj, rr, mmax, mxprj, pswf,
                 end do
             end do
 
-        end if !nproj>=2
+        end if  !nproj>=2
 
         ! normalize projectors
         do jj = 1, np
@@ -293,7 +293,7 @@ subroutine run_vkb(lmax, lloc, lpopt, dvloc0, irc, nproj, rr, mmax, mxprj, pswf,
                 end if
             end do
 
-        end if !nproj(l1)>=2
+        end if  !nproj(l1)>=2
 
         if (nproj(l1) < mxprj) then
             do jj = nproj(l1) + 1, mxprj

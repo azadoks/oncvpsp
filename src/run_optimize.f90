@@ -46,7 +46,7 @@ subroutine run_optimize(eig, ll, mmax, mxprj, rr, uua, qq,&
 
     implicit none
     integer, parameter :: dp = kind(1.0d0)
-    real(dp), parameter :: Ha_eV = 27.21138386d0 ! 1 Hartree, in eV
+    real(dp), parameter :: Ha_eV = 27.21138386d0  ! 1 Hartree, in eV
 
     !Input variables
     integer :: ll, mmax, mxprj, irc, ncon_in, nbas_in, npr
@@ -262,7 +262,7 @@ subroutine run_optimize(eig, ll, mmax, mxprj, rr, uua, qq,&
         deallocate (eresiddot, eresidmat)
         deallocate (qout, eresq, leresq, eresid0)
 
-    end do !iprj
+    end do  !iprj
 
     deallocate (work, qroot)
 

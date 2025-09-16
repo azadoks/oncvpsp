@@ -136,7 +136,7 @@ subroutine run_diag(lmax, npa, epa, lloc, irc, &
                     &             iprj, nnp, ll, ierr, epa(iprj, l1), etest
 
                 end if
-            end if !epa<0 (bound or not)
+            end if  !epa<0 (bound or not)
 
             gam = dabs(umch / uu(mchf))
             gpr = dabs(upmch / up(mchf))
@@ -145,7 +145,7 @@ subroutine run_diag(lmax, npa, epa, lloc, irc, &
             &         etest - epa(iprj, l1), gam, gpr
 
         end do  !iprj
-    end do !l1
+    end do  !l1
 
     deallocate (uu, up)
     return

@@ -144,9 +144,9 @@ subroutine upfout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
 
                 call dpnint(rr, vkb(1, jj, l1, ikap), mmax, rl, vkbl(1, jj, l1, ikap), nrl)
 
-            end do !jj
-        end do !ikap
-    end do !l1
+            end do  !jj
+        end do  !ikap
+    end do  !l1
 
     call dpnint(rr, rho, mmax, rl, rhol, nrl)
 
@@ -397,10 +397,10 @@ subroutine upfout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
 
     if (ntotproj <= 9) then
         write (6, '(t8,a,i1,a)') &
-        &          'number_of_proj="', ntotproj, '"/>' !end of PP_HEADER
+        &          'number_of_proj="', ntotproj, '"/>'  !end of PP_HEADER
     else
         write (6, '(t8,a,i2,a)') &
-        &          'number_of_proj="', ntotproj, '"/>' !end of PP_HEADER
+        &          'number_of_proj="', ntotproj, '"/>'  !end of PP_HEADER
     end if
 
     write (6, '(t2,a)') &
@@ -459,7 +459,7 @@ subroutine upfout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
                     djjj = ll - 0.5d0
                 end if
                 iproj = iproj + 1
-                dmat(iproj, iproj) = 2.0d0 * evkb(jj, l1, ikap) !2 for Rydbergs
+                dmat(iproj, iproj) = 2.0d0 * evkb(jj, l1, ikap)  !2 for Rydbergs
                 if (iproj <= 9) then
                     write (6, '(t4,a,i1)') &
                     &            '<PP_BETA.', iproj
@@ -497,9 +497,9 @@ subroutine upfout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
                     write (6, '(t4,a,i2,a)') &
                     &            '</PP_BETA.', iproj, '>'
                 end if
-            end do !ikap
-        end do !jj (1,nproj(l1))
-    end do !l1
+            end do  !ikap
+        end do  !jj (1,nproj(l1))
+    end do  !l1
 
     write (6, '(t4,a,i4,a)') &
     &      '<PP_DIJ type="real"  size="', ntotproj**2, '" columns="4">'
@@ -615,9 +615,9 @@ subroutine upfout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
                     &            '<PP_RELBETA.', iproj, ' index="', iproj, '" lll="', ll, &
                     &            '" jjj="', djjj, '"/>'
                 end if
-            end do !ikap
-        end do !jj (1,nproj(l1))
-    end do !l1
+            end do  !ikap
+        end do  !jj (1,nproj(l1))
+    end do  !l1
 
     nwfc = 0
     do ii = 1, nv

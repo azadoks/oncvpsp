@@ -164,7 +164,7 @@ subroutine run_diag_sr_so_r(lmax, npa, epa, lloc, irc, &
                         write (6, '(a,4i4,1p,2e16.8)') 'run_diag_r: lschvkbbe ERROR', &
                         &             iprj, ll, kap, ierr, epa(iprj, l1, ikap), etest
                     end if
-                end if !epa<0 (bound or not)
+                end if  !epa<0 (bound or not)
 
                 gam = dabs(umch / uu(mchf))
                 gpr = dabs(upmch / up(mchf))
@@ -174,7 +174,7 @@ subroutine run_diag_sr_so_r(lmax, npa, epa, lloc, irc, &
 
             end do  !ikap
         end do  !iprj
-    end do !l1
+    end do  !l1
 
     deallocate (uu, up)
     return

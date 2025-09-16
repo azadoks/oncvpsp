@@ -219,7 +219,7 @@ subroutine gnu_script_r(epa, evkb, lmax, lloc, mxprj, nproj)
 
                 write (6, '(/a/)') trim(pse)
 
-            end do !iprj
+            end do  !iprj
 
             ! orthonormal projector plot
             ll = l1 - 1
@@ -262,8 +262,8 @@ subroutine gnu_script_r(epa, evkb, lmax, lloc, mxprj, nproj)
 
             write (6, '(/a/)') trim(pse)
 
-        end do !ikap
-    end do !l1
+        end do  !ikap
+    end do  !l1
 
     ! log derivatives for angular momenta for which no pseudopotentials
     ! were created
@@ -284,8 +284,8 @@ subroutine gnu_script_r(epa, evkb, lmax, lloc, mxprj, nproj)
                 end if
 
                 write (6, '(/a/)') trim(pse)
-            end do !ikap
-        end do !l1
+            end do  !ikap
+        end do  !l1
     end if
 
     ! Convergence profile

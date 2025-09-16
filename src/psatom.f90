@@ -163,7 +163,7 @@ subroutine psatom(na, la, ea, fat, nv, it, rhoc, rho, &
             eeig = eeig + fa(ii) * ea(ii)
             rho(:) = rho(:) + fa(ii) * (uu(:) / rr(:))**2
 
-        end do !ii
+        end do  !ii
 
         if (ierr /= 0) exit
 
@@ -218,7 +218,7 @@ subroutine psatom(na, la, ea, fat, nv, it, rhoc, rho, &
             end if
         end do
 
-    end do !it
+    end do  !it
 
     ! total energy output
 

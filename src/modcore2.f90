@@ -63,11 +63,11 @@ subroutine modcore2(rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
     real(dp) :: xx, yy, dy
     real(dp) :: x0max, x0min, a0, b0, ymatch, ytrial
     real(dp) :: fmatch(5)
-    real(dp) :: drint, rtst, rint(20), fint(20) !ad-hoc smoothing variables
+    real(dp) :: drint, rtst, rint(20), fint(20)  !ad-hoc smoothing variables
     real(dp), allocatable :: vxcae(:), vxcpsp(:), vo(:), d2excae(:, :), d2excps(:, :)
     real(dp), allocatable :: dvxcae(:, :), dvxcps(:, :), vxct(:)
     integer :: ii, ircc, irmod, jj, kk
-    integer :: iint !ad-hoc smoothing variables
+    integer :: iint  !ad-hoc smoothing variables
 
     allocate (vxcae(mmax), vxcpsp(mmax), vo(mmax))
     allocate (dvxcae(mmax, nv), dvxcps(mmax, nv), vxct(mmax))

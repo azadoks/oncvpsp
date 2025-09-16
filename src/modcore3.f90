@@ -67,12 +67,12 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
     real(dp) :: al
     real(dp) :: d2diff, iminus, metric, rmatch, rhocmatch, r0, rcross
     real(dp) :: gg, tt, yy
-    real(dp) :: drint, rtst, rint(20), fint(20) !ad-hoc smoothing variables
+    real(dp) :: drint, rtst, rint(20), fint(20)  !ad-hoc smoothing variables
     real(dp), allocatable :: vxcae(:), vxcpsp(:), vo(:), d2excae(:, :), d2excps(:, :)
     real(dp), allocatable :: dvxcae(:, :), dvxcps(:, :), vxct(:)
     real(dp), allocatable :: d2diff_array(:, :), iminus_array(:, :), metric_array(:, :), fta(:)
     integer :: ii, ircc, ircross, irmod, jj, kk
-    integer :: iint !ad-hoc smoothing variables
+    integer :: iint  !ad-hoc smoothing variables
     integer :: nfcfact, nrcfact
     character(len=32) :: headerfmt, rowfmt
     logical :: dostop
@@ -390,7 +390,7 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
 
             if (ff(1) <= fr .and. fr < ff(2)) then
                 ff(3) = fr; xx(:, 3) = xr(:)
-                cycle !kk loop
+                cycle  !kk loop
             end if
 
             !(4) Expansion
@@ -431,10 +431,10 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
 
                 if (fe < fr) then
                     ff(3) = fe; xx(:, 3) = xe(:)
-                    cycle !kk
+                    cycle  !kk
                 else
                     ff(3) = fr; xx(:, 3) = xr(:)
-                    cycle !kk
+                    cycle  !kk
                 end if
             end if
 
@@ -474,7 +474,7 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
             !  write(6,'(i4,a,2f10.4,1p,e14.4)') kk,'  xc',xc(1),xc(2),fc
             if (fc < ff(3)) then
                 ff(3) = fc; xx(:, 3) = xc(:)
-                cycle !kk
+                cycle  !kk
             end if
 
             !(6) Reduction
@@ -512,9 +512,9 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
                     stop
                 end if
                 !  write(6,'(i4,a,2f10.4,1p,e14.4)') kk,' xrd',xx(1,jj),xx(2,jj),ff(jj)
-            end do !jj
+            end do  !jj
 
-        end do !kk
+        end do  !kk
 
         write (6, '(/a)') 'Optimized Teter model core charge'
 

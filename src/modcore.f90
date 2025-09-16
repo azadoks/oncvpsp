@@ -230,7 +230,7 @@ subroutine modcore(rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
             a0 = 0.5d0 * (a0max + a0min)
         end if
 
-    end do !iterr
+    end do  !iterr
     if (iter > 50) write (6, '(/a/)') 'WARNING - modcore not conveged'
 
     ! fill in model and derivatives with fitted polynomial

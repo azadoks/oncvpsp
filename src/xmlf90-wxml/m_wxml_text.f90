@@ -1,4 +1,5 @@
 module m_wxml_text
+implicit none
 !
 integer, private, parameter ::  sp = selected_real_kind(6,30)
 integer, private, parameter ::  dp = selected_real_kind(14,100)

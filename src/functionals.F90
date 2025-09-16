@@ -21,8 +21,8 @@
 module parser
     implicit none
     interface parse_variable
-        module procedure real_parser ! interface for a module
-        module procedure logical_parser ! procedure is implicit
+        module procedure real_parser  ! interface for a module
+        module procedure logical_parser  ! procedure is implicit
     end interface parse_variable
 contains
 subroutine real_parser(varval, var)
@@ -198,7 +198,7 @@ subroutine xc_functl_init_functl(functl, id, ndim,nel, nspin, deriv_method)
     else if(functl%family  ==  XC_FAMILY_NONE) then
         functl%type = -1
         functl%flags = 0
-    else ! handled by libxc
+    else  ! handled by libxc
         ! initialize
 #if XC_MAJOR_VERSION>=6
         call xc_f03_func_init(functl%conf, functl%id, nspin)
@@ -293,7 +293,7 @@ subroutine xc_functl_write_info(functl, iunit)
 #elif XC_MAJOR_VERSION==5
 #endif
 
-    if(functl%family /= XC_FAMILY_NONE) then ! all the other families
+    if(functl%family /= XC_FAMILY_NONE) then  ! all the other families
         select case(functl%type)
           case(XC_EXCHANGE)
             write(message(1), '(2x,a)') 'Exchange'
@@ -416,7 +416,7 @@ subroutine xc_functl_get_vxc(functl, np, al, rr, rho, rho_grad, rho_lapl, tau, i
             do
                 c = alpha + beta*sqrt(2.0d0*sqrt(2.0d0*(maxval(ip) + a)))
                 b = (3.0d0*c - 2.0d0)/pi*sqrt(5.0d0/6.0d0*(maxval(ip) + a))
-                if (abs(a - b) < 1.0e-8) exit
+                if (abs(a - b) < 1.0d-8) exit
                 a = b
             end do
         end if
@@ -521,7 +521,7 @@ subroutine xc_functl_get_vxc(functl, np, al, rr, rho, rho_grad, rho_lapl, tau, i
                                          dedn(1), deds(1), dedl(1), dedt(1))
             end select
 
-        else !Just get the potential
+        else  !Just get the potential
 
             select case(functl%family)
               case(XC_FAMILY_LDA)
@@ -548,7 +548,7 @@ subroutine xc_functl_get_vxc(functl, np, al, rr, rho, rho_grad, rho_lapl, tau, i
                                          dedn(1), deds(1), dedl(1), dedt(1))
             end select
 
-        else !Just get the potential
+        else  !Just get the potential
 
             select case(functl%family)
               case(XC_FAMILY_LDA)
@@ -599,7 +599,8 @@ subroutine xc_functl_get_vxc(functl, np, al, rr, rho, rho_grad, rho_lapl, tau, i
                     d2edrhodgrad(i, 4) = 2.0d0*rho_grad(i, 2)*d2ednds(6) + rho_grad(i, 1)*d2ednds(5)
 
                     d2edgrad2(i, 1) = 2.0d0*deds(1) + 4.0d0*s(1)*d2eds2(1) + 4.0d0*s(2)*d2eds2(2) + s(3)*d2eds2(4)
-                    d2edgrad2(i, 2) = deds(2) + 4.0d0*s(2)*d2eds2(3) + 2.0d0*s(1)*d2eds2(2) + 2.0d0*s(3)*d2eds2(5) + s(2)*d2eds2(4)
+                    d2edgrad2(i, 2) = deds(2) + 4.0d0*s(2)*d2eds2(3) + 2.0d0*s(1)*d2eds2(2) + 2.0d0*s(3)*d2eds2(5) &
+                                      + s(2)*d2eds2(4)
                     d2edgrad2(i, 3) = 2.0d0*deds(3) + 4.0d0*s(3)*d2eds2(6) + 4.0d0*s(2)*d2eds2(5) + s(1)*d2eds2(4)
                 end if
 
@@ -608,7 +609,7 @@ subroutine xc_functl_get_vxc(functl, np, al, rr, rho, rho_grad, rho_lapl, tau, i
             end if
         end if
 
-    end do ! loop over points i
+    end do  ! loop over points i
 
 
     !---Compute potentials---!

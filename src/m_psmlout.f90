@@ -21,9 +21,9 @@
  ! Support for PSML file creation
  !
 module m_psmlout
-
-    public :: psmlout, psmlout_r
+    implicit none
     private
+    public :: psmlout, psmlout_r
 
     integer, parameter :: dp = selected_real_kind(10, 100)
     character(len=1), dimension(0:4) :: lsymb = (/'s', 'p', 'd', 'f', 'g'/)
@@ -62,15 +62,14 @@ subroutine psmlout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     use xmlf90_wxml     ! To write XML files
     use m_libxc_list  ! For ease of libxc handling
 
-    implicit none
 
     real(dp), parameter :: pi = 3.141592653589793238462643383279502884197_dp
 
     !Input variables
     integer :: lmax, lloc, iexc, mmax, icmod
     integer :: nproj(6)
-    integer :: irct ! index of point at which rho_core is matched
-    logical :: srel ! whether it is scalar-relativistic or not
+    integer :: irct  ! index of point at which rho_core is matched
+    logical :: srel  ! whether it is scalar-relativistic or not
     real(dp) :: drl, fcfact, zz, zion
     real(dp), target :: rr(mmax), vpuns(mmax, 5), rho(mmax), vkb(mmax, 2, 4)
     real(dp), target :: rhomod(mmax, 5)
@@ -110,7 +109,7 @@ subroutine psmlout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
 
     character(len=1), dimension(0:4) :: lsymb = (/'s', 'p', 'd', 'f', 'g'/)
 
-    character * 30 xcfuntype, xcfunparam
+    character * 30 :: xcfuntype, xcfunparam
     integer :: ncore, nval, ncp, norbs, npots
 
     integer, allocatable :: n(:), l(:)
@@ -537,14 +536,13 @@ subroutine psmlout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     use xmlf90_wxml     ! To write XML files
     use m_libxc_list  ! For ease of libxc handling
 
-    implicit none
 
     real(dp), parameter :: pi = 3.141592653589793238462643383279502884197_dp
 
     !Input variables
     integer :: lmax, lloc, iexc, mmax, icmod
     integer :: nproj(6)
-    integer :: irct ! index of point at which rho_core is matched
+    integer :: irct  ! index of point at which rho_core is matched
     real(dp) :: drl, fcfact, zz, zion
     real(dp), target :: rr(mmax), vpuns(mmax, 5, 2), rho(mmax), vkb(mmax, 2, 4, 2)
     real(dp), target :: rhomod(mmax, 5)
@@ -584,7 +582,7 @@ subroutine psmlout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
 
     character(len=1), dimension(0:4) :: lsymb = (/'s', 'p', 'd', 'f', 'g'/)
 
-    character * 30 xcfuntype, xcfunparam
+    character * 30 :: xcfuntype, xcfunparam
     integer :: ncore, nval, ncp, norbs, npots
 
     integer, allocatable :: n(:), l(:)
@@ -904,7 +902,7 @@ subroutine psmlout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
                                      f=f0)
             else
                 do jj = 1, 2
-                    jval = ll(i) + (3 - 2 * jj) * 0.5  ! convert (1,2) to (1,-1)*1/2
+                    jval = ll(i) + (3 - 2 * jj) * 0.5d0  ! convert (1,2) to (1,-1)*1/2
                     ! last index:  1: j=l+1/2; 2: j=l-1/2; l=0,j=0 stored in index 1
                     vps(:) = vpuns(:, l1, jj)
                     call add_zero_r(vps(1:npts), r, f0)
@@ -917,7 +915,7 @@ subroutine psmlout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
         end do
         call xml_EndElement(xf, "semilocal-potentials")
 
-    end if ! upf vs psp8
+    end if  ! upf vs psp8
     !
     !--------
     call xml_NewElement(xf, "valence-charge")
@@ -1048,7 +1046,7 @@ subroutine psmlout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
 
                 ! two j values
                 do jk = 1, 2
-                    jval = l1 - 1 + (3 - 2 * jk) * 0.5  ! convert (1,2) to (1,-1)*1/2
+                    jval = l1 - 1 + (3 - 2 * jk) * 0.5d0  ! convert (1,2) to (1,-1)*1/2
                     do jj = 1, nproj(l1)
                         call add_zero_r(vkb(:, jj, l1, jk), r, f0)
                         call write_psml_item(xf, class="proj", &
@@ -1060,10 +1058,10 @@ subroutine psmlout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
 
             end if  ! l1 == 1
 
-        end do ! over l shells
+        end do  ! over l shells
         call xml_EndElement(xf, "projectors")
         !
-    end if ! upf vs psp8
+    end if  ! upf vs psp8
 
     call xml_EndElement(xf, "pseudopotential-operator")
 
@@ -1111,7 +1109,7 @@ subroutine add_zero_r(f, r, f0)
     double precision, intent(in) :: f(:), r(:)
     double precision, intent(out) :: f0(:)
 
-    integer i, npts
+    integer :: i, npts
     double precision :: r2
 
     npts = size(f)
@@ -1130,8 +1128,8 @@ subroutine get_unit(lun)
 
     integer, intent(out) :: lun
 
-    integer i
-    logical unit_used
+    integer :: i
+    logical :: unit_used
 
     do i = 10, 99
         lun = i

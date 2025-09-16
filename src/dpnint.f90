@@ -30,14 +30,14 @@ subroutine dpnint(xx, yy, nn, tt, ss, mm)
 
     !Input variables
     real(dp) :: xx(*), yy(*), tt(*)
-    integer nn, mm
+    integer :: nn, mm
 
     !Output variables
     real(dp) :: ss(*)
 
     !Local variables
     real(dp) :: sum, term, zz
-    integer ii, imin, imax, iprod, iy, istart, jj, kk
+    integer :: ii, imin, imax, iprod, iy, istart, jj, kk
 
     ! set order of polynomial
     integer, parameter :: npoly = 7

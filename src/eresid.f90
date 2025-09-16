@@ -237,7 +237,7 @@ subroutine eresid(ll, irc, nnull, nbas, mmax, rr, qmax, qroot, &
             end if
         end do
 
-    end do !big iq loop
+    end do  !big iq loop
 
     deallocate (rlin, uulin, ps0)
     deallocate (psnull, tpsnull, psnullq)

@@ -82,8 +82,8 @@ subroutine run_ghosts(lmax, la, ea, nc, nv, lloc, irc, qmsbf, &
 
     al = 0.01d0 * dlog(rr(101) / rr(1))
     amesh = dexp(al)
-    eps = 1.0d-4 !threshold for negative-energy ghost report
-    tht = 0.0d0 !sets barrier boundary conditions to zero
+    eps = 1.0d-4  !threshold for negative-energy ghost report
+    tht = 0.0d0  !sets barrier boundary conditions to zero
 
     ! loop for diagnostic output using Vanderbilt Kleinman-Bylander projectors
 
@@ -156,7 +156,7 @@ subroutine run_ghosts(lmax, la, ea, nc, nv, lloc, irc, qmsbf, &
                 call vpinteg(uu, vkb(1, iprj, l1), irc(l1), 2 * ll + 2, gg0(iprj, jj), rr)
             end do
 
-        end do !jj
+        end do  !jj
 
         ecut = ebcut(l1)
 
@@ -207,10 +207,10 @@ subroutine run_ghosts(lmax, la, ea, nc, nv, lloc, irc, qmsbf, &
                 else
                     exit
                 end if
-            end do !ii
+            end do  !ii
 
             write (6, '(2i4,2f16.6,f10.2)') nn, ll, ee, hmev(jj), ecut
-        end do !kk
+        end do  !kk
 
         !if there were no valence states, look for any nodeless bound state
         !if this fails, use vacuum level (0.0) to compare to basis-set states
@@ -271,7 +271,7 @@ subroutine run_ghosts(lmax, la, ea, nc, nv, lloc, irc, qmsbf, &
 
         deallocate (gg0, hmat, hmev, work)
         deallocate (uua)
-    end do !l1
+    end do  !l1
 
     write (6, '(/a)') ' Testing for highly-localized positive-energy ghosts'
     write (6, '(5a)') '    ', '   l', '    <radius>/rc  ', &

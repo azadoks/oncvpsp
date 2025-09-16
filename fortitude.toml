@@ -4,6 +4,8 @@
 # S - Style
 select = ["E", "C", "S"]
 ignore = [
-    "C092" # procedure-not-in-module
+    "C003", # missing-external
+    "C061", # missing-intent
+    "C092", # procedure-not-in-module
 ]
 line-length = 120

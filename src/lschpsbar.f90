@@ -50,7 +50,7 @@ subroutine lschpsbar(nn, ll, ierr, ee, emin, emax, rr, vv, uu, up, mmax, mbar, t
 
     !Local Variables
 
-    real(dp) :: aei, aeo, aii, aio !functions in aeo.f90
+    real(dp) :: aei, aeo, aii, aio  !functions in aeo.f90
     real(dp) :: de, uumax
     real(dp) :: eps, ro, sc, stht, ctht
     real(dp) :: sls, sn, cn, uout, upin, upout, xkap, xkap2, xx
@@ -199,7 +199,7 @@ subroutine lschpsbar(nn, ll, ierr, ee, emin, emax, rr, vv, uu, up, mmax, mbar, t
                     upp(ii) = al * up(ii) + cf(mbar) * uu(ii)
                 end do
 
-            end if !nin<mbar
+            end if  !nin<mbar
 
             ! integrate inward
 
@@ -285,7 +285,7 @@ subroutine lschpsbar(nn, ll, ierr, ee, emin, emax, rr, vv, uu, up, mmax, mbar, t
             ee = 0.5d0 * (emin + emax)
         end if
 
-    end do !nint
+    end do  !nint
 
     deallocate (upp, cf)
     return

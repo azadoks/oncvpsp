@@ -6,6 +6,7 @@ module xmlf90_wxml
 use m_wxml_text
 use m_wxml_core
 
+implicit none
 public
 
 end module xmlf90_wxml

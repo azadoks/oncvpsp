@@ -41,7 +41,7 @@ subroutine wellstate(nnin, ll, irc, ep, rr, vfull, uu, up, zz, mmax, mch, srel)
     !Input variables
     real(dp) :: rr(mmax), vfull(mmax)
     real(dp) :: ep, zz
-    integer :: nnin, ll, irc, mmax !(nnin is actually in/out)
+    integer :: nnin, ll, irc, mmax  !(nnin is actually in/out)
     logical :: srel
 
     !Output variables
@@ -186,10 +186,10 @@ subroutine wellstate(nnin, ll, irc, ep, rr, vfull, uu, up, zz, mmax, mch, srel)
                 cycle
             end if
 
-        end do !itrwell
+        end do  !itrwell
 
         if (convg) exit
-    end do !nnloop
+    end do  !nnloop
 
     if (.not. convg) then
         write (6, '(a,a,i3,a,i3,a,f8.4)') &

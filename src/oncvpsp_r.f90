@@ -78,7 +78,7 @@ program oncvpsp_r
     real(dp), allocatable :: vpuns(:, :)
     real(dp), allocatable :: vo(:), vxc(:)
     real(dp), allocatable :: rhomod(:, :), rhoae(:, :), rhops(:, :), rhotae(:)
-    real(dp), allocatable :: uupsa(:, :, :) !pseudo-atomic orbitals array
+    real(dp), allocatable :: uupsa(:, :, :)  !pseudo-atomic orbitals array
     real(dp), allocatable :: epa(:, :, :), fpa(:, :, :)
     real(dp), allocatable :: uua(:, :, :), upa(:, :, :)
     real(dp), allocatable :: vsr(:, :, :), vso(:, :, :), esr(:, :), eso(:, :)
@@ -328,7 +328,7 @@ program oncvpsp_r
             if (nc > 0) then
                 do kk = 1, nc
                     if (la(kk) == l1 - 1) npa(1, l1) = na(kk) + 1
-                end do !kk
+                end do  !kk
             end if
 
             !get all-electron bound states for projectors
@@ -356,10 +356,10 @@ program oncvpsp_r
                         call renorm_r(uu, rr, ll, kap, zz, mmax, cnorm)
                         uua(:, iprj, ikap) = uu(:, 1)
                         upa(:, iprj, ikap) = cnorm * up(:, 1)
-                    end if !la(kk)==l1-1
+                    end if  !la(kk)==l1-1
                     if (iprj == nproj(l1)) exit
-                end do !kk
-            end if !nv/=0
+                end do  !kk
+            end if  !nv/=0
 
             !get all-electron well states for projectors
             !if there were no valence states, use ep from input data for 1st well state
@@ -415,8 +415,8 @@ program oncvpsp_r
                     call renorm_r(uu, rr, ll, kap, zz, mmax, cnorm)
                     uua(:, iprj, ikap) = uu(:, 1)
                     upa(:, iprj, ikap) = cnorm * up(:, 1)
-                end do !kk
-            end if !iprj<nproj(l1)
+                end do  !kk
+            end if  !iprj<nproj(l1)
 
             do iprj = 1, nproj(l1)
 
@@ -439,8 +439,8 @@ program oncvpsp_r
             &                    pswf(1, 1, l1, ikap), vp(1, l1, ikap), vkb(1, 1, l1, ikap), &
             &                    vfull, cvgplt(1, 1, 1, l1, ikap))
 
-        end do !ikap
-    end do !l1
+        end do  !ikap
+    end do  !l1
 
     deallocate (uua, upa)
 
@@ -521,12 +521,12 @@ program oncvpsp_r
             rhops(:, kk) = rhops(:, kk) + fj * (uu(:, 1) / rr(:))**2
             eeig = eeig + fa(nc + kk) * fj * et
 
-        end do !ikap
+        end do  !ikap
         rho(:) = rho(:) + fa(nc + kk) * rhops(:, kk)
         zval = zval + fa(nc + kk)
         nodes(l1) = nodes(l1) + 1
         irps = max(irps, irc(l1))
-    end do !kk
+    end do  !kk
 
     ! decomposition into scalar-relativistic and spin-orbit projectors
 
@@ -643,7 +643,7 @@ program oncvpsp_r
         &                  rcmax, mmax, mxprj, iexc, ea, etot, epstot, nproj, vpuns, &
         &                  lloc, vkb, evkb)
 
-    end do !jj
+    end do  !jj
 
     call run_plot_r(lmax, npa, epa, lloc, irc, &
     &                    vkb, evkb, nproj, rr, vfull, vp, vpuns, zz, mmax, mxprj, drl, nrl, &

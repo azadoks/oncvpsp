@@ -172,7 +172,7 @@ subroutine run_plot(lmax, npa, epa, lloc, irc, &
                     r0 = rr(ii) + dr
                 end if
             end do
-        end do !iproj
+        end do  !iproj
 
         ! orthonormal projector plots
 
@@ -187,7 +187,7 @@ subroutine run_plot(lmax, npa, epa, lloc, irc, &
             end if
         end do
 
-    end do !l1
+    end do  !l1
     !
     ! convergence profile plots
 

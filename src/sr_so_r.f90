@@ -269,7 +269,7 @@ subroutine sr_so_r(lmax, irc, nproj, rr, mmax, mxprj, evkb, vkb, &
             end if
         end do
 
-    end do ! l1
+    end do  ! l1
 
     deallocate (vkbt, vkbst)
     return
