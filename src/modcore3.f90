@@ -25,7 +25,7 @@
 
 subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
 &                   fcfact, fcfact_min, fcfact_max, fcfact_step, rcfact, rcfact_min, rcfact_max, rcfact_step, &
-                    irps, mmax, rr, nc, nv, la, zion, iexc)
+                    mmax, rr, nc, nv, la, zion, iexc)
 
 !icmod  3 coefficient optimizaion, 4 for specivied fcfact and rfact
 !rhops  state-by-state pseudocharge density
@@ -36,7 +36,6 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
 !rhomod  model core density and 4 derivatives
 !fcfact  prefactor for model amplitude (multiplies crossover value)
 !rcfact  prefactor for model scale (multiplies crossover radius)
-!irps  rr index of maximum rc
 !mmax  dimension of log grid
 !rr log radial grid
 !nc  number of core states
@@ -49,7 +48,7 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
     integer, parameter :: dp = kind(1.0d0)
 
 !Input variables
-    integer :: icmod, nv, nc, iexc, irps, mmax
+    integer :: icmod, nv, nc, iexc, mmax
     integer :: la(30)
     real(dp) :: rhoae(mmax, nv), rhops(mmax, nv), rhotae(mmax)
     real(dp) :: rhotps(mmax), rhoc(mmax), rr(mmax)

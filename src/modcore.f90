@@ -23,10 +23,9 @@
 ! Performs analysis and based on "hardness" criterion described in
 ! Teter, Phys. Rev. B 48, 5031 (1993) , Appendix, as
 
-subroutine modcore(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
-&                   fcfact, rcfact, irps, mmax, rr, nc, nv, la, zion, iexc)
+subroutine modcore(rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
+&                   fcfact, irps, mmax, rr, nc, nv, la, zion, iexc)
 
-!icmod  3 coefficient optimizaion, 4 for specivied fcfact and rfact
 !rhops  state-by-state pseudocharge density
 !rhotps  total pseudocharge density
 !rhoc  core-charge density
@@ -34,7 +33,6 @@ subroutine modcore(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
 !rhotae  total all-electron valence charge density
 !rhomod  model core density and 4 derivatives
 !fcfact  prefactor for model amplitude (multiplies crossover value)
-!rcfact  prefactor for model scale (multiplies crossover radius)
 !irps  rr index of maximum rc
 !mmax  dimension of log grid
 !rr log radial grid
@@ -48,11 +46,11 @@ subroutine modcore(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
     integer, parameter :: dp = kind(1.0d0)
 
 !Input variables
-    integer :: icmod, nv, nc, iexc, irps, mmax
+    integer :: nv, nc, iexc, irps, mmax
     integer :: la(30)
     real(dp) :: rhoae(mmax, nv), rhops(mmax, nv), rhotae(mmax)
     real(dp) :: rhotps(mmax), rhoc(mmax), rr(mmax)
-    real(dp) :: zion, fcfact, rcfact
+    real(dp) :: zion, fcfact
 
 !Output variables
     real(dp) :: rhomod(mmax, 5)

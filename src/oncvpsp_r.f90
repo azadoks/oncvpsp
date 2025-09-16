@@ -553,17 +553,17 @@ program oncvpsp_r
 ! or Teter function fit
 
     if (icmod == 1) then
-        call modcore(icmod, rhops, rho, rhoc, rhoae, rhotae, rhomod, &
-        &               fcfact, rcfact, irps, mmax, rr, nc, nv, la, zion, iexc)
+        call modcore(rhops, rho, rhoc, rhoae, rhotae, rhomod, &
+        &               fcfact, irps, mmax, rr, nc, nv, la, zion, iexc)
 
     else if (icmod == 2) then
-        call modcore2(icmod, rhops, rho, rhoc, rhoae, rhotae, rhomod, &
-        &               fcfact, rcfact, irps, mmax, rr, nc, nv, la, zion, iexc)
+        call modcore2(rhops, rho, rhoc, rhoae, rhotae, rhomod, &
+        &               fcfact, mmax, rr, nc, nv, la, zion, iexc)
 
     else if (icmod >= 3) then
         call modcore3(icmod, rhops, rho, rhoc, rhoae, rhotae, rhomod, &
         &               fcfact, fcfact_min, fcfact_max, fcfact_step, rcfact, rcfact_min, rcfact_max, rcfact_step, &
-        &               irps, mmax, rr, nc, nv, la, zion, iexc)
+        &               mmax, rr, nc, nv, la, zion, iexc)
 
     end if
 
@@ -680,9 +680,9 @@ program oncvpsp_r
         call psmlout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpsml, rho, rhomod, &
         &             irct, &
         &             vsr, esr, vso, eso, &
-        &             zz, zion, mmax, iexc, icmod, nrl, drl, atsym, epstot, &
+        &             zz, zion, mmax, iexc, icmod, drl, atsym, &
         &             na, la, ncon, nbas, nvcnf, nacnf, lacnf, nc, nv, lpopt, ncnf, &
-        &             fa, rc0, ep, qcut, debl, facnf, dvloc0, fcfact, &
+        &             fa, ep, qcut, debl, facnf, dvloc0, fcfact, &
         &             epsh1, epsh2, depsh, rlmax, psfile)
     end if
 

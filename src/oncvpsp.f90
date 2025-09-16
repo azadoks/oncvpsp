@@ -36,58 +36,253 @@ program oncvpsp
     use m_read_input, only: read_input
     implicit none
     integer, parameter :: dp = kind(1.0d0)
-
-!
-    integer :: ii, ierr, iexc, ios, irps, it, icmod, lpopt
-    integer :: jj, kk, ll, l1, lloc, lmax, inline
-    integer :: mch, mmax, nc, nlim, nrl
-    integer :: nv, irct, ncnf
-    integer :: iprj, mxprj
-    integer, allocatable :: npa(:, :)
-!
-    integer :: na(30), la(30)
-    integer :: nacnf(30, 5), lacnf(30, 5), nvcnf(5)
-    integer :: irc(6), nodes(4)
-    integer :: nproj(6)
-    integer :: ncon(6), nbas(6)
-
-    real(dp) :: al, amesh, depsh, drl, eeel
-    real(dp) :: eeig, eexc
-    real(dp) :: emax, epsh1, epsh2, rxpsh
-    real(dp) :: et, emin
-    real(dp) :: fcfact, rcfact, dvloc0
-    real(dp) :: fcfact_min, fcfact_max, fcfact_step
-    real(dp) :: rcfact_min, rcfact_max, rcfact_step
-    real(dp) :: rr1, rcmax, rct, rlmax
-    real(dp) :: zz, zion, zval, etot
-!
-    real(dp) :: debl(6), ea(30), ep(6), fa(30), facnf(30, 5)
-    real(dp) :: qcut(6), qmsbf(6), rc(6), rc0(6)
-    real(dp) :: rpk(30)
-    real(dp) :: epstot
+    ! Constants
+    !> Scalar-relativistic flag
+    logical, parameter :: srel = .true.
+    !> "Dimension of number of projectors"
+    integer, parameter :: mxprj = 5
+    !> Dimension of number of states
+    integer, parameter :: mxstate = 30
+    !> Dimension of number of angular momenta
+    integer, parameter :: mxnl = 6
+    !> Dimension of number of test configurations
+    integer, parameter :: mxcnf = 5
+    !> Convergence / tolerance parameter
     real(dp), parameter :: eps = 1.0d-8
+    !> Logarithmic mesh spacing
+    real(dp), parameter :: amesh = 1.006d0
+    !> Logarithmic mesh upper bound
+    real(dp), parameter :: rrmax = 45.0d0
 
-    real(dp), allocatable :: evkb(:, :), cvgplt(:, :, :, :), qq(:, :)
+    ! Input parameters
+    ! [Atom and reference configuration]
+    !> Atomic symbol
+    character(len=2) :: atsym
+    !> Atomic number
+    real(dp) :: zz
+    !> Number of core states
+    integer :: nc
+    !> Number of valence states
+    integer :: nv
+    !> Exchange-correlation functional code
+    integer :: iexc
+    !> Output pseudopotential file format
+    character(len=4) :: psfile
+    !> Principal quantum numbers for reference states
+    integer :: na(mxstate)
+    !> Angular quantum numbers for reference states
+    integer :: la(mxstate)
+    !> Occupation numbers for reference states
+    real(dp) :: fa(mxstate)
+    ! [Pseudopotential and optimization]
+    !> Maximum angular momentum
+    integer :: lmax
+    !> Core radii for pseudopotentials
+    real(dp) :: rc(mxnl)
+    !> Energies at which to construct the pseudopotentials
+    real(dp) :: ep(mxnl)
+    !> Number of matching constraints for each pseudopotential
+    integer :: ncon(mxnl)
+    !> Number of basis functions for each pseudopotential
+    integer :: nbas(mxnl)
+    !> Maximum wave number for each pseudopotential
+    real(dp) :: qcut(mxnl)
+    ! [Local potential]
+    !> Angular momentum channel used for local potential
+    integer :: lloc
+    !>
+    integer :: lpopt
+    !> Local potential offset at origin
+    real(dp) :: dvloc0
+    ! [Vanderbilt-Kleinman-Bylander projectors]
+    !> Number of projectors for each angular momentum
+    integer :: nproj(mxnl)
+    !>
+    real(dp) :: debl(mxnl)
+    ! [Model core charge]
+    !> Model core charge type
+    integer :: icmod
+    !> Amplitude factor for model core charge
+    real(dp) :: fcfact
+    !> Width factor for model core charge
+    real(dp) :: rcfact
+    !> Minimum value for fcfact coarse grid (icmod>=4)
+    real(dp) :: fcfact_min
+    !> Maximum value for fcfact coarse grid (icmod>=4)
+    real(dp) :: fcfact_max
+    !> Step size for fcfact coarse grid (icmod>=4)
+    real(dp) :: fcfact_step
+    !> Minimum value for rcfact coarse grid (icmod>=4)
+    real(dp) :: rcfact_min
+    !> Maximum value for rcfact coarse grid (icmod>=4)
+    real(dp) :: rcfact_max
+    !> Step size for rcfact coarse grid (icmod>=4)
+    real(dp) :: rcfact_step
+    ! [Log derivative analysis]
+    !> Minimum energy for logarithmic derivative analysis
+    real(dp) :: epsh1
+    !> Maximum energy for logarithmic derivative analysis
+    real(dp) :: epsh2
+    !> Energy spacing for logarithmic derivative analysis
+    real(dp) :: depsh
+    !> Radius at which logarithmic derivative is evaluated
+    real(dp) :: rxpsh
+    ! [Output grid]
+    !> Linear mesh spacing
+    real(dp) :: drl
+    !> Maximum linear mesh value
+    real(dp) :: rlmax
+    ! [Test configurations]
+    !> Number of test configurations
+    integer :: ncnf
+    !> Number of valence states in test configurations
+    integer :: nvcnf(mxcnf)
+    !> Principal quantum numbers for test configurations
+    integer :: nacnf(mxstate, mxcnf)
+    !> Angular quantum numbers for test configurations
+    integer :: lacnf(mxstate, mxcnf)
+    !> Occupation numbers for test configurations
+    real(dp) :: facnf(mxstate, mxcnf)
+
+    ! Local variables
+    !> Loop index
+    integer :: ii
+    !> Loop index
+    integer :: jj
+    !> Loop index
+    integer :: kk
+    !> Angular momentum quantum number
+    integer :: ll
+    !> Angular momentum index (l + 1)
+    integer :: l1
+    !> Error code
+    integer :: ierr
+    !> I/O status code
+    integer :: ios
+    !> Line number in input file
+    integer :: inline
+    !> log(amesh)
+    real(dp) :: al
+    !> Number of logarithmic mesh points
+    integer :: mmax
+    !> First logarithmic mesh value
+    real(dp) :: rr1
+    !> Number of linear mesh points
+    integer :: nrl
+    !>
+    real(dp) :: ea(mxstate)
+    !> Logarithmic mesh point of maximum rc
+    integer :: irps
+    !> Iteration count for all-electron atom solver
+    integer :: it
+    !> Logarithmic mesh point at which inward and outward solutions are matched
+    integer :: mch
+    !> "Index of maximum rc including that of vlocal"
+    ! Used in: run_vkb
+    integer :: nlim
+    !> "Index of point at which rho_core is matched"
+    ! Used in: psmlout
+    integer :: irct
+    !> Projector index
+    integer :: iprj
+    !> Principal quantum number for each projector
+    ! Indexed by (projector, angular momentum)
+    integer, allocatable :: npa(:, :)
+    !> Index of logarithmic mesh point nearest input rc for each l
+    integer :: irc(mxnl)
+    !>
+    integer :: nodes(4)
+
+    !> Electron-electron energy
+    real(dp) :: eeel
+    !>
+    real(dp) :: eeig
+    !> Correction to eigenvalue sum from exchange-correlation for total energy calculation
+    real(dp) :: eexc
+    !>
+    real(dp) :: emax
+    !>
+    real(dp) :: et
+    !>
+    real(dp) :: emin
+    !>
+    real(dp) :: rcmax
+    !>
+    real(dp) :: rct
+    !> Ionic charge (sum of core occupation, zz - zval)
+    real(dp) :: zion
+    !> Valence charge (sum of valence occupation, zz - zion)
+    real(dp) :: zval
+    !> Total all-electron energy
+    real(dp) :: etot
+    !>
+    real(dp) :: qmsbf(mxnl)
+    !>
+    real(dp) :: rc0(mxnl)
+    !>
+    real(dp) :: rpk(mxstate)
+    !>
+    real(dp) :: epstot
+    !>
+    real(dp), allocatable :: evkb(:, :)
+    !>
+    real(dp), allocatable :: cvgplt(:, :, :, :)
+    !>
+    real(dp), allocatable :: qq(:, :)
+    !>
     real(dp), allocatable :: rr(:)
-    real(dp), allocatable :: rho(:), rhoc(:), rhot(:)
-    real(dp), allocatable :: uu(:), up(:)
-    real(dp), allocatable :: vp(:, :), vfull(:), vkb(:, :, :), pswf(:, :, :)
+    !> Total charge density of all-electron atom
+    real(dp), allocatable :: rho(:)
+    !> Charge density of core states in all-electron atom
+    real(dp), allocatable :: rhoc(:)
+    !>
+    real(dp), allocatable :: rhot(:)
+    !> Wavefunction r * ψ(r) on logarithmic mesh
+    real(dp), allocatable :: uu(:)
+    !> Wavefunction derivative d(r * ψ(r))/dr on logarithmic mesh
+    real(dp), allocatable :: up(:)
+    !>
+    real(dp), allocatable :: vp(:, :)
+    !> Total all-electron potential
+    real(dp), allocatable :: vfull(:)
+    !>
+    real(dp), allocatable :: vkb(:, :, :)
+    !>
+    real(dp), allocatable :: pswf(:, :, :)
+    !>
     real(dp), allocatable :: vwell(:)
+    !>
     real(dp), allocatable :: vpuns(:, :)
-    real(dp), allocatable :: vo(:), vxc(:)
-    real(dp), allocatable :: rhomod(:, :), rhoae(:, :), rhops(:, :), rhotae(:)
-    real(dp), allocatable :: uupsa(:, :) !pseudo-atomic orbitals array
-    real(dp), allocatable :: epa(:, :), fpa(:, :)
-    real(dp), allocatable :: uua(:, :), upa(:, :)
+    !>
+    real(dp), allocatable :: vo(:)
+    !>
+    real(dp), allocatable :: vxc(:)
+    !>
+    real(dp), allocatable :: rhomod(:, :)
+    !>
+    real(dp), allocatable :: rhoae(:, :)
+    !>
+    real(dp), allocatable :: rhops(:, :)
+    !>
+    real(dp), allocatable :: rhotae(:)
+    !> Pseudo wave functions
+    real(dp), allocatable :: uupsa(:, :)
+    !>
+    real(dp), allocatable :: epa(:, :)
+    !>
+    real(dp), allocatable :: fpa(:, :)
+    !>
+    real(dp), allocatable :: uua(:, :)
+    !>
+    real(dp), allocatable :: upa(:, :)
+    !>
     real(dp), allocatable :: vr(:, :, :)
-
-    character*2 :: atsym
-    character*4 :: psfile
-    character*256 :: arg
-    character*1024 :: infile = ''
+    !> Command line argument
+    character(len=1024) :: arg
+    !> Input file name
+    character(len=1024) :: infile = ''
+    !> Unit for input file
     integer :: inunit
-
-    logical :: srel
 
     write (6, '(a/a//)') &
     &      'ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
@@ -97,9 +292,6 @@ program oncvpsp
     &      'While it is not required under the terms of the GNU GPL, it is',&
     &      'suggested that you cite D. R. Hamann, Phys. Rev. B 88, 085117 (2013)', &
     &      'in any publication utilizing these pseudopotentials.'
-
-    srel = .true.
-!srel=.false.
 
     do ii = 1, command_argument_count()
         call get_command_argument(ii, arg)
@@ -156,24 +348,15 @@ program oncvpsp
 
     nrl = int((rlmax / drl) - 0.5d0) + 1
 
-!PWSCF wants an even number of mesh pointe
-!if(trim(psfile)=='upf') then
+    !PWSCF wants an even number of mesh pointe
     if (mod(nrl, 2) /= 0) nrl = nrl + 1
-!end if
-
-!amesh=1.012d0
-    amesh = 1.006d0
-!amesh=1.003d0
-!amesh=1.0015d0
-
-    mxprj = 5
 
     al = log(amesh)
     rr1 = 0.0005d0 / zz
     rr1 = min(rr1, 0.0005d0 / 10)
-    mmax = int(log(45.0d0 / rr1) / al)
+    mmax = int(log(rrmax / rr1) / al)
 
-!calculate zion for output
+    !calculate zion for output
     zion = zz
     do ii = 1, nc
         zion = zion - fa(ii)
@@ -471,17 +654,17 @@ program oncvpsp
 ! or Teter function fit
 
     if (icmod == 1) then
-        call modcore(icmod, rhops, rho, rhoc, rhoae, rhotae, rhomod, &
-        &               fcfact, rcfact, irps, mmax, rr, nc, nv, la, zion, iexc)
+        call modcore(rhops, rho, rhoc, rhoae, rhotae, rhomod, &
+        &               fcfact, irps, mmax, rr, nc, nv, la, zion, iexc)
 
     else if (icmod == 2) then
-        call modcore2(icmod, rhops, rho, rhoc, rhoae, rhotae, rhomod, &
-        &               fcfact, rcfact, irps, mmax, rr, nc, nv, la, zion, iexc)
+        call modcore2(rhops, rho, rhoc, rhoae, rhotae, rhomod, &
+        &               fcfact, mmax, rr, nc, nv, la, zion, iexc)
 
     else if (icmod >= 3) then
         call modcore3(icmod, rhops, rho, rhoc, rhoae, rhotae, rhomod, &
         &               fcfact, fcfact_min, fcfact_max, fcfact_step, rcfact, rcfact_min, rcfact_max, rcfact_step, &
-        &               irps, mmax, rr, nc, nv, la, zion, iexc)
+        &               mmax, rr, nc, nv, la, zion, iexc)
 
     end if
 
@@ -569,9 +752,9 @@ program oncvpsp
         print *, 'calling psmlout'
         call psmlout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
         &             irct, srel, &
-        &             zz, zion, mmax, iexc, icmod, nrl, drl, atsym, epstot, &
+        &             zz, zion, mmax, iexc, icmod, drl, atsym, &
         &             na, la, ncon, nbas, nvcnf, nacnf, lacnf, nc, nv, lpopt, ncnf, &
-        &             fa, rc0, ep, qcut, debl, facnf, dvloc0, fcfact, &
+        &             fa, ep, qcut, debl, facnf, dvloc0, fcfact, &
         &             epsh1, epsh2, depsh, rlmax, psfile)
     end if
 

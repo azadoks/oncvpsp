@@ -8,5 +8,6 @@
         "--indent_continuation=default",
         "--indent_ampersand",
         "--align_paren",
-    ]
+    ],
+    "cSpell.enabled": false
 }

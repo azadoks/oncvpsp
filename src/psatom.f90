@@ -19,7 +19,7 @@
 ! self-consistent pseudoatom calculation
 
 subroutine psatom(na, la, ea, fat, nv, it, rhoc, rho, &
-&           rr, rcmax, mmax, mxprj, iexc, etot, nproj, vpuns, lloc, vkb, evkb, ierr)
+&           rr, mmax, mxprj, iexc, etot, nproj, vpuns, lloc, vkb, evkb, ierr)
 
 !na  principal quantum number array, dimension nv
 !la  angular-momenta
@@ -29,7 +29,6 @@ subroutine psatom(na, la, ea, fat, nv, it, rhoc, rho, &
 !nv  number of valence states
 !it  number of iterations (output)
 !rr  log radial mesh
-!rcmax  maximum core radius for psp
 !mmax  size of log grid
 !mxprj  dimension of number of projectors
 !iexc  exchange-correlation function to be used
@@ -48,7 +47,6 @@ subroutine psatom(na, la, ea, fat, nv, it, rhoc, rho, &
 
     integer :: mmax, mxprj, iexc, nv, lloc
     integer :: na(nv), la(nv), nproj(5)
-    real(dp) :: rcmax
     real(dp) :: fat(30, 2), rr(mmax)
     real(dp) :: vpuns(mmax, 5), vkb(mmax, mxprj, 4), evkb(mxprj, 4)
 

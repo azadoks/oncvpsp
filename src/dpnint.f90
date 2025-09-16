@@ -85,11 +85,11 @@ subroutine dpnint(xx, yy, nn, tt, ss, mm)
         zz = tt(jj)
 
         if (mod(npoly, 2) == 1) then
-            istart = imin - npoly / 2
+            istart = imin - int(real(npoly) / real(2))
         else if (zz - xx(imin) < xx(imax) - zz) then
-            istart = imin - npoly / 2
+            istart = imin - int(real(npoly) / real(2))
         else
-            istart = imax - npoly / 2
+            istart = imax - int(real(npoly) / real(2))
         end if
 
         istart = min(istart, nn - npoly)

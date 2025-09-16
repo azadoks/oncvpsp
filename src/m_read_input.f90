@@ -7,20 +7,23 @@ module m_read_input
 contains
 
 subroutine read_input( &
-                       unit, inline, & ! atom and reference configuration
-                       atsym, zz, nc, nv, iexc, psfile, na, la, fa, & ! pseudopotential and optimization
-                       lmax, rc, ep, ncon, nbas, qcut, & ! local potential
-                       lloc, lpopt, dvloc0, nproj, debl, & ! Vanderbilt-Kleinman-Bylander projectors
-                       icmod, fcfact, rcfact, fcfact_min, fcfact_max, fcfact_step, rcfact_min, rcfact_max, rcfact_step, & ! model core charge
-                       epsh1, epsh2, depsh, rxpsh, & ! log derivative analysis
-                       rlmax, drl, & ! output grid
-                       ncnf, nvcnf, nacnf, lacnf, facnf & ! test configurations
+                       unit, inline, &
+                       atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
+                       lmax, rc, ep, ncon, nbas, qcut, &
+                       lloc, lpopt, dvloc0, nproj, debl, &
+                       icmod, fcfact, rcfact, &
+                       fcfact_min, fcfact_max, fcfact_step, &
+                       rcfact_min, rcfact_max, rcfact_step, &
+                       epsh1, epsh2, depsh, rxpsh, &
+                       rlmax, drl, &
+                       ncnf, nvcnf, nacnf, lacnf, facnf &
                        )
     implicit none
     !> File unit number for input
     integer, intent(in) :: unit
     !> Current line number in input file
     integer, intent(out) :: inline
+    ! [Atom and reference configuration]
     !> Atomic symbol
     character(len=2), intent(out) :: atsym
     !> Atomic number
@@ -39,9 +42,10 @@ subroutine read_input( &
     integer, intent(inout) :: la(:)
     !> Occupation number array
     real(dp), intent(inout) :: fa(:)
+    ! [Pseudopotential and optimization]
     !> Maximum angular momentum
     integer, intent(out) :: lmax
-    !> Pseudopotential cutoff radii
+    !> Core radii for pseudopotentials
     real(dp), intent(inout) :: rc(:)
     !> Pseudopotential energies
     real(dp), intent(inout) :: ep(:)
@@ -51,16 +55,19 @@ subroutine read_input( &
     integer, intent(inout) :: nbas(:)
     !> Maximum wave number for each pseudopotential
     real(dp), intent(inout) :: qcut(:)
+    ! [Local potential]
     !> Angular momentum used for local potential
     integer, intent(out) :: lloc
     !>
     integer, intent(out) :: lpopt
     !> Local potential offset at origin
     real(dp), intent(out) :: dvloc0
+    ! [Vanderbilt-Kleinman-Bylander projectors]
     !> Number of projectors for each angular momentum
     integer, intent(inout) :: nproj(:)
     !> Energy shift for unbound states
     real(dp), intent(inout) :: debl(:)
+    ! [Model core charge]
     !> Model core charge flag
     integer, intent(out) :: icmod
     !> Scaling factor for core charge
@@ -79,6 +86,7 @@ subroutine read_input( &
     real(dp), intent(out) :: rcfact_max
     !> Core charge width factor step size for optimization
     real(dp), intent(out) :: rcfact_step
+    ! [Log derivative analysis]
     !> Lower bound of energy range for log derivative analysis
     real(dp), intent(out) :: epsh1
     !> Upper bound of energy range for log derivative analysis
@@ -87,10 +95,12 @@ subroutine read_input( &
     real(dp), intent(out) :: depsh
     !> Radius for log derivative analysis
     real(dp), intent(out) :: rxpsh
+    ! [Output grid]
     !> Maximum radius for output grid
     real(dp), intent(out) :: rlmax
     !> Grid spacing for output grid
     real(dp), intent(out) :: drl
+    ! [Test configurations]
     !> Number of test configurations
     integer, intent(out) :: ncnf
     !> Number of valence states in test configurations

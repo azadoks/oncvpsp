@@ -230,7 +230,7 @@ subroutine run_config(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz, 
     rhocps(:) = rhomod(:, 1)
 
     call psatom(natp, latp, eatp, fatp, nvt, it, rhocps, rho, &
-    &           rr, rcmax, mmax, mxprj, iexc, etsttot, nproj, vpuns, lloc, &
+    &           rr, mmax, mxprj, iexc, etsttot, nproj, vpuns, lloc, &
     &           vkb, evkb, ierr)
 
     if (ierr /= 0) then
@@ -252,7 +252,7 @@ subroutine run_config(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz, 
     end do
 
     call psatom(natp, latp, eatp, fatp, nvt, it, rhocps, rho, &
-    &           rr, rcmax, mmax, mxprj, iexc, etsttot, nproj, vpuns, lloc, &
+    &           rr, mmax, mxprj, iexc, etsttot, nproj, vpuns, lloc, &
     &           vkb, evkb, ierr)
 
     if (ierr /= 0) then
