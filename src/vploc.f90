@@ -1,50 +1,50 @@
 !
-! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
-! University
-!
-!
-! This program is free software: you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License
-! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-!
+ ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
+ ! University
+ !
+ !
+ ! This program is free software: you can redistribute it and/or modify
+ ! it under the terms of the GNU General Public License as published by
+ ! the Free Software Foundation, either version 3 of the License, or
+ ! (at your option) any later version.
+ !
+ ! This program is distributed in the hope that it will be useful,
+ ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ! GNU General Public License for more details.
+ !
+ ! You should have received a copy of the GNU General Public License
+ ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ !
 subroutine vploc(rr, vv, vp, dvloc0, irc, mmax, lpopt)
 
-!polynomial extrapolation of all-electron potential to rr=0
+    !polynomial extrapolation of all-electron potential to rr=0
 
-!rr log radial mesh
-!vv all-electron  potential
-!vp pseudopotentials, vp(:,5) is local to be created by this routine
-!dvloc0  amplitude at rr==0 of smooth "null space" function to be added
-!irc  matching radius for polynomial potential
-!mmax  dimension of rr
-!lpopt  1-5, determines polynomial to be used
-!  1) match 2 derivatives, r**0,2,4
-!  2) match 2 derivatives, r**0,4,6
-!  3) match 3 derivatives, r**0,4,5,6
-!  4) match 3 derivatives, r**0,4,6,8
-!  5) match 3 derivatives, r**0,2,4,6
+    !rr log radial mesh
+    !vv all-electron  potential
+    !vp pseudopotentials, vp(:,5) is local to be created by this routine
+    !dvloc0  amplitude at rr==0 of smooth "null space" function to be added
+    !irc  matching radius for polynomial potential
+    !mmax  dimension of rr
+    !lpopt  1-5, determines polynomial to be used
+    !  1) match 2 derivatives, r**0,2,4
+    !  2) match 2 derivatives, r**0,4,6
+    !  3) match 3 derivatives, r**0,4,5,6
+    !  4) match 3 derivatives, r**0,4,6,8
+    !  5) match 3 derivatives, r**0,2,4,6
 
     implicit none
     integer, parameter :: dp = kind(1.0d0)
 
-! Input variables
+    ! Input variables
     integer :: irc, mmax, lpopt
     real(dp) :: dvloc0
     real(dp) :: rr(mmax), vv(mmax)
 
-! Output variables
+    ! Output variables
     real(dp) :: vp(mmax, 5)
 
-!Local variables
+    !Local variables
     integer :: ii
     real(dp) :: aco, al, bco, cco, dco, d3vv, x
 
@@ -54,7 +54,7 @@ subroutine vploc(rr, vv, vp, dvloc0, irc, mmax, lpopt)
 
     al = 0.01d0 * dlog(rr(101) / rr(1))
 
-! derivatives of vv
+    ! derivatives of vv
 
     do ii = irc - 4, irc + 4
         dvv(ii) = (2.d0 * vv(ii - 2) - 16.d0 * vv(ii - 1) + 16.d0 * vv(ii + 1) &
@@ -105,7 +105,7 @@ subroutine vploc(rr, vv, vp, dvloc0, irc, mmax, lpopt)
 
     end if
 
-! create polynomial potential inside irc
+    ! create polynomial potential inside irc
 
     if (lpopt == 1) then
         do ii = 1, irc
@@ -129,7 +129,7 @@ subroutine vploc(rr, vv, vp, dvloc0, irc, mmax, lpopt)
         end do
     end if
 
-! add compatible supplementary function to change value at rr==0
+    ! add compatible supplementary function to change value at rr==0
 
     do ii = 1, irc
         x = rr(ii) / rr(irc)

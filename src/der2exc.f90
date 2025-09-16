@@ -1,58 +1,58 @@
 !
-! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
-! University
-!
-!
-! This program is free software: you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License
-! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-!
-! computes the 2nd derivative of the contribution to the exchange-
-! correlation energy from the region where the valence pseudo wave functions
-! differ from the all-electron wave functions
-!
+ ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
+ ! University
+ !
+ !
+ ! This program is free software: you can redistribute it and/or modify
+ ! it under the terms of the GNU General Public License as published by
+ ! the Free Software Foundation, either version 3 of the License, or
+ ! (at your option) any later version.
+ !
+ ! This program is distributed in the hope that it will be useful,
+ ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ! GNU General Public License for more details.
+ !
+ ! You should have received a copy of the GNU General Public License
+ ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ !
+ ! computes the 2nd derivative of the contribution to the exchange-
+ ! correlation energy from the region where the valence pseudo wave functions
+ ! differ from the all-electron wave functions
+ !
 subroutine der2exc(rhotot, rhoc, rho, rr, d2exc, d2ref, d2mdiff, &
 &                   zion, iexc, nc, nv, la, ircut, mmax)
 
-! rhotot  total valence charge, all-electron of pseudo
-! rhoc  core charge, all-electron or model
-! rho  valence state-by-state charge (one-electron)
-! rr  log radial grid
-! d2exc  Exc 2nd-derivative matrix
-! d2ref  reference matrix
-! d2mdiff root-mean-squared differrenc between d2exc and d2ref
-! zion  ion potential
-! iexc  exchange-correlation type
-! nc  number of core states
-! nv  number of valence states
-! la  array of l values for all-electron atom
-! ircut  maximum-radius for which all-electron and pseudo charges differ
-! mmax  dimensiion of log grid
+    ! rhotot  total valence charge, all-electron of pseudo
+    ! rhoc  core charge, all-electron or model
+    ! rho  valence state-by-state charge (one-electron)
+    ! rr  log radial grid
+    ! d2exc  Exc 2nd-derivative matrix
+    ! d2ref  reference matrix
+    ! d2mdiff root-mean-squared differrenc between d2exc and d2ref
+    ! zion  ion potential
+    ! iexc  exchange-correlation type
+    ! nc  number of core states
+    ! nv  number of valence states
+    ! la  array of l values for all-electron atom
+    ! ircut  maximum-radius for which all-electron and pseudo charges differ
+    ! mmax  dimensiion of log grid
 
     implicit none
     integer, parameter :: dp = kind(1.0d0)
 
-! Input variables
+    ! Input variables
     real(dp) :: rhotot(mmax), rhoc(mmax), rho(mmax, nv), rr(mmax)
     real(dp) :: d2ref(nv, nv)
     real(dp) :: zion
     integer :: la(nv + nc)
     integer :: iexc, nc, nv, ircut, mmax
 
-! Output variables
+    ! Output variables
     real(dp) :: d2exc(nv, nv)
     real(dp) :: d2mdiff
 
-! Local variables
+    ! Local variables
     real(dp) :: hh, eeel, eexc, ss
     real(dp), allocatable :: vo(:), vxct(:), rhot(:), dvxc(:, :)
     integer :: jj, kk, l1
@@ -82,7 +82,7 @@ subroutine der2exc(rhotot, rhoc, rho, rr, d2exc, d2ref, d2mdiff, &
 
     end do !kk
 
-! compute Exc 2nd-derivative wrt occupation numbers matrix
+    ! compute Exc 2nd-derivative wrt occupation numbers matrix
 
     do kk = 1, nv
         l1 = la(nc + kk) + 1

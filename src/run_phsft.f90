@@ -1,52 +1,52 @@
 !
-! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
-! University
-!
-!
-! This program is free software: you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License
-! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-!
+ ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
+ ! University
+ !
+ !
+ ! This program is free software: you can redistribute it and/or modify
+ ! it under the terms of the GNU General Public License as published by
+ ! the Free Software Foundation, either version 3 of the License, or
+ ! (at your option) any later version.
+ !
+ ! This program is distributed in the hope that it will be useful,
+ ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ! GNU General Public License for more details.
+ !
+ ! You should have received a copy of the GNU General Public License
+ ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ !
 subroutine run_phsft(lmax, lloc, nproj, epa, epsh1, epsh2, depsh, vkb, evkb, &
 &                     rr, vfull, vp, zz, mmax, mxprj, irc, rxpsh, srel)
 
-! computes log derivatives, actually atan(r * ((d psi(r)/dr)/psi(r)))
-! at rr(irphs) comparing all-electron with Vanderbilt-Kleinman-Bylander
-! results for 1 and 2 projectors, or the semi-local pseudpotential
-! when that is the local potential for some l
-! the computed quantity is reminiscent of a scattering phase shift, but isn't
+    ! computes log derivatives, actually atan(r * ((d psi(r)/dr)/psi(r)))
+    ! at rr(irphs) comparing all-electron with Vanderbilt-Kleinman-Bylander
+    ! results for 1 and 2 projectors, or the semi-local pseudpotential
+    ! when that is the local potential for some l
+    ! the computed quantity is reminiscent of a scattering phase shift, but isn't
 
-!lmax  maximum angular momentum
-!lloc  l for local potential
-!nproj  number ov V / KB projectors for  each l
-!ep  bound-state or scattering state reference energies for vkb potentials
-!epsh1  low energy limit for "phase shift" calculation
-!epsh2  high energy limit for "phase shift" calculation
-!depsh  energy increment
-!vkb  VKB projectors
-!evkb  coefficients of VKB projectors
-!rr  log radial grid
-!vfull  all-electron potential
-!vp  semi-local pseudopotentials (vp(:,5) is local potential if linear comb.)
-!zz  atomic number
-!mmax  size of radial grid
-!mxprj dimension of number of projectors
-!irphs  index of rr beyond which all vp==vlocal
-!srel .true. for scalar-relativistic, .false. for non-relativistic
+    !lmax  maximum angular momentum
+    !lloc  l for local potential
+    !nproj  number ov V / KB projectors for  each l
+    !ep  bound-state or scattering state reference energies for vkb potentials
+    !epsh1  low energy limit for "phase shift" calculation
+    !epsh2  high energy limit for "phase shift" calculation
+    !depsh  energy increment
+    !vkb  VKB projectors
+    !evkb  coefficients of VKB projectors
+    !rr  log radial grid
+    !vfull  all-electron potential
+    !vp  semi-local pseudopotentials (vp(:,5) is local potential if linear comb.)
+    !zz  atomic number
+    !mmax  size of radial grid
+    !mxprj dimension of number of projectors
+    !irphs  index of rr beyond which all vp==vlocal
+    !srel .true. for scalar-relativistic, .false. for non-relativistic
 
     implicit none
     integer, parameter :: dp = kind(1.0d0)
 
-!Input variables
+    !Input variables
     integer :: lmax, lloc, mmax, mxprj
     integer :: nproj(6), irc(6)
     real(dp) :: epsh1, epsh2, depsh, zz, rxpsh
@@ -54,9 +54,9 @@ subroutine run_phsft(lmax, lloc, nproj, epa, epsh1, epsh2, depsh, vkb, evkb, &
     real(dp) :: vfull(mmax), vkb(mmax, mxprj, 4), evkb(mxprj, 4)
     logical :: srel
 
-!Output variables - printing only
+    !Output variables - printing only
 
-!Local variables
+    !Local variables
     integer :: ii, irphs, ll, l1, npsh, xirphs
     real(dp) :: epsh
 
@@ -66,8 +66,8 @@ subroutine run_phsft(lmax, lloc, nproj, epa, epsh1, epsh2, depsh, vkb, evkb, &
 
     allocate (pshf(npsh), pshp(npsh))
 
-! loop for phase shift calculation -- full, then local or Kleinman-
-! Bylander / Vanderbilt
+    ! loop for phase shift calculation -- full, then local or Kleinman-
+    ! Bylander / Vanderbilt
 
     do l1 = 1, 4
 

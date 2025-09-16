@@ -1,50 +1,50 @@
 !_der
-! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
-! University
-!
-!
-! This program is free software: you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License
-! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-!
+ ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
+ ! University
+ !
+ !
+ ! This program is free software: you can redistribute it and/or modify
+ ! it under the terms of the GNU General Public License as published by
+ ! the Free Software Foundation, either version 3 of the License, or
+ ! (at your option) any later version.
+ !
+ ! This program is distributed in the hope that it will be useful,
+ ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ! GNU General Public License for more details.
+ !
+ ! You should have received a copy of the GNU General Public License
+ ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ !
 subroutine sbf_basis(ll, rr, mmax, irc, nbas, qroot, sbasis, orbasis, orbasis_der, &
 &                     nconmx)
 
-!orthonormalize basis functions and derivatives at rc and find all-electron
-!charge inside rc.
+    !orthonormalize basis functions and derivatives at rc and find all-electron
+    !charge inside rc.
 
     implicit none
     integer, parameter :: dp = kind(1.0d0)
 
-!INPUT
-!ll  angujlar momentum
-!rr  log radial mesh
-!mmax  number of points in log radial mesh
-!irc  index rr such that rr(irc)=rc
-!nbas  number of basis functions
-!qroot  q values for j_l(q*r)
+    !INPUT
+    !ll  angujlar momentum
+    !rr  log radial mesh
+    !mmax  number of points in log radial mesh
+    !irc  index rr such that rr(irc)=rc
+    !nbas  number of basis functions
+    !qroot  q values for j_l(q*r)
 
-!OUTPUT
-!sbasis  normalization coefficients for j_l basis set
-!orbasis  matrix for orthonormal basis (rows j_l, columns basis vectors)
-!orbasis_der  values and derivatives of orthonormal basis set at rc,
+    !OUTPUT
+    !sbasis  normalization coefficients for j_l basis set
+    !orbasis  matrix for orthonormal basis (rows j_l, columns basis vectors)
+    !orbasis_der  values and derivatives of orthonormal basis set at rc,
 
-!Arguments
+    !Arguments
     integer :: ll, mmax, nconmx, irc, nbas
     real(dp) :: rr(mmax), qroot(nbas)
     real(dp) :: sbasis(nbas), orbasis(nbas, nbas)
     real(dp) :: orbasis_der(nconmx, nbas)
 
-!Local variables
+    !Local variables
     integer :: ii, jj, ll1, ibas, info
     real(dp) :: al, amesh, ro, rc, sn, xx, tt
     real(dp) :: sb_out(10), sbfder(5), tder(6)
@@ -68,7 +68,7 @@ subroutine sbf_basis(ll, rr, mmax, irc, nbas, qroot, sbasis, orbasis, orbasis_de
         end do
     end do
 
-!perform sbf orthonormalization sum for overlap matrix
+    !perform sbf orthonormalization sum for overlap matrix
 
     sovlp(:, :) = 0.0d0
     ro = rr(1) / sqrt(amesh)
@@ -91,15 +91,15 @@ subroutine sbf_basis(ll, rr, mmax, irc, nbas, qroot, sbasis, orbasis, orbasis_de
         end do
     end do
 
-!normalization for j_l basis
+    !normalization for j_l basis
     do ibas = 1, nbas
         sbasis(ibas) = 1.0d0 / sqrt(sovlp(ibas, ibas))
     end do
 
     sovlp_save(:, :) = sovlp(:, :)
-!find eigenvalues and eigenvectors of the overlap matrix
+    !find eigenvalues and eigenvectors of the overlap matrix
 
-!      SUBROUTINE DSYEV( JOBZ, UPLO, N, A, LDA, W, WORK, LWORK, INFO )
+    !      SUBROUTINE DSYEV( JOBZ, UPLO, N, A, LDA, W, WORK, LWORK, INFO )
 
     call dsyev('V', 'U', nbas, sovlp, nbas, sev, work, 5 * nbas, info)
     if (info /= 0) then
@@ -107,12 +107,12 @@ subroutine sbf_basis(ll, rr, mmax, irc, nbas, qroot, sbasis, orbasis, orbasis_de
         stop
     end if
 
-!write(6,'(/a)') 'sbf overlap matrix eigenvalues'
-!write(6,'(1p,6d12.3)') (sev(ibas),ibas=1,nbas)
+    !write(6,'(/a)') 'sbf overlap matrix eigenvalues'
+    !write(6,'(1p,6d12.3)') (sev(ibas),ibas=1,nbas)
 
-!scale eigenvectors to form orthonormal basis coefficients for sbf's
-!note that we are reversing order so that the leading eigenvector is the
-!most linearly independent
+    !scale eigenvectors to form orthonormal basis coefficients for sbf's
+    !note that we are reversing order so that the leading eigenvector is the
+    !most linearly independent
     do ibas = 1, nbas
         if (sev(ibas) > 0.0d0) then
             tt = 1.0d0 / sqrt(sev(ibas))
@@ -125,7 +125,7 @@ subroutine sbf_basis(ll, rr, mmax, irc, nbas, qroot, sbasis, orbasis, orbasis_de
         end do
     end do
 
-!find rc derivatives of basis funtction
+    !find rc derivatives of basis funtction
     orbasis_der(:, :) = 0.0d0
     do jj = 1, nbas !sbf loop
         call sbf_rc_der(ll, qroot(jj), rc, sbfder)
@@ -136,7 +136,7 @@ subroutine sbf_basis(ll, rr, mmax, irc, nbas, qroot, sbasis, orbasis, orbasis_de
         end do
     end do
 
-!find approximate kinetic energy of orbasis
+    !find approximate kinetic energy of orbasis
 
     orbasis_ke(:) = 0.0d0
     do ibas = 1, nbas
@@ -144,12 +144,12 @@ subroutine sbf_basis(ll, rr, mmax, irc, nbas, qroot, sbasis, orbasis, orbasis_de
             orbasis_ke(ibas) = orbasis_ke(ibas) + (orbasis(jj, ibas) * qroot(jj))**2
         end do
     end do
-!do  ibas=1,nbas
-!  write(6,*) 'orbasis_ke',ibas,orbasis_ke(ibas)
-!end do
+    !do  ibas=1,nbas
+    !  write(6,*) 'orbasis_ke',ibas,orbasis_ke(ibas)
+    !end do
 
-! bubble-sort on approximate kinetic energies
-! (Yes, I know bubble-sort is the least-efficient sorting algorithm.)
+    ! bubble-sort on approximate kinetic energies
+    ! (Yes, I know bubble-sort is the least-efficient sorting algorithm.)
 
     do ii = 1, 100
         sorted = .true.
@@ -174,9 +174,9 @@ subroutine sbf_basis(ll, rr, mmax, irc, nbas, qroot, sbasis, orbasis, orbasis_de
         if (sorted) exit
     end do
 
-!do  ibas=1,nbas
-!  write(6,*) 'sorbasis_ke',ibas,orbasis_ke(ibas)
-!end do
+    !do  ibas=1,nbas
+    !  write(6,*) 'sorbasis_ke',ibas,orbasis_ke(ibas)
+    !end do
 
     deallocate (sbfar, sev, work, sovlp)
     deallocate (sovlp_save, orbasis_ke, tor)

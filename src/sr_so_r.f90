@@ -1,56 +1,56 @@
 !
-! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
-! University
-!
-!
-! This program is free software: you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License
-! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-!
+ ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
+ ! University
+ !
+ !
+ ! This program is free software: you can redistribute it and/or modify
+ ! it under the terms of the GNU General Public License as published by
+ ! the Free Software Foundation, either version 3 of the License, or
+ ! (at your option) any later version.
+ !
+ ! This program is distributed in the hope that it will be useful,
+ ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ! GNU General Public License for more details.
+ !
+ ! You should have received a copy of the GNU General Public License
+ ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ !
 subroutine sr_so_r(lmax, irc, nproj, rr, mmax, mxprj, evkb, vkb, &
 &                       vsr, esr, vso, eso)
 
-! reformulates non-local potentials based on j = l +/- 1/2 to scalar-
-! relativistic and L dot S projectors
-! uses relationship <L dot S> = (J^2 - L^2 - S^2)/2
-! so L dot S = +/- l/2 for j = l +/- 1/2
+    ! reformulates non-local potentials based on j = l +/- 1/2 to scalar-
+    ! relativistic and L dot S projectors
+    ! uses relationship <L dot S> = (J^2 - L^2 - S^2)/2
+    ! so L dot S = +/- l/2 for j = l +/- 1/2
 
-!lmax  maximum angular momentum
-!irc  core radii indices
-!nproj  number of projectors for each l
-!rr  log radial grid
-!mmax  size of radial grid
-!mmax  dimension of log grid
-!mxprj  dimension of number of projectors
-!vkb  vkb projectors
-!evkb  coefficients of BKB projectors
-!vsr  normalized scalar projectors
-!esr  energy  coefficients of vscal
-!vso  normalized spin-orbig projectors
-!esol  energy  coefficients of vso
+    !lmax  maximum angular momentum
+    !irc  core radii indices
+    !nproj  number of projectors for each l
+    !rr  log radial grid
+    !mmax  size of radial grid
+    !mmax  dimension of log grid
+    !mxprj  dimension of number of projectors
+    !vkb  vkb projectors
+    !evkb  coefficients of BKB projectors
+    !vsr  normalized scalar projectors
+    !esr  energy  coefficients of vscal
+    !vso  normalized spin-orbig projectors
+    !esol  energy  coefficients of vso
 
     implicit none
     integer, parameter :: dp = kind(1.0d0)
 
-!Input variables
+    !Input variables
     integer :: lmax, mmax, mxprj
     integer :: irc(6), nproj(6)
     real(dp) :: rr(mmax), vkb(mmax, mxprj, 4, 2), evkb(mxprj, 4, 2)
 
-!Output variables
+    !Output variables
     real(dp) :: vsr(mmax, 2 * mxprj, 4), esr(2 * mxprj, 4)
     real(dp) :: vso(mmax, 2 * mxprj, 4), eso(2 * mxprj, 4)
 
-!Local variables
+    !Local variables
     integer :: ii, jj, kk, ik1, ik2, ip1, ip2, ipk, ll, l1, info, nn
     real(dp) :: apk, tt
     real(dp) :: sovl(2 * mxprj, 2 * mxprj), sovlev(2 * mxprj), ascl(2 * mxprj, 2 * mxprj), aso(2 * mxprj, 2 * mxprj)
@@ -87,7 +87,7 @@ subroutine sr_so_r(lmax, irc, nproj, rr, mmax, mxprj, evkb, vkb, &
         fso(1) = 2 / dble(2 * ll + 1)
         fso(2) = -2 / dble(2 * ll + 1)
 
-! construct overlap matrix and diagonal energy matrices
+        ! construct overlap matrix and diagonal energy matrices
 
         sovl(:, :) = 0.0d0
         ascl(:, :) = 0.0d0
@@ -122,7 +122,7 @@ subroutine sr_so_r(lmax, irc, nproj, rr, mmax, mxprj, evkb, vkb, &
             stop
         end if
 
-! construct S^(-1/2) AND s^(1/2)
+        ! construct S^(-1/2) AND s^(1/2)
 
         do jj = 1, nn
             tt = sqrt(sovlev(jj))
@@ -132,7 +132,7 @@ subroutine sr_so_r(lmax, irc, nproj, rr, mmax, mxprj, evkb, vkb, &
             end do
         end do
 
-! take linear combinations to form orthonormal basis functions
+        ! take linear combinations to form orthonormal basis functions
 
         vkbst(:, :) = 0.0d0
 
@@ -142,7 +142,7 @@ subroutine sr_so_r(lmax, irc, nproj, rr, mmax, mxprj, evkb, vkb, &
             end do
         end do
 
-! construct A^(-1)* = S^(1/2)^T A^(-1) S^(1/2)
+        ! construct A^(-1)* = S^(1/2)^T A^(-1) S^(1/2)
 
         asclt(:, :) = 0.0d0
         asclst(:, :) = 0.0d0
@@ -167,9 +167,9 @@ subroutine sr_so_r(lmax, irc, nproj, rr, mmax, mxprj, evkb, vkb, &
             end do
         end do
 
-! find eigenvalues and eigenvectors of the A* matrices
+        ! find eigenvalues and eigenvectors of the A* matrices
 
-!      SUBROUTINE DSYEV( JOBZ, UPLO, N, A, LDA, W, WORK, LWORK, INFO )
+        !      SUBROUTINE DSYEV( JOBZ, UPLO, N, A, LDA, W, WORK, LWORK, INFO )
 
         call dsyev('V', 'U', nn, asclst, 2 * mxprj, wsclst, work, 10 * mxprj, info)
 
@@ -185,7 +185,7 @@ subroutine sr_so_r(lmax, irc, nproj, rr, mmax, mxprj, evkb, vkb, &
             stop
         end if
 
-! take linear combinations to form orthonormal projectors
+        ! take linear combinations to form orthonormal projectors
 
         vsr(:, :, l1) = 0.0d0
         vso(:, :, l1) = 0.0d0
@@ -201,8 +201,8 @@ subroutine sr_so_r(lmax, irc, nproj, rr, mmax, mxprj, evkb, vkb, &
             end do
         end do
 
-! bubble-sort on coefficient magnitudes for scalar and then s-o
-! (Yes, I know bubble-sort is the least-efficient sorting algorithm.)
+        ! bubble-sort on coefficient magnitudes for scalar and then s-o
+        ! (Yes, I know bubble-sort is the least-efficient sorting algorithm.)
 
         do ii = 1, 100
             sorted = .true.
@@ -243,8 +243,8 @@ subroutine sr_so_r(lmax, irc, nproj, rr, mmax, mxprj, evkb, vkb, &
         &         ' Orthonormal spin-orbit projector coefficients, l = ', ll
         write (6, '(1p,6e12.4)') (eso(jj, l1), jj=1, nn)
 
-! Set sign of projectors (physically irrelevant) so that they are positive
-! at their peak (needed for compaisons apparently)
+        ! Set sign of projectors (physically irrelevant) so that they are positive
+        ! at their peak (needed for compaisons apparently)
 
         do jj = 1, nn
             apk = 0.0d0

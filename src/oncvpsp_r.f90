@@ -1,43 +1,43 @@
 !
-! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
-! University
-!
-!
-! This program is free software: you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License
-! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-!
+ ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
+ ! University
+ !
+ !
+ ! This program is free software: you can redistribute it and/or modify
+ ! it under the terms of the GNU General Public License as published by
+ ! the Free Software Foundation, either version 3 of the License, or
+ ! (at your option) any later version.
+ !
+ ! This program is distributed in the hope that it will be useful,
+ ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ! GNU General Public License for more details.
+ !
+ ! You should have received a copy of the GNU General Public License
+ ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ !
 program oncvpsp_r
-!
-! Creates and tests optimized norm-conserving Vanderbilt or Kleinman-Bylander
-! pseudopotentials based on D. R. Hamann, Phys. Rev. B 88, 085117 (2013)
-! and references therein.
-!
-!   D. R. Hamann
-!   Mat-Sim Research LLC
-!   P.O. Box 742
-!   Murray Hill, NJ 07974
-!   USA
-!
-!   Developed from original "gncpp" code of March 8,1987
-!
-!   Output format for ABINIT pspcod=8 and upf format for quantumespresso
-!
+    !
+    ! Creates and tests optimized norm-conserving Vanderbilt or Kleinman-Bylander
+    ! pseudopotentials based on D. R. Hamann, Phys. Rev. B 88, 085117 (2013)
+    ! and references therein.
+    !
+    !   D. R. Hamann
+    !   Mat-Sim Research LLC
+    !   P.O. Box 742
+    !   Murray Hill, NJ 07974
+    !   USA
+    !
+    !   Developed from original "gncpp" code of March 8,1987
+    !
+    !   Output format for ABINIT pspcod=8 and upf format for quantumespresso
+    !
     use m_read_input, only: read_input_r
     use m_psmlout, only: psmlout_r
     implicit none
     integer, parameter :: dp = kind(1.0d0)
 
-!
+    !
     integer :: ii, ierr, iexc, irps, it, icmod, lpopt
     integer :: jj, kk, ll, l1, lloc, lmax, inline
     integer :: mch, mmax, nc, nlim, nrl
@@ -45,7 +45,7 @@ program oncvpsp_r
     integer :: ikap, kap, mkap
     integer :: iprj, mxprj
     integer, allocatable :: npa(:, :)
-!
+    !
     integer :: na(30), la(30), np(6)
     integer :: nacnf(30, 5), lacnf(30, 5), nvcnf(5)
     integer :: irc(6), nodes(4)
@@ -62,7 +62,7 @@ program oncvpsp_r
     real(dp) :: rr1, rcmax, rct, rlmax
     real(dp) :: zz, zion, zval, etot
     real(dp) :: cnorm, ebar
-!
+    !
     real(dp) :: debl(6), ea(30, 2), ep(6, 2), fa(30), facnf(30, 5)
     real(dp) :: qcut(6), qmsbf(6), rc(6), rc0(6)
     real(dp) :: rpk(30, 2)
@@ -100,7 +100,7 @@ program oncvpsp_r
     &      'in any publication utilizing these pseudopotentials.'
 
     srel = .true.
-!srel=.false.
+    !srel=.false.
 
     nproj(:) = 0
     fcfact = 0.0d0
@@ -139,24 +139,24 @@ program oncvpsp_r
 
     nrl = int((rlmax / drl) - 0.5d0) + 1
 
-!amesh=1.012d0
+    !amesh=1.012d0
     amesh = 1.006d0
-!amesh=1.003d0
-!amesh=1.0015d0
+    !amesh=1.003d0
+    !amesh=1.0015d0
 
     al = log(amesh)
     rr1 = 0.0005d0 / zz
     mmax = int(log(45.0d0 / rr1) / al)
 
-!calculate zion for output
+    !calculate zion for output
     zion = zz
     do ii = 1, nc
         zion = zion - fa(ii)
     end do
 
-!temporary test
+    !temporary test
     mxprj = 5
-!mxprj=2
+    !mxprj=2
 
     allocate (rr(mmax))
     allocate (rho(mmax), rhoc(mmax), rhot(mmax))
@@ -182,16 +182,16 @@ program oncvpsp_r
         rr(ii) = rr1 * exp(al * (ii - 1))
     end do
 
-!
-! full potential atom solution
-!
+    !
+    ! full potential atom solution
+    !
     call relatom(na, la, ea, fa, rpk, nc, nc + nv, it, rhoc, rho, &
     &              rr, vfull, zz, mmax, iexc, etot, ierr)
 
-!
-!
+    !
+    !
 
-! Drop digits beyond 5 decimals for input rcs before making any use of them
+    ! Drop digits beyond 5 decimals for input rcs before making any use of them
     do l1 = 1, max(lmax + 1, lloc + 1)
         jj = int(rc(l1) * 10.0d5)
         rc(l1) = jj / 10.0d5
@@ -210,7 +210,7 @@ program oncvpsp_r
     nproj(lloc + 1) = 0
     rc0(:) = rc(:)
 
-! output printing (echos input data, with all-electron eigenvalues added)
+    ! output printing (echos input data, with all-electron eigenvalues added)
 
     write (6, '(a)') '# ATOM AND REFERENCE CONFIGURATION'
     write (6, '(a)') '# atsym  z   nc   nv     iexc    psfile'
@@ -275,7 +275,7 @@ program oncvpsp_r
     end if
     write (6, '(a,1p,d18.8)') '  all-electron total energy (Ha)', etot
 
-!find log mesh point nearest input rc
+    !find log mesh point nearest input rc
     rcmax = 0.0d0
     irc(:) = 0
     do l1 = 1, max(lmax + 1, lloc + 1)
@@ -291,16 +291,16 @@ program oncvpsp_r
         rcmax = dmax1(rcmax, rc(l1))
     end do
 
-!
+    !
     cvgplt(:, :, :, :, :) = 0.0d0
-!
-! loop to construct pseudopotentials for all angular momenta
-!
+    !
+    ! loop to construct pseudopotentials for all angular momenta
+    !
     write (6, '(/a/a)') 'Begin loop to  construct optimized pseudo wave functions',&
     &      'and semi-local pseudopoentials for all angular momenta'
 
-!temporarily set this to 1 so that the pseudo wave function needed for the
-!local potential will be generated.  Reset before psp output.
+    !temporarily set this to 1 so that the pseudo wave function needed for the
+    !local potential will be generated.  Reset before psp output.
     npa(:, :) = 0
     nproj(lloc + 1) = 1
     do l1 = 1, lmax + 1
@@ -323,7 +323,7 @@ program oncvpsp_r
             uu(:, :) = 0.0d0; qq(:, :) = 0.0d0
             iprj = 0
 
-!get principal quantum number for the highest core state for this l
+            !get principal quantum number for the highest core state for this l
             npa(1, l1) = l1
             if (nc > 0) then
                 do kk = 1, nc
@@ -331,7 +331,7 @@ program oncvpsp_r
                 end do !kk
             end if
 
-!get all-electron bound states for projectors
+            !get all-electron bound states for projectors
             if (nv /= 0) then
                 do kk = nc + 1, nc + nv
                     if (la(kk) == l1 - 1) then
@@ -361,9 +361,9 @@ program oncvpsp_r
                 end do !kk
             end if !nv/=0
 
-!get all-electron well states for projectors
-!if there were no valence states, use ep from input data for 1st well state
-!otherwise shift up by input debl
+            !get all-electron well states for projectors
+            !if there were no valence states, use ep from input data for 1st well state
+            !otherwise shift up by input debl
 
             if (iprj == 0) epa(1, l1, ikap) = ep(l1, ikap)
             if (iprj < nproj(l1)) then
@@ -376,9 +376,9 @@ program oncvpsp_r
                         stop
                     end if
 
-! npa is not reset for ikap=2 to retain same node count for consistency with
-! keeping same well potential as for ikap=1.  Note that it may have been
-! reset by wellstate which is only now called foerer ikap1.
+                    ! npa is not reset for ikap=2 to retain same node count for consistency with
+                    ! keeping same well potential as for ikap=1.  Note that it may have been
+                    ! reset by wellstate which is only now called foerer ikap1.
                     if (iprj > 1) then
                         epa(iprj, l1, ikap) = epa(iprj - 1, l1, ikap) + debl(l1)
                         if (ikap == 1) then
@@ -386,10 +386,10 @@ program oncvpsp_r
                         end if
                     end if
 
-! since new wellstate can change npa, well potential is calculated for
-! less-bound ikap=1 state and kept for ikap=2, which is more deeply
-! bound and shoould always have a bound state for this combination of
-! npa and vwell
+                    ! since new wellstate can change npa, well potential is calculated for
+                    ! less-bound ikap=1 state and kept for ikap=2, which is more deeply
+                    ! bound and shoould always have a bound state for this combination of
+                    ! npa and vwell
                     if (ikap == 1) then
                         call wellstate_r(npa(iprj, l1), ll, kap, irc(l1), epa(iprj, l1, ikap), &
                         &                         rr, vfull, vwell(1, iprj), uu, up, zz, mmax, mch)
@@ -425,10 +425,10 @@ program oncvpsp_r
                 &              zz, mmax, irc(l1), srel)
             end do
 
-!get all-electron overlap matrix
+            !get all-electron overlap matrix
             do jj = 1, nproj(l1)
                 do ii = 1, jj
-!      call fpovlp_r(uua(1,ii,ikap),uua(1,jj,ikap),irc(l1),ll,zz, &
+                    !      call fpovlp_r(uua(1,ii,ikap),uua(1,jj,ikap),irc(l1),ll,zz, &
                     call fpovlp(uua(1, ii, ikap), uua(1, jj, ikap), irc(l1), ll, zz, &
                     &                  qq(ii, jj), rr, srel)
                     qq(jj, ii) = qq(ii, jj)
@@ -444,24 +444,24 @@ program oncvpsp_r
 
     deallocate (uua, upa)
 
-!restore this temporay reset
+    !restore this temporay reset
     nproj(lloc + 1) = 0
 
-! construct Vanderbilt / Kleinman-Bylander projectors
+    ! construct Vanderbilt / Kleinman-Bylander projectors
 
     write (6, '(/a,a)') 'Construct Vanderbilt / Kleinmman-Bylander projectors'
 
     call run_vkb_r(lmax, lloc, lpopt, dvloc0, irc, nproj, rr, mmax, mxprj, pswf, vfull, vp, &
     &             evkb, vkb, nlim, vr)
 
-! accumulate charge and eigenvalues
-! pseudo wave functions are calculated with VKB projectors for
-! maximum consistency of unscreening
+    ! accumulate charge and eigenvalues
+    ! pseudo wave functions are calculated with VKB projectors for
+    ! maximum consistency of unscreening
     allocate (uua(mmax, 30, 2))
-! get all-electron and pseudopotential valence-state by valence-state
-! charge densities
+    ! get all-electron and pseudopotential valence-state by valence-state
+    ! charge densities
 
-! null charge and eigenvalue accumulators
+    ! null charge and eigenvalue accumulators
     uupsa(:, :, :) = 0.0d0
     eeig = 0.0d0
     zval = 0.0d0
@@ -515,7 +515,7 @@ program oncvpsp_r
                 stop
             end if
 
-! save valence pseudo wave functions for uprout
+            ! save valence pseudo wave functions for uprout
             uupsa(:, ikap, kk) = uu(:, 1)
 
             rhops(:, kk) = rhops(:, kk) + fj * (uu(:, 1) / rr(:))**2
@@ -528,12 +528,12 @@ program oncvpsp_r
         irps = max(irps, irc(l1))
     end do !kk
 
-! decomposition into scalar-relativistic and spin-orbit projectors
+    ! decomposition into scalar-relativistic and spin-orbit projectors
 
     call sr_so_r(lmax, irc, nproj, rr, mmax, mxprj, evkb, vkb, &
     &              vsr, esr, vso, eso)
 
-! set smallest components to zero (will be dropped in psp8 output)
+    ! set smallest components to zero (will be dropped in psp8 output)
     eps_srso = 1.0d-3
     do l1 = 1, lmax + 1
         if (nproj(l1) > 0) then
@@ -549,8 +549,8 @@ program oncvpsp_r
 
     rhomod(:, :) = 0.0d0
 
-! construct model core charge based on monotonic polynomial fit
-! or Teter function fit
+    ! construct model core charge based on monotonic polynomial fit
+    ! or Teter function fit
 
     if (icmod == 1) then
         call modcore(rhops, rho, rhoc, rhoae, rhotae, rhomod, &
@@ -567,11 +567,11 @@ program oncvpsp_r
 
     end if
 
-! screening potential for pseudocharge
+    ! screening potential for pseudocharge
 
     call vout(1, rho, rhomod(1, 1), vo, vxc, zval, eeel, eexc, rr, mmax, iexc)
 
-! total energy output
+    ! total energy output
 
     epstot = eeig + eexc - 0.5d0 * eeel
     write (6, '(/a,f12.6/)') 'Pseudoatom total energy', epstot
@@ -584,7 +584,7 @@ program oncvpsp_r
     call run_diag_sr_so_r(lmax, npa, epa, lloc, irc, &
     &                       vsr, esr, vso, eso, nproj, rr, vfull, vp, zz, mmax, mxprj)
 
-! save full info for psml
+    ! save full info for psml
     allocate (vpsml(mmax, 5, 2))
     do l1 = 1, max(lmax + 1, lloc + 1)
         ll = l1 - 1
@@ -592,7 +592,7 @@ program oncvpsp_r
         vpsml(:, l1, 2) = vp(:, l1, 2) - vo(:)
     end do
 
-! ghost testing
+    ! ghost testing
 
     write (6, '(/a)') 'Ghost test for J = L + 1/2'
     call run_ghosts(lmax, la, ea(1, 1), nc, nv, lloc, irc, qmsbf, &
@@ -606,7 +606,7 @@ program oncvpsp_r
     vkb(:, :, 1, 2) = 0.0d0
     evkb(:, 1, 2) = 0.0d0
 
-! unscreen semi-local potentials taking scalar-relativistic average
+    ! unscreen semi-local potentials taking scalar-relativistic average
 
     do l1 = 1, max(lmax + 1, lloc + 1)
         ll = l1 - 1
@@ -618,7 +618,7 @@ program oncvpsp_r
         end if
     end do
 
-! fix unscreening error due to greater range of all-electron charge
+    ! fix unscreening error due to greater range of all-electron charge
     do ii = mmax, 1, -1
         if (rho(ii) == 0.0d0) then
             do l1 = 1, max(lmax + 1, lloc + 1)
@@ -629,13 +629,13 @@ program oncvpsp_r
         end if
     end do
 
-! loop over reference plus test atom configurations
+    ! loop over reference plus test atom configurations
     do jj = 1, ncnf + 1
 
         write (6, '(/a,i2)') 'Test configuration', jj - 1
 
-! For first (reference) configuration, charge is initialized as previously-
-! calculated pseudocharge is saved
+        ! For first (reference) configuration, charge is initialized as previously-
+        ! calculated pseudocharge is saved
 
         rhot(:) = rho(:)
 

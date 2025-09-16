@@ -1,55 +1,55 @@
 !
-! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
-! University
-!
-!
-! This program is free software: you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License
-! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-!
+ ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
+ ! University
+ !
+ !
+ ! This program is free software: you can redistribute it and/or modify
+ ! it under the terms of the GNU General Public License as published by
+ ! the Free Software Foundation, either version 3 of the License, or
+ ! (at your option) any later version.
+ !
+ ! This program is distributed in the hope that it will be useful,
+ ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ! GNU General Public License for more details.
+ !
+ ! You should have received a copy of the GNU General Public License
+ ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ !
 subroutine run_plot(lmax, npa, epa, lloc, irc, &
 &                    vkb, evkb, nproj, rr, vfull, vp, vpuns, zz, mmax, mxprj, drl, nrl, &
 &                    rho, rhoc, rhomod, srel, cvgplt)
 
-! write output for plotting pseudopotentials, model core charge, and
-! all-electron and pseudo wave functions
+    ! write output for plotting pseudopotentials, model core charge, and
+    ! all-electron and pseudo wave functions
 
-!lmax  maximum angular momentum
-!npa  principal quantum number for corresponding all-electron state
-!epa  bound-state or scattering state reference energies for vkb potentials
-!lloc  l for local potential
-!irc  indices of core radii
-!vkb  VKB projectors
-!evkb  coefficients of VKB projectors
-!nproj  number of vkb projectors for each l
-!rr  log radial grid
-!vfull  all-electron potential
-!vp  semi-local pseudopotentials
-!vpuns  unscreened vp
-!zz  atomic number
-!mmax  size of radial grid
-!mxprj  dimension of number of projector
-!drl  spacing of linear radial mesh
-!nrl  number of points in radial mesh
-!rho  valence pseudocharge
-!rhoc core charge
-!rhomod  model core charge
-!srel .true. for scalar-relativistic, .false. for non-relativistic
-!cvgplt  Energy per electron error vs. cutoff
+    !lmax  maximum angular momentum
+    !npa  principal quantum number for corresponding all-electron state
+    !epa  bound-state or scattering state reference energies for vkb potentials
+    !lloc  l for local potential
+    !irc  indices of core radii
+    !vkb  VKB projectors
+    !evkb  coefficients of VKB projectors
+    !nproj  number of vkb projectors for each l
+    !rr  log radial grid
+    !vfull  all-electron potential
+    !vp  semi-local pseudopotentials
+    !vpuns  unscreened vp
+    !zz  atomic number
+    !mmax  size of radial grid
+    !mxprj  dimension of number of projector
+    !drl  spacing of linear radial mesh
+    !nrl  number of points in radial mesh
+    !rho  valence pseudocharge
+    !rhoc core charge
+    !rhomod  model core charge
+    !srel .true. for scalar-relativistic, .false. for non-relativistic
+    !cvgplt  Energy per electron error vs. cutoff
 
     implicit none
     integer, parameter :: dp = kind(1.0d0)
 
-!Input variables
+    !Input variables
     integer :: lmax, lloc, mmax, mxprj, nrl
     integer :: npa(mxprj, 6), irc(6), nproj(6)
     real(dp) :: zz, drl
@@ -58,9 +58,9 @@ subroutine run_plot(lmax, npa, epa, lloc, irc, &
     real(dp) :: epa(mxprj, 6), evkb(mxprj, 4), cvgplt(2, 7, mxprj, 4)
     logical :: srel
 
-!Output variables - printing only
+    !Output variables - printing only
 
-!Local variables
+    !Local variables
     integer :: ll, l1, ii, jj, ierr, mch, n1, n2, n3, n4, nn
     integer :: iprj, npr
     real(dp) :: al, emax, emin, etest, rmx, sgnae, sgnps
@@ -102,7 +102,7 @@ subroutine run_plot(lmax, npa, epa, lloc, irc, &
         end do
     end if
 
-! output for analysis of core charge and models
+    ! output for analysis of core charge and models
     rmx = 0
     do ii = n1, n2
         rmx = max(rmx, 5.0d0 * rho(ii), rhomod(ii, 1))
@@ -124,7 +124,7 @@ subroutine run_plot(lmax, npa, epa, lloc, irc, &
         end if
     end do
 
-! loop for wave function output
+    ! loop for wave function output
 
     do l1 = 1, lmax + 1
         ll = l1 - 1
@@ -174,7 +174,7 @@ subroutine run_plot(lmax, npa, epa, lloc, irc, &
             end do
         end do !iproj
 
-! orthonormal projector plots
+        ! orthonormal projector plots
 
         write (6, '(/)')
         dr = dmin1(drl, rr(n3) / 200.0d0)
@@ -188,8 +188,8 @@ subroutine run_plot(lmax, npa, epa, lloc, irc, &
         end do
 
     end do !l1
-!
-! convergence profile plots
+    !
+    ! convergence profile plots
 
     write (6, '(/a)') 'convergence profiles, (ll=0,lmax)'
     write (6, *) 'lmax', lmax

@@ -1,23 +1,23 @@
 !! Taken from Octopus (2002-2006 M. Marques, A. Castro, A. Rubio, G. Bertsch)
-!! Adapted to oncvpsp by A. Castaneda M. (2019)
-!!
-!! This program is free software; you can redistribute it and/or modify
-!! it under the terms of the GNU General Public License as published by
-!! the Free Software Foundation; either version 2, or (at your option)
-!! any later version.
-!!
-!! This program is distributed in the hope that it will be useful,
-!! but WITHOUT ANY WARRANTY; without even the implied warranty of
-!! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-!! GNU General Public License for more details.
-!!
-!! You should have received a copy of the GNU General Public License
-!! along with this program; if not, write to the Free Software
-!! Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-!! 02110-1301, USA.
-!!
+ !! Adapted to oncvpsp by A. Castaneda M. (2019)
+ !!
+ !! This program is free software; you can redistribute it and/or modify
+ !! it under the terms of the GNU General Public License as published by
+ !! the Free Software Foundation; either version 2, or (at your option)
+ !! any later version.
+ !!
+ !! This program is distributed in the hope that it will be useful,
+ !! but WITHOUT ANY WARRANTY; without even the implied warranty of
+ !! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ !! GNU General Public License for more details.
+ !!
+ !! You should have received a copy of the GNU General Public License
+ !! along with this program; if not, write to the Free Software
+ !! Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ !! 02110-1301, USA.
+ !!
 
-! generic interfaces
+ ! generic interfaces
 module parser
     implicit none
     interface parse_variable
@@ -37,7 +37,7 @@ subroutine logical_parser(varval, var)
 end subroutine logical_parser
 end module parser
 
-! For messaging
+ ! For messaging
 module xc_messages
     implicit none
     ! Messages
@@ -84,7 +84,7 @@ subroutine messages_not_implemented(str)
 end subroutine messages_not_implemented
 end module xc_messages
 
-! The main module
+ ! The main module
 module functionals_m
 use parser
 use xc_messages

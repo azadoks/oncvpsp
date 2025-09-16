@@ -1,23 +1,23 @@
 !
-! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
-! University
-!
-!
-! This program is free software: you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License
-! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-!
-! interpolates various arrays onto linear radial mesh to create file
-! for PWSCF input using the UPF file format
+ ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
+ ! University
+ !
+ !
+ ! This program is free software: you can redistribute it and/or modify
+ ! it under the terms of the GNU General Public License as published by
+ ! the Free Software Foundation, either version 3 of the License, or
+ ! (at your option) any later version.
+ !
+ ! This program is distributed in the hope that it will be useful,
+ ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ! GNU General Public License for more details.
+ !
+ ! You should have received a copy of the GNU General Public License
+ ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ !
+ ! interpolates various arrays onto linear radial mesh to create file
+ ! for PWSCF input using the UPF file format
 
 subroutine upfout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
 &                  zz, zion, mmax, mxprj, iexc, icmod, nrl, drl, atsym, epstot, &
@@ -25,41 +25,41 @@ subroutine upfout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
 &                  fa, rc0, ep, qcut, debl, facnf, dvloc0, fcfact, rcfact, &
 &                  epsh1, epsh2, depsh, rlmax, psfile, uupsa, ea)
 
-!lmax  maximum angular momentum
-!lloc  l for local potential
-!rc  core radii
-!vkb  VKB projectors
-!evkb  coefficients of VKB projectors
-!nproj  number of vkb projectors for each l
-!rr  log radial grid
-!vpuns  unscreened semi-local pseudopotentials (vp(:,5) is local potential
-!  if linear combination is used)
-!rho  valence pseudocharge
-!rhomod  model core charge
-!zz  atomic number
-!zion  at this point, total valence charge (becomes psuedoion charge)
-!mmax  size of log radial grid
-!mxprj  dimension of number of projectors
-!iexc  type of exchange-correlation
-!icmod  1 if model core charge is used, otherwise 0
-!nrl size of linear radial grid
-!drl spacing of linear radial grid
-!atsym  atomic symbol
-!epstot  pseudoatom total energy
-!psfile  should be 'upf'
-!remaining input variables to be echoed:
-!  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf
-!  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact
-!  epsh1,epsh2,depsh,rlmax,psfile
-!uupsa  pseudo-atomic orbital array
-!ea  psuedo-orbital eigenvalues
+    !lmax  maximum angular momentum
+    !lloc  l for local potential
+    !rc  core radii
+    !vkb  VKB projectors
+    !evkb  coefficients of VKB projectors
+    !nproj  number of vkb projectors for each l
+    !rr  log radial grid
+    !vpuns  unscreened semi-local pseudopotentials (vp(:,5) is local potential
+    !  if linear combination is used)
+    !rho  valence pseudocharge
+    !rhomod  model core charge
+    !zz  atomic number
+    !zion  at this point, total valence charge (becomes psuedoion charge)
+    !mmax  size of log radial grid
+    !mxprj  dimension of number of projectors
+    !iexc  type of exchange-correlation
+    !icmod  1 if model core charge is used, otherwise 0
+    !nrl size of linear radial grid
+    !drl spacing of linear radial grid
+    !atsym  atomic symbol
+    !epstot  pseudoatom total energy
+    !psfile  should be 'upf'
+    !remaining input variables to be echoed:
+    !  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf
+    !  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact
+    !  epsh1,epsh2,depsh,rlmax,psfile
+    !uupsa  pseudo-atomic orbital array
+    !ea  psuedo-orbital eigenvalues
 
     implicit none
     integer, parameter :: dp = kind(1.0d0)
 
     real(dp), parameter :: pi = 3.141592653589793238462643383279502884197_dp
 
-!Input variables
+    !Input variables
     integer :: lmax, lloc, iexc, mmax, mxprj, nrl, icmod
     integer :: nproj(6)
     real(dp) :: drl, fcfact, rcfact, zz, zion, epstot
@@ -69,8 +69,8 @@ subroutine upfout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     character*2 :: atsym
     real(dp) :: uupsa(mmax, nv)
 
-!additional input for upf output to echo input file, all as defined
-! in the main progam
+    !additional input for upf output to echo input file, all as defined
+    ! in the main progam
     integer :: na(30), la(30), ncon(6), nbas(6)
     integer :: nvcnf(5), nacnf(30, 5), lacnf(30, 5)
     integer :: nc, nv, lpopt, ncnf
@@ -78,9 +78,9 @@ subroutine upfout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     real(dp) :: dvloc0, epsh1, epsh2, depsh, rlmax
     character*4 :: psfile
 
-!Output variables - printing only
+    !Output variables - printing only
 
-!Local variables
+    !Local variables
     integer :: ii, jj, l1, iproj, ntotproj, nrlproj
     integer :: dtime(8)
     real(dp) :: al, nrmsum, uurcut
@@ -91,7 +91,7 @@ subroutine upfout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
 
     lnames = "SPDFG"
 
-! adjust nrl to properly accomodate atomic orbitals
+    ! adjust nrl to properly accomodate atomic orbitals
     al = dlog(rr(2) / rr(1))
     uurcut = 0.d0
     do ii = 1, nv
@@ -112,15 +112,15 @@ subroutine upfout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
 
     allocate (rhol(nrl), rl(nrl), vkbl(nrl, mxprj, 4), vpl(nrl, 5), rhomodl(nrl, 5), uual(nrl, nv))
 
-! interpolation of everything onto linear output mesh
+    ! interpolation of everything onto linear output mesh
 
     do ii = 1, nrl
         rl(ii) = drl * dble(ii - 1)
     end do
-!
+    !
     do l1 = 1, max(lmax + 1, lloc + 1)
         call dpnint(rr, vpuns(1, l1), mmax, rl, vpl(1, l1), nrl)
-! override dpnint extrapolation to zero for vpl
+        ! override dpnint extrapolation to zero for vpl
         vpl(1, l1) = vpuns(1, l1)
         if (l1 /= lloc + 1) then
 
@@ -160,7 +160,7 @@ subroutine upfout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
         write (pspd(3), '(i2)') ii
     end if
 
-! section for upf output for pwscf
+    ! section for upf output for pwscf
 
     write (6, '(/a)') 'Begin PSP_UPF'
 
@@ -183,7 +183,7 @@ subroutine upfout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     write (6, '(a)') &
     &      '    <PP_INPUTFILE>'
 
-! output printing (echos input data)
+    ! output printing (echos input data)
 
     write (6, '(a)') '# ATOM AND REFERENCE CONFIGURATION'
     write (6, '(a)') '# atsym  z   nc   nv     iexc    psfile'
@@ -338,8 +338,8 @@ subroutine upfout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
         &        'l_local="', lloc, '"'
     end if
 
-! calculate total number of projectors and maximum linear mesh point for
-! projectors
+    ! calculate total number of projectors and maximum linear mesh point for
+    ! projectors
 
     ntotproj = 0
     nrlproj = 0
@@ -386,7 +386,7 @@ subroutine upfout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     write (6, '(t2,a)') &
     &        '</PP_MESH>'
 
-! write local potential with factor of 2 for Rydberg units
+    ! write local potential with factor of 2 for Rydberg units
     write (6, '(a,i4,a)') &
     &      '  <PP_LOCAL type="real"  size="', nrl, '" columns="4">'
 
@@ -395,7 +395,7 @@ subroutine upfout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     write (6, '(a)') &
     &      '  </PP_LOCAL>'
 
-! loop on angular mommentum for projector outputs
+    ! loop on angular mommentum for projector outputs
 
     write (6, '(t2,a)') &
     &      '<PP_NONLOCAL>'
@@ -419,13 +419,13 @@ subroutine upfout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
             &          'type="real"'
             write (6, '(t8,a,i4,a)') &
             &          'size="', nrl, '"'
-!&          'size="',nrlproj,'"'
+            !&          'size="',nrlproj,'"'
             write (6, '(t8,a)') &
             &          'columns="4"'
             write (6, '(t8,a,i1,a)') &
             &          'index="', iproj, '"'
-!     write(6,'(t8,a)') &
-!&          'label="3P"'
+            !     write(6,'(t8,a)') &
+            !&          'label="3P"'
             write (6, '(t8,a,i1,a)') &
             &          'angular_momentum="', l1 - 1, '"'
             write (6, '(t8,a,i4,a)') &
@@ -512,7 +512,7 @@ subroutine upfout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
 
     deallocate (rhol, rl, vkbl, vpl, rhomodl, dmat)
 
-! write termination flag
+    ! write termination flag
     write (6, '(/a)') 'END_PSP'
 
     return

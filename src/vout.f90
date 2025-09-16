@@ -1,37 +1,37 @@
 !
-! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
-! University
-!
-!
-! This program is free software: you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License
-! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-!
-! calculates Hartree and exchange-correlation potentials and total-energy
-! term to add to eigenvalue sum
+ ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
+ ! University
+ !
+ !
+ ! This program is free software: you can redistribute it and/or modify
+ ! it under the terms of the GNU General Public License as published by
+ ! the Free Software Foundation, either version 3 of the License, or
+ ! (at your option) any later version.
+ !
+ ! This program is distributed in the hope that it will be useful,
+ ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ! GNU General Public License for more details.
+ !
+ ! You should have received a copy of the GNU General Public License
+ ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ !
+ ! calculates Hartree and exchange-correlation potentials and total-energy
+ ! term to add to eigenvalue sum
 
 subroutine vout(mode, rho, rhoc, vo, vxc, zion, eeel, eexc, &
 &                rr, mmax, iexc)
 
-!mode  1=> add rhoc to rho, 0 => don't
-!rho  total charge density or valence/pseudovalence charge density
-!rhoc  core charge density, full or model
-!vo  output total potential
-!vc  output exchange-correlation potential
-!zion  charge of screened ion
-!eeel  electron-electron interaction energy
-!eexc  exchange-correlation correction to eigenvalue sum for total energy
-!rr  log radial mesh
-!output electrostatic and exchange-correlation potential
+    !mode  1=> add rhoc to rho, 0 => don't
+    !rho  total charge density or valence/pseudovalence charge density
+    !rhoc  core charge density, full or model
+    !vo  output total potential
+    !vc  output exchange-correlation potential
+    !zion  charge of screened ion
+    !eeel  electron-electron interaction energy
+    !eexc  exchange-correlation correction to eigenvalue sum for total energy
+    !rr  log radial mesh
+    !output electrostatic and exchange-correlation potential
 
     implicit none
 
@@ -39,20 +39,20 @@ subroutine vout(mode, rho, rhoc, vo, vxc, zion, eeel, eexc, &
     real(dp), parameter :: pi = 3.141592653589793238462643383279502884197_dp
     real(dp), parameter :: pi4 = 4.0_dp * pi
 
-!Input vaiables
+    !Input vaiables
     integer :: iexc, mmax, mode
     real(dp) :: rho(mmax), rhoc(mmax), rr(mmax)
     real(dp) :: zion
 
-!Output variables
+    !Output variables
     real(dp) :: vo(mmax), vxc(mmax)
     real(dp) :: eeel, eexc
 
-!Local variables
+    !Local variables
     integer ii
     real(dp) :: al, tv
 
-!Function
+    !Function
     real(dp) :: aii
 
     real(dp), allocatable :: rvp(:), rv(:), excca(:), difxc(:)
@@ -67,7 +67,7 @@ subroutine vout(mode, rho, rhoc, vo, vxc, zion, eeel, eexc, &
 
     foutfc(:) = 0.0d0
 
-! integration for electrostatic potential
+    ! integration for electrostatic potential
     do ii = 1, mmax
         rvp(ii) = rho(ii) * al * rr(ii)**3
     end do
@@ -94,7 +94,7 @@ subroutine vout(mode, rho, rhoc, vo, vxc, zion, eeel, eexc, &
         vo(ii) = rv(ii) / rr(ii)
     end do
 
-! electron-electron interaction for total energy
+    ! electron-electron interaction for total energy
     do ii = 1, mmax
         foutv(ii) = rho(ii) * vo(ii) * rr(ii)**3
     end do
@@ -119,7 +119,7 @@ subroutine vout(mode, rho, rhoc, vo, vxc, zion, eeel, eexc, &
         stop
     end if
 
-! exchange-correlation potential added
+    ! exchange-correlation potential added
 
     if (iexc == 1) then
         call excwig(rhot, vxc, exca, mmax)
@@ -141,7 +141,7 @@ subroutine vout(mode, rho, rhoc, vo, vxc, zion, eeel, eexc, &
         vo(ii) = vo(ii) + vxc(ii)
     end do
 
-! exchange-correlation correction for total energy
+    ! exchange-correlation correction for total energy
 
     do ii = 1, mmax
         foutx(ii) = rho(ii) * difxc(ii) * rr(ii)**3

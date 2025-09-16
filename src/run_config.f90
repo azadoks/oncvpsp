@@ -1,55 +1,55 @@
 !
-! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
-! University
-!
-!
-! This program is free software: you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License
-! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-!
-! self-consistent all-electron and pseudopotential atomic calculations
-! compared for reference and tests atomic configurations
+ ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
+ ! University
+ !
+ !
+ ! This program is free software: you can redistribute it and/or modify
+ ! it under the terms of the GNU General Public License as published by
+ ! the Free Software Foundation, either version 3 of the License, or
+ ! (at your option) any later version.
+ !
+ ! This program is distributed in the hope that it will be useful,
+ ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ! GNU General Public License for more details.
+ !
+ ! You should have received a copy of the GNU General Public License
+ ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ !
+ ! self-consistent all-electron and pseudopotential atomic calculations
+ ! compared for reference and tests atomic configurations
 
 subroutine run_config(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz, &
 &                  rcmax, mmax, mxprj, iexc, ea, etot, epstot, nproj, vpuns, &
 &                  lloc, vkb, evkb, srel)
 
-!jj  index of current configufation
-!nacnf  principal quantum number array, all configurations
-!lacnf  angular-momenta array, all config.
-!nc  number of core states
-!nvcnf  number of valence states, all config.
-!rhov valence pseudo-charge of reference configuration
-!rhomod  model core charge
-!rr  log radial mesh
-!zz  atomic number
-!rcmax  maximum core radius for psp
-!mmax  size of log grid
-!mxprj  dimension of number of projectors
-!iexc  exchange-correlation function to be used
-!ea  reference configurattion eigenvalues
-!etot  reference configuration total energy
-!epstot  pseudoatom total energy
-!nproj  number of VKB projectors to use for each l
-!vpuns  unscreened semi-local pseudopotentials (plus different vloc if lloc==4)
-!lloc  index-1 of local potential
-!vkb   Vanderbilt-Kleinman-Bylander projectors
-!evkb VKB projector coefficients
-!srel .true. for scalar-relativistic, .false. for non-relativistic
+    !jj  index of current configufation
+    !nacnf  principal quantum number array, all configurations
+    !lacnf  angular-momenta array, all config.
+    !nc  number of core states
+    !nvcnf  number of valence states, all config.
+    !rhov valence pseudo-charge of reference configuration
+    !rhomod  model core charge
+    !rr  log radial mesh
+    !zz  atomic number
+    !rcmax  maximum core radius for psp
+    !mmax  size of log grid
+    !mxprj  dimension of number of projectors
+    !iexc  exchange-correlation function to be used
+    !ea  reference configurattion eigenvalues
+    !etot  reference configuration total energy
+    !epstot  pseudoatom total energy
+    !nproj  number of VKB projectors to use for each l
+    !vpuns  unscreened semi-local pseudopotentials (plus different vloc if lloc==4)
+    !lloc  index-1 of local potential
+    !vkb   Vanderbilt-Kleinman-Bylander projectors
+    !evkb VKB projector coefficients
+    !srel .true. for scalar-relativistic, .false. for non-relativistic
 
     implicit none
     integer, parameter :: dp = kind(1.0d0)
 
-!Input variables
+    !Input variables
 
     integer :: jj, mmax, mxprj, iexc, nc, lloc
     integer :: nacnf(30, 5), lacnf(30, 5), nvcnf(5), nproj(5)
@@ -58,14 +58,14 @@ subroutine run_config(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz, 
     real(dp) :: vpuns(mmax, 5), vkb(mmax, mxprj, 4), evkb(mxprj, 4), rhomod(mmax, 5)
     logical :: srel
 
-!Output variables  only printing
+    !Output variables  only printing
 
-!Local variables
+    !Local variables
     integer :: ii, it, kk, l1, ierr, mch, nvt
     integer :: nat(30), lat(30), natp(30), latp(30), nav(4)
     integer :: indxr(30), indxe(30)
     real(dp) :: et, eaetst, etsttot
-!real(dp) :: eat(30,2),fat(30,2),rpk(30),eatp(30),fatp(30,2)
+    !real(dp) :: eat(30,2),fat(30,2),rpk(30),eatp(30),fatp(30,2)
     real(dp) :: eat(30, 3), fat(30, 3), rpk(30), eatp(30), fatp(30, 3)
 
     real(dp), allocatable :: rho(:), rhoc(:), rhocps(:), vi(:), vfull(:)
@@ -74,39 +74,39 @@ subroutine run_config(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz, 
     allocate (rho(mmax), rhoc(mmax), vi(mmax), vfull(mmax), rhocps(mmax))
     allocate (uu(mmax), up(mmax))
 
-! atom tests comparing reference state and excited configuration for
-! all-electron and pseudo atoms.  Total excitation energies and excited-
-! -configuration eigenvalues are compared
+    ! atom tests comparing reference state and excited configuration for
+    ! all-electron and pseudo atoms.  Total excitation energies and excited-
+    ! -configuration eigenvalues are compared
 
-! For multi-projector potentials, the bound-state solver lschvkbb has poor
-! stability, and requires a trial energy sufficiently close to the correct
-! result for a given local potential. This appears to be due to the fact
-! that intermediate stages towards the solution of the radial Schroedinger
-! equation with a non-local potential may not increase their node count
-! monotonically with increasing energy (the same phenonenon which gives
-! rise to ghost states).
+    ! For multi-projector potentials, the bound-state solver lschvkbb has poor
+    ! stability, and requires a trial energy sufficiently close to the correct
+    ! result for a given local potential. This appears to be due to the fact
+    ! that intermediate stages towards the solution of the radial Schroedinger
+    ! equation with a non-local potential may not increase their node count
+    ! monotonically with increasing energy (the same phenonenon which gives
+    ! rise to ghost states).
 
-! To aviod these problems, the pseudoatom calculation is started with the
-! screened local potential and valence eigenvalues of the reference
-! configuration.  This is adiabatically changed in two steps.  In the first,
-! the occupation numbers are changed by 2% within the potential iteration
-! loop for each of the first 50 steps to those of a maximally-ionized
-! intermediate configuration.
+    ! To aviod these problems, the pseudoatom calculation is started with the
+    ! screened local potential and valence eigenvalues of the reference
+    ! configuration.  This is adiabatically changed in two steps.  In the first,
+    ! the occupation numbers are changed by 2% within the potential iteration
+    ! loop for each of the first 50 steps to those of a maximally-ionized
+    ! intermediate configuration.
 
-! The second step is started with the local potential of this maximally-
-! ionized psuedo-atom, and eigenvalues from an all-electron
-! calculation of this configuration including unoccupied states that
-! are to be adiabatically filled to produce the final configuration.
-! The same 2% strategy is used filling pseudo-atom states in this step.
+    ! The second step is started with the local potential of this maximally-
+    ! ionized psuedo-atom, and eigenvalues from an all-electron
+    ! calculation of this configuration including unoccupied states that
+    ! are to be adiabatically filled to produce the final configuration.
+    ! The same 2% strategy is used filling pseudo-atom states in this step.
 
-! set up pseudo atom arrays
-!arrange data arrays for adiabatic configufation switching of pseudo atom
+    ! set up pseudo atom arrays
+    !arrange data arrays for adiabatic configufation switching of pseudo atom
 
     fat(:, :) = 0.0d0
     nat(:) = 0
     lat(:) = 0
 
-! set up cross indces of reference (r) and excited (e) cofigurations
+    ! set up cross indces of reference (r) and excited (e) cofigurations
     indxr(:) = 0
     indxe(:) = 0
     do ii = 1, nc + nvcnf(1)
@@ -119,8 +119,8 @@ subroutine run_config(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz, 
         end do
     end do
 
-! set up merged list with reference levels first
-! levels not present in one confguration or the other get zero occupancy
+    ! set up merged list with reference levels first
+    ! levels not present in one confguration or the other get zero occupancy
     eat(:, 1) = 0.0d0
     do ii = 1, nc + nvcnf(1)
         nat(ii) = nacnf(ii, 1)
@@ -146,7 +146,7 @@ subroutine run_config(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz, 
         end if
     end do
 
-!set up array for maximally ionized intermediate state
+    !set up array for maximally ionized intermediate state
     do kk = 1, nc + nvt
         fat(ii, 2) = dmin1(fat(ii, 1), fat(ii, 3))
     end do
@@ -154,7 +154,7 @@ subroutine run_config(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz, 
     eat(:, 2) = 0.d0; rpk(:) = 0.d0; rhoc(:) = 0.d0; rho(:) = 0.d0; vfull(:) = 0.d0
     eaetst = 0.d0
 
-!all-electron atom solution for maximally-ionized state
+    !all-electron atom solution for maximally-ionized state
 
     call sratom(nat, lat, eat(1, 2), fat(1, 2), rpk, nc, nc + nvt, it, rhoc, rho, &
     &            rr, vfull, zz, mmax, iexc, eaetst, ierr, srel)
@@ -171,7 +171,7 @@ subroutine run_config(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz, 
         return
     end if
 
-!fill in energies for empty levels of maximally ionized state
+    !fill in energies for empty levels of maximally ionized state
 
     do kk = 1, nc + nvt
         if (eat(kk, 2) == 0.0d0) then
@@ -193,7 +193,7 @@ subroutine run_config(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz, 
     eat(:, 3) = 0.d0; rpk(:) = 0.d0; rhoc(:) = 0.d0; rho(:) = 0.d0; vfull(:) = 0.d0
     eaetst = 0.d0
 
-!all-electron atom solution for excited state
+    !all-electron atom solution for excited state
 
     call sratom(nat, lat, eat(1, 3), fat(1, 3), rpk, nc, nc + nvt, it, rhoc, rho, &
     &            rr, vfull, zz, mmax, iexc, eaetst, ierr, srel)
@@ -210,7 +210,7 @@ subroutine run_config(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz, 
         return
     end if
 
-!first pseudoatom run from reference to maximally-ionized configuration
+    !first pseudoatom run from reference to maximally-ionized configuration
     do l1 = 1, 4
         nav(l1) = l1 - 1
     end do
@@ -241,7 +241,7 @@ subroutine run_config(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz, 
         return
     end if
 
-!second pseudoatom run from maximally-ionized to excited configuration
+    !second pseudoatom run from maximally-ionized to excited configuration
 
     do kk = 1, nvt
         eatp(kk) = eat(nc + kk, 2)

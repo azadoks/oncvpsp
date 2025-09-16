@@ -1,42 +1,42 @@
 !
-! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
-! University
-!
-!
-! This program is free software: you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License
-! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-!
-! creates appropriate input file for GNUPLOT
+ ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
+ ! University
+ !
+ !
+ ! This program is free software: you can redistribute it and/or modify
+ ! it under the terms of the GNU General Public License as published by
+ ! the Free Software Foundation, either version 3 of the License, or
+ ! (at your option) any later version.
+ !
+ ! This program is distributed in the hope that it will be useful,
+ ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ! GNU General Public License for more details.
+ !
+ ! You should have received a copy of the GNU General Public License
+ ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ !
+ ! creates appropriate input file for GNUPLOT
 
 subroutine gnu_script_r(epa, evkb, lmax, lloc, mxprj, nproj)
 
-!epa  wave function energies
-!lmax  maximum angular momentum
-!lloc  angular momentum for local potential (lloc=4 for polynomial, etc.)
-!mxprj maximum number of projectors
-!nproj number of projectors for each l
+    !epa  wave function energies
+    !lmax  maximum angular momentum
+    !lloc  angular momentum for local potential (lloc=4 for polynomial, etc.)
+    !mxprj maximum number of projectors
+    !nproj number of projectors for each l
 
     implicit none
     integer, parameter :: dp = kind(1.0d0)
 
-!Input variables
+    !Input variables
     integer :: lmax, lloc, mxprj
     integer :: nproj(6)
     real(dp) :: epa(mxprj, 6, 2), evkb(mxprj, 4, 2)
 
-!Output -- printing only
+    !Output -- printing only
 
-!Local variables
+    !Local variables
     integer :: ii, iprj, jj, l1, ll
     integer :: ikap, mkap
 
@@ -147,7 +147,7 @@ subroutine gnu_script_r(epa, evkb, lmax, lloc, mxprj, nproj)
     gln(73) = ''' t1" using 3:6 title "Prj 3" with lines ls 3'
     gln(74) = ''' t1" using 3:7 title "Prj 4" with lines ls 4'
 
-!write(6,*) 'lmax,lloc,mxprj',lmax,lloc,mxprj
+    !write(6,*) 'lmax,lloc,mxprj',lmax,lloc,mxprj
     write (6, '(a)') 'GNUSCRIPT'
 
     set = 'set term wxt font "arial,14" size 800,600'
@@ -193,7 +193,7 @@ subroutine gnu_script_r(epa, evkb, lmax, lloc, mxprj, nproj)
 
     write (6, '(/a/)') trim(pse)
 
-!wave function plots
+    !wave function plots
 
     do l1 = 1, lmax + 1
         if (l1 == 1) then
@@ -201,7 +201,7 @@ subroutine gnu_script_r(epa, evkb, lmax, lloc, mxprj, nproj)
         else
             mkap = 2
         end if
-! loop on J = ll +/- 1/2
+        ! loop on J = ll +/- 1/2
         do ikap = 1, mkap
 
             do iprj = 1, nproj(l1)
@@ -221,7 +221,7 @@ subroutine gnu_script_r(epa, evkb, lmax, lloc, mxprj, nproj)
 
             end do !iprj
 
-! orthonormal projector plot
+            ! orthonormal projector plot
             ll = l1 - 1
             if (ll /= lloc) then
                 write (6, '(a/)') trim(x_label(1))
@@ -247,7 +247,7 @@ subroutine gnu_script_r(epa, evkb, lmax, lloc, mxprj, nproj)
 
             end if
 
-!  log derivative plots
+            !  log derivative plots
 
             write (6, '(a/)') trim(plot_title(5))
             write (6, '(a/)') trim(x_label(2))
@@ -265,8 +265,8 @@ subroutine gnu_script_r(epa, evkb, lmax, lloc, mxprj, nproj)
         end do !ikap
     end do !l1
 
-! log derivatives for angular momenta for which no pseudopotentials
-! were created
+    ! log derivatives for angular momenta for which no pseudopotentials
+    ! were created
 
     if (lmax < 3) then
         do l1 = lmax + 2, 4
@@ -288,7 +288,7 @@ subroutine gnu_script_r(epa, evkb, lmax, lloc, mxprj, nproj)
         end do !l1
     end if
 
-! Convergence profile
+    ! Convergence profile
 
     set = 'set  logscale y'
     write (6, '(a/)') trim(set)

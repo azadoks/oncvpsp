@@ -1,49 +1,49 @@
 !
-! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
-! University
-!
-!
-! This program is free software: you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License
-! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-!
-! self-consistent pseudoatom calculation
+ ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
+ ! University
+ !
+ !
+ ! This program is free software: you can redistribute it and/or modify
+ ! it under the terms of the GNU General Public License as published by
+ ! the Free Software Foundation, either version 3 of the License, or
+ ! (at your option) any later version.
+ !
+ ! This program is distributed in the hope that it will be useful,
+ ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ! GNU General Public License for more details.
+ !
+ ! You should have received a copy of the GNU General Public License
+ ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ !
+ ! self-consistent pseudoatom calculation
 
 subroutine psatom_r(na, la, ea, fat, nv, it, rhoc, rho, &
 &           rr, rcmax, mmax, mxprj, iexc, etot, nproj, vpuns, lloc, vkb, evkb, ierr)
 
-!na  principal quantum number array, dimension nv
-!la  angular-momenta
-!ea  eigenvalues (input starting guess, output)
-!fa  occupancies
-!rpk  radius of outermost peak of wave function
-!nv  number of valence states
-!it  number of iterations (output)
-!rr  log radial mesh
-!rcmax  maximum core radius for psp
-!mmax  size of log grid
-!mxprj  dimension of number of projectors
-!iexc  exchange-correlation function to be used
-!etot  pseudoatom total energy (output)
-!nproj  number of VKB projectora to use for each l
-!vpuns  unscreened semi-local pseudopotentials (plus differenv vloc if lloc==4)
-!lloc  index-1 of local potential
-!vkb   Vanderbilt-Kleinman-Bylander projectors
-!evkb VKB projector coefficients
+    !na  principal quantum number array, dimension nv
+    !la  angular-momenta
+    !ea  eigenvalues (input starting guess, output)
+    !fa  occupancies
+    !rpk  radius of outermost peak of wave function
+    !nv  number of valence states
+    !it  number of iterations (output)
+    !rr  log radial mesh
+    !rcmax  maximum core radius for psp
+    !mmax  size of log grid
+    !mxprj  dimension of number of projectors
+    !iexc  exchange-correlation function to be used
+    !etot  pseudoatom total energy (output)
+    !nproj  number of VKB projectora to use for each l
+    !vpuns  unscreened semi-local pseudopotentials (plus differenv vloc if lloc==4)
+    !lloc  index-1 of local potential
+    !vkb   Vanderbilt-Kleinman-Bylander projectors
+    !evkb VKB projector coefficients
 
     implicit none
     integer, parameter :: dp = kind(1.0d0)
 
-!Input variables
+    !Input variables
 
     integer :: mmax, mxprj, iexc, nv, lloc
     integer :: na(30), la(30), nproj(5)
@@ -51,13 +51,13 @@ subroutine psatom_r(na, la, ea, fat, nv, it, rhoc, rho, &
     real(dp) :: fat(30, 2), rr(mmax)
     real(dp) :: vpuns(mmax, 5), vkb(mmax, mxprj, 4, 2), evkb(mxprj, 4, 2)
 
-!Output variables
+    !Output variables
     integer :: it
     real(dp) :: etot
     real(dp) :: ea(30, 2)
     real(dp) :: rho(mmax), rhoc(mmax), vi(mmax)
 
-!Local variables
+    !Local variables
     integer :: nin, mch
     real(dp) :: amesh, al
     real(dp) :: dr, eeel, eexc, et, emin, emax, rl, rl1, sd, sn, sls, eeig
@@ -71,15 +71,15 @@ subroutine psatom_r(na, la, ea, fat, nv, it, rhoc, rho, &
     real(dp), allocatable :: vo(:), vi1(:), vo1(:), vxc(:), vp(:)
     real(dp), allocatable :: vtot(:)
 
-! blend parameter for Anderson iterative potential mixing
+    ! blend parameter for Anderson iterative potential mixing
     real(dp), parameter :: bl = 0.5d0
 
     allocate (uu(mmax), up(mmax))
     allocate (vo(mmax), vi1(mmax), vo1(mmax), vxc(mmax), vp(mmax))
     allocate (vtot(mmax))
 
-! this seems necessary in sratom, so I might as well do it  here too
-! don't ask why!
+    ! this seems necessary in sratom, so I might as well do it  here too
+    ! don't ask why!
     uu(:) = 0.d0; up(:) = 0.d0
     vo(:) = 0.d0; vi1(:) = 0.d0; vo1(:) = 0.d0; vxc(:) = 0.d0; vp(:) = 0.d0
     vtot(:) = 0.d0
@@ -96,40 +96,40 @@ subroutine psatom_r(na, la, ea, fat, nv, it, rhoc, rho, &
         nprj = max(nprj, nproj(l1))
     end do
 
-! total valence charge, initial config
+    ! total valence charge, initial config
     zval = 0.0d0
     do ii = 1, nv
         fa(ii) = fat(ii, 1)
         zval = zval + fa(ii)
     end do
 
-! test if new states are added
+    ! test if new states are added
     icx = 50
 
-! screening potential for pseudocharge
-! input rho is assumed to be valence rho from all-electron calculation
-! which shouldn''t be a bad approximation for a starting screened
-! potential
+    ! screening potential for pseudocharge
+    ! input rho is assumed to be valence rho from all-electron calculation
+    ! which shouldn''t be a bad approximation for a starting screened
+    ! potential
 
     call vout(1, rho, rhoc, vi, vxc, zval, eeel, eexc, rr, mmax, iexc)
 
-! big self  self-consietency loop
+    ! big self  self-consietency loop
     do it = 1, 100
 
-! add well do deal with initially unbound states which may arise from
-! discrepancy between all-electron valence charge used to initiate screening
-! and self-consistent pseudocharge
-! start well at 0.5 Ha at infinity and scale down with iterations
+        ! add well do deal with initially unbound states which may arise from
+        ! discrepancy between all-electron valence charge used to initiate screening
+        ! and self-consistent pseudocharge
+        ! start well at 0.5 Ha at infinity and scale down with iterations
 
-! convergence is only to be considered if we are fully in  the target
-! configurtion
+        ! convergence is only to be considered if we are fully in  the target
+        ! configurtion
         if (it > 2) then
             convg = .true.
         else
             convg = .false.
         end if
 
-! solve for bound states in turn
+        ! solve for bound states in turn
 
         eeig = 0.0d0
 
@@ -151,7 +151,7 @@ subroutine psatom_r(na, la, ea, fat, nv, it, rhoc, rho, &
             else
                 mkap = 2
             end if
-! loop on J = ll +/- 1/2
+            ! loop on J = ll +/- 1/2
             do ikap = 1, mkap
                 if (ikap == 1) then
                     kap = -(ll + 1)
@@ -175,11 +175,11 @@ subroutine psatom_r(na, la, ea, fat, nv, it, rhoc, rho, &
                     exit
                 end if
 
-!   overall convergence criterion based on eps within lschf*
+                !   overall convergence criterion based on eps within lschf*
                 if (ea(ii, ikap) /= et) convg = .false.
                 ea(ii, ikap) = et
 
-! accumulate charge and eigenvalues
+                ! accumulate charge and eigenvalues
                 eeig = eeig + fj * ea(ii, ikap)
                 rho(:) = rho(:) + fj * (uu(:) / rr(:))**2
             end do !ikap
@@ -187,17 +187,17 @@ subroutine psatom_r(na, la, ea, fat, nv, it, rhoc, rho, &
 
         if (ierr /= 0) exit
 
-! total valence charge
+        ! total valence charge
         zval = 0.0d0
         do ii = 1, nv
             zval = zval + fa(ii)
         end do
 
-! output potential
+        ! output potential
         call vout(1, rho, rhoc, vo, vxc, zval, eeel, eexc, rr, mmax, iexc)
 
-! generate next iteration using d. g. anderson''s
-! method
+        ! generate next iteration using d. g. anderson''s
+        ! method
         thl = 0.0d0
         if (it > icx + 1) then
             sn = 0.0d0
@@ -227,8 +227,8 @@ subroutine psatom_r(na, la, ea, fat, nv, it, rhoc, rho, &
             ierr = 101
         end if
 
-! switch from reference to new configuration
-! new or increased occupancy added in second stage
+        ! switch from reference to new configuration
+        ! new or increased occupancy added in second stage
         do ii = 1, nv
             dfa = 0.02d0 * (fat(ii, 2) - fat(ii, 1))
             if (it <= 50) then
@@ -240,8 +240,8 @@ subroutine psatom_r(na, la, ea, fat, nv, it, rhoc, rho, &
 
     end do !it
 
-! total energy output
-! output potential for e-e interactions
+    ! total energy output
+    ! output potential for e-e interactions
 
     call vout(1, rho, rhoc, vo, vxc, zval, eeel, eexc, &
     &          rr, mmax, iexc)

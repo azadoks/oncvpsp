@@ -1,63 +1,63 @@
 !
-! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
-! University
-!
-!
-! This program is free software: you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License
-! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-!
-! Creates monotonic polynomial model core charge matching all-electron
-! core charge and 4 derivatives at "crossover" radius.
-! Polynomial is 8th-order with no linear term.
+ ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
+ ! University
+ !
+ !
+ ! This program is free software: you can redistribute it and/or modify
+ ! it under the terms of the GNU General Public License as published by
+ ! the Free Software Foundation, either version 3 of the License, or
+ ! (at your option) any later version.
+ !
+ ! This program is distributed in the hope that it will be useful,
+ ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ! GNU General Public License for more details.
+ !
+ ! You should have received a copy of the GNU General Public License
+ ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ !
+ ! Creates monotonic polynomial model core charge matching all-electron
+ ! core charge and 4 derivatives at "crossover" radius.
+ ! Polynomial is 8th-order with no linear term.
 
-! Performs analysis and based on "hardness" criterion described in
-! Teter, Phys. Rev. B 48, 5031 (1993) , Appendix, as
+ ! Performs analysis and based on "hardness" criterion described in
+ ! Teter, Phys. Rev. B 48, 5031 (1993) , Appendix, as
 
 subroutine modcore2(rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
 &                   fcfact, mmax, rr, nc, nv, la, zion, iexc)
 
-!rhops  state-by-state pseudocharge density
-!rhotps  total pseudocharge density
-!rhoc  core-charge density
-!rhoae  state-by-state all-electron valence charge density
-!rhotae  total all-electron valence charge density
-!rhomod  model core density and 4 derivatives
-!fcfact  prefactor for model amplitude (multiplies crossover value)
-!mmax  dimension of log grid
-!rr log radial grid
-!nc  number of core states
-!nv  number of valence states
-!la  angular-momenta
-!zion  ion charge
-!iexc  exchange-correlation function to be used
+    !rhops  state-by-state pseudocharge density
+    !rhotps  total pseudocharge density
+    !rhoc  core-charge density
+    !rhoae  state-by-state all-electron valence charge density
+    !rhotae  total all-electron valence charge density
+    !rhomod  model core density and 4 derivatives
+    !fcfact  prefactor for model amplitude (multiplies crossover value)
+    !mmax  dimension of log grid
+    !rr log radial grid
+    !nc  number of core states
+    !nv  number of valence states
+    !la  angular-momenta
+    !zion  ion charge
+    !iexc  exchange-correlation function to be used
 
     implicit none
     integer, parameter :: dp = kind(1.0d0)
 
-!Input variables
+    !Input variables
     integer :: nv, nc, iexc, mmax
     integer :: la(30)
     real(dp) :: rhoae(mmax, nv), rhops(mmax, nv), rhotae(mmax)
     real(dp) :: rhotps(mmax), rhoc(mmax), rr(mmax)
     real(dp) :: zion, fcfact
 
-!Output variables
+    !Output variables
     real(dp) :: rhomod(mmax, 5)
 
-!convergence criterion
+    !convergence criterion
     real(dp), parameter :: eps = 1.0d-7
 
-!Local variables
+    !Local variables
     real(dp) :: al
     real(dp) :: d2mdiff, rmatch, rhocmatch
     real(dp) :: xx, yy, dy
@@ -76,8 +76,8 @@ subroutine modcore2(rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
     d2excae(:, :) = 0.0d0
     d2excps(:, :) = 0.0d0
 
-! find valence pseudocharge - core charge crossover
-! this is needed for compatability with icmod=3 option
+    ! find valence pseudocharge - core charge crossover
+    ! this is needed for compatability with icmod=3 option
     ircc = 0
     do ii = mmax, 1, -1
         if (rhoc(ii) > rhotps(ii)) then
@@ -88,7 +88,7 @@ subroutine modcore2(rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
         end if
     end do
 
-! find scaled valence pseudocharge - core charge crossover
+    ! find scaled valence pseudocharge - core charge crossover
     ircc = 0
     do ii = mmax, 1, -1
         if (rhoc(ii) > fcfact * rhotps(ii)) then
@@ -103,13 +103,13 @@ subroutine modcore2(rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
         stop
     end if
 
-!set limit for d2Exc calculation to radius beyond which rhomod=rhoc
+    !set limit for d2Exc calculation to radius beyond which rhomod=rhoc
     irmod = mmax
 
     write (6, '(/a/a)') 'Model core correction analysis',&
     &                  '  based on d2Exc/dn_idn_j'
 
-! get derivatives of all-electron xc energy
+    ! get derivatives of all-electron xc energy
 
     call der2exc(rhotae, rhoc, rhoae, rr, d2excae, d2excps, d2mdiff, &
     &                   zion, iexc, nc, nv, la, irmod, mmax)
@@ -119,10 +119,10 @@ subroutine modcore2(rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
         write (6, '(1p,4d16.6)') (d2excae(kk, jj), jj=1, nv)
     end do
 
-! set model charge to zero
+    ! set model charge to zero
     rhomod(:, :) = 0.0d0
 
-! compute d2excps with no core correction
+    ! compute d2excps with no core correction
     rhomod(:, :) = 0.0d0
 
     call der2exc(rhotps, rhomod(1, 1), rhops, rr, d2excps, d2excae, d2mdiff, &
@@ -136,16 +136,16 @@ subroutine modcore2(rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
 
     al = 0.01d0 * dlog(rr(101) / rr(1))
 
-! core charge density for Louie-Froyen-Cohen correction
+    ! core charge density for Louie-Froyen-Cohen correction
 
     rhomod(:, 1) = rhoc(:)
 
     xx = rr(ircc)
     fmatch(1) = rhoc(ircc)
 
-! core charge derivatives
+    ! core charge derivatives
 
-!7-point numerical first derivative
+    !7-point numerical first derivative
     jj = 2; ii = ircc
     rhomod(ii, jj) = (-rhomod(ii - 3, jj - 1) + 9.d0 * rhomod(ii - 2, jj - 1)&
     &     - 45.d0 * rhomod(ii - 1, jj - 1) + 45.d0 * rhomod(ii + 1, jj - 1)&
@@ -153,11 +153,11 @@ subroutine modcore2(rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
     &     / (60.d0 * al * rr(ii))
     fmatch(jj) = rhomod(ircc, jj)
 
-! Fit Teter function to value and slope at ircc
+    ! Fit Teter function to value and slope at ircc
 
     ymatch = rr(ircc) * fmatch(2) / fmatch(1)
 
-! interval-halving search for dimensionless match point
+    ! interval-halving search for dimensionless match point
 
     x0max = 1.48d0
     x0min = 0.0d0
@@ -198,7 +198,7 @@ subroutine modcore2(rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
         end if
     end do
 
-! test model
+    ! test model
     call der2exc(rhotps, rhomod(1, 1), rhops, rr, d2excps, d2excae, d2mdiff, &
     &                   zion, iexc, nc, nv, la, irmod, mmax)
 
@@ -209,22 +209,22 @@ subroutine modcore2(rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
     end do
     write (6, '(/a,1p,e16.6)') 'rms 2nd derivative error', d2mdiff
 
-!7-point numerical first derivatives applied successively
+    !7-point numerical first derivatives applied successively
 
-! do jj=4,5
-!  do ii=3*jj-8,mmax-3
-!    if(rhomod(ii,1)==0.0d0) exit
-!     rhomod(ii,jj)=(-rhomod(ii-3,jj-1)+ 9.d0*rhomod(ii-2,jj-1)&
-!&     -45.d0*rhomod(ii-1,jj-1)+45.d0*rhomod(ii+1,jj-1)&
-!&     -9.d0*rhomod(ii+2,jj-1)+rhomod(ii+3,jj-1))&
-!&     /(60.d0*al*rr(ii))
-!  end do
-! end do
+    ! do jj=4,5
+    !  do ii=3*jj-8,mmax-3
+    !    if(rhomod(ii,1)==0.0d0) exit
+    !     rhomod(ii,jj)=(-rhomod(ii-3,jj-1)+ 9.d0*rhomod(ii-2,jj-1)&
+    !&     -45.d0*rhomod(ii-1,jj-1)+45.d0*rhomod(ii+1,jj-1)&
+    !&     -9.d0*rhomod(ii+2,jj-1)+rhomod(ii+3,jj-1))&
+    !&     /(60.d0*al*rr(ii))
+    !  end do
+    ! end do
 
-!ad-hoc treatment of numerical noise near origin
-!set up a mesh on which 2nd derivative will have a stable
-!polynomial representation
-!assumes dpnint remains 7th order
+    !ad-hoc treatment of numerical noise near origin
+    !set up a mesh on which 2nd derivative will have a stable
+    !polynomial representation
+    !assumes dpnint remains 7th order
     drint = 0.05d0 * rr(ircc)
     rtst = 0.5d0 * drint
     do jj = 1, 4
@@ -251,7 +251,7 @@ subroutine modcore2(rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
         &     / (60.d0 * al * rr(ii))
     end do
 
-!set up a mesh on which 3rd derivative will have a stable
+    !set up a mesh on which 3rd derivative will have a stable
     drint = 0.95d0 * drint
     rtst = 0.5d0 * drint
     rtst = 0.5d0 * drint
@@ -279,7 +279,7 @@ subroutine modcore2(rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
         &     / (60.d0 * al * rr(ii))
     end do
 
-!set up a mesh on which 4th derivative will have a stable
+    !set up a mesh on which 4th derivative will have a stable
     drint = 0.95d0 * drint
     rtst = 0.5d0 * drint
     do jj = 1, 4

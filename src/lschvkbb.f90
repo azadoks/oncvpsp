@@ -1,57 +1,57 @@
 !
-! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
-! University
-!
-!
-! This program is free software: you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License
-! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-!
+ ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
+ ! University
+ !
+ !
+ ! This program is free software: you can redistribute it and/or modify
+ ! it under the terms of the GNU General Public License as published by
+ ! the Free Software Foundation, either version 3 of the License, or
+ ! (at your option) any later version.
+ !
+ ! This program is distributed in the hope that it will be useful,
+ ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ! GNU General Public License for more details.
+ !
+ ! You should have received a copy of the GNU General Public License
+ ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ !
 subroutine lschvkbb(nn, ll, nvkb, ierr, ee, emin, emax, &
 &   rr, vloc, vkb, evkb, uu, up, mmax, mch)
 
-! Finds bound states of a  pseudopotential with
-! Vanderbilt-Kleinman-Bylander non-local projectors
+    ! Finds bound states of a  pseudopotential with
+    ! Vanderbilt-Kleinman-Bylander non-local projectors
 
-!nn  principal quantum number
-!ll  angular-momentum quantum number
-!nvkb  = number of VKB projectors to be used
-!ierr  non-zero return if error
-!ee  bound-state energy, input guess and output calculated value
-!emin  externally generaated estimate of lower bound for ee
-!emax  externally generaated estimate of upper bound for ee
-!rr  log radial mesh
-!vloc  local part of psp
-!vkb  VKB projectors
-!evkb coefficients of BKB projectors
-!uu  output radial wave function (*rr)
-!up  d(uu)/dr
-!mmax  size of log grid
-!mch matching mesh point for inward-outward integrations
+    !nn  principal quantum number
+    !ll  angular-momentum quantum number
+    !nvkb  = number of VKB projectors to be used
+    !ierr  non-zero return if error
+    !ee  bound-state energy, input guess and output calculated value
+    !emin  externally generaated estimate of lower bound for ee
+    !emax  externally generaated estimate of upper bound for ee
+    !rr  log radial mesh
+    !vloc  local part of psp
+    !vkb  VKB projectors
+    !evkb coefficients of BKB projectors
+    !uu  output radial wave function (*rr)
+    !up  d(uu)/dr
+    !mmax  size of log grid
+    !mch matching mesh point for inward-outward integrations
 
     implicit none
     integer, parameter :: dp = kind(1.0d0)
 
-!Input Variables
+    !Input Variables
     real(dp) :: emin, emax
     real(dp) :: rr(mmax), vloc(mmax), vkb(mmax, nvkb), evkb(nvkb)
     integer :: nn, ll, nvkb, mmax
 
-!Output variables
+    !Output variables
     real(dp) :: uu(mmax), up(mmax)
     real(dp) :: ee  !in/out, really - needs starting guess
     integer :: ierr, mch
 
-!Local variables
+    !Local variables
     real(dp) :: aei, aii, cn
     real(dp) :: de
     real(dp) :: eps, ro, sc
@@ -67,10 +67,10 @@ subroutine lschvkbb(nn, ll, nvkb, ierr, ee, emin, emax, &
     amesh = dexp(al)
     node = 0
 
-! convergence factor for solution of schroedinger eq.  if calculated
-! correction to eigenvalue is smaller in magnitude than eps times
-! the magnitude of the current guess, the current guess is not changed.
-!eps=1.0d-10
+    ! convergence factor for solution of schroedinger eq.  if calculated
+    ! correction to eigenvalue is smaller in magnitude than eps times
+    ! the magnitude of the current guess, the current guess is not changed.
+    !eps=1.0d-10
     eps = 1.0d-8
     ierr = 100
 
@@ -80,22 +80,22 @@ subroutine lschvkbb(nn, ll, nvkb, ierr, ee, emin, emax, &
     if (ee < emin) ee = 0.75d0 * emin
     if (ee > emax) ee = 0.5d0 * (emax + emin)
 
-! null arrays to remove leftover garbage
+    ! null arrays to remove leftover garbage
     uu(:) = 0.0d0
     up(:) = 0.0d0
     upp(:) = 0.0d0
 
     als = al**2
 
-! return point for bound state convergence
+    ! return point for bound state convergence
     do nint = 1, 100
 
-! coefficient array for u in differential eq.
+        ! coefficient array for u in differential eq.
         do ii = 1, mmax
             cf(ii) = als * sls + 2.0d0 * als * (vloc(ii) - ee) * rr(ii)**2
         end do
 
-! find classical turning point for matching
+        ! find classical turning point for matching
         mch = 1
         do ii = mmax, 2, -1
             if (cf(ii - 1) <= 0.d0 .and. cf(ii) > 0.d0) then
@@ -108,11 +108,11 @@ subroutine lschvkbb(nn, ll, nvkb, ierr, ee, emin, emax, &
             write (6, '(/a)') 'lschvkbb: ERROR no classical turning point'
             write (6, '(a,i2,a,i6)') 'lschvkbb: ERROR nvkb=', nvkb, 'mch=', mch
             write (6, '(a,i2,a,f8.4,a)') 'lschvkbb: ERROR l=', ll, '  e=', ee
-!   stop
+            !   stop
         end if
 
         if (nvkb > 0) then
-! find cutoff radius for projectors
+            ! find cutoff radius for projectors
             rc = 0.0d0
             do ii = mmax, 1, -1
                 if (abs(vkb(ii, 1)) > 0.0d0) then
@@ -123,7 +123,7 @@ subroutine lschvkbb(nn, ll, nvkb, ierr, ee, emin, emax, &
 
             if (mch == 1) rc = 1.25d0 * rc
 
-! adjust matching radius if necessary
+            ! adjust matching radius if necessary
             if (rr(mch) < rc) then
                 do ii = mch, mmax
                     if (rr(ii) > rc) then
@@ -133,7 +133,7 @@ subroutine lschvkbb(nn, ll, nvkb, ierr, ee, emin, emax, &
                 end do
             end if
         end if
-! outward integration
+        ! outward integration
         call vkboutwf(ll, nvkb, ee, vkb, evkb, rr, vloc, uu, up, node, mmax, mch)
 
         uout = uu(mch)
@@ -141,8 +141,8 @@ subroutine lschvkbb(nn, ll, nvkb, ierr, ee, emin, emax, &
 
         if (node - nn + ll + 1 == 0) then
 
-! start inward integration at 10*classical turning
-! point with simple exponential
+            ! start inward integration at 10*classical turning
+            ! point with simple exponential
 
             nin = int(mch + 2.3d0 / al)
             if (nin + 4 > mmax) nin = mmax - 4
@@ -154,7 +154,7 @@ subroutine lschvkbb(nn, ll, nvkb, ierr, ee, emin, emax, &
                 upp(ii) = al * up(ii) + cf(ii) * uu(ii)
             end do
 
-! integrate inward
+            ! integrate inward
 
             do ii = nin, mch + 1, -1
                 uu(ii - 1) = uu(ii) + aei(up, ii)
@@ -166,7 +166,7 @@ subroutine lschvkbb(nn, ll, nvkb, ierr, ee, emin, emax, &
                 end do
             end do
 
-! scale outside wf for continuity
+            ! scale outside wf for continuity
 
             sc = uout / uu(mch)
 
@@ -177,7 +177,7 @@ subroutine lschvkbb(nn, ll, nvkb, ierr, ee, emin, emax, &
 
             upin = up(mch)
 
-! perform normalization sum
+            ! perform normalization sum
 
             ro = rr(1) / dsqrt(amesh)
             sn = ro**(2 * ll + 3) / dfloat(2 * ll + 3)
@@ -190,7 +190,7 @@ subroutine lschvkbb(nn, ll, nvkb, ierr, ee, emin, emax, &
             &              + 28.0d0 * rr(nin - 1) * uu(nin - 1)**2 &
             &              + 9.0d0 * rr(nin) * uu(nin)**2) / 24.0d0
 
-! normalize u
+            ! normalize u
 
             cn = 1.0d0 / dsqrt(sn)
             uout = cn * uout
@@ -205,11 +205,11 @@ subroutine lschvkbb(nn, ll, nvkb, ierr, ee, emin, emax, &
                 uu(ii) = 0.0d0
             end do
 
-! perturbation theory for energy shift
+            ! perturbation theory for energy shift
 
             de = 0.5d0 * uout * (upout - upin) / (al * rr(mch))
 
-! convergence test and possible exit
+            ! convergence test and possible exit
 
             if (dabs(de) < dmax1(dabs(ee), 0.2d0) * eps) then
                 ierr = 0
@@ -217,30 +217,30 @@ subroutine lschvkbb(nn, ll, nvkb, ierr, ee, emin, emax, &
             end if
 
             if (de > 0.0d0) then
-!      emin=ee
+                !      emin=ee
                 emin = 0.5d0 * (emin + ee)
             else
-!      emax=ee
+                !      emax=ee
                 emax = 0.5d0 * (emax + ee)
             end if
             ee = ee + de
             if (ee > emax .or. ee < emin) ee = 0.5d0 * (emax + emin)
 
         else if (node - nn + ll + 1 < 0) then
-! too few nodes
-!    emin=ee
+            ! too few nodes
+            !    emin=ee
             emin = 0.5d0 * (emin + ee)
             ee = 0.5d0 * (emin + emax)
 
         else
-! too many nodes
-!    emax=ee
+            ! too many nodes
+            !    emax=ee
             emax = 0.5d0 * (emax + ee)
             ee = 0.5d0 * (emin + emax)
         end if
 
     end do
-!fix sign to be positive at rr->oo
+    !fix sign to be positive at rr->oo
     if (uu(mch) < 0.0d0) then
         uu(:) = -uu(:)
         up(:) = -up(:)

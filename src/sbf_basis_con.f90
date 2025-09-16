@@ -1,55 +1,55 @@
 !_der
-! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
-! University
-!
-!
-! This program is free software: you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License
-! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-!
+ ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
+ ! University
+ !
+ !
+ ! This program is free software: you can redistribute it and/or modify
+ ! it under the terms of the GNU General Public License as published by
+ ! the Free Software Foundation, either version 3 of the License, or
+ ! (at your option) any later version.
+ !
+ ! This program is distributed in the hope that it will be useful,
+ ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ! GNU General Public License for more details.
+ !
+ ! You should have received a copy of the GNU General Public License
+ ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ !
 subroutine sbf_basis_con(ll, rr, mmax, irc, nbas, qroot, psopt, orbasis, orbasis_der, &
 &                     iprj, mxprj, ncon, ncon_in)
 
-! orthonormalize basis functions and derivatives at rc and form constraint
-! matrix based on derivative to be matched and overlaps with prior
-! optimized wave functions
+    ! orthonormalize basis functions and derivatives at rc and form constraint
+    ! matrix based on derivative to be matched and overlaps with prior
+    ! optimized wave functions
 
     implicit none
     integer, parameter :: dp = kind(1.0d0)
 
-!INPUT
-!ll  angujlar momentum
-!rr  log radial mesh
-!mmax  number of points in log radial mesh
-!irc  index rr such that rr(irc)=rc
-!nbas  number of basis functions
-!qroot  q values for j_l(q*r)
-!psopt  optimized projector wave functions for lower iprj
+    !INPUT
+    !ll  angujlar momentum
+    !rr  log radial mesh
+    !mmax  number of points in log radial mesh
+    !irc  index rr such that rr(irc)=rc
+    !nbas  number of basis functions
+    !qroot  q values for j_l(q*r)
+    !psopt  optimized projector wave functions for lower iprj
 
-!OUTPUT
-!orbasis  matrix for orthonormal basis (rows j_l, columns basis vectors)
-!orbasis_der  values and derivatives of orthonormal basis set at rc, and
-! norm constraint vectors from already-computed psopt
+    !OUTPUT
+    !orbasis  matrix for orthonormal basis (rows j_l, columns basis vectors)
+    !orbasis_der  values and derivatives of orthonormal basis set at rc, and
+    ! norm constraint vectors from already-computed psopt
 
-!Input variables
+    !Input variables
     integer :: ll, mmax, ncon, ncon_in, irc, nbas, iprj, mxprj
     real(dp) :: rr(mmax), qroot(nbas)
     real(dp) :: psopt(mmax, mxprj)
 
-!Output variables
+    !Output variables
     real(dp) :: orbasis(nbas, nbas)
     real(dp) :: orbasis_der(ncon, nbas)
 
-!Local variables
+    !Local variables
     integer :: ii, jj, kk, ll1, ibas, info
     real(dp) :: al, amesh, ro, rc, sn, xx, tt
     real(dp) :: sb_out(10), sbfder(5)
@@ -72,7 +72,7 @@ subroutine sbf_basis_con(ll, rr, mmax, irc, nbas, qroot, psopt, orbasis, orbasis
         end do
     end do
 
-!perform sbf orthonormalization sum for overlap matrix
+    !perform sbf orthonormalization sum for overlap matrix
 
     sovlp(:, :) = 0.0d0
     ro = rr(1) / sqrt(amesh)
@@ -95,9 +95,9 @@ subroutine sbf_basis_con(ll, rr, mmax, irc, nbas, qroot, psopt, orbasis, orbasis
         end do
     end do
 
-!find eigenvalues and eigenvectors of the overlap matrix
+    !find eigenvalues and eigenvectors of the overlap matrix
 
-!      SUBROUTINE DSYEV( JOBZ, UPLO, N, A, LDA, W, WORK, LWORK, INFO )
+    !      SUBROUTINE DSYEV( JOBZ, UPLO, N, A, LDA, W, WORK, LWORK, INFO )
 
     call dsyev('V', 'U', nbas, sovlp, nbas, sev, work, 5 * nbas, info)
     if (info /= 0) then
@@ -105,12 +105,12 @@ subroutine sbf_basis_con(ll, rr, mmax, irc, nbas, qroot, psopt, orbasis, orbasis
         stop
     end if
 
-!write(6,'(/a)') 'sbf overlap matrix eigenvalues'
-!write(6,'(1p,6d12.3)') (sev(ibas),ibas=1,nbas)
+    !write(6,'(/a)') 'sbf overlap matrix eigenvalues'
+    !write(6,'(1p,6d12.3)') (sev(ibas),ibas=1,nbas)
 
-!scale eigenvectors to form orthonormal basis coefficients for sbf's
-!note that we are reversing order so that the leading eigenvector is the
-!most linearly independent
+    !scale eigenvectors to form orthonormal basis coefficients for sbf's
+    !note that we are reversing order so that the leading eigenvector is the
+    !most linearly independent
     do ibas = 1, nbas
         if (sev(ibas) > 0.0d0) then
             tt = 1.0d0 / sqrt(sev(ibas))
@@ -123,7 +123,7 @@ subroutine sbf_basis_con(ll, rr, mmax, irc, nbas, qroot, psopt, orbasis, orbasis
         end do
     end do
 
-!find rc derivatives of basis funtction
+    !find rc derivatives of basis funtction
     orbasis_der(:, :) = 0.0d0
     do jj = 1, nbas !sbf loop
         call sbf_rc_der(ll, qroot(jj), rc, sbfder)
@@ -134,7 +134,7 @@ subroutine sbf_basis_con(ll, rr, mmax, irc, nbas, qroot, psopt, orbasis, orbasis
         end do
     end do
 
-!find orthogonal basis radial functiona
+    !find orthogonal basis radial functiona
     sbf_or(:, :) = 0.0d0
     do jj = 1, nbas !sbf loop
         do ibas = 1, nbas !orbasis loop
@@ -142,8 +142,8 @@ subroutine sbf_basis_con(ll, rr, mmax, irc, nbas, qroot, psopt, orbasis, orbasis
         end do
     end do
 
-!find new or-basis representation of previous optimized wave functions
-!fill in last rows of orbssis_der constraint matrix for overlap constraint
+    !find new or-basis representation of previous optimized wave functions
+    !fill in last rows of orbssis_der constraint matrix for overlap constraint
 
     if (iprj >= 2) then
         ro = rr(1) / sqrt(amesh)

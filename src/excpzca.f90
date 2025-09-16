@@ -1,30 +1,30 @@
 !
-! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
-! University
-!
-!
-! This program is free software: you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License
-! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-!
+ ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
+ ! University
+ !
+ !
+ ! This program is free software: you can redistribute it and/or modify
+ ! it under the terms of the GNU General Public License as published by
+ ! the Free Software Foundation, either version 3 of the License, or
+ ! (at your option) any later version.
+ !
+ ! This program is distributed in the hope that it will be useful,
+ ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ! GNU General Public License for more details.
+ !
+ ! You should have received a copy of the GNU General Public License
+ ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ !
 subroutine excpzca(rho, vxc, exc, mmax)
 
-!calculates Perdew-Zunger-Ceperly_Alder exchange-correlation potential
-! and energy density J. P. Perdew and A. Zunger, Phys. Rev. B23, 5048 (1981)
+    !calculates Perdew-Zunger-Ceperly_Alder exchange-correlation potential
+    ! and energy density J. P. Perdew and A. Zunger, Phys. Rev. B23, 5048 (1981)
 
-!rho  charge density
-!vxc  exchange-correlation potential
-!exc  exchange-correlation energy density
-!mmax  dimension of log radial grid
+    !rho  charge density
+    !vxc  exchange-correlation potential
+    !exc  exchange-correlation energy density
+    !mmax  dimension of log radial grid
 
     implicit none
     integer, parameter :: dp = kind(1.0d0)
@@ -33,14 +33,14 @@ subroutine excpzca(rho, vxc, exc, mmax)
     real(dp), parameter :: pi4i = 1.0d0 / pi4
     real(dp), parameter :: thrd = 1.0d0 / 3.0d0
 
-!Input variables
+    !Input variables
     integer :: mmax
     real(dp) :: rho(mmax)
 
-!Output variables
+    !Output variables
     real(dp) :: vxc(mmax), exc(mmax)
 
-!Local variables
+    !Local variables
     integer :: ii
     real(dp) :: rs, rh, sqrs, rsl, den
 
@@ -48,22 +48,22 @@ subroutine excpzca(rho, vxc, exc, mmax)
     real(dp), parameter :: convx = (1.5d0 / pi)**(2.0d0 / 3.0d0)
     real(dp), parameter :: conex = 0.75d0 * convx
 
-!rs>1, Ceperley-Alder fit to QMC
+    !rs>1, Ceperley-Alder fit to QMC
     real(dp), parameter :: gam = -0.1423d0
     real(dp), parameter :: bt1 = 1.0529d0
     real(dp), parameter :: bt2 = 0.3334d0
 
-!rs<1, Perdew-Zunger leading terms of RPA high-density expansion
-!AA and BB known from Gell-Mann & Bruckner
-!PZ adjust CC and DD for contiunity of exc and vxc at rs=1
+    !rs<1, Perdew-Zunger leading terms of RPA high-density expansion
+    !AA and BB known from Gell-Mann & Bruckner
+    !PZ adjust CC and DD for contiunity of exc and vxc at rs=1
     real(dp), parameter :: AA = 0.0311d0
     real(dp), parameter :: BB = -0.0480d0
     real(dp), parameter :: CC = 0.0020d0
     real(dp), parameter :: DD = -0.0116d0
 
-!PZ modified coeffients from libxc
-!real(dp), parameter :: CC =   0.0020191519406228d0
-!real(dp), parameter :: DD =  -0.0116320663789130d0
+    !PZ modified coeffients from libxc
+    !real(dp), parameter :: CC =   0.0020191519406228d0
+    !real(dp), parameter :: DD =  -0.0116320663789130d0
 
     do ii = 1, mmax
         if (rho(ii) > 1.0d-20) then

@@ -1,23 +1,23 @@
 !
-! Copyright (c) 1989-2017 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
-! University
-!
-!
-! This program is free software: you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License
-! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-!
-! interpolates various arrays onto linear radial mesh to create file
-! for Abinit input using pspcod=8
+ ! Copyright (c) 1989-2017 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
+ ! University
+ !
+ !
+ ! This program is free software: you can redistribute it and/or modify
+ ! it under the terms of the GNU General Public License as published by
+ ! the Free Software Foundation, either version 3 of the License, or
+ ! (at your option) any later version.
+ !
+ ! This program is distributed in the hope that it will be useful,
+ ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ! GNU General Public License for more details.
+ !
+ ! You should have received a copy of the GNU General Public License
+ ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ !
+ ! interpolates various arrays onto linear radial mesh to create file
+ ! for Abinit input using pspcod=8
 
 subroutine linout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
 &                  rhotae, rhoc, zz, zion, mmax, mxprj, iexc, icmod, nrl, drl, atsym, &
@@ -25,38 +25,38 @@ subroutine linout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
 &                  fa, rc0, ep, qcut, debl, facnf, dvloc0, fcfact, rcfact, &
 &                  epsh1, epsh2, depsh, rlmax, psfile)
 
-!lmax  maximum angular momentum
-!lloc  l for local potential
-!rc  core radii
-!vkb  VKB projectors
-!evkb  coefficients of VKB projectors
-!nproj  number of vkb projectors for each l
-!rr  log radial grid
-!vpuns  unscreened semi-local pseudopotentials (vp(:,5) is local potential
-!  if linear combination is used)
-!rho  valence pseudocharge
-!rhomod  model core charge
-!rhotae  all-electron valence charge
-!rhoc  all-electron core charge
-!zz  atomic number
-!zion  at this point, total valence charge (becomes psuedoion charge)
-!mmax  size of log radial grid
-!mxprj  dimension of number of projectors
-!iexc  type of exchange-correlation
-!icmod  1 if model core charge is used, otherwise 0
-!nrl size of linear radial grid
-!drl spacing of linear radial grid
-!atsym  atomic symbol
-!remaining input variables to be echoed:
-!  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf
-!  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact
-!  epsh1,epsh2,depsh,rlmax,psfile
-!psfile  should be 'psp8' or 'both'
+    !lmax  maximum angular momentum
+    !lloc  l for local potential
+    !rc  core radii
+    !vkb  VKB projectors
+    !evkb  coefficients of VKB projectors
+    !nproj  number of vkb projectors for each l
+    !rr  log radial grid
+    !vpuns  unscreened semi-local pseudopotentials (vp(:,5) is local potential
+    !  if linear combination is used)
+    !rho  valence pseudocharge
+    !rhomod  model core charge
+    !rhotae  all-electron valence charge
+    !rhoc  all-electron core charge
+    !zz  atomic number
+    !zion  at this point, total valence charge (becomes psuedoion charge)
+    !mmax  size of log radial grid
+    !mxprj  dimension of number of projectors
+    !iexc  type of exchange-correlation
+    !icmod  1 if model core charge is used, otherwise 0
+    !nrl size of linear radial grid
+    !drl spacing of linear radial grid
+    !atsym  atomic symbol
+    !remaining input variables to be echoed:
+    !  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf
+    !  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact
+    !  epsh1,epsh2,depsh,rlmax,psfile
+    !psfile  should be 'psp8' or 'both'
 
     implicit none
     integer, parameter :: dp = kind(1.0d0)
 
-!Input variables
+    !Input variables
     integer :: lmax, lloc, iexc, mmax, mxprj, nrl, icmod
     integer :: nproj(6)
     real(dp) :: drl, fcfact, rcfact, zz, zion
@@ -66,8 +66,8 @@ subroutine linout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     real(dp) :: rc(6), evkb(mxprj, 4)
     character*2 :: atsym
 
-!additional input for psp8 output to echo input file, all as defined
-! in the main progam
+    !additional input for psp8 output to echo input file, all as defined
+    ! in the main progam
     integer :: na(30), la(30), ncon(6), nbas(6)
     integer :: nvcnf(5), nacnf(30, 5), lacnf(30, 5)
     integer :: nc, nv, lpopt, ncnf
@@ -75,9 +75,9 @@ subroutine linout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     real(dp) :: dvloc0, epsh1, epsh2, depsh, rlmax
     character*4 :: psfile
 
-!Output variables - printing only
+    !Output variables - printing only
 
-!Local variables
+    !Local variables
     integer :: ii, iprj, jj, ll, l1, ixc_abinit
     integer :: dtime(8)
     real(dp), allocatable :: rhomodl(:, :)
@@ -88,17 +88,17 @@ subroutine linout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     allocate (rhol(nrl), rl(nrl), vkbl(nrl, mxprj, 4), vpl(nrl, 5), rhomodl(nrl, 5))
     allocate (rhotael(nrl), rhocl(nrl))
 
-!
-! interpolation of everything onto linear output mesh
+    !
+    ! interpolation of everything onto linear output mesh
 
     do ii = 1, nrl
         rl(ii) = drl * dble(ii - 1)
     end do
-!
+    !
     do l1 = 1, max(lmax + 1, lloc + 1)
         call dpnint(rr, vpuns(1, l1), mmax, rl, vpl(1, l1), nrl)
 
-! override dpnint extrapolation to zero for vpl
+        ! override dpnint extrapolation to zero for vpl
         vpl(1, l1) = vpuns(1, l1)
 
         if (l1 /= lloc + 1) then
@@ -118,7 +118,7 @@ subroutine linout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
         call dpnint(rr, rhomod(1, jj), mmax, rl, rhomodl(1, jj), nrl)
     end do
 
-! Output for Abinit input using pspcod=8
+    ! Output for Abinit input using pspcod=8
 
     if (iexc == 1) then
         ixc_abinit = 4
@@ -166,7 +166,7 @@ subroutine linout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     write (6, '(2i6, a)') 1, 1, &
     &  '           extension_switch'
 
-! write the VKB projectors and the local potential
+    ! write the VKB projectors and the local potential
     do l1 = 1, max(lmax + 1, lloc + 1)
         ll = l1 - 1
         if (ll == lloc) then
@@ -186,7 +186,7 @@ subroutine linout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
         end if
     end do
 
-! write the model core charge if called for
+    ! write the model core charge if called for
     if (fcfact > 0.0d0) then
         do ii = 1, nrl
             write (6, '(i6,1p,6e21.13)') ii, rl(ii),  &
@@ -194,7 +194,7 @@ subroutine linout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
         end do
     end if
 
-! write pseudo valence, all-electron valence and all-electron core charges
+    ! write pseudo valence, all-electron valence and all-electron core charges
     do ii = 1, nrl
         write (6, '(i6,1p,4e21.13)') ii, rl(ii), rhol(ii), rhotael(ii), rhocl(ii)
     end do
@@ -261,7 +261,7 @@ subroutine linout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
         write (6, '(a)') '#'
     end do
 
-! write termination signal
+    ! write termination signal
     write (6, '(a)') '</INPUT>'
     write (6, '(/a)') 'END_PSP'
 

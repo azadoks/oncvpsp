@@ -1,0 +1,9 @@
+[check]
+# E - Error
+# C - correctness
+# S - Style
+select = ["E", "C", "S"]
+ignore = [
+    "C092" # procedure-not-in-module
+]
+line-length = 120

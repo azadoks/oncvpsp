@@ -1,55 +1,55 @@
 !
-! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
-! University
-!
-!
-! This program is free software: you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License
-! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-!
+ ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
+ ! University
+ !
+ !
+ ! This program is free software: you can redistribute it and/or modify
+ ! it under the terms of the GNU General Public License as published by
+ ! the Free Software Foundation, either version 3 of the License, or
+ ! (at your option) any later version.
+ !
+ ! This program is distributed in the hope that it will be useful,
+ ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ! GNU General Public License for more details.
+ !
+ ! You should have received a copy of the GNU General Public License
+ ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ !
 subroutine fphsft(ll, epsh2, depsh, pshf, rr, vv, zz, mmax, mch, npsh, srel)
 
-! computes full potential scattering log derivatives
-! returns atan(rr(mch) * du/dr / u) which is sort-of like a phase shift
-! and easier to compare in plots than the log derivatives themselves
-! Pauli-type scalar-relativistic calculation
+    ! computes full potential scattering log derivatives
+    ! returns atan(rr(mch) * du/dr / u) which is sort-of like a phase shift
+    ! and easier to compare in plots than the log derivatives themselves
+    ! Pauli-type scalar-relativistic calculation
 
-!ll  angular momentum
-!epsh2  upper limit of energy scan
-!depsh  increment of scan
-!pshf  log derivatives "angles", as above
-!rr  radial log grid
-!vv  all-electron potential
-!zz  atomic number
-!mmax  dimension of rr, etc.
-!mch  index of radius for log der test
-!npsh  number of energy points in scan
-!srel .true. for scalar-relativistic, .false. for non-relativistic
+    !ll  angular momentum
+    !epsh2  upper limit of energy scan
+    !depsh  increment of scan
+    !pshf  log derivatives "angles", as above
+    !rr  radial log grid
+    !vv  all-electron potential
+    !zz  atomic number
+    !mmax  dimension of rr, etc.
+    !mch  index of radius for log der test
+    !npsh  number of energy points in scan
+    !srel .true. for scalar-relativistic, .false. for non-relativistic
 
     implicit none
     integer, parameter :: dp = kind(1.0d0)
     real(dp), parameter :: pi = 3.141592653589793238462643383279502884197_dp
     real(dp), parameter :: pi2 = 2.0d0 * pi
 
-!Input variables
+    !Input variables
     integer :: ll, mmax, npsh, mch
     real(dp) :: rr(mmax), vv(mmax)
     real(dp) :: depsh, epsh2, zz
     logical :: srel
 
-!Output variables
+    !Output variables
     real(dp) :: pshf(npsh)
 
-!Local variables
+    !Local variables
     real(dp) :: al, epsh, phi, phip, pshoff
     integer :: ii, ierr, nn
 

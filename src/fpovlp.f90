@@ -1,51 +1,51 @@
 !
-! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
-! University
-!
-!
-! This program is free software: you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License
-! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-!
-! calculates all-electron wave function overlap intergrals
+ ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
+ ! University
+ !
+ !
+ ! This program is free software: you can redistribute it and/or modify
+ ! it under the terms of the GNU General Public License as published by
+ ! the Free Software Foundation, either version 3 of the License, or
+ ! (at your option) any later version.
+ !
+ ! This program is distributed in the hope that it will be useful,
+ ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ! GNU General Public License for more details.
+ !
+ ! You should have received a copy of the GNU General Public License
+ ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ !
+ ! calculates all-electron wave function overlap intergrals
 
 subroutine fpovlp(gg, hh, nn, ll, zz, ss, rr, srel)
 
     implicit none
     integer, parameter :: dp = kind(1.0d0)
 
-!gg wave function one
-!hh wave function two
-!nn outer integration limit
-!ll angular momentum
-!zz nuclear charge
-!ss overlap output
-!rr log radial mesh
-!srel .true. for scalar-relativistic, .false. for non-relativistic
+    !gg wave function one
+    !hh wave function two
+    !nn outer integration limit
+    !ll angular momentum
+    !zz nuclear charge
+    !ss overlap output
+    !rr log radial mesh
+    !srel .true. for scalar-relativistic, .false. for non-relativistic
 
-! product of all-elecctron scalar-relativistic wave functions gg*hh
-! goes like rr**(2*gamma) as rr -> 0
-! integral on usual log mesh from rr=0 to rr(nn)
+    ! product of all-elecctron scalar-relativistic wave functions gg*hh
+    ! goes like rr**(2*gamma) as rr -> 0
+    ! integral on usual log mesh from rr=0 to rr(nn)
 
-!Input variables
+    !Input variables
     real(dp) :: zz
     real(dp) :: gg(nn), hh(nn), rr(nn)
     integer :: nn, ll
     logical :: srel
 
-!Output variable
+    !Output variable
     real(dp) :: ss
 
-!Local variables
+    !Local variables
     real(dp) :: r0, amesh, al, fss, gamma
     integer :: ii
 

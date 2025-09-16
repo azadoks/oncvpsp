@@ -1,35 +1,35 @@
 !
-! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
-! University
-!
-!
-! This program is free software: you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License
-! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-!
+ ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
+ ! University
+ !
+ !
+ ! This program is free software: you can redistribute it and/or modify
+ ! it under the terms of the GNU General Public License as published by
+ ! the Free Software Foundation, either version 3 of the License, or
+ ! (at your option) any later version.
+ !
+ ! This program is distributed in the hope that it will be useful,
+ ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ! GNU General Public License for more details.
+ !
+ ! You should have received a copy of the GNU General Public License
+ ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ !
 subroutine check_data(atsym, zz, fcfact, rcfact, epsh1, epsh2, depsh, rlmax, drl, &
 &                      fa, facnf, &
 &                      rc, ep, qcut, debl, nc, nv, iexc, lmax, lloc, lpopt, icmod, &
 &                      ncnf, na, la, nvcnf, nacnf, lacnf, ncon, nbas, nproj, psfile)
 
-!check input data for various violations of size or sign
-!see annotated input document for all definitions
-!*cnf variables are arrays of the basis atomic configuration variables
-!to be used for the test configurations
+    !check input data for various violations of size or sign
+    !see annotated input document for all definitions
+    !*cnf variables are arrays of the basis atomic configuration variables
+    !to be used for the test configurations
 
     implicit none
     integer, parameter :: dp = kind(1.0d0)
 
-! Input variables
+    ! Input variables
     character*2 :: atsym
     character*4 :: psfile
 
@@ -40,7 +40,7 @@ subroutine check_data(atsym, zz, fcfact, rcfact, epsh1, epsh2, depsh, rlmax, drl
     integer :: na(30), la(30), nvcnf(5), nacnf(30, 5), lacnf(30, 5)
     integer :: ncon(6), nbas(6), nproj(6)
 
-! Local variables
+    ! Local variables
     integer :: ierr, ii, jj, l1
 
     logical :: occ
@@ -116,11 +116,11 @@ subroutine check_data(atsym, zz, fcfact, rcfact, epsh1, epsh2, depsh, rlmax, drl
                     occ = .true.
                 end if
             end do
-!   if(.not. occ) then
-!     write(6,'(a,a,i4)') 'test_data: must have ep>0.0 for scattering state', &
-!&     ' l=',l1-1
-!     ierr=ierr+1
-!   end if
+            !   if(.not. occ) then
+            !     write(6,'(a,a,i4)') 'test_data: must have ep>0.0 for scattering state', &
+            !&     ' l=',l1-1
+            !     ierr=ierr+1
+            !   end if
         end if
 
         if (ncon(l1) < 3 .or. ncon(l1) > 5) then

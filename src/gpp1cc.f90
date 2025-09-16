@@ -1,31 +1,31 @@
 !{\src2tex{textfont=tt}}
-!!****f* ABINIT/gpp1cc
-!! NAME
-!! gpp1cc
-!!
-!! FUNCTION
-!! Second derivative of gg wrt xx.
-!!
-!! COPYRIGHT
-!! Copyright (C) 1998-2014 ABINIT group (XG, DCA, MM, DRH)
-!! This file is distributed under the terms of the
-!! GNU General Public License, see ~abinit/COPYING
-!! or http://www.gnu.org/copyleft/gpl.txt .
-!! For the initials of contributors, see ~abinit/doc/developers/contributors.txt .
-!!
-!! INPUTS
-!!  xx= abscisse to which gpp1cc_xx is calculated
-!!
-!! OUTPUT
-!!  gpp1cc_xx=second derivative of gg wrt xx.
-!!
-!!
-!! PARENTS
-!!      psp1cc
-!!
-!! CHILDREN
-!!
-!! SOURCE
+ !!****f* ABINIT/gpp1cc
+ !! NAME
+ !! gpp1cc
+ !!
+ !! FUNCTION
+ !! Second derivative of gg wrt xx.
+ !!
+ !! COPYRIGHT
+ !! Copyright (C) 1998-2014 ABINIT group (XG, DCA, MM, DRH)
+ !! This file is distributed under the terms of the
+ !! GNU General Public License, see ~abinit/COPYING
+ !! or http://www.gnu.org/copyleft/gpl.txt .
+ !! For the initials of contributors, see ~abinit/doc/developers/contributors.txt .
+ !!
+ !! INPUTS
+ !!  xx= abscisse to which gpp1cc_xx is calculated
+ !!
+ !! OUTPUT
+ !!  gpp1cc_xx=second derivative of gg wrt xx.
+ !!
+ !!
+ !! PARENTS
+ !!      psp1cc
+ !!
+ !! CHILDREN
+ !!
+ !! SOURCE
 
 subroutine gpp1cc(gpp1cc_xx, xx)
 
@@ -34,13 +34,13 @@ subroutine gpp1cc(gpp1cc_xx, xx)
     real(dp), parameter :: pi = 3.141592653589793238462643383279502884197_dp
     real(dp), parameter :: two_pi = 2.0d0 * pi
 
-!Arguments ------------------------------------
-!scalars
+    !Arguments ------------------------------------
+    !scalars
     real(dp), intent(in) :: xx
     real(dp), intent(out) :: gpp1cc_xx
 
-!Local variables -------------------------------------------
-!scalars
+    !Local variables -------------------------------------------
+    !scalars
     real(dp), parameter :: c2 = 40.d0 / 3.d0 - 32.d0 * pi**2 / 27.d0
     real(dp), parameter :: c3 = -8320.d0 / 81.d0 + 320.d0 * pi**2 / 27.d0
     real(dp), parameter :: c4 = 157712.d0 / 243.d0 - 320.d0 * pi**2 / 3.d0 + 512.d0 * pi**4 / 135.d0
@@ -50,7 +50,7 @@ subroutine gpp1cc(gpp1cc_xx, xx)
     real(dp), parameter :: c8 = 616697.d0 / 3888.d0 - 485.d0 * pi**2 / 27.d0 + 32.d0 * pi**4 / 135.d0
     real(dp), parameter :: c9 = -2933875.d0 / 3888.d0 + 81100.d0 * pi**2 / 729.d0 - 800.d0 * pi**4 / 243.d0
 
-!Series expansion coefficients around xx=0 from Mathematica
+    !Series expansion coefficients around xx=0 from Mathematica
     real(dp), parameter :: cpp0 = 20.d0 - 8.d0 * pi**2 / 3.d00
 
     real(dp), parameter :: cpp2 = 804.d0 - 160.d0 * pi**2 + (128.d0 * pi**4) / 15.d0
@@ -67,22 +67,22 @@ subroutine gpp1cc(gpp1cc_xx, xx)
     real(dp) :: t34, t4, t41, t42, t44, t45, t46, t5, t54, t55, t56, t57, t6, t62, t64, t65, t7
     real(dp) :: t72, t78, t79, t8, t85, t9, t93
 
-! *************************************************************************
+    ! *************************************************************************
 
     if (xx > 3.0d0) then
-!  Cut off beyond 3/gcut=3*xcccrc
+        !  Cut off beyond 3/gcut=3*xcccrc
         gpp1cc_xx = 0.0d0
-!  Take care of difficult limits near xx=0, 1/2, and 1
+        !  Take care of difficult limits near xx=0, 1/2, and 1
     else if (abs(xx) <= 1.d-03) then
         gpp1cc_xx = cpp0 + cpp2 * xx**2 + cpp4 * xx**4 + cpp6 * xx**6
     else if (abs(xx - 0.5d0) <= 1.d-04) then
-!  (this limit and next are more troublesome for numerical cancellation)
+        !  (this limit and next are more troublesome for numerical cancellation)
         gpp1cc_xx = c2 + (xx - 0.5d0) * (c3 + (xx - 0.5d0) * (c4 + (xx - 0.5d0) * c5))
     else if (abs(xx - 1.d0) <= 1.d-04) then
         gpp1cc_xx = c6 + (xx - 1.0d0) * (c7 + (xx - 1.0d0) * (c8 + (xx - 1.0d0) * c9))
     else
 
-!  Should fix up this Maple fortran later
+        !  Should fix up this Maple fortran later
         t1 = xx**2
         t2 = 1 / t1
         t3 = 1 / Pi
@@ -152,4 +152,4 @@ subroutine gpp1cc(gpp1cc_xx, xx)
     end if
 
 end subroutine gpp1cc
-!!***
+ !!***

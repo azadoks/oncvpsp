@@ -1,58 +1,58 @@
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
-! University
-!
-!
-! This program is free software: you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License
-! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-!
+ ! University
+ !
+ !
+ ! This program is free software: you can redistribute it and/or modify
+ ! it under the terms of the GNU General Public License as published by
+ ! the Free Software Foundation, either version 3 of the License, or
+ ! (at your option) any later version.
+ !
+ ! This program is distributed in the hope that it will be useful,
+ ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ! GNU General Public License for more details.
+ !
+ ! You should have received a copy of the GNU General Public License
+ ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ !
 subroutine run_diag_r(lmax, npa, epa, lloc, irc, &
 &                    vkb, evkb, nproj, rr, vfull, vp, zz, mmax, mxprj)
 
-!diagnostics for semi-local and Vanderbilt-Kleinman-bylander pseudopotentials
-!checks bound-state energies, norms, and slopes, and pseudo-bound state
-!quantities for positive-energy projectors by matching all-electron
-!log derivatives at rc.
-!Should test as essentially exact for non-relativitic calculations
-!Error for relativistic is B matrix Hermiticity error
+    !diagnostics for semi-local and Vanderbilt-Kleinman-bylander pseudopotentials
+    !checks bound-state energies, norms, and slopes, and pseudo-bound state
+    !quantities for positive-energy projectors by matching all-electron
+    !log derivatives at rc.
+    !Should test as essentially exact for non-relativitic calculations
+    !Error for relativistic is B matrix Hermiticity error
 
-!lmax  maximum angular momentum
-!npa  principal quantum number for corresponding all-electron state
-!epa  bound-state or scattering state reference energies for vkb potentials
-!lloc  l for local potential
-!irc  core radii indices
-!vkb  VKB projectors
-!evkb  coefficients of VKB projectors
-!nproj  number of vkb projectors for each l
-!rr  log radial grid
-!vfull  all-electron potential
-!vp  semi-local pseudopotentials (vp(:,5) is local potential if linear comb.)
-!zz  atomic number
-!mmax  size of radial grid
-!mxprj  dimension of number of projectors
+    !lmax  maximum angular momentum
+    !npa  principal quantum number for corresponding all-electron state
+    !epa  bound-state or scattering state reference energies for vkb potentials
+    !lloc  l for local potential
+    !irc  core radii indices
+    !vkb  VKB projectors
+    !evkb  coefficients of VKB projectors
+    !nproj  number of vkb projectors for each l
+    !rr  log radial grid
+    !vfull  all-electron potential
+    !vp  semi-local pseudopotentials (vp(:,5) is local potential if linear comb.)
+    !zz  atomic number
+    !mmax  size of radial grid
+    !mxprj  dimension of number of projectors
 
     implicit none
     integer, parameter :: dp = kind(1.0d0)
 
-!Input variables
+    !Input variables
     integer :: lmax, lloc, mmax, mxprj
     integer :: npa(mxprj, 6), irc(6), nproj(6)
     real(dp) :: zz
     real(dp) :: rr(mmax), vp(mmax, 5, 2), vfull(mmax), vkb(mmax, mxprj, 4, 2)
     real(dp) :: epa(mxprj, 6, 2), evkb(mxprj, 4, 2)
 
-!Output variables - printing only
+    !Output variables - printing only
 
-!Local variables
+    !Local variables
     integer :: ll, l1, ikap, kap, mkap, ierr, mch, mchf
     integer :: iprj, nnae, nnp, npr
     real(dp) :: al, emax, emin, etest, umch, upmch, uldf, gam, gpr, cnorm
@@ -62,14 +62,14 @@ subroutine run_diag_r(lmax, npa, epa, lloc, irc, &
 
     al = 0.01d0 * dlog(rr(101) / rr(1))
 
-! loop for diagnostic output using Vanderbilt Kleinman-Bylander projectors
-!
+    ! loop for diagnostic output using Vanderbilt Kleinman-Bylander projectors
+    !
     write (6, '(/a/a)') &
     & 'Diagnostic tests using Vanderbilt-Kleinman-Bylander pseudopotentials',&
     & '  relativistic with J = L +/- 1/2 projectors'
     write (6, '(/2a)') '   l  kap   rcore       rmatch      e in        ', &
     &   'delta e    norm test   slope test'
-!
+    !
     do l1 = 1, lmax + 1
         write (6, '(a)') ''
         ll = l1 - 1
@@ -80,7 +80,7 @@ subroutine run_diag_r(lmax, npa, epa, lloc, irc, &
             else
                 mkap = 2
             end if
-!  loop on J = ll +/- 1/2
+            !  loop on J = ll +/- 1/2
             do ikap = 1, mkap
                 if (ikap == 1) then
                     kap = -(ll + 1)
@@ -90,7 +90,7 @@ subroutine run_diag_r(lmax, npa, epa, lloc, irc, &
 
                 npr = nproj(l1)
 
-!   find cutoff radius for projectors
+                !   find cutoff radius for projectors
                 mchf = max(irc(l1), irc(lloc + 1)) + 5
 
                 etest = epa(iprj, l1, ikap)
@@ -132,8 +132,8 @@ subroutine run_diag_r(lmax, npa, epa, lloc, irc, &
 
                     nnp = nnp + 1
                 else
-!     calculate effective pseudo wave function principal quantum number
-!     from all-electron node count
+                    !     calculate effective pseudo wave function principal quantum number
+                    !     from all-electron node count
 
                     nnp = nnae - npa(1, l1) + ll + 1
                     call lschvkbbe(nnp, ll, npr, ierr, etest, uldf, emin, emax, &
@@ -148,7 +148,7 @@ subroutine run_diag_r(lmax, npa, epa, lloc, irc, &
 
                 gam = dabs(umch / uu(mchf))
                 gpr = dabs(upmch / up(mchf))
-!
+                !
                 write (6, '(2i4,6f12.7)') ll, kap, rr(irc(l1)), rr(mchf), epa(iprj, l1, ikap), &
                 &         etest - epa(iprj, l1, ikap), gam, gpr
 

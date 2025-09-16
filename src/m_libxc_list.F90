@@ -1,10 +1,10 @@
 module m_libxc_list
-!
-! List of selected functionals in libxc, wrapped
-! in a derived type record.
-!
-! Copyright (c) Alberto Garcia, 2014, 2015
-!
+    !
+    ! List of selected functionals in libxc, wrapped
+    ! in a derived type record.
+    !
+    ! Copyright (c) Alberto Garcia, 2014, 2015
+    !
 
     type, public :: libxc_kind_t
         character(len=24) :: str
@@ -15,22 +15,22 @@ module m_libxc_list
     type(libxc_kind_t), parameter :: EXCH_CORR =  &
         libxc_kind_t("XC_EXCHANGE_CORRELATION")
 
-!character(len=*), parameter :: EXCH = "XC_EXCHANGE"
-!character(len=*), parameter :: CORR = "XC_CORRELATION"
-!character(len=*), parameter :: EXCH_CORR = "XC_EXCHANGE_CORRELATION"
+    !character(len=*), parameter :: EXCH = "XC_EXCHANGE"
+    !character(len=*), parameter :: CORR = "XC_CORRELATION"
+    !character(len=*), parameter :: EXCH_CORR = "XC_EXCHANGE_CORRELATION"
 
     type, public :: libxc_t
         character(len=40)  :: name
         integer            :: code
         type(libxc_kind_t) :: xc_kind
-!   character(len=40)  :: xc_kind
+        !   character(len=40)  :: xc_kind
     end type libxc_t
 
     type(libxc_t), parameter, public  ::                  &
         XC_EMPTY = libxc_t("XC_EMPTY", 0 , EXCH_CORR),  &
         XC_NOT_IMPL = libxc_t("XC_NOT_IMPL", -1 , EXCH_CORR)
 
-! Exchange
+    ! Exchange
 
     type(libxc_t), parameter  ::                  &
         XC_LDA_X = libxc_t("XC_LDA_X", 1 , EXCH),  &
@@ -105,7 +105,7 @@ module m_libxc_list
         XC_GGA_X_ITYH = libxc_t("XC_GGA_X_ITYH", 529 , EXCH),  &
         XC_GGA_X_SFAT = libxc_t("XC_GGA_X_SFAT", 530 , EXCH)
 
-! Correlation
+    ! Correlation
 
     type(libxc_t), parameter  ::                  &
         XC_LDA_C_WIGNER = libxc_t("XC_LDA_C_WIGNER", 2 , CORR),  &
@@ -168,7 +168,7 @@ module m_libxc_list
         XC_GGA_C_APBE = libxc_t("XC_GGA_C_APBE", 186 , CORR),  &
         XC_GGA_C_OPTC = libxc_t("XC_GGA_C_OPTC", 200 , CORR)
 
-! Exchange and correlation
+    ! Exchange and correlation
     type(libxc_t), parameter  ::                  &
         XC_LDA_XC_TETER93 = libxc_t("XC_LDA_XC_TETER93", 20 , EXCH_CORR),  &
         XC_GGA_XC_OPBE_D = libxc_t("XC_GGA_XC_OPBE_D", 65 , EXCH_CORR),  &

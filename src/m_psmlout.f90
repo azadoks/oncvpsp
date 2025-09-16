@@ -1,25 +1,25 @@
 !
-! Copyright (c) 1989-2014 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
-! University
-! Copyright (c) 2015 by Alberto Garcia, ICMAB-CSIC for xmlf90-wxml calls
-! in support of the PSML format
-!
-!
-! This program is free software: you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License
-! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-!
-! Support for PSML file creation
-!
+ ! Copyright (c) 1989-2014 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
+ ! University
+ ! Copyright (c) 2015 by Alberto Garcia, ICMAB-CSIC for xmlf90-wxml calls
+ ! in support of the PSML format
+ !
+ !
+ ! This program is free software: you can redistribute it and/or modify
+ ! it under the terms of the GNU General Public License as published by
+ ! the Free Software Foundation, either version 3 of the License, or
+ ! (at your option) any later version.
+ !
+ ! This program is distributed in the hope that it will be useful,
+ ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ! GNU General Public License for more details.
+ !
+ ! You should have received a copy of the GNU General Public License
+ ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ !
+ ! Support for PSML file creation
+ !
 module m_psmlout
 
     public :: psmlout, psmlout_r
@@ -37,25 +37,25 @@ subroutine psmlout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
 &                  fa, ep, qcut, debl, facnf, dvloc0, fcfact, &
 &                  epsh1, epsh2, depsh, rlmax, psfile)
 
-!lmax  maximum angular momentum
-!lloc  l for local potential
-!rc  core radii
-!vkb  VKB projectors
-!evkb  coefficients of VKB projectors
-!nproj  number of vkb projectors for each l
-!rr  log radial grid
-!vpuns  unscreened semi-local pseudopotentials (vp(:,5) is local potential
-!  if linear combination is used)
-!rho  valence pseudocharge
-!rhomod  model core charge
-!zz  atomic number
-!zion  at this point, total valence charge (becomes psuedoion charge)
-!mmax  size of log radial grid
-!iexc  type of exchange-correlation
-!icmod  1 if model core charge is used, otherwise 0
-!drl spacing of linear radial grid
-!atsym  atomic symbol
-!psfile  should be 'upf'
+    !lmax  maximum angular momentum
+    !lloc  l for local potential
+    !rc  core radii
+    !vkb  VKB projectors
+    !evkb  coefficients of VKB projectors
+    !nproj  number of vkb projectors for each l
+    !rr  log radial grid
+    !vpuns  unscreened semi-local pseudopotentials (vp(:,5) is local potential
+    !  if linear combination is used)
+    !rho  valence pseudocharge
+    !rhomod  model core charge
+    !zz  atomic number
+    !zion  at this point, total valence charge (becomes psuedoion charge)
+    !mmax  size of log radial grid
+    !iexc  type of exchange-correlation
+    !icmod  1 if model core charge is used, otherwise 0
+    !drl spacing of linear radial grid
+    !atsym  atomic symbol
+    !psfile  should be 'upf'
 
     ! Alberto Garcia, February 1, 2015
 
@@ -66,7 +66,7 @@ subroutine psmlout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
 
     real(dp), parameter :: pi = 3.141592653589793238462643383279502884197_dp
 
-!Input variables
+    !Input variables
     integer :: lmax, lloc, iexc, mmax, icmod
     integer :: nproj(6)
     integer :: irct ! index of point at which rho_core is matched
@@ -77,8 +77,8 @@ subroutine psmlout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     real(dp) :: rc(6), evkb(2, 4)
     character*2 :: atsym
 
-!additional input for upf output to echo input file, all as defined
-! in the main progam
+    !additional input for upf output to echo input file, all as defined
+    ! in the main progam
     integer :: na(30), la(30), ncon(6), nbas(6)
     integer :: nvcnf(5), nacnf(30, 5), lacnf(30, 5)
     integer :: nc, nv, lpopt, ncnf
@@ -86,11 +86,11 @@ subroutine psmlout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     real(dp) :: dvloc0, epsh1, epsh2, depsh, rlmax
     character*4 :: psfile
 
-!Local variables
+    !Local variables
     integer :: dtime(8)
 
-!-------
-!psml stuff
+    !-------
+    !psml stuff
 
     type(xmlf_t) :: xf
     type(libxc_t) :: libxc_id(2)
@@ -123,7 +123,7 @@ subroutine psmlout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     logical :: polarized, there_is_core, found
     integer :: lun, stat
 
-!---
+    !---
 
     call date_and_time(VALUES=dtime)
     write (datestr, "(i4,'-',i2.2,'-',i2.2)") dtime(1:3)
@@ -196,7 +196,7 @@ subroutine psmlout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     call my_add_attribute(xf, "date", datestr)
     call xml_NewElement(xf, "input-file")
     call my_add_attribute(xf, "name", "oncvpsp-input")
-!
+    !
     call get_unit(lun)
     open (unit=lun, file="_tmp_input", form="formatted", &
           status="old", position="rewind", action="read")
@@ -213,7 +213,7 @@ subroutine psmlout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     !
     call xml_EndElement(xf, "provenance")
 
-!  nameat = symbol(nint(zz))
+    !  nameat = symbol(nint(zz))
     nameat = atsym
     ncore = nc
     nval = nv
@@ -338,16 +338,16 @@ subroutine psmlout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     call do_configuration()
     call xml_EndElement(xf, "header")
 
-!AG: save
+    !AG: save
     if (lloc == 4) then
         ! fitted local potential
     else
         ! 'l_local="',lloc,'"'
     end if
-!AG -- decide how to handle the case of Vlocal as one of the sl pots.
+    !AG -- decide how to handle the case of Vlocal as one of the sl pots.
 
-!AG: decide whether to use a single mesh (Hamann's own) or have the
-! projectors use another one (linear, shorter)
+    !AG: decide whether to use a single mesh (Hamann's own) or have the
+    ! projectors use another one (linear, shorter)
 
     npts = mmax
 
@@ -393,8 +393,8 @@ subroutine psmlout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
                              f=f0)
     end do vpsd
     call xml_EndElement(xf, "semilocal-potentials")
-!
-!--------
+    !
+    !--------
     call xml_NewElement(xf, "valence-charge")
     call my_add_attribute(xf, "total-charge", &
                           str(total_valence_charge))
@@ -402,7 +402,7 @@ subroutine psmlout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
 
     call xml_NewElement(xf, "data")
     call add_zero_r(chval(1:npts), r, f0)
-!  call xml_AddArray(xf,chval(1:npts))
+    !  call xml_AddArray(xf,chval(1:npts))
     call xml_AddArray(xf, f0(1:nr))
     call xml_EndElement(xf, "data")
     call xml_EndElement(xf, "radfunc")
@@ -500,10 +500,10 @@ subroutine do_configuration()
 end subroutine do_configuration
 
 end subroutine psmlout
-!
-!=================================================
-! Fully relativistic version
-!
+ !
+ !=================================================
+ ! Fully relativistic version
+ !
 subroutine psmlout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
 &                  irct, &
 &                  vsr, esr, vso, eso, &
@@ -512,25 +512,25 @@ subroutine psmlout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
 &                  fa, ep, qcut, debl, facnf, dvloc0, fcfact, &
 &                  epsh1, epsh2, depsh, rlmax, psfile)
 
-!lmax  maximum angular momentum
-!lloc  l for local potential
-!rc  core radii
-!vkb  VKB projectors
-!evkb  coefficients of VKB projectors
-!nproj  number of vkb projectors for each l
-!rr  log radial grid
-!vpuns  unscreened semi-local pseudopotentials (vp(:,5) is local potential
-!  if linear combination is used)
-!rho  valence pseudocharge
-!rhomod  model core charge
-!zz  atomic number
-!zion  at this point, total valence charge (becomes psuedoion charge)
-!mmax  size of log radial grid
-!iexc  type of exchange-correlation
-!icmod  1 if model core charge is used, otherwise 0
-!drl spacing of linear radial grid
-!atsym  atomic symbol
-!psfile  'upf' or 'psp8'
+    !lmax  maximum angular momentum
+    !lloc  l for local potential
+    !rc  core radii
+    !vkb  VKB projectors
+    !evkb  coefficients of VKB projectors
+    !nproj  number of vkb projectors for each l
+    !rr  log radial grid
+    !vpuns  unscreened semi-local pseudopotentials (vp(:,5) is local potential
+    !  if linear combination is used)
+    !rho  valence pseudocharge
+    !rhomod  model core charge
+    !zz  atomic number
+    !zion  at this point, total valence charge (becomes psuedoion charge)
+    !mmax  size of log radial grid
+    !iexc  type of exchange-correlation
+    !icmod  1 if model core charge is used, otherwise 0
+    !drl spacing of linear radial grid
+    !atsym  atomic symbol
+    !psfile  'upf' or 'psp8'
 
     ! Alberto Garcia, February 1, 2015
 
@@ -541,7 +541,7 @@ subroutine psmlout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
 
     real(dp), parameter :: pi = 3.141592653589793238462643383279502884197_dp
 
-!Input variables
+    !Input variables
     integer :: lmax, lloc, iexc, mmax, icmod
     integer :: nproj(6)
     integer :: irct ! index of point at which rho_core is matched
@@ -553,8 +553,8 @@ subroutine psmlout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     real(dp) :: esr(4, 4), eso(4, 4)
     character*2 :: atsym
 
-!additional input for upf output to echo input file, all as defined
-! in the main progam
+    !additional input for upf output to echo input file, all as defined
+    ! in the main progam
     integer :: na(30), la(30), ncon(6), nbas(6)
     integer :: nvcnf(5), nacnf(30, 5), lacnf(30, 5)
     integer :: nc, nv, lpopt, ncnf
@@ -562,7 +562,7 @@ subroutine psmlout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     real(dp) :: dvloc0, epsh1, epsh2, depsh, rlmax
     character*4 :: psfile
 
-!Local variables
+    !Local variables
     integer :: dtime(8)
     integer :: npr_so(4), npr_sr(4)
 
@@ -597,7 +597,7 @@ subroutine psmlout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     logical :: polarized, there_is_core, found
     integer :: lun, stat
 
-!---
+    !---
 
     call date_and_time(VALUES=dtime)
     write (datestr, "(i4,'-',i2.2,'-',i2.2)") dtime(1:3)
@@ -670,7 +670,7 @@ subroutine psmlout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     call my_add_attribute(xf, "date", datestr)
     call xml_NewElement(xf, "input-file")
     call my_add_attribute(xf, "name", "oncvpsp-input")
-!
+    !
     call get_unit(lun)
     open (unit=lun, file="_tmp_input", form="formatted", &
           status="old", position="rewind", action="read")
@@ -687,7 +687,7 @@ subroutine psmlout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     !
     call xml_EndElement(xf, "provenance")
 
-!  nameat = symbol(nint(zz))
+    !  nameat = symbol(nint(zz))
     nameat = atsym
     ncore = nc
     nval = nv
@@ -808,16 +808,16 @@ subroutine psmlout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     call do_configuration()
     call xml_EndElement(xf, "header")
 
-!AG: save
+    !AG: save
     if (lloc == 4) then
         ! fitted local potential
     else
         ! 'l_local="',lloc,'"'
     end if
-!AG -- decide how to handle the case of Vlocal as one of the sl pots.
+    !AG -- decide how to handle the case of Vlocal as one of the sl pots.
 
-!AG: decide whether to use a single mesh (Hamann's own) or have the
-! projectors use another one (linear, shorter)
+    !AG: decide whether to use a single mesh (Hamann's own) or have the
+    ! projectors use another one (linear, shorter)
 
     npts = mmax
 
@@ -856,7 +856,7 @@ subroutine psmlout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
 
         call xml_NewElement(xf, "semilocal-potentials")
         call my_add_attribute(xf, "set", "scalar_relativistic")
-! sr components
+        ! sr components
         do i = 1, npots
             l1 = i
             ! last index:  1: j=l+1/2; 2: j=l-1/2; l=0,j=0 stored in index 1
@@ -868,9 +868,9 @@ subroutine psmlout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
                                  f=f0)
         end do
         call xml_EndElement(xf, "semilocal-potentials")
-!
-! so components
-!
+        !
+        ! so components
+        !
         call xml_NewElement(xf, "semilocal-potentials")
         call my_add_attribute(xf, "set", "spin_orbit")
 
@@ -918,8 +918,8 @@ subroutine psmlout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
         call xml_EndElement(xf, "semilocal-potentials")
 
     end if ! upf vs psp8
-!
-!--------
+    !
+    !--------
     call xml_NewElement(xf, "valence-charge")
     call my_add_attribute(xf, "total-charge", &
                           str(total_valence_charge))
@@ -927,7 +927,7 @@ subroutine psmlout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
 
     call xml_NewElement(xf, "data")
     call add_zero_r(chval(1:npts), r, f0)
-!  call xml_AddArray(xf,chval(1:npts))
+    !  call xml_AddArray(xf,chval(1:npts))
     call xml_AddArray(xf, f0(1:nr))
     call xml_EndElement(xf, "data")
     call xml_EndElement(xf, "radfunc")
@@ -976,12 +976,12 @@ subroutine psmlout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     call xml_EndElement(xf, "radfunc")
     call xml_EndElement(xf, "local-potential")
 
-!
-!     Scalar-relativistic projectors
-!
+    !
+    !     Scalar-relativistic projectors
+    !
     if (trim(psfile) == "psp8") then
 
-! set up projector number for sr_so calculations based on non-zero coefficients
+        ! set up projector number for sr_so calculations based on non-zero coefficients
         npr_sr(:) = 0
         npr_so(:) = 0
         do l1 = 1, lmax + 1
@@ -1005,9 +1005,9 @@ subroutine psmlout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
             end do
         end do
         call xml_EndElement(xf, "projectors")
-!
-!     Spin-orbit part
-!
+        !
+        !     Spin-orbit part
+        !
         call xml_NewElement(xf, "projectors")
         call my_add_attribute(xf, "set", "spin_orbit")
 
@@ -1062,7 +1062,7 @@ subroutine psmlout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
 
         end do ! over l shells
         call xml_EndElement(xf, "projectors")
-!
+        !
     end if ! upf vs psp8
 
     call xml_EndElement(xf, "pseudopotential-operator")
@@ -1126,7 +1126,7 @@ end subroutine add_zero_r
 
 subroutine get_unit(lun)
 
-!     Get an available Fortran unit number
+    !     Get an available Fortran unit number
 
     integer, intent(out) :: lun
 

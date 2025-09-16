@@ -1,53 +1,53 @@
 !
-! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
-! University
-!
-!
-! This program is free software: you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation, either version 3 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License
-! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-!
-! Creates monotonic polynomial model core charge matching all-electron
-! core charge and 4 derivatives at "crossover" radius.
-! Polynomial is 8th-order with no linear term.
+ ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
+ ! University
+ !
+ !
+ ! This program is free software: you can redistribute it and/or modify
+ ! it under the terms of the GNU General Public License as published by
+ ! the Free Software Foundation, either version 3 of the License, or
+ ! (at your option) any later version.
+ !
+ ! This program is distributed in the hope that it will be useful,
+ ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ! GNU General Public License for more details.
+ !
+ ! You should have received a copy of the GNU General Public License
+ ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ !
+ ! Creates monotonic polynomial model core charge matching all-electron
+ ! core charge and 4 derivatives at "crossover" radius.
+ ! Polynomial is 8th-order with no linear term.
 
-! Performs analysis and based on "hardness" criterion described in
-! Teter, Phys. Rev. B 48, 5031 (1993) , Appendix, as
+ ! Performs analysis and based on "hardness" criterion described in
+ ! Teter, Phys. Rev. B 48, 5031 (1993) , Appendix, as
 
 subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
 &                   fcfact, fcfact_min, fcfact_max, fcfact_step, rcfact, rcfact_min, rcfact_max, rcfact_step, &
                     mmax, rr, nc, nv, la, zion, iexc)
 
-!icmod  3 coefficient optimizaion, 4 for specivied fcfact and rfact
-!rhops  state-by-state pseudocharge density
-!rhotps  total pseudocharge density
-!rhoc  core-charge density
-!rhoae  state-by-state all-electron valence charge density
-!rhotae  total all-electron valence charge density
-!rhomod  model core density and 4 derivatives
-!fcfact  prefactor for model amplitude (multiplies crossover value)
-!rcfact  prefactor for model scale (multiplies crossover radius)
-!mmax  dimension of log grid
-!rr log radial grid
-!nc  number of core states
-!nv  number of valence states
-!la  angular-momenta
-!zion  ion charge
-!iexc  exchange-correlation function to be used
+    !icmod  3 coefficient optimizaion, 4 for specivied fcfact and rfact
+    !rhops  state-by-state pseudocharge density
+    !rhotps  total pseudocharge density
+    !rhoc  core-charge density
+    !rhoae  state-by-state all-electron valence charge density
+    !rhotae  total all-electron valence charge density
+    !rhomod  model core density and 4 derivatives
+    !fcfact  prefactor for model amplitude (multiplies crossover value)
+    !rcfact  prefactor for model scale (multiplies crossover radius)
+    !mmax  dimension of log grid
+    !rr log radial grid
+    !nc  number of core states
+    !nv  number of valence states
+    !la  angular-momenta
+    !zion  ion charge
+    !iexc  exchange-correlation function to be used
 
     implicit none
     integer, parameter :: dp = kind(1.0d0)
 
-!Input variables
+    !Input variables
     integer :: icmod, nv, nc, iexc, mmax
     integer :: la(30)
     real(dp) :: rhoae(mmax, nv), rhops(mmax, nv), rhotae(mmax)
@@ -56,14 +56,14 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
     real(dp) :: fcfact_min, fcfact_max, fcfact_step
     real(dp) :: rcfact_min, rcfact_max, rcfact_step
 
-!Output variables
+    !Output variables
     real(dp) :: rhomod(mmax, 5)
 
-!convergence criterion
+    !convergence criterion
     real(dp), parameter :: eps = 1.0d-7
     real(dp), parameter :: blend = 2.0d0
 
-!Local variables
+    !Local variables
     real(dp) :: al
     real(dp) :: d2diff, iminus, metric, rmatch, rhocmatch, r0, rcross
     real(dp) :: gg, tt, yy
@@ -77,7 +77,7 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
     character(len=32) :: headerfmt, rowfmt
     logical :: dostop
 
-!2-dimensional Nelder-Mead variables
+    !2-dimensional Nelder-Mead variables
     real(dp), parameter :: alpha_nm = 1.0d0
     real(dp), parameter :: gamma_nm = 2.0d0
     real(dp), parameter :: rho_nm = -0.5d0
@@ -92,7 +92,7 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
     d2excae(:, :) = 0.0d0
     d2excps(:, :) = 0.0d0
 
-!set limit for d2Exc calculation to radius beyond which rhomod=rhoc
+    !set limit for d2Exc calculation to radius beyond which rhomod=rhoc
     irmod = mmax
 
     write (6, '(/a/a)') 'Model core correction analysis',&
@@ -106,10 +106,10 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
         write (6, '(1p,4d16.6)') (d2excae(kk, jj), jj=1, nv)
     end do
 
-! set model charge to zero
+    ! set model charge to zero
     rhomod(:, :) = 0.0d0
 
-! compute d2excps with no core correction
+    ! compute d2excps with no core correction
     rhomod(:, :) = 0.0d0
 
     call der2exc(rhotps, rhomod(1, 1), rhops, rr, d2excps, d2excae, d2diff, &
@@ -131,7 +131,7 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
     iminusref = iminus
     metricref = metric
 
-! find valence pseudocharge - core charge crossover
+    ! find valence pseudocharge - core charge crossover
     ircc = 0
     do ii = mmax, 1, -1
         if (rhoc(ii) > rhotps(ii)) then
@@ -153,12 +153,12 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
     gg = 0.d0
     yy = 0.d0
 
-!option for optimization
+    !option for optimization
     if (icmod >= 4) then
 
         fcfact = 1.0d0
 
-!Coarse-grid search for minimum
+        !Coarse-grid search for minimum
         nfcfact = nint((fcfact_max - fcfact_min) / fcfact_step) + 1
         nrcfact = nint((rcfact_max - rcfact_min) / rcfact_step) + 1
 
@@ -263,7 +263,7 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
         deallocate (iminus_array)
         deallocate (metric_array)
 
-!Initial Nelder-Mead simplex from coarse-search minimum
+        !Initial Nelder-Mead simplex from coarse-search minimum
 
         xx(1, 2) = xx(1, 1) + 0.25d0 * rhocmatch
         xx(2, 2) = xx(2, 1)
@@ -272,7 +272,7 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
         xx(1, 1) = xx(1, 1) - 0.125d0 * rhocmatch
         xx(2, 1) = xx(2, 1) - 0.025d0 * rmatch
 
-!Fill function values for initial simplex
+        !Fill function values for initial simplex
 
         do kk = 1, 3
             xt(:) = xx(:, kk)
@@ -308,14 +308,14 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
                 stop
             end if
 
-!  write(6,'(i4,a,2f10.4,1p,e14.4)') kk,'  xt',xt(1),xt(2),ff(kk)
+            !  write(6,'(i4,a,2f10.4,1p,e14.4)') kk,'  xt',xt(1),xt(2),ff(kk)
         end do
 
-!Nelder-Mead iteration loop
+        !Nelder-Mead iteration loop
         write (6, '(/a)') 'Nelder-Mead iteration'
         do kk = 1, 101
 
-!(1) Order (dumb bubble sort)
+            !(1) Order (dumb bubble sort)
             do jj = 1, 3
                 if (ff(3) < ff(2)) then
                     ft = ff(2); xt(:) = xx(:, 2)
@@ -329,7 +329,7 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
                 end if
             end do
 
-!stopping criterion
+            !stopping criterion
             if (icmod == 4) then
                 dostop = (ff(3) - ff(1) < 1.0d-4 * d2ref)
             else if (icmod == 5) then
@@ -350,10 +350,10 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
                 exit
             end if
 
-!(2) Centroid
+            !(2) Centroid
             x0(:) = 0.5d0 * (xx(:, 1) + xx(:, 2))
 
-!(3) Reflection
+            !(3) Reflection
             xr(:) = x0(:) + alpha_nm * (x0(:) - xx(:, 3))
 
             r0 = 1.5d0 * xr(2)
@@ -386,14 +386,14 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
                 write (6, '(/a)') 'modcore3: ERROR icmod not 4 or 5'
                 stop
             end if
-! write(6,'(i4,a,2f10.4,1p,e14.4)') kk,'  xr',xr(1),xr(2),fr
+            ! write(6,'(i4,a,2f10.4,1p,e14.4)') kk,'  xr',xr(1),xr(2),fr
 
             if (ff(1) <= fr .and. fr < ff(2)) then
                 ff(3) = fr; xx(:, 3) = xr(:)
                 cycle !kk loop
             end if
 
-!(4) Expansion
+            !(4) Expansion
             if (fr < ff(1)) then
                 xe(:) = x0(:) + gamma_nm * (x0(:) - xx(:, 3))
 
@@ -427,7 +427,7 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
                     write (6, '(/a)') 'modcore3: ERROR icmod not 4 or 5'
                     stop
                 end if
-! write(6,'(i4,a,2f10.4,1p,e14.4)') kk,'  xe',xe(1),xe(2),fe
+                ! write(6,'(i4,a,2f10.4,1p,e14.4)') kk,'  xe',xe(1),xe(2),fe
 
                 if (fe < fr) then
                     ff(3) = fe; xx(:, 3) = xe(:)
@@ -438,7 +438,7 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
                 end if
             end if
 
-!(5) Contraction
+            !(5) Contraction
             xc(:) = x0(:) + rho_nm * (x0(:) - xx(:, 3))
 
             r0 = 1.5d0 * xc(2)
@@ -471,13 +471,13 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
                 write (6, '(/a)') 'modcore3: ERROR icmod not 4 or 5'
                 stop
             end if
-!  write(6,'(i4,a,2f10.4,1p,e14.4)') kk,'  xc',xc(1),xc(2),fc
+            !  write(6,'(i4,a,2f10.4,1p,e14.4)') kk,'  xc',xc(1),xc(2),fc
             if (fc < ff(3)) then
                 ff(3) = fc; xx(:, 3) = xc(:)
                 cycle !kk
             end if
 
-!(6) Reduction
+            !(6) Reduction
             do jj = 2, 3
                 xx(:, jj) = xx(:, 1) + sigma_nm * (xx(:, jj) - xx(:, 1))
 
@@ -511,14 +511,14 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
                     write (6, '(/a)') 'modcore3: ERROR icmod not 4 or 5'
                     stop
                 end if
-!  write(6,'(i4,a,2f10.4,1p,e14.4)') kk,' xrd',xx(1,jj),xx(2,jj),ff(jj)
+                !  write(6,'(i4,a,2f10.4,1p,e14.4)') kk,' xrd',xx(1,jj),xx(2,jj),ff(jj)
             end do !jj
 
         end do !kk
 
         write (6, '(/a)') 'Optimized Teter model core charge'
 
-!option for specifying prefactors as input
+        !option for specifying prefactors as input
     else if (icmod == 3) then
         xx(1, 1) = fcfact * rhocmatch
         xx(2, 1) = rcfact * rmatch
@@ -539,8 +539,8 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
         end if
     end do
 
-! blend the Teter function tail into the all-electron rhoc
-! first two derivatives are filled in analytically before the blend starts
+    ! blend the Teter function tail into the all-electron rhoc
+    ! first two derivatives are filled in analytically before the blend starts
     rhomod(:, :) = 0.0d0
     do ii = 1, mmax
         yy = rr(ii) / xx(2, 1)
@@ -571,8 +571,8 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
         write (6, '(a,1p,e16.6)') 'combined metric', metric
     end if
 
-!7-point numerical first derivatives applied successively
-!skip non-blended section for 1st and 2nd derivatives
+    !7-point numerical first derivatives applied successively
+    !skip non-blended section for 1st and 2nd derivatives
 
     al = 0.01d0 * dlog(rr(101) / rr(1))
 
@@ -585,10 +585,10 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
         end do
     end do
 
-!ad-hoc treatment of numerical noise near origin
-!set up a mesh on which 2nd derivative will have a stable
-!polynomial representation
-!assumes dpnint remains 7th order
+    !ad-hoc treatment of numerical noise near origin
+    !set up a mesh on which 2nd derivative will have a stable
+    !polynomial representation
+    !assumes dpnint remains 7th order
     drint = 0.02d0 * rr(ircross)
     rtst = 0.5d0 * drint
     do jj = 1, 4
@@ -615,7 +615,7 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
         &     / (60.d0 * al * rr(ii))
     end do
 
-!set up a mesh on which 3rd derivative will have a stable
+    !set up a mesh on which 3rd derivative will have a stable
     drint = 0.95d0 * drint
     rtst = 0.5d0 * drint
     rtst = 0.5d0 * drint
@@ -643,7 +643,7 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
         &     / (60.d0 * al * rr(ii))
     end do
 
-!set up a mesh on which 4th derivative will have a stable
+    !set up a mesh on which 4th derivative will have a stable
     drint = 0.95d0 * drint
     rtst = 0.5d0 * drint
     do jj = 1, 4
