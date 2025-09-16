@@ -155,11 +155,9 @@ end subroutine xc_functl_init
 
  ! ---------------------------------------------------------
 
-subroutine xc_functl_init_functl(functl, id, ndim,nel, nspin, deriv_method)
+subroutine xc_functl_init_functl(functl, id, nspin, deriv_method)
     type(xc_functl_t), intent(out) :: functl
     integer,           intent(in)  :: id
-    integer,           intent(in)  :: ndim
-    real(8),             intent(in)  :: nel
     integer,           intent(in)  :: nspin
     integer,           intent(in)  :: deriv_method
 
@@ -600,7 +598,7 @@ subroutine xc_functl_get_vxc(functl, np, al, rr, rho, rho_grad, rho_lapl, tau, i
 
                     d2edgrad2(i, 1) = 2.0d0*deds(1) + 4.0d0*s(1)*d2eds2(1) + 4.0d0*s(2)*d2eds2(2) + s(3)*d2eds2(4)
                     d2edgrad2(i, 2) = deds(2) + 4.0d0*s(2)*d2eds2(3) + 2.0d0*s(1)*d2eds2(2) + 2.0d0*s(3)*d2eds2(5) &
-                                      + s(2)*d2eds2(4)
+                        + s(2)*d2eds2(4)
                     d2edgrad2(i, 3) = 2.0d0*deds(3) + 4.0d0*s(3)*d2eds2(6) + 4.0d0*s(2)*d2eds2(5) + s(1)*d2eds2(4)
                 end if
 

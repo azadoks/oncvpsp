@@ -714,7 +714,7 @@ program oncvpsp
         rhot(:) = rho(:)
 
         call run_config(jj, nacnf, lacnf, facnf, nc, nvcnf, rhot, rhomod, rr, zz, &
-        &                  rcmax, mmax, mxprj, iexc, ea, etot, epstot, nproj, vpuns, &
+        &                  mmax, mxprj, iexc, ea, etot, epstot, nproj, vpuns, &
         &                  lloc, vkb, evkb, srel)
 
     end do  !jj

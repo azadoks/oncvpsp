@@ -353,7 +353,7 @@ program oncvpsp_r
 
                         epa(iprj, l1, ikap) = ea(kk, ikap)
                         npa(iprj, l1) = na(kk)
-                        call renorm_r(uu, rr, ll, kap, zz, mmax, cnorm)
+                        call renorm_r(uu, rr, kap, zz, mmax, cnorm)
                         uua(:, iprj, ikap) = uu(:, 1)
                         upa(:, iprj, ikap) = cnorm * up(:, 1)
                     end if  !la(kk)==l1-1
@@ -412,7 +412,7 @@ program oncvpsp_r
                         &                  '     eigenvalue = ', et
                     end if
 
-                    call renorm_r(uu, rr, ll, kap, zz, mmax, cnorm)
+                    call renorm_r(uu, rr, kap, zz, mmax, cnorm)
                     uua(:, iprj, ikap) = uu(:, 1)
                     upa(:, iprj, ikap) = cnorm * up(:, 1)
                 end do  !kk
@@ -640,7 +640,7 @@ program oncvpsp_r
         rhot(:) = rho(:)
 
         call run_config_r(jj, nacnf, lacnf, facnf, nc, nvcnf, rhot, rhomod, rr, zz, &
-        &                  rcmax, mmax, mxprj, iexc, ea, etot, epstot, nproj, vpuns, &
+        &                  mmax, mxprj, iexc, ea, etot, epstot, nproj, vpuns, &
         &                  lloc, vkb, evkb)
 
     end do  !jj
