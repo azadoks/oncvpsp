@@ -87,22 +87,22 @@ program oncvpsp
     logical :: srel
 
     write (6, '(a/a//)') &
-        &      'ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
-        &      'scalar-relativistic version 4.0.1 03/01/2019'
+    &      'ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
+    &      'scalar-relativistic version 4.0.1 03/01/2019'
 
     write (6, '(a/a/a//)') &
-        &      'While it is not required under the terms of the GNU GPL, it is',&
-        &      'suggested that you cite D. R. Hamann, Phys. Rev. B 88, 085117 (2013)', &
-        &      'in any publication utilizing these pseudopotentials.'
+    &      'While it is not required under the terms of the GNU GPL, it is',&
+    &      'suggested that you cite D. R. Hamann, Phys. Rev. B 88, 085117 (2013)', &
+    &      'in any publication utilizing these pseudopotentials.'
 
 !srel=.true.
     srel = .false.
 
     call read_input(5, inline, atsym, zz, nc, nv, iexc, psfile, na, la, fa, lmax, rc, ep, &
-        &                       ncon, nbas, qcut, lloc, lpopt, dvloc0, nproj, debl, icmod, fcfact, &
-        &                       rcfact, fcfact_min, fcfact_max, fcfact_step, rcfact_min, &
-        &                       rcfact_max, rcfact_step, epsh1, epsh2, depsh, rxpsh, rlmax, drl, &
-        &                       ncnf, nvcnf, nacnf, lacnf, facnf)
+    &                       ncon, nbas, qcut, lloc, lpopt, dvloc0, nproj, debl, icmod, fcfact, &
+    &                       rcfact, fcfact_min, fcfact_max, fcfact_step, rcfact_min, &
+    &                       rcfact_max, rcfact_step, epsh1, epsh2, depsh, rxpsh, rlmax, drl, &
+    &                       ncnf, nvcnf, nacnf, lacnf, facnf)
 
     nvcnf(1) = nv
     do ii = 1, nc + nv
@@ -124,8 +124,8 @@ program oncvpsp
     end if
 
     call check_data(atsym, zz, fcfact, rcfact, epsh1, epsh2, depsh, rlmax, drl, fa, facnf, &
-        &                rc, ep, qcut, debl, nc, nv, iexc, lmax, lloc, lpopt, icmod, &
-        &                ncnf, na, la, nvcnf, nacnf, lacnf, ncon, nbas, nproj, psfile)
+    &                rc, ep, qcut, debl, nc, nv, iexc, lmax, lloc, lpopt, icmod, &
+    &                ncnf, na, la, nvcnf, nacnf, lacnf, ncon, nbas, nproj, psfile)
 
     nrl = int((rlmax / drl) - 0.5d0) + 1
 
@@ -179,7 +179,7 @@ program oncvpsp
 ! full potential atom solution
 !
     call sratom(na, la, ea, fa, rpk, nc, nc + nv, it, rhoc, rho, &
-        &              rr, vfull, zz, mmax, iexc, etot, ierr, srel)
+    &              rr, vfull, zz, mmax, iexc, etot, ierr, srel)
 !
 !
 
@@ -207,7 +207,7 @@ program oncvpsp
     write (6, '(a)') '# ATOM AND REFERENCE CONFIGURATION'
     write (6, '(a)') '# atsym  z   nc   nv     iexc    psfile'
     write (6, '(a,a,f6.2,2i5,i8,2a)') '  ', trim(atsym), zz, nc, nv, iexc, &
-        &      '      ', psfile
+    &      '      ', psfile
     write (6, '(a/a)') '#', '#   n    l    f        energy (Ha)'
     do ii = 1, nc + nv
         write (6, '(2i5,f8.2,1pe18.7)') na(ii), la(ii), fa(ii), ea(ii)
@@ -218,25 +218,25 @@ program oncvpsp
     write (6, '(a/a)') '#', '#   l,   rc,      ep,       ncon, nbas, qcut'
     do l1 = 1, lmax + 1
         write (6, '(i5,2f10.5,2i5,f10.5)') l1 - 1, rc(l1), ep(l1), ncon(l1),&
-            &        nbas(l1), qcut(l1)
+        &        nbas(l1), qcut(l1)
     end do
 
     write (6, '(a/a/a,a)') '#', '# LOCAL POTENTIAL', '# lloc, lpopt,  rc(5),', &
-        &      '   dvloc0'
+    &      '   dvloc0'
     write (6, '(2i5,f10.5,a,f10.5)') lloc, lpopt, rc(5), '   ', dvloc0
 
     write (6, '(a/a/a)') '#', '# VANDERBILT-KLEINMAN-BYLANDER PROJECTORs', &
-        &      '# l, nproj, debl'
+    &      '# l, nproj, debl'
     do l1 = 1, lmax + 1
         write (6, '(2i5,f10.5)') l1 - 1, nproj(l1), debl(l1)
     end do
 
     write (6, '(a/a/a)') '#', '# MODEL CORE CHARGE', &
-        &      '# icmod, fcfact, rcfact'
+    &      '# icmod, fcfact, rcfact'
     write (6, '(i5,2f10.5)') icmod, fcfact, rcfact
 
     write (6, '(a/a/a)') '#', '# LOG DERIVATIVE ANALYSIS', &
-        &      '# epsh1, epsh2, depsh'
+    &      '# epsh1, epsh2, depsh'
     write (6, '(3f8.2)') epsh1, epsh2, depsh
 
     write (6, '(a/a/a)') '#', '# OUTPUT GRID', '# rlmax, drl'
@@ -283,7 +283,7 @@ program oncvpsp
 ! loop to construct pseudopotentials for all angular momenta
 !
     write (6, '(/a/a)') 'Begin loop to  construct optimized pseudo wave functions',&
-        &      'and semi-local pseudopoentials for all angular momenta'
+    &      'and semi-local pseudopoentials for all angular momenta'
 
 !temporarily set this to 1 so that the pseudo wave function needed for the
 !local potential will be generated.  Reset after run_vkb.
@@ -306,10 +306,10 @@ program oncvpsp
                     iprj = iprj + 1
                     et = ea(kk)
                     call lschfb(na(kk), la(kk), ierr, et, &
-                        &                      rr, vfull, uu, up, zz, mmax, mch, srel)
+                    &                      rr, vfull, uu, up, zz, mmax, mch, srel)
                     if (ierr /= 0) then
                         write (6, '(/a,3i4)') 'oncvpsp-387: lschfb convergence ERROR n,l,iter=', &
-                            &           na(ii), la(ii), it
+                        &           na(ii), la(ii), it
                         stop
                     end if
                     epa(iprj, l1) = ea(kk)
@@ -330,8 +330,8 @@ program oncvpsp
                 iprj = iprj + 1
                 if (iprj > 1 .and. debl(l1) <= 0.0d0) then
                     write (6, '(a,f8.3,a/a)') 'oncvpsp: ERROR debl =', debl, 'for l=', &
-                        &              ' ERROR not allowed with 2 or more scattering states', &
-                        &              'program will stop'
+                    &              ' ERROR not allowed with 2 or more scattering states', &
+                    &              'program will stop'
                     stop
                 end if
                 if (iprj > 1) then
@@ -340,7 +340,7 @@ program oncvpsp
                 end if
 
                 call wellstate(npa(iprj, l1), ll, irc(l1), epa(iprj, l1), rr, &
-                    &                     vfull, uu, up, zz, mmax, mch, srel)
+                &                     vfull, uu, up, zz, mmax, mch, srel)
                 uua(:, iprj) = uu(:)
                 upa(:, iprj) = up(:)
             end do !kk
@@ -350,7 +350,7 @@ program oncvpsp
 
 !calculate relativistic correction to potential to force projectors to 0 at rc
             call vrel(ll, epa(iprj, l1), rr, vfull, vr(1, iprj, l1), uua(1, iprj), upa(1, iprj), &
-                &              zz, mmax, irc(l1), srel)
+            &              zz, mmax, irc(l1), srel)
 
         end do
 
@@ -363,8 +363,8 @@ program oncvpsp
         end do
 
         call run_optimize(epa(1, l1), ll, mmax, mxprj, rr, uua, qq, &
-            &                    irc(l1), qcut(l1), qmsbf(l1), ncon(l1), nbas(l1), nproj(l1), &
-            &                    pswf(1, 1, l1), vp(1, l1), vkb(1, 1, l1), vfull, cvgplt(1, 1, 1, l1))
+        &                    irc(l1), qcut(l1), qmsbf(l1), ncon(l1), nbas(l1), nproj(l1), &
+        &                    pswf(1, 1, l1), vp(1, l1), vkb(1, 1, l1), vfull, cvgplt(1, 1, 1, l1))
 
     end do !l1
 
@@ -373,7 +373,7 @@ program oncvpsp
     write (6, '(/a,a)') 'Construct Vanderbilt / Kleinmman-Bylander projectors'
 
     call run_vkb(lmax, lloc, lpopt, dvloc0, irc, nproj, rr, mmax, mxprj, pswf, vfull, vp, &
-        &             evkb, vkb, nlim, vr)
+    &             evkb, vkb, nlim, vr)
 
 !restore this to its proper value
     nproj(lloc + 1) = 0
@@ -400,10 +400,10 @@ program oncvpsp
         ll = la(nc + kk)
         l1 = ll + 1
         call lschfb(na(nc + kk), ll, ierr, et, &
-            &                rr, vfull, uu, up, zz, mmax, mch, srel)
+        &                rr, vfull, uu, up, zz, mmax, mch, srel)
         if (ierr /= 0) then
             write (6, '(/a,3i4)') 'oncvpsp-461: lschfb convergence ERROR n,l,iter=', &
-                &     na(ii), la(ii), it
+            &     na(ii), la(ii), it
             stop
         end if
 
@@ -415,8 +415,8 @@ program oncvpsp
         emin = 1.25d0 * et
 
         call lschvkbb(ll + nodes(l1) + 1, ll, nproj(l1), ierr, et, emin, emax, &
-            &                rr, vp(1, lloc + 1), vkb(1, 1, l1), evkb(1, l1), &
-            &                uu, up, mmax, mch)
+        &                rr, vp(1, lloc + 1), vkb(1, 1, l1), evkb(1, l1), &
+        &                uu, up, mmax, mch)
 
         if (ierr /= 0) then
             write (6, '(a,3i4)') 'oncvpsp: lschvkbb ERROR', ll + nodes(l1) + 1, ll, ierr
@@ -445,16 +445,16 @@ program oncvpsp
 
     if (icmod == 1) then
         call modcore(icmod, rhops, rho, rhoc, rhoae, rhotae, rhomod, &
-            &               fcfact, rcfact, irps, mmax, rr, nc, nv, la, zion, iexc)
+        &               fcfact, rcfact, irps, mmax, rr, nc, nv, la, zion, iexc)
 
     else if (icmod == 2) then
         call modcore2(icmod, rhops, rho, rhoc, rhoae, rhotae, rhomod, &
-            &               fcfact, rcfact, irps, mmax, rr, nc, nv, la, zion, iexc)
+        &               fcfact, rcfact, irps, mmax, rr, nc, nv, la, zion, iexc)
 
     else if (icmod >= 3) then
         call modcore3(icmod, rhops, rho, rhoc, rhoae, rhotae, rhomod, &
-            &               fcfact, fcfact_min, fcfact_max, fcfact_step, rcfact, rcfact_min, rcfact_max, rcfact_step, &
-            &               irps, mmax, rr, nc, nv, la, zion, iexc)
+        &               fcfact, fcfact_min, fcfact_max, fcfact_step, rcfact, rcfact_min, rcfact_max, rcfact_step, &
+        &               irps, mmax, rr, nc, nv, la, zion, iexc)
 
     end if
 
@@ -468,10 +468,10 @@ program oncvpsp
     write (6, '(/a,f12.6/)') 'Pseudoatom total energy', epstot
 
     call run_diag(lmax, npa, epa, lloc, irc, &
-        &                    vkb, evkb, nproj, rr, vfull, vp, zz, mmax, mxprj, srel)
+    &                    vkb, evkb, nproj, rr, vfull, vp, zz, mmax, mxprj, srel)
 
     call run_ghosts(lmax, la, ea, nc, nv, lloc, irc, qmsbf, &
-        &                    vkb, evkb, nproj, rr, vp, mmax, mxprj)
+    &                    vkb, evkb, nproj, rr, vp, mmax, mxprj)
 
 ! unscreen semi-local potentials
 
@@ -504,35 +504,35 @@ program oncvpsp
         rhot(:) = rho(:)
 
         call run_config(jj, nacnf, lacnf, facnf, nc, nvcnf, rhot, rhomod, rr, zz, &
-            &                  rcmax, mmax, mxprj, iexc, ea, etot, epstot, nproj, vpuns, &
-            &                  lloc, vkb, evkb, srel)
+        &                  rcmax, mmax, mxprj, iexc, ea, etot, epstot, nproj, vpuns, &
+        &                  lloc, vkb, evkb, srel)
 
     end do !jj
 
     call run_plot(lmax, npa, epa, lloc, irc, &
-        &                    vkb, evkb, nproj, rr, vfull, vp, vpuns, zz, mmax, mxprj, drl, nrl, &
-        &                    rho, rhoc, rhomod, srel, cvgplt)
+    &                    vkb, evkb, nproj, rr, vfull, vp, vpuns, zz, mmax, mxprj, drl, nrl, &
+    &                    rho, rhoc, rhomod, srel, cvgplt)
 
     call run_phsft(lmax, lloc, nproj, epa, epsh1, epsh2, depsh, vkb, evkb, &
-        &               rr, vfull, vp, zz, mmax, mxprj, irc, srel)
+    &               rr, vfull, vp, zz, mmax, mxprj, irc, srel)
 
     call gnu_script(epa, evkb, lmax, lloc, mxprj, nproj)
 
     if (trim(psfile) == 'psp8' .or. trim(psfile) == 'both') then
 
         call linout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
-            &             rhotae, rhoc, zz, zion, mmax, mxprj, iexc, icmod, nrl, drl, atsym, &
-            &             na, la, ncon, nbas, nvcnf, nacnf, lacnf, nc, nv, lpopt, ncnf, &
-            &             fa, rc0, ep, qcut, debl, facnf, dvloc0, fcfact, rcfact, &
-            &             epsh1, epsh2, depsh, rlmax, psfile)
+        &             rhotae, rhoc, zz, zion, mmax, mxprj, iexc, icmod, nrl, drl, atsym, &
+        &             na, la, ncon, nbas, nvcnf, nacnf, lacnf, nc, nv, lpopt, ncnf, &
+        &             fa, rc0, ep, qcut, debl, facnf, dvloc0, fcfact, rcfact, &
+        &             epsh1, epsh2, depsh, rlmax, psfile)
     end if
 
     if (trim(psfile) == 'upf' .or. trim(psfile) == 'both') then
         call upfout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
-            &             zz, zion, mmax, mxprj, iexc, icmod, nrl, drl, atsym, epstot, &
-            &             na, la, ncon, nbas, nvcnf, nacnf, lacnf, nc, nv, lpopt, ncnf, &
-            &             fa, rc0, ep, qcut, debl, facnf, dvloc0, fcfact, rcfact, &
-            &             epsh1, epsh2, depsh, rlmax, psfile, uupsa, ea)
+        &             zz, zion, mmax, mxprj, iexc, icmod, nrl, drl, atsym, epstot, &
+        &             na, la, ncon, nbas, nvcnf, nacnf, lacnf, nc, nv, lpopt, ncnf, &
+        &             fa, rc0, ep, qcut, debl, facnf, dvloc0, fcfact, rcfact, &
+        &             epsh1, epsh2, depsh, rlmax, psfile, uupsa, ea)
     end if
 
     if (trim(psfile) == 'psml' .or. trim(psfile) == 'both') then
@@ -541,11 +541,11 @@ program oncvpsp
 !
         print *, 'calling psmlout'
         call psmlout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
-            &             irct, srel, &
-            &             zz, zion, mmax, iexc, icmod, nrl, drl, atsym, epstot, &
-            &             na, la, ncon, nbas, nvcnf, nacnf, lacnf, nc, nv, lpopt, ncnf, &
-            &             fa, rc0, ep, qcut, debl, facnf, dvloc0, fcfact, &
-            &             epsh1, epsh2, depsh, rlmax, psfile)
+        &             irct, srel, &
+        &             zz, zion, mmax, iexc, icmod, nrl, drl, atsym, epstot, &
+        &             na, la, ncon, nbas, nvcnf, nacnf, lacnf, nc, nv, lpopt, ncnf, &
+        &             fa, rc0, ep, qcut, debl, facnf, dvloc0, fcfact, &
+        &             epsh1, epsh2, depsh, rlmax, psfile)
     end if
 
     stop

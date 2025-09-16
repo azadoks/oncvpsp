@@ -178,8 +178,8 @@ subroutine lschpb(nn, ll, ierr, ee, rr, vv, uu, up, mmax, mch)
             end do
 
             sn = sn + al * (23.0d0 * rr(nin - 2) * uu(nin - 2)**2 &
-                &              + 28.0d0 * rr(nin - 1) * uu(nin - 1)**2 &
-                &              + 9.0d0 * rr(nin) * uu(nin)**2) / 24.0d0
+            &              + 28.0d0 * rr(nin - 1) * uu(nin - 1)**2 &
+            &              + 9.0d0 * rr(nin) * uu(nin)**2) / 24.0d0
 
 ! normalize u
 

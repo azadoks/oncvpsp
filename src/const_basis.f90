@@ -19,8 +19,8 @@
 !calculates basis for residual energy minimization
 
 subroutine const_basis(nbas, ncon, cons, orbasis, orbasis_der,&
-    &                       pswf0_or, pswfnull_or, &
-    &                       pswf0_sb, pswfnull_sb, ps0norm)
+&                       pswf0_or, pswfnull_or, &
+&                       pswf0_sb, pswfnull_sb, ps0norm)
 
 !ncon  number of constraints
 !nbas  number of orthogonalized sbf basis functions
@@ -64,7 +64,7 @@ subroutine const_basis(nbas, ncon, cons, orbasis, orbasis_der,&
 
 !singular value decomposition of constraint matrix
     call dgesvd('A', 'A', ncon, nbas, amat, 10, ss, usvd, 10, vt, nbas, &
-        &             work, 64, info)
+    &             work, 64, info)
 
     if (info /= 0) then
         write (6, '(/a,i4)') 'const_basis: ERTOR const_basis: dgesvd info = ', info

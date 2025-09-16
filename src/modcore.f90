@@ -24,7 +24,7 @@
 ! Teter, Phys. Rev. B 48, 5031 (1993) , Appendix, as
 
 subroutine modcore(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
-    &                   fcfact, rcfact, irps, mmax, rr, nc, nv, la, zion, iexc)
+&                   fcfact, rcfact, irps, mmax, rr, nc, nv, la, zion, iexc)
 
 !icmod  3 coefficient optimizaion, 4 for specivied fcfact and rfact
 !rhops  state-by-state pseudocharge density
@@ -87,7 +87,7 @@ subroutine modcore(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
 
     if (ircc == 0) then
         write (6, '(/a)') 'rhomod: ERROR ircc (core-valence charge crossover) &
-            &        not found'
+        &        not found'
         stop
     end if
 
@@ -95,12 +95,12 @@ subroutine modcore(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
     irmod = max(irps, ircc)
 
     write (6, '(/a/a)') 'Model core correction analysis',&
-        &                  '  based on d2Exc/dn_idn_j'
+    &                  '  based on d2Exc/dn_idn_j'
 
 ! get derivatives of all-electron xc energy
 
     call der2exc(rhotae, rhoc, rhoae, rr, d2excae, d2excps, d2mdiff, &
-        &                   zion, iexc, nc, nv, la, irmod, mmax)
+    &                   zion, iexc, nc, nv, la, irmod, mmax)
 
     write (6, '(/a/)') 'd2excae - all-electron derivatives'
     do kk = 1, nv
@@ -114,7 +114,7 @@ subroutine modcore(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
     rhomod(:, :) = 0.0d0
 
     call der2exc(rhotps, rhomod(1, 1), rhops, rr, d2excps, d2excae, d2mdiff, &
-        &                   zion, iexc, nc, nv, la, irmod, mmax)
+    &                   zion, iexc, nc, nv, la, irmod, mmax)
 
     write (6, '(/a/)') 'd2excps - pseudofunction derivatives with no core correction'
     do kk = 1, nv
@@ -137,9 +137,9 @@ subroutine modcore(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
 !7-point numerical first derivatives applied successively
         do ii = ircc - 25 + 3 * jj, mmax - 3
             rhomod(ii, jj) = (-rhomod(ii - 3, jj - 1) + 9.d0 * rhomod(ii - 2, jj - 1)&
-                &     - 45.d0 * rhomod(ii - 1, jj - 1) + 45.d0 * rhomod(ii + 1, jj - 1)&
-                &     - 9.d0 * rhomod(ii + 2, jj - 1) + rhomod(ii + 3, jj - 1))&
-                &     / (60.d0 * al * rr(ii))
+            &     - 45.d0 * rhomod(ii - 1, jj - 1) + 45.d0 * rhomod(ii + 1, jj - 1)&
+            &     - 9.d0 * rhomod(ii + 2, jj - 1) + rhomod(ii + 3, jj - 1))&
+            &     / (60.d0 * al * rr(ii))
         end do
         fmatch(jj) = rhomod(ircc, jj)
     end do
@@ -193,9 +193,9 @@ subroutine modcore(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
         call dgesv(5, 1, work, 5, ipvt, aco, 5, kk)
         if (kk /= 0) then
             if (kk > 0) write (6, '(a,i4)') &
-                &      'modcore:ERROR stop - singular polym matrix', kk
+            &      'modcore:ERROR stop - singular polym matrix', kk
             if (kk < 0) write (6, '(a,i4)') &
-                &      'modcore:ERROR stop - dgesv input error', kk
+            &      'modcore:ERROR stop - dgesv input error', kk
             stop
         end if
 
@@ -255,7 +255,7 @@ subroutine modcore(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
 
 !test model
     call der2exc(rhotps, rhomod(1, 1), rhops, rr, d2excps, d2excae, d2mdiff, &
-        &                   zion, iexc, nc, nv, la, irmod, mmax)
+    &                   zion, iexc, nc, nv, la, irmod, mmax)
 
     write (6, '(/a/)') 'Polynomial model core charge'
     write (6, '(/a/)') 'd2excps - pseudofunction derivatives with core correction'

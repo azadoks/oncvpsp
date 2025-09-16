@@ -20,9 +20,9 @@
 ! in orthonormal and spherical Bessel function bases
 
 subroutine optimize(nnull, nbas, pswf0_sb, pswf0_or, nqout, qout,&
-    &                    eresid0, eresiddot, eresidmat,&
-    &                    pswfnull_sb, pswfnull_or, uunorm, ps0norm, eresidmin,&
-    &                    pswfopt_sb, pswfopt_or, ekin_anal, eresq)
+&                    eresid0, eresiddot, eresidmat,&
+&                    pswfnull_sb, pswfnull_or, uunorm, ps0norm, eresidmin,&
+&                    pswfopt_sb, pswfopt_or, ekin_anal, eresq)
 
 !nnull  number of unconstrained basis vectors for residual minimization
 !nbas  number of sbf basis functions
@@ -160,7 +160,7 @@ subroutine optimize(nnull, nbas, pswf0_sb, pswf0_or, nqout, qout,&
         tt = x1**2 - yy**2
         do ii = 2, nnull
             pswfopt(ii) = -eresiddot_ev(ii) / (eresideval(ii) - eresideval(1) &
-                &               + abs(eresiddot_ev(1)) / x1)
+            &               + abs(eresiddot_ev(1)) / x1)
             tt = tt + pswfopt(ii)**2
         end do
 
@@ -185,7 +185,7 @@ subroutine optimize(nnull, nbas, pswf0_sb, pswf0_or, nqout, qout,&
     emin = eresid0(1)
     do ii = 1, nnull
         emin = emin + (2.0d0 * eresiddot_ev(ii) * pswfopt(ii) &
-            &            + eresideval(ii) * pswfopt(ii)**2)
+        &            + eresideval(ii) * pswfopt(ii)**2)
     end do
     eresidmin = emin
 

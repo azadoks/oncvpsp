@@ -72,7 +72,7 @@ subroutine gg1cc(gg1cc_xx, xx)
 !  function built out of two spherical bessel functions in G
 !  space and cut off absolutely beyond gcut
         gg1cc_xx = (sin(2.0d0 * pi * xx) / ((2.0d0 * pi * xx) * &
-            &   (1.d0 - 4.0d0 * xx**2) * (1.d0 - xx**2)))**2
+        &   (1.d0 - 4.0d0 * xx**2) * (1.d0 - xx**2)))**2
     end if
 
 end subroutine gg1cc

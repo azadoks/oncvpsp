@@ -20,8 +20,8 @@
 ! compared for reference and tests atomic configurations
 
 subroutine run_config(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz, &
-    &                  rcmax, mmax, mxprj, iexc, ea, etot, epstot, nproj, vpuns, &
-    &                  lloc, vkb, evkb, srel)
+&                  rcmax, mmax, mxprj, iexc, ea, etot, epstot, nproj, vpuns, &
+&                  lloc, vkb, evkb, srel)
 
 !jj  index of current configufation
 !nacnf  principal quantum number array, all configurations
@@ -112,7 +112,7 @@ subroutine run_config(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz, 
     do ii = 1, nc + nvcnf(1)
         do kk = 1, nc + nvcnf(jj)
             if (nacnf(kk, jj) == nacnf(ii, 1) .and. &
-                &         lacnf(kk, jj) == lacnf(ii, 1)) then
+            &         lacnf(kk, jj) == lacnf(ii, 1)) then
                 indxr(ii) = kk
                 indxe(kk) = ii
             end if
@@ -157,10 +157,10 @@ subroutine run_config(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz, 
 !all-electron atom solution for maximally-ionized state
 
     call sratom(nat, lat, eat(1, 2), fat(1, 2), rpk, nc, nc + nvt, it, rhoc, rho, &
-        &            rr, vfull, zz, mmax, iexc, eaetst, ierr, srel)
+    &            rr, vfull, zz, mmax, iexc, eaetst, ierr, srel)
     if (ierr /= 0) then
         write (6, '(a/a,i2)') 'run_config: WARNING  for AE atom,', &
-            &       ' WARNING no output for configuration', jj
+        &       ' WARNING no output for configuration', jj
         if (ierr == -1) then
             write (6, '(a,i4)') 'no classical turning point error, iteration', it
         else
@@ -177,11 +177,11 @@ subroutine run_config(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz, 
         if (eat(kk, 2) == 0.0d0) then
             et = 0.0d0
             call lschfb(nat(kk), lat(kk), ierr, et, &
-                &                rr, vfull, uu, up, zz, mmax, mch, srel)
+            &                rr, vfull, uu, up, zz, mmax, mch, srel)
             if (ierr /= 0) then
                 write (6, '(/a,3i4)') &
-                    &            'runconfig: WARNING lschfb convergence ERROR n,l,iter=', &
-                    &            nat(kk), lat(kk), it
+                &            'runconfig: WARNING lschfb convergence ERROR n,l,iter=', &
+                &            nat(kk), lat(kk), it
                 deallocate (rho, rhoc, rhocps, vi, vfull)
                 deallocate (uu, up)
                 return
@@ -196,10 +196,10 @@ subroutine run_config(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz, 
 !all-electron atom solution for excited state
 
     call sratom(nat, lat, eat(1, 3), fat(1, 3), rpk, nc, nc + nvt, it, rhoc, rho, &
-        &            rr, vfull, zz, mmax, iexc, eaetst, ierr, srel)
+    &            rr, vfull, zz, mmax, iexc, eaetst, ierr, srel)
     if (ierr /= 0) then
         write (6, '(a/a,i2)') 'run_config: WARNING  for AE atom,', &
-            &       ' WARNING no output for configuration', jj
+        &       ' WARNING no output for configuration', jj
         if (ierr == -1) then
             write (6, '(a,i4)') 'no classical turning point error, iteration', it
         else
@@ -230,13 +230,13 @@ subroutine run_config(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz, 
     rhocps(:) = rhomod(:, 1)
 
     call psatom(natp, latp, eatp, fatp, nvt, it, rhocps, rho, &
-        &           rr, rcmax, mmax, mxprj, iexc, etsttot, nproj, vpuns, lloc, &
-        &           vkb, evkb, ierr)
+    &           rr, rcmax, mmax, mxprj, iexc, etsttot, nproj, vpuns, lloc, &
+    &           vkb, evkb, ierr)
 
     if (ierr /= 0) then
         write (6, '(a,a/a,i2)') 'run_config: WARNING for fully non-local PS atom,', &
-            &       ' stg. 1', &
-            &       ' WARNING no output for configuration', jj
+        &       ' stg. 1', &
+        &       ' WARNING no output for configuration', jj
         deallocate (rho, rhoc, rhocps, vi, vfull)
         return
     end if
@@ -252,13 +252,13 @@ subroutine run_config(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz, 
     end do
 
     call psatom(natp, latp, eatp, fatp, nvt, it, rhocps, rho, &
-        &           rr, rcmax, mmax, mxprj, iexc, etsttot, nproj, vpuns, lloc, &
-        &           vkb, evkb, ierr)
+    &           rr, rcmax, mmax, mxprj, iexc, etsttot, nproj, vpuns, lloc, &
+    &           vkb, evkb, ierr)
 
     if (ierr /= 0) then
         write (6, '(a,a/a,i2)') 'run_config: WARNING for fully non-local PS atom,', &
-            &       ' stg. 2', &
-            &       ' WARNING no output for configuration', jj
+        &       ' stg. 2', &
+        &       ' WARNING no output for configuration', jj
         deallocate (rho, rhoc, rhocps, vi, vfull)
         return
     end if
@@ -270,16 +270,16 @@ subroutine run_config(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz, 
     do ii = 1, nvt
         if (fat(ii + nc, 3) == 0.0d0) cycle
         write (6, '(2i4,f8.4,2f14.8,1p,d12.2)') nat(ii + nc), lat(ii + nc), fat(ii + nc, 3), &
-            &  eat(ii + nc, 3), eatp(ii), eatp(ii) - eat(ii + nc, 3)
+        &  eat(ii + nc, 3), eatp(ii), eatp(ii) - eat(ii + nc, 3)
     end do
 
     write (6, '(/a)') '    Total energies and differences'
     write (6, '(a,1p,d16.8,a,d16.8,a,d10.2)') '      AE_ref=', etot, &
-        & '  AE_tst=', eaetst, '  dif=', eaetst - etot
+    & '  AE_tst=', eaetst, '  dif=', eaetst - etot
     write (6, '(a,1p,d16.8,a,d16.8,a,d10.2)') '      PS_ref=', epstot, &
-        & '  PS_tst=', etsttot, '  dif=', etsttot - epstot
+    & '  PS_tst=', etsttot, '  dif=', etsttot - epstot
     write (6, '(a,1p,d10.2)') '      PSP excitation error=', &
-        & eaetst - etot - etsttot + epstot
+    & eaetst - etot - etsttot + epstot
 
     deallocate (rho, rhoc, rhocps, vi, vfull)
     deallocate (uu, up)

@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 subroutine vkbphsft(ll, ivkb, epsh2, depsh, ep, pshf, pshp, &
-    & rr, vloc, vkb, evkb, mmax, mch, npsh)
+& rr, vloc, vkb, evkb, mmax, mch, npsh)
 
 ! computes Vanderfilt / Kleinman-Bylander scattering log derivatives
 ! (or semi-local if ivkb==0)

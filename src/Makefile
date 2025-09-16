@@ -54,7 +54,7 @@ oncvpspnr:	$(OBJS_OPSPNR)
 oncvpspr:	$(OBJS_OPSPR)
 		$(FLINKER) $(FFLAGS) -o oncvpspr.x $(OBJS_OPSPR) $(LIBS) $(WXML_LIB)
 
-.SUFFIXES: 
+.SUFFIXES:
 .SUFFIXES: .c .o .f .f90 .F90
 
 .F90.o:

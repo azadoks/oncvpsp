@@ -207,7 +207,7 @@ subroutine gnu_script_r(epa, evkb, lmax, lloc, mxprj, nproj)
             do iprj = 1, nproj(l1)
 
                 write (6, '(a,i2,a,f7.2,a/)') trim(plot_title(3)), iprj, ', E= ', &
-                    &          epa(iprj, l1, ikap), ' Ha"'
+                &          epa(iprj, l1, ikap), ' Ha"'
                 write (6, '(a/)') trim(x_label(1))
                 if (ikap == 1) then
                     write (6, '(2a,i5,2a)') lead(1), trim(gln(60)), -iprj, trim(gln(2 * l1 + 7)), cbs
@@ -227,10 +227,10 @@ subroutine gnu_script_r(epa, evkb, lmax, lloc, mxprj, nproj)
                 write (6, '(a/)') trim(x_label(1))
                 if (ikap == 1) then
                     write (6, '(a,1p,5e11.2)', advance='no') trim(plot_title(6 + l1)), &
-                        &           (evkb(jj, l1, ikap), jj=1, nproj(l1))
+                    &           (evkb(jj, l1, ikap), jj=1, nproj(l1))
                 else
                     write (6, '(a,1p,5e11.2)', advance='no') trim(plot_title(10 + l1)), &
-                        &           (evkb(jj, l1, ikap), jj=1, nproj(l1))
+                    &           (evkb(jj, l1, ikap), jj=1, nproj(l1))
                 end if
                 write (6, '(a/)') ' Ha"'
 

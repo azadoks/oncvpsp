@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 subroutine pspot(ipr, ll, rr, irc, mmax, al, nbas, qroot, eig, uu, pswfopt_sb, &
-    &           psopt, vae, vpsp, vkb, ekin_num)
+&           psopt, vae, vpsp, vkb, ekin_num)
 
 !calculates optimized pseudopotential from coefficients of optimized
 !pseudo wave function and all-electron wave function
@@ -88,9 +88,9 @@ subroutine pspot(ipr, ll, rr, irc, mmax, al, nbas, qroot, eig, uu, pswfopt_sb, &
 ! 7-point numerical first derivatives applied successively
         do ii = 1 + 3 * jj, mmax - 3 * jj
             work(ii, jj) = (-work(ii - 3, jj - 1) + 9.d0 * work(ii - 2, jj - 1)&
-                &     - 45.d0 * work(ii - 1, jj - 1) + 45.d0 * work(ii + 1, jj - 1)&
-                &     - 9.d0 * work(ii + 2, jj - 1) + work(ii + 3, jj - 1))&
-                &     / (60.d0 * al * rr(ii))
+            &     - 45.d0 * work(ii - 1, jj - 1) + 45.d0 * work(ii + 1, jj - 1)&
+            &     - 9.d0 * work(ii + 2, jj - 1) + work(ii + 3, jj - 1))&
+            &     / (60.d0 * al * rr(ii))
         end do
     end do
 
@@ -124,7 +124,7 @@ subroutine pspot(ipr, ll, rr, irc, mmax, al, nbas, qroot, eig, uu, pswfopt_sb, &
         if (abs(work(ii, 1)) > 0.0d0) then
             if (ipr <= 1 .and. work(ii, 1) * work(ii + 1, 1) < 0.0d0) then
                 write (6, '(a)') ' ERROR pspot:  first pseudo wave function has node, &
-                    &         program will stop'
+                &         program will stop'
                 write (6, '(a)') ' ERROR pspot: try changing psp parameters for this l'
                 stop
             end if

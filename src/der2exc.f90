@@ -21,7 +21,7 @@
 ! differ from the all-electron wave functions
 !
 subroutine der2exc(rhotot, rhoc, rho, rr, d2exc, d2ref, d2mdiff, &
-    &                   zion, iexc, nc, nv, la, ircut, mmax)
+&                   zion, iexc, nc, nv, la, ircut, mmax)
 
 ! rhotot  total valence charge, all-electron of pseudo
 ! rhoc  core charge, all-electron or model

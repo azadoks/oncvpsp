@@ -44,7 +44,7 @@ subroutine dpnint(xx, yy, nn, tt, ss, mm)
 
     if (nn < npoly + 1) then
         write (6, '(/a,i6,a,i4)') 'dpnint: interpolation ERROR, n=', &
-            &       nn, '< npoly=', npoly
+        &       nn, '< npoly=', npoly
         stop
     end if
 

@@ -15,7 +15,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 subroutine run_diag_sr_so_r(lmax, npa, epa, lloc, irc, &
-    &                    vsr, esr, vso, eso, nproj, rr, vfull, vp, zz, mmax, mxprj)
+&                    vsr, esr, vso, eso, nproj, rr, vfull, vp, zz, mmax, mxprj)
 
 !diagnostics for semi-local and Vanderbilt-Kleinman-bylander pseudopotentials
 !checks bound-state energies, norms, and slopes, and pseudo-bound state
@@ -71,10 +71,10 @@ subroutine run_diag_sr_so_r(lmax, npa, epa, lloc, irc, &
 ! loop for diagnostic output using Vanderbilt Kleinman-Bylander projectors
 !
     write (6, '(/a/a)') &
-        & 'Diagnostic tests using Vanderbilt-Kleinman-Bylander pseudopotentials',&
-        & '  relativistic with scalar and spin-orbit non-local projectors'
+    & 'Diagnostic tests using Vanderbilt-Kleinman-Bylander pseudopotentials',&
+    & '  relativistic with scalar and spin-orbit non-local projectors'
     write (6, '(/2a)') '   l  kap   rcore       rmatch      e in        ', &
-        &   'delta e    norm test   slope test'
+    &   'delta e    norm test   slope test'
 !
     do l1 = 1, lmax + 1
         write (6, '(a)') ''
@@ -123,10 +123,10 @@ subroutine run_diag_sr_so_r(lmax, npa, epa, lloc, irc, &
                 etest = epa(iprj, l1, ikap)
                 if (epa(iprj, l1, 1) < 0.0d0) then
                     call ldiracfb(npa(iprj, l1), ll, kap, ierr, etest, &
-                        &                     rr, zz, vfull, ur, urp, mmax, mch)
+                    &                     rr, zz, vfull, ur, urp, mmax, mch)
                 else
                     call ldiracfs(nnae, ll, kap, ierr, etest, &
-                        &                  rr, zz, vfull, ur, urp, mmax, mchf)
+                    &                  rr, zz, vfull, ur, urp, mmax, mchf)
                 end if
                 call renorm_r(ur, rr, ll, kap, zz, mmax, cnorm)
                 umch = ur(mchf, 1)
@@ -144,11 +144,11 @@ subroutine run_diag_sr_so_r(lmax, npa, epa, lloc, irc, &
                     emax = dmin1(emax, 0.0d0)
 
                     call lschvkbb(ll + iprj, ll, nvkbt, ierr, etest, emin, emax, &
-                        &                   rr, vp(1, lloc + 1, ikap), vkbt, evkbt, &
-                        &                   uu, up, mmax, mch)
+                    &                   rr, vp(1, lloc + 1, ikap), vkbt, evkbt, &
+                    &                   uu, up, mmax, mch)
                     if (ierr /= 0) then
                         write (6, '(a,4i4,1p,2e16.8)') 'run_diag_sr_so_r: lschvkbb ERROR', &
-                            &             iprj, ll, kap, ierr, epa(iprj, l1, ikap), etest
+                        &             iprj, ll, kap, ierr, epa(iprj, l1, ikap), etest
                     end if
 
                     nnp = nnp + 1
@@ -157,12 +157,12 @@ subroutine run_diag_sr_so_r(lmax, npa, epa, lloc, irc, &
 !     from all-electron node count
                     nnp = nnae - npa(1, l1) + ll + 1
                     call lschvkbbe(nnp, ll, nvkbt, ierr, etest, uldf, emin, emax, &
-                        &                    rr, vp(1, lloc + 1, ikap), vkbt, evkbt, &
-                        &                    uu, up, mmax, mchf)
+                    &                    rr, vp(1, lloc + 1, ikap), vkbt, evkbt, &
+                    &                    uu, up, mmax, mchf)
 
                     if (ierr /= 0) then
                         write (6, '(a,4i4,1p,2e16.8)') 'run_diag_r: lschvkbbe ERROR', &
-                            &             iprj, ll, kap, ierr, epa(iprj, l1, ikap), etest
+                        &             iprj, ll, kap, ierr, epa(iprj, l1, ikap), etest
                     end if
                 end if !epa<0 (bound or not)
 
@@ -170,7 +170,7 @@ subroutine run_diag_sr_so_r(lmax, npa, epa, lloc, irc, &
                 gpr = dabs(upmch / up(mchf))
 !
                 write (6, '(2i4,6f12.7)') ll, kap, rr(irc(l1)), rr(mchf), epa(iprj, l1, ikap), &
-                    &         etest - epa(iprj, l1, ikap), gam, gpr
+                &         etest - epa(iprj, l1, ikap), gam, gpr
 
             end do  !ikap
         end do  !iprj

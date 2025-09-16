@@ -48,8 +48,8 @@ subroutine vpinteg(gg, hh, nn, mm, ss, rr)
     end do
 
     ss = ss + al * (23.d0 * rr(nn - 2) * gg(nn - 2) * hh(nn - 2) &
-        &        + 28.d0 * rr(nn - 1) * gg(nn - 1) * hh(nn - 1) &
-        &        + 9.d0 * rr(nn) * gg(nn) * hh(nn)) / 24.d0
+    &        + 28.d0 * rr(nn - 1) * gg(nn - 1) * hh(nn - 1) &
+    &        + 9.d0 * rr(nn) * gg(nn) * hh(nn)) / 24.d0
 
     return
 end subroutine vpinteg

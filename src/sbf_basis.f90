@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 subroutine sbf_basis(ll, rr, mmax, irc, nbas, qroot, sbasis, orbasis, orbasis_der, &
-    &                     nconmx)
+&                     nconmx)
 
 !orthonormalize basis functions and derivatives at rc and find all-electron
 !charge inside rc.
@@ -76,15 +76,15 @@ subroutine sbf_basis(ll, rr, mmax, irc, nbas, qroot, sbasis, orbasis, orbasis_de
         do jj = ibas, nbas
 
             sn = (sbfar(1, ibas) / rr(1)**ll) * (sbfar(1, jj) / rr(1)**ll)&
-                &     * ro**(2 * ll + 3) / dfloat(2 * ll + 3)
+            &     * ro**(2 * ll + 3) / dfloat(2 * ll + 3)
 
             do ii = 1, irc - 3
                 sn = sn + al * rr(ii) * sbfar(ii, ibas) * sbfar(ii, jj)
             end do
 
             sn = sn + al * (23.0d0 * rr(irc - 2) * sbfar(irc - 2, ibas) * sbfar(irc - 2, jj)&
-                &            + 28.0d0 * rr(irc - 1) * sbfar(irc - 1, ibas) * sbfar(irc - 1, jj)&
-                &            + 9.0d0 * rr(irc) * sbfar(irc, ibas) * sbfar(irc, jj)) / 24.0d0
+            &            + 28.0d0 * rr(irc - 1) * sbfar(irc - 1, ibas) * sbfar(irc - 1, jj)&
+            &            + 9.0d0 * rr(irc) * sbfar(irc, ibas) * sbfar(irc, jj)) / 24.0d0
 
             sovlp(ibas, jj) = sn
             sovlp(jj, ibas) = sn

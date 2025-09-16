@@ -17,9 +17,9 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 subroutine check_data(atsym, zz, fcfact, rcfact, epsh1, epsh2, depsh, rlmax, drl, &
-    &                      fa, facnf, &
-    &                      rc, ep, qcut, debl, nc, nv, iexc, lmax, lloc, lpopt, icmod, &
-    &                      ncnf, na, la, nvcnf, nacnf, lacnf, ncon, nbas, nproj, psfile)
+&                      fa, facnf, &
+&                      rc, ep, qcut, debl, nc, nv, iexc, lmax, lloc, lpopt, icmod, &
+&                      ncnf, na, la, nvcnf, nacnf, lacnf, ncon, nbas, nproj, psfile)
 
 !check input data for various violations of size or sign
 !see annotated input document for all definitions
@@ -55,7 +55,7 @@ subroutine check_data(atsym, zz, fcfact, rcfact, epsh1, epsh2, depsh, rlmax, drl
     end if
 
     if (trim(psfile) /= 'psp8' .and. trim(psfile) /= 'upf' &
-        &   .and. trim(psfile) /= 'both') then
+    &   .and. trim(psfile) /= 'both') then
         write (6, '(a)') 'test_data: psfile must == psp8 or upf or both'
         ierr = ierr + 1
     end if
@@ -81,7 +81,7 @@ subroutine check_data(atsym, zz, fcfact, rcfact, epsh1, epsh2, depsh, rlmax, drl
         sf = sf + fa(ii)
         if (la(ii) < 0 .or. la(ii) > 3) then
             write (6, '(a,a,i4)') 'test_data: must have 0<= l <=3,', &
-                &   ' reference configuration line', ii
+            &   ' reference configuration line', ii
             ierr = ierr + 1
         end if
         if (na(ii) <= la(ii)) then
@@ -130,7 +130,7 @@ subroutine check_data(atsym, zz, fcfact, rcfact, epsh1, epsh2, depsh, rlmax, drl
         if (nproj(l1) == 2) then
             if (nbas(l1) < ncon(l1) + 3 .or. nbas(l1) > ncon(l1) + 5) then
                 write (6, '(a,i4/a)') 'test_data: must have ncon+3 <= nbas <= ncon+5, l=',&
-                    &    l1 - 1, ' for nproj=2'
+                &    l1 - 1, ' for nproj=2'
                 ierr = ierr + 1
             end if
         else
@@ -162,7 +162,7 @@ subroutine check_data(atsym, zz, fcfact, rcfact, epsh1, epsh2, depsh, rlmax, drl
     do l1 = 1, lmax + 1
         if (rc(l1) < rc(lloc + 1)) then
             write (6, '(a,i2,a)') 'test_data: rc < rc(lloc) for l =', l1 - 1,&
-                &         '.  Not allowed.'
+            &         '.  Not allowed.'
             ierr = ierr + 1
         end if
     end do
@@ -172,7 +172,7 @@ subroutine check_data(atsym, zz, fcfact, rcfact, epsh1, epsh2, depsh, rlmax, drl
             cycle
         else if (nproj(l1) < 1 .or. nproj(l1) > 5) then
             write (6, '(a,i4,a)') 'test_data: must have nproj in [1,5] (0 OK lloc=4 or', &
-                &        l1 - 1, ')'
+            &        l1 - 1, ')'
             ierr = ierr + 1
         end if
         if (debl(l1) < 0.0d0) then
@@ -233,17 +233,17 @@ subroutine check_data(atsym, zz, fcfact, rcfact, epsh1, epsh2, depsh, rlmax, drl
                 sf = sf + facnf(ii, jj)
                 if (lacnf(ii, jj) < 0 .or. lacnf(ii, jj) > 3) then
                     write (6, '(a,a,i4,a,i4)') 'test_data: must have 0<= l <=3,', &
-                        &     ' test configuration', jj - 1, ' line', ii - nc
+                    &     ' test configuration', jj - 1, ' line', ii - nc
                     ierr = ierr + 1
                 end if
                 if (nacnf(ii, jj) <= lacnf(ii, jj)) then
                     write (6, '(a,a,i4,a,i4)') 'test_data: l > n,', &
-                        &     ' test configuration', jj - 1, ' line', ii - nc
+                    &     ' test configuration', jj - 1, ' line', ii - nc
                     ierr = ierr + 1
                 end if
                 if (facnf(ii, jj) < 0.0d0) then
                     write (6, '(a,a,i4,a,i4)') 'test_data: f < 0.0,', &
-                        &     ' test configuration', jj - 1, ' line', ii - nc
+                    &     ' test configuration', jj - 1, ' line', ii - nc
                     ierr = ierr + 1
                 end if
             end do

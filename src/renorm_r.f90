@@ -72,8 +72,8 @@ subroutine renorm_r(uu, rr, ll, kap, zz, mmax, cnorm)
     end do
 
     sn = sn + al * (23.0d0 * rr(nin - 2) * uu(nin - 2, 1)**2 &
-        &          + 28.0d0 * rr(nin - 1) * uu(nin - 1, 1)**2 &
-        &          + 9.0d0 * rr(nin) * uu(nin, 1)**2) / 24.0d0
+    &          + 28.0d0 * rr(nin - 1) * uu(nin - 1, 1)**2 &
+    &          + 9.0d0 * rr(nin) * uu(nin, 1)**2) / 24.0d0
 
     cnorm = sqrt(1.0d0 / sn)
 

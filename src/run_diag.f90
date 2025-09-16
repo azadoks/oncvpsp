@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 subroutine run_diag(lmax, npa, epa, lloc, irc, &
-    &                    vkb, evkb, nproj, rr, vfull, vp, zz, mmax, mxprj, srel)
+&                    vkb, evkb, nproj, rr, vfull, vp, zz, mmax, mxprj, srel)
 
 !diagnostics for semi-local and Vanderbilt-Kleinman-bylander pseudopotentials
 !checks bound-state energies, norms, and slopes, and pseudo-bound state
@@ -68,10 +68,10 @@ subroutine run_diag(lmax, npa, epa, lloc, irc, &
 ! loop for diagnostic output using Vanderbilt Kleinman-Bylander projectors
 !
     write (6, '(/a/a)') &
-        & 'Diagnostic tests using Vanderbilt-Kleinman-Bylander pseudopotentials',&
-        & '  1 or more projectors used as specified by nproj input data'
+    & 'Diagnostic tests using Vanderbilt-Kleinman-Bylander pseudopotentials',&
+    & '  1 or more projectors used as specified by nproj input data'
     write (6, '(/2a)') '   l    rcore       rmatch      e in        ', &
-        &   'delta e   norm test  slope test'
+    &   'delta e   norm test  slope test'
 !
     do l1 = 1, lmax + 1
         write (6, '(a)') ''
@@ -86,16 +86,16 @@ subroutine run_diag(lmax, npa, epa, lloc, irc, &
             etest = epa(iprj, l1)
             if (etest < 0.0d0) then
                 call lschfb(npa(iprj, l1), ll, ierr, etest, &
-                    &                rr, vfull, uu, up, zz, mmax, mch, srel)
+                &                rr, vfull, uu, up, zz, mmax, mch, srel)
                 if (ierr /= 0) then
                     write (6, '(/a,3i4)') 'run_diag: lschfb convergence ERROR n,l,ierr=', &
-                        &        npa(iprj, l1), ll, ierr
+                    &        npa(iprj, l1), ll, ierr
                     stop
                 end if
 
             else
                 call lschfs(nnae, ll, ierr, etest, &
-                    &               rr, vfull, uu, up, zz, mmax, mchf, srel)
+                &               rr, vfull, uu, up, zz, mmax, mchf, srel)
             end if
 
             umch = uu(mchf)
@@ -115,11 +115,11 @@ subroutine run_diag(lmax, npa, epa, lloc, irc, &
                 emax = dmin1(emax, 0.0d0)
 
                 call lschvkbb(ll + iprj, ll, npr, ierr, etest, emin, emax, &
-                    &                   rr, vp(1, lloc + 1), vkb(1, 1, l1), evkb(1, l1), &
-                    &                   uu, up, mmax, mch)
+                &                   rr, vp(1, lloc + 1), vkb(1, 1, l1), evkb(1, l1), &
+                &                   uu, up, mmax, mch)
                 if (ierr /= 0) then
                     write (6, '(a,3i4,1p,2e16.8)') 'run_diag: lschvkbb ERROR', &
-                        &             iprj, ll, ierr, epa(iprj, l1), etest
+                    &             iprj, ll, ierr, epa(iprj, l1), etest
                 end if
 
                 nnp = nnp + 1
@@ -128,12 +128,12 @@ subroutine run_diag(lmax, npa, epa, lloc, irc, &
 !     from all-electron node count
                 nnp = nnae - npa(1, l1) + ll + 1
                 call lschvkbbe(nnp, ll, npr, ierr, etest, uldf, emin, emax, &
-                    &                   rr, vp(1, lloc + 1), vkb(1, 1, l1), evkb(1, l1), &
-                    &                   uu, up, mmax, mchf)
+                &                   rr, vp(1, lloc + 1), vkb(1, 1, l1), evkb(1, l1), &
+                &                   uu, up, mmax, mchf)
 
                 if (ierr /= 0) then
                     write (6, '(a,4i4,1p,2e16.8)') 'run_diag: lschvkbbe ERROR', &
-                        &             iprj, nnp, ll, ierr, epa(iprj, l1), etest
+                    &             iprj, nnp, ll, ierr, epa(iprj, l1), etest
 
                 end if
             end if !epa<0 (bound or not)
@@ -142,7 +142,7 @@ subroutine run_diag(lmax, npa, epa, lloc, irc, &
             gpr = dabs(upmch / up(mchf))
 !
             write (6, '(i4,6f12.7)') ll, rr(irc(l1)), rr(mchf), epa(iprj, l1), &
-                &         etest - epa(iprj, l1), gam, gpr
+            &         etest - epa(iprj, l1), gam, gpr
 
         end do  !iprj
     end do !l1

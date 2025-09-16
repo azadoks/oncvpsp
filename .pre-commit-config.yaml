@@ -1,0 +1,37 @@
+exclude: '(scripts|tests|doc)/.*'
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files
+        args: ["--maxkb=5000"]
+      - id: end-of-file-fixer
+        exclude: '(scripts|tests|doc)/.*'
+      - id: check-case-conflict
+      - id: detect-private-key
+      - id: check-docstring-first
+      - id: mixed-line-ending
+        exclude: '(scripts|tests|doc)/.*'
+      - id: trailing-whitespace
+        exclude: '(scripts|tests|doc)/.*'
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v4.9.1
+    hooks:
+      - id: commitizen
+        stages: [commit-msg]
+  - repo: https://github.com/zmoon/findent-pre-commit
+    rev: 527f61f770f504abd87f97932b510b8dce07ab3a
+    hooks:
+      - id: wfindent-pypi
+        args:
+          [
+            -ofree,
+            --indent=4,
+            --refactor_end,
+            --indent_contains=restart,
+            --indent-continuation=default,
+            --indent_ampersand,
+            --align_paren,
+          ]
+        additional_dependencies: [findent==4.3.1]

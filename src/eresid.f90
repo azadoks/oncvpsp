@@ -19,8 +19,8 @@
 ! calculates residual energy operator matrix elements as a function of q
 
 subroutine eresid(ll, irc, nnull, nbas, mmax, rr, drdum, dqdum, qmax, qroot, &
-    &                  uu, pswf0_sb, pswfnull_sb, nqout, qout, &
-    &                  eresid0, eresiddot, eresidmat)
+&                  uu, pswf0_sb, pswfnull_sb, nqout, qout, &
+&                  eresid0, eresiddot, eresidmat)
 
 !ll  anglar momentum
 !irc  log mesh index of rc
@@ -164,18 +164,18 @@ subroutine eresid(ll, irc, nnull, nbas, mmax, rr, drdum, dqdum, qmax, qroot, &
 !null functions exist for r<rc
 
         ps0q = (9.0d0 * ps0(1) * sbf(1) &
-            &      + 28.0d0 * ps0(2) * sbf(2) &
-            &      + 23.0d0 * ps0(3) * sbf(3)    &
-            &      + 23.0d0 * ps0(irclin - 2) * sbf(irclin - 2) &
-            &      + 28.0d0 * ps0(irclin - 1) * sbf(irclin - 1) &
-            &      + 9.0d0 * ps0(irclin) * sbf(irclin)) / 24.0d0
+        &      + 28.0d0 * ps0(2) * sbf(2) &
+        &      + 23.0d0 * ps0(3) * sbf(3)    &
+        &      + 23.0d0 * ps0(irclin - 2) * sbf(irclin - 2) &
+        &      + 28.0d0 * ps0(irclin - 1) * sbf(irclin - 1) &
+        &      + 9.0d0 * ps0(irclin) * sbf(irclin)) / 24.0d0
 
         psnullq(:) = (9.0d0 * psnull(1, :) * sbf(1) &
-            &            + 28.0d0 * psnull(2, :) * sbf(2) &
-            &            + 23.0d0 * psnull(3, :) * sbf(3)    &
-            &            + 23.0d0 * psnull(irclin - 2, :) * sbf(irclin - 2) &
-            &            + 28.0d0 * psnull(irclin - 1, :) * sbf(irclin - 1) &
-            &            + 9.0d0 * psnull(irclin, :) * sbf(irclin)) / 24.0d0
+        &            + 28.0d0 * psnull(2, :) * sbf(2) &
+        &            + 23.0d0 * psnull(3, :) * sbf(3)    &
+        &            + 23.0d0 * psnull(irclin - 2, :) * sbf(irclin - 2) &
+        &            + 28.0d0 * psnull(irclin - 1, :) * sbf(irclin - 1) &
+        &            + 9.0d0 * psnull(irclin, :) * sbf(irclin)) / 24.0d0
 
         do ii = 4, irclin - 3
             ps0q = ps0q + ps0(ii) * sbf(ii)
@@ -183,11 +183,11 @@ subroutine eresid(ll, irc, nnull, nbas, mmax, rr, drdum, dqdum, qmax, qroot, &
         end do
 
         ps0q = ps0q + (9.0d0 * ps0(irclin) * sbf(irclin) &
-            &            + 28.0d0 * ps0(irclin + 1) * sbf(irclin + 1) &
-            &            + 23.0d0 * ps0(irclin + 2) * sbf(irclin + 2)    &
-            &            + 23.0d0 * ps0(mmaxlin - 2) * sbf(mmaxlin - 2) &
-            &            + 28.0d0 * ps0(mmaxlin - 1) * sbf(mmaxlin - 1) &
-            &            + 9.0d0 * ps0(mmaxlin) * sbf(mmaxlin)) / 24.0d0
+        &            + 28.0d0 * ps0(irclin + 1) * sbf(irclin + 1) &
+        &            + 23.0d0 * ps0(irclin + 2) * sbf(irclin + 2)    &
+        &            + 23.0d0 * ps0(mmaxlin - 2) * sbf(mmaxlin - 2) &
+        &            + 28.0d0 * ps0(mmaxlin - 1) * sbf(mmaxlin - 1) &
+        &            + 9.0d0 * ps0(mmaxlin) * sbf(mmaxlin)) / 24.0d0
 
         do ii = irclin + 3, mmaxlin - 3
             ps0q = ps0q + ps0(ii) * sbf(ii)
@@ -208,13 +208,13 @@ subroutine eresid(ll, irc, nnull, nbas, mmax, rr, drdum, dqdum, qmax, qroot, &
 !are full
         if (iq < nq - 3) then
             ac0 = ac0 + (9.0d0 * dac0(1) + 19.0d0 * dac0(2) &
-                &      - 5.0d0 * dac0(3) + dac0(4)) / 24.0d0
+            &      - 5.0d0 * dac0(3) + dac0(4)) / 24.0d0
 
             acdot(:) = acdot(:) + (9.0d0 * dacdot(:, 1) + 19.0d0 * dacdot(:, 2) &
-                &      - 5.0d0 * dacdot(:, 3) + dacdot(:, 4)) / 24.0d0
+            &      - 5.0d0 * dacdot(:, 3) + dacdot(:, 4)) / 24.0d0
 
             acmat(:, :) = acmat(:, :) + (9.0d0 * dacmat(:, :, 1) + 19.0d0 * dacmat(:, :, 2) &
-                &      - 5.0d0 * dacmat(:, :, 3) + dacmat(:, :, 4)) / 24.0d0
+            &      - 5.0d0 * dacmat(:, :, 3) + dacmat(:, :, 4)) / 24.0d0
         end if
 
 !shift dac* arrays one step inward

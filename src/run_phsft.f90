@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 subroutine run_phsft(lmax, lloc, nproj, epa, epsh1, epsh2, depsh, vkb, evkb, &
-    &                     rr, vfull, vp, zz, mmax, mxprj, irc, rxpsh, srel)
+&                     rr, vfull, vp, zz, mmax, mxprj, irc, rxpsh, srel)
 
 ! computes log derivatives, actually atan(r * ((d psi(r)/dr)/psi(r)))
 ! at rr(irphs) comparing all-electron with Vanderbilt-Kleinman-Bylander
@@ -91,12 +91,12 @@ subroutine run_phsft(lmax, lloc, nproj, epa, epsh1, epsh2, depsh, vkb, evkb, &
         call fphsft(ll, epsh2, depsh, pshf, rr, vfull, zz, mmax, irphs, npsh, srel)
         if (ll == lloc) then
             call vkbphsft(ll, 0, epsh2, depsh, epa(1, l1), pshf, pshp, &
-                &                   rr, vp(1, lloc + 1), vkb(1, 1, l1), evkb(1, l1), &
-                &                   mmax, irphs, npsh)
+            &                   rr, vp(1, lloc + 1), vkb(1, 1, l1), evkb(1, l1), &
+            &                   mmax, irphs, npsh)
         else
             call vkbphsft(ll, nproj(l1), epsh2, depsh, epa(1, l1), pshf, pshp, &
-                &                   rr, vp(1, lloc + 1), vkb(1, 1, l1), evkb(1, l1), &
-                &                   mmax, irphs, npsh)
+            &                   rr, vp(1, lloc + 1), vkb(1, 1, l1), evkb(1, l1), &
+            &                   mmax, irphs, npsh)
         end if
 
         write (6, '(/a,i2)') 'log derivativve data for plotting, l=', ll

@@ -60,7 +60,7 @@ subroutine fpovlp(gg, hh, nn, ll, zz, ss, rr, srel)
 
     if (ll == 0) gamma = dsqrt(1.0d0 - fss * zz**2)
     if (ll > 0) gamma = (ll * dsqrt(ll**2 - fss * zz**2) + &
-        & (ll + 1) * dsqrt((ll + 1)**2 - fss * zz**2)) / (2 * ll + 1)
+    & (ll + 1) * dsqrt((ll + 1)**2 - fss * zz**2)) / (2 * ll + 1)
 
     r0 = rr(1) / dsqrt(amesh)
     ss = r0**(2.0d0 * gamma + 1.0d0) / (2.d0 * gamma + 1.0d0)
@@ -71,8 +71,8 @@ subroutine fpovlp(gg, hh, nn, ll, zz, ss, rr, srel)
     end do
 
     ss = ss + al * (23.d0 * rr(nn - 2) * gg(nn - 2) * hh(nn - 2) &
-        &        + 28.d0 * rr(nn - 1) * gg(nn - 1) * hh(nn - 1) &
-        &        + 9.d0 * rr(nn) * gg(nn) * hh(nn)) / 24.d0
+    &        + 28.d0 * rr(nn - 1) * gg(nn - 1) * hh(nn - 1) &
+    &        + 9.d0 * rr(nn) * gg(nn) * hh(nn)) / 24.d0
 
     return
 end subroutine fpovlp

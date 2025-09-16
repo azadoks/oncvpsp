@@ -20,8 +20,8 @@
 ! compared for reference and tests atomic configurations
 
 subroutine run_config_r(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz, &
-    &                  rcmax, mmax, mxprj, iexc, ea, etot, epstot, nproj, vpuns, &
-    &                  lloc, vkb, evkb)
+&                  rcmax, mmax, mxprj, iexc, ea, etot, epstot, nproj, vpuns, &
+&                  lloc, vkb, evkb)
 
 !jj  index of current configufation
 !nacnf  principal quantum number array, all configurations
@@ -111,7 +111,7 @@ subroutine run_config_r(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz
     do ii = 1, nc + nvcnf(1)
         do kk = 1, nc + nvcnf(jj)
             if (nacnf(kk, jj) == nacnf(ii, 1) .and. &
-                &         lacnf(kk, jj) == lacnf(ii, 1)) then
+            &         lacnf(kk, jj) == lacnf(ii, 1)) then
                 indxr(ii) = kk
                 indxe(kk) = ii
             end if
@@ -156,13 +156,13 @@ subroutine run_config_r(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz
 !all-electron atom solution for maximally-ionized state
 
     call relatom(nat, lat, eat(1, 1, 2), fat(1, 2), rpk, nc, nc + nvt, it, rhoc, rho, &
-        &            rr, vfull, zz, mmax, iexc, eaetst, ierr)
+    &            rr, vfull, zz, mmax, iexc, eaetst, ierr)
     if (ierr /= 0) then
         write (6, '(a/a,i2)') 'run_config_r: WARNING  for AE atom,', &
-            &       ' WARNING no output for configuration', jj
+        &       ' WARNING no output for configuration', jj
         if (ierr == -1) then
             write (6, '(a,i4)') &
-                &         'run_config_r: WARNING no classical turning point error, iteration', it
+            &         'run_config_r: WARNING no classical turning point error, iteration', it
         else
             write (6, '(a)') 'run_config_r: WARNING self-consistency failed to converge'
         end if
@@ -179,11 +179,11 @@ subroutine run_config_r(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz
             ll = lat(kk)
             kap = ll + 1
             call ldiracfb(nat(kk), ll, kap, ierr, et, &
-                &                rr, zz, vfull, uu, up, mmax, mch)
+            &                rr, zz, vfull, uu, up, mmax, mch)
             if (ierr /= 0) then
                 write (6, '(/a,4i4)') &
-                    &            'runconfig: WARNING ldiracfb convergence ERROR n,l,kap,ierr=', &
-                    &            nat(kk), ll, kap, ierr
+                &            'runconfig: WARNING ldiracfb convergence ERROR n,l,kap,ierr=', &
+                &            nat(kk), ll, kap, ierr
                 deallocate (rho, rhoc, rhocps, vi, vfull)
                 deallocate (uu, up)
                 return
@@ -194,11 +194,11 @@ subroutine run_config_r(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz
             else
                 kap = ll
                 call ldiracfb(nat(kk), ll, kap, ierr, et, &
-                    &                  rr, zz, vfull, uu, up, mmax, mch)
+                &                  rr, zz, vfull, uu, up, mmax, mch)
                 if (ierr > 0) then
                     write (6, '(/a,4i4)') &
-                        &              'runconfig: WARNING ldiracfb convergence ERROR n,l,kap,iter=', &
-                        &              nat(kk), ll, kap, it
+                    &              'runconfig: WARNING ldiracfb convergence ERROR n,l,kap,iter=', &
+                    &              nat(kk), ll, kap, it
                     deallocate (rho, rhoc, rhocps, vi, vfull)
                     deallocate (uu, up)
                     return
@@ -214,13 +214,13 @@ subroutine run_config_r(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz
 !all-electron atom solution for excited state
 
     call relatom(nat, lat, eat(1, 1, 3), fat(1, 3), rpk, nc, nc + nvt, it, rhoc, rho, &
-        &            rr, vfull, zz, mmax, iexc, eaetst, ierr)
+    &            rr, vfull, zz, mmax, iexc, eaetst, ierr)
     if (ierr /= 0) then
         write (6, '(a/a,i2)') 'run_config_r: WARNING  for AE atom,', &
-            &       ' WARNING no output for configuration', jj
+        &       ' WARNING no output for configuration', jj
         if (ierr == -1) then
             write (6, '(a,i4)') &
-                &        'run_config_r: WARNING no classical turning point error, iteration', it
+            &        'run_config_r: WARNING no classical turning point error, iteration', it
         else
             write (6, '(a)') 'run_config_r: WARNING self-consistency failed to converge'
         end if
@@ -249,12 +249,12 @@ subroutine run_config_r(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz
     rhocps(:) = rhomod(:, 1)
 
     call psatom_r(natp, latp, eatp, fatp, nvt, it, rhocps, rho, &
-        &           rr, rcmax, mmax, mxprj, iexc, etsttot, nproj, vpuns, lloc, &
-        &           vkb, evkb, ierr)
+    &           rr, rcmax, mmax, mxprj, iexc, etsttot, nproj, vpuns, lloc, &
+    &           vkb, evkb, ierr)
 
     if (ierr /= 0) then
         write (6, '(a/a,i2)') 'run_config_r: WARNING for fully non-local PS atom,', &
-            &       ' WARNING no output for configuration', jj
+        &       ' WARNING no output for configuration', jj
         deallocate (rho, rhoc, rhocps, vi, vfull)
         return
     end if
@@ -268,12 +268,12 @@ subroutine run_config_r(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz
     end do
 
     call psatom_r(natp, latp, eatp, fatp, nvt, it, rhocps, rho, &
-        &           rr, rcmax, mmax, mxprj, iexc, etsttot, nproj, vpuns, lloc, &
-        &           vkb, evkb, ierr)
+    &           rr, rcmax, mmax, mxprj, iexc, etsttot, nproj, vpuns, lloc, &
+    &           vkb, evkb, ierr)
 
     if (ierr /= 0) then
         write (6, '(a/a,i2)') 'run_config_r: WARNING for fully non-local PS atom,', &
-            &       ' WARNING no output for configuration', jj
+        &       ' WARNING no output for configuration', jj
         deallocate (rho, rhoc, rhocps, vi, vfull)
         return
     end if
@@ -316,17 +316,17 @@ subroutine run_config_r(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz
                 fj = dble(ll) * fat(ii + nc, 3) / dble(2 * ll + 1)
             end if
             write (6, '(3i4,f8.4,2f14.8,1p,e12.2)') nat(ii + nc), lat(ii + nc), kap, fj, &
-                &    eat(ii + nc, ikap, 3), eatp(ii, ikap), eatp(ii, ikap) - eat(ii + nc, ikap, 3)
+            &    eat(ii + nc, ikap, 3), eatp(ii, ikap), eatp(ii, ikap) - eat(ii + nc, ikap, 3)
         end do
     end do
 
     write (6, '(/a)') '    Total energies and differences'
     write (6, '(a,1p,e16.8,a,e16.8,a,e10.2)') '      AE_ref=', etot, &
-        & '  AE_tst=', eaetst, '  dif=', eaetst - etot
+    & '  AE_tst=', eaetst, '  dif=', eaetst - etot
     write (6, '(a,1p,e16.8,a,e16.8,a,e10.2)') '      PS_ref=', epstot, &
-        & '  PS_tst=', etsttot, '  dif=', etsttot - epstot
+    & '  PS_tst=', etsttot, '  dif=', etsttot - epstot
     write (6, '(a,1p,e10.2)') '      PSP excitation error=', &
-        & eaetst - etot - etsttot + epstot
+    & eaetst - etot - etsttot + epstot
 
     deallocate (rho, rhoc, rhocps, vi, vfull)
     deallocate (uu, up)

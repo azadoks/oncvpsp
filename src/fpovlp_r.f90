@@ -80,8 +80,8 @@ subroutine fpovlp_r(gg, hh, nn, ll, kap, zz, ss, rr)
     end do
 
     ss = ss + al * (23.d0 * rr(nn - 2) * (gg(nn - 2, 1) * hh(nn - 2, 1)) &
-        &        + 28.d0 * rr(nn - 1) * (gg(nn - 1, 1) * hh(nn - 1, 1)) &
-        &        + 9.d0 * rr(nn) * (gg(nn, 1) * hh(nn, 1))) / 24.d0
+    &        + 28.d0 * rr(nn - 1) * (gg(nn - 1, 1) * hh(nn - 1, 1)) &
+    &        + 9.d0 * rr(nn) * (gg(nn, 1) * hh(nn, 1))) / 24.d0
 
     return
 end subroutine fpovlp_r

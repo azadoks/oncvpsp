@@ -70,8 +70,8 @@ subroutine lschvkbs(ll, ivkb, ee, rr, vloc, vkb, evkb, uu, up, mmax, mch)
     end do
 
     sn = sn + al * (23.0d0 * rr(mch - 2) * uu(mch - 2)**2 &
-        &           + 28.0d0 * rr(mch - 1) * uu(mch - 1)**2 &
-        &          + 9.0d0 * rr(mch) * uu(mch)**2) / 24.0d0
+    &           + 28.0d0 * rr(mch - 1) * uu(mch - 1)**2 &
+    &          + 9.0d0 * rr(mch) * uu(mch)**2) / 24.0d0
 
 !normalize u
 

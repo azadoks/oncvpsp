@@ -20,10 +20,10 @@
 ! for PWSCF input using the UPF file format
 
 subroutine upfout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
-    &                  zz, zion, mmax, mxprj, iexc, icmod, nrl, drl, atsym, epstot, &
-    &                  na, la, ncon, nbas, nvcnf, nacnf, lacnf, nc, nv, lpopt, ncnf, &
-    &                  fa, rc0, ep, qcut, debl, facnf, dvloc0, fcfact, rcfact, &
-    &                  epsh1, epsh2, depsh, rlmax, psfile, uupsa, ea)
+&                  zz, zion, mmax, mxprj, iexc, icmod, nrl, drl, atsym, epstot, &
+&                  na, la, ncon, nbas, nvcnf, nacnf, lacnf, nc, nv, lpopt, ncnf, &
+&                  fa, rc0, ep, qcut, debl, facnf, dvloc0, fcfact, rcfact, &
+&                  epsh1, epsh2, depsh, rlmax, psfile, uupsa, ea)
 
 !lmax  maximum angular momentum
 !lloc  l for local potential
@@ -165,30 +165,30 @@ subroutine upfout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     write (6, '(/a)') 'Begin PSP_UPF'
 
     write (6, '(a,/a)') &
-        &      '<UPF version="2.0.1">', &
-        &      '  <PP_INFO>'
+    &      '<UPF version="2.0.1">', &
+    &      '  <PP_INFO>'
     write (6, '(/t2,a/t2,a/t2,a/t2,a/t2,a/t2,a//)') &
         'This pseudopotential file has been produced using the code', &
-        &      'ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
-        &      'scalar-relativistic version 4.0.1 06/20/2107 by D. R. Hamann', &
-        &      'The code is available through a link at URL www.mat-simresearch.com.', &
-        &      'Documentation with the package provides a full discription of the', &
-        &      'input data below.'
+    &      'ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
+    &      'scalar-relativistic version 4.0.1 06/20/2107 by D. R. Hamann', &
+    &      'The code is available through a link at URL www.mat-simresearch.com.', &
+    &      'Documentation with the package provides a full discription of the', &
+    &      'input data below.'
 
     write (6, '(t2,a/t2,a/t2,a/t2,a//)') &
-        &      'While it is not required under the terms of the GNU GPL, it is',&
-        &      'suggested that you cite D. R. Hamann, Phys. Rev. B 88, 085117 (2013)',&
-        &      'in any publication using these pseudopotentials.'
+    &      'While it is not required under the terms of the GNU GPL, it is',&
+    &      'suggested that you cite D. R. Hamann, Phys. Rev. B 88, 085117 (2013)',&
+    &      'in any publication using these pseudopotentials.'
 
     write (6, '(a)') &
-        &      '    <PP_INPUTFILE>'
+    &      '    <PP_INPUTFILE>'
 
 ! output printing (echos input data)
 
     write (6, '(a)') '# ATOM AND REFERENCE CONFIGURATION'
     write (6, '(a)') '# atsym  z   nc   nv     iexc    psfile'
     write (6, '(a,a,f6.2,2i5,i8,2a)') '  ', trim(atsym), zz, nc, nv, iexc, &
-        &      '      ', trim(psfile)
+    &      '      ', trim(psfile)
     write (6, '(a/a)') '#', '#   n    l    f        energy (Ha)'
     do ii = 1, nc + nv
         write (6, '(2i5,f8.2)') na(ii), la(ii), fa(ii)
@@ -199,25 +199,25 @@ subroutine upfout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     write (6, '(a/a)') '#', '#   l,   rc,      ep,       ncon, nbas, qcut'
     do l1 = 1, lmax + 1
         write (6, '(i5,2f10.5,2i5,f10.5)') l1 - 1, rc0(l1), ep(l1), ncon(l1),&
-            &        nbas(l1), qcut(l1)
+        &        nbas(l1), qcut(l1)
     end do
 
     write (6, '(a/a/a,a)') '#', '# LOCAL POTENTIAL', '# lloc, lpopt,  rc(5),', &
-        &      '   dvloc0'
+    &      '   dvloc0'
     write (6, '(2i5,f10.5,a,f10.5)') lloc, lpopt, rc0(5), '   ', dvloc0
 
     write (6, '(a/a/a)') '#', '# VANDERBILT-KLEINMAN-BYLANDER PROJECTORs', &
-        &      '# l, nproj, debl'
+    &      '# l, nproj, debl'
     do l1 = 1, lmax + 1
         write (6, '(2i5,f10.5)') l1 - 1, nproj(l1), debl(l1)
     end do
 
     write (6, '(a/a/a)') '#', '# MODEL CORE CHARGE', &
-        &      '# icmod, fcfact, rcfact'
+    &      '# icmod, fcfact, rcfact'
     write (6, '(i5,2f10.5)') icmod, fcfact, rcfact
 
     write (6, '(a/a/a)') '#', '# LOG DERIVATIVE ANALYSIS', &
-        &      '# epsh1, epsh2, depsh'
+    &      '# epsh1, epsh2, depsh'
     write (6, '(3f8.2)') epsh1, epsh2, depsh
 
     write (6, '(a/a/a)') '#', '# OUTPUT GRID', '# rlmax, drl'
@@ -234,108 +234,108 @@ subroutine upfout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
         write (6, '(a)') '#'
     end do
     write (6, '(a)') &
-        &      '    </PP_INPUTFILE>'
+    &      '    </PP_INPUTFILE>'
 
     write (6, '(a,3(/a))') &
-        &      '  </PP_INFO>', &
-        &      '  <!--                               -->', &
-        &      '  <!-- END OF HUMAN READABLE SECTION -->', &
-        &      '  <!--                               -->'
+    &      '  </PP_INFO>', &
+    &      '  <!--                               -->', &
+    &      '  <!-- END OF HUMAN READABLE SECTION -->', &
+    &      '  <!--                               -->'
 
     write (6, '(a)') &
-        &      '    <PP_HEADER'
+    &      '    <PP_HEADER'
 
     write (6, '(t8,a)') &
-        &        'generated="Generated using ONCVPSP code by D. R. Hamann"'
+    &        'generated="Generated using ONCVPSP code by D. R. Hamann"'
     write (6, '(t8,a)') &
-        &        'author="anonymous"'
+    &        'author="anonymous"'
     write (6, '(t8,5a)') &
-        &        'date="', pspd(:), '"'
+    &        'date="', pspd(:), '"'
     write (6, '(t8,a)') &
-        &        'comment=""'
+    &        'comment=""'
     write (6, '(t8,a,a2,a)') &
-        &        'element="', atsym, '"'
+    &        'element="', atsym, '"'
     write (6, '(t8,a)') &
-        &        'pseudo_type="NC"'
+    &        'pseudo_type="NC"'
     write (6, '(t8,a)') &
-        &        'relativistic="scalar"'
+    &        'relativistic="scalar"'
     write (6, '(t8,a)') &
-        &        'is_ultrasoft="F"'
+    &        'is_ultrasoft="F"'
     write (6, '(t8,a)') &
-        &        'is_paw="F"'
+    &        'is_paw="F"'
     write (6, '(t8,a)') &
-        &        'is_coulomb="F"'
+    &        'is_coulomb="F"'
     write (6, '(t8,a)') &
-        &        'has_so="F"'
+    &        'has_so="F"'
     write (6, '(t8,a)') &
-        &        'has_wfc="F"'
+    &        'has_wfc="F"'
     write (6, '(t8,a)') &
-        &        'has_gipaw="F"'
+    &        'has_gipaw="F"'
 
     if (icmod >= 1) then
         write (6, '(t8,a)') &
-            &        'core_correction="T"'
+        &        'core_correction="T"'
     else
         write (6, '(t8,a)') &
-            &        'core_correction="F"'
+        &        'core_correction="F"'
     end if
 
     if (iexc == 3 .or. iexc == -001009) then
         write (6, '(t8,a)') &
-            &        'functional="PZ"'
+        &        'functional="PZ"'
 
     else if (iexc == 4 .or. iexc == -101130) then
         write (6, '(t8,a)') &
-            &        'functional="PBE"'
+        &        'functional="PBE"'
 
     else if (iexc == -109134) then
         write (6, '(t8,a)') &
-            &        'functional="PW91"'
+        &        'functional="PW91"'
 
     else if (iexc == -116133) then
         write (6, '(t8,a)') &
-            &        'functional="PBESOL"'
+        &        'functional="PBESOL"'
 
     else if (iexc == -102130) then
         write (6, '(t8,a)') &
-            &        'functional="REVPBE"'
+        &        'functional="REVPBE"'
 
     else if (iexc == -106132) then
         write (6, '(t8,a)') &
-            &        'functional="BP"'
+        &        'functional="BP"'
 
     else if (iexc == -106131) then
         write (6, '(t8,a)') &
-            &        'functional="BLYP"'
+        &        'functional="BLYP"'
 
     else if (iexc == -118130) then
         write (6, '(t8,a)') &
-            &        'functional="WC"'
+        &        'functional="WC"'
 
     else
         write (6, '(t8,a)') &
-            &        'upfout: ERROR iexc = ', iexc, ' is presently unsupported for UPF output'
+        &        'upfout: ERROR iexc = ', iexc, ' is presently unsupported for UPF output'
         stop
     end if
 
     write (6, '(t8,a,f8.2,a)') &
-        &        'z_valence="', zion, '"'
+    &        'z_valence="', zion, '"'
 
     write (6, '(t8,a,1p,e20.11,a)') &
-        &        'total_psenergy="', 2 * epstot, '"'
+    &        'total_psenergy="', 2 * epstot, '"'
 
     write (6, '(t8,a,1p,e20.11,a)') &
-        &        'rho_cutoff="', rl(nrl), '"'
+    &        'rho_cutoff="', rl(nrl), '"'
 
     write (6, '(t8,a,i1,a)') &
-        &        'l_max="', lmax, '"'
+    &        'l_max="', lmax, '"'
 
     if (lloc == 4) then
         write (6, '(t8,a)') &
-            &        'l_local="-1"'
+        &        'l_local="-1"'
     else
         write (6, '(t8,a,i1,a)') &
-            &        'l_local="', lloc, '"'
+        &        'l_local="', lloc, '"'
     end if
 
 ! calculate total number of projectors and maximum linear mesh point for
@@ -356,49 +356,49 @@ subroutine upfout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     if (mod(nrlproj, 4) /= 0) nrlproj = nrlproj + 2  !make divisible by 4 to use for 0 compression below
 
     write (6, '(t8,a,i6,a)') &
-        &        'mesh_size="', nrl, '"'
+    &        'mesh_size="', nrl, '"'
 
     write (6, '(t8,a,i1,a)') &
-        &        'number_of_wfc="', nv, '"'
+    &        'number_of_wfc="', nv, '"'
 
     write (6, '(t8,a,i1,a)') &
-        &        'number_of_proj="', ntotproj, '"/>' !end of PP_HEADER
+    &        'number_of_proj="', ntotproj, '"/>' !end of PP_HEADER
 
     write (6, '(t2,a)') &
-        &        '<PP_MESH>'
+    &        '<PP_MESH>'
 
     write (6, '(t4,a,i4,a)') &
-        &      '<PP_R type="real"  size="', nrl, '" columns="8">'
+    &      '<PP_R type="real"  size="', nrl, '" columns="8">'
 
     write (6, '(8f10.4)') (rl(ii), ii=1, nrl)
 
     write (6, '(t4,a)') &
-        &      '</PP_R>'
+    &      '</PP_R>'
 
     write (6, '(t4,a,i4,a)') &
-        &      '<PP_RAB type="real"  size="', nrl, '" columns="8">'
+    &      '<PP_RAB type="real"  size="', nrl, '" columns="8">'
 
     write (6, '(8f10.4)') (drl, ii=1, nrl)
 
     write (6, '(t4,a)') &
-        &      '</PP_RAB>'
+    &      '</PP_RAB>'
 
     write (6, '(t2,a)') &
-        &        '</PP_MESH>'
+    &        '</PP_MESH>'
 
 ! write local potential with factor of 2 for Rydberg units
     write (6, '(a,i4,a)') &
-        &      '  <PP_LOCAL type="real"  size="', nrl, '" columns="4">'
+    &      '  <PP_LOCAL type="real"  size="', nrl, '" columns="4">'
 
     write (6, '(1p,4e20.10)') (2.0d0 * vpl(ii, lloc + 1), ii=1, nrl)
 
     write (6, '(a)') &
-        &      '  </PP_LOCAL>'
+    &      '  </PP_LOCAL>'
 
 ! loop on angular mommentum for projector outputs
 
     write (6, '(t2,a)') &
-        &      '<PP_NONLOCAL>'
+    &      '<PP_NONLOCAL>'
 
     dmat(:, :) = 0.0d0
     iproj = 0
@@ -410,105 +410,105 @@ subroutine upfout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
             dmat(iproj, iproj) = 2.0d0 * evkb(jj, l1) !2 for Rydbergs
             if (iproj <= 9) then
                 write (6, '(t4,a,i1)') &
-                    &            '<PP_BETA.', iproj
+                &            '<PP_BETA.', iproj
             else
                 write (6, '(t4,a,i2)') &
-                    &            '<PP_BETA.', iproj
+                &            '<PP_BETA.', iproj
             end if
             write (6, '(t8,a)') &
-                &          'type="real"'
+            &          'type="real"'
             write (6, '(t8,a,i4,a)') &
-                &          'size="', nrl, '"'
+            &          'size="', nrl, '"'
 !&          'size="',nrlproj,'"'
             write (6, '(t8,a)') &
-                &          'columns="4"'
+            &          'columns="4"'
             write (6, '(t8,a,i1,a)') &
-                &          'index="', iproj, '"'
+            &          'index="', iproj, '"'
 !     write(6,'(t8,a)') &
 !&          'label="3P"'
             write (6, '(t8,a,i1,a)') &
-                &          'angular_momentum="', l1 - 1, '"'
+            &          'angular_momentum="', l1 - 1, '"'
             write (6, '(t8,a,i4,a)') &
-                &          'cutoff_radius_index="', nrlproj, '"'
+            &          'cutoff_radius_index="', nrlproj, '"'
             write (6, '(t8,a,1p,e20.10,a)') &
-                &          'cutoff_radius="', (nrlproj - 1) * drl, '" >'
+            &          'cutoff_radius="', (nrlproj - 1) * drl, '" >'
 
             write (6, '(1p,4e20.10)') (vkbl(ii, jj, l1), ii=1, nrlproj)
             write (6, '(1p,4f3.0)') (0.d0, ii=nrlproj + 1, nrl)
 
             if (iproj <= 9) then
                 write (6, '(t4,a,i1,a)') &
-                    &            '</PP_BETA.', iproj, '>'
+                &            '</PP_BETA.', iproj, '>'
             else
                 write (6, '(t4,a,i2,a)') &
-                    &            '</PP_BETA.', iproj, '>'
+                &            '</PP_BETA.', iproj, '>'
             end if
         end do
     end do
 
     write (6, '(t4,a,i4,a)') &
-        &      '<PP_DIJ type="real"  size="', ntotproj**2, '" columns="4">'
+    &      '<PP_DIJ type="real"  size="', ntotproj**2, '" columns="4">'
 
     write (6, '(1p,4e20.10)') ((dmat(ii, jj), ii=1, ntotproj), jj=1, ntotproj)
 
     write (6, '(t4,a)') &
-        &      '</PP_DIJ>'
+    &      '</PP_DIJ>'
 
     write (6, '(t2,a)') &
-        &      '</PP_NONLOCAL>'
+    &      '</PP_NONLOCAL>'
 
     write (6, '(t2,a)') &
-        &      '<PP_PSWFC>'
+    &      '<PP_PSWFC>'
     do ii = 1, nv
         l1 = la(nc + ii)
         write (6, '(t4,a,i1)') &
-            &       '<PP_CHI.', ii
+        &       '<PP_CHI.', ii
         write (6, '(t8,a)') &
-            &       'type="real"'
+        &       'type="real"'
         write (6, '(t8,a,i4,a)') &
-            &       'size="', nrl, '"'
+        &       'size="', nrl, '"'
         write (6, '(t8,a)') &
-            &       'columns="4"'
+        &       'columns="4"'
         write (6, '(t8,a,i1,a)') &
-            &       'index="', ii, '"'
+        &       'index="', ii, '"'
         write (6, '(t8,a,f6.3,a)') &
-            &       'occupation="', fa(nc + ii), '"'
+        &       'occupation="', fa(nc + ii), '"'
         write (6, '(t8,a,e20.10,a)') &
-            &       'pseudo_energy="', 2 * ea(nc + ii), '"'
+        &       'pseudo_energy="', 2 * ea(nc + ii), '"'
         write (6, '(t8,a,i1,a,a)') &
-            &       'label="', na(nc + ii), lnames(l1 + 1:l1 + 1), '"'
+        &       'label="', na(nc + ii), lnames(l1 + 1:l1 + 1), '"'
         write (6, '(t8,a,i1,a)') &
-            &          'l="', l1, '" >'
+        &          'l="', l1, '" >'
 
         write (6, '(1p,4e20.10)') (uual(jj, ii), jj=1, nrl)
 
         write (6, '(t4,a,i1,a)') &
-            &       '</PP_CHI.', ii, '>'
+        &       '</PP_CHI.', ii, '>'
 
     end do
     write (6, '(t2,a)') &
-        &      '</PP_PSWFC>'
+    &      '</PP_PSWFC>'
 
     if (icmod >= 1) then
         write (6, '(t2,a,i4,a)') &
-            &        '<PP_NLCC type="real"  size="', nrl, '" columns="4">'
+        &        '<PP_NLCC type="real"  size="', nrl, '" columns="4">'
 
         write (6, '(1p,4e20.10)') (rhomodl(ii, 1) / (4.0d0 * pi), ii=1, nrl)
 
         write (6, '(t2,a)') &
-            &        '</PP_NLCC>'
+        &        '</PP_NLCC>'
     end if
 
     write (6, '(t2,a,i4,a)') &
-        &      '<PP_RHOATOM type="real"  size="', nrl, '" columns="4">'
+    &      '<PP_RHOATOM type="real"  size="', nrl, '" columns="4">'
 
     write (6, '(1p,4e20.10)') ((rl(ii)**2) * rhol(ii), ii=1, nrl)
 
     write (6, '(t2,a)') &
-        &      '</PP_RHOATOM>'
+    &      '</PP_RHOATOM>'
 
     write (6, '(a)') &
-        &      '</UPF>'
+    &      '</UPF>'
 
     deallocate (rhol, rl, vkbl, vpl, rhomodl, dmat)
 

@@ -28,7 +28,7 @@ function aeo(yy, jj)
     integer :: jj
 
     aeo = (4.16666666667d-2) * (55.0d0 * yy(jj) - 59.0d0 * yy(jj - 1) &
-        & + 37.0d0 * yy(jj - 2) - 9.0d0 * yy(jj - 3))
+    & + 37.0d0 * yy(jj - 2) - 9.0d0 * yy(jj - 3))
     return
 end function aeo
 
@@ -40,7 +40,7 @@ function aio(yy, jj)
     integer :: jj
 
     aio = (4.16666666667d-2) * (9.0d0 * yy(jj + 1) + 19.0d0 * yy(jj) &
-        & - 5.0d0 * yy(jj - 1) + yy(jj - 2))
+    & - 5.0d0 * yy(jj - 1) + yy(jj - 2))
     return
 end function aio
 
@@ -52,7 +52,7 @@ function aei(yy, jj)
     integer :: jj
 
     aei = -(4.16666666667d-2) * (55.0d0 * yy(jj) - 59.0d0 * yy(jj + 1) &
-        & + 37.0d0 * yy(jj + 2) - 9.0d0 * yy(jj + 3))
+    & + 37.0d0 * yy(jj + 2) - 9.0d0 * yy(jj + 3))
     return
 end function aei
 
@@ -63,7 +63,6 @@ function aii(yy, jj)
     integer :: jj
 
     aii = -(4.16666666667d-2) * (9.0d0 * yy(jj - 1) + 19.0d0 * yy(jj) &
-        & - 5.0d0 * yy(jj + 1) + yy(jj + 2))
+    & - 5.0d0 * yy(jj + 1) + yy(jj + 2))
     return
 end function aii
-

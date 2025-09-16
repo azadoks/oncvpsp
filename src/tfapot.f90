@@ -47,11 +47,10 @@ function tfapot(rr, zz)
     xs = sqrt(xx)
 
     tt = zz / (1.0d0 + xs * (0.02747d0 - xx * (0.1486d0 - 0.007298d0 * xx)) &
-        &   + xx * (1.243d0 + xx * (0.2302d0 + 0.006944d0 * xx)))
+    &   + xx * (1.243d0 + xx * (0.2302d0 + 0.006944d0 * xx)))
 
     if (tt < 1.0d0) tt = 1.0d0
     tfapot = -tt / rr
 
     return
 end function tfapot
-

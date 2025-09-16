@@ -24,7 +24,7 @@
 ! Teter, Phys. Rev. B 48, 5031 (1993) , Appendix, as
 
 subroutine modcore2(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
-    &                   fcfact, rcfact, irps, mmax, rr, nc, nv, la, zion, iexc)
+&                   fcfact, rcfact, irps, mmax, rr, nc, nv, la, zion, iexc)
 
 !icmod  3 coefficient optimizaion, 4 for specivied fcfact and rfact
 !rhops  state-by-state pseudocharge density
@@ -102,7 +102,7 @@ subroutine modcore2(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
 
     if (ircc == 0) then
         write (6, '(/a)') 'modcore2: ERROR ircc (core-valence charge crossover) &
-            &        not found'
+        &        not found'
         stop
     end if
 
@@ -110,12 +110,12 @@ subroutine modcore2(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
     irmod = mmax
 
     write (6, '(/a/a)') 'Model core correction analysis',&
-        &                  '  based on d2Exc/dn_idn_j'
+    &                  '  based on d2Exc/dn_idn_j'
 
 ! get derivatives of all-electron xc energy
 
     call der2exc(rhotae, rhoc, rhoae, rr, d2excae, d2excps, d2mdiff, &
-        &                   zion, iexc, nc, nv, la, irmod, mmax)
+    &                   zion, iexc, nc, nv, la, irmod, mmax)
 
     write (6, '(/a/)') 'd2excae - all-electron derivatives'
     do kk = 1, nv
@@ -129,7 +129,7 @@ subroutine modcore2(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
     rhomod(:, :) = 0.0d0
 
     call der2exc(rhotps, rhomod(1, 1), rhops, rr, d2excps, d2excae, d2mdiff, &
-        &                   zion, iexc, nc, nv, la, irmod, mmax)
+    &                   zion, iexc, nc, nv, la, irmod, mmax)
 
     write (6, '(/a/)') 'd2excps - pseudofunction derivatives with no core correction'
     do kk = 1, nv
@@ -151,9 +151,9 @@ subroutine modcore2(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
 !7-point numerical first derivative
     jj = 2; ii = ircc
     rhomod(ii, jj) = (-rhomod(ii - 3, jj - 1) + 9.d0 * rhomod(ii - 2, jj - 1)&
-        &     - 45.d0 * rhomod(ii - 1, jj - 1) + 45.d0 * rhomod(ii + 1, jj - 1)&
-        &     - 9.d0 * rhomod(ii + 2, jj - 1) + rhomod(ii + 3, jj - 1))&
-        &     / (60.d0 * al * rr(ii))
+    &     - 45.d0 * rhomod(ii - 1, jj - 1) + 45.d0 * rhomod(ii + 1, jj - 1)&
+    &     - 9.d0 * rhomod(ii + 2, jj - 1) + rhomod(ii + 3, jj - 1))&
+    &     / (60.d0 * al * rr(ii))
     fmatch(jj) = rhomod(ircc, jj)
 
 ! Fit Teter function to value and slope at ircc
@@ -203,7 +203,7 @@ subroutine modcore2(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
 
 ! test model
     call der2exc(rhotps, rhomod(1, 1), rhops, rr, d2excps, d2excae, d2mdiff, &
-        &                   zion, iexc, nc, nv, la, irmod, mmax)
+    &                   zion, iexc, nc, nv, la, irmod, mmax)
 
     write (6, '(/a/)') 'd2excps - pseudofunction derivatives with core correction'
 
@@ -249,9 +249,9 @@ subroutine modcore2(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
     jj = 4
     do ii = 3 * jj - 8, mmax - 3
         rhomod(ii, jj) = (-rhomod(ii - 3, jj - 1) + 9.d0 * rhomod(ii - 2, jj - 1)&
-            &     - 45.d0 * rhomod(ii - 1, jj - 1) + 45.d0 * rhomod(ii + 1, jj - 1)&
-            &     - 9.d0 * rhomod(ii + 2, jj - 1) + rhomod(ii + 3, jj - 1))&
-            &     / (60.d0 * al * rr(ii))
+        &     - 45.d0 * rhomod(ii - 1, jj - 1) + 45.d0 * rhomod(ii + 1, jj - 1)&
+        &     - 9.d0 * rhomod(ii + 2, jj - 1) + rhomod(ii + 3, jj - 1))&
+        &     / (60.d0 * al * rr(ii))
     end do
 
 !set up a mesh on which 3rd derivative will have a stable
@@ -277,9 +277,9 @@ subroutine modcore2(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
     jj = 5
     do ii = 3 * jj - 8, mmax - 3
         rhomod(ii, jj) = (-rhomod(ii - 3, jj - 1) + 9.d0 * rhomod(ii - 2, jj - 1)&
-            &     - 45.d0 * rhomod(ii - 1, jj - 1) + 45.d0 * rhomod(ii + 1, jj - 1)&
-            &     - 9.d0 * rhomod(ii + 2, jj - 1) + rhomod(ii + 3, jj - 1))&
-            &     / (60.d0 * al * rr(ii))
+        &     - 45.d0 * rhomod(ii - 1, jj - 1) + 45.d0 * rhomod(ii + 1, jj - 1)&
+        &     - 9.d0 * rhomod(ii + 2, jj - 1) + rhomod(ii + 3, jj - 1))&
+        &     / (60.d0 * al * rr(ii))
     end do
 
 !set up a mesh on which 4th derivative will have a stable

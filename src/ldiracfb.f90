@@ -137,10 +137,10 @@ subroutine ldiracfb(nn, ll, kap, ierr, ee, rr, zz, vv, uu, up, mmax, mch)
             fu(ii) = cof * gu(ii)
 
             fup(ii) = al * rr(ii) * (kap * fu(ii) / rr(ii) &
-                &            + cci * (ee + vv(ii)) * gu(ii))
+            &            + cci * (ee + vv(ii)) * gu(ii))
 
             gup(ii) = al * rr(ii) * (-kap * gu(ii) / rr(ii) &
-                &            + cci * (2.0d0 * cc**2 - ee - vv(ii)) * fu(ii))
+            &            + cci * (2.0d0 * cc**2 - ee - vv(ii)) * fu(ii))
         end do
 
 ! outward integration using predictor once, corrector
@@ -153,10 +153,10 @@ subroutine ldiracfb(nn, ll, kap, ierr, ee, rr, zz, vv, uu, up, mmax, mch)
 
             do kk = 1, 2
                 fup(ii + 1) = al * rr(ii + 1) * (kap * fu(ii + 1) / rr(ii + 1) &
-                    &             - cci * (ee - vv(ii + 1)) * gu(ii + 1))
+                &             - cci * (ee - vv(ii + 1)) * gu(ii + 1))
 
                 gup(ii + 1) = al * rr(ii + 1) * (-kap * gu(ii + 1) / rr(ii + 1) &
-                    &             + cci * (2.0d0 * cc**2 + ee - vv(ii + 1)) * fu(ii + 1))
+                &             + cci * (2.0d0 * cc**2 + ee - vv(ii + 1)) * fu(ii + 1))
 
                 fu(ii + 1) = fu(ii) + aio(fup, ii)
                 gu(ii + 1) = gu(ii) + aio(gup, ii)
@@ -181,9 +181,9 @@ subroutine ldiracfb(nn, ll, kap, ierr, ee, rr, zz, vv, uu, up, mmax, mch)
                 fu(ii) = 0.5d0 * cci * (-xkap + kap / rr(ii)) * gu(ii)
 
                 fup(ii) = al * rr(ii) * (kap * fu(ii) / rr(ii) &
-                    &               + cci * (ee + vv(ii)) * gu(ii))
+                &               + cci * (ee + vv(ii)) * gu(ii))
                 gup(ii) = al * rr(ii) * (-kap * gu(ii) / rr(ii) &
-                    &               + cci * (2.0d0 * cc**2 - ee - vv(ii)) * fu(ii))
+                &               + cci * (2.0d0 * cc**2 - ee - vv(ii)) * fu(ii))
             end do
 
 ! integrate inward
@@ -194,10 +194,10 @@ subroutine ldiracfb(nn, ll, kap, ierr, ee, rr, zz, vv, uu, up, mmax, mch)
 
                 do kk = 1, 2
                     fup(ii - 1) = al * rr(ii - 1) * (kap * fu(ii - 1) / rr(ii - 1) &
-                        &               - cci * (ee - vv(ii - 1)) * gu(ii - 1))
+                    &               - cci * (ee - vv(ii - 1)) * gu(ii - 1))
 
                     gup(ii - 1) = al * rr(ii - 1) * (-kap * gu(ii - 1) / rr(ii - 1) &
-                        &               + cci * (2.0d0 * cc**2 + ee - vv(ii - 1)) * fu(ii - 1))
+                    &               + cci * (2.0d0 * cc**2 + ee - vv(ii - 1)) * fu(ii - 1))
 
                     fu(ii - 1) = fu(ii) + aii(fup, ii)
                     gu(ii - 1) = gu(ii) + aii(gup, ii)
@@ -227,8 +227,8 @@ subroutine ldiracfb(nn, ll, kap, ierr, ee, rr, zz, vv, uu, up, mmax, mch)
             end do
 
             sn = sn + al * (23.0d0 * rr(nin - 2) * (gu(nin - 2)**2 + fu(nin - 2)**2) &
-                &              + 28.0d0 * rr(nin - 1) * (gu(nin - 1)**2 + fu(nin - 1)**2) &
-                &              + 9.0d0 * rr(nin) * (gu(nin)**2 + fu(nin)**2)) / 24.0d0
+            &              + 28.0d0 * rr(nin - 1) * (gu(nin - 1)**2 + fu(nin - 1)**2) &
+            &              + 9.0d0 * rr(nin) * (gu(nin)**2 + fu(nin)**2)) / 24.0d0
 
 ! normalize u
 

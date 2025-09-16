@@ -96,7 +96,7 @@ subroutine lschkb(nn, ll, ierr, ee, vkb, rr, vv, uu, up, mmax, mch)
         up(ii + 1) = up(ii) + aeo(upp, ii)
         do it = 1, 2
             upp(ii + 1) = al * up(ii + 1) + cf(ii + 1) * uu(ii + 1) &
-                &            + 2.0d0 * als * vkb(ii + 1) * rr(ii + 1)**2
+            &            + 2.0d0 * als * vkb(ii + 1) * rr(ii + 1)**2
             up(ii + 1) = up(ii) + aio(upp, ii)
             uu(ii + 1) = uu(ii) + aio(up, ii)
         end do

@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 subroutine wellstate_r(nnin, ll, kap, irc, ep, rr, vfull, vwell, &
-    &                      uu, up, zz, mmax, mch, srel)
+&                      uu, up, zz, mmax, mch, srel)
 
 !creates quantum well to confine positive-energy state, and calculates
 !the resulting all-electron wave function
@@ -83,9 +83,9 @@ subroutine wellstate_r(nnin, ll, kap, irc, ep, rr, vfull, vwell, &
         if (rr(iumax) < 0.75d0 * rr(irc)) then
             ep = et
             write (6, '(/a,i2,a,i2/a,f12.8/a)') &
-                &          'WARNING wellstate: localized bound state found for n=', &
-                &           nnin, ' l=', ll, 'WARNING this state with energy', ep, &
-                &          'WARNING will be used for the first projector'
+            &          'WARNING wellstate: localized bound state found for n=', &
+            &           nnin, ' l=', ll, 'WARNING this state with energy', ep, &
+            &          'WARNING will be used for the first projector'
 
 !make sure vwell exists for ikap=2 calculation in this case
             vwell(:) = vfull(:)
@@ -97,9 +97,9 @@ subroutine wellstate_r(nnin, ll, kap, irc, ep, rr, vfull, vwell, &
 
             ep = 0.05d0
             write (6, '(/a,i2,a,i2/a,f12.8/a)') &
-                &          'WARNING wellstate: moderately localized bound state found for n=', &
-                &          nnin, ' l= ', ll, 'WARNING scattering state with energy', ep, &
-                &          'WARNING will be used for the first projector'
+            &          'WARNING wellstate: moderately localized bound state found for n=', &
+            &          nnin, ' l= ', ll, 'WARNING scattering state with energy', ep, &
+            &          'WARNING will be used for the first projector'
         end if
     end if
 
@@ -107,10 +107,10 @@ subroutine wellstate_r(nnin, ll, kap, irc, ep, rr, vfull, vwell, &
     if (ep < 0.0d0) then
         ep = 0.25d0
         write (6, '(/a,i2,a,i2/a,f12.8/a)') &
-            &         'WARNING wellstate: negative energy specified for n=', &
-            &         nnin, ' l= ', ll, &
-            &         'WARNING scattering state with energy', ep, &
-            &         'WARNING will be used for the first projector'
+        &         'WARNING wellstate: negative energy specified for n=', &
+        &         nnin, ' l= ', ll, &
+        &         'WARNING scattering state with energy', ep, &
+        &         'WARNING will be used for the first projector'
     end if
 
 !scale factor to decrease well width until trial energy exceeds target
@@ -199,17 +199,17 @@ subroutine wellstate_r(nnin, ll, kap, irc, ep, rr, vfull, vwell, &
 
     if (.not. convg) then
         write (6, '(a,a,i3,a,i3,a,i3a,f8.4)') &
-            &   'ERROR wellstate_r: well potential iteration failed', &
-            &   ' to converge, n=', nn, ' l=', ll, ' kap=', kap, ' ep=', ep
+        &   'ERROR wellstate_r: well potential iteration failed', &
+        &   ' to converge, n=', nn, ' l=', ll, ' kap=', kap, ' ep=', ep
         stop
     end if
 
     if (cwell > 0.0d0) then
         write (6, '(/a,i3,a,i3,a,i3/a,f8.4,/a,f8.4/a,f8.4)') &
-            &          '   Wellstate for l =', ll, '  n =', nn, ' kap=', kap, &
-            &          '     eigenvalue = ', et, &
-            &          '     asymptotic potential = ', cwell, &
-            &          '     half-point radius =', rr(irc) + rwell
+        &          '   Wellstate for l =', ll, '  n =', nn, ' kap=', kap, &
+        &          '     eigenvalue = ', et, &
+        &          '     asymptotic potential = ', cwell, &
+        &          '     half-point radius =', rr(irc) + rwell
     end if
 
 !carry over node count

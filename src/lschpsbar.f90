@@ -189,12 +189,12 @@ subroutine lschpsbar(nn, ll, ierr, ee, emin, emax, rr, vv, uu, up, mmax, mbar, t
                         uu(ii) = rr(ii) * (ctht * sinh(-xx) / xkap + stht * cosh(-xx))
 
                         up(ii) = al * rr(ii)**2 * (-ctht * cosh(-xx) - xkap * stht * sinh(-xx)) &
-                            &                 + al * uu(ii)
+                        &                 + al * uu(ii)
                     else
                         uu(ii) = rr(ii) * (ctht * sin(-xx) / xkap + stht * cos(-xx))
 
                         up(ii) = al * rr(ii)**2 * (-ctht * cos(-xx) + xkap * stht * sin(-xx)) &
-                            &                 + al * uu(ii)
+                        &                 + al * uu(ii)
                     end if
                     upp(ii) = al * up(ii) + cf(mbar) * uu(ii)
                 end do
@@ -239,8 +239,8 @@ subroutine lschpsbar(nn, ll, ierr, ee, emin, emax, rr, vv, uu, up, mmax, mbar, t
             end do
 
             sn = sn + al * (23.0d0 * rr(nin - 2) * uu(nin - 2)**2 &
-                &              + 28.0d0 * rr(nin - 1) * uu(nin - 1)**2 &
-                &              + 9.0d0 * rr(nin) * uu(nin)**2) / 24.0d0
+            &              + 28.0d0 * rr(nin - 1) * uu(nin - 1)**2 &
+            &              + 9.0d0 * rr(nin) * uu(nin)**2) / 24.0d0
 
 ! normalize u
 

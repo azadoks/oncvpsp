@@ -76,9 +76,9 @@ subroutine wf_rc_der(rr, uu, al, rc, irc, mmax, uorder)
 ! 7-point numerical first derivatives applied successively
         do ii = irc - 25 + 3 * jj, irc + 25 - 3 * jj
             work(ii, jj) = (-work(ii - 3, jj - 1) + 9.d0 * work(ii - 2, jj - 1)&
-                &     - 45.d0 * work(ii - 1, jj - 1) + 45.d0 * work(ii + 1, jj - 1)&
-                &     - 9.d0 * work(ii + 2, jj - 1) + work(ii + 3, jj - 1))&
-                &     / (60.d0 * al * rr(ii))
+            &     - 45.d0 * work(ii - 1, jj - 1) + 45.d0 * work(ii + 1, jj - 1)&
+            &     - 9.d0 * work(ii + 2, jj - 1) + work(ii + 3, jj - 1))&
+            &     / (60.d0 * al * rr(ii))
         end do
     end do
 

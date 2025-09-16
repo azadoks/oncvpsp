@@ -31,11 +31,11 @@ module m_psmlout
 CONTAINS
 
 subroutine psmlout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
-    &                  irct, srel, &
-    &                  zz, zion, mmax, iexc, icmod, nrl, drl, atsym, epstot, &
-    &                  na, la, ncon, nbas, nvcnf, nacnf, lacnf, nc, nv, lpopt, ncnf, &
-    &                  fa, rc0, ep, qcut, debl, facnf, dvloc0, fcfact, &
-    &                  epsh1, epsh2, depsh, rlmax, psfile)
+&                  irct, srel, &
+&                  zz, zion, mmax, iexc, icmod, nrl, drl, atsym, epstot, &
+&                  na, la, ncon, nbas, nvcnf, nacnf, lacnf, nc, nv, lpopt, ncnf, &
+&                  fa, rc0, ep, qcut, debl, facnf, dvloc0, fcfact, &
+&                  epsh1, epsh2, depsh, rlmax, psfile)
 
 !lmax  maximum angular momentum
 !lloc  l for local potential
@@ -138,7 +138,7 @@ subroutine psmlout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     write (lun, '(a)') '# ATOM AND REFERENCE CONFIGURATION'
     write (lun, '(a)') '# atsym  z    nc    nv    iexc   psfile'
     write (lun, '(a,a,f6.2,3i6,2a)') '  ', trim(atsym), zz, nc, nv, iexc, &
-        &      '      ', trim(psfile)
+    &      '      ', trim(psfile)
     write (lun, '(a/a)') '#', '#   n    l    f        energy (Ha)'
     do ii = 1, nc + nv
         write (lun, '(2i5,f8.2)') na(ii), la(ii), fa(ii)
@@ -152,21 +152,21 @@ subroutine psmlout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     end do
 
     write (lun, '(a/a/a,a)') '#', '# LOCAL POTENTIAL', '# lloc, lpopt,  rc(5),', &
-        &      '   dvloc0'
+    &      '   dvloc0'
     write (lun, '(2i5,f10.2,a,f8.2)') lloc, lpopt, rc(5), '   ', dvloc0
 
     write (lun, '(a/a/a)') '#', '# VANDERBILT-KLEINMAN-BYLANDER PROJECTORs', &
-        &      '# l, nproj, debl'
+    &      '# l, nproj, debl'
     do l1 = 1, lmax + 1
         write (lun, '(2i5,f10.4)') l1 - 1, nproj(l1), debl(l1)
     end do
 
     write (lun, '(a/a/a)') '#', '# MODEL CORE CHARGE', &
-        &      '# icmod, fcfact'
+    &      '# icmod, fcfact'
     write (lun, '(i5,f8.2,2i5,f8.2)') icmod, fcfact
 
     write (lun, '(a/a/a)') '#', '# LOG DERIVATIVE ANALYSIS', &
-        &      '# epsh1, epsh2, depsh'
+    &      '# epsh1, epsh2, depsh'
     write (lun, '(3f8.2)') epsh1, epsh2, depsh
 
     write (lun, '(a/a/a)') '#', '# OUTPUT GRID', '# rlmax, drl'
@@ -507,12 +507,12 @@ end subroutine psmlout
 ! Fully relativistic version
 !
 subroutine psmlout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
-    &                  irct, &
-    &                  vsr, esr, vso, eso, &
-    &                  zz, zion, mmax, iexc, icmod, nrl, drl, atsym, epstot, &
-    &                  na, la, ncon, nbas, nvcnf, nacnf, lacnf, nc, nv, lpopt, ncnf, &
-    &                  fa, rc0, ep, qcut, debl, facnf, dvloc0, fcfact, &
-    &                  epsh1, epsh2, depsh, rlmax, psfile)
+&                  irct, &
+&                  vsr, esr, vso, eso, &
+&                  zz, zion, mmax, iexc, icmod, nrl, drl, atsym, epstot, &
+&                  na, la, ncon, nbas, nvcnf, nacnf, lacnf, nc, nv, lpopt, ncnf, &
+&                  fa, rc0, ep, qcut, debl, facnf, dvloc0, fcfact, &
+&                  epsh1, epsh2, depsh, rlmax, psfile)
 
 !lmax  maximum angular momentum
 !lloc  l for local potential
@@ -614,7 +614,7 @@ subroutine psmlout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     write (lun, '(a)') '# ATOM AND REFERENCE CONFIGURATION'
     write (lun, '(a)') '# atsym  z    nc    nv    iexc   psfile'
     write (lun, '(a,a,f6.2,3i6,2a)') '  ', trim(atsym), zz, nc, nv, iexc, &
-        &      '      ', trim(psfile)
+    &      '      ', trim(psfile)
     write (lun, '(a/a)') '#', '#   n    l    f        energy (Ha)'
     do ii = 1, nc + nv
         write (lun, '(2i5,f8.2)') na(ii), la(ii), fa(ii)
@@ -628,21 +628,21 @@ subroutine psmlout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     end do
 
     write (lun, '(a/a/a,a)') '#', '# LOCAL POTENTIAL', '# lloc, lpopt,  rc(5),', &
-        &      '   dvloc0'
+    &      '   dvloc0'
     write (lun, '(2i5,f10.2,a,f8.2)') lloc, lpopt, rc(5), '   ', dvloc0
 
     write (lun, '(a/a/a)') '#', '# VANDERBILT-KLEINMAN-BYLANDER PROJECTORs', &
-        &      '# l, nproj, debl'
+    &      '# l, nproj, debl'
     do l1 = 1, lmax + 1
         write (lun, '(2i5,f10.4)') l1 - 1, nproj(l1), debl(l1)
     end do
 
     write (lun, '(a/a/a)') '#', '# MODEL CORE CHARGE', &
-        &      '# icmod, fcfact'
+    &      '# icmod, fcfact'
     write (lun, '(i5,f8.2,2i5,f8.2)') icmod, fcfact
 
     write (lun, '(a/a/a)') '#', '# LOG DERIVATIVE ANALYSIS', &
-        &      '# epsh1, epsh2, depsh'
+    &      '# epsh1, epsh2, depsh'
     write (lun, '(3f8.2)') epsh1, epsh2, depsh
 
     write (lun, '(a/a/a)') '#', '# OUTPUT GRID', '# rlmax, drl'

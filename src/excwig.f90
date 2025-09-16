@@ -62,4 +62,3 @@ subroutine excwig(rho, vxc, exc, mmax)
     end do
     return
 end subroutine excwig
-

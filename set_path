@@ -42,4 +42,3 @@ cp $TMP scripts/compare_psml.sh
 chmod u+x tests/*sh
 
 rm $TMP
-

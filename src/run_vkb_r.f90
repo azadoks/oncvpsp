@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 subroutine run_vkb_r(lmax, lloc, lpopt, dvloc0, irc, nproj, rr, mmax, mxprj, pswf, vfull, vp, &
-    &                   evkb, vkb, nlim, vr)
+&                   evkb, vkb, nlim, vr)
 
 ! computes Vanderbilt / Kleinman-Bylander non-local potentials
 
@@ -113,7 +113,7 @@ subroutine run_vkb_r(lmax, lloc, lpopt, dvloc0, irc, nproj, rr, mmax, mxprj, psw
                     end if
 
                     vkb(ii, jj, l1, ikap) = vkb(ii, jj, l1, ikap) &
-                        &                         - (vloc(ii) + ff * vr(ii, jj, l1, ikap)) * pswf(ii, jj, l1, ikap)
+                    &                         - (vloc(ii) + ff * vr(ii, jj, l1, ikap)) * pswf(ii, jj, l1, ikap)
                 end do
                 do ii = irc(l1) + 1, mmax
                     vkb(ii, jj, l1, ikap) = 0.0d0
@@ -152,7 +152,7 @@ subroutine run_vkb_r(lmax, lloc, lpopt, dvloc0, irc, nproj, rr, mmax, mxprj, psw
 
 ! symmetrize exactly
                 write (6, '(/a,i3,a,i3)') 'B matrix Hermiticity error, ll=', l1 - 1, &
-                    &        '  kap=', kap
+                &        '  kap=', kap
                 do jj = 2, np
                     do ii = 1, jj - 1
                         write (6, '(2i4,1p,d14.4)') ii, jj, bb(ii, jj) - bb(jj, ii)
@@ -308,7 +308,7 @@ subroutine run_vkb_r(lmax, lloc, lpopt, dvloc0, irc, nproj, rr, mmax, mxprj, psw
                 end do
 
                 write (6, '(/a,1p,5e12.4)') '  Orthonormal projector coefficients',&
-                    &        (evkb(jj, l1, ikap), jj=1, np)
+                &        (evkb(jj, l1, ikap), jj=1, np)
 
 ! Set sign of projectors (physically irrelevant) so that they are positive
 ! at their peak (needed for compaisons apparently)

@@ -19,7 +19,7 @@
 ! self-consistent pseudoatom calculation
 
 subroutine psatom_r(na, la, ea, fat, nv, it, rhoc, rho, &
-    &           rr, rcmax, mmax, mxprj, iexc, etot, nproj, vpuns, lloc, vkb, evkb, ierr)
+&           rr, rcmax, mmax, mxprj, iexc, etot, nproj, vpuns, lloc, vkb, evkb, ierr)
 
 !na  principal quantum number array, dimension nv
 !la  angular-momenta
@@ -165,12 +165,12 @@ subroutine psatom_r(na, la, ea, fat, nv, it, rhoc, rho, &
                 emin = 1.10d0 * ea(ii, ikap)
                 emax = 0.90d0 * ea(ii, ikap)
                 call lschvkbb(na(ii), la(ii), nproj(l1), ierr, et, emin, emax, &
-                    &                   rr, vtot, vkb(1, 1, l1, ikap), evkb(1, l1, ikap), uu, up, mmax, mch)
+                &                   rr, vtot, vkb(1, 1, l1, ikap), evkb(1, l1, ikap), uu, up, mmax, mch)
 
                 if (ierr /= 0) then
                     write (6, '(/a,3i4)') &
-                        &              'psatom_r: WARNING lschvkbb convergence error n,l,kap,iter=', &
-                        &               na(ii), la(ii), kap, it
+                    &              'psatom_r: WARNING lschvkbb convergence error n,l,kap,iter=', &
+                    &               na(ii), la(ii), kap, it
                     write (6, '(a,1p,4e14.6)') 'ea(ii),et,emin,emax', ea(ii, ikap), et, emin, emax
                     exit
                 end if
@@ -214,7 +214,7 @@ subroutine psatom_r(na, la, ea, fat, nv, it, rhoc, rho, &
 
         do ii = 1, mmax
             vn = (1.0d0 - bl) * ((1.0d0 - thl) * vi(ii) + thl * vi1(ii)) &
-                &   + bl * ((1.0d0 - thl) * vo(ii) + thl * vo1(ii))
+            &   + bl * ((1.0d0 - thl) * vo(ii) + thl * vo1(ii))
             vi1(ii) = vi(ii)
             vo1(ii) = vo(ii)
             vi(ii) = vn
@@ -244,7 +244,7 @@ subroutine psatom_r(na, la, ea, fat, nv, it, rhoc, rho, &
 ! output potential for e-e interactions
 
     call vout(1, rho, rhoc, vo, vxc, zval, eeel, eexc, &
-        &          rr, mmax, iexc)
+    &          rr, mmax, iexc)
 
     etot = eeig + eexc - 0.5d0 * eeel
 

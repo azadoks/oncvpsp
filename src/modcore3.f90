@@ -24,7 +24,7 @@
 ! Teter, Phys. Rev. B 48, 5031 (1993) , Appendix, as
 
 subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
-    &                   fcfact, fcfact_min, fcfact_max, fcfact_step, rcfact, rcfact_min, rcfact_max, rcfact_step, &
+&                   fcfact, fcfact_min, fcfact_max, fcfact_step, rcfact, rcfact_min, rcfact_max, rcfact_step, &
                     irps, mmax, rr, nc, nv, la, zion, iexc)
 
 !icmod  3 coefficient optimizaion, 4 for specivied fcfact and rfact
@@ -97,10 +97,10 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
     irmod = mmax
 
     write (6, '(/a/a)') 'Model core correction analysis',&
-        &                  '  based on d2Exc/dn_idn_j'
+    &                  '  based on d2Exc/dn_idn_j'
 
     call der2exc(rhotae, rhoc, rhoae, rr, d2excae, d2excps, d2diff, &
-        &                   zion, iexc, nc, nv, la, irmod, mmax)
+    &                   zion, iexc, nc, nv, la, irmod, mmax)
 
     write (6, '(/a/)') 'd2excae - all-electron derivatives'
     do kk = 1, nv
@@ -114,7 +114,7 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
     rhomod(:, :) = 0.0d0
 
     call der2exc(rhotps, rhomod(1, 1), rhops, rr, d2excps, d2excae, d2diff, &
-        &                   zion, iexc, nc, nv, la, irmod, mmax)
+    &                   zion, iexc, nc, nv, la, irmod, mmax)
     call compute_iminus(rhoc, rhomod, rr, mmax, iminus)
     call compute_combined_metric(d2diff, iminus, metric)
 
@@ -145,7 +145,7 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
 
     if (ircc == 0) then
         write (6, '(/a)') 'modcore3: ERROR ircc (core-valence charge crossover) &
-            &        not found'
+        &        not found'
         stop
     else
         write (6, '(/a,2f10.4)') 'rmatch, rhocmatch', rmatch, rhocmatch
@@ -200,7 +200,7 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
                 end do
 
                 call der2exc(rhotps, rhomod(1, 1), rhops, rr, d2excps, d2excae, d2diff, &
-                    &                     zion, iexc, nc, nv, la, irmod, mmax)
+                &                     zion, iexc, nc, nv, la, irmod, mmax)
                 fta(jj) = 1.0d3 * d2diff  ! mHa
                 call compute_iminus(rhoc, rhomod, rr, mmax, iminus)
                 call compute_combined_metric(d2diff, iminus, metric)
@@ -297,7 +297,7 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
             end do
 
             call der2exc(rhotps, rhomod(1, 1), rhops, rr, d2excps, d2excae, d2diff, &
-                &                    zion, iexc, nc, nv, la, irmod, mmax)
+            &                    zion, iexc, nc, nv, la, irmod, mmax)
             if (icmod == 4) then
                 ff(kk) = d2diff
             else if (icmod == 5) then
@@ -376,7 +376,7 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
             end do
 
             call der2exc(rhotps, rhomod(1, 1), rhops, rr, d2excps, d2excae, d2diff, &
-                &                    zion, iexc, nc, nv, la, irmod, mmax)
+            &                    zion, iexc, nc, nv, la, irmod, mmax)
             if (icmod == 4) then
                 fr = d2diff
             else if (icmod == 5) then
@@ -417,7 +417,7 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
                 end do
 
                 call der2exc(rhotps, rhomod(1, 1), rhops, rr, d2excps, d2excae, d2diff, &
-                    &                    zion, iexc, nc, nv, la, irmod, mmax)
+                &                    zion, iexc, nc, nv, la, irmod, mmax)
                 if (icmod == 4) then
                     fe = d2diff
                 else if (icmod == 5) then
@@ -461,7 +461,7 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
             end do
 
             call der2exc(rhotps, rhomod(1, 1), rhops, rr, d2excps, d2excae, d2diff, &
-                &                    zion, iexc, nc, nv, la, irmod, mmax)
+            &                    zion, iexc, nc, nv, la, irmod, mmax)
             if (icmod == 4) then
                 fc = d2diff
             else if (icmod == 5) then
@@ -501,7 +501,7 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
                 end do
 
                 call der2exc(rhotps, rhomod(1, 1), rhops, rr, d2excps, d2excae, d2diff, &
-                    &                    zion, iexc, nc, nv, la, irmod, mmax)
+                &                    zion, iexc, nc, nv, la, irmod, mmax)
                 if (icmod == 4) then
                     ff(jj) = d2diff
                 else if (icmod == 5) then
@@ -525,7 +525,7 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
         xx(2, 1) = rcfact * rmatch
 
         write (6, '(/a/)') &
-            &       'Teter function model core charge with specified parameters'
+        &       'Teter function model core charge with specified parameters'
     end if
 
     r0 = 1.5d0 * xx(2, 1)
@@ -558,7 +558,7 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
     end do
 
     call der2exc(rhotps, rhomod(1, 1), rhops, rr, d2excps, d2excae, d2diff, &
-        &                   zion, iexc, nc, nv, la, irmod, mmax)
+    &                   zion, iexc, nc, nv, la, irmod, mmax)
     call compute_iminus(rhoc, rhomod, rr, mmax, iminus)
     call compute_combined_metric(d2diff, iminus, metric)
 
@@ -580,9 +580,9 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
     do jj = 2, 3
         do ii = ircross - 6, mmax - 3
             rhomod(ii, jj) = (-rhomod(ii - 3, jj - 1) + 9.d0 * rhomod(ii - 2, jj - 1)&
-                &     - 45.d0 * rhomod(ii - 1, jj - 1) + 45.d0 * rhomod(ii + 1, jj - 1)&
-                &     - 9.d0 * rhomod(ii + 2, jj - 1) + rhomod(ii + 3, jj - 1))&
-                &     / (60.d0 * al * rr(ii))
+            &     - 45.d0 * rhomod(ii - 1, jj - 1) + 45.d0 * rhomod(ii + 1, jj - 1)&
+            &     - 9.d0 * rhomod(ii + 2, jj - 1) + rhomod(ii + 3, jj - 1))&
+            &     / (60.d0 * al * rr(ii))
         end do
     end do
 
@@ -611,9 +611,9 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
     jj = 4
     do ii = 3 * jj - 8, mmax - 3
         rhomod(ii, jj) = (-rhomod(ii - 3, jj - 1) + 9.d0 * rhomod(ii - 2, jj - 1)&
-            &     - 45.d0 * rhomod(ii - 1, jj - 1) + 45.d0 * rhomod(ii + 1, jj - 1)&
-            &     - 9.d0 * rhomod(ii + 2, jj - 1) + rhomod(ii + 3, jj - 1))&
-            &     / (60.d0 * al * rr(ii))
+        &     - 45.d0 * rhomod(ii - 1, jj - 1) + 45.d0 * rhomod(ii + 1, jj - 1)&
+        &     - 9.d0 * rhomod(ii + 2, jj - 1) + rhomod(ii + 3, jj - 1))&
+        &     / (60.d0 * al * rr(ii))
     end do
 
 !set up a mesh on which 3rd derivative will have a stable
@@ -639,9 +639,9 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
     jj = 5
     do ii = 3 * jj - 8, mmax - 3
         rhomod(ii, jj) = (-rhomod(ii - 3, jj - 1) + 9.d0 * rhomod(ii - 2, jj - 1)&
-            &     - 45.d0 * rhomod(ii - 1, jj - 1) + 45.d0 * rhomod(ii + 1, jj - 1)&
-            &     - 9.d0 * rhomod(ii + 2, jj - 1) + rhomod(ii + 3, jj - 1))&
-            &     / (60.d0 * al * rr(ii))
+        &     - 45.d0 * rhomod(ii - 1, jj - 1) + 45.d0 * rhomod(ii + 1, jj - 1)&
+        &     - 9.d0 * rhomod(ii + 2, jj - 1) + rhomod(ii + 3, jj - 1))&
+        &     / (60.d0 * al * rr(ii))
     end do
 
 !set up a mesh on which 4th derivative will have a stable

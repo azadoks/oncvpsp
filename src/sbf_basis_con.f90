@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 subroutine sbf_basis_con(ll, rr, mmax, irc, nbas, qroot, psopt, orbasis, orbasis_der, &
-    &                     iprj, mxprj, ncon, ncon_in)
+&                     iprj, mxprj, ncon, ncon_in)
 
 ! orthonormalize basis functions and derivatives at rc and form constraint
 ! matrix based on derivative to be matched and overlaps with prior
@@ -80,15 +80,15 @@ subroutine sbf_basis_con(ll, rr, mmax, irc, nbas, qroot, psopt, orbasis, orbasis
         do jj = ibas, nbas
 
             sn = (sbfar(1, ibas) / rr(1)**ll) * (sbfar(1, jj) / rr(1)**ll)&
-                &     * ro**(2 * ll + 3) / dfloat(2 * ll + 3)
+            &     * ro**(2 * ll + 3) / dfloat(2 * ll + 3)
 
             do ii = 1, irc - 3
                 sn = sn + al * rr(ii) * sbfar(ii, ibas) * sbfar(ii, jj)
             end do
 
             sn = sn + al * (23.0d0 * rr(irc - 2) * sbfar(irc - 2, ibas) * sbfar(irc - 2, jj)&
-                &            + 28.0d0 * rr(irc - 1) * sbfar(irc - 1, ibas) * sbfar(irc - 1, jj)&
-                &            + 9.0d0 * rr(irc) * sbfar(irc, ibas) * sbfar(irc, jj)) / 24.0d0
+            &            + 28.0d0 * rr(irc - 1) * sbfar(irc - 1, ibas) * sbfar(irc - 1, jj)&
+            &            + 9.0d0 * rr(irc) * sbfar(irc, ibas) * sbfar(irc, jj)) / 24.0d0
 
             sovlp(ibas, jj) = sn
             sovlp(jj, ibas) = sn
@@ -151,15 +151,15 @@ subroutine sbf_basis_con(ll, rr, mmax, irc, nbas, qroot, psopt, orbasis, orbasis
             do jj = 1, nbas
 
                 sn = (psopt(1, kk) / rr(1)**ll) * (sbf_or(1, jj) / rr(1)**ll)&
-                    &     * ro**(2 * ll + 3) / dfloat(2 * ll + 3)
+                &     * ro**(2 * ll + 3) / dfloat(2 * ll + 3)
 
                 do ii = 1, irc - 3
                     sn = sn + al * rr(ii) * psopt(ii, kk) * sbf_or(ii, jj)
                 end do
 
                 sn = sn + al * (23.0d0 * rr(irc - 2) * psopt(irc - 2, kk) * sbf_or(irc - 2, jj)&
-                    &            + 28.0d0 * rr(irc - 1) * psopt(irc - 1, kk) * sbf_or(irc - 1, jj)&
-                    &            + 9.0d0 * rr(irc) * psopt(irc, kk) * sbf_or(irc, jj)) / 24.0d0
+                &            + 28.0d0 * rr(irc - 1) * psopt(irc - 1, kk) * sbf_or(irc - 1, jj)&
+                &            + 9.0d0 * rr(irc) * psopt(irc, kk) * sbf_or(irc, jj)) / 24.0d0
 
                 orbasis_der(ncon_in + kk, jj) = sn
             end do !jj

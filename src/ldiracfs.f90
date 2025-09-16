@@ -139,7 +139,7 @@ subroutine ldiracfs(nn, ll, kap, ierr, ee, rr, zz, vv, uu, up, mmax, mch)
 
     sn = sn + al * (23.0d0 * rr(mch - 2) * (gu(mch - 2)**2 + fu(mch - 2)**2) &
                     + 28.0d0 * rr(mch - 1) * (gu(mch - 1)**2 + fu(mch - 1)**2) &
-        &              + 9.0d0 * rr(mch) * (gu(mch)**2 + fu(mch)**2)) / 24.0d0
+    &              + 9.0d0 * rr(mch) * (gu(mch)**2 + fu(mch)**2)) / 24.0d0
 
 ! normalize u
 

@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 subroutine sr_so_r(lmax, irc, nproj, rr, mmax, mxprj, evkb, vkb, &
-    &                       vsr, esr, vso, eso)
+&                       vsr, esr, vso, eso)
 
 ! reformulates non-local potentials based on j = l +/- 1/2 to scalar-
 ! relativistic and L dot S projectors
@@ -108,7 +108,7 @@ subroutine sr_so_r(lmax, irc, nproj, rr, mmax, mxprj, evkb, vkb, &
                         jj = ip2 + (ik2 - 1) * nproj(l1)
 
                         call vpinteg(vkb(1, ip1, l1, ik1), vkb(1, ip2, l1, ik2), irc(l1), 2 * l1, &
-                            &                   sovl(ii, jj), rr)
+                        &                   sovl(ii, jj), rr)
 
                     end do
                 end do
@@ -237,10 +237,10 @@ subroutine sr_so_r(lmax, irc, nproj, rr, mmax, mxprj, evkb, vkb, &
         end do
 
         write (6, '(/a,i2)') &
-            &         ' Orthonormal scalar projector coefficients, l = ', ll
+        &         ' Orthonormal scalar projector coefficients, l = ', ll
         write (6, '(1p,6e12.4)') (esr(jj, l1), jj=1, nn)
         write (6, '(/a,i2)') &
-            &         ' Orthonormal spin-orbit projector coefficients, l = ', ll
+        &         ' Orthonormal spin-orbit projector coefficients, l = ', ll
         write (6, '(1p,6e12.4)') (eso(jj, l1), jj=1, nn)
 
 ! Set sign of projectors (physically irrelevant) so that they are positive

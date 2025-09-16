@@ -17,8 +17,8 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 subroutine run_plot(lmax, npa, epa, lloc, irc, &
-    &                    vkb, evkb, nproj, rr, vfull, vp, vpuns, zz, mmax, mxprj, drl, nrl, &
-    &                    rho, rhoc, rhomod, srel, cvgplt)
+&                    vkb, evkb, nproj, rr, vfull, vp, vpuns, zz, mmax, mxprj, drl, nrl, &
+&                    rho, rhoc, rhomod, srel, cvgplt)
 
 ! write output for plotting pseudopotentials, model core charge, and
 ! all-electron and pseudo wave functions
@@ -115,10 +115,10 @@ subroutine run_plot(lmax, npa, epa, lloc, irc, &
         if (rr(ii) > r0) then
             if (rhoc(ii) < rmx) then
                 write (6, '(a,8(f12.7,1x))') '!r', rr(ii), rho(ii), rhoc(ii), &
-                    &       rhomod(ii, 1)
+                &       rhomod(ii, 1)
             else if (rr(ii) > 0.01d0) then
                 write (6, '(a,8(f12.7,1x))') '!r', rr(ii), rho(ii), rmx, &
-                    &       rhomod(ii, 1)
+                &       rhomod(ii, 1)
             end if
             r0 = rr(ii) + dr
         end if
@@ -134,13 +134,13 @@ subroutine run_plot(lmax, npa, epa, lloc, irc, &
         do iprj = 1, nproj(l1)
             if (epa(iprj, l1) < 0.0d0) then
                 write (6, '(//a,i2,a,i2,a,a/)') 'n=', npa(iprj, l1), ',  l=', ll, &
-                    &           ', all-electron wave function', ', pseudo w-f'
+                &           ', all-electron wave function', ', pseudo w-f'
                 etest = epa(iprj, l1)
                 call lschfb(npa(iprj, l1), ll, ierr, etest, &
-                    &                  rr, vfull, uu, up, zz, mmax, mch, srel)
+                &                  rr, vfull, uu, up, zz, mmax, mch, srel)
                 if (ierr /= 0) then
                     write (6, '(/a,3i4)') 'run_plot: lschfb convergence ERROR n,l,ierr=', &
-                        &         npa(iprj, l1), ll, ierr
+                    &         npa(iprj, l1), ll, ierr
                     stop
                 end if
 
@@ -148,17 +148,17 @@ subroutine run_plot(lmax, npa, epa, lloc, irc, &
                 emin = 1.1d0 * etest
 
                 call lschvkbb(ll + iprj, ll, npr, ierr, etest, emin, emax, &
-                    &                    rr, vp(1, lloc + 1), vkb(1, 1, l1), evkb(1, l1), &
-                    &                    u2, up, mmax, mch)
+                &                    rr, vp(1, lloc + 1), vkb(1, 1, l1), evkb(1, l1), &
+                &                    u2, up, mmax, mch)
                 sgnae = 1.0d0
                 sgnps = 1.0d0
             else
                 write (6, '(//a,i2,a,i2,a,a/)') 'scattering, iprj=', iprj, ',  l=', ll, &
-                    &           ', all-electron wave function', ', pseudo w-f'
+                &           ', all-electron wave function', ', pseudo w-f'
                 call lschfs(nn, ll, ierr, epa(iprj, l1), &
-                    &                  rr, vfull, uu, up, zz, mmax, n2, srel)
+                &                  rr, vfull, uu, up, zz, mmax, n2, srel)
                 call lschvkbs(ll, npr, epa(iprj, l1), rr, vp(1, lloc + 1), &
-                    &                    vkb(1, 1, l1), evkb(1, l1), u2, up, mmax, n2)
+                &                    vkb(1, 1, l1), evkb(1, l1), u2, up, mmax, n2)
                 sgnae = sign(1.0d0, uu(n2))
                 sgnps = sign(1.0d0, u2(n2))
             end if
@@ -168,7 +168,7 @@ subroutine run_plot(lmax, npa, epa, lloc, irc, &
             do ii = n1, n2
                 if (rr(ii) > r0) then
                     write (6, '(a,i5,i1,3(f12.6,1x))') '&', iprj, ll, rr(ii), sgnae * uu(ii),&
-                        &          sgnps * u2(ii)
+                    &          sgnps * u2(ii)
                     r0 = rr(ii) + dr
                 end if
             end do
@@ -182,7 +182,7 @@ subroutine run_plot(lmax, npa, epa, lloc, irc, &
         do ii = n1, n3
             if (rr(ii) > r0) then
                 write (6, '(a,i6,6(f12.6,1x))') '!J', ll, rr(ii), &
-                    &       (vkb(ii, jj, l1), jj=1, nproj(l1))
+                &       (vkb(ii, jj, l1), jj=1, nproj(l1))
                 r0 = rr(ii) + dr
             end if
         end do

@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 subroutine run_vkb(lmax, lloc, lpopt, dvloc0, irc, nproj, rr, mmax, mxprj, pswf, &
-    &                   vfull, vp, evkb, vkb, nlim, vr)
+&                   vfull, vp, evkb, vkb, nlim, vr)
 
 ! computes Vanderbilt / Kleinman-Bylander non-local potentials
 
@@ -275,7 +275,7 @@ subroutine run_vkb(lmax, lloc, lpopt, dvloc0, irc, nproj, rr, mmax, mxprj, pswf,
             end do
 
             write (6, '(/a,1p,5e12.4)') '  Orthonormal projector coefficients',&
-                &        (evkb(jj, l1), jj=1, np)
+            &        (evkb(jj, l1), jj=1, np)
 
 ! Set sign of projectors (physically irrelevant) so that they are positive
 ! at their peak (needed for compaisons apparently)

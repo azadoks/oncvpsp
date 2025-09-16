@@ -20,10 +20,10 @@
 ! for Abinit input using pspcod=8
 
 subroutine linout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
-    &                  rhotae, rhoc, zz, zion, mmax, mxprj, iexc, icmod, nrl, drl, atsym, &
-    &                  na, la, ncon, nbas, nvcnf, nacnf, lacnf, nc, nv, lpopt, ncnf, &
-    &                  fa, rc0, ep, qcut, debl, facnf, dvloc0, fcfact, rcfact, &
-    &                  epsh1, epsh2, depsh, rlmax, psfile)
+&                  rhotae, rhoc, zz, zion, mmax, mxprj, iexc, icmod, nrl, drl, atsym, &
+&                  na, la, ncon, nbas, nvcnf, nacnf, lacnf, nc, nv, lpopt, ncnf, &
+&                  fa, rc0, ep, qcut, debl, facnf, dvloc0, fcfact, rcfact, &
+&                  epsh1, epsh2, depsh, rlmax, psfile)
 
 !lmax  maximum angular momentum
 !lloc  l for local potential
@@ -154,17 +154,17 @@ subroutine linout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
 
     write (6, '(/a)') 'Begin PSPCODE8'
     write (6, '(3a,4f10.5)') atsym, '    ONCVPSP-4.0.1' &
-        &  , '  r_core=', (rc(l1), l1=1, lmax + 1)
+    &  , '  r_core=', (rc(l1), l1=1, lmax + 1)
     write (6, '(2f12.4, 5a)') zz, zion, '      ', pspd,  &
-        &  '    zatom,zion,pspd'
+    &  '    zatom,zion,pspd'
     write (6, '(i6,i8,i4,3i6, a)') 8, ixc_abinit, lmax, lloc, &
-        &  nrl, 0, '    pspcod,pspxc,lmax,lloc,mmax,r2well'
+    &  nrl, 0, '    pspcod,pspxc,lmax,lloc,mmax,r2well'
     write (6, '(3f12.8, a)') rl(nrl), fcfact, 0.0,  &
-        &  '    rchrg fchrg qchrg'
+    &  '    rchrg fchrg qchrg'
     write (6, '(5i6, a)') (nproj(l1), l1=1, 5),  &
-        &  '    nproj'
+    &  '    nproj'
     write (6, '(2i6, a)') 1, 1, &
-        &  '           extension_switch'
+    &  '           extension_switch'
 
 ! write the VKB projectors and the local potential
     do l1 = 1, max(lmax + 1, lloc + 1)
@@ -190,7 +190,7 @@ subroutine linout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     if (fcfact > 0.0d0) then
         do ii = 1, nrl
             write (6, '(i6,1p,6e21.13)') ii, rl(ii),  &
-                &      (rhomodl(ii, jj), jj=1, 5)
+            &      (rhomodl(ii, jj), jj=1, 5)
         end do
     end if
 
@@ -201,21 +201,21 @@ subroutine linout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
 
     write (6, '(a)') '<INPUT>'
     write (6, '(a/a/a/a)') &
-        &    '#', &
-        &    '#ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
-        &    '#scalar-relativistic version 4.0.1 0r/27/2018', &
-        &    '#'
+    &    '#', &
+    &    '#ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
+    &    '#scalar-relativistic version 4.0.1 0r/27/2018', &
+    &    '#'
 
     write (6, '(a/a/a/a)') &
-        &    '#While it is not required under the terms of the GNU GPL, it is',&
-        &    '#suggested that you cite D. R. Hamann, Phys. Rev. B 88, 085117 (2013)', &
-        &    '#in any publication utilizing these pseudopotentials.', &
-        &    '#'
+    &    '#While it is not required under the terms of the GNU GPL, it is',&
+    &    '#suggested that you cite D. R. Hamann, Phys. Rev. B 88, 085117 (2013)', &
+    &    '#in any publication utilizing these pseudopotentials.', &
+    &    '#'
 
     write (6, '(a)') '# ATOM AND REFERENCE CONFIGURATION'
     write (6, '(a)') '# atsym  z   nc   nv     iexc    psfile'
     write (6, '(a,a,f6.2,2i5,i8,2a)') '  ', trim(atsym), zz, nc, nv, iexc, &
-        &      '      ', trim(psfile)
+    &      '      ', trim(psfile)
     write (6, '(a/a)') '#', '#   n    l    f'
     do ii = 1, nc + nv
         write (6, '(2i5,f8.2)') na(ii), la(ii), fa(ii)
@@ -226,25 +226,25 @@ subroutine linout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     write (6, '(a/a)') '#', '#   l,   rc,      ep,       ncon, nbas, qcut'
     do l1 = 1, lmax + 1
         write (6, '(i5,2f10.5,2i5,f10.5)') l1 - 1, rc0(l1), ep(l1), ncon(l1),&
-            &        nbas(l1), qcut(l1)
+        &        nbas(l1), qcut(l1)
     end do
 
     write (6, '(a/a/a,a)') '#', '# LOCAL POTENTIAL', '# lloc, lpopt,  rc(5),', &
-        &      '   dvloc0'
+    &      '   dvloc0'
     write (6, '(2i5,f10.5,a,f10.5)') lloc, lpopt, rc0(5), '   ', dvloc0
 
     write (6, '(a/a/a)') '#', '# VANDERBILT-KLEINMAN-BYLANDER PROJECTORs', &
-        &      '# l, nproj, debl'
+    &      '# l, nproj, debl'
     do l1 = 1, lmax + 1
         write (6, '(2i5,f10.5)') l1 - 1, nproj(l1), debl(l1)
     end do
 
     write (6, '(a/a/a)') '#', '# MODEL CORE CHARGE', &
-        &      '# icmod, fcfact, rcfact'
+    &      '# icmod, fcfact, rcfact'
     write (6, '(i5,2f10.5)') icmod, fcfact, rcfact
 
     write (6, '(a/a/a)') '#', '# LOG DERIVATIVE ANALYSIS', &
-        &      '# epsh1, epsh2, depsh'
+    &      '# epsh1, epsh2, depsh'
     write (6, '(3f8.2)') epsh1, epsh2, depsh
 
     write (6, '(a/a/a)') '#', '# OUTPUT GRID', '# rlmax, drl'

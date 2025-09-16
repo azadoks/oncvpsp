@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 subroutine lschvkbbe(nn, ll, nvkb, ierr, ee, uld, emin, emax, &
-    &   rr, vloc, vkb, evkb, uu, up, mmax, mch)
+&   rr, vloc, vkb, evkb, uu, up, mmax, mch)
 
 ! integrates radial schroedinger equation for pseudopotential with
 ! Vanderbilt-Kleinman-Bylander non-local projectors finding energy at
@@ -116,8 +116,8 @@ subroutine lschvkbbe(nn, ll, nvkb, ierr, ee, uld, emin, emax, &
             end do
 
             sn = sn + al * (23.0d0 * rr(nin - 2) * uu(nin - 2)**2 &
-                &              + 28.0d0 * rr(nin - 1) * uu(nin - 1)**2 &
-                &              + 9.0d0 * rr(nin) * uu(nin)**2) / 24.0d0
+            &              + 28.0d0 * rr(nin - 1) * uu(nin - 1)**2 &
+            &              + 9.0d0 * rr(nin) * uu(nin)**2) / 24.0d0
 
 ! normalize u
 

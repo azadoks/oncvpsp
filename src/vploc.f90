@@ -58,17 +58,17 @@ subroutine vploc(rr, vv, vp, dvloc0, irc, mmax, lpopt)
 
     do ii = irc - 4, irc + 4
         dvv(ii) = (2.d0 * vv(ii - 2) - 16.d0 * vv(ii - 1) + 16.d0 * vv(ii + 1) &
-            &         - 2.d0 * vv(ii + 2)) / (24.d0 * al * rr(ii))
+        &         - 2.d0 * vv(ii + 2)) / (24.d0 * al * rr(ii))
     end do
 
     do ii = irc - 2, irc + 2
         d2vv(ii) = (2.d0 * dvv(ii - 2) - 16.d0 * dvv(ii - 1) + 16.d0 * dvv(ii + 1) &
-            &         - 2.d0 * dvv(ii + 2)) / (24.d0 * al * rr(ii))
+        &         - 2.d0 * dvv(ii + 2)) / (24.d0 * al * rr(ii))
     end do
 
     ii = irc
     d3vv = (2.d0 * d2vv(ii - 2) - 16.d0 * d2vv(ii - 1) + 16.d0 * d2vv(ii + 1) &
-        &       - 2.d0 * d2vv(ii + 2)) / (24.d0 * al * rr(ii))
+    &       - 2.d0 * d2vv(ii + 2)) / (24.d0 * al * rr(ii))
 
     if (lpopt == 1) then
 

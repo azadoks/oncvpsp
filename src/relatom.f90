@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 subroutine relatom(na, la, ea, fa, rpk, nc, ncv, it, rhoc, rho, &
-    &           rr, vi, zz, mmax, iexc, etot, ierr)
+&           rr, vi, zz, mmax, iexc, etot, ierr)
 
 ! self-consistent fully-relativistic all-electron atom
 ! partially-occupied orbitals are weighted proportionally to 2j+1
@@ -131,11 +131,11 @@ subroutine relatom(na, la, ea, fa, rpk, nc, ncv, it, rhoc, rho, &
                 ierr = 0
 
                 call ldiracfb(na(ii), ll, kap, ierr, et, &
-                    &                rr, zz, vi, uu, up, mmax, mch)
+                &                rr, zz, vi, uu, up, mmax, mch)
 
                 if (ierr /= 0) then
                     write (6, '(/2a,5i4)') 'relatom: ldiracfb convergence ERROR', &
-                        &           ' n,l,kap,iter,ierr=', na(ii), ll, kap, it, ierr
+                    &           ' n,l,kap,iter,ierr=', na(ii), ll, kap, it, ierr
                     stop
                 end if
 
@@ -166,7 +166,7 @@ subroutine relatom(na, la, ea, fa, rpk, nc, ncv, it, rhoc, rho, &
 
 ! output potential
         call vout(0, rho, rhoc, vo, vxc, sf - zz, eeel, eexc, &
-            &            rr, mmax, iexc)
+        &            rr, mmax, iexc)
 
 ! generate next iteration using d. g. anderson''s
 ! method
@@ -186,7 +186,7 @@ subroutine relatom(na, la, ea, fa, rpk, nc, ncv, it, rhoc, rho, &
 
         do ii = 1, mmax
             vn = (1.0d0 - bl) * ((1.0d0 - thl) * vi(ii) + thl * vi1(ii)) &
-                &   + bl * ((1.0d0 - thl) * vo(ii) + thl * vo1(ii))
+            &   + bl * ((1.0d0 - thl) * vo(ii) + thl * vo1(ii))
             vi1(ii) = vi(ii)
             vo1(ii) = vo(ii)
             vi(ii) = vn
@@ -209,7 +209,7 @@ subroutine relatom(na, la, ea, fa, rpk, nc, ncv, it, rhoc, rho, &
 ! output potential for e-e interactions
 
     call vout(0, rho, rhoc, vo, vxc, sf, eeel, eexc, &
-        &          rr, mmax, iexc)
+    &          rr, mmax, iexc)
 
     etot = eeig + eexc - 0.5d0 * eeel
 

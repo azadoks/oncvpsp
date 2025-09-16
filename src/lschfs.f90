@@ -76,7 +76,7 @@ subroutine lschfs(nn, ll, ierr, ee, rr, vv, uu, up, zz, mmax, mch, srel)
 
     if (ll == 0) gamma = sqrt(1.0d0 - fss * zz**2)
     if (ll > 0) gamma = (ll * sqrt(ll**2 - fss * zz**2) &
-        & + (ll + 1) * sqrt((ll + 1)**2 - fss * zz**2)) / (2 * ll + 1)
+    & + (ll + 1) * sqrt((ll + 1)**2 - fss * zz**2)) / (2 * ll + 1)
 
     sls = ll * (ll + 1)
 
@@ -99,20 +99,20 @@ subroutine lschfs(nn, ll, ierr, ee, rr, vv, uu, up, zz, mmax, mch, srel)
     dv(:) = 0.0d0
 
     dv(1) = (-50.d0 * vv(1) + 96.d0 * vv(2) - 72.d0 * vv(3) + 32.d0 * vv(4) &
-        &       - 6.d0 * vv(5)) / (24.d0 * al * rr(1))
+    &       - 6.d0 * vv(5)) / (24.d0 * al * rr(1))
     dv(2) = (-6.d0 * vv(1) - 20.d0 * vv(2) + 36.d0 * vv(3) - 12.d0 * vv(4) &
-        &       + 2.d0 * vv(5)) / (24.d0 * al * rr(2))
+    &       + 2.d0 * vv(5)) / (24.d0 * al * rr(2))
 
     do ii = 3, mmax - 2
         dv(ii) = (2.d0 * vv(ii - 2) - 16.d0 * vv(ii - 1) + 16.d0 * vv(ii + 1) &
-            &         - 2.d0 * vv(ii + 2)) / (24.d0 * al * rr(ii))
+        &         - 2.d0 * vv(ii + 2)) / (24.d0 * al * rr(ii))
     end do
 
 !  relativistic coefficient arrays for u (fr) and up (frp).
     do ii = 1, mmax
         tfss = fss
         fr(ii) = als * (rr(ii)**2) * (-tfss * (vv(ii) - ee)**2 + 0.5d0 * tfss * dv(ii) / &
-            &   (rr(ii) * (1.0d0 + 0.5d0 * tfss * (ee - vv(ii)))))
+        &   (rr(ii) * (1.0d0 + 0.5d0 * tfss * (ee - vv(ii)))))
         frp(ii) = -al * rr(ii) * 0.5d0 * tfss * dv(ii) / (1.0d0 + 0.5d0 * tfss * (ee - vv(ii)))
     end do
 
@@ -151,8 +151,8 @@ subroutine lschfs(nn, ll, ierr, ee, rr, vv, uu, up, zz, mmax, mch, srel)
     end do
 
     sn = sn + al * (23.0d0 * rr(mch - 2) * uu(mch - 2)**2 &
-        &           + 28.0d0 * rr(mch - 1) * uu(mch - 1)**2 &
-        &          + 9.0d0 * rr(mch) * uu(mch)**2) / 24.0d0
+    &           + 28.0d0 * rr(mch - 1) * uu(mch - 1)**2 &
+    &          + 9.0d0 * rr(mch) * uu(mch)**2) / 24.0d0
 
 !normalize u
 

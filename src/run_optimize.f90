@@ -17,8 +17,8 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 subroutine run_optimize(eig, ll, mmax, mxprj, rr, uua, qq,&
-    &                        irc, qcut, qmsbf, ncon_in, nbas_in, npr, &
-    &                        psopt, vpsp, vkb, vae, cvgplt)
+&                        irc, qcut, qmsbf, ncon_in, nbas_in, npr, &
+&                        psopt, vpsp, vkb, vae, cvgplt)
 
 ! calls routines to generate optimized pseudo wave function and semi-local
 ! pseudopotential and prints diagnostic information on process and
@@ -125,7 +125,7 @@ subroutine run_optimize(eig, ll, mmax, mxprj, rr, uua, qq,&
     do iprj = 1, npr
 
         write (6, '(/a,i4)') 'Calculating optimized projector #', iprj, &
-            &        ' for l=', ll
+        &        ' for l=', ll
 
 !basis size and number of constraints for this projector
         nbas = nbas_in + iprj - 1
@@ -162,7 +162,7 @@ subroutine run_optimize(eig, ll, mmax, mxprj, rr, uua, qq,&
 
 !calculate orthogonal basis and constraint matrix
         call sbf_basis_con(ll, rr, mmax, irc, nbas, qroot, psopt, orbasis, orbasis_der, &
-            &                     iprj, mxprj, ncon, ncon_in)
+        &                     iprj, mxprj, ncon, ncon_in)
 
 !load constraint vector for value/derivative matching
         cons(:) = 0.0d0
@@ -179,8 +179,8 @@ subroutine run_optimize(eig, ll, mmax, mxprj, rr, uua, qq,&
 !calculate constrained basis for residual energy minimization
 !satisfying off-diagonal norm conservation
         call const_basis(nbas, ncon, cons, orbasis, orbasis_der, &
-            &                   pswf0_or, pswfnull_or, &
-            &                   pswf0_sb, pswfnull_sb, ps0norm)
+        &                   pswf0_or, pswfnull_or, &
+        &                   pswf0_sb, pswfnull_sb, ps0norm)
 
 !calculate eigenvectors, eigenvalues, and inhomogeneous terms for
 !the residual energy for a set of q lower cutoffs
@@ -188,29 +188,29 @@ subroutine run_optimize(eig, ll, mmax, mxprj, rr, uua, qq,&
         write (6, '(/a,f10.6)') '    Fraction of norm inside rc', qq(iprj, iprj)
 
         call eresid(ll, irc, nnull, nbas, mmax, rr, dr, dq, qmax, qroot, &
-            &                    uua(1, iprj), pswf0_sb, pswfnull_sb, nqout, qout, &
-            &                    eresid0, eresiddot, eresidmat)
+        &                    uua(1, iprj), pswf0_sb, pswfnull_sb, nqout, qout, &
+        &                    eresid0, eresiddot, eresidmat)
 
         write (6, '(a,f7.2,a,f7.2,a)') '    Optimizing pswf for qcut=', qout(1), &
-            &   ' a_B^-1,  ecut=', 0.5d0 * qout(1)**2, ' Ha'
+        &   ' a_B^-1,  ecut=', 0.5d0 * qout(1)**2, ' Ha'
         write (6, '(a,f6.2,a,f7.1,a)') '    q_infinity defining residual KE=',&
-            &   qmax, '  (E_inf=', 0.5d0 * qmax**2, ' Ha)'
+        &   qmax, '  (E_inf=', 0.5d0 * qmax**2, ' Ha)'
 
 !find the null-basis coefficients which minimize the eresid while
 !satisfying diagonal norm conservation
 
         call optimize(nnull, nbas, pswf0_sb, pswf0_or, nqout, qout,&
-            &                eresid0, eresiddot, eresidmat,&
-            &                pswfnull_sb, pswfnull_or, qq(iprj, iprj), ps0norm, eresidmin, &
-            &                pswfopt_sb, pswfopt_or, ekin_anal, eresq)
+        &                eresid0, eresiddot, eresidmat,&
+        &                pswfnull_sb, pswfnull_or, qq(iprj, iprj), ps0norm, eresidmin, &
+        &                pswfopt_sb, pswfopt_or, ekin_anal, eresq)
 
         write (6, '(a,1p,d10.2,a)') '    Residual kinetic energy error=', &
-            &        eresidmin, ' Ha'
+        &        eresidmin, ' Ha'
 
 ! find the Vanderbilt projectors and optimized wave functions
 
         call pspot(iprj, ll, rr, irc, mmax, al, nbas, qroot, eig(iprj), uua(1, iprj), &
-            &             pswfopt_sb, psopt(1, iprj), vae, work, vkb(1, iprj), ekin_num)
+        &             pswfopt_sb, psopt(1, iprj), vae, work, vkb(1, iprj), ekin_num)
 
 !semi-local potential
         if (iprj == 1) then
@@ -225,10 +225,10 @@ subroutine run_optimize(eig, ll, mmax, mxprj, rr, uua, qq,&
         write (6, '(/a)') '    Total kinetic energy consistency test'
         write (6, '(a)') '      Fourier integration compared to d^2/dr^2 integral'
         write (6, '(a,f12.8,a,f12.8,a,f12.8)') '      Fourier', ekin_anal, &
-            &    '  r-space=', ekin_num, '  ratio=', ekin_anal / ekin_num
+        &    '  r-space=', ekin_num, '  ratio=', ekin_anal / ekin_num
         write (6, '(a)') '    Potential consistency test at r_c'
         write (6, '(a,f12.8,a,f12.8,a,1p,d10.2)') '    "vpsp"=', work(irc), '  vae=', &
-            &    vae(irc), '  difference=', vae(irc) - work(irc)
+        &    vae(irc), '  difference=', vae(irc) - work(irc)
 
 !interpolate the convergence behavior of the optimized pseudo wave function
 

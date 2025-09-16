@@ -81,9 +81,9 @@ subroutine wellstate(nnin, ll, irc, ep, rr, vfull, uu, up, zz, mmax, mch, srel)
         if (rr(iumax) < 0.75d0 * rr(irc)) then
             ep = et
             write (6, '(/a,i2,a,i2/a,f12.8/a)') &
-                &          'WARNING wellstate: localized bound state found for n=', &
-                &           nnin, ' l=', ll, 'WARNING this state with energy', ep, &
-                &          'WARNING will be used for the first projector'
+            &          'WARNING wellstate: localized bound state found for n=', &
+            &           nnin, ' l=', ll, 'WARNING this state with energy', ep, &
+            &          'WARNING will be used for the first projector'
             return
 
 !if moderately delocalized use very low-energy scattering state
@@ -91,9 +91,9 @@ subroutine wellstate(nnin, ll, irc, ep, rr, vfull, uu, up, zz, mmax, mch, srel)
 
             ep = 0.05d0
             write (6, '(/a,i2,a,i2/a,f12.8/a)') &
-                &          'WARNING wellstate: moderately localized bound state found for n=', &
-                &          nnin, ' l= ', ll, 'WARNING scattering state with energy', ep, &
-                &          'WARNING will be used for the first projector'
+            &          'WARNING wellstate: moderately localized bound state found for n=', &
+            &          nnin, ' l= ', ll, 'WARNING scattering state with energy', ep, &
+            &          'WARNING will be used for the first projector'
         end if
     end if
 
@@ -101,10 +101,10 @@ subroutine wellstate(nnin, ll, irc, ep, rr, vfull, uu, up, zz, mmax, mch, srel)
     if (ep < 0.0d0) then
         ep = 0.25d0
         write (6, '(/a,i2,a,i2/a,f12.8/a)') &
-            &         'WARNING wellstate: negative energy specified for n=', &
-            &         nnin, ' l= ', ll, &
-            &         'WARNING scattering state with energy', ep, &
-            &         'WARNING will be used for the first projector'
+        &         'WARNING wellstate: negative energy specified for n=', &
+        &         nnin, ' l= ', ll, &
+        &         'WARNING scattering state with energy', ep, &
+        &         'WARNING will be used for the first projector'
     end if
 
     allocate (vwell(mmax))
@@ -144,7 +144,7 @@ subroutine wellstate(nnin, ll, irc, ep, rr, vfull, uu, up, zz, mmax, mch, srel)
             call lschfb(nn, ll, ierr, et, rr, vwell, uu, up, zz, mmax, mch, srel)
             if (ierr < 0) then
                 write (6, '(a,i3,a,i3)') &
-                    &           'wellstate: ERROR lschfb convergence error, n=', nn, ' l=', ll
+                &           'wellstate: ERROR lschfb convergence error, n=', nn, ' l=', ll
                 stop
             end if
 
@@ -193,17 +193,17 @@ subroutine wellstate(nnin, ll, irc, ep, rr, vfull, uu, up, zz, mmax, mch, srel)
 
     if (.not. convg) then
         write (6, '(a,a,i3,a,i3,a,f8.4)') &
-            &   'ERROR wellstate: well potential iteration failed', &
-            &   ' to converge, n=', nn, ' l=', ll, ' ep=', ep
+        &   'ERROR wellstate: well potential iteration failed', &
+        &   ' to converge, n=', nn, ' l=', ll, ' ep=', ep
         stop
     end if
 
     if (cwell > 0.0d0) then
         write (6, '(/a,i3,a,i3/a,f8.4,/a,f8.4/a,f8.4)') &
-            &          '   Wellstate for l =', ll, '  n =', nn, &
-            &          '     eigenvalue = ', et, &
-            &          '     asymptotic potential = ', cwell, &
-            &          '     half-point radius =', rr(irc) + rwell
+        &          '   Wellstate for l =', ll, '  n =', nn, &
+        &          '     eigenvalue = ', et, &
+        &          '     asymptotic potential = ', cwell, &
+        &          '     half-point radius =', rr(irc) + rwell
     end if
 
     deallocate (vwell)

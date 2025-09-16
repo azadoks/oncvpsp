@@ -63,7 +63,7 @@ subroutine qroots(ll, rc, ulgd, nroot, dltq, qmax, qroot)
         found_root = .false.
 !interval halving to find root
         if (ii > 1 .and. dlgd * dlgd_last < 0.0d0 .and. &
-            &         abs(dlgd * dlgd_last) < 1.0d0) then
+        &         abs(dlgd * dlgd_last) < 1.0d0) then
             if (dlgd > 0.0d0) then
                 qhi = qq
                 qlow = dltq * (ii - 1)
