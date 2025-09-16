@@ -16,10 +16,10 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine vpinteg(gg, hh, nn, mm, ss, rr)
+subroutine vpinteg(gg, hh, nn, mm, ss, rr)
 
-     implicit none
-     integer, parameter :: dp = kind(1.0d0)
+    implicit none
+    integer, parameter :: dp = kind(1.0d0)
 
 ! integrals that go into construction of Vanderbilt separable pseudopotential
 
@@ -27,29 +27,29 @@
 ! integral on usual log mesh from 1 to nn
 
 !Input variables
-     real(dp) :: gg(nn), hh(nn), rr(nn)
-     integer :: nn, mm
+    real(dp) :: gg(nn), hh(nn), rr(nn)
+    integer :: nn, mm
 
 !Output variable
-     real(dp) :: ss
+    real(dp) :: ss
 
 !Local variables
-     real(dp) :: r0, amesh, al
-     integer :: ii
+    real(dp) :: r0, amesh, al
+    integer :: ii
 
-     al = 0.01d0 * dlog(rr(101) / rr(1))
-     amesh = exp(al)
+    al = 0.01d0 * dlog(rr(101) / rr(1))
+    amesh = exp(al)
 
-     r0 = rr(1) / dsqrt(amesh)
-     ss = r0**(mm + 1) * (gg(1) * hh(1) / rr(1)**mm) / dfloat(mm + 1)
+    r0 = rr(1) / dsqrt(amesh)
+    ss = r0**(mm + 1) * (gg(1) * hh(1) / rr(1)**mm) / dfloat(mm + 1)
 
-     do ii = 4, nn - 3
-         ss = ss + al * gg(ii) * hh(ii) * rr(ii)
-     end do
+    do ii = 4, nn - 3
+        ss = ss + al * gg(ii) * hh(ii) * rr(ii)
+    end do
 
-     ss = ss + al * (23.d0 * rr(nn - 2) * gg(nn - 2) * hh(nn - 2) &
-    &        + 28.d0 * rr(nn - 1) * gg(nn - 1) * hh(nn - 1) &
-    &        + 9.d0 * rr(nn) * gg(nn) * hh(nn)) / 24.d0
+    ss = ss + al * (23.d0 * rr(nn - 2) * gg(nn - 2) * hh(nn - 2) &
+        &        + 28.d0 * rr(nn - 1) * gg(nn - 1) * hh(nn - 1) &
+        &        + 9.d0 * rr(nn) * gg(nn) * hh(nn)) / 24.d0
 
-     return
- end subroutine vpinteg
+    return
+end subroutine vpinteg

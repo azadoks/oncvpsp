@@ -1,0 +1,13 @@
+{
+    "fortran.formatting.formatter": "findent",
+    "fortran.formatting.findentArgs": [
+        "-ofree",
+        "--refactor_end",
+        "-i4",
+        "--indent_contains=restart",
+        "--indent_continuation=default",
+        "--indent_ampersand",
+        "--align_paren",
+        ""
+    ]
+}

@@ -16,8 +16,8 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine run_phsft_r(lmax, lloc, nproj, ep, epsh1, epsh2, depsh, vkb, evkb, &
-&                     rr, vfull, vp, zz, mmax, mxprj, rxpsh, irc)
+subroutine run_phsft_r(lmax, lloc, nproj, ep, epsh1, epsh2, depsh, vkb, evkb, &
+    &                     rr, vfull, vp, zz, mmax, mxprj, rxpsh, irc)
 
 ! computes log derivatives, actually atan(r * ((d psi(r)/dr)/psi(r)))
 ! at rr(irphs) comparing all-electron with Vanderbilt-Kleinman-Bylander
@@ -44,84 +44,84 @@
 !irc  core radii
 !irphs  index of rr beyond which all vp==vlocal
 
-     implicit none
-     integer, parameter :: dp = kind(1.0d0)
+    implicit none
+    integer, parameter :: dp = kind(1.0d0)
 
 !Input variables
-     integer :: lmax, lloc, mmax, mxprj
-     integer :: nproj(6), irc(6)
-     real(dp) :: epsh1, epsh2, depsh, zz, rxpsh
-     real(dp) :: rr(mmax), vp(mmax, 5, 2), ep(6, 2)
-     real(dp) :: vfull(mmax), vkb(mmax, mxprj, 4, 2), evkb(mxprj, 4, 2)
+    integer :: lmax, lloc, mmax, mxprj
+    integer :: nproj(6), irc(6)
+    real(dp) :: epsh1, epsh2, depsh, zz, rxpsh
+    real(dp) :: rr(mmax), vp(mmax, 5, 2), ep(6, 2)
+    real(dp) :: vfull(mmax), vkb(mmax, mxprj, 4, 2), evkb(mxprj, 4, 2)
 
 !Output variables - printing only
 
 !Local variables
-     integer :: ii, ll, l1, irphs, npsh, xirphs
-     integer :: ikap, kap, mkap
-     real(dp) :: epsh
+    integer :: ii, ll, l1, irphs, npsh, xirphs
+    integer :: ikap, kap, mkap
+    real(dp) :: epsh
 
-     real(dp), allocatable :: pshf(:), pshp(:)
+    real(dp), allocatable :: pshf(:), pshp(:)
 
-     npsh = int(((epsh2 - epsh1) / depsh) - 0.5d0) + 1
+    npsh = int(((epsh2 - epsh1) / depsh) - 0.5d0) + 1
 
-     allocate (pshf(npsh), pshp(npsh))
+    allocate (pshf(npsh), pshp(npsh))
 
 ! loop for phase shift calculation -- full, then local or Kleinman-
 ! Bylander / Vanderbilt
 
-     do l1 = 1, 4
-         ll = l1 - 1
+    do l1 = 1, 4
+        ll = l1 - 1
 
-         if (ll <= lmax) then
-             irphs = irc(l1) + 2
-         else
-             irphs = irc(lloc + 1)
-         end if
+        if (ll <= lmax) then
+            irphs = irc(l1) + 2
+        else
+            irphs = irc(lloc + 1)
+        end if
 
-         if (rxpsh > 0.d0) then
-             xirphs = minloc(abs(rr - rxpsh), dim=1)
-             if (xirphs < irphs) then
-                 write (6, '(a,f6.2)') 'run_phsft_r: ERROR rxpsh for logder analysis too small (~< rc(l)) : ', rxpsh
-                 stop
-             else
-                 irphs = xirphs
-             end if
-         end if
+        if (rxpsh > 0.d0) then
+            xirphs = minloc(abs(rr - rxpsh), dim=1)
+            if (xirphs < irphs) then
+                write (6, '(a,f6.2)') 'run_phsft_r: ERROR rxpsh for logder analysis too small (~< rc(l)) : ', rxpsh
+                stop
+            else
+                irphs = xirphs
+            end if
+        end if
 
-         if (l1 == 1) then
-             mkap = 1
-         else
-             mkap = 2
-         end if
+        if (l1 == 1) then
+            mkap = 1
+        else
+            mkap = 2
+        end if
 ! loop on J = ll +/- 1/2
-         do ikap = 1, mkap
-             if (ikap == 1) kap = -(ll + 1)
-             if (ikap == 2) kap = ll
-             call fphsft_r(ll, kap, epsh2, depsh, pshf, rr, vfull, zz, mmax, irphs, npsh)
-             if (ll == lloc) then
-                 call vkbphsft(ll, 0, epsh2, depsh, ep(l1, ikap), pshf, pshp, &
-            &                   rr, vp(1, lloc + 1, ikap), vkb(1, 1, l1, ikap), evkb(1, l1, ikap), &
-            &                   mmax, irphs, npsh)
-             else
-                 call vkbphsft(ll, nproj(l1), epsh2, depsh, ep(l1, ikap), pshf, pshp, &
-            &                   rr, vp(1, lloc + 1, ikap), vkb(1, 1, l1, ikap), evkb(1, l1, ikap), &
-            &                   mmax, irphs, npsh)
-             end if
+        do ikap = 1, mkap
+            if (ikap == 1) kap = -(ll + 1)
+            if (ikap == 2) kap = ll
+            call fphsft_r(ll, kap, epsh2, depsh, pshf, rr, vfull, zz, mmax, irphs, npsh)
+            if (ll == lloc) then
+                call vkbphsft(ll, 0, epsh2, depsh, ep(l1, ikap), pshf, pshp, &
+                    &                   rr, vp(1, lloc + 1, ikap), vkb(1, 1, l1, ikap), evkb(1, l1, ikap), &
+                    &                   mmax, irphs, npsh)
+            else
+                call vkbphsft(ll, nproj(l1), epsh2, depsh, ep(l1, ikap), pshf, pshp, &
+                    &                   rr, vp(1, lloc + 1, ikap), vkb(1, 1, l1, ikap), evkb(1, l1, ikap), &
+                    &                   mmax, irphs, npsh)
+            end if
 
-             write (6, '(/a,i2)') 'log derivativve data for plotting, l=', ll
-             write (6, '(a,f6.2)') 'atan(r * ((d psi(r)/dr)/psi(r))), r=', rr(irphs)
-             write (6, '(a/)') 'l, energy, all-electron, pseudopotential'
-             do ii = 1, npsh
-                 epsh = epsh2 - depsh * dfloat(ii - 1)
-                 if (ikap == 1) then
-                     write (6, '(a, i6, 3f12.6)') '! ', -ll, epsh, pshf(ii), pshp(ii)
-                 else
-                     write (6, '(a, i6, 3f12.6)') '! ', ll, epsh, pshf(ii), pshp(ii)
-                 end if
-             end do
-         end do !ikap
-     end do !l1
-     deallocate (pshf, pshp)
-     return
- end subroutine run_phsft_r
+            write (6, '(/a,i2)') 'log derivativve data for plotting, l=', ll
+            write (6, '(a,f6.2)') 'atan(r * ((d psi(r)/dr)/psi(r))), r=', rr(irphs)
+            write (6, '(a/)') 'l, energy, all-electron, pseudopotential'
+            do ii = 1, npsh
+                epsh = epsh2 - depsh * dfloat(ii - 1)
+                if (ikap == 1) then
+                    write (6, '(a, i6, 3f12.6)') '! ', -ll, epsh, pshf(ii), pshp(ii)
+                else
+                    write (6, '(a, i6, 3f12.6)') '! ', ll, epsh, pshf(ii), pshp(ii)
+                end if
+            end do
+        end do !ikap
+    end do !l1
+    deallocate (pshf, pshp)
+    return
+end subroutine run_phsft_r

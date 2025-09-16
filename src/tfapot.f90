@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 ! tfapot
- function tfapot(rr, zz)
+function tfapot(rr, zz)
 
 ! generalized Thomas-Fermi atomic potential
 
@@ -30,28 +30,28 @@
 ! performed by Miranda (C. Miranda, Mem. Acc. Italia 5, 285 (1934)).
 !                                 Alexander Seidl, TU Munich
 
-     implicit none
-     integer, parameter :: dp = kind(1.0d0)
+    implicit none
+    integer, parameter :: dp = kind(1.0d0)
 
 !Input variables
-     real(dp) :: rr, zz
+    real(dp) :: rr, zz
 
 !Output function
-     real(dp) :: tfapot
+    real(dp) :: tfapot
 
 !Local variables
-     real(dp) :: bb, tt, xx, xs
+    real(dp) :: bb, tt, xx, xs
 
-     bb = (0.69395656d0 / zz)**.33333333d0
-     xx = rr / bb
-     xs = sqrt(xx)
+    bb = (0.69395656d0 / zz)**.33333333d0
+    xx = rr / bb
+    xs = sqrt(xx)
 
-     tt = zz / (1.0d0 + xs * (0.02747d0 - xx * (0.1486d0 - 0.007298d0 * xx)) &
-    &   + xx * (1.243d0 + xx * (0.2302d0 + 0.006944d0 * xx)))
+    tt = zz / (1.0d0 + xs * (0.02747d0 - xx * (0.1486d0 - 0.007298d0 * xx)) &
+        &   + xx * (1.243d0 + xx * (0.2302d0 + 0.006944d0 * xx)))
 
-     if (tt < 1.0d0) tt = 1.0d0
-     tfapot = -tt / rr
+    if (tt < 1.0d0) tt = 1.0d0
+    tfapot = -tt / rr
 
-     return
- end function tfapot
+    return
+end function tfapot
 
