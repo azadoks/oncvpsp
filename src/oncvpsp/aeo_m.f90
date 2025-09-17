@@ -20,7 +20,7 @@
 ! outward and inward integration, Abramowitz and
 ! Stegun, p. 896
 module aeo_m
-   use constants_m, only: dp
+   use precision_m, only: dp
    implicit none
    private
    public :: aeo, aio, aei, aii

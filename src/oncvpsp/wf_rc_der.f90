@@ -34,7 +34,7 @@ subroutine wf_rc_der(rr, uu, al, rc, irc, mmax, uorder)
    !OUTPUT
    ! uorder  value and four derivatives of uu/rr at final rc
 
-   use constants_m, only: dp
+   use precision_m, only: dp
    implicit none
 
 

@@ -39,7 +39,7 @@ subroutine run_vkb(lmax, lloc, lpopt, dvloc0, irc, nproj, rr, mmax, mxprj, pswf,
    !nlim  index of maximum rc including that of vlocal (output)
    !vr  effective scalar-relativisic "potential" calculated in vrel
 
-   use constants_m, only: dp
+   use precision_m, only: dp
    implicit none
 
 

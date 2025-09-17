@@ -39,7 +39,8 @@ subroutine vkbphsft(ll, ivkb, epsh2, depsh, ep, pshf, pshp, &
    !mch  index of radius for log der test
    !npsh  number of energy points in scan
 
-   use constants_m, only: dp, pi, twopi
+   use precision_m, only: dp
+   use constants_m, only:  pi, twopi
    implicit none
    real(dp), parameter :: eps = 1.0d-8
 

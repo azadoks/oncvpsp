@@ -33,7 +33,7 @@ subroutine vploc(rr, vv, vp, dvloc0, irc, mmax, lpopt)
    !  4) match 3 derivatives, r**0,4,6,8
    !  5) match 3 derivatives, r**0,2,4,6
 
-   use constants_m, only: dp
+   use precision_m, only: dp
    implicit none
 
 

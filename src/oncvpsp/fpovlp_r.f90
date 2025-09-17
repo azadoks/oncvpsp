@@ -19,7 +19,7 @@
  ! calculates all-electron wave function overlap intergrals
 
 subroutine fpovlp_r(gg, hh, nn, kap, zz, ss, rr)
-   use constants_m, only: dp
+   use precision_m, only: dp
    implicit none
 
    !gg Dirac wave function one

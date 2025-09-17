@@ -38,7 +38,7 @@ subroutine der2exc(rhotot, rhoc, rho, rr, d2exc, d2ref, d2mdiff, &
    ! ircut  maximum-radius for which all-electron and pseudo charges differ
    ! mmax  dimensiion of log grid
 
-   use constants_m, only: dp
+   use precision_m, only: dp
    implicit none
 
 

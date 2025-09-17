@@ -42,7 +42,7 @@ subroutine modcore(rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
    !zion  ion charge
    !iexc  exchange-correlation function to be used
 
-   use constants_m, only: dp
+   use precision_m, only: dp
    implicit none
 
 

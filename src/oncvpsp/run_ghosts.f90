@@ -55,7 +55,8 @@ subroutine run_ghosts(lmax, la, ea, nc, nv, lloc, irc, qmsbf, &
    !vp  semi-local pseudopotentials (vp(:,5) is local potential if linear comb.)
    !mmax  size of radial grid
    !mxprj  dimension of number of projectors
-   use constants_m, only: dp, pi
+   use precision_m, only: dp
+   use constants_m, only:  pi
    use lsch_m, only: lschpsbar, lschvkbb
    implicit none
 

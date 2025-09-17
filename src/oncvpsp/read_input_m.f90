@@ -1,5 +1,5 @@
 module read_input_m
-   use constants_m, only: dp
+   use precision_m, only: dp
    implicit none
 
    private

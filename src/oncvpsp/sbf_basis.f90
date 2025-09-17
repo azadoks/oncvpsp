@@ -22,7 +22,7 @@ subroutine sbf_basis(ll, rr, mmax, irc, nbas, qroot, sbasis, orbasis, orbasis_de
    !orthonormalize basis functions and derivatives at rc and find all-electron
    !charge inside rc.
 
-   use constants_m, only: dp
+   use precision_m, only: dp
    implicit none
 
 

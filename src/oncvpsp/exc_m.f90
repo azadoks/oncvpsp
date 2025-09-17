@@ -17,7 +17,8 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 module exc_m
-   use constants_m, only: dp, pi, fourpi, ifourpi, third
+   use precision_m, only: dp
+   use constants_m, only:  pi, fourpi, ifourpi, third
    implicit none
    private
    public :: exchdl

@@ -43,7 +43,7 @@ subroutine optimize(nnull, nbas, pswf0_sb, pswf0_or, nqout, qout,&
    !ekin_anal  total pswf kinetic energy calculated analytically from E_resid
    !eresq(nqout)  E_resid for optimized pswf as a function of cutoff
 
-   use constants_m, only: dp
+   use precision_m, only: dp
    implicit none
 
 

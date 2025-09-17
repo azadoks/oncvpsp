@@ -22,7 +22,7 @@ subroutine exc_libxc(iexc, al, rho, vxc, exc, rr, mmax)
    !  dummy substitute for interface to libxc library to allow successful
    !  build without this library
    !
-   use constants_m, only: dp
+   use precision_m, only: dp
    implicit none
 
 

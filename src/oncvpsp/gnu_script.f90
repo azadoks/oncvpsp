@@ -26,7 +26,7 @@ subroutine gnu_script(epa, evkb, lmax, lloc, mxprj, nproj)
    !mxprj maximum number of projectors
    !nproj number of projectors for each l
 
-   use constants_m, only: dp
+   use precision_m, only: dp
    implicit none
 
 

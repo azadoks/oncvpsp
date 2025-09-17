@@ -35,7 +35,7 @@ subroutine wellstate_r(nnin, ll, kap, irc, ep, rr, vfull, vwell, &
    !zz  atomic number
    !mmax  size of log radial mesh
    !mch matching mesh point for inward-outward integrations
-   use constants_m, only: dp
+   use precision_m, only: dp
    use ldirac_m, only: ldiracfb
    implicit none
 

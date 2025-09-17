@@ -45,7 +45,7 @@ repos:
         args:
           [
             -ofree,
-            --indent=3,
+            -i3,
             --refactor_end,
             --indent_contains=restart,
             --indent-continuation=default,

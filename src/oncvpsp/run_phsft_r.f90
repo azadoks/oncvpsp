@@ -44,7 +44,7 @@ subroutine run_phsft_r(lmax, lloc, nproj, ep, epsh1, epsh2, depsh, vkb, evkb, &
    !irc  core radii
    !irphs  index of rr beyond which all vp==vlocal
 
-   use constants_m, only: dp
+   use precision_m, only: dp
    implicit none
 
 

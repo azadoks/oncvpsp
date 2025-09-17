@@ -20,7 +20,7 @@
 
 subroutine fpovlp(gg, hh, nn, ll, zz, ss, rr, srel)
 
-   use constants_m, only: dp
+   use precision_m, only: dp
    implicit none
 
 

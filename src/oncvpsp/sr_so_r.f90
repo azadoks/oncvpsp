@@ -38,7 +38,7 @@ subroutine sr_so_r(lmax, irc, nproj, rr, mmax, mxprj, evkb, vkb, &
    !vso  normalized spin-orbig projectors
    !esol  energy  coefficients of vso
 
-   use constants_m, only: dp
+   use precision_m, only: dp
    implicit none
 
 

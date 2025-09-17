@@ -53,7 +53,7 @@ subroutine linout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
    !  epsh1,epsh2,depsh,rlmax,psfile
    !psfile  should be 'psp8' or 'both'
 
-   use constants_m, only: dp
+   use precision_m, only: dp
    implicit none
 
 

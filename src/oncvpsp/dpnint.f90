@@ -23,7 +23,7 @@ subroutine dpnint(xx, yy, nn, tt, ss, mm)
    ! npoly sets order of polynomial
    ! xx must be ordered in ascending order
    ! output mm interpolated values ss on points tt
-   use constants_m, only: dp
+   use precision_m, only: dp
    implicit none
 
    !Input variables

@@ -35,7 +35,7 @@ subroutine const_basis(nbas, ncon, cons, orbasis, orbasis_der,&
    !          the pswf0 combination (which is not normalized)
    !ps0norm  charge contained in ps0 inside rc
 
-   use constants_m, only: dp
+   use precision_m, only: dp
    implicit none
 
 

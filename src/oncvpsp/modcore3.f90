@@ -44,7 +44,7 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
    !zion  ion charge
    !iexc  exchange-correlation function to be used
 
-   use constants_m, only: dp
+   use precision_m, only: dp
    implicit none
 
 
@@ -670,7 +670,7 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
 end subroutine modcore3
 
 subroutine compute_combined_metric(d2mdiff, iminus, metric)
-   use constants_m, only: dp
+   use precision_m, only: dp
    implicit none
 
 
@@ -690,7 +690,7 @@ subroutine compute_combined_metric(d2mdiff, iminus, metric)
 end subroutine compute_combined_metric
 
 subroutine compute_iminus(rhoc, rhomod, rr, mmax, iminus)
-   use constants_m, only: dp
+   use precision_m, only: dp
    implicit none
 
 
@@ -714,7 +714,7 @@ subroutine compute_iminus(rhoc, rhomod, rr, mmax, iminus)
 end subroutine compute_iminus
 
 subroutine nonuniform_trapezoidal(fx, xx, nn, integral)
-   use constants_m, only: dp
+   use precision_m, only: dp
    implicit none
 
 

@@ -39,7 +39,7 @@ subroutine run_diag_r(lmax, npa, epa, lloc, irc, &
    !zz  atomic number
    !mmax  size of radial grid
    !mxprj  dimension of number of projectors
-   use constants_m, only: dp
+   use precision_m, only: dp
    use lsch_m, only: lschvkbb, lschvkbbe
    use ldirac_m, only: ldiracfb, ldiracfs
    implicit none

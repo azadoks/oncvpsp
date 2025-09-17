@@ -20,7 +20,7 @@ subroutine sbf_rc_der(llin, qq, rc, sbfder)
 
    !calculate spherical Bessel function values and first four derivatives
 
-   use constants_m, only: dp
+   use precision_m, only: dp
    implicit none
 
 

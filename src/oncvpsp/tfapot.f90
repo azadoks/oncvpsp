@@ -30,7 +30,7 @@ function tfapot(rr, zz)
    ! performed by Miranda (C. Miranda, Mem. Acc. Italia 5, 285 (1934)).
    !                                 Alexander Seidl, TU Munich
 
-   use constants_m, only: dp
+   use precision_m, only: dp
    implicit none
 
 

@@ -21,7 +21,8 @@ subroutine exc_libxc(iexc, al, rho, vxc, exc, rr, mmax)
    !
    !  interface to libxc library for potential and energy density calculation
    !
-   use constants_m, only: dp, pi
+   use precision_m, only: dp
+   use constants_m, only:  pi
    use functionals_m
    implicit none
 
@@ -114,7 +115,7 @@ end subroutine exc_libxc
 subroutine derivs(mmax, rho, al, rr, dpr, dppr, dlap)
    ! NB: presumes incoming rho is properly scaled without 4pi or r**2 factors.
 
-   use constants_m, only: dp
+   use precision_m, only: dp
    implicit none
 
 

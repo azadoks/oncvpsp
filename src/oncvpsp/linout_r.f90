@@ -55,7 +55,7 @@ subroutine linout_r(lmax, lloc, rc, vsr, esr, vso, eso, nproj, rr, vpuns, rho, r
    !  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact
    !  epsh1,epsh2,depsh,rlmax,psfile
 
-   use constants_m, only: dp
+   use precision_m, only: dp
    implicit none
 
 

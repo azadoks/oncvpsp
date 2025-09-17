@@ -33,7 +33,8 @@ subroutine vout(mode, rho, rhoc, vo, vxc, zion, eeel, eexc, &
    !rr  log radial mesh
    !output electrostatic and exchange-correlation potential
 
-   use constants_m, only: dp, pi
+   use precision_m, only: dp
+   use constants_m, only:  pi
    use aeo_m, only: aii
    use exc_m, only: exchdl, excpzca, excwig
    use pbe_m, only: excggc

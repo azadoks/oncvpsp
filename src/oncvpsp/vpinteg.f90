@@ -18,7 +18,7 @@
  !
 subroutine vpinteg(gg, hh, nn, mm, ss, rr)
 
-   use constants_m, only: dp
+   use precision_m, only: dp
    implicit none
 
 

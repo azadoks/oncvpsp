@@ -22,7 +22,8 @@
 ! ago and does not follow the coding style of the rest of ONCVPSP
 !
 module pbe_m
-   use constants_m, only: dp, pi, fourpi, ifourpi, third
+   use precision_m, only: dp
+   use constants_m, only:  pi, fourpi, ifourpi, third
    private
    public :: excggc
 contains

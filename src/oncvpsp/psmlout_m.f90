@@ -30,7 +30,8 @@ module psmlout_m
    use libxc_list_m, only: libxc_t, libxc_kind_t, XC_NOT_IMPL, &
       XC_LDA_X, XC_GGA_X_PBE, &
       XC_LDA_C_WIGNER, XC_LDA_C_HL, XC_LDA_C_PZ, XC_GGA_C_PBE
-   use constants_m, only: dp, pi
+   use precision_m, only: dp
+   use constants_m, only:  pi
    implicit none
    private
    public :: psmlout, psmlout_r

@@ -17,7 +17,8 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 module lsch_m
-   use constants_m, only: dp, pi
+   use precision_m, only: dp
+   use constants_m, only:  pi
    use aeo_m, only: aeo, aio, aei, aii
    implicit none
    private

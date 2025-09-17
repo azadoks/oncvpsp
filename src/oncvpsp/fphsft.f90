@@ -35,7 +35,8 @@ subroutine fphsft(ll, epsh2, depsh, pshf, rr, vv, zz, mmax, mch, npsh, srel)
    !npsh  number of energy points in scan
    !srel .true. for scalar-relativistic, .false. for non-relativistic
 
-   use constants_m, only: dp, pi, twopi
+   use precision_m, only: dp
+   use constants_m, only:  pi, twopi
    use lsch_m, only: lschfs
    implicit none
 

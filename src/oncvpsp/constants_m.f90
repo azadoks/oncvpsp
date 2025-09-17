@@ -1,9 +1,7 @@
 module constants_m
-   ! use, intrinsic :: iso_fortran_env, only: real64
+   use precision_m, only: dp
    implicit none
    private
-   !> Double precision kind
-   integer, parameter, public :: dp = kind(1.d0)
    !> π
    real(dp), parameter, public :: pi = 3.141592653589793238462643383279502884197_dp
    !> 2π

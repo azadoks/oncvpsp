@@ -22,7 +22,7 @@ subroutine pspot(ipr, ll, rr, irc, mmax, al, nbas, qroot, eig, uu, pswfopt_sb, &
    !calculates optimized pseudopotential from coefficients of optimized
    !pseudo wave function and all-electron wave function
 
-   use constants_m, only: dp
+   use precision_m, only: dp
    implicit none
 
 
