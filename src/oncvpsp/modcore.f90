@@ -42,8 +42,9 @@ subroutine modcore(rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
     !zion  ion charge
     !iexc  exchange-correlation function to be used
 
+    use constants_m, only: dp
     implicit none
-    integer, parameter :: dp = kind(1.0d0)
+
 
     !Input variables
     integer :: nv, nc, iexc, irps, mmax

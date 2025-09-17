@@ -44,8 +44,9 @@ subroutine run_optimize(eig, ll, mmax, mxprj, rr, uua, qq,&
     !vae  all-electron potential
     !cvgplt  energy error vs. cutoff energy for plotting
 
+    use constants_m, only: dp
     implicit none
-    integer, parameter :: dp = kind(1.0d0)
+
     real(dp), parameter :: Ha_eV = 27.21138386d0  ! 1 Hartree, in eV
 
     !Input variables

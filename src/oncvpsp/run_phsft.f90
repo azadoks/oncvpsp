@@ -43,8 +43,9 @@ subroutine run_phsft(lmax, lloc, nproj, epa, epsh1, epsh2, depsh, vkb, evkb, &
     !irphs  index of rr beyond which all vp==vlocal
     !srel .true. for scalar-relativistic, .false. for non-relativistic
 
+    use constants_m, only: dp
     implicit none
-    integer, parameter :: dp = kind(1.0d0)
+
 
     !Input variables
     integer :: lmax, lloc, mmax, mxprj

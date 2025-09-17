@@ -34,8 +34,9 @@ subroutine wf_rc_der(rr, uu, al, rc, irc, mmax, uorder)
     !OUTPUT
     ! uorder  value and four derivatives of uu/rr at final rc
 
+    use constants_m, only: dp
     implicit none
-    integer, parameter :: dp = kind(1.0d0)
+
 
     !subroutine arguments
     real(dp) :: rr(mmax), uu(mmax), uorder(5)

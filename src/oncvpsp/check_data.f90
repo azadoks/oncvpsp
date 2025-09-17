@@ -26,8 +26,9 @@ subroutine check_data(atsym, zz, fcfact, rcfact, epsh1, epsh2, depsh, rlmax, drl
     !*cnf variables are arrays of the basis atomic configuration variables
     !to be used for the test configurations
 
+    use constants_m, only: dp
     implicit none
-    integer, parameter :: dp = kind(1.0d0)
+
 
     ! Input variables
     character*2 :: atsym

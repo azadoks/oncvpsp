@@ -22,8 +22,9 @@ subroutine pspot(ipr, ll, rr, irc, mmax, al, nbas, qroot, eig, uu, pswfopt_sb, &
     !calculates optimized pseudopotential from coefficients of optimized
     !pseudo wave function and all-electron wave function
 
+    use constants_m, only: dp
     implicit none
-    integer, parameter :: dp = kind(1.0d0)
+
 
     !INPUT
     !ipr 1 for first projector, 2 for second which usually has a node

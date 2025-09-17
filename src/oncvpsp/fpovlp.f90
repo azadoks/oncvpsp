@@ -20,8 +20,9 @@
 
 subroutine fpovlp(gg, hh, nn, ll, zz, ss, rr, srel)
 
+    use constants_m, only: dp
     implicit none
-    integer, parameter :: dp = kind(1.0d0)
+
 
     !gg wave function one
     !hh wave function two

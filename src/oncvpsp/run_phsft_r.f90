@@ -44,8 +44,9 @@ subroutine run_phsft_r(lmax, lloc, nproj, ep, epsh1, epsh2, depsh, vkb, evkb, &
     !irc  core radii
     !irphs  index of rr beyond which all vp==vlocal
 
+    use constants_m, only: dp
     implicit none
-    integer, parameter :: dp = kind(1.0d0)
+
 
     !Input variables
     integer :: lmax, lloc, mmax, mxprj

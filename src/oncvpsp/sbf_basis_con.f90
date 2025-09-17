@@ -23,8 +23,9 @@ subroutine sbf_basis_con(ll, rr, mmax, irc, nbas, qroot, psopt, orbasis, orbasis
     ! matrix based on derivative to be matched and overlaps with prior
     ! optimized wave functions
 
+    use constants_m, only: dp
     implicit none
-    integer, parameter :: dp = kind(1.0d0)
+
 
     !INPUT
     !ll  angujlar momentum

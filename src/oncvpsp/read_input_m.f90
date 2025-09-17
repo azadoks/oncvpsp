@@ -1,6 +1,7 @@
 module read_input_m
+    use constants_m, only: dp
     implicit none
-    integer, parameter :: dp = kind(1.0d0)
+
     private
     public :: read_input
     public :: read_input_r

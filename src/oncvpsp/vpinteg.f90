@@ -18,8 +18,9 @@
  !
 subroutine vpinteg(gg, hh, nn, mm, ss, rr)
 
+    use constants_m, only: dp
     implicit none
-    integer, parameter :: dp = kind(1.0d0)
+
 
     ! integrals that go into construction of Vanderbilt separable pseudopotential
 

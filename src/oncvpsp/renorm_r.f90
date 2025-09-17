@@ -27,8 +27,9 @@ subroutine renorm_r(uu, rr, kap, zz, mmax, cnorm)
     !mmax  size of radial grid
     !cnorm  renormalization coefficient
 
+    use constants_m, only: dp
     implicit none
-    integer, parameter :: dp = kind(1.0d0)
+
 
     !Input variables
     real(dp) :: rr(mmax)

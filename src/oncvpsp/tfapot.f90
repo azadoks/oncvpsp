@@ -30,8 +30,9 @@ function tfapot(rr, zz)
     ! performed by Miranda (C. Miranda, Mem. Acc. Italia 5, 285 (1934)).
     !                                 Alexander Seidl, TU Munich
 
+    use constants_m, only: dp
     implicit none
-    integer, parameter :: dp = kind(1.0d0)
+
 
     !Input variables
     real(dp) :: rr, zz

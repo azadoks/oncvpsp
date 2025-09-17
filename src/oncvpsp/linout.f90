@@ -53,8 +53,9 @@ subroutine linout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     !  epsh1,epsh2,depsh,rlmax,psfile
     !psfile  should be 'psp8' or 'both'
 
+    use constants_m, only: dp
     implicit none
-    integer, parameter :: dp = kind(1.0d0)
+
 
     !Input variables
     integer :: lmax, lloc, iexc, mmax, mxprj, nrl, icmod

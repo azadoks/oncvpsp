@@ -26,8 +26,9 @@ subroutine gnu_script_r(epa, evkb, lmax, lloc, mxprj, nproj)
     !mxprj maximum number of projectors
     !nproj number of projectors for each l
 
+    use constants_m, only: dp
     implicit none
-    integer, parameter :: dp = kind(1.0d0)
+
 
     !Input variables
     integer :: lmax, lloc, mxprj

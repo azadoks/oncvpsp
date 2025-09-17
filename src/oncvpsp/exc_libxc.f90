@@ -114,8 +114,9 @@ end subroutine exc_libxc
 subroutine derivs(mmax, rho, al, rr, dpr, dppr, dlap)
     ! NB: presumes incoming rho is properly scaled without 4pi or r**2 factors.
 
+    use constants_m, only: dp
     implicit none
-    integer, parameter :: dp = kind(1.0d0)
+
 
     integer, intent(in) :: mmax
     real(dp), intent(in) :: al

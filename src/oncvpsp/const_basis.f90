@@ -35,8 +35,9 @@ subroutine const_basis(nbas, ncon, cons, orbasis, orbasis_der,&
     !          the pswf0 combination (which is not normalized)
     !ps0norm  charge contained in ps0 inside rc
 
+    use constants_m, only: dp
     implicit none
-    integer, parameter :: dp = kind(1.0d0)
+
 
     !input variables
     integer :: ncon, nbas

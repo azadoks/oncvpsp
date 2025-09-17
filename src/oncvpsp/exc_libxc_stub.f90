@@ -22,9 +22,9 @@ subroutine exc_libxc(iexc, al, rho, vxc, exc, rr, mmax)
     !  dummy substitute for interface to libxc library to allow successful
     !  build without this library
     !
+    use constants_m, only: dp
     implicit none
 
-    integer, parameter :: dp = kind(1.0d0)
 
     real(dp), intent(in) :: al
     real(dp), intent(in) :: rho(mmax), rr(mmax)
