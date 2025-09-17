@@ -1,0 +1,9 @@
+[submodule "extern/libxc"]
+	path = extern/libxc
+	url = https://gitlab.com/libxc/libxc.git
+[submodule "extern/lapack"]
+	path = extern/lapack
+	url = https://github.com/Reference-LAPACK/lapack.git
+[submodule "extern/xmlf90"]
+	path = extern/xmlf90
+	url = https://github.com/azadoks/xmlf90.git
