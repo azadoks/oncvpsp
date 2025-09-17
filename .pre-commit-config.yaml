@@ -18,12 +18,12 @@ repos:
     hooks:
       - id: commitizen
         stages: [commit-msg]
-  # - repo: https://github.com/PlasmaFAIR/fortitude-pre-commit
-  #   rev: v0.7.5
-  #   hooks:
-  #     - id: fortitude
-  #       args: ["--fix"]
-  #       exclude: "(scripts|tests|doc|extern|build)/.*"
+  - repo: https://github.com/PlasmaFAIR/fortitude-pre-commit
+    rev: v0.7.5
+    hooks:
+      - id: fortitude
+        args: ["--fix"]
+        exclude: "(scripts|tests|doc|extern|build)/.*"
   - repo: https://github.com/zmoon/findent-pre-commit
     rev: 527f61f770f504abd87f97932b510b8dce07ab3a
     hooks:
