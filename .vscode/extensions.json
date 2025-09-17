@@ -1,0 +1,8 @@
+{
+    "recommendations": [
+        "fortran-lang.linter-gfortran",
+        "tamasfe.even-better-toml",
+        "redhat.vscode-yaml",
+        "yzhang.markdown-all-in-one",
+    ]
+}

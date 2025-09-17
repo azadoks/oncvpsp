@@ -1,0 +1,33 @@
+[project]
+name = "oncvpsp"
+version = "4.0.1"
+description = "The official Fortran code to generate optimized norm-conserving Vanderbilt pseudopotentials."
+dependencies = [
+    "ford",
+    "graphviz",
+]
+requires-python = ">=3.8"
+authors = [
+  { name = "D. R. Hamann", email = "drhamann@mat-simresearch.com" },
+  { name = "Austin Zadoks", email = "austin.zadoks@protonmail.com" }
+]
+readme = "README.md"
+license = { file = "COPYING" }
+keywords = ["fortran", "modern fortran", "vscode"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+]
+
+[project.optional-dependencies]
+dev = [
+    "fortls",
+    "pre-commit",
+    "fortitude-lint",
+]
+
+[project.urls]
+Homepage = "https://github.com/oncvpsp/oncvpsp"
+Documentation = "https://github.com/oncvpsp/oncvpsp/README.md"
+Repository = "https://github.com/oncvpsp/oncvpsp"
+"Bug Tracker" = "https://github.com/oncvpsp/oncvpsp/issues"
