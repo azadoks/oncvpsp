@@ -35,12 +35,8 @@ repos:
             --align_paren,
           ]
         additional_dependencies: [findent==4.3.1]
-  - repo: local
+  - repo: https://github.com/PlasmaFAIR/fortitude-pre-commit
+    rev: v0.7.5
     hooks:
-      - id: fortitude-lint
-        name: Run Fortitude linter
-        entry: fortitude check
-        language: system
-        pass_filenames: true
-        always_run: true
-        files: \.[fF](90|95|03|08)$
+      - id: fortitude
+        args: ["--fix"]
