@@ -7,35 +7,35 @@ cp scripts/extract.sh scripts/replot.sh tests/
 
 TMP=$$.tmp
 
-sed -e /PREFIX=/s:PREFIX=.*$:PREFIX=$NEW_PREFIX: scripts/run.sh >$TMP
+sed -e /PREFIX=/s:PREFIX=.*$:PREFIX=$NEW_PREFIX: scripts/run_template.sh >$TMP
 cp $TMP tests/run.sh
 cp $TMP scripts/run.sh
 
-sed -e /PREFIX=/s:PREFIX=.*$:PREFIX=$NEW_PREFIX: scripts/run_nr.sh >$TMP
+sed -e /PREFIX=/s:PREFIX=.*$:PREFIX=$NEW_PREFIX: scripts/run_nr_template.sh >$TMP
 cp $TMP tests/run_nr.sh
 cp $TMP scripts/run_nr.sh
 
-sed -e /PREFIX=/s:PREFIX=.*$:PREFIX=$NEW_PREFIX: scripts/run_r.sh >$TMP
+sed -e /PREFIX=/s:PREFIX=.*$:PREFIX=$NEW_PREFIX: scripts/run_r_template.sh >$TMP
 cp $TMP tests/run_r.sh
 cp $TMP scripts/run_r.sh
 
-sed -e /PREFIX=/s:PREFIX=.*$:PREFIX=$NEW_PREFIX: scripts/run_nr.sh >$TMP
+sed -e /PREFIX=/s:PREFIX=.*$:PREFIX=$NEW_PREFIX: scripts/run_nr_template.sh >$TMP
 cp $TMP tests/multirun_nr.sh
 cp $TMP scripts/run_nr.sh
 
-sed -e /PREFIX=/s:PREFIX=.*$:PREFIX=$NEW_PREFIX: scripts/run_r.sh >$TMP
+sed -e /PREFIX=/s:PREFIX=.*$:PREFIX=$NEW_PREFIX: scripts/run_r_template.sh >$TMP
 cp $TMP tests/multirun_r.sh
 cp $TMP scripts/run_r.sh
 
-sed -e /PREFIX=/s:PREFIX=.*$:PREFIX=$NEW_PREFIX: scripts/compare.sh >$TMP
+sed -e /PREFIX=/s:PREFIX=.*$:PREFIX=$NEW_PREFIX: scripts/compare_template.sh >$TMP
 cp $TMP tests/compare.sh
 cp $TMP scripts/compare.sh
 
-sed -e /PREFIX=/s:PREFIX=.*$:PREFIX=$NEW_PREFIX: scripts/compare_r.sh >$TMP
+sed -e /PREFIX=/s:PREFIX=.*$:PREFIX=$NEW_PREFIX: scripts/compare_r_template.sh >$TMP
 cp $TMP tests/compare_r.sh
 cp $TMP scripts/compare_r.sh
 
-sed -e /PREFIX=/s:PREFIX=.*$:PREFIX=$NEW_PREFIX: scripts/compare_psml.sh >$TMP
+sed -e /PREFIX=/s:PREFIX=.*$:PREFIX=$NEW_PREFIX: scripts/compare_psml_template.sh >$TMP
 cp $TMP tests/compare_psml.sh
 cp $TMP scripts/compare_psml.sh
 
