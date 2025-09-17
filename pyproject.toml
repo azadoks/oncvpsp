@@ -3,6 +3,7 @@ name = "oncvpsp"
 version = "4.0.1"
 description = "The official Fortran code to generate optimized norm-conserving Vanderbilt pseudopotentials."
 dependencies = [
+    "cmake",
     "ford",
     "graphviz",
 ]
