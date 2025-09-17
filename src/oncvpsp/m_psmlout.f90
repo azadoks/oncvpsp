@@ -210,16 +210,10 @@ subroutine psmlout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     ! delete the temporary file
     inquire (file="_tmp_input", exist=found)
     if (found) then
-        !      write(*,*) 'deleting temporary file _tmp_input'
         inquire (file="_tmp_input", opened=found)
         if (found) then
             close (lun)
         end if
-        !      write(*,*) 'deleting temporary file _tmp_input'
-        !      open(unit=lun,file='_tmp_input',status='old',action='delete')
-        !      close(lun)
-        ! The above does not work in some systems (e.g. MacOSX)
-        ! so we use the following instead
         call execute_command_line("rm -f _tmp_input", wait=.true.)
     end if
     !
@@ -689,6 +683,15 @@ subroutine psmlout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
         call xml_AddPcData(xf, trim(line), line_feed=.true.)
     end do
     close (lun)
+    ! delete the temporary file
+    inquire (file="_tmp_input", exist=found)
+    if (found) then
+        inquire (file="_tmp_input", opened=found)
+        if (found) then
+            close (lun)
+        end if
+        call execute_command_line("rm -f _tmp_input", wait=.true.)
+    end if
 
     call xml_EndElement(xf, "input-file")
     !
