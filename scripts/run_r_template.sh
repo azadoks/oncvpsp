@@ -16,7 +16,7 @@ PLOTFILE=$1_r.plot
 
 TEMP=$$.tmp
 
-$PREFIX/build/bin/src/oncvpspr.x <$INFILE >$OUTFILE  #Edit if your executable is
+$PREFIX/build/bin/oncvpspr.x <$INFILE >$OUTFILE  #Edit if your executable is
                                             #in another directory
 
 awk 'BEGIN{out=0};/GNUSCRIPT/{out=0}; {if(out == 1) {print}};\
