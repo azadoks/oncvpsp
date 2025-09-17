@@ -20,60 +20,60 @@
 
 subroutine fpovlp(gg, hh, nn, ll, zz, ss, rr, srel)
 
-    use constants_m, only: dp
-    implicit none
+   use constants_m, only: dp
+   implicit none
 
 
-    !gg wave function one
-    !hh wave function two
-    !nn outer integration limit
-    !ll angular momentum
-    !zz nuclear charge
-    !ss overlap output
-    !rr log radial mesh
-    !srel .true. for scalar-relativistic, .false. for non-relativistic
+   !gg wave function one
+   !hh wave function two
+   !nn outer integration limit
+   !ll angular momentum
+   !zz nuclear charge
+   !ss overlap output
+   !rr log radial mesh
+   !srel .true. for scalar-relativistic, .false. for non-relativistic
 
-    ! product of all-elecctron scalar-relativistic wave functions gg*hh
-    ! goes like rr**(2*gamma) as rr -> 0
-    ! integral on usual log mesh from rr=0 to rr(nn)
+   ! product of all-elecctron scalar-relativistic wave functions gg*hh
+   ! goes like rr**(2*gamma) as rr -> 0
+   ! integral on usual log mesh from rr=0 to rr(nn)
 
-    !Input variables
-    real(dp) :: zz
-    real(dp) :: gg(nn), hh(nn), rr(nn)
-    integer :: nn, ll
-    logical :: srel
+   !Input variables
+   real(dp) :: zz
+   real(dp) :: gg(nn), hh(nn), rr(nn)
+   integer :: nn, ll
+   logical :: srel
 
-    !Output variable
-    real(dp) :: ss
+   !Output variable
+   real(dp) :: ss
 
-    !Local variables
-    real(dp) :: r0, amesh, al, fss, gamma
-    integer :: ii
+   !Local variables
+   real(dp) :: r0, amesh, al, fss, gamma
+   integer :: ii
 
-    al = 0.01d0 * dlog(rr(101) / rr(1))
-    amesh = exp(al)
+   al = 0.01d0 * dlog(rr(101) / rr(1))
+   amesh = exp(al)
 
-    if (srel) then
-        fss = (1.0d0 / 137.036d0)**2
-    else
-        fss = 1.0d-12
-    end if
+   if (srel) then
+      fss = (1.0d0 / 137.036d0)**2
+   else
+      fss = 1.0d-12
+   end if
 
-    if (ll == 0) gamma = dsqrt(1.0d0 - fss * zz**2)
-    if (ll > 0) gamma = (ll * dsqrt(ll**2 - fss * zz**2) + &
-    & (ll + 1) * dsqrt((ll + 1)**2 - fss * zz**2)) / (2 * ll + 1)
+   if (ll == 0) gamma = dsqrt(1.0d0 - fss * zz**2)
+   if (ll > 0) gamma = (ll * dsqrt(ll**2 - fss * zz**2) + &
+   & (ll + 1) * dsqrt((ll + 1)**2 - fss * zz**2)) / (2 * ll + 1)
 
-    r0 = rr(1) / dsqrt(amesh)
-    ss = r0**(2.0d0 * gamma + 1.0d0) / (2.d0 * gamma + 1.0d0)
-    ss = (ss * gg(1) * hh(1)) / rr(1)**(2.d0 * gamma)
+   r0 = rr(1) / dsqrt(amesh)
+   ss = r0**(2.0d0 * gamma + 1.0d0) / (2.d0 * gamma + 1.0d0)
+   ss = (ss * gg(1) * hh(1)) / rr(1)**(2.d0 * gamma)
 
-    do ii = 1, nn - 3
-        ss = ss + al * gg(ii) * hh(ii) * rr(ii)
-    end do
+   do ii = 1, nn - 3
+      ss = ss + al * gg(ii) * hh(ii) * rr(ii)
+   end do
 
-    ss = ss + al * (23.d0 * rr(nn - 2) * gg(nn - 2) * hh(nn - 2) &
-    &        + 28.d0 * rr(nn - 1) * gg(nn - 1) * hh(nn - 1) &
-    &        + 9.d0 * rr(nn) * gg(nn) * hh(nn)) / 24.d0
+   ss = ss + al * (23.d0 * rr(nn - 2) * gg(nn - 2) * hh(nn - 2) &
+   &        + 28.d0 * rr(nn - 1) * gg(nn - 1) * hh(nn - 1) &
+   &        + 9.d0 * rr(nn) * gg(nn) * hh(nn)) / 24.d0
 
-    return
+   return
 end subroutine fpovlp

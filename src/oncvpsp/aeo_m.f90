@@ -20,44 +20,44 @@
 ! outward and inward integration, Abramowitz and
 ! Stegun, p. 896
 module aeo_m
-    use constants_m, only: dp
-    implicit none
-    private
-    public :: aeo, aio, aei, aii
+   use constants_m, only: dp
+   implicit none
+   private
+   public :: aeo, aio, aei, aii
 contains
 function aeo(xx, ii) result(yy)
-    real(dp), dimension(:) :: xx
-    real(dp) :: yy
-    integer :: ii
+   real(dp), dimension(:) :: xx
+   real(dp) :: yy
+   integer :: ii
 
-    yy = (4.16666666667d-2) * (55.0d0 * xx(ii) - 59.0d0 * xx(ii - 1) + 37.0d0 * xx(ii - 2) - 9.0d0 * xx(ii - 3))
-    return
+   yy = (4.16666666667d-2) * (55.0d0 * xx(ii) - 59.0d0 * xx(ii - 1) + 37.0d0 * xx(ii - 2) - 9.0d0 * xx(ii - 3))
+   return
 end function aeo
 
 function aio(xx, ii) result(yy)
-    real(dp), dimension(:) :: xx
-    real(dp) :: yy
-    integer :: ii
+   real(dp), dimension(:) :: xx
+   real(dp) :: yy
+   integer :: ii
 
-    yy = (4.16666666667d-2) * (9.0d0 * xx(ii + 1) + 19.0d0 * xx(ii) - 5.0d0 * xx(ii - 1) + xx(ii - 2))
-    return
+   yy = (4.16666666667d-2) * (9.0d0 * xx(ii + 1) + 19.0d0 * xx(ii) - 5.0d0 * xx(ii - 1) + xx(ii - 2))
+   return
 end function aio
 
 function aei(xx, ii) result(yy)
-    real(dp), dimension(:) :: xx
-    real(dp) :: yy
-    integer :: ii
+   real(dp), dimension(:) :: xx
+   real(dp) :: yy
+   integer :: ii
 
-    yy = -(4.16666666667d-2) * (55.0d0 * xx(ii) - 59.0d0 * xx(ii + 1) + 37.0d0 * xx(ii + 2) - 9.0d0 * xx(ii + 3))
-    return
+   yy = -(4.16666666667d-2) * (55.0d0 * xx(ii) - 59.0d0 * xx(ii + 1) + 37.0d0 * xx(ii + 2) - 9.0d0 * xx(ii + 3))
+   return
 end function aei
 
 function aii(xx, ii) result(yy)
-    real(dp), dimension(:) :: xx
-    real(dp) :: yy
-    integer :: ii
+   real(dp), dimension(:) :: xx
+   real(dp) :: yy
+   integer :: ii
 
-    yy = -(4.16666666667d-2) * (9.0d0 * xx(ii - 1) + 19.0d0 * xx(ii) - 5.0d0 * xx(ii + 1) + xx(ii + 2))
-    return
+   yy = -(4.16666666667d-2) * (9.0d0 * xx(ii - 1) + 19.0d0 * xx(ii) - 5.0d0 * xx(ii + 1) + xx(ii + 2))
+   return
 end function aii
 end module aeo_m

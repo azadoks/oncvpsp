@@ -19,95 +19,95 @@
 subroutine run_phsft(lmax, lloc, nproj, epa, epsh1, epsh2, depsh, vkb, evkb, &
 &                     rr, vfull, vp, zz, mmax, mxprj, irc, rxpsh, srel)
 
-    ! computes log derivatives, actually atan(r * ((d psi(r)/dr)/psi(r)))
-    ! at rr(irphs) comparing all-electron with Vanderbilt-Kleinman-Bylander
-    ! results for 1 and 2 projectors, or the semi-local pseudpotential
-    ! when that is the local potential for some l
-    ! the computed quantity is reminiscent of a scattering phase shift, but isn't
+   ! computes log derivatives, actually atan(r * ((d psi(r)/dr)/psi(r)))
+   ! at rr(irphs) comparing all-electron with Vanderbilt-Kleinman-Bylander
+   ! results for 1 and 2 projectors, or the semi-local pseudpotential
+   ! when that is the local potential for some l
+   ! the computed quantity is reminiscent of a scattering phase shift, but isn't
 
-    !lmax  maximum angular momentum
-    !lloc  l for local potential
-    !nproj  number ov V / KB projectors for  each l
-    !ep  bound-state or scattering state reference energies for vkb potentials
-    !epsh1  low energy limit for "phase shift" calculation
-    !epsh2  high energy limit for "phase shift" calculation
-    !depsh  energy increment
-    !vkb  VKB projectors
-    !evkb  coefficients of VKB projectors
-    !rr  log radial grid
-    !vfull  all-electron potential
-    !vp  semi-local pseudopotentials (vp(:,5) is local potential if linear comb.)
-    !zz  atomic number
-    !mmax  size of radial grid
-    !mxprj dimension of number of projectors
-    !irphs  index of rr beyond which all vp==vlocal
-    !srel .true. for scalar-relativistic, .false. for non-relativistic
+   !lmax  maximum angular momentum
+   !lloc  l for local potential
+   !nproj  number ov V / KB projectors for  each l
+   !ep  bound-state or scattering state reference energies for vkb potentials
+   !epsh1  low energy limit for "phase shift" calculation
+   !epsh2  high energy limit for "phase shift" calculation
+   !depsh  energy increment
+   !vkb  VKB projectors
+   !evkb  coefficients of VKB projectors
+   !rr  log radial grid
+   !vfull  all-electron potential
+   !vp  semi-local pseudopotentials (vp(:,5) is local potential if linear comb.)
+   !zz  atomic number
+   !mmax  size of radial grid
+   !mxprj dimension of number of projectors
+   !irphs  index of rr beyond which all vp==vlocal
+   !srel .true. for scalar-relativistic, .false. for non-relativistic
 
-    use constants_m, only: dp
-    implicit none
+   use constants_m, only: dp
+   implicit none
 
 
-    !Input variables
-    integer :: lmax, lloc, mmax, mxprj
-    integer :: nproj(6), irc(6)
-    real(dp) :: epsh1, epsh2, depsh, zz, rxpsh
-    real(dp) :: rr(mmax), vp(mmax, 5), epa(mxprj, 6)
-    real(dp) :: vfull(mmax), vkb(mmax, mxprj, 4), evkb(mxprj, 4)
-    logical :: srel
+   !Input variables
+   integer :: lmax, lloc, mmax, mxprj
+   integer :: nproj(6), irc(6)
+   real(dp) :: epsh1, epsh2, depsh, zz, rxpsh
+   real(dp) :: rr(mmax), vp(mmax, 5), epa(mxprj, 6)
+   real(dp) :: vfull(mmax), vkb(mmax, mxprj, 4), evkb(mxprj, 4)
+   logical :: srel
 
-    !Output variables - printing only
+   !Output variables - printing only
 
-    !Local variables
-    integer :: ii, irphs, ll, l1, npsh, xirphs
-    real(dp) :: epsh
+   !Local variables
+   integer :: ii, irphs, ll, l1, npsh, xirphs
+   real(dp) :: epsh
 
-    real(dp), allocatable :: pshf(:), pshp(:)
+   real(dp), allocatable :: pshf(:), pshp(:)
 
-    npsh = int(((epsh2 - epsh1) / depsh) - 0.5d0) + 1
+   npsh = int(((epsh2 - epsh1) / depsh) - 0.5d0) + 1
 
-    allocate (pshf(npsh), pshp(npsh))
+   allocate (pshf(npsh), pshp(npsh))
 
-    ! loop for phase shift calculation -- full, then local or Kleinman-
-    ! Bylander / Vanderbilt
+   ! loop for phase shift calculation -- full, then local or Kleinman-
+   ! Bylander / Vanderbilt
 
-    do l1 = 1, 4
+   do l1 = 1, 4
 
-        ll = l1 - 1
-        if (ll <= lmax) then
-            irphs = irc(l1) + 2
-        else
-            irphs = irc(lloc + 1)
-        end if
+      ll = l1 - 1
+      if (ll <= lmax) then
+         irphs = irc(l1) + 2
+      else
+         irphs = irc(lloc + 1)
+      end if
 
-        if (rxpsh > 0.d0) then
-            xirphs = minloc(abs(rr - rxpsh), dim=1)
-            if (xirphs < irphs) then
-                write (6, '(a,f6.2)') 'run_phsft: ERROR rxpsh for logder analysis too small (~< rc(l)) : ', rxpsh
-                stop
-            else
-                irphs = xirphs
-            end if
-        end if
+      if (rxpsh > 0.d0) then
+         xirphs = minloc(abs(rr - rxpsh), dim=1)
+         if (xirphs < irphs) then
+            write (6, '(a,f6.2)') 'run_phsft: ERROR rxpsh for logder analysis too small (~< rc(l)) : ', rxpsh
+            stop
+         else
+            irphs = xirphs
+         end if
+      end if
 
-        call fphsft(ll, epsh2, depsh, pshf, rr, vfull, zz, mmax, irphs, npsh, srel)
-        if (ll == lloc) then
-            call vkbphsft(ll, 0, epsh2, depsh, epa(1, l1), pshf, pshp, &
-            &                   rr, vp(1, lloc + 1), vkb(1, 1, l1), evkb(1, l1), &
-            &                   mmax, irphs, npsh)
-        else
-            call vkbphsft(ll, nproj(l1), epsh2, depsh, epa(1, l1), pshf, pshp, &
-            &                   rr, vp(1, lloc + 1), vkb(1, 1, l1), evkb(1, l1), &
-            &                   mmax, irphs, npsh)
-        end if
+      call fphsft(ll, epsh2, depsh, pshf, rr, vfull, zz, mmax, irphs, npsh, srel)
+      if (ll == lloc) then
+         call vkbphsft(ll, 0, epsh2, depsh, epa(1, l1), pshf, pshp, &
+         &                   rr, vp(1, lloc + 1), vkb(1, 1, l1), evkb(1, l1), &
+         &                   mmax, irphs, npsh)
+      else
+         call vkbphsft(ll, nproj(l1), epsh2, depsh, epa(1, l1), pshf, pshp, &
+         &                   rr, vp(1, lloc + 1), vkb(1, 1, l1), evkb(1, l1), &
+         &                   mmax, irphs, npsh)
+      end if
 
-        write (6, '(/a,i2)') 'log derivativve data for plotting, l=', ll
-        write (6, '(a,f6.2)') 'atan(r * ((d psi(r)/dr)/psi(r))), r=', rr(irphs)
-        write (6, '(a/)') 'l, energy, all-electron, pseudopotential'
-        do ii = 1, npsh
-            epsh = epsh2 - depsh * dfloat(ii - 1)
-            write (6, '(a, i6, 3f12.6)') '! ', ll, epsh, pshf(ii), pshp(ii)
-        end do
-    end do
-    deallocate (pshf, pshp)
-    return
+      write (6, '(/a,i2)') 'log derivativve data for plotting, l=', ll
+      write (6, '(a,f6.2)') 'atan(r * ((d psi(r)/dr)/psi(r))), r=', rr(irphs)
+      write (6, '(a/)') 'l, energy, all-electron, pseudopotential'
+      do ii = 1, npsh
+         epsh = epsh2 - depsh * dfloat(ii - 1)
+         write (6, '(a, i6, 3f12.6)') '! ', ll, epsh, pshf(ii), pshp(ii)
+      end do
+   end do
+   deallocate (pshf, pshp)
+   return
 end subroutine run_phsft

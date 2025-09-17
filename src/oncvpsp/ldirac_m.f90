@@ -17,440 +17,440 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 module ldirac_m
-    use constants_m, only: dp, pi
-    use aeo_m, only: aeo, aio, aei, aii
-    implicit none
-    private
-    public :: ldiracfb
-    public :: ldiracfs
+   use constants_m, only: dp, pi
+   use aeo_m, only: aeo, aio, aei, aii
+   implicit none
+   private
+   public :: ldiracfb
+   public :: ldiracfs
 contains
 
 !> Finds relativistic bound states of an al-electron potential
 subroutine ldiracfb(nn, ll, kap, ierr, ee, rr, zz, vv, uu, up, mmax, mch)
-    !nn  principal quantum number
-    !ll  angular-momentum quantum number
-    !kap =l, -(l+1) for j=l -/+ 1/2
-    !ierr  non-zero return if error
-    !ee  bound-state energy, input guess and output calculated value
-    !rr  log radial mesh
-    !zz  atomic number
-    !vv  local psp
-    !uu(mmax,jj)  output radial wave functions (*rr) jj=1,2 for large, small
-    !up  d(uu)/dr
-    !mmax  size of log grid
-    !mch matching mesh point for inward-outward integrations
+   !nn  principal quantum number
+   !ll  angular-momentum quantum number
+   !kap =l, -(l+1) for j=l -/+ 1/2
+   !ierr  non-zero return if error
+   !ee  bound-state energy, input guess and output calculated value
+   !rr  log radial mesh
+   !zz  atomic number
+   !vv  local psp
+   !uu(mmax,jj)  output radial wave functions (*rr) jj=1,2 for large, small
+   !up  d(uu)/dr
+   !mmax  size of log grid
+   !mch matching mesh point for inward-outward integrations
 
-    !Input variables
-    real(dp) :: rr(mmax), vv(mmax)
-    real(dp) :: zz
-    integer :: nn, ll, kap, mmax
+   !Input variables
+   real(dp) :: rr(mmax), vv(mmax)
+   real(dp) :: zz
+   integer :: nn, ll, kap, mmax
 
-    !Output variables
-    real(dp) :: uu(mmax, 2), up(mmax, 2)
-    real(dp) :: ee
-    integer :: ierr, mch
+   !Output variables
+   real(dp) :: uu(mmax, 2), up(mmax, 2)
+   real(dp) :: ee
+   integer :: ierr, mch
 
-    !Local Variables
+   !Local Variables
 
-    real(dp), allocatable :: gu(:), fu(:), gup(:), fup(:), cf(:)
+   real(dp), allocatable :: gu(:), fu(:), gup(:), fup(:), cf(:)
 
-    real(dp) :: cc, cci, gam, cof
-    real(dp) :: de, emax, emin
-    real(dp) :: eps, ro, sc
-    real(dp) :: sls, sn, cn, uout, upin, upout, xkap
-    real(dp) :: amesh, al
-    integer :: ii, kk, nint, node, nin
+   real(dp) :: cc, cci, gam, cof
+   real(dp) :: de, emax, emin
+   real(dp) :: eps, ro, sc
+   real(dp) :: sls, sn, cn, uout, upin, upout, xkap
+   real(dp) :: amesh, al
+   integer :: ii, kk, nint, node, nin
 
-    cc = 137.036d0
-    cci = 1.0d0 / cc
+   cc = 137.036d0
+   cci = 1.0d0 / cc
 
-    al = 0.01d0 * dlog(rr(101) / rr(1))
-    amesh = exp(al)
+   al = 0.01d0 * dlog(rr(101) / rr(1))
+   amesh = exp(al)
 
-    ! convergence factor for solution of Dirac eq.  if calculated
-    ! correction to eigenvalue is smaller in magnitude than eps times
-    ! the magnitude of the current guess, the current guess is not changed.
-    eps = 1.0d-10
-    ierr = 60
+   ! convergence factor for solution of Dirac eq.  if calculated
+   ! correction to eigenvalue is smaller in magnitude than eps times
+   ! the magnitude of the current guess, the current guess is not changed.
+   eps = 1.0d-10
+   ierr = 60
 
-    ! check arguments
-    if (ll > nn - 1) then
-        write (6, '(/a,i4,a,i4)') 'ldiracfb: ERROR ll =', ll, ' > nn =', nn
-        ierr = 1
-        return
-    end if
-    if (kap /= ll .and. kap /= -(ll + 1)) then
-        write (6, '(/a,i4,a,i4)') 'ldiracfb: ERROR kap =', kap, ' ll =', ll
-        ierr = 2
-        return
-    end if
-    if (zz < 1.0d0) then
-        write (6, '(/a,f12.8)') 'ldiracfb: ERROR zz =', zz
-        ierr = 3
-        return
-    end if
+   ! check arguments
+   if (ll > nn - 1) then
+      write (6, '(/a,i4,a,i4)') 'ldiracfb: ERROR ll =', ll, ' > nn =', nn
+      ierr = 1
+      return
+   end if
+   if (kap /= ll .and. kap /= -(ll + 1)) then
+      write (6, '(/a,i4,a,i4)') 'ldiracfb: ERROR kap =', kap, ' ll =', ll
+      ierr = 2
+      return
+   end if
+   if (zz < 1.0d0) then
+      write (6, '(/a,f12.8)') 'ldiracfb: ERROR zz =', zz
+      ierr = 3
+      return
+   end if
 
-    sls = ll * (ll + 1)
+   sls = ll * (ll + 1)
 
-    ! usual limits from non-relativistic Schroedinger eq. should be OK
-    emax = vv(mmax) + 0.5d0 * sls / rr(mmax)**2
-    emin = emax
-    do ii = 1, mmax
-        emin = dmin1(emin, vv(ii) + 0.5d0 * sls / rr(ii)**2)
-    end do
-    emin = dmax1(emin, -zz**2 / nn**2)
-    if (ee > emax) ee = 0.5d0 * (emax + emin)
-    if (ee < emin) ee = 0.5d0 * (emax + emin)
-    if (ee > emax) ee = 0.5d0 * (emax + emin)
+   ! usual limits from non-relativistic Schroedinger eq. should be OK
+   emax = vv(mmax) + 0.5d0 * sls / rr(mmax)**2
+   emin = emax
+   do ii = 1, mmax
+      emin = dmin1(emin, vv(ii) + 0.5d0 * sls / rr(ii)**2)
+   end do
+   emin = dmax1(emin, -zz**2 / nn**2)
+   if (ee > emax) ee = 0.5d0 * (emax + emin)
+   if (ee < emin) ee = 0.5d0 * (emax + emin)
+   if (ee > emax) ee = 0.5d0 * (emax + emin)
 
-    allocate (gu(mmax), fu(mmax), gup(mmax), fup(mmax), cf(mmax))
+   allocate (gu(mmax), fu(mmax), gup(mmax), fup(mmax), cf(mmax))
 
-    ! null arrays
-    gu(:) = 0.0d0; fu(:) = 0.0d0; gup(:) = 0.0d0; fup(:) = 0.0d0; cf(:) = 0.0d0
+   ! null arrays
+   gu(:) = 0.0d0; fu(:) = 0.0d0; gup(:) = 0.0d0; fup(:) = 0.0d0; cf(:) = 0.0d0
 
-    gam = sqrt(kap**2 - (zz * cci)**2)
+   gam = sqrt(kap**2 - (zz * cci)**2)
 
-    cof = (kap + gam) * (cc / zz)
+   cof = (kap + gam) * (cc / zz)
 
-    ! return point for bound state convergence
-    do nint = 1, 60
+   ! return point for bound state convergence
+   do nint = 1, 60
 
-        ! coefficient array for u in Schroedinger eq.
-        do ii = 1, mmax
-            cf(ii) = sls + 2.0d0 * (vv(ii) - ee) * rr(ii)**2
-        end do
+      ! coefficient array for u in Schroedinger eq.
+      do ii = 1, mmax
+         cf(ii) = sls + 2.0d0 * (vv(ii) - ee) * rr(ii)**2
+      end do
 
-        ! find classical turning point for matching
-        mch = 0
-        do ii = mmax, 2, -1
-            if (cf(ii - 1) <= 0.d0 .and. cf(ii) > 0.d0) then
-                mch = ii
-                exit
-            end if
-        end do
+      ! find classical turning point for matching
+      mch = 0
+      do ii = mmax, 2, -1
+         if (cf(ii - 1) <= 0.d0 .and. cf(ii) > 0.d0) then
+            mch = ii
+            exit
+         end if
+      end do
 
-        if (mch == 0) then
-            ierr = -1
-            return
-        end if
+      if (mch == 0) then
+         ierr = -1
+         return
+      end if
 
-        ! start wavefunctions with series
-        do ii = 1, 5
-            gu(ii) = rr(ii)**gam
-            fu(ii) = cof * gu(ii)
+      ! start wavefunctions with series
+      do ii = 1, 5
+         gu(ii) = rr(ii)**gam
+         fu(ii) = cof * gu(ii)
+
+         fup(ii) = al * rr(ii) * (kap * fu(ii) / rr(ii) &
+         &            + cci * (ee + vv(ii)) * gu(ii))
+
+         gup(ii) = al * rr(ii) * (-kap * gu(ii) / rr(ii) &
+         &            + cci * (2.0d0 * cc**2 - ee - vv(ii)) * fu(ii))
+      end do
+
+      ! outward integration using predictor once, corrector
+      ! twice
+      node = 0
+      do ii = 5, mch - 1
+
+         fu(ii + 1) = fu(ii) + aeo(fup, ii)
+         gu(ii + 1) = gu(ii) + aeo(gup, ii)
+
+         do kk = 1, 2
+            fup(ii + 1) = al * rr(ii + 1) * (kap * fu(ii + 1) / rr(ii + 1) &
+            &             - cci * (ee - vv(ii + 1)) * gu(ii + 1))
+
+            gup(ii + 1) = al * rr(ii + 1) * (-kap * gu(ii + 1) / rr(ii + 1) &
+            &             + cci * (2.0d0 * cc**2 + ee - vv(ii + 1)) * fu(ii + 1))
+
+            fu(ii + 1) = fu(ii) + aio(fup, ii)
+            gu(ii + 1) = gu(ii) + aio(gup, ii)
+         end do
+         if (gu(ii + 1) * gu(ii) <= 0.0d0) node = node + 1
+      end do
+
+      uout = gu(mch)
+      upout = gup(mch)
+
+      if (node - nn + ll + 1 == 0) then
+
+         ! start inward integration at 10*classical turning
+         ! point with simple exponential
+
+         nin = int(mch + 2.3d0 / al)
+         if (nin + 4 > mmax) nin = mmax - 4
+         xkap = dsqrt(sls / rr(nin)**2 + 2.0d0 * (vv(nin) - ee))
+
+         do ii = nin, nin + 4
+            gu(ii) = exp(-xkap * (rr(ii) - rr(nin)))
+            fu(ii) = 0.5d0 * cci * (-xkap + kap / rr(ii)) * gu(ii)
 
             fup(ii) = al * rr(ii) * (kap * fu(ii) / rr(ii) &
-            &            + cci * (ee + vv(ii)) * gu(ii))
-
+            &               + cci * (ee + vv(ii)) * gu(ii))
             gup(ii) = al * rr(ii) * (-kap * gu(ii) / rr(ii) &
-            &            + cci * (2.0d0 * cc**2 - ee - vv(ii)) * fu(ii))
-        end do
+            &               + cci * (2.0d0 * cc**2 - ee - vv(ii)) * fu(ii))
+         end do
 
-        ! outward integration using predictor once, corrector
-        ! twice
-        node = 0
-        do ii = 5, mch - 1
+         ! integrate inward
+         do ii = nin, mch + 1, -1
 
-            fu(ii + 1) = fu(ii) + aeo(fup, ii)
-            gu(ii + 1) = gu(ii) + aeo(gup, ii)
+            fu(ii - 1) = fu(ii) + aei(fup, ii)
+            gu(ii - 1) = gu(ii) + aei(gup, ii)
 
             do kk = 1, 2
-                fup(ii + 1) = al * rr(ii + 1) * (kap * fu(ii + 1) / rr(ii + 1) &
-                &             - cci * (ee - vv(ii + 1)) * gu(ii + 1))
+               fup(ii - 1) = al * rr(ii - 1) * (kap * fu(ii - 1) / rr(ii - 1) &
+               &               - cci * (ee - vv(ii - 1)) * gu(ii - 1))
 
-                gup(ii + 1) = al * rr(ii + 1) * (-kap * gu(ii + 1) / rr(ii + 1) &
-                &             + cci * (2.0d0 * cc**2 + ee - vv(ii + 1)) * fu(ii + 1))
+               gup(ii - 1) = al * rr(ii - 1) * (-kap * gu(ii - 1) / rr(ii - 1) &
+               &               + cci * (2.0d0 * cc**2 + ee - vv(ii - 1)) * fu(ii - 1))
 
-                fu(ii + 1) = fu(ii) + aio(fup, ii)
-                gu(ii + 1) = gu(ii) + aio(gup, ii)
+               fu(ii - 1) = fu(ii) + aii(fup, ii)
+               gu(ii - 1) = gu(ii) + aii(gup, ii)
             end do
-            if (gu(ii + 1) * gu(ii) <= 0.0d0) node = node + 1
-        end do
+         end do
 
-        uout = gu(mch)
-        upout = gup(mch)
+         ! scale outside wf for continuity
 
-        if (node - nn + ll + 1 == 0) then
+         sc = uout / gu(mch)
 
-            ! start inward integration at 10*classical turning
-            ! point with simple exponential
+         do ii = mch, nin
+            gup(ii) = sc * gup(ii)
+            gu(ii) = sc * gu(ii)
+            fup(ii) = sc * gup(ii)
+            fu(ii) = sc * fu(ii)
+         end do
 
-            nin = int(mch + 2.3d0 / al)
-            if (nin + 4 > mmax) nin = mmax - 4
-            xkap = dsqrt(sls / rr(nin)**2 + 2.0d0 * (vv(nin) - ee))
+         upin = gup(mch)
 
-            do ii = nin, nin + 4
-                gu(ii) = exp(-xkap * (rr(ii) - rr(nin)))
-                fu(ii) = 0.5d0 * cci * (-xkap + kap / rr(ii)) * gu(ii)
+         ! perform normalization sum
 
-                fup(ii) = al * rr(ii) * (kap * fu(ii) / rr(ii) &
-                &               + cci * (ee + vv(ii)) * gu(ii))
-                gup(ii) = al * rr(ii) * (-kap * gu(ii) / rr(ii) &
-                &               + cci * (2.0d0 * cc**2 - ee - vv(ii)) * fu(ii))
-            end do
+         ro = rr(1) / dsqrt(amesh)
+         sn = ((1.0d0 + cof**2) * ro**(2.0d0 * gam + 1.0d0)) / (2.0d0 * gam + 1.0d0)
 
-            ! integrate inward
-            do ii = nin, mch + 1, -1
+         do ii = 1, nin - 3
+            sn = sn + al * rr(ii) * (gu(ii)**2 + fu(ii)**2)
+         end do
 
-                fu(ii - 1) = fu(ii) + aei(fup, ii)
-                gu(ii - 1) = gu(ii) + aei(gup, ii)
+         sn = sn + al * (23.0d0 * rr(nin - 2) * (gu(nin - 2)**2 + fu(nin - 2)**2) &
+         &              + 28.0d0 * rr(nin - 1) * (gu(nin - 1)**2 + fu(nin - 1)**2) &
+         &              + 9.0d0 * rr(nin) * (gu(nin)**2 + fu(nin)**2)) / 24.0d0
 
-                do kk = 1, 2
-                    fup(ii - 1) = al * rr(ii - 1) * (kap * fu(ii - 1) / rr(ii - 1) &
-                    &               - cci * (ee - vv(ii - 1)) * gu(ii - 1))
+         ! normalize u
 
-                    gup(ii - 1) = al * rr(ii - 1) * (-kap * gu(ii - 1) / rr(ii - 1) &
-                    &               + cci * (2.0d0 * cc**2 + ee - vv(ii - 1)) * fu(ii - 1))
+         cn = 1.0d0 / dsqrt(sn)
+         uout = cn * uout
+         upout = cn * upout
+         upin = cn * upin
 
-                    fu(ii - 1) = fu(ii) + aii(fup, ii)
-                    gu(ii - 1) = gu(ii) + aii(gup, ii)
-                end do
-            end do
+         do ii = 1, nin
+            gup(ii) = cn * gup(ii)
+            gu(ii) = cn * gu(ii)
+            fup(ii) = cn * fup(ii)
+            fu(ii) = cn * fu(ii)
+         end do
+         do ii = nin + 1, mmax
+            gu(ii) = 0.0d0
+            fu(ii) = 0.0d0
+         end do
 
-            ! scale outside wf for continuity
+         ! perturbation theory for energy shift based on large component
+         ! continuity of small component should follow
 
-            sc = uout / gu(mch)
+         de = 0.5d0 * uout * (upout - upin) / (al * rr(mch))
 
-            do ii = mch, nin
-                gup(ii) = sc * gup(ii)
-                gu(ii) = sc * gu(ii)
-                fup(ii) = sc * gup(ii)
-                fu(ii) = sc * fu(ii)
-            end do
+         ! convergence test and possible exit
 
-            upin = gup(mch)
+         if (dabs(de) < dmax1(dabs(ee), 0.2d0) * eps) then
+            ierr = 0
+            exit
+         end if
 
-            ! perform normalization sum
-
-            ro = rr(1) / dsqrt(amesh)
-            sn = ((1.0d0 + cof**2) * ro**(2.0d0 * gam + 1.0d0)) / (2.0d0 * gam + 1.0d0)
-
-            do ii = 1, nin - 3
-                sn = sn + al * rr(ii) * (gu(ii)**2 + fu(ii)**2)
-            end do
-
-            sn = sn + al * (23.0d0 * rr(nin - 2) * (gu(nin - 2)**2 + fu(nin - 2)**2) &
-            &              + 28.0d0 * rr(nin - 1) * (gu(nin - 1)**2 + fu(nin - 1)**2) &
-            &              + 9.0d0 * rr(nin) * (gu(nin)**2 + fu(nin)**2)) / 24.0d0
-
-            ! normalize u
-
-            cn = 1.0d0 / dsqrt(sn)
-            uout = cn * uout
-            upout = cn * upout
-            upin = cn * upin
-
-            do ii = 1, nin
-                gup(ii) = cn * gup(ii)
-                gu(ii) = cn * gu(ii)
-                fup(ii) = cn * fup(ii)
-                fu(ii) = cn * fu(ii)
-            end do
-            do ii = nin + 1, mmax
-                gu(ii) = 0.0d0
-                fu(ii) = 0.0d0
-            end do
-
-            ! perturbation theory for energy shift based on large component
-            ! continuity of small component should follow
-
-            de = 0.5d0 * uout * (upout - upin) / (al * rr(mch))
-
-            ! convergence test and possible exit
-
-            if (dabs(de) < dmax1(dabs(ee), 0.2d0) * eps) then
-                ierr = 0
-                exit
-            end if
-
-            if (de > 0.0d0) then
-                emin = ee
-            else
-                emax = ee
-            end if
-            ee = ee + de
-            if (ee > emax .or. ee < emin) ee = 0.5d0 * (emax + emin)
-
-        else if (node - nn + ll + 1 < 0) then
-            ! too few nodes
+         if (de > 0.0d0) then
             emin = ee
-            ee = 0.5d0 * (emin + emax)
-
-        else
-            ! too many nodes
+         else
             emax = ee
-            ee = 0.5d0 * (emin + emax)
-        end if
+         end if
+         ee = ee + de
+         if (ee > emax .or. ee < emin) ee = 0.5d0 * (emax + emin)
 
-    end do
+      else if (node - nn + ll + 1 < 0) then
+         ! too few nodes
+         emin = ee
+         ee = 0.5d0 * (emin + emax)
 
-    ! copy local arrays for output
-    uu(:, 1) = gu(:)
-    up(:, 1) = gup(:)
-    uu(:, 2) = fu(:)
-    up(:, 2) = fup(:)
+      else
+         ! too many nodes
+         emax = ee
+         ee = 0.5d0 * (emin + emax)
+      end if
 
-    !fix sign to be positive at rr->oo
-    if (uu(mch, 1) < 0.0d0) then
-        uu(:, :) = -uu(:, :)
-        up(:, :) = -up(:, :)
-    end if
+   end do
 
-    deallocate (gu, fu, gup, fup)
-    deallocate (cf)
-    return
+   ! copy local arrays for output
+   uu(:, 1) = gu(:)
+   up(:, 1) = gup(:)
+   uu(:, 2) = fu(:)
+   up(:, 2) = fup(:)
+
+   !fix sign to be positive at rr->oo
+   if (uu(mch, 1) < 0.0d0) then
+      uu(:, :) = -uu(:, :)
+      up(:, :) = -up(:, :)
+   end if
+
+   deallocate (gu, fu, gup, fup)
+   deallocate (cf)
+   return
 
 end subroutine ldiracfb
 
 !> Finds relativistic scattering states of an al-electron potential
 subroutine ldiracfs(nn, ll, kap, ierr, ee, rr, zz, vv, uu, up, mmax, mch)
-    !nn  effective principal quantum number based on nodes inside mch (output)
-    !ll  angular-momentum quantum number
-    !kap =l, -(l+1) for j=l -/+ 1/2
-    !ierr  non-zero return if error
-    !ee  bound-state energy, input guess and output calculated value
-    !rr  log radial mesh
-    !zz  atomic number
-    !vv  local psp
-    !uu(mmax,jj)  output radial wave functions (*rr) jj=1,2 for large, small
-    !up  d(uu)/dr
-    !mmax  size of log grid
-    !mch matching mesh point for inward-outward integrations
+   !nn  effective principal quantum number based on nodes inside mch (output)
+   !ll  angular-momentum quantum number
+   !kap =l, -(l+1) for j=l -/+ 1/2
+   !ierr  non-zero return if error
+   !ee  bound-state energy, input guess and output calculated value
+   !rr  log radial mesh
+   !zz  atomic number
+   !vv  local psp
+   !uu(mmax,jj)  output radial wave functions (*rr) jj=1,2 for large, small
+   !up  d(uu)/dr
+   !mmax  size of log grid
+   !mch matching mesh point for inward-outward integrations
 
-    !Input variables
-    real(dp) :: rr(mmax), vv(mmax)
-    real(dp) :: zz
-    integer :: ll, kap, mmax
+   !Input variables
+   real(dp) :: rr(mmax), vv(mmax)
+   real(dp) :: zz
+   integer :: ll, kap, mmax
 
-    !Output variables
-    real(dp) :: uu(mmax, 2), up(mmax, 2)
-    real(dp) :: ee
-    integer :: ierr, mch, nn
+   !Output variables
+   real(dp) :: uu(mmax, 2), up(mmax, 2)
+   real(dp) :: ee
+   integer :: ierr, mch, nn
 
-    !Local Variables
+   !Local Variables
 
-    real(dp), allocatable :: gu(:), fu(:), gup(:), fup(:), cf(:)
+   real(dp), allocatable :: gu(:), fu(:), gup(:), fup(:), cf(:)
 
-    real(dp) :: cc, cci, gam, cof
-    real(dp) :: eps, ro
-    real(dp) :: sn, cn, uout, upout
-    real(dp) :: amesh, al
-    integer :: ii, kk, node
+   real(dp) :: cc, cci, gam, cof
+   real(dp) :: eps, ro
+   real(dp) :: sn, cn, uout, upout
+   real(dp) :: amesh, al
+   integer :: ii, kk, node
 
-    cc = 137.036d0
-    cci = 1.0d0 / cc
+   cc = 137.036d0
+   cci = 1.0d0 / cc
 
-    al = 0.01d0 * dlog(rr(101) / rr(1))
-    amesh = exp(al)
+   al = 0.01d0 * dlog(rr(101) / rr(1))
+   amesh = exp(al)
 
-    ! convergence factor for solution of Dirac eq.  if calculated
-    ! correction to eigenvalue is smaller in magnitude than eps times
-    ! the magnitude of the current guess, the current guess is not changed.
-    eps = 1.0d-10
-    ierr = 60
+   ! convergence factor for solution of Dirac eq.  if calculated
+   ! correction to eigenvalue is smaller in magnitude than eps times
+   ! the magnitude of the current guess, the current guess is not changed.
+   eps = 1.0d-10
+   ierr = 60
 
-    ! check arguments
-    if (kap /= ll .and. kap /= -(ll + 1)) then
-        write (6, '(/a,i4,a,i4)') 'ldiracfs: ERROR kap =', kap, ' ll =', ll
-        ierr = 2
-        return
-    end if
-    if (zz < 1.0d0) then
-        write (6, '(/a,f12.8)') 'ldiracfs: ERROR zz =', zz
-        ierr = 3
-        return
-    end if
+   ! check arguments
+   if (kap /= ll .and. kap /= -(ll + 1)) then
+      write (6, '(/a,i4,a,i4)') 'ldiracfs: ERROR kap =', kap, ' ll =', ll
+      ierr = 2
+      return
+   end if
+   if (zz < 1.0d0) then
+      write (6, '(/a,f12.8)') 'ldiracfs: ERROR zz =', zz
+      ierr = 3
+      return
+   end if
 
-    allocate (gu(mmax), fu(mmax), gup(mmax), fup(mmax), cf(mmax))
+   allocate (gu(mmax), fu(mmax), gup(mmax), fup(mmax), cf(mmax))
 
-    ! null arrays
-    gu(:) = 0.0d0; fu(:) = 0.0d0; gup(:) = 0.0d0; fup(:) = 0.0d0; cf(:) = 0.0d0
+   ! null arrays
+   gu(:) = 0.0d0; fu(:) = 0.0d0; gup(:) = 0.0d0; fup(:) = 0.0d0; cf(:) = 0.0d0
 
-    node = 0
-    ierr = 0
+   node = 0
+   ierr = 0
 
-    gam = sqrt(kap**2 - (zz * cci)**2)
+   gam = sqrt(kap**2 - (zz * cci)**2)
 
-    cof = (kap + gam) * (cc / zz)
+   cof = (kap + gam) * (cc / zz)
 
-    ! start wavefunctions with series
-    do ii = 1, 5
-        gu(ii) = rr(ii)**gam
-        fu(ii) = cof * gu(ii)
+   ! start wavefunctions with series
+   do ii = 1, 5
+      gu(ii) = rr(ii)**gam
+      fu(ii) = cof * gu(ii)
 
-        fup(ii) = al * rr(ii) * (kap * fu(ii) / rr(ii) &
-                                 + cci * (ee + vv(ii)) * gu(ii))
+      fup(ii) = al * rr(ii) * (kap * fu(ii) / rr(ii) &
+                               + cci * (ee + vv(ii)) * gu(ii))
 
-        gup(ii) = al * rr(ii) * (-kap * gu(ii) / rr(ii) &
-                                 + cci * (2.0d0 * cc**2 - ee - vv(ii)) * fu(ii))
-    end do
+      gup(ii) = al * rr(ii) * (-kap * gu(ii) / rr(ii) &
+                               + cci * (2.0d0 * cc**2 - ee - vv(ii)) * fu(ii))
+   end do
 
-    ! outward integration using predictor once, corrector
-    ! twice
-    do ii = 5, mch - 1
+   ! outward integration using predictor once, corrector
+   ! twice
+   do ii = 5, mch - 1
 
-        fu(ii + 1) = fu(ii) + aeo(fup, ii)
-        gu(ii + 1) = gu(ii) + aeo(gup, ii)
+      fu(ii + 1) = fu(ii) + aeo(fup, ii)
+      gu(ii + 1) = gu(ii) + aeo(gup, ii)
 
-        do kk = 1, 2
-            fup(ii + 1) = al * rr(ii + 1) * (kap * fu(ii + 1) / rr(ii + 1) &
-                                             - cci * (ee - vv(ii + 1)) * gu(ii + 1))
+      do kk = 1, 2
+         fup(ii + 1) = al * rr(ii + 1) * (kap * fu(ii + 1) / rr(ii + 1) &
+                                          - cci * (ee - vv(ii + 1)) * gu(ii + 1))
 
-            gup(ii + 1) = al * rr(ii + 1) * (-kap * gu(ii + 1) / rr(ii + 1) &
-                                             + cci * (2.0d0 * cc**2 + ee - vv(ii + 1)) * fu(ii + 1))
+         gup(ii + 1) = al * rr(ii + 1) * (-kap * gu(ii + 1) / rr(ii + 1) &
+                                          + cci * (2.0d0 * cc**2 + ee - vv(ii + 1)) * fu(ii + 1))
 
-            fu(ii + 1) = fu(ii) + aio(fup, ii)
-            gu(ii + 1) = gu(ii) + aio(gup, ii)
-        end do
-        if (gu(ii + 1) * gu(ii) <= 0.0d0) node = node + 1
-    end do
+         fu(ii + 1) = fu(ii) + aio(fup, ii)
+         gu(ii + 1) = gu(ii) + aio(gup, ii)
+      end do
+      if (gu(ii + 1) * gu(ii) <= 0.0d0) node = node + 1
+   end do
 
-    uout = gu(mch)
-    upout = gup(mch)
+   uout = gu(mch)
+   upout = gup(mch)
 
-    ! perform normalization sum
+   ! perform normalization sum
 
-    ro = rr(1) / dsqrt(amesh)
-    sn = ((1.0d0 + cof**2) * ro**(2.0d0 * gam + 1.0d0)) / (2.0d0 * gam + 1.0d0)
+   ro = rr(1) / dsqrt(amesh)
+   sn = ((1.0d0 + cof**2) * ro**(2.0d0 * gam + 1.0d0)) / (2.0d0 * gam + 1.0d0)
 
-    do ii = 1, mch - 3
-        sn = sn + al * rr(ii) * (gu(ii)**2 + fu(ii)**2)
-    end do
+   do ii = 1, mch - 3
+      sn = sn + al * rr(ii) * (gu(ii)**2 + fu(ii)**2)
+   end do
 
-    sn = sn + al * (23.0d0 * rr(mch - 2) * (gu(mch - 2)**2 + fu(mch - 2)**2) &
-                    + 28.0d0 * rr(mch - 1) * (gu(mch - 1)**2 + fu(mch - 1)**2) &
-    &              + 9.0d0 * rr(mch) * (gu(mch)**2 + fu(mch)**2)) / 24.0d0
+   sn = sn + al * (23.0d0 * rr(mch - 2) * (gu(mch - 2)**2 + fu(mch - 2)**2) &
+                   + 28.0d0 * rr(mch - 1) * (gu(mch - 1)**2 + fu(mch - 1)**2) &
+   &              + 9.0d0 * rr(mch) * (gu(mch)**2 + fu(mch)**2)) / 24.0d0
 
-    ! normalize u
+   ! normalize u
 
-    cn = 1.0d0 / dsqrt(sn)
-    uout = cn * uout
-    upout = cn * upout
+   cn = 1.0d0 / dsqrt(sn)
+   uout = cn * uout
+   upout = cn * upout
 
-    do ii = 1, mch
-        gup(ii) = cn * gup(ii)
-        gu(ii) = cn * gu(ii)
-        fup(ii) = cn * fup(ii)
-        fu(ii) = cn * fu(ii)
-    end do
-    do ii = mch + 1, mmax
-        gu(ii) = 0.0d0
-        fu(ii) = 0.0d0
-    end do
+   do ii = 1, mch
+      gup(ii) = cn * gup(ii)
+      gu(ii) = cn * gu(ii)
+      fup(ii) = cn * fup(ii)
+      fu(ii) = cn * fu(ii)
+   end do
+   do ii = mch + 1, mmax
+      gu(ii) = 0.0d0
+      fu(ii) = 0.0d0
+   end do
 
-    ! copy local arrays for output
-    uu(:, 1) = gu(:)
-    up(:, 1) = gup(:)
-    uu(:, 2) = fu(:)
-    up(:, 2) = fup(:)
+   ! copy local arrays for output
+   uu(:, 1) = gu(:)
+   up(:, 1) = gup(:)
+   uu(:, 2) = fu(:)
+   up(:, 2) = fup(:)
 
-    !calculate effective principal quantum number as if this were a bound
-    !state with a barrier at mch
-    nn = node + ll + 1
+   !calculate effective principal quantum number as if this were a bound
+   !state with a barrier at mch
+   nn = node + ll + 1
 
-    deallocate (gu, fu, gup, fup)
-    deallocate (cf)
-    return
+   deallocate (gu, fu, gup, fup)
+   deallocate (cf)
+   return
 
 end subroutine ldiracfs
 

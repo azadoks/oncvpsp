@@ -18,23 +18,23 @@
  !
 
 subroutine exc_libxc(iexc, al, rho, vxc, exc, rr, mmax)
-    !
-    !  dummy substitute for interface to libxc library to allow successful
-    !  build without this library
-    !
-    use constants_m, only: dp
-    implicit none
+   !
+   !  dummy substitute for interface to libxc library to allow successful
+   !  build without this library
+   !
+   use constants_m, only: dp
+   implicit none
 
 
-    real(dp), intent(in) :: al
-    real(dp), intent(in) :: rho(mmax), rr(mmax)
-    real(dp), intent(out) :: vxc(mmax), exc(mmax)
-    integer, intent(in) :: mmax, iexc
+   real(dp), intent(in) :: al
+   real(dp), intent(in) :: rho(mmax), rr(mmax)
+   real(dp), intent(out) :: vxc(mmax), exc(mmax)
+   integer, intent(in) :: mmax, iexc
 
-    write (6, '(a,i8,a)') 'exc_libxc_stub: ERROR iexc = ', iexc, ' requires libxc'
-    write (6, '(a)') 'The present oncvpsp executable was built without libxc.'
-    write (6, '(a)') 'Program will stop.'
+   write (6, '(a,i8,a)') 'exc_libxc_stub: ERROR iexc = ', iexc, ' requires libxc'
+   write (6, '(a)') 'The present oncvpsp executable was built without libxc.'
+   write (6, '(a)') 'Program will stop.'
 
-    stop
-    return
+   stop
+   return
 end subroutine exc_libxc

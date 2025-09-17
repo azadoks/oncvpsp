@@ -18,76 +18,76 @@
  !
 subroutine wf_rc_der(rr, uu, al, rc, irc, mmax, uorder)
 
-    !calculate derivatives of radial wave functin at core radius rc
+   !calculate derivatives of radial wave functin at core radius rc
 
-    !INPUT
-    ! rr log radial mesh
-    ! uu rr*radial wavefunction
-    ! al  log of radial mesh factor
-    ! mmax last point used on radial mesh
-    !
-    !IN/OUT
-    ! irc  index of radial mesh point used as rc
-    ! rc  input core radius.  If irc = 0 on input, irc is calculated and rc
-    !      is exact mesh point value on output (next larger point)
-    !
-    !OUTPUT
-    ! uorder  value and four derivatives of uu/rr at final rc
+   !INPUT
+   ! rr log radial mesh
+   ! uu rr*radial wavefunction
+   ! al  log of radial mesh factor
+   ! mmax last point used on radial mesh
+   !
+   !IN/OUT
+   ! irc  index of radial mesh point used as rc
+   ! rc  input core radius.  If irc = 0 on input, irc is calculated and rc
+   !      is exact mesh point value on output (next larger point)
+   !
+   !OUTPUT
+   ! uorder  value and four derivatives of uu/rr at final rc
 
-    use constants_m, only: dp
-    implicit none
+   use constants_m, only: dp
+   implicit none
 
 
-    !subroutine arguments
-    real(dp) :: rr(mmax), uu(mmax), uorder(5)
-    real(dp) :: al, rc
-    integer :: mmax, irc
+   !subroutine arguments
+   real(dp) :: rr(mmax), uu(mmax), uorder(5)
+   real(dp) :: al, rc
+   integer :: mmax, irc
 
-    !local variables
-    integer :: ii, jj
-    real(dp), allocatable :: work(:, :)
+   !local variables
+   integer :: ii, jj
+   real(dp), allocatable :: work(:, :)
 
-    !set rc to exact mesh value if not specified by irc
-    if (irc == 0) then
-        do ii = 1, mmax
-            if (irc == 0 .and. rr(ii) >= rc) then
-                irc = ii
-                rc = rr(ii)
-                exit
-            end if
-        end do
-    else
-        rc = rr(irc)
-    end if
+   !set rc to exact mesh value if not specified by irc
+   if (irc == 0) then
+      do ii = 1, mmax
+         if (irc == 0 .and. rr(ii) >= rc) then
+            irc = ii
+            rc = rr(ii)
+            exit
+         end if
+      end do
+   else
+      rc = rr(irc)
+   end if
 
-    allocate (work(mmax, 5))
+   allocate (work(mmax, 5))
 
-    do ii = 1, mmax
-        work(ii, 1) = uu(ii) / rr(ii)
-    end do
+   do ii = 1, mmax
+      work(ii, 1) = uu(ii) / rr(ii)
+   end do
 
-    do jj = 2, 5
+   do jj = 2, 5
 
-        ! 5-point numerical first derivatives applied successively
-        !  do ii=irc-18+2*jj,irc+18-2*jj
-        !     work(ii,jj)=(2.d0*work(ii-2,jj-1)-16.d0*work(ii-1,jj-1)&
-        !&     +16.d0*work(ii+1,jj-1)-2.d0*work(ii+2,jj-1))&
-        !&     /(24.d0*al*rr(ii))
+      ! 5-point numerical first derivatives applied successively
+      !  do ii=irc-18+2*jj,irc+18-2*jj
+      !     work(ii,jj)=(2.d0*work(ii-2,jj-1)-16.d0*work(ii-1,jj-1)&
+      !&     +16.d0*work(ii+1,jj-1)-2.d0*work(ii+2,jj-1))&
+      !&     /(24.d0*al*rr(ii))
 
-        ! 7-point numerical first derivatives applied successively
-        do ii = irc - 25 + 3 * jj, irc + 25 - 3 * jj
-            work(ii, jj) = (-work(ii - 3, jj - 1) + 9.d0 * work(ii - 2, jj - 1)&
-            &     - 45.d0 * work(ii - 1, jj - 1) + 45.d0 * work(ii + 1, jj - 1)&
-            &     - 9.d0 * work(ii + 2, jj - 1) + work(ii + 3, jj - 1))&
-            &     / (60.d0 * al * rr(ii))
-        end do
-    end do
+      ! 7-point numerical first derivatives applied successively
+      do ii = irc - 25 + 3 * jj, irc + 25 - 3 * jj
+         work(ii, jj) = (-work(ii - 3, jj - 1) + 9.d0 * work(ii - 2, jj - 1)&
+         &     - 45.d0 * work(ii - 1, jj - 1) + 45.d0 * work(ii + 1, jj - 1)&
+         &     - 9.d0 * work(ii + 2, jj - 1) + work(ii + 3, jj - 1))&
+         &     / (60.d0 * al * rr(ii))
+      end do
+   end do
 
-    do jj = 1, 5
-        uorder(jj) = work(irc, jj)
-    end do
+   do jj = 1, 5
+      uorder(jj) = work(irc, jj)
+   end do
 
-    deallocate (work)
+   deallocate (work)
 
-    return
+   return
 end subroutine wf_rc_der

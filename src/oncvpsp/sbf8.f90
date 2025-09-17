@@ -20,83 +20,83 @@
 
 subroutine sbf8(nm, xx, sb_out)
 
-    !nm  maximum angular momentum wanted plus 1
-    !xx  argument of spherical bessel function
-    !sb_out  output of sbf_l(xx) for l=0,...,nm-1
+   !nm  maximum angular momentum wanted plus 1
+   !xx  argument of spherical bessel function
+   !sb_out  output of sbf_l(xx) for l=0,...,nm-1
 
-    use constants_m, only: dp, pi, twopi
-    implicit none
+   use constants_m, only: dp, pi, twopi
+   implicit none
 
-    !Input variables
-    integer :: nm
-    real(dp) :: xx
+   !Input variables
+   integer :: nm
+   real(dp) :: xx
 
-    !Output variables
-    real(dp) :: sb_out(nm)
+   !Output variables
+   real(dp) :: sb_out(nm)
 
-    !Local variables
-    integer :: nlim, nn
-    real(dp) :: cc, fn, sn, ss, xi, xn, xs, xmod
-    real(dp), allocatable :: sb(:)
+   !Local variables
+   integer :: nlim, nn
+   real(dp) :: cc, fn, sn, ss, xi, xn, xs, xmod
+   real(dp), allocatable :: sb(:)
 
-    if (xx <= 1.0d-36) then
-        !  zero argument section
-        sb_out(:) = 0.0d0
-        sb_out(1) = 1.0d0
-    else if (xx < 1.0d-3) then
-        !  small argument section
-        xn = 1.0d0
-        xs = 0.5d0 * xx**2
-        do nn = 1, nm
-            sb_out(nn) = xn * (1.0d0 - xs * (1.0d0 - xs / (4 * nn + 6)) / (2 * nn + 1))
-            xn = xx * xn / (2 * nn + 1)
-        end do
-        !  trigonometric section (small l values)
-    else if (nm == 1) then
-        xmod = mod(xx, twopi)
-        ss = sin(xmod)
-        sb_out(1) = ss / xx
-    else if (nm == 2) then
-        xmod = mod(xx, twopi)
-        ss = sin(xmod)
-        cc = cos(xmod)
-        sb_out(1) = ss / xx
-        sb_out(2) = (ss - xx * cc) / xx**2
-    else if (nm == 3) then
-        xmod = mod(xx, twopi)
-        ss = sin(xmod)
-        cc = cos(xmod)
-        sb_out(1) = ss / xx
-        sb_out(3) = ((3.0d0 - xx**2) * ss - 3.0d0 * xx * cc) / xx**3
-    else if (nm == 4) then
-        xmod = mod(xx, twopi)
-        ss = sin(xmod)
-        cc = cos(xmod)
-        sb_out(1) = ss / xx
-        sb_out(3) = ((3.0d0 - xx**2) * ss - 3.0d0 * xx * cc) / xx**3
-        sb_out(4) = (15.d0 * ss - 15.d0 * xx * cc - 6.d0 * xx**2 * ss + xx**3 * cc) / xx**4
-    else
-        !  recursion method (accurate for large l, slow for large arguments)
-        if (xx < 1.0d0) then
-            nlim = nm + int(15.0d0 * xx) + 1
-        else
-            nlim = nm + int(1.36d0 * xx) + 15
-        end if
-        allocate (sb(nlim + 1))
-        nn = nlim
-        xi = 1.0d0 / xx
-        sb(nn + 1) = 0.0d0
-        sb(nn) = 1.0d-18
-        sn = dble(2 * nn - 1) * 1.0d-36
-        do nn = nlim - 1, 1, -1
-            sb(nn) = dble(2 * nn + 1) * xi * sb(nn + 1) - sb(nn + 2)
-        end do
-        do nn = 1, nlim - 1
-            sn = sn + dble(2 * nn - 1) * sb(nn) * sb(nn)
-        end do
-        fn = 1.0d0 / sqrt(sn)
-        sb_out(:) = fn * sb(1:nm)
-        deallocate (sb)
-    end if
-    return
+   if (xx <= 1.0d-36) then
+      !  zero argument section
+      sb_out(:) = 0.0d0
+      sb_out(1) = 1.0d0
+   else if (xx < 1.0d-3) then
+      !  small argument section
+      xn = 1.0d0
+      xs = 0.5d0 * xx**2
+      do nn = 1, nm
+         sb_out(nn) = xn * (1.0d0 - xs * (1.0d0 - xs / (4 * nn + 6)) / (2 * nn + 1))
+         xn = xx * xn / (2 * nn + 1)
+      end do
+      !  trigonometric section (small l values)
+   else if (nm == 1) then
+      xmod = mod(xx, twopi)
+      ss = sin(xmod)
+      sb_out(1) = ss / xx
+   else if (nm == 2) then
+      xmod = mod(xx, twopi)
+      ss = sin(xmod)
+      cc = cos(xmod)
+      sb_out(1) = ss / xx
+      sb_out(2) = (ss - xx * cc) / xx**2
+   else if (nm == 3) then
+      xmod = mod(xx, twopi)
+      ss = sin(xmod)
+      cc = cos(xmod)
+      sb_out(1) = ss / xx
+      sb_out(3) = ((3.0d0 - xx**2) * ss - 3.0d0 * xx * cc) / xx**3
+   else if (nm == 4) then
+      xmod = mod(xx, twopi)
+      ss = sin(xmod)
+      cc = cos(xmod)
+      sb_out(1) = ss / xx
+      sb_out(3) = ((3.0d0 - xx**2) * ss - 3.0d0 * xx * cc) / xx**3
+      sb_out(4) = (15.d0 * ss - 15.d0 * xx * cc - 6.d0 * xx**2 * ss + xx**3 * cc) / xx**4
+   else
+      !  recursion method (accurate for large l, slow for large arguments)
+      if (xx < 1.0d0) then
+         nlim = nm + int(15.0d0 * xx) + 1
+      else
+         nlim = nm + int(1.36d0 * xx) + 15
+      end if
+      allocate (sb(nlim + 1))
+      nn = nlim
+      xi = 1.0d0 / xx
+      sb(nn + 1) = 0.0d0
+      sb(nn) = 1.0d-18
+      sn = dble(2 * nn - 1) * 1.0d-36
+      do nn = nlim - 1, 1, -1
+         sb(nn) = dble(2 * nn + 1) * xi * sb(nn + 1) - sb(nn + 2)
+      end do
+      do nn = 1, nlim - 1
+         sn = sn + dble(2 * nn - 1) * sb(nn) * sb(nn)
+      end do
+      fn = 1.0d0 / sqrt(sn)
+      sb_out(:) = fn * sb(1:nm)
+      deallocate (sb)
+   end if
+   return
 end subroutine sbf8

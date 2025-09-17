@@ -19,68 +19,68 @@
  ! calculates all-electron wave function overlap intergrals
 
 subroutine fpovlp_r(gg, hh, nn, kap, zz, ss, rr)
-    use constants_m, only: dp
-    implicit none
+   use constants_m, only: dp
+   implicit none
 
-    !gg Dirac wave function one
-    !hh Dirac wave function two
-    !nn outer integration limit
-    !ll angular momentum
-    !kap  =l, -(l+1) for j=l -/+ 1/2
-    !zz nuclear charge
-    !ss overlap output
-    !rr log radial mesh
+   !gg Dirac wave function one
+   !hh Dirac wave function two
+   !nn outer integration limit
+   !ll angular momentum
+   !kap  =l, -(l+1) for j=l -/+ 1/2
+   !zz nuclear charge
+   !ss overlap output
+   !rr log radial mesh
 
-    ! product of all-elecctron relativistic wave functions gg*hh
-    ! goes like rr**(2*gamma) as rr -> 0
-    ! integral on usual log mesh from rr=0 to rr(nn)
+   ! product of all-elecctron relativistic wave functions gg*hh
+   ! goes like rr**(2*gamma) as rr -> 0
+   ! integral on usual log mesh from rr=0 to rr(nn)
 
-    !Input variables
-    real(dp) :: zz
-    real(dp) :: gg(nn, 2), hh(nn, 2), rr(nn)
-    integer :: nn, kap
+   !Input variables
+   real(dp) :: zz
+   real(dp) :: gg(nn, 2), hh(nn, 2), rr(nn)
+   integer :: nn, kap
 
-    !Output variable
-    real(dp) :: ss
+   !Output variable
+   real(dp) :: ss
 
-    !Local variables
-    real(dp) :: r0, amesh, al, gam, cc, cci
-    integer :: ii
+   !Local variables
+   real(dp) :: r0, amesh, al, gam, cc, cci
+   integer :: ii
 
-    al = 0.01d0 * dlog(rr(101) / rr(1))
-    amesh = exp(al)
+   al = 0.01d0 * dlog(rr(101) / rr(1))
+   amesh = exp(al)
 
-    cc = 137.036d0
-    cci = 1.0d0 / cc
+   cc = 137.036d0
+   cci = 1.0d0 / cc
 
-    gam = sqrt(kap**2 - (zz * cci)**2)
+   gam = sqrt(kap**2 - (zz * cci)**2)
 
-    r0 = rr(1) / dsqrt(amesh)
-    ss = r0**(2.0d0 * gam + 1.0d0) / (2.d0 * gam + 1.0d0)
+   r0 = rr(1) / dsqrt(amesh)
+   ss = r0**(2.0d0 * gam + 1.0d0) / (2.d0 * gam + 1.0d0)
 
-    ! original version used large and small components, now deprecated (see docs)
+   ! original version used large and small components, now deprecated (see docs)
 
-    ! ss=ss*(gg(1,1)*hh(1,1)+gg(1,2)*hh(1,2))/rr(1)**(2.d0*gam)
+   ! ss=ss*(gg(1,1)*hh(1,1)+gg(1,2)*hh(1,2))/rr(1)**(2.d0*gam)
 
-    ! do ii = 1, nn - 3
-    !   ss =  ss + al*(gg(ii,1)*hh(ii,1)+gg(ii,2)*hh(ii,2))*rr(ii)
-    ! end do
+   ! do ii = 1, nn - 3
+   !   ss =  ss + al*(gg(ii,1)*hh(ii,1)+gg(ii,2)*hh(ii,2))*rr(ii)
+   ! end do
 
-    ! ss=ss+al*(23.d0*rr(nn-2)*(gg(nn-2,1)*hh(nn-2,1)+gg(nn-2,2)*hh(nn-2,2)) &
-    !&        + 28.d0*rr(nn-1)*(gg(nn-1,1)*hh(nn-1,1)+gg(nn-1,2)*hh(nn-1,2)) &
-    !&        +  9.d0*rr(nn  )*(gg(nn  ,1)*hh(nn  ,1)+gg(nn  ,2)*hh(nn  ,2)))/24.d0
+   ! ss=ss+al*(23.d0*rr(nn-2)*(gg(nn-2,1)*hh(nn-2,1)+gg(nn-2,2)*hh(nn-2,2)) &
+   !&        + 28.d0*rr(nn-1)*(gg(nn-1,1)*hh(nn-1,1)+gg(nn-1,2)*hh(nn-1,2)) &
+   !&        +  9.d0*rr(nn  )*(gg(nn  ,1)*hh(nn  ,1)+gg(nn  ,2)*hh(nn  ,2)))/24.d0
 
-    ! current version based on large-component only
+   ! current version based on large-component only
 
-    ss = ss * (gg(1, 1) * hh(1, 1)) / rr(1)**(2.d0 * gam)
+   ss = ss * (gg(1, 1) * hh(1, 1)) / rr(1)**(2.d0 * gam)
 
-    do ii = 1, nn - 3
-        ss = ss + al * (gg(ii, 1) * hh(ii, 1)) * rr(ii)
-    end do
+   do ii = 1, nn - 3
+      ss = ss + al * (gg(ii, 1) * hh(ii, 1)) * rr(ii)
+   end do
 
-    ss = ss + al * (23.d0 * rr(nn - 2) * (gg(nn - 2, 1) * hh(nn - 2, 1)) &
-    &        + 28.d0 * rr(nn - 1) * (gg(nn - 1, 1) * hh(nn - 1, 1)) &
-    &        + 9.d0 * rr(nn) * (gg(nn, 1) * hh(nn, 1))) / 24.d0
+   ss = ss + al * (23.d0 * rr(nn - 2) * (gg(nn - 2, 1) * hh(nn - 2, 1)) &
+   &        + 28.d0 * rr(nn - 1) * (gg(nn - 1, 1) * hh(nn - 1, 1)) &
+   &        + 9.d0 * rr(nn) * (gg(nn, 1) * hh(nn, 1))) / 24.d0
 
-    return
+   return
 end subroutine fpovlp_r

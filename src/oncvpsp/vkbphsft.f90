@@ -19,140 +19,140 @@
 subroutine vkbphsft(ll, ivkb, epsh2, depsh, ep, pshf, pshp, &
 & rr, vloc, vkb, evkb, mmax, mch, npsh)
 
-    ! computes Vanderfilt / Kleinman-Bylander scattering log derivatives
-    ! (or semi-local if ivkb==0)
-    ! returns atan(rr(mch) * du/dr / u) which is sort-of like a phase shift
-    ! and easier to compare in plots than the log derivatives themselves
-    ! Pauli-type scalar-relativistic calculation
+   ! computes Vanderfilt / Kleinman-Bylander scattering log derivatives
+   ! (or semi-local if ivkb==0)
+   ! returns atan(rr(mch) * du/dr / u) which is sort-of like a phase shift
+   ! and easier to compare in plots than the log derivatives themselves
+   ! Pauli-type scalar-relativistic calculation
 
-    !ll  angular momentum
-    !ivkb  number of projectors
-    !epsh2  upper limit of energy scan
-    !depsh  increment of scan
-    !ep  reference energy for psp creation (bound or scattering)
-    !pshf  all-electron log derivatives "angles", as above (input)
-    !pshp  pseudopotential log derivatives "angles", as above (output)
-    !rr  radial log grid
-    !vloc  local part of psp
-    !vkb  VKB projectors
-    !mmax  dimension of rr, etc.
-    !mch  index of radius for log der test
-    !npsh  number of energy points in scan
+   !ll  angular momentum
+   !ivkb  number of projectors
+   !epsh2  upper limit of energy scan
+   !depsh  increment of scan
+   !ep  reference energy for psp creation (bound or scattering)
+   !pshf  all-electron log derivatives "angles", as above (input)
+   !pshp  pseudopotential log derivatives "angles", as above (output)
+   !rr  radial log grid
+   !vloc  local part of psp
+   !vkb  VKB projectors
+   !mmax  dimension of rr, etc.
+   !mch  index of radius for log der test
+   !npsh  number of energy points in scan
 
-    use constants_m, only: dp, pi, twopi
-    implicit none
-    real(dp), parameter :: eps = 1.0d-8
+   use constants_m, only: dp, pi, twopi
+   implicit none
+   real(dp), parameter :: eps = 1.0d-8
 
-    !Input variables
-    integer :: ll, ivkb, mmax, npsh, mch
-    real(dp) :: rr(mmax), vloc(mmax), vkb(mmax, *), evkb(*)
-    real(dp) :: pshf(npsh)
-    real(dp) :: depsh, epsh2, ep
+   !Input variables
+   integer :: ll, ivkb, mmax, npsh, mch
+   real(dp) :: rr(mmax), vloc(mmax), vkb(mmax, *), evkb(*)
+   real(dp) :: pshf(npsh)
+   real(dp) :: depsh, epsh2, ep
 
-    !Output variables
-    real(dp) :: pshp(npsh)
+   !Output variables
+   real(dp) :: pshp(npsh)
 
-    !Local variables
-    real(dp) :: al, dnpi, epsh, phi, phip, pshoff
-    real(dp) :: dmin, dmax, emin, emax, et, psmin, psmax, pst, shift, shift2
-    integer :: ii, jj, node
-    logical :: jump
+   !Local variables
+   real(dp) :: al, dnpi, epsh, phi, phip, pshoff
+   real(dp) :: dmin, dmax, emin, emax, et, psmin, psmax, pst, shift, shift2
+   integer :: ii, jj, node
+   logical :: jump
 
-    real(dp), allocatable :: uu(:), up(:)
+   real(dp), allocatable :: uu(:), up(:)
 
-    allocate (uu(mmax), up(mmax))
+   allocate (uu(mmax), up(mmax))
 
-    al = 0.01d0 * dlog(rr(101) / rr(1))
+   al = 0.01d0 * dlog(rr(101) / rr(1))
 
-    pshoff = 0.0d0
+   pshoff = 0.0d0
 
-    do ii = 1, npsh
-        epsh = epsh2 - (ii - 1) * depsh
+   do ii = 1, npsh
+      epsh = epsh2 - (ii - 1) * depsh
 
-        call vkboutwf(ll, ivkb, epsh, vkb, evkb, rr, vloc, uu, up, node, mmax, mch)
+      call vkboutwf(ll, ivkb, epsh, vkb, evkb, rr, vloc, uu, up, node, mmax, mch)
 
-        phi = uu(mch) / rr(mch)
-        phip = (up(mch) - al * uu(mch)) / (al * rr(mch)**2)
-        pshp(ii) = atan2(rr(mch) * phip, phi) + pshoff
+      phi = uu(mch) / rr(mch)
+      phip = (up(mch) - al * uu(mch)) / (al * rr(mch)**2)
+      pshp(ii) = atan2(rr(mch) * phip, phi) + pshoff
 
-        ! Shift for continuity and to avoid false jumps suggesting ghost states
+      ! Shift for continuity and to avoid false jumps suggesting ghost states
 
-        ! -2 pi jump is harmless cycling from pi to -pi
-        if (ii > 1) then
-            if (pshp(ii) < pshp(ii - 1) - 4.0d0) then
-                pshoff = pshoff + twopi
-                pshp(ii) = pshp(ii) + twopi
-                ! +/- pi jump can be actual bound semi-core state, ghost state, or spurious
-                ! jump from sudden change of sign of both uu and up with no real change
-                ! of shape.
-            else if (abs(pshp(ii) - pshp(ii - 1)) > 2.0d0) then
-                shift = sign(pi, pshp(ii) - pshp(ii - 1))
+      ! -2 pi jump is harmless cycling from pi to -pi
+      if (ii > 1) then
+         if (pshp(ii) < pshp(ii - 1) - 4.0d0) then
+            pshoff = pshoff + twopi
+            pshp(ii) = pshp(ii) + twopi
+            ! +/- pi jump can be actual bound semi-core state, ghost state, or spurious
+            ! jump from sudden change of sign of both uu and up with no real change
+            ! of shape.
+         else if (abs(pshp(ii) - pshp(ii - 1)) > 2.0d0) then
+            shift = sign(pi, pshp(ii) - pshp(ii - 1))
 
-                ! interval-halving search to determine if this is a discontinuous pi jump
-                ! or varies continuously on some scale, indicating a real or ghost
-                ! bound state / resonance
-                jump = .true.
-                emin = epsh
-                emax = epsh + depsh
-                psmin = pshp(ii)
-                psmax = pshp(ii - 1)
-                !       if((psmax-psmin)>pi) psmin=psmin+twopi
-                if ((psmax - psmin) > 2.9d0) psmin = psmin + twopi
+            ! interval-halving search to determine if this is a discontinuous pi jump
+            ! or varies continuously on some scale, indicating a real or ghost
+            ! bound state / resonance
+            jump = .true.
+            emin = epsh
+            emax = epsh + depsh
+            psmin = pshp(ii)
+            psmax = pshp(ii - 1)
+            !       if((psmax-psmin)>pi) psmin=psmin+twopi
+            if ((psmax - psmin) > 2.9d0) psmin = psmin + twopi
 
-                do jj = 1, 25
+            do jj = 1, 25
 
-                    if (.not. jump) cycle
-                    et = 0.5d0 * (emin + emax)
-                    shift2 = 0.0d0
+               if (.not. jump) cycle
+               et = 0.5d0 * (emin + emax)
+               shift2 = 0.0d0
 
-                    call vkboutwf(ll, ivkb, et, vkb, evkb, rr, vloc, uu, up, node, mmax, mch)
-                    phi = uu(mch) / rr(mch)
-                    phip = (up(mch) - al * uu(mch)) / (al * rr(mch)**2)
-                    pst = atan2(rr(mch) * phip, phi) + pshoff
-                    if ((psmax - pst) > 2.9d0) then
-                        pst = pst + twopi
-                        shift2 = twopi
-                    end if
+               call vkboutwf(ll, ivkb, et, vkb, evkb, rr, vloc, uu, up, node, mmax, mch)
+               phi = uu(mch) / rr(mch)
+               phip = (up(mch) - al * uu(mch)) / (al * rr(mch)**2)
+               pst = atan2(rr(mch) * phip, phi) + pshoff
+               if ((psmax - pst) > 2.9d0) then
+                  pst = pst + twopi
+                  shift2 = twopi
+               end if
 
-                    dmin = abs(pst - psmin)
-                    dmax = abs(psmax - pst)
+               dmin = abs(pst - psmin)
+               dmax = abs(psmax - pst)
 
-                    if (dmin > dmax) then
-                        emax = et
-                        psmax = pst
-                    else
-                        emin = et
-                        psmin = pst
-                    end if
+               if (dmin > dmax) then
+                  emax = et
+                  psmax = pst
+               else
+                  emin = et
+                  psmin = pst
+               end if
 
-                    ! this is the test to see if an interval of change less than pi had been
-                    ! reached
-                    if (dmax < 0.5d0 .and. dmin < 0.5d0) jump = .false.
+               ! this is the test to see if an interval of change less than pi had been
+               ! reached
+               if (dmax < 0.5d0 .and. dmin < 0.5d0) jump = .false.
 
-                end do
+            end do
 
-                ! if this is a spurious abrupt jump, restore +/- pi
-                if (jump) then
-                    pshoff = pshoff - shift
-                    pshp(ii) = pshp(ii) - shift
-                    ! if this is a real continuous transition, check for 2 pi issue and fix
-                else if (pshp(ii) < pshp(ii - 1) - 2.5d0) then
-                    pshoff = pshoff + twopi
-                    pshp(ii) = pshp(ii) + twopi
-                end if
-
+            ! if this is a spurious abrupt jump, restore +/- pi
+            if (jump) then
+               pshoff = pshoff - shift
+               pshp(ii) = pshp(ii) - shift
+               ! if this is a real continuous transition, check for 2 pi issue and fix
+            else if (pshp(ii) < pshp(ii - 1) - 2.5d0) then
+               pshoff = pshoff + twopi
+               pshp(ii) = pshp(ii) + twopi
             end if
-        end if
 
-        ! calculate shift to align with all-electron results
-        if (abs(ep - epsh) - 0.5d0 * depsh < eps) then
-            dnpi = pi * (nint((pshf(ii) - pshp(ii)) / pi))
-        end if
+         end if
+      end if
 
-    end do
+      ! calculate shift to align with all-electron results
+      if (abs(ep - epsh) - 0.5d0 * depsh < eps) then
+         dnpi = pi * (nint((pshf(ii) - pshp(ii)) / pi))
+      end if
 
-    pshp(:) = pshp(:) + dnpi
+   end do
 
-    deallocate (uu, up)
-    return
+   pshp(:) = pshp(:) + dnpi
+
+   deallocate (uu, up)
+   return
 end subroutine vkbphsft

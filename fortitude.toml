@@ -8,4 +8,4 @@ ignore = [
     "C061", # missing-intent
     "C092", # procedure-not-in-module
 ]
-line-length = 120
+line-length = 132

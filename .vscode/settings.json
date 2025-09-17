@@ -1,15 +1,24 @@
 {
+    "[FortranFreeForm]": {
+        "editor.trimAutoWhitespace": true,
+        "editor.formatOnSave": true,
+        "editor.insertSpaces": true,
+        "editor.tabSize": 3,
+        "editor.rulers": [132],
+    },
+    "files.trimTrailingWhitespace": true,
     "fortran.formatting.formatter": "findent",
     "fortran.formatting.findentArgs": [
         "-ofree",
         "--refactor_end",
-        "-i4",
+        "--indent=3",
         "--indent_contains=restart",
         "--indent_continuation=default",
         "--indent_ampersand",
         "--align_paren",
     ],
-    "cSpell.enabled": false,
+    "fortran.linter.compiler": "gfortran",
+    "fortran.linter.modOutput": "${workspaceFolder}/.linter_mods",
     "search.exclude": {
         "**/*.mod": true,
         "extern/": true,
