@@ -39,9 +39,9 @@ subroutine run_diag_r(lmax, npa, epa, lloc, irc, &
     !zz  atomic number
     !mmax  size of radial grid
     !mxprj  dimension of number of projectors
-
+    use m_constants, only: dp
+    use m_lsch, only: lschvkbb, lschvkbbe
     implicit none
-    integer, parameter :: dp = kind(1.0d0)
 
     !Input variables
     integer :: lmax, lloc, mmax, mxprj

@@ -32,9 +32,9 @@ subroutine vkboutwf(ll, nvkb, ep, vkb, evkb, rr, vloc, uu, up, node, mmax, mch)
     !node  count of number of nodes from 0 to rr(mch)
     !mmax  dimension of log mesh
     !mch  index of radius to which wave function is to be integrated
-
+    use m_constants, only: dp
+    use m_lsch, only: lschps, lschkb
     implicit none
-    integer, parameter :: dp = kind(1.0d0)
 
     !Input variables
     real(dp) :: rr(mmax), vloc(mmax), vkb(mmax, nvkb), evkb(nvkb)

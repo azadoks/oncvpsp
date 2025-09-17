@@ -33,11 +33,10 @@ subroutine wellstate(nnin, ll, irc, ep, rr, vfull, uu, up, zz, mmax, mch, srel)
     !mmax  size of log radial mesh
     !mch matching mesh point for inward-outward integrations
     !srel .true. for scalar-relativistic, .false. for non-relativistic
-
+    use m_constants, only: dp
+    use m_lsch, only: lschfb
     implicit none
-
-    integer, parameter :: dp = kind(1.0d0)
-
+    
     !Input variables
     real(dp) :: rr(mmax), vfull(mmax)
     real(dp) :: ep, zz
