@@ -2,17 +2,80 @@
 
 Pseudopotential development
 
-The official repository of the oncvpsp Fortran code to generate  
-optimized norm-conserving Vanderbilt pseudopotentials.
+The official repository of the oncvpsp Fortran code to generate optimized norm-conserving Vanderbilt pseudopotentials.
 
-## Installation and usage
+## How to cite oncvpsp 
 
-1. edit make.inc (or copy it from older oncvpsp-3*)
+If you use oncvpsp in your research, please consider citing the 
+[following work](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.88.085117):
 
-2. make all >& make.log
+> Optimized norm-conserving Vanderbilt pseudopotentials
+    D. R. Hamann
+    Phys. Rev. B 88, 085117 (2013)
+    10.1103/PhysRevB.88.085117
 
-3. cd tests/data; evaluate TEST.report
-   
+```
+@article{PhysRevB.88.085117,
+  title = {Optimized norm-conserving Vanderbilt pseudopotentials},
+  author = {Hamann, D. R.},
+  journal = {Phys. Rev. B},
+  volume = {88},
+  issue = {8},
+  pages = {085117},
+  numpages = {10},
+  year = {2013},
+  month = {Aug},
+  publisher = {American Physical Society},
+  doi = {10.1103/PhysRevB.88.085117},
+  url = {https://link.aps.org/doi/10.1103/PhysRevB.88.085117}
+}
+```
+
+## Installation
+
+### Cloning the repository
+This repository contains git submodules for the external dependencies of oncvpsp (BLAS/LAPACK and Libxc).
+To clone the submodules with the repository, git requires the `--recursive` flag:
+
+```bash
+git clone https://github.com/azadoks/oncvpsp.git --recursive && cd oncvpsp
+```
+
+### Building with CMake
+You can usually use the following recipe:
+
+> To install in a custom directory, use the `-DCMAKE_INSTALL_PREFIX` flag with `cmake`
+
+> Libxc fallback compilation is currently broken! Compile Libxc (>=v5.0.0 and <7.0.0) and provide the flag `-DLibxc_ROOT="/path/to/libxc"`! 
+
+```bash
+mkdir build && cd build
+cmake .. -DLibxc_ROOT="/path/to/libxc"
+make
+make install
+```
+
+If you don't want to use the external fallbacks and `cmake` fails to find one of the dependencies, then you can point it to where they are installed by adding one or more flags to the command above:
+
+> You might have to delete the contents of your build directory for the flags to have an effect!
+
+* Libxc: `-DLibxc_ROOT="/path/to/libxc"`
+* BLAS: `-DBLAS_ROOT="/path/to/blas"`
+* LAPACK: `-DLAPACK_ROOT="/path/to/lapack"`
+
+You can also configure your prefered flavor of BLAS/LAPACK using the `-DBLA_VENDOR` flag.
+Supported vendors are listed in the [CMake documentation](https://cmake.org/cmake/help/latest/module/FindBLAS.html#blas-lapack-vendors).
+
+### Running tests
+Following a successful build, run the following from the root of the repository:
+
+```bash
+./set_path
+cd tests/data
+./TEST.sh
+```
+
+
 The code provided here is intended for a Linux or Unix system with a Fortran 95 compiler.
 Your system must have lapack and blas installed to compile ONCVPSP, and 
 gnuplot installed and in your $PATH to run it as recommended.  If these are
@@ -96,43 +159,16 @@ Please see the files in doc directory for details on the code, input file format
 
 ## Documentation
 
-* [User Guide](./doc/users_guide.md).
+* [User Guide](./doc/users_guide.md)
 * [Ghost States](./doc/ghosts.md)
 * [Relativistic](./doc/relativistic.md)
 * [Core Correction](./doc/core_correction.md)
 * [How to use libxc](./doc/libxc_use.md)
 * [How to translate iexc to pwscf names](./doc/pwscf_exc.md)
 * [Program Overview](./doc/program_overview.md)
-* [coding_standards](./doc/coding_standards.md)
-* [Support](./SUPPORT.md).
+* [Coding Standards](./doc/coding_standards.md)
+* [Support](./SUPPORT.md)
 * [Release Notes](./doc/release_notes.md)
-
-## How to cite oncvpsp 
-
-If you use oncvpsp in your research, please consider citing the 
-[following work](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.88.085117):
-
-> Optimized norm-conserving Vanderbilt pseudopotentials
-    D. R. Hamann
-    Phys. Rev. B 88, 085117 (2013)
-    10.1103/PhysRevB.88.085117
-
-```
-@article{PhysRevB.88.085117,
-  title = {Optimized norm-conserving Vanderbilt pseudopotentials},
-  author = {Hamann, D. R.},
-  journal = {Phys. Rev. B},
-  volume = {88},
-  issue = {8},
-  pages = {085117},
-  numpages = {10},
-  year = {2013},
-  month = {Aug},
-  publisher = {American Physical Society},
-  doi = {10.1103/PhysRevB.88.085117},
-  url = {https://link.aps.org/doi/10.1103/PhysRevB.88.085117}
-}
-```
 
 ## License
 

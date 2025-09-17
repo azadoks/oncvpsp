@@ -10,12 +10,19 @@ if(${CMAKE_BINARY_DIR} STREQUAL ${CMAKE_SOURCE_DIR})
 endif()
 
 ##########################################################
-# ONCVPSP
+# oncvpsp
 ##########################################################
 project(oncvpsp
     VERSION 4.0.1
     DESCRIPTION "Optimized norm-conserving Vanderbilt pseudopotentials"
     LANGUAGES Fortran)
+
+##########################################################
+# Options
+##########################################################
+option(ONCVPSP_ENABLE_EXTERN_FALLBACKS
+    "Enable fallbacks to git submodules if external dependencies are not found"
+    ON)
 
 ##########################################################
 # Define the paths for static libraries and executables
@@ -43,90 +50,63 @@ set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/modules
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 ###########################################################
-# BLAS
+# Git submodules
 ###########################################################
-if (NOT BLA_VENDOR)
-    if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64.*")
-        message(STATUS "Trying to find BLAS from Intel MKL")
-        SET(BLA_VENDOR Intel10_64lp_seq)
-        find_package(BLAS)
-    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "i686.*|i386.*|x86.*")
-        message(STATUS "Trying to find BLAS from Intel MKL - 32bit")
-        SET(BLA_VENDOR Intel10_32)
-        find_package(BLAS)
-    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64.*|AARCH64.*|arm64.*|ARM64.*)")
-        message(STATUS "Trying to find BLAS from ARM Performance Library")
-        SET(BLA_VENDOR Arm)
-        find_package(BLAS)
+find_package(Git QUIET)
+if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+    # Update submodules as needed
+    option(GIT_SUBMODULE "Check submodules during build" ON)
+    if(GIT_SUBMODULE)
+        message(STATUS "Submodule update")
+        execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+                        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                        RESULT_VARIABLE GIT_SUBMOD_RESULT)
+        if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+            message(FATAL_ERROR "git submodule update --init --recursive failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
+        endif()
     endif()
-    if (NOT BLAS_FOUND)
-        message(STATUS "Trying to find alternative BLAS libraries")
-        SET(BLA_VENDOR All)
-        find_package(BLAS)
-    endif()
-else()
-    find_package(BLAS)
-endif()
-if (BLAS_FOUND)
-    message(STATUS "BLAS library found:")
-    message(STATUS "  BLAS_LIBRARIES: ${BLAS_LIBRARIES}")
-    message(STATUS "  BLAS_LINKER_FLAGS: ${BLAS_LINKER_FLAGS}")
-    message(STATUS "  BLAS_INCLUDE_DIRS: ${BLAS_INCLUDE_DIRS}")
-else()
-    message(FATAL ERROR "Failed to find BLAS.")
 endif()
 
 ###########################################################
 # LAPACK
 ###########################################################
-if (NOT BLA_VENDOR)
-    if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64.*")
-        message(STATUS "Trying to find LAPACK from Intel MKL")
-        SET(BLA_VENDOR Intel10_64lp_seq)
-        find_package(LAPACK)
-    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "i686.*|i386.*|x86.*")
-        message(STATUS "Trying to find LAPACK from Intel MKL - 32bit")
-        SET(BLA_VENDOR Intel10_32)
-        find_package(LAPACK)
-    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64.*|AARCH64.*|arm64.*|ARM64.*)")
-        message(STATUS "Trying to find LAPACK from ARM Performance Library")
-        SET(BLA_VENDOR Arm)
-        find_package(LAPACK)
-    endif()
-    if (NOT LAPACK_FOUND)
-        message(STATUS "Trying to find alternative LAPACK libraries")
-        SET(BLA_VENDOR All)
-        find_package(LAPACK)
-    endif()
-else()
-    find_package(LAPACK)
-endif()
+find_package(LAPACK)
 if (LAPACK_FOUND)
-    message(STATUS "LAPACK library found:")
-    message(STATUS "  LAPACK_LIBRARIES: ${LAPACK_LIBRARIES}")
-    message(STATUS "  LAPACK_LINKER_FLAGS: ${LAPACK_LINKER_FLAGS}")
-    message(STATUS "  LAPACK_INCLUDE_DIRS: ${LAPACK_INCLUDE_DIRS}")
-else()
+elseif (ONCVPSP_ENABLE_EXTERN_FALLBACKS)
+    message(STATUS "Installing LAPACK via submodule")
+    add_subdirectory(extern/lapack)
+    set(LAPACK_LIBRARIES lapack)
+else ()
     message(FATAL ERROR "Failed to find LAPACK.")
 endif()
 
 ###########################################################
 # LIBXC
 ###########################################################
-# target_compile_definitions(oncvpsp_libxc INTERFACE "__LIBXC")
 find_package(Libxc COMPONENTS Fortran)
 if (NOT Libxc_FOUND)
     message(STATUS "Libxc search failed in CMake Module mode, trying Config mode")
-    find_package(Libxc COMPONENTS Fortran REQUIRED)
+    find_package(Libxc COMPONENTS Fortran)
 endif()
-if (${Libxc_FOUND})
+if (Libxc_FOUND)
     message(STATUS "Libxc version ${Libxc_VERSION} found.")
     if (${Libxc_VERSION} VERSION_GREATER_EQUAL 5 AND ${Libxc_VERSION} VERSION_LESS 7)
     else()
-        message(FATAL_ERROR "Only Libxc major versions 5 and 6 are supported.")
+        message(STATUS "Only Libxc major versions 5 and 6 are supported. Setting Libxc_FOUND to FALSE.")
+        set(Libxc_FOUND FALSE)
     endif()
-else()
-    message(FATAL_ERROR "Failed to find Libxc package (5.0.0 <= x <= 7.0.0) with Fortran enabled.")
+    set(LIBXC_LIBRARIES Libxc::xcf03)
+endif()
+if (NOT Libxc_FOUND)
+    if (ONCVPSP_ENABLE_EXTERN_FALLBACKS)
+        message(STATUS "Installing Libxc via submodule")
+        set(ENABLE_FORTRAN ON CACHE BOOL "Enable Fortran bindings" FORCE)
+        add_subdirectory(extern/libxc)
+        set(LIBXC_LIBRARIES Libxc::xcf03)
+    else()
+        message(FATAL_ERROR "Failed to find Libxc package (5.0.0 <= x <= 7.0.0) with Fortran enabled.")
+    endif()
+else ()
 endif()
 
 ###########################################################
