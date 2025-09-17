@@ -26,7 +26,6 @@ module aeo_m
     public :: aeo, aio, aei, aii
 contains
 function aeo(xx, ii) result(yy)
-    implicit none
     real(dp), dimension(:) :: xx
     real(dp) :: yy
     integer :: ii
@@ -36,7 +35,6 @@ function aeo(xx, ii) result(yy)
 end function aeo
 
 function aio(xx, ii) result(yy)
-    implicit none
     real(dp), dimension(:) :: xx
     real(dp) :: yy
     integer :: ii
@@ -46,7 +44,6 @@ function aio(xx, ii) result(yy)
 end function aio
 
 function aei(xx, ii) result(yy)
-    implicit none
     real(dp), dimension(:) :: xx
     real(dp) :: yy
     integer :: ii
@@ -56,7 +53,6 @@ function aei(xx, ii) result(yy)
 end function aei
 
 function aii(xx, ii) result(yy)
-    implicit none
     real(dp), dimension(:) :: xx
     real(dp) :: yy
     integer :: ii

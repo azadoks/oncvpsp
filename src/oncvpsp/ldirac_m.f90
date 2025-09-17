@@ -39,7 +39,6 @@ subroutine ldiracfb(nn, ll, kap, ierr, ee, rr, zz, vv, uu, up, mmax, mch)
     !up  d(uu)/dr
     !mmax  size of log grid
     !mch matching mesh point for inward-outward integrations
-    implicit none
 
     !Input variables
     real(dp) :: rr(mmax), vv(mmax)
@@ -317,7 +316,6 @@ subroutine ldiracfs(nn, ll, kap, ierr, ee, rr, zz, vv, uu, up, mmax, mch)
     !up  d(uu)/dr
     !mmax  size of log grid
     !mch matching mesh point for inward-outward integrations
-    implicit none
 
     !Input variables
     real(dp) :: rr(mmax), vv(mmax)

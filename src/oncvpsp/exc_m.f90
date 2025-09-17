@@ -27,7 +27,6 @@ contains
 
 !> Calculates Hedin-Lundquist exchange-correlation potential and energy density
 subroutine exchdl(rho, vxc, exc, mmax)
-    implicit none
 
     !Inpupt variables
     integer :: mmax
@@ -69,7 +68,6 @@ subroutine excwig(rho, vxc, exc, mmax)
     !vxc  exchange-correlation potential
     !exc  exchange-correlation energy density
     !mmax  dimension of log radial grid
-    implicit none
 
     !Input variables
     real(dp) :: rho(mmax)
@@ -107,7 +105,6 @@ subroutine excpzca(rho, vxc, exc, mmax)
     !vxc  exchange-correlation potential
     !exc  exchange-correlation energy density
     !mmax  dimension of log radial grid
-    implicit none
 
     !Input variables
     integer :: mmax

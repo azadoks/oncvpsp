@@ -36,7 +36,6 @@ contains
 !> Finds bound states of an all-electron atomic potential using
 !> Pauli-type  scalar-relativistic Schroedinger equation
 subroutine lschfb(nn, ll, ierr, ee, rr, vv, uu, up, zz, mmax, mch, srel)
-    implicit none
 
     !Input variables
     !> Logarithmic radial mesh
@@ -320,7 +319,6 @@ subroutine lschfs(nn, ll, ierr, ee, rr, vv, uu, up, zz, mmax, mch, srel)
     !mmax  size of log grid
     !mch matching mesh point for inward-outward integrations
     !srel .true. for scalar-relativistic, .false. for non-relativistic
-    implicit none
 
     !Input variables
     integer :: mmax
@@ -475,7 +473,6 @@ subroutine lschkb(ll, ierr, ee, vkb, rr, vv, uu, up, mmax, mch)
     !zz  atomic number
     !mmax  size of log grid
     !mch matching mesh point for inward-outward integrations
-    implicit none
 
     !Input variables
     integer :: mmax, mch
@@ -562,7 +559,6 @@ subroutine lschpb(nn, ll, ierr, ee, rr, vv, uu, up, mmax, mch)
     !up  d(uu)/dr
     !mmax  size of log grid
     !mch matching mesh point for inward-outward integrations
-    implicit none
 
     !Input variables
     real(dp) :: rr(mmax), vv(mmax)
@@ -777,7 +773,6 @@ subroutine lschpsbar(nn, ll, ierr, ee, emin, emax, rr, vv, uu, up, mmax, mbar, t
     !mmax  size of log grid
     !mbar  mesh point for infinite barrier
     !tht  phast-shift angle for boundary condition, units of pi
-    implicit none
 
     !Input variables
     real(dp) :: rr(mmax), vv(mmax)
@@ -1047,7 +1042,6 @@ subroutine lschpse(nn, ll, ierr, ee, uld, rr, vv, uu, up, mmax, mch)
     !up  d(uu)/dr
     !mmax  size of log grid
     !mch matching mesh point for inward-outward integrations
-    implicit none
 
     !Input variables
     integer :: mmax, mch
@@ -1213,7 +1207,6 @@ subroutine lschps(ll, ierr, ee, rr, vv, uu, up, mmax, mch)
     !up  d(uu)/dr
     !mmax  size of log grid
     !mch matching mesh point for inward-outward integrations
-    implicit none
 
     !Input variables
     integer :: mmax, mch
@@ -1332,7 +1325,6 @@ subroutine lschvkbbe(nn, ll, nvkb, ierr, ee, uld, emin, emax, rr, vloc, vkb, evk
     !up  d(uu)/dr
     !mmax  size of log grid
     !mch matching mesh point for inward-outward integrations
-    implicit none
 
     !Input Variables
     real(dp) :: emin, emax, uld
@@ -1479,7 +1471,6 @@ subroutine lschvkbb(nn, ll, nvkb, ierr, ee, emin, emax, rr, vloc, vkb, evkb, uu,
     !up  d(uu)/dr
     !mmax  size of log grid
     !mch matching mesh point for inward-outward integrations
-    implicit none
 
     !Input Variables
     real(dp) :: emin, emax
@@ -1705,7 +1696,6 @@ subroutine lschvkbs(ll, ivkb, ee, rr, vloc, vkb, evkb, uu, up, mmax, mch)
     !up  d(uu)/dr
     !mmax  size of log grid
     !mch  index of radius to which uu is computed
-    implicit none
 
     !Input variables
     integer :: mmax, mch

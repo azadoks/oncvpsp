@@ -35,10 +35,10 @@ subroutine excggc(rho,vxc,exc,r,mmax)
     implicit none
     integer, parameter :: dp=kind(1.0d0)
 !
-    real*8 rho(*),vxc(*),exc(*),r(*)
-    real*8 amesh,al
-    real*8 fk,sk,g,ec
-    integer i, mmax
+    real*8 :: rho(*),vxc(*),exc(*),r(*)
+    real*8 :: amesh,al
+    real*8 :: fk,sk,g,ec
+    integer :: i, mmax
 !
 !      common/GAS/fk,sk,g,ec,ecrs,eczet
 !
@@ -416,13 +416,13 @@ subroutine gcor2(a,a1,b1,b2,b3,b4,rtrs,gg,ggrs)
     ! LSD correlation energy, as given by (10) of
     ! J. P. Perdew and Y. Wang, Phys. Rev. B {\bf 45}, 13244 (1992).
     ! K. Burke, May 11, 1996.
-    
+
     implicit none
-    
+
     ! Input variables
     real(dp), intent(in) :: a, a1, b1, b2, b3, b4, rtrs
     real(dp), intent(out) :: gg, ggrs
-    
+
     ! Local variables
     real(dp) :: q0, q1, q2, q3
 

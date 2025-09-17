@@ -1,4 +1,4 @@
-exclude: "(scripts|tests|doc)/.*"
+exclude: "(scripts|tests|doc|extern|build)/.*"
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -20,6 +20,11 @@ repos:
     hooks:
       - id: commitizen
         stages: [commit-msg]
+  - repo: https://github.com/PlasmaFAIR/fortitude-pre-commit
+    rev: v0.7.5
+    hooks:
+      - id: fortitude
+        args: ["--fix"]
   - repo: https://github.com/zmoon/findent-pre-commit
     rev: 527f61f770f504abd87f97932b510b8dce07ab3a
     hooks:
@@ -35,8 +40,3 @@ repos:
             --align_paren,
           ]
         additional_dependencies: [findent==4.3.1]
-  - repo: https://github.com/PlasmaFAIR/fortitude-pre-commit
-    rev: v0.7.5
-    hooks:
-      - id: fortitude
-        args: ["--fix"]

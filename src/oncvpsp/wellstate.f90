@@ -36,7 +36,7 @@ subroutine wellstate(nnin, ll, irc, ep, rr, vfull, uu, up, zz, mmax, mch, srel)
     use constants_m, only: dp
     use lsch_m, only: lschfb
     implicit none
-    
+
     !Input variables
     real(dp) :: rr(mmax), vfull(mmax)
     real(dp) :: ep, zz
