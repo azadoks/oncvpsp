@@ -31,7 +31,7 @@ subroutine gg1cc(gg1cc_xx, xx)
     !This section has been created automatically by the script Abilint (TD).
     !Do not modify the following lines by hand.
 
-    use m_constants, only: dp, pi
+    use constants_m, only: dp, pi
     implicit none
     !The cs are coefficients for Taylor expansion of the analytic form near xx=0, 1/2, and 1.
     real(dp), parameter :: c21 = 4.d0 / 9.d0

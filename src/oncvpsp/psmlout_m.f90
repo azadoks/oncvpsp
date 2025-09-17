@@ -20,17 +20,17 @@
  !
  ! Support for PSML file creation
  !
-module m_psmlout
+module psmlout_m
     ! To write XML files
     use xmlf90_wxml, only: xmlf_t, str, xml_OpenFile, xml_Close, &
         xml_NewElement, xml_EndElement, &
         xml_AddArray, xml_AddAttribute, &
         xml_AddXMLDeclaration, xml_AddPcData
     ! For ease of libxc handling
-    use m_libxc_list, only: libxc_t, libxc_kind_t, XC_NOT_IMPL, &
+    use libxc_list_m, only: libxc_t, libxc_kind_t, XC_NOT_IMPL, &
         XC_LDA_X, XC_GGA_X_PBE, &
         XC_LDA_C_WIGNER, XC_LDA_C_HL, XC_LDA_C_PZ, XC_GGA_C_PBE
-    use m_constants, only: dp, pi
+    use constants_m, only: dp, pi
     implicit none
     private
     public :: psmlout, psmlout_r
@@ -1207,4 +1207,4 @@ subroutine write_psml_item(xf, class, &
 
 end subroutine write_psml_item
 
-end module m_psmlout
+end module psmlout_m

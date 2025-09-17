@@ -1,4 +1,4 @@
-module m_libxc_list
+module libxc_list_m
     implicit none
     !
     ! List of selected functionals in libxc, wrapped
@@ -213,4 +213,4 @@ module m_libxc_list
         XC_GGA_XC_TH_FCFO = libxc_t("XC_GGA_XC_TH_FCFO", 198 , EXCH_CORR),  &
         XC_GGA_XC_TH_FCO = libxc_t("XC_GGA_XC_TH_FCO", 199 , EXCH_CORR)
 
-end module m_libxc_list
+end module libxc_list_m

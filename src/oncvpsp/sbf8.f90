@@ -24,7 +24,7 @@ subroutine sbf8(nm, xx, sb_out)
     !xx  argument of spherical bessel function
     !sb_out  output of sbf_l(xx) for l=0,...,nm-1
 
-    use m_constants, only: dp, pi, twopi
+    use constants_m, only: dp, pi, twopi
     implicit none
 
     !Input variables

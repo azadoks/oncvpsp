@@ -53,7 +53,7 @@ subroutine upfout_r(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     !uua pseudo-atomic orbital array
     !ea  psuedo-orbital eigenvalues
 
-    use m_constants, only: dp, pi
+    use constants_m, only: dp, pi
     implicit none
 
     !Input variables

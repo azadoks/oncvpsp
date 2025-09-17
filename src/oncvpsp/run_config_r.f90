@@ -44,8 +44,8 @@ subroutine run_config_r(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz
     !vkb   Vanderbilt-Kleinman-Bylander projectors
     !evkb VKB projector coefficients
     !srel .true. for scalar-relativistic, .false. for non-relativistic
-    use m_constants, only: dp
-    use m_ldirac, only: ldiracfb
+    use constants_m, only: dp
+    use ldirac_m, only: ldiracfb
     implicit none
 
     !Input variables

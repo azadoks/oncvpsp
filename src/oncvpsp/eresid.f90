@@ -46,7 +46,7 @@ subroutine eresid(ll, irc, nnull, nbas, mmax, rr, qmax, qroot, &
     !eresiddot(nnull,nqout) set of <pswfnull| E_resid |pswf0> matrix elements
     !eresidevec(nnull,null,nqout)  set of <pswfnull| E_res |pswfnull'> matrices
 
-    use m_constants, only: dp, pi
+    use constants_m, only: dp, pi
     implicit none
 
     !Input variables

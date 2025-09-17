@@ -35,7 +35,7 @@
 
 subroutine gp1cc(gp1cc_xx, xx)
 
-    use m_constants, only: dp, pi, twopi
+    use constants_m, only: dp, pi, twopi
     implicit none
 
     !Arguments ------------------------------------

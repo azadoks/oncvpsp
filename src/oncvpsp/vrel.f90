@@ -34,7 +34,7 @@ subroutine vrel(ll, ee, rr, vv, vr, uu, up, zz, mmax, irc, srel)
     !mch matching mesh point for inward-outward integrations
     !srel .true. for scalar-relativistic, .false. for non-relativistic
 
-    use m_constants, only: dp
+    use constants_m, only: dp
     implicit none
 
     !Input variables

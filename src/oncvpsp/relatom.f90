@@ -39,8 +39,8 @@ subroutine relatom(na, la, ea, fa, rpk, nc, ncv, it, rhoc, rho, &
     !etot  all-electron total energy (output)
     !ierr  error flag
     !srel  .true. for scalar-relativistic, .false. for non-relativistic
-    use m_constants, only: dp
-    use m_ldirac, only: ldiracfb
+    use constants_m, only: dp
+    use ldirac_m, only: ldiracfb
     implicit none
 
     !Input variables

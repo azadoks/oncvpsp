@@ -32,11 +32,11 @@ program oncvpsp_r
     !
     !   Output format for ABINIT pspcod=8 and upf format for quantumespresso
     !
-    use m_constants, only: dp
-    use m_read_input, only: read_input_r
-    use m_psmlout, only: psmlout_r
-    use m_lsch, only: lschvkbb
-    use m_ldirac, only: ldiracfb
+    use constants_m, only: dp
+    use read_input_m, only: read_input_r
+    use psmlout_m, only: psmlout_r
+    use lsch_m, only: lschvkbb
+    use ldirac_m, only: ldiracfb
     implicit none
 
     !

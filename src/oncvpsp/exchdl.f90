@@ -20,7 +20,7 @@ subroutine exchdl(rho, vxc, exc, mmax)
 
     !calculates Hedin-Lundquist exchange-correlation potential and energy
     !density
-    use m_constants, only: dp, pi, fourpi, ifourpi, third
+    use constants_m, only: dp, pi, fourpi, ifourpi, third
     implicit none
 
     !Inpupt variables

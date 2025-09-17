@@ -35,8 +35,8 @@ subroutine fphsft_r(ll, kap, epsh2, depsh, pshf, rr, vv, zz, mmax, mch, npsh)
     !mch  index of radius for log der test
     !npsh  number of energy points in scan
 
-    use m_constants, only: dp, pi, twopi
-    use m_ldirac, only: ldiracfs
+    use constants_m, only: dp, pi, twopi
+    use ldirac_m, only: ldiracfs
     implicit none
 
     !Input variables

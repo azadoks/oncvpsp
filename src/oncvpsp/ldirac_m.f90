@@ -16,9 +16,9 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
-module m_ldirac
-    use m_constants, only: dp, pi
-    use m_aeo, only: aeo, aio, aei, aii
+module ldirac_m
+    use constants_m, only: dp, pi
+    use aeo_m, only: aeo, aio, aei, aii
     implicit none
     private
     public :: ldiracfb
@@ -456,4 +456,4 @@ subroutine ldiracfs(nn, ll, kap, ierr, ee, rr, zz, vv, uu, up, mmax, mch)
 
 end subroutine ldiracfs
 
-end module m_ldirac
+end module ldirac_m

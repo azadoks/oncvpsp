@@ -19,14 +19,14 @@ set(src_oncvpsp
     gnu_script_r.f90
     gp1cc.f90
     gpp1cc.f90
-    m_ldirac.f90
+    ldirac_m.f90
     linout.f90
     linout_r.f90
-    m_aeo.f90
-    m_lsch.f90
-    m_constants.f90
-    m_psmlout.f90
-    m_read_input.f90
+    aeo_m.f90
+    lsch_m.f90
+    constants_m.f90
+    psmlout_m.f90
+    read_input_m.f90
     modcore.f90
     modcore2.f90
     modcore3.f90
@@ -68,8 +68,10 @@ set(src_oncvpsp
     wellstate.f90
     wellstate_r.f90
     wf_rc_der.f90
-    functionals.F90
-    m_libxc_list.F90
+    functionals_parser_m.f90
+    functionals_messages_m.f90
+    functionals_m.F90
+    libxc_list_m.F90
 )
 
 ###########################################################

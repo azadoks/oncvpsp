@@ -25,7 +25,7 @@ subroutine excwig(rho, vxc, exc, mmax)
     !vxc  exchange-correlation potential
     !exc  exchange-correlation energy density
     !mmax  dimension of log radial grid
-    use m_constants, only: dp, pi, fourpi, ifourpi, third
+    use constants_m, only: dp, pi, fourpi, ifourpi, third
     implicit none
 
     !Input variables

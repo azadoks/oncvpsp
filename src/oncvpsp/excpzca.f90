@@ -25,7 +25,7 @@ subroutine excpzca(rho, vxc, exc, mmax)
     !vxc  exchange-correlation potential
     !exc  exchange-correlation energy density
     !mmax  dimension of log radial grid
-    use m_constants, only: dp, pi, fourpi, third
+    use constants_m, only: dp, pi, fourpi, third
     implicit none
 
     !Input variables

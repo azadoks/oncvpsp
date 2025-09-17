@@ -21,7 +21,7 @@ subroutine exc_libxc(iexc, al, rho, vxc, exc, rr, mmax)
     !
     !  interface to libxc library for potential and energy density calculation
     !
-    use m_constants, only: dp, pi
+    use constants_m, only: dp, pi
     use functionals_m
     implicit none
 

@@ -19,8 +19,8 @@
 ! Adams extrapolation and interpolation formulas for
 ! outward and inward integration, Abramowitz and
 ! Stegun, p. 896
-module m_aeo
-    use m_constants, only: dp
+module aeo_m
+    use constants_m, only: dp
     implicit none
     private
     public :: aeo, aio, aei, aii
@@ -64,4 +64,4 @@ function aii(xx, ii) result(yy)
     yy = -(4.16666666667d-2) * (9.0d0 * xx(ii - 1) + 19.0d0 * xx(ii) - 5.0d0 * xx(ii + 1) + xx(ii + 2))
     return
 end function aii
-end module m_aeo
+end module aeo_m

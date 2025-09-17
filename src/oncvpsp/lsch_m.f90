@@ -16,9 +16,9 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
-module m_lsch
-    use m_constants, only: dp, pi
-    use m_aeo, only: aeo, aio, aei, aii
+module lsch_m
+    use constants_m, only: dp, pi
+    use aeo_m, only: aeo, aio, aei, aii
     implicit none
     private
     public :: lschfb
@@ -1759,4 +1759,4 @@ subroutine lschvkbs(ll, ivkb, ee, rr, vloc, vkb, evkb, uu, up, mmax, mch)
     return
 end subroutine lschvkbs
 
-end module m_lsch
+end module lsch_m

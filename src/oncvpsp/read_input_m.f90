@@ -1,4 +1,4 @@
-module m_read_input
+module read_input_m
     implicit none
     integer, parameter :: dp = kind(1.0d0)
     private
@@ -505,4 +505,4 @@ subroutine read_error(ios, inline)
     return
 end subroutine read_error
 
-end module m_read_input
+end module read_input_m

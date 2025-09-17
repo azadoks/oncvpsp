@@ -29,7 +29,7 @@
 
 subroutine gpp1cc(gpp1cc_xx, xx)
 
-    use m_constants, only: dp, pi
+    use constants_m, only: dp, pi
     implicit none
 
     !Arguments ------------------------------------

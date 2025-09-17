@@ -1,4 +1,4 @@
-module m_constants
+module constants_m
     ! use, intrinsic :: iso_fortran_env, only: real64
     implicit none
     private
@@ -14,4 +14,4 @@ module m_constants
     real(dp), parameter, public :: ifourpi = 1.0_dp / fourpi
     !> 1/3
     real(dp), parameter, public :: third = 1.0_dp / 3.0_dp
-end module m_constants
+end module constants_m
