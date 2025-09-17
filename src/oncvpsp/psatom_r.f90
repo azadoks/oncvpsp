@@ -38,9 +38,9 @@ subroutine psatom_r(na, la, ea, fat, nv, it, rhoc, rho, &
     !lloc  index-1 of local potential
     !vkb   Vanderbilt-Kleinman-Bylander projectors
     !evkb VKB projector coefficients
-
+    use m_constants, only: dp
+    use m_lsch, only: lschvkbb
     implicit none
-    integer, parameter :: dp = kind(1.0d0)
 
     !Input variables
 

@@ -36,6 +36,7 @@ subroutine fphsft(ll, epsh2, depsh, pshf, rr, vv, zz, mmax, mch, npsh, srel)
     !srel .true. for scalar-relativistic, .false. for non-relativistic
 
     use m_constants, only: dp, pi, twopi
+    use m_lsch, only: lschfs
     implicit none
 
     !Input variables

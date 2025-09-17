@@ -45,9 +45,9 @@ subroutine run_plot_r(lmax, npa, epa, lloc, irc, &
     !rhomod  model core charge
     !srel .true. for scalar-relativistic, .false. for non-relativistic
     !cvgplt  Energy per electron error vs. cutoff
-
+    use m_constants, only: dp
+    use m_lsch, only: lschvkbb, lschvkbs
     implicit none
-    integer, parameter :: dp = kind(1.0d0)
 
     !Input variables
     integer :: lmax, lloc, mmax, mxprj, nrl

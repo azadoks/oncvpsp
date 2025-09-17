@@ -23,17 +23,18 @@ set(src_oncvpsp
     ldiracfs.f90
     linout.f90
     linout_r.f90
-    lschfb.f90
-    lschfs.f90
-    lschkb.f90
-    lschpb.f90
-    lschps.f90
-    lschpsbar.f90
-    lschpse.f90
-    lschvkbb.f90
-    lschvkbbe.f90
-    lschvkbs.f90
+    # lschfb.f90
+    # lschfs.f90
+    # lschkb.f90
+    # lschpb.f90
+    # lschps.f90
+    # lschpsbar.f90
+    # lschpse.f90
+    # lschvkbb.f90
+    # lschvkbbe.f90
+    # lschvkbs.f90
     m_aeo.f90
+    m_lsch.f90
     m_constants.f90
     m_psmlout.f90
     m_read_input.f90

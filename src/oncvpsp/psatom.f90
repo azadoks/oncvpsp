@@ -39,9 +39,9 @@ subroutine psatom(na, la, ea, fat, nv, it, rhoc, rho, &
     !vkb   Vanderbilt-Kleinman-Bylander projectors
     !evkb VKB projector coefficients
     !uua Array of pseudo-atomic orbitals (output)
-
+    use m_constants, only: dp
+    use m_lsch, only: lschvkbb
     implicit none
-    integer, parameter :: dp = kind(1.0d0)
 
     !Input variables
 

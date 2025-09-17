@@ -41,9 +41,9 @@ subroutine run_diag(lmax, npa, epa, lloc, irc, &
     !mmax  size of radial grid
     !mxprj  dimension of number of projectors
     !srel .true. for scalar-relativistic, .false. for non-relativistic
-
+    use m_constants, only: dp
+    use m_lsch, only: lschfb, lschfs, lschvkbb, lschvkbbe
     implicit none
-    integer, parameter :: dp = kind(1.0d0)
 
     !Input variables
     integer :: lmax, lloc, mmax, mxprj

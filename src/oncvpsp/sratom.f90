@@ -38,12 +38,11 @@ subroutine sratom(na, la, ea, fa, rpk, nc, ncv, it, rhoc, rho, &
     !etot  all-electron total energy (output)
     !ierr  error flag
     !srel  .true. for scalar-relativistic, .false. for non-relativistic
-
+    use m_constants, only: dp
+    use m_lsch, only: lschfb
     implicit none
-    integer, parameter :: dp = kind(1.0d0)
 
     !Input variables
-
     integer :: mmax, iexc, nc, ncv
     integer :: na(ncv), la(ncv)
     real(dp) :: zz
