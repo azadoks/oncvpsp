@@ -14,3 +14,6 @@ tests/data/*.out
 tests/data/*.diff
 tests/data/*.oncvpsp.*
 tests/data/TEST.report
+
+# set_path modifies these in-place
+scripts/*.sh
