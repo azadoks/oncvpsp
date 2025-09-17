@@ -12,23 +12,23 @@ set_target_properties(oncvpsp_exe
 )
 
 ##########################################################
-oncvpsp_nr.x
+# oncvpspnr.x
 ##########################################################
 add_executable(oncvpsp_nr_exe oncvpsp_nr.f90)
 add_dependencies(oncvpsp_nr_exe oncvpsp)
 target_link_libraries(oncvpsp_nr_exe oncvpsp wxml Libxc::xcf03 ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
 set_target_properties(oncvpsp_nr_exe
     PROPERTIES
-        OUTPUT_NAME oncvpsp_nr.x
+        OUTPUT_NAME oncvpspnr.x
 )
 
 ##########################################################
-oncvpsp_r.x
+# oncvpspr.x
 ##########################################################
 add_executable(oncvpsp_r_exe oncvpsp_r.f90)
 add_dependencies(oncvpsp_r_exe oncvpsp)
 target_link_libraries(oncvpsp_r_exe oncvpsp wxml Libxc::xcf03 ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
 set_target_properties(oncvpsp_r_exe
     PROPERTIES
-        OUTPUT_NAME oncvpsp_r.x
+        OUTPUT_NAME oncvpspr.x
 )

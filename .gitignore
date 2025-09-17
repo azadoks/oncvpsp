@@ -1,29 +1,16 @@
-make.inc
 build/
+dependencies/
 
 *.o
 *.x
-.*.swp
-*.mod
-*_cpp.f90
 *.a
-
-t
-t1
-t2
-t3
-t4
-t5
-t6
-t7
-t8
-t9
+*.mod
+.*.swp
+*_cpp.f90
 *.log
 
-drh_*
 tests/*.sh
 tests/data/*.out
 tests/data/*.diff
 tests/data/*.oncvpsp.*
 tests/data/TEST.report
-#tests/refs/*

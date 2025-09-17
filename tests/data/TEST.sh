@@ -13,7 +13,7 @@ for test in $sr_tests; do
 done
 
 for test in $r_tests; do
-    echo "[oncvpsp_r.x | $test]"
+    echo "[oncvpspr.x | $test]"
     ../run_r.sh $test -np;
     ../compare.sh ${test}_r;
     summary=$(grep "Summary" ${test}_r.diff);

@@ -200,7 +200,6 @@ subroutine psmlout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
     call get_unit(lun)
     open (unit=lun, file="_tmp_input", form="formatted", &
           status="old", position="rewind", action="read")
-
     rewind (lun)
     do
         read (lun, fmt="(a)", iostat=stat) line
@@ -208,7 +207,22 @@ subroutine psmlout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
         call xml_AddPcData(xf, trim(line), line_feed=.true.)
     end do
     close (lun)
-
+    ! delete the temporary file
+    inquire (file="_tmp_input", exist=found)
+    if (found) then
+        !      write(*,*) 'deleting temporary file _tmp_input'
+        inquire (file="_tmp_input", opened=found)
+        if (found) then
+            close (lun)
+        end if
+        !      write(*,*) 'deleting temporary file _tmp_input'
+        !      open(unit=lun,file='_tmp_input',status='old',action='delete')
+        !      close(lun)
+        ! The above does not work in some systems (e.g. MacOSX)
+        ! so we use the following instead
+        call execute_command_line("rm -f _tmp_input", wait=.true.)
+    end if
+    !
     call xml_EndElement(xf, "input-file")
     !
     call xml_EndElement(xf, "provenance")
