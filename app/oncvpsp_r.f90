@@ -148,6 +148,7 @@ program oncvpsp_r
 
     al = log(amesh)
     rr1 = 0.0005d0 / zz
+    rr1 = min(rr1, 0.0005d0 / 10)
     mmax = int(log(45.0d0 / rr1) / al)
 
     !calculate zion for output
@@ -189,7 +190,6 @@ program oncvpsp_r
     !
     call relatom(na, la, ea, fa, rpk, nc, nc + nv, it, rhoc, rho, &
     &              rr, vfull, zz, mmax, iexc, etot, ierr)
-
     !
     !
 
@@ -413,7 +413,6 @@ program oncvpsp_r
                         &                  '   Wellstate for l =', ll, '  n =', npa(iprj, l1), ' kap=', kap, &
                         &                  '     eigenvalue = ', et
                     end if
-
                     call renorm_r(uu, rr, kap, zz, mmax, cnorm)
                     uua(:, iprj, ikap) = uu(:, 1)
                     upa(:, iprj, ikap) = cnorm * up(:, 1)
@@ -431,7 +430,7 @@ program oncvpsp_r
             do jj = 1, nproj(l1)
                 do ii = 1, jj
                     !      call fpovlp_r(uua(1,ii,ikap),uua(1,jj,ikap),irc(l1),ll,zz, &
-                    call fpovlp(uua(1, ii, ikap), uua(1, jj, ikap), irc(l1), zz, &
+                    call fpovlp(uua(1, ii, ikap), uua(1, jj, ikap), irc(l1), ll, zz, &
                     &                  qq(ii, jj), rr, srel)
                     qq(jj, ii) = qq(ii, jj)
                 end do

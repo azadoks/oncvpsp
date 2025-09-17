@@ -23,9 +23,8 @@ subroutine qroots(ll, rc, ulgd, nroot, dltq, qmax, qroot)
     !1st and 3rd output roots do not correspond to these conditions, rather
     !0.5 times the first matching root, and the average of the 1st and second
     !matching roots
-
+    use constants_m, only: dp
     implicit none
-    integer, parameter :: dp = kind(1.0d0)
 
     !INPUT
     !ll  angular momentum
