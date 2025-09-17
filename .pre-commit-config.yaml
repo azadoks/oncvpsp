@@ -5,14 +5,28 @@ repos:
       - id: check-added-large-files
         args: ["--maxkb=5000"]
       - id: end-of-file-fixer
-        exclude: "(scripts|tests|doc|extern|build)/.*"
+        exclude: |
+          (?x)^(
+            (scripts|tests|doc|extern|build)/.*|
+            .*\.md|
+            .*COPYING|
+            .*LICENSE|
+          )$
       - id: check-case-conflict
+        exclude: (scripts|tests|doc|extern|build)/.*
       - id: detect-private-key
       - id: check-docstring-first
+        exclude: (scripts|tests|doc|extern|build)/.*
       - id: mixed-line-ending
-        exclude: "(scripts|tests|doc|extern|build)/.*"
+        exclude: (scripts|tests|doc|extern|build)/.*
       - id: trailing-whitespace
-        exclude: "(scripts|tests|doc|extern|build)/.*"
+        exclude: |
+          (?x)^(
+            (scripts|tests|doc|extern|build)/.*|
+            .*\.md|
+            .*COPYING|
+            .*LICENSE|
+          )$
   - repo: https://github.com/commitizen-tools/commitizen
     rev: v4.9.1
     hooks:
@@ -23,7 +37,7 @@ repos:
     hooks:
       - id: fortitude
         args: ["--fix"]
-        exclude: "(scripts|tests|doc|extern|build)/.*"
+        exclude: (scripts|tests|doc|extern|build)/.*
   - repo: https://github.com/zmoon/findent-pre-commit
     rev: 527f61f770f504abd87f97932b510b8dce07ab3a
     hooks:
@@ -39,4 +53,4 @@ repos:
             --align_paren,
           ]
         additional_dependencies: [findent==4.3.1]
-        exclude: "(scripts|tests|doc|extern|build)/.*"
+        exclude: (scripts|tests|doc|extern|build)/.*
