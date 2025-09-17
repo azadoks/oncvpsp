@@ -35,6 +35,8 @@ subroutine vout(mode, rho, rhoc, vo, vxc, zion, eeel, eexc, &
 
     use constants_m, only: dp, pi
     use aeo_m, only: aii
+    use exc_m, only: exchdl, excpzca, excwig
+    use pbe_m, only: excggc
     implicit none
 
     !Input vaiables

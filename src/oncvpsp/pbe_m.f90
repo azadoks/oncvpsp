@@ -17,9 +17,15 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 ! calculates PBE exchange-correlation potential and energy density
-
+!
 ! The core of this routine was obtained from John Perdew a long time
 ! ago and does not follow the coding style of the rest of ONCVPSP
+!
+module pbe_m
+    use constants_m, only: dp, pi, fourpi, ifourpi, third
+    private
+    public :: excggc
+contains
 
 subroutine excggc(rho,vxc,exc,r,mmax)
 !
@@ -266,8 +272,7 @@ end subroutine EXCHPBE
 !----------------------------------------------------------------------
 !######################################################################
 !----------------------------------------------------------------------
-SUBROUTINE CORPBE(RS,ZET,T,UU,VV,WW,lgga,lpot,ec,vcup,vcdn,&
-&H,DVCUP,DVCDN)
+SUBROUTINE CORPBE(RS,ZET,T,UU,VV,WW,lgga,lpot,ec,vcup,vcdn,H,DVCUP,DVCDN)
 !----------------------------------------------------------------------
 !  Official PBE correlation code. K. Burke, May 14, 1996.
 !  INPUT: RS=SEITZ RADIUS=(3/4pi rho)^(1/3)
@@ -406,206 +411,30 @@ end subroutine CORPBE
 !----------------------------------------------------------------------
 !######################################################################
 !----------------------------------------------------------------------
-SUBROUTINE GCOR2(A,A1,B1,B2,B3,B4,rtrs,GG,GGRS)
-! slimmed down version of GCOR used in PW91 routines, to interpolate
-! LSD correlation energy, as given by (10) of
-! J. P. Perdew and Y. Wang, Phys. Rev. B {\bf 45}, 13244 (1992).
-! K. Burke, May 11, 1996.
-    IMPLICIT REAL*8 (A-H,O-Z)
-    Q0 = -2.D0*A*(1.D0+A1*rtrs*rtrs)
-    Q1 = 2.D0*A*rtrs*(B1+rtrs*(B2+rtrs*(B3+B4*rtrs)))
-    Q2 = DLOG(1.D0+1.D0/Q1)
-    GG = Q0*Q2
-    Q3 = A*(B1/rtrs+2.D0*B2+rtrs*(3.D0*B3+4.D0*B4*rtrs))
-    GGRS = -2.D0*A*A1*Q2-Q0*Q3/(Q1*(1.d0+Q1))
-    RETURN
-end subroutine GCOR2
-!----------------------------------------------------------------------
-!######################################################################
-!----------------------------------------------------------------------
-SUBROUTINE EXCHPW91(D,S,U,V,EX,VX)
-!  GGA91 EXCHANGE FOR A SPIN-UNPOLARIZED ELECTRONIC SYSTEM
-!  INPUT D : DENSITY
-!  INPUT S:  ABS(GRAD D)/(2*KF*D)
-!  INPUT U:  (GRAD D)*GRAD(ABS(GRAD D))/(D**2 * (2*KF)**3)
-!  INPUT V: (LAPLACIAN D)/(D*(2*KF)**2)
-!  OUTPUT:  EXCHANGE ENERGY PER ELECTRON (EX) AND POTENTIAL (VX)
-    IMPLICIT REAL*8 (A-H,O-Z)
-    parameter(a1=0.19645D0,a2=0.27430D0,a3=0.15084D0,a4=100.d0)
-    parameter(ax=-0.7385588D0,a=7.7956D0,b1=0.004d0)
-    parameter(thrd=0.333333333333D0,thrd4=1.33333333333D0)
-! for Becke exchange, set a3=b1=0
-    FAC = AX*D**THRD
-    S2 = S*S
-    S3 = S2*S
-    S4 = S2*S2
-    P0 = 1.D0/DSQRT(1.D0+A*A*S2)
-    P1 = DLOG(A*S+1.D0/P0)
-    P2 = DEXP(-A4*S2)
-    P3 = 1.D0/(1.D0+A1*S*P1+B1*S4)
-    P4 = 1.D0+A1*S*P1+(A2-A3*P2)*S2
-    F = P3*P4
-    EX = FAC*F
-!  LOCAL EXCHANGE OPTION
-!     EX = FAC
-!  ENERGY DONE. NOW THE POTENTIAL:
-    P5 = B1*S2-(A2-A3*P2)
-    P6 = A1*S*(P1+A*S*P0)
-    P7 = 2.D0*(A2-A3*P2)+2.D0*A3*A4*S2*P2-4.D0*B1*S2*F
-    FS = P3*(P3*P5*P6+P7)
-    P8 = 2.D0*S*(B1-A3*A4*P2)
-    P9 = A1*P1+A*A1*S*P0*(3.D0-A*A*S2*P0*P0)
-    P10 = 4.D0*A3*A4*S*P2*(2.D0-A4*S2)-8.D0*B1*S*F-4.D0*B1*S3*FS
-    P11 = -P3*P3*(A1*P1+A*A1*S*P0+4.D0*B1*S3)
-    FSS = P3*P3*(P5*P9+P6*P8)+2.D0*P3*P5*P6*P11+P3*P10+P7*P11
-    VX = FAC*(THRD4*F-(U-THRD4*S3)*FSS-V*FS)
-!  LOCAL EXCHANGE OPTION:
-!     VX = FAC*THRD4
-    RETURN
-end subroutine EXCHPW91
-!----------------------------------------------------------------------
-!######################################################################
-!----------------------------------------------------------------------
-SUBROUTINE CORLSD(RS,ZET,EC,VCUP,VCDN,ECRS,ECZET,ALFC)
-!  UNIFORM-GAS CORRELATION OF PERDEW AND WANG 1991
-!  INPUT: SEITZ RADIUS (RS), RELATIVE SPIN POLARIZATION (ZET)
-!  OUTPUT: CORRELATION ENERGY PER ELECTRON (EC), UP- AND DOWN-SPIN
-!     POTENTIALS (VCUP,VCDN), DERIVATIVES OF EC WRT RS (ECRS) & ZET (ECZET)
-!  OUTPUT: CORRELATION CONTRIBUTION (ALFC) TO THE SPIN STIFFNESS
-    IMPLICIT REAL*8 (A-H,O-Z)
-    parameter(gam=0.5198421D0,fzz=1.709921D0)
-    parameter(thrd=0.333333333333D0,thrd4=1.333333333333D0)
-    F = ((1.D0+ZET)**THRD4+(1.D0-ZET)**THRD4-2.D0)/GAM
-    CALL GCOR(0.0310907D0,0.21370D0,7.5957D0,3.5876D0,1.6382D0,&
-    &0.49294D0,1.00D0,RS,EU,EURS)
-    CALL GCOR(0.01554535D0,0.20548D0,14.1189D0,6.1977D0,3.3662D0,&
-    &0.62517D0,1.00D0,RS,EP,EPRS)
-    CALL GCOR(0.0168869D0,0.11125D0,10.357D0,3.6231D0,0.88026D0,&
-    &0.49671D0,1.00D0,RS,ALFM,ALFRSM)
-!  ALFM IS MINUS THE SPIN STIFFNESS ALFC
-    ALFC = -ALFM
-    Z4 = ZET**4
-    EC = EU*(1.D0-F*Z4)+EP*F*Z4-ALFM*F*(1.D0-Z4)/FZZ
-!  ENERGY DONE. NOW THE POTENTIAL:
-    ECRS = EURS*(1.D0-F*Z4)+EPRS*F*Z4-ALFRSM*F*(1.D0-Z4)/FZZ
-    FZ = THRD4*((1.D0+ZET)**THRD-(1.D0-ZET)**THRD)/GAM
-    ECZET = 4.D0*(ZET**3)*F*(EP-EU+ALFM/FZZ)+FZ*(Z4*EP-Z4*EU&
-    &-(1.D0-Z4)*ALFM/FZZ)
-    COMM = EC -RS*ECRS/3.D0-ZET*ECZET
-    VCUP = COMM + ECZET
-    VCDN = COMM - ECZET
-    RETURN
-end subroutine CORLSD
-!----------------------------------------------------------------------
-!######################################################################
-!----------------------------------------------------------------------
-SUBROUTINE GCOR(A,A1,B1,B2,B3,B4,P,RS,GG,GGRS)
-!  CALLED BY SUBROUTINE CORLSD
-    IMPLICIT REAL*8 (A-H,O-Z)
-    P1 = P + 1.D0
-    Q0 = -2.D0*A*(1.D0+A1*RS)
-    RS12 = DSQRT(RS)
-    RS32 = RS12**3
-    RSP = RS**P
-    Q1 = 2.D0*A*(B1*RS12+B2*RS+B3*RS32+B4*RS*RSP)
-    Q2 = DLOG(1.D0+1.D0/Q1)
-    GG = Q0*Q2
-    Q3 = A*(B1/RS12+2.D0*B2+3.D0*B3*RS12+2.D0*B4*P1*RSP)
-    GGRS = -2.D0*A*A1*Q2-Q0*Q3/(Q1**2+Q1)
-    RETURN
-end subroutine GCOR
-!----------------------------------------------------------------------
-!######################################################################
-!----------------------------------------------------------------------
-SUBROUTINE CORpw91(RS,ZET,G,EC,ECRS,ECZET,T,UU,VV,WW,H,&
-&DVCUP,DVCDN)
-!  pw91 CORRELATION, modified by K. Burke to put all arguments
-!  as variables in calling statement, rather than in common block
-!  May, 1996.
-!  INPUT RS: SEITZ RADIUS
-!  INPUT ZET: RELATIVE SPIN POLARIZATION
-!  INPUT T: ABS(GRAD D)/(D*2.*KS*G)
-!  INPUT UU: (GRAD D)*GRAD(ABS(GRAD D))/(D**2 * (2*KS*G)**3)
-!  INPUT VV: (LAPLACIAN D)/(D * (2*KS*G)**2)
-!  INPUT WW:  (GRAD D)*(GRAD ZET)/(D * (2*KS*G)**2
-!  OUTPUT H: NONLOCAL PART OF CORRELATION ENERGY PER ELECTRON
-!  OUTPUT DVCUP,DVCDN:  NONLOCAL PARTS OF CORRELATION POTENTIALS
-    IMPLICIT REAL*8 (A-H,O-Z)
-    parameter(xnu=15.75592D0,cc0=0.004235D0,cx=-0.001667212D0)
-    parameter(alf=0.09D0)
-    parameter(c1=0.002568D0,c2=0.023266D0,c3=7.389D-6,c4=8.723D0)
-    parameter(c5=0.472D0,c6=7.389D-2,a4=100.D0)
-    parameter(thrdm=-0.333333333333D0,thrd2=0.666666666667D0)
-    BET = XNU*CC0
-    DELT = 2.D0*ALF/BET
-    G3 = G**3
-    G4 = G3*G
-    PON = -DELT*EC/(G3*BET)
-    B = DELT/(DEXP(PON)-1.D0)
-    B2 = B*B
-    T2 = T*T
-    T4 = T2*T2
-    T6 = T4*T2
-    RS2 = RS*RS
-    RS3 = RS2*RS
-    Q4 = 1.D0+B*T2
-    Q5 = 1.D0+B*T2+B2*T4
-    Q6 = C1+C2*RS+C3*RS2
-    Q7 = 1.D0+C4*RS+C5*RS2+C6*RS3
-    CC = -CX + Q6/Q7
-    R0 = 0.663436444d0*rs
-    R1 = A4*R0*G4
-    COEFF = CC-CC0-3.D0*CX/7.D0
-    R2 = XNU*COEFF*G3
-    R3 = DEXP(-R1*T2)
-    H0 = G3*(BET/DELT)*DLOG(1.D0+DELT*Q4*T2/Q5)
-    H1 = R3*R2*T2
-    H = H0+H1
-!  LOCAL CORRELATION OPTION:
-!     H = 0.0D0
-!  ENERGY DONE. NOW THE POTENTIAL:
-    CCRS = (C2+2.*C3*RS)/Q7 - Q6*(C4+2.*C5*RS+3.*C6*RS2)/Q7**2
-    RSTHRD = RS/3.D0
-    R4 = RSTHRD*CCRS/COEFF
-    GZ = ((1.D0+ZET)**THRDM - (1.D0-ZET)**THRDM)/3.D0
-    FAC = DELT/B+1.D0
-    BG = -3.D0*B2*EC*FAC/(BET*G4)
-    BEC = B2*FAC/(BET*G3)
-    Q8 = Q5*Q5+DELT*Q4*Q5*T2
-    Q9 = 1.D0+2.D0*B*T2
-    H0B = -BET*G3*B*T6*(2.D0+B*T2)/Q8
-    H0RS = -RSTHRD*H0B*BEC*ECRS
-    FACT0 = 2.D0*DELT-6.D0*B
-    FACT1 = Q5*Q9+Q4*Q9*Q9
-    H0BT = 2.D0*BET*G3*T4*((Q4*Q5*FACT0-DELT*FACT1)/Q8)/Q8
-    H0RST = RSTHRD*T2*H0BT*BEC*ECRS
-    H0Z = 3.D0*GZ*H0/G + H0B*(BG*GZ+BEC*ECZET)
-    H0T = 2.*BET*G3*Q9/Q8
-    H0ZT = 3.D0*GZ*H0T/G+H0BT*(BG*GZ+BEC*ECZET)
-    FACT2 = Q4*Q5+B*T2*(Q4*Q9+Q5)
-    FACT3 = 2.D0*B*Q5*Q9+DELT*FACT2
-    H0TT = 4.D0*BET*G3*T*(2.D0*B/Q8-(Q9*FACT3/Q8)/Q8)
-    H1RS = R3*R2*T2*(-R4+R1*T2/3.D0)
-    FACT4 = 2.D0-R1*T2
-    H1RST = R3*R2*T2*(2.D0*R4*(1.D0-R1*T2)-THRD2*R1*T2*FACT4)
-    H1Z = GZ*R3*R2*T2*(3.D0-4.D0*R1*T2)/G
-    H1T = 2.D0*R3*R2*(1.D0-R1*T2)
-    H1ZT = 2.D0*GZ*R3*R2*(3.D0-11.D0*R1*T2+4.D0*R1*R1*T4)/G
-    H1TT = 4.D0*R3*R2*R1*T*(-2.D0+R1*T2)
-    HRS = H0RS+H1RS
-    HRST = H0RST+H1RST
-    HT = H0T+H1T
-    HTT = H0TT+H1TT
-    HZ = H0Z+H1Z
-    HZT = H0ZT+H1ZT
-    COMM = H+HRS+HRST+T2*HT/6.D0+7.D0*T2*T*HTT/6.D0
-    PREF = HZ-GZ*T2*HT/G
-    FACT5 = GZ*(2.D0*HT+T*HTT)/G
-    COMM = COMM-PREF*ZET-UU*HTT-VV*HT-WW*(HZT-FACT5)
-    DVCUP = COMM + PREF
-    DVCDN = COMM - PREF
-!  LOCAL CORRELATION OPTION:
-!     DVCUP = 0.0D0
-!     DVCDN = 0.0D0
-    RETURN
-end subroutine CORpw91
+subroutine gcor2(a,a1,b1,b2,b3,b4,rtrs,gg,ggrs)
+    ! slimmed down version of GCOR used in PW91 routines, to interpolate
+    ! LSD correlation energy, as given by (10) of
+    ! J. P. Perdew and Y. Wang, Phys. Rev. B {\bf 45}, 13244 (1992).
+    ! K. Burke, May 11, 1996.
+    
+    implicit none
+    
+    ! Input variables
+    real(dp), intent(in) :: a, a1, b1, b2, b3, b4, rtrs
+    real(dp), intent(out) :: gg, ggrs
+    
+    ! Local variables
+    real(dp) :: q0, q1, q2, q3
+
+    ! implicit real*8 (a-h,o-z)
+    q0 = -2.d0*a*(1.d0+a1*rtrs*rtrs)
+    q1 = 2.d0*a*rtrs*(b1+rtrs*(b2+rtrs*(b3+b4*rtrs)))
+    q2 = log(1.d0+1.d0/q1)
+    gg = q0*q2
+    q3 = a*(b1/rtrs+2.d0*b2+rtrs*(3.d0*b3+4.d0*b4*rtrs))
+    ggrs = -2.d0*a*a1*q2-q0*q3/(q1*(1.d0+q1))
+
+    return
+end subroutine gcor2
+
+end module pbe_m

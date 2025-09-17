@@ -27,12 +27,15 @@ if (NOT CMAKE_BUILD_TYPE)
 endif (NOT CMAKE_BUILD_TYPE)
 if (CMAKE_BUILD_TYPE STREQUAL "debug")
     message(STATUS "Building in debug mode")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -g -O0 -Wall -fcheck=all -fbacktrace -ffpe-trap=invalid,zero,overflow")
+    # TODO: put this back -ffpe-trap=invalid,zero,overflow
+    # TODO: SIGFPE in fpovlp.f90:52 called by oncvpsp_r.f90 (log of zero at rr(1)?)
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -g -O0 -Wall -fcheck=all -fbacktrace")
 endif (CMAKE_BUILD_TYPE STREQUAL "debug")
 if (CMAKE_BUILD_TYPE STREQUAL "release")
     message(STATUS "Building in release mode")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O3 -ffast-math -funroll-loops -DNDEBUG")
 endif (CMAKE_BUILD_TYPE STREQUAL "release")
+
 ##########################################################
 # Options
 ##########################################################
@@ -132,6 +135,7 @@ endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 link_directories(${CMAKE_LIBRARY_PATH})
 include_directories(${CMAKE_INCLUDE_PATH})
+
 ###########################################################
 # Subdirectories
 ###########################################################

@@ -6,10 +6,8 @@ set(src_oncvpsp
     eresid.f90
     exc_libxc.f90
     exc_libxc_stub.f90
-    exc_off_pbe.f90
-    exchdl.f90
-    excpzca.f90
-    excwig.f90
+    pbe_m.f90
+    exc_m.f90
     fphsft.f90
     fphsft_r.f90
     fpovlp.f90
