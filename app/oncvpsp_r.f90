@@ -36,6 +36,7 @@ program oncvpsp_r
     use m_read_input, only: read_input_r
     use m_psmlout, only: psmlout_r
     use m_lsch, only: lschvkbb
+    use m_ldirac, only: ldiracfb
     implicit none
 
     !

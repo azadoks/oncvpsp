@@ -19,20 +19,9 @@ set(src_oncvpsp
     gnu_script_r.f90
     gp1cc.f90
     gpp1cc.f90
-    ldiracfb.f90
-    ldiracfs.f90
+    m_ldirac.f90
     linout.f90
     linout_r.f90
-    # lschfb.f90
-    # lschfs.f90
-    # lschkb.f90
-    # lschpb.f90
-    # lschps.f90
-    # lschpsbar.f90
-    # lschpse.f90
-    # lschvkbb.f90
-    # lschvkbbe.f90
-    # lschvkbs.f90
     m_aeo.f90
     m_lsch.f90
     m_constants.f90

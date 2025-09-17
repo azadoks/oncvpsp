@@ -9,5 +9,12 @@
         "--indent_ampersand",
         "--align_paren",
     ],
-    "cSpell.enabled": false
+    "cSpell.enabled": false,
+    "search.exclude": {
+        "**/*.mod": true
+    },
+    "files.exclude": {
+        "**/.git": true,
+        "**/*.mod": true,
+    }
 }

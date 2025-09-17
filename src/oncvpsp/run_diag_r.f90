@@ -41,6 +41,7 @@ subroutine run_diag_r(lmax, npa, epa, lloc, irc, &
     !mxprj  dimension of number of projectors
     use m_constants, only: dp
     use m_lsch, only: lschvkbb, lschvkbbe
+    use m_ldirac, only: ldiracfb, ldiracfs
     implicit none
 
     !Input variables

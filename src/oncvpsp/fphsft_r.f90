@@ -36,6 +36,7 @@ subroutine fphsft_r(ll, kap, epsh2, depsh, pshf, rr, vv, zz, mmax, mch, npsh)
     !npsh  number of energy points in scan
 
     use m_constants, only: dp, pi, twopi
+    use m_ldirac, only: ldiracfs
     implicit none
 
     !Input variables

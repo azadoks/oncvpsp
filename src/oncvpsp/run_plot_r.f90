@@ -47,6 +47,7 @@ subroutine run_plot_r(lmax, npa, epa, lloc, irc, &
     !cvgplt  Energy per electron error vs. cutoff
     use m_constants, only: dp
     use m_lsch, only: lschvkbb, lschvkbs
+    use m_ldirac, only: ldiracfb, ldiracfs
     implicit none
 
     !Input variables
