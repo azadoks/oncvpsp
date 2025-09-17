@@ -6,7 +6,7 @@
 
 include ../make.inc
 
-OBJS_ALL =	aeo.o check_data.o const_basis.o dpnint.o eresid.o exchdl.o \
+OBJS_ALL =	check_data.o const_basis.o dpnint.o eresid.o exchdl.o \
 		exc_off_pbe.o excpzca.o excwig.o ldiracfb.o ldiracfs.o \
 		lschfb.o lschfs.o lschkb.o lschpb.o lschpse.o lschps.o \
 		lschvkbbe.o lschvkbb.o lschvkbs.o modcore.o optimize.o \
@@ -20,11 +20,11 @@ OBJS_NRSR =	fphsft.o fpovlp.o gnu_script.o linout.o psatom.o \
 		relatom.o run_config.o run_diag.o run_phsft.o run_plot.o \
 		run_vkb.o sratom.o upfout.o wellstate.o
 
-OBJS_SR =	m_read_input.o m_psmlout.o oncvpsp.o
+OBJS_SR =	m_constants.o m_read_input.o m_psmlout.o m_aeo.o oncvpsp.o
 
-OBJS_NR =	m_read_input.o m_psmlout.o oncvpsp_nr.o
+OBJS_NR =	m_constants.o m_read_input.o m_psmlout.o m_aeo.o oncvpsp_nr.o
 
-OBJS_R =	m_read_input.o m_psmlout.o oncvpsp_r.o fphsft_r.o fpovlp.o gnu_script_r.o linout_r.o \
+OBJS_R =	m_constants.o m_read_input.o m_psmlout.o m_aeo.o oncvpsp_r.o fphsft_r.o fpovlp.o gnu_script_r.o linout_r.o \
 		psatom_r.o relatom.o renorm_r.o run_config_r.o run_diag_r.o \
 		run_diag_sr_so_r.o run_phsft_r.o run_plot_r.o run_vkb_r.o \
 		sr_so_r.o upfout_r.o wellstate_r.o
@@ -59,16 +59,16 @@ oncvpspr:	$(OBJS_OPSPR)
 
 .F90.o:
 	$(FCCPP) $(FCCPPFLAGS) $*.F90  > $*_cpp.f90
-	$(F90) $(FFLAGS) $(INC) $(INCLUDE_WXML) -o $*.o -c $*_cpp.f90
+	$(F90) $(FFLAGS) $(INC) $(INCLUDE_WXML) -I./ -o $*.o -c $*_cpp.f90
 
 .f90.o:
-	$(F90) $(FFLAGS) $(INC) $(INCLUDE_WXML) -c $*.f90
+	$(F90) $(FFLAGS) $(INC) $(INCLUDE_WXML) -I./ -c $*.f90
 
 .f.o:
-	$(F90) $(FFLAGS) $(INC) $(INCLUDE_WXML) -c $*.f
+	$(F90) $(FFLAGS) $(INC) $(INCLUDE_WXML) -I./ -c $*.f
 
 .c.o:
-	$(CC) $(CFLAGS) $(INC) -c $*.c
+	$(CC) $(CFLAGS) $(INC) -I./ -c $*.c
 
 clean:
 	 /bin/rm -f *.o  *.d  *.mod *.log *_cpp.f90

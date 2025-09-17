@@ -1,0 +1,90 @@
+set(src_oncvpsp
+    check_data.f90
+    const_basis.f90
+    der2exc.f90
+    dpnint.f90
+    eresid.f90
+    exc_libxc.f90
+    exc_libxc_stub.f90
+    exc_off_pbe.f90
+    exchdl.f90
+    excpzca.f90
+    excwig.f90
+    fphsft.f90
+    fphsft_r.f90
+    fpovlp.f90
+    fpovlp_r.f90
+    gg1cc.f90
+    gnu_script.f90
+    gnu_script_r.f90
+    gp1cc.f90
+    gpp1cc.f90
+    ldiracfb.f90
+    ldiracfs.f90
+    linout.f90
+    linout_r.f90
+    lschfb.f90
+    lschfs.f90
+    lschkb.f90
+    lschpb.f90
+    lschps.f90
+    lschpsbar.f90
+    lschpse.f90
+    lschvkbb.f90
+    lschvkbbe.f90
+    lschvkbs.f90
+    m_aeo.f90
+    m_constants.f90
+    m_psmlout.f90
+    m_read_input.f90
+    modcore.f90
+    modcore2.f90
+    modcore3.f90
+    optimize.f90
+    psatom.f90
+    psatom_r.f90
+    pspot.f90
+    qroots.f90
+    relatom.f90
+    renorm_r.f90
+    run_config.f90
+    run_config_r.f90
+    run_diag.f90
+    run_diag_r.f90
+    run_diag_sr_so_r.f90
+    run_ghosts.f90
+    run_optimize.f90
+    run_phsft.f90
+    run_phsft_r.f90
+    run_plot.f90
+    run_plot_r.f90
+    run_vkb.f90
+    run_vkb_r.f90
+    sbf8.f90
+    sbf_basis.f90
+    sbf_basis_con.f90
+    sbf_rc_der.f90
+    sr_so_r.f90
+    sratom.f90
+    tfapot.f90
+    upfout.f90
+    upfout_r.f90
+    vkboutwf.f90
+    vkbphsft.f90
+    vout.f90
+    vpinteg.f90
+    vploc.f90
+    vrel.f90
+    wellstate.f90
+    wellstate_r.f90
+    wf_rc_der.f90
+    functionals.F90
+    m_libxc_list.F90
+)
+
+###########################################################
+# ONCVPSP library
+###########################################################
+add_library(oncvpsp STATIC ${src_oncvpsp})
+add_dependencies(oncvpsp wxml)
+target_link_libraries(oncvpsp wxml Libxc::xcf03 ${LAPACKBLAS_LIBRARIES})
