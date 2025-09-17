@@ -18,6 +18,22 @@ project(oncvpsp
     LANGUAGES Fortran)
 
 ##########################################################
+# Build types
+##########################################################
+if (NOT CMAKE_BUILD_TYPE)
+  set (CMAKE_BUILD_TYPE RELEASE CACHE STRING
+      "Choose the type of build, options are: None Debug Release."
+      FORCE)
+endif (NOT CMAKE_BUILD_TYPE)
+if (CMAKE_BUILD_TYPE STREQUAL "debug")
+    message(STATUS "Building in debug mode")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -g -O0 -Wall -fcheck=all -fbacktrace -ffpe-trap=invalid,zero,overflow")
+endif (CMAKE_BUILD_TYPE STREQUAL "debug")
+if (CMAKE_BUILD_TYPE STREQUAL "release")
+    message(STATUS "Building in release mode")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O3 -ffast-math -funroll-loops -DNDEBUG")
+endif (CMAKE_BUILD_TYPE STREQUAL "release")
+##########################################################
 # Options
 ##########################################################
 option(ONCVPSP_ENABLE_EXTERN_FALLBACKS

@@ -18,10 +18,9 @@
  !
  ! calculates all-electron wave function overlap intergrals
 
-subroutine fpovlp_r(gg, hh, nn, ll, kap, zz, ss, rr)
-
+subroutine fpovlp_r(gg, hh, nn, kap, zz, ss, rr)
+    use constants_m, only: dp
     implicit none
-    integer, parameter :: dp = kind(1.0d0)
 
     !gg Dirac wave function one
     !hh Dirac wave function two
@@ -39,13 +38,13 @@ subroutine fpovlp_r(gg, hh, nn, ll, kap, zz, ss, rr)
     !Input variables
     real(dp) :: zz
     real(dp) :: gg(nn, 2), hh(nn, 2), rr(nn)
-    integer :: nn, ll, kap
+    integer :: nn, kap
 
     !Output variable
     real(dp) :: ss
 
     !Local variables
-    real(dp) :: r0, amesh, al, fss, gam, cc, cci
+    real(dp) :: r0, amesh, al, gam, cc, cci
     integer :: ii
 
     al = 0.01d0 * dlog(rr(101) / rr(1))

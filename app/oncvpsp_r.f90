@@ -431,7 +431,7 @@ program oncvpsp_r
             do jj = 1, nproj(l1)
                 do ii = 1, jj
                     !      call fpovlp_r(uua(1,ii,ikap),uua(1,jj,ikap),irc(l1),ll,zz, &
-                    call fpovlp(uua(1, ii, ikap), uua(1, jj, ikap), irc(l1), ll, zz, &
+                    call fpovlp(uua(1, ii, ikap), uua(1, jj, ikap), irc(l1), zz, &
                     &                  qq(ii, jj), rr, srel)
                     qq(jj, ii) = qq(ii, jj)
                 end do
