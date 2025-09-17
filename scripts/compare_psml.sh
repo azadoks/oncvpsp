@@ -8,7 +8,7 @@
 #functions can be compared (libxc produces two extra lines which 
 #stops fldiff)
 
-PREFIX=/Users/mverstra/CODES/ONCVPSP/GITHUB_VERSION/oncvpsp
+PREFIX=/path/to/repository
 
 OUTFILE1=$PREFIX/tests/refs/$1.oncvpsp.psml
 
@@ -17,4 +17,3 @@ OUTFILE2=$PREFIX/tests/data/$1.oncvpsp.psml
 DIFFFILE=$1.oncvpsp.diff
 
 $PREFIX/scripts/fldiff.pl -easy $OUTFILE1 $OUTFILE2 >& $DIFFFILE
-

@@ -8,7 +8,7 @@
 #functions can be compared (libxc produces two extra lines which 
 #stops fldiff)
 
-PREFIX=/Users/mverstra/CODES/ONCVPSP/GITHUB_VERSION/oncvpsp
+PREFIX=/path/to/repository
 
 #HEAD=`echo $1 | sed s/.dat//`
 HEAD=`echo $1 | sed s/.dat/_r/`

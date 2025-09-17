@@ -3,7 +3,7 @@
 #which review the results
 #uses the scalar-relativistic all-electron atom calculation
 
-PREFIX=/Users/mverstra/CODES/ONCVPSP/GITHUB_VERSION/oncvpsp
+PREFIX=/path/to/repository
 
 INFILE=$1.dat
 
@@ -15,7 +15,7 @@ PLOTFILE=$1.plot
 
 TEMP=$$.tmp
 
-$PREFIX/src/oncvpsp.x <$INFILE >$OUTFILE  #Edit if your executable is
+$PREFIX/build/bin/oncvpsp.x <$INFILE >$OUTFILE  #Edit if your executable is
                                             #in another directory
 
 grep GHOST $OUTFILE

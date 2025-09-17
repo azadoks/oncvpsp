@@ -3,7 +3,7 @@
 #which review the results
 #uses the non-relativistic all-electron atom calculation
 
-PREFIX=/Users/mverstra/CODES/ONCVPSP/GITHUB_VERSION/oncvpsp
+PREFIX=/path/to/repository
 
 INFILE=$1.dat
 
@@ -15,7 +15,7 @@ PLOTFILE=$1_nr.plot
 
 TEMP=$$.tmp
 
-$PREFIX/src/oncvpspnr.x <$INFILE >$OUTFILE
+$PREFIX/build/bin/oncvpspnr.x <$INFILE >$OUTFILE
 
 grep GHOST $OUTFILE
 
