@@ -18,7 +18,7 @@
 !
 module m_lsch
     use m_constants, only: dp, pi
-    use m_aeo, only: aei, aeo, aii, aio
+    use m_aeo, only: aeo, aio, aei, aii
     implicit none
     private
     public :: lschfb
@@ -1061,7 +1061,7 @@ subroutine lschpse(nn, ll, ierr, ee, uld, rr, vv, uu, up, mmax, mch)
     integer :: ierr
 
     !Local variables
-    real(dp) :: aeo, aio, als, cn
+    real(dp) :: als, cn
     real(dp) :: de, emax, emin
     real(dp) :: eps, ro
     real(dp) :: amesh, al
