@@ -22,7 +22,7 @@ subroutine exc_libxc(iexc, al, rho, vxc, exc, rr, mmax)
    !  interface to libxc library for potential and energy density calculation
    !
    use precision_m, only: dp
-   use constants_m, only:  pi
+   use constants_m, only: pi
    use functionals_m
    implicit none
 
@@ -88,7 +88,7 @@ subroutine exc_libxc(iexc, al, rho, vxc, exc, rr, mmax)
       v = 0.0d0
       e = 0.0d0
       call xc_functl_get_vxc(functls(ifunc), mmax, al, rr, rho_loc, dpr, dlap, &
-      &        tau_dummy, ip, v, e, vtau_dummy)
+         &        tau_dummy, ip, v, e, vtau_dummy)
       vxc(1:mmax) = vxc(1:mmax) + v(1:mmax)
       exc(1:mmax) = exc(1:mmax) + e(1:mmax)
    end do
@@ -147,31 +147,31 @@ subroutine derivs(mmax, rho, al, rr, dpr, dppr, dlap)
    !
    i = 1
    dpn(i) = -25.d0 / 12.d0 * rho(i) + 4.d0 * rho(i + 1) - 3.d0 * rho(i + 2) &
-   &         + 4.d0 / 3.d0 * rho(i + 3) - 1.d0 / 4.d0 * rho(i + 4)
+      &         + 4.d0 / 3.d0 * rho(i + 3) - 1.d0 / 4.d0 * rho(i + 4)
    dppn(i) = 15.d0 / 4.d0 * rho(i) - 77.d0 / 6.d0 * rho(i + 1) + 107.d0 / 6.d0 * rho(i + 2) &
-   &         - 13.d0 * rho(i + 3) + 61.d0 / 12.d0 * rho(i + 4) - 5.d0 / 6.d0 * rho(i + 5)
+      &         - 13.d0 * rho(i + 3) + 61.d0 / 12.d0 * rho(i + 4) - 5.d0 / 6.d0 * rho(i + 5)
    i = 2
    dpn(i) = -25.d0 / 12.d0 * rho(i) + 4.d0 * rho(i + 1) - 3.d0 * rho(i + 2)  &
-   &         + 4.d0 / 3.d0 * rho(i + 3) - 1.d0 / 4.d0 * rho(i + 4)
+      &         + 4.d0 / 3.d0 * rho(i + 3) - 1.d0 / 4.d0 * rho(i + 4)
    dppn(i) = 15.d0 / 4.d0 * rho(i) - 77.d0 / 6.d0 * rho(i + 1) + 107.d0 / 6.d0 * rho(i + 2) &
-   &         - 13.d0 * rho(i + 3) + 61.d0 / 12.d0 * rho(i + 4) - 5.d0 / 6.d0 * rho(i + 5)
+      &         - 13.d0 * rho(i + 3) + 61.d0 / 12.d0 * rho(i + 4) - 5.d0 / 6.d0 * rho(i + 5)
 
    do i = 3, mmax - 2
       dpn(i) = c11 * rho(i - 2) + c12 * rho(i - 1) + c14 * rho(i + 1) + c15 * rho(i + 2)
       dppn(i) = c21 * rho(i - 2) + c22 * rho(i - 1) + c23 * rho(i) + c24 * rho(i + 1) &
-      &           + c25 * rho(i + 2)
+         &           + c25 * rho(i + 2)
    end do
 
    i = mmax - 1
    dpn(i) = +25.d0 / 12.d0 * rho(i) - 4.d0 * rho(i - 1) + 3.d0 * rho(i - 2) &
-   &         - 4.d0 / 3.d0 * rho(i - 3) + 1.d0 / 4.d0 * rho(i - 4)
+      &         - 4.d0 / 3.d0 * rho(i - 3) + 1.d0 / 4.d0 * rho(i - 4)
    dppn(i) = -15.d0 / 4.d0 * rho(i) + 77.d0 / 6.d0 * rho(i - 1) - 107.d0 / 6.d0 * rho(i - 2) &
-   &          + 13.d0 * rho(i - 3) - 61.d0 / 12.d0 * rho(i - 4) + 5.d0 / 6.d0 * rho(i - 5)
+      &          + 13.d0 * rho(i - 3) - 61.d0 / 12.d0 * rho(i - 4) + 5.d0 / 6.d0 * rho(i - 5)
    i = mmax
    dpn(i) = +25.d0 / 12.d0 * rho(i) - 4.d0 * rho(i - 1) + 3.d0 * rho(i - 2) &
-   &         - 4.d0 / 3.d0 * rho(i - 3) + 1.d0 / 4.d0 * rho(i - 4)
+      &         - 4.d0 / 3.d0 * rho(i - 3) + 1.d0 / 4.d0 * rho(i - 4)
    dppn(i) = -15.d0 / 4.d0 * rho(i) + 77.d0 / 6.d0 * rho(i - 1) - 107.d0 / 6.d0 * rho(i - 2) &
-   &          + 13.d0 * rho(i - 3) - 61.d0 / 12.d0 * rho(i - 4) + 5.d0 / 6.d0 * rho(i - 5)
+      &          + 13.d0 * rho(i - 3) - 61.d0 / 12.d0 * rho(i - 4) + 5.d0 / 6.d0 * rho(i - 5)
 
    !
    ! r derivatives of d

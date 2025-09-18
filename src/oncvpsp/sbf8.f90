@@ -25,7 +25,7 @@ subroutine sbf8(nm, xx, sb_out)
    !sb_out  output of sbf_l(xx) for l=0,...,nm-1
 
    use precision_m, only: dp
-   use constants_m, only:  pi, twopi
+   use constants_m, only: pi, twopi
    implicit none
 
    !Input variables

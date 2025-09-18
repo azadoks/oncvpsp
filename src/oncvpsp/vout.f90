@@ -20,7 +20,7 @@
  ! term to add to eigenvalue sum
 
 subroutine vout(mode, rho, rhoc, vo, vxc, zion, eeel, eexc, &
-&                rr, mmax, iexc)
+   &                rr, mmax, iexc)
 
    !mode  1=> add rhoc to rho, 0 => don't
    !rho  total charge density or valence/pseudovalence charge density
@@ -34,7 +34,7 @@ subroutine vout(mode, rho, rhoc, vo, vxc, zion, eeel, eexc, &
    !output electrostatic and exchange-correlation potential
 
    use precision_m, only: dp
-   use constants_m, only:  pi
+   use constants_m, only: pi
    use aeo_m, only: aii
    use exc_m, only: exchdl, excpzca, excwig
    use pbe_m, only: excggc
@@ -98,7 +98,7 @@ subroutine vout(mode, rho, rhoc, vo, vxc, zion, eeel, eexc, &
    end do
 
    eeel = (9.0d0 * foutv(1) + 28.0d0 * foutv(2) &
-   &   + 23.0d0 * foutv(3)) / 24.0d0
+      &   + 23.0d0 * foutv(3)) / 24.0d0
    do ii = 4, mmax
       eeel = eeel + foutv(ii)
    end do
@@ -145,7 +145,7 @@ subroutine vout(mode, rho, rhoc, vo, vxc, zion, eeel, eexc, &
       foutx(ii) = rho(ii) * difxc(ii) * rr(ii)**3
    end do
    eexc = (9.0d0 * foutx(1) + 28.0d0 * foutx(2) &
-   &   + 23.0d0 * foutx(3)) / 24.0d0
+      &   + 23.0d0 * foutx(3)) / 24.0d0
    do ii = 4, mmax
       eexc = eexc + foutx(ii)
    end do
@@ -170,7 +170,7 @@ subroutine vout(mode, rho, rhoc, vo, vxc, zion, eeel, eexc, &
          foutfc(ii) = rhoc(ii) * (exca(ii) - excca(ii)) * rr(ii)**3
       end do
       eexc = eexc + (9.0d0 * foutfc(1) + 28.0d0 * foutfc(2) &
-      &     + 23.0d0 * foutfc(3)) / 24.0d0
+         &     + 23.0d0 * foutfc(3)) / 24.0d0
       do ii = 4, mmax
          eexc = eexc + foutfc(ii)
       end do

@@ -17,7 +17,7 @@
  ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
  !
 subroutine run_ghosts(lmax, la, ea, nc, nv, lloc, irc, qmsbf, &
-&                    vkb, evkb, nproj, rr, vp, mmax, mxprj)
+   &                    vkb, evkb, nproj, rr, vp, mmax, mxprj)
 
    ! Two tests for ghosts;  The local potential is terminated by a hard wall
    ! barrier at a radius of mbfact*rc, presently 3*rc.  A basis set is formed
@@ -56,7 +56,7 @@ subroutine run_ghosts(lmax, la, ea, nc, nv, lloc, irc, qmsbf, &
    !mmax  size of radial grid
    !mxprj  dimension of number of projectors
    use precision_m, only: dp
-   use constants_m, only:  pi
+   use constants_m, only: pi
    use lsch_m, only: lschpsbar, lschvkbb
    implicit none
 
@@ -89,7 +89,7 @@ subroutine run_ghosts(lmax, la, ea, nc, nv, lloc, irc, qmsbf, &
 
    write (6, '(/a)') ' Testing for bound ghosts'
    write (6, '(5a)') '   n', '   l', '    E NL Schr. Eq', &
-   &        '   E Basis Diag.', '   E Cutoff'
+      &        '   E Basis Diag.', '   E Cutoff'
 
    nodes(:) = 0
    npgh = 0
@@ -133,13 +133,13 @@ subroutine run_ghosts(lmax, la, ea, nc, nv, lloc, irc, qmsbf, &
          ee = 0.0d0
 
          call lschpsbar(nn, ll, ierr, ee, emin, emax, rr, vp(1, lloc + 1), uu, up, &
-         &                   mmax, mbar, tht)
+            &                   mmax, mbar, tht)
 
          if (ierr /= 0) then
             if (emax /= ebcut(l1)) then
                write (6, '(a,3i4,3f12.6)')  &
-               &              'run_ghosts 143: lschpsbar ERROR ierr,nn,ll,ee,emin,emax', &
-               &              ierr, nn, ll, ee, emin, emax
+                  &              'run_ghosts 143: lschpsbar ERROR ierr,nn,ll,ee,emin,emax', &
+                  &              ierr, nn, ll, ee, emin, emax
                stop
             end if
             nbas = jj - 1
@@ -177,7 +177,7 @@ subroutine run_ghosts(lmax, la, ea, nc, nv, lloc, irc, qmsbf, &
       call dsyev('V', 'U', nbas, hmat, nbmax, hmev, work, lwork, info)
       if (info /= 0) then
          write (6, '(a,i4)') 'run_ghosts: hamiltonian matrix eigenvalue ERROR, &
-         &          info=', info
+            &          info=', info
          stop
       end if
       !treat valence states for this l
@@ -191,18 +191,18 @@ subroutine run_ghosts(lmax, la, ea, nc, nv, lloc, irc, qmsbf, &
          emax = 0.9d0 * ea(nc + kk)
          emin = 1.1d0 * ea(nc + kk)
          call lschvkbb(nn, ll, nprj, ierr, ee, emin, emax, &
-         &                    rr, vp(1, lloc + 1), vkb(1, 1, l1), evkb(1, l1), &
-         &                    uu, up, mmax, mch)
+            &                    rr, vp(1, lloc + 1), vkb(1, 1, l1), evkb(1, l1), &
+            &                    uu, up, mmax, mch)
          if (ierr /= 0) then
             write (6, '(a,3i4,2f12.6)') 'run_ghosts: lschvkbb ERROR', &
-            &              nn, ll, ierr, ea(nc + kk), ee
+               &              nn, ll, ierr, ea(nc + kk), ee
          end if
 
          do ii = 1, 10
             et = dmin1(ee - eps, ee * (1.0d0 + eps))
             if (hmev(jj) < et) then
                write (6, '(4x,i4,16x,f16.6,f10.2,a)') ll, hmev(jj), ecut, &
-               &                '  WARNING - GHOST(-)'
+                  &                '  WARNING - GHOST(-)'
                jj = jj + 1
             else
                exit
@@ -223,14 +223,14 @@ subroutine run_ghosts(lmax, la, ea, nc, nv, lloc, irc, qmsbf, &
          emax = 0.0d0
          emin = 2.0d0 * ee
          call lschvkbb(ll + 1, ll, nprj, ierr, ee, emin, emax, &
-         &                    rr, vp(1, lloc + 1), vkb(1, 1, l1), evkb(1, l1), &
-         &                    uu, up, mmax, mch)
+            &                    rr, vp(1, lloc + 1), vkb(1, 1, l1), evkb(1, l1), &
+            &                    uu, up, mmax, mch)
          if (ierr /= 0) ee = 0.0d0
          do jj = 1, 10
             et = dmin1(ee - eps, ee * (1.0d0 + eps))
             if (hmev(jj) < et) then
                write (6, '(4x,i4,16x,f16.6,f10.2,a)') ll, hmev(jj), ecut, &
-               &                '  WARNING - GHOST(-)'
+                  &                '  WARNING - GHOST(-)'
             else if (ee < 0.0d0) then
                write (6, '(2i4,2f16.6,f10.2)') ll + 1, ll, ee, hmev(jj), ecut
                exit
@@ -256,8 +256,8 @@ subroutine run_ghosts(lmax, la, ea, nc, nv, lloc, irc, qmsbf, &
          end do
 
          sn = sn + al * (23.0d0 * (rr(mbar - 2) * uu(mbar - 2))**2 &
-         &                + 28.0d0 * (rr(mbar - 1) * uu(mbar - 1))**2 &
-         &                + 9.0d0 * (rr(mbar) * uu(mbar))**2) / 24.0d0
+            &                + 28.0d0 * (rr(mbar - 1) * uu(mbar - 1))**2 &
+            &                + 9.0d0 * (rr(mbar) * uu(mbar))**2) / 24.0d0
 
          !      if(sn<rr(irc(l1)) .and. hmev(jj)>0.0d0 .and. npgh<20) then
          if (sn < rr(irc(l1)) .and. hmev(jj) > ee + 0.05d0 .and. npgh < 20) then
@@ -275,12 +275,12 @@ subroutine run_ghosts(lmax, la, ea, nc, nv, lloc, irc, qmsbf, &
 
    write (6, '(/a)') ' Testing for highly-localized positive-energy ghosts'
    write (6, '(5a)') '    ', '   l', '    <radius>/rc  ', &
-   &        '   E Basis Diag.', '   E Cutoff'
+      &        '   E Basis Diag.', '   E Cutoff'
 
    if (npgh > 0) then
       do jj = 1, npgh
          write (6, '(/4x,i4,2f16.6,f10.2,a)') lpgh(jj), rpgh(jj), &
-         &                epgh(jj), cpgh(jj), '  WARNING - GHOST(+)'
+            &                epgh(jj), cpgh(jj), '  WARNING - GHOST(+)'
       end do
    end if
 

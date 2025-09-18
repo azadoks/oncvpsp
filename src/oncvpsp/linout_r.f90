@@ -20,10 +20,10 @@
  ! for Abinit input using pspcod=8, relativistic veresion with spin-orbit
 
 subroutine linout_r(lmax, lloc, rc, vsr, esr, vso, eso, nproj, rr, vpuns, rho, rhomod, &
-&                  rhotae, rhoc, zz, zion, mmax, mxprj, iexc, icmod, nrl, drl, atsym, soscale, &
-&                  na, la, ncon, nbas, nvcnf, nacnf, lacnf, nc, nv, lpopt, ncnf, &
-&                  fa, rc0, ep, qcut, debl, facnf, dvloc0, fcfact, rcfact, &
-&                  epsh1, epsh2, depsh, rlmax, psfile)
+   &                  rhotae, rhoc, zz, zion, mmax, mxprj, iexc, icmod, nrl, drl, atsym, soscale, &
+   &                  na, la, ncon, nbas, nvcnf, nacnf, lacnf, nc, nv, lpopt, ncnf, &
+   &                  fa, rc0, ep, qcut, debl, facnf, dvloc0, fcfact, rcfact, &
+   &                  epsh1, epsh2, depsh, rlmax, psfile)
 
    !lmax  maximum angular momentum
    !lloc  l for local potential
@@ -56,6 +56,7 @@ subroutine linout_r(lmax, lloc, rc, vsr, esr, vso, eso, nproj, rr, vpuns, rho, r
    !  epsh1,epsh2,depsh,rlmax,psfile
 
    use precision_m, only: dp
+   use interpolate_m, only: interpolate
    implicit none
 
 
@@ -115,29 +116,29 @@ subroutine linout_r(lmax, lloc, rc, vsr, esr, vso, eso, nproj, rr, vpuns, rho, r
    !
    vpl(:, :) = 0.0d0
    l1 = lloc + 1
-   call dpnint(rr, vpuns(1, l1), mmax, rl, vpl(1, l1), nrl)
+   call interpolate(rr, vpuns(1, l1), mmax, rl, vpl(1, l1), nrl)
 
-   ! override dpnint extrapolation to zero for vpl
+   ! override interpolate extrapolation to zero for vpl
    vpl(1, l1) = vpuns(1, l1)
 
    do l1 = 1, lmax + 1
       if (l1 /= lloc + 1) then
 
          do jj = 1, npr_sr(l1)
-            call dpnint(rr, vsr(1, jj, l1), mmax, rl, vsrl(1, jj, l1), nrl)
+            call interpolate(rr, vsr(1, jj, l1), mmax, rl, vsrl(1, jj, l1), nrl)
          end do
          do jj = 1, npr_so(l1)
-            call dpnint(rr, vso(1, jj, l1), mmax, rl, vsol(1, jj, l1), nrl)
+            call interpolate(rr, vso(1, jj, l1), mmax, rl, vsol(1, jj, l1), nrl)
          end do
       end if
    end do
 
-   call dpnint(rr, rho, mmax, rl, rhol, nrl)
-   call dpnint(rr, rhotae, mmax, rl, rhotael, nrl)
-   call dpnint(rr, rhoc, mmax, rl, rhocl, nrl)
+   call interpolate(rr, rho, mmax, rl, rhol, nrl)
+   call interpolate(rr, rhotae, mmax, rl, rhotael, nrl)
+   call interpolate(rr, rhoc, mmax, rl, rhocl, nrl)
 
    do jj = 1, 5
-      call dpnint(rr, rhomod(1, jj), mmax, rl, rhomodl(1, jj), nrl)
+      call interpolate(rr, rhomod(1, jj), mmax, rl, rhomodl(1, jj), nrl)
    end do
 
    ! Output for Abinit input using pspcod=8
@@ -176,18 +177,18 @@ subroutine linout_r(lmax, lloc, rc, vsr, esr, vso, eso, nproj, rr, vpuns, rho, r
 
    write (6, '(/a)') 'Begin PSPCODE8'
    write (6, '(3a,4f10.5)') atsym, '    ONCVPSP-4.0.1' &
-   &  , '  r_core=', (rc(l1), l1=1, lmax + 1)
+      &  , '  r_core=', (rc(l1), l1=1, lmax + 1)
    write (6, '(2f12.4, 5a)') zz, zion, '      ', pspd,  &
-   &  '    zatom,zion,pspd'
+      &  '    zatom,zion,pspd'
    write (6, '(i6,i8,i4,3i6, a)') 8, ixc_abinit, lmax, lloc, &
-   &  nrl, 0, '    pspcod,pspxc,lmax,lloc,mmax,r2well'
+      &  nrl, 0, '    pspcod,pspxc,lmax,lloc,mmax,r2well'
    write (6, '(3f12.8, a)') rl(nrl), fcfact, 0.d0,  &
-   &  '    rchrg fchrg qchrg'
+      &  '    rchrg fchrg qchrg'
    write (6, '(4i6, a)') npr_sr(1:4), '    nproj'
 
    ! this is where abinit is informed that we have spin-orbit
    write (6, '(2i6, a)') 3, 1, &
-   &  '           extension_switch'
+      &  '           extension_switch'
    if (soscale == 1.d0) then
       write (6, '(3i6, a)') npr_so(2:4), '    nprojso'
    else
@@ -244,7 +245,7 @@ subroutine linout_r(lmax, lloc, rc, vsr, esr, vso, eso, nproj, rr, vpuns, rho, r
    if (fcfact > 0.0d0) then
       do ii = 1, nrl
          write (6, '(i6,1p,6e21.13)') ii, rl(ii),  &
-         &      (rhomodl(ii, jj), jj=1, 5)
+            &      (rhomodl(ii, jj), jj=1, 5)
       end do
    end if
 
@@ -255,22 +256,22 @@ subroutine linout_r(lmax, lloc, rc, vsr, esr, vso, eso, nproj, rr, vpuns, rho, r
 
    write (6, '(a)') '<INPUT>'
    write (6, '(a/a/a/a)') &
-   &    '#', &
-   &    '#ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
-   &    '#relativistic version 4.0.1 03/03/2109', &
-   &    '#'
+      &    '#', &
+      &    '#ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
+      &    '#relativistic version 4.0.1 03/03/2109', &
+      &    '#'
 
    write (6, '(a/a/a/a)') &
-   &    '#While it is not required under the terms of the GNU GPL, it is',&
-   &    '#suggested that you cite D. R. Hamann, Phys. Rev. B 88, 085117 (2013)', &
-   &    '#in any publication utilizing these pseudopotentials.', &
-   &    '#'
+      &    '#While it is not required under the terms of the GNU GPL, it is',&
+      &    '#suggested that you cite D. R. Hamann, Phys. Rev. B 88, 085117 (2013)', &
+      &    '#in any publication utilizing these pseudopotentials.', &
+      &    '#'
 
    write (6, '(a)') '#Echo of input data for oncvpsp-4.0.1'
    write (6, '(a)') '# ATOM AND REFERENCE CONFIGURATION'
    write (6, '(a)') '# atsym  z   nc   nv     iexc    psfile'
    write (6, '(a,a,f6.2,2i5,i8,2a)') '  ', trim(atsym), zz, nc, nv, iexc, &
-   &      '      ', trim(psfile)
+      &      '      ', trim(psfile)
    write (6, '(a/a)') '#', '#   n    l    f        energy (Ha)'
    do ii = 1, nc + nv
       write (6, '(2i5,f8.2)') na(ii), la(ii), fa(ii)
@@ -283,21 +284,21 @@ subroutine linout_r(lmax, lloc, rc, vsr, esr, vso, eso, nproj, rr, vpuns, rho, r
    end do
 
    write (6, '(a/a/a,a)') '#', '# LOCAL POTENTIAL', '# lloc, lpopt,  rc(5),', &
-   &      '   dvloc0'
+      &      '   dvloc0'
    write (6, '(2i5,f10.5,a,f10.5)') lloc, lpopt, rc0(5), '   ', dvloc0
 
    write (6, '(a/a/a)') '#', '# VANDERBILT-KLEINMAN-BYLANDER PROJECTORs', &
-   &      '# l, nproj, debl'
+      &      '# l, nproj, debl'
    do l1 = 1, lmax + 1
       write (6, '(2i5,f10.5)') l1 - 1, nproj(l1), debl(l1, 1)
    end do
 
    write (6, '(a/a/a)') '#', '# MODEL CORE CHARGE', &
-   &      '# icmod, fcfact, rcfact'
+      &      '# icmod, fcfact, rcfact'
    write (6, '(i5,2f10.5)') icmod, fcfact, rcfact
 
    write (6, '(a/a/a)') '#', '# LOG DERIVATIVE ANALYSIS', &
-   &      '# epsh1, epsh2, depsh'
+      &      '# epsh1, epsh2, depsh'
    write (6, '(3f8.2)') epsh1, epsh2, depsh
 
    write (6, '(a/a/a)') '#', '# OUTPUT GRID', '# rlmax, drl'

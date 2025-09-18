@@ -23,7 +23,7 @@
 !
 module pbe_m
    use precision_m, only: dp
-   use constants_m, only:  pi, fourpi, ifourpi, third
+   use constants_m, only: pi, fourpi, ifourpi, third
    private
    public :: excggc
 contains
@@ -90,7 +90,7 @@ subroutine excggc(rho,vxc,exc,r,mmax)
    do i = 3, mmax - 2
       dpn(i) =  c11*d(i-2) + c12*d(i-1) + c14*d(i+1) + c15*d(i+2)
       dppn(i) = c21*d(i-2) + c22*d(i-1) + c23*d(i)   + c24*d(i+1)&
-      &+ c25*d(i+2)
+         &+ c25*d(i+2)
    end do
 !
 ! r derivatives of d
@@ -165,7 +165,7 @@ subroutine excggc(rho,vxc,exc,r,mmax)
 !
 !          call corpbe(rs,zet,t,uu,vv,ww,h,dvcup,dvcdn)
          call CORPBE(rs,zet,t,uu,vv,ww,1,1,ec,vcup,vcdn,&
-         &h,dvcup,dvcdn)
+            &h,dvcup,dvcdn)
 !
       else
          ex = 0.0d0
@@ -334,11 +334,11 @@ SUBROUTINE CORPBE(RS,ZET,T,UU,VV,WW,lgga,lpot,ec,vcup,vcdn,H,DVCUP,DVCDN)
 ! construct ec, using [c](8)
    rtrs=dsqrt(rs)
    CALL gcor2(0.0310907D0,0.21370D0,7.5957D0,3.5876D0,1.6382D0,&
-   &0.49294D0,rtrs,EU,EURS)
+      &0.49294D0,rtrs,EU,EURS)
    CALL gcor2(0.01554535D0,0.20548D0,14.1189D0,6.1977D0,3.3662D0,&
-   &0.62517D0,rtRS,EP,EPRS)
+      &0.62517D0,rtRS,EP,EPRS)
    CALL gcor2(0.0168869D0,0.11125D0,10.357D0,3.6231D0,0.88026D0,&
-   &0.49671D0,rtRS,ALFM,ALFRSM)
+      &0.49671D0,rtRS,ALFM,ALFRSM)
    ALFC = -ALFM
    Z4 = ZET**4
    F=((1.D0+ZET)**THRD4+(1.D0-ZET)**THRD4-2.D0)/GAM
@@ -352,7 +352,7 @@ SUBROUTINE CORPBE(RS,ZET,T,UU,VV,WW,lgga,lpot,ec,vcup,vcdn,H,DVCUP,DVCDN)
    ECRS = EURS*(1.D0-F*Z4)+EPRS*F*Z4-ALFRSM*F*(1.D0-Z4)/FZZ
    FZ = THRD4*((1.D0+ZET)**THRD-(1.D0-ZET)**THRD)/GAM
    ECZET = 4.D0*(ZET**3)*F*(EP-EU+ALFM/FZZ)+FZ*(Z4*EP-Z4*EU&
-   &-(1.D0-Z4)*ALFM/FZZ)
+      &-(1.D0-Z4)*ALFM/FZZ)
    COMM = EC -RS*ECRS/3.D0-ZET*ECZET
    VCUP = COMM + ECZET
    VCDN = COMM - ECZET
@@ -383,7 +383,7 @@ SUBROUTINE CORPBE(RS,ZET,T,UU,VV,WW,lgga,lpot,ec,vcup,vcdn,H,DVCUP,DVCDN)
    T6 = T4*T2
    RSTHRD = RS/3.D0
    GZ=(((1.d0+zet)**2+eta)**sixthm-&
-   &((1.d0-zet)**2+eta)**sixthm)/3.d0
+      &((1.d0-zet)**2+eta)**sixthm)/3.d0
    FAC = DELT/B+1.D0
    BG = -3.D0*B2*EC*FAC/(BET*G4)
    BEC = B2*FAC/(BET*G3)

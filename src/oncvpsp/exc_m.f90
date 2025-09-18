@@ -18,7 +18,7 @@
 !
 module exc_m
    use precision_m, only: dp
-   use constants_m, only:  pi, fourpi, ifourpi, third
+   use constants_m, only: pi, fourpi, ifourpi, third
    implicit none
    private
    public :: exchdl
@@ -148,12 +148,12 @@ subroutine excpzca(rho, vxc, exc, mmax)
             den = 1.0d0 + bt1 * sqrs + bt2 * rs
             exc(ii) = -conex / rs + gam / den
             vxc(ii) = -convx / rs + gam * (1.0d0 + (3.5d0 * bt1 * sqrs &
-            &            + 4.0d0 * bt2 * rs) * third) / den**2
+               &            + 4.0d0 * bt2 * rs) * third) / den**2
          else
             rsl = dlog(rs)
             exc(ii) = -conex / rs + AA * rsl + BB + CC * rs * rsl + DD * rs
             vxc(ii) = -convx / rs + AA * rsl + (BB - third * AA) + 2.0d0 * third * CC * rs * rsl &
-            &            + third * (2.0d0 * DD - CC) * rs
+               &            + third * (2.0d0 * DD - CC) * rs
          end if
       else
          vxc(ii) = 0.0d0; exc(ii) = 0.0d0

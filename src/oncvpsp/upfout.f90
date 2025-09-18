@@ -53,7 +53,8 @@ subroutine upfout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
    !ea  psuedo-orbital eigenvalues
 
    use precision_m, only: dp
-   use constants_m, only:  pi
+   use constants_m, only: pi
+   use interpolate_m, only: interpolate
    implicit none
 
    !Input variables
@@ -116,25 +117,25 @@ subroutine upfout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
    end do
    !
    do l1 = 1, max(lmax + 1, lloc + 1)
-      call dpnint(rr, vpuns(1, l1), mmax, rl, vpl(1, l1), nrl)
-      ! override dpnint extrapolation to zero for vpl
+      call interpolate(rr, vpuns(1, l1), mmax, rl, vpl(1, l1), nrl)
+      ! override interpolate extrapolation to zero for vpl
       vpl(1, l1) = vpuns(1, l1)
       if (l1 /= lloc + 1) then
 
-         call dpnint(rr, vkb(1, 1, l1), mmax, rl, vkbl(1, 1, l1), nrl)
-         call dpnint(rr, vkb(1, 2, l1), mmax, rl, vkbl(1, 2, l1), nrl)
+         call interpolate(rr, vkb(1, 1, l1), mmax, rl, vkbl(1, 1, l1), nrl)
+         call interpolate(rr, vkb(1, 2, l1), mmax, rl, vkbl(1, 2, l1), nrl)
 
       end if
    end do
 
-   call dpnint(rr, rho, mmax, rl, rhol, nrl)
+   call interpolate(rr, rho, mmax, rl, rhol, nrl)
 
    do jj = 1, 5
-      call dpnint(rr, rhomod(1, jj), mmax, rl, rhomodl(1, jj), nrl)
+      call interpolate(rr, rhomod(1, jj), mmax, rl, rhomodl(1, jj), nrl)
    end do
 
    do ii = 1, nv
-      call dpnint(rr, uupsa(1, ii), mmax, rl, uual(1, ii), nrl)
+      call interpolate(rr, uupsa(1, ii), mmax, rl, uual(1, ii), nrl)
    end do
 
    call date_and_time(VALUES=dtime)

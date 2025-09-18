@@ -3,7 +3,7 @@ set(src_oncvpsp
     check_data.f90
     const_basis.f90
     der2exc.f90
-    dpnint.f90
+    interpolate.f90
     eresid.f90
     exc_libxc.f90
     exc_libxc_stub.f90
