@@ -77,6 +77,7 @@ subroutine write_output_hdf5(filename, lmax, npa, epa, lloc, irc, &
    integer :: mch
    !> ???
    integer :: n2
+   !> ???
    integer :: nn
    !> Projector index
    integer :: iprj
@@ -205,7 +206,7 @@ subroutine write_output_hdf5(filename, lmax, npa, epa, lloc, irc, &
          else
             ! scattering, iprj= xx, l= xx, all-electron wavefunction, pseudo wavefunction
             etest = epa(iprj, l1)
-            call lschfs(0, ll, ierr, etest, rr, vfull, uae, up, zz, mmax, n2, srel)
+            call lschfs(nn, ll, ierr, etest, rr, vfull, uae, up, zz, mmax, n2, srel)
             if (ierr /= 0) then
                write(error_message, '(a,i0,a,i0)') 'write_output_hdf5: ERROR in lschfs for l=', ll, ' iprj=', iprj
                call hdf_close_group(bound_wf_group_id)

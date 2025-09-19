@@ -2,7 +2,32 @@ module hdf5_utils
    !> A set of high level wrapper subroutines for HDF5, taken directly from
    !> [https://github.com/jterwin/HDF5_utils](https://github.com/jterwin/HDF5_utils)
 
-   use hdf5
+   ! HDF5 types
+   use hdf5, only: SIZE_T, HID_T, HSIZE_T
+   ! HDF5 datatypes
+   use hdf5, only: H5T_NATIVE_INTEGER, H5T_NATIVE_DOUBLE, H5T_NATIVE_CHARACTER
+   use hdf5, only: h5tclose_f, h5tcopy_f, h5tset_size_f
+   ! HDF5 general
+   use hdf5, only: h5open_f, h5close_f
+   ! HDF5 constants
+   use hdf5, only: H5F_ACC_RDONLY_F, H5F_ACC_RDWR_F, H5F_ACC_TRUNC_F, H5F_ACC_EXCL_F
+   ! HDF5 objects
+   use hdf5, only: h5oopen_f, h5oclose_f
+   ! HDF5 files
+   use hdf5, only: h5fopen_f, h5fcreate_f, h5fclose_f
+   ! HDF5 groups
+   use hdf5, only: h5gopen_f, h5gcreate_f, h5gclose_f
+   ! HDF5 attributes
+   use hdf5, only: h5aopen_f, h5acreate_f, h5awrite_f, h5aread_f, h5aclose_f
+   ! HDF5 links
+   use hdf5, only: h5lexists_f
+   ! HDF5 datasets
+   use hdf5, only: h5dopen_f, h5dcreate_f, h5dget_space_f, h5dread_f, h5dwrite_f, h5dclose_f
+   ! HDF5 dataspaces
+   use hdf5, only: H5S_SCALAR_F, H5S_SELECT_SET_F
+   use hdf5, only: h5screate_f, h5screate_simple_f, h5sget_simple_extent_dims_f, h5sget_simple_extent_ndims_f, &
+      h5sget_simple_extent_npoints_f, h5sselect_hyperslab_f, h5sclose_f
+   ! use hdf5
    implicit none
 
    private
