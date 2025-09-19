@@ -35,26 +35,26 @@ subroutine read_input( &
    !> Exchange-correlation functional code
    integer, intent(out) :: iexc
    !> Pseudopotential output file format flag
-   character(*), intent(inout) :: psfile
+   character(*), intent(in out) :: psfile
    !> Principal quantum number array
-   integer, intent(inout) :: na(:)
+   integer, intent(in out) :: na(:)
    !> Orbital angular momentum quantum number array
-   integer, intent(inout) :: la(:)
+   integer, intent(in out) :: la(:)
    !> Occupation number array
-   real(dp), intent(inout) :: fa(:)
+   real(dp), intent(in out) :: fa(:)
    ! [Pseudopotential and optimization]
    !> Maximum angular momentum
    integer, intent(out) :: lmax
    !> Core radii for pseudopotentials
-   real(dp), intent(inout) :: rc(:)
+   real(dp), intent(in out) :: rc(:)
    !> Pseudopotential energies
-   real(dp), intent(inout) :: ep(:)
+   real(dp), intent(in out) :: ep(:)
    !> Number of matching constraints for each pseudopotential
-   integer, intent(inout) :: ncon(:)
+   integer, intent(in out) :: ncon(:)
    !> Number of basis functions for each pseudopotential
-   integer, intent(inout) :: nbas(:)
+   integer, intent(in out) :: nbas(:)
    !> Maximum wave number for each pseudopotential
-   real(dp), intent(inout) :: qcut(:)
+   real(dp), intent(in out) :: qcut(:)
    ! [Local potential]
    !> Angular momentum used for local potential
    integer, intent(out) :: lloc
@@ -64,9 +64,9 @@ subroutine read_input( &
    real(dp), intent(out) :: dvloc0
    ! [Vanderbilt-Kleinman-Bylander projectors]
    !> Number of projectors for each angular momentum
-   integer, intent(inout) :: nproj(:)
+   integer, intent(in out) :: nproj(:)
    !> Energy shift for unbound states
-   real(dp), intent(inout) :: debl(:)
+   real(dp), intent(in out) :: debl(:)
    ! [Model core charge]
    !> Model core charge flag
    integer, intent(out) :: icmod
@@ -106,11 +106,11 @@ subroutine read_input( &
    !> Number of valence states in test configurations
    integer, intent(out) :: nvcnf(:)
    !> Principal quantum number array for test configurations
-   integer, intent(inout) :: nacnf(:, :)
+   integer, intent(in out) :: nacnf(:, :)
    !> Orbital angular momentum quantum number array for test configurations
-   integer, intent(inout) :: lacnf(:, :)
+   integer, intent(in out) :: lacnf(:, :)
    !> Occupation number array for test configurations
-   real(dp), intent(inout) :: facnf(:, :)
+   real(dp), intent(in out) :: facnf(:, :)
 
    !Local variables
    !> I/O status variable
@@ -268,25 +268,25 @@ subroutine read_input_r( &
    !> Exchange-correlation functional code
    integer, intent(out) :: iexc
    !> Pseudopotential output file format flag
-   character(*), intent(inout) :: psfile
+   character(*), intent(in out) :: psfile
    !> Principal quantum number array
-   integer, intent(inout) :: na(:)
+   integer, intent(in out) :: na(:)
    !> Orbital angular momentum quantum number array
-   integer, intent(inout) :: la(:)
+   integer, intent(in out) :: la(:)
    !> Occupation number array
-   real(dp), intent(inout) :: fa(:)
+   real(dp), intent(in out) :: fa(:)
    !> Maximum angular momentum
    integer, intent(out) :: lmax
    !> Pseudopotential cutoff radii
-   real(dp), intent(inout) :: rc(:)
+   real(dp), intent(in out) :: rc(:)
    !> Pseudopotential energies
-   real(dp), intent(inout) :: ep(:, :)
+   real(dp), intent(in out) :: ep(:, :)
    !> Number of matching constraints for each pseudopotential
-   integer, intent(inout) :: ncon(:)
+   integer, intent(in out) :: ncon(:)
    !> Number of basis functions for each pseudopotential
-   integer, intent(inout) :: nbas(:)
+   integer, intent(in out) :: nbas(:)
    !> Maximum wave number for each pseudopotential
-   real(dp), intent(inout) :: qcut(:)
+   real(dp), intent(in out) :: qcut(:)
    !> Angular momentum used for local potential
    integer, intent(out) :: lloc
    !>
@@ -294,9 +294,9 @@ subroutine read_input_r( &
    !> Local potential offset at origin
    real(dp), intent(out) :: dvloc0
    !> Number of projectors for each angular momentum
-   integer, intent(inout) :: nproj(:)
+   integer, intent(in out) :: nproj(:)
    !> Energy shift for unbound states
-   real(dp), intent(inout) :: debl(:)
+   real(dp), intent(in out) :: debl(:)
    !> Model core charge flag
    integer, intent(out) :: icmod
    !> Scaling factor for core charge
@@ -332,11 +332,11 @@ subroutine read_input_r( &
    !> Number of valence states in test configurations
    integer, intent(out) :: nvcnf(:)
    !> Principal quantum number array for test configurations
-   integer, intent(inout) :: nacnf(:, :)
+   integer, intent(in out) :: nacnf(:, :)
    !> Orbital angular momentum quantum number array for test configurations
-   integer, intent(inout) :: lacnf(:, :)
+   integer, intent(in out) :: lacnf(:, :)
    !> Occupation number array for test configurations
-   real(dp), intent(inout) :: facnf(:, :)
+   real(dp), intent(in out) :: facnf(:, :)
 
    !Local variables
    !> I/O status variable

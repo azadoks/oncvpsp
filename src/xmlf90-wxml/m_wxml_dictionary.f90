@@ -68,7 +68,7 @@ end function has_key
 subroutine wxml_get_value(dict,key,value,status)
    type(wxml_dictionary_t), intent(in)            :: dict
    character(len=*), intent(in)              :: key
-   character(len=*), intent(inout)             :: value
+   character(len=*), intent(in out)             :: value
    integer, intent(out)                      :: status
 !
    integer  :: n, i
@@ -92,7 +92,7 @@ subroutine get_key(dict,i,key,status)
 !
    type(wxml_dictionary_t), intent(in)            :: dict
    integer, intent(in)                       :: i
-   character(len=*), intent(inout)             :: key
+   character(len=*), intent(in out)             :: key
    integer, intent(out)                      :: status
 
    if (i <= dict%number_of_items) then
@@ -108,7 +108,7 @@ end subroutine get_key
 !------------------------------------------------------
 subroutine add_key_to_dict(key,dict)
    character(len=*), intent(in)          :: key
-   type(wxml_dictionary_t), intent(inout)   :: dict
+   type(wxml_dictionary_t), intent(in out)   :: dict
 
    integer  :: n
 
@@ -130,7 +130,7 @@ end subroutine add_key_to_dict
 !
 subroutine add_value_to_dict(value,dict)
    character(len=*), intent(in)          :: value
-   type(wxml_dictionary_t), intent(inout)   :: dict
+   type(wxml_dictionary_t), intent(in out)   :: dict
 
    integer  :: n
 
@@ -141,7 +141,7 @@ end subroutine add_value_to_dict
 
 !------------------------------------------------------
 subroutine reset_dict(dict)
-   type(wxml_dictionary_t), intent(inout)   :: dict
+   type(wxml_dictionary_t), intent(in out)   :: dict
 
    dict%number_of_items = 0
 

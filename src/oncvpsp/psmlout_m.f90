@@ -1108,7 +1108,7 @@ end subroutine psmlout_r
 
 subroutine my_add_attribute(xf, name, value)
 
-   type(xmlf_t), intent(inout) :: xf
+   type(xmlf_t), intent(in out) :: xf
    character(len=*), intent(in) :: name
    character(len=*), intent(in) :: value
 
@@ -1158,7 +1158,7 @@ subroutine write_psml_item(xf, class, &
                            flavor, type, set, &
                            f)
 
-   type(xmlf_t), intent(inout) :: xf
+   type(xmlf_t), intent(in out) :: xf
    character(len=*), intent(in) :: class
 
    integer, intent(in), optional :: n

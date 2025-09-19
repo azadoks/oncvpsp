@@ -37,7 +37,6 @@ contains
 !> Finds bound states of an all-electron atomic potential using
 !> Pauli-type  scalar-relativistic Schroedinger equation
 subroutine lschfb(nn, ll, ierr, ee, rr, vv, uu, up, zz, mmax, mch, srel)
-
    !Input variables
    !> Logarithmic radial mesh
    real(dp), intent(in) :: rr(mmax)
@@ -47,21 +46,21 @@ subroutine lschfb(nn, ll, ierr, ee, rr, vv, uu, up, zz, mmax, mch, srel)
    real(dp), intent(in) :: zz
    !> Principal quantum number
    integer, intent(in) :: nn
-   !> Angular-momentum quantum number
+   !> Angular momentum quantum number
    integer, intent(in) :: ll
-   !> Size of logarithmic grid
+   !> Size of the logarithmic mesh
    integer, intent(in) :: mmax
    !> Scalar-relativistic switch
    logical, intent(in) :: srel
 
    !Output variables
-   !> Output radial wave function (*rr)
+   !> Output radial wave function (r * ψ(r))
    real(dp), intent(out) :: uu(mmax)
-   !> d(uu)/dr
+   !> Wave function derivative (d(r * ψ(r))/dr)
    real(dp), intent(out) :: up(mmax)
-   !> Bound-state energy, input guess and output calculated value
-   real(dp), intent(inout) :: ee
-   !> Non-zero return if error
+   !> Bound state energy -- input guess, output calculated value
+   real(dp), intent(in out) :: ee
+   !> Error flag -- non-zero if error occurred
    integer, intent(out) :: ierr
    !> Matching mesh point for inward-outward integrations
    integer, intent(out) :: mch
@@ -308,30 +307,33 @@ end subroutine lschfb
 !> Integrates radial Pauli-type scalar-relativistic equation on a logarithmic mesh
 !> Modified routine to be used in finding norm-conserving pseudopotential
 subroutine lschfs(nn, ll, ierr, ee, rr, vv, uu, up, zz, mmax, mch, srel)
-   !nn  effective principal quantum number based on nodes inside mch (output)
-   !ll  angular-momentum quantum number
-   !ierr  non-zero return if error
-   !ee  bound-state energy, input guess and output calculated value
-   !rr  log radial mesh
-   !vv  local atomic potential
-   !uu  output radial wave function (*rr)
-   !up  d(uu)/dr
-   !zz  atomic number
-   !mmax  size of log grid
-   !mch matching mesh point for inward-outward integrations
-   !srel .true. for scalar-relativistic, .false. for non-relativistic
-
    !Input variables
-   integer :: mmax
-   real(dp) :: rr(mmax), vv(mmax)
-   real(dp) :: zz
-   integer :: ll, mch
-   logical :: srel
+   !> Size of the logarithmic mesh
+   integer, intent(in) :: mmax
+   !> Logarithmic radial mesh
+   real(dp), intent(in) :: rr(mmax)
+   !> Local atomic potential
+   real(dp), intent(in) :: vv(mmax)
+   !> Atomic number
+   real(dp), intent(in) :: zz
+   !> Angular momentum quantum number
+   integer, intent(in) :: ll
+   !> Matching mesh point for inward-outward integrations
+   integer, intent(in) :: mch
+   !> Scalar relativistic switch
+   logical, intent(in) :: srel
 
    !Output variables
-   real(dp) :: uu(mmax), up(mmax)
-   real(dp) :: ee
-   integer :: ierr, nn
+   !> Output radial wave function (r * ψ(r))
+   real(dp), intent(out) :: uu(mmax)
+   !> Wave function derivative (d(r * ψ(r))/dr)
+   real(dp), intent(out) :: up(mmax)
+   !> Bound state energy
+   real(dp), intent(out) :: ee
+   !> Error flag -- non-zero if error occurred
+   integer, intent(out) :: ierr
+   !> Effective principal quantum number based on nodes inside mch
+   integer, intent(out) :: nn
 
    !Local variables
    real(dp) :: amesh, al
@@ -425,7 +427,7 @@ subroutine lschfs(nn, ll, ierr, ee, rr, vv, uu, up, zz, mmax, mch, srel)
 
    !perform normalization sum
 
-   ro = rr(1) / dsqrt(amesh)
+   ro = rr(1) / sqrt(amesh)
    sn = ro**(2.0d0 * gamma + 1.0d0) / (2.0d0 * gamma + 1.0d0)
 
    do ii = 1, mch - 3
@@ -438,7 +440,7 @@ subroutine lschfs(nn, ll, ierr, ee, rr, vv, uu, up, zz, mmax, mch, srel)
 
    !normalize u
 
-   cn = 1.0d0 / dsqrt(sn)
+   cn = 1.0d0 / sqrt(sn)
    uout = cn * uout
    upout = cn * upout
 
@@ -462,28 +464,29 @@ end subroutine lschfs
 !> outward integration of the inhomogeneous radial Schroedinger equation
 !> on a logarithmic mesh with local potential and one proector term
 subroutine lschkb(ll, ierr, ee, vkb, rr, vv, uu, up, mmax, mch)
-   !nn  principal quantum number (not used)
-   !ll  angular-momentum quantum number
-   !ierr  non-zero return if error
-   !ee  bound-state energy, input guess and output calculated value
-   !vkb Vanderbilt-Kleinman-bylander projector
-   !rr  log radial mesh
-   !vv  local pseudopotential
-   !uu  output radial wave function (*rr)
-   !up  d(uu)/dr
-   !zz  atomic number
-   !mmax  size of log grid
-   !mch matching mesh point for inward-outward integrations
-
    !Input variables
-   integer :: mmax, mch
-   real(dp) :: rr(mmax), vv(mmax), vkb(mmax)
-   integer :: ll
+   !> Size of the logarithmic mesh
+   integer, intent(in) :: mmax
+   !> Matching mesh point for inward-outward integrations
+   integer, intent(in) :: mch
+   !> Logarithmic radial mesh
+   real(dp), intent(in) :: rr(mmax)
+   !> Local pseudopotential
+   real(dp), intent(in) :: vv(mmax)
+   !> Vanderbilt-Kleinman-Bylander projector
+   real(dp), intent(in) :: vkb(mmax)
+   !> Angular momentum quantum number
+   integer, intent(in) :: ll
+   !> Bound state energy
+   real(dp), intent(in) :: ee
 
    !Output variables
-   real(dp) :: uu(mmax), up(mmax)
-   real(dp) :: ee
-   integer :: ierr
+   !> Output radial wave function (r * ψ(r))
+   real(dp), intent(out) :: uu(mmax)
+   !> Wave function derivative (d(r * ψ(r))/dr)
+   real(dp), intent(out) :: up(mmax)
+   !> Error flag -- non-zero if error occurred
+   integer, intent(out) :: ierr
 
    !Local variables
    real(dp) :: amesh, al
@@ -550,25 +553,29 @@ end subroutine lschkb
 
 !> Finds bound states of a semi-local pseudopotential
 subroutine lschpb(nn, ll, ierr, ee, rr, vv, uu, up, mmax, mch)
-   !nn  principal quantum number
-   !ll  angular-momentum quantum number
-   !ierr  non-zero return if error
-   !ee  bound-state energy, input guess and output calculated value
-   !rr  log radial mesh
-   !vv  local psp
-   !uu  output radial wave function (*rr)
-   !up  d(uu)/dr
-   !mmax  size of log grid
-   !mch matching mesh point for inward-outward integrations
-
    !Input variables
-   real(dp) :: rr(mmax), vv(mmax)
-   integer :: nn, ll, mmax
+   !> Principal quantum number
+   integer, intent(in) :: nn
+   !> Angular momentum quantum number
+   integer, intent(in) :: ll
+   !> Size of the logarithmic mesh
+   integer, intent(in) :: mmax
+   !> Logarithmic radial mesh
+   real(dp), intent(in) :: rr(mmax)
+   !> Local pseudopotential
+   real(dp), intent(in) :: vv(mmax)
 
    !Output variables
-   real(dp) :: uu(mmax), up(mmax)
-   real(dp) :: ee
-   integer :: ierr, mch
+   !> Output radial wave function (r * ψ(r))
+   real(dp), intent(out) :: uu(mmax)
+   !> Wave function derivative (d(r * ψ(r))/dr)
+   real(dp), intent(out) :: up(mmax)
+   !> Bound state energy -- input guess, output calculated value
+   real(dp), intent(in out) :: ee
+   !> Error flag -- non-zero if error occurred
+   integer, intent(out) :: ierr
+   !> Matching mesh point for inward-outward integrations
+   integer, intent(out) :: mch
 
    !Local Variables
 
@@ -663,7 +670,7 @@ subroutine lschpb(nn, ll, ierr, ee, rr, vv, uu, up, mmax, mch)
 
          nin = int(mch + 2.3d0 / al)
          if (nin + 4 > mmax) nin = mmax - 4
-         xkap = dsqrt(sls / rr(nin)**2 + 2.0d0 * (vv(nin) - ee))
+         xkap = sqrt(sls / rr(nin)**2 + 2.0d0 * (vv(nin) - ee))
 
          do ii = nin, nin + 4
             uu(ii) = exp(-xkap * (rr(ii) - rr(nin)))
@@ -696,7 +703,7 @@ subroutine lschpb(nn, ll, ierr, ee, rr, vv, uu, up, mmax, mch)
 
          ! perform normalization sum
 
-         ro = rr(1) / dsqrt(amesh)
+         ro = rr(1) / sqrt(amesh)
          sn = ro**(2 * ll + 3) / dfloat(2 * ll + 3)
 
          do ii = 1, nin - 3
@@ -709,7 +716,7 @@ subroutine lschpb(nn, ll, ierr, ee, rr, vv, uu, up, mmax, mch)
 
          ! normalize u
 
-         cn = 1.0d0 / dsqrt(sn)
+         cn = 1.0d0 / sqrt(sn)
          uout = cn * uout
          upout = cn * upout
          upin = cn * upin
@@ -761,29 +768,35 @@ end subroutine lschpb
 
 !> Finds bound states of a semi-local pseudopotential
 subroutine lschpsbar(nn, ll, ierr, ee, emin, emax, rr, vv, uu, up, mmax, mbar, tht)
-   !nn  principal quantum number
-   !ll  angular-momentum quantum number
-   !ierr  non-zero return if error/ input for box boundary condition (0 or 1)
-   !ee  bound-state energy, input guess and output calculated value (in/our)
-   !emin  lower bound, potential minimum if ==0.0
-   !emax  upper bound
-   !rr  log radial mesh
-   !vv  local psp
-   !uu  output radial wave function (*rr)
-   !up  d(uu)/dr
-   !mmax  size of log grid
-   !mbar  mesh point for infinite barrier
-   !tht  phast-shift angle for boundary condition, units of pi
-
    !Input variables
-   real(dp) :: rr(mmax), vv(mmax)
-   real(dp) :: emin, emax, tht
-   integer :: nn, ll, mmax, mbar
+   !> Principal quantum number
+   integer, intent(in) :: nn
+   !> Angular momentum quantum number
+   integer, intent(in) :: ll
+   !> Size of the logarithmic mesh
+   integer, intent(in) :: mmax
+   !> Mesh point for infinite barrier
+   integer, intent(in) :: mbar
+   !> Logarithmic radial mesh
+   real(dp), intent(in) :: rr(mmax)
+   !> Local pseudopotential
+   real(dp), intent(in) :: vv(mmax)
+   !> Lower bound for eigenvalue search -- will be overwritten!
+   real(dp), intent(in out) :: emin
+   !> Upper bound for eigenvalue search -- will be overwritten!
+   real(dp), intent(in out) :: emax
+   !> Phase-shift angle for boundary condition, units of π
+   real(dp), intent(in) :: tht
 
    !Output variables
-   real(dp) :: uu(mmax), up(mmax)
-   real(dp) :: ee
-   integer :: ierr
+   !> Output radial wave function (r * ψ(r))
+   real(dp), intent(out) :: uu(mmax)
+   !> Wave function derivative (d(r * ψ(r))/dr)
+   real(dp), intent(out) :: up(mmax)
+   !> Bound state energy -- input guess, output calculated value
+   real(dp), intent(in out) :: ee
+   !> Error flag -- non-zero if error occurred
+   integer, intent(out) :: ierr
 
    !Local Variables
 
@@ -900,7 +913,7 @@ subroutine lschpsbar(nn, ll, ierr, ee, emin, emax, rr, vv, uu, up, mmax, mbar, t
          nin = int(mch + 2.3d0 / al)
          if (nin < mbar - 4) then
             if (nin + 4 > mmax) nin = mmax - 4
-            xkap = dsqrt(sls / rr(nin)**2 + 2.0d0 * (vv(nin) - ee))
+            xkap = sqrt(sls / rr(nin)**2 + 2.0d0 * (vv(nin) - ee))
 
             do ii = nin, nin + 4
                uu(ii) = exp(-xkap * (rr(ii) - rr(nin)))
@@ -916,7 +929,7 @@ subroutine lschpsbar(nn, ll, ierr, ee, emin, emax, rr, vv, uu, up, mmax, mbar, t
             !   point with sinh or sin
 
             xkap2 = sls / rr(mbar)**2 + 2.0d0 * (vv(mbar) - ee)
-            xkap = dsqrt(dabs(xkap2))
+            xkap = sqrt(dabs(xkap2))
 
             do ii = mbar, mbar + 4
                xx = xkap * (rr(ii) - rr(mbar))
@@ -968,7 +981,7 @@ subroutine lschpsbar(nn, ll, ierr, ee, emin, emax, rr, vv, uu, up, mmax, mbar, t
 
          ! perform normalization sum
 
-         ro = rr(1) / dsqrt(amesh)
+         ro = rr(1) / sqrt(amesh)
          sn = ro**(2 * ll + 3) / dfloat(2 * ll + 3)
          do ii = 1, nin - 3
             sn = sn + al * rr(ii) * uu(ii)**2
@@ -980,7 +993,7 @@ subroutine lschpsbar(nn, ll, ierr, ee, emin, emax, rr, vv, uu, up, mmax, mbar, t
 
          ! normalize u
 
-         cn = 1.0d0 / dsqrt(sn)
+         cn = 1.0d0 / sqrt(sn)
          uout = cn * uout
          upout = cn * upout
          upin = cn * upin
@@ -1032,28 +1045,31 @@ end subroutine lschpsbar
 !> on a logarithmic mesh finding energy at which desired log derivative
 !> uld is matched at point mch
 subroutine lschpse(nn, ll, ierr, ee, uld, rr, vv, uu, up, mmax, mch)
-   !nn  principal quantum number
-   !ll  angular-momentum quantum number
-   !ierr  non-zero return if error
-   !ee  bound-state energy, input guess and output calculated value
-   !uld  log derivative to be matched
-   !rr  log radial mesh
-   !vv  semi-local pseudopotential
-   !uu  output radial wave function (*rr)
-   !up  d(uu)/dr
-   !mmax  size of log grid
-   !mch matching mesh point for inward-outward integrations
-
    !Input variables
-   integer :: mmax, mch
-   real(dp) :: rr(mmax), vv(mmax)
-   real(dp) :: uld
-   integer :: nn, ll
+   !> Size of the logarithmic mesh
+   integer, intent(in) :: mmax
+   !> Matching mesh point for inward-outward integrations
+   integer, intent(in) :: mch
+   !> Principal quantum number
+   integer, intent(in) :: nn
+   !> Angular momentum quantum number
+   integer, intent(in) :: ll
+   !> Logarithmic radial mesh
+   real(dp), intent(in) :: rr(mmax)
+   !> Semi-local pseudopotential
+   real(dp), intent(in) :: vv(mmax)
+   !> Log derivative to be matched at point mch
+   real(dp), intent(in) :: uld
 
    !Output variables
-   real(dp) :: uu(mmax), up(mmax)
-   real(dp) :: ee
-   integer :: ierr
+   !> Output radial wave function (r * ψ(r))
+   real(dp), intent(out) :: uu(mmax)
+   !> Wave function derivative (d(r * ψ(r))/dr)
+   real(dp), intent(out) :: up(mmax)
+   !> Bound state energy -- input guess, output calculated value
+   real(dp), intent(in out) :: ee
+   !> Error flag -- non-zero if error occurred
+   integer, intent(out) :: ierr
 
    !Local variables
    real(dp) :: als, cn
@@ -1133,7 +1149,7 @@ subroutine lschpse(nn, ll, ierr, ee, uld, rr, vv, uu, up, mmax, mch)
 
          ! perform normalization sum
 
-         ro = rr(1) / dsqrt(amesh)
+         ro = rr(1) / sqrt(amesh)
          sn = ro**(2 * ll + 3) / dfloat(2 * ll + 3)
 
          do ii = 1, nin - 3
@@ -1146,7 +1162,7 @@ subroutine lschpse(nn, ll, ierr, ee, uld, rr, vv, uu, up, mmax, mch)
 
          ! normalize u
 
-         cn = 1.0d0 / dsqrt(sn)
+         cn = 1.0d0 / sqrt(sn)
          uout = cn * uout
          upout = cn * upout
          upin = cn * upin
@@ -1210,14 +1226,26 @@ subroutine lschps(ll, ierr, ee, rr, vv, uu, up, mmax, mch)
    !mch matching mesh point for inward-outward integrations
 
    !Input variables
-   integer :: mmax, mch
-   real(dp) :: rr(mmax), vv(mmax)
-   integer :: ll
+   !> Size of the logarithmic mesh
+   integer, intent(in) :: mmax
+   !> Matching mesh point for inward-outward integrations
+   integer, intent(in) :: mch
+   !> Angular momentum quantum number
+   integer, intent(in) :: ll
+   !> Logarithmic radial mesh
+   real(dp), intent(in) :: rr(mmax)
+   !> Semi-local pseudopotential
+   real(dp), intent(in) :: vv(mmax)
+   !> Bound state energy
+   real(dp), intent(in) :: ee
 
    !Output variables
-   real(dp) :: uu(mmax), up(mmax)
-   real(dp) :: ee
-   integer :: ierr
+   !> Output radial wave function (r * ψ(r))
+   real(dp), intent(out) :: uu(mmax)
+   !> Wave function derivative (d(r * ψ(r))/dr)
+   real(dp), intent(out) :: up(mmax)
+   !> Error flag -- non-zero if error occurred
+   integer, intent(out) :: ierr
 
    !Local variables
    real(dp) :: amesh, al
@@ -1230,8 +1258,8 @@ subroutine lschps(ll, ierr, ee, rr, vv, uu, up, mmax, mch)
 
    allocate (upp(mmax), cf(mmax))
 
-   al = 0.01d0 * dlog(rr(101) / rr(1))
-   amesh = dexp(al)
+   al = 0.01d0 * log(rr(101) / rr(1))
+   amesh = exp(al)
 
    ierr = 0
 
@@ -1276,7 +1304,7 @@ subroutine lschps(ll, ierr, ee, rr, vv, uu, up, mmax, mch)
 
    !perform normalization sum
 
-   ro = rr(1) / dsqrt(amesh)
+   ro = rr(1) / sqrt(amesh)
    sn = ro**(2 * ll + 3) / (2 * ll + 3)
 
    do ii = 1, mch - 3
@@ -1289,7 +1317,7 @@ subroutine lschps(ll, ierr, ee, rr, vv, uu, up, mmax, mch)
 
    !normalize u
 
-   cn = 1.0d0 / dsqrt(sn)
+   cn = 1.0d0 / sqrt(sn)
    uout = cn * uout
    upout = cn * upout
 
@@ -1328,14 +1356,40 @@ subroutine lschvkbbe(nn, ll, nvkb, ierr, ee, uld, emin, emax, rr, vloc, vkb, evk
    !mch matching mesh point for inward-outward integrations
 
    !Input Variables
-   real(dp) :: emin, emax, uld
-   real(dp) :: rr(mmax), vloc(mmax), vkb(mmax, nvkb), evkb(nvkb)
-   integer :: nn, ll, nvkb, mmax
+   !> Principal quantum number
+   integer, intent(in) :: nn
+   !> Angular momentum quantum number
+   integer, intent(in) :: ll
+   !> Number of VKB projectors to be used
+   integer, intent(in) :: nvkb
+   !> Size of the logarithmic mesh
+   integer, intent(in) :: mmax
+   !> Lower bound for eigenvalue search -- will be overwritten!
+   real(dp), intent(in out) :: emin
+   !> Upper bound for eigenvalue search -- will be overwritten!
+   real(dp), intent(in out) :: emax
+   !> Bound state energy -- input guess, output calculated value
+   real(dp), intent(in out) :: uld
+   !> Logarithmic radial mesh
+   real(dp), intent(in) :: rr(mmax)
+   !> Local part of the pseudopotential
+   real(dp), intent(in) :: vloc(mmax)
+   !> VKB projectors
+   real(dp), intent(in) :: vkb(mmax, nvkb)
+   !> Coefficients of VKB projectors
+   real(dp), intent(in) :: evkb(nvkb)
 
    !Output variables
-   real(dp) :: uu(mmax), up(mmax)
-   real(dp) :: ee  !in/out, really - needs starting guess
-   integer :: ierr, mch
+   !> Output radial wave function (r * ψ(r))
+   real(dp), intent(out) :: uu(mmax)
+   !> Wave function derivative (d(r * ψ(r))/dr)
+   real(dp), intent(out) :: up(mmax)
+   !> Bound state energy -- input guess, output calculated value
+   real(dp), intent(in out) :: ee
+   !> Error flag -- non-zero if error occurred
+   integer, intent(out) :: ierr
+   !> Matching mesh point for inward-outward integrations
+   integer, intent(out) :: mch
 
    !Local variables
    real(dp) :: cn
@@ -1392,7 +1446,7 @@ subroutine lschvkbbe(nn, ll, nvkb, ierr, ee, uld, emin, emax, rr, vloc, vkb, evk
 
          ! perform normalization sum
 
-         ro = rr(1) / dsqrt(amesh)
+         ro = rr(1) / sqrt(amesh)
          sn = ro**(2 * ll + 3) / dfloat(2 * ll + 3)
 
          do ii = 1, nin - 3
@@ -1405,7 +1459,7 @@ subroutine lschvkbbe(nn, ll, nvkb, ierr, ee, uld, emin, emax, rr, vloc, vkb, evk
 
          ! normalize u
 
-         cn = 1.0d0 / dsqrt(sn)
+         cn = 1.0d0 / sqrt(sn)
          uout = cn * uout
          upout = cn * upout
          upin = cn * upin
@@ -1457,31 +1511,39 @@ end subroutine lschvkbbe
 !> Finds bound states of a  pseudopotential with
 !> Vanderbilt-Kleinman-Bylander non-local projectors
 subroutine lschvkbb(nn, ll, nvkb, ierr, ee, emin, emax, rr, vloc, vkb, evkb, uu, up, mmax, mch)
-   !nn  principal quantum number
-   !ll  angular-momentum quantum number
-   !nvkb  = number of VKB projectors to be used
-   !ierr  non-zero return if error
-   !ee  bound-state energy, input guess and output calculated value
-   !emin  externally generaated estimate of lower bound for ee
-   !emax  externally generaated estimate of upper bound for ee
-   !rr  log radial mesh
-   !vloc  local part of psp
-   !vkb  VKB projectors
-   !evkb coefficients of BKB projectors
-   !uu  output radial wave function (*rr)
-   !up  d(uu)/dr
-   !mmax  size of log grid
-   !mch matching mesh point for inward-outward integrations
-
    !Input Variables
-   real(dp) :: emin, emax
-   real(dp) :: rr(mmax), vloc(mmax), vkb(mmax, nvkb), evkb(nvkb)
-   integer :: nn, ll, nvkb, mmax
+   !> Principal quantum number
+   integer, intent(in) :: nn
+   !> Angular momentum quantum number
+   integer, intent(in) :: ll
+   !> Number of VKB projectors to be used
+   integer, intent(in) :: nvkb
+   !> Size of the logarithmic mesh
+   integer, intent(in) :: mmax
+   !> Lower bound for eigenvalue search -- will be overwritten!
+   real(dp), intent(in out) :: emin
+   !> Upper bound for eigenvalue search -- will be overwritten!
+   real(dp), intent(in out) :: emax
+   !> Logarithmic radial mesh
+   real(dp), intent(in) :: rr(mmax)
+   !> Local part of the pseudopotential
+   real(dp), intent(in) :: vloc(mmax)
+   !> VKB projectors
+   real(dp), intent(in) :: vkb(mmax, nvkb)
+   !> Coefficients of VKB projectors
+   real(dp), intent(in) :: evkb(nvkb)
 
    !Output variables
-   real(dp) :: uu(mmax), up(mmax)
-   real(dp) :: ee  !in/out, really - needs starting guess
-   integer :: ierr, mch
+   !> Output radial wave function (r * ψ(r))
+   real(dp), intent(out) :: uu(mmax)
+   !> Wave function derivative (d(r * ψ(r))/dr)
+   real(dp), intent(out) :: up(mmax)
+   !> Bound state energy -- input guess, output calculated value
+   real(dp), intent(in out) :: ee  !in/out, really - needs starting guess
+   !> Error flag -- non-zero if error occurred
+   integer, intent(out) :: ierr
+   !> Matching mesh point for inward-outward integrations
+   integer, intent(out) :: mch
 
    !Local variables
    real(dp) :: cn
@@ -1578,7 +1640,7 @@ subroutine lschvkbb(nn, ll, nvkb, ierr, ee, emin, emax, rr, vloc, vkb, evkb, uu,
 
          nin = int(mch + 2.3d0 / al)
          if (nin + 4 > mmax) nin = mmax - 4
-         xkap = dsqrt(sls / rr(nin)**2 + 2.0d0 * (vloc(nin) - ee))
+         xkap = sqrt(sls / rr(nin)**2 + 2.0d0 * (vloc(nin) - ee))
 
          do ii = nin, nin + 4
             uu(ii) = exp(-xkap * (rr(ii) - rr(nin)))
@@ -1611,7 +1673,7 @@ subroutine lschvkbb(nn, ll, nvkb, ierr, ee, emin, emax, rr, vloc, vkb, evkb, uu,
 
          ! perform normalization sum
 
-         ro = rr(1) / dsqrt(amesh)
+         ro = rr(1) / sqrt(amesh)
          sn = ro**(2 * ll + 3) / dfloat(2 * ll + 3)
 
          do ii = 1, nin - 3
@@ -1624,7 +1686,7 @@ subroutine lschvkbb(nn, ll, nvkb, ierr, ee, emin, emax, rr, vloc, vkb, evkb, uu,
 
          ! normalize u
 
-         cn = 1.0d0 / dsqrt(sn)
+         cn = 1.0d0 / sqrt(sn)
          uout = cn * uout
          upout = cn * upout
          upin = cn * upin
@@ -1686,26 +1748,31 @@ end subroutine lschvkbb
 !> Normalized scattering state for pseudopotential, fully non-local unless
 !> ivkb=0, which should only happen if ll=lloc
 subroutine lschvkbs(ll, ivkb, ee, rr, vloc, vkb, evkb, uu, up, mmax, mch)
-   !ll  angular-momentum quantum number
-   !ivkb  = 0, 1 or 2 VKB proectors to be used
-   !ee  scattering state energy
-   !rr  log radial mesh
-   !vloc  local pseudopotential
-   !vkb  VKB projectors
-   !evkb  coefficients of VKB projectors
-   !uu  output radial wave function (*rr)
-   !up  d(uu)/dr
-   !mmax  size of log grid
-   !mch  index of radius to which uu is computed
-
    !Input variables
-   integer :: mmax, mch
-   real(dp) :: rr(mmax), vloc(mmax), vkb(mmax, 2), evkb(2)
-   real(dp) :: ee
-   integer :: ivkb, ll
+   !> Size of the logarithmic mesh
+   integer, intent(in) :: mmax
+   !> Index of radius to which uu is computed
+   integer, intent(in) :: mch
+   !> Logarithmic radial mesh
+   real(dp), intent(in) :: rr(mmax)
+   !> Local part of the pseudopotential
+   real(dp), intent(in) :: vloc(mmax)
+   !> VKB projectors
+   real(dp), intent(in) :: vkb(mmax, 2)
+   !> Coefficients of VKB projectors
+   real(dp), intent(in) :: evkb(2)
+   !> Scattering state energy
+   real(dp), intent(in) :: ee
+   !> 0, 1, or 2 VKB projectors to be used
+   integer, intent(in) :: ivkb
+   !> Angular momentum quantum number
+   integer, intent(in) :: ll
 
    !Output variables
-   real(dp) :: uu(mmax), up(mmax)
+   !> Output radial wave function (r * ψ(r))
+   real(dp), intent(out) :: uu(mmax)
+   !> Wave function derivative (d(r * ψ(r))/dr)
+   real(dp), intent(out) :: up(mmax)
 
    !Local variables
    real(dp) :: amesh, al
@@ -1724,7 +1791,7 @@ subroutine lschvkbs(ll, ivkb, ee, rr, vloc, vkb, evkb, uu, up, mmax, mch)
 
    !perform normalization sum
 
-   ro = rr(1) / dsqrt(amesh)
+   ro = rr(1) / sqrt(amesh)
    sn = ro**(2 * ll + 3) / (2 * ll + 3)
 
    do ii = 1, mch - 3
@@ -1737,7 +1804,7 @@ subroutine lschvkbs(ll, ivkb, ee, rr, vloc, vkb, evkb, uu, up, mmax, mch)
 
    !normalize u
 
-   cn = 1.0d0 / dsqrt(sn)
+   cn = 1.0d0 / sqrt(sn)
 
    do ii = 1, mch
       up(ii) = cn * up(ii)
