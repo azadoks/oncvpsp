@@ -733,12 +733,6 @@ program oncvpsp
    &                    vkb, evkb, nproj, rr, vfull, vp, vpuns, zz, mmax, mxprj, drl, nrl, &
    &                    rho, rhoc, rhomod, srel, cvgplt)
 
-   if (trim(h5file) /= '') then
-      call write_output_hdf5(trim(h5file), lmax, npa, epa, lloc, irc, &
-                             vkb, evkb, nproj, rr, vfull, vp, vpuns, zz, mmax, mxprj, drl, nrl, &
-                             rho, rhoc, rhomod, srel, cvgplt)
-   end if
-
    call run_phsft(lmax, lloc, nproj, epa, epsh1, epsh2, depsh, vkb, evkb, &
    &               rr, vfull, vp, zz, mmax, mxprj, irc, rxpsh, srel)
 
@@ -772,6 +766,12 @@ program oncvpsp
       &             na, la, ncon, nbas, nvcnf, nacnf, lacnf, nc, nv, lpopt, ncnf, &
       &             fa, ep, qcut, debl, facnf, dvloc0, fcfact, &
       &             epsh1, epsh2, depsh, rlmax, psfile)
+   end if
+
+   if (trim(h5file) /= '') then
+      call write_output_hdf5(trim(h5file), lmax, npa, epa, lloc, irc, &
+                             vkb, evkb, nproj, rr, vfull, vp, vpuns, zz, mmax, mxprj, drl, nrl, &
+                             rho, rhoc, rhomod, srel, cvgplt, epsh1, epsh2, depsh, rxpsh)
    end if
 
    stop

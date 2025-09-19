@@ -80,4 +80,4 @@ set(src_oncvpsp
 ###########################################################
 add_library(oncvpsp STATIC ${src_oncvpsp})
 add_dependencies(oncvpsp wxml)
-target_link_libraries(oncvpsp wxml ${HDF5_LIBRARIES} ${LIBXC_LIBRARIES} ${LAPACK_LIBRARIES})
+target_link_libraries(oncvpsp wxml ${COMMON_LIBRARIES})

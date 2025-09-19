@@ -1,9 +1,13 @@
 module write_output_hdf5_m
-   use hdf5_utils, only: hdf_open_file, hdf_close_file, &
+   ! High-level HDF5 utilities
+   use hdf5_utils, only: HID_T, &
+      hdf_open_file, hdf_close_file, &
       hdf_create_group, hdf_open_group, hdf_close_group, &
-      hdf_create_dataset, hdf_write_dataset, hdf_write_attribute, &
-      hdf_write_vector_to_dataset, &
-      HID_T
+      hdf_create_dataset, hdf_write_dataset, &
+      hdf_write_attribute, &
+      hdf_set_data_scale, hdf_attach_data_scale, hdf_label_dim
+   ! HDF5 datasets
+   use hdf5, only: h5dopen_f, h5dclose_f
    use precision_m, only: dp
    use lsch_m, only: lschfb, lschfs, lschvkbb, lschvkbs
    implicit none
@@ -13,7 +17,7 @@ contains
 
 subroutine write_output_hdf5(filename, lmax, npa, epa, lloc, irc, &
                              vkb, evkb, nproj, rr, vfull, vp, vpuns, zz, mmax, mxprj, drl, nrl, &
-                             rho, rhoc, rhomod, srel, cvgplt)
+                             rho, rhoc, rhomod, srel, cvgplt, epsh1, epsh2, depsh, rxpsh)
    ! Input variables
    !> HDF5 filename
    character(*), intent(in) :: filename
@@ -58,7 +62,196 @@ subroutine write_output_hdf5(filename, lmax, npa, epa, lloc, irc, &
    !> Coefficients of VKB projectors
    real(dp), intent(in) :: evkb(mxprj, 4)
    !> Energy per electron error vs. cutoff
+   !> cvgplt(1, error-value, projector, ang-mom) = Cutoff energies (Ha)
+   !> cvgplt(2, error-value, projector, ang-mom) = [error-value] Energy error per electron (Ha)
    real(dp), intent(in) :: cvgplt(2, 7, mxprj, 4)
+   !> Scalar-relativistic flag
+   logical, intent(in) :: srel
+   !> Minimum energy for log-der analysis
+   real(dp), intent(in) :: epsh1
+   !> Maximum energy for log-der analysis
+   real(dp), intent(in) :: epsh2
+   !> Energy spacing for log-der analysis
+   real(dp), intent(in) :: depsh
+   !> Radius for log-der analysis (if <= 0, use default value)
+   real(dp), intent(in) :: rxpsh
+
+   ! Local variables
+   !> Angular momentum
+   integer :: ll
+   !> Loop index
+   integer :: ii
+
+   ! HDF5 variables
+   !> HDF5 file identifier
+   integer(HID_T) :: file_id
+
+   ! Create HDF5 file
+   call hdf_open_file(file_id, filename, 'REPLACE', 'WRITE')
+   ! Logarithmic radial grid
+   write(6, '(a)') 'write_output_hdf5: writing dataset logarithmic_radial_mesh'
+   call hdf_write_dataset(file_id, 'logarithmic_radial_mesh', rr)
+   call hdf_set_data_scale(file_id, 'logarithmic_radial_mesh', 'r (a.u.)')
+   ! Angular momenta
+   write(6, '(a)') 'write_output_hdf5: writing dataset angular_momentum'
+   call hdf_write_dataset(file_id, 'angular_momentum', [(ll, ll = 0, lmax)])
+   call hdf_set_data_scale(file_id, 'angular_momentum', 'angular_momentum')
+   ! Derivative orders (for model core charge)
+   write(6, '(a)') 'write_output_hdf5: writing dataset derivative_order'
+   call hdf_write_dataset(file_id, 'derivative_order', [(ii - 1, ii = 1, 5)])
+   call hdf_set_data_scale(file_id, 'derivative_order', 'derivative_order')
+   ! Valence pseudo charge density
+   write(6, '(a)') 'write_output_hdf5: writing dataset ps_valence_charge_density'
+   call hdf_write_dataset(file_id, 'ps_valence_charge_density', rho)
+   call hdf_attach_data_scale(file_id, 'logarithmic_radial_mesh', file_id, 'ps_valence_charge_density')
+   ! Unscreened pseudopotentials
+   write(6, '(a)') 'write_output_hdf5: writing dataset unscreened_pseudopotentials'
+   call hdf_write_dataset(file_id, 'unscreened_pseudopotentials', vpuns)
+   call hdf_attach_data_scale(file_id, 'logarithmic_radial_mesh', file_id, 'unscreened_pseudopotentials', 1)
+   call hdf_attach_data_scale(file_id, 'angular_momentum', file_id, 'unscreened_pseudopotentials', 2)
+   ! Local potential
+   write(6, '(a)') 'write_output_hdf5: writing dataset local_potential'
+   call hdf_write_dataset(file_id, 'local_potential', vpuns(:, lloc + 1))
+   call hdf_attach_data_scale(file_id, 'logarithmic_radial_mesh', file_id, 'local_potential')
+   ! Semi-local pseudopotentials
+   write(6, '(a)') 'write_output_hdf5: writing dataset semilocal_pseudopotentials'
+   call hdf_write_dataset(file_id, 'semilocal_pseudopotentials', vp)
+   call hdf_attach_data_scale(file_id, 'logarithmic_radial_mesh', file_id, 'semilocal_pseudopotentials', 1)
+   call hdf_attach_data_scale(file_id, 'angular_momentum', file_id, 'semilocal_pseudopotentials', 2)
+   ! Core charge density
+   write(6, '(a)') 'write_output_hdf5: writing dataset ae_core_charge_density'
+   call hdf_write_dataset(file_id, 'ae_core_charge_density', rhoc)
+   call hdf_attach_data_scale(file_id, 'logarithmic_radial_mesh', file_id, 'ae_core_charge_density')
+   ! Model core charge density
+   write(6, '(a)') 'write_output_hdf5: writing dataset model_core_charge_density'
+   call hdf_write_dataset(file_id, 'model_core_charge_density', rhomod)
+   call hdf_attach_data_scale(file_id, 'logarithmic_radial_mesh', file_id, 'model_core_charge_density', 1)
+   call hdf_attach_data_scale(file_id, 'derivative_order', file_id, 'model_core_charge_density', 2)
+   ! Wavefunctions
+   call write_wavefunctions_hdf5(file_id, lmax, npa, epa, lloc, vkb, evkb, &
+                                 nproj, rr, vfull, vp, zz, mmax, mxprj, drl, nrl, srel)
+   ! VKB projectors
+   call write_vkb_projectors_hdf5(file_id, mmax, mxprj, lmax, vkb, nproj)
+   ! Convergence profiles:
+   call write_convergence_profiles_hdf5(file_id, cvgplt, mxprj, lmax)
+   ! Log derivative phase shift analysis
+   call write_phase_shift_hdf5(file_id, lmax, lloc, nproj, epa, epsh1, epsh2, &
+                               depsh, vkb, evkb, rr, vfull, vp, zz, mmax, mxprj, &
+                               irc, rxpsh, srel)
+   ! Close HDF5 file
+   call hdf_close_file(file_id)
+
+end subroutine write_output_hdf5
+
+subroutine write_convergence_profiles_hdf5(file_id, cvgplt, mxprj, lmax)
+   ! Input variables
+   integer(HID_T), intent(in) :: file_id
+   !> Maximum angular momentum
+   integer, intent(in) :: lmax
+   !> Maximum number of projectors
+   integer, intent(in) :: mxprj
+   !> Energy per electron error vs. cutoff
+   !> cvgplt(1, error-value, projector, ang-mom) = Cutoff energies (Ha)
+   !> cvgplt(2, error-value, projector, ang-mom) = [error-value] Energy error per electron (Ha)
+   real(dp), intent(in) :: cvgplt(2, 7, mxprj, 4)
+
+   ! Local variables
+   integer(HID_T) :: group_id
+   real(dp) :: tmp_cvgplt(7, mxprj, lmax + 1)
+
+   if (lmax + 1 > 4) error stop "write_convergence_profiles_hdf5: lmax + 1 > 4 (last dimension of cvgplt)"
+
+   call hdf_create_group(file_id, 'convergence_profiles')
+   call hdf_open_group(file_id, 'convergence_profiles', group_id)
+
+   tmp_cvgplt = cvgplt(1, :, :, 1:lmax + 1)
+   call hdf_write_dataset(group_id, 'cutoff_energies', tmp_cvgplt)
+   call hdf_write_attribute(group_id, 'cutoff_energies', 'units', 'Ha')
+   call hdf_label_dim(group_id, 'cutoff_energies', 2, 'projector')
+   call hdf_label_dim(group_id, 'cutoff_energies', 3, 'angular_momentum')
+
+   tmp_cvgplt = cvgplt(2, :, :, 1:lmax + 1)
+   call hdf_write_dataset(group_id, 'error_per_electron', tmp_cvgplt)
+   call hdf_write_attribute(group_id, 'error_per_electron', 'units', 'Ha')
+   call hdf_label_dim(group_id, 'error_per_electron', 2, 'projector')
+   call hdf_label_dim(group_id, 'error_per_electron', 3, 'angular_momentum')
+   call hdf_close_group(group_id)
+
+end subroutine write_convergence_profiles_hdf5
+
+subroutine write_vkb_projectors_hdf5(file_id, mmax, mxprj, lmax, vkb, nproj)
+   ! Input variables
+   integer(HID_T), intent(in) :: file_id
+   !> Number of points in logarithmic radial mesh
+   integer, intent(in) :: mmax
+   !> Maximum number of projectors
+   integer, intent(in) :: mxprj
+   !> Maximum angular momentum
+   integer, intent(in) :: lmax
+   !> VKB projectors
+   real(dp), intent(in) :: vkb(mmax, mxprj, 4)
+   !> Number of VKB projectors for each l
+   integer, intent(in) :: nproj(6)
+
+   ! Local variables
+   !> Angular momentum
+   integer :: ll
+   !> Angular momentum index (l + 1)
+   integer :: l1
+   !> VKB projector group identifier
+   integer(HID_T) :: group_id
+   ! Dataset name
+   character(len=1024) :: name
+
+   call hdf_create_group(file_id, 'vkb_projectors')
+   call hdf_open_group(file_id, 'vkb_projectors', group_id)
+   do l1 = 1, lmax + 1
+      ll = l1 - 1
+      write(name, '(a,i0)') 'l_', ll
+      call hdf_write_dataset(group_id, name, vkb(:, 1:nproj(l1), l1))
+      call hdf_attach_data_scale(file_id, 'logarithmic_radial_mesh', group_id, name, 1)
+      call hdf_label_dim(group_id, name, 1, 'r (a.u.)')
+      call hdf_label_dim(group_id, name, 2, 'projector')
+   end do
+   call hdf_close_group(group_id)
+
+end subroutine write_vkb_projectors_hdf5
+
+subroutine write_wavefunctions_hdf5(file_id, lmax, npa, epa, lloc, &
+                                    vkb, evkb, nproj, rr, vfull, vp, zz, mmax, mxprj, drl, nrl, &
+                                    srel)
+   ! Input variables
+   integer(HID_T), intent(in) :: file_id
+   !> Maximum angular momentum
+   integer, intent(in) :: lmax
+   !> Local potential angular momentum
+   integer, intent(in) :: lloc
+   !> Number of points in logarithmic radial mesh
+   integer, intent(in) :: mmax
+   !> Maximum number of projectors
+   integer, intent(in) :: mxprj
+   !> Number of points in linear radial mesh
+   integer, intent(in) :: nrl
+   !> Principal quantum number for corresponding all-electron state
+   integer, intent(in) :: npa(mxprj, 6)
+   !> Number of VKB projectors for each l
+   integer, intent(in) :: nproj(6)
+   !> Atomic number
+   real(dp), intent(in) :: zz
+   !> Spacing of linear radial mesh
+   real(dp), intent(in) :: drl
+   !> Logarithmic radial grid
+   real(dp), intent(in) :: rr(mmax)
+   !> Semi-local pseudopotentials
+   real(dp), intent(in) :: vp(mmax, 5)
+   !> All-electron potential
+   real(dp), intent(in) :: vfull(mmax)
+   !> VKB projectors
+   real(dp), intent(in) :: vkb(mmax, mxprj, 4)
+   !> Bound-state or scattering state reference energies for VKB potentials
+   real(dp), intent(in) :: epa(mxprj, 6)
+   !> Coefficients of VKB projectors
+   real(dp), intent(in) :: evkb(mxprj, 4)
    !> Scalar-relativistic flag
    logical, intent(in) :: srel
 
@@ -69,18 +262,16 @@ subroutine write_output_hdf5(filename, lmax, npa, epa, lloc, irc, &
    integer :: l1
    !> Loop index
    integer :: ii
-   !> Loop index
-   integer :: jj
-   !> Error code
+   !> Error flag for lsch* routines
    integer :: ierr
    !> Matching index (dummy)
    integer :: mch
-   !> ???
+   !> ????
    integer :: n2
-   !> ???
+   !> Effective principal quantum number for scattering states
    integer :: nn
    !> Projector index
-   integer :: iprj
+   integer :: iproj
    !> Number of projectors for given l
    integer :: nproj_l
    !> Logarithmic radial mesh spacing (log(amesh))
@@ -101,124 +292,80 @@ subroutine write_output_hdf5(filename, lmax, npa, epa, lloc, irc, &
    real(dp), allocatable :: ups(:)
    !> Wavefunction derivative (dummy)
    real(dp), allocatable :: up(:)
-   !> Erro message
+   logical :: is_bound
    character(len=1024) :: error_message
-
    ! HDF5 variables
-   !> HDF5 file identifier
-   integer(HID_T) :: file_id
-   !> HDF5 group and subgroup identifier
-   integer(HID_T) :: loc_id
-   !> HDF5 Bound wavefunction group identifier
-   integer(HID_T) :: bound_wf_group_id
-   !> HDF5 Scattering wavefunction group identifier
-   integer(HID_T) :: scattering_wf_group_id
-   !> HDF5 angular momentum subgroup identifier
-   integer(HID_T) :: l_subgroup_id
-   !> HDF5 principal quantum number or projector index subgroup identifier
-   integer(HID_T) :: n_iproj_subgroup_id
-   !> HDF5 VKB projector group identifier
-   integer(HID_T) :: vkb_group_id
-
-   ! For creating dataset / group names
    character(len=1024) :: l_group_name
-   character(len=1024) :: n_iproj_group_name
+   character(len=1024) :: iproj_group_name
+   integer(HID_T) :: dset_id
+   integer(HID_T) :: wfn_group_id
+   integer(HID_T) :: ae_wfn_group_id
+   integer(HID_T) :: ps_wfn_group_id
 
    allocate (uae(mmax), ups(mmax), up(mmax))
 
    al = 0.01_dp * log(rr(101) / rr(1))
    n2 = int(log(dble(nrl) * drl / rr(1)) / al + 1.0_dp)
 
-   ! Create HDF5 file
-   call hdf_open_file(file_id, filename, 'REPLACE', 'WRITE')
-   ! Logarithmic radial grid
-   call hdf_write_dataset(file_id, 'logarithmic_mesh', rr)
-   ! Valence pseudo charge density
-   call hdf_write_dataset(file_id, 'ps_valence_charge_density', rho)
-   ! Unscreened pseudopotentials
-   call hdf_write_dataset(file_id, 'unscreened_pseudopotentials', vpuns)
-   ! Local potential
-   call hdf_write_dataset(file_id, 'local_potential', vpuns(:, lloc + 1))
-   ! Core charge density
-   call hdf_write_dataset(file_id, 'ae_core_charge_density', rhoc)
-   ! Model core charge density
-   call hdf_write_dataset(file_id, 'model_core_charge_density', rhomod)
-   ! Bound and scattering all-electron and pseudo wavefunctions for each n / iprj:
-   ! /
-   !  bound_wavefunctions/
-   !    l_0/
-   !      n_1/
-   !        ae_wavefunction(mmax)
-   !        ps_wavefunction(mmax)
-   !      ...
-   !    ...
-   !  scattering_wavefunctions/
-   !    l_0/
-   !      iprj_1/
-   !        ae_wavefunction(mmax)
-   !        ps_wavefunction(mmax)
-   !      ...
-   !    ...
-   call hdf_create_group(file_id, 'bound_wavefunctions')
-   call hdf_open_group(file_id, 'bound_wavefunctions', bound_wf_group_id)
-   call hdf_create_group(file_id, 'scattering_wavefunctions')
-   call hdf_open_group(file_id, 'scattering_wavefunctions', scattering_wf_group_id)
+   call hdf_create_group(file_id, 'wavefunctions')
+   call hdf_open_group(file_id, 'wavefunctions', wfn_group_id)
+   call hdf_create_group(wfn_group_id, 'all_electron')
+   call hdf_open_group(wfn_group_id, 'all_electron', ae_wfn_group_id)
+   call hdf_create_group(wfn_group_id, 'pseudo')
+   call hdf_open_group(wfn_group_id, 'pseudo', ps_wfn_group_id)
    do l1 = 1, lmax + 1
       ll = l1 - 1
       nproj_l = nproj(l1)
       if (ll == lloc) nproj_l = 0
       l_group_name = ''
       write(l_group_name, '(a,i0)') 'l_', ll
-      call hdf_create_group(bound_wf_group_id, l_group_name)
-      call hdf_create_group(scattering_wf_group_id, l_group_name)
-      do iprj = 1, nproj(l1)
-         if (epa(iprj, l1) < 0.0_dp) then
-            ! n= xx, l= xx, all-electron wavefunction, pseudo wavefunction
-            etest = epa(iprj, l1)
-            call lschfb(npa(iprj, l1), ll, ierr, etest, rr, vfull, uae, up, zz, mmax, mch, srel)
+      call hdf_create_group(ae_wfn_group_id, l_group_name)
+      call hdf_create_group(ps_wfn_group_id, l_group_name)
+      do iproj = 1, nproj(l1)
+         if (epa(iproj, l1) < 0.0_dp) then
+            is_bound = .true.
+            etest = epa(iproj, l1)
+            call lschfb(npa(iproj, l1), ll, ierr, etest, rr, vfull, uae, up, zz, mmax, mch, srel)
             if (ierr /= 0) then
-               write(error_message, '(a,i0,a,i0)') 'write_output_hdf5: ERROR in lschfb for l=', ll, ' n=', npa(iprj, l1)
-               call hdf_close_group(bound_wf_group_id)
-               call hdf_close_group(scattering_wf_group_id)
+               write(error_message, '(a,i0,a,i0)') 'write_output_hdf5: ERROR in lschfb for l=', ll, ' n=', npa(iproj, l1)
+               call hdf_close_group(ps_wfn_group_id)
+               call hdf_close_group(ae_wfn_group_id)
+               call hdf_close_group(wfn_group_id)
                call hdf_close_file(file_id)
                stop error_message
             end if
             emax = 0.9_dp * etest
             emin = 1.1_dp * etest
-            call lschvkbb(ll + iprj, ll, nproj_l, ierr, etest, emin, emax, rr, vp(:, lloc + 1), vkb(:, :, l1), &
+            call lschvkbb(ll + iproj, ll, nproj_l, ierr, etest, emin, emax, rr, vp(:, lloc + 1), vkb(:, :, l1), &
                           evkb(1, l1), ups, up, mmax, mch)
             if (ierr /= 0) then
-               write(error_message, '(a,i0,a,i0)') 'write_output_hdf5: ERROR in lschvkbb for l=', ll, ' iprj=', iprj
-               call hdf_close_group(bound_wf_group_id)
-               call hdf_close_group(scattering_wf_group_id)
+               write(error_message, '(a,i0,a,i0)') 'write_output_hdf5: ERROR in lschvkbb for l=', ll, ' iprj=', iproj
+               call hdf_close_group(ps_wfn_group_id)
+               call hdf_close_group(ae_wfn_group_id)
+               call hdf_close_group(wfn_group_id)
                call hdf_close_file(file_id)
                stop error_message
             end if
-            call hdf_open_group(bound_wf_group_id, l_group_name, l_subgroup_id)
-            n_iproj_group_name = ''
-            write(n_iproj_group_name, '(a,i0)') 'n_', npa(iprj, l1)
-            call hdf_create_group(l_subgroup_id, n_iproj_group_name)
-            call hdf_open_group(l_subgroup_id, n_iproj_group_name, n_iproj_subgroup_id)
-            call hdf_write_dataset(n_iproj_subgroup_id, 'ae_wavefunction', uae)
-            call hdf_write_dataset(n_iproj_subgroup_id, 'ps_wavefunction', ups)
-            call hdf_close_group(n_iproj_subgroup_id)
-            call hdf_close_group(l_subgroup_id)
          else
-            ! scattering, iprj= xx, l= xx, all-electron wavefunction, pseudo wavefunction
-            etest = epa(iprj, l1)
+            is_bound = .false.
+            etest = epa(iproj, l1)
+            ! AE scattering state
             call lschfs(nn, ll, ierr, etest, rr, vfull, uae, up, zz, mmax, n2, srel)
             if (ierr /= 0) then
-               write(error_message, '(a,i0,a,i0)') 'write_output_hdf5: ERROR in lschfs for l=', ll, ' iprj=', iprj
-               call hdf_close_group(bound_wf_group_id)
-               call hdf_close_group(scattering_wf_group_id)
+               write(error_message, '(a,i0,a,i0)') 'write_output_hdf5: ERROR in lschfs for l=', ll, ' iprj=', iproj
+               call hdf_close_group(ps_wfn_group_id)
+               call hdf_close_group(ae_wfn_group_id)
+               call hdf_close_group(wfn_group_id)
                call hdf_close_file(file_id)
                stop error_message
             end if
+            ! PS scattering state
             call lschvkbs(ll, nproj_l, etest, rr, vp(:, lloc + 1), vkb(:, :, l1), evkb(:, l1), ups, up, mmax, n2)
             if (ierr /= 0) then
-               write(error_message, '(a,i0,a,i0)') 'write_output_hdf5: ERROR in lschvkbs for l=', ll, ' iprj=', iprj
-               call hdf_close_group(bound_wf_group_id)
-               call hdf_close_group(scattering_wf_group_id)
+               write(error_message, '(a,i0,a,i0)') 'write_output_hdf5: ERROR in lschvkbs for l=', ll, ' iprj=', iproj
+               call hdf_close_group(ps_wfn_group_id)
+               call hdf_close_group(ae_wfn_group_id)
+               call hdf_close_group(wfn_group_id)
                call hdf_close_file(file_id)
                stop error_message
             end if
@@ -228,40 +375,174 @@ subroutine write_output_hdf5(filename, lmax, npa, epa, lloc, irc, &
                uae(ii) = sgnae * uae(ii)
                ups(ii) = sgnps * ups(ii)
             end do
-            n_iproj_group_name = ''
-            write(n_iproj_group_name, '(a,i0)') 'iprj_', iprj
-            call hdf_open_group(scattering_wf_group_id, l_group_name, l_subgroup_id)
-            call hdf_create_group(l_subgroup_id, n_iproj_group_name)
-            call hdf_open_group(l_subgroup_id, n_iproj_group_name, n_iproj_subgroup_id)
-            call hdf_write_dataset(n_iproj_subgroup_id, 'ae_wavefunction', uae)
-            call hdf_write_dataset(n_iproj_subgroup_id, 'ps_wavefunction', ups)
          end if
+         write(iproj_group_name, '(a,i0)') 'n_', iproj
+         ! AE wavefunction
+         call hdf_open_group(ae_wfn_group_id, l_group_name, dset_id)
+         call hdf_write_dataset(dset_id, iproj_group_name, uae)
+         call hdf_write_attribute(dset_id, iproj_group_name, 'angular_momentum', ll)
+         call hdf_write_attribute(dset_id, iproj_group_name, 'projector_number', iproj)
+         call hdf_write_attribute(dset_id, iproj_group_name, 'ae_ps', 'ae')
+         if (is_bound) then
+            call hdf_write_attribute(dset_id, iproj_group_name, 'scattering_bound', 'bound')
+            call hdf_write_attribute(dset_id, iproj_group_name, 'principal_quantum_number', npa(iproj, l1))
+            call hdf_write_attribute(dset_id, iproj_group_name, 'energy', epa(iproj, l1))
+         else
+            call hdf_write_attribute(dset_id, iproj_group_name, 'scattering_bound', 'scattering')
+            call hdf_write_attribute(dset_id, iproj_group_name, 'principal_quantum_number', nn)
+            call hdf_write_attribute(dset_id, iproj_group_name, 'energy', etest)
+         end if
+         call hdf_attach_data_scale(file_id, 'logarithmic_radial_mesh', dset_id, iproj_group_name)
+         call hdf_close_group(dset_id)
+         ! PS wavefunction
+         call hdf_open_group(ps_wfn_group_id, l_group_name, dset_id)
+         call hdf_write_dataset(dset_id, iproj_group_name, ups)
+         call hdf_write_attribute(dset_id, iproj_group_name, 'angular_momentum', ll)
+         call hdf_write_attribute(dset_id, iproj_group_name, 'projector_number', iproj)
+         call hdf_write_attribute(dset_id, iproj_group_name, 'ae_ps', 'ps')
+         if (is_bound) then
+            call hdf_write_attribute(dset_id, iproj_group_name, 'scattering_bound', 'bound')
+            call hdf_write_attribute(dset_id, iproj_group_name, 'principal_quantum_number', npa(iproj, l1))
+            call hdf_write_attribute(dset_id, iproj_group_name, 'energy', epa(iproj, l1))
+         else
+            call hdf_write_attribute(dset_id, iproj_group_name, 'scattering_bound', 'scattering')
+            call hdf_write_attribute(dset_id, iproj_group_name, 'principal_quantum_number', nn)
+            call hdf_write_attribute(dset_id, iproj_group_name, 'energy', etest)
+         end if
+         call hdf_attach_data_scale(file_id, 'logarithmic_radial_mesh', dset_id, iproj_group_name)
+         call hdf_close_group(dset_id)
       end do  ! iprj
    end do  ! l1
-   call hdf_close_group(bound_wf_group_id)
-   call hdf_close_group(scattering_wf_group_id)
-   ! VKB projectors:
-   ! /vkb_projectors/
-   !    l_0/
-   !      vkb(mmax, nproj(l))
-   !    ...
-   call hdf_create_group(file_id, 'vkb_projectors')
-   call hdf_open_group(file_id, 'vkb_projectors', vkb_group_id)
-   do l1 = 1, lmax + 1
-      ll = l1 - 1
-      l_group_name = ''
-      write(l_group_name, '(a,i0)') 'l_', ll
-      call hdf_create_group(vkb_group_id, l_group_name)
-      call hdf_open_group(vkb_group_id, l_group_name, l_subgroup_id)
-      call hdf_write_dataset(l_subgroup_id, 'vkb', vkb(:, 1:nproj(l1), l1))
-      call hdf_close_group(l_subgroup_id)
-   end do
-   call hdf_close_group(vkb_group_id)
-   ! Write convergence profiles:
-   call hdf_write_dataset(file_id, 'convergence_profiles', cvgplt)
-   ! Close HDF5 file
-   call hdf_close_file(file_id)
+end subroutine write_wavefunctions_hdf5
 
-end subroutine write_output_hdf5
+subroutine write_phase_shift_hdf5(file_id, lmax, lloc, nproj, epa, epsh1, epsh2, depsh, vkb, evkb, &
+                                  rr, vfull, vp, zz, mmax, mxprj, irc, rxpsh, srel)
+   !Input variables
+   !> HDF5 File ID
+   integer(HID_T), intent(in) :: file_id
+   !> Maximum angular momentum
+   integer, intent(in) :: lmax
+   !> Local potential angular momentum
+   integer, intent(in) :: lloc
+   !> Number of points in logarithmic radial mesh
+   integer, intent(in) :: mmax
+   !> Maximum number of projectors
+   integer, intent(in) :: mxprj
+   !> Indices of core radii
+   integer, intent(in) :: irc(6)
+   !> Number of VKB projectors for each l
+   integer, intent(in) :: nproj(6)
+   !> Atomic number
+   real(dp), intent(in) :: zz
+   !> Logarithmic radial grid
+   real(dp), intent(in) :: rr(mmax)
+   !> Semi-local pseudopotentials
+   real(dp), intent(in) :: vp(mmax, 5)
+   !> Bound-state or scattering state reference energies for VKB potentials
+   real(dp), intent(in) :: epa(mxprj, 6)
+   !> All-electron potential
+   real(dp), intent(in) :: vfull(mmax)
+   !> VKB projectors
+   real(dp), intent(in) :: vkb(mmax, mxprj, 4)
+   !> Coefficients of VKB projectors
+   real(dp), intent(in) :: evkb(mxprj, 4)
+   !> Scalar-relativistic flag
+   logical, intent(in) :: srel
+   !> Minimum energy for log-der analysis
+   real(dp) :: epsh1
+   !> Maximum energy for log-der analysis
+   real(dp) :: epsh2
+   !> Energy spacing for log-der analysis
+   real(dp) :: depsh
+   !> Radius for log-der analysis
+   real(dp) :: rxpsh
+
+   ! Local variables
+   integer :: ii
+   integer :: irphs
+   integer :: ll
+   integer :: l1
+   integer :: npsh
+   integer :: xirphs
+   real(dp), allocatable :: epsh(:), pshf(:), pshp(:)
+   character(len=6) :: name
+   character(len=1024) :: error_msg
+   integer(HID_T) :: psh_group_id, ae_group_id, ps_group_id
+
+   npsh = int(((epsh2 - epsh1) / depsh) - 0.5d0) + 1
+   allocate (epsh(npsh), pshf(npsh), pshp(npsh))
+   do ii = 1, npsh
+      epsh(ii) = epsh2 - depsh * dble(ii - 1)
+   end do
+
+   call hdf_create_group(file_id, "log_derivative_phase_shift")
+   call hdf_open_group(file_id, "log_derivative_phase_shift", psh_group_id)
+   ! Write energy mesh wiith metadata and make it a data scale
+   call hdf_write_dataset(psh_group_id, "energy_mesh", epsh)
+   call hdf_write_attribute(psh_group_id, "energy_mesh", "start", epsh1)
+   call hdf_write_attribute(psh_group_id, "energy_mesh", "stop", epsh2)
+   call hdf_write_attribute(psh_group_id, "energy_mesh", "step", depsh)
+   call hdf_set_data_scale(psh_group_id, "energy_mesh", 'E (Ha)')
+   ! Create and open PS and AE groups
+   call hdf_create_group(psh_group_id, "all_electron")
+   call hdf_open_group(psh_group_id, "all_electron", ae_group_id)
+   call hdf_create_group(psh_group_id, "pseudo")
+   call hdf_open_group(psh_group_id, "pseudo", ps_group_id)
+   do l1 = 1, 4
+      ll = l1 - 1
+      if (ll <= lmax) then
+         irphs = irc(l1) + 2
+      else
+         irphs = irc(lloc + 1)
+      end if
+
+      ! Check that user-specified radius is at least as large as the default value
+      ! If it's too small, error out; if it's larger, use it
+      if (rxpsh > 0.d0) then
+         xirphs = minloc(abs(rr - rxpsh), dim=1)
+         if (xirphs < irphs) then
+            write (error_msg, '(a,f6.2)') 'run_phsft: ERROR rxpsh for logder analysis too small (~< rc(l)) : ', rxpsh
+            call hdf_close_group(ae_group_id)
+            call hdf_close_group(ps_group_id)
+            call hdf_close_file(file_id)
+            error stop error_msg
+         else
+            irphs = xirphs
+         end if
+      end if
+
+      ! Compute the phase shift atan(d(r*ψ(r))/dr / (rψ(r)))
+      call fphsft(ll, epsh2, depsh, pshf, rr, vfull, zz, mmax, irphs, npsh, srel)
+      if (ll == lloc) then
+         call vkbphsft(ll, 0, epsh2, depsh, epa(:, l1), pshf, pshp, &
+         &                   rr, vp(:, lloc + 1), vkb(:, :, l1), evkb(:, l1), &
+         &                   mmax, irphs, npsh)
+      else
+         call vkbphsft(ll, nproj(l1), epsh2, depsh, epa(:, l1), pshf, pshp, &
+         &                   rr, vp(:, lloc + 1), vkb(:, :, l1), evkb(:, l1), &
+         &                   mmax, irphs, npsh)
+      end if
+
+      write(name, '(a,i0)') 'l_', ll
+      ! ! AE
+      call hdf_write_dataset(ae_group_id, name, pshf)
+      call hdf_write_attribute(ae_group_id, name, 'r', rr(irphs))
+      call hdf_write_attribute(ae_group_id, name, 'angular_momentum', ll)
+      call hdf_write_attribute(ae_group_id, name, 'ae_ps', 'ae')
+      call hdf_attach_data_scale(psh_group_id, "energy_mesh", ae_group_id, name)
+      ! ! PS
+      call hdf_write_dataset(ps_group_id, name, pshp)
+      call hdf_write_attribute(ps_group_id, name, 'r', rr(irphs))
+      call hdf_write_attribute(ps_group_id, name, 'angular_momentum', ll)
+      call hdf_write_attribute(ps_group_id, name, 'ae_ps', 'ps')
+      call hdf_attach_data_scale(psh_group_id, "energy_mesh", ps_group_id, name)
+   end do  ! l1
+
+   call hdf_close_group(ps_group_id)
+   call hdf_close_group(ae_group_id)
+   call hdf_close_group(psh_group_id)
+   deallocate (epsh, pshf, pshp)
+
+end subroutine write_phase_shift_hdf5
 
 end module write_output_hdf5_m
