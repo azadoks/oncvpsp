@@ -25,14 +25,14 @@ if (NOT CMAKE_BUILD_TYPE)
       "Choose the type of build, options are: None Debug Release."
       FORCE)
 endif (NOT CMAKE_BUILD_TYPE)
-if (CMAKE_BUILD_TYPE STREQUAL "debug")
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(STATUS "Building in debug mode")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -g -O0 -Wall -fcheck=all -fbacktrace -ffpe-trap=invalid,zero,overflow")
-endif (CMAKE_BUILD_TYPE STREQUAL "debug")
-if (CMAKE_BUILD_TYPE STREQUAL "release")
+endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
     message(STATUS "Building in release mode")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O3 -ffast-math -funroll-loops -DNDEBUG")
-endif (CMAKE_BUILD_TYPE STREQUAL "release")
+endif (CMAKE_BUILD_TYPE STREQUAL "Release")
 
 ##########################################################
 # Options
@@ -85,25 +85,46 @@ if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
 endif()
 
 ###########################################################
+# Common variables
+###########################################################
+set(COMMON_LIBRARIES "")
+set(COMMON_INCLUDE_DIRECTORIES "")
+
+###########################################################
 # LAPACK
 ###########################################################
-find_package(LAPACK)
+find_package(LAPACK HINTS ${LAPACK_ROOT} ${BLAS_ROOT})
 if (LAPACK_FOUND)
+    message(STATUS "LAPACK found.")
+    message(STATUS "  LAPACK libraries: ${LAPACK_LIBRARIES}")
+    message(STATUS "  LAPACK linker flags: ${LAPACK_LINKER_FLAGS}")
 elseif (ONCVPSP_ENABLE_EXTERN_FALLBACKS)
     message(STATUS "Installing LAPACK via submodule")
     add_subdirectory(extern/lapack)
-    set(LAPACK_LIBRARIES lapack)
 else ()
     message(FATAL ERROR "Failed to find LAPACK.")
 endif()
+list(APPEND COMMON_LIBRARIES ${LAPACK_LIBRARIES})
 
 ###########################################################
 # HDF5
 ###########################################################
-find_package(HDF5 COMPONENTS Fortran)
+if (HDF5_USE_STATIC_LIBRARIES)
+    find_package(ZLIB REQUIRED)
+    find_package(LIBAEC REQUIRED)
+endif()
+find_package(HDF5 COMPONENTS Fortran HL REQUIRED)
 if (NOT HDF5_FOUND)
     message(FATAL ERROR "Failed to find HDF5.")
+else()
+    message(STATUS "HDF5 found.")
+    message(STATUS "  HDF5 version: ${HDF5_VERSION}")
+    message(STATUS "  HDF5 include dirs: ${HDF5_INCLUDE_DIRS}")
+    message(STATUS "  HDF5 libraries: ${HDF5_LIBRARIES}")
+    message(STATUS "  HDF5 high-level libraries: ${HDF5_HL_LIBRARIES}")
 endif()
+list(APPEND COMMON_LIBRARIES ${HDF5_HL_LIBRARIES})
+list(APPEND COMMON_INCLUDE_DIRECTORIES ${HDF5_INCLUDE_DIRS})
 
 ###########################################################
 # LIBXC
@@ -133,14 +154,15 @@ if (NOT Libxc_FOUND)
     endif()
 else ()
 endif()
+list(APPEND COMMON_LIBRARIES ${LIBXC_LIBRARIES})
 
 ###########################################################
 # CMake Configuration
 ###########################################################
 # Save compile commands to `compile_commands.json` file
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-link_directories(${CMAKE_LIBRARY_PATH})
-include_directories(${CMAKE_INCLUDE_PATH})
+link_directories(${CMAKE_LIBRARY_PATH} ${COMMON_INCLUDE_DIRECTORIES})
+include_directories(${CMAKE_INCLUDE_PATH} ${COMMON_INCLUDE_DIRECTORIES})
 
 ###########################################################
 # Subdirectories
