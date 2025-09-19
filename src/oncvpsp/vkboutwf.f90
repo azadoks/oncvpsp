@@ -16,41 +16,38 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> Computes Vanderbilt / Kleinman-Bylander outward-integrated wave functions
 subroutine vkboutwf(ll, nvkb, ep, vkb, evkb, rr, vloc, uu, up, node, mmax, mch)
-
-   ! computes Vanderbilt / Kleinman-Bylander outward-integrated wave functions
-
-   !ll  angular momentum
-   !nvkb  switch for 1 or 2 projedtors
-   !ep  energy at which wave function is to be calculated
-   !vkb  Vanderbilt-Kleinman-Bylander projectors for this l
-   !evkb  projector coefficients
-   !rr  log radial mesh
-   !vloc  local pseudopotential
-   !uu  wave function
-   !up  1st derivative of uu
-   !node  count of number of nodes from 0 to rr(mch)
-   !mmax  dimension of log mesh
-   !mch  index of radius to which wave function is to be integrated
    use precision_m, only: dp
    use lsch_m, only: lschps, lschkb
    implicit none
 
    !Input variables
+   !> Switch for 1 or 2 projectors
    integer, intent(in) :: nvkb
+   !> Angular momentum quantum number
    integer, intent(in) :: ll
+   !> Size of logarithmic radial mesh
    integer, intent(in) :: mmax
+   !> Index of radius to which wave function is to be integrated
    integer, intent(in) :: mch
+   !> Logarithmic radial mesh
    real(dp), intent(in) :: rr(mmax)
+   !> Local pseudopotential
    real(dp), intent(in) :: vloc(mmax)
+   !> Vanderbilt-Kleinman-Bylander projectors for this l
    real(dp), intent(in) :: vkb(mmax, nvkb)
+   !> Projector coefficients
    real(dp), intent(in) :: evkb(nvkb)
    !> Energy at which wave function is to be calculated
    real(dp), intent(in) :: ep
 
    !Output variables
+   !> Output radial wave function (r * ψ(r))
    real(dp), intent(out) :: uu(mmax)
+   !> Wave function derivative (d(r * ψ(r))/dr)
    real(dp), intent(out) :: up(mmax)
+   !> Count of number of nodes from 0 to rr(mch)
    integer, intent(out) :: node
 
    !Local variables
