@@ -27,7 +27,7 @@ subroutine dpnint(xx, yy, nn, tt, ss, mm)
    implicit none
 
    !Input variables
-   real(dp), dimension(:) :: xx, yy, tt
+   real(dp) :: xx(*), yy(*), tt(*)
    integer :: nn, mm
 
    !Output variables
