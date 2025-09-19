@@ -149,7 +149,7 @@ subroutine write_output_hdf5(filename, lmax, npa, epa, lloc, irc, &
    ! VKB projectors
    call write_vkb_projectors_hdf5(file_id, mmax, mxprj, lmax, vkb, nproj)
    ! Convergence profiles:
-   call write_convergence_profiles_hdf5(file_id, cvgplt, mxprj, lmax)
+   call write_convergence_profiles_hdf5(file_id, cvgplt, mxprj, lmax, nproj)
    ! Log derivative phase shift analysis
    call write_phase_shift_hdf5(file_id, lmax, lloc, nproj, epa, epsh1, epsh2, &
                                depsh, vkb, evkb, rr, vfull, vp, zz, mmax, mxprj, &
@@ -159,41 +159,59 @@ subroutine write_output_hdf5(filename, lmax, npa, epa, lloc, irc, &
 
 end subroutine write_output_hdf5
 
-subroutine write_convergence_profiles_hdf5(file_id, cvgplt, mxprj, lmax)
+subroutine write_convergence_profiles_hdf5(file_id, cvgplt, mxprj, lmax, nproj)
    ! Input variables
    integer(HID_T), intent(in) :: file_id
    !> Maximum angular momentum
    integer, intent(in) :: lmax
    !> Maximum number of projectors
    integer, intent(in) :: mxprj
+   !> Number of projectors at each angular momentum
+   integer, intent(in) :: nproj(6)
    !> Energy per electron error vs. cutoff
    !> cvgplt(1, error-value, projector, ang-mom) = Cutoff energies (Ha)
    !> cvgplt(2, error-value, projector, ang-mom) = [error-value] Energy error per electron (Ha)
    real(dp), intent(in) :: cvgplt(2, 7, mxprj, 4)
 
    ! Local variables
-   integer(HID_T) :: group_id
-   real(dp) :: tmp_cvgplt(7, mxprj, lmax + 1)
-
-   if (lmax + 1 > 4) error stop "write_convergence_profiles_hdf5: lmax + 1 > 4 (last dimension of cvgplt)"
+   !> Angular momentum index
+   integer :: l1
+   !> Angular momentum
+   integer :: ll
+   !> Projector index
+   integer :: iproj
+   !> Group identifiers
+   integer(HID_T) :: group_id, l_group_id, i_group_id
+   !> Group names
+   character(len=4) :: l_name, i_name
+   !> Temporary buffer for writing
+   real(dp) :: buffer(7)
 
    call hdf_create_group(file_id, 'convergence_profiles')
    call hdf_open_group(file_id, 'convergence_profiles', group_id)
 
-   tmp_cvgplt = cvgplt(1, :, :, 1:lmax + 1)
-   call hdf_write_dataset(group_id, 'cutoff_energies', tmp_cvgplt)
-   call hdf_write_attribute(group_id, 'cutoff_energies', 'units', 'Ha')
-   call hdf_label_dim(group_id, 'cutoff_energies', 2, 'projector')
-   call hdf_label_dim(group_id, 'cutoff_energies', 3, 'angular_momentum')
-
-   tmp_cvgplt = cvgplt(2, :, :, 1:lmax + 1)
-   call hdf_write_dataset(group_id, 'error_per_electron', tmp_cvgplt)
-   call hdf_write_attribute(group_id, 'error_per_electron', 'units', 'Ha')
-   call hdf_label_dim(group_id, 'error_per_electron', 2, 'projector')
-   call hdf_label_dim(group_id, 'error_per_electron', 3, 'angular_momentum')
+   do l1 = 1,lmax + 1
+      ll = l1 - 1
+      write (l_name, '(a,i0)') 'l_', ll
+      call hdf_create_group(group_id, l_name)
+      call hdf_open_group(group_id, l_name, l_group_id)
+      do iproj = 1, nproj(l1)
+         write (i_name, '(a,i0)') 'i_', iproj
+         call hdf_create_group(l_group_id, i_name)
+         call hdf_open_group(l_group_id, i_name, i_group_id)
+         buffer(:) = cvgplt(1, 1:7, iproj, l1)
+         call hdf_write_dataset(i_group_id, 'cutoff_energy', buffer)
+         call hdf_write_attribute(i_group_id, 'cutoff_energy', 'units', 'Ha')
+         buffer(:) = cvgplt(2, 1:7, iproj, l1)
+         call hdf_write_dataset(i_group_id, 'energy_error_per_electron', buffer)
+         call hdf_write_attribute(i_group_id, 'energy_error_per_electron', 'units', 'Ha')
+         call hdf_close_group(i_group_id)
+      end do
+      call hdf_close_group(l_group_id)
+   end do
    call hdf_close_group(group_id)
-
 end subroutine write_convergence_profiles_hdf5
+
 
 subroutine write_vkb_projectors_hdf5(file_id, mmax, mxprj, lmax, vkb, nproj)
    ! Input variables
@@ -214,20 +232,29 @@ subroutine write_vkb_projectors_hdf5(file_id, mmax, mxprj, lmax, vkb, nproj)
    integer :: ll
    !> Angular momentum index (l + 1)
    integer :: l1
+   !> Projector index
+   integer :: iproj
    !> VKB projector group identifier
    integer(HID_T) :: group_id
-   ! Dataset name
-   character(len=1024) :: name
+   !> Angular momentum group identifier
+   integer(HID_T) :: l_group_id
+   ! Group/dataset names
+   character(len=1024) :: l_name
+   character(len=1024) :: i_name
 
    call hdf_create_group(file_id, 'vkb_projectors')
    call hdf_open_group(file_id, 'vkb_projectors', group_id)
    do l1 = 1, lmax + 1
       ll = l1 - 1
-      write(name, '(a,i0)') 'l_', ll
-      call hdf_write_dataset(group_id, name, vkb(:, 1:nproj(l1), l1))
-      call hdf_attach_data_scale(file_id, 'logarithmic_radial_mesh', group_id, name, 1)
-      call hdf_label_dim(group_id, name, 1, 'r (a.u.)')
-      call hdf_label_dim(group_id, name, 2, 'projector')
+      write(l_name, '(a,i0)') 'l_', ll
+      call hdf_create_group(group_id, l_name)
+      call hdf_open_group(group_id, l_name, l_group_id)
+      do iproj = 1, nproj(l1)
+         write(i_name, '(a,i0)') 'i_', iproj
+         call hdf_write_dataset(l_group_id, i_name, vkb(:, iproj, l1))
+         call hdf_attach_data_scale(file_id, 'logarithmic_radial_mesh', l_group_id, i_name)
+      end do
+      call hdf_close_group(l_group_id)
    end do
    call hdf_close_group(group_id)
 
