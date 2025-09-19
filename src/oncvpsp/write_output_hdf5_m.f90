@@ -16,51 +16,51 @@ subroutine write_output_hdf5(filename, lmax, npa, epa, lloc, irc, &
                              rho, rhoc, rhomod, srel, cvgplt)
    ! Input variables
    !> HDF5 filename
-   character(*) :: filename
+   character(*), intent(in) :: filename
    !> Maximum angular momentum
-   integer :: lmax
+   integer, intent(in) :: lmax
    !> Local potential angular momentum
-   integer :: lloc
+   integer, intent(in) :: lloc
    !> Number of points in logarithmic radial mesh
-   integer :: mmax
+   integer, intent(in) :: mmax
    !> Maximum number of projectors
-   integer :: mxprj
+   integer, intent(in) :: mxprj
    !> Number of points in linear radial mesh
-   integer :: nrl
+   integer, intent(in) :: nrl
    !> Principal quantum number for corresponding all-electron state
-   integer :: npa(mxprj, 6)
+   integer, intent(in) :: npa(mxprj, 6)
    !> Indices of core radii
-   integer :: irc(6)
+   integer, intent(in) :: irc(6)
    !> Number of VKB projectors for each l
-   integer :: nproj(6)
+   integer, intent(in) :: nproj(6)
    !> Atomic number
-   real(dp) :: zz
+   real(dp), intent(in) :: zz
    !> Spacing of linear radial mesh
-   real(dp) :: drl
+   real(dp), intent(in) :: drl
    !> Logarithmic radial grid
-   real(dp) :: rr(mmax)
+   real(dp), intent(in) :: rr(mmax)
    !> Semi-local pseudopotentials
-   real(dp) :: vp(mmax, 5)
+   real(dp), intent(in) :: vp(mmax, 5)
    !> Unscreened pseudopotentials
-   real(dp) :: vpuns(mmax, 5)
+   real(dp), intent(in) :: vpuns(mmax, 5)
    !> All-electron potential
-   real(dp) :: vfull(mmax)
+   real(dp), intent(in) :: vfull(mmax)
    !> VKB projectors
-   real(dp) :: vkb(mmax, mxprj, 4)
+   real(dp), intent(in) :: vkb(mmax, mxprj, 4)
    !> Valence pseudocharge
-   real(dp) :: rho(mmax)
+   real(dp), intent(in) :: rho(mmax)
    !> Core charge
-   real(dp) :: rhoc(mmax)
+   real(dp), intent(in) :: rhoc(mmax)
    !> Model core charge
-   real(dp) :: rhomod(mmax, 5)
+   real(dp), intent(in) :: rhomod(mmax, 5)
    !> Bound-state or scattering state reference energies for VKB potentials
-   real(dp) :: epa(mxprj, 6)
+   real(dp), intent(in) :: epa(mxprj, 6)
    !> Coefficients of VKB projectors
-   real(dp) :: evkb(mxprj, 4)
+   real(dp), intent(in) :: evkb(mxprj, 4)
    !> Energy per electron error vs. cutoff
-   real(dp) :: cvgplt(2, 7, mxprj, 4)
+   real(dp), intent(in) :: cvgplt(2, 7, mxprj, 4)
    !> Scalar-relativistic flag
-   logical :: srel
+   logical, intent(in) :: srel
 
    ! Local variables
    !> Angular momentum
