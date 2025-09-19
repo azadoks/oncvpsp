@@ -15,7 +15,7 @@ endif()
 project(oncvpsp
     VERSION 4.0.1
     DESCRIPTION "Optimized norm-conserving Vanderbilt pseudopotentials"
-    LANGUAGES Fortran)
+    LANGUAGES Fortran C)
 
 ##########################################################
 # Build types
@@ -95,6 +95,14 @@ elseif (ONCVPSP_ENABLE_EXTERN_FALLBACKS)
     set(LAPACK_LIBRARIES lapack)
 else ()
     message(FATAL ERROR "Failed to find LAPACK.")
+endif()
+
+###########################################################
+# HDF5
+###########################################################
+find_package(HDF5 COMPONENTS Fortran)
+if (NOT HDF5_FOUND)
+    message(FATAL ERROR "Failed to find HDF5.")
 endif()
 
 ###########################################################

@@ -36,6 +36,7 @@ program oncvpsp
    use psmlout_m, only: psmlout
    use read_input_m, only: read_input
    use lsch_m, only: lschfb, lschvkbb
+   use write_output_hdf5_m, only: write_output_hdf5
    implicit none
    ! Constants
    !> Scalar-relativistic flag
@@ -282,6 +283,8 @@ program oncvpsp
    character(len=1024) :: arg
    !> Input file name
    character(len=1024) :: infile = ''
+   !> HDF5 output file name
+   character(len=1024) :: h5file = ''
    !> Unit for input file
    integer :: inunit
 
@@ -303,6 +306,12 @@ program oncvpsp
             stop 1
          end if
          call get_command_argument(ii + 1, infile)
+       case ('--hdf5-output')
+         if (ii + 1 > command_argument_count()) then
+            write (6, '(a)') 'Error: --hdf5-output requires a filename argument'
+            stop 1
+         end if
+         call get_command_argument(ii + 1, h5file)
        case default
          ! Ignore unknown arguments for now
       end select
@@ -723,6 +732,12 @@ program oncvpsp
    call run_plot(lmax, npa, epa, lloc, irc, &
    &                    vkb, evkb, nproj, rr, vfull, vp, vpuns, zz, mmax, mxprj, drl, nrl, &
    &                    rho, rhoc, rhomod, srel, cvgplt)
+
+   if (trim(h5file) /= '') then
+      call write_output_hdf5(trim(h5file), lmax, npa, epa, lloc, irc, &
+                             vkb, evkb, nproj, rr, vfull, vp, vpuns, zz, mmax, mxprj, drl, nrl, &
+                             rho, rhoc, rhomod, srel, cvgplt)
+   end if
 
    call run_phsft(lmax, lloc, nproj, epa, epsh1, epsh2, depsh, vkb, evkb, &
    &               rr, vfull, vp, zz, mmax, mxprj, irc, rxpsh, srel)
