@@ -31,7 +31,7 @@ CONTAINS
 
 !-----------------------------------------------------------------
 subroutine reset_elstack(elstack)
-   type(elstack_t), intent(inout)  :: elstack
+   type(elstack_t), intent(in out)  :: elstack
 
    elstack%n_items = 0
 
@@ -56,7 +56,7 @@ end function number_of_items
 !-----------------------------------------------------------------
 subroutine push_elstack(item,elstack)
    character(len=*), intent(in)      :: item
-   type(elstack_t), intent(inout)  :: elstack
+   type(elstack_t), intent(in out)  :: elstack
 
    integer   :: n
 
@@ -72,7 +72,7 @@ end subroutine push_elstack
 
 !-----------------------------------------------------------------
 subroutine pop_elstack(elstack,item)
-   type(elstack_t), intent(inout)     :: elstack
+   type(elstack_t), intent(in out)     :: elstack
    character(len=*), intent(out)        :: item
 
 !

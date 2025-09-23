@@ -46,7 +46,7 @@ CONTAINS
 !-------------------------------------------------------------------
 subroutine xml_OpenFile(filename, xf, indent)
    character(len=*), intent(in)  :: filename
-   type(xmlf_t), intent(inout)   :: xf
+   type(xmlf_t), intent(in out)   :: xf
    logical, intent(in), optional :: indent
 
    integer :: iostat
@@ -71,7 +71,7 @@ end subroutine xml_OpenFile
 
 !-------------------------------------------------------------------
 subroutine xml_AddXMLDeclaration(xf,encoding)
-   type(xmlf_t), intent(inout)   :: xf
+   type(xmlf_t), intent(in out)   :: xf
    character(len=*), intent(in), optional :: encoding
 
    if (present(encoding)) then
@@ -84,7 +84,7 @@ end subroutine xml_AddXMLDeclaration
 
 !-------------------------------------------------------------------
 subroutine xml_AddComment(xf,comment)
-   type(xmlf_t), intent(inout)   :: xf
+   type(xmlf_t), intent(in out)   :: xf
    character(len=*), intent(in)  :: comment
 
    call close_start_tag(xf,">")
@@ -96,7 +96,7 @@ end subroutine xml_AddComment
 
 !-------------------------------------------------------------------
 subroutine xml_AddCdataSection(xf,cdata)
-   type(xmlf_t), intent(inout)   :: xf
+   type(xmlf_t), intent(in out)   :: xf
    character(len=*), intent(in)  :: cdata
 
    call close_start_tag(xf,">")
@@ -107,7 +107,7 @@ end subroutine xml_AddCdataSection
 
 !-------------------------------------------------------------------
 subroutine xml_NewElement(xf,name)
-   type(xmlf_t), intent(inout)   :: xf
+   type(xmlf_t), intent(in out)   :: xf
    character(len=*), intent(in)  :: name
 
    if (is_empty(xf%stack)) then
@@ -125,7 +125,7 @@ subroutine xml_NewElement(xf,name)
 end subroutine xml_NewElement
 !-------------------------------------------------------------------
 subroutine xml_AddPcdata(xf,pcdata,space,line_feed)
-   type(xmlf_t), intent(inout)   :: xf
+   type(xmlf_t), intent(in out)   :: xf
    character(len=*), intent(in)  :: pcdata
    logical, intent(in), optional  :: space
    logical, intent(in), optional  :: line_feed
@@ -180,7 +180,7 @@ end subroutine xml_AddPcdata
 
 !-------------------------------------------------------------------
 subroutine xml_AddAttribute(xf,name,value)
-   type(xmlf_t), intent(inout)   :: xf
+   type(xmlf_t), intent(in out)   :: xf
    character(len=*), intent(in)  :: name
    character(len=*), intent(in)  :: value
 
@@ -202,7 +202,7 @@ end subroutine xml_AddAttribute
 
 !-----------------------------------------------------------
 subroutine xml_EndElement(xf,name)
-   type(xmlf_t), intent(inout)   :: xf
+   type(xmlf_t), intent(in out)   :: xf
    character(len=*), intent(in)  :: name
 
    character(len=100)  :: current
@@ -264,7 +264,7 @@ end subroutine get_unit
 
 !----------------------------------------------------------
 subroutine add_eol(xf)
-   type(xmlf_t), intent(inout)   :: xf
+   type(xmlf_t), intent(in out)   :: xf
 
    integer :: indent_level
    character(len=100), parameter  ::  blanks =  ""
@@ -279,7 +279,7 @@ subroutine add_eol(xf)
 end subroutine add_eol
 !------------------------------------------------------------
 subroutine dump_buffer(xf,lf)
-   type(xmlf_t), intent(inout)   :: xf
+   type(xmlf_t), intent(in out)   :: xf
    logical, intent(in), optional :: lf
 
    if (present(lf)) then
@@ -297,7 +297,7 @@ end subroutine dump_buffer
 
 !------------------------------------------------------------
 subroutine close_start_tag(xf,s)
-   type(xmlf_t), intent(inout)   :: xf
+   type(xmlf_t), intent(in out)   :: xf
    character(len=*), intent(in)  :: s
 
    if (.not. xf%start_tag_closed)  then
@@ -310,7 +310,7 @@ end subroutine close_start_tag
 
 !-------------------------------------------------------------
 subroutine write_attributes(xf)
-   type(xmlf_t), intent(inout)   :: xf
+   type(xmlf_t), intent(in out)   :: xf
 
    integer  :: i, status, size
    character(len=100)  :: key, value
@@ -334,7 +334,7 @@ end subroutine write_attributes
 
 !---------------------------------------------------------------
 subroutine xml_AddArray_integer(xf,a,format)
-   type(xmlf_t), intent(inout)         :: xf
+   type(xmlf_t), intent(in out)         :: xf
    integer, intent(in), dimension(:)   :: a
    character(len=*), intent(in), optional  :: format
 
@@ -349,7 +349,7 @@ end subroutine xml_AddArray_integer
 
 !-------------------------------------------------------------------
 subroutine xml_AddArray_real_dp(xf,a,format)
-   type(xmlf_t), intent(inout)         :: xf
+   type(xmlf_t), intent(in out)         :: xf
    real(kind=dp), intent(in), dimension(:)   :: a
    character(len=*), intent(in), optional  :: format
 
@@ -364,7 +364,7 @@ end subroutine xml_AddArray_real_dp
 
 !------------------------------------------------------------------
 subroutine xml_AddArray_real_sp(xf,a,format)
-   type(xmlf_t), intent(inout)         :: xf
+   type(xmlf_t), intent(in out)         :: xf
    real(kind=sp), intent(in), dimension(:)   :: a
    character(len=*), intent(in), optional  :: format
 

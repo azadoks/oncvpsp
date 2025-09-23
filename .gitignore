@@ -10,6 +10,9 @@ dependencies/
 .*.swp
 *_cpp.f90
 *.log
+*.hdf5
+*.h5
+*.out
 
 tests/*.sh
 tests/data/*.out

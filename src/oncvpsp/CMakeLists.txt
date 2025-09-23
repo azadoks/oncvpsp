@@ -71,6 +71,8 @@ set(src_oncvpsp
     functionals_messages_m.f90
     functionals_m.F90
     libxc_list_m.F90
+    hdf5_utils.f90
+    write_output_hdf5_m.f90
 )
 
 ###########################################################
@@ -78,4 +80,4 @@ set(src_oncvpsp
 ###########################################################
 add_library(oncvpsp STATIC ${src_oncvpsp})
 add_dependencies(oncvpsp wxml)
-target_link_libraries(oncvpsp wxml ${LIBXC_LIBRARIES} ${LAPACK_LIBRARIES})
+target_link_libraries(oncvpsp wxml ${COMMON_LIBRARIES})

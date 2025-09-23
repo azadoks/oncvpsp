@@ -7,3 +7,6 @@
 [submodule "extern/xmlf90"]
 	path = extern/xmlf90
 	url = https://github.com/azadoks/xmlf90.git
+[submodule "extern/hdf5"]
+	path = extern/hdf5
+	url = https://github.com/HDFGroup/hdf5.git

@@ -90,7 +90,7 @@ end function compare_str_buffer
 !----------------------------------------------------------------
 subroutine add_str_to_buffer(s, buffer)
    character(len=*), intent(in) :: s
-   type(buffer_t), intent(inout) :: buffer
+   type(buffer_t), intent(in out) :: buffer
 
    integer :: n, len_s, last_pos
 
@@ -108,7 +108,7 @@ end subroutine add_str_to_buffer
 
 !----------------------------------------------------------------
 subroutine reset_buffer(buffer)
-   type(buffer_t), intent(inout) :: buffer
+   type(buffer_t), intent(in out) :: buffer
 
    buffer%size = 0
 

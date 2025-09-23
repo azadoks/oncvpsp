@@ -191,7 +191,7 @@ end subroutine xc_functl_init_functl
 
  ! ---------------------------------------------------------
 subroutine xc_functl_end(functl)
-   type(xc_functl_t), intent(inout) :: functl
+   type(xc_functl_t), intent(in out) :: functl
 
 
    if(functl%family /= XC_FAMILY_NONE .and. functl%family /= XC_FAMILY_OEP)  then
@@ -293,7 +293,7 @@ subroutine xc_functl_get_vxc(functl, np, al, rr, rho, rho_grad, rho_lapl, tau, i
    !  e        - energy per-volume                                         !
    !  vtau     - extra term arising from MGGA potential                    !
    !-----------------------------------------------------------------------!
-   type(xc_functl_t), intent(inout) :: functl
+   type(xc_functl_t), intent(in out) :: functl
    integer     ,       intent(in)    :: np
    real(8),           intent(in)    :: al
    real(8),           intent(in)    :: rr(np)
