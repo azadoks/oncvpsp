@@ -27,11 +27,14 @@ subroutine dpnint(xx, yy, nn, tt, ss, mm)
    implicit none
 
    !Input variables
-   real(dp) :: xx(*), yy(*), tt(*)
-   integer :: nn, mm
+   real(dp), intent(in) :: xx(*)
+   real(dp), intent(in) :: yy(*)
+   real(dp), intent(in) :: tt(*)
+   integer, intent(in) :: nn
+   integer, intent(in) :: mm
 
    !Output variables
-   real(dp) :: ss(*)
+   real(dp), intent(out) :: ss(*)
 
    !Local variables
    real(dp) :: sum, term, zz

@@ -36,6 +36,7 @@ program oncvpsp
    use psmlout_m, only: psmlout
    use read_input_m, only: read_input
    use lsch_m, only: lschfb, lschvkbb
+   use construct_rhoc_model_m, only: construct_rhoc_model_1, construct_rhoc_model_2, construct_rhoc_model_3
    use write_output_hdf5_m, only: write_output_hdf5
    implicit none
    ! Constants
@@ -328,10 +329,10 @@ program oncvpsp
    end if
 
    call read_input(inunit, inline, atsym, zz, nc, nv, iexc, psfile, na, la, fa, lmax, rc, ep, &
-   &                       ncon, nbas, qcut, lloc, lpopt, dvloc0, nproj, debl, icmod, fcfact, &
-   &                       rcfact, fcfact_min, fcfact_max, fcfact_step, rcfact_min, &
-   &                       rcfact_max, rcfact_step, epsh1, epsh2, depsh, rxpsh, rlmax, drl, &
-   &                       ncnf, nvcnf, nacnf, lacnf, facnf)
+                   ncon, nbas, qcut, lloc, lpopt, dvloc0, nproj, debl, icmod, fcfact, &
+                   rcfact, fcfact_min, fcfact_max, fcfact_step, rcfact_min, &
+                   rcfact_max, rcfact_step, epsh1, epsh2, depsh, rxpsh, rlmax, drl, &
+                   ncnf, nvcnf, nacnf, lacnf, facnf)
 
    nvcnf(1) = nv
    do ii = 1, nc + nv
@@ -353,8 +354,8 @@ program oncvpsp
    end if
 
    call check_data(atsym, zz, fcfact, rcfact, epsh1, epsh2, depsh, rlmax, drl, fa, facnf, &
-   &                rc, ep, qcut, debl, nc, nv, iexc, lmax, lloc, lpopt, icmod, &
-   &                ncnf, na, la, nvcnf, nacnf, lacnf, ncon, nbas, nproj, psfile)
+                   rc, ep, qcut, debl, nc, nv, iexc, lmax, lloc, lpopt, icmod, &
+                   ncnf, na, la, nvcnf, nacnf, lacnf, ncon, nbas, nproj, psfile)
 
    nrl = int((rlmax / drl) - 0.5d0) + 1
 
@@ -399,7 +400,7 @@ program oncvpsp
    ! full potential atom solution
    !
    call sratom(na, la, ea, fa, rpk, nc, nc + nv, it, rhoc, rho, &
-   &              rr, vfull, zz, mmax, iexc, etot, ierr, srel)
+               rr, vfull, zz, mmax, iexc, etot, ierr, srel)
    !
    !
 
@@ -664,17 +665,25 @@ program oncvpsp
    ! or Teter function fit
 
    if (icmod == 1) then
-      call modcore(rhops, rho, rhoc, rhoae, rhotae, rhomod, &
-      &               fcfact, irps, mmax, rr, nc, nv, la, zion, iexc)
+      ! call modcore(rhops, rho, rhoc, rhoae, rhotae, rhomod, &
+      !              fcfact, irps, mmax, rr, nc, nv, la, zion, iexc)
+      call construct_rhoc_model_1(rhops, rho, rhoc, rhoae, rhotae, rhomod, &
+                                  fcfact, irps, mmax, rr, nc, nv, la, zion, iexc)
 
    else if (icmod == 2) then
-      call modcore2(rhops, rho, rhoc, rhoae, rhotae, rhomod, &
-      &               fcfact, mmax, rr, nc, nv, la, zion, iexc)
+      ! call modcore2(rhops, rho, rhoc, rhoae, rhotae, rhomod, &
+      !               fcfact, mmax, rr, nc, nv, la, zion, iexc)
+      call construct_rhoc_model_2(rhops, rho, rhoc, rhoae, rhotae, rhomod, &
+                                  fcfact, mmax, rr, nc, nv, la, zion, iexc)
 
-   else if (icmod >= 3) then
+   else if (icmod == 3) then
+      call construct_rhoc_model_3(rhops, rho, rhoc, rhoae, rhotae, rhomod, &
+                                  fcfact, rcfact, mmax, rr, nc, nv, la, zion, iexc)
+
+   else if (icmod > 3) then
       call modcore3(icmod, rhops, rho, rhoc, rhoae, rhotae, rhomod, &
-      &               fcfact, fcfact_min, fcfact_max, fcfact_step, rcfact, rcfact_min, rcfact_max, rcfact_step, &
-      &               mmax, rr, nc, nv, la, zion, iexc)
+                    fcfact, fcfact_min, fcfact_max, fcfact_step, rcfact, rcfact_min, rcfact_max, rcfact_step, &
+                    mmax, rr, nc, nv, la, zion, iexc)
 
    end if
 

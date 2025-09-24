@@ -73,6 +73,8 @@ set(src_oncvpsp
     libxc_list_m.F90
     hdf5_utils.f90
     write_output_hdf5_m.f90
+    teter_m.f90
+    construct_rhoc_model_m.f90
 )
 
 ###########################################################
