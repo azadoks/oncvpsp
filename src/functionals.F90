@@ -281,7 +281,7 @@ subroutine xc_functl_write_info(functl, iunit)
    type(xc_functl_t), intent(in) :: functl
    integer,           intent(in) :: iunit
 
-   character(len=1000) :: s1, s2
+   character(len=1024) :: s1, s2
    integer :: ii
 #if XC_MAJOR_VERSION>=6
    type(xc_f03_func_reference_t) :: xc_ref
