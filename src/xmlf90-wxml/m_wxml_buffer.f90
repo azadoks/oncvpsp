@@ -88,24 +88,6 @@ function compare_str_buffer(str,buffer) result(equal)  ! .equal. generic
 end function compare_str_buffer
 
 !----------------------------------------------------------------
-subroutine add_char_to_buffer(c,buffer)
-   character(len=1), intent(in)   :: c
-   type(buffer_t), intent(inout)  :: buffer
-
-   integer   :: n
-   buffer%size = buffer%size + 1
-   n = buffer%size
-
-   if (n> MAX_BUFF_SIZE) then
-      stop "Buffer overflow: long unbroken string of pcdata or attribute value..."
-!  RETURN
-!
-   endif
-
-   buffer%str(n:n) = c
-end subroutine add_char_to_buffer
-
-!----------------------------------------------------------------
 subroutine add_str_to_buffer(s,buffer)
    character(len=*), intent(in)   :: s
    type(buffer_t), intent(inout)  :: buffer
