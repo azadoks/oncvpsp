@@ -83,11 +83,9 @@ subroutine dpnint(xx, yy, nn, tt, ss, mm)
          end if
       end do
 
-      zz = tt(jj)
-
       if (mod(npoly, 2) == 1) then
          istart = imin - int(real(npoly) / real(2))
-      else if (zz - xx(imin) < xx(imax) - zz) then
+      else if (tt(jj) - xx(imin) < xx(imax) - tt(jj)) then
          istart = imin - int(real(npoly) / real(2))
       else
          istart = imax - int(real(npoly) / real(2))
@@ -102,7 +100,7 @@ subroutine dpnint(xx, yy, nn, tt, ss, mm)
          term = yy(iy)
          do iprod = istart, istart + npoly
             if (iprod == iy) cycle
-            term = term * (zz - xx(iprod)) / (xx(iy) - xx(iprod))
+            term = term * (tt(jj) - xx(iprod)) / (xx(iy) - xx(iprod))
          end do
          sum = sum + term
       end do
@@ -127,14 +125,12 @@ subroutine dpnint(xx, yy, nn, tt, ss, mm)
             term = ss(iy)
             do iprod = istart, istart + npoly
                if (iprod == iy) cycle
-               term = term * (zz - tt(iprod)) / (tt(iy) - tt(iprod))
+               term = term * (tt(jj) - tt(iprod)) / (tt(iy) - tt(iprod))
             end do
             sum = sum + term
          end do
          ss(1) = sum
-
       end if
-
    end do
    return
 end subroutine dpnint

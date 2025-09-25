@@ -36,6 +36,7 @@ program oncvpsp
    use psmlout_m, only: psmlout
    use read_input_m, only: read_input
    use lsch_m, only: lschfb, lschvkbb
+   use sratom_m, only: sratom
    use construct_rhoc_model_m, only: construct_rhoc_model_1, construct_rhoc_model_2, construct_rhoc_model_3
    use write_output_hdf5_m, only: write_output_hdf5
    implicit none
@@ -527,7 +528,7 @@ program oncvpsp
                iprj = iprj + 1
                et = ea(kk)
                call lschfb(na(kk), la(kk), ierr, et, &
-               &                      rr, vfull, uu, up, zz, mmax, mch, srel)
+                           rr, vfull, uu, up, zz, mmax, mch, srel)
                if (ierr /= 0) then
                   write (6, '(/a,3i4)') 'oncvpsp-387: lschfb convergence ERROR n,l,iter=', &
                   &           na(ii), la(ii), it

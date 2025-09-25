@@ -67,7 +67,7 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
    !Local variables
    real(dp) :: al
    real(dp) :: d2diff, iminus, metric, rmatch, rhocmatch, r0, rcross
-   real(dp) :: gg, tt, yy
+   real(dp) :: gg, yy
    real(dp) :: drint, rtst, rint(20), fint(20)  !ad-hoc smoothing variables
    real(dp), allocatable :: vxcae(:), vxcpsp(:), vo(:), d2excae(:, :), d2excps(:, :)
    real(dp), allocatable :: dvxcae(:, :), dvxcps(:, :), vxct(:)
@@ -182,17 +182,6 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
          do jj = 1, nfcfact
             xt(1) = (fcfact_min + fcfact_step * (jj - 1)) * rhocmatch
 
-            r0 = 1.5d0 * xt(2)
-            do ii = mmax, 1, -1
-               if (rr(ii) < r0) then
-                  call gg1cc(gg, yy)
-                  if (xt(1) * gg < rhoc(ii)) then
-                     rcross = rr(ii)
-                     exit
-                  end if
-               end if
-            end do
-
             do ii = 1, mmax
                yy = rr(ii) / xt(2)
                call gg1cc(gg, yy)
@@ -200,7 +189,7 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
             end do
 
             call der2exc(rhotps, rhomod(1, 1), rhops, rr, d2excps, d2excae, d2diff, &
-            &                     zion, iexc, nc, nv, la, irmod, mmax)
+                         zion, iexc, nc, nv, la, irmod, mmax)
             fta(jj) = 1.0d3 * d2diff  ! mHa
             call compute_iminus(rhoc, rhomod, rr, mmax, iminus)
             call compute_combined_metric(d2diff, iminus, metric)
@@ -274,16 +263,20 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
       xx(2, 1) = xx(2, 1) - 0.025d0 * rmatch
 
       !Fill function values for initial simplex
-
       do kk = 1, 3
          xt(:) = xx(:, kk)
 
          r0 = 1.5d0 * xt(2)
          do ii = mmax, 1, -1
             if (rr(ii) < r0) then
+               yy = rr(ii) / xt(2)
                call gg1cc(gg, yy)
                if (xt(1) * gg < rhoc(ii)) then
                   rcross = rr(ii)
+                  write(6, '(a,f10.4,a,f10.4,a,f10.6,a,f10.6,a,f10.6,a,f10.6)') &
+                     ' rcfact=', xt(2), ' fcfact=', xt(1), &
+                     ' y=', yy, ' g=', gg, &
+                     ' rhoc(ii)=', rhoc(ii), ' rcross=', rcross
                   exit
                end if
             end if
@@ -292,12 +285,11 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
          do ii = 1, mmax
             yy = rr(ii) / xt(2)
             call gg1cc(gg, yy)
-            tt = (rr(ii) - r0 - 2.0d0 * rcross) / (r0 - rcross)
             rhomod(ii, 1) = xt(1) * gg
          end do
 
          call der2exc(rhotps, rhomod(1, 1), rhops, rr, d2excps, d2excae, d2diff, &
-         &                    zion, iexc, nc, nv, la, irmod, mmax)
+                      zion, iexc, nc, nv, la, irmod, mmax)
          if (icmod == 4) then
             ff(kk) = d2diff
          else if (icmod == 5) then
@@ -357,26 +349,14 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
          !(3) Reflection
          xr(:) = x0(:) + alpha_nm * (x0(:) - xx(:, 3))
 
-         r0 = 1.5d0 * xr(2)
-         do ii = mmax, 1, -1
-            if (rr(ii) < r0) then
-               call gg1cc(gg, yy)
-               if (xr(1) * gg < rhoc(ii)) then
-                  rcross = rr(ii)
-                  exit
-               end if
-            end if
-         end do
-
          do ii = 1, mmax
             yy = rr(ii) / xr(2)
             call gg1cc(gg, yy)
-            tt = (rr(ii) - r0 - 2.0d0 * rcross) / (r0 - rcross)
             rhomod(ii, 1) = xr(1) * gg
          end do
 
          call der2exc(rhotps, rhomod(1, 1), rhops, rr, d2excps, d2excae, d2diff, &
-         &                    zion, iexc, nc, nv, la, irmod, mmax)
+                      zion, iexc, nc, nv, la, irmod, mmax)
          if (icmod == 4) then
             fr = d2diff
          else if (icmod == 5) then
@@ -398,26 +378,14 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
          if (fr < ff(1)) then
             xe(:) = x0(:) + gamma_nm * (x0(:) - xx(:, 3))
 
-            r0 = 1.5d0 * xe(2)
-            do ii = mmax, 1, -1
-               if (rr(ii) < r0) then
-                  call gg1cc(gg, yy)
-                  if (xe(1) * gg < rhoc(ii)) then
-                     rcross = rr(ii)
-                     exit
-                  end if
-               end if
-            end do
-
             do ii = 1, mmax
                yy = rr(ii) / xe(2)
                call gg1cc(gg, yy)
-               tt = (rr(ii) - r0 - 2.0d0 * rcross) / (r0 - rcross)
                rhomod(ii, 1) = xe(1) * gg
             end do
 
             call der2exc(rhotps, rhomod(1, 1), rhops, rr, d2excps, d2excae, d2diff, &
-            &                    zion, iexc, nc, nv, la, irmod, mmax)
+                         zion, iexc, nc, nv, la, irmod, mmax)
             if (icmod == 4) then
                fe = d2diff
             else if (icmod == 5) then
@@ -442,26 +410,14 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
          !(5) Contraction
          xc(:) = x0(:) + rho_nm * (x0(:) - xx(:, 3))
 
-         r0 = 1.5d0 * xc(2)
-         do ii = mmax, 1, -1
-            if (rr(ii) < r0) then
-               call gg1cc(gg, yy)
-               if (xc(1) * gg < rhoc(ii)) then
-                  rcross = rr(ii)
-                  exit
-               end if
-            end if
-         end do
-
          do ii = 1, mmax
             yy = rr(ii) / xc(2)
             call gg1cc(gg, yy)
-            tt = (rr(ii) - r0 - 2.0d0 * rcross) / (r0 - rcross)
             rhomod(ii, 1) = xc(1) * gg
          end do
 
          call der2exc(rhotps, rhomod(1, 1), rhops, rr, d2excps, d2excae, d2diff, &
-         &                    zion, iexc, nc, nv, la, irmod, mmax)
+                      zion, iexc, nc, nv, la, irmod, mmax)
          if (icmod == 4) then
             fc = d2diff
          else if (icmod == 5) then
@@ -482,26 +438,14 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
          do jj = 2, 3
             xx(:, jj) = xx(:, 1) + sigma_nm * (xx(:, jj) - xx(:, 1))
 
-            r0 = 1.5d0 * xx(2, jj)
-            do ii = mmax, 1, -1
-               if (rr(ii) < r0) then
-                  call gg1cc(gg, yy)
-                  if (xx(1, jj) * gg < rhoc(ii)) then
-                     rcross = rr(ii)
-                     exit
-                  end if
-               end if
-            end do
-
             do ii = 1, mmax
                yy = rr(ii) / xx(2, jj)
                call gg1cc(gg, yy)
-               tt = (rr(ii) - r0 - 2.0d0 * rcross) / (r0 - rcross)
                rhomod(ii, 1) = xx(1, jj) * gg
             end do
 
             call der2exc(rhotps, rhomod(1, 1), rhops, rr, d2excps, d2excae, d2diff, &
-            &                    zion, iexc, nc, nv, la, irmod, mmax)
+                         zion, iexc, nc, nv, la, irmod, mmax)
             if (icmod == 4) then
                ff(jj) = d2diff
             else if (icmod == 5) then
@@ -524,16 +468,17 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
       xx(1, 1) = fcfact * rhocmatch
       xx(2, 1) = rcfact * rmatch
 
-      write (6, '(/a/)') &
-      &       'Teter function model core charge with specified parameters'
+      write (6, '(/a/)') 'Teter function model core charge with specified parameters'
+      write (6, '(a)') 'amplitude prefactor, scale prefactor'
+      write (6, '(2f10.4)') xx(1, 1) / rhocmatch, xx(2, 1) / rmatch
    end if
 
    r0 = 1.5d0 * xx(2, 1)
    do ii = mmax, 1, -1
       if (rr(ii) < r0) then
+         yy = rr(ii) / xx(2, 1)
          call gg1cc(gg, yy)
          if (xx(1, 1) * gg < rhoc(ii)) then
-            rcross = rr(ii)
             ircross = ii
             exit
          end if
@@ -546,7 +491,6 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
    do ii = 1, mmax
       yy = rr(ii) / xx(2, 1)
       call gg1cc(gg, yy)
-      tt = (rr(ii) - r0 - 2.0d0 * rr(ircross)) / (r0 - rr(ircross))
 
       rhomod(ii, 1) = xx(1, 1) * gg
       if (ii < ircross) then
@@ -558,7 +502,7 @@ subroutine modcore3(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
    end do
 
    call der2exc(rhotps, rhomod(1, 1), rhops, rr, d2excps, d2excae, d2diff, &
-   &                   zion, iexc, nc, nv, la, irmod, mmax)
+                zion, iexc, nc, nv, la, irmod, mmax)
    call compute_iminus(rhoc, rhomod, rr, mmax, iminus)
    call compute_combined_metric(d2diff, iminus, metric)
 
@@ -672,7 +616,6 @@ end subroutine modcore3
 subroutine compute_combined_metric(d2mdiff, iminus, metric)
    use precision_m, only: dp
    implicit none
-
 
    ! Input variables
    real(dp), intent(in) :: d2mdiff, iminus

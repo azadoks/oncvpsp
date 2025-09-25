@@ -1,62 +1,73 @@
 !
- ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
- ! University
- !
- !
- ! This program is free software: you can redistribute it and/or modify
- ! it under the terms of the GNU General Public License as published by
- ! the Free Software Foundation, either version 3 of the License, or
- ! (at your option) any later version.
- !
- ! This program is distributed in the hope that it will be useful,
- ! but WITHOUT ANY WARRANTY; without even the implied warranty of
- ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- ! GNU General Public License for more details.
- !
- ! You should have received a copy of the GNU General Public License
- ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
- !
- ! computes the 2nd derivative of the contribution to the exchange-
- ! correlation energy from the region where the valence pseudo wave functions
- ! differ from the all-electron wave functions
- !
+! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
+! University
+!
+!
+! This program is free software: you can redistribute it and/or modify
+! it under the terms of the GNU General Public License as published by
+! the Free Software Foundation, either version 3 of the License, or
+! (at your option) any later version.
+!
+! This program is distributed in the hope that it will be useful,
+! but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+! GNU General Public License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+!
+
+!> Computes the 2nd derivative of the contribution to the exchange-
+!> correlation energy from the region where the valence pseudo wave functions
+!> differ from the all-electron wave functions
 subroutine der2exc(rhotot, rhoc, rho, rr, d2exc, d2ref, d2mdiff, &
-&                   zion, iexc, nc, nv, la, ircut, mmax)
-
-   ! rhotot  total valence charge, all-electron of pseudo
-   ! rhoc  core charge, all-electron or model
-   ! rho  valence state-by-state charge (one-electron)
-   ! rr  log radial grid
-   ! d2exc  Exc 2nd-derivative matrix
-   ! d2ref  reference matrix
-   ! d2mdiff root-mean-squared differrenc between d2exc and d2ref
-   ! zion  ion potential
-   ! iexc  exchange-correlation type
-   ! nc  number of core states
-   ! nv  number of valence states
-   ! la  array of l values for all-electron atom
-   ! ircut  maximum-radius for which all-electron and pseudo charges differ
-   ! mmax  dimensiion of log grid
-
+                   zion, iexc, nc, nv, la, ircut, mmax)
    use precision_m, only: dp
    implicit none
-
-
    ! Input variables
-   real(dp) :: rhotot(mmax), rhoc(mmax), rho(mmax, nv), rr(mmax)
-   real(dp) :: d2ref(nv, nv)
-   real(dp) :: zion
-   integer :: la(nv + nc)
-   integer :: iexc, nc, nv, ircut, mmax
+   !> Number of core states
+   integer, intent(in) :: nc
+   !> Number of valence states
+   integer, intent(in) :: nv
+   !> Size of logarithmic radial grid
+   integer, intent(in) :: mmax
+   !> Total valence charge
+   real(dp), intent(in) :: rhotot(mmax)
+   !> Total core charge
+   real(dp), intent(in) :: rhoc(mmax)
+   !> Valence state-by-state charge
+   real(dp), intent(in) :: rho(mmax, nv)
+   !> Logarithmic radial grid
+   real(dp), intent(in) :: rr(mmax)
+   !> Reference 2nd-derivative matrix
+   real(dp), intent(in) :: d2ref(nv, nv)
+   !> Ionic charge
+   real(dp), intent(in) :: zion
+   !> Array of angular momentum quantum numbers for all-electron atom
+   integer, intent(in) :: la(nv + nc)
+   !> Exchange-correlation type
+   integer, intent(in) :: iexc
+   !> Maximum radius for which AE and PS charges differ
+   integer, intent(in) :: ircut
 
    ! Output variables
-   real(dp) :: d2exc(nv, nv)
-   real(dp) :: d2mdiff
+   !> 2nd-derivative matrix
+   real(dp), intent(out) :: d2exc(nv, nv)
+   !> RMSE b/w d2exc and d2ref
+   real(dp), intent(out) :: d2mdiff
 
    ! Local variables
-   real(dp) :: hh, eeel, eexc, ss
-   real(dp), allocatable :: vo(:), vxct(:), rhot(:), dvxc(:, :)
-   integer :: jj, kk, l1
+   real(dp) :: hh
+   real(dp) :: eeel
+   real(dp) :: eexc
+   real(dp) :: ss
+   real(dp), allocatable :: vo(:)
+   real(dp), allocatable :: vxct(:)
+   real(dp), allocatable :: rhot(:)
+   real(dp), allocatable :: dvxc(:, :)
+   integer :: jj
+   integer :: kk
+   integer :: l1
 
    allocate (vo(mmax), vxct(mmax), rhot(mmax), dvxc(mmax, nv))
 
@@ -84,12 +95,11 @@ subroutine der2exc(rhotot, rhoc, rho, rr, d2exc, d2ref, d2mdiff, &
    end do  !kk
 
    ! compute Exc 2nd-derivative wrt occupation numbers matrix
-
    do kk = 1, nv
       l1 = la(nc + kk) + 1
       rhot(:) = rho(:, kk) * rr(:)**2
       do jj = 1, nv
-         call vpinteg(rhot, dvxc(1, jj), ircut, 2 * l1, d2exc(kk, jj), rr)
+         call vpinteg(rhot, dvxc(:, jj), ircut, 2 * l1, d2exc(kk, jj), rr)
       end do  !jj
    end do  !kk
 
@@ -99,7 +109,7 @@ subroutine der2exc(rhotot, rhoc, rho, rr, d2exc, d2ref, d2mdiff, &
          ss = ss + (d2exc(jj, kk) - d2ref(jj, kk))**2
       end do
    end do
-   d2mdiff = sqrt(ss / nv**2)
+   d2mdiff = sqrt(ss / dble(nv**2))
 
    deallocate (vo, vxct, rhot, dvxc)
 end subroutine der2exc
