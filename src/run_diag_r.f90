@@ -108,7 +108,7 @@ subroutine run_diag_r(lmax,npa,epa,lloc,irc, &
                call ldiracfs(nnae,ll,kap,ierr,etest, &
                &                  rr,zz,vfull,ur,urp,mmax,mchf)
             end if
-            call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm)
+            call renorm_r(ur,rr,kap,zz,mmax,cnorm)
             umch=ur(mchf,1)
             upmch=cnorm*urp(mchf,1)
             uldf=upmch/umch

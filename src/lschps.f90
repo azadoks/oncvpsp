@@ -16,7 +16,7 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
-subroutine lschps(nn,ll,ierr,ee,rr,vv,uu,up,mmax,mch)
+subroutine lschps(ll,ierr,ee,rr,vv,uu,up,mmax,mch)
 
 ! outward integration of Srcroedinger equation for semi-local pseudopotential
 ! on a logarithmic mesh
@@ -38,7 +38,7 @@ subroutine lschps(nn,ll,ierr,ee,rr,vv,uu,up,mmax,mch)
 !Input variables
    integer :: mmax,mch
    real(dp) :: rr(mmax),vv(mmax)
-   integer :: nn,ll
+   integer :: ll
 
 !Output variables
    real(dp) :: uu(mmax),up(mmax)

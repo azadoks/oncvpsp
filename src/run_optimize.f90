@@ -189,7 +189,7 @@ subroutine run_optimize(eig,ll,mmax,mxprj,rr,uua,qq,&
 
       write(6,'(/a,f10.6)') '    Fraction of norm inside rc',qq(iprj,iprj)
 
-      call eresid(ll,irc,nnull,nbas,mmax,rr,dr,dq,qmax,qroot, &
+      call eresid(ll,irc,nnull,nbas,mmax,rr,qmax,qroot, &
       &                    uua(1,iprj),pswf0_sb,pswfnull_sb, nqout,qout, &
       &                    eresid0,eresiddot,eresidmat)
 

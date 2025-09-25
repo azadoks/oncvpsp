@@ -24,7 +24,7 @@
 ! Teter, Phys. Rev. B 48, 5031 (1993) , Appendix, as
 
 subroutine modcore3(icmod,rhops,rhotps,rhoc,rhoae,rhotae,rhomod, &
-&                   fcfact,rcfact,irps,mmax,rr,nc,nv,la,zion,iexc)
+&                   fcfact,rcfact,mmax,rr,nc,nv,la,zion,iexc)
 
 !icmod  3 coefficient optimizaion, 4 for specivied fcfact and rfact
 !rhops  state-by-state pseudocharge density
@@ -48,7 +48,7 @@ subroutine modcore3(icmod,rhops,rhotps,rhoc,rhoae,rhotae,rhomod, &
    integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
-   integer :: icmod,nv,nc,iexc,irps,mmax
+   integer :: icmod,nv,nc,iexc,mmax
    integer :: la(30)
    real(dp) :: rhoae(mmax,nv),rhops(mmax,nv),rhotae(mmax)
    real(dp) :: rhotps(mmax),rhoc(mmax),rr(mmax)

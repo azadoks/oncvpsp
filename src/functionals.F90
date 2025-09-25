@@ -155,11 +155,9 @@ end subroutine xc_functl_init
 
  ! ---------------------------------------------------------
 
-subroutine xc_functl_init_functl(functl, id, ndim,nel, nspin, deriv_method)
+subroutine xc_functl_init_functl(functl, id, nspin, deriv_method)
    type(xc_functl_t), intent(out) :: functl
    integer,           intent(in)  :: id
-   integer,           intent(in)  :: ndim
-   real(8),             intent(in)  :: nel
    integer,           intent(in)  :: nspin
    integer,           intent(in)  :: deriv_method
 

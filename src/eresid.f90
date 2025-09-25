@@ -18,7 +18,7 @@
 !
 ! calculates residual energy operator matrix elements as a function of q
 
-subroutine eresid(ll,irc,nnull,nbas,mmax,rr,drdum,dqdum,qmax,qroot, &
+subroutine eresid(ll,irc,nnull,nbas,mmax,rr,qmax,qroot, &
 &                  uu,pswf0_sb,pswfnull_sb, nqout,qout, &
 &                  eresid0,eresiddot,eresidmat)
 
@@ -55,7 +55,7 @@ subroutine eresid(ll,irc,nnull,nbas,mmax,rr,drdum,dqdum,qmax,qroot, &
    real(dp) :: rr(mmax),uu(mmax),pswf0_sb(nbas),pswfnull_sb(nbas,nnull)
    real(dp) :: qroot(nbas)
 !real(dp) :: dr,dq,qmax
-   real(dp) :: drdum,dqdum,qmax
+   real(dp) :: qmax
 
 !Output variables
    real(dp) :: eresid0(nqout),eresiddot(nnull,nqout)

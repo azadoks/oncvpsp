@@ -21,7 +21,7 @@
 
 
 subroutine run_config(jj,nacnf,lacnf,facnf,nc,nvcnf,rhov,rhomod,rr,zz, &
-&                  rcmax,mmax,mxprj,iexc,ea,etot,epstot,nproj,vpuns, &
+&                  mmax,mxprj,iexc,ea,etot,epstot,nproj,vpuns, &
 &                  lloc,vkb,evkb,srel)
 
 !jj  index of current configufation
@@ -54,7 +54,7 @@ subroutine run_config(jj,nacnf,lacnf,facnf,nc,nvcnf,rhov,rhomod,rr,zz, &
 
    integer :: jj,mmax,mxprj,iexc,nc,lloc
    integer :: nacnf(30,5),lacnf(30,5),nvcnf(5),nproj(5)
-   real(dp) :: etot,epstot,rcmax,zz
+   real(dp) :: etot,epstot,zz
    real(dp) :: facnf(30,5),ea(30),rhov(mmax),rr(mmax)
    real(dp) :: vpuns(mmax,5),vkb(mmax,mxprj,4),evkb(mxprj,4),rhomod(mmax,5)
    logical :: srel
@@ -234,7 +234,7 @@ subroutine run_config(jj,nacnf,lacnf,facnf,nc,nvcnf,rhov,rhomod,rr,zz, &
    rhocps(:)=rhomod(:,1)
 
    call psatom(natp,latp,eatp,fatp,nvt,it,rhocps,rho, &
-   &           rr,rcmax,mmax,mxprj,iexc,etsttot,nproj,vpuns,lloc, &
+   &           rr,mmax,mxprj,iexc,etsttot,nproj,vpuns,lloc, &
    &           vkb,evkb,ierr)
 
    if(ierr/=0) then
@@ -256,7 +256,7 @@ subroutine run_config(jj,nacnf,lacnf,facnf,nc,nvcnf,rhov,rhomod,rr,zz, &
    end do
 
    call psatom(natp,latp,eatp,fatp,nvt,it,rhocps,rho, &
-   &           rr,rcmax,mmax,mxprj,iexc,etsttot,nproj,vpuns,lloc, &
+   &           rr,mmax,mxprj,iexc,etsttot,nproj,vpuns,lloc, &
    &           vkb,evkb,ierr)
 
    if(ierr/=0) then

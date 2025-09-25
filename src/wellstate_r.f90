@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 subroutine wellstate_r(nnin,ll,kap,irc,ep,rr,vfull,vwell, &
-&                      uu,up,zz,mmax,mch,srel)
+&                      uu,up,zz,mmax,mch)
 
 !creates quantum well to confine positive-energy state, and calculates
 !the resulting all-electron wave function
@@ -45,7 +45,6 @@ subroutine wellstate_r(nnin,ll,kap,irc,ep,rr,vfull,vwell, &
    real(dp) :: rr(mmax),vfull(mmax)
    real(dp) :: ep,zz
    integer :: nnin,ll,kap,irc,mmax  !(nnin is actually in/out)
-   logical :: srel
 
 !Output variables
    real(dp) :: uu(mmax,2),up(mmax,2),vwell(mmax)

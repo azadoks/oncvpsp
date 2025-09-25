@@ -159,7 +159,7 @@ subroutine run_plot_r(lmax,npa,epa,lloc,irc, &
                   &                 npa(iprj,l1),'  l=',ll, 'kap-',kap,'  ierr=',ierr
                   stop
                end if
-               call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm)
+               call renorm_r(ur,rr,kap,zz,mmax,cnorm)
 
                emax=0.9d0*etest
                emin=1.1d0*etest
@@ -174,7 +174,7 @@ subroutine run_plot_r(lmax,npa,epa,lloc,irc, &
                &           ', kap=',kap,', all-electron wave function', ', pseudo w-f'
                call ldiracfs(nnae,ll,kap,ierr,epa(iprj,l1,ikap), &
                &                    rr,zz,vfull,ur,urp,mmax,n2)
-               call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm)
+               call renorm_r(ur,rr,kap,zz,mmax,cnorm)
 
                call lschvkbs(ll,npr,epa(iprj,l1,ikap),rr,vp(1,lloc+1,ikap), &
                &                    vkb(1,1,l1,ikap),evkb(1,l1,ikap),u2,up,mmax,n2)

@@ -518,16 +518,16 @@ program oncvpsp
 ! or Teter function fit
 
    if(icmod==1) then
-      call modcore(icmod,rhops,rho,rhoc,rhoae,rhotae,rhomod, &
-      &               fcfact,rcfact,irps,mmax,rr,nc,nv,la,zion,iexc)
+      call modcore(rhops,rho,rhoc,rhoae,rhotae,rhomod, &
+      &               fcfact,irps,mmax,rr,nc,nv,la,zion,iexc)
 
    else if(icmod==2) then
-      call modcore2(icmod,rhops,rho,rhoc,rhoae,rhotae,rhomod, &
-      &               fcfact,rcfact,irps,mmax,rr,nc,nv,la,zion,iexc)
+      call modcore2(rhops,rho,rhoc,rhoae,rhotae,rhomod, &
+      &               fcfact,mmax,rr,nc,nv,la,zion,iexc)
 
    else if(icmod>=3) then
       call modcore3(icmod,rhops,rho,rhoc,rhoae,rhotae,rhomod, &
-      &               fcfact,rcfact,irps,mmax,rr,nc,nv,la,zion,iexc)
+      &               fcfact,rcfact,mmax,rr,nc,nv,la,zion,iexc)
 
    end if
 
@@ -578,7 +578,7 @@ program oncvpsp
       rhot(:)=rho(:)
 
       call run_config(jj,nacnf,lacnf,facnf,nc,nvcnf,rhot,rhomod,rr,zz, &
-      &                  rcmax,mmax,mxprj,iexc,ea,etot,epstot,nproj,vpuns, &
+      &                  mmax,mxprj,iexc,ea,etot,epstot,nproj,vpuns, &
       &                  lloc,vkb,evkb,srel)
 
    end do  !jj
@@ -620,9 +620,9 @@ program oncvpsp
       print *, 'calling psmlout'
       call psmlout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
       &             irct, srel, &
-      &             zz,zion,mmax,iexc,icmod,nrl,drl,atsym,epstot, &
+      &             zz,zion,mmax,iexc,icmod,drl,atsym, &
       &             na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-      &             fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact, &
+      &             fa,ep,qcut,debl,facnf,dvloc0,fcfact, &
       &             epsh1,epsh2,depsh,rlmax,psfile)
    end if
 

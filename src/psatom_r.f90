@@ -19,7 +19,7 @@
 ! self-consistent pseudoatom calculation
 
 subroutine psatom_r(na,la,ea,fat,nv,it,rhoc,rho, &
-&           rr,rcmax,mmax,mxprj,iexc,etot,nproj,vpuns,lloc,vkb,evkb,ierr)
+&           rr,mmax,mxprj,iexc,etot,nproj,vpuns,lloc,vkb,evkb,ierr)
 
 !na  principal quantum number array, dimension nv
 !la  angular-momenta
@@ -47,7 +47,6 @@ subroutine psatom_r(na,la,ea,fat,nv,it,rhoc,rho, &
 
    integer :: mmax,mxprj,iexc,nv,lloc
    integer :: na(30),la(30),nproj(5)
-   real(dp) :: rcmax
    real(dp) :: fat(30,2),rr(mmax)
    real(dp) :: vpuns(mmax,5),vkb(mmax,mxprj,4,2),evkb(mxprj,4,2)
 
