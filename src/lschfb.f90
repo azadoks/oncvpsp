@@ -55,7 +55,7 @@ subroutine lschfb(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,srel)
    real(dp) :: de,emax,emin
    real(dp) :: eps,fss,tfss,gamma,ro,sc
    real(dp) :: sls,sn,cn,uout,upin,upout,xkap
-   real(dp) :: amesh,al,xx
+   real(dp) :: amesh,al
    integer :: ii,it,nint,node,nin
 
    real(dp), allocatable :: upp(:),cf(:),dv(:),fr(:),frp(:)

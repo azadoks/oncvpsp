@@ -53,7 +53,6 @@ subroutine modcore(icmod,rhops,rhotps,rhoc,rhoae,rhotae,rhomod, &
    real(dp) :: rhoae(mmax,nv),rhops(mmax,nv),rhotae(mmax)
    real(dp) :: rhotps(mmax),rhoc(mmax),rr(mmax)
    real(dp) :: zion,fcfact,rcfact
-   logical :: srel
 
 !Output variables
    real(dp) :: rhomod(mmax,5)
@@ -62,14 +61,14 @@ subroutine modcore(icmod,rhops,rhotps,rhoc,rhoae,rhotae,rhomod, &
    real(dp), parameter :: eps=1.0d-7
 
 !Local variables
-   real(dp) :: a0,al,et,yy,gg,a0min,a0max,dermax,psum,sf,eeel,eexc
-   real(dp) :: d2mdiff,rmatch,rhocmatch
-   real(dp) :: emin,emax,sls,ss,hh,rgg,xx
+   real(dp) :: a0,al,a0min,a0max,dermax,psum
+   real(dp) :: d2mdiff
+   real(dp) :: xx
    real(dp) :: aco(5),polym(5,5),work(5,5),constm(5,5),xpow(9),fmatch(5)
    real(dp), allocatable :: vxcae(:),vxcpsp(:),vo(:),d2excae(:,:),d2excps(:,:)
    real(dp), allocatable :: dvxcae(:,:),dvxcps(:,:),vxct(:)
-   integer :: ii,ierr,ircc,irmod,iter,jj,kk,ll,l1,mch
-   integer :: ipvt(5),nodes(4)
+   integer :: ii,ircc,irmod,iter,jj,kk
+   integer :: ipvt(5)
 
 
    allocate(vxcae(mmax),vxcpsp(mmax),vo(mmax))

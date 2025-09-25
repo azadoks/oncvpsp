@@ -47,11 +47,11 @@ subroutine vkboutwf(ll,nvkb,ep,vkb,evkb,rr,vloc,uu,up,node,mmax,mch)
 
 !Local variables
    real(dp) :: rc,rn
-   real(dp), allocatable ::  phi(:,:),phip(:,:),phi0(:),phi0p(:)
+   real(dp), allocatable ::  phi(:,:),phip(:,:)
    real(dp), allocatable ::  gg0(:),gg(:,:)
    integer, allocatable :: ipiv(:)
 
-   integer :: ii,jj,kk,ierr,info
+   integer :: ii,jj,ierr,info
 
    uu(:)=0.0d0
    up(:)=0.0d0

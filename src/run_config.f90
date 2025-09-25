@@ -65,7 +65,7 @@ subroutine run_config(jj,nacnf,lacnf,facnf,nc,nvcnf,rhov,rhomod,rr,zz, &
    integer :: ii,it,kk,l1,ierr,mch,nvt
    integer :: nat(30),lat(30),natp(30),latp(30),nav(4)
    integer ::  indxr(30),indxe(30)
-   real(dp) :: et,eaetst,etsttot,zval
+   real(dp) :: et,eaetst,etsttot
 !real(dp) :: eat(30,2),fat(30,2),rpk(30),eatp(30),fatp(30,2)
    real(dp) :: eat(30,3),fat(30,3),rpk(30),eatp(30),fatp(30,3)
 

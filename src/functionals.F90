@@ -165,7 +165,7 @@ subroutine xc_functl_init_functl(functl, id, ndim,nel, nspin, deriv_method)
 
    real(8)   :: alpha
    real(8)   :: parameters(2)
-   logical :: ok, lb94_modified
+   logical :: lb94_modified
 
 #if XC_MAJOR_VERSION<5
    call messages_input_error('LibXC version', 'at least v5 is now required')

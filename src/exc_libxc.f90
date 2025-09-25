@@ -30,7 +30,7 @@ subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax)
    real(dp), intent(in) :: rho(mmax),rr(mmax)
    real(dp), intent(out) :: vxc(mmax),exc(mmax)
    integer, intent(in) :: mmax, iexc
-   integer :: ii, unit
+   integer :: ii
 
 ! local
    integer ::  id(2), ifunc

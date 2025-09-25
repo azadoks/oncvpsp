@@ -55,7 +55,7 @@ subroutine ldiracfb(nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch)
    real(dp) :: de,emax,emin
    real(dp) :: eps,ro,sc
    real(dp) :: sls,sn,cn,uout,upin,upout,xkap
-   real(dp) :: amesh,al,als
+   real(dp) :: amesh,al
    integer :: ii,kk,nint,node,nin
 
    cc=137.036d0

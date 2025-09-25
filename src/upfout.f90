@@ -82,7 +82,7 @@ subroutine upfout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
 !Output variables - printing only
 
 !Local variables
-   integer :: ii,jj,ll,l1,iproj,ntotproj,nrlproj
+   integer :: ii,jj,l1,iproj,ntotproj,nrlproj
    integer :: dtime(8)
    real(dp) :: al,nrmsum,uurcut
    real(dp), allocatable :: rhomodl(:,:),dmat(:,:)

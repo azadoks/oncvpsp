@@ -45,7 +45,7 @@ subroutine psatom_r(na,la,ea,fat,nv,it,rhoc,rho, &
 
 !Input variables
 
-   integer :: mmax,mxprj,iexc,nv,lloc,okb
+   integer :: mmax,mxprj,iexc,nv,lloc
    integer :: na(30),la(30),nproj(5)
    real(dp) :: rcmax
    real(dp) :: fat(30,2),rr(mmax)
@@ -63,7 +63,7 @@ subroutine psatom_r(na,la,ea,fat,nv,it,rhoc,rho, &
    real(dp) :: dr,eeel,eexc,et,emin,emax,rl,rl1,sd,sn,sls,eeig
    real(dp) :: thl,vn,zval,dfa,fj
    real(dp) :: fa(30)
-   integer :: ii,jj,l1,ierr,icx,nprj
+   integer :: ii,l1,ierr,icx,nprj
    integer :: ikap,kap,ll,mkap
    logical :: convg
 

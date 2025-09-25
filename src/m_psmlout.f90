@@ -107,7 +107,6 @@ subroutine psmlout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
 
    character(len=100)    :: line
    character(len=4)      :: polattrib, coreattrib
-   character(len=1)      :: pscode, char_dummy
    character(len=2) :: nameat
    character(len=40):: psflavor
 
@@ -123,7 +122,7 @@ subroutine psmlout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
    integer :: nr
    character(len=10)     :: datestr
 
-   logical :: tdopsp, nonrel, polarized, there_is_core, found
+   logical :: polarized, there_is_core, found
    integer :: lun, stat
 
 !---
@@ -588,7 +587,6 @@ subroutine psmlout_r(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
 
    character(len=100)    :: line
    character(len=4)      :: polattrib, coreattrib
-   character(len=1)      :: pscode, char_dummy
    character(len=2) :: nameat
    character(len=40):: psflavor
 
@@ -604,7 +602,7 @@ subroutine psmlout_r(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
    integer :: nr
    character(len=10)     :: datestr
 
-   logical :: tdopsp, nonrel, polarized, there_is_core, found
+   logical :: polarized, there_is_core, found
    integer :: lun, stat
 
 !---

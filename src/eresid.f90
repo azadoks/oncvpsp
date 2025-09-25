@@ -66,17 +66,15 @@ subroutine eresid(ll,irc,nnull,nbas,mmax,rr,drdum,dqdum,qmax,qroot, &
 
 !Local variables
    real(dp), allocatable :: rlin(:),uulin(:),sbf(:),ps0(:)
-   real(dp), allocatable :: erdot(:),ereval(:),erevec(:,:)
    real(dp), allocatable :: psnull(:,:),tpsnull(:),psnullq(:)
    real(dp), allocatable :: dac0(:),dacdot(:,:),dacmat(:,:,:)
    real(dp), allocatable :: acdot(:),acmat(:,:)
-   real(dp), allocatable :: work(:),wmat(:,:),wev(:),wvec(:)
    real(dp) :: sb_out(5)
-   real(dp) :: ac0,rc,ps0q,tps0,xx,qq,qq4,sn,tn,td
+   real(dp) :: ac0,rc,ps0q,tps0,xx,qq,qq4
    real(dp) :: dr,dq
 
-   integer :: nrlin,nq,irclin,mmaxlin
-   integer :: ii,info,iq,jj,kk,ll1
+   integer :: nq,irclin,mmaxlin
+   integer :: ii,iq,jj,ll1
 
 
 ! new calculations of dq, dr

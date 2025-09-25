@@ -54,10 +54,9 @@ subroutine lschpsbar(nn,ll,ierr,ee,emin,emax,rr,vv,uu,up,mmax,mbar,tht)
    real(dp) :: aei,aeo,aii,aio  !functions in aeo.f90
    real(dp) :: de,uumax
    real(dp) :: eps,ro,sc,stht,ctht
-   real(dp) :: sls,sn,cn,uout,upin,upout,ur,xkap,xkap2,xx
+   real(dp) :: sls,sn,cn,uout,upin,upout,xkap,xkap2,xx
    real(dp) :: amesh,al,als
    integer :: ii,imin,it,mch,mchb,nint,node,nin
-   logical :: maxset
 
    real(dp), allocatable :: upp(:),cf(:)
    allocate(upp(mmax),cf(mmax))
