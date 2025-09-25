@@ -33,7 +33,7 @@ module m_wxml_buffer
    interface add_to_buffer
       module procedure add_str_to_buffer
    end interface add_to_buffer
-   private :: add_char_to_buffer, add_str_to_buffer
+   private :: add_str_to_buffer
 
    interface operator (.equal.)
       module procedure compare_buffers, compare_buffer_str, &
