@@ -16,37 +16,41 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+!> creates quantum well to confine positive-energy state, and calculates
+!> the resulting all-electron wave function
 subroutine wellstate(nnin,ll,irc,ep,rr,vfull,uu,up,zz,mmax,mch,srel)
-
-!creates quantum well to confine positive-energy state, and calculates
-!the resulting all-electron wave function
-
-!nn  principal quantum number of well state
-!ll  angular momentum
-!irc  index of core radius
-!ep  target energy for well state (>0)
-!rr  log radial mesh
-!vfull  all-electron potential
-!uu  all-electron well-bound wave function
-!up  d(uu)/dr
-!zz  atomic number
-!mmax  size of log radial mesh
-!mch matching mesh point for inward-outward integrations
-!srel .true. for scalar-relativistic, .false. for non-relativistic
-
    implicit none
 
    integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
-   real(dp) :: rr(mmax),vfull(mmax)
-   real(dp) :: ep,zz
-   integer :: nnin,ll,irc,mmax  !(nnin is actually in/out)
-   logical :: srel
+   !> log radial mesh
+   real(dp), intent(in) :: rr(mmax)
+   !> all-electron potential
+   real(dp), intent(in) :: vfull(mmax)
+   !> target energy for well state (>0)
+   real(dp), intent(in out) :: ep
+   !> atomic number
+   real(dp), intent(in) :: zz
+   !> principal quantum number of well state
+   integer, intent(in out) :: nnin  !(nnin is actually in/out)
+   !> angular momentum
+   integer, intent(in) :: ll
+   !> index of core radius
+   integer, intent(in) :: irc
+   !> size of log radial mesh
+   integer, intent(in) :: mmax
+   !> .true. for scalar-relativistic, .false. for non-relativistic
+   logical, intent(in) :: srel
 
 !Output variables
-   real(dp) :: uu(mmax),up(mmax)
-   integer :: mch
+   !> all-electron well-bound wave function
+   real(dp), intent(out) :: uu(mmax)
+   !> d(uu)/dr
+   real(dp), intent(out) :: up(mmax)
+   !> matching mesh point for inward-outward integrations
+   integer, intent(out) :: mch
 
 !Local variables
    real(dp), allocatable :: vwell(:)

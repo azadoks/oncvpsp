@@ -16,31 +16,29 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+!> Two tests for ghosts;  The local potential is terminated by a hard wall
+!> barrier at a radius of mbfact*rc, presently 3*rc.  A basis set is formed
+!> from eigenstates this combination and used to compute a hamiltonian matrix
+!> whose off-diagonal terms come exclusively from the non-local pojectors.
+!> A cutoff is chosen to simulate a reasonably well converged plane-wave
+!> calculation.  The hamiltoian is diagonalized, and the results used
+!> as follows:
+!>
+!> Test 1) Negative eigenvalues are compared with those of the radial
+!> Schroedinger equation for the full-range pseudopotential.  Those
+!> lying below the Schroedinger Eq. results and which presumably have
+!> more nodes are reported and tagged as GHOST(-).
+!>
+!> Test2) For barrier states with  positive eigenvalues, the average radius
+!> is computed.  Such states could be ghost resonances, and highly localized
+!> ones with <r>/rc<1 are reported as GHOST(+).  Real fairly localized
+!> resonances can occur, particularly at lower energies, and the GHOST(+)
+!> report is an indication that the log-derivative plot should be examined
+!> carefully around the reported energy to see if the all-electron plot
+!> has a corresponding drop of pi  (arctan(log der), of course).
 subroutine run_ghosts(lmax,la,ea,nc,nv,lloc,irc,qmsbf, &
 &                    vkb,evkb,nproj,rr,vp,mmax,mxprj)
-
-! Two tests for ghosts;  The local potential is terminated by a hard wall
-! barrier at a radius of mbfact*rc, presently 3*rc.  A basis set is formed
-! from eigenstates this combination and used to compute a hamiltonian matrix
-! whose off-diagonal terms come exclusively from the non-local pojectors.
-! A cutoff is chosen to simulate a reasonably well converged plane-wave
-! calculation.  The hamiltoian is diagonalized, and the results used
-! as follows:
-!
-! Test 1) Negative eigenvalues are compared with those of the radial
-! Schroedinger equation for the full-range pseudopotential.  Those
-! lying below the Schroedinger Eq. results and which presumably have
-! more nodes are reported and tagged as GHOST(-).
-!
-! Test2) For barrier states with  positive eigenvalues, the average radius
-! is computed.  Such states could be ghost resonances, and highly localized
-! ones with <r>/rc<1 are reported as GHOST(+).  Real fairly localized
-! resonances can occur, particularly at lower energies, and the GHOST(+)
-! report is an indication that the log-derivative plot should be examined
-! carefully around the reported energy to see if the all-electron plot
-! has a corresponding drop of pi  (arctan(log der), of course).
-
-
 !lmax  maximum angular momentum
 !la  angular momenta of all-electron states
 !nc  number of core electrons

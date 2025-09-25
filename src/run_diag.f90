@@ -16,42 +16,49 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+!> diagnostics for semi-local and Vanderbilt-Kleinman-bylander pseudopotentials
+!> checks bound-state energies, norms, and slopes, and pseudo-bound state
+!> quantities for positive-energy projectors by matching all-electron
+!> log derivatives at rc.
+!> Should test as essentially exact for non-relativitic calculations
+!> Error for relativistic is B matrix Hermiticity error
 subroutine run_diag(lmax,npa,epa,lloc,irc, &
 &                    vkb,evkb,nproj,rr,vfull,vp,zz,mmax,mxprj,srel)
-
-!diagnostics for semi-local and Vanderbilt-Kleinman-bylander pseudopotentials
-!checks bound-state energies, norms, and slopes, and pseudo-bound state
-!quantities for positive-energy projectors by matching all-electron
-!log derivatives at rc.
-!Should test as essentially exact for non-relativitic calculations
-!Error for relativistic is B matrix Hermiticity error
-
-!lmax  maximum angular momentum
-!npa  principal quantum number for corresponding all-electron state
-!epa  bound-state or scattering state reference energies for vkb potentials
-!lloc  l for local potential
-!irc  core radii indices
-!vkb  VKB projectors
-!evkb  coefficients of VKB projectors
-!nproj  number of vkb projectors for each l
-!rr  log radial grid
-!vfull  all-electron potential
-!vp  semi-local pseudopotentials (vp(:,5) is local potential if linear comb.)
-!zz  atomic number
-!mmax  size of radial grid
-!mxprj  dimension of number of projectors
-!srel .true. for scalar-relativistic, .false. for non-relativistic
-
    implicit none
    integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
-   integer :: lmax,lloc,mmax,mxprj
-   integer :: npa(mxprj,6),irc(6),nproj(6)
-   real(dp) :: zz
-   real(dp) :: rr(mmax),vp(mmax,5),vfull(mmax),vkb(mmax,mxprj,4)
-   real(dp):: epa(mxprj,6),evkb(mxprj,4)
-   logical :: srel
+   !> maximum angular momentum
+   integer, intent(in) :: lmax
+   !> l for local potential
+   integer, intent(in) :: lloc
+   !> size of radial grid
+   integer, intent(in) :: mmax
+   !> dimension of number of projectors
+   integer, intent(in) :: mxprj
+   !> principal quantum number for corresponding all-electron state
+   integer, intent(in) :: npa(mxprj,6)
+   !> core radii indices
+   integer, intent(in) :: irc(6)
+   !> number of vkb projectors for each l
+   integer, intent(in) :: nproj(6)
+   !> atomic number
+   real(dp), intent(in) :: zz
+   !> log radial grid
+   real(dp), intent(in) :: rr(mmax)
+   !> semi-local pseudopotentials (vp(:,5) is local potential if linear comb.)
+   real(dp), intent(in) :: vp(mmax,5)
+   !> all-electron potential
+   real(dp), intent(in) :: vfull(mmax)
+   !> VKB projectors
+   real(dp), intent(in) :: vkb(mmax,mxprj,4)
+   !> bound-state or scattering state reference energies for vkb potentials
+   real(dp), intent(in) :: epa(mxprj,6)
+   !> coefficients of VKB projectors
+   real(dp), intent(in) :: evkb(mxprj,4)
+   !> .true. for scalar-relativistic, .false. for non-relativistic
+   logical, intent(in) :: srel
 
 !Output variables - printing only
 

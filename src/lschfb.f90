@@ -16,38 +16,40 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+!> Finds bound states of an all-electron atomic potential using
+!> Pauli-type  scalar-relativistic Schroedinger equation
 subroutine lschfb(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,srel)
-
-!Finds bound states of an all-electron atomic potential using
-!Pauli-type  scalar-relativistic Schroedinger equation
-
-!nn  principal quantum number
-!ll  angular-momentum quantum number
-!ierr  non-zero return if error
-!ee  bound-state energy, input guess and output calculated value
-!rr  log radial mesh
-!vv  local atomic potential
-!uu  output radial wave function (*rr)
-!up  d(uu)/dr
-!zz  atomic number
-!mmax  size of log grid
-!mch matching mesh point for inward-outward integrations
-!srel .true. for scalar-relativistic, .false. for non-relativistic
-
    implicit none
    integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
-   real(dp) :: rr(mmax),vv(mmax)
-   real(dp) :: zz
-   integer :: nn,ll
-   integer :: mmax
-   logical :: srel
+   !> log radial mesh
+   real(dp), intent(in) :: rr(mmax)
+   !> local atomic potential
+   real(dp), intent(in) :: vv(mmax)
+   !> atomic number
+   real(dp), intent(in) :: zz
+   !> principal quantum number
+   integer, intent(in) :: nn
+   !> angular-momentum quantum number
+   integer, intent(in) :: ll
+   !> size of log grid
+   integer, intent(in) :: mmax
+   !> .true. for scalar-relativistic, .false. for non-relativistic
+   logical, intent(in) :: srel
 
 !Output variables
-   real(dp) :: uu(mmax),up(mmax)
-   real(dp) :: ee
-   integer :: ierr,mch
+   !> output radial wave function (*rr)
+   real(dp), intent(out) :: uu(mmax)
+   !> d(uu)/dr
+   real(dp), intent(out) :: up(mmax)
+   !> bound-state energy, input guess and output calculated value
+   real(dp), intent(in out) :: ee
+   !> non-zero return if error
+   integer, intent(out) :: ierr
+   !> matching mesh point for inward-outward integrations
+   integer, intent(out) :: mch
 
 !Local variables
 

@@ -20,42 +20,44 @@
 ! core charge and 4 derivatives at "crossover" radius.
 ! Polynomial is 8th-order with no linear term.
 
-! Performs analysis and based on "hardness" criterion described in
-! Teter, Phys. Rev. B 48, 5031 (1993) , Appendix, as
-
+!> Performs analysis and based on "hardness" criterion described in
+!> Teter, Phys. Rev. B 48, 5031 (1993) , Appendix, as
 subroutine modcore2(rhops,rhotps,rhoc,rhoae,rhotae,rhomod, &
 &                   fcfact,mmax,rr,nc,nv,la,zion,iexc)
-
-!icmod  3 coefficient optimizaion, 4 for specivied fcfact and rfact
-!rhops  state-by-state pseudocharge density
-!rhotps  total pseudocharge density
-!rhoc  core-charge density
-!rhoae  state-by-state all-electron valence charge density
-!rhotae  total all-electron valence charge density
-!rhomod  model core density and 4 derivatives
-!fcfact  prefactor for model amplitude (multiplies crossover value)
-!rcfact  prefactor for model scale (multiplies crossover radius)
-!irps  rr index of maximum rc
-!mmax  dimension of log grid
-!rr log radial grid
-!nc  number of core states
-!nv  number of valence states
-!la  angular-momenta
-!zion  ion charge
-!iexc  exchange-correlation function to be used
-
    implicit none
    integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
-   integer :: nv,nc,iexc,mmax
-   integer :: la(30)
-   real(dp) :: rhoae(mmax,nv),rhops(mmax,nv),rhotae(mmax)
-   real(dp) :: rhotps(mmax),rhoc(mmax),rr(mmax)
-   real(dp) :: zion,fcfact
+   !> number of valence states
+   integer, intent(in) :: nv
+   !> number of core states
+   integer, intent(in) :: nc
+   !> exchange-correlation function to be used
+   integer, intent(in) :: iexc
+   !> dimension of log grid
+   integer, intent(in) :: mmax
+   !> angular-momenta
+   integer, intent(in) :: la(30)
+   !> state-by-state all-electron valence charge density
+   real(dp), intent(in) :: rhoae(mmax,nv)
+   !> state-by-state pseudocharge density
+   real(dp), intent(in) :: rhops(mmax,nv)
+   !> total all-electron valence charge density
+   real(dp), intent(in) :: rhotae(mmax)
+   !> total pseudocharge density
+   real(dp), intent(in) :: rhotps(mmax)
+   !> core-charge density
+   real(dp), intent(in) :: rhoc(mmax)
+   !> log radial grid
+   real(dp), intent(in) :: rr(mmax)
+   !> ion charge
+   real(dp), intent(in) :: zion
+   !> prefactor for model amplitude (multiplies crossover value)
+   real(dp), intent(in) :: fcfact
 
 !Output variables
-   real(dp) :: rhomod(mmax,5)
+   !> model core density and 4 derivatives
+   real(dp), intent(out) :: rhomod(mmax,5)
 
 !convergence criterion
    real(dp), parameter :: eps=1.0d-7

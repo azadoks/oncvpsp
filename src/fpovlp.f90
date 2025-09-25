@@ -16,35 +16,34 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
-! calculates all-electron wave function overlap intergrals
 
+!> calculates all-electron wave function overlap intergrals
+!> product of all-electron scalar-relativistic wave functions gg*hh
+!> goes like rr**(2*gamma) as rr -> 0
+!> integral on usual log mesh from rr=0 to rr(nn)
 subroutine fpovlp(gg,hh,nn,ll,zz,ss,rr,srel)
-
    implicit none
    integer, parameter :: dp=kind(1.0d0)
 
-!gg wave function one
-!hh wave function two
-!nn outer integration limit
-!ll angular momentum
-!zz nuclear charge
-!ss overlap output
-!rr log radial mesh
-!srel .true. for scalar-relativistic, .false. for non-relativistic
-
-
-! product of all-elecctron scalar-relativistic wave functions gg*hh
-! goes like rr**(2*gamma) as rr -> 0
-! integral on usual log mesh from rr=0 to rr(nn)
-
 !Input variables
-   real(dp) :: zz
-   real(dp) :: gg(nn),hh(nn),rr(nn)
-   integer :: nn,ll
-   logical :: srel
+   !> nuclear charge
+   real(dp), intent(in) :: zz
+   !> wave function one
+   real(dp), intent(in) :: gg(nn)
+   !> wave function two
+   real(dp), intent(in) :: hh(nn)
+   !> log radial mesh
+   real(dp), intent(in) :: rr(nn)
+   !> outer integration limit
+   integer, intent(in) :: nn
+   !> angular momentum
+   integer, intent(in) :: ll
+   !> .true. for scalar-relativistic, .false. for non-relativistic
+   logical, intent(in) :: srel
 
 !Output variable
-   real(dp) :: ss
+   !> overlap output
+   real(dp), intent(out) :: ss
 
 !Local variables
    real(dp) :: r0,amesh,al,fss,gamma

@@ -16,47 +16,55 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+!> calls routines to generate optimized pseudo wave function and semi-local
+!> pseudopotential and prints diagnostic information on process and
+!> convergence performance
 subroutine run_optimize(eig,ll,mmax,mxprj,rr,uua,qq,&
 &                        irc,qcut,qmsbf,ncon_in,nbas_in,npr, &
 &                        psopt,vpsp,vkb,vae,cvgplt)
-
-! calls routines to generate optimized pseudo wave function and semi-local
-! pseudopotential and prints diagnostic information on process and
-! convergence performance
-
-!eig  energy at which pseudo wave function is computed
-!ll  angular momentum
-!mmax  dimension of log grid
-!mxprj  dimension of number of projectors
-!rr  log radial grid
-!uu  all-electron wave function for first projector
-!qq  2x2 matrix of norms and overlaps of uu and uu2
-!uu2  all-electron wave function for second projector
-!irc  index of core radius
-!qcut  q cutoff defining residual energy
-!qmsbf  maximum q in sbfs for this ll
-!ncon_in  number of constraints for matching psuedo and AE wave functions
-!nbas_in  number of basis functions for pseudo wave function
-!np_in   number of projectors = 0,1,2
-!psopt  optimized pseudo wave function(s)
-!vpsp  corresponding pseudopotential
-!vkb  Vanderbilt-Kleinman-Bylander projectors (without local v correction)
-!vae  all-electron potential
-!cvgplt  energy error vs. cutoff energy for plotting
 
    implicit none
    integer, parameter :: dp=kind(1.0d0)
    real(dp), parameter :: Ha_eV=27.21138386d0  ! 1 Hartree, in eV
 
 !Input variables
-   integer :: ll,mmax,mxprj,irc,ncon_in,nbas_in,npr
-   real(dp) :: rr(mmax)
-   real(dp) :: uua(mmax,mxprj),vae(mmax),qq(mxprj,mxprj)
-   real(dp) :: eig(mxprj),qcut
+   !> angular momentum
+   integer, intent(in) :: ll
+   !> dimension of log grid
+   integer, intent(in) :: mmax
+   !> dimension of number of projectors
+   integer, intent(in) :: mxprj
+   !> index of core radius
+   integer, intent(in) :: irc
+   !> number of constraints for matching psuedo and AE wave functions
+   integer, intent(in) :: ncon_in
+   !> number of basis functions for pseudo wave function
+   integer, intent(in) :: nbas_in
+   !> number of projectors = 0,1,2
+   integer, intent(in) :: npr
+   !> log radial grid
+   real(dp), intent(in) :: rr(mmax)
+   !> all-electron wave functions for the projectors
+   real(dp), intent(in) :: uua(mmax,mxprj)
+   !> all-electron potential
+   real(dp), intent(in) :: vae(mmax)
+   !> 2x2 matrix of norms and overlaps of uu and uu2
+   real(dp), intent(in) :: qq(mxprj,mxprj)
+   !> energy at which pseudo wave function is computed
+   real(dp), intent(in) :: eig(mxprj)
+   !> q cutoff defining residual energy
+   real(dp), intent(in) :: qcut
 
 !Output variables
-   real(dp) :: qmsbf
-   real(dp) :: psopt(mmax,mxprj),vpsp(mmax),vkb(mmax,mxprj)
+   !> maximum q in sbfs for this ll
+   real(dp), intent(out) :: qmsbf
+   !> optimized pseudo wave function(s)
+   real(dp), intent(out) :: psopt(mmax,mxprj)
+   !> corresponding pseudopotential
+   real(dp), intent(out) :: vpsp(mmax)
+   !> Vanderbilt-Kleinman-Bylander projectors (without local v correction)
+   real(dp), intent(out) :: vkb(mmax,mxprj)
 
 !Local variables
    real(dp) :: uord(6)

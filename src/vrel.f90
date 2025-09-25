@@ -16,38 +16,38 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+!> Finds an effective potential representing the Pauli-type scalar-relativistic
+!> operators in the radial Schroedinger equation
 subroutine vrel(ll,ee,rr,vv,vr,uu,up,zz,mmax,irc,srel)
-
-! Finds an effective potential representing the Pauli-type scalar-relativistic
-! operators in the radial Schroedinger equation
-
-!nn  principal quantum number
-!ll  angular-momentum quantum number
-!ierr  non-zero return if error
-!ee  bound-state energy, input guess and output calculated value
-!rr  log radial mesh
-!vv  local atomic potential
-!uu  output radial wave function (*rr)
-!up  d(uu)/dr
-!zz  atomic number
-!mmax  size of log grid
-!mch matching mesh point for inward-outward integrations
-!srel .true. for scalar-relativistic, .false. for non-relativistic
-
    implicit none
    integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
-   real(dp) :: rr(mmax),vv(mmax)
-   real(dp) :: uu(mmax),up(mmax)
-   real(dp) :: zz
-   integer :: ll,irc
-   integer :: mmax
-   logical :: srel
+   !> log radial mesh
+   real(dp), intent(in) :: rr(mmax)
+   !> local atomic potential
+   real(dp), intent(in) :: vv(mmax)
+   !> radial wave function (*rr)
+   real(dp), intent(in) :: uu(mmax)
+   !> d(uu)/dr
+   real(dp), intent(in) :: up(mmax)
+   !> atomic number
+   real(dp), intent(in) :: zz
+   !> angular-momentum quantum number
+   integer, intent(in) :: ll
+   !>
+   integer, intent(in) :: irc
+   !> size of log grid
+   integer, intent(in) :: mmax
+   !> .true. for scalar-relativistic, .false. for non-relativistic
+   logical, intent(in) :: srel
 
 !Output variables
-   real(dp) :: vr(mmax)
-   real(dp) :: ee
+   !>
+   real(dp), intent(out) :: vr(mmax)
+   !> bound-state energy, input guess and output calculated value
+   real(dp), intent(in out) :: ee
 
 
 !Local variables
