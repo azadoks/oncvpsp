@@ -172,7 +172,7 @@ subroutine ldiracfb(nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch)
 ! start inward integration at 10*classical turning
 ! point with simple exponential
 
-         nin=mch+2.3d0/al
+         nin=int(mch+2.3d0/al)
          if(nin+4>mmax) nin=mmax-4
          xkap=dsqrt(sls/rr(nin)**2 + 2.0d0*(vv(nin)-ee))
 

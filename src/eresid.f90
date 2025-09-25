@@ -87,12 +87,12 @@ subroutine eresid(ll,irc,nnull,nbas,mmax,rr,drdum,dqdum,qmax,qroot, &
 
 !set up linear radial mesh
    rc=rr(irc)
-   irclin=rc/dr + 1.5d0
+   irclin=int(rc/dr + 1.5d0)
    dr=rc/(irclin-1)
 
    do ii=mmax,1,-1
       if(abs(uu(ii))>1.0d-10) then
-         mmaxlin=rr(ii)/dr - 2.0d0
+         mmaxlin=int(rr(ii)/dr - 2.0d0)
          exit
       end if
    end do
@@ -139,7 +139,7 @@ subroutine eresid(ll,irc,nnull,nbas,mmax,rr,drdum,dqdum,qmax,qroot, &
 !inward from qmax (considered infinity) to qq=0, saving snapshots along the
 !way
 
-   nq=qmax/dq+1
+   nq=int(qmax/dq)+1
 
 !null accumulators and running registers
 

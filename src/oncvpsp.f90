@@ -217,7 +217,7 @@ program oncvpsp
    al=dlog(amesh)
    rr1=0.0005d0/zz
    rr1=dmin1(rr1,0.0005d0/10)
-   mmax=dlog(45.0d0 /rr1)/al
+   mmax=int(dlog(45.0d0 /rr1)/al)
 
 !calculate zion for output
    zion=zz

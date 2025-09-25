@@ -151,7 +151,7 @@ subroutine run_optimize(eig,ll,mmax,mxprj,rr,uua,qq,&
       qmax=max(qmax,20.0d0)
 
 
-      nqout=2 + 0.75d0*qmax/dqout
+      nqout=2 + int(0.75d0*qmax/dqout)
 
       allocate(qout(nqout),eresq(nqout),leresq(nqout),eresid0(nqout))
       allocate(eresiddot(nnull,nqout),eresidmat(nnull,nnull,nqout))
