@@ -161,8 +161,8 @@ module input_toml_m
       !! Linear mesh section (required)
       call get_value(table, "linear_mesh", child)
       call check_associated(child, "[linear_mesh] section")
-      call get_value(child, "a", drl)
-      call get_value(child, "rmax", rlmax)
+      call get_value(child, "drl", drl)
+      call get_value(child, "rlmax", rlmax)
 
       !! Reference configuration section (required)
       call get_value(table, "reference_configuration", child)

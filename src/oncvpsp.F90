@@ -99,6 +99,7 @@
  integer :: input_mode
  integer :: unit
  character(len=1024) :: input_filename
+ logical :: input_file_exists
 
  input_mode = INPUT_STDIN
 
@@ -121,14 +122,15 @@
        call get_command_argument(i, arg)
        select case(arg)
        case('-h', '--help')
-          write (stdout, '(a)') 'Usage: oncvpsp.x [options]'
+          write (stdout, '(a)') 'Usage: oncvpspnr.x [options]'
           write (stdout, '(a)') 'Options:'
           write (stdout, '(a)') '  -h, --help       Show this help message and exit'
           write (stdout, '(a)') '  -v, --version    Show version information and exit'
-          write (stdout, '(a)') '  -i, --input      Specify input file (TOML). For legacy input, use stdin.'
+          write (stdout, '(a)') '  -i, --input      Specify text format input file.'
+          write (stdout, '(a)') '  -t, --toml-input Specify TOML format input file.'
           stop 0
        case('-v', '--version')
-          write (stdout, '(a)') 'ONCVPSP (scalar-realtivistic) version 4.0.1'
+          write (stdout, '(a)') 'ONCVPSP (non-realtivistic) version 4.0.1'
           stop 0
        case('-i', '--input')
          if (i + 1 > command_argument_count()) then
@@ -136,6 +138,11 @@
             stop 1
          end if
          call get_command_argument(i + 1, input_filename)
+         inquire (file=trim(input_filename), exist=input_file_exists)
+         if (.not. input_file_exists) then
+             write (stderr, '(a,a)') 'Error: input file does not exist: ', trim(input_filename)
+             stop 1
+         end if
          input_mode = INPUT_TEXT
 #if (defined WITH_TOML)
        case('-t', '--toml-input')
@@ -144,6 +151,11 @@
             stop 1
          end if
          call get_command_argument(i + 1, input_filename)
+         inquire (file=trim(input_filename), exist=input_file_exists)
+         if (.not. input_file_exists) then
+            write (stderr, '(a,a)') 'Error: TOML input file does not exist: ', trim(input_filename)
+            stop 1
+         end if
          input_mode = INPUT_TOML
 #else
         case('-t', '--toml-input')

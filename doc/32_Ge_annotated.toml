@@ -1,0 +1,176 @@
+[oncvpsp]
+# Atomic symbol
+atsym = "Ge"
+# Atomic number
+z = 32.0
+# Number of core states
+nc = 5
+# Number of valence states
+nv = 3
+# Exchange-correlation functional
+# 1: Wigner
+# 2: Hedin-Lundquist
+# 3: Perdew-Zunger-Ceperly-Alder
+# 4: Perdew-Burke-Enzerhof
+# Negative values: Libxc
+iexc = 3
+
+[reference_configuration]
+# Principal quantum numbers
+n = [ 1, 2, 2, 3, 3, 3, 4, 4,]
+# Angular momentum quantum numbers
+l = [ 0, 0, 1, 0, 1, 2, 0, 1,]
+# Occupancies
+# (f >= 0.0)
+f = [ 2.0, 2.0, 6.0, 2.0, 6.0, 10.0, 2.0, 2.0,]
+
+[pseudopotentials]
+# Maximum angular momentum for which pseudopotentials are calculated
+# (lmax <= 3)
+lmax = 2
+# Angular momentum quantum numbers
+l = [ 0, 1, 2,]
+# Core radii for each angular momentum channel
+rc = [ 2.6, 2.6, 2.0,]
+# Energy at which each semi-local pseudopotential is generated.
+# If an occupied state in the reference configuration exists for
+# this l, its eigenvalue is used instead of ep. A positive energy
+# must be specified for barrier-confined "scattering" states for
+# unoccupied l <=lmax.
+# A small positive energy is usually good (0.1-0.25 Ha).
+ep = [ -0.0, -0.0, 0.0,]
+# Number of constraints for pseudo wave function to match
+# all-electron wave function at rc, value + ncon-1 derivatives.
+# Must be between 3 and 5 ("M" in the paper, Eq.(6)).
+ncon = [ 4, 4, 4,]
+# Number of basis functions.
+# Must be between ncon+2 and ncon+5.
+# ("N" in the paper, Eqs.(4-5)).
+nbas = [ 8, 8, 9,]
+# Wave vector defining "residual energy" in the RRKJ method.
+# ("q_c" in the paper, Eq.(1)).
+qcut = [ 5.0, 5.2, 8.4,]
+
+[local_potential]
+# Angular momentum whose semi-local pseudopotential is taken
+# as the local potential.
+# For `lloc = 4`, a smooth polynomial continuation of the
+# all-electron full potential is used starting from `rcloc`.
+# If `lloc < lmax`, the `lpopt` and `dvloc0` are ignored.
+# If `lloc != 4`, `rcloc` must be less than the core radii
+# defined in `[pseudopotentials]`.
+# If `lloc == 4`, `rcloc` can be less than or equal to the
+# minimum of the core radii defined in `[pseudopotentials]`.
+lloc = 4
+# Core radius for the local potential.
+rcloc = 2.0
+# Type of polynomial continuation for `lloc=4`.
+# Values 1-5 permitted.
+#   1) match 2 derivatives, r^0,2,4
+#   2) match 2 derivatives, r^0,4,6
+#   3) match 3 derivatives, r^0,4,5,6
+#   4) match 3 derivatives, r^0,4,6,8
+#   5) match 3 derivatives, r^0,2,4,6
+lpopt = 5
+# Shift of r=0 potential from basic continuation (Ha) for lloc=4.
+# Depends on lpopt above as follows, with x=(r/rc)
+#   1) dvloc0*(1-x^2)^3
+#   2) dvloc0*(1-x^4)^3
+#   3-5) dvloc0*(1-x^4)^4
+dvloc0 = 0.0
+
+[vkb_projectors]
+# Angular momentum quantum numbers
+l = [ 0, 1, 2,]
+# Number of projectors for each angular momentum channel (0 <= nproj <= 5)
+nproj = [ 2, 2, 2,]
+# Energy step (added to the bound state eigenvalue or `ep`) to generate
+# the all-electron bound / well-confined state for the 2nd and subsequent
+# projectors in each angular momentum channel.
+debl = [ 1.5, 1.5, 1.5,]
+
+[model_core_charge]
+# Model core charge type:
+#   0) No non-linear core correction
+#   1) Smooth monotonic polynomial model core charge
+#      fit at "matching" radius following reference 35.
+#   2) Teter model core charge fit to match
+#      all-electron core charge and its first derivative
+#      at "matching" radius.
+#   3) Teter model core charge with parameters
+#      specified by rcfact and fcfact.
+#   4) Optimized Teter model core charge with parameters
+#      determined to minimize the RMSE of the 2nd derivative
+#      of the exchange-correlation energy.
+icmod = 0
+# Charge amplitude factor:
+#   1-2) "Matching" radius determined where fcfact * rhoc == rhops
+#   3) Teter amplitude parameter defined as fcfact * rhoc(rmatch)
+fcfact = 0.0
+# Charge scale factor:
+#   3) Teter scale parameter defined as rcfact * rmatch
+rcfact = 0.0
+
+[log_derivative_analysis]
+# Lower energy limit for the "phase-shift-like" log-derivative
+# plots. Should be below the nearest core level across angular
+# momenta to make sure there are no ghosts. Usually -2.0 is OK.
+# When semi-core states are included in the valence, this should
+# be below the lowest core energy.
+epsh1 = -2.0
+# Upper energy limit.
+# 2.0 is usually good.
+epsh2 = 2.0
+# Energy mesh interval for the plot.
+# 0.02 is usually good enough.
+depsh = 0.02
+
+[linear_mesh]
+# Parameters of the linear mesh used in writing the formatted
+# pseudopotential output files.
+# Mesh spacing.
+# 0.02 is good for "softer" pseudopotentials, 0.01 is probably
+# better with 1st row, 3d's, or semi-core pseudopotentials.
+drl = 0.01
+# Maximum radius (exclusive).
+# Must be greater than the maximum core radius (including lloc=4 rc(5)).
+# Also determines the range of diagnostic plots, so ~2-3*rcmax is usually good.
+rlmax = 4.0
+
+[pp_output]
+# Output pseudopotential file format.
+# Options:
+#   - "psp8": ABINIT "psp8".
+#   - "upf": Quantum ESPRESSO "unified pseudopotential format v2".
+#   - "psml": SIESTA "PSeudopotential Markup Language".
+#   - "none": no output pseudopotential file is generated.
+#   - "both": both "upf" and "psp8" files are generated.
+#   - "all": "upf", "psp8" and "psml" files are generated.
+psfile = "psp8"
+
+# TEST CONFIGURATIONS
+# The core configuration for test configurations is always
+# fixed to that of the reference configuration, so here we
+# only specify the valence.
+# In the output, the first "test configuration" corresponds
+# to the reference configuration, which is inserted automatically
+# before the user-defined test configurations.
+[[test_configurations]]
+n = [ 3, 4, 4,]
+l = [ 2, 0, 1,]
+f = [ 10.0, 1.0, 2.0,]
+
+[[test_configurations]]
+n = [ 3, 4, 4,]
+l = [ 2, 0, 1,]
+f = [ 10.0, 2.0, 1.0,]
+
+[[test_configurations]]
+n = [ 3, 4, 4,]
+l = [ 2, 0, 1,]
+f = [ 10.0, 1.0, 1.0,]
+
+[[test_configurations]]
+n = [ 3, 4, 4,]
+l = [ 2, 0, 2,]
+f = [ 10.0, 1.0, 1.0,]

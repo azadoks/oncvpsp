@@ -52,13 +52,14 @@ jobs:
       uses: actions/cache@v4
       with:
         path: |
-          $HOME/dependencies/libxc-${{ matrix.libxc_version }}
+          ${HOME}/dependencies/libxc-${{ matrix.libxc_version }}
         key: ${{ runner.os }}-${{ matrix.c_compiler }}-libxc-${{ matrix.libxc_version }}
 
     - name: Compile Libxc
       if: steps.cache-libxc.outputs.cache-hit != 'true'
       run: |
         cd $HOME
+        mkdir -p ${HOME}/dependencies/libxc-${{ matrix.libxc_version}}
         wget https://gitlab.com/libxc/libxc/-/archive/${{ matrix.libxc_version }}/libxc-${{ matrix.libxc_version }}.tar.bz2
         tar -xf libxc-${{ matrix.libxc_version }}.tar.bz2
         cd libxc-${{ matrix.libxc_version }}
@@ -66,11 +67,12 @@ jobs:
         cd build
         cmake .. \
           -DENABLE_FORTRAN=ON \
+          -DENABLE_FORTRAN03=ON \
+          -DBUILD_TESTING=OFF \
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
           -DCMAKE_Fortran_COMPILER=${{ matrix.fortran_compiler }} \
-          -DCMAKE_INSTALL_PREFIX=$HOME/dependencies/libxc-${{ matrix.libxc_version }}
-        make -j4
-        make install
+          -DCMAKE_INSTALL_PREFIX=${HOME}/dependencies/libxc-${{ matrix.libxc_version }}
+        make install -j
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
@@ -80,23 +82,29 @@ jobs:
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_Fortran_COMPILER=${{ matrix.fortran_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -DWITH_TOML=ON
+        -DWITH_Libxc=ON
         -DLibxc_ROOT=$HOME/dependencies/libxc-${{ matrix.libxc_version }}
         -S ${{ github.workspace }}
 
-    - name: Build
+    - name: Build ONCVPSP with CMake
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       run: >
         cmake --build ${{ steps.strings.outputs.build-output-dir }}
         --config ${{ matrix.build_type }}
 
-    - name: Test
-      run: |
-        ./set_path
-        cd tests/data
-        ./TEST.sh
-
-    - name: Upload TEST.report
-      uses: actions/upload-artifact@v4
+    - name: Setup Python
+      uses: actions/setup-python@v6
       with:
-        name: ${{ matrix.os }}-${{ matrix.fortran_compiler }}-${{ matrix.build_type }}-TEST.report
-        path: tests/data/TEST.report
+        python-version-file: "pyproject.toml"
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+      with:
+        enable-cache: true
+
+    - name: Install pyoncvpsp
+      run: uv sync --locked --all-extras --dev
+
+    - name: Run pytest
+      run: uv run pytest -n auto
