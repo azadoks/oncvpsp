@@ -25,12 +25,14 @@ build-backend = "uv_build"
 dev = [
     "black>=25.11.0",
     "isort>=7.0.0",
-    "mkdocs==1.6.1",
-    "mkdocs-material==9.5.42",
     "pylint>=4.0.3",
-    "pymdown-extensions==10.12",
     "pytest>=9.0.1",
     "pytest-xdist>=3.8.0",
+]
+docs = [
+    "mkdocs==1.6.1",
+    "mkdocs-material==9.5.42",
+    "pymdown-extensions==10.12",
     "python-markdown-math==0.8",
 ]
 

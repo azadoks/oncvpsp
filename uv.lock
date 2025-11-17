@@ -701,12 +701,14 @@ dependencies = [
 dev = [
     { name = "black" },
     { name = "isort" },
-    { name = "mkdocs" },
-    { name = "mkdocs-material" },
     { name = "pylint" },
-    { name = "pymdown-extensions" },
     { name = "pytest" },
     { name = "pytest-xdist" },
+]
+docs = [
+    { name = "mkdocs" },
+    { name = "mkdocs-material" },
+    { name = "pymdown-extensions" },
     { name = "python-markdown-math" },
 ]
 
@@ -722,12 +724,14 @@ requires-dist = [
 dev = [
     { name = "black", specifier = ">=25.11.0" },
     { name = "isort", specifier = ">=7.0.0" },
-    { name = "mkdocs", specifier = "==1.6.1" },
-    { name = "mkdocs-material", specifier = "==9.5.42" },
     { name = "pylint", specifier = ">=4.0.3" },
-    { name = "pymdown-extensions", specifier = "==10.12" },
     { name = "pytest", specifier = ">=9.0.1" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
+]
+docs = [
+    { name = "mkdocs", specifier = "==1.6.1" },
+    { name = "mkdocs-material", specifier = "==9.5.42" },
+    { name = "pymdown-extensions", specifier = "==10.12" },
     { name = "python-markdown-math", specifier = "==0.8" },
 ]
 
