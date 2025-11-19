@@ -81,6 +81,7 @@ def test_against_reference(
     filepaths_executables: dict[str, pathlib.Path],
     filepath_data: pathlib.Path,
     filepath_refs: pathlib.Path,
+    tmp_path: pathlib.Path,
 ) -> None:
     """Integration test comparing program output against reference output."""
     # Find input and output files
@@ -94,13 +95,11 @@ def test_against_reference(
         if not output_file.exists():
             raise FileNotFoundError(f"Reference output file {filepath_refs}/{name}[_r].out does not exist.")
     exe_path: pathlib.Path = _determine_executable(output_file, filepaths_executables)
+    workdir: pathlib.Path = tmp_path / name
+    workdir.mkdir(exist_ok=True)
     with open(input_file, "r", encoding="latin-1") as fp:
         proc: subprocess.CompletedProcess[str] = subprocess.run(
-            args=[str(exe_path)],
-            stdin=fp,
-            capture_output=True,
-            text=True,
-            check=False,
+            args=[str(exe_path)], stdin=fp, capture_output=True, text=True, check=False, cwd=str(workdir)
         )
         if proc.returncode != 0:
             raise RuntimeError(
