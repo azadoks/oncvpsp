@@ -114,6 +114,17 @@ def test_against_reference(
     with io.StringIO(proc.stdout) as fp:
         tst_output = OncvpspTextParser(fp).all_data
     # Compare outputs recursively
-    inequalities = nested_approx(ref_output, tst_output, abs=1e-5, rel=1e-12)
+    inequalities = nested_approx(
+        ref_output,
+        tst_output,
+        abs=1e-5,
+        rel=1e-12,
+        exclude=[
+            "/program_information/date",
+            "/program_information/day",
+            "/program_information/month",
+            "/program_information/year",
+        ],
+    )
     if inequalities:
         pytest.fail(f"Outputs differ\n{_inequalities_message(inequalities)}")

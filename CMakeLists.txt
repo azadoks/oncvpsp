@@ -32,19 +32,8 @@ include(cmake/CPM.cmake)
 ##########################################################
 # Build types
 ##########################################################
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE RELEASE CACHE STRING
-        "Choose the type of build, options are: None Debug Release."
-        FORCE)
-endif(NOT CMAKE_BUILD_TYPE)
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    message(STATUS "Building in debug mode")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -g -O0 -fPIC -Wall -fcheck=all -fbacktrace -ffpe-trap=invalid,zero,overflow")
-endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    message(STATUS "Building in release mode")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O3 -fPIC -ffast-math -funroll-loops -DNDEBUG")
-endif(CMAKE_BUILD_TYPE STREQUAL "Release")
+set(CMAKE_Fortran_FLAGS_DEBUG "-g -O0 -fPIC -Wall -fcheck=all -fbacktrace -ffpe-trap=invalid,zero,overflow")
+set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -fPIC -ffast-math -funroll-loops -DNDEBUG")
 
 ##########################################################
 # Define the paths for static libraries and executables

@@ -17,7 +17,9 @@ optimized norm-conserving Vanderbilt pseudopotentials.
     - `-DONCVPSP_WITH_TOML=[ON,OFF]`: Enable or disable the TOML input file format.
     - `-DONCVPSP_WITH_Libxc=[ON,OFF]`: Enable or disable building against Libxc.
     - `-DLibxc_ROOT`: Path to a Libxc installation to build against.
-    - `-DCMAKE_INSTALL_DIRECTORY`: Path to install ONCVPSP if desired (see step 4. below)
+    - `-DBLA_VENDOR`: Controls the BLAS/LAPACK vendor (see the [CMake documentation](https://cmake.org/cmake/help/latest/module/FindBLAS.html)).
+    - `-DCMAKE_INSTALL_DIRECTORY`: Path to install ONCVPSP if desired (see step 4. below).
+    - `-DCMAKE_BUILD_TYPE`: Custom flags are defined for "Debug" and "Release" builds.
 2. Build the project
     ```
     cmake --build build --parallel
