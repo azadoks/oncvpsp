@@ -9,17 +9,47 @@ optimized norm-conserving Vanderbilt pseudopotentials.
 
 ### With CMake
 
-1. make a `build` directory in the root of the repository like `/path/to/oncvpsp/build`
-2. `cd` into the `build` directory
-3. run `cmake ..` from the `build` directory
-  a. to enable Libxc, pass the flag `-DLibxc_ROOT=/path/to/libxc`
-  b. to provide a path to LAPACK/BLAS, pass the flag(s) `-DLAPACK_ROOT=/path/to/lapack`, `-DBLAS_ROOT=/path/to/blas` (which might be the same as LAPACK!)
-  c. to change the build type (debug vs. release), pass the flag `-DCMAKE_BUILD_TYPE="Debug"` or `-DCMAKE_BUILD_TYPE="Release"`
-  d. to set the installation directory, pass the flag `-DCMAKE_INSTALL_PREFIX=/path/to/installation`
-4. run `make all >& make.log` (builds the executable targets `oncvpsp`, `oncvpsp_nr`, and `oncvpsp_r`)
-5. `cd ..` to go back to the root of the repository
-6. in the root of the repository run `set_path` to set up the test scripts
-7. `cd tests/data && ./TEST.sh` to run the tests
+1. Configure the build in the `build/` directory (created if it doesn't exist)
+    ```bash
+    cmake -S. -Bbuild
+    ```
+    These are a few useful flags for configuring the build (consult the CMake documentation for others):
+    - `-DONCVPSP_WITH_TOML=[ON,OFF]`: Enable or disable the TOML input file format.
+    - `-DONCVPSP_WITH_Libxc=[ON,OFF]`: Enable or disable building against Libxc.
+    - `-DLibxc_ROOT`: Path to a Libxc installation to build against.
+    - `-DCMAKE_INSTALL_DIRECTORY`: Path to install ONCVPSP if desired (see step 4. below)
+2. Build the project
+    ```
+    cmake --build build --parallel
+    ```
+3. (Optional) Run the test suite
+  - Via `pytest`
+    - Install the `pyoncvpsp` package with the `dev` extra:
+      ```bash
+      pip install .[dev]
+      ```
+    - Run the `pytest` test suite (parallelized via `pytest-xdist`)
+      ```
+      pytest -n auto
+      ```
+  - With `TEST.sh`
+      - Run the `set_path` script to modify the scripts in `scripts/` with the path to the ONCVPSP binaries
+        ```
+        ./set_path
+        ```
+      - Run the test script in `tests/data`
+        ```
+        cd tests/data
+        ./TEST.sh
+        ```
+      - Look at the test results in `TEST.report`
+        ```
+        less TEST.report
+        ```
+4. (Optional) Install ONCVPSP
+    ```
+    cmake --build build --target install
+    ```
 
 ### With make
 

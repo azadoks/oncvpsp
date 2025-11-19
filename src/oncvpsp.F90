@@ -102,10 +102,11 @@
  logical :: input_file_exists
 
  input_mode = INPUT_STDIN
+ call date_and_time(values=dtime)
 
- write(6,'(a/a//)') &
+ write(6,'(a/a,i02,a,i02,a,i4//)') &
 &      'ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
-&      'scalar-relativistic version 4.0.1 03/01/2019'
+&      'scalar-relativistic version 4.0.1 ', dtime(3), '/', dtime(2), '/', dtime(1)
 
  write(6,'(a/a/a//)') &
 &      'While it is not required under the terms of the GNU GPL, it is',&

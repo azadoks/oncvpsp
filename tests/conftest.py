@@ -11,9 +11,11 @@ EXECUTABLE_NAMES: typing.Final[list[str]] = [
     "oncvpsp.x",
     "oncvpspnr.x",
     "oncvpspr.x",
-    "oncvpspm.x",
-    "oncvpspmx.x",
 ]
+
+
+def _filepath_tests() -> pathlib.Path:
+    return pathlib.Path(__file__).parent.resolve()
 
 
 @pytest.fixture
@@ -23,7 +25,7 @@ def filepath_tests() -> pathlib.Path:
     Returns:
         pathlib.Path: Absolute path of "oncvpsp/tests/".
     """
-    return pathlib.Path(__file__).parent.resolve()
+    return _filepath_tests()
 
 
 @pytest.fixture
@@ -56,26 +58,9 @@ def filepath_refs(
     return filepath_tests / "refs"
 
 
-@pytest.fixture
-def filepaths_executables(
-    filepath_tests: pathlib.Path,  # pylint: disable=redefined-outer-name
+def _filepaths_executables(
+    filepath_tests: pathlib.Path,
 ) -> dict[str, pathlib.Path]:
-    """Absolute paths to the ONCVPSP / METAPSP executables.
-
-    Searches the following sources (later sources have priority over earlier ones):
-        1. The system PATH via `which`.
-        2. "oncvpsp/src/" (the directory in which `make` places the binaries).
-        3. "oncvpsp/build/src/" (the suggested CMake build directory).
-        4. ONCVPSP_BIN_DIR environment variable (if set).
-
-    If an executable is not found, it will not be included in the returned dictionary.
-
-    Args:
-        filepath_tests (pathlib.Path): Absolute path of "oncvpsp/tests/".
-
-    Returns:
-        dict[str, pathlib.Path]: Dictionary mapping executable names to their absolute paths.
-    """
     executable_paths: dict[str, pathlib.Path] = {}
     # Search in PATH
     for exe_name in EXECUTABLE_NAMES:
@@ -106,3 +91,38 @@ def filepaths_executables(
             if exe_path.exists():
                 executable_paths[exe_name] = exe_path.resolve()
     return executable_paths
+
+
+@pytest.fixture
+def filepaths_executables(
+    filepath_tests: pathlib.Path,  # pylint: disable=redefined-outer-name
+) -> dict[str, pathlib.Path]:
+    """Absolute paths to the ONCVPSP executables.
+
+    Searches the following sources (later sources have priority over earlier ones):
+        1. The system PATH via `which`.
+        2. "oncvpsp/src/" (the directory in which `make` places the binaries).
+        3. "oncvpsp/build/src/" (the suggested CMake build directory).
+        4. ONCVPSP_BIN_DIR environment variable (if set).
+
+    If an executable is not found, it will not be included in the returned dictionary.
+
+    Args:
+        filepath_tests (pathlib.Path): Absolute path of "oncvpsp/tests/".
+
+    Returns:
+        dict[str, pathlib.Path]: Dictionary mapping executable names to their absolute paths.
+    """
+    return _filepaths_executables(filepath_tests)
+
+
+@pytest.hookimpl()
+def pytest_sessionstart(session) -> None:  # pylint: disable=unused-argument
+    """Hook to print a message at the start of the test session."""
+    executable_paths: dict[str, pathlib.Path] = _filepaths_executables(_filepath_tests())
+    print("ONCVPSP executables:")
+    for exe_name in EXECUTABLE_NAMES:
+        if exe_name in executable_paths:
+            print(f"  {exe_name:>12s}: {executable_paths[exe_name]}")
+        else:
+            print(f"  {exe_name:>12s}: NOT FOUND")
