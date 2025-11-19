@@ -26,7 +26,7 @@ def nested_approx(  # pylint: disable=too-many-arguments,too-many-positional-arg
         bool: True if the dictionaries are approximately equal, False otherwise.
     """
     if path is None:
-        path = [""]
+        path = []
 
     if inequalities is None:
         inequalities = {}

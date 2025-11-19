@@ -120,10 +120,10 @@ def test_against_reference(
         abs=1e-5,
         rel=1e-12,
         exclude=[
-            "/program_information/date",
-            "/program_information/day",
-            "/program_information/month",
-            "/program_information/year",
+            "program_information/date",
+            "program_information/day",
+            "program_information/month",
+            "program_information/year",
         ],
     )
     if inequalities:
