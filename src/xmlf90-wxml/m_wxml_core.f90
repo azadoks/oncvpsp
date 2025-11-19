@@ -133,12 +133,12 @@ logical :: advance_line , advance_space
 integer :: n, i, jmax
 integer, parameter   :: chunk_size = 128
 
-advance_line = pcdata_advance_line_default 
+advance_line = pcdata_advance_line_default
 if (present(line_feed)) then
    advance_line = line_feed
 endif
 
-advance_space = pcdata_advance_space_default 
+advance_space = pcdata_advance_space_default
 if (present(space)) then
    advance_space = space
 endif
@@ -377,4 +377,3 @@ end subroutine write_attributes
     end subroutine xml_AddArray_real_sp
 
 end module m_wxml_core
-

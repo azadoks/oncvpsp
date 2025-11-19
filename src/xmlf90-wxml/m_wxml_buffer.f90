@@ -1,7 +1,7 @@
 module m_wxml_buffer
 
 !
-! At this point we use a fixed-size buffer. 
+! At this point we use a fixed-size buffer.
 ! Note however that buffer overflows will only be
 ! triggered by overly long *unbroken* pcdata values, or
 ! by overly long attribute values. Hopefully
@@ -168,7 +168,7 @@ function buffer_length(buffer) result(length)
 type(buffer_t), intent(in)          :: buffer
 integer                             :: length
 
-length = buffer%size 
+length = buffer%size
 
 end function buffer_length
 
