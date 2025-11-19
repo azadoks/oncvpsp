@@ -1402,15 +1402,12 @@ class OncvpspTextParser:
             },
         }
 
-    def _parse_test_configuration_result(self, test_index) -> dict[str, int | float | list[dict[str, int | float]]]:
-        if self.relativistic:
-            return self._parse_rel_test_configuration_result(test_index)
-        return self._parse_nonrel_test_configuration_result(test_index)
-
     @cached_property
     @restore_reader_state
     def _test_configuration_results(self):
-        return [self._parse_test_configuration_result(i) for i in range(self.ncnf)]
+        if self.relativistic:
+            return [self._parse_rel_test_configuration_result(i) for i in range(self.ncnf)]
+        return [self._parse_nonrel_test_configuration_result(i) for i in range(self.ncnf)]
 
     @cached_property
     @restore_reader_state
@@ -1474,7 +1471,7 @@ class OncvpspTextParser:
             "local_potential": {},
         }
         r_list = []
-        while (line := self.reader.readline(check_warning=True, check_error=True)).startswith("!p"):
+        while (line := self.reader.readline()).startswith("!p"):
             words = line.strip().split()
             r_list.append(float(words[1]))
             data["rho_val"]["f"].append(float(words[2]))
@@ -1485,10 +1482,12 @@ class OncvpspTextParser:
             data["semilocal_potentials"][l]["r"] = r_list
         if line.startswith(" !L"):  # lloc == 4
             assert self.lloc == 4
-            self.reader.goto_line_number(line.number - 1, check_warning=True, check_error=True)
+            self.reader.goto_line_number(
+                line.number - 1,
+            )
             data["local_potential"]["f"] = []
             data["local_potential"]["r"] = []
-            while (line := self.reader.readline(check_warning=True, check_error=True)).startswith(" !L"):
+            while (line := self.reader.readline()).startswith(" !L"):
                 words = line.strip().split()
                 data["local_potential"]["r"].append(float(words[1]))
                 data["local_potential"]["f"].append(float(words[2]))
@@ -1502,14 +1501,14 @@ class OncvpspTextParser:
             check_warning=True,
             check_error=True,
         )
-        self.reader.readline(check_warning=True, check_error=True)  # Blank line
+        self.reader.readline()  # Blank line
         data = {
             "rho_val": {"f": []},
             "rho_core": {"f": []},
             "rho_model_core": {"f": []},
         }
         r_list = []
-        while (line := self.reader.readline(check_warning=True, check_error=True)).startswith("!r"):
+        while (line := self.reader.readline()).startswith("!r"):
             words = line.strip().split()
             r_list.append(float(words[1]))
             data["rho_val"]["f"].append(float(words[2]))
@@ -1524,14 +1523,16 @@ class OncvpspTextParser:
     def _kinetic_energy_density_plot_data(self):
         if self.program != "METAPSP":
             return {}
-        self.reader.goto_line_equals(" Metagga taups and taumodps \n", check_warning=True, check_error=True)
-        self.reader.readline(check_warning=True, check_error=True)  # Blank line
+        self.reader.goto_line_equals(
+            " Metagga taups and taumodps \n",
+        )
+        self.reader.readline()  # Blank line
         data = {
             "tau": {"tau_ps": {"f": []}, "tau_mod_ps": {"f": []}},
             "vtau": {"vtau_ps": {"f": []}, "vtau_mod_ps": {"f": []}},
         }
         r_list = []
-        while (line := self.reader.readline(check_warning=True, check_error=True)).startswith("!t"):
+        while (line := self.reader.readline()).startswith("!t"):
             words = line.strip().split()
             r_list.append(float(words[1]))
             data["tau"]["tau_ps"]["f"].append(float(words[2]))
@@ -1539,10 +1540,15 @@ class OncvpspTextParser:
         for value in data["tau"].values():
             value["r"] = r_list
 
-        line = self.reader.goto_line_startswith("!vt", lookback=False, check_warning=True, check_error=True)
-        self.reader.goto_line_number(line.number - 1, check_warning=True, check_error=True)
+        line = self.reader.goto_line_startswith(
+            "!vt",
+            lookback=False,
+        )
+        self.reader.goto_line_number(
+            line.number - 1,
+        )
         r_list = []
-        while (line := self.reader.readline(check_warning=True, check_error=True)).startswith("!vt"):
+        while (line := self.reader.readline()).startswith("!vt"):
             words = line.strip().split()
             r_list.append(float(words[1]))
             data["vtau"]["vtau_ps"]["f"].append(float(words[2]))
@@ -1590,7 +1596,7 @@ class OncvpspTextParser:
                 }
                 self.reader.readline()  # Blank line
                 r_list = []
-                while (line := self.reader.readline(check_warning=True, check_error=True)).startswith("&"):
+                while (line := self.reader.readline()).startswith("&"):
                     words = line.strip().split()
                     r_list.append(float(words[2]))
                     ae_wf["f"].append(float(words[3]))
@@ -1600,10 +1606,10 @@ class OncvpspTextParser:
                 ps_wf["r"] = r_list
                 wavefunctions.append(ps_wf)
             # Parse VKB projectors
-            self.reader.readline(check_warning=True, check_error=True)  # Blank line
+            self.reader.readline()  # Blank line
             projs_l = [{"l": l, "i": i, "kappa": 0, "f": []} for i in range(self.nproj[l])]
             r_list = []
-            while (line := self.reader.readline(check_warning=True, check_error=True)).startswith("!J"):
+            while (line := self.reader.readline()).startswith("!J"):
                 words = line.strip().split()
                 r_list.append(float(words[2]))
                 for i in range(self.nproj[l]):
@@ -1656,9 +1662,9 @@ class OncvpspTextParser:
                         "ae_ps": "ps",
                         "f": [],
                     }
-                    self.reader.readline(check_warning=True, check_error=True)  # Blank line
+                    self.reader.readline()  # Blank line
                     r_list = []
-                    while (line := self.reader.readline(check_warning=True, check_error=True)).startswith("&"):
+                    while (line := self.reader.readline()).startswith("&"):
                         words = line.strip().split()
                         r_list.append(float(words[2]))
                         ae_wf["f"].append(float(words[3]))
@@ -1668,10 +1674,10 @@ class OncvpspTextParser:
                     ps_wf["r"] = r_list
                     wavefunctions.append(ps_wf)
                 # Parse VKB projectors
-                self.reader.readline(check_warning=True, check_error=True)  # Blank line
+                self.reader.readline()  # Blank line
                 projs = [{"l": l, "i": i, "kappa": kappa, "r": [], "f": []} for i in range(self.nproj[l])]
                 r_list = []
-                while (line := self.reader.readline(check_warning=True, check_error=True)).startswith("!J"):
+                while (line := self.reader.readline()).startswith("!J"):
                     words = line.strip().split()
                     r_list.append(float(words[2]))
                     for i in range(self.nproj[l]):
@@ -1695,10 +1701,12 @@ class OncvpspTextParser:
     @cached_property
     @restore_reader_state
     def _convergence_profiles_plot_data(self):
-        self.reader.goto_line_startswith("convergence profiles, (ll=0,lmax)", check_warning=True, check_error=True)
-        self.reader.readline(check_warning=True, check_error=True)  # lmax line
+        self.reader.goto_line_startswith(
+            "convergence profiles, (ll=0,lmax)",
+        )
+        self.reader.readline()  # lmax line
         profiles = [{"l": l, "ecut_ha": [], "error_ha": []} for l in range(self.lmax + 1)]
-        while (line := self.reader.readline(check_warning=True, check_error=True)).startswith("!C"):
+        while (line := self.reader.readline()).startswith("!C"):
             words = line.strip().split()
             l = int(words[1])
             assert profiles[l]["l"] == l
@@ -1715,13 +1723,13 @@ class OncvpspTextParser:
                 check_warning=True,
                 check_error=True,
             )
-            r = float(self.reader.readline(check_warning=True, check_error=True).strip().split()[-1])
+            r = float(self.reader.readline().strip().split()[-1])
             self.reader.readline()  # 'l, energy, all-electron, pseudopotential
             self.reader.readline()  # Blank line
             log_der_ae = {"l": l, "kappa": 0, "r": r, "ae_ps": "ae", "f": []}
             log_der_ps = {"l": l, "kappa": 0, "r": r, "ae_ps": "ps", "f": []}
             e_list = []
-            while (line := self.reader.readline(check_warning=True, check_error=True)).startswith("!"):
+            while (line := self.reader.readline()).startswith("!"):
                 words = line.strip().split()
                 assert l == int(words[1])
                 e_list.append(float(words[2]))
@@ -1744,16 +1752,14 @@ class OncvpspTextParser:
                     check_warning=True,
                     check_error=True,
                 )
-                line = self.reader.readline(
-                    check_warning=True, check_error=True
-                )  # 'atan(r * ((d psi(r)/dr)/psi(r))), r={r:6.2f}\n'
+                line = self.reader.readline()  # 'atan(r * ((d psi(r)/dr)/psi(r))), r={r:6.2f}\n'
                 r = float(line.strip().split()[-1])
                 self.reader.readline()  # 'l, energy, all-electron, pseudopotential\n'
                 self.reader.readline()  # Blank line
                 log_der_ae = {"l": l, "kappa": 0, "r": r, "ae_ps": "ae", "f": []}
                 log_der_ps = {"l": l, "kappa": 0, "r": r, "ae_ps": "ps", "f": []}
                 e_list = []
-                while (line := self.reader.readline(check_warning=True, check_error=True)).startswith("!"):
+                while (line := self.reader.readline()).startswith("!"):
                     words = line.strip().split()
                     assert copysign(l, kappa) == int(words[1])
                     e_list.append(float(words[2]))

@@ -2,6 +2,7 @@
 # ONCVPSP library
 ###########################################################
 set(src_oncvpsp
+    # Core files
     aeo.f90
     check_data.f90
     const_basis.f90
@@ -83,25 +84,28 @@ set(src_oncvpsp
     upfout_r.f90
     wellstate_r.f90
 )
-if (Libxc_FOUND AND WITH_Libxc)
+# Append Libxc interface or stub
+if (Libxc_FOUND AND ONCVPSP_WITH_Libxc)
     list(APPEND src_oncvpsp functionals.F90 exc_libxc.f90)
 else ()
     list(APPEND src_oncvpsp exc_libxc_stub.f90)
 endif ()
-if (WITH_TOML)
-    add_compile_definitions(WITH_TOML)
+# Append TOML input parser if enabled
+if (ONCVPSP_WITH_TOML)
     list(APPEND src_oncvpsp input_toml_m.f90)
 endif ()
+# Create ONCVPSP library
 add_library(oncvpsp STATIC ${src_oncvpsp})
-add_dependencies(oncvpsp wxml)
-target_link_libraries(oncvpsp wxml ${COMMON_LIBRARIES})
+target_link_libraries(oncvpsp wxml ${ONCVPSP_DEPENDENCY_LIBRARIES})
+if (ONCVPSP_WITH_TOML)
+    target_compile_definitions(oncvpsp PRIVATE WITH_TOML)
+endif()
 
 ###########################################################
 # oncvpsp.x
 ###########################################################
 add_executable(oncvpspsr oncvpsp.F90)
-add_dependencies(oncvpspsr oncvpsp)
-target_link_libraries(oncvpspsr oncvpsp)
+target_link_libraries(oncvpspsr PRIVATE oncvpsp)
 set_target_properties(oncvpspsr
     PROPERTIES
         OUTPUT_NAME oncvpsp.x
@@ -111,8 +115,7 @@ set_target_properties(oncvpspsr
 # oncvpspnr.x
 ##########################################################
 add_executable(oncvpspnr oncvpsp_nr.F90)
-add_dependencies(oncvpspnr oncvpsp)
-target_link_libraries(oncvpspnr oncvpsp)
+target_link_libraries(oncvpspnr PRIVATE oncvpsp)
 set_target_properties(oncvpspnr
     PROPERTIES
         OUTPUT_NAME oncvpspnr.x
@@ -122,8 +125,7 @@ set_target_properties(oncvpspnr
 # oncvpspr.x
 ##########################################################
 add_executable(oncvpspfr oncvpsp_r.F90)
-add_dependencies(oncvpspfr oncvpsp)
-target_link_libraries(oncvpspfr oncvpsp)
+target_link_libraries(oncvpspfr PRIVATE oncvpsp)
 set_target_properties(oncvpspfr
     PROPERTIES
         OUTPUT_NAME oncvpspr.x
