@@ -1,5 +1,6 @@
 """Test configuration for ONCVPSP / METAPSP tests."""
 
+import os
 import pathlib
 import subprocess
 import typing
@@ -65,6 +66,7 @@ def filepaths_executables(
         1. The system PATH via `which`.
         2. "oncvpsp/src/" (the directory in which `make` places the binaries).
         3. "oncvpsp/build/src/" (the suggested CMake build directory).
+        4. ONCVPSP_BIN_DIR environment variable (if set).
 
     If an executable is not found, it will not be included in the returned dictionary.
 
@@ -95,4 +97,12 @@ def filepaths_executables(
         exe_path: pathlib.Path = filepath_cmake_bin / exe_name
         if exe_path.exists():
             executable_paths[exe_name] = exe_path.resolve()
+    # Search ONCVPSP_BIN_DIR environment variable (prioritize over CMake)
+    env_bin_dir: str | None = os.getenv("ONCVPSP_BIN_DIR")
+    if env_bin_dir is not None:
+        filepath_env_bin: pathlib.Path = pathlib.Path(env_bin_dir)
+        for exe_name in EXECUTABLE_NAMES:
+            exe_path: pathlib.Path = filepath_env_bin / exe_name
+            if exe_path.exists():
+                executable_paths[exe_name] = exe_path.resolve()
     return executable_paths

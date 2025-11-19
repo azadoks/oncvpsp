@@ -12,7 +12,8 @@ endif()
 ##########################################################
 # oncvpsp
 ##########################################################
-project(oncvpsp
+project(
+    oncvpsp
     VERSION 4.0.1
     DESCRIPTION "Optimized norm-conserving Vanderbilt pseudopotentials"
     LANGUAGES Fortran C)
@@ -20,8 +21,8 @@ project(oncvpsp
 ##########################################################
 # Options
 ##########################################################
-option(WITH_TOML "Enable TOML input support" ON)
-option(WITH_Libxc "Enable Libxc support" ON)
+option(ONCVPSP_WITH_TOML "Enable TOML input support" ON)
+option(ONCVPSP_WITH_Libxc "Enable Libxc support" ON)
 
 ###########################################################
 # Include CMake modules
@@ -31,36 +32,36 @@ include(cmake/CPM.cmake)
 ##########################################################
 # Build types
 ##########################################################
-if (NOT CMAKE_BUILD_TYPE)
-  set (CMAKE_BUILD_TYPE RELEASE CACHE STRING
-      "Choose the type of build, options are: None Debug Release."
-      FORCE)
-endif (NOT CMAKE_BUILD_TYPE)
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE RELEASE CACHE STRING
+        "Choose the type of build, options are: None Debug Release."
+        FORCE)
+endif(NOT CMAKE_BUILD_TYPE)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(STATUS "Building in debug mode")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -g -O0 -fPIC -Wall -fcheck=all -fbacktrace -ffpe-trap=invalid,zero,overflow")
-endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
-if (CMAKE_BUILD_TYPE STREQUAL "Release")
+endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
     message(STATUS "Building in release mode")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O3 -fPIC -ffast-math -funroll-loops -DNDEBUG")
-endif (CMAKE_BUILD_TYPE STREQUAL "Release")
+endif(CMAKE_BUILD_TYPE STREQUAL "Release")
 
 ##########################################################
 # Define the paths for static libraries and executables
 ##########################################################
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib
     CACHE
     PATH "Single output directory for building all libraries."
 )
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib
     CACHE
     PATH "Single output directory for building all libraries."
 )
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin
     CACHE
     PATH "Single output directory for building all executables."
 )
-set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/modules
+set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/modules
     CACHE
     PATH "Single output directory for building all Fortran modules."
 )
@@ -68,8 +69,8 @@ set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/modules
 ###########################################################
 # Common variables
 ###########################################################
-set(COMMON_LIBRARIES "")
-set(COMMON_INCLUDE_DIRECTORIES "")
+set(ONCVPSP_DEPENDENCY_LIBRARIES "")
+set(ONCVPSP_DEPENDENCY_INCLUDE_DIRECTORIES "")
 
 ###########################################################
 # PkgConfig (used preferentially for Libxc)
@@ -79,14 +80,14 @@ find_package(PkgConfig)
 ###########################################################
 # LAPACK
 ###########################################################
-if (DEFINED LAPACK_ROOT)
+if(DEFINED LAPACK_ROOT)
     find_package(LAPACK REQUIRED HINTS ${LAPACK_ROOT})
 else()
     find_package(LAPACK REQUIRED)
 endif()
 message(STATUS "Found LAPACK version ${LAPACK_VERSION}")
 message(STATUS "  LAPACK libraries: ${LAPACK_LIBRARIES}")
-list(APPEND COMMON_LIBRARIES ${LAPACK_LIBRARIES})
+list(APPEND ONCVPSP_DEPENDENCY_LIBRARIES ${LAPACK_LIBRARIES})
 
 ###########################################################
 # LIBXC
@@ -94,30 +95,30 @@ list(APPEND COMMON_LIBRARIES ${LAPACK_LIBRARIES})
 ###########################################################
 # Try to find Libxc via pkg-config
 set(Libxc_FOUND FALSE)
-if(WITH_Libxc)
-    if ((PkgConfig_FOUND) AND (NOT DEFINED Libxc_ROOT))
+if(ONCVPSP_WITH_Libxc)
+    if((PkgConfig_FOUND) AND (NOT DEFINED Libxc_ROOT))
         message(STATUS "Looking for Libxc via pkg-config")
         # C library
         pkg_check_modules(ONCVPSP_LIBXC QUIET IMPORTED_TARGET libxc)
-        if (ONCVPSP_LIBXC_FOUND)
+        if(ONCVPSP_LIBXC_FOUND)
             message(STATUS "Found Libxc version ${ONCVPSP_LIBXC_VERSION} via pkg-config")
         endif()
         # Fortran library
         pkg_check_modules(ONCVPSP_LIBXCF03 QUIET IMPORTED_TARGET libxcf03)
-        if (ONCVPSP_LIBXC_VERSION VERSION_LESS 7)
+        if(ONCVPSP_LIBXC_VERSION VERSION_LESS 7)
             pkg_check_modules(ONCVPSP_LIBXCF90 QUIET IMPORTED_TARGET libxcf90)
         endif()
         # Fortran interface check
-        if (NOT ONCVPSP_LIBXCF03_FOUND)
+        if(NOT ONCVPSP_LIBXCF03_FOUND)
             message(FATAL_ERROR "Libxc found via CMake lacks Fortran03 interface.")
         endif()
-        if (ONCVPSP_LIBXC_VERSION VERSION_LESS 7)
-            if (NOT ONCVPSP_LIBXCF90_FOUND)
+        if(ONCVPSP_LIBXC_VERSION VERSION_LESS 7)
+            if(NOT ONCVPSP_LIBXCF90_FOUND)
                 message(FATAL_ERROR "Libxc found via CMake lacks Fortran90 interface.")
             endif()
         endif()
         # Success check
-        if (ONCVPSP_LIBXC_FOUND AND (ONCVPSP_LIBXCF90_FOUND OR ONCVPSP_LIBXCF03_FOUND))
+        if(ONCVPSP_LIBXC_FOUND AND (ONCVPSP_LIBXCF90_FOUND OR ONCVPSP_LIBXCF03_FOUND))
             message(STATUS "Found Libxc via pkg-config")
             set(Libxc_FOUND TRUE)
             set(Libxc_VERSION ${ONCVPSP_LIBXCF03_VERSION})
@@ -129,23 +130,23 @@ if(WITH_Libxc)
     endif()
 
     # If not found via pkg-config, try CMake's FindLibxc module
-    if (NOT Libxc_FOUND)
+    if(NOT Libxc_FOUND)
         message(STATUS "Looking for Libxc via CMake's find_package")
         find_package(Libxc)
-        if (Libxc_FOUND)
+        if(Libxc_FOUND)
             message(STATUS "Found Libxc version ${Libxc_VERSION} via CMake's find_package")
             # Fortran interface check
-            if (NOT TARGET Libxc::xcf03)
+            if(NOT TARGET Libxc::xcf03)
                 message(FATAL_ERROR "Libxc found via CMake lacks Fortran03 interface.")
             endif()
-            if (Libxc_VERSION VERSION_LESS 7)
-                if (NOT TARGET Libxc::xcf90)
+            if(Libxc_VERSION VERSION_LESS 7)
+                if(NOT TARGET Libxc::xcf90)
                     message(STATUS "Libxc found via CMake lacks Fortran90 interface.")
                 endif()
             endif()
         endif()
-        if (Libxc_FOUND)
-            if (Libxc_VERSION VERSION_GREATER_EQUAL 7)
+        if(Libxc_FOUND)
+            if(Libxc_VERSION VERSION_GREATER_EQUAL 7)
                 set(Libxc_LIBRARIES Libxc::xcf03 Libxc::xc)
             else()
                 set(Libxc_LIBRARIES Libxc::xcf03 Libxc::xcf90 Libxc::xc)
@@ -154,7 +155,7 @@ if(WITH_Libxc)
         endif()
     endif()
 
-    if (NOT Libxc_FOUND)
+    if(NOT Libxc_FOUND)
         message(FATAL_ERROR "Libxc not found.")
     elseif(Libxc_VERSION VERSION_LESS 3)
         message(FATAL_ERROR "Libxc version ${ONCVPSP_LIBXC_VERSION} is too old (<3.0.0).")
@@ -162,9 +163,9 @@ if(WITH_Libxc)
         message(FATAL_ERROR "Libxc version 5.0.0 is affected by serious bugs.")
     else()
         message(STATUS "Libxc version ${Libxc_VERSION}:")
-        list(APPEND COMMON_LIBRARIES ${Libxc_LIBRARIES})
+        list(APPEND ONCVPSP_DEPENDENCY_LIBRARIES ${Libxc_LIBRARIES})
         message(STATUS "  Libxc libraries: ${Libxc_LIBRARIES}")
-        list(APPEND COMMON_INCLUDE_DIRECTORIES ${Libxc_INCLUDE_DIRS})
+        list(APPEND ONCVPSP_DEPENDENCY_INCLUDE_DIRECTORIES ${Libxc_INCLUDE_DIRS})
         message(STATUS "  Libxc include directories: ${Libxc_INCLUDE_DIRS}")
     endif()
 endif()
@@ -172,23 +173,28 @@ endif()
 ###########################################################
 # TOML-F (via CPM)
 ###########################################################
-if (WITH_TOML)
+if(ONCVPSP_WITH_TOML)
     CPMAddPackage(
         URI "gh:toml-f/toml-f@0.4.2"
         OPTIONS "BUILD_TESTING=OFF"
     )
-    list(APPEND COMMON_LIBRARIES toml-f-lib)
+    list(APPEND ONCVPSP_DEPENDENCY_LIBRARIES toml-f-lib)
 endif()
-
-###########################################################
-# CMake Configuration
-###########################################################
-# Save compile commands to `compile_commands.json` file
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-link_directories(${CMAKE_LIBRARY_PATH} ${COMMON_INCLUDE_DIRECTORIES})
-include_directories(${CMAKE_INCLUDE_PATH} ${COMMON_INCLUDE_DIRECTORIES})
 
 ###########################################################
 # Subdirectories
 ###########################################################
 add_subdirectory(src)
+
+
+###########################################################
+# Installation
+###########################################################
+include(GNUInstallDirs)
+install(TARGETS oncvpsp oncvpspnr oncvpspsr oncvpspfr
+    EXPORT oncvpspTargets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
