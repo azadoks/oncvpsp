@@ -246,3 +246,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# FORD documentation
+ford/
