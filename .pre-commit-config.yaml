@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.9.9
+    rev: 0.9.10
     hooks:
       - id: uv-lock
 
@@ -15,27 +15,41 @@ repos:
       - id: black
 
   - repo: https://github.com/pycqa/isort
-    rev: '7.0.0'
+    rev: "7.0.0"
     hooks:
       - id: isort
 
   - repo: https://github.com/pycqa/pylint
-    rev: v4.0.2
+    rev: v4.0.3
     hooks:
       - id: pylint
         alias: pylint-with-spelling
-        stages: [ manual ]
+        stages: [manual]
         language: system
-        types: [ python ]
+        types: [python]
         require_serial: true
-        exclude:
-          (?x)^(
+        exclude: (?x)^(
           doc/.*|
           tests/.*
           )$
 
+  - repo: https://github.com/zmoon/findent-pre-commit
+    rev: 527f61f770f504abd87f97932b510b8dce07ab3a
+    hooks:
+      - id: wfindent-system
+        args:
+          [
+            -ofree,
+            -i3,
+            --indent_contains=restart,
+            --indent_continuation=default,
+            --indent_ampersand,
+            --align_paren,
+            --refactor_end,
+          ]
+
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v4.9.1
+    rev: v4.10.0
     hooks:
       - id: commitizen
-        stages: [ commit-msg ]
+        stages: [commit-msg]

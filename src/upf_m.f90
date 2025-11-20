@@ -96,7 +96,7 @@ subroutine upfout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
    integer, intent(in) :: lpopt, ncnf
    real(dp), intent(in) :: fa(30), rc0(6), ep(6), qcut(6), debl(6), facnf(30, 5)
    !> ea  psuedo-orbital eigenvalues
-   real(dp), intent(in) ::  ea(30)
+   real(dp), intent(in) :: ea(30)
    real(dp), intent(in) :: dvloc0, epsh1, epsh2, depsh, rlmax
    !> psfile  should be 'upf'
    character*4, intent(in) :: psfile

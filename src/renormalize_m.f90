@@ -38,7 +38,6 @@ subroutine renorm_r(uu, rr, ll, kap, zz, mmax, cnorm)
    !> kap  Dirac kappa
    integer, intent(in) :: kap
 
-
    !Output variable
    !> cnorm  renormalization coefficient
    real(dp), intent(out) :: cnorm

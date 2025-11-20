@@ -197,15 +197,15 @@ subroutine run_diag_r(lmax, npa, epa, lloc, irc, &
    !> rr  log radial grid
    real(dp), intent(in) :: rr(mmax)
    !> vp  semi-local pseudopotentials (vp(:,5) is local potential if linear comb.)
-   real(dp ), intent(in) :: vp(mmax, 5, 2)
+   real(dp), intent(in) :: vp(mmax, 5, 2)
    !> vfull  all-electron potential
-   real(dp ), intent(in) :: vfull(mmax)
+   real(dp), intent(in) :: vfull(mmax)
    !> vkb  VKB projectors
-   real(dp ), intent(in) :: vkb(mmax, mxprj, 4, 2)
+   real(dp), intent(in) :: vkb(mmax, mxprj, 4, 2)
    !> epa  bound-state or scattering state reference energies for vkb potentials
    real(dp), intent(in) :: epa(mxprj, 6, 2)
    !> evkb  coefficients of VKB projectors
-   real(dp ), intent(in) :: evkb(mxprj, 4, 2)
+   real(dp), intent(in) :: evkb(mxprj, 4, 2)
 
    !Output variables - printing only
 

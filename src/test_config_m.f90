@@ -48,11 +48,11 @@ subroutine run_config(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz, 
    !> nacnf  principal quantum number array, all configurations
    integer, intent(in) :: nacnf(30, 5)
    !> lacnf  angular-momenta array, all config.
-   integer, intent(in) ::  lacnf(30, 5)
+   integer, intent(in) :: lacnf(30, 5)
    !> nvcnf  number of valence states, all config.
-   integer, intent(in) ::  nvcnf(5)
+   integer, intent(in) :: nvcnf(5)
    !> nproj  number of VKB projectors to use for each l
-   integer, intent(in) ::  nproj(5)
+   integer, intent(in) :: nproj(5)
    !> etot  reference configuration total energy
    real(dp), intent(in) :: etot
    !> epstot  pseudoatom total energy

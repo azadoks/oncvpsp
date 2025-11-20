@@ -41,11 +41,11 @@ subroutine der2exc(rhotot, rhoc, rho, rr, d2exc, d2ref, d2mdiff, &
    !> rhotot  total valence charge, all-electron of pseudo
    real(dp), intent(in) :: rhotot(mmax)
    !> rhoc  core charge, all-electron or model
-   real(dp), intent(in) ::rhoc(mmax)
+   real(dp), intent(in) :: rhoc(mmax)
    !> rho  valence state-by-state charge (one-electron)
-   real(dp), intent(in) ::rho(mmax, nv)
+   real(dp), intent(in) :: rho(mmax, nv)
    !> rr  log radial grid
-   real(dp), intent(in) ::rr(mmax)
+   real(dp), intent(in) :: rr(mmax)
    !> d2ref  reference matrix
    real(dp), intent(in) :: d2ref(nv, nv)
    !> zion  ion potential

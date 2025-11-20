@@ -1830,7 +1830,7 @@ subroutine vkboutwf(ll, nvkb, ep, vkb, evkb, rr, vloc, uu, up, node, mmax, mch)
    !> mmax  dimension of log mesh
    integer, intent(in) :: mmax
    !> nvkb  switch for 1 or 2 projedtors
-   integer ::  nvkb
+   integer :: nvkb
    !> rr  log radial mesh
    real(dp), intent(in) :: rr(mmax)
    !> vloc  local pseudopotential

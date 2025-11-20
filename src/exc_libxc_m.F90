@@ -55,12 +55,12 @@ module exc_libxc_m
    integer, public, parameter :: XC_DERIV_NUMERICAL = 1, XC_DERIV_ANALYTICAL = 2
 
    type xc_functl_t
-      integer         :: family            !< LDA, GGA, etc.
-      integer         :: type              !< exchange, correlation, or exchange-correlation
-      integer         :: id                !< identifier
+      integer :: family            !< LDA, GGA, etc.
+      integer :: type              !< exchange, correlation, or exchange-correlation
+      integer :: id                !< identifier
 
-      integer         :: nspin             !< XC_UNPOLARIZED | XC_POLARIZED
-      integer         :: flags             !< XC_FLAGS_HAVE_EXC + XC_FLAGS_HAVE_VXC + ...
+      integer :: nspin             !< XC_UNPOLARIZED | XC_POLARIZED
+      integer :: flags             !< XC_FLAGS_HAVE_EXC + XC_FLAGS_HAVE_VXC + ...
 
 #if XC_MAJOR_VERSION<=4
       type(xc_f90_pointer_t) :: conf         !< the pointer used to call the library
@@ -70,10 +70,10 @@ module exc_libxc_m
       type(xc_f03_func_info_t) :: info     !< information about the functional
 #endif
 
-      integer         :: LB94_modified     !< should I use a special version of LB94 that
-      real(8)         :: LB94_threshold    !< needs to be handled specially
+      integer :: LB94_modified     !< should I use a special version of LB94 that
+      real(8) :: LB94_threshold    !< needs to be handled specially
 
-      integer  :: deriv_method
+      integer :: deriv_method
    end type xc_functl_t
 
 contains
@@ -87,9 +87,9 @@ subroutine exc_libxc(iexc, al, rho, vxc, exc, rr, mmax)
    integer, intent(in) :: iexc
    real(dp), intent(in) :: al
    real(dp), intent(in) :: rho(mmax)
-   real(dp), intent(in) ::rr(mmax)
+   real(dp), intent(in) :: rr(mmax)
    real(dp), intent(out) :: vxc(mmax)
-   real(dp), intent(out) ::exc(mmax)
+   real(dp), intent(out) :: exc(mmax)
    integer :: ii, unit
 
    ! local
@@ -150,7 +150,7 @@ subroutine exc_libxc(iexc, al, rho, vxc, exc, rr, mmax)
       v = 0.0d0
       e = 0.0d0
       call xc_functl_get_vxc(functls(ifunc), mmax, al, rr, rho_loc, dpr, dlap, &
-         &        tau_dummy, ip, v, e, vtau_dummy)
+      &        tau_dummy, ip, v, e, vtau_dummy)
       vxc(1:mmax) = vxc(1:mmax) + v(1:mmax)
       exc(1:mmax) = exc(1:mmax) + e(1:mmax)
    end do
@@ -208,31 +208,31 @@ subroutine derivs(mmax, rho, al, rr, dpr, dppr, dlap)
    !
    i = 1
    dpn(i) = -25.d0/12.d0*rho(i) + 4.d0*rho(i + 1) - 3.d0*rho(i + 2) &
-      &         + 4.d0/3.d0*rho(i + 3) - 1.d0/4.d0*rho(i + 4)
+   &         + 4.d0/3.d0*rho(i + 3) - 1.d0/4.d0*rho(i + 4)
    dppn(i) = 15.d0/4.d0*rho(i) - 77.d0/6.d0*rho(i + 1) + 107.d0/6.d0*rho(i + 2) &
-      &         - 13.d0*rho(i + 3) + 61.d0/12.d0*rho(i + 4) - 5.d0/6.d0*rho(i + 5)
+   &         - 13.d0*rho(i + 3) + 61.d0/12.d0*rho(i + 4) - 5.d0/6.d0*rho(i + 5)
    i = 2
    dpn(i) = -25.d0/12.d0*rho(i) + 4.d0*rho(i + 1) - 3.d0*rho(i + 2)  &
-      &         + 4.d0/3.d0*rho(i + 3) - 1.d0/4.d0*rho(i + 4)
+   &         + 4.d0/3.d0*rho(i + 3) - 1.d0/4.d0*rho(i + 4)
    dppn(i) = 15.d0/4.d0*rho(i) - 77.d0/6.d0*rho(i + 1) + 107.d0/6.d0*rho(i + 2) &
-      &         - 13.d0*rho(i + 3) + 61.d0/12.d0*rho(i + 4) - 5.d0/6.d0*rho(i + 5)
+   &         - 13.d0*rho(i + 3) + 61.d0/12.d0*rho(i + 4) - 5.d0/6.d0*rho(i + 5)
 
    do i = 3, mmax - 2
       dpn(i) = c11*rho(i - 2) + c12*rho(i - 1) + c14*rho(i + 1) + c15*rho(i + 2)
       dppn(i) = c21*rho(i - 2) + c22*rho(i - 1) + c23*rho(i) + c24*rho(i + 1) &
-         &           + c25*rho(i + 2)
+      &           + c25*rho(i + 2)
    end do
 
    i = mmax - 1
    dpn(i) = +25.d0/12.d0*rho(i) - 4.d0*rho(i - 1) + 3.d0*rho(i - 2) &
-      &         - 4.d0/3.d0*rho(i - 3) + 1.d0/4.d0*rho(i - 4)
+   &         - 4.d0/3.d0*rho(i - 3) + 1.d0/4.d0*rho(i - 4)
    dppn(i) = -15.d0/4.d0*rho(i) + 77.d0/6.d0*rho(i - 1) - 107.d0/6.d0*rho(i - 2) &
-      &          + 13.d0*rho(i - 3) - 61.d0/12.d0*rho(i - 4) + 5.d0/6.d0*rho(i - 5)
+   &          + 13.d0*rho(i - 3) - 61.d0/12.d0*rho(i - 4) + 5.d0/6.d0*rho(i - 5)
    i = mmax
    dpn(i) = +25.d0/12.d0*rho(i) - 4.d0*rho(i - 1) + 3.d0*rho(i - 2) &
-      &         - 4.d0/3.d0*rho(i - 3) + 1.d0/4.d0*rho(i - 4)
+   &         - 4.d0/3.d0*rho(i - 3) + 1.d0/4.d0*rho(i - 4)
    dppn(i) = -15.d0/4.d0*rho(i) + 77.d0/6.d0*rho(i - 1) - 107.d0/6.d0*rho(i - 2) &
-      &          + 13.d0*rho(i - 3) - 61.d0/12.d0*rho(i - 4) + 5.d0/6.d0*rho(i - 5)
+   &          + 13.d0*rho(i - 3) - 61.d0/12.d0*rho(i - 4) + 5.d0/6.d0*rho(i - 5)
 
    !
    ! r derivatives of d
@@ -247,13 +247,12 @@ end subroutine derivs
  ! ---------------------------------------------------------
 subroutine xc_functl_init(functl, nspin, deriv_method)
    type(xc_functl_t), intent(out) :: functl
-   integer,           intent(in)  :: nspin, deriv_method
-
+   integer, intent(in) :: nspin, deriv_method
 
    functl%family = 0
-   functl%type   = 0
-   functl%id     = 0
-   functl%flags  = 0
+   functl%type = 0
+   functl%id = 0
+   functl%flags = 0
    functl%nspin = nspin
    functl%deriv_method = deriv_method
 
@@ -261,16 +260,16 @@ end subroutine xc_functl_init
 
  ! ---------------------------------------------------------
 
-subroutine xc_functl_init_functl(functl, id, ndim,nel, nspin, deriv_method)
+subroutine xc_functl_init_functl(functl, id, ndim, nel, nspin, deriv_method)
    type(xc_functl_t), intent(out) :: functl
-   integer,           intent(in)  :: id
-   integer,           intent(in)  :: ndim
-   real(8),           intent(in)  :: nel
-   integer,           intent(in)  :: nspin
-   integer,           intent(in)  :: deriv_method
+   integer, intent(in) :: id
+   integer, intent(in) :: ndim
+   real(8), intent(in) :: nel
+   integer, intent(in) :: nspin
+   integer, intent(in) :: deriv_method
 
-   real(8)   :: alpha
-   real(8)   :: parameters(2)
+   real(8) :: alpha
+   real(8) :: parameters(2)
    logical :: ok, lb94_modified
 
    ! initialize structure
@@ -278,7 +277,7 @@ subroutine xc_functl_init_functl(functl, id, ndim,nel, nspin, deriv_method)
 
    functl%id = id
 
-   if(functl%id == 0) then
+   if (functl%id == 0) then
       functl%family = XC_FAMILY_NONE
    else
       ! get the family of the functional
@@ -289,38 +288,38 @@ subroutine xc_functl_init_functl(functl, id, ndim,nel, nspin, deriv_method)
 #endif
       ! this also ensures it is actually a functional defined by the linked version of libxc
 
-      if(functl%family == XC_FAMILY_UNKNOWN) then
+      if (functl%family == XC_FAMILY_UNKNOWN) then
          call messages_input_error('XCFunctional', 'Unknown functional')
       end if
    end if
 
-   if(functl%family == XC_FAMILY_OEP) then
+   if (functl%family == XC_FAMILY_OEP) then
       functl%type = XC_EXCHANGE
 
-   else if(functl%family  ==  XC_FAMILY_NONE) then
+   else if (functl%family == XC_FAMILY_NONE) then
       functl%type = -1
       functl%flags = 0
    else ! handled by libxc
       ! initialize
 #if XC_MAJOR_VERSION<=4
       call xc_f90_func_init(functl%conf, functl%info, functl%id, nspin)
-      functl%type     = xc_f90_info_kind(functl%info)
-      functl%flags    = xc_f90_info_flags(functl%info)
+      functl%type = xc_f90_info_kind(functl%info)
+      functl%flags = xc_f90_info_flags(functl%info)
 #else
       call xc_f03_func_init(functl%conf, functl%id, nspin)
-      functl%info     = xc_f03_func_get_info(functl%conf)
-      functl%type     = xc_f03_func_info_get_kind(functl%info)
-      functl%flags    = xc_f03_func_info_get_flags(functl%info)
+      functl%info = xc_f03_func_get_info(functl%conf)
+      functl%type = xc_f03_func_info_get_kind(functl%info)
+      functl%flags = xc_f03_func_info_get_flags(functl%info)
 #endif
 
       ! FIXME: no need to say this for kernel
-      if(iand(functl%flags, XC_FLAGS_HAVE_EXC) == 0) then
+      if (iand(functl%flags, XC_FLAGS_HAVE_EXC) == 0) then
          message(1) = 'Specified functional does not have total energy available.'
          message(2) = 'Corresponding component of energy will just be left as zero.'
          call messages_warning(2)
       end if
 
-      if(iand(functl%flags, XC_FLAGS_HAVE_VXC) == 0) then
+      if (iand(functl%flags, XC_FLAGS_HAVE_VXC) == 0) then
          message(1) = 'Specified functional does not have XC potential available.'
          message(2) = 'Cannot run calculations. Choose another XCFunctional.'
          call messages_fatal(2)
@@ -332,8 +331,8 @@ subroutine xc_functl_init_functl(functl, id, ndim,nel, nspin, deriv_method)
 
    ! FIXME: aren`t there other parameters that can or should be set?
    ! special parameters that have to be configured
-   select case(functl%id)
-    case(XC_LDA_C_XALPHA)
+   select case (functl%id)
+    case (XC_LDA_C_XALPHA)
       ! FIXME: aren`t there other Xalpha functionals?
       ! Variable Xalpha
       ! The parameter of the Slater X<math>\alpha</math> functional
@@ -347,11 +346,11 @@ subroutine xc_functl_init_functl(functl, id, ndim,nel, nspin, deriv_method)
       parameters(1) = alpha
       call xc_f03_func_set_ext_params(functl%conf, parameters(1))
 #endif
-    case(XC_GGA_X_LB)
+    case (XC_GGA_X_LB)
       ! FIXME: libxc has XC_GGA_X_LBM, isn`t that the modified one?
       ! Whether to use a modified form of the LB94 functional
       call parse_variable(.false., lb94_modified)
-      if(lb94_modified) then
+      if (lb94_modified) then
          functl%LB94_modified = 1
       else
          functl%LB94_modified = 0
@@ -363,13 +362,11 @@ subroutine xc_functl_init_functl(functl, id, ndim,nel, nspin, deriv_method)
 
 end subroutine xc_functl_init_functl
 
-
  ! ---------------------------------------------------------
 subroutine xc_functl_end(functl)
    type(xc_functl_t), intent(inout) :: functl
 
-
-   if(functl%family /= XC_FAMILY_NONE .and. functl%family /= XC_FAMILY_OEP)  then
+   if (functl%family /= XC_FAMILY_NONE .and. functl%family /= XC_FAMILY_OEP) then
 #if XC_MAJOR_VERSION<=4
       call xc_f90_func_end(functl%conf)
 #else
@@ -379,11 +376,10 @@ subroutine xc_functl_end(functl)
 
 end subroutine xc_functl_end
 
-
  ! ---------------------------------------------------------
 subroutine xc_functl_write_info(functl, iunit)
    type(xc_functl_t), intent(in) :: functl
-   integer,           intent(in) :: iunit
+   integer, intent(in) :: iunit
 
    character(len=1000) :: s1, s2
    integer :: ii
@@ -391,18 +387,18 @@ subroutine xc_functl_write_info(functl, iunit)
    type(xc_f03_func_reference_t) :: xc_ref
 #endif
 
-   if(functl%family /= XC_FAMILY_NONE) then ! all the other families
-      select case(functl%type)
-       case(XC_EXCHANGE)
-         write(message(1), '(2x,a)') 'Exchange'
-       case(XC_CORRELATION)
-         write(message(1), '(2x,a)') 'Correlation'
-       case(XC_EXCHANGE_CORRELATION)
-         write(message(1), '(2x,a)') 'Exchange-correlation'
-       case(XC_KINETIC)
+   if (functl%family /= XC_FAMILY_NONE) then ! all the other families
+      select case (functl%type)
+       case (XC_EXCHANGE)
+         write (message(1), '(2x,a)') 'Exchange'
+       case (XC_CORRELATION)
+         write (message(1), '(2x,a)') 'Correlation'
+       case (XC_EXCHANGE_CORRELATION)
+         write (message(1), '(2x,a)') 'Exchange-correlation'
+       case (XC_KINETIC)
          call messages_not_implemented("kinetic-energy functionals")
        case default
-         write(message(1), '(a,i6,a,i6)') "Unknown functional type ", functl%type, ' for functional ', functl%id
+         write (message(1), '(a,i6,a,i6)') "Unknown functional type ", functl%type, ' for functional ', functl%id
          call messages_fatal(1)
       end select
 
@@ -411,14 +407,14 @@ subroutine xc_functl_write_info(functl, iunit)
 #else
       s1 = xc_f03_func_info_get_name(functl%info)
 #endif
-      select case(functl%family)
-       case (XC_FAMILY_LDA);       write(s2,'(a)') "LDA"
-       case (XC_FAMILY_GGA);       write(s2,'(a)') "GGA"
-       case (XC_FAMILY_HYB_GGA);   write(s2,'(a)') "Hybrid GGA"
-       case (XC_FAMILY_HYB_MGGA);  write(s2,'(a)') "Hybrid MGGA"
-       case (XC_FAMILY_MGGA);      write(s2,'(a)') "MGGA"
+      select case (functl%family)
+       case (XC_FAMILY_LDA); write (s2, '(a)') "LDA"
+       case (XC_FAMILY_GGA); write (s2, '(a)') "GGA"
+       case (XC_FAMILY_HYB_GGA); write (s2, '(a)') "Hybrid GGA"
+       case (XC_FAMILY_HYB_MGGA); write (s2, '(a)') "Hybrid MGGA"
+       case (XC_FAMILY_MGGA); write (s2, '(a)') "MGGA"
       end select
-      write(message(2), '(4x,4a)') trim(s1), ' (', trim(s2), ')'
+      write (message(2), '(4x,4a)') trim(s1), ' (', trim(s2), ')'
       call messages_info(2, iunit)
 
       ii = 0
@@ -430,8 +426,8 @@ subroutine xc_functl_write_info(functl, iunit)
       xc_ref = xc_f03_func_info_get_references(functl%info, ii)
       s1 = xc_f03_func_reference_get_ref(xc_ref)
 #endif
-      do while(ii >= 0)
-         write(message(1), '(4x,a,i1,2a)') '[', ii, '] ', trim(s1)
+      do while (ii >= 0)
+         write (message(1), '(4x,a,i1,2a)') '[', ii, '] ', trim(s1)
          call messages_info(1, iunit)
 #if XC_MAJOR_VERSION<3
          call xc_f90_info_refs(functl%info, ii, str, s1)
@@ -464,24 +460,24 @@ subroutine xc_functl_get_vxc(functl, np, al, rr, rho, rho_grad, rho_lapl, tau, i
    !  vtau     - extra term arising from MGGA potential                    !
    !-----------------------------------------------------------------------!
    type(xc_functl_t), intent(inout) :: functl
-   integer     ,       intent(in)    :: np
-   real(8),           intent(in)    :: al
-   real(8),           intent(in)    :: rr(np)
-   real(8),           intent(in)    :: rho(np, functl%nspin)
-   real(8),           intent(in)    :: rho_grad(np, functl%nspin)
-   real(8),           intent(in)    :: rho_lapl(np, functl%nspin)
-   real(8),           intent(in)    :: tau(np, functl%nspin)
-   real(8),           intent(in)    :: ip(functl%nspin)
-   real(8),           intent(out)   :: v(np, functl%nspin), e(np)
-   real(8),           intent(out)   :: vtau(np, functl%nspin)
+   integer, intent(in) :: np
+   real(8), intent(in) :: al
+   real(8), intent(in) :: rr(np)
+   real(8), intent(in) :: rho(np, functl%nspin)
+   real(8), intent(in) :: rho_grad(np, functl%nspin)
+   real(8), intent(in) :: rho_lapl(np, functl%nspin)
+   real(8), intent(in) :: tau(np, functl%nspin)
+   real(8), intent(in) :: ip(functl%nspin)
+   real(8), intent(out) :: v(np, functl%nspin), e(np)
+   real(8), intent(out) :: vtau(np, functl%nspin)
 
-   integer  :: i, is, nspin
+   integer :: i, is, nspin
    real(8) :: a, b, c
-   real(8), parameter   :: alpha = -0.012d0, beta = 1.023d0
+   real(8), parameter :: alpha = -0.012d0, beta = 1.023d0
 
    ! Global variables
-   real(8), allocatable :: dedrho(:,:), dedgrad(:,:), dedlapl(:,:), dedtau(:,:)
-   real(8), allocatable :: d2edrhodgrad(:,:), d2edgrad2(:,:)
+   real(8), allocatable :: dedrho(:, :), dedgrad(:, :), dedlapl(:, :), dedtau(:, :)
+   real(8), allocatable :: d2edrhodgrad(:, :), d2edgrad2(:, :)
 
    ! Local variables
    real(8), allocatable :: n(:), s(:), l(:), t(:)
@@ -489,13 +485,12 @@ subroutine xc_functl_get_vxc(functl, np, al, rr, rho, rho_grad, rho_lapl, tau, i
    real(8), allocatable :: d2edn2(:), d2eds2(:), d2ednds(:)
 
    real(8), allocatable :: dpr(:), dppr(:), dlap(:)
-   real(8)   :: parameters(2)
-
+   real(8) :: parameters(2)
 
    if (.not. (size(v, dim=2) == functl%nspin)) stop 'functionals: ERROR bad nspin definition'
 
    ! Initialize all output quantities to zero
-   v =0.0d0 ; e =0.0d0 ; vtau =0.0d0
+   v = 0.0d0; e = 0.0d0; vtau = 0.0d0
 
    ! If the functional is not set, there is nothing to be done
    if (functl%family == 0) then
@@ -505,13 +500,12 @@ subroutine xc_functl_get_vxc(functl, np, al, rr, rho, rho_grad, rho_lapl, tau, i
    ! Shortcut
    nspin = functl%nspin
 
-
    ! Compute c parameter of the TB09 functional
    if (functl%id == XC_MGGA_X_TB09) then
-      if (maxval(ip) ==0.0d0) then
+      if (maxval(ip) == 0.0d0) then
          c = 1.0d0
       else
-         a =0.0d0
+         a = 0.0d0
          do
             c = alpha + beta*sqrt(2.0d0*sqrt(2.0d0*(maxval(ip) + a)))
             b = (3.0d0*c - 2.0d0)/pi*sqrt(5.0d0/6.0d0*(maxval(ip) + a))
@@ -530,68 +524,66 @@ subroutine xc_functl_get_vxc(functl, np, al, rr, rho, rho_grad, rho_lapl, tau, i
 #endif
    end if
 
-
    !---Allocate work arrays---!
 
    ! LDA
-   allocate(n(nspin), dedn(nspin))
-   allocate(dedrho(np, nspin))
-   n =0.0d0; dedn =0.0d0
-   dedrho =0.0d0
+   allocate (n(nspin), dedn(nspin))
+   allocate (dedrho(np, nspin))
+   n = 0.0d0; dedn = 0.0d0
+   dedrho = 0.0d0
 
    if (functl%deriv_method == XC_DERIV_ANALYTICAL) then
       if (nspin == 1) then
-         allocate(d2edn2(1))
+         allocate (d2edn2(1))
       else
-         allocate(d2edn2(3))
+         allocate (d2edn2(3))
       end if
-      d2edn2 =0.0d0
+      d2edn2 = 0.0d0
    end if
 
    ! GGA
    if (functl%family == XC_FAMILY_GGA .or. functl%family == XC_FAMILY_MGGA) then
       if (nspin == 1) then
-         allocate(s(1), deds(1))
+         allocate (s(1), deds(1))
       else
-         allocate(s(3), deds(3))
+         allocate (s(3), deds(3))
       end if
-      allocate(dedgrad(np, nspin))
-      s =0.0d0; deds =0.0d0
-      dedgrad =0.0d0
+      allocate (dedgrad(np, nspin))
+      s = 0.0d0; deds = 0.0d0
+      dedgrad = 0.0d0
 
       if (functl%deriv_method == XC_DERIV_ANALYTICAL) then
          if (nspin == 1) then
-            allocate(d2eds2(1), d2ednds(1))
-            allocate(d2edgrad2(np, 1))
-            allocate(d2edrhodgrad(np, 1))
+            allocate (d2eds2(1), d2ednds(1))
+            allocate (d2edgrad2(np, 1))
+            allocate (d2edrhodgrad(np, 1))
          else
-            allocate(d2eds2(6), d2ednds(6))
-            allocate(d2edgrad2(np, 3))
-            allocate(d2edrhodgrad(np, 4))
+            allocate (d2eds2(6), d2ednds(6))
+            allocate (d2edgrad2(np, 3))
+            allocate (d2edrhodgrad(np, 4))
          end if
-         d2eds2 =0.0d0; d2ednds =0.0d0
-         d2edgrad2 =0.0d0; d2edrhodgrad =0.0d0
+         d2eds2 = 0.0d0; d2ednds = 0.0d0
+         d2edgrad2 = 0.0d0; d2edrhodgrad = 0.0d0
       end if
 
    end if
 
    ! MGGA
    if (functl%family == XC_FAMILY_MGGA) then
-      allocate(l(nspin), dedl(nspin))
-      allocate(t(nspin), dedt(nspin))
-      allocate(dedlapl(np, nspin))
-      allocate(dedtau(np, nspin))
-      l =0.0d0; dedl =0.0d0
-      t =0.0d0; dedt =0.0d0
-      dedlapl =0.0d0
-      dedtau =0.0d0
+      allocate (l(nspin), dedl(nspin))
+      allocate (t(nspin), dedt(nspin))
+      allocate (dedlapl(np, nspin))
+      allocate (dedtau(np, nspin))
+      l = 0.0d0; dedl = 0.0d0
+      t = 0.0d0; dedt = 0.0d0
+      dedlapl = 0.0d0
+      dedtau = 0.0d0
 
       if (functl%deriv_method == XC_DERIV_ANALYTICAL) then
          !Not yet implemented
       end if
 
    end if
-
 
    !---Space loop---!
 
@@ -600,7 +592,7 @@ subroutine xc_functl_get_vxc(functl, np, al, rr, rho, rho_grad, rho_lapl, tau, i
       n(1:nspin) = rho(i, 1:nspin)
       if (functl%family == XC_FAMILY_GGA .or. functl%family == XC_FAMILY_MGGA) then
          s(1) = rho_grad(i, 1)**2
-         if(nspin == 2) then
+         if (nspin == 2) then
             s(2) = rho_grad(i, 1)*rho_grad(i, 2)
             s(3) = rho_grad(i, 2)**2
          end if
@@ -616,20 +608,20 @@ subroutine xc_functl_get_vxc(functl, np, al, rr, rho, rho_grad, rho_lapl, tau, i
       if (iand(xc_f03_func_info_get_flags(functl%info), XC_FLAGS_HAVE_EXC) .ne. 0) then
 #endif
 
-         select case(functl%family)
-          case(XC_FAMILY_LDA)
+         select case (functl%family)
+          case (XC_FAMILY_LDA)
 #if XC_MAJOR_VERSION<=4
             call xc_f90_lda_exc_vxc(functl%conf, xc_one, n(1), e(i), dedn(1))
 #else
             call xc_f03_lda_exc_vxc(functl%conf, xc_one, n(1), e(i), dedn(1))
 #endif
-          case(XC_FAMILY_GGA)
+          case (XC_FAMILY_GGA)
 #if XC_MAJOR_VERSION<=4
             call xc_f90_gga_exc_vxc(functl%conf, xc_one, n(1), s(1), e(i), dedn(1), deds(1))
 #else
             call xc_f03_gga_exc_vxc(functl%conf, xc_one, n(1), s(1), e(i), dedn(1), deds(1))
 #endif
-          case(XC_FAMILY_MGGA)
+          case (XC_FAMILY_MGGA)
 #if XC_MAJOR_VERSION<=4
             call xc_f90_mgga_exc_vxc(functl%conf, xc_one, n(1), s(1), l(1), t(1), e(i), &
                                      dedn(1), deds(1), dedl(1), dedt(1))
@@ -641,20 +633,20 @@ subroutine xc_functl_get_vxc(functl, np, al, rr, rho, rho_grad, rho_lapl, tau, i
 
       else !Just get the potential
 
-         select case(functl%family)
-          case(XC_FAMILY_LDA)
+         select case (functl%family)
+          case (XC_FAMILY_LDA)
 #if XC_MAJOR_VERSION<=4
             call xc_f90_lda_vxc(functl%conf, 1, n(1), dedn(1))
 #else
             call xc_f03_lda_vxc(functl%conf, xc_one, n(1), dedn(1))
 #endif
-          case(XC_FAMILY_GGA)
+          case (XC_FAMILY_GGA)
 #if XC_MAJOR_VERSION<=4
             call xc_f90_gga_vxc(functl%conf, 1, n(1), s(1), dedn(1), deds(1))
 #else
             call xc_f03_gga_vxc(functl%conf, xc_one, n(1), s(1), dedn(1), deds(1))
 #endif
-          case(XC_FAMILY_MGGA)
+          case (XC_FAMILY_MGGA)
 #if XC_MAJOR_VERSION<=4
             call xc_f90_mgga_vxc(functl%conf, 1, n(1), s(1), l(1), t(1), &
                                  dedn(1), deds(1), dedl(1), dedt(1))
@@ -663,7 +655,7 @@ subroutine xc_functl_get_vxc(functl, np, al, rr, rho, rho_grad, rho_lapl, tau, i
                                  dedn(1), deds(1), dedl(1), dedt(1))
 #endif
          end select
-         e(i) =0.0d0
+         e(i) = 0.0d0
 
       end if
 
@@ -678,7 +670,7 @@ subroutine xc_functl_get_vxc(functl, np, al, rr, rho, rho_grad, rho_lapl, tau, i
          end if
       end if
 
-      if(functl%family == XC_FAMILY_MGGA) then
+      if (functl%family == XC_FAMILY_MGGA) then
          dedlapl(i, 1:nspin) = dedl(1:nspin)
 #if XC_MAJOR_VERSION>=2
          dedtau(i, 1:nspin) = dedt(1:nspin)/2.0d0
@@ -717,7 +709,6 @@ subroutine xc_functl_get_vxc(functl, np, al, rr, rho, rho_grad, rho_lapl, tau, i
 
    end do ! loop over points i
 
-
    !---Compute potentials---!
 
    ! LDA contribution
@@ -730,9 +721,9 @@ subroutine xc_functl_get_vxc(functl, np, al, rr, rho, rho_grad, rho_lapl, tau, i
          allocate (dppr(np))
          allocate (dlap(np))
          do is = 1, nspin
-            call derivs(np, dedgrad(:,is), al, rr, dpr, dppr, dlap)
+            call derivs(np, dedgrad(:, is), al, rr, dpr, dppr, dlap)
             !          v(:, is) = v(:, is) - mesh_divergence(m, dedgrad(:, is))
-            v(:, is) = v(:, is) - (2.0d0/rr(:)*dedgrad(:,is) + dpr(:))
+            v(:, is) = v(:, is) - (2.0d0/rr(:)*dedgrad(:, is) + dpr(:))
          end do
          deallocate (dpr, dppr, dlap)
       elseif (functl%deriv_method == XC_DERIV_ANALYTICAL) then
@@ -748,7 +739,7 @@ subroutine xc_functl_get_vxc(functl, np, al, rr, rho, rho_grad, rho_lapl, tau, i
          allocate (dppr(np))
          allocate (dlap(np))
          do is = 1, nspin
-            call derivs(np, dedlapl(:,is), al, rr, dpr, dppr, dlap)
+            call derivs(np, dedlapl(:, is), al, rr, dpr, dppr, dlap)
             !          v(:, is) = v(:, is) + mesh_laplacian(m, dedlapl(:, is))
             v(:, is) = v(:, is) + dlap(:)
          end do
@@ -772,10 +763,10 @@ subroutine xc_functl_get_vxc(functl, np, al, rr, rho, rho_grad, rho_lapl, tau, i
          a = sqrt(2.0d0)*(1.0d0/(54.0d0*pi) + 2.0d0/15.0d0)
 #endif
        case default
-         a =0.0d0
+         a = 0.0d0
       end select
       do i = np, 1, -1
-         if (v(i, is) /=0.0d0) then
+         if (v(i, is) /= 0.0d0) then
             v(1:i, is) = v(1:i, is) - a*sqrt(ip(is))
             exit
          end if
@@ -785,23 +776,23 @@ subroutine xc_functl_get_vxc(functl, np, al, rr, rho, rho_grad, rho_lapl, tau, i
    !---Deallocate arrays---!
 
    ! LDA
-   deallocate(n, dedn, dedrho)
+   deallocate (n, dedn, dedrho)
    if (functl%deriv_method == XC_DERIV_ANALYTICAL) then
-      deallocate(d2edn2)
+      deallocate (d2edn2)
    end if
 
    ! GGA
    if (functl%family == XC_FAMILY_GGA .or. functl%family == XC_FAMILY_MGGA) then
-      deallocate(s, deds, dedgrad)
+      deallocate (s, deds, dedgrad)
       if (functl%deriv_method == XC_DERIV_ANALYTICAL) then
-         deallocate(d2eds2, d2ednds, d2edgrad2, d2edrhodgrad)
+         deallocate (d2eds2, d2ednds, d2edgrad2, d2edrhodgrad)
       end if
    end if
 
    ! MGGA
    if (functl%family == XC_FAMILY_MGGA) then
-      deallocate(l, dedl, dedlapl)
-      deallocate(t, dedt, dedtau)
+      deallocate (l, dedl, dedlapl)
+      deallocate (t, dedt, dedtau)
       if (functl%deriv_method == XC_DERIV_ANALYTICAL) then
          message(1) = 'Not implemented analytical derivatives'
          call messages_fatal(1)
@@ -822,32 +813,32 @@ subroutine functional_get_tau(functl, np, rho, rho_grad, rho_lapl, tau)
    !  rho_lapl - laplacian of the electronic radial density                !
    !  tau      - radial kinetic energy density                             !
    !-----------------------------------------------------------------------!
-   type(xc_functl_t), intent(in)  :: functl
-   integer     ,       intent(in)  :: np
-   real(8),           intent(in)  :: rho(np, functl%nspin)
-   real(8),           intent(in)  :: rho_grad(np, functl%nspin)
-   real(8),           intent(in)  :: rho_lapl(np, functl%nspin)
-   real(8),           intent(out) :: tau(np, functl%nspin)
+   type(xc_functl_t), intent(in) :: functl
+   integer, intent(in) :: np
+   real(8), intent(in) :: rho(np, functl%nspin)
+   real(8), intent(in) :: rho_grad(np, functl%nspin)
+   real(8), intent(in) :: rho_lapl(np, functl%nspin)
+   real(8), intent(out) :: tau(np, functl%nspin)
 
-   integer  :: i, is, nspin
+   integer :: i, is, nspin
    real(8), allocatable :: n(:), s(:), l(:), t(:)
 
    nspin = functl%nspin
 
    !Allocate work arrays
-   allocate(n(nspin), t(nspin))
-   n =0.0d0; t =0.0d0
+   allocate (n(nspin), t(nspin))
+   n = 0.0d0; t = 0.0d0
    if (functl%family == XC_FAMILY_GGA .or. functl%family == XC_FAMILY_MGGA) then
       if (nspin == 1) then
-         allocate(s(1))
+         allocate (s(1))
       else
-         allocate(s(3))
+         allocate (s(3))
       end if
-      s =0.0d0
+      s = 0.0d0
    end if
    if (functl%family == XC_FAMILY_MGGA) then
-      allocate(l(nspin))
-      l =0.0d0
+      allocate (l(nspin))
+      l = 0.0d0
    end if
 
    !Spin loop
@@ -859,7 +850,7 @@ subroutine functional_get_tau(functl, np, rho, rho_grad, rho_lapl, tau)
 
          if (functl%family == XC_FAMILY_GGA .or. functl%family == XC_FAMILY_MGGA) then
             s(1) = rho_grad(i, 1)**2
-            if(nspin == 2) then
+            if (nspin == 2) then
                s(2) = rho_grad(i, 1)*rho_grad(i, 2)
                s(3) = rho_grad(i, 2)**2
             end if
@@ -868,14 +859,14 @@ subroutine functional_get_tau(functl, np, rho, rho_grad, rho_lapl, tau)
             l(is) = rho_lapl(i, is)
          end if
 
-         select case(functl%family)
-          case(XC_FAMILY_LDA)
+         select case (functl%family)
+          case (XC_FAMILY_LDA)
 #if XC_MAJOR_VERSION<=4
             call xc_f90_lda_exc(functl%conf, 1, n(1), t(1))
 #else
             call xc_f03_lda_exc(functl%conf, xc_one, n(1), t(1))
 #endif
-          case(XC_FAMILY_GGA)
+          case (XC_FAMILY_GGA)
 #if XC_MAJOR_VERSION<=4
             call xc_f90_gga_exc(functl%conf, 1, n(1), s(1), t(1))
 #else
@@ -892,9 +883,9 @@ subroutine functional_get_tau(functl, np, rho, rho_grad, rho_lapl, tau)
    end do
 
    !Deallocate arrays
-   deallocate(n, t)
-   if (functl%family == XC_FAMILY_GGA .or. functl%family == XC_FAMILY_MGGA) deallocate(s)
-   if (functl%family == XC_FAMILY_MGGA) deallocate(l)
+   deallocate (n, t)
+   if (functl%family == XC_FAMILY_GGA .or. functl%family == XC_FAMILY_MGGA) deallocate (s)
+   if (functl%family == XC_FAMILY_MGGA) deallocate (l)
 
 end subroutine functional_get_tau
 
