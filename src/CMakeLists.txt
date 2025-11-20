@@ -2,102 +2,56 @@
 # ONCVPSP library
 ###########################################################
 set(src_oncvpsp
-    # Core files
-    aeo.f90
-    check_data.f90
-    const_basis.f90
-    der2exc.f90
-    dpnint.f90
-    eresid.f90
-    exc_off_pbe.f
-    exchdl.f90
-    excpzca.f90
-    excwig.f90
-    gg1cc.f90
-    gp1cc.f90
-    gpp1cc.f90
-    ldiracfb.f90
-    ldiracfs.f90
-    lschfb.f90
-    lschfs.f90
-    lschkb.f90
-    lschpb.f90
-    lschps.f90
-    lschpsbar.f90
-    lschpse.f90
-    lschvkbb.f90
-    lschvkbbe.f90
-    lschvkbs.f90
-    m_libxc_list.F90
-    m_psmlout.f90
-    modcore.f90
-    modcore2.f90
-    modcore3.f90
-    optimize.f90
-    pspot.f90
-    qroots.f90
-    run_ghosts.f90
-    run_optimize.f90
-    sbf_basis_con.f90
-    sbf_basis.f90
-    sbf_rc_der.f90
-    sbf8.f90
-    tfapot.f90
-    vkboutwf.f90
-    vkbphsft.f90
-    vout.f90
-    vpinteg.f90
-    vploc.f90
-    vrel.f90
-    wf_rc_der.f90
     input_text_m.f90
-    # Non-relativistic and scalar-relativistic files
-    fphsft.f90
-    fpovlp.f90
-    gnu_script.f90
-    linout.f90
-    psatom.f90
-    relatom.f90
-    run_config.f90
-    run_diag.f90
-    run_phsft.f90
-    run_plot.f90
-    run_vkb.f90
-    sratom.f90
-    upfout.f90
-    wellstate.f90
-    # Relativistic files
-    fphsft_r.f90
-    fpovlp.f90
-    gnu_script_r.f90
-    linout_r.f90
-    psatom_r.f90
-    relatom.f90
-    renorm_r.f90
-    run_config_r.f90
-    run_diag_r.f90
-    run_diag_sr_so_r.f90
-    run_phsft_r.f90
-    run_plot_r.f90
-    run_vkb_r.f90
-    sr_so_r.f90
-    upfout_r.f90
-    wellstate_r.f90
+    check_data_m.f90
+    adams_m.f90
+    dpnint_m.f90
+    der2exc_m.f90
+    eresid_m.f90
+    exc_libxc_list_m.F90
+    exc_internal_m.f90
+    exc_off_pbe_m.f90
+    teter_m.f90
+    dirac_m.f90
+    schroedinger_m.f90
+    vout_m.f90
+    wellstate_m.f90
+    model_core_m.f90
+    dft_m.f90
+    sbf_m.f90
+    vsl_m.f90
+    vploc_m.f90
+    vkb_m.f90
+    thomas_fermi_m.f90
+    vpinteg_m.f90
+    wf_rc_der_m.f90
+    vrel_m.f90
+    psp8_m.f90
+    upf_m.f90
+    psml_m.f90
+    test_ghosts_m.f90
+    test_log_der_m.f90
+    test_pseudization_m.f90
+    test_config_m.f90
+    gnuplot_m.f90
+    plot_m.f90
+    renormalize_m.f90
+    overlap_m.f90
 )
 # Append Libxc interface or stub
-if (Libxc_FOUND AND ONCVPSP_WITH_Libxc)
-    list(APPEND src_oncvpsp functionals.F90 exc_libxc.f90)
-else ()
-    list(APPEND src_oncvpsp exc_libxc_stub.f90)
-endif ()
+if(Libxc_FOUND AND ONCVPSP_WITH_Libxc)
+    list(APPEND src_oncvpsp exc_libxc_m.F90 exc_libxc_parser_m.f90 exc_libxc_xc_messages_m.f90)
+else()
+    list(APPEND src_oncvpsp exc_libxc_m_stub.f90)
+endif()
 # Append TOML input parser if enabled
-if (ONCVPSP_WITH_TOML)
+if(ONCVPSP_WITH_TOML)
     list(APPEND src_oncvpsp input_toml_m.f90)
-endif ()
+endif()
 # Create ONCVPSP library
 add_library(oncvpsp STATIC ${src_oncvpsp})
 target_link_libraries(oncvpsp wxml ${ONCVPSP_DEPENDENCY_LIBRARIES})
-if (ONCVPSP_WITH_TOML)
+if(ONCVPSP_WITH_TOML)
     target_compile_definitions(oncvpsp PRIVATE WITH_TOML)
 endif()
 
@@ -108,7 +62,7 @@ add_executable(oncvpspsr oncvpsp.F90)
 target_link_libraries(oncvpspsr PRIVATE oncvpsp)
 set_target_properties(oncvpspsr
     PROPERTIES
-        OUTPUT_NAME oncvpsp.x
+    OUTPUT_NAME oncvpsp.x
 )
 
 ##########################################################
@@ -118,7 +72,7 @@ add_executable(oncvpspnr oncvpsp_nr.F90)
 target_link_libraries(oncvpspnr PRIVATE oncvpsp)
 set_target_properties(oncvpspnr
     PROPERTIES
-        OUTPUT_NAME oncvpspnr.x
+    OUTPUT_NAME oncvpspnr.x
 )
 
 ##########################################################
@@ -128,7 +82,7 @@ add_executable(oncvpspfr oncvpsp_r.F90)
 target_link_libraries(oncvpspfr PRIVATE oncvpsp)
 set_target_properties(oncvpspfr
     PROPERTIES
-        OUTPUT_NAME oncvpspr.x
+    OUTPUT_NAME oncvpspr.x
 )
 
 ###########################################################

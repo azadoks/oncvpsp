@@ -33,11 +33,32 @@
 !   Output format for ABINIT pspcod=8 and upf format for quantumespresso
 !
  use, intrinsic :: iso_fortran_env, only: stdin => input_unit, stdout => output_unit, stderr => error_unit
- use m_psmlout, only: psmlout_r
- use input_text_m, only: read_input_text_r
+   use, intrinsic :: iso_fortran_env, only: stdin => input_unit, stdout => output_unit, stderr => error_unit
+   use input_text_m, only: read_input_text_r
 #if (defined WITH_TOML)
- use input_toml_m, only: read_input_toml_r
+   use input_toml_m, only: read_input_toml
 #endif
+   use check_data_m, only: check_data
+   use dirac_m, only: ldiracfb
+   use schroedinger_m, only: lschvkbb
+   use renormalize_m, only: renorm_r
+   use wellstate_m, only: wellstate_r
+   use dft_m, only: relatom
+   use vrel_m, only: vrel
+   use overlap_m, only: fpovlp
+   use vsl_m, only: run_optimize
+   use vkb_m, only: run_vkb_r, sr_so_r
+   use model_core_m, only: modcore, modcore2, modcore3
+   use vout_m, only: vout
+   use test_pseudization_m, only: run_diag_r, run_diag_sr_so_r
+   use test_ghosts_m, only: run_ghosts
+   use test_config_m, only: run_config_r
+   use test_log_der_m, only: run_phsft_r
+   use plot_m, only: run_plot_r
+   use gnuplot_m, only: gnu_script_r
+   use psml_m, only: psmlout_r
+   use psp8_m, only: linout_r
+   use upf_m, only: upfout_r
  implicit none
  integer, parameter :: dp=kind(1.0d0)
 
