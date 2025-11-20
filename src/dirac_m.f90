@@ -30,31 +30,31 @@ subroutine ldiracfb(nn, ll, kap, ierr, ee, rr, zz, vv, uu, up, mmax, mch)
 
    !Input variables
    !> mmax  size of log grid
-   integer, intent(in) :: mmax
+   integer :: mmax
    !> rr  log radial mesh
-   real(dp), intent(in) :: rr(mmax)
+   real(dp) :: rr(mmax)
    !> vv  local psp
-   real(dp), intent(in) :: vv(mmax)
+   real(dp) :: vv(mmax)
    !> zz  atomic number
-   real(dp), intent(in) :: zz
+   real(dp) :: zz
    !> nn  principal quantum number
-   integer, intent(in) :: nn
+   integer :: nn
    !> ll  angular-momentum quantum number
-   integer, intent(in) :: ll
+   integer :: ll
    !> kap =l, -(l+1) for j=l -/+ 1/2
-   integer, intent(in) :: kap
+   integer :: kap
 
    !Output variables
    !> uu(mmax,jj)  output radial wave functions (*rr) jj=1,2 for large, small
-   real(dp), intent(out) :: uu(mmax, 2)
+   real(dp) :: uu(mmax, 2)
    !> up  d(uu)/dr
-   real(dp), intent(out) :: up(mmax, 2)
+   real(dp) :: up(mmax, 2)
    !> ee  bound-state energy, input guess and output calculated value
-   real(dp), intent(out) :: ee
+   real(dp) :: ee
    !> ierr  non-zero return if error
-   integer, intent(out) :: ierr
+   integer :: ierr
    !> mch matching mesh point for inward-outward integrations
-   integer, intent(out) :: mch
+   integer :: mch
 
    !Local Variables
 
@@ -314,31 +314,31 @@ subroutine ldiracfs(nn, ll, kap, ierr, ee, rr, zz, vv, uu, up, mmax, mch)
 
    !Input variables
    !> mmax  size of log grid
-   integer, intent(in) :: mmax
+   integer :: mmax
    !> rr  log radial mesh
-   real(dp), intent(in) :: rr(mmax)
+   real(dp) :: rr(mmax)
    !> vv  local psp
-   real(dp), intent(in) :: vv(mmax)
+   real(dp) :: vv(mmax)
    !> zz  atomic number
-   real(dp), intent(in) :: zz
+   real(dp) :: zz
    !> ll  angular-momentum quantum number
-   integer, intent(in) :: ll
+   integer :: ll
    !> kap =l, -(l+1) for j=l -/+ 1/2
-   integer, intent(in) :: kap
+   integer :: kap
 
    !Output variables
    !> uu(mmax,jj)  output radial wave functions (*rr) jj=1,2 for large, small
-   real(dp), intent(out) :: uu(mmax, 2)
+   real(dp) :: uu(mmax, 2)
    !> up  d(uu)/dr
-   real(dp), intent(out) :: up(mmax, 2)
+   real(dp) :: up(mmax, 2)
    !> ee  bound-state energy, input guess and output calculated value
-   real(dp), intent(out) :: ee
+   real(dp) :: ee
    !> ierr  non-zero return if error
-   integer, intent(out) :: ierr
+   integer :: ierr
    !> mch matching mesh point for inward-outward integrations
-   integer, intent(out) :: mch
+   integer :: mch
    !> nn  effective principal quantum number based on nodes inside mch (output)
-   integer, intent(out) :: nn
+   integer :: nn
 
    !Local Variables
 

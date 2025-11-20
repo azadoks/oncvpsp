@@ -315,31 +315,31 @@ subroutine lschfs(nn, ll, ierr, ee, rr, vv, uu, up, zz, mmax, mch, srel)
 
    !Input variables
    !> mmax  size of log grid
-   integer, intent(in) :: mmax
+   integer :: mmax
    !> rr  log radial mesh
-   real(dp), intent(in) :: rr(mmax)
+   real(dp) :: rr(mmax)
    !> vv  local atomic potential
-   real(dp), intent(in) :: vv(mmax)
+   real(dp) :: vv(mmax)
    !> zz  atomic number
-   real(dp), intent(in) :: zz
+   real(dp) :: zz
    !> ll  angular-momentum quantum number
-   integer, intent(in) :: ll
+   integer :: ll
    !> mch matching mesh point for inward-outward integrations
-   integer, intent(in) :: mch
+   integer :: mch
    !> srel .true. for scalar-relativistic, .false. for non-relativistic
-   logical, intent(in) :: srel
+   logical :: srel
 
    !Output variables
    !> uu  output radial wave function (*rr)
-   real(dp), intent(out) :: uu(mmax)
+   real(dp) :: uu(mmax)
    !> up  d(uu)/dr
-   real(dp), intent(out) :: up(mmax)
+   real(dp) :: up(mmax)
    !> ee  bound-state energy, input guess and output calculated value
-   real(dp), intent(out) :: ee
+   real(dp) :: ee
    !> ierr  non-zero return if error
-   integer, intent(out) :: ierr
+   integer :: ierr
    !> nn  effective principal quantum number based on nodes inside mch (output)
-   integer, intent(out) :: nn
+   integer :: nn
 
    !Local variables
    real(dp) :: amesh, al
@@ -1828,29 +1828,29 @@ subroutine vkboutwf(ll, nvkb, ep, vkb, evkb, rr, vloc, uu, up, node, mmax, mch)
 
    !Input variables
    !> mmax  dimension of log mesh
-   integer, intent(in) :: mmax
+   integer :: mmax
    !> nvkb  switch for 1 or 2 projedtors
-   integer, intent(in) ::  nvkb
+   integer ::  nvkb
    !> rr  log radial mesh
-   real(dp), intent(in) :: rr(mmax)
+   real(dp) :: rr(mmax)
    !> vloc  local pseudopotential
-   real(dp), intent(in) :: vloc(mmax)
+   real(dp) :: vloc(mmax)
    !> vkb  Vanderbilt-Kleinman-Bylander projectors for this l
-   real(dp), intent(in) :: vkb(mmax, nvkb)
+   real(dp) :: vkb(mmax, nvkb)
    !> evkb  projector coefficients
-   real(dp), intent(in) :: evkb(nvkb)
+   real(dp) :: evkb(nvkb)
    !> ep  energy at which wave function is to be calculated
-   real(dp), intent(in out) :: ep
+   real(dp) :: ep
    !> ll  angular momentum
-   integer, intent(in) :: ll
+   integer :: ll
    !> mch  index of radius to which wave function is to be integrated
-   integer, intent(in) :: mch
+   integer :: mch
 
    !Output variables
    !> uu  wave function
-   real(dp), intent(out) :: uu(mmax)
+   real(dp) :: uu(mmax)
    !> up  1st derivative of uu
-   real(dp), intent(out) :: up(mmax)
+   real(dp) :: up(mmax)
    !> node  count of number of nodes from 0 to rr(mch)
    integer node
 

@@ -71,7 +71,7 @@ def _determine_executable(output_file: pathlib.Path, filepaths_executables: dict
 def _inequalities_message(inequalities: dict) -> str:
     messages: list[str] = []
     for path, ((val1, val2), reason) in inequalities.items():
-        messages.append(f"Difference at {path}: {val1} vs {val2} ({reason})")
+        messages.append(f"Difference at {path}: {val1} [ref] vs {val2} [tst] ({reason})")
     return "\n".join(messages)
 
 
