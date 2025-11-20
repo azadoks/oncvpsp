@@ -57,9 +57,9 @@ subroutine lschfb(nn, ll, ierr, ee, rr, vv, uu, up, zz, mmax, mch, srel)
 
    !Output variables
    !> uu  output radial wave function (*rr)
-   real(dp) :: uu(mmax)
+   real(dp), intent(out) :: uu(mmax)
    !> up  d(uu)/dr
-   real(dp) :: up(mmax)
+   real(dp), intent(out) :: up(mmax)
    !> ee  bound-state energy, input guess and output calculated value
    real(dp) :: ee
    !> ierr  non-zero return if error
@@ -331,9 +331,9 @@ subroutine lschfs(nn, ll, ierr, ee, rr, vv, uu, up, zz, mmax, mch, srel)
 
    !Output variables
    !> uu  output radial wave function (*rr)
-   real(dp) :: uu(mmax)
+   real(dp), intent(out) :: uu(mmax)
    !> up  d(uu)/dr
-   real(dp) :: up(mmax)
+   real(dp), intent(out) :: up(mmax)
    !> ee  bound-state energy, input guess and output calculated value
    real(dp) :: ee
    !> ierr  non-zero return if error

@@ -151,7 +151,7 @@ subroutine fphsft(ll, epsh2, depsh, pshf, rr, vv, zz, mmax, mch, npsh, srel)
 
    !Output variables
    !> pshf  log derivatives "angles", as above
-   real(dp) :: pshf(npsh)
+   real(dp), intent(out) :: pshf(npsh)
 
    !Local variables
    real(dp) :: al, epsh, phi, phip, pshoff
@@ -225,7 +225,7 @@ subroutine vkbphsft(ll, ivkb, epsh2, depsh, ep, pshf, pshp, &
 
    !Output variables
    !> pshp  pseudopotential log derivatives "angles", as above (output)
-   real(dp) :: pshp(npsh)
+   real(dp), intent(out) :: pshp(npsh)
 
    !Local variables
    real(dp) :: al, dnpi, epsh, phi, phip, pshoff
@@ -473,7 +473,7 @@ subroutine fphsft_r(ll, kap, epsh2, depsh, pshf, rr, vv, zz, mmax, mch, npsh)
 
    !Output variables
    !> pshf  log derivatives "angles", as above
-   real(dp) :: pshf(npsh)
+   real(dp), intent(out) :: pshf(npsh)
 
    !Local variables
    real(dp) :: al, epsh, phi, phip, pshoff
