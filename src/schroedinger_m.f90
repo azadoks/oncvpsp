@@ -41,19 +41,19 @@ subroutine lschfb(nn, ll, ierr, ee, rr, vv, uu, up, zz, mmax, mch, srel)
 
    !Input variables
    !> mmax  size of log grid
-   integer :: mmax
+   integer, intent(in) :: mmax
    !> rr  log radial mesh
-   real(dp) :: rr(mmax)
+   real(dp), intent(in) :: rr(mmax)
    !> vv  local atomic potential
-   real(dp) :: vv(mmax)
+   real(dp), intent(in) :: vv(mmax)
    !> zz  atomic number
-   real(dp) :: zz
+   real(dp), intent(in) :: zz
    !> nn  principal quantum number
-   integer :: nn
+   integer, intent(in) :: nn
    !> ll  angular-momentum quantum number
-   integer :: ll
+   integer, intent(in) :: ll
    !> srel .true. for scalar-relativistic, .false. for non-relativistic
-   logical :: srel
+   logical, intent(in) :: srel
 
    !Output variables
    !> uu  output radial wave function (*rr)
@@ -315,19 +315,19 @@ subroutine lschfs(nn, ll, ierr, ee, rr, vv, uu, up, zz, mmax, mch, srel)
 
    !Input variables
    !> mmax  size of log grid
-   integer :: mmax
+   integer, intent(in) :: mmax
    !> rr  log radial mesh
-   real(dp) :: rr(mmax)
+   real(dp), intent(in) :: rr(mmax)
    !> vv  local atomic potential
-   real(dp) :: vv(mmax)
+   real(dp), intent(in) :: vv(mmax)
    !> zz  atomic number
-   real(dp) :: zz
+   real(dp), intent(in) :: zz
    !> ll  angular-momentum quantum number
-   integer :: ll
+   integer, intent(in) :: ll
    !> mch matching mesh point for inward-outward integrations
-   integer :: mch
+   integer, intent(in) :: mch
    !> srel .true. for scalar-relativistic, .false. for non-relativistic
-   logical :: srel
+   logical, intent(in) :: srel
 
    !Output variables
    !> uu  output radial wave function (*rr)
@@ -1754,11 +1754,11 @@ subroutine lschvkbs(ll, ivkb, ee, rr, vloc, vkb, evkb, uu, up, mmax, mch)
 
    !Input variables
    !> mmax  size of log grid
-   integer :: mmax
+   integer, intent(in) :: mmax
    !> mch  index of radius to which uu is computed
    integer :: mch
    !> rr  log radial mesh
-   real(dp) :: rr(mmax)
+   real(dp), intent(in) :: rr(mmax)
    !> vloc  local pseudopotential
    real(dp) :: vloc(mmax)
    !> vkb  VKB projectors
@@ -1770,7 +1770,7 @@ subroutine lschvkbs(ll, ivkb, ee, rr, vloc, vkb, evkb, uu, up, mmax, mch)
    !> ivkb  = 0, 1 or 2 VKB proectors to be used
    integer :: ivkb
    !> ll  angular-momentum quantum number
-   integer :: ll
+   integer, intent(in) :: ll
 
    !Output variables
    !> uu  output radial wave function (*rr)
@@ -1828,11 +1828,11 @@ subroutine vkboutwf(ll, nvkb, ep, vkb, evkb, rr, vloc, uu, up, node, mmax, mch)
 
    !Input variables
    !> mmax  dimension of log mesh
-   integer :: mmax
+   integer, intent(in) :: mmax
    !> nvkb  switch for 1 or 2 projedtors
    integer ::  nvkb
    !> rr  log radial mesh
-   real(dp) :: rr(mmax)
+   real(dp), intent(in) :: rr(mmax)
    !> vloc  local pseudopotential
    real(dp) :: vloc(mmax)
    !> vkb  Vanderbilt-Kleinman-Bylander projectors for this l
@@ -1842,7 +1842,7 @@ subroutine vkboutwf(ll, nvkb, ep, vkb, evkb, rr, vloc, uu, up, node, mmax, mch)
    !> ep  energy at which wave function is to be calculated
    real(dp) :: ep
    !> ll  angular momentum
-   integer :: ll
+   integer, intent(in) :: ll
    !> mch  index of radius to which wave function is to be integrated
    integer :: mch
 

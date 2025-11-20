@@ -36,38 +36,38 @@ subroutine run_phsft(lmax, lloc, nproj, epa, epsh1, epsh2, depsh, vkb, evkb, &
 
    !Input variables
    !> lmax  maximum angular momentum
-   integer :: lmax
+   integer, intent(in) :: lmax
    !> lloc  l for local potential
-   integer :: lloc
+   integer, intent(in) :: lloc
    !> mmax  size of radial grid
-   integer :: mmax
+   integer, intent(in) :: mmax
    !> mxprj dimension of number of projectors
-   integer :: mxprj
+   integer, intent(in) :: mxprj
    !> nproj  number ov V / KB projectors for  each l
-   integer :: nproj(6)
-   integer :: irc(6)
+   integer, intent(in) :: nproj(6)
+   integer, intent(in) :: irc(6)
    !> epsh1  low energy limit for "phase shift" calculation
-   real(dp) :: epsh1
+   real(dp), intent(in) :: epsh1
    !> epsh2  high energy limit for "phase shift" calculation
-   real(dp) :: epsh2
+   real(dp), intent(in) :: epsh2
    !> depsh  energy increment
-   real(dp) :: depsh
+   real(dp), intent(in) :: depsh
    !> zz  atomic number
-   real(dp) :: zz
+   real(dp), intent(in) :: zz
    !> rr  log radial grid
-   real(dp) :: rr(mmax)
+   real(dp), intent(in) :: rr(mmax)
    !> vp  semi-local pseudopotentials (vp(:,5) is local potential if linear comb.)
-   real(dp) :: vp(mmax, 5)
+   real(dp), intent(in) :: vp(mmax, 5)
    !> ep  bound-state or scattering state reference energies for vkb potentials
-   real(dp) :: epa(mxprj, 6)
+   real(dp), intent(in) :: epa(mxprj, 6)
    !> vfull  all-electron potential
-   real(dp) :: vfull(mmax)
+   real(dp), intent(in) :: vfull(mmax)
    !> vkb  VKB projectors
-   real(dp) :: vkb(mmax, mxprj, 4)
+   real(dp), intent(in) :: vkb(mmax, mxprj, 4)
    !> evkb  coefficients of VKB projectors
-   real(dp) :: evkb(mxprj, 4)
+   real(dp), intent(in) :: evkb(mxprj, 4)
    !> srel .true. for scalar-relativistic, .false. for non-relativistic
-   logical :: srel
+   logical, intent(in) :: srel
 
    !Output variables - printing only
 
@@ -129,25 +129,25 @@ subroutine fphsft(ll, epsh2, depsh, pshf, rr, vv, zz, mmax, mch, npsh, srel)
 
    !Input variables
    !> ll  angular momentum
-   integer :: ll
+   integer, intent(in) :: ll
    !> mmax  dimension of rr, etc.
-   integer :: mmax
+   integer, intent(in) :: mmax
    !> npsh  number of energy points in scan
-   integer :: npsh
+   integer, intent(in) :: npsh
    !> mch  index of radius for log der test
-   integer :: mch
+   integer, intent(in) :: mch
    !> rr  radial log grid
-   real(dp) :: rr(mmax)
+   real(dp), intent(in) :: rr(mmax)
    !> vv  all-electron potential
-   real(dp) :: vv(mmax)
+   real(dp), intent(in) :: vv(mmax)
    !> depsh  increment of scan
-   real(dp) :: depsh
+   real(dp), intent(in) :: depsh
    !> epsh2  upper limit of energy scan
-   real(dp) :: epsh2
+   real(dp), intent(in) :: epsh2
    !> zz  atomic number
-   real(dp) :: zz
+   real(dp), intent(in) :: zz
    !> srel .true. for scalar-relativistic, .false. for non-relativistic
-   logical :: srel
+   logical, intent(in) :: srel
 
    !Output variables
    !> pshf  log derivatives "angles", as above
@@ -199,29 +199,29 @@ subroutine vkbphsft(ll, ivkb, epsh2, depsh, ep, pshf, pshp, &
 
    !Input variables
    !> ll  angular momentum
-   integer :: ll
+   integer, intent(in) :: ll
    !> ivkb  number of projectors
-   integer :: ivkb
+   integer, intent(in) :: ivkb
    !> mmax  dimension of rr, etc.
-   integer :: mmax
+   integer, intent(in) :: mmax
    !> npsh  number of energy points in scan
-   integer :: npsh
+   integer, intent(in) :: npsh
    !> mch  index of radius for log der test
-   integer :: mch
-   real(dp) :: rr(mmax)
+   integer, intent(in) :: mch
+   real(dp), intent(in) :: rr(mmax)
    !> vloc  local part of psp
-   real(dp) :: vloc(mmax)
+   real(dp), intent(in) :: vloc(mmax)
    !> vkb  VKB projectorsx
-   real(dp) :: vkb(mmax, *)
-   real(dp) :: evkb(*)
+   real(dp), intent(in) :: vkb(mmax, *)
+   real(dp), intent(in) :: evkb(*)
    !> pshf  all-electron log derivatives "angles", as above (input)
-   real(dp) :: pshf(npsh)
+   real(dp), intent(in) :: pshf(npsh)
    !> depsh  increment of scan
-   real(dp) :: depsh
+   real(dp), intent(in) :: depsh
    !> epsh2  upper limit of energy scan
-   real(dp) :: epsh2
+   real(dp), intent(in) :: epsh2
    !> ep  reference energy for psp creation (bound or scattering)
-   real(dp) :: ep
+   real(dp), intent(in) :: ep
 
    !Output variables
    !> pshp  pseudopotential log derivatives "angles", as above (output)
@@ -344,37 +344,37 @@ subroutine run_phsft_r(lmax, lloc, nproj, ep, epsh1, epsh2, depsh, vkb, evkb, &
 
    !Input variables
    !> lmax  maximum angular momentum
-   integer :: lmax
+   integer, intent(in) :: lmax
    !> lloc  l for local potential
-   integer :: lloc
+   integer, intent(in) :: lloc
    !> mmax  size of radial grid
-   integer :: mmax
+   integer, intent(in) :: mmax
    !> mxprj  dimension of number of projectors
-   integer :: mxprj
+   integer, intent(in) :: mxprj
    !> nproj  number ov VKB projectors for  each l
-   integer :: nproj(6)
+   integer, intent(in) :: nproj(6)
    !> irc  core radii
-   integer :: irc(6)
+   integer, intent(in) :: irc(6)
    !> epsh1  low energy limit for "phase shift" calculation
-   real(dp) :: epsh1
+   real(dp), intent(in) :: epsh1
    !> epsh2  high energy limit for "phase shift" calculation
-   real(dp) :: epsh2
+   real(dp), intent(in) :: epsh2
    !> depsh  energy increment
-   real(dp) :: depsh
+   real(dp), intent(in) :: depsh
    !> zz  atomic number
-   real(dp) :: zz
+   real(dp), intent(in) :: zz
    !> rr  log radial grid
-   real(dp) :: rr(mmax)
+   real(dp), intent(in) :: rr(mmax)
    !> vp  semi-local pseudopotentials (vp(:,5) is local potential if linear comb.)
-   real(dp) :: vp(mmax, 5, 2)
+   real(dp), intent(in) :: vp(mmax, 5, 2)
    !> ep  bound-state or scattering state reference energies for vkb potentials
-   real(dp) :: ep(6, 2)
+   real(dp), intent(in) :: ep(6, 2)
    !> vfull  all-electron potential
-   real(dp) :: vfull(mmax)
+   real(dp), intent(in) :: vfull(mmax)
    !> vkb  VKB projectors
-   real(dp) :: vkb(mmax, mxprj, 4, 2)
+   real(dp), intent(in) :: vkb(mmax, mxprj, 4, 2)
    !> evkb  coefficients of VKB projectors
-   real(dp) :: evkb(mxprj, 4, 2)
+   real(dp), intent(in) :: evkb(mxprj, 4, 2)
 
    !Output variables - printing only
 
@@ -451,25 +451,25 @@ subroutine fphsft_r(ll, kap, epsh2, depsh, pshf, rr, vv, zz, mmax, mch, npsh)
 
    !Input variables
    !> ll  angular momentum
-   integer :: ll
+   integer, intent(in) :: ll
    !> kap =l, -(l+1) for j=l -/+ 1/2
-   integer :: kap
+   integer, intent(in) :: kap
    !> mmax  dimension of rr, etc.
-   integer :: mmax
+   integer, intent(in) :: mmax
    !> npsh  number of energy points in scan
-   integer :: npsh
+   integer, intent(in) :: npsh
    !> mch  index of radius for log der test
-   integer :: mch
+   integer, intent(in) :: mch
    !> rr  radial log grid
-   real(dp) :: rr(mmax)
+   real(dp), intent(in) :: rr(mmax)
    !> vv  all-electron potential
-   real(dp) :: vv(mmax)
+   real(dp), intent(in) :: vv(mmax)
    !> depsh  increment of scan
-   real(dp) :: depsh
+   real(dp), intent(in) :: depsh
    !> epsh2  upper limit of energy scan
-   real(dp) :: epsh2
+   real(dp), intent(in) :: epsh2
    !> zz  atomic number
-   real(dp) :: zz
+   real(dp), intent(in) :: zz
 
    !Output variables
    !> pshf  log derivatives "angles", as above

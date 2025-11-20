@@ -30,19 +30,19 @@ subroutine ldiracfb(nn, ll, kap, ierr, ee, rr, zz, vv, uu, up, mmax, mch)
 
    !Input variables
    !> mmax  size of log grid
-   integer :: mmax
+   integer, intent(in) :: mmax
    !> rr  log radial mesh
-   real(dp) :: rr(mmax)
+   real(dp), intent(in) :: rr(mmax)
    !> vv  local psp
-   real(dp) :: vv(mmax)
+   real(dp), intent(in) :: vv(mmax)
    !> zz  atomic number
-   real(dp) :: zz
+   real(dp), intent(in) :: zz
    !> nn  principal quantum number
-   integer :: nn
+   integer, intent(in) :: nn
    !> ll  angular-momentum quantum number
-   integer :: ll
+   integer, intent(in) :: ll
    !> kap =l, -(l+1) for j=l -/+ 1/2
-   integer :: kap
+   integer, intent(in) :: kap
 
    !Output variables
    !> uu(mmax,jj)  output radial wave functions (*rr) jj=1,2 for large, small
@@ -314,17 +314,17 @@ subroutine ldiracfs(nn, ll, kap, ierr, ee, rr, zz, vv, uu, up, mmax, mch)
 
    !Input variables
    !> mmax  size of log grid
-   integer :: mmax
+   integer, intent(in) :: mmax
    !> rr  log radial mesh
-   real(dp) :: rr(mmax)
+   real(dp), intent(in) :: rr(mmax)
    !> vv  local psp
-   real(dp) :: vv(mmax)
+   real(dp), intent(in) :: vv(mmax)
    !> zz  atomic number
-   real(dp) :: zz
+   real(dp), intent(in) :: zz
    !> ll  angular-momentum quantum number
-   integer :: ll
+   integer, intent(in) :: ll
    !> kap =l, -(l+1) for j=l -/+ 1/2
-   integer :: kap
+   integer, intent(in) :: kap
 
    !Output variables
    !> uu(mmax,jj)  output radial wave functions (*rr) jj=1,2 for large, small
