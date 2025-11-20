@@ -16,55 +16,63 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> Two tests for ghosts;  The local potential is terminated by a hard wall
+!> barrier at a radius of mbfact*rc, presently 3*rc.  A basis set is formed
+!> from eigenstates this combination and used to compute a hamiltonian matrix
+!> whose off-diagonal terms come exclusively from the non-local pojectors.
+!> A cutoff is chosen to simulate a reasonably well converged plane-wave
+!> calculation.  The hamiltoian is diagonalized, and the results used
+!> as follows:
+!>
+!> Test 1) Negative eigenvalues are compared with those of the radial
+!> Schroedinger equation for the full-range pseudopotential.  Those
+!> lying below the Schroedinger Eq. results and which presumably have
+!> more nodes are reported and tagged as GHOST(-).
+!>
+!> Test2) For barrier states with  positive eigenvalues, the average radius
+!> is computed.  Such states could be ghost resonances, and highly localized
+!> ones with <r>/rc<1 are reported as GHOST(+).  Real fairly localized
+!> resonances can occur, particularly at lower energies, and the GHOST(+)
+!> report is an indication that the log-derivative plot should be examined
+!> carefully around the reported energy to see if the all-electron plot
+!> has a corresponding drop of pi  (arctan(log der), of course).
 subroutine run_ghosts(lmax, la, ea, nc, nv, lloc, irc, qmsbf, &
 &                    vkb, evkb, nproj, rr, vp, mmax, mxprj)
-
-   ! Two tests for ghosts;  The local potential is terminated by a hard wall
-   ! barrier at a radius of mbfact*rc, presently 3*rc.  A basis set is formed
-   ! from eigenstates this combination and used to compute a hamiltonian matrix
-   ! whose off-diagonal terms come exclusively from the non-local pojectors.
-   ! A cutoff is chosen to simulate a reasonably well converged plane-wave
-   ! calculation.  The hamiltoian is diagonalized, and the results used
-   ! as follows:
-   !
-   ! Test 1) Negative eigenvalues are compared with those of the radial
-   ! Schroedinger equation for the full-range pseudopotential.  Those
-   ! lying below the Schroedinger Eq. results and which presumably have
-   ! more nodes are reported and tagged as GHOST(-).
-   !
-   ! Test2) For barrier states with  positive eigenvalues, the average radius
-   ! is computed.  Such states could be ghost resonances, and highly localized
-   ! ones with <r>/rc<1 are reported as GHOST(+).  Real fairly localized
-   ! resonances can occur, particularly at lower energies, and the GHOST(+)
-   ! report is an indication that the log-derivative plot should be examined
-   ! carefully around the reported energy to see if the all-electron plot
-   ! has a corresponding drop of pi  (arctan(log der), of course).
-
-   !lmax  maximum angular momentum
-   !la  angular momenta of all-electron states
-   !nc  number of core electrons
-   !nv  number of valence electrons
-   !ea  all-electron bound-state energies
-   !lloc  l for local potential
-   !irc  core radii indices
-   !vkb  VKB projectors
-   !qmsbf maximum q in sbf basis for each l
-   !evkb  coefficients of VKB projectors
-   !nproj  number of vkb projectors for each l
-   !rr  log radial grid
-   !vp  semi-local pseudopotentials (vp(:,5) is local potential if linear comb.)
-   !mmax  size of radial grid
-   !mxprj  dimension of number of projectors
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
    real(dp), parameter :: pi = 3.141592653589793238462643383279502884197_dp
 
    !Input variables
-   integer :: nc, nv, lmax, lloc, mmax, mxprj
-   integer :: la(30), irc(6), nproj(6)
-   real(dp) :: rr(mmax), vp(mmax, 5), vkb(mmax, mxprj, 4)
-   real(dp) :: qmsbf(6), ea(30), evkb(mxprj, 4)
+   !> nc  number of core electrons
+   integer, intent(in) :: nc
+   !> nv  number of valence electrons
+   integer, intent(in) :: nv
+   !> lmax  maximum angular momentum
+   integer, intent(in) :: lmax
+   !> lloc  l for local potential
+   integer, intent(in) :: lloc
+   !> mmax  size of radial grid
+   integer, intent(in) :: mmax
+   !> mxprj  dimension of number of projectors
+   integer, intent(in) :: mxprj
+   !> la  angular momenta of all-electron states
+   integer, intent(in) :: la(30)
+   !> irc  core radii indices
+   integer, intent(in) :: irc(6)
+   !> nproj  number of vkb projectors for each l
+   integer, intent(in) :: nproj(6)
+   !> rr  log radial grid
+   real(dp), intent(in) :: rr(mmax)
+   !> vp  semi-local pseudopotentials (vp(:,5) is local potential if linear comb.)
+   real(dp), intent(in) :: vp(mmax, 5)
+   !> vkb  VKB projectors
+   real(dp), intent(in) :: vkb(mmax, mxprj, 4)
+   !> qmsbf maximum q in sbf basis for each l
+   real(dp), intent(in) :: qmsbf(6)
+   !> ea  all-electron bound-state energies
+   real(dp), intent(in) :: ea(30)
+   !> evkb  coefficients of VKB projectors
+   real(dp), intent(in) :: evkb(mxprj, 4)
 
    !Output variables - printing only
 

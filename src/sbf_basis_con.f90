@@ -16,38 +16,40 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> orthonormalize basis functions and derivatives at rc and form constraint
+!> matrix based on derivative to be matched and overlaps with prior
+!> optimized wave functions
 subroutine sbf_basis_con(ll, rr, mmax, irc, nbas, qroot, psopt, orbasis, orbasis_der, &
 &                     iprj, mxprj, ncon, ncon_in)
-
-   ! orthonormalize basis functions and derivatives at rc and form constraint
-   ! matrix based on derivative to be matched and overlaps with prior
-   ! optimized wave functions
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
-   !INPUT
-   !ll  angujlar momentum
-   !rr  log radial mesh
-   !mmax  number of points in log radial mesh
-   !irc  index rr such that rr(irc)=rc
-   !nbas  number of basis functions
-   !qroot  q values for j_l(q*r)
-   !psopt  optimized projector wave functions for lower iprj
-
-   !OUTPUT
-   !orbasis  matrix for orthonormal basis (rows j_l, columns basis vectors)
-   !orbasis_der  values and derivatives of orthonormal basis set at rc, and
-   ! norm constraint vectors from already-computed psopt
-
    !Input variables
-   integer :: ll, mmax, ncon, ncon_in, irc, nbas, iprj, mxprj
-   real(dp) :: rr(mmax), qroot(nbas)
-   real(dp) :: psopt(mmax, mxprj)
+   !> ll  angujlar momentum
+   integer, intent(in) :: ll
+   !> mmax  number of points in log radial mesh
+   integer, intent(in) :: mmax
+   integer, intent(in) :: ncon
+   integer, intent(in) :: ncon_in
+   !> irc  index rr such that rr(irc)=rc
+   integer, intent(in) :: irc
+   !> nbas  number of basis functions
+   integer, intent(in) :: nbas
+   integer, intent(in) :: iprj
+   integer, intent(in) :: mxprj
+   !> rr  log radial mesh
+   real(dp), intent(in) :: rr(mmax)
+   !> qroot  q values for j_l(q*r)
+   real(dp), intent(in) :: qroot(nbas)
+   !> psopt  optimized projector wave functions for lower iprj
+   real(dp), intent(in) :: psopt(mmax, mxprj)
 
    !Output variables
-   real(dp) :: orbasis(nbas, nbas)
-   real(dp) :: orbasis_der(ncon, nbas)
+   !> orbasis  matrix for orthonormal basis (rows j_l, columns basis vectors)
+   real(dp), intent(out) :: orbasis(nbas, nbas)
+   !> orbasis_der  values and derivatives of orthonormal basis set at rc, and
+   !>  norm constraint vectors from already-computed psopt
+   real(dp), intent(out) :: orbasis_der(ncon, nbas)
 
    !Local variables
    integer :: ii, jj, kk, ll1, ibas, info

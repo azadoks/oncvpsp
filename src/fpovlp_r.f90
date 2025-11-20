@@ -16,33 +16,33 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
-! calculates all-electron wave function overlap intergrals
-
+!> calculates all-electron wave function overlap intergrals
+!> product of all-elecctron relativistic wave functions gg*hh
+!> goes like rr**(2*gamma) as rr -> 0
+!> integral on usual log mesh from rr=0 to rr(nn)
 subroutine fpovlp_r(gg, hh, nn, ll, kap, zz, ss, rr)
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
-   !gg Dirac wave function one
-   !hh Dirac wave function two
-   !nn outer integration limit
-   !ll angular momentum
-   !kap  =l, -(l+1) for j=l -/+ 1/2
-   !zz nuclear charge
-   !ss overlap output
-   !rr log radial mesh
-
-   ! product of all-elecctron relativistic wave functions gg*hh
-   ! goes like rr**(2*gamma) as rr -> 0
-   ! integral on usual log mesh from rr=0 to rr(nn)
-
    !Input variables
-   real(dp) :: zz
-   real(dp) :: gg(nn, 2), hh(nn, 2), rr(nn)
-   integer :: nn, ll, kap
+   !> nn outer integration limit
+   integer, intent(in) :: nn
+   !> ll angular momentum
+   integer, intent(in) :: ll
+   !> kap  =l, -(l+1) for j=l -/+ 1/2
+   integer, intent(in) :: kap
+   !> zz nuclear charge
+   real(dp), intent(in) :: zz
+   !> gg Dirac wave function one
+   real(dp), intent(in) :: gg(nn, 2)
+   !> hh Dirac wave function two
+   real(dp), intent(in) :: hh(nn, 2)
+   !> rr log radial mesh
+   real(dp), intent(in) :: rr(nn)
 
    !Output variable
-   real(dp) :: ss
+   !> ss overlap output
+   real(dp), intent(out) :: ss
 
    !Local variables
    real(dp) :: r0, amesh, al, fss, gam, cc, cci

@@ -16,32 +16,34 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> Finds bound states of a semi-local pseudopotential
 subroutine lschpb(nn, ll, ierr, ee, rr, vv, uu, up, mmax, mch)
-
-   ! Finds bound states of a semi-local pseudopotential
-
-   !nn  principal quantum number
-   !ll  angular-momentum quantum number
-   !ierr  non-zero return if error
-   !ee  bound-state energy, input guess and output calculated value
-   !rr  log radial mesh
-   !vv  local psp
-   !uu  output radial wave function (*rr)
-   !up  d(uu)/dr
-   !mmax  size of log grid
-   !mch matching mesh point for inward-outward integrations
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
    !Input variables
-   real(dp) :: rr(mmax), vv(mmax)
-   integer :: nn, ll, mmax
+   !> mmax  size of log grid
+   integer, intent(in) :: mmax
+   !> rr  log radial mesh
+   real(dp), intent(in) :: rr(mmax)
+   !> vv  local psp
+   real(dp), intent(in) :: vv(mmax)
+   !> nn  principal quantum number
+   integer, intent(in) :: nn
+   !> ll  angular-momentum quantum number
+   integer, intent(in) :: ll
 
    !Output variables
-   real(dp) :: uu(mmax), up(mmax)
-   real(dp) :: ee
-   integer :: ierr, mch
+   !> uu  output radial wave function (*rr)
+   real(dp), intent(out) :: uu(mmax)
+   !> up  d(uu)/dr
+   real(dp), intent(out) :: up(mmax)
+   !> ee  bound-state energy, input guess and output calculated value
+   real(dp), intent(out) :: ee
+   !> ierr  non-zero return if error
+   integer, intent(out) :: ierr
+   !> mch matching mesh point for inward-outward integrations
+   integer, intent(out) :: mch
 
    !Local Variables
 

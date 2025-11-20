@@ -16,20 +16,20 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
-
+!> interface to libxc library for potential and energy density calculation
 subroutine exc_libxc(iexc, al, rho, vxc, exc, rr, mmax)
-   !
-   !  interface to libxc library for potential and energy density calculation
-   !
    use functionals_m
    implicit none
 
    integer, parameter :: dp = kind(1.0d0)
 
+   integer, intent(in) :: mmax
+   integer, intent(in) :: iexc
    real(dp), intent(in) :: al
-   real(dp), intent(in) :: rho(mmax), rr(mmax)
-   real(dp), intent(out) :: vxc(mmax), exc(mmax)
-   integer, intent(in) :: mmax, iexc
+   real(dp), intent(in) :: rho(mmax)
+   real(dp), intent(in) ::rr(mmax)
+   real(dp), intent(out) :: vxc(mmax)
+   real(dp), intent(out) ::exc(mmax)
    integer :: ii, unit
 
    ! local

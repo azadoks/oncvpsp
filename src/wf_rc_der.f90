@@ -16,33 +16,33 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> calculate derivatives of radial wave functin at core radius rc
 subroutine wf_rc_der(rr, uu, al, rc, irc, mmax, uorder)
-
-   !calculate derivatives of radial wave functin at core radius rc
-
-   !INPUT
-   ! rr log radial mesh
-   ! uu rr*radial wavefunction
-   ! al  log of radial mesh factor
-   ! mmax last point used on radial mesh
-   !
-   !IN/OUT
-   ! irc  index of radial mesh point used as rc
-   ! rc  input core radius.  If irc = 0 on input, irc is calculated and rc
-   !      is exact mesh point value on output (next larger point)
-   !
-   !OUTPUT
-   ! uorder  value and four derivatives of uu/rr at final rc
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
-   !subroutine arguments
-   real(dp) :: rr(mmax), uu(mmax), uorder(5)
-   real(dp) :: al, rc
-   integer :: mmax, irc, nder
+   !Input variables
+   !> mmax last point used on radial mesh
+   integer, intent(in) :: mmax
+   !> rr log radial mesh
+   real(dp), intent(in) :: rr(mmax)
+   !> uu rr*radial wavefunction
+   real(dp), intent(in) :: uu(mmax)
+   !> al  log of radial mesh factor
+   real(dp), intent(in) :: al
 
-   !local variables
+   !Input/Output variables
+   !> irc  index of radial mesh point used as rc
+   integer, intent(in out) :: irc
+   !> rc  input core radius.  If irc = 0 on input, irc is calculated and rc
+   !>      is exact mesh point value on output (next larger point)
+   real(dp), intent(in out) :: rc
+
+   !Output variable
+   !> uorder  value and four derivatives of uu/rr at final rc
+   real(dp), intent(out) :: uorder(5)
+
+   !Local variables
    integer :: ii, jj
    real(dp), allocatable :: work(:, :)
 

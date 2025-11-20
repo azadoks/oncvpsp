@@ -16,37 +16,40 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
-! calculates Hartree and exchange-correlation potentials and total-energy
-! term to add to eigenvalue sum
-
+!> calculates Hartree and exchange-correlation potentials and total-energy
+!> term to add to eigenvalue sum
 subroutine vout(mode, rho, rhoc, vo, vxc, zion, eeel, eexc, &
 &                rr, mmax, iexc)
-
-   !mode  1=> add rhoc to rho, 0 => don't
-   !rho  total charge density or valence/pseudovalence charge density
-   !rhoc  core charge density, full or model
-   !vo  output total potential
-   !vc  output exchange-correlation potential
-   !zion  charge of screened ion
-   !eeel  electron-electron interaction energy
-   !eexc  exchange-correlation correction to eigenvalue sum for total energy
-   !rr  log radial mesh
-   !output electrostatic and exchange-correlation potential
-
    implicit none
 
    integer, parameter :: dp = kind(1.0d0)
    real(dp), parameter :: pi = 3.141592653589793238462643383279502884197_dp
    real(dp), parameter :: pi4 = 4.0_dp*pi
 
-   !Input vaiables
-   integer :: iexc, mmax, mode
-   real(dp) :: rho(mmax), rhoc(mmax), rr(mmax)
-   real(dp) :: zion
+   !Input variables
+   integer, intent(in) :: iexc
+   integer, intent(in) :: mmax
+   !> mode  1=> add rhoc to rho, 0 => don't
+   integer, intent(in) :: mode
+   !> rho  total charge density or valence/pseudovalence charge density
+   real(dp), intent(in) :: rho(mmax)
+   !> rhoc  core charge density, full or model
+   real(dp), intent(in) :: rhoc(mmax)
+   !> rr  log radial mesh
+   real(dp), intent(in) :: rr(mmax)
+   !> zion  charge of screened ion
+   real(dp), intent(in) :: zion
 
    !Output variables
-   real(dp) :: vo(mmax), vxc(mmax)
-   real(dp) :: eeel, eexc
+   !> vo  output total potential
+   !> output electrostatic and exchange-correlation potential
+   real(dp), intent(out) :: vo(mmax)
+   !> vc  output exchange-correlation potential
+   real(dp), intent(out) :: vxc(mmax)
+   !> eeel  electron-electron interaction energy
+   real(dp), intent(out) :: eeel
+   !> eexc  exchange-correlation correction to eigenvalue sum for total energy
+   real(dp), intent(out) :: eexc
 
    !Local variables
    integer ii

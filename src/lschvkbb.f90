@@ -16,40 +16,46 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> Finds bound states of a  pseudopotential with
+!> Vanderbilt-Kleinman-Bylander non-local projectors
 subroutine lschvkbb(nn, ll, nvkb, ierr, ee, emin, emax, &
 &   rr, vloc, vkb, evkb, uu, up, mmax, mch)
-
-   ! Finds bound states of a  pseudopotential with
-   ! Vanderbilt-Kleinman-Bylander non-local projectors
-
-   !nn  principal quantum number
-   !ll  angular-momentum quantum number
-   !nvkb  = number of VKB projectors to be used
-   !ierr  non-zero return if error
-   !ee  bound-state energy, input guess and output calculated value
-   !emin  externally generaated estimate of lower bound for ee
-   !emax  externally generaated estimate of upper bound for ee
-   !rr  log radial mesh
-   !vloc  local part of psp
-   !vkb  VKB projectors
-   !evkb coefficients of BKB projectors
-   !uu  output radial wave function (*rr)
-   !up  d(uu)/dr
-   !mmax  size of log grid
-   !mch matching mesh point for inward-outward integrations
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
    !Input Variables
-   real(dp) :: emin, emax
-   real(dp) :: rr(mmax), vloc(mmax), vkb(mmax, nvkb), evkb(nvkb)
-   integer :: nn, ll, nvkb, mmax
+   !> nvkb  = number of VKB projectors to be used
+   integer, intent(in) :: nvkb
+   !> mmax  size of log grid
+   integer, intent(in) :: mmax
+   !> emin  externally generaated estimate of lower bound for ee
+   real(dp), intent(in) :: emin
+   !> emax  externally generaated estimate of upper bound for ee
+   real(dp), intent(in) :: emax
+   !> rr  log radial mesh
+   real(dp), intent(in) :: rr(mmax)
+   !> vloc  local part of psp
+   real(dp), intent(in) :: vloc(mmax)
+   !> vkb  VKB projectors
+   real(dp), intent(in) :: vkb(mmax, nvkb)
+   !> evkb coefficients of BKB projectors
+   real(dp), intent(in) :: evkb(nvkb)
+   !> nn  principal quantum number
+   integer, intent(in) :: nn
+   !> ll  angular-momentum quantum number
+   integer, intent(in) :: ll
 
    !Output variables
-   real(dp) :: uu(mmax), up(mmax)
-   real(dp) :: ee  !in/out, really - needs starting guess
-   integer :: ierr, mch
+   !> uu  output radial wave function (*rr)
+   real(dp), intent(out) :: uu(mmax)
+   !> up  d(uu)/dr
+   real(dp), intent(out) :: up(mmax)
+   !> ee  bound-state energy, input guess and output calculated value
+   real(dp), intent(in out) :: ee  !in/out, really - needs starting guess
+   !> ierr  non-zero return if error
+   integer, intent(out) :: ierr
+   !> mch matching mesh point for inward-outward integrations
+   integer, intent(out) :: mch
 
    !Local variables
    real(dp) :: aei, aeo, aii, aio, cn

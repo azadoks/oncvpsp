@@ -16,16 +16,9 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> calculates Perdew-Zunger-Ceperly_Alder exchange-correlation potential
+!> and energy density J. P. Perdew and A. Zunger, Phys. Rev. B23, 5048 (1981)
 subroutine excpzca(rho, vxc, exc, mmax)
-
-   !calculates Perdew-Zunger-Ceperly_Alder exchange-correlation potential
-   ! and energy density J. P. Perdew and A. Zunger, Phys. Rev. B23, 5048 (1981)
-
-   !rho  charge density
-   !vxc  exchange-correlation potential
-   !exc  exchange-correlation energy density
-   !mmax  dimension of log radial grid
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
    real(dp), parameter :: pi = 3.141592653589793238462643383279502884197_dp
@@ -34,11 +27,16 @@ subroutine excpzca(rho, vxc, exc, mmax)
    real(dp), parameter :: thrd = 1.0d0/3.0d0
 
    !Input variables
-   integer :: mmax
-   real(dp) :: rho(mmax)
+   !> mmax  dimension of log radial grid
+   integer, intent(in) :: mmax
+   !> rho  charge density
+   real(dp), intent(in) :: rho(mmax)
 
    !Output variables
-   real(dp) :: vxc(mmax), exc(mmax)
+   !> vxc  exchange-correlation potential
+   real(dp), intent(out) :: vxc(mmax)
+   !> exc  exchange-correlation energy density
+   real(dp), intent(out) :: exc(mmax)
 
    !Local variables
    integer :: ii

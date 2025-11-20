@@ -16,16 +16,14 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> check input data for various violations of size or sign
+!> see annotated input document for all definitions
+!> *cnf variables are arrays of the basis atomic configuration variables
+!> to be used for the test configurations
 subroutine check_data(atsym, zz, fcfact, rcfact, epsh1, epsh2, depsh, rlmax, drl, &
 &                      fa, facnf, &
 &                      rc, ep, qcut, debl, nc, nv, iexc, lmax, lloc, lpopt, icmod, &
 &                      ncnf, na, la, nvcnf, nacnf, lacnf, ncon, nbas, nproj, psfile)
-
-   !check input data for various violations of size or sign
-   !see annotated input document for all definitions
-   !*cnf variables are arrays of the basis atomic configuration variables
-   !to be used for the test configurations
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 

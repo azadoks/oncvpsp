@@ -16,29 +16,13 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> computes Vanderfilt / Kleinman-Bylander scattering log derivatives
+!> (or semi-local if ivkb==0)
+!> returns atan(rr(mch) * du/dr / u) which is sort-of like a phase shift
+!> and easier to compare in plots than the log derivatives themselves
+!> Pauli-type scalar-relativistic calculation
 subroutine vkbphsft(ll, ivkb, epsh2, depsh, ep, pshf, pshp, &
 & rr, vloc, vkb, evkb, mmax, mch, npsh)
-
-   ! computes Vanderfilt / Kleinman-Bylander scattering log derivatives
-   ! (or semi-local if ivkb==0)
-   ! returns atan(rr(mch) * du/dr / u) which is sort-of like a phase shift
-   ! and easier to compare in plots than the log derivatives themselves
-   ! Pauli-type scalar-relativistic calculation
-
-   !ll  angular momentum
-   !ivkb  number of projectors
-   !epsh2  upper limit of energy scan
-   !depsh  increment of scan
-   !ep  reference energy for psp creation (bound or scattering)
-   !pshf  all-electron log derivatives "angles", as above (input)
-   !pshp  pseudopotential log derivatives "angles", as above (output)
-   !rr  radial log grid
-   !vloc  local part of psp
-   !vkb  VKB projectors
-   !mmax  dimension of rr, etc.
-   !mch  index of radius for log der test
-   !npsh  number of energy points in scan
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
    real(dp), parameter :: pi = 3.141592653589793238462643383279502884197_dp
@@ -46,13 +30,34 @@ subroutine vkbphsft(ll, ivkb, epsh2, depsh, ep, pshf, pshp, &
    real(dp), parameter :: eps = 1.0d-8
 
    !Input variables
-   integer :: ll, ivkb, mmax, npsh, mch, mcht
-   real(dp) :: rr(mmax), vloc(mmax), vkb(mmax, *), evkb(*)
-   real(dp) :: pshf(npsh)
-   real(dp) :: depsh, epsh2, ep
+   !> ll  angular momentum
+   integer, intent(in) :: ll
+   !> ivkb  number of projectors
+   integer, intent(in) :: ivkb
+   !> mmax  dimension of rr, etc.
+   integer, intent(in) :: mmax
+   !> npsh  number of energy points in scan
+   integer, intent(in) :: npsh
+   !> mch  index of radius for log der test
+   integer, intent(in) :: mch
+   real(dp), intent(in) :: rr(mmax)
+   !> vloc  local part of psp
+   real(dp), intent(in) :: vloc(mmax)
+   !> vkb  VKB projectorsx
+   real(dp), intent(in) :: vkb(mmax, *)
+   real(dp), intent(in) :: evkb(*)
+   !> pshf  all-electron log derivatives "angles", as above (input)
+   real(dp), intent(in) :: pshf(npsh)
+   !> depsh  increment of scan
+   real(dp), intent(in) :: depsh
+   !> epsh2  upper limit of energy scan
+   real(dp), intent(in) :: epsh2
+   !> ep  reference energy for psp creation (bound or scattering)
+   real(dp), intent(in) :: ep
 
    !Output variables
-   real(dp) :: pshp(npsh)
+   !> pshp  pseudopotential log derivatives "angles", as above (output)
+   real(dp), intent(out) :: pshp(npsh)
 
    !Local variables
    real(dp) :: al, dnpi, epsh, phi, phip, pshoff

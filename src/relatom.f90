@@ -16,45 +16,49 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> self-consistent fully-relativistic all-electron atom
+!> partially-occupied orbitals are weighted proportionally to 2j+1
+!> calculation using log mesh
 subroutine relatom(na, la, ea, fa, rpk, nc, ncv, it, rhoc, rho, &
 &           rr, vi, zz, mmax, iexc, etot, ierr)
-
-   ! self-consistent fully-relativistic all-electron atom
-   ! partially-occupied orbitals are weighted proportionally to 2j+1
-   ! calculation using log mesh (non-relativistic when srel=.false.)
-
-   !na  principal quantum number array, dimension ncv
-   !la  angular-momenta
-   !ea  eigenvalues (output)
-   !fa  occupancies
-   !rpk  radius of outermost peak of wave function
-   !nc  number of core states
-   !ncv  number of core+valence states
-   !it  number of iterations (output)
-   !rr  log radial mesh
-   !vi  all-electron potential (output)
-   !zz  atomic number
-   !mmax  size of log grid
-   !iexc  exchange-correlation function to be used
-   !etot  all-electron total energy (output)
-   !ierr  error flag
-   !srel  .true. for scalar-relativistic, .false. for non-relativistic
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
    !Input variables
-
-   integer :: mmax, iexc, nc, ncv
-   integer :: na(ncv), la(ncv)
-   real(dp) :: zz
-   real(dp) :: fa(ncv), rr(mmax)
+   !> mmax  size of log grid
+   integer, intent(in) :: mmax
+   !> iexc  exchange-correlation function to be used
+   integer, intent(in) :: iexc
+   !> nc  number of core states
+   integer, intent(in) :: nc
+   !> ncv  number of core+valence states
+   integer, intent(in) :: ncv
+   !> na  principal quantum number array, dimension ncv
+   integer, intent(in) :: na(ncv)
+   !> la  angular-momenta
+   integer, intent(in) :: la(ncv)
+   !> zz  atomic number
+   real(dp), intent(in) :: zz
+   !> fa  occupancies
+   real(dp), intent(in) :: fa(ncv)
+   !> rr  log radial mesh
+   real(dp), intent(in) :: rr(mmax)
 
    !Output variables
-   integer :: it, ierr
-   real(dp) :: etot
-   real(dp) :: ea(30, 2), rpk(30, 2)
-   real(dp) :: rho(mmax), rhoc(mmax), vi(mmax)
+   !> it  number of iterations (output)
+   integer, intent(out) :: it
+   !> ierr  error flag
+   integer, intent(out) :: ierr
+   !> etot  all-electron total energy (output)
+   real(dp), intent(out) :: etot
+   !> ea  eigenvalues (output)
+   real(dp), intent(out) :: ea(30, 2)
+   !> rpk  radius of outermost peak of wave function
+   real(dp), intent(out) :: rpk(30, 2)
+   real(dp), intent(out) :: rho(mmax)
+   real(dp), intent(out) :: rhoc(mmax)
+   !> vi  all-electron potential (output)
+   real(dp), intent(out) :: vi(mmax)
 
    !Local function
    real(dp) :: tfapot

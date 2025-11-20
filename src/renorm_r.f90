@@ -16,31 +16,31 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> renormalize Dirac wave function so that large component is normalized
 subroutine renorm_r(uu, rr, ll, kap, zz, mmax, cnorm)
-
-   ! renormalize Dirac wave function so that large component is normalized
-
-   !uu  Dirac wave function
-   !rr  log radial grid
-   !ll  angular momentum
-   !kap  Dirac kappa
-   !zz  atomic number
-   !mmax  size of radial grid
-   !cnorm  renormalization coefficient
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
    !Input variables
-   real(dp) :: rr(mmax)
-   real(dp) :: zz
-   integer :: ll, kap, mmax
+   !> mmax  size of radial grid
+   integer, intent(in) :: mmax
+   !> rr  log radial grid
+   real(dp), intent(in) :: rr(mmax)
+   !> zz  atomic number
+   real(dp), intent(in) :: zz
+   !> ll  angular momentum
+   integer, intent(in) :: ll
+   !> kap  Dirac kappa
+   integer, intent(in) :: kap
+
 
    !Output variable
-   real(dp) :: cnorm
+   !> cnorm  renormalization coefficient
+   real(dp), intent(out) :: cnorm
 
-   !Input/Output variable
-   real(dp) :: uu(mmax, 2)
+   !> Input/Output variable
+   !> uu  Dirac wave function
+   real(dp), intent(in out) :: uu(mmax, 2)
 
    !Local variables
    real(dp) :: sn

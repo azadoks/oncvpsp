@@ -16,33 +16,33 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> polynomial extrapolation of all-electron potential to rr=0
 subroutine vploc(rr, vv, vp, dvloc0, irc, mmax, lpopt)
-
-   !polynomial extrapolation of all-electron potential to rr=0
-
-   !rr log radial mesh
-   !vv all-electron  potential
-   !vp pseudopotentials, vp(:,5) is local to be created by this routine
-   !dvloc0  amplitude at rr==0 of smooth "null space" function to be added
-   !irc  matching radius for polynomial potential
-   !mmax  dimension of rr
-   !lpopt  1-5, determines polynomial to be used
-   !  1) match 2 derivatives, r**0,2,4
-   !  2) match 2 derivatives, r**0,4,6
-   !  3) match 3 derivatives, r**0,4,5,6
-   !  4) match 3 derivatives, r**0,4,6,8
-   !  5) match 3 derivatives, r**0,2,4,6
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
    ! Input variables
-   integer :: irc, mmax, lpopt
-   real(dp) :: dvloc0
-   real(dp) :: rr(mmax), vv(mmax)
+   !> irc  matching radius for polynomial potential
+   integer, intent(in) :: irc
+   !> mmax  dimension of rr
+   integer, intent(in) :: mmax
+   !> lpopt  1-5, determines polynomial to be used
+   !>   1) match 2 derivatives, r**0,2,4
+   !>   2) match 2 derivatives, r**0,4,6
+   !>   3) match 3 derivatives, r**0,4,5,6
+   !>   4) match 3 derivatives, r**0,4,6,8
+   !>   5) match 3 derivatives, r**0,2,4,6
+   integer, intent(in) :: lpopt
+   !> dvloc0  amplitude at rr==0 of smooth "null space" function to be added
+   real(dp), intent(in) :: dvloc0
+   !> rr log radial mesh
+   real(dp), intent(in) :: rr(mmax)
+   !> vv all-electron  potential
+   real(dp), intent(in) :: vv(mmax)
 
    ! Output variables
-   real(dp) :: vp(mmax, 5)
+   !> vp pseudopotentials, vp(:,5) is local to be created by this routine
+   real(dp), intent(out) :: vp(mmax, 5)
 
    !Local variables
    integer :: ii

@@ -16,46 +16,54 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
-! self-consistent pseudoatom calculation
-
+!> self-consistent pseudoatom calculation
 subroutine psatom_r(na, la, ea, fat, nv, it, rhoc, rho, &
 &           rr, rcmax, mmax, mxprj, iexc, etot, nproj, vpuns, lloc, vkb, evkb, ierr)
 
-   !na  principal quantum number array, dimension nv
-   !la  angular-momenta
-   !ea  eigenvalues (input starting guess, output)
-   !fa  occupancies
-   !rpk  radius of outermost peak of wave function
-   !nv  number of valence states
-   !it  number of iterations (output)
-   !rr  log radial mesh
-   !rcmax  maximum core radius for psp
-   !mmax  size of log grid
-   !mxprj  dimension of number of projectors
-   !iexc  exchange-correlation function to be used
-   !etot  pseudoatom total energy (output)
-   !nproj  number of VKB projectora to use for each l
-   !vpuns  unscreened semi-local pseudopotentials (plus differenv vloc if lloc==4)
-   !lloc  index-1 of local potential
-   !vkb   Vanderbilt-Kleinman-Bylander projectors
-   !evkb VKB projector coefficients
+   !> rpk  radius of outermost peak of wave function
 
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
    !Input variables
-
-   integer :: mmax, mxprj, iexc, nv, lloc, okb
-   integer :: na(30), la(30), nproj(5)
-   real(dp) :: rcmax
-   real(dp) :: fat(30, 2), rr(mmax)
-   real(dp) :: vpuns(mmax, 5), vkb(mmax, mxprj, 4, 2), evkb(mxprj, 4, 2)
+   !> mmax  size of log grid
+   integer, intent(in) :: mmax
+   !> mxprj  dimension of number of projectors
+   integer, intent(in) :: mxprj
+   !> iexc  exchange-correlation function to be used
+   integer, intent(in) :: iexc
+   !> nv  number of valence states
+   integer, intent(in) :: nv
+   !> lloc  index-1 of local potential
+   integer, intent(in) :: lloc
+   !> na  principal quantum number array, dimension nv
+   integer, intent(in) :: na(30)
+   !> la  angular-momenta
+   integer, intent(in) :: la(30)
+   !> nproj  number of VKB projectora to use for each l
+   integer, intent(in) :: nproj(5)
+   !> rcmax  maximum core radius for psp
+   real(dp), intent(in) :: rcmax
+   !> fa  occupancies
+   real(dp), intent(in) :: fat(30, 2)
+   !> rr  log radial mesh
+   real(dp), intent(in) :: rr(mmax)
+   !> vpuns  unscreened semi-local pseudopotentials (plus differenv vloc if lloc==4)
+   real(dp), intent(in) :: vpuns(mmax, 5)
+   !> vkb   Vanderbilt-Kleinman-Bylander projectors
+   real(dp), intent(in) :: vkb(mmax, mxprj, 4, 2)
+   !> evkb VKB projector coefficients
+   real(dp), intent(in) :: evkb(mxprj, 4, 2)
 
    !Output variables
-   integer :: it
-   real(dp) :: etot
-   real(dp) :: ea(30, 2)
-   real(dp) :: rho(mmax), rhoc(mmax), vi(mmax)
+   !> it  number of iterations (output)
+   integer, intent(out) :: it
+   !> etot  pseudoatom total energy (output)
+   real(dp), intent(out) :: etot
+   !> ea  eigenvalues (input starting guess, output)
+   real(dp), intent(out) :: ea(30, 2)
+   real(dp), intent(out) :: rho(mmax)
+   real(dp), intent(out) :: rhoc(mmax)
 
    !Local variables
    integer :: nin, mch
@@ -63,6 +71,7 @@ subroutine psatom_r(na, la, ea, fat, nv, it, rhoc, rho, &
    real(dp) :: dr, eeel, eexc, et, emin, emax, rl, rl1, sd, sn, sls, eeig
    real(dp) :: thl, vn, zval, dfa, fj
    real(dp) :: fa(30)
+   real(dp) :: vi(mmax)
    integer :: ii, jj, l1, ierr, icx, nprj
    integer :: ikap, kap, ll, mkap
    logical :: convg

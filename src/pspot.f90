@@ -16,44 +16,48 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> calculates optimized pseudopotential from coefficients of optimized
+!> pseudo wave function and all-electron wave function
 subroutine pspot(ipr, ll, rr, irc, mmax, al, nbas, qroot, eig, uu, pswfopt_sb, &
 &           psopt, vae, vpsp, vkb, ekin_num)
-
-   !calculates optimized pseudopotential from coefficients of optimized
-   !pseudo wave function and all-electron wave function
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
-   !INPUT
-   !ipr 1 for first projector, 2 for second which usually has a node
-   !ll  angular momentum
-   !rr  log radial mesh
-   !irc  index of rc
-   !mmax  last point of rr
-   !al  log of mesh spacing factor
-   !nbas  number of sbfs
-   !qroot  q's for set of sbf
-   !eig  eigenvalue of all-electron wave function
-   !uu  rr*all-electron wave function
-   !pswfopt_sb  sbf coefficients for optimized pseudo wave function
-   !vae  all-electron potential
-
-   !OUTPUT
-   !psopt  rr * pseudo wave function on log grid
-   !vpsp  pseudopotential
-   !vkb  (epsilon-T)*phi component of chi projector
-   !ekin_num  total radial kinetic energy
-
    !Input variables
-   integer :: ipr, ll, irc, mmax, nbas
-   real(dp) :: rr(mmax), qroot(nbas), uu(mmax), pswfopt_sb(nbas), vae(mmax)
-   real(dp) :: al, eig
+   !> ipr 1 for first projector, 2 for second which usually has a node
+   integer, intent(in) :: ipr
+   !> ll  angular momentum
+   integer, intent(in) :: ll
+   !> irc  index of rc
+   integer, intent(in) :: irc
+   !> mmax  last point of rr
+   integer, intent(in) :: mmax
+   !> nbas  number of sbfs
+   integer, intent(in) :: nbas
+   !> rr  log radial mesh
+   real(dp), intent(in) :: rr(mmax)
+   !> qroot  q's for set of sbf
+   real(dp), intent(in) :: qroot(nbas)
+   !> uu  rr*all-electron wave function
+   real(dp), intent(in) :: uu(mmax)
+   !> pswfopt_sb  sbf coefficients for optimized pseudo wave function
+   real(dp), intent(in) :: pswfopt_sb(nbas)
+   !> vae  all-electron potential
+   real(dp), intent(in) :: vae(mmax)
+   !> al  log of mesh spacing factor
+   real(dp), intent(in) :: al
+   !> eig  eigenvalue of all-electron wave function
+   real(dp), intent(in) :: eig
 
    !Output variables
-   real(dp) :: psopt(mmax)
-   real(dp) :: vpsp(mmax), vkb(mmax)
-   real(dp) :: ekin_num
+   !> psopt  rr * pseudo wave function on log grid
+   real(dp), intent(out) :: psopt(mmax)
+   !> vpsp  pseudopotential
+   real(dp), intent(out) :: vpsp(mmax)
+   !> vkb  (epsilon-T)*phi component of chi projector
+   real(dp), intent(out) :: vkb(mmax)
+   !> ekin_num  total radial kinetic energy
+   real(dp), intent(out) :: ekin_num
 
    !Local variables
    real(dp), allocatable :: work(:, :)

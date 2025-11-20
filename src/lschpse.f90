@@ -16,37 +16,38 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> integrates radial Schroedinger equation for pseudopotential
+!> on a logarithmic mesh finding energy at which desired log derivative
+!> uld is matched at point mch
 subroutine lschpse(nn, ll, ierr, ee, uld, rr, vv, uu, up, mmax, mch)
-
-   ! integrates radial Schroedinger equation for pseudopotential
-   ! on a logarithmic mesh finding energy at which desired log derivative
-   ! uld is matched at point mch
-
-   !nn  principal quantum number
-   !ll  angular-momentum quantum number
-   !ierr  non-zero return if error
-   !ee  bound-state energy, input guess and output calculated value
-   !uld  log derivative to be matched
-   !rr  log radial mesh
-   !vv  semi-local pseudopotential
-   !uu  output radial wave function (*rr)
-   !up  d(uu)/dr
-   !mmax  size of log grid
-   !mch matching mesh point for inward-outward integrations
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
    !Input variables
-   integer :: mmax, mch
-   real(dp) :: rr(mmax), vv(mmax)
-   real(dp) :: uld
-   integer :: nn, ll
+   !> mmax  size of log grid
+   integer, intent(in) :: mmax
+   !> mch matching mesh point for inward-outward integrations
+   integer, intent(in) :: mch
+   !> rr  log radial mesh
+   real(dp), intent(in) :: rr(mmax)
+   !> vv  semi-local pseudopotential
+   real(dp), intent(in) :: vv(mmax)
+   !> uld  log derivative to be matched
+   real(dp), intent(in) :: uld
+   !> nn  principal quantum number
+   integer, intent(in) :: nn
+   !> ll  angular-momentum quantum number
+   integer, intent(in) :: ll
 
    !Output variables
-   real(dp) :: uu(mmax), up(mmax)
-   real(dp) :: ee
-   integer :: ierr
+   !> uu  output radial wave function (*rr)
+   real(dp), intent(out) :: uu(mmax)
+   !> up  d(uu)/dr
+   real(dp), intent(out) :: up(mmax)
+   !> ee  bound-state energy, input guess and output calculated value
+   real(dp), intent(in out) :: ee
+   !> ierr  non-zero return if error
+   integer, intent(out) :: ierr
 
    !Local variables
    real(dp) :: aei, aeo, aii, aio, als, cn

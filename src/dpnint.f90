@@ -16,24 +16,25 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> local polynomial interpolation of data yy on nn points xx
+!> giving values ss on mm points tt
+!> npoly sets order of polynomial
+!> xx must be ordered in ascending order
+!> output mm interpolated values ss on points tt
 subroutine dpnint(xx, yy, nn, tt, ss, mm)
-
-   ! local polynomial interpolation of data yy on nn points xx
-   ! giving values ss on mm points tt
-   ! npoly sets order of polynomial
-   ! xx must be ordered in ascending order
-   ! output mm interpolated values ss on points tt
-
    implicit none
 
    integer, parameter :: dp = kind(1.0d0)
 
    !Input variables
-   real(dp) :: xx(*), yy(*), tt(*)
-   integer nn, mm
+   real(dp), intent(in) :: xx(*)
+   real(dp), intent(in) :: yy(*)
+   real(dp), intent(in) :: tt(*)
+   integer, intent(in) :: nn
+   integer, intent(in) :: mm
 
    !Output variables
-   real(dp) :: ss(*)
+   real(dp), intent(out) :: ss(*)
 
    !Local variables
    real(dp) :: sum, term, zz

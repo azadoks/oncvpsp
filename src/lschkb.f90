@@ -16,37 +16,37 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> outward integration of the inhomogeneous radial Schroedinger equation
+!> on a logarithmic mesh with local potential and one proector term
 subroutine lschkb(nn, ll, ierr, ee, vkb, rr, vv, uu, up, mmax, mch)
-
-   ! outward integration of the inhomogeneous radial Schroedinger equation
-   ! on a logarithmic mesh with local potential and one proector term
-
-   !nn  principal quantum number (not used)
-   !ll  angular-momentum quantum number
-   !ierr  non-zero return if error
-   !ee  bound-state energy, input guess and output calculated value
-   !vkb Vanderbilt-Kleinman-bylander projector
-   !rr  log radial mesh
-   !vv  local pseudopotential
-   !uu  output radial wave function (*rr)
-   !up  d(uu)/dr
-   !zz  atomic number
-   !mmax  size of log grid
-   !mch matching mesh point for inward-outward integrations
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
    !Input variables
-   integer :: mmax, mch
-   real(dp) :: rr(mmax), vv(mmax), vkb(mmax)
-   real(dp) :: zz
-   integer :: nn, ll
+   !> mmax  size of log grid
+   integer, intent(in) :: mmax
+   !> mch matching mesh point for inward-outward integrations
+   integer, intent(in) :: mch
+   !> rr  log radial mesh
+   real(dp), intent(in) :: rr(mmax)
+   !> vv  local pseudopotential
+   real(dp), intent(in) :: vv(mmax)
+   !> vkb Vanderbilt-Kleinman-bylander projector
+   real(dp), intent(in) :: vkb(mmax)
+   !> nn  principal quantum number (not used)
+   integer, intent(in) :: nn
+   !> ll  angular-momentum quantum number
+   integer, intent(in) :: ll
 
    !Output variables
-   real(dp) :: uu(mmax), up(mmax)
-   real(dp) :: ee
-   integer :: ierr
+   !> uu  output radial wave function (*rr)
+   real(dp), intent(out) :: uu(mmax)
+   !> up  d(uu)/dr
+   real(dp), intent(out) :: up(mmax)
+   !> ee  bound-state energy, input guess and output calculated value
+   real(dp), intent(out) :: ee
+   !> ierr  non-zero return if error
+   integer, intent(out) :: ierr
 
    !Local variables
    real(dp) :: amesh, al

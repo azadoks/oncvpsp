@@ -16,40 +16,41 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> integrates radial Pauli-type scalar-relativistic equation
+!> on a logarithmic mesh
+!> modified routine to be used in finding norm-conserving
+!> pseudopotential
 subroutine lschfs(nn, ll, ierr, ee, rr, vv, uu, up, zz, mmax, mch, srel)
-
-   ! integrates radial Pauli-type scalar-relativistic equation
-   ! on a logarithmic mesh
-   ! modified routine to be used in finding norm-conserving
-   ! pseudopotential
-
-   !nn  effective principal quantum number based on nodes inside mch (output)
-   !ll  angular-momentum quantum number
-   !ierr  non-zero return if error
-   !ee  bound-state energy, input guess and output calculated value
-   !rr  log radial mesh
-   !vv  local atomic potential
-   !uu  output radial wave function (*rr)
-   !up  d(uu)/dr
-   !zz  atomic number
-   !mmax  size of log grid
-   !mch matching mesh point for inward-outward integrations
-   !srel .true. for scalar-relativistic, .false. for non-relativistic
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
    !Input variables
-   integer :: mmax
-   real(dp) :: rr(mmax), vv(mmax)
-   real(dp) :: zz
-   integer :: ll, mch
-   logical :: srel
+   !> mmax  size of log grid
+   integer, intent(in) :: mmax
+   !> rr  log radial mesh
+   real(dp), intent(in) :: rr(mmax)
+   !> vv  local atomic potential
+   real(dp), intent(in) :: vv(mmax)
+   !> zz  atomic number
+   real(dp), intent(in) :: zz
+   !> ll  angular-momentum quantum number
+   integer, intent(in) :: ll
+   !> mch matching mesh point for inward-outward integrations
+   integer, intent(in) :: mch
+   !> srel .true. for scalar-relativistic, .false. for non-relativistic
+   logical, intent(in) :: srel
 
    !Output variables
-   real(dp) :: uu(mmax), up(mmax)
-   real(dp) :: ee
-   integer :: ierr, nn
+   !> uu  output radial wave function (*rr)
+   real(dp), intent(out) :: uu(mmax)
+   !> up  d(uu)/dr
+   real(dp), intent(out) :: up(mmax)
+   !> ee  bound-state energy, input guess and output calculated value
+   real(dp), intent(out) :: ee
+   !> ierr  non-zero return if error
+   integer, intent(out) :: ierr
+   !> nn  effective principal quantum number based on nodes inside mch (output)
+   integer, intent(out) :: nn
 
    !Local variables
    real(dp) :: amesh, al

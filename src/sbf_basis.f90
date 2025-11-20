@@ -16,33 +16,35 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> orthonormalize basis functions and derivatives at rc and find all-electron
+!> charge inside rc.
 subroutine sbf_basis(ll, rr, mmax, irc, nbas, qroot, sbasis, orbasis, orbasis_der, &
 &                     nconmx)
-
-   !orthonormalize basis functions and derivatives at rc and find all-electron
-   !charge inside rc.
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
-   !INPUT
-   !ll  angujlar momentum
-   !rr  log radial mesh
-   !mmax  number of points in log radial mesh
-   !irc  index rr such that rr(irc)=rc
-   !nbas  number of basis functions
-   !qroot  q values for j_l(q*r)
+   !Input variables
+   !> ll  angujlar momentum
+   integer, intent(in) :: ll
+   !> mmax  number of points in log radial mesh
+   integer, intent(in) :: mmax
+   integer, intent(in) :: nconmx
+   !> irc  index rr such that rr(irc)=rc
+   integer, intent(in) :: irc
+   !> nbas  number of basis functions
+   integer, intent(in) :: nbas
+   !> rr  log radial mesh
+   real(dp), intent(in) :: rr(mmax)
+   !> qroot  q values for j_l(q*r)
+   real(dp), intent(in) :: qroot(nbas)
 
-   !OUTPUT
-   !sbasis  normalization coefficients for j_l basis set
-   !orbasis  matrix for orthonormal basis (rows j_l, columns basis vectors)
-   !orbasis_der  values and derivatives of orthonormal basis set at rc,
-
-   !Arguments
-   integer :: ll, mmax, nconmx, irc, nbas
-   real(dp) :: rr(mmax), qroot(nbas)
-   real(dp) :: sbasis(nbas), orbasis(nbas, nbas)
-   real(dp) :: orbasis_der(nconmx, nbas)
+   !Output variables
+   !> sbasis  normalization coefficients for j_l basis set
+   real(dp), intent(out) :: sbasis(nbas)
+   !> orbasis  matrix for orthonormal basis (rows j_l, columns basis vectors)
+   real(dp), intent(out) :: orbasis(nbas, nbas)
+   !> orbasis_der  values and derivatives of orthonormal basis set at rc,
+   real(dp), intent(out) :: orbasis_der(nconmx, nbas)
 
    !Local variables
    integer :: ii, jj, ll1, ibas, info

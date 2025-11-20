@@ -16,35 +16,38 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> Finds relativistic scattering states of an al-electron potential
 subroutine ldiracfs(nn, ll, kap, ierr, ee, rr, zz, vv, uu, up, mmax, mch)
-
-   ! Finds relativistic scattering states of an al-electron potential
-
-   !nn  effective principal quantum number based on nodes inside mch (output)
-   !ll  angular-momentum quantum number
-   !kap =l, -(l+1) for j=l -/+ 1/2
-   !ierr  non-zero return if error
-   !ee  bound-state energy, input guess and output calculated value
-   !rr  log radial mesh
-   !zz  atomic number
-   !vv  local psp
-   !uu(mmax,jj)  output radial wave functions (*rr) jj=1,2 for large, small
-   !up  d(uu)/dr
-   !mmax  size of log grid
-   !mch matching mesh point for inward-outward integrations
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
    !Input variables
-   real(dp) :: rr(mmax), vv(mmax)
-   real(dp) :: zz
-   integer :: ll, kap, mmax
+   !> mmax  size of log grid
+   integer, intent(in) :: mmax
+   !> rr  log radial mesh
+   real(dp), intent(in) :: rr(mmax)
+   !> vv  local psp
+   real(dp), intent(in) :: vv(mmax)
+   !> zz  atomic number
+   real(dp), intent(in) :: zz
+   !> ll  angular-momentum quantum number
+   integer, intent(in) :: ll
+   !> kap =l, -(l+1) for j=l -/+ 1/2
+   integer, intent(in) :: kap
 
    !Output variables
-   real(dp) :: uu(mmax, 2), up(mmax, 2)
-   real(dp) :: ee
-   integer :: ierr, mch, nn
+   !> uu(mmax,jj)  output radial wave functions (*rr) jj=1,2 for large, small
+   real(dp), intent(out) :: uu(mmax, 2)
+   !> up  d(uu)/dr
+   real(dp), intent(out) :: up(mmax, 2)
+   !> ee  bound-state energy, input guess and output calculated value
+   real(dp), intent(out) :: ee
+   !> ierr  non-zero return if error
+   integer, intent(out) :: ierr
+   !> mch matching mesh point for inward-outward integrations
+   integer, intent(out) :: mch
+   !> nn  effective principal quantum number based on nodes inside mch (output)
+   integer, intent(out) :: nn
 
    !Local Variables
 

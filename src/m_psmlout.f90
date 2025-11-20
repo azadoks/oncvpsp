@@ -36,57 +36,65 @@ subroutine psmlout(lmax, lloc, rc, vkb, evkb, mxprj, nproj, rr, vpuns, rho, rhom
 &                  na, la, ncon, nbas, nvcnf, nacnf, lacnf, nc, nv, lpopt, ncnf, &
 &                  fa, rc0, ep, qcut, debl, facnf, dvloc0, fcfact, &
 &                  epsh1, epsh2, depsh, rlmax, psfile)
-
-   !lmax  maximum angular momentum
-   !lloc  l for local potential
-   !rc  core radii
-   !vkb  VKB projectors
-   !evkb  coefficients of VKB projectors
-   !nproj  number of vkb projectors for each l
-   !rr  log radial grid
-   !vpuns  unscreened semi-local pseudopotentials (vp(:,5) is local potential
-   !  if linear combination is used)
-   !rho  valence pseudocharge
-   !rhomod  model core charge
-   !zz  atomic number
-   !zion  at this point, total valence charge (becomes psuedoion charge)
-   !mmax  size of log radial grid
-   !iexc  type of exchange-correlation
-   !icmod  1 if model core charge is used, otherwise 0
-   !nrl size of linear radial grid
-   !drl spacing of linear radial grid
-   !atsym  atomic symbol
-   !epstot  pseudoatom total energy
-   !psfile  should be 'upf'
-
    ! Alberto Garcia, February 1, 2015
-
    use xmlf90_wxml     ! To write XML files
    use m_libxc_list  ! For ease of libxc handling
-
    implicit none
 
    real(dp), parameter :: pi = 3.141592653589793238462643383279502884197_dp
 
    !Input variables
-   integer :: lmax, lloc, iexc, mmax, nrl, icmod
+   !> lmax  maximum angular momentum
+   integer :: lmax
+   !> lloc  l for local potential
+   integer :: lloc
+   !> iexc  type of exchange-correlation
+   integer :: iexc
+   !> mmax  size of log radial grid
+   integer :: mmax
+   !> nrl size of linear radial grid
+   integer :: nrl
+   !> icmod  1 if model core charge is used, otherwise 0
+   integer :: icmod
+   !> nproj  number of vkb projectors for each l
    integer :: nproj(6)
    integer :: irct ! index of point at which rho_core is matched
    logical :: srel ! whether it is scalar-relativistic or not
    integer :: mxprj !> maximum number of projectors for any l
-   real(dp) :: drl, fcfact, zz, zion, epstot
-   real(dp), target :: rr(mmax), vpuns(mmax, 5), rho(mmax), vkb(mmax, mxprj, 4)
+   !> drl spacing of linear radial grid
+   real(dp) :: drl
+   real(dp) :: fcfact
+   !> zz  atomic number
+   real(dp) :: zz
+   !> zion  at this point, total valence charge (becomes psuedoion charge)
+   real(dp) :: zion
+   !> epstot  pseudoatom total energy
+   real(dp) :: epstot
+   !> rr  log radial grid
+   real(dp), target :: rr(mmax)
+   !> vpuns  unscreened semi-local pseudopotentials (vp(:,5) is local potential
+   !>   if linear combination is used)
+   real(dp), target :: vpuns(mmax, 5)
+   !> rho  valence pseudocharge
+   real(dp), target :: rho(mmax)
+   !> vkb  VKB projectors
+   real(dp), target :: vkb(mmax, mxprj, 4)
+   !> rhomod  model core charge
    real(dp), target :: rhomod(mmax, 5)
-   real(dp) :: rc(6), evkb(mxprj, 4)
+   !> rc  core radii
+   real(dp) :: rc(6)
+   !> evkb  coefficients of VKB projectors
+   real(dp) :: evkb(mxprj, 4)
+   !> atsym  atomic symbol
    character*2 :: atsym
-
-   !additional input for upf output to echo input file, all as defined
+   ! additional input for upf output to echo input file, all as defined
    ! in the main progam
    integer :: na(30), la(30), ncon(6), nbas(6)
    integer :: nvcnf(5), nacnf(30, 5), lacnf(30, 5)
    integer :: nc, nv, lpopt, ncnf
    real(dp) :: fa(30), rc0(6), ep(6), qcut(6), debl(6), facnf(30, 5)
    real(dp) :: dvloc0, epsh1, epsh2, depsh, rlmax
+   !> psfile  should be 'upf'
    character*4 :: psfile
 
    !Local variables

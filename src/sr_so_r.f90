@@ -16,39 +16,42 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> reformulates non-local potentials based on j = l +/- 1/2 to scalar-
+!> relativistic and L dot S projectors
+!> uses relationship <L dot S> = (J^2 - L^2 - S^2)/2
+!> so L dot S = +/- l/2 for j = l +/- 1/2
 subroutine sr_so_r(lmax, irc, nproj, rr, mmax, mxprj, evkb, vkb, &
 &                       vsr, esr, vso, eso)
-
-   ! reformulates non-local potentials based on j = l +/- 1/2 to scalar-
-   ! relativistic and L dot S projectors
-   ! uses relationship <L dot S> = (J^2 - L^2 - S^2)/2
-   ! so L dot S = +/- l/2 for j = l +/- 1/2
-
-   !lmax  maximum angular momentum
-   !irc  core radii indices
-   !nproj  number of projectors for each l
-   !rr  log radial grid
-   !mmax  size of radial grid
-   !mmax  dimension of log grid
-   !mxprj  dimension of number of projectors
-   !vkb  vkb projectors
-   !evkb  coefficients of BKB projectors
-   !vsr  normalized scalar projectors
-   !esr  energy  coefficients of vscal
-   !vso  normalized spin-orbig projectors
-   !esol  energy  coefficients of vso
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
    !Input variables
-   integer :: lmax, lloc, lpopt, mmax, mxprj
-   integer :: irc(6), nproj(6)
-   real(dp) :: rr(mmax), vkb(mmax, mxprj, 4, 2), evkb(mxprj, 4, 2)
+   !> lmax  maximum angular momentum
+   integer, intent(in) :: lmax
+   !> mmax  dimension of log grid
+   integer, intent(in) :: mmax
+   !> mxprj  dimension of number of projectors
+   integer, intent(in) :: mxprj
+   !> irc  core radii indices
+   integer, intent(in) :: irc(6)
+   !> nproj  number of projectors for each l
+   integer, intent(in) :: nproj(6)
+   !> rr  log radial grid
+   real(dp), intent(in) :: rr(mmax)
+   !> vkb  vkb projectors
+   real(dp), intent(in) :: vkb(mmax, mxprj, 4, 2)
+   !> evkb  coefficients of BKB projectors
+   real(dp), intent(in) :: evkb(mxprj, 4, 2)
 
    !Output variables
-   real(dp) :: vsr(mmax, 2*mxprj, 4), esr(2*mxprj, 4)
-   real(dp) :: vso(mmax, 2*mxprj, 4), eso(2*mxprj, 4)
+   !> vsr  normalized scalar projectors
+   real(dp), intent(out) :: vsr(mmax, 2*mxprj, 4)
+   !> esr  energy  coefficients of vscal
+   real(dp), intent(out) :: esr(2*mxprj, 4)
+   !> vso  normalized spin-orbig projectors
+   real(dp), intent(out) :: vso(mmax, 2*mxprj, 4)
+   !> esol  energy  coefficients of vso
+   real(dp), intent(out) :: eso(2*mxprj, 4)
 
    !Local variables
    integer :: ii, jj, kk, ierr, ik1, ik2, ip1, ip2, ipk, ll, l1, info, nn

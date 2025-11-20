@@ -16,37 +16,42 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> Finds bound states of a semi-local pseudopotential
 subroutine lschpsbar(nn, ll, ierr, ee, emin, emax, rr, vv, uu, up, mmax, mbar, tht)
-
-   ! Finds bound states of a semi-local pseudopotential
-
-   !nn  principal quantum number
-   !ll  angular-momentum quantum number
-   !ierr  non-zero return if error/ input for box boundary condition (0 or 1)
-   !ee  bound-state energy, input guess and output calculated value (in/our)
-   !emin  lower bound, potential minimum if ==0.0
-   !emax  upper bound
-   !rr  log radial mesh
-   !vv  local psp
-   !uu  output radial wave function (*rr)
-   !up  d(uu)/dr
-   !mmax  size of log grid
-   !mbar  mesh point for infinite barrier
-   !tht  phast-shift angle for boundary condition, units of pi
 
    implicit none
    integer, parameter :: dp = kind(1.0d0)
    real(dp), parameter :: pi = 3.141592653589793238462643383279502884197_dp
 
    !Input variables
-   real(dp) :: rr(mmax), vv(mmax)
-   real(dp) :: emin, emax, tht
-   integer :: nn, ll, mmax, mbar
+   !> mmax  size of log grid
+   integer, intent(in) :: mmax
+   !> rr  log radial mesh
+   real(dp), intent(in) :: rr(mmax)
+   !> vv  local psp
+   real(dp), intent(in) :: vv(mmax)
+   !> emin  lower bound, potential minimum if ==0.0
+   real(dp), intent(in) :: emin
+   !> emax  upper bound
+   real(dp), intent(in) :: emax
+   !> tht  phast-shift angle for boundary condition, units of pi
+   real(dp), intent(in) :: tht
+   !> nn  principal quantum number
+   integer, intent(in) :: nn
+   !> ll  angular-momentum quantum number
+   integer, intent(in) :: ll
+   !> mbar  mesh point for infinite barrier
+   integer, intent(in) :: mbar
 
    !Output variables
-   real(dp) :: uu(mmax), up(mmax)
-   real(dp) :: ee
-   integer :: ierr
+   !> uu  output radial wave function (*rr)
+   real(dp), intent(out) :: uu(mmax)
+   !> up  d(uu)/dr
+   real(dp), intent(out) :: up(mmax)
+   !> ee  bound-state energy, input guess and output calculated value (in/our)
+   real(dp), intent(in out) :: ee
+   !> ierr  non-zero return if error/ input for box boundary condition (0 or 1)
+   integer, intent(out) :: ierr
 
    !Local Variables
 

@@ -166,7 +166,7 @@ contains
     type(xc_functl_t), intent(out) :: functl
     integer,           intent(in)  :: id
     integer,           intent(in)  :: ndim
-    real(8),             intent(in)  :: nel
+    real(8),           intent(in)  :: nel
     integer,           intent(in)  :: nspin
     integer,           intent(in)  :: deriv_method
 

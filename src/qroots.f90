@@ -16,33 +16,32 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> calculate q values for spherical Bessel function orthogonal basis inside r_c
+!> all having specified log derivative ulgd at rc
+!> 1st and 3rd output roots do not correspond to these conditions, rather
+!> 0.5 times the first matching root, and the average of the 1st and second
+!> matching roots
 subroutine qroots(ll, rc, ulgd, nroot, dltq, qmax, qroot)
-
-   !calculate q values for spherical Bessel function orthogonal basis inside r_c
-   !all having specified log derivative ulgd at rc
-   !1st and 3rd output roots do not correspond to these conditions, rather
-   !0.5 times the first matching root, and the average of the 1st and second
-   !matching roots
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
+   !Input variables
+   !> ll  angular momentum
+   integer, intent(in) :: ll
+   !> nroot  number of spherical Bessel functions matgching ulgd at rc (form
+   !>         orthogonal basis)
+   integer, intent(in) :: nroot
+   !> rc  core radius
+   real(dp), intent(in) :: rc
+   !> ulgd  log derivaive of all-electron radial wave function at rc
+   real(dp), intent(in) :: ulgd
+   !> dltq  step for search for qroots satisfying log derivative condition
+   real(dp), intent(in) :: dltq
+   !> qmax  maximum q for search
+   real(dp), intent(in) :: qmax
 
-   !INPUT
-   !ll  angular momentum
-   !rc  core radius
-   !ulgd  log derivaive of all-electron radial wave function at rc
-   !nroot  number of spherical Bessel functions matgching ulgd at rc (form
-   !        orthogonal basis)
-   !dltq  step for search for qroots satisfying log derivative condition
-   !qmax  maximum q for search
-
-   !OUTPuT
-   !qroot  set of q's satisfying dj_l(q*r)/dr / jl(q*r) = ulgd
-
-   !Arguments
-   integer :: ll, nroot
-   real(dp) :: rc, ulgd, dltq, qmax
-   real(dp) :: qroot(nroot)
+   !Output variables
+   !> qroot  set of q's satisfying dj_l(q*r)/dr / jl(q*r) = ulgd
+   real(dp), intent(out) :: qroot(nroot)
 
    !Local variables
    real(dp), parameter :: eps = 1.0d-12

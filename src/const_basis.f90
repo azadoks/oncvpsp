@@ -16,43 +16,52 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
-!calculates basis for residual energy minimization
-
+!> calculates basis for residual energy minimization
 subroutine const_basis(nbas, ncon, cons, orbasis, orbasis_der,&
 &                       pswf0_or, pswfnull_or, &
 &                       pswf0_sb, pswfnull_sb, ps0norm)
-
-   !ncon  number of constraints
-   !nbas  number of orthogonalized sbf basis functions
-   !cons  constraints (value at rc and derivatives up to 4th)
-   !orbasis  coefficients of sbfs in orthogonal basis
-   !orbasis_der  values and derivatives of orthogonalized sbf basis
-   !              functions at rc (constraint matrix)
-   !pswf0_sb  linear combination of sbfs that matches cons at rc
-   !pswfnull_sb  nbas-ncon linear combinations of sbfs satisfying value and ncon-1
-   !           derivatives at rc == 0 (null space of constraint matrix)
-   !          These form an orthonormal set, and are all orthogonal to
-   !          the pswf0 combination (which is not normalized)
-   !ps0norm  charge contained in ps0 inside rc
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
    !input variables
-   integer :: ncon, nbas
-   real(dp) :: orbasis(nbas, nbas), orbasis_der(ncon, nbas), cons(ncon)
+   !> ncon  number of constraints
+   integer, intent(in) :: ncon
+   !> nbas  number of orthogonalized sbf basis functions
+   integer, intent(in) :: nbas
+   !> orbasis  coefficients of sbfs in orthogonal basis
+   real(dp), intent(in) :: orbasis(nbas, nbas)
+   !> orbasis_der  values and derivatives of orthogonalized sbf basis
+   !>               functions at rc (constraint matrix)
+   real(dp), intent(in) :: orbasis_der(ncon, nbas)
+   !> cons  constraints (value at rc and derivatives up to 4th)
+   real(dp), intent(in) :: cons(ncon)
 
    !Output variables
-   real(dp) :: pswf0_or(nbas), pswfnull_or(nbas, nbas - ncon)
-   real(dp) :: pswf0_sb(nbas), pswfnull_sb(nbas, nbas - ncon)
-   real(dp) :: ps0norm
+   real(dp), intent(out) :: pswf0_or(nbas)
+   real(dp), intent(out) :: pswfnull_or(nbas, nbas - ncon)
+   !> pswf0_sb  linear combination of sbfs that matches cons at rc
+   real(dp), intent(out) :: pswf0_sb(nbas)
+   !> pswfnull_sb  nbas-ncon linear combinations of sbfs satisfying value and ncon-1
+   !>            derivatives at rc == 0 (null space of constraint matrix)
+   !>           These form an orthonormal set, and are all orthogonal to
+   !>           the pswf0 combination (which is not normalized)
+   real(dp), intent(out) :: pswfnull_sb(nbas, nbas - ncon)
+   !> ps0norm  charge contained in ps0 inside rc
+   real(dp), intent(out) :: ps0norm
 
    !Local variables
-   real(dp) :: usvd(10, 10), ss(10), work(100), con_tst(10)
-   real(dp), allocatable :: amat(:, :), vt(:, :)
+   real(dp) :: usvd(10, 10)
+   real(dp) :: ss(10)
+   real(dp) :: work(100)
+   real(dp) :: con_tst(10)
+   real(dp), allocatable :: amat(:, :)
+   real(dp), allocatable :: vt(:, :)
    real(dp) :: sn
    real(dp), parameter :: eps = 1.d-8
-   integer :: ii, jj, kk, info
+   integer :: ii
+   integer :: jj
+   integer :: kk
+   integer :: info
 
    !DGESVD( JOBU, JOBVT, M, N, A, LDA, S, U, LDU, VT, LDVT,
    !     $                   WORK, LWORK, INFO )

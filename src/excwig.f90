@@ -16,15 +16,12 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> Wigner ingerpolation formula for exchange-correlation potential and
+!> energy density
 subroutine excwig(rho, vxc, exc, mmax)
 
-   ! Wigner ingerpolation formula for exchange-correlation potential and
-   ! energy density
 
-   !rho  charge density
-   !vxc  exchange-correlation potential
-   !exc  exchange-correlation energy density
-   !mmax  dimension of log radial grid
+
 
    implicit none
 
@@ -35,11 +32,16 @@ subroutine excwig(rho, vxc, exc, mmax)
    real(dp), parameter :: thrd = 1.0d0/3.0d0
 
    !Input variables
-   real(dp) :: rho(mmax)
+   !> mmax  dimension of log radial grid
    integer :: mmax
+   !> rho  charge density
+   real(dp) :: rho(mmax)
 
    !Output variables
-   real(dp) :: vxc(mmax), exc(mmax)
+   !> vxc  exchange-correlation potential
+   real(dp) :: vxc(mmax)
+   !> exc  exchange-correlation energy density
+   real(dp) :: exc(mmax)
 
    !Local vafriables
    real(dp) :: rh, rs

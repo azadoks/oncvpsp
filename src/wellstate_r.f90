@@ -16,40 +16,45 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> creates quantum well to confine positive-energy state, and calculates
+!> the resulting all-electron wave function
 subroutine wellstate_r(nnin, ll, kap, irc, ep, rr, vfull, vwell, &
 &                      uu, up, zz, mmax, mch, srel)
-
-   !creates quantum well to confine positive-energy state, and calculates
-   !the resulting all-electron wave function
-
-   !nn  principal quantum number of well state
-   !ll  angular momentum
-   !kap =l, -(l+1) for j=l -/+ 1/2
-   !irc  index of core radius
-   !ep  target energy for well state (>0)
-   !rr  log radial mesh
-   !vfull  all-electron potential
-   !vwell  potential with binding well for ikap=2 calculation
-   !uu  all-electron well-bound wave function
-   !up  d(uu)/dr
-   !zz  atomic number
-   !mmax  size of log radial mesh
-   !mch matching mesh point for inward-outward integrations
-   !srel .true. for scalar-relativistic, .false. for non-relativistic
-
    implicit none
 
    integer, parameter :: dp = kind(1.0d0)
 
    !Input variables
-   real(dp) :: rr(mmax), vfull(mmax)
-   real(dp) :: ep, zz
-   integer :: nnin, ll, kap, irc, mmax !(nnin is actually in/out)
-   logical :: srel
+   !> mmax  size of log radial mesh
+   integer, intent(in) :: mmax
+   !> rr  log radial mesh
+   real(dp), intent(in) :: rr(mmax)
+   !> vfull  all-electron potential
+   real(dp), intent(in) :: vfull(mmax)
+   !> ep  target energy for well state (>0)
+   real(dp), intent(in) :: ep
+   !> zz  atomic number
+   real(dp), intent(in) :: zz
+   !> nn  principal quantum number of well state
+   integer, intent(in out) :: nnin  !(nnin is actually in/out)
+   !> ll  angular momentum
+   integer, intent(in) :: ll
+   !> kap =l, -(l+1) for j=l -/+ 1/2
+   integer, intent(in) :: kap
+   !> irc  index of core radius
+   integer, intent(in) :: irc
+   !> srel .true. for scalar-relativistic, .false. for non-relativistic
+   logical, intent(in) :: srel
 
    !Output variables
-   real(dp) :: uu(mmax, 2), up(mmax, 2), vwell(mmax)
-   integer :: mch
+   !> uu  all-electron well-bound wave function
+   real(dp), intent(out) :: uu(mmax, 2)
+   !> up  d(uu)/dr
+   real(dp), intent(out) :: up(mmax, 2)
+   !> vwell  potential with binding well for ikap=2 calculation
+   real(dp), intent(out) :: vwell(mmax)
+   !> mch matching mesh point for inward-outward integrations
+   integer, intent(out) :: mch
 
    !Local variables
    real(dp) :: al, cwell, et, xx, rwell, rwmax, rwmin, rwscale, umax

@@ -16,47 +16,53 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
-! Creates monotonic polynomial model core charge matching all-electron
-! core charge and 4 derivatives at "crossover" radius.
-! Polynomial is 8th-order with no linear term.
-
-! Performs analysis and based on "hardness" criterion described in
-! Teter, Phys. Rev. B 48, 5031 (1993) , Appendix, as
-
+!> Creates monotonic polynomial model core charge matching all-electron
+!> core charge and 4 derivatives at "crossover" radius.
+!> Polynomial is 8th-order with no linear term.
+!> Performs analysis and based on "hardness" criterion described in
+!> Teter, Phys. Rev. B 48, 5031 (1993) , Appendix, as
 subroutine modcore(icmod, rhops, rhotps, rhoc, rhoae, rhotae, rhomod, &
 &                   fcfact, rcfact, irps, mmax, rr, nc, nv, la, zion, iexc)
-
-   !icmod  3 coefficient optimizaion, 4 for specivied fcfact and rfact
-   !rhops  state-by-state pseudocharge density
-   !rhotps  total pseudocharge density
-   !rhoc  core-charge density
-   !rhoae  state-by-state all-electron valence charge density
-   !rhotae  total all-electron valence charge density
-   !rhomod  model core density and 4 derivatives
-   !fcfact  prefactor for model amplitude (multiplies crossover value)
-   !rcfact  prefactor for model scale (multiplies crossover radius)
-   !irps  rr index of maximum rc
-   !mmax  dimension of log grid
-   !rr log radial grid
-   !nc  number of core states
-   !nv  number of valence states
-   !la  angular-momenta
-   !zion  ion charge
-   !iexc  exchange-correlation function to be used
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
    !Input variables
-   integer :: icmod, nv, nc, iexc, irps, mmax
-   integer :: la(30)
-   real(dp) :: rhoae(mmax, nv), rhops(mmax, nv), rhotae(mmax)
-   real(dp) :: rhotps(mmax), rhoc(mmax), rr(mmax)
-   real(dp) :: zion, fcfact, rcfact
-   logical :: srel
+   !> icmod  3 coefficient optimizaion, 4 for specivied fcfact and rfact
+   integer, intent(in) :: icmod
+   !> nv  number of valence states
+   integer, intent(in) :: nv
+   !> nc  number of core states
+   integer, intent(in) :: nc
+   !> iexc  exchange-correlation function to be used
+   integer, intent(in) :: iexc
+   !> irps  rr index of maximum rc
+   integer, intent(in) :: irps
+   !> mmax  dimension of log grid
+   integer, intent(in) :: mmax
+   !> la  angular-momenta
+   integer, intent(in) :: la(30)
+   !> rhoae  state-by-state all-electron valence charge density
+   real(dp), intent(in) :: rhoae(mmax, nv)
+   !> rhops  state-by-state pseudocharge density
+   real(dp), intent(in) :: rhops(mmax, nv)
+   !> rhotae  total all-electron valence charge density
+   real(dp), intent(in) :: rhotae(mmax)
+   !> rhotps  total pseudocharge density
+   real(dp), intent(in) :: rhotps(mmax)
+   !> rhoc  core-charge density
+   real(dp), intent(in) :: rhoc(mmax)
+   !> rr log radial grid
+   real(dp), intent(in) :: rr(mmax)
+   !> zion  ion charge
+   real(dp), intent(in) :: zion
+   !> fcfact  prefactor for model amplitude (multiplies crossover value)
+   real(dp), intent(in) :: fcfact
+   !> rcfact  prefactor for model scale (multiplies crossover radius)
+   real(dp), intent(in) :: rcfact
 
    !Output variables
-   real(dp) :: rhomod(mmax, 5)
+   !> rhomod  model core density and 4 derivatives
+   real(dp), intent(out) :: rhomod(mmax, 5)
 
    !convergence criterion
    real(dp), parameter :: eps = 1.0d-7

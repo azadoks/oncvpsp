@@ -16,41 +16,46 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
-! computes the 2nd derivative of the contribution to the exchange-
-! correlation energy from the region where the valence pseudo wave functions
-! differ from the all-electron wave functions
-!
+
+!> computes the 2nd derivative of the contribution to the exchange-
+!> correlation energy from the region where the valence pseudo wave functions
+!> differ from the all-electron wave functions
 subroutine der2exc(rhotot, rhoc, rho, rr, d2exc, d2ref, d2mdiff, &
 &                   zion, iexc, nc, nv, la, ircut, mmax)
-
-   ! rhotot  total valence charge, all-electron of pseudo
-   ! rhoc  core charge, all-electron or model
-   ! rho  valence state-by-state charge (one-electron)
-   ! rr  log radial grid
-   ! d2exc  Exc 2nd-derivative matrix
-   ! d2ref  reference matrix
-   ! d2mdiff root-mean-squared differrenc between d2exc and d2ref
-   ! zion  ion potential
-   ! iexc  exchange-correlation type
-   ! nc  number of core states
-   ! nv  number of valence states
-   ! la  array of l values for all-electron atom
-   ! ircut  maximum-radius for which all-electron and pseudo charges differ
-   ! mmax  dimensiion of log grid
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
    ! Input variables
-   real(dp) :: rhotot(mmax), rhoc(mmax), rho(mmax, nv), rr(mmax)
-   real(dp) :: d2ref(nv, nv)
-   real(dp) :: zion
-   integer :: la(nv + nc)
-   integer :: iexc, nc, nv, ircut, mmax
+   !> rhotot  total valence charge, all-electron of pseudo
+   real(dp), intent(in) :: rhotot(mmax)
+   !> rhoc  core charge, all-electron or model
+   real(dp), intent(in) ::rhoc(mmax)
+   !> rho  valence state-by-state charge (one-electron)
+   real(dp), intent(in) ::rho(mmax, nv)
+   !> rr  log radial grid
+   real(dp), intent(in) ::rr(mmax)
+   !> d2ref  reference matrix
+   real(dp), intent(in) :: d2ref(nv, nv)
+   !> zion  ion potential
+   real(dp), intent(in) :: zion
+   !> la  array of l values for all-electron atom
+   integer, intent(in) :: la(nv + nc)
+   !> iexc  exchange-correlation type
+   integer, intent(in) :: iexc
+   !> nc  number of core states
+   integer, intent(in) :: nc
+   !> nv  number of valence states
+   integer, intent(in) :: nv
+   !> ircut  maximum-radius for which all-electron and pseudo charges differ
+   integer, intent(in) :: ircut
+   !> mmax  dimensiion of log grid
+   integer, intent(in) :: mmax
 
    ! Output variables
-   real(dp) :: d2exc(nv, nv)
-   real(dp) :: d2mdiff
+   !> d2exc  Exc 2nd-derivative matrix
+   real(dp), intent(out) :: d2exc(nv, nv)
+   !> d2mdiff root-mean-squared differrenc between d2exc and d2ref
+   real(dp), intent(out) :: d2mdiff
 
    ! Local variables
    real(dp) :: hh, eeel, eexc, ss

@@ -16,33 +16,38 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> computes Vanderbilt / Kleinman-Bylander outward-integrated wave functions
 subroutine vkboutwf(ll, nvkb, ep, vkb, evkb, rr, vloc, uu, up, node, mmax, mch)
-
-   ! computes Vanderbilt / Kleinman-Bylander outward-integrated wave functions
-
-   !ll  angular momentum
-   !nvkb  switch for 1 or 2 projedtors
-   !ep  energy at which wave function is to be calculated
-   !vkb  Vanderbilt-Kleinman-Bylander projectors for this l
-   !evkb  projector coefficients
-   !rr  log radial mesh
-   !vloc  local pseudopotential
-   !uu  wave function
-   !up  1st derivative of uu
-   !node  count of number of nodes from 0 to rr(mch)
-   !mmax  dimension of log mesh
-   !mch  index of radius to which wave function is to be integrated
 
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
    !Input variables
-   real(dp) :: rr(mmax), vloc(mmax), vkb(mmax, nvkb), evkb(nvkb)
-   real(dp) :: ep
-   integer nvkb, ll, mmax, mch
+   !> mmax  dimension of log mesh
+   integer, intent(in) :: mmax
+   !> nvkb  switch for 1 or 2 projedtors
+   integer, intent(in) ::  nvkb
+   !> rr  log radial mesh
+   real(dp), intent(in) :: rr(mmax)
+   !> vloc  local pseudopotential
+   real(dp), intent(in) :: vloc(mmax)
+   !> vkb  Vanderbilt-Kleinman-Bylander projectors for this l
+   real(dp), intent(in) :: vkb(mmax, nvkb)
+   !> evkb  projector coefficients
+   real(dp), intent(in) :: evkb(nvkb)
+   !> ep  energy at which wave function is to be calculated
+   real(dp), intent(in) :: ep
+   !> ll  angular momentum
+   integer, intent(in) :: ll
+   !> mch  index of radius to which wave function is to be integrated
+   integer, intent(in) :: mch
 
    !Output variables
-   real(dp) :: uu(mmax), up(mmax)
+   !> uu  wave function
+   real(dp), intent(out) :: uu(mmax)
+   !> up  1st derivative of uu
+   real(dp), intent(out) :: up(mmax)
+   !> node  count of number of nodes from 0 to rr(mch)
    integer node
 
    !Local variables

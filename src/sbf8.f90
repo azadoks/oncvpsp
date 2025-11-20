@@ -16,14 +16,8 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
-! calculates spherical Bessel functions using recursion algorithm
-
+!> calculates spherical Bessel functions using recursion algorithm
 subroutine sbf8(nm, xx, sb_out)
-
-   !nm  maximum angular momentum wanted plus 1
-   !xx  argument of spherical bessel function
-   !sb_out  output of sbf_l(xx) for l=0,...,nm-1
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
@@ -31,11 +25,14 @@ subroutine sbf8(nm, xx, sb_out)
    real(dp), parameter :: pi2 = 2.0_dp*pi
 
    !Input variables
-   integer :: nm
-   real(dp) :: xx
+   !> nm  maximum angular momentum wanted plus 1
+   integer, intent(in) :: nm
+   !> xx  argument of spherical bessel function
+   real(dp), intent(in) :: xx
 
    !Output variables
-   real(dp) :: sb_out(nm)
+   !> sb_out  output of sbf_l(xx) for l=0,...,nm-1
+   real(dp), intent(out) :: sb_out(nm)
 
    !Local variables
    integer :: nlim, nn

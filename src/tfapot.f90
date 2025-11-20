@@ -16,25 +16,22 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
-! tfapot
+!> generalized Thomas-Fermi atomic potential
+!> ...to an article of N. H. March ( "The Thomas-Fermi Approximation in
+!>  Quantum Mechanics", Adv. Phys. 6, 1 (1957)). He has the formula,
+!>  but it is not the result of his work. The original publication is:
+!>      R. Latter, Phys. Rev. 99, 510 (1955).
+!>  He says that it''s an analytic fit to an improved calculation of the
+!>  potential distribution of a Thomas-Fermi atom without exchange first
+!>  performed by Miranda (C. Miranda, Mem. Acc. Italia 5, 285 (1934)).
+!>                                  Alexander Seidl, TU Munich
 function tfapot(rr, zz)
-
-   ! generalized Thomas-Fermi atomic potential
-
-   !...to an article of N. H. March ( "The Thomas-Fermi Approximation in
-   ! Quantum Mechanics", Adv. Phys. 6, 1 (1957)). He has the formula,
-   ! but it is not the result of his work. The original publication is:
-   !     R. Latter, Phys. Rev. 99, 510 (1955).
-   ! He says that it''s an analytic fit to an improved calculation of the
-   ! potential distribution of a Thomas-Fermi atom without exchange first
-   ! performed by Miranda (C. Miranda, Mem. Acc. Italia 5, 285 (1934)).
-   !                                 Alexander Seidl, TU Munich
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
    !Input variables
-   real(dp) :: rr, zz
+   real(dp) :: rr
+   real(dp) :: zz
 
    !Output function
    real(dp) :: tfapot

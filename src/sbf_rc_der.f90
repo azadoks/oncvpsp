@@ -16,26 +16,25 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> calculate spherical Bessel function values and first four derivatives
 subroutine sbf_rc_der(llin, qq, rc, sbfder)
-
-   !calculate spherical Bessel function values and first four derivatives
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
-   !INPUT
-   ! llin  angular momentum l
-   ! qq  wave vector
-   ! rc  core radius
-   !
-   !OUTPUT
-   ! sbfder  values and first 4 derivatives of j_l(qq*rc)
+   !Input variables
+   !> llin  angular momentum l
+   integer, intent(in) :: llin
+   !> qq  wave vector
+   real(dp), intent(in) :: qq
+   !> rc  core radius
+   real(dp), intent(in) :: rc
 
-   !Arguments
-   integer :: llin
-   real(dp) :: qq, rc, xx, sbfder(5)
-   !
-   !local variables
+   !Output variables
+   !> sbfder  values and first 4 derivatives of j_l(qq*rc)
+   real(dp), intent(out) :: sbfder(5)
+
+   !Local variables
+   real(dp) :: xx
    real(dp) :: sb_out(10), sbfad(5, 10)
    integer :: ii, ll
 

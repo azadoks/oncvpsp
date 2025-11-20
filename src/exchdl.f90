@@ -16,11 +16,9 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> calculates Hedin-Lundquist exchange-correlation potential and energy
+!> density
 subroutine exchdl(rho, vxc, exc, mmax)
-
-   !calculates Hedin-Lundquist exchange-correlation potential and energy
-   !density
-
    implicit none
 
    integer, parameter :: dp = kind(1.0d0)
@@ -29,12 +27,17 @@ subroutine exchdl(rho, vxc, exc, mmax)
    real(dp), parameter :: pi4i = 1.0d0/pi4
    real(dp), parameter :: thrd = 1.0d0/3.0d0
 
-   !Inpupt variables
-   integer :: mmax
-   real(dp) :: rho(mmax)
+   !Input variables
+   !> mmax  dimension of log radial grid
+   integer, intent(in) :: mmax
+   !> rho  charge density
+   real(dp), intent(in) :: rho(mmax)
 
    !Output variables
-   real(dp) :: vxc(mmax), exc(mmax)
+   !> vxc  exchange-correlation potential
+   real(dp), intent(out) :: vxc(mmax)
+   !> exc  exchange-correlation energy density
+   real(dp), intent(out) :: exc(mmax)
 
    !Local variables
    integer :: ii

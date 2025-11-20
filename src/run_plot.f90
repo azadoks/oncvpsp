@@ -16,53 +16,66 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> write output for plotting pseudopotentials, model core charge, and
+!> all-electron and pseudo wave functions
 subroutine run_plot(lmax, npa, epa, lloc, irc, &
 &                    vkb, evkb, nproj, rr, vfull, vp, vpuns, zz, mmax, mxprj, drl, nrl, &
 &                    rho, rhoc, rhomod, srel, cvgplt)
-
-   ! write output for plotting pseudopotentials, model core charge, and
-   ! all-electron and pseudo wave functions
-
-   !lmax  maximum angular momentum
-   !npa  principal quantum number for corresponding all-electron state
-   !epa  bound-state or scattering state reference energies for vkb potentials
-   !lloc  l for local potential
-   !irc  indices of core radii
-   !vkb  VKB projectors
-   !evkb  coefficients of VKB projectors
-   !nproj  number of vkb projectors for each l
-   !rr  log radial grid
-   !vfull  all-electron potential
-   !vp  semi-local pseudopotentials
-   !vpuns  unscreened vp
-   !zz  atomic number
-   !mmax  size of radial grid
-   !mxprj  dimension of number of projector
-   !drl  spacing of linear radial mesh
-   !nrl  number of points in radial mesh
-   !rho  valence pseudocharge
-   !rhoc core charge
-   !rhomod  model core charge
-   !srel .true. for scalar-relativistic, .false. for non-relativistic
-   !cvgplt  Energy per electron error vs. cutoff
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
    !Input variables
-   integer :: lmax, lloc, mmax, mxprj, nlim, nrl
-   integer :: npa(mxprj, 6), npx(6), irc(6), lpx(6), nproj(6)
-   real(dp) :: zz, drl
-   real(dp) :: rr(mmax), vp(mmax, 5), vpuns(mmax, 5), vfull(mmax), vkb(mmax, mxprj, 4)
-   real(dp) :: rho(mmax), rhoc(mmax), rhomod(mmax, 5)
-   real(dp) :: epa(mxprj, 6), evkb(mxprj, 4), cvgplt(2, 7, mxprj, 4)
-   logical :: srel
+   !> lmax  maximum angular momentum
+   integer, intent(in) :: lmax
+   !> lloc  l for local potential
+   integer, intent(in) :: lloc
+   !> mmax  size of radial grid
+   integer, intent(in) :: mmax
+   !> mxprj  dimension of number of projector
+   integer, intent(in) :: mxprj
+   !> nrl  number of points in radial mesh
+   integer, intent(in) :: nrl
+   !> npa  principal quantum number for corresponding all-electron state
+   integer, intent(in) :: npa(mxprj, 6)
+   !> irc  indices of core radii
+   integer, intent(in) :: irc(6)
+   !> nproj  number of vkb projectors for each l
+   integer, intent(in) :: nproj(6)
+   !> zz  atomic number
+   real(dp), intent(in) :: zz
+   !> drl  spacing of linear radial mesh
+   real(dp), intent(in) :: drl
+   !> rr  log radial grid
+   real(dp), intent(in) :: rr(mmax)
+   !> vp  semi-local pseudopotentials
+   real(dp), intent(in) :: vp(mmax, 5)
+   !> vpuns  unscreened vp
+   real(dp), intent(in) :: vpuns(mmax, 5)
+   !> vfull  all-electron potential
+   real(dp), intent(in) :: vfull(mmax)
+   !> vkb  VKB projectors
+   real(dp), intent(in) :: vkb(mmax, mxprj, 4)
+   !> rho  valence pseudocharge
+   real(dp), intent(in) :: rho(mmax)
+   !> rhoc core charge
+   real(dp), intent(in) :: rhoc(mmax)
+   !> rhomod  model core charge
+   real(dp), intent(in) :: rhomod(mmax, 5)
+   !> epa  bound-state or scattering state reference energies for vkb potentials
+   real(dp), intent(in) :: epa(mxprj, 6)
+   !> evkb  coefficients of VKB projectors
+   real(dp), intent(in) :: evkb(mxprj, 4)
+   !> cvgplt  Energy per electron error vs. cutoff
+   real(dp), intent(in) :: cvgplt(2, 7, mxprj, 4)
+   !> srel .true. for scalar-relativistic, .false. for non-relativistic
+   logical, intent(in) :: srel
 
    !Output variables - printing only
 
    !Local variables
    integer :: ll, l1, ii, jj, ierr, mch, mchf, n1, n2, n3, n4, nn
-   integer :: iprj, nnp, npr
+   integer :: iprj, nnp, npr, nlim
+   integer :: npx(6), lpx(6)
    real(dp) :: al, emax, emin, etest, sls, rmx, sgnae, sgnps
    real(dp) :: r0, dr
    real(dp), allocatable :: uu(:), u2(:), up(:)

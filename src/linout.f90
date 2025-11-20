@@ -16,64 +16,92 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
-! interpolates various arrays onto linear radial mesh to create file
-! for Abinit input using pspcod=8
-
+!> interpolates various arrays onto linear radial mesh to create file
+!> for Abinit input using pspcod=8
 subroutine linout(lmax, lloc, rc, vkb, evkb, nproj, rr, vpuns, rho, rhomod, &
 &                  rhotae, rhoc, zz, zion, mmax, mxprj, iexc, icmod, nrl, drl, atsym, &
 &                  na, la, ncon, nbas, nvcnf, nacnf, lacnf, nc, nv, lpopt, ncnf, &
 &                  fa, rc0, ep, qcut, debl, facnf, dvloc0, fcfact, rcfact, &
 &                  epsh1, epsh2, depsh, rlmax, psfile)
-
-   !lmax  maximum angular momentum
-   !lloc  l for local potential
-   !rc  core radii
-   !vkb  VKB projectors
-   !evkb  coefficients of VKB projectors
-   !nproj  number of vkb projectors for each l
-   !rr  log radial grid
-   !vpuns  unscreened semi-local pseudopotentials (vp(:,5) is local potential
-   !  if linear combination is used)
-   !rho  valence pseudocharge
-   !rhomod  model core charge
-   !rhotae  all-electron valence charge
-   !rhoc  all-electron core charge
-   !zz  atomic number
-   !zion  at this point, total valence charge (becomes psuedoion charge)
-   !mmax  size of log radial grid
-   !mxprj  dimension of number of projectors
-   !iexc  type of exchange-correlation
-   !icmod  1 if model core charge is used, otherwise 0
-   !nrl size of linear radial grid
-   !drl spacing of linear radial grid
-   !atsym  atomic symbol
-   !remaining input variables to be echoed:
-   !  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf
-   !  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact
-   !  epsh1,epsh2,depsh,rlmax,psfile
-   !psfile  should be 'psp8' or 'both'
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
    !Input variables
-   integer :: lmax, lloc, iexc, mmax, mxprj, nrl, icmod
-   integer :: nproj(6)
-   real(dp) :: drl, fcfact, rcfact, zz, zion
-   real(dp) :: rr(mmax), vpuns(mmax, 5), rho(mmax), vkb(mmax, mxprj, 4)
-   real(dp) :: rhotae(mmax), rhoc(mmax)
-   real(dp) :: rhomod(mmax, 5)
-   real(dp) :: rc(6), evkb(mxprj, 4)
-   character*2 :: atsym
-
-   !additional input for psp8 output to echo input file, all as defined
+   !> lmax  maximum angular momentum
+   integer, intent(in) :: lmax
+   !> lloc  l for local potential
+   integer, intent(in) :: lloc
+   !> iexc  type of exchange-correlation
+   integer, intent(in) :: iexc
+   !> mmax  size of log radial grid
+   integer, intent(in) :: mmax
+   !> mxprj  dimension of number of projectors
+   integer, intent(in) :: mxprj
+   !> nrl size of linear radial grid
+   integer, intent(in) :: nrl
+   !> icmod  1 if model core charge is used, otherwise 0
+   integer, intent(in) :: icmod
+   !> nproj  number of vkb projectors for each l
+   integer, intent(in) :: nproj(6)
+   !> drl spacing of linear radial grid
+   real(dp), intent(in) :: drl
+   real(dp), intent(in) :: fcfact
+   real(dp), intent(in) :: rcfact
+   !> zz  atomic number
+   real(dp), intent(in) :: zz
+   !> zion  at this point, total valence charge (becomes psuedoion charge)
+   real(dp), intent(in) :: zion
+   !> rr  log radial grid
+   real(dp), intent(in) :: rr(mmax)
+   !> vpuns  unscreened semi-local pseudopotentials (vp(:,5) is local potential
+   !>   if linear combination is used)
+   real(dp), intent(in) :: vpuns(mmax, 5)
+   !> rho  valence pseudocharge
+   real(dp), intent(in) :: rho(mmax)
+   !> vkb  VKB projectors
+   real(dp), intent(in) :: vkb(mmax, mxprj, 4)
+   !> rhotae  all-electron valence charge
+   real(dp), intent(in) :: rhotae(mmax)
+   !> rhoc  all-electron core charge
+   real(dp), intent(in) :: rhoc(mmax)
+   !> rhomod  model core charge
+   real(dp), intent(in) :: rhomod(mmax, 5)
+   !> rc  core radii
+   real(dp), intent(in) :: rc(6)
+   !> evkb  coefficients of VKB projectors
+   real(dp), intent(in) :: evkb(mxprj, 4)
+   !> atsym  atomic symbol
+   character*2, intent(in) :: atsym
+   ! remaining input variables to be echoed:
+   !   na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf
+   !   fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact
+   !   epsh1,epsh2,depsh,rlmax,psfile
+   ! psfile  should be 'psp8' or 'both'
+   ! additional input for psp8 output to echo input file, all as defined
    ! in the main progam
-   integer :: na(30), la(30), ncon(6), nbas(6)
-   integer :: nvcnf(5), nacnf(30, 5), lacnf(30, 5)
-   integer :: nc, nv, lpopt, ncnf
-   real(dp) :: fa(30), rc0(6), ep(6), qcut(6), debl(6), facnf(30, 5)
-   real(dp) :: dvloc0, epsh1, epsh2, depsh, rlmax
-   character*4 :: psfile
+   integer, intent(in) :: na(30)
+   integer, intent(in) :: la(30)
+   integer, intent(in) :: ncon(6)
+   integer, intent(in) :: nbas(6)
+   integer, intent(in) :: nvcnf(5)
+   integer, intent(in) :: nacnf(30, 5)
+   integer, intent(in) :: lacnf(30, 5)
+   integer, intent(in) :: nc
+   integer, intent(in) :: nv
+   integer, intent(in) :: lpopt
+   integer, intent(in) :: ncnf
+   real(dp), intent(in) :: fa(30)
+   real(dp), intent(in) :: rc0(6)
+   real(dp), intent(in) :: ep(6)
+   real(dp), intent(in) :: qcut(6)
+   real(dp), intent(in) :: debl(6)
+   real(dp), intent(in) :: facnf(30, 5)
+   real(dp), intent(in) :: dvloc0
+   real(dp), intent(in) :: epsh1
+   real(dp), intent(in) :: epsh2
+   real(dp), intent(in) :: depsh
+   real(dp), intent(in) :: rlmax
+   character*4, intent(in) :: psfile
 
    !Output variables - printing only
 

@@ -16,48 +16,57 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> computes log derivatives, actually atan(r * ((d psi(r)/dr)/psi(r)))
+!> at rr(irphs) comparing all-electron with Vanderbilt-Kleinman-Bylander
+!> results for 1 and 2 projectors, or the semi-local pseudpotential
+!> when that is the local potential for some l
+!> the computed quantity is reminiscent of a scattering phase shift, but isn't
 subroutine run_phsft(lmax, lloc, nproj, epa, epsh1, epsh2, depsh, vkb, evkb, &
 &                     rr, vfull, vp, zz, mmax, mxprj, irc, srel)
-
-   ! computes log derivatives, actually atan(r * ((d psi(r)/dr)/psi(r)))
-   ! at rr(irphs) comparing all-electron with Vanderbilt-Kleinman-Bylander
-   ! results for 1 and 2 projectors, or the semi-local pseudpotential
-   ! when that is the local potential for some l
-   ! the computed quantity is reminiscent of a scattering phase shift, but isn't
-
-   !lmax  maximum angular momentum
-   !lloc  l for local potential
-   !nproj  number ov V / KB projectors for  each l
-   !ep  bound-state or scattering state reference energies for vkb potentials
-   !epsh1  low energy limit for "phase shift" calculation
-   !epsh2  high energy limit for "phase shift" calculation
-   !depsh  energy increment
-   !vkb  VKB projectors
-   !evkb  coefficients of VKB projectors
-   !rr  log radial grid
-   !vfull  all-electron potential
-   !vp  semi-local pseudopotentials (vp(:,5) is local potential if linear comb.)
-   !zz  atomic number
-   !mmax  size of radial grid
-   !mxprj dimension of number of projectors
-   !irphs  index of rr beyond which all vp==vlocal
-   !srel .true. for scalar-relativistic, .false. for non-relativistic
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
    !Input variables
-   integer :: lmax, lloc, mmax, mxprj
-   integer :: nproj(6), irc(6)
-   real(dp) :: epsh1, epsh2, depsh, zz
-   real(dp) :: rr(mmax), vp(mmax, 5), epa(mxprj, 6)
-   real(dp) :: vfull(mmax), vkb(mmax, mxprj, 4), evkb(mxprj, 4)
-   logical :: srel
+   !> lmax  maximum angular momentum
+   integer, intent(in) :: lmax
+   !> lloc  l for local potential
+   integer, intent(in) :: lloc
+   !> mmax  size of radial grid
+   integer, intent(in) :: mmax
+   !> mxprj dimension of number of projectors
+   integer, intent(in) :: mxprj
+   !> nproj  number ov V / KB projectors for  each l
+   integer, intent(in) :: nproj(6)
+   integer, intent(in) :: irc(6)
+   !> epsh1  low energy limit for "phase shift" calculation
+   real(dp), intent(in) :: epsh1
+   !> epsh2  high energy limit for "phase shift" calculation
+   real(dp), intent(in) :: epsh2
+   !> depsh  energy increment
+   real(dp), intent(in) :: depsh
+   !> zz  atomic number
+   real(dp), intent(in) :: zz
+   !> rr  log radial grid
+   real(dp), intent(in) :: rr(mmax)
+   !> vp  semi-local pseudopotentials (vp(:,5) is local potential if linear comb.)
+   real(dp), intent(in) :: vp(mmax, 5)
+   !> ep  bound-state or scattering state reference energies for vkb potentials
+   real(dp), intent(in) :: epa(mxprj, 6)
+   !> vfull  all-electron potential
+   real(dp), intent(in) :: vfull(mmax)
+   !> vkb  VKB projectors
+   real(dp), intent(in) :: vkb(mmax, mxprj, 4)
+   !> evkb  coefficients of VKB projectors
+   real(dp), intent(in) :: evkb(mxprj, 4)
+   !> srel .true. for scalar-relativistic, .false. for non-relativistic
+   logical, intent(in) :: srel
 
    !Output variables - printing only
 
    !Local variables
-   integer :: ii, irphs, ll, l1, npsh
+   !> irphs  index of rr beyond which all vp==vlocal
+   integer :: irphs
+   integer :: ii, ll, l1, npsh
    real(dp) :: epsh
 
    real(dp), allocatable :: pshf(:), pshp(:)

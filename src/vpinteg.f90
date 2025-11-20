@@ -16,19 +16,19 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> integrals that go into construction of Vanderbilt separable pseudopotential
+!> product of functions gg*hh goes like rr**mm at rr -> 0
+!> integral on usual log mesh from 1 to nn
 subroutine vpinteg(gg, hh, nn, mm, ss, rr)
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
-   ! integrals that go into construction of Vanderbilt separable pseudopotential
-
-   ! product of functions gg*hh goes like rr**mm at rr -> 0
-   ! integral on usual log mesh from 1 to nn
-
    !Input variables
-   real(dp) :: gg(nn), hh(nn), rr(nn)
-   integer :: nn, mm
+   integer :: nn
+   real(dp) :: gg(nn)
+   real(dp) :: hh(nn)
+   real(dp) :: rr(nn)
+   integer :: mm
 
    !Output variable
    real(dp) :: ss

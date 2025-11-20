@@ -16,23 +16,23 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
-! creates appropriate input file for GNUPLOT
-
+!> creates appropriate input file for GNUPLOT
 subroutine gnu_script_r(epa, evkb, lmax, lloc, mxprj, nproj)
-
-   !epa  wave function energies
-   !lmax  maximum angular momentum
-   !lloc  angular momentum for local potential (lloc=4 for polynomial, etc.)
-   !mxprj maximum number of projectors
-   !nproj number of projectors for each l
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
    !Input variables
-   integer :: lmax, lloc, mxprj
-   integer :: nproj(6)
-   real(dp) :: epa(mxprj, 6, 2), evkb(mxprj, 4, 2)
+   !> lmax  maximum angular momentum
+   integer, intent(in) :: lmax
+   !> lloc  angular momentum for local potential (lloc=4 for polynomial, etc.)
+   integer, intent(in) :: lloc
+   !> mxprj maximum number of projectors
+   integer, intent(in) :: mxprj
+   !> nproj number of projectors for each l
+   integer, intent(in) :: nproj(6)
+   !> epa  wave function energies
+   real(dp), intent(in) :: epa(mxprj, 6, 2)
+   real(dp), intent(in) :: evkb(mxprj, 4, 2)
 
    !Output -- printing only
 

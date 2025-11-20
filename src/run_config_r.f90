@@ -16,47 +16,58 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
-! self-consistent all-electron and pseudopotential atomic calculations
-! compared for reference and tests atomic configurations
-
+!> self-consistent all-electron and pseudopotential atomic calculations
+!> compared for reference and tests atomic configurations
 subroutine run_config_r(jj, nacnf, lacnf, facnf, nc, nvcnf, rhov, rhomod, rr, zz, &
 &                  rcmax, mmax, mxprj, iexc, ea, etot, epstot, nproj, vpuns, &
 &                  lloc, vkb, evkb)
-
-   !jj  index of current configufation
-   !nacnf  principal quantum number array, all configurations
-   !lacnf  angular-momenta array, all config.
-   !nc  number of core states
-   !nvcnf  number of valence states, all config.
-   !rhov valence pseudo-charge of reference configuration
-   !rhomod  model core charge
-   !rr  log radial mesh
-   !zz  atomic number
-   !rcmax  maximum core radius for psp
-   !mmax  size of log grid
-   !mxprj  dimension of number of projectors
-   !iexc  exchange-correlation function to be used
-   !ea  reference configurattion eigenvalues
-   !etot  reference configuration total energy
-   !epstot  pseudoatom total energy
-   !nproj  number of VKB projectors to use for each l
-   !vpuns  unscreened semi-local pseudopotentials (plus different vloc if lloc==4)
-   !lloc  index-1 of local potential
-   !vkb   Vanderbilt-Kleinman-Bylander projectors
-   !evkb VKB projector coefficients
-   !srel .true. for scalar-relativistic, .false. for non-relativistic
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
    !Input variables
-
-   integer :: jj, mmax, mxprj, iexc, nc, lloc
-   integer :: nacnf(30, 5), lacnf(30, 5), nvcnf(5), nproj(5)
-   real(dp) :: etot, epstot, rcmax, zz
-   real(dp) :: facnf(30, 5), ea(30, 2), rhov(mmax), rr(mmax)
-   real(dp) :: vpuns(mmax, 5), vkb(mmax, mxprj, 4, 2), evkb(mxprj, 4, 2), rhomod(mmax, 5)
-   logical :: srel
+   !> jj  index of current configufation
+   integer, intent(in) :: jj
+   !> mmax  size of log grid
+   integer, intent(in) :: mmax
+   !> mxprj  dimension of number of projectors
+   integer, intent(in) :: mxprj
+   !> iexc  exchange-correlation function to be used
+   integer, intent(in) :: iexc
+   !> nc  number of core states
+   integer, intent(in) :: nc
+   !> lloc  index-1 of local potential
+   integer, intent(in) :: lloc
+   !> nacnf  principal quantum number array, all configurations
+   integer, intent(in) :: nacnf(30, 5)
+   !> lacnf  angular-momenta array, all config.
+   integer, intent(in) :: lacnf(30, 5)
+   !> nvcnf  number of valence states, all config.
+   integer, intent(in) :: nvcnf(5)
+   !> nproj  number of VKB projectors to use for each l
+   integer, intent(in) :: nproj(5)
+   !> etot  reference configuration total energy
+   real(dp), intent(in) :: etot
+   !> epstot  pseudoatom total energy
+   real(dp), intent(in) :: epstot
+   !> rcmax  maximum core radius for psp
+   real(dp), intent(in) :: rcmax
+   !> zz  atomic number
+   real(dp), intent(in) :: zz
+   real(dp), intent(in) :: facnf(30, 5)
+   !> ea  reference configurattion eigenvalues
+   real(dp), intent(in) :: ea(30, 2)
+   !> rhov valence pseudo-charge of reference configuration
+   real(dp), intent(in) :: rhov(mmax)
+   !> rr  log radial mesh
+   real(dp), intent(in) :: rr(mmax)
+   !> vpuns  unscreened semi-local pseudopotentials (plus different vloc if lloc==4)
+   real(dp), intent(in) :: vpuns(mmax, 5)
+   !> vkb   Vanderbilt-Kleinman-Bylander projectors
+   real(dp), intent(in) :: vkb(mmax, mxprj, 4, 2)
+   !> evkb VKB projector coefficients
+   real(dp), intent(in) :: evkb(mxprj, 4, 2)
+   !> rhomod  model core charge
+   real(dp), intent(in) :: rhomod(mmax, 5)
 
    !Output variables  only printing
 

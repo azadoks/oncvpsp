@@ -16,34 +16,37 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!> Normalized scattering state for pseudopotential, fully non-local unless
+!> ivkb=0, which should only happen if ll=lloc
 subroutine lschvkbs(ll, ivkb, ee, rr, vloc, vkb, evkb, uu, up, mmax, mch)
-
-   ! Normalized scattering state for pseudopotential, fully non-local unless
-   ! ivkb=0, which should only happen if ll=lloc
-
-   !ll  angular-momentum quantum number
-   !ivkb  = 0, 1 or 2 VKB proectors to be used
-   !ee  scattering state energy
-   !rr  log radial mesh
-   !vloc  local pseudopotential
-   !vkb  VKB projectors
-   !evkb  coefficients of VKB projectors
-   !uu  output radial wave function (*rr)
-   !up  d(uu)/dr
-   !mmax  size of log grid
-   !mch  index of radius to which uu is computed
-
    implicit none
    integer, parameter :: dp = kind(1.0d0)
 
    !Input variables
-   integer :: mmax, mch
-   real(dp) :: rr(mmax), vloc(mmax), vkb(mmax, 2), evkb(2)
+   !> mmax  size of log grid
+   integer :: mmax
+   !> mch  index of radius to which uu is computed
+   integer :: mch
+   !> rr  log radial mesh
+   real(dp) :: rr(mmax)
+   !> vloc  local pseudopotential
+   real(dp) :: vloc(mmax)
+   !> vkb  VKB projectors
+   real(dp) :: vkb(mmax, 2)
+   !> evkb  coefficients of VKB projectors
+   real(dp) :: evkb(2)
+   !> ee  scattering state energy
    real(dp) :: ee
-   integer :: ivkb, ll
+   !> ivkb  = 0, 1 or 2 VKB proectors to be used
+   integer :: ivkb
+   !> ll  angular-momentum quantum number
+   integer :: ll
 
    !Output variables
-   real(dp) :: uu(mmax), up(mmax)
+   !> uu  output radial wave function (*rr)
+   real(dp) :: uu(mmax)
+   !> up  d(uu)/dr
+   real(dp) :: up(mmax)
 
    !Local variables
    real(dp) :: amesh, al
