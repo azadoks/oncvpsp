@@ -66,7 +66,7 @@ subroutine der2exc(rhotot, rhoc, rho, rr, d2exc, d2ref, d2mdiff, &
    ! Local variables
    real(dp) :: hh, eeel, eexc, ss
    real(dp), allocatable :: vo(:), vxct(:), rhot(:), dvxc(:, :)
-   integer :: ii, jj, kk, l1
+   integer :: jj, kk, l1
 
    allocate (vo(mmax), vxct(mmax), rhot(mmax), dvxc(mmax, nv))
 
@@ -109,7 +109,7 @@ subroutine der2exc(rhotot, rhoc, rho, rr, d2exc, d2ref, d2mdiff, &
          ss = ss + (d2exc(jj, kk) - d2ref(jj, kk))**2
       end do
    end do
-   d2mdiff = sqrt(ss/nv**2)
+   d2mdiff = sqrt(ss/real(nv, kind=dp)**2)
 
    deallocate (vo, vxct, rhot, dvxc)
 end subroutine der2exc

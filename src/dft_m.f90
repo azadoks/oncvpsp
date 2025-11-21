@@ -90,7 +90,7 @@ subroutine sratom(na, la, ea, fa, rpk, nc, ncv, it, rhoc, rho, &
    do ii = 1, ncv
       sf = sf + fa(ii)
       zion = zz + 1.0d0 - sf
-      ea(ii) = -0.5d0*(zion/na(ii))**2
+      ea(ii) = -0.5d0*(zion/real(na(ii), kind=dp))**2
       if (ea(ii) > vi(mmax)) ea(ii) = 2.0d0*vi(mmax)
    end do
 
