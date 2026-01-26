@@ -2,22 +2,22 @@
 ! Copyright (c) 1989-201r by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
-! 
+!
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
-! 
+!
 ! This program is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
-! 
+!
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
  subroutine sratom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&           rr,vi,zz,mmax,iexc,etot,ierr,srel)
+&           rr,vi,zz,mmax,iexc,etot,ierr,srel,uu,up)
 
 ! self-consistent scalar-relativistic all-electron atom
 ! calculation using log mesh (non-relativistic when srel=.false.)
@@ -43,7 +43,7 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
- 
+
  integer :: mmax,iexc,nc,ncv
  integer :: na(ncv),la(ncv)
  real(dp) :: zz
@@ -55,6 +55,7 @@
  real(dp) :: etot
  real(dp) :: ea(ncv),rpk(ncv)
  real(dp) :: rho(mmax),rhoc(mmax),vi(mmax)
+ real(dp) :: uu(mmax,ncv),up(mmax,ncv)
 
 !Local function
  real(dp) :: tfapot
@@ -67,19 +68,20 @@
  integer :: ii,jj
  logical :: convg
 
- real(dp), allocatable :: u(:),up(:)
+ ! real(dp), allocatable :: u(:),up(:)
  real(dp), allocatable :: vo(:),vi1(:),vo1(:),vxc(:)
 
 ! blend parameter for Anderson iterative potential mixing
  real(dp), parameter ::  bl=0.5d0
 
- allocate(u(mmax),up(mmax))
+ ! allocate(u(mmax),up(mmax))
  allocate(vo(mmax),vi1(mmax),vo1(mmax),vxc(mmax))
 
 ! why all this is necessary is unclear, but it seems to be
- u(:)=0.d0; up(:)=0.d0; vo(:)=0.d0; vi1(:)=0.d0; vo1(:)=0.d0; vxc(:)=0.d0
+ ! u(:)=0.d0; up(:)=0.d0;
+ vo(:)=0.d0; vi1(:)=0.d0; vo1(:)=0.d0; vxc(:)=0.d0
  dr=0.d0; eeel=0.d0; eexc=0.d0; et=0.d0; rl=0.d0; rl1=0.d0
- sd=0.d0; sf=0.d0; sn=0.d0; eeig=0.d0; thl=0.d0; vn=0.d0; zion=0.d0 
+ sd=0.d0; sf=0.d0; sn=0.d0; eeig=0.d0; thl=0.d0; vn=0.d0; zion=0.d0
  nin=0; mch=0
 
  al = 0.01d0 * dlog(rr(101) / rr(1))
@@ -118,7 +120,7 @@
      et=ea(ii)
      ierr = 0
      call lschfb(na(ii),la(ii),ierr,et, &
-&                rr,vi,u,up,zz,mmax,mch,srel)
+&                rr,vi,uu(:,ii),up(:,ii),zz,mmax,mch,srel)
      if(ierr .ne. 0) then
        write(6,'(/a,3i4)') 'sratom123: lschfb convergence ERROR n,l,iter=', &
 &       na(ii),la(ii),it
@@ -131,15 +133,15 @@
 
 ! accumulate charge and eigenvalues
      eeig = eeig + fa(ii) * ea(ii)
-     rho(:)=rho(:) + fa(ii)*(u(:)/rr(:))**2
+     rho(:)=rho(:) + fa(ii)*(uu(:,ii)/rr(:))**2
      if(ii<=nc) then
-       rhoc(:)=rhoc(:) + fa(ii)*(u(:)/rr(:))**2
+       rhoc(:)=rhoc(:) + fa(ii)*(uu(:,ii)/rr(:))**2
      end if
 
 
 ! find outermost peak of wavefunction
      do jj=mch-1,1,-1
-       if(up(jj)*up(jj+1)<0.0d0) then
+       if(up(jj,ii)*up(jj+1,ii)<0.0d0) then
          rpk(ii)=rr(jj)
          exit
        end if
@@ -204,7 +206,6 @@
  etot =  eeig + eexc - 0.5d0*eeel
 
 
- deallocate(u,up)
  deallocate(vo,vi1,vo1,vxc)
  return
 

@@ -87,6 +87,7 @@
  real(dp), allocatable :: rhomod(:,:),rhoae(:,:),rhops(:,:),rhotae(:)
  real(dp), allocatable :: uupsa(:,:) !pseudo-atomic orbitals array
  real(dp), allocatable :: epa(:,:),fpa(:,:)
+ real(dp), allocatable :: uuaea(:,:),upaea(:,:)
  real(dp), allocatable :: uua(:,:),upa(:,:)
  real(dp), allocatable :: vr(:,:,:)
 
@@ -265,6 +266,7 @@
  allocate(rhoae(mmax,nv),rhops(mmax,nv),rhotae(mmax))
  allocate(npa(mxprj,6))
  allocate(epa(mxprj,6),fpa(mxprj,6))
+ allocate(uuaea(mmax,nc+nv),upaea(mmax,nc+nv))
  allocate(uua(mmax,mxprj),upa(mmax,mxprj))
  allocate(vr(mmax,mxprj,6))
 
@@ -272,6 +274,8 @@
  vp(:,:)=0.0d0
  vkb(:,:,:)=0.0d0
  epa(:,:)=0.0d0
+ uuaea(:,:)=0.0d0
+ upaea(:,:)=0.0d0
 
  do ii=1,mmax
   rr(ii)=rr1*exp(al*(ii-1))
@@ -281,7 +285,7 @@
 ! full potential atom solution
 !
    call sratom(na,la,ea,fa,rpk,nc,nc+nv,it,rhoc,rho, &
-&              rr,vfull,zz,mmax,iexc,etot,ierr,srel)
+&              rr,vfull,zz,mmax,iexc,etot,ierr,srel,uuaea,upaea)
 !
 !
 
@@ -637,7 +641,7 @@
 &             zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
 &             na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &             fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
-&             epsh1,epsh2,depsh,rlmax,psfile,uupsa,ea)
+&             epsh1,epsh2,depsh,rlmax,psfile,uupsa,ea,uuaea,vfull)
  end if
 
 

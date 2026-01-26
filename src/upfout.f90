@@ -23,7 +23,7 @@
 &                  zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
-&                  epsh1,epsh2,depsh,rlmax,psfile,uupsa,ea)
+&                  epsh1,epsh2,depsh,rlmax,psfile,uupsa,ea,uuaea,vfull)
 
 
 !lmax  maximum angular momentum
@@ -64,11 +64,11 @@
  integer :: lmax,lloc,iexc,mmax,mxprj,nrl,icmod
  integer :: nproj(6)
  real(dp) :: drl,fcfact,rcfact,zz,zion,epstot
- real(dp) :: rr(mmax),vpuns(mmax,5),rho(mmax),vkb(mmax,mxprj,4)
+ real(dp) :: rr(mmax),vpuns(mmax,5),rho(mmax),vkb(mmax,mxprj,4),vfull(mmax)
  real(dp) :: rhomod(mmax,5)
  real(dp):: rc(6),evkb(mxprj,4)
  character*2 :: atsym
- real(dp) :: uupsa(mmax,nv)
+ real(dp) :: uupsa(mmax,nv), uuaea(mmax,nc+nv)
 
 !additional input for upf output to echo input file, all as defined
 ! in the main progam
@@ -86,7 +86,7 @@
  integer :: dtime(8)
  real(dp) :: al,nrmsum,uurcut
  real(dp), allocatable :: rhomodl(:,:),dmat(:,:)
- real(dp),allocatable :: rhol(:),rl(:),vkbl(:,:,:),vpl(:,:),uual(:,:)
+ real(dp),allocatable :: rhol(:),rl(:),vkbl(:,:,:),vpl(:,:),uupsal(:,:),uuaeal(:,:),vfulll(:)
  character*5 :: lnames
  character*2 :: pspd(3)
 
@@ -111,7 +111,7 @@
    write(6,'(a,i5,a,f10.5)') "Updating nrl = ", nrl, " for uurcut = ", uurcut
  end if
 
- allocate(rhol(nrl),rl(nrl),vkbl(nrl,mxprj,4),vpl(nrl,5),rhomodl(nrl,5),uual(nrl,nv))
+ allocate(rhol(nrl),rl(nrl),vkbl(nrl,mxprj,4),vpl(nrl,5),rhomodl(nrl,5),uupsal(nrl,nv),uuaeal(nrl,nc+nv),vfulll(nrl))
 
 ! interpolation of everything onto linear output mesh
 
@@ -137,8 +137,14 @@
  end do
 
  do ii=1,nv
-   call dpnint(rr,uupsa(1,ii),mmax,rl,uual(1,ii),nrl)
+   call dpnint(rr,uupsa(1,ii),mmax,rl,uupsal(1,ii),nrl)
  end do
+
+ do ii=1,nc+nv
+   call dpnint(rr,uuaea(1,ii),mmax,rl,uuaeal(1,ii),nrl)
+ end do
+
+ call dpnint(rr,vfull,mmax,rl,vfulll,nrl)
 
  call date_and_time(VALUES=dtime)
  ii=dtime(1)-2000
@@ -498,7 +504,7 @@
      write(6,'(t8,a,i1,a)') &
 &          'l="',l1,'" >'
 
-  write(6,'(1p,4e20.10)') (uual(jj,ii),jj=1,nrl)
+  write(6,'(1p,4e20.10)') (uupsal(jj,ii),jj=1,nrl)
 
   if(ii <= 9) then
     write(6,'(t4,a,i1,a)') &
@@ -530,9 +536,130 @@
  write(6,'(t2,a)') &
 &      '</PP_RHOATOM>'
 
+ write(6,'(t2,a)') &
+&      '<PP_GIPAW gipaw_data_format="2">'
+
+if (nc <= 9) then
+ write(6,'(t4,a,i1,a)') &
+&      '<PP_GIPAW_CORE_ORBITALS number_of_core_orbitals="', nc, '">'
+else
+ write(6,'(t4,a,i2,a)') &
+&      '<PP_GIPAW_CORE_ORBITALS number_of_core_orbitals="', nc, '">'
+end if
+do ii = 1, nc
+  ll = la(ii)
+  if (ii <= 9) then
+   write(6,'(t6,a,i1)') &
+&        '<PP_GIPAW_CORE_ORBITAL.', ii
+  else
+   write(6,'(t6,a,i2)') &
+&        '<PP_GIPAW_CORE_ORBITAL.', ii
+  end if
+  write(6,'(t8,a)') &
+&       'type="real"'
+  write(6,'(t8,a,i4,a)') &
+&       'size="',nrl,'"'
+  write(6,'(t8,a)') &
+&       'columns="4"'
+  if (ii <= 9) then
+     write(6,'(t8,a,i1,a)') &
+&          'index="',ii,'"'
+  else
+    write(6,'(t8,a,i2,a)') &
+&         'index="',ii,'"'
+  end if
+  write(6,'(t8,a,i1,a,a)') &
+&       'label="',na(ii),lnames(ll+1:ll+1),'"'
+     write(6,'(t8,a,i1,a)') &
+&          'n="',na(ii),'" '
+     write(6,'(t8,a,i1,a)') &
+&          'l="',ll,'">'
+  write(6,'(1p,4e20.10)') (uuaeal(jj,ii),jj=1,nrl)
+  if (ii <= 9) then
+   write(6,'(t6,a,i1,a)') &
+&        '</PP_GIPAW_CORE_ORBITAL.', ii, '>'
+  else
+   write(6,'(t6,a,i2,a)') &
+&        '</PP_GIPAW_CORE_ORBITAL.', ii, '>'
+  end if
+end do
+ write(6,'(t4,a)') &
+&      '</PP_GIPAW_CORE_ORBITALS>'
+
  write(6,'(a)') &
 &      '</UPF>'
 
+if (nv <= 9) then
+ write(6,'(t4,a,i1,a)') &
+&      '<PP_GIPAW_ORBITALS number_of_valence_orbitals="', nv, '">'
+else
+ write(6,'(t4,a,i2,a)') &
+&      '<PP_GIPAW_ORBITALS number_of_valence_orbitals="', nv, '">'
+end if
+do ii = 1, nv
+  ll = la(nc+ii)
+  if (ii <= 9) then
+   write(6,'(t6,a,i1)') &
+&        '<PP_GIPAW_ORBITAL.', ii
+  else
+   write(6,'(t6,a,i2)') &
+&        '<PP_GIPAW_ORBITAL.', ii
+  end if
+  write(6,'(t8,a)') &
+&       'type="real"'
+  write(6,'(t8,a,i4,a)') &
+&       'size="',nrl,'"'
+  write(6,'(t8,a)') &
+&       'columns="4"'
+  if (ii <= 9) then
+     write(6,'(t8,a,i1,a)') &
+&          'index="',ii,'"'
+  else
+    write(6,'(t8,a,i2,a)') &
+&         'index="',ii,'"'
+  end if
+  write(6,'(t8,a,i1,a,a)') &
+&       'label="',na(nc+ii),lnames(ll+1:ll+1),'"'
+     write(6,'(t8,a,i1,a)') &
+&          'n="',na(nc+ii),'" '
+     write(6,'(t8,a,i1,a)') &
+&          'l="',ll,'">'
+write(6,'(t10,a,i4,a)') &
+&      '  <PP_GIPAW_WFS_AE size="', nrl, '">'
+write(6,'(1p,4e20.10)') (uuaeal(jj,nc+ii),jj=1,nrl)
+write(6,'(t10,a)') &
+&      '  </PP_GIPAW_WFS_AE>'
+write(6,'(t10,a,i4,a)') &
+&      '  <PP_GIPAW_WFS_PS size="', nrl, '">'
+write(6,'(1p,4e20.10)') (uupsal(jj,ii),jj=1,nrl)
+write(6,'(t10,a)') &
+&      '  </PP_GIPAW_WFS_PS>'
+  if (ii <= 9) then
+   write(6,'(t6,a,i1,a)') &
+&        '</PP_GIPAW_ORBITAL.', ii, '>'
+  else
+   write(6,'(t6,a,i2,a)') &
+&        '</PP_GIPAW_ORBITAL.', ii, '>'
+  end if
+end do
+ write(6,'(t4,a)') &
+&      '</PP_GIPAW_ORBITALS>'
+ write(6,'(t4,a)') &
+&      '<PP_GIPAW_VLOCAL>'
+ write(6,'(t6,a,i4,a)') &
+&      '<PP_GIPAW_VLOCAL_AE size="', nrl, '">'
+ write(6,'(1p,4e20.10)') (2.0d0*vfulll(ii),ii=1,nrl)
+ write(6,'(t6,a)') &
+&      '</PP_GIPAW_VLOCAL_AE>'
+ write(6,'(t6,a,i4,a)') &
+&      '<PP_GIPAW_VLOCAL_PS size="', nrl, '">'
+ write(6,'(1p,4e20.10)') (2.0d0*vpl(ii,lloc+1),ii=1,nrl)
+ write(6,'(t6,a)') &
+&      '</PP_GIPAW_VLOCAL_PS>'
+ write(6,'(t4,a)') &
+&      '</PP_GIPAW_VLOCAL>'
+ write(6,'(a)') &
+&      '</UPF>'
 
  deallocate(rhol,rl,vkbl,vpl,rhomodl,dmat)
 
