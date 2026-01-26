@@ -157,12 +157,41 @@ module input_toml_m
       call get_value(child, "nc", nc)
       call get_value(child, "nv", nv)
       call get_value(child, "iexc", iexc)
+      call get_value(child, "psfile", tmp_str)
+      if (len_trim(tmp_str) < 1 .or. len_trim(tmp_str) > 4) then
+         write (stderr, '(A)') 'Error: Invalid psfile in [oncvpsp] section.'
+         stop 1
+      else
+         psfile(1:len_trim(tmp_str)) = tmp_str(1:len_trim(tmp_str))
+      end if
+      deallocate(tmp_str)
+      ! UPF file name (optional, default: "stdout")
+      call get_value(child, "upffile", tmp_str, "stdout")
+      upffile(1:len_trim(tmp_str)) = tmp_str(1:len_trim(tmp_str))
+      deallocate(tmp_str)
+      ! UPF grid/mesh type (optional, default: "linear")
+      call get_value(child, "upfgrid", tmp_str, "linear")
+      if (len_trim(tmp_str) < 1 .or. len_trim(tmp_str) > 4) then
+         write (stderr, '(A)') 'Error: Invalid upfgrid in [oncvpsp] section.'
+         stop 1
+      else
+         upfgrid(1:len_trim(tmp_str)) = tmp_str(1:len_trim(tmp_str))
+      end if
+      deallocate(tmp_str)
+      ! PSP8 file name (optional, default: "stdout")
+      call get_value(child, "psp8file", tmp_str, "stdout")
+      psp8file(1:len_trim(tmp_str)) = tmp_str(1:len_trim(tmp_str))
+      deallocate(tmp_str)
+      ! PSML file name (optional, default: "stdout")
+      call get_value(child, "psmlfile", tmp_str, "stdout")
+      psmlfile(1:len_trim(tmp_str)) = tmp_str(1:len_trim(tmp_str))
+      deallocate(tmp_str)
 
       !! Linear mesh section (required)
-      call get_value(table, "linear_mesh", child)
-      call check_associated(child, "[linear_mesh] section")
-      call get_value(child, "a", drl)
-      call get_value(child, "rmax", rlmax)
+      call get_value(table, "output_grid", child)
+      call check_associated(child, "[output_grid] section")
+      call get_value(child, "drl", drl)
+      call get_value(child, "rlmax", rlmax)
 
       !! Reference configuration section (required)
       call get_value(table, "reference_configuration", child)
@@ -307,18 +336,6 @@ module input_toml_m
       call get_value(child, "epsh2", epsh2)
       call get_value(child, "depsh", depsh)
       call get_value(child, "rxpsh", rxpsh, -1.0_dp)
-
-      !! PP output section (required)
-      call get_value(table, "pp_output", child)
-      call check_associated(child, "[pp_output] section")
-      call get_value(child, "psfile", tmp_str)
-      if (len_trim(tmp_str) < 1 .or. len_trim(tmp_str) > 4) then
-         write (stderr, '(A)') 'Error: Invalid psfile in [pp_out] section.'
-         stop 1
-      else
-         psfile(1:len_trim(tmp_str)) = tmp_str(1:len_trim(tmp_str))
-      end if
-      deallocate(tmp_str)
 
       !! Test configurations section (optional)
       call get_value(table, "test_configurations", arr)
@@ -541,12 +558,20 @@ module input_toml_m
       call get_value(child, "nc", nc)
       call get_value(child, "nv", nv)
       call get_value(child, "iexc", iexc)
+      call get_value(child, "psfile", tmp_str)
+      if (len_trim(tmp_str) < 1 .or. len_trim(tmp_str) > 4) then
+         write (stderr, '(A)') 'Error: Invalid psfile in [oncvpsp] section.'
+         stop 1
+      else
+         psfile(1:len_trim(tmp_str)) = tmp_str(1:len_trim(tmp_str))
+      end if
+      deallocate(tmp_str)
 
       !! Linear mesh section (required)
-      call get_value(table, "linear_mesh", child)
-      call check_associated(child, "[linear_mesh] section")
-      call get_value(child, "a", drl)
-      call get_value(child, "rmax", rlmax)
+      call get_value(table, "output_grid", child)
+      call check_associated(child, "[output_grid] section")
+      call get_value(child, "drl", drl)
+      call get_value(child, "rlmax", rlmax)
 
       !! Reference configuration section (required)
       call get_value(table, "reference_configuration", child)
@@ -692,18 +717,6 @@ module input_toml_m
       call get_value(child, "epsh2", epsh2)
       call get_value(child, "depsh", depsh)
       call get_value(child, "rxpsh", rxpsh, -1.0_dp)
-
-      !! PP output section (required)
-      call get_value(table, "pp_output", child)
-      call check_associated(child, "[pp_output] section")
-      call get_value(child, "psfile", tmp_str)
-      if (len_trim(tmp_str) < 1 .or. len_trim(tmp_str) > 4) then
-         write (stderr, '(A)') 'Error: Invalid psfile in [pp_out] section.'
-         stop 1
-      else
-         psfile(1:len_trim(tmp_str)) = tmp_str(1:len_trim(tmp_str))
-      end if
-      deallocate(tmp_str)
 
       !! Test configurations section (optional)
       call get_value(table, "test_configurations", arr)
