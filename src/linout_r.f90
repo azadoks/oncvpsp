@@ -2,17 +2,17 @@
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
-! 
+!
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
-! 
+!
 ! This program is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
-! 
+!
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
@@ -35,7 +35,7 @@
 !esr  energy  coefficients of vscal
 !vso  normalized spin-orbig projectors
 !eso  energy  coefficients of vso
-!vpuns  unscreened semi-local pseudopotentials (vpuns(:,5) is local potential 
+!vpuns  unscreened semi-local pseudopotentials (vpuns(:,5) is local potential
 !  if linear combination is used)
 !rho  valence pseudocharge
 !rhotae  all-electron valence charge
@@ -108,7 +108,7 @@
    end do
    write(6,'(a,3i4)') 'l1-1,npr_sr,npr_so',l1-1,npr_sr(l1),npr_so(l1)
   end do
-   
+
 ! interpolation of everything onto linear output mesh
 !
  do  ii=1,nrl
@@ -120,7 +120,9 @@
  call dpnint(rr,vpuns(1,l1),mmax,rl,vpl(1,l1),nrl)
 
 ! override dpnint extrapolation to zero for vpl
-   vpl(1,l1)=vpuns(1,l1)
+   if (icmod == 0) then
+      vpl(1,l1)=vpuns(1,l1)
+   end if
 
  do l1=1,lmax+1
    if(l1 .ne. lloc+1) then
@@ -134,7 +136,7 @@
    end if
  end do
 
- 
+
  call dpnint(rr,rho,mmax,rl,rhol,nrl)
  call dpnint(rr,rhotae,mmax,rl,rhotael,nrl)
  call dpnint(rr,rhoc,mmax,rl,rhocl,nrl)
@@ -316,7 +318,7 @@ write(6,'(a/a/a)') '#','# MODEL CORE CHARGE', &
    end do
    write(6,'(a)') '#'
  end do
-  
+
 ! write termination signal
  write(6,'(a)') '</INPUT>'
  write(6,'(/a)') 'END_PSP'

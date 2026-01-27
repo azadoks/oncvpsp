@@ -130,6 +130,10 @@
 !
  vpl(:,:)=0.0d0
  call dpnint(rr,vpuns(1,lloc+1),mmax,rl,vpl(1,lloc+1),nrl)
+! override dpnint extrapolation to zero for vpl
+   if (icmod == 0) then
+       vpl(1,lloc+1)=vpuns(1,lloc+1)
+   end if
 
  do l1=1,lmax+1
   if(l1==lloc+1) cycle
