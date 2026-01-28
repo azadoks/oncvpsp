@@ -14,7 +14,8 @@ contains
                               rcfact_min, rcfact_max, rcfact_step, &
                               epsh1, epsh2, depsh, rxpsh, &
                               rlmax, drl, &
-                              ncnf, nvcnf, nacnf, lacnf, facnf)
+                              ncnf, nvcnf, nacnf, lacnf, facnf, &
+                              upffile, upfgrid, psp8file, psmlfile)
       !> File unit number for input
       integer, intent(in) :: unit
       !> Current line number in input file
@@ -107,6 +108,10 @@ contains
       integer, intent(out) :: lacnf(30, 5)
       !> Occupation number array for test configurations
       real(dp), intent(out) :: facnf(30, 5)
+      character(len=1024), intent(out) :: upffile
+      character(len=16), intent(out) :: upfgrid
+      character(len=1024), intent(out) :: psp8file
+      character(len=1024), intent(out) :: psmlfile
 
       !Local variables
       !> I/O status variable
@@ -134,6 +139,10 @@ contains
       rcfact_min = 1.0d0
       rcfact_max = 1.9d0
       rcfact_step = 0.1d0
+      upffile = 'stdout'
+      upfgrid = 'linear'
+      psp8file = 'stdout'
+      psmlfile = 'stdout'
 
       ! read input data
       inline = 0
@@ -246,7 +255,8 @@ contains
                                 rcfact_min, rcfact_max, rcfact_step, &
                                 epsh1, epsh2, depsh, rxpsh, &
                                 rlmax, drl, &
-                                ncnf, nvcnf, nacnf, lacnf, facnf)
+                                ncnf, nvcnf, nacnf, lacnf, facnf, &
+                                upffile, upfgrid, psp8file, psmlfile)
       !> File unit number for input
       integer, intent(in) :: unit
       !> Current line number in input file
@@ -331,6 +341,10 @@ contains
       integer, intent(out) :: lacnf(30, 5)
       !> Occupation number array for test configurations
       real(dp), intent(out) :: facnf(30, 5)
+      character(len=1024), intent(out) :: upffile
+      character(len=16), intent(out) :: upfgrid
+      character(len=1024), intent(out) :: psp8file
+      character(len=1024), intent(out) :: psmlfile
 
       !Local variables
       !> I/O status variable
@@ -357,6 +371,10 @@ contains
       rcfact_min = 1.0d0
       rcfact_max = 1.9d0
       rcfact_step = 0.1d0
+      upffile = 'stdout'
+      upfgrid = 'linear'
+      psp8file = 'stdout'
+      psmlfile = 'stdout'
 
       ! read input data
       inline = 0

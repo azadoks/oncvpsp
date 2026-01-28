@@ -19,12 +19,11 @@
 ! interpolates various arrays onto linear radial mesh to create file
 ! for Abinit input using pspcod=8
 
- subroutine linout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
-&                  rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym, &
+ subroutine linout(lmax,lloc,rc,vkbl,evkb,nproj,rl,vpunsl,rhol,rhomodl, &
+&                  rhotael,rhocl,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
 &                  epsh1,epsh2,depsh,rlmax,psfile)
-
 
 !lmax  maximum angular momentum
 !lloc  l for local potential
@@ -61,9 +60,9 @@
  integer :: lmax,lloc,iexc,mmax,mxprj,nrl,icmod
  integer :: nproj(6)
  real(dp) :: drl,fcfact,rcfact,zz,zion
- real(dp) :: rr(mmax),vpuns(mmax,5),rho(mmax),vkb(mmax,mxprj,4)
- real(dp) :: rhotae(mmax),rhoc(mmax)
- real(dp) :: rhomod(mmax,5)
+ real(dp) :: rl(mmax),vpunsl(mmax,5),rhol(mmax),vkbl(mmax,mxprj,4)
+ real(dp) :: rhotael(mmax),rhocl(mmax)
+ real(dp) :: rhomodl(mmax,5)
  real(dp):: rc(6),evkb(mxprj,4)
  character*2 :: atsym
 
@@ -81,46 +80,7 @@
 !Local variables
  integer :: ii,iprj,jj,ll,l1,ixc_abinit
  integer :: dtime(8)
- real(dp), allocatable :: rhomodl(:,:)
- real(dp),allocatable :: rhol(:),rl(:),vkbl(:,:,:),vpl(:,:)
- real(dp),allocatable :: rhotael(:),rhocl(:)
  character*2 :: pspd(3)
-
-
- allocate(rhol(nrl),rl(nrl),vkbl(nrl,mxprj,4),vpl(nrl,5),rhomodl(nrl,5))
- allocate(rhotael(nrl),rhocl(nrl))
-
-!
-! interpolation of everything onto linear output mesh
-
- do  ii=1,nrl
-   rl(ii)=drl*dble(ii-1)
- end do
-!
- do l1=1,max(lmax+1,lloc+1)
-   call dpnint(rr,vpuns(1,l1),mmax,rl,vpl(1,l1),nrl)
-
-! override dpnint extrapolation to zero for vpl
-   if (icmod == 0) then
-       vpl(1,l1)=vpuns(1,l1)
-   end if
-
-   if(l1 .ne. lloc + 1) then
-     do iprj=1,nproj(l1)
-
-       call dpnint(rr,vkb(1,iprj,l1),mmax,rl,vkbl(1,iprj,l1),nrl)
-
-     end do
-   end if
- end do
-
- call dpnint(rr,rho,mmax,rl,rhol,nrl)
- call dpnint(rr,rhotae,mmax,rl,rhotael,nrl)
- call dpnint(rr,rhoc,mmax,rl,rhocl,nrl)
-
- do jj=1,5
-   call dpnint(rr,rhomod(1,jj),mmax,rl,rhomodl(1,jj),nrl)
- end do
 
 ! Output for Abinit input using pspcod=8
 
@@ -176,7 +136,7 @@
    if(ll==lloc) then
      write(6,'(i4)') ll
      do ii = 1,nrl
-       write(6,'(i6,1p,2e21.13)') ii,rl(ii),vpl(ii,l1)
+       write(6,'(i6,1p,2e21.13)') ii,rl(ii),vpunsl(ii,l1)
      end do
    else if(nproj(l1)>0) then
      write(6,'(i4,23x,1p,6e21.13)') ll,(evkb(jj,l1),jj=1,nproj(l1))
@@ -269,8 +229,6 @@
 ! write termination signal
  write(6,'(a)')'</INPUT>'
  write(6,'(/a)') 'END_PSP'
-
- deallocate(rhol,rl,vkbl,vpl,rhomodl,rhotael,rhocl)
 
  return
  end subroutine linout

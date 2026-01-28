@@ -57,6 +57,8 @@ set(src_oncvpsp
     gnu_script.f90
     linout.f90
     psatom.f90
+    psfileout.f90
+    linear_interpolate.f90
     relatom.f90
     run_config.f90
     run_diag.f90
@@ -74,6 +76,8 @@ set(src_oncvpsp
     psatom_r.f90
     relatom.f90
     renorm_r.f90
+    psfileout_r.f90
+    linear_interpolate_r.f90
     run_config_r.f90
     run_diag_r.f90
     run_diag_sr_so_r.f90
@@ -116,9 +120,6 @@ set_target_properties(oncvpspsr
 if (ONCVPSP_WITH_TOML)
     target_compile_definitions(oncvpspsr PRIVATE WITH_TOML)
 endif ()
-if (HDF5_FOUND AND ONCVPSP_WITH_HDF5)
-    target_compile_definitions(oncvpspsr PRIVATE WITH_HDF5)
-endif ()
 
 ##########################################################
 # oncvpspnr.x (non-relativistic)
@@ -133,9 +134,6 @@ set_target_properties(oncvpspnr
 )
 if (ONCVPSP_WITH_TOML)
     target_compile_definitions(oncvpspnr PRIVATE WITH_TOML)
-endif ()
-if (HDF5_FOUND AND ONCVPSP_WITH_HDF5)
-    target_compile_definitions(oncvpspnr PRIVATE WITH_HDF5)
 endif ()
 
 ##########################################################
@@ -152,9 +150,21 @@ set_target_properties(oncvpspr
 if (ONCVPSP_WITH_TOML)
     target_compile_definitions(oncvpspr PRIVATE WITH_TOML)
 endif ()
-if (HDF5_FOUND AND ONCVPSP_WITH_HDF5)
-    target_compile_definitions(oncvpspr PRIVATE WITH_HDF5)
-endif ()
+
+##########################################################
+# oncvatom.x (scalar-relativistic)
+##########################################################
+# if (ONCVPSP_WITH_TOML)
+#     add_executable(oncvatom oncvatom.F90)
+#     target_compile_definitions(oncvatom PUBLIC RELATIVISTIC=1)
+#     add_dependencies(oncvatom oncvpsp)
+#     target_link_libraries(oncvatom PRIVATE oncvpsp)
+#     set_target_properties(oncvatom
+#         PROPERTIES
+#             OUTPUT_NAME oncvatom.x
+#     )
+#     target_compile_definitions(oncvatom PRIVATE WITH_TOML)
+# endif()
 
 ###########################################################
 # Subdirectories

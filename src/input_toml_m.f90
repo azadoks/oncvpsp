@@ -20,7 +20,8 @@ module input_toml_m
                               rcfact_min, rcfact_max, rcfact_step, &
                               epsh1, epsh2, depsh, rxpsh, &
                               rlmax, drl, &
-                              ncnf, nvcnf, nacnf, lacnf, facnf)
+                              ncnf, nvcnf, nacnf, lacnf, facnf, &
+                              upffile, upfgrid, psp8file, psmlfile)
       implicit none
       ! Input variables
       !> The Fortran unit number to read from
@@ -115,6 +116,14 @@ module input_toml_m
       integer, intent(out) :: lacnf(30, 5)
       !> Occupation number array for test configurations
       real(dp), intent(out) :: facnf(30, 5)
+      !> UPF output file name
+      character(len=1024), intent(out) :: upffile
+      !> UPF grid/mesh type
+      character(len=16), intent(out) :: upfgrid
+      !> PSP8 output file name
+      character(len=1024), intent(out) :: psp8file
+      !> PSML output file name
+      character(len=1024), intent(out) :: psmlfile
 
       ! Local variables
       !> The TOML table object
@@ -133,8 +142,12 @@ module input_toml_m
       nproj(:) = 0
       rc(:) = 0.0_dp
       ep(:) = 0.0_dp
-      atsym(:) = '  '
-      psfile(:) = '    '
+      atsym(:) = ' '
+      psfile(:) = ' '
+      upffile(:) = ' '
+      upfgrid(:) = ' '
+      psp8file(:) = ' '
+      psmlfile(:) = ' '
 
       call toml_load(table, unit)
       if (.not. allocated(table)) then
@@ -421,7 +434,8 @@ module input_toml_m
                                 rcfact_min, rcfact_max, rcfact_step, &
                                 epsh1, epsh2, depsh, rxpsh, &
                                 rlmax, drl, &
-                                ncnf, nvcnf, nacnf, lacnf, facnf)
+                                ncnf, nvcnf, nacnf, lacnf, facnf, &
+                                upffile, upfgrid, psp8file, psmlfile)
       implicit none
       ! Input variables
       !> The Fortran unit number to read from
@@ -516,6 +530,14 @@ module input_toml_m
       integer, intent(out) :: lacnf(30, 5)
       !> Occupation number array for test configurations
       real(dp), intent(out) :: facnf(30, 5)
+      !> UPF output file name
+      character(len=1024), intent(out) :: upffile
+      !> UPF grid/mesh type
+      character(len=16), intent(out) :: upfgrid
+      !> PSP8 output file name
+      character(len=1024), intent(out) :: psp8file
+      !> PSML output file name
+      character(len=1024), intent(out) :: psmlfile
 
       ! Local variables
       !> The TOML table object
@@ -534,8 +556,12 @@ module input_toml_m
       nproj(:) = 0
       rc(:) = 0.0_dp
       ep(:,:) = 0.0_dp
-      atsym(:) = '  '
-      psfile(:) = '    '
+      atsym(:) = ' '
+      psfile(:) = ' '
+      upffile(:) = ' '
+      upfgrid(:) = ' '
+      psp8file(:) = ' '
+      psmlfile(:) = ' '
 
       call toml_load(table, unit)
       if (.not. allocated(table)) then
@@ -565,6 +591,27 @@ module input_toml_m
       else
          psfile(1:len_trim(tmp_str)) = tmp_str(1:len_trim(tmp_str))
       end if
+      deallocate(tmp_str)
+      ! UPF file name (optional, default: "stdout")
+      call get_value(child, "upffile", tmp_str, "stdout")
+      upffile(1:len_trim(tmp_str)) = tmp_str(1:len_trim(tmp_str))
+      deallocate(tmp_str)
+      ! UPF grid/mesh type (optional, default: "linear")
+      call get_value(child, "upfgrid", tmp_str, "linear")
+      if (len_trim(tmp_str) < 1 .or. len_trim(tmp_str) > 4) then
+         write (stderr, '(A)') 'Error: Invalid upfgrid in [oncvpsp] section.'
+         stop 1
+      else
+         upfgrid(1:len_trim(tmp_str)) = tmp_str(1:len_trim(tmp_str))
+      end if
+      deallocate(tmp_str)
+      ! PSP8 file name (optional, default: "stdout")
+      call get_value(child, "psp8file", tmp_str, "stdout")
+      psp8file(1:len_trim(tmp_str)) = tmp_str(1:len_trim(tmp_str))
+      deallocate(tmp_str)
+      ! PSML file name (optional, default: "stdout")
+      call get_value(child, "psmlfile", tmp_str, "stdout")
+      psmlfile(1:len_trim(tmp_str)) = tmp_str(1:len_trim(tmp_str))
       deallocate(tmp_str)
 
       !! Linear mesh section (required)
