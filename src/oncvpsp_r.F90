@@ -742,7 +742,7 @@
 &                    vkb,evkb,nproj,rr,vfull,vp,vpuns,zz,mmax,mxprj,drl,nrl, &
 &                    rho,rhoc,rhomod,cvgplt)
 
- call run_phsft_r(lmax,lloc,nproj,ep,epsh1,epsh2,depsh,vkb,evkb, &
+ call run_phsft_r(lmax,lloc,nproj,ep,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
 &               rr,vfull,vp,zz,mmax,mxprj,irc)
 
  call gnu_script_r(epa,evkb,lmax,lloc,mxprj,nproj)
