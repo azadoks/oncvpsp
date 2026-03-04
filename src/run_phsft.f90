@@ -16,7 +16,7 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine run_phsft(lmax,lloc,nproj,epa,epsh1,epsh2,depsh,vkb,evkb, &
+subroutine run_phsft(lmax,lloc,nproj,epa,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
 &                     rr,vfull,vp,zz,mmax,mxprj,irc,srel)
 
 ! computes log derivatives, actually atan(r * ((d psi(r)/dr)/psi(r)))
@@ -43,60 +43,86 @@
 !irphs  index of rr beyond which all vp==vlocal
 !srel .true. for scalar-relativistic, .false. for non-relativistic
 
- implicit none
- integer, parameter :: dp=kind(1.0d0)
+   implicit none
+   integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
- integer :: lmax,lloc,mmax,mxprj
- integer :: nproj(6),irc(6)
- real(dp) :: epsh1,epsh2,depsh,zz
- real(dp) :: rr(mmax),vp(mmax,5),epa(mxprj,6)
- real(dp) :: vfull(mmax),vkb(mmax,mxprj,4),evkb(mxprj,4)
- logical :: srel
+   integer :: lmax,lloc,mmax,mxprj
+   integer :: nproj(6),irc(6)
+   real(dp) :: epsh1,epsh2,depsh,zz,rxpsh
+   real(dp) :: rr(mmax),vp(mmax,5),epa(mxprj,6)
+   real(dp) :: vfull(mmax),vkb(mmax,mxprj,4),evkb(mxprj,4)
+   logical :: srel
 
 !Output variables - printing only
 
 !Local variables
- integer :: ii,irphs,ll,l1,npsh
- real(dp) :: epsh
+   integer :: ii,irphs,ll,l1,npsh
+   real(dp) :: epsh
 
- real(dp),allocatable :: pshf(:),pshp(:)
+   real(dp),allocatable :: pshf(:),pshp(:)
 
- npsh=int(((epsh2-epsh1)/depsh)-0.5d0)+1
+   npsh=int(((epsh2-epsh1)/depsh)-0.5d0)+1
 
- allocate(pshf(npsh),pshp(npsh))
+   allocate(pshf(npsh),pshp(npsh))
 
 ! loop for phase shift calculation -- full, then local or Kleinman-
 ! Bylander / Vanderbilt
 
- do l1 = 1, 4
+   do l1 = 1, 4
 
-   ll = l1 - 1
-   if(ll<=lmax) then
-     irphs=irc(l1)+2
-   else
-     irphs=irc(lloc+1)
-   end if
+      ll = l1 - 1
+      if (ll <= lmax) then
+         if (rxpsh < 0.0) then
+            irphs = irc(l1) + 2
+         else
+            do ii = 1,mmax
+               if (rr(ii) >= rxpsh) then
+                  irphs = ii
+                  exit
+               end if
+            end do
+            if (irphs <= irc(l1)) then
+               write(6, '(a,f12.5,a,i1,a,f12.5)') &
+                  'ERROR: run_phsft: rxpsh=', rr(irphs), ' < rc(', l1-1, ')=', rr(irc(l1))
+            end if
+         end if
+      else
+         if (rxpsh < 0.0) then
+            irphs = irc(lloc + 1)
+         else
+            do ii = 1,mmax
+               if (rr(ii) >= rxpsh) then
+                  irphs = ii
+                  exit
+               end if
+            end do
+            if (irphs <= irc(lloc+1)) then
+               write(6, '(a,f12.5,a,i1,a,f12.5)') &
+                  'ERROR: run_phsft: rxpsh=', rr(irphs), ' < rc(', lloc+1, ')=', rr(irc(lloc+1))
+            end if
+         end if
+      end if
 
-   call fphsft(ll,epsh2,depsh,pshf,rr,vfull,zz,mmax,irphs,npsh,srel)
-   if(ll .eq. lloc) then
-     call  vkbphsft(ll,0,epsh2,depsh,epa(1,l1),pshf,pshp, &
-&                   rr,vp(1,lloc+1),vkb(1,1,l1),evkb(1,l1), &
-&                   mmax,irphs,npsh)
-   else
-     call  vkbphsft(ll,nproj(l1),epsh2,depsh,epa(1,l1),pshf,pshp, &
-&                   rr,vp(1,lloc+1),vkb(1,1,l1),evkb(1,l1), &
-&                   mmax,irphs,npsh)
-   end if
+      call fphsft(ll,epsh2,depsh,pshf,rr,vfull,zz,mmax,irphs,npsh,srel)
+      if(ll .eq. lloc) then
+         call  vkbphsft(ll,0,epsh2,depsh,epa(1,l1),pshf,pshp, &
+         &                   rr,vp(1,lloc+1),vkb(1,1,l1),evkb(1,l1), &
+         &                   mmax,irphs,npsh)
+      else
+         call  vkbphsft(ll,nproj(l1),epsh2,depsh,epa(1,l1),pshf,pshp, &
+         &                   rr,vp(1,lloc+1),vkb(1,1,l1),evkb(1,l1), &
+         &                   mmax,irphs,npsh)
+      end if
 
-   write(6,'(/a,i2)') 'log derivativve data for plotting, l=',ll
-   write(6,'(a,f6.2)') 'atan(r * ((d psi(r)/dr)/psi(r))), r=',rr(irphs)
-   write(6,'(a/)') 'l, energy, all-electron, pseudopotential'
-   do ii = 1, npsh
-     epsh = epsh2 - depsh * dfloat(ii - 1)
-     write(6,'(a, i6, 3f12.6)') '! ',ll, epsh, pshf(ii), pshp(ii)
+      write(6,'(/a,i2)') 'log derivativve data for plotting, l=',ll
+      write(6,'(a,f6.2)') 'atan(r * ((d psi(r)/dr)/psi(r))), r=',rr(irphs)
+      write(6,'(a/)') 'l, energy, all-electron, pseudopotential'
+      do ii = 1, npsh
+         epsh = epsh2 - depsh * dfloat(ii - 1)
+         write(6,'(a, i6, 3f12.6)') '! ',ll, epsh, pshf(ii), pshp(ii)
+      end do
    end do
- end do
- deallocate(pshf,pshp)
- return
- end subroutine run_phsft
+   deallocate(pshf,pshp)
+   return
+end subroutine run_phsft
