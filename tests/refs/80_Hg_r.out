@@ -17975,7 +17975,6 @@ Hg    ONCVPSP-4.0.1  r_core=   3.20805   3.00375   2.51029   3.00375
 #suggested that you cite D. R. Hamann, Phys. Rev. B 88, 085117 (2013)
 #in any publication utilizing these pseudopotentials.
 #
-#Echo of input data for oncvpsp-4.0.1
 # ATOM AND REFERENCE CONFIGURATION
 # atsym  z   nc   nv     iexc    psfile
   Hg 80.00   12    2       3      both
