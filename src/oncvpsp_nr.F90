@@ -16,6 +16,9 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!
+#include "version.h"
+!
  program oncvpsp
 !
 ! Creates and tests optimized norm-conserving Vanderbilt or Kleinman-Bylander
@@ -102,9 +105,11 @@
 
  input_mode = INPUT_STDIN
 
- write(6,'(a/a//)') &
+  write(6,'(a/a,a,a,a,a//)') &
 &      'ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
-&      'scalar-relativistic version 4.0.1 03/01/2019'
+&      'non-relativistic version', &
+&      ' ', ONCVPSP_VERSION_STRING, &
+&      ' ', ONCVPSP_VERSION_DATE
 
  write(6,'(a/a/a//)') &
 &      'While it is not required under the terms of the GNU GPL, it is',&
@@ -617,7 +622,7 @@
 
 
 
- call run_phsft(lmax,lloc,nproj,epa,epsh1,epsh2,depsh,vkb,evkb, &
+ call run_phsft(lmax,lloc,nproj,epa,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
 &               rr,vfull,vp,zz,mmax,mxprj,irc,srel)
 
  call gnu_script(epa,evkb,lmax,lloc,mxprj,nproj)
@@ -629,7 +634,7 @@
 &             rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym, &
 &             na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &             fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
-&             epsh1,epsh2,depsh,rlmax,psfile)
+&             epsh1,epsh2,depsh,rlmax,psfile,srel)
  end if
 
  if(trim(psfile)=='upf' .or. trim(psfile)=='both') then
@@ -637,7 +642,7 @@
 &             zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
 &             na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &             fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
-&             epsh1,epsh2,depsh,rlmax,psfile,uupsa,ea)
+&             epsh1,epsh2,depsh,rlmax,psfile,uupsa,ea,srel)
  end if
 
  if(trim(psfile)=='psml' .or. trim(psfile)=='both') then

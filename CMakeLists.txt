@@ -15,6 +15,7 @@ endif()
 project(
     oncvpsp
     VERSION 4.0.1
+    SPDX_LICENSE GPL-3.0-only
     DESCRIPTION "Optimized norm-conserving Vanderbilt pseudopotentials"
     LANGUAGES Fortran C)
 

@@ -16,6 +16,9 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+!
+#include "version.h"
+!
  program oncvpsp_r
 !
 ! Creates and tests optimized norm-conserving Vanderbilt or Kleinman-Bylander
@@ -103,9 +106,11 @@
 
  input_mode = INPUT_STDIN
 
- write(6,'(a/a//)') &
+  write(6,'(a/a,a,a,a,a//)') &
 &      'ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
-&      'relativistic version 4.0.1 03/01/2019'
+&      'relativistic version', &
+&      ' ', ONCVPSP_VERSION_STRING, &
+&      ' ', ONCVPSP_VERSION_DATE
 
  write(6,'(a/a/a//)') &
 &      'While it is not required under the terms of the GNU GPL, it is',&

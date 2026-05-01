@@ -18,6 +18,7 @@
 !
 ! interpolates various arrays onto linear radial mesh to create file
 ! for PWSCF input using the UPF file format, fully-relativistic case
+#include "version.h"
 
  subroutine upfout_r(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
 &                  zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
@@ -196,10 +197,10 @@
  write(6,'(a,/a)') &
 &      '<UPF version="2.0.1">', &
 &      '  <PP_INFO>'
- write(6,'(/t2,a/t2,a/t2,a/t2,a/t2,a/t2,a//)') &
-       'This pseudopotential file has been produced using the code', &
+ write(6,'(/t2,a/t2,a/t2,a,a,a,a,a/t2,a/t2,a/t2,a//)') &
+&      'This pseudopotential file has been produced using the code', &
 &      'ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
-&      'fully-relativistic version 4.0.1 06/20/2107 by D. R. Hamann', &
+&      'relativistic version ', ONCVPSP_VERSION_STRING, ' ', ONCVPSP_VERSION_DATE, ' by D. R. Hamann', &
 &      'The code is available through a link at URL www.mat-simresearch.com.', &
 &      'Documentation with the package provides a full discription of the', &
 &      'input data below.'
@@ -272,8 +273,8 @@ write(6,'(a/a/a)') '#','# MODEL CORE CHARGE', &
  write(6,'(a)') &
 &      '    <PP_HEADER'
 
-   write(6,'(t8,a)') &
-&        'generated="Generated using ONCVPSP code by D. R. Hamann"'
+   write(6,'(t8,a,a,a)') &
+&        'generated="Generated using ONCVPSP code version ', ONCVPSP_VERSION_STRING, ' by D. R. Hamann"'
    write(6,'(t8,a)') &
 &        'author="anonymous"'
    write(6,'(t8,5a)') &
@@ -669,3 +670,8 @@ write(6,'(a/a/a)') '#','# MODEL CORE CHARGE', &
 
  return
  end subroutine upfout_r
+
+!! Local Variables:
+!! mode: f90
+!! coding: utf-8
+!! End:

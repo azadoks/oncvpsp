@@ -1,4 +1,10 @@
 ###########################################################
+# Automatic version number
+###########################################################
+configure_file(version.h.in version.h)
+include_directories(${PROJECT_BINARY_DIR}/src)
+
+###########################################################
 # ONCVPSP library
 ###########################################################
 set(src_oncvpsp
@@ -29,7 +35,7 @@ set(src_oncvpsp
     lschvkbbe.f90
     lschvkbs.f90
     m_libxc_list.F90
-    m_psmlout.f90
+    m_psmlout.F90
     modcore.f90
     modcore2.f90
     modcore3.f90
@@ -55,7 +61,7 @@ set(src_oncvpsp
     fphsft.f90
     fpovlp.f90
     gnu_script.f90
-    linout.f90
+    linout.F90
     psatom.f90
     relatom.f90
     run_config.f90
@@ -64,13 +70,13 @@ set(src_oncvpsp
     run_plot.f90
     run_vkb.f90
     sratom.f90
-    upfout.f90
+    upfout.F90
     wellstate.f90
     # Fully-relativistic files
     fphsft_r.f90
     fpovlp.f90
     gnu_script_r.f90
-    linout_r.f90
+    linout_r.F90
     psatom_r.f90
     relatom.f90
     renorm_r.f90
@@ -81,7 +87,7 @@ set(src_oncvpsp
     run_plot_r.f90
     run_vkb_r.f90
     sr_so_r.f90
-    upfout_r.f90
+    upfout_r.F90
     wellstate_r.f90
 )
 # Append Libxc interface or stub
@@ -120,7 +126,7 @@ endif ()
 ##########################################################
 # oncvpspnr.x (non-relativistic)
 ##########################################################
-add_executable(oncvpspnr oncvpsp.F90)
+add_executable(oncvpspnr oncvpsp_nr.F90)
 target_compile_definitions(oncvpspnr PUBLIC RELATIVISTIC=0)
 add_dependencies(oncvpspnr oncvpsp)
 target_link_libraries(oncvpspnr PRIVATE oncvpsp)

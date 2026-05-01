@@ -18,12 +18,13 @@
 !
 ! interpolates various arrays onto linear radial mesh to create file
 ! for PWSCF input using the UPF file format
+#include "version.h"
 
  subroutine upfout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
 &                  zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
-&                  epsh1,epsh2,depsh,rlmax,psfile,uupsa,ea)
+&                  epsh1,epsh2,depsh,rlmax,psfile,uupsa,ea,srel)
 
 
 !lmax  maximum angular momentum
@@ -78,6 +79,7 @@
  real(dp) :: fa(30),rc0(6),ep(6),qcut(6),debl(6),facnf(30,5),ea(30)
  real(dp) :: dvloc0,epsh1,epsh2,depsh,rlmax
  character*4 :: psfile
+ logical :: srel
 
 !Output variables - printing only
 
@@ -89,8 +91,15 @@
  real(dp),allocatable :: rhol(:),rl(:),vkbl(:,:,:),vpl(:,:),uual(:,:)
  character*5 :: lnames
  character*2 :: pspd(3)
+ character*7 :: relprefix
 
  lnames = "SPDFG"
+
+ if (srel) then
+  relprefix = "scalar-"
+ else
+  relprefix = "non-"
+ end if
 
 ! adjust nrl to properly accomodate atomic orbitals
  al = dlog(rr(2)/rr(1))
@@ -167,10 +176,10 @@
  write(6,'(a,/a)') &
 &      '<UPF version="2.0.1">', &
 &      '  <PP_INFO>'
- write(6,'(/t2,a/t2,a/t2,a/t2,a/t2,a/t2,a//)') &
+ write(6,'(/t2,a/t2,a/t2,a,a,a,a,a,a/t2,a/t2,a/t2,a//)') &
        'This pseudopotential file has been produced using the code', &
 &      'ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
-&      'scalar-relativistic version 4.0.1 06/20/2107 by D. R. Hamann', &
+&      trim(relprefix), 'relativistic version ', ONCVPSP_VERSION_STRING, ' ', ONCVPSP_VERSION_DATE, ' by D. R. Hamann', &
 &      'The code is available through a link at URL www.mat-simresearch.com.', &
 &      'Documentation with the package provides a full discription of the', &
 &      'input data below.'
@@ -245,8 +254,8 @@
  write(6,'(a)') &
 &      '    <PP_HEADER'
 
-   write(6,'(t8,a)') &
-&        'generated="Generated using ONCVPSP code by D. R. Hamann"'
+   write(6,'(t8,a,a,a)') &
+&        'generated="Generated using ONCVPSP code version ', ONCVPSP_VERSION_STRING, ' by D. R. Hamann"'
    write(6,'(t8,a)') &
 &        'author="anonymous"'
    write(6,'(t8,5a)') &
@@ -257,8 +266,13 @@
 &        'element="',atsym,'"'
    write(6,'(t8,a)') &
 &        'pseudo_type="NC"'
-   write(6,'(t8,a)') &
-&        'relativistic="scalar"'
+   if (srel) then
+     write(6,'(t8,a)') &
+&          'relativistic="scalar"'
+   else
+     write(6,'(t8,a)') &
+&          'relativistic="nonrelativistic"'
+   end if
    write(6,'(t8,a)') &
 &        'is_ultrasoft="F"'
    write(6,'(t8,a)') &
@@ -541,3 +555,8 @@
 
  return
  end subroutine upfout
+
+!! Local Variables:
+!! mode: f90
+!! coding: utf-8
+!! End:

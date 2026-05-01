@@ -20,6 +20,8 @@
 !
 ! Support for PSML file creation
 !
+#include "version.h"
+
 module m_psmlout
 
   public :: psmlout, psmlout_r
@@ -111,6 +113,7 @@ module m_psmlout
   character*1      :: pscode, char_dummy
   character(len=2) :: nameat
   character(len=40):: psflavor
+  character(len=100) :: oncvpsp_version
 
   character(len=1), dimension(0:4) :: lsymb = (/'s','p','d','f','g'/)
 
@@ -128,6 +131,8 @@ module m_psmlout
   integer :: lun, stat
 
 !---
+
+ oncvpsp_version(:) = ONCVPSP_VERSION_STRING
 
  call date_and_time(VALUES=dtime)
  write(datestr,"(i4,'-',i2.2,'-',i2.2)") dtime(1:3)
@@ -196,7 +201,7 @@ module m_psmlout
   call my_add_attribute(xf,"length_unit","bohr")
 
   call xml_NewElement(xf,"provenance")
-  call my_add_attribute(xf,"creator","ONCVPSP-2.1.2+psml")
+  call my_add_attribute(xf,"creator","ONCVPSP v" // trim(oncvpsp_version))
   call my_add_attribute(xf,"date",datestr)
   call xml_NewElement(xf,"input-file")
   call my_add_attribute(xf,"name","oncvpsp-input")
@@ -439,7 +444,7 @@ module m_psmlout
       call my_add_attribute(xf,"length_unit","bohr")
 
         call xml_NewElement(xf,"provenance")
-          call my_add_attribute(xf,"creator","oncvpsp 2.1.2+psml")
+          call my_add_attribute(xf,"creator","ONCVPSP v" // trim(oncvpsp_version))
         call xml_EndElement(xf,"provenance")
 
         vlocal => vpuns(:,lloc+1)
@@ -593,6 +598,7 @@ end subroutine psmlout
   character*1      :: pscode, char_dummy
   character(len=2) :: nameat
   character(len=40):: psflavor
+  character(len=100) :: oncvpsp_version
 
   character(len=1), dimension(0:4) :: lsymb = (/'s','p','d','f','g'/)
 
@@ -610,6 +616,8 @@ end subroutine psmlout
   integer :: lun, stat
 
 !---
+
+ oncvpsp_version(:) = ONCVPSP_VERSION_STRING
 
  call date_and_time(VALUES=dtime)
  write(datestr,"(i4,'-',i2.2,'-',i2.2)") dtime(1:3)
@@ -679,7 +687,7 @@ end subroutine psmlout
   call my_add_attribute(xf,"length_unit","bohr")
 
   call xml_NewElement(xf,"provenance")
-  call my_add_attribute(xf,"creator","ONCVPSP-2.1.2+psml")
+  call my_add_attribute(xf,"creator","ONCVPSP v" // trim(oncvpsp_version))
   call my_add_attribute(xf,"date",datestr)
   call xml_NewElement(xf,"input-file")
   call my_add_attribute(xf,"name","oncvpsp-input")
@@ -974,7 +982,7 @@ end subroutine psmlout
       call my_add_attribute(xf,"length_unit","bohr")
 
         call xml_NewElement(xf,"provenance")
-          call my_add_attribute(xf,"creator","oncvpsp 2.1.2+psml")
+          call my_add_attribute(xf,"creator","ONCVPSP v" // trim(oncvpsp_version))
         call xml_EndElement(xf,"provenance")
 
         vlocal => vpuns(:,lloc+1,1)
@@ -1220,3 +1228,8 @@ end subroutine psmlout_r
      end subroutine write_psml_item
 
 end module m_psmlout
+
+!! Local Variables:
+!! mode: f90
+!! coding: utf-8
+!! End:
