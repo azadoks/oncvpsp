@@ -387,7 +387,11 @@
 
  write(6,'(a/a/a)') '#','# MODEL CORE CHARGE', &
 &      '# icmod, fcfact, rcfact'
- write(6,'(i5,2f10.5)') icmod,fcfact,rcfact
+ if(icmod==6) then
+   write(6,'(i5,f10.5,es12.4)') icmod,fcfact,rcfact
+ else
+   write(6,'(i5,2f10.5)') icmod,fcfact,rcfact
+ end if
 
  write(6,'(a/a/a)') '#','# LOG DERIVATIVE ANALYSIS', &
 &      '# epsh1, epsh2, depsh'

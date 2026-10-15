@@ -41,7 +41,7 @@ in any publication utilizing these pseudopotentials.
 #
 # MODEL CORE CHARGE
 # icmod, fcfact, rcfact
-    6  25.00000   0.00010
+    6  25.00000  1.0000E-04
 #
 # LOG DERIVATIVE ANALYSIS
 # epsh1, epsh2, depsh
@@ -7900,7 +7900,7 @@ Si    ONCVPSP-4.0.1  r_core=   2.70302   2.70302   2.70302
 #
 # MODEL CORE CHARGE
 # icmod, fcfact, rcfact
-    6  25.00000   0.00010
+    6  25.00000  1.0000E-04
 #
 # LOG DERIVATIVE ANALYSIS
 # epsh1, epsh2, depsh
