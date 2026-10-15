@@ -126,7 +126,7 @@
    hmev(:)=0.0d0
 
    
-   nbas=0
+   nbas=nbmax
    do jj=1,nbmax
      nn=ll+jj
 

@@ -105,6 +105,7 @@
 
  do l1=1,lmax+1
    if(l1==lloc+1) cycle
+   if(nproj(l1)==0) cycle
    np=nproj(l1)
    bb(:,:)=0.0d0
    call vpinteg(pswf(1,1,l1),vkb(1,1,l1),irc(l1),2*l1,bb(1,1),rr)

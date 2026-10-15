@@ -859,6 +859,14 @@
  end if
 
  if(trim(psfile)=='psml' .or. trim(psfile)=='both') then
+!
+! irct: first point beyond which the model core equals the all-electron core
+!
+   irct=mmax
+   do ii=mmax,1,-1
+     if(rhomod(ii,1)/=rhoc(ii)) exit
+     irct=ii
+   end do
    print *, 'calling psmlout'
    call psmlout_r(lmax,lloc,rc,vkb,evkb,mxprj,nproj,rr,vpsml,rho,rhomod, &
 &             irct, &

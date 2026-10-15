@@ -89,6 +89,8 @@
         qlow=qt
       end if
     end do
+!a sign change that bisection cannot resolve is a pole of the log
+!derivative (a zero of j_l), not a root, so it is skipped
     found_root=.true.
     if(.not. found_root) then
       write(6,'(a)') 'qroots: ERROR - failed to find root'
@@ -98,7 +100,7 @@
   if(iroot .eq. nroot) exit
   dlgd_last=dlgd
  end do
- if(.not. found_root) then
+ if(iroot<nroot) then
    write(6,'(a)') 'qroots: ERROR - failed to find nroot roots'
    stop
  end if

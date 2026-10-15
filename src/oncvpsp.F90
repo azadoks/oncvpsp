@@ -749,6 +749,14 @@
 !
 ! Write info for PSML format
 !
+!
+! irct: first point beyond which the model core equals the all-electron core
+!
+   irct=mmax
+   do ii=mmax,1,-1
+     if(rhomod(ii,1)/=rhoc(ii)) exit
+     irct=ii
+   end do
    print *, 'calling psmlout'
    call psmlout(lmax,lloc,rc,vkb,evkb,mxprj,nproj,rr,vpuns,rho,rhomod, &
 &             irct, srel, &

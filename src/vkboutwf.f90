@@ -145,18 +145,20 @@ real(dp) :: rc,rn
  real(dp) :: uh(mmax),uph(mmax),uk(mmax,*),upk(mmax,*)
 
  real(dp) :: al,als,amesh,cn,ro,sls,sn,akb,ckb
- integer :: ii,it,kk,nsol
+ integer :: ii,it,kk,nsol,nn
  real(dp), allocatable :: cf(:),src(:,:),u(:,:),upr(:,:),upp(:,:)
 
  nsol=nkb+1
- allocate(cf(mch),src(mch,nsol),u(mch,nsol),upr(mch,nsol),upp(mch,nsol))
+!the start-up points 1..4 are set even when mch<4
+ nn=max(mch,4)
+ allocate(cf(nn),src(nn,nsol),u(nn,nsol),upr(nn,nsol),upp(nn,nsol))
 
  al = 0.01d0 * dlog(rr(101) / rr(1))
  amesh = dexp(al)
  sls=ll*(ll+1)
  als=al**2
 
- do ii=1,mch
+ do ii=1,nn
    cf(ii)=als*sls + 2.0d0*als*(vloc(ii)-ep)*rr(ii)**2
  end do
 
@@ -169,7 +171,7 @@ real(dp) :: rc,rn
    upp(ii,1)=al*upr(ii,1)+cf(ii)*u(ii,1)
  end do
  do kk=1,nkb
-   do ii=1,mch
+   do ii=1,nn
      src(ii,kk+1)=2.0d0*als*vkb(ii,kk)*rr(ii)**2
    end do
    ckb = 2.0d0*vkb(1,kk)/rr(1)**(ll+1)
@@ -219,8 +221,8 @@ real(dp) :: rc,rn
  do kk=1,nkb
    uk(:,kk)=0.0d0
    upk(:,kk)=0.0d0
-   uk(1:mch,kk)=u(:,kk+1)
-   upk(1:mch,kk)=upr(:,kk+1)
+   uk(1:mch,kk)=u(1:mch,kk+1)
+   upk(1:mch,kk)=upr(1:mch,kk+1)
  end do
 
  deallocate(cf,src,u,upr,upp)

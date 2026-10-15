@@ -430,7 +430,6 @@ module m_psmlout
      call xml_EndElement(xf,"data")
      call xml_EndElement(xf,"radfunc")
      call xml_EndElement(xf,"pseudocore-charge")
-     deallocate(chcore)
   endif
 
       call xml_NewElement(xf,"pseudopotential-operator")
@@ -964,7 +963,6 @@ end subroutine psmlout
      call xml_EndElement(xf,"data")
      call xml_EndElement(xf,"radfunc")
      call xml_EndElement(xf,"pseudocore-charge")
-     deallocate(chcore)
   endif
 
 

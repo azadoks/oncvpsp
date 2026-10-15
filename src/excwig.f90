@@ -58,6 +58,8 @@
    rs=conrs*rh**(-thrd)
    vxc(ii)=-convx/rs - 0.44d0*(4.0d0*thrd*rs+7.8d0)/(rs+7.8d0)**2
    exc(ii)=-conex/rs - 0.44d0/(rs+7.8d0)
+  else
+   vxc(ii)=0.0d0 ; exc(ii)=0.0d0
   end if
  end do
  return

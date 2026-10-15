@@ -64,7 +64,7 @@
  real(dp) :: sn,ps0norm,amesh,ro
  real(dp) :: err,lerr,qerr,ehaerr,eeverr
  real(dp) :: sbf(mmax)
- real(dp) :: cons(6),cvgplt(2,7,mxprj)
+ real(dp) :: cons(10),cvgplt(2,7,mxprj)
  real(dp), allocatable :: orbasis(:,:)
  real(dp), allocatable :: orbasis_der(:,:),pswf0_sb(:),pswfnull_sb(:,:)
  real(dp), allocatable :: pswf0_or(:),pswfnull_or(:,:)
@@ -151,6 +151,8 @@
 !q considered infinity for E_resid calculation
    qmax=dq*int(2.0d0*qroot(nbas)/dq) 
    qmax=max(qmax,20.0d0)
+!keep qcut on the E_resid q mesh, which runs from qmax inward
+   if(qcut>qmax-4.0d0*dq) qmax=dq*int(2.0d0*qcut/dq)
 
 
    nqout=2 + 0.75d0*qmax/dqout

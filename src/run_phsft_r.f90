@@ -76,6 +76,7 @@ subroutine run_phsft_r(lmax,lloc,nproj,ep,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
          if (rxpsh < 0.0) then
             irphs = irc(l1) + 2
          else
+            irphs = mmax - 5  ! rxpsh beyond the mesh
             do ii = 1,mmax
                if (rr(ii) >= rxpsh) then
                   irphs = ii
@@ -91,6 +92,7 @@ subroutine run_phsft_r(lmax,lloc,nproj,ep,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
          if (rxpsh < 0.0) then
             irphs = irc(lloc + 1)
          else
+            irphs = mmax - 5  ! rxpsh beyond the mesh
             do ii = 1,mmax
                if (rr(ii) >= rxpsh) then
                   irphs = ii

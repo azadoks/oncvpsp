@@ -63,6 +63,8 @@ real(dp) :: vr(mmax,mxprj,6,2)
  real(dp), allocatable :: vloc(:),vkbt(:,:),vkbst(:,:),work(:)
  logical :: sorted
 
+ evkb(:,:,:)=0.0d0
+
  lwork=3*mxprj
  allocate(vloc(mmax),vkbt(mmax,mxprj),vkbst(mmax,mxprj),work(lwork))
 
@@ -128,6 +130,7 @@ real(dp) :: vr(mmax,mxprj,6,2)
 
  do l1=1,lmax+1
   if(l1==lloc+1) cycle
+  if(nproj(l1)==0) cycle
   ll=l1-1
   if(l1==1) then
    mkap=1

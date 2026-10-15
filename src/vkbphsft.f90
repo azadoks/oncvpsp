@@ -58,7 +58,7 @@
  real(dp) :: al,dnpi,epsh,phi,phip,pshoff
  real(dp) :: dmin,dmax,dtst,emin,emax,et,psmin,psmax,pst,shift,shift2
  integer :: ii,jj,ierr,node,n2
- logical :: jump
+ logical :: jump,aligned
 
  real(dp), allocatable :: uu(:),up(:)
 
@@ -69,6 +69,7 @@
  al = 0.01d0 * dlog(rr(101) / rr(1))
 
  pshoff = 0.0d0
+ aligned = .false.
 
  do ii = 1,npsh
    epsh = epsh2-(ii-1)*depsh
@@ -151,9 +152,20 @@
 ! calculate shift to align with all-electron results
    if(abs(ep-epsh)-0.5d0*depsh<eps) then
      dnpi = pi*(nint((pshf(ii)-pshp(ii))/pi))
+     aligned = .true.
    end if
 
  end do
+
+! ep outside the scan: align at the nearer end of the scan
+ if(.not. aligned) then
+   if(ep>epsh2) then
+     ii=1
+   else
+     ii=npsh
+   end if
+   dnpi = pi*(nint((pshf(ii)-pshp(ii))/pi))
+ end if
 
  pshp(:)=pshp(:)+dnpi
 
