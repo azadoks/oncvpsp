@@ -52,9 +52,6 @@
  integer ii
  real(dp) :: al,tv
 
-!Function
- real(dp) :: aii
-
  real(dp), allocatable :: rvp(:),rv(:),excca(:),difxc(:)
  real(dp), allocatable :: exca(:),vxcd(:),rhot(:)
  real(dp), allocatable :: foutv(:),foutx(:),foutfc(:)
@@ -190,5 +187,9 @@
  deallocate(exca,vxcd,rhot)
  deallocate(foutv,foutx,foutfc)
  return
+
+ contains
+
+ include 'adams.inc'
 
  end subroutine vout

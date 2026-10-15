@@ -50,7 +50,6 @@
 
  real(dp), allocatable :: gu(:),fu(:),gup(:),fup(:),cf(:)
 
- real(dp) :: aei,aeo,aii,aio !functions in aeo.f90
  real(dp) :: cc,cci,gam,cof
  real(dp) :: de,emax,emin
  real(dp) :: eps,ro,sc
@@ -296,6 +295,10 @@
  deallocate(gu,fu,gup,fup)
  deallocate(cf)
  return
+
+ contains
+
+ include 'adams.inc'
 
  end subroutine ldiracfb
 

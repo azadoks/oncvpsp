@@ -6,7 +6,7 @@
 
 include ../make.inc
 
-OBJS_ALL =	aeo.o check_data.o const_basis.o dpnint.o eresid.o exchdl.o \
+OBJS_ALL =	check_data.o const_basis.o dpnint.o eresid.o exchdl.o \
 		exc_off_pbe.o excpzca.o excwig.o input_text_m.o ldiracfb.o ldiracfs.o \
 		lschfb.o lschfs.o lschkb.o lschpb.o lschpse.o lschps.o \
 		lschvkbbe.o lschvkbb.o lschvkbs.o modcore.o optimize.o \
@@ -67,6 +67,8 @@ $(DRIVERS_NRSR) $(DRIVERS_R) run_config.o run_config_r.o ae_file_m.o: config_ae_
 $(DRIVERS_NRSR) $(DRIVERS_R): ae_file_m.o
 oncvpsp_nr.o oncvpsp_ae.o oncvpsp_ps.o oncvpspnr_ae.o oncvpspnr_ps.o: oncvpsp.F90
 oncvpspr_ae.o oncvpspr_ps.o: oncvpsp_r.F90
+ldiracfb.o ldiracfs.o lschfb.o lschfs.o lschkb.o lschpb.o lschps.o \
+lschpsbar.o lschpse.o lschvkbb.o vout.o: adams.inc
 INCLUDE_WXML=-I./xmlf90-wxml
 
 

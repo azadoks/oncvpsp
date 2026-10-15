@@ -45,7 +45,6 @@
 
 !Local Variables
 
- real(dp) :: aei,aeo,aii,aio !functions in aeo.f90
  real(dp) :: de,emax,emin
  real(dp) :: eps,exp,ro,sc
  real(dp) :: sls,sn,cn,uout,upin,upout,xkap
@@ -231,5 +230,9 @@
 
  deallocate(upp,cf)
  return
+
+ contains
+
+ include 'adams.inc'
 
  end subroutine lschpb

@@ -51,7 +51,7 @@
 
 !Local variables
  real(dp) :: amesh,al
- real(dp) :: aeo, aio, als, cn
+ real(dp) :: als, cn
  real(dp) :: sls, uout, upout
  real(dp) :: akb,ckb
  integer :: ii, it
@@ -111,4 +111,8 @@
  deallocate(upp,cf)
 
  return
+ contains
+
+ include 'adams.inc'
+
  end  subroutine lschkb

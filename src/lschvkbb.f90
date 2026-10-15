@@ -54,7 +54,7 @@
 
 
 !Local variables
- real(dp) :: aei,aeo,aii,aio,cn
+ real(dp) :: cn
  real(dp) :: de
  real(dp) :: eps,ro,sc
  real(dp) :: sls,sn,uout,upin,upout
@@ -251,5 +251,9 @@
 
  deallocate(upp,cf)
  return
+
+ contains
+
+ include 'adams.inc'
 
  end subroutine lschvkbb

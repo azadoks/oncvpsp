@@ -54,7 +54,7 @@
 
 !Local variables
  real(dp) :: amesh,al
- real(dp) :: aeo, aio, als, cn
+ real(dp) :: als, cn
  real(dp) :: fss, tfss, gamma, ro, xx
  real(dp) :: sls, sn, uout, upout
  integer :: ii, it,node
@@ -177,4 +177,8 @@
  deallocate(upp,cf,dv,fr,frp)
 
  return
+ contains
+
+ include 'adams.inc'
+
  end  subroutine lschfs

@@ -51,7 +51,6 @@
 
 !Local Variables
 
- real(dp) :: aei,aeo,aii,aio !functions in aeo.f90
  real(dp) :: de,uumax
  real(dp) :: eps,ro,sc,stht,ctht
  real(dp) :: sls,sn,cn,uout,upin,upout,ur,xkap,xkap2,xx
@@ -293,5 +292,9 @@
 
  deallocate(upp,cf)
  return
+
+ contains
+
+ include 'adams.inc'
 
  end subroutine lschpsbar

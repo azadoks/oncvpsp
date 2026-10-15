@@ -3,7 +3,6 @@
 ###########################################################
 set(src_oncvpsp
     # Common files
-    aeo.f90
     check_data.f90
     const_basis.f90
     der2exc.f90

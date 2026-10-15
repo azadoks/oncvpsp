@@ -49,7 +49,7 @@
 
 !Local variables
  real(dp) :: amesh,al
- real(dp) :: aeo, aio, als, cn
+ real(dp) :: als, cn
  real(dp) :: ro, xx
  real(dp) :: sls, sn, uout, upout
  integer :: ii, it
@@ -133,4 +133,8 @@
  deallocate(upp,cf)
 
  return
+ contains
+
+ include 'adams.inc'
+
  end  subroutine lschps

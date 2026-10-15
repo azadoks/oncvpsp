@@ -19,6 +19,9 @@
 ! Adams extrapolation and interpolation formulas for
 ! outward and inward integration, Abramowitz and
 ! Stegun, p. 896
+!
+! Included as internal functions (after "contains") by the radial
+! integrators that use them, so the compiler can inline them
 
  function aeo(yy,jj)
 
