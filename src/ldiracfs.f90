@@ -99,10 +99,10 @@
   fu(ii)=cof*gu(ii)
 
   fup(ii)= al*rr(ii)*(kap*fu(ii)/rr(ii) &
-         + cci*(ee + vv(ii))*gu(ii))
+         + cci*(vv(ii) - ee)*gu(ii))
 
   gup(ii)= al*rr(ii)*(-kap*gu(ii)/rr(ii) &
-           + cci*(2.0d0*cc**2 - ee - vv(ii))*fu(ii))
+           + cci*(2.0d0*cc**2 + ee - vv(ii))*fu(ii))
  end do
   
 ! outward integration using predictor once, corrector
