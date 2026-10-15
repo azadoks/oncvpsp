@@ -159,13 +159,15 @@
   ierr=ierr+1
  end if
 
- do l1=1,lmax+1
-  if(rc(l1)<rc(lloc+1)) then
-    write(6,'(a,i2,a)') 'test_data: rc < rc(lloc) for l =',l1-1,&
-&         '.  Not allowed.'
-    ierr=ierr+1
-  end if
- end do
+ if(lloc>=0 .and. lloc<=4) then
+  do l1=1,lmax+1
+   if(rc(l1)<rc(lloc+1)) then
+     write(6,'(a,i2,a)') 'test_data: rc < rc(lloc) for l =',l1-1,&
+&          '.  Not allowed.'
+     ierr=ierr+1
+   end if
+  end do
+ end if
 
  do l1=1,lmax+1
   if(nproj(l1)==0 .and. (lloc==4 .or. lloc==l1-1)) then
@@ -205,7 +207,7 @@
   write(6,'(a)') 'test_data: must have epsh2 > epsh1'
   ierr=ierr+1
  end if
- if(depsh<0.0d0) then
+ if(depsh<=0.0d0) then
   write(6,'(a)') 'test_data: must have depsh>0.0'
   ierr=ierr+1
  end if

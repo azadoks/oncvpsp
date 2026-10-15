@@ -141,6 +141,8 @@ contains
       ! atom and reference configuration
       call cmtskp(unit, inline)
       read (unit, *, iostat=ios) atsym, zz, nc, nv, iexc, psfile
+      ! counts beyond the array sizes would overrun before check_data runs
+      if (ios == 0 .and. (nc < 0 .or. nv < 0 .or. nc + nv > 30)) ios = 999
       call read_error(ios, inline)
 
       call cmtskp(unit, inline)
@@ -152,6 +154,7 @@ contains
       ! pseudopotential and optimization
       call cmtskp(unit, inline)
       read (unit, *, iostat=ios) lmax
+      if (ios == 0 .and. lmax > 5) ios = 999
       call read_error(ios, inline)
 
       call cmtskp(unit, inline)
@@ -230,11 +233,13 @@ contains
       ! test configurations
       call cmtskp(unit, inline)
       read (unit, *, iostat=ios) ncnf
+      if (ios == 0 .and. ncnf > 4) ios = 999
       call read_error(ios, inline)
 
       do jj = 2, ncnf + 1
          call cmtskp(unit, inline)
          read (unit, *, iostat=ios) nvcnf(jj)
+         if (ios == 0 .and. (nvcnf(jj) < 0 .or. nc + nvcnf(jj) > 30)) ios = 999
          call read_error(ios, inline)
          do ii = nc + 1, nc + nvcnf(jj)
             call cmtskp(unit, inline)
@@ -372,6 +377,8 @@ contains
       ! atom and reference configuration
       call cmtskp(unit, inline)
       read (unit, *, iostat=ios) atsym, zz, nc, nv, iexc, psfile
+      ! counts beyond the array sizes would overrun before check_data runs
+      if (ios == 0 .and. (nc < 0 .or. nv < 0 .or. nc + nv > 30)) ios = 999
       call read_error(ios, inline)
 
       call cmtskp(unit, inline)
@@ -383,6 +390,7 @@ contains
       ! pseudopotential and optimization
       call cmtskp(unit, inline)
       read (unit, *, iostat=ios) lmax
+      if (ios == 0 .and. lmax > 5) ios = 999
       call read_error(ios, inline)
 
       call cmtskp(unit, inline)
@@ -462,11 +470,13 @@ contains
       ! test configurations
       call cmtskp(unit, inline)
       read (unit, *, iostat=ios) ncnf
+      if (ios == 0 .and. ncnf > 4) ios = 999
       call read_error(ios, inline)
 
       do jj = 2, ncnf + 1
          call cmtskp(unit, inline)
          read (unit, *, iostat=ios) nvcnf(jj)
+         if (ios == 0 .and. (nvcnf(jj) < 0 .or. nc + nvcnf(jj) > 30)) ios = 999
          call read_error(ios, inline)
          do ii = nc + 1, nc + nvcnf(jj)
             call cmtskp(unit, inline)

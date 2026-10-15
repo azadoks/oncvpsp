@@ -214,6 +214,10 @@
                               ncnf, nvcnf, nacnf, lacnf, facnf)
     case(INPUT_TEXT)
        open(newunit=unit, file=input_filename, status='old', action='read', iostat=ios)
+       if(ios /= 0) then
+          write(stderr, '(a)') 'Error: cannot open input file '//trim(input_filename)
+          stop 1
+       end if
        call read_input_text_r(unit, inline, &
                               atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
                               lmax, rc, ep, ncon, nbas, qcut, &
@@ -227,6 +231,10 @@
 #if (defined WITH_TOML)
     case(INPUT_TOML)
        open(newunit=unit, file=input_filename, status='old', action='read', iostat=ios)
+       if(ios /= 0) then
+          write(stderr, '(a)') 'Error: cannot open input file '//trim(input_filename)
+          stop 1
+       end if
        call read_input_toml_r(unit, &
                               atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
                               lmax, rc, ep, ncon, nbas, qcut, &
