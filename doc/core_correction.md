@@ -124,8 +124,9 @@ icmod==6:
             6   25.0   1.0e-4
     ```
 
-    r_s is the smallest grid radius, no larger than the smallest rc, whose
-    model needs no more than ecut. The model needs the cutoff ecut if,
+    r_s is the smallest grid radius, no larger than the smallest rc (or
+    the last radius with core charge, if that is smaller), whose model
+    needs no more than ecut. The model needs the cutoff ecut if,
     for every density cutoff q from 2*sqrt(2*ecut) on (steps of 0.1 bohr^-1
     up to 40 bohr^-1, 200 Ha), the core charge without its Fourier
     components beyond q changes the exchange-correlation energy by less
@@ -133,7 +134,7 @@ icmod==6:
     - Vxc[n_bg] int (rhomod_q - rhomod)| within r <= 10 bohr, with n the
     pseudo valence charge on a uniform background n_bg = 5e-3 bohr^-3 that
     stands for the interstitial electrons of the neighbours. The run stops
-    if even r_s = rc needs more than ecut. The out file gives r_s and the
+    if even the largest r_s needs more than ecut. The out file gives r_s and the
     cutoff the model needs. This is the BudgetedCore of
     PseudoPotentialGenerators.jl with its Martins candidate, executed by
     modcore_budget.f90; tests/data/14_Si_bc.dat uses it.

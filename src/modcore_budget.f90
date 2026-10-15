@@ -20,9 +20,9 @@
 ! wherever the plane-wave cutoff affords it.  Inside the radius r_s the
 ! model is Martins' exp(a + b r**2 + c r**4), matching the core charge and
 ! its first two derivatives at r_s; beyond r_s it is the core charge.
-! r_s is the smallest grid radius, no larger than the smallest rc, whose
-! model needs no more than the cutoff ecut for an exchange-correlation
-! energy error below errmax.
+! r_s is the smallest grid radius, no larger than the smallest rc (or the
+! last radius with core charge), whose model needs no more than the cutoff
+! ecut for an exchange-correlation energy error below errmax.
 !
 ! The error of a density cutoff q (a plane-wave cutoff q**2/8) is that of
 ! the core charge without its Fourier components beyond q, in a solid:
@@ -35,6 +35,10 @@
 ! error stays below errmax for every density cutoff from 2*sqrt(2*ecut) on,
 ! in steps of 0.1 bohr**-1 up to 40 bohr**-1 (200 Ha).  This is the
 ! BudgetedCore of PseudoPotentialGenerators.jl with its Martins candidate.
+!
+! The error almost always peaks at the first of these cutoffs, so r_s is
+! bisected for with the first nquick of them only, and then confirmed with
+! all of them (and bisected for again with all of them if that fails).
 
  subroutine modcore_budget(rhotps,rhoc,rhomod,ecut,errmax,irmax,mmax,rr,iexc)
 
@@ -63,16 +67,17 @@
 
 !background density (bohr**-3) and radius (bohr) of the error,
 !largest density cutoff and its step (bohr**-1),
-!panels of the band-limited transform per step
+!panels of the band-limited transform per step,
+!cutoffs of the bisection before the confirmation with all of them
  real(dp), parameter :: background=5.0d-3, radius=10.0d0
  real(dp), parameter :: qmax=40.0d0, qstep=0.1d0
- integer, parameter :: npanel=4
+ integer, parameter :: npanel=4, nquick=10
 
 !Local variables
- real(dp) :: al,dq,vbg,ecore,aco,bco,cco
+ real(dp) :: al,dq,vbg,ecore,aco,bco,cco,e0
  real(dp), allocatable :: dc(:,:),core(:),nval(:),sn(:),cs(:),sh(:),ch(:)
- real(dp), allocatable :: rq(:),work(:),eps(:),vxc(:),err(:)
- integer :: ii,jj,nq,nin,nx,ilo,ihi,imid,irs,ifrom,ibad
+ real(dp), allocatable :: rq(:),work(:),eps(:),vxc(:),err(:),rqs(:,:)
+ integer :: ii,jj,nq,nin,nx,ilo,ihi,irs,ifrom,iquick,ibad,irtop
 
  al = 0.01d0 * dlog(rr(101) / rr(1))
  dq = qstep/npanel
@@ -81,11 +86,6 @@
  if(2.0d0*sqrt(2.0d0*ecut) >= qmax) then
    write(6,'(/a,f10.2,a)') 'modcore_budget: ERROR stop - ecut beyond', &
 &        qmax**2/8.0d0,' Ha'
-   stop
- end if
-
- if(.not. rhoc(irmax)>0.0d0) then
-   write(6,'(/a)') 'modcore_budget: ERROR stop - no core charge at rc'
    stop
  end if
 
@@ -130,47 +130,55 @@
      exit
    end if
  end do
+ iquick=min(nq,ifrom+nquick-1)
 
-! smallest r_s on the grid, by bisection in the index between rc/50 and rc
-! (the needed cutoff falls as the model softens)
- ihi=irmax
- ilo=irmax
- do ii=irmax,1,-1
-   if(rr(ii)<rr(irmax)/50.0d0) exit
+! the largest r_s: the smallest rc, or the last radius at which the core
+! charge and the derivatives matched there are not zero
+ irtop=0
+ do ii=1,min(irmax,mmax-6)
+   if(.not. all(rhoc(ii:ii+6)>0.0d0)) exit
+   irtop=ii
+ end do
+ if(irtop<4) then
+   write(6,'(/a)') 'modcore_budget: ERROR stop - no core charge'
+   stop
+ end if
+
+! smallest r_s on the grid, by bisection in the index between rr(irtop)/50
+! and rr(irtop) (the needed cutoff falls as the model softens).
+! A model that fails at the first cutoffs fails at all of them
+ ilo=irtop
+ do ii=irtop,4,-1
+   if(rr(ii)<rr(irtop)/50.0d0) exit
    ilo=ii
  end do
 
- if(.not. fits(ihi)) then
-   write(6,'(/a,f10.6,a,f10.4,a,1p,e10.2,a)') &
-&        'modcore_budget: ERROR stop - no model core inside rc =',rr(irmax), &
-&        ' needs less than',ecut,' Ha for an error of',errmax,' Ha'
-   stop
- end if
- if(fits(ilo)) then
-   irs=ilo
- else
-   do while(ihi-ilo>1)
-     imid=(ilo+ihi)/2
-     if(fits(imid)) then
-       ihi=imid
-     else
-       ilo=imid
-     end if
-   end do
-   irs=ihi
+ if(.not. fits(irtop,iquick)) call no_model()
+ irs=bisect(ilo,irtop,iquick)
+ if(.not. fits(irs,nq)) then
+   if(irs==irtop) call no_model()
+   if(.not. fits(irtop,nq)) call no_model()
+   irs=bisect(irs,irtop,nq)
  end if
 
-! the cutoff the model needs, from the full scan
+! the cutoff the model needs: (q+qstep)**2/8 for the last density cutoff q
+! above errmax, which is below 2*sqrt(2*ecut)
  call model(irs)
- call scan_errors(1,huge(1.0d0),ibad)
  ibad=0
- do ii=1,nq
-   if(err(ii)>errmax) ibad=ii
- end do
+ if(ifrom>1) then
+   allocate(rqs(nx,ifrom-1))
+   call scan_errors(1,0,huge(1.0d0),ii)
+   do ii=ifrom-1,1,-1
+     err(ii)=xc_error(rqs(:,ii))
+     if(err(ii)>errmax) then
+       ibad=ii
+       exit
+     end if
+   end do
+   deallocate(rqs)
+ end if
  if(ibad==0) then
    ecore=0.0d0
- else if(ibad==nq) then
-   ecore=huge(1.0d0)
  else
    ecore=((ibad+1)*qstep)**2/8.0d0
  end if
@@ -186,10 +194,11 @@
 &      ' Ha for an xc energy error of',errmax,' Ha'
  write(6,'(a,f12.6,a,f10.6)') '  model radius r_s',rr(irs), &
 &      '  smallest rc',rr(irmax)
- write(6,'(a,1p,3e16.8)') '  a, b, c',aco,bco,cco
- if(ecore<huge(1.0d0)) then
-   write(6,'(a,f12.4,a)') '  cutoff the model core needs',ecore,' Ha'
+ if(irtop<irmax) then
+   write(6,'(a,f12.6)') '  last radius with core charge',rr(irtop)
  end if
+ write(6,'(a,1p,3e16.8)') '  a, b, c',aco,bco,cco
+ write(6,'(a,f12.4,a)') '  cutoff the model core needs',ecore,' Ha'
 
  deallocate(dc,core,sn,cs,sh,ch,err)
  deallocate(nval,rq,work,eps,vxc)
@@ -198,14 +207,44 @@
 
  contains
 
-! whether the model of radius rr(is) needs no more than ecut
- logical function fits(is)
-   integer, intent(in) :: is
+! whether the model of radius rr(is) has errors below errmax at the
+! density cutoffs ifrom..ilast
+ logical function fits(is,ilast)
+   integer, intent(in) :: is,ilast
    integer :: ifail
    call model(is)
-   call scan_errors(ifrom,errmax,ifail)
+   call scan_errors(ifrom,ilast,errmax,ifail)
    fits = ifail==0
  end function fits
+
+! the smallest index above ilo, which fails, that fits up to ilast;
+! ihi fits
+ integer function bisect(ilo,ihi,ilast)
+   integer, intent(in) :: ilo,ihi,ilast
+   integer :: ia,ib,imid
+   ia=ilo
+   ib=ihi
+   if(fits(ia,ilast)) then
+     bisect=ia
+     return
+   end if
+   do while(ib-ia>1)
+     imid=(ia+ib)/2
+     if(fits(imid,ilast)) then
+       ib=imid
+     else
+       ia=imid
+     end if
+   end do
+   bisect=ib
+ end function bisect
+
+ subroutine no_model()
+   write(6,'(/a,f10.6,a,f10.4,a,1p,e10.2,a)') &
+&        'modcore_budget: ERROR stop - no model core inside r =',rr(irtop), &
+&        ' needs less than',ecut,' Ha for an error of',errmax,' Ha'
+   stop
+ end subroutine no_model
 
 ! the Martins coefficients at rr(is), and in core the model inside rr(is)
 ! and the core charge beyond
@@ -244,26 +283,30 @@
    end do
  end subroutine martins_derivatives
 
-! the errors err(iq) at the density cutoffs iq*qstep, iq=ifirst..nq, of the
-! model in core, up to the first above elimit (its index in ifail, else 0).
+! the errors err(iq) at the density cutoffs iq*qstep, iq=ifirst..ilast, of
+! the model in core, up to the first above elimit (its index in ifail,
+! else 0).  With ilast=0 instead the band-limited models of the cutoffs
+! 1..ifrom-1 are kept in rqs.
 ! The band-limited model is built up panel by panel (midpoints, width dq),
 ! the sines and cosines of the midpoints by rotation
- subroutine scan_errors(ifirst,elimit,ifail)
-   integer, intent(in) :: ifirst
+ subroutine scan_errors(ifirst,ilast,elimit,ifail)
+   integer, intent(in) :: ifirst,ilast
    real(dp), intent(in) :: elimit
    integer, intent(out) :: ifail
-   real(dp) :: e0,q,ww,tt
-   integer :: iq,kk,ll
+   real(dp) :: q,ww,tt
+   integer :: iq,kk,ll,iend
 
    ifail=0
    err(:)=-1.0d0
    e0=exc_sphere(core(1:nx))
+   iend=ilast
+   if(ilast==0) iend=ifrom-1
    sn(:)=sin(0.5d0*dq*rr(:))
    cs(:)=cos(0.5d0*dq*rr(:))
    sh(:)=sin(dq*rr(:))
    ch(:)=cos(dq*rr(:))
    rq(:)=0.0d0
-   do iq=1,nq
+   do iq=1,iend
      do kk=1,npanel
        q=((iq-1)*npanel + kk - 0.5d0)*dq
 ! weight dq (1/2pi**2) int 4pi r**2 nc j0(qr) dr of the panel
@@ -282,18 +325,30 @@
          sn(ll)=tt
        end do
      end do
+     if(ilast==0) then
+       rqs(:,iq)=rq(:)
+       cycle
+     end if
      if(iq<ifirst) cycle
-     tt=0.0d0
-     do ll=1,nin
-       tt=tt + rr(ll)**3*(rq(ll) - core(ll))
-     end do
-     err(iq)=abs(exc_sphere(rq) - e0 - vbg*al*tt)
+     err(iq)=xc_error(rq)
      if(.not. err(iq)<=elimit) then
        ifail=iq
        return
      end if
    end do
  end subroutine scan_errors
+
+! the error of the band-limited model bq of the model in core
+ real(dp) function xc_error(bq)
+   real(dp), intent(in) :: bq(nx)
+   real(dp) :: tt
+   integer :: ll
+   tt=0.0d0
+   do ll=1,nin
+     tt=tt + rr(ll)**3*(bq(ll) - core(ll))
+   end do
+   xc_error=abs(exc_sphere(bq) - e0 - vbg*al*tt)
+ end function xc_error
 
 ! the exchange-correlation energy within the sphere of the valence charge
 ! on the background plus the core charge cc
