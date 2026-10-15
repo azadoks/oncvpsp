@@ -120,14 +120,16 @@ scalar-relativistic code,
     oncvpsp_ps.x --ae-file <prefix>.ae < <prefix>.dat > <prefix>.out
 
 and likewise `oncvpspnr_ae.x` and `oncvpspnr_ps.x` for the
-non-relativistic code. `oncvpsp_ae.x` solves the reference atom and the
+non-relativistic code and `oncvpspr_ae.x` and `oncvpspr_ps.x` for the
+fully-relativistic code. `oncvpsp_ae.x` solves the reference atom and the
 all-electron halves of the test configurations and writes them to the
 `--ae-file`. `oncvpsp_ps.x` reads that file instead of solving the
 all-electron atom, and otherwise gives the same output as `oncvpsp.x`.
 Its input may change anything except the reference atom (`atsym`, `z`,
 `nc`, `nv`, `iexc` and the reference configuration), and may use any
 subset of the test configurations that `oncvpsp_ae.x` was given; it stops
-with an error otherwise. There are no fully-relativistic versions yet.
+with an error otherwise, or if the file was written for a different
+relativistic treatment.
 
 Setting `psfile` to `none` skips writing a pseudopotential file, and
 `ncnf` = 0 skips the test configurations other than the reference.

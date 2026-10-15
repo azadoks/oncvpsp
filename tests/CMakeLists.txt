@@ -79,6 +79,7 @@ endforeach(test_name)
 # scripts/split_test.sh)
 set(oncvpsp_split_tests
     "sr:14_Si" "sr:19_K_st" "sr:29_Cu" "sr:57_La" "nr:14_Si" "nr:29_Cu"
+    "r:52_Te" "r:80_Hg"
 )
 foreach(split_test ${oncvpsp_split_tests})
     string(REPLACE ":" ";" split_test_parts ${split_test})

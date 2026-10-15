@@ -122,13 +122,14 @@ oncvpsp_executable(oncvpspsr oncvpsp.F90 oncvpsp.x)
 oncvpsp_executable(oncvpspnr oncvpsp_nr.F90 oncvpspnr.x)
 oncvpsp_executable(oncvpspr oncvpsp_r.F90 oncvpspr.x)
 
-# All-electron and pseudopotential stages of the scalar- and
-# non-relativistic drivers, which pass the all-electron atom through a
+# All-electron and pseudopotential stages of the three drivers, which pass the all-electron atom through a
 # file (see oncvpsp.F90 and ae_file_m.f90)
 oncvpsp_executable(oncvpspsr_ae oncvpsp_ae.F90 oncvpsp_ae.x)
 oncvpsp_executable(oncvpspsr_ps oncvpsp_ps.F90 oncvpsp_ps.x)
 oncvpsp_executable(oncvpspnr_ae oncvpspnr_ae.F90 oncvpspnr_ae.x)
 oncvpsp_executable(oncvpspnr_ps oncvpspnr_ps.F90 oncvpspnr_ps.x)
+oncvpsp_executable(oncvpspr_ae oncvpspr_ae.F90 oncvpspr_ae.x)
+oncvpsp_executable(oncvpspr_ps oncvpspr_ps.F90 oncvpspr_ps.x)
 
 ###########################################################
 # Subdirectories

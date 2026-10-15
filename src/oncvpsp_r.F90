@@ -16,6 +16,12 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+#if defined(ONCVPSP_AE_ONLY) || defined(ONCVPSP_PS_ONLY)
+#define ONCVPSP_SPLIT
+#endif
+#if !defined(ONCVPSP_EXE)
+#define ONCVPSP_EXE 'oncvpspr.x'
+#endif
  program oncvpsp_r
 !
 ! Creates and tests optimized norm-conserving Vanderbilt or Kleinman-Bylander
@@ -32,9 +38,19 @@
 !
 !   Output format for ABINIT pspcod=8 and upf format for quantumespresso
 !
+!   Built with ONCVPSP_AE_ONLY (oncvpspr_ae.x) or ONCVPSP_PS_ONLY
+!   (oncvpspr_ps.x), this program is split into all-electron and
+!   pseudopotential stages as oncvpsp.F90 is; see there and ae_file_m.
+!
  use, intrinsic :: iso_fortran_env, only: stdin => input_unit, stdout => output_unit, stderr => error_unit
  use m_psmlout, only: psmlout_r
  use input_text_m, only: read_input_text_r
+ use config_ae_m, only: config_ae_r_t, run_config_ae_r
+#if defined(ONCVPSP_AE_ONLY)
+ use ae_file_m, only: write_ae_file_r
+#elif defined(ONCVPSP_PS_ONLY)
+ use ae_file_m, only: read_ae_file_r, ae_file_config_r
+#endif
 #if (defined WITH_TOML)
  use input_toml_m, only: read_input_toml_r
 #endif
@@ -91,6 +107,8 @@
  real(dp), allocatable :: vpsml(:,:,:)
  real(dp), allocatable :: vr(:,:,:,:)
 
+ type(config_ae_r_t) :: cae(5)
+
  character*2 :: atsym
  character*4 :: psfile
 
@@ -100,6 +118,7 @@
  integer :: input_mode
  integer :: unit
  character(len=1024) :: input_filename
+ character(len=1024) :: ae_filename=''
 
  input_mode = INPUT_STDIN
 
@@ -122,11 +141,16 @@
        call get_command_argument(i, arg)
        select case(arg)
        case('-h', '--help')
-          write (stdout, '(a)') 'Usage: oncvpspr.x [options]'
+          write (stdout, '(a)') 'Usage: '//ONCVPSP_EXE//' [options]'
           write (stdout, '(a)') 'Options:'
           write (stdout, '(a)') '  -h, --help       Show this help message and exit'
           write (stdout, '(a)') '  -v, --version    Show version information and exit'
           write (stdout, '(a)') '  -i, --input      Specify input file (TOML). For legacy input, use stdin.'
+#if defined(ONCVPSP_AE_ONLY)
+          write (stdout, '(a)') '  -a, --ae-file    All-electron data file to write (required)'
+#elif defined(ONCVPSP_PS_ONLY)
+          write (stdout, '(a)') '  -a, --ae-file    All-electron data file written by oncvpspr_ae.x (required)'
+#endif
           stop 0
        case('-v', '--version')
           write (stdout, '(a)') 'ONCVPSP (fully-realtivistic) version 4.0.1'
@@ -150,10 +174,25 @@
         case('-t', '--toml-input')
           error stop 'Error: TOML input support not enabled in this build.'
 #endif
+#if defined(ONCVPSP_SPLIT)
+       case('-a', '--ae-file')
+         if (i + 1 > command_argument_count()) then
+            write (stderr, '(a)') 'Error: --ae-file requires a filename argument'
+            stop 1
+         end if
+         call get_command_argument(i + 1, ae_filename)
+#endif
        case default
        end select
     end do
  end block parse_args
+
+#if defined(ONCVPSP_SPLIT)
+ if (len_trim(ae_filename) == 0) then
+    write (stderr, '(a)') 'Error: '//ONCVPSP_EXE//' requires --ae-file'
+    stop 1
+ end if
+#endif
 
  ios = 0
  select case(input_mode)
@@ -275,8 +314,13 @@
 !
 ! full potential atom solution
 !
+#if defined(ONCVPSP_PS_ONLY)
+   call read_ae_file_r(ae_filename,atsym,zz,nc,nv,iexc,na,la,fa, &
+&                      mmax,rr,it,etot,ea,rhoc,rho,vfull)
+#else
    call relatom(na,la,ea,fa,rpk,nc,nc+nv,it,rhoc,rho, &
 &              rr,vfull,zz,mmax,iexc,etot,ierr)
+#endif
 
 !
 !
@@ -364,6 +408,22 @@
   stop
  end if
  write(6,'(a,1p,d18.8)') '  all-electron total energy (Ha)',etot
+
+#if defined(ONCVPSP_AE_ONLY)
+!all-electron halves of the test configurations; their pseudo-atom halves
+!and all output about them come from oncvpspr_ps.x
+ do jj=1,ncnf+1
+   call run_config_ae_r(jj,nacnf,lacnf,facnf,nc,nvcnf,rr,zz, &
+&                       mmax,iexc,ea,cae(jj))
+ end do
+
+ call write_ae_file_r(ae_filename,atsym,zz,nc,nv,iexc,na,la,fa, &
+&                     mmax,rr,it,etot,ea,rhoc,rho,vfull, &
+&                     ncnf,nvcnf,nacnf,lacnf,facnf,cae)
+
+ write(6,'(/2a)') 'All-electron data written to ',trim(ae_filename)
+ stop
+#endif
 
 !find log mesh point nearest input rc
  rcmax=0.0d0
@@ -732,8 +792,15 @@
 
    rhot(:)=rho(:)
 
-   call run_config_r(jj,nacnf,lacnf,facnf,nc,nvcnf,rhot,rhomod,rr,zz, &
-&                  rcmax,mmax,mxprj,iexc,ea,etot,epstot,nproj,vpuns, &
+#if defined(ONCVPSP_PS_ONLY)
+   call ae_file_config_r(jj,nc,nvcnf,nacnf,lacnf,facnf,cae(jj))
+#else
+   call run_config_ae_r(jj,nacnf,lacnf,facnf,nc,nvcnf,rr,zz, &
+&                       mmax,iexc,ea,cae(jj))
+#endif
+
+   call run_config_ps_r(jj,cae(jj),nc,rhot,rhomod,rr, &
+&                  rcmax,mmax,mxprj,iexc,etot,epstot,nproj,vpuns, &
 &                  lloc,vkb,evkb)
 
  end do !jj

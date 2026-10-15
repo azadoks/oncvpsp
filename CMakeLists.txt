@@ -182,7 +182,7 @@ add_subdirectory(tests)
 ###########################################################
 include(GNUInstallDirs)
 install(TARGETS oncvpsp oncvpspnr oncvpspsr oncvpspr
-    oncvpspsr_ae oncvpspsr_ps oncvpspnr_ae oncvpspnr_ps
+    oncvpspsr_ae oncvpspsr_ps oncvpspnr_ae oncvpspnr_ps oncvpspr_ae oncvpspr_ps
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
