@@ -1,0 +1,62 @@
+[[test_configurations]]
+n = [ 5, 6, 6,]
+l = [ 2, 0, 1,]
+f = [ 10.0, 1.0, 3.0,]
+
+[[test_configurations]]
+n = [ 5, 6, 6,]
+l = [ 2, 0, 1,]
+f = [ 10.0, 2.0, 2.0,]
+
+[[test_configurations]]
+n = [ 5, 6, 6,]
+l = [ 2, 0, 1,]
+f = [ 10.0, 1.0, 2.0,]
+
+[oncvpsp]
+atsym = "Bi"
+z = 83.0
+nc = 12
+nv = 3
+iexc = -101130
+
+[linear_mesh]
+a = 0.01
+rmax = 7.0
+
+[reference_configuration]
+n = [ 1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 6, 6,]
+l = [ 0, 0, 1, 0, 1, 2, 0, 1, 2, 3, 0, 1, 2, 0, 1,]
+f = [ 2.0, 2.0, 6.0, 2.0, 6.0, 10.0, 2.0, 6.0, 10.0, 14.0, 2.0, 6.0, 10.0, 2.0, 3.0,]
+
+[pseudopotentials]
+lmax = 3
+l = [ 0, 1, 2, 3,]
+rc = [ 3.0, 3.0, 2.5, 3.0,]
+ep = [ 0.0, 0.0, 0.0, 0.25,]
+ncon = [ 4, 4, 4, 4,]
+nbas = [ 7, 7, 8, 8,]
+qcut = [ 4.0, 4.0, 6.0, 5.0,]
+
+[local_potential]
+lloc = 4
+lpopt = 3
+rcloc = 2.5
+dvloc0 = 0.0
+
+[vkb_projectors]
+l = [ 0, 1, 2, 3,]
+nproj = [ 2, 2, 2, 2,]
+debl = [ 1.0, 1.0, 1.2, 1.0,]
+
+[model_core_charge]
+icmod = 1
+fcfact = 0.25
+
+[log_derivative_analysis]
+epsh1 = -2.0
+epsh2 = 3.0
+depsh = 0.02
+
+[pp_output]
+psfile = "psp8"

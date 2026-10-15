@@ -153,7 +153,8 @@
           write (stdout, '(a)') 'Options:'
           write (stdout, '(a)') '  -h, --help       Show this help message and exit'
           write (stdout, '(a)') '  -v, --version    Show version information and exit'
-          write (stdout, '(a)') '  -i, --input      Specify input file (TOML). For legacy input, use stdin.'
+          write (stdout, '(a)') '  -i, --input      Read the input from a text file instead of stdin'
+          write (stdout, '(a)') '  -t, --toml-input Read the input from a TOML file'
 #if defined(ONCVPSP_AE_ONLY)
           write (stdout, '(a)') '  -a, --ae-file    All-electron data file to write (required)'
 #elif defined(ONCVPSP_PS_ONLY)

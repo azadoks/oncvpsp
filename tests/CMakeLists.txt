@@ -96,3 +96,46 @@ foreach(split_test ${oncvpsp_split_tests})
     )
     set_property(TEST split_${rel}_${test_name} PROPERTY LABEL "split")
 endforeach(split_test)
+
+# TOML input: every input in tests/data/toml (the TOML form of its
+# tests/data/*.dat) must give the output of the text input, and the reader
+# must stop with a message naming the problem for each of the changes in
+# scripts/toml_error_test.sh
+if (ONCVPSP_WITH_TOML)
+    set(oncvpsp_toml_tests ${oncvpspsr_tests})
+    list(TRANSFORM oncvpsp_toml_tests PREPEND "sr:")
+    list(APPEND oncvpsp_toml_tests "r:52_Te" "r:74_W" "r:80_Hg" "nr:14_Si" "nr:29_Cu")
+    foreach(toml_test ${oncvpsp_toml_tests})
+        string(REPLACE ":" ";" toml_test_parts ${toml_test})
+        list(GET toml_test_parts 0 rel)
+        list(GET toml_test_parts 1 test_name)
+        add_test(
+            NAME toml_${rel}_${test_name}
+            COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/toml_test.sh
+                $<TARGET_FILE:oncvpsp${rel}>
+                ${CMAKE_SOURCE_DIR}/tests/data/${test_name}.dat
+                ${CMAKE_SOURCE_DIR}/tests/data/toml/${test_name}.toml
+                ${CMAKE_CURRENT_BINARY_DIR}/toml_${rel}_${test_name}
+        )
+        set_property(TEST toml_${rel}_${test_name} PROPERTY LABEL "toml")
+    endforeach(toml_test)
+
+    set(oncvpsp_toml_error_tests
+        "parse_error" "missing_table" "not_a_table" "missing_key" "missing_string"
+        "integer_type" "number_type" "string_type" "atsym_length" "state_counts"
+        "lmax_range" "array_length" "array_type" "not_an_array" "l_order"
+        "icmod3_rcfact" "test_config_length" "test_config_count" "test_config_type"
+        "integer_for_real" "extra_keys" "icmod6_default_rcfact"
+    )
+    foreach(case ${oncvpsp_toml_error_tests})
+        add_test(
+            NAME toml_input_${case}
+            COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/toml_error_test.sh
+                $<TARGET_FILE:oncvpspsr>
+                ${CMAKE_SOURCE_DIR}/tests/data
+                ${case}
+                ${CMAKE_CURRENT_BINARY_DIR}/toml_input_${case}
+        )
+        set_property(TEST toml_input_${case} PROPERTY LABEL "toml")
+    endforeach(case)
+endif ()

@@ -4,13 +4,29 @@ module input_toml_m
    implicit none
    private
    public :: read_input_toml, read_input_toml_r
-
-   interface check_associated
-      module procedure toml_table_check_associated
-      module procedure toml_array_check_associated
-   end interface check_associated
    contains
 
+   ! Reads the TOML input of the scalar- and non-relativistic drivers: the
+   ! same data as read_input_text, with the same defaults and the same checks
+   ! against the array sizes (check_data validates the values afterwards).
+   ! Every table and key is required unless stated otherwise; a missing or
+   ! mistyped one stops the program with a message naming it.
+   !
+   !   [oncvpsp]                  atsym, z, nc, nv, iexc
+   !   [reference_configuration]  n, l, f                (nc + nv each)
+   !   [pseudopotentials]         lmax, and l (0..lmax), rc, ep, ncon, nbas, qcut
+   !   [local_potential]          lloc, lpopt, rcloc, dvloc0
+   !   [vkb_projectors]           l (0..lmax), nproj, debl
+   !   [model_core_charge]        icmod, fcfact (icmod 1, 2, 3, 6; else 0),
+   !                              rcfact (icmod 3; 1e-4 for icmod 6; else 0),
+   !                              fcfact_min, fcfact_max, fcfact_step, rcfact_min,
+   !                              rcfact_max, rcfact_step (optional, icmod 4 grid)
+   !   [log_derivative_analysis]  epsh1, epsh2, depsh, rxpsh (optional, -1 for auto)
+   !   [linear_mesh]              a (drl), rmax (rlmax)
+   !   [pp_output]                psfile
+   !   [[test_configurations]]    n, l, f (valence states only; optional, up to 4)
+   !
+   ! scripts/input_text_to_toml.py converts a text input to this form.
    subroutine read_input_toml(unit, &
                               atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
                               lmax, rc, ep, ncon, nbas, qcut, &
@@ -32,9 +48,9 @@ module input_toml_m
       character(len=2), intent(out) :: atsym
       !> Atomic number
       real(dp), intent(out) :: zz
-      !> Number of core electrons
+      !> Number of core states
       integer, intent(out) :: nc
-      !> Number of valence electrons
+      !> Number of valence states
       integer, intent(out) :: nv
       !> Exchange-correlation functional code
       integer, intent(out) :: iexc
@@ -49,7 +65,7 @@ module input_toml_m
       ! [Pseudopotential and optimization]
       !> Maximum angular momentum
       integer, intent(out) :: lmax
-      !> Core radii for pseudopotentials
+      !> Core radii for pseudopotentials (rc(5) is the local potential's)
       real(dp), intent(out) :: rc(6)
       !> Pseudopotential energies
       real(dp), intent(out) :: ep(6)
@@ -62,7 +78,7 @@ module input_toml_m
       ! [Local potential]
       !> Angular momentum used for local potential
       integer, intent(out) :: lloc
-      !>
+      !> Polynomial type of the local potential
       integer, intent(out) :: lpopt
       !> Local potential offset at origin
       real(dp), intent(out) :: dvloc0
@@ -117,287 +133,170 @@ module input_toml_m
       real(dp), intent(out) :: facnf(30, 5)
 
       ! Local variables
-      !> The TOML table object
+      !> The TOML document
       type(toml_table), allocatable :: table
-      !> A pointer to a child table
+      !> Parser error
+      type(toml_error), allocatable :: error
+      !> A section of the document
       type(toml_table), pointer :: child
-      !> A pointer to a toml array
+      !> The array of test configurations
       type(toml_array), pointer :: arr
-      !> Status variable for optional sections
+      !> The n array of a test configuration
+      type(toml_array), pointer :: narr
+      !> Status of a lookup
       integer :: stat
-      !> Iteration index
-      integer :: i
+      !> Configuration index
+      integer :: jj
+      !> Angular momenta of a section's rows
+      integer :: lt(6)
       !> Temporary string
       character(len=:), allocatable :: tmp_str
 
+      ! the defaults of read_input_text
       nproj(:) = 0
+      fcfact = 0.0_dp
+      rcfact = 0.0_dp
       rc(:) = 0.0_dp
       ep(:) = 0.0_dp
-      atsym(:) = '  '
-      psfile(:) = '    '
+      rxpsh = -1.0_dp  ! negative value for auto setting of radius
+      fcfact_min = 1.5_dp
+      fcfact_max = 6.0_dp
+      fcfact_step = 0.5_dp
+      rcfact_min = 1.0_dp
+      rcfact_max = 1.9_dp
+      rcfact_step = 0.1_dp
+      ncnf = 0
+      atsym = ' '
+      psfile = ' '
 
-      call toml_load(table, unit)
-      if (.not. allocated(table)) then
-         write (stderr, '(A)') 'Error: Failed to load TOML input file.'
-         stop 1
-      end if
+      call toml_load(table, unit, error=error)
+      if (allocated(error)) call input_error('cannot parse the input: '//error%message)
+      if (.not. allocated(table)) call input_error('cannot parse the input')
 
-      !! oncvpsp section (required)
-      call get_value(table, "oncvpsp", child)
-      call check_associated(child, "[oncvpsp] section")
-      call get_value(child, "atsym", tmp_str)
+      ! atom
+      call get_section(table, 'oncvpsp', child)
+      call get_string(child, 'oncvpsp', 'atsym', tmp_str)
       if (len_trim(tmp_str) < 1 .or. len_trim(tmp_str) > 2) then
-         write (stderr, '(A)') 'Error: Invalid atomic symbol in [oncvpsp] section.'
-         stop 1
-      else
-         atsym(1:len_trim(tmp_str)) = tmp_str(1:len_trim(tmp_str))
+         call input_error('atsym in [oncvpsp] must have 1 or 2 characters, got "'//tmp_str//'"')
       end if
-      deallocate(tmp_str)
-      call get_value(child, "z", zz)
-      call get_value(child, "nc", nc)
-      call get_value(child, "nv", nv)
-      call get_value(child, "iexc", iexc)
-
-      !! Linear mesh section (required)
-      call get_value(table, "linear_mesh", child)
-      call check_associated(child, "[linear_mesh] section")
-      call get_value(child, "a", drl)
-      call get_value(child, "rmax", rlmax)
-
-      !! Reference configuration section (required)
-      call get_value(table, "reference_configuration", child)
-      call check_associated(child, '[reference_configuration] section')
-      ! n (required, length = nc + nv)
-      call get_value(child, "n", arr)
-      call check_associated(arr, 'n in [reference_configuration] section')
-      call check_len(arr, nc + nv, 'n')
-      do i = 1, len(arr)
-         call get_value(arr, i, na(i))
-      end do
-      ! l (required, length = nc + nv)
-      call get_value(child, "l", arr)
-      call check_associated(arr, 'l in [reference_configuration] section')
-      call check_len(arr, nc + nv, 'l')
-      do i = 1, len(arr)
-         call get_value(arr, i, la(i))
-      end do
-      ! f (required, length = nc + nv)
-      call get_value(child, "f", arr)
-      call check_associated(arr, 'f in [reference_configuration] section')
-      call check_len(arr, nc + nv, 'f')
-      do i = 1, len(arr)
-         call get_value(arr, i, fa(i))
-      end do
-
-      !! Pseudopotential section (required)
-      call get_value(table, "pseudopotentials", child)
-      call check_associated(child, "[pseudopotentials] section")
-      ! lmax (required)
-      call get_value(child, "lmax", lmax)
-      ! l (required, length = lmax + 1, must be in order from 0 to lmax)
-      call get_value(child, "l", arr)
-      call check_associated(arr, 'l in [pseudopotentials] section')
-      call check_len(arr, lmax + 1, 'l in [pseudopotentials] section')
-      pseudopotentials_l: block ! pseudopotentials.l
-         integer :: l
-         do i = 1, len(arr)
-               call get_value(arr, i, l)
-               if (i /= l + 1) then
-                  write (stderr, '(A,A,I0,A,I0,A)') 'Error: l values in [pseudopotentials] section must be in order ', &
-                     'starting from 0 to lmax without skipping any values. Expected ', i-1, ' but got ', l, '.'
-                  stop 1
-               end if
-         end do
-      end block pseudopotentials_l
-      ! rc (required, length = lmax + 1)
-      call get_value(child, "rc", arr)
-      call check_associated(arr, 'rc in [pseudopotentials] section')
-      call check_len(arr, lmax + 1, 'rc in [pseudopotentials] section')
-      do i = 1, lmax + 1
-         call get_value(arr, i, rc(i))
-      end do
-      ! ep (required, length = lmax + 1)
-      call get_value(child, "ep", arr)
-      call check_associated(arr, 'ep in [pseudopotentials] section')
-      call check_len(arr, lmax + 1, 'ep in [pseudopotentials] section')
-      do i = 1, lmax + 1
-         call get_value(arr, i, ep(i))
-      end do
-      ! ncon (required, length = lmax + 1)
-      call get_value(child, "ncon", arr)
-      call check_associated(arr, 'ncon in [pseudopotentials] section')
-      call check_len(arr, lmax + 1, 'ncon in [pseudopotentials] section')
-      do i = 1, lmax + 1
-         call get_value(arr, i, ncon(i))
-      end do
-      ! nbas (required, length = lmax + 1)
-      call get_value(child, "nbas", arr)
-      call check_associated(arr, 'nbas in [pseudopotentials] section')
-      call check_len(arr, lmax + 1, 'nbas in [pseudopotentials] section')
-      do i = 1, lmax + 1
-         call get_value(arr, i, nbas(i))
-      end do
-      ! qcut (required, length = lmax + 1)
-      call get_value(child, "qcut", arr)
-      call check_associated(arr, 'qcut in [pseudopotentials] section')
-      call check_len(arr, lmax + 1, 'qcut in [pseudopotentials] section')
-      do i = 1, lmax + 1
-         call get_value(arr, i, qcut(i))
-      end do
-
-      !! Local potential section (required)
-      call get_value(table, "local_potential", child)
-      call check_associated(child, "[local_potential] section")
-      call get_value(child, "lloc", lloc)
-      call get_value(child, "lpopt", lpopt)
-      call get_value(child, "rcloc", rc(5))
-      call get_value(child, "dvloc0", dvloc0)
-
-      !! VKB projectors section (required)
-      call get_value(table, "vkb_projectors", child)
-      call check_associated(child, "[vkb_projectors] section")
-      ! l (required, length = lmax + 1, must be in order from 0 to lmax)
-      call get_value(child, "l", arr)
-      call check_associated(arr, 'l in [vkb_projectors] section')
-      call check_len(arr, lmax + 1, 'l in [vkb_projectors] section')
-      vkb_projectors_l: block ! vkb_projectors.l
-         integer :: l
-         do i = 1, len(arr)
-               call get_value(arr, i, l)
-               if (i /= l + 1) then
-                  write (stderr, '(A,A,I0,A,I0,A)') 'Error: l values in [vkb_projectors] section must be in order ', &
-                     'starting from 0 to lmax without skipping any values. Expected ', i-1, ' but got ', l, '.'
-                  stop 1
-               end if
-         end do
-      end block vkb_projectors_l
-      ! nproj (required, length = lmax + 1)
-      call get_value(child, "nproj", arr)
-      call check_associated(arr, 'nproj in [vkb_projectors] section')
-      call check_len(arr, lmax + 1, 'nproj in [vkb_projectors] section')
-      do i = 1, lmax + 1
-         call get_value(arr, i, nproj(i))
-      end do
-      ! debl (required, length = lmax + 1)
-      call get_value(child, "debl", arr)
-      call check_associated(arr, 'debl in [vkb_projectors] section')
-      call check_len(arr, lmax + 1, 'debl in [vkb_projectors] section')
-      do i = 1, lmax + 1
-         call get_value(arr, i, debl(i))
-      end do
-
-      !! Model core charge (nlcc) section (required)
-      call get_value(table, "model_core_charge", child)
-      call check_associated(child, "[model_core_charge] section")
-      call get_value(child, "icmod", icmod)
-      call get_value(child, "fcfact", fcfact)
-      if (icmod >= 0 .and. icmod <= 2) then
-         rcfact = 0.0_dp
-      else if (icmod >= 3 .and. icmod <= 4) then
-         call get_value(child, "rcfact", rcfact)
-      else if (icmod == 6) then
-         call get_value(child, "rcfact", rcfact, 1.0e-4_dp)
-      else
-         write (stderr, '(A)') 'Error: Invalid icmod in [model_core_charge] section. Must be 0, 1, 2, 3, 4, or 6.'
-         stop 1
+      atsym = trim(tmp_str)
+      call get_real(child, 'oncvpsp', 'z', zz)
+      call get_int(child, 'oncvpsp', 'nc', nc)
+      call get_int(child, 'oncvpsp', 'nv', nv)
+      call get_int(child, 'oncvpsp', 'iexc', iexc)
+      ! counts beyond the array sizes would overrun before check_data runs
+      if (nc < 0 .or. nv < 0 .or. nc + nv > 30) then
+         call input_error('nc and nv in [oncvpsp] must be >= 0 with nc + nv <= 30')
       end if
 
-      !! Log-derivative analysis section (required)
-      call get_value(table, "log_derivative_analysis", child)
-      call check_associated(child, "[log_derivative_analysis] section")
-      call get_value(child, "epsh1", epsh1)
-      call get_value(child, "epsh2", epsh2)
-      call get_value(child, "depsh", depsh)
-      call get_value(child, "rxpsh", rxpsh, -1.0_dp)
+      ! reference configuration
+      call get_section(table, 'reference_configuration', child)
+      call get_int_array(child, 'reference_configuration', 'n', nc + nv, na)
+      call get_int_array(child, 'reference_configuration', 'l', nc + nv, la)
+      call get_real_array(child, 'reference_configuration', 'f', nc + nv, fa)
 
-      !! PP output section (required)
-      call get_value(table, "pp_output", child)
-      call check_associated(child, "[pp_output] section")
-      call get_value(child, "psfile", tmp_str)
+      ! pseudopotential and optimization
+      call get_section(table, 'pseudopotentials', child)
+      call get_int(child, 'pseudopotentials', 'lmax', lmax)
+      if (lmax < 0 .or. lmax > 5) call input_error('lmax in [pseudopotentials] must be in 0..5')
+      call get_int_array(child, 'pseudopotentials', 'l', lmax + 1, lt)
+      call check_l(lt, lmax, 'pseudopotentials')
+      call get_real_array(child, 'pseudopotentials', 'rc', lmax + 1, rc)
+      call get_real_array(child, 'pseudopotentials', 'ep', lmax + 1, ep)
+      call get_int_array(child, 'pseudopotentials', 'ncon', lmax + 1, ncon)
+      call get_int_array(child, 'pseudopotentials', 'nbas', lmax + 1, nbas)
+      call get_real_array(child, 'pseudopotentials', 'qcut', lmax + 1, qcut)
+
+      ! local potential
+      call get_section(table, 'local_potential', child)
+      call get_int(child, 'local_potential', 'lloc', lloc)
+      call get_int(child, 'local_potential', 'lpopt', lpopt)
+      call get_real(child, 'local_potential', 'rcloc', rc(5))
+      call get_real(child, 'local_potential', 'dvloc0', dvloc0)
+
+      ! Vanderbilt-Kleinman-Bylander projectors
+      call get_section(table, 'vkb_projectors', child)
+      call get_int_array(child, 'vkb_projectors', 'l', lmax + 1, lt)
+      call check_l(lt, lmax, 'vkb_projectors')
+      call get_int_array(child, 'vkb_projectors', 'nproj', lmax + 1, nproj)
+      call get_real_array(child, 'vkb_projectors', 'debl', lmax + 1, debl)
+
+      ! model core charge; check_data validates icmod and the values
+      call get_section(table, 'model_core_charge', child)
+      call get_int(child, 'model_core_charge', 'icmod', icmod)
+      select case (icmod)
+      case (1, 2, 6)
+         call get_real(child, 'model_core_charge', 'fcfact', fcfact)
+      case (3)
+         call get_real(child, 'model_core_charge', 'fcfact', fcfact)
+         call get_real(child, 'model_core_charge', 'rcfact', rcfact)
+      case default
+         call get_real(child, 'model_core_charge', 'fcfact', fcfact, 0.0_dp)
+      end select
+      select case (icmod)
+      case (4, 5)
+         ! fcfact and rcfact are ignored; the grid of the Teter parameters
+         call get_real(child, 'model_core_charge', 'rcfact', rcfact, 0.0_dp)
+         call get_real(child, 'model_core_charge', 'fcfact_min', fcfact_min, fcfact_min)
+         call get_real(child, 'model_core_charge', 'fcfact_max', fcfact_max, fcfact_max)
+         call get_real(child, 'model_core_charge', 'fcfact_step', fcfact_step, fcfact_step)
+         call get_real(child, 'model_core_charge', 'rcfact_min', rcfact_min, rcfact_min)
+         call get_real(child, 'model_core_charge', 'rcfact_max', rcfact_max, rcfact_max)
+         call get_real(child, 'model_core_charge', 'rcfact_step', rcfact_step, rcfact_step)
+      case (6)
+         call get_real(child, 'model_core_charge', 'rcfact', rcfact, 1.0e-4_dp)
+      end select
+
+      ! log derivative analysis
+      call get_section(table, 'log_derivative_analysis', child)
+      call get_real(child, 'log_derivative_analysis', 'epsh1', epsh1)
+      call get_real(child, 'log_derivative_analysis', 'epsh2', epsh2)
+      call get_real(child, 'log_derivative_analysis', 'depsh', depsh)
+      call get_real(child, 'log_derivative_analysis', 'rxpsh', rxpsh, -1.0_dp)
+
+      ! output grid
+      call get_section(table, 'linear_mesh', child)
+      call get_real(child, 'linear_mesh', 'a', drl)
+      call get_real(child, 'linear_mesh', 'rmax', rlmax)
+
+      ! pseudopotential output file
+      call get_section(table, 'pp_output', child)
+      call get_string(child, 'pp_output', 'psfile', tmp_str)
       if (len_trim(tmp_str) < 1 .or. len_trim(tmp_str) > 4) then
-         write (stderr, '(A)') 'Error: Invalid psfile in [pp_out] section.'
-         stop 1
-      else
-         psfile(1:len_trim(tmp_str)) = tmp_str(1:len_trim(tmp_str))
+         call input_error('psfile in [pp_output] must have 1 to 4 characters, got "'//tmp_str//'"')
       end if
-      deallocate(tmp_str)
+      psfile = trim(tmp_str)
 
-      !! Test configurations section (optional)
-      call get_value(table, "test_configurations", arr)
+      ! test configurations (optional): the valence states, after the
+      ! reference core states the driver copies in
+      call get_value(table, 'test_configurations', arr, requested=.false., stat=stat)
+      if (stat /= toml_stat%success) then
+         call input_error('test_configurations must be an array of tables, [[test_configurations]]')
+      end if
       if (associated(arr)) then
-         test_configurations: block
-               ! Test configuration index
-               integer :: icnf
-               ! Valence state index within test configuration
-               integer :: iv
-               ! Core state index
-               integer :: ic
-               ! Core + valence state index
-               integer :: icv
-               ! Configuration sub-table
-               type(toml_table), pointer :: cnf_tbl
-               ! Array within test configuration (e.g. n, l, f)
-               type(toml_array), pointer :: cnf_arr
-               ncnf = len(arr)
-               nvcnf(1) = nv  ! First configuration is the reference configuration
-               ! Determine maximum number of valence states in test configurations
-               do icnf = 1, ncnf
-                  ! Get the configuration sub-table
-                  call get_value(arr, icnf, cnf_tbl)
-                  ! Get the n array to determine number of valence states in this configuration
-                  call get_value(cnf_tbl, "n", cnf_arr)
-                  call check_associated(cnf_arr, 'n in [[test_configurations]] section')
-                  nvcnf(icnf + 1) = len(cnf_arr)
-               end do
-               ! Read the test configurations
-               do icnf = 1, ncnf
-                  ! Get the configuration sub-table
-                  call get_value(arr, icnf, cnf_tbl)
-                  ! n
-                  call get_value(cnf_tbl, "n", cnf_arr)
-                  call check_associated(cnf_arr, 'n in [[test_configurations]] section')
-                  do iv = 1, nvcnf(icnf + 1)
-                     call get_value(cnf_arr, iv, nacnf(nc + iv, icnf + 1))
-                  end do
-                  ! l
-                  call get_value(cnf_tbl, "l", cnf_arr)
-                  call check_associated(cnf_arr, 'l in [[test_configurations]] section')
-                  do iv = 1, nvcnf(icnf + 1)
-                     call get_value(cnf_arr, iv, lacnf(nc + iv, icnf + 1))
-                  end do
-                  ! f
-                  call get_value(cnf_tbl, "f", cnf_arr)
-                  call check_associated(cnf_arr, 'f in [[test_configurations]] section')
-                  do iv = 1, nvcnf(icnf + 1)
-                     call get_value(cnf_arr, iv, facnf(nc + iv, icnf + 1))
-                  end do
-               end do
-               ! Add the reference configuration as the first configuration
-               do icv = 1, nc + nv
-                  nacnf(icv, 1) = na(icv)
-                  lacnf(icv, 1) = la(icv)
-                  facnf(icv, 1) = fa(icv)
-               end do
-               ! Add the reference core configuration to the test configurations
-               do icnf = 1, ncnf
-                  do ic = 1, nc
-                     nacnf(ic, icnf + 1) = na(ic)
-                     lacnf(ic, icnf + 1) = la(ic)
-                     facnf(ic, icnf + 1) = fa(ic)
-                  end do
-               end do
-         end block test_configurations
-      else
-         ncnf = 0
-         nvcnf(1) = nv  ! First configuration
-         do i = 1, nc + nv
-               nacnf(i, 1) = na(i)
-               lacnf(i, 1) = la(i)
-               facnf(i, 1) = fa(i)
+         ncnf = len(arr)
+         if (ncnf > 4) call input_error('at most 4 [[test_configurations]] are allowed')
+         do jj = 2, ncnf + 1
+            call get_value(arr, jj - 1, child, stat=stat)
+            if (.not. associated(child)) then
+               call input_error('test_configurations must be an array of tables, [[test_configurations]]')
+            end if
+            ! the number of valence states is that of n
+            call get_value(child, 'n', narr, requested=.false., stat=stat)
+            if (.not. associated(narr)) call key_error('test_configurations', 'n', stat, 'an array')
+            nvcnf(jj) = len(narr)
+            if (nc + nvcnf(jj) > 30) then
+               call input_error('nc plus the states of a [[test_configurations]] must be <= 30')
+            end if
+            call get_int_array(child, 'test_configurations', 'n', nvcnf(jj), nacnf(nc + 1:, jj))
+            call get_int_array(child, 'test_configurations', 'l', nvcnf(jj), lacnf(nc + 1:, jj))
+            call get_real_array(child, 'test_configurations', 'f', nvcnf(jj), facnf(nc + 1:, jj))
          end do
       end if
    end subroutine read_input_toml
 
+   ! Reads the TOML input of the fully-relativistic driver: that of
+   ! read_input_toml, with the same ep for both kappa, as read_input_text_r
    subroutine read_input_toml_r(unit, &
                                 atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
                                 lmax, rc, ep, ncon, nbas, qcut, &
@@ -408,413 +307,180 @@ module input_toml_m
                                 rlmax, drl, &
                                 ncnf, nvcnf, nacnf, lacnf, facnf)
       implicit none
-      ! Input variables
-      !> The Fortran unit number to read from
       integer, intent(in) :: unit
-
-      ! Output variables
-      ! [Atom and reference configuration]
-      !> Atomic symbol
       character(len=2), intent(out) :: atsym
-      !> Atomic number
       real(dp), intent(out) :: zz
-      !> Number of core electrons
-      integer, intent(out) :: nc
-      !> Number of valence electrons
-      integer, intent(out) :: nv
-      !> Exchange-correlation functional code
-      integer, intent(out) :: iexc
-      !> Pseudopotential output file format flag
+      integer, intent(out) :: nc, nv, iexc
       character(len=4), intent(out) :: psfile
-      !> Principal quantum number array
-      integer, intent(out) :: na(30)
-      !> Orbital angular momentum quantum number array
-      integer, intent(out) :: la(30)
-      !> Occupation number array
+      integer, intent(out) :: na(30), la(30)
       real(dp), intent(out) :: fa(30)
-      ! [Pseudopotential and optimization]
-      !> Maximum angular momentum
       integer, intent(out) :: lmax
-      !> Core radii for pseudopotentials
       real(dp), intent(out) :: rc(6)
-      !> Pseudopotential energies
+      !> Pseudopotential energies for both kappa
       real(dp), intent(out) :: ep(6, 2)
-      !> Number of matching constraints for each pseudopotential
-      integer, intent(out) :: ncon(6)
-      !> Number of basis functions for each pseudopotential
-      integer, intent(out) :: nbas(6)
-      !> Maximum wave number for each pseudopotential
+      integer, intent(out) :: ncon(6), nbas(6)
       real(dp), intent(out) :: qcut(6)
-      ! [Local potential]
-      !> Angular momentum used for local potential
-      integer, intent(out) :: lloc
-      !>
-      integer, intent(out) :: lpopt
-      !> Local potential offset at origin
+      integer, intent(out) :: lloc, lpopt
       real(dp), intent(out) :: dvloc0
-      ! [Vanderbilt-Kleinman-Bylander projectors]
-      !> Number of projectors for each angular momentum
       integer, intent(out) :: nproj(6)
-      !> Energy shift for unbound states
       real(dp), intent(out) :: debl(6)
-      ! [Model core charge]
-      !> Model core charge flag
       integer, intent(out) :: icmod
-      !> Scaling factor for core charge
-      real(dp), intent(out) :: fcfact
-      !> Scaling factor range minimum for optimization
-      real(dp), intent(out) :: fcfact_min
-      !> Scaling factor range maximum for optimization
-      real(dp), intent(out) :: fcfact_max
-      !> Scaling factor step size for optimization
-      real(dp), intent(out) :: fcfact_step
-      !> Core charge width factor
-      real(dp), intent(out) :: rcfact
-      !> Core charge width factor minimum for optimization
-      real(dp), intent(out) :: rcfact_min
-      !> Core charge width factor maximum for optimization
-      real(dp), intent(out) :: rcfact_max
-      !> Core charge width factor step size for optimization
-      real(dp), intent(out) :: rcfact_step
-      ! [Log derivative analysis]
-      !> Lower bound of energy range for log derivative analysis
-      real(dp), intent(out) :: epsh1
-      !> Upper bound of energy range for log derivative analysis
-      real(dp), intent(out) :: epsh2
-      !> Energy step size for log derivative analysis
-      real(dp), intent(out) :: depsh
-      !> Radius for log derivative analysis
-      real(dp), intent(out) :: rxpsh
-      ! [Output grid]
-      !> Maximum radius for output grid
-      real(dp), intent(out) :: rlmax
-      !> Grid spacing for output grid
-      real(dp), intent(out) :: drl
-      ! [Test configurations]
-      !> Number of test configurations
-      integer, intent(out) :: ncnf
-      !> Number of valence states in test configurations
-      integer, intent(out) :: nvcnf(5)
-      !> Principal quantum number array for test configurations
-      integer, intent(out) :: nacnf(30, 5)
-      !> Orbital angular momentum quantum number array for test configurations
-      integer, intent(out) :: lacnf(30, 5)
-      !> Occupation number array for test configurations
+      real(dp), intent(out) :: fcfact, rcfact, fcfact_min, fcfact_max, fcfact_step
+      real(dp), intent(out) :: rcfact_min, rcfact_max, rcfact_step
+      real(dp), intent(out) :: epsh1, epsh2, depsh, rxpsh
+      real(dp), intent(out) :: rlmax, drl
+      integer, intent(out) :: ncnf, nvcnf(5), nacnf(30, 5), lacnf(30, 5)
       real(dp), intent(out) :: facnf(30, 5)
 
-      ! Local variables
-      !> The TOML table object
-      type(toml_table), allocatable :: table
-      !> A pointer to a child table
-      type(toml_table), pointer :: child
-      !> A pointer to a toml array
-      type(toml_array), pointer :: arr
-      !> Status variable for optional sections
-      integer :: stat
-      !> Iteration index
-      integer :: i
-      !> Temporary string
-      character(len=:), allocatable :: tmp_str
+      real(dp) :: ep1(6)
 
-      nproj(:) = 0
-      rc(:) = 0.0_dp
-      ep(:,:) = 0.0_dp
-      atsym(:) = '  '
-      psfile(:) = '    '
-
-      call toml_load(table, unit)
-      if (.not. allocated(table)) then
-         write (stderr, '(A)') 'Error: Failed to load TOML input file.'
-         stop 1
-      end if
-
-      !! oncvpsp section (required)
-      call get_value(table, "oncvpsp", child)
-      call check_associated(child, "[oncvpsp] section")
-      call get_value(child, "atsym", tmp_str)
-      if (len_trim(tmp_str) < 1 .or. len_trim(tmp_str) > 2) then
-         write (stderr, '(A)') 'Error: Invalid atomic symbol in [oncvpsp] section.'
-         stop 1
-      else
-         atsym(1:len_trim(tmp_str)) = tmp_str(1:len_trim(tmp_str))
-      end if
-      deallocate(tmp_str)
-      call get_value(child, "z", zz)
-      call get_value(child, "nc", nc)
-      call get_value(child, "nv", nv)
-      call get_value(child, "iexc", iexc)
-
-      !! Linear mesh section (required)
-      call get_value(table, "linear_mesh", child)
-      call check_associated(child, "[linear_mesh] section")
-      call get_value(child, "a", drl)
-      call get_value(child, "rmax", rlmax)
-
-      !! Reference configuration section (required)
-      call get_value(table, "reference_configuration", child)
-      call check_associated(child, '[reference_configuration] section')
-      ! n (required, length = nc + nv)
-      call get_value(child, "n", arr)
-      call check_associated(arr, 'n in [reference_configuration] section')
-      call check_len(arr, nc + nv, 'n')
-      do i = 1, len(arr)
-         call get_value(arr, i, na(i))
-      end do
-      ! l (required, length = nc + nv)
-      call get_value(child, "l", arr)
-      call check_associated(arr, 'l in [reference_configuration] section')
-      call check_len(arr, nc + nv, 'l')
-      do i = 1, len(arr)
-         call get_value(arr, i, la(i))
-      end do
-      ! f (required, length = nc + nv)
-      call get_value(child, "f", arr)
-      call check_associated(arr, 'f in [reference_configuration] section')
-      call check_len(arr, nc + nv, 'f')
-      do i = 1, len(arr)
-         call get_value(arr, i, fa(i))
-      end do
-
-      !! Pseudopotential section (required)
-      call get_value(table, "pseudopotentials", child)
-      call check_associated(child, "[pseudopotentials] section")
-      ! lmax (required)
-      call get_value(child, "lmax", lmax)
-      ! l (required, length = lmax + 1, must be in order from 0 to lmax)
-      call get_value(child, "l", arr)
-      call check_associated(arr, 'l in [pseudopotentials] section')
-      call check_len(arr, lmax + 1, 'l in [pseudopotentials] section')
-      pseudopotentials_l: block ! pseudopotentials.l
-         integer :: l
-         do i = 1, len(arr)
-               call get_value(arr, i, l)
-               if (i /= l + 1) then
-                  write (stderr, '(A,A,I0,A,I0,A)') 'Error: l values in [pseudopotentials] section must be in order ', &
-                     'starting from 0 to lmax without skipping any values. Expected ', i-1, ' but got ', l, '.'
-                  stop 1
-               end if
-         end do
-      end block pseudopotentials_l
-      ! rc (required, length = lmax + 1)
-      call get_value(child, "rc", arr)
-      call check_associated(arr, 'rc in [pseudopotentials] section')
-      call check_len(arr, lmax + 1, 'rc in [pseudopotentials] section')
-      do i = 1, lmax + 1
-         call get_value(arr, i, rc(i))
-      end do
-      ! ep (required, length = lmax + 1)
-      call get_value(child, "ep", arr)
-      call check_associated(arr, 'ep in [pseudopotentials] section')
-      call check_len(arr, lmax + 1, 'ep in [pseudopotentials] section')
-      do i = 1, lmax + 1
-         call get_value(arr, i, ep(i, 1))
-         ep(i, 2) = ep(i, 1)
-      end do
-      ! ncon (required, length = lmax + 1)
-      call get_value(child, "ncon", arr)
-      call check_associated(arr, 'ncon in [pseudopotentials] section')
-      call check_len(arr, lmax + 1, 'ncon in [pseudopotentials] section')
-      do i = 1, lmax + 1
-         call get_value(arr, i, ncon(i))
-      end do
-      ! nbas (required, length = lmax + 1)
-      call get_value(child, "nbas", arr)
-      call check_associated(arr, 'nbas in [pseudopotentials] section')
-      call check_len(arr, lmax + 1, 'nbas in [pseudopotentials] section')
-      do i = 1, lmax + 1
-         call get_value(arr, i, nbas(i))
-      end do
-      ! qcut (required, length = lmax + 1)
-      call get_value(child, "qcut", arr)
-      call check_associated(arr, 'qcut in [pseudopotentials] section')
-      call check_len(arr, lmax + 1, 'qcut in [pseudopotentials] section')
-      do i = 1, lmax + 1
-         call get_value(arr, i, qcut(i))
-      end do
-
-      !! Local potential section (required)
-      call get_value(table, "local_potential", child)
-      call check_associated(child, "[local_potential] section")
-      call get_value(child, "lloc", lloc)
-      call get_value(child, "lpopt", lpopt)
-      call get_value(child, "rcloc", rc(5))
-      call get_value(child, "dvloc0", dvloc0)
-
-      !! VKB projectors section (required)
-      call get_value(table, "vkb_projectors", child)
-      call check_associated(child, "[vkb_projectors] section")
-      ! l (required, length = lmax + 1, must be in order from 0 to lmax)
-      call get_value(child, "l", arr)
-      call check_associated(arr, 'l in [vkb_projectors] section')
-      call check_len(arr, lmax + 1, 'l in [vkb_projectors] section')
-      vkb_projectors_l: block ! vkb_projectors.l
-         integer :: l
-         do i = 1, len(arr)
-               call get_value(arr, i, l)
-               if (i /= l + 1) then
-                  write (stderr, '(A,A,I0,A,I0,A)') 'Error: l values in [vkb_projectors] section must be in order ', &
-                     'starting from 0 to lmax without skipping any values. Expected ', i-1, ' but got ', l, '.'
-                  stop 1
-               end if
-         end do
-      end block vkb_projectors_l
-      ! nproj (required, length = lmax + 1)
-      call get_value(child, "nproj", arr)
-      call check_associated(arr, 'nproj in [vkb_projectors] section')
-      call check_len(arr, lmax + 1, 'nproj in [vkb_projectors] section')
-      do i = 1, lmax + 1
-         call get_value(arr, i, nproj(i))
-      end do
-      ! debl (required, length = lmax + 1)
-      call get_value(child, "debl", arr)
-      call check_associated(arr, 'debl in [vkb_projectors] section')
-      call check_len(arr, lmax + 1, 'debl in [vkb_projectors] section')
-      do i = 1, lmax + 1
-         call get_value(arr, i, debl(i))
-      end do
-
-      !! model_core_charge section (required)
-      call get_value(table, "model_core_charge", child)
-      call check_associated(child, "[model_core_charge] section")
-      call get_value(child, "icmod", icmod)
-      call get_value(child, "fcfact", fcfact)
-      if (icmod >= 0 .and. icmod <= 2) then
-         rcfact = 0.0_dp
-      else if (icmod >= 3 .and. icmod <= 4) then
-         call get_value(child, "rcfact", rcfact)
-      else if (icmod == 6) then
-         call get_value(child, "rcfact", rcfact, 1.0e-4_dp)
-      else
-         write (stderr, '(A)') 'Error: Invalid icmod in [model_core_charge] section. Must be 0, 1, 2, 3, 4, or 6.'
-         stop 1
-      end if
-
-      !! Log-derivative analysis section (required)
-      call get_value(table, "log_derivative_analysis", child)
-      call check_associated(child, "[log_derivative_analysis] section")
-      call get_value(child, "epsh1", epsh1)
-      call get_value(child, "epsh2", epsh2)
-      call get_value(child, "depsh", depsh)
-      call get_value(child, "rxpsh", rxpsh, -1.0_dp)
-
-      !! PP output section (required)
-      call get_value(table, "pp_output", child)
-      call check_associated(child, "[pp_output] section")
-      call get_value(child, "psfile", tmp_str)
-      if (len_trim(tmp_str) < 1 .or. len_trim(tmp_str) > 4) then
-         write (stderr, '(A)') 'Error: Invalid psfile in [pp_out] section.'
-         stop 1
-      else
-         psfile(1:len_trim(tmp_str)) = tmp_str(1:len_trim(tmp_str))
-      end if
-      deallocate(tmp_str)
-
-      !! Test configurations section (optional)
-      call get_value(table, "test_configurations", arr)
-      if (associated(arr)) then
-         test_configurations: block
-               ! Test configuration index
-               integer :: icnf
-               ! Valence state index within test configuration
-               integer :: iv
-               ! Core state index
-               integer :: ic
-               ! Core + valence state index
-               integer :: icv
-               ! Configuration sub-table
-               type(toml_table), pointer :: cnf_tbl
-               ! Array within test configuration (e.g. n, l, f)
-               type(toml_array), pointer :: cnf_arr
-               ncnf = len(arr)
-               nvcnf(1) = nv  ! First configuration is the reference configuration
-               ! Determine maximum number of valence states in test configurations
-               do icnf = 1, ncnf
-                  ! Get the configuration sub-table
-                  call get_value(arr, icnf, cnf_tbl)
-                  ! Get the n array to determine number of valence states in this configuration
-                  call get_value(cnf_tbl, "n", cnf_arr)
-                  call check_associated(cnf_arr, 'n in [[test_configurations]] section')
-                  nvcnf(icnf + 1) = len(cnf_arr)
-               end do
-               ! Read the test configurations
-               do icnf = 1, ncnf
-                  ! Get the configuration sub-table
-                  call get_value(arr, icnf, cnf_tbl)
-                  ! n
-                  call get_value(cnf_tbl, "n", cnf_arr)
-                  call check_associated(cnf_arr, 'n in [[test_configurations]] section')
-                  do iv = 1, nvcnf(icnf + 1)
-                     call get_value(cnf_arr, iv, nacnf(nc + iv, icnf + 1))
-                  end do
-                  ! l
-                  call get_value(cnf_tbl, "l", cnf_arr)
-                  call check_associated(cnf_arr, 'l in [[test_configurations]] section')
-                  do iv = 1, nvcnf(icnf + 1)
-                     call get_value(cnf_arr, iv, lacnf(nc + iv, icnf + 1))
-                  end do
-                  ! f
-                  call get_value(cnf_tbl, "f", cnf_arr)
-                  call check_associated(cnf_arr, 'f in [[test_configurations]] section')
-                  do iv = 1, nvcnf(icnf + 1)
-                     call get_value(cnf_arr, iv, facnf(nc + iv, icnf + 1))
-                  end do
-               end do
-               ! Add the reference configuration as the first configuration
-               do icv = 1, nc + nv
-                  nacnf(icv, 1) = na(icv)
-                  lacnf(icv, 1) = la(icv)
-                  facnf(icv, 1) = fa(icv)
-               end do
-               ! Add the reference core configuration to the test configurations
-               do icnf = 1, ncnf
-                  do ic = 1, nc
-                     nacnf(ic, icnf + 1) = na(ic)
-                     lacnf(ic, icnf + 1) = la(ic)
-                     facnf(ic, icnf + 1) = fa(ic)
-                  end do
-               end do
-         end block test_configurations
-      else
-         ncnf = 0
-         nvcnf(1) = nv  ! First configuration
-         do i = 1, nc + nv
-               nacnf(i, 1) = na(i)
-               lacnf(i, 1) = la(i)
-               facnf(i, 1) = fa(i)
-         end do
-      end if
+      call read_input_toml(unit, &
+                           atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
+                           lmax, rc, ep1, ncon, nbas, qcut, &
+                           lloc, lpopt, dvloc0, nproj, debl, &
+                           icmod, fcfact, rcfact, &
+                           fcfact_min, fcfact_max, fcfact_step, &
+                           rcfact_min, rcfact_max, rcfact_step, &
+                           epsh1, epsh2, depsh, rxpsh, &
+                           rlmax, drl, &
+                           ncnf, nvcnf, nacnf, lacnf, facnf)
+      ep(:, 1) = ep1(:)
+      ep(:, 2) = ep1(:)
    end subroutine read_input_toml_r
 
-   subroutine toml_table_check_associated(ptr, name)
-      implicit none
-      type(toml_table), pointer :: ptr
-      character(len=*), intent(in) :: name
-      if (.not. associated(ptr)) then
-         write (stderr, '(A,A)') 'Error: Missing or invalid table', trim(name)
-         stop 1
-      end if
-   end
+   ! report an input error on stdout (the output file) and stderr, and stop
+   subroutine input_error(message)
+      character(len=*), intent(in) :: message
+      write (stdout, '(a)') 'TOML input ERROR: '//message
+      write (stdout, '(a)') 'Program will stop'
+      write (stderr, '(a)') 'Error: '//message
+      stop 1
+   end subroutine input_error
 
-   subroutine toml_array_check_associated(ptr, name)
-      implicit none
-      type(toml_array), pointer :: ptr
+   ! the table [name] of the document
+   subroutine get_section(table, name, child)
+      type(toml_table), intent(inout) :: table
       character(len=*), intent(in) :: name
-      if (.not. associated(ptr)) then
-         write (stderr, '(A,A)') 'Error: Missing or invalid array', trim(name)
-         stop 1
+      type(toml_table), pointer, intent(out) :: child
+      integer :: stat
+      ! a missing key leaves child null with success, a mistyped one with an error
+      call get_value(table, name, child, requested=.false., stat=stat)
+      if (.not. associated(child)) then
+         if (stat == toml_stat%success) call input_error('missing table ['//name//']')
+         call input_error('['//name//'] must be a table')
       end if
-   end
+   end subroutine get_section
 
-   subroutine check_len(arr, expected_len, name)
-      implicit none
+   ! report a key that a lookup did not return: missing for missing_key, or
+   ! for success from a lookup with requested=.false., else mistyped
+   subroutine key_error(section, key, stat, what)
+      character(len=*), intent(in) :: section, key, what
+      integer, intent(in) :: stat
+      if (stat == toml_stat%missing_key .or. stat == toml_stat%success) then
+         call input_error('missing key '//key//' in ['//section//']')
+      else
+         call input_error(key//' in ['//section//'] must be '//what)
+      end if
+   end subroutine key_error
+
+   ! an integer key, required
+   subroutine get_int(table, section, key, val)
+      type(toml_table), intent(inout) :: table
+      character(len=*), intent(in) :: section, key
+      integer, intent(out) :: val
+      integer :: stat
+      call get_value(table, key, val, stat=stat)
+      if (stat /= toml_stat%success) call key_error(section, key, stat, 'an integer')
+   end subroutine get_int
+
+   ! a real key (an integer is converted), required unless default is given
+   subroutine get_real(table, section, key, val, default)
+      type(toml_table), intent(inout) :: table
+      character(len=*), intent(in) :: section, key
+      real(dp), intent(inout) :: val
+      real(dp), intent(in), optional :: default
+      type(toml_keyval), pointer :: ptr
+      integer :: stat
+      call get_value(table, key, ptr, requested=.false., stat=stat)
+      if (.not. associated(ptr)) then
+         if (present(default) .and. stat == toml_stat%success) then
+            val = default
+            return
+         end if
+         call key_error(section, key, stat, 'a number')
+      end if
+      call get_value(ptr, val, stat=stat)
+      if (stat /= toml_stat%success) call key_error(section, key, stat, 'a number')
+   end subroutine get_real
+
+   ! a string key, required
+   subroutine get_string(table, section, key, val)
+      type(toml_table), intent(inout) :: table
+      character(len=*), intent(in) :: section, key
+      character(len=:), allocatable, intent(out) :: val
+      integer :: stat
+      call get_value(table, key, val, stat=stat)
+      if (stat /= toml_stat%success .or. .not. allocated(val)) then
+         call key_error(section, key, stat, 'a string')
+      end if
+   end subroutine get_string
+
+   ! the array key of a table, required, with n elements
+   subroutine get_array(table, section, key, n, arr)
+      type(toml_table), intent(inout) :: table
+      character(len=*), intent(in) :: section, key
+      integer, intent(in) :: n
+      type(toml_array), pointer, intent(out) :: arr
+      integer :: stat
+      character(len=24) :: counts
+      call get_value(table, key, arr, requested=.false., stat=stat)
+      if (.not. associated(arr)) call key_error(section, key, stat, 'an array')
+      if (len(arr) /= n) then
+         write (counts, '(i0,a,i0)') len(arr), ' instead of ', n
+         call input_error(key//' in ['//section//'] has '//trim(counts)//' elements')
+      end if
+   end subroutine get_array
+
+   ! an integer array key, required, with n elements
+   subroutine get_int_array(table, section, key, n, vals)
+      type(toml_table), intent(inout) :: table
+      character(len=*), intent(in) :: section, key
+      integer, intent(in) :: n
+      integer, intent(inout) :: vals(:)
       type(toml_array), pointer :: arr
-      integer, intent(in) :: expected_len
-      character(len=*), intent(in) :: name
-      if (len(arr) /= expected_len) then
-         write (stderr, '(A,A,A,A,I0,A,I0)') 'Error: Length of', ' ', trim(name), '(len=', len(arr), &
-                                             ') must be equal to ', expected_len
-         stop 1
-      end if
-   end subroutine check_len
+      integer :: ii, stat
+      call get_array(table, section, key, n, arr)
+      do ii = 1, n
+         call get_value(arr, ii, vals(ii), stat=stat)
+         if (stat /= toml_stat%success) call input_error(key//' in ['//section//'] must hold integers')
+      end do
+   end subroutine get_int_array
+
+   ! a real array key (integers are converted), required, with n elements
+   subroutine get_real_array(table, section, key, n, vals)
+      type(toml_table), intent(inout) :: table
+      character(len=*), intent(in) :: section, key
+      integer, intent(in) :: n
+      real(dp), intent(inout) :: vals(:)
+      type(toml_array), pointer :: arr
+      integer :: ii, stat
+      call get_array(table, section, key, n, arr)
+      do ii = 1, n
+         call get_value(arr, ii, vals(ii), stat=stat)
+         if (stat /= toml_stat%success) call input_error(key//' in ['//section//'] must hold numbers')
+      end do
+   end subroutine get_real_array
+
+   ! the angular momenta of the rows of a section must be 0..lmax in order
+   subroutine check_l(lt, lmax, section)
+      integer, intent(in) :: lt(:), lmax
+      character(len=*), intent(in) :: section
+      integer :: l1
+      do l1 = 1, lmax + 1
+         if (lt(l1) /= l1 - 1) then
+            call input_error('l in ['//section//'] must be 0, 1, ..., lmax in order')
+         end if
+      end do
+   end subroutine check_l
 
 end module input_toml_m

@@ -1,0 +1,56 @@
+[[test_configurations]]
+n = [ 1,]
+l = [ 0,]
+f = [ 2.0,]
+
+[[test_configurations]]
+n = [ 1, 2,]
+l = [ 0, 1,]
+f = [ 2.0, 1.0,]
+
+[oncvpsp]
+atsym = "Li"
+z = 3.0
+nc = 0
+nv = 2
+iexc = 3
+
+[linear_mesh]
+a = 0.01
+rmax = 6.0
+
+[reference_configuration]
+n = [ 1, 2,]
+l = [ 0, 0,]
+f = [ 2.0, 1.0,]
+
+[pseudopotentials]
+lmax = 1
+l = [ 0, 1,]
+rc = [ 2.0, 3.0,]
+ep = [ 0.0, 0.1,]
+ncon = [ 4, 4,]
+nbas = [ 8, 8,]
+qcut = [ 6.0, 4.0,]
+
+[local_potential]
+lloc = 4
+lpopt = 5
+rcloc = 1.0
+dvloc0 = 0.0
+
+[vkb_projectors]
+l = [ 0, 1,]
+nproj = [ 2, 2,]
+debl = [ 0.0, 0.75,]
+
+[model_core_charge]
+icmod = 0
+
+[log_derivative_analysis]
+epsh1 = -2.0
+epsh2 = 2.0
+depsh = 0.02
+
+[pp_output]
+psfile = "psp8"

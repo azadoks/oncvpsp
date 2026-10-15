@@ -465,8 +465,11 @@ class ModelCoreChargeConfiguration:
             else:
                 raise ValueError(f"Invalid model core charge configuration: {s}")
         elif icmod == 6:
+            # icmod, fcfact (cutoff budget, Ha), rcfact (xc energy error, Ha; default 1e-4)
             return cls(
-                icmod=icmod, rcfact=fort_float(parts[1]), fcfact=fort_float(parts[2])
+                icmod=icmod,
+                fcfact=fort_float(parts[1]),
+                rcfact=fort_float(parts[2]) if len(parts) > 2 else None,
             )
         else:
             raise ValueError(f"Invalid model core charge configuration: {s}")

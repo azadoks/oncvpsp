@@ -1,0 +1,61 @@
+[[test_configurations]]
+n = [ 4, 4, 5,]
+l = [ 0, 1, 0,]
+f = [ 2.0, 6.0, 1.0,]
+
+[[test_configurations]]
+n = [ 4, 4,]
+l = [ 0, 1,]
+f = [ 2.0, 6.0,]
+
+[[test_configurations]]
+n = [ 4, 4, 4,]
+l = [ 0, 1, 2,]
+f = [ 2.0, 6.0, 1.0,]
+
+[oncvpsp]
+atsym = "Sr"
+z = 38.0
+nc = 6
+nv = 3
+iexc = -101130
+
+[linear_mesh]
+a = 0.01
+rmax = 5.0
+
+[reference_configuration]
+n = [ 1, 2, 2, 3, 3, 3, 4, 4, 5,]
+l = [ 0, 0, 1, 0, 1, 2, 0, 1, 0,]
+f = [ 2.0, 2.0, 6.0, 2.0, 6.0, 10.0, 2.0, 6.0, 2.0,]
+
+[pseudopotentials]
+lmax = 3
+l = [ 0, 1, 2, 3,]
+rc = [ 2.2, 2.4, 2.2, 2.2,]
+ep = [ 0.0, 0.0, 0.25, 0.5,]
+ncon = [ 4, 4, 4, 4,]
+nbas = [ 7, 7, 7, 7,]
+qcut = [ 5.5, 5.0, 6.0, 6.5,]
+
+[local_potential]
+lloc = 4
+lpopt = 3
+rcloc = 2.2
+dvloc0 = 1.0
+
+[vkb_projectors]
+l = [ 0, 1, 2, 3,]
+nproj = [ 2, 2, 2, 1,]
+debl = [ 2.5, 2.5, 2.5, 0.0,]
+
+[model_core_charge]
+icmod = 4
+
+[log_derivative_analysis]
+epsh1 = -2.0
+epsh2 = 2.0
+depsh = 0.02
+
+[pp_output]
+psfile = "psp8"
