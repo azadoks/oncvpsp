@@ -139,3 +139,19 @@ if (ONCVPSP_WITH_TOML)
         set_property(TEST toml_input_${case} PROPERTY LABEL "toml")
     endforeach(case)
 endif ()
+
+# PSML output: written into the output like the psp8 and upf files, with
+# no files left in the working directory
+foreach(psml_test "sr:14_Si" "r:52_Te" "nr:08_O")
+    string(REPLACE ":" ";" psml_test_parts ${psml_test})
+    list(GET psml_test_parts 0 rel)
+    list(GET psml_test_parts 1 test_name)
+    add_test(
+        NAME psml_${rel}_${test_name}
+        COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/psml_test.sh
+            $<TARGET_FILE:oncvpsp${rel}>
+            ${CMAKE_SOURCE_DIR}/tests/data/${test_name}.dat
+            ${CMAKE_CURRENT_BINARY_DIR}/psml_${rel}_${test_name}
+    )
+    set_property(TEST psml_${rel}_${test_name} PROPERTY LABEL "psml")
+endforeach(psml_test)
