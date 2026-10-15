@@ -76,7 +76,7 @@
    call vout(1,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,iexc)
    dvxc(:,kk)=dvxc(:,kk)+( 16.0d0/(24.0d0*hh))*vxct(:)
 
-   rhot(:)=rhotot(:)-2.d0*hh*rho(:,kk)
+   rhot(:)=rhotot(:)+2.d0*hh*rho(:,kk)
    call vout(1,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,iexc)
    dvxc(:,kk)=dvxc(:,kk)+(-2.0d0/(24.0d0*hh))*vxct(:)
 
