@@ -22,6 +22,7 @@
 #if !defined(ONCVPSP_EXE)
 #define ONCVPSP_EXE 'oncvpspr.x'
 #endif
+#define ONCVPSP_TREATMENT 'fully-relativistic'
  program oncvpsp_r
 !
 ! Creates and tests optimized norm-conserving Vanderbilt or Kleinman-Bylander
@@ -44,6 +45,7 @@
 !
  use, intrinsic :: iso_fortran_env, only: stdin => input_unit, stdout => output_unit, stderr => error_unit
  use m_psmlout, only: psmlout_r
+ use build_info_m, only: write_build_info
  use input_text_m, only: read_input_text_r
  use config_ae_m, only: config_ae_r_t, run_config_ae_r
 #if defined(ONCVPSP_AE_ONLY)
@@ -131,6 +133,9 @@
 &      'suggested that you cite D. R. Hamann, Phys. Rev. B 88, 085117 (2013)', &
 &      'in any publication utilizing these pseudopotentials.'
 
+ call write_build_info(6,ONCVPSP_EXE,ONCVPSP_TREATMENT)
+ write(6,'(/)')
+
  srel=.true.
 !srel=.false.
 
@@ -154,6 +159,7 @@
           stop 0
        case('-v', '--version')
           write (stdout, '(a)') 'ONCVPSP (fully-realtivistic) version 4.0.1'
+          call write_build_info(stdout,ONCVPSP_EXE,ONCVPSP_TREATMENT)
           stop 0
        case('-i', '--input')
          if (i + 1 > command_argument_count()) then

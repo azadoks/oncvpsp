@@ -8,6 +8,7 @@ build-*/
 .*.swp
 *.mod
 *_cpp.f90
+src/build_info.inc
 *.a
 
 t

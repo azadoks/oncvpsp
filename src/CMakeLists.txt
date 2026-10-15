@@ -3,6 +3,7 @@
 ###########################################################
 set(src_oncvpsp
     # Common files
+    build_info_m.f90
     check_data.f90
     const_basis.f90
     der2exc.f90
@@ -96,8 +97,18 @@ if (ONCVPSP_WITH_TOML)
     list(APPEND src_oncvpsp input_toml_m.f90)
 endif ()
 
+# Git commit, source state and build time, regenerated at every build (see cmake/BuildInfo.cmake)
+add_custom_target(oncvpsp_build_info
+    COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${PROJECT_SOURCE_DIR} -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/build_info.inc
+            -P ${PROJECT_SOURCE_DIR}/cmake/BuildInfo.cmake
+    BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/build_info.inc
+    COMMENT "Checking git commit and source state for build_info.inc"
+    VERBATIM
+)
+
 add_library(oncvpsp STATIC ${src_oncvpsp})
-add_dependencies(oncvpsp wxml)
+add_dependencies(oncvpsp wxml oncvpsp_build_info)
+target_include_directories(oncvpsp PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(oncvpsp wxml ${ONCVPSP_DEPENDENCY_LIBRARIES})
 if (ONCVPSP_WITH_TOML)
     target_compile_definitions(oncvpsp PRIVATE WITH_TOML)

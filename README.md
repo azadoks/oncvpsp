@@ -20,6 +20,16 @@ ctest --test-dir build --progress --parallel
 cmake --build build -t install
 ```
 
+Every build records the git commit of the source tree, whether the source
+differs from that commit (with a hash of the differences), and the build
+time. The executables print this on one line after the citation notice, and
+with `--version`, after their name and relativistic treatment, for example
+
+    build: oncvpspr.x (fully-relativistic), commit 4b47c7355e556fb098724409daaa436d8216790f, source clean, compiled 2026-10-15T10:07:48Z
+
+Outside a git checkout the commit and source state are `unknown`. Both CMake
+and make generate this information with `cmake/BuildInfo.cmake`.
+
 ### With make
 
 1. Edit `make.inc` (or copy it from older oncvpsp-3*)
