@@ -181,8 +181,13 @@
   end if
  end do
 
- if(icmod<0 .or. icmod>4) then
-  write(6,'(a)') 'test_data: must have 0<= icmod <=4'
+ if((icmod<0 .or. icmod>4) .and. icmod/=6) then
+  write(6,'(a)') 'test_data: must have 0<= icmod <=4 or icmod=6'
+  ierr=ierr+1
+ end if
+
+ if((icmod==6) .and. (fcfact<=0.0d0 .or. rcfact<=0.0d0)) then
+  write(6,'(a)') 'test_data: must have fcfact>0.0 and rcfact>0.0 for icmod= 6'
   ierr=ierr+1
  end if
 

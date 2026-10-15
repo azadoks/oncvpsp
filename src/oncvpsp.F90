@@ -633,6 +633,10 @@
    call modcore2(icmod,rhops,rho,rhoc,rhoae,rhotae,rhomod, &
 &               fcfact,rcfact,irps,mmax,rr,nc,nv,la,zion,iexc)
 
+ else if(icmod==6) then
+   call modcore_budget(rho,rhoc,rhomod,fcfact,rcfact, &
+&               minval(irc(1:lmax+1)),mmax,rr,iexc)
+
  else if(icmod>=3) then
    call modcore3(icmod,rhops,rho,rhoc,rhoae,rhotae,rhomod, &
 &               fcfact,rcfact,irps,mmax,rr,nc,nv,la,zion,iexc)

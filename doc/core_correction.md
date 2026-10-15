@@ -33,7 +33,7 @@ often unnecessary.  In addition, if inner cores are modeled, the shallow-
 core charge at the crossover may be significantly different from that
 of the all-electron atom, so the 'non-linearity" correction may not be
 the only issue.  Teter 2nd-derivative calculations of Exc are now
-included, with 4 options specified by the input variable icmod.
+included, with 5 options specified by the input variable icmod.
 
 To my knowledge there is no systematic evidence that "Teter hardness
 metric" accuracy correlates with improved agreement between all-electron
@@ -108,6 +108,35 @@ icmod==4:
     However, the minimization may converge to yield a wildly implausalbe
     model, or may not converge.  An local minimum on the initial grid
     may be selected and used as input in option 3 above.
+
+icmod==6:
+
+    The all-electron core charge wherever the plane-wave cutoff affords
+    it. Inside the radius r_s the model is Martins' exp(a + b r^2 + c r^4),
+    matching rhoc and its first two derivatives at r_s; beyond r_s it is
+    rhoc. fcfact is the plane-wave cutoff ecut (Ha) of the calculations the
+    pseudopotential is for, and rcfact (optional, default 1e-4) an
+    exchange-correlation energy error (Ha):
+
+    ```
+        # MODEL CORE CHARGE
+        # icmod, fcfact (ecut, Ha), rcfact (xc energy error, Ha)
+            6   25.0   1.0e-4
+    ```
+
+    r_s is the smallest grid radius, no larger than the smallest rc, whose
+    model needs no more than ecut. The model needs the cutoff ecut if,
+    for every density cutoff q from 2*sqrt(2*ecut) on (steps of 0.1 bohr^-1
+    up to 40 bohr^-1, 200 Ha), the core charge without its Fourier
+    components beyond q changes the exchange-correlation energy by less
+    than rcfact: |Exc[n + rhomod_q] - Exc[n + rhomod]
+    - Vxc[n_bg] int (rhomod_q - rhomod)| within r <= 10 bohr, with n the
+    pseudo valence charge on a uniform background n_bg = 5e-3 bohr^-3 that
+    stands for the interstitial electrons of the neighbours. The run stops
+    if even r_s = rc needs more than ecut. The out file gives r_s and the
+    cutoff the model needs. This is the BudgetedCore of
+    PseudoPotentialGenerators.jl with its Martins candidate, executed by
+    modcore_budget.f90; tests/data/14_Si_bc.dat uses it.
 
 1) S. G. Louie, S. Froyen, and M. L. Cohen, Phys. Rev. B 43, 1993 (1991).
 

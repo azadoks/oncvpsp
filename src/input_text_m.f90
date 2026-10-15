@@ -183,10 +183,18 @@ contains
       if (ios == 0 .and. icmod == 3) then
          read (line, *, iostat=ios) icmod, fcfact, rcfact
       end if
+      ! icmod==6 : icmod, fcfact (cutoff, Ha), rcfact (xc energy error, Ha; default 1e-4)
+      if (ios == 0 .and. icmod == 6) then
+         read (line, *, iostat=ios) icmod, fcfact, rcfact
+         if (ios /= 0) then
+            read (line, *, iostat=ios) icmod, fcfact
+            rcfact = 1.d-4
+         end if
+      end if
       ! icmod==4[explicit grid]: icmod, fcfact(ignored), rcfact(ignored),
       !   fcfact_min, fcfact_max, fcfact_step,
       !   rcfact_min, rcfact_max, rcfact_step
-      if (ios == 0 .and. icmod >= 4) then
+      if (ios == 0 .and. (icmod == 4 .or. icmod == 5)) then
          read (line, *, iostat=ios) icmod, fcfact, rcfact, &
             fcfact_min, fcfact_max, fcfact_step, &
             rcfact_min, rcfact_max, rcfact_step
@@ -407,10 +415,18 @@ contains
       if (ios == 0 .and. icmod == 3) then
          read (line, *, iostat=ios) icmod, fcfact, rcfact
       end if
+      ! icmod==6 : icmod, fcfact (cutoff, Ha), rcfact (xc energy error, Ha; default 1e-4)
+      if (ios == 0 .and. icmod == 6) then
+         read (line, *, iostat=ios) icmod, fcfact, rcfact
+         if (ios /= 0) then
+            read (line, *, iostat=ios) icmod, fcfact
+            rcfact = 1.d-4
+         end if
+      end if
       ! icmod==4[explicit grid]: icmod, fcfact(ignored), rcfact(ignored),
       !   fcfact_min, fcfact_max, fcfact_step,
       !   rcfact_min, rcfact_max, rcfact_step
-      if (ios == 0 .and. icmod >= 4) then
+      if (ios == 0 .and. (icmod == 4 .or. icmod == 5)) then
          read (line, *, iostat=ios) icmod, fcfact, rcfact, &
             fcfact_min, fcfact_max, fcfact_step, &
             rcfact_min, rcfact_max, rcfact_step
