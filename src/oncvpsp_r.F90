@@ -913,7 +913,6 @@
      if(rhomod(ii,1)/=rhoc(ii)) exit
      irct=ii
    end do
-   print *, 'calling psmlout'
    call psmlout_r(lmax,lloc,rc,vkb,evkb,mxprj,nproj,rr,vpsml,rho,rhomod, &
 &             irct, &
 &             vsr,esr,vso,eso, &

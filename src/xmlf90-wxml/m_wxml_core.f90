@@ -20,9 +20,10 @@ type, public :: xmlf_t
    logical            :: start_tag_closed
    logical            :: root_element_output
    logical            :: indenting_requested
+   logical            :: close_unit
 end type xmlf_t
 
-public :: xml_OpenFile, xml_NewElement, xml_EndElement, xml_Close
+public :: xml_OpenFile, xml_OpenUnit, xml_NewElement, xml_EndElement, xml_Close
 public :: xml_AddPcdata, xml_AddAttribute, xml_AddXMLDeclaration
 public :: xml_AddComment, xml_AddCdataSection
 
@@ -54,6 +55,7 @@ call get_unit(xf%lun,iostat)
 if (iostat /= 0) stop "cannot open file"
 open(unit=xf%lun, file=filename, form="formatted", status="replace", &
      action="write", position="rewind") ! , recl=65536)
+xf%close_unit = .true.
 
 call reset_elstack(xf%stack)
 call reset_dict(xf%dict)
@@ -67,6 +69,30 @@ if (present(indent)) then
    xf%indenting_requested = indent
 endif
 end subroutine xml_OpenFile
+
+!-------------------------------------------------------------------
+! Write the document to lun, a formatted unit the caller has opened and
+! positioned at the start of a record (such as 6); xml_Close leaves it open
+subroutine xml_OpenUnit(lun, xf, indent)
+integer, intent(in)           :: lun
+type(xmlf_t), intent(inout)   :: xf
+logical, intent(in), optional :: indent
+
+xf%lun = lun
+xf%close_unit = .false.
+
+call reset_elstack(xf%stack)
+call reset_dict(xf%dict)
+call reset_buffer(xf%buffer)
+
+xf%start_tag_closed = .true.
+xf%root_element_output = .false.
+
+xf%indenting_requested = .false.
+if (present(indent)) then
+   xf%indenting_requested = indent
+endif
+end subroutine xml_OpenUnit
 
 !-------------------------------------------------------------------
 subroutine xml_AddXMLDeclaration(xf,encoding)
@@ -233,7 +259,7 @@ subroutine xml_Close(xf)
 type(xmlf_t), intent(in)   :: xf
 
 write(unit=xf%lun,fmt="(a)") char(xf%buffer)
-close(unit=xf%lun)
+if (xf%close_unit) close(unit=xf%lun)
 
 end subroutine xml_Close
 

@@ -125,68 +125,17 @@ module m_psmlout
   character(len=10)     :: datestr
 
   logical :: tdopsp, nonrel, polarized, there_is_core, found
-  integer :: lun, stat
 
 !---
 
  call date_and_time(VALUES=dtime)
  write(datestr,"(i4,'-',i2.2,'-',i2.2)") dtime(1:3)
 
- !-------------- beginning of file echoing
-  call get_unit(lun)
-  open(unit=lun,file="_tmp_input",form="formatted",&
-       status="unknown",position="rewind",action="write")
 
- write(lun,'(a)') '# ATOM AND REFERENCE CONFIGURATION'
- write(lun,'(a)') '# atsym  z    nc    nv    iexc   psfile'
- write(lun,'(a,a,f6.2,3i6,2a)') '  ',trim(atsym),zz,nc,nv,iexc, &
-&      '      ',trim(psfile)
- write(lun,'(a/a)') '#','#   n    l    f        energy (Ha)'
- do ii=1,nc+nv
-   write(lun,'(2i5,f8.2)') na(ii),la(ii),fa(ii)
- end do
-
- write(lun,'(a/a/a)') '#','# PSEUDOPOTENTIAL AND OPTIMIZATION','# lmax'
- write(lun,'(i5)')  lmax
- write(lun,'(a/a)') '#','#   l,   rc,     ep,   ncon, nbas, qcut'
- do l1=1,lmax+1
-   write(lun,'(i5,2f8.2,2i5,f8.2)') l1-1,rc(l1),ep(l1),ncon(l1),nbas(l1),qcut(l1)
- end do
-
- write(lun,'(a/a/a,a)') '#','# LOCAL POTENTIAL','# lloc, lpopt,  rc(5),', &
-&      '   dvloc0'
- write(lun,'(2i5,f10.2,a,f8.2)') lloc,lpopt,rc(5),'   ',dvloc0
-
- write(lun,'(a/a/a)') '#','# VANDERBILT-KLEINMAN-BYLANDER PROJECTORs', &
-&      '# l, nproj, debl'
- do l1=1,lmax+1
-   write(lun,'(2i5,f10.4)') l1-1,nproj(l1),debl(l1)
- end do
-
- write(lun,'(a/a/a)') '#','# MODEL CORE CHARGE', &
-&      '# icmod, fcfact'
- write(lun,'(i5,f8.2,2i5,f8.2)') icmod,fcfact
-
- write(lun,'(a/a/a)') '#','# LOG DERIVATIVE ANALYSIS', &
-&      '# epsh1, epsh2, depsh'
- write(lun,'(3f8.2)') epsh1,epsh2,depsh
-
- write(lun,'(a/a/a)') '#','# OUTPUT GRID','# rlmax, drl'
- write(lun,'(2f8.2)') rlmax,drl
-
- write(lun,'(a/a/a)') '#','# TEST CONFIGURATIONS','# ncnf'
- write(lun,'(i5)') ncnf
- write(lun,'(a/a)') '# nvcnf','#   n    l    f'
- do jj=2,ncnf+1
-   write(lun,'(i5)') nvcnf(jj)
-   do ii=nc+1,nc+nvcnf(jj)
-     write(lun,'(2i5,f8.2)') nacnf(ii,jj),lacnf(ii,jj),facnf(ii,jj)
-   end do
-   write(lun,'(a)') '#'
- end do
- close(lun)
-
-  call xml_OpenFile("ONCVPSP.psml",xf, indent=.false.)
+! the document goes to the output, between markers, as do the psp8 and
+! upf files
+  write(6,'(/a)') 'Begin PSML'
+  call xml_OpenUnit(6,xf, indent=.false.)
 
   call xml_AddXMLDeclaration(xf,"UTF-8")
 
@@ -201,17 +150,9 @@ module m_psmlout
   call xml_NewElement(xf,"input-file")
   call my_add_attribute(xf,"name","oncvpsp-input")
 !
-  call get_unit(lun)
-  open(unit=lun,file="_tmp_input",form="formatted",&
-       status="old",position="rewind",action="read")
-
-  rewind(lun)
-  do
-     read(lun,fmt="(a)",iostat=stat) line
-     if (stat .ne. 0) exit
-     call xml_AddPcData(xf,trim(line),line_feed=.true.)
-  enddo
-  close(lun)
+  call echo_input(xf,atsym,zz,nc,nv,iexc,psfile,na,la,fa,lmax,rc,ep,ncon, &
+&                 nbas,qcut,lloc,lpopt,dvloc0,nproj,debl,icmod,fcfact, &
+&                 epsh1,epsh2,depsh,rlmax,drl,ncnf,nvcnf,nacnf,lacnf,facnf)
 
   call xml_EndElement(xf,"input-file")
   !
@@ -482,6 +423,7 @@ module m_psmlout
 
 
   call xml_Close(xf)
+  write(6,'(/a)') 'END_PSP'
 
   deallocate(f0,r0)
 
@@ -606,69 +548,18 @@ end subroutine psmlout
   character(len=10)     :: datestr
 
   logical :: tdopsp, nonrel, polarized, there_is_core, found
-  integer :: lun, stat
 
 !---
 
  call date_and_time(VALUES=dtime)
  write(datestr,"(i4,'-',i2.2,'-',i2.2)") dtime(1:3)
 
- !-------------- beginning of file echoing
-  call get_unit(lun)
-  open(unit=lun,file="_tmp_input",form="formatted",&
-       status="unknown",position="rewind",action="write")
-
- write(lun,'(a)') '# ATOM AND REFERENCE CONFIGURATION'
- write(lun,'(a)') '# atsym  z    nc    nv    iexc   psfile'
- write(lun,'(a,a,f6.2,3i6,2a)') '  ',trim(atsym),zz,nc,nv,iexc, &
-&      '      ',trim(psfile)
- write(lun,'(a/a)') '#','#   n    l    f        energy (Ha)'
- do ii=1,nc+nv
-   write(lun,'(2i5,f8.2)') na(ii),la(ii),fa(ii)
- end do
-
- write(lun,'(a/a/a)') '#','# PSEUDOPOTENTIAL AND OPTIMIZATION','# lmax'
- write(lun,'(i5)')  lmax
- write(lun,'(a/a)') '#','#   l,   rc,     ep,   ncon, nbas, qcut'
- do l1=1,lmax+1
-   write(lun,'(i5,2f8.2,2i5,f8.2)') l1-1,rc(l1),ep(l1),ncon(l1),nbas(l1),qcut(l1)
- end do
-
- write(lun,'(a/a/a,a)') '#','# LOCAL POTENTIAL','# lloc, lpopt,  rc(5),', &
-&      '   dvloc0'
- write(lun,'(2i5,f10.2,a,f8.2)') lloc,lpopt,rc(5),'   ',dvloc0
-
- write(lun,'(a/a/a)') '#','# VANDERBILT-KLEINMAN-BYLANDER PROJECTORs', &
-&      '# l, nproj, debl'
- do l1=1,lmax+1
-   write(lun,'(2i5,f10.4)') l1-1,nproj(l1),debl(l1)
- end do
-
- write(lun,'(a/a/a)') '#','# MODEL CORE CHARGE', &
-&      '# icmod, fcfact'
- write(lun,'(i5,f8.2,2i5,f8.2)') icmod,fcfact
-
- write(lun,'(a/a/a)') '#','# LOG DERIVATIVE ANALYSIS', &
-&      '# epsh1, epsh2, depsh'
- write(lun,'(3f8.2)') epsh1,epsh2,depsh
-
- write(lun,'(a/a/a)') '#','# OUTPUT GRID','# rlmax, drl'
- write(lun,'(2f8.2)') rlmax,drl
-
- write(lun,'(a/a/a)') '#','# TEST CONFIGURATIONS','# ncnf'
- write(lun,'(i5)') ncnf
- write(lun,'(a/a)') '# nvcnf','#   n    l    f'
- do jj=2,ncnf+1
-   write(lun,'(i5)') nvcnf(jj)
-   do ii=nc+1,nc+nvcnf(jj)
-     write(lun,'(2i5,f8.2)') nacnf(ii,jj),lacnf(ii,jj),facnf(ii,jj)
-   end do
-   write(lun,'(a)') '#'
- end do
- close(lun)
 
 
-  call xml_OpenFile("ONCVPSP.psml",xf, indent=.false.)
+! the document goes to the output, between markers, as do the psp8 and
+! upf files
+  write(6,'(/a)') 'Begin PSML'
+  call xml_OpenUnit(6,xf, indent=.false.)
 
   call xml_AddXMLDeclaration(xf,"UTF-8")
 
@@ -683,17 +574,9 @@ end subroutine psmlout
   call xml_NewElement(xf,"input-file")
   call my_add_attribute(xf,"name","oncvpsp-input")
 !
-  call get_unit(lun)
-  open(unit=lun,file="_tmp_input",form="formatted",&
-       status="old",position="rewind",action="read")
-
-  rewind(lun)
-  do
-     read(lun,fmt="(a)",iostat=stat) line
-     if (stat .ne. 0) exit
-     call xml_AddPcData(xf,trim(line),line_feed=.true.)
-  enddo
-  close(lun)
+  call echo_input(xf,atsym,zz,nc,nv,iexc,psfile,na,la,fa,lmax,rc,ep,ncon, &
+&                 nbas,qcut,lloc,lpopt,dvloc0,nproj,debl,icmod,fcfact, &
+&                 epsh1,epsh2,depsh,rlmax,drl,ncnf,nvcnf,nacnf,lacnf,facnf)
 
   call xml_EndElement(xf,"input-file")
   !
@@ -1085,6 +968,7 @@ end subroutine psmlout
 
 
   call xml_Close(xf)
+  write(6,'(/a)') 'END_PSP'
 
   deallocate(f0,r0)
 
@@ -1110,6 +994,106 @@ end subroutine do_configuration
 
 
 end subroutine psmlout_r
+
+! echo the input data into the input-file element of the provenance, a
+! line at a time
+ subroutine echo_input(xf,atsym,zz,nc,nv,iexc,psfile,na,la,fa,lmax,rc,ep,ncon, &
+&                      nbas,qcut,lloc,lpopt,dvloc0,nproj,debl,icmod,fcfact, &
+&                      epsh1,epsh2,depsh,rlmax,drl,ncnf,nvcnf,nacnf,lacnf,facnf)
+  use xmlf90_wxml
+  implicit none
+  type(xmlf_t), intent(inout) :: xf
+  character*2 :: atsym
+  character*4 :: psfile
+  integer :: nc,nv,iexc,lmax,lloc,lpopt,icmod,ncnf
+  integer :: na(30),la(30),ncon(6),nbas(6),nproj(6)
+  integer :: nvcnf(5),nacnf(30,5),lacnf(30,5)
+  real(dp) :: zz,fa(30),rc(6),ep(6),qcut(6),debl(6),facnf(30,5)
+  real(dp) :: dvloc0,fcfact,epsh1,epsh2,depsh,rlmax,drl
+  character(len=100) :: line
+  integer :: ii,jj,l1
+
+  call add('# ATOM AND REFERENCE CONFIGURATION')
+  call add('# atsym  z    nc    nv    iexc   psfile')
+  write(line,'(a,a,f6.2,3i6,2a)') '  ',trim(atsym),zz,nc,nv,iexc, &
+&      '      ',trim(psfile)
+  call add(line)
+  call add('#')
+  call add('#   n    l    f        energy (Ha)')
+  do ii=1,nc+nv
+    write(line,'(2i5,f8.2)') na(ii),la(ii),fa(ii)
+    call add(line)
+  end do
+
+  call add('#')
+  call add('# PSEUDOPOTENTIAL AND OPTIMIZATION')
+  call add('# lmax')
+  write(line,'(i5)')  lmax
+  call add(line)
+  call add('#')
+  call add('#   l,   rc,     ep,   ncon, nbas, qcut')
+  do l1=1,lmax+1
+    write(line,'(i5,2f8.2,2i5,f8.2)') l1-1,rc(l1),ep(l1),ncon(l1),nbas(l1),qcut(l1)
+    call add(line)
+  end do
+
+  call add('#')
+  call add('# LOCAL POTENTIAL')
+  call add('# lloc, lpopt,  rc(5),   dvloc0')
+  write(line,'(2i5,f10.2,a,f8.2)') lloc,lpopt,rc(5),'   ',dvloc0
+  call add(line)
+
+  call add('#')
+  call add('# VANDERBILT-KLEINMAN-BYLANDER PROJECTORs')
+  call add('# l, nproj, debl')
+  do l1=1,lmax+1
+    write(line,'(2i5,f10.4)') l1-1,nproj(l1),debl(l1)
+    call add(line)
+  end do
+
+  call add('#')
+  call add('# MODEL CORE CHARGE')
+  call add('# icmod, fcfact')
+  write(line,'(i5,f8.2,2i5,f8.2)') icmod,fcfact
+  call add(line)
+
+  call add('#')
+  call add('# LOG DERIVATIVE ANALYSIS')
+  call add('# epsh1, epsh2, depsh')
+  write(line,'(3f8.2)') epsh1,epsh2,depsh
+  call add(line)
+
+  call add('#')
+  call add('# OUTPUT GRID')
+  call add('# rlmax, drl')
+  write(line,'(2f8.2)') rlmax,drl
+  call add(line)
+
+  call add('#')
+  call add('# TEST CONFIGURATIONS')
+  call add('# ncnf')
+  write(line,'(i5)') ncnf
+  call add(line)
+  call add('# nvcnf')
+  call add('#   n    l    f')
+  do jj=2,ncnf+1
+    write(line,'(i5)') nvcnf(jj)
+    call add(line)
+    do ii=nc+1,nc+nvcnf(jj)
+      write(line,'(2i5,f8.2)') nacnf(ii,jj),lacnf(ii,jj),facnf(ii,jj)
+      call add(line)
+    end do
+    call add('#')
+  end do
+
+ contains
+
+  subroutine add(text)
+    character(len=*), intent(in) :: text
+    call xml_AddPcData(xf,trim(text),line_feed=.true.)
+  end subroutine add
+
+ end subroutine echo_input
 
      subroutine my_add_attribute(xf,name,value)
        use xmlf90_wxml, only: xmlf_t, xml_AddAttribute
@@ -1140,22 +1124,6 @@ end subroutine psmlout_r
 
     end subroutine add_zero_r
 
-    subroutine get_unit(lun)
-
-!     Get an available Fortran unit number
-
-      integer, intent(out) ::  lun
-
-      integer i
-      logical unit_used
-
-      do i = 10, 99
-         lun = i
-         inquire(lun,opened=unit_used)
-         if (.not. unit_used) return
-      enddo
-      stop 'NO LUNS'
-    end subroutine get_unit
 
     subroutine write_psml_item(xf,class, &
                                n, l, j, s, &
