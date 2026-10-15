@@ -52,6 +52,7 @@ set(src_oncvpsp
     wf_rc_der.f90
     input_text_m.f90
     # Non-/scalar-relativistic files
+    config_ae_m.f90
     fphsft.f90
     fpovlp.f90
     gnu_script.f90

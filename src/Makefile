@@ -16,7 +16,7 @@ OBJS_ALL =	aeo.o check_data.o const_basis.o dpnint.o eresid.o exchdl.o \
 		der2exc.o modcore3.o sbf_basis_con.o run_ghosts.o \
 		lschpsbar.o vrel.o
 
-OBJS_NRSR =	fphsft.o fpovlp.o gnu_script.o linout.o psatom.o \
+OBJS_NRSR =	config_ae_m.o fphsft.o fpovlp.o gnu_script.o linout.o psatom.o \
 		relatom.o run_config.o run_diag.o run_phsft.o run_plot.o \
 		run_vkb.o sratom.o upfout.o wellstate.o
 
@@ -42,6 +42,9 @@ wxml:
 	(cd xmlf90-wxml; $(MAKE) module)
 #
 m_psmlout.o: wxml m_libxc_list.o
+oncvpsp.o oncvpsp_nr.o oncvpsp_r.o: m_psmlout.o input_text_m.o
+oncvpsp.o oncvpsp_nr.o run_config.o: config_ae_m.o
+oncvpsp_nr.o: oncvpsp.F90
 INCLUDE_WXML=-I./xmlf90-wxml
 
 

@@ -20,24 +20,20 @@
 ! compared for reference and tests atomic configurations
 
 
-  subroutine run_config(jj,nacnf,lacnf,facnf,nc,nvcnf,rhov,rhomod,rr,zz, &
-&                  rcmax,mmax,mxprj,iexc,ea,etot,epstot,nproj,vpuns, &
-&                  lloc,vkb,evkb,srel)
+  subroutine run_config_ps(jj,cae,nc,rhov,rhomod,rr, &
+&                  rcmax,mmax,mxprj,iexc,etot,epstot,nproj,vpuns, &
+&                  lloc,vkb,evkb)
 
 !jj  index of current configufation
-!nacnf  principal quantum number array, all configurations
-!lacnf  angular-momenta array, all config.
+!cae  all-electron results for this configuration, from run_config_ae
 !nc  number of core states
-!nvcnf  number of valence states, all config.
 !rhov valence pseudo-charge of reference configuration
 !rhomod  model core charge
 !rr  log radial mesh
-!zz  atomic number
 !rcmax  maximum core radius for psp
 !mmax  size of log grid
 !mxprj  dimension of number of projectors
 !iexc  exchange-correlation function to be used
-!ea  reference configurattion eigenvalues
 !etot  reference configuration total energy
 !epstot  pseudoatom total energy
 !nproj  number of VKB projectors to use for each l
@@ -45,35 +41,29 @@
 !lloc  index-1 of local potential
 !vkb   Vanderbilt-Kleinman-Bylander projectors
 !evkb VKB projector coefficients
-!srel .true. for scalar-relativistic, .false. for non-relativistic
 
+ use config_ae_m, only: config_ae_t, config_ae_warning
  implicit none
  integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
  
+ type(config_ae_t), intent(in) :: cae
  integer :: jj,mmax,mxprj,iexc,nc,lloc
- integer :: nacnf(30,5),lacnf(30,5),nvcnf(5),nproj(5)
- real(dp) :: etot,epstot,rcmax,zz
- real(dp) :: facnf(30,5),ea(30),rhov(mmax),rr(mmax)
+ integer :: nproj(5)
+ real(dp) :: etot,epstot,rcmax
+ real(dp) :: rhov(mmax),rr(mmax)
  real(dp) :: vpuns(mmax,5),vkb(mmax,mxprj,4),evkb(mxprj,4),rhomod(mmax,5)
- logical :: srel
 
 !Output variables  only printing
  
 !Local variables
- integer :: ii,it,kk,l1,ierr,mch,nvt
+ integer :: ii,it,kk,l1,ierr,nvt
  integer :: nat(30),lat(30),natp(30),latp(30),nav(4)
- integer ::  indxr(30),indxe(30)
- real(dp) :: et,eaetst,etsttot,zval
-!real(dp) :: eat(30,2),fat(30,2),rpk(30),eatp(30),fatp(30,2)
- real(dp) :: eat(30,3),fat(30,3),rpk(30),eatp(30),fatp(30,3)
+ real(dp) :: eaetst,etsttot
+ real(dp) :: eat(30,3),fat(30,3),eatp(30),fatp(30,3)
 
- real(dp),allocatable :: rho(:),rhoc(:),rhocps(:),vi(:),vfull(:)
- real(dp),allocatable :: uu(:),up(:)
-
- allocate(rho(mmax),rhoc(mmax),vi(mmax),vfull(mmax),rhocps(mmax))
- allocate(uu(mmax),up(mmax))
+ real(dp),allocatable :: rho(:),rhocps(:)
 
 ! atom tests comparing reference state and excited configuration for
 ! all-electron and pseudo atoms.  Total excitation energies and excited-
@@ -100,119 +90,22 @@
 ! are to be adiabatically filled to produce the final configuration.
 ! The same 2% strategy is used filling pseudo-atom states in this step.
 
-! set up pseudo atom arrays
-!arrange data arrays for adiabatic configufation switching of pseudo atom
+! The all-electron atoms for the maximally-ionized and excited
+! configurations are computed by run_config_ae.
 
-   fat(:,:)=0.0d0
-   nat(:)=0
-   lat(:)=0
-
-! set up cross indces of reference (r) and excited (e) cofigurations
-   indxr(:)=0
-   indxe(:)=0
-   do ii=1,nc+nvcnf(1)
-     do kk=1,nc+nvcnf(jj)
-       if(nacnf(kk,jj)==nacnf(ii,1) .and. &
-&         lacnf(kk,jj)==lacnf(ii,1)) then
-         indxr(ii)=kk
-         indxe(kk)=ii
-       end if
-     end do
-   end do
-
-! set up merged list with reference levels first
-! levels not present in one confguration or the other get zero occupancy
-   eat(:,1)=0.0d0
-   do ii=1,nc+nvcnf(1)
-     nat(ii)=nacnf(ii,1)
-     lat(ii)=lacnf(ii,1)
-     fat(ii,1)=facnf(ii,1)
-     eat(ii,1)=ea(ii)
-     if(indxr(ii)>0) then
-       fat(ii,2)=facnf(indxr(ii),jj)
-     else
-       fat(ii,2)=0.0d0
-     end if
-     fat(ii,3)=fat(ii,2)
-   end do
-  
-   nvt=nvcnf(1)
-   do kk=1,nc+nvcnf(jj)
-     if(indxe(kk)==0) then
-       nvt=nvt+1
-       nat(nc+nvt)=nacnf(kk,jj)
-       lat(nc+nvt)=lacnf(kk,jj)
-       fat(nc+nvt,1)=0.0d0
-       fat(nc+nvt,3)=facnf(kk,jj)
-     end if
-   end do
-
-!set up array for maximally ionized intermediate state
-   do kk=1,nc+nvt
-     fat(ii,2)=dmin1(fat(ii,1),fat(ii,3))
-   end do
-
-
-
- eat(:,2)=0.d0; rpk(:)=0.d0; rhoc(:)=0.d0; rho(:)=0.d0; vfull(:)=0.d0 
- eaetst=0.d0
-
-!all-electron atom solution for maximally-ionized state
-
- call sratom(nat,lat,eat(1,2),fat(1,2),rpk,nc,nc+nvt,it,rhoc,rho, &
-&            rr,vfull,zz,mmax,iexc,eaetst,ierr,srel)
- if(ierr/=0) then
-  write(6,'(a/a,i2)') 'run_config: WARNING  for AE atom,', &
-&       ' WARNING no output for configuration',jj
-  if(ierr==-1) then
-    write(6,'(a,i4)') 'no classical turning point error, iteration',it
-  else
-    write(6,'(a)') 'run_config: WARNING self-consistency failed to converge'
-  end if
-  deallocate(rho,rhoc,rhocps,vi,vfull)
-  deallocate(uu,up)
+ if(cae%stat/=0) then
+  call config_ae_warning(jj,cae)
   return
  end if
 
-!fill in energies for empty levels of maximally ionized state
+ nvt=cae%nvt
+ nat(:)=cae%nat(:)
+ lat(:)=cae%lat(:)
+ fat(:,:)=cae%fat(:,:)
+ eat(:,:)=cae%eat(:,:)
+ eaetst=cae%eaetst
 
- do kk=1,nc+nvt
-   if(eat(kk,2)==0.0d0) then
-     et=0.0d0
-     call lschfb(nat(kk),lat(kk),ierr,et, &
-&                rr,vfull,uu,up,zz,mmax,mch,srel)
-     if(ierr .ne. 0) then
-       write(6,'(/a,3i4)') & 
-&            'runconfig: WARNING lschfb convergence ERROR n,l,iter=', &
-&            nat(kk),lat(kk),it
-       deallocate(rho,rhoc,rhocps,vi,vfull)
-       deallocate(uu,up)
-       return
-     end if
-     eat(kk,2)=et
-   end if
- end do
-
- eat(:,3)=0.d0; rpk(:)=0.d0; rhoc(:)=0.d0; rho(:)=0.d0; vfull(:)=0.d0 
- eaetst=0.d0
-
-!all-electron atom solution for excited state
-
- call sratom(nat,lat,eat(1,3),fat(1,3),rpk,nc,nc+nvt,it,rhoc,rho, &
-&            rr,vfull,zz,mmax,iexc,eaetst,ierr,srel)
- if(ierr/=0) then
-  write(6,'(a/a,i2)') 'run_config: WARNING  for AE atom,', &
-&       ' WARNING no output for configuration',jj
-  if(ierr==-1) then
-    write(6,'(a,i4)') 'no classical turning point error, iteration',it
-  else
-    write(6,'(a)') 'run_config: WARNING self-consistency failed to converge'
-  end if
-  deallocate(rho,rhoc,rhocps,vi,vfull)
-  deallocate(uu,up)
-  return
- end if
-
+ allocate(rho(mmax),rhocps(mmax))
 
 !first pseudoatom run from reference to maximally-ionized configuration
    do l1=1,4
@@ -241,7 +134,7 @@
   write(6,'(a,a/a,i2)') 'run_config: WARNING for fully non-local PS atom,', &
 &       ' stg. 1', &
 &       ' WARNING no output for configuration',jj
-  deallocate(rho,rhoc,rhocps,vi,vfull)
+  deallocate(rho,rhocps)
   return
  end if
 
@@ -263,7 +156,7 @@
   write(6,'(a,a/a,i2)') 'run_config: WARNING for fully non-local PS atom,', &
 &       ' stg. 2', &
 &       ' WARNING no output for configuration',jj
-  deallocate(rho,rhoc,rhocps,vi,vfull)
+  deallocate(rho,rhocps)
   return
  end if
 
@@ -287,7 +180,7 @@
  write(6,'(a,1p,d10.2)') '      PSP excitation error=', &
 & eaetst-etot-etsttot+epstot
 
- deallocate(rho,rhoc,rhocps,vi,vfull)
-  deallocate(uu,up)
+ deallocate(rho,rhocps)
+
  return
- end subroutine run_config
+ end subroutine run_config_ps

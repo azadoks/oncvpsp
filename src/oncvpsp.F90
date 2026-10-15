@@ -35,6 +35,7 @@
  use, intrinsic :: iso_fortran_env, only: stdin => input_unit, stdout => output_unit, stderr => error_unit
  use m_psmlout, only: psmlout
  use input_text_m, only: read_input_text
+ use config_ae_m, only: config_ae_t, run_config_ae
 #if (defined WITH_TOML)
  use input_toml_m, only: read_input_toml
 #endif
@@ -89,6 +90,8 @@
  real(dp), allocatable :: epa(:,:),fpa(:,:)
  real(dp), allocatable :: uua(:,:),upa(:,:)
  real(dp), allocatable :: vr(:,:,:)
+
+ type(config_ae_t) :: cae(5)
 
  character*2 :: atsym
  character*4 :: psfile
@@ -616,9 +619,12 @@
 
    rhot(:)=rho(:)
 
-   call run_config(jj,nacnf,lacnf,facnf,nc,nvcnf,rhot,rhomod,rr,zz, &
-&                  rcmax,mmax,mxprj,iexc,ea,etot,epstot,nproj,vpuns, &
-&                  lloc,vkb,evkb,srel)
+   call run_config_ae(jj,nacnf,lacnf,facnf,nc,nvcnf,rr,zz, &
+&                     mmax,iexc,ea,srel,cae(jj))
+
+   call run_config_ps(jj,cae(jj),nc,rhot,rhomod,rr, &
+&                  rcmax,mmax,mxprj,iexc,etot,epstot,nproj,vpuns, &
+&                  lloc,vkb,evkb)
 
  end do !jj
 
