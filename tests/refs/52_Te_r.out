@@ -591,6 +591,8 @@ B matrix Hermiticity error, ll=  3  kap=  3
  Orthonormal spin-orbit projector coefficients, l =  3
   4.6110E-03  1.2134E-03 -3.0973E-05 -2.0345E-07
 
+Ionic tail switched over r =  3.1138 to  6.2275 a.u., converged in  3 steps
+
 Pseudoatom total energy  -87.789923
 
 

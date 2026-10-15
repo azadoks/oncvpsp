@@ -368,6 +368,8 @@ B matrix Hermiticity error, ll=   3
 
   Orthonormal projector coefficients -1.0998E+01 -3.4529E+00
 
+Ionic tail switched over r =  2.5053 to  5.4199 a.u., converged in  5 steps
+
 Pseudoatom total energy  -31.760756
 
 
@@ -424,8 +426,8 @@ Test configuration 0
 
     Total energies and differences
       AE_ref= -8.48684361D+03  AE_tst= -8.48684361D+03  dif=  0.00D+00
-      PS_ref= -3.17607556D+01  PS_tst= -3.17607337D+01  dif=  2.20D-05
-      PSP excitation error= -2.20D-05
+      PS_ref= -3.17607606D+01  PS_tst= -3.17607606D+01  dif=  0.00D+00
+      PSP excitation error=  0.00D+00
 
 Test configuration 1
 
@@ -446,7 +448,7 @@ Test configuration 1
     Total energies and differences
       AE_ref= -8.48684361D+03  AE_tst= -8.48664216D+03  dif=  2.01D-01
       PS_ref= -3.17607556D+01  PS_tst= -3.15592434D+01  dif=  2.02D-01
-      PSP excitation error= -7.46D-05
+      PSP excitation error= -5.56D-05
 
 Test configuration 2
 
@@ -468,7 +470,7 @@ Test configuration 2
     Total energies and differences
       AE_ref= -8.48684361D+03  AE_tst= -8.48664755D+03  dif=  1.96D-01
       PS_ref= -3.17607556D+01  PS_tst= -3.15647173D+01  dif=  1.96D-01
-      PSP excitation error=  7.41D-06
+      PSP excitation error=  2.60D-05
 
 Test configuration 3
 
@@ -489,7 +491,7 @@ Test configuration 3
     Total energies and differences
       AE_ref= -8.48684361D+03  AE_tst= -8.48623772D+03  dif=  6.06D-01
       PS_ref= -3.17607556D+01  PS_tst= -3.11548744D+01  dif=  6.06D-01
-      PSP excitation error=  2.37D-06
+      PSP excitation error=  1.61D-05
 
 DATA FOR PLOTTING
 

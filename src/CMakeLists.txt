@@ -46,6 +46,7 @@ set(src_oncvpsp
     tfapot.f90
     vkboutwf.f90
     vkbphsft.f90
+    ionic_tail.f90
     vout.f90
     vpinteg.f90
     vploc.f90

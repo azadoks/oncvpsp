@@ -329,6 +329,8 @@ d2excps - pseudofunction derivatives with core correction
 
 rms 2nd derivative error    6.043798E-05
 
+Ionic tail switched over r =  3.1142 to  7.4586 a.u., converged in  3 steps
+
 Pseudoatom total energy   -9.570048
 
 

@@ -303,6 +303,8 @@ Model core correction: budgeted Martins core (icmod 6)
   a, b, c  5.36621515E+00 -6.23065052E+00  1.87082158E+00
   cutoff the model core needs     24.8513 Ha
 
+Ionic tail switched over r =  2.7030 to  5.4060 a.u., converged in  5 steps
+
 Pseudoatom total energy   -3.793156
 
 
