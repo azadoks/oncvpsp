@@ -350,6 +350,13 @@
 #if defined(ONCVPSP_PS_ONLY)
    call read_ae_file(ae_filename,srel,atsym,zz,nc,nv,iexc,na,la,fa, &
 &                    mmax,rr,it,etot,ea,rhoc,rho,vfull)
+!sratom prints the libxc functional description on its first exc_libxc call
+   if(iexc<0) then
+     block
+       real(dp) :: vxct(mmax),exct(mmax)
+       call exc_libxc(iexc,al,rho,vxct,exct,rr,mmax)
+     end block
+   end if
 #else
    call sratom(na,la,ea,fa,rpk,nc,nc+nv,it,rhoc,rho, &
 &              rr,vfull,zz,mmax,iexc,etot,ierr,srel)
