@@ -71,12 +71,15 @@
  real(dp), allocatable :: dac0(:),dacdot(:,:),dacmat(:,:,:)
  real(dp), allocatable :: acdot(:),acmat(:,:)
  real(dp), allocatable :: work(:),wmat(:,:),wev(:),wvec(:)
+ real(dp), allocatable :: sqr(:),cqr(:),sdqr(:),cdqr(:)
  real(dp) :: sb_out(5)
  real(dp) :: ac0,rc,ps0q,tps0,xx,qq,qq4,sn,tn,td
  real(dp) :: dr,dq
 
  integer :: nrlin,nq,irclin,mmaxlin
  integer :: ii,info,iq,jj,kk,ll1
+!steps between exact sin/cos(qq*rlin) evaluations in the q loop
+ integer, parameter :: nqseed=32
 
 
 ! new calculations of dq, dr
@@ -103,6 +106,7 @@
  allocate(rlin(mmaxlin),uulin(mmaxlin),ps0(mmaxlin))
  allocate(psnull(irclin,nnull),tpsnull(nnull),psnullq(nnull))
  allocate(sbf(mmaxlin))
+ allocate(sqr(mmaxlin),cqr(mmaxlin),sdqr(mmaxlin),cdqr(mmaxlin))
  allocate(dac0(4),dacdot(nnull,4),dacmat(nnull,nnull,4))
  allocate(acdot(nnull),acmat(nnull,nnull))
 
@@ -143,6 +147,15 @@
 
  nq=qmax/dq+1
 
+!sin and cos of dq*rlin, which step sin and cos of qq*rlin from one qq to
+!the next by rotation
+ do ii=1,mmaxlin
+  sdqr(ii)=sin(dq*rlin(ii))
+ end do
+ do ii=1,mmaxlin
+  cdqr(ii)=cos(dq*rlin(ii))
+ end do
+
 !null accumulators and running registers
 
  ac0=0.0d0
@@ -156,13 +169,27 @@
  do iq=nq,1,-1
   qq=dq*(iq-1)
 
+!sin and cos of qq*rlin, evaluated directly every nqseed steps and
+!otherwise rotated inward by dq*rlin from the previous qq
+!(separate loops so sin and cos each vectorize)
+  if(mod(nq-iq,nqseed)==0) then
+   do ii=1,mmaxlin
+    sqr(ii)=sin(qq*rlin(ii))
+   end do
+   do ii=1,mmaxlin
+    cqr(ii)=cos(qq*rlin(ii))
+   end do
+  else
+   do ii=1,mmaxlin
+    tn=sqr(ii)*cdqr(ii)-cqr(ii)*sdqr(ii)
+    cqr(ii)=cqr(ii)*cdqr(ii)+sqr(ii)*sdqr(ii)
+    sqr(ii)=tn
+   end do
+  end if
+
 !sbfs on full rlin mesh for this qq
 !multiply by rlin for integration
-  do ii=1,mmaxlin
-   xx=qq*rlin(ii)
-   call sbf8(ll1,xx,sb_out)
-   sbf(ii)=rlin(ii)*sb_out(ll1)
-  end do
+  call rsbf_lin(ll1,qq,rlin,sqr,cqr,mmaxlin,sbf)
 
 !Fourier transforms of basis functions
 !null functions exist for r<rc
@@ -183,7 +210,11 @@
 
   do ii=4,irclin-3
    ps0q=ps0q+ps0(ii)*sbf(ii)
-   psnullq(:)=psnullq(:)+psnull(ii,:)*sbf(ii)
+  end do
+  do jj=1,nnull
+   do ii=4,irclin-3
+    psnullq(jj)=psnullq(jj)+psnull(ii,jj)*sbf(ii)
+   end do
   end do
 
   ps0q=ps0q +( 9.0d0*ps0(irclin   )*sbf(irclin   ) &
@@ -249,8 +280,88 @@
  deallocate(rlin,uulin,ps0)
  deallocate(psnull,tpsnull,psnullq)
  deallocate(sbf)
+ deallocate(sqr,cqr,sdqr,cdqr)
  deallocate(dac0,dacdot,dacmat)
  deallocate(acdot,acmat)
 
  return
+
+ contains
+
+ subroutine rsbf_lin(ll1,qq,rlin,sqr,cqr,nr,rsbf)
+! rlin(ii)*j_l(qq*rlin(ii)) for l=ll1-1 on the linear mesh rlin(nr), given
+! sqr=sin(qq*rlin) and cqr=cos(qq*rlin).  Same branches and formulas as
+! sbf8 for l<=3, written as loops over the mesh that vectorize; this is
+! the inner loop of the E_resid q integration.
+
+!Input variables
+ integer :: ll1,nr
+ real(dp) :: qq,rlin(nr),sqr(nr),cqr(nr)
+
+!Output variables
+ real(dp) :: rsbf(nr)
+
+!Local variables
+ real(dp) :: xx,xn,xs
+ integer :: ii,i0,nn
+
+ if(ll1>4) then
+  do ii=1,nr
+   call sbf8(ll1,qq*rlin(ii),sb_out)
+   rsbf(ii)=rlin(ii)*sb_out(ll1)
+  end do
+  return
+ end if
+
+!rlin is increasing, so the small-argument points come first
+ i0=nr+1
+ do ii=1,nr
+  xx=qq*rlin(ii)
+  if(xx>=1.0d-3) then
+   i0=ii
+   exit
+  end if
+  if(xx<=1.0d-36) then
+   if(ll1==1) then
+    rsbf(ii)=rlin(ii)
+   else
+    rsbf(ii)=0.0d0
+   end if
+  else
+   xn=1.0d0
+   xs=0.5d0*xx**2
+   do nn=1,ll1-1
+    xn=xx*xn/(2*nn+1)
+   end do
+   rsbf(ii)=rlin(ii)*xn*(1.0d0 - xs*(1.0d0 - xs/(4*ll1+6))/(2*ll1+1))
+  end if
+ end do
+
+ select case(ll1)
+ case(1)
+  do ii=i0,nr
+   xx=qq*rlin(ii)
+   rsbf(ii)=rlin(ii)*(sqr(ii)/xx)
+  end do
+ case(2)
+  do ii=i0,nr
+   xx=qq*rlin(ii)
+   rsbf(ii)=rlin(ii)*((sqr(ii)-xx*cqr(ii))/xx**2)
+  end do
+ case(3)
+  do ii=i0,nr
+   xx=qq*rlin(ii)
+   rsbf(ii)=rlin(ii)*(((3.0d0-xx**2)*sqr(ii) - 3.0d0*xx*cqr(ii))/xx**3)
+  end do
+ case(4)
+  do ii=i0,nr
+   xx=qq*rlin(ii)
+   rsbf(ii)=rlin(ii)*((15.d0*sqr(ii)-15.d0*xx*cqr(ii) - 6.d0*xx**2*sqr(ii) &
+&           + xx**3*cqr(ii))/xx**4)
+  end do
+ end select
+
+ return
+ end subroutine rsbf_lin
+
  end subroutine  eresid
