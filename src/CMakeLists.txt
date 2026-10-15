@@ -52,6 +52,7 @@ set(src_oncvpsp
     wf_rc_der.f90
     input_text_m.f90
     # Non-/scalar-relativistic files
+    ae_file_m.f90
     config_ae_m.f90
     fphsft.f90
     fpovlp.f90
@@ -104,46 +105,30 @@ if (ONCVPSP_WITH_TOML)
 endif ()
 
 ###########################################################
-# oncvpsp.x (scalar-relativistic)
+# Executables
 ###########################################################
-add_executable(oncvpspsr oncvpsp.F90)
-add_dependencies(oncvpspsr oncvpsp)
-target_link_libraries(oncvpspsr PRIVATE oncvpsp)
-set_target_properties(oncvpspsr
-    PROPERTIES
-        OUTPUT_NAME oncvpsp.x
-)
-if (ONCVPSP_WITH_TOML)
-    target_compile_definitions(oncvpspsr PRIVATE WITH_TOML)
-endif ()
+function(oncvpsp_executable target source output_name)
+    add_executable(${target} ${source})
+    add_dependencies(${target} oncvpsp)
+    target_link_libraries(${target} PRIVATE oncvpsp)
+    set_target_properties(${target} PROPERTIES OUTPUT_NAME ${output_name})
+    if (ONCVPSP_WITH_TOML)
+        target_compile_definitions(${target} PRIVATE WITH_TOML)
+    endif ()
+endfunction()
 
-##########################################################
-# oncvpspnr.x (non-relativistic)
-##########################################################
-add_executable(oncvpspnr oncvpsp_nr.F90)
-add_dependencies(oncvpspnr oncvpsp)
-target_link_libraries(oncvpspnr PRIVATE oncvpsp)
-set_target_properties(oncvpspnr
-    PROPERTIES
-        OUTPUT_NAME oncvpspnr.x
-)
-if (ONCVPSP_WITH_TOML)
-    target_compile_definitions(oncvpspnr PRIVATE WITH_TOML)
-endif ()
+# Scalar-relativistic, non-relativistic and fully-relativistic drivers
+oncvpsp_executable(oncvpspsr oncvpsp.F90 oncvpsp.x)
+oncvpsp_executable(oncvpspnr oncvpsp_nr.F90 oncvpspnr.x)
+oncvpsp_executable(oncvpspr oncvpsp_r.F90 oncvpspr.x)
 
-##########################################################
-# oncvpspr.x (fully-relativistic)
-##########################################################
-add_executable(oncvpspr oncvpsp_r.F90)
-add_dependencies(oncvpspr oncvpsp)
-target_link_libraries(oncvpspr PRIVATE oncvpsp)
-set_target_properties(oncvpspr
-    PROPERTIES
-        OUTPUT_NAME oncvpspr.x
-)
-if (ONCVPSP_WITH_TOML)
-    target_compile_definitions(oncvpspr PRIVATE WITH_TOML)
-endif ()
+# All-electron and pseudopotential stages of the scalar- and
+# non-relativistic drivers, which pass the all-electron atom through a
+# file (see oncvpsp.F90 and ae_file_m.f90)
+oncvpsp_executable(oncvpspsr_ae oncvpsp_ae.F90 oncvpsp_ae.x)
+oncvpsp_executable(oncvpspsr_ps oncvpsp_ps.F90 oncvpsp_ps.x)
+oncvpsp_executable(oncvpspnr_ae oncvpspnr_ae.F90 oncvpspnr_ae.x)
+oncvpsp_executable(oncvpspnr_ps oncvpspnr_ps.F90 oncvpspnr_ps.x)
 
 ###########################################################
 # Subdirectories

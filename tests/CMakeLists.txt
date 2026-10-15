@@ -73,3 +73,25 @@ foreach(test_name ${oncvpspr_tests})
     )
     set_property(TEST ${test_name} PROPERTY LABEL "r")
 endforeach(test_name)
+
+# All-electron / pseudopotential split: oncvpsp_ae.x writes the
+# all-electron atom to a file and oncvpsp_ps.x reads it (see
+# scripts/split_test.sh)
+set(oncvpsp_split_tests
+    "sr:14_Si" "sr:19_K_st" "sr:29_Cu" "sr:57_La" "nr:14_Si" "nr:29_Cu"
+)
+foreach(split_test ${oncvpsp_split_tests})
+    string(REPLACE ":" ";" split_test_parts ${split_test})
+    list(GET split_test_parts 0 rel)
+    list(GET split_test_parts 1 test_name)
+    add_test(
+        NAME split_${rel}_${test_name}
+        COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/split_test.sh
+            $<TARGET_FILE:oncvpsp${rel}>
+            $<TARGET_FILE:oncvpsp${rel}_ae>
+            $<TARGET_FILE:oncvpsp${rel}_ps>
+            ${CMAKE_SOURCE_DIR}/tests/data/${test_name}.dat
+            ${CMAKE_CURRENT_BINARY_DIR}/split_${rel}_${test_name}
+    )
+    set_property(TEST split_${rel}_${test_name} PROPERTY LABEL "split")
+endforeach(split_test)

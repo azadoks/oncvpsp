@@ -109,6 +109,29 @@ The non-relativistic executable `src/oncvpsp_nr.x` is run by `tests/run_nr.sh`,
 and the fully-relativistic one `src/oncvpsp_r.x` by `tests/run_r.sh`.
 Please see the files in `doc` directory for details on the code, input file format, etc.
 
+### Solving the all-electron atom once
+
+When the same atom is regenerated many times with different
+pseudopotential parameters (for example in an optimization loop), the
+all-electron atom can be solved once and reused. For the
+scalar-relativistic code,
+
+    oncvpsp_ae.x --ae-file <prefix>.ae < <prefix>.dat > <prefix>_ae.out
+    oncvpsp_ps.x --ae-file <prefix>.ae < <prefix>.dat > <prefix>.out
+
+and likewise `oncvpspnr_ae.x` and `oncvpspnr_ps.x` for the
+non-relativistic code. `oncvpsp_ae.x` solves the reference atom and the
+all-electron halves of the test configurations and writes them to the
+`--ae-file`. `oncvpsp_ps.x` reads that file instead of solving the
+all-electron atom, and otherwise gives the same output as `oncvpsp.x`.
+Its input may change anything except the reference atom (`atsym`, `z`,
+`nc`, `nv`, `iexc` and the reference configuration), and may use any
+subset of the test configurations that `oncvpsp_ae.x` was given; it stops
+with an error otherwise. There are no fully-relativistic versions yet.
+
+Setting `psfile` to `none` skips writing a pseudopotential file, and
+`ncnf` = 0 skips the test configurations other than the reference.
+
 ## Documentation
 
 Documentation available at [https://oncvpsp.github.io/oncvpsp/](https://oncvpsp.github.io/oncvpsp/)

@@ -16,13 +16,21 @@ OBJS_ALL =	aeo.o check_data.o const_basis.o dpnint.o eresid.o exchdl.o \
 		der2exc.o modcore3.o sbf_basis_con.o run_ghosts.o \
 		lschpsbar.o vrel.o
 
-OBJS_NRSR =	config_ae_m.o fphsft.o fpovlp.o gnu_script.o linout.o psatom.o \
+OBJS_NRSR =	ae_file_m.o config_ae_m.o fphsft.o fpovlp.o gnu_script.o linout.o psatom.o \
 		relatom.o run_config.o run_diag.o run_phsft.o run_plot.o \
 		run_vkb.o sratom.o upfout.o wellstate.o
 
 OBJS_SR =	m_psmlout.o oncvpsp.o
 
 OBJS_NR =	m_psmlout.o oncvpsp_nr.o
+
+OBJS_SR_AE =	m_psmlout.o oncvpsp_ae.o
+
+OBJS_SR_PS =	m_psmlout.o oncvpsp_ps.o
+
+OBJS_NR_AE =	m_psmlout.o oncvpspnr_ae.o
+
+OBJS_NR_PS =	m_psmlout.o oncvpspnr_ps.o
 
 OBJS_R =	m_psmlout.o oncvpsp_r.o fphsft_r.o fpovlp.o gnu_script_r.o linout_r.o \
 		psatom_r.o relatom.o renorm_r.o run_config_r.o run_diag_r.o \
@@ -35,16 +43,21 @@ OBJS_OPSPNR = 	$(OBJS_NR) $(OBJS_NRSR) $(OBJS_ALL) $(OBJS_LIBXC)
 
 OBJS_OPSPR = 	$(OBJS_R) $(OBJS_ALL) $(OBJS_LIBXC)
 
-all:	oncvpsp oncvpspnr oncvpspr
+OBJS_SPLIT =	$(OBJS_NRSR) $(OBJS_ALL) $(OBJS_LIBXC)
+
+all:	oncvpsp oncvpspnr oncvpspr oncvpsp_ae oncvpsp_ps oncvpspnr_ae oncvpspnr_ps
 
 WXML_LIB=xmlf90-wxml/libwxml.a
 wxml:
 	(cd xmlf90-wxml; $(MAKE) module)
 #
 m_psmlout.o: wxml m_libxc_list.o
-oncvpsp.o oncvpsp_nr.o oncvpsp_r.o: m_psmlout.o input_text_m.o
-oncvpsp.o oncvpsp_nr.o run_config.o: config_ae_m.o
-oncvpsp_nr.o: oncvpsp.F90
+DRIVERS_NRSR =	oncvpsp.o oncvpsp_nr.o oncvpsp_ae.o oncvpsp_ps.o \
+		oncvpspnr_ae.o oncvpspnr_ps.o
+$(DRIVERS_NRSR) oncvpsp_r.o: m_psmlout.o input_text_m.o
+$(DRIVERS_NRSR) run_config.o ae_file_m.o: config_ae_m.o
+$(DRIVERS_NRSR): ae_file_m.o
+oncvpsp_nr.o oncvpsp_ae.o oncvpsp_ps.o oncvpspnr_ae.o oncvpspnr_ps.o: oncvpsp.F90
 INCLUDE_WXML=-I./xmlf90-wxml
 
 
@@ -57,6 +70,18 @@ oncvpspnr:	$(OBJS_OPSPNR)
 
 oncvpspr:	$(OBJS_OPSPR)
 		$(FLINKER) -o oncvpspr.x $(OBJS_OPSPR) $(LIBS) $(WXML_LIB)
+
+oncvpsp_ae:	$(OBJS_SR_AE) $(OBJS_SPLIT)
+		$(FLINKER) -o oncvpsp_ae.x $(OBJS_SR_AE) $(OBJS_SPLIT) $(LIBS) $(WXML_LIB)
+
+oncvpsp_ps:	$(OBJS_SR_PS) $(OBJS_SPLIT)
+		$(FLINKER) -o oncvpsp_ps.x $(OBJS_SR_PS) $(OBJS_SPLIT) $(LIBS) $(WXML_LIB)
+
+oncvpspnr_ae:	$(OBJS_NR_AE) $(OBJS_SPLIT)
+		$(FLINKER) -o oncvpspnr_ae.x $(OBJS_NR_AE) $(OBJS_SPLIT) $(LIBS) $(WXML_LIB)
+
+oncvpspnr_ps:	$(OBJS_NR_PS) $(OBJS_SPLIT)
+		$(FLINKER) -o oncvpspnr_ps.x $(OBJS_NR_PS) $(OBJS_SPLIT) $(LIBS) $(WXML_LIB)
 
 .SUFFIXES: 
 .SUFFIXES: .c .o .f .f90 .F90
