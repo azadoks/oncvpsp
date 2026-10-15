@@ -284,7 +284,11 @@
 &        'core_correction="F"'
    end if
 
-   if(iexc==2 .or. iexc==-000004) then
+   if(iexc==2) then
+     write(6,'(t8,a)') &
+&        'functional="SLA  HL   NOGX NOGC"'
+
+   else if(iexc==-000004) then
      write(6,'(t8,a)') &
 &        'functional="NOX+HL"'
 
@@ -370,10 +374,10 @@
    write(6,'(t8,a,i6,a)') &
 &        'mesh_size="',nrl,'"'
 
-   write(6,'(t8,a,i1,a)') &
+   write(6,'(t8,a,i0,a)') &
 &        'number_of_wfc="',nv,'"'
 
-   write(6,'(t8,a,i1,a)') &
+   write(6,'(t8,a,i0,a)') &
 &        'number_of_proj="',ntotproj,'"/>' !end of PP_HEADER
 
    write(6,'(t2,a)') &
@@ -434,7 +438,7 @@
 !&          'size="',nrlproj,'"'
      write(6,'(t8,a)') &
 &          'columns="4"'
-     write(6,'(t8,a,i1,a)') &
+     write(6,'(t8,a,i0,a)') &
 &          'index="',iproj,'"'
 !     write(6,'(t8,a)') &
 !&          'label="3P"'

@@ -208,7 +208,7 @@
      do ii = 1,nrl
        write(6,'(i6,1p,2e21.13)') ii,rl(ii),vpl(ii,l1)
      end do
-   else
+   else if(npr_sr(l1)>0) then
      write(6,'(i4,23x,1p,10e21.13)') ll,(esr(jj,l1),jj=1,npr_sr(l1))
      do ii = 1,nrl
        if(rl(ii)<=rc(l1)+2.0d0*drl) then

@@ -311,7 +311,15 @@ write(6,'(a/a/a)') '#','# MODEL CORE CHARGE', &
 &        'core_correction="F"'
    end if
 
-   if(iexc==3 .or. iexc==-001009) then
+   if(iexc==2) then
+     write(6,'(t8,a)') &
+&        'functional="SLA  HL   NOGX NOGC"'
+
+   else if(iexc==-000004) then
+     write(6,'(t8,a)') &
+&        'functional="NOX+HL"'
+
+   else if(iexc==3 .or. iexc==-001009) then
      write(6,'(t8,a)') &
 &        'functional="PZ"'
 

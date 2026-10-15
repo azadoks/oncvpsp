@@ -124,7 +124,7 @@
  gln(72)=''' t1" using 3:5 title "Prj 2" with lines ls 2'
  gln(73)=''' t1" using 3:6 title "Prj 3" with lines ls 3'
  gln(74)=''' t1" using 3:7 title "Prj 4" with lines ls 4'
- gln(75)=''' t1" using 3:7 title "Prj 5" with lines ls 5'
+ gln(75)=''' t1" using 3:8 title "Prj 5" with lines ls 5'
 
 !write(6,*) 'lmax,lloc,mxprj',lmax,lloc,mxprj
  write(6,'(a)') 'GNUSCRIPT'

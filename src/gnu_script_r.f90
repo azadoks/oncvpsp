@@ -146,6 +146,7 @@
  gln(72)=''' t1" using 3:5 title "Prj 2" with lines ls 2'
  gln(73)=''' t1" using 3:6 title "Prj 3" with lines ls 3'
  gln(74)=''' t1" using 3:7 title "Prj 4" with lines ls 4'
+ gln(75)=''' t1" using 3:8 title "Prj 5" with lines ls 5'
 
 !write(6,*) 'lmax,lloc,mxprj',lmax,lloc,mxprj
  write(6,'(a)') 'GNUSCRIPT'
@@ -235,7 +236,12 @@
     write(6,'(a/)')    ' Ha"'
 
     do jj=1,nproj(l1)
-      write(6,'(2a,i6,a)',advance='no') lead(jj),trim(gln(70)),ll,trim(gln(70+jj))
+!run_plot_r labels the j=l+1/2 (ikap=1) projector lines with -l
+      if(ikap==1) then
+        write(6,'(2a,i6,a)',advance='no') lead(jj),trim(gln(70)),-ll,trim(gln(70+jj))
+      else
+        write(6,'(2a,i6,a)',advance='no') lead(jj),trim(gln(70)),ll,trim(gln(70+jj))
+      end if
       if(jj<nproj(l1)) then
        write(6,'(a)') cbs
       else
