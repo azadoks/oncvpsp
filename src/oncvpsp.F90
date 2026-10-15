@@ -495,7 +495,7 @@
 &                      rr,vfull,uu,up,zz,mmax,mch,srel)
          if(ierr /= 0) then
            write(6,'(/a,3i4)') 'oncvpsp-387: lschfb convergence ERROR n,l,iter=', &
-&           na(ii),la(ii),it
+&           na(kk),la(kk),it
            stop
          end if
          epa(iprj,l1)=ea(kk)
@@ -515,7 +515,8 @@
      do kk=1,nproj(l1)-iprj
        iprj=iprj+1
        if(iprj>1 .and. debl(l1)<=0.0d0) then
-         write(6,'(a,f8.3,a/a)') 'oncvpsp: ERROR debl =',debl, 'for l=', &
+         write(6,'(a,f8.3,a,i2/a/a)') 'oncvpsp: ERROR debl =',debl(l1), &
+&              ' for l=',ll, &
 &              ' ERROR not allowed with 2 or more scattering states', &
 &              'program will stop'
          stop
@@ -589,7 +590,7 @@
 &                rr,vfull,uu,up,zz,mmax,mch,srel)
    if(ierr /= 0) then
      write(6,'(/a,3i4)') 'oncvpsp-461: lschfb convergence ERROR n,l,iter=', &
-&     na(ii),la(ii),it
+&     na(nc+kk),la(nc+kk),it
      stop
    end if
 

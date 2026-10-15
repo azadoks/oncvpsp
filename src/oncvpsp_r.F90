@@ -507,7 +507,7 @@
          if(ierr /= 0) then
            write(6,'(a,i2,a,i2,a,i2)') &
 &                'oncvpsp_r 409: ldiracfb convergence ERROR, n=',&
-&                 np(l1),'  l=',ll, 'kap-',kap
+&                 na(kk),'  l=',ll, 'kap-',kap
            stop
          end if
 
@@ -530,7 +530,8 @@
      do kk=1,nproj(l1)-iprj
        iprj=iprj+1
        if(iprj>1 .and.debl(l1)<=0.0d0) then
-         write(6,'(a,f8.3,a/a)') 'oncvpsp: ERROR debl =',debl, 'for l=', &
+         write(6,'(a,f8.3,a,i2/a/a)') 'oncvpsp: ERROR debl =',debl(l1), &
+&              ' for l=',ll, &
 &              ' not allowed with 2 or more scattering states', &
 &              'program will stop'
          stop
@@ -657,7 +658,7 @@
     if(ierr /= 0) then
       write(6,'(a,i2,a,i2,a,i2,a,i4)') &
 &           'oncvpsp_r 541: ldiracfb convergence ERROR, n=',&
-&            np(l1),'  l=',ll, '  kap-',kap,'  ierr=',ierr
+&            na(nc+kk),'  l=',ll, '  kap-',kap,'  ierr=',ierr
       stop
     end if
 

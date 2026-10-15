@@ -203,7 +203,7 @@ module input_toml_m
          do i = 1, len(arr)
                call get_value(arr, i, l)
                if (i /= l + 1) then
-                  write (stderr, '(A,I0,A,I0)') 'Error: l values in [pseudopotentials] section must be in order ', &
+                  write (stderr, '(A,A,I0,A,I0,A)') 'Error: l values in [pseudopotentials] section must be in order ', &
                      'starting from 0 to lmax without skipping any values. Expected ', i-1, ' but got ', l, '.'
                   stop 1
                end if
@@ -265,7 +265,7 @@ module input_toml_m
          do i = 1, len(arr)
                call get_value(arr, i, l)
                if (i /= l + 1) then
-                  write (stderr, '(A,I0,A,I0)') 'Error: l values in [vkb_projectors] section must be in order ', &
+                  write (stderr, '(A,A,I0,A,I0,A)') 'Error: l values in [vkb_projectors] section must be in order ', &
                      'starting from 0 to lmax without skipping any values. Expected ', i-1, ' but got ', l, '.'
                   stop 1
                end if
@@ -589,7 +589,7 @@ module input_toml_m
          do i = 1, len(arr)
                call get_value(arr, i, l)
                if (i /= l + 1) then
-                  write (stderr, '(A,I0,A,I0)') 'Error: l values in [pseudopotentials] section must be in order ', &
+                  write (stderr, '(A,A,I0,A,I0,A)') 'Error: l values in [pseudopotentials] section must be in order ', &
                      'starting from 0 to lmax without skipping any values. Expected ', i-1, ' but got ', l, '.'
                   stop 1
                end if
@@ -652,7 +652,7 @@ module input_toml_m
          do i = 1, len(arr)
                call get_value(arr, i, l)
                if (i /= l + 1) then
-                  write (stderr, '(A,I0,A,I0)') 'Error: l values in [vkb_projectors] section must be in order ', &
+                  write (stderr, '(A,A,I0,A,I0,A)') 'Error: l values in [vkb_projectors] section must be in order ', &
                      'starting from 0 to lmax without skipping any values. Expected ', i-1, ' but got ', l, '.'
                   stop 1
                end if
