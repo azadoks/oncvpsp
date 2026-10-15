@@ -678,7 +678,6 @@
     end if
 
    rhoae(:,kk)=rhoae(:,kk)+fj*((uu(:,1)/rr(:))**2 + (uu(:,2)/rr(:))**2)
-   rhotae(:)=rhotae(:)+fa(nc+kk)*rhoae(:,kk)
 
    emax=0.90d0*et
    emin=1.10d0*et
@@ -699,6 +698,7 @@
    eeig=eeig+fa(nc+kk)*fj*et
 
   end do !ikap
+  rhotae(:)=rhotae(:)+fa(nc+kk)*rhoae(:,kk)
   rho(:)=rho(:)+fa(nc+kk)*rhops(:,kk)
   zval=zval+fa(nc+kk)
   nodes(l1)=nodes(l1)+1
