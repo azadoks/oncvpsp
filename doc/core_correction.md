@@ -139,6 +139,30 @@ icmod==6:
     PseudoPotentialGenerators.jl with its Martins candidate, executed by
     modcore_budget.f90; tests/data/14_Si_bc.dat uses it.
 
+    With fcfact <= 0, ecut is instead the cutoff the pseudo-waves need for
+    the same error rcfact, times -fcfact (times 1 for fcfact = 0): a
+    calculation needs that cutoff anyway, so the core costs nothing more.
+
+    ```
+        # MODEL CORE CHARGE
+        # icmod, fcfact (0, or minus a multiple of the pseudo-wave cutoff), rcfact
+            6   0   1.0e-4
+    ```
+
+    The pseudo-wave cutoff is the root of the total residual kinetic
+    energy sum_i w_i E_i(ecut) = rcfact, with E_i the energy error per
+    electron of the optimized pseudo wave function of projector i (the
+    "Energy error per electron" profiles of the out file, interpolated in
+    log E between points 0.5 bohr^-1 apart) and w_i the electrons that fill
+    it: the occupation of a valence state, or 2(2l+1) (2j+1 fully
+    relativistic) for a scattering or empty one. The local channel's wave
+    function counts as well. This is the default ecut of the BudgetedCore
+    (ecut_for_error). It is usually within a few Ha of the largest cutoff of
+    the profiles at 1e-5 Ha per electron. The out file gives it on the
+    line "pseudo-wave cutoff", and modcore_budget_ecut (in modcore_budget.f90)
+    computes it;
+    tests/data/14_Si_bca.dat uses it.
+
 1) S. G. Louie, S. Froyen, and M. L. Cohen, Phys. Rev. B 43, 1993 (1991).
 
 2) M. Fuchs and M. Scheffler, Comput. Phys. Commun. 119, 67 (1999).

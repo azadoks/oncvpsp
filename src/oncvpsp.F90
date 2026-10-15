@@ -102,6 +102,9 @@
  real(dp), parameter :: eps=1.0d-8
 
  real(dp), allocatable :: evkb(:,:),cvgplt(:,:,:,:),qq(:,:)
+ real(dp), allocatable :: ecurve(:,:,:,:),wcurve(:,:)
+ real(dp) :: ecutw
+ integer, parameter :: ncurve=1000
  real(dp), allocatable :: rr(:)
  real(dp), allocatable :: rho(:),rhoc(:),rhot(:)
  real(dp), allocatable :: uu(:),up(:)
@@ -325,6 +328,7 @@
  allocate(rho(mmax),rhoc(mmax),rhot(mmax))
  allocate(uu(mmax),up(mmax),uupsa(mmax,30))
  allocate(evkb(mxprj,4), cvgplt(2,7,mxprj,4),qq(mxprj,mxprj))
+ allocate(ecurve(2,ncurve,mxprj,4),wcurve(mxprj,4))
  allocate(vp(mmax,5),vfull(mmax),vkb(mmax,mxprj,4),pswf(mmax,mxprj,4))
  allocate(vwell(mmax))
  allocate(vpuns(mmax,5))
@@ -480,6 +484,8 @@
 
 !
  cvgplt(:,:,:,:)=0.0d0
+ ecurve(:,:,:,:)=0.0d0
+ wcurve(:,:)=0.0d0
 !
 ! loop to construct pseudopotentials for all angular momenta
 !
@@ -493,6 +499,9 @@
    ll=l1-1
    uu(:)=0.0d0; qq(:,:)=0.0d0
    iprj=0
+!electrons filling each pseudo-wave in the cutoff of icmod 6: the shell's
+!for a scattering or empty state, else the occupation
+   wcurve(1:nproj(l1),l1)=dble(2*(2*ll+1))
 
 !get principal quantum number for the highest core state for this l
    npa(1,l1)=l1
@@ -514,6 +523,7 @@
            stop
          end if
          epa(iprj,l1)=ea(kk)
+         if(fa(kk)>0.0d0) wcurve(iprj,l1)=fa(kk)
          npa(iprj,l1)=na(kk)
          uua(:,iprj)=uu(:)
          upa(:,iprj)=up(:)
@@ -566,7 +576,8 @@
 
    call run_optimize(epa(1,l1),ll,mmax,mxprj,rr,uua,qq, &
 &                    irc(l1),qcut(l1),qmsbf(l1),ncon(l1),nbas(l1),nproj(l1), &
-&                    pswf(1,1,l1),vp(1,l1),vkb(1,1,l1),vfull,cvgplt(1,1,1,l1))
+&                    pswf(1,1,l1),vp(1,l1),vkb(1,1,l1),vfull,cvgplt(1,1,1,l1), &
+&                    ncurve,ecurve(1,1,1,l1))
 
  end do !l1
 
@@ -654,7 +665,11 @@
 &               fcfact,rcfact,irps,mmax,rr,nc,nv,la,zion,iexc)
 
  else if(icmod==6) then
-   call modcore_budget(rho,rhoc,rhomod,fcfact,rcfact, &
+   ecutw=0.0d0
+   if(fcfact<=0.0d0) then
+     call modcore_budget_ecut(ecurve,wcurve,ncurve,mxprj*4,rcfact,ecutw)
+   end if
+   call modcore_budget(rho,rhoc,rhomod,fcfact,ecutw,rcfact, &
 &               minval(irc(1:lmax+1)),mmax,rr,iexc)
 
  else if(icmod>=3) then

@@ -24,6 +24,10 @@
 ! last radius with core charge), whose model needs no more than the cutoff
 ! ecut for an exchange-correlation energy error below errmax.
 !
+! ecut is fcfact (Ha) if fcfact > 0.  Otherwise it is the cutoff the
+! pseudo-waves need for the same error (ecutw, from modcore_budget_ecut),
+! times -fcfact if fcfact < 0: a calculation needs that cutoff anyway.
+!
 ! The error of a density cutoff q (a plane-wave cutoff q**2/8) is that of
 ! the core charge without its Fourier components beyond q, in a solid:
 !
@@ -40,12 +44,15 @@
 ! bisected for with the first nquick of them only, and then confirmed with
 ! all of them (and bisected for again with all of them if that fails).
 
- subroutine modcore_budget(rhotps,rhoc,rhomod,ecut,errmax,irmax,mmax,rr,iexc)
+ subroutine modcore_budget(rhotps,rhoc,rhomod,fcfact,ecutw,errmax,irmax, &
+&                           mmax,rr,iexc)
 
 !rhotps  total pseudocharge density
 !rhoc  core-charge density
 !rhomod  model core density and 4 derivatives
-!ecut  plane-wave cutoff (Ha) the model must not need more than
+!fcfact  plane-wave cutoff (Ha) the model must not need more than, if > 0;
+!        else 0 for ecutw, or minus the multiple of ecutw
+!ecutw  cutoff (Ha) the pseudo-waves need for errmax (used if fcfact <= 0)
 !errmax  exchange-correlation energy error (Ha) that defines the needed cutoff
 !irmax  rr index of the largest r_s (smallest rc)
 !mmax  dimension of log grid
@@ -60,7 +67,7 @@
 !Input variables
  integer :: mmax,irmax,iexc
  real(dp) :: rhotps(mmax),rhoc(mmax),rr(mmax)
- real(dp) :: ecut,errmax
+ real(dp) :: fcfact,ecutw,errmax
 
 !Output variables
  real(dp) :: rhomod(mmax,5)
@@ -74,10 +81,18 @@
  integer, parameter :: npanel=4, nquick=10
 
 !Local variables
- real(dp) :: al,dq,vbg,ecore,aco,bco,cco,e0
+ real(dp) :: al,dq,vbg,ecore,aco,bco,cco,e0,ecut,factor
  real(dp), allocatable :: dc(:,:),core(:),nval(:),sn(:),cs(:),sh(:),ch(:)
  real(dp), allocatable :: rq(:),work(:),eps(:),vxc(:),err(:),rqs(:,:)
  integer :: ii,jj,nq,nin,nx,ilo,ihi,irs,ifrom,iquick,ibad,irtop
+
+ if(fcfact>0.0d0) then
+   ecut=fcfact
+ else
+   factor=1.0d0
+   if(fcfact<0.0d0) factor=-fcfact
+   ecut=factor*ecutw
+ end if
 
  al = 0.01d0 * dlog(rr(101) / rr(1))
  dq = qstep/npanel
@@ -190,6 +205,10 @@
  end do
 
  write(6,'(/a)') 'Model core correction: budgeted Martins core (icmod 6)'
+ if(fcfact<=0.0d0) then
+   write(6,'(a,f12.4,a,f8.4)') '  pseudo-wave cutoff',ecutw, &
+&        ' Ha, times',factor
+ end if
  write(6,'(a,f12.4,a,1p,e10.2,a)') '  cutoff budget',ecut, &
 &      ' Ha for an xc energy error of',errmax,' Ha'
  write(6,'(a,f12.6,a,f10.6)') '  model radius r_s',rr(irs), &
@@ -385,3 +404,72 @@
  end subroutine xc_eps
 
  end subroutine modcore_budget
+
+! the cutoff ecut (Ha) the pseudo-waves need for the error errmax (Ha per
+! atom): the root of the total residual kinetic energy sum_i w_i E_i(ecut),
+! with E_i the error per electron of pseudo-wave i and w_i the electrons
+! that fill it, the ecut_for_error of PseudoPotentialGenerators.jl.
+! ecurve(:,:,i) holds the cutoffs and E_i of run_optimize on its mesh,
+! zero beyond its end; wcurve(i)=0 skips it.  log E is interpolated
+! linearly in q between the mesh points, as for the convergence profiles
+ subroutine modcore_budget_ecut(ecurve,wcurve,ncurve,nprof,errmax,ecut)
+
+ implicit none
+ integer, parameter :: dp=kind(1.0d0)
+
+!Input variables
+ integer :: ncurve,nprof
+ real(dp) :: ecurve(2,ncurve,nprof),wcurve(nprof),errmax
+
+!Output variables
+ real(dp) :: ecut
+
+!Local variables
+ real(dp), allocatable :: total(:),qq(:)
+ real(dp) :: qt
+ integer :: ip,kk,nend,klast
+
+ allocate(total(ncurve),qq(ncurve))
+ total(:)=0.0d0
+ qq(:)=0.0d0
+ nend=0
+ do ip=1,nprof
+   if(wcurve(ip)<=0.0d0) cycle
+   kk=ncurve
+   do while(kk>1 .and. ecurve(1,kk,ip)<=0.0d0)
+     kk=kk-1
+   end do
+   if(nend==0 .or. kk<nend) nend=kk
+   total(:)=total(:)+wcurve(ip)*ecurve(2,:,ip)
+   qq(:)=sqrt(2.0d0*ecurve(1,:,ip))
+ end do
+ if(nend<2) then
+   write(6,'(/a)') 'modcore_budget_ecut: ERROR stop - no residual energy curves'
+   stop
+ end if
+ if(total(nend)>errmax) then
+   write(6,'(/a,1p,e10.2,a,0p,f10.2,a)') &
+&        'modcore_budget_ecut: ERROR stop - residual kinetic energy above', &
+&        errmax,' Ha at',0.5d0*qq(nend)**2,' Ha, the end of its tables'
+   stop
+ end if
+
+ klast=0
+ do kk=1,nend-1
+   if(total(kk)>errmax) klast=kk
+ end do
+ if(klast==0) then
+   ecut=0.0d0
+ else if(total(klast+1)>0.0d0) then
+   qt=qq(klast)+(qq(klast+1)-qq(klast)) &
+&    *log(total(klast)/errmax)/log(total(klast)/total(klast+1))
+   ecut=0.5d0*qt**2
+ else
+   qt=qq(klast)+(qq(klast+1)-qq(klast)) &
+&    *(total(klast)-errmax)/(total(klast)-total(klast+1))
+   ecut=0.5d0*qt**2
+ end if
+
+ deallocate(total,qq)
+ return
+ end subroutine modcore_budget_ecut

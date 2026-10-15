@@ -18,7 +18,7 @@
 !
    subroutine run_optimize(eig,ll,mmax,mxprj,rr,uua,qq,&
 &                        irc,qcut,qmsbf,ncon_in,nbas_in,npr, &
-&                        psopt,vpsp,vkb,vae,cvgplt)
+&                        psopt,vpsp,vkb,vae,cvgplt,ncurve,ecurve)
 
 ! calls routines to generate optimized pseudo wave function and semi-local
 ! pseudopotential and prints diagnostic information on process and 
@@ -43,13 +43,16 @@
 !vkb  Vanderbilt-Kleinman-Bylander projectors (without local v correction)
 !vae  all-electron potential
 !cvgplt  energy error vs. cutoff energy for plotting
+!ncurve  dimension of ecurve
+!ecurve  cutoff energy and energy error per electron on the E_resid(q) mesh,
+!        zero beyond its end
 
  implicit none
  integer, parameter :: dp=kind(1.0d0)
  real(dp), parameter :: Ha_eV=27.21138386d0 ! 1 Hartree, in eV
 
 !Input variables
- integer :: ll,mmax,mxprj,irc,ncon_in,nbas_in,npr
+ integer :: ll,mmax,mxprj,irc,ncon_in,nbas_in,npr,ncurve
  real(dp) :: rr(mmax)
  real(dp) :: uua(mmax,mxprj),vae(mmax),qq(mxprj,mxprj)
  real(dp) :: eig(mxprj),qcut
@@ -64,7 +67,7 @@
  real(dp) :: sn,ps0norm,amesh,ro
  real(dp) :: err,lerr,qerr,ehaerr,eeverr
  real(dp) :: sbf(mmax)
- real(dp) :: cons(10),cvgplt(2,7,mxprj)
+ real(dp) :: cons(10),cvgplt(2,7,mxprj),ecurve(2,ncurve,mxprj)
  real(dp), allocatable :: orbasis(:,:)
  real(dp), allocatable :: orbasis_der(:,:),pswf0_sb(:),pswfnull_sb(:,:)
  real(dp), allocatable :: pswf0_or(:),pswfnull_or(:,:)
@@ -212,6 +215,13 @@
 
    write(6,'(a,1p,d10.2,a)') '    Residual kinetic energy error=', &
 &        eresidmin,' Ha'
+
+!the convergence curve on the uniform mesh qout(2:nqout)
+   ecurve(:,:,iprj)=0.0d0
+   do ii=2,min(nqout,ncurve+1)
+     ecurve(1,ii-1,iprj)=0.5d0*qout(ii)**2
+     ecurve(2,ii-1,iprj)=eresq(ii)
+   end do
 
 ! find the Vanderbilt projectors and optimized wave functions
 

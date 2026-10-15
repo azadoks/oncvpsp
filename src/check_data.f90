@@ -188,8 +188,8 @@
   ierr=ierr+1
  end if
 
- if((icmod==6) .and. (fcfact<=0.0d0 .or. rcfact<=0.0d0)) then
-  write(6,'(a)') 'test_data: must have fcfact>0.0 and rcfact>0.0 for icmod= 6'
+ if((icmod==6) .and. rcfact<=0.0d0) then
+  write(6,'(a)') 'test_data: must have rcfact>0.0 for icmod= 6'
   ierr=ierr+1
  end if
 

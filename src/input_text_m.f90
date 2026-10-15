@@ -186,7 +186,8 @@ contains
       if (ios == 0 .and. icmod == 3) then
          read (line, *, iostat=ios) icmod, fcfact, rcfact
       end if
-      ! icmod==6 : icmod, fcfact (cutoff, Ha), rcfact (xc energy error, Ha; default 1e-4)
+      ! icmod==6 : icmod, fcfact (cutoff, Ha; <= 0 for -fcfact, or 1 if 0, times the
+      !   cutoff of the pseudo-waves), rcfact (xc energy error, Ha; default 1e-4)
       if (ios == 0 .and. icmod == 6) then
          read (line, *, iostat=ios) icmod, fcfact, rcfact
          if (ios /= 0) then
@@ -423,7 +424,8 @@ contains
       if (ios == 0 .and. icmod == 3) then
          read (line, *, iostat=ios) icmod, fcfact, rcfact
       end if
-      ! icmod==6 : icmod, fcfact (cutoff, Ha), rcfact (xc energy error, Ha; default 1e-4)
+      ! icmod==6 : icmod, fcfact (cutoff, Ha; <= 0 for -fcfact, or 1 if 0, times the
+      !   cutoff of the pseudo-waves), rcfact (xc energy error, Ha; default 1e-4)
       if (ios == 0 .and. icmod == 6) then
          read (line, *, iostat=ios) icmod, fcfact, rcfact
          if (ios /= 0) then
