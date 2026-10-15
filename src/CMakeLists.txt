@@ -106,7 +106,6 @@ endif ()
 # oncvpsp.x (scalar-relativistic)
 ###########################################################
 add_executable(oncvpspsr oncvpsp.F90)
-target_compile_definitions(oncvpspsr PUBLIC RELATIVISTIC=1)
 add_dependencies(oncvpspsr oncvpsp)
 target_link_libraries(oncvpspsr PRIVATE oncvpsp)
 set_target_properties(oncvpspsr
@@ -120,8 +119,7 @@ endif ()
 ##########################################################
 # oncvpspnr.x (non-relativistic)
 ##########################################################
-add_executable(oncvpspnr oncvpsp.F90)
-target_compile_definitions(oncvpspnr PUBLIC RELATIVISTIC=0)
+add_executable(oncvpspnr oncvpsp_nr.F90)
 add_dependencies(oncvpspnr oncvpsp)
 target_link_libraries(oncvpspnr PRIVATE oncvpsp)
 set_target_properties(oncvpspnr
@@ -136,7 +134,6 @@ endif ()
 # oncvpspr.x (fully-relativistic)
 ##########################################################
 add_executable(oncvpspr oncvpsp_r.F90)
-target_compile_definitions(oncvpspr PUBLIC RELATIVISTIC=2)
 add_dependencies(oncvpspr oncvpsp)
 target_link_libraries(oncvpspr PRIVATE oncvpsp)
 set_target_properties(oncvpspr
