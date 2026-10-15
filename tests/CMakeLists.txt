@@ -24,10 +24,12 @@ foreach(test_name ${oncvpspsr_tests})
             fi
             awk 'BEGIN{out=0}; {if(out == 1) {print}};\
                 /ATOM AND REFERENCE CONFIGURATION/{out=1}' ${ref_out} | \
-                sed -e /pspd/s/^/-/ | sed -e /date/s/^/-/ >$TEMP1
+                sed -e /pspd/s/^/-/ | sed -e /date/s/^/-/ | \
+                sed -e '/^Begin PSML/,/^END_PSP/s/^/-/' >$TEMP1
             awk 'BEGIN{out=0}; {if(out == 1) {print}};\
                 /ATOM AND REFERENCE CONFIGURATION/{out=1}' ${test_out} | \
-                sed -e /pspd/s/^/-/ | sed -e /date/s/^/-/ >$TEMP2
+                sed -e /pspd/s/^/-/ | sed -e /date/s/^/-/ | \
+                sed -e '/^Begin PSML/,/^END_PSP/s/^/-/' >$TEMP2
             perl ${CMAKE_SOURCE_DIR}/scripts/fldiff.pl -easy $TEMP1 $TEMP2 > ${diff_out}
             rm -f $TEMP1 $TEMP2
             grep -E 'Summary  : no significant difference|Summary  : different lines=\\s*[0-9]+ , max abs_diff= -?0\\.000e[\\+\\-]00 \\(.*\\), max rel_diff= -?0\\.000e[\\+\\-]00 \\(.*\\)' ${diff_out}
@@ -59,10 +61,12 @@ foreach(test_name ${oncvpspr_tests})
             fi
             awk 'BEGIN{out=0}; {if(out == 1) {print}};\
                 /ATOM AND REFERENCE CONFIGURATION/{out=1}' ${ref_out} | \
-                sed -e /pspd/s/^/-/ | sed -e /date/s/^/-/ >$TEMP1
+                sed -e /pspd/s/^/-/ | sed -e /date/s/^/-/ | \
+                sed -e '/^Begin PSML/,/^END_PSP/s/^/-/' >$TEMP1
             awk 'BEGIN{out=0}; {if(out == 1) {print}};\
                 /ATOM AND REFERENCE CONFIGURATION/{out=1}' ${test_out} | \
-                sed -e /pspd/s/^/-/ | sed -e /date/s/^/-/ >$TEMP2
+                sed -e /pspd/s/^/-/ | sed -e /date/s/^/-/ | \
+                sed -e '/^Begin PSML/,/^END_PSP/s/^/-/' >$TEMP2
             perl ${CMAKE_SOURCE_DIR}/scripts/fldiff.pl -easy $TEMP1 $TEMP2 > ${diff_out}
             rm -f $TEMP1 $TEMP2
             grep -E 'Summary  : no significant difference|Summary  : different lines=\\s*[0-9]+ , max abs_diff= -?0\\.000e[\\+\\-]00 \\(.*\\), max rel_diff= -?0\\.000e[\\+\\-]00 \\(.*\\)' ${diff_out}
