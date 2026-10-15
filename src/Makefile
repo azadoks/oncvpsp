@@ -54,11 +54,8 @@ OBJS_SPLIT =	$(OBJS_NRSR) $(OBJS_ALL) $(OBJS_LIBXC)
 all:	oncvpsp oncvpspnr oncvpspr oncvpsp_ae oncvpsp_ps oncvpspnr_ae oncvpspnr_ps \
 	oncvpspr_ae oncvpspr_ps
 
-WXML_LIB=xmlf90-wxml/libwxml.a
-wxml:
-	(cd xmlf90-wxml; $(MAKE) module)
-#
-m_psmlout.o: wxml m_libxc_list.o
+# WXML_LIB and INCLUDE_WXML, for xmlf90, are set in make.inc
+m_psmlout.o: m_libxc_list.o
 DRIVERS_NRSR =	oncvpsp.o oncvpsp_nr.o oncvpsp_ae.o oncvpsp_ps.o \
 		oncvpspnr_ae.o oncvpspnr_ps.o
 DRIVERS_R =	oncvpsp_r.o oncvpspr_ae.o oncvpspr_ps.o
@@ -78,7 +75,6 @@ FORCE:
 
 ldiracfb.o ldiracfs.o lschfb.o lschfs.o lschkb.o lschpb.o lschps.o \
 lschpsbar.o lschpse.o lschvkbb.o vout.o: adams.inc
-INCLUDE_WXML=-I./xmlf90-wxml
 
 
 

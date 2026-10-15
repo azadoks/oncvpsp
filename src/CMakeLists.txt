@@ -108,9 +108,9 @@ add_custom_target(oncvpsp_build_info
 )
 
 add_library(oncvpsp STATIC ${src_oncvpsp})
-add_dependencies(oncvpsp wxml oncvpsp_build_info)
+add_dependencies(oncvpsp oncvpsp_build_info)
 target_include_directories(oncvpsp PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-target_link_libraries(oncvpsp wxml ${ONCVPSP_DEPENDENCY_LIBRARIES})
+target_link_libraries(oncvpsp ${ONCVPSP_DEPENDENCY_LIBRARIES})
 if (ONCVPSP_WITH_TOML)
     target_compile_definitions(oncvpsp PRIVATE WITH_TOML)
 endif ()
@@ -141,8 +141,3 @@ oncvpsp_executable(oncvpspnr_ae oncvpspnr_ae.F90 oncvpspnr_ae.x)
 oncvpsp_executable(oncvpspnr_ps oncvpspnr_ps.F90 oncvpspnr_ps.x)
 oncvpsp_executable(oncvpspr_ae oncvpspr_ae.F90 oncvpspr_ae.x)
 oncvpsp_executable(oncvpspr_ps oncvpspr_ps.F90 oncvpspr_ps.x)
-
-###########################################################
-# Subdirectories
-###########################################################
-add_subdirectory(xmlf90-wxml)

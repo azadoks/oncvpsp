@@ -1,0 +1,73 @@
+diff --git a/src/wxml/m_wxml_core.f90 b/src/wxml/m_wxml_core.f90
+index 4181ada..60c85a4 100644
+--- a/src/wxml/m_wxml_core.f90
++++ b/src/wxml/m_wxml_core.f90
+@@ -27,9 +27,10 @@ type, public :: xmlf_t
+    logical                 :: root_element_output
+    logical                 :: indenting_requested
+    logical                 :: inhibit_lf
++   logical                 :: close_unit
+ end type xmlf_t
+ 
+-public :: xml_OpenFile, xml_NewElement, xml_EndElement, xml_Close
++public :: xml_OpenFile, xml_OpenUnit, xml_NewElement, xml_EndElement, xml_Close
+ public :: xml_AddXMLDeclaration
+ public :: xml_AddXMLStylesheet
+ public :: xml_AddXMLPI
+@@ -101,6 +102,7 @@ if (iostat /= 0) call wxml_fatal(xf, "cannot open file")
+ 
+ open(unit=xf%lun, file=filename, form="formatted", status="replace", &
+      action="write", position="rewind", recl=xml_recl)
++xf%close_unit = .true.
+ 
+ call init_elstack(xf%stack)
+ 
+@@ -117,6 +119,39 @@ if (present(indent)) then
+ endif
+ end subroutine xml_OpenFile
+ 
++!-------------------------------------------------------------------
++! Write the document to lun, a formatted unit the caller has opened and
++! positioned at the start of a record (such as the standard output), with
++! the record length it was opened with; xml_Close leaves it open
++subroutine xml_OpenUnit(lun, xf, indent)
++integer, intent(in)           :: lun
++type(xmlf_t), intent(inout)   :: xf
++logical, intent(in), optional :: indent
++
++character(len=24) :: name
++
++write(name,"(a,i0)") "unit ", lun
++allocate(xf%filename(len_trim(name)))
++call assign_str_to_array(xf%filename,trim(name))
++
++xf%lun = lun
++xf%close_unit = .false.
++
++call init_elstack(xf%stack)
++
++call init_dict(xf%dict)
++call reset_buffer(xf%buffer)
++
++xf%start_tag_closed = .true.
++xf%root_element_output = .false.
++xf%inhibit_lf = .false.
++
++xf%indenting_requested = .false.
++if (present(indent)) then
++   xf%indenting_requested = indent
++endif
++end subroutine xml_OpenUnit
++
+ !-------------------------------------------------------------------
+ subroutine xml_AddXMLDeclaration(xf,encoding)
+ type(xmlf_t), intent(inout)   :: xf
+@@ -330,7 +365,7 @@ do
+ enddo
+ 
+ write(unit=xf%lun,fmt="(a)") char(xf%buffer)
+-close(unit=xf%lun)
++if (xf%close_unit) close(unit=xf%lun)
+ 
+ deallocate(xf%filename)
+ 

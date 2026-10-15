@@ -172,6 +172,20 @@ if(ONCVPSP_WITH_TOML)
 endif()
 
 ###########################################################
+# xmlf90 (via CPM), whose wxml writes the PSML output
+###########################################################
+# The patch adds xml_OpenUnit, which writes a document to a unit that is
+# already open (the standard output, where the PSML file goes like the
+# psp8 and upf files) and leaves it open at xml_Close
+CPMAddPackage(
+    NAME xmlf90
+    GIT_REPOSITORY "https://gitlab.com/siesta-project/libraries/xmlf90.git"
+    GIT_TAG 1.6.3
+    PATCHES "${CMAKE_CURRENT_SOURCE_DIR}/cmake/patches/xmlf90-wxml-open-unit.patch"
+)
+list(APPEND ONCVPSP_DEPENDENCY_LIBRARIES xmlf90-lib)
+
+###########################################################
 # Subdirectories
 ###########################################################
 add_subdirectory(src)
