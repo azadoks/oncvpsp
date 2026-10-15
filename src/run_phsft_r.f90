@@ -16,7 +16,7 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
-subroutine run_phsft_r(lmax,lloc,nproj,ep,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
+subroutine run_phsft_r(lmax,lloc,nproj,epa,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
 &                     rr,vfull,vp,zz,mmax,mxprj,irc)
 
 ! computes log derivatives, actually atan(r * ((d psi(r)/dr)/psi(r)))
@@ -29,7 +29,7 @@ subroutine run_phsft_r(lmax,lloc,nproj,ep,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
 !lmax  maximum angular momentum
 !lloc  l for local potential
 !nproj  number ov VKB projectors for  each l
-!ep  bound-state or scattering state reference energies for vkb potentials
+!epa  bound-state or scattering state reference energies for vkb potentials
 !epsh1  low energy limit for "phase shift" calculation
 !epsh2  high energy limit for "phase shift" calculation
 !depsh  energy increment
@@ -51,7 +51,7 @@ subroutine run_phsft_r(lmax,lloc,nproj,ep,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
    integer :: lmax,lloc,mmax,mxprj
    integer :: nproj(6),irc(6)
    real(dp) :: epsh1,epsh2,depsh,zz,rxpsh
-   real(dp) :: rr(mmax),vp(mmax,5,2),ep(6,2)
+   real(dp) :: rr(mmax),vp(mmax,5,2),epa(mxprj,6,2)
    real(dp) :: vfull(mmax),vkb(mmax,mxprj,4,2),evkb(mxprj,4,2)
 
 !Output variables - printing only
@@ -117,11 +117,11 @@ subroutine run_phsft_r(lmax,lloc,nproj,ep,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
          if(ikap==2) kap=  ll
          call fphsft_r(ll,kap,epsh2,depsh,pshf,rr,vfull,zz,mmax,irphs,npsh)
          if(ll .eq. lloc) then
-            call  vkbphsft(ll,0,epsh2,depsh,ep(l1,ikap),pshf,pshp, &
+            call  vkbphsft(ll,0,epsh2,depsh,epa(1,l1,ikap),pshf,pshp, &
             &                   rr,vp(1,lloc+1,ikap),vkb(1,1,l1,ikap),evkb(1,l1,ikap), &
             &                   mmax,irphs,npsh)
          else
-            call  vkbphsft(ll,nproj(l1),epsh2,depsh,ep(l1,ikap),pshf,pshp, &
+            call  vkbphsft(ll,nproj(l1),epsh2,depsh,epa(1,l1,ikap),pshf,pshp, &
             &                   rr,vp(1,lloc+1,ikap),vkb(1,1,l1,ikap),evkb(1,l1,ikap), &
             &                   mmax,irphs,npsh)
          end if
