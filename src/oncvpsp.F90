@@ -695,6 +695,27 @@
    end if
  end do
 
+! smoothly force vpuns to -zion/r beyond rcmax, over a window of 1 a.u.,
+! with the 5th-order "smootherstep" 6x^5-15x^4+10x^3 (ported from METAPSP
+! ba95225), so the psp correction no longer depends on where the
+! unscreening data stops
+ smooth_vloc: block
+   real(dp) :: xs,ss
+   do l1=1,max(lmax+1,lloc+1)
+     do ii=1,mmax
+       if(rr(ii)>rcmax) then
+         xs=1.0d0+(rcmax-rr(ii))
+         if(xs<=0.0d0) then
+           ss=0.0d0
+         else
+           ss=xs**3*(10.0d0+xs*(-15.0d0+6.0d0*xs))
+         end if
+         vpuns(ii,l1)=-zion/rr(ii)+(vpuns(ii,l1)+zion/rr(ii))*ss
+       end if
+     end do
+   end do
+ end block smooth_vloc
+
 
 ! loop over reference plus test atom configurations
 !if(.false.) then

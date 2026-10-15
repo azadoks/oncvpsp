@@ -953,12 +953,12 @@ Test configuration 0
    5   1   1  2.0000   -1.85710441   -1.85711163   -7.21E-06
    5   2  -3  2.4000   -0.16170846   -0.16171152   -3.06E-06
    5   2   2  1.6000   -0.18872351   -0.18872494   -1.44E-06
-   6   0  -1  2.0000   -0.21733123   -0.21733176   -5.25E-07
+   6   0  -1  2.0000   -0.21733123   -0.21731611    1.51E-05
 
     Total energies and differences
       AE_ref= -1.61564270E+04  AE_tst= -1.61564270E+04  dif=  0.00E+00
-      PS_ref= -6.93531387E+01  PS_tst= -6.93531387E+01  dif= -3.70E-11
-      PSP excitation error=  3.70E-11
+      PS_ref= -6.93531385E+01  PS_tst= -6.93530874E+01  dif=  5.11E-05
+      PSP excitation error= -5.11E-05
 
 Test configuration 1
 
@@ -979,17 +979,17 @@ Test configuration 1
    4   2   2  4.0000   -9.28944046
    4   3  -4  8.0000   -1.46772389
    4   3   3  6.0000   -1.55010414
-   5   0  -1  2.0000   -3.18512664   -3.18845171   -3.33E-03
+   5   0  -1  2.0000   -3.18512664   -3.18844100   -3.31E-03
    5   1  -2  4.0000   -1.77075010   -1.77158625   -8.36E-04
    5   1   1  2.0000   -2.13528211   -2.13648779   -1.21E-03
-   5   2  -3  2.4000   -0.42953080   -0.42949966    3.11E-05
-   5   2   2  1.6000   -0.45832253   -0.45832835   -5.82E-06
-   6   0  -1  1.0000   -0.45877063   -0.45896537   -1.95E-04
+   5   2  -3  2.4000   -0.42953079   -0.42948832    4.25E-05
+   5   2   2  1.6000   -0.45832253   -0.45831735    5.18E-06
+   6   0  -1  1.0000   -0.45877063   -0.45894757   -1.77E-04
 
     Total energies and differences
       AE_ref= -1.61564270E+04  AE_tst= -1.61560913E+04  dif=  3.36E-01
       PS_ref= -6.93531387E+01  PS_tst= -6.90172970E+01  dif=  3.36E-01
-      PSP excitation error= -7.94E-05
+      PSP excitation error= -1.14E-04
 
 Test configuration 2
 
@@ -1013,14 +1013,14 @@ Test configuration 2
    5   0  -1  2.0000   -3.28282629   -3.28130277    1.52E-03
    5   1  -2  4.0000   -1.86064751   -1.86048765    1.60E-04
    5   1   1  2.0000   -2.22915765   -2.22837658    7.81E-04
-   5   2  -3  1.8000   -0.49269914   -0.49265808    4.11E-05
+   5   2  -3  1.8000   -0.49269914   -0.49264798    5.12E-05
    5   2   2  1.2000   -0.52392803   -0.52379618    1.32E-04
-   6   0  -1  2.0000   -0.49195458   -0.49184890    1.06E-04
+   6   0  -1  2.0000   -0.49195458   -0.49183180    1.23E-04
 
     Total energies and differences
       AE_ref= -1.61564270E+04  AE_tst= -1.61560939E+04  dif=  3.33E-01
       PS_ref= -6.93531387E+01  PS_tst= -6.90200412E+01  dif=  3.33E-01
-      PSP excitation error=  1.08E-05
+      PSP excitation error= -3.03E-05
 
 Test configuration 3
 
@@ -1046,14 +1046,14 @@ Test configuration 3
    5   1   1  2.0000   -1.99689967   -1.99575996    1.14E-03
    5   2  -3  1.8000   -0.26447132   -0.26434773    1.24E-04
    5   2   2  1.2000   -0.29496022   -0.29473190    2.28E-04
-   6   0  -1  2.0000   -0.27880537   -0.27871077    9.46E-05
+   6   0  -1  2.0000   -0.27880537   -0.27869945    1.06E-04
    6   1  -2  0.6667   -0.08529782   -0.08534225   -4.44E-05
-   6   1   1  0.3333   -0.10985750   -0.10993019   -7.27E-05
+   6   1   1  0.3333   -0.10985750   -0.10991981   -6.23E-05
 
     Total energies and differences
       AE_ref= -1.61564270E+04  AE_tst= -1.61562780E+04  dif=  1.49E-01
       PS_ref= -6.93531387E+01  PS_tst= -6.92041435E+01  dif=  1.49E-01
-      PSP excitation error=  7.78E-05
+      PSP excitation error=  2.33E-05
 
 DATA FOR PLOTTING
 
@@ -15762,9 +15762,9 @@ set xlabel "Radius (a_B)"
 
 set title "P+ Ortho. Projs. evkb(:) =  -2.21E+00   3.01E-01  -2.63E-01 Ha"
 
-plot    "<grep '!J     1' t1" using 3:4 title "Prj 1" with lines ls 1,\
-        "<grep '!J     1' t1" using 3:5 title "Prj 2" with lines ls 2,\
-        "<grep '!J     1' t1" using 3:6 title "Prj 3" with lines ls 3
+plot    "<grep '!J    -1' t1" using 3:4 title "Prj 1" with lines ls 1,\
+        "<grep '!J    -1' t1" using 3:5 title "Prj 2" with lines ls 2,\
+        "<grep '!J    -1' t1" using 3:6 title "Prj 3" with lines ls 3
 
 
 pause -1 "Hit enter to continue"
@@ -15856,9 +15856,9 @@ set xlabel "Radius (a_B)"
 
 set title "D+ Ortho. Projs. evkb(:) =  -2.25E+00  -9.15E-01  -3.40E-01 Ha"
 
-plot    "<grep '!J     2' t1" using 3:4 title "Prj 1" with lines ls 1,\
-        "<grep '!J     2' t1" using 3:5 title "Prj 2" with lines ls 2,\
-        "<grep '!J     2' t1" using 3:6 title "Prj 3" with lines ls 3
+plot    "<grep '!J    -2' t1" using 3:4 title "Prj 1" with lines ls 1,\
+        "<grep '!J    -2' t1" using 3:5 title "Prj 2" with lines ls 2,\
+        "<grep '!J    -2' t1" using 3:6 title "Prj 3" with lines ls 3
 
 
 pause -1 "Hit enter to continue"
@@ -15941,8 +15941,8 @@ set xlabel "Radius (a_B)"
 
 set title "F+ Ortho. Projs. evkb(:) =  -2.17E+00   1.02E+00 Ha"
 
-plot    "<grep '!J     3' t1" using 3:4 title "Prj 1" with lines ls 1,\
-        "<grep '!J     3' t1" using 3:5 title "Prj 2" with lines ls 2
+plot    "<grep '!J    -3' t1" using 3:4 title "Prj 1" with lines ls 1,\
+        "<grep '!J    -3' t1" using 3:5 title "Prj 2" with lines ls 2
 
 
 pause -1 "Hit enter to continue"
