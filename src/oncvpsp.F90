@@ -111,8 +111,11 @@
 &      'suggested that you cite D. R. Hamann, Phys. Rev. B 88, 085117 (2013)', &
 &      'in any publication utilizing these pseudopotentials.'
 
+#if defined(ONCVPSP_NONREL)
+ srel=.false.
+#else
  srel=.true.
-!srel=.false.
+#endif
 
  parse_args: block
     integer :: i
@@ -121,14 +124,22 @@
        call get_command_argument(i, arg)
        select case(arg)
        case('-h', '--help')
+#if defined(ONCVPSP_NONREL)
+          write (stdout, '(a)') 'Usage: oncvpspnr.x [options]'
+#else
           write (stdout, '(a)') 'Usage: oncvpsp.x [options]'
+#endif
           write (stdout, '(a)') 'Options:'
           write (stdout, '(a)') '  -h, --help       Show this help message and exit'
           write (stdout, '(a)') '  -v, --version    Show version information and exit'
           write (stdout, '(a)') '  -i, --input      Specify input file (TOML). For legacy input, use stdin.'
           stop 0
        case('-v', '--version')
+#if defined(ONCVPSP_NONREL)
+          write (stdout, '(a)') 'ONCVPSP (non-realtivistic) version 4.0.1'
+#else
           write (stdout, '(a)') 'ONCVPSP (scalar-realtivistic) version 4.0.1'
+#endif
           stop 0
        case('-i', '--input')
          if (i + 1 > command_argument_count()) then
