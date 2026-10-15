@@ -2,17 +2,17 @@
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
-! 
+!
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
-! 
+!
 ! This program is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
-! 
+!
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
@@ -143,7 +143,7 @@
      end if
      fat(ii,3)=fat(ii,2)
    end do
-  
+
    nvt=nvcnf(1)
    do kk=1,nc+nvcnf(jj)
      if(indxe(kk)==0) then
@@ -162,7 +162,7 @@
 
 
 
- eat(:,2)=0.d0; rpk(:)=0.d0; rhoc(:)=0.d0; rho(:)=0.d0; vfull(:)=0.d0 
+ eat(:,2)=0.d0; rpk(:)=0.d0; rhoc(:)=0.d0; rho(:)=0.d0; vfull(:)=0.d0
  eaetst=0.d0
 
 !all-electron atom solution for maximally-ionized state
@@ -199,7 +199,7 @@
    end if
  end do
 
- eat(:,3)=0.d0; rpk(:)=0.d0; rhoc(:)=0.d0; rho(:)=0.d0; vfull(:)=0.d0 
+ eat(:,3)=0.d0; rpk(:)=0.d0; rhoc(:)=0.d0; rho(:)=0.d0; vfull(:)=0.d0
  eaetst=0.d0
 
 !all-electron atom solution for excited state
@@ -334,7 +334,7 @@
      end if
      fat(ii,3)=fat(ii,2)
    end do
-  
+
    nvt=nvcnf(1)
    do kk=1,nc+nvcnf(jj)
      if(indxe(kk)==0) then
@@ -353,7 +353,7 @@
 
 
 
- eat(:,:,2)=0.d0; rpk(:,:)=0.d0; rhoc(:)=0.d0; rho(:)=0.d0; vfull(:)=0.d0 
+ eat(:,:,2)=0.d0; rpk(:,:)=0.d0; rhoc(:)=0.d0; rho(:)=0.d0; vfull(:)=0.d0
  eaetst=0.d0
 
 !all-electron atom solution for maximally-ionized state
@@ -411,7 +411,7 @@
    end if
  end do
 
- eat(:,:,3)=0.d0; rpk(:,:)=0.d0; rhoc(:)=0.d0; rho(:)=0.d0; vfull(:)=0.d0 
+ eat(:,:,3)=0.d0; rpk(:,:)=0.d0; rhoc(:)=0.d0; rho(:)=0.d0; vfull(:)=0.d0
  eaetst=0.d0
 
 !all-electron atom solution for excited state
@@ -467,12 +467,12 @@
   end if
  case(2)
   ll=cae%lat(cae%kerr)
-  write(6,'(/a,4i4)') & 
+  write(6,'(/a,4i4)') &
 &      'runconfig: WARNING ldiracfb convergence ERROR n,l,kap,ierr=', &
 &      cae%nat(cae%kerr),ll,ll+1,cae%ierr
  case(3)
   ll=cae%lat(cae%kerr)
-  write(6,'(/a,4i4)') & 
+  write(6,'(/a,4i4)') &
 &      'runconfig: WARNING ldiracfb convergence ERROR n,l,kap,iter=', &
 &      cae%nat(cae%kerr),ll,ll,cae%it
  end select

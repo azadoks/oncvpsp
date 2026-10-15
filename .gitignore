@@ -1,6 +1,7 @@
 make.inc
 CMakeUserPresets.json
 build/
+build-*/
 
 *.o
 *.x
