@@ -7,6 +7,7 @@
 ### iexc  exchange-correlation functional: 1-Wigner, 2-Hedin-Lundquist,
 ###  3-Perdew-Zunger-Ceperly-Alder, 4-Perdew-Burke-Enzerhof
 ### psfile format of pseudopotential file, psp8 for ABINIT, upf for PWSCF
+###  both for psp8 and upf, none to write no pseudopotential file
 #
 # atsym, z, nc, nv, iexc   psfile
     Ge  32.0   5   3   3   psp8

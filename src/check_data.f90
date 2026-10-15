@@ -55,8 +55,8 @@
  end if
 
  if(trim(psfile)/='psp8' .and. trim(psfile)/='upf' &
-&   .and. trim(psfile)/='both') then
-  write(6,'(a)') 'test_data: psfile must == psp8 or upf or both'
+&   .and. trim(psfile)/='both' .and. trim(psfile)/='none') then
+  write(6,'(a)') 'test_data: psfile must == psp8 or upf or both or none'
   ierr=ierr+1
  end if
 

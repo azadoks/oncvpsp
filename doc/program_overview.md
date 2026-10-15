@@ -159,7 +159,8 @@ The main program is oncvpsp.f90, and has the following major sections:
     pseudopotential file in a specified directory.  The routine upfout
     uses the same linear mesh but produces a PWSCF-conpatible pseudopotential
     file in the UPF format.  Which one is called depends on the "psfile"
-    input variable.  While all the psp files presently linked to PWSCF use
+    input variable; psfile = none calls neither, so no pseudopotential
+    file is written.  While all the psp files presently linked to PWSCF use
     a log mesh, the linear mesh works fine and produces results in excellent
     agreement with ABINIT results.
 
