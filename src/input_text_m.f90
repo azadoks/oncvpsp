@@ -2,7 +2,7 @@ module input_text_m
    use, intrinsic :: iso_fortran_env, only: dp => real64, stdout => output_unit, stderr => error_unit
    implicit none
    private
-   public :: read_input_text, read_input_text_r
+   public :: read_input_text, read_input_text_r, next_line
 contains
 
    subroutine read_input_text(unit, inline, &
@@ -117,8 +117,8 @@ contains
       integer :: l1
       !> Temporary variable for reading angular momentum
       integer :: lt
-      !> Temporary line string for reading model core charge, log derivative analysis parameters
-      character(len=2048) :: line
+      !> The input line being read
+      character(len=:), allocatable :: line
 
       nproj(:) = 0
       fcfact = 0.d0
@@ -139,47 +139,46 @@ contains
       inline = 0
 
       ! atom and reference configuration
-      call cmtskp(unit, inline)
-      read (unit, *, iostat=ios) atsym, zz, nc, nv, iexc, psfile
+      call next_line(unit, line, inline)
+      read (line, *, iostat=ios) atsym, zz, nc, nv, iexc, psfile
       ! counts beyond the array sizes would overrun before check_data runs
       if (ios == 0 .and. (nc < 0 .or. nv < 0 .or. nc + nv > 30)) ios = 999
       call read_error(ios, inline)
 
-      call cmtskp(unit, inline)
       do ii = 1, nc + nv
-         read (unit, *, iostat=ios) na(ii), la(ii), fa(ii)
+         call next_line(unit, line, inline)
+         read (line, *, iostat=ios) na(ii), la(ii), fa(ii)
          call read_error(ios, inline)
       end do
 
       ! pseudopotential and optimization
-      call cmtskp(unit, inline)
-      read (unit, *, iostat=ios) lmax
+      call next_line(unit, line, inline)
+      read (line, *, iostat=ios) lmax
       if (ios == 0 .and. lmax > 5) ios = 999
       call read_error(ios, inline)
 
-      call cmtskp(unit, inline)
       do l1 = 1, lmax + 1
-         read (unit, *, iostat=ios) lt, rc(l1), ep(l1), ncon(l1), nbas(l1), qcut(l1)
+         call next_line(unit, line, inline)
+         read (line, *, iostat=ios) lt, rc(l1), ep(l1), ncon(l1), nbas(l1), qcut(l1)
          if (lt /= l1 - 1) ios = 999
          call read_error(ios, inline)
       end do
 
       ! local potential
-      call cmtskp(unit, inline)
-      read (unit, *, iostat=ios) lloc, lpopt, rc(5), dvloc0
+      call next_line(unit, line, inline)
+      read (line, *, iostat=ios) lloc, lpopt, rc(5), dvloc0
       call read_error(ios, inline)
 
       ! Vanderbilt-Kleinman-Bylander projectors
-      call cmtskp(unit, inline)
       do l1 = 1, lmax + 1
-         read (unit, *, iostat=ios) lt, nproj(l1), debl(l1)
+         call next_line(unit, line, inline)
+         read (line, *, iostat=ios) lt, nproj(l1), debl(l1)
          if (lt /= l1 - 1) ios = 999
          call read_error(ios, inline)
       end do
 
       ! model core charge
-      call cmtskp(unit, inline)
-      read (unit, '(a)', iostat=ios) line
+      call next_line(unit, line, inline)
       ! icmod=0,1,2,4[default grid] : icmod, fcfact
       read (line, *, iostat=ios) icmod, fcfact
       ! icmod==3 : icmod, fcfact, rcfact
@@ -217,8 +216,7 @@ contains
       call read_error(ios, inline)
 
       ! log derivative analysis
-      call cmtskp(unit, inline)
-      read (unit, '(a)', iostat=ios) line
+      call next_line(unit, line, inline)
       read (line, *, iostat=ios) epsh1, epsh2, depsh, rxpsh
       if (ios /= 0) then
          read (line, *, iostat=ios) epsh1, epsh2, depsh
@@ -227,24 +225,24 @@ contains
       call read_error(ios, inline)
 
       ! output grid
-      call cmtskp(unit, inline)
-      read (unit, *, iostat=ios) rlmax, drl
+      call next_line(unit, line, inline)
+      read (line, *, iostat=ios) rlmax, drl
       call read_error(ios, inline)
 
       ! test configurations
-      call cmtskp(unit, inline)
-      read (unit, *, iostat=ios) ncnf
+      call next_line(unit, line, inline)
+      read (line, *, iostat=ios) ncnf
       if (ios == 0 .and. ncnf > 4) ios = 999
       call read_error(ios, inline)
 
       do jj = 2, ncnf + 1
-         call cmtskp(unit, inline)
-         read (unit, *, iostat=ios) nvcnf(jj)
+         call next_line(unit, line, inline)
+         read (line, *, iostat=ios) nvcnf(jj)
          if (ios == 0 .and. (nvcnf(jj) < 0 .or. nc + nvcnf(jj) > 30)) ios = 999
          call read_error(ios, inline)
          do ii = nc + 1, nc + nvcnf(jj)
-            call cmtskp(unit, inline)
-            read (unit, *, iostat=ios) nacnf(ii, jj), lacnf(ii, jj), facnf(ii, jj)
+            call next_line(unit, line, inline)
+            read (line, *, iostat=ios) nacnf(ii, jj), lacnf(ii, jj), facnf(ii, jj)
             call read_error(ios, inline)
          end do
       end do
@@ -355,8 +353,8 @@ contains
       integer :: l1
       !> Temporary variable for reading angular momentum
       integer :: lt
-      !> Temporary line string for reading log derivative analysis
-      character(len=1024) :: line
+      !> The input line being read
+      character(len=:), allocatable :: line
 
       nproj(:) = 0
       fcfact = 0.d0
@@ -376,48 +374,47 @@ contains
       inline = 0
 
       ! atom and reference configuration
-      call cmtskp(unit, inline)
-      read (unit, *, iostat=ios) atsym, zz, nc, nv, iexc, psfile
+      call next_line(unit, line, inline)
+      read (line, *, iostat=ios) atsym, zz, nc, nv, iexc, psfile
       ! counts beyond the array sizes would overrun before check_data runs
       if (ios == 0 .and. (nc < 0 .or. nv < 0 .or. nc + nv > 30)) ios = 999
       call read_error(ios, inline)
 
-      call cmtskp(unit, inline)
       do ii = 1, nc + nv
-         read (unit, *, iostat=ios) na(ii), la(ii), fa(ii)
+         call next_line(unit, line, inline)
+         read (line, *, iostat=ios) na(ii), la(ii), fa(ii)
          call read_error(ios, inline)
       end do
 
       ! pseudopotential and optimization
-      call cmtskp(unit, inline)
-      read (unit, *, iostat=ios) lmax
+      call next_line(unit, line, inline)
+      read (line, *, iostat=ios) lmax
       if (ios == 0 .and. lmax > 5) ios = 999
       call read_error(ios, inline)
 
-      call cmtskp(unit, inline)
       do l1 = 1, lmax + 1
-         read (unit, *, iostat=ios) lt, rc(l1), ep(l1, 1), ncon(l1), nbas(l1), qcut(l1)
+         call next_line(unit, line, inline)
+         read (line, *, iostat=ios) lt, rc(l1), ep(l1, 1), ncon(l1), nbas(l1), qcut(l1)
          if (lt /= l1 - 1) ios = 999
          call read_error(ios, inline)
          ep(l1, 2) = ep(l1, 1)
       end do
 
       ! local potential
-      call cmtskp(unit, inline)
-      read (unit, *, iostat=ios) lloc, lpopt, rc(5), dvloc0
+      call next_line(unit, line, inline)
+      read (line, *, iostat=ios) lloc, lpopt, rc(5), dvloc0
       call read_error(ios, inline)
 
       ! Vanderbilt-Kleinman-Bylander projectors
-      call cmtskp(unit, inline)
       do l1 = 1, lmax + 1
-         read (unit, *, iostat=ios) lt, nproj(l1), debl(l1)
+         call next_line(unit, line, inline)
+         read (line, *, iostat=ios) lt, nproj(l1), debl(l1)
          if (lt /= l1 - 1) ios = 999
          call read_error(ios, inline)
       end do
 
       ! model core charge
-      call cmtskp(unit, inline)
-      read (unit, '(a)', iostat=ios) line
+      call next_line(unit, line, inline)
       ! icmod=0,1,2,4[default grid] : icmod, fcfact
       read (line, *, iostat=ios) icmod, fcfact
       ! icmod==3 : icmod, fcfact, rcfact
@@ -455,8 +452,7 @@ contains
       call read_error(ios, inline)
 
       ! log derivative analysis
-      call cmtskp(unit, inline)
-      read (unit, '(a)', iostat=ios) line
+      call next_line(unit, line, inline)
       read (line, *, iostat=ios) epsh1, epsh2, depsh, rxpsh
       if (ios /= 0) then
          read (line, *, iostat=ios) epsh1, epsh2, depsh
@@ -465,24 +461,24 @@ contains
       call read_error(ios, inline)
 
       ! output grid
-      call cmtskp(unit, inline)
-      read (unit, *, iostat=ios) rlmax, drl
+      call next_line(unit, line, inline)
+      read (line, *, iostat=ios) rlmax, drl
       call read_error(ios, inline)
 
       ! test configurations
-      call cmtskp(unit, inline)
-      read (unit, *, iostat=ios) ncnf
+      call next_line(unit, line, inline)
+      read (line, *, iostat=ios) ncnf
       if (ios == 0 .and. ncnf > 4) ios = 999
       call read_error(ios, inline)
 
       do jj = 2, ncnf + 1
-         call cmtskp(unit, inline)
-         read (unit, *, iostat=ios) nvcnf(jj)
+         call next_line(unit, line, inline)
+         read (line, *, iostat=ios) nvcnf(jj)
          if (ios == 0 .and. (nvcnf(jj) < 0 .or. nc + nvcnf(jj) > 30)) ios = 999
          call read_error(ios, inline)
          do ii = nc + 1, nc + nvcnf(jj)
-            call cmtskp(unit, inline)
-            read (unit, *, iostat=ios) nacnf(ii, jj), lacnf(ii, jj), facnf(ii, jj)
+            call next_line(unit, line, inline)
+            read (line, *, iostat=ios) nacnf(ii, jj), lacnf(ii, jj), facnf(ii, jj)
             call read_error(ios, inline)
          end do
       end do
@@ -490,26 +486,42 @@ contains
       ! end of reading input data
    end subroutine read_input_text_r
 
-   subroutine cmtskp(unit, inline)
-      ! skips lines of standard input (file 5) whose first character is #
+   subroutine next_line(unit, line, inline)
+      ! reads into line the next line of the input that is neither blank nor a comment (one whose
+      ! first nonblank character is #), and sets inline to its line number. The data are then read
+      ! from line rather than from unit, so the input is never backspaced, and can come from a pipe
 
-      !In/Out variable
-      integer :: inline
+      !Input variable
       integer, intent(in) :: unit
 
-      !Local variable
-      character(len=1) :: tst
+      !Output variable
+      character(len=:), allocatable, intent(out) :: line
 
-      tst = '#'
-      do while (tst == '#')
-         read (unit, *) tst
+      !In/Out variable
+      integer, intent(inout) :: inline
+
+      !Local variables
+      character(len=256) :: chunk
+      integer :: ios, nread, first
+
+      do
+         ! a line of any length, read in chunks
+         line = ''
+         do
+            read (unit, '(a)', advance='no', size=nread, iostat=ios) chunk
+            line = line//chunk(1:nread)
+            if (ios /= 0) exit
+         end do
          inline = inline + 1
+         if (.not. is_iostat_eor(ios)) call read_error(ios, inline)
+         first = verify(line, ' '//achar(9))
+         if (first > 0) then
+            if (line(first:first) /= '#') exit
+         end if
       end do
-      backspace (unit)
-      inline = inline - 1
 
       return
-   end subroutine cmtskp
+   end subroutine next_line
 
    subroutine read_error(ios, inline)
       ! report data read error and stop
@@ -517,7 +529,6 @@ contains
       !Input variables
       integer :: ios, inline
 
-      inline = inline + 1
       if (ios /= 0) then
          write (6, '(a,i4)') 'Read ERROR, input data file line', inline
          write (6, '(a)') 'Program will stop'
