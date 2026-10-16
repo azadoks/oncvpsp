@@ -44,10 +44,10 @@ FCCPPFLAGS += -I/Users/mverstra/CODES/LIBXC/6.0.0/include
 OBJS_LIBXC =	functionals.o exc_libxc.o 
 
 # xmlf90 1.6.3 (https://gitlab.com/siesta-project/libraries/xmlf90), whose
-# wxml writes the PSML output, with cmake/patches/xmlf90-wxml-open-unit.patch
+# wxml writes the PSML output, with cmake/patches/xmlf90-1.6.3.patch
 # applied (the CMake build fetches and patches it itself):
 #   git clone --branch 1.6.3 https://gitlab.com/siesta-project/libraries/xmlf90.git
-#   cd xmlf90 && git apply <oncvpsp>/cmake/patches/xmlf90-wxml-open-unit.patch
+#   cd xmlf90 && git apply <oncvpsp>/cmake/patches/xmlf90-1.6.3.patch
 #   cmake -B build -DCMAKE_INSTALL_PREFIX=$(XMLF90_ROOT) && cmake --build build --target install
 XMLF90_ROOT = /usr/local/xmlf90
 # (its modules are installed in a directory named after the compiler, which

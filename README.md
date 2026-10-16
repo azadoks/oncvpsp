@@ -9,16 +9,49 @@ optimized norm-conserving Vanderbilt pseudopotentials.
 
 ### With CMake
 
+CMake 3.22 or later is needed.
+
 ```bash
 # Configure the build (example flags in brackets)
-cmake -S . -B build [-DLibxc_ROOT=<path>] [-DLAPACK_ROOT=<path>] [-DCMAKE_INSTALL_PREFIX=<path>]
+cmake -S . -B build [-DLibxc_ROOT=<path>] [-DBLA_VENDOR=OpenBLAS] [-DCMAKE_INSTALL_PREFIX=<path>]
 # Compile ONCVPSP
 cmake --build build --parallel
-# Run the test suite
-ctest --test-dir build --progress --parallel
-# Install ONCVPSP
-cmake --build build -t install
+# Run the test suite (or one part of it, with -L sr, r, split, toml or psml)
+ctest --test-dir build --parallel 8
+# Install the executables
+cmake --install build
 ```
+
+or, with the presets in `CMakePresets.json` (`default`, `debug`, `release`
+and `fetch`), `cmake --preset default`, `cmake --build --preset default` and
+`ctest --preset default`. Without a build type, the build is
+`RelWithDebInfo` (`-O2 -g` with gfortran), the one the test references are
+checked against; `Debug` adds run-time checks and floating-point traps, and
+`Release` fast math.
+
+The dependencies are LAPACK and BLAS, Libxc (unless `-DONCVPSP_WITH_Libxc=OFF`),
+toml-f for the TOML input (unless `-DONCVPSP_WITH_TOML=OFF`) and xmlf90 for
+the PSML output. xmlf90 is always downloaded and built, with a small patch
+(`cmake/patches/xmlf90-1.6.3.patch`). For the others,
+`ONCVPSP_LAPACK_SOURCE`, `ONCVPSP_Libxc_SOURCE` and `ONCVPSP_TOML_SOURCE` say
+where they come from:
+
+- `AUTO` (the default): the system's, if one is found and a program using it
+  compiles and links, and otherwise Reference-LAPACK 3.12.1, Libxc 7.0.0 or
+  toml-f 0.4.3, downloaded and built with [CPM](https://github.com/cpm-cmake/CPM.cmake)
+- `SYSTEM`: the system's, or an error
+- `FETCH`: always downloaded and built
+
+LAPACK is searched for with CMake's FindLAPACK (which honours `BLA_VENDOR`,
+`BLA_STATIC` and `LAPACK_ROOT`) and then pkg-config, or given directly as
+`-DONCVPSP_LAPACK_LIBRARIES="-llapack;-lblas"`. Libxc is searched for as a
+CMake package, with pkg-config and then by its files, all under `Libxc_ROOT`
+first if it is set; it must be version 3 or later (but not 5.0.0) with its
+Fortran interface built by the same compiler. The configuration ends with a
+summary of what was found.
+
+Downloading needs network access when configuring. Set `CPM_SOURCE_CACHE`
+(e.g. `~/.cache/CPM`) to keep the downloads between build directories.
 
 Every build records the git commit of the source tree, whether the source
 differs from that commit (with a hash of the differences), and the build

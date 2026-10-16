@@ -1,0 +1,52 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": {"major": 3, "minor": 22, "patch": 0},
+    "configurePresets": [
+        {
+            "name": "default",
+            "displayName": "RelWithDebInfo (-O2 -g), the build the test references are checked against",
+            "binaryDir": "${sourceDir}/build",
+            "cacheVariables": {"CMAKE_BUILD_TYPE": "RelWithDebInfo"}
+        },
+        {
+            "name": "debug",
+            "displayName": "Debug, with run-time checks and floating-point traps",
+            "binaryDir": "${sourceDir}/build-debug",
+            "cacheVariables": {"CMAKE_BUILD_TYPE": "Debug"}
+        },
+        {
+            "name": "release",
+            "displayName": "Release, with fast math",
+            "binaryDir": "${sourceDir}/build-release",
+            "cacheVariables": {"CMAKE_BUILD_TYPE": "Release"}
+        },
+        {
+            "name": "fetch",
+            "inherits": "default",
+            "displayName": "RelWithDebInfo, building LAPACK, Libxc and toml-f instead of using the system's",
+            "binaryDir": "${sourceDir}/build-fetch",
+            "cacheVariables": {
+                "ONCVPSP_LAPACK_SOURCE": "FETCH",
+                "ONCVPSP_Libxc_SOURCE": "FETCH",
+                "ONCVPSP_TOML_SOURCE": "FETCH"
+            }
+        }
+    ],
+    "buildPresets": [
+        {"name": "default", "configurePreset": "default"},
+        {"name": "debug", "configurePreset": "debug"},
+        {"name": "release", "configurePreset": "release"},
+        {"name": "fetch", "configurePreset": "fetch"}
+    ],
+    "testPresets": [
+        {
+            "name": "default",
+            "configurePreset": "default",
+            "output": {"outputOnFailure": true},
+            "execution": {"jobs": 8}
+        },
+        {"name": "debug", "inherits": "default", "configurePreset": "debug"},
+        {"name": "release", "inherits": "default", "configurePreset": "release"},
+        {"name": "fetch", "inherits": "default", "configurePreset": "fetch"}
+    ]
+}

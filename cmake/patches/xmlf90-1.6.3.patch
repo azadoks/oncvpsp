@@ -1,3 +1,24 @@
+Changes to xmlf90 1.6.3 for ONCVPSP:
+- wxml: xml_OpenUnit writes a document to a unit that is already open and
+  leaves it open at xml_Close
+- the SAX example tests are added only when xmlf90 is the top-level project
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 6d56820..f9bb6b2 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -85,6 +85,8 @@ install(
+   DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/${PROJECT_NAME}"
+ )
+ 
+-# add the testsuite
+-enable_testing()
+-add_subdirectory("doc/Examples/sax/features")
++# add the testsuite, unless xmlf90 is built as part of another project
++if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
++  enable_testing()
++  add_subdirectory("doc/Examples/sax/features")
++endif()
 diff --git a/src/wxml/m_wxml_core.f90 b/src/wxml/m_wxml_core.f90
 index 4181ada..60c85a4 100644
 --- a/src/wxml/m_wxml_core.f90

@@ -71,11 +71,9 @@ set(src_oncvpsp
     wellstate.f90
     # Fully-relativistic files
     fphsft_r.f90
-    fpovlp.f90
     gnu_script_r.f90
     linout_r.f90
     psatom_r.f90
-    relatom.f90
     renorm_r.f90
     run_config_r.f90
     run_diag_r.f90
@@ -87,13 +85,11 @@ set(src_oncvpsp
     upfout_r.f90
     wellstate_r.f90
 )
-# Append Libxc interface or stub
-if (Libxc_FOUND AND ONCVPSP_WITH_Libxc)
+if (ONCVPSP_WITH_Libxc)
     list(APPEND src_oncvpsp functionals.F90 exc_libxc.f90)
 else ()
     list(APPEND src_oncvpsp exc_libxc_stub.f90)
 endif ()
-# Append TOML input parser if enabled
 if (ONCVPSP_WITH_TOML)
     list(APPEND src_oncvpsp input_toml_m.f90)
 endif ()
@@ -108,24 +104,34 @@ add_custom_target(oncvpsp_build_info
 )
 
 add_library(oncvpsp STATIC ${src_oncvpsp})
+add_library(oncvpsp::oncvpsp ALIAS oncvpsp)
 add_dependencies(oncvpsp oncvpsp_build_info)
-target_include_directories(oncvpsp PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-target_link_libraries(oncvpsp ${ONCVPSP_DEPENDENCY_LIBRARIES})
-if (ONCVPSP_WITH_TOML)
-    target_compile_definitions(oncvpsp PRIVATE WITH_TOML)
-endif ()
+set_target_properties(oncvpsp PROPERTIES Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/modules")
+target_include_directories(oncvpsp
+    PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/modules"
+    PRIVATE "${CMAKE_CURRENT_BINARY_DIR}"
+)
+target_compile_definitions(oncvpsp PUBLIC $<$<BOOL:${ONCVPSP_WITH_TOML}>:WITH_TOML>)
+target_link_libraries(oncvpsp
+    PUBLIC
+        oncvpsp::lapack
+        xmlf90-lib
+        $<$<BOOL:${ONCVPSP_WITH_Libxc}>:oncvpsp::libxc>
+        $<$<BOOL:${ONCVPSP_WITH_TOML}>:toml-f::toml-f>
+    PRIVATE
+        oncvpsp::compile_options
+)
 
 ###########################################################
 # Executables
 ###########################################################
+set(ONCVPSP_EXECUTABLES "")
 function(oncvpsp_executable target source output_name)
     add_executable(${target} ${source})
-    add_dependencies(${target} oncvpsp)
-    target_link_libraries(${target} PRIVATE oncvpsp)
+    target_link_libraries(${target} PRIVATE oncvpsp::oncvpsp oncvpsp::compile_options)
     set_target_properties(${target} PROPERTIES OUTPUT_NAME ${output_name})
-    if (ONCVPSP_WITH_TOML)
-        target_compile_definitions(${target} PRIVATE WITH_TOML)
-    endif ()
+    list(APPEND ONCVPSP_EXECUTABLES ${target})
+    set(ONCVPSP_EXECUTABLES ${ONCVPSP_EXECUTABLES} PARENT_SCOPE)
 endfunction()
 
 # Scalar-relativistic, non-relativistic and fully-relativistic drivers
@@ -141,3 +147,5 @@ oncvpsp_executable(oncvpspnr_ae oncvpspnr_ae.F90 oncvpspnr_ae.x)
 oncvpsp_executable(oncvpspnr_ps oncvpspnr_ps.F90 oncvpspnr_ps.x)
 oncvpsp_executable(oncvpspr_ae oncvpspr_ae.F90 oncvpspr_ae.x)
 oncvpsp_executable(oncvpspr_ps oncvpspr_ps.F90 oncvpspr_ps.x)
+
+set(ONCVPSP_EXECUTABLES ${ONCVPSP_EXECUTABLES} PARENT_SCOPE)
