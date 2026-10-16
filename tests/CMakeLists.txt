@@ -7,6 +7,13 @@ if (NOT ONCVPSP_BASH OR NOT PERL_FOUND)
     return()
 endif ()
 
+# Unit tests of the input readers
+add_executable(test_input_text unit/test_input_text.f90)
+target_link_libraries(test_input_text PRIVATE oncvpsp::oncvpsp oncvpsp::compile_options)
+set_target_properties(test_input_text PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+add_test(NAME unit_input_text COMMAND test_input_text)
+set_tests_properties(unit_input_text PROPERTIES LABELS unit)
+
 set(scripts "${PROJECT_SOURCE_DIR}/scripts")
 set(data "${CMAKE_CURRENT_SOURCE_DIR}/data")
 
@@ -95,3 +102,14 @@ foreach (psml_test IN ITEMS "sr:14_Si" "r:52_Te" "nr:08_O")
     oncvpsp_test(psml_${rel}_${test_name} psml psml_test.sh
         $<TARGET_FILE:oncvpsp${rel}> "${data}/${test_name}.dat" "${CMAKE_CURRENT_BINARY_DIR}/psml_${rel}_${test_name}")
 endforeach ()
+
+# Text input from a pipe (as from a Python subprocess), which cannot be backspaced: the same output
+# as from a file, and an input ending early reported with the line the reader stopped at
+foreach (pipe_test IN ITEMS "sr:14_Si" "r:52_Te" "nr:08_O")
+    string(REPLACE ":" ";" pipe_test "${pipe_test}")
+    list(GET pipe_test 0 rel)
+    list(GET pipe_test 1 test_name)
+    oncvpsp_test(pipe_${rel}_${test_name} pipe pipe_test.sh
+        $<TARGET_FILE:oncvpsp${rel}> "${data}/${test_name}.dat" "${CMAKE_CURRENT_BINARY_DIR}/pipe_${rel}_${test_name}")
+endforeach ()
+oncvpsp_test(pipe_truncated pipe pipe_truncated_test.sh $<TARGET_FILE:oncvpspsr> "${data}/14_Si.dat")

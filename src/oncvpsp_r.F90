@@ -926,45 +926,6 @@
  stop
  end program oncvpsp_r
 
-
- subroutine cmtskp(inline)
-! skips lines of standard input (file 5) whose first character is #
- implicit none
-
-!In/Out variable
- integer :: inline
-
-!Local variable
- character*1 tst
-
- tst='#'
- do while (tst=='#')
-  read(5,*) tst
-  inline=inline+1
- end do
- backspace(5)
- inline=inline-1
-
- return
- end subroutine cmtskp
-
- subroutine read_error(ios,inline)
-! report data read error and stop
- implicit none
-
-!Input variables
- integer :: ios,inline
-
- inline=inline+1
- if(ios/=0) then
-  write(6,'(a,i4)') 'Read error, input data file line',inline
-  write(6,'(a)') 'Program will stop'
-  stop
- end if
-
- return
- end subroutine read_error
-
 !! Local Variables:
 !! mode: f90
 !! coding: utf-8
