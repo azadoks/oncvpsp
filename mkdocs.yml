@@ -20,6 +20,8 @@ nav:
     - Coding Standards: coding_standards.md
     - Pwscf Exc: pwscf_exc.md
     - Known Issues: known_issues.md
+    - Fortran Best Practices: fortran_best_practices.md
+    - Coding Standard Violations: coding_standard_violations.md
     - Release Notes: release_notes.md
 
 theme:

@@ -300,25 +300,25 @@ Model core correction analysis
 
 d2excae - all-electron derivatives
 
-   -3.046952D-02   -2.104109D-02
-   -2.104403D-02   -1.537011D-02
+   -2.284500D-02   -1.577805D-02
+   -1.577804D-02   -1.152538D-02
 
 d2excps - pseudofunction derivatives with no core correction
 
-   -3.585693D-02   -2.397821D-02
-   -2.398296D-02   -1.697493D-02
+   -2.688188D-02   -1.798031D-02
+   -1.798029D-02   -1.272866D-02
 
-rms 2nd derivative error    3.495123E-03
+rms 2nd derivative error    2.619362E-03
 
 Polynomial model core charge
 
 
 d2excps - pseudofunction derivatives with core correction
 
-   -3.077220D-02   -2.139704D-02
-   -2.139997D-02   -1.564696D-02
+   -2.307214D-02   -1.604499D-02
+   -1.604503D-02   -1.173298D-02
 
-rms 2nd derivative error    3.246754E-04
+rms 2nd derivative error    2.435337E-04
 
 Pseudoatom total energy   -3.792023
 

@@ -213,7 +213,7 @@
 
    if(convg) exit
 
-   if(it==400 .and. .not. convg) then
+   if(it==100 .and. .not. convg) then
      write(6,'(/a)') 'psatom: potential failed to converge'
      ierr=101
    end if

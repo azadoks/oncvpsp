@@ -132,6 +132,13 @@ module input_toml_m
 
       nproj(:) = 0
       rc(:) = 0.0_dp
+      ! Grid for icmod=4, same defaults as the text reader
+      fcfact_min = 1.5_dp
+      fcfact_max = 6.0_dp
+      fcfact_step = 0.5_dp
+      rcfact_min = 1.0_dp
+      rcfact_max = 1.9_dp
+      rcfact_step = 0.1_dp
       ep(:) = 0.0_dp
       atsym(:) = '  '
       psfile(:) = '    '
@@ -145,7 +152,8 @@ module input_toml_m
       !! oncvpsp section (required)
       call get_value(table, "oncvpsp", child)
       call check_associated(child, "[oncvpsp] section")
-      call get_value(child, "atsym", tmp_str)
+      call get_value(child, "atsym", tmp_str, stat=stat)
+      call check_stat(stat, "atsym")
       if (len_trim(tmp_str) < 1 .or. len_trim(tmp_str) > 2) then
          write (stderr, '(A)') 'Error: Invalid atomic symbol in [oncvpsp] section.'
          stop 1
@@ -153,16 +161,22 @@ module input_toml_m
          atsym(1:len_trim(tmp_str)) = tmp_str(1:len_trim(tmp_str))
       end if
       deallocate(tmp_str)
-      call get_value(child, "z", zz)
-      call get_value(child, "nc", nc)
-      call get_value(child, "nv", nv)
-      call get_value(child, "iexc", iexc)
+      call get_value(child, "z", zz, stat=stat)
+      call check_stat(stat, "z")
+      call get_value(child, "nc", nc, stat=stat)
+      call check_stat(stat, "nc")
+      call get_value(child, "nv", nv, stat=stat)
+      call check_stat(stat, "nv")
+      call get_value(child, "iexc", iexc, stat=stat)
+      call check_stat(stat, "iexc")
 
       !! Linear mesh section (required)
       call get_value(table, "linear_mesh", child)
       call check_associated(child, "[linear_mesh] section")
-      call get_value(child, "a", drl)
-      call get_value(child, "rmax", rlmax)
+      call get_value(child, "a", drl, stat=stat)
+      call check_stat(stat, "a")
+      call get_value(child, "rmax", rlmax, stat=stat)
+      call check_stat(stat, "rmax")
 
       !! Reference configuration section (required)
       call get_value(table, "reference_configuration", child)
@@ -172,28 +186,32 @@ module input_toml_m
       call check_associated(arr, 'n in [reference_configuration] section')
       call check_len(arr, nc + nv, 'n')
       do i = 1, len(arr)
-         call get_value(arr, i, na(i))
+         call get_value(arr, i, na(i), stat=stat)
+         call check_stat(stat, "na(i)")
       end do
       ! l (required, length = nc + nv)
       call get_value(child, "l", arr)
       call check_associated(arr, 'l in [reference_configuration] section')
       call check_len(arr, nc + nv, 'l')
       do i = 1, len(arr)
-         call get_value(arr, i, la(i))
+         call get_value(arr, i, la(i), stat=stat)
+         call check_stat(stat, "la(i)")
       end do
       ! f (required, length = nc + nv)
       call get_value(child, "f", arr)
       call check_associated(arr, 'f in [reference_configuration] section')
       call check_len(arr, nc + nv, 'f')
       do i = 1, len(arr)
-         call get_value(arr, i, fa(i))
+         call get_value(arr, i, fa(i), stat=stat)
+         call check_stat(stat, "fa(i)")
       end do
 
       !! Pseudopotential section (required)
       call get_value(table, "pseudopotentials", child)
       call check_associated(child, "[pseudopotentials] section")
       ! lmax (required)
-      call get_value(child, "lmax", lmax)
+      call get_value(child, "lmax", lmax, stat=stat)
+      call check_stat(stat, "lmax")
       ! l (required, length = lmax + 1, must be in order from 0 to lmax)
       call get_value(child, "l", arr)
       call check_associated(arr, 'l in [pseudopotentials] section')
@@ -201,7 +219,8 @@ module input_toml_m
       pseudopotentials_l: block ! pseudopotentials.l
          integer :: l
          do i = 1, len(arr)
-               call get_value(arr, i, l)
+               call get_value(arr, i, l, stat=stat)
+               call check_stat(stat, "l")
                if (i /= l + 1) then
                   write (stderr, '(A,I0,A,I0)') 'Error: l values in [pseudopotentials] section must be in order ', &
                      'starting from 0 to lmax without skipping any values. Expected ', i-1, ' but got ', l, '.'
@@ -214,44 +233,53 @@ module input_toml_m
       call check_associated(arr, 'rc in [pseudopotentials] section')
       call check_len(arr, lmax + 1, 'rc in [pseudopotentials] section')
       do i = 1, lmax + 1
-         call get_value(arr, i, rc(i))
+         call get_value(arr, i, rc(i), stat=stat)
+         call check_stat(stat, "rc(i)")
       end do
       ! ep (required, length = lmax + 1)
       call get_value(child, "ep", arr)
       call check_associated(arr, 'ep in [pseudopotentials] section')
       call check_len(arr, lmax + 1, 'ep in [pseudopotentials] section')
       do i = 1, lmax + 1
-         call get_value(arr, i, ep(i))
+         call get_value(arr, i, ep(i), stat=stat)
+         call check_stat(stat, "ep(i)")
       end do
       ! ncon (required, length = lmax + 1)
       call get_value(child, "ncon", arr)
       call check_associated(arr, 'ncon in [pseudopotentials] section')
       call check_len(arr, lmax + 1, 'ncon in [pseudopotentials] section')
       do i = 1, lmax + 1
-         call get_value(arr, i, ncon(i))
+         call get_value(arr, i, ncon(i), stat=stat)
+         call check_stat(stat, "ncon(i)")
       end do
       ! nbas (required, length = lmax + 1)
       call get_value(child, "nbas", arr)
       call check_associated(arr, 'nbas in [pseudopotentials] section')
       call check_len(arr, lmax + 1, 'nbas in [pseudopotentials] section')
       do i = 1, lmax + 1
-         call get_value(arr, i, nbas(i))
+         call get_value(arr, i, nbas(i), stat=stat)
+         call check_stat(stat, "nbas(i)")
       end do
       ! qcut (required, length = lmax + 1)
       call get_value(child, "qcut", arr)
       call check_associated(arr, 'qcut in [pseudopotentials] section')
       call check_len(arr, lmax + 1, 'qcut in [pseudopotentials] section')
       do i = 1, lmax + 1
-         call get_value(arr, i, qcut(i))
+         call get_value(arr, i, qcut(i), stat=stat)
+         call check_stat(stat, "qcut(i)")
       end do
 
       !! Local potential section (required)
       call get_value(table, "local_potential", child)
       call check_associated(child, "[local_potential] section")
-      call get_value(child, "lloc", lloc)
-      call get_value(child, "lpopt", lpopt)
-      call get_value(child, "rcloc", rc(5))
-      call get_value(child, "dvloc0", dvloc0)
+      call get_value(child, "lloc", lloc, stat=stat)
+      call check_stat(stat, "lloc")
+      call get_value(child, "lpopt", lpopt, stat=stat)
+      call check_stat(stat, "lpopt")
+      call get_value(child, "rcloc", rc(5), stat=stat)
+      call check_stat(stat, "rcloc")
+      call get_value(child, "dvloc0", dvloc0, stat=stat)
+      call check_stat(stat, "dvloc0")
 
       !! VKB projectors section (required)
       call get_value(table, "vkb_projectors", child)
@@ -263,7 +291,8 @@ module input_toml_m
       vkb_projectors_l: block ! vkb_projectors.l
          integer :: l
          do i = 1, len(arr)
-               call get_value(arr, i, l)
+               call get_value(arr, i, l, stat=stat)
+               call check_stat(stat, "l")
                if (i /= l + 1) then
                   write (stderr, '(A,I0,A,I0)') 'Error: l values in [vkb_projectors] section must be in order ', &
                      'starting from 0 to lmax without skipping any values. Expected ', i-1, ' but got ', l, '.'
@@ -276,25 +305,30 @@ module input_toml_m
       call check_associated(arr, 'nproj in [vkb_projectors] section')
       call check_len(arr, lmax + 1, 'nproj in [vkb_projectors] section')
       do i = 1, lmax + 1
-         call get_value(arr, i, nproj(i))
+         call get_value(arr, i, nproj(i), stat=stat)
+         call check_stat(stat, "nproj(i)")
       end do
       ! debl (required, length = lmax + 1)
       call get_value(child, "debl", arr)
       call check_associated(arr, 'debl in [vkb_projectors] section')
       call check_len(arr, lmax + 1, 'debl in [vkb_projectors] section')
       do i = 1, lmax + 1
-         call get_value(arr, i, debl(i))
+         call get_value(arr, i, debl(i), stat=stat)
+         call check_stat(stat, "debl(i)")
       end do
 
       !! Model core charge (nlcc) section (required)
       call get_value(table, "model_core_charge", child)
       call check_associated(child, "[model_core_charge] section")
-      call get_value(child, "icmod", icmod)
-      call get_value(child, "fcfact", fcfact)
+      call get_value(child, "icmod", icmod, stat=stat)
+      call check_stat(stat, "icmod")
+      call get_value(child, "fcfact", fcfact, stat=stat)
+      call check_stat(stat, "fcfact")
       if (icmod >= 0 .and. icmod <= 2) then
          rcfact = 0.0_dp
       else if (icmod >= 3 .and. icmod <= 4) then
-         call get_value(child, "rcfact", rcfact)
+         call get_value(child, "rcfact", rcfact, stat=stat)
+         call check_stat(stat, "rcfact")
       else
          write (stderr, '(A)') 'Error: Invalid icmod in [model_core_charge] section. Must be 0, 1, 2, 3, or 4.'
          stop 1
@@ -303,15 +337,19 @@ module input_toml_m
       !! Log-derivative analysis section (required)
       call get_value(table, "log_derivative_analysis", child)
       call check_associated(child, "[log_derivative_analysis] section")
-      call get_value(child, "epsh1", epsh1)
-      call get_value(child, "epsh2", epsh2)
-      call get_value(child, "depsh", depsh)
+      call get_value(child, "epsh1", epsh1, stat=stat)
+      call check_stat(stat, "epsh1")
+      call get_value(child, "epsh2", epsh2, stat=stat)
+      call check_stat(stat, "epsh2")
+      call get_value(child, "depsh", depsh, stat=stat)
+      call check_stat(stat, "depsh")
       call get_value(child, "rxpsh", rxpsh, -1.0_dp)
 
       !! PP output section (required)
       call get_value(table, "pp_output", child)
       call check_associated(child, "[pp_output] section")
-      call get_value(child, "psfile", tmp_str)
+      call get_value(child, "psfile", tmp_str, stat=stat)
+      call check_stat(stat, "psfile")
       if (len_trim(tmp_str) < 1 .or. len_trim(tmp_str) > 4) then
          write (stderr, '(A)') 'Error: Invalid psfile in [pp_out] section.'
          stop 1
@@ -516,6 +554,13 @@ module input_toml_m
 
       nproj(:) = 0
       rc(:) = 0.0_dp
+      ! Grid for icmod=4, same defaults as the text reader
+      fcfact_min = 1.5_dp
+      fcfact_max = 6.0_dp
+      fcfact_step = 0.5_dp
+      rcfact_min = 1.0_dp
+      rcfact_max = 1.9_dp
+      rcfact_step = 0.1_dp
       ep(:,:) = 0.0_dp
       atsym(:) = '  '
       psfile(:) = '    '
@@ -529,7 +574,8 @@ module input_toml_m
       !! oncvpsp section (required)
       call get_value(table, "oncvpsp", child)
       call check_associated(child, "[oncvpsp] section")
-      call get_value(child, "atsym", tmp_str)
+      call get_value(child, "atsym", tmp_str, stat=stat)
+      call check_stat(stat, "atsym")
       if (len_trim(tmp_str) < 1 .or. len_trim(tmp_str) > 2) then
          write (stderr, '(A)') 'Error: Invalid atomic symbol in [oncvpsp] section.'
          stop 1
@@ -537,16 +583,22 @@ module input_toml_m
          atsym(1:len_trim(tmp_str)) = tmp_str(1:len_trim(tmp_str))
       end if
       deallocate(tmp_str)
-      call get_value(child, "z", zz)
-      call get_value(child, "nc", nc)
-      call get_value(child, "nv", nv)
-      call get_value(child, "iexc", iexc)
+      call get_value(child, "z", zz, stat=stat)
+      call check_stat(stat, "z")
+      call get_value(child, "nc", nc, stat=stat)
+      call check_stat(stat, "nc")
+      call get_value(child, "nv", nv, stat=stat)
+      call check_stat(stat, "nv")
+      call get_value(child, "iexc", iexc, stat=stat)
+      call check_stat(stat, "iexc")
 
       !! Linear mesh section (required)
       call get_value(table, "linear_mesh", child)
       call check_associated(child, "[linear_mesh] section")
-      call get_value(child, "a", drl)
-      call get_value(child, "rmax", rlmax)
+      call get_value(child, "a", drl, stat=stat)
+      call check_stat(stat, "a")
+      call get_value(child, "rmax", rlmax, stat=stat)
+      call check_stat(stat, "rmax")
 
       !! Reference configuration section (required)
       call get_value(table, "reference_configuration", child)
@@ -556,28 +608,32 @@ module input_toml_m
       call check_associated(arr, 'n in [reference_configuration] section')
       call check_len(arr, nc + nv, 'n')
       do i = 1, len(arr)
-         call get_value(arr, i, na(i))
+         call get_value(arr, i, na(i), stat=stat)
+         call check_stat(stat, "na(i)")
       end do
       ! l (required, length = nc + nv)
       call get_value(child, "l", arr)
       call check_associated(arr, 'l in [reference_configuration] section')
       call check_len(arr, nc + nv, 'l')
       do i = 1, len(arr)
-         call get_value(arr, i, la(i))
+         call get_value(arr, i, la(i), stat=stat)
+         call check_stat(stat, "la(i)")
       end do
       ! f (required, length = nc + nv)
       call get_value(child, "f", arr)
       call check_associated(arr, 'f in [reference_configuration] section')
       call check_len(arr, nc + nv, 'f')
       do i = 1, len(arr)
-         call get_value(arr, i, fa(i))
+         call get_value(arr, i, fa(i), stat=stat)
+         call check_stat(stat, "fa(i)")
       end do
 
       !! Pseudopotential section (required)
       call get_value(table, "pseudopotentials", child)
       call check_associated(child, "[pseudopotentials] section")
       ! lmax (required)
-      call get_value(child, "lmax", lmax)
+      call get_value(child, "lmax", lmax, stat=stat)
+      call check_stat(stat, "lmax")
       ! l (required, length = lmax + 1, must be in order from 0 to lmax)
       call get_value(child, "l", arr)
       call check_associated(arr, 'l in [pseudopotentials] section')
@@ -585,7 +641,8 @@ module input_toml_m
       pseudopotentials_l: block ! pseudopotentials.l
          integer :: l
          do i = 1, len(arr)
-               call get_value(arr, i, l)
+               call get_value(arr, i, l, stat=stat)
+               call check_stat(stat, "l")
                if (i /= l + 1) then
                   write (stderr, '(A,I0,A,I0)') 'Error: l values in [pseudopotentials] section must be in order ', &
                      'starting from 0 to lmax without skipping any values. Expected ', i-1, ' but got ', l, '.'
@@ -598,7 +655,8 @@ module input_toml_m
       call check_associated(arr, 'rc in [pseudopotentials] section')
       call check_len(arr, lmax + 1, 'rc in [pseudopotentials] section')
       do i = 1, lmax + 1
-         call get_value(arr, i, rc(i))
+         call get_value(arr, i, rc(i), stat=stat)
+         call check_stat(stat, "rc(i)")
       end do
       ! ep (required, length = lmax + 1)
       call get_value(child, "ep", arr)
@@ -613,30 +671,37 @@ module input_toml_m
       call check_associated(arr, 'ncon in [pseudopotentials] section')
       call check_len(arr, lmax + 1, 'ncon in [pseudopotentials] section')
       do i = 1, lmax + 1
-         call get_value(arr, i, ncon(i))
+         call get_value(arr, i, ncon(i), stat=stat)
+         call check_stat(stat, "ncon(i)")
       end do
       ! nbas (required, length = lmax + 1)
       call get_value(child, "nbas", arr)
       call check_associated(arr, 'nbas in [pseudopotentials] section')
       call check_len(arr, lmax + 1, 'nbas in [pseudopotentials] section')
       do i = 1, lmax + 1
-         call get_value(arr, i, nbas(i))
+         call get_value(arr, i, nbas(i), stat=stat)
+         call check_stat(stat, "nbas(i)")
       end do
       ! qcut (required, length = lmax + 1)
       call get_value(child, "qcut", arr)
       call check_associated(arr, 'qcut in [pseudopotentials] section')
       call check_len(arr, lmax + 1, 'qcut in [pseudopotentials] section')
       do i = 1, lmax + 1
-         call get_value(arr, i, qcut(i))
+         call get_value(arr, i, qcut(i), stat=stat)
+         call check_stat(stat, "qcut(i)")
       end do
 
       !! Local potential section (required)
       call get_value(table, "local_potential", child)
       call check_associated(child, "[local_potential] section")
-      call get_value(child, "lloc", lloc)
-      call get_value(child, "lpopt", lpopt)
-      call get_value(child, "rcloc", rc(5))
-      call get_value(child, "dvloc0", dvloc0)
+      call get_value(child, "lloc", lloc, stat=stat)
+      call check_stat(stat, "lloc")
+      call get_value(child, "lpopt", lpopt, stat=stat)
+      call check_stat(stat, "lpopt")
+      call get_value(child, "rcloc", rc(5), stat=stat)
+      call check_stat(stat, "rcloc")
+      call get_value(child, "dvloc0", dvloc0, stat=stat)
+      call check_stat(stat, "dvloc0")
 
       !! VKB projectors section (required)
       call get_value(table, "vkb_projectors", child)
@@ -648,7 +713,8 @@ module input_toml_m
       vkb_projectors_l: block ! vkb_projectors.l
          integer :: l
          do i = 1, len(arr)
-               call get_value(arr, i, l)
+               call get_value(arr, i, l, stat=stat)
+               call check_stat(stat, "l")
                if (i /= l + 1) then
                   write (stderr, '(A,I0,A,I0)') 'Error: l values in [vkb_projectors] section must be in order ', &
                      'starting from 0 to lmax without skipping any values. Expected ', i-1, ' but got ', l, '.'
@@ -661,25 +727,30 @@ module input_toml_m
       call check_associated(arr, 'nproj in [vkb_projectors] section')
       call check_len(arr, lmax + 1, 'nproj in [vkb_projectors] section')
       do i = 1, lmax + 1
-         call get_value(arr, i, nproj(i))
+         call get_value(arr, i, nproj(i), stat=stat)
+         call check_stat(stat, "nproj(i)")
       end do
       ! debl (required, length = lmax + 1)
       call get_value(child, "debl", arr)
       call check_associated(arr, 'debl in [vkb_projectors] section')
       call check_len(arr, lmax + 1, 'debl in [vkb_projectors] section')
       do i = 1, lmax + 1
-         call get_value(arr, i, debl(i))
+         call get_value(arr, i, debl(i), stat=stat)
+         call check_stat(stat, "debl(i)")
       end do
 
       !! model_core_charge section (required)
       call get_value(table, "model_core_charge", child)
       call check_associated(child, "[model_core_charge] section")
-      call get_value(child, "icmod", icmod)
-      call get_value(child, "fcfact", fcfact)
+      call get_value(child, "icmod", icmod, stat=stat)
+      call check_stat(stat, "icmod")
+      call get_value(child, "fcfact", fcfact, stat=stat)
+      call check_stat(stat, "fcfact")
       if (icmod >= 0 .and. icmod <= 2) then
          rcfact = 0.0_dp
       else if (icmod >= 3 .and. icmod <= 4) then
-         call get_value(child, "rcfact", rcfact)
+         call get_value(child, "rcfact", rcfact, stat=stat)
+         call check_stat(stat, "rcfact")
       else
          write (stderr, '(A)') 'Error: Invalid icmod in [model_core_charge] section. Must be 0, 1, 2, 3, or 4.'
          stop 1
@@ -688,15 +759,19 @@ module input_toml_m
       !! Log-derivative analysis section (required)
       call get_value(table, "log_derivative_analysis", child)
       call check_associated(child, "[log_derivative_analysis] section")
-      call get_value(child, "epsh1", epsh1)
-      call get_value(child, "epsh2", epsh2)
-      call get_value(child, "depsh", depsh)
+      call get_value(child, "epsh1", epsh1, stat=stat)
+      call check_stat(stat, "epsh1")
+      call get_value(child, "epsh2", epsh2, stat=stat)
+      call check_stat(stat, "epsh2")
+      call get_value(child, "depsh", depsh, stat=stat)
+      call check_stat(stat, "depsh")
       call get_value(child, "rxpsh", rxpsh, -1.0_dp)
 
       !! PP output section (required)
       call get_value(table, "pp_output", child)
       call check_associated(child, "[pp_output] section")
-      call get_value(child, "psfile", tmp_str)
+      call get_value(child, "psfile", tmp_str, stat=stat)
+      call check_stat(stat, "psfile")
       if (len_trim(tmp_str) < 1 .or. len_trim(tmp_str) > 4) then
          write (stderr, '(A)') 'Error: Invalid psfile in [pp_out] section.'
          stop 1
@@ -800,6 +875,16 @@ module input_toml_m
          stop 1
       end if
    end
+
+   subroutine check_stat(stat, name)
+      implicit none
+      integer, intent(in) :: stat
+      character(len=*), intent(in) :: name
+      if (stat /= toml_stat%success) then
+         write (stderr, '(A,A)') 'Error: Missing or invalid value ', trim(name)
+         stop 1
+      end if
+   end subroutine check_stat
 
    subroutine check_len(arr, expected_len, name)
       implicit none

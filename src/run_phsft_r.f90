@@ -76,30 +76,42 @@ subroutine run_phsft_r(lmax,lloc,nproj,ep,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
          if (rxpsh < 0.0) then
             irphs = irc(l1) + 2
          else
+            irphs = 0
             do ii = 1,mmax
                if (rr(ii) >= rxpsh) then
                   irphs = ii
                   exit
                end if
             end do
+            if (irphs == 0) then
+               write(6, '(a,f12.5,a,f12.5)') &
+                  'ERROR: run_phsft: rxpsh=', rxpsh, ' > rr(mmax)=', rr(mmax)
+               stop
+            end if
             if (irphs <= irc(l1)) then
                write(6, '(a,f12.5,a,i1,a,f12.5)') &
-                  'ERROR: run_phsft: rxpsh=', rr(irphs), ' < rc(', l1-1, ')=', rr(irc(l1))
+                  'ERROR: run_phsft: rxpsh=', rxpsh, ' <= rc(', l1-1, ')=', rr(irc(l1))
             end if
          end if
       else
          if (rxpsh < 0.0) then
             irphs = irc(lloc + 1)
          else
+            irphs = 0
             do ii = 1,mmax
                if (rr(ii) >= rxpsh) then
                   irphs = ii
                   exit
                end if
             end do
+            if (irphs == 0) then
+               write(6, '(a,f12.5,a,f12.5)') &
+                  'ERROR: run_phsft: rxpsh=', rxpsh, ' > rr(mmax)=', rr(mmax)
+               stop
+            end if
             if (irphs <= irc(lloc+1)) then
                write(6, '(a,f12.5,a,i1,a,f12.5)') &
-                  'ERROR: run_phsft: rxpsh=', rr(irphs), ' < rc(', lloc+1, ')=', rr(irc(lloc+1))
+                  'ERROR: run_phsft: rxpsh=', rxpsh, ' <= rc(', lloc+1, ')=', rr(irc(lloc+1))
             end if
          end if
       end if

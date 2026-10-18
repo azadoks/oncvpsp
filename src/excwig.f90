@@ -38,8 +38,8 @@
  real(dp), intent(in) ::  rho(mmax)
  integer, intent(in) :: mmax
 
-!Input/output variables
- real(dp), intent(inout) :: vxc(mmax),exc(mmax)
+!Output variables
+ real(dp), intent(out) :: vxc(mmax),exc(mmax)
 
 !Local vafriables
  real(dp) ::  rh,rs
@@ -58,6 +58,9 @@
    rs=conrs*rh**(-thrd)
    vxc(ii)=-convx/rs - 0.44d0*(4.0d0*thrd*rs+7.8d0)/(rs+7.8d0)**2
    exc(ii)=-conex/rs - 0.44d0/(rs+7.8d0)
+  else
+   vxc(ii)=0.0d0
+   exc(ii)=0.0d0
   end if
  end do
  return

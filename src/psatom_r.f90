@@ -192,6 +192,7 @@
        eeig = eeig + fj*ea(ii,ikap)
        rho(:)=rho(:) + fj*(uu(:)/rr(:))**2
      end do !ikap
+     if(ierr/=0) exit
    end do !ii
 
    if(ierr/=0) exit

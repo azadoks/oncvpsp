@@ -149,7 +149,7 @@
 
 !set up array for maximally ionized intermediate state
    do kk=1,nc+nvt
-     fat(ii,2)=dmin1(fat(ii,1),fat(ii,3))
+     fat(kk,2)=dmin1(fat(kk,1),fat(kk,3))
    end do
 
 

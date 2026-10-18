@@ -409,8 +409,10 @@
  end if
 
  r0=1.5d0*xx(2,1)
+ ircross=0
  do ii=mmax,1,-1
   if(rr(ii)<r0) then
+    yy=rr(ii)/xx(2,1)
     call gg1cc(gg,yy)
     if( xx(1,1)*gg<rhoc(ii)) then
       rcross=rr(ii)
@@ -419,6 +421,11 @@
     end if
   end if
  end do
+
+ if(ircross==0) then
+  write(6,'(/a)') 'modcore3: ERROR failed to find model core crossover'
+  stop
+ end if
 
 ! blend the Teter function tail into the all-electron rhoc
 ! first two derivatives are filled in analytically before the blend starts

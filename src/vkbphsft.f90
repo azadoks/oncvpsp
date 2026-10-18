@@ -69,6 +69,7 @@
  al = 0.01d0 * dlog(rr(101) / rr(1))
 
  pshoff = 0.0d0
+ dnpi = 0.0d0
 
  do ii = 1,npsh
    epsh = epsh2-(ii-1)*depsh
