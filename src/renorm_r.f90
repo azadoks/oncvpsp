@@ -32,15 +32,15 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
- real(dp) :: rr(mmax)
- real(dp) :: zz
- integer :: ll,kap,mmax
+ real(dp), intent(in) :: rr(mmax)
+ real(dp), intent(in) :: zz
+ integer, intent(in) :: ll,kap,mmax
 
 !Output variable
- real(dp) :: cnorm
+ real(dp), intent(out) :: cnorm
 
 !Input/Output variable
- real(dp) :: uu(mmax,2)
+ real(dp), intent(inout) :: uu(mmax,2)
 
 !Local variables
  real(dp) :: sn

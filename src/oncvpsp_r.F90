@@ -788,7 +788,7 @@
  implicit none
 
 !In/Out variable
- integer :: inline
+ integer, intent(inout) :: inline
 
 !Local variable
  character*1 tst
@@ -809,7 +809,8 @@
  implicit none
 
 !Input variables
- integer :: ios,inline
+ integer, intent(in) :: ios
+ integer, intent(inout) :: inline
 
  inline=inline+1
  if(ios/=0) then

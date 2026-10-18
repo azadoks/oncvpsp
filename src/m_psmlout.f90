@@ -69,25 +69,26 @@ module m_psmlout
  real(dp), parameter :: pi=3.141592653589793238462643383279502884197_dp
 
 !Input variables
- integer :: lmax,lloc,iexc,mmax,nrl,icmod
- integer :: nproj(6)
- integer :: irct ! index of point at which rho_core is matched
- logical :: srel ! whether it is scalar-relativistic or not
- integer :: mxprj !> maximum number of projectors for any l
- real(dp) :: drl,fcfact,zz,zion,epstot
- real(dp), target :: rr(mmax),vpuns(mmax,5),rho(mmax),vkb(mmax,mxprj,4)
- real(dp), target :: rhomod(mmax,5)
- real(dp):: rc(6),evkb(mxprj,4)
- character*2 :: atsym
+ integer, intent(inout) :: lmax
+ integer, intent(in) :: lloc,iexc,mmax,nrl,icmod
+ integer, intent(in) :: nproj(6)
+ integer, intent(in) :: irct ! index of point at which rho_core is matched
+ logical, intent(in) :: srel ! whether it is scalar-relativistic or not
+ integer, intent(in) :: mxprj !> maximum number of projectors for any l
+ real(dp), intent(in) :: drl,fcfact,zz,zion,epstot
+ real(dp), target, intent(in) :: rr(mmax),vpuns(mmax,5),rho(mmax),vkb(mmax,mxprj,4)
+ real(dp), target, intent(in) :: rhomod(mmax,5)
+ real(dp), intent(in) :: rc(6),evkb(mxprj,4)
+ character*2, intent(in) :: atsym
 
 !additional input for upf output to echo input file, all as defined
 ! in the main progam
- integer :: na(30),la(30),ncon(6),nbas(6)
- integer :: nvcnf(5),nacnf(30,5),lacnf(30,5)
- integer :: nc,nv,lpopt,ncnf
- real(dp) :: fa(30),rc0(6),ep(6),qcut(6),debl(6),facnf(30,5)
- real(dp) :: dvloc0,epsh1,epsh2,depsh,rlmax
- character*4 :: psfile
+ integer, intent(in) :: na(30),la(30),ncon(6),nbas(6)
+ integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
+ integer, intent(in) :: nc,nv,lpopt,ncnf
+ real(dp), intent(in) :: fa(30),rc0(6),ep(6),qcut(6),debl(6),facnf(30,5)
+ real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rlmax
+ character*4, intent(in) :: psfile
 
 !Local variables
  integer :: dtime(8)
@@ -551,26 +552,27 @@ end subroutine psmlout
  real(dp), parameter :: pi=3.141592653589793238462643383279502884197_dp
 
 !Input variables
- integer :: lmax,lloc,iexc,mmax,nrl,icmod
- integer :: nproj(6)
- integer :: irct ! index of point at which rho_core is matched
- integer :: mxprj !> maximum number of projectors for any l
- real(dp) :: drl,fcfact,zz,zion,epstot
- real(dp), target :: rr(mmax),vpuns(mmax,5,2),rho(mmax),vkb(mmax,mxprj,4,2)
- real(dp), target :: rhomod(mmax,5)
- real(dp):: rc(6),evkb(mxprj,4,2)
- real(dp), target :: vsr(mmax,4,4),vso(mmax,4,4)
- real(dp) :: esr(4,4),eso(4,4)
- character*2 :: atsym
+ integer, intent(inout) :: lmax
+ integer, intent(in) :: lloc,iexc,mmax,nrl,icmod
+ integer, intent(in) :: nproj(6)
+ integer, intent(in) :: irct ! index of point at which rho_core is matched
+ integer, intent(in) :: mxprj !> maximum number of projectors for any l
+ real(dp), intent(in) :: drl,fcfact,zz,zion,epstot
+ real(dp), target, intent(in) :: rr(mmax),vpuns(mmax,5,2),rho(mmax),vkb(mmax,mxprj,4,2)
+ real(dp), target, intent(in) :: rhomod(mmax,5)
+ real(dp), intent(in) :: rc(6),evkb(mxprj,4,2)
+ real(dp), target, intent(in) :: vsr(mmax,4,4),vso(mmax,4,4)
+ real(dp), intent(in) :: esr(4,4),eso(4,4)
+ character*2, intent(in) :: atsym
 
 !additional input for upf output to echo input file, all as defined
 ! in the main progam
- integer :: na(30),la(30),ncon(6),nbas(6)
- integer :: nvcnf(5),nacnf(30,5),lacnf(30,5)
- integer :: nc,nv,lpopt,ncnf
- real(dp) :: fa(30),rc0(6),ep(6),qcut(6),debl(6),facnf(30,5)
- real(dp) :: dvloc0,epsh1,epsh2,depsh,rlmax
- character*4 :: psfile
+ integer, intent(in) :: na(30),la(30),ncon(6),nbas(6)
+ integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
+ integer, intent(in) :: nc,nv,lpopt,ncnf
+ real(dp), intent(in) :: fa(30),rc0(6),ep(6),qcut(6),debl(6),facnf(30,5)
+ real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rlmax
+ character*4, intent(in) :: psfile
 
 
 !Local variables

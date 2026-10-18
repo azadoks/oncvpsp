@@ -40,13 +40,16 @@
  real(dp), parameter :: pi4=4.0_dp*pi
 
 !Input vaiables
- integer :: iexc,mmax,mode
- real(dp) :: rho(mmax),rhoc(mmax),rr(mmax)
- real(dp) :: zion
+ integer, intent(in) :: iexc,mmax,mode
+ real(dp), intent(in) :: rho(mmax),rhoc(mmax),rr(mmax)
+ real(dp), intent(in) :: zion
+
+!Input/output variables
+ real(dp), intent(inout) :: vxc(mmax)
 
 !Output variables
- real(dp) :: vo(mmax),vxc(mmax)
- real(dp) :: eeel,eexc
+ real(dp), intent(out) :: vo(mmax)
+ real(dp), intent(out) :: eeel,eexc
 
 !Local variables
  integer ii

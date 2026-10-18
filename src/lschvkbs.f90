@@ -37,13 +37,13 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
- integer :: mmax,mch
- real(dp) :: rr(mmax),vloc(mmax),vkb(mmax,2),evkb(2)
- real(dp) :: ee
- integer :: ivkb,ll
+ integer, intent(in) :: mmax,mch
+ real(dp), intent(in) :: rr(mmax),vloc(mmax),vkb(mmax,2),evkb(2)
+ real(dp), intent(in) :: ee
+ integer, intent(in) :: ivkb,ll
  
 !Output variables
- real(dp) :: uu(mmax),up(mmax)
+ real(dp), intent(out) :: uu(mmax),up(mmax)
 
 
 !Local variables

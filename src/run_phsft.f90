@@ -47,12 +47,12 @@ subroutine run_phsft(lmax,lloc,nproj,epa,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
    integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
-   integer :: lmax,lloc,mmax,mxprj
-   integer :: nproj(6),irc(6)
-   real(dp) :: epsh1,epsh2,depsh,zz,rxpsh
-   real(dp) :: rr(mmax),vp(mmax,5),epa(mxprj,6)
-   real(dp) :: vfull(mmax),vkb(mmax,mxprj,4),evkb(mxprj,4)
-   logical :: srel
+   integer, intent(in) :: lmax,lloc,mmax,mxprj
+   integer, intent(in) :: nproj(6),irc(6)
+   real(dp), intent(in) :: epsh1,epsh2,depsh,zz,rxpsh
+   real(dp), intent(in) :: rr(mmax),vp(mmax,5),epa(mxprj,6)
+   real(dp), intent(in) :: vfull(mmax),vkb(mmax,mxprj,4),evkb(mxprj,4)
+   logical, intent(in) :: srel
 
 !Output variables - printing only
 

@@ -52,12 +52,12 @@
 
 !Input variables
  
- integer :: jj,mmax,mxprj,iexc,nc,lloc
- integer :: nacnf(30,5),lacnf(30,5),nvcnf(5),nproj(5)
- real(dp) :: etot,epstot,rcmax,zz
- real(dp) :: facnf(30,5),ea(30),rhov(mmax),rr(mmax)
- real(dp) :: vpuns(mmax,5),vkb(mmax,mxprj,4),evkb(mxprj,4),rhomod(mmax,5)
- logical :: srel
+ integer, intent(in) :: jj,mmax,mxprj,iexc,nc,lloc
+ integer, intent(in) :: nacnf(30,5),lacnf(30,5),nvcnf(5),nproj(5)
+ real(dp), intent(in) :: etot,epstot,rcmax,zz
+ real(dp), intent(in) :: facnf(30,5),ea(30),rhov(mmax),rr(mmax)
+ real(dp), intent(in) :: vpuns(mmax,5),vkb(mmax,mxprj,4),evkb(mxprj,4),rhomod(mmax,5)
+ logical, intent(in) :: srel
 
 !Output variables  only printing
  

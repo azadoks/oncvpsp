@@ -46,18 +46,18 @@
  real(dp), parameter :: eps=1.0d-8
 
 !Input variables
- integer :: ll,ivkb,mmax,npsh,mch,mcht
- real(dp) :: rr(mmax),vloc(mmax),vkb(mmax,*),evkb(*)
- real(dp) :: pshf(npsh)
- real(dp) :: depsh,epsh2,ep
+ integer, intent(in) :: ll,ivkb,mmax,npsh,mch
+ real(dp), intent(in) :: rr(mmax),vloc(mmax),vkb(mmax,*),evkb(*)
+ real(dp), intent(in) :: pshf(npsh)
+ real(dp), intent(in) :: depsh,epsh2,ep
 
 !Output variables
- real(dp) :: pshp(npsh)
+ real(dp), intent(out) :: pshp(npsh)
 
 !Local variables
  real(dp) :: al,dnpi,epsh,phi,phip,pshoff
  real(dp) :: dmin,dmax,dtst,emin,emax,et,psmin,psmax,pst,shift,shift2
- integer :: ii,jj,ierr,node,n2
+ integer :: ii,jj,ierr,node,n2,mcht
  logical :: jump
 
  real(dp), allocatable :: uu(:),up(:)

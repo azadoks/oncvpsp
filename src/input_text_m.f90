@@ -466,7 +466,7 @@ contains
       ! skips lines of standard input (file 5) whose first character is #
 
       !In/Out variable
-      integer :: inline
+      integer, intent(inout) :: inline
       integer, intent(in) :: unit
 
       !Local variable
@@ -487,7 +487,8 @@ contains
       ! report data read error and stop
 
       !Input variables
-      integer :: ios, inline
+      integer, intent(in) :: ios
+      integer, intent(inout) :: inline
 
       inline = inline + 1
       if (ios /= 0) then

@@ -61,25 +61,25 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
- integer :: lmax,lloc,iexc,mmax,mxprj,nrl,icmod
- integer :: nproj(6)
- real(dp) :: drl,fcfact,rcfact,zz,zion,soscale
- real(dp) :: rr(mmax),vpuns(mmax,5),rho(mmax)
- real(dp) :: rhotae(mmax),rhoc(mmax)
- real(dp) :: vsr(mmax,2*mxprj,4),vso(mmax,2*mxprj,4)
- real(dp) :: esr(2*mxprj,4),eso(2*mxprj,4)
- real(dp) :: rhomod(mmax,5)
- real(dp):: rc(6)
- character*2 :: atsym
+ integer, intent(in) :: lmax,lloc,iexc,mmax,mxprj,nrl,icmod
+ integer, intent(in) :: nproj(6)
+ real(dp), intent(in) :: drl,fcfact,rcfact,zz,zion,soscale
+ real(dp), intent(in) :: rr(mmax),vpuns(mmax,5),rho(mmax)
+ real(dp), intent(in) :: rhotae(mmax),rhoc(mmax)
+ real(dp), intent(in) :: vsr(mmax,2*mxprj,4),vso(mmax,2*mxprj,4)
+ real(dp), intent(in) :: esr(2*mxprj,4),eso(2*mxprj,4)
+ real(dp), intent(in) :: rhomod(mmax,5)
+ real(dp), intent(in) :: rc(6)
+ character*2, intent(in) :: atsym
 
 !additional input for psp8 output to echo input file, all as defined
 ! in the main progam
- integer :: na(30),la(30),ncon(6),nbas(6)
- integer :: nvcnf(5),nacnf(30,5),lacnf(30,5)
- integer :: nc,nv,lpopt,ncnf
- real(dp) :: fa(30),rc0(6),ep(6,2),qcut(6),debl(6,2),facnf(30,5)
- real(dp) :: dvloc0,epsh1,epsh2,depsh,rlmax
- character*4 :: psfile
+ integer, intent(in) :: na(30),la(30),ncon(6),nbas(6)
+ integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
+ integer, intent(in) :: nc,nv,lpopt,ncnf
+ real(dp), intent(in) :: fa(30),rc0(6),ep(6,2),qcut(6),debl(6,2),facnf(30,5)
+ real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rlmax
+ character*4, intent(in) :: psfile
 
 !Output variables - printing only
 

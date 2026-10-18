@@ -51,13 +51,15 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
- integer :: lmax,lloc,mmax,mxprj,nlim,nrl
- integer :: npa(mxprj,6),npx(6),irc(6),lpx(6),nproj(6)
- real(dp) :: zz,drl
- real(dp) :: rr(mmax),vp(mmax,5),vpuns(mmax,5),vfull(mmax),vkb(mmax,mxprj,4)
- real(dp) :: rho(mmax),rhoc(mmax),rhomod(mmax,5)
- real(dp):: epa(mxprj,6),evkb(mxprj,4),cvgplt(2,7,mxprj,4)
- logical :: srel
+ integer, intent(in) :: lmax,lloc,mmax,mxprj,nrl
+ integer :: nlim
+ integer, intent(in) :: npa(mxprj,6),irc(6),nproj(6)
+ integer :: npx(6),lpx(6)
+ real(dp), intent(in) :: zz,drl
+ real(dp), intent(in) :: rr(mmax),vp(mmax,5),vpuns(mmax,5),vfull(mmax),vkb(mmax,mxprj,4)
+ real(dp), intent(in) :: rho(mmax),rhoc(mmax),rhomod(mmax,5)
+ real(dp), intent(in) :: epa(mxprj,6),evkb(mxprj,4),cvgplt(2,7,mxprj,4)
+ logical, intent(in) :: srel
 
 !Output variables - printing only
 

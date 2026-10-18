@@ -42,15 +42,16 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
- integer :: lmax,lloc,lpopt,mmax,mxprj
- integer :: irc(6),nproj(6)
- real(dp) :: rr(mmax),vkb(mmax,mxprj,4,2),evkb(mxprj,4,2)
+ integer, intent(in) :: lmax,mmax,mxprj
+ integer, intent(in) :: irc(6),nproj(6)
+ real(dp), intent(in) :: rr(mmax),vkb(mmax,mxprj,4,2),evkb(mxprj,4,2)
 
-!Output variables
- real(dp) :: vsr(mmax,2*mxprj,4),esr(2*mxprj,4)
- real(dp) :: vso(mmax,2*mxprj,4),eso(2*mxprj,4)
+!Input/output variables
+ real(dp), intent(inout) :: vsr(mmax,2*mxprj,4),esr(2*mxprj,4)
+ real(dp), intent(inout) :: vso(mmax,2*mxprj,4),eso(2*mxprj,4)
 
 !Local variables
+ integer :: lloc,lpopt
  integer :: ii,jj,kk,ierr,ik1,ik2,ip1,ip2,ipk,ll,l1,info,nn
  real(dp) :: apk,sn,tt,qq1mxprj
  real(dp) :: sovl(2*mxprj,2*mxprj),sovlev(2*mxprj),ascl(2*mxprj,2*mxprj),aso(2*mxprj,2*mxprj)

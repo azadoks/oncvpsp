@@ -38,9 +38,13 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !subroutine arguments
- real(dp) :: rr(mmax),uu(mmax),uorder(5)
- real(dp) :: al,rc
- integer :: mmax,irc,nder
+ real(dp), intent(in) :: rr(mmax),uu(mmax)
+ real(dp), intent(out) :: uorder(5)
+ real(dp), intent(in) :: al
+ real(dp), intent(inout) :: rc
+ integer, intent(in) :: mmax
+ integer, intent(inout) :: irc
+ integer :: nder
 
 !local variables
  integer :: ii,jj

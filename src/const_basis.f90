@@ -39,13 +39,13 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !input variables
- integer :: ncon,nbas
- real(dp) :: orbasis(nbas,nbas),orbasis_der(ncon,nbas),cons(ncon)
+ integer, intent(in) :: ncon,nbas
+ real(dp), intent(in) :: orbasis(nbas,nbas),orbasis_der(ncon,nbas),cons(ncon)
 
 !Output variables
- real(dp) :: pswf0_or(nbas),pswfnull_or(nbas,nbas-ncon)
- real(dp) :: pswf0_sb(nbas),pswfnull_sb(nbas,nbas-ncon)
- real(dp) :: ps0norm
+ real(dp), intent(out) :: pswf0_or(nbas),pswfnull_or(nbas,nbas-ncon)
+ real(dp), intent(out) :: pswf0_sb(nbas),pswfnull_sb(nbas,nbas-ncon)
+ real(dp), intent(out) :: ps0norm
 
 !Local variables
  real(dp) :: usvd(10,10),ss(10),work(100),con_tst(10)

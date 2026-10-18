@@ -24,8 +24,9 @@
 
  implicit none
  integer, parameter :: dp=kind(1.0d0)
- real(dp) :: aeo,yy(*)
- integer :: jj
+ real(dp) :: aeo
+ real(dp), intent(in) :: yy(*)
+ integer, intent(in) :: jj
 
  aeo=(4.16666666667d-2)*(55.0d0*yy(jj)-59.0d0*yy(jj-1) &
 & +37.0d0*yy(jj-2)-9.0d0*yy(jj-3))
@@ -36,8 +37,9 @@
 
  implicit none
  integer, parameter :: dp=kind(1.0d0)
- real(dp) :: aio,yy(*)
- integer :: jj
+ real(dp) :: aio
+ real(dp), intent(in) :: yy(*)
+ integer, intent(in) :: jj
 
  aio=(4.16666666667d-2)*(9.0d0*yy(jj+1)+19.0d0*yy(jj) &
 & -5.0d0*yy(jj-1)+yy(jj-2))
@@ -48,8 +50,9 @@
 
  implicit none
  integer, parameter :: dp=kind(1.0d0)
- real(dp) :: aei,yy(*)
- integer :: jj
+ real(dp) :: aei
+ real(dp), intent(in) :: yy(*)
+ integer, intent(in) :: jj
 
  aei=-(4.16666666667d-2)*(55.0d0*yy(jj)-59.0d0*yy(jj+1) &
 & +37.0d0*yy(jj+2)-9.0d0*yy(jj+3))
@@ -59,8 +62,9 @@
  function aii(yy,jj)
 
  integer, parameter :: dp=kind(1.0d0)
- real(dp) :: aii,yy(*)
- integer :: jj
+ real(dp) :: aii
+ real(dp), intent(in) :: yy(*)
+ integer, intent(in) :: jj
 
  aii=-(4.16666666667d-2)*(9.0d0*yy(jj-1)+19.0d0*yy(jj) &
 & -5.0d0*yy(jj+1)+yy(jj+2))

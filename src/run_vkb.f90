@@ -43,15 +43,20 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
- integer :: lmax,lloc,lpopt,lwork,mmax,mxprj
- integer :: irc(6),nproj(6)
- real(dp) :: rr(mmax),pswf(mmax,mxprj,5),vfull(mmax),vp(mmax,5)
- real(dp) :: dvloc0
+ integer, intent(in) :: lmax,lloc,lpopt,mmax,mxprj
+ integer :: lwork
+ integer, intent(in) :: irc(6),nproj(6)
+ real(dp), intent(in) :: rr(mmax),pswf(mmax,mxprj,5),vfull(mmax)
+ real(dp), intent(in) :: dvloc0
+ real(dp), intent(in) :: vr(mmax,mxprj,6)
 
 !Input/Output variables
- real(dp) :: vkb(mmax,mxprj,4),evkb(mxprj,4)
- real(dp) :: vr(mmax,mxprj,6)
- integer :: nlim
+ real(dp), intent(inout) :: vp(mmax,5)
+ real(dp), intent(inout) :: vkb(mmax,mxprj,4)
+
+!Output variables
+ real(dp), intent(out) :: evkb(mxprj,4)
+ integer, intent(out) :: nlim
 
 !Local variables
  integer :: ii,ipk,jj,kk,ierr,l1,info,np

@@ -41,9 +41,9 @@
 
 
 !Arguments
- integer :: ll,nroot
- real(dp) :: rc,ulgd,dltq,qmax
- real(dp) :: qroot(nroot)
+ integer, intent(in) :: ll,nroot
+ real(dp), intent(in) :: rc,ulgd,dltq,qmax
+ real(dp), intent(out) :: qroot(nroot)
 
 !Local variables
  real(dp), parameter :: eps=1.0d-12

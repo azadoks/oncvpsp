@@ -48,17 +48,18 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
- integer :: nnull,nbas,nqout
- real(dp) :: pswf0_sb(nbas),pswfnull_sb(nbas,nnull)
- real(dp) :: pswf0_or(nbas),pswfnull_or(nbas,nnull)
- real(dp) :: eresid0(nqout),eresiddot(nnull,nqout),eresidmat(nnull,nnull,nqout)
+ integer, intent(in) :: nnull,nbas,nqout
+ real(dp), intent(in) :: pswf0_sb(nbas),pswfnull_sb(nbas,nnull)
+ real(dp), intent(in) :: pswf0_or(nbas),pswfnull_or(nbas,nnull)
+ real(dp), intent(in) :: eresid0(nqout),eresiddot(nnull,nqout),eresidmat(nnull,nnull,nqout)
  real(dp) :: orbasis_it(nbas,nbas)
- real(dp) :: qout(nqout),eresq(nqout)
- real(dp) :: uunorm,ps0norm
+ real(dp), intent(in) :: qout(nqout)
+ real(dp), intent(out) :: eresq(nqout)
+ real(dp), intent(in) :: uunorm,ps0norm
 
 !Output variables
- real(dp) :: eresidmin,ekin_anal
- real(dp) :: pswfopt_sb(nbas),pswfopt_or(nbas)
+ real(dp), intent(out) :: eresidmin,ekin_anal
+ real(dp), intent(out) :: pswfopt_sb(nbas),pswfopt_or(nbas)
  real(dp) :: eres(nqout)
 
 !Local variables

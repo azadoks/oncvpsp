@@ -38,15 +38,15 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
- integer :: mmax,mch
- real(dp) :: rr(mmax),vv(mmax),vkb(mmax)
+ integer, intent(in) :: mmax,mch
+ real(dp), intent(in) :: rr(mmax),vv(mmax),vkb(mmax)
  real(dp) :: zz
- integer :: nn,ll
+ integer, intent(in) :: nn,ll
+ real(dp), intent(in) :: ee
  
 !Output variables
- real(dp) :: uu(mmax),up(mmax)
- real(dp) :: ee
- integer :: ierr
+ real(dp), intent(out) :: uu(mmax),up(mmax)
+ integer, intent(out) :: ierr
 
 
 !Local variables

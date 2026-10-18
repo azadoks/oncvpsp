@@ -49,14 +49,19 @@
  real(dp), parameter :: Ha_eV=27.21138386d0 ! 1 Hartree, in eV
 
 !Input variables
- integer :: ll,mmax,mxprj,irc,ncon_in,nbas_in,npr
- real(dp) :: rr(mmax)
- real(dp) :: uua(mmax,mxprj),vae(mmax),qq(mxprj,mxprj)
- real(dp) :: eig(mxprj),qcut
+ integer, intent(in) :: ll,mmax,mxprj,ncon_in,nbas_in,npr
+ real(dp), intent(in) :: rr(mmax)
+ real(dp), intent(in) :: uua(mmax,mxprj),vae(mmax),qq(mxprj,mxprj)
+ real(dp), intent(in) :: eig(mxprj),qcut
+
+!Input/output variables
+ integer, intent(inout) :: irc
+ real(dp), intent(inout) :: vpsp(mmax),vkb(mmax,mxprj)
+ real(dp), intent(inout) :: cvgplt(2,7,mxprj)
 
 !Output variables
- real(dp) :: qmsbf
- real(dp) :: psopt(mmax,mxprj),vpsp(mmax),vkb(mmax,mxprj)
+ real(dp), intent(out) :: qmsbf
+ real(dp), intent(out) :: psopt(mmax,mxprj)
 
 !Local variables
  real(dp) :: uord(6)
@@ -64,7 +69,7 @@
  real(dp) :: sn,ps0norm,amesh,ro
  real(dp) :: err,lerr,qerr,ehaerr,eeverr
  real(dp) :: sbf(mmax)
- real(dp) :: cons(6),cvgplt(2,7,mxprj)
+ real(dp) :: cons(6)
  real(dp), allocatable :: orbasis(:,:)
  real(dp), allocatable :: orbasis_der(:,:),pswf0_sb(:),pswfnull_sb(:,:)
  real(dp), allocatable :: pswf0_or(:),pswfnull_or(:,:)

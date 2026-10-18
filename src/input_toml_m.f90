@@ -783,7 +783,7 @@ module input_toml_m
 
    subroutine toml_table_check_associated(ptr, name)
       implicit none
-      type(toml_table), pointer :: ptr
+      type(toml_table), pointer, intent(in) :: ptr
       character(len=*), intent(in) :: name
       if (.not. associated(ptr)) then
          write (stderr, '(A,A)') 'Error: Missing or invalid table', trim(name)
@@ -793,7 +793,7 @@ module input_toml_m
 
    subroutine toml_array_check_associated(ptr, name)
       implicit none
-      type(toml_array), pointer :: ptr
+      type(toml_array), pointer, intent(in) :: ptr
       character(len=*), intent(in) :: name
       if (.not. associated(ptr)) then
          write (stderr, '(A,A)') 'Error: Missing or invalid array', trim(name)
@@ -803,7 +803,7 @@ module input_toml_m
 
    subroutine check_len(arr, expected_len, name)
       implicit none
-      type(toml_array), pointer :: arr
+      type(toml_array), pointer, intent(in) :: arr
       integer, intent(in) :: expected_len
       character(len=*), intent(in) :: name
       if (len(arr) /= expected_len) then

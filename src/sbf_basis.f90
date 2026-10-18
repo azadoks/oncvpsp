@@ -39,10 +39,10 @@
 !orbasis_der  values and derivatives of orthonormal basis set at rc,
 
 !Arguments
- integer :: ll,mmax,nconmx,irc,nbas
- real(dp) :: rr(mmax),qroot(nbas)
- real(dp) :: sbasis(nbas),orbasis(nbas,nbas)
- real(dp) :: orbasis_der(nconmx,nbas)
+ integer, intent(in) :: ll,mmax,nconmx,irc,nbas
+ real(dp), intent(in) :: rr(mmax),qroot(nbas)
+ real(dp), intent(out) :: sbasis(nbas),orbasis(nbas,nbas)
+ real(dp), intent(out) :: orbasis_der(nconmx,nbas)
 
 !Local variables
  integer :: ii,jj,ll1,ibas,info

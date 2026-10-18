@@ -62,10 +62,10 @@
  real(dp), parameter :: pi=3.141592653589793238462643383279502884197_dp
 
 !Input variables
- integer :: nc,nv,lmax,lloc,mmax,mxprj
- integer :: la(30),irc(6),nproj(6)
- real(dp) :: rr(mmax),vp(mmax,5),vkb(mmax,mxprj,4)
- real(dp):: qmsbf(6),ea(30),evkb(mxprj,4)
+ integer, intent(in) :: nc,nv,lmax,lloc,mmax,mxprj
+ integer, intent(in) :: la(30),irc(6),nproj(6)
+ real(dp), intent(in) :: rr(mmax),vp(mmax,5),vkb(mmax,mxprj,4)
+ real(dp), intent(in) :: qmsbf(6),ea(30),evkb(mxprj,4)
 
 !Output variables - printing only
 

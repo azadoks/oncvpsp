@@ -45,25 +45,31 @@
 
 !Input variables
  
- integer :: mmax,mxprj,iexc,nv,lloc,okb
- integer :: na(30),la(30),nproj(5)
- real(dp) :: rcmax
- real(dp) :: fat(30,2),rr(mmax)
- real(dp) :: vpuns(mmax,5),vkb(mmax,mxprj,4,2),evkb(mxprj,4,2)
+ integer, intent(in) :: mmax,mxprj,iexc,nv,lloc
+ integer, intent(in) :: na(30),la(30),nproj(5)
+ real(dp), intent(in) :: rcmax
+ real(dp), intent(in) :: fat(30,2),rr(mmax)
+ real(dp), intent(in) :: vpuns(mmax,5),vkb(mmax,mxprj,4,2),evkb(mxprj,4,2)
+ real(dp), intent(in) :: rhoc(mmax)
+
+!Input/output variables
+ integer, intent(inout) :: ierr
+ real(dp), intent(inout) :: ea(30,2)
+ real(dp), intent(inout) :: rho(mmax)
 
 !Output variables
- integer :: it
- real(dp) :: etot
- real(dp) :: ea(30,2)
- real(dp) :: rho(mmax),rhoc(mmax),vi(mmax)
+ integer, intent(out) :: it
+ real(dp), intent(out) :: etot
 
 !Local variables
+ integer :: okb
+ real(dp) :: vi(mmax)
  integer :: nin,mch
  real(dp) :: amesh,al
  real(dp) :: dr,eeel,eexc,et,emin,emax,rl,rl1,sd,sn,sls,eeig
  real(dp) :: thl,vn,zval,dfa,fj
  real(dp) :: fa(30)
- integer :: ii,jj,l1,ierr,icx,nprj
+ integer :: ii,jj,l1,icx,nprj
  integer :: ikap,kap,ll,mkap
  logical :: convg
 

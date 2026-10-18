@@ -27,11 +27,11 @@
 ! integral on usual log mesh from 1 to nn
 
 !Input variables
- real(dp) :: gg(nn),hh(nn),rr(nn)
- integer :: nn,mm
+ real(dp), intent(in) :: gg(nn),hh(nn),rr(nn)
+ integer, intent(in) :: nn,mm
 
 !Output variable
- real(dp) :: ss
+ real(dp), intent(out) :: ss
 
 !Local variables
  real(dp) :: r0,amesh,al

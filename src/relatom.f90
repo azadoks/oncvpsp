@@ -45,16 +45,19 @@
 
 !Input variables
  
- integer :: mmax,iexc,nc,ncv
- integer :: na(ncv),la(ncv)
- real(dp) :: zz
- real(dp) :: fa(ncv),rr(mmax)
+ integer, intent(in) :: mmax,iexc,nc,ncv
+ integer, intent(in) :: na(ncv),la(ncv)
+ real(dp), intent(in) :: zz
+ real(dp), intent(in) :: fa(ncv),rr(mmax)
+
+!Input/output variables
+ integer, intent(inout) :: ierr
+ real(dp), intent(inout) :: ea(30,2),rpk(30,2)
 
 !Output variables
- integer :: it,ierr
- real(dp) :: etot
- real(dp) :: ea(30,2),rpk(30,2)
- real(dp) :: rho(mmax),rhoc(mmax),vi(mmax)
+ integer, intent(out) :: it
+ real(dp), intent(out) :: etot
+ real(dp), intent(out) :: rho(mmax),rhoc(mmax),vi(mmax)
 
 !Local function
  real(dp) :: tfapot

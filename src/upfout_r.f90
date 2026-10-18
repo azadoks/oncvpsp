@@ -60,23 +60,26 @@
  real(dp), parameter :: pi=3.141592653589793238462643383279502884197_dp
 
 !Input variables
- integer :: lmax,lloc,iexc,mmax,mxprj,nrl,icmod
- integer :: nproj(6)
- real(dp) :: drl,fcfact,rcfact,zz,zion,epstot
- real(dp) :: rr(mmax),vpuns(mmax,5),rho(mmax),vkb(mmax,mxprj,4,2)
- real(dp) :: rhomod(mmax,5)
- real(dp):: rc(6),evkb(mxprj,4,2)
- character*2 :: atsym
- real(dp) :: uua(mmax,2,nv)
+ integer, intent(in) :: lmax,lloc,iexc,mmax,mxprj,icmod
+ integer, intent(in) :: nproj(6)
+ real(dp), intent(in) :: drl,fcfact,rcfact,zz,zion,epstot
+ real(dp), intent(in) :: rr(mmax),vpuns(mmax,5),rho(mmax),vkb(mmax,mxprj,4,2)
+ real(dp), intent(in) :: rhomod(mmax,5)
+ real(dp), intent(in) :: rc(6),evkb(mxprj,4,2)
+ character*2, intent(in) :: atsym
+ real(dp), intent(in) :: uua(mmax,2,nv)
+
+!Input/output variables
+ integer, intent(inout) :: nrl
 
 !additional input for upf output to echo input file, all as defined
 ! in the main progam
- integer :: na(30),la(30),ncon(6),nbas(6)
- integer :: nvcnf(5),nacnf(30,5),lacnf(30,5)
- integer :: nc,nv,lpopt,ncnf
- real(dp) :: fa(30),rc0(6),ep(6,2),qcut(6),debl(6,2),facnf(30,5),ea(30,2)
- real(dp) :: dvloc0,epsh1,epsh2,depsh,rlmax
- character*4 :: psfile
+ integer, intent(in) :: na(30),la(30),ncon(6),nbas(6)
+ integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
+ integer, intent(in) :: nc,nv,lpopt,ncnf
+ real(dp), intent(in) :: fa(30),rc0(6),ep(6,2),qcut(6),debl(6,2),facnf(30,5),ea(30,2)
+ real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rlmax
+ character*4, intent(in) :: psfile
 
 !Output variables - printing only
 

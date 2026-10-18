@@ -42,14 +42,18 @@ subroutine wellstate_r(nnin,ll,kap,irc,ep,rr,vfull,vwell, &
  integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
- real(dp) :: rr(mmax),vfull(mmax)
- real(dp) :: ep,zz
- integer :: nnin,ll,kap,irc,mmax !(nnin is actually in/out)
- logical :: srel
+ real(dp), intent(in) :: rr(mmax),vfull(mmax)
+ real(dp), intent(in) :: zz
+ integer, intent(in) :: ll,kap,irc,mmax
+ logical, intent(in) :: srel
+
+!Input/output variables
+ real(dp), intent(inout) :: ep
+ integer, intent(inout) :: nnin !(nnin is actually in/out)
+ integer, intent(inout) :: mch
 
 !Output variables
- real(dp) :: uu(mmax,2),up(mmax,2),vwell(mmax)
- integer :: mch
+ real(dp), intent(out) :: uu(mmax,2),up(mmax,2),vwell(mmax)
  
 !Local variables
  real(dp) :: al,cwell,et,xx,rwell,rwmax,rwmin,rwscale,umax

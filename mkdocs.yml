@@ -19,6 +19,7 @@ nav:
     - Libxc Use: libxc_use.md
     - Coding Standards: coding_standards.md
     - Pwscf Exc: pwscf_exc.md
+    - Known Issues: known_issues.md
     - Release Notes: release_notes.md
 
 theme:

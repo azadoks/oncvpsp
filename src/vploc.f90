@@ -37,12 +37,12 @@
  integer, parameter :: dp=kind(1.0d0)
 
 ! Input variables
- integer :: irc,mmax,lpopt
- real(dp) :: dvloc0
- real(dp) :: rr(mmax),vv(mmax)
+ integer, intent(in) :: irc,mmax,lpopt
+ real(dp), intent(in) :: dvloc0
+ real(dp), intent(in) :: rr(mmax),vv(mmax)
 
-! Output variables
- real(dp) :: vp(mmax,5)
+! Input/output variables
+ real(dp), intent(inout) :: vp(mmax,5)
 
 !Local variables
  integer :: ii

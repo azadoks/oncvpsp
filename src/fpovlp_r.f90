@@ -37,12 +37,12 @@
 ! integral on usual log mesh from rr=0 to rr(nn)
 
 !Input variables
- real(dp) :: zz
- real(dp) :: gg(nn,2),hh(nn,2),rr(nn)
- integer :: nn,ll,kap
+ real(dp), intent(in) :: zz
+ real(dp), intent(in) :: gg(nn,2),hh(nn,2),rr(nn)
+ integer, intent(in) :: nn,ll,kap
 
 !Output variable
- real(dp) :: ss
+ real(dp), intent(out) :: ss
 
 !Local variables
  real(dp) :: r0,amesh,al,fss,gam,cc,cci
