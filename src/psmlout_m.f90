@@ -592,8 +592,8 @@
  real(dp), target, intent(in) :: vkb(mmax,mxprj,4,2)
  real(dp), target, intent(in) :: rhomod(mmax,5)
  real(dp), intent(in) :: rc(6),evkb(mxprj,4,2)
- real(dp), target, intent(in) :: vsr(mmax,4,4),vso(mmax,4,4)
- real(dp), intent(in) :: esr(4,4),eso(4,4)
+ real(dp), target, intent(in) :: vsr(mmax,2*mxprj,4),vso(mmax,2*mxprj,4)
+ real(dp), intent(in) :: esr(2*mxprj,4),eso(2*mxprj,4)
  character(len=2), intent(in) :: atsym
 
 !additional input to echo the input file, all as defined
@@ -970,7 +970,7 @@
    npr_sr(:)=0
    npr_so(:)=0
    do l1=1,lmax+1
-     do ii=1,4
+     do ii=1,2*nproj(l1)
        if(abs(esr(ii,l1))>0.0d0) npr_sr(l1)=npr_sr(l1)+1
        if(abs(eso(ii,l1))>0.0d0) npr_so(l1)=npr_so(l1)+1
      end do

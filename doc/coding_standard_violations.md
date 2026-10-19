@@ -140,8 +140,8 @@ Kept on purpose:
 - unused locals (e.g. `maxset` in `lschpsbar`, `cfloc` in `check_data`),
   which fortitude's default rules don't flag.
 
-The pass also found a bug, now in
-[Known Issues](known_issues.md#p2-open).
+The pass also found a latent bug in `psmlout_r`, since fixed (see
+[Known Issues](known_issues.md#p3-fixed)).
 
 ## Summary
 
