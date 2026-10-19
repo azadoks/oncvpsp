@@ -22,8 +22,8 @@ iexc= -101130 (Perdew-Burke-Ernzerhof)
 ```
 
 PWSCF does not appear to support libxc yet, and iexc for a subset of what they
-do support is properly translated in src/upfout.f90 begining at line 286
-and in src/upfout_r at line 317.  Feel free to add to these.  The presently-
+do support is properly translated in src/upfout.f90 (search for
+"functional=").  Feel free to add to these.  The presently-
 implemented translations and the full list of pwscf functionals is in
 pwscf_exc.txt in this directory.
 

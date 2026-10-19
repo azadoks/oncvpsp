@@ -7,7 +7,10 @@ Libxc/TOML files and the two main programs). The vendored
 [remediation order](#recommended-remediation-order) and the
 [Coding Standard Violations](coding_standard_violations.md). Line numbers
 refer to commit `7e9480a`, before any Known Issues fixes. File names are
-relative to `src/`.
+relative to `src/`. The `foo`/`foo_r` pairs and the two drivers it cites
+have since been merged into single routines taking `irel` or `nkap` (see
+[Merging sr and fr](fr_merge_plan.md)), so its `_r` files and
+`oncvpsp_r.F90` lines are as they were then.
 
 Related pages:
 
@@ -597,6 +600,9 @@ project standard ([Coding Standards](coding_standards.md), rule 3) forbids
 compatible with it.
 
 ## 14. Code duplication
+
+Since resolved for the `foo`/`foo_r` pairs and the drivers, by the
+merge described in [Merging sr and fr](fr_merge_plan.md).
 
 **Why it matters.** A bug fixed in one twin stays in the other. Many of the
 Known Issues exist in one sibling but not the other, e.g. `psatom` `it==400`

@@ -1,7 +1,7 @@
 ## PWSCF EXC FUNCTIONAL NAMES
 
 List of translations from libxc numerical iexc values to pwscf
-"dft_shortnames" as presently implemented in src/upfout.f90 and upfout_r.f90
+"dft_shortnames" as presently implemented in src/upfout.f90
 
 ```
 iexc==3 .or. iexc==-001009, 'functional="PZ"'

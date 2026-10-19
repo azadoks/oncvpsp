@@ -31,9 +31,17 @@ None.
   `modcore`/`modcore2`, and `drdum`/`dqdum` in `eresid`. Removing them
   would change the routines' calls for programs that use the library.
   Their comments say they are not used.
-- **`run_diag_sr_so_r.f90`**: unlike `run_diag_r`, it doesn't stop on an
-  `ldiracfb` error. `run_diag_r` runs first with identical calls and does
+- **`run_diag_sr_so_r.f90`**: unlike `run_diag`, it doesn't stop on an
+  `ldiracfb` error. `run_diag` runs first with identical calls and does
   stop.
+- **The sr/fr divergences**: where the scalar- and fully-relativistic
+  codes differed for no evident reason before they were merged, both
+  behaviours are kept behind `irel`; they are listed under
+  [Divergences](fr_merge_plan.md#divergences).
+- **`psmlout`**: its fully-relativistic branch for `psfile=='psp8'`
+  (separate scalar-relativistic and spin-orbit sets) can't be reached,
+  since `psmlout` is called only for `psfile` 'psml' or 'both'. P3; kept
+  as it was.
 
 ## Dismissed
 
@@ -43,22 +51,22 @@ Each of these was checked and turned out not to be a bug:
   `run_optimize` sets `ncon=ncon_in+iprj-1`.
 - `fpovlp.f90` `rr(101)`: `irc` is always far above 101 on the log mesh.
 - `optimize.f90` `nnull==0`: `check_data` guarantees `nnull>=2`.
-- `linout_r.f90` `zero(20)`: `npr_sr` and `npr_so` are ≤10.
+- `linout.f90` `zero(20)`: `npr_sr` and `npr_so` are ≤10.
 - `vrel.f90` edge reads: the rc window keeps `ii` in the interior.
 - `run_ghosts.f90` `hmev` past `nbas`: `hmev` has size `nbmax` and is
   zeroed. `dsyev` with N=0 is a legal quick return.
 - `qroots.f90` `nroot>=4`: `check_data` guarantees it.
 - `input_toml_m.f90` icmod range: `check_data` rejects values outside 0–4
   for both readers.
-- `linout(_r).f90` `ixc_abinit`: `check_data` rejects `iexc>4`.
+- `linout.f90` `ixc_abinit`: `check_data` rejects `iexc>4`.
 - `sratom`/`relatom` `ierr=100` unchecked: the drivers already stop with
   "ERROR all-electron reference atom not converged" when `it>=100`, and
   every other failure inside `sratom`/`relatom` stops there.
-- `wellstate_r.f90` doesn't check the `ldiracfb` error in its well
-  search: the search retries with a new well radius when `ldiracfb`
-  fails, and the outer convergence test catches a bad `et`. The sibling
-  `wellstate` does stop, but checking could stop runs that now recover,
-  so it is left as is.
-- Leaks in `vrel`, `run_diag_sr_so_r`, `run_config(_r)` and `modcore`:
+- `wellstate.f90` with `irel=2` doesn't check the `ldiracfb` error in
+  its well search: the search retries with a new well radius when
+  `ldiracfb` fails, and the outer convergence test catches a bad `et`.
+  With `irel<2` it does stop on an `lschfb` error, but checking for
+  `irel=2` could stop runs that now recover, so it is left as is.
+- Leaks in `vrel`, `run_diag_sr_so_r`, `run_config` and `modcore`:
   these are local allocatables, which Fortran deallocates automatically on
   return.

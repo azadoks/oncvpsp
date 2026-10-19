@@ -110,9 +110,19 @@ looks like this:
   `lacnf(30,5)` and `facnf(30,5)`. Types that a
   library defines (toml-f's `toml_table`, xmlf90's `xmlf_t`) are used
   where its calls need them.
-- `_r` marks the fully-relativistic version of a routine or a module
-  entry point (`run_vkb_r`, `psmlout_r`). A pair `foo`/`foo_r` is kept
-  alike in everything but the relativistic part.
+- The non-, scalar- and fully-relativistic codes share their routines.
+  A routine whose work depends on the equation takes `irel` (0 non-, 1
+  scalar-, 2 fully-relativistic), tested at run time, rather than a
+  logical or a preprocessor macro. Arrays indexed by l have a last index
+  for kappa of size `nkap` (1, or 2 for `irel=2`): 1 for j=l+1/2, 2 for
+  j=l-1/2. Loops over it run to `mkap`, which is 1 when `nkap=1` or l=0.
+  `boundstate`, `scatstate` and `aeatom` choose the Schroedinger or Dirac
+  solver. `_r` is left only on routines that exist for the
+  fully-relativistic code alone (`sr_so_r`, `run_diag_sr_so_r`,
+  `renorm_r`). See [Merging sr and fr](fr_merge_plan.md).
+- A new routine takes integer and `real(dp)` scalars and explicit-shape
+  arrays, with their sizes as arguments, so that C could call it: no
+  logical, optional, assumed-shape, allocatable or pointer dummies.
 
 **Header.**
 

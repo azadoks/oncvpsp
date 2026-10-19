@@ -1,12 +1,14 @@
 ## Merging the scalar- and fully-relativistic code
 
-The non-relativistic (nr) and scalar-relativistic (sr) programs already
-share one code path: `oncvpsp_nr.F90` includes `oncvpsp.F90`, and `srel`
-selects the Schroedinger equation with or without the scalar-relativistic
-terms. The fully-relativistic (fr) program is a copy: a `foo_r` for most
-routines `foo`, and an `_r` entry point in five modules, about 6000 lines
-in all. This is the plan for merging the two, and the record of how far it
-has got. Tick a box when its commit is in.
+The non-relativistic (nr) and scalar-relativistic (sr) programs shared one
+code path: `oncvpsp_nr.F90` included `oncvpsp.F90`, and `srel` selected the
+Schroedinger equation with or without the scalar-relativistic terms. The
+fully-relativistic (fr) program was a copy: a `foo_r` for most routines
+`foo`, and an `_r` entry point in five modules, about 6000 lines in all.
+This was the plan for merging the two, and is the record of how it went.
+All its steps are done: every executable now runs `oncvpsp_main(irel,
+istage)`, and `_r` is left only on the routines that exist for fr alone
+(`sr_so_r`, `run_diag_sr_so_r`, `renorm_r`).
 
 ### Rules
 
@@ -112,9 +114,9 @@ stay separate and what they share moves to common routines.
 
 ### Phase 6: documentation
 
-- [ ] `coding_standards.md`: replace the `foo`/`foo_r` pairing with
+- [x] `coding_standards.md`: replace the `foo`/`foo_r` pairing with
       `irel`/`nkap` and the interface rules above
-- [ ] `program_overview.md`, `relativistic.md` (its list of fr
+- [x] `program_overview.md`, `relativistic.md` (its list of fr
       routines), `coding_standard_violations.md`, `known_issues.md` (the
       divergences, if kept); `fortran_best_practices.md` cites the `_r`
       files as they were

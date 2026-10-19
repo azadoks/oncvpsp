@@ -21,7 +21,8 @@ None.
   and `exc_off_pbe.f`, and the missing headers of `input_text_m.f90` and
   `input_toml_m.f90`, whose authors would have to add them.
 - The text of messages from 4.0.1, including the `test_data:` prefix in
-  `check_data`, the `_r` routines' non-`_r` prefixes, and the
+  `check_data`, the prefixes of the fully-relativistic messages (the
+  names of the former `_r` routines, or of the sr ones), and the
   list-directed `lmax` and `calling psmlout` prints, which the reference
   outputs contain (see [Error messages](coding_standards.md#error-messages)).
 - `derivs` in `exc_libxc.f90`, an external routine that `functionals.F90`

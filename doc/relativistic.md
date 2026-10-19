@@ -1,29 +1,33 @@
 ﻿## OVERVIEW OF RELATIVISTIC CHANGES
 
-The relativistic code utilizes a new main program, oncvpsp_r, rather than
-complicate oncvpsp with lots of branching.  Many arrays have acquired an
-additional final index, and most loops over angular momenta include inner
-loops over this "ikap=1,2" index referring to the additional quantum number of
-the radial Dirac equations kappa (kap) =l, -(l+1) for j=l -/+ 1/2.
+The relativistic code was originally a new main program, oncvpsp_r, with
+a fully-relativistic copy foo_r of most routines foo.  These have since been
+merged (see [Merging sr and fr](fr_merge_plan.md)): oncvpspr.x runs the same
+subroutine, oncvpsp_main, as oncvpsp.x and oncvpspnr.x, with irel=2.  Many
+arrays have an additional final index, of size nkap=2 when fully
+relativistic and 1 otherwise, and most loops over angular momenta include
+inner loops over this "ikap=1,nkap" index referring to the additional
+quantum number of the radial Dirac equations kappa (kap) =l, -(l+1) for
+j=l -/+ 1/2.
 
 The routines ldiracfb and ldiracfs are introduced for bound and scattering
-solutions of the radial Dirac equations. The following routines are
-straightforward modifications of the old versions, mostly just incorporating
-the ikap loops and Dirac equations for full-potential calculations:
+solutions of the radial Dirac equations; boundstate and scatstate call them
+or the Schroedinger solvers according to irel, and aeatom calls relatom or
+sratom.  The following routines take irel or nkap and incorporate the ikap
+loops and Dirac equations for full-potential calculations:
 
-* fphsft_r
-* gnu_script_r (plot lines are labeled S+, P+, P-, ... indicting j=l +/- 1/2)
-* linout_r
-* oncvpsp_r
-* psatom_r
-* renorm_r
-* run_config_r
-* run_diag_r
-* run_phsft_r
-* run_plot_r (the Ion potential plots are scalar averages)
-* run_vkb_r
-* upfout_r
-* wellstate_r
+* fphsft
+* gnu_script (plot lines are labeled S+, P+, P-, ... indicting j=l +/- 1/2)
+* linout
+* oncvpsp_main
+* psatom
+* run_config_ae, run_config_ps
+* run_diag
+* run_phsft
+* run_plot (the Ion potential plots are scalar averages)
+* run_vkb
+* upfout
+* wellstate
 
 The following routines are introduced to serve new functions:
 
@@ -56,8 +60,9 @@ in 4 projectors each for sr and so, with large subtractions forced upon
 the electronic structure code.  The routine sr-so_r re-diagonalizes each
 of these operators, creating different sr and so projectors.  Some of
 the coefficients of these orthonormal projectors are very small and can
-be neglected.  The threshold eprmin in oncvpsp_r is presently set to
-2E-5 Ha, but can be easily changed if desired.  Another advantage of the
+be neglected.  The threshold eps_srso in oncvpsp_main is presently set
+to 1E-3 of the largest coefficient for each l, but can be easily changed
+if desired.  Another advantage of the
 decomposition is that the strength of the so term can be artificially
 scaled.  While no additional input variable is provided for this, to
 maintain compatibility  with the scalar-relativistic data structure, the

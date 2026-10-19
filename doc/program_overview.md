@@ -3,7 +3,10 @@
 References to "the paper" are to oncvpsp6.pdf, which is reproduced in this
 directory (now published as Phys. Rev. B 88, 085117 (2013)).
 
-The main program is oncvpsp.f90, and has the following major sections:
+The calculation is the subroutine oncvpsp_main (oncvpsp_main.F90).  Each
+executable (oncvpsp.x, oncvpspnr.x, oncvpspr.x and their _ae.x and _ps.x
+stages) is a short program calling it with the relativistic treatment,
+irel, and the stage.  It has the following major sections:
 
 1) Data readin: Oncvpsp reads an input file, say *32_Ge.dat*, from its standard
    input.  While this file may contain comment lines with the initial character
@@ -17,7 +20,8 @@ The main program is oncvpsp.f90, and has the following major sections:
    Everything must be thought about and specified (but there is not that much
    input data).
 
-2) The routine sratom will then run to perform a self-consistent scalar-
+2) The routine sratom (relatom for the fully-relativistic code, both
+   called through aeatom) will then run to perform a self-consistent scalar-
    relativistic calculation for the reference configuration of the atom,
    as described in the input.  I strongly believe that neutral ground-state
    reference configurations provide the best pseudopotentials for solids,
@@ -165,8 +169,8 @@ The main program is oncvpsp.f90, and has the following major sections:
     agreement with ABINIT results.
 
 
-The auxiliary main program *oncvpsp_nr.f90* is identical to oncvpsp except it
-sets a switch to do non-relativistic all-electron calculations.  The only
+The auxiliary program *oncvpspnr.x* runs oncvpsp_main with irel=0, which
+does non-relativistic all-electron calculations.  The only
 reason for including this feature is to support the discussion following
 Eq.(24) of the paper. The script *tests/run_nr.sh* calls it.
 
