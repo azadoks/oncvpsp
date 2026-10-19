@@ -1,13 +1,13 @@
-! Unit tests of the rxpsh check in run_phsft and run_phsft_r, called
-! directly as from the library: a radius inside the core radii must give a
-! warning for each l, and one at or beyond them none. The programs never get
-! the warning, because check_data keeps rxpsh beyond every rc. The atom is
-! hydrogen-like (zz=1) with no projectors. Stops with a non-zero code at the
-! first failure.
+! Unit tests of the rxpsh check in run_phsft, non- and fully-relativistic,
+! called directly as from the library: a radius inside the core radii must
+! give a warning for each l, and one at or beyond them none. The programs
+! never get the warning, because check_data keeps rxpsh beyond every rc. The
+! atom is hydrogen-like (zz=1) with no projectors. Stops with a non-zero code
+! at the first failure.
  program test_run_phsft
  use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
  implicit none
- external :: run_phsft, run_phsft_r
+ external :: run_phsft
 
 !Local variables
  integer, parameter :: mmax = 950, mxprj = 5, lmax = 0, lloc = 0
@@ -48,7 +48,7 @@
    write(stderr, '(i0,a)') nfail, ' check(s) failed'
    error stop 1
  end if
- write(stderr, '(a)') 'run_phsft, run_phsft_r: all checks passed'
+ write(stderr, '(a)') 'run_phsft: all checks passed'
 
  contains
 
@@ -56,7 +56,8 @@
 
 !runs name with rxpsh, its output going to a file, and counts its warnings
 
-!name  routine to run, run_phsft or run_phsft_r
+!name  run_phsft for the non-relativistic case, run_phsft_r for the
+!      fully-relativistic one, whose messages it names
 !rxpsh  radius for the log-derivative analysis (bohr)
 !nexpected  number of warnings it should give
 
@@ -72,10 +73,10 @@
  open(unit=6, file=name//'.out', status='replace', action='write')
  if(name == 'run_phsft') then
    call run_phsft(lmax, lloc, nproj, epa, epsh1, epsh2, depsh, rxpsh, &
-&                 vkb, evkb, rr, vfull, vp, zz, mmax, mxprj, irc, .false.)
+&                 vkb, evkb, rr, vfull, vp, zz, mmax, mxprj, irc, 0, 1)
  else
-   call run_phsft_r(lmax, lloc, nproj, epa_r, epsh1, epsh2, depsh, rxpsh, &
-&                   vkb_r, evkb_r, rr, vfull, vp_r, zz, mmax, mxprj, irc)
+   call run_phsft(lmax, lloc, nproj, epa_r, epsh1, epsh2, depsh, rxpsh, &
+&                 vkb_r, evkb_r, rr, vfull, vp_r, zz, mmax, mxprj, irc, 2, 2)
  end if
  close(6)
 

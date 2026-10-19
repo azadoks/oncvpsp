@@ -14,7 +14,7 @@ set_target_properties(test_input_text PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMA
 add_test(NAME unit_input_text COMMAND test_input_text)
 set_tests_properties(unit_input_text PROPERTIES LABELS unit)
 
-# Unit tests of the rxpsh warning in run_phsft and run_phsft_r, called directly
+# Unit tests of the rxpsh warning in run_phsft (nr and fr), called directly
 add_executable(test_run_phsft unit/test_run_phsft.f90)
 target_link_libraries(test_run_phsft PRIVATE oncvpsp::oncvpsp oncvpsp::compile_options)
 set_target_properties(test_run_phsft PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")

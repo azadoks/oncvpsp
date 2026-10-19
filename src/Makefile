@@ -25,10 +25,10 @@ OBJS_ALL =	aeatom.o boundstate.o build_info_m.o check_data.o const_basis.o const
 		vploc.o wf_rc_der.o modcore2.o gg1cc.o gp1cc.o gpp1cc.o \
 		der2exc.o modcore3.o modcore_budget.o sbf_basis_con.o run_ghosts.o \
 		lschpsbar.o vrel.o ae_file_m.o config_ae_m.o sratom.o input_echo_m.o \
-		relatom.o
+		relatom.o fphsft.o run_phsft.o scatstate.o
 
-OBJS_NRSR =	fphsft.o fpovlp.o gnu_script.o linout.o psatom.o \
-		run_config.o run_diag.o run_phsft.o run_plot.o \
+OBJS_NRSR =	fpovlp.o gnu_script.o linout.o psatom.o \
+		run_config.o run_diag.o run_plot.o \
 		run_vkb.o upfout.o wellstate.o
 
 OBJS_SR =	psmlout_m.o oncvpsp.o
@@ -43,9 +43,9 @@ OBJS_NR_AE =	psmlout_m.o oncvpspnr_ae.o
 
 OBJS_NR_PS =	psmlout_m.o oncvpspnr_ps.o
 
-OBJS_RLIB =	fphsft_r.o fpovlp.o gnu_script_r.o linout_r.o \
+OBJS_RLIB =	fpovlp.o gnu_script_r.o linout_r.o \
 		psatom_r.o renorm_r.o run_config_r.o run_diag_r.o \
-		run_diag_sr_so_r.o run_phsft_r.o run_plot_r.o run_vkb_r.o \
+		run_diag_sr_so_r.o run_plot_r.o run_vkb_r.o \
 		sr_so_r.o upfout_r.o wellstate_r.o
 
 OBJS_R =	psmlout_m.o oncvpsp_r.o $(OBJS_RLIB)

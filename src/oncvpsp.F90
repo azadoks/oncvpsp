@@ -810,7 +810,7 @@
 
 
  call run_phsft(lmax,lloc,nproj,epa,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
-&               rr,vfull,vp,zz,mmax,mxprj,irc,srel)
+&               rr,vfull,vp,zz,mmax,mxprj,irc,irel,nkap)
 
  call gnu_script(epa,evkb,lmax,lloc,mxprj,nproj)
 

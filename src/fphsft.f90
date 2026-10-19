@@ -16,14 +16,16 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine fphsft(ll,epsh2,depsh,pshf,rr,vv,zz,mmax,mch,npsh,srel)
+ subroutine fphsft(ll,kap,epsh2,depsh,pshf,rr,vv,zz,mmax,mch,npsh,irel)
 
 ! computes full potential scattering log derivatives
 ! returns atan(rr(mch) * du/dr / u) which is sort-of like a phase shift
 ! and easier to compare in plots than the log derivatives themselves
-! Pauli-type scalar-relativistic calculation
+! Pauli-type scalar-relativistic or non-relativistic calculation, or the
+! Dirac equation with the log derivatives of the large component only
 
 !ll  angular momentum
+!kap  =l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
 !epsh2  upper limit of energy scan
 !depsh  increment of scan
 !pshf  log derivatives "angles", as above
@@ -33,16 +35,15 @@
 !mmax  dimension of rr, etc.
 !mch  index of radius for log der test
 !npsh  number of energy points in scan
-!srel  .true. for scalar-relativistic, .false. for non-relativistic
+!irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 
  use constants_m, only: dp, pi
  implicit none
 
 !Input variables
- integer, intent(in) :: ll,mmax,npsh,mch
+ integer, intent(in) :: ll,kap,mmax,npsh,mch,irel
  real(dp), intent(in) :: rr(mmax),vv(mmax)
  real(dp), intent(in) :: depsh,epsh2,zz
- logical, intent(in) :: srel
 
 !Output variables
  real(dp), intent(out) :: pshf(npsh)
@@ -52,11 +53,9 @@
  real(dp) :: al,epsh,phi,phip,pshoff
  integer :: ii,ierr,nn
 
- real(dp), allocatable :: uu(:),up(:)
+ real(dp), allocatable :: uu(:,:),up(:,:)
 
-
-
- allocate(uu(mmax),up(mmax))
+ allocate(uu(mmax,2),up(mmax,2))
 
  al = 0.01d0 * log(rr(101) / rr(1))
 
@@ -65,10 +64,10 @@
  do ii = 1,npsh
    epsh = epsh2-(ii-1)*depsh
 
-   call lschfs(nn,ll,ierr,epsh,rr,vv,uu,up,zz,mmax,mch,srel)
+   call scatstate(irel,nn,ll,kap,ierr,epsh,rr,zz,vv,uu,up,mmax,mch)
 
-   phi = uu(mch)/rr(mch)
-   phip = (up(mch)-al*uu(mch))/(al*rr(mch)**2)
+   phi = uu(mch,1)/rr(mch)
+   phip = (up(mch,1)-al*uu(mch,1))/(al*rr(mch)**2)
    pshf(ii) = atan2(rr(mch)*phip,phi) + pshoff
    if(ii>1) then
      if(pshf(ii)<pshf(ii-1)) then

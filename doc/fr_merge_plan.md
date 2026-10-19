@@ -55,7 +55,7 @@ The fr path had 3 reference tests to the sr path's 28.
 - [x] Bound state (`boundstate`): one routine calling `lschfb` or
       `ldiracfb`, on `uu(mmax,2)`, `up(mmax,2)` (callers that need the
       large component normalized still call `renorm_r`)
-- [ ] Scattering state: the same for `lschfs` and `ldiracfs`
+- [x] Scattering state (`scatstate`): the same for `lschfs` and `ldiracfs`
 - [x] All-electron atom (`aeatom`): the same for `sratom` and `relatom`
 
 ### Phase 3: merging the pairs
@@ -64,11 +64,11 @@ The fr path had 3 reference tests to the sr path's 28.
 - [x] `read_input_toml` / `read_input_toml_r`
 - [x] `run_config_ae` / `run_config_ae_r`, and their warnings
 - [x] `write_ae_file`, `read_ae_file` / their `_r`
-- [ ] `fphsft` / `fphsft_r`
+- [x] `fphsft` / `fphsft_r`
 - [ ] `wellstate` / `wellstate_r`
 - [ ] `run_config_ps` / `run_config_ps_r`
 - [ ] `psatom` / `psatom_r`
-- [ ] `run_phsft` / `run_phsft_r`
+- [x] `run_phsft` / `run_phsft_r`
 - [ ] `run_diag` / `run_diag_r`
 - [ ] `run_plot` / `run_plot_r`
 - [ ] `run_vkb` / `run_vkb_r`
@@ -98,8 +98,10 @@ separate; what they share moves to common routines.
 
 - [ ] `coding_standards.md`: replace the `foo`/`foo_r` pairing with
       `irel`/`nkap` and the interface rules above
-- [ ] `program_overview.md`, `coding_standard_violations.md`,
-      `known_issues.md` (the divergences, if kept)
+- [ ] `program_overview.md`, `relativistic.md` (its list of fr
+      routines), `coding_standard_violations.md`, `known_issues.md` (the
+      divergences, if kept); `fortran_best_practices.md` cites the `_r`
+      files as they were
 
 ### Divergences
 
