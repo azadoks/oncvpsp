@@ -48,15 +48,15 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
- integer :: icmod,nv,nc,iexc,irps,mmax
- integer :: la(30)
- real(dp) :: rhoae(mmax,nv),rhops(mmax,nv),rhotae(mmax)
- real(dp) :: rhotps(mmax),rhoc(mmax),rr(mmax)
- real(dp) :: zion,fcfact,rcfact
+ integer, intent(in) :: icmod,nv,nc,iexc,irps,mmax
+ integer, intent(in) :: la(30)
+ real(dp), intent(in) :: rhoae(mmax,nv),rhops(mmax,nv),rhotae(mmax)
+ real(dp), intent(in) :: rhotps(mmax),rhoc(mmax),rr(mmax)
+ real(dp), intent(in) :: zion,fcfact,rcfact
  logical :: srel
 
 !Output variables
- real(dp) :: rhomod(mmax,5)
+ real(dp), intent(out) :: rhomod(mmax,5)
 
 !convergence criterion
  real(dp), parameter :: eps=1.0d-7
@@ -90,7 +90,14 @@
  if(ircc .eq. 0) then
    write(6,'(/a)') 'rhomod: ERROR ircc (core-valence charge crossover) &
 &        not found'
-   stop
+   error stop 1
+ end if
+
+! the 7-point derivative stencils below reach down to ircc-22
+ if(ircc<23) then
+   write(6,'(/2a,i0)') 'modcore: ERROR core-valence crossover too close', &
+&        ' to the origin, ircc=',ircc
+   error stop 1
  end if
 
 !set limit for d2Exc calculation to radius beyond which rhomod=rhoc
@@ -201,7 +208,7 @@
 &      'modcore:ERROR stop - singular polym matrix',kk
      if(kk<0) write(6,'(a,i4)') &
 &      'modcore:ERROR stop - dgesv input error',kk
-     stop
+     error stop 1
    end if
 
 ! find maximum derivative

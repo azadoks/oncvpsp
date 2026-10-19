@@ -88,6 +88,7 @@
  real(dp) :: fcfact,rcfact,dvloc0
  real(dp) :: fcfact_min,fcfact_max,fcfact_step
  real(dp) :: rcfact_min,rcfact_max,rcfact_step
+ real(dp) :: fcgrid(3),rcgrid(3)
  real(dp) :: rr1,rcion,rciont,rcmax,rct,rlmax,rpkt
  real(dp) :: amesh_in,rr1_in,rmax_in,rmax,log_mesh(3)
  real(dp) :: sf,zz,zion,zval,etot
@@ -136,7 +137,11 @@
 
  write(6,'(a/a//)') &
 &      'ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
+#if (defined RELATIVISTIC) && (RELATIVISTIC == 0)
+&      'non-relativistic version 4.0.1 03/01/2019'
+#else
 &      'scalar-relativistic version 4.0.1 03/01/2019'
+#endif
 
  write(6,'(a/a/a//)') &
 &      'While it is not required under the terms of the GNU GPL, it is',&
@@ -173,9 +178,9 @@
           stop 0
        case('-v', '--version')
 #if defined(ONCVPSP_NONREL)
-          write (stdout, '(a)') 'ONCVPSP (non-realtivistic) version 4.0.1'
+          write (stdout, '(a)') 'ONCVPSP (non-relativistic) version 4.0.1'
 #else
-          write (stdout, '(a)') 'ONCVPSP (scalar-realtivistic) version 4.0.1'
+          write (stdout, '(a)') 'ONCVPSP (scalar-relativistic) version 4.0.1'
 #endif
           call write_build_info(stdout,ONCVPSP_EXE,ONCVPSP_TREATMENT)
           stop 0
@@ -234,9 +239,10 @@
                             amesh_in, rr1_in, rmax_in)
     case(INPUT_TEXT)
        open(newunit=unit, file=input_filename, status='old', action='read', iostat=ios)
-       if(ios /= 0) then
-          write(stderr, '(a)') 'Error: cannot open input file '//trim(input_filename)
-          stop 1
+       if (ios /= 0) then
+          write(6, '(/2a)') 'oncvpsp: ERROR cannot open input file, file=', &
+             trim(input_filename)
+          error stop 1
        end if
        call read_input_text(unit, inline, &
                             atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
@@ -253,9 +259,10 @@
 #if (defined WITH_TOML)
     case(INPUT_TOML)
        open(newunit=unit, file=input_filename, status='old', action='read', iostat=ios)
-       if(ios /= 0) then
-          write(stderr, '(a)') 'Error: cannot open input file '//trim(input_filename)
-          stop 1
+       if (ios /= 0) then
+          write(6, '(/2a)') 'oncvpsp: ERROR cannot open input file, file=', &
+             trim(input_filename)
+          error stop 1
        end if
        call read_input_toml(unit, &
                             atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
@@ -274,11 +281,6 @@
         write (stderr, '(a,i2)') 'Error: Unknown input mode =', input_mode
         stop 1
  end select
-
- if(ios /= 0) then
-    write(6,'(a)') 'oncvpsp: ERROR reading input file'
-    stop
- end if
 
  nvcnf(1)=nv
  do ii=1,nc+nv
@@ -299,7 +301,11 @@
    fcfact=0.0d0
  end if
 
- call check_data(atsym,zz,fcfact,rcfact,epsh1,epsh2,depsh,rlmax,drl,fa,facnf, &
+!icmod=4 coarse-search grids: min, max, step
+ fcgrid=[fcfact_min,fcfact_max,fcfact_step]
+ rcgrid=[rcfact_min,rcfact_max,rcfact_step]
+
+ call check_data(atsym,zz,fcfact,rcfact,fcgrid,rcgrid,epsh1,epsh2,depsh,rlmax,drl,fa,facnf, &
 &                rc,ep,qcut,debl,nc,nv,iexc,lmax,lloc,lpopt,icmod, &
 &                ncnf,na,la,nvcnf,nacnf,lacnf,ncon,nbas,nproj,psfile, &
 &                amesh_in,rr1_in,rmax_in)
@@ -440,13 +446,7 @@
    write(6,'(2i5,f10.5)') l1-1,nproj(l1),debl(l1)
  end do
 
- write(6,'(a/a/a)') '#','# MODEL CORE CHARGE', &
-&      '# icmod, fcfact, rcfact'
- if(icmod==6) then
-   write(6,'(i5,f10.5,es12.4)') icmod,fcfact,rcfact
- else
-   write(6,'(i5,2f10.5)') icmod,fcfact,rcfact
- end if
+ call write_icmod(icmod,fcfact,rcfact,fcgrid,rcgrid)
 
  write(6,'(a/a/a)') '#','# LOG DERIVATIVE ANALYSIS', &
 &      '# epsh1, epsh2, depsh'
@@ -475,7 +475,7 @@
  write(6,'(a,i6)') '  iterations',it
  if(it .ge. 100) then
   write(6,'(a)') 'oncvpsp: ERROR all-electron reference atom not converged'
-  stop
+  error stop 1
  end if
  write(6,'(a,1p,d18.8)') '  all-electron total energy (Ha)',etot
 
@@ -549,7 +549,7 @@
          if(ierr /= 0) then
            write(6,'(/a,3i4)') 'oncvpsp-387: lschfb convergence ERROR n,l,iter=', &
 &           na(kk),la(kk),it
-           stop
+           error stop 1
          end if
          epa(iprj,l1)=ea(kk)
          if(fa(kk)>0.0d0) wcurve(iprj,l1)=fa(kk)
@@ -573,7 +573,7 @@
 &              ' for l=',ll, &
 &              ' ERROR not allowed with 2 or more scattering states', &
 &              'program will stop'
-         stop
+         error stop 1
        end if
        if(iprj>1) then
          epa(iprj,l1)=epa(iprj-1,l1)+debl(l1)
@@ -646,7 +646,7 @@
    if(ierr /= 0) then
      write(6,'(/a,3i4)') 'oncvpsp-461: lschfb convergence ERROR n,l,iter=', &
 &     na(nc+kk),la(nc+kk),it
-     stop
+     error stop 1
    end if
 
    rhoae(:,kk)=(uu(:)/rr(:))**2
@@ -663,7 +663,7 @@
    if(ierr/=0) then
      write(6,'(a,3i4)') 'oncvpsp: lschvkbb ERROR',ll+nodes(l1)+1,ll,ierr
      flush(6)
-     stop
+     error stop 1
    end if
 
 ! save valence pseudo wave functions for upfout
@@ -703,7 +703,7 @@
 
  else if(icmod>=3) then
    call modcore3(icmod,rhops,rho,rhoc,rhoae,rhotae,rhomod, &
-&               fcfact,rcfact,irps,mmax,rr,nc,nv,la,zion,iexc)
+&               fcfact,rcfact,fcgrid,rcgrid,irps,mmax,rr,nc,nv,la,zion,iexc)
 
  end if
 
@@ -804,7 +804,7 @@
   call linout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
 &             rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym, &
 &             na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&             fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
+&             fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact,fcgrid,rcgrid, &
 &             epsh1,epsh2,depsh,rlmax,psfile,log_mesh)
  end if
 
@@ -812,7 +812,7 @@
   call upfout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
 &             zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
 &             na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&             fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
+&             fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact,fcgrid,rcgrid, &
 &             epsh1,epsh2,depsh,rlmax,psfile,uupsa,ea,log_mesh)
  end if
 

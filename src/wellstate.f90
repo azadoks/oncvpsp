@@ -39,14 +39,17 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
- real(dp) :: rr(mmax),vfull(mmax)
- real(dp) :: ep,zz
- integer :: nnin,ll,irc,mmax !(nnin is actually in/out)
- logical :: srel
+ real(dp), intent(in) :: rr(mmax),vfull(mmax)
+ real(dp), intent(in) :: zz
+ integer, intent(in) :: nnin,ll,irc,mmax
+ logical, intent(in) :: srel
+
+!Input/output variables
+ real(dp), intent(inout) :: ep
+ integer, intent(inout) :: mch
 
 !Output variables
- real(dp) :: uu(mmax),up(mmax)
- integer :: mch
+ real(dp), intent(out) :: uu(mmax),up(mmax)
  
 !Local variables
  real(dp), allocatable :: vwell(:)
@@ -68,6 +71,7 @@
 !if bound state is found, check its localization
  if(ierr==0) then
    umax=0.0d0
+   iumax=1
    do ii=mmax,1,-1
      if(dabs(uu(ii))>=umax) then
        umax=dabs(uu(ii))
@@ -146,7 +150,7 @@
      if(ierr<0) then
       write(6,'(a,i3,a,i3)') &
 &           'wellstate: ERROR lschfb convergence error, n=',nn,' l=',ll
-      stop
+      error stop 1
      end if
 
      if(abs(et-ep)<eps) then
@@ -196,7 +200,7 @@
    write(6,'(a,a,i3,a,i3,a,f8.4)') &
 &   'ERROR wellstate: well potential iteration failed', &
 &   ' to converge, n=',nn,' l=',ll,' ep=',ep
-  stop
+  error stop 1
  end if
 
  if(cwell>0.0d0) then

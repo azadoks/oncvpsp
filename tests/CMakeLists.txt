@@ -40,6 +40,9 @@ set(oncvpspsr_tests
     "19_K_st" "20_Ca" "22_Ti" "29_Cu" "32_Ge"
     "34_Se" "38_Sr_lxc" "40_Zr" "56_Ba" "57_La"
     "60_Nd_GHOST" "73_Ta" "79_Au_lxc" "83_Bi"
+    "08_O_wigner"   # iexc=1 (excwig)
+    "14_Si_lder"    # rxpsh set, s projector below epsh1 (run_phsft, vkbphsft)
+    "40_Zr_grid"    # icmod=4 with an explicit search grid (modcore3)
 )
 foreach (test_name IN LISTS oncvpspsr_tests)
     oncvpsp_test(${test_name} sr ref_test.sh
@@ -52,6 +55,13 @@ foreach (test_name IN LISTS oncvpspr_tests)
     oncvpsp_test(${test_name} r ref_test.sh
         $<TARGET_FILE:oncvpspr> "${data}/${test_name}.dat" "${CMAKE_CURRENT_SOURCE_DIR}/refs/${test_name}_r.out"
         "${CMAKE_CURRENT_BINARY_DIR}/${test_name}_r")
+endforeach ()
+
+set(oncvpspnr_tests "08_O" "14_Si")
+foreach (test_name IN LISTS oncvpspnr_tests)
+    oncvpsp_test(${test_name}_nr nr ref_test.sh
+        $<TARGET_FILE:oncvpspnr> "${data}/${test_name}.dat" "${CMAKE_CURRENT_SOURCE_DIR}/refs/${test_name}_nr.out"
+        "${CMAKE_CURRENT_BINARY_DIR}/${test_name}_nr")
 endforeach ()
 
 # All-electron / pseudopotential split: oncvpsp_ae.x writes the all-electron atom to a file and
@@ -141,3 +151,23 @@ foreach (pipe_test IN ITEMS "sr:14_Si" "r:52_Te" "nr:08_O")
         $<TARGET_FILE:oncvpsp${rel}> "${data}/${test_name}.dat" "${CMAKE_CURRENT_BINARY_DIR}/pipe_${rel}_${test_name}")
 endforeach ()
 oncvpsp_test(pipe_truncated pipe pipe_truncated_test.sh $<TARGET_FILE:oncvpspsr> "${data}/14_Si.dat")
+
+# Input errors: exit status 1 and the documented message (see scripts/error_test.sh)
+foreach (rel IN ITEMS "sr" "nr" "r")
+    if (rel STREQUAL "r")
+        set(program_name "oncvpsp_r")
+    else ()
+        set(program_name "oncvpsp")
+    endif ()
+    oncvpsp_test(error_${rel}_missing_input errors error_test.sh
+        $<TARGET_FILE:oncvpsp${rel}> "${program_name}: ERROR cannot open input file"
+        "${CMAKE_CURRENT_BINARY_DIR}/error_${rel}_missing_input")
+endforeach ()
+oncvpsp_test(error_rxpsh_beyond_mesh errors error_test.sh
+    $<TARGET_FILE:oncvpspsr> "run_phsft: ERROR rxpsh beyond radial mesh"
+    "${CMAKE_CURRENT_BINARY_DIR}/error_rxpsh_beyond_mesh"
+    "${data}/14_Si.dat" "s/^   -2.0  2.0  0.02$/   -2.0  2.0  0.02  100.0/")
+oncvpsp_test(error_icmod4_bad_grid errors error_test.sh
+    $<TARGET_FILE:oncvpspsr> "check_data: ERROR icmod=4 needs 0<fcfact_min<=fcfact_max and fcfact_step>0"
+    "${CMAKE_CURRENT_BINARY_DIR}/error_icmod4_bad_grid"
+    "${data}/40_Zr.dat" "s/^    4   0\\.0$/    4   0.0   0.0   2.0   5.0   0.0   1.1   1.6   0.05/")

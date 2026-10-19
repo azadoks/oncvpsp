@@ -43,15 +43,19 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
- integer :: lmax,lloc,lpopt,lwork,mmax,mxprj
- integer :: irc(6),nproj(6)
- real(dp) :: rr(mmax),pswf(mmax,mxprj,4,2),vfull(mmax),vp(mmax,5,2)
-real(dp) :: vr(mmax,mxprj,6,2)
- real(dp) :: dvloc0
+ integer, intent(in) :: lmax,lloc,lpopt,mmax,mxprj
+ integer :: lwork
+ integer, intent(in) :: irc(6),nproj(6)
+ real(dp), intent(in) :: rr(mmax),pswf(mmax,mxprj,4,2),vfull(mmax)
+real(dp), intent(in) :: vr(mmax,mxprj,6,2)
+ real(dp), intent(in) :: dvloc0
 
 !Input/Output variables
- real(dp) :: vkb(mmax,mxprj,4,2),evkb(mxprj,4,2)
- integer :: nlim
+ real(dp), intent(inout) :: vp(mmax,5,2)
+ real(dp), intent(inout) :: vkb(mmax,mxprj,4,2),evkb(mxprj,4,2)
+
+!Output variables
+ integer, intent(out) :: nlim
 
 !Local variables
  integer :: ii,ipk,jj,kk,ikap,ll,l1,info,np,kap,mkap
@@ -73,13 +77,10 @@ real(dp) :: vr(mmax,mxprj,6,2)
 ! use "scalar-relativistic" weighted average if real ll/=0 is specified
 ! reset semi-local potential to this average (ie., there is no SO for this l)
 
- l1=0
  if(lloc==4) then
    call vploc(rr,vfull,vp(1,1,1),dvloc0,irc(5),mmax,lpopt)
    vloc(:)=vp(:,5,1)
    vp(:,5,2)=vp(:,5,1)
- else if (l1==1) then
-   vloc(:)=vp(:,1,1)
  else
    l1=lloc+1
    vloc(:)=(dble(l1)*vp(:,l1,1) + dble(l1-1)*vp(:,l1,2))/dble(2*l1-1)
@@ -174,7 +175,7 @@ real(dp) :: vr(mmax,mxprj,6,2)
      call dsyev( 'V', 'U', np, bb, mxprj, bbev, work, lwork, info )
      if(info .ne. 0) then
       write(6,'(a,i4)') 'run_vkb: B matrix eigenvalue ERROR, info=',info
-      stop
+      error stop 1
      end if
 
 ! take linear combinations to form diagonal projectors
@@ -228,7 +229,7 @@ real(dp) :: vr(mmax,mxprj,6,2)
     call dsyev( 'V', 'U', np, sovl, mxprj, sovlev, work, lwork, info )
     if(info .ne. 0) then
      write(6,'(a,i4)') 'run_vkb: sovl matrix eigenvalue ERROR, info=',info
-     stop
+     error stop 1
     end if
 
 !   write(6,'(/1p,2e12.4)') (sovlev(ii),ii=1,2)
@@ -269,7 +270,7 @@ real(dp) :: vr(mmax,mxprj,6,2)
      call dsyev( 'V', 'U', np , bbist, mxprj, bbistev, work, lwork, info )
      if(info .ne. 0) then
       write(6,'(a,i4)') 'run_vkb: B^(-1)* matrix eigenvalue ERROR, info=',info
-      stop
+      error stop 1
      end if
 
 
@@ -324,6 +325,7 @@ real(dp) :: vr(mmax,mxprj,6,2)
 
      do jj=1,np
        apk=0.0d0
+       ipk=1
        do ii=1,mmax
          if(abs(vkb(ii,jj,l1,ikap))>apk) then
            apk=abs(vkb(ii,jj,l1,ikap))

@@ -49,11 +49,11 @@
 !Input variables
  
  type(config_ae_t), intent(in) :: cae
- integer :: jj,mmax,mxprj,iexc,nc,lloc
- integer :: nproj(5)
- real(dp) :: etot,epstot,rcmax
- real(dp) :: rhov(mmax),rr(mmax)
- real(dp) :: vpuns(mmax,5),vkb(mmax,mxprj,4),evkb(mxprj,4),rhomod(mmax,5)
+ integer, intent(in) :: jj,mmax,mxprj,iexc,nc,lloc
+ integer, intent(in) :: nproj(5)
+ real(dp), intent(in) :: etot,epstot,rcmax
+ real(dp), intent(in) :: rhov(mmax),rr(mmax)
+ real(dp), intent(in) :: vpuns(mmax,5),vkb(mmax,mxprj,4),evkb(mxprj,4),rhomod(mmax,5)
 
 !Output variables  only printing
  

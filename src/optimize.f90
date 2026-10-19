@@ -48,17 +48,18 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
- integer :: nnull,nbas,nqout
- real(dp) :: pswf0_sb(nbas),pswfnull_sb(nbas,nnull)
- real(dp) :: pswf0_or(nbas),pswfnull_or(nbas,nnull)
- real(dp) :: eresid0(nqout),eresiddot(nnull,nqout),eresidmat(nnull,nnull,nqout)
+ integer, intent(in) :: nnull,nbas,nqout
+ real(dp), intent(in) :: pswf0_sb(nbas),pswfnull_sb(nbas,nnull)
+ real(dp), intent(in) :: pswf0_or(nbas),pswfnull_or(nbas,nnull)
+ real(dp), intent(in) :: eresid0(nqout),eresiddot(nnull,nqout),eresidmat(nnull,nnull,nqout)
  real(dp) :: orbasis_it(nbas,nbas)
- real(dp) :: qout(nqout),eresq(nqout)
- real(dp) :: uunorm,ps0norm
+ real(dp), intent(in) :: qout(nqout)
+ real(dp), intent(out) :: eresq(nqout)
+ real(dp), intent(in) :: uunorm,ps0norm
 
 !Output variables
- real(dp) :: eresidmin,ekin_anal
- real(dp) :: pswfopt_sb(nbas),pswfopt_or(nbas)
+ real(dp), intent(out) :: eresidmin,ekin_anal
+ real(dp), intent(out) :: pswfopt_sb(nbas),pswfopt_or(nbas)
  real(dp) :: eres(nqout)
 
 !Local variables
@@ -87,7 +88,7 @@
  call dsyev( 'V', 'U', nnull, wmat, nnull, wev, work, 5*nnull, info )
  if(info .ne. 0) then
   write(6,'(a,i4)') 'optimize: residual-energy eigenvalue ERROR, info=',info
-  stop
+  error stop 1
  end if
 
 !convert <ps0| E_resid |psnull> vector from the null-space representation
@@ -149,7 +150,7 @@
  rtsgn=-sign(1.0d0, eresiddot_ev(1))
  if(ps0norm>uunorm) then
    write(6,'(/a)') 'optimize: ERROR ps0norm > uunorm, code will stop'
-   stop
+   error stop 1
  end if
  yy=sqrt((uunorm-ps0norm))
 
@@ -183,7 +184,7 @@
 
  if(converged .eqv. .false.) then
   write(6,'(/a)') 'optimize: ERROR interval-halving search not converged'
-  stop
+  error stop 1
  end if
 
  emin=eresid0(1)

@@ -35,13 +35,15 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
- real(dp) :: rr(mmax),vv(mmax)
- integer :: nn,ll,mmax
+ real(dp), intent(in) :: rr(mmax),vv(mmax)
+ integer, intent(in) :: nn,ll,mmax
+
+!Input/output variables
+ real(dp), intent(inout) :: ee
 
 !Output variables
- real(dp) :: uu(mmax),up(mmax)
- real(dp) :: ee
- integer :: ierr,mch
+ real(dp), intent(out) :: uu(mmax),up(mmax)
+ integer, intent(out) :: ierr,mch
 
 !Local Variables
 
@@ -100,7 +102,7 @@
    end do
    if(mch==0) then
     write(6,'(/a)') 'lschpb: ERROR no classical turning point'
-    stop
+    error stop 1
    end if
   
 ! start wavefunction with series

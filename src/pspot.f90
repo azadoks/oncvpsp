@@ -46,14 +46,17 @@
 !ekin_num  total radial kinetic energy
 
 !Input variables
- integer :: ipr,ll,irc,mmax,nbas
- real(dp) :: rr(mmax),qroot(nbas),uu(mmax),pswfopt_sb(nbas),vae(mmax)
- real(dp) :: al,eig
+ integer, intent(in) :: ipr,ll,irc,mmax,nbas
+ real(dp), intent(in) :: rr(mmax),qroot(nbas),uu(mmax),pswfopt_sb(nbas),vae(mmax)
+ real(dp), intent(in) :: al,eig
+
+!Input/output variables
+ real(dp), intent(inout) :: vkb(mmax)
 
 !Output variables
- real(dp) :: psopt(mmax)
- real(dp) :: vpsp(mmax),vkb(mmax)
- real(dp) :: ekin_num
+ real(dp), intent(out) :: psopt(mmax)
+ real(dp), intent(out) :: vpsp(mmax)
+ real(dp), intent(out) :: ekin_num
 
 !Local variables
  real(dp), allocatable :: work(:,:)
@@ -128,7 +131,7 @@
     write(6,'(a)') ' ERROR pspot:  first pseudo wave function has node, &
 &         program will stop'
     write(6,'(a)') ' ERROR pspot: try changing psp parameters for this l'
-    stop
+    error stop 1
    end if
    vpsp(ii)=-work(ii,4)/work(ii,1) + eig
    vkb(ii)=-work(ii,4) + eig*work(ii,1)

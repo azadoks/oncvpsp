@@ -24,7 +24,6 @@ set(src_oncvpsp
     lschpb.f90
     lschps.f90
     lschpsbar.f90
-    lschpse.f90
     lschvkbb.f90
     lschvkbbe.f90
     lschvkbs.f90
@@ -40,7 +39,6 @@ set(src_oncvpsp
     run_ghosts.f90
     run_optimize.f90
     sbf_basis_con.f90
-    sbf_basis.f90
     sbf_rc_der.f90
     sbf8.f90
     tfapot.f90
@@ -51,6 +49,7 @@ set(src_oncvpsp
     vploc.f90
     vrel.f90
     wf_rc_der.f90
+    write_icmod.f90
     input_text_m.f90
     # Non-/scalar-relativistic files
     ae_file_m.f90

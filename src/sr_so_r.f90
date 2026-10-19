@@ -42,15 +42,16 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
- integer :: lmax,lloc,lpopt,mmax,mxprj
- integer :: irc(6),nproj(6)
- real(dp) :: rr(mmax),vkb(mmax,mxprj,4,2),evkb(mxprj,4,2)
+ integer, intent(in) :: lmax,mmax,mxprj
+ integer, intent(in) :: irc(6),nproj(6)
+ real(dp), intent(in) :: rr(mmax),vkb(mmax,mxprj,4,2),evkb(mxprj,4,2)
 
-!Output variables
- real(dp) :: vsr(mmax,2*mxprj,4),esr(2*mxprj,4)
- real(dp) :: vso(mmax,2*mxprj,4),eso(2*mxprj,4)
+!Input/output variables
+ real(dp), intent(inout) :: vsr(mmax,2*mxprj,4),esr(2*mxprj,4)
+ real(dp), intent(inout) :: vso(mmax,2*mxprj,4),eso(2*mxprj,4)
 
 !Local variables
+ integer :: lloc,lpopt
  integer :: ii,jj,kk,ierr,ik1,ik2,ip1,ip2,ipk,ll,l1,info,nn
  real(dp) :: apk,sn,tt,qq1mxprj
  real(dp) :: sovl(2*mxprj,2*mxprj),sovlev(2*mxprj),ascl(2*mxprj,2*mxprj),aso(2*mxprj,2*mxprj)
@@ -119,7 +120,7 @@
 
    if(info .ne. 0) then
     write(6,'(a,i4)') 'sr_so_r: S matrix eigenvalue ERROR, info=',info
-    stop
+    error stop 1
    end if
 
 ! construct S^(-1/2) AND s^(1/2)
@@ -175,7 +176,7 @@
 
      if(info .ne. 0) then
       write(6,'(a,i4)') 'sr_so_r: A* matrix eigenvalue ERROR, info=',info
-      stop
+      error stop 1
      end if
 
      call dsyev( 'V', 'U', nn,  asost, 2*mxprj,  wsost, work, 10*mxprj, info )
@@ -183,7 +184,7 @@
 
      if(info .ne. 0) then
       write(6,'(a,i4)') 'sr_so_r: A* matrix eigenvalue ERROR, info=',info
-      stop
+      error stop 1
      end if
 
 ! take linear combinations to form orthonormal projectors
@@ -249,6 +250,7 @@
 
      do jj=1,nn
        apk=0.0d0
+       ipk=1
        do ii=1,mmax
          if(abs(vso(ii,jj,l1))>apk) then
            apk=abs(vso(ii,jj,l1))
@@ -259,6 +261,7 @@
          vso(:,jj,l1)=-vso(:,jj,l1)
        end if
        apk=0.0d0
+       ipk=1
        do ii=1,mmax
          if(abs(vsr(ii,jj,l1))>apk) then
            apk=abs(vsr(ii,jj,l1))

@@ -30,9 +30,9 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
- integer :: lmax,lloc,mxprj
- integer :: nproj(6)
- real(dp) :: epa(mxprj,6),evkb(mxprj,4)
+ integer, intent(in) :: lmax,lloc,mxprj
+ integer, intent(in) :: nproj(6)
+ real(dp), intent(in) :: epa(mxprj,6),evkb(mxprj,4)
 
 !Output -- printing only
 

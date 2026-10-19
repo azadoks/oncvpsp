@@ -24,9 +24,9 @@
 ! Teter, Phys. Rev. B 48, 5031 (1993) , Appendix, as 
 
  subroutine modcore3(icmod,rhops,rhotps,rhoc,rhoae,rhotae,rhomod, &
-&                   fcfact,rcfact,irps,mmax,rr,nc,nv,la,zion,iexc)
+&                   fcfact,rcfact,fcgrid,rcgrid,irps,mmax,rr,nc,nv,la,zion,iexc)
 
-!icmod  3 coefficient optimizaion, 4 for specivied fcfact and rfact
+!icmod  3 for specified fcfact and rcfact, 4 for coefficient optimization
 !rhops  state-by-state pseudocharge density
 !rhotps  total pseudocharge density
 !rhoc  core-charge density
@@ -35,6 +35,8 @@
 !rhomod  model core density and 4 derivatives
 !fcfact  prefactor for model amplitude (multiplies crossover value)
 !rcfact  prefactor for model scale (multiplies crossover radius)
+!fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
+!rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 !irps  rr index of maximum rc
 !mmax  dimension of log grid
 !rr log radial grid
@@ -48,15 +50,19 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
- integer :: icmod,nv,nc,iexc,irps,mmax
- integer :: la(30)
- real(dp) :: rhoae(mmax,nv),rhops(mmax,nv),rhotae(mmax)
- real(dp) :: rhotps(mmax),rhoc(mmax),rr(mmax)
- real(dp) :: zion,fcfact,rcfact
+ integer, intent(in) :: icmod,nv,nc,iexc,irps,mmax
+ integer, intent(in) :: la(30)
+ real(dp), intent(in) :: rhoae(mmax,nv),rhops(mmax,nv),rhotae(mmax)
+ real(dp), intent(in) :: rhotps(mmax),rhoc(mmax),rr(mmax)
+ real(dp), intent(in) :: zion,rcfact
+ real(dp), intent(in) :: fcgrid(3),rcgrid(3)
  logical :: srel
 
+!Input/output variables
+ real(dp), intent(inout) :: fcfact
+
 !Output variables
- real(dp) :: rhomod(mmax,5)
+ real(dp), intent(out) :: rhomod(mmax,5)
 
 !convergence criterion
  real(dp), parameter :: eps=1.0d-7
@@ -78,7 +84,10 @@
  real(dp), parameter :: rho_nm=-0.5d0
  real(dp), parameter :: sigma_nm=0.5d0
  real(dp) :: xx(2,3),ff(3),xt(2),ft,x0(2),xr(2),fr,xe(2),fe,xc(2),fc
- real(dp) :: d2ref,fta(10),d2min
+ real(dp) :: d2ref,d2min
+ real(dp), allocatable :: fta(:)
+ integer :: nfc,nrc
+ character(len=24) :: rowfmt
 
 
  allocate(vxcae(mmax),vxcpsp(mmax),vo(mmax))
@@ -134,7 +143,7 @@
  if(ircc .eq. 0) then
    write(6,'(/a)') 'modcore3: ERROR ircc (core-valence charge crossover) &
 &        not found'
-   stop
+   error stop 1
  else
   write(6,'(/a,2f10.4)') 'rmatch, rhocmatch',rmatch,rhocmatch
  end if
@@ -154,12 +163,25 @@
  write(6,'(a)') '  column index : amplitude prefactor to rhocmatch'
  write(6,'(a)') '  row index : scale prefactor to rmatch'
 
+ nfc=nint((fcgrid(2)-fcgrid(1))/fcgrid(3))+1
+ nrc=nint((rcgrid(2)-rcgrid(1))/rcgrid(3))+1
+ allocate(fta(nfc))
+
+!row labels need more than one decimal if the rcfact grid is finer than 0.1
+ if(abs(10.0d0*rcgrid(1)-nint(10.0d0*rcgrid(1)))<1.0d-8 .and. &
+&   abs(10.0d0*rcgrid(3)-nint(10.0d0*rcgrid(3)))<1.0d-8) then
+   rowfmt='(f5.1,f9.3,*(f7.3))'
+ else
+   rowfmt='(f6.3,f8.3,*(f7.3))'
+ end if
+
  d2min=10.0d0
- write(6,'(/7x,10f7.3/)') (1.5d0+0.5d0*(jj-1), jj=1,10)
- do  kk=1,10
-  xt(2)=(1.0d0+0.1d0*(kk-1))*rmatch
-  do jj=1,10
-   xt(1)=(1.5d0+0.5d0*(jj-1))*rhocmatch
+ write(6,'(/7x,*(f7.3))') (fcgrid(1)+fcgrid(3)*(jj-1), jj=1,nfc)
+ write(6,'(a)') ''
+ do  kk=1,nrc
+  xt(2)=(rcgrid(1)+rcgrid(3)*(kk-1))*rmatch
+  do jj=1,nfc
+   xt(1)=(fcgrid(1)+fcgrid(3)*(jj-1))*rhocmatch
 
    r0=1.5d0*xt(2)
    do ii=mmax,1,-1
@@ -188,17 +210,18 @@
    end if
 
   end do
-  write(6,'(f5.1,f9.3,9f7.3)') 1.0d0+0.1d0*(kk-1),(fta(jj),jj=1,10)
+  write(6,rowfmt) rcgrid(1)+rcgrid(3)*(kk-1),(fta(jj),jj=1,nfc)
  end do
 
-!Initial Nelder-Mead simplex from coarse-search minimum
+!Initial Nelder-Mead simplex from coarse-search minimum, scaled to the
+!grid steps
 
- xx(1,2)=xx(1,1)+0.25d0*rhocmatch
+ xx(1,2)=xx(1,1)+0.5d0*fcgrid(3)*rhocmatch
  xx(2,2)=xx(2,1)
  xx(1,3)=xx(1,1)
- xx(2,3)=xx(2,1)+0.05d0*rmatch
- xx(1,1)=xx(1,1)-0.125d0*rhocmatch
- xx(2,1)=xx(2,1)-0.025d0*rmatch
+ xx(2,3)=xx(2,1)+0.5d0*rcgrid(3)*rmatch
+ xx(1,1)=xx(1,1)-0.25d0*fcgrid(3)*rhocmatch
+ xx(2,1)=xx(2,1)-0.25d0*rcgrid(3)*rmatch
 
 !Fill function values for initial simplex
 
@@ -406,8 +429,10 @@
  end if
 
  r0=1.5d0*xx(2,1)
+ ircross=0
  do ii=mmax,1,-1
   if(rr(ii)<r0) then
+    yy=rr(ii)/xx(2,1)
     call gg1cc(gg,yy)
     if( xx(1,1)*gg<rhoc(ii)) then
       rcross=rr(ii)
@@ -416,6 +441,11 @@
     end if
   end if
  end do
+
+ if(ircross==0) then
+  write(6,'(/a)') 'modcore3: ERROR failed to find model core crossover'
+  error stop 1
+ end if
 
 ! blend the Teter function tail into the all-electron rhoc
 ! first two derivatives are filled in analytically before the blend starts

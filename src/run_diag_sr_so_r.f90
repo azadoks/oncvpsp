@@ -46,13 +46,16 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
- integer :: lmax,lloc,mmax,mxprj,nlim
- integer :: npa(mxprj,6),irc(6),nproj(6)
- real(dp) :: zz
- real(dp) :: rr(mmax),vp(mmax,5,2),vfull(mmax),vkb(mmax,mxprj,4,2)
- real(dp) :: vsr(mmax,2*mxprj,4),esr(2*mxprj,4)
- real(dp) :: vso(mmax,2*mxprj,4),eso(2*mxprj,4)
- real(dp):: epa(mxprj,6,2),evkb(mxprj,4,2)
+ integer, intent(in) :: lmax,lloc,mmax,mxprj
+ integer :: nlim
+ integer, intent(in) :: npa(mxprj,6),irc(6),nproj(6)
+ real(dp), intent(in) :: zz
+ real(dp), intent(in) :: rr(mmax),vp(mmax,5,2),vfull(mmax)
+ real(dp) :: vkb(mmax,mxprj,4,2)
+ real(dp), intent(in) :: vsr(mmax,2*mxprj,4),esr(2*mxprj,4)
+ real(dp), intent(in) :: vso(mmax,2*mxprj,4),eso(2*mxprj,4)
+ real(dp), intent(in) :: epa(mxprj,6,2)
+ real(dp) :: evkb(mxprj,4,2)
 
 !Output variables - printing only
 

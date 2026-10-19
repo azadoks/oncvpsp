@@ -34,11 +34,11 @@
  real(dp), parameter :: thrd=1.0d0/3.0d0
 
 !Input variables
- integer :: mmax
- real(dp) :: rho(mmax)
+ integer, intent(in) :: mmax
+ real(dp), intent(in) :: rho(mmax)
 
 !Output variables
- real(dp) :: vxc(mmax),exc(mmax)
+ real(dp), intent(out) :: vxc(mmax),exc(mmax)
 
 !Local variables
  integer :: ii

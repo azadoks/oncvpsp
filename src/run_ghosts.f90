@@ -62,10 +62,10 @@
  real(dp), parameter :: pi=3.141592653589793238462643383279502884197_dp
 
 !Input variables
- integer :: nc,nv,lmax,lloc,mmax,mxprj
- integer :: la(30),irc(6),nproj(6)
- real(dp) :: rr(mmax),vp(mmax,5),vkb(mmax,mxprj,4)
- real(dp):: qmsbf(6),ea(30),evkb(mxprj,4)
+ integer, intent(in) :: nc,nv,lmax,lloc,mmax,mxprj
+ integer, intent(in) :: la(30),irc(6),nproj(6)
+ real(dp), intent(in) :: rr(mmax),vp(mmax,5),vkb(mmax,mxprj,4)
+ real(dp), intent(in) :: qmsbf(6),ea(30),evkb(mxprj,4)
 
 !Output variables - printing only
 
@@ -106,6 +106,12 @@
 
    mbfact=3
    mbar = idint(dlog(mbfact*rr(irc(l1))/rr(1))/al+1.0d0)
+! lschpsbar starts the solution at mbar:mbar+4
+   if(mbar+4>mmax) then
+     write(6,'(/2a,i0,a,i0)') 'run_ghosts: ERROR barrier radius beyond', &
+&          ' radial mesh, mbar=',mbar,', mmax=',mmax
+     error stop 1
+   end if
 
 ! Basis cutoff energy is based on largest q in sbf optimization basis
   basfact=1.25d0
@@ -126,6 +132,7 @@
    hmev(:)=0.0d0
 
    
+! nbas stays nbmax unless lschpsbar runs out of states below ebcut
    nbas=nbmax
    do jj=1,nbmax
      nn=ll+jj
@@ -142,7 +149,7 @@
          write(6,'(a,3i4,3f12.6)')  &
 &              'run_ghosts 143: lschpsbar ERROR ierr,nn,ll,ee,emin,emax', &
 &              ierr,nn,ll,ee,emin,emax
-         stop
+         error stop 1
          end if
        nbas=jj-1
        exit
@@ -180,7 +187,7 @@
      if(info .ne. 0) then
       write(6,'(a,i4)') 'run_ghosts: hamiltonian matrix eigenvalue ERROR, &
 &          info=',info
-      stop
+      error stop 1
      end if
 !treat valence states for this l
      nn=ll

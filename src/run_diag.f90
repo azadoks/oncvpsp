@@ -46,12 +46,13 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
- integer :: lmax,lloc,mmax,mxprj,nlim
- integer :: npa(mxprj,6),irc(6),nproj(6)
- real(dp) :: zz
- real(dp) :: rr(mmax),vp(mmax,5),vfull(mmax),vkb(mmax,mxprj,4)
- real(dp):: epa(mxprj,6),evkb(mxprj,4)
- logical :: srel
+ integer, intent(in) :: lmax,lloc,mmax,mxprj
+ integer :: nlim
+ integer, intent(in) :: npa(mxprj,6),irc(6),nproj(6)
+ real(dp), intent(in) :: zz
+ real(dp), intent(in) :: rr(mmax),vp(mmax,5),vfull(mmax),vkb(mmax,mxprj,4)
+ real(dp), intent(in) :: epa(mxprj,6),evkb(mxprj,4)
+ logical, intent(in) :: srel
 
 !Output variables - printing only
 
@@ -90,7 +91,7 @@
       if(ierr .ne. 0) then
          write(6,'(/a,3i4)') 'run_diag: lschfb convergence ERROR n,l,ierr=', &
 &        npa(iprj,l1),ll,ierr
-        stop
+        error stop 1
       end if
 
     else

@@ -44,17 +44,21 @@
 
 !Input variables
  
- integer :: mmax,iexc,nc,ncv
- integer :: na(ncv),la(ncv)
- real(dp) :: zz
- real(dp) :: fa(ncv),rr(mmax)
- logical :: srel
+ integer, intent(in) :: mmax,iexc,nc,ncv
+ integer, intent(in) :: na(ncv),la(ncv)
+ real(dp), intent(in) :: zz
+ real(dp), intent(in) :: fa(ncv),rr(mmax)
+ logical, intent(in) :: srel
+
+!Input/output variables
+ integer, intent(inout) :: ierr
+ real(dp), intent(inout) :: rpk(ncv)
 
 !Output variables
- integer :: it,ierr
- real(dp) :: etot
- real(dp) :: ea(ncv),rpk(ncv)
- real(dp) :: rho(mmax),rhoc(mmax),vi(mmax)
+ integer, intent(out) :: it
+ real(dp), intent(out) :: etot
+ real(dp), intent(out) :: ea(ncv)
+ real(dp), intent(out) :: rho(mmax),rhoc(mmax),vi(mmax)
 
 !Local function
  real(dp) :: tfapot
@@ -122,7 +126,7 @@
      if(ierr .ne. 0) then
        write(6,'(/a,3i4)') 'sratom123: lschfb convergence ERROR n,l,iter=', &
 &       na(ii),la(ii),it
-       stop
+       error stop 1
      end if
 
 ! overall convergence criterion based on eps within lschfb

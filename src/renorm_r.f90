@@ -32,15 +32,15 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
- real(dp) :: rr(mmax)
- real(dp) :: zz
- integer :: ll,kap,mmax
+ real(dp), intent(in) :: rr(mmax)
+ real(dp), intent(in) :: zz
+ integer, intent(in) :: ll,kap,mmax
 
 !Output variable
- real(dp) :: cnorm
+ real(dp), intent(out) :: cnorm
 
 !Input/Output variable
- real(dp) :: uu(mmax,2)
+ real(dp), intent(inout) :: uu(mmax,2)
 
 !Local variables
  real(dp) :: sn
@@ -56,12 +56,18 @@
 
  gam=sqrt(kap**2-(zz*cci)**2)
 
+ nin=0
  do ii=mmax,1,-1
    if(dabs(uu(ii,1))>0.0d0) then
      nin=ii
      exit
    end if
  end do
+ if(nin<4) then
+   write(6,'(/a,i0,a,i0)') 'renorm_r: ERROR wave function is zero, ll=',ll, &
+&        ', kap=',kap
+   error stop 1
+ end if
 
  r0=rr(1)/dsqrt(amesh)
  sn=r0**(2.0d0*gam+1.0d0)/(2.d0*gam+1.0d0)

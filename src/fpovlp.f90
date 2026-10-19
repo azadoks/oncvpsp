@@ -38,13 +38,13 @@
 ! integral on usual log mesh from rr=0 to rr(nn)
 
 !Input variables
- real(dp) :: zz
- real(dp) :: gg(nn),hh(nn),rr(nn)
- integer :: nn,ll
- logical :: srel
+ real(dp), intent(in) :: zz
+ real(dp), intent(in) :: gg(nn),hh(nn),rr(nn)
+ integer, intent(in) :: nn,ll
+ logical, intent(in) :: srel
 
 !Output variable
- real(dp) :: ss
+ real(dp), intent(out) :: ss
 
 !Local variables
  real(dp) :: r0,amesh,al,fss,gamma

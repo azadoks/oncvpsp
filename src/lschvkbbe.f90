@@ -45,14 +45,18 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !Input Variables
- real(dp) :: emin,emax,uld
- real(dp) :: rr(mmax),vloc(mmax),vkb(mmax,nvkb),evkb(nvkb)
- integer :: nn,ll,nvkb,mmax
+ real(dp), intent(in) :: uld
+ real(dp), intent(in) :: rr(mmax),vloc(mmax),vkb(mmax,nvkb),evkb(nvkb)
+ integer, intent(in) :: nn,ll,nvkb,mmax
+ integer, intent(in) :: mch
+
+!Input/output variables
+ real(dp), intent(inout) :: emin,emax
+ real(dp), intent(inout) :: ee  !in/out, really - needs starting guess
 
 !Output variables
- real(dp) :: uu(mmax),up(mmax)
- real(dp) :: ee  !in/out, really - needs starting guess
- integer :: ierr,mch
+ real(dp), intent(out) :: uu(mmax),up(mmax)
+ integer, intent(out) :: ierr
 
 
 !Local variables

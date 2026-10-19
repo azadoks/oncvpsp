@@ -32,17 +32,19 @@
 ! sbfder  values and first 4 derivatives of j_l(qq*rc)
 
 !Arguments
- integer :: llin
- real(dp) :: qq,rc,xx,sbfder(5)
+ integer, intent(in) :: llin
+ real(dp), intent(in) :: qq,rc
+ real(dp), intent(out) :: sbfder(5)
+ real(dp) :: xx
 !
 !local variables
  real(dp) :: sb_out(10),sbfad(5,10)
  integer :: ii,ll
 
- if(llin>5) then
+ if(llin>4) then
   write(6,'(a,i4,a)') 'sbf_rc_der: argument ERROR, llin = ',llin,&
 &  ' >5'
-  stop
+  error stop 1
  end if
 
 ! calculate sbf for needed l values

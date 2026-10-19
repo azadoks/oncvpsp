@@ -51,12 +51,14 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
- integer :: lmax,lloc,mmax,mxprj,nlim,nrl
- integer :: npa(mxprj,6),npx(6),irc(6),lpx(6),nproj(6)
- real(dp) :: zz,drl
- real(dp) :: rr(mmax),vp(mmax,5,2),vpuns(mmax,5),vfull(mmax),vkb(mmax,mxprj,4,2)
- real(dp) :: rho(mmax),rhoc(mmax),rhomod(mmax,5)
- real(dp):: epa(mxprj,6,2),evkb(mxprj,4,2),cvgplt(2,7,mxprj,4,2)
+ integer, intent(in) :: lmax,lloc,mmax,mxprj,nrl
+ integer :: nlim
+ integer, intent(in) :: npa(mxprj,6),irc(6),nproj(6)
+ integer :: npx(6),lpx(6)
+ real(dp), intent(in) :: zz,drl
+ real(dp), intent(in) :: rr(mmax),vp(mmax,5,2),vpuns(mmax,5),vfull(mmax),vkb(mmax,mxprj,4,2)
+ real(dp), intent(in) :: rho(mmax),rhoc(mmax),rhomod(mmax,5)
+ real(dp), intent(in) :: epa(mxprj,6,2),evkb(mxprj,4,2),cvgplt(2,7,mxprj,4,2)
  logical :: srel
 
 !Output variables - printing only
@@ -158,7 +160,7 @@
            write(6,'(a,i2,a,i2,a,i2,a,i4)') &
 &                'run_plot_r 409: ldiracfb convergence ERROR, n=',&
 &                 npa(iprj,l1),'  l=',ll, 'kap-',kap,'  ierr=',ierr
-           stop
+           error stop 1
          end if
        call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm)
 
@@ -175,6 +177,11 @@
 &           ', kap=',kap,', all-electron wave function', ', pseudo w-f'
        call ldiracfs(nnae,ll,kap,ierr,epa(iprj,l1,ikap), &
 &                    rr,zz,vfull,ur,urp,mmax,n2)
+       if(ierr/=0) then
+         write(6,'(/2a,i0,a,i0,a,i0)') 'run_plot_r: ERROR ldiracfs failed', &
+&              ', ll=',ll,', kap=',kap,', ierr=',ierr
+         error stop 1
+       end if
        call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm)
 
        call lschvkbs(ll,npr,epa(iprj,l1,ikap),rr,vp(1,lloc+1,ikap), &

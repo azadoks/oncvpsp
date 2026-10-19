@@ -29,10 +29,12 @@ c
       implicit none
       integer, parameter :: dp=kind(1.0d0)
 c
-      real*8 rho(*),vxc(*),exc(*),r(*)
+      real*8, intent(in) :: rho(*),r(*)
+      real*8, intent(out) :: vxc(*),exc(*)
       real*8 amesh,al
       real*8 fk,sk,g,ec,ecrs,eczet
-      integer i, mmax
+      integer i
+      integer, intent(in) :: mmax
 c
 c      common/GAS/fk,sk,g,ec,ecrs,eczet
 c
@@ -228,6 +230,9 @@ c uk, ul defined after [a](13)
 c----------------------------------------------------------------------
 c----------------------------------------------------------------------
       IMPLICIT REAL*8 (A-H,O-Z)
+      intent(in) :: rho,S,U,V,lgga,lpot
+      intent(out) :: EX
+      intent(inout) :: VX
       parameter(thrd=1.d0/3.d0,thrd4=4.d0/3.d0)
       parameter(pi=3.14159265358979323846264338327950d0)
       parameter(ax=-0.738558766382022405884230032680836d0)
@@ -298,6 +303,9 @@ c [c] J. P. Perdew and Y. Wang, Phys. Rev. B {\bf 45}, 13244 (1992).
 c----------------------------------------------------------------------
 c----------------------------------------------------------------------
       IMPLICIT REAL*8 (A-H,O-Z)
+      intent(in) :: RS,ZET,T,UU,VV,WW,lgga,lpot
+      intent(out) :: ec,vcup,vcdn
+      intent(inout) :: H,DVCUP,DVCDN
 c thrd*=various multiples of 1/3
 c numbers for use in LSD energy spin-interpolation formula, [c](9).
 c      GAM= 2^(4/3)-2
@@ -412,6 +420,8 @@ c LSD correlation energy, as given by (10) of
 c J. P. Perdew and Y. Wang, Phys. Rev. B {\bf 45}, 13244 (1992).
 c K. Burke, May 11, 1996.
       IMPLICIT REAL*8 (A-H,O-Z)
+      intent(in) :: A,A1,B1,B2,B3,B4,rtrs
+      intent(out) :: GG,GGRS
       Q0 = -2.D0*A*(1.D0+A1*rtrs*rtrs)
       Q1 = 2.D0*A*rtrs*(B1+rtrs*(B2+rtrs*(B3+B4*rtrs)))
       Q2 = DLOG(1.D0+1.D0/Q1)
@@ -431,6 +441,8 @@ C  INPUT U:  (GRAD D)*GRAD(ABS(GRAD D))/(D**2 * (2*KF)**3)
 C  INPUT V: (LAPLACIAN D)/(D*(2*KF)**2)
 C  OUTPUT:  EXCHANGE ENERGY PER ELECTRON (EX) AND POTENTIAL (VX)
       IMPLICIT REAL*8 (A-H,O-Z)
+      intent(in) :: D,S,U,V
+      intent(out) :: EX,VX
       parameter(a1=0.19645D0,a2=0.27430D0,a3=0.15084D0,a4=100.d0)
       parameter(ax=-0.7385588D0,a=7.7956D0,b1=0.004d0)
       parameter(thrd=0.333333333333D0,thrd4=1.33333333333D0)
@@ -473,6 +485,8 @@ C  OUTPUT: CORRELATION ENERGY PER ELECTRON (EC), UP- AND DOWN-SPIN
 C     POTENTIALS (VCUP,VCDN), DERIVATIVES OF EC WRT RS (ECRS) & ZET (ECZET)
 C  OUTPUT: CORRELATION CONTRIBUTION (ALFC) TO THE SPIN STIFFNESS
       IMPLICIT REAL*8 (A-H,O-Z)
+      intent(in) :: RS,ZET
+      intent(out) :: EC,VCUP,VCDN,ECRS,ECZET,ALFC
       parameter(gam=0.5198421D0,fzz=1.709921D0)
       parameter(thrd=0.333333333333D0,thrd4=1.333333333333D0)
       F = ((1.D0+ZET)**THRD4+(1.D0-ZET)**THRD4-2.D0)/GAM
@@ -502,6 +516,8 @@ c----------------------------------------------------------------------
       SUBROUTINE GCOR(A,A1,B1,B2,B3,B4,P,RS,GG,GGRS)
 C  CALLED BY SUBROUTINE CORLSD
       IMPLICIT REAL*8 (A-H,O-Z)
+      intent(in) :: A,A1,B1,B2,B3,B4,P,RS
+      intent(out) :: GG,GGRS
       P1 = P + 1.D0
       Q0 = -2.D0*A*(1.D0+A1*RS)
       RS12 = DSQRT(RS)
@@ -531,6 +547,8 @@ C  INPUT WW:  (GRAD D)*(GRAD ZET)/(D * (2*KS*G)**2
 C  OUTPUT H: NONLOCAL PART OF CORRELATION ENERGY PER ELECTRON
 C  OUTPUT DVCUP,DVCDN:  NONLOCAL PARTS OF CORRELATION POTENTIALS
       IMPLICIT REAL*8 (A-H,O-Z)
+      intent(in) :: RS,ZET,G,EC,ECRS,ECZET,T,UU,VV,WW
+      intent(out) :: H,DVCUP,DVCDN
       parameter(xnu=15.75592D0,cc0=0.004235D0,cx=-0.001667212D0)
       parameter(alf=0.09D0)
       parameter(c1=0.002568D0,c2=0.023266D0,c3=7.389D-6,c4=8.723D0)

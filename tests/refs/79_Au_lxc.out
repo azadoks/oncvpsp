@@ -91,7 +91,7 @@ LXC     Perdew & Zunger (LDA)
 
 
 Reference configufation results
-  iterations    28
+  iterations    29
   all-electron total energy (Ha)   -1.90013717D+04
 
 Begin loop to  construct optimized pseudo wave functions

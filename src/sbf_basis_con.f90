@@ -41,13 +41,13 @@
 ! norm constraint vectors from already-computed psopt
 
 !Input variables
- integer :: ll,mmax,ncon,ncon_in,irc,nbas,iprj,mxprj
- real(dp) :: rr(mmax),qroot(nbas)
- real(dp) :: psopt(mmax,mxprj)
+ integer, intent(in) :: ll,mmax,ncon,ncon_in,irc,nbas,iprj,mxprj
+ real(dp), intent(in) :: rr(mmax),qroot(nbas)
+ real(dp), intent(in) :: psopt(mmax,mxprj)
 
 !Output variables
- real(dp) :: orbasis(nbas,nbas)
- real(dp) :: orbasis_der(ncon,nbas)
+ real(dp), intent(out) :: orbasis(nbas,nbas)
+ real(dp), intent(out) :: orbasis_der(ncon,nbas)
 
 !Local variables
  integer :: ii,jj,kk,ll1,ibas,info
@@ -102,7 +102,7 @@
  call dsyev( 'V', 'U', nbas, sovlp, nbas, sev, work, 5*nbas, info )
  if(info .ne. 0) then
   write(6,'(a,i4)') 'sbf_basis: overlap matrix eigenvalue error, info=',info
-  stop
+  error stop 1
  end if
 
 !write(6,'(/a)') 'sbf overlap matrix eigenvalues'
@@ -116,7 +116,7 @@
    tt=1.0d0/sqrt(sev(ibas))
   else
    write(6,'(a,f12.6)') 'sbfbasis: negative eigenvalue of overlap matrix'
-   stop
+   error stop 1
   end if
   do jj=1,nbas
    orbasis(jj,nbas-ibas+1)=tt*sovlp(jj,ibas)

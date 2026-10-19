@@ -48,15 +48,15 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
- integer :: icmod,nv,nc,iexc,irps,mmax
- integer :: la(30)
- real(dp) :: rhoae(mmax,nv),rhops(mmax,nv),rhotae(mmax)
- real(dp) :: rhotps(mmax),rhoc(mmax),rr(mmax)
- real(dp) :: zion,fcfact,rcfact
+ integer, intent(in) :: icmod,nv,nc,iexc,irps,mmax
+ integer, intent(in) :: la(30)
+ real(dp), intent(in) :: rhoae(mmax,nv),rhops(mmax,nv),rhotae(mmax)
+ real(dp), intent(in) :: rhotps(mmax),rhoc(mmax),rr(mmax)
+ real(dp), intent(in) :: zion,fcfact,rcfact
  logical :: srel
 
 !Output variables
- real(dp) :: rhomod(mmax,5)
+ real(dp), intent(out) :: rhomod(mmax,5)
 
 !convergence criterion
  real(dp), parameter :: eps=1.0d-7
@@ -91,6 +91,11 @@
      exit
    end if
  end do
+ if(ircc==0) then
+   write(6,'(/2a)') 'modcore2: ERROR core charge never exceeds', &
+&        ' valence pseudocharge'
+   error stop 1
+ end if
 
 ! find scaled valence pseudocharge - core charge crossover
  ircc = 0
@@ -104,7 +109,7 @@
  if(ircc .eq. 0) then
    write(6,'(/a)') 'modcore2: ERROR ircc (core-valence charge crossover) &
 &        not found'
-   stop
+   error stop 1
  end if
 
 !set limit for d2Exc calculation to radius beyond which rhomod=rhoc

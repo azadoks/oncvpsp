@@ -51,18 +51,16 @@
  real(dp), parameter :: pi=3.141592653589793238462643383279502884197_dp
 
 !Input variables
- integer :: irc,ll,nnull,nbas,mmax,nqout
- real(dp) :: rr(mmax),uu(mmax),pswf0_sb(nbas),pswfnull_sb(nbas,nnull)
- real(dp) :: qroot(nbas)
+ integer, intent(in) :: irc,ll,nnull,nbas,mmax,nqout
+ real(dp), intent(in) :: rr(mmax),uu(mmax),pswf0_sb(nbas),pswfnull_sb(nbas,nnull)
+ real(dp), intent(in) :: qroot(nbas)
 !real(dp) :: dr,dq,qmax
- real(dp) :: drdum,dqdum,qmax
-
-!Output variables
- real(dp) :: eresid0(nqout),eresiddot(nnull,nqout)
- real(dp) :: eresidmat(nnull,nnull,nqout)
+ real(dp), intent(in) :: drdum,dqdum,qmax
 
 !Input/output variables
- real(dp) :: qout(nqout)
+ real(dp), intent(inout) :: qout(nqout)
+ real(dp), intent(inout) :: eresid0(nqout),eresiddot(nnull,nqout)
+ real(dp), intent(inout) :: eresidmat(nnull,nnull,nqout)
 
 !Local variables
  real(dp), allocatable :: rlin(:),uulin(:),sbf(:),ps0(:)
@@ -95,6 +93,7 @@
  irclin=rc/dr + 1.5d0
  dr=rc/(irclin-1)
 
+ mmaxlin=0
  do ii=mmax,1,-1
    if(abs(uu(ii))>1.0d-10) then
      mmaxlin=rr(ii)/dr - 2.0d0
@@ -102,6 +101,11 @@
     end if
  end do
 !mmaxlin=rr(mmax)/dr - 1.5d0 !leave non-zero room for cubic interpolation
+ if(mmaxlin<irclin+6) then
+   write(6,'(/2a,i0,a,i0)') 'eresid: ERROR wave function vanishes too close', &
+&       ' to rc, mmaxlin=',mmaxlin,', irclin=',irclin
+   error stop 1
+ end if
 
  allocate(rlin(mmaxlin),uulin(mmaxlin),ps0(mmaxlin))
  allocate(psnull(irclin,nnull),tpsnull(nnull),psnullq(nnull))

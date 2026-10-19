@@ -22,7 +22,7 @@
  subroutine linout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
 &                  rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
+&                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact,fcgrid,rcgrid, &
 &                  epsh1,epsh2,depsh,rlmax,psfile,log_mesh)
 
 
@@ -50,7 +50,7 @@
 !atsym  atomic symbol
 !remaining input variables to be echoed:
 !  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf
-!  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact
+!  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact,fcgrid,rcgrid
 !  epsh1,epsh2,depsh,rlmax,psfile
 !log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets it (else 0)
 !psfile  should be 'psp8' or 'both'
@@ -59,24 +59,25 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
- integer :: lmax,lloc,iexc,mmax,mxprj,nrl,icmod
- integer :: nproj(6)
- real(dp) :: drl,fcfact,rcfact,zz,zion
- real(dp) :: rr(mmax),vpuns(mmax,5),rho(mmax),vkb(mmax,mxprj,4)
- real(dp) :: rhotae(mmax),rhoc(mmax)
- real(dp) :: rhomod(mmax,5)
- real(dp):: rc(6),evkb(mxprj,4)
- character*2 :: atsym
+ integer, intent(in) :: lmax,lloc,iexc,mmax,mxprj,nrl,icmod
+ integer, intent(in) :: nproj(6)
+ real(dp), intent(in) :: drl,fcfact,rcfact,zz,zion
+ real(dp), intent(in) :: fcgrid(3),rcgrid(3)
+ real(dp), intent(in) :: rr(mmax),vpuns(mmax,5),rho(mmax),vkb(mmax,mxprj,4)
+ real(dp), intent(in) :: rhotae(mmax),rhoc(mmax)
+ real(dp), intent(in) :: rhomod(mmax,5)
+ real(dp), intent(in) :: rc(6),evkb(mxprj,4)
+ character*2, intent(in) :: atsym
 
 !additional input for psp8 output to echo input file, all as defined
 ! in the main progam
- integer :: na(30),la(30),ncon(6),nbas(6)
- integer :: nvcnf(5),nacnf(30,5),lacnf(30,5)
- integer :: nc,nv,lpopt,ncnf
- real(dp) :: fa(30),rc0(6),ep(6),qcut(6),debl(6),facnf(30,5)
- real(dp) :: dvloc0,epsh1,epsh2,depsh,rlmax
- real(dp) :: log_mesh(3)
- character*4 :: psfile
+ integer, intent(in) :: na(30),la(30),ncon(6),nbas(6)
+ integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
+ integer, intent(in) :: nc,nv,lpopt,ncnf
+ real(dp), intent(in) :: fa(30),rc0(6),ep(6),qcut(6),debl(6),facnf(30,5)
+ real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rlmax
+ real(dp), intent(in) :: log_mesh(3)
+ character*4, intent(in) :: psfile
 
 !Output variables - printing only
 
@@ -244,13 +245,7 @@
    write(6,'(2i5,f10.5)') l1-1,nproj(l1),debl(l1)
  end do
 
- write(6,'(a/a/a)') '#','# MODEL CORE CHARGE', &
-&      '# icmod, fcfact, rcfact'
- if(icmod==6) then
-   write(6,'(i5,f10.5,es12.4)') icmod,fcfact,rcfact
- else
-   write(6,'(i5,2f10.5)') icmod,fcfact,rcfact
- end if
+ call write_icmod(icmod,fcfact,rcfact,fcgrid,rcgrid)
 
  write(6,'(a/a/a)') '#','# LOG DERIVATIVE ANALYSIS', &
 &      '# epsh1, epsh2, depsh'

@@ -20,9 +20,9 @@
 ! for PWSCF input using the UPF file format
 
  subroutine upfout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
-&                  zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
+&                  zz,zion,mmax,mxprj,iexc,icmod,nrlin,drl,atsym,epstot, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
+&                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact,fcgrid,rcgrid, &
 &                  epsh1,epsh2,depsh,rlmax,psfile,uupsa,ea,log_mesh)
 
 
@@ -43,14 +43,14 @@
 !mxprj  dimension of number of projectors
 !iexc  type of exchange-correlation
 !icmod  1 if model core charge is used, otherwise 0
-!nrl size of linear radial grid
+!nrlin  size of linear radial grid (enlarged locally to fit the orbitals)
 !drl spacing of linear radial grid
 !atsym  atomic symbol
 !epstot  pseudoatom total energy
 !psfile  should be 'upf'
 !remaining input variables to be echoed:
 !  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf
-!  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact
+!  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact,fcgrid,rcgrid
 !  epsh1,epsh2,depsh,rlmax,psfile
 !log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets it (else 0)
 !uupsa  pseudo-atomic orbital array
@@ -62,28 +62,30 @@
  real(dp), parameter :: pi=3.141592653589793238462643383279502884197_dp
 
 !Input variables
- integer :: lmax,lloc,iexc,mmax,mxprj,nrl,icmod
- integer :: nproj(6)
- real(dp) :: drl,fcfact,rcfact,zz,zion,epstot
- real(dp) :: rr(mmax),vpuns(mmax,5),rho(mmax),vkb(mmax,mxprj,4)
- real(dp) :: rhomod(mmax,5)
- real(dp):: rc(6),evkb(mxprj,4)
- character*2 :: atsym
- real(dp) :: uupsa(mmax,nv)
+ integer, intent(in) :: lmax,lloc,iexc,mmax,mxprj,icmod,nrlin
+ integer, intent(in) :: nproj(6)
+ real(dp), intent(in) :: drl,fcfact,rcfact,zz,zion,epstot
+ real(dp), intent(in) :: fcgrid(3),rcgrid(3)
+ real(dp), intent(in) :: rr(mmax),vpuns(mmax,5),rho(mmax),vkb(mmax,mxprj,4)
+ real(dp), intent(in) :: rhomod(mmax,5)
+ real(dp), intent(in) :: rc(6),evkb(mxprj,4)
+ character*2, intent(in) :: atsym
+ real(dp), intent(in) :: uupsa(mmax,nv)
 
 !additional input for upf output to echo input file, all as defined
 ! in the main progam
- integer :: na(30),la(30),ncon(6),nbas(6)
- integer :: nvcnf(5),nacnf(30,5),lacnf(30,5)
- integer :: nc,nv,lpopt,ncnf
- real(dp) :: fa(30),rc0(6),ep(6),qcut(6),debl(6),facnf(30,5),ea(30)
- real(dp) :: dvloc0,epsh1,epsh2,depsh,rlmax
- real(dp) :: log_mesh(3)
- character*4 :: psfile
+ integer, intent(in) :: na(30),la(30),ncon(6),nbas(6)
+ integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
+ integer, intent(in) :: nc,nv,lpopt,ncnf
+ real(dp), intent(in) :: fa(30),rc0(6),ep(6),qcut(6),debl(6),facnf(30,5),ea(30)
+ real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rlmax
+ real(dp), intent(in) :: log_mesh(3)
+ character*4, intent(in) :: psfile
 
 !Output variables - printing only
 
 !Local variables
+ integer :: nrl
  integer :: ii,jj,ll,l1,iproj,ntotproj,nrlproj
  integer :: dtime(8)
  real(dp) :: al,nrmsum,uurcut
@@ -93,6 +95,7 @@
  character*2 :: pspd(3)
 
  lnames = "SPDFG"
+ nrl = nrlin
 
 ! adjust nrl to properly accomodate atomic orbitals
  al = dlog(rr(2)/rr(1))
@@ -105,10 +108,11 @@
        exit  ! Cutoff radius such that uu norm accurate to 10^-6
      end if
    end do
+   jj=max(jj,1)
    if (rr(jj) > uurcut) uurcut = rr(jj)
  end do
  if (uurcut > drl*dble(nrl-1)) then
-   nrl = 1 + uurcut/drl
+   nrl = 1 + int(uurcut/drl)
    if(mod(nrl,2)/=0) nrl=nrl+1
    write(6,'(a,i5,a,f10.5)') "Updating nrl = ", nrl, " for uurcut = ", uurcut
  end if
@@ -214,13 +218,7 @@
    write(6,'(2i5,f10.5)') l1-1,nproj(l1),debl(l1)
  end do
 
- write(6,'(a/a/a)') '#','# MODEL CORE CHARGE', &
-&      '# icmod, fcfact, rcfact'
- if(icmod==6) then
-   write(6,'(i5,f10.5,es12.4)') icmod,fcfact,rcfact
- else
-   write(6,'(i5,2f10.5)') icmod,fcfact,rcfact
- end if
+ call write_icmod(icmod,fcfact,rcfact,fcgrid,rcgrid)
 
  write(6,'(a/a/a)') '#','# LOG DERIVATIVE ANALYSIS', &
 &      '# epsh1, epsh2, depsh'
@@ -336,9 +334,9 @@
 &        'functional="WC"'
 
    else
-     write(6,'(t8,a,i8,a)') &
+     write(6,'(t8,a,i0,a)') &
 &        'upfout: ERROR iexc = ',iexc,' is presently unsupported for UPF output'
-     stop
+     error stop 1
    end if
 
    write(6,'(t8,a,f8.2,a)') &

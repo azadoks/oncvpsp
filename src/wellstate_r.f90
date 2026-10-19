@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 subroutine wellstate_r(nnin,ll,kap,irc,ep,rr,vfull,vwell, &
-&                      uu,up,zz,mmax,mch,srel)
+&                      uu,up,zz,mmax,mch)
 
 !creates quantum well to confine positive-energy state, and calculates
 !the resulting all-electron wave function
@@ -35,21 +35,23 @@ subroutine wellstate_r(nnin,ll,kap,irc,ep,rr,vfull,vwell, &
 !zz  atomic number
 !mmax  size of log radial mesh 
 !mch matching mesh point for inward-outward integrations
-!srel .true. for scalar-relativistic, .false. for non-relativistic
  
  implicit none
 
  integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
- real(dp) :: rr(mmax),vfull(mmax)
- real(dp) :: ep,zz
- integer :: nnin,ll,kap,irc,mmax !(nnin is actually in/out)
- logical :: srel
+ real(dp), intent(in) :: rr(mmax),vfull(mmax)
+ real(dp), intent(in) :: zz
+ integer, intent(in) :: ll,kap,irc,mmax
+
+!Input/output variables
+ real(dp), intent(inout) :: ep
+ integer, intent(inout) :: nnin !(nnin is actually in/out)
+ integer, intent(inout) :: mch
 
 !Output variables
- real(dp) :: uu(mmax,2),up(mmax,2),vwell(mmax)
- integer :: mch
+ real(dp), intent(out) :: uu(mmax,2),up(mmax,2),vwell(mmax)
  
 !Local variables
  real(dp) :: al,cwell,et,xx,rwell,rwmax,rwmin,rwscale,umax
@@ -70,6 +72,7 @@ subroutine wellstate_r(nnin,ll,kap,irc,ep,rr,vfull,vwell, &
 !if bound state is found, check its localization
  if(ierr==0) then
    umax=0.0d0
+   iumax=1
    do ii=mmax,1,-1
      if(dabs(uu(ii,1))>=umax) then
        umax=dabs(uu(ii,1))
@@ -203,7 +206,7 @@ subroutine wellstate_r(nnin,ll,kap,irc,ep,rr,vfull,vwell, &
    write(6,'(a,a,i3,a,i3,a,i3,a,f8.4)') &
 &   'ERROR wellstate_r: well potential iteration failed', &
 &   ' to converge, n=',nn,' l=',ll,' kap=', kap,' ep=',ep
-  stop
+  error stop 1
  end if
 
  if(cwell>0.0d0) then

@@ -6,6 +6,9 @@
 
 MAKE = make
 
+ifeq ($(wildcard make.inc),)
+$(error make.inc not found. Copy make.inc.example to make.inc and fill it in)
+endif
 include make.inc
 
 all:

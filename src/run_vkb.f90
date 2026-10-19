@@ -43,15 +43,20 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
- integer :: lmax,lloc,lpopt,lwork,mmax,mxprj
- integer :: irc(6),nproj(6)
- real(dp) :: rr(mmax),pswf(mmax,mxprj,5),vfull(mmax),vp(mmax,5)
- real(dp) :: dvloc0
+ integer, intent(in) :: lmax,lloc,lpopt,mmax,mxprj
+ integer :: lwork
+ integer, intent(in) :: irc(6),nproj(6)
+ real(dp), intent(in) :: rr(mmax),pswf(mmax,mxprj,5),vfull(mmax)
+ real(dp), intent(in) :: dvloc0
+ real(dp), intent(in) :: vr(mmax,mxprj,6)
 
 !Input/Output variables
- real(dp) :: vkb(mmax,mxprj,4),evkb(mxprj,4)
- real(dp) :: vr(mmax,mxprj,6)
- integer :: nlim
+ real(dp), intent(inout) :: vp(mmax,5)
+ real(dp), intent(inout) :: vkb(mmax,mxprj,4)
+
+!Output variables
+ real(dp), intent(out) :: evkb(mxprj,4)
+ integer, intent(out) :: nlim
 
 !Local variables
  integer :: ii,ipk,jj,kk,ierr,l1,info,np
@@ -138,7 +143,7 @@
      call dsyev( 'V', 'U', np, bb, mxprj, bbev, work, lwork, info )
      if(info .ne. 0) then
       write(6,'(a,i4)') 'run_vkb: B matrix eigenvalue ERROR, info=',info
-      stop
+      error stop 1
      end if
 
 ! take linear combinations to form diagonal projectors
@@ -192,7 +197,7 @@
     call dsyev( 'V', 'U', np, sovl, mxprj, sovlev, work, lwork, info )
     if(info .ne. 0) then
      write(6,'(a,i4)') 'run_vkb: sovl matrix ERROR error, info=',info
-     stop
+     error stop 1
     end if
 
 !   write(6,'(/1p,2e12.4)') (sovlev(ii),ii=1,2)
@@ -233,7 +238,7 @@
      call dsyev( 'V', 'U', np , bbist, mxprj, bbistev, work, lwork, info )
      if(info .ne. 0) then
       write(6,'(a,i4)') 'run_vkb: B^(-1)* matrix eigenvalue ERROR, info=',info
-      stop
+      error stop 1
      end if
 
 
@@ -288,6 +293,7 @@
 
      do jj=1,np
        apk=0.0d0
+       ipk=1
        do ii=1,mmax
          if(abs(vkb(ii,jj,l1))>apk) then
            apk=abs(vkb(ii,jj,l1))

@@ -36,3 +36,54 @@ be done in such a way that older files still run.  This could also be
 accomplished by building a separate executable for the new feature.
 
 There are probably other conventions I've been following but you get the idea.
+
+## Error messages
+
+These rules were added after the list above. Messages that were in the
+4.0.1 release keep their text, because users' scripts and the reference
+outputs may depend on it, but they now stop with `error stop` so that
+failures exit with status 1. New messages follow these rules.
+
+A fatal error is reported like this:
+
+```fortran
+ if(irphs==0) then
+   write(6,'(/2a,f12.6,a,f12.6)') 'run_phsft: ERROR rxpsh beyond radial mesh', &
+&        ', rxpsh=',rxpsh,', rr(mmax)=',rr(mmax)
+   error stop 1
+ end if
+```
+
+1) Write the message to unit 6, the output file, so it appears next to the
+output that led up to it. This holds for every message, including
+command-line errors.
+
+2) Start the message with a blank line (`/` at the start of the format).
+
+3) The text is `<routine>: ERROR <description>`. `<routine>` is the name
+of the subroutine or program that makes the check, exactly as in its
+`subroutine` or `program` statement, with no line number. `ERROR` is in
+capitals. The description is lower case and has no final period.
+
+4) After the description, give the values that explain the error as
+`name=value` pairs separated by `, `. Use the names from the source or the
+input file, e.g. `rxpsh=` or `rr(mmax)=`. Use `i0` for integers, `f12.6`
+for reals of known scale (radii in bohr, energies in Ha) and `es12.4` for
+anything else. (`f0.N` would drop the leading zero, and `es0.N` needs
+Fortran 2018.) Use `a` with `trim` for strings. To split a long message,
+end one string and start another (`'...', &` / `&  '...'`) rather than
+continuing inside a string, which would copy the indentation into the
+message.
+
+5) Stop with `error stop 1`, not `stop`, so that the exit status is
+non-zero and scripts and CTest see the failure.
+
+6) If a called routine reports a failure through `ierr`, the caller that
+decides to stop prints the message. It names the called routine and
+includes `ierr`, e.g. `oncvpsp: ERROR sratom failed, ierr=100`.
+
+7) A routine that already has an `ierr` argument should set `ierr` and
+return, not stop, when its callers can recover from the failure.
+
+8) A warning has the same form with `WARNING` in place of `ERROR`, and the
+program continues.

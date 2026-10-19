@@ -46,26 +46,32 @@
 
 !Input variables
  
- integer :: mmax,mxprj,iexc,nv,lloc,okb
- integer :: na(nv),la(nv),nproj(5)
- real(dp) :: rcmax
- real(dp) :: fat(30,2),rr(mmax)
- real(dp) :: vpuns(mmax,5),vkb(mmax,mxprj,4),evkb(mxprj,4)
+ integer, intent(in) :: mmax,mxprj,iexc,nv,lloc
+ integer, intent(in) :: na(nv),la(nv),nproj(5)
+ real(dp), intent(in) :: rcmax
+ real(dp), intent(in) :: fat(30,2),rr(mmax)
+ real(dp), intent(in) :: vpuns(mmax,5),vkb(mmax,mxprj,4),evkb(mxprj,4)
+ real(dp), intent(in) :: rhoc(mmax)
+
+!Input/output variables
+ real(dp), intent(inout) :: ea(nv)
+ real(dp), intent(inout) :: rho(mmax)
 
 !Output variables
- integer :: it
- real(dp) :: etot
- real(dp) :: ea(nv)
- real(dp) :: rho(mmax),rhoc(mmax),vi(mmax)
- real(dp) :: uua(mmax,nv)
+ integer, intent(out) :: ierr
+ integer, intent(out) :: it
+ real(dp), intent(out) :: etot
 
 !Local variables
+ integer :: okb
+ real(dp) :: vi(mmax)
+ real(dp) :: uua(mmax,nv)
  integer :: nin,mch
  real(dp) :: amesh,al
  real(dp) :: dr,eeel,eexc,et,emin,emax,rl,rl1,sd,sn,sls,eeig
  real(dp) :: thl,vn,zval,dfa
  real(dp) :: fa(30)
- integer :: ii,jj,l1,ierr,icx,nprj
+ integer :: ii,jj,l1,icx,nprj
  logical :: convg
 
  real(dp), allocatable :: uu(:),up(:)
@@ -75,6 +81,8 @@
 
 ! blend parameter for Anderson iterative potential mixing
  real(dp), parameter ::  bl=0.5d0
+
+ ierr=0
 
  allocate(uu(mmax),up(mmax))
  allocate(vo(mmax),vi1(mmax),vo1(mmax),vxc(mmax),vp(mmax))

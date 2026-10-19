@@ -34,7 +34,7 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
- real(dp) :: rr,zz
+ real(dp), intent(in) :: rr,zz
  
 !Output function
  real(dp) :: tfapot

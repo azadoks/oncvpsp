@@ -42,15 +42,15 @@
  integer, parameter :: dp=kind(1.0d0)
 
 ! Input variables
- real(dp) :: rhotot(mmax),rhoc(mmax),rho(mmax,nv),rr(mmax)
- real(dp) :: d2ref(nv,nv)
- real(dp) :: zion
- integer :: la(nv+nc)
- integer :: iexc,nc,nv,ircut,mmax
+ real(dp), intent(in) :: rhotot(mmax),rhoc(mmax),rho(mmax,nv),rr(mmax)
+ real(dp), intent(in) :: d2ref(nv,nv)
+ real(dp), intent(in) :: zion
+ integer, intent(in) :: la(nv+nc)
+ integer, intent(in) :: iexc,nc,nv,ircut,mmax
 
 ! Output variables
- real(dp) :: d2exc(nv,nv)
- real(dp) :: d2mdiff
+ real(dp), intent(out) :: d2exc(nv,nv)
+ real(dp), intent(out) :: d2mdiff
  
 ! Local variables
  real(dp) :: hh,eeel,eexc,ss

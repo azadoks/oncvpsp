@@ -41,13 +41,13 @@
  real(dp), parameter :: pi2=2.0d0*pi
 
 !Input variables
- integer :: ll,kap,mmax,npsh,mch
- real(dp) :: rr(mmax),vv(mmax)
- real(dp) :: depsh,epsh2,zz
+ integer, intent(in) :: ll,kap,mmax,npsh,mch
+ real(dp), intent(in) :: rr(mmax),vv(mmax)
+ real(dp), intent(in) :: depsh,epsh2,zz
  logical :: srel
 
 !Output variables
- real(dp) :: pshf(npsh)
+ real(dp), intent(out) :: pshf(npsh)
 
 !Local variables
  real(dp) :: al,epsh,phi,phip,pshoff

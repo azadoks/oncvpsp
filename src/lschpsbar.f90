@@ -40,14 +40,17 @@
 
 
 !Input variables
- real(dp) :: rr(mmax),vv(mmax)
- real(dp) :: emin,emax,tht
- integer :: nn,ll,mmax,mbar
+ real(dp), intent(in) :: rr(mmax),vv(mmax)
+ real(dp), intent(in) :: tht
+ integer, intent(in) :: nn,ll,mmax,mbar
+
+!Input/output variables
+ real(dp), intent(inout) :: emin,emax
+ real(dp), intent(inout) :: ee
 
 !Output variables
- real(dp) :: uu(mmax),up(mmax)
- real(dp) :: ee
- integer :: ierr
+ real(dp), intent(out) :: uu(mmax),up(mmax)
+ integer, intent(out) :: ierr
 
 !Local Variables
 
@@ -77,6 +80,7 @@
 
  sls=ll*(ll+1)
 
+ imin=2
  if(emin==0.0d0) then
    emin=emax
    do ii=1,mbar

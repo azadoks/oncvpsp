@@ -31,11 +31,11 @@ subroutine sbf8(nm,xx,sb_out)
  real(dp), parameter :: pi2=2.0_dp*pi
 
 !Input variables
-  integer :: nm
-  real(dp) :: xx
+  integer, intent(in) :: nm
+  real(dp), intent(in) :: xx
 
-!Output variables
-  real(dp) :: sb_out(nm)
+!Input/output variables
+  real(dp), intent(inout) :: sb_out(nm)
 
 !Local variables
  integer :: nlim,nn

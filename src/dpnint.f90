@@ -29,11 +29,11 @@
  integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
- real(dp) ::  xx(*),yy(*),tt(*)
- integer nn,mm
+ real(dp), intent(in) ::  xx(*),yy(*),tt(*)
+ integer, intent(in) :: nn,mm
 
 !Output variables
- real(dp) :: ss(*)
+ real(dp), intent(out) :: ss(*)
 
 !Local variables
  real(dp) :: sum,term,zz
@@ -45,7 +45,7 @@
  if(nn<npoly+1) then
    write(6,'(/a,i6,a,i4)') 'dpnint: interpolation ERROR, n=', &
 &       nn,'< npoly=',npoly
-   stop
+   error stop 1
  end if
 
 ! note: output point 1 is skipped in this version because of special
@@ -57,11 +57,11 @@
  do jj = 2, mm
    if(tt(jj)<xx(1)) then
      write(6,'(/a)') 'dpnint: interpolation ERROR - out of range'
-     stop
+     error stop 1
    end if
    if(tt(jj)>xx(nn)) then
      write(6,'(/a)') 'dpnint: interpolation ERROR - out of range'
-     stop
+     error stop 1
    end if
 
 ! interval halving search for xx(ii) points bracketing tt(jj)
@@ -108,6 +108,8 @@
    end do
    ss(jj)=sum
 
+ end do
+
 ! special treatment for the origin
 ! Do order npoly EXTRAPOLATION to the origin using the points inerpolated
 ! on the linear grid rather than the log grid, since this represents an
@@ -117,6 +119,11 @@
 ! of order npoly or less, this is exact.
 
   if(tt(1)==0.0d0) then
+   if(mm<npoly+2) then
+     write(6,'(/2a,i0,a,i0)') 'dpnint: ERROR too few points to extrapolate', &
+&          ' to the origin, mm=',mm,', npoly=',npoly
+     error stop 1
+   end if
 
    istart=2
    zz=0.0d0
@@ -135,6 +142,5 @@
 
   end if
 
- end do
  return
  end subroutine dpnint
