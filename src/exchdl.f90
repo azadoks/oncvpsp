@@ -21,14 +21,15 @@
 !calculates Hedin-Lundquist exchange-correlation potential and energy
 !density
 
+!rho  charge density times 4 pi
+!vxc  exchange-correlation potential
+!exc  exchange-correlation energy density
+!mmax  dimension of log radial grid
+
  use constants_m, only: dp, pi
  implicit none
 
- real(dp), parameter :: pi4=4.0d0*pi
- real(dp), parameter :: pi4i=1.0d0/pi4
- real(dp), parameter :: thrd=1.0d0/3.0d0
-
-!Inpupt variables
+!Input variables
  integer, intent(in) :: mmax
  real(dp), intent(in) :: rho(mmax)
 
@@ -36,6 +37,9 @@
  real(dp), intent(out) :: vxc(mmax),exc(mmax)
 
 !Local variables
+ real(dp), parameter :: pi4=4.0d0*pi
+ real(dp), parameter :: pi4i=1.0d0/pi4
+ real(dp), parameter :: thrd=1.0d0/3.0d0
  integer :: ii
  real(dp) :: conrs,convx,conex
  real(dp) :: rs,ecp,aln,xx,rh
@@ -53,9 +57,6 @@
      xx=rs/21.0d0
      aln=log(1.0d0 + 1.0d0/xx)
      ecp = aln+(xx**3*aln-xx*xx)+0.5d0*xx-thrd
-!    ecp = aln+(xx**3*aln-xx*xx)+xx/2-1.0d0/3.0d0
-!    exc(ii)=-0.458175d0/rs - 0.0225d0*ecp
-!    vxc(ii)=-0.6109d0/rs - 0.0225d0*aln
      exc(ii)=-conex/rs - 0.0225d0*ecp
      vxc(ii)=-convx/rs - 0.0225d0*aln
    else

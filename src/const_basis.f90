@@ -28,6 +28,8 @@
 !orbasis  coefficients of sbfs in orthogonal basis
 !orbasis_der  values and derivatives of orthogonalized sbf basis
 !              functions at rc (constraint matrix)
+!pswf0_or  pswf0_sb in the orthogonalized basis
+!pswfnull_or  pswfnull_sb in the orthogonalized basis
 !pswf0_sb  linear combination of sbfs that matches cons at rc
 !pswfnull_sb  nbas-ncon linear combinations of sbfs satisfying value and ncon-1
 !           derivatives at rc == 0 (null space of constraint matrix)
@@ -72,18 +74,6 @@
    error stop 1
  end if
 
-!write(6,'(/a,6d12.4)') 'singular values',(ss(ii),ii=1,ncon)
-
-!write(6,'(/a)') 'usvd'
-!do jj=1,ncon
-! write(6,'(6f12.6)') (usvd(jj,ii),ii=1,ncon)
-!end do
-
-!write(6,'(/a)') 'vt'
-!do jj=1,nbas
-! write(6,'(11f12.6)') (vt(jj,ii),ii=1,nbas)
-!end do
-
 !operate on constraint vector with usvd^transpose
  work(:)=0.0d0
  do ii=1,ncon
@@ -112,7 +102,6 @@
 
 !copy coefficient vectors spanning null space of constraint matrix
 !note that vt (transpose) rows become columns of pswfnull
-!write(6,'(/)')
  do jj=1,nbas-ncon
    sn=0.0d0
    do ii=1,nbas

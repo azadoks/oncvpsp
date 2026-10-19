@@ -24,7 +24,7 @@
 ! Dirac equation, log derivatives based on large component only
 
 !ll  angular momentum
-!kap =l, -(l+1) for j=l -/+ 1/2
+!kap  =l, -(l+1) for j=l -/+ 1/2
 !epsh2  upper limit of energy scan
 !depsh  increment of scan
 !pshf  log derivatives "angles", as above
@@ -37,20 +37,20 @@
 
  use constants_m, only: dp, pi
  implicit none
- real(dp), parameter :: pi2=2.0d0*pi
 
 !Input variables
  integer, intent(in) :: ll,kap,mmax,npsh,mch
  real(dp), intent(in) :: rr(mmax),vv(mmax)
  real(dp), intent(in) :: depsh,epsh2,zz
- logical :: srel
 
 !Output variables
  real(dp), intent(out) :: pshf(npsh)
 
 !Local variables
+ real(dp), parameter :: pi2=2.0d0*pi
  real(dp) :: al,epsh,phi,phip,pshoff
  integer :: ii,ierr,nnae
+ logical :: srel
 
  real(dp), allocatable :: uu(:,:),up(:,:)
 

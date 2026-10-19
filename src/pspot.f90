@@ -22,11 +22,7 @@
 !calculates optimized pseudopotential from coefficients of optimized
 !pseudo wave function and all-electron wave function
 
- use constants_m, only: dp
- implicit none
-
-!INPUT
-!ipr 1 for first projector, 2 for second which usually has a node
+!ipr  1 for first projector, 2 for second which usually has a node
 !ll  angular momentum
 !rr  log radial mesh
 !irc  index of rc
@@ -38,16 +34,18 @@
 !uu  rr*all-electron wave function
 !pswfopt_sb  sbf coefficients for optimized pseudo wave function
 !vae  all-electron potential
-
-!OUTPUT
 !psopt  rr * pseudo wave function on log grid
 !vpsp  pseudopotential
 !vkb  (epsilon-T)*phi component of chi projector
 !ekin_num  total radial kinetic energy
 
+ use constants_m, only: dp
+ implicit none
+
 !Input variables
  integer, intent(in) :: ipr,ll,irc,mmax,nbas
- real(dp), intent(in) :: rr(mmax),qroot(nbas),uu(mmax),pswfopt_sb(nbas),vae(mmax)
+ real(dp), intent(in) :: rr(mmax),qroot(nbas),uu(mmax),pswfopt_sb(nbas)
+ real(dp), intent(in) :: vae(mmax)
  real(dp), intent(in) :: al,eig
 
 !Input/output variables
@@ -82,12 +80,6 @@
 !numerical derivatives of all-electron wave function
 !note that we are taking derivatives of uu here, not uu/rr as for sbf matching
  do jj=2,3
-
-! 5-point numerical first derivatives applied successively
-!  do ii=1+2*jj,mmax-2*jj
-!     work(ii,jj)=(2.d0*work(ii-2,jj-1)-16.d0*work(ii-1,jj-1)&
-!&     +16.d0*work(ii+1,jj-1)-2.d0*work(ii+2,jj-1))&
-!&     /(24.d0*al*rr(ii))
 
 ! 7-point numerical first derivatives applied successively
    do ii=1+3*jj,mmax-3*jj

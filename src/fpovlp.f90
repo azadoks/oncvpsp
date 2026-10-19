@@ -20,27 +20,26 @@
 
  subroutine fpovlp(gg,hh,nn,ll,zz,ss,rr,srel)
 
- use constants_m, only: dp, c_light
- implicit none
-
-!gg wave function one
-!hh wave function two
-!nn outer integration limit
-!ll angular momentum
-!zz nuclear charge
-!ss overlap output
-!rr log radial mesh
-!srel .true. for scalar-relativistic, .false. for non-relativistic
-
+!gg  wave function one
+!hh  wave function two
+!nn  outer integration limit
+!ll  angular momentum
+!zz  nuclear charge
+!ss  overlap output
+!rr  log radial mesh
+!srel  .true. for scalar-relativistic, .false. for non-relativistic
 
 ! product of all-elecctron scalar-relativistic wave functions gg*hh
 ! goes like rr**(2*gamma) as rr -> 0
 ! integral on usual log mesh from rr=0 to rr(nn)
 
+ use constants_m, only: dp, c_light
+ implicit none
+
 !Input variables
+ integer, intent(in) :: nn,ll
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: gg(nn),hh(nn),rr(nn)
- integer, intent(in) :: nn,ll
  logical, intent(in) :: srel
 
 !Output variables

@@ -22,11 +22,13 @@
 !creates quantum well to confine positive-energy state, and calculates
 !the resulting all-electron wave function
 
-!nn  principal quantum number of well state
+!nnin  principal quantum number of well state (input); that of the well
+!       state found, which may have more nodes (output)
 !ll  angular momentum
-!kap =l, -(l+1) for j=l -/+ 1/2
+!kap  l, -(l+1) for j=l -/+ 1/2
 !irc  index of core radius
-!ep  target energy for well state (>0)
+!ep  target energy for well state (>0); reset if a bound state is used
+!    or a negative energy was specified
 !rr  log radial mesh
 !vfull  all-electron potential
 !vwell  potential with binding well for ikap=2 calculation
@@ -34,11 +36,10 @@
 !up  d(uu)/dr
 !zz  atomic number
 !mmax  size of log radial mesh
-!mch matching mesh point for inward-outward integrations
+!mch  matching mesh point for inward-outward integrations
 
  use constants_m, only: dp
  implicit none
-
 
 !Input variables
  real(dp), intent(in) :: rr(mmax),vfull(mmax)
@@ -151,13 +152,6 @@
 !find bound state in well
      et=ep
      call ldiracfb(nn,ll,kap,ierr,et,rr,zz,vwell,uu,up,mmax,mch)
-
-!     if(ierr < 0) then
-!       write(6,'(a,i3,a,i3,a,i3)') &
-!&            'wellstate_r: ERROR ldiracfb no classical turning point, &
-!&             n=',nn,' l=',ll,' kap=',kap
-!       stop
-!     end if
 
      if(abs(et-ep)<eps) then
        ep=et

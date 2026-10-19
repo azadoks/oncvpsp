@@ -20,17 +20,19 @@
 &           rr,vi,zz,mmax,iexc,etot,ierr)
 
 ! self-consistent fully-relativistic all-electron atom
+! calculation using log mesh
 ! partially-occupied orbitals are weighted proportionally to 2j+1
-! calculation using log mesh (non-relativistic when srel=.false.)
 
 !na  principal quantum number array, dimension ncv
 !la  angular-momenta
-!ea  eigenvalues (output)
+!ea  eigenvalues (output), ea(:,1) for j=l+1/2, ea(:,2) for j=l-1/2
 !fa  occupancies
-!rpk  radius of outermost peak of wave function
+!rpk  radius of outermost peak of wave function, indexed as ea
 !nc  number of core states
 !ncv  number of core+valence states
 !it  number of iterations (output)
+!rhoc  core charge (output)
+!rho  total core+valence charge (output)
 !rr  log radial mesh
 !vi  all-electron potential (output)
 !zz  atomic number
@@ -38,7 +40,6 @@
 !iexc  exchange-correlation function to be used
 !etot  all-electron total energy (output)
 !ierr  error flag
-!srel  .true. for scalar-relativistic, .false. for non-relativistic
 
  use constants_m, only: dp
  implicit none
@@ -59,10 +60,8 @@
  real(dp), intent(out) :: etot
  real(dp), intent(out) :: rho(mmax),rhoc(mmax),vi(mmax)
 
-!Local function
- real(dp) :: tfapot
-
 !Local variables
+ real(dp) :: tfapot
  integer :: nin,mch
  real(dp) :: amesh,al
  real(dp) :: dr,eeel,eexc,et,rl,rl1,sd,sf,sn,eeig

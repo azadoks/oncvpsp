@@ -72,6 +72,9 @@
  subroutine run_config_ae(jj,nacnf,lacnf,facnf,nc,nvcnf,rr,zz, &
 &                         mmax,iexc,ea,srel,cae)
 
+! solves the all-electron atom in the maximally-ionized and excited states
+! of test configuration jj, the all-electron half of run_config
+
 !jj  index of current configufation
 !nacnf  principal quantum number array, all configurations
 !lacnf  angular-momenta array, all config.
@@ -224,6 +227,7 @@
  contains
 
  subroutine store_results
+! copies the results so far into cae
  cae%nvt=nvt
  cae%nat(:)=nat(:)
  cae%lat(:)=lat(:)
@@ -237,6 +241,11 @@
  subroutine config_ae_warning(jj,cae)
 ! prints the warning run_config gives when the all-electron atom for test
 ! configuration jj failed
+
+!jj  index of the configuration (1 for the reference)
+!cae  run_config_ae results for this configuration
+
+!Input variables
  integer, intent(in) :: jj
  type(config_ae_t), intent(in) :: cae
 
@@ -438,6 +447,7 @@
  contains
 
  subroutine store_results
+! copies the results so far into cae
  cae%nvt=nvt
  cae%nat(:)=nat(:)
  cae%lat(:)=lat(:)
@@ -451,9 +461,15 @@
  subroutine config_ae_r_warning(jj,cae)
 ! prints the warning run_config_r gives when the all-electron atom for
 ! test configuration jj failed
+
+!jj  index of the configuration (1 for the reference)
+!cae  run_config_ae_r results for this configuration
+
+!Input variables
  integer, intent(in) :: jj
  type(config_ae_r_t), intent(in) :: cae
 
+!Local variables
  integer :: ll
 
  select case(cae%stat)
@@ -462,7 +478,8 @@
 &        ' WARNING no output for configuration',jj
    if(cae%ierr==-1) then
      write(6,'(a,i4)') &
-&          'run_config_r: WARNING no classical turning point error, iteration', &
+&          'run_config_r: WARNING no classical turning point ' // &
+&          'error, iteration', &
 &          cae%it
    else
      write(6,'(a)') 'run_config_r: WARNING self-consistency failed to converge'

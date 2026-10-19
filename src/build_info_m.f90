@@ -34,6 +34,8 @@
 !iunit  output unit
 !program  name of the executable
 !treatment  relativistic treatment (non-, scalar- or fully-relativistic)
+
+!Input variables
  integer, intent(in) :: iunit
  character(len=*), intent(in) :: program,treatment
 

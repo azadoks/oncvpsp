@@ -16,18 +16,17 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
-! self-consistent all-electron and pseudopotential atomic calculations
-! compared for reference and tests atomic configurations
-
-
  subroutine run_config_ps(jj,cae,nc,rhov,rhomod,rr, &
 &                 rcmax,mmax,mxprj,iexc,etot,epstot,nproj,vpuns, &
 &                 lloc,vkb,evkb)
 
-!jj  index of current configufation
+! self-consistent pseudoatom calculation for test configuration jj, compared
+! with the all-electron results for the reference and test configurations
+
+!jj  index of current configuration
 !cae  all-electron results for this configuration, from run_config_ae
 !nc  number of core states
-!rhov valence pseudo-charge of reference configuration
+!rhov  valence pseudo-charge of reference configuration
 !rhomod  model core charge
 !rr  log radial mesh
 !rcmax  maximum core radius for psp
@@ -35,12 +34,12 @@
 !mxprj  dimension of number of projectors
 !iexc  exchange-correlation function to be used
 !etot  reference configuration total energy
-!epstot  pseudoatom total energy
+!epstot  reference configuration pseudoatom total energy
 !nproj  number of VKB projectors to use for each l
 !vpuns  unscreened semi-local pseudopotentials (plus different vloc if lloc==4)
 !lloc  index-1 of local potential
-!vkb   Vanderbilt-Kleinman-Bylander projectors
-!evkb VKB projector coefficients
+!vkb  Vanderbilt-Kleinman-Bylander projectors
+!evkb  VKB projector coefficients
 
  use config_ae_m, only: config_ae_t, config_ae_warning
  use constants_m, only: dp
@@ -53,9 +52,8 @@
  integer, intent(in) :: nproj(5)
  real(dp), intent(in) :: etot,epstot,rcmax
  real(dp), intent(in) :: rhov(mmax),rr(mmax)
- real(dp), intent(in) :: vpuns(mmax,5),vkb(mmax,mxprj,4),evkb(mxprj,4),rhomod(mmax,5)
-
-!Output variables - printing only
+ real(dp), intent(in) :: vpuns(mmax,5),vkb(mmax,mxprj,4),evkb(mxprj,4)
+ real(dp), intent(in) :: rhomod(mmax,5)
 
 !Local variables
  integer :: ii,it,kk,l1,ierr,nvt
@@ -144,8 +142,6 @@
    eatp(kk)=eat(nc+kk,2)
    fatp(kk,1)=fat(nc+kk,2)
    fatp(kk,2)=fat(nc+kk,3)
- end do
- do ii=1,nvt
  end do
 
  call psatom(natp,latp,eatp,fatp,nvt,it,rhocps,rho, &

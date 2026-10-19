@@ -23,11 +23,14 @@
 
 !na  principal quantum number array, dimension nv
 !la  angular-momenta
-!ea  eigenvalues (input starting guess, output)
-!fa  occupancies
-!rpk  radius of outermost peak of wave function
+!ea  eigenvalues (input starting guess, output), ea(:,1) for j=l+1/2,
+!    ea(:,2) for j=l-1/2
+!fat  occupancies, fat(:,1) reference and fat(:,2) new configuration
 !nv  number of valence states
 !it  number of iterations (output)
+!rhoc  core charge (model core charge of the pseudopotential)
+!rho  valence charge, input all-electron starting guess, output
+!     self-consistent pseudo valence charge
 !rr  log radial mesh
 !rcmax  maximum core radius for psp
 !mmax  size of log grid
@@ -37,8 +40,10 @@
 !nproj  number of VKB projectora to use for each l
 !vpuns  unscreened semi-local pseudopotentials (plus differenv vloc if lloc==4)
 !lloc  index-1 of local potential
-!vkb   Vanderbilt-Kleinman-Bylander projectors
-!evkb VKB projector coefficients
+!vkb   Vanderbilt-Kleinman-Bylander projectors, last index 1 for j=l+1/2,
+!      2 for j=l-1/2
+!evkb VKB projector coefficients, last index as for vkb
+!ierr  non-zero return if error
 
  use constants_m, only: dp
  implicit none

@@ -24,10 +24,6 @@
 !0.5 times the first matching root, and the average of the 1st and second
 !matching roots
 
- use constants_m, only: dp
- implicit none
-
-!INPUT
 !ll  angular momentum
 !rc  core radius
 !ulgd  log derivaive of all-electron radial wave function at rc
@@ -35,14 +31,16 @@
 !        orthogonal basis)
 !dltq  step for search for qroots satisfying log derivative condition
 !qmax  maximum q for search
-
-!OUTPUT
 !qroot  set of q's satisfying dj_l(q*r)/dr / jl(q*r) = ulgd
 
+ use constants_m, only: dp
+ implicit none
 
-!Arguments
+!Input variables
  integer, intent(in) :: ll,nroot
  real(dp), intent(in) :: rc,ulgd,dltq,qmax
+
+!Output variables
  real(dp), intent(out) :: qroot(nroot)
 
 !Local variables
@@ -92,7 +90,8 @@
        end if
      end do
      if(.not. found_root) then
-       write(6,'(/a,i0,a,es12.4,a,es12.4)') 'qroots: WARNING bisection failed, skipping', &
+       write(6,'(/a,i0,a,es12.4,a,es12.4)') &
+&            'qroots: WARNING bisection failed, skipping', &
 &            ', ll=',ll,', qlow=',qlow,', qhi=',qhi
      end if
    end if

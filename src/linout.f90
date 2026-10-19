@@ -20,9 +20,11 @@
 ! for Abinit input using pspcod=8
 
  subroutine linout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
-&                  rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym, &
+&                  rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl, &
+&                  atsym, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,fcfact0,rcfact,fcgrid,rcgrid, &
+&                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,fcfact0,rcfact, &
+&                  fcgrid,rcgrid, &
 &                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh)
 
 
@@ -33,8 +35,8 @@
 !evkb  coefficients of VKB projectors
 !nproj  number of vkb projectors for each l
 !rr  log radial grid
-!vpuns  unscreened semi-local pseudopotentials (vp(:,5) is local potential
-!  if linear combination is used)
+!vpuns  unscreened semi-local pseudopotentials (vpuns(:,5) is local
+!       potential if linear combination is used)
 !rho  valence pseudocharge
 !rhomod  model core charge
 !rhotae  all-electron valence charge
@@ -47,15 +49,41 @@
 !icmod  1 if model core charge is used, otherwise 0
 !fcfact  model core amplitude prefactor (1 for icmod=4, cutoff for icmod=6)
 !fcfact0  input fcfact, for the echo
-!nrl size of linear radial grid
-!drl spacing of linear radial grid
+!rcfact  prefactor for the model core charge scale
+!nrl  size of linear radial grid
+!drl  spacing of linear radial grid
 !atsym  atomic symbol
-!remaining input variables to be echoed:
-!  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf
-!  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact0,rcfact,fcgrid,rcgrid
-!  epsh1,epsh2,depsh,rxpsh,rlmax,psfile
-!log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets it (else 0)
-!psfile  should be 'psp8' or 'both'
+!(the arguments from na on are input variables echoed in the psp8 file)
+!na  principal quantum numbers, reference configuration
+!la  angular momenta, reference configuration
+!ncon  number of matching constraints for each l
+!nbas  number of basis functions for each l
+!nvcnf  number of valence states, all configurations
+!nacnf  principal quantum numbers, all configurations
+!lacnf  angular momenta, all configurations
+!nc  number of core states
+!nv  number of valence states
+!lpopt  choice of polynomial for lloc==4
+!ncnf  number of test configurations
+!fa  occupancies, reference configuration
+!rc0  input core radii
+!ep  energies at which the pseudopotentials are generated (Ha)
+!qcut  residual-energy cutoff wave vectors for each l
+!debl  energy shifts for the second projectors for each l (Ha)
+!facnf  occupancies, all configurations
+!dvloc0  amplitude at rr==0 of the function added to the local potential
+!        for lloc==4
+!fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
+!rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
+!epsh1  lower limit of the log derivative analysis energy range (Ha)
+!epsh2  upper limit of the log derivative analysis energy range (Ha)
+!depsh  energy step of the log derivative analysis (Ha)
+!rxpsh  radius (bohr) of the log derivative analysis, negative for the
+!       default
+!rlmax  maximum radius of the linear output mesh (bohr)
+!psfile  output format, should be 'psp8' or 'both'
+!log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets
+!          it (else 0)
 
  use constants_m, only: dp
  use input_echo_m, only: write_icmod, write_epsh
@@ -81,8 +109,6 @@
  real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rxpsh,rlmax
  real(dp), intent(in) :: log_mesh(3)
  character(len=4), intent(in) :: psfile
-
-!Output variables - printing only
 
 !Local variables
  integer :: ii,iprj,jj,ll,l1,ixc_abinit

@@ -35,15 +35,13 @@
 !rr  radial log grid
 !vloc  local part of psp
 !vkb  VKB projectors
+!evkb  coefficients of VKB projectors
 !mmax  dimension of rr, etc.
 !mch  index of radius for log der test
 !npsh  number of energy points in scan
 
  use constants_m, only: dp, pi
  implicit none
- real(dp), parameter :: pi2=2.0d0*pi
- real(dp), parameter :: eps=1.0d-8
-
 !Input variables
  integer, intent(in) :: ll,ivkb,mmax,npsh,mch
  real(dp), intent(in) :: rr(mmax),vloc(mmax),vkb(mmax,ivkb),evkb(ivkb)
@@ -54,6 +52,8 @@
  real(dp), intent(out) :: pshp(npsh)
 
 !Local variables
+ real(dp), parameter :: pi2=2.0d0*pi
+ real(dp), parameter :: eps=1.0d-8
  real(dp) :: al,dnpi,epsh,phi,phip,pshoff
  real(dp) :: dmin,dmax,dtst,emin,emax,et,psmin,psmax,pst,shift,shift2
  integer :: ii,jj,ierr,node,n2
@@ -100,7 +100,6 @@
        emax=epsh+depsh
        psmin=pshp(ii)
        psmax=pshp(ii-1)
-!       if((psmax-psmin)>pi) psmin=psmin+pi2
        if((psmax-psmin)>2.9d0) psmin=psmin+pi2
 
        do jj=1,25

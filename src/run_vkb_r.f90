@@ -16,8 +16,8 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine run_vkb_r(lmax,lloc,lpopt,dvloc0,irc,nproj,rr,mmax,mxprj,pswf,vfull,vp, &
-&                   evkb,vkb,nlim,vr)
+ subroutine run_vkb_r(lmax,lloc,lpopt,dvloc0,irc,nproj,rr,mmax,mxprj,pswf, &
+&                   vfull,vp,evkb,vkb,nlim,vr)
 
 ! computes Vanderbilt / Kleinman-Bylander non-local potentials
 
@@ -30,21 +30,22 @@
 !rr  log radial grid
 !mmax  size of radial grid
 !mxprj  dimension of number of projectors
-!pswf pseudo wave functions
+!pswf  pseudo wave functions
 !vfull  all-electron potential
 !vp  semi-local pseudopotentials for first projectors
 !     (vp(:,5) is local potential if lloc=4)
 !vkb  semi-local "potentials"*pswf (input); VKB projectors (output)
-!evkb  coefficients of BKB projectors (output)
+!evkb  coefficients of VKB projectors (output)
 !nlim  index of maximum rc including that of vlocal (output)
-!vr  effective scalar-relativisic "potential" calculated in vrel
+!vr  effective scalar-relativistic "potential" calculated in vrel
+!   (for pswf, vp, vkb, evkb and vr the last index is 1 for j=l+1/2,
+!   2 for j=l-1/2)
 
  use constants_m, only: dp
  implicit none
 
 !Input variables
  integer, intent(in) :: lmax,lloc,lpopt,mmax,mxprj
- integer :: lwork
  integer, intent(in) :: irc(6),nproj(6)
  real(dp), intent(in) :: rr(mmax),pswf(mmax,mxprj,4,2),vfull(mmax)
  real(dp), intent(in) :: vr(mmax,mxprj,6,2)
@@ -58,6 +59,7 @@
  integer, intent(out) :: nlim
 
 !Local variables
+ integer :: lwork
  integer :: ii,ipk,jj,kk,ikap,ll,l1,info,np,kap,mkap
  real(dp) :: apk,sn,tt,qq12,xx,ff
  real(dp) :: bb(mxprj,mxprj),bbev(mxprj),bbi(mxprj,mxprj)
@@ -112,7 +114,6 @@
          xx=20.0d0*((rr(ii)/rr(irc(l1)))-1.0d0)
          if(xx>-1.0d0) then
            ff=(1.0d0-xx**2)**2
-!        ff=0.0d0
          else
            ff=0.0d0
          end if
@@ -152,7 +153,8 @@
 
        do jj=1,np
          do ii=1,np
-           call vpinteg(pswf(1,ii,l1,ikap),vkb(1,jj,l1,ikap),irc(l1),2*l1,bb(ii,jj),rr)
+           call vpinteg(pswf(1,ii,l1,ikap),vkb(1,jj,l1,ikap),irc(l1),2*l1, &
+&                       bb(ii,jj),rr)
          end do
        end do
 
@@ -232,8 +234,6 @@
          error stop 1
        end if
 
-!   write(6,'(/1p,2e12.4)') (sovlev(ii),ii=1,2)
-
 ! construct S^(-1/2) AND s^(1/2)
 
        do jj=1,np
@@ -269,7 +269,8 @@
 
        call dsyev( 'V', 'U', np , bbist, mxprj, bbistev, work, lwork, info )
        if(info /= 0) then
-         write(6,'(a,i4)') 'run_vkb: B^(-1)* matrix eigenvalue ERROR, info=',info
+         write(6,'(a,i4)') &
+&              'run_vkb: B^(-1)* matrix eigenvalue ERROR, info=',info
          error stop 1
        end if
 

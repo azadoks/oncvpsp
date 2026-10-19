@@ -27,8 +27,6 @@
  use constants_m, only: dp, pi
  implicit none
 
- real(dp), parameter :: pi2=2.0_dp*pi
-
 !Input variables
  integer, intent(in) :: nm
  real(dp), intent(in) :: xx
@@ -37,6 +35,7 @@
  real(dp), intent(inout) :: sb_out(nm)
 
 !Local variables
+ real(dp), parameter :: pi2=2.0_dp*pi
  integer :: nlim,nn
  real(dp) :: cc,fn,sn,ss,xi,xn,xs,xmod
  real(dp),allocatable :: sb(:)

@@ -46,7 +46,7 @@
 
 !Local variables
  integer :: ii
- real(dp) :: aco,al,bco,cco,dco,cl,d3vv,fnp,x
+ real(dp) :: aco,al,bco,cco,dco,cl,d3vv,fnp,xx
 
  real(dp), allocatable :: dvv(:),d2vv(:)
 
@@ -135,15 +135,15 @@
 ! add compatible supplementary function to change value at rr==0
 
  do ii = 1, irc
-   x=rr(ii)/rr(irc)
+   xx=rr(ii)/rr(irc)
    if(lpopt == 1) then
-     vp(ii,5)=vp(ii,5) + dvloc0*(1.0d0 - x**2)**3
+     vp(ii,5)=vp(ii,5) + dvloc0*(1.0d0 - xx**2)**3
    else if(lpopt == 2) then
-     vp(ii,5)=vp(ii,5) + dvloc0*(1.0d0 - x**4)**3
+     vp(ii,5)=vp(ii,5) + dvloc0*(1.0d0 - xx**4)**3
    else if(lpopt == 3 .or. lpopt == 4) then
-     vp(ii,5)=vp(ii,5) + dvloc0*(1.0d0 - x**4)**4
+     vp(ii,5)=vp(ii,5) + dvloc0*(1.0d0 - xx**4)**4
    else if(lpopt == 5) then
-     vp(ii,5)=vp(ii,5) + dvloc0*(1.0d0 - x**4)**4
+     vp(ii,5)=vp(ii,5) + dvloc0*(1.0d0 - xx**4)**4
    end if
  end do
 

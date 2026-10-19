@@ -22,7 +22,7 @@
 
 !nn  effective principal quantum number based on nodes inside mch (output)
 !ll  angular-momentum quantum number
-!kap =l, -(l+1) for j=l -/+ 1/2
+!kap  =l, -(l+1) for j=l -/+ 1/2
 !ierr  non-zero return if error
 !ee  bound-state energy, input guess and output calculated value
 !rr  log radial mesh
@@ -31,7 +31,7 @@
 !uu(mmax,jj)  output radial wave functions (*rr) jj=1,2 for large, small
 !up  d(uu)/dr
 !mmax  size of log grid
-!mch matching mesh point for inward-outward integrations
+!mch  matching mesh point for inward-outward integrations
 
  use constants_m, only: dp, c_light
  implicit none

@@ -21,22 +21,22 @@
 !creates quantum well to confine positive-energy state, and calculates
 !the resulting all-electron wave function
 
-!nn  principal quantum number of well state
+!nnin  principal quantum number of well state
 !ll  angular momentum
 !irc  index of core radius
-!ep  target energy for well state (>0)
+!ep  target energy for well state (>0); reset if a bound state is used
+!    or a negative energy was specified
 !rr  log radial mesh
 !vfull  all-electron potential
 !uu  all-electron well-bound wave function
 !up  d(uu)/dr
 !zz  atomic number
 !mmax  size of log radial mesh
-!mch matching mesh point for inward-outward integrations
-!srel .true. for scalar-relativistic, .false. for non-relativistic
+!mch  matching mesh point for inward-outward integrations
+!srel  .true. for scalar-relativistic, .false. for non-relativistic
 
  use constants_m, only: dp
  implicit none
-
 
 !Input variables
  real(dp), intent(in) :: rr(mmax),vfull(mmax)

@@ -33,11 +33,11 @@
 !rr  log radial mesh
 !vloc  local part of psp
 !vkb  VKB projectors
-!evkb coefficients of BKB projectors
+!evkb  coefficients of BKB projectors
 !uu  output radial wave function (*rr)
 !up  d(uu)/dr
 !mmax  size of log grid
-!mch matching mesh point for inward-outward integrations
+!mch  matching mesh point for inward-outward integrations
 
  use constants_m, only: dp
  implicit none
@@ -74,7 +74,6 @@
 ! convergence factor for solution of schroedinger eq.  if calculated
 ! correction to eigenvalue is smaller in magnitude than eps times
 ! the magnitude of the current guess, the current guess is not changed.
-!eps=1.0d-10
  eps=1.0d-8
  ierr = 100
 
@@ -113,7 +112,6 @@
      write(6,'(/a)') 'lschvkbb: ERROR no classical turning point'
      write(6,'(a,i2,a,i6)') 'lschvkbb: ERROR nvkb=',nvkb,'mch=',mch
      write(6,'(a,i2,a,f8.4,a)') 'lschvkbb: ERROR l=',ll,'  e=',ee
-!   stop
    end if
 
    if(nvkb>0) then
@@ -222,10 +220,8 @@
      end if
 
      if(de>0.0d0) then
-!      emin=ee
        emin=0.5d0*(emin+ee)
      else
-!      emax=ee
        emax=0.5d0*(emax+ee)
      end if
      ee=ee+de
@@ -233,13 +229,11 @@
 
    else if(node-nn+ll+1<0) then
 ! too few nodes
-!    emin=ee
      emin=0.5d0*(emin+ee)
      ee=0.5d0*(emin+emax)
 
    else
 ! too many nodes
-!    emax=ee
      emax=0.5d0*(emax+ee)
      ee=0.5d0*(emin+emax)
    end if

@@ -26,17 +26,16 @@
 !rho  total charge density or valence/pseudovalence charge density
 !rhoc  core charge density, full or model
 !vo  output total potential
-!vc  output exchange-correlation potential
+!vxc  output exchange-correlation potential
 !zion  charge of screened ion
 !eeel  electron-electron interaction energy
 !eexc  exchange-correlation correction to eigenvalue sum for total energy
 !rr  log radial mesh
-!output electrostatic and exchange-correlation potential
+!mmax  dimension of log radial grid
+!iexc  exchange-correlation functional type (1-4 built in, <0 libxc)
 
  use constants_m, only: dp, pi
  implicit none
-
- real(dp), parameter :: pi4=4.0_dp*pi
 
 !Input variables
  integer, intent(in) :: iexc,mmax,mode
@@ -51,6 +50,7 @@
  real(dp), intent(out) :: eeel,eexc
 
 !Local variables
+ real(dp), parameter :: pi4=4.0_dp*pi
  integer :: ii
  real(dp) :: al,tv
 

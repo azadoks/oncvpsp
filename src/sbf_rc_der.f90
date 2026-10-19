@@ -20,24 +20,23 @@
 
 !calculate spherical Bessel function values and first four derivatives
 
+!llin  angular momentum l
+!qq  wave vector
+!rc  core radius
+!sbfder  values and first 4 derivatives of j_l(qq*rc)
+
  use constants_m, only: dp
  implicit none
 
-!INPUT
-! llin  angular momentum l
-! qq  wave vector
-! rc  core radius
-!
-!OUTPUT
-! sbfder  values and first 4 derivatives of j_l(qq*rc)
-
-!Arguments
+!Input variables
  integer, intent(in) :: llin
  real(dp), intent(in) :: qq,rc
+
+!Output variables
  real(dp), intent(out) :: sbfder(5)
- real(dp) :: xx
-!
+
 !Local variables
+ real(dp) :: xx
  real(dp) :: sb_out(10),sbfad(5,10)
  integer :: ii,ll
 

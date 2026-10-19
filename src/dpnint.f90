@@ -24,13 +24,19 @@
 ! xx must be ordered in ascending order
 ! output mm interpolated values ss on points tt
 
+!xx  points of the input data (ascending)
+!yy  input data values on xx
+!nn  number of input points
+!tt  points at which to interpolate (tt(1) may be 0, see below)
+!ss  interpolated values on tt
+!mm  number of output points
+
  use constants_m, only: dp
  implicit none
 
-
 !Input variables
- real(dp), intent(in) :: xx(nn),yy(nn),tt(mm)
  integer, intent(in) :: nn,mm
+ real(dp), intent(in) :: xx(nn),yy(nn),tt(mm)
 
 !Output variables
  real(dp), intent(out) :: ss(mm)

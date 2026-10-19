@@ -33,7 +33,8 @@
 !rhoae  state-by-state all-electron valence charge density
 !rhotae  total all-electron valence charge density
 !rhomod  model core density and 4 derivatives
-!fcfact  prefactor for model amplitude (multiplies crossover value)
+!fcfact  the model is matched where rhoc equals fcfact times the total
+!        pseudocharge
 !rcfact  (not used)
 !irps  rr index of maximum rc
 !mmax  dimension of log grid
@@ -53,15 +54,14 @@
  real(dp), intent(in) :: rhoae(mmax,nv),rhops(mmax,nv),rhotae(mmax)
  real(dp), intent(in) :: rhotps(mmax),rhoc(mmax),rr(mmax)
  real(dp), intent(in) :: zion,fcfact,rcfact
- logical :: srel
 
 !Output variables
  real(dp), intent(out) :: rhomod(mmax,5)
 
+!Local variables
 !convergence criterion
  real(dp), parameter :: eps=1.0d-7
-
-!Local variables
+ logical :: srel
  real(dp) :: a0,al,et,yy,gg,a0min,a0max,dermax,psum,sf,eeel,eexc
  real(dp) :: d2mdiff,rmatch,rhocmatch
  real(dp) :: emin,emax,sls,ss,hh,rgg,xx

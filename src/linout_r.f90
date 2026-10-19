@@ -19,10 +19,13 @@
 ! interpolates various arrays onto linear radial mesh to create file
 ! for Abinit input using pspcod=8, relativistic veresion with spin-orbit
 
- subroutine linout_r(lmax,lloc,rc,vsr,esr,vso,eso,nproj,rr,vpuns,rho,rhomod, &
-&                  rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,soscale, &
+ subroutine linout_r(lmax,lloc,rc,vsr,esr,vso,eso,nproj,rr,vpuns,rho, &
+&                  rhomod, &
+&                  rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl, &
+&                  atsym,soscale, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,fcfact0,rcfact,fcgrid,rcgrid, &
+&                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,fcfact0,rcfact, &
+&                  fcgrid,rcgrid, &
 &                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh)
 
 
@@ -31,12 +34,12 @@
 !rc  core radii
 !nproj  number of vkb projectors for each l
 !rr  log radial grid
-!vsr  normalized scalar projectors
-!esr  energy  coefficients of vscal
-!vso  normalized spin-orbig projectors
-!eso  energy  coefficients of vso
-!vpuns  unscreened semi-local pseudopotentials (vpuns(:,5) is local potential
-!  if linear combination is used)
+!vsr  normalized scalar-relativistic projectors
+!esr  energy coefficients of vsr
+!vso  normalized spin-orbit projectors
+!eso  energy coefficients of vso
+!vpuns  unscreened semi-local pseudopotentials (vpuns(:,5) is local
+!       potential if linear combination is used)
 !rho  valence pseudocharge
 !rhotae  all-electron valence charge
 !rhoc  all-electron core charge
@@ -49,15 +52,43 @@
 !icmod  1 if model core charge is used, otherwise 0
 !fcfact  model core amplitude prefactor (1 for icmod=4, cutoff for icmod=6)
 !fcfact0  input fcfact, for the echo
-!nrl size of linear radial grid
-!drl spacing of linear radial grid
+!rcfact  prefactor for the model core charge scale
+!nrl  size of linear radial grid
+!drl  spacing of linear radial grid
 !atsym  atomic symbol
-!soscale  possible factor to boost or cut spin-orbit strength, not in use yet
-!remaining input variables to be echoed:
-!  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf
-!  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact0,rcfact,fcgrid,rcgrid
-!  epsh1,epsh2,depsh,rxpsh,rlmax,psfile
-!log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets it (else 0)
+!soscale  possible factor to boost or cut spin-orbit strength, not in use
+!         yet
+!(the arguments from na on are input variables echoed in the psp8 file)
+!na  principal quantum numbers, reference configuration
+!la  angular momenta, reference configuration
+!ncon  number of matching constraints for each l
+!nbas  number of basis functions for each l
+!nvcnf  number of valence states, all configurations
+!nacnf  principal quantum numbers, all configurations
+!lacnf  angular momenta, all configurations
+!nc  number of core states
+!nv  number of valence states
+!lpopt  choice of polynomial for lloc==4
+!ncnf  number of test configurations
+!fa  occupancies, reference configuration
+!rc0  input core radii
+!ep  energies at which the pseudopotentials are generated (Ha), both kap
+!qcut  residual-energy cutoff wave vectors for each l
+!debl  energy shifts for the second projectors for each l (Ha)
+!facnf  occupancies, all configurations
+!dvloc0  amplitude at rr==0 of the function added to the local potential
+!        for lloc==4
+!fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
+!rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
+!epsh1  lower limit of the log derivative analysis energy range (Ha)
+!epsh2  upper limit of the log derivative analysis energy range (Ha)
+!depsh  energy step of the log derivative analysis (Ha)
+!rxpsh  radius (bohr) of the log derivative analysis, negative for the
+!       default
+!rlmax  maximum radius of the linear output mesh (bohr)
+!psfile  output format, should be 'psp8' or 'both'
+!log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets
+!          it (else 0)
 
 
  use constants_m, only: dp
@@ -87,8 +118,6 @@
  real(dp), intent(in) :: log_mesh(3)
  character(len=4), intent(in) :: psfile
 
-!Output variables - printing only
-
 !Local variables
  integer :: ii,jj,ll,l1,ixc_abinit
  integer :: dtime(8),npr_sr(5),npr_so(5)
@@ -105,10 +134,10 @@
  allocate(rhotael(nrl),rhocl(nrl))
  allocate(vsrl(nrl,2*mxprj,4),vsol(nrl,2*mxprj,4))
 
-! set up projector number for sr_so calculations based on non-zero coefficients
+! set up projector number for sr_so calculations based on non-zero
+! coefficients
  npr_sr(:)=0 ; npr_so(:)=0
  do l1=1,lmax+1
-!  do ii=1,4
    do ii=1,2*nproj(l1)
      if(abs(esr(ii,l1))>0.0d0) npr_sr(l1)=npr_sr(l1)+1
      if(abs(eso(ii,l1))>0.0d0) npr_so(l1)=npr_so(l1)+1
@@ -297,7 +326,8 @@
  write(6,'(i5)')  lmax
  write(6,'(a/a)') '#','#   l,   rc,     ep,   ncon, nbas, qcut'
  do l1=1,lmax+1
-   write(6,'(i5,2f10.5,2i5,f10.5)') l1-1,rc0(l1),ep(l1,1),ncon(l1),nbas(l1),qcut(l1)
+   write(6,'(i5,2f10.5,2i5,f10.5)') l1-1,rc0(l1),ep(l1,1),ncon(l1), &
+&        nbas(l1),qcut(l1)
  end do
 
  write(6,'(a/a/a,a)') '#','# LOCAL POTENTIAL','# lloc, lpopt,  rc(5),', &

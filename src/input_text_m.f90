@@ -17,18 +17,25 @@
 &                           rlmax, drl, &
 &                           ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                           amesh, rr1, rmax)
+
+!reads the text input file (see doc/32_Ge_annotated.dat) for the
+!non- and scalar-relativistic codes, stopping on a read error
+
+!Input variables
 !> File unit number for input
  integer, intent(in) :: unit
-!> Current line number in input file
+
+!Output variables
+!> Line number in the input file of the last line read
  integer, intent(out) :: inline
 ! [Atom and reference configuration]
 !> Atomic symbol
  character(len=2), intent(out) :: atsym
 !> Atomic number
  real(dp), intent(out) :: zz
-!> Number of core electrons
+!> Number of core states
  integer, intent(out) :: nc
-!> Number of valence electrons
+!> Number of valence states
  integer, intent(out) :: nv
 !> Exchange-correlation functional code
  integer, intent(out) :: iexc
@@ -51,19 +58,19 @@
  integer, intent(out) :: ncon(6)
 !> Number of basis functions for each pseudopotential
  integer, intent(out) :: nbas(6)
-!> Maximum wave number for each pseudopotential
+!> Residual-energy cutoff wave vector for each pseudopotential
  real(dp), intent(out) :: qcut(6)
 ! [Local potential]
 !> Angular momentum used for local potential
  integer, intent(out) :: lloc
-!>
+!> Type of polynomial continuation of the lloc=4 local potential
  integer, intent(out) :: lpopt
 !> Local potential offset at origin
  real(dp), intent(out) :: dvloc0
 ! [Vanderbilt-Kleinman-Bylander projectors]
 !> Number of projectors for each angular momentum
  integer, intent(out) :: nproj(6)
-!> Energy shift for unbound states
+!> Energy added to ep for the second projector (Ha)
  real(dp), intent(out) :: debl(6)
 ! [Model core charge]
 !> Model core charge flag
@@ -110,7 +117,8 @@
 !> Occupation number array for test configurations
  real(dp), intent(out) :: facnf(30, 5)
 ! [Log mesh]
-!> Ratio of successive points of the log radial mesh (0 or less for the default)
+!> Ratio of successive points of the log radial mesh
+!> (0 or less for the default)
  real(dp), intent(out) :: amesh
 !> First point of the log radial mesh (0 or less for the default)
  real(dp), intent(out) :: rr1
@@ -174,7 +182,8 @@
 
  do l1 = 1, lmax + 1
    call next_line(unit, line, inline)
-   read (line, *, iostat=ios) lt, rc(l1), ep(l1), ncon(l1), nbas(l1), qcut(l1)
+   read (line, *, iostat=ios) lt, rc(l1), ep(l1), ncon(l1), nbas(l1), &
+&    qcut(l1)
    if (ios == 0 .and. lt /= l1 - 1) ios = 999
    call read_error(ios, inline)
  end do
@@ -200,8 +209,9 @@
  if (ios == 0 .and. icmod == 3) then
    read (line, *, iostat=ios) icmod, fcfact, rcfact
  end if
-! icmod==6 : icmod, fcfact (cutoff, Ha; <= 0 for -fcfact, or 1 if 0, times the
-!   cutoff of the pseudo-waves), rcfact (xc energy error, Ha; default 1e-4)
+! icmod==6 : icmod, fcfact (cutoff, Ha; <= 0 for -fcfact, or 1 if 0, times
+!   the cutoff of the pseudo-waves), rcfact (xc energy error, Ha;
+!   default 1e-4)
  if (ios == 0 .and. icmod == 6) then
    read (line, *, iostat=ios) icmod, fcfact, rcfact
    if (ios /= 0) then
@@ -216,7 +226,8 @@
    read (line, *, iostat=ios) icmod, fcfact, rcfact, &
 &     fcfact_min, fcfact_max, fcfact_step, &
 &     rcfact_min, rcfact_max, rcfact_step
-! icmod==4[implicit grid]: *_min, *_max, *_step not provided, fall back to defaults
+! icmod==4[implicit grid]: *_min, *_max, *_step not provided, fall back to
+!   defaults
    if (ios /= 0) then
      read (line, *, iostat=ios) icmod, fcfact
      rcfact = 0.d0
@@ -276,23 +287,31 @@
 &                             atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
 &                             lmax, rc, ep, ncon, nbas, qcut, &
 &                             lloc, lpopt, dvloc0, nproj, debl, &
-&                             icmod, fcfact, rcfact, fcfact_min, fcfact_max, fcfact_step, &
+&                             icmod, fcfact, rcfact, &
+&                             fcfact_min, fcfact_max, fcfact_step, &
 &                             rcfact_min, rcfact_max, rcfact_step, &
 &                             epsh1, epsh2, depsh, rxpsh, &
 &                             rlmax, drl, &
 &                             ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                             amesh, rr1, rmax)
+
+!reads the text input file (see doc/32_Ge_annotated.dat) for the
+!fully-relativistic code, stopping on a read error
+
+!Input variables
 !> File unit number for input
  integer, intent(in) :: unit
-!> Current line number in input file
+
+!Output variables
+!> Line number in the input file of the last line read
  integer, intent(out) :: inline
 !> Atomic symbol
  character(len=2), intent(out) :: atsym
 !> Atomic number
  real(dp), intent(out) :: zz
-!> Number of core electrons
+!> Number of core states
  integer, intent(out) :: nc
-!> Number of valence electrons
+!> Number of valence states
  integer, intent(out) :: nv
 !> Exchange-correlation functional code
  integer, intent(out) :: iexc
@@ -308,23 +327,23 @@
  integer, intent(out) :: lmax
 !> Pseudopotential cutoff radii
  real(dp), intent(out) :: rc(6)
-!> Pseudopotential energies
+!> Pseudopotential energies for j=l-1/2 and l+1/2 (both the input value)
  real(dp), intent(out) :: ep(6, 2)
 !> Number of matching constraints for each pseudopotential
  integer, intent(out) :: ncon(6)
 !> Number of basis functions for each pseudopotential
  integer, intent(out) :: nbas(6)
-!> Maximum wave number for each pseudopotential
+!> Residual-energy cutoff wave vector for each pseudopotential
  real(dp), intent(out) :: qcut(6)
 !> Angular momentum used for local potential
  integer, intent(out) :: lloc
-!>
+!> Type of polynomial continuation of the lloc=4 local potential
  integer, intent(out) :: lpopt
 !> Local potential offset at origin
  real(dp), intent(out) :: dvloc0
 !> Number of projectors for each angular momentum
  integer, intent(out) :: nproj(6)
-!> Energy shift for unbound states
+!> Energy added to ep for the second projector (Ha)
  real(dp), intent(out) :: debl(6)
 !> Model core charge flag
  integer, intent(out) :: icmod
@@ -367,7 +386,8 @@
 !> Occupation number array for test configurations
  real(dp), intent(out) :: facnf(30, 5)
 ! [Log mesh]
-!> Ratio of successive points of the log radial mesh (0 or less for the default)
+!> Ratio of successive points of the log radial mesh
+!> (0 or less for the default)
  real(dp), intent(out) :: amesh
 !> First point of the log radial mesh (0 or less for the default)
  real(dp), intent(out) :: rr1
@@ -430,7 +450,8 @@
 
  do l1 = 1, lmax + 1
    call next_line(unit, line, inline)
-   read (line, *, iostat=ios) lt, rc(l1), ep(l1, 1), ncon(l1), nbas(l1), qcut(l1)
+   read (line, *, iostat=ios) lt, rc(l1), ep(l1, 1), ncon(l1), nbas(l1), &
+&    qcut(l1)
    if (ios == 0 .and. lt /= l1 - 1) ios = 999
    call read_error(ios, inline)
    ep(l1, 2) = ep(l1, 1)
@@ -457,8 +478,9 @@
  if (ios == 0 .and. icmod == 3) then
    read (line, *, iostat=ios) icmod, fcfact, rcfact
  end if
-! icmod==6 : icmod, fcfact (cutoff, Ha; <= 0 for -fcfact, or 1 if 0, times the
-!   cutoff of the pseudo-waves), rcfact (xc energy error, Ha; default 1e-4)
+! icmod==6 : icmod, fcfact (cutoff, Ha; <= 0 for -fcfact, or 1 if 0, times
+!   the cutoff of the pseudo-waves), rcfact (xc energy error, Ha;
+!   default 1e-4)
  if (ios == 0 .and. icmod == 6) then
    read (line, *, iostat=ios) icmod, fcfact, rcfact
    if (ios /= 0) then
@@ -473,7 +495,8 @@
    read (line, *, iostat=ios) icmod, fcfact, rcfact, &
 &     fcfact_min, fcfact_max, fcfact_step, &
 &     rcfact_min, rcfact_max, rcfact_step
-! icmod==4[implicit grid]: *_min, *_max, *_step not provided, fall back to defaults
+! icmod==4[implicit grid]: *_min, *_max, *_step not provided, fall back to
+!   defaults
    if (ios /= 0) then
      read (line, *, iostat=ios) icmod, fcfact
      rcfact = 0.d0
@@ -530,22 +553,26 @@
  end subroutine read_input_text_r
 
  subroutine next_line(unit, line, inline, eof)
-! reads into line the next line of the input that is neither blank nor a comment (one whose
-! first nonblank character is #), and sets inline to its line number. The data are then read
-! from line rather than from unit, so the input is never backspaced, and can come from a pipe.
-! The end of the input is an error, unless eof is present: it is then set instead, and inline
-! left at the line it had on entry
+! reads into line the next line of the input that is neither blank nor a
+! comment (one whose first nonblank character is #), and sets inline to its
+! line number. The data are then read from line rather than from unit, so
+! the input is never backspaced, and can come from a pipe. The end of the
+! input is an error, unless eof is present: it is then set instead, and
+! inline left at the line it had on entry
+
+!unit  input file unit
+!line  the line read, of any length
+!inline  line number of the last line read, updated on return
+!eof  optional, .true. if the input ended before another data line
 
 !Input variables
  integer, intent(in) :: unit
 
-!Output variables
- character(len=:), allocatable, intent(out) :: line
-
 !Input/output variables
  integer, intent(inout) :: inline
 
-!Optional output variable
+!Output variables
+ character(len=:), allocatable, intent(out) :: line
  logical, intent(out), optional :: eof
 
 !Local variables
@@ -581,8 +608,13 @@
  subroutine read_error(ios, inline)
 ! report data read error and stop
 
+!ios  iostat of the read, non-zero for an error
+!inline  line number of the input file line being read
+
 !Input variables
  integer, intent(in) :: ios
+
+!Input/output variables
  integer, intent(inout) :: inline
 
  if (ios /= 0) then

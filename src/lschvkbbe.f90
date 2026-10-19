@@ -29,17 +29,17 @@
 !nvkb  = number of VKB projectors to be used
 !ierr  non-zero return if error
 !ee  bound-state energy, input guess and output calculated value
-!uld  bound-state energy, input guess and output calculated value
+!uld  log derivative up/uu to be matched at mch
 !emin  externally generaated estimate of lower bound for ee
 !emax  externally generaated estimate of upper bound for ee
 !rr  log radial mesh
 !vloc  local part of psp
 !vkb  VKB projectors
-!evkb coefficients of VKB projectors
+!evkb  coefficients of VKB projectors
 !uu  output radial wave function (*rr)
 !up  d(uu)/dr
 !mmax  size of log grid
-!mch matching mesh point for inward-outward integrations
+!mch  matching mesh point for inward-outward integrations
 
  use constants_m, only: dp
  implicit none

@@ -20,13 +20,13 @@
 &                    vkb,evkb,nproj,rr,vfull,vp,vpuns,zz,mmax,mxprj,drl,nrl, &
 &                    rho,rhoc,rhomod,cvgplt)
 
-
 ! write output for plotting pseudopotentials, model core charge, and
 ! all-electron and pseudo wave functions
 
 !lmax  maximum angular momentum
 !npa  principal quantum number for corresponding all-electron state
 !epa  bound-state or scattering state reference energies for vkb potentials
+!     (last index 1 for j=l+1/2, 2 for j=l-1/2, as in vkb, evkb, vp, cvgplt)
 !lloc  l for local potential
 !irc  indices of core radii
 !vkb  VKB projectors
@@ -38,32 +38,30 @@
 !vpuns  unscreened vp
 !zz  atomic number
 !mmax  size of radial grid
-!mxprj  dimension of number of projector
+!mxprj  dimension of number of projectors
 !drl  spacing of linear radial mesh
-!nrl  number of points in radial mesh
+!nrl  number of points in linear radial mesh
 !rho  valence pseudocharge
-!rhoc core charge
+!rhoc  all-electron core charge
 !rhomod  model core charge
-!srel .true. for scalar-relativistic, .false. for non-relativistic
-!cvgplt  Energy per electron error vs. cutoff
+!cvgplt  energy per electron error vs. cutoff (convergence profiles)
 
  use constants_m, only: dp
  implicit none
 
 !Input variables
  integer, intent(in) :: lmax,lloc,mmax,mxprj,nrl
- integer :: nlim
  integer, intent(in) :: npa(mxprj,6),irc(6),nproj(6)
- integer :: npx(6),lpx(6)
  real(dp), intent(in) :: zz,drl
- real(dp), intent(in) :: rr(mmax),vp(mmax,5,2),vpuns(mmax,5),vfull(mmax),vkb(mmax,mxprj,4,2)
+ real(dp), intent(in) :: rr(mmax),vp(mmax,5,2),vpuns(mmax,5),vfull(mmax)
+ real(dp), intent(in) :: vkb(mmax,mxprj,4,2)
  real(dp), intent(in) :: rho(mmax),rhoc(mmax),rhomod(mmax,5)
  real(dp), intent(in) :: epa(mxprj,6,2),evkb(mxprj,4,2),cvgplt(2,7,mxprj,4,2)
- logical :: srel
-
-!Output variables - printing only
 
 !Local variables
+ integer :: nlim
+ integer :: npx(6),lpx(6)
+ logical :: srel
  integer :: ll,l1,ii,jj,ierr,mch,mchf,n1,n2,n3,n4,nn,nnae
  integer :: iprj,nnp,npr
  integer :: ikap,kap,mkap
@@ -168,13 +166,14 @@
          emin=1.1d0*etest
 
          call lschvkbb(ll+iprj,ll,npr,ierr,etest,emin,emax, &
-&                      rr,vp(1,lloc+1,ikap),vkb(1,1,l1,ikap),evkb(1,l1,ikap), &
-&                      u2,up,mmax,mch)
+&                      rr,vp(1,lloc+1,ikap),vkb(1,1,l1,ikap), &
+&                      evkb(1,l1,ikap),u2,up,mmax,mch)
          sgnae=1.0d0
          sgnps=1.0d0
        else
-         write(6,'(//a,i2,a,i2,a,i2,a,a/)') 'scattering, iprj=',iprj,',  l=',ll, &
-&             ', kap=',kap,', all-electron wave function', ', pseudo w-f'
+         write(6,'(//a,i2,a,i2,a,i2,a,a/)') 'scattering, iprj=',iprj, &
+&             ',  l=',ll,', kap=',kap,', all-electron wave function', &
+&             ', pseudo w-f'
          call ldiracfs(nnae,ll,kap,ierr,epa(iprj,l1,ikap), &
 &                      rr,zz,vfull,ur,urp,mmax,n2)
          if(ierr/=0) then

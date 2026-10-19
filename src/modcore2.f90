@@ -16,9 +16,9 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
-! Creates monotonic polynomial model core charge matching all-electron
-! core charge and 4 derivatives at "crossover" radius.
-! Polynomial is 8th-order with no linear term.
+! Creates a Teter-function model core charge whose amplitude and scale fit
+! the value and slope of the all-electron core charge at the radius where
+! it equals fcfact times the valence pseudocharge (icmod=2).
 
 ! Performs analysis and based on "hardness" criterion described in
 ! Teter, Phys. Rev. B 48, 5031 (1993) , Appendix, as
@@ -33,7 +33,8 @@
 !rhoae  state-by-state all-electron valence charge density
 !rhotae  total all-electron valence charge density
 !rhomod  model core density and 4 derivatives
-!fcfact  prefactor for model amplitude (multiplies crossover value)
+!fcfact  the model is matched where rhoc equals fcfact times the total
+!        pseudocharge
 !rcfact  (not used)
 !irps  rr index of maximum rc
 !mmax  dimension of log grid
@@ -53,15 +54,14 @@
  real(dp), intent(in) :: rhoae(mmax,nv),rhops(mmax,nv),rhotae(mmax)
  real(dp), intent(in) :: rhotps(mmax),rhoc(mmax),rr(mmax)
  real(dp), intent(in) :: zion,fcfact,rcfact
- logical :: srel
 
 !Output variables
  real(dp), intent(out) :: rhomod(mmax,5)
 
+!Local variables
 !convergence criterion
  real(dp), parameter :: eps=1.0d-7
-
-!Local variables
+ logical :: srel
  real(dp) :: al,eeel,eexc
  real(dp) :: d2mdiff,rmatch,rhocmatch
  real(dp) :: xx,yy,dy
@@ -221,17 +221,6 @@
  end do
  write(6,'(/a,1p,e16.6)') 'rms 2nd derivative error',d2mdiff
 
-!7-point numerical first derivatives applied successively
-
-! do jj=4,5
-!  do ii=3*jj-8,mmax-3
-!    if(rhomod(ii,1)==0.0d0) exit
-!     rhomod(ii,jj)=(-rhomod(ii-3,jj-1)+ 9.d0*rhomod(ii-2,jj-1)&
-!&     -45.d0*rhomod(ii-1,jj-1)+45.d0*rhomod(ii+1,jj-1)&
-!&     -9.d0*rhomod(ii+2,jj-1)+rhomod(ii+3,jj-1))&
-!&     /(60.d0*al*rr(ii))
-!  end do
-! end do
 
 !ad-hoc treatment of numerical noise near origin
 !set up a mesh on which 2nd derivative will have a stable

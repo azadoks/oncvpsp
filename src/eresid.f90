@@ -34,25 +34,23 @@
 !uu(mmax)  r*all-electron wave function
 !pswf0_sb(nbas)  sbf basis  coefficients for constrained part of pseudo
 !                    wave function
-!pswfnull_sb(nbas,nnull) sbf coefficients for unconstrained basis of pseudo
+!pswfnull_sb(nbas,nnull)  sbf coefficients for unconstrained basis of pseudo
 !                       wave function
 !nqout  number of wave vector lower cutoffs
 !qout(nqout)  wave vector lower cutoffs for E_res for which output is wanted,
 !       rounded on output to nearest multiple of dq
-!nqout  number of q values in [0,qmax] for which results are to be saved
-!qout(nqout)  set of these q values
 !eresid0(nqout)  set of <pswf0| E_resid |pswf0> matrix elements
-!eresiddot(nnull,nqout) set of <pswfnull| E_resid |pswf0> matrix elements
-!eresidevec(nnull,null,nqout)  set of <pswfnull| E_res |pswfnull'> matrices
+!eresiddot(nnull,nqout)  set of <pswfnull| E_resid |pswf0> matrix elements
+!eresidmat(nnull,nnull,nqout)  set of <pswfnull| E_res |pswfnull'> matrices
 
  use constants_m, only: dp, pi
  implicit none
 
 !Input variables
  integer, intent(in) :: irc,ll,nnull,nbas,mmax,nqout
- real(dp), intent(in) :: rr(mmax),uu(mmax),pswf0_sb(nbas),pswfnull_sb(nbas,nnull)
+ real(dp), intent(in) :: rr(mmax),uu(mmax),pswf0_sb(nbas)
+ real(dp), intent(in) :: pswfnull_sb(nbas,nnull)
  real(dp), intent(in) :: qroot(nbas)
-!real(dp) :: dr,dq,qmax
  real(dp), intent(in) :: drdum,dqdum,qmax
 
 !Input/output variables
@@ -80,10 +78,9 @@
 
 ! new calculations of dq, dr
 ! larger denominators yield better convergence at the cost of more time
-! dq=2.0d0*pi/(300.0d0*rr(irc))
+! (alternatives tried: 300 or 75 in place of 150 for dq, 150 in place
+! of 75 for dr)
  dq=2.0d0*pi/(150.0d0*rr(irc))
-! dq=2.0d0*pi/(75.0d0*rr(irc))
-! dr=2.0d0*pi/(150.0d0*qmax)
  dr=2.0d0*pi/(75.0d0*qmax)
 
 !set up linear radial mesh
@@ -98,7 +95,6 @@
      exit
    end if
  end do
-!mmaxlin=rr(mmax)/dr - 1.5d0 !leave non-zero room for cubic interpolation
  if(mmaxlin<irclin+6) then
    write(6,'(/2a,i0,a,i0)') 'eresid: ERROR wave function vanishes too close', &
 &       ' to rc, mmaxlin=',mmaxlin,', irclin=',irclin
@@ -295,6 +291,14 @@
 ! sqr=sin(qq*rlin) and cqr=cos(qq*rlin).  Same branches and formulas as
 ! sbf8 for l<=3, written as loops over the mesh that vectorize; this is
 ! the inner loop of the E_resid q integration.
+
+!ll1  angular momentum plus one
+!qq  wave vector
+!rlin  linear radial mesh
+!sqr  sin(qq*rlin)
+!cqr  cos(qq*rlin)
+!nr  number of points in rlin
+!rsbf  rlin*j_l(qq*rlin)
 
 !Input variables
  integer, intent(in) :: ll1,nr

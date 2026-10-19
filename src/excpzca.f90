@@ -28,9 +28,6 @@
 
  use constants_m, only: dp, pi
  implicit none
- real(dp), parameter :: pi4=4.0d0*pi
- real(dp), parameter :: pi4i=1.0d0/pi4
- real(dp), parameter :: thrd=1.0d0/3.0d0
 
 !Input variables
  integer, intent(in) :: mmax
@@ -40,6 +37,9 @@
  real(dp), intent(out) :: vxc(mmax),exc(mmax)
 
 !Local variables
+ real(dp), parameter :: pi4=4.0d0*pi
+ real(dp), parameter :: pi4i=1.0d0/pi4
+ real(dp), parameter :: thrd=1.0d0/3.0d0
  integer :: ii
  real(dp) :: rs,rh,sqrs,rsl,den
 
@@ -61,9 +61,8 @@
  real(dp), parameter :: CC =   0.0020d0
  real(dp), parameter :: DD =  -0.0116d0
 
-!PZ modified coeffients from libxc
-!real(dp), parameter :: CC =   0.0020191519406228d0
-!real(dp), parameter :: DD =  -0.0116320663789130d0
+!libxc uses PZ's modified coefficients CC=0.0020191519406228 and
+!DD=-0.0116320663789130
 
  do ii=1,mmax
    if(rho(ii)>1.0d-20) then

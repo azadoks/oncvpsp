@@ -33,11 +33,10 @@
 !mmax  dimension of rr, etc.
 !mch  index of radius for log der test
 !npsh  number of energy points in scan
-!srel .true. for scalar-relativistic, .false. for non-relativistic
+!srel  .true. for scalar-relativistic, .false. for non-relativistic
 
  use constants_m, only: dp, pi
  implicit none
- real(dp), parameter :: pi2=2.0d0*pi
 
 !Input variables
  integer, intent(in) :: ll,mmax,npsh,mch
@@ -49,6 +48,7 @@
  real(dp), intent(out) :: pshf(npsh)
 
 !Local variables
+ real(dp), parameter :: pi2=2.0d0*pi
  real(dp) :: al,epsh,phi,phip,pshoff
  integer :: ii,ierr,nn
 

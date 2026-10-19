@@ -25,11 +25,21 @@
 
  function aeo(yy,jj)
 
+!Adams outward extrapolation (predictor) to point jj+1:
+!increment of the integrated function per mesh step
+
+!yy  derivative of the integrated function with respect to the mesh index
+!jj  mesh index of the current point
+
  use constants_m, only: dp
  implicit none
- real(dp) :: aeo
+
+!Input variables
  real(dp), intent(in) :: yy(*)
  integer, intent(in) :: jj
+
+!Output variables
+ real(dp) :: aeo
 
  aeo=(1.0d0/24.0d0)*(55.0d0*yy(jj)-59.0d0*yy(jj-1) &
 & +37.0d0*yy(jj-2)-9.0d0*yy(jj-3))
@@ -38,11 +48,21 @@
 
  function aio(yy,jj)
 
+!Adams outward interpolation (corrector) to point jj+1:
+!increment of the integrated function per mesh step
+
+!yy  derivative of the integrated function with respect to the mesh index
+!jj  mesh index of the current point
+
  use constants_m, only: dp
  implicit none
- real(dp) :: aio
+
+!Input variables
  real(dp), intent(in) :: yy(*)
  integer, intent(in) :: jj
+
+!Output variables
+ real(dp) :: aio
 
  aio=(1.0d0/24.0d0)*(9.0d0*yy(jj+1)+19.0d0*yy(jj) &
 & -5.0d0*yy(jj-1)+yy(jj-2))
@@ -51,11 +71,21 @@
 
  function aei(yy,jj)
 
+!Adams inward extrapolation (predictor) to point jj-1:
+!increment of the integrated function per mesh step
+
+!yy  derivative of the integrated function with respect to the mesh index
+!jj  mesh index of the current point
+
  use constants_m, only: dp
  implicit none
- real(dp) :: aei
+
+!Input variables
  real(dp), intent(in) :: yy(*)
  integer, intent(in) :: jj
+
+!Output variables
+ real(dp) :: aei
 
  aei=-(1.0d0/24.0d0)*(55.0d0*yy(jj)-59.0d0*yy(jj+1) &
 & +37.0d0*yy(jj+2)-9.0d0*yy(jj+3))
@@ -64,11 +94,21 @@
 
  function aii(yy,jj)
 
+!Adams inward interpolation (corrector) to point jj-1:
+!increment of the integrated function per mesh step
+
+!yy  derivative of the integrated function with respect to the mesh index
+!jj  mesh index of the current point
+
  use constants_m, only: dp
  implicit none
- real(dp) :: aii
+
+!Input variables
  real(dp), intent(in) :: yy(*)
  integer, intent(in) :: jj
+
+!Output variables
+ real(dp) :: aii
 
  aii=-(1.0d0/24.0d0)*(9.0d0*yy(jj-1)+19.0d0*yy(jj) &
 & -5.0d0*yy(jj+1)+yy(jj+2))

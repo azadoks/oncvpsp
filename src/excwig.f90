@@ -29,18 +29,17 @@
  use constants_m, only: dp, pi
  implicit none
 
- real(dp), parameter :: pi4=4.0d0*pi
- real(dp), parameter :: pi4i=1.0d0/pi4
- real(dp), parameter :: thrd=1.0d0/3.0d0
-
 !Input variables
- real(dp), intent(in) ::  rho(mmax)
  integer, intent(in) :: mmax
+ real(dp), intent(in) ::  rho(mmax)
 
 !Output variables
  real(dp), intent(out) :: vxc(mmax),exc(mmax)
 
 !Local variables
+ real(dp), parameter :: pi4=4.0d0*pi
+ real(dp), parameter :: pi4i=1.0d0/pi4
+ real(dp), parameter :: thrd=1.0d0/3.0d0
  real(dp) ::  rh,rs
  real(dp) :: conrs,convx,conex
  integer :: ii

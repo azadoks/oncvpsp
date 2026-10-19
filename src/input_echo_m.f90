@@ -61,9 +61,11 @@
 
  text(1)='#'
  text(2)='# MODEL CORE CHARGE'
- if(icmod==4 .and. (any(fcgrid/=fcgrid_def) .or. any(rcgrid/=rcgrid_def))) then
+ if(icmod==4 .and. (any(fcgrid/=fcgrid_def) &
+&   .or. any(rcgrid/=rcgrid_def))) then
    text(3)='# icmod, fcfact, rcfact,'
-   text(4)='#   fcfact_min, fcfact_max, fcfact_step, rcfact_min, rcfact_max, rcfact_step'
+   text(4)='#   fcfact_min, fcfact_max, fcfact_step, '// &
+&   'rcfact_min, rcfact_max, rcfact_step'
    write(text(5),'(i5,8f10.5)') icmod,fcfact,rcfact,fcgrid(:),rcgrid(:)
    ntext=5
  else
@@ -84,8 +86,9 @@
 ! rxpsh is written only when the input sets it (the readers set -1 otherwise)
  subroutine epsh_lines(epsh1,epsh2,depsh,rxpsh,text,ntext)
 
-!epsh1, epsh2  energy range of the log derivative analysis
-!depsh  energy step
+!epsh1  lower limit of the log derivative analysis energy range (Ha)
+!epsh2  upper limit of the log derivative analysis energy range (Ha)
+!depsh  energy step (Ha)
 !rxpsh  radius of the analysis, negative for the default
 !text  the lines of the section
 !ntext  number of lines
@@ -114,7 +117,11 @@
 ! writes the MODEL CORE CHARGE section to unit 6
  subroutine write_icmod(icmod,fcfact,rcfact,fcgrid,rcgrid)
 
-!arguments as in icmod_lines
+!icmod  model core charge option
+!fcfact  prefactor for model amplitude
+!rcfact  prefactor for model scale
+!fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
+!rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 
 !Input variables
  integer, intent(in) :: icmod
@@ -134,7 +141,10 @@
 ! writes the LOG DERIVATIVE ANALYSIS section to unit 6
  subroutine write_epsh(epsh1,epsh2,depsh,rxpsh)
 
-!arguments as in epsh_lines
+!epsh1  lower limit of the log derivative analysis energy range (Ha)
+!epsh2  upper limit of the log derivative analysis energy range (Ha)
+!depsh  energy step (Ha)
+!rxpsh  radius of the analysis, negative for the default
 
 !Input variables
  real(dp), intent(in) :: epsh1,epsh2,depsh,rxpsh

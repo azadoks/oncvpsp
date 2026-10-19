@@ -31,8 +31,8 @@
 !up  d(uu)/dr
 !zz  atomic number
 !mmax  size of log grid
-!mch matching mesh point for inward-outward integrations
-!srel .true. for scalar-relativistic, .false. for non-relativistic
+!mch  matching mesh point for inward-outward integrations
+!srel  .true. for scalar-relativistic, .false. for non-relativistic
 
  use constants_m, only: dp, c_light
  implicit none

@@ -20,7 +20,9 @@
 
  subroutine gnu_script_r(epa,evkb,lmax,lloc,mxprj,nproj)
 
-!epa  wave function energies
+!epa  wave function energies, last index 1 for j=l+1/2, 2 for j=l-1/2
+!evkb  projector coefficients, printed in the projector plot titles,
+!      last index as for epa
 !lmax  maximum angular momentum
 !lloc  angular momentum for local potential (lloc=4 for polynomial, etc.)
 !mxprj maximum number of projectors
@@ -33,8 +35,6 @@
  integer, intent(in) :: lmax,lloc,mxprj
  integer, intent(in) :: nproj(6)
  real(dp), intent(in) :: epa(mxprj,6,2),evkb(mxprj,4,2)
-
-!Output variables - printing only
 
 !Local variables
  integer :: ii,iprj,jj,l1,ll
@@ -115,25 +115,41 @@
  gln(85)='3'' t1" using 3:4 title "F- full" with lines ls 1'
  gln(86)='3'' t1" using 3:5 title "F- pseudo" with lines ls 8'
 
- gln(23)='    "<grep ''!      0'' t1" using 3:4 title "S+   full" with lines ls 1'
- gln(24)='    "<grep ''!      0'' t1" using 3:5 title "S+ pseudo" with lines ls 8'
- gln(25)='    "<grep ''!      0'' t1" using 3:4 title "S-   full" with lines ls 1'
- gln(26)='    "<grep ''!      0'' t1" using 3:5 title "S- pseudo" with lines ls 8'
+ gln(23)='    "<grep ''!      0'' t1" using 3:4 ' &
+&        //'title "S+   full" with lines ls 1'
+ gln(24)='    "<grep ''!      0'' t1" using 3:5 ' &
+&        //'title "S+ pseudo" with lines ls 8'
+ gln(25)='    "<grep ''!      0'' t1" using 3:4 ' &
+&        //'title "S-   full" with lines ls 1'
+ gln(26)='    "<grep ''!      0'' t1" using 3:5 ' &
+&        //'title "S- pseudo" with lines ls 8'
 
- gln(27)='    "<grep ''!      1'' t1" using 3:4 title "P+   full" with lines ls 3'
- gln(28)='    "<grep ''!      1'' t1" using 3:5 title "P+ pseudo" with lines ls 10'
- gln(29)='    "<grep ''!      1'' t1" using 3:4 title "P-   full" with lines ls 3'
- gln(30)='    "<grep ''!      1'' t1" using 3:5 title "P- pseudo" with lines ls 10'
+ gln(27)='    "<grep ''!      1'' t1" using 3:4 ' &
+&        //'title "P+   full" with lines ls 3'
+ gln(28)='    "<grep ''!      1'' t1" using 3:5 ' &
+&        //'title "P+ pseudo" with lines ls 10'
+ gln(29)='    "<grep ''!      1'' t1" using 3:4 ' &
+&        //'title "P-   full" with lines ls 3'
+ gln(30)='    "<grep ''!      1'' t1" using 3:5 ' &
+&        //'title "P- pseudo" with lines ls 10'
 
- gln(31)='    "<grep ''!      2'' t1" using 3:4 title "D+   full" with lines ls 5'
- gln(32)='    "<grep ''!      2'' t1" using 3:5 title "D+ pseudo" with lines ls 12'
- gln(33)='    "<grep ''!      2'' t1" using 3:4 title "D-   full" with lines ls 5'
- gln(34)='    "<grep ''!      2'' t1" using 3:5 title "D- pseudo" with lines ls 12'
+ gln(31)='    "<grep ''!      2'' t1" using 3:4 ' &
+&        //'title "D+   full" with lines ls 5'
+ gln(32)='    "<grep ''!      2'' t1" using 3:5 ' &
+&        //'title "D+ pseudo" with lines ls 12'
+ gln(33)='    "<grep ''!      2'' t1" using 3:4 ' &
+&        //'title "D-   full" with lines ls 5'
+ gln(34)='    "<grep ''!      2'' t1" using 3:5 ' &
+&        //'title "D- pseudo" with lines ls 12'
 
- gln(35)='    "<grep ''!      3'' t1" using 3:4 title "F+   full" with lines ls 1'
- gln(36)='    "<grep ''!      3'' t1" using 3:5 title "F+ pseudo" with lines ls 8'
- gln(37)='    "<grep ''!      3'' t1" using 3:4 title "F-   full" with lines ls 1'
- gln(38)='    "<grep ''!      3'' t1" using 3:5 title "F- pseudo" with lines ls 8'
+ gln(35)='    "<grep ''!      3'' t1" using 3:4 ' &
+&        //'title "F+   full" with lines ls 1'
+ gln(36)='    "<grep ''!      3'' t1" using 3:5 ' &
+&        //'title "F+ pseudo" with lines ls 8'
+ gln(37)='    "<grep ''!      3'' t1" using 3:4 ' &
+&        //'title "F-   full" with lines ls 1'
+ gln(38)='    "<grep ''!      3'' t1" using 3:5 ' &
+&        //'title "F- pseudo" with lines ls 8'
 
  gln(47)='    "<grep ''!C     0'' t1" using 3:4 title "S" with lines ls 1'
  gln(48)='    "<grep ''!C     1'' t1" using 3:4 title "P" with lines ls 2'
@@ -148,7 +164,7 @@
  gln(74)=''' t1" using 3:7 title "Prj 4" with lines ls 4'
  gln(75)=''' t1" using 3:8 title "Prj 5" with lines ls 5'
 
-!write(6,*) 'lmax,lloc,mxprj',lmax,lloc,mxprj
+
  write(6,'(a)') 'GNUSCRIPT'
 
  set='set term wxt font "arial,14" size 800,600'
@@ -238,9 +254,11 @@
        do jj=1,nproj(l1)
 !run_plot_r labels the j=l+1/2 (ikap=1) projector lines with -l
          if(ikap==1) then
-           write(6,'(2a,i6,a)',advance='no') lead(jj),trim(gln(70)),-ll,trim(gln(70+jj))
+           write(6,'(2a,i6,a)',advance='no') lead(jj),trim(gln(70)), &
+&          -ll,trim(gln(70+jj))
          else
-           write(6,'(2a,i6,a)',advance='no') lead(jj),trim(gln(70)),ll,trim(gln(70+jj))
+           write(6,'(2a,i6,a)',advance='no') lead(jj),trim(gln(70)), &
+&          ll,trim(gln(70+jj))
          end if
          if(jj<nproj(l1)) then
            write(6,'(a)') cbs

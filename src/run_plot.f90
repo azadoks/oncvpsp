@@ -20,7 +20,6 @@
 &                    vkb,evkb,nproj,rr,vfull,vp,vpuns,zz,mmax,mxprj,drl,nrl, &
 &                    rho,rhoc,rhomod,srel,cvgplt)
 
-
 ! write output for plotting pseudopotentials, model core charge, and
 ! all-electron and pseudo wave functions
 
@@ -38,32 +37,31 @@
 !vpuns  unscreened vp
 !zz  atomic number
 !mmax  size of radial grid
-!mxprj  dimension of number of projector
+!mxprj  dimension of number of projectors
 !drl  spacing of linear radial mesh
-!nrl  number of points in radial mesh
+!nrl  number of points in linear radial mesh
 !rho  valence pseudocharge
-!rhoc core charge
+!rhoc  all-electron core charge
 !rhomod  model core charge
-!srel .true. for scalar-relativistic, .false. for non-relativistic
-!cvgplt  Energy per electron error vs. cutoff
+!srel  .true. for scalar-relativistic, .false. for non-relativistic
+!cvgplt  energy per electron error vs. cutoff (convergence profiles)
 
  use constants_m, only: dp
  implicit none
 
 !Input variables
  integer, intent(in) :: lmax,lloc,mmax,mxprj,nrl
- integer :: nlim
  integer, intent(in) :: npa(mxprj,6),irc(6),nproj(6)
- integer :: npx(6),lpx(6)
  real(dp), intent(in) :: zz,drl
- real(dp), intent(in) :: rr(mmax),vp(mmax,5),vpuns(mmax,5),vfull(mmax),vkb(mmax,mxprj,4)
+ real(dp), intent(in) :: rr(mmax),vp(mmax,5),vpuns(mmax,5),vfull(mmax)
+ real(dp), intent(in) :: vkb(mmax,mxprj,4)
  real(dp), intent(in) :: rho(mmax),rhoc(mmax),rhomod(mmax,5)
  real(dp), intent(in) :: epa(mxprj,6),evkb(mxprj,4),cvgplt(2,7,mxprj,4)
  logical, intent(in) :: srel
 
-!Output variables - printing only
-
 !Local variables
+ integer :: nlim
+ integer :: npx(6),lpx(6)
  integer :: ll,l1,ii,jj,ierr,mch,mchf,n1,n2,n3,n4,nn
  integer :: iprj,nnp,npr
  real(dp) :: al,emax,emin,etest,sls,rmx,sgnae,sgnps

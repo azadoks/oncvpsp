@@ -61,7 +61,6 @@
 
  use constants_m, only: dp, pi
  implicit none
- real(dp), parameter :: pi4=4.0_dp*pi
 
 !Input variables
  integer, intent(in) :: mmax,irmax,iexc
@@ -71,6 +70,8 @@
 !Output variables
  real(dp), intent(out) :: rhomod(mmax,5)
 
+!Local variables
+ real(dp), parameter :: pi4=4.0_dp*pi
 !background density (bohr**-3) and radius (bohr) of the error,
 !largest density cutoff and its step (bohr**-1),
 !panels of the band-limited transform per step,
@@ -78,8 +79,6 @@
  real(dp), parameter :: background=5.0d-3, radius=10.0d0
  real(dp), parameter :: qmax=40.0d0, qstep=0.1d0
  integer, parameter :: npanel=4, nquick=10
-
-!Local variables
  real(dp) :: al,dq,vbg,ecore,aco,bco,cco,e0,ecut,factor
  real(dp), allocatable :: dc(:,:),core(:),nval(:),sn(:),cs(:),sh(:),ch(:)
  real(dp), allocatable :: rq(:),work(:),eps(:),vxc(:),err(:),rqs(:,:)
@@ -228,7 +227,14 @@
 ! whether the model of radius rr(is) has errors below errmax at the
 ! density cutoffs ifrom..ilast
  logical function fits(is,ilast)
+
+!is  rr index of the model radius
+!ilast  last density cutoff index tested
+
+!Input variables
  integer, intent(in) :: is,ilast
+
+!Local variables
  integer :: ifail
  call model(is)
  call scan_errors(ifrom,ilast,errmax,ifail)
@@ -238,7 +244,15 @@
 ! the smallest index above ilo, which fails, that fits up to ilast;
 ! ihi fits
  integer function bisect(ilo,ihi,ilast)
+
+!ilo  lower rr index of the bracket, a model radius that fails
+!ihi  upper rr index of the bracket, a model radius that fits
+!ilast  last density cutoff index tested
+
+!Input variables
  integer, intent(in) :: ilo,ihi,ilast
+
+!Local variables
  integer :: ia,ib,imid
  ia=ilo
  ib=ihi
@@ -257,6 +271,7 @@
  bisect=ib
  end function bisect
 
+! reports that no model radius fits and stops
  subroutine no_model()
  write(6,'(/a,f10.6,a,f10.4,a,1p,e10.2,a)') &
 &      'modcore_budget: ERROR stop - no model core inside r =',rr(irtop), &
@@ -267,7 +282,13 @@
 ! the Martins coefficients at rr(is), and in core the model inside rr(is)
 ! and the core charge beyond
  subroutine model(is)
+
+!is  rr index of the model radius
+
+!Input variables
  integer, intent(in) :: is
+
+!Local variables
  real(dp) :: rs,l1,l2
  integer :: kk
  rs=rr(is)
@@ -282,21 +303,31 @@
  end do
  end subroutine model
 
-! the model and its first 4 derivatives at r, from n' = p' n with
+! the model and its first 4 derivatives at rad, from n' = p' n with
 ! p = a + b r**2 + c r**4: n(k) = sum_j C(k-1,j) p(j+1) n(k-1-j)
- subroutine martins_derivatives(r,d)
- real(dp), intent(in) :: r
- real(dp), intent(out) :: d(5)
+ subroutine martins_derivatives(rad,dd)
+
+!rad  radius (bohr)
+!dd  the model and its first 4 derivatives at rad
+
+!Input variables
+ real(dp), intent(in) :: rad
+
+!Output variables
+ real(dp), intent(out) :: dd(5)
+
+!Local variables
  real(dp) :: dp1(4)
  integer :: kk,jj
- integer, parameter :: binom(0:3,0:3)=reshape([1,1,1,1, 0,1,2,3, 0,0,1,3, 0,0,0,1],[4,4])
- dp1=[2.0d0*bco*r + 4.0d0*cco*r**3, 2.0d0*bco + 12.0d0*cco*r**2, &
-&     24.0d0*cco*r, 24.0d0*cco]
- d(1)=exp(aco + bco*r**2 + cco*r**4)
+ integer, parameter :: binom(0:3,0:3)=reshape([1,1,1,1, 0,1,2,3, &
+&                                              0,0,1,3, 0,0,0,1],[4,4])
+ dp1=[2.0d0*bco*rad + 4.0d0*cco*rad**3, 2.0d0*bco + 12.0d0*cco*rad**2, &
+&     24.0d0*cco*rad, 24.0d0*cco]
+ dd(1)=exp(aco + bco*rad**2 + cco*rad**4)
  do kk=1,4
-   d(kk+1)=0.0d0
+   dd(kk+1)=0.0d0
    do jj=0,kk-1
-     d(kk+1)=d(kk+1) + binom(kk-1,jj)*dp1(jj+1)*d(kk-jj)
+     dd(kk+1)=dd(kk+1) + binom(kk-1,jj)*dp1(jj+1)*dd(kk-jj)
    end do
  end do
  end subroutine martins_derivatives
@@ -308,10 +339,21 @@
 ! The band-limited model is built up panel by panel (midpoints, width dq),
 ! the sines and cosines of the midpoints by rotation
  subroutine scan_errors(ifirst,ilast,elimit,ifail)
+
+!ifirst  first density cutoff index whose error is tested
+!ilast  last density cutoff index, or 0 to keep the band-limited models
+!elimit  error limit (Ha)
+!ifail  index of the first cutoff with an error above elimit, else 0
+
+!Input variables
  integer, intent(in) :: ifirst,ilast
  real(dp), intent(in) :: elimit
+
+!Output variables
  integer, intent(out) :: ifail
- real(dp) :: q,ww,tt
+
+!Local variables
+ real(dp) :: qq,ww,tt
  integer :: iq,kk,ll,iend
 
  ifail=0
@@ -326,16 +368,16 @@
  rq(:)=0.0d0
  do iq=1,iend
    do kk=1,npanel
-     q=((iq-1)*npanel + kk - 0.5d0)*dq
+     qq=((iq-1)*npanel + kk - 0.5d0)*dq
 ! weight dq (1/2pi**2) int 4pi r**2 nc j0(qr) dr of the panel
      ww=0.0d0
      do ll=1,mmax
        ww=ww + rr(ll)**2*core(ll)*sn(ll)
      end do
-     ww=dq*al*ww*2.0d0/(pi*q)
+     ww=dq*al*ww*2.0d0/(pi*qq)
 ! q**2 j0(qr) = q sin(qr)/r
      do ll=1,nx
-       rq(ll)=rq(ll) + ww*q*sn(ll)/rr(ll)
+       rq(ll)=rq(ll) + ww*qq*sn(ll)/rr(ll)
      end do
      do ll=1,mmax
        tt=sn(ll)*ch(ll) + cs(ll)*sh(ll)
@@ -358,7 +400,13 @@
 
 ! the error of the band-limited model bq of the model in core
  real(dp) function xc_error(bq)
+
+!bq  band-limited model core charge on rr(1:nx)
+
+!Input variables
  real(dp), intent(in) :: bq(nx)
+
+!Local variables
  real(dp) :: tt
  integer :: ll
  tt=0.0d0
@@ -371,7 +419,13 @@
 ! the exchange-correlation energy within the sphere of the valence charge
 ! on the background plus the core charge cc
  real(dp) function exc_sphere(cc)
+
+!cc  core charge on rr(1:nx)
+
+!Input variables
  real(dp), intent(in) :: cc(nx)
+
+!Local variables
  integer :: ll
  work(:)=nval(:) + cc(:)
  call xc_eps(work,eps,vxc)
@@ -384,7 +438,15 @@
 
 ! the xc energy per electron and potential of the charge rho on rr(1:nx)
  subroutine xc_eps(rho,exc,vx)
+
+!rho  charge density on rr(1:nx)
+!exc  exchange-correlation energy per electron
+!vx  exchange-correlation potential
+
+!Input/output variables
  real(dp), intent(inout) :: rho(nx)
+
+!Output variables
  real(dp), intent(out) :: exc(nx),vx(nx)
  if(iexc == 1) then
    call excwig(rho,vx,exc,nx)
@@ -412,6 +474,14 @@
 ! zero beyond its end; wcurve(i)=0 skips it.  log E is interpolated
 ! linearly in q between the mesh points, as for the convergence profiles
  subroutine modcore_budget_ecut(ecurve,wcurve,ncurve,nprof,errmax,ecut)
+
+!ecurve  residual kinetic energy curves: ecurve(1,:,i) cutoffs (Ha),
+!        ecurve(2,:,i) error per electron E_i (Ha) of pseudo-wave i
+!wcurve  electrons filling each pseudo-wave (0 skips it)
+!ncurve  number of points per curve
+!nprof  number of curves (pseudo-waves)
+!errmax  error (Ha per atom) that defines the needed cutoff
+!ecut  cutoff (Ha) the pseudo-waves need for errmax
 
  use constants_m, only: dp
  implicit none

@@ -43,13 +43,13 @@
 
 !lmax  maximum angular momentum
 !la  angular momenta of all-electron states
-!nc  number of core electrons
-!nv  number of valence electrons
+!nc  number of core states
+!nv  number of valence states
 !ea  all-electron bound-state energies
 !lloc  l for local potential
 !irc  core radii indices
 !vkb  VKB projectors
-!qmsbf maximum q in sbf basis for each l
+!qmsbf  maximum q in sbf basis for each l
 !evkb  coefficients of VKB projectors
 !nproj  number of vkb projectors for each l
 !rr  log radial grid
@@ -65,8 +65,6 @@
  integer, intent(in) :: la(30),irc(6),nproj(6)
  real(dp), intent(in) :: rr(mmax),vp(mmax,5),vkb(mmax,mxprj,4)
  real(dp), intent(in) :: qmsbf(6),ea(30),evkb(mxprj,4)
-
-!Output variables - printing only
 
 !Local variables
  integer :: ll,l1,ii,jj,kk,ierr,mbfact,mbar,mch,nn,npgh
@@ -267,7 +265,6 @@
 &              + 28.0d0*(rr(mbar-1)*uu(mbar-1))**2 &
 &              +  9.0d0*(rr(mbar  )*uu(mbar  ))**2)/24.0d0
 
-!      if(sn<rr(irc(l1)) .and. hmev(jj)>0.0d0 .and. npgh<20) then
      if(sn<rr(irc(l1)) .and. hmev(jj)>ee+0.05d0 .and. npgh<20) then
        npgh=npgh+1
        lpgh(npgh)=ll

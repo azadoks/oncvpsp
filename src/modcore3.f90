@@ -16,9 +16,11 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
-! Creates monotonic polynomial model core charge matching all-electron
-! core charge and 4 derivatives at "crossover" radius.
-! Polynomial is 8th-order with no linear term.
+! Creates a Teter-function model core charge, amplitude fcfact times the
+! core charge and scale rcfact times the radius at the core-valence
+! crossover, blended into the all-electron core charge.  The prefactors are
+! input (icmod=3) or optimized to reduce the Exc 2nd-derivative errors
+! (icmod=4).
 
 ! Performs analysis and based on "hardness" criterion described in
 ! Teter, Phys. Rev. B 48, 5031 (1993) , Appendix, as
@@ -33,7 +35,8 @@
 !rhoae  state-by-state all-electron valence charge density
 !rhotae  total all-electron valence charge density
 !rhomod  model core density and 4 derivatives
-!fcfact  prefactor for model amplitude (multiplies crossover value)
+!fcfact  prefactor for model amplitude (multiplies crossover value),
+!        set to 1 for icmod=4
 !rcfact  prefactor for model scale (multiplies crossover radius)
 !fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
@@ -56,7 +59,6 @@
  real(dp), intent(in) :: rhotps(mmax),rhoc(mmax),rr(mmax)
  real(dp), intent(in) :: zion,rcfact
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
- logical :: srel
 
 !Input/output variables
  real(dp), intent(inout) :: fcfact
@@ -64,11 +66,11 @@
 !Output variables
  real(dp), intent(out) :: rhomod(mmax,5)
 
+!Local variables
 !convergence criterion
  real(dp), parameter :: eps=1.0d-7
  real(dp), parameter :: blend=2.0d0
-
-!Local variables
+ logical :: srel
  real(dp) :: al,eeel,eexc
  real(dp) :: d2mdiff,rmatch,rhocmatch,r0,rcross
  real(dp) :: gg,tt,yy
@@ -313,7 +315,6 @@
      call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
 &                       zion,iexc,nc,nv,la,irmod,mmax)
      fr=d2mdiff
-! write(6,'(i4,a,2f10.4,1p,e14.4)') kk,'  xr',xr(1),xr(2),fr
 
      if(ff(1)<= fr .and. fr<ff(2)) then
        ff(3)=fr ; xx(:,3)=xr(:)
@@ -345,7 +346,6 @@
        call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
 &                         zion,iexc,nc,nv,la,irmod,mmax)
        fe=d2mdiff
-! write(6,'(i4,a,2f10.4,1p,e14.4)') kk,'  xe',xe(1),xe(2),fe
 
        if(fe<fr) then
          ff(3)=fe ; xx(:,3)=xe(:)

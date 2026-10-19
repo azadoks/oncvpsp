@@ -25,13 +25,13 @@
 !ll  angular-momentum quantum number
 !ierr  non-zero return if error
 !ee  bound-state energy, input guess and output calculated value
-!vkb Vanderbilt-Kleinman-bylander projector
+!vkb  Vanderbilt-Kleinman-bylander projector
 !rr  log radial mesh
 !vv  local pseudopotential
 !uu  output radial wave function (*rr)
 !up  d(uu)/dr
 !mmax  size of log grid
-!mch matching mesh point for inward-outward integrations
+!mch  matching mesh point for inward-outward integrations
 
  use constants_m, only: dp
  implicit none

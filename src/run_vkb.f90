@@ -30,21 +30,20 @@
 !rr  log radial grid
 !mmax  size of radial grid
 !mxprj  dimension of number of projectors
-!pswf pseudo wave functions
+!pswf  pseudo wave functions
 !vfull  all-electron potential
 !vp  semi-local pseudopotentials for first projectors
 !     (vp(:,5) is local potential if lloc=4)
 !vkb  semi-local "potentials"*pswf (input); VKB projectors (output)
-!evkb  coefficients of BKB projectors (output)
+!evkb  coefficients of VKB projectors (output)
 !nlim  index of maximum rc including that of vlocal (output)
-!vr  effective scalar-relativisic "potential" calculated in vrel
+!vr  effective scalar-relativistic "potential" calculated in vrel
 
  use constants_m, only: dp
  implicit none
 
 !Input variables
  integer, intent(in) :: lmax,lloc,lpopt,mmax,mxprj
- integer :: lwork
  integer, intent(in) :: irc(6),nproj(6)
  real(dp), intent(in) :: rr(mmax),pswf(mmax,mxprj,5),vfull(mmax)
  real(dp), intent(in) :: dvloc0
@@ -59,6 +58,7 @@
  integer, intent(out) :: nlim
 
 !Local variables
+ integer :: lwork
  integer :: ii,ipk,jj,kk,ierr,l1,info,np
  real(dp) :: apk,sn,tt,qq12
  real(dp) :: xx,ff
@@ -199,8 +199,6 @@
        write(6,'(a,i4)') 'run_vkb: sovl matrix ERROR error, info=',info
        error stop 1
      end if
-
-!   write(6,'(/1p,2e12.4)') (sovlev(ii),ii=1,2)
 
 ! construct S^(-1/2) AND s^(1/2)
 

@@ -22,7 +22,7 @@
 
 !nn  principal quantum number
 !ll  angular-momentum quantum number
-!ierr  non-zero return if error/ input for box boundary condition (0 or 1)
+!ierr  non-zero return if error
 !ee  bound-state energy, input guess and output calculated value (in/our)
 !emin  lower bound, potential minimum if ==0.0
 !emax  upper bound
@@ -102,7 +102,6 @@
  up(:)=0.0d0
  upp(:)=0.0d0
  cf(:)=0.0d0
-!maxset=.false.
 
  als=al**2
 ! return point for bound state convergence

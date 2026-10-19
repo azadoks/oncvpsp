@@ -16,8 +16,8 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine check_data(atsym,zz,fcfact,rcfact,fcgrid,rcgrid,epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
-&                      fa,facnf, &
+ subroutine check_data(atsym,zz,fcfact,rcfact,fcgrid,rcgrid,epsh1,epsh2, &
+&                      depsh,rxpsh,rlmax,drl,fa,facnf, &
 &                      rc,ep,qcut,debl,nc,nv,iexc,lmax,lloc,lpopt,icmod, &
 &                      ncnf,na,la,nvcnf,nacnf,lacnf,ncon,nbas,nproj,psfile, &
 &                      amesh,rr1,rmax)
@@ -26,8 +26,46 @@
 !see annotated input document for all definitions
 !*cnf variables are arrays of the basis atomic configuration variables
 !to be used for the test configurations
-!amesh, rr1 and rmax are the log mesh input, 0 or less for the default
-!rxpsh is the log derivative radius, negative for the default
+
+!atsym  atomic symbol
+!zz  atomic number
+!fcfact  prefactor for model core charge amplitude
+!rcfact  prefactor for model core charge scale (icmod=3), or error
+!        tolerance (icmod=6)
+!fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
+!rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
+!epsh1  lower limit of the log derivative analysis energy range (Ha)
+!epsh2  upper limit of the log derivative analysis energy range (Ha)
+!depsh  energy step of the log derivative analysis (Ha)
+!rxpsh  log derivative radius (bohr), negative for the default
+!rlmax  maximum radius of the linear output mesh (bohr)
+!drl  spacing of the linear output mesh (bohr)
+!fa  reference configuration occupancies
+!facnf  occupancies of the reference (1) and test configurations
+!rc  core radii for each l, rc(5) for the lloc=4 local potential (bohr)
+!ep  energies at which the pseudopotentials are generated (Ha)
+!qcut  residual-energy cutoff wave vectors for each l
+!debl  energy shifts for the second projectors for each l (Ha)
+!nc  number of core states
+!nv  number of valence states
+!iexc  exchange-correlation functional, negative for libxc
+!lmax  maximum angular momentum of the pseudopotential
+!lloc  angular momentum of the local potential, 4 for a polynomial
+!lpopt  type of polynomial continuation for lloc=4
+!icmod  model core charge option
+!ncnf  number of test configurations
+!na  reference configuration principal quantum numbers
+!la  reference configuration angular momenta
+!nvcnf  numbers of valence states of the reference and test configurations
+!nacnf  principal quantum numbers of the reference and test configurations
+!lacnf  angular momenta of the reference and test configurations
+!ncon  number of matching constraints for each l
+!nbas  number of basis functions for each l
+!nproj  number of projectors for each l
+!psfile  format of the pseudopotential file (psp8, upf, psml, both, none)
+!amesh  log mesh ratio, 0 or less for the default
+!rr1  first log mesh point (bohr), 0 or less for the default
+!rmax  outer radius of the log mesh (bohr), 0 or less for the default
 
  use constants_m, only: dp
  implicit none
@@ -62,7 +100,8 @@
 
  if(trim(psfile)/='psp8' .and. trim(psfile)/='upf' .and. trim(psfile)/='psml' &
 &   .and. trim(psfile)/='both' .and. trim(psfile)/='none') then
-   write(6,'(a)') 'test_data: psfile must == psp8 or upf or psml or both or none'
+   write(6,'(a)') 'test_data: psfile must == psp8 or upf or psml'// &
+&        ' or both or none'
    ierr=ierr+1
  end if
 
@@ -122,11 +161,6 @@
          occ=.true.
        end if
      end do
-!   if(.not. occ) then
-!     write(6,'(a,a,i4)') 'test_data: must have ep>0.0 for scattering state', &
-!&     ' l=',l1-1
-!     ierr=ierr+1
-!   end if
    end if
 
    if(ncon(l1)<3 .or. ncon(l1)>5) then
@@ -141,7 +175,8 @@
      end if
    else
      if(nbas(l1)<ncon(l1)+2 .or. nbas(l1)>ncon(l1)+5) then
-       write(6,'(a,i4)') 'test_data: must have ncon+2 <= nbas <= ncon+5, l=',l1-1
+       write(6,'(a,i4)') 'test_data: must have ncon+2 <= nbas <= ncon+5, l=', &
+&        l1-1
        ierr=ierr+1
      end if
    end if
@@ -179,7 +214,8 @@
    if(nproj(l1)==0 .and. (lloc==4 .or. lloc==l1-1)) then
      cycle
    else if(nproj(l1)<1 .or. nproj(l1)>5) then
-     write(6,'(a,i4,a)') 'test_data: must have nproj in [1,5] (0 OK lloc=4 or', &
+     write(6,'(a,i4,a)') 'test_data: must have nproj in [1,5]'// &
+&          ' (0 OK lloc=4 or', &
 &          l1-1,')'
      ierr=ierr+1
    end if
@@ -212,13 +248,15 @@
  if(icmod==4) then
    if(fcgrid(1)<=0.0d0 .or. fcgrid(2)<fcgrid(1) .or. fcgrid(3)<=0.0d0) then
      write(6,'(/a,3(a,f12.6))') 'check_data: ERROR icmod=4 needs', &
-&          ' 0<fcfact_min<=fcfact_max and fcfact_step>0, fcfact_min=',fcgrid(1), &
+&          ' 0<fcfact_min<=fcfact_max and fcfact_step>0, fcfact_min=', &
+&          fcgrid(1), &
 &          ', fcfact_max=',fcgrid(2),', fcfact_step=',fcgrid(3)
      ierr=ierr+1
    end if
    if(rcgrid(1)<=0.0d0 .or. rcgrid(2)<rcgrid(1) .or. rcgrid(3)<=0.0d0) then
      write(6,'(/a,3(a,f12.6))') 'check_data: ERROR icmod=4 needs', &
-&          ' 0<rcfact_min<=rcfact_max and rcfact_step>0, rcfact_min=',rcgrid(1), &
+&          ' 0<rcfact_min<=rcfact_max and rcfact_step>0, rcfact_min=', &
+&          rcgrid(1), &
 &          ', rcfact_max=',rcgrid(2),', rcfact_step=',rcgrid(3)
      ierr=ierr+1
    end if
@@ -249,7 +287,8 @@
 !a set rxpsh must lie beyond every core radius, so that the log derivatives
 !are evaluated outside the pseudized region (run_phsft)
  if(rxpsh>=0.0d0 .and. rxpsh<=rcmax) then
-   write(6,'(/2a,f12.6,a,f12.6)') 'check_data: ERROR rxpsh not beyond every core radius', &
+   write(6,'(/2a,f12.6,a,f12.6)') 'check_data: ERROR rxpsh not beyond'// &
+&        ' every core radius', &
 &        ', rxpsh=',rxpsh,', rcmax=',rcmax
    ierr=ierr+1
  end if

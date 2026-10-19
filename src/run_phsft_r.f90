@@ -16,8 +16,8 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine run_phsft_r(lmax,lloc,nproj,epa,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
-&                      rr,vfull,vp,zz,mmax,mxprj,irc)
+ subroutine run_phsft_r(lmax,lloc,nproj,epa,epsh1,epsh2,depsh,rxpsh, &
+&                      vkb,evkb,rr,vfull,vp,zz,mmax,mxprj,irc)
 
 ! computes log derivatives, actually atan(r * ((d psi(r)/dr)/psi(r)))
 ! at rr(irphs) comparing all-electron with Vanderbilt-Kleinman-Bylander
@@ -28,11 +28,14 @@
 
 !lmax  maximum angular momentum
 !lloc  l for local potential
-!nproj  number ov VKB projectors for  each l
+!nproj  number of VKB projectors for each l
 !epa  bound-state or scattering state reference energies for vkb potentials
+!     (last index 1 for j=l+1/2, 2 for j=l-1/2, as in vkb, evkb and vp)
 !epsh1  low energy limit for "phase shift" calculation
 !epsh2  high energy limit for "phase shift" calculation
 !depsh  energy increment
+!rxpsh  radius (bohr) at which log derivatives are computed; if negative,
+!       rr(irc(l)+2) is used, and rr(irc(lloc)) for l>lmax
 !vkb  VKB projectors
 !evkb  coefficients of VKB projectors
 !rr  log radial grid
@@ -41,8 +44,7 @@
 !zz  atomic number
 !mmax  size of radial grid
 !mxprj  dimension of number of projectors
-!irc  core radii
-!irphs  index of rr beyond which all vp==vlocal
+!irc  core radii indices
 
  use constants_m, only: dp
  implicit none
@@ -53,8 +55,6 @@
  real(dp), intent(in) :: epsh1,epsh2,depsh,zz,rxpsh
  real(dp), intent(in) :: rr(mmax),vp(mmax,5,2),epa(mxprj,6,2)
  real(dp), intent(in) :: vfull(mmax),vkb(mmax,mxprj,4,2),evkb(mxprj,4,2)
-
-!Output variables - printing only
 
 !Local variables
  integer :: ii,ll,l1,irphs,npsh
@@ -84,7 +84,8 @@
          end if
        end do
        if (irphs == 0) then
-         write(6, '(/2a,f12.6,a,f12.6)') 'run_phsft_r: ERROR rxpsh beyond radial mesh', &
+         write(6, '(/2a,f12.6,a,f12.6)') &
+&           'run_phsft_r: ERROR rxpsh beyond radial mesh', &
 &           ', rxpsh=', rxpsh, ', rr(mmax)=', rr(mmax)
          error stop 1
        end if
@@ -107,13 +108,15 @@
          end if
        end do
        if (irphs == 0) then
-         write(6, '(/2a,f12.6,a,f12.6)') 'run_phsft_r: ERROR rxpsh beyond radial mesh', &
+         write(6, '(/2a,f12.6,a,f12.6)') &
+&           'run_phsft_r: ERROR rxpsh beyond radial mesh', &
 &           ', rxpsh=', rxpsh, ', rr(mmax)=', rr(mmax)
          error stop 1
        end if
 ! check_data keeps rxpsh beyond every rc, so only a direct call gets here
        if (irphs < irc(lloc+1)) then
-         write(6, '(/2a,i0,2(a,f12.6))') 'run_phsft_r: WARNING rxpsh inside ' // &
+         write(6, '(/2a,i0,2(a,f12.6))') &
+&           'run_phsft_r: WARNING rxpsh inside ' // &
 &           'the local potential core radius', &
 &           ', l=', ll, ', rxpsh=', rxpsh, ', rc=', rr(irc(lloc+1))
        end if
@@ -132,12 +135,12 @@
      call fphsft_r(ll,kap,epsh2,depsh,pshf,rr,vfull,zz,mmax,irphs,npsh)
      if(ll == lloc) then
        call  vkbphsft(ll,0,epsh2,depsh,epa(1,l1,ikap),pshf,pshp, &
-&                          rr,vp(1,lloc+1,ikap),vkb(1,1,l1,ikap),evkb(1,l1,ikap), &
-&                          mmax,irphs,npsh)
+&                          rr,vp(1,lloc+1,ikap),vkb(1,1,l1,ikap), &
+&                          evkb(1,l1,ikap),mmax,irphs,npsh)
      else
        call  vkbphsft(ll,nproj(l1),epsh2,depsh,epa(1,l1,ikap),pshf,pshp, &
-&                          rr,vp(1,lloc+1,ikap),vkb(1,1,l1,ikap),evkb(1,l1,ikap), &
-&                          mmax,irphs,npsh)
+&                          rr,vp(1,lloc+1,ikap),vkb(1,1,l1,ikap), &
+&                          evkb(1,l1,ikap),mmax,irphs,npsh)
      end if
 
      write(6,'(/a,i2)') 'log derivativve data for plotting, l=',ll

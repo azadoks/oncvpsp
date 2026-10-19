@@ -29,7 +29,7 @@
 !uu  output radial wave function (*rr)
 !up  d(uu)/dr
 !mmax  size of log grid
-!mch matching mesh point for inward-outward integrations
+!mch  matching mesh point for inward-outward integrations
 
  use constants_m, only: dp
  implicit none

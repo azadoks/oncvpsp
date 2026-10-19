@@ -21,37 +21,46 @@
 !
 !  interface to libxc library for potential and energy density calculation
 !
- use functionals_m, only: xc_functl_t, xc_functl_init_functl, xc_functl_get_vxc, &
-&                         xc_functl_write_info, xc_functl_end, XC_DERIV_NUMERICAL
+!iexc  exchange-correlation function to be used: -(1000*id1+id2) for
+!      the libxc functionals id1 and id2
+!al  log of the mesh ratio amesh of the log radial mesh
+!rho  charge density
+!vxc  exchange-correlation potential
+!exc  exchange-correlation energy density
+!rr  log radial mesh
+!mmax  dimension of log radial grid
+
+ use functionals_m, only: xc_functl_t, xc_functl_init_functl, &
+&                         xc_functl_get_vxc, xc_functl_write_info, &
+&                         xc_functl_end, XC_DERIV_NUMERICAL
  use constants_m, only: dp, pi
  implicit none
 
-
+!Input variables
+ integer, intent(in) :: mmax, iexc
  real(dp), intent(in) :: al
  real(dp), intent(in) :: rho(mmax),rr(mmax)
+
+!Output variables
  real(dp), intent(out) :: vxc(mmax),exc(mmax)
- integer, intent(in) :: mmax, iexc
- integer :: ii, unit
 
 !Local variables
+ integer :: ii, unit
  integer ::  id(2), ifunc
  integer, save :: functprinted = 0
  type(xc_functl_t) :: functls(2)
  integer :: nspin, irel, deriv_method
  real(dp),allocatable :: ip(:)
 
- real(dp), allocatable :: v(:), e(:)
+ real(dp), allocatable :: vv(:), ee(:)
  real(dp), allocatable :: dpr(:), dppr(:), dlap(:)
  real(dp), allocatable :: tau_dummy(:), vtau_dummy(:)
  real(dp), allocatable :: rho_loc(:)
 
- allocate(v(mmax), e(mmax))
+ allocate(vv(mmax), ee(mmax))
  allocate(dpr(mmax), dppr(mmax), dlap(mmax))
  allocate(tau_dummy(mmax), vtau_dummy(mmax))
  allocate(rho_loc(mmax))
-!
-!conf = (3.d0*pi**2)**thrd
-!conrs = (3.d0/(4.d0*pi))**thrd
 
  rho_loc = rho(1:mmax) /4.0d0 / pi
 
@@ -64,10 +73,8 @@
  id(2) = abs(iexc) - id(1)*1000
  nspin = 1
  irel = 0 !XC_NON_RELATIVISTIC
-!deriv_method = XC_DERIV_ANALYTICAL
+!numerical derivatives (XC_DERIV_ANALYTICAL is the alternative)
  deriv_method = XC_DERIV_NUMERICAL
-! call xc_functl_init(functls(1),nspin)
-! call xc_functl_init(functls(2),nspin)
  call xc_functl_init_functl(functls(1),id(1),3,0.d0,nspin,deriv_method)
  call xc_functl_init_functl(functls(2),id(2),3,0.d0,nspin,deriv_method)
 
@@ -88,18 +95,18 @@
  vxc(1:mmax) = 0.0d0
  exc(1:mmax) = 0.0d0
  do ifunc = 1, 2
-   v = 0.0d0
-   e = 0.0d0
+   vv = 0.0d0
+   ee = 0.0d0
    call xc_functl_get_vxc(functls(ifunc), mmax, al, rr, rho_loc, dpr, dlap, &
-&         tau_dummy, ip, v, e, vtau_dummy)
-   vxc(1:mmax) = vxc(1:mmax) + v(1:mmax)
-   exc(1:mmax) = exc(1:mmax) + e(1:mmax)
+&         tau_dummy, ip, vv, ee, vtau_dummy)
+   vxc(1:mmax) = vxc(1:mmax) + vv(1:mmax)
+   exc(1:mmax) = exc(1:mmax) + ee(1:mmax)
  end do
 
-! go to convention for Don Hamman code - I do not understand:
-! in principle libxc outputs energy per particle,
-! and here we divide by rho again to get an LDA exc
-! identical to the other routine...
+! convert to the convention of D. R. Hamann's built-in routines (excwig
+! etc.).  Why this is needed is not understood: in principle libxc
+! outputs the energy per particle, yet dividing by rho once more here
+! gives an LDA exc identical to that of the built-in routines.
  do ii=1,mmax
    exc(ii) = exc(ii) / max(rho_loc(ii),1.d-20)
  end do
@@ -108,7 +115,7 @@
  call xc_functl_end(functls(1))
  call xc_functl_end(functls(2))
  deallocate (ip)
- deallocate(v, e)
+ deallocate(vv, ee)
  deallocate(dpr, dppr, dlap)
  deallocate(tau_dummy, vtau_dummy)
  deallocate(rho_loc)
@@ -117,19 +124,32 @@
 
 
  subroutine derivs(mmax, rho, al, rr, dpr, dppr, dlap)
+! first and second radial derivatives and Laplacian of rho on the log
+! mesh, by finite differences, for exc_libxc
 ! NB: presumes incoming rho is properly scaled without 4pi or r**2 factors.
+
+!mmax  dimension of log radial grid
+!rho  charge density
+!al  log of the mesh ratio amesh of the log radial mesh
+!rr  log radial mesh
+!dpr  first radial derivative of rho
+!dppr  second radial derivative of rho
+!dlap  Laplacian of rho
 
  use constants_m, only: dp
  implicit none
 
+!Input variables
  integer, intent(in) :: mmax
  real(dp), intent(in) :: al
  real(dp), intent(in) :: rr(mmax)
  real(dp), intent(in) :: rho(mmax)
+
+!Output variables
  real(dp), intent(out) :: dpr(mmax), dppr(mmax), dlap(mmax)
 
 !Local variables
- integer :: i
+ integer :: ii
  real(dp) :: dpn(mmax), dppn(mmax)
  real(dp) :: c11,c12,c13,c14,c15
  real(dp) :: c21,c22,c23,c24,c25
@@ -148,41 +168,41 @@
 !
 ! n derivatives of d
 !
- i=1
- dpn(i) = -25.d0/12.d0*rho(i) +4.d0*rho(i+1) -3.d0*rho(i+2) &
-&         +4.d0/3.d0*rho(i+3) -1.d0/4.d0*rho(i+4)
- dppn(i) = 15.d0/4.d0*rho(i) -77.d0/6.d0*rho(i+1) +107.d0/6.d0*rho(i+2) &
-&         -13.d0*rho(i+3) +61.d0/12.d0*rho(i+4) -5.d0/6.d0*rho(i+5)
- i=2
- dpn(i) = -25.d0/12.d0*rho(i) +4.d0*rho(i+1) -3.d0*rho(i+2)  &
-&         +4.d0/3.d0*rho(i+3) -1.d0/4.d0*rho(i+4)
- dppn(i) = 15.d0/4.d0*rho(i) -77.d0/6.d0*rho(i+1) +107.d0/6.d0*rho(i+2) &
-&         -13.d0*rho(i+3) +61.d0/12.d0*rho(i+4) -5.d0/6.d0*rho(i+5)
+ ii=1
+ dpn(ii) = -25.d0/12.d0*rho(ii) +4.d0*rho(ii+1) -3.d0*rho(ii+2) &
+&         +4.d0/3.d0*rho(ii+3) -1.d0/4.d0*rho(ii+4)
+ dppn(ii) = 15.d0/4.d0*rho(ii) -77.d0/6.d0*rho(ii+1) +107.d0/6.d0*rho(ii+2) &
+&         -13.d0*rho(ii+3) +61.d0/12.d0*rho(ii+4) -5.d0/6.d0*rho(ii+5)
+ ii=2
+ dpn(ii) = -25.d0/12.d0*rho(ii) +4.d0*rho(ii+1) -3.d0*rho(ii+2)  &
+&         +4.d0/3.d0*rho(ii+3) -1.d0/4.d0*rho(ii+4)
+ dppn(ii) = 15.d0/4.d0*rho(ii) -77.d0/6.d0*rho(ii+1) +107.d0/6.d0*rho(ii+2) &
+&         -13.d0*rho(ii+3) +61.d0/12.d0*rho(ii+4) -5.d0/6.d0*rho(ii+5)
 
- do i = 3, mmax - 2
-   dpn(i) =  c11*rho(i-2) + c12*rho(i-1) + c14*rho(i+1) + c15*rho(i+2)
-   dppn(i) = c21*rho(i-2) + c22*rho(i-1) + c23*rho(i)   + c24*rho(i+1) &
-&           +c25*rho(i+2)
+ do ii = 3, mmax - 2
+   dpn(ii) =  c11*rho(ii-2) + c12*rho(ii-1) + c14*rho(ii+1) + c15*rho(ii+2)
+   dppn(ii) = c21*rho(ii-2) + c22*rho(ii-1) + c23*rho(ii)   + c24*rho(ii+1) &
+&           +c25*rho(ii+2)
  end do
 
- i=mmax-1
- dpn(i) = +25.d0/12.d0*rho(i) -4.d0*rho(i-1) +3.d0*rho(i-2) &
-&         -4.d0/3.d0*rho(i-3) +1.d0/4.d0*rho(i-4)
- dppn(i) = -15.d0/4.d0*rho(i) +77.d0/6.d0*rho(i-1) -107.d0/6.d0*rho(i-2) &
-&          +13.d0*rho(i-3) -61.d0/12.d0*rho(i-4) +5.d0/6.d0*rho(i-5)
- i=mmax
- dpn(i) = +25.d0/12.d0*rho(i) -4.d0*rho(i-1) +3.d0*rho(i-2) &
-&         -4.d0/3.d0*rho(i-3) +1.d0/4.d0*rho(i-4)
- dppn(i) = -15.d0/4.d0*rho(i) +77.d0/6.d0*rho(i-1) -107.d0/6.d0*rho(i-2) &
-&          +13.d0*rho(i-3) -61.d0/12.d0*rho(i-4) +5.d0/6.d0*rho(i-5)
+ ii=mmax-1
+ dpn(ii) = +25.d0/12.d0*rho(ii) -4.d0*rho(ii-1) +3.d0*rho(ii-2) &
+&         -4.d0/3.d0*rho(ii-3) +1.d0/4.d0*rho(ii-4)
+ dppn(ii) = -15.d0/4.d0*rho(ii) +77.d0/6.d0*rho(ii-1) -107.d0/6.d0*rho(ii-2) &
+&          +13.d0*rho(ii-3) -61.d0/12.d0*rho(ii-4) +5.d0/6.d0*rho(ii-5)
+ ii=mmax
+ dpn(ii) = +25.d0/12.d0*rho(ii) -4.d0*rho(ii-1) +3.d0*rho(ii-2) &
+&         -4.d0/3.d0*rho(ii-3) +1.d0/4.d0*rho(ii-4)
+ dppn(ii) = -15.d0/4.d0*rho(ii) +77.d0/6.d0*rho(ii-1) -107.d0/6.d0*rho(ii-2) &
+&          +13.d0*rho(ii-3) -61.d0/12.d0*rho(ii-4) +5.d0/6.d0*rho(ii-5)
 
 !
 ! r derivatives of d
 !
- do i = 1, mmax
-   dpr(i) = dpn(i) / (al * rr(i))
-   dppr(i) = (dppn(i) - al * dpn(i)) / (al * rr(i))**2
-   dlap(i) = (dppn(i) + al * dpn(i)) / (al * rr(i))**2
+ do ii = 1, mmax
+   dpr(ii) = dpn(ii) / (al * rr(ii))
+   dppr(ii) = (dppn(ii) - al * dpn(ii)) / (al * rr(ii))**2
+   dlap(ii) = (dppn(ii) + al * dpn(ii)) / (al * rr(ii))**2
  end do
 
  end subroutine derivs

@@ -36,11 +36,11 @@
  real(dp), intent(in) :: zz
  integer, intent(in) :: ll,kap,mmax
 
-!Output variables
- real(dp), intent(out) :: cnorm
-
 !Input/output variables
  real(dp), intent(inout) :: uu(mmax,2)
+
+!Output variables
+ real(dp), intent(out) :: cnorm
 
 !Local variables
  real(dp) :: sn

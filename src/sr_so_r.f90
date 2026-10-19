@@ -29,14 +29,13 @@
 !nproj  number of projectors for each l
 !rr  log radial grid
 !mmax  size of radial grid
-!mmax  dimension of log grid
 !mxprj  dimension of number of projectors
-!vkb  vkb projectors
-!evkb  coefficients of BKB projectors
-!vsr  normalized scalar projectors
-!esr  energy  coefficients of vscal
-!vso  normalized spin-orbig projectors
-!esol  energy  coefficients of vso
+!vkb  vkb projectors for each l and j=l+/-1/2
+!evkb  coefficients of VKB projectors for each l and j=l+/-1/2
+!vsr  normalized scalar-relativistic projectors
+!esr  energy coefficients of vsr
+!vso  normalized spin-orbit projectors
+!eso  energy coefficients of vso, to be multiplied by <L dot S>
 
  use constants_m, only: dp
  implicit none
@@ -54,8 +53,10 @@
  integer :: lloc,lpopt
  integer :: ii,jj,kk,ierr,ik1,ik2,ip1,ip2,ipk,ll,l1,info,nn
  real(dp) :: apk,sn,tt,qq1mxprj
- real(dp) :: sovl(2*mxprj,2*mxprj),sovlev(2*mxprj),ascl(2*mxprj,2*mxprj),aso(2*mxprj,2*mxprj)
- real(dp) :: asclst(2*mxprj,2*mxprj),wsclst(2*mxprj),asost(2*mxprj,2*mxprj),wsost(2*mxprj)
+ real(dp) :: sovl(2*mxprj,2*mxprj),sovlev(2*mxprj)
+ real(dp) :: ascl(2*mxprj,2*mxprj),aso(2*mxprj,2*mxprj)
+ real(dp) :: asclst(2*mxprj,2*mxprj),wsclst(2*mxprj)
+ real(dp) :: asost(2*mxprj,2*mxprj),wsost(2*mxprj)
  real(dp) :: asclt(2*mxprj,2*mxprj),asot(2*mxprj,2*mxprj)
  real(dp) :: sphalf(2*mxprj,2*mxprj),smhalf(2*mxprj,2*mxprj)
  real(dp) :: fscl(mxprj),fso(mxprj),work(10*mxprj)

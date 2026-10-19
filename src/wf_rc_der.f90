@@ -20,33 +20,32 @@
 
 !calculate derivatives of radial wave functin at core radius rc
 
-!INPUT
-! rr log radial mesh
-! uu rr*radial wavefunction
-! al  log of radial mesh factor
-! mmax last point used on radial mesh
-!
-!IN/OUT
-! irc  index of radial mesh point used as rc
-! rc  input core radius.  If irc = 0 on input, irc is calculated and rc
-!      is exact mesh point value on output (next larger point)
-!
-!OUTPUT
-! uorder  value and four derivatives of uu/rr at final rc
+!rr  log radial mesh
+!uu  rr*radial wavefunction
+!al  log of radial mesh factor
+!mmax  last point used on radial mesh
+!irc  index of radial mesh point used as rc
+!rc  input core radius.  If irc = 0 on input, irc is calculated and rc
+!    is exact mesh point value on output (next larger point)
+!uorder  value and four derivatives of uu/rr at final rc
 
  use constants_m, only: dp
  implicit none
 
-!subroutine arguments
- real(dp), intent(in) :: rr(mmax),uu(mmax)
- real(dp), intent(out) :: uorder(5)
- real(dp), intent(in) :: al
- real(dp), intent(inout) :: rc
+!Input variables
  integer, intent(in) :: mmax
+ real(dp), intent(in) :: rr(mmax),uu(mmax)
+ real(dp), intent(in) :: al
+
+!Input/output variables
+ real(dp), intent(inout) :: rc
  integer, intent(inout) :: irc
- integer :: nder
+
+!Output variables
+ real(dp), intent(out) :: uorder(5)
 
 !Local variables
+ integer :: nder
  integer :: ii,jj
  real(dp),allocatable :: work(:,:)
 
@@ -70,12 +69,6 @@
  end do
 
  do jj=2,5
-
-! 5-point numerical first derivatives applied successively
-!  do ii=irc-18+2*jj,irc+18-2*jj
-!     work(ii,jj)=(2.d0*work(ii-2,jj-1)-16.d0*work(ii-1,jj-1)&
-!&     +16.d0*work(ii+1,jj-1)-2.d0*work(ii+2,jj-1))&
-!&     /(24.d0*al*rr(ii))
 
 ! 7-point numerical first derivatives applied successively
    do ii=irc-25+3*jj,irc+25-3*jj

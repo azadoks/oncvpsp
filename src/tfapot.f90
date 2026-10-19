@@ -21,6 +21,10 @@
 
 ! generalized Thomas-Fermi atomic potential
 
+!rr  radius (bohr)
+!zz  atomic number
+!tfapot  returned potential at rr (Ha)
+
 !...to an article of N. H. March ( "The Thomas-Fermi Approximation in
 ! Quantum Mechanics", Adv. Phys. 6, 1 (1957)). He has the formula,
 ! but it is not the result of his work. The original publication is:
@@ -36,7 +40,7 @@
 !Input variables
  real(dp), intent(in) :: rr,zz
 
-!Output function
+!Output variables
  real(dp) :: tfapot
 
 !Local variables

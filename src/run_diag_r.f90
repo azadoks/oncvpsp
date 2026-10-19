@@ -29,6 +29,7 @@
 !lmax  maximum angular momentum
 !npa  principal quantum number for corresponding all-electron state
 !epa  bound-state or scattering state reference energies for vkb potentials
+!     (last index 1 for j=l+1/2, 2 for j=l-1/2, as in vkb, evkb and vp)
 !lloc  l for local potential
 !irc  core radii indices
 !vkb  VKB projectors
@@ -46,15 +47,13 @@
 
 !Input variables
  integer, intent(in) :: lmax,lloc,mmax,mxprj
- integer :: nlim
  integer, intent(in) :: npa(mxprj,6),irc(6),nproj(6)
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: rr(mmax),vp(mmax,5,2),vfull(mmax),vkb(mmax,mxprj,4,2)
  real(dp), intent(in) :: epa(mxprj,6,2),evkb(mxprj,4,2)
 
-!Output variables - printing only
-
 !Local variables
+ integer :: nlim
  integer :: ll,l1,ikap,kap,mkap,ii,jj,ierr,mch,mchf
  integer :: iprj,nnae,nnp,npr
  real(dp) :: al,emax,emin,etest,umch,upmch,uldf,gam,gpr,cnorm

@@ -40,23 +40,21 @@
 !zz  atomic number
 !mmax  size of radial grid
 !mxprj  dimension of number of projectors
-!srel .true. for scalar-relativistic, .false. for non-relativistic
+!srel  .true. for scalar-relativistic, .false. for non-relativistic
 
  use constants_m, only: dp
  implicit none
 
 !Input variables
  integer, intent(in) :: lmax,lloc,mmax,mxprj
- integer :: nlim
  integer, intent(in) :: npa(mxprj,6),irc(6),nproj(6)
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: rr(mmax),vp(mmax,5),vfull(mmax),vkb(mmax,mxprj,4)
  real(dp), intent(in) :: epa(mxprj,6),evkb(mxprj,4)
  logical, intent(in) :: srel
 
-!Output variables - printing only
-
 !Local variables
+ integer :: nlim
  integer :: ll,l1,ii,jj,ierr,mch,mchf
  integer :: iprj,nnae,nnp,npr
  real(dp) :: al,emax,emin,etest,sls,umch,upmch,uldf,gam,gpr

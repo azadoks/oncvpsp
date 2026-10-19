@@ -30,6 +30,8 @@
 !nc  number of core states
 !ncv  number of core+valence states
 !it  number of iterations (output)
+!rhoc  core charge (output)
+!rho  total core+valence charge (output)
 !rr  log radial mesh
 !vi  all-electron potential (output)
 !zz  atomic number
@@ -60,10 +62,8 @@
  real(dp), intent(out) :: ea(ncv)
  real(dp), intent(out) :: rho(mmax),rhoc(mmax),vi(mmax)
 
-!Local function
- real(dp) :: tfapot
-
 !Local variables
+ real(dp) :: tfapot
  integer :: nin,mch
  real(dp) :: amesh,al
  real(dp) :: dr,eeel,eexc,et,rl,rl1,sd,sf,sn,eeig
@@ -71,17 +71,17 @@
  integer :: ii,jj
  logical :: convg
 
- real(dp), allocatable :: u(:),up(:)
+ real(dp), allocatable :: uu(:),up(:)
  real(dp), allocatable :: vo(:),vi1(:),vo1(:),vxc(:)
 
 ! blend parameter for Anderson iterative potential mixing
  real(dp), parameter ::  bl=0.5d0
 
- allocate(u(mmax),up(mmax))
+ allocate(uu(mmax),up(mmax))
  allocate(vo(mmax),vi1(mmax),vo1(mmax),vxc(mmax))
 
 ! why all this is necessary is unclear, but it seems to be
- u(:)=0.d0; up(:)=0.d0; vo(:)=0.d0; vi1(:)=0.d0; vo1(:)=0.d0; vxc(:)=0.d0
+ uu(:)=0.d0; up(:)=0.d0; vo(:)=0.d0; vi1(:)=0.d0; vo1(:)=0.d0; vxc(:)=0.d0
  dr=0.d0; eeel=0.d0; eexc=0.d0; et=0.d0; rl=0.d0; rl1=0.d0
  sd=0.d0; sf=0.d0; sn=0.d0; eeig=0.d0; thl=0.d0; vn=0.d0; zion=0.d0
  nin=0; mch=0
@@ -122,7 +122,7 @@
      et=ea(ii)
      ierr = 0
      call lschfb(na(ii),la(ii),ierr,et, &
-&                rr,vi,u,up,zz,mmax,mch,srel)
+&                rr,vi,uu,up,zz,mmax,mch,srel)
      if(ierr /= 0) then
        write(6,'(/a,3i4)') 'sratom123: lschfb convergence ERROR n,l,iter=', &
 &       na(ii),la(ii),it
@@ -135,9 +135,9 @@
 
 ! accumulate charge and eigenvalues
      eeig = eeig + fa(ii) * ea(ii)
-     rho(:)=rho(:) + fa(ii)*(u(:)/rr(:))**2
+     rho(:)=rho(:) + fa(ii)*(uu(:)/rr(:))**2
      if(ii<=nc) then
-       rhoc(:)=rhoc(:) + fa(ii)*(u(:)/rr(:))**2
+       rhoc(:)=rhoc(:) + fa(ii)*(uu(:)/rr(:))**2
      end if
 
 
@@ -208,7 +208,7 @@
  etot =  eeig + eexc - 0.5d0*eeel
 
 
- deallocate(u,up)
+ deallocate(uu,up)
  deallocate(vo,vi1,vo1,vxc)
  return
 

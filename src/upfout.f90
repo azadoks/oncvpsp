@@ -22,7 +22,8 @@
  subroutine upfout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
 &                  zz,zion,mmax,mxprj,iexc,icmod,nrlin,drl,atsym,epstot, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact,fcgrid,rcgrid, &
+&                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
+&                  fcgrid,rcgrid, &
 &                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,uupsa,ea,log_mesh)
 
 
@@ -47,14 +48,39 @@
 !drl spacing of linear radial grid
 !atsym  atomic symbol
 !epstot  pseudoatom total energy
-!psfile  should be 'upf'
-!remaining input variables to be echoed:
-!  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf
-!  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact,fcgrid,rcgrid
-!  epsh1,epsh2,depsh,rxpsh,rlmax,psfile
-!log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets it (else 0)
+!na  principal quantum numbers of the reference configuration states
+!la  angular momenta of the reference configuration states
+!ncon  number of matching constraints for each l
+!nbas  number of basis functions for each l
+!nvcnf  numbers of valence states of the reference and test configurations
+!nacnf  principal quantum numbers of the reference and test configurations
+!lacnf  angular momenta of the reference and test configurations
+!nc  number of core states
+!nv  number of valence states
+!lpopt  type of polynomial continuation for lloc=4
+!ncnf  number of test configurations
+!fa  occupations of the reference configuration states
+!rc0  core radii as read from the input (bohr), rc0(5) for lloc=4
+!ep  energies at which the pseudopotentials are generated (Ha)
+!qcut  residual-energy cutoff wave vectors for each l
+!debl  energy shifts for the second projectors for each l (Ha)
+!facnf  occupancies of the reference and test configurations
+!dvloc0  r=0 shift of the lloc=4 local potential (Ha)
+!fcfact  prefactor for model core charge amplitude, as read from the input
+!rcfact  prefactor for model core charge scale (icmod=3), or error
+!  tolerance (icmod=6)
+!fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
+!rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
+!epsh1  lower limit of the log derivative analysis energy range (Ha)
+!epsh2  upper limit of the log derivative analysis energy range (Ha)
+!depsh  energy step of the log derivative analysis (Ha)
+!rxpsh  radius of the log derivative analysis (bohr), negative for default
+!rlmax  maximum radius of the linear output mesh (bohr)
+!psfile  pseudopotential file format, 'upf' or 'both'
+!log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets it
+!  (else 0)
 !uupsa  pseudo-atomic orbital array
-!ea  psuedo-orbital eigenvalues
+!ea  psuedo-orbital eigenvalues (Ha)
 
  use constants_m, only: dp, pi
  use input_echo_m, only: write_icmod, write_epsh
@@ -77,7 +103,8 @@
  integer, intent(in) :: na(30),la(30),ncon(6),nbas(6)
  integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
  integer, intent(in) :: nc,nv,lpopt,ncnf
- real(dp), intent(in) :: fa(30),rc0(6),ep(6),qcut(6),debl(6),facnf(30,5),ea(30)
+ real(dp), intent(in) :: fa(30),rc0(6),ep(6),qcut(6),debl(6),facnf(30,5)
+ real(dp), intent(in) :: ea(30)
  real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rxpsh,rlmax
  real(dp), intent(in) :: log_mesh(3)
  character(len=4), intent(in) :: psfile
@@ -117,7 +144,8 @@
    write(6,'(a,i5,a,f10.5)') "Updating nrl = ", nrl, " for uurcut = ", uurcut
  end if
 
- allocate(rhol(nrl),rl(nrl),vkbl(nrl,mxprj,4),vpl(nrl,5),rhomodl(nrl,5),uual(nrl,nv))
+ allocate(rhol(nrl),rl(nrl),vkbl(nrl,mxprj,4),vpl(nrl,5),rhomodl(nrl,5), &
+&          uual(nrl,nv))
 
 ! interpolation of everything onto linear output mesh
 
@@ -372,7 +400,8 @@
  allocate(dmat(ntotproj,ntotproj))
 
  if(mod(nrlproj,2)/=0) nrlproj=nrlproj+1
- if(mod(nrlproj,4)/=0) nrlproj=nrlproj+2  !make divisible by 4 to use for 0 compression below
+!make divisible by 4 to use for 0 compression below
+ if(mod(nrlproj,4)/=0) nrlproj=nrlproj+2
 
  write(6,'(t8,a,i6,a)') &
 &      'mesh_size="',nrl,'"'
@@ -438,13 +467,10 @@
 &          'type="real"'
      write(6,'(t8,a,i4,a)') &
 &          'size="',nrl,'"'
-!&          'size="',nrlproj,'"'
      write(6,'(t8,a)') &
 &          'columns="4"'
      write(6,'(t8,a,i0,a)') &
 &          'index="',iproj,'"'
-!     write(6,'(t8,a)') &
-!&          'label="3P"'
      write(6,'(t8,a,i1,a)') &
 &          'angular_momentum="',l1-1,'"'
      write(6,'(t8,a,i4,a)') &

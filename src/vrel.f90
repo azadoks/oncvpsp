@@ -21,17 +21,17 @@
 ! Finds an effective potential representing the Pauli-type scalar-relativistic
 ! operators in the radial Schroedinger equation
 
-!nn  principal quantum number
 !ll  angular-momentum quantum number
-!ierr  non-zero return if error
-!ee  bound-state energy, input guess and output calculated value
+!ee  bound-state energy
 !rr  log radial mesh
 !vv  local atomic potential
-!uu  output radial wave function (*rr)
+!vr  effective scalar-relativistic potential, set for
+!    0.5*rr(irc)<=rr<=1.5*rr(irc) and zero elsewhere
+!uu  radial wave function (*rr)
 !up  d(uu)/dr
 !zz  atomic number
 !mmax  size of log grid
-!mch matching mesh point for inward-outward integrations
+!irc  mesh index of the radius around which vr is calculated
 !srel .true. for scalar-relativistic, .false. for non-relativistic
 
  use constants_m, only: dp, c_light

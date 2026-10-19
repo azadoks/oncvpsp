@@ -31,16 +31,16 @@
 !pswf0_or(nbas)  or basis  coefficients
 !nqout  number of q values in [0,qmax] for which results are to be saved
 !qout(nqout)  q values in [0,qmax] for which residuals are to be calculated
-!eresid0(nqout) set of <pswf0| E_resid |pswf0> matrix elements
-!eresiddot(nnull,nqout) set of <pswfnull| E_resid |pswf0> matrix elements
-!eresidmat(nnull,nnull,nqout) set of <pswfnull | E_resid |pswfnull'>
+!eresid0(nqout)  set of <pswf0| E_resid |pswf0> matrix elements
+!eresiddot(nnull,nqout)  set of <pswfnull| E_resid |pswf0> matrix elements
+!eresidmat(nnull,nnull,nqout)  set of <pswfnull | E_resid |pswfnull'>
 !pswfnull_sb(nbas,nnull)  sbf coefficients of null-space eigenfunctions
-!pswfnull_sb(nbas,nnull)  or basis coefficients of null-space eigenfunctions
+!pswfnull_or(nbas,nnull)  or basis coefficients of null-space eigenfunctions
 !uunorm  all-electron charge inside rc
 !ps0norm  ps0 charge inside rc
-!pswfopt_sb optimized pseudowavefunction sbf coefficients
-!orbasis_it  transformation matrix from sb to or basis
-!pswfopt_or optimized pseudowavefunction or basis coefficients
+!eresidmin  minimized E_resid for qout(1), the optimization cutoff
+!pswfopt_sb  optimized pseudowavefunction sbf coefficients
+!pswfopt_or  optimized pseudowavefunction or basis coefficients
 !ekin_anal  total pswf kinetic energy calculated analytically from E_resid
 !eresq(nqout)  E_resid for optimized pswf as a function of cutoff
 
@@ -51,18 +51,19 @@
  integer, intent(in) :: nnull,nbas,nqout
  real(dp), intent(in) :: pswf0_sb(nbas),pswfnull_sb(nbas,nnull)
  real(dp), intent(in) :: pswf0_or(nbas),pswfnull_or(nbas,nnull)
- real(dp), intent(in) :: eresid0(nqout),eresiddot(nnull,nqout),eresidmat(nnull,nnull,nqout)
- real(dp) :: orbasis_it(nbas,nbas)
+ real(dp), intent(in) :: eresid0(nqout),eresiddot(nnull,nqout)
+ real(dp), intent(in) :: eresidmat(nnull,nnull,nqout)
  real(dp), intent(in) :: qout(nqout)
- real(dp), intent(out) :: eresq(nqout)
  real(dp), intent(in) :: uunorm,ps0norm
 
 !Output variables
+ real(dp), intent(out) :: eresq(nqout)
  real(dp), intent(out) :: eresidmin,ekin_anal
  real(dp), intent(out) :: pswfopt_sb(nbas),pswfopt_or(nbas)
- real(dp) :: eres(nqout)
 
 !Local variables
+ real(dp) :: orbasis_it(nbas,nbas)
+ real(dp) :: eres(nqout)
  real(dp) :: yy,tt,emin,rtsgn,sn
  real(dp) :: emin0,emin1,x1,x1min,x1max
  real(dp), allocatable :: work(:),wmat(:,:),wev(:),wvec(:)
@@ -102,10 +103,6 @@
    end do
  end do
 
-!write(6,'(/a,1p,4d14.4)') 'eresideval',wev(:)
-!write(6,'(/a,1p,4d14.4)') 'eresiddot_ev',eresiddot_ev(:)
-!write(6,'(/a,1p,4d14.4)') 'eresid0',eresid0(1)
-
  eresideval(:)=wev(:)
  eresidevec_nu(:,:)=wmat(:,:)
 
@@ -121,8 +118,6 @@
  allocate(pswfopt(nnull),pswfopt_nu(nnull))
  pswfopt(:)=0.d0
  pswfopt_nu(:)=0.d0
-
-!write(6,'(/a,1p,3d16.6)') 'initial emin, final, diff',emin0,emin,emin0-emin
 
 ! Interval-halving search to minimize E*r
 

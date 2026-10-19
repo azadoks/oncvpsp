@@ -51,7 +51,8 @@
 !   same output.  Both read the same input.  See ae_file_m.
 !
  use, intrinsic :: iso_fortran_env, only: stdin => input_unit, &
-&                                         stdout => output_unit, stderr => error_unit
+&                                         stdout => output_unit, &
+&                                         stderr => error_unit
  use m_psmlout, only: psmlout
  use build_info_m, only: write_build_info
  use input_text_m, only: read_input_text
@@ -68,7 +69,7 @@
  use input_echo_m, only: write_icmod, write_epsh
  implicit none
 
-!
+!Local variables
  integer :: ii,ierr,iexc,iexct,ios,iprint,irps,it,icmod,lpopt
  integer :: jj,kk,ll,l1,lloc,lmax,lt,inline
  integer :: mch,mchf,mmax,n1,n2,nc,nlim,nlloc,nlmax,irpsh,nrl
@@ -156,23 +157,29 @@
 #endif
 
  parse_args: block
-   integer :: i
+   integer :: iarg
    character(len=256) :: arg
-   do i = 1, command_argument_count()
-     call get_command_argument(i, arg)
+   do iarg = 1, command_argument_count()
+     call get_command_argument(iarg, arg)
      select case(arg)
      case('-h', '--help')
        write (stdout, '(a)') 'Usage: '//ONCVPSP_EXE//' [options]'
        write (stdout, '(a)') 'Options:'
-       write (stdout, '(a)') '  -h, --help       Show this help message and exit'
-       write (stdout, '(a)') '  -v, --version    Show version information and exit'
-       write (stdout, '(a)') '  -i, --input      Read the input from a text file ' // &
+       write (stdout, '(a)') '  -h, --help       ' // &
+&                            'Show this help message and exit'
+       write (stdout, '(a)') '  -v, --version    ' // &
+&                            'Show version information and exit'
+       write (stdout, '(a)') '  -i, --input      ' // &
+&                            'Read the input from a text file ' // &
 &                            'instead of stdin'
-       write (stdout, '(a)') '  -t, --toml-input Read the input from a TOML file'
+       write (stdout, '(a)') '  -t, --toml-input ' // &
+&                            'Read the input from a TOML file'
 #if defined(ONCVPSP_AE_ONLY)
-       write (stdout, '(a)') '  -a, --ae-file    All-electron data file to write (required)'
+       write (stdout, '(a)') '  -a, --ae-file    ' // &
+&                            'All-electron data file to write (required)'
 #elif defined(ONCVPSP_PS_ONLY)
-       write (stdout, '(a)') '  -a, --ae-file    All-electron data file written by ' // &
+       write (stdout, '(a)') '  -a, --ae-file    ' // &
+&                            'All-electron data file written by ' // &
 &                            'the matching _ae.x (required)'
 #endif
        stop 0
@@ -185,19 +192,20 @@
        call write_build_info(stdout,ONCVPSP_EXE,ONCVPSP_TREATMENT)
        stop 0
      case('-i', '--input')
-       if (i + 1 > command_argument_count()) then
+       if (iarg + 1 > command_argument_count()) then
          write (stderr, '(a)') 'Error: --input requires a filename argument'
          stop 1
        end if
-       call get_command_argument(i + 1, input_filename)
+       call get_command_argument(iarg + 1, input_filename)
        input_mode = INPUT_TEXT
 #if (defined WITH_TOML)
      case('-t', '--toml-input')
-       if (i + 1 > command_argument_count()) then
-         write (stderr, '(a)') 'Error: --toml-input requires a filename argument'
+       if (iarg + 1 > command_argument_count()) then
+         write (stderr, '(a)') &
+&              'Error: --toml-input requires a filename argument'
          stop 1
        end if
-       call get_command_argument(i + 1, input_filename)
+       call get_command_argument(iarg + 1, input_filename)
        input_mode = INPUT_TOML
 #else
      case('-t', '--toml-input')
@@ -205,11 +213,11 @@
 #endif
 #if defined(ONCVPSP_SPLIT)
      case('-a', '--ae-file')
-       if (i + 1 > command_argument_count()) then
+       if (iarg + 1 > command_argument_count()) then
          write (stderr, '(a)') 'Error: --ae-file requires a filename argument'
          stop 1
        end if
-       call get_command_argument(i + 1, ae_filename)
+       call get_command_argument(iarg + 1, ae_filename)
 #endif
      case default
      end select
@@ -238,7 +246,8 @@
 &                       ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                       amesh_in, rr1_in, rmax_in)
  case(INPUT_TEXT)
-   open(newunit=unit, file=input_filename, status='old', action='read', iostat=ios)
+   open(newunit=unit, file=input_filename, status='old', action='read', &
+&       iostat=ios)
    if (ios /= 0) then
      write(6, '(/2a)') 'oncvpsp: ERROR cannot open input file, file=', &
 &       trim(input_filename)
@@ -258,7 +267,8 @@
    close(unit)
 #if (defined WITH_TOML)
  case(INPUT_TOML)
-   open(newunit=unit, file=input_filename, status='old', action='read', iostat=ios)
+   open(newunit=unit, file=input_filename, status='old', action='read', &
+&       iostat=ios)
    if (ios /= 0) then
      write(6, '(/2a)') 'oncvpsp: ERROR cannot open input file, file=', &
 &       trim(input_filename)
@@ -305,7 +315,8 @@
  fcgrid=[fcfact_min,fcfact_max,fcfact_step]
  rcgrid=[rcfact_min,rcfact_max,rcfact_step]
 
- call check_data(atsym,zz,fcfact,rcfact,fcgrid,rcgrid,epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
+ call check_data(atsym,zz,fcfact,rcfact,fcgrid,rcgrid,epsh1,epsh2,depsh, &
+&                rxpsh,rlmax,drl, &
 &                fa,facnf, &
 &                rc,ep,qcut,debl,nc,nv,iexc,lmax,lloc,lpopt,icmod, &
 &                ncnf,na,la,nvcnf,nacnf,lacnf,ncon,nbas,nproj,psfile, &
@@ -314,18 +325,15 @@
  nrl=int((rlmax/drl)-0.5d0)+1
 
 !PWSCF wants an even number of mesh pointe
-!if(trim(psfile)=='upf') then
  if(mod(nrl,2)/=0) nrl=nrl+1
-!end if
 
 !log mesh: the input values, or the built-in ones for those 0 or less
  if(amesh_in>0.0d0) then
    amesh=amesh_in
  else
-!amesh=1.012d0
+!Alternative built-in meshes: amesh=1.012d0 (coarser), or 1.003d0 and
+!1.0015d0 (finer)
    amesh=1.006d0
-!amesh=1.003d0
-!amesh=1.0015d0
  end if
 
  al=log(amesh)
@@ -341,10 +349,12 @@
    rmax=45.0d0
  end if
  mmax=log(rmax/rr1)/al
-!the log mesh for the echoes of the input, only when the input sets it, so that the
-!output of an input without it is unchanged
+!the log mesh for the echoes of the input, only when the input sets it, so
+!that the output of an input without it is unchanged
  log_mesh(:)=0.0d0
- if(amesh_in>0.0d0 .or. rr1_in>0.0d0 .or. rmax_in>0.0d0) log_mesh(:)=[amesh,rr1,rmax]
+ if(amesh_in>0.0d0 .or. rr1_in>0.0d0 .or. rmax_in>0.0d0) then
+   log_mesh(:)=[amesh,rr1,rmax]
+ end if
 
 !calculate zion for output
  zion=zz
@@ -546,7 +556,8 @@
          call lschfb(na(kk),la(kk),ierr,et, &
 &                      rr,vfull,uu,up,zz,mmax,mch,srel)
          if(ierr /= 0) then
-           write(6,'(/a,3i4)') 'oncvpsp-387: lschfb convergence ERROR n,l,iter=', &
+           write(6,'(/a,3i4)') &
+&           'oncvpsp-387: lschfb convergence ERROR n,l,iter=', &
 &           na(kk),la(kk),it
            error stop 1
          end if
@@ -761,9 +772,6 @@
 
 
 ! loop over reference plus test atom configurations
-!if(.false.) then
-
-!ncnf=0
  rhot(:)=rho(:)
  do jj=1,ncnf+1
 
@@ -803,7 +811,8 @@
    call linout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
 &              rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym, &
 &              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&              fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,fcfact0,rcfact,fcgrid,rcgrid, &
+&              fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,fcfact0,rcfact, &
+&              fcgrid,rcgrid, &
 &              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh)
  end if
 

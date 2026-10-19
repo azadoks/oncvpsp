@@ -23,10 +23,6 @@
 ! matrix based on derivative to be matched and overlaps with prior
 ! optimized wave functions
 
- use constants_m, only: dp
- implicit none
-
-!INPUT
 !ll  angujlar momentum
 !rr  log radial mesh
 !mmax  number of points in log radial mesh
@@ -34,11 +30,16 @@
 !nbas  number of basis functions
 !qroot  q values for j_l(q*r)
 !psopt  optimized projector wave functions for lower iprj
-
-!OUTPUT
+!iprj  index of the projector being optimized
+!mxprj  dimension of psopt, maximum number of projectors
+!ncon  total number of constraints, ncon_in+iprj-1
+!ncon_in  number of value and derivative constraints at rc
 !orbasis  matrix for orthonormal basis (rows j_l, columns basis vectors)
 !orbasis_der  values and derivatives of orthonormal basis set at rc, and
 ! norm constraint vectors from already-computed psopt
+
+ use constants_m, only: dp
+ implicit none
 
 !Input variables
  integer, intent(in) :: ll,mmax,ncon,ncon_in,irc,nbas,iprj,mxprj
@@ -104,9 +105,6 @@
    write(6,'(a,i4)') 'sbf_basis: overlap matrix eigenvalue error, info=',info
    error stop 1
  end if
-
-!write(6,'(/a)') 'sbf overlap matrix eigenvalues'
-!write(6,'(1p,6d12.3)') (sev(ibas),ibas=1,nbas)
 
 !scale eigenvectors to form orthonormal basis coefficients for sbf's
 !note that we are reversing order so that the leading eigenvector is the

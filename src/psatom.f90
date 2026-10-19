@@ -24,10 +24,12 @@
 !na  principal quantum number array, dimension nv
 !la  angular-momenta
 !ea  eigenvalues (input starting guess, output)
-!fa  occupancies
-!rpk  radius of outermost peak of wave function
+!fat  occupancies, fat(:,1) reference and fat(:,2) new configuration
 !nv  number of valence states
 !it  number of iterations (output)
+!rhoc  core charge (model core charge of the pseudopotential)
+!rho  valence charge, input all-electron starting guess, output
+!     self-consistent pseudo valence charge
 !rr  log radial mesh
 !rcmax  maximum core radius for psp
 !mmax  size of log grid
@@ -39,7 +41,8 @@
 !lloc  index-1 of local potential
 !vkb   Vanderbilt-Kleinman-Bylander projectors
 !evkb VKB projector coefficients
-!uua Array of pseudo-atomic orbitals (output)
+!ierr  non-zero return if error
+
 
  use constants_m, only: dp
  implicit none
@@ -115,9 +118,6 @@
 
 ! test if new states are added
  icx=50
-!do ii=1,nv
-!  if(fat(ii,2)>fat(ii,1)) icx=100
-!end do
 
 ! screening potential for pseudocharge
 ! input rho is assumed to be valence rho from all-electron calculation
@@ -162,8 +162,9 @@
 &                 rr,vtot,vkb(1,1,l1),evkb(1,l1),uu,up,mmax,mch)
 
      if(ierr /= 0) then
-       write(6,'(/a,3i4)') 'psatom: WARNING lschvkbb convergence error n,l,iter=', &
-&       na(ii),la(ii),it
+       write(6,'(/a,3i4)') &
+&            'psatom: WARNING lschvkbb convergence error n,l,iter=', &
+&            na(ii),la(ii),it
        write(6,'(a,1p,4e14.6)') 'ea(ii),et,emin,emax',ea(ii),et,emin,emax
        exit
      end if

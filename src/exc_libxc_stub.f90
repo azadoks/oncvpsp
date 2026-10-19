@@ -22,14 +22,25 @@
 !  dummy substitute for interface to libxc library to allow successful
 !  build without this library
 !
+!iexc  exchange-correlation function to be used: -(1000*id1+id2) for
+!      the libxc functionals id1 and id2
+!al  log of the mesh ratio amesh of the log radial mesh
+!rho  charge density
+!vxc  exchange-correlation potential
+!exc  exchange-correlation energy density
+!rr  log radial mesh
+!mmax  dimension of log radial grid
+
  use constants_m, only: dp
  implicit none
 
-
+!Input variables
+ integer, intent(in) :: mmax, iexc
  real(dp), intent(in) :: al
  real(dp), intent(in) :: rho(mmax),rr(mmax)
+
+!Output variables
  real(dp), intent(out) :: vxc(mmax),exc(mmax)
- integer, intent(in) :: mmax, iexc
 
  write(6,'(a,i8,a)') 'exc_libxc_stub: ERROR iexc = ',iexc,' requires libxc'
  write(6,'(a)') 'The present oncvpsp executable was built without libxc.'

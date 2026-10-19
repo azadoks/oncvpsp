@@ -29,15 +29,14 @@
 !mmax  dimension of log grid
 !mxprj  dimension of number of projectors
 !rr  log radial grid
-!uu  all-electron wave function for first projector
-!qq  2x2 matrix of norms and overlaps of uu and uu2
-!uu2  all-electron wave function for second projector
+!uua  all-electron wave functions (*rr) for the projectors
+!qq  matrix of norms and overlaps of the uua inside rc
 !irc  index of core radius
 !qcut  q cutoff defining residual energy
 !qmsbf  maximum q in sbfs for this ll
 !ncon_in  number of constraints for matching psuedo and AE wave functions
 !nbas_in  number of basis functions for pseudo wave function
-!np_in   number of projectors = 0,1,2
+!npr  number of projectors for this ll
 !psopt  optimized pseudo wave function(s)
 !vpsp  corresponding pseudopotential
 !vkb  Vanderbilt-Kleinman-Bylander projectors (without local v correction)
@@ -49,7 +48,6 @@
 
  use constants_m, only: dp
  implicit none
- real(dp), parameter :: Ha_eV=27.21138386d0 ! 1 Hartree, in eV
 
 !Input variables
  integer, intent(in) :: ll,mmax,mxprj,ncon_in,nbas_in,npr,ncurve
@@ -68,6 +66,7 @@
  real(dp), intent(out) :: ecurve(2,ncurve,mxprj)
 
 !Local variables
+ real(dp), parameter :: Ha_eV=27.21138386d0 ! 1 Hartree, in eV
  real(dp) :: uord(6)
  real(dp) :: al,rc,ulgd,tt
  real(dp) :: sn,ps0norm,amesh,ro
@@ -98,7 +97,6 @@
  real(dp) :: dq,dr,dqout
  dq=0.02d0  !linear integration mesh spacing for above
  dr=0.02d0  !linear integration spacing for Fourier transforms
-!dr=0.002d0  !linear integration spacing for Fourier transforms
  dqout=0.5000001d0  !linear mesh spacing for final E_resid(q) interpolation
 !increment is to avoid exact commnesurability with dq mesh
 
@@ -126,9 +124,6 @@
  call qroots(ll,rc,ulgd,nbas,dq,qmax,qroot)
 
  qmsbf=qroot(nbas)
-
-!write(6,'(/a)') 'qroots'
-!write(6,'(6f12.6)') (qroot(ii),ii=1,nbas)
 
  psopt(:,:)=0.0d0
 

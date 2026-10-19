@@ -27,11 +27,13 @@
 
 !lmax  maximum angular momentum
 !lloc  l for local potential
-!nproj  number ov V / KB projectors for  each l
-!ep  bound-state or scattering state reference energies for vkb potentials
+!nproj  number of VKB projectors for each l
+!epa  bound-state or scattering state reference energies for vkb potentials
 !epsh1  low energy limit for "phase shift" calculation
 !epsh2  high energy limit for "phase shift" calculation
 !depsh  energy increment
+!rxpsh  radius (bohr) at which log derivatives are computed; if negative,
+!       rr(irc(l)+2) is used, and rr(irc(lloc)) for l>lmax
 !vkb  VKB projectors
 !evkb  coefficients of VKB projectors
 !rr  log radial grid
@@ -39,9 +41,9 @@
 !vp  semi-local pseudopotentials (vp(:,5) is local potential if linear comb.)
 !zz  atomic number
 !mmax  size of radial grid
-!mxprj dimension of number of projectors
-!irphs  index of rr beyond which all vp==vlocal
-!srel .true. for scalar-relativistic, .false. for non-relativistic
+!mxprj  dimension of number of projectors
+!irc  core radii indices
+!srel  .true. for scalar-relativistic, .false. for non-relativistic
 
  use constants_m, only: dp
  implicit none
@@ -53,8 +55,6 @@
  real(dp), intent(in) :: rr(mmax),vp(mmax,5),epa(mxprj,6)
  real(dp), intent(in) :: vfull(mmax),vkb(mmax,mxprj,4),evkb(mxprj,4)
  logical, intent(in) :: srel
-
-!Output variables - printing only
 
 !Local variables
  integer :: ii,irphs,ll,l1,npsh
@@ -84,13 +84,15 @@
          end if
        end do
        if (irphs == 0) then
-         write(6, '(/2a,f12.6,a,f12.6)') 'run_phsft: ERROR rxpsh beyond radial mesh', &
+         write(6, '(/2a,f12.6,a,f12.6)') &
+&           'run_phsft: ERROR rxpsh beyond radial mesh', &
 &           ', rxpsh=', rxpsh, ', rr(mmax)=', rr(mmax)
          error stop 1
        end if
 ! check_data keeps rxpsh beyond every rc, so only a direct call gets here
        if (irphs < irc(l1)) then
-         write(6, '(/2a,i0,2(a,f12.6))') 'run_phsft: WARNING rxpsh inside the core radius', &
+         write(6, '(/2a,i0,2(a,f12.6))') &
+&           'run_phsft: WARNING rxpsh inside the core radius', &
 &           ', l=', ll, ', rxpsh=', rxpsh, ', rc=', rr(irc(l1))
        end if
      end if
@@ -106,13 +108,15 @@
          end if
        end do
        if (irphs == 0) then
-         write(6, '(/2a,f12.6,a,f12.6)') 'run_phsft: ERROR rxpsh beyond radial mesh', &
+         write(6, '(/2a,f12.6,a,f12.6)') &
+&           'run_phsft: ERROR rxpsh beyond radial mesh', &
 &           ', rxpsh=', rxpsh, ', rr(mmax)=', rr(mmax)
          error stop 1
        end if
 ! check_data keeps rxpsh beyond every rc, so only a direct call gets here
        if (irphs < irc(lloc+1)) then
-         write(6, '(/2a,i0,2(a,f12.6))') 'run_phsft: WARNING rxpsh inside ' // &
+         write(6, '(/2a,i0,2(a,f12.6))') &
+&           'run_phsft: WARNING rxpsh inside ' // &
 &           'the local potential core radius', &
 &           ', l=', ll, ', rxpsh=', rxpsh, ', rc=', rr(irc(lloc+1))
        end if

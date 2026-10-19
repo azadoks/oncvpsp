@@ -17,19 +17,22 @@
 !
 !   [oncvpsp]                  atsym, z, nc, nv, iexc
 !   [reference_configuration]  n, l, f                (nc + nv each)
-!   [pseudopotentials]         lmax, and l (0..lmax), rc, ep, ncon, nbas, qcut
+!   [pseudopotentials]         lmax, and l (0..lmax), rc, ep, ncon, nbas,
+!                              qcut
 !   [local_potential]          lloc, lpopt, rcloc, dvloc0
 !   [vkb_projectors]           l (0..lmax), nproj, debl
 !   [model_core_charge]        icmod, fcfact (icmod 1, 2, 3, 6; else 0),
 !                              rcfact (icmod 3; 1e-4 for icmod 6; else 0),
 !                              fcfact_min, fcfact_max, fcfact_step, rcfact_min,
 !                              rcfact_max, rcfact_step (optional, icmod 4 grid)
-!   [log_derivative_analysis]  epsh1, epsh2, depsh, rxpsh (optional, -1 for auto)
+!   [log_derivative_analysis]  epsh1, epsh2, depsh, rxpsh (optional, -1 for
+!                              auto)
 !   [linear_mesh]              a (drl), rmax (rlmax)
 !   [log_mesh]                 amesh, rr1, rmax (optional table and keys, each
 !                              0 or less or missing for the built-in mesh)
 !   [pp_output]                psfile
-!   [[test_configurations]]    n, l, f (valence states only; optional, up to 4)
+!   [[test_configurations]]    n, l, f (valence states only; optional, up
+!                              to 4)
 !
 ! scripts/input_text_to_toml.py converts a text input to this form.
  subroutine read_input_toml(unit, &
@@ -79,7 +82,7 @@
  integer, intent(out) :: ncon(6)
 !> Number of basis functions for each pseudopotential
  integer, intent(out) :: nbas(6)
-!> Maximum wave number for each pseudopotential
+!> Residual-energy cutoff wave vector for each pseudopotential
  real(dp), intent(out) :: qcut(6)
 ! [Local potential]
 !> Angular momentum used for local potential
@@ -91,7 +94,7 @@
 ! [Vanderbilt-Kleinman-Bylander projectors]
 !> Number of projectors for each angular momentum
  integer, intent(out) :: nproj(6)
-!> Energy shift for unbound states
+!> Energy added to ep for the second projector (Ha)
  real(dp), intent(out) :: debl(6)
 ! [Model core charge]
 !> Model core charge flag
@@ -137,7 +140,8 @@
  integer, intent(out) :: lacnf(30, 5)
 !> Occupation number array for test configurations
  real(dp), intent(out) :: facnf(30, 5)
-!> Ratio of successive points of the log radial mesh (0 or less for the default)
+!> Ratio of successive points of the log radial mesh
+!> (0 or less for the default)
  real(dp), intent(out) :: amesh
 !> First point of the log radial mesh (0 or less for the default)
  real(dp), intent(out) :: rr1
@@ -185,14 +189,17 @@
  psfile = ' '
 
  call toml_load(table, unit, error=error)
- if (allocated(error)) call input_error('cannot parse the input: '//error%message)
+ if (allocated(error)) then
+   call input_error('cannot parse the input: '//error%message)
+ end if
  if (.not. allocated(table)) call input_error('cannot parse the input')
 
 ! atom
  call get_section(table, 'oncvpsp', child)
  call get_string(child, 'oncvpsp', 'atsym', tmp_str)
  if (len_trim(tmp_str) < 1 .or. len_trim(tmp_str) > 2) then
-   call input_error('atsym in [oncvpsp] must have 1 or 2 characters, got "'//tmp_str//'"')
+   call input_error('atsym in [oncvpsp] must have 1 or 2 characters, '// &
+&    'got "'//tmp_str//'"')
  end if
  atsym = trim(tmp_str)
  call get_real(child, 'oncvpsp', 'z', zz)
@@ -213,7 +220,9 @@
 ! pseudopotential and optimization
  call get_section(table, 'pseudopotentials', child)
  call get_int(child, 'pseudopotentials', 'lmax', lmax)
- if (lmax < 0 .or. lmax > 5) call input_error('lmax in [pseudopotentials] must be in 0..5')
+ if (lmax < 0 .or. lmax > 5) then
+   call input_error('lmax in [pseudopotentials] must be in 0..5')
+ end if
  call get_int_array(child, 'pseudopotentials', 'l', lmax + 1, lt)
  call check_l(lt, lmax, 'pseudopotentials')
  call get_real_array(child, 'pseudopotentials', 'rc', lmax + 1, rc)
@@ -252,12 +261,18 @@
  case (4, 5)
 ! fcfact and rcfact are ignored; the grid of the Teter parameters
    call get_real(child, 'model_core_charge', 'rcfact', rcfact, 0.0_dp)
-   call get_real(child, 'model_core_charge', 'fcfact_min', fcfact_min, fcfact_min)
-   call get_real(child, 'model_core_charge', 'fcfact_max', fcfact_max, fcfact_max)
-   call get_real(child, 'model_core_charge', 'fcfact_step', fcfact_step, fcfact_step)
-   call get_real(child, 'model_core_charge', 'rcfact_min', rcfact_min, rcfact_min)
-   call get_real(child, 'model_core_charge', 'rcfact_max', rcfact_max, rcfact_max)
-   call get_real(child, 'model_core_charge', 'rcfact_step', rcfact_step, rcfact_step)
+   call get_real(child, 'model_core_charge', 'fcfact_min', fcfact_min, &
+&    fcfact_min)
+   call get_real(child, 'model_core_charge', 'fcfact_max', fcfact_max, &
+&    fcfact_max)
+   call get_real(child, 'model_core_charge', 'fcfact_step', fcfact_step, &
+&    fcfact_step)
+   call get_real(child, 'model_core_charge', 'rcfact_min', rcfact_min, &
+&    rcfact_min)
+   call get_real(child, 'model_core_charge', 'rcfact_max', rcfact_max, &
+&    rcfact_max)
+   call get_real(child, 'model_core_charge', 'rcfact_step', rcfact_step, &
+&    rcfact_step)
  case (6)
    call get_real(child, 'model_core_charge', 'rcfact', rcfact, 1.0e-4_dp)
  case default
@@ -290,19 +305,24 @@
  call get_section(table, 'pp_output', child)
  call get_string(child, 'pp_output', 'psfile', tmp_str)
  if (len_trim(tmp_str) < 1 .or. len_trim(tmp_str) > 4) then
-   call input_error('psfile in [pp_output] must have 1 to 4 characters, got "'//tmp_str//'"')
+   call input_error('psfile in [pp_output] must have 1 to 4 characters, '// &
+&    'got "'//tmp_str//'"')
  end if
  psfile = trim(tmp_str)
 
 ! test configurations (optional): the valence states, after the
 ! reference core states the driver copies in
- call get_value(table, 'test_configurations', arr, requested=.false., stat=stat)
+ call get_value(table, 'test_configurations', arr, requested=.false., &
+&  stat=stat)
  if (stat /= toml_stat%success) then
-   call input_error('test_configurations must be an array of tables, [[test_configurations]]')
+   call input_error('test_configurations must be an array of tables, '// &
+&    '[[test_configurations]]')
  end if
  if (associated(arr)) then
    ncnf = len(arr)
-   if (ncnf > 4) call input_error('at most 4 [[test_configurations]] are allowed')
+   if (ncnf > 4) then
+     call input_error('at most 4 [[test_configurations]] are allowed')
+   end if
    do jj = 2, ncnf + 1
      call get_value(arr, jj - 1, child, stat=stat)
      if (.not. associated(child)) then
@@ -311,14 +331,20 @@
      end if
 ! the number of valence states is that of n
      call get_value(child, 'n', narr, requested=.false., stat=stat)
-     if (.not. associated(narr)) call key_error('test_configurations', 'n', stat, 'an array')
+     if (.not. associated(narr)) then
+       call key_error('test_configurations', 'n', stat, 'an array')
+     end if
      nvcnf(jj) = len(narr)
      if (nc + nvcnf(jj) > 30) then
-       call input_error('nc plus the states of a [[test_configurations]] must be <= 30')
+       call input_error('nc plus the states of a [[test_configurations]]'// &
+&        ' must be <= 30')
      end if
-     call get_int_array(child, 'test_configurations', 'n', nvcnf(jj), nacnf(nc + 1:, jj))
-     call get_int_array(child, 'test_configurations', 'l', nvcnf(jj), lacnf(nc + 1:, jj))
-     call get_real_array(child, 'test_configurations', 'f', nvcnf(jj), facnf(nc + 1:, jj))
+     call get_int_array(child, 'test_configurations', 'n', nvcnf(jj), &
+&      nacnf(nc + 1:, jj))
+     call get_int_array(child, 'test_configurations', 'l', nvcnf(jj), &
+&      lacnf(nc + 1:, jj))
+     call get_real_array(child, 'test_configurations', 'f', nvcnf(jj), &
+&      facnf(nc + 1:, jj))
    end do
  end if
  end subroutine read_input_toml
@@ -329,39 +355,117 @@
 &                             atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
 &                             lmax, rc, ep, ncon, nbas, qcut, &
 &                             lloc, lpopt, dvloc0, nproj, debl, &
-&                             icmod, fcfact, rcfact, fcfact_min, fcfact_max, fcfact_step, &
+&                             icmod, fcfact, rcfact, &
+&                             fcfact_min, fcfact_max, fcfact_step, &
 &                             rcfact_min, rcfact_max, rcfact_step, &
 &                             epsh1, epsh2, depsh, rxpsh, &
 &                             rlmax, drl, &
 &                             ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                             amesh, rr1, rmax)
  implicit none
+!Input variables
+!> The Fortran unit number to read from
  integer, intent(in) :: unit
+
+!Output variables
+! [Atom and reference configuration]
+!> Atomic symbol
  character(len=2), intent(out) :: atsym
+!> Atomic number
  real(dp), intent(out) :: zz
- integer, intent(out) :: nc, nv, iexc
+!> Number of core states
+ integer, intent(out) :: nc
+!> Number of valence states
+ integer, intent(out) :: nv
+!> Exchange-correlation functional code
+ integer, intent(out) :: iexc
+!> Pseudopotential output file format flag
  character(len=4), intent(out) :: psfile
- integer, intent(out) :: na(30), la(30)
+!> Principal quantum number array
+ integer, intent(out) :: na(30)
+!> Orbital angular momentum quantum number array
+ integer, intent(out) :: la(30)
+!> Occupation number array
  real(dp), intent(out) :: fa(30)
+! [Pseudopotential and optimization]
+!> Maximum angular momentum
  integer, intent(out) :: lmax
+!> Core radii for pseudopotentials (rc(5) is the local potential's)
  real(dp), intent(out) :: rc(6)
 !> Pseudopotential energies for both kappa
  real(dp), intent(out) :: ep(6, 2)
- integer, intent(out) :: ncon(6), nbas(6)
+!> Number of matching constraints for each pseudopotential
+ integer, intent(out) :: ncon(6)
+!> Number of basis functions for each pseudopotential
+ integer, intent(out) :: nbas(6)
+!> Residual-energy cutoff wave vector for each pseudopotential
  real(dp), intent(out) :: qcut(6)
- integer, intent(out) :: lloc, lpopt
+! [Local potential]
+!> Angular momentum used for local potential
+ integer, intent(out) :: lloc
+!> Polynomial type of the local potential
+ integer, intent(out) :: lpopt
+!> Local potential offset at origin
  real(dp), intent(out) :: dvloc0
+! [Vanderbilt-Kleinman-Bylander projectors]
+!> Number of projectors for each angular momentum
  integer, intent(out) :: nproj(6)
+!> Energy added to ep for the second projector (Ha)
  real(dp), intent(out) :: debl(6)
+! [Model core charge]
+!> Model core charge flag
  integer, intent(out) :: icmod
- real(dp), intent(out) :: fcfact, rcfact, fcfact_min, fcfact_max, fcfact_step
- real(dp), intent(out) :: rcfact_min, rcfact_max, rcfact_step
- real(dp), intent(out) :: epsh1, epsh2, depsh, rxpsh
- real(dp), intent(out) :: rlmax, drl
- integer, intent(out) :: ncnf, nvcnf(5), nacnf(30, 5), lacnf(30, 5)
+!> Scaling factor for core charge
+ real(dp), intent(out) :: fcfact
+!> Core charge width factor
+ real(dp), intent(out) :: rcfact
+!> Scaling factor range minimum for optimization
+ real(dp), intent(out) :: fcfact_min
+!> Scaling factor range maximum for optimization
+ real(dp), intent(out) :: fcfact_max
+!> Scaling factor step size for optimization
+ real(dp), intent(out) :: fcfact_step
+!> Core charge width factor minimum for optimization
+ real(dp), intent(out) :: rcfact_min
+!> Core charge width factor maximum for optimization
+ real(dp), intent(out) :: rcfact_max
+!> Core charge width factor step size for optimization
+ real(dp), intent(out) :: rcfact_step
+! [Log derivative analysis]
+!> Lower bound of energy range for log derivative analysis
+ real(dp), intent(out) :: epsh1
+!> Upper bound of energy range for log derivative analysis
+ real(dp), intent(out) :: epsh2
+!> Energy step size for log derivative analysis
+ real(dp), intent(out) :: depsh
+!> Radius for log derivative analysis
+ real(dp), intent(out) :: rxpsh
+! [Output grid]
+!> Maximum radius for output grid
+ real(dp), intent(out) :: rlmax
+!> Grid spacing for output grid
+ real(dp), intent(out) :: drl
+! [Test configurations]
+!> Number of test configurations
+ integer, intent(out) :: ncnf
+!> Number of valence states in test configurations
+ integer, intent(out) :: nvcnf(5)
+!> Principal quantum number array for test configurations
+ integer, intent(out) :: nacnf(30, 5)
+!> Orbital angular momentum quantum number array for test configurations
+ integer, intent(out) :: lacnf(30, 5)
+!> Occupation number array for test configurations
  real(dp), intent(out) :: facnf(30, 5)
- real(dp), intent(out) :: amesh, rr1, rmax
+!> Ratio of successive points of the log radial mesh
+!> (0 or less for the default)
+ real(dp), intent(out) :: amesh
+!> First point of the log radial mesh (0 or less for the default)
+ real(dp), intent(out) :: rr1
+!> Outer radius of the log radial mesh (0 or less for the default)
+ real(dp), intent(out) :: rmax
 
+!Local variables
+!> Pseudopotential energies as read
  real(dp) :: ep1(6)
 
  call read_input_toml(unit, &
@@ -381,7 +485,12 @@
 
 ! report an input error on stdout (the output file) and stderr, and stop
  subroutine input_error(message)
+
+!message  description of the error
+
+!Input variables
  character(len=*), intent(in) :: message
+
  write (stdout, '(a)') 'TOML input ERROR: '//message
  write (stdout, '(a)') 'Program will stop'
  write (stderr, '(a)') 'Error: '//message
@@ -390,10 +499,23 @@
 
 ! the table [name] of the document
  subroutine get_section(table, name, child)
- type(toml_table), intent(inout) :: table
+
+!table  the TOML document
+!name  name of the table
+!child  the table [name]; the program stops if it is missing or not a table
+
+!Input variables
  character(len=*), intent(in) :: name
+
+!Input/output variables
+ type(toml_table), intent(inout) :: table
+
+!Output variables
  type(toml_table), pointer, intent(out) :: child
+
+!Local variables
  integer :: stat
+
 ! a missing key leaves child null with success, a mistyped one with an error
  call get_value(table, name, child, requested=.false., stat=stat)
  if (.not. associated(child)) then
@@ -405,8 +527,16 @@
 ! report a key that a lookup did not return: missing for missing_key, or
 ! for success from a lookup with requested=.false., else mistyped
  subroutine key_error(section, key, stat, what)
+
+!section  name of the table holding the key
+!key  name of the key
+!stat  status of the lookup
+!what  the expected type, for the message (e.g. 'an integer')
+
+!Input variables
  character(len=*), intent(in) :: section, key, what
  integer, intent(in) :: stat
+
  if (stat == toml_stat%missing_key .or. stat == toml_stat%success) then
    call input_error('missing key '//key//' in ['//section//']')
  else
@@ -416,22 +546,51 @@
 
 ! an integer key, required
  subroutine get_int(table, section, key, val)
- type(toml_table), intent(inout) :: table
+
+!table  the table holding the key
+!section  name of the table, for messages
+!key  name of the key
+!val  the value of the key
+
+!Input variables
  character(len=*), intent(in) :: section, key
+
+!Input/output variables
+ type(toml_table), intent(inout) :: table
+
+!Output variables
  integer, intent(out) :: val
+
+!Local variables
  integer :: stat
+
  call get_value(table, key, val, stat=stat)
- if (stat /= toml_stat%success) call key_error(section, key, stat, 'an integer')
+ if (stat /= toml_stat%success) then
+   call key_error(section, key, stat, 'an integer')
+ end if
  end subroutine get_int
 
 ! a real key (an integer is converted), required unless default is given
  subroutine get_real(table, section, key, val, default)
- type(toml_table), intent(inout) :: table
+
+!table  the table holding the key
+!section  name of the table, for messages
+!key  name of the key
+!val  the value of the key, or default if the key is missing
+!default  optional, the value for a missing key, which is then not required
+
+!Input variables
  character(len=*), intent(in) :: section, key
- real(dp), intent(inout) :: val
  real(dp), intent(in), optional :: default
+
+!Input/output variables
+ type(toml_table), intent(inout) :: table
+ real(dp), intent(inout) :: val
+
+!Local variables
  type(toml_keyval), pointer :: ptr
  integer :: stat
+
  call get_value(table, key, ptr, requested=.false., stat=stat)
  if (.not. associated(ptr)) then
    if (present(default) .and. stat == toml_stat%success) then
@@ -446,42 +605,85 @@
 
 ! a string key, required
  subroutine get_string(table, section, key, val)
- type(toml_table), intent(inout) :: table
+
+!table  the table holding the key
+!section  name of the table, for messages
+!key  name of the key
+!val  the value of the key
+
+!Input variables
  character(len=*), intent(in) :: section, key
+
+!Input/output variables
+ type(toml_table), intent(inout) :: table
+
+!Output variables
  character(len=:), allocatable, intent(out) :: val
+
+!Local variables
  integer :: stat
+
  call get_value(table, key, val, stat=stat)
  if (stat /= toml_stat%success .or. .not. allocated(val)) then
    call key_error(section, key, stat, 'a string')
  end if
  end subroutine get_string
 
-! the array key of a table, required, with n elements
- subroutine get_array(table, section, key, n, arr)
- type(toml_table), intent(inout) :: table
+! the array key of a table, required, with nn elements
+ subroutine get_array(table, section, key, nn, arr)
+
+!table  the table holding the key
+!section  name of the table, for messages
+!key  name of the key
+!nn  required number of elements
+!arr  the array of the key
+
+!Input variables
  character(len=*), intent(in) :: section, key
- integer, intent(in) :: n
+ integer, intent(in) :: nn
+
+!Input/output variables
+ type(toml_table), intent(inout) :: table
+
+!Output variables
  type(toml_array), pointer, intent(out) :: arr
+
+!Local variables
  integer :: stat
  character(len=24) :: counts
+
  call get_value(table, key, arr, requested=.false., stat=stat)
  if (.not. associated(arr)) call key_error(section, key, stat, 'an array')
- if (len(arr) /= n) then
-   write (counts, '(i0,a,i0)') len(arr), ' instead of ', n
-   call input_error(key//' in ['//section//'] has '//trim(counts)//' elements')
+ if (len(arr) /= nn) then
+   write (counts, '(i0,a,i0)') len(arr), ' instead of ', nn
+   call input_error(key//' in ['//section//'] has '//trim(counts)// &
+&    ' elements')
  end if
  end subroutine get_array
 
-! an integer array key, required, with n elements
- subroutine get_int_array(table, section, key, n, vals)
- type(toml_table), intent(inout) :: table
+! an integer array key, required, with nn elements
+ subroutine get_int_array(table, section, key, nn, vals)
+
+!table  the table holding the key
+!section  name of the table, for messages
+!key  name of the key
+!nn  required number of elements
+!vals  the values, in vals(1:nn); the rest is unchanged
+
+!Input variables
  character(len=*), intent(in) :: section, key
- integer, intent(in) :: n
+ integer, intent(in) :: nn
+
+!Input/output variables
+ type(toml_table), intent(inout) :: table
  integer, intent(inout) :: vals(:)
+
+!Local variables
  type(toml_array), pointer :: arr
  integer :: ii, stat
- call get_array(table, section, key, n, arr)
- do ii = 1, n
+
+ call get_array(table, section, key, nn, arr)
+ do ii = 1, nn
    call get_value(arr, ii, vals(ii), stat=stat)
    if (stat /= toml_stat%success) then
      call input_error(key//' in ['//section//'] must hold integers')
@@ -489,16 +691,29 @@
  end do
  end subroutine get_int_array
 
-! a real array key (integers are converted), required, with n elements
- subroutine get_real_array(table, section, key, n, vals)
- type(toml_table), intent(inout) :: table
+! a real array key (integers are converted), required, with nn elements
+ subroutine get_real_array(table, section, key, nn, vals)
+
+!table  the table holding the key
+!section  name of the table, for messages
+!key  name of the key
+!nn  required number of elements
+!vals  the values, in vals(1:nn); the rest is unchanged
+
+!Input variables
  character(len=*), intent(in) :: section, key
- integer, intent(in) :: n
+ integer, intent(in) :: nn
+
+!Input/output variables
+ type(toml_table), intent(inout) :: table
  real(dp), intent(inout) :: vals(:)
+
+!Local variables
  type(toml_array), pointer :: arr
  integer :: ii, stat
- call get_array(table, section, key, n, arr)
- do ii = 1, n
+
+ call get_array(table, section, key, nn, arr)
+ do ii = 1, nn
    call get_value(arr, ii, vals(ii), stat=stat)
    if (stat /= toml_stat%success) then
      call input_error(key//' in ['//section//'] must hold numbers')
@@ -508,9 +723,18 @@
 
 ! the angular momenta of the rows of a section must be 0..lmax in order
  subroutine check_l(lt, lmax, section)
+
+!lt  the angular momenta of the rows
+!lmax  maximum angular momentum
+!section  name of the table, for messages
+
+!Input variables
  integer, intent(in) :: lt(:), lmax
  character(len=*), intent(in) :: section
+
+!Local variables
  integer :: l1
+
  do l1 = 1, lmax + 1
    if (lt(l1) /= l1 - 1) then
      call input_error('l in ['//section//'] must be 0, 1, ..., lmax in order')
