@@ -922,10 +922,10 @@
 &                     nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
 #endif
 
-   call run_config_ps_r(jj,istcnf,ierrcnf,itcnf,kerrcnf,nvtcnf, &
-&                       natcnf,latcnf,fatcnf,eatcnf,etstcnf,nc,rhot,rhomod,rr, &
-&                       rcmax,mmax,mxprj,iexc,etot,epstot,nproj,vpuns, &
-&                       lloc,vkb,evkb)
+   call run_config_ps(jj,istcnf,ierrcnf,itcnf,kerrcnf,nvtcnf, &
+&                     natcnf,latcnf,fatcnf,eatcnf,etstcnf,nc,rhot,rhomod,rr, &
+&                     rcmax,mmax,mxprj,iexc,etot,epstot,nproj,vpuns, &
+&                     lloc,vkb,evkb,irel,nkap)
 
  end do !jj
 

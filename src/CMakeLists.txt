@@ -39,9 +39,11 @@ set(src_oncvpsp
     modcore3.f90
     modcore_budget.f90
     optimize.f90
+    psatom.f90
     pspot.f90
     qroots.f90
     relatom.f90
+    run_config.f90
     run_ghosts.f90
     run_optimize.f90
     run_phsft.f90
@@ -66,8 +68,6 @@ set(src_oncvpsp
     fpovlp.f90
     gnu_script.f90
     linout.f90
-    psatom.f90
-    run_config.f90
     run_diag.f90
     run_plot.f90
     run_vkb.f90
@@ -75,9 +75,7 @@ set(src_oncvpsp
     # Fully-relativistic files
     gnu_script_r.f90
     linout_r.f90
-    psatom_r.f90
     renorm_r.f90
-    run_config_r.f90
     run_diag_r.f90
     run_diag_sr_so_r.f90
     run_plot_r.f90

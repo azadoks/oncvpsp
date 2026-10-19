@@ -19,11 +19,13 @@
 ! self-consistent pseudoatom calculation
 
  subroutine psatom(na,la,ea,fat,nv,it,rhoc,rho, &
-&           rr,rcmax,mmax,mxprj,iexc,etot,nproj,vpuns,lloc,vkb,evkb,ierr)
+&           rr,rcmax,mmax,mxprj,iexc,etot,nproj,vpuns,lloc,vkb,evkb,ierr, &
+&           nkap)
 
 !na  principal quantum number array, dimension nv
 !la  angular-momenta
-!ea  eigenvalues (input starting guess, output)
+!ea  eigenvalues (input starting guess, output), ea(:,1) for j=l+1/2,
+!    ea(:,2) for j=l-1/2 when nkap=2
 !fat  occupancies, fat(:,1) reference and fat(:,2) new configuration
 !nv  number of valence states
 !it  number of iterations (output)
@@ -39,25 +41,27 @@
 !nproj  number of VKB projectora to use for each l
 !vpuns  unscreened semi-local pseudopotentials (plus differenv vloc if lloc==4)
 !lloc  index-1 of local potential
-!vkb   Vanderbilt-Kleinman-Bylander projectors
-!evkb VKB projector coefficients
+!vkb   Vanderbilt-Kleinman-Bylander projectors, last index 1 for j=l+1/2,
+!      2 for j=l-1/2 when nkap=2
+!evkb VKB projector coefficients, last index as for vkb
 !ierr  non-zero return if error
-
+!nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
 
  use constants_m, only: dp
  implicit none
 
 !Input variables
 
- integer, intent(in) :: mmax,mxprj,iexc,nv,lloc
+ integer, intent(in) :: mmax,mxprj,iexc,nv,lloc,nkap
  integer, intent(in) :: na(nv),la(nv),nproj(5)
  real(dp), intent(in) :: rcmax
  real(dp), intent(in) :: fat(30,2),rr(mmax)
- real(dp), intent(in) :: vpuns(mmax,5),vkb(mmax,mxprj,4),evkb(mxprj,4)
+ real(dp), intent(in) :: vpuns(mmax,5),vkb(mmax,mxprj,4,nkap)
+ real(dp), intent(in) :: evkb(mxprj,4,nkap)
  real(dp), intent(in) :: rhoc(mmax)
 
 !Input/output variables
- real(dp), intent(inout) :: ea(nv)
+ real(dp), intent(inout) :: ea(30,nkap)
  real(dp), intent(inout) :: rho(mmax)
 
 !Output variables
@@ -68,13 +72,13 @@
 !Local variables
  integer :: okb
  real(dp) :: vi(mmax)
- real(dp) :: uua(mmax,nv)
  integer :: nin,mch
  real(dp) :: amesh,al
  real(dp) :: dr,eeel,eexc,et,emin,emax,rl,rl1,sd,sn,sls,eeig
- real(dp) :: thl,vn,zval,dfa
+ real(dp) :: thl,vn,zval,dfa,fj
  real(dp) :: fa(30)
  integer :: ii,jj,l1,icx,nprj
+ integer :: ikap,kap,ll,mkap
  logical :: convg
 
  real(dp), allocatable :: uu(:),up(:)
@@ -152,30 +156,58 @@
      if(fa(ii)==0.0d0) then
        cycle
      end if
-     et=ea(ii)
      ierr = 0
      l1=la(ii)+1
 
-     emin=1.10d0*ea(ii)
-     emax=0.90d0*ea(ii)
-     call lschvkbb(na(ii),la(ii),nproj(l1),ierr,et,emin,emax, &
-&                 rr,vtot,vkb(1,1,l1),evkb(1,l1),uu,up,mmax,mch)
-
-     if(ierr /= 0) then
-       write(6,'(/a,3i4)') &
-&            'psatom: WARNING lschvkbb convergence error n,l,iter=', &
-&            na(ii),la(ii),it
-       write(6,'(a,1p,4e14.6)') 'ea(ii),et,emin,emax',ea(ii),et,emin,emax
-       exit
+     ll=la(ii)
+     if(nkap==1 .or. ll==0) then
+       mkap=1
+     else
+       mkap=2
      end if
+! loop on J = ll +/- 1/2 when nkap=2, the occupation shared out as 2j+1
+     do ikap=1,mkap
+       if(nkap==1) then
+         kap=0
+         fj=fa(ii)
+       else if(ikap==1) then
+         kap=-(ll+1)
+         fj=dble(ll+1)*fa(ii)/dble(2*ll+1)
+       else
+         kap=  ll
+         fj=dble(ll)*fa(ii)/dble(2*ll+1)
+       end if
+       et=ea(ii,ikap)
+
+       emin=1.10d0*ea(ii,ikap)
+       emax=0.90d0*ea(ii,ikap)
+       call lschvkbb(na(ii),la(ii),nproj(l1),ierr,et,emin,emax, &
+&                   rr,vtot,vkb(1,1,l1,ikap),evkb(1,l1,ikap),uu,up,mmax,mch)
+
+       if(ierr /= 0) then
+         if(nkap==2) then
+           write(6,'(/a,3i4)') &
+&                'psatom_r: WARNING lschvkbb convergence error n,l,kap,iter=', &
+&                 na(ii),la(ii),kap,it
+         else
+           write(6,'(/a,3i4)') &
+&                'psatom: WARNING lschvkbb convergence error n,l,iter=', &
+&                na(ii),la(ii),it
+         end if
+         write(6,'(a,1p,4e14.6)') 'ea(ii),et,emin,emax',ea(ii,ikap),et, &
+&              emin,emax
+         exit
+       end if
 
 ! overall convergence criterion based on eps within lschf*
-     if(ea(ii)/= et) convg=.false.
-     ea(ii)=et
+       if(ea(ii,ikap)/= et) convg=.false.
+       ea(ii,ikap)=et
 
 ! accumulate charge and eigenvalues
-     eeig = eeig + fa(ii) * ea(ii)
-     rho(:)=rho(:) + fa(ii)*(uu(:)/rr(:))**2
+       eeig = eeig + fj*ea(ii,ikap)
+       rho(:)=rho(:) + fj*(uu(:)/rr(:))**2
+     end do !ikap
+     if(ierr/=0) exit
 
    end do !ii
 
@@ -217,7 +249,11 @@
    if(convg) exit
 
    if(it==100 .and. .not. convg) then
-     write(6,'(/a)') 'psatom: potential failed to converge'
+     if(nkap==2) then
+       write(6,'(/a)') 'psatom_r: WARNING potential failed to converge'
+     else
+       write(6,'(/a)') 'psatom: potential failed to converge'
+     end if
      ierr=101
    end if
 

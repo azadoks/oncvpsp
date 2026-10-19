@@ -19,7 +19,7 @@
  subroutine run_config_ps(jj,istcnf,ierrcnf,itcnf,kerrcnf,nvtcnf, &
 &                         natcnf,latcnf,fatcnf,eatcnf,etstcnf,nc,rhov,rhomod, &
 &                         rr,rcmax,mmax,mxprj,iexc,etot,epstot,nproj,vpuns, &
-&                         lloc,vkb,evkb)
+&                         lloc,vkb,evkb,irel,nkap)
 
 ! self-consistent pseudoatom calculation for test configuration jj, compared
 ! with the all-electron results for the reference and test configurations
@@ -40,8 +40,11 @@
 !nproj  number of VKB projectors to use for each l
 !vpuns  unscreened semi-local pseudopotentials (plus different vloc if lloc==4)
 !lloc  index-1 of local potential
-!vkb  Vanderbilt-Kleinman-Bylander projectors
-!evkb  VKB projector coefficients
+!vkb  Vanderbilt-Kleinman-Bylander projectors, last index 1 for j=l+1/2,
+!     2 for j=l-1/2 when irel=2
+!evkb  VKB projector coefficients, last index as for vkb
+!irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!nkap  number of kappa per l: 1, or 2 for irel=2
 
  use config_ae_m, only: config_ae_warning
  use constants_m, only: dp
@@ -51,19 +54,21 @@
 
  integer, intent(in) :: istcnf(5),ierrcnf(5),itcnf(5),kerrcnf(5)
  integer, intent(in) :: nvtcnf(5),natcnf(30,5),latcnf(30,5)
- real(dp), intent(in) :: fatcnf(30,3,5),eatcnf(30,3,5),etstcnf(5)
- integer, intent(in) :: jj,mmax,mxprj,iexc,nc,lloc
+ real(dp), intent(in) :: fatcnf(30,3,5),eatcnf(30,nkap,3,5),etstcnf(5)
+ integer, intent(in) :: jj,mmax,mxprj,iexc,nc,lloc,irel,nkap
  integer, intent(in) :: nproj(5)
  real(dp), intent(in) :: etot,epstot,rcmax
  real(dp), intent(in) :: rhov(mmax),rr(mmax)
- real(dp), intent(in) :: vpuns(mmax,5),vkb(mmax,mxprj,4),evkb(mxprj,4)
+ real(dp), intent(in) :: vpuns(mmax,5),vkb(mmax,mxprj,4,nkap)
+ real(dp), intent(in) :: evkb(mxprj,4,nkap)
  real(dp), intent(in) :: rhomod(mmax,5)
 
 !Local variables
- integer :: ii,it,kk,l1,ierr,nvt
+ integer :: ii,it,kk,ll,l1,ierr,nvt
+ integer :: ikap,kap,mkap
  integer :: nat(30),lat(30),natp(30),latp(30),nav(4)
- real(dp) :: eaetst,etsttot
- real(dp) :: eat(30,3),fat(30,3),eatp(30),fatp(30,3)
+ real(dp) :: eaetst,etsttot,fj
+ real(dp) :: eat(30,nkap,3),fat(30,3),eatp(30,nkap),fatp(30,3)
 
  real(dp),allocatable :: rho(:),rhocps(:)
 
@@ -96,7 +101,7 @@
 ! configurations are computed by run_config_ae.
 
  if(istcnf(jj)/=0) then
-   call config_ae_warning(jj,1,istcnf,ierrcnf,itcnf,kerrcnf,natcnf,latcnf)
+   call config_ae_warning(jj,irel,istcnf,ierrcnf,itcnf,kerrcnf,natcnf,latcnf)
    return
  end if
 
@@ -104,7 +109,7 @@
  nat(:)=natcnf(:,jj)
  lat(:)=latcnf(:,jj)
  fat(:,:)=fatcnf(:,:,jj)
- eat(:,:)=eatcnf(:,:,jj)
+ eat(:,:,:)=eatcnf(:,:,:,jj)
  eaetst=etstcnf(jj)
 
  allocate(rho(mmax),rhocps(mmax))
@@ -119,7 +124,7 @@
    l1=latp(kk)+1
    nav(l1)=nav(l1)+1
    natp(kk)=nav(l1)
-   eatp(kk)=eat(nc+kk,1)
+   eatp(kk,:)=eat(nc+kk,:,1)
    fatp(kk,1)=fat(nc+kk,1)
    fatp(kk,2)=fat(nc+kk,2)
  end do
@@ -130,12 +135,19 @@
 
  call psatom(natp,latp,eatp,fatp,nvt,it,rhocps,rho, &
 &           rr,rcmax,mmax,mxprj,iexc,etsttot,nproj,vpuns,lloc, &
-&           vkb,evkb,ierr)
+&           vkb,evkb,ierr,nkap)
 
  if(ierr/=0) then
-   write(6,'(a,a/a,i2)') 'run_config: WARNING for fully non-local PS atom,', &
-&        ' stg. 1', &
-&        ' WARNING no output for configuration',jj
+   if(irel==2) then
+     write(6,'(a/a,i2)') &
+&          'run_config_r: WARNING for fully non-local PS atom,', &
+&          ' WARNING no output for configuration',jj
+   else
+     write(6,'(a,a/a,i2)') &
+&          'run_config: WARNING for fully non-local PS atom,', &
+&          ' stg. 1', &
+&          ' WARNING no output for configuration',jj
+   end if
    deallocate(rho,rhocps)
    return
  end if
@@ -143,33 +155,54 @@
 !second pseudoatom run from maximally-ionized to excited configuration
 
  do kk=1,nvt
-   eatp(kk)=eat(nc+kk,2)
+   eatp(kk,:)=eat(nc+kk,:,2)
    fatp(kk,1)=fat(nc+kk,2)
    fatp(kk,2)=fat(nc+kk,3)
  end do
 
  call psatom(natp,latp,eatp,fatp,nvt,it,rhocps,rho, &
 &           rr,rcmax,mmax,mxprj,iexc,etsttot,nproj,vpuns,lloc, &
-&           vkb,evkb,ierr)
+&           vkb,evkb,ierr,nkap)
 
  if(ierr/=0) then
-   write(6,'(a,a/a,i2)') 'run_config: WARNING for fully non-local PS atom,', &
-&        ' stg. 2', &
-&        ' WARNING no output for configuration',jj
+   if(irel==2) then
+     write(6,'(a/a,i2)') &
+&          'run_config_r: WARNING for fully non-local PS atom,', &
+&          ' WARNING no output for configuration',jj
+   else
+     write(6,'(a,a/a,i2)') &
+&          'run_config: WARNING for fully non-local PS atom,', &
+&          ' stg. 2', &
+&          ' WARNING no output for configuration',jj
+   end if
    deallocate(rho,rhocps)
    return
  end if
 
 
 
+ if(irel==2) then
+   call write_results_r
+ else
+   call write_results
+ end if
+
+ deallocate(rho,rhocps)
+
+ return
+
+ contains
+
+ subroutine write_results
+! the eigenvalues and energies of the all-electron and pseudo atoms
  write(6,'(/a)') '   n   l     f        eae           eps        diff'
  do ii=1,nc
-   write(6,'(2i4,f8.4,f14.8)') nat(ii),lat(ii),fat(ii,3),eat(ii,3)
+   write(6,'(2i4,f8.4,f14.8)') nat(ii),lat(ii),fat(ii,3),eat(ii,1,3)
  end do
  do ii=1,nvt
    if(fat(ii+nc,3)==0.0d0) cycle
    write(6,'(2i4,f8.4,2f14.8,1p,d12.2)') nat(ii+nc),lat(ii+nc),fat(ii+nc,3), &
-&   eat(ii+nc,3),eatp(ii),eatp(ii)-eat(ii+nc,3)
+&   eat(ii+nc,1,3),eatp(ii,1),eatp(ii,1)-eat(ii+nc,1,3)
  end do
 
  write(6,'(/a)') '    Total energies and differences'
@@ -179,8 +212,62 @@
 & '  PS_tst=',etsttot,'  dif=',etsttot-epstot
  write(6,'(a,1p,d10.2)') '      PSP excitation error=', &
 & eaetst-etot-etsttot+epstot
-
- deallocate(rho,rhocps)
-
  return
+ end subroutine write_results
+
+ subroutine write_results_r
+! write_results for irel=2, a line for each kappa with its share of the
+! occupation
+ write(6,'(/a)') '   n   l kap    f        eae           eps        diff'
+ do ii=1,nc
+   ll = lat(ii)
+   if(ll==0) then
+     mkap=1
+   else
+     mkap=2
+   end if
+! loop on J = ll +/- 1/2
+   do ikap=1,mkap
+     if(ikap==1) then
+       kap=-(ll+1)
+       fj=dble(ll+1)*fat(ii,3)/dble(2*ll+1)
+     else
+       kap=  ll
+       fj=dble(ll)*fat(ii,3)/dble(2*ll+1)
+     end if
+     write(6,'(3i4,f8.4,f14.8)') nat(ii),lat(ii),kap,fj,eat(ii,ikap,3)
+   end do
+ end do
+
+ do ii=1,nvt
+   ll = lat(ii+nc)
+   if(ll==0) then
+     mkap=1
+   else
+     mkap=2
+   end if
+! loop on J = ll +/- 1/2
+   do ikap=1,mkap
+     if(ikap==1) then
+       kap=-(ll+1)
+       fj=dble(ll+1)*fat(ii+nc,3)/dble(2*ll+1)
+     else
+       kap=  ll
+       fj=dble(ll)*fat(ii+nc,3)/dble(2*ll+1)
+     end if
+     write(6,'(3i4,f8.4,2f14.8,1p,e12.2)') nat(ii+nc),lat(ii+nc),kap,fj, &
+&     eat(ii+nc,ikap,3),eatp(ii,ikap),eatp(ii,ikap)-eat(ii+nc,ikap,3)
+   end do
+ end do
+
+ write(6,'(/a)') '    Total energies and differences'
+ write(6,'(a,1p,e16.8,a,e16.8,a,e10.2)') '      AE_ref=',etot, &
+& '  AE_tst=',eaetst,'  dif=',eaetst-etot
+ write(6,'(a,1p,e16.8,a,e16.8,a,e10.2)') '      PS_ref=',epstot, &
+& '  PS_tst=',etsttot,'  dif=',etsttot-epstot
+ write(6,'(a,1p,e10.2)') '      PSP excitation error=', &
+& eaetst-etot-etsttot+epstot
+ return
+ end subroutine write_results_r
+
  end subroutine run_config_ps

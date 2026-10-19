@@ -66,8 +66,8 @@ The fr path had 3 reference tests to the sr path's 28.
 - [x] `write_ae_file`, `read_ae_file` / their `_r`
 - [x] `fphsft` / `fphsft_r`
 - [x] `wellstate` / `wellstate_r`
-- [ ] `run_config_ps` / `run_config_ps_r`
-- [ ] `psatom` / `psatom_r`
+- [x] `run_config_ps` / `run_config_ps_r`
+- [x] `psatom` / `psatom_r`
 - [x] `run_phsft` / `run_phsft_r`
 - [ ] `run_diag` / `run_diag_r`
 - [ ] `run_plot` / `run_plot_r`
@@ -116,6 +116,8 @@ physical reason, kept behind `irel` until decided:
   fr keeps its n in `npa` and sr the n asked for; sr stops if `lschfb`
   fails in the well, fr goes on
 - the error-message prefixes and some numeric formats (`e` and `d`)
+- the test-configuration results table of `run_config_ps`: sr leaves out
+  empty valence levels, fr lists every level once for each kappa
 
 ### Fixed on the way
 

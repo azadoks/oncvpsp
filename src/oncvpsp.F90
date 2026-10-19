@@ -802,7 +802,7 @@
    call run_config_ps(jj,istcnf,ierrcnf,itcnf,kerrcnf,nvtcnf, &
 &                     natcnf,latcnf,fatcnf,eatcnf,etstcnf,nc,rhot,rhomod,rr, &
 &                     rcmax,mmax,mxprj,iexc,etot,epstot,nproj,vpuns, &
-&                     lloc,vkb,evkb)
+&                     lloc,vkb,evkb,irel,nkap)
 
  end do !jj
 
