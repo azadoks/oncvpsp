@@ -94,7 +94,7 @@
  real(dp), parameter :: eps=1.0d-8
 
  real(dp), allocatable :: evkb(:,:,:),cvgplt(:,:,:,:,:),qq(:,:)
- real(dp), allocatable :: ecurve(:,:,:,:,:),wcurve(:,:,:)
+ real(dp), allocatable :: ecurve(:,:,:,:,:)
  real(dp) :: ecutw
  integer, parameter :: ncurve=1000
  real(dp), allocatable :: rr(:)
@@ -406,7 +406,7 @@
  allocate(uu(mmax,2),up(mmax,2),uupsa(mmax,nkap,nv))
  allocate(vwell(mmax,mxprj))
  allocate(evkb(mxprj,4,nkap),cvgplt(2,7,mxprj,4,nkap),qq(mxprj,mxprj))
- allocate(ecurve(2,ncurve,mxprj,4,nkap),wcurve(mxprj,4,nkap))
+ allocate(ecurve(2,ncurve,mxprj,4,nkap))
  allocate(vp(mmax,5,nkap),vfull(mmax),vkb(mmax,mxprj,4,nkap))
  allocate(pswf(mmax,mxprj,4,nkap))
  allocate(vpuns(mmax,5))
@@ -576,7 +576,6 @@
 !
  cvgplt(:,:,:,:,:)=0.0d0
  ecurve(:,:,:,:,:)=0.0d0
- wcurve(:,:,:)=0.0d0
 !
 ! loop to construct pseudopotentials for all angular momenta
 !
@@ -610,16 +609,6 @@
 
      uu(:,:)=0.0d0; qq(:,:)=0.0d0
      iprj=0
-!electrons filling each pseudo-wave in the cutoff of icmod 6: the shell's
-!(the J subshell's for nkap=2) for a scattering or empty state, else the
-!occupation
-     if(nkap==1) then
-       wcurve(1:nproj(l1),l1,ikap)=dble(2*(2*ll+1))
-     else if(ikap==1) then
-       wcurve(1:nproj(l1),l1,ikap)=dble(2*ll+2)
-     else
-       wcurve(1:nproj(l1),l1,ikap)=dble(2*ll)
-     end if
 
 !get principal quantum number for the highest core state for this l
      npa(1,l1)=l1
@@ -649,7 +638,6 @@
            end if
 
            epa(iprj,l1,ikap)=ea(kk,ikap)
-           if(fa(kk)>0.0d0) wcurve(iprj,l1,ikap)=fj*fa(kk)
            npa(iprj,l1)=na(kk)
            if(irel==2) then
              call renorm_r(uu,rr,ll,kap,zz,mmax,cnorm)
@@ -907,7 +895,7 @@
  else if(icmod==6 .or. icmod==7) then
    ecutw=0.0d0
    if(fcfact<=0.0d0) then
-     call modcore_budget_ecut(ecurve,wcurve,ncurve,mxprj*4*nkap,rcfact,ecutw)
+     call modcore_budget_table(ecurve,ncurve,mxprj*4*nkap,rcfact,ecutw)
    end if
 !the probe densities of the hardness of icmod=7
    allocate(probes(mmax,mxprj*(lmax+1)),lprobe(mxprj*(lmax+1)))

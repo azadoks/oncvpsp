@@ -32,9 +32,11 @@
 ! that does not rise (b <= 0 and b + 2c r_s**2 <= 0); where neither is
 ! monotone, the radius has no model.
 !
-! ecut is fcfact (Ha) if fcfact > 0.  Otherwise it is the cutoff the
-! pseudo-waves need for the same error (ecutw, from modcore_budget_ecut),
-! times -fcfact if fcfact < 0: a calculation needs that cutoff anyway.
+! ecut is fcfact (Ha) if fcfact > 0.  Otherwise it is the cutoff of the
+! pseudo-waves at the same error per electron (ecutw, from
+! modcore_budget_table: the largest Ecut of the "Energy error per electron"
+! tables), times -fcfact if fcfact < 0: a calculation runs at that cutoff
+! anyway.
 ! The model must fit slack*ecut (0 < slack <= 1), and is still made for
 ! the qlo of ecut.
 !
@@ -75,8 +77,8 @@
 !! @param rhomod  model core density and 4 derivatives
 !! @param fcfact  plane-wave cutoff (Ha) the model is made for, if > 0; else 0
 !!                for ecutw, or minus the multiple of ecutw
-!! @param ecutw  cutoff (Ha) the pseudo-waves need for errmax (used if fcfact <=
-!!               0)
+!! @param ecutw  cutoff (Ha) of the pseudo-waves at errmax per electron (used
+!!               if fcfact <= 0)
 !! @param errmax  exchange-correlation energy error (Ha) that defines the needed
 !!                cutoff
 !! @param slack  share of the cutoff the model must fit, 0 < slack <= 1
@@ -346,8 +348,9 @@
    write(6,'(/a)') 'Model core correction: budgeted core (icmod 6)'
  end if
  if(fcfact<=0.0d0) then
-   write(6,'(a,f12.4,a,f8.4)') '  pseudo-wave cutoff',ecutw, &
-&        ' Ha, times',factor
+   write(6,'(a,1p,e10.2,a,0p,f12.4,a,f8.4)') &
+&        '  pseudo-wave cutoff, largest Ecut of the tables at',errmax, &
+&        ' Ha/electron',ecutw,' Ha, times',factor
  end if
  write(6,'(a,f12.4,a,1p,e10.2,a)') '  cutoff budget',ecut, &
 &      ' Ha for an xc energy error of',errmax,' Ha'
@@ -968,80 +971,66 @@
  return
  end subroutine modcore_probes
 
- subroutine modcore_budget_ecut(ecurve,wcurve,ncurve,nprof,errmax,ecut)
+ subroutine modcore_budget_table(ecurve,ncurve,nprof,errmax,ecut)
 
-!! the cutoff ecut (Ha) the pseudo-waves need for the error errmax (Ha per
-!! atom): the root of the total residual kinetic energy sum_i w_i E_i(ecut),
-!! with E_i the error per electron of pseudo-wave i and w_i the electrons
-!! that fill it, the ecut_for_error of PseudoPotentialGenerators.jl.
-!! ecurve(:,:,i) holds the cutoffs and E_i of run_optimize on its mesh,
-!! zero beyond its end; wcurve(i)=0 skips it.  log E is interpolated
-!! linearly in q between the mesh points, as for the convergence profiles
+!! the cutoff ecut (Ha) of the pseudo-waves at the error errmax (Ha per
+!! electron): the largest over the pseudo-waves of the cutoff at which the
+!! energy error per electron of each falls to errmax, the "Energy error per
+!! electron / Cutoff" tables of run_optimize (the same interpolation, log E
+!! linear in q with the nominal spacing dqout, from the last crossing).
+!! ecurve(:,:,i) holds the cutoffs and errors of pseudo-wave i, zero beyond
+!! its end (all zero for no pseudo-wave); a pseudo-wave whose table does not
+!! reach errmax does not count, as it has no line in its table
 !!
 !! @param ecurve  residual kinetic energy curves: ecurve(1,:,i) cutoffs (Ha),
-!!                ecurve(2,:,i) error per electron E_i (Ha) of pseudo-wave i
-!! @param wcurve  electrons filling each pseudo-wave (0 skips it)
+!!                ecurve(2,:,i) error per electron (Ha) of pseudo-wave i
 !! @param ncurve  number of points per curve
 !! @param nprof  number of curves (pseudo-waves)
-!! @param errmax  error (Ha per atom) that defines the needed cutoff
-!! @param ecut  cutoff (Ha) the pseudo-waves need for errmax
+!! @param errmax  error per electron (Ha) that defines the cutoff
+!! @param ecut  cutoff (Ha) of the pseudo-waves at errmax
 
- use constants_m, only: dp
+ use constants_m, only: dp, dqout
  implicit none
 
 !Input variables
  integer, intent(in) :: ncurve,nprof
- real(dp), intent(in) :: ecurve(2,ncurve,nprof),wcurve(nprof),errmax
+ real(dp), intent(in) :: ecurve(2,ncurve,nprof),errmax
 
 !Output variables
  real(dp), intent(out) :: ecut
 
 !Local variables
- real(dp), allocatable :: total(:),qq(:)
- real(dp) :: qt
- integer :: ip,kk,nend,klast
+ real(dp) :: lerr,q1,l0,l1,qerr,ecut1
+ integer :: ip,kk
+ logical :: found
 
- allocate(total(ncurve),qq(ncurve))
- total(:)=0.0d0
- qq(:)=0.0d0
- nend=0
+ lerr=log(errmax)
+ ecut=0.0d0
+ found=.false.
  do ip=1,nprof
-   if(wcurve(ip)<=0.0d0) cycle
-   kk=ncurve
-   do while(kk>1 .and. ecurve(1,kk,ip)<=0.0d0)
-     kk=kk-1
+   ecut1=-1.0d0
+   do kk=2,ncurve
+     if(ecurve(1,kk,ip)<=0.0d0) exit
+     if(ecurve(2,kk-1,ip)<=0.0d0 .or. ecurve(2,kk,ip)<=0.0d0) cycle
+     l0=log(ecurve(2,kk-1,ip))
+     l1=log(ecurve(2,kk,ip))
+     if(l0>lerr .and. l1<=lerr) then
+       q1=sqrt(2.0d0*ecurve(1,kk,ip))
+       qerr=q1-dqout*(lerr-l1)/(l0-l1)
+       ecut1=0.5d0*qerr**2
+     end if
    end do
-   if(nend==0 .or. kk<nend) nend=kk
-   total(:)=total(:)+wcurve(ip)*ecurve(2,:,ip)
-   qq(:)=sqrt(2.0d0*ecurve(1,:,ip))
+   if(ecut1>=0.0d0) then
+     found=.true.
+     ecut=max(ecut,ecut1)
+   end if
  end do
- if(nend<2) then
-   write(6,'(/a)') 'modcore_budget_ecut: ERROR stop - no residual energy curves'
-   error stop 1
- end if
- if(total(nend)>errmax) then
-   write(6,'(/a,1p,e10.2,a,0p,f10.2,a)') &
-&        'modcore_budget_ecut: ERROR stop - residual kinetic energy above', &
-&        errmax,' Ha at',0.5d0*qq(nend)**2,' Ha, the end of its tables'
+ if(.not. found) then
+   write(6,'(/a,1p,e10.2,a)') &
+&        'modcore_budget_table: ERROR stop - no pseudo-wave reaches', &
+&        errmax,' Ha per electron in its table'
    error stop 1
  end if
 
- klast=0
- do kk=1,nend-1
-   if(total(kk)>errmax) klast=kk
- end do
- if(klast==0) then
-   ecut=0.0d0
- else if(total(klast+1)>0.0d0) then
-   qt=qq(klast)+(qq(klast+1)-qq(klast)) &
-&    *log(total(klast)/errmax)/log(total(klast)/total(klast+1))
-   ecut=0.5d0*qt**2
- else
-   qt=qq(klast)+(qq(klast+1)-qq(klast)) &
-&    *(total(klast)-errmax)/(total(klast)-total(klast+1))
-   ecut=0.5d0*qt**2
- end if
-
- deallocate(total,qq)
  return
- end subroutine modcore_budget_ecut
+ end subroutine modcore_budget_table

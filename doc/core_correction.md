@@ -163,8 +163,9 @@ icmod==6:
     I, Pb, Cs; TM, PBE).
 
     With fcfact <= 0, ecut is instead the cutoff the pseudo-waves need for
-    the same error rcfact, times -fcfact (times 1 for fcfact = 0): a
-    calculation needs that cutoff anyway, so the core costs nothing more.
+    the same error rcfact per electron, times -fcfact (times 1 for
+    fcfact = 0): a calculation runs at that cutoff anyway, so the core
+    costs nothing more.
     The psp8 file then gives fchrg = 1 (fchrg > 0 tells Abinit that a model
     core follows; otherwise it is fcfact).
 
@@ -174,19 +175,24 @@ icmod==6:
             6   0   1.0e-5
     ```
 
-    The pseudo-wave cutoff is the root of the total residual kinetic
-    energy sum_i w_i E_i(ecut) = rcfact, with E_i the energy error per
-    electron of the optimized pseudo wave function of projector i (the
-    "Energy error per electron" profiles of the out file, interpolated in
-    log E between points 0.5 bohr^-1 apart) and w_i the electrons that fill
-    it: the occupation of a valence state, or 2(2l+1) (2j+1 fully
-    relativistic) for a scattering or empty one. The local channel's wave
-    function counts as well. This is the default ecut of the BudgetedCore
-    (ecut_for_error). It is usually within a few Ha of the largest cutoff of
-    the profiles at 1e-5 Ha per electron. The out file gives it on the
-    line "pseudo-wave cutoff", and modcore_budget_ecut (in modcore_budget.f90)
-    computes it;
-    tests/data/14_Si_bca.dat uses it.
+    The pseudo-wave cutoff is the largest over the optimized pseudo wave
+    functions (every l and projector, and both J fully relativistic) of
+    the cutoff at which the energy error per electron falls to rcfact:
+    the largest Ecut of the "Energy error per electron / Cutoff" tables of
+    the out file at that error, interpolated as they are, so the cutoff
+    one would run at. The out file gives it on the line "pseudo-wave
+    cutoff, largest Ecut of the tables at ...", and modcore_budget_table
+    (in modcore_budget.f90) computes it; a wave whose table does not reach
+    rcfact does not count. tests/data/14_Si_bca.dat uses it.
+
+    PPG's default budget (ecut_for_error) is instead the root of the total
+    residual kinetic energy sum_i w_i E_i(ecut) = rcfact, with w_i the
+    electrons that fill wave i (2(2l+1) for an empty or scattering one),
+    an error per atom rather than per electron. On ONCVPSP's inputs it is
+    up to 2.2 times the cutoff they are run at (ecut_recommended + 5 Ha in
+    the QE equation-of-state runs), and the cores made for it at slack 1
+    were truncated by ecutrho = 4 ecutwfc; it was the meaning of
+    fcfact <= 0 here until the table maximum replaced it.
 
 icmod==7:
 

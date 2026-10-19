@@ -22,7 +22,7 @@
  use, intrinsic :: iso_fortran_env, only: real64
  implicit none
  private
- public :: dp, pi, c_light, mxprj
+ public :: dp, pi, c_light, mxprj, dqout
 
 !> kind of all real variables
  integer, parameter :: dp=real64
@@ -36,5 +36,10 @@
 
 !> maximum number of projectors for each l
  integer, parameter :: mxprj=5
+
+!> spacing (bohr**-1) of the q mesh of the "Energy error per electron"
+!> tables, as their interpolation assumes it (eresid moves the mesh points
+!> onto its own q mesh, so the actual spacing differs slightly)
+ real(dp), parameter :: dqout=0.5000001_dp
 
  end module constants_m

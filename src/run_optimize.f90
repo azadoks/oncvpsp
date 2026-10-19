@@ -48,7 +48,7 @@
 !! @param ecurve  cutoff energy and energy error per electron on the E_resid(q)
 !!                mesh, zero beyond its end
 
- use constants_m, only: dp
+ use constants_m, only: dp, dqout
  implicit none
 
 !Input variables
@@ -96,11 +96,11 @@
 !parameters whose default values here give well-converged results
 ! increasing dq and/or dr will speed up the code at some cost
 ! in optimization accuracy
- real(dp) :: dq,dr,dqout
+ real(dp) :: dq,dr
  dq=0.02d0  !linear integration mesh spacing for above
  dr=0.02d0  !linear integration spacing for Fourier transforms
- dqout=0.5000001d0  !linear mesh spacing for final E_resid(q) interpolation
-!increment is to avoid exact commnesurability with dq mesh
+!dqout (constants_m) is the linear mesh spacing for final E_resid(q)
+!interpolation; its increment is to avoid exact commnesurability with dq mesh
 
  al = 0.01d0 * log(rr(101) / rr(1))
  rc=rr(irc)
