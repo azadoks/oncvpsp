@@ -1,0 +1,111 @@
+## Merging the scalar- and fully-relativistic code
+
+The non-relativistic (nr) and scalar-relativistic (sr) programs already
+share one code path: `oncvpsp_nr.F90` includes `oncvpsp.F90`, and `srel`
+selects the Schroedinger equation with or without the scalar-relativistic
+terms. The fully-relativistic (fr) program is a copy: a `foo_r` for most
+routines `foo`, and an `_r` entry point in five modules, about 6000 lines
+in all. This is the plan for merging the two, and the record of how far it
+has got. Tick a box when its commit is in.
+
+### Rules
+
+- **Output is unchanged.** Every step passes `ctest -j8` (the reference
+  comparisons allow no numerical difference), `scripts/check_interfaces.sh`,
+  the legacy `make` check and the comparison of the split programs
+  (`_ae.x` + `_ps.x`) with the single ones. One commit per step.
+- **Little preprocessor.** No new `#if` blocks. Which equation is solved
+  is an integer argument, `irel` (0 nr, 1 sr, 2 fr), tested at run time.
+- **Interfaces that C could call.** A merged or new routine takes integer
+  and `real(dp)` scalars and explicit-shape arrays with their sizes passed
+  in: no logical, optional, assumed-shape, allocatable or pointer dummy
+  arguments. `irel` replaces the logical `srel` in each routine as it is
+  merged. The character arguments already there (`atsym`, `psfile`) stay
+  for now.
+- **The fr layout throughout.** Arrays indexed by l get a last index for
+  kappa of size `nkap` (1 nr/sr, 2 fr): `ikap=1` is j=l+1/2, `ikap=2`
+  j=l-1/2, as the fr code has them now.
+- **Differences kept.** Where sr and fr differ for no evident reason
+  (listed under [Divergences](#divergences)), the merged code keeps both
+  behind `irel`, so the references don't change. Unifying them is a
+  separate decision.
+
+### Phase 0: tests
+
+The fr path had 3 reference tests to the sr path's 28.
+
+- [x] Add fr references for the inputs covering what the 3 did not:
+      no core (03_Li), lloc<4 (07_N_dl), iexc=1 (08_O_wigner), icmod 1
+      (14_Si), 2 (79_Au_lxc), 3 (34_Se), 4 with a grid (40_Zr_grid) and 6
+      (14_Si_bc), rxpsh (14_Si_lder), lpopt 1 (20_Ca), a single projector
+      (38_Sr_lxc), three projectors (73_Ta), ghosts (60_Nd_GHOST); nr
+      references for 03_Li, 07_N_dl and 14_Si_lder; TOML input tests for
+      the new fr inputs
+
+### Phase 1: one array layout
+
+- [ ] Give the per-l and per-level arrays of `oncvpsp.F90` the kappa
+      index (`ea`, `ep`, `epa`, `vp`, `vkb`, `evkb`, `pswf`, `uua`,
+      `uupsa`, `cvgplt`, `ecurve`, `wcurve`, `vr`), passing their first
+      element to the sr routines until they are merged
+
+### Phase 2: choosing the equation in one place
+
+- [ ] Bound state: one routine calling `lschfb` or `ldiracfb` (and
+      `renorm_r`), on `uu(mmax,2)`, `up(mmax,2)`
+- [ ] Scattering state: the same for `lschfs` and `ldiracfs`
+- [ ] All-electron atom: the same for `sratom` and `relatom`
+
+### Phase 3: merging the pairs
+
+- [ ] `read_input_text` / `read_input_text_r`
+- [ ] `read_input_toml` / `read_input_toml_r`
+- [ ] `run_config_ae` / `run_config_ae_r`, and their warnings
+- [ ] `write_ae_file`, `read_ae_file` / their `_r`
+- [ ] `fphsft` / `fphsft_r`
+- [ ] `wellstate` / `wellstate_r`
+- [ ] `run_config_ps` / `run_config_ps_r`
+- [ ] `psatom` / `psatom_r`
+- [ ] `run_phsft` / `run_phsft_r`
+- [ ] `run_diag` / `run_diag_r`
+- [ ] `run_plot` / `run_plot_r`
+- [ ] `run_vkb` / `run_vkb_r`
+- [ ] The projector loop of the driver (from `npa` to `run_optimize`)
+      and the pseudo-wave-function loop after `run_vkb`
+
+### Phase 4: one driver
+
+- [ ] Move the body of `oncvpsp.F90` into a subroutine taking `irel` and
+      the stage (whole, all-electron only, pseudopotential only), with each
+      executable a short program calling it; drop `oncvpsp_r.F90` and the
+      `#if`s of the driver
+- [ ] The fr-only steps (`sr_so_r`, `run_diag_sr_so_r`, the second ghost
+      test, the averaged unscreening) under `irel==2`
+
+### Phase 5: output
+
+The psp8, UPF and PSML files differ in form for fr, so their writers stay
+separate; what they share moves to common routines.
+
+- [ ] `gnu_script` / `gnu_script_r`
+- [ ] The shared parts of `linout` / `linout_r`
+- [ ] The shared parts of `upfout` / `upfout_r`
+- [ ] The shared parts of `psmlout` / `psmlout_r`
+
+### Phase 6: documentation
+
+- [ ] `coding_standards.md`: replace the `foo`/`foo_r` pairing with
+      `irel`/`nkap` and the interface rules above
+- [ ] `program_overview.md`, `coding_standard_violations.md`,
+      `known_issues.md` (the divergences, if kept)
+
+### Divergences
+
+Differences between `oncvpsp.F90` and `oncvpsp_r.F90` with no evident
+physical reason, kept behind `irel` until decided:
+
+- sr makes the number of points of the linear output mesh even ("PWSCF
+  wants an even number"); fr does not
+- the first point of the default log mesh, `rr1`, is computed differently
+- `lschvkbb` searches 0.75 to 1.25 of the energy in sr, 0.90 to 1.10 in fr
+- the error-message prefixes and some numeric formats (`e` and `d`)

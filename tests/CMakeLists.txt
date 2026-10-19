@@ -33,7 +33,7 @@ function(oncvpsp_test name label script)
     set_tests_properties(${name} PROPERTIES LABELS ${label})
     if (NOT ONCVPSP_WITH_Libxc)
         foreach (input IN LISTS libxc_inputs)
-            if (name MATCHES "(^|_)${input}$")
+            if (name MATCHES "(^|_)${input}(_r|_nr)?$")
                 set_tests_properties(${name} PROPERTIES DISABLED TRUE)
             endif ()
         endforeach ()
@@ -57,14 +57,28 @@ foreach (test_name IN LISTS oncvpspsr_tests)
         "${CMAKE_CURRENT_BINARY_DIR}/${test_name}")
 endforeach ()
 
-set(oncvpspr_tests "52_Te" "74_W" "80_Hg")
+set(oncvpspr_tests "52_Te" "74_W" "80_Hg"
+    "03_Li"         # no core states
+    "07_N_dl"       # lloc<4
+    "08_O_wigner"   # iexc=1
+    "14_Si"         # icmod=1
+    "14_Si_bc"      # icmod=6
+    "14_Si_lder"    # rxpsh set
+    "20_Ca"         # lpopt=1
+    "34_Se"         # icmod=3
+    "38_Sr_lxc"     # a single projector for one l
+    "40_Zr_grid"    # icmod=4 with an explicit search grid
+    "60_Nd_GHOST"   # ghosts
+    "73_Ta"         # three projectors
+    "79_Au_lxc"     # icmod=2
+)
 foreach (test_name IN LISTS oncvpspr_tests)
-    oncvpsp_test(${test_name} r ref_test.sh
+    oncvpsp_test(${test_name}_r r ref_test.sh
         $<TARGET_FILE:oncvpspr> "${data}/${test_name}.dat" "${CMAKE_CURRENT_SOURCE_DIR}/refs/${test_name}_r.out"
         "${CMAKE_CURRENT_BINARY_DIR}/${test_name}_r")
 endforeach ()
 
-set(oncvpspnr_tests "08_O" "14_Si")
+set(oncvpspnr_tests "08_O" "14_Si" "03_Li" "07_N_dl" "14_Si_lder")
 foreach (test_name IN LISTS oncvpspnr_tests)
     oncvpsp_test(${test_name}_nr nr ref_test.sh
         $<TARGET_FILE:oncvpspnr> "${data}/${test_name}.dat" "${CMAKE_CURRENT_SOURCE_DIR}/refs/${test_name}_nr.out"
@@ -117,7 +131,9 @@ endforeach ()
 if (ONCVPSP_WITH_TOML)
     set(toml_tests ${oncvpspsr_tests})
     list(TRANSFORM toml_tests PREPEND "sr:")
-    list(APPEND toml_tests "r:52_Te" "r:74_W" "r:80_Hg" "nr:14_Si" "nr:29_Cu")
+    set(toml_r_tests ${oncvpspr_tests})
+    list(TRANSFORM toml_r_tests PREPEND "r:")
+    list(APPEND toml_tests ${toml_r_tests} "nr:14_Si" "nr:29_Cu")
     foreach (toml_test IN LISTS toml_tests)
         string(REPLACE ":" ";" toml_test "${toml_test}")
         list(GET toml_test 0 rel)
