@@ -1049,21 +1049,12 @@
  end if
 
  if(trim(psfile)=='upf' .or. trim(psfile)=='both') then
-   if(irel==2) then
-     call upfout_r(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
-&                  zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
-&                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact0,rcfact, &
-&                  fcgrid,rcgrid, &
-&                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,uupsa,ea,log_mesh)
-   else
-     call upfout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
-&                zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
-&                na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&                fa,rc0,ep(1,1),qcut,debl,facnf,dvloc0,fcfact0,rcfact, &
-&                fcgrid,rcgrid,epsh1,epsh2,depsh,rxpsh,rlmax,psfile,uupsa, &
-&                ea(1,1),log_mesh)
-   end if
+   call upfout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
+&              zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
+&              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
+&              fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact0,rcfact, &
+&              fcgrid,rcgrid, &
+&              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,uupsa,ea,log_mesh,nkap)
  end if
 
 

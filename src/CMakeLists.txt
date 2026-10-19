@@ -77,7 +77,6 @@ set(src_oncvpsp
     # Fully-relativistic files
     run_diag_sr_so_r.f90
     sr_so_r.f90
-    upfout_r.f90
 )
 if (ONCVPSP_WITH_Libxc)
     list(APPEND src_oncvpsp functionals.F90 exc_libxc.f90)

@@ -105,7 +105,8 @@ stay separate and what they share moves to common routines.
       `write_input_echo` in `input_echo_m`
 - [x] `linout` / `linout_r`, merged: they differ only in the projector
       section and a few header lines
-- [ ] The shared parts of `upfout` / `upfout_r`
+- [x] `upfout` / `upfout_r`, merged: they differ in the kappa loops, the
+      header attributes and the spin-orbit section
 - [ ] The shared parts of `psmlout` / `psmlout_r`
 
 ### Phase 6: documentation
@@ -136,6 +137,10 @@ physical reason, kept behind `irel` until decided:
   and averages the convergence profiles over kappa
 - the test-configuration results table of `run_config_ps`: sr leaves out
   empty valence levels, fr lists every level once for each kappa
+- `upfout`: the search for the radius holding all but 1e-6 of each
+  orbital's norm starts at `mmax-1` in sr, `mmax` in fr; sr sets the first
+  point of the interpolated local potential to its value at r=0, fr keeps
+  the extrapolated one
 
 ### Fixed on the way
 
