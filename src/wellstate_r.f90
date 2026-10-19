@@ -2,17 +2,17 @@
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
-! 
+!
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
-! 
+!
 ! This program is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
-! 
+!
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
@@ -33,9 +33,9 @@ subroutine wellstate_r(nnin,ll,kap,irc,ep,rr,vfull,vwell, &
 !uu  all-electron well-bound wave function
 !up  d(uu)/dr
 !zz  atomic number
-!mmax  size of log radial mesh 
+!mmax  size of log radial mesh
 !mch matching mesh point for inward-outward integrations
- 
+
  use constants_m, only: dp
  implicit none
 
@@ -52,14 +52,14 @@ subroutine wellstate_r(nnin,ll,kap,irc,ep,rr,vfull,vwell, &
 
 !Output variables
  real(dp), intent(out) :: uu(mmax,2),up(mmax,2),vwell(mmax)
- 
+
 !Local variables
  real(dp) :: al,cwell,et,xx,rwell,rwmax,rwmin,rwscale,umax
 
  real(dp),parameter :: eps=1.0d-8
  integer :: ii,iter,ierr,iumax,l1,itrwell,nn,nnloop
  logical :: convg
- 
+
  l1=ll+1
  al = 0.01d0 * dlog(rr(101) / rr(1))
 
@@ -106,7 +106,7 @@ subroutine wellstate_r(nnin,ll,kap,irc,ep,rr,vfull,vwell, &
    end if
  end if
 
-!if specified ep is retained and is negative 
+!if specified ep is retained and is negative
  if(ep<0.0d0) then
    ep=0.25d0
    write(6,'(/a,i2,a,i2/a,f12.8/a)') &
@@ -155,7 +155,7 @@ subroutine wellstate_r(nnin,ll,kap,irc,ep,rr,vfull,vwell, &
 !     if(ierr < 0) then
 !       write(6,'(a,i3,a,i3,a,i3)') &
 !&            'wellstate_r: ERROR ldiracfb no classical turning point, &
-!&             n=',nn,' l=',ll,' kap=',kap 
+!&             n=',nn,' l=',ll,' kap=',kap
 !       stop
 !     end if
 
@@ -172,14 +172,14 @@ subroutine wellstate_r(nnin,ll,kap,irc,ep,rr,vfull,vwell, &
        else
          rwmax=rwell
       end if
-      rwell=0.5d0*(rwmax+rwmin) 
+      rwell=0.5d0*(rwmax+rwmin)
       cycle
      end if
 
      if(et>ep) then
        rwmin=rwell
        if(rwmax>0.0d0) then
-         rwell=0.5d0*(rwmax+rwmin) 
+         rwell=0.5d0*(rwmax+rwmin)
        else
          rwell=rwell/rwscale
        end if
@@ -189,7 +189,7 @@ subroutine wellstate_r(nnin,ll,kap,irc,ep,rr,vfull,vwell, &
      if(et<ep) then
        rwmax=rwell
        if(rwmin>0.0d0) then
-         rwell=0.5d0*(rwmax+rwmin) 
+         rwell=0.5d0*(rwmax+rwmin)
        else
          rwell=rwell*rwscale
          if(rwell<dmax1(1.0d0,0.5d0*rr(irc))) exit

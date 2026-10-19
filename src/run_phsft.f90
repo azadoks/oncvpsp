@@ -119,7 +119,7 @@ subroutine run_phsft(lmax,lloc,nproj,epa,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
       end if
 
       call fphsft(ll,epsh2,depsh,pshf,rr,vfull,zz,mmax,irphs,npsh,srel)
-      if(ll .eq. lloc) then
+      if(ll == lloc) then
          call  vkbphsft(ll,0,epsh2,depsh,epa(1,l1),pshf,pshp, &
          &                   rr,vp(1,lloc+1),vkb(1,1,l1),evkb(1,l1), &
          &                   mmax,irphs,npsh)

@@ -123,8 +123,8 @@
 
  type(config_ae_t) :: cae(5)
 
- character*2 :: atsym
- character*4 :: psfile
+ character(len=2) :: atsym
+ character(len=4) :: psfile
 
  logical :: srel,cset
 
@@ -473,7 +473,7 @@
 
  write(6,'(//a)') 'Reference configufation results'
  write(6,'(a,i6)') '  iterations',it
- if(it .ge. 100) then
+ if(it >= 100) then
   write(6,'(a)') 'oncvpsp: ERROR all-electron reference atom not converged'
   error stop 1
  end if

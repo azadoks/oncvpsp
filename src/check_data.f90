@@ -2,17 +2,17 @@
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
-! 
+!
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
-! 
+!
 ! This program is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
-! 
+!
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
@@ -33,8 +33,8 @@
  implicit none
 
 ! Input variables
- character*2, intent(in) :: atsym
- character*4, intent(in) :: psfile
+ character(len=2), intent(in) :: atsym
+ character(len=4), intent(in) :: psfile
 
  real(dp), intent(in) :: zz,fcfact,rcfact,epsh1,epsh2,depsh,rxpsh,rlmax,drl
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
@@ -232,7 +232,7 @@
   write(6,'(a)') 'test_data: must have depsh>0.0'
   ierr=ierr+1
  end if
- 
+
  rcmax=0.0d0
  do l1=1,lmax+1
   rcmax=max(rcmax,rc(l1))
@@ -298,14 +298,14 @@
      ierr=ierr+1
     end if
    end do
-  
+
    if(sf>zz) then
     write(6,'(a,i4)') 'test_data: negative ion, test configuration',jj-1
     ierr=ierr+1
    end if
   end do
  end if
- 
+
  if(ierr>0) then
   write(6,'(a,i4,a)') 'ERROR: test_data found',ierr,' ERROR; stopping'
   error stop 1

@@ -128,7 +128,7 @@ subroutine run_phsft_r(lmax,lloc,nproj,epa,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
          if(ikap==1) kap=-(ll+1)
          if(ikap==2) kap=  ll
          call fphsft_r(ll,kap,epsh2,depsh,pshf,rr,vfull,zz,mmax,irphs,npsh)
-         if(ll .eq. lloc) then
+         if(ll == lloc) then
             call  vkbphsft(ll,0,epsh2,depsh,epa(1,l1,ikap),pshf,pshp, &
             &                   rr,vp(1,lloc+1,ikap),vkb(1,1,l1,ikap),evkb(1,l1,ikap), &
             &                   mmax,irphs,npsh)

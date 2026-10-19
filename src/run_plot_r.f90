@@ -2,17 +2,17 @@
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
-! 
+!
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
-! 
+!
 ! This program is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
-! 
+!
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
@@ -45,7 +45,7 @@
 !rhoc core charge
 !rhomod  model core charge
 !srel .true. for scalar-relativistic, .false. for non-relativistic
-!cvgplt  Energy per electron error vs. cutoff 
+!cvgplt  Energy per electron error vs. cutoff
 
  use constants_m, only: dp
  implicit none
@@ -96,7 +96,7 @@
    r0=rr(ii)+dr
  end do
 
- if(lloc .eq. 4) then
+ if(lloc == 4) then
    r0=rr(n1)-dr
    do ii=n1,n4
      if(rr(ii)>r0) then
@@ -132,7 +132,7 @@
 
  do l1 = 1, lmax + 1
   ll = l1 - 1
-  npr=nproj(l1)   
+  npr=nproj(l1)
   if(l1==lloc+1) npr=0
    ll=l1-1
    if(ll==0) then
@@ -156,7 +156,7 @@
        etest=epa(iprj,l1,ikap)
        call ldiracfb(npa(iprj,l1),ll,kap,ierr,etest, &
 &                    rr,zz,vfull,ur,urp,mmax,mch)
-         if(ierr .ne. 0) then
+         if(ierr /= 0) then
            write(6,'(a,i2,a,i2,a,i2,a,i4)') &
 &                'run_plot_r 409: ldiracfb convergence ERROR, n=',&
 &                 npa(iprj,l1),'  l=',ll, 'kap-',kap,'  ierr=',ierr
@@ -166,7 +166,7 @@
 
        emax=0.9d0*etest
        emin=1.1d0*etest
-        
+
        call lschvkbb(ll+iprj,ll,npr,ierr,etest,emin,emax, &
 &                    rr,vp(1,lloc+1,ikap),vkb(1,1,l1,ikap),evkb(1,l1,ikap), &
 &                    u2,up,mmax,mch)

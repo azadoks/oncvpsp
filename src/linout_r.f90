@@ -2,17 +2,17 @@
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
-! 
+!
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
-! 
+!
 ! This program is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
-! 
+!
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
@@ -35,7 +35,7 @@
 !esr  energy  coefficients of vscal
 !vso  normalized spin-orbig projectors
 !eso  energy  coefficients of vso
-!vpuns  unscreened semi-local pseudopotentials (vpuns(:,5) is local potential 
+!vpuns  unscreened semi-local pseudopotentials (vpuns(:,5) is local potential
 !  if linear combination is used)
 !rho  valence pseudocharge
 !rhotae  all-electron valence charge
@@ -75,7 +75,7 @@
  real(dp), intent(in) :: esr(2*mxprj,4),eso(2*mxprj,4)
  real(dp), intent(in) :: rhomod(mmax,5)
  real(dp), intent(in) :: rc(6)
- character*2, intent(in) :: atsym
+ character(len=2), intent(in) :: atsym
 
 !additional input for psp8 output to echo input file, all as defined
 ! in the main progam
@@ -85,7 +85,7 @@
  real(dp), intent(in) :: fa(30),rc0(6),ep(6,2),qcut(6),debl(6),facnf(30,5)
  real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rxpsh,rlmax
  real(dp), intent(in) :: log_mesh(3)
- character*4, intent(in) :: psfile
+ character(len=4), intent(in) :: psfile
 
 !Output variables - printing only
 
@@ -98,7 +98,7 @@
  real(dp),allocatable :: rhol(:),rl(:),vpl(:,:)
  real(dp),allocatable :: rhotael(:),rhocl(:)
  real(dp), allocatable :: vsrl(:,:,:),vsol(:,:,:)
- character*2 :: pspd(3)
+ character(len=2) :: pspd(3)
  logical :: nonzero
 
  allocate(rhol(nrl),rl(nrl),vpl(nrl,5),rhomodl(nrl,5))
@@ -115,7 +115,7 @@
    end do
    write(6,'(a,3i4)') 'l1-1,npr_sr,npr_so',l1-1,npr_sr(l1),npr_so(l1)
   end do
-   
+
 ! interpolation of everything onto linear output mesh
 !
  do  ii=1,nrl
@@ -130,7 +130,7 @@
    vpl(1,l1)=vpuns(1,l1)
 
  do l1=1,lmax+1
-   if(l1 .ne. lloc+1) then
+   if(l1 /= lloc+1) then
 
     do jj=1,npr_sr(l1)
      call dpnint(rr,vsr(1,jj,l1),mmax,rl,vsrl(1,jj,l1),nrl)
@@ -141,7 +141,7 @@
    end if
  end do
 
- 
+
  call dpnint(rr,rho,mmax,rl,rhol,nrl)
  call dpnint(rr,rhotae,mmax,rl,rhotael,nrl)
  call dpnint(rr,rhoc,mmax,rl,rhocl,nrl)
@@ -327,7 +327,7 @@
    end do
    write(6,'(a)') '#'
  end do
-  
+
  if(log_mesh(1)>0.0d0) then
    write(6,'(a/a/a)') '#','# LOG MESH','# amesh, rr1, rmax'
    write(6,'(3es24.16)') log_mesh

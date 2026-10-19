@@ -2,17 +2,17 @@
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
-! 
+!
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
-! 
+!
 ! This program is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
-! 
+!
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
@@ -26,7 +26,7 @@
 
 !nnull  number of unconstrained basis vectors for residual minimization
 !nbas  number of sbf basis functions
-!pswf0_sb(nbas)  sbf basis  coefficients for constrained part of pseudo 
+!pswf0_sb(nbas)  sbf basis  coefficients for constrained part of pseudo
 !                    wave function
 !pswf0_or(nbas)  or basis  coefficients
 !nqout  number of q values in [0,qmax] for which results are to be saved
@@ -86,7 +86,7 @@
  wmat(:,:)=eresidmat(:,:,1)
 
  call dsyev( 'V', 'U', nnull, wmat, nnull, wev, work, 5*nnull, info )
- if(info .ne. 0) then
+ if(info /= 0) then
   write(6,'(a,i4)') 'optimize: residual-energy eigenvalue ERROR, info=',info
   error stop 1
  end if
@@ -157,7 +157,7 @@
  x1min=0.0d0
  x1max=yy
  converged=.false.
-  
+
  do iter=1,niter
 
   x1=0.5d0*(x1max+x1min)
@@ -166,7 +166,7 @@
   do ii=2,nnull
    pswfopt(ii)=-eresiddot_ev(ii)/(eresideval(ii)-eresideval(1) &
 &               +abs(eresiddot_ev(1))/x1)
-   tt=tt+pswfopt(ii)**2 
+   tt=tt+pswfopt(ii)**2
   end do
 
   if(x1max-x1min<eps) then
@@ -197,7 +197,7 @@
  ekin_anal=0.0d0
 !find cutoff-dependence of E_resid for optimized pswf
 !must transform pswfopt to the null basis representation to be
-!consistent with the input dot product and 
+!consistent with the input dot product and
  allocate(work(nnull))
  do ii=1,nnull
   pswfopt_nu(ii)=0.0d0
@@ -219,7 +219,7 @@
   eresq(kk)=emin
   if(qout(kk)==0.0d0) ekin_anal=emin
  end do
- 
+
 !calculate optimized pswf in sbf representation
  pswfopt_sb(:)=pswf0_sb(:)
  pswfopt_or(:)=pswf0_or(:)

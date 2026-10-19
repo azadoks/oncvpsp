@@ -2,17 +2,17 @@
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
-! 
+!
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
-! 
+!
 ! This program is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
-! 
+!
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
@@ -32,7 +32,7 @@
 !mxprj  dimension of number of projectors
 !pswf pseudo wave functions
 !vfull  all-electron potential
-!vp  semi-local pseudopotentials for first projectors 
+!vp  semi-local pseudopotentials for first projectors
 !     (vp(:,5) is local potential if lloc=4)
 !vkb  semi-local "potentials"*pswf (input); VKB projectors (output)
 !evkb  coefficients of BKB projectors (output)
@@ -173,7 +173,7 @@ real(dp), intent(in) :: vr(mmax,mxprj,6,2)
 !      SUBROUTINE DSYEV( JOBZ, UPLO, N, A, LDA, W, WORK, LWORK, INFO )
 
      call dsyev( 'V', 'U', np, bb, mxprj, bbev, work, lwork, info )
-     if(info .ne. 0) then
+     if(info /= 0) then
       write(6,'(a,i4)') 'run_vkb: B matrix eigenvalue ERROR, info=',info
       error stop 1
      end if
@@ -191,7 +191,7 @@ real(dp), intent(in) :: vr(mmax,mxprj,6,2)
        vkb(:,jj,l1,ikap)=vkb(:,jj,l1,ikap)+bb(ii,jj)*vkbt(:,ii)
      end do
    end do
-   
+
    end if !nproj>=2
 
 ! normalize projectors
@@ -227,7 +227,7 @@ real(dp), intent(in) :: vr(mmax,mxprj,6,2)
 !      SUBROUTINE DSYEV( JOBZ, UPLO, N, A, LDA, W, WORK, LWORK, INFO )
 
     call dsyev( 'V', 'U', np, sovl, mxprj, sovlev, work, lwork, info )
-    if(info .ne. 0) then
+    if(info /= 0) then
      write(6,'(a,i4)') 'run_vkb: sovl matrix eigenvalue ERROR, info=',info
      error stop 1
     end if
@@ -268,7 +268,7 @@ real(dp), intent(in) :: vr(mmax,mxprj,6,2)
 !      SUBROUTINE DSYEV( JOBZ, UPLO, N, A, LDA, W, WORK, LWORK, INFO )
 
      call dsyev( 'V', 'U', np , bbist, mxprj, bbistev, work, lwork, info )
-     if(info .ne. 0) then
+     if(info /= 0) then
       write(6,'(a,i4)') 'run_vkb: B^(-1)* matrix eigenvalue ERROR, info=',info
       error stop 1
      end if
@@ -316,7 +316,7 @@ real(dp), intent(in) :: vr(mmax,mxprj,6,2)
        end do
        if(sorted) exit
      end do
-  
+
      write(6,'(/a,1p,5e12.4)') '  Orthonormal projector coefficients',&
 &        (evkb(jj,l1,ikap),jj=1,np)
 

@@ -2,17 +2,17 @@
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
-! 
+!
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
-! 
+!
 ! This program is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
-! 
+!
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
@@ -93,7 +93,7 @@
    do ii=1,mmax
      cf(ii)=als*sls + 2.0d0*als*(vv(ii)-ee)*rr(ii)**2
    end do
-  
+
 ! calculate dv/dr for darwin correction
    dv(:)=0.0d0
 
@@ -101,12 +101,12 @@
 &         -6.d0*vv(5))/(24.d0*al*rr(1))
    dv(2)=(-6.d0*vv(1)-20.d0*vv(2)+36.d0*vv(3)-12.d0*vv(4) &
 &         +2.d0*vv(5))/(24.d0*al*rr(2))
-  
+
    do ii=3,mmax-2
      dv(ii)=(2.d0*vv(ii-2)-16.d0*vv(ii-1)+16.d0*vv(ii+1) &
 &          -2.d0*vv(ii+2))/(24.d0*al*rr(ii))
    end do
-  
+
 !  relativistic coefficient arrays for u (fr) and up (frp).
    do ii=1,mmax
      tfss=fss
@@ -114,7 +114,7 @@
 &     (rr(ii)*(1.0d0+0.5d0*tfss*(ee-vv(ii)))))
      frp(ii)=-al*rr(ii)*0.5d0*tfss*dv(ii)/(1.0d0+0.5d0*tfss*(ee-vv(ii)))
    end do
-  
+
    do ii=1,mmax
      if(rr(ii)<0.5d0*rr(irc) .or. rr(ii)>1.5d0*rr(irc)) cycle
      if(rr(ii)<0.5d0*rr(irc) .or. rr(ii)>2.5d0*rr(irc)) cycle

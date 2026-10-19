@@ -81,7 +81,7 @@
 !Input variables
  character(len=*) :: fname
  logical :: srel
- character*2 :: atsym
+ character(len=2) :: atsym
  integer :: nc,nv,iexc,mmax,it,ncnf
  integer :: na(30),la(30),nvcnf(5),nacnf(30,5),lacnf(30,5)
  real(dp) :: zz,etot
@@ -117,7 +117,7 @@
 
 !Input variables
  character(len=*) :: fname
- character*2 :: atsym
+ character(len=2) :: atsym
  integer :: nc,nv,iexc,mmax,it,ncnf
  integer :: na(30),la(30),nvcnf(5),nacnf(30,5),lacnf(30,5)
  real(dp) :: zz,etot
@@ -162,7 +162,7 @@
 
  character(len=*) :: fname
  logical :: srel
- character*2 :: atsym
+ character(len=2) :: atsym
  integer :: nc,nv,iexc,mmax,it
  integer :: na(30),la(30)
  real(dp) :: zz,etot
@@ -196,7 +196,7 @@
 ! fully-relativistic read_ae_file
 
  character(len=*) :: fname
- character*2 :: atsym
+ character(len=2) :: atsym
  integer :: nc,nv,iexc,mmax,it
  integer :: na(30),la(30)
  real(dp) :: zz,etot
@@ -263,7 +263,7 @@
 
  character(len=*) :: fname
  integer :: unit,irel
- character*2 :: atsym
+ character(len=2) :: atsym
  integer :: nc,nv,iexc,mmax
  integer :: na(30),la(30)
  real(dp) :: zz
@@ -291,14 +291,14 @@
 
  character(len=*) :: fname
  integer :: unit,irel
- character*2 :: atsym
+ character(len=2) :: atsym
  integer :: nc,nv,iexc,mmax
  integer :: na(30),la(30)
  real(dp) :: zz
  real(dp) :: fa(30),rr(mmax)
 
  character(len=8) :: magic_f
- character*2 :: atsym_f
+ character(len=2) :: atsym_f
  integer :: ios,version_f,irel_f,nc_f,nv_f,iexc_f,mmax_f
  integer :: na_f(30),la_f(30)
  real(dp) :: zz_f,fa_f(30)

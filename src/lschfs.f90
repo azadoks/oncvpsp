@@ -2,17 +2,17 @@
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
-! 
+!
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
-! 
+!
 ! This program is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
-! 
+!
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
@@ -46,7 +46,7 @@
  integer, intent(in) :: ll,mch
  logical, intent(in) :: srel
  real(dp), intent(in) :: ee
- 
+
 !Output variables
  real(dp), intent(out) :: uu(mmax),up(mmax)
  integer, intent(out) :: ierr,nn
@@ -60,7 +60,7 @@
  integer :: ii, it,node
 
  real(dp), allocatable :: upp(:),cf(:),dv(:),fr(:),frp(:)
- 
+
  allocate(upp(mmax),cf(mmax),dv(mmax),fr(mmax),frp(mmax))
 
 
@@ -99,7 +99,7 @@
 
 ! calculate dv/dr for darwin correction
  dv(:)=0.0d0
- 
+
  dv(1)=(-50.d0*vv(1)+96.d0*vv(2)-72.d0*vv(3)+32.d0*vv(4) &
 &       -6.d0*vv(5))/(24.d0*al*rr(1))
  dv(2)=(-6.d0*vv(1)-20.d0*vv(2)+36.d0*vv(3)-12.d0*vv(4) &
@@ -137,7 +137,7 @@
      up(ii+1)=up(ii)+aio(upp,ii)
      uu(ii+1)=uu(ii)+aio(up,ii)
    end do
-   if(uu(ii+1)*uu(ii) .le. 0.0d0) node=node+1
+   if(uu(ii+1)*uu(ii) <= 0.0d0) node=node+1
  end do
 
  uout=uu(mch)

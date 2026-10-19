@@ -2,17 +2,17 @@
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
-! 
+!
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
-! 
+!
 ! This program is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
-! 
+!
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
@@ -58,24 +58,24 @@ subroutine sbf8(nm,xx,sb_out)
  else if(nm==1) then
    xmod=mod(xx,pi2)
    ss=sin(xmod)
-   sb_out(1)=ss/xx 
+   sb_out(1)=ss/xx
  else if(nm==2) then
    xmod=mod(xx,pi2)
    ss=sin(xmod)
    cc=cos(xmod)
-   sb_out(1)=ss/xx 
+   sb_out(1)=ss/xx
    sb_out(2)=(ss-xx*cc)/xx**2
  else if(nm==3) then
    xmod=mod(xx,pi2)
    ss=sin(xmod)
    cc=cos(xmod)
-   sb_out(1)=ss/xx 
+   sb_out(1)=ss/xx
    sb_out(3)=((3.0d0-xx**2)*ss - 3.0d0*xx*cc)/xx**3
  else if(nm==4) then
    xmod=mod(xx,pi2)
    ss=sin(xmod)
    cc=cos(xmod)
-   sb_out(1)=ss/xx 
+   sb_out(1)=ss/xx
    sb_out(3)=((3.0d0-xx**2)*ss - 3.0d0*xx*cc)/xx**3
    sb_out(4)=(15.d0*ss-15.d0*xx*cc - 6.d0*xx**2*ss + xx**3*cc )/xx**4
  else

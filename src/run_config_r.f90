@@ -2,17 +2,17 @@
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
-! 
+!
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
-! 
+!
 ! This program is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
-! 
+!
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
@@ -47,7 +47,7 @@
  implicit none
 
 !Input variables
- 
+
  type(config_ae_r_t), intent(in) :: cae
  integer, intent(in) :: jj,mmax,mxprj,iexc,nc,lloc
  integer, intent(in) :: nproj(5)
@@ -56,7 +56,7 @@
  real(dp), intent(in) :: vpuns(mmax,5),vkb(mmax,mxprj,4,2),evkb(mxprj,4,2),rhomod(mmax,5)
 
 !Output variables  only printing
- 
+
 !Local variables
  integer :: ii,it,kk,ll,l1,ierr,nvt
  integer :: ikap,kap,mkap
@@ -70,23 +70,23 @@
 ! all-electron and pseudo atoms.  Total excitation energies and excited-
 ! -configuration eigenvalues are compared
 
-! For multi-projector potentials, the bound-state solver lschvkbb has poor 
+! For multi-projector potentials, the bound-state solver lschvkbb has poor
 ! stability, and requires a trial energy sufficiently close to the correct
 ! result for a given local potential. This appears to be due to the fact
-! that intermediate stages towards the solution of the radial Schroedinger 
-! equation with a non-local potential may not increase their node count 
+! that intermediate stages towards the solution of the radial Schroedinger
+! equation with a non-local potential may not increase their node count
 ! monotonically with increasing energy (the same phenonenon which gives
 ! rise to ghost states).
 
-! To aviod these problems, the pseudoatom calculation is started with the 
-! screened local potential and valence eigenvalues of the reference 
+! To aviod these problems, the pseudoatom calculation is started with the
+! screened local potential and valence eigenvalues of the reference
 ! configuration.  This is adiabatically changed in two steps.  In the first,
 ! the occupation numbers are changed by 2% within the potential iteration
-! loop for each of the first 50 steps to those of a maximally-ionized 
+! loop for each of the first 50 steps to those of a maximally-ionized
 ! intermediate configuration.
 
 ! The second step is started with the local potential of this maximally-
-! ionized psuedo-atom, and eigenvalues from an all-electron 
+! ionized psuedo-atom, and eigenvalues from an all-electron
 ! calculation of this configuration including unoccupied states that
 ! are to be adiabatically filled to produce the final configuration.
 ! The same 2% strategy is used filling pseudo-atom states in this step.

@@ -2,17 +2,17 @@
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
-! 
+!
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
-! 
+!
 ! This program is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
-! 
+!
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
@@ -28,7 +28,7 @@
 ! as follows:
 !
 ! Test 1) Negative eigenvalues are compared with those of the radial
-! Schroedinger equation for the full-range pseudopotential.  Those 
+! Schroedinger equation for the full-range pseudopotential.  Those
 ! lying below the Schroedinger Eq. results and which presumably have
 ! more nodes are reported and tagged as GHOST(-).
 !
@@ -94,7 +94,7 @@
  nodes(:)=0
  npgh=0
  do l1 = 1, lmax + 1
-   nprj=nproj(l1)  
+   nprj=nproj(l1)
    if(nprj==0) cycle
 
    write(6,'()')
@@ -130,7 +130,7 @@
    hmat(:,:)=0.0d0
    hmev(:)=0.0d0
 
-   
+
 ! nbas stays nbmax unless lschpsbar runs out of states below ebcut
    nbas=nbmax
    do jj=1,nbmax
@@ -183,7 +183,7 @@
 !      SUBROUTINE DSYEV( JOBZ, UPLO, N, A, LDA, W, WORK, LWORK, INFO )
 
      call dsyev( 'V', 'U', nbas, hmat, nbmax, hmev, work, lwork, info )
-     if(info .ne. 0) then
+     if(info /= 0) then
       write(6,'(a,i4)') 'run_ghosts: hamiltonian matrix eigenvalue ERROR, &
 &          info=',info
       error stop 1

@@ -386,13 +386,13 @@
  subroutine xc_eps(rho,exc,vx)
    real(dp), intent(inout) :: rho(nx)
    real(dp), intent(out) :: exc(nx),vx(nx)
-   if(iexc .eq. 1) then
+   if(iexc == 1) then
      call excwig(rho,vx,exc,nx)
-   else if(iexc .eq. 2) then
+   else if(iexc == 2) then
      call exchdl(rho,vx,exc,nx)
-   else if(iexc .eq. 3) then
+   else if(iexc == 3) then
      call excpzca(rho,vx,exc,nx)
-   else if(iexc .eq. 4) then
+   else if(iexc == 4) then
      call excggc(rho,vx,exc,rr,nx)
    else if (iexc < 0) then
      call exc_libxc(iexc,al,rho,vx,exc,rr,nx)

@@ -186,7 +186,7 @@
      et=0.0d0
      call lschfb(nat(kk),lat(kk),ierr,et, &
 &                rr,vfull,uu,up,zz,mmax,mch,srel)
-     if(ierr .ne. 0) then
+     if(ierr /= 0) then
        call store_results
        cae%stat=2
        cae%kerr=kk
@@ -379,7 +379,7 @@
      kap=ll+1
      call ldiracfb(nat(kk),ll,kap,ierr,et, &
 &                rr,zz,vfull,uu,up,mmax,mch)
-     if(ierr .ne. 0) then
+     if(ierr /= 0) then
        call store_results
        cae%stat=2
        cae%ierr=ierr

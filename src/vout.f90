@@ -2,17 +2,17 @@
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
-! 
+!
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
-! 
+!
 ! This program is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
-! 
+!
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
@@ -51,7 +51,7 @@
  real(dp), intent(out) :: eeel,eexc
 
 !Local variables
- integer ii
+ integer :: ii
  real(dp) :: al,tv
 
  real(dp), allocatable :: rvp(:),rv(:),excca(:),difxc(:)
@@ -106,11 +106,11 @@
  end do
  eeel=al*eeel + foutv(1)/3.0d0
 
- if(mode .eq. 0) then
+ if(mode == 0) then
    do ii = 1, mmax
      rhot(ii) = rho(ii)
    end do
- else if(mode .eq. 1) then
+ else if(mode == 1) then
    do ii = 1, mmax
      rhot(ii) = rho(ii) + rhoc(ii)
    end do
@@ -121,13 +121,13 @@
 
 ! exchange-correlation potential added
 
- if(iexc .eq. 1) then
+ if(iexc == 1) then
    call excwig(rhot,vxc,exca,mmax)
- else if(iexc .eq. 2) then
+ else if(iexc == 2) then
    call exchdl(rhot,vxc,exca,mmax)
- else if(iexc .eq. 3) then
+ else if(iexc == 3) then
    call excpzca(rhot,vxc,exca,mmax)
- else if(iexc .eq. 4) then
+ else if(iexc == 4) then
    call excggc(rhot,vxc,exca,rr,mmax)
  else if (iexc < 0) then
    call exc_libxc(iexc,al,rhot,vxc,exca,rr,mmax)
@@ -152,14 +152,14 @@
    eexc=eexc + foutx(ii)
  end do
 
- if(mode .eq. 1 .and. rhoc(1) .ne. 0.0d0) then
-   if(iexc .eq. 1) then
+ if(mode == 1 .and. rhoc(1) /= 0.0d0) then
+   if(iexc == 1) then
      call excwig(rhoc,vxcd,excca,mmax)
-   else if(iexc .eq. 2) then
+   else if(iexc == 2) then
      call exchdl(rhoc,vxcd,excca,mmax)
-   else if(iexc .eq. 3) then
+   else if(iexc == 3) then
      call excpzca(rhoc,vxcd,excca,mmax)
-   else if(iexc .eq. 4) then
+   else if(iexc == 4) then
      call excggc(rhoc,vxcd,excca,rr,mmax)
    else if (iexc < 0) then
      call exc_libxc(iexc,al,rhoc,vxcd,excca,rr,mmax)
@@ -181,7 +181,7 @@
  eexc=al*eexc + foutx(1)/3.0d0
 
 
- if(mode .eq. 1) then
+ if(mode == 1) then
    eexc=eexc + foutfc(1)/3.0d0
  end if
 

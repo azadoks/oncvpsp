@@ -2,17 +2,17 @@
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
-! 
+!
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
-! 
+!
 ! This program is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
-! 
+!
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
@@ -20,8 +20,8 @@
 ! core charge and 4 derivatives at "crossover" radius.
 ! Polynomial is 8th-order with no linear term.
 
-! Performs analysis and based on "hardness" criterion described in 
-! Teter, Phys. Rev. B 48, 5031 (1993) , Appendix, as 
+! Performs analysis and based on "hardness" criterion described in
+! Teter, Phys. Rev. B 48, 5031 (1993) , Appendix, as
 
  subroutine modcore2(icmod,rhops,rhotps,rhoc,rhoae,rhotae,rhomod, &
 &                   fcfact,rcfact,irps,mmax,rr,nc,nv,la,zion,iexc)
@@ -84,7 +84,7 @@
 ! this is needed for compatability with icmod=3 option
  ircc = 0
  do ii = mmax,1,-1
-   if(rhoc(ii) .gt. rhotps(ii)) then
+   if(rhoc(ii) > rhotps(ii)) then
      ircc=ii
      rmatch=rr(ircc)
      rhocmatch=rhoc(ircc)
@@ -100,13 +100,13 @@
 ! find scaled valence pseudocharge - core charge crossover
  ircc = 0
  do ii = mmax,1,-1
-   if(rhoc(ii) .gt. fcfact*rhotps(ii)) then
+   if(rhoc(ii) > fcfact*rhotps(ii)) then
      ircc=ii
      exit
    end if
  end do
- 
- if(ircc .eq. 0) then
+
+ if(ircc == 0) then
    write(6,'(/a)') 'modcore2: ERROR ircc (core-valence charge crossover) &
 &        not found'
    error stop 1
@@ -129,7 +129,7 @@
    write(6,'(1p,4d16.6)') (d2excae(kk,jj),jj=1,nv)
  end do
 
- 
+
 ! set model charge to zero
  rhomod(:,:)=0.0d0
 
@@ -189,7 +189,7 @@
    x0min=xx
   end if
  end do
- 
+
  b0=xx/rr(ircc)
  a0=fmatch(1)/yy
 
@@ -213,7 +213,7 @@
 ! test model
  call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
 &                   zion,iexc,nc,nv,la,irmod,mmax)
- 
+
  write(6,'(/a/)') 'd2excps - pseudofunction derivatives with core correction'
 
  do kk=1,nv

@@ -2,17 +2,17 @@
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
-! 
+!
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
-! 
+!
 ! This program is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
-! 
+!
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
@@ -44,7 +44,7 @@
  implicit none
 
 !Input variables
- 
+
  integer, intent(in) :: mmax,iexc,nc,ncv
  integer, intent(in) :: na(ncv),la(ncv)
  real(dp), intent(in) :: zz
@@ -82,7 +82,7 @@
 ! why all this is necessary is unclear, but it seems to be
  uu(:,:)=0.d0; up(:,:)=0.d0; vo(:)=0.d0; vi1(:)=0.d0; vo1(:)=0.d0; vxc(:)=0.d0
  dr=0.d0; eeel=0.d0; eexc=0.d0; et=0.d0; rl=0.d0; rl1=0.d0
- sd=0.d0; sf=0.d0; sn=0.d0; eeig=0.d0; thl=0.d0; vn=0.d0; zion=0.d0 
+ sd=0.d0; sf=0.d0; sn=0.d0; eeig=0.d0; thl=0.d0; vn=0.d0; zion=0.d0
  nin=0; mch=0
 
  al = 0.01d0 * dlog(rr(101) / rr(1))
@@ -136,7 +136,7 @@
      call ldiracfb(na(ii),ll,kap,ierr,et, &
 &                rr,zz,vi,uu,up,mmax,mch)
 
-     if(ierr .ne. 0) then
+     if(ierr /= 0) then
        write(6,'(/2a,5i4)') 'relatom: ldiracfb convergence ERROR', &
 &           ' n,l,kap,iter,ierr=',na(ii),ll,kap,it,ierr
        error stop 1

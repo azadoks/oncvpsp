@@ -69,7 +69,7 @@
  real(dp), intent(in) :: rr(mmax),vpuns(mmax,5),rho(mmax),vkb(mmax,mxprj,4)
  real(dp), intent(in) :: rhomod(mmax,5)
  real(dp), intent(in) :: rc(6),evkb(mxprj,4)
- character*2, intent(in) :: atsym
+ character(len=2), intent(in) :: atsym
  real(dp), intent(in) :: uupsa(mmax,nv)
 
 !additional input for upf output to echo input file, all as defined
@@ -80,7 +80,7 @@
  real(dp), intent(in) :: fa(30),rc0(6),ep(6),qcut(6),debl(6),facnf(30,5),ea(30)
  real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rxpsh,rlmax
  real(dp), intent(in) :: log_mesh(3)
- character*4, intent(in) :: psfile
+ character(len=4), intent(in) :: psfile
 
 !Output variables - printing only
 
@@ -91,8 +91,8 @@
  real(dp) :: al,nrmsum,uurcut
  real(dp), allocatable :: rhomodl(:,:),dmat(:,:)
  real(dp),allocatable :: rhol(:),rl(:),vkbl(:,:,:),vpl(:,:),uual(:,:)
- character*5 :: lnames
- character*2 :: pspd(3)
+ character(len=5) :: lnames
+ character(len=2) :: pspd(3)
 
  lnames = "SPDFG"
  nrl = nrlin
@@ -129,7 +129,7 @@
    call dpnint(rr,vpuns(1,l1),mmax,rl,vpl(1,l1),nrl)
 ! override dpnint extrapolation to zero for vpl
    vpl(1,l1)=vpuns(1,l1)
-   if(l1 .ne. lloc + 1) then
+   if(l1 /= lloc + 1) then
       do iproj=1,nproj(l1)
         call dpnint(rr,vkb(1,iproj,l1),mmax,rl,vkbl(1,iproj,l1),nrl)
       end do

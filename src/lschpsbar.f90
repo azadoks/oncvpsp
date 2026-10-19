@@ -2,17 +2,17 @@
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
-! 
+!
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
-! 
+!
 ! This program is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
-! 
+!
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
@@ -133,7 +133,7 @@
      up(ii)=al*(ll+1)*rr(ii)**(ll+1)
      upp(ii)=al*up(ii)+cf(ii)*uu(ii)
    end do
-  
+
 ! outward integration using predictor once, corrector
 ! twice
    node=0
@@ -154,11 +154,11 @@
        if(uu(ii+1)*uu(ii) < 0.0d0) node=node+1
      end if
    end do
-   
+
    mchb=mch
    uout=uu(mchb)
    upout=up(mchb)
-  
+
    de=0.0d0
    if(node-nn+ll+1==0) then
 
@@ -179,10 +179,10 @@
      else
 
        nin=mbar
-    
+
 !   start inward integration at barrier
 !   point with sinh or sin
-    
+
        xkap2=sls/rr(mbar)**2 + 2.0d0*(vv(mbar)-ee)
        xkap=dsqrt(dabs(xkap2))
 
@@ -207,7 +207,7 @@
      end if !nin<mbar
 
 ! integrate inward
-  
+
      do ii=nin,mchb+1,-1
        uu(ii-1)=uu(ii)+aei(up,ii)
        up(ii-1)=up(ii)+aei(upp,ii)
@@ -223,18 +223,18 @@
        up(ii)=0.0d0
        upp(ii)=0.0d0
      end do
-  
+
 ! scale outside wf for continuity
-  
+
      sc=uout/uu(mchb)
-  
+
      do ii=mchb,nin
        up(ii)=sc*up(ii)
        uu(ii)=sc*uu(ii)
      end do
-  
+
      upin=up(mchb)
-  
+
 ! perform normalization sum
 
      ro=rr(1)/dsqrt(amesh)
@@ -242,18 +242,18 @@
      do ii=1,nin-3
        sn=sn+al*rr(ii)*uu(ii)**2
      end do
-  
+
      sn=sn + al*(23.0d0*rr(nin-2)*uu(nin-2)**2 &
 &              + 28.0d0*rr(nin-1)*uu(nin-1)**2 &
 &              +  9.0d0*rr(nin  )*uu(nin  )**2)/24.0d0
-  
+
 ! normalize u
-  
+
      cn=1.0d0/dsqrt(sn)
      uout=cn*uout
      upout=cn*upout
      upin=cn*upin
-  
+
      do ii=1,nin
        up(ii)=cn*up(ii)
        uu(ii)=cn*uu(ii)
@@ -261,19 +261,19 @@
      do ii=nin+1,mmax
        uu(ii)=0.0d0
      end do
-  
+
 ! perturbation theory for energy shift
-  
+
      de=0.5d0*uout*(upout-upin)/(al*rr(mchb))
 
 ! convergence test and possible exit
 
-  
+
      if(dabs(de)<dmax1(dabs(ee),0.2d0)*eps) then
        ierr = 0
        exit
      end if
-  
+
      if(de>0.0d0) then
        emin=ee
      else
@@ -290,7 +290,7 @@
      emax=ee
      ee=0.5d0*(emin+emax)
    end if
-  
+
  end do !nint
 
  deallocate(upp,cf)

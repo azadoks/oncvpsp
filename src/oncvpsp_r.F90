@@ -117,8 +117,8 @@
 
  type(config_ae_r_t) :: cae(5)
 
- character*2 :: atsym
- character*4 :: psfile
+ character(len=2) :: atsym
+ character(len=4) :: psfile
 
  logical :: srel,cset
 
@@ -455,7 +455,7 @@
 
  write(6,'(//a)') 'Reference configufation results'
  write(6,'(a,i6)') '  iterations',it
- if(it .ge. 100) then
+ if(it >= 100) then
   write(6,'(a)') 'oncvpsp_r: ERROR all-electron reference atom not converged'
   error stop 1
  end if
@@ -721,7 +721,7 @@
    call lschvkbb(ll+nodes(l1)+1,ll,nproj(l1),ierr,et,emin,emax, &
 &                rr,vp(1,lloc+1,ikap),vkb(1,1,l1,ikap),evkb(1,l1,ikap), &
 &                uu(1,1),up(1,1),mmax,mch)
-   if(ierr .ne. 0) then
+   if(ierr /= 0) then
      write(6,'(a,i2,a,i2)') 'oncvpsp_r: lschvkbb convergence ERROR, n=',&
 &     ll+1,'  l=',ll
      error stop 1

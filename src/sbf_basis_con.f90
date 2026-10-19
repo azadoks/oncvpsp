@@ -2,17 +2,17 @@
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
-! 
+!
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
-! 
+!
 ! This program is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
-! 
+!
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
@@ -81,15 +81,15 @@
 
    sn=(sbfar(1,ibas)/rr(1)**ll)*(sbfar(1,jj)/rr(1)**ll)&
 &     *ro**(2*ll+3)/dfloat(2*ll+3)
- 
+
    do ii=1,irc-3
      sn=sn+al*rr(ii)*sbfar(ii,ibas)*sbfar(ii,jj)
    end do
- 
+
    sn=sn + al*(23.0d0*rr(irc-2)*sbfar(irc-2,ibas)*sbfar(irc-2,jj)&
 &            + 28.0d0*rr(irc-1)*sbfar(irc-1,ibas)*sbfar(irc-1,jj)&
 &            +  9.0d0*rr(irc  )*sbfar(irc  ,ibas)*sbfar(irc  ,jj))/24.0d0
- 
+
    sovlp(ibas,jj)=sn
    sovlp(jj,ibas)=sn
   end do
@@ -100,7 +100,7 @@
 !      SUBROUTINE DSYEV( JOBZ, UPLO, N, A, LDA, W, WORK, LWORK, INFO )
 
  call dsyev( 'V', 'U', nbas, sovlp, nbas, sev, work, 5*nbas, info )
- if(info .ne. 0) then
+ if(info /= 0) then
   write(6,'(a,i4)') 'sbf_basis: overlap matrix eigenvalue error, info=',info
   error stop 1
  end if
@@ -149,18 +149,18 @@
    ro=rr(1)/sqrt(amesh)
    do kk=1,iprj-1
     do jj=1,nbas
-  
+
      sn=(psopt(1,kk)/rr(1)**ll)*(sbf_or(1,jj)/rr(1)**ll)&
   &     *ro**(2*ll+3)/dfloat(2*ll+3)
-   
+
      do ii=1,irc-3
        sn=sn+al*rr(ii)*psopt(ii,kk)*sbf_or(ii,jj)
      end do
-   
+
      sn=sn + al*(23.0d0*rr(irc-2)*psopt(irc-2,kk)*sbf_or(irc-2,jj)&
   &            + 28.0d0*rr(irc-1)*psopt(irc-1,kk)*sbf_or(irc-1,jj)&
   &            +  9.0d0*rr(irc  )*psopt(irc  ,kk)*sbf_or(irc  ,jj))/24.0d0
-   
+
      orbasis_der(ncon_in+kk,jj)=sn
     end do !jj
    end do !kk

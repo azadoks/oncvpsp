@@ -2,17 +2,17 @@
 ! Copyright (c) 1989-2012 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
-! 
+!
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
-! 
+!
 ! This program is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
-! 
+!
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
@@ -113,12 +113,12 @@
 
 ! return point for bound state convergence
  do nint=1,60
-  
+
 ! coefficient array for u in Schroedinger eq.
    do ii=1,mmax
      cf(ii)=sls + 2.0d0*(vv(ii)-ee)*rr(ii)**2
    end do
-  
+
 ! find classical turning point for matching
    mch=0
    do ii=mmax,2,-1
@@ -132,7 +132,7 @@
     ierr=-1
     return
    end if
-  
+
 ! start wavefunctions with series
    do ii=1,5
     gu(ii)=rr(ii)**gam
@@ -144,7 +144,7 @@
     gup(ii)= al*rr(ii)*(-kap*gu(ii)/rr(ii) &
 &            + cci*(2.0d0*cc**2 + ee - vv(ii))*fu(ii))
    end do
-  
+
 ! outward integration using predictor once, corrector
 ! twice
    node=0
@@ -163,21 +163,21 @@
      fu(ii+1)=fu(ii)+aio(fup,ii)
      gu(ii+1)=gu(ii)+aio(gup,ii)
     end do
-    if(gu(ii+1)*gu(ii) .le. 0.0d0) node=node+1
+    if(gu(ii+1)*gu(ii) <= 0.0d0) node=node+1
    end do
 
    uout=gu(mch)
    upout=gup(mch)
-  
+
    if(node-nn+ll+1==0) then
-  
+
 ! start inward integration at 10*classical turning
 ! point with simple exponential
-  
+
      nin=mch+2.3d0/al
      if(nin+4>mmax) nin=mmax-4
      xkap=dsqrt(sls/rr(nin)**2 + 2.0d0*(vv(nin)-ee))
-  
+
      do ii=nin,nin+4
        gu(ii)=exp(-xkap*(rr(ii)-rr(nin)))
        fu(ii)=0.5d0*cci*(-xkap+kap/rr(ii))*gu(ii)
@@ -187,7 +187,7 @@
        gup(ii)= al*rr(ii)*(-kap*gu(ii)/rr(ii) &
 &               + cci*(2.0d0*cc**2 + ee - vv(ii))*fu(ii))
      end do
-  
+
 ! integrate inward
      do ii=nin,mch+1,-1
 
@@ -205,40 +205,40 @@
        gu(ii-1)=gu(ii)+aii(gup,ii)
       end do
      end do
-  
+
 ! scale outside wf for continuity
-  
+
      sc=uout/gu(mch)
-  
+
      do ii=mch,nin
        gup(ii)=sc*gup(ii)
        gu(ii)=sc*gu(ii)
        fup(ii)=sc*fup(ii)
        fu(ii)=sc*fu(ii)
      end do
-  
+
      upin=gup(mch)
-  
+
 ! perform normalization sum
-  
+
      ro=rr(1)/dsqrt(amesh)
      sn=((1.0d0+cof**2)*ro**(2.0d0*gam+1.0d0))/(2.0d0*gam+1.0d0)
-  
+
      do ii=1,nin-3
        sn=sn+al*rr(ii)*(gu(ii)**2 + fu(ii)**2)
      end do
-  
+
      sn=sn + al*(23.0d0*rr(nin-2)*(gu(nin-2)**2 + fu(nin-2)**2) &
 &              + 28.0d0*rr(nin-1)*(gu(nin-1)**2 + fu(nin-1)**2) &
 &              +  9.0d0*rr(nin  )*(gu(nin  )**2 + fu(nin  )**2))/24.0d0
-  
+
 ! normalize u
-  
+
      cn=1.0d0/dsqrt(sn)
      uout=cn*uout
      upout=cn*upout
      upin=cn*upin
-  
+
      do ii=1,nin
        gup(ii)=cn*gup(ii)
        gu(ii)=cn*gu(ii)
@@ -249,38 +249,38 @@
        gu(ii)=0.0d0
        fu(ii)=0.0d0
      end do
-  
+
 ! perturbation theory for energy shift based on large component
 ! continuity of small component should follow
-  
+
      de=0.5d0*uout*(upout-upin)/(al*rr(mch))
-  
+
 ! convergence test and possible exit
-  
+
      if(dabs(de)<dmax1(dabs(ee),0.2d0)*eps) then
        ierr = 0
        exit
      end if
-  
-     if(de>0.0d0) then 
+
+     if(de>0.0d0) then
        emin=ee
      else
        emax=ee
      end if
      ee=ee+de
      if(ee>emax .or. ee<emin) ee=0.5d0*(emax+emin)
-  
+
    else if(node-nn+ll+1<0) then
 ! too few nodes
      emin=ee
      ee=0.5d0*(emin+emax)
-  
+
    else
 ! too many nodes
      emax=ee
      ee=0.5d0*(emin+emax)
    end if
-  
+
  end do
 
 ! copy local arrays for output

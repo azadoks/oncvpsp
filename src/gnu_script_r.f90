@@ -2,17 +2,17 @@
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
-! 
+!
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
-! 
+!
 ! This program is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
-! 
+!
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
@@ -69,7 +69,7 @@
  x_label(1)='set xlabel "Radius (a_B)"'
  x_label(2)='set xlabel "Energy (Ha)"'
  x_label(3)='set xlabel "Cutoff Energy (Ha)"'
- 
+
  pse='pause -1 "Hit enter to continue"'
 
  lset(1)='set style line 1 lw 3 lt 1 lc rgb "#D00000"'
@@ -271,15 +271,15 @@
   end do !ikap
  end do !l1
 
-! log derivatives for angular momenta for which no pseudopotentials 
+! log derivatives for angular momenta for which no pseudopotentials
 ! were created
 
  if(lmax<3) then
   do l1=lmax+2,4
- 
+
    write(6,'(a/)') trim(plot_title(5))
    write(6,'(a/)') trim(x_label(2))
- 
+
    do ikap=1,2
     if(ikap==1) then
       write(6,'(3a)') lead(1),trim(gln(4*l1+19)),cbs
@@ -288,7 +288,7 @@
       write(6,'(3a)') lead(1),trim(gln(4*l1+21)),cbs
       write(6,'(2a)') lead(2),trim(gln(4*l1+22))
     end if
- 
+
    write(6,'(/a/)') trim(pse)
     end do !ikap
   end do !l1

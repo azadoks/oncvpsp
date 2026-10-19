@@ -2,23 +2,23 @@
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
-! 
+!
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
-! 
+!
 ! This program is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
-! 
+!
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 ! computes the 2nd derivative of the contribution to the exchange-
 ! correlation energy from the region where the valence pseudo wave functions
-! differ from the all-electron wave functions 
+! differ from the all-electron wave functions
 !
  subroutine der2exc(rhotot,rhoc,rho,rr,d2exc,d2ref,d2mdiff, &
 &                   zion,iexc,nc,nv,la,ircut,mmax)
@@ -51,7 +51,7 @@
 ! Output variables
  real(dp), intent(out) :: d2exc(nv,nv)
  real(dp), intent(out) :: d2mdiff
- 
+
 ! Local variables
  real(dp) :: hh,eeel,eexc,ss
  real(dp), allocatable :: vo(:),vxct(:),rhot(:),dvxc(:,:)

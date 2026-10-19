@@ -28,7 +28,7 @@ module m_psmlout
 
   character(len=1), dimension(0:4) :: lsymb = (/'s','p','d','f','g'/)
 
-  CONTAINS
+  contains
 
  subroutine psmlout(lmax,lloc,rc,vkb,evkb,mxprj,nproj,rr,vpuns,rho,rhomod, &
 &                  irct, srel, &
@@ -80,7 +80,7 @@ module m_psmlout
  real(dp), target, intent(in) :: rr(mmax),vpuns(mmax,5),rho(mmax),vkb(mmax,mxprj,4)
  real(dp), target, intent(in) :: rhomod(mmax,5)
  real(dp), intent(in) :: rc(6),evkb(mxprj,4)
- character*2, intent(in) :: atsym
+ character(len=2), intent(in) :: atsym
 
 !additional input for upf output to echo input file, all as defined
 ! in the main progam
@@ -90,7 +90,7 @@ module m_psmlout
  real(dp), intent(in) :: fa(30),rc0(6),ep(6),qcut(6),debl(6),facnf(30,5)
  real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rxpsh,rlmax
  real(dp), intent(in) :: rcfact,fcgrid(3),rcgrid(3),log_mesh(3)
- character*4, intent(in) :: psfile
+ character(len=4), intent(in) :: psfile
 
 !Local variables
  integer :: dtime(8)
@@ -110,14 +110,14 @@ module m_psmlout
   real(dp), allocatable :: r0(:), f0(:)
 
   character(len=100)    :: line
-  character*4      :: polattrib, coreattrib
-  character*1      :: pscode, char_dummy
+  character(len=4)      :: polattrib, coreattrib
+  character(len=1)      :: pscode, char_dummy
   character(len=2) :: nameat
   character(len=40):: psflavor
 
   character(len=1), dimension(0:4) :: lsymb = (/'s','p','d','f','g'/)
 
-  character*30 xcfuntype, xcfunparam
+  character(len=30) :: xcfuntype, xcfunparam
   integer          :: ncore, nval, ncp, norbs, npots
 
   integer, allocatable  :: n(:), l(:)
@@ -178,8 +178,8 @@ module m_psmlout
      f(i) = fa(i)
      if (i > ncore) then
         total_valence_charge =   total_valence_charge + f(i)
-     endif
-  enddo
+     end if
+  end do
 
   npots = lmax + 1
   allocate (ll(npots), nn(npots), ff(npots))
@@ -193,19 +193,19 @@ module m_psmlout
            nn(i) = n(j)
            ff(i) = f(j)
            exit
-        endif
-     enddo
+        end if
+     end do
      if (.not. found) then
         ! generate the appropriate effective n
         nn(i) = ll(i) + 1
         do j = 1, ncore
            if (l(j) == ll(i)) then
               nn(i) = nn(i) + 1
-           endif
+           end if
            ff(i) = 0.0_dp
-        enddo
-     endif
-  enddo
+        end do
+     end if
+  end do
 
   psflavor ="Hamann's oncvpsp"
 
@@ -216,7 +216,7 @@ module m_psmlout
      coreattrib = "yes"
   else
      coreattrib = "no"
-  endif
+  end if
 
   ! XC name handling
 
@@ -258,7 +258,7 @@ module m_psmlout
      call my_add_attribute(xf,"relativity","scalar")
   else
      call my_add_attribute(xf,"relativity","no")
-  endif
+  end if
   call my_add_attribute(xf,"polarized",polattrib)
   call my_add_attribute(xf,"core-corrections",coreattrib)
 
@@ -277,7 +277,7 @@ module m_psmlout
                call my_add_attribute(xf,"type",trim(libxc_id(i)%xc_kind%str))
                call my_add_attribute(xf,"id",str(libxc_id(i)%code))
               call xml_EndElement(xf,"functional")
-           enddo
+           end do
           call xml_EndElement(xf,"libxc-info")
           call xml_EndElement(xf,"exchange-correlation")
           !
@@ -330,7 +330,7 @@ module m_psmlout
      call my_add_attribute(xf,"set","scalar_relativistic")
   else
      call my_add_attribute(xf,"set","non_relativistic")
-  endif
+  end if
   !
   allocate(f0(nr))
   vpsd: do i = 1, npots
@@ -340,7 +340,7 @@ module m_psmlout
                           n=nn(i), l=ll(i), &
                           rc=rc(i),flavor=psflavor,&
                           f=f0)
-  enddo vpsd
+  end do vpsd
   call xml_EndElement(xf,"semilocal-potentials")
 !
 !--------
@@ -375,7 +375,7 @@ module m_psmlout
      call xml_EndElement(xf,"radfunc")
      call xml_EndElement(xf,"pseudocore-charge")
      nullify(chcore)
-  endif
+  end if
 
       call xml_NewElement(xf,"pseudopotential-operator")
       call my_add_attribute(xf,"version","0.1")
@@ -392,7 +392,7 @@ module m_psmlout
                call my_add_attribute(xf,"type","oncv-fit")
             else
                call my_add_attribute(xf,"type","l="//str(lloc))
-            endif
+            end if
             call xml_NewElement(xf,"radfunc")
                call xml_NewElement(xf,"data")
                 call add_zero_r(vlocal(1:npts),r,f0)
@@ -406,7 +406,7 @@ module m_psmlout
          call my_add_attribute(xf,"set","scalar_relativistic")
       else
          call my_add_attribute(xf,"set","non_relativistic")
-      endif
+      end if
 
       do l1=1,lmax+1
          if(l1==lloc+1) cycle
@@ -416,8 +416,8 @@ module m_psmlout
                                  seq=jj, l=l1-1, &
                                  ekb=evkb(jj,l1), &
                                  type="oncv", f=f0)
-         enddo
-      enddo
+         end do
+      end do
 
       call xml_EndElement(xf,"projectors")
 
@@ -431,13 +431,13 @@ module m_psmlout
 
   deallocate(f0,r0)
 
-CONTAINS
+contains
   subroutine do_configuration()
 
   call xml_NewElement(xf,"valence-configuration")
   call my_add_attribute(xf,"total-valence-charge", str(total_valence_charge))
   do i = ncp, norbs
-     if (f(i) .lt. 1.0e-10_dp) cycle
+     if (f(i) < 1.0e-10_dp) cycle
      call xml_NewElement(xf,"shell")
      call my_add_attribute(xf,"n",str(n(i)))
      call my_add_attribute(xf,"l",lsymb(l(i)))
@@ -445,9 +445,9 @@ CONTAINS
      if (polarized) then
         call my_add_attribute(xf,"occupation-down",str(fdown(i)))
         call my_add_attribute(xf,"occupation-up",str(fup(i)))
-     endif
+     end if
      call xml_EndElement(xf,"shell")
-  enddo
+  end do
   call xml_EndElement(xf,"valence-configuration")
 end subroutine do_configuration
 
@@ -507,7 +507,7 @@ end subroutine psmlout
  real(dp), intent(in) :: rc(6),evkb(mxprj,4,2)
  real(dp), target, intent(in) :: vsr(mmax,4,4),vso(mmax,4,4)
  real(dp), intent(in) :: esr(4,4),eso(4,4)
- character*2, intent(in) :: atsym
+ character(len=2), intent(in) :: atsym
 
 !additional input for upf output to echo input file, all as defined
 ! in the main progam
@@ -517,7 +517,7 @@ end subroutine psmlout
  real(dp), intent(in) :: fa(30),rc0(6),ep(6),qcut(6),debl(6),facnf(30,5)
  real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rxpsh,rlmax
  real(dp), intent(in) :: rcfact,fcgrid(3),rcgrid(3),log_mesh(3)
- character*4, intent(in) :: psfile
+ character(len=4), intent(in) :: psfile
 
 
 !Local variables
@@ -536,14 +536,14 @@ end subroutine psmlout
   real(dp), allocatable :: r0(:), f0(:), vps(:)
 
   character(len=100)    :: line
-  character*4      :: polattrib, coreattrib
-  character*1      :: pscode, char_dummy
+  character(len=4)      :: polattrib, coreattrib
+  character(len=1)      :: pscode, char_dummy
   character(len=2) :: nameat
   character(len=40):: psflavor
 
   character(len=1), dimension(0:4) :: lsymb = (/'s','p','d','f','g'/)
 
-  character*30 xcfuntype, xcfunparam
+  character(len=30) :: xcfuntype, xcfunparam
   integer          :: ncore, nval, ncp, norbs, npots
 
   integer, allocatable  :: n(:), l(:)
@@ -605,8 +605,8 @@ end subroutine psmlout
      f(i) = fa(i)
      if (i > ncore) then
         total_valence_charge =   total_valence_charge + f(i)
-     endif
-  enddo
+     end if
+  end do
 
   npots = lmax + 1
   allocate (ll(npots), nn(npots), ff(npots))
@@ -620,19 +620,19 @@ end subroutine psmlout
            nn(i) = n(j)
            ff(i) = f(j)
            exit
-        endif
-     enddo
+        end if
+     end do
      if (.not. found) then
         ! generate the appropriate effective n
         nn(i) = ll(i) + 1
         do j = 1, ncore
            if (l(j) == ll(i)) then
               nn(i) = nn(i) + 1
-           endif
+           end if
            ff(i) = 0.0_dp
-        enddo
-     endif
-  enddo
+        end do
+     end if
+  end do
 
   psflavor ="Hamann's oncvpsp"
 
@@ -643,7 +643,7 @@ end subroutine psmlout
      coreattrib = "yes"
   else
      coreattrib = "no"
-  endif
+  end if
 
   ! XC name handling
 
@@ -700,7 +700,7 @@ end subroutine psmlout
                call my_add_attribute(xf,"type",trim(libxc_id(i)%xc_kind%str))
                call my_add_attribute(xf,"id",str(libxc_id(i)%code))
               call xml_EndElement(xf,"functional")
-           enddo
+           end do
           call xml_EndElement(xf,"libxc-info")
           call xml_EndElement(xf,"exchange-correlation")
           !
@@ -768,7 +768,7 @@ end subroutine psmlout
                           n=nn(i), l=ll(i), &
                           rc=rc(i),flavor=psflavor,&
                           f=f0)
-  enddo
+  end do
   call xml_EndElement(xf,"semilocal-potentials")
 !
 ! so components
@@ -784,7 +784,7 @@ end subroutine psmlout
                           n=nn(i), l=ll(i), &
                           rc=rc(i),flavor=psflavor,&
                           f=f0)
-  enddo
+  end do
 
   call xml_EndElement(xf,"semilocal-potentials")
 
@@ -814,12 +814,12 @@ end subroutine psmlout
                           n=nn(i), l=ll(i), j=jval, &
                           rc=rc(i),flavor=psflavor,&
                           f=f0)
-           enddo
-        endif
-     enddo
+           end do
+        end if
+     end do
      call xml_EndElement(xf,"semilocal-potentials")
 
-  endif ! upf vs psp8
+  end if ! upf vs psp8
 !
 !--------
   call xml_NewElement(xf,"valence-charge")
@@ -853,7 +853,7 @@ end subroutine psmlout
      call xml_EndElement(xf,"radfunc")
      call xml_EndElement(xf,"pseudocore-charge")
      nullify(chcore)
-  endif
+  end if
 
 
       call xml_NewElement(xf,"pseudopotential-operator")
@@ -871,7 +871,7 @@ end subroutine psmlout
                call my_add_attribute(xf,"type","oncv-fit")
             else
                call my_add_attribute(xf,"type","l="//str(lloc))
-            endif
+            end if
             call xml_NewElement(xf,"radfunc")
                call xml_NewElement(xf,"data")
                 call add_zero_r(vlocal(1:npts),r,f0)
@@ -906,8 +906,8 @@ end subroutine psmlout
                                  seq=jj, l=l1-1, &
                                  ekb=esr(jj,l1), &
                                  type="oncv", f=f0)
-         enddo
-      enddo
+         end do
+      end do
       call xml_EndElement(xf,"projectors")
 !
 !     Spin-orbit part
@@ -923,8 +923,8 @@ end subroutine psmlout
                                  seq=jj, l=l1-1, &
                                  ekb=eso(jj,l1), &
                                  type="oncv", f=f0)
-         enddo
-      enddo
+         end do
+      end do
 
       call xml_EndElement(xf,"projectors")
 
@@ -946,7 +946,7 @@ end subroutine psmlout
                                  seq=jj, l=l1-1, j=jval, &
                                  ekb=evkb(jj,l1,1), &
                                  type="oncv", f=f0)
-            enddo
+            end do
 
          else  ! l1 /=1  (l/=0)
 
@@ -959,15 +959,15 @@ end subroutine psmlout
                                  seq=jj, l=l1-1, j=jval, &
                                  ekb=evkb(jj,l1,jk), &
                                  type="oncv", f=f0)
-              enddo
-           enddo
+              end do
+           end do
 
-        endif  ! l1 == 1
+        end if  ! l1 == 1
 
-      enddo ! over l shells
+      end do ! over l shells
       call xml_EndElement(xf,"projectors")
 !
-   endif ! upf vs psp8
+   end if ! upf vs psp8
 
     call xml_EndElement(xf,"pseudopotential-operator")
 
@@ -979,13 +979,13 @@ end subroutine psmlout
 
   deallocate(f0,r0)
 
-CONTAINS
+contains
   subroutine do_configuration()
 
   call xml_NewElement(xf,"valence-configuration")
   call my_add_attribute(xf,"total-valence-charge", str(total_valence_charge))
   do i = ncp, norbs
-     if (f(i) .lt. 1.0e-10_dp) cycle
+     if (f(i) < 1.0e-10_dp) cycle
      call xml_NewElement(xf,"shell")
      call my_add_attribute(xf,"n",str(n(i)))
      call my_add_attribute(xf,"l",lsymb(l(i)))
@@ -993,9 +993,9 @@ CONTAINS
      if (polarized) then
         call my_add_attribute(xf,"occupation-down",str(fdown(i)))
         call my_add_attribute(xf,"occupation-up",str(fup(i)))
-     endif
+     end if
      call xml_EndElement(xf,"shell")
-  enddo
+  end do
   call xml_EndElement(xf,"valence-configuration")
 end subroutine do_configuration
 
@@ -1013,8 +1013,8 @@ end subroutine psmlout_r
   use input_echo_m, only: icmod_lines, epsh_lines, echo_len, echo_max
   implicit none
   type(xmlf_t), intent(inout) :: xf
-  character*2 :: atsym
-  character*4 :: psfile
+  character(len=2) :: atsym
+  character(len=4) :: psfile
   integer :: nc,nv,iexc,lmax,lloc,lpopt,icmod,ncnf
   integer :: na(30),la(30),ncon(6),nbas(6),nproj(6)
   integer :: nvcnf(5),nacnf(30,5),lacnf(30,5)
@@ -1129,14 +1129,14 @@ end subroutine psmlout_r
       double precision, intent(in)  :: f(:), r(:)
       double precision, intent(out) :: f0(:)
 
-      integer i, npts
+      integer :: i, npts
       double precision :: r2
 
       npts = size(f)
       if (size(f0) /= npts +1) error stop "nr /= npts + 1 in add_zero_r"
       do i = 1, npts
          f0(i+1) = f(i)
-      enddo
+      end do
       r2 = r(1)/(r(2)-r(1))
       f0(1) = f(2) - (f(3)-f(2))*r2
 

@@ -2,23 +2,23 @@
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
-! 
+!
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
-! 
+!
 ! This program is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
-! 
+!
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
  subroutine excpzca(rho,vxc,exc,mmax)
 
-!calculates Perdew-Zunger-Ceperly_Alder exchange-correlation potential 
+!calculates Perdew-Zunger-Ceperly_Alder exchange-correlation potential
 ! and energy density J. P. Perdew and A. Zunger, Phys. Rev. B23, 5048 (1981)
 
 !rho  charge density

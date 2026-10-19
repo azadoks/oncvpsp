@@ -2,17 +2,17 @@
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
-! 
+!
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
-! 
+!
 ! This program is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
-! 
+!
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
@@ -90,15 +90,15 @@
 
 ! construct overlap matrix and diagonal energy matrices
 
-   sovl(:,:)=0.0d0 
-   ascl(:,:)=0.0d0 
+   sovl(:,:)=0.0d0
+   ascl(:,:)=0.0d0
    aso(:,:)=0.0d0
    vkbt(:,:)=0.0d0
 
    do ik1=1,2
     do ip1=1,nproj(l1)
      ii=ip1+(ik1-1)*nproj(l1)
-     
+
      ascl(ii,ii)=fscl(ik1)*evkb(ip1,l1,ik1)
      aso(ii,ii)=fso(ik1)*evkb(ip1,l1,ik1)
 
@@ -118,7 +118,7 @@
 
    call dsyev( 'V', 'U', nn, sovl, 2*mxprj, sovlev, work, 10*mxprj, info )
 
-   if(info .ne. 0) then
+   if(info /= 0) then
     write(6,'(a,i4)') 'sr_so_r: S matrix eigenvalue ERROR, info=',info
     error stop 1
    end if
@@ -174,7 +174,7 @@
 
      call dsyev( 'V', 'U', nn, asclst, 2*mxprj, wsclst, work, 10*mxprj, info )
 
-     if(info .ne. 0) then
+     if(info /= 0) then
       write(6,'(a,i4)') 'sr_so_r: A* matrix eigenvalue ERROR, info=',info
       error stop 1
      end if
@@ -182,7 +182,7 @@
      call dsyev( 'V', 'U', nn,  asost, 2*mxprj,  wsost, work, 10*mxprj, info )
 
 
-     if(info .ne. 0) then
+     if(info /= 0) then
       write(6,'(a,i4)') 'sr_so_r: A* matrix eigenvalue ERROR, info=',info
       error stop 1
      end if
@@ -221,7 +221,7 @@
       end do
       if(sorted) exit
      end do
-  
+
      do ii=1,100
       sorted=.true.
       do jj=2,nn

@@ -2,17 +2,17 @@
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
-! 
+!
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
-! 
+!
 ! This program is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
-! 
+!
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
@@ -45,7 +45,7 @@
  implicit none
 
 !Input variables
- 
+
  integer, intent(in) :: mmax,mxprj,iexc,nv,lloc
  integer, intent(in) :: na(nv),la(nv),nproj(5)
  real(dp), intent(in) :: rcmax
@@ -94,9 +94,9 @@
  vo(:)=0.d0; vi1(:)=0.d0; vo1(:)=0.d0; vxc(:)=0.d0; vp(:)=0.d0
  vtot(:)=0.d0
  dr=0.d0; eeel=0.d0; eexc=0.d0; et=0.d0; emin=0.d0; emax=0.d0;
- rl=0.d0; rl1=0.d0; sd=0.d0; sn=0.d0; sls=0.d0; eeig=0.d0; 
- thl=0.d0; vn=0.d0; zval=0.d0; 
- nin=0; mch=0 
+ rl=0.d0; rl1=0.d0; sd=0.d0; sn=0.d0; sls=0.d0; eeig=0.d0;
+ thl=0.d0; vn=0.d0; zval=0.d0;
+ nin=0; mch=0
 
  al = 0.01d0 * dlog(rr(101) / rr(1))
  amesh = dexp(al)
@@ -113,7 +113,7 @@
    zval=zval+fa(ii)
  end do
 
-! test if new states are added 
+! test if new states are added
  icx=50
 !do ii=1,nv
 !  if(fat(ii,2)>fat(ii,1)) icx=100
@@ -160,8 +160,8 @@
      emax=0.90d0*ea(ii)
      call lschvkbb(na(ii),la(ii),nproj(l1),ierr,et,emin,emax, &
 &                 rr,vtot,vkb(1,1,l1),evkb(1,l1),uu,up,mmax,mch)
-     
-     if(ierr .ne. 0) then
+
+     if(ierr /= 0) then
        write(6,'(/a,3i4)') 'psatom: WARNING lschvkbb convergence error n,l,iter=', &
 &       na(ii),la(ii),it
        write(6,'(a,1p,4e14.6)') 'ea(ii),et,emin,emax',ea(ii),et,emin,emax
@@ -226,14 +226,14 @@
      dfa=0.02d0*(fat(ii,2)-fat(ii,1))
      if(it<=50) then
        fa(ii)=0.02d0*(50-it)*fat(ii,1) + 0.02d0*it*fat(ii,2)
-     else 
+     else
        fa(ii)=fat(ii,2)
      end if
    end do
 
 
  end do !it
- 
+
 ! total energy output
 
 ! output potential for e-e interactions

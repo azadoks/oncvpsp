@@ -2,17 +2,17 @@
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
-! 
+!
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
-! 
+!
 ! This program is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
-! 
+!
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
@@ -33,9 +33,9 @@
 !qmax  largest wave vector for E_res integration
 !qroot(nbas)  q values for sbfs in basis
 !uu(mmax)  r*all-electron wave function
-!pswf0_sb(nbas)  sbf basis  coefficients for constrained part of pseudo 
+!pswf0_sb(nbas)  sbf basis  coefficients for constrained part of pseudo
 !                    wave function
-!pswfnull_sb(nbas,nnull) sbf coefficients for unconstrained basis of pseudo 
+!pswfnull_sb(nbas,nnull) sbf coefficients for unconstrained basis of pseudo
 !                       wave function
 !nqout  number of wave vector lower cutoffs
 !qout(nqout)  wave vector lower cutoffs for E_res for which output is wanted,
@@ -276,7 +276,7 @@
     qout(ii)=qq
    end if
   end do
- 
+
  end do !big iq loop
 
 

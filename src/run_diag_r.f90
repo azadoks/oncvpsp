@@ -1,17 +1,17 @@
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
-! 
+!
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
-! 
+!
 ! This program is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
-! 
+!
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
@@ -99,7 +99,7 @@
     if(epa(iprj,l1,1)<0.0d0) then
       call ldiracfb(npa(iprj,l1),ll,kap,ierr,etest, &
 &                     rr,zz,vfull,ur,urp,mmax,mch)
-      if(ierr .ne. 0) then
+      if(ierr /= 0) then
          write(6,'(/a,4i4)') 'run_diag_r: ldiracfb convergence ERROR &
 &         n,l,,kap,ierr=', &
 &        npa(iprj,l1),ll,kap,ierr
@@ -134,7 +134,7 @@
 
       nnp=nnp+1
     else
-!     calculate effective pseudo wave function principal quantum number 
+!     calculate effective pseudo wave function principal quantum number
 !     from all-electron node count
 
       nnp=nnae-npa(1,l1)+ll+1
@@ -150,7 +150,7 @@
 
     gam=dabs(umch/uu(mchf))
     gpr=dabs(upmch/up(mchf))
-!  
+!
     write(6,'(2i4,6f12.7)') ll,kap,rr(irc(l1)),rr(mchf),epa(iprj,l1,ikap), &
 &         etest-epa(iprj,l1,ikap),gam,gpr
 

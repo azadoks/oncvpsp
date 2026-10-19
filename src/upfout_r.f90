@@ -68,7 +68,7 @@
  real(dp), intent(in) :: rr(mmax),vpuns(mmax,5),rho(mmax),vkb(mmax,mxprj,4,2)
  real(dp), intent(in) :: rhomod(mmax,5)
  real(dp), intent(in) :: rc(6),evkb(mxprj,4,2)
- character*2, intent(in) :: atsym
+ character(len=2), intent(in) :: atsym
  real(dp), intent(in) :: uua(mmax,2,nv)
 
 !additional input for upf output to echo input file, all as defined
@@ -79,7 +79,7 @@
  real(dp), intent(in) :: fa(30),rc0(6),ep(6,2),qcut(6),debl(6),facnf(30,5),ea(30,2)
  real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rxpsh,rlmax
  real(dp), intent(in) :: log_mesh(3)
- character*4, intent(in) :: psfile
+ character(len=4), intent(in) :: psfile
 
 !Output variables - printing only
 
@@ -92,8 +92,8 @@
  real(dp) :: al,nrmsum,uurcut,fj
  real(dp), allocatable :: rhomodl(:,:),dmat(:,:)
  real(dp),allocatable :: rhol(:),rl(:),vkbl(:,:,:,:),vpl(:,:),uual(:,:,:)
- character*5 :: lnames
- character*2 :: pspd(3)
+ character(len=5) :: lnames
+ character(len=2) :: pspd(3)
 
  lnames = "SPDFG"
  nrl = nrlin

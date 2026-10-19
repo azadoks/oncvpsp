@@ -2,17 +2,17 @@
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
-! 
+!
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
-! 
+!
 ! This program is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
-! 
+!
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
@@ -26,7 +26,7 @@
 !nbas  number of orthogonalized sbf basis functions
 !cons  constraints (value at rc and derivatives up to 4th)
 !orbasis  coefficients of sbfs in orthogonal basis
-!orbasis_der  values and derivatives of orthogonalized sbf basis 
+!orbasis_der  values and derivatives of orthogonalized sbf basis
 !              functions at rc (constraint matrix)
 !pswf0_sb  linear combination of sbfs that matches cons at rc
 !pswfnull_sb  nbas-ncon linear combinations of sbfs satisfying value and ncon-1
@@ -61,7 +61,7 @@
 
 !save orbasis_der from overwrite
  amat(:,:)=0.0d0
- amat(1:ncon,:)=orbasis_der(1:ncon,:) 
+ amat(1:ncon,:)=orbasis_der(1:ncon,:)
 
 !singular value decomposition of constraint matrix
  call dgesvd('A','A',ncon,nbas,amat,10,ss,usvd,10,vt,nbas, &
@@ -143,7 +143,7 @@
  end do
 
 !convert ps0 and psnull in orthogonal representation to sbf represention
- 
+
  pswf0_sb(:)=0.0d0
  pswfnull_sb(:,:)=0.0d0
  do jj=1,nbas

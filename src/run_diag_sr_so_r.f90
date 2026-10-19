@@ -1,16 +1,16 @@
 ! University
 !
-! 
+!
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
-! 
+!
 ! This program is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
-! 
+!
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
@@ -159,7 +159,7 @@
 
       nnp=nnp+1
     else
-!     calculate effective pseudo wave function principal quantum number 
+!     calculate effective pseudo wave function principal quantum number
 !     from all-electron node count
       nnp=nnae-npa(1,l1)+ll+1
       call lschvkbbe(nnp,ll,nvkbt,ierr,etest,uldf,emin,emax, &
@@ -174,7 +174,7 @@
 
     gam=dabs(umch/uu(mchf))
     gpr=dabs(upmch/up(mchf))
-!  
+!
     write(6,'(2i4,6f12.7)') ll,kap,rr(irc(l1)),rr(mchf),epa(iprj,l1,ikap), &
 &         etest-epa(iprj,l1,ikap),gam,gpr
 
