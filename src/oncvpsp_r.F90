@@ -636,8 +636,8 @@
 ! bound and shoould always have a bound state for this combination of
 ! npa and vwell
          if(ikap==1) then
-           call wellstate_r(npa(iprj,l1),ll,kap,irc(l1),epa(iprj,l1,ikap), &
-&                           rr,vfull,vwell(1,iprj),uu,up,zz,mmax,mch)
+           call wellstate(npa(iprj,l1),ll,kap,irc(l1),epa(iprj,l1,ikap), &
+&                         rr,vfull,vwell(1,iprj),uu,up,zz,mmax,mch,irel)
          else
            et=epa(iprj,l1,ikap)
            call ldiracfb(npa(iprj,l1),ll,kap,ierr,epa(iprj,l1,ikap), &

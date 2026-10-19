@@ -57,6 +57,7 @@ set(src_oncvpsp
     vpinteg.f90
     vploc.f90
     vrel.f90
+    wellstate.f90
     wf_rc_der.f90
     input_echo_m.f90
     input_text_m.f90
@@ -71,7 +72,6 @@ set(src_oncvpsp
     run_plot.f90
     run_vkb.f90
     upfout.f90
-    wellstate.f90
     # Fully-relativistic files
     gnu_script_r.f90
     linout_r.f90
@@ -84,7 +84,6 @@ set(src_oncvpsp
     run_vkb_r.f90
     sr_so_r.f90
     upfout_r.f90
-    wellstate_r.f90
 )
 if (ONCVPSP_WITH_Libxc)
     list(APPEND src_oncvpsp functionals.F90 exc_libxc.f90)

@@ -65,7 +65,7 @@ The fr path had 3 reference tests to the sr path's 28.
 - [x] `run_config_ae` / `run_config_ae_r`, and their warnings
 - [x] `write_ae_file`, `read_ae_file` / their `_r`
 - [x] `fphsft` / `fphsft_r`
-- [ ] `wellstate` / `wellstate_r`
+- [x] `wellstate` / `wellstate_r`
 - [ ] `run_config_ps` / `run_config_ps_r`
 - [ ] `psatom` / `psatom_r`
 - [x] `run_phsft` / `run_phsft_r`
@@ -112,6 +112,9 @@ physical reason, kept behind `irel` until decided:
   wants an even number"); fr does not
 - the first point of the default log mesh, `rr1`, is computed differently
 - `lschvkbb` searches 0.75 to 1.25 of the energy in sr, 0.90 to 1.10 in fr
+- when `wellstate` finds the well state with more nodes than asked for,
+  fr keeps its n in `npa` and sr the n asked for; sr stops if `lschfb`
+  fails in the well, fr goes on
 - the error-message prefixes and some numeric formats (`e` and `d`)
 
 ### Fixed on the way

@@ -16,24 +16,28 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine wellstate(nnin,ll,irc,ep,rr,vfull,uu,up,zz,mmax,mch,srel)
+ subroutine wellstate(nnin,ll,kap,irc,ep,rr,vfull,vwell, &
+&                     uu,up,zz,mmax,mch,irel)
 
 !creates quantum well to confine positive-energy state, and calculates
 !the resulting all-electron wave function
 
-!nnin  principal quantum number of well state
+!nnin  principal quantum number of well state (input); that of the well
+!       state found, which may have more nodes (output)
 !ll  angular momentum
+!kap  l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
 !irc  index of core radius
 !ep  target energy for well state (>0); reset if a bound state is used
 !    or a negative energy was specified
 !rr  log radial mesh
 !vfull  all-electron potential
+!vwell  potential with binding well, for the ikap=2 calculation when irel=2
 !uu  all-electron well-bound wave function
 !up  d(uu)/dr
 !zz  atomic number
 !mmax  size of log radial mesh
 !mch  matching mesh point for inward-outward integrations
-!srel  .true. for scalar-relativistic, .false. for non-relativistic
+!irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 
  use constants_m, only: dp
  implicit none
@@ -41,18 +45,17 @@
 !Input variables
  real(dp), intent(in) :: rr(mmax),vfull(mmax)
  real(dp), intent(in) :: zz
- integer, intent(in) :: nnin,ll,irc,mmax
- logical, intent(in) :: srel
+ integer, intent(in) :: ll,kap,irc,mmax,irel
 
 !Input/output variables
  real(dp), intent(inout) :: ep
+ integer, intent(inout) :: nnin !(nnin is actually in/out)
  integer, intent(inout) :: mch
 
 !Output variables
- real(dp), intent(out) :: uu(mmax),up(mmax)
+ real(dp), intent(out) :: uu(mmax,2),up(mmax,2),vwell(mmax)
 
 !Local variables
- real(dp), allocatable :: vwell(:)
  real(dp) :: al,cwell,et,xx,rwell,rwmax,rwmin,rwscale,umax
 
  real(dp),parameter :: eps=1.0d-8
@@ -64,17 +67,17 @@
 
 !check for bound state with specified ll and nnin
 
- uu(:)=0.0d0 ; up(:)=0.0d0
+ uu(:,:)=0.0d0 ; up(:,:)=0.0d0
  et=-0.1d0
- call lschfb(nnin,ll,ierr,et,rr,vfull,uu,up,zz,mmax,mch,srel)
+ call boundstate(irel,nnin,ll,kap,ierr,et,rr,zz,vfull,uu,up,mmax,mch)
 
 !if bound state is found, check its localization
  if(ierr==0) then
    umax=0.0d0
    iumax=1
    do ii=mmax,1,-1
-     if(abs(uu(ii))>=umax) then
-       umax=abs(uu(ii))
+     if(abs(uu(ii,1))>=umax) then
+       umax=abs(uu(ii,1))
      else
        iumax=ii+1
        exit
@@ -88,6 +91,10 @@
 &          'WARNING wellstate: localized bound state found for n=', &
 &           nnin,' l=', ll,'WARNING this state with energy',ep, &
 &          'WARNING will be used for the first projector'
+
+!make sure vwell exists for ikap=2 calculation in this case
+     vwell(:)=vfull(:)
+
      return
 
 !if moderately delocalized use very low-energy scattering state
@@ -111,7 +118,6 @@
 &         'WARNING will be used for the first projector'
  end if
 
- allocate(vwell(mmax))
 
 !scale factor to decrease well width until trial energy exceeds target
  rwscale=0.8d0
@@ -146,8 +152,8 @@
 
 !find bound state in well
      et=ep
-     call lschfb(nn,ll,ierr,et,rr,vwell,uu,up,zz,mmax,mch,srel)
-     if(ierr<0) then
+     call boundstate(irel,nn,ll,kap,ierr,et,rr,zz,vwell,uu,up,mmax,mch)
+     if(ierr<0 .and. irel/=2) then
        write(6,'(a,i3,a,i3)') &
 &            'wellstate: ERROR lschfb convergence error, n=',nn,' l=',ll
        error stop 1
@@ -197,20 +203,37 @@
  end do !nnloop
 
  if(.not. convg) then
-   write(6,'(a,a,i3,a,i3,a,f8.4)') &
-&   'ERROR wellstate: well potential iteration failed', &
-&   ' to converge, n=',nn,' l=',ll,' ep=',ep
+   if(irel==2) then
+     write(6,'(a,a,i3,a,i3,a,i3,a,f8.4)') &
+&     'ERROR wellstate_r: well potential iteration failed', &
+&     ' to converge, n=',nn,' l=',ll,' kap=', kap,' ep=',ep
+   else
+     write(6,'(a,a,i3,a,i3,a,f8.4)') &
+&     'ERROR wellstate: well potential iteration failed', &
+&     ' to converge, n=',nn,' l=',ll,' ep=',ep
+   end if
    error stop 1
  end if
 
  if(cwell>0.0d0) then
-   write(6,'(/a,i3,a,i3/a,f8.4,/a,f8.4/a,f8.4)') &
-&           '   Wellstate for l =',ll,'  n =',nn, &
-&           '     eigenvalue = ',et, &
-&           '     asymptotic potential = ',cwell, &
-&           '     half-point radius =',rr(irc)+rwell
+   if(irel==2) then
+     write(6,'(/a,i3,a,i3,a,i3/a,f8.4,/a,f8.4/a,f8.4)') &
+&             '   Wellstate for l =',ll,'  n =',nn,' kap=',kap, &
+&             '     eigenvalue = ',et, &
+&             '     asymptotic potential = ',cwell, &
+&             '     half-point radius =',rr(irc)+rwell
+   else
+     write(6,'(/a,i3,a,i3/a,f8.4,/a,f8.4/a,f8.4)') &
+&             '   Wellstate for l =',ll,'  n =',nn, &
+&             '     eigenvalue = ',et, &
+&             '     asymptotic potential = ',cwell, &
+&             '     half-point radius =',rr(irc)+rwell
+   end if
  end if
 
- deallocate(vwell)
+!carry over node count
+
+ nnin=nn
+
  return
  end subroutine wellstate

@@ -74,7 +74,7 @@
  integer :: jj,kk,ll,l1,lloc,lmax,lt,inline
  integer :: mch,mchf,mmax,n1,n2,nc,nlim,nlloc,nlmax,irpsh,nrl
  integer :: nv,irct,ncnf,nvt
- integer :: iprj,irel,nkap
+ integer :: iprj,irel,nkap,nnwell
  integer,allocatable :: npa(:,:)
 !
  integer :: dtime(8),na(30),la(30),np(6)
@@ -108,7 +108,7 @@
  integer, parameter :: ncurve=1000
  real(dp), allocatable :: rr(:)
  real(dp), allocatable :: rho(:),rhoc(:),rhot(:)
- real(dp), allocatable :: uu(:),up(:)
+ real(dp), allocatable :: uu(:,:),up(:,:),vwell(:,:)
  real(dp), allocatable :: vp(:,:,:),vfull(:),vkb(:,:,:,:),pswf(:,:,:,:)
  real(dp), allocatable :: vpuns(:,:)
  real(dp), allocatable :: vo(:),vxc(:)
@@ -370,7 +370,8 @@
 
  allocate(rr(mmax))
  allocate(rho(mmax),rhoc(mmax),rhot(mmax))
- allocate(uu(mmax),up(mmax),uupsa(mmax,nkap,nv))
+ allocate(uu(mmax,2),up(mmax,2),uupsa(mmax,nkap,nv))
+ allocate(vwell(mmax,mxprj))
  allocate(evkb(mxprj,4,nkap),cvgplt(2,7,mxprj,4,nkap),qq(mxprj,mxprj))
  allocate(ecurve(2,ncurve,mxprj,4,nkap),wcurve(mxprj,4,nkap))
  allocate(vp(mmax,5,nkap),vfull(mmax),vkb(mmax,mxprj,4,nkap))
@@ -544,7 +545,7 @@
  nproj(lloc+1)=1
  do l1=1,lmax+1
    ll=l1-1
-   uu(:)=0.0d0; qq(:,:)=0.0d0
+   uu(:,:)=0.0d0; qq(:,:)=0.0d0
    iprj=0
 !electrons filling each pseudo-wave in the cutoff of icmod 6: the shell's
 !for a scattering or empty state, else the occupation
@@ -573,8 +574,8 @@
          epa(iprj,l1,1)=ea(kk,1)
          if(fa(kk)>0.0d0) wcurve(iprj,l1,1)=fa(kk)
          npa(iprj,l1)=na(kk)
-         uua(:,iprj,1)=uu(:)
-         upa(:,iprj,1)=up(:)
+         uua(:,iprj,1)=uu(:,1)
+         upa(:,iprj,1)=up(:,1)
        end if !la(kk)==l1-1
        if(iprj==nproj(l1)) exit
      end do !kk
@@ -599,10 +600,12 @@
          npa(iprj,l1)=npa(iprj-1,l1)+1
        end if
 
-       call wellstate(npa(iprj,l1),ll,irc(l1),epa(iprj,l1,1),rr, &
-&                     vfull,uu,up,zz,mmax,mch,srel)
-       uua(:,iprj,1)=uu(:)
-       upa(:,iprj,1)=up(:)
+!npa keeps the input n even if the well state found has more nodes
+       nnwell=npa(iprj,l1)
+       call wellstate(nnwell,ll,-(ll+1),irc(l1),epa(iprj,l1,1),rr, &
+&                     vfull,vwell(1,iprj),uu,up,zz,mmax,mch,irel)
+       uua(:,iprj,1)=uu(:,1)
+       upa(:,iprj,1)=up(:,1)
      end do !kk
    end if !iprj<nproj(l1)
 
@@ -668,7 +671,7 @@
      error stop 1
    end if
 
-   rhoae(:,kk)=(uu(:)/rr(:))**2
+   rhoae(:,kk)=(uu(:,1)/rr(:))**2
 
    rhotae(:)=rhotae(:) + fa(nc+kk)*rhoae(:,kk)
 
@@ -686,9 +689,9 @@
    end if
 
 ! save valence pseudo wave functions for upfout
-   uupsa(:,1,kk)=uu(:)
+   uupsa(:,1,kk)=uu(:,1)
 
-   rhops(:,kk)=(uu(:)/rr(:))**2
+   rhops(:,kk)=(uu(:,1)/rr(:))**2
    rho(:)=rho(:)+fa(nc+kk)*rhops(:,kk)
    eeig=eeig+fa(nc+kk)*et
 
