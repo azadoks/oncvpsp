@@ -3,9 +3,8 @@
 Suspected bugs found while auditing dummy-argument `intent`s across `src/`,
 then triaged against the code, the callers, the input checks in
 `check_data.f90`, and the test inputs in `tests/data/`. The P1 and P2
-issues have been fixed, and so have the P3 issues apart from cosmetic
-items and dead code that is kept on purpose; [Next steps](#next-steps)
-gives a plan for those. Line numbers refer to the code before the fixes.
+issues have been fixed, and so have the P3 issues apart from dead code
+that is kept on purpose. Line numbers refer to the code before the fixes.
 
 The issues were found on `master`, and the fixes were then merged into
 `oncvpsp-opt`, which had fixed some of them independently. Where the two
@@ -47,8 +46,9 @@ Priorities:
 | P3 | `functional_get_tau` (imported dead code) | no | kept |
 | P3 | Adams 1/24 coefficient in `adams.inc` | last digits only; refs pass unchanged | fixed |
 | P3 | input echoes that don't run again to the same output | echo lines only (5 refs) | fixed |
-| P3 | 5 cosmetic items | no | open |
+| P3 | 5 cosmetic items | no | fixed (unused arguments kept) |
 | P3 | `rxpsh` inside a core radius not rejected | no | fixed |
+| P3 | `oncvpspnr.x` banner says "scalar-relativistic version" | no (the nr refs already say non-relativistic) | fixed |
 
 ## P1 (fixed)
 
@@ -191,7 +191,7 @@ Priorities:
     recorded the missing core, now has it. Tests `psp8_core_sr_14_Si` and
     `psp8_core_r_74_W`.
 
-## P3 (open)
+## P3 (kept, or fixed later)
 
 ### Dead code
 
@@ -201,20 +201,25 @@ Priorities:
 
 ### Cosmetic
 
-- `run_diag_sr_so_r.f90:142`: the `npr=0` for `l==lloc` is redundant,
-  because `oncvpsp_r.F90:539` already zeroes `nproj(lloc+1)`. Unlike
-  `run_diag_r`, this routine doesn't stop on an `ldiracfb` error.
+Fixed in the mechanical coding-standard pass (see
+[Coding Standard Violations](coding_standard_violations.md#status)),
+except the unused arguments:
+
+- `run_diag_sr_so_r.f90:142`: the `npr=0` for `l==lloc` was redundant,
+  because `oncvpsp_r.F90:539` already zeroes `nproj(lloc+1)`. Removed.
+  Unlike `run_diag_r`, this routine doesn't stop on an `ldiracfb` error.
   `run_diag_r` runs first with identical calls, though.
-- `vrel.f90`: the second of two consecutive `cycle` tests (`2.5*rc`) can
-  never trigger.
-- `lschpb.f90`: declares a local `real(dp) :: exp`. The name still resolves
-  to the intrinsic.
-- `sbf_basis_con.f90`: the local `tder(6)` is unused.
+- `vrel.f90`: the second of two consecutive `cycle` tests (`2.5*rc`)
+  could never trigger. Removed.
+- `lschpb.f90`: declared a local `real(dp) :: exp`. The name still
+  resolved to the intrinsic. Removed.
+- `sbf_basis_con.f90`: the unused local `tder(6)` is removed.
 - Unused names:
-  - arguments `nn` in `lschkb`/`lschps`;
-  - locals `zz` in `lschkb`/`lschps`;
-  - arguments `icmod` and `rcfact` in `modcore`/`modcore2`;
-  - `drdum`/`dqdum` in `eresid`.
+  - locals `zz` in `lschkb`/`lschps`: removed;
+  - arguments `nn` in `lschkb`/`lschps`, `icmod` and `rcfact` in
+    `modcore`/`modcore2`, and `drdum`/`dqdum` in `eresid`: kept, because
+    removing them would change the routines' calls for programs that use
+    the library. Their comments now say they are not used.
 - **Fixed:** `adams.inc` (formerly `aeo.f90`) wrote the Adams 1/24
   coefficient 4 times as `4.16666666667d-2`, a relative error of about
   8e-12. It is now `1.0d0/24.0d0`, fixed together with the introduction of
@@ -225,6 +230,16 @@ Priorities:
     convergence-profile entries.
   - Every reference comparison still passes, so the refs in `tests/refs`
     were kept as they are (they are the 4.0.1 outputs).
+- **Fixed:** **`oncvpsp.F90`: `oncvpspnr.x` printed "scalar-relativistic version
+  4.0.1"** in its banner. The banner chose its text with
+  `#if (defined RELATIVISTIC) && (RELATIVISTIC == 0)`, but no build
+  defines `RELATIVISTIC` (the non-relativistic build defines
+  `ONCVPSP_NONREL`). It now uses `ONCVPSP_TREATMENT`, as the build line
+  does. The 08_O_nr and 14_Si_nr refs, from upstream's non-relativistic
+  executable, already say "non-relativistic version".
+  - Found in the mechanical coding-standard pass (2026-10-19): the
+    `#if` inside the continued `write` statement was the only code
+    fortitude could not parse.
 
 ## P3 (fixed)
 
@@ -395,11 +410,8 @@ Make binaries. New error messages follow the format in
 
 ## Next steps
 
-What is left:
-
-1. **Cosmetic.** Fold the remaining [cosmetic](#cosmetic) items into the
-   mechanical coding-standard pass in
-   [Coding Standard Violations](coding_standard_violations.md#fixing).
+Nothing is left open. The dead code in `functionals.F90` is kept on
+purpose.
 
 ## Dismissed
 

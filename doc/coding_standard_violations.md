@@ -3,8 +3,9 @@
 Style and consistency deviations found by auditing the 82 Fortran files in
 `src/` that `src/CMakeLists.txt` compiles (including the optional Libxc/TOML
 files and the two main programs). The vendored `src/xmlf90-wxml/` library is
-excluded. None of these have been fixed yet. Line numbers refer to commit
-`7e9480a`, before any Known Issues fixes.
+excluded. The mechanical items have since been fixed (see
+[Status](#status)); the rest of the page describes the code as it was.
+Line numbers refer to commit `7e9480a`, before any Known Issues fixes.
 
 This page covers layout, naming, comments and consistency only. Suspected bugs
 are in [Known Issues](known_issues.md). Language-level practice (`implicit
@@ -54,6 +55,47 @@ ABINIT, `functionals.F90` from Octopus, `m_libxc_list.F90` from SIESTA) keeps
 its upstream style. `exc_off_pbe.f` says so itself (lines 21–22). Most of the
 violations below come from these two groups. Whether to exempt them, or to
 adopt the module style as a second sanctioned standard, is a project decision.
+
+## Status
+
+The mechanical pass (October 2026) used
+[fortitude](https://fortitude.readthedocs.io) 0.9.2, which now runs as a
+pre-commit hook and in CI (see
+[Coding Standards](coding_standards.md#linting)). It covers every file
+except the imported ones (`exc_off_pbe.f`, `functionals.F90`,
+`gg1cc`/`gp1cc`/`gpp1cc`, `m_libxc_list.F90`). fprettify was tried first,
+but its 0.3.7 release applies the operator replacements only while
+reformatting whitespace, which would restyle every legacy file. No output
+changed: the make build gives bit-identical outputs before and after.
+
+Fixed:
+
+- trailing whitespace, in all files (tabs remain only in `exc_off_pbe.f`);
+- `enddo`, `endif` → `end do`, `end if`;
+- `.eq.`-style relational operators → `==` etc.;
+- `character*N` → `character(len=N)`, and `::` in every declaration;
+- `CONTAINS` → `contains`;
+- the specific intrinsics `dlog`, `dsqrt`, `dabs`, `dexp`, `dmin1`,
+  `dmax1`, `idint` and `dfloat` → `log`, `sqrt`, `abs`, `exp`, `min`,
+  `max`, `int` and `real(…,dp)`;
+- `intent` on every dummy argument, with the missing section labels in
+  `ae_file_m.f90` and `vkboutwf.f90`;
+- `only` on every `use` statement;
+- `implicit none` in `m_psmlout`, and its `lsymb` is a `parameter`;
+- assumed-size dummies (`*`) in `dpnint`, `vkbphsft` and `vkboutwf`
+  given explicit shapes (those in `adams.inc` are kept, so that the
+  integrators can inline its functions);
+- `(/ … /)` → `[ … ]`, superfluous semicolons, a `case default` in each
+  `select case`, and lines over 100 columns;
+- the section labels, spelled as the four canonical ones (`!Input
+  variables`, `!Input/output variables`, `!Output variables`, `!Local
+  variables`, and `!Output variables - printing only`), and the typos
+  `vafriables`, `vaiables`, `OUTPuT` and `1989-201r`;
+- the stray first lines, and `run_diag_sr_so_r.f90`'s copyright line;
+- the [cosmetic Known Issues](known_issues.md#cosmetic).
+
+Still open: the items under "Needs manual work or a decision" in
+[Fixing](#fixing), apart from the `use` statements and the unused names.
 
 ## Summary
 

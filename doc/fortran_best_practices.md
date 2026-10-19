@@ -3,9 +3,11 @@
 Language-level deviations from modern Fortran practice (F2008/F2018) in the
 82 files that `src/CMakeLists.txt` compiles (including the optional
 Libxc/TOML files and the two main programs). The vendored
-`src/xmlf90-wxml/` is excluded. None of these have been fixed yet. Line
-numbers refer to commit `7e9480a`, before any Known Issues fixes. File
-names are relative to `src/`.
+`src/xmlf90-wxml/` is excluded. Some have since been fixed: see the
+[remediation order](#recommended-remediation-order) and the
+[mechanical pass](coding_standard_violations.md#status). Line numbers
+refer to commit `7e9480a`, before any Known Issues fixes. File names are
+relative to `src/`.
 
 Related pages:
 
@@ -766,10 +768,14 @@ the tests compare.
 8. **Merge the `foo`/`foo_r` twins**, beginning with the input readers and
    `psmlout`/`psmlout_r`.
 9. **Mechanical cleanup.**
-   - Use generic intrinsics in place of `dlog`/`dsqrt`/`dfloat`/`dble`/`idint`.
+   - **Done** (with fortitude; see
+     [Coding Standard Violations](coding_standard_violations.md#status)):
+     generic intrinsics in place of `dlog`, `dsqrt`, `dabs`, `dexp`,
+     `dmin1`, `dmax1`, `idint` and `dfloat`; `only` on every `use`;
+     `intent` on every argument; `implicit none` in `m_psmlout`; the
+     unused locals. All except in the imported files.
    - Add explicit `int()`/`nint()`.
    - Replace exact-equality convergence tests with tolerances.
-   - Remove unused names and dead routines.
-   - Add `only` to the `use` statements.
+   - Remove the dead routines.
    - Make `gg1cc`'s coefficients `parameter`s.
    - Convert `exc_off_pbe.f` to free form with `implicit none`.

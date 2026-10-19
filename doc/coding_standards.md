@@ -24,7 +24,7 @@ before or after the subroutine statement.
 9) All subroutine arguments should be defined in comments following the
 subroutine statement.
 
-10) There should be comments throughout to indicate what is going on.  
+10) There should be comments throughout to indicate what is going on.
 Any new math should be described in a text or pdf contribution to the doc directory.
 
 11) I'd like to stick to one input file read on standard input and one
@@ -111,3 +111,38 @@ return, not stop, when its callers can recover from the failure.
 
 8) A warning has the same form with `WARNING` in place of `ERROR`, and the
 program continues.
+
+## Linting
+
+The [pre-commit](https://pre-commit.com) hooks in `.pre-commit-config.yaml`
+check every commit, and CI runs them on every file. Install them once in a
+clone with
+
+```bash
+pre-commit install
+```
+
+and run them on everything with `pre-commit run --all-files`. They trim
+trailing whitespace and end files with one newline (fixing the files in
+place), check the YAML and TOML files and the scripts' shebangs, and run
+
+- [fortitude](https://fortitude.readthedocs.io) on the Fortran, with the
+  settings in `fortitude.toml`;
+- [shellcheck](https://www.shellcheck.net) on the shell scripts written
+  since 4.0.1;
+- [ruff](https://docs.astral.sh/ruff) on the Python, with `ruff.toml`.
+
+fortitude uses its default rules, without the four that conflict with the
+rules above: double-quoted strings (S241), and three that ask for modules
+or `implicit none (external)` in place of external procedures (C003, C091,
+C092). Among other things it wants `intent` on every argument, `only` on
+every `use`, `==` rather than `.eq.`, `end do` rather than `enddo`,
+`character(len=N)`, `::` in every declaration, generic intrinsics (`log`,
+not `dlog`), no assumed-size (`*`) arrays, and lines of at most 100
+columns. `fortitude check --fix` fixes some of these itself.
+
+The imported files (`exc_off_pbe.f`, `functionals.F90`,
+`gg1cc`/`gp1cc`/`gpp1cc` and `m_libxc_list.F90`) are excluded from the
+hooks, so that they can be kept in sync with their sources, and so are the
+reference outputs in `tests/refs`, the patches in `cmake/patches` and
+`COPYING`.

@@ -64,6 +64,10 @@ with `--version`, after their name and relativistic treatment, for example
 Outside a git checkout the commit and source state are `unknown`. Both CMake
 and make generate this information with `cmake/BuildInfo.cmake`.
 
+To contribute, install the [pre-commit](https://pre-commit.com) hooks with
+`pre-commit install`; they lint every commit, as CI does. See
+[Coding Standards](doc/coding_standards.md#linting).
+
 ### With make
 
 1. `cp make.inc.example make.inc`, then fill in `make.inc` for your
