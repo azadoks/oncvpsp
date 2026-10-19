@@ -66,6 +66,14 @@ foreach (split_test IN ITEMS "sr:14_Si" "sr:19_K_st" "sr:29_Cu" "sr:57_La" "nr:1
         "${data}/${test_name}.dat" "${CMAKE_CURRENT_BINARY_DIR}/split_${rel}_${test_name}")
 endforeach ()
 
+# Damaged or mismatched all-electron data files: oncvpsp_ps.x must stop with a message naming the
+# problem, but accept differences within round-off (see scripts/ae_file_error_test.sh)
+foreach (case IN ITEMS "byte_order" "zz" "fa" "mesh" "zz_roundoff" "fa_roundoff" "mesh_roundoff")
+    oncvpsp_test(ae_file_${case} split ae_file_error_test.sh
+        $<TARGET_FILE:oncvpspsr> $<TARGET_FILE:oncvpspsr_ae> $<TARGET_FILE:oncvpspsr_ps>
+        "${data}/14_Si.dat" ${case} "${CMAKE_CURRENT_BINARY_DIR}/ae_file_${case}")
+endforeach ()
+
 # TOML input: every input in tests/data/toml (the TOML form of its tests/data/*.dat) must give the
 # output of the text input, and the reader must stop with a message naming the problem for each of the
 # changes in scripts/toml_error_test.sh

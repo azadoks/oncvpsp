@@ -29,7 +29,8 @@
 !   magic, format version, irel                (0 non-, 1 scalar-,
 !                                               2 fully-relativistic)
 !   atsym, zz, nc, nv, iexc, na, la, fa         (checked against the input)
-!   mmax, rr                                   (log radial mesh)
+!   mmax, rr                                   (log radial mesh, checked
+!                                               against the input mesh)
 !   it, etot, ea, rhoc, rho, vfull             (reference atom, sratom or
 !                                               relatom; ea(:,1:2) if irel=2)
 !   ncfg, then for each test configuration:
@@ -37,6 +38,7 @@
 !     config_ae_t or config_ae_r_t fields      (run_config_ae[_r] results)
 
  module ae_file_m
+ use, intrinsic :: iso_fortran_env, only: int8
  use config_ae_m, only: config_ae_t, config_ae_r_t
  implicit none
  private
@@ -47,6 +49,10 @@
  character(len=8), parameter :: magic='ONCVAE  '
  integer, parameter :: version=1
  integer, parameter :: irel_fr=2
+!relative tolerance for comparing real input (zz, occupations) and the
+!radial mesh with the file: both programs parse the same input text, but
+!may be built by different compilers or with different flags
+ real(dp), parameter :: rtol=1.0d-12
 
 !test configurations read from the file
  integer :: ncfg_file=0
@@ -149,9 +155,9 @@
 !srel, atsym, zz, nc, nv, iexc, na, la, fa  this run's input, checked
 !                                            against the file
 !mmax  size of log grid, checked against the file
+!rr  log radial mesh, checked against the file
 
 !Output variables
-!rr  log radial mesh
 !it, etot, ea, rhoc, rho, vfull  sratom results for the reference atom
 
  character(len=*) :: fname
@@ -296,6 +302,7 @@
  integer :: ios,version_f,irel_f,nc_f,nv_f,iexc_f,mmax_f
  integer :: na_f(30),la_f(30)
  real(dp) :: zz_f,fa_f(30)
+ real(dp), allocatable :: rr_f(:)
 
  open(newunit=unit,file=fname,access='stream',form='unformatted', &
 &     status='old',action='read',iostat=ios)
@@ -310,6 +317,13 @@
 &       trim(fname)
   stop 1
  end if
+!the magic string reads the same in either byte order, so a file from a
+!machine of the other byte order shows up as a byte-swapped version
+ if(version_f/=version .and. byteswap(version_f)==version) then
+  write(6,'(2a)') 'read_ae_file: ERROR file was written on a machine', &
+&       ' with the other byte order'
+  stop 1
+ end if
  if(version_f/=version) then
   write(6,'(a,i4,a,i4)') 'read_ae_file: ERROR file format version', &
 &       version_f,' but this program reads version',version
@@ -322,7 +336,7 @@
  end if
 
  read(unit) atsym_f,zz_f,nc_f,nv_f,iexc_f
- if(atsym_f/=atsym .or. zz_f/=zz .or. nc_f/=nc .or. nv_f/=nv &
+ if(atsym_f/=atsym .or. differ(zz_f,zz) .or. nc_f/=nc .or. nv_f/=nv &
 &   .or. iexc_f/=iexc) then
   write(6,'(2a)') 'read_ae_file: ERROR atsym, z, nc, nv or iexc differ', &
 &       ' from the input'
@@ -330,7 +344,7 @@
  end if
  read(unit) na_f(1:nc+nv),la_f(1:nc+nv),fa_f(1:nc+nv)
  if(any(na_f(1:nc+nv)/=na(1:nc+nv)) .or. any(la_f(1:nc+nv)/=la(1:nc+nv)) &
-&   .or. any(fa_f(1:nc+nv)/=fa(1:nc+nv))) then
+&   .or. any(differ(fa_f(1:nc+nv),fa(1:nc+nv)))) then
   write(6,'(2a)') 'read_ae_file: ERROR reference configuration differs', &
 &       ' from the input'
   stop 1
@@ -342,7 +356,13 @@
 &       mmax_f,mmax
   stop 1
  end if
- read(unit) rr(1:mmax)
+ allocate(rr_f(mmax))
+ read(unit) rr_f(1:mmax)
+ if(any(abs(rr_f(1:mmax)-rr(1:mmax))>rtol*rr(1:mmax))) then
+  write(6,'(2a)') 'read_ae_file: ERROR radial mesh differs from the', &
+&       ' one this program builds'
+  stop 1
+ end if
  end subroutine read_head
 
  subroutine write_config_key(unit,jj,nc,nvcnf,nacnf,lacnf,facnf)
@@ -380,7 +400,7 @@
   if(nvcnf_file(kk)/=nvcnf(jj)) cycle
   if(any(nacnf_file(1:nt,kk)/=nacnf(1:nt,jj))) cycle
   if(any(lacnf_file(1:nt,kk)/=lacnf(1:nt,jj))) cycle
-  if(any(facnf_file(1:nt,kk)/=facnf(1:nt,jj))) cycle
+  if(any(differ(facnf_file(1:nt,kk),facnf(1:nt,jj)))) cycle
   find_config=kk
   return
  end do
@@ -389,5 +409,21 @@
 &     ' is not in the all-electron data file'
  stop 1
  end function find_config
+
+ elemental logical function differ(a,b)
+! .true. if a and b differ by more than rtol relative to the larger,
+! or absolutely for values below 1 (occupations of 0); not for the mesh,
+! whose points near the origin are far below 1
+ real(dp), intent(in) :: a,b
+ differ=abs(a-b)>rtol*max(1.0d0,abs(a),abs(b))
+ end function differ
+
+ integer function byteswap(ii)
+! ii with its bytes in reverse order
+ integer, intent(in) :: ii
+ integer(int8) :: bytes(storage_size(ii)/8)
+ bytes=transfer(ii,bytes)
+ byteswap=transfer(bytes(size(bytes):1:-1),ii)
+ end function byteswap
 
  end module ae_file_m
