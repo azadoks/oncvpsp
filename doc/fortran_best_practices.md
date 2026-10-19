@@ -772,6 +772,9 @@ the tests compare.
    their dummies to assumed shape and drop the redundant size arguments.
    Replace the sequence-association calls (`a(1,l1)` → `a(:,l1)`) at the
    same time.
+   - **Superseded** by [Library and wrappers](library_plan.md), phase 4:
+     the dummies stay explicit-shape, so that the routines remain callable
+     from C, and modules come after error codes and the driver split.
 8. **Merge the `foo`/`foo_r` twins**, beginning with the input readers and
    `psmlout`/`psmlout_r`.
 9. **Mechanical cleanup.**
