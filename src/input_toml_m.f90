@@ -23,6 +23,8 @@ module input_toml_m
    !                              rcfact_max, rcfact_step (optional, icmod 4 grid)
    !   [log_derivative_analysis]  epsh1, epsh2, depsh, rxpsh (optional, -1 for auto)
    !   [linear_mesh]              a (drl), rmax (rlmax)
+   !   [log_mesh]                 amesh, rr1, rmax (optional table and keys, each
+   !                              0 or less or missing for the built-in mesh)
    !   [pp_output]                psfile
    !   [[test_configurations]]    n, l, f (valence states only; optional, up to 4)
    !
@@ -36,7 +38,8 @@ module input_toml_m
                               rcfact_min, rcfact_max, rcfact_step, &
                               epsh1, epsh2, depsh, rxpsh, &
                               rlmax, drl, &
-                              ncnf, nvcnf, nacnf, lacnf, facnf)
+                              ncnf, nvcnf, nacnf, lacnf, facnf, &
+                              amesh, rr1, rmax)
       implicit none
       ! Input variables
       !> The Fortran unit number to read from
@@ -131,6 +134,12 @@ module input_toml_m
       integer, intent(out) :: lacnf(30, 5)
       !> Occupation number array for test configurations
       real(dp), intent(out) :: facnf(30, 5)
+      !> Ratio of successive points of the log radial mesh (0 or less for the default)
+      real(dp), intent(out) :: amesh
+      !> First point of the log radial mesh (0 or less for the default)
+      real(dp), intent(out) :: rr1
+      !> Outer radius of the log radial mesh (0 or less for the default)
+      real(dp), intent(out) :: rmax
 
       ! Local variables
       !> The TOML document
@@ -166,6 +175,9 @@ module input_toml_m
       rcfact_max = 1.9_dp
       rcfact_step = 0.1_dp
       ncnf = 0
+      amesh = -1.0_dp  ! negative values for the built-in mesh
+      rr1 = -1.0_dp
+      rmax = -1.0_dp
       atsym = ' '
       psfile = ' '
 
@@ -259,6 +271,16 @@ module input_toml_m
       call get_real(child, 'linear_mesh', 'a', drl)
       call get_real(child, 'linear_mesh', 'rmax', rlmax)
 
+      ! log mesh (optional)
+      call get_value(table, 'log_mesh', child, requested=.false., stat=stat)
+      if (associated(child)) then
+         call get_real(child, 'log_mesh', 'amesh', amesh, -1.0_dp)
+         call get_real(child, 'log_mesh', 'rr1', rr1, -1.0_dp)
+         call get_real(child, 'log_mesh', 'rmax', rmax, -1.0_dp)
+      else if (stat /= toml_stat%success) then
+         call input_error('[log_mesh] must be a table')
+      end if
+
       ! pseudopotential output file
       call get_section(table, 'pp_output', child)
       call get_string(child, 'pp_output', 'psfile', tmp_str)
@@ -305,7 +327,8 @@ module input_toml_m
                                 rcfact_min, rcfact_max, rcfact_step, &
                                 epsh1, epsh2, depsh, rxpsh, &
                                 rlmax, drl, &
-                                ncnf, nvcnf, nacnf, lacnf, facnf)
+                                ncnf, nvcnf, nacnf, lacnf, facnf, &
+                                amesh, rr1, rmax)
       implicit none
       integer, intent(in) :: unit
       character(len=2), intent(out) :: atsym
@@ -331,6 +354,7 @@ module input_toml_m
       real(dp), intent(out) :: rlmax, drl
       integer, intent(out) :: ncnf, nvcnf(5), nacnf(30, 5), lacnf(30, 5)
       real(dp), intent(out) :: facnf(30, 5)
+      real(dp), intent(out) :: amesh, rr1, rmax
 
       real(dp) :: ep1(6)
 
@@ -343,7 +367,8 @@ module input_toml_m
                            rcfact_min, rcfact_max, rcfact_step, &
                            epsh1, epsh2, depsh, rxpsh, &
                            rlmax, drl, &
-                           ncnf, nvcnf, nacnf, lacnf, facnf)
+                           ncnf, nvcnf, nacnf, lacnf, facnf, &
+                           amesh, rr1, rmax)
       ep(:, 1) = ep1(:)
       ep(:, 2) = ep1(:)
    end subroutine read_input_toml_r

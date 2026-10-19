@@ -16,7 +16,7 @@ CMake 3.22 or later is needed.
 cmake -S . -B build [-DLibxc_ROOT=<path>] [-DBLA_VENDOR=OpenBLAS] [-DCMAKE_INSTALL_PREFIX=<path>]
 # Compile ONCVPSP
 cmake --build build --parallel
-# Run the test suite (or one part of it, with -L unit, sr, r, split, toml, psml or pipe)
+# Run the test suite (or one part of it, with -L unit, sr, r, split, mesh, toml, psml or pipe)
 ctest --test-dir build --parallel 8
 # Install the executables
 cmake --install build
@@ -172,10 +172,28 @@ Its input may change anything except the reference atom (`atsym`, `z`,
 `nc`, `nv`, `iexc` and the reference configuration), and may use any
 subset of the test configurations that `oncvpsp_ae.x` was given; it stops
 with an error otherwise, or if the file was written for a different
-relativistic treatment.
+relativistic treatment or on a different radial mesh.
 
 Setting `psfile` to `none` skips writing a pseudopotential file, and
 `ncnf` = 0 skips the test configurations other than the reference.
+
+### The radial mesh
+
+The calculations use the log radial mesh `rr(i) = rr1 * amesh**(i-1)`
+out to `rmax`. By default `amesh` = 1.006, `rmax` = 45 bohr, and
+`rr1` = 0.0005/z, capped at 0.00005 except in the fully-relativistic
+code. An optional last line of the text input, after the test
+configurations, sets them:
+
+    # amesh, rr1, rmax
+      1.004  -1  50.0
+
+A value of 0 or less keeps the default, so this line keeps `rr1`. The
+TOML input takes them in an optional `[log_mesh]` table, where a missing
+key also keeps the default. The output, and the input copied into the
+psp8 and UPF files, give the mesh (all three values, as used) only when
+the input sets it, so the output for an input without it is unchanged. `rmax` must be larger than `rlmax`, `rr1`
+smaller than the largest rc, and `amesh` larger than 1.
 
 ## Documentation
 

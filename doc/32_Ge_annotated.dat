@@ -168,3 +168,12 @@
     4    0    1.00
     4    2    1.00
 #
+#
+### optional: the log radial mesh rr(i) = rr1 * amesh**(i-1) out to rmax
+### amesh ratio of successive mesh points (default 1.006)
+### rr1   first mesh point (default 0.0005/z, capped at 0.00005 except
+###       in the fully-relativistic code)
+### rmax  outer radius of the mesh (default 45)
+### a value of 0 or less keeps the default; leaving the line out keeps all three
+#   amesh, rr1, rmax
+#   1.006   -1   45.0

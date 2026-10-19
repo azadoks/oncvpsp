@@ -10,8 +10,10 @@ program test_input_text
    integer :: nfail = 0
 
    call test_next_line()
-   call test_read_input_text(final_newline=.true.)
-   call test_read_input_text(final_newline=.false.)
+   call test_read_input_text(final_newline=.true., with_mesh=.false.)
+   call test_read_input_text(final_newline=.false., with_mesh=.false.)
+   call test_read_input_text(final_newline=.true., with_mesh=.true.)
+   call test_read_input_text(final_newline=.false., with_mesh=.true.)
 
    if (nfail > 0) then
       write (stderr, '(i0,a)') nfail, ' check(s) failed'
@@ -50,6 +52,7 @@ contains
       character(len=700) :: lines(8)
       character(len=:), allocatable :: line
       integer :: unit, inline
+      logical :: eof
 
       lines(1) = '# comment'
       lines(2) = ''
@@ -67,20 +70,24 @@ contains
       call check(line == repeat('x', 600)//' long' .and. inline == 7, 'next_line reads a long line whole')
       call next_line(unit, line, inline)
       call check(line == 'last' .and. inline == 8, 'next_line reads a last line without a newline')
+      call next_line(unit, line, inline, eof)
+      call check(eof .and. inline == 8, 'next_line reports the end of the input when asked')
       close (unit)
    end subroutine test_next_line
 
    ! 14_Si.dat, with blank lines and comments inside the blocks, a long line and comments
-   ! after the data
-   subroutine test_read_input_text(final_newline)
-      logical, intent(in) :: final_newline
+   ! after the data, and with or without the optional log mesh line
+   subroutine test_read_input_text(final_newline, with_mesh)
+      logical, intent(in) :: final_newline, with_mesh
       character(len=700) :: lines(33)
+      character(len=700), allocatable :: all_lines(:)
       integer :: unit, inline
       character(len=2) :: atsym
       character(len=4) :: psfile
       real(dp) :: zz, fa(30), rc(6), ep(6), qcut(6), dvloc0, debl(6), fcfact, rcfact
       real(dp) :: fcfact_min, fcfact_max, fcfact_step, rcfact_min, rcfact_max, rcfact_step
       real(dp) :: epsh1, epsh2, depsh, rxpsh, rlmax, drl, facnf(30, 5)
+      real(dp) :: amesh, rr1, rmax
       integer :: nc, nv, iexc, na(30), la(30), lmax, ncon(6), nbas(6), lloc, lpopt, nproj(6)
       integer :: icmod, ncnf, nvcnf(5), nacnf(30, 5), lacnf(30, 5)
 
@@ -118,7 +125,13 @@ contains
          '', &
          '    3    1    1.0', &
          '# a comment after the data']
-      unit = scratch_input(lines, final_newline)
+      if (with_mesh) then
+         all_lines = [character(len=700) :: lines, '# amesh, rr1, rmax', '  1.003  -1  60.0', &
+                      '# a comment after the mesh']
+      else
+         all_lines = lines
+      end if
+      unit = scratch_input(all_lines, final_newline)
       call read_input_text(unit, inline, &
                            atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
                            lmax, rc, ep, ncon, nbas, qcut, &
@@ -128,7 +141,8 @@ contains
                            rcfact_min, rcfact_max, rcfact_step, &
                            epsh1, epsh2, depsh, rxpsh, &
                            rlmax, drl, &
-                           ncnf, nvcnf, nacnf, lacnf, facnf)
+                           ncnf, nvcnf, nacnf, lacnf, facnf, &
+                           amesh, rr1, rmax)
       close (unit)
 
       call check(atsym == 'Si' .and. zz == 14 .and. nc == 3 .and. nv == 2 .and. iexc == 3 &
@@ -147,7 +161,13 @@ contains
       call check(ncnf == 1 .and. nvcnf(2) == 2 .and. all(nacnf(4:5, 2) == 3) &
                  .and. all(lacnf(4:5, 2) == [0, 1]) .and. all(facnf(4:5, 2) == [2, 1]), &
                  'test configurations')
-      call check(inline == 32, 'line number of the last data line')
+      if (with_mesh) then
+         call check(amesh == 1.003_dp .and. rr1 < 0 .and. rmax == 60, 'log mesh')
+         call check(inline == 35, 'line number of the last data line')
+      else
+         call check(amesh < 0 .and. rr1 < 0 .and. rmax < 0, 'log mesh defaults')
+         call check(inline == 32, 'line number of the last data line')
+      end if
    end subroutine test_read_input_text
 
 end program test_input_text

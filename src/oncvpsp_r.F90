@@ -83,6 +83,7 @@
  real(dp) :: fcfact_min,fcfact_max,fcfact_step
  real(dp) :: rcfact_min,rcfact_max,rcfact_step
  real(dp) :: rr1,rcion,rciont,rcmax,rct,rlmax,rpkt
+ real(dp) :: amesh_in,rr1_in,rmax_in,rmax,log_mesh(3)
  real(dp) :: sf,zz,zion,zval,etot
  real(dp) :: cnorm,ebar,eprmin
  real(dp) :: xdummy
@@ -215,7 +216,8 @@
                               rcfact_min, rcfact_max, rcfact_step, &
                               epsh1, epsh2, depsh, rxpsh, &
                               rlmax, drl, &
-                              ncnf, nvcnf, nacnf, lacnf, facnf)
+                              ncnf, nvcnf, nacnf, lacnf, facnf, &
+                              amesh_in, rr1_in, rmax_in)
     case(INPUT_TEXT)
        open(newunit=unit, file=input_filename, status='old', action='read', iostat=ios)
        if(ios /= 0) then
@@ -230,7 +232,8 @@
                               rcfact_min, rcfact_max, rcfact_step, &
                               epsh1, epsh2, depsh, rxpsh, &
                               rlmax, drl, &
-                              ncnf, nvcnf, nacnf, lacnf, facnf)
+                              ncnf, nvcnf, nacnf, lacnf, facnf, &
+                              amesh_in, rr1_in, rmax_in)
        close(unit)
 #if (defined WITH_TOML)
     case(INPUT_TOML)
@@ -247,7 +250,8 @@
                               rcfact_min, rcfact_max, rcfact_step, &
                               epsh1, epsh2, depsh, rxpsh, &
                               rlmax, drl, &
-                              ncnf, nvcnf, nacnf, lacnf, facnf)
+                              ncnf, nvcnf, nacnf, lacnf, facnf, &
+                              amesh_in, rr1_in, rmax_in)
         close(unit)
 #endif
     case default
@@ -281,19 +285,38 @@
 
  call check_data(atsym,zz,fcfact,rcfact,epsh1,epsh2,depsh,rlmax,drl,fa,facnf, &
 &                rc,ep,qcut,debl,nc,nv,iexc,lmax,lloc,lpopt,icmod, &
-&                ncnf,na,la,nvcnf,nacnf,lacnf,ncon,nbas,nproj,psfile)
+&                ncnf,na,la,nvcnf,nacnf,lacnf,ncon,nbas,nproj,psfile, &
+&                amesh_in,rr1_in,rmax_in)
 
  nrl=int((rlmax/drl)-0.5d0)+1
 
+!log mesh: the input values, or the built-in ones for those 0 or less
+ if(amesh_in>0.0d0) then
+  amesh=amesh_in
+ else
 !amesh=1.012d0
- amesh=1.006d0
+  amesh=1.006d0
 !amesh=1.003d0
 !amesh=1.0015d0
+ end if
 
  al=dlog(amesh)
- rr1=.0005d0/zz
- rr1=0.0005d0/zz
- mmax=dlog(45.0d0 /rr1)/al
+ if(rr1_in>0.0d0) then
+  rr1=rr1_in
+ else
+  rr1=.0005d0/zz
+  rr1=0.0005d0/zz
+ end if
+ if(rmax_in>0.0d0) then
+  rmax=rmax_in
+ else
+  rmax=45.0d0
+ end if
+ mmax=dlog(rmax/rr1)/al
+!the log mesh for the echoes of the input, only when the input sets it, so that the
+!output of an input without it is unchanged
+ log_mesh(:)=0.0d0
+ if(amesh_in>0.0d0 .or. rr1_in>0.0d0 .or. rmax_in>0.0d0) log_mesh(:)=[amesh,rr1,rmax]
 
 !calculate zion for output
  zion=zz
@@ -430,6 +453,11 @@
    end do
    write(6,'(a)') '#'
  end do
+
+ if(log_mesh(1)>0.0d0) then
+   write(6,'(a/a/a)') '#','# LOG MESH','# amesh, rr1, rmax'
+   write(6,'(3es24.16)') log_mesh
+ end if
 
  write(6,'(//a)') 'Reference configufation results'
  write(6,'(a,i6)') '  iterations',it
@@ -891,7 +919,7 @@
 &             rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,soscale, &
 &             na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &             fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
-&             epsh1,epsh2,depsh,rlmax,psfile)
+&             epsh1,epsh2,depsh,rlmax,psfile,log_mesh)
 
  end if
 
@@ -901,7 +929,7 @@
 &              zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
 &              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &              fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
-&              epsh1,epsh2,depsh,rlmax,psfile,uupsa,ea)
+&              epsh1,epsh2,depsh,rlmax,psfile,uupsa,ea,log_mesh)
 
  end if
 

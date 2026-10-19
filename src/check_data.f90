@@ -19,12 +19,14 @@
  subroutine check_data(atsym,zz,fcfact,rcfact,epsh1,epsh2,depsh,rlmax,drl, &
 &                      fa,facnf, &
 &                      rc,ep,qcut,debl,nc,nv,iexc,lmax,lloc,lpopt,icmod, &
-&                      ncnf,na,la,nvcnf,nacnf,lacnf,ncon,nbas,nproj,psfile)
+&                      ncnf,na,la,nvcnf,nacnf,lacnf,ncon,nbas,nproj,psfile, &
+&                      amesh,rr1,rmax)
 
 !check input data for various violations of size or sign
 !see annotated input document for all definitions
 !*cnf variables are arrays of the basis atomic configuration variables
 !to be used for the test configurations
+!amesh, rr1 and rmax are the log mesh input, 0 or less for the default
 
  implicit none
  integer, parameter :: dp=kind(1.0d0)
@@ -34,6 +36,7 @@
  character*4 :: psfile
 
  real(dp) :: zz,fcfact,rcfact,epsh1,epsh2,depsh,rlmax,drl
+ real(dp) :: amesh,rr1,rmax
  real(dp) :: fa(30),facnf(30,5),rc(6),ep(6),qcut(6),cfloc(5),debl(5)
 
  integer :: nc,nv,iexc,lmax,lloc,lpopt,icmod,ncnf
@@ -227,6 +230,21 @@
 
  if(drl<=0.0d0) then
   write(6,'(a)') 'test_data: must have drl > 0.0'
+  ierr=ierr+1
+ end if
+
+ if(amesh>0.0d0 .and. amesh<=1.0d0) then
+  write(6,'(a)') 'test_data: must have amesh > 1.0'
+  ierr=ierr+1
+ end if
+
+ if(rr1>0.0d0 .and. rr1>=rcmax) then
+  write(6,'(a)') 'test_data: must have rr1 < rcmax'
+  ierr=ierr+1
+ end if
+
+ if(rmax>0.0d0 .and. rmax<=rlmax) then
+  write(6,'(a)') 'test_data: must have rmax > rlmax'
   ierr=ierr+1
  end if
 

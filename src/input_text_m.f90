@@ -14,7 +14,8 @@ contains
                               rcfact_min, rcfact_max, rcfact_step, &
                               epsh1, epsh2, depsh, rxpsh, &
                               rlmax, drl, &
-                              ncnf, nvcnf, nacnf, lacnf, facnf)
+                              ncnf, nvcnf, nacnf, lacnf, facnf, &
+                              amesh, rr1, rmax)
       !> File unit number for input
       integer, intent(in) :: unit
       !> Current line number in input file
@@ -107,6 +108,13 @@ contains
       integer, intent(out) :: lacnf(30, 5)
       !> Occupation number array for test configurations
       real(dp), intent(out) :: facnf(30, 5)
+      ! [Log mesh]
+      !> Ratio of successive points of the log radial mesh (0 or less for the default)
+      real(dp), intent(out) :: amesh
+      !> First point of the log radial mesh (0 or less for the default)
+      real(dp), intent(out) :: rr1
+      !> Outer radius of the log radial mesh (0 or less for the default)
+      real(dp), intent(out) :: rmax
 
       !Local variables
       !> I/O status variable
@@ -119,6 +127,8 @@ contains
       integer :: lt
       !> The input line being read
       character(len=:), allocatable :: line
+      !> Whether the input has ended
+      logical :: eof
 
       nproj(:) = 0
       fcfact = 0.d0
@@ -134,6 +144,10 @@ contains
       rcfact_min = 1.0d0
       rcfact_max = 1.9d0
       rcfact_step = 0.1d0
+
+      amesh = -1.d0  ! negative values for the built-in mesh
+      rr1 = -1.d0
+      rmax = -1.d0
 
       ! read input data
       inline = 0
@@ -247,6 +261,13 @@ contains
          end do
       end do
 
+      ! log mesh (optional, the last line): amesh, rr1, rmax
+      call next_line(unit, line, inline, eof)
+      if (.not. eof) then
+         read (line, *, iostat=ios) amesh, rr1, rmax
+         call read_error(ios, inline)
+      end if
+
       ! end of reading input data
    end subroutine read_input_text
 
@@ -258,7 +279,8 @@ contains
                                 rcfact_min, rcfact_max, rcfact_step, &
                                 epsh1, epsh2, depsh, rxpsh, &
                                 rlmax, drl, &
-                                ncnf, nvcnf, nacnf, lacnf, facnf)
+                                ncnf, nvcnf, nacnf, lacnf, facnf, &
+                                amesh, rr1, rmax)
       !> File unit number for input
       integer, intent(in) :: unit
       !> Current line number in input file
@@ -343,6 +365,13 @@ contains
       integer, intent(out) :: lacnf(30, 5)
       !> Occupation number array for test configurations
       real(dp), intent(out) :: facnf(30, 5)
+      ! [Log mesh]
+      !> Ratio of successive points of the log radial mesh (0 or less for the default)
+      real(dp), intent(out) :: amesh
+      !> First point of the log radial mesh (0 or less for the default)
+      real(dp), intent(out) :: rr1
+      !> Outer radius of the log radial mesh (0 or less for the default)
+      real(dp), intent(out) :: rmax
 
       !Local variables
       !> I/O status variable
@@ -355,6 +384,8 @@ contains
       integer :: lt
       !> The input line being read
       character(len=:), allocatable :: line
+      !> Whether the input has ended
+      logical :: eof
 
       nproj(:) = 0
       fcfact = 0.d0
@@ -369,6 +400,10 @@ contains
       rcfact_min = 1.0d0
       rcfact_max = 1.9d0
       rcfact_step = 0.1d0
+
+      amesh = -1.d0  ! negative values for the built-in mesh
+      rr1 = -1.d0
+      rmax = -1.d0
 
       ! read input data
       inline = 0
@@ -483,13 +518,22 @@ contains
          end do
       end do
 
+      ! log mesh (optional, the last line): amesh, rr1, rmax
+      call next_line(unit, line, inline, eof)
+      if (.not. eof) then
+         read (line, *, iostat=ios) amesh, rr1, rmax
+         call read_error(ios, inline)
+      end if
+
       ! end of reading input data
    end subroutine read_input_text_r
 
-   subroutine next_line(unit, line, inline)
+   subroutine next_line(unit, line, inline, eof)
       ! reads into line the next line of the input that is neither blank nor a comment (one whose
       ! first nonblank character is #), and sets inline to its line number. The data are then read
-      ! from line rather than from unit, so the input is never backspaced, and can come from a pipe
+      ! from line rather than from unit, so the input is never backspaced, and can come from a pipe.
+      ! The end of the input is an error, unless eof is present: it is then set instead, and inline
+      ! left at the line it had on entry
 
       !Input variable
       integer, intent(in) :: unit
@@ -500,10 +544,15 @@ contains
       !In/Out variable
       integer, intent(inout) :: inline
 
+      !Optional output variable
+      logical, intent(out), optional :: eof
+
       !Local variables
       character(len=256) :: chunk
-      integer :: ios, nread, first
+      integer :: ios, nread, first, inline0
 
+      if (present(eof)) eof = .false.
+      inline0 = inline
       do
          ! a line of any length, read in chunks
          line = ''
@@ -513,6 +562,11 @@ contains
             if (ios /= 0) exit
          end do
          inline = inline + 1
+         if (present(eof) .and. is_iostat_end(ios) .and. len(line) == 0) then
+            eof = .true.
+            inline = inline0
+            return
+         end if
          if (.not. is_iostat_eor(ios)) call read_error(ios, inline)
          first = verify(line, ' '//achar(9))
          if (first > 0) then
