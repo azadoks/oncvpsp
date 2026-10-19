@@ -48,12 +48,12 @@
  use build_info_m, only: write_build_info
  use input_text_m, only: read_input_text_r
 #if defined(ONCVPSP_AE_ONLY)
- use config_ae_m, only: run_config_ae_r
+ use config_ae_m, only: run_config_ae
  use ae_file_m, only: write_ae_file_r
 #elif defined(ONCVPSP_PS_ONLY)
  use ae_file_m, only: read_ae_file_r
 #else
- use config_ae_m, only: run_config_ae_r
+ use config_ae_m, only: run_config_ae
 #endif
 #if (defined WITH_TOML)
  use input_toml_m, only: read_input_toml_r
@@ -67,7 +67,7 @@
  integer :: jj,kk,ll,l1,lloc,lmax,lt,inline
  integer :: mch,mchf,mmax,n1,n2,nc,nlim,nlloc,nlmax,irpsh,nrl
  integer :: nv,irct,ncnf,nvt
- integer :: ikap,kap,mkap
+ integer :: ikap,kap,mkap,irel,nkap
  integer :: iprj
  integer,allocatable :: npa(:,:)
 !
@@ -117,7 +117,7 @@
  real(dp), allocatable :: vpsml(:,:,:)
  real(dp), allocatable :: vr(:,:,:,:)
 
-!all-electron results for the test configurations (see run_config_ae_r)
+!all-electron results for the test configurations (see run_config_ae)
  integer :: istcnf(5),ierrcnf(5),itcnf(5),kerrcnf(5)
  integer :: nvtcnf(5),natcnf(30,5),latcnf(30,5)
  real(dp) :: fatcnf(30,3,5),eatcnf(30,2,3,5),etstcnf(5)
@@ -148,6 +148,10 @@
  write(6,'(/)')
 
  srel=.true.
+!fully-relativistic, with the arrays indexed by l having a last index for
+!kappa: 1 for j=l+1/2, 2 for j=l-1/2
+ irel=2
+ nkap=2
 
  parse_args: block
    integer :: iarg
@@ -393,7 +397,7 @@
    end block
  end if
 #else
- call relatom(na,la,ea,fa,rpk,nc,nc+nv,it,rhoc,rho, &
+ call aeatom(irel,nkap,na,la,ea,fa,rpk,nc,nc+nv,it,rhoc,rho, &
 &            rr,vfull,zz,mmax,iexc,etot,ierr)
 #endif
 
@@ -491,9 +495,9 @@
 !all-electron halves of the test configurations; their pseudo-atom halves
 !and all output about them come from oncvpspr_ps.x
  do jj=1,ncnf+1
-   call run_config_ae_r(jj,nacnf,lacnf,facnf,nc,nvcnf,rr,zz, &
-&                       mmax,iexc,ea,istcnf,ierrcnf,itcnf,kerrcnf, &
-&                       nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
+   call run_config_ae(jj,nacnf,lacnf,facnf,nc,nvcnf,rr,zz, &
+&                     mmax,iexc,ea,irel,nkap,istcnf,ierrcnf,itcnf,kerrcnf, &
+&                     nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
  end do
 
  call write_ae_file_r(ae_filename,atsym,zz,nc,nv,iexc,na,la,fa, &
@@ -913,9 +917,9 @@
    rhot(:)=rho(:)
 
 #if !defined(ONCVPSP_PS_ONLY)
-   call run_config_ae_r(jj,nacnf,lacnf,facnf,nc,nvcnf,rr,zz, &
-&                       mmax,iexc,ea,istcnf,ierrcnf,itcnf,kerrcnf, &
-&                       nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
+   call run_config_ae(jj,nacnf,lacnf,facnf,nc,nvcnf,rr,zz, &
+&                     mmax,iexc,ea,irel,nkap,istcnf,ierrcnf,itcnf,kerrcnf, &
+&                     nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
 #endif
 
    call run_config_ps_r(jj,istcnf,ierrcnf,itcnf,kerrcnf,nvtcnf, &

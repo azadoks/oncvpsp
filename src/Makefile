@@ -16,7 +16,7 @@ ifeq ($(strip $(OBJS_LIBXC)),)
 $(error OBJS_LIBXC is not set. Fill in ../make.inc (see ../make.inc.example))
 endif
 
-OBJS_ALL =	build_info_m.o check_data.o const_basis.o constants_m.o dpnint.o eresid.o exchdl.o \
+OBJS_ALL =	aeatom.o boundstate.o build_info_m.o check_data.o const_basis.o constants_m.o dpnint.o eresid.o exchdl.o \
 		exc_off_pbe.o excpzca.o excwig.o input_text_m.o ldiracfb.o ldiracfs.o \
 		lschfb.o lschfs.o lschkb.o lschpb.o lschps.o \
 		lschvkbbe.o lschvkbb.o lschvkbs.o modcore.o optimize.o \
@@ -24,10 +24,11 @@ OBJS_ALL =	build_info_m.o check_data.o const_basis.o constants_m.o dpnint.o eres
 		sbf_rc_der.o tfapot.o vkboutwf.o vkbphsft.o vout.o vpinteg.o \
 		vploc.o wf_rc_der.o modcore2.o gg1cc.o gp1cc.o gpp1cc.o \
 		der2exc.o modcore3.o modcore_budget.o sbf_basis_con.o run_ghosts.o \
-		lschpsbar.o vrel.o ae_file_m.o config_ae_m.o sratom.o input_echo_m.o
+		lschpsbar.o vrel.o ae_file_m.o config_ae_m.o sratom.o input_echo_m.o \
+		relatom.o
 
 OBJS_NRSR =	fphsft.o fpovlp.o gnu_script.o linout.o psatom.o \
-		relatom.o run_config.o run_diag.o run_phsft.o run_plot.o \
+		run_config.o run_diag.o run_phsft.o run_plot.o \
 		run_vkb.o upfout.o wellstate.o
 
 OBJS_SR =	psmlout_m.o oncvpsp.o
@@ -43,7 +44,7 @@ OBJS_NR_AE =	psmlout_m.o oncvpspnr_ae.o
 OBJS_NR_PS =	psmlout_m.o oncvpspnr_ps.o
 
 OBJS_RLIB =	fphsft_r.o fpovlp.o gnu_script_r.o linout_r.o \
-		psatom_r.o relatom.o renorm_r.o run_config_r.o run_diag_r.o \
+		psatom_r.o renorm_r.o run_config_r.o run_diag_r.o \
 		run_diag_sr_so_r.o run_phsft_r.o run_plot_r.o run_vkb_r.o \
 		sr_so_r.o upfout_r.o wellstate_r.o
 

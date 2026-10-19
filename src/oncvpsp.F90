@@ -74,7 +74,7 @@
  integer :: jj,kk,ll,l1,lloc,lmax,lt,inline
  integer :: mch,mchf,mmax,n1,n2,nc,nlim,nlloc,nlmax,irpsh,nrl
  integer :: nv,irct,ncnf,nvt
- integer :: iprj,nkap
+ integer :: iprj,irel,nkap
  integer,allocatable :: npa(:,:)
 !
  integer :: dtime(8),na(30),la(30),np(6)
@@ -149,10 +149,11 @@
  write(6,'(/)')
 
 #if defined(ONCVPSP_NONREL)
- srel=.false.
+ irel=0
 #else
- srel=.true.
+ irel=1
 #endif
+ srel=irel==1
 !the arrays indexed by l have a last index for kappa (see doc/fr_merge_plan.md),
 !1 for j=l+1/2 and 2 for j=l-1/2 in the fully-relativistic code, and only 1
 !here
@@ -407,8 +408,8 @@
    end block
  end if
 #else
- call sratom(na,la,ea(1,1),fa,rpk,nc,nc+nv,it,rhoc,rho, &
-&            rr,vfull,zz,mmax,iexc,etot,ierr,srel)
+ call aeatom(irel,nkap,na,la,ea,fa,rpk,nc,nc+nv,it,rhoc,rho, &
+&            rr,vfull,zz,mmax,iexc,etot,ierr)
 #endif
 !
 !
@@ -499,7 +500,7 @@
 !and all output about them come from oncvpsp_ps.x
  do jj=1,ncnf+1
    call run_config_ae(jj,nacnf,lacnf,facnf,nc,nvcnf,rr,zz, &
-&                     mmax,iexc,ea(1,1),srel,istcnf,ierrcnf,itcnf,kerrcnf, &
+&                     mmax,iexc,ea,irel,nkap,istcnf,ierrcnf,itcnf,kerrcnf, &
 &                     nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
  end do
 
@@ -791,7 +792,7 @@
 
 #if !defined(ONCVPSP_PS_ONLY)
    call run_config_ae(jj,nacnf,lacnf,facnf,nc,nvcnf,rr,zz, &
-&                     mmax,iexc,ea(1,1),srel,istcnf,ierrcnf,itcnf,kerrcnf, &
+&                     mmax,iexc,ea,irel,nkap,istcnf,ierrcnf,itcnf,kerrcnf, &
 &                     nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
 #endif
 

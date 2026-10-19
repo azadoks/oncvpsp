@@ -26,7 +26,7 @@
 
 !jj  index of current configuration
 !istcnf through etstcnf  all-electron results, all configurations, from
-!  run_config_ae_r
+!  run_config_ae
 !nc  number of core states
 !rhov  valence pseudo-charge of reference configuration
 !rhomod  model core charge
@@ -43,7 +43,7 @@
 !vkb  Vanderbilt-Kleinman-Bylander projectors for each l and j=l+/-1/2
 !evkb  VKB projector coefficients for each l and j=l+/-1/2
 
- use config_ae_m, only: config_ae_r_warning
+ use config_ae_m, only: config_ae_warning
  use constants_m, only: dp
  implicit none
 
@@ -94,10 +94,10 @@
 ! The same 2% strategy is used filling pseudo-atom states in this step.
 
 ! The all-electron atoms for the maximally-ionized and excited
-! configurations are computed by run_config_ae_r.
+! configurations are computed by run_config_ae.
 
  if(istcnf(jj)/=0) then
-   call config_ae_r_warning(jj,istcnf,ierrcnf,itcnf,kerrcnf,natcnf,latcnf)
+   call config_ae_warning(jj,2,istcnf,ierrcnf,itcnf,kerrcnf,natcnf,latcnf)
    return
  end if
 

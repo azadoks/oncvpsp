@@ -96,7 +96,7 @@
 ! configurations are computed by run_config_ae.
 
  if(istcnf(jj)/=0) then
-   call config_ae_warning(jj,istcnf,ierrcnf,itcnf,kerrcnf,natcnf,latcnf)
+   call config_ae_warning(jj,1,istcnf,ierrcnf,itcnf,kerrcnf,natcnf,latcnf)
    return
  end if
 

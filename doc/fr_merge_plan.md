@@ -52,16 +52,17 @@ The fr path had 3 reference tests to the sr path's 28.
 
 ### Phase 2: choosing the equation in one place
 
-- [ ] Bound state: one routine calling `lschfb` or `ldiracfb` (and
-      `renorm_r`), on `uu(mmax,2)`, `up(mmax,2)`
+- [x] Bound state (`boundstate`): one routine calling `lschfb` or
+      `ldiracfb`, on `uu(mmax,2)`, `up(mmax,2)` (callers that need the
+      large component normalized still call `renorm_r`)
 - [ ] Scattering state: the same for `lschfs` and `ldiracfs`
-- [ ] All-electron atom: the same for `sratom` and `relatom`
+- [x] All-electron atom (`aeatom`): the same for `sratom` and `relatom`
 
 ### Phase 3: merging the pairs
 
 - [ ] `read_input_text` / `read_input_text_r`
 - [ ] `read_input_toml` / `read_input_toml_r`
-- [ ] `run_config_ae` / `run_config_ae_r`, and their warnings
+- [x] `run_config_ae` / `run_config_ae_r`, and their warnings
 - [ ] `write_ae_file`, `read_ae_file` / their `_r`
 - [ ] `fphsft` / `fphsft_r`
 - [ ] `wellstate` / `wellstate_r`
@@ -110,3 +111,12 @@ physical reason, kept behind `irel` until decided:
 - the first point of the default log mesh, `rr1`, is computed differently
 - `lschvkbb` searches 0.75 to 1.25 of the energy in sr, 0.90 to 1.10 in fr
 - the error-message prefixes and some numeric formats (`e` and `d`)
+
+### Fixed on the way
+
+Behaviour changed by a merge, in paths that no test reaches:
+
+- `run_config_ae_r` searched for an empty level's j=l+1/2 bound state with
+  kappa=l+1, which `ldiracfb` rejects, so the search always failed; the
+  merged `run_config_ae` uses -(l+1). It also records the error code of a
+  failed sr search in `ierrcnf`, as fr did.

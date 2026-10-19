@@ -3,8 +3,11 @@
 ###########################################################
 set(src_oncvpsp
     # Common files
+    aeatom.f90
+    boundstate.f90
     build_info_m.f90
     check_data.f90
+    config_ae_m.f90
     const_basis.f90
     constants_m.f90
     der2exc.f90
@@ -37,11 +40,13 @@ set(src_oncvpsp
     optimize.f90
     pspot.f90
     qroots.f90
+    relatom.f90
     run_ghosts.f90
     run_optimize.f90
     sbf_basis_con.f90
     sbf_rc_der.f90
     sbf8.f90
+    sratom.f90
     tfapot.f90
     vkboutwf.f90
     vkbphsft.f90
@@ -54,19 +59,16 @@ set(src_oncvpsp
     input_text_m.f90
     # Non-/scalar-relativistic files
     ae_file_m.f90
-    config_ae_m.f90
     fphsft.f90
     fpovlp.f90
     gnu_script.f90
     linout.f90
     psatom.f90
-    relatom.f90
     run_config.f90
     run_diag.f90
     run_phsft.f90
     run_plot.f90
     run_vkb.f90
-    sratom.f90
     upfout.f90
     wellstate.f90
     # Fully-relativistic files

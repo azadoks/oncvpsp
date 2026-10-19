@@ -126,7 +126,7 @@
 &                           kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
 
 ! fully-relativistic write_ae_file: ea holds both kap, and the results
-! come from run_config_ae_r
+! come from run_config_ae
 
 !fname  file to write
 !atsym  atomic symbol
@@ -150,7 +150,7 @@
 !nacnf  principal quantum numbers, all configurations
 !lacnf  angular momenta, all configurations
 !facnf  occupancies, all configurations
-!istcnf through etstcnf  run_config_ae_r results, all configurations
+!istcnf through etstcnf  run_config_ae results, all configurations
 
 !Input variables
  character(len=*), intent(in) :: fname
@@ -307,7 +307,7 @@
 !rhoc  all-electron core charge density
 !rho  all-electron valence charge density
 !vfull  all-electron potential
-!istcnf through etstcnf  run_config_ae_r results, all configurations
+!istcnf through etstcnf  run_config_ae results, all configurations
 
 !Input variables
  character(len=*), intent(in) :: fname
