@@ -49,9 +49,9 @@
  use input_text_m, only: read_input_text_r
 #if defined(ONCVPSP_AE_ONLY)
  use config_ae_m, only: run_config_ae
- use ae_file_m, only: write_ae_file_r
+ use ae_file_m, only: write_ae_file
 #elif defined(ONCVPSP_PS_ONLY)
- use ae_file_m, only: read_ae_file_r
+ use ae_file_m, only: read_ae_file
 #else
  use config_ae_m, only: run_config_ae
 #endif
@@ -385,11 +385,11 @@
 ! full potential atom solution
 !
 #if defined(ONCVPSP_PS_ONLY)
- call read_ae_file_r(ae_filename,atsym,zz,nc,nv,iexc,na,la,fa, &
-&                    mmax,rr,ncnf,nvcnf,nacnf,lacnf,facnf, &
-&                    it,etot,ea,rhoc,rho,vfull,istcnf,ierrcnf,itcnf, &
-&                    kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
-!relatom prints the libxc functional description on its first exc_libxc call
+ call read_ae_file(ae_filename,irel,nkap,atsym,zz,nc,nv,iexc,na,la,fa, &
+&                  mmax,rr,ncnf,nvcnf,nacnf,lacnf,facnf, &
+&                  it,etot,ea,rhoc,rho,vfull,istcnf,ierrcnf,itcnf, &
+&                  kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
+!aeatom prints the libxc functional description on its first exc_libxc call
  if(iexc<0) then
    block
      real(dp) :: vxct(mmax),exct(mmax)
@@ -500,10 +500,10 @@
 &                     nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
  end do
 
- call write_ae_file_r(ae_filename,atsym,zz,nc,nv,iexc,na,la,fa, &
-&                     mmax,rr,it,etot,ea,rhoc,rho,vfull, &
-&                     ncnf,nvcnf,nacnf,lacnf,facnf,istcnf,ierrcnf,itcnf, &
-&                     kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
+ call write_ae_file(ae_filename,irel,nkap,atsym,zz,nc,nv,iexc,na,la,fa, &
+&                   mmax,rr,it,etot,ea,rhoc,rho,vfull, &
+&                   ncnf,nvcnf,nacnf,lacnf,facnf,istcnf,ierrcnf,itcnf, &
+&                   kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
 
  write(6,'(/2a)') 'All-electron data written to ',trim(ae_filename)
  stop

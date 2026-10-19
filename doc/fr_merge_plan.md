@@ -63,7 +63,7 @@ The fr path had 3 reference tests to the sr path's 28.
 - [ ] `read_input_text` / `read_input_text_r`
 - [ ] `read_input_toml` / `read_input_toml_r`
 - [x] `run_config_ae` / `run_config_ae_r`, and their warnings
-- [ ] `write_ae_file`, `read_ae_file` / their `_r`
+- [x] `write_ae_file`, `read_ae_file` / their `_r`
 - [ ] `fphsft` / `fphsft_r`
 - [ ] `wellstate` / `wellstate_r`
 - [ ] `run_config_ps` / `run_config_ps_r`

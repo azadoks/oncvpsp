@@ -31,11 +31,11 @@
 !   atsym, zz, nc, nv, iexc, na, la, fa         (checked against the input)
 !   mmax, rr                                   (log radial mesh, checked
 !                                               against the input mesh)
-!   it, etot, ea, rhoc, rho, vfull             (reference atom, sratom or
-!                                               relatom; ea(:,1:2) if irel=2)
+!   it, etot, ea, rhoc, rho, vfull             (reference atom, aeatom;
+!                                               ea(:,1:2) if irel=2)
 !   ncfg, then for each test configuration:
 !     nvcnf, nacnf, lacnf, facnf               (key, matched to the input)
-!     istcnf through etstcnf for it            (run_config_ae[_r] results)
+!     istcnf through etstcnf for it            (run_config_ae results)
 
  module ae_file_m
  use, intrinsic :: iso_fortran_env, only: int8
@@ -43,11 +43,9 @@
  implicit none
  private
  public :: write_ae_file, read_ae_file
- public :: write_ae_file_r, read_ae_file_r
 
  character(len=8), parameter :: magic='ONCVAE  '
  integer, parameter :: version=1
- integer, parameter :: irel_fr=2
 !relative tolerance for comparing real input (zz, occupations) and the
 !radial mesh with the file: both programs parse the same input text, but
 !may be built by different compilers or with different flags
@@ -55,16 +53,17 @@
 
  contains
 
- subroutine write_ae_file(fname,srel,atsym,zz,nc,nv,iexc,na,la,fa, &
+ subroutine write_ae_file(fname,irel,nkap,atsym,zz,nc,nv,iexc,na,la,fa, &
 &                         mmax,rr,it,etot,ea,rhoc,rho,vfull, &
 &                         ncnf,nvcnf,nacnf,lacnf,facnf,istcnf,ierrcnf,itcnf, &
 &                         kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
 
-! writes the all-electron data file: the sratom results for the reference
+! writes the all-electron data file: the aeatom results for the reference
 ! atom and the run_config_ae results for all configurations
 
 !fname  file to write
-!srel  .true. for scalar-relativistic, .false. for non-relativistic
+!irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!nkap  number of kappa per level: 1, or 2 for irel=2
 !atsym  atomic symbol
 !zz  atomic number
 !nc  number of core states
@@ -75,9 +74,9 @@
 !fa  occupancies, reference configuration
 !mmax  size of log grid
 !rr  log radial mesh
-!it  sratom iteration count
+!it  aeatom iteration count
 !etot  all-electron total energy (Ha)
-!ea  all-electron eigenvalues (Ha)
+!ea  all-electron eigenvalues (Ha), kap=-(l+1) and kap=l if irel=2
 !rhoc  all-electron core charge density
 !rho  all-electron valence charge density
 !vfull  all-electron potential
@@ -90,86 +89,23 @@
 
 !Input variables
  character(len=*), intent(in) :: fname
- logical, intent(in) :: srel
+ integer, intent(in) :: irel,nkap
  character(len=2), intent(in) :: atsym
  integer, intent(in) :: nc,nv,iexc,mmax,it,ncnf
  integer, intent(in) :: na(30),la(30),nvcnf(5),nacnf(30,5),lacnf(30,5)
  real(dp), intent(in) :: zz,etot
- real(dp), intent(in) :: fa(30),ea(30),facnf(30,5)
+ real(dp), intent(in) :: fa(30),ea(30,nkap),facnf(30,5)
  real(dp), intent(in) :: rr(mmax),rhoc(mmax),rho(mmax),vfull(mmax)
  integer, intent(in) :: istcnf(5),ierrcnf(5),itcnf(5),kerrcnf(5)
  integer, intent(in) :: nvtcnf(5),natcnf(30,5),latcnf(30,5)
- real(dp), intent(in) :: fatcnf(30,3,5),eatcnf(30,3,5),etstcnf(5)
+ real(dp), intent(in) :: fatcnf(30,3,5),eatcnf(30,nkap,3,5),etstcnf(5)
 
 !Local variables
  integer :: unit,jj
 
- call write_head(fname,unit,merge(1,0,srel),atsym,zz,nc,nv,iexc,na,la,fa, &
+ call write_head(fname,unit,irel,atsym,zz,nc,nv,iexc,na,la,fa, &
 &                mmax,rr)
- write(unit) it,etot,ea(1:nc+nv)
- write(unit) rhoc(1:mmax),rho(1:mmax),vfull(1:mmax)
- write(unit) ncnf+1
- do jj=1,ncnf+1
-   call write_config_key(unit,jj,nc,nvcnf,nacnf,lacnf,facnf)
-   write(unit) istcnf(jj),ierrcnf(jj),itcnf(jj),kerrcnf(jj), &
-&              nvtcnf(jj),natcnf(:,jj),latcnf(:,jj),fatcnf(:,:,jj), &
-&              eatcnf(:,:,jj),etstcnf(jj)
- end do
-
- close(unit)
- return
- end subroutine write_ae_file
-
- subroutine write_ae_file_r(fname,atsym,zz,nc,nv,iexc,na,la,fa, &
-&                           mmax,rr,it,etot,ea,rhoc,rho,vfull, &
-&                           ncnf,nvcnf,nacnf,lacnf,facnf,istcnf,ierrcnf,itcnf, &
-&                           kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
-
-! fully-relativistic write_ae_file: ea holds both kap, and the results
-! come from run_config_ae
-
-!fname  file to write
-!atsym  atomic symbol
-!zz  atomic number
-!nc  number of core states
-!nv  number of valence states
-!iexc  exchange-correlation function to be used
-!na  principal quantum numbers, reference configuration
-!la  angular momenta, reference configuration
-!fa  occupancies, reference configuration
-!mmax  size of log grid
-!rr  log radial mesh
-!it  relatom iteration count
-!etot  all-electron total energy (Ha)
-!ea  all-electron eigenvalues (Ha), kap=-(l+1) and kap=l
-!rhoc  all-electron core charge density
-!rho  all-electron valence charge density
-!vfull  all-electron potential
-!ncnf  number of test configurations (not counting the reference)
-!nvcnf  number of valence states, all configurations
-!nacnf  principal quantum numbers, all configurations
-!lacnf  angular momenta, all configurations
-!facnf  occupancies, all configurations
-!istcnf through etstcnf  run_config_ae results, all configurations
-
-!Input variables
- character(len=*), intent(in) :: fname
- character(len=2), intent(in) :: atsym
- integer, intent(in) :: nc,nv,iexc,mmax,it,ncnf
- integer, intent(in) :: na(30),la(30),nvcnf(5),nacnf(30,5),lacnf(30,5)
- real(dp), intent(in) :: zz,etot
- real(dp), intent(in) :: fa(30),ea(30,2),facnf(30,5)
- real(dp), intent(in) :: rr(mmax),rhoc(mmax),rho(mmax),vfull(mmax)
- integer, intent(in) :: istcnf(5),ierrcnf(5),itcnf(5),kerrcnf(5)
- integer, intent(in) :: nvtcnf(5),natcnf(30,5),latcnf(30,5)
- real(dp), intent(in) :: fatcnf(30,3,5),eatcnf(30,2,3,5),etstcnf(5)
-
-!Local variables
- integer :: unit,jj
-
- call write_head(fname,unit,irel_fr,atsym,zz,nc,nv,iexc,na,la,fa, &
-&                mmax,rr)
- write(unit) it,etot,ea(1:nc+nv,1:2)
+ write(unit) it,etot,ea(1:nc+nv,1:nkap)
  write(unit) rhoc(1:mmax),rho(1:mmax),vfull(1:mmax)
  write(unit) ncnf+1
  do jj=1,ncnf+1
@@ -181,9 +117,9 @@
 
  close(unit)
  return
- end subroutine write_ae_file_r
+ end subroutine write_ae_file
 
- subroutine read_ae_file(fname,srel,atsym,zz,nc,nv,iexc,na,la,fa, &
+ subroutine read_ae_file(fname,irel,nkap,atsym,zz,nc,nv,iexc,na,la,fa, &
 &                        mmax,rr,ncnf,nvcnf,nacnf,lacnf,facnf, &
 &                        it,etot,ea,rhoc,rho,vfull,istcnf,ierrcnf,itcnf, &
 &                        kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
@@ -193,11 +129,12 @@
 ! file by matching the configuration itself, so the file may hold more
 ! test configurations than the input, in any order.  Stops if the file
 ! was written for a different atom or relativistic treatment, or lacks a
-! configuration.  srel through facnf are this run's input, checked
+! configuration.  irel through facnf are this run's input, checked
 ! against the file; it through etstcnf are read from it.
 
 !fname  file to read
-!srel  .true. for scalar-relativistic, .false. for non-relativistic
+!irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!nkap  number of kappa per level: 1, or 2 for irel=2
 !atsym  atomic symbol
 !zz  atomic number
 !nc  number of core states
@@ -213,9 +150,9 @@
 !nacnf  principal quantum numbers, all configurations
 !lacnf  angular momenta, all configurations
 !facnf  occupancies, all configurations
-!it  sratom iteration count
+!it  aeatom iteration count
 !etot  all-electron total energy (Ha)
-!ea  all-electron eigenvalues (Ha)
+!ea  all-electron eigenvalues (Ha), kap=-(l+1) and kap=l if irel=2
 !rhoc  all-electron core charge density
 !rho  all-electron valence charge density
 !vfull  all-electron potential
@@ -223,7 +160,7 @@
 
 !Input variables
  character(len=*), intent(in) :: fname
- logical, intent(in) :: srel
+ integer, intent(in) :: irel,nkap
  character(len=2), intent(in) :: atsym
  integer, intent(in) :: nc,nv,iexc,mmax,ncnf
  integer, intent(in) :: na(30),la(30),nvcnf(5),nacnf(30,5),lacnf(30,5)
@@ -233,107 +170,20 @@
 !Output variables
  integer, intent(out) :: it
  real(dp), intent(out) :: etot
- real(dp), intent(out) :: ea(30),rhoc(mmax),rho(mmax),vfull(mmax)
+ real(dp), intent(out) :: ea(30,nkap),rhoc(mmax),rho(mmax),vfull(mmax)
  integer, intent(out) :: istcnf(5),ierrcnf(5),itcnf(5),kerrcnf(5)
  integer, intent(out) :: nvtcnf(5),natcnf(30,5),latcnf(30,5)
- real(dp), intent(out) :: fatcnf(30,3,5),eatcnf(30,3,5),etstcnf(5)
+ real(dp), intent(out) :: fatcnf(30,3,5),eatcnf(30,nkap,3,5),etstcnf(5)
 
 !Local variables
  integer :: unit,jj,kk,ncfg
  integer :: ist,ierr,itc,kerr,nvt,nat(30),lat(30)
- real(dp) :: eaetst,fat(30,3),eat(30,3)
+ real(dp) :: eaetst,fat(30,3),eat(30,nkap,3)
  logical :: found(5),match(5)
 
- call read_head(fname,unit,merge(1,0,srel),atsym,zz,nc,nv,iexc,na,la,fa, &
+ call read_head(fname,unit,irel,atsym,zz,nc,nv,iexc,na,la,fa, &
 &               mmax,rr)
- read(unit) it,etot,ea(1:nc+nv)
- read(unit) rhoc(1:mmax),rho(1:mmax),vfull(1:mmax)
-
-! copy the results of each configuration in the file to the configurations
-! of this run that it matches
- found(:)=.false.
- read(unit) ncfg
- do kk=1,ncfg
-   call match_config(unit,nc,ncnf,nvcnf,nacnf,lacnf,facnf,found,match)
-   read(unit) ist,ierr,itc,kerr,nvt,nat,lat,fat,eat,eaetst
-   do jj=1,ncnf+1
-     if(.not. match(jj)) cycle
-     istcnf(jj)=ist
-     ierrcnf(jj)=ierr
-     itcnf(jj)=itc
-     kerrcnf(jj)=kerr
-     nvtcnf(jj)=nvt
-     natcnf(:,jj)=nat(:)
-     latcnf(:,jj)=lat(:)
-     fatcnf(:,:,jj)=fat(:,:)
-     eatcnf(:,:,jj)=eat(:,:)
-     etstcnf(jj)=eaetst
-     found(jj)=.true.
-   end do
- end do
- call check_found(ncnf,found)
-
- close(unit)
- return
- end subroutine read_ae_file
-
- subroutine read_ae_file_r(fname,atsym,zz,nc,nv,iexc,na,la,fa, &
-&                          mmax,rr,ncnf,nvcnf,nacnf,lacnf,facnf, &
-&                          it,etot,ea,rhoc,rho,vfull,istcnf,ierrcnf,itcnf, &
-&                          kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
-
-! fully-relativistic read_ae_file.  atsym through facnf are this run's
-! input, checked against the file; it through etstcnf are read from it.
-
-!fname  file to read
-!atsym  atomic symbol
-!zz  atomic number
-!nc  number of core states
-!nv  number of valence states
-!iexc  exchange-correlation function to be used
-!na  principal quantum numbers, reference configuration
-!la  angular momenta, reference configuration
-!fa  occupancies, reference configuration
-!mmax  size of log grid
-!rr  log radial mesh
-!ncnf  number of test configurations (not counting the reference)
-!nvcnf  number of valence states, all configurations
-!nacnf  principal quantum numbers, all configurations
-!lacnf  angular momenta, all configurations
-!facnf  occupancies, all configurations
-!it  relatom iteration count
-!etot  all-electron total energy (Ha)
-!ea  all-electron eigenvalues (Ha), kap=-(l+1) and kap=l
-!rhoc  all-electron core charge density
-!rho  all-electron valence charge density
-!vfull  all-electron potential
-!istcnf through etstcnf  run_config_ae results, all configurations
-
-!Input variables
- character(len=*), intent(in) :: fname
- character(len=2), intent(in) :: atsym
- integer, intent(in) :: nc,nv,iexc,mmax,ncnf
- integer, intent(in) :: na(30),la(30),nvcnf(5),nacnf(30,5),lacnf(30,5)
- real(dp), intent(in) :: zz
- real(dp), intent(in) :: fa(30),rr(mmax),facnf(30,5)
-
-!Output variables
- integer, intent(out) :: it
- real(dp), intent(out) :: etot
- real(dp), intent(out) :: ea(30,2),rhoc(mmax),rho(mmax),vfull(mmax)
- integer, intent(out) :: istcnf(5),ierrcnf(5),itcnf(5),kerrcnf(5)
- integer, intent(out) :: nvtcnf(5),natcnf(30,5),latcnf(30,5)
- real(dp), intent(out) :: fatcnf(30,3,5),eatcnf(30,2,3,5),etstcnf(5)
-
-!Local variables
- integer :: unit,jj,kk,ncfg
- integer :: ist,ierr,itc,kerr,nvt,nat(30),lat(30)
- real(dp) :: eaetst,fat(30,3),eat(30,2,3)
- logical :: found(5),match(5)
-
- call read_head(fname,unit,irel_fr,atsym,zz,nc,nv,iexc,na,la,fa, &
-&               mmax,rr)
- read(unit) it,etot,ea(1:nc+nv,1:2)
+ read(unit) it,etot,ea(1:nc+nv,1:nkap)
  read(unit) rhoc(1:mmax),rho(1:mmax),vfull(1:mmax)
 
 ! copy the results of each configuration in the file to the configurations
@@ -362,7 +212,7 @@
 
  close(unit)
  return
- end subroutine read_ae_file_r
+ end subroutine read_ae_file
 
  subroutine write_head(fname,unit,irel,atsym,zz,nc,nv,iexc,na,la,fa, &
 &                      mmax,rr)

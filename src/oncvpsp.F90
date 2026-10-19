@@ -396,11 +396,11 @@
 ! full potential atom solution
 !
 #if defined(ONCVPSP_PS_ONLY)
- call read_ae_file(ae_filename,srel,atsym,zz,nc,nv,iexc,na,la,fa, &
+ call read_ae_file(ae_filename,irel,nkap,atsym,zz,nc,nv,iexc,na,la,fa, &
 &                  mmax,rr,ncnf,nvcnf,nacnf,lacnf,facnf, &
-&                  it,etot,ea(1,1),rhoc,rho,vfull,istcnf,ierrcnf,itcnf, &
+&                  it,etot,ea,rhoc,rho,vfull,istcnf,ierrcnf,itcnf, &
 &                  kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
-!sratom prints the libxc functional description on its first exc_libxc call
+!aeatom prints the libxc functional description on its first exc_libxc call
  if(iexc<0) then
    block
      real(dp) :: vxct(mmax),exct(mmax)
@@ -504,8 +504,8 @@
 &                     nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
  end do
 
- call write_ae_file(ae_filename,srel,atsym,zz,nc,nv,iexc,na,la,fa, &
-&                   mmax,rr,it,etot,ea(1,1),rhoc,rho,vfull, &
+ call write_ae_file(ae_filename,irel,nkap,atsym,zz,nc,nv,iexc,na,la,fa, &
+&                   mmax,rr,it,etot,ea,rhoc,rho,vfull, &
 &                   ncnf,nvcnf,nacnf,lacnf,facnf,istcnf,ierrcnf,itcnf, &
 &                   kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
 
