@@ -807,8 +807,8 @@
  end do !jj
 
  call run_plot(lmax,npa,epa,lloc,irc, &
-&                    vkb,evkb,nproj,rr,vfull,vp,vpuns,zz,mmax,mxprj,drl,nrl, &
-&                    rho,rhoc,rhomod,srel,cvgplt)
+&               vkb,evkb,nproj,rr,vfull,vp,vpuns,zz,mmax,mxprj,drl,nrl, &
+&               rho,rhoc,rhomod,irel,nkap,cvgplt)
 
 
 

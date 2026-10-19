@@ -73,7 +73,7 @@ The fr path had 3 reference tests to the sr path's 28.
 - [x] `psatom` / `psatom_r`
 - [x] `run_phsft` / `run_phsft_r`
 - [x] `run_diag` / `run_diag_r`
-- [ ] `run_plot` / `run_plot_r`
+- [x] `run_plot` / `run_plot_r`
 - [ ] `run_vkb` / `run_vkb_r`
 - [ ] The projector loop of the driver (from `npa` to `run_optimize`)
       and the pseudo-wave-function loop after `run_vkb`
@@ -119,6 +119,9 @@ physical reason, kept behind `irel` until decided:
   fr keeps its n in `npa` and sr the n asked for; sr stops if `lschfb`
   fails in the well, fr goes on
 - the error-message prefixes and some numeric formats (`e` and `d`)
+- the plot data of `run_plot`: fr writes every point of the potentials,
+  starts the wave functions a step further out, labels j=l+1/2 with -l,
+  and averages the convergence profiles over kappa
 - the test-configuration results table of `run_config_ps`: sr leaves out
   empty valence levels, fr lists every level once for each kappa
 
