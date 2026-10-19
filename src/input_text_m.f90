@@ -127,7 +127,7 @@ contains
       ep(:) = 0.d0
       rxpsh = -1.d0  ! negative value for auto setting of radius
       ! default values for icmod=4 optimization ranges
-      ! overriden by input values if icmod=5
+      ! overridden by input values if given with icmod=4
       fcfact_min = 1.5d0
       fcfact_max = 6.0d0
       fcfact_step = 0.5d0
@@ -494,7 +494,7 @@ contains
       if (ios /= 0) then
          write (6, '(a,i4)') 'Read ERROR, input data file line', inline
          write (6, '(a)') 'Program will stop'
-         stop
+         error stop 1
       end if
 
       return

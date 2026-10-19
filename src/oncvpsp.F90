@@ -63,6 +63,7 @@
  real(dp) :: fcfact,rcfact,dvloc0
  real(dp) :: fcfact_min,fcfact_max,fcfact_step
  real(dp) :: rcfact_min,rcfact_max,rcfact_step
+ real(dp) :: fcgrid(3),rcgrid(3)
  real(dp) :: rr1,rcion,rciont,rcmax,rct,rlmax,rpkt
  real(dp) :: sf,zz,zion,zval,etot
  real(dp) :: xdummy
@@ -245,7 +246,11 @@
    fcfact=0.0d0
  end if
 
- call check_data(atsym,zz,fcfact,rcfact,epsh1,epsh2,depsh,rlmax,drl,fa,facnf, &
+!icmod=4 coarse-search grids: min, max, step
+ fcgrid=[fcfact_min,fcfact_max,fcfact_step]
+ rcgrid=[rcfact_min,rcfact_max,rcfact_step]
+
+ call check_data(atsym,zz,fcfact,rcfact,fcgrid,rcgrid,epsh1,epsh2,depsh,rlmax,drl,fa,facnf, &
 &                rc,ep,qcut,debl,nc,nv,iexc,lmax,lloc,lpopt,icmod, &
 &                ncnf,na,la,nvcnf,nacnf,lacnf,ncon,nbas,nproj,psfile)
 
@@ -354,9 +359,7 @@
    write(6,'(2i5,f10.5)') l1-1,nproj(l1),debl(l1)
  end do
 
- write(6,'(a/a/a)') '#','# MODEL CORE CHARGE', &
-&      '# icmod, fcfact, rcfact'
- write(6,'(i5,2f10.5)') icmod,fcfact,rcfact
+ call write_icmod(icmod,fcfact,rcfact,fcgrid,rcgrid)
 
  write(6,'(a/a/a)') '#','# LOG DERIVATIVE ANALYSIS', &
 &      '# epsh1, epsh2, depsh'
@@ -380,7 +383,7 @@
  write(6,'(a,i6)') '  iterations',it
  if(it .ge. 100) then
   write(6,'(a)') 'oncvpsp: ERROR all-electron reference atom not converged'
-  stop
+  error stop 1
  end if
  write(6,'(a,1p,d18.8)') '  all-electron total energy (Ha)',etot
 
@@ -433,7 +436,7 @@
          if(ierr /= 0) then
            write(6,'(/a,3i4)') 'oncvpsp-387: lschfb convergence ERROR n,l,iter=', &
 &           na(ii),la(ii),it
-           stop
+           error stop 1
          end if
          epa(iprj,l1)=ea(kk)
          npa(iprj,l1)=na(kk)
@@ -455,7 +458,7 @@
          write(6,'(a,f8.3,a/a)') 'oncvpsp: ERROR debl =',debl, 'for l=', &
 &              ' ERROR not allowed with 2 or more scattering states', &
 &              'program will stop'
-         stop
+         error stop 1
        end if
        if(iprj>1) then
          epa(iprj,l1)=epa(iprj-1,l1)+debl(l1)
@@ -527,7 +530,7 @@
    if(ierr /= 0) then
      write(6,'(/a,3i4)') 'oncvpsp-461: lschfb convergence ERROR n,l,iter=', &
 &     na(ii),la(ii),it
-     stop
+     error stop 1
    end if
 
    rhoae(:,kk)=(uu(:)/rr(:))**2
@@ -544,7 +547,7 @@
    if(ierr/=0) then
      write(6,'(a,3i4)') 'oncvpsp: lschvkbb ERROR',ll+nodes(l1)+1,ll,ierr
      flush(6)
-     stop
+     error stop 1
    end if
 
 ! save valence pseudo wave functions for upfout
@@ -576,7 +579,7 @@
 
  else if(icmod>=3) then
    call modcore3(icmod,rhops,rho,rhoc,rhoae,rhotae,rhomod, &
-&               fcfact,rcfact,irps,mmax,rr,nc,nv,la,zion,iexc)
+&               fcfact,rcfact,fcgrid,rcgrid,irps,mmax,rr,nc,nv,la,zion,iexc)
 
  end if
 
@@ -649,7 +652,7 @@
   call linout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
 &             rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym, &
 &             na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&             fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
+&             fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact,fcgrid,rcgrid, &
 &             epsh1,epsh2,depsh,rlmax,psfile)
  end if
 
@@ -657,7 +660,7 @@
   call upfout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
 &             zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
 &             na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&             fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
+&             fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact,fcgrid,rcgrid, &
 &             epsh1,epsh2,depsh,rlmax,psfile,uupsa,ea)
  end if
 

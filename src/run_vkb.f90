@@ -142,7 +142,7 @@
      call dsyev( 'V', 'U', np, bb, mxprj, bbev, work, lwork, info )
      if(info .ne. 0) then
       write(6,'(a,i4)') 'run_vkb: B matrix eigenvalue ERROR, info=',info
-      stop
+      error stop 1
      end if
 
 ! take linear combinations to form diagonal projectors
@@ -196,7 +196,7 @@
     call dsyev( 'V', 'U', np, sovl, mxprj, sovlev, work, lwork, info )
     if(info .ne. 0) then
      write(6,'(a,i4)') 'run_vkb: sovl matrix ERROR error, info=',info
-     stop
+     error stop 1
     end if
 
 !   write(6,'(/1p,2e12.4)') (sovlev(ii),ii=1,2)
@@ -237,7 +237,7 @@
      call dsyev( 'V', 'U', np , bbist, mxprj, bbistev, work, lwork, info )
      if(info .ne. 0) then
       write(6,'(a,i4)') 'run_vkb: B^(-1)* matrix eigenvalue ERROR, info=',info
-      stop
+      error stop 1
      end if
 
 

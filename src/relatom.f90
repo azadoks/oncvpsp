@@ -139,7 +139,7 @@
      if(ierr .ne. 0) then
        write(6,'(/2a,5i4)') 'relatom: ldiracfb convergence ERROR', &
 &           ' n,l,kap,iter,ierr=',na(ii),ll,kap,it,ierr
-       stop
+       error stop 1
      end if
 
 ! overall convergence criterion based on eps within lschfb

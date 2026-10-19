@@ -102,7 +102,7 @@ real(dp) :: rc,rn
    call dgesv(nvkb, 1, gg, nvkb, ipiv, gg0, nvkb, info)
    if(info/=0) then
     write(6,'(/a,i4)') 'vkbout: dgesv ERROR, stopping info =',info
-    stop
+    error stop 1
    end if
 
 ! output wave functions

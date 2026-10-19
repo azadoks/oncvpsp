@@ -109,7 +109,7 @@
  if(ircc .eq. 0) then
    write(6,'(/a)') 'modcore2: ERROR ircc (core-valence charge crossover) &
 &        not found'
-   stop
+   error stop 1
  end if
 
 !set limit for d2Exc calculation to radius beyond which rhomod=rhoc

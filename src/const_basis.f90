@@ -69,7 +69,7 @@
 
  if(info /= 0) then
   write(6,'(/a,i4)') 'const_basis: ERTOR const_basis: dgesvd info = ',info
-  stop
+  error stop 1
  end if
 
 !write(6,'(/a,6d12.4)') 'singular values',(ss(ii),ii=1,ncon)

@@ -48,6 +48,7 @@ set(src_oncvpsp
     vploc.f90
     vrel.f90
     wf_rc_der.f90
+    write_icmod.f90
     input_text_m.f90
     # Non-/scalar-relativistic files
     fphsft.f90

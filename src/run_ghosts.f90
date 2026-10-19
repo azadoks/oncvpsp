@@ -149,7 +149,7 @@
          write(6,'(a,3i4,3f12.6)')  &
 &              'run_ghosts 143: lschpsbar ERROR ierr,nn,ll,ee,emin,emax', &
 &              ierr,nn,ll,ee,emin,emax
-         stop
+         error stop 1
          end if
        nbas=jj-1
        exit
@@ -187,7 +187,7 @@
      if(info .ne. 0) then
       write(6,'(a,i4)') 'run_ghosts: hamiltonian matrix eigenvalue ERROR, &
 &          info=',info
-      stop
+      error stop 1
      end if
 !treat valence states for this l
      nn=ll

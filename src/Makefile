@@ -27,7 +27,7 @@ OBJS_ALL =	input_text_m.o aeo.o check_data.o const_basis.o dpnint.o eresid.o exc
 		sbf_rc_der.o tfapot.o vkboutwf.o vkbphsft.o vout.o vpinteg.o \
 		vploc.o wf_rc_der.o modcore2.o gg1cc.o gp1cc.o gpp1cc.o \
 		der2exc.o modcore3.o sbf_basis_con.o run_ghosts.o \
-		lschpsbar.o vrel.o
+		lschpsbar.o vrel.o write_icmod.o
 
 OBJS_NRSR =	fphsft.o fpovlp.o gnu_script.o linout.o psatom.o \
 		relatom.o run_config.o run_diag.o run_phsft.o run_plot.o \

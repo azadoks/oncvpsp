@@ -49,7 +49,7 @@
  real(dp), parameter :: eps=1.0d-12
 
  real(dp) :: sbfd(5)
- real(dp) al,qq,dlgd,dlgd_last,qhi,qlow,qt
+ real(dp) al,qq,dlgd,dlgd_grid,dlgd_last,qhi,qlow,qt
  integer :: ii,jj,ll1,lmax,mmax,iroot,nq
  logical :: found_root
 
@@ -61,6 +61,8 @@
   qq=dltq*ii
   call sbf_rc_der(ll,qq,rc,sbfd)
   dlgd=ulgd - sbfd(2)/sbfd(1)
+!keep the grid value for the next sign test; bisection overwrites dlgd
+  dlgd_grid=dlgd
   found_root=.false.
 !interval halving to find root
   if(ii>1 .and. dlgd*dlgd_last < 0.0d0 .and. &
@@ -89,18 +91,17 @@
         qlow=qt
       end if
     end do
-    found_root=.true.
     if(.not. found_root) then
-      write(6,'(a)') 'qroots: ERROR - failed to find root'
-      stop
+      write(6,'(/a,i0,a,es12.4,a,es12.4)') 'qroots: WARNING bisection failed, skipping', &
+&           ', ll=',ll,', qlow=',qlow,', qhi=',qhi
     end if
   end if
   if(iroot .eq. nroot) exit
-  dlgd_last=dlgd
+  dlgd_last=dlgd_grid
  end do
- if(.not. found_root) then
+ if(iroot<nroot) then
    write(6,'(a)') 'qroots: ERROR - failed to find nroot roots'
-   stop
+   error stop 1
  end if
 
 !extra q values for needed flexibility to satisfy constraints

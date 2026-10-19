@@ -1133,7 +1133,7 @@ end subroutine psmlout_r
       double precision :: r2
 
       npts = size(f)
-      if (size(f0) /= npts +1) stop "nr /= npts + 1 in add_zero_r"
+      if (size(f0) /= npts +1) error stop "nr /= npts + 1 in add_zero_r"
       do i = 1, npts
          f0(i+1) = f(i)
       enddo
@@ -1156,7 +1156,7 @@ end subroutine psmlout_r
          inquire(lun,opened=unit_used)
          if (.not. unit_used) return
       enddo
-      stop 'NO LUNS'
+      error stop 'NO LUNS'
     end subroutine get_unit
 
     subroutine write_psml_item(xf,class, &

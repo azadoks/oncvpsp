@@ -44,7 +44,7 @@
  if(llin>4) then
   write(6,'(a,i4,a)') 'sbf_rc_der: argument ERROR, llin = ',llin,&
 &  ' >5'
-  stop
+  error stop 1
  end if
 
 ! calculate sbf for needed l values

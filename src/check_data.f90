@@ -16,7 +16,7 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine check_data(atsym,zz,fcfact,rcfact,epsh1,epsh2,depsh,rlmax,drl, &
+ subroutine check_data(atsym,zz,fcfact,rcfact,fcgrid,rcgrid,epsh1,epsh2,depsh,rlmax,drl, &
 &                      fa,facnf, &
 &                      rc,ep,qcut,debl,nc,nv,iexc,lmax,lloc,lpopt,icmod, &
 &                      ncnf,na,la,nvcnf,nacnf,lacnf,ncon,nbas,nproj,psfile)
@@ -34,6 +34,7 @@
  character*4, intent(in) :: psfile
 
  real(dp), intent(in) :: zz,fcfact,rcfact,epsh1,epsh2,depsh,rlmax,drl
+ real(dp), intent(in) :: fcgrid(3),rcgrid(3)
  real(dp), intent(in) :: fa(30),facnf(30,5),rc(6),ep(6),qcut(6),debl(6)
 
  integer, intent(in) :: nc,nv,iexc,lmax,lloc,lpopt,icmod,ncnf
@@ -197,6 +198,21 @@
   ierr=ierr+1
  end if
 
+ if(icmod==4) then
+  if(fcgrid(1)<=0.0d0 .or. fcgrid(2)<fcgrid(1) .or. fcgrid(3)<=0.0d0) then
+   write(6,'(/a,3(a,f12.6))') 'check_data: ERROR icmod=4 needs', &
+&        ' 0<fcfact_min<=fcfact_max and fcfact_step>0, fcfact_min=',fcgrid(1), &
+&        ', fcfact_max=',fcgrid(2),', fcfact_step=',fcgrid(3)
+   ierr=ierr+1
+  end if
+  if(rcgrid(1)<=0.0d0 .or. rcgrid(2)<rcgrid(1) .or. rcgrid(3)<=0.0d0) then
+   write(6,'(/a,3(a,f12.6))') 'check_data: ERROR icmod=4 needs', &
+&        ' 0<rcfact_min<=rcfact_max and rcfact_step>0, rcfact_min=',rcgrid(1), &
+&        ', rcfact_max=',rcgrid(2),', rcfact_step=',rcgrid(3)
+   ierr=ierr+1
+  end if
+ end if
+
  if(epsh2<epsh1) then
   write(6,'(a)') 'test_data: must have epsh2 > epsh1'
   ierr=ierr+1
@@ -258,7 +274,7 @@
  
  if(ierr>0) then
   write(6,'(a,i4,a)') 'ERROR: test_data found',ierr,' ERROR; stopping'
-  stop
+  error stop 1
  end if
 
  return

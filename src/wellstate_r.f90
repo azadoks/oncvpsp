@@ -206,7 +206,7 @@ subroutine wellstate_r(nnin,ll,kap,irc,ep,rr,vfull,vwell, &
    write(6,'(a,a,i3,a,i3,a,i3a,f8.4)') &
 &   'ERROR wellstate_r: well potential iteration failed', &
 &   ' to converge, n=',nn,' l=',ll,' kap=', kap,' ep=',ep
-  stop
+  error stop 1
  end if
 
  if(cwell>0.0d0) then

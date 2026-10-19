@@ -326,9 +326,26 @@ module input_toml_m
       call check_stat(stat, "fcfact")
       if (icmod >= 0 .and. icmod <= 2) then
          rcfact = 0.0_dp
-      else if (icmod >= 3 .and. icmod <= 4) then
+      else if (icmod == 3) then
          call get_value(child, "rcfact", rcfact, stat=stat)
          call check_stat(stat, "rcfact")
+      else if (icmod == 4) then
+         ! rcfact is not used; the search grid is optional, with the
+         ! same defaults as above
+         call get_value(child, "rcfact", rcfact, 0.0_dp, stat=stat)
+         call check_stat(stat, "rcfact")
+         call get_value(child, "fcfact_min", fcfact_min, 1.5_dp, stat=stat)
+         call check_stat(stat, "fcfact_min")
+         call get_value(child, "fcfact_max", fcfact_max, 6.0_dp, stat=stat)
+         call check_stat(stat, "fcfact_max")
+         call get_value(child, "fcfact_step", fcfact_step, 0.5_dp, stat=stat)
+         call check_stat(stat, "fcfact_step")
+         call get_value(child, "rcfact_min", rcfact_min, 1.0_dp, stat=stat)
+         call check_stat(stat, "rcfact_min")
+         call get_value(child, "rcfact_max", rcfact_max, 1.9_dp, stat=stat)
+         call check_stat(stat, "rcfact_max")
+         call get_value(child, "rcfact_step", rcfact_step, 0.1_dp, stat=stat)
+         call check_stat(stat, "rcfact_step")
       else
          write (stderr, '(A)') 'Error: Invalid icmod in [model_core_charge] section. Must be 0, 1, 2, 3, or 4.'
          stop 1
@@ -748,9 +765,26 @@ module input_toml_m
       call check_stat(stat, "fcfact")
       if (icmod >= 0 .and. icmod <= 2) then
          rcfact = 0.0_dp
-      else if (icmod >= 3 .and. icmod <= 4) then
+      else if (icmod == 3) then
          call get_value(child, "rcfact", rcfact, stat=stat)
          call check_stat(stat, "rcfact")
+      else if (icmod == 4) then
+         ! rcfact is not used; the search grid is optional, with the
+         ! same defaults as above
+         call get_value(child, "rcfact", rcfact, 0.0_dp, stat=stat)
+         call check_stat(stat, "rcfact")
+         call get_value(child, "fcfact_min", fcfact_min, 1.5_dp, stat=stat)
+         call check_stat(stat, "fcfact_min")
+         call get_value(child, "fcfact_max", fcfact_max, 6.0_dp, stat=stat)
+         call check_stat(stat, "fcfact_max")
+         call get_value(child, "fcfact_step", fcfact_step, 0.5_dp, stat=stat)
+         call check_stat(stat, "fcfact_step")
+         call get_value(child, "rcfact_min", rcfact_min, 1.0_dp, stat=stat)
+         call check_stat(stat, "rcfact_min")
+         call get_value(child, "rcfact_max", rcfact_max, 1.9_dp, stat=stat)
+         call check_stat(stat, "rcfact_max")
+         call get_value(child, "rcfact_step", rcfact_step, 0.1_dp, stat=stat)
+         call check_stat(stat, "rcfact_step")
       else
          write (stderr, '(A)') 'Error: Invalid icmod in [model_core_charge] section. Must be 0, 1, 2, 3, or 4.'
          stop 1

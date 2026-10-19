@@ -144,7 +144,7 @@
        if(ierr .ne. 0) then
           write(6,'(/a,3i4)') 'run_plot: lschfb convergence ERROR n,l,ierr=', &
 &         npa(iprj,l1),ll,ierr
-        stop
+        error stop 1
        end if
 
        emax=0.9d0*etest

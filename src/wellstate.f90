@@ -150,7 +150,7 @@
      if(ierr<0) then
       write(6,'(a,i3,a,i3)') &
 &           'wellstate: ERROR lschfb convergence error, n=',nn,' l=',ll
-      stop
+      error stop 1
      end if
 
      if(abs(et-ep)<eps) then
@@ -200,7 +200,7 @@
    write(6,'(a,a,i3,a,i3,a,f8.4)') &
 &   'ERROR wellstate: well potential iteration failed', &
 &   ' to converge, n=',nn,' l=',ll,' ep=',ep
-  stop
+  error stop 1
  end if
 
  if(cwell>0.0d0) then

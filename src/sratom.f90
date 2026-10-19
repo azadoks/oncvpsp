@@ -126,7 +126,7 @@
      if(ierr .ne. 0) then
        write(6,'(/a,3i4)') 'sratom123: lschfb convergence ERROR n,l,iter=', &
 &       na(ii),la(ii),it
-       stop
+       error stop 1
      end if
 
 ! overall convergence criterion based on eps within lschfb

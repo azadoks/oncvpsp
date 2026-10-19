@@ -64,6 +64,7 @@
  real(dp) :: fcfact,rcfact,dvloc0,soscale
  real(dp) :: fcfact_min,fcfact_max,fcfact_step
  real(dp) :: rcfact_min,rcfact_max,rcfact_step
+ real(dp) :: fcgrid(3),rcgrid(3)
  real(dp) :: rr1,rcion,rciont,rcmax,rct,rlmax,rpkt
  real(dp) :: sf,zz,zion,zval,etot
  real(dp) :: cnorm,ebar,eprmin
@@ -227,7 +228,11 @@
    fcfact=0.0d0
  end if
 
- call check_data(atsym,zz,fcfact,rcfact,epsh1,epsh2,depsh,rlmax,drl,fa,facnf, &
+!icmod=4 coarse-search grids: min, max, step
+ fcgrid=[fcfact_min,fcfact_max,fcfact_step]
+ rcgrid=[rcfact_min,rcfact_max,rcfact_step]
+
+ call check_data(atsym,zz,fcfact,rcfact,fcgrid,rcgrid,epsh1,epsh2,depsh,rlmax,drl,fa,facnf, &
 &                rc,ep,qcut,debl,nc,nv,iexc,lmax,lloc,lpopt,icmod, &
 &                ncnf,na,la,nvcnf,nacnf,lacnf,ncon,nbas,nproj,psfile)
 
@@ -340,9 +345,7 @@
    write(6,'(2i5,f10.5)') l1-1,nproj(l1),debl(l1)
  end do
 
- write(6,'(a/a/a)') '#','# MODEL CORE CHARGE', &
-&      '# icmod, fcfact, rcfact'
- write(6,'(i5,2f10.5)') icmod,fcfact,rcfact
+ call write_icmod(icmod,fcfact,rcfact,fcgrid,rcgrid)
 
  write(6,'(a/a/a)') '#','# LOG DERIVATIVE ANALYSIS', &
 &      '# epsh1, epsh2, depsh'
@@ -366,7 +369,7 @@
  write(6,'(a,i6)') '  iterations',it
  if(it .ge. 100) then
   write(6,'(a)') 'oncvpsp_r: ERROR all-electron reference atom not converged'
-  stop
+  error stop 1
  end if
  write(6,'(a,1p,d18.8)') '  all-electron total energy (Ha)',etot
 
@@ -443,7 +446,7 @@
            write(6,'(a,i2,a,i2,a,i2)') &
 &                'oncvpsp_r 409: ldiracfb convergence ERROR, n=',&
 &                 np(l1),'  l=',ll, 'kap-',kap
-           stop
+           error stop 1
          end if
 
          epa(iprj,l1,ikap)=ea(kk,ikap)
@@ -468,7 +471,7 @@
          write(6,'(a,f8.3,a/a)') 'oncvpsp: ERROR debl =',debl, 'for l=', &
 &              ' not allowed with 2 or more scattering states', &
 &              'program will stop'
-         stop
+         error stop 1
        end if
 
 ! npa is not reset for ikap=2 to retain same node count for consistency with
@@ -499,7 +502,7 @@
 &                  npa(iprj,l1),'  l=',ll, 'kap=',kap, ' epa=', &
 &                  epa(iprj,l1,ikap)
 
-            stop
+            error stop 1
           end if
 
           write(6,'(/a,i3,a,i3,a,i3/a,f8.4)') &
@@ -592,7 +595,7 @@
       write(6,'(a,i2,a,i2,a,i2,a,i4)') &
 &           'oncvpsp_r 541: ldiracfb convergence ERROR, n=',&
 &            np(l1),'  l=',ll, '  kap-',kap,'  ierr=',ierr
-      stop
+      error stop 1
     end if
 
    rhoae(:,kk)=rhoae(:,kk)+fj*((uu(:,1)/rr(:))**2 + (uu(:,2)/rr(:))**2)
@@ -607,7 +610,7 @@
    if(ierr .ne. 0) then
      write(6,'(a,i2,a,i2)') 'oncvpsp_r: lschvkbb convergence ERROR, n=',&
 &     ll+1,'  l=',ll
-     stop
+     error stop 1
    end if
 
 ! save valence pseudo wave functions for uprout
@@ -657,7 +660,7 @@
 
  else if(icmod>=3) then
    call modcore3(icmod,rhops,rho,rhoc,rhoae,rhotae,rhomod, &
-&               fcfact,rcfact,irps,mmax,rr,nc,nv,la,zion,iexc)
+&               fcfact,rcfact,fcgrid,rcgrid,irps,mmax,rr,nc,nv,la,zion,iexc)
 
  end if
 
@@ -757,7 +760,7 @@
  call linout_r(lmax,lloc,rc,vsr,esr,vso,eso,nproj,rr,vpuns,rho,rhomod, &
 &             rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,soscale, &
 &             na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&             fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
+&             fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact,fcgrid,rcgrid, &
 &             epsh1,epsh2,depsh,rlmax,psfile)
 
  end if
@@ -767,7 +770,7 @@
  call upfout_r(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
 &              zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
 &              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&              fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
+&              fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact,fcgrid,rcgrid, &
 &              epsh1,epsh2,depsh,rlmax,psfile,uupsa,ea)
 
  end if
@@ -820,7 +823,7 @@
  if(ios/=0) then
   write(6,'(a,i4)') 'Read error, input data file line',inline
   write(6,'(a)') 'Program will stop'
-  stop
+  error stop 1
  end if
 
  return

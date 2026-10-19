@@ -1,0 +1,65 @@
+# Same pseudopotential as 14_Si.dat, in TOML form; the output must match
+# tests/refs/14_Si.out
+
+[oncvpsp]
+atsym = "Si"
+z = 14.0
+nc = 3
+nv = 2
+iexc = 3
+
+[reference_configuration]
+n = [1, 2, 2, 3, 3]
+l = [0, 0, 1, 0, 1]
+f = [2.0, 2.0, 6.0, 2.0, 2.0]
+
+[pseudopotentials]
+lmax = 2
+l = [0, 1, 2]
+rc = [2.70, 2.70, 2.70]
+ep = [0.00, 0.00, 0.10]
+ncon = [5, 5, 5]
+nbas = [8, 8, 8]
+qcut = [5.00, 5.00, 5.00]
+
+[local_potential]
+lloc = 4
+lpopt = 5
+rcloc = 2.7
+dvloc0 = 0.0
+
+[vkb_projectors]
+l = [0, 1, 2]
+nproj = [2, 2, 2]
+debl = [1.0, 0.75, 0.75]
+
+[model_core_charge]
+icmod = 1
+fcfact = 0.25
+
+[log_derivative_analysis]
+epsh1 = -2.0
+epsh2 = 2.0
+depsh = 0.02
+
+[linear_mesh]
+rmax = 5.0
+a = 0.01
+
+[pp_output]
+psfile = "psp8"
+
+[[test_configurations]]
+n = [3, 3]
+l = [0, 1]
+f = [1.0, 2.0]
+
+[[test_configurations]]
+n = [3, 3]
+l = [0, 1]
+f = [2.0, 1.0]
+
+[[test_configurations]]
+n = [3, 3]
+l = [0, 1]
+f = [1.0, 1.0]

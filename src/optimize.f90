@@ -88,7 +88,7 @@
  call dsyev( 'V', 'U', nnull, wmat, nnull, wev, work, 5*nnull, info )
  if(info .ne. 0) then
   write(6,'(a,i4)') 'optimize: residual-energy eigenvalue ERROR, info=',info
-  stop
+  error stop 1
  end if
 
 !convert <ps0| E_resid |psnull> vector from the null-space representation
@@ -150,7 +150,7 @@
  rtsgn=-sign(1.0d0, eresiddot_ev(1))
  if(ps0norm>uunorm) then
    write(6,'(/a)') 'optimize: ERROR ps0norm > uunorm, code will stop'
-   stop
+   error stop 1
  end if
  yy=sqrt((uunorm-ps0norm))
 
@@ -184,7 +184,7 @@
 
  if(converged .eqv. .false.) then
   write(6,'(/a)') 'optimize: ERROR interval-halving search not converged'
-  stop
+  error stop 1
  end if
 
  emin=eresid0(1)

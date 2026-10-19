@@ -57,7 +57,7 @@ contains
     do i=1,lmess
        write(*,'("Fatal ",A)') trim(message(i))
     end do
-    stop
+    error stop 1
   end subroutine messages_fatal
 
   subroutine messages_warning(lmess)
@@ -393,7 +393,7 @@ contains
     real(8)   :: parameters(2)
 
 
-    if (.not. (size(v, dim=2) == functl%nspin)) stop 'functionals: ERROR bad nspin definition'
+    if (.not. (size(v, dim=2) == functl%nspin)) error stop 'functionals: ERROR bad nspin definition'
 
     ! Initialize all output quantities to zero
     v =0.0d0 ; e =0.0d0 ; vtau =0.0d0
@@ -637,13 +637,13 @@ contains
           end do
           deallocate (dpr, dppr, dlap)
        elseif (functl%deriv_method == XC_DERIV_ANALYTICAL) then
-          stop 'functionals: ERROR - no analytical derivatives coded'
+          error stop 'functionals: ERROR - no analytical derivatives coded'
        end if
     end if
 
     ! MGGA contribution
     if (functl%family == XC_FAMILY_MGGA) then
-       stop 'functrionals: ERROOR : meta GGA not coded yet '
+       error stop 'functrionals: ERROOR : meta GGA not coded yet '
        if (functl%deriv_method == XC_DERIV_NUMERICAL) then
           allocate (dpr(np))
           allocate (dppr(np))

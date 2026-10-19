@@ -45,7 +45,7 @@
  if(nn<npoly+1) then
    write(6,'(/a,i6,a,i4)') 'dpnint: interpolation ERROR, n=', &
 &       nn,'< npoly=',npoly
-   stop
+   error stop 1
  end if
 
 ! note: output point 1 is skipped in this version because of special
@@ -57,11 +57,11 @@
  do jj = 2, mm
    if(tt(jj)<xx(1)) then
      write(6,'(/a)') 'dpnint: interpolation ERROR - out of range'
-     stop
+     error stop 1
    end if
    if(tt(jj)>xx(nn)) then
      write(6,'(/a)') 'dpnint: interpolation ERROR - out of range'
-     stop
+     error stop 1
    end if
 
 ! interval halving search for xx(ii) points bracketing tt(jj)

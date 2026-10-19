@@ -131,7 +131,7 @@
     write(6,'(a)') ' ERROR pspot:  first pseudo wave function has node, &
 &         program will stop'
     write(6,'(a)') ' ERROR pspot: try changing psp parameters for this l'
-    stop
+    error stop 1
    end if
    vpsp(ii)=-work(ii,4)/work(ii,1) + eig
    vkb(ii)=-work(ii,4) + eig*work(ii,1)

@@ -22,7 +22,7 @@
  subroutine linout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
 &                  rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
+&                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact,fcgrid,rcgrid, &
 &                  epsh1,epsh2,depsh,rlmax,psfile)
 
 
@@ -50,7 +50,7 @@
 !atsym  atomic symbol
 !remaining input variables to be echoed:
 !  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf
-!  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact
+!  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact,fcgrid,rcgrid
 !  epsh1,epsh2,depsh,rlmax,psfile
 !psfile  should be 'psp8' or 'both'
 
@@ -61,6 +61,7 @@
  integer, intent(in) :: lmax,lloc,iexc,mmax,mxprj,nrl,icmod
  integer, intent(in) :: nproj(6)
  real(dp), intent(in) :: drl,fcfact,rcfact,zz,zion
+ real(dp), intent(in) :: fcgrid(3),rcgrid(3)
  real(dp), intent(in) :: rr(mmax),vpuns(mmax,5),rho(mmax),vkb(mmax,mxprj,4)
  real(dp), intent(in) :: rhotae(mmax),rhoc(mmax)
  real(dp), intent(in) :: rhomod(mmax,5)
@@ -242,9 +243,7 @@
    write(6,'(2i5,f10.5)') l1-1,nproj(l1),debl(l1)
  end do
 
- write(6,'(a/a/a)') '#','# MODEL CORE CHARGE', &
-&      '# icmod, fcfact, rcfact'
- write(6,'(i5,2f10.5)') icmod,fcfact,rcfact
+ call write_icmod(icmod,fcfact,rcfact,fcgrid,rcgrid)
 
  write(6,'(a/a/a)') '#','# LOG DERIVATIVE ANALYSIS', &
 &      '# epsh1, epsh2, depsh'

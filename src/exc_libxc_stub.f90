@@ -35,6 +35,6 @@ subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax)
  write(6,'(a)') 'The present oncvpsp executable was built without libxc.'
  write(6,'(a)') 'Program will stop.'
  
- stop
+ error stop 1
  return
 end subroutine exc_libxc

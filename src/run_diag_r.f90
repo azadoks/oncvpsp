@@ -103,7 +103,7 @@
          write(6,'(/a,4i4)') 'run_diag_r: ldiracfb convergence ERROR &
 &         n,l,,kap,ierr=', &
 &        npa(iprj,l1),ll,kap,ierr
-        stop
+        error stop 1
       end if
     else
       call ldiracfs(nnae,ll,kap,ierr,etest, &

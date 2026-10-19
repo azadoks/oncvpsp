@@ -120,7 +120,7 @@
    end do
  else
    write(6,'(/a,i4)') 'vout: ERROR bad input mode =',mode
-   stop
+   error stop 1
  end if
 
 ! exchange-correlation potential added
@@ -137,7 +137,7 @@
    call exc_libxc(iexc,al,rhot,vxc,exca,rr,mmax)
  else
    write(6,'(/a,i4)') 'vout: ERROR bad input iexc =',iexc
-   stop
+   error stop 1
  end if
 
  do ii = 1, mmax
@@ -169,7 +169,7 @@
      call exc_libxc(iexc,al,rhoc,vxcd,excca,rr,mmax)
    else
      write(6,'(/a,i4)') 'vout: ERROR bad input iexc =',iexc
-     stop
+     error stop 1
    end if
 
    do ii=1,mmax

@@ -160,7 +160,7 @@
            write(6,'(a,i2,a,i2,a,i2,a,i4)') &
 &                'run_plot_r 409: ldiracfb convergence ERROR, n=',&
 &                 npa(iprj,l1),'  l=',ll, 'kap-',kap,'  ierr=',ierr
-           stop
+           error stop 1
          end if
        call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm)
 

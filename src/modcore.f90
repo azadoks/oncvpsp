@@ -90,7 +90,7 @@
  if(ircc .eq. 0) then
    write(6,'(/a)') 'rhomod: ERROR ircc (core-valence charge crossover) &
 &        not found'
-   stop
+   error stop 1
  end if
 
 ! the 7-point derivative stencils below reach down to ircc-22
@@ -208,7 +208,7 @@
 &      'modcore:ERROR stop - singular polym matrix',kk
      if(kk<0) write(6,'(a,i4)') &
 &      'modcore:ERROR stop - dgesv input error',kk
-     stop
+     error stop 1
    end if
 
 ! find maximum derivative

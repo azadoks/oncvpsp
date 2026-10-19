@@ -120,7 +120,7 @@
 
    if(info .ne. 0) then
     write(6,'(a,i4)') 'sr_so_r: S matrix eigenvalue ERROR, info=',info
-    stop
+    error stop 1
    end if
 
 ! construct S^(-1/2) AND s^(1/2)
@@ -176,7 +176,7 @@
 
      if(info .ne. 0) then
       write(6,'(a,i4)') 'sr_so_r: A* matrix eigenvalue ERROR, info=',info
-      stop
+      error stop 1
      end if
 
      call dsyev( 'V', 'U', nn,  asost, 2*mxprj,  wsost, work, 10*mxprj, info )
@@ -184,7 +184,7 @@
 
      if(info .ne. 0) then
       write(6,'(a,i4)') 'sr_so_r: A* matrix eigenvalue ERROR, info=',info
-      stop
+      error stop 1
      end if
 
 ! take linear combinations to form orthonormal projectors
