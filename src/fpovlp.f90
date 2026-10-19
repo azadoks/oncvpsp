@@ -18,7 +18,7 @@
 !
 ! calculates all-electron wave function overlap intergrals
 
- subroutine fpovlp(gg,hh,nn,ll,zz,ss,rr,srel)
+ subroutine fpovlp(gg,hh,nn,ll,zz,ss,rr,irel)
 
 !gg  wave function one
 !hh  wave function two
@@ -27,7 +27,8 @@
 !zz  nuclear charge
 !ss  overlap output
 !rr  log radial mesh
-!srel  .true. for scalar-relativistic, .false. for non-relativistic
+!irel  0 non-relativistic, 1 scalar-, 2 fully-relativistic (the
+!      scalar-relativistic overlap is used for both)
 
 ! product of all-elecctron scalar-relativistic wave functions gg*hh
 ! goes like rr**(2*gamma) as rr -> 0
@@ -40,7 +41,7 @@
  integer, intent(in) :: nn,ll
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: gg(nn),hh(nn),rr(nn)
- logical, intent(in) :: srel
+ integer, intent(in) :: irel
 
 !Output variables
  real(dp), intent(out) :: ss
@@ -52,7 +53,7 @@
  al = 0.01d0 * log(rr(101)/rr(1))
  amesh = exp(al)
 
- if(srel) then
+ if(irel/=0) then
    fss=(1.0d0/c_light)**2
  else
    fss=1.0d-12

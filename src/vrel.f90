@@ -16,7 +16,7 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine vrel(ll,ee,rr,vv,vr,uu,up,zz,mmax,irc,srel)
+ subroutine vrel(ll,ee,rr,vv,vr,uu,up,zz,mmax,irc,irel)
 
 ! Finds an effective potential representing the Pauli-type scalar-relativistic
 ! operators in the radial Schroedinger equation
@@ -32,7 +32,8 @@
 !zz  atomic number
 !mmax  size of log grid
 !irc  mesh index of the radius around which vr is calculated
-!srel .true. for scalar-relativistic, .false. for non-relativistic
+!irel  0 non-relativistic (vr is then not set), 1 scalar-, 2 fully-
+!      relativistic
 
  use constants_m, only: dp, c_light
  implicit none
@@ -44,7 +45,7 @@
  real(dp), intent(in) :: ee
  integer, intent(in) :: ll,irc
  integer, intent(in) :: mmax
- logical, intent(in) :: srel
+ integer, intent(in) :: irel
 
 !Output variables
  real(dp), intent(out) :: vr(mmax)
@@ -67,7 +68,7 @@
  vr(:)=0.0d0
 
 ! relativistic - non-relativistic switch
- if(.not. srel) return
+ if(irel==0) return
 
  al = 0.01d0 * log(rr(101) / rr(1))
  amesh = exp(al)

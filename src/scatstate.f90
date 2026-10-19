@@ -55,7 +55,7 @@
  if(irel==2) then
    call ldiracfs(nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch)
  else
-   call lschfs(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,irel==1)
+   call lschfs(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,irel)
  end if
  return
  end subroutine scatstate

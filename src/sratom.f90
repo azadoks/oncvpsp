@@ -17,10 +17,10 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
  subroutine sratom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&           rr,vi,zz,mmax,iexc,etot,ierr,srel)
+&           rr,vi,zz,mmax,iexc,etot,ierr,irel)
 
 ! self-consistent scalar-relativistic all-electron atom
-! calculation using log mesh (non-relativistic when srel=.false.)
+! calculation using log mesh (non-relativistic when irel=0)
 
 !na  principal quantum number array, dimension ncv
 !la  angular-momenta
@@ -39,7 +39,7 @@
 !iexc  exchange-correlation function to be used
 !etot  all-electron total energy (output)
 !ierr  error flag
-!srel  .true. for scalar-relativistic, .false. for non-relativistic
+!irel  0 non-relativistic, 1 scalar-relativistic
 
  use constants_m, only: dp
  implicit none
@@ -50,7 +50,7 @@
  integer, intent(in) :: na(ncv),la(ncv)
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: fa(ncv),rr(mmax)
- logical, intent(in) :: srel
+ integer, intent(in) :: irel
 
 !Input/output variables
  integer, intent(inout) :: ierr
@@ -122,7 +122,7 @@
      et=ea(ii)
      ierr = 0
      call lschfb(na(ii),la(ii),ierr,et, &
-&                rr,vi,uu,up,zz,mmax,mch,srel)
+&                rr,vi,uu,up,zz,mmax,mch,irel)
      if(ierr /= 0) then
        write(6,'(/a,3i4)') 'sratom123: lschfb convergence ERROR n,l,iter=', &
 &       na(ii),la(ii),it

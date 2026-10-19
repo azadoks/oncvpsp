@@ -16,7 +16,7 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine lschfb(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,srel)
+ subroutine lschfb(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,irel)
 
 !Finds bound states of an all-electron atomic potential using
 !Pauli-type  scalar-relativistic Schroedinger equation
@@ -32,7 +32,7 @@
 !zz  atomic number
 !mmax  size of log grid
 !mch  matching mesh point for inward-outward integrations
-!srel  .true. for scalar-relativistic, .false. for non-relativistic
+!irel  0 non-relativistic, 1 scalar-relativistic
 
  use constants_m, only: dp, c_light
  implicit none
@@ -42,7 +42,7 @@
  real(dp), intent(in) :: zz
  integer, intent(in) :: nn,ll
  integer, intent(in) :: mmax
- logical, intent(in) :: srel
+ integer, intent(in) :: irel
 
 !Input/output variables
  real(dp), intent(inout) :: uu(mmax),up(mmax)
@@ -81,7 +81,7 @@
  end if
 
 ! relativistic - non-relativistic switch
- if(srel) then
+ if(irel/=0) then
    fss=(1.0d0/c_light)**2
  else
    fss=1.0d-12

@@ -70,7 +70,6 @@
 !convergence criterion
  real(dp), parameter :: eps=1.0d-7
  real(dp), parameter :: blend=2.0d0
- logical :: srel
  real(dp) :: al,eeel,eexc
  real(dp) :: d2mdiff,rmatch,rhocmatch,r0,rcross
  real(dp) :: gg,tt,yy

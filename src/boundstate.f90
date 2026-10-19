@@ -56,7 +56,7 @@
  if(irel==2) then
    call ldiracfb(nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch)
  else
-   call lschfb(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,irel==1)
+   call lschfb(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,irel)
  end if
  return
  end subroutine boundstate

@@ -61,7 +61,6 @@
 !Local variables
 !convergence criterion
  real(dp), parameter :: eps=1.0d-7
- logical :: srel
  real(dp) :: a0,al,et,yy,gg,a0min,a0max,dermax,psum,sf,eeel,eexc
  real(dp) :: d2mdiff,rmatch,rhocmatch
  real(dp) :: emin,emax,sls,ss,hh,rgg,xx

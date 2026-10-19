@@ -124,7 +124,6 @@
  character(len=2) :: atsym
  character(len=4) :: psfile
 
- logical :: srel
 !names in the messages: the equation solved and the program
  character(len=19) :: treatment
  character(len=9) :: pname
@@ -141,7 +140,6 @@
 
 !the arrays indexed by l have a last index for kappa (see doc/fr_merge_plan.md):
 !1 for j=l+1/2 and 2 for j=l-1/2 when fully relativistic, only 1 otherwise
- srel=irel/=0
  if(irel==2) then
    nkap=2
    treatment='fully-relativistic'
@@ -740,7 +738,7 @@
 !calculate relativistic correction to potential to force projectors to 0 at rc
        call vrel(ll,epa(iprj,l1,ikap),rr,vfull,vr(1,iprj,l1,ikap), &
 &                uua(1,iprj,ikap),upa(1,iprj,ikap), &
-&                zz,mmax,irc(l1),srel)
+&                zz,mmax,irc(l1),irel)
      end do
 
 
@@ -748,7 +746,7 @@
      do jj=1,nproj(l1)
        do ii=1,jj
          call fpovlp(uua(1,ii,ikap),uua(1,jj,ikap),irc(l1),ll,zz, &
-&                    qq(ii,jj),rr,srel)
+&                    qq(ii,jj),rr,irel)
          qq(jj,ii)=qq(ii,jj)
        end do
      end do

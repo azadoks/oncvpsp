@@ -16,7 +16,7 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine lschfs(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,srel)
+ subroutine lschfs(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,irel)
 
 ! integrates radial Pauli-type scalar-relativistic equation
 ! on a logarithmic mesh
@@ -34,7 +34,7 @@
 !zz  atomic number
 !mmax  size of log grid
 !mch  matching mesh point for inward-outward integrations
-!srel  .true. for scalar-relativistic, .false. for non-relativistic
+!irel  0 non-relativistic, 1 scalar-relativistic
 
  use constants_m, only: dp, c_light
  implicit none
@@ -44,7 +44,7 @@
  real(dp), intent(in) :: rr(mmax),vv(mmax)
  real(dp), intent(in) :: zz
  integer, intent(in) :: ll,mch
- logical, intent(in) :: srel
+ integer, intent(in) :: irel
  real(dp), intent(in) :: ee
 
 !Output variables
@@ -70,7 +70,7 @@
  ierr = 0
 
 ! relativistic - non-relativistic switch
- if(srel) then
+ if(irel/=0) then
    fss=(1.0d0/c_light)**2
  else
    fss=1.0d-12

@@ -66,7 +66,7 @@
 &               rr,vi,zz,mmax,iexc,etot,ierr)
  else
    call sratom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&              rr,vi,zz,mmax,iexc,etot,ierr,irel==1)
+&              rr,vi,zz,mmax,iexc,etot,ierr,irel)
  end if
  return
  end subroutine aeatom

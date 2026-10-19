@@ -158,6 +158,9 @@ physical reason, kept behind `irel` until decided:
 
 Behaviour changed by a merge, in paths that no test reaches:
 
+- `srel`, the logical argument of `sratom`, `lschfb`, `lschfs`, `vrel`
+  and `fpovlp`, is replaced by `irel` (`vrel` and `fpovlp` include the
+  scalar-relativistic terms for `irel` 1 and 2, as `srel` did)
 - `run_config_ae_r` searched for an empty level's j=l+1/2 bound state with
   kappa=l+1, which `ldiracfb` rejects, so the search always failed; the
   merged `run_config_ae` uses -(l+1). It also records the error code of a
