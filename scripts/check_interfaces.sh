@@ -44,6 +44,9 @@ sources=$(awk '/^set\(src_oncvpsp/{on=1; next} on && /^\)/{exit} on' \
 
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
+# gfortran looks for module files in the current directory first, so stray
+# .mod files there (an editor's linter leaves them) would shadow moddir's
+cd "$work"
 
 status=0
 # The drivers, each a call of oncvpsp_main (in the sources above)
