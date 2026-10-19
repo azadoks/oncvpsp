@@ -116,9 +116,10 @@
 ### epsh2 upper energy limit, 2.0 usually good
 ### depsh energy mesh interval for plot, 0.02 usually good enough
 ### rxpsh (optional) radius (bohr) at which the log derivatives are
-###       evaluated; it must lie beyond rc for each l.  Leave it out (or
-###       give a negative value) for the default, just beyond rc for each l
-###       and at the rc of the local potential.  It is echoed only when set.
+###       evaluated; it must be larger than every rc (the program stops
+###       otherwise).  Leave it out (or give a negative value) for the
+###       default, just beyond rc for each l and at the rc of the local
+###       potential.  It is echoed only when set.
 #
 # epsh1, epsh2, depsh
    -2.0  2.0  0.02

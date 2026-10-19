@@ -88,9 +88,10 @@ subroutine run_phsft_r(lmax,lloc,nproj,epa,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
                   ', rxpsh=', rxpsh, ', rr(mmax)=', rr(mmax)
                error stop 1
             end if
-            if (irphs <= irc(l1)) then
-               write(6, '(a,f12.5,a,i1,a,f12.5)') &
-                  'ERROR: run_phsft: rxpsh=', rxpsh, ' <= rc(', l1-1, ')=', rr(irc(l1))
+! check_data keeps rxpsh beyond every rc, so only a direct call gets here
+            if (irphs < irc(l1)) then
+               write(6, '(/2a,i0,2(a,f12.6))') 'run_phsft_r: WARNING rxpsh inside the core radius', &
+                  ', l=', ll, ', rxpsh=', rxpsh, ', rc=', rr(irc(l1))
             end if
          end if
       else
@@ -109,9 +110,10 @@ subroutine run_phsft_r(lmax,lloc,nproj,epa,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
                   ', rxpsh=', rxpsh, ', rr(mmax)=', rr(mmax)
                error stop 1
             end if
-            if (irphs <= irc(lloc+1)) then
-               write(6, '(a,f12.5,a,i1,a,f12.5)') &
-                  'ERROR: run_phsft: rxpsh=', rxpsh, ' <= rc(', lloc+1, ')=', rr(irc(lloc+1))
+! check_data keeps rxpsh beyond every rc, so only a direct call gets here
+            if (irphs < irc(lloc+1)) then
+               write(6, '(/2a,i0,2(a,f12.6))') 'run_phsft_r: WARNING rxpsh inside the local potential core radius', &
+                  ', l=', ll, ', rxpsh=', rxpsh, ', rc=', rr(irc(lloc+1))
             end if
          end if
       end if

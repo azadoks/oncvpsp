@@ -14,6 +14,13 @@ set_target_properties(test_input_text PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMA
 add_test(NAME unit_input_text COMMAND test_input_text)
 set_tests_properties(unit_input_text PROPERTIES LABELS unit)
 
+# Unit tests of the rxpsh warning in run_phsft and run_phsft_r, called directly
+add_executable(test_run_phsft unit/test_run_phsft.f90)
+target_link_libraries(test_run_phsft PRIVATE oncvpsp::oncvpsp oncvpsp::compile_options)
+set_target_properties(test_run_phsft PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+add_test(NAME unit_run_phsft COMMAND test_run_phsft WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+set_tests_properties(unit_run_phsft PROPERTIES LABELS unit)
+
 set(scripts "${PROJECT_SOURCE_DIR}/scripts")
 set(data "${CMAKE_CURRENT_SOURCE_DIR}/data")
 
@@ -199,6 +206,15 @@ oncvpsp_test(error_rxpsh_beyond_mesh errors error_test.sh
     $<TARGET_FILE:oncvpspsr> "run_phsft: ERROR rxpsh beyond radial mesh"
     "${CMAKE_CURRENT_BINARY_DIR}/error_rxpsh_beyond_mesh"
     "${data}/14_Si.dat" "s/^   -2.0  2.0  0.02$/   -2.0  2.0  0.02  100.0/")
+foreach (case IN ITEMS "inside:2.0" "at_rc:2.70")
+    string(REPLACE ":" ";" case "${case}")
+    list(GET case 0 where)
+    list(GET case 1 radius)
+    oncvpsp_test(error_rxpsh_${where} errors error_test.sh
+        $<TARGET_FILE:oncvpspsr> "check_data: ERROR rxpsh not beyond every core radius"
+        "${CMAKE_CURRENT_BINARY_DIR}/error_rxpsh_${where}"
+        "${data}/14_Si_lder.dat" "s/^   -0\\.3  2\\.0  0\\.02  3\\.5$/   -0.3  2.0  0.02  ${radius}/")
+endforeach ()
 oncvpsp_test(error_icmod4_bad_grid errors error_test.sh
     $<TARGET_FILE:oncvpspsr> "check_data: ERROR icmod=4 needs 0<fcfact_min<=fcfact_max and fcfact_step>0"
     "${CMAKE_CURRENT_BINARY_DIR}/error_icmod4_bad_grid"

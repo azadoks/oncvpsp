@@ -16,7 +16,7 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine check_data(atsym,zz,fcfact,rcfact,fcgrid,rcgrid,epsh1,epsh2,depsh,rlmax,drl, &
+ subroutine check_data(atsym,zz,fcfact,rcfact,fcgrid,rcgrid,epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
 &                      fa,facnf, &
 &                      rc,ep,qcut,debl,nc,nv,iexc,lmax,lloc,lpopt,icmod, &
 &                      ncnf,na,la,nvcnf,nacnf,lacnf,ncon,nbas,nproj,psfile, &
@@ -27,6 +27,7 @@
 !*cnf variables are arrays of the basis atomic configuration variables
 !to be used for the test configurations
 !amesh, rr1 and rmax are the log mesh input, 0 or less for the default
+!rxpsh is the log derivative radius, negative for the default
 
  use constants_m, only: dp
  implicit none
@@ -35,7 +36,7 @@
  character*2, intent(in) :: atsym
  character*4, intent(in) :: psfile
 
- real(dp), intent(in) :: zz,fcfact,rcfact,epsh1,epsh2,depsh,rlmax,drl
+ real(dp), intent(in) :: zz,fcfact,rcfact,epsh1,epsh2,depsh,rxpsh,rlmax,drl
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
  real(dp), intent(in) :: amesh,rr1,rmax
  real(dp), intent(in) :: fa(30),facnf(30,5),rc(6),ep(6),qcut(6),debl(6)
@@ -242,6 +243,14 @@
 
  if(rlmax<rcmax) then
   write(6,'(a)') 'test_data: must have rlmax>rcmax'
+  ierr=ierr+1
+ end if
+
+!a set rxpsh must lie beyond every core radius, so that the log derivatives
+!are evaluated outside the pseudized region (run_phsft)
+ if(rxpsh>=0.0d0 .and. rxpsh<=rcmax) then
+  write(6,'(/2a,f12.6,a,f12.6)') 'check_data: ERROR rxpsh not beyond every core radius', &
+&       ', rxpsh=',rxpsh,', rcmax=',rcmax
   ierr=ierr+1
  end if
 

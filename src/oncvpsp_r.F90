@@ -286,7 +286,8 @@
  fcgrid=[fcfact_min,fcfact_max,fcfact_step]
  rcgrid=[rcfact_min,rcfact_max,rcfact_step]
 
- call check_data(atsym,zz,fcfact,rcfact,fcgrid,rcgrid,epsh1,epsh2,depsh,rlmax,drl,fa,facnf, &
+ call check_data(atsym,zz,fcfact,rcfact,fcgrid,rcgrid,epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
+&                fa,facnf, &
 &                rc,ep,qcut,debl,nc,nv,iexc,lmax,lloc,lpopt,icmod, &
 &                ncnf,na,la,nvcnf,nacnf,lacnf,ncon,nbas,nproj,psfile, &
 &                amesh_in,rr1_in,rmax_in)

@@ -4,8 +4,8 @@ Suspected bugs found while auditing dummy-argument `intent`s across `src/`,
 then triaged against the code, the callers, the input checks in
 `check_data.f90`, and the test inputs in `tests/data/`. The P1 and P2
 issues have been fixed, and so have the P3 issues apart from cosmetic
-items, one unchecked input and dead code that is kept on purpose;
-[Next steps](#next-steps) gives a plan for those. Line numbers refer to the code before the fixes.
+items and dead code that is kept on purpose; [Next steps](#next-steps)
+gives a plan for those. Line numbers refer to the code before the fixes.
 
 The issues were found on `master`, and the fixes were then merged into
 `oncvpsp-opt`, which had fixed some of them independently. Where the two
@@ -48,7 +48,7 @@ Priorities:
 | P3 | Adams 1/24 coefficient in `adams.inc` | last digits only; refs pass unchanged | fixed |
 | P3 | input echoes that don't run again to the same output | echo lines only (5 refs) | fixed |
 | P3 | 5 cosmetic items | no | open |
-| P3 | `run_phsft(_r)` doesn't stop for `rxpsh<=rc` | no | open |
+| P3 | `rxpsh` inside a core radius not rejected | no | fixed |
 
 ## P1 (fixed)
 
@@ -193,16 +193,6 @@ Priorities:
 
 ## P3 (open)
 
-### Unchecked input
-
-- **`run_phsft.f90:93,114`, `run_phsft_r.f90:93,114`**: for
-  `rxpsh<=rc(l)` they print `ERROR: run_phsft: rxpsh=... <= rc(l)=...`
-  and go on, evaluating the log derivatives inside rc. The message predates
-  the [error format](coding_standards.md#error-messages), and `run_phsft_r`
-  calls itself `run_phsft`. Either stop with `error stop 1`, or make it a
-  `WARNING`; `check_data` can't test it, because rc is moved onto the grid
-  later. Found while documenting `rxpsh` (2026-10-19).
-
 ### Dead code
 
 - **`functionals.F90`**: in `functional_get_tau`, `n(1)`/`t(1)` are stale
@@ -292,6 +282,24 @@ Make binaries. New error messages follow the format in
   The `echo` tests (`scripts/echo_rerun_test.sh`) check the output echo
   and the file echo for inputs that cover each of these. `08_O_wigner`
   can't be checked with UPF, because UPF output doesn't support `iexc=1`.
+
+- **`rxpsh` inside a core radius**: `run_phsft` and `run_phsft_r`
+  (lines 93 and 114) printed `ERROR: run_phsft: rxpsh=... <= rc(l)=...`
+  for `rxpsh<=rc` and went on, evaluating the log derivatives inside rc;
+  `run_phsft_r` called itself `run_phsft`, and the local-potential message
+  printed `lloc+1` as the l. Found while documenting `rxpsh` (2026-10-19).
+  - `check_data` now stops with
+    `check_data: ERROR rxpsh not beyond every core radius` when a set
+    `rxpsh` is not larger than every input rc (`rc(5)` too for `lloc=4`).
+    Tests `error_rxpsh_inside` and `error_rxpsh_at_rc`.
+  - `run_phsft(_r)` now give
+    `run_phsft: WARNING rxpsh inside the core radius, l=..., rxpsh=..., rc=...`
+    (or `inside the local potential core radius`) and go on, for callers
+    of the library that skip `check_data`. The test is now `irphs<irc`: the
+    mesh rc is the first point beyond the input rc, and the log derivative
+    radius the first point at or beyond `rxpsh`, so with `rxpsh>rc` the
+    programs never get the warning, while a radius between the input rc
+    and the mesh rc (same mesh point) is allowed. Test `unit_run_phsft`.
 
 **Build and dead code**
 
@@ -392,8 +400,6 @@ What is left:
 1. **Cosmetic.** Fold the remaining [cosmetic](#cosmetic) items into the
    mechanical coding-standard pass in
    [Coding Standard Violations](coding_standard_violations.md#fixing).
-2. **`rxpsh<=rc`**: decide between an error and a warning (see
-   [Unchecked input](#unchecked-input)).
 
 ## Dismissed
 
