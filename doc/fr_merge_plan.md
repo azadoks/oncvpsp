@@ -96,11 +96,15 @@ The fr path had 3 reference tests to the sr path's 28.
 
 ### Phase 5: output
 
-The psp8, UPF and PSML files differ in form for fr, so their writers stay
-separate; what they share moves to common routines.
+The psp8, UPF and PSML files differ in form for fr. Where the difference
+is a few sections, the two writers merge as the rest did; otherwise they
+stay separate and what they share moves to common routines.
 
 - [x] `gnu_script` / `gnu_script_r`
-- [ ] The shared parts of `linout` / `linout_r`
+- [x] The input echo of `linout`, `linout_r`, `upfout`, `upfout_r`:
+      `write_input_echo` in `input_echo_m`
+- [x] `linout` / `linout_r`, merged: they differ only in the projector
+      section and a few header lines
 - [ ] The shared parts of `upfout` / `upfout_r`
 - [ ] The shared parts of `psmlout` / `psmlout_r`
 

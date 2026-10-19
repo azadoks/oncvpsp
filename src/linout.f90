@@ -1,5 +1,5 @@
 !
-! Copyright (c) 1989-2017 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
+! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
 !
@@ -17,30 +17,37 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 ! interpolates various arrays onto linear radial mesh to create file
-! for Abinit input using pspcod=8
+! for Abinit input using pspcod=8, with the spin-orbit projectors when
+! fully relativistic
 
- subroutine linout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
+ subroutine linout(lmax,lloc,rc,vkb,evkb,vsr,esr,vso,eso,nproj,rr,vpuns, &
+&                  rho,rhomod, &
 &                  rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl, &
-&                  atsym, &
+&                  atsym,soscale, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,fcfact0,rcfact, &
 &                  fcgrid,rcgrid, &
-&                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh)
+&                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,nkap)
 
 
 !lmax  maximum angular momentum
 !lloc  l for local potential
 !rc  core radii
-!vkb  VKB projectors
+!vkb  VKB projectors, written when nkap=1
 !evkb  coefficients of VKB projectors
+!vsr  normalized scalar-relativistic projectors, written with vso when
+!     nkap=2
+!esr  energy coefficients of vsr
+!vso  normalized spin-orbit projectors
+!eso  energy coefficients of vso
 !nproj  number of vkb projectors for each l
 !rr  log radial grid
 !vpuns  unscreened semi-local pseudopotentials (vpuns(:,5) is local
 !       potential if linear combination is used)
 !rho  valence pseudocharge
-!rhomod  model core charge
 !rhotae  all-electron valence charge
 !rhoc  all-electron core charge
+!rhomod  model core charge
 !zz  atomic number
 !zion  at this point, total valence charge (becomes psuedoion charge)
 !mmax  size of log radial grid
@@ -53,6 +60,9 @@
 !nrl  size of linear radial grid
 !drl  spacing of linear radial grid
 !atsym  atomic symbol
+!soscale  possible factor to boost or cut spin-orbit strength, not in use
+!         yet
+!nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
 !(the arguments from na on are input variables echoed in the psp8 file)
 !na  principal quantum numbers, reference configuration
 !la  angular momenta, reference configuration
@@ -67,7 +77,7 @@
 !ncnf  number of test configurations
 !fa  occupancies, reference configuration
 !rc0  input core radii
-!ep  energies at which the pseudopotentials are generated (Ha)
+!ep  energies at which the pseudopotentials are generated (Ha), each kap
 !qcut  residual-energy cutoff wave vectors for each l
 !debl  energy shifts for the second projectors for each l (Ha)
 !facnf  occupancies, all configurations
@@ -85,19 +95,23 @@
 !log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets
 !          it (else 0)
 
+
  use constants_m, only: dp
  use input_echo_m, only: write_input_echo
  implicit none
 
 !Input variables
- integer, intent(in) :: lmax,lloc,iexc,mmax,mxprj,nrl,icmod
+ integer, intent(in) :: lmax,lloc,iexc,mmax,mxprj,nrl,icmod,nkap
  integer, intent(in) :: nproj(6)
- real(dp), intent(in) :: drl,fcfact,fcfact0,rcfact,zz,zion
+ real(dp), intent(in) :: drl,fcfact,fcfact0,rcfact,zz,zion,soscale
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
- real(dp), intent(in) :: rr(mmax),vpuns(mmax,5),rho(mmax),vkb(mmax,mxprj,4)
+ real(dp), intent(in) :: rr(mmax),vpuns(mmax,5),rho(mmax)
  real(dp), intent(in) :: rhotae(mmax),rhoc(mmax)
+ real(dp), intent(in) :: vkb(mmax,mxprj,4,nkap),evkb(mxprj,4,nkap)
+ real(dp), intent(in) :: vsr(mmax,2*mxprj,4),vso(mmax,2*mxprj,4)
+ real(dp), intent(in) :: esr(2*mxprj,4),eso(2*mxprj,4)
  real(dp), intent(in) :: rhomod(mmax,5)
- real(dp), intent(in) :: rc(6),evkb(mxprj,4)
+ real(dp), intent(in) :: rc(6)
  character(len=2), intent(in) :: atsym
 
 !additional input for psp8 output to echo input file, all as defined
@@ -105,45 +119,68 @@
  integer, intent(in) :: na(30),la(30),ncon(6),nbas(6)
  integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
  integer, intent(in) :: nc,nv,lpopt,ncnf
- real(dp), intent(in) :: fa(30),rc0(6),ep(6),qcut(6),debl(6),facnf(30,5)
+ real(dp), intent(in) :: fa(30),rc0(6),ep(6,nkap),qcut(6),debl(6),facnf(30,5)
  real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rxpsh,rlmax
  real(dp), intent(in) :: log_mesh(3)
  character(len=4), intent(in) :: psfile
 
 !Local variables
- integer :: ii,iprj,jj,ll,l1,ixc_abinit
- integer :: dtime(8)
+ integer :: ii,jj,ll,l1,ixc_abinit
+ integer :: dtime(8),npr_sr(5),npr_so(5)
+ real(dp) :: zero(20)
  real(dp) :: fchrg
  real(dp), allocatable :: rhomodl(:,:)
- real(dp),allocatable :: rhol(:),rl(:),vkbl(:,:,:),vpl(:,:)
+ real(dp),allocatable :: rhol(:),rl(:),vpl(:,:)
  real(dp),allocatable :: rhotael(:),rhocl(:)
+ real(dp), allocatable :: vkbl(:,:,:),vsrl(:,:,:),vsol(:,:,:)
  character(len=2) :: pspd(3)
+ character(len=48) :: version
 
-
- allocate(rhol(nrl),rl(nrl),vkbl(nrl,mxprj,4),vpl(nrl,5),rhomodl(nrl,5))
+ allocate(rhol(nrl),rl(nrl),vpl(nrl,5),rhomodl(nrl,5))
  allocate(rhotael(nrl),rhocl(nrl))
+ allocate(vkbl(nrl,mxprj,4))
+ allocate(vsrl(nrl,2*mxprj,4),vsol(nrl,2*mxprj,4))
 
-!
+! set up projector number for sr_so calculations based on non-zero
+! coefficients
+ npr_sr(:)=0 ; npr_so(:)=0
+ if(nkap==2) then
+   do l1=1,lmax+1
+     do ii=1,2*nproj(l1)
+       if(abs(esr(ii,l1))>0.0d0) npr_sr(l1)=npr_sr(l1)+1
+       if(abs(eso(ii,l1))>0.0d0) npr_so(l1)=npr_so(l1)+1
+     end do
+     write(6,'(a,3i4)') 'l1-1,npr_sr,npr_so',l1-1,npr_sr(l1),npr_so(l1)
+   end do
+ end if
+
 ! interpolation of everything onto linear output mesh
-
+!
  do  ii=1,nrl
    rl(ii)=drl*dble(ii-1)
  end do
 !
- do l1=1,max(lmax+1,lloc+1)
-   call dpnint(rr,vpuns(1,l1),mmax,rl,vpl(1,l1),nrl)
+ vpl(:,:)=0.0d0
+ l1=lloc+1
+ call dpnint(rr,vpuns(1,l1),mmax,rl,vpl(1,l1),nrl)
 
 ! override dpnint extrapolation to zero for vpl
-   vpl(1,l1)=vpuns(1,l1)
+ vpl(1,l1)=vpuns(1,l1)
 
-   if(l1 /= lloc + 1) then
-     do iprj=1,nproj(l1)
-
-       call dpnint(rr,vkb(1,iprj,l1),mmax,rl,vkbl(1,iprj,l1),nrl)
-
+ do l1=1,lmax+1
+   if(l1 /= lloc+1) then
+     do jj=1,nproj(l1)
+       if(nkap==1) call dpnint(rr,vkb(1,jj,l1,1),mmax,rl,vkbl(1,jj,l1),nrl)
+     end do
+     do jj=1,npr_sr(l1)
+       call dpnint(rr,vsr(1,jj,l1),mmax,rl,vsrl(1,jj,l1),nrl)
+     end do
+     do jj=1,npr_so(l1)
+       call dpnint(rr,vso(1,jj,l1),mmax,rl,vsol(1,jj,l1),nrl)
      end do
    end if
  end do
+
 
  call dpnint(rr,rho,mmax,rl,rhol,nrl)
  call dpnint(rr,rhotae,mmax,rl,rhotael,nrl)
@@ -204,21 +241,37 @@
 &  nrl, 0, '    pspcod,pspxc,lmax,lloc,mmax,r2well'
  write(6,'(3f12.8, a)') rl(nrl),fchrg, 0.0,  &
 &  '    rchrg fchrg qchrg'
- write(6,'(5i6, a)') (nproj(l1),l1=1,5),  &
-&  '    nproj'
- write(6,'(2i6, a)') 1,1, &
-&  '           extension_switch'
+ if(nkap==1) then
+   write(6,'(5i6, a)') (nproj(l1),l1=1,5),  &
+&    '    nproj'
+   write(6,'(2i6, a)') 1,1, &
+&    '           extension_switch'
+ else
+   write(6,'(4i6, a)') npr_sr(1:4),'    nproj'
 
-! write the VKB projectors and the local potential
- do l1=1,max(lmax+1,lloc+1)
+! this is where abinit is informed that we have spin-orbit
+   write(6,'(2i6, a)') 3,1, &
+&    '           extension_switch'
+   if(soscale==1.d0) then
+     write(6,'(3i6, a)') npr_so(2:4),'    nprojso'
+   else
+     write(6,'(3i6, a,f6.2)') npr_so(2:4),'    nprojso  X,soscale', soscale
+   end if
+ end if
+
+! write the VKB projectors, or the scalar-relativistic ones, and the local
+! potential if it is one of the semi-local potentials
+ zero(:)=0.0d0
+
+ do l1=1,lmax+1
    ll=l1-1
    if(ll==lloc) then
      write(6,'(i4)') ll
      do ii = 1,nrl
        write(6,'(i6,1p,2e21.13)') ii,rl(ii),vpl(ii,l1)
      end do
-   else if(nproj(l1)>0) then
-     write(6,'(i4,23x,1p,6e21.13)') ll,(evkb(jj,l1),jj=1,nproj(l1))
+   else if(nkap==1 .and. nproj(l1)>0) then
+     write(6,'(i4,23x,1p,6e21.13)') ll,(evkb(jj,l1,1),jj=1,nproj(l1))
      do ii = 1,nrl
        if(rl(ii)<=rc(l1)+2.0d0*drl) then
          write(6,'(i6,1p,6e21.13)') ii,rl(ii),(vkbl(ii,jj,l1),jj=1,nproj(l1))
@@ -226,9 +279,40 @@
          write(6,'(i6,f6.2,6f4.0)') ii,rl(ii),(vkbl(ii,jj,l1),jj=1,nproj(l1))
        end if
      end do
+   else if(nkap==2 .and. npr_sr(l1)>0) then
+     write(6,'(i4,23x,1p,10e21.13)') ll,(esr(jj,l1),jj=1,npr_sr(l1))
+     do ii = 1,nrl
+       if(rl(ii)<=rc(l1)+2.0d0*drl) then
+         write(6,'(i6,1p,11e21.13)') ii,rl(ii),(vsrl(ii,jj,l1),jj=1,npr_sr(l1))
+       else
+         write(6,'(i6,f6.2,10f4.0)') ii,rl(ii),(zero(jj),jj=1,npr_sr(l1))
+       end if
+     end do
    end if
  end do
 
+! write general local potential if called for
+ if(lloc>lmax) then
+   write(6,'(i4)') lloc
+   do ii = 1,nrl
+     write(6,'(i6,1p,2e21.13)') ii,rl(ii),vpl(ii,lloc+1)
+   end do
+ end if
+
+! write spin-orbit projectors (none when nkap=1)
+ do l1=2,lmax+1
+   ll=l1-1
+   if(npr_so(l1)>0) then
+     write(6,'(i4,23x,1p,20e21.13)') ll,(soscale*eso(jj,l1),jj=1,npr_so(l1))
+     do ii = 1,nrl
+       if(rl(ii)<=rc(l1)+2.0d0*drl) then
+         write(6,'(i6,1p,11e21.13)') ii,rl(ii),(vsol(ii,jj,l1),jj=1,npr_so(l1))
+       else
+         write(6,'(i6,f6.2,10f4.0)') ii,rl(ii),(zero(jj),jj=1,npr_so(l1))
+       end if
+     end do
+   end if
+ end do
 
 ! write the model core charge if called for
  if(fchrg>0.0d0) then
@@ -243,11 +327,16 @@
    write(6,'(i6,1p,4e21.13)') ii,rl(ii),rhol(ii),rhotael(ii),rhocl(ii)
  end do
 
+ if(nkap==1) then
+   version='#scalar-relativistic version 4.0.1 0r/27/2018'
+ else
+   version='#relativistic version 4.0.1 03/03/2109'
+ end if
  write(6,'(a)') '<INPUT>'
  write(6,'(a/a/a/a)') &
 &    '#', &
 &    '#ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
-&    '#scalar-relativistic version 4.0.1 0r/27/2018', &
+&    trim(version), &
 &    '#'
 
  write(6,'(a/a/a/a)') &
@@ -256,18 +345,20 @@
 &    '#in any publication utilizing these pseudopotentials.', &
 &    '#'
 
- call write_input_echo(1,1,atsym,zz,nc,nv,iexc,psfile, &
-&                       na,la,fa,lmax,rc0,ep,ncon,nbas,qcut, &
+ if(nkap==2) write(6,'(a)') '#Echo of input data for oncvpsp-4.0.1'
+ call write_input_echo(nkap,1,atsym,zz,nc,nv,iexc,psfile, &
+&                       na,la,fa,lmax,rc0,ep(:,1),ncon,nbas,qcut, &
 &                       lloc,lpopt,dvloc0,nproj,debl, &
 &                       icmod,fcfact0,rcfact,fcgrid,rcgrid, &
 &                       epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
 &                       ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh)
 
 ! write termination signal
- write(6,'(a)')'</INPUT>'
+ write(6,'(a)') '</INPUT>'
  write(6,'(/a)') 'END_PSP'
 
- deallocate(rhol,rl,vkbl,vpl,rhomodl,rhotael,rhocl)
+ deallocate(rhol,rl,vpl,rhomodl,rhotael,rhocl)
+ deallocate(vkbl,vsrl,vsol)
 
  return
  end subroutine linout

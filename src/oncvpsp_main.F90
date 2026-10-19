@@ -1038,23 +1038,14 @@
  call gnu_script(epa,evkb,lmax,lloc,mxprj,nproj,nkap)
 
  if(trim(psfile)=='psp8' .or. trim(psfile)=='both') then
-   if(irel==2) then
-     soscale=1.0d0
-     call linout_r(lmax,lloc,rc,vsr,esr,vso,eso,nproj,rr,vpuns,rho,rhomod, &
-&                  rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym, &
-&                  soscale, &
-&                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,fcfact0,rcfact, &
-&                  fcgrid,rcgrid, &
-&                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh)
-   else
-     call linout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
-&                rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym, &
-&                na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&                fa,rc0,ep(1,1),qcut,debl,facnf,dvloc0,fcfact,fcfact0,rcfact, &
-&                fcgrid,rcgrid, &
-&                epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh)
-   end if
+   soscale=1.0d0
+   call linout(lmax,lloc,rc,vkb,evkb,vsr,esr,vso,eso,nproj,rr,vpuns,rho, &
+&              rhomod,rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl, &
+&              atsym,soscale, &
+&              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
+&              fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,fcfact0,rcfact, &
+&              fcgrid,rcgrid, &
+&              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,nkap)
  end if
 
  if(trim(psfile)=='upf' .or. trim(psfile)=='both') then
