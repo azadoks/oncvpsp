@@ -13,7 +13,10 @@ has got. Tick a box when its commit is in.
 - **Output is unchanged.** Every step passes `ctest -j8` (the reference
   comparisons allow no numerical difference), `scripts/check_interfaces.sh`,
   the legacy `make` check and the comparison of the split programs
-  (`_ae.x` + `_ps.x`) with the single ones. One commit per step.
+  (`_ae.x` + `_ps.x`) with the single ones. The reference comparisons
+  ignore text, so the outputs are also compared line for line with those
+  of the code before the merge (53bd8ac), apart from the build line and
+  dates. One commit per step.
 - **Little preprocessor.** No new `#if` blocks. Which equation is solved
   is an integer argument, `irel` (0 nr, 1 sr, 2 fr), tested at run time.
 - **Interfaces that C could call.** A merged or new routine takes integer
@@ -69,7 +72,7 @@ The fr path had 3 reference tests to the sr path's 28.
 - [x] `run_config_ps` / `run_config_ps_r`
 - [x] `psatom` / `psatom_r`
 - [x] `run_phsft` / `run_phsft_r`
-- [ ] `run_diag` / `run_diag_r`
+- [x] `run_diag` / `run_diag_r`
 - [ ] `run_plot` / `run_plot_r`
 - [ ] `run_vkb` / `run_vkb_r`
 - [ ] The projector loop of the driver (from `npa` to `run_optimize`)

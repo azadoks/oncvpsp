@@ -739,7 +739,7 @@
  write(6,'(/a,f12.6/)') 'Pseudoatom total energy', epstot
 
  call run_diag(lmax,npa,epa,lloc,irc, &
-&                    vkb,evkb,nproj,rr,vfull,vp,zz,mmax,mxprj,srel)
+&               vkb,evkb,nproj,rr,vfull,vp,zz,mmax,mxprj,irel,nkap)
 
  call run_ghosts(lmax,la,ea(1,1),nc,nv,lloc,irc,qmsbf, &
 &                    vkb,evkb,nproj,rr,vp,mmax,mxprj)

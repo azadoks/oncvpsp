@@ -831,8 +831,8 @@
 
 ! diagnostics
 
- call run_diag_r(lmax,npa,epa,lloc,irc, &
-&                vkb,evkb,nproj,rr,vfull,vp,zz,mmax,mxprj)
+ call run_diag(lmax,npa,epa,lloc,irc, &
+&               vkb,evkb,nproj,rr,vfull,vp,zz,mmax,mxprj,irel,nkap)
 
  call run_diag_sr_so_r(lmax,npa,epa,lloc,irc, &
 &                      vsr,esr,vso,eso,nproj,rr,vfull,vp,zz,mmax,mxprj)
