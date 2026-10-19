@@ -20,7 +20,7 @@
 ! for PWSCF input using the UPF file format
 
  subroutine upfout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
-&                  zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
+&                  zz,zion,mmax,mxprj,iexc,icmod,nrlin,drl,atsym,epstot, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
 &                  epsh1,epsh2,depsh,rlmax,psfile,uupsa,ea)
@@ -43,7 +43,7 @@
 !mxprj  dimension of number of projectors
 !iexc  type of exchange-correlation
 !icmod  1 if model core charge is used, otherwise 0
-!nrl size of linear radial grid
+!nrlin  size of linear radial grid (enlarged locally to fit the orbitals)
 !drl spacing of linear radial grid
 !atsym  atomic symbol
 !epstot  pseudoatom total energy
@@ -61,7 +61,7 @@
  real(dp), parameter :: pi=3.141592653589793238462643383279502884197_dp
 
 !Input variables
- integer, intent(in) :: lmax,lloc,iexc,mmax,mxprj,icmod
+ integer, intent(in) :: lmax,lloc,iexc,mmax,mxprj,icmod,nrlin
  integer, intent(in) :: nproj(6)
  real(dp), intent(in) :: drl,fcfact,rcfact,zz,zion,epstot
  real(dp), intent(in) :: rr(mmax),vpuns(mmax,5),rho(mmax),vkb(mmax,mxprj,4)
@@ -69,9 +69,6 @@
  real(dp), intent(in) :: rc(6),evkb(mxprj,4)
  character*2, intent(in) :: atsym
  real(dp), intent(in) :: uupsa(mmax,nv)
-
-!Input/output variables
- integer, intent(inout) :: nrl
 
 !additional input for upf output to echo input file, all as defined
 ! in the main progam
@@ -85,6 +82,7 @@
 !Output variables - printing only
 
 !Local variables
+ integer :: nrl
  integer :: ii,jj,ll,l1,iproj,ntotproj,nrlproj
  integer :: dtime(8)
  real(dp) :: al,nrmsum,uurcut
@@ -94,6 +92,7 @@
  character*2 :: pspd(3)
 
  lnames = "SPDFG"
+ nrl = nrlin
 
 ! adjust nrl to properly accomodate atomic orbitals
  al = dlog(rr(2)/rr(1))
@@ -106,10 +105,11 @@
        exit  ! Cutoff radius such that uu norm accurate to 10^-6
      end if
    end do
+   jj=max(jj,1)
    if (rr(jj) > uurcut) uurcut = rr(jj)
  end do
  if (uurcut > drl*dble(nrl-1)) then
-   nrl = 1 + uurcut/drl
+   nrl = 1 + int(uurcut/drl)
    if(mod(nrl,2)/=0) nrl=nrl+1
    write(6,'(a,i5,a,f10.5)') "Updating nrl = ", nrl, " for uurcut = ", uurcut
  end if
@@ -324,7 +324,7 @@
 &        'functional="WC"'
 
    else
-     write(6,'(t8,a)') &
+     write(6,'(t8,a,i0,a)') &
 &        'upfout: ERROR iexc = ',iexc,' is presently unsupported for UPF output'
      stop
    end if

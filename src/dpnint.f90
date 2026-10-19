@@ -108,6 +108,8 @@
    end do
    ss(jj)=sum
 
+ end do
+
 ! special treatment for the origin
 ! Do order npoly EXTRAPOLATION to the origin using the points inerpolated
 ! on the linear grid rather than the log grid, since this represents an
@@ -117,6 +119,11 @@
 ! of order npoly or less, this is exact.
 
   if(tt(1)==0.0d0) then
+   if(mm<npoly+2) then
+     write(6,'(/2a,i0,a,i0)') 'dpnint: ERROR too few points to extrapolate', &
+&          ' to the origin, mm=',mm,', npoly=',npoly
+     error stop 1
+   end if
 
    istart=2
    zz=0.0d0
@@ -135,6 +142,5 @@
 
   end if
 
- end do
  return
  end subroutine dpnint

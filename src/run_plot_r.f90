@@ -177,6 +177,11 @@
 &           ', kap=',kap,', all-electron wave function', ', pseudo w-f'
        call ldiracfs(nnae,ll,kap,ierr,epa(iprj,l1,ikap), &
 &                    rr,zz,vfull,ur,urp,mmax,n2)
+       if(ierr/=0) then
+         write(6,'(/2a,i0,a,i0,a,i0)') 'run_plot_r: ERROR ldiracfs failed', &
+&              ', ll=',ll,', kap=',kap,', ierr=',ierr
+         error stop 1
+       end if
        call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm)
 
        call lschvkbs(ll,npr,epa(iprj,l1,ikap),rr,vp(1,lloc+1,ikap), &

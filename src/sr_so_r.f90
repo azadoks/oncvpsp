@@ -250,6 +250,7 @@
 
      do jj=1,nn
        apk=0.0d0
+       ipk=1
        do ii=1,mmax
          if(abs(vso(ii,jj,l1))>apk) then
            apk=abs(vso(ii,jj,l1))
@@ -260,6 +261,7 @@
          vso(:,jj,l1)=-vso(:,jj,l1)
        end if
        apk=0.0d0
+       ipk=1
        do ii=1,mmax
          if(abs(vsr(ii,jj,l1))>apk) then
            apk=abs(vsr(ii,jj,l1))

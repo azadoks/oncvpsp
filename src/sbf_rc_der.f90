@@ -41,7 +41,7 @@
  real(dp) :: sb_out(10),sbfad(5,10)
  integer :: ii,ll
 
- if(llin>5) then
+ if(llin>4) then
   write(6,'(a,i4,a)') 'sbf_rc_der: argument ERROR, llin = ',llin,&
 &  ' >5'
   stop

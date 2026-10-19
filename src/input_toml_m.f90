@@ -881,8 +881,8 @@ module input_toml_m
       integer, intent(in) :: stat
       character(len=*), intent(in) :: name
       if (stat /= toml_stat%success) then
-         write (stderr, '(A,A)') 'Error: Missing or invalid value ', trim(name)
-         stop 1
+         write (6, '(/2a)') 'check_stat: ERROR missing or invalid value, key=', trim(name)
+         error stop 1
       end if
    end subroutine check_stat
 

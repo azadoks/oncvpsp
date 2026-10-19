@@ -20,7 +20,7 @@
 ! for PWSCF input using the UPF file format, fully-relativistic case
 
  subroutine upfout_r(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
-&                  zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
+&                  zz,zion,mmax,mxprj,iexc,icmod,nrlin,drl,atsym,epstot, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
 &                  epsh1,epsh2,depsh,rlmax,psfile, uua,ea)
@@ -43,7 +43,7 @@
 !mxprj  dimension of number of projectors
 !iexc  type of exchange-correlation
 !icmod  1 if model core charge is used, otherwise 0
-!nrl size of linear radial grid
+!nrlin  size of linear radial grid (enlarged locally to fit the orbitals)
 !drl spacing of linear radial grid
 !atsym  atomic symbol
 !epstot  pseudoatom total energy
@@ -60,7 +60,7 @@
  real(dp), parameter :: pi=3.141592653589793238462643383279502884197_dp
 
 !Input variables
- integer, intent(in) :: lmax,lloc,iexc,mmax,mxprj,icmod
+ integer, intent(in) :: lmax,lloc,iexc,mmax,mxprj,icmod,nrlin
  integer, intent(in) :: nproj(6)
  real(dp), intent(in) :: drl,fcfact,rcfact,zz,zion,epstot
  real(dp), intent(in) :: rr(mmax),vpuns(mmax,5),rho(mmax),vkb(mmax,mxprj,4,2)
@@ -69,21 +69,19 @@
  character*2, intent(in) :: atsym
  real(dp), intent(in) :: uua(mmax,2,nv)
 
-!Input/output variables
- integer, intent(inout) :: nrl
-
 !additional input for upf output to echo input file, all as defined
 ! in the main progam
  integer, intent(in) :: na(30),la(30),ncon(6),nbas(6)
  integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
  integer, intent(in) :: nc,nv,lpopt,ncnf
- real(dp), intent(in) :: fa(30),rc0(6),ep(6,2),qcut(6),debl(6,2),facnf(30,5),ea(30,2)
+ real(dp), intent(in) :: fa(30),rc0(6),ep(6,2),qcut(6),debl(6),facnf(30,5),ea(30,2)
  real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rlmax
  character*4, intent(in) :: psfile
 
 !Output variables - printing only
 
 !Local variables
+ integer :: nrl
  integer :: ii,jj,ll,l1,iproj,ntotproj,nrlproj,nwfc
  integer :: ikap,mkap
  integer :: dtime(8)
@@ -95,6 +93,7 @@
  character*2 :: pspd(3)
 
  lnames = "SPDFG"
+ nrl = nrlin
 
  ! adjust nrl to properly accomodate atomic orbitals
  al = dlog(rr(2)/rr(1))
@@ -114,11 +113,12 @@
          exit  ! Cutoff radius such that uu norm accurate to 10^-6
        end if
      end do
+     jj=max(jj,1)
      if (rr(jj) > uurcut) uurcut = rr(jj)
    end do
  end do
  if (uurcut > drl*dble(nrl-1)) then
-   nrl = 1 + uurcut/drl
+   nrl = 1 + int(uurcut/drl)
    if(mod(nrl,2)/=0) nrl=nrl+1
    write(6,'(a,i5,a,f10.5)') "Updating nrl = ", nrl, " for uurcut = ", uurcut
  end if
@@ -239,7 +239,7 @@
  write(6,'(a/a/a)') '#','# VANDERBILT-KLEINMAN-BYLANDER PROJECTORs', &
 &      '# l, nproj, debl'
  do l1=1,lmax+1
-   write(6,'(2i5,f10.5)') l1-1,nproj(l1),debl(l1,1)
+   write(6,'(2i5,f10.5)') l1-1,nproj(l1),debl(l1)
  end do
 
 write(6,'(a/a/a)') '#','# MODEL CORE CHARGE', &
@@ -347,7 +347,7 @@ write(6,'(a/a/a)') '#','# MODEL CORE CHARGE', &
 &        'functional="WC"'
 
    else
-     write(6,'(t8,a)') &
+     write(6,'(t8,a,i0,a)') &
 &        'upfout: ERROR iexc = ',iexc,' is presently unsupported for UPF output'
      stop
    end if

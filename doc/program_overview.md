@@ -178,7 +178,7 @@ each l, and has the following steps:
 2) The routine qroots selects the wave vectors *q_i* for the xi^B basis,
    Eq.(3) according to the principles discussed following Eq.(10).
 
-3) The routine *sbf_basis* creates the xi^O basis using Eq.(4).
+3) The routine *sbf_basis_con* creates the xi^O basis using Eq.(4).
 
 4) The routine *Const_basis* executes Eqs.(6-10), producing the xi^N basis
    and the *phi_0* component of the pseudo wave function.  Diagnostics

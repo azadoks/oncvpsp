@@ -12,7 +12,6 @@ straightforward modifications of the old versions, mostly just incorporating
 the ikap loops and Dirac equations for full-potential calculations:
 
 * fphsft_r
-* fpovlp_r
 * gnu_script_r (plot lines are labeled S+, P+, P-, ... indicting j=l +/- 1/2)
 * linout_r
 * oncvpsp_r

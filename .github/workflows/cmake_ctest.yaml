@@ -20,6 +20,8 @@ jobs:
               uses: threeal/cmake-action@v2
               with:
                 build-args: "-j"
+            - name: Check call interfaces
+              run: scripts/check_interfaces.sh build/modules
             - name: Test
               uses: threeal/ctest-action@v1
               with:

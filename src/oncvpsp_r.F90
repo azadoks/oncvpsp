@@ -169,6 +169,11 @@
                               ncnf, nvcnf, nacnf, lacnf, facnf)
     case(INPUT_TEXT)
        open(newunit=unit, file=input_filename, status='old', action='read', iostat=ios)
+       if (ios /= 0) then
+          write(6, '(/2a)') 'oncvpsp_r: ERROR cannot open input file, file=', &
+             trim(input_filename)
+          error stop 1
+       end if
        call read_input_text_r(unit, inline, &
                               atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
                               lmax, rc, ep, ncon, nbas, qcut, &
@@ -182,6 +187,11 @@
 #if (defined WITH_TOML)
     case(INPUT_TOML)
        open(newunit=unit, file=input_filename, status='old', action='read', iostat=ios)
+       if (ios /= 0) then
+          write(6, '(/2a)') 'oncvpsp_r: ERROR cannot open input file, file=', &
+             trim(input_filename)
+          error stop 1
+       end if
        call read_input_toml_r(unit, &
                               atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
                               lmax, rc, ep, ncon, nbas, qcut, &
@@ -197,11 +207,6 @@
         write (stderr, '(a,i2)') 'Error: Unknown input mode =', input_mode
         stop 1
  end select
-
- if(ios /= 0) then
-    write(6,'(a)') 'oncvpsp: ERROR reading input file'
-    stop
- end if
 
  nvcnf(1)=nv
  do ii=1,nc+nv
@@ -519,7 +524,6 @@
 !get all-electron overlap matrix
    do jj=1,nproj(l1)
      do ii=1,jj
-!      call fpovlp_r(uua(1,ii,ikap),uua(1,jj,ikap),irc(l1),ll,zz, &
        call fpovlp(uua(1,ii,ikap),uua(1,jj,ikap),irc(l1),ll,zz, &
 &                  qq(ii,jj),rr,srel)
        qq(jj,ii)=qq(ii,jj)

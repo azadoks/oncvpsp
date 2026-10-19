@@ -81,6 +81,7 @@
 
  sls=ll*(ll+1)
 
+ imin=2
  if(emin==0.0d0) then
    emin=emax
    do ii=1,mbar

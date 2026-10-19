@@ -34,7 +34,7 @@
  character*4, intent(in) :: psfile
 
  real(dp), intent(in) :: zz,fcfact,rcfact,epsh1,epsh2,depsh,rlmax,drl
- real(dp), intent(in) :: fa(30),facnf(30,5),rc(6),ep(6),qcut(6),debl(5)
+ real(dp), intent(in) :: fa(30),facnf(30,5),rc(6),ep(6),qcut(6),debl(6)
 
  integer, intent(in) :: nc,nv,iexc,lmax,lloc,lpopt,icmod,ncnf
  integer, intent(in) :: na(30),la(30),nvcnf(5),nacnf(30,5),lacnf(30,5)

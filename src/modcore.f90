@@ -93,6 +93,13 @@
    stop
  end if
 
+! the 7-point derivative stencils below reach down to ircc-22
+ if(ircc<23) then
+   write(6,'(/2a,i0)') 'modcore: ERROR core-valence crossover too close', &
+&        ' to the origin, ircc=',ircc
+   error stop 1
+ end if
+
 !set limit for d2Exc calculation to radius beyond which rhomod=rhoc
    irmod=max(irps,ircc)
 

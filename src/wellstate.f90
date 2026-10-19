@@ -71,6 +71,7 @@
 !if bound state is found, check its localization
  if(ierr==0) then
    umax=0.0d0
+   iumax=1
    do ii=mmax,1,-1
      if(dabs(uu(ii))>=umax) then
        umax=dabs(uu(ii))

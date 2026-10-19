@@ -91,6 +91,11 @@
      exit
    end if
  end do
+ if(ircc==0) then
+   write(6,'(/2a)') 'modcore2: ERROR core charge never exceeds', &
+&        ' valence pseudocharge'
+   error stop 1
+ end if
 
 ! find scaled valence pseudocharge - core charge crossover
  ircc = 0

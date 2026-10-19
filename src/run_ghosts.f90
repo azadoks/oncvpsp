@@ -106,6 +106,12 @@
 
    mbfact=3
    mbar = idint(dlog(mbfact*rr(irc(l1))/rr(1))/al+1.0d0)
+! lschpsbar starts the solution at mbar:mbar+4
+   if(mbar+4>mmax) then
+     write(6,'(/2a,i0,a,i0)') 'run_ghosts: ERROR barrier radius beyond', &
+&          ' radial mesh, mbar=',mbar,', mmax=',mmax
+     error stop 1
+   end if
 
 ! Basis cutoff energy is based on largest q in sbf optimization basis
   basfact=1.25d0
@@ -126,7 +132,8 @@
    hmev(:)=0.0d0
 
    
-   nbas=0
+! nbas stays nbmax unless lschpsbar runs out of states below ebcut
+   nbas=nbmax
    do jj=1,nbmax
      nn=ll+jj
 

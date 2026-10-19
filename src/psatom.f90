@@ -54,11 +54,11 @@
  real(dp), intent(in) :: rhoc(mmax)
 
 !Input/output variables
- integer, intent(inout) :: ierr
  real(dp), intent(inout) :: ea(nv)
  real(dp), intent(inout) :: rho(mmax)
 
 !Output variables
+ integer, intent(out) :: ierr
  integer, intent(out) :: it
  real(dp), intent(out) :: etot
 
@@ -81,6 +81,8 @@
 
 ! blend parameter for Anderson iterative potential mixing
  real(dp), parameter ::  bl=0.5d0
+
+ ierr=0
 
  allocate(uu(mmax),up(mmax))
  allocate(vo(mmax),vi1(mmax),vo1(mmax),vxc(mmax),vp(mmax))

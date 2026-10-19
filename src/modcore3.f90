@@ -424,7 +424,7 @@
 
  if(ircross==0) then
   write(6,'(/a)') 'modcore3: ERROR failed to find model core crossover'
-  stop
+  error stop 1
  end if
 
 ! blend the Teter function tail into the all-electron rhoc

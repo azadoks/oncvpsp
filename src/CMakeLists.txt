@@ -24,7 +24,6 @@ set(src_oncvpsp
     lschpb.f90
     lschps.f90
     lschpsbar.f90
-    lschpse.f90
     lschvkbb.f90
     lschvkbbe.f90
     lschvkbs.f90
@@ -39,7 +38,6 @@ set(src_oncvpsp
     run_ghosts.f90
     run_optimize.f90
     sbf_basis_con.f90
-    sbf_basis.f90
     sbf_rc_der.f90
     sbf8.f90
     tfapot.f90
@@ -68,11 +66,9 @@ set(src_oncvpsp
     wellstate.f90
     # Fully-relativistic files
     fphsft_r.f90
-    fpovlp.f90
     gnu_script_r.f90
     linout_r.f90
     psatom_r.f90
-    relatom.f90
     renorm_r.f90
     run_config_r.f90
     run_diag_r.f90

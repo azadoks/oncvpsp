@@ -2,9 +2,11 @@
 
 Suspected bugs found while auditing dummy-argument `intent`s across `src/`,
 then triaged against the code, the callers, the input checks in
-`check_data.f90`, and the test inputs in `tests/data/`. The P1 and P2 issues
-have been fixed. The P3 issues are open. Line
-numbers refer to the code before the fixes.
+`check_data.f90`, and the test inputs in `tests/data/`. The P1 and P2
+issues have been fixed, and so have most P3 issues. The P3 issues that are
+still open need a decision, are cosmetic, or are dead code that is kept on
+purpose; [Next steps](#next-steps) gives a plan for them. Line numbers
+refer to the code before the fixes.
 
 Later issues come from the audits in
 [Fortran Best Practices](fortran_best_practices.md) and
@@ -36,7 +38,10 @@ Priorities:
 | P2 | `excwig.f90` `vxc`/`exc` unset for `rho<1e-15` | no | fixed |
 | P2 | `vkbphsft.f90` `dnpi` can be undefined | no | fixed |
 | P2 | `oncvpspnr.x` is scalar-relativistic | new tests (08_O_nr, 14_Si_nr) | fixed |
-| P3 | everything else below | no | open |
+| P3 | build, dead code, silent errors, bounds, argument mismatches (see [P3 (fixed)](#p3-fixed)) | no | fixed |
+| P3 | 5 latent bugs that need a decision | maybe for `qroots` and `ldirac*` (unchecked) | open |
+| P3 | `functional_get_tau` (imported dead code) | no | kept |
+| P3 | 7 cosmetic items | no, except the 1/24 coefficient | open |
 
 ## P1 (fixed)
 
@@ -151,7 +156,7 @@ Priorities:
   test covers it.
   - The old non-relativistic driver, `oncvpsp_nr.F90`, sets
     `srel=.false.`, but CMake doesn't build it and it is stale (see
-    [Build](#build)).
+    [P3 (fixed)](#p3-fixed)).
   - Fixed: `oncvpsp.F90` now sets `srel=.false.` when built with
     `RELATIVISTIC=0`, and the banner, `--help` and `--version` text say
     "non-relativistic". The check is `defined RELATIVISTIC &&
@@ -184,70 +189,13 @@ Priorities:
     test stop.
   - Fix: save the grid value before bisecting, and treat a failed bisection
     as a skip.
-- **`upfout.f90:103`, `upfout_r.f90:111`**: the backward `jj` search could
-  end at `jj=0` and read `rr(0)`. That needs a normalised orbital whose norm
-  never exceeds 1e-6, which can't happen. Fix: `jj=max(jj,1)`.
-- **`sbf_rc_der.f90`**: the guard is `llin>5`, but `llin=5` would write
-  `sbfad(1,11)`. `check_data` caps `lmax<=3`. Fix: change the guard to
-  `llin>4`.
-- **`modcore.f90:142`**: `ii=ircc-25+3*jj` needs `ircc>=23`. `ircc` sits
-  near rc, at an index above 1000.
-- **`lschpsbar.f90`**: the barrier start writes `uu(mbar:mbar+4)` without
-  checking it against `mmax`. That only matters for rc > ~15 bohr.
-- **`lschpsbar.f90:94`**: `imin` is undefined if no point up to `mbar` lies
-  below `emax`. It is then clamped to ≥2. Fix: set `imin=2` at entry.
-- **`run_ghosts.f90`**: `nbas` is set only on the `lschpsbar` error path.
-  If all `nbmax` solves succeed, `nbas` stays 0 and ghost detection is
-  silently skipped. `nbmax` is sized so the error path normally fires. Fix:
-  set `nbas=nbmax` first, and bound the `jj` loops by `nbas`.
-- **`oncvpsp_r.F90:484`**: calls `wellstate_r` with 13 arguments, but the
-  routine takes 14; the last is `srel`. This is harmless because `srel` is
-  unused, and the compiler can't catch it because the routine has no
-  explicit interface. Fix: drop `srel` from the signature.
-- **`input_toml_m.f90`**: `fcfact_min/max/step` and `rcfact_min/max/step`
-  are declared `intent(out)` but never set, which gfortran warns about. No
-  code reads them: `modcore3` hard-codes the `icmod=4` grid at lines
-  161–165. That also means the text reader's explicit-grid form of
-  `icmod=4` is silently ignored. Fix: set them to defaults, or wire the
-  grid into `modcore3`.
-- **`m_psmlout.f90`**: `write_psml_item` declares `f` optional but uses it
-  unconditionally. Every caller passes it. Fix: make `f` non-optional.
-- **`dpnint.f90`**: the `tt(1)==0` extrapolation block sits inside the `jj`
-  loop. That wastes work, but the result is bit-identical. With `mm<9` it
-  reads `ss` beyond `mm`.
-
-- **`sratom.f90:198`, `relatom.f90:209`**: these return `ierr=100` when
-  the all-electron SCF doesn't converge, but `oncvpsp.F90:283` and
-  `oncvpsp_r.F90:278` never check it. A warning is printed and the run then
-  continues with the unconverged atom. Some other solver `ierr`s are also
-  ignored: `ldiracfs` in `run_plot_r.f90:178` and `ldiracfb` in
-  `wellstate_r.f90:154`, where the check has been commented out. In
-  `wellstate_r` the outer convergence loop still catches a bad `et`. Fix:
-  stop on `ierr/=0` after the AE solve.
-- **`upfout.f90:327`, `upfout_r.f90:350`**: the unsupported-`iexc` error
-  writes a string, an integer and a string with the format `(t8,a)`. On
-  format reversion the integer `iexc` meets an `a` descriptor, so gfortran
-  should abort with a runtime I/O error instead of printing the message.
-  This hasn't been tried. It is reachable with an unsupported libxc
-  functional and `psfile=upf`, and the run would stop either way. Fix:
-  `(t8,a,i0,a)`.
-- **Missing input file**: `oncvpsp.F90:171` opens with `iostat=ios` but
-  only checks `ios` after `read_input_text` has run. Tested: `oncvpsp.x -i
-  missing.dat` aborts with "Fortran runtime error: Cannot read from file
-  opened for WRITE" and exit code 2. The TOML reader reports the error
-  clearly. The same applies to `oncvpsp_r.F90`. Fix: check `ios` right
-  after `open`.
-- **Possibly used before being set.** Each case needs degenerate data:
-  - `ipk` in `run_vkb.f90:298`/`run_vkb_r.f90:331`: needs an identically
-    zero projector.
-  - `nin` in `renorm_r.f90:61`: needs an identically zero wave function.
-  - `iumax` in `wellstate.f90:78`/`wellstate_r.f90:81`: needs `|uu|` to be
-    monotonic over the whole grid.
-  - `rmatch`/`rhocmatch` in `modcore2.f90:89`: needs the core charge to
-    never exceed the pseudo valence charge, e.g. `nc=0`.
-  - `mmaxlin` in `eresid.f90:95`: needs `|uu|<=1e-10` everywhere.
-
-  Fix: initialise each variable before its search.
+- **`icmod=4` grid**: the text reader accepts an explicit
+  `fcfact`/`rcfact` scan grid for `icmod=4`, and both readers return
+  `fcfact_min/max/step` and `rcfact_min/max/step` (the TOML reader sets
+  them to the defaults since `a672619`). No code reads them: `modcore3`
+  hard-codes the grid at lines 161–165, so an explicit grid in the input is
+  silently ignored. Fix: pass the grid into `modcore3`, or reject the
+  explicit-grid form.
 - **`m_psmlout.f90:138,621`**: the PSML writer echoes the input through a
   fixed-name scratch file, `_tmp_input`, in the working directory. It
   doesn't check for I/O errors and never deletes the file. Two PSML runs in
@@ -256,24 +204,52 @@ Priorities:
 
 ### Dead code
 
-- **`lschpse.f90:78`**: uses `rr(ii)+0.5*sls/rr(ii)**2` where every sibling
-  routine uses `vv(ii)`. The routine is compiled but never called.
-- **`run_vkb_r.f90:78-83`**: `l1=0` is set right before
-  `else if (l1==1)`, so that branch is dead. For `lloc=0` the `else` branch
-  computes the same `vloc`.
-- **`sbf_basis.f90`**: has shape and bounds errors, but nothing calls it.
-  Delete it.
 - **`functionals.F90`**: in `functional_get_tau`, `n(1)`/`t(1)` are stale
-  for `nspin=2`. The routine is never called.
+  for `nspin=2`. The routine is never called. Kept, because the file is
+  imported and is easier to keep in sync with upstream unchanged.
 
-### Build
+### Cosmetic
 
-- **`src/CMakeLists.txt`**: `fpovlp.f90` and `relatom.f90` are each listed
-  twice (lines 56/71 and 60/75). CMake ignores the duplicates.
-  `fpovlp_r.f90` is never compiled, and its only call site is commented
-  out.
-- **Legacy `src/Makefile`** (fixed): it didn't build. Checked on Linux
-  with gfortran:
+- `run_diag_sr_so_r.f90:142`: the `npr=0` for `l==lloc` is redundant,
+  because `oncvpsp_r.F90:539` already zeroes `nproj(lloc+1)`. Unlike
+  `run_diag_r`, this routine doesn't stop on an `ldiracfb` error.
+  `run_diag_r` runs first with identical calls, though.
+- `vrel.f90`: the second of two consecutive `cycle` tests (`2.5*rc`) can
+  never trigger.
+- `lschpb.f90`: declares a local `real(dp) :: exp`. The name still resolves
+  to the intrinsic.
+- `aeo.f90`: `aii` lacks `implicit none`, although all its names are
+  declared.
+- `sbf_basis_con.f90`: the local `tder(6)` is unused.
+- Unused names:
+  - arguments `nn` in `lschkb`/`lschps`;
+  - locals `zz` in `lschkb`/`lschps`;
+  - arguments `icmod` and `rcfact` in `modcore`/`modcore2`;
+  - local `srel` in `run_config_r`;
+  - `drdum`/`dqdum` in `eresid`.
+- `aeo.f90`: the Adams 1/24 coefficient is written 4 times as
+  `4.16666666667d-2`, a relative error of about 8e-12. Writing it as
+  `1.0d0/24.0d0` would change the last digits of the refs.
+
+## P3 (fixed)
+
+Fixed in batches 1–4 of the plan below. None of these changes the
+reference outputs. All 28 reference tests pass with both the CMake and the
+Make binaries. New error messages follow the format in
+[Coding Standards](coding_standards.md#error-messages).
+
+**Build and dead code**
+
+- **`src/CMakeLists.txt`**: removed the duplicate `fpovlp.f90` and
+  `relatom.f90` entries.
+- Deleted the uncalled `lschpse.f90` (which used `rr(ii)` in place of
+  `vv(ii)`), `sbf_basis.f90` (shape and bounds errors) and `fpovlp_r.f90`
+  (never compiled), and the commented-out `fpovlp_r` call in
+  `oncvpsp_r.F90`.
+- **`run_vkb_r.f90:78-83`**: removed the dead `l1==1` branch and the
+  `l1=0` before it.
+- **Legacy `src/Makefile`**: it didn't build. Checked on Linux with
+  gfortran:
   - The committed `make.inc` held one developer's macOS paths, and its
     `FCCPPFLAGS = -ansi` makes GNU `cpp` reject the `//` in the URLs in
     the `.F90` licence headers. It is now `make.inc.example`, a blank
@@ -288,58 +264,116 @@ Priorities:
     `run_phsft` call omitted `rxpsh`, shifting every later argument. It
     stopped with `ERROR: run_phsft: rxpsh= 0.00013 > rr(mmax)=****`. It is
     now built from `oncvpsp.F90` with `-DRELATIVISTIC=0`, as in CMake, and
-    `oncvpsp_nr.F90` is deleted.
-  - All 28 `tests/refs` comparisons pass with the Make binaries (libxc
-    build), and the build without libxc (`exc_libxc_stub.o`) also links.
-- **CMake libxc include directories** (fixed): a fresh configure against
-  a system libxc (`/usr/include`, found via pkg-config) failed with
-  "Cannot open module file 'xc_f03_lib_m.mod'". pkg-config drops system
-  include directories, and `ONCVPSP_DEPENDENCY_INCLUDE_DIRS` was never
-  applied to any target. `CMakeLists.txt` now falls back to pkg-config's
+    `oncvpsp_nr.F90` and the older `oncpsp_nr.f90` are deleted.
+- **CMake libxc include directories**: a fresh configure against a system
+  libxc (`/usr/include`, found via pkg-config) failed with "Cannot open
+  module file 'xc_f03_lib_m.mod'". pkg-config drops system include
+  directories, and `ONCVPSP_DEPENDENCY_INCLUDE_DIRS` was never applied to
+  any target. `CMakeLists.txt` now falls back to pkg-config's
   `INCLUDEDIR`, and `src/CMakeLists.txt` passes each directory to
   `oncvpsp` as a Fortran `-I` option. They are passed as options rather
   than as include directories, which CMake would drop for `/usr/include`.
-- **`src/oncpsp_nr.f90`**: deleted. It was not built by CMake or Make; it
-  was a stale copy of `oncvpsp_nr.F90` from before the input module
-  existed.
+- **`tests/CMakeLists.txt`**: the `nr` loop set its label on the `sr` test
+  of the same name, and every loop used the property `LABEL` instead of
+  `LABELS`, so `ctest -L` didn't work. Both fixed.
 
-### Cosmetic
+**Errors that were silent**
 
-- `run_diag_sr_so_r.f90:142`: the `npr=0` for `l==lloc` is redundant,
-  because `oncvpsp_r.F90:539` already zeroes `nproj(lloc+1)`. Unlike
-  `run_diag_r`, this routine doesn't stop on an `ldiracfb` error.
-  `run_diag_r` runs first with identical calls, though.
-- `m_psmlout.f90:239,723`: the no-op `lmax = lmax` forces
-  `intent(inout)`.
-- `upfout.f90:112`, `upfout_r.f90:121`: `nrl` is enlarged in place, with an
-  implicit real→integer conversion. PSML doesn't use `nrl`, so `both` mode
-  is unaffected. Use a local copy instead.
-- `vrel.f90`: the second of two consecutive `cycle` tests (`2.5*rc`) can
-  never trigger.
-- `lschpb.f90`: declares a local `real(dp) :: exp`. The name still resolves
-  to the intrinsic.
-- `aeo.f90`: `aii` lacks `implicit none`, although all its names are
-  declared.
-- `psatom.f90`, `psatom_r.f90`: `ierr` is not reset at entry. Callers
-  always pass in 0.
-- `sr_so_r.f90`: `ipk` is unset only if a whole column is NaN. Fix: set
-  `ipk=1` before each search.
-- `sbf_basis_con.f90`: the local `tder(6)` is unused.
-- Unused names:
-  - arguments `nn` in `lschkb`/`lschps`;
-  - locals `zz` in `lschkb`/`lschps`;
-  - arguments `icmod` and `rcfact` in `modcore`/`modcore2`;
-  - local `srel` in `run_config_r`;
-  - `drdum`/`dqdum` in `eresid`.
+- **Missing input file**: `oncvpsp.F90` and `oncvpsp_r.F90` checked the
+  `open` status only after `read_input_text` had run, so `oncvpsp.x -i
+  missing.dat` aborted with "Cannot read from file opened for WRITE". They
+  now check right after `open` and stop with
+  `oncvpsp: ERROR cannot open input file, file=...` and exit status 1. The
+  old check after the read could no longer fire and was removed. New tests
+  `oncvpsp{sr,r,nr}_missing_input` (label `errors`) check the message and
+  the exit status.
+- **`upfout.f90:327`, `upfout_r.f90:350`**: the unsupported-`iexc` message
+  now uses `(t8,a,i0,a)`, so it prints instead of failing on the integer.
+  The text is unchanged.
+- **`run_plot_r.f90:178`**: `ldiracfs` errors now stop the run. `ldiracfs`
+  only fails on bad `kap` or `zz`, and prints its own message first.
+- **`run_ghosts.f90`**: `nbas` now starts at `nbmax`, so ghost testing
+  isn't skipped when all `nbmax` barrier states are found.
+- The messages added with the P2 fixes in `a672619` now follow the format
+  and exit with status 1: `rxpsh` beyond the mesh in `run_phsft(_r)`, no
+  model-core crossover in `modcore3`, and missing TOML keys
+  (`check_stat` in `input_toml_m`).
 
-- `oncvpsp_r.F90:753,763` pass `debl(6)` to `linout_r`/`upfout_r`, which
-  declare `debl(6,2)`. This works by sequence association, and only
-  `debl(l1,1)` is read, which lies within the actual array.
-  `check_data.f90:37` declares `debl(5)` and reads at most `lmax+1<=4`.
-  Fix: declare `debl(6)` in both routines.
-- `aeo.f90`: the Adams 1/24 coefficient is written 4 times as
-  `4.16666666667d-2`, a relative error of about 8e-12. Writing it as
-  `1.0d0/24.0d0` would change the last digits of the refs.
+**Search results and index bounds**
+
+- **`lschpsbar.f90:94`**: `imin=2` before the search.
+- **`run_vkb(_r).f90`, `sr_so_r.f90`**: `ipk=1` before each peak search.
+- **`upfout(_r).f90`**: `jj=max(jj,1)` after the norm search.
+- **`psatom(_r).f90`**: `ierr` is set to 0 at entry and is now
+  `intent(out)`.
+- **`wellstate(_r).f90`**: `iumax=1` before the search.
+- **`renorm_r.f90`**, **`modcore2.f90`**, **`eresid.f90`**: stop with a
+  message if the wave function is zero (`nin`, `mmaxlin`) or the core
+  charge never exceeds the valence pseudocharge (`rmatch`/`rhocmatch`).
+- **`sbf_rc_der.f90`**: the guard is now `llin>4`.
+- **`modcore.f90:142`**: stop if `ircc<23`.
+- **`run_ghosts.f90`**: stop if `mbar+4>mmax`, which `lschpsbar` would
+  write past.
+- **`dpnint.f90`**: the `tt(1)==0` extrapolation now runs once after the
+  loop (bit-identical result), and stops if `mm<npoly+2`.
+
+**Argument mismatches**
+
+- **`wellstate_r`**: dropped the unused `srel` argument that
+  `oncvpsp_r.F90` didn't pass.
+- **`debl`**: declared `debl(6)` in `linout_r`, `upfout_r` and
+  `check_data`, matching the drivers.
+- **`m_psmlout.f90`**: `f` in `write_psml_item` is no longer optional, and
+  the `lmax = lmax` no-ops are removed so `lmax` is `intent(in)`.
+- **`upfout(_r).f90`**: `nrl` is now a local copy of the new `intent(in)`
+  argument `nrlin`, and the real→integer conversion is explicit.
+- **`scripts/check_interfaces.sh`**: compiles each driver with all external
+  procedures as one file, so gfortran checks every call against its
+  definition. It runs in CI after the build and reported exactly the three
+  mismatches above before they were fixed.
+
+## Next steps
+
+Batches 1–4 of the original plan (build and dead code, silent errors,
+search results and bounds, argument mismatches) are done; see
+[P3 (fixed)](#p3-fixed). What is left, in order:
+
+1. **Items that need a decision or a refs check.** One commit each.
+   - **`qroots.f90:92`**: save the grid value of `dlgd` before bisecting,
+     treat a failed bisection as a skip, then remove the unconditional
+     `found_root=.true.`. Run the full suite: if any root moves, the change
+     is not a pure clean-up, and needs a closer look before the refs are
+     regenerated.
+   - **`ldiracfb`/`ldiracfs` series starts**: fix the sign of `ee`, and fix
+     `fup(ii)=sc*fup(ii)` in `ldiracfb.f90:217`. Check whether the three
+     `_r` refs change; if they change beyond the last digits, compare with
+     a non-relativistic limit (large `c`) before accepting.
+   - **`icmod=4` grid**: decide whether the explicit-grid form of
+     `icmod=4` input should work. If yes, pass the grid into `modcore3` in
+     place of the hard-coded values at lines 161–165, and add a test. If
+     no, make both readers reject the explicit-grid form with a message.
+   - **`m_psmlout` `_tmp_input`**: replace the named scratch file with
+     `status='scratch'` or an internal buffer. The PSML output should be
+     byte-identical; check with a PSML test.
+   - **1/24 coefficient in `aeo.f90`**: changes the last digits of every
+     ref. Do it together with the constants module (step 6 of the
+     [best-practices order](fortran_best_practices.md#recommended-remediation-order)),
+     so the refs are regenerated once.
+   - **Exit status of old errors**: the ~100 existing `stop`s after error
+     messages exit with status 0. Changing them to `error stop 1` keeps the
+     messages as they are but changes the exit status, which scripts may
+     rely on.
+2. **Cosmetic.** Fold the remaining [cosmetic](#cosmetic) items into the
+   mechanical coding-standard pass in
+   [Coding Standard Violations](coding_standard_violations.md#fixing).
+3. **Test coverage.** Several fixed paths are still untested. Add small
+   tests for:
+   - PSML output with `icmod>=1` (`m_psmlout` deallocate);
+   - TOML input, including a missing required key (`input_toml_m`);
+   - `iexc=1` (`excwig`);
+   - a user-set `rxpsh`, including one beyond `rr(mmax)`, which must exit
+     non-zero (`run_phsft`);
+   - a deep semicore projector below `epsh1` (`vkbphsft`).
 
 ## Dismissed
 
@@ -358,6 +392,14 @@ Each of these was checked and turned out not to be a bug:
 - `input_toml_m.f90` icmod range: `check_data` rejects values outside 0–4
   for both readers.
 - `linout(_r).f90` `ixc_abinit`: `check_data` rejects `iexc>4`.
+- `sratom`/`relatom` `ierr=100` unchecked: the drivers already stop with
+  "ERROR all-electron reference atom not converged" when `it>=100`, and
+  every other failure inside `sratom`/`relatom` stops there.
+- `wellstate_r.f90:154` commented-out `ldiracfb` check: the well search
+  retries with a new well radius when `ldiracfb` fails, and the outer
+  convergence test catches a bad `et`. The sibling `wellstate` does stop,
+  but restoring the check could stop runs that now recover, so it is left
+  as is.
 - Leaks in `vrel`, `run_diag_sr_so_r`, `run_config(_r)` and `modcore`:
   these are local allocatables, which Fortran deallocates automatically on
   return.

@@ -36,7 +36,7 @@ foreach(test_name ${oncvpspsr_tests})
             exit \$success
         "
     )
-    set_property(TEST ${test_name} PROPERTY LABEL "sr")
+    set_property(TEST ${test_name} PROPERTY LABELS "sr")
 endforeach(test_name)
 
 set(oncvpspr_tests
@@ -71,7 +71,7 @@ foreach(test_name ${oncvpspr_tests})
             exit \$success
         "
     )
-    set_property(TEST ${test_name} PROPERTY LABEL "r")
+    set_property(TEST ${test_name} PROPERTY LABELS "r")
 endforeach(test_name)
 
 set(oncvpspnr_tests
@@ -106,5 +106,26 @@ foreach(test_name ${oncvpspnr_tests})
             exit \$success
         "
     )
-    set_property(TEST ${test_name} PROPERTY LABEL "nr")
+    set_property(TEST ${test_name}_nr PROPERTY LABELS "nr")
 endforeach(test_name)
+
+# Error handling: a missing input file must stop with exit status 1 and the
+# documented message (see doc/coding_standards.md)
+foreach(target oncvpspsr oncvpspr oncvpspnr)
+    if(target STREQUAL "oncvpspr")
+        set(program_name "oncvpsp_r")
+    else()
+        set(program_name "oncvpsp")
+    endif()
+    add_test(
+        NAME ${target}_missing_input
+        COMMAND bash -c "
+            out=\$($<TARGET_FILE:${target}> -i ${CMAKE_CURRENT_BINARY_DIR}/no_such_file.dat 2>&1)
+            status=\$?
+            echo \"\$out\"
+            [ \$status -eq 1 ] || { echo \"exit status \$status, expected 1\"; exit 1; }
+            echo \"\$out\" | grep -q '${program_name}: ERROR cannot open input file'
+        "
+    )
+    set_property(TEST ${target}_missing_input PROPERTY LABELS "errors")
+endforeach(target)

@@ -77,7 +77,7 @@
  integer, intent(in) :: na(30),la(30),ncon(6),nbas(6)
  integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
  integer, intent(in) :: nc,nv,lpopt,ncnf
- real(dp), intent(in) :: fa(30),rc0(6),ep(6,2),qcut(6),debl(6,2),facnf(30,5)
+ real(dp), intent(in) :: fa(30),rc0(6),ep(6,2),qcut(6),debl(6),facnf(30,5)
  real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rlmax
  character*4, intent(in) :: psfile
 
@@ -292,7 +292,7 @@
  write(6,'(a/a/a)') '#','# VANDERBILT-KLEINMAN-BYLANDER PROJECTORs', &
 &      '# l, nproj, debl'
  do l1=1,lmax+1
-   write(6,'(2i5,f10.5)') l1-1,nproj(l1),debl(l1,1)
+   write(6,'(2i5,f10.5)') l1-1,nproj(l1),debl(l1)
  end do
 
 write(6,'(a/a/a)') '#','# MODEL CORE CHARGE', &

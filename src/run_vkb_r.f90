@@ -75,13 +75,10 @@ real(dp), intent(in) :: vr(mmax,mxprj,6,2)
 ! use "scalar-relativistic" weighted average if real ll/=0 is specified
 ! reset semi-local potential to this average (ie., there is no SO for this l)
 
- l1=0
  if(lloc==4) then
    call vploc(rr,vfull,vp(1,1,1),dvloc0,irc(5),mmax,lpopt)
    vloc(:)=vp(:,5,1)
    vp(:,5,2)=vp(:,5,1)
- else if (l1==1) then
-   vloc(:)=vp(:,1,1)
  else
    l1=lloc+1
    vloc(:)=(dble(l1)*vp(:,l1,1) + dble(l1-1)*vp(:,l1,2))/dble(2*l1-1)
@@ -325,6 +322,7 @@ real(dp), intent(in) :: vr(mmax,mxprj,6,2)
 
      do jj=1,np
        apk=0.0d0
+       ipk=1
        do ii=1,mmax
          if(abs(vkb(ii,jj,l1,ikap))>apk) then
            apk=abs(vkb(ii,jj,l1,ikap))

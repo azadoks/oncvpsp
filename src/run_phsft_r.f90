@@ -84,9 +84,9 @@ subroutine run_phsft_r(lmax,lloc,nproj,ep,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
                end if
             end do
             if (irphs == 0) then
-               write(6, '(a,f12.5,a,f12.5)') &
-                  'ERROR: run_phsft: rxpsh=', rxpsh, ' > rr(mmax)=', rr(mmax)
-               stop
+               write(6, '(/2a,f12.6,a,f12.6)') 'run_phsft_r: ERROR rxpsh beyond radial mesh', &
+                  ', rxpsh=', rxpsh, ', rr(mmax)=', rr(mmax)
+               error stop 1
             end if
             if (irphs <= irc(l1)) then
                write(6, '(a,f12.5,a,i1,a,f12.5)') &
@@ -105,9 +105,9 @@ subroutine run_phsft_r(lmax,lloc,nproj,ep,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
                end if
             end do
             if (irphs == 0) then
-               write(6, '(a,f12.5,a,f12.5)') &
-                  'ERROR: run_phsft: rxpsh=', rxpsh, ' > rr(mmax)=', rr(mmax)
-               stop
+               write(6, '(/2a,f12.6,a,f12.6)') 'run_phsft_r: ERROR rxpsh beyond radial mesh', &
+                  ', rxpsh=', rxpsh, ', rr(mmax)=', rr(mmax)
+               error stop 1
             end if
             if (irphs <= irc(lloc+1)) then
                write(6, '(a,f12.5,a,i1,a,f12.5)') &

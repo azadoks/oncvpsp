@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 subroutine wellstate_r(nnin,ll,kap,irc,ep,rr,vfull,vwell, &
-&                      uu,up,zz,mmax,mch,srel)
+&                      uu,up,zz,mmax,mch)
 
 !creates quantum well to confine positive-energy state, and calculates
 !the resulting all-electron wave function
@@ -35,7 +35,6 @@ subroutine wellstate_r(nnin,ll,kap,irc,ep,rr,vfull,vwell, &
 !zz  atomic number
 !mmax  size of log radial mesh 
 !mch matching mesh point for inward-outward integrations
-!srel .true. for scalar-relativistic, .false. for non-relativistic
  
  implicit none
 
@@ -45,7 +44,6 @@ subroutine wellstate_r(nnin,ll,kap,irc,ep,rr,vfull,vwell, &
  real(dp), intent(in) :: rr(mmax),vfull(mmax)
  real(dp), intent(in) :: zz
  integer, intent(in) :: ll,kap,irc,mmax
- logical, intent(in) :: srel
 
 !Input/output variables
  real(dp), intent(inout) :: ep
@@ -74,6 +72,7 @@ subroutine wellstate_r(nnin,ll,kap,irc,ep,rr,vfull,vwell, &
 !if bound state is found, check its localization
  if(ierr==0) then
    umax=0.0d0
+   iumax=1
    do ii=mmax,1,-1
      if(dabs(uu(ii,1))>=umax) then
        umax=dabs(uu(ii,1))

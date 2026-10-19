@@ -292,6 +292,7 @@
 
      do jj=1,np
        apk=0.0d0
+       ipk=1
        do ii=1,mmax
          if(abs(vkb(ii,jj,l1))>apk) then
            apk=abs(vkb(ii,jj,l1))

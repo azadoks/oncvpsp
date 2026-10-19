@@ -69,7 +69,7 @@ module m_psmlout
  real(dp), parameter :: pi=3.141592653589793238462643383279502884197_dp
 
 !Input variables
- integer, intent(inout) :: lmax
+ integer, intent(in) :: lmax
  integer, intent(in) :: lloc,iexc,mmax,nrl,icmod
  integer, intent(in) :: nproj(6)
  integer, intent(in) :: irct ! index of point at which rho_core is matched
@@ -236,7 +236,6 @@ module m_psmlout
         total_valence_charge =   total_valence_charge + f(i)
      endif
   enddo
-  lmax = lmax
 
   npots = lmax + 1
   allocate (ll(npots), nn(npots), ff(npots))
@@ -552,7 +551,7 @@ end subroutine psmlout
  real(dp), parameter :: pi=3.141592653589793238462643383279502884197_dp
 
 !Input variables
- integer, intent(inout) :: lmax
+ integer, intent(in) :: lmax
  integer, intent(in) :: lloc,iexc,mmax,nrl,icmod
  integer, intent(in) :: nproj(6)
  integer, intent(in) :: irct ! index of point at which rho_core is matched
@@ -720,7 +719,6 @@ end subroutine psmlout
         total_valence_charge =   total_valence_charge + f(i)
      endif
   enddo
-  lmax = lmax
 
   npots = lmax + 1
   allocate (ll(npots), nn(npots), ff(npots))
@@ -1189,7 +1187,7 @@ end subroutine psmlout_r
        character(len=*), intent(in), optional  :: type
 
        character(len=*), intent(in), optional  :: set
-       real(dp), intent(in), optional  :: f(:)
+       real(dp), intent(in)  :: f(:)
 
        call xml_NewElement(xf,trim(class))
          if (present(set))  call my_add_attribute(xf,"set",set)
