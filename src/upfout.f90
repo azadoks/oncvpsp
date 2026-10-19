@@ -83,7 +83,7 @@
 !ea  psuedo-orbital eigenvalues (Ha)
 
  use constants_m, only: dp, pi
- use input_echo_m, only: write_icmod, write_epsh
+ use input_echo_m, only: write_input_echo
  implicit none
 
 
@@ -219,54 +219,12 @@
 
 ! output printing (echos input data)
 
- write(6,'(a)') '# ATOM AND REFERENCE CONFIGURATION'
- write(6,'(a)') '# atsym  z   nc   nv     iexc    psfile'
- write(6,'(a,a,f6.2,2i5,i8,2a)') '  ',trim(atsym),zz,nc,nv,iexc, &
-&      '      ',trim(psfile)
- write(6,'(a/a)') '#','#   n    l    f        energy (Ha)'
- do ii=1,nc+nv
-   write(6,'(2i5,f8.2)') na(ii),la(ii),fa(ii)
- end do
-
- write(6,'(a/a/a)') '#','# PSEUDOPOTENTIAL AND OPTIMIZATION','# lmax'
- write(6,'(i5)')  lmax
- write(6,'(a/a)') '#','#   l,   rc,      ep,       ncon, nbas, qcut'
- do l1=1,lmax+1
-   write(6,'(i5,2f10.5,2i5,f10.5)') l1-1,rc0(l1),ep(l1),ncon(l1),&
-&        nbas(l1),qcut(l1)
- end do
-
- write(6,'(a/a/a,a)') '#','# LOCAL POTENTIAL','# lloc, lpopt,  rc(5),', &
-&      '   dvloc0'
- write(6,'(2i5,f10.5,a,f10.5)') lloc,lpopt,rc0(5),'   ',dvloc0
-
- write(6,'(a/a/a)') '#','# VANDERBILT-KLEINMAN-BYLANDER PROJECTORs', &
-&      '# l, nproj, debl'
- do l1=1,lmax+1
-   write(6,'(2i5,f10.5)') l1-1,nproj(l1),debl(l1)
- end do
-
- call write_icmod(icmod,fcfact,rcfact,fcgrid,rcgrid)
-
- call write_epsh(epsh1,epsh2,depsh,rxpsh)
-
- write(6,'(a/a/a)') '#','# OUTPUT GRID','# rlmax, drl'
- write(6,'(2f8.2)') rlmax,drl
-
- write(6,'(a/a/a)') '#','# TEST CONFIGURATIONS','# ncnf'
- write(6,'(i5)') ncnf
- write(6,'(a/a)') '# nvcnf','#   n    l    f'
- do jj=2,ncnf+1
-   write(6,'(i5)') nvcnf(jj)
-   do ii=nc+1,nc+nvcnf(jj)
-     write(6,'(2i5,f8.2)') nacnf(ii,jj),lacnf(ii,jj),facnf(ii,jj)
-   end do
-   write(6,'(a)') '#'
- end do
- if(log_mesh(1)>0.0d0) then
-   write(6,'(a/a/a)') '#','# LOG MESH','# amesh, rr1, rmax'
-   write(6,'(3es24.16)') log_mesh
- end if
+ call write_input_echo(1,2,atsym,zz,nc,nv,iexc,psfile, &
+&                       na,la,fa,lmax,rc0,ep,ncon,nbas,qcut, &
+&                       lloc,lpopt,dvloc0,nproj,debl, &
+&                       icmod,fcfact,rcfact,fcgrid,rcgrid, &
+&                       epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
+&                       ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh)
 
  write(6,'(a)') &
 &      '    </PP_INPUTFILE>'
