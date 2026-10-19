@@ -109,6 +109,10 @@ icmod==4:
     model, or may not converge.  An local minimum on the initial grid
     may be selected and used as input in option 3 above.
 
+    fcfact is ignored (0.0 is fine). The psp8 file gives fchrg = 1, which
+    only tells Abinit that a model core follows; the echoes repeat the
+    input fcfact.
+
 icmod==6:
 
     The all-electron core charge wherever the plane-wave cutoff affords
@@ -142,6 +146,8 @@ icmod==6:
     With fcfact <= 0, ecut is instead the cutoff the pseudo-waves need for
     the same error rcfact, times -fcfact (times 1 for fcfact = 0): a
     calculation needs that cutoff anyway, so the core costs nothing more.
+    The psp8 file then gives fchrg = 1 (fchrg > 0 tells Abinit that a model
+    core follows; otherwise it is fcfact).
 
     ```
         # MODEL CORE CHARGE

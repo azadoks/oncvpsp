@@ -4,8 +4,8 @@ Suspected bugs found while auditing dummy-argument `intent`s across `src/`,
 then triaged against the code, the callers, the input checks in
 `check_data.f90`, and the test inputs in `tests/data/`. The P1 and P2
 issues have been fixed, and so have the P3 issues apart from cosmetic
-items and dead code that is kept on purpose; [Next steps](#next-steps)
-gives a plan for those. Line numbers refer to the code before the fixes.
+items, one unchecked input and dead code that is kept on purpose;
+[Next steps](#next-steps) gives a plan for those. Line numbers refer to the code before the fixes.
 
 The issues were found on `master`, and the fixes were then merged into
 `oncvpsp-opt`, which had fixed some of them independently. Where the two
@@ -48,6 +48,7 @@ Priorities:
 | P3 | Adams 1/24 coefficient in `adams.inc` | last digits only; refs pass unchanged | fixed |
 | P3 | input echoes that don't run again to the same output | echo lines only (5 refs) | fixed |
 | P3 | 5 cosmetic items | no | open |
+| P3 | `run_phsft(_r)` doesn't stop for `rxpsh<=rc` | no | open |
 
 ## P1 (fixed)
 
@@ -191,6 +192,16 @@ Priorities:
     `psp8_core_r_74_W`.
 
 ## P3 (open)
+
+### Unchecked input
+
+- **`run_phsft.f90:93,114`, `run_phsft_r.f90:93,114`**: for
+  `rxpsh<=rc(l)` they print `ERROR: run_phsft: rxpsh=... <= rc(l)=...`
+  and go on, evaluating the log derivatives inside rc. The message predates
+  the [error format](coding_standards.md#error-messages), and `run_phsft_r`
+  calls itself `run_phsft`. Either stop with `error stop 1`, or make it a
+  `WARNING`; `check_data` can't test it, because rc is moved onto the grid
+  later. Found while documenting `rxpsh` (2026-10-19).
 
 ### Dead code
 
@@ -381,6 +392,8 @@ What is left:
 1. **Cosmetic.** Fold the remaining [cosmetic](#cosmetic) items into the
    mechanical coding-standard pass in
    [Coding Standard Violations](coding_standard_violations.md#fixing).
+2. **`rxpsh<=rc`**: decide between an error and a warning (see
+   [Unchecked input](#unchecked-input)).
 
 ## Dismissed
 

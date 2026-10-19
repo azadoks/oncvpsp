@@ -96,11 +96,11 @@
 #
 ### icmod 0: no non-linear core correction charge. 1: smooth monotonic
 ###       polynomial model core charge fit at "matching" rc following
-###       reference 35. For icmod = 2, 3, 4 see doc/core_correction.txt
+###       reference 35. For icmod = 2, 3, 4, 6 see doc/core_correction.md
 ### fcfact radius for above determined by  rho_core(r)=fcfact*rho_pseudo_
 ###        valence(r) values 0.25-0.5 are usually good (look at plots)
 ###       For icmod = 3, fcfact has a different meaning and a third
-###       artument rcfact is added (see core_correction.txt)
+###       artument rcfact is added (see core_correction.md)
 ###       For icmod = 4,, fcfact is ignored but must be present (0.0 OK)
 #
 # icmod, fcfact, (rcfact)
@@ -115,6 +115,10 @@
 ###       energy
 ### epsh2 upper energy limit, 2.0 usually good
 ### depsh energy mesh interval for plot, 0.02 usually good enough
+### rxpsh (optional) radius (bohr) at which the log derivatives are
+###       evaluated; it must lie beyond rc for each l.  Leave it out (or
+###       give a negative value) for the default, just beyond rc for each l
+###       and at the rc of the local potential.  It is echoed only when set.
 #
 # epsh1, epsh2, depsh
    -2.0  2.0  0.02

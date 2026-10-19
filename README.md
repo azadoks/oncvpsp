@@ -16,7 +16,8 @@ CMake 3.22 or later is needed.
 cmake -S . -B build [-DLibxc_ROOT=<path>] [-DBLA_VENDOR=OpenBLAS] [-DCMAKE_INSTALL_PREFIX=<path>]
 # Compile ONCVPSP
 cmake --build build --parallel
-# Run the test suite (or one part of it, with -L unit, sr, r, split, mesh, toml, psml or pipe)
+# Run the test suite (or one part of it, with -L unit, sr, r, nr, split, mesh, toml, psml, pipe,
+# errors, echo or psp8)
 ctest --test-dir build --parallel 8
 # Install the executables
 cmake --install build
