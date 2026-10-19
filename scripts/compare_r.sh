@@ -4,8 +4,8 @@
 #command line argument 1 is <prefix>
 
 #comparison starts after the "ATOM AND REFERENCE CONFIGURATION" line
-#so that output with built-in exc functions and corresponding libxc 
-#functions can be compared (libxc produces two extra lines which 
+#so that output with built-in exc functions and corresponding libxc
+#functions can be compared (libxc produces two extra lines which
 #stops fldiff)
 
 PREFIX=/Users/mverstra/CODES/ONCVPSP/GITHUB_VERSION/oncvpsp

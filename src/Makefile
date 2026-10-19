@@ -122,7 +122,7 @@ oncvpspr_ae:	$(OBJS_R_AE) $(OBJS_ALL) $(OBJS_LIBXC)
 oncvpspr_ps:	$(OBJS_R_PS) $(OBJS_ALL) $(OBJS_LIBXC)
 		$(FLINKER) -o oncvpspr_ps.x $(OBJS_R_PS) $(OBJS_ALL) $(OBJS_LIBXC) $(LIBS) $(WXML_LIB)
 
-.SUFFIXES: 
+.SUFFIXES:
 .SUFFIXES: .c .o .f .f90 .F90
 
 #	$(FCCPP) $(FCCPPFLAGS) $*.F90  > $*_cpp.f90
@@ -140,4 +140,3 @@ oncvpspr_ps:	$(OBJS_R_PS) $(OBJS_ALL) $(OBJS_LIBXC)
 
 clean:
 	 /bin/rm -f *.o  *.d  *.mod *.log *_cpp.f90 build_info.inc
-

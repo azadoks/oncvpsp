@@ -2,7 +2,7 @@
 # atsym  z   nc   nv     iexc    psfile
   Ta 73.00    6    8       3      psp8
 #
-#   n    l    f    
+#   n    l    f
     1    0    2.00
     2    0    2.00
     2    1    6.00

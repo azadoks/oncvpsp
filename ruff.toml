@@ -1,0 +1,4 @@
+# ruff settings (https://docs.astral.sh/ruff), run by pre-commit
+[lint]
+# l is the angular momentum, named as in the input file
+ignore = ["E741"]

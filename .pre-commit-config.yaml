@@ -1,0 +1,50 @@
+# pre-commit hooks (https://pre-commit.com).  Install them in a clone with
+#   pre-commit install
+# and run them on every file with
+#   pre-commit run --all-files
+# which is what CI does (.github/workflows/pre-commit.yaml).
+exclude: |
+  (?x)^(
+    COPYING|
+    tests/refs/.*|
+    cmake/patches/.*|
+    src/(exc_off_pbe\.f|functionals\.F90|m_libxc_list\.F90|gg1cc\.f90|gp1cc\.f90|gpp1cc\.f90)
+  )$
+# COPYING: the license, kept verbatim
+# tests/refs: reference outputs, compared as written
+# cmake/patches: patches, whose whitespace is part of the patch
+# src/...: imported code, kept as written upstream (see fortitude.toml)
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-added-large-files
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: check-yaml
+      - id: check-toml
+
+  - repo: https://github.com/PlasmaFAIR/fortitude-pre-commit
+    rev: v0.9.2
+    hooks:
+      - id: fortitude
+
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
+        # the scripts that came with ONCVPSP 4.0.1
+        exclude: ^(scripts/(run|run_nr|run_r|multirun|multirun_r|extract|extract\.old|replot|compare|compare_r|compare_psml)\.sh|tests/data/TEST\.sh|set_path)$
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.0
+    hooks:
+      - id: ruff-check
+      - id: ruff-format

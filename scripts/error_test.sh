@@ -9,7 +9,7 @@
 set -uo pipefail
 exe=$(realpath "$1"); message=$2; work=$3
 mkdir -p "$work"
-cd "$work"
+cd "$work" || exit 1
 
 if [ $# -ge 5 ]; then
     sed -e "$5" "$4" > input.dat

@@ -10,6 +10,8 @@ rm -rf "$work"
 mkdir -p "$work"
 cd "$work"
 "$exe" < "$dat" > file.out
+# the input must come through a pipe, not a file
+# shellcheck disable=SC2002
 cat "$dat" | "$exe" > pipe.out
 diff <(sed '/date/d' file.out) <(sed '/date/d' pipe.out)
 grep -q '^# atsym.*psfile' pipe.out

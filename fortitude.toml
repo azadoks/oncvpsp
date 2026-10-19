@@ -1,0 +1,22 @@
+# fortitude settings (https://fortitude.readthedocs.io), run by pre-commit.
+# See doc/coding_standards.md.
+[check]
+# fortitude's default rules, except those that conflict with the coding
+# standards
+ignore = [
+    "S241",  # bad-quote-string: strings are quoted with '
+    "C003",  # implicit-external-procedures: the routines are external
+    "C091",  # external-procedure: (same)
+    "C092",  # procedure-not-in-module: one external routine per file (rule 2)
+]
+# imported code, kept as written upstream
+extend-exclude = [
+    "src/exc_off_pbe.f",
+    "src/functionals.F90",
+    "src/m_libxc_list.F90",
+    "src/gg1cc.f90",
+    "src/gp1cc.f90",
+    "src/gpp1cc.f90",
+]
+# apply the exclusions to files named on the command line (by pre-commit)
+force-exclude = true

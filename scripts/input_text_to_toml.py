@@ -592,7 +592,10 @@ class LogMeshConfiguration:
         for name in ("amesh", "rr1", "rmax"):
             if abs(getattr(self, name) - getattr(other, name)) >= ATOL:
                 logging.debug(
-                    "%s differs: %f != %f", name, getattr(self, name), getattr(other, name)
+                    "%s differs: %f != %f",
+                    name,
+                    getattr(self, name),
+                    getattr(other, name),
                 )
                 return False
         return True

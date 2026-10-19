@@ -22,4 +22,3 @@ test:
 clean:
 	cd src ; $(MAKE) clean ; rm *.x
 	cd tests/data ; /bin/rm -f *.out *.diff TEST.report
-
