@@ -1,0 +1,11 @@
+{
+    "recommendations": [
+        "fortran-lang.linter-gfortran",
+        "jkillian.custom-local-formatters",
+        "plasmafair.fortitude",
+        "ms-python.python",
+        "charliermarsh.ruff",
+        "EditorConfig.EditorConfig",
+        "ms-vscode.cmake-tools"
+    ]
+}

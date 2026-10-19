@@ -66,7 +66,9 @@ and make generate this information with `cmake/BuildInfo.cmake`.
 
 To contribute, install the [pre-commit](https://pre-commit.com) hooks with
 `pre-commit install`; they lint every commit, as CI does. See
-[Coding Standards](doc/coding_standards.md#linting).
+[Developer Setup](doc/developer_setup.md) for the tools, the editor
+integration and the builds, and [Coding Standards](doc/coding_standards.md)
+for the rules.
 
 ### With make
 

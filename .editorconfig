@@ -1,0 +1,56 @@
+# EditorConfig (https://editorconfig.org): keeps editors to the layout that
+# the pre-commit hooks enforce (see doc/coding_standards.md).  Most editors
+# read this file natively or through a plugin.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+
+# Fortran: Hamann's layout, set by scripts/reindent.py.  Unit statements in
+# column 2, each block body 2 columns right of its opener, 80 columns.
+[*.{f90,F90,inc}]
+indent_size = 2
+max_line_length = 80
+
+[*.py]
+indent_size = 4
+max_line_length = 88
+
+[{CMakeLists.txt,*.cmake,CMakePresets.json,CMakeUserPresets.json}]
+indent_size = 4
+
+[*.sh]
+indent_size = 4
+
+[*.{yml,yaml}]
+indent_size = 2
+
+[*.toml]
+indent_size = 4
+
+[*.md]
+indent_size = 2
+# two trailing spaces are a line break in Markdown
+trim_trailing_whitespace = false
+
+# make needs tabs
+[{Makefile,*.mk,make.inc*}]
+indent_style = tab
+
+# the license, kept verbatim
+[COPYING]
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+
+# reference outputs, compared as written; patches, whose whitespace is part
+# of the patch; imported code, kept as written upstream (see fortitude.toml)
+[{tests/refs/**,cmake/patches/**,src/exc_off_pbe.f,src/functionals.F90,src/m_libxc_list.F90,src/gg1cc.f90,src/gp1cc.f90,src/gpp1cc.f90}]
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+indent_style = unset
+indent_size = unset

@@ -14,6 +14,12 @@ The object files compile byte-identical before and after.  Run by
 pre-commit on the Fortran files (see doc/coding_standards.md).
 
 Usage: reindent.py [--check] file...
+       reindent.py --stdin [name]
+
+With --stdin the text comes from standard input and the re-indented text
+goes to standard output, which is how an editor runs it as a formatter
+(doc/developer_setup.md); name is the file's path, used in the warnings and
+to leave the imported files alone.  Warnings go to standard error.
 """
 
 import re
@@ -264,8 +270,35 @@ def reindent(text, fname):
     return "\n".join(out), warn
 
 
+# Imported code, kept as written upstream: the same list as in
+# .pre-commit-config.yaml and fortitude.toml.  pre-commit never passes these
+# files; an editor formatting on save does, and gets them back unchanged.
+IMPORTED = (
+    "src/exc_off_pbe.f",
+    "src/functionals.F90",
+    "src/m_libxc_list.F90",
+    "src/gg1cc.f90",
+    "src/gp1cc.f90",
+    "src/gpp1cc.f90",
+)
+
+
+def from_stdin(name):
+    text = sys.stdin.buffer.read().decode("latin-1")
+    if name.replace("\\", "/").endswith(IMPORTED):
+        new = text
+    else:
+        new, warn = reindent(text, name)
+        for w in warn:
+            print("warning:", w, file=sys.stderr)
+    sys.stdout.buffer.write(new.encode("latin-1"))
+    return 0
+
+
 def main():
     args = sys.argv[1:]
+    if args and args[0] == "--stdin":
+        return from_stdin(args[1] if len(args) > 1 else "<stdin>")
     check = "--check" in args
     files = [a for a in args if a != "--check"]
     bad = 0
@@ -273,7 +306,7 @@ def main():
         text = open(f, encoding="latin-1").read()
         new, warn = reindent(text, f)
         for w in warn:
-            print("warning:", w)
+            print("warning:", w, file=sys.stderr)
         if new != text:
             bad += 1
             if check:

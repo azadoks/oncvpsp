@@ -1,0 +1,35 @@
+{
+    "files.associations": {
+        "*.inc": "FortranFreeForm"
+    },
+    "[FortranFreeForm]": {
+        "editor.defaultFormatter": "jkillian.custom-local-formatters",
+        "editor.formatOnSave": true,
+        "editor.rulers": [80],
+        "editor.tabSize": 2
+    },
+    "customLocalFormatters.formatters": [
+        {
+            "command": {
+                "win32": "python scripts/reindent.py --stdin \"${file}\"",
+                "*": "python3 scripts/reindent.py --stdin \"${file}\""
+            },
+            "languages": ["FortranFreeForm"]
+        }
+    ],
+    "fortran.formatting.formatter": "Disabled",
+    "fortran.linter.compiler": "gfortran",
+    "fortran.linter.includePaths": [
+        "${workspaceFolder}/build/modules",
+        "${workspaceFolder}/build/src",
+        "${workspaceFolder}/build/_deps/*/include",
+        "/usr/include"
+    ],
+    "fortran.linter.extraArgs": ["-Wall", "-DWITH_TOML"],
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true,
+        "editor.rulers": [88]
+    },
+    "cmake.useCMakePresets": "always"
+}

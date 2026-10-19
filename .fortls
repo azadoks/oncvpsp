@@ -1,0 +1,6 @@
+{
+    "source_dirs": ["src", "tests/unit"],
+    "incl_suffixes": [".inc"],
+    "pp_defs": {"WITH_TOML": ""},
+    "lowercase_intrinsics": true
+}

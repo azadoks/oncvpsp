@@ -293,7 +293,9 @@ YAML and TOML files and the scripts' shebangs, and run
 no trailing whitespace, one final newline, spaces not tabs, 2-column
 Fortran indentation, 80 columns) so that files come out of the editor
 already conforming. Most editors honour it natively or with the
-[EditorConfig](https://editorconfig.org) plugin.
+[EditorConfig](https://editorconfig.org) plugin. [Developer
+Setup](developer_setup.md) has the installation of the tools and the VS Code
+setup that runs `reindent.py` as the formatter and fortitude in the editor.
 
 fortitude uses its default rules, without the four that conflict with the
 rules above: double-quoted strings (S241), and three that ask for modules

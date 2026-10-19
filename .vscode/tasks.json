@@ -1,0 +1,29 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "pre-commit: this file",
+            "type": "shell",
+            "command": "pre-commit run --files \"${file}\"",
+            "problemMatcher": []
+        },
+        {
+            "label": "pre-commit: all files",
+            "type": "shell",
+            "command": "pre-commit run --all-files",
+            "problemMatcher": []
+        },
+        {
+            "label": "fortitude --fix then reindent: this file",
+            "type": "shell",
+            "command": "fortitude check --fix \"${file}\"; python3 scripts/reindent.py \"${file}\"",
+            "problemMatcher": []
+        },
+        {
+            "label": "check interfaces (needs a build in build/)",
+            "type": "shell",
+            "command": "scripts/check_interfaces.sh",
+            "problemMatcher": []
+        }
+    ]
+}
