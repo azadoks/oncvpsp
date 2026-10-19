@@ -41,9 +41,10 @@ There are probably other conventions I've been following but you get the idea.
 
 Hamann's list ends with "There are probably other conventions I've been
 following". These are those conventions, read off the majority of his
-files (see [Coding Standard Violations](coding_standard_violations.md)),
-and they apply to all the code except the imported files (see
-[Linting](#linting)). A routine looks like this:
+files, and they apply to all the code except the imported files (see
+[Linting](#linting)) and the exceptions kept in
+[Coding Standard Violations](coding_standard_violations.md). A routine
+looks like this:
 
 ```fortran
 !

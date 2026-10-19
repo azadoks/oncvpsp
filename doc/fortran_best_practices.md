@@ -5,14 +5,15 @@ Language-level deviations from modern Fortran practice (F2008/F2018) in the
 Libxc/TOML files and the two main programs). The vendored
 `src/xmlf90-wxml/` is excluded. Some have since been fixed: see the
 [remediation order](#recommended-remediation-order) and the
-[mechanical pass](coding_standard_violations.md#status). Line numbers
+[Coding Standard Violations](coding_standard_violations.md). Line numbers
 refer to commit `7e9480a`, before any Known Issues fixes. File names are
 relative to `src/`.
 
 Related pages:
 
 - [Known Issues](known_issues.md) lists suspected bugs. Its items are not
-  repeated here, only cross-referenced.
+  repeated here, only cross-referenced. Those since fixed are no longer
+  listed there; their fixes are in the commit messages.
 - [Coding Standard Violations](coding_standard_violations.md) covers layout,
   naming, comments and consistency (`.eq.`, `character*N`, `enddo`,
   commented-out code, header blocks). Those items are only summarised here.
@@ -769,7 +770,7 @@ the tests compare.
    `psmlout`/`psmlout_r`.
 9. **Mechanical cleanup.**
    - **Done** (with fortitude; see
-     [Coding Standard Violations](coding_standard_violations.md#status)):
+     [Coding Standard Violations](coding_standard_violations.md)):
      generic intrinsics in place of `dlog`, `dsqrt`, `dabs`, `dexp`,
      `dmin1`, `dmax1`, `idint` and `dfloat`; `only` on every `use`;
      `intent` on every argument; `implicit none` in `m_psmlout`; the
