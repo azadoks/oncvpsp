@@ -99,7 +99,7 @@ The fr path had 3 reference tests to the sr path's 28.
 The psp8, UPF and PSML files differ in form for fr, so their writers stay
 separate; what they share moves to common routines.
 
-- [ ] `gnu_script` / `gnu_script_r`
+- [x] `gnu_script` / `gnu_script_r`
 - [ ] The shared parts of `linout` / `linout_r`
 - [ ] The shared parts of `upfout` / `upfout_r`
 - [ ] The shared parts of `psmlout` / `psmlout_r`

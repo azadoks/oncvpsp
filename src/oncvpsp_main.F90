@@ -1035,11 +1035,7 @@
  call run_phsft(lmax,lloc,nproj,epa,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
 &               rr,vfull,vp,zz,mmax,mxprj,irc,irel,nkap)
 
- if(irel==2) then
-   call gnu_script_r(epa,evkb,lmax,lloc,mxprj,nproj)
- else
-   call gnu_script(epa,evkb,lmax,lloc,mxprj,nproj)
- end if
+ call gnu_script(epa,evkb,lmax,lloc,mxprj,nproj,nkap)
 
  if(trim(psfile)=='psp8' .or. trim(psfile)=='both') then
    if(irel==2) then

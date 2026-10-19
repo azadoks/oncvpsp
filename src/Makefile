@@ -27,7 +27,7 @@ OBJS_ALL =	aeatom.o boundstate.o build_info_m.o check_data.o const_basis.o const
 		lschpsbar.o vrel.o ae_file_m.o config_ae_m.o sratom.o input_echo_m.o \
 		relatom.o fphsft.o run_phsft.o scatstate.o wellstate.o \
 		psatom.o run_config.o run_diag.o renorm_r.o run_plot.o \
-		run_vkb.o fpovlp.o gnu_script.o linout.o upfout.o gnu_script_r.o \
+		run_vkb.o fpovlp.o gnu_script.o linout.o upfout.o \
 		linout_r.o run_diag_sr_so_r.o sr_so_r.o upfout_r.o \
 		psmlout_m.o oncvpsp_main.o
 

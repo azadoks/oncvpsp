@@ -18,47 +18,72 @@
 !
 ! creates appropriate input file for GNUPLOT
 
- subroutine gnu_script(epa,evkb,lmax,lloc,mxprj,nproj)
+ subroutine gnu_script(epa,evkb,lmax,lloc,mxprj,nproj,nkap)
 
-!epa  wave function energies
-!evkb  projector coefficients, printed in the projector plot titles
+!epa  wave function energies, last index 1 for j=l+1/2, 2 for j=l-1/2
+!     when nkap=2
+!evkb  projector coefficients, printed in the projector plot titles,
+!      last index as for epa
 !lmax  maximum angular momentum
 !lloc  angular momentum for local potential (lloc=4 for polynomial, etc.)
 !mxprj maximum number of projectors
 !nproj number of projectors for each l
+!nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
 
  use constants_m, only: dp
  implicit none
 
 !Input variables
- integer, intent(in) :: lmax,lloc,mxprj
+ integer, intent(in) :: lmax,lloc,mxprj,nkap
  integer, intent(in) :: nproj(6)
- real(dp), intent(in) :: epa(mxprj,6),evkb(mxprj,4)
+ real(dp), intent(in) :: epa(mxprj,6,nkap),evkb(mxprj,4,nkap)
 
 !Local variables
  integer :: ii,iprj,jj,l1,ll
+ integer :: ikap,mkap
 
  character (len=2), parameter :: cbs=',\'
 
  character(len=80) :: gln(100)
  character(len=4) :: lead(6)
  character(len=80) :: pse,set,lset(12)
- character(len=50) :: plot_title(10)
+ character(len=50) :: plot_title(20)
  character(len=40) :: x_label(3)
+!suffix of the j=l+1/2 line titles: + when nkap=2
+ character(len=1) :: jp
 
  lead(:)='    '
  lead(1)='plot'
 
- plot_title(1)='set title "t2   Semi-Local Ion Pseudopotentials"'
- plot_title(2)='set title "t2   Charge Densities"'
- plot_title(3)='set title "t2   Wave Function set'
- plot_title(4)='set title "t2   Projector Wave Functions"'
- plot_title(5)='set title "t2   ARCTAN(Log Derivatives)"'
- plot_title(6)='set title "t2   Energy Error per Electron (Ha)"'
- plot_title(7)='set title "t2   S Projs. evkb(:) ='
- plot_title(8)='set title "t2   P Projs. evkb(:) ='
- plot_title(9)='set title "t2   D Projs. evkb(:) ='
- plot_title(10)='set title "t2   F Projs. evkb(:) ='
+ if(nkap==1) then
+   jp=' '
+   plot_title(1)='set title "t2   Semi-Local Ion Pseudopotentials"'
+   plot_title(2)='set title "t2   Charge Densities"'
+   plot_title(3)='set title "t2   Wave Function set'
+   plot_title(4)='set title "t2   Projector Wave Functions"'
+   plot_title(5)='set title "t2   ARCTAN(Log Derivatives)"'
+   plot_title(6)='set title "t2   Energy Error per Electron (Ha)"'
+   plot_title(7)='set title "t2   S Projs. evkb(:) ='
+   plot_title(8)='set title "t2   P Projs. evkb(:) ='
+   plot_title(9)='set title "t2   D Projs. evkb(:) ='
+   plot_title(10)='set title "t2   F Projs. evkb(:) ='
+ else
+   jp='+'
+   plot_title(1)='set title "t1 Ion Pseudopotentials"'
+   plot_title(2)='set title "t1 Charge Densities"'
+   plot_title(3)='set title "t1 Wave Function set'
+   plot_title(4)='set title "t1 Projector Wave Functions"'
+   plot_title(5)='set title "t1 ARCTAN(Log Derivatives)"'
+   plot_title(6)='set title "t1 Energy Error per Electron (Ha)"'
+   plot_title(7)='set title "S+ Ortho. Projs. evkb(:) ='
+   plot_title(8)='set title "P+ Ortho. Projs. evkb(:) ='
+   plot_title(9)='set title "D+ Ortho. Projs. evkb(:) ='
+   plot_title(10)='set title "F+ Ortho. Projs. evkb(:) ='
+   plot_title(11)='set title "S- Ortho. Projs. evkb(:) ='
+   plot_title(12)='set title "P- Ortho. Projs. evkb(:) ='
+   plot_title(13)='set title "D- Ortho. Projs. evkb(:) ='
+   plot_title(14)='set title "F- Ortho. Projs. evkb(:) ='
+ end if
 
  x_label(1)='set xlabel "Radius (a_B)"'
  x_label(2)='set xlabel "Energy (Ha)"'
@@ -91,34 +116,59 @@
 
  gln(60)='    "<grep ''&    '
 
- gln( 9)='0'' t1" using 3:4 title "S full" with lines ls 1'
- gln(10)='0'' t1" using 3:5 title "S pseudo" with lines ls 8'
- gln(11)='1'' t1" using 3:4 title "P full" with lines ls 3'
- gln(12)='1'' t1" using 3:5 title "P pseudo" with lines ls 10'
- gln(13)='2'' t1" using 3:4 title "D full" with lines ls 5'
- gln(14)='2'' t1" using 3:5 title "D pseudo" with lines ls 12'
- gln(15)='3'' t1" using 3:4 title "F full" with lines ls 1'
- gln(16)='3'' t1" using 3:5 title "F pseudo" with lines ls 8'
+ gln( 9)='0'' t1" using 3:4 title "S'//trim(jp)//' full" with lines ls 1'
+ gln(10)='0'' t1" using 3:5 title "S'//trim(jp)//' pseudo" with lines ls 8'
+ gln(11)='1'' t1" using 3:4 title "P'//trim(jp)//' full" with lines ls 3'
+ gln(12)='1'' t1" using 3:5 title "P'//trim(jp)//' pseudo" with lines ls 10'
+ gln(13)='2'' t1" using 3:4 title "D'//trim(jp)//' full" with lines ls 5'
+ gln(14)='2'' t1" using 3:5 title "D'//trim(jp)//' pseudo" with lines ls 12'
+ gln(15)='3'' t1" using 3:4 title "F'//trim(jp)//' full" with lines ls 1'
+ gln(16)='3'' t1" using 3:5 title "F'//trim(jp)//' pseudo" with lines ls 8'
+
+ gln(79)='0'' t1" using 3:4 title "S- full" with lines ls 1'
+ gln(80)='0'' t1" using 3:5 title "S- pseudo" with lines ls 8'
+ gln(81)='1'' t1" using 3:4 title "P- full" with lines ls 3'
+ gln(82)='1'' t1" using 3:5 title "P- pseudo" with lines ls 10'
+ gln(83)='2'' t1" using 3:4 title "D- full" with lines ls 5'
+ gln(84)='2'' t1" using 3:5 title "D- pseudo" with lines ls 12'
+ gln(85)='3'' t1" using 3:4 title "F- full" with lines ls 1'
+ gln(86)='3'' t1" using 3:5 title "F- pseudo" with lines ls 8'
 
  gln(23)='    "<grep ''!      0'' t1" using 3:4 ' &
-&        //'title "S   full" with lines ls 1'
+&        //'title "S'//trim(jp)//'   full" with lines ls 1'
  gln(24)='    "<grep ''!      0'' t1" using 3:5 ' &
-&        //'title "S pseudo" with lines ls 8'
+&        //'title "S'//trim(jp)//' pseudo" with lines ls 8'
+ gln(25)='    "<grep ''!      0'' t1" using 3:4 ' &
+&        //'title "S-   full" with lines ls 1'
+ gln(26)='    "<grep ''!      0'' t1" using 3:5 ' &
+&        //'title "S- pseudo" with lines ls 8'
 
  gln(27)='    "<grep ''!      1'' t1" using 3:4 ' &
-&        //'title "P   full" with lines ls 3'
+&        //'title "P'//trim(jp)//'   full" with lines ls 3'
  gln(28)='    "<grep ''!      1'' t1" using 3:5 ' &
-&        //'title "P pseudo" with lines ls 10'
+&        //'title "P'//trim(jp)//' pseudo" with lines ls 10'
+ gln(29)='    "<grep ''!      1'' t1" using 3:4 ' &
+&        //'title "P-   full" with lines ls 3'
+ gln(30)='    "<grep ''!      1'' t1" using 3:5 ' &
+&        //'title "P- pseudo" with lines ls 10'
 
  gln(31)='    "<grep ''!      2'' t1" using 3:4 ' &
-&        //'title "D   full" with lines ls 5'
+&        //'title "D'//trim(jp)//'   full" with lines ls 5'
  gln(32)='    "<grep ''!      2'' t1" using 3:5 ' &
-&        //'title "D pseudo" with lines ls 12'
+&        //'title "D'//trim(jp)//' pseudo" with lines ls 12'
+ gln(33)='    "<grep ''!      2'' t1" using 3:4 ' &
+&        //'title "D-   full" with lines ls 5'
+ gln(34)='    "<grep ''!      2'' t1" using 3:5 ' &
+&        //'title "D- pseudo" with lines ls 12'
 
  gln(35)='    "<grep ''!      3'' t1" using 3:4 ' &
-&        //'title "F   full" with lines ls 1'
+&        //'title "F'//trim(jp)//'   full" with lines ls 1'
  gln(36)='    "<grep ''!      3'' t1" using 3:5 ' &
-&        //'title "F pseudo" with lines ls 8'
+&        //'title "F'//trim(jp)//' pseudo" with lines ls 8'
+ gln(37)='    "<grep ''!      3'' t1" using 3:4 ' &
+&        //'title "F-   full" with lines ls 1'
+ gln(38)='    "<grep ''!      3'' t1" using 3:5 ' &
+&        //'title "F- pseudo" with lines ls 8'
 
  gln(47)='    "<grep ''!C     0'' t1" using 3:4 title "S" with lines ls 1'
  gln(48)='    "<grep ''!C     1'' t1" using 3:4 title "P" with lines ls 2'
@@ -179,68 +229,110 @@
 
  write(6,'(/a/)') trim(pse)
 
+!wave function plots
+
  do l1=1,lmax+1
-   do iprj=1,nproj(l1)
-
-     write(6,'(a,i2,a,f7.2,a/)') trim(plot_title(3)),iprj,', E= ', &
-&          epa(iprj,l1),' Ha"'
-     write(6,'(a/)') trim(x_label(1))
-
-     write(6,'(2a,i5,2a)') lead(1),trim(gln(60)),iprj,trim(gln(2*l1+7)),cbs
-     write(6,'(2a,i5, a)') lead(2),trim(gln(60)),iprj,trim(gln(2*l1+8))
-
-     write(6,'(/a/)') trim(pse)
-
-   end do !iprj
-
-!orthonormal projector plot
-   ll=l1-1
-   if(ll/=lloc) then
-     write(6,'(a/)') trim(x_label(1))
-     write(6,'(a,1p,5e11.2)',advance='no') trim(plot_title(6+l1)), &
-&          (evkb(jj,l1),jj=1,nproj(l1))
-     write(6,'(a/)')    ' Ha"'
-
-     do jj=1,nproj(l1)
-       write(6,'(2a,i6,a)',advance='no') lead(jj),trim(gln(70)), &
-&          ll,trim(gln(70+jj))
-       if(jj<nproj(l1)) then
-         write(6,'(a)') cbs
-       else
-         write(6,'(/)')
-       end if
-     end do
-
-     write(6,'(/a/)') trim(pse)
-
+   if(nkap==1 .or. l1==1) then
+     mkap=1
+   else
+     mkap=2
    end if
+! loop on J = ll +/- 1/2
+   do ikap=1,mkap
 
-! log derivative plots
+     do iprj=1,nproj(l1)
 
-   write(6,'(a/)') trim(plot_title(5))
-   write(6,'(a/)') trim(x_label(2))
+       write(6,'(a,i2,a,f7.2,a/)') trim(plot_title(3)),iprj,', E= ', &
+&            epa(iprj,l1,ikap),' Ha"'
+       write(6,'(a/)') trim(x_label(1))
+       if(nkap==1) then
+         write(6,'(2a,i5,2a)') lead(1),trim(gln(60)),iprj,trim(gln(2*l1+7)),cbs
+         write(6,'(2a,i5, a)') lead(2),trim(gln(60)),iprj,trim(gln(2*l1+8))
+       else if(ikap==1) then
+         write(6,'(2a,i5,2a)') lead(1),trim(gln(60)),-iprj,trim(gln(2*l1+7)),cbs
+         write(6,'(2a,i5, a)') lead(2),trim(gln(60)),-iprj,trim(gln(2*l1+8))
+       else
+         write(6,'(2a,i5,2a)') lead(1),trim(gln(60)),iprj,trim(gln(2*l1+77)),cbs
+         write(6,'(2a,i5, a)') lead(2),trim(gln(60)),iprj,trim(gln(2*l1+78))
+       end if
 
-   write(6,'(3a)') lead(1),trim(gln(4*l1+19)),cbs
-   write(6,'(2a)') lead(2),trim(gln(4*l1+20))
+       write(6,'(/a/)') trim(pse)
 
-   write(6,'(/a/)') trim(pse)
+     end do !iprj
 
+! orthonormal projector plot
+     ll=l1-1
+     if(ll/=lloc) then
+       write(6,'(a/)') trim(x_label(1))
+       if(ikap==1) then
+         write(6,'(a,1p,5e11.2)',advance='no') trim(plot_title(6+l1)), &
+&              (evkb(jj,l1,ikap),jj=1,nproj(l1))
+       else
+         write(6,'(a,1p,5e11.2)',advance='no') trim(plot_title(10+l1)), &
+&              (evkb(jj,l1,ikap),jj=1,nproj(l1))
+       end if
+       write(6,'(a/)')    ' Ha"'
+
+       do jj=1,nproj(l1)
+!run_plot labels the j=l+1/2 (ikap=1) projector lines with -l when nkap=2
+         if(nkap==2 .and. ikap==1) then
+           write(6,'(2a,i6,a)',advance='no') lead(jj),trim(gln(70)), &
+&          -ll,trim(gln(70+jj))
+         else
+           write(6,'(2a,i6,a)',advance='no') lead(jj),trim(gln(70)), &
+&          ll,trim(gln(70+jj))
+         end if
+         if(jj<nproj(l1)) then
+           write(6,'(a)') cbs
+         else
+           write(6,'(/)')
+         end if
+       end do
+
+       write(6,'(/a/)') trim(pse)
+
+     end if
+
+!  log derivative plots
+
+     write(6,'(a/)') trim(plot_title(5))
+     write(6,'(a/)') trim(x_label(2))
+
+     if(ikap==1) then
+       write(6,'(3a)') lead(1),trim(gln(4*l1+19)),cbs
+       write(6,'(2a)') lead(2),trim(gln(4*l1+20))
+     else
+       write(6,'(3a)') lead(1),trim(gln(4*l1+21)),cbs
+       write(6,'(2a)') lead(2),trim(gln(4*l1+22))
+     end if
+
+     write(6,'(/a/)') trim(pse)
+
+   end do !ikap
  end do !l1
 
 ! log derivatives for angular momenta for which no pseudopotentials
 ! were created
 
- do l1=lmax+2,4
+ if(lmax<3) then
+   do l1=lmax+2,4
 
-   write(6,'(a/)') trim(plot_title(5))
-   write(6,'(a/)') trim(x_label(2))
+     write(6,'(a/)') trim(plot_title(5))
+     write(6,'(a/)') trim(x_label(2))
 
-   write(6,'(3a)') lead(1),trim(gln(4*l1+19)),cbs
-   write(6,'(2a)') lead(2),trim(gln(4*l1+20))
+     do ikap=1,nkap
+       if(ikap==1) then
+         write(6,'(3a)') lead(1),trim(gln(4*l1+19)),cbs
+         write(6,'(2a)') lead(2),trim(gln(4*l1+20))
+       else
+         write(6,'(3a)') lead(1),trim(gln(4*l1+21)),cbs
+         write(6,'(2a)') lead(2),trim(gln(4*l1+22))
+       end if
 
-   write(6,'(/a/)') trim(pse)
-
- end do
+       write(6,'(/a/)') trim(pse)
+     end do !ikap
+   end do !l1
+ end if
 
 ! Convergence profile
 
