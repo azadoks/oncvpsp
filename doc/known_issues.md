@@ -41,6 +41,7 @@ Priorities:
 | P2 | `excwig.f90` `vxc`/`exc` unset for `rho<1e-15` | no | fixed |
 | P2 | `vkbphsft.f90` `dnpi` can be undefined | no | fixed |
 | P2 | `oncvpspnr.x` is scalar-relativistic | new tests (08_O_nr, 14_Si_nr) | fixed |
+| P2 | psp8 file without the model core for `icmod=6`, `fcfact<=0` | yes (14_Si_bca) | fixed |
 | P3 | build, dead code, silent errors, bounds, argument mismatches (see [P3 (fixed)](#p3-fixed)) | no | fixed |
 | P3 | 5 latent bugs: `qroots`, `ldirac*` series starts, `icmod=4` grid, `_tmp_input`, exit status of errors | no | fixed |
 | P3 | `functional_get_tau` (imported dead code) | no | kept |
@@ -175,6 +176,19 @@ Priorities:
     `ONCVPSP_NONREL` and includes `oncvpsp.F90`, which then sets
     `srel=.false.` (from `oncvpsp-opt`, which replaced the `RELATIVISTIC=0`
     fix on `master`). Both builds use it.
+- **`linout.f90`, `linout_r.f90`: no model core in the psp8 file for
+  `icmod=6` with `fcfact<=0`.** The psp8 writers wrote `fcfact` as
+  `fchrg` and wrote the model core only when `fcfact>0`. Since
+  `f098dc9` on `oncvpsp-opt`, `fcfact<=0` with `icmod=6` takes the cutoff
+  from the pseudo-waves, so those psp8 files had `fchrg=0` and no core,
+  although the pseudopotential was made with one. The UPF and PSML
+  writers test `icmod>=1` and were right.
+  - Found while checking the input echoes (2026-10-19).
+  - Fixed: `fchrg` is `fcfact` when `icmod>=1`, or 1 when `fcfact<=0`, and
+    the core is written when `fchrg>0`. Inputs with `icmod=0` or
+    `fcfact>0` write the same psp8 file as before. The psp8 block of the 14_Si_bca ref, which had
+    recorded the missing core, now has it. Tests `psp8_core_sr_14_Si` and
+    `psp8_core_r_74_W`.
 
 ## P3 (open)
 

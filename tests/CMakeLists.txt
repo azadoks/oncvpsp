@@ -164,6 +164,15 @@ foreach (echo_test IN ITEMS
         "${CMAKE_CURRENT_BINARY_DIR}/echo_${format}_${rel}_${test_name}" "${edit}")
 endforeach ()
 
+# icmod=6 with fcfact<=0 (the cutoff taken from the pseudo-waves): the psp8 file must still carry the
+# model core (see scripts/psp8_core_test.sh)
+oncvpsp_test(psp8_core_sr_14_Si psp8 psp8_core_test.sh
+    $<TARGET_FILE:oncvpspsr> "${data}/14_Si.dat" "s/^   1    0\\.25$/   6    0.0   1.0d-3/"
+    "${CMAKE_CURRENT_BINARY_DIR}/psp8_core_sr_14_Si")
+oncvpsp_test(psp8_core_r_74_W psp8 psp8_core_test.sh
+    $<TARGET_FILE:oncvpspr> "${data}/74_W.dat" "s/^    4  0\\.0$/    6  0.0  1.0d-3/"
+    "${CMAKE_CURRENT_BINARY_DIR}/psp8_core_r_74_W")
+
 # Text input from a pipe (as from a Python subprocess), which cannot be backspaced: the same output
 # as from a file, and an input ending early reported with the line the reader stopped at
 foreach (pipe_test IN ITEMS "sr:14_Si" "r:52_Te" "nr:08_O")

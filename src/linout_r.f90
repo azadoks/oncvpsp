@@ -47,7 +47,7 @@
 !mxprj  dimension of number of projectors
 !iexc  type of exchange-correlation
 !icmod  1 if model core charge is used, otherwise 0
-!fcfact  model core amplitude prefactor, written as fchrg (1 for icmod=4)
+!fcfact  model core amplitude prefactor (1 for icmod=4, cutoff for icmod=6)
 !fcfact0  input fcfact, for the echo
 !nrl size of linear radial grid
 !drl spacing of linear radial grid
@@ -93,6 +93,7 @@
  integer :: ii,jj,ll,l1,ixc_abinit
  integer :: dtime(8),npr_sr(5),npr_so(5)
  real(dp) :: zero(20)
+ real(dp) :: fchrg
  real(dp), allocatable :: rhomodl(:,:)
  real(dp),allocatable :: rhol(:),rl(:),vpl(:,:)
  real(dp),allocatable :: rhotael(:),rhocl(:)
@@ -183,6 +184,14 @@
    write(pspd(3),'(i2)') ii
  end if
 
+!fchrg flags the model core for Abinit: fcfact, or 1 when fcfact<=0
+!(icmod=6 with the cutoff taken from the pseudo-waves)
+ fchrg=0.0d0
+ if(icmod>=1) then
+   fchrg=fcfact
+   if(fchrg<=0.0d0) fchrg=1.0d0
+ end if
+
  write(6,'(/a)') 'Begin PSPCODE8'
  write(6,'(3a,4f10.5)') atsym,'    ONCVPSP-4.0.1' &
 &  ,'  r_core=',(rc(l1),l1=1,lmax+1)
@@ -190,7 +199,7 @@
 &  '    zatom,zion,pspd'
  write(6,'(i6,i8,i4,3i6, a)') 8, ixc_abinit,lmax,lloc, &
 &  nrl, 0, '    pspcod,pspxc,lmax,lloc,mmax,r2well'
- write(6,'(3f12.8, a)') rl(nrl),fcfact, 0.0,  &
+ write(6,'(3f12.8, a)') rl(nrl),fchrg, 0.0,  &
 &  '    rchrg fchrg qchrg'
  write(6,'(4i6, a)') npr_sr(1:4),'    nproj'
 
@@ -250,7 +259,7 @@
  end do
 
 ! write the model core charge if called for
- if(fcfact>0.0d0) then
+ if(fchrg>0.0d0) then
    do ii=1,nrl
      write(6,'(i6,1p,6e21.13)') ii,rl(ii),  &
 &      (rhomodl(ii,jj),jj=1,5)
