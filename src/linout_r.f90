@@ -23,7 +23,7 @@
 &                  rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,soscale, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
-&                  epsh1,epsh2,depsh,rlmax,psfile)
+&                  epsh1,epsh2,depsh,rlmax,psfile,log_mesh)
 
 
 !lmax  maximum angular momentum
@@ -55,6 +55,7 @@
 !  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf
 !  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact
 !  epsh1,epsh2,depsh,rlmax,psfile
+!log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets it (else 0)
 
 
  implicit none
@@ -79,6 +80,7 @@
  integer :: nc,nv,lpopt,ncnf
  real(dp) :: fa(30),rc0(6),ep(6,2),qcut(6),debl(6,2),facnf(30,5)
  real(dp) :: dvloc0,epsh1,epsh2,depsh,rlmax
+ real(dp) :: log_mesh(3)
  character*4 :: psfile
 
 !Output variables - printing only
@@ -321,6 +323,11 @@ write(6,'(a/a/a)') '#','# MODEL CORE CHARGE', &
    write(6,'(a)') '#'
  end do
   
+ if(log_mesh(1)>0.0d0) then
+   write(6,'(a/a/a)') '#','# LOG MESH','# amesh, rr1, rmax'
+   write(6,'(3es24.16)') log_mesh
+ end if
+
 ! write termination signal
  write(6,'(a)') '</INPUT>'
  write(6,'(/a)') 'END_PSP'

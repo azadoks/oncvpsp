@@ -74,6 +74,26 @@ foreach (case IN ITEMS "byte_order" "zz" "fa" "mesh" "zz_roundoff" "fa_roundoff"
         "${data}/14_Si.dat" ${case} "${CMAKE_CURRENT_BINARY_DIR}/ae_file_${case}")
 endforeach ()
 
+# Log mesh input (the optional last line of the text input): see scripts/log_mesh_test.sh
+foreach (mesh_test IN ITEMS "sr:14_Si" "nr:29_Cu" "r:52_Te")
+    string(REPLACE ":" ";" mesh_test "${mesh_test}")
+    list(GET mesh_test 0 rel)
+    list(GET mesh_test 1 test_name)
+    set(mesh_cases "defaults" "explicit" "rerun" "upf" "split" "split_differ")
+    if (rel STREQUAL "sr")
+        list(APPEND mesh_cases "amesh" "rr1" "rmax" "read")
+    endif ()
+    if (ONCVPSP_WITH_TOML)
+        list(APPEND mesh_cases "toml")
+    endif ()
+    foreach (case IN LISTS mesh_cases)
+        oncvpsp_test(log_mesh_${rel}_${test_name}_${case} mesh log_mesh_test.sh
+            $<TARGET_FILE:oncvpsp${rel}> $<TARGET_FILE:oncvpsp${rel}_ae> $<TARGET_FILE:oncvpsp${rel}_ps>
+            "${data}/${test_name}.dat" ${case} "${CMAKE_CURRENT_BINARY_DIR}/log_mesh_${rel}_${test_name}_${case}"
+            "${data}/toml/${test_name}.toml")
+    endforeach ()
+endforeach ()
+
 # TOML input: every input in tests/data/toml (the TOML form of its tests/data/*.dat) must give the
 # output of the text input, and the reader must stop with a message naming the problem for each of the
 # changes in scripts/toml_error_test.sh

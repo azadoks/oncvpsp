@@ -573,6 +573,47 @@ class LinearMeshConfiguration:
 
 
 @dataclass
+class LogMeshConfiguration:
+    """Configuration of the log radial mesh, the optional last line of the text input. A value of
+    0 or less selects ONCVPSP's built-in value."""
+
+    "Ratio of successive mesh points"
+    amesh: float
+    "First mesh point"
+    rr1: float
+    "Outer radius of the mesh"
+    rmax: float
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, LogMeshConfiguration):
+            raise NotImplementedError(
+                f"Cannot compare LogMeshConfiguration with {type(other)}"
+            )
+        for name in ("amesh", "rr1", "rmax"):
+            if abs(getattr(self, name) - getattr(other, name)) >= ATOL:
+                logging.debug(
+                    "%s differs: %f != %f", name, getattr(self, name), getattr(other, name)
+                )
+                return False
+        return True
+
+    @classmethod
+    def from_str(cls, s: str) -> "LogMeshConfiguration":
+        """Create a LogMeshConfiguration from a string.
+
+        Args:
+            s: String in the format "amesh rr1 rmax"
+
+        Returns:
+            LogMeshConfiguration instance.
+        """
+        parts = s.split()
+        if len(parts) != 3:
+            raise ValueError(f"Invalid log mesh configuration: {s}")
+        return cls(*(fort_float(p) for p in parts))
+
+
+@dataclass
 class OncvpspInput:
     """Input parameters for ONCVPSP."""
 
@@ -591,6 +632,7 @@ class OncvpspInput:
     log_derivative_analysis: LogDerivativeConfiguration
     linear_mesh: LinearMeshConfiguration
     test_configurations: list[list[StateConfiguration]]
+    log_mesh: LogMeshConfiguration | None = None
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, OncvpspInput):
@@ -703,6 +745,9 @@ class OncvpspInput:
                 if s1 != s2:
                     logging.debug("test_configurations entry differs: %s != %s", s1, s2)
                     return False
+        if self.log_mesh != other.log_mesh:
+            logging.debug("log_mesh differs: %s != %s", self.log_mesh, other.log_mesh)
+            return False
         return True
 
     @classmethod
@@ -793,6 +838,11 @@ class OncvpspInput:
                 [StateConfiguration.from_str(next(lines)) for _ in range(nvcnf)]
             )
 
+        log_mesh_line = next(lines, None)
+        log_mesh = (
+            LogMeshConfiguration.from_str(log_mesh_line) if log_mesh_line else None
+        )
+
         return cls(
             atsym,
             zz,
@@ -809,6 +859,7 @@ class OncvpspInput:
             log_derivative_analysis,
             linear_mesh,
             test_configurations,
+            log_mesh,
         )
 
     @classmethod
@@ -890,6 +941,15 @@ class OncvpspInput:
                 ]
                 for cfg in d["test_configurations"]
             ],
+            log_mesh=(
+                LogMeshConfiguration(
+                    amesh=d["log_mesh"].get("amesh", -1.0),
+                    rr1=d["log_mesh"].get("rr1", -1.0),
+                    rmax=d["log_mesh"].get("rmax", -1.0),
+                )
+                if "log_mesh" in d
+                else None
+            ),
         )
 
     def to_dict(self) -> dict[str, ty.Any]:
@@ -898,7 +958,7 @@ class OncvpspInput:
         Returns:
             Dictionary representation of the OncvpspInput.
         """
-        return {
+        d = {
             "oncvpsp": {
                 "atsym": self.atsym,
                 "z": self.zz,
@@ -964,6 +1024,13 @@ class OncvpspInput:
                 for cfg in self.test_configurations
             ],
         }
+        if self.log_mesh is not None:
+            d["log_mesh"] = {
+                name: value
+                for name in ("amesh", "rr1", "rmax")
+                if (value := getattr(self.log_mesh, name)) > 0
+            }
+        return d
 
 
 # %%
