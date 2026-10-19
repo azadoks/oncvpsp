@@ -75,6 +75,7 @@
  integer :: mch,mchf,mmax,n1,n2,nc,nlim,nlloc,nlmax,irpsh,nrl
  integer :: nv,irct,ncnf,nvt
  integer :: iprj,irel,nkap,nnwell
+ integer :: ikap,kap,mkap
  integer,allocatable :: npa(:,:)
 !
  integer :: dtime(8),na(30),la(30),np(6)
@@ -94,7 +95,7 @@
  real(dp) :: rr1,rcion,rciont,rcmax,rct,rlmax,rpkt
  real(dp) :: amesh_in,rr1_in,rmax_in,rmax,log_mesh(3)
  real(dp) :: sf,zz,zion,zval,etot
- real(dp) :: xdummy
+ real(dp) :: xdummy,fj,cnorm
 !
  real(dp) :: cl(6),debl(6),ea(30,2),ep(6,2),fa(30),facnf(30,5)
  real(dp) :: qcut(6),qmsbf(6),rc(6),rc0(6)
@@ -542,102 +543,189 @@
 
 !temporarily set this to 1 so that the pseudo wave function needed for the
 !local potential will be generated.  Reset after run_vkb.
+ npa(:,:)=0
  nproj(lloc+1)=1
  do l1=1,lmax+1
+   vwell(:,:)=0.0d0
    ll=l1-1
-   uu(:,:)=0.0d0; qq(:,:)=0.0d0
-   iprj=0
+   if(nkap==1 .or. ll==0) then
+     mkap=1
+   else
+     mkap=2
+   end if
+! loop on J = ll +/- 1/2 when nkap=2; fj is the weight of each J
+   do ikap=1,mkap
+     if(nkap==1) then
+       kap=-(ll+1)
+       fj=1.0d0
+     else if(ikap==1) then
+       kap=-(ll+1)
+       fj=dble(ll+1)/dble(2*ll+1)
+     else
+       kap=  ll
+       fj=dble(ll)/dble(2*ll+1)
+     end if
+
+     uu(:,:)=0.0d0; qq(:,:)=0.0d0
+     iprj=0
 !electrons filling each pseudo-wave in the cutoff of icmod 6: the shell's
-!for a scattering or empty state, else the occupation
-   wcurve(1:nproj(l1),l1,1)=dble(2*(2*ll+1))
+!(the J subshell's for nkap=2) for a scattering or empty state, else the
+!occupation
+     if(nkap==1) then
+       wcurve(1:nproj(l1),l1,ikap)=dble(2*(2*ll+1))
+     else if(ikap==1) then
+       wcurve(1:nproj(l1),l1,ikap)=dble(2*ll+2)
+     else
+       wcurve(1:nproj(l1),l1,ikap)=dble(2*ll)
+     end if
 
 !get principal quantum number for the highest core state for this l
-   npa(1,l1)=l1
-   do kk=1,nc
-     if(la(kk)==l1-1) npa(1,l1)=na(kk)+1
-   end do !kk
+     npa(1,l1)=l1
+     do kk=1,nc
+       if(la(kk)==l1-1) npa(1,l1)=na(kk)+1
+     end do !kk
 
 !get all-electron bound states for projectors
-   if(nv/=0) then
-     do kk=nc+1,nc+nv
-       if(la(kk)==l1-1) then
-         iprj=iprj+1
-         et=ea(kk,1)
-         call lschfb(na(kk),la(kk),ierr,et, &
-&                      rr,vfull,uu,up,zz,mmax,mch,srel)
-         if(ierr /= 0) then
-           write(6,'(/a,3i4)') &
-&           'oncvpsp-387: lschfb convergence ERROR n,l,iter=', &
-&           na(kk),la(kk),it
-           error stop 1
-         end if
-         epa(iprj,l1,1)=ea(kk,1)
-         if(fa(kk)>0.0d0) wcurve(iprj,l1,1)=fa(kk)
-         npa(iprj,l1)=na(kk)
-         uua(:,iprj,1)=uu(:,1)
-         upa(:,iprj,1)=up(:,1)
-       end if !la(kk)==l1-1
-       if(iprj==nproj(l1)) exit
-     end do !kk
-   end if !nv/=0
+     if(nv/=0) then
+       do kk=nc+1,nc+nv
+         if(la(kk)==l1-1) then
+           iprj=iprj+1
+           et=ea(kk,ikap)
+           call boundstate(irel,na(kk),ll,kap,ierr,et, &
+&                          rr,zz,vfull,uu,up,mmax,mch)
+           if(ierr /= 0) then
+             if(irel==2) then
+               write(6,'(a,i2,a,i2,a,i2)') &
+&                    'oncvpsp_r 409: ldiracfb convergence ERROR, n=',&
+&                     na(kk),'  l=',ll, 'kap-',kap
+             else
+               write(6,'(/a,3i4)') &
+&                    'oncvpsp-387: lschfb convergence ERROR n,l,iter=', &
+&                    na(kk),la(kk),it
+             end if
+             error stop 1
+           end if
+
+           epa(iprj,l1,ikap)=ea(kk,ikap)
+           if(fa(kk)>0.0d0) wcurve(iprj,l1,ikap)=fj*fa(kk)
+           npa(iprj,l1)=na(kk)
+           if(irel==2) then
+             call renorm_r(uu,rr,ll,kap,zz,mmax,cnorm)
+           else
+             cnorm=1.0d0
+           end if
+           uua(:,iprj,ikap)=uu(:,1)
+           upa(:,iprj,ikap)=cnorm*up(:,1)
+         end if !la(kk)==l1-1
+         if(iprj==nproj(l1)) exit
+       end do !kk
+     end if !nv/=0
 
 !get all-electron well states for projectors
 !if there were no valence states, use ep from input data for 1st well state
 !otherwise shift up by input debl
-   if(iprj==0) epa(1,l1,1)=ep(l1,1)
-   if(iprj<nproj(l1))then
-     do kk=1,nproj(l1)-iprj
-       iprj=iprj+1
-       if(iprj>1 .and. debl(l1)<=0.0d0) then
-         write(6,'(a,f8.3,a,i2/a/a)') 'oncvpsp: ERROR debl =',debl(l1), &
-&              ' for l=',ll, &
-&              ' ERROR not allowed with 2 or more scattering states', &
-&              'program will stop'
-         error stop 1
-       end if
-       if(iprj>1) then
-         epa(iprj,l1,1)=epa(iprj-1,l1,1)+debl(l1)
-         npa(iprj,l1)=npa(iprj-1,l1)+1
-       end if
 
-!npa keeps the input n even if the well state found has more nodes
-       nnwell=npa(iprj,l1)
-       call wellstate(nnwell,ll,-(ll+1),irc(l1),epa(iprj,l1,1),rr, &
-&                     vfull,vwell(1,iprj),uu,up,zz,mmax,mch,irel)
-       uua(:,iprj,1)=uu(:,1)
-       upa(:,iprj,1)=up(:,1)
-     end do !kk
-   end if !iprj<nproj(l1)
+     if(iprj==0) epa(1,l1,ikap)=ep(l1,ikap)
+     if(iprj<nproj(l1))then
+       do kk=1,nproj(l1)-iprj
+         iprj=iprj+1
+         if(iprj>1 .and. debl(l1)<=0.0d0) then
+           if(irel==2) then
+             write(6,'(a,f8.3,a,i2/a/a)') 'oncvpsp: ERROR debl =',debl(l1), &
+&                  ' for l=',ll, &
+&                  ' not allowed with 2 or more scattering states', &
+&                  'program will stop'
+           else
+             write(6,'(a,f8.3,a,i2/a/a)') 'oncvpsp: ERROR debl =',debl(l1), &
+&                  ' for l=',ll, &
+&                  ' ERROR not allowed with 2 or more scattering states', &
+&                  'program will stop'
+           end if
+           error stop 1
+         end if
 
-   do iprj=1,nproj(l1)
+! npa is not reset for ikap=2 to retain same node count for consistency with
+! keeping same well potential as for ikap=1.
+         if(iprj>1) then
+           epa(iprj,l1,ikap)=epa(iprj-1,l1,ikap)+debl(l1)
+           if(ikap==1) then
+             npa(iprj,l1)=npa(iprj-1,l1)+1
+           end if
+         end if
+
+! the well potential is calculated for the less-bound ikap=1 state and kept
+! for ikap=2, which is more deeply bound and should always have a bound
+! state for this combination of npa and vwell.  For irel=2 npa takes the n
+! of the well state found, which can have more nodes than asked for; else
+! npa keeps the input n.
+         if(ikap==1 .and. irel==2) then
+           call wellstate(npa(iprj,l1),ll,kap,irc(l1),epa(iprj,l1,ikap), &
+&                         rr,vfull,vwell(1,iprj),uu,up,zz,mmax,mch,irel)
+         else if(ikap==1) then
+           nnwell=npa(iprj,l1)
+           call wellstate(nnwell,ll,kap,irc(l1),epa(iprj,l1,ikap), &
+&                         rr,vfull,vwell(1,iprj),uu,up,zz,mmax,mch,irel)
+         else
+           et=epa(iprj,l1,ikap)
+           call boundstate(irel,npa(iprj,l1),ll,kap,ierr,epa(iprj,l1,ikap), &
+&                          rr,zz,vwell(1,iprj),uu,up,mmax,mch)
+
+           if(ierr /= 0) then
+             write(6,'(a,i2,a,i2,a,i3,a,f12.6)') &
+&                  'oncvpsp_r 474: ldiracfb convergence ERROR, n=',&
+&                   npa(iprj,l1),'  l=',ll, 'kap=',kap, ' epa=', &
+&                   epa(iprj,l1,ikap)
+
+             error stop 1
+           end if
+
+           write(6,'(/a,i3,a,i3,a,i3/a,f8.4)') &
+&                   '   Wellstate for l =',ll,'  n =',npa(iprj,l1), &
+&                   ' kap=',kap, &
+&                   '     eigenvalue = ',et
+         end if
+
+         if(irel==2) then
+           call renorm_r(uu,rr,ll,kap,zz,mmax,cnorm)
+         else
+           cnorm=1.0d0
+         end if
+         uua(:,iprj,ikap)=uu(:,1)
+         upa(:,iprj,ikap)=cnorm*up(:,1)
+       end do !kk
+     end if !iprj<nproj(l1)
+
+     do iprj=1,nproj(l1)
 
 !calculate relativistic correction to potential to force projectors to 0 at rc
-     call vrel(ll,epa(iprj,l1,1),rr,vfull,vr(1,iprj,l1,1),uua(1,iprj,1), &
-&              upa(1,iprj,1),zz,mmax,irc(l1),srel)
+       call vrel(ll,epa(iprj,l1,ikap),rr,vfull,vr(1,iprj,l1,ikap), &
+&                uua(1,iprj,ikap),upa(1,iprj,ikap), &
+&                zz,mmax,irc(l1),srel)
+     end do
 
-   end do
 
 !get all-electron overlap matrix
-   do jj=1,nproj(l1)
-     do ii=1,jj
-       call fpovlp(uua(1,ii,1),uua(1,jj,1),irc(l1),ll,zz,qq(ii,jj),rr,srel)
-       qq(jj,ii)=qq(ii,jj)
+     do jj=1,nproj(l1)
+       do ii=1,jj
+         call fpovlp(uua(1,ii,ikap),uua(1,jj,ikap),irc(l1),ll,zz, &
+&                    qq(ii,jj),rr,srel)
+         qq(jj,ii)=qq(ii,jj)
+       end do
      end do
-   end do
+     call run_optimize(epa(1,l1,ikap),ll,mmax,mxprj,rr,uua(1,1,ikap),qq, &
+&                      irc(l1),qcut(l1),qmsbf(l1),ncon(l1),nbas(l1),nproj(l1), &
+&                      pswf(1,1,l1,ikap),vp(1,l1,ikap),vkb(1,1,l1,ikap), &
+&                      vfull,cvgplt(1,1,1,l1,ikap),ncurve,ecurve(1,1,1,l1,ikap))
 
-   call run_optimize(epa(1,l1,1),ll,mmax,mxprj,rr,uua,qq, &
-&                    irc(l1),qcut(l1),qmsbf(l1),ncon(l1),nbas(l1),nproj(l1), &
-&                    pswf(1,1,l1,1),vp(1,l1,1),vkb(1,1,l1,1),vfull, &
-&                    cvgplt(1,1,1,l1,1),ncurve,ecurve(1,1,1,l1,1))
-
+   end do !ikap
  end do !l1
 
 ! construct Vanderbilt / Kleinman-Bylander projectors
 
  write(6,'(/a,a)') 'Construct Vanderbilt / Kleinmman-Bylander projectors'
 
- call run_vkb(lmax,lloc,lpopt,dvloc0,irc,nproj,rr,mmax,mxprj,pswf, &
-&             vfull,vp,evkb,vkb,nlim,vr,irel,nkap)
+ call run_vkb(lmax,lloc,lpopt,dvloc0,irc,nproj,rr,mmax,mxprj,pswf,vfull,vp, &
+&             evkb,vkb,nlim,vr,irel,nkap)
 
 !restore this to its proper value
  nproj(lloc+1)=0
@@ -654,47 +742,87 @@
  uupsa(:,:,:)=0.0d0
  eeig=0.0d0
  zval=0.0d0
+ rhops(:,:)=0.0d0
  rho(:)=0.0d0
  nodes(:)=0
+ rhoae(:,:)=0.0d0
  rhotae(:)=0.0d0
  irps=0
  do kk=1,nv
-
-   et=ea(nc+kk,1)
    ll=la(nc+kk)
    l1=ll+1
-   call lschfb(na(nc+kk),ll,ierr,et, &
-&                rr,vfull,uu,up,zz,mmax,mch,srel)
-   if(ierr /= 0) then
-     write(6,'(/a,3i4)') 'oncvpsp-461: lschfb convergence ERROR n,l,iter=', &
-&     na(nc+kk),la(nc+kk),it
-     error stop 1
+
+   if(nkap==1 .or. ll==0) then
+     mkap=1
+   else
+     mkap=2
    end if
+   do ikap=1,mkap
+     if(nkap==1) then
+       kap=-(ll+1)
+       fj=1.0d0
+     else if(ikap==1) then
+       kap=-(ll+1)
+       fj=dble(ll+1)/dble(2*ll+1)
+     else
+       kap=  ll
+       fj=dble(ll)/dble(2*ll+1)
+     end if
 
-   rhoae(:,kk)=(uu(:,1)/rr(:))**2
+     et=ea(nc+kk,ikap)
 
-   rhotae(:)=rhotae(:) + fa(nc+kk)*rhoae(:,kk)
+     call boundstate(irel,na(nc+kk),ll,kap,ierr,et, &
+&                    rr,zz,vfull,uu,up,mmax,mch)
+     if(ierr /= 0) then
+       if(irel==2) then
+         write(6,'(a,i2,a,i2,a,i2,a,i4)') &
+&              'oncvpsp_r 541: ldiracfb convergence ERROR, n=',&
+&               na(nc+kk),'  l=',ll, '  kap-',kap,'  ierr=',ierr
+       else
+         write(6,'(/a,3i4)') &
+&              'oncvpsp-461: lschfb convergence ERROR n,l,iter=', &
+&              na(nc+kk),la(nc+kk),it
+       end if
+       error stop 1
+     end if
 
-   emax=0.75d0*et
-   emin=1.25d0*et
+     if(irel==2) then
+       rhoae(:,kk)=rhoae(:,kk)+fj*((uu(:,1)/rr(:))**2 + (uu(:,2)/rr(:))**2)
+       emax=0.90d0*et
+       emin=1.10d0*et
+     else
+       rhoae(:,kk)=(uu(:,1)/rr(:))**2
+       emax=0.75d0*et
+       emin=1.25d0*et
+     end if
 
-   call lschvkbb(ll+nodes(l1)+1,ll,nproj(l1),ierr,et,emin,emax, &
-&                rr,vp(1,lloc+1,1),vkb(1,1,l1,1),evkb(1,l1,1), &
-&                uu,up,mmax,mch)
-
-   if(ierr/=0) then
-     write(6,'(a,3i4)') 'oncvpsp: lschvkbb ERROR',ll+nodes(l1)+1,ll,ierr
-     flush(6)
-     error stop 1
-   end if
+     call lschvkbb(ll+nodes(l1)+1,ll,nproj(l1),ierr,et,emin,emax, &
+&                  rr,vp(1,lloc+1,ikap),vkb(1,1,l1,ikap),evkb(1,l1,ikap), &
+&                  uu,up,mmax,mch)
+     if(ierr /= 0) then
+       if(irel==2) then
+         write(6,'(a,i2,a,i2)') 'oncvpsp_r: lschvkbb convergence ERROR, n=',&
+&         ll+1,'  l=',ll
+       else
+         write(6,'(a,3i4)') 'oncvpsp: lschvkbb ERROR',ll+nodes(l1)+1,ll,ierr
+         flush(6)
+       end if
+       error stop 1
+     end if
 
 ! save valence pseudo wave functions for upfout
-   uupsa(:,1,kk)=uu(:,1)
+     uupsa(:,ikap,kk)=uu(:,1)
 
-   rhops(:,kk)=(uu(:,1)/rr(:))**2
+     if(irel==2) then
+       rhops(:,kk)=rhops(:,kk)+fj*(uu(:,1)/rr(:))**2
+     else
+       rhops(:,kk)=(uu(:,1)/rr(:))**2
+     end if
+     eeig=eeig+fa(nc+kk)*fj*et
+
+   end do !ikap
+   rhotae(:)=rhotae(:)+fa(nc+kk)*rhoae(:,kk)
    rho(:)=rho(:)+fa(nc+kk)*rhops(:,kk)
-   eeig=eeig+fa(nc+kk)*et
-
    zval=zval+fa(nc+kk)
    nodes(l1)=nodes(l1)+1
    irps=max(irps,irc(l1))

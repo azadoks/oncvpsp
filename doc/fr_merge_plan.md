@@ -75,8 +75,9 @@ The fr path had 3 reference tests to the sr path's 28.
 - [x] `run_diag` / `run_diag_r`
 - [x] `run_plot` / `run_plot_r`
 - [x] `run_vkb` / `run_vkb_r`
-- [ ] The projector loop of the driver (from `npa` to `run_optimize`)
-      and the pseudo-wave-function loop after `run_vkb`
+- [x] The projector loop of the driver (from `npa` to `run_optimize`)
+      and the pseudo-wave-function loop after `run_vkb`: the same text in
+      both drivers, for phase 4 to keep one copy
 
 ### Phase 4: one driver
 
