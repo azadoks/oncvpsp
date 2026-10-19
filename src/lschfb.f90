@@ -61,8 +61,8 @@
  real(dp) :: amesh,al,xx
  integer :: ii,it,nint,node,nin
 
- real(dp), allocatable :: upp(:),cf(:),dv(:),fr(:),frp(:)
- allocate(upp(mmax),cf(mmax),dv(mmax),fr(mmax),frp(mmax))
+ real(dp), allocatable :: upp(:),cf(:),dv(:),fr(:),frp(:),r2(:)
+ allocate(upp(mmax),cf(mmax),dv(mmax),fr(mmax),frp(mmax),r2(mmax))
 
  al = 0.01d0 * log(rr(101) / rr(1))
  amesh = exp(al)
@@ -114,31 +114,36 @@
 
  als=al**2
 
+! squared radii and dv/dr for the darwin correction, which do not depend
+! on the energy
+ do ii=1,mmax
+   r2(ii)=rr(ii)**2
+ end do
+
+ dv(:)=0.0d0
+
+ dv(1)=(-50.d0*vv(1)+96.d0*vv(2)-72.d0*vv(3)+32.d0*vv(4) &
+&       -6.d0*vv(5))/(24.d0*al*rr(1))
+ dv(2)=(-6.d0*vv(1)-20.d0*vv(2)+36.d0*vv(3)-12.d0*vv(4) &
+&       +2.d0*vv(5))/(24.d0*al*rr(2))
+
+ do ii=3,mmax-2
+   dv(ii)=(2.d0*vv(ii-2)-16.d0*vv(ii-1)+16.d0*vv(ii+1) &
+&        -2.d0*vv(ii+2))/(24.d0*al*rr(ii))
+ end do
+
 ! return point for bound state convergence
  do nint=1,60
 
 ! coefficient array for u in differential eq.
    do ii=1,mmax
-     cf(ii)=als*sls + 2.0d0*als*(vv(ii)-ee)*rr(ii)**2
-   end do
-
-! calculate dv/dr for darwin correction
-   dv(:)=0.0d0
-
-   dv(1)=(-50.d0*vv(1)+96.d0*vv(2)-72.d0*vv(3)+32.d0*vv(4) &
-&         -6.d0*vv(5))/(24.d0*al*rr(1))
-   dv(2)=(-6.d0*vv(1)-20.d0*vv(2)+36.d0*vv(3)-12.d0*vv(4) &
-&         +2.d0*vv(5))/(24.d0*al*rr(2))
-
-   do ii=3,mmax-2
-     dv(ii)=(2.d0*vv(ii-2)-16.d0*vv(ii-1)+16.d0*vv(ii+1) &
-&          -2.d0*vv(ii+2))/(24.d0*al*rr(ii))
+     cf(ii)=als*sls + 2.0d0*als*(vv(ii)-ee)*r2(ii)
    end do
 
 !  relativistic coefficient arrays for u (fr) and up (frp).
    do ii=1,mmax
      tfss=fss
-     fr(ii)=als*(rr(ii)**2)*(-tfss*(vv(ii)-ee)**2 + 0.5d0*tfss*dv(ii)/ &
+     fr(ii)=als*r2(ii)*(-tfss*(vv(ii)-ee)**2 + 0.5d0*tfss*dv(ii)/ &
 &     (rr(ii)*(1.0d0+0.5d0*tfss*(ee-vv(ii)))))
      frp(ii)=-al*rr(ii)*0.5d0*tfss*dv(ii)/(1.0d0+0.5d0*tfss*(ee-vv(ii)))
    end do
@@ -288,7 +293,7 @@
    up(:)=-up(:)
  end if
 
- deallocate(upp,cf,dv,fr,frp)
+ deallocate(upp,cf,dv,fr,frp,r2)
  return
 
  contains
