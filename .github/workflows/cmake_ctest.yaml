@@ -2,9 +2,9 @@ name: Build and test
 
 on:
     push:
-        branches: [ "master", "dev" ]
+        branches: [ "master", "dev", "oncvpsp-opt" ]
     pull_request:
-        branches: [ "master" ]
+        branches: [ "master", "oncvpsp-opt" ]
 
 jobs:
     all:
