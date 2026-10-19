@@ -102,6 +102,14 @@ looks like this:
   functions in an include file (`adams.inc`).
 - `.f90`, or `.F90` when the file uses the preprocessor.
 - Modules are named `<name>_m`, in `<name>_m.f90`.
+- Rule 3 is read as: no global state. A module may hold parameters
+  (`constants_m`) and procedures (`ae_file_m`), but no variables, so
+  everything that changes is passed as arguments. There are no derived
+  types of our own: values that belong together are separate arrays
+  with a common index, like the test-configuration input `nacnf(30,5)`,
+  `lacnf(30,5)` and `facnf(30,5)`. Types that a
+  library defines (toml-f's `toml_table`, xmlf90's `xmlf_t`) are used
+  where its calls need them.
 - `_r` marks the fully-relativistic version of a routine or a module
   entry point (`run_vkb_r`, `psmlout_r`). A pair `foo`/`foo_r` is kept
   alike in everything but the relativistic part.

@@ -47,11 +47,13 @@
  use psmlout_m, only: psmlout_r
  use build_info_m, only: write_build_info
  use input_text_m, only: read_input_text_r
- use config_ae_m, only: config_ae_r_t, run_config_ae_r
 #if defined(ONCVPSP_AE_ONLY)
+ use config_ae_m, only: run_config_ae_r
  use ae_file_m, only: write_ae_file_r
 #elif defined(ONCVPSP_PS_ONLY)
- use ae_file_m, only: read_ae_file_r, ae_file_config_r
+ use ae_file_m, only: read_ae_file_r
+#else
+ use config_ae_m, only: run_config_ae_r
 #endif
 #if (defined WITH_TOML)
  use input_toml_m, only: read_input_toml_r
@@ -115,7 +117,10 @@
  real(dp), allocatable :: vpsml(:,:,:)
  real(dp), allocatable :: vr(:,:,:,:)
 
- type(config_ae_r_t) :: cae(5)
+!all-electron results for the test configurations (see run_config_ae_r)
+ integer :: istcnf(5),ierrcnf(5),itcnf(5),kerrcnf(5)
+ integer :: nvtcnf(5),natcnf(30,5),latcnf(30,5)
+ real(dp) :: fatcnf(30,3,5),eatcnf(30,2,3,5),etstcnf(5)
 
  character(len=2) :: atsym
  character(len=4) :: psfile
@@ -377,7 +382,9 @@
 !
 #if defined(ONCVPSP_PS_ONLY)
  call read_ae_file_r(ae_filename,atsym,zz,nc,nv,iexc,na,la,fa, &
-&                    mmax,rr,it,etot,ea,rhoc,rho,vfull)
+&                    mmax,rr,ncnf,nvcnf,nacnf,lacnf,facnf, &
+&                    it,etot,ea,rhoc,rho,vfull,istcnf,ierrcnf,itcnf, &
+&                    kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
 !relatom prints the libxc functional description on its first exc_libxc call
  if(iexc<0) then
    block
@@ -485,12 +492,14 @@
 !and all output about them come from oncvpspr_ps.x
  do jj=1,ncnf+1
    call run_config_ae_r(jj,nacnf,lacnf,facnf,nc,nvcnf,rr,zz, &
-&                       mmax,iexc,ea,cae(jj))
+&                       mmax,iexc,ea,istcnf,ierrcnf,itcnf,kerrcnf, &
+&                       nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
  end do
 
  call write_ae_file_r(ae_filename,atsym,zz,nc,nv,iexc,na,la,fa, &
 &                     mmax,rr,it,etot,ea,rhoc,rho,vfull, &
-&                     ncnf,nvcnf,nacnf,lacnf,facnf,cae)
+&                     ncnf,nvcnf,nacnf,lacnf,facnf,istcnf,ierrcnf,itcnf, &
+&                     kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
 
  write(6,'(/2a)') 'All-electron data written to ',trim(ae_filename)
  stop
@@ -903,16 +912,16 @@
 
    rhot(:)=rho(:)
 
-#if defined(ONCVPSP_PS_ONLY)
-   call ae_file_config_r(jj,nc,nvcnf,nacnf,lacnf,facnf,cae(jj))
-#else
+#if !defined(ONCVPSP_PS_ONLY)
    call run_config_ae_r(jj,nacnf,lacnf,facnf,nc,nvcnf,rr,zz, &
-&                       mmax,iexc,ea,cae(jj))
+&                       mmax,iexc,ea,istcnf,ierrcnf,itcnf,kerrcnf, &
+&                       nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
 #endif
 
-   call run_config_ps_r(jj,cae(jj),nc,rhot,rhomod,rr, &
-&                  rcmax,mmax,mxprj,iexc,etot,epstot,nproj,vpuns, &
-&                  lloc,vkb,evkb)
+   call run_config_ps_r(jj,istcnf,ierrcnf,itcnf,kerrcnf,nvtcnf, &
+&                       natcnf,latcnf,fatcnf,eatcnf,etstcnf,nc,rhot,rhomod,rr, &
+&                       rcmax,mmax,mxprj,iexc,etot,epstot,nproj,vpuns, &
+&                       lloc,vkb,evkb)
 
  end do !jj
 

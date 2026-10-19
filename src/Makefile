@@ -70,7 +70,7 @@ DRIVERS_NRSR =	oncvpsp.o oncvpsp_nr.o oncvpsp_ae.o oncvpsp_ps.o \
 		oncvpspnr_ae.o oncvpspnr_ps.o
 DRIVERS_R =	oncvpsp_r.o oncvpspr_ae.o oncvpspr_ps.o
 $(DRIVERS_NRSR) $(DRIVERS_R): psmlout_m.o input_text_m.o
-$(DRIVERS_NRSR) $(DRIVERS_R) run_config.o run_config_r.o ae_file_m.o: config_ae_m.o
+$(DRIVERS_NRSR) $(DRIVERS_R) run_config.o run_config_r.o: config_ae_m.o
 $(DRIVERS_NRSR) $(DRIVERS_R): ae_file_m.o
 oncvpsp_nr.o oncvpsp_ae.o oncvpsp_ps.o oncvpspnr_ae.o oncvpspnr_ps.o: oncvpsp.F90
 oncvpspr_ae.o oncvpspr_ps.o: oncvpsp_r.F90

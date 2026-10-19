@@ -16,15 +16,17 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine run_config_ps_r(jj,cae,nc,rhov,rhomod,rr, &
-&                 rcmax,mmax,mxprj,iexc,etot,epstot,nproj,vpuns, &
-&                 lloc,vkb,evkb)
+ subroutine run_config_ps_r(jj,istcnf,ierrcnf,itcnf,kerrcnf,nvtcnf, &
+&                           natcnf,latcnf,fatcnf,eatcnf,etstcnf,nc,rhov, &
+&                           rhomod,rr,rcmax,mmax,mxprj,iexc,etot,epstot,nproj, &
+&                           vpuns,lloc,vkb,evkb)
 
 ! self-consistent pseudoatom calculation for test configuration jj, compared
 ! with the all-electron results for the reference and test configurations
 
 !jj  index of current configuration
-!cae  all-electron results for this configuration, from run_config_ae_r
+!istcnf through etstcnf  all-electron results, all configurations, from
+!  run_config_ae_r
 !nc  number of core states
 !rhov  valence pseudo-charge of reference configuration
 !rhomod  model core charge
@@ -41,13 +43,15 @@
 !vkb  Vanderbilt-Kleinman-Bylander projectors for each l and j=l+/-1/2
 !evkb  VKB projector coefficients for each l and j=l+/-1/2
 
- use config_ae_m, only: config_ae_r_t, config_ae_r_warning
+ use config_ae_m, only: config_ae_r_warning
  use constants_m, only: dp
  implicit none
 
 !Input variables
 
- type(config_ae_r_t), intent(in) :: cae
+ integer, intent(in) :: istcnf(5),ierrcnf(5),itcnf(5),kerrcnf(5)
+ integer, intent(in) :: nvtcnf(5),natcnf(30,5),latcnf(30,5)
+ real(dp), intent(in) :: fatcnf(30,3,5),eatcnf(30,2,3,5),etstcnf(5)
  integer, intent(in) :: jj,mmax,mxprj,iexc,nc,lloc
  integer, intent(in) :: nproj(5)
  real(dp), intent(in) :: etot,epstot,rcmax
@@ -92,17 +96,17 @@
 ! The all-electron atoms for the maximally-ionized and excited
 ! configurations are computed by run_config_ae_r.
 
- if(cae%stat/=0) then
-   call config_ae_r_warning(jj,cae)
+ if(istcnf(jj)/=0) then
+   call config_ae_r_warning(jj,istcnf,ierrcnf,itcnf,kerrcnf,natcnf,latcnf)
    return
  end if
 
- nvt=cae%nvt
- nat(:)=cae%nat(:)
- lat(:)=cae%lat(:)
- fat(:,:)=cae%fat(:,:)
- eat(:,:,:)=cae%eat(:,:,:)
- eaetst=cae%eaetst
+ nvt=nvtcnf(jj)
+ nat(:)=natcnf(:,jj)
+ lat(:)=latcnf(:,jj)
+ fat(:,:)=fatcnf(:,:,jj)
+ eat(:,:,:)=eatcnf(:,:,:,jj)
+ eaetst=etstcnf(jj)
 
  allocate(rho(mmax),rhocps(mmax))
 

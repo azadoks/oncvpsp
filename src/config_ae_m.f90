@@ -27,53 +27,20 @@
  use constants_m, only: dp
  implicit none
  private
- public :: config_ae_t, run_config_ae, config_ae_warning
- public :: config_ae_r_t, run_config_ae_r, config_ae_r_warning
-
-
-!all-electron results for one test configuration, merged with the
-!reference configuration (reference levels first)
- type :: config_ae_t
-!stat  0 success, 1 all-electron atom failed, 2 lschfb failed for an
-!      empty level
-!ierr  sratom error code when stat==1
-!it  sratom iteration count
-!kerr  index in nat/lat of the level whose lschfb failed when stat==2
-!nvt  number of merged valence levels
-!nat, lat  merged level quantum numbers
-!fat(:,1:3)  occupations: reference, maximally-ionized, excited
-!eat(:,1:3)  all-electron eigenvalues: reference, maximally-ionized,
-!            excited
-!eaetst  all-electron total energy of the excited configuration
-   integer :: stat=0,ierr=0,it=0,kerr=0,nvt=0
-   integer :: nat(30)=0,lat(30)=0
-   real(dp) :: fat(30,3)=0.0d0,eat(30,3)=0.0d0
-   real(dp) :: eaetst=0.0d0
- end type config_ae_t
-
-!fully-relativistic counterpart, from run_config_ae_r
- type :: config_ae_r_t
-!stat  0 success, 1 all-electron atom failed, 2 ldiracfb failed for an
-!      empty level with kap=l+1, 3 with kap=l
-!ierr  relatom error code when stat==1, ldiracfb error code when stat==2
-!it  relatom iteration count
-!kerr  index in nat/lat of the level whose ldiracfb failed when stat>=2
-!nvt, nat, lat, fat, eaetst  as in config_ae_t
-!eat(:,ikap,1:3)  all-electron eigenvalues for kap=-(l+1) (ikap=1) and
-!                 kap=l (ikap=2): reference, maximally-ionized, excited
-   integer :: stat=0,ierr=0,it=0,kerr=0,nvt=0
-   integer :: nat(30)=0,lat(30)=0
-   real(dp) :: fat(30,3)=0.0d0,eat(30,2,3)=0.0d0
-   real(dp) :: eaetst=0.0d0
- end type config_ae_r_t
+ public :: run_config_ae, config_ae_warning
+ public :: run_config_ae_r, config_ae_r_warning
 
  contains
 
  subroutine run_config_ae(jj,nacnf,lacnf,facnf,nc,nvcnf,rr,zz, &
-&                         mmax,iexc,ea,srel,cae)
+&                         mmax,iexc,ea,srel,istcnf,ierrcnf,itcnf,kerrcnf, &
+&                         nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
 
 ! solves the all-electron atom in the maximally-ionized and excited states
-! of test configuration jj, the all-electron half of run_config
+! of test configuration jj, the all-electron half of the test-configuration
+! calculations.  These depend only on the configurations, not on the
+! pseudopotential, so oncvpsp_ae.x can compute them once for oncvpsp_ps.x
+! (see ae_file_m).  run_config_ps does the pseudo-atom half.
 
 !jj  index of current configufation
 !nacnf  principal quantum number array, all configurations
@@ -87,7 +54,23 @@
 !iexc  exchange-correlation function to be used
 !ea  reference configurattion eigenvalues
 !srel .true. for scalar-relativistic, .false. for non-relativistic
-!cae  all-electron results for this configuration
+!istcnf  0 success, 1 all-electron atom failed, 2 lschfb failed for an
+!        empty level, all config.
+!ierrcnf  sratom error code when istcnf==1, all config.
+!itcnf  sratom iteration count when istcnf/=0, all config.
+!kerrcnf  index in natcnf/latcnf of the level whose lschfb failed when
+!         istcnf==2, all config.
+!nvtcnf  number of merged valence levels, all config.
+!natcnf  merged level principal quantum numbers, reference levels first,
+!        all config.
+!latcnf  merged level angular momenta, all config.
+!fatcnf  merged level occupancies (:,1:3,jj): reference,
+!        maximally-ionized, excited, all config.
+!eatcnf  merged level all-electron eigenvalues (:,1:3,jj): reference,
+!        maximally-ionized, excited, all config.
+!etstcnf  all-electron total energy of the excited configuration, all
+!         config.
+!Only the column jj of istcnf through etstcnf is set.
 
 !Input variables
  integer, intent(in) :: jj,mmax,iexc,nc
@@ -96,8 +79,10 @@
  real(dp), intent(in) :: facnf(30,5),ea(30),rr(mmax)
  logical, intent(in) :: srel
 
-!Output variables
- type(config_ae_t), intent(out) :: cae
+!Input/output variables
+ integer, intent(inout) :: istcnf(5),ierrcnf(5),itcnf(5),kerrcnf(5)
+ integer, intent(inout) :: nvtcnf(5),natcnf(30,5),latcnf(30,5)
+ real(dp), intent(inout) :: fatcnf(30,3,5),eatcnf(30,3,5),etstcnf(5)
 
 !Local variables
  integer :: ii,it,kk,ierr,mch,nvt
@@ -111,6 +96,11 @@
 
  allocate(rho(mmax),rhoc(mmax),vfull(mmax))
  allocate(uu(mmax),up(mmax))
+
+ istcnf(jj)=0
+ ierrcnf(jj)=0
+ itcnf(jj)=0
+ kerrcnf(jj)=0
 
  it=0
 
@@ -174,9 +164,9 @@
 &            rr,vfull,zz,mmax,iexc,eaetst,ierr,srel)
  if(ierr/=0) then
    call store_results
-   cae%stat=1
-   cae%ierr=ierr
-   cae%it=it
+   istcnf(jj)=1
+   ierrcnf(jj)=ierr
+   itcnf(jj)=it
    deallocate(rho,rhoc,vfull)
    deallocate(uu,up)
    return
@@ -191,9 +181,9 @@
 &                rr,vfull,uu,up,zz,mmax,mch,srel)
      if(ierr /= 0) then
        call store_results
-       cae%stat=2
-       cae%kerr=kk
-       cae%it=it
+       istcnf(jj)=2
+       kerrcnf(jj)=kk
+       itcnf(jj)=it
        deallocate(rho,rhoc,vfull)
        deallocate(uu,up)
        return
@@ -211,9 +201,9 @@
 &            rr,vfull,zz,mmax,iexc,eaetst,ierr,srel)
  if(ierr/=0) then
    call store_results
-   cae%stat=1
-   cae%ierr=ierr
-   cae%it=it
+   istcnf(jj)=1
+   ierrcnf(jj)=ierr
+   itcnf(jj)=it
    deallocate(rho,rhoc,vfull)
    deallocate(uu,up)
    return
@@ -227,42 +217,44 @@
  contains
 
  subroutine store_results
-! copies the results so far into cae
- cae%nvt=nvt
- cae%nat(:)=nat(:)
- cae%lat(:)=lat(:)
- cae%fat(:,:)=fat(:,:)
- cae%eat(:,:)=eat(:,:)
- cae%eaetst=eaetst
+! copies the results so far into column jj of the output arrays
+ nvtcnf(jj)=nvt
+ natcnf(:,jj)=nat(:)
+ latcnf(:,jj)=lat(:)
+ fatcnf(:,:,jj)=fat(:,:)
+ eatcnf(:,:,jj)=eat(:,:)
+ etstcnf(jj)=eaetst
  return
  end subroutine store_results
 
  end subroutine run_config_ae
 
- subroutine config_ae_warning(jj,cae)
+ subroutine config_ae_warning(jj,istcnf,ierrcnf,itcnf,kerrcnf,natcnf,latcnf)
 ! prints the warning run_config gives when the all-electron atom for test
 ! configuration jj failed
 
 !jj  index of the configuration (1 for the reference)
-!cae  run_config_ae results for this configuration
+!istcnf, ierrcnf, itcnf, kerrcnf, natcnf, latcnf  run_config_ae results, all
+!  configurations
 
 !Input variables
  integer, intent(in) :: jj
- type(config_ae_t), intent(in) :: cae
+ integer, intent(in) :: istcnf(5),ierrcnf(5),itcnf(5),kerrcnf(5)
+ integer, intent(in) :: natcnf(30,5),latcnf(30,5)
 
- select case(cae%stat)
+ select case(istcnf(jj))
  case(1)
    write(6,'(a/a,i2)') 'run_config: WARNING  for AE atom,', &
 &        ' WARNING no output for configuration',jj
-   if(cae%ierr==-1) then
-     write(6,'(a,i4)') 'no classical turning point error, iteration',cae%it
+   if(ierrcnf(jj)==-1) then
+     write(6,'(a,i4)') 'no classical turning point error, iteration',itcnf(jj)
    else
      write(6,'(a)') 'run_config: WARNING self-consistency failed to converge'
    end if
  case(2)
    write(6,'(/a,3i4)') &
 &       'runconfig: WARNING lschfb convergence ERROR n,l,iter=', &
-&       cae%nat(cae%kerr),cae%lat(cae%kerr),cae%it
+&       natcnf(kerrcnf(jj),jj),latcnf(kerrcnf(jj),jj),itcnf(jj)
  case default
 ! the atom converged: nothing to report
  end select
@@ -270,9 +262,11 @@
  end subroutine config_ae_warning
 
  subroutine run_config_ae_r(jj,nacnf,lacnf,facnf,nc,nvcnf,rr,zz, &
-&                           mmax,iexc,ea,cae)
+&                           mmax,iexc,ea,istcnf,ierrcnf,itcnf,kerrcnf, &
+&                           nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
 
-! fully-relativistic run_config_ae, the all-electron half of run_config_r
+! fully-relativistic run_config_ae, the all-electron half of the
+! test-configuration calculations of run_config_ps_r
 
 !jj  index of current configufation
 !nacnf  principal quantum number array, all configurations
@@ -285,7 +279,18 @@
 !mmax  size of log grid
 !iexc  exchange-correlation function to be used
 !ea  reference configurattion eigenvalues
-!cae  all-electron results for this configuration
+!istcnf  0 success, 1 all-electron atom failed, 2 ldiracfb failed for an
+!        empty level with kap=l+1, 3 with kap=l, all config.
+!ierrcnf  relatom error code when istcnf==1, ldiracfb error code when
+!         istcnf>=2, all config.
+!itcnf  relatom iteration count when istcnf/=0, all config.
+!kerrcnf  index in natcnf/latcnf of the level whose ldiracfb failed when
+!         istcnf>=2, all config.
+!nvtcnf, natcnf, latcnf, fatcnf, etstcnf  as in run_config_ae
+!eatcnf  merged level all-electron eigenvalues (:,ikap,1:3,jj) for
+!        kap=-(l+1) (ikap=1) and kap=l (ikap=2): reference,
+!        maximally-ionized, excited, all config.
+!Only the column jj of istcnf through etstcnf is set.
 
 !Input variables
  integer, intent(in) :: jj,mmax,iexc,nc
@@ -293,8 +298,10 @@
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: facnf(30,5),ea(30,2),rr(mmax)
 
-!Output variables
- type(config_ae_r_t), intent(out) :: cae
+!Input/output variables
+ integer, intent(inout) :: istcnf(5),ierrcnf(5),itcnf(5),kerrcnf(5)
+ integer, intent(inout) :: nvtcnf(5),natcnf(30,5),latcnf(30,5)
+ real(dp), intent(inout) :: fatcnf(30,3,5),eatcnf(30,2,3,5),etstcnf(5)
 
 !Local variables
  integer :: ii,it,kk,ll,ierr,mch,nvt
@@ -309,6 +316,11 @@
 
  allocate(rho(mmax),rhoc(mmax),vfull(mmax))
  allocate(uu(mmax,2),up(mmax,2))
+
+ istcnf(jj)=0
+ ierrcnf(jj)=0
+ itcnf(jj)=0
+ kerrcnf(jj)=0
 
  it=0
 
@@ -375,9 +387,9 @@
 &            rr,vfull,zz,mmax,iexc,eaetst,ierr)
  if(ierr/=0) then
    call store_results
-   cae%stat=1
-   cae%ierr=ierr
-   cae%it=it
+   istcnf(jj)=1
+   ierrcnf(jj)=ierr
+   itcnf(jj)=it
    deallocate(rho,rhoc,vfull)
    deallocate(uu,up)
    return
@@ -394,10 +406,10 @@
 &                rr,zz,vfull,uu,up,mmax,mch)
      if(ierr /= 0) then
        call store_results
-       cae%stat=2
-       cae%ierr=ierr
-       cae%kerr=kk
-       cae%it=it
+       istcnf(jj)=2
+       ierrcnf(jj)=ierr
+       kerrcnf(jj)=kk
+       itcnf(jj)=it
        deallocate(rho,rhoc,vfull)
        deallocate(uu,up)
        return
@@ -411,10 +423,10 @@
 &                  rr,zz,vfull,uu,up,mmax,mch)
        if(ierr>0) then
          call store_results
-         cae%stat=3
-         cae%ierr=ierr
-         cae%kerr=kk
-         cae%it=it
+         istcnf(jj)=3
+         ierrcnf(jj)=ierr
+         kerrcnf(jj)=kk
+         itcnf(jj)=it
          deallocate(rho,rhoc,vfull)
          deallocate(uu,up)
          return
@@ -433,9 +445,9 @@
 &            rr,vfull,zz,mmax,iexc,eaetst,ierr)
  if(ierr/=0) then
    call store_results
-   cae%stat=1
-   cae%ierr=ierr
-   cae%it=it
+   istcnf(jj)=1
+   ierrcnf(jj)=ierr
+   itcnf(jj)=it
    deallocate(rho,rhoc,vfull)
    deallocate(uu,up)
    return
@@ -449,54 +461,56 @@
  contains
 
  subroutine store_results
-! copies the results so far into cae
- cae%nvt=nvt
- cae%nat(:)=nat(:)
- cae%lat(:)=lat(:)
- cae%fat(:,:)=fat(:,:)
- cae%eat(:,:,:)=eat(:,:,:)
- cae%eaetst=eaetst
+! copies the results so far into column jj of the output arrays
+ nvtcnf(jj)=nvt
+ natcnf(:,jj)=nat(:)
+ latcnf(:,jj)=lat(:)
+ fatcnf(:,:,jj)=fat(:,:)
+ eatcnf(:,:,:,jj)=eat(:,:,:)
+ etstcnf(jj)=eaetst
  return
  end subroutine store_results
 
  end subroutine run_config_ae_r
 
- subroutine config_ae_r_warning(jj,cae)
+ subroutine config_ae_r_warning(jj,istcnf,ierrcnf,itcnf,kerrcnf,natcnf,latcnf)
 ! prints the warning run_config_r gives when the all-electron atom for
 ! test configuration jj failed
 
 !jj  index of the configuration (1 for the reference)
-!cae  run_config_ae_r results for this configuration
+!istcnf, ierrcnf, itcnf, kerrcnf, natcnf, latcnf  run_config_ae_r results, all
+!  configurations
 
 !Input variables
  integer, intent(in) :: jj
- type(config_ae_r_t), intent(in) :: cae
+ integer, intent(in) :: istcnf(5),ierrcnf(5),itcnf(5),kerrcnf(5)
+ integer, intent(in) :: natcnf(30,5),latcnf(30,5)
 
 !Local variables
  integer :: ll
 
- select case(cae%stat)
+ select case(istcnf(jj))
  case(1)
    write(6,'(a/a,i2)') 'run_config_r: WARNING  for AE atom,', &
 &        ' WARNING no output for configuration',jj
-   if(cae%ierr==-1) then
+   if(ierrcnf(jj)==-1) then
      write(6,'(a,i4)') &
 &          'run_config_r: WARNING no classical turning point ' // &
 &          'error, iteration', &
-&          cae%it
+&          itcnf(jj)
    else
      write(6,'(a)') 'run_config_r: WARNING self-consistency failed to converge'
    end if
  case(2)
-   ll=cae%lat(cae%kerr)
+   ll=latcnf(kerrcnf(jj),jj)
    write(6,'(/a,4i4)') &
 &       'runconfig: WARNING ldiracfb convergence ERROR n,l,kap,ierr=', &
-&       cae%nat(cae%kerr),ll,ll+1,cae%ierr
+&       natcnf(kerrcnf(jj),jj),ll,ll+1,ierrcnf(jj)
  case(3)
-   ll=cae%lat(cae%kerr)
+   ll=latcnf(kerrcnf(jj),jj)
    write(6,'(/a,4i4)') &
 &       'runconfig: WARNING ldiracfb convergence ERROR n,l,kap,iter=', &
-&       cae%nat(cae%kerr),ll,ll,cae%it
+&       natcnf(kerrcnf(jj),jj),ll,ll,itcnf(jj)
  case default
 ! the atom converged: nothing to report
  end select
