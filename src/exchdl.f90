@@ -21,10 +21,9 @@
 !calculates Hedin-Lundquist exchange-correlation potential and energy
 !density
 
+ use constants_m, only: dp, pi
  implicit none
 
- integer, parameter :: dp=kind(1.0d0)
- real(dp), parameter :: pi=3.141592653589793238462643383279502884197_dp
  real(dp), parameter :: pi4=4.0d0*pi
  real(dp), parameter :: pi4i=1.0d0/pi4
  real(dp), parameter :: thrd=1.0d0/3.0d0

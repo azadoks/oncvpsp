@@ -24,12 +24,12 @@
 ! the all-electron half of run_config_r.
 
  module config_ae_m
+ use constants_m, only: dp
  implicit none
  private
  public :: config_ae_t, run_config_ae, config_ae_warning
  public :: config_ae_r_t, run_config_ae_r, config_ae_r_warning
 
- integer, parameter :: dp=kind(1.0d0)
 
 !all-electron results for one test configuration, merged with the
 !reference configuration (reference levels first)

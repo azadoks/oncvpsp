@@ -28,8 +28,8 @@
 !fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 
+ use constants_m, only: dp
  implicit none
- integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
  integer, intent(in) :: icmod

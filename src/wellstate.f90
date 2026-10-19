@@ -34,9 +34,9 @@
 !mch matching mesh point for inward-outward integrations
 !srel .true. for scalar-relativistic, .false. for non-relativistic
  
+ use constants_m, only: dp
  implicit none
 
- integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
  real(dp), intent(in) :: rr(mmax),vfull(mmax)

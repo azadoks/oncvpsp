@@ -57,9 +57,8 @@
 !mmax  size of radial grid
 !mxprj  dimension of number of projectors
 
+ use constants_m, only: dp, pi
  implicit none
- integer, parameter :: dp=kind(1.0d0)
- real(dp), parameter :: pi=3.141592653589793238462643383279502884197_dp
 
 !Input variables
  integer, intent(in) :: nc,nv,lmax,lloc,mmax,mxprj

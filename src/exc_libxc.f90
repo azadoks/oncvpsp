@@ -22,9 +22,9 @@ subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax)
 !  interface to libxc library for potential and energy density calculation
 !
  use functionals_m
+ use constants_m, only: dp, pi
  implicit none
  
- integer, parameter :: dp=kind(1.0d0)
  
  real(dp), intent(in) :: al
  real(dp), intent(in) :: rho(mmax),rr(mmax)
@@ -38,7 +38,6 @@ subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax)
  type(xc_functl_t) :: functls(2)
  integer :: nspin, irel, deriv_method
  real(dp),allocatable :: ip(:)
- real(dp), parameter :: pi=3.141592653589793238462643383279502884197_dp
  
  real(dp), allocatable :: v(:), e(:)
  real(dp), allocatable :: dpr(:), dppr(:), dlap(:)
@@ -118,8 +117,8 @@ end subroutine exc_libxc
 subroutine derivs(mmax, rho, al, rr, dpr, dppr, dlap)
 ! NB: presumes incoming rho is properly scaled without 4pi or r**2 factors.
  
+ use constants_m, only: dp
  implicit none
- integer, parameter :: dp=kind(1.0d0)
  
  integer, intent(in) :: mmax
  real(dp), intent(in) :: al

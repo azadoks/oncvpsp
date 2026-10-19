@@ -47,8 +47,8 @@
 !srel .true. for scalar-relativistic, .false. for non-relativistic
 !cvgplt  Energy per electron error vs. cutoff 
 
+ use constants_m, only: dp
  implicit none
- integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
  integer, intent(in) :: lmax,lloc,mmax,mxprj,nrl

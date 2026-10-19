@@ -37,6 +37,19 @@ accomplished by building a separate executable for the new feature.
 
 There are probably other conventions I've been following but you get the idea.
 
+## Kinds and constants
+
+Take the real kind and shared constants from `constants_m`
+(`src/constants_m.f90`), with an `only` list, before `implicit none`:
+
+```fortran
+ use constants_m, only: dp, pi
+ implicit none
+```
+
+Don't define `dp`, `pi` or the speed of light locally. Write rational
+coefficients as quotients (`1.0d0/24.0d0`), not as truncated decimals.
+
 ## Error messages
 
 These rules were added after the list above. Messages that were in the

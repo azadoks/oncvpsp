@@ -43,8 +43,8 @@
 !evkb VKB projector coefficients
 
  use config_ae_m, only: config_ae_r_t, config_ae_r_warning
+ use constants_m, only: dp
  implicit none
- integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
  

@@ -47,8 +47,8 @@
 !ecurve  cutoff energy and energy error per electron on the E_resid(q) mesh,
 !        zero beyond its end
 
+ use constants_m, only: dp
  implicit none
- integer, parameter :: dp=kind(1.0d0)
  real(dp), parameter :: Ha_eV=27.21138386d0 ! 1 Hartree, in eV
 
 !Input variables

@@ -44,8 +44,8 @@
 !zion  ion charge
 !iexc  exchange-correlation function to be used
 
+ use constants_m, only: dp
  implicit none
- integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
  integer, intent(in) :: icmod,nv,nc,iexc,irps,mmax

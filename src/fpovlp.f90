@@ -20,8 +20,8 @@
 
  subroutine fpovlp(gg,hh,nn,ll,zz,ss,rr,srel)
 
+ use constants_m, only: dp, c_light
  implicit none
- integer, parameter :: dp=kind(1.0d0)
 
 !gg wave function one
 !hh wave function two
@@ -54,7 +54,7 @@
  amesh = exp(al)
 
  if(srel) then
-  fss=(1.0d0/137.036d0)**2
+  fss=(1.0d0/c_light)**2
  else
   fss=1.0d-12
  end if

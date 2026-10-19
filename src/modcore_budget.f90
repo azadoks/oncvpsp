@@ -59,9 +59,8 @@
 !rr log radial grid
 !iexc  exchange-correlation function to be used
 
+ use constants_m, only: dp, pi
  implicit none
- integer, parameter :: dp=kind(1.0d0)
- real(dp), parameter :: pi=3.141592653589793238462643383279502884197_dp
  real(dp), parameter :: pi4=4.0_dp*pi
 
 !Input variables
@@ -414,8 +413,8 @@
 ! linearly in q between the mesh points, as for the convergence profiles
  subroutine modcore_budget_ecut(ecurve,wcurve,ncurve,nprof,errmax,ecut)
 
+ use constants_m, only: dp
  implicit none
- integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
  integer :: ncurve,nprof

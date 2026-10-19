@@ -33,8 +33,8 @@
 !mmax  dimension of log mesh
 !mch  index of radius to which wave function is to be integrated
 
+ use constants_m, only: dp
  implicit none
- integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
  real(dp), intent(in) :: rr(mmax),vloc(mmax),vkb(mmax,nvkb),evkb(nvkb)

@@ -44,7 +44,8 @@ Priorities:
 | P3 | build, dead code, silent errors, bounds, argument mismatches (see [P3 (fixed)](#p3-fixed)) | no | fixed |
 | P3 | 5 latent bugs: `qroots`, `ldirac*` series starts, `icmod=4` grid, `_tmp_input`, exit status of errors | no | fixed |
 | P3 | `functional_get_tau` (imported dead code) | no | kept |
-| P3 | 6 cosmetic items | no, except the 1/24 coefficient | open |
+| P3 | Adams 1/24 coefficient in `adams.inc` | last digits only; refs pass unchanged | fixed |
+| P3 | 5 cosmetic items | no | open |
 
 ## P1 (fixed)
 
@@ -198,9 +199,16 @@ Priorities:
   - locals `zz` in `lschkb`/`lschps`;
   - arguments `icmod` and `rcfact` in `modcore`/`modcore2`;
   - `drdum`/`dqdum` in `eresid`.
-- `adams.inc` (formerly `aeo.f90`): the Adams 1/24 coefficient is written
-  4 times as `4.16666666667d-2`, a relative error of about 8e-12. Writing
-  it as `1.0d0/24.0d0` would change the last digits of the refs.
+- **Fixed:** `adams.inc` (formerly `aeo.f90`) wrote the Adams 1/24
+  coefficient 4 times as `4.16666666667d-2`, a relative error of about
+  8e-12. It is now `1.0d0/24.0d0`, fixed together with the introduction of
+  `constants_m`.
+  - This changes the last printed digits of most outputs. Quantities that
+    are small differences move more: the largest relative changes are
+    about 4e-3, in the 57_La excitation error (2.37e-6) and some 80_Hg_r
+    convergence-profile entries.
+  - Every reference comparison still passes, so the refs in `tests/refs`
+    were kept as they are (they are the 4.0.1 outputs).
 
 ## P3 (fixed)
 
@@ -335,14 +343,10 @@ Make binaries. New error messages follow the format in
 
 What is left:
 
-1. **1/24 coefficient in `adams.inc`**: changes the last digits of every
-   ref. Do it together with the constants module (step 6 of the
-   [best-practices order](fortran_best_practices.md#recommended-remediation-order)),
-   so the refs are regenerated once.
-2. **Cosmetic.** Fold the remaining [cosmetic](#cosmetic) items into the
+1. **Cosmetic.** Fold the remaining [cosmetic](#cosmetic) items into the
    mechanical coding-standard pass in
    [Coding Standard Violations](coding_standard_violations.md#fixing).
-3. **Input echo**: the echoed input omits `rxpsh`, so a run from the
+2. **Input echo**: the echoed input omits `rxpsh`, so a run from the
    echoed input of a psp8 or UPF file uses the default radius. The PSML
    echo also omits `rcfact` and the `icmod=4` grid.
 

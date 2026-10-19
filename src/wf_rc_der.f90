@@ -34,8 +34,8 @@
 !OUTPUT
 ! uorder  value and four derivatives of uu/rr at final rc
 
+ use constants_m, only: dp
  implicit none
- integer, parameter :: dp=kind(1.0d0)
 
 !subroutine arguments
  real(dp), intent(in) :: rr(mmax),uu(mmax)

@@ -21,11 +21,11 @@
 ! Support for PSML file creation
 !
 module m_psmlout
+  use constants_m, only: dp
 
   public :: psmlout, psmlout_r
   private
 
-  integer, parameter :: dp = selected_real_kind(10,100)
   character(len=1), dimension(0:4) :: lsymb = (/'s','p','d','f','g'/)
 
   CONTAINS
@@ -64,9 +64,9 @@ module m_psmlout
   use xmlf90_wxml     ! To write XML files
   use m_libxc_list  ! For ease of libxc handling
 
+ use constants_m, only: pi
  implicit none
 
- real(dp), parameter :: pi=3.141592653589793238462643383279502884197_dp
 
 !Input variables
  integer, intent(in) :: lmax
@@ -488,9 +488,9 @@ end subroutine psmlout
   use xmlf90_wxml     ! To write XML files
   use m_libxc_list  ! For ease of libxc handling
 
+ use constants_m, only: pi
  implicit none
 
- real(dp), parameter :: pi=3.141592653589793238462643383279502884197_dp
 
 !Input variables
  integer, intent(in) :: lmax

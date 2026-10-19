@@ -28,8 +28,8 @@
 !mmax  size of radial grid
 !cnorm  renormalization coefficient
 
+ use constants_m, only: dp, c_light
  implicit none
- integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
  real(dp), intent(in) :: rr(mmax)
@@ -51,7 +51,7 @@
  al = 0.01d0 * dlog(rr(101)/rr(1))
  amesh = exp(al)
 
- cc=137.036d0
+ cc=c_light
  cci=1.0d0/cc
 
  gam=sqrt(kap**2-(zz*cci)**2)

@@ -24,9 +24,9 @@
 ! xx must be ordered in ascending order
 ! output mm interpolated values ss on points tt
 
+ use constants_m, only: dp
  implicit none
 
- integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
  real(dp), intent(in) ::  xx(*),yy(*),tt(*)

@@ -24,10 +24,9 @@ subroutine sbf8(nm,xx,sb_out)
 !xx  argument of spherical bessel function
 !sb_out  output of sbf_l(xx) for l=0,...,nm-1
 
+ use constants_m, only: dp, pi
  implicit none
- integer, parameter :: dp=kind(1.0d0)
 
- real(dp), parameter :: pi=3.141592653589793238462643383279502884197_dp
  real(dp), parameter :: pi2=2.0_dp*pi
 
 !Input variables

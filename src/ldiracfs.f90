@@ -33,8 +33,8 @@
 !mmax  size of log grid
 !mch matching mesh point for inward-outward integrations
 
+ use constants_m, only: dp, c_light
  implicit none
- integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
  real(dp), intent(in) :: rr(mmax),vv(mmax)
@@ -61,7 +61,7 @@
  real(dp) :: amesh,al,als
  integer :: ii,kk,nint,nin,node
 
- cc=137.036d0
+ cc=c_light
  cci=1.0d0/cc
 
  al = 0.01d0 * dlog(rr(101) / rr(1))

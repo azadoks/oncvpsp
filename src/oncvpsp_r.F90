@@ -56,8 +56,8 @@
 #if (defined WITH_TOML)
  use input_toml_m, only: read_input_toml_r
 #endif
+ use constants_m, only: dp, mxprj
  implicit none
- integer, parameter :: dp=kind(1.0d0)
 
 !
  integer :: ii,ierr,iexc,iexct,ios,iprint,irps,it,icmod,lpopt
@@ -65,7 +65,7 @@
  integer :: mch,mchf,mmax,n1,n2,nc,nlim,nlloc,nlmax,irpsh,nrl
  integer :: nv,irct,ncnf,nvt
  integer :: ikap,kap,mkap
- integer :: iprj,mxprj
+ integer :: iprj
  integer,allocatable :: npa(:,:)
 !
  integer :: dtime(8),na(30),la(30),np(6)
@@ -325,10 +325,6 @@
  do ii=1,nc
   zion=zion-fa(ii)
  end do
-
-!temporary test
- mxprj=5
-!mxprj=2
 
  allocate(rr(mmax))
  allocate(rho(mmax),rhoc(mmax),rhot(mmax))

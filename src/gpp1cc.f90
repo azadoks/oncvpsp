@@ -29,9 +29,8 @@
 
 subroutine gpp1cc(gpp1cc_xx,xx)
 
+ use constants_m, only: dp, pi
  implicit none
- integer, parameter :: dp=kind(1.0d0)
- real(dp), parameter :: pi=3.141592653589793238462643383279502884197_dp
  real(dp), parameter :: two_pi=2.0d0*pi
 
 !Arguments ------------------------------------

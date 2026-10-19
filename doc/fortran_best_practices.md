@@ -750,6 +750,14 @@ the tests compare.
    local `dp` definitions, the 7 copies of 137.036 and the literal shapes.
    Fix the 1/24 coefficient (this changes the reference outputs in the last
    digits).
+   - **Done:** `src/constants_m.f90` holds `dp`, `pi`, `c_light` and
+     `mxprj`. Every routine except the imported `functionals.F90` and
+     `m_libxc_list.F90` takes `dp` from it. `pi` and 137.036 are no longer
+     defined locally, except for the literals in the imported
+     `exc_off_pbe.f`. These changes leave the output bit-identical. The
+     1/24 coefficient is fixed.
+   - **Left:** the array limits (30/6/5/4) and the literal shapes of dummy
+     and local arrays. `tfapot.f90`'s `**.33333333d0` is also left.
 7. **Move procedures into modules**, starting with the leaf routines (`aeo`
    family, `dpnint`, `vpinteg`, the `lsch*`/`ldirac*` solvers). Then switch
    their dummies to assumed shape and drop the redundant size arguments.

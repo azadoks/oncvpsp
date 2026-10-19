@@ -26,8 +26,8 @@
 !mxprj maximum number of projectors
 !nproj number of projectors for each l
 
+ use constants_m, only: dp
  implicit none
- integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
  integer, intent(in) :: lmax,lloc,mxprj

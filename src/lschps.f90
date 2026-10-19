@@ -32,8 +32,8 @@
 !mmax  size of log grid
 !mch matching mesh point for inward-outward integrations
 
+ use constants_m, only: dp
  implicit none
- integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
  integer, intent(in) :: mmax,mch

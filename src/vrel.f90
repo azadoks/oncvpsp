@@ -34,8 +34,8 @@
 !mch matching mesh point for inward-outward integrations
 !srel .true. for scalar-relativistic, .false. for non-relativistic
 
+ use constants_m, only: dp, c_light
  implicit none
- integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
  real(dp), intent(in) :: rr(mmax),vv(mmax)
@@ -79,7 +79,7 @@
 
   vr(:)=0.0d0
 
- fss=(1.0d0/137.036d0)**2
+ fss=(1.0d0/c_light)**2
 
  if(ll==0) gamma=dsqrt(1.0d0-fss*zz**2)
  if(ll>0) gamma=(ll*dsqrt(ll**2-fss*zz**2) + &

@@ -34,9 +34,8 @@
 !mbar  mesh point for infinite barrier
 !tht  phast-shift angle for boundary condition, units of pi
 
+ use constants_m, only: dp, pi
  implicit none
- integer, parameter :: dp=kind(1.0d0)
- real(dp), parameter :: pi=3.141592653589793238462643383279502884197_dp
 
 
 !Input variables

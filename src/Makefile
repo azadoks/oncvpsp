@@ -16,7 +16,7 @@ ifeq ($(strip $(OBJS_LIBXC)),)
 $(error OBJS_LIBXC is not set. Fill in ../make.inc (see ../make.inc.example))
 endif
 
-OBJS_ALL =	build_info_m.o check_data.o const_basis.o dpnint.o eresid.o exchdl.o \
+OBJS_ALL =	build_info_m.o check_data.o const_basis.o constants_m.o dpnint.o eresid.o exchdl.o \
 		exc_off_pbe.o excpzca.o excwig.o input_text_m.o ldiracfb.o ldiracfs.o \
 		lschfb.o lschfs.o lschkb.o lschpb.o lschps.o \
 		lschvkbbe.o lschvkbb.o lschvkbs.o modcore.o optimize.o \
@@ -84,9 +84,13 @@ FORCE:
 .PHONY: FORCE
 
 ldiracfb.o ldiracfs.o lschfb.o lschfs.o lschkb.o lschpb.o lschps.o \
-lschpsbar.o lschvkbb.o vout.o: adams.inc
+lschpsbar.o lschvkbb.o vkboutwf.o vout.o: adams.inc
 
 exc_libxc.o: functionals.o
+
+# Every routine uses constants_m
+$(filter-out constants_m.o,$(sort $(OBJS_ALL) $(OBJS_NRSR) $(OBJS_RLIB) \
+	$(OBJS_LIBXC) m_psmlout.o $(DRIVERS_NRSR) $(DRIVERS_R))): constants_m.o
 
 
 

@@ -58,8 +58,8 @@
 !log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets it (else 0)
 
 
+ use constants_m, only: dp
  implicit none
- integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
  integer, intent(in) :: lmax,lloc,iexc,mmax,mxprj,nrl,icmod

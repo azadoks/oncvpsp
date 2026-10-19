@@ -33,10 +33,9 @@
 !rr  log radial mesh
 !output electrostatic and exchange-correlation potential
 
+ use constants_m, only: dp, pi
  implicit none
 
- integer, parameter :: dp=kind(1.0d0)
- real(dp), parameter :: pi=3.141592653589793238462643383279502884197_dp
  real(dp), parameter :: pi4=4.0_dp*pi
 
 !Input vaiables

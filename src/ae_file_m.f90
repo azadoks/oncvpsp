@@ -40,12 +40,12 @@
  module ae_file_m
  use, intrinsic :: iso_fortran_env, only: int8
  use config_ae_m, only: config_ae_t, config_ae_r_t
+ use constants_m, only: dp
  implicit none
  private
  public :: write_ae_file, read_ae_file, ae_file_config
  public :: write_ae_file_r, read_ae_file_r, ae_file_config_r
 
- integer, parameter :: dp=kind(1.0d0)
  character(len=8), parameter :: magic='ONCVAE  '
  integer, parameter :: version=1
  integer, parameter :: irel_fr=2

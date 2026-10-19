@@ -38,8 +38,8 @@
 !vso  normalized spin-orbig projectors
 !esol  energy  coefficients of vso
 
+ use constants_m, only: dp
  implicit none
- integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
  integer, intent(in) :: lmax,mmax,mxprj

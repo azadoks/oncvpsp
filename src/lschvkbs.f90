@@ -33,8 +33,8 @@
 !mmax  size of log grid
 !mch  index of radius to which uu is computed
 
+ use constants_m, only: dp
  implicit none
- integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
  integer, intent(in) :: mmax,mch

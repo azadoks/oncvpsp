@@ -63,15 +63,15 @@
 #if (defined WITH_TOML)
  use input_toml_m, only: read_input_toml
 #endif
+ use constants_m, only: dp, mxprj
  implicit none
- integer, parameter :: dp=kind(1.0d0)
 
 !
  integer :: ii,ierr,iexc,iexct,ios,iprint,irps,it,icmod,lpopt
  integer :: jj,kk,ll,l1,lloc,lmax,lt,inline
  integer :: mch,mchf,mmax,n1,n2,nc,nlim,nlloc,nlmax,irpsh,nrl
  integer :: nv,irct,ncnf,nvt
- integer :: iprj,mxprj
+ integer :: iprj
  integer,allocatable :: npa(:,:)
 !
  integer :: dtime(8),na(30),la(30),np(6)
@@ -326,8 +326,6 @@
 !amesh=1.003d0
 !amesh=1.0015d0
  end if
-
- mxprj=5
 
  al=dlog(amesh)
  if(rr1_in>0.0d0) then

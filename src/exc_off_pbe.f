@@ -26,8 +26,8 @@ c
 c Error (from Perdew''s group) corrected 12/27/00 in expression for FSS
 c in routine exchpbe. (See NOTES file.)
 c
+      use constants_m, only: dp
       implicit none
-      integer, parameter :: dp=kind(1.0d0)
 c
       real*8, intent(in) :: rho(*),r(*)
       real*8, intent(out) :: vxc(*),exc(*)

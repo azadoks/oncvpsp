@@ -34,8 +34,8 @@
 !mch matching mesh point for inward-outward integrations
 !srel .true. for scalar-relativistic, .false. for non-relativistic
 
+ use constants_m, only: dp, c_light
  implicit none
- integer, parameter :: dp=kind(1.0d0)
 
 !Input variables
  real(dp), intent(in) :: rr(mmax),vv(mmax)
@@ -82,7 +82,7 @@
 
 ! relativistic - non-relativistic switch
  if(srel) then
-  fss=(1.0d0/137.036d0)**2
+  fss=(1.0d0/c_light)**2
  else
   fss=1.0d-12
  end if

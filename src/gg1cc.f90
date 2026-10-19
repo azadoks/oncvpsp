@@ -32,9 +32,8 @@ subroutine gg1cc(gg1cc_xx,xx)
 !This section has been created automatically by the script Abilint (TD).
 !Do not modify the following lines by hand.
 
+ use constants_m, only: dp, pi
  implicit none
- integer, parameter :: dp=kind(1.0d0)
- real(dp), parameter :: pi=3.141592653589793238462643383279502884197_dp
 
 !Arguments ------------------------------------
 !scalars

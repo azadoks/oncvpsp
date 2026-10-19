@@ -46,9 +46,8 @@
 !eresiddot(nnull,nqout) set of <pswfnull| E_resid |pswf0> matrix elements
 !eresidevec(nnull,null,nqout)  set of <pswfnull| E_res |pswfnull'> matrices
 
+ use constants_m, only: dp, pi
  implicit none
- integer, parameter :: dp=kind(1.0d0)
- real(dp), parameter :: pi=3.141592653589793238462643383279502884197_dp
 
 !Input variables
  integer, intent(in) :: irc,ll,nnull,nbas,mmax,nqout

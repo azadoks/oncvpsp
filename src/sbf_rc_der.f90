@@ -20,8 +20,8 @@
 
 !calculate spherical Bessel function values and first four derivatives
 
+ use constants_m, only: dp
  implicit none
- integer, parameter :: dp=kind(1.0d0)
 
 !INPUT
 ! llin  angular momentum l

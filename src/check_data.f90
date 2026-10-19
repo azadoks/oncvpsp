@@ -28,8 +28,8 @@
 !to be used for the test configurations
 !amesh, rr1 and rmax are the log mesh input, 0 or less for the default
 
+ use constants_m, only: dp
  implicit none
- integer, parameter :: dp=kind(1.0d0)
 
 ! Input variables
  character*2, intent(in) :: atsym

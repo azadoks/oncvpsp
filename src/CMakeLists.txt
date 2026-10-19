@@ -6,6 +6,7 @@ set(src_oncvpsp
     build_info_m.f90
     check_data.f90
     const_basis.f90
+    constants_m.f90
     der2exc.f90
     dpnint.f90
     eresid.f90
