@@ -50,6 +50,7 @@ set(oncvpspsr_tests
     "08_O_wigner"   # iexc=1 (excwig)
     "14_Si_lder"    # rxpsh set, s projector below epsh1 (run_phsft, vkbphsft)
     "40_Zr_grid"    # icmod=4 with an explicit search grid (modcore3)
+    "14_Si_hm"      # icmod=7 with slack (modcore_budget, modcore_probes)
 )
 foreach (test_name IN LISTS oncvpspsr_tests)
     oncvpsp_test(${test_name} sr ref_test.sh
@@ -63,6 +64,7 @@ set(oncvpspr_tests "52_Te" "74_W" "80_Hg"
     "08_O_wigner"   # iexc=1
     "14_Si"         # icmod=1
     "14_Si_bc"      # icmod=6
+    "14_Si_hm"      # icmod=7 with slack
     "14_Si_lder"    # rxpsh set
     "20_Ca"         # lpopt=1
     "34_Se"         # icmod=3
@@ -148,7 +150,8 @@ if (ONCVPSP_WITH_TOML)
             "integer_type" "number_type" "string_type" "atsym_length" "state_counts"
             "lmax_range" "array_length" "array_type" "not_an_array" "l_order"
             "icmod3_rcfact" "test_config_length" "test_config_count" "test_config_type"
-            "integer_for_real" "extra_keys" "icmod6_default_rcfact")
+            "integer_for_real" "extra_keys" "icmod6_default_rcfact"
+            "icmod6_default_slack")
         oncvpsp_test(toml_input_${case} toml toml_error_test.sh
             $<TARGET_FILE:oncvpspsr> "${data}" ${case} "${CMAKE_CURRENT_BINARY_DIR}/toml_input_${case}")
     endforeach ()
@@ -166,13 +169,13 @@ endforeach ()
 
 # Input echoes: the input echoed in the output, and in the psp8, UPF or PSML file, run again, give the
 # same output (see scripts/echo_rerun_test.sh). The inputs cover rxpsh (14_Si_lder, and 52_Te with
-# rxpsh set), icmod=4 with its search grid (40_Zr_grid, 74_W), a Libxc iexc (83_Bi) and rc on the
-# grid (03_Li).
+# rxpsh set), icmod=4 with its search grid (40_Zr_grid, 74_W), icmod=7 with slack (14_Si_hm), a
+# Libxc iexc (83_Bi) and rc on the grid (03_Li).
 set(te_rxpsh "s/^   -3\\.0  3\\.0  0\\.02$/   -3.0  3.0  0.02  3.5/")
 foreach (echo_test IN ITEMS
         "sr:14_Si_lder:psp8" "sr:14_Si_lder:upf" "sr:14_Si_lder:psml"
         "sr:40_Zr_grid:psp8" "sr:40_Zr_grid:upf" "sr:40_Zr_grid:psml"
-        "sr:83_Bi:psml" "sr:03_Li:psml" "nr:14_Si:psml"
+        "sr:83_Bi:psml" "sr:03_Li:psml" "nr:14_Si:psml" "sr:14_Si_hm:psp8"
         "r:74_W:psp8" "r:74_W:psml" "r:52_Te:psp8" "r:52_Te:upf" "r:52_Te:psml")
     string(REPLACE ":" ";" echo_test "${echo_test}")
     list(GET echo_test 0 rel)
@@ -231,6 +234,10 @@ foreach (case IN ITEMS "inside:2.0" "at_rc:2.70")
         "${CMAKE_CURRENT_BINARY_DIR}/error_rxpsh_${where}"
         "${data}/14_Si_lder.dat" "s/^   -0\\.3  2\\.0  0\\.02  3\\.5$/   -0.3  2.0  0.02  ${radius}/")
 endforeach ()
+oncvpsp_test(error_icmod7_slack_range errors error_test.sh
+    $<TARGET_FILE:oncvpspsr> "test_data: must have 0.0<slack<=1.0 for icmod= 6 or 7"
+    "${CMAKE_CURRENT_BINARY_DIR}/error_icmod7_slack_range"
+    "${data}/14_Si_hm.dat" "s/^   7   0   1\\.0e-5   0\\.7$/   7   0   1.0e-5   1.5/")
 oncvpsp_test(error_icmod4_bad_grid errors error_test.sh
     $<TARGET_FILE:oncvpspsr> "check_data: ERROR icmod=4 needs 0<fcfact_min<=fcfact_max and fcfact_step>0"
     "${CMAKE_CURRENT_BINARY_DIR}/error_icmod4_bad_grid"

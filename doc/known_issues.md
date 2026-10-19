@@ -52,8 +52,8 @@ Each of these was checked and turned out not to be a bug:
 - `run_ghosts.f90` `hmev` past `nbas`: `hmev` has size `nbmax` and is
   zeroed. `dsyev` with N=0 is a legal quick return.
 - `qroots.f90` `nroot>=4`: `check_data` guarantees it.
-- `input_toml_m.f90` icmod range: `check_data` rejects values outside 0–4
-  for both readers.
+- `input_toml_m.f90` icmod range: `check_data` rejects values outside 0–4,
+  6 and 7 for both readers.
 - `linout.f90` `ixc_abinit`: `check_data` rejects `iexc>4`.
 - `sratom`/`relatom` `ierr=100` unchecked: the drivers already stop with
   "ERROR all-electron reference atom not converged" when `it>=100`, and

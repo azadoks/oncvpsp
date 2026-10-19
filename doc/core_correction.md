@@ -116,32 +116,51 @@ icmod==4:
 icmod==6:
 
     The all-electron core charge wherever the plane-wave cutoff affords
-    it. Inside the radius r_s the model is Martins' exp(a + b r^2 + c r^4),
-    matching rhoc and its first two derivatives at r_s; beyond r_s it is
-    rhoc. fcfact is the plane-wave cutoff ecut (Ha) of the calculations the
-    pseudopotential is for, and rcfact (optional, default 1e-4) an
-    exchange-correlation energy error (Ha):
+    it. Inside the radius r_s the model is a fill that matches rhoc and its
+    first two derivatives at r_s; beyond r_s it is rhoc. fcfact is the
+    plane-wave cutoff ecut (Ha) of the calculations the pseudopotential is
+    for, rcfact (optional, default 1e-5) an exchange-correlation energy
+    error (Ha), and slack (optional, 0 < slack <= 1, default 1) the share of
+    ecut the model must fit:
 
     ```
         # MODEL CORE CHARGE
-        # icmod, fcfact (ecut, Ha), rcfact (xc energy error, Ha)
-            6   25.0   1.0e-4
+        # icmod, fcfact (ecut, Ha), rcfact (xc energy error, Ha), slack
+            6   25.0   1.0e-5   1.0
     ```
+
+    The fill is the minimum tail, the even polynomial
+
+        sum_{k=0..8} c_k (r/r_s)^(2k)
+
+    whose six free coefficients minimize the Fourier tail of the whole
+    model, int_{qlo}^{qhi} q^2 |rhomod(q)|^2 dq, with qlo = 2*sqrt(2*ecut),
+    the density cutoff of ecut, and qhi = min(3*qlo, 120 bohr^-1). Where
+    that polynomial rises somewhere on [0, r_s] (checked at 201 points),
+    the fill is Martins' exp(a + b r^2 + c r^4) instead, if that does not
+    rise (b <= 0 and b + 2c r_s^2 <= 0); where neither is monotone, the
+    radius has no model. The out file says which fill was used, and gives
+    its coefficients.
 
     r_s is the smallest grid radius, no larger than the smallest rc (or
     the last radius with core charge, if that is smaller), whose model
-    needs no more than ecut. The model needs the cutoff ecut if,
-    for every density cutoff q from 2*sqrt(2*ecut) on (steps of 0.1 bohr^-1
-    up to 40 bohr^-1, 200 Ha), the core charge without its Fourier
-    components beyond q changes the exchange-correlation energy by less
-    than rcfact: |Exc[n + rhomod_q] - Exc[n + rhomod]
-    - Vxc[n_bg] int (rhomod_q - rhomod)| within r <= 10 bohr, with n the
-    pseudo valence charge on a uniform background n_bg = 5e-3 bohr^-3 that
-    stands for the interstitial electrons of the neighbours. The run stops
-    if even the largest r_s needs more than ecut. The out file gives r_s and the
-    cutoff the model needs. This is the BudgetedCore of
-    PseudoPotentialGenerators.jl with its Martins candidate, executed by
-    modcore_budget.f90; tests/data/14_Si_bc.dat uses it.
+    fits slack*ecut. A model fits a cutoff e if, for every density cutoff
+    q from 2*sqrt(2*e) on (steps of 0.1 bohr^-1 up to 120 bohr^-1, 1800
+    Ha), the core charge without its Fourier components beyond q changes
+    the exchange-correlation energy by less than rcfact:
+    |Exc[n + rhomod_q] - Exc[n + rhomod] - Vxc[n_bg] int (rhomod_q -
+    rhomod)| within r <= 10 bohr, with n the pseudo valence charge on a
+    uniform background n_bg = 5e-3 bohr^-3 that stands for the interstitial
+    electrons of the neighbours. The run stops if even the largest r_s
+    does not fit. The out file gives r_s and the cutoff the model needs.
+
+    With slack < 1 the model is still made for the qlo of ecut, but must
+    fit slack*ecut: a core made for its own, lower cutoff converges worse
+    in plane waves. This is the BudgetedCore of PseudoPotentialGenerators.jl
+    (PPG), executed by modcore_budget.f90; tests/data/14_Si_bc.dat uses it.
+    On the same core and valence charges it gives PPG's r_s within the grid
+    spacing, and the same fill and core cutoff (Si, Li, Na, K, Zn, Ga, N,
+    I, Pb, Cs; TM, PBE).
 
     With fcfact <= 0, ecut is instead the cutoff the pseudo-waves need for
     the same error rcfact, times -fcfact (times 1 for fcfact = 0): a
@@ -152,7 +171,7 @@ icmod==6:
     ```
         # MODEL CORE CHARGE
         # icmod, fcfact (0, or minus a multiple of the pseudo-wave cutoff), rcfact
-            6   0   1.0e-4
+            6   0   1.0e-5
     ```
 
     The pseudo-wave cutoff is the root of the total residual kinetic
@@ -168,6 +187,36 @@ icmod==6:
     line "pseudo-wave cutoff", and modcore_budget_ecut (in modcore_budget.f90)
     computes it;
     tests/data/14_Si_bca.dat uses it.
+
+icmod==7:
+
+    The core of icmod=6 (the same fill, inputs and cutoff test) at the
+    radius whose model acts on the valence most as the all-electron core
+    does: the HardnessMatchedCore of PPG, and the one to use in plane
+    waves. The radii run from the largest r_s of icmod=6 down by factors of
+    1.025 to the r_s of icmod=6 over 1.25, that r_s included (each on the
+    nearest grid point). For each, the measure is the rms over i, j of
+
+        d2Exc/dn_i dn_j [rho_v + rhomod] - d2Exc/dn_i dn_j [rho_v + rhoc]
+
+    (der2exc, as icmod=3 and 4, but with the pseudo valence charge rho_v
+    in both), for the probe densities: the eigenstates of the screened
+    pseudo-Hamiltonian with iprj-1 nodes for every projector iprj of every
+    l, at unit occupation, if bound. The models are tested against
+    slack*ecut in the order of this measure, and the first that fits is
+    taken; ties go to the larger radius.
+
+    ```
+        # MODEL CORE CHARGE
+        # icmod, fcfact, rcfact, slack
+            7   0   1.0e-5   0.7
+    ```
+
+    The out file adds the r_s of icmod=6, the measure of the chosen model,
+    and a table of the radii: r_s, the fill (MT for the minimum tail, M for
+    Martins, - for none), the measure, and whether it fits (T, F, or - if
+    it was not tested), ended by a blank line. tests/data/14_Si_hm.dat
+    uses it. The search costs 1.4-3 times that of icmod=6.
 
 1) S. G. Louie, S. Froyen, and M. L. Cohen, Phys. Rev. B 43, 1993 (1991).
 

@@ -99,9 +99,16 @@ case $case in
         { echo 'comment = "extra"'; set_key oncvpsp z 'z = 14.0\nextra = 1' < "$base"; \
           printf '\n[extra_table]\nx = 1\n'; } > in.toml ;;
     icmod6_default_rcfact)
-        # rcfact defaults to 1e-4 for icmod 6, the value 14_Si_bca gives
-        base=$data/toml/14_Si_bca.toml
+        # rcfact defaults to 1e-5 for icmod 6
+        set_key model_core_charge rcfact 'rcfact = 1.0e-5' \
+            < "$data/toml/14_Si_bca.toml" > base.toml
+        base=base.toml
         set_key model_core_charge rcfact '' < "$base" > in.toml ;;
+    icmod6_default_slack)
+        # slack defaults to 1 for icmod 6
+        base=$data/toml/14_Si_bca.toml
+        set_key model_core_charge rcfact 'rcfact = 1.0e-4\nslack = 1.0' \
+            < "$base" > in.toml ;;
     *)
         echo "toml_error_test.sh: unknown case $case" >&2
         exit 2 ;;

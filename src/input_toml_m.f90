@@ -12,7 +12,7 @@
 &                           atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
 &                           lmax, rc, ep, ncon, nbas, qcut, &
 &                           lloc, lpopt, dvloc0, nproj, debl, &
-&                           icmod, fcfact, rcfact, &
+&                           icmod, fcfact, rcfact, slack, &
 &                           fcfact_min, fcfact_max, fcfact_step, &
 &                           rcfact_min, rcfact_max, rcfact_step, &
 &                           epsh1, epsh2, depsh, rxpsh, &
@@ -35,8 +35,9 @@
 !                              qcut
 !   [local_potential]          lloc, lpopt, rcloc, dvloc0
 !   [vkb_projectors]           l (0..lmax), nproj, debl
-!   [model_core_charge]        icmod, fcfact (icmod 1, 2, 3, 6; else 0),
-!                              rcfact (icmod 3; 1e-4 for icmod 6; else 0),
+!   [model_core_charge]        icmod, fcfact (icmod 1, 2, 3, 6, 7; else 0),
+!                              rcfact (icmod 3; 1e-5 for icmod 6, 7; else
+!                              0), slack (icmod 6, 7; 1),
 !                              fcfact_min, fcfact_max, fcfact_step, rcfact_min,
 !                              rcfact_max, rcfact_step (optional, icmod 4 grid)
 !   [log_derivative_analysis]  epsh1, epsh2, depsh, rxpsh (optional, -1 for
@@ -112,6 +113,8 @@
  real(dp), intent(out) :: fcfact_step
 !> Core charge width factor
  real(dp), intent(out) :: rcfact
+!> Share of the cutoff the model core must fit (icmod 6, 7)
+ real(dp), intent(out) :: slack
 !> Core charge width factor minimum for optimization
  real(dp), intent(out) :: rcfact_min
 !> Core charge width factor maximum for optimization
@@ -175,6 +178,7 @@
  nproj(:) = 0
  fcfact = 0.0_dp
  rcfact = 0.0_dp
+ slack = 1.0_dp
  rc(:) = 0.0_dp
  ep(:, :) = 0.0_dp
  rxpsh = -1.0_dp  ! negative value for auto setting of radius
@@ -253,7 +257,7 @@
  call get_section(table, 'model_core_charge', child)
  call get_int(child, 'model_core_charge', 'icmod', icmod)
  select case(icmod)
- case(1, 2, 6)
+ case(1, 2, 6, 7)
    call get_real(child, 'model_core_charge', 'fcfact', fcfact)
  case(3)
    call get_real(child, 'model_core_charge', 'fcfact', fcfact)
@@ -277,8 +281,9 @@
 &    rcfact_max)
    call get_real(child, 'model_core_charge', 'rcfact_step', rcfact_step, &
 &    rcfact_step)
- case(6)
-   call get_real(child, 'model_core_charge', 'rcfact', rcfact, 1.0e-4_dp)
+ case(6, 7)
+   call get_real(child, 'model_core_charge', 'rcfact', rcfact, 1.0e-5_dp)
+   call get_real(child, 'model_core_charge', 'slack', slack, 1.0_dp)
  case default
 ! no further keys
  end select

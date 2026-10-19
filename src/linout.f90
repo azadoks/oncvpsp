@@ -26,7 +26,7 @@
 &                  atsym,soscale, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,fcfact0,rcfact, &
-&                  fcgrid,rcgrid, &
+&                  slack,fcgrid,rcgrid, &
 &                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,nkap)
 
 
@@ -87,6 +87,7 @@
 !! @param facnf  occupancies, all configurations
 !! @param dvloc0  amplitude at rr==0 of the function added to the local
 !!                potential for lloc==4
+!! @param slack  share of the cutoff the model core must fit (icmod=6, 7)
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 !! @param epsh1  lower limit of the log derivative analysis energy range (Ha)
@@ -108,6 +109,7 @@
  integer, intent(in) :: lmax,lloc,iexc,mmax,mxprj,nrl,icmod,nkap
  integer, intent(in) :: nproj(6)
  real(dp), intent(in) :: drl,fcfact,fcfact0,rcfact,zz,zion,soscale
+ real(dp), intent(in) :: slack
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
  real(dp), intent(in) :: rr(mmax),vpuns(mmax,5),rho(mmax)
  real(dp), intent(in) :: rhotae(mmax),rhoc(mmax)
@@ -353,7 +355,7 @@
  call write_input_echo(nkap,1,atsym,zz,nc,nv,iexc,psfile, &
 &                       na,la,fa,lmax,rc0,ep(:,1),ncon,nbas,qcut, &
 &                       lloc,lpopt,dvloc0,nproj,debl, &
-&                       icmod,fcfact0,rcfact,fcgrid,rcgrid, &
+&                       icmod,fcfact0,rcfact,slack,fcgrid,rcgrid, &
 &                       epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
 &                       ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh)
 

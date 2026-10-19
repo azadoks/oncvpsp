@@ -316,6 +316,8 @@ class ModelCoreChargeConfiguration:
     rcfact_max: float | None = None
     "Step size for the cutoff radius scaling factor (for optimization)"
     rcfact_step: float | None = None
+    "Share of the cutoff the model core must fit (icmod 6, 7)"
+    slack: float | None = None
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, ModelCoreChargeConfiguration):
@@ -421,6 +423,13 @@ class ModelCoreChargeConfiguration:
                     "rcfact_step differs: %f != %f", self.rcfact_step, other.rcfact_step
                 )
                 return False
+        if (self.slack is None) != (other.slack is None):
+            logging.debug("slack presence differs: %s != %s", self.slack, other.slack)
+            return False
+        elif self.slack is not None and other.slack is not None:
+            if abs(self.slack - other.slack) >= ATOL:
+                logging.debug("slack differs: %f != %f", self.slack, other.slack)
+                return False
         return True
 
     @classmethod
@@ -464,12 +473,14 @@ class ModelCoreChargeConfiguration:
                 )
             else:
                 raise ValueError(f"Invalid model core charge configuration: {s}")
-        elif icmod == 6:
-            # icmod, fcfact (cutoff budget, Ha), rcfact (xc energy error, Ha; default 1e-4)
+        elif icmod in (6, 7):
+            # icmod, fcfact (cutoff budget, Ha), rcfact (xc energy error, Ha; default
+            # 1e-5), slack (share of the budget the core must fit; default 1)
             return cls(
                 icmod=icmod,
                 fcfact=fort_float(parts[1]),
                 rcfact=fort_float(parts[2]) if len(parts) > 2 else None,
+                slack=fort_float(parts[3]) if len(parts) > 3 else None,
             )
         else:
             raise ValueError(f"Invalid model core charge configuration: {s}")
@@ -926,6 +937,7 @@ class OncvpspInput:
                 rcfact_min=d["model_core_charge"].get("rcfact_min"),
                 rcfact_max=d["model_core_charge"].get("rcfact_max"),
                 rcfact_step=d["model_core_charge"].get("rcfact_step"),
+                slack=d["model_core_charge"].get("slack"),
             ),
             log_derivative_analysis=LogDerivativeConfiguration(
                 epsh1=d["log_derivative_analysis"]["epsh1"],
@@ -1008,6 +1020,7 @@ class OncvpspInput:
                 "rcfact_min": self.model_core_charge.rcfact_min,
                 "rcfact_max": self.model_core_charge.rcfact_max,
                 "rcfact_step": self.model_core_charge.rcfact_step,
+                "slack": self.model_core_charge.slack,
             },
             "log_derivative_analysis": {
                 "epsh1": self.log_derivative_analysis.epsh1,

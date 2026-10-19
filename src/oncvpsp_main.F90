@@ -78,7 +78,7 @@
  real(dp) :: eeig,eexc
  real(dp) :: emax,epsh1,epsh1t,epsh2,epsh2t,rxpsh
  real(dp) :: et,etest,emin,sls
- real(dp) :: fcfact,fcfact0,rcfact,dvloc0,soscale
+ real(dp) :: fcfact,fcfact0,rcfact,slack,dvloc0,soscale
  real(dp) :: fcfact_min,fcfact_max,fcfact_step
  real(dp) :: rcfact_min,rcfact_max,rcfact_step
  real(dp) :: fcgrid(3),rcgrid(3)
@@ -105,6 +105,10 @@
  real(dp), allocatable :: vo(:),vxc(:)
  real(dp), allocatable :: rhomod(:,:),rhoae(:,:),rhops(:,:),rhotae(:)
  real(dp), allocatable :: uupsa(:,:,:) !pseudo-atomic orbitals array
+!probe densities and their l for the hardness of icmod=7
+ real(dp), allocatable :: probes(:,:)
+ integer, allocatable :: lprobe(:)
+ integer :: nprobe
  real(dp), allocatable :: epa(:,:,:)
  real(dp), allocatable :: uua(:,:,:),upa(:,:,:)
  real(dp), allocatable :: vr(:,:,:,:)
@@ -268,7 +272,7 @@
 &                       atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
 &                       lmax, rc, ep, ncon, nbas, qcut, &
 &                       lloc, lpopt, dvloc0, nproj, debl, &
-&                       icmod, fcfact, rcfact, &
+&                       icmod, fcfact, rcfact, slack, &
 &                       fcfact_min, fcfact_max, fcfact_step, &
 &                       rcfact_min, rcfact_max, rcfact_step, &
 &                       epsh1, epsh2, depsh, rxpsh, &
@@ -287,7 +291,7 @@
 &                       atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
 &                       lmax, rc, ep, ncon, nbas, qcut, &
 &                       lloc, lpopt, dvloc0, nproj, debl, &
-&                       icmod, fcfact, rcfact, &
+&                       icmod, fcfact, rcfact, slack, &
 &                       fcfact_min, fcfact_max, fcfact_step, &
 &                       rcfact_min, rcfact_max, rcfact_step, &
 &                       epsh1, epsh2, depsh, rxpsh, &
@@ -308,7 +312,7 @@
 &                       atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
 &                       lmax, rc, ep, ncon, nbas, qcut, &
 &                       lloc, lpopt, dvloc0, nproj, debl, &
-&                       icmod, fcfact, rcfact, &
+&                       icmod, fcfact, rcfact, slack, &
 &                       fcfact_min, fcfact_max, fcfact_step, &
 &                       rcfact_min, rcfact_max, rcfact_step, &
 &                       epsh1, epsh2, depsh, rxpsh, &
@@ -346,7 +350,7 @@
  fcgrid=[fcfact_min,fcfact_max,fcfact_step]
  rcgrid=[rcfact_min,rcfact_max,rcfact_step]
 
- call check_data(atsym,zz,fcfact,rcfact,fcgrid,rcgrid,epsh1,epsh2,depsh, &
+ call check_data(atsym,zz,fcfact,rcfact,slack,fcgrid,rcgrid,epsh1,epsh2,depsh, &
 &                rxpsh,rlmax,drl, &
 &                fa,facnf, &
 &                rc,ep,qcut,debl,nc,nv,iexc,lmax,lloc,lpopt,icmod, &
@@ -501,7 +505,7 @@
    write(6,'(2i5,f10.5)') l1-1,nproj(l1),debl(l1)
  end do
 
- call write_icmod(icmod,fcfact,rcfact,fcgrid,rcgrid)
+ call write_icmod(icmod,fcfact,rcfact,slack,fcgrid,rcgrid)
 
  call write_epsh(epsh1,epsh2,depsh,rxpsh)
 
@@ -898,13 +902,22 @@
    call modcore2(icmod,rhops,rho,rhoc,rhoae,rhotae,rhomod, &
 &               fcfact,rcfact,irps,mmax,rr,nc,nv,la,zion,iexc)
 
- else if(icmod==6) then
+ else if(icmod==6 .or. icmod==7) then
    ecutw=0.0d0
    if(fcfact<=0.0d0) then
      call modcore_budget_ecut(ecurve,wcurve,ncurve,mxprj*4*nkap,rcfact,ecutw)
    end if
-   call modcore_budget(rho,rhoc,rhomod,fcfact,ecutw,rcfact, &
-&               minval(irc(1:lmax+1)),mmax,rr,iexc)
+!the probe densities of the hardness of icmod=7
+   allocate(probes(mmax,mxprj*(lmax+1)),lprobe(mxprj*(lmax+1)))
+   nprobe=0
+   if(icmod==7) then
+     call modcore_probes(lmax,lloc,nproj,epa,vp,vkb,evkb,rr,mmax,mxprj, &
+&                        nkap,probes,lprobe,nprobe)
+   end if
+   call modcore_budget(icmod,rho,rhoc,rhomod,fcfact,ecutw,rcfact,slack, &
+&               minval(irc(1:lmax+1)),mmax,rr,iexc,zion, &
+&               probes(:,1:nprobe),lprobe(1:nprobe),nprobe)
+   deallocate(probes,lprobe)
 
  else if(icmod>=3) then
    call modcore3(icmod,rhops,rho,rhoc,rhoae,rhotae,rhomod, &
@@ -1040,7 +1053,7 @@
 &              atsym,soscale, &
 &              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &              fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,fcfact0,rcfact, &
-&              fcgrid,rcgrid, &
+&              slack,fcgrid,rcgrid, &
 &              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,nkap)
  end if
 
@@ -1049,7 +1062,7 @@
 &              zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
 &              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &              fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact0,rcfact, &
-&              fcgrid,rcgrid, &
+&              slack,fcgrid,rcgrid, &
 &              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,uupsa,ea,log_mesh,nkap)
  end if
 
@@ -1077,7 +1090,7 @@
 &               zz,zion,mmax,iexc,icmod,nrl,drl,atsym,epstot, &
 &               na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &               fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact0,rcfact, &
-&               fcgrid,rcgrid, &
+&               slack,fcgrid,rcgrid, &
 &               epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,irel,nkap)
  end if
 

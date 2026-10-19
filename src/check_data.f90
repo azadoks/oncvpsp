@@ -16,7 +16,7 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine check_data(atsym,zz,fcfact,rcfact,fcgrid,rcgrid,epsh1,epsh2, &
+ subroutine check_data(atsym,zz,fcfact,rcfact,slack,fcgrid,rcgrid,epsh1,epsh2, &
 &                      depsh,rxpsh,rlmax,drl,fa,facnf, &
 &                      rc,ep,qcut,debl,nc,nv,iexc,lmax,lloc,lpopt,icmod, &
 &                      ncnf,na,la,nvcnf,nacnf,lacnf,ncon,nbas,nproj,psfile, &
@@ -32,6 +32,7 @@
 !! @param fcfact  prefactor for model core charge amplitude
 !! @param rcfact  prefactor for model core charge scale (icmod=3), or error
 !!                tolerance (icmod=6)
+!! @param slack  share of the cutoff the model core must fit (icmod=6, 7)
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 !! @param epsh1  lower limit of the log derivative analysis energy range (Ha)
@@ -78,6 +79,7 @@
  character(len=4), intent(in) :: psfile
 
  real(dp), intent(in) :: zz,fcfact,rcfact,epsh1,epsh2,depsh,rxpsh,rlmax,drl
+ real(dp), intent(in) :: slack
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
  real(dp), intent(in) :: amesh,rr1,rmax
  real(dp), intent(in) :: fa(30),facnf(30,5),rc(6),ep(6),qcut(6),debl(6)
@@ -228,13 +230,18 @@
    end if
  end do
 
- if((icmod<0 .or. icmod>4) .and. icmod/=6) then
-   write(6,'(a)') 'test_data: must have 0<= icmod <=4 or icmod=6'
+ if((icmod<0 .or. icmod>4) .and. icmod/=6 .and. icmod/=7) then
+   write(6,'(a)') 'test_data: must have 0<= icmod <=4 or icmod=6 or 7'
    ierr=ierr+1
  end if
 
- if((icmod==6) .and. rcfact<=0.0d0) then
-   write(6,'(a)') 'test_data: must have rcfact>0.0 for icmod= 6'
+ if((icmod==6 .or. icmod==7) .and. rcfact<=0.0d0) then
+   write(6,'(a)') 'test_data: must have rcfact>0.0 for icmod= 6 or 7'
+   ierr=ierr+1
+ end if
+
+ if((icmod==6 .or. icmod==7) .and. (slack<=0.0d0 .or. slack>1.0d0)) then
+   write(6,'(a)') 'test_data: must have 0.0<slack<=1.0 for icmod= 6 or 7'
    ierr=ierr+1
  end if
 

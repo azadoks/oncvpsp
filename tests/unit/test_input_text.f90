@@ -126,7 +126,7 @@
  character(len=2) :: atsym
  character(len=4) :: psfile
  real(dp) :: zz, fa(30), rc(6), ep(6, 2), qcut(6), dvloc0, debl(6)
- real(dp) :: fcfact, rcfact, fcfact_min, fcfact_max, fcfact_step
+ real(dp) :: fcfact, rcfact, slack, fcfact_min, fcfact_max, fcfact_step
  real(dp) :: rcfact_min, rcfact_max, rcfact_step
  real(dp) :: epsh1, epsh2, depsh, rxpsh, rlmax, drl, facnf(30, 5)
  real(dp) :: amesh, rr1, rmax
@@ -180,7 +180,7 @@
 &                     atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
 &                     lmax, rc, ep, ncon, nbas, qcut, &
 &                     lloc, lpopt, dvloc0, nproj, debl, &
-&                     icmod, fcfact, rcfact, &
+&                     icmod, fcfact, rcfact, slack, &
 &                     fcfact_min, fcfact_max, fcfact_step, &
 &                     rcfact_min, rcfact_max, rcfact_step, &
 &                     epsh1, epsh2, depsh, rxpsh, &

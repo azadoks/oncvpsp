@@ -9,7 +9,7 @@
 &                           atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
 &                           lmax, rc, ep, ncon, nbas, qcut, &
 &                           lloc, lpopt, dvloc0, nproj, debl, &
-&                           icmod, fcfact, rcfact, &
+&                           icmod, fcfact, rcfact, slack, &
 &                           fcfact_min, fcfact_max, fcfact_step, &
 &                           rcfact_min, rcfact_max, rcfact_step, &
 &                           epsh1, epsh2, depsh, rxpsh, &
@@ -85,6 +85,8 @@
  real(dp), intent(out) :: fcfact_step
 !> Core charge width factor
  real(dp), intent(out) :: rcfact
+!> Share of the cutoff the model core must fit (icmod 6, 7)
+ real(dp), intent(out) :: slack
 !> Core charge width factor minimum for optimization
  real(dp), intent(out) :: rcfact_min
 !> Core charge width factor maximum for optimization
@@ -142,6 +144,7 @@
  nproj(:) = 0
  fcfact = 0.d0
  rcfact = 0.d0
+ slack = 1.d0
  rc(:) = 0.d0
  ep(:, :) = 0.d0
  rxpsh = -1.d0  ! negative value for auto setting of radius
@@ -210,14 +213,18 @@
  if(ios == 0 .and. icmod == 3) then
    read(line, *, iostat=ios) icmod, fcfact, rcfact
  end if
-! icmod==6 : icmod, fcfact (cutoff, Ha; <= 0 for -fcfact, or 1 if 0, times
-!   the cutoff of the pseudo-waves), rcfact (xc energy error, Ha;
-!   default 1e-4)
- if(ios == 0 .and. icmod == 6) then
-   read(line, *, iostat=ios) icmod, fcfact, rcfact
+! icmod==6, 7 : icmod, fcfact (cutoff, Ha; <= 0 for -fcfact, or 1 if 0,
+!   times the cutoff of the pseudo-waves), rcfact (xc energy error, Ha;
+!   default 1e-5), slack (share of the cutoff the model must fit; default 1)
+ if(ios == 0 .and. (icmod == 6 .or. icmod == 7)) then
+   read(line, *, iostat=ios) icmod, fcfact, rcfact, slack
+   if(ios /= 0) then
+     slack = 1.d0
+     read(line, *, iostat=ios) icmod, fcfact, rcfact
+   end if
    if(ios /= 0) then
      read(line, *, iostat=ios) icmod, fcfact
-     rcfact = 1.d-4
+     rcfact = 1.d-5
    end if
  end if
 ! icmod==4[explicit grid]: icmod, fcfact(ignored), rcfact(ignored),

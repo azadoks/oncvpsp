@@ -24,7 +24,7 @@
 &                  zz,zion,mmax,mxprj,iexc,icmod,nrlin,drl,atsym,epstot, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
-&                  fcgrid,rcgrid, &
+&                  slack,fcgrid,rcgrid, &
 &                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,uupsa,ea,log_mesh, &
 &                  nkap)
 
@@ -77,6 +77,7 @@
 !!                input
 !! @param rcfact  prefactor for model core charge scale (icmod=3), or error
 !!                tolerance (icmod=6)
+!! @param slack  share of the cutoff the model core must fit (icmod=6, 7)
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 !! @param epsh1  lower limit of the log derivative analysis energy range (Ha)
@@ -102,6 +103,7 @@
  integer, intent(in) :: lmax,lloc,iexc,mmax,mxprj,icmod,nrlin,nkap
  integer, intent(in) :: nproj(6)
  real(dp), intent(in) :: drl,fcfact,rcfact,zz,zion,epstot
+ real(dp), intent(in) :: slack
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
  real(dp), intent(in) :: rr(mmax),vpuns(mmax,5),rho(mmax),vkb(mmax,mxprj,4,nkap)
  real(dp), intent(in) :: rhomod(mmax,5)
@@ -277,7 +279,7 @@
  call write_input_echo(nkap,2,atsym,zz,nc,nv,iexc,psfile, &
 &                       na,la,fa,lmax,rc0,ep(:,1),ncon,nbas,qcut, &
 &                       lloc,lpopt,dvloc0,nproj,debl, &
-&                       icmod,fcfact,rcfact,fcgrid,rcgrid, &
+&                       icmod,fcfact,rcfact,slack,fcgrid,rcgrid, &
 &                       epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
 &                       ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh)
 

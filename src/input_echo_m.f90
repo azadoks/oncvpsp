@@ -37,7 +37,7 @@
 
  contains
 
- subroutine icmod_lines(icmod,fcfact,rcfact,fcgrid,rcgrid,text,ntext)
+ subroutine icmod_lines(icmod,fcfact,rcfact,slack,fcgrid,rcgrid,text,ntext)
 
 !! MODEL CORE CHARGE section
 !! the icmod=4 search grid is written only when it differs from the default
@@ -45,6 +45,7 @@
 !! @param icmod  model core charge option
 !! @param fcfact  prefactor for model amplitude
 !! @param rcfact  prefactor for model scale
+!! @param slack  share of the cutoff the model core must fit (icmod=6, 7)
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 !! @param text  the lines of the section
@@ -53,6 +54,7 @@
 !Input variables
  integer, intent(in) :: icmod
  real(dp), intent(in) :: fcfact,rcfact
+ real(dp), intent(in) :: slack
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
 
 !Output variables
@@ -73,10 +75,14 @@
 &   'rcfact_min, rcfact_max, rcfact_step'
    write(text(5),'(i5,8f10.5)') icmod,fcfact,rcfact,fcgrid(:),rcgrid(:)
    ntext=5
+ else if((icmod==6 .or. icmod==7) .and. slack/=1.0d0) then
+!icmod=6, 7 rcfact is an error tolerance, slack is written if not 1
+   text(3)='# icmod, fcfact, rcfact, slack'
+   write(text(4),'(i5,f10.5,es12.4,f10.5)') icmod,fcfact,rcfact,slack
+   ntext=4
  else
    text(3)='# icmod, fcfact, rcfact'
-!icmod=6 rcfact is an error tolerance
-   if(icmod==6) then
+   if(icmod==6 .or. icmod==7) then
      write(text(4),'(i5,f10.5,es12.4)') icmod,fcfact,rcfact
    else
      write(text(4),'(i5,2f10.5)') icmod,fcfact,rcfact
@@ -120,26 +126,28 @@
  return
  end subroutine epsh_lines
 
- subroutine write_icmod(icmod,fcfact,rcfact,fcgrid,rcgrid)
+ subroutine write_icmod(icmod,fcfact,rcfact,slack,fcgrid,rcgrid)
 
 !! writes the MODEL CORE CHARGE section to unit 6
 !!
 !! @param icmod  model core charge option
 !! @param fcfact  prefactor for model amplitude
 !! @param rcfact  prefactor for model scale
+!! @param slack  share of the cutoff the model core must fit (icmod=6, 7)
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 
 !Input variables
  integer, intent(in) :: icmod
  real(dp), intent(in) :: fcfact,rcfact
+ real(dp), intent(in) :: slack
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
 
 !Local variables
  character(len=echo_len) :: text(echo_max)
  integer :: ii,ntext
 
- call icmod_lines(icmod,fcfact,rcfact,fcgrid,rcgrid,text,ntext)
+ call icmod_lines(icmod,fcfact,rcfact,slack,fcgrid,rcgrid,text,ntext)
  write(6,'(a)') (trim(text(ii)),ii=1,ntext)
 
  return
@@ -170,7 +178,7 @@
  subroutine write_input_echo(nkap,iformat,atsym,zz,nc,nv,iexc,psfile, &
 &                            na,la,fa,lmax,rc0,ep,ncon,nbas,qcut, &
 &                            lloc,lpopt,dvloc0,nproj,debl, &
-&                            icmod,fcfact,rcfact,fcgrid,rcgrid, &
+&                            icmod,fcfact,rcfact,slack,fcgrid,rcgrid, &
 &                            epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
 &                            ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh)
 !! writes the echo of the input data to unit 6, from the reference
@@ -189,6 +197,7 @@
  integer, intent(in) :: na(30),la(30),ncon(6),nbas(6),nproj(6)
  integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
  real(dp), intent(in) :: zz,dvloc0,fcfact,rcfact
+ real(dp), intent(in) :: slack
  real(dp), intent(in) :: epsh1,epsh2,depsh,rxpsh,rlmax,drl
  real(dp), intent(in) :: fa(30),rc0(6),ep(6),qcut(6),debl(6),facnf(30,5)
  real(dp), intent(in) :: fcgrid(3),rcgrid(3),log_mesh(3)
@@ -234,7 +243,7 @@
    write(6,'(2i5,f10.5)') l1-1,nproj(l1),debl(l1)
  end do
 
- call write_icmod(icmod,fcfact,rcfact,fcgrid,rcgrid)
+ call write_icmod(icmod,fcfact,rcfact,slack,fcgrid,rcgrid)
 
  call write_epsh(epsh1,epsh2,depsh,rxpsh)
 
