@@ -34,9 +34,12 @@ FCCPPFLAGS =
 ##### Optimization flags #####
 #
 # For example, with gfortran:
-#     FFLAGS = -O3 -ffast-math -funroll-loops -fallow-argument-mismatch
+#     FFLAGS = -O3 -ffast-math -funroll-loops -fallow-argument-mismatch \
+#              --param=max-inline-insns-auto=30
 #     CFLAGS = -O3
-# -fallow-argument-mismatch is needed with gfortran 10 and later.
+# -fallow-argument-mismatch is needed with gfortran 10 and later. The
+# --param option lets gfortran inline the Adams formulas of adams.inc into
+# the radial integrators (at -O2 they stay calls, about 9 % of the run time).
 
 FFLAGS     =
 CFLAGS     =
