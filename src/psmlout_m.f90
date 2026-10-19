@@ -33,7 +33,6 @@
 
  subroutine psmlout(lmax,lloc,rc,vkb,evkb,mxprj,nproj,rr,vpuns,rho,rhomod, &
 &                  irct, &
-&                  vsr,esr,vso,eso, &
 &                  zz,zion,mmax,iexc,icmod,nrl,drl,atsym,epstot, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
@@ -57,10 +56,6 @@
 !rho  valence pseudocharge
 !rhomod  model core charge and its first four derivatives
 !irct  index of the point at which the model core charge is matched
-!vsr  scalar-relativistic projectors (irel=2 only)
-!esr  energy coefficients of vsr
-!vso  spin-orbit projectors
-!eso  energy coefficients of vso
 !zz  atomic number
 !zion  at this point, total valence charge (becomes psuedoion charge)
 !mmax  size of log radial grid
@@ -98,9 +93,7 @@
 !depsh  energy step of the log derivative analysis (Ha)
 !rxpsh  radius of the log derivative analysis (bohr), negative for default
 !rlmax  maximum radius of the linear output mesh (bohr)
-!psfile  pseudopotential file format as read from the input; for irel=2,
-!  'psp8' writes scalar-relativistic and spin-orbit sets, otherwise l,j
-!  sets are written
+!psfile  pseudopotential file format as read from the input
 !log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets it
 !  (else 0)
 !irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
@@ -130,8 +123,6 @@
  real(dp), target, intent(in) :: vkb(mmax,mxprj,4,nkap)
  real(dp), target, intent(in) :: rhomod(mmax,5)
  real(dp), intent(in) :: rc(6),evkb(mxprj,4,nkap)
- real(dp), target, intent(in) :: vsr(mmax,2*mxprj,4),vso(mmax,2*mxprj,4)
- real(dp), intent(in) :: esr(2*mxprj,4),eso(2*mxprj,4)
  character(len=2), intent(in) :: atsym
 
 !additional input to echo the input file, all as defined
@@ -146,7 +137,6 @@
 
 !Local variables
  integer :: dtime(8)
- integer :: npr_so(4), npr_sr(4)
 
 !-------
 !psml stuff
@@ -377,73 +367,34 @@
 
  allocate(f0(nr))
  if(irel==2) then
-   if(trim(psfile)=="psp8") then
+   call xml_NewElement(xf,"semilocal-potentials")
+   call my_add_attribute(xf,"set","lj")
 
-     call xml_NewElement(xf,"semilocal-potentials")
-     call my_add_attribute(xf,"set","scalar_relativistic")
-! sr components
-     do ii = 1, npots
-       l1 = ii
+   do ii = 1, npots
+     l1 = ii
+     if(ii == 1) then
+       jval = 0.0
 ! last index:  1: j=l+1/2; 2: j=l-1/2; l=0,j=0 stored in index 1
-       vps(:) = ((ll(ii)+1)*vpuns(:,l1,1)+ ll(ii)*vpuns(:,l1,2)) &
-&             / dble(2*ll(ii)+1)
+       vps(:) = vpuns(:,l1,1)
        call add_zero_r(vps(1:npts),rgrid,f0)
        call write_psml_item(xf, class="slps", &
-&                         nn=nn(ii), ll=ll(ii), &
-&                         rc=rc(ii),flavor=psflavor,&
-&                         ff=f0)
-     end do
-     call xml_EndElement(xf,"semilocal-potentials")
-!
-! so components
-!
-     call xml_NewElement(xf,"semilocal-potentials")
-     call my_add_attribute(xf,"set","spin_orbit")
-
-     do ii = 2, npots
-       l1 = ii
-       vps(:) = 2*(vpuns(:,l1,1) - vpuns(:,l1,2)) / dble(2*ll(ii)+1)
-       call add_zero_r(vps(1:npts),rgrid,f0)
-       call write_psml_item(xf, class="slps", &
-&                         nn=nn(ii), ll=ll(ii), &
-&                         rc=rc(ii),flavor=psflavor,&
-&                         ff=f0)
-     end do
-
-     call xml_EndElement(xf,"semilocal-potentials")
-
-   else   ! upf
-
-     call xml_NewElement(xf,"semilocal-potentials")
-     call my_add_attribute(xf,"set","lj")
-
-     do ii = 1, npots
-       l1 = ii
-       if(ii == 1) then
-         jval = 0.0
-! last index:  1: j=l+1/2; 2: j=l-1/2; l=0,j=0 stored in index 1
-         vps(:) = vpuns(:,l1,1)
-         call add_zero_r(vps(1:npts),rgrid,f0)
-         call write_psml_item(xf, class="slps", &
 &                     nn=nn(ii), ll=ll(ii), jj=jval, &
 &                     rc=rc(ii),flavor=psflavor,&
 &                     ff=f0)
-       else
-         do jj=1,2
-           jval = ll(ii) + (3-2*jj)*0.5  ! convert (1,2) to (1,-1)*1/2
+     else
+       do jj=1,2
+         jval = ll(ii) + (3-2*jj)*0.5  ! convert (1,2) to (1,-1)*1/2
 ! last index:  1: j=l+1/2; 2: j=l-1/2; l=0,j=0 stored in index 1
-           vps(:) = vpuns(:,l1,jj)
-           call add_zero_r(vps(1:npts),rgrid,f0)
-           call write_psml_item(xf, class="slps", &
+         vps(:) = vpuns(:,l1,jj)
+         call add_zero_r(vps(1:npts),rgrid,f0)
+         call write_psml_item(xf, class="slps", &
 &                    nn=nn(ii), ll=ll(ii), jj=jval, &
 &                    rc=rc(ii),flavor=psflavor,&
 &                    ff=f0)
-         end do
-       end if
-     end do
-     call xml_EndElement(xf,"semilocal-potentials")
-
-   end if ! upf vs psp8
+       end do
+     end if
+   end do
+   call xml_EndElement(xf,"semilocal-potentials")
  else
    call xml_NewElement(xf,"semilocal-potentials")
    if(irel==1) then
@@ -520,91 +471,42 @@
  call xml_EndElement(xf,"local-potential")
 
  if(irel==2) then
-   if(trim(psfile)=="psp8") then
+   call xml_NewElement(xf,"projectors")
+   call my_add_attribute(xf,"set","lj")
 
-! set up projector number for sr_so calculations based on non-zero coefficients
-     npr_sr(:)=0
-     npr_so(:)=0
-     do l1=1,lmax+1
-       do ii=1,2*nproj(l1)
-         if(abs(esr(ii,l1))>0.0d0) npr_sr(l1)=npr_sr(l1)+1
-         if(abs(eso(ii,l1))>0.0d0) npr_so(l1)=npr_so(l1)+1
-       end do
-     end do
+   do l1=1,lmax+1
+     if(l1==lloc+1) cycle
 
-     call xml_NewElement(xf,"projectors")
-     call my_add_attribute(xf,"set","scalar_relativistic")
-
-     do l1=1,lmax+1
-       if(l1==lloc+1) cycle
-       do jj=1,npr_sr(l1)
-         call add_zero_r(vsr(:,jj,l1),rgrid,f0)
-         call write_psml_item(xf, class="proj", &
-&                           seq=jj, ll=l1-1, &
-&                           ekb=esr(jj,l1), &
-&                           type="oncv", ff=f0)
-       end do
-     end do
-     call xml_EndElement(xf,"projectors")
-!
-!     Spin-orbit part
-!
-     call xml_NewElement(xf,"projectors")
-     call my_add_attribute(xf,"set","spin_orbit")
-
-     do l1=2,lmax+1
-       if(l1==lloc+1) cycle
-       do jj=1,npr_so(l1)
-         call add_zero_r(vso(:,jj,l1),rgrid,f0)
-         call write_psml_item(xf, class="proj", &
-&                           seq=jj, ll=l1-1, &
-&                           ekb=eso(jj,l1), &
-&                           type="oncv", ff=f0)
-       end do
-     end do
-
-     call xml_EndElement(xf,"projectors")
-
-   else  ! upf
-
-     call xml_NewElement(xf,"projectors")
-     call my_add_attribute(xf,"set","lj")
-
-     do l1=1,lmax+1
-       if(l1==lloc+1) cycle
-
-       if(l1 == 1) then
+     if(l1 == 1) then
 ! l=0, only one j=0
-         jval = 0.0
+       jval = 0.0
 
-         do jj=1,nproj(l1)
-           call add_zero_r(vkb(:,jj,l1,1),rgrid,f0)
-           call write_psml_item(xf, class="proj", &
+       do jj=1,nproj(l1)
+         call add_zero_r(vkb(:,jj,l1,1),rgrid,f0)
+         call write_psml_item(xf, class="proj", &
 &                          seq=jj, ll=l1-1, jj=jval, &
 &                          ekb=evkb(jj,l1,1), &
 &                          type="oncv", ff=f0)
-         end do
+       end do
 
-       else  ! l1 /=1  (l/=0)
+     else  ! l1 /=1  (l/=0)
 
 ! two j values
-         do jk=1,2
-           jval = l1-1 + (3-2*jk)*0.5  ! convert (1,2) to (1,-1)*1/2
-           do jj=1,nproj(l1)
-             call add_zero_r(vkb(:,jj,l1,jk),rgrid,f0)
-             call write_psml_item(xf, class="proj", &
+       do jk=1,2
+         jval = l1-1 + (3-2*jk)*0.5  ! convert (1,2) to (1,-1)*1/2
+         do jj=1,nproj(l1)
+           call add_zero_r(vkb(:,jj,l1,jk),rgrid,f0)
+           call write_psml_item(xf, class="proj", &
 &                          seq=jj, ll=l1-1, jj=jval, &
 &                          ekb=evkb(jj,l1,jk), &
 &                          type="oncv", ff=f0)
-           end do
          end do
+       end do
 
-       end if  ! l1 == 1
+     end if  ! l1 == 1
 
-     end do ! over l shells
-     call xml_EndElement(xf,"projectors")
-!
-   end if ! upf vs psp8
+   end do ! over l shells
+   call xml_EndElement(xf,"projectors")
  else
    call xml_NewElement(xf,"projectors")
    if(irel==1) then

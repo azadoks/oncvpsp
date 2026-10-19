@@ -38,10 +38,6 @@ None.
   codes differed for no evident reason before they were merged, both
   behaviours are kept behind `irel`; they are listed under
   [Divergences](fr_merge_plan.md#divergences).
-- **`psmlout`**: its fully-relativistic branch for `psfile=='psp8'`
-  (separate scalar-relativistic and spin-orbit sets) can't be reached,
-  since `psmlout` is called only for `psfile` 'psml' or 'both'. P3; kept
-  as it was.
 
 ## Dismissed
 

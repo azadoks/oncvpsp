@@ -1076,7 +1076,6 @@
    end if
    call psmlout(lmax,lloc,rc,vkb,evkb,mxprj,nproj,rr,vpsml,rho,rhomod, &
 &               irct, &
-&               vsr,esr,vso,eso, &
 &               zz,zion,mmax,iexc,icmod,nrl,drl,atsym,epstot, &
 &               na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &               fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact0,rcfact, &

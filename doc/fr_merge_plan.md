@@ -148,16 +148,14 @@ physical reason, kept behind `irel` until decided:
   corrections (the tail beyond the charge and the smoothing to -zion/r),
   fr writes `vp-vo` for each kappa without them
 
-### Found on the way
-
-- `psmlout` is called only for `psfile` 'psml' or 'both', so its fr branch
-  for `psfile=='psp8'` (separate scalar-relativistic and spin-orbit sets)
-  never runs; it was unreachable before the merge too
-
 ### Fixed on the way
 
 Behaviour changed by a merge, in paths that no test reaches:
 
+- `psmlout` is called only for `psfile` 'psml' or 'both', so its fr branch
+  for `psfile=='psp8'` (separate scalar-relativistic and spin-orbit sets)
+  could never run, before the merge too; it is removed, with the `vsr`,
+  `esr`, `vso` and `eso` arguments it alone used
 - `srel`, the logical argument of `sratom`, `lschfb`, `lschfs`, `vrel`
   and `fpovlp`, is replaced by `irel` (`vrel` and `fpovlp` include the
   scalar-relativistic terms for `irel` 1 and 2, as `srel` did)
