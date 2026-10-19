@@ -30,28 +30,28 @@ OBJS_NRSR =	fphsft.o fpovlp.o gnu_script.o linout.o psatom.o \
 		relatom.o run_config.o run_diag.o run_phsft.o run_plot.o \
 		run_vkb.o upfout.o wellstate.o
 
-OBJS_SR =	m_psmlout.o oncvpsp.o
+OBJS_SR =	psmlout_m.o oncvpsp.o
 
-OBJS_NR =	m_psmlout.o oncvpsp_nr.o
+OBJS_NR =	psmlout_m.o oncvpsp_nr.o
 
-OBJS_SR_AE =	m_psmlout.o oncvpsp_ae.o
+OBJS_SR_AE =	psmlout_m.o oncvpsp_ae.o
 
-OBJS_SR_PS =	m_psmlout.o oncvpsp_ps.o
+OBJS_SR_PS =	psmlout_m.o oncvpsp_ps.o
 
-OBJS_NR_AE =	m_psmlout.o oncvpspnr_ae.o
+OBJS_NR_AE =	psmlout_m.o oncvpspnr_ae.o
 
-OBJS_NR_PS =	m_psmlout.o oncvpspnr_ps.o
+OBJS_NR_PS =	psmlout_m.o oncvpspnr_ps.o
 
 OBJS_RLIB =	fphsft_r.o fpovlp.o gnu_script_r.o linout_r.o \
 		psatom_r.o relatom.o renorm_r.o run_config_r.o run_diag_r.o \
 		run_diag_sr_so_r.o run_phsft_r.o run_plot_r.o run_vkb_r.o \
 		sr_so_r.o upfout_r.o wellstate_r.o
 
-OBJS_R =	m_psmlout.o oncvpsp_r.o $(OBJS_RLIB)
+OBJS_R =	psmlout_m.o oncvpsp_r.o $(OBJS_RLIB)
 
-OBJS_R_AE =	m_psmlout.o oncvpspr_ae.o $(OBJS_RLIB)
+OBJS_R_AE =	psmlout_m.o oncvpspr_ae.o $(OBJS_RLIB)
 
-OBJS_R_PS =	m_psmlout.o oncvpspr_ps.o $(OBJS_RLIB)
+OBJS_R_PS =	psmlout_m.o oncvpspr_ps.o $(OBJS_RLIB)
 
 OBJS_OPSP =     $(OBJS_SR) $(OBJS_NRSR) $(OBJS_ALL) $(OBJS_LIBXC)
 
@@ -65,17 +65,17 @@ all:	oncvpsp oncvpspnr oncvpspr oncvpsp_ae oncvpsp_ps oncvpspnr_ae oncvpspnr_ps 
 	oncvpspr_ae oncvpspr_ps
 
 # WXML_LIB and INCLUDE_WXML, for xmlf90, are set in make.inc
-m_psmlout.o: m_libxc_list.o
+psmlout_m.o: m_libxc_list.o
 DRIVERS_NRSR =	oncvpsp.o oncvpsp_nr.o oncvpsp_ae.o oncvpsp_ps.o \
 		oncvpspnr_ae.o oncvpspnr_ps.o
 DRIVERS_R =	oncvpsp_r.o oncvpspr_ae.o oncvpspr_ps.o
-$(DRIVERS_NRSR) $(DRIVERS_R): m_psmlout.o input_text_m.o
+$(DRIVERS_NRSR) $(DRIVERS_R): psmlout_m.o input_text_m.o
 $(DRIVERS_NRSR) $(DRIVERS_R) run_config.o run_config_r.o ae_file_m.o: config_ae_m.o
 $(DRIVERS_NRSR) $(DRIVERS_R): ae_file_m.o
 oncvpsp_nr.o oncvpsp_ae.o oncvpsp_ps.o oncvpspnr_ae.o oncvpspnr_ps.o: oncvpsp.F90
 oncvpspr_ae.o oncvpspr_ps.o: oncvpsp_r.F90
 $(DRIVERS_NRSR) $(DRIVERS_R): build_info_m.o
-$(DRIVERS_NRSR) $(DRIVERS_R) linout.o linout_r.o upfout.o upfout_r.o m_psmlout.o: input_echo_m.o
+$(DRIVERS_NRSR) $(DRIVERS_R) linout.o linout_r.o upfout.o upfout_r.o psmlout_m.o: input_echo_m.o
 build_info_m.o: build_info.inc
 
 # Git commit, source state and build time, regenerated at every build (see ../cmake/BuildInfo.cmake)
@@ -91,7 +91,7 @@ exc_libxc.o: functionals.o
 
 # Every routine uses constants_m
 $(filter-out constants_m.o,$(sort $(OBJS_ALL) $(OBJS_NRSR) $(OBJS_RLIB) \
-	$(OBJS_LIBXC) m_psmlout.o $(DRIVERS_NRSR) $(DRIVERS_R))): constants_m.o
+	$(OBJS_LIBXC) psmlout_m.o $(DRIVERS_NRSR) $(DRIVERS_R))): constants_m.o
 
 
 

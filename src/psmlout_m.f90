@@ -20,7 +20,7 @@
 !
 ! Support for PSML file creation
 !
- module m_psmlout
+ module psmlout_m
  use constants_m, only: dp
  implicit none
 
@@ -1392,4 +1392,4 @@
 
  end subroutine write_psml_item
 
- end module m_psmlout
+ end module psmlout_m

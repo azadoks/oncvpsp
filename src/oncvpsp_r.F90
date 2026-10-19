@@ -44,7 +44,7 @@
 !   pseudopotential stages as oncvpsp.F90 is; see there and ae_file_m.
 !
  use, intrinsic :: iso_fortran_env, only: stdin => input_unit
- use m_psmlout, only: psmlout_r
+ use psmlout_m, only: psmlout_r
  use build_info_m, only: write_build_info
  use input_text_m, only: read_input_text_r
  use config_ae_m, only: config_ae_r_t, run_config_ae_r

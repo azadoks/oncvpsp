@@ -10,7 +10,7 @@
 # Usage: scripts/check_interfaces.sh [module-dir]
 #
 # module-dir holds the .mod files of the ONCVPSP modules (input_text_m,
-# m_psmlout, ...) from a CMake build; the default is build/src/modules. Its
+# psmlout_m, ...) from a CMake build; the default is build/src/modules. Its
 # parent directory must hold build_info.inc. Build with CMake first.
 #
 # Not checked: the modules themselves (their procedures already have
@@ -25,7 +25,7 @@ top=$(cd "$(dirname "$0")/.." && pwd)
 moddir=${1:-$top/build/src/modules}
 moddir=$(cd "$moddir" && pwd)
 
-if [ ! -f "$moddir/m_psmlout.mod" ]; then
+if [ ! -f "$moddir/psmlout_m.mod" ]; then
     echo "check_interfaces: ERROR no ONCVPSP modules in $moddir (build with CMake first)"
     exit 1
 fi

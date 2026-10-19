@@ -29,7 +29,7 @@ set(src_oncvpsp
     lschvkbbe.f90
     lschvkbs.f90
     m_libxc_list.F90
-    m_psmlout.f90
+    psmlout_m.f90
     modcore.f90
     modcore2.f90
     modcore3.f90
