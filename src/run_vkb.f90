@@ -119,22 +119,22 @@
 
    if(nproj(l1)>=2) then
 
-   do jj=1,np
-     do ii=1,np
-       call vpinteg(pswf(1,ii,l1),vkb(1,jj,l1),irc(l1),2*l1,bb(ii,jj),rr)
+     do jj=1,np
+       do ii=1,np
+         call vpinteg(pswf(1,ii,l1),vkb(1,jj,l1),irc(l1),2*l1,bb(ii,jj),rr)
+       end do
      end do
-   end do
 
 ! symmetrize exactly
-   write(6,'(/a,i4)') 'B matrix Hermiticity error, ll=',l1-1
-   do jj=2,np
-     do ii=1,jj-1
-       write(6,'(2i4,1p,e14.4)') ii,jj,bb(ii,jj)-bb(jj,ii)
-       tt=0.5d0*(bb(ii,jj)+bb(jj,ii))
-       bb(ii,jj)=tt
-       bb(jj,ii)=tt
+     write(6,'(/a,i4)') 'B matrix Hermiticity error, ll=',l1-1
+     do jj=2,np
+       do ii=1,jj-1
+         write(6,'(2i4,1p,e14.4)') ii,jj,bb(ii,jj)-bb(jj,ii)
+         tt=0.5d0*(bb(ii,jj)+bb(jj,ii))
+         bb(ii,jj)=tt
+         bb(jj,ii)=tt
+       end do
      end do
-   end do
 
 ! find eigenvalues and eigenvectors of the B matrix
 
@@ -142,23 +142,23 @@
 
      call dsyev( 'V', 'U', np, bb, mxprj, bbev, work, lwork, info )
      if(info /= 0) then
-      write(6,'(a,i4)') 'run_vkb: B matrix eigenvalue ERROR, info=',info
-      error stop 1
+       write(6,'(a,i4)') 'run_vkb: B matrix eigenvalue ERROR, info=',info
+       error stop 1
      end if
 
 ! take linear combinations to form diagonal projectors
 
-   do jj=1,np
-   vkbt(:,jj)=vkb(:,jj,l1)
-   end do
-
-   do jj=1,np
-     vkb(:,jj,l1)=0.0d0
-     evkb(jj,l1)=1.0d0/bbev(jj)
-     do ii=1,np
-       vkb(:,jj,l1)=vkb(:,jj,l1)+bb(ii,jj)*vkbt(:,ii)
+     do jj=1,np
+       vkbt(:,jj)=vkb(:,jj,l1)
      end do
-   end do
+
+     do jj=1,np
+       vkb(:,jj,l1)=0.0d0
+       evkb(jj,l1)=1.0d0/bbev(jj)
+       do ii=1,np
+         vkb(:,jj,l1)=vkb(:,jj,l1)+bb(ii,jj)*vkbt(:,ii)
+       end do
+     end do
 
    end if !nproj>=2
 
@@ -178,38 +178,38 @@
    if(nproj(l1)>=2) then
 
 
-    bbi(:,:)=0.0d0
-    do jj=1,np
-      sovl(jj,jj)=1.0d0
-      bbi(jj,jj)=evkb(jj,l1)
-      do ii=jj+1,np
-        call vpinteg(vkb(1,ii,l1),vkb(1,jj,l1),irc(l1),2*l1,sn,rr)
-        sovl(ii,jj)=sn
-        sovl(jj,ii)=sn
-      end do
-    end do
-    call vpinteg(vkb(1,1,l1),vkb(1,2,l1),irc(l1),2*l1,sn,rr)
+     bbi(:,:)=0.0d0
+     do jj=1,np
+       sovl(jj,jj)=1.0d0
+       bbi(jj,jj)=evkb(jj,l1)
+       do ii=jj+1,np
+         call vpinteg(vkb(1,ii,l1),vkb(1,jj,l1),irc(l1),2*l1,sn,rr)
+         sovl(ii,jj)=sn
+         sovl(jj,ii)=sn
+       end do
+     end do
+     call vpinteg(vkb(1,1,l1),vkb(1,2,l1),irc(l1),2*l1,sn,rr)
 
 ! find eigenvalues and eigenvectors of the overlap matrix
 
 !      SUBROUTINE DSYEV( JOBZ, UPLO, N, A, LDA, W, WORK, LWORK, INFO )
 
-    call dsyev( 'V', 'U', np, sovl, mxprj, sovlev, work, lwork, info )
-    if(info /= 0) then
-     write(6,'(a,i4)') 'run_vkb: sovl matrix ERROR error, info=',info
-     error stop 1
-    end if
+     call dsyev( 'V', 'U', np, sovl, mxprj, sovlev, work, lwork, info )
+     if(info /= 0) then
+       write(6,'(a,i4)') 'run_vkb: sovl matrix ERROR error, info=',info
+       error stop 1
+     end if
 
 !   write(6,'(/1p,2e12.4)') (sovlev(ii),ii=1,2)
 
 ! construct S^(-1/2) AND s^(1/2)
 
      do jj=1,np
-      tt=sqrt(sovlev(jj))
-      do ii=1,np
-       sphalf(ii,jj)=tt*sovl(ii,jj)
-       smhalf(ii,jj)=sovl(ii,jj)/tt
-      end do
+       tt=sqrt(sovlev(jj))
+       do ii=1,np
+         sphalf(ii,jj)=tt*sovl(ii,jj)
+         smhalf(ii,jj)=sovl(ii,jj)/tt
+       end do
      end do
 
 ! construct B^(-1)* = S^(1/2)^T B^(-1) S^(1/2)
@@ -218,27 +218,27 @@
      bbist(:,:)=0.0d0
 
      do ii=1,np
-      do jj=1,np
-       do kk=1,np
-        bbit(ii,jj)=bbit(ii,jj)+bbi(ii,kk)*sphalf(kk,jj)
+       do jj=1,np
+         do kk=1,np
+           bbit(ii,jj)=bbit(ii,jj)+bbi(ii,kk)*sphalf(kk,jj)
+         end do
        end do
-      end do
      end do
 
      do ii=1,np
-      do jj=1,np
-       do kk=1,np
-        bbist(ii,jj)=bbist(ii,jj)+bbit(kk,jj)*sphalf(kk,ii)
+       do jj=1,np
+         do kk=1,np
+           bbist(ii,jj)=bbist(ii,jj)+bbit(kk,jj)*sphalf(kk,ii)
+         end do
        end do
-      end do
      end do
 
 !      SUBROUTINE DSYEV( JOBZ, UPLO, N, A, LDA, W, WORK, LWORK, INFO )
 
      call dsyev( 'V', 'U', np , bbist, mxprj, bbistev, work, lwork, info )
      if(info /= 0) then
-      write(6,'(a,i4)') 'run_vkb: B^(-1)* matrix eigenvalue ERROR, info=',info
-      error stop 1
+       write(6,'(a,i4)') 'run_vkb: B^(-1)* matrix eigenvalue ERROR, info=',info
+       error stop 1
      end if
 
 
@@ -248,9 +248,9 @@
      vkbst(:,:)=0.0d0
 
      do jj=1,np
-      do ii=1,np
-       vkbst(:,jj)=vkbst(:,jj) + smhalf(ii,jj)*vkbt(:,ii)
-      end do
+       do ii=1,np
+         vkbst(:,jj)=vkbst(:,jj) + smhalf(ii,jj)*vkbt(:,ii)
+       end do
      end do
 
 
@@ -259,10 +259,10 @@
      vkb(:,:,L1)=0.0d0
 
      do ii=1,np
-      evkb(ii,l1)=bbistev(ii)
-      do jj=1,np
-       vkb(:,ii,l1)=vkb(:,ii,l1) + bbist(jj,ii)*vkbst(:,jj)
-      end do
+       evkb(ii,l1)=bbistev(ii)
+       do jj=1,np
+         vkb(:,ii,l1)=vkb(:,ii,l1) + bbist(jj,ii)*vkbst(:,jj)
+       end do
      end do
 
 ! re-order if necessary so first projector has largest magnitude coefficient

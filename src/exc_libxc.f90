@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 
-subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax)
+ subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax)
 !
 !  interface to libxc library for potential and energy density calculation
 !
@@ -66,14 +66,14 @@ subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax)
  irel = 0 !XC_NON_RELATIVISTIC
 !deriv_method = XC_DERIV_ANALYTICAL
  deriv_method = XC_DERIV_NUMERICAL
- ! call xc_functl_init(functls(1),nspin)
- ! call xc_functl_init(functls(2),nspin)
+! call xc_functl_init(functls(1),nspin)
+! call xc_functl_init(functls(2),nspin)
  call xc_functl_init_functl(functls(1),id(1),3,0.d0,nspin,deriv_method)
  call xc_functl_init_functl(functls(2),id(2),3,0.d0,nspin,deriv_method)
 
  if (functprinted==0) then
-    call xc_functl_write_info(functls(1), 6)
-    call xc_functl_write_info(functls(2), 6)
+   call xc_functl_write_info(functls(1), 6)
+   call xc_functl_write_info(functls(2), 6)
    write (*,*)
    functprinted = 1
  end if
@@ -91,7 +91,7 @@ subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax)
    v = 0.0d0
    e = 0.0d0
    call xc_functl_get_vxc(functls(ifunc), mmax, al, rr, rho_loc, dpr, dlap, &
- &        tau_dummy, ip, v, e, vtau_dummy)
+&         tau_dummy, ip, v, e, vtau_dummy)
    vxc(1:mmax) = vxc(1:mmax) + v(1:mmax)
    exc(1:mmax) = exc(1:mmax) + e(1:mmax)
  end do
@@ -104,7 +104,7 @@ subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax)
    exc(ii) = exc(ii) / max(rho_loc(ii),1.d-20)
  end do
 
- ! finish
+! finish
  call xc_functl_end(functls(1))
  call xc_functl_end(functls(2))
  deallocate (ip)
@@ -113,10 +113,10 @@ subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax)
  deallocate(tau_dummy, vtau_dummy)
  deallocate(rho_loc)
 
-end subroutine exc_libxc
+ end subroutine exc_libxc
 
 
-subroutine derivs(mmax, rho, al, rr, dpr, dppr, dlap)
+ subroutine derivs(mmax, rho, al, rr, dpr, dppr, dlap)
 ! NB: presumes incoming rho is properly scaled without 4pi or r**2 factors.
 
  use constants_m, only: dp
@@ -185,4 +185,4 @@ subroutine derivs(mmax, rho, al, rr, dpr, dppr, dlap)
    dlap(i) = (dppn(i) + al * dpn(i)) / (al * rr(i))**2
  end do
 
-end subroutine derivs
+ end subroutine derivs

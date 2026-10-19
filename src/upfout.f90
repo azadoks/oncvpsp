@@ -130,9 +130,9 @@
 ! override dpnint extrapolation to zero for vpl
    vpl(1,l1)=vpuns(1,l1)
    if(l1 /= lloc + 1) then
-      do iproj=1,nproj(l1)
-        call dpnint(rr,vkb(1,iproj,l1),mmax,rl,vkbl(1,iproj,l1),nrl)
-      end do
+     do iproj=1,nproj(l1)
+       call dpnint(rr,vkb(1,iproj,l1),mmax,rl,vkbl(1,iproj,l1),nrl)
+     end do
    end if
  end do
 
@@ -174,7 +174,7 @@
 &      '<UPF version="2.0.1">', &
 &      '  <PP_INFO>'
  write(6,'(/t2,a/t2,a/t2,a/t2,a/t2,a/t2,a//)') &
-       'This pseudopotential file has been produced using the code', &
+&      'This pseudopotential file has been produced using the code', &
 &      'ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
 &      'scalar-relativistic version 4.0.1 06/20/2107 by D. R. Hamann', &
 &      'The code is available through a link at URL www.mat-simresearch.com.', &
@@ -252,139 +252,139 @@
  write(6,'(a)') &
 &      '    <PP_HEADER'
 
+ write(6,'(t8,a)') &
+&      'generated="Generated using ONCVPSP code by D. R. Hamann"'
+ write(6,'(t8,a)') &
+&      'author="anonymous"'
+ write(6,'(t8,5a)') &
+&      'date="',pspd(:),'"'
+ write(6,'(t8,a)') &
+&      'comment=""'
+ write(6,'(t8,a,a2,a)') &
+&      'element="',atsym,'"'
+ write(6,'(t8,a)') &
+&      'pseudo_type="NC"'
+ write(6,'(t8,a)') &
+&      'relativistic="scalar"'
+ write(6,'(t8,a)') &
+&      'is_ultrasoft="F"'
+ write(6,'(t8,a)') &
+&      'is_paw="F"'
+ write(6,'(t8,a)') &
+&      'is_coulomb="F"'
+ write(6,'(t8,a)') &
+&      'has_so="F"'
+ write(6,'(t8,a)') &
+&      'has_wfc="F"'
+ write(6,'(t8,a)') &
+&      'has_gipaw="F"'
+
+ if(icmod>=1) then
    write(6,'(t8,a)') &
-&        'generated="Generated using ONCVPSP code by D. R. Hamann"'
+&      'core_correction="T"'
+ else
    write(6,'(t8,a)') &
-&        'author="anonymous"'
-   write(6,'(t8,5a)') &
-&        'date="',pspd(:),'"'
+&      'core_correction="F"'
+ end if
+
+ if(iexc==2) then
    write(6,'(t8,a)') &
-&        'comment=""'
-   write(6,'(t8,a,a2,a)') &
-&        'element="',atsym,'"'
+&      'functional="SLA  HL   NOGX NOGC"'
+
+ else if(iexc==-000004) then
    write(6,'(t8,a)') &
-&        'pseudo_type="NC"'
+&      'functional="NOX+HL"'
+
+ else if(iexc==3 .or. iexc==-001009) then
    write(6,'(t8,a)') &
-&        'relativistic="scalar"'
+&      'functional="PZ"'
+
+ else if(iexc==4 .or. iexc==-101130) then
    write(6,'(t8,a)') &
-&        'is_ultrasoft="F"'
+&      'functional="PBE"'
+
+ else if(iexc==-001012) then
    write(6,'(t8,a)') &
-&        'is_paw="F"'
+&      'functional="SLA  PW   NOGX NOGC"'
+
+ else if(iexc==-109134) then
    write(6,'(t8,a)') &
-&        'is_coulomb="F"'
+&      'functional="PW91"'
+
+ else if(iexc==-116133) then
    write(6,'(t8,a)') &
-&        'has_so="F"'
+&      'functional="PBESOL"'
+
+ else if(iexc==-102130) then
    write(6,'(t8,a)') &
-&        'has_wfc="F"'
+&      'functional="REVPBE"'
+
+ else if(iexc==-106132) then
    write(6,'(t8,a)') &
-&        'has_gipaw="F"'
+&      'functional="BP"'
 
-   if(icmod>=1) then
-     write(6,'(t8,a)') &
-&        'core_correction="T"'
-   else
-     write(6,'(t8,a)') &
-&        'core_correction="F"'
-   end if
+ else if(iexc==-106131) then
+   write(6,'(t8,a)') &
+&      'functional="BLYP"'
 
-   if(iexc==2) then
-     write(6,'(t8,a)') &
-&        'functional="SLA  HL   NOGX NOGC"'
+ else if(iexc==-118130) then
+   write(6,'(t8,a)') &
+&      'functional="WC"'
 
-   else if(iexc==-000004) then
-     write(6,'(t8,a)') &
-&        'functional="NOX+HL"'
+ else
+   write(6,'(t8,a,i0,a)') &
+&      'upfout: ERROR iexc = ',iexc,' is presently unsupported for UPF output'
+   error stop 1
+ end if
 
-   else if(iexc==3 .or. iexc==-001009) then
-     write(6,'(t8,a)') &
-&        'functional="PZ"'
+ write(6,'(t8,a,f8.2,a)') &
+&      'z_valence="',zion,'"'
 
-   else if(iexc==4 .or. iexc==-101130) then
-     write(6,'(t8,a)') &
-&        'functional="PBE"'
+ write(6,'(t8,a,1p,e20.11,a)') &
+&      'total_psenergy="',2*epstot,'"'
 
-   else if(iexc==-001012) then
-     write(6,'(t8,a)') &
-&        'functional="SLA  PW   NOGX NOGC"'
+ write(6,'(t8,a,1p,e20.11,a)') &
+&      'rho_cutoff="',rl(nrl),'"'
 
-   else if(iexc==-109134) then
-     write(6,'(t8,a)') &
-&        'functional="PW91"'
+ write(6,'(t8,a,i1,a)') &
+&      'l_max="',lmax,'"'
 
-   else if(iexc==-116133) then
-     write(6,'(t8,a)') &
-&        'functional="PBESOL"'
-
-   else if(iexc==-102130) then
-     write(6,'(t8,a)') &
-&        'functional="REVPBE"'
-
-   else if(iexc==-106132) then
-     write(6,'(t8,a)') &
-&        'functional="BP"'
-
-   else if(iexc==-106131) then
-     write(6,'(t8,a)') &
-&        'functional="BLYP"'
-
-   else if(iexc==-118130) then
-     write(6,'(t8,a)') &
-&        'functional="WC"'
-
-   else
-     write(6,'(t8,a,i0,a)') &
-&        'upfout: ERROR iexc = ',iexc,' is presently unsupported for UPF output'
-     error stop 1
-   end if
-
-   write(6,'(t8,a,f8.2,a)') &
-&        'z_valence="',zion,'"'
-
-   write(6,'(t8,a,1p,e20.11,a)') &
-&        'total_psenergy="',2*epstot,'"'
-
-   write(6,'(t8,a,1p,e20.11,a)') &
-&        'rho_cutoff="',rl(nrl),'"'
-
+ if(lloc==4) then
+   write(6,'(t8,a)') &
+&      'l_local="-1"'
+ else
    write(6,'(t8,a,i1,a)') &
-&        'l_max="',lmax,'"'
-
-   if(lloc==4) then
-     write(6,'(t8,a)') &
-&        'l_local="-1"'
-   else
-     write(6,'(t8,a,i1,a)') &
-&        'l_local="',lloc,'"'
-   end if
+&      'l_local="',lloc,'"'
+ end if
 
 ! calculate total number of projectors and maximum linear mesh point for
 ! projectors
 
-   ntotproj=0
-   nrlproj=0
-   do l1=1,lmax+1
-     if(l1/=lloc+1) then
-       ntotproj=ntotproj+nproj(l1)
-     end if
-     nrlproj=max(nrlproj,4+int(rc(l1)/drl))
-   end do
+ ntotproj=0
+ nrlproj=0
+ do l1=1,lmax+1
+   if(l1/=lloc+1) then
+     ntotproj=ntotproj+nproj(l1)
+   end if
+   nrlproj=max(nrlproj,4+int(rc(l1)/drl))
+ end do
 
-   allocate(dmat(ntotproj,ntotproj))
+ allocate(dmat(ntotproj,ntotproj))
 
-   if(mod(nrlproj,2)/=0) nrlproj=nrlproj+1
-   if(mod(nrlproj,4)/=0) nrlproj=nrlproj+2  !make divisible by 4 to use for 0 compression below
+ if(mod(nrlproj,2)/=0) nrlproj=nrlproj+1
+ if(mod(nrlproj,4)/=0) nrlproj=nrlproj+2  !make divisible by 4 to use for 0 compression below
 
-   write(6,'(t8,a,i6,a)') &
-&        'mesh_size="',nrl,'"'
+ write(6,'(t8,a,i6,a)') &
+&      'mesh_size="',nrl,'"'
 
-   write(6,'(t8,a,i0,a)') &
-&        'number_of_wfc="',nv,'"'
+ write(6,'(t8,a,i0,a)') &
+&      'number_of_wfc="',nv,'"'
 
-   write(6,'(t8,a,i0,a)') &
-&        'number_of_proj="',ntotproj,'"/>' !end of PP_HEADER
+ write(6,'(t8,a,i0,a)') &
+&      'number_of_proj="',ntotproj,'"/>' !end of PP_HEADER
 
-   write(6,'(t2,a)') &
-&        '<PP_MESH>'
+ write(6,'(t2,a)') &
+&      '<PP_MESH>'
 
  write(6,'(t4,a,i4,a)') &
 &      '<PP_R type="real"  size="',nrl,'" columns="8">'
@@ -402,8 +402,8 @@
  write(6,'(t4,a)') &
 &      '</PP_RAB>'
 
-   write(6,'(t2,a)') &
-&        '</PP_MESH>'
+ write(6,'(t2,a)') &
+&      '</PP_MESH>'
 
 ! write local potential with factor of 2 for Rydberg units
  write(6,'(a,i4,a)') &
@@ -479,45 +479,45 @@
  write(6,'(t2,a)') &
 &      '<PP_PSWFC>'
  do ii=1,nv
-  l1 = la(nc+ii)
-  if(ii <= 9) then
-    write(6,'(t4,a,i1)') &
-&         '<PP_CHI.',ii
-  else
-    write(6,'(t4,a,i2)') &
-&         '<PP_CHI.',ii
-  end if
-  write(6,'(t8,a)') &
-&       'type="real"'
-  write(6,'(t8,a,i4,a)') &
-&       'size="',nrl,'"'
-  write(6,'(t8,a)') &
-&       'columns="4"'
-  if (ii <= 9) then
+   l1 = la(nc+ii)
+   if(ii <= 9) then
+     write(6,'(t4,a,i1)') &
+&          '<PP_CHI.',ii
+   else
+     write(6,'(t4,a,i2)') &
+&          '<PP_CHI.',ii
+   end if
+   write(6,'(t8,a)') &
+&        'type="real"'
+   write(6,'(t8,a,i4,a)') &
+&        'size="',nrl,'"'
+   write(6,'(t8,a)') &
+&        'columns="4"'
+   if (ii <= 9) then
      write(6,'(t8,a,i1,a)') &
 &          'index="',ii,'"'
-  else
-    write(6,'(t8,a,i2,a)') &
-&         'index="',ii,'"'
-  end if
-  write(6,'(t8,a,f6.3,a)') &
-&       'occupation="',fa(nc+ii),'"'
-  write(6,'(t8,a,e20.10,a)') &
-&       'pseudo_energy="',2*ea(nc+ii),'"'
-  write(6,'(t8,a,i1,a,a)') &
-&       'label="',na(nc+ii),lnames(l1+1:l1+1),'"'
-     write(6,'(t8,a,i1,a)') &
-&          'l="',l1,'" >'
+   else
+     write(6,'(t8,a,i2,a)') &
+&          'index="',ii,'"'
+   end if
+   write(6,'(t8,a,f6.3,a)') &
+&        'occupation="',fa(nc+ii),'"'
+   write(6,'(t8,a,e20.10,a)') &
+&        'pseudo_energy="',2*ea(nc+ii),'"'
+   write(6,'(t8,a,i1,a,a)') &
+&        'label="',na(nc+ii),lnames(l1+1:l1+1),'"'
+   write(6,'(t8,a,i1,a)') &
+&        'l="',l1,'" >'
 
-  write(6,'(1p,4e20.10)') (uual(jj,ii),jj=1,nrl)
+   write(6,'(1p,4e20.10)') (uual(jj,ii),jj=1,nrl)
 
-  if(ii <= 9) then
-    write(6,'(t4,a,i1,a)') &
-&         '</PP_CHI.',ii,'>'
-  else
-    write(6,'(t4,a,i2,a)') &
-&         '</PP_CHI.',ii,'>'
-  end if
+   if(ii <= 9) then
+     write(6,'(t4,a,i1,a)') &
+&          '</PP_CHI.',ii,'>'
+   else
+     write(6,'(t4,a,i2,a)') &
+&          '</PP_CHI.',ii,'>'
+   end if
 
  end do
  write(6,'(t2,a)') &

@@ -76,7 +76,7 @@
  ixp(4)=8
 
  do ii=1,mmax
-  work(ii,1)=uu(ii)
+   work(ii,1)=uu(ii)
  end do
 
 !numerical derivatives of all-electron wave function
@@ -90,29 +90,29 @@
 !&     /(24.d0*al*rr(ii))
 
 ! 7-point numerical first derivatives applied successively
-  do ii=1+3*jj,mmax-3*jj
+   do ii=1+3*jj,mmax-3*jj
      work(ii,jj)=(-work(ii-3,jj-1)+ 9.d0*work(ii-2,jj-1)&
 &     -45.d0*work(ii-1,jj-1)+45.d0*work(ii+1,jj-1)&
 &     -9.d0*work(ii+2,jj-1)+work(ii+3,jj-1))&
 &     /(60.d0*al*rr(ii))
-  end do
+   end do
  end do
 
 !fill [0, rc] with rr * analytic pswf and 2nd derivatives
  do ii=1,irc
-  tt=0.0d0
-  ddt=0.0d0
-  do jj=1,nbas
-   call sbf_rc_der(ll,qroot(jj),rr(ii),sbfder)
-   tt=tt+pswfopt_sb(jj)*rr(ii)*sbfder(1)
-   ddt=ddt+pswfopt_sb(jj)*(rr(ii)*sbfder(3)+2.0d0*sbfder(2))
-  end do
-  work(ii,1)=tt
-  work(ii,3)=ddt
+   tt=0.0d0
+   ddt=0.0d0
+   do jj=1,nbas
+     call sbf_rc_der(ll,qroot(jj),rr(ii),sbfder)
+     tt=tt+pswfopt_sb(jj)*rr(ii)*sbfder(1)
+     ddt=ddt+pswfopt_sb(jj)*(rr(ii)*sbfder(3)+2.0d0*sbfder(2))
+   end do
+   work(ii,1)=tt
+   work(ii,3)=ddt
  end do
 
  do ii=1,mmax
-  psopt(ii)=work(ii,1)
+   psopt(ii)=work(ii,1)
  end do
 
 !integration for radial kinetic energy
@@ -126,18 +126,18 @@
 
 !pseudopotential and node test
  do ii=1,irc
-  if(abs(work(ii,1))>0.0d0) then
-   if(ipr<=1 .and. work(ii,1)*work(ii+1,1)<0.0d0) then
-    write(6,'(a)') ' ERROR pspot:  first pseudo wave function has node, &
+   if(abs(work(ii,1))>0.0d0) then
+     if(ipr<=1 .and. work(ii,1)*work(ii+1,1)<0.0d0) then
+       write(6,'(a)') ' ERROR pspot:  first pseudo wave function has node, &
 &         program will stop'
-    write(6,'(a)') ' ERROR pspot: try changing psp parameters for this l'
-    error stop 1
+       write(6,'(a)') ' ERROR pspot: try changing psp parameters for this l'
+       error stop 1
+     end if
+     vpsp(ii)=-work(ii,4)/work(ii,1) + eig
+     vkb(ii)=-work(ii,4) + eig*work(ii,1)
+   else
+     vpsp(ii)=0.0d0
    end if
-   vpsp(ii)=-work(ii,4)/work(ii,1) + eig
-   vkb(ii)=-work(ii,4) + eig*work(ii,1)
-  else
-   vpsp(ii)=0.0d0
-  end if
  end do
 
  do ii=irc+1,mmax
@@ -152,7 +152,7 @@
  ske=((work(5,5))/rr(5)**ixp(ll1)) * ro**ixp(ll1)/ixp(ll1)
 
  do ii=5,mmax-9
-  ske=ske+al*rr(ii)*work(ii,5)
+   ske=ske+al*rr(ii)*work(ii,5)
  end do
 
  ekin_num=ske

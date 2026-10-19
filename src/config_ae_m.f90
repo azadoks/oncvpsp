@@ -45,10 +45,10 @@
 !eat(:,1:3)  all-electron eigenvalues: reference, maximally-ionized,
 !            excited
 !eaetst  all-electron total energy of the excited configuration
-  integer :: stat=0,ierr=0,it=0,kerr=0,nvt=0
-  integer :: nat(30)=0,lat(30)=0
-  real(dp) :: fat(30,3)=0.0d0,eat(30,3)=0.0d0
-  real(dp) :: eaetst=0.0d0
+   integer :: stat=0,ierr=0,it=0,kerr=0,nvt=0
+   integer :: nat(30)=0,lat(30)=0
+   real(dp) :: fat(30,3)=0.0d0,eat(30,3)=0.0d0
+   real(dp) :: eaetst=0.0d0
  end type config_ae_t
 
 !fully-relativistic counterpart, from run_config_ae_r
@@ -61,10 +61,10 @@
 !nvt, nat, lat, fat, eaetst  as in config_ae_t
 !eat(:,ikap,1:3)  all-electron eigenvalues for kap=-(l+1) (ikap=1) and
 !                 kap=l (ikap=2): reference, maximally-ionized, excited
-  integer :: stat=0,ierr=0,it=0,kerr=0,nvt=0
-  integer :: nat(30)=0,lat(30)=0
-  real(dp) :: fat(30,3)=0.0d0,eat(30,2,3)=0.0d0
-  real(dp) :: eaetst=0.0d0
+   integer :: stat=0,ierr=0,it=0,kerr=0,nvt=0
+   integer :: nat(30)=0,lat(30)=0
+   real(dp) :: fat(30,3)=0.0d0,eat(30,2,3)=0.0d0
+   real(dp) :: eaetst=0.0d0
  end type config_ae_r_t
 
  contains
@@ -111,54 +111,54 @@
 
  it=0
 
-   fat(:,:)=0.0d0
-   nat(:)=0
-   lat(:)=0
+ fat(:,:)=0.0d0
+ nat(:)=0
+ lat(:)=0
 
 ! set up cross indces of reference (r) and excited (e) cofigurations
-   indxr(:)=0
-   indxe(:)=0
-   do ii=1,nc+nvcnf(1)
-     do kk=1,nc+nvcnf(jj)
-       if(nacnf(kk,jj)==nacnf(ii,1) .and. &
-&         lacnf(kk,jj)==lacnf(ii,1)) then
-         indxr(ii)=kk
-         indxe(kk)=ii
-       end if
-     end do
+ indxr(:)=0
+ indxe(:)=0
+ do ii=1,nc+nvcnf(1)
+   do kk=1,nc+nvcnf(jj)
+     if(nacnf(kk,jj)==nacnf(ii,1) .and. &
+&       lacnf(kk,jj)==lacnf(ii,1)) then
+       indxr(ii)=kk
+       indxe(kk)=ii
+     end if
    end do
+ end do
 
 ! set up merged list with reference levels first
 ! levels not present in one confguration or the other get zero occupancy
-   eat(:,1)=0.0d0
-   do ii=1,nc+nvcnf(1)
-     nat(ii)=nacnf(ii,1)
-     lat(ii)=lacnf(ii,1)
-     fat(ii,1)=facnf(ii,1)
-     eat(ii,1)=ea(ii)
-     if(indxr(ii)>0) then
-       fat(ii,2)=facnf(indxr(ii),jj)
-     else
-       fat(ii,2)=0.0d0
-     end if
-     fat(ii,3)=fat(ii,2)
-   end do
+ eat(:,1)=0.0d0
+ do ii=1,nc+nvcnf(1)
+   nat(ii)=nacnf(ii,1)
+   lat(ii)=lacnf(ii,1)
+   fat(ii,1)=facnf(ii,1)
+   eat(ii,1)=ea(ii)
+   if(indxr(ii)>0) then
+     fat(ii,2)=facnf(indxr(ii),jj)
+   else
+     fat(ii,2)=0.0d0
+   end if
+   fat(ii,3)=fat(ii,2)
+ end do
 
-   nvt=nvcnf(1)
-   do kk=1,nc+nvcnf(jj)
-     if(indxe(kk)==0) then
-       nvt=nvt+1
-       nat(nc+nvt)=nacnf(kk,jj)
-       lat(nc+nvt)=lacnf(kk,jj)
-       fat(nc+nvt,1)=0.0d0
-       fat(nc+nvt,3)=facnf(kk,jj)
-     end if
-   end do
+ nvt=nvcnf(1)
+ do kk=1,nc+nvcnf(jj)
+   if(indxe(kk)==0) then
+     nvt=nvt+1
+     nat(nc+nvt)=nacnf(kk,jj)
+     lat(nc+nvt)=lacnf(kk,jj)
+     fat(nc+nvt,1)=0.0d0
+     fat(nc+nvt,3)=facnf(kk,jj)
+   end if
+ end do
 
 !set up array for maximally ionized intermediate state
-   do kk=1,nc+nvt
-     fat(kk,2)=min(fat(kk,1),fat(kk,3))
-   end do
+ do kk=1,nc+nvt
+   fat(kk,2)=min(fat(kk,1),fat(kk,3))
+ end do
 
 
 
@@ -170,13 +170,13 @@
  call sratom(nat,lat,eat(1,2),fat(1,2),rpk,nc,nc+nvt,it,rhoc,rho, &
 &            rr,vfull,zz,mmax,iexc,eaetst,ierr,srel)
  if(ierr/=0) then
-  call store_results
-  cae%stat=1
-  cae%ierr=ierr
-  cae%it=it
-  deallocate(rho,rhoc,vfull)
-  deallocate(uu,up)
-  return
+   call store_results
+   cae%stat=1
+   cae%ierr=ierr
+   cae%it=it
+   deallocate(rho,rhoc,vfull)
+   deallocate(uu,up)
+   return
  end if
 
 !fill in energies for empty levels of maximally ionized state
@@ -207,13 +207,13 @@
  call sratom(nat,lat,eat(1,3),fat(1,3),rpk,nc,nc+nvt,it,rhoc,rho, &
 &            rr,vfull,zz,mmax,iexc,eaetst,ierr,srel)
  if(ierr/=0) then
-  call store_results
-  cae%stat=1
-  cae%ierr=ierr
-  cae%it=it
-  deallocate(rho,rhoc,vfull)
-  deallocate(uu,up)
-  return
+   call store_results
+   cae%stat=1
+   cae%ierr=ierr
+   cae%it=it
+   deallocate(rho,rhoc,vfull)
+   deallocate(uu,up)
+   return
  end if
 
  call store_results
@@ -224,12 +224,12 @@
  contains
 
  subroutine store_results
-  cae%nvt=nvt
-  cae%nat(:)=nat(:)
-  cae%lat(:)=lat(:)
-  cae%fat(:,:)=fat(:,:)
-  cae%eat(:,:)=eat(:,:)
-  cae%eaetst=eaetst
+ cae%nvt=nvt
+ cae%nat(:)=nat(:)
+ cae%lat(:)=lat(:)
+ cae%fat(:,:)=fat(:,:)
+ cae%eat(:,:)=eat(:,:)
+ cae%eaetst=eaetst
  end subroutine store_results
 
  end subroutine run_config_ae
@@ -242,17 +242,17 @@
 
  select case(cae%stat)
  case(1)
-  write(6,'(a/a,i2)') 'run_config: WARNING  for AE atom,', &
-&       ' WARNING no output for configuration',jj
-  if(cae%ierr==-1) then
-    write(6,'(a,i4)') 'no classical turning point error, iteration',cae%it
-  else
-    write(6,'(a)') 'run_config: WARNING self-consistency failed to converge'
-  end if
+   write(6,'(a/a,i2)') 'run_config: WARNING  for AE atom,', &
+&        ' WARNING no output for configuration',jj
+   if(cae%ierr==-1) then
+     write(6,'(a,i4)') 'no classical turning point error, iteration',cae%it
+   else
+     write(6,'(a)') 'run_config: WARNING self-consistency failed to converge'
+   end if
  case(2)
-  write(6,'(/a,3i4)') &
-&      'runconfig: WARNING lschfb convergence ERROR n,l,iter=', &
-&      cae%nat(cae%kerr),cae%lat(cae%kerr),cae%it
+   write(6,'(/a,3i4)') &
+&       'runconfig: WARNING lschfb convergence ERROR n,l,iter=', &
+&       cae%nat(cae%kerr),cae%lat(cae%kerr),cae%it
  case default
 ! the atom converged: nothing to report
  end select
@@ -304,54 +304,54 @@
 ! set up pseudo atom arrays
 !arrange data arrays for adiabatic configufation switching of pseudo atom
 
-   fat(:,:)=0.0d0
-   nat(:)=0
-   lat(:)=0
+ fat(:,:)=0.0d0
+ nat(:)=0
+ lat(:)=0
 
 ! set up cross indces of reference (r) and excited (e) cofigurations
-   indxr(:)=0
-   indxe(:)=0
-   do ii=1,nc+nvcnf(1)
-     do kk=1,nc+nvcnf(jj)
-       if(nacnf(kk,jj)==nacnf(ii,1) .and. &
-&         lacnf(kk,jj)==lacnf(ii,1)) then
-         indxr(ii)=kk
-         indxe(kk)=ii
-       end if
-     end do
+ indxr(:)=0
+ indxe(:)=0
+ do ii=1,nc+nvcnf(1)
+   do kk=1,nc+nvcnf(jj)
+     if(nacnf(kk,jj)==nacnf(ii,1) .and. &
+&       lacnf(kk,jj)==lacnf(ii,1)) then
+       indxr(ii)=kk
+       indxe(kk)=ii
+     end if
    end do
+ end do
 
 ! set up merged list with reference levels first
 ! levels not present in one confguration or the other get zero occupancy
-   eat(:,:,:)=0.0d0
-   do ii=1,nc+nvcnf(1)
-     nat(ii)=nacnf(ii,1)
-     lat(ii)=lacnf(ii,1)
-     fat(ii,1)=facnf(ii,1)
-     eat(ii,:,1)=ea(ii,:)
-     if(indxr(ii)>0) then
-       fat(ii,2)=facnf(indxr(ii),jj)
-     else
-       fat(ii,2)=0.0d0
-     end if
-     fat(ii,3)=fat(ii,2)
-   end do
+ eat(:,:,:)=0.0d0
+ do ii=1,nc+nvcnf(1)
+   nat(ii)=nacnf(ii,1)
+   lat(ii)=lacnf(ii,1)
+   fat(ii,1)=facnf(ii,1)
+   eat(ii,:,1)=ea(ii,:)
+   if(indxr(ii)>0) then
+     fat(ii,2)=facnf(indxr(ii),jj)
+   else
+     fat(ii,2)=0.0d0
+   end if
+   fat(ii,3)=fat(ii,2)
+ end do
 
-   nvt=nvcnf(1)
-   do kk=1,nc+nvcnf(jj)
-     if(indxe(kk)==0) then
-       nvt=nvt+1
-       nat(nc+nvt)=nacnf(kk,jj)
-       lat(nc+nvt)=lacnf(kk,jj)
-       fat(nc+nvt,1)=0.0d0
-       fat(nc+nvt,3)=facnf(kk,jj)
-     end if
-   end do
+ nvt=nvcnf(1)
+ do kk=1,nc+nvcnf(jj)
+   if(indxe(kk)==0) then
+     nvt=nvt+1
+     nat(nc+nvt)=nacnf(kk,jj)
+     lat(nc+nvt)=lacnf(kk,jj)
+     fat(nc+nvt,1)=0.0d0
+     fat(nc+nvt,3)=facnf(kk,jj)
+   end if
+ end do
 
 !set up array for maximally ionized intermediate state
-   do kk=1,nc+nvt
-     fat(kk,2)=min(fat(kk,1),fat(kk,3))
-   end do
+ do kk=1,nc+nvt
+   fat(kk,2)=min(fat(kk,1),fat(kk,3))
+ end do
 
 
 
@@ -363,13 +363,13 @@
  call relatom(nat,lat,eat(1,1,2),fat(1,2),rpk,nc,nc+nvt,it,rhoc,rho, &
 &            rr,vfull,zz,mmax,iexc,eaetst,ierr)
  if(ierr/=0) then
-  call store_results
-  cae%stat=1
-  cae%ierr=ierr
-  cae%it=it
-  deallocate(rho,rhoc,vfull)
-  deallocate(uu,up)
-  return
+   call store_results
+   cae%stat=1
+   cae%ierr=ierr
+   cae%it=it
+   deallocate(rho,rhoc,vfull)
+   deallocate(uu,up)
+   return
  end if
 
 !fill in energies for empty levels of maximally ionized state
@@ -421,13 +421,13 @@
  call relatom(nat,lat,eat(1,1,3),fat(1,3),rpk,nc,nc+nvt,it,rhoc,rho, &
 &            rr,vfull,zz,mmax,iexc,eaetst,ierr)
  if(ierr/=0) then
-  call store_results
-  cae%stat=1
-  cae%ierr=ierr
-  cae%it=it
-  deallocate(rho,rhoc,vfull)
-  deallocate(uu,up)
-  return
+   call store_results
+   cae%stat=1
+   cae%ierr=ierr
+   cae%it=it
+   deallocate(rho,rhoc,vfull)
+   deallocate(uu,up)
+   return
  end if
 
  call store_results
@@ -438,12 +438,12 @@
  contains
 
  subroutine store_results
-  cae%nvt=nvt
-  cae%nat(:)=nat(:)
-  cae%lat(:)=lat(:)
-  cae%fat(:,:)=fat(:,:)
-  cae%eat(:,:,:)=eat(:,:,:)
-  cae%eaetst=eaetst
+ cae%nvt=nvt
+ cae%nat(:)=nat(:)
+ cae%lat(:)=lat(:)
+ cae%fat(:,:)=fat(:,:)
+ cae%eat(:,:,:)=eat(:,:,:)
+ cae%eaetst=eaetst
  end subroutine store_results
 
  end subroutine run_config_ae_r
@@ -458,25 +458,25 @@
 
  select case(cae%stat)
  case(1)
-  write(6,'(a/a,i2)') 'run_config_r: WARNING  for AE atom,', &
-&       ' WARNING no output for configuration',jj
-  if(cae%ierr==-1) then
-    write(6,'(a,i4)') &
-&         'run_config_r: WARNING no classical turning point error, iteration', &
-&         cae%it
-  else
-    write(6,'(a)') 'run_config_r: WARNING self-consistency failed to converge'
-  end if
+   write(6,'(a/a,i2)') 'run_config_r: WARNING  for AE atom,', &
+&        ' WARNING no output for configuration',jj
+   if(cae%ierr==-1) then
+     write(6,'(a,i4)') &
+&          'run_config_r: WARNING no classical turning point error, iteration', &
+&          cae%it
+   else
+     write(6,'(a)') 'run_config_r: WARNING self-consistency failed to converge'
+   end if
  case(2)
-  ll=cae%lat(cae%kerr)
-  write(6,'(/a,4i4)') &
-&      'runconfig: WARNING ldiracfb convergence ERROR n,l,kap,ierr=', &
-&      cae%nat(cae%kerr),ll,ll+1,cae%ierr
+   ll=cae%lat(cae%kerr)
+   write(6,'(/a,4i4)') &
+&       'runconfig: WARNING ldiracfb convergence ERROR n,l,kap,ierr=', &
+&       cae%nat(cae%kerr),ll,ll+1,cae%ierr
  case(3)
-  ll=cae%lat(cae%kerr)
-  write(6,'(/a,4i4)') &
-&      'runconfig: WARNING ldiracfb convergence ERROR n,l,kap,iter=', &
-&      cae%nat(cae%kerr),ll,ll,cae%it
+   ll=cae%lat(cae%kerr)
+   write(6,'(/a,4i4)') &
+&       'runconfig: WARNING ldiracfb convergence ERROR n,l,kap,iter=', &
+&       cae%nat(cae%kerr),ll,ll,cae%it
  case default
 ! the atom converged: nothing to report
  end select

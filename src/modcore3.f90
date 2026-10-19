@@ -145,7 +145,7 @@
 &        not found'
    error stop 1
  else
-  write(6,'(/a,2f10.4)') 'rmatch, rhocmatch',rmatch,rhocmatch
+   write(6,'(/a,2f10.4)') 'rmatch, rhocmatch',rmatch,rhocmatch
  end if
 
  gg=0.d0
@@ -154,320 +154,320 @@
 !option for optimization
  if(icmod==4) then
 
- fcfact=1.0d0
+   fcfact=1.0d0
 
 !Coarse-grid search for minimum
 
- write(6,'(/a)') 'Coarse scan for minimum error'
- write(6,'(a)') '  matrix elements: rms 2nd-derivative errors (mHa)'
- write(6,'(a)') '  column index : amplitude prefactor to rhocmatch'
- write(6,'(a)') '  row index : scale prefactor to rmatch'
+   write(6,'(/a)') 'Coarse scan for minimum error'
+   write(6,'(a)') '  matrix elements: rms 2nd-derivative errors (mHa)'
+   write(6,'(a)') '  column index : amplitude prefactor to rhocmatch'
+   write(6,'(a)') '  row index : scale prefactor to rmatch'
 
- nfc=nint((fcgrid(2)-fcgrid(1))/fcgrid(3))+1
- nrc=nint((rcgrid(2)-rcgrid(1))/rcgrid(3))+1
- allocate(fta(nfc))
+   nfc=nint((fcgrid(2)-fcgrid(1))/fcgrid(3))+1
+   nrc=nint((rcgrid(2)-rcgrid(1))/rcgrid(3))+1
+   allocate(fta(nfc))
 
 !row labels need more than one decimal if the rcfact grid is finer than 0.1
- if(abs(10.0d0*rcgrid(1)-nint(10.0d0*rcgrid(1)))<1.0d-8 .and. &
-&   abs(10.0d0*rcgrid(3)-nint(10.0d0*rcgrid(3)))<1.0d-8) then
-   rowfmt='(f5.1,f9.3,*(f7.3))'
- else
-   rowfmt='(f6.3,f8.3,*(f7.3))'
- end if
-
- d2min=10.0d0
- write(6,'(/7x,*(f7.3))') (fcgrid(1)+fcgrid(3)*(jj-1), jj=1,nfc)
- write(6,'(a)') ''
- do  kk=1,nrc
-  xt(2)=(rcgrid(1)+rcgrid(3)*(kk-1))*rmatch
-  do jj=1,nfc
-   xt(1)=(fcgrid(1)+fcgrid(3)*(jj-1))*rhocmatch
-
-   r0=1.5d0*xt(2)
-   do ii=mmax,1,-1
-    if(rr(ii)<r0) then
-      call gg1cc(gg,yy)
-      if(xt(1)*gg<rhoc(ii)) then
-        rcross=rr(ii)
-        exit
-      end if
-    end if
-   end do
-
-   do ii=1,mmax
-    yy=rr(ii)/xt(2)
-    call gg1cc(gg,yy)
-    rhomod(ii,1)= xt(1)*gg
-   end do
-
-   call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
-&                     zion,iexc,nc,nv,la,irmod,mmax)
-   fta(jj)=1.0d3*d2mdiff
-
-   if(d2mdiff<d2min) then
-    xx(:,1)=xt(:)
-    d2min=d2mdiff
+   if(abs(10.0d0*rcgrid(1)-nint(10.0d0*rcgrid(1)))<1.0d-8 .and. &
+&     abs(10.0d0*rcgrid(3)-nint(10.0d0*rcgrid(3)))<1.0d-8) then
+     rowfmt='(f5.1,f9.3,*(f7.3))'
+   else
+     rowfmt='(f6.3,f8.3,*(f7.3))'
    end if
 
-  end do
-  write(6,rowfmt) rcgrid(1)+rcgrid(3)*(kk-1),(fta(jj),jj=1,nfc)
- end do
+   d2min=10.0d0
+   write(6,'(/7x,*(f7.3))') (fcgrid(1)+fcgrid(3)*(jj-1), jj=1,nfc)
+   write(6,'(a)') ''
+   do  kk=1,nrc
+     xt(2)=(rcgrid(1)+rcgrid(3)*(kk-1))*rmatch
+     do jj=1,nfc
+       xt(1)=(fcgrid(1)+fcgrid(3)*(jj-1))*rhocmatch
+
+       r0=1.5d0*xt(2)
+       do ii=mmax,1,-1
+         if(rr(ii)<r0) then
+           call gg1cc(gg,yy)
+           if(xt(1)*gg<rhoc(ii)) then
+             rcross=rr(ii)
+             exit
+           end if
+         end if
+       end do
+
+       do ii=1,mmax
+         yy=rr(ii)/xt(2)
+         call gg1cc(gg,yy)
+         rhomod(ii,1)= xt(1)*gg
+       end do
+
+       call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
+&                         zion,iexc,nc,nv,la,irmod,mmax)
+       fta(jj)=1.0d3*d2mdiff
+
+       if(d2mdiff<d2min) then
+         xx(:,1)=xt(:)
+         d2min=d2mdiff
+       end if
+
+     end do
+     write(6,rowfmt) rcgrid(1)+rcgrid(3)*(kk-1),(fta(jj),jj=1,nfc)
+   end do
 
 !Initial Nelder-Mead simplex from coarse-search minimum, scaled to the
 !grid steps
 
- xx(1,2)=xx(1,1)+0.5d0*fcgrid(3)*rhocmatch
- xx(2,2)=xx(2,1)
- xx(1,3)=xx(1,1)
- xx(2,3)=xx(2,1)+0.5d0*rcgrid(3)*rmatch
- xx(1,1)=xx(1,1)-0.25d0*fcgrid(3)*rhocmatch
- xx(2,1)=xx(2,1)-0.25d0*rcgrid(3)*rmatch
+   xx(1,2)=xx(1,1)+0.5d0*fcgrid(3)*rhocmatch
+   xx(2,2)=xx(2,1)
+   xx(1,3)=xx(1,1)
+   xx(2,3)=xx(2,1)+0.5d0*rcgrid(3)*rmatch
+   xx(1,1)=xx(1,1)-0.25d0*fcgrid(3)*rhocmatch
+   xx(2,1)=xx(2,1)-0.25d0*rcgrid(3)*rmatch
 
 !Fill function values for initial simplex
 
- do kk=1,3
-  xt(:)=xx(:,kk)
+   do kk=1,3
+     xt(:)=xx(:,kk)
 
 
-   r0=1.5d0*xt(2)
-   do ii=mmax,1,-1
-    if(rr(ii)<r0) then
-      call gg1cc(gg,yy)
-      if(xt(1)*gg<rhoc(ii)) then
-        rcross=rr(ii)
-        exit
-      end if
-    end if
-   end do
+     r0=1.5d0*xt(2)
+     do ii=mmax,1,-1
+       if(rr(ii)<r0) then
+         call gg1cc(gg,yy)
+         if(xt(1)*gg<rhoc(ii)) then
+           rcross=rr(ii)
+           exit
+         end if
+       end if
+     end do
 
-   do ii=1,mmax
-    yy=rr(ii)/xt(2)
-    call gg1cc(gg,yy)
-    tt=(rr(ii)-r0-2.0d0*rcross)/(r0-rcross)
-    rhomod(ii,1)= xt(1)*gg
-   end do
+     do ii=1,mmax
+       yy=rr(ii)/xt(2)
+       call gg1cc(gg,yy)
+       tt=(rr(ii)-r0-2.0d0*rcross)/(r0-rcross)
+       rhomod(ii,1)= xt(1)*gg
+     end do
 
-   call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
- &                    zion,iexc,nc,nv,la,irmod,mmax)
-   ff(kk)=d2mdiff
+     call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
+&                       zion,iexc,nc,nv,la,irmod,mmax)
+     ff(kk)=d2mdiff
 
 !  write(6,'(i4,a,2f10.4,1p,e14.4)') kk,'  xt',xt(1),xt(2),ff(kk)
- end do
+   end do
 
 !Nelder-Mead iteration loop
- write(6,'(/a)') 'Nelder-Mead iteration'
- do kk=1,101
+   write(6,'(/a)') 'Nelder-Mead iteration'
+   do kk=1,101
 
 !(1) Order (dumb bubble sort)
-  do jj=1,3
-   if(ff(3)<ff(2)) then
-     ft=ff(2) ; xt(:)=xx(:,2)
-     ff(2)=ff(3) ; xx(:,2)=xx(:,3)
-     ff(3)=ft ; xx(:,3)=xt(:)
-   end if
-   if(ff(2)<ff(1)) then
-     ft=ff(1) ; xt(:)=xx(:,1)
-     ff(1)=ff(2) ; xx(:,1)=xx(:,2)
-     ff(2)=ft ; xx(:,2)=xt(:)
-   end if
-  end do
+     do jj=1,3
+       if(ff(3)<ff(2)) then
+         ft=ff(2) ; xt(:)=xx(:,2)
+         ff(2)=ff(3) ; xx(:,2)=xx(:,3)
+         ff(3)=ft ; xx(:,3)=xt(:)
+       end if
+       if(ff(2)<ff(1)) then
+         ft=ff(1) ; xt(:)=xx(:,1)
+         ff(1)=ff(2) ; xx(:,1)=xx(:,2)
+         ff(2)=ft ; xx(:,2)=xt(:)
+       end if
+     end do
 
 !stopping criterion
-  if(ff(3)-ff(1)<1.0d-4*d2ref) then
-    write(6,'(a,i4,a)') ' converged in',kk-1,' steps'
-    write(6,'(a)') 'amplitude prefactor, scale prefactor'
-    write(6,'(2f10.4)') xx(1,1)/rhocmatch,xx(2,1)/rmatch
-    exit
-  else if(kk==101) then
-    write(6,'(a,i4,a)') ' WARNING: not fully converged in 100 steps'
-    write(6,'(a)') 'amplitude prefactor, scale prefactor'
-    write(6,'(2f10.4)') xx(1,1)/rhocmatch,xx(2,1)/rmatch
-    exit
-  end if
+     if(ff(3)-ff(1)<1.0d-4*d2ref) then
+       write(6,'(a,i4,a)') ' converged in',kk-1,' steps'
+       write(6,'(a)') 'amplitude prefactor, scale prefactor'
+       write(6,'(2f10.4)') xx(1,1)/rhocmatch,xx(2,1)/rmatch
+       exit
+     else if(kk==101) then
+       write(6,'(a,i4,a)') ' WARNING: not fully converged in 100 steps'
+       write(6,'(a)') 'amplitude prefactor, scale prefactor'
+       write(6,'(2f10.4)') xx(1,1)/rhocmatch,xx(2,1)/rmatch
+       exit
+     end if
 
 !(2) Centroid
-  x0(:)=0.5d0*(xx(:,1)+xx(:,2))
+     x0(:)=0.5d0*(xx(:,1)+xx(:,2))
 
 !(3) Reflection
-  xr(:)=x0(:)+alpha_nm*(x0(:)-xx(:,3))
+     xr(:)=x0(:)+alpha_nm*(x0(:)-xx(:,3))
 
 
-   r0=1.5d0*xr(2)
-   do ii=mmax,1,-1
-    if(rr(ii)<r0) then
-      call gg1cc(gg,yy)
-      if(xr(1)*gg<rhoc(ii)) then
-        rcross=rr(ii)
-        exit
-      end if
-    end if
-   end do
+     r0=1.5d0*xr(2)
+     do ii=mmax,1,-1
+       if(rr(ii)<r0) then
+         call gg1cc(gg,yy)
+         if(xr(1)*gg<rhoc(ii)) then
+           rcross=rr(ii)
+           exit
+         end if
+       end if
+     end do
 
-   do ii=1,mmax
-    yy=rr(ii)/xr(2)
-    call gg1cc(gg,yy)
-    tt=(rr(ii)-r0-2.0d0*rcross)/(r0-rcross)
-    rhomod(ii,1)= xr(1)*gg
-   end do
+     do ii=1,mmax
+       yy=rr(ii)/xr(2)
+       call gg1cc(gg,yy)
+       tt=(rr(ii)-r0-2.0d0*rcross)/(r0-rcross)
+       rhomod(ii,1)= xr(1)*gg
+     end do
 
-  call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
-&                    zion,iexc,nc,nv,la,irmod,mmax)
-  fr=d2mdiff
+     call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
+&                       zion,iexc,nc,nv,la,irmod,mmax)
+     fr=d2mdiff
 ! write(6,'(i4,a,2f10.4,1p,e14.4)') kk,'  xr',xr(1),xr(2),fr
 
-  if(ff(1)<= fr .and. fr<ff(2)) then
-   ff(3)=fr ; xx(:,3)=xr(:)
-   cycle !kk loop
-  end if
+     if(ff(1)<= fr .and. fr<ff(2)) then
+       ff(3)=fr ; xx(:,3)=xr(:)
+       cycle !kk loop
+     end if
 
 !(4) Expansion
-  if(fr<ff(1)) then
-   xe(:)=x0(:)+gamma_nm*(x0(:)-xx(:,3))
+     if(fr<ff(1)) then
+       xe(:)=x0(:)+gamma_nm*(x0(:)-xx(:,3))
 
-   r0=1.5d0*xe(2)
-   do ii=mmax,1,-1
-    if(rr(ii)<r0) then
-      call gg1cc(gg,yy)
-      if(xe(1)*gg<rhoc(ii)) then
-        rcross=rr(ii)
-        exit
-      end if
-    end if
-   end do
+       r0=1.5d0*xe(2)
+       do ii=mmax,1,-1
+         if(rr(ii)<r0) then
+           call gg1cc(gg,yy)
+           if(xe(1)*gg<rhoc(ii)) then
+             rcross=rr(ii)
+             exit
+           end if
+         end if
+       end do
 
-   do ii=1,mmax
-    yy=rr(ii)/xe(2)
-    call gg1cc(gg,yy)
-    tt=(rr(ii)-r0-2.0d0*rcross)/(r0-rcross)
-    rhomod(ii,1)= xe(1)*gg
-   end do
+       do ii=1,mmax
+         yy=rr(ii)/xe(2)
+         call gg1cc(gg,yy)
+         tt=(rr(ii)-r0-2.0d0*rcross)/(r0-rcross)
+         rhomod(ii,1)= xe(1)*gg
+       end do
 
-   call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
-&                     zion,iexc,nc,nv,la,irmod,mmax)
-   fe=d2mdiff
+       call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
+&                         zion,iexc,nc,nv,la,irmod,mmax)
+       fe=d2mdiff
 ! write(6,'(i4,a,2f10.4,1p,e14.4)') kk,'  xe',xe(1),xe(2),fe
 
-   if(fe<fr) then
-    ff(3)=fe ; xx(:,3)=xe(:)
-    cycle !kk
-   else
-    ff(3)=fr ; xx(:,3)=xr(:)
-    cycle !kk
-   end if
-  end if
+       if(fe<fr) then
+         ff(3)=fe ; xx(:,3)=xe(:)
+         cycle !kk
+       else
+         ff(3)=fr ; xx(:,3)=xr(:)
+         cycle !kk
+       end if
+     end if
 
 !(5) Contraction
-  xc(:)=x0(:)+rho_nm*(x0(:)-xx(:,3))
+     xc(:)=x0(:)+rho_nm*(x0(:)-xx(:,3))
 
 
-   r0=1.5d0*xc(2)
-   do ii=mmax,1,-1
-    if(rr(ii)<r0) then
-      call gg1cc(gg,yy)
-      if(xc(1)*gg<rhoc(ii)) then
-        rcross=rr(ii)
-        exit
-      end if
-    end if
-   end do
+     r0=1.5d0*xc(2)
+     do ii=mmax,1,-1
+       if(rr(ii)<r0) then
+         call gg1cc(gg,yy)
+         if(xc(1)*gg<rhoc(ii)) then
+           rcross=rr(ii)
+           exit
+         end if
+       end if
+     end do
 
-   do ii=1,mmax
-    yy=rr(ii)/xc(2)
-    call gg1cc(gg,yy)
-    tt=(rr(ii)-r0-2.0d0*rcross)/(r0-rcross)
-    rhomod(ii,1)= xc(1)*gg
-   end do
+     do ii=1,mmax
+       yy=rr(ii)/xc(2)
+       call gg1cc(gg,yy)
+       tt=(rr(ii)-r0-2.0d0*rcross)/(r0-rcross)
+       rhomod(ii,1)= xc(1)*gg
+     end do
 
-  call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
-&                    zion,iexc,nc,nv,la,irmod,mmax)
-  fc=d2mdiff
+     call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
+&                       zion,iexc,nc,nv,la,irmod,mmax)
+     fc=d2mdiff
 !  write(6,'(i4,a,2f10.4,1p,e14.4)') kk,'  xc',xc(1),xc(2),fc
-  if(fc<ff(3)) then
-   ff(3)=fc ; xx(:,3)=xc(:)
-   cycle !kk
-  end if
+     if(fc<ff(3)) then
+       ff(3)=fc ; xx(:,3)=xc(:)
+       cycle !kk
+     end if
 
 !(6) Reduction
-  do jj=2,3
-   xx(:,jj)=xx(:,1)+sigma_nm*(xx(:,jj)-xx(:,1))
+     do jj=2,3
+       xx(:,jj)=xx(:,1)+sigma_nm*(xx(:,jj)-xx(:,1))
 
-   r0=1.5d0*xx(2,jj)
-   do ii=mmax,1,-1
-    if(rr(ii)<r0) then
-      call gg1cc(gg,yy)
-      if(xx(1,jj)*gg<rhoc(ii)) then
-        rcross=rr(ii)
-        exit
-      end if
-    end if
-   end do
+       r0=1.5d0*xx(2,jj)
+       do ii=mmax,1,-1
+         if(rr(ii)<r0) then
+           call gg1cc(gg,yy)
+           if(xx(1,jj)*gg<rhoc(ii)) then
+             rcross=rr(ii)
+             exit
+           end if
+         end if
+       end do
 
-   do ii=1,mmax
-    yy=rr(ii)/xx(2,jj)
-    call gg1cc(gg,yy)
-    tt=(rr(ii)-r0-2.0d0*rcross)/(r0-rcross)
-    rhomod(ii,1)= xx(1,jj)*gg
-   end do
+       do ii=1,mmax
+         yy=rr(ii)/xx(2,jj)
+         call gg1cc(gg,yy)
+         tt=(rr(ii)-r0-2.0d0*rcross)/(r0-rcross)
+         rhomod(ii,1)= xx(1,jj)*gg
+       end do
 
-   call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
-&                     zion,iexc,nc,nv,la,irmod,mmax)
-   ff(jj)=d2mdiff
+       call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
+&                         zion,iexc,nc,nv,la,irmod,mmax)
+       ff(jj)=d2mdiff
 !  write(6,'(i4,a,2f10.4,1p,e14.4)') kk,' xrd',xx(1,jj),xx(2,jj),ff(jj)
-  end do !jj
+     end do !jj
 
- end do !kk
+   end do !kk
 
- write(6,'(/a)') 'Optimized Teter model core charge'
+   write(6,'(/a)') 'Optimized Teter model core charge'
 
 !option for specifying prefactors as input
  else if(icmod==3) then
-  xx(1,1)=fcfact*rhocmatch
-  xx(2,1)=rcfact*rmatch
+   xx(1,1)=fcfact*rhocmatch
+   xx(2,1)=rcfact*rmatch
 
-  write(6,'(/a/)') &
-&       'Teter function model core charge with specified parameters'
+   write(6,'(/a/)') &
+&        'Teter function model core charge with specified parameters'
  end if
 
  r0=1.5d0*xx(2,1)
  ircross=0
  do ii=mmax,1,-1
-  if(rr(ii)<r0) then
-    yy=rr(ii)/xx(2,1)
-    call gg1cc(gg,yy)
-    if( xx(1,1)*gg<rhoc(ii)) then
-      rcross=rr(ii)
-      ircross=ii
-      exit
-    end if
-  end if
+   if(rr(ii)<r0) then
+     yy=rr(ii)/xx(2,1)
+     call gg1cc(gg,yy)
+     if( xx(1,1)*gg<rhoc(ii)) then
+       rcross=rr(ii)
+       ircross=ii
+       exit
+     end if
+   end if
  end do
 
  if(ircross==0) then
-  write(6,'(/a)') 'modcore3: ERROR failed to find model core crossover'
-  error stop 1
+   write(6,'(/a)') 'modcore3: ERROR failed to find model core crossover'
+   error stop 1
  end if
 
 ! blend the Teter function tail into the all-electron rhoc
 ! first two derivatives are filled in analytically before the blend starts
  rhomod(:,:)=0.0d0
  do ii=1,mmax
-  yy=rr(ii)/xx(2,1)
-  call gg1cc(gg,yy)
-  tt=(rr(ii)-r0-2.0d0*rr(ircross))/(r0-rr(ircross))
+   yy=rr(ii)/xx(2,1)
+   call gg1cc(gg,yy)
+   tt=(rr(ii)-r0-2.0d0*rr(ircross))/(r0-rr(ircross))
 
-  rhomod(ii,1)=xx(1,1)*gg
-  if(ii<ircross) then
-   call gp1cc(gg,yy)
-   rhomod(ii,2)=xx(1,1)*gg/xx(2,1)
-   call gpp1cc(gg,yy)
-   rhomod(ii,3)=xx(1,1)*gg/xx(2,1)**2
-  end if
+   rhomod(ii,1)=xx(1,1)*gg
+   if(ii<ircross) then
+     call gp1cc(gg,yy)
+     rhomod(ii,2)=xx(1,1)*gg/xx(2,1)
+     call gpp1cc(gg,yy)
+     rhomod(ii,3)=xx(1,1)*gg/xx(2,1)**2
+   end if
  end do
 
  call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
 &                   zion,iexc,nc,nv,la,irmod,mmax)
 
-write(6,'(/a/)') 'd2excps - pseudofunction derivatives with core correction'
+ write(6,'(/a/)') 'd2excps - pseudofunction derivatives with core correction'
  do kk=1,nv
    write(6,'(1p,4d16.6)') (d2excps(kk,jj),jj=1,nv)
  end do
@@ -479,12 +479,12 @@ write(6,'(/a/)') 'd2excps - pseudofunction derivatives with core correction'
  al = 0.01d0 * log(rr(101) / rr(1))
 
  do jj=2,3
-  do ii=ircross-6,mmax-3
+   do ii=ircross-6,mmax-3
      rhomod(ii,jj)=(-rhomod(ii-3,jj-1)+ 9.d0*rhomod(ii-2,jj-1)&
 &     -45.d0*rhomod(ii-1,jj-1)+45.d0*rhomod(ii+1,jj-1)&
 &     -9.d0*rhomod(ii+2,jj-1)+rhomod(ii+3,jj-1))&
 &     /(60.d0*al*rr(ii))
-  end do
+   end do
  end do
 
 !ad-hoc treatment of numerical noise near origin
@@ -510,12 +510,12 @@ write(6,'(/a/)') 'd2excps - pseudofunction derivatives with core correction'
  call dpnint(rint,fint,8,rr,rhomod(1,3),iint-1)
 
  jj=4
-  do ii=3*jj-8,mmax-3
-     rhomod(ii,jj)=(-rhomod(ii-3,jj-1)+ 9.d0*rhomod(ii-2,jj-1)&
-&     -45.d0*rhomod(ii-1,jj-1)+45.d0*rhomod(ii+1,jj-1)&
-&     -9.d0*rhomod(ii+2,jj-1)+rhomod(ii+3,jj-1))&
-&     /(60.d0*al*rr(ii))
-  end do
+ do ii=3*jj-8,mmax-3
+   rhomod(ii,jj)=(-rhomod(ii-3,jj-1)+ 9.d0*rhomod(ii-2,jj-1)&
+&   -45.d0*rhomod(ii-1,jj-1)+45.d0*rhomod(ii+1,jj-1)&
+&   -9.d0*rhomod(ii+2,jj-1)+rhomod(ii+3,jj-1))&
+&   /(60.d0*al*rr(ii))
+ end do
 
 !set up a mesh on which 3rd derivative will have a stable
  drint=0.95d0*drint
@@ -538,12 +538,12 @@ write(6,'(/a/)') 'd2excps - pseudofunction derivatives with core correction'
  call dpnint(rint,fint,8,rr,rhomod(1,4),iint-1)
 
  jj=5
-  do ii=3*jj-8,mmax-3
-     rhomod(ii,jj)=(-rhomod(ii-3,jj-1)+ 9.d0*rhomod(ii-2,jj-1)&
-&     -45.d0*rhomod(ii-1,jj-1)+45.d0*rhomod(ii+1,jj-1)&
-&     -9.d0*rhomod(ii+2,jj-1)+rhomod(ii+3,jj-1))&
-&     /(60.d0*al*rr(ii))
-  end do
+ do ii=3*jj-8,mmax-3
+   rhomod(ii,jj)=(-rhomod(ii-3,jj-1)+ 9.d0*rhomod(ii-2,jj-1)&
+&   -45.d0*rhomod(ii-1,jj-1)+45.d0*rhomod(ii+1,jj-1)&
+&   -9.d0*rhomod(ii+2,jj-1)+rhomod(ii+3,jj-1))&
+&   /(60.d0*al*rr(ii))
+ end do
 
 !set up a mesh on which 4th derivative will have a stable
  drint=0.95d0*drint
@@ -569,4 +569,4 @@ write(6,'(/a/)') 'd2excps - pseudofunction derivatives with core correction'
  deallocate(d2excae,d2excps)
 
  return
-end subroutine modcore3
+ end subroutine modcore3

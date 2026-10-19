@@ -18,7 +18,7 @@
 !
 ! calculates spherical Bessel functions using recursion algorithm
 
-subroutine sbf8(nm,xx,sb_out)
+ subroutine sbf8(nm,xx,sb_out)
 
 !nm  maximum angular momentum wanted plus 1
 !xx  argument of spherical bessel function
@@ -30,11 +30,11 @@ subroutine sbf8(nm,xx,sb_out)
  real(dp), parameter :: pi2=2.0_dp*pi
 
 !Input variables
-  integer, intent(in) :: nm
-  real(dp), intent(in) :: xx
+ integer, intent(in) :: nm
+ real(dp), intent(in) :: xx
 
 !Input/output variables
-  real(dp), intent(inout) :: sb_out(nm)
+ real(dp), intent(inout) :: sb_out(nm)
 
 !Local variables
  integer :: nlim,nn
@@ -102,4 +102,4 @@ subroutine sbf8(nm,xx,sb_out)
    deallocate(sb)
  end if
  return
-end subroutine sbf8
+ end subroutine sbf8

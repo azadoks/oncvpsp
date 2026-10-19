@@ -147,123 +147,123 @@
 !srel=.false.
 
  parse_args: block
-    integer :: i
-    character(len=256) :: arg
-    do i = 1, command_argument_count()
-       call get_command_argument(i, arg)
-       select case(arg)
-       case('-h', '--help')
-          write (stdout, '(a)') 'Usage: '//ONCVPSP_EXE//' [options]'
-          write (stdout, '(a)') 'Options:'
-          write (stdout, '(a)') '  -h, --help       Show this help message and exit'
-          write (stdout, '(a)') '  -v, --version    Show version information and exit'
-          write (stdout, '(a)') '  -i, --input      Read the input from a text file ' // &
-&                               'instead of stdin'
-          write (stdout, '(a)') '  -t, --toml-input Read the input from a TOML file'
+   integer :: i
+   character(len=256) :: arg
+   do i = 1, command_argument_count()
+     call get_command_argument(i, arg)
+     select case(arg)
+     case('-h', '--help')
+       write (stdout, '(a)') 'Usage: '//ONCVPSP_EXE//' [options]'
+       write (stdout, '(a)') 'Options:'
+       write (stdout, '(a)') '  -h, --help       Show this help message and exit'
+       write (stdout, '(a)') '  -v, --version    Show version information and exit'
+       write (stdout, '(a)') '  -i, --input      Read the input from a text file ' // &
+&                            'instead of stdin'
+       write (stdout, '(a)') '  -t, --toml-input Read the input from a TOML file'
 #if defined(ONCVPSP_AE_ONLY)
-          write (stdout, '(a)') '  -a, --ae-file    All-electron data file to write (required)'
+       write (stdout, '(a)') '  -a, --ae-file    All-electron data file to write (required)'
 #elif defined(ONCVPSP_PS_ONLY)
-          write (stdout, '(a)') '  -a, --ae-file    All-electron data file written by ' // &
-&                               'oncvpspr_ae.x (required)'
+       write (stdout, '(a)') '  -a, --ae-file    All-electron data file written by ' // &
+&                            'oncvpspr_ae.x (required)'
 #endif
-          stop 0
-       case('-v', '--version')
-          write (stdout, '(a)') 'ONCVPSP (fully-relativistic) version 4.0.1'
-          call write_build_info(stdout,ONCVPSP_EXE,ONCVPSP_TREATMENT)
-          stop 0
-       case('-i', '--input')
-         if (i + 1 > command_argument_count()) then
-            write (stderr, '(a)') 'Error: --input requires a filename argument'
-            stop 1
-         end if
-         call get_command_argument(i + 1, input_filename)
-         input_mode = INPUT_TEXT
+       stop 0
+     case('-v', '--version')
+       write (stdout, '(a)') 'ONCVPSP (fully-relativistic) version 4.0.1'
+       call write_build_info(stdout,ONCVPSP_EXE,ONCVPSP_TREATMENT)
+       stop 0
+     case('-i', '--input')
+       if (i + 1 > command_argument_count()) then
+         write (stderr, '(a)') 'Error: --input requires a filename argument'
+         stop 1
+       end if
+       call get_command_argument(i + 1, input_filename)
+       input_mode = INPUT_TEXT
 #if (defined WITH_TOML)
-       case('-t', '--toml-input')
-         if (i + 1 > command_argument_count()) then
-            write (stderr, '(a)') 'Error: --toml-input requires a filename argument'
-            stop 1
-         end if
-         call get_command_argument(i + 1, input_filename)
-         input_mode = INPUT_TOML
+     case('-t', '--toml-input')
+       if (i + 1 > command_argument_count()) then
+         write (stderr, '(a)') 'Error: --toml-input requires a filename argument'
+         stop 1
+       end if
+       call get_command_argument(i + 1, input_filename)
+       input_mode = INPUT_TOML
 #else
-        case('-t', '--toml-input')
-          error stop 'Error: TOML input support not enabled in this build.'
+     case('-t', '--toml-input')
+       error stop 'Error: TOML input support not enabled in this build.'
 #endif
 #if defined(ONCVPSP_SPLIT)
-       case('-a', '--ae-file')
-         if (i + 1 > command_argument_count()) then
-            write (stderr, '(a)') 'Error: --ae-file requires a filename argument'
-            stop 1
-         end if
-         call get_command_argument(i + 1, ae_filename)
+     case('-a', '--ae-file')
+       if (i + 1 > command_argument_count()) then
+         write (stderr, '(a)') 'Error: --ae-file requires a filename argument'
+         stop 1
+       end if
+       call get_command_argument(i + 1, ae_filename)
 #endif
-       case default
-       end select
-    end do
+     case default
+     end select
+   end do
  end block parse_args
 
 #if defined(ONCVPSP_SPLIT)
  if (len_trim(ae_filename) == 0) then
-    write (stderr, '(a)') 'Error: '//ONCVPSP_EXE//' requires --ae-file'
-    stop 1
+   write (stderr, '(a)') 'Error: '//ONCVPSP_EXE//' requires --ae-file'
+   stop 1
  end if
 #endif
 
  ios = 0
  select case(input_mode)
-    case(INPUT_STDIN)
-       call read_input_text_r(stdin, inline, &
-                              atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
-                              lmax, rc, ep, ncon, nbas, qcut, &
-                              lloc, lpopt, dvloc0, nproj, debl, &
-                              icmod, fcfact, rcfact, fcfact_min, fcfact_max, fcfact_step, &
-                              rcfact_min, rcfact_max, rcfact_step, &
-                              epsh1, epsh2, depsh, rxpsh, &
-                              rlmax, drl, &
-                              ncnf, nvcnf, nacnf, lacnf, facnf, &
-                              amesh_in, rr1_in, rmax_in)
-    case(INPUT_TEXT)
-       open(newunit=unit, file=input_filename, status='old', action='read', iostat=ios)
-       if (ios /= 0) then
-          write(6, '(/2a)') 'oncvpsp_r: ERROR cannot open input file, file=', &
-             trim(input_filename)
-          error stop 1
-       end if
-       call read_input_text_r(unit, inline, &
-                              atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
-                              lmax, rc, ep, ncon, nbas, qcut, &
-                              lloc, lpopt, dvloc0, nproj, debl, &
-                              icmod, fcfact, rcfact, fcfact_min, fcfact_max, fcfact_step, &
-                              rcfact_min, rcfact_max, rcfact_step, &
-                              epsh1, epsh2, depsh, rxpsh, &
-                              rlmax, drl, &
-                              ncnf, nvcnf, nacnf, lacnf, facnf, &
-                              amesh_in, rr1_in, rmax_in)
-       close(unit)
+ case(INPUT_STDIN)
+   call read_input_text_r(stdin, inline, &
+&                         atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
+&                         lmax, rc, ep, ncon, nbas, qcut, &
+&                         lloc, lpopt, dvloc0, nproj, debl, &
+&                         icmod, fcfact, rcfact, fcfact_min, fcfact_max, fcfact_step, &
+&                         rcfact_min, rcfact_max, rcfact_step, &
+&                         epsh1, epsh2, depsh, rxpsh, &
+&                         rlmax, drl, &
+&                         ncnf, nvcnf, nacnf, lacnf, facnf, &
+&                         amesh_in, rr1_in, rmax_in)
+ case(INPUT_TEXT)
+   open(newunit=unit, file=input_filename, status='old', action='read', iostat=ios)
+   if (ios /= 0) then
+     write(6, '(/2a)') 'oncvpsp_r: ERROR cannot open input file, file=', &
+&       trim(input_filename)
+     error stop 1
+   end if
+   call read_input_text_r(unit, inline, &
+&                         atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
+&                         lmax, rc, ep, ncon, nbas, qcut, &
+&                         lloc, lpopt, dvloc0, nproj, debl, &
+&                         icmod, fcfact, rcfact, fcfact_min, fcfact_max, fcfact_step, &
+&                         rcfact_min, rcfact_max, rcfact_step, &
+&                         epsh1, epsh2, depsh, rxpsh, &
+&                         rlmax, drl, &
+&                         ncnf, nvcnf, nacnf, lacnf, facnf, &
+&                         amesh_in, rr1_in, rmax_in)
+   close(unit)
 #if (defined WITH_TOML)
-    case(INPUT_TOML)
-       open(newunit=unit, file=input_filename, status='old', action='read', iostat=ios)
-       if (ios /= 0) then
-          write(6, '(/2a)') 'oncvpsp_r: ERROR cannot open input file, file=', &
-             trim(input_filename)
-          error stop 1
-       end if
-       call read_input_toml_r(unit, &
-                              atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
-                              lmax, rc, ep, ncon, nbas, qcut, &
-                              lloc, lpopt, dvloc0, nproj, debl, &
-                              icmod, fcfact, rcfact, fcfact_min, fcfact_max, fcfact_step, &
-                              rcfact_min, rcfact_max, rcfact_step, &
-                              epsh1, epsh2, depsh, rxpsh, &
-                              rlmax, drl, &
-                              ncnf, nvcnf, nacnf, lacnf, facnf, &
-                              amesh_in, rr1_in, rmax_in)
-        close(unit)
+ case(INPUT_TOML)
+   open(newunit=unit, file=input_filename, status='old', action='read', iostat=ios)
+   if (ios /= 0) then
+     write(6, '(/2a)') 'oncvpsp_r: ERROR cannot open input file, file=', &
+&       trim(input_filename)
+     error stop 1
+   end if
+   call read_input_toml_r(unit, &
+&                         atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
+&                         lmax, rc, ep, ncon, nbas, qcut, &
+&                         lloc, lpopt, dvloc0, nproj, debl, &
+&                         icmod, fcfact, rcfact, fcfact_min, fcfact_max, fcfact_step, &
+&                         rcfact_min, rcfact_max, rcfact_step, &
+&                         epsh1, epsh2, depsh, rxpsh, &
+&                         rlmax, drl, &
+&                         ncnf, nvcnf, nacnf, lacnf, facnf, &
+&                         amesh_in, rr1_in, rmax_in)
+   close(unit)
 #endif
-    case default
-        write (stderr, '(a,i2)') 'Error: Unknown input mode =', input_mode
-        stop 1
+ case default
+   write (stderr, '(a,i2)') 'Error: Unknown input mode =', input_mode
+   stop 1
  end select
 
  nvcnf(1)=nv
@@ -299,25 +299,25 @@
 
 !log mesh: the input values, or the built-in ones for those 0 or less
  if(amesh_in>0.0d0) then
-  amesh=amesh_in
+   amesh=amesh_in
  else
 !amesh=1.012d0
-  amesh=1.006d0
+   amesh=1.006d0
 !amesh=1.003d0
 !amesh=1.0015d0
  end if
 
  al=log(amesh)
  if(rr1_in>0.0d0) then
-  rr1=rr1_in
+   rr1=rr1_in
  else
-  rr1=.0005d0/zz
-  rr1=0.0005d0/zz
+   rr1=.0005d0/zz
+   rr1=0.0005d0/zz
  end if
  if(rmax_in>0.0d0) then
-  rmax=rmax_in
+   rmax=rmax_in
  else
-  rmax=45.0d0
+   rmax=45.0d0
  end if
  mmax=log(rmax/rr1)/al
 !the log mesh for the echoes of the input, only when the input sets it, so that the
@@ -328,7 +328,7 @@
 !calculate zion for output
  zion=zz
  do ii=1,nc
-  zion=zion-fa(ii)
+   zion=zion-fa(ii)
  end do
 
  allocate(rr(mmax))
@@ -353,25 +353,25 @@
  epa(:,:,:)=0.0d0
 
  do ii=1,mmax
-  rr(ii)=rr1*exp(al*(ii-1))
+   rr(ii)=rr1*exp(al*(ii-1))
  end do
 
 !
 ! full potential atom solution
 !
 #if defined(ONCVPSP_PS_ONLY)
-   call read_ae_file_r(ae_filename,atsym,zz,nc,nv,iexc,na,la,fa, &
-&                      mmax,rr,it,etot,ea,rhoc,rho,vfull)
+ call read_ae_file_r(ae_filename,atsym,zz,nc,nv,iexc,na,la,fa, &
+&                    mmax,rr,it,etot,ea,rhoc,rho,vfull)
 !relatom prints the libxc functional description on its first exc_libxc call
-   if(iexc<0) then
-     block
-       real(dp) :: vxct(mmax),exct(mmax)
-       call exc_libxc(iexc,al,rho,vxct,exct,rr,mmax)
-     end block
-   end if
+ if(iexc<0) then
+   block
+     real(dp) :: vxct(mmax),exct(mmax)
+     call exc_libxc(iexc,al,rho,vxct,exct,rr,mmax)
+   end block
+ end if
 #else
-   call relatom(na,la,ea,fa,rpk,nc,nc+nv,it,rhoc,rho, &
-&              rr,vfull,zz,mmax,iexc,etot,ierr)
+ call relatom(na,la,ea,fa,rpk,nc,nc+nv,it,rhoc,rho, &
+&            rr,vfull,zz,mmax,iexc,etot,ierr)
 #endif
 
 !
@@ -379,8 +379,8 @@
 
 ! Drop digits beyond 5 decimals for input rcs before making any use of them
  do l1=1,max(lmax+1,lloc+1)
-    jj=int(rc(l1)*10.0d5)
-    rc(l1)=jj/10.0d5
+   jj=int(rc(l1)*10.0d5)
+   rc(l1)=jj/10.0d5
  end do
 
  rcmax=0.0d0
@@ -406,12 +406,12 @@
 &      '      ',psfile
  write(6,'(a/a)') '#','#   n    l    f        energy (Ha)'
  do ii=1,nc+nv
-  if(la(ii)==0) then
-   write(6,'(2i5,f8.2,1p,d18.7)') na(ii),la(ii),fa(ii),ea(ii,1)
-   ea(ii,2)=ea(ii,1)
-  else
-   write(6,'(2i5,f8.2,1p,2d18.7)') na(ii),la(ii),fa(ii),ea(ii,1),ea(ii,2)
-  end if
+   if(la(ii)==0) then
+     write(6,'(2i5,f8.2,1p,d18.7)') na(ii),la(ii),fa(ii),ea(ii,1)
+     ea(ii,2)=ea(ii,1)
+   else
+     write(6,'(2i5,f8.2,1p,2d18.7)') na(ii),la(ii),fa(ii),ea(ii,1),ea(ii,2)
+   end if
 
  end do
 
@@ -459,8 +459,8 @@
  write(6,'(//a)') 'Reference configufation results'
  write(6,'(a,i6)') '  iterations',it
  if(it >= 100) then
-  write(6,'(a)') 'oncvpsp_r: ERROR all-electron reference atom not converged'
-  error stop 1
+   write(6,'(a)') 'oncvpsp_r: ERROR all-electron reference atom not converged'
+   error stop 1
  end if
  write(6,'(a,1p,d18.8)') '  all-electron total energy (Ha)',etot
 
@@ -484,16 +484,16 @@
  rcmax=0.0d0
  irc(:)=0
  do l1=1,max(lmax+1,lloc+1)
-  rct=rc(l1)
-  irc(l1)=0
-  do ii=2,mmax
-   if(rr(ii)>rct) then
-    irc(l1)=ii
-    rc(l1)=rr(ii)
-    exit
-   end if
-  end do
-  rcmax=max(rcmax,rc(l1))
+   rct=rc(l1)
+   irc(l1)=0
+   do ii=2,mmax
+     if(rr(ii)>rct) then
+       irc(l1)=ii
+       rc(l1)=rr(ii)
+       exit
+     end if
+   end do
+   rcmax=max(rcmax,rc(l1))
  end do
 
 !
@@ -513,155 +513,155 @@
  do l1=1,lmax+1
    vwell(:,:)=0.0d0
    ll=l1-1
-  if(ll==0) then
-    mkap=1
-  else
-   mkap=2
-  end if
-  do ikap=1,mkap
-   if(ikap==1) then
-     kap=-(ll+1)
-     fj=dble(ll+1)/dble(2*ll+1)
+   if(ll==0) then
+     mkap=1
    else
-     kap=  ll
-     fj=dble(ll)/dble(2*ll+1)
+     mkap=2
    end if
+   do ikap=1,mkap
+     if(ikap==1) then
+       kap=-(ll+1)
+       fj=dble(ll+1)/dble(2*ll+1)
+     else
+       kap=  ll
+       fj=dble(ll)/dble(2*ll+1)
+     end if
 
-   uu(:,:)=0.0d0; qq(:,:)=0.0d0
-   iprj=0
+     uu(:,:)=0.0d0; qq(:,:)=0.0d0
+     iprj=0
 !electrons filling each pseudo-wave in the cutoff of icmod 6: the shell's
 !(2j+1) for a scattering or empty state, else the occupation
-   if(ikap==1) then
-     wcurve(1:nproj(l1),l1,ikap)=dble(2*ll+2)
-   else
-     wcurve(1:nproj(l1),l1,ikap)=dble(2*ll)
-   end if
+     if(ikap==1) then
+       wcurve(1:nproj(l1),l1,ikap)=dble(2*ll+2)
+     else
+       wcurve(1:nproj(l1),l1,ikap)=dble(2*ll)
+     end if
 
 !get principal quantum number for the highest core state for this l
-   npa(1,l1)=l1
-   if(nc>0) then
-     do kk=1,nc
-       if(la(kk)==l1-1) npa(1,l1)=na(kk)+1
-     end do !kk
-   end if
+     npa(1,l1)=l1
+     if(nc>0) then
+       do kk=1,nc
+         if(la(kk)==l1-1) npa(1,l1)=na(kk)+1
+       end do !kk
+     end if
 
 !get all-electron bound states for projectors
-   if(nv/=0) then
-     do kk=nc+1,nc+nv
-       if(la(kk)==l1-1) then
-         iprj=iprj+1
-         if(ll==0) then
-           ebar=ea(kk,1)
-         else
-           ebar=(l1*ea(kk,1)+(l1-1)*ea(kk,2))/dble(2*l1-1)
-         end if
-         et=ea(kk,ikap)
-         call ldiracfb(na(kk),ll,kap,ierr,et, &
-&                rr,zz,vfull,uu,up,mmax,mch)
-         if(ierr /= 0) then
-           write(6,'(a,i2,a,i2,a,i2)') &
-&                'oncvpsp_r 409: ldiracfb convergence ERROR, n=',&
-&                 na(kk),'  l=',ll, 'kap-',kap
-           error stop 1
-         end if
+     if(nv/=0) then
+       do kk=nc+1,nc+nv
+         if(la(kk)==l1-1) then
+           iprj=iprj+1
+           if(ll==0) then
+             ebar=ea(kk,1)
+           else
+             ebar=(l1*ea(kk,1)+(l1-1)*ea(kk,2))/dble(2*l1-1)
+           end if
+           et=ea(kk,ikap)
+           call ldiracfb(na(kk),ll,kap,ierr,et, &
+&                  rr,zz,vfull,uu,up,mmax,mch)
+           if(ierr /= 0) then
+             write(6,'(a,i2,a,i2,a,i2)') &
+&                  'oncvpsp_r 409: ldiracfb convergence ERROR, n=',&
+&                   na(kk),'  l=',ll, 'kap-',kap
+             error stop 1
+           end if
 
-         epa(iprj,l1,ikap)=ea(kk,ikap)
-         if(fa(kk)>0.0d0) wcurve(iprj,l1,ikap)=fj*fa(kk)
-         npa(iprj,l1)=na(kk)
-         call renorm_r(uu,rr,ll,kap,zz,mmax,cnorm)
-         uua(:,iprj,ikap)=uu(:,1)
-         upa(:,iprj,ikap)=cnorm*up(:,1)
-       end if !la(kk)==l1-1
-       if(iprj==nproj(l1)) exit
-     end do !kk
-   end if !nv/=0
+           epa(iprj,l1,ikap)=ea(kk,ikap)
+           if(fa(kk)>0.0d0) wcurve(iprj,l1,ikap)=fj*fa(kk)
+           npa(iprj,l1)=na(kk)
+           call renorm_r(uu,rr,ll,kap,zz,mmax,cnorm)
+           uua(:,iprj,ikap)=uu(:,1)
+           upa(:,iprj,ikap)=cnorm*up(:,1)
+         end if !la(kk)==l1-1
+         if(iprj==nproj(l1)) exit
+       end do !kk
+     end if !nv/=0
 
 !get all-electron well states for projectors
 !if there were no valence states, use ep from input data for 1st well state
 !otherwise shift up by input debl
 
-   if(iprj==0) epa(1,l1,ikap)=ep(l1,ikap)
-   if(iprj<nproj(l1))then
-     do kk=1,nproj(l1)-iprj
-       iprj=iprj+1
-       if(iprj>1 .and.debl(l1)<=0.0d0) then
-         write(6,'(a,f8.3,a,i2/a/a)') 'oncvpsp: ERROR debl =',debl(l1), &
-&              ' for l=',ll, &
-&              ' not allowed with 2 or more scattering states', &
-&              'program will stop'
-         error stop 1
-       end if
+     if(iprj==0) epa(1,l1,ikap)=ep(l1,ikap)
+     if(iprj<nproj(l1))then
+       do kk=1,nproj(l1)-iprj
+         iprj=iprj+1
+         if(iprj>1 .and.debl(l1)<=0.0d0) then
+           write(6,'(a,f8.3,a,i2/a/a)') 'oncvpsp: ERROR debl =',debl(l1), &
+&                ' for l=',ll, &
+&                ' not allowed with 2 or more scattering states', &
+&                'program will stop'
+           error stop 1
+         end if
 
 ! npa is not reset for ikap=2 to retain same node count for consistency with
 ! keeping same well potential as for ikap=1.  Note that it may have been
 ! reset by wellstate which is only now called foerer ikap1.
-       if(iprj>1) then
-         epa(iprj,l1,ikap)=epa(iprj-1,l1,ikap)+debl(l1)
-         if(ikap==1) then
-           npa(iprj,l1)=npa(iprj-1,l1)+1
+         if(iprj>1) then
+           epa(iprj,l1,ikap)=epa(iprj-1,l1,ikap)+debl(l1)
+           if(ikap==1) then
+             npa(iprj,l1)=npa(iprj-1,l1)+1
+           end if
          end if
-       end if
 
 ! since new wellstate can change npa, well potential is calculated for
 ! less-bound ikap=1 state and kept for ikap=2, which is more deeply
 ! bound and shoould always have a bound state for this combination of
 ! npa and vwell
-       if(ikap==1) then
-         call wellstate_r(npa(iprj,l1),ll,kap,irc(l1),epa(iprj,l1,ikap), &
-&                         rr,vfull,vwell(1,iprj),uu,up,zz,mmax,mch)
-       else
-         et=epa(iprj,l1,ikap)
-         call ldiracfb(npa(iprj,l1),ll,kap,ierr,epa(iprj,l1,ikap), &
-&                         rr,zz,vwell(1,iprj),uu,up,mmax,mch)
+         if(ikap==1) then
+           call wellstate_r(npa(iprj,l1),ll,kap,irc(l1),epa(iprj,l1,ikap), &
+&                           rr,vfull,vwell(1,iprj),uu,up,zz,mmax,mch)
+         else
+           et=epa(iprj,l1,ikap)
+           call ldiracfb(npa(iprj,l1),ll,kap,ierr,epa(iprj,l1,ikap), &
+&                           rr,zz,vwell(1,iprj),uu,up,mmax,mch)
 
-          if(ierr /= 0) then
-            write(6,'(a,i2,a,i2,a,i3,a,f12.6)') &
-&                 'oncvpsp_r 474: ldiracfb convergence ERROR, n=',&
-&                  npa(iprj,l1),'  l=',ll, 'kap=',kap, ' epa=', &
-&                  epa(iprj,l1,ikap)
+           if(ierr /= 0) then
+             write(6,'(a,i2,a,i2,a,i3,a,f12.6)') &
+&                  'oncvpsp_r 474: ldiracfb convergence ERROR, n=',&
+&                   npa(iprj,l1),'  l=',ll, 'kap=',kap, ' epa=', &
+&                   epa(iprj,l1,ikap)
 
-            error stop 1
-          end if
+             error stop 1
+           end if
 
-          write(6,'(/a,i3,a,i3,a,i3/a,f8.4)') &
-&                  '   Wellstate for l =',ll,'  n =',npa(iprj,l1),' kap=',kap, &
-&                  '     eigenvalue = ',et
-       end if
+           write(6,'(/a,i3,a,i3,a,i3/a,f8.4)') &
+&                   '   Wellstate for l =',ll,'  n =',npa(iprj,l1),' kap=',kap, &
+&                   '     eigenvalue = ',et
+         end if
 
-       call renorm_r(uu,rr,ll,kap,zz,mmax,cnorm)
-       uua(:,iprj,ikap)=uu(:,1)
-       upa(:,iprj,ikap)=cnorm*up(:,1)
-     end do !kk
-   end if !iprj<nproj(l1)
+         call renorm_r(uu,rr,ll,kap,zz,mmax,cnorm)
+         uua(:,iprj,ikap)=uu(:,1)
+         upa(:,iprj,ikap)=cnorm*up(:,1)
+       end do !kk
+     end if !iprj<nproj(l1)
 
-   do iprj=1,nproj(l1)
+     do iprj=1,nproj(l1)
 
-     call vrel(ll,epa(iprj,l1,ikap),rr,vfull,vr(1,iprj,l1,ikap), &
-&              uua(1,iprj,ikap),upa(1,iprj,ikap), &
-&              zz,mmax,irc(l1),srel)
-   end do
+       call vrel(ll,epa(iprj,l1,ikap),rr,vfull,vr(1,iprj,l1,ikap), &
+&                uua(1,iprj,ikap),upa(1,iprj,ikap), &
+&                zz,mmax,irc(l1),srel)
+     end do
 
 
 !get all-electron overlap matrix
-   do jj=1,nproj(l1)
-     do ii=1,jj
-       call fpovlp(uua(1,ii,ikap),uua(1,jj,ikap),irc(l1),ll,zz, &
-&                  qq(ii,jj),rr,srel)
-       qq(jj,ii)=qq(ii,jj)
+     do jj=1,nproj(l1)
+       do ii=1,jj
+         call fpovlp(uua(1,ii,ikap),uua(1,jj,ikap),irc(l1),ll,zz, &
+&                    qq(ii,jj),rr,srel)
+         qq(jj,ii)=qq(ii,jj)
+       end do
      end do
-   end do
-   call run_optimize(epa(1,l1,ikap),ll,mmax,mxprj,rr,uua(1,1,ikap),qq, &
-&                    irc(l1),qcut(l1),qmsbf(l1),ncon(l1),nbas(l1),nproj(l1), &
-&                    pswf(1,1,l1,ikap),vp(1,l1,ikap),vkb(1,1,l1,ikap), &
-&                    vfull,cvgplt(1,1,1,l1,ikap),ncurve,ecurve(1,1,1,l1,ikap))
+     call run_optimize(epa(1,l1,ikap),ll,mmax,mxprj,rr,uua(1,1,ikap),qq, &
+&                      irc(l1),qcut(l1),qmsbf(l1),ncon(l1),nbas(l1),nproj(l1), &
+&                      pswf(1,1,l1,ikap),vp(1,l1,ikap),vkb(1,1,l1,ikap), &
+&                      vfull,cvgplt(1,1,1,l1,ikap),ncurve,ecurve(1,1,1,l1,ikap))
 
-  end do !ikap
+   end do !ikap
  end do !l1
 
  deallocate(uua,upa)
 
 !restore this temporay reset
-  nproj(lloc+1)=0
+ nproj(lloc+1)=0
 
 ! construct Vanderbilt / Kleinman-Bylander projectors
 
@@ -688,78 +688,78 @@
  rhotae(:)=0.0d0
  irps=0
  do kk=1,nv
-  ll=la(nc+kk)
-  l1=ll+1
+   ll=la(nc+kk)
+   l1=ll+1
 
-  if(ll==0) then
-    mkap=1
-  else
-   mkap=2
-  end if
-  do ikap=1,mkap
-   if(ikap==1) then
-     kap=-(ll+1)
-     fj=dble(ll+1)/dble(2*ll+1)
+   if(ll==0) then
+     mkap=1
    else
-     kap=  ll
-     fj=dble(ll)/dble(2*ll+1)
+     mkap=2
    end if
+   do ikap=1,mkap
+     if(ikap==1) then
+       kap=-(ll+1)
+       fj=dble(ll+1)/dble(2*ll+1)
+     else
+       kap=  ll
+       fj=dble(ll)/dble(2*ll+1)
+     end if
 
-   et=ea(nc+kk,ikap)
+     et=ea(nc+kk,ikap)
 
-   call ldiracfb(na(nc+kk),ll,kap,ierr,et, &
-&                rr,zz,vfull,uu,up,mmax,mch)
-    if(ierr /= 0) then
-      write(6,'(a,i2,a,i2,a,i2,a,i4)') &
-&           'oncvpsp_r 541: ldiracfb convergence ERROR, n=',&
-&            na(nc+kk),'  l=',ll, '  kap-',kap,'  ierr=',ierr
-      error stop 1
-    end if
+     call ldiracfb(na(nc+kk),ll,kap,ierr,et, &
+&                  rr,zz,vfull,uu,up,mmax,mch)
+     if(ierr /= 0) then
+       write(6,'(a,i2,a,i2,a,i2,a,i4)') &
+&            'oncvpsp_r 541: ldiracfb convergence ERROR, n=',&
+&             na(nc+kk),'  l=',ll, '  kap-',kap,'  ierr=',ierr
+       error stop 1
+     end if
 
-   rhoae(:,kk)=rhoae(:,kk)+fj*((uu(:,1)/rr(:))**2 + (uu(:,2)/rr(:))**2)
+     rhoae(:,kk)=rhoae(:,kk)+fj*((uu(:,1)/rr(:))**2 + (uu(:,2)/rr(:))**2)
 
-   emax=0.90d0*et
-   emin=1.10d0*et
+     emax=0.90d0*et
+     emin=1.10d0*et
 
-   call lschvkbb(ll+nodes(l1)+1,ll,nproj(l1),ierr,et,emin,emax, &
-&                rr,vp(1,lloc+1,ikap),vkb(1,1,l1,ikap),evkb(1,l1,ikap), &
-&                uu(1,1),up(1,1),mmax,mch)
-   if(ierr /= 0) then
-     write(6,'(a,i2,a,i2)') 'oncvpsp_r: lschvkbb convergence ERROR, n=',&
-&     ll+1,'  l=',ll
-     error stop 1
-   end if
+     call lschvkbb(ll+nodes(l1)+1,ll,nproj(l1),ierr,et,emin,emax, &
+&                  rr,vp(1,lloc+1,ikap),vkb(1,1,l1,ikap),evkb(1,l1,ikap), &
+&                  uu(1,1),up(1,1),mmax,mch)
+     if(ierr /= 0) then
+       write(6,'(a,i2,a,i2)') 'oncvpsp_r: lschvkbb convergence ERROR, n=',&
+&       ll+1,'  l=',ll
+       error stop 1
+     end if
 
 ! save valence pseudo wave functions for uprout
-   uupsa(:,ikap,kk)=uu(:,1)
+     uupsa(:,ikap,kk)=uu(:,1)
 
-   rhops(:,kk)=rhops(:,kk)+fj*(uu(:,1)/rr(:))**2
-   eeig=eeig+fa(nc+kk)*fj*et
+     rhops(:,kk)=rhops(:,kk)+fj*(uu(:,1)/rr(:))**2
+     eeig=eeig+fa(nc+kk)*fj*et
 
-  end do !ikap
-  rhotae(:)=rhotae(:)+fa(nc+kk)*rhoae(:,kk)
-  rho(:)=rho(:)+fa(nc+kk)*rhops(:,kk)
-  zval=zval+fa(nc+kk)
-  nodes(l1)=nodes(l1)+1
-  irps=max(irps,irc(l1))
+   end do !ikap
+   rhotae(:)=rhotae(:)+fa(nc+kk)*rhoae(:,kk)
+   rho(:)=rho(:)+fa(nc+kk)*rhops(:,kk)
+   zval=zval+fa(nc+kk)
+   nodes(l1)=nodes(l1)+1
+   irps=max(irps,irc(l1))
  end do !kk
 
 ! decomposition into scalar-relativistic and spin-orbit projectors
 
-  call sr_so_r(lmax,irc,nproj,rr,mmax,mxprj,evkb,vkb, &
-&              vsr,esr,vso,eso)
+ call sr_so_r(lmax,irc,nproj,rr,mmax,mxprj,evkb,vkb, &
+&             vsr,esr,vso,eso)
 
 ! set smallest components to zero (will be dropped in psp8 output)
-  eps_srso=1.0d-3
-  do l1=1,lmax+1
-    if(nproj(l1)>0) then
-      do iprj=2,2*nproj(l1)
-        if(abs(esr(iprj,l1))<eps_srso*abs(esr(1,l1))) esr(iprj,l1)=0.0d0
-        if(l1==1) cycle
-        if(abs(eso(iprj,l1))<eps_srso*abs(eso(1,l1))) eso(iprj,l1)=0.0d0
-      end do
-    end if
-  end do
+ eps_srso=1.0d-3
+ do l1=1,lmax+1
+   if(nproj(l1)>0) then
+     do iprj=2,2*nproj(l1)
+       if(abs(esr(iprj,l1))<eps_srso*abs(esr(1,l1))) esr(iprj,l1)=0.0d0
+       if(l1==1) cycle
+       if(abs(eso(iprj,l1))<eps_srso*abs(eso(1,l1))) eso(iprj,l1)=0.0d0
+     end do
+   end if
+ end do
 
  allocate(rhomod(mmax,5))
 
@@ -799,20 +799,20 @@
  epstot= eeig + eexc - 0.5d0*eeel
  write(6,'(/a,f12.6/)') 'Pseudoatom total energy', epstot
 
- ! diagnostics
+! diagnostics
 
  call run_diag_r(lmax,npa,epa,lloc,irc, &
 &                vkb,evkb,nproj,rr,vfull,vp,zz,mmax,mxprj)
 
-  call run_diag_sr_so_r(lmax,npa,epa,lloc,irc, &
-&                       vsr,esr,vso,eso,nproj,rr,vfull,vp,zz,mmax,mxprj)
+ call run_diag_sr_so_r(lmax,npa,epa,lloc,irc, &
+&                      vsr,esr,vso,eso,nproj,rr,vfull,vp,zz,mmax,mxprj)
 
 ! save full info for psml
  allocate(vpsml(mmax,5,2))
  do l1=1,max(lmax+1,lloc+1)
-    ll=l1-1
-    vpsml(:,l1,1) = vp(:,l1,1) - vo(:)
-    vpsml(:,l1,2) = vp(:,l1,2) - vo(:)
+   ll=l1-1
+   vpsml(:,l1,1) = vp(:,l1,1) - vo(:)
+   vpsml(:,l1,2) = vp(:,l1,2) - vo(:)
  end do
 
 
@@ -845,7 +845,7 @@
 
 ! fix unscreening error due to greater range of all-electron charge
  do ii=mmax,1,-1
- if(rho(ii)==0.0d0) then
+   if(rho(ii)==0.0d0) then
      do l1=1,max(lmax+1,lloc+1)
        vpuns(ii,l1)=-zion/rr(ii)
      end do
@@ -910,22 +910,22 @@
 
  if(trim(psfile)=='psp8' .or. trim(psfile)=='both') then
 
- soscale=1.0d0
- call linout_r(lmax,lloc,rc,vsr,esr,vso,eso,nproj,rr,vpuns,rho,rhomod, &
-&             rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,soscale, &
-&             na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&             fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,fcfact0,rcfact,fcgrid,rcgrid, &
-&             epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh)
+   soscale=1.0d0
+   call linout_r(lmax,lloc,rc,vsr,esr,vso,eso,nproj,rr,vpuns,rho,rhomod, &
+&               rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,soscale, &
+&               na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
+&               fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,fcfact0,rcfact,fcgrid,rcgrid, &
+&               epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh)
 
  end if
 
  if(trim(psfile)=='upf' .or. trim(psfile)=='both') then
 
- call upfout_r(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
-&              zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
-&              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&              fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact0,rcfact,fcgrid,rcgrid, &
-&              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,uupsa,ea,log_mesh)
+   call upfout_r(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
+&                zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
+&                na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
+&                fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact0,rcfact,fcgrid,rcgrid, &
+&                epsh1,epsh2,depsh,rxpsh,rlmax,psfile,uupsa,ea,log_mesh)
 
  end if
 

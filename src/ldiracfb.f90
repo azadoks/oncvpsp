@@ -74,19 +74,19 @@
 
 ! check arguments
  if(ll>nn-1) then
-  write(6,'(/a,i4,a,i4)') 'ldiracfb: ERROR ll =',ll,' > nn =',nn
-  ierr=1
-  return
+   write(6,'(/a,i4,a,i4)') 'ldiracfb: ERROR ll =',ll,' > nn =',nn
+   ierr=1
+   return
  end if
  if(kap/=ll .and. kap/=-(ll+1)) then
-  write(6,'(/a,i4,a,i4)') 'ldiracfb: ERROR kap =',kap,' ll =',ll
-  ierr=2
-  return
+   write(6,'(/a,i4,a,i4)') 'ldiracfb: ERROR kap =',kap,' ll =',ll
+   ierr=2
+   return
  end if
  if(zz<1.0d0) then
-  write(6,'(/a,f12.8)') 'ldiracfb: ERROR zz =',zz
-  ierr=3
-  return
+   write(6,'(/a,f12.8)') 'ldiracfb: ERROR zz =',zz
+   ierr=3
+   return
  end if
 
  sls=ll*(ll+1)
@@ -129,20 +129,20 @@
    end do
 
    if(mch==0) then
-    ierr=-1
-    return
+     ierr=-1
+     return
    end if
 
 ! start wavefunctions with series
    do ii=1,5
-    gu(ii)=rr(ii)**gam
-    fu(ii)=cof*gu(ii)
+     gu(ii)=rr(ii)**gam
+     fu(ii)=cof*gu(ii)
 
-    fup(ii)= al*rr(ii)*(kap*fu(ii)/rr(ii) &
-&            + cci*(vv(ii) - ee)*gu(ii))
+     fup(ii)= al*rr(ii)*(kap*fu(ii)/rr(ii) &
+&             + cci*(vv(ii) - ee)*gu(ii))
 
-    gup(ii)= al*rr(ii)*(-kap*gu(ii)/rr(ii) &
-&            + cci*(2.0d0*cc**2 + ee - vv(ii))*fu(ii))
+     gup(ii)= al*rr(ii)*(-kap*gu(ii)/rr(ii) &
+&             + cci*(2.0d0*cc**2 + ee - vv(ii))*fu(ii))
    end do
 
 ! outward integration using predictor once, corrector
@@ -150,20 +150,20 @@
    node=0
    do ii=5,mch-1
 
-    fu(ii+1)=fu(ii)+aeo(fup,ii)
-    gu(ii+1)=gu(ii)+aeo(gup,ii)
+     fu(ii+1)=fu(ii)+aeo(fup,ii)
+     gu(ii+1)=gu(ii)+aeo(gup,ii)
 
-    do kk=1,2
-     fup(ii+1)= al*rr(ii+1)*(kap*fu(ii+1)/rr(ii+1) &
-&             - cci*(ee - vv(ii+1))*gu(ii+1))
+     do kk=1,2
+       fup(ii+1)= al*rr(ii+1)*(kap*fu(ii+1)/rr(ii+1) &
+&               - cci*(ee - vv(ii+1))*gu(ii+1))
 
-     gup(ii+1)= al*rr(ii+1)*(-kap*gu(ii+1)/rr(ii+1) &
-&             + cci*(2.0d0*cc**2 + ee - vv(ii+1))*fu(ii+1))
+       gup(ii+1)= al*rr(ii+1)*(-kap*gu(ii+1)/rr(ii+1) &
+&               + cci*(2.0d0*cc**2 + ee - vv(ii+1))*fu(ii+1))
 
-     fu(ii+1)=fu(ii)+aio(fup,ii)
-     gu(ii+1)=gu(ii)+aio(gup,ii)
-    end do
-    if(gu(ii+1)*gu(ii) <= 0.0d0) node=node+1
+       fu(ii+1)=fu(ii)+aio(fup,ii)
+       gu(ii+1)=gu(ii)+aio(gup,ii)
+     end do
+     if(gu(ii+1)*gu(ii) <= 0.0d0) node=node+1
    end do
 
    uout=gu(mch)
@@ -191,19 +191,19 @@
 ! integrate inward
      do ii=nin,mch+1,-1
 
-      fu(ii-1)=fu(ii)+aei(fup,ii)
-      gu(ii-1)=gu(ii)+aei(gup,ii)
+       fu(ii-1)=fu(ii)+aei(fup,ii)
+       gu(ii-1)=gu(ii)+aei(gup,ii)
 
-      do kk=1,2
-       fup(ii-1)= al*rr(ii-1)*(kap*fu(ii-1)/rr(ii-1) &
-&               - cci*(ee - vv(ii-1))*gu(ii-1))
+       do kk=1,2
+         fup(ii-1)= al*rr(ii-1)*(kap*fu(ii-1)/rr(ii-1) &
+&                 - cci*(ee - vv(ii-1))*gu(ii-1))
 
-       gup(ii-1)= al*rr(ii-1)*(-kap*gu(ii-1)/rr(ii-1) &
-&               + cci*(2.0d0*cc**2 + ee - vv(ii-1))*fu(ii-1))
+         gup(ii-1)= al*rr(ii-1)*(-kap*gu(ii-1)/rr(ii-1) &
+&                 + cci*(2.0d0*cc**2 + ee - vv(ii-1))*fu(ii-1))
 
-       fu(ii-1)=fu(ii)+aii(fup,ii)
-       gu(ii-1)=gu(ii)+aii(gup,ii)
-      end do
+         fu(ii-1)=fu(ii)+aii(fup,ii)
+         gu(ii-1)=gu(ii)+aii(gup,ii)
+       end do
      end do
 
 ! scale outside wf for continuity

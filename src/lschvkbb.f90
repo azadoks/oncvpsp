@@ -110,9 +110,9 @@
    end do
 
    if(mch==1 .and. nvkb==0) then
-    write(6,'(/a)') 'lschvkbb: ERROR no classical turning point'
-    write(6,'(a,i2,a,i6)') 'lschvkbb: ERROR nvkb=',nvkb,'mch=',mch
-    write(6,'(a,i2,a,f8.4,a)') 'lschvkbb: ERROR l=',ll,'  e=',ee
+     write(6,'(/a)') 'lschvkbb: ERROR no classical turning point'
+     write(6,'(a,i2,a,i6)') 'lschvkbb: ERROR nvkb=',nvkb,'mch=',mch
+     write(6,'(a,i2,a,f8.4,a)') 'lschvkbb: ERROR l=',ll,'  e=',ee
 !   stop
    end if
 
@@ -130,12 +130,12 @@
 
 ! adjust matching radius if necessary
      if(rr(mch)<rc) then
-      do ii=mch,mmax
-       if(rr(ii)>rc) then
-        mch=ii
-        exit
-       end if
-      end do
+       do ii=mch,mmax
+         if(rr(ii)>rc) then
+           mch=ii
+           exit
+         end if
+       end do
      end if
    end if
 ! outward integration

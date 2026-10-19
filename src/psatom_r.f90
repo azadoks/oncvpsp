@@ -134,11 +134,11 @@
 
 ! convergence is only to be considered if we are fully in  the target
 ! configurtion
-  if(it>2) then
-    convg=.true.
-  else
-    convg=.false.
-  end if
+   if(it>2) then
+     convg=.true.
+   else
+     convg=.false.
+   end if
 
 ! solve for bound states in turn
 
@@ -158,20 +158,20 @@
      l1=la(ii)+1
      ll=la(ii)
      if(ll==0) then
-      mkap=1
+       mkap=1
      else
-      mkap=2
+       mkap=2
      end if
 ! loop on J = ll +/- 1/2
-      do ikap=1,mkap
-        if(ikap==1) then
-          kap=-(ll+1)
-          fj=dble(ll+1)*fa(ii)/dble(2*ll+1)
-        else
-          kap=  ll
-          fj=dble(ll)*fa(ii)/dble(2*ll+1)
-        end if
-        et=ea(ii,ikap)
+     do ikap=1,mkap
+       if(ikap==1) then
+         kap=-(ll+1)
+         fj=dble(ll+1)*fa(ii)/dble(2*ll+1)
+       else
+         kap=  ll
+         fj=dble(ll)*fa(ii)/dble(2*ll+1)
+       end if
+       et=ea(ii,ikap)
 
        emin=1.10d0*ea(ii,ikap)
        emax=0.90d0*ea(ii,ikap)
@@ -183,7 +183,7 @@
 &              'psatom_r: WARNING lschvkbb convergence error n,l,kap,iter=', &
 &               na(ii),la(ii),kap,it
          write(6,'(a,1p,4e14.6)') 'ea(ii),et,emin,emax',ea(ii,ikap),et,emin,emax
-          exit
+         exit
        end if
 
 !   overall convergence criterion based on eps within lschf*
@@ -226,7 +226,7 @@
 
    do ii=1,mmax
      vn=(1.0d0-bl)*((1.0d0-thl)*vi(ii) + thl*vi1(ii)) &
-  &   + bl*((1.0d0-thl)*vo(ii) + thl*vo1(ii))
+&     + bl*((1.0d0-thl)*vo(ii) + thl*vo1(ii))
      vi1(ii)=vi(ii)
      vo1(ii)=vo(ii)
      vi(ii)=vn

@@ -42,9 +42,9 @@
  integer :: ii,ll
 
  if(llin>4) then
-  write(6,'(a,i4,a)') 'sbf_rc_der: argument ERROR, llin = ',llin,&
-&  ' >5'
-  error stop 1
+   write(6,'(a,i4,a)') 'sbf_rc_der: argument ERROR, llin = ',llin,&
+&   ' >5'
+   error stop 1
  end if
 
 ! calculate sbf for needed l values
@@ -58,41 +58,41 @@
 
 ! store values
  do ll=llin,llin+5
-  sbfad(1,ll+1)=sb_out(ll+1)
+   sbfad(1,ll+1)=sb_out(ll+1)
  end do
 
 ! first derivatives
  do ll=llin,llin+3
-  sbfad(2,ll+1)=ll*sbfad(1,ll+1)/xx &
-&                - sbfad(1,ll+2)
+   sbfad(2,ll+1)=ll*sbfad(1,ll+1)/xx &
+&                 - sbfad(1,ll+2)
  end do
 
 ! second derivatives
  do ll=llin,llin+2
-  sbfad(3,ll+1)=-ll*sbfad(1,ll+1)/xx**2 &
-&              + ll*sbfad(2,ll+1)/xx&
-&                  -sbfad(2,ll+2)
+   sbfad(3,ll+1)=-ll*sbfad(1,ll+1)/xx**2 &
+&               + ll*sbfad(2,ll+1)/xx&
+&                   -sbfad(2,ll+2)
  end do
 
 ! third derivatives
  do ll=llin,llin+1
-  sbfad(4,ll+1)= 2*ll*sbfad(1,ll+1)/xx**3 &
-&               -2*ll*sbfad(2,ll+1)/xx**2 &
-&                 +ll*sbfad(3,ll+1)/xx &
-&                    -sbfad(3,ll+2)
+   sbfad(4,ll+1)= 2*ll*sbfad(1,ll+1)/xx**3 &
+&                -2*ll*sbfad(2,ll+1)/xx**2 &
+&                  +ll*sbfad(3,ll+1)/xx &
+&                     -sbfad(3,ll+2)
  end do
 
 ! fourth derivatives
  do ll=llin,llin
-  sbfad(5,ll+1)=-6*ll*sbfad(1,ll+1)/xx**4 &
-&               +6*ll*sbfad(2,ll+1)/xx**3 &
-&               -3*ll*sbfad(3,ll+1)/xx**2 &
-&                 +ll*sbfad(4,ll+1)/xx &
-&                    -sbfad(4,ll+2)
+   sbfad(5,ll+1)=-6*ll*sbfad(1,ll+1)/xx**4 &
+&                +6*ll*sbfad(2,ll+1)/xx**3 &
+&                -3*ll*sbfad(3,ll+1)/xx**2 &
+&                  +ll*sbfad(4,ll+1)/xx &
+&                     -sbfad(4,ll+2)
  end do
 
  do ii=1,5
-  sbfder(ii)=sbfad(ii,llin+1)*qq**(ii-1)
+   sbfder(ii)=sbfad(ii,llin+1)*qq**(ii-1)
  end do
 
  return

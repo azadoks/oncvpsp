@@ -81,10 +81,10 @@
 ! new calculations of dq, dr
 ! larger denominators yield better convergence at the cost of more time
 ! dq=2.0d0*pi/(300.0d0*rr(irc))
-  dq=2.0d0*pi/(150.0d0*rr(irc))
+ dq=2.0d0*pi/(150.0d0*rr(irc))
 ! dq=2.0d0*pi/(75.0d0*rr(irc))
 ! dr=2.0d0*pi/(150.0d0*qmax)
-  dr=2.0d0*pi/(75.0d0*qmax)
+ dr=2.0d0*pi/(75.0d0*qmax)
 
 !set up linear radial mesh
  rc=rr(irc)
@@ -96,7 +96,7 @@
    if(abs(uu(ii))>1.0d-10) then
      mmaxlin=rr(ii)/dr - 2.0d0
      exit
-    end if
+   end if
  end do
 !mmaxlin=rr(mmax)/dr - 1.5d0 !leave non-zero room for cubic interpolation
  if(mmaxlin<irclin+6) then
@@ -114,7 +114,7 @@
 
 
  do ii=1,mmaxlin
-  rlin(ii)=(ii-1)*dr
+   rlin(ii)=(ii-1)*dr
  end do
 
 !interpolate all-electron wave function onto linear mesh, even though we
@@ -123,22 +123,22 @@
  call dpnint(rr,uu,mmax,rlin,uulin,mmaxlin)
 
  do ii=irclin,mmaxlin
-  ps0(ii)=uulin(ii)
+   ps0(ii)=uulin(ii)
  end do
 
 !set up constrained basis functions on linear grid inside rc (multiplied by r)
  ll1=ll+1
  do ii=1,irclin
-  tps0=0.0d0
-  tpsnull(:)=0.0d0
-  do jj=1,nbas
-   xx=rlin(ii)*qroot(jj)
-   call sbf8(ll1,xx,sb_out)
-   tps0      =tps0      +pswf0_sb(jj)     *sb_out(ll1)
-   tpsnull(:)=tpsnull(:)+pswfnull_sb(jj,:)*sb_out(ll1)
-  end do
-  ps0(ii)=rlin(ii)*tps0
-  psnull(ii,:)=rlin(ii)*tpsnull(:)
+   tps0=0.0d0
+   tpsnull(:)=0.0d0
+   do jj=1,nbas
+     xx=rlin(ii)*qroot(jj)
+     call sbf8(ll1,xx,sb_out)
+     tps0      =tps0      +pswf0_sb(jj)     *sb_out(ll1)
+     tpsnull(:)=tpsnull(:)+pswfnull_sb(jj,:)*sb_out(ll1)
+   end do
+   ps0(ii)=rlin(ii)*tps0
+   psnull(ii,:)=rlin(ii)*tpsnull(:)
  end do
 
 !big q integration loop
@@ -152,10 +152,10 @@
 !sin and cos of dq*rlin, which step sin and cos of qq*rlin from one qq to
 !the next by rotation
  do ii=1,mmaxlin
-  sdqr(ii)=sin(dq*rlin(ii))
+   sdqr(ii)=sin(dq*rlin(ii))
  end do
  do ii=1,mmaxlin
-  cdqr(ii)=cos(dq*rlin(ii))
+   cdqr(ii)=cos(dq*rlin(ii))
  end do
 
 !null accumulators and running registers
@@ -169,112 +169,112 @@
  dacmat(:,:,:)=0.0d0
 
  do iq=nq,1,-1
-  qq=dq*(iq-1)
+   qq=dq*(iq-1)
 
 !sin and cos of qq*rlin, evaluated directly every nqseed steps and
 !otherwise rotated inward by dq*rlin from the previous qq
 !(separate loops so sin and cos each vectorize)
-  if(mod(nq-iq,nqseed)==0) then
-   do ii=1,mmaxlin
-    sqr(ii)=sin(qq*rlin(ii))
-   end do
-   do ii=1,mmaxlin
-    cqr(ii)=cos(qq*rlin(ii))
-   end do
-  else
-   do ii=1,mmaxlin
-    tn=sqr(ii)*cdqr(ii)-cqr(ii)*sdqr(ii)
-    cqr(ii)=cqr(ii)*cdqr(ii)+sqr(ii)*sdqr(ii)
-    sqr(ii)=tn
-   end do
-  end if
+   if(mod(nq-iq,nqseed)==0) then
+     do ii=1,mmaxlin
+       sqr(ii)=sin(qq*rlin(ii))
+     end do
+     do ii=1,mmaxlin
+       cqr(ii)=cos(qq*rlin(ii))
+     end do
+   else
+     do ii=1,mmaxlin
+       tn=sqr(ii)*cdqr(ii)-cqr(ii)*sdqr(ii)
+       cqr(ii)=cqr(ii)*cdqr(ii)+sqr(ii)*sdqr(ii)
+       sqr(ii)=tn
+     end do
+   end if
 
 !sbfs on full rlin mesh for this qq
 !multiply by rlin for integration
-  call rsbf_lin(ll1,qq,rlin,sqr,cqr,mmaxlin,sbf)
+   call rsbf_lin(ll1,qq,rlin,sqr,cqr,mmaxlin,sbf)
 
 !Fourier transforms of basis functions
 !null functions exist for r<rc
 
-  ps0q=( 9.0d0*ps0(1       )*sbf(1       ) &
-&      +28.0d0*ps0(2       )*sbf(2       ) &
-&      +23.0d0*ps0(3       )*sbf(3    )    &
-&      +23.0d0*ps0(irclin-2)*sbf(irclin-2) &
-&      +28.0d0*ps0(irclin-1)*sbf(irclin-1) &
-&      + 9.0d0*ps0(irclin  )*sbf(irclin  ))/24.0d0
+   ps0q=( 9.0d0*ps0(1       )*sbf(1       ) &
+&       +28.0d0*ps0(2       )*sbf(2       ) &
+&       +23.0d0*ps0(3       )*sbf(3    )    &
+&       +23.0d0*ps0(irclin-2)*sbf(irclin-2) &
+&       +28.0d0*ps0(irclin-1)*sbf(irclin-1) &
+&       + 9.0d0*ps0(irclin  )*sbf(irclin  ))/24.0d0
 
-  psnullq(:)=( 9.0d0*psnull(1       ,:)*sbf(1       ) &
-&            +28.0d0*psnull(2       ,:)*sbf(2       ) &
-&            +23.0d0*psnull(3       ,:)*sbf(3    )    &
-&            +23.0d0*psnull(irclin-2,:)*sbf(irclin-2) &
-&            +28.0d0*psnull(irclin-1,:)*sbf(irclin-1) &
-&            + 9.0d0*psnull(irclin  ,:)*sbf(irclin  ))/24.0d0
+   psnullq(:)=( 9.0d0*psnull(1       ,:)*sbf(1       ) &
+&             +28.0d0*psnull(2       ,:)*sbf(2       ) &
+&             +23.0d0*psnull(3       ,:)*sbf(3    )    &
+&             +23.0d0*psnull(irclin-2,:)*sbf(irclin-2) &
+&             +28.0d0*psnull(irclin-1,:)*sbf(irclin-1) &
+&             + 9.0d0*psnull(irclin  ,:)*sbf(irclin  ))/24.0d0
 
-  do ii=4,irclin-3
-   ps0q=ps0q+ps0(ii)*sbf(ii)
-  end do
-  do jj=1,nnull
    do ii=4,irclin-3
-    psnullq(jj)=psnullq(jj)+psnull(ii,jj)*sbf(ii)
+     ps0q=ps0q+ps0(ii)*sbf(ii)
    end do
-  end do
+   do jj=1,nnull
+     do ii=4,irclin-3
+       psnullq(jj)=psnullq(jj)+psnull(ii,jj)*sbf(ii)
+     end do
+   end do
 
-  ps0q=ps0q +( 9.0d0*ps0(irclin   )*sbf(irclin   ) &
-&            +28.0d0*ps0(irclin+1 )*sbf(irclin+1 ) &
-&            +23.0d0*ps0(irclin+2 )*sbf(irclin+2 )    &
-&            +23.0d0*ps0(mmaxlin-2)*sbf(mmaxlin-2) &
-&            +28.0d0*ps0(mmaxlin-1)*sbf(mmaxlin-1) &
-&            + 9.0d0*ps0(mmaxlin  )*sbf(mmaxlin  ))/24.0d0
+   ps0q=ps0q +( 9.0d0*ps0(irclin   )*sbf(irclin   ) &
+&             +28.0d0*ps0(irclin+1 )*sbf(irclin+1 ) &
+&             +23.0d0*ps0(irclin+2 )*sbf(irclin+2 )    &
+&             +23.0d0*ps0(mmaxlin-2)*sbf(mmaxlin-2) &
+&             +28.0d0*ps0(mmaxlin-1)*sbf(mmaxlin-1) &
+&             + 9.0d0*ps0(mmaxlin  )*sbf(mmaxlin  ))/24.0d0
 
-  do ii=irclin+3,mmaxlin-3
-   ps0q=ps0q+ps0(ii)*sbf(ii)
-  end do
+   do ii=irclin+3,mmaxlin-3
+     ps0q=ps0q+ps0(ii)*sbf(ii)
+   end do
 
-  ps0q=dr*ps0q
-  psnullq(:)=dr*psnullq(:)
+   ps0q=dr*ps0q
+   psnullq(:)=dr*psnullq(:)
 
 !stuff integrands for E_resid q integration
-  qq4=dq*qq**4
-  dac0(1)=qq4*ps0q**2
-  dacdot(:,1)=qq4*ps0q*psnullq(:)
-  do jj=1,nnull
-    dacmat(:,jj,1)=qq4*psnullq(:)*psnullq(jj)
-  end do
+   qq4=dq*qq**4
+   dac0(1)=qq4*ps0q**2
+   dacdot(:,1)=qq4*ps0q*psnullq(:)
+   do jj=1,nnull
+     dacmat(:,jj,1)=qq4*psnullq(:)*psnullq(jj)
+   end do
 
 !inward integration as soon as dac arrays ("derivative accumulator arrays")
 !are full
-  if(iq<nq-3) then
-   ac0=ac0+(9.0d0*dac0(1)+19.0d0*dac0(2) &
-&      -5.0d0*dac0(3)+dac0(4))/24.0d0
+   if(iq<nq-3) then
+     ac0=ac0+(9.0d0*dac0(1)+19.0d0*dac0(2) &
+&        -5.0d0*dac0(3)+dac0(4))/24.0d0
 
-   acdot(:)=acdot(:)+(9.0d0*dacdot(:,1)+19.0d0*dacdot(:,2) &
-&      -5.0d0*dacdot(:,3)+dacdot(:,4))/24.0d0
+     acdot(:)=acdot(:)+(9.0d0*dacdot(:,1)+19.0d0*dacdot(:,2) &
+&        -5.0d0*dacdot(:,3)+dacdot(:,4))/24.0d0
 
-   acmat(:,:)=acmat(:,:)+(9.0d0*dacmat(:,:,1)+19.0d0*dacmat(:,:,2) &
-&      -5.0d0*dacmat(:,:,3)+dacmat(:,:,4))/24.0d0
-  end if
+     acmat(:,:)=acmat(:,:)+(9.0d0*dacmat(:,:,1)+19.0d0*dacmat(:,:,2) &
+&        -5.0d0*dacmat(:,:,3)+dacmat(:,:,4))/24.0d0
+   end if
 
 !shift dac* arrays one step inward
 
-  do ii=4,2,-1
-   dac0(ii)=dac0(ii-1)
-   dacdot(:,ii)=dacdot(:,ii-1)
-   dacmat(:,:,ii)=dacmat(:,:,ii-1)
-  end do
-  dac0(1)=0.0d0
-  dacdot(:,1)=0.0d0
-  dacmat(:,:,1)=0.0d0
+   do ii=4,2,-1
+     dac0(ii)=dac0(ii-1)
+     dacdot(:,ii)=dacdot(:,ii-1)
+     dacmat(:,:,ii)=dacmat(:,:,ii-1)
+   end do
+   dac0(1)=0.0d0
+   dacdot(:,1)=0.0d0
+   dacmat(:,:,1)=0.0d0
 
 !test if present qq value is a "save" point
 !1/pi factor from implicit sbf*sbf integral
-  do ii=1,nqout
-   if(abs(qout(ii)-qq)<0.5d0*dq) then
-    eresid0(ii)=ac0/pi
-    eresiddot(:,ii)=acdot(:)/pi
-    eresidmat(:,:,ii)=acmat(:,:)/pi
-    qout(ii)=qq
-   end if
-  end do
+   do ii=1,nqout
+     if(abs(qout(ii)-qq)<0.5d0*dq) then
+       eresid0(ii)=ac0/pi
+       eresiddot(:,ii)=acdot(:)/pi
+       eresidmat(:,:,ii)=acmat(:,:)/pi
+       qout(ii)=qq
+     end if
+   end do
 
  end do !big iq loop
 
@@ -308,59 +308,59 @@
  integer :: ii,i0,nn
 
  if(ll1>4) then
-  do ii=1,nr
-   call sbf8(ll1,qq*rlin(ii),sb_out)
-   rsbf(ii)=rlin(ii)*sb_out(ll1)
-  end do
-  return
+   do ii=1,nr
+     call sbf8(ll1,qq*rlin(ii),sb_out)
+     rsbf(ii)=rlin(ii)*sb_out(ll1)
+   end do
+   return
  end if
 
 !rlin is increasing, so the small-argument points come first
  i0=nr+1
  do ii=1,nr
-  xx=qq*rlin(ii)
-  if(xx>=1.0d-3) then
-   i0=ii
-   exit
-  end if
-  if(xx<=1.0d-36) then
-   if(ll1==1) then
-    rsbf(ii)=rlin(ii)
-   else
-    rsbf(ii)=0.0d0
+   xx=qq*rlin(ii)
+   if(xx>=1.0d-3) then
+     i0=ii
+     exit
    end if
-  else
-   xn=1.0d0
-   xs=0.5d0*xx**2
-   do nn=1,ll1-1
-    xn=xx*xn/(2*nn+1)
-   end do
-   rsbf(ii)=rlin(ii)*xn*(1.0d0 - xs*(1.0d0 - xs/(4*ll1+6))/(2*ll1+1))
-  end if
+   if(xx<=1.0d-36) then
+     if(ll1==1) then
+       rsbf(ii)=rlin(ii)
+     else
+       rsbf(ii)=0.0d0
+     end if
+   else
+     xn=1.0d0
+     xs=0.5d0*xx**2
+     do nn=1,ll1-1
+       xn=xx*xn/(2*nn+1)
+     end do
+     rsbf(ii)=rlin(ii)*xn*(1.0d0 - xs*(1.0d0 - xs/(4*ll1+6))/(2*ll1+1))
+   end if
  end do
 
  select case(ll1)
  case(1)
-  do ii=i0,nr
-   xx=qq*rlin(ii)
-   rsbf(ii)=rlin(ii)*(sqr(ii)/xx)
-  end do
+   do ii=i0,nr
+     xx=qq*rlin(ii)
+     rsbf(ii)=rlin(ii)*(sqr(ii)/xx)
+   end do
  case(2)
-  do ii=i0,nr
-   xx=qq*rlin(ii)
-   rsbf(ii)=rlin(ii)*((sqr(ii)-xx*cqr(ii))/xx**2)
-  end do
+   do ii=i0,nr
+     xx=qq*rlin(ii)
+     rsbf(ii)=rlin(ii)*((sqr(ii)-xx*cqr(ii))/xx**2)
+   end do
  case(3)
-  do ii=i0,nr
-   xx=qq*rlin(ii)
-   rsbf(ii)=rlin(ii)*(((3.0d0-xx**2)*sqr(ii) - 3.0d0*xx*cqr(ii))/xx**3)
-  end do
+   do ii=i0,nr
+     xx=qq*rlin(ii)
+     rsbf(ii)=rlin(ii)*(((3.0d0-xx**2)*sqr(ii) - 3.0d0*xx*cqr(ii))/xx**3)
+   end do
  case(4)
-  do ii=i0,nr
-   xx=qq*rlin(ii)
-   rsbf(ii)=rlin(ii)*((15.d0*sqr(ii)-15.d0*xx*cqr(ii) - 6.d0*xx**2*sqr(ii) &
-&           + xx**3*cqr(ii))/xx**4)
-  end do
+   do ii=i0,nr
+     xx=qq*rlin(ii)
+     rsbf(ii)=rlin(ii)*((15.d0*sqr(ii)-15.d0*xx*cqr(ii) - 6.d0*xx**2*sqr(ii) &
+&             + xx**3*cqr(ii))/xx**4)
+   end do
  case default
 ! ll1>4 returned above
  end select

@@ -16,8 +16,8 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
-subroutine wellstate_r(nnin,ll,kap,irc,ep,rr,vfull,vwell, &
-&                      uu,up,zz,mmax,mch)
+ subroutine wellstate_r(nnin,ll,kap,irc,ep,rr,vfull,vwell, &
+&                       uu,up,zz,mmax,mch)
 
 !creates quantum well to confine positive-energy state, and calculates
 !the resulting all-electron wave function
@@ -139,13 +139,13 @@ subroutine wellstate_r(nnin,ll,kap,irc,ep,rr,vfull,vwell, &
 
 !create well potential
      do ii=1,mmax
-      vwell(ii)=vfull(ii)
+       vwell(ii)=vfull(ii)
      end do
 
 !   start outside rc to keep numerical derivatives at rc accurate
      do ii=irc+6,mmax
-      xx=(rr(ii)-rr(irc+5))/rwell
-      vwell(ii)=vwell(ii)+cwell*xx**3/(1.0d0+xx**3)
+       xx=(rr(ii)-rr(irc+5))/rwell
+       vwell(ii)=vwell(ii)+cwell*xx**3/(1.0d0+xx**3)
      end do
 
 !find bound state in well
@@ -160,9 +160,9 @@ subroutine wellstate_r(nnin,ll,kap,irc,ep,rr,vfull,vwell, &
 !     end if
 
      if(abs(et-ep)<eps) then
-      ep=et
-      convg=.true.
-      exit
+       ep=et
+       convg=.true.
+       exit
      end if
 
 !Interval-halving search after proper rwell has been bracketed
@@ -171,9 +171,9 @@ subroutine wellstate_r(nnin,ll,kap,irc,ep,rr,vfull,vwell, &
          rwmin=rwell
        else
          rwmax=rwell
-      end if
-      rwell=0.5d0*(rwmax+rwmin)
-      cycle
+       end if
+       rwell=0.5d0*(rwmax+rwmin)
+       cycle
      end if
 
      if(et>ep) then
@@ -206,15 +206,15 @@ subroutine wellstate_r(nnin,ll,kap,irc,ep,rr,vfull,vwell, &
    write(6,'(a,a,i3,a,i3,a,i3,a,f8.4)') &
 &   'ERROR wellstate_r: well potential iteration failed', &
 &   ' to converge, n=',nn,' l=',ll,' kap=', kap,' ep=',ep
-  error stop 1
+   error stop 1
  end if
 
  if(cwell>0.0d0) then
-  write(6,'(/a,i3,a,i3,a,i3/a,f8.4,/a,f8.4/a,f8.4)') &
-&          '   Wellstate for l =',ll,'  n =',nn,' kap=',kap, &
-&          '     eigenvalue = ',et, &
-&          '     asymptotic potential = ',cwell, &
-&          '     half-point radius =',rr(irc)+rwell
+   write(6,'(/a,i3,a,i3,a,i3/a,f8.4,/a,f8.4/a,f8.4)') &
+&           '   Wellstate for l =',ll,'  n =',nn,' kap=',kap, &
+&           '     eigenvalue = ',et, &
+&           '     asymptotic potential = ',cwell, &
+&           '     half-point radius =',rr(irc)+rwell
  end if
 
 !carry over node count

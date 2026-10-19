@@ -133,11 +133,11 @@
 ! convergence is only to be considered if we are fully in  the target
 ! configurtion
 
-  if(it>2) then
-    convg=.true.
-  else
-    convg=.false.
-  end if
+   if(it>2) then
+     convg=.true.
+   else
+     convg=.false.
+   end if
 
 ! solve for bound states in turn
 
@@ -207,7 +207,7 @@
 
    do ii=1,mmax
      vn=(1.0d0-bl)*((1.0d0-thl)*vi(ii) + thl*vi1(ii)) &
-  &   + bl*((1.0d0-thl)*vo(ii) + thl*vo1(ii))
+&     + bl*((1.0d0-thl)*vo(ii) + thl*vo1(ii))
      vi1(ii)=vi(ii)
      vo1(ii)=vo(ii)
      vi(ii)=vn

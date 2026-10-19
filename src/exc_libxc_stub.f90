@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 
-subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax)
+ subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax)
 !
 !  dummy substitute for interface to libxc library to allow successful
 !  build without this library
@@ -36,4 +36,4 @@ subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax)
  write(6,'(a)') 'Program will stop.'
 
  error stop 1
-end subroutine exc_libxc
+ end subroutine exc_libxc

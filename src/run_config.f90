@@ -20,9 +20,9 @@
 ! compared for reference and tests atomic configurations
 
 
-  subroutine run_config_ps(jj,cae,nc,rhov,rhomod,rr, &
-&                  rcmax,mmax,mxprj,iexc,etot,epstot,nproj,vpuns, &
-&                  lloc,vkb,evkb)
+ subroutine run_config_ps(jj,cae,nc,rhov,rhomod,rr, &
+&                 rcmax,mmax,mxprj,iexc,etot,epstot,nproj,vpuns, &
+&                 lloc,vkb,evkb)
 
 !jj  index of current configufation
 !cae  all-electron results for this configuration, from run_config_ae
@@ -94,8 +94,8 @@
 ! configurations are computed by run_config_ae.
 
  if(cae%stat/=0) then
-  call config_ae_warning(jj,cae)
-  return
+   call config_ae_warning(jj,cae)
+   return
  end if
 
  nvt=cae%nvt
@@ -108,19 +108,19 @@
  allocate(rho(mmax),rhocps(mmax))
 
 !first pseudoatom run from reference to maximally-ionized configuration
-   do l1=1,4
-     nav(l1)=l1-1
-   end do
+ do l1=1,4
+   nav(l1)=l1-1
+ end do
 
-   do kk=1,nvt
-     latp(kk)=lat(nc+kk)
-     l1=latp(kk)+1
-     nav(l1)=nav(l1)+1
-     natp(kk)=nav(l1)
-     eatp(kk)=eat(nc+kk,1)
-     fatp(kk,1)=fat(nc+kk,1)
-     fatp(kk,2)=fat(nc+kk,2)
-   end do
+ do kk=1,nvt
+   latp(kk)=lat(nc+kk)
+   l1=latp(kk)+1
+   nav(l1)=nav(l1)+1
+   natp(kk)=nav(l1)
+   eatp(kk)=eat(nc+kk,1)
+   fatp(kk,1)=fat(nc+kk,1)
+   fatp(kk,2)=fat(nc+kk,2)
+ end do
 
  rho(:)=rhov(:)
 
@@ -131,20 +131,20 @@
 &           vkb,evkb,ierr)
 
  if(ierr/=0) then
-  write(6,'(a,a/a,i2)') 'run_config: WARNING for fully non-local PS atom,', &
-&       ' stg. 1', &
-&       ' WARNING no output for configuration',jj
-  deallocate(rho,rhocps)
-  return
+   write(6,'(a,a/a,i2)') 'run_config: WARNING for fully non-local PS atom,', &
+&        ' stg. 1', &
+&        ' WARNING no output for configuration',jj
+   deallocate(rho,rhocps)
+   return
  end if
 
 !second pseudoatom run from maximally-ionized to excited configuration
 
-   do kk=1,nvt
-     eatp(kk)=eat(nc+kk,2)
-     fatp(kk,1)=fat(nc+kk,2)
-     fatp(kk,2)=fat(nc+kk,3)
-   end do
+ do kk=1,nvt
+   eatp(kk)=eat(nc+kk,2)
+   fatp(kk,1)=fat(nc+kk,2)
+   fatp(kk,2)=fat(nc+kk,3)
+ end do
  do ii=1,nvt
  end do
 
@@ -153,23 +153,23 @@
 &           vkb,evkb,ierr)
 
  if(ierr/=0) then
-  write(6,'(a,a/a,i2)') 'run_config: WARNING for fully non-local PS atom,', &
-&       ' stg. 2', &
-&       ' WARNING no output for configuration',jj
-  deallocate(rho,rhocps)
-  return
+   write(6,'(a,a/a,i2)') 'run_config: WARNING for fully non-local PS atom,', &
+&        ' stg. 2', &
+&        ' WARNING no output for configuration',jj
+   deallocate(rho,rhocps)
+   return
  end if
 
 
 
  write(6,'(/a)') '   n   l     f        eae           eps        diff'
  do ii=1,nc
-  write(6,'(2i4,f8.4,f14.8)') nat(ii),lat(ii),fat(ii,3),eat(ii,3)
+   write(6,'(2i4,f8.4,f14.8)') nat(ii),lat(ii),fat(ii,3),eat(ii,3)
  end do
  do ii=1,nvt
-  if(fat(ii+nc,3)==0.0d0) cycle
-  write(6,'(2i4,f8.4,2f14.8,1p,d12.2)') nat(ii+nc),lat(ii+nc),fat(ii+nc,3), &
-&  eat(ii+nc,3),eatp(ii),eatp(ii)-eat(ii+nc,3)
+   if(fat(ii+nc,3)==0.0d0) cycle
+   write(6,'(2i4,f8.4,2f14.8,1p,d12.2)') nat(ii+nc),lat(ii+nc),fat(ii+nc,3), &
+&   eat(ii+nc,3),eatp(ii),eatp(ii)-eat(ii+nc,3)
  end do
 
  write(6,'(/a)') '    Total energies and differences'

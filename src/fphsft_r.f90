@@ -69,10 +69,10 @@
    phip = (up(mch,1)-al*uu(mch,1))/(al*rr(mch)**2)
    pshf(ii) = atan2(rr(mch)*phip,phi) + pshoff
    if(ii>1) then
-      if(pshf(ii)<pshf(ii-1)) then
-         pshoff = pshoff+pi2
-         pshf(ii) = pshf(ii)+pi2
-      end if
+     if(pshf(ii)<pshf(ii-1)) then
+       pshoff = pshoff+pi2
+       pshf(ii) = pshf(ii)+pi2
+     end if
    end if
  end do
 

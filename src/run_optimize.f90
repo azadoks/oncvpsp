@@ -16,9 +16,9 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
-   subroutine run_optimize(eig,ll,mmax,mxprj,rr,uua,qq,&
-&                        irc,qcut,qmsbf,ncon_in,nbas_in,npr, &
-&                        psopt,vpsp,vkb,vae,cvgplt,ncurve,ecurve)
+ subroutine run_optimize(eig,ll,mmax,mxprj,rr,uua,qq,&
+&                      irc,qcut,qmsbf,ncon_in,nbas_in,npr, &
+&                      psopt,vpsp,vkb,vae,cvgplt,ncurve,ecurve)
 
 ! calls routines to generate optimized pseudo wave function and semi-local
 ! pseudopotential and prints diagnostic information on process and
@@ -100,7 +100,7 @@
  dr=0.02d0  !linear integration spacing for Fourier transforms
 !dr=0.002d0  !linear integration spacing for Fourier transforms
  dqout=0.5000001d0  !linear mesh spacing for final E_resid(q) interpolation
-                    !increment is to avoid exact commnesurability with dq mesh
+!increment is to avoid exact commnesurability with dq mesh
 
  al = 0.01d0 * log(rr(101) / rr(1))
  rc=rr(irc)
@@ -111,21 +111,21 @@
  allocate(work(mmax))
 
 !maximum basis size
-   nbas=nbas_in+npr-1
-   allocate(qroot(nbas))
+ nbas=nbas_in+npr-1
+ allocate(qroot(nbas))
 
 !calculate derivatives of all-electron wave function at r_c
 !for the first projector to set sbf wave vectors for all projectors
 
-   call wf_rc_der(rr,uua(1,1),al,rc,irc,mmax,uord)
-   ulgd=uord(2)/uord(1)
+ call wf_rc_der(rr,uua(1,1),al,rc,irc,mmax,uord)
+ ulgd=uord(2)/uord(1)
 
-   qmax=200.0d0  !very large value should always allow nbas q's to be found
+ qmax=200.0d0  !very large value should always allow nbas q's to be found
 
 !select wave vectors for spherical Bessel functions
-   call qroots(ll,rc,ulgd,nbas,dq,qmax,qroot)
+ call qroots(ll,rc,ulgd,nbas,dq,qmax,qroot)
 
-   qmsbf=qroot(nbas)
+ qmsbf=qroot(nbas)
 
 !write(6,'(/a)') 'qroots'
 !write(6,'(6f12.6)') (qroot(ii),ii=1,nbas)
@@ -171,7 +171,7 @@
 
    qout(1)=qcut
    do ii=nqout,2,-1
-    qout(ii)=(ii-2)*dqout
+     qout(ii)=(ii-2)*dqout
    end do
 
 !calculate orthogonal basis and constraint matrix
@@ -182,7 +182,7 @@
 !load constraint vector for value/derivative matching
    cons(:)=0.0d0
    do jj=1,ncon_in
-    cons(jj)=uord(jj)
+     cons(jj)=uord(jj)
    end do
 !load overlap constraints if present
    if(iprj>=2) then
@@ -259,18 +259,18 @@
    leresq(:)=log(eresq(:))
    err=0.01d0
    do jj=1,7
-    lerr=log(err)
-    do ii=3,nqout
-     if(leresq(ii-1)>lerr .and. leresq(ii)<=lerr) then
-      qerr=qout(ii)-dqout*(lerr-leresq(ii))/(leresq(ii-1)-leresq(ii))
-      cvgplt(1,jj,iprj)= 0.5d0*qerr**2
-      cvgplt(2,jj,iprj)= err
-      if(mod(jj,2)/=0) then
-        write(6,'(4x,2f12.5,f12.2)') err,err*Ha_eV,0.5d0*qerr**2
-      end if
-     end if
-    end do
-    err=sqrt(0.1d0)*err
+     lerr=log(err)
+     do ii=3,nqout
+       if(leresq(ii-1)>lerr .and. leresq(ii)<=lerr) then
+         qerr=qout(ii)-dqout*(lerr-leresq(ii))/(leresq(ii-1)-leresq(ii))
+         cvgplt(1,jj,iprj)= 0.5d0*qerr**2
+         cvgplt(2,jj,iprj)= err
+         if(mod(jj,2)/=0) then
+           write(6,'(4x,2f12.5,f12.2)') err,err*Ha_eV,0.5d0*qerr**2
+         end if
+       end if
+     end do
+     err=sqrt(0.1d0)*err
    end do
 
    deallocate(sbasis)

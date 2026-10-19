@@ -2,3 +2,6 @@ The *.sh scripts are replicated in the tests directory.
 
 The first line of fldiff.pl may have to be edited to specify the proper
 location of perl.
+
+reindent.py re-indents the Fortran sources in the layout of
+doc/coding_standards.md; pre-commit runs it.

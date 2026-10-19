@@ -87,9 +87,9 @@
 
 ! loop for diagnostic output using Vanderbilt Kleinman-Bylander projectors
 
-   write(6,'(/a)') ' Testing for bound ghosts'
-   write(6,'(5a)') '   n','   l','    E NL Schr. Eq', &
-&        '   E Basis Diag.','   E Cutoff'
+ write(6,'(/a)') ' Testing for bound ghosts'
+ write(6,'(5a)') '   n','   l','    E NL Schr. Eq', &
+&      '   E Basis Diag.','   E Cutoff'
 
  nodes(:)=0
  npgh=0
@@ -113,8 +113,8 @@
    end if
 
 ! Basis cutoff energy is based on largest q in sbf optimization basis
-  basfact=1.25d0
-  ebcut(l1)= basfact*0.5d0*qmsbf(l1)**2
+   basfact=1.25d0
+   ebcut(l1)= basfact*0.5d0*qmsbf(l1)**2
 
 ! Estimate maximum basis set size nbmax based on ll=0 sbf
 ! with 20% allowance for binding by local potential
@@ -144,12 +144,12 @@
 &                   mmax,mbar,tht)
 
      if(ierr/=0) then
-         if(emax/=ebcut(l1)) then
+       if(emax/=ebcut(l1)) then
          write(6,'(a,3i4,3f12.6)')  &
 &              'run_ghosts 143: lschpsbar ERROR ierr,nn,ll,ee,emin,emax', &
 &              ierr,nn,ll,ee,emin,emax
          error stop 1
-         end if
+       end if
        nbas=jj-1
        exit
      end if
@@ -182,114 +182,114 @@
 
 !      SUBROUTINE DSYEV( JOBZ, UPLO, N, A, LDA, W, WORK, LWORK, INFO )
 
-     call dsyev( 'V', 'U', nbas, hmat, nbmax, hmev, work, lwork, info )
-     if(info /= 0) then
-      write(6,'(a,i4)') 'run_ghosts: hamiltonian matrix eigenvalue ERROR, &
+   call dsyev( 'V', 'U', nbas, hmat, nbmax, hmev, work, lwork, info )
+   if(info /= 0) then
+     write(6,'(a,i4)') 'run_ghosts: hamiltonian matrix eigenvalue ERROR, &
 &          info=',info
-      error stop 1
-     end if
+     error stop 1
+   end if
 !treat valence states for this l
-     nn=ll
-     jj=0
-     do kk=1,nv
-       if(la(nc+kk)/=ll) cycle
-       jj=jj+1
-       nn=nn+1
-       ee=ea(nc+kk)
-       emax=0.9d0*ea(nc+kk)
-       emin=1.1d0*ea(nc+kk)
-       call lschvkbb(nn,ll,nprj,ierr,ee,emin,emax, &
-&                    rr,vp(1,lloc+1),vkb(1,1,l1),evkb(1,l1), &
-&                    uu,up,mmax,mch)
-       if(ierr/=0) then
-         write(6,'(a,3i4,2f12.6)') 'run_ghosts: lschvkbb ERROR', &
-&              nn,ll,ierr,ea(nc+kk),ee
+   nn=ll
+   jj=0
+   do kk=1,nv
+     if(la(nc+kk)/=ll) cycle
+     jj=jj+1
+     nn=nn+1
+     ee=ea(nc+kk)
+     emax=0.9d0*ea(nc+kk)
+     emin=1.1d0*ea(nc+kk)
+     call lschvkbb(nn,ll,nprj,ierr,ee,emin,emax, &
+&                  rr,vp(1,lloc+1),vkb(1,1,l1),evkb(1,l1), &
+&                  uu,up,mmax,mch)
+     if(ierr/=0) then
+       write(6,'(a,3i4,2f12.6)') 'run_ghosts: lschvkbb ERROR', &
+&            nn,ll,ierr,ea(nc+kk),ee
+     end if
+
+     do ii=1,10
+       et=min(ee-eps,ee*(1.0d0+eps))
+       if(hmev(jj)<et) then
+         write(6,'(4x,i4,16x,f16.6,f10.2,a)') ll,hmev(jj),ecut, &
+&              '  WARNING - GHOST(-)'
+         jj=jj+1
+       else
+         exit
        end if
+     end do !ii
 
-       do ii=1,10
-         et=min(ee-eps,ee*(1.0d0+eps))
-         if(hmev(jj)<et) then
-           write(6,'(4x,i4,16x,f16.6,f10.2,a)') ll,hmev(jj),ecut, &
-&                '  WARNING - GHOST(-)'
-           jj=jj+1
-         else
-           exit
-         end if
-       end do !ii
-
-       write(6,'(2i4,2f16.6,f10.2)') nn,ll,ee,hmev(jj),ecut
-     end do !kk
+     write(6,'(2i4,2f16.6,f10.2)') nn,ll,ee,hmev(jj),ecut
+   end do !kk
 
 !if there were no valence states, look for any nodeless bound state
 !if this fails, use vacuum level (0.0) to compare to basis-set states
 
-     if(jj==0) then
-       ee=-1.0d5
-       do kk=1,nv
-         ee=max(ee,ea(nc+kk))
-       end do
-       emax=0.0d0
-       emin=2.0d0*ee
-       call lschvkbb(ll+1,ll,nprj,ierr,ee,emin,emax, &
-&                    rr,vp(1,lloc+1),vkb(1,1,l1),evkb(1,l1), &
-&                    uu,up,mmax,mch)
-       if(ierr/=0) ee=0.0d0
-       do jj=1,10
-         et=min(ee-eps,ee*(1.0d0+eps))
-         if(hmev(jj)<et) then
-           write(6,'(4x,i4,16x,f16.6,f10.2,a)') ll,hmev(jj),ecut, &
-&                '  WARNING - GHOST(-)'
-         else if(ee<0.0d0) then
-           write(6,'(2i4,2f16.6,f10.2)') ll+1,ll,ee,hmev(jj),ecut
-           exit
-         else
-           exit
-         end if
-       end do
-     end if
+   if(jj==0) then
+     ee=-1.0d5
+     do kk=1,nv
+       ee=max(ee,ea(nc+kk))
+     end do
+     emax=0.0d0
+     emin=2.0d0*ee
+     call lschvkbb(ll+1,ll,nprj,ierr,ee,emin,emax, &
+&                  rr,vp(1,lloc+1),vkb(1,1,l1),evkb(1,l1), &
+&                  uu,up,mmax,mch)
+     if(ierr/=0) ee=0.0d0
+     do jj=1,10
+       et=min(ee-eps,ee*(1.0d0+eps))
+       if(hmev(jj)<et) then
+         write(6,'(4x,i4,16x,f16.6,f10.2,a)') ll,hmev(jj),ecut, &
+&              '  WARNING - GHOST(-)'
+       else if(ee<0.0d0) then
+         write(6,'(2i4,2f16.6,f10.2)') ll+1,ll,ee,hmev(jj),ecut
+         exit
+       else
+         exit
+       end if
+     end do
+   end if
 
 !calculate mean radius of all eigenstates to look for highly localized
 !states which indicate postive-energy ghosts
-     do jj=1,nbas
-       uu(:)=0.0d0
-       do ii=1,nbas
-         uu(:)=uu(:)+hmat(ii,jj)*uua(:,ii)
-       end do
+   do jj=1,nbas
+     uu(:)=0.0d0
+     do ii=1,nbas
+       uu(:)=uu(:)+hmat(ii,jj)*uua(:,ii)
+     end do
 
-       ro=rr(1)/sqrt(amesh)
-       sn=(ro*uu(1))**2/real(2*ll+4,dp)
+     ro=rr(1)/sqrt(amesh)
+     sn=(ro*uu(1))**2/real(2*ll+4,dp)
 
-       do ii=1,mbar-3
-         sn=sn+al*(rr(ii)*uu(ii))**2
-       end do
+     do ii=1,mbar-3
+       sn=sn+al*(rr(ii)*uu(ii))**2
+     end do
 
-       sn=sn + al*(23.0d0*(rr(mbar-2)*uu(mbar-2))**2 &
-&                + 28.0d0*(rr(mbar-1)*uu(mbar-1))**2 &
-&                +  9.0d0*(rr(mbar  )*uu(mbar  ))**2)/24.0d0
+     sn=sn + al*(23.0d0*(rr(mbar-2)*uu(mbar-2))**2 &
+&              + 28.0d0*(rr(mbar-1)*uu(mbar-1))**2 &
+&              +  9.0d0*(rr(mbar  )*uu(mbar  ))**2)/24.0d0
 
 !      if(sn<rr(irc(l1)) .and. hmev(jj)>0.0d0 .and. npgh<20) then
-       if(sn<rr(irc(l1)) .and. hmev(jj)>ee+0.05d0 .and. npgh<20) then
-         npgh=npgh+1
-         lpgh(npgh)=ll
-         epgh(npgh)=hmev(jj)
-         rpgh(npgh)=sn/rr(irc(l1))
-         cpgh(npgh)=ecut
-       end if
-     end do
+     if(sn<rr(irc(l1)) .and. hmev(jj)>ee+0.05d0 .and. npgh<20) then
+       npgh=npgh+1
+       lpgh(npgh)=ll
+       epgh(npgh)=hmev(jj)
+       rpgh(npgh)=sn/rr(irc(l1))
+       cpgh(npgh)=ecut
+     end if
+   end do
 
 
    deallocate(gg0,hmat,hmev,work)
    deallocate(uua)
  end do !l1
 
-   write(6,'(/a)') ' Testing for highly-localized positive-energy ghosts'
-   write(6,'(5a)') '    ','   l','    <radius>/rc  ', &
-&        '   E Basis Diag.','   E Cutoff'
+ write(6,'(/a)') ' Testing for highly-localized positive-energy ghosts'
+ write(6,'(5a)') '    ','   l','    <radius>/rc  ', &
+&      '   E Basis Diag.','   E Cutoff'
 
  if(npgh>0) then
    do jj=1,npgh
-           write(6,'(/4x,i4,2f16.6,f10.2,a)') lpgh(jj),rpgh(jj), &
-&                epgh(jj),cpgh(jj),'  WARNING - GHOST(+)'
+     write(6,'(/4x,i4,2f16.6,f10.2,a)') lpgh(jj),rpgh(jj), &
+&          epgh(jj),cpgh(jj),'  WARNING - GHOST(+)'
    end do
  end if
 

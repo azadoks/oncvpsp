@@ -96,7 +96,7 @@
 
 ! electron-electron interaction for total energy
  do ii=1,mmax
-  foutv(ii)=rho(ii)*vo(ii)*rr(ii)**3
+   foutv(ii)=rho(ii)*vo(ii)*rr(ii)**3
  end do
 
  eeel=(9.0d0*foutv(1) + 28.0d0*foutv(2) &
@@ -144,7 +144,7 @@
 ! exchange-correlation correction for total energy
 
  do ii=1,mmax
-  foutx(ii)=rho(ii)*difxc(ii)*rr(ii)**3
+   foutx(ii)=rho(ii)*difxc(ii)*rr(ii)**3
  end do
  eexc=(9.0d0*foutx(1) + 28.0d0*foutx(2) &
 &   + 23.0d0*foutx(3))/24.0d0
@@ -169,7 +169,7 @@
    end if
 
    do ii=1,mmax
-    foutfc(ii)=rhoc(ii)*(exca(ii) - excca(ii))*rr(ii)**3
+     foutfc(ii)=rhoc(ii)*(exca(ii) - excca(ii))*rr(ii)**3
    end do
    eexc=eexc + (9.0d0*foutfc(1) + 28.0d0*foutfc(2) &
 &     + 23.0d0*foutfc(3))/24.0d0

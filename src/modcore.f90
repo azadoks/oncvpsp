@@ -101,7 +101,7 @@
  end if
 
 !set limit for d2Exc calculation to radius beyond which rhomod=rhoc
-   irmod=max(irps,ircc)
+ irmod=max(irps,ircc)
 
  write(6,'(/a/a)') 'Model core correction analysis',&
 &                  '  based on d2Exc/dn_idn_j'
@@ -146,13 +146,13 @@
  do jj=2,5
 
 !7-point numerical first derivatives applied successively
-  do ii=ircc-25+3*jj,mmax-3
+   do ii=ircc-25+3*jj,mmax-3
      rhomod(ii,jj)=(-rhomod(ii-3,jj-1)+ 9.d0*rhomod(ii-2,jj-1)&
 &     -45.d0*rhomod(ii-1,jj-1)+45.d0*rhomod(ii+1,jj-1)&
 &     -9.d0*rhomod(ii+2,jj-1)+rhomod(ii+3,jj-1))&
 &     /(60.d0*al*rr(ii))
-  end do
-  fmatch(jj)=rhomod(ircc,jj)
+   end do
+   fmatch(jj)=rhomod(ircc,jj)
  end do
 
 ! constants for polynomial matrix
@@ -177,11 +177,11 @@
  end do
 
 ! polynomial matrix
-   do jj=1,5
-     do ii=1,5
-       polym(ii,jj)=constm(ii,jj)*xpow(jj-ii+5)
-     end do
+ do jj=1,5
+   do ii=1,5
+     polym(ii,jj)=constm(ii,jj)*xpow(jj-ii+5)
    end do
+ end do
 
 
 ! begin iteration for monotonic polynomial match
@@ -192,7 +192,7 @@
 
  do iter=1,50
 
-  work(:,:)=polym(:,:)
+   work(:,:)=polym(:,:)
 
 ! fill target value vector
    aco(1)=fmatch(1)-a0
@@ -284,4 +284,4 @@
  deallocate(d2excae,d2excps)
 
  return
-end subroutine modcore
+ end subroutine modcore

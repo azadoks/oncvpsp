@@ -143,17 +143,17 @@
  write(6,'(a/)') trim(x_label(1))
 
  do l1=1,lmax+1
-  write(6,'(2a)',advance='no') lead(l1),trim(gln(l1))
-  if(l1<lmax+1 .or. lloc==4) then
-   write(6,'(a)') cbs
-  else
-   write(6,'(/)')
-  end if
+   write(6,'(2a)',advance='no') lead(l1),trim(gln(l1))
+   if(l1<lmax+1 .or. lloc==4) then
+     write(6,'(a)') cbs
+   else
+     write(6,'(/)')
+   end if
  end do
 
  if(lloc==4) then
-  l1=5
-  write(6,'(2a)') lead(l1),trim(gln(l1))
+   l1=5
+   write(6,'(2a)') lead(l1),trim(gln(l1))
  end if
 
  write(6,'(/a/)') trim(pse)
@@ -162,60 +162,60 @@
  write(6,'(a/)') trim(x_label(1))
 
  do ii=1,3
-  write(6,'(2a)',advance='no') lead(ii),trim(gln(ii+5))
-  if(ii<3) then
-   write(6,'(a)') cbs
-  else
-   write(6,'(/)')
-  end if
+   write(6,'(2a)',advance='no') lead(ii),trim(gln(ii+5))
+   if(ii<3) then
+     write(6,'(a)') cbs
+   else
+     write(6,'(/)')
+   end if
  end do
 
  write(6,'(/a/)') trim(pse)
 
  do l1=1,lmax+1
-  do iprj=1,nproj(l1)
+   do iprj=1,nproj(l1)
 
-    write(6,'(a,i2,a,f7.2,a/)') trim(plot_title(3)),iprj,', E= ', &
-&         epa(iprj,l1),' Ha"'
-    write(6,'(a/)') trim(x_label(1))
+     write(6,'(a,i2,a,f7.2,a/)') trim(plot_title(3)),iprj,', E= ', &
+&          epa(iprj,l1),' Ha"'
+     write(6,'(a/)') trim(x_label(1))
 
-    write(6,'(2a,i5,2a)') lead(1),trim(gln(60)),iprj,trim(gln(2*l1+7)),cbs
-    write(6,'(2a,i5, a)') lead(2),trim(gln(60)),iprj,trim(gln(2*l1+8))
+     write(6,'(2a,i5,2a)') lead(1),trim(gln(60)),iprj,trim(gln(2*l1+7)),cbs
+     write(6,'(2a,i5, a)') lead(2),trim(gln(60)),iprj,trim(gln(2*l1+8))
 
-    write(6,'(/a/)') trim(pse)
+     write(6,'(/a/)') trim(pse)
 
-  end do !iprj
+   end do !iprj
 
 !orthonormal projector plot
- ll=l1-1
- if(ll/=lloc) then
-   write(6,'(a/)') trim(x_label(1))
-   write(6,'(a,1p,5e11.2)',advance='no') trim(plot_title(6+l1)), &
-&        (evkb(jj,l1),jj=1,nproj(l1))
-   write(6,'(a/)')    ' Ha"'
+   ll=l1-1
+   if(ll/=lloc) then
+     write(6,'(a/)') trim(x_label(1))
+     write(6,'(a,1p,5e11.2)',advance='no') trim(plot_title(6+l1)), &
+&          (evkb(jj,l1),jj=1,nproj(l1))
+     write(6,'(a/)')    ' Ha"'
 
-   do jj=1,nproj(l1)
-     write(6,'(2a,i6,a)',advance='no') lead(jj),trim(gln(70)),ll,trim(gln(70+jj))
-     if(jj<nproj(l1)) then
-      write(6,'(a)') cbs
-     else
-      write(6,'(/)')
-     end if
-   end do
+     do jj=1,nproj(l1)
+       write(6,'(2a,i6,a)',advance='no') lead(jj),trim(gln(70)),ll,trim(gln(70+jj))
+       if(jj<nproj(l1)) then
+         write(6,'(a)') cbs
+       else
+         write(6,'(/)')
+       end if
+     end do
 
-   write(6,'(/a/)') trim(pse)
+     write(6,'(/a/)') trim(pse)
 
- end if
+   end if
 
 ! log derivative plots
 
-  write(6,'(a/)') trim(plot_title(5))
-  write(6,'(a/)') trim(x_label(2))
+   write(6,'(a/)') trim(plot_title(5))
+   write(6,'(a/)') trim(x_label(2))
 
-  write(6,'(3a)') lead(1),trim(gln(4*l1+19)),cbs
-  write(6,'(2a)') lead(2),trim(gln(4*l1+20))
+   write(6,'(3a)') lead(1),trim(gln(4*l1+19)),cbs
+   write(6,'(2a)') lead(2),trim(gln(4*l1+20))
 
-  write(6,'(/a/)') trim(pse)
+   write(6,'(/a/)') trim(pse)
 
  end do !l1
 
@@ -224,13 +224,13 @@
 
  do l1=lmax+2,4
 
-  write(6,'(a/)') trim(plot_title(5))
-  write(6,'(a/)') trim(x_label(2))
+   write(6,'(a/)') trim(plot_title(5))
+   write(6,'(a/)') trim(x_label(2))
 
-  write(6,'(3a)') lead(1),trim(gln(4*l1+19)),cbs
-  write(6,'(2a)') lead(2),trim(gln(4*l1+20))
+   write(6,'(3a)') lead(1),trim(gln(4*l1+19)),cbs
+   write(6,'(2a)') lead(2),trim(gln(4*l1+20))
 
-  write(6,'(/a/)') trim(pse)
+   write(6,'(/a/)') trim(pse)
 
  end do
 
@@ -246,12 +246,12 @@
  write(6,'(a/)') trim(x_label(3))
 
  do l1=1,lmax+1
-  write(6,'(2a)',advance='no') lead(l1),trim(gln(46+l1))
-  if(l1<lmax+1) then
-   write(6,'(a)') cbs
-  else
-   write(6,'(/)')
-  end if
+   write(6,'(2a)',advance='no') lead(l1),trim(gln(46+l1))
+   if(l1<lmax+1) then
+     write(6,'(a)') cbs
+   else
+     write(6,'(/)')
+   end if
  end do
 
  write(6,'(/a/)') trim(pse)

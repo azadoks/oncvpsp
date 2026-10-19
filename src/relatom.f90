@@ -89,7 +89,7 @@
  amesh = exp(al)
 
  do ii=1,mmax
-  vi(ii)=tfapot(rr(ii),zz)
+   vi(ii)=tfapot(rr(ii),zz)
  end do
 
 ! starting approximation for energies
@@ -115,57 +115,57 @@
 ! solve for bound states in turn
    eeig=0.0d0
    do ii=1,ncv
-    ll = la(ii)
-    if(ll==0) then
-     mkap=1
-    else
-     mkap=2
-    end if
-! loop on J = ll +/- 1/2
-    do ikap=1,mkap
-     if(ikap==1) then
-       kap=-(ll+1)
-       fj=dble(ll+1)*fa(ii)/dble(2*ll+1)
+     ll = la(ii)
+     if(ll==0) then
+       mkap=1
      else
-       kap=  ll
-       fj=dble(ll)*fa(ii)/dble(2*ll+1)
+       mkap=2
      end if
-     et=ea(ii,ikap)
-     ierr = 0
+! loop on J = ll +/- 1/2
+     do ikap=1,mkap
+       if(ikap==1) then
+         kap=-(ll+1)
+         fj=dble(ll+1)*fa(ii)/dble(2*ll+1)
+       else
+         kap=  ll
+         fj=dble(ll)*fa(ii)/dble(2*ll+1)
+       end if
+       et=ea(ii,ikap)
+       ierr = 0
 
-     call ldiracfb(na(ii),ll,kap,ierr,et, &
-&                rr,zz,vi,uu,up,mmax,mch)
+       call ldiracfb(na(ii),ll,kap,ierr,et, &
+&                  rr,zz,vi,uu,up,mmax,mch)
 
-     if(ierr /= 0) then
-       write(6,'(/2a,5i4)') 'relatom: ldiracfb convergence ERROR', &
-&           ' n,l,kap,iter,ierr=',na(ii),ll,kap,it,ierr
-       error stop 1
-     end if
+       if(ierr /= 0) then
+         write(6,'(/2a,5i4)') 'relatom: ldiracfb convergence ERROR', &
+&             ' n,l,kap,iter,ierr=',na(ii),ll,kap,it,ierr
+         error stop 1
+       end if
 
 ! overall convergence criterion based on eps within lschfb
-     if(ea(ii,ikap)/= et) convg=.false.
-     ea(ii,ikap)=et
+       if(ea(ii,ikap)/= et) convg=.false.
+       ea(ii,ikap)=et
 
 ! accumulate charge and eigenvalues
-     eeig = eeig + fj*ea(ii,ikap)
-     rho(:)=rho(:) + fj*((uu(:,1)/rr(:))**2 + (uu(:,2)/rr(:))**2)
-     if(ii<=nc) then
-      rhoc(:)=rhoc(:) + fj*((uu(:,1)/rr(:))**2 + (uu(:,2)/rr(:))**2)
-     end if
+       eeig = eeig + fj*ea(ii,ikap)
+       rho(:)=rho(:) + fj*((uu(:,1)/rr(:))**2 + (uu(:,2)/rr(:))**2)
+       if(ii<=nc) then
+         rhoc(:)=rhoc(:) + fj*((uu(:,1)/rr(:))**2 + (uu(:,2)/rr(:))**2)
+       end if
 
 
 ! find outermost peak of wavefunction
-     do jj=mch-1,1,-1
-       if(up(jj,1)*up(jj+1,1)<0.0d0) then
-         rpk(ii,ikap)=rr(jj)
-         exit
-       end if
+       do jj=mch-1,1,-1
+         if(up(jj,1)*up(jj+1,1)<0.0d0) then
+           rpk(ii,ikap)=rr(jj)
+           exit
+         end if
+       end do
      end do
-    end do
    end do
 
    if(ierr/=0) then
-    exit
+     exit
    end if
 
 
@@ -191,7 +191,7 @@
 
    do ii=1,mmax
      vn=(1.0d0-bl)*((1.0d0-thl)*vi(ii) + thl*vi1(ii)) &
-  &   + bl*((1.0d0-thl)*vo(ii) + thl*vo1(ii))
+&     + bl*((1.0d0-thl)*vo(ii) + thl*vo1(ii))
      vi1(ii)=vi(ii)
      vo1(ii)=vo(ii)
      vi(ii)=vn

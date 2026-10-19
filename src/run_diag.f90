@@ -75,78 +75,78 @@
 &   'delta e   norm test  slope test'
 !
  do l1 = 1, lmax + 1
-  write(6,'(a)') ''
-  ll = l1 - 1
-  nnp=l1
-  do iprj=1,max(1,nproj(l1))
-    npr=nproj(l1)
+   write(6,'(a)') ''
+   ll = l1 - 1
+   nnp=l1
+   do iprj=1,max(1,nproj(l1))
+     npr=nproj(l1)
 
 !   find cutoff radius for projectors
-    mchf=max(irc(l1),irc(lloc+1))+5
+     mchf=max(irc(l1),irc(lloc+1))+5
 
-    etest=epa(iprj,l1)
-    if(etest<0.0d0) then
-      call lschfb(npa(iprj,l1),ll,ierr,etest, &
-&                rr,vfull,uu,up,zz,mmax,mch,srel)
-      if(ierr /= 0) then
+     etest=epa(iprj,l1)
+     if(etest<0.0d0) then
+       call lschfb(npa(iprj,l1),ll,ierr,etest, &
+&                 rr,vfull,uu,up,zz,mmax,mch,srel)
+       if(ierr /= 0) then
          write(6,'(/a,3i4)') 'run_diag: lschfb convergence ERROR n,l,ierr=', &
 &        npa(iprj,l1),ll,ierr
-        error stop 1
-      end if
+         error stop 1
+       end if
 
-    else
-      call lschfs(nnae,ll,ierr,etest, &
-&               rr,vfull,uu,up,zz,mmax,mchf,srel)
-    end if
+     else
+       call lschfs(nnae,ll,ierr,etest, &
+&                rr,vfull,uu,up,zz,mmax,mchf,srel)
+     end if
 
-    umch=uu(mchf)
-    upmch=up(mchf)
-    uldf=upmch/umch
-    etest=epa(iprj,l1)
+     umch=uu(mchf)
+     upmch=up(mchf)
+     uldf=upmch/umch
+     etest=epa(iprj,l1)
 
-    if(l1==lloc+1) npr=0
+     if(l1==lloc+1) npr=0
 
-    etest=epa(iprj,l1)
-    emax=etest+0.1d0*abs(etest)+0.05d0
-    emin=etest-0.1d0*abs(etest)-0.05d0
+     etest=epa(iprj,l1)
+     emax=etest+0.1d0*abs(etest)+0.05d0
+     emin=etest-0.1d0*abs(etest)-0.05d0
 
 
-    if(epa(iprj,l1)<0.0d0) then
-      sls=(l1-1)*l1
+     if(epa(iprj,l1)<0.0d0) then
+       sls=(l1-1)*l1
 
-      emax=min(emax,0.0d0)
+       emax=min(emax,0.0d0)
 
-      call lschvkbb(ll+iprj,ll,npr,ierr,etest,emin,emax, &
-&                   rr,vp(1,lloc+1),vkb(1,1,l1),evkb(1,l1), &
-&                   uu,up,mmax,mch)
-      if(ierr/=0) then
-        write(6,'(a,3i4,1p,2e16.8)') 'run_diag: lschvkbb ERROR', &
-&             iprj,ll,ierr,epa(iprj,l1),etest
-      end if
+       call lschvkbb(ll+iprj,ll,npr,ierr,etest,emin,emax, &
+&                    rr,vp(1,lloc+1),vkb(1,1,l1),evkb(1,l1), &
+&                    uu,up,mmax,mch)
+       if(ierr/=0) then
+         write(6,'(a,3i4,1p,2e16.8)') 'run_diag: lschvkbb ERROR', &
+&              iprj,ll,ierr,epa(iprj,l1),etest
+       end if
 
-      nnp=nnp+1
-    else
+       nnp=nnp+1
+     else
 !     calculate effective pseudo wave function principal quantum number
 !     from all-electron node count
-      nnp=nnae-npa(1,l1)+ll+1
-      call lschvkbbe(nnp,ll,npr,ierr,etest,uldf,emin,emax, &
-&                   rr,vp(1,lloc+1),vkb(1,1,l1),evkb(1,l1), &
-&                   uu,up,mmax,mchf)
+       nnp=nnae-npa(1,l1)+ll+1
+       call lschvkbbe(nnp,ll,npr,ierr,etest,uldf,emin,emax, &
+&                    rr,vp(1,lloc+1),vkb(1,1,l1),evkb(1,l1), &
+&                    uu,up,mmax,mchf)
 
-      if(ierr/=0) then
-        write(6,'(a,4i4,1p,2e16.8)') 'run_diag: lschvkbbe ERROR', &
-&             iprj,nnp,ll,ierr,epa(iprj,l1),etest
+       if(ierr/=0) then
+         write(6,'(a,4i4,1p,2e16.8)') 'run_diag: lschvkbbe ERROR', &
+&              iprj,nnp,ll,ierr,epa(iprj,l1),etest
 
-      end if
-    end if !epa<0 (bound or not)
+       end if
+     end if !epa<0 (bound or not)
 
-    gam=abs(umch/uu(mchf))
-    gpr=abs(upmch/up(mchf))
+     gam=abs(umch/uu(mchf))
+     gpr=abs(upmch/up(mchf))
 !
-    write(6,'(i4,6f12.7)') ll,rr(irc(l1)),rr(mchf),epa(iprj,l1), &
-&         etest-epa(iprj,l1),gam,gpr
+     write(6,'(i4,6f12.7)') ll,rr(irc(l1)),rr(mchf),epa(iprj,l1), &
+&          etest-epa(iprj,l1),gam,gpr
 
-  end do  !iprj
+   end do  !iprj
  end do !l1
 
  deallocate(uu,up)

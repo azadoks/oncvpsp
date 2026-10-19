@@ -87,8 +87,8 @@
 
  call dsyev( 'V', 'U', nnull, wmat, nnull, wev, work, 5*nnull, info )
  if(info /= 0) then
-  write(6,'(a,i4)') 'optimize: residual-energy eigenvalue ERROR, info=',info
-  error stop 1
+   write(6,'(a,i4)') 'optimize: residual-energy eigenvalue ERROR, info=',info
+   error stop 1
  end if
 
 !convert <ps0| E_resid |psnull> vector from the null-space representation
@@ -97,9 +97,9 @@
  wvec(:)=eresiddot(:,1)
  eresiddot_ev(:)=0.0d0
  do jj=1,nnull
-  do kk=1,nnull
-   eresiddot_ev(jj)=eresiddot_ev(jj)+wvec(kk)*wmat(kk,jj)
-  end do
+   do kk=1,nnull
+     eresiddot_ev(jj)=eresiddot_ev(jj)+wvec(kk)*wmat(kk,jj)
+   end do
  end do
 
 !write(6,'(/a,1p,4d14.4)') 'eresideval',wev(:)
@@ -160,37 +160,37 @@
 
  do iter=1,niter
 
-  x1=0.5d0*(x1max+x1min)
+   x1=0.5d0*(x1max+x1min)
 
-  tt=x1**2-yy**2
-  do ii=2,nnull
-   pswfopt(ii)=-eresiddot_ev(ii)/(eresideval(ii)-eresideval(1) &
-&               +abs(eresiddot_ev(1))/x1)
-   tt=tt+pswfopt(ii)**2
-  end do
+   tt=x1**2-yy**2
+   do ii=2,nnull
+     pswfopt(ii)=-eresiddot_ev(ii)/(eresideval(ii)-eresideval(1) &
+&                 +abs(eresiddot_ev(1))/x1)
+     tt=tt+pswfopt(ii)**2
+   end do
 
-  if(x1max-x1min<eps) then
-   pswfopt(1)=rtsgn*x1
-   converged=.true.
-   exit
-  end if
+   if(x1max-x1min<eps) then
+     pswfopt(1)=rtsgn*x1
+     converged=.true.
+     exit
+   end if
 
-  if(tt<0.0d0) then
-   x1min=x1
-  else
-   x1max=x1
-  end if
+   if(tt<0.0d0) then
+     x1min=x1
+   else
+     x1max=x1
+   end if
  end do
 
  if(converged .eqv. .false.) then
-  write(6,'(/a)') 'optimize: ERROR interval-halving search not converged'
-  error stop 1
+   write(6,'(/a)') 'optimize: ERROR interval-halving search not converged'
+   error stop 1
  end if
 
  emin=eresid0(1)
  do ii=1,nnull
-  emin=emin+(2.0d0*eresiddot_ev(ii)*pswfopt(ii) &
-&            +eresideval(ii)*pswfopt(ii)**2)
+   emin=emin+(2.0d0*eresiddot_ev(ii)*pswfopt(ii) &
+&             +eresideval(ii)*pswfopt(ii)**2)
  end do
  eresidmin=emin
 
@@ -200,32 +200,32 @@
 !consistent with the input dot product and
  allocate(work(nnull))
  do ii=1,nnull
-  pswfopt_nu(ii)=0.0d0
-  do jj=1,nnull
-   pswfopt_nu(ii)=pswfopt_nu(ii)+eresidevec_nu(ii,jj)*pswfopt(jj)
-  end do
+   pswfopt_nu(ii)=0.0d0
+   do jj=1,nnull
+     pswfopt_nu(ii)=pswfopt_nu(ii)+eresidevec_nu(ii,jj)*pswfopt(jj)
+   end do
  end do
 
  do kk=1,nqout
-  emin=eresid0(kk)
-  work(:)=0.0d0
-  do ii=1,nnull
-   emin=emin+2.0d0*eresiddot(ii,kk)*pswfopt_nu(ii)
-   work(:)=work(:)+eresidmat(:,ii,kk)*pswfopt_nu(ii)
-  end do
-  do ii=1,nnull
-   emin=emin+pswfopt_nu(ii)*work(ii)
-  end do
-  eresq(kk)=emin
-  if(qout(kk)==0.0d0) ekin_anal=emin
+   emin=eresid0(kk)
+   work(:)=0.0d0
+   do ii=1,nnull
+     emin=emin+2.0d0*eresiddot(ii,kk)*pswfopt_nu(ii)
+     work(:)=work(:)+eresidmat(:,ii,kk)*pswfopt_nu(ii)
+   end do
+   do ii=1,nnull
+     emin=emin+pswfopt_nu(ii)*work(ii)
+   end do
+   eresq(kk)=emin
+   if(qout(kk)==0.0d0) ekin_anal=emin
  end do
 
 !calculate optimized pswf in sbf representation
  pswfopt_sb(:)=pswf0_sb(:)
  pswfopt_or(:)=pswf0_or(:)
  do ii=1,nnull
-  pswfopt_sb(:)=pswfopt_sb(:)+pswfopt_nu(ii)*pswfnull_sb(:,ii)
-  pswfopt_or(:)=pswfopt_or(:)+pswfopt_nu(ii)*pswfnull_or(:,ii)
+   pswfopt_sb(:)=pswfopt_sb(:)+pswfopt_nu(ii)*pswfnull_sb(:,ii)
+   pswfopt_or(:)=pswfopt_or(:)+pswfopt_nu(ii)*pswfnull_or(:,ii)
  end do
 
  deallocate(pswfopt,pswfopt_nu)

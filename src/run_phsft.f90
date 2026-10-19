@@ -16,8 +16,8 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
-subroutine run_phsft(lmax,lloc,nproj,epa,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
-&                     rr,vfull,vp,zz,mmax,mxprj,irc,srel)
+ subroutine run_phsft(lmax,lloc,nproj,epa,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
+&                      rr,vfull,vp,zz,mmax,mxprj,irc,srel)
 
 ! computes log derivatives, actually atan(r * ((d psi(r)/dr)/psi(r)))
 ! at rr(irphs) comparing all-electron with Vanderbilt-Kleinman-Bylander
@@ -43,101 +43,101 @@ subroutine run_phsft(lmax,lloc,nproj,epa,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
 !irphs  index of rr beyond which all vp==vlocal
 !srel .true. for scalar-relativistic, .false. for non-relativistic
 
-   use constants_m, only: dp
-   implicit none
+ use constants_m, only: dp
+ implicit none
 
 !Input variables
-   integer, intent(in) :: lmax,lloc,mmax,mxprj
-   integer, intent(in) :: nproj(6),irc(6)
-   real(dp), intent(in) :: epsh1,epsh2,depsh,zz,rxpsh
-   real(dp), intent(in) :: rr(mmax),vp(mmax,5),epa(mxprj,6)
-   real(dp), intent(in) :: vfull(mmax),vkb(mmax,mxprj,4),evkb(mxprj,4)
-   logical, intent(in) :: srel
+ integer, intent(in) :: lmax,lloc,mmax,mxprj
+ integer, intent(in) :: nproj(6),irc(6)
+ real(dp), intent(in) :: epsh1,epsh2,depsh,zz,rxpsh
+ real(dp), intent(in) :: rr(mmax),vp(mmax,5),epa(mxprj,6)
+ real(dp), intent(in) :: vfull(mmax),vkb(mmax,mxprj,4),evkb(mxprj,4)
+ logical, intent(in) :: srel
 
 !Output variables - printing only
 
 !Local variables
-   integer :: ii,irphs,ll,l1,npsh
-   real(dp) :: epsh
+ integer :: ii,irphs,ll,l1,npsh
+ real(dp) :: epsh
 
-   real(dp),allocatable :: pshf(:),pshp(:)
+ real(dp),allocatable :: pshf(:),pshp(:)
 
-   npsh=int(((epsh2-epsh1)/depsh)-0.5d0)+1
+ npsh=int(((epsh2-epsh1)/depsh)-0.5d0)+1
 
-   allocate(pshf(npsh),pshp(npsh))
+ allocate(pshf(npsh),pshp(npsh))
 
 ! loop for phase shift calculation -- full, then local or Kleinman-
 ! Bylander / Vanderbilt
 
-   do l1 = 1, 4
+ do l1 = 1, 4
 
-      ll = l1 - 1
-      if (ll <= lmax) then
-         if (rxpsh < 0.0) then
-            irphs = irc(l1) + 2
-         else
-            irphs = 0
-            do ii = 1,mmax
-               if (rr(ii) >= rxpsh) then
-                  irphs = ii
-                  exit
-               end if
-            end do
-            if (irphs == 0) then
-               write(6, '(/2a,f12.6,a,f12.6)') 'run_phsft: ERROR rxpsh beyond radial mesh', &
-                  ', rxpsh=', rxpsh, ', rr(mmax)=', rr(mmax)
-               error stop 1
-            end if
-! check_data keeps rxpsh beyond every rc, so only a direct call gets here
-            if (irphs < irc(l1)) then
-               write(6, '(/2a,i0,2(a,f12.6))') 'run_phsft: WARNING rxpsh inside the core radius', &
-                  ', l=', ll, ', rxpsh=', rxpsh, ', rc=', rr(irc(l1))
-            end if
+   ll = l1 - 1
+   if (ll <= lmax) then
+     if (rxpsh < 0.0) then
+       irphs = irc(l1) + 2
+     else
+       irphs = 0
+       do ii = 1,mmax
+         if (rr(ii) >= rxpsh) then
+           irphs = ii
+           exit
          end if
-      else
-         if (rxpsh < 0.0) then
-            irphs = irc(lloc + 1)
-         else
-            irphs = 0
-            do ii = 1,mmax
-               if (rr(ii) >= rxpsh) then
-                  irphs = ii
-                  exit
-               end if
-            end do
-            if (irphs == 0) then
-               write(6, '(/2a,f12.6,a,f12.6)') 'run_phsft: ERROR rxpsh beyond radial mesh', &
-                  ', rxpsh=', rxpsh, ', rr(mmax)=', rr(mmax)
-               error stop 1
-            end if
+       end do
+       if (irphs == 0) then
+         write(6, '(/2a,f12.6,a,f12.6)') 'run_phsft: ERROR rxpsh beyond radial mesh', &
+&           ', rxpsh=', rxpsh, ', rr(mmax)=', rr(mmax)
+         error stop 1
+       end if
 ! check_data keeps rxpsh beyond every rc, so only a direct call gets here
-            if (irphs < irc(lloc+1)) then
-               write(6, '(/2a,i0,2(a,f12.6))') 'run_phsft: WARNING rxpsh inside ' // &
-                  'the local potential core radius', &
-                  ', l=', ll, ', rxpsh=', rxpsh, ', rc=', rr(irc(lloc+1))
-            end if
+       if (irphs < irc(l1)) then
+         write(6, '(/2a,i0,2(a,f12.6))') 'run_phsft: WARNING rxpsh inside the core radius', &
+&           ', l=', ll, ', rxpsh=', rxpsh, ', rc=', rr(irc(l1))
+       end if
+     end if
+   else
+     if (rxpsh < 0.0) then
+       irphs = irc(lloc + 1)
+     else
+       irphs = 0
+       do ii = 1,mmax
+         if (rr(ii) >= rxpsh) then
+           irphs = ii
+           exit
          end if
-      end if
+       end do
+       if (irphs == 0) then
+         write(6, '(/2a,f12.6,a,f12.6)') 'run_phsft: ERROR rxpsh beyond radial mesh', &
+&           ', rxpsh=', rxpsh, ', rr(mmax)=', rr(mmax)
+         error stop 1
+       end if
+! check_data keeps rxpsh beyond every rc, so only a direct call gets here
+       if (irphs < irc(lloc+1)) then
+         write(6, '(/2a,i0,2(a,f12.6))') 'run_phsft: WARNING rxpsh inside ' // &
+&           'the local potential core radius', &
+&           ', l=', ll, ', rxpsh=', rxpsh, ', rc=', rr(irc(lloc+1))
+       end if
+     end if
+   end if
 
-      call fphsft(ll,epsh2,depsh,pshf,rr,vfull,zz,mmax,irphs,npsh,srel)
-      if(ll == lloc) then
-         call  vkbphsft(ll,0,epsh2,depsh,epa(1,l1),pshf,pshp, &
-         &                   rr,vp(1,lloc+1),vkb(1,1,l1),evkb(1,l1), &
-         &                   mmax,irphs,npsh)
-      else
-         call  vkbphsft(ll,nproj(l1),epsh2,depsh,epa(1,l1),pshf,pshp, &
-         &                   rr,vp(1,lloc+1),vkb(1,1,l1),evkb(1,l1), &
-         &                   mmax,irphs,npsh)
-      end if
+   call fphsft(ll,epsh2,depsh,pshf,rr,vfull,zz,mmax,irphs,npsh,srel)
+   if(ll == lloc) then
+     call  vkbphsft(ll,0,epsh2,depsh,epa(1,l1),pshf,pshp, &
+&                        rr,vp(1,lloc+1),vkb(1,1,l1),evkb(1,l1), &
+&                        mmax,irphs,npsh)
+   else
+     call  vkbphsft(ll,nproj(l1),epsh2,depsh,epa(1,l1),pshf,pshp, &
+&                        rr,vp(1,lloc+1),vkb(1,1,l1),evkb(1,l1), &
+&                        mmax,irphs,npsh)
+   end if
 
-      write(6,'(/a,i2)') 'log derivativve data for plotting, l=',ll
-      write(6,'(a,f6.2)') 'atan(r * ((d psi(r)/dr)/psi(r))), r=',rr(irphs)
-      write(6,'(a/)') 'l, energy, all-electron, pseudopotential'
-      do ii = 1, npsh
-         epsh = epsh2 - depsh * real(ii - 1,dp)
-         write(6,'(a, i6, 3f12.6)') '! ',ll, epsh, pshf(ii), pshp(ii)
-      end do
+   write(6,'(/a,i2)') 'log derivativve data for plotting, l=',ll
+   write(6,'(a,f6.2)') 'atan(r * ((d psi(r)/dr)/psi(r))), r=',rr(irphs)
+   write(6,'(a/)') 'l, energy, all-electron, pseudopotential'
+   do ii = 1, npsh
+     epsh = epsh2 - depsh * real(ii - 1,dp)
+     write(6,'(a, i6, 3f12.6)') '! ',ll, epsh, pshf(ii), pshp(ii)
    end do
-   deallocate(pshf,pshp)
-   return
-end subroutine run_phsft
+ end do
+ deallocate(pshf,pshp)
+ return
+ end subroutine run_phsft

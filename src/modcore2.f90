@@ -113,7 +113,7 @@
  end if
 
 !set limit for d2Exc calculation to radius beyond which rhomod=rhoc
-   irmod=mmax
+ irmod=mmax
 
  write(6,'(/a/a)') 'Model core correction analysis',&
 &                  '  based on d2Exc/dn_idn_j'
@@ -158,10 +158,10 @@
 
 !7-point numerical first derivative
  jj=2; ii=ircc
-     rhomod(ii,jj)=(-rhomod(ii-3,jj-1)+ 9.d0*rhomod(ii-2,jj-1)&
-&     -45.d0*rhomod(ii-1,jj-1)+45.d0*rhomod(ii+1,jj-1)&
-&     -9.d0*rhomod(ii+2,jj-1)+rhomod(ii+3,jj-1))&
-&     /(60.d0*al*rr(ii))
+ rhomod(ii,jj)=(-rhomod(ii-3,jj-1)+ 9.d0*rhomod(ii-2,jj-1)&
+& -45.d0*rhomod(ii-1,jj-1)+45.d0*rhomod(ii+1,jj-1)&
+& -9.d0*rhomod(ii+2,jj-1)+rhomod(ii+3,jj-1))&
+& /(60.d0*al*rr(ii))
  fmatch(jj)=rhomod(ircc,jj)
 
 ! Fit Teter function to value and slope at ircc
@@ -175,19 +175,19 @@
 
  do jj=1,50
 
-  xx=0.5d0*(x0max+x0min)
+   xx=0.5d0*(x0max+x0min)
 
-  call gg1cc(yy,xx)
-  call gp1cc(dy,xx)
-  ytrial=xx*dy/yy
+   call gg1cc(yy,xx)
+   call gp1cc(dy,xx)
+   ytrial=xx*dy/yy
 
-  if(abs(ytrial-ymatch)<eps) exit
+   if(abs(ytrial-ymatch)<eps) exit
 
-  if(ytrial<ymatch) then
-   x0max=xx
-  else
-   x0min=xx
-  end if
+   if(ytrial<ymatch) then
+     x0max=xx
+   else
+     x0min=xx
+   end if
  end do
 
  b0=xx/rr(ircc)
@@ -199,15 +199,15 @@
 
  rhomod(:,:)=0.0d0
  do ii=1,mmax
-  xx=b0*rr(ii)
-  if(xx<3.0d0) then
-   call gg1cc(yy,xx)
-   rhomod(ii,1)=a0*yy
-   call gp1cc(yy,xx)
-   rhomod(ii,2)=a0*yy*b0
-   call gpp1cc(yy,xx)
-   rhomod(ii,3)=a0*yy*b0**2
-  end if
+   xx=b0*rr(ii)
+   if(xx<3.0d0) then
+     call gg1cc(yy,xx)
+     rhomod(ii,1)=a0*yy
+     call gp1cc(yy,xx)
+     rhomod(ii,2)=a0*yy*b0
+     call gpp1cc(yy,xx)
+     rhomod(ii,3)=a0*yy*b0**2
+   end if
  end do
 
 ! test model
@@ -256,12 +256,12 @@
  call dpnint(rint,fint,8,rr,rhomod(1,3),iint-1)
 
  jj=4
-  do ii=3*jj-8,mmax-3
-     rhomod(ii,jj)=(-rhomod(ii-3,jj-1)+ 9.d0*rhomod(ii-2,jj-1)&
-&     -45.d0*rhomod(ii-1,jj-1)+45.d0*rhomod(ii+1,jj-1)&
-&     -9.d0*rhomod(ii+2,jj-1)+rhomod(ii+3,jj-1))&
-&     /(60.d0*al*rr(ii))
-  end do
+ do ii=3*jj-8,mmax-3
+   rhomod(ii,jj)=(-rhomod(ii-3,jj-1)+ 9.d0*rhomod(ii-2,jj-1)&
+&   -45.d0*rhomod(ii-1,jj-1)+45.d0*rhomod(ii+1,jj-1)&
+&   -9.d0*rhomod(ii+2,jj-1)+rhomod(ii+3,jj-1))&
+&   /(60.d0*al*rr(ii))
+ end do
 
 !set up a mesh on which 3rd derivative will have a stable
  drint=0.95d0*drint
@@ -284,12 +284,12 @@
  call dpnint(rint,fint,8,rr,rhomod(1,4),iint-1)
 
  jj=5
-  do ii=3*jj-8,mmax-3
-     rhomod(ii,jj)=(-rhomod(ii-3,jj-1)+ 9.d0*rhomod(ii-2,jj-1)&
-&     -45.d0*rhomod(ii-1,jj-1)+45.d0*rhomod(ii+1,jj-1)&
-&     -9.d0*rhomod(ii+2,jj-1)+rhomod(ii+3,jj-1))&
-&     /(60.d0*al*rr(ii))
-  end do
+ do ii=3*jj-8,mmax-3
+   rhomod(ii,jj)=(-rhomod(ii-3,jj-1)+ 9.d0*rhomod(ii-2,jj-1)&
+&   -45.d0*rhomod(ii-1,jj-1)+45.d0*rhomod(ii+1,jj-1)&
+&   -9.d0*rhomod(ii+2,jj-1)+rhomod(ii+3,jj-1))&
+&   /(60.d0*al*rr(ii))
+ end do
 
 !set up a mesh on which 4th derivative will have a stable
  drint=0.95d0*drint
@@ -316,4 +316,4 @@
  deallocate(d2excae,d2excps)
 
  return
-end subroutine modcore2
+ end subroutine modcore2

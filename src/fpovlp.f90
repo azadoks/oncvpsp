@@ -54,9 +54,9 @@
  amesh = exp(al)
 
  if(srel) then
-  fss=(1.0d0/c_light)**2
+   fss=(1.0d0/c_light)**2
  else
-  fss=1.0d-12
+   fss=1.0d-12
  end if
 
  if(ll==0) gamma=sqrt(1.0d0-fss*zz**2)

@@ -75,14 +75,14 @@
 
 ! check arguments
  if(kap/=ll .and. kap/=-(ll+1)) then
-  write(6,'(/a,i4,a,i4)') 'ldiracfs: ERROR kap =',kap,' ll =',ll
-  ierr=2
-  return
+   write(6,'(/a,i4,a,i4)') 'ldiracfs: ERROR kap =',kap,' ll =',ll
+   ierr=2
+   return
  end if
  if(zz<1.0d0) then
-  write(6,'(/a,f12.8)') 'ldiracfs: ERROR zz =',zz
-  ierr=3
-  return
+   write(6,'(/a,f12.8)') 'ldiracfs: ERROR zz =',zz
+   ierr=3
+   return
  end if
 
  allocate(gu(mmax),fu(mmax),gup(mmax),fup(mmax),cf(mmax))
@@ -99,34 +99,34 @@
 
 ! start wavefunctions with series
  do ii=1,5
-  gu(ii)=rr(ii)**gam
-  fu(ii)=cof*gu(ii)
+   gu(ii)=rr(ii)**gam
+   fu(ii)=cof*gu(ii)
 
-  fup(ii)= al*rr(ii)*(kap*fu(ii)/rr(ii) &
-         + cci*(vv(ii) - ee)*gu(ii))
+   fup(ii)= al*rr(ii)*(kap*fu(ii)/rr(ii) &
+&         + cci*(vv(ii) - ee)*gu(ii))
 
-  gup(ii)= al*rr(ii)*(-kap*gu(ii)/rr(ii) &
-           + cci*(2.0d0*cc**2 + ee - vv(ii))*fu(ii))
+   gup(ii)= al*rr(ii)*(-kap*gu(ii)/rr(ii) &
+&           + cci*(2.0d0*cc**2 + ee - vv(ii))*fu(ii))
  end do
 
 ! outward integration using predictor once, corrector
 ! twice
  do ii=5,mch-1
 
-  fu(ii+1)=fu(ii)+aeo(fup,ii)
-  gu(ii+1)=gu(ii)+aeo(gup,ii)
+   fu(ii+1)=fu(ii)+aeo(fup,ii)
+   gu(ii+1)=gu(ii)+aeo(gup,ii)
 
-  do kk=1,2
-   fup(ii+1)= al*rr(ii+1)*(kap*fu(ii+1)/rr(ii+1) &
-            - cci*(ee - vv(ii+1))*gu(ii+1))
+   do kk=1,2
+     fup(ii+1)= al*rr(ii+1)*(kap*fu(ii+1)/rr(ii+1) &
+&             - cci*(ee - vv(ii+1))*gu(ii+1))
 
-   gup(ii+1)= al*rr(ii+1)*(-kap*gu(ii+1)/rr(ii+1) &
-            + cci*(2.0d0*cc**2 + ee - vv(ii+1))*fu(ii+1))
+     gup(ii+1)= al*rr(ii+1)*(-kap*gu(ii+1)/rr(ii+1) &
+&             + cci*(2.0d0*cc**2 + ee - vv(ii+1))*fu(ii+1))
 
-   fu(ii+1)=fu(ii)+aio(fup,ii)
-   gu(ii+1)=gu(ii)+aio(gup,ii)
-  end do
-  if(gu(ii+1)*gu(ii) <= 0.0d0) node=node+1
+     fu(ii+1)=fu(ii)+aio(fup,ii)
+     gu(ii+1)=gu(ii)+aio(gup,ii)
+   end do
+   if(gu(ii+1)*gu(ii) <= 0.0d0) node=node+1
  end do
 
  uout=gu(mch)
@@ -143,7 +143,7 @@
  end do
 
  sn=sn + al*(23.0d0*rr(mch-2)*(gu(mch-2)**2 + fu(mch-2)**2) &
-           + 28.0d0*rr(mch-1)*(gu(mch-1)**2 + fu(mch-1)**2) &
+&          + 28.0d0*rr(mch-1)*(gu(mch-1)**2 + fu(mch-1)**2) &
 &              +  9.0d0*rr(mch  )*(gu(mch  )**2 + fu(mch  )**2))/24.0d0
 
 ! normalize u

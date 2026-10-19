@@ -86,7 +86,7 @@
    zz=tt(jj)
 
    if(mod(npoly,2)==1) then
-    istart=imin-npoly/2
+     istart=imin-npoly/2
    else if(zz-xx(imin) < xx(imax)-zz) then
      istart=imin-npoly/2
    else
@@ -98,13 +98,13 @@
 
    sum=0.0d0
    do iy=istart,istart+npoly
-    if(yy(iy)==0.0d0) cycle
-    term=yy(iy)
-    do iprod=istart, istart+npoly
-     if(iprod==iy) cycle
-     term=term*(zz-xx(iprod))/(xx(iy)-xx(iprod))
-    end do
-    sum=sum+term
+     if(yy(iy)==0.0d0) cycle
+     term=yy(iy)
+     do iprod=istart, istart+npoly
+       if(iprod==iy) cycle
+       term=term*(zz-xx(iprod))/(xx(iy)-xx(iprod))
+     end do
+     sum=sum+term
    end do
    ss(jj)=sum
 
@@ -118,7 +118,7 @@
 ! error would not be acceptable If the fitted function is a polynomial
 ! of order npoly or less, this is exact.
 
-  if(tt(1)==0.0d0) then
+ if(tt(1)==0.0d0) then
    if(mm<npoly+2) then
      write(6,'(/2a,i0,a,i0)') 'dpnint: ERROR too few points to extrapolate', &
 &          ' to the origin, mm=',mm,', npoly=',npoly
@@ -130,17 +130,17 @@
 
    sum=0.0d0
    do iy=istart,istart+npoly
-    if(ss(iy)==0.0d0) cycle
-    term=ss(iy)
-    do iprod=istart, istart+npoly
-     if(iprod==iy) cycle
-     term=term*(zz-tt(iprod))/(tt(iy)-tt(iprod))
-    end do
-    sum=sum+term
+     if(ss(iy)==0.0d0) cycle
+     term=ss(iy)
+     do iprod=istart, istart+npoly
+       if(iprod==iy) cycle
+       term=term*(zz-tt(iprod))/(tt(iy)-tt(iprod))
+     end do
+     sum=sum+term
    end do
    ss(1)=sum
 
-  end if
+ end if
 
  return
  end subroutine dpnint

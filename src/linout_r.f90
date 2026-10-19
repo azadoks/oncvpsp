@@ -106,15 +106,15 @@
  allocate(vsrl(nrl,2*mxprj,4),vsol(nrl,2*mxprj,4))
 
 ! set up projector number for sr_so calculations based on non-zero coefficients
-  npr_sr(:)=0 ; npr_so(:)=0
-  do l1=1,lmax+1
+ npr_sr(:)=0 ; npr_so(:)=0
+ do l1=1,lmax+1
 !  do ii=1,4
    do ii=1,2*nproj(l1)
-    if(abs(esr(ii,l1))>0.0d0) npr_sr(l1)=npr_sr(l1)+1
-    if(abs(eso(ii,l1))>0.0d0) npr_so(l1)=npr_so(l1)+1
+     if(abs(esr(ii,l1))>0.0d0) npr_sr(l1)=npr_sr(l1)+1
+     if(abs(eso(ii,l1))>0.0d0) npr_so(l1)=npr_so(l1)+1
    end do
    write(6,'(a,3i4)') 'l1-1,npr_sr,npr_so',l1-1,npr_sr(l1),npr_so(l1)
-  end do
+ end do
 
 ! interpolation of everything onto linear output mesh
 !
@@ -127,17 +127,17 @@
  call dpnint(rr,vpuns(1,l1),mmax,rl,vpl(1,l1),nrl)
 
 ! override dpnint extrapolation to zero for vpl
-   vpl(1,l1)=vpuns(1,l1)
+ vpl(1,l1)=vpuns(1,l1)
 
  do l1=1,lmax+1
    if(l1 /= lloc+1) then
 
-    do jj=1,npr_sr(l1)
-     call dpnint(rr,vsr(1,jj,l1),mmax,rl,vsrl(1,jj,l1),nrl)
-    end do
-    do jj=1,npr_so(l1)
-     call dpnint(rr,vso(1,jj,l1),mmax,rl,vsol(1,jj,l1),nrl)
-    end do
+     do jj=1,npr_sr(l1)
+       call dpnint(rr,vsr(1,jj,l1),mmax,rl,vsrl(1,jj,l1),nrl)
+     end do
+     do jj=1,npr_so(l1)
+       call dpnint(rr,vso(1,jj,l1),mmax,rl,vsol(1,jj,l1),nrl)
+     end do
    end if
  end do
 
@@ -248,13 +248,13 @@
    ll=l1-1
    if(npr_so(l1)>0) then
      write(6,'(i4,23x,1p,20e21.13)') ll,(soscale*eso(jj,l1),jj=1,npr_so(l1))
-       do ii = 1,nrl
-         if(rl(ii)<=rc(l1)+2.0d0*drl) then
-           write(6,'(i6,1p,11e21.13)') ii,rl(ii),(vsol(ii,jj,l1),jj=1,npr_so(l1))
-         else
-           write(6,'(i6,f6.2,10f4.0)') ii,rl(ii),(zero(jj),jj=1,npr_so(l1))
-         end if
-       end do
+     do ii = 1,nrl
+       if(rl(ii)<=rc(l1)+2.0d0*drl) then
+         write(6,'(i6,1p,11e21.13)') ii,rl(ii),(vsol(ii,jj,l1),jj=1,npr_so(l1))
+       else
+         write(6,'(i6,f6.2,10f4.0)') ii,rl(ii),(zero(jj),jj=1,npr_so(l1))
+       end if
+     end do
    end if
  end do
 

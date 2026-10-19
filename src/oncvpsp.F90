@@ -156,130 +156,130 @@
 #endif
 
  parse_args: block
-    integer :: i
-    character(len=256) :: arg
-    do i = 1, command_argument_count()
-       call get_command_argument(i, arg)
-       select case(arg)
-       case('-h', '--help')
-          write (stdout, '(a)') 'Usage: '//ONCVPSP_EXE//' [options]'
-          write (stdout, '(a)') 'Options:'
-          write (stdout, '(a)') '  -h, --help       Show this help message and exit'
-          write (stdout, '(a)') '  -v, --version    Show version information and exit'
-          write (stdout, '(a)') '  -i, --input      Read the input from a text file ' // &
-&                               'instead of stdin'
-          write (stdout, '(a)') '  -t, --toml-input Read the input from a TOML file'
+   integer :: i
+   character(len=256) :: arg
+   do i = 1, command_argument_count()
+     call get_command_argument(i, arg)
+     select case(arg)
+     case('-h', '--help')
+       write (stdout, '(a)') 'Usage: '//ONCVPSP_EXE//' [options]'
+       write (stdout, '(a)') 'Options:'
+       write (stdout, '(a)') '  -h, --help       Show this help message and exit'
+       write (stdout, '(a)') '  -v, --version    Show version information and exit'
+       write (stdout, '(a)') '  -i, --input      Read the input from a text file ' // &
+&                            'instead of stdin'
+       write (stdout, '(a)') '  -t, --toml-input Read the input from a TOML file'
 #if defined(ONCVPSP_AE_ONLY)
-          write (stdout, '(a)') '  -a, --ae-file    All-electron data file to write (required)'
+       write (stdout, '(a)') '  -a, --ae-file    All-electron data file to write (required)'
 #elif defined(ONCVPSP_PS_ONLY)
-          write (stdout, '(a)') '  -a, --ae-file    All-electron data file written by ' // &
-&                               'the matching _ae.x (required)'
+       write (stdout, '(a)') '  -a, --ae-file    All-electron data file written by ' // &
+&                            'the matching _ae.x (required)'
 #endif
-          stop 0
-       case('-v', '--version')
+       stop 0
+     case('-v', '--version')
 #if defined(ONCVPSP_NONREL)
-          write (stdout, '(a)') 'ONCVPSP (non-relativistic) version 4.0.1'
+       write (stdout, '(a)') 'ONCVPSP (non-relativistic) version 4.0.1'
 #else
-          write (stdout, '(a)') 'ONCVPSP (scalar-relativistic) version 4.0.1'
+       write (stdout, '(a)') 'ONCVPSP (scalar-relativistic) version 4.0.1'
 #endif
-          call write_build_info(stdout,ONCVPSP_EXE,ONCVPSP_TREATMENT)
-          stop 0
-       case('-i', '--input')
-         if (i + 1 > command_argument_count()) then
-            write (stderr, '(a)') 'Error: --input requires a filename argument'
-            stop 1
-         end if
-         call get_command_argument(i + 1, input_filename)
-         input_mode = INPUT_TEXT
+       call write_build_info(stdout,ONCVPSP_EXE,ONCVPSP_TREATMENT)
+       stop 0
+     case('-i', '--input')
+       if (i + 1 > command_argument_count()) then
+         write (stderr, '(a)') 'Error: --input requires a filename argument'
+         stop 1
+       end if
+       call get_command_argument(i + 1, input_filename)
+       input_mode = INPUT_TEXT
 #if (defined WITH_TOML)
-       case('-t', '--toml-input')
-         if (i + 1 > command_argument_count()) then
-            write (stderr, '(a)') 'Error: --toml-input requires a filename argument'
-            stop 1
-         end if
-         call get_command_argument(i + 1, input_filename)
-         input_mode = INPUT_TOML
+     case('-t', '--toml-input')
+       if (i + 1 > command_argument_count()) then
+         write (stderr, '(a)') 'Error: --toml-input requires a filename argument'
+         stop 1
+       end if
+       call get_command_argument(i + 1, input_filename)
+       input_mode = INPUT_TOML
 #else
-        case('-t', '--toml-input')
-          error stop 'Error: TOML input support not enabled in this build.'
+     case('-t', '--toml-input')
+       error stop 'Error: TOML input support not enabled in this build.'
 #endif
 #if defined(ONCVPSP_SPLIT)
-       case('-a', '--ae-file')
-         if (i + 1 > command_argument_count()) then
-            write (stderr, '(a)') 'Error: --ae-file requires a filename argument'
-            stop 1
-         end if
-         call get_command_argument(i + 1, ae_filename)
+     case('-a', '--ae-file')
+       if (i + 1 > command_argument_count()) then
+         write (stderr, '(a)') 'Error: --ae-file requires a filename argument'
+         stop 1
+       end if
+       call get_command_argument(i + 1, ae_filename)
 #endif
-       case default
-       end select
-    end do
+     case default
+     end select
+   end do
  end block parse_args
 
 #if defined(ONCVPSP_SPLIT)
  if (len_trim(ae_filename) == 0) then
-    write (stderr, '(a)') 'Error: '//ONCVPSP_EXE//' requires --ae-file'
-    stop 1
+   write (stderr, '(a)') 'Error: '//ONCVPSP_EXE//' requires --ae-file'
+   stop 1
  end if
 #endif
 
  ios = 0
  select case(input_mode)
-    case(INPUT_STDIN)
-       call read_input_text(stdin, inline, &
-                            atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
-                            lmax, rc, ep, ncon, nbas, qcut, &
-                            lloc, lpopt, dvloc0, nproj, debl, &
-                            icmod, fcfact, rcfact, &
-                            fcfact_min, fcfact_max, fcfact_step, &
-                            rcfact_min, rcfact_max, rcfact_step, &
-                            epsh1, epsh2, depsh, rxpsh, &
-                            rlmax, drl, &
-                            ncnf, nvcnf, nacnf, lacnf, facnf, &
-                            amesh_in, rr1_in, rmax_in)
-    case(INPUT_TEXT)
-       open(newunit=unit, file=input_filename, status='old', action='read', iostat=ios)
-       if (ios /= 0) then
-          write(6, '(/2a)') 'oncvpsp: ERROR cannot open input file, file=', &
-             trim(input_filename)
-          error stop 1
-       end if
-       call read_input_text(unit, inline, &
-                            atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
-                            lmax, rc, ep, ncon, nbas, qcut, &
-                            lloc, lpopt, dvloc0, nproj, debl, &
-                            icmod, fcfact, rcfact, &
-                            fcfact_min, fcfact_max, fcfact_step, &
-                            rcfact_min, rcfact_max, rcfact_step, &
-                            epsh1, epsh2, depsh, rxpsh, &
-                            rlmax, drl, &
-                            ncnf, nvcnf, nacnf, lacnf, facnf, &
-                            amesh_in, rr1_in, rmax_in)
-       close(unit)
+ case(INPUT_STDIN)
+   call read_input_text(stdin, inline, &
+&                       atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
+&                       lmax, rc, ep, ncon, nbas, qcut, &
+&                       lloc, lpopt, dvloc0, nproj, debl, &
+&                       icmod, fcfact, rcfact, &
+&                       fcfact_min, fcfact_max, fcfact_step, &
+&                       rcfact_min, rcfact_max, rcfact_step, &
+&                       epsh1, epsh2, depsh, rxpsh, &
+&                       rlmax, drl, &
+&                       ncnf, nvcnf, nacnf, lacnf, facnf, &
+&                       amesh_in, rr1_in, rmax_in)
+ case(INPUT_TEXT)
+   open(newunit=unit, file=input_filename, status='old', action='read', iostat=ios)
+   if (ios /= 0) then
+     write(6, '(/2a)') 'oncvpsp: ERROR cannot open input file, file=', &
+&       trim(input_filename)
+     error stop 1
+   end if
+   call read_input_text(unit, inline, &
+&                       atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
+&                       lmax, rc, ep, ncon, nbas, qcut, &
+&                       lloc, lpopt, dvloc0, nproj, debl, &
+&                       icmod, fcfact, rcfact, &
+&                       fcfact_min, fcfact_max, fcfact_step, &
+&                       rcfact_min, rcfact_max, rcfact_step, &
+&                       epsh1, epsh2, depsh, rxpsh, &
+&                       rlmax, drl, &
+&                       ncnf, nvcnf, nacnf, lacnf, facnf, &
+&                       amesh_in, rr1_in, rmax_in)
+   close(unit)
 #if (defined WITH_TOML)
-    case(INPUT_TOML)
-       open(newunit=unit, file=input_filename, status='old', action='read', iostat=ios)
-       if (ios /= 0) then
-          write(6, '(/2a)') 'oncvpsp: ERROR cannot open input file, file=', &
-             trim(input_filename)
-          error stop 1
-       end if
-       call read_input_toml(unit, &
-                            atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
-                            lmax, rc, ep, ncon, nbas, qcut, &
-                            lloc, lpopt, dvloc0, nproj, debl, &
-                            icmod, fcfact, rcfact, &
-                            fcfact_min, fcfact_max, fcfact_step, &
-                            rcfact_min, rcfact_max, rcfact_step, &
-                            epsh1, epsh2, depsh, rxpsh, &
-                            rlmax, drl, &
-                            ncnf, nvcnf, nacnf, lacnf, facnf, &
-                            amesh_in, rr1_in, rmax_in)
-        close(unit)
+ case(INPUT_TOML)
+   open(newunit=unit, file=input_filename, status='old', action='read', iostat=ios)
+   if (ios /= 0) then
+     write(6, '(/2a)') 'oncvpsp: ERROR cannot open input file, file=', &
+&       trim(input_filename)
+     error stop 1
+   end if
+   call read_input_toml(unit, &
+&                       atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
+&                       lmax, rc, ep, ncon, nbas, qcut, &
+&                       lloc, lpopt, dvloc0, nproj, debl, &
+&                       icmod, fcfact, rcfact, &
+&                       fcfact_min, fcfact_max, fcfact_step, &
+&                       rcfact_min, rcfact_max, rcfact_step, &
+&                       epsh1, epsh2, depsh, rxpsh, &
+&                       rlmax, drl, &
+&                       ncnf, nvcnf, nacnf, lacnf, facnf, &
+&                       amesh_in, rr1_in, rmax_in)
+   close(unit)
 #endif
-    case default
-        write (stderr, '(a,i2)') 'Error: Unknown input mode =', input_mode
-        stop 1
+ case default
+   write (stderr, '(a,i2)') 'Error: Unknown input mode =', input_mode
+   stop 1
  end select
 
  nvcnf(1)=nv
@@ -315,30 +315,30 @@
 
 !PWSCF wants an even number of mesh pointe
 !if(trim(psfile)=='upf') then
-  if(mod(nrl,2)/=0) nrl=nrl+1
+ if(mod(nrl,2)/=0) nrl=nrl+1
 !end if
 
 !log mesh: the input values, or the built-in ones for those 0 or less
  if(amesh_in>0.0d0) then
-  amesh=amesh_in
+   amesh=amesh_in
  else
 !amesh=1.012d0
-  amesh=1.006d0
+   amesh=1.006d0
 !amesh=1.003d0
 !amesh=1.0015d0
  end if
 
  al=log(amesh)
  if(rr1_in>0.0d0) then
-  rr1=rr1_in
+   rr1=rr1_in
  else
-  rr1=0.0005d0/zz
-  rr1=min(rr1,0.0005d0/10)
+   rr1=0.0005d0/zz
+   rr1=min(rr1,0.0005d0/10)
  end if
  if(rmax_in>0.0d0) then
-  rmax=rmax_in
+   rmax=rmax_in
  else
-  rmax=45.0d0
+   rmax=45.0d0
  end if
  mmax=log(rmax/rr1)/al
 !the log mesh for the echoes of the input, only when the input sets it, so that the
@@ -349,7 +349,7 @@
 !calculate zion for output
  zion=zz
  do ii=1,nc
-  zion=zion-fa(ii)
+   zion=zion-fa(ii)
  end do
 
 
@@ -374,33 +374,33 @@
  epa(:,:)=0.0d0
 
  do ii=1,mmax
-  rr(ii)=rr1*exp(al*(ii-1))
+   rr(ii)=rr1*exp(al*(ii-1))
  end do
 
 !
 ! full potential atom solution
 !
 #if defined(ONCVPSP_PS_ONLY)
-   call read_ae_file(ae_filename,srel,atsym,zz,nc,nv,iexc,na,la,fa, &
-&                    mmax,rr,it,etot,ea,rhoc,rho,vfull)
+ call read_ae_file(ae_filename,srel,atsym,zz,nc,nv,iexc,na,la,fa, &
+&                  mmax,rr,it,etot,ea,rhoc,rho,vfull)
 !sratom prints the libxc functional description on its first exc_libxc call
-   if(iexc<0) then
-     block
-       real(dp) :: vxct(mmax),exct(mmax)
-       call exc_libxc(iexc,al,rho,vxct,exct,rr,mmax)
-     end block
-   end if
+ if(iexc<0) then
+   block
+     real(dp) :: vxct(mmax),exct(mmax)
+     call exc_libxc(iexc,al,rho,vxct,exct,rr,mmax)
+   end block
+ end if
 #else
-   call sratom(na,la,ea,fa,rpk,nc,nc+nv,it,rhoc,rho, &
-&              rr,vfull,zz,mmax,iexc,etot,ierr,srel)
+ call sratom(na,la,ea,fa,rpk,nc,nc+nv,it,rhoc,rho, &
+&            rr,vfull,zz,mmax,iexc,etot,ierr,srel)
 #endif
 !
 !
 
 ! Drop digits beyond 5 decimals for input rcs before making any use of them
  do l1=1,max(lmax+1,lloc+1)
-    jj=int(rc(l1)*10.0d5)
-    rc(l1)=jj/10.0d5
+   jj=int(rc(l1)*10.0d5)
+   rc(l1)=jj/10.0d5
  end do
 
  rcmax=0.0d0
@@ -473,8 +473,8 @@
  write(6,'(//a)') 'Reference configufation results'
  write(6,'(a,i6)') '  iterations',it
  if(it >= 100) then
-  write(6,'(a)') 'oncvpsp: ERROR all-electron reference atom not converged'
-  error stop 1
+   write(6,'(a)') 'oncvpsp: ERROR all-electron reference atom not converged'
+   error stop 1
  end if
  write(6,'(a,1p,d18.8)') '  all-electron total energy (Ha)',etot
 
@@ -498,16 +498,16 @@
  rcmax=0.0d0
  irc(:)=0
  do l1=1,max(lmax+1,lloc+1)
-  rct=rc(l1)
-  irc(l1)=0
-  do ii=2,mmax
-   if(rr(ii)>rct) then
-    irc(l1)=ii
-    rc(l1)=rr(ii)
-    exit
-   end if
-  end do
-  rcmax=max(rcmax,rc(l1))
+   rct=rc(l1)
+   irc(l1)=0
+   do ii=2,mmax
+     if(rr(ii)>rct) then
+       irc(l1)=ii
+       rc(l1)=rr(ii)
+       exit
+     end if
+   end do
+   rcmax=max(rcmax,rc(l1))
  end do
 
 !
@@ -800,19 +800,19 @@
  if(trim(psfile)=='psp8' .or. trim(psfile)=='both') then
 
 
-  call linout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
-&             rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym, &
-&             na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&             fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,fcfact0,rcfact,fcgrid,rcgrid, &
-&             epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh)
+   call linout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
+&              rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym, &
+&              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
+&              fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,fcfact0,rcfact,fcgrid,rcgrid, &
+&              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh)
  end if
 
  if(trim(psfile)=='upf' .or. trim(psfile)=='both') then
-  call upfout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
-&             zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
-&             na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&             fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact0,rcfact,fcgrid,rcgrid, &
-&             epsh1,epsh2,depsh,rxpsh,rlmax,psfile,uupsa,ea,log_mesh)
+   call upfout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
+&              zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
+&              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
+&              fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact0,rcfact,fcgrid,rcgrid, &
+&              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,uupsa,ea,log_mesh)
  end if
 
 

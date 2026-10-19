@@ -52,14 +52,14 @@
 ! Wigner interpolation formula, E. Wigner, Phys. Rev. 46, 1002 (1934).
 
  do ii=1,mmax
-  if(rho(ii)>=1.0d-15) then
-   rh=rho(ii)*pi4i
-   rs=conrs*rh**(-thrd)
-   vxc(ii)=-convx/rs - 0.44d0*(4.0d0*thrd*rs+7.8d0)/(rs+7.8d0)**2
-   exc(ii)=-conex/rs - 0.44d0/(rs+7.8d0)
-  else
-   vxc(ii)=0.0d0 ; exc(ii)=0.0d0
-  end if
+   if(rho(ii)>=1.0d-15) then
+     rh=rho(ii)*pi4i
+     rs=conrs*rh**(-thrd)
+     vxc(ii)=-convx/rs - 0.44d0*(4.0d0*thrd*rs+7.8d0)/(rs+7.8d0)**2
+     exc(ii)=-conex/rs - 0.44d0/(rs+7.8d0)
+   else
+     vxc(ii)=0.0d0 ; exc(ii)=0.0d0
+   end if
  end do
  return
  end subroutine excwig

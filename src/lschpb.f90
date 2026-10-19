@@ -101,8 +101,8 @@
      end if
    end do
    if(mch==0) then
-    write(6,'(/a)') 'lschpb: ERROR no classical turning point'
-    error stop 1
+     write(6,'(/a)') 'lschpb: ERROR no classical turning point'
+     error stop 1
    end if
 
 ! start wavefunction with series

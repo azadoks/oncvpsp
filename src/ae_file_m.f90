@@ -98,10 +98,10 @@
  write(unit) rhoc(1:mmax),rho(1:mmax),vfull(1:mmax)
  write(unit) ncnf+1
  do jj=1,ncnf+1
-  call write_config_key(unit,jj,nc,nvcnf,nacnf,lacnf,facnf)
-  write(unit) cae(jj)%stat,cae(jj)%ierr,cae(jj)%it,cae(jj)%kerr, &
-&             cae(jj)%nvt,cae(jj)%nat,cae(jj)%lat,cae(jj)%fat, &
-&             cae(jj)%eat,cae(jj)%eaetst
+   call write_config_key(unit,jj,nc,nvcnf,nacnf,lacnf,facnf)
+   write(unit) cae(jj)%stat,cae(jj)%ierr,cae(jj)%it,cae(jj)%kerr, &
+&              cae(jj)%nvt,cae(jj)%nat,cae(jj)%lat,cae(jj)%fat, &
+&              cae(jj)%eat,cae(jj)%eaetst
  end do
 
  close(unit)
@@ -134,10 +134,10 @@
  write(unit) rhoc(1:mmax),rho(1:mmax),vfull(1:mmax)
  write(unit) ncnf+1
  do jj=1,ncnf+1
-  call write_config_key(unit,jj,nc,nvcnf,nacnf,lacnf,facnf)
-  write(unit) cae(jj)%stat,cae(jj)%ierr,cae(jj)%it,cae(jj)%kerr, &
-&             cae(jj)%nvt,cae(jj)%nat,cae(jj)%lat,cae(jj)%fat, &
-&             cae(jj)%eat,cae(jj)%eaetst
+   call write_config_key(unit,jj,nc,nvcnf,nacnf,lacnf,facnf)
+   write(unit) cae(jj)%stat,cae(jj)%ierr,cae(jj)%it,cae(jj)%kerr, &
+&              cae(jj)%nvt,cae(jj)%nat,cae(jj)%lat,cae(jj)%fat, &
+&              cae(jj)%eat,cae(jj)%eaetst
  end do
 
  close(unit)
@@ -184,11 +184,11 @@
 
  read(unit) ncfg_file
  do jj=1,ncfg_file
-  call read_config_key(unit,jj,nc)
-  read(unit) cae_file(jj)%stat,cae_file(jj)%ierr,cae_file(jj)%it, &
-&            cae_file(jj)%kerr,cae_file(jj)%nvt,cae_file(jj)%nat, &
-&            cae_file(jj)%lat,cae_file(jj)%fat,cae_file(jj)%eat, &
-&            cae_file(jj)%eaetst
+   call read_config_key(unit,jj,nc)
+   read(unit) cae_file(jj)%stat,cae_file(jj)%ierr,cae_file(jj)%it, &
+&             cae_file(jj)%kerr,cae_file(jj)%nvt,cae_file(jj)%nat, &
+&             cae_file(jj)%lat,cae_file(jj)%fat,cae_file(jj)%eat, &
+&             cae_file(jj)%eaetst
  end do
 
  close(unit)
@@ -223,11 +223,11 @@
 
  read(unit) ncfg_file
  do jj=1,ncfg_file
-  call read_config_key(unit,jj,nc)
-  read(unit) cae_r_file(jj)%stat,cae_r_file(jj)%ierr,cae_r_file(jj)%it, &
-&            cae_r_file(jj)%kerr,cae_r_file(jj)%nvt,cae_r_file(jj)%nat, &
-&            cae_r_file(jj)%lat,cae_r_file(jj)%fat,cae_r_file(jj)%eat, &
-&            cae_r_file(jj)%eaetst
+   call read_config_key(unit,jj,nc)
+   read(unit) cae_r_file(jj)%stat,cae_r_file(jj)%ierr,cae_r_file(jj)%it, &
+&             cae_r_file(jj)%kerr,cae_r_file(jj)%nvt,cae_r_file(jj)%nat, &
+&             cae_r_file(jj)%lat,cae_r_file(jj)%fat,cae_r_file(jj)%eat, &
+&             cae_r_file(jj)%eaetst
  end do
 
  close(unit)
@@ -285,8 +285,8 @@
  open(newunit=unit,file=fname,access='stream',form='unformatted', &
 &     status='replace',action='write',iostat=ios)
  if(ios/=0) then
-  write(6,'(2a)') 'write_ae_file: ERROR cannot open ',trim(fname)
-  stop 1
+   write(6,'(2a)') 'write_ae_file: ERROR cannot open ',trim(fname)
+   stop 1
  end if
 
  write(unit) magic,version,irel
@@ -319,61 +319,61 @@
  open(newunit=unit,file=fname,access='stream',form='unformatted', &
 &     status='old',action='read',iostat=ios)
  if(ios/=0) then
-  write(6,'(2a)') 'read_ae_file: ERROR cannot open ',trim(fname)
-  stop 1
+   write(6,'(2a)') 'read_ae_file: ERROR cannot open ',trim(fname)
+   stop 1
  end if
 
  read(unit,iostat=ios) magic_f,version_f,irel_f
  if(ios/=0 .or. magic_f/=magic) then
-  write(6,'(2a)') 'read_ae_file: ERROR not an all-electron data file: ', &
-&       trim(fname)
-  stop 1
+   write(6,'(2a)') 'read_ae_file: ERROR not an all-electron data file: ', &
+&        trim(fname)
+   stop 1
  end if
 !the magic string reads the same in either byte order, so a file from a
 !machine of the other byte order shows up as a byte-swapped version
  if(version_f/=version .and. byteswap(version_f)==version) then
-  write(6,'(2a)') 'read_ae_file: ERROR file was written on a machine', &
-&       ' with the other byte order'
-  stop 1
+   write(6,'(2a)') 'read_ae_file: ERROR file was written on a machine', &
+&        ' with the other byte order'
+   stop 1
  end if
  if(version_f/=version) then
-  write(6,'(a,i4,a,i4)') 'read_ae_file: ERROR file format version', &
-&       version_f,' but this program reads version',version
-  stop 1
+   write(6,'(a,i4,a,i4)') 'read_ae_file: ERROR file format version', &
+&        version_f,' but this program reads version',version
+   stop 1
  end if
  if(irel_f/=irel) then
-  write(6,'(2a)') 'read_ae_file: ERROR file was written with a different', &
-&       ' relativistic treatment'
-  stop 1
+   write(6,'(2a)') 'read_ae_file: ERROR file was written with a different', &
+&        ' relativistic treatment'
+   stop 1
  end if
 
  read(unit) atsym_f,zz_f,nc_f,nv_f,iexc_f
  if(atsym_f/=atsym .or. differ(zz_f,zz) .or. nc_f/=nc .or. nv_f/=nv &
 &   .or. iexc_f/=iexc) then
-  write(6,'(2a)') 'read_ae_file: ERROR atsym, z, nc, nv or iexc differ', &
-&       ' from the input'
-  stop 1
+   write(6,'(2a)') 'read_ae_file: ERROR atsym, z, nc, nv or iexc differ', &
+&        ' from the input'
+   stop 1
  end if
  read(unit) na_f(1:nc+nv),la_f(1:nc+nv),fa_f(1:nc+nv)
  if(any(na_f(1:nc+nv)/=na(1:nc+nv)) .or. any(la_f(1:nc+nv)/=la(1:nc+nv)) &
 &   .or. any(differ(fa_f(1:nc+nv),fa(1:nc+nv)))) then
-  write(6,'(2a)') 'read_ae_file: ERROR reference configuration differs', &
-&       ' from the input'
-  stop 1
+   write(6,'(2a)') 'read_ae_file: ERROR reference configuration differs', &
+&        ' from the input'
+   stop 1
  end if
 
  read(unit) mmax_f
  if(mmax_f/=mmax) then
-  write(6,'(a,2i8)') 'read_ae_file: ERROR radial mesh size differs', &
-&       mmax_f,mmax
-  stop 1
+   write(6,'(a,2i8)') 'read_ae_file: ERROR radial mesh size differs', &
+&        mmax_f,mmax
+   stop 1
  end if
  allocate(rr_f(mmax))
  read(unit) rr_f(1:mmax)
  if(any(abs(rr_f(1:mmax)-rr(1:mmax))>rtol*rr(1:mmax))) then
-  write(6,'(2a)') 'read_ae_file: ERROR radial mesh differs from the', &
-&       ' one this program builds'
-  stop 1
+   write(6,'(2a)') 'read_ae_file: ERROR radial mesh differs from the', &
+&        ' one this program builds'
+   stop 1
  end if
  end subroutine read_head
 
@@ -409,12 +409,12 @@
 
  nt=nc+nvcnf(jj)
  do kk=1,ncfg_file
-  if(nvcnf_file(kk)/=nvcnf(jj)) cycle
-  if(any(nacnf_file(1:nt,kk)/=nacnf(1:nt,jj))) cycle
-  if(any(lacnf_file(1:nt,kk)/=lacnf(1:nt,jj))) cycle
-  if(any(differ(facnf_file(1:nt,kk),facnf(1:nt,jj)))) cycle
-  find_config=kk
-  return
+   if(nvcnf_file(kk)/=nvcnf(jj)) cycle
+   if(any(nacnf_file(1:nt,kk)/=nacnf(1:nt,jj))) cycle
+   if(any(lacnf_file(1:nt,kk)/=lacnf(1:nt,jj))) cycle
+   if(any(differ(facnf_file(1:nt,kk),facnf(1:nt,jj)))) cycle
+   find_config=kk
+   return
  end do
 
  write(6,'(a,i2,a)') 'ae_file_config: ERROR test configuration',jj-1, &

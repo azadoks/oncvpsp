@@ -52,21 +52,21 @@
 
 !set rc to exact mesh value if not specified by irc
  if(irc == 0) then
-  do ii=1,mmax
-   if(irc == 0 .and. rr(ii)>=rc) then
-    irc=ii
-    rc=rr(ii)
-    exit
-   end if
-  end do
+   do ii=1,mmax
+     if(irc == 0 .and. rr(ii)>=rc) then
+       irc=ii
+       rc=rr(ii)
+       exit
+     end if
+   end do
  else
-  rc=rr(irc)
+   rc=rr(irc)
  end if
 
  allocate(work(mmax,5))
 
  do ii=1,mmax
-  work(ii,1)=uu(ii)/rr(ii)
+   work(ii,1)=uu(ii)/rr(ii)
  end do
 
  do jj=2,5
@@ -78,16 +78,16 @@
 !&     /(24.d0*al*rr(ii))
 
 ! 7-point numerical first derivatives applied successively
-  do ii=irc-25+3*jj,irc+25-3*jj
+   do ii=irc-25+3*jj,irc+25-3*jj
      work(ii,jj)=(-work(ii-3,jj-1)+ 9.d0*work(ii-2,jj-1)&
 &     -45.d0*work(ii-1,jj-1)+45.d0*work(ii+1,jj-1)&
 &     -9.d0*work(ii+2,jj-1)+work(ii+3,jj-1))&
 &     /(60.d0*al*rr(ii))
-  end do
+   end do
  end do
 
  do jj=1,5
-  uorder(jj)=work(irc,jj)
+   uorder(jj)=work(irc,jj)
  end do
 
  deallocate(work)

@@ -46,7 +46,7 @@
  integer, intent(out) :: node
 
 !Local variables
-real(dp) :: rc,rn
+ real(dp) :: rc,rn
  real(dp), allocatable ::  phi(:,:),phip(:,:),phi0(:),phi0p(:)
  real(dp), allocatable ::  gg0(:),gg(:,:)
  integer, allocatable :: ipiv(:)
@@ -63,36 +63,36 @@ real(dp) :: rc,rn
  rc=0.0d0
  if(nvkb/=0) then
 ! find cutoff radius for projectors
-  do ii=mmax,1,-1
-    if(abs(vkb(ii,1))>0.0d0) then
-      rc=rr(ii)
-      exit
-    end if
-  end do
+   do ii=mmax,1,-1
+     if(abs(vkb(ii,1))>0.0d0) then
+       rc=rr(ii)
+       exit
+     end if
+   end do
 
-  allocate(phi(mmax,nvkb),phip(mmax,nvkb))
-  allocate(gg(nvkb,nvkb),gg0(nvkb))
-  allocate(ipiv(nvkb))
+   allocate(phi(mmax,nvkb),phip(mmax,nvkb))
+   allocate(gg(nvkb,nvkb),gg0(nvkb))
+   allocate(ipiv(nvkb))
 
-  phi(:,:)=0.0d0
-  phip(:,:)=0.0d0
-  gg(:,:)=0.0d0
-  gg0(:)=0.0d0
+   phi(:,:)=0.0d0
+   phip(:,:)=0.0d0
+   gg(:,:)=0.0d0
+   gg0(:)=0.0d0
 
 ! inhomogeneous solutions
-  call outwf_all(nvkb,uu,up,phi,phip)
+   call outwf_all(nvkb,uu,up,phi,phip)
 
 
 ! projector matrix elements and coefficient matrix
-  do jj=1,nvkb
-   call vpinteg(uu,vkb(1,jj),mch,2*ll+2,gg0(jj),rr)
-   gg0(jj)=evkb(jj)*gg0(jj)
-   do ii=1,nvkb
-    call vpinteg(phi(1,ii),vkb(1,jj),mch,2*ll+2,gg(jj,ii),rr)
-    gg(jj,ii)=-evkb(jj)*gg(jj,ii)
+   do jj=1,nvkb
+     call vpinteg(uu,vkb(1,jj),mch,2*ll+2,gg0(jj),rr)
+     gg0(jj)=evkb(jj)*gg0(jj)
+     do ii=1,nvkb
+       call vpinteg(phi(1,ii),vkb(1,jj),mch,2*ll+2,gg(jj,ii),rr)
+       gg(jj,ii)=-evkb(jj)*gg(jj,ii)
+     end do
+     gg(jj,jj)=1.0d0+gg(jj,jj)
    end do
-   gg(jj,jj)=1.0d0+gg(jj,jj)
-  end do
 
 ! solve linear equations for coefficients
 
@@ -100,19 +100,19 @@ real(dp) :: rc,rn
 
    call dgesv(nvkb, 1, gg, nvkb, ipiv, gg0, nvkb, info)
    if(info/=0) then
-    write(6,'(/a,i4)') 'vkbout: dgesv ERROR, stopping info =',info
-    error stop 1
+     write(6,'(/a,i4)') 'vkbout: dgesv ERROR, stopping info =',info
+     error stop 1
    end if
 
 ! output wave functions
    do jj=1,nvkb
-    uu(:)=uu(:)+gg0(jj)*phi(:,jj)
-    up(:)=up(:)+gg0(jj)*phip(:,jj)
+     uu(:)=uu(:)+gg0(jj)*phi(:,jj)
+     up(:)=up(:)+gg0(jj)*phip(:,jj)
    end do
 
-  deallocate(phi,phip)
-  deallocate(gg,gg0)
-  deallocate(ipiv)
+   deallocate(phi,phip)
+   deallocate(gg,gg0)
+   deallocate(ipiv)
  end if
 
 ! lower cutoff for node counting to avoid small-r noise
@@ -126,7 +126,7 @@ real(dp) :: rc,rn
 !  if(rr(ii)>0.10d0 .and. uu(ii-1)*uu(ii)<0.0d0) then
 !  if(rr(ii)>0.07d0 .and. uu(ii-1)*uu(ii)<0.0d0) then
    if(rr(ii)>rn .and. uu(ii-1)*uu(ii)<0.0d0) then
-    node=node+1
+     node=node+1
    end if
  end do
 

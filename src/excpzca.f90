@@ -67,22 +67,22 @@
 
  do ii=1,mmax
    if(rho(ii)>1.0d-20) then
-      rh=rho(ii)/pi4
-      rs=conrs*rh**(-thrd)
-      if(rs > 1.0d0) then
-        sqrs=sqrt(rs)
-        den=1.0d0 + bt1*sqrs +bt2*rs
-        exc(ii)=-conex/rs + gam/den
-        vxc(ii)=-convx/rs + gam*(1.0d0 + (3.5d0*bt1*sqrs &
-   &            + 4.0d0*bt2*rs)*thrd)/den**2
-      else
-        rsl=log(rs)
-        exc(ii)=-conex/rs + AA*rsl + BB + CC*rs*rsl + DD*rs
-        vxc(ii)=-convx/rs + AA*rsl + (BB-thrd*AA) + 2.0d0*thrd*CC*rs*rsl &
-   &            + thrd*(2.0d0*DD-CC)*rs
-      end if
+     rh=rho(ii)/pi4
+     rs=conrs*rh**(-thrd)
+     if(rs > 1.0d0) then
+       sqrs=sqrt(rs)
+       den=1.0d0 + bt1*sqrs +bt2*rs
+       exc(ii)=-conex/rs + gam/den
+       vxc(ii)=-convx/rs + gam*(1.0d0 + (3.5d0*bt1*sqrs &
+&              + 4.0d0*bt2*rs)*thrd)/den**2
+     else
+       rsl=log(rs)
+       exc(ii)=-conex/rs + AA*rsl + BB + CC*rs*rsl + DD*rs
+       vxc(ii)=-convx/rs + AA*rsl + (BB-thrd*AA) + 2.0d0*thrd*CC*rs*rsl &
+&              + thrd*(2.0d0*DD-CC)*rs
+     end if
    else
-      vxc(ii)=0.0d0 ; exc(ii)=0.0d0
+     vxc(ii)=0.0d0 ; exc(ii)=0.0d0
    end if
  end do
 

@@ -90,7 +90,7 @@
  amesh = exp(al)
 
  do ii=1,mmax
-  vi(ii)=tfapot(rr(ii),zz)
+   vi(ii)=tfapot(rr(ii),zz)
  end do
 
 ! starting approximation for energies
@@ -152,7 +152,7 @@
    end do
 
    if(ierr/=0) then
-    exit
+     exit
    end if
 
 
@@ -160,7 +160,7 @@
    call vout(0,rho,rhoc,vo,vxc,sf-zz,eeel,eexc, &
 &            rr,mmax,iexc)
 
-  etot =  eeig + eexc - 0.5d0*eeel
+   etot =  eeig + eexc - 0.5d0*eeel
 
 ! generate next iteration using d. g. anderson''s
 ! method
@@ -180,7 +180,7 @@
 
    do ii=1,mmax
      vn=(1.0d0-bl)*((1.0d0-thl)*vi(ii) + thl*vi1(ii)) &
-  &   + bl*((1.0d0-thl)*vo(ii) + thl*vo1(ii))
+&     + bl*((1.0d0-thl)*vo(ii) + thl*vo1(ii))
      vi1(ii)=vi(ii)
      vo1(ii)=vo(ii)
      vi(ii)=vn

@@ -109,7 +109,7 @@
 ! output for analysis of core charge and models
  rmx=0
  do ii=n1,n2
-  rmx=max(rmx,5.0d0*rho(ii),rhomod(ii,1))
+   rmx=max(rmx,5.0d0*rho(ii),rhomod(ii,1))
  end do
 
  write(6,'(//2a/)') ' radii, charge,',' core charge, model core charge'
@@ -117,13 +117,13 @@
  r0=rr(n1)-dr
  do ii=n1,n2
    if(rr(ii)>r0) then
-      if(rhoc(ii)<rmx)then
+     if(rhoc(ii)<rmx)then
        write(6,'(a,8(f12.7,1x))') '!r',rr(ii),rho(ii),rhoc(ii), &
 &       rhomod(ii,1)
-      else if(rr(ii)>0.01d0) then
-        write(6,'(a,8(f12.7,1x))') '!r',rr(ii),rho(ii),rmx, &
-&       rhomod(ii,1)
-      end if
+     else if(rr(ii)>0.01d0) then
+       write(6,'(a,8(f12.7,1x))') '!r',rr(ii),rho(ii),rmx, &
+&      rhomod(ii,1)
+     end if
      r0=rr(ii)+dr
    end if
  end do
@@ -131,99 +131,99 @@
 ! loop for wave function output
 
  do l1 = 1, lmax + 1
-  ll = l1 - 1
-  npr=nproj(l1)
-  if(l1==lloc+1) npr=0
+   ll = l1 - 1
+   npr=nproj(l1)
+   if(l1==lloc+1) npr=0
    ll=l1-1
    if(ll==0) then
-    mkap=1
+     mkap=1
    else
-    mkap=2
+     mkap=2
    end if
 ! loop on J = ll +/- 1/2
-  do ikap=1,mkap
-    if(ikap==1) then
-      kap=-(ll+1)
-    else
-      kap=  ll
-    end if
+   do ikap=1,mkap
+     if(ikap==1) then
+       kap=-(ll+1)
+     else
+       kap=  ll
+     end if
 
-   do iprj=1,nproj(l1)
-     if(epa(iprj,l1,ikap)<0.0d0) then
-        write(6,'(//a,i2,a,i2,a,i2,a,a/)') 'n=',npa(iprj,l1),',  l=',ll, &
-&             ', kap=',kap, ', all-electron wave function', ', pseudo w-f'
+     do iprj=1,nproj(l1)
+       if(epa(iprj,l1,ikap)<0.0d0) then
+         write(6,'(//a,i2,a,i2,a,i2,a,a/)') 'n=',npa(iprj,l1),',  l=',ll, &
+&              ', kap=',kap, ', all-electron wave function', ', pseudo w-f'
 
-       etest=epa(iprj,l1,ikap)
-       call ldiracfb(npa(iprj,l1),ll,kap,ierr,etest, &
-&                    rr,zz,vfull,ur,urp,mmax,mch)
+         etest=epa(iprj,l1,ikap)
+         call ldiracfb(npa(iprj,l1),ll,kap,ierr,etest, &
+&                      rr,zz,vfull,ur,urp,mmax,mch)
          if(ierr /= 0) then
            write(6,'(a,i2,a,i2,a,i2,a,i4)') &
 &                'run_plot_r 409: ldiracfb convergence ERROR, n=',&
 &                 npa(iprj,l1),'  l=',ll, 'kap-',kap,'  ierr=',ierr
            error stop 1
          end if
-       call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm)
+         call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm)
 
-       emax=0.9d0*etest
-       emin=1.1d0*etest
+         emax=0.9d0*etest
+         emin=1.1d0*etest
 
-       call lschvkbb(ll+iprj,ll,npr,ierr,etest,emin,emax, &
-&                    rr,vp(1,lloc+1,ikap),vkb(1,1,l1,ikap),evkb(1,l1,ikap), &
-&                    u2,up,mmax,mch)
-       sgnae=1.0d0
-       sgnps=1.0d0
-     else
-       write(6,'(//a,i2,a,i2,a,i2,a,a/)') 'scattering, iprj=',iprj,',  l=',ll, &
-&           ', kap=',kap,', all-electron wave function', ', pseudo w-f'
-       call ldiracfs(nnae,ll,kap,ierr,epa(iprj,l1,ikap), &
-&                    rr,zz,vfull,ur,urp,mmax,n2)
-       if(ierr/=0) then
-         write(6,'(/2a,i0,a,i0,a,i0)') 'run_plot_r: ERROR ldiracfs failed', &
-&              ', ll=',ll,', kap=',kap,', ierr=',ierr
-         error stop 1
+         call lschvkbb(ll+iprj,ll,npr,ierr,etest,emin,emax, &
+&                      rr,vp(1,lloc+1,ikap),vkb(1,1,l1,ikap),evkb(1,l1,ikap), &
+&                      u2,up,mmax,mch)
+         sgnae=1.0d0
+         sgnps=1.0d0
+       else
+         write(6,'(//a,i2,a,i2,a,i2,a,a/)') 'scattering, iprj=',iprj,',  l=',ll, &
+&             ', kap=',kap,', all-electron wave function', ', pseudo w-f'
+         call ldiracfs(nnae,ll,kap,ierr,epa(iprj,l1,ikap), &
+&                      rr,zz,vfull,ur,urp,mmax,n2)
+         if(ierr/=0) then
+           write(6,'(/2a,i0,a,i0,a,i0)') 'run_plot_r: ERROR ldiracfs failed', &
+&                ', ll=',ll,', kap=',kap,', ierr=',ierr
+           error stop 1
+         end if
+         call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm)
+
+         call lschvkbs(ll,npr,epa(iprj,l1,ikap),rr,vp(1,lloc+1,ikap), &
+&                      vkb(1,1,l1,ikap),evkb(1,l1,ikap),u2,up,mmax,n2)
+         sgnae=sign(1.0d0,ur(n2,1))
+         sgnps=sign(1.0d0,u2(n2))
        end if
-       call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm)
 
-       call lschvkbs(ll,npr,epa(iprj,l1,ikap),rr,vp(1,lloc+1,ikap), &
-&                    vkb(1,1,l1,ikap),evkb(1,l1,ikap),u2,up,mmax,n2)
-       sgnae=sign(1.0d0,ur(n2,1))
-       sgnps=sign(1.0d0,u2(n2))
-     end if
+       dr=min(drl,rr(n2)/200)
+       r0=rr(n1)+dr
+       do ii = n1, n2
+         if(rr(ii)>r0) then
+           if(ikap==1) then
+             write(6,'(a,i5,i1,3(f12.6,1x))') '&',-iprj,ll,rr(ii), &
+&                  sgnae*ur(ii,1),sgnps*u2(ii)
+           else
+             write(6,'(a,i5,i1,3(f12.6,1x))') '&',iprj,ll,rr(ii), &
+&                  sgnae*ur(ii,1),sgnps*u2(ii)
+           end if
+           r0=rr(ii)+dr
+         end if
+       end do
+     end do !iproj
 
-     dr=min(drl,rr(n2)/200)
-     r0=rr(n1)+dr
-     do ii = n1, n2
+! orthonormal projector plots
+
+     write(6,'(/)')
+     dr=min(drl,rr(n3)/200)
+     r0=rr(n1)-dr
+     do ii=n1,n3
        if(rr(ii)>r0) then
          if(ikap==1) then
-            write(6,'(a,i5,i1,3(f12.6,1x))') '&',-iprj,ll,rr(ii), &
-&                 sgnae*ur(ii,1),sgnps*u2(ii)
+           write(6,'(a,i6,6(f12.6,1x))') '!J',-ll,rr(ii), &
+&                (vkb(ii,jj,l1,ikap),jj=1,nproj(l1))
          else
-            write(6,'(a,i5,i1,3(f12.6,1x))') '&',iprj,ll,rr(ii), &
-&                 sgnae*ur(ii,1),sgnps*u2(ii)
+           write(6,'(a,i6,6(f12.6,1x))') '!J',ll,rr(ii), &
+&                (vkb(ii,jj,l1,ikap),jj=1,nproj(l1))
          end if
          r0=rr(ii)+dr
        end if
      end do
-   end do !iproj
-
-! orthonormal projector plots
-
-   write(6,'(/)')
-   dr=min(drl,rr(n3)/200)
-   r0=rr(n1)-dr
-   do ii=n1,n3
-     if(rr(ii)>r0) then
-       if(ikap==1) then
-         write(6,'(a,i6,6(f12.6,1x))') '!J',-ll,rr(ii), &
-&              (vkb(ii,jj,l1,ikap),jj=1,nproj(l1))
-       else
-         write(6,'(a,i6,6(f12.6,1x))') '!J',ll,rr(ii), &
-&              (vkb(ii,jj,l1,ikap),jj=1,nproj(l1))
-       end if
-       r0=rr(ii)+dr
-     end if
-    end do
-  end do !ikap
+   end do !ikap
  end do !l1
 !
 ! convergence profile plots

@@ -98,17 +98,17 @@
  if(lloc == 4) then
    r0=rr(n1)-dr
    do ii=n1,n4
-   if(rr(ii)>r0) then
-     write(6,'(a, 2(f12.7,1x))') ' !L',rr(ii),vpuns(ii,lloc + 1)
-     r0=rr(ii)+dr
-   end if
+     if(rr(ii)>r0) then
+       write(6,'(a, 2(f12.7,1x))') ' !L',rr(ii),vpuns(ii,lloc + 1)
+       r0=rr(ii)+dr
+     end if
    end do
  end if
 
 ! output for analysis of core charge and models
  rmx=0
  do ii=n1,n2
-  rmx=max(rmx,5.0d0*rho(ii),rhomod(ii,1))
+   rmx=max(rmx,5.0d0*rho(ii),rhomod(ii,1))
  end do
 
  write(6,'(//2a/)') ' radii, charge,',' core charge, model core charge'
@@ -116,13 +116,13 @@
  r0=rr(n1)-dr
  do ii=n1,n2
    if(rr(ii)>r0) then
-      if(rhoc(ii)<rmx)then
+     if(rhoc(ii)<rmx)then
        write(6,'(a,8(f12.7,1x))') '!r',rr(ii),rho(ii),rhoc(ii), &
 &       rhomod(ii,1)
-      else if(rr(ii)>0.01d0) then
-        write(6,'(a,8(f12.7,1x))') '!r',rr(ii),rho(ii),rmx, &
-&       rhomod(ii,1)
-      end if
+     else if(rr(ii)>0.01d0) then
+       write(6,'(a,8(f12.7,1x))') '!r',rr(ii),rho(ii),rmx, &
+&      rhomod(ii,1)
+     end if
      r0=rr(ii)+dr
    end if
  end do
@@ -131,8 +131,8 @@
 
  do l1 = 1, lmax + 1
    ll = l1 - 1
-    npr=nproj(l1)
-    if(l1==lloc+1) npr=0
+   npr=nproj(l1)
+   if(l1==lloc+1) npr=0
 
    do iprj=1,nproj(l1)
      if(epa(iprj,l1)<0.0d0) then
@@ -142,9 +142,9 @@
        call lschfb(npa(iprj,l1),ll,ierr,etest, &
 &                  rr,vfull,uu,up,zz,mmax,mch,srel)
        if(ierr /= 0) then
-          write(6,'(/a,3i4)') 'run_plot: lschfb convergence ERROR n,l,ierr=', &
-&         npa(iprj,l1),ll,ierr
-        error stop 1
+         write(6,'(/a,3i4)') 'run_plot: lschfb convergence ERROR n,l,ierr=', &
+&        npa(iprj,l1),ll,ierr
+         error stop 1
        end if
 
        emax=0.9d0*etest
@@ -170,9 +170,9 @@
      r0=rr(n1)-dr
      do ii = n1, n2
        if(rr(ii)>r0) then
-          write(6,'(a,i5,i1,3(f12.6,1x))') '&',iprj,ll,rr(ii),sgnae*uu(ii),&
-&          sgnps*u2(ii)
-          r0=rr(ii)+dr
+         write(6,'(a,i5,i1,3(f12.6,1x))') '&',iprj,ll,rr(ii),sgnae*uu(ii),&
+&         sgnps*u2(ii)
+         r0=rr(ii)+dr
        end if
      end do
    end do !iproj

@@ -85,8 +85,8 @@
 ! compute Exc 2nd-derivative wrt occupation numbers matrix
 
  do kk=1,nv
-     l1=la(nc+kk)+1
-     rhot(:)=rho(:,kk)*rr(:)**2
+   l1=la(nc+kk)+1
+   rhot(:)=rho(:,kk)*rr(:)**2
    do jj=1,nv
      call vpinteg(rhot,dvxc(1,jj),ircut,2*l1,d2exc(kk,jj),rr)
    end do !jj

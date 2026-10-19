@@ -20,9 +20,9 @@
 ! compared for reference and tests atomic configurations
 
 
-  subroutine run_config_ps_r(jj,cae,nc,rhov,rhomod,rr, &
-&                  rcmax,mmax,mxprj,iexc,etot,epstot,nproj,vpuns, &
-&                  lloc,vkb,evkb)
+ subroutine run_config_ps_r(jj,cae,nc,rhov,rhomod,rr, &
+&                 rcmax,mmax,mxprj,iexc,etot,epstot,nproj,vpuns, &
+&                 lloc,vkb,evkb)
 
 !jj  index of current configufation
 !cae  all-electron results for this configuration, from run_config_ae_r
@@ -95,8 +95,8 @@
 ! configurations are computed by run_config_ae_r.
 
  if(cae%stat/=0) then
-  call config_ae_r_warning(jj,cae)
-  return
+   call config_ae_r_warning(jj,cae)
+   return
  end if
 
  nvt=cae%nvt
@@ -109,19 +109,19 @@
  allocate(rho(mmax),rhocps(mmax))
 
 !first pseudoatom run from reference to maximally-ionized configuration
-   do l1=1,4
-     nav(l1)=l1-1
-   end do
+ do l1=1,4
+   nav(l1)=l1-1
+ end do
 
-   do kk=1,nvt
-     latp(kk)=lat(nc+kk)
-     l1=latp(kk)+1
-     nav(l1)=nav(l1)+1
-     natp(kk)=nav(l1)
-     eatp(kk,:)=eat(nc+kk,:,1)
-     fatp(kk,1)=fat(nc+kk,1)
-     fatp(kk,2)=fat(nc+kk,2)
-   end do
+ do kk=1,nvt
+   latp(kk)=lat(nc+kk)
+   l1=latp(kk)+1
+   nav(l1)=nav(l1)+1
+   natp(kk)=nav(l1)
+   eatp(kk,:)=eat(nc+kk,:,1)
+   fatp(kk,1)=fat(nc+kk,1)
+   fatp(kk,2)=fat(nc+kk,2)
+ end do
 
  rho(:)=rhov(:)
 
@@ -132,29 +132,29 @@
 &           vkb,evkb,ierr)
 
  if(ierr/=0) then
-  write(6,'(a/a,i2)') 'run_config_r: WARNING for fully non-local PS atom,', &
-&       ' WARNING no output for configuration',jj
-  deallocate(rho,rhocps)
-  return
+   write(6,'(a/a,i2)') 'run_config_r: WARNING for fully non-local PS atom,', &
+&        ' WARNING no output for configuration',jj
+   deallocate(rho,rhocps)
+   return
  end if
 
 !second pseudoatom run from maximally-ionized to excited configuration
 
-   do kk=1,nvt
-     eatp(kk,:)=eat(nc+kk,:,2)
-     fatp(kk,1)=fat(nc+kk,2)
-     fatp(kk,2)=fat(nc+kk,3)
-   end do
+ do kk=1,nvt
+   eatp(kk,:)=eat(nc+kk,:,2)
+   fatp(kk,1)=fat(nc+kk,2)
+   fatp(kk,2)=fat(nc+kk,3)
+ end do
 
  call psatom_r(natp,latp,eatp,fatp,nvt,it,rhocps,rho, &
 &           rr,rcmax,mmax,mxprj,iexc,etsttot,nproj,vpuns,lloc, &
 &           vkb,evkb,ierr)
 
  if(ierr/=0) then
-  write(6,'(a/a,i2)') 'run_config_r: WARNING for fully non-local PS atom,', &
-&       ' WARNING no output for configuration',jj
-  deallocate(rho,rhocps)
-  return
+   write(6,'(a/a,i2)') 'run_config_r: WARNING for fully non-local PS atom,', &
+&        ' WARNING no output for configuration',jj
+   deallocate(rho,rhocps)
+   return
  end if
 
 
@@ -162,41 +162,41 @@
  do ii=1,nc
    ll = lat(ii)
    if(ll==0) then
-    mkap=1
+     mkap=1
    else
-    mkap=2
+     mkap=2
    end if
 ! loop on J = ll +/- 1/2
    do ikap=1,mkap
-    if(ikap==1) then
-      kap=-(ll+1)
-      fj=dble(ll+1)*fat(ii,3)/dble(2*ll+1)
-    else
-      kap=  ll
-      fj=dble(ll)*fat(ii,3)/dble(2*ll+1)
-    end if
-    write(6,'(3i4,f8.4,f14.8)') nat(ii),lat(ii),kap,fj,eat(ii,ikap,3)
+     if(ikap==1) then
+       kap=-(ll+1)
+       fj=dble(ll+1)*fat(ii,3)/dble(2*ll+1)
+     else
+       kap=  ll
+       fj=dble(ll)*fat(ii,3)/dble(2*ll+1)
+     end if
+     write(6,'(3i4,f8.4,f14.8)') nat(ii),lat(ii),kap,fj,eat(ii,ikap,3)
    end do
  end do
 
  do ii=1,nvt
    ll = lat(ii+nc)
    if(ll==0) then
-    mkap=1
+     mkap=1
    else
-    mkap=2
+     mkap=2
    end if
 ! loop on J = ll +/- 1/2
    do ikap=1,mkap
-    if(ikap==1) then
-      kap=-(ll+1)
-      fj=dble(ll+1)*fat(ii+nc,3)/dble(2*ll+1)
-    else
-      kap=  ll
-      fj=dble(ll)*fat(ii+nc,3)/dble(2*ll+1)
-    end if
-    write(6,'(3i4,f8.4,2f14.8,1p,e12.2)') nat(ii+nc),lat(ii+nc),kap,fj, &
-&    eat(ii+nc,ikap,3),eatp(ii,ikap),eatp(ii,ikap)-eat(ii+nc,ikap,3)
+     if(ikap==1) then
+       kap=-(ll+1)
+       fj=dble(ll+1)*fat(ii+nc,3)/dble(2*ll+1)
+     else
+       kap=  ll
+       fj=dble(ll)*fat(ii+nc,3)/dble(2*ll+1)
+     end if
+     write(6,'(3i4,f8.4,2f14.8,1p,e12.2)') nat(ii+nc),lat(ii+nc),kap,fj, &
+&     eat(ii+nc,ikap,3),eatp(ii,ikap),eatp(ii,ikap)-eat(ii+nc,ikap,3)
    end do
  end do
 

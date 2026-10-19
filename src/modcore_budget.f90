@@ -228,77 +228,77 @@
 ! whether the model of radius rr(is) has errors below errmax at the
 ! density cutoffs ifrom..ilast
  logical function fits(is,ilast)
-   integer, intent(in) :: is,ilast
-   integer :: ifail
-   call model(is)
-   call scan_errors(ifrom,ilast,errmax,ifail)
-   fits = ifail==0
+ integer, intent(in) :: is,ilast
+ integer :: ifail
+ call model(is)
+ call scan_errors(ifrom,ilast,errmax,ifail)
+ fits = ifail==0
  end function fits
 
 ! the smallest index above ilo, which fails, that fits up to ilast;
 ! ihi fits
  integer function bisect(ilo,ihi,ilast)
-   integer, intent(in) :: ilo,ihi,ilast
-   integer :: ia,ib,imid
-   ia=ilo
-   ib=ihi
-   if(fits(ia,ilast)) then
-     bisect=ia
-     return
+ integer, intent(in) :: ilo,ihi,ilast
+ integer :: ia,ib,imid
+ ia=ilo
+ ib=ihi
+ if(fits(ia,ilast)) then
+   bisect=ia
+   return
+ end if
+ do while(ib-ia>1)
+   imid=(ia+ib)/2
+   if(fits(imid,ilast)) then
+     ib=imid
+   else
+     ia=imid
    end if
-   do while(ib-ia>1)
-     imid=(ia+ib)/2
-     if(fits(imid,ilast)) then
-       ib=imid
-     else
-       ia=imid
-     end if
-   end do
-   bisect=ib
+ end do
+ bisect=ib
  end function bisect
 
  subroutine no_model()
-   write(6,'(/a,f10.6,a,f10.4,a,1p,e10.2,a)') &
-&        'modcore_budget: ERROR stop - no model core inside r =',rr(irtop), &
-&        ' needs less than',ecut,' Ha for an error of',errmax,' Ha'
-   stop
+ write(6,'(/a,f10.6,a,f10.4,a,1p,e10.2,a)') &
+&      'modcore_budget: ERROR stop - no model core inside r =',rr(irtop), &
+&      ' needs less than',ecut,' Ha for an error of',errmax,' Ha'
+ stop
  end subroutine no_model
 
 ! the Martins coefficients at rr(is), and in core the model inside rr(is)
 ! and the core charge beyond
  subroutine model(is)
-   integer, intent(in) :: is
-   real(dp) :: rs,l1,l2
-   integer :: kk
-   rs=rr(is)
-   l1=dc(is,2)/dc(is,1)
-   l2=dc(is,3)/dc(is,1) - l1**2
-   cco=(rs*l2 - l1)/(8.0d0*rs**3)
-   bco=(l1 - 4.0d0*cco*rs**3)/(2.0d0*rs)
-   aco=log(dc(is,1)) - bco*rs**2 - cco*rs**4
-   core(:)=rhoc(:)
-   do kk=1,is-1
-     core(kk)=exp(aco + bco*rr(kk)**2 + cco*rr(kk)**4)
-   end do
+ integer, intent(in) :: is
+ real(dp) :: rs,l1,l2
+ integer :: kk
+ rs=rr(is)
+ l1=dc(is,2)/dc(is,1)
+ l2=dc(is,3)/dc(is,1) - l1**2
+ cco=(rs*l2 - l1)/(8.0d0*rs**3)
+ bco=(l1 - 4.0d0*cco*rs**3)/(2.0d0*rs)
+ aco=log(dc(is,1)) - bco*rs**2 - cco*rs**4
+ core(:)=rhoc(:)
+ do kk=1,is-1
+   core(kk)=exp(aco + bco*rr(kk)**2 + cco*rr(kk)**4)
+ end do
  end subroutine model
 
 ! the model and its first 4 derivatives at r, from n' = p' n with
 ! p = a + b r**2 + c r**4: n(k) = sum_j C(k-1,j) p(j+1) n(k-1-j)
  subroutine martins_derivatives(r,d)
-   real(dp), intent(in) :: r
-   real(dp), intent(out) :: d(5)
-   real(dp) :: dp1(4)
-   integer :: kk,jj
-   integer, parameter :: binom(0:3,0:3)=reshape([1,1,1,1, 0,1,2,3, 0,0,1,3, 0,0,0,1],[4,4])
-   dp1=[2.0d0*bco*r + 4.0d0*cco*r**3, 2.0d0*bco + 12.0d0*cco*r**2, &
-&       24.0d0*cco*r, 24.0d0*cco]
-   d(1)=exp(aco + bco*r**2 + cco*r**4)
-   do kk=1,4
-     d(kk+1)=0.0d0
-     do jj=0,kk-1
-       d(kk+1)=d(kk+1) + binom(kk-1,jj)*dp1(jj+1)*d(kk-jj)
-     end do
+ real(dp), intent(in) :: r
+ real(dp), intent(out) :: d(5)
+ real(dp) :: dp1(4)
+ integer :: kk,jj
+ integer, parameter :: binom(0:3,0:3)=reshape([1,1,1,1, 0,1,2,3, 0,0,1,3, 0,0,0,1],[4,4])
+ dp1=[2.0d0*bco*r + 4.0d0*cco*r**3, 2.0d0*bco + 12.0d0*cco*r**2, &
+&     24.0d0*cco*r, 24.0d0*cco]
+ d(1)=exp(aco + bco*r**2 + cco*r**4)
+ do kk=1,4
+   d(kk+1)=0.0d0
+   do jj=0,kk-1
+     d(kk+1)=d(kk+1) + binom(kk-1,jj)*dp1(jj+1)*d(kk-jj)
    end do
+ end do
  end subroutine martins_derivatives
 
 ! the errors err(iq) at the density cutoffs iq*qstep, iq=ifirst..ilast, of
@@ -308,98 +308,98 @@
 ! The band-limited model is built up panel by panel (midpoints, width dq),
 ! the sines and cosines of the midpoints by rotation
  subroutine scan_errors(ifirst,ilast,elimit,ifail)
-   integer, intent(in) :: ifirst,ilast
-   real(dp), intent(in) :: elimit
-   integer, intent(out) :: ifail
-   real(dp) :: q,ww,tt
-   integer :: iq,kk,ll,iend
+ integer, intent(in) :: ifirst,ilast
+ real(dp), intent(in) :: elimit
+ integer, intent(out) :: ifail
+ real(dp) :: q,ww,tt
+ integer :: iq,kk,ll,iend
 
-   ifail=0
-   err(:)=-1.0d0
-   e0=exc_sphere(core(1:nx))
-   iend=ilast
-   if(ilast==0) iend=ifrom-1
-   sn(:)=sin(0.5d0*dq*rr(:))
-   cs(:)=cos(0.5d0*dq*rr(:))
-   sh(:)=sin(dq*rr(:))
-   ch(:)=cos(dq*rr(:))
-   rq(:)=0.0d0
-   do iq=1,iend
-     do kk=1,npanel
-       q=((iq-1)*npanel + kk - 0.5d0)*dq
+ ifail=0
+ err(:)=-1.0d0
+ e0=exc_sphere(core(1:nx))
+ iend=ilast
+ if(ilast==0) iend=ifrom-1
+ sn(:)=sin(0.5d0*dq*rr(:))
+ cs(:)=cos(0.5d0*dq*rr(:))
+ sh(:)=sin(dq*rr(:))
+ ch(:)=cos(dq*rr(:))
+ rq(:)=0.0d0
+ do iq=1,iend
+   do kk=1,npanel
+     q=((iq-1)*npanel + kk - 0.5d0)*dq
 ! weight dq (1/2pi**2) int 4pi r**2 nc j0(qr) dr of the panel
-       ww=0.0d0
-       do ll=1,mmax
-         ww=ww + rr(ll)**2*core(ll)*sn(ll)
-       end do
-       ww=dq*al*ww*2.0d0/(pi*q)
-! q**2 j0(qr) = q sin(qr)/r
-       do ll=1,nx
-         rq(ll)=rq(ll) + ww*q*sn(ll)/rr(ll)
-       end do
-       do ll=1,mmax
-         tt=sn(ll)*ch(ll) + cs(ll)*sh(ll)
-         cs(ll)=cs(ll)*ch(ll) - sn(ll)*sh(ll)
-         sn(ll)=tt
-       end do
+     ww=0.0d0
+     do ll=1,mmax
+       ww=ww + rr(ll)**2*core(ll)*sn(ll)
      end do
-     if(ilast==0) then
-       rqs(:,iq)=rq(:)
-       cycle
-     end if
-     if(iq<ifirst) cycle
-     err(iq)=xc_error(rq)
-     if(.not. err(iq)<=elimit) then
-       ifail=iq
-       return
-     end if
+     ww=dq*al*ww*2.0d0/(pi*q)
+! q**2 j0(qr) = q sin(qr)/r
+     do ll=1,nx
+       rq(ll)=rq(ll) + ww*q*sn(ll)/rr(ll)
+     end do
+     do ll=1,mmax
+       tt=sn(ll)*ch(ll) + cs(ll)*sh(ll)
+       cs(ll)=cs(ll)*ch(ll) - sn(ll)*sh(ll)
+       sn(ll)=tt
+     end do
    end do
+   if(ilast==0) then
+     rqs(:,iq)=rq(:)
+     cycle
+   end if
+   if(iq<ifirst) cycle
+   err(iq)=xc_error(rq)
+   if(.not. err(iq)<=elimit) then
+     ifail=iq
+     return
+   end if
+ end do
  end subroutine scan_errors
 
 ! the error of the band-limited model bq of the model in core
  real(dp) function xc_error(bq)
-   real(dp), intent(in) :: bq(nx)
-   real(dp) :: tt
-   integer :: ll
-   tt=0.0d0
-   do ll=1,nin
-     tt=tt + rr(ll)**3*(bq(ll) - core(ll))
-   end do
-   xc_error=abs(exc_sphere(bq) - e0 - vbg*al*tt)
+ real(dp), intent(in) :: bq(nx)
+ real(dp) :: tt
+ integer :: ll
+ tt=0.0d0
+ do ll=1,nin
+   tt=tt + rr(ll)**3*(bq(ll) - core(ll))
+ end do
+ xc_error=abs(exc_sphere(bq) - e0 - vbg*al*tt)
  end function xc_error
 
 ! the exchange-correlation energy within the sphere of the valence charge
 ! on the background plus the core charge cc
  real(dp) function exc_sphere(cc)
-   real(dp), intent(in) :: cc(nx)
-   integer :: ll
-   work(:)=nval(:) + cc(:)
-   call xc_eps(work,eps,vxc)
-   exc_sphere=0.0d0
-   do ll=1,nin
-     exc_sphere=exc_sphere + rr(ll)**3*work(ll)*eps(ll)
-   end do
-   exc_sphere=al*exc_sphere
+ real(dp), intent(in) :: cc(nx)
+ integer :: ll
+ work(:)=nval(:) + cc(:)
+ call xc_eps(work,eps,vxc)
+ exc_sphere=0.0d0
+ do ll=1,nin
+   exc_sphere=exc_sphere + rr(ll)**3*work(ll)*eps(ll)
+ end do
+ exc_sphere=al*exc_sphere
  end function exc_sphere
 
 ! the xc energy per electron and potential of the charge rho on rr(1:nx)
  subroutine xc_eps(rho,exc,vx)
-   real(dp), intent(inout) :: rho(nx)
-   real(dp), intent(out) :: exc(nx),vx(nx)
-   if(iexc == 1) then
-     call excwig(rho,vx,exc,nx)
-   else if(iexc == 2) then
-     call exchdl(rho,vx,exc,nx)
-   else if(iexc == 3) then
-     call excpzca(rho,vx,exc,nx)
-   else if(iexc == 4) then
-     call excggc(rho,vx,exc,rr,nx)
-   else if (iexc < 0) then
-     call exc_libxc(iexc,al,rho,vx,exc,rr,nx)
-   else
-     write(6,'(/a,i4)') 'modcore_budget: ERROR bad input iexc =',iexc
-     stop
-   end if
+ real(dp), intent(inout) :: rho(nx)
+ real(dp), intent(out) :: exc(nx),vx(nx)
+ if(iexc == 1) then
+   call excwig(rho,vx,exc,nx)
+ else if(iexc == 2) then
+   call exchdl(rho,vx,exc,nx)
+ else if(iexc == 3) then
+   call excpzca(rho,vx,exc,nx)
+ else if(iexc == 4) then
+   call excggc(rho,vx,exc,rr,nx)
+ else if (iexc < 0) then
+   call exc_libxc(iexc,al,rho,vx,exc,rr,nx)
+ else
+   write(6,'(/a,i4)') 'modcore_budget: ERROR bad input iexc =',iexc
+   stop
+ end if
  end subroutine xc_eps
 
  end subroutine modcore_budget

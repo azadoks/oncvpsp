@@ -75,16 +75,16 @@
 
 ! check arguments
  if(ll>nn-1) then
-  write(6,'(/a,i4,a,i4)') 'lschfb: ERROR ll =',ll,' > nn =',nn
-  ierr=1
-  return
+   write(6,'(/a,i4,a,i4)') 'lschfb: ERROR ll =',ll,' > nn =',nn
+   ierr=1
+   return
  end if
 
 ! relativistic - non-relativistic switch
  if(srel) then
-  fss=(1.0d0/c_light)**2
+   fss=(1.0d0/c_light)**2
  else
-  fss=1.0d-12
+   fss=1.0d-12
  end if
 
  if(ll==0) gamma=sqrt(1.0d0-fss*zz**2)
@@ -153,8 +153,8 @@
    end do
 
    if(mch==0) then
-    ierr=-1
-    return
+     ierr=-1
+     return
    end if
 
 ! start wavefunction with series

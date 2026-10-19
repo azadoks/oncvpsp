@@ -58,46 +58,46 @@
  qroot(:)=0.0d0
  iroot=2
  do ii=1,nq
-  qq=dltq*ii
-  call sbf_rc_der(ll,qq,rc,sbfd)
-  dlgd=ulgd - sbfd(2)/sbfd(1)
+   qq=dltq*ii
+   call sbf_rc_der(ll,qq,rc,sbfd)
+   dlgd=ulgd - sbfd(2)/sbfd(1)
 !keep the grid value for the next sign test; bisection overwrites dlgd
-  dlgd_grid=dlgd
-  found_root=.false.
+   dlgd_grid=dlgd
+   found_root=.false.
 !interval halving to find root
-  if(ii>1 .and. dlgd*dlgd_last < 0.0d0 .and. &
-&         abs(dlgd*dlgd_last)<1.0d0) then
-    if(dlgd>0.0d0) then
-      qhi=qq
-      qlow=dltq*(ii-1)
-    else
-      qhi=dltq*(ii-1)
-      qlow=qq
-    end if
+   if(ii>1 .and. dlgd*dlgd_last < 0.0d0 .and. &
+&          abs(dlgd*dlgd_last)<1.0d0) then
+     if(dlgd>0.0d0) then
+       qhi=qq
+       qlow=dltq*(ii-1)
+     else
+       qhi=dltq*(ii-1)
+       qlow=qq
+     end if
 
-    do jj=1,100
-      qt=0.5d0*(qhi+qlow)
-      call sbf_rc_der(ll,qt,rc,sbfd)
-      dlgd=ulgd - sbfd(2)/sbfd(1)
-      if(abs(dlgd)<eps) then
-        iroot=iroot+1
-        qroot(iroot)=qt
-        found_root=.true.
-        exit
-      end if
-      if(dlgd>0.0d0) then
-        qhi=qt
-      else
-        qlow=qt
-      end if
-    end do
-    if(.not. found_root) then
-      write(6,'(/a,i0,a,es12.4,a,es12.4)') 'qroots: WARNING bisection failed, skipping', &
-&           ', ll=',ll,', qlow=',qlow,', qhi=',qhi
-    end if
-  end if
-  if(iroot == nroot) exit
-  dlgd_last=dlgd_grid
+     do jj=1,100
+       qt=0.5d0*(qhi+qlow)
+       call sbf_rc_der(ll,qt,rc,sbfd)
+       dlgd=ulgd - sbfd(2)/sbfd(1)
+       if(abs(dlgd)<eps) then
+         iroot=iroot+1
+         qroot(iroot)=qt
+         found_root=.true.
+         exit
+       end if
+       if(dlgd>0.0d0) then
+         qhi=qt
+       else
+         qlow=qt
+       end if
+     end do
+     if(.not. found_root) then
+       write(6,'(/a,i0,a,es12.4,a,es12.4)') 'qroots: WARNING bisection failed, skipping', &
+&            ', ll=',ll,', qlow=',qlow,', qhi=',qhi
+     end if
+   end if
+   if(iroot == nroot) exit
+   dlgd_last=dlgd_grid
  end do
  if(iroot<nroot) then
    write(6,'(a)') 'qroots: ERROR - failed to find nroot roots'

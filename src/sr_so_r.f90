@@ -65,28 +65,28 @@
  allocate(vkbt(mmax,2*mxprj),vkbst(mmax,2*mxprj))
 
  do l1=1,lmax+1
-  ll=l1-1
+   ll=l1-1
 
-  if(ll==0) then
-   vsr(:,:,l1)=0.0d0
-   vso(:,:,l1)=0.0d0
-   esr(:,l1)=0.0d0
-   eso(:,l1)=0.0d0
-   if(nproj(l1)>=1) then
-    do ii=1,nproj(l1)
-     vsr(:,ii,l1)=vkb(:,ii,l1,1)
-     esr(ii,l1)=evkb(ii,l1,1)
-    end do
+   if(ll==0) then
+     vsr(:,:,l1)=0.0d0
+     vso(:,:,l1)=0.0d0
+     esr(:,l1)=0.0d0
+     eso(:,l1)=0.0d0
+     if(nproj(l1)>=1) then
+       do ii=1,nproj(l1)
+         vsr(:,ii,l1)=vkb(:,ii,l1,1)
+         esr(ii,l1)=evkb(ii,l1,1)
+       end do
+     end if
+     cycle
    end if
-   cycle
-  end if
 
-  nn=2*nproj(l1)
+   nn=2*nproj(l1)
 
-  fscl(1)=(ll+1)/dble(2*ll+1)
-  fscl(2)=ll/dble(2*ll+1)
-  fso(1)=2/dble(2*ll+1)
-  fso(2)=-2/dble(2*ll+1)
+   fscl(1)=(ll+1)/dble(2*ll+1)
+   fscl(2)=ll/dble(2*ll+1)
+   fso(1)=2/dble(2*ll+1)
+   fso(2)=-2/dble(2*ll+1)
 
 ! construct overlap matrix and diagonal energy matrices
 
@@ -96,41 +96,41 @@
    vkbt(:,:)=0.0d0
 
    do ik1=1,2
-    do ip1=1,nproj(l1)
-     ii=ip1+(ik1-1)*nproj(l1)
+     do ip1=1,nproj(l1)
+       ii=ip1+(ik1-1)*nproj(l1)
 
-     ascl(ii,ii)=fscl(ik1)*evkb(ip1,l1,ik1)
-     aso(ii,ii)=fso(ik1)*evkb(ip1,l1,ik1)
+       ascl(ii,ii)=fscl(ik1)*evkb(ip1,l1,ik1)
+       aso(ii,ii)=fso(ik1)*evkb(ip1,l1,ik1)
 
-     vkbt(:,ii)=vkb(:,ip1,l1,ik1)
+       vkbt(:,ii)=vkb(:,ip1,l1,ik1)
 
-     do ik2=1,2
-      do ip2=1,nproj(l1)
-       jj=ip2+(ik2-1)*nproj(l1)
+       do ik2=1,2
+         do ip2=1,nproj(l1)
+           jj=ip2+(ik2-1)*nproj(l1)
 
-       call vpinteg(vkb(1,ip1,l1,ik1),vkb(1,ip2,l1,ik2),irc(l1),2*l1, &
-&                   sovl(ii,jj),rr)
+           call vpinteg(vkb(1,ip1,l1,ik1),vkb(1,ip2,l1,ik2),irc(l1),2*l1, &
+&                       sovl(ii,jj),rr)
 
-      end do
+         end do
+       end do
      end do
-    end do
    end do
 
    call dsyev( 'V', 'U', nn, sovl, 2*mxprj, sovlev, work, 10*mxprj, info )
 
    if(info /= 0) then
-    write(6,'(a,i4)') 'sr_so_r: S matrix eigenvalue ERROR, info=',info
-    error stop 1
+     write(6,'(a,i4)') 'sr_so_r: S matrix eigenvalue ERROR, info=',info
+     error stop 1
    end if
 
 ! construct S^(-1/2) AND s^(1/2)
 
    do jj=1,nn
-    tt=sqrt(sovlev(jj))
-    do ii=1,nn
-     sphalf(ii,jj)=tt*sovl(ii,jj)
-     smhalf(ii,jj)=sovl(ii,jj)/tt
-    end do
+     tt=sqrt(sovlev(jj))
+     do ii=1,nn
+       sphalf(ii,jj)=tt*sovl(ii,jj)
+       smhalf(ii,jj)=sovl(ii,jj)/tt
+     end do
    end do
 
 ! take linear combinations to form orthonormal basis functions
@@ -138,140 +138,140 @@
    vkbst(:,:)=0.0d0
 
    do jj=1,nn
-    do ii=1,nn
-     vkbst(:,jj)=vkbst(:,jj) + smhalf(ii,jj)*vkbt(:,ii)
-    end do
+     do ii=1,nn
+       vkbst(:,jj)=vkbst(:,jj) + smhalf(ii,jj)*vkbt(:,ii)
+     end do
    end do
 
 ! construct A^(-1)* = S^(1/2)^T A^(-1) S^(1/2)
 
-     asclt(:,:)=0.0d0
-     asclst(:,:)=0.0d0
-     asot(:,:)=0.0d0
-     asost(:,:)=0.0d0
+   asclt(:,:)=0.0d0
+   asclst(:,:)=0.0d0
+   asot(:,:)=0.0d0
+   asost(:,:)=0.0d0
 
-     do ii=1,nn
-      do jj=1,nn
+   do ii=1,nn
+     do jj=1,nn
        do kk=1,nn
-        asclt(ii,jj)=asclt(ii,jj)+ascl(ii,kk)*sphalf(kk,jj)
-        asot(ii,jj) =asot(ii,jj) + aso(ii,kk)*sphalf(kk,jj)
+         asclt(ii,jj)=asclt(ii,jj)+ascl(ii,kk)*sphalf(kk,jj)
+         asot(ii,jj) =asot(ii,jj) + aso(ii,kk)*sphalf(kk,jj)
        end do
-      end do
      end do
+   end do
 
-     do ii=1,nn
-      do jj=1,nn
+   do ii=1,nn
+     do jj=1,nn
        do kk=1,nn
-        asclst(ii,jj)=asclst(ii,jj)+asclt(kk,jj)*sphalf(kk,ii)
-        asost(ii,jj) =asost(ii,jj) + asot(kk,jj)*sphalf(kk,ii)
+         asclst(ii,jj)=asclst(ii,jj)+asclt(kk,jj)*sphalf(kk,ii)
+         asost(ii,jj) =asost(ii,jj) + asot(kk,jj)*sphalf(kk,ii)
        end do
-      end do
      end do
+   end do
 
 ! find eigenvalues and eigenvectors of the A* matrices
 
 !      SUBROUTINE DSYEV( JOBZ, UPLO, N, A, LDA, W, WORK, LWORK, INFO )
 
-     call dsyev( 'V', 'U', nn, asclst, 2*mxprj, wsclst, work, 10*mxprj, info )
+   call dsyev( 'V', 'U', nn, asclst, 2*mxprj, wsclst, work, 10*mxprj, info )
 
-     if(info /= 0) then
-      write(6,'(a,i4)') 'sr_so_r: A* matrix eigenvalue ERROR, info=',info
-      error stop 1
-     end if
+   if(info /= 0) then
+     write(6,'(a,i4)') 'sr_so_r: A* matrix eigenvalue ERROR, info=',info
+     error stop 1
+   end if
 
-     call dsyev( 'V', 'U', nn,  asost, 2*mxprj,  wsost, work, 10*mxprj, info )
+   call dsyev( 'V', 'U', nn,  asost, 2*mxprj,  wsost, work, 10*mxprj, info )
 
 
-     if(info /= 0) then
-      write(6,'(a,i4)') 'sr_so_r: A* matrix eigenvalue ERROR, info=',info
-      error stop 1
-     end if
+   if(info /= 0) then
+     write(6,'(a,i4)') 'sr_so_r: A* matrix eigenvalue ERROR, info=',info
+     error stop 1
+   end if
 
 ! take linear combinations to form orthonormal projectors
 
-     vsr(:,:,l1)=0.0d0
-     vso(:,:,l1)=0.0d0
-     esr(:,l1)=0.0d0
-     eso(:,l1)=0.0d0
+   vsr(:,:,l1)=0.0d0
+   vso(:,:,l1)=0.0d0
+   esr(:,l1)=0.0d0
+   eso(:,l1)=0.0d0
 
-     do ii=1,nn
-      esr(ii,l1)=wsclst(ii)
-      eso(ii,l1)=  wsost(ii)
-      do jj=1,nn
+   do ii=1,nn
+     esr(ii,l1)=wsclst(ii)
+     eso(ii,l1)=  wsost(ii)
+     do jj=1,nn
        vsr(:,ii,l1)=vsr(:,ii,l1) + asclst(jj,ii)*vkbst(:,jj)
        vso(:,ii,l1)= vso(:,ii,l1) +   asost(jj,ii)*vkbst(:,jj)
-      end do
      end do
+   end do
 
 ! bubble-sort on coefficient magnitudes for scalar and then s-o
 ! (Yes, I know bubble-sort is the least-efficient sorting algorithm.)
 
-     do ii=1,100
-      sorted=.true.
-      do jj=2,nn
+   do ii=1,100
+     sorted=.true.
+     do jj=2,nn
        if(abs(esr(jj-1,l1))<abs(esr(jj,l1))) then
-        tt=esr(jj,l1)
-        vkbt(:,1)=vsr(:,jj,l1)
-        esr(jj,l1)=esr(jj-1,l1)
-        vsr(:,jj,l1)=vsr(:,jj-1,l1)
-        esr(jj-1,l1)=tt
-        vsr(:,jj-1,l1)=vkbt(:,1)
-        sorted=.false.
+         tt=esr(jj,l1)
+         vkbt(:,1)=vsr(:,jj,l1)
+         esr(jj,l1)=esr(jj-1,l1)
+         vsr(:,jj,l1)=vsr(:,jj-1,l1)
+         esr(jj-1,l1)=tt
+         vsr(:,jj-1,l1)=vkbt(:,1)
+         sorted=.false.
        end if
-      end do
-      if(sorted) exit
      end do
+     if(sorted) exit
+   end do
 
-     do ii=1,100
-      sorted=.true.
-      do jj=2,nn
+   do ii=1,100
+     sorted=.true.
+     do jj=2,nn
        if(abs(eso(jj-1,l1))<abs(eso(jj,l1))) then
-        tt=eso(jj,l1)
-        vkbt(:,1)=vso(:,jj,l1)
-        eso(jj,l1)=eso(jj-1,l1)
-        vso(:,jj,l1)=vso(:,jj-1,l1)
-        eso(jj-1,l1)=tt
-        vso(:,jj-1,l1)=vkbt(:,1)
-        sorted=.false.
+         tt=eso(jj,l1)
+         vkbt(:,1)=vso(:,jj,l1)
+         eso(jj,l1)=eso(jj-1,l1)
+         vso(:,jj,l1)=vso(:,jj-1,l1)
+         eso(jj-1,l1)=tt
+         vso(:,jj-1,l1)=vkbt(:,1)
+         sorted=.false.
        end if
-      end do
-      if(sorted) exit
      end do
+     if(sorted) exit
+   end do
 
-     write(6,'(/a,i2)') &
-&         ' Orthonormal scalar projector coefficients, l = ',ll
-     write(6,'(1p,6e12.4)') (esr(jj,l1),jj=1,nn)
-     write(6,'(/a,i2)') &
-&         ' Orthonormal spin-orbit projector coefficients, l = ',ll
-     write(6,'(1p,6e12.4)') (eso(jj,l1),jj=1,nn)
+   write(6,'(/a,i2)') &
+&       ' Orthonormal scalar projector coefficients, l = ',ll
+   write(6,'(1p,6e12.4)') (esr(jj,l1),jj=1,nn)
+   write(6,'(/a,i2)') &
+&       ' Orthonormal spin-orbit projector coefficients, l = ',ll
+   write(6,'(1p,6e12.4)') (eso(jj,l1),jj=1,nn)
 
 ! Set sign of projectors (physically irrelevant) so that they are positive
 ! at their peak (needed for compaisons apparently)
 
-     do jj=1,nn
-       apk=0.0d0
-       ipk=1
-       do ii=1,mmax
-         if(abs(vso(ii,jj,l1))>apk) then
-           apk=abs(vso(ii,jj,l1))
-           ipk=ii
-         end if
-       end do
-       if(vso(ipk,jj,l1)<0.0d0) then
-         vso(:,jj,l1)=-vso(:,jj,l1)
-       end if
-       apk=0.0d0
-       ipk=1
-       do ii=1,mmax
-         if(abs(vsr(ii,jj,l1))>apk) then
-           apk=abs(vsr(ii,jj,l1))
-           ipk=ii
-         end if
-       end do
-       if(vsr(ipk,jj,l1)<0.0d0) then
-         vsr(:,jj,l1)=-vsr(:,jj,l1)
+   do jj=1,nn
+     apk=0.0d0
+     ipk=1
+     do ii=1,mmax
+       if(abs(vso(ii,jj,l1))>apk) then
+         apk=abs(vso(ii,jj,l1))
+         ipk=ii
        end if
      end do
+     if(vso(ipk,jj,l1)<0.0d0) then
+       vso(:,jj,l1)=-vso(:,jj,l1)
+     end if
+     apk=0.0d0
+     ipk=1
+     do ii=1,mmax
+       if(abs(vsr(ii,jj,l1))>apk) then
+         apk=abs(vsr(ii,jj,l1))
+         ipk=ii
+       end if
+     end do
+     if(vsr(ipk,jj,l1)<0.0d0) then
+       vsr(:,jj,l1)=-vsr(:,jj,l1)
+     end if
+   end do
 
  end do ! l1
 

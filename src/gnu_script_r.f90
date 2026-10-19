@@ -165,17 +165,17 @@
  write(6,'(a/)') trim(x_label(1))
 
  do l1=1,lmax+1
-  write(6,'(2a)',advance='no') lead(l1),trim(gln(l1))
-  if(l1<lmax+1 .or. lloc==4) then
-   write(6,'(a)') cbs
-  else
-   write(6,'(/)')
-  end if
+   write(6,'(2a)',advance='no') lead(l1),trim(gln(l1))
+   if(l1<lmax+1 .or. lloc==4) then
+     write(6,'(a)') cbs
+   else
+     write(6,'(/)')
+   end if
  end do
 
  if(lloc==4) then
-  l1=5
-  write(6,'(2a)') lead(l1),trim(gln(l1))
+   l1=5
+   write(6,'(2a)') lead(l1),trim(gln(l1))
  end if
 
  write(6,'(/a/)') trim(pse)
@@ -184,12 +184,12 @@
  write(6,'(a/)') trim(x_label(1))
 
  do ii=1,3
-  write(6,'(2a)',advance='no') lead(ii),trim(gln(ii+5))
-  if(ii<3) then
-   write(6,'(a)') cbs
-  else
-   write(6,'(/)')
-  end if
+   write(6,'(2a)',advance='no') lead(ii),trim(gln(ii+5))
+   if(ii<3) then
+     write(6,'(a)') cbs
+   else
+     write(6,'(/)')
+   end if
  end do
 
  write(6,'(/a/)') trim(pse)
@@ -197,101 +197,101 @@
 !wave function plots
 
  do l1=1,lmax+1
-  if(l1==1) then
-   mkap=1
-  else
-   mkap=2
-  end if
+   if(l1==1) then
+     mkap=1
+   else
+     mkap=2
+   end if
 ! loop on J = ll +/- 1/2
-  do ikap=1,mkap
+   do ikap=1,mkap
 
-   do iprj=1,nproj(l1)
+     do iprj=1,nproj(l1)
 
-     write(6,'(a,i2,a,f7.2,a/)') trim(plot_title(3)),iprj,', E= ', &
-&          epa(iprj,l1,ikap),' Ha"'
-     write(6,'(a/)') trim(x_label(1))
+       write(6,'(a,i2,a,f7.2,a/)') trim(plot_title(3)),iprj,', E= ', &
+&            epa(iprj,l1,ikap),' Ha"'
+       write(6,'(a/)') trim(x_label(1))
+       if(ikap==1) then
+         write(6,'(2a,i5,2a)') lead(1),trim(gln(60)),-iprj,trim(gln(2*l1+7)),cbs
+         write(6,'(2a,i5, a)') lead(2),trim(gln(60)),-iprj,trim(gln(2*l1+8))
+       else
+         write(6,'(2a,i5,2a)') lead(1),trim(gln(60)),iprj,trim(gln(2*l1+77)),cbs
+         write(6,'(2a,i5, a)') lead(2),trim(gln(60)),iprj,trim(gln(2*l1+78))
+       end if
+
+       write(6,'(/a/)') trim(pse)
+
+     end do !iprj
+
+! orthonormal projector plot
+     ll=l1-1
+     if(ll/=lloc) then
+       write(6,'(a/)') trim(x_label(1))
+       if(ikap==1) then
+         write(6,'(a,1p,5e11.2)',advance='no') trim(plot_title(6+l1)), &
+&              (evkb(jj,l1,ikap),jj=1,nproj(l1))
+       else
+         write(6,'(a,1p,5e11.2)',advance='no') trim(plot_title(10+l1)), &
+&              (evkb(jj,l1,ikap),jj=1,nproj(l1))
+       end if
+       write(6,'(a/)')    ' Ha"'
+
+       do jj=1,nproj(l1)
+!run_plot_r labels the j=l+1/2 (ikap=1) projector lines with -l
+         if(ikap==1) then
+           write(6,'(2a,i6,a)',advance='no') lead(jj),trim(gln(70)),-ll,trim(gln(70+jj))
+         else
+           write(6,'(2a,i6,a)',advance='no') lead(jj),trim(gln(70)),ll,trim(gln(70+jj))
+         end if
+         if(jj<nproj(l1)) then
+           write(6,'(a)') cbs
+         else
+           write(6,'(/)')
+         end if
+       end do
+
+       write(6,'(/a/)') trim(pse)
+
+     end if
+
+!  log derivative plots
+
+     write(6,'(a/)') trim(plot_title(5))
+     write(6,'(a/)') trim(x_label(2))
+
      if(ikap==1) then
-       write(6,'(2a,i5,2a)') lead(1),trim(gln(60)),-iprj,trim(gln(2*l1+7)),cbs
-       write(6,'(2a,i5, a)') lead(2),trim(gln(60)),-iprj,trim(gln(2*l1+8))
+       write(6,'(3a)') lead(1),trim(gln(4*l1+19)),cbs
+       write(6,'(2a)') lead(2),trim(gln(4*l1+20))
      else
-       write(6,'(2a,i5,2a)') lead(1),trim(gln(60)),iprj,trim(gln(2*l1+77)),cbs
-       write(6,'(2a,i5, a)') lead(2),trim(gln(60)),iprj,trim(gln(2*l1+78))
+       write(6,'(3a)') lead(1),trim(gln(4*l1+21)),cbs
+       write(6,'(2a)') lead(2),trim(gln(4*l1+22))
      end if
 
      write(6,'(/a/)') trim(pse)
 
-   end do !iprj
-
-! orthonormal projector plot
-  ll=l1-1
-  if(ll/=lloc) then
-    write(6,'(a/)') trim(x_label(1))
-    if(ikap==1) then
-      write(6,'(a,1p,5e11.2)',advance='no') trim(plot_title(6+l1)), &
-&           (evkb(jj,l1,ikap),jj=1,nproj(l1))
-    else
-      write(6,'(a,1p,5e11.2)',advance='no') trim(plot_title(10+l1)), &
-&           (evkb(jj,l1,ikap),jj=1,nproj(l1))
-    end if
-    write(6,'(a/)')    ' Ha"'
-
-    do jj=1,nproj(l1)
-!run_plot_r labels the j=l+1/2 (ikap=1) projector lines with -l
-      if(ikap==1) then
-        write(6,'(2a,i6,a)',advance='no') lead(jj),trim(gln(70)),-ll,trim(gln(70+jj))
-      else
-        write(6,'(2a,i6,a)',advance='no') lead(jj),trim(gln(70)),ll,trim(gln(70+jj))
-      end if
-      if(jj<nproj(l1)) then
-       write(6,'(a)') cbs
-      else
-       write(6,'(/)')
-      end if
-    end do
-
-    write(6,'(/a/)') trim(pse)
-
-  end if
-
-!  log derivative plots
-
-   write(6,'(a/)') trim(plot_title(5))
-   write(6,'(a/)') trim(x_label(2))
-
-   if(ikap==1) then
-     write(6,'(3a)') lead(1),trim(gln(4*l1+19)),cbs
-     write(6,'(2a)') lead(2),trim(gln(4*l1+20))
-   else
-     write(6,'(3a)') lead(1),trim(gln(4*l1+21)),cbs
-     write(6,'(2a)') lead(2),trim(gln(4*l1+22))
-   end if
-
-   write(6,'(/a/)') trim(pse)
-
-  end do !ikap
+   end do !ikap
  end do !l1
 
 ! log derivatives for angular momenta for which no pseudopotentials
 ! were created
 
  if(lmax<3) then
-  do l1=lmax+2,4
+   do l1=lmax+2,4
 
-   write(6,'(a/)') trim(plot_title(5))
-   write(6,'(a/)') trim(x_label(2))
+     write(6,'(a/)') trim(plot_title(5))
+     write(6,'(a/)') trim(x_label(2))
 
-   do ikap=1,2
-    if(ikap==1) then
-      write(6,'(3a)') lead(1),trim(gln(4*l1+19)),cbs
-      write(6,'(2a)') lead(2),trim(gln(4*l1+20))
-    else
-      write(6,'(3a)') lead(1),trim(gln(4*l1+21)),cbs
-      write(6,'(2a)') lead(2),trim(gln(4*l1+22))
-    end if
+     do ikap=1,2
+       if(ikap==1) then
+         write(6,'(3a)') lead(1),trim(gln(4*l1+19)),cbs
+         write(6,'(2a)') lead(2),trim(gln(4*l1+20))
+       else
+         write(6,'(3a)') lead(1),trim(gln(4*l1+21)),cbs
+         write(6,'(2a)') lead(2),trim(gln(4*l1+22))
+       end if
 
-   write(6,'(/a/)') trim(pse)
-    end do !ikap
-  end do !l1
+       write(6,'(/a/)') trim(pse)
+     end do !ikap
+   end do !l1
  end if
 
 ! Convergence profile
@@ -306,12 +306,12 @@
  write(6,'(a/)') trim(x_label(3))
 
  do l1=1,lmax+1
-  write(6,'(2a)',advance='no') lead(l1),trim(gln(46+l1))
-  if(l1<lmax+1) then
-   write(6,'(a)') cbs
-  else
-   write(6,'(/)')
-  end if
+   write(6,'(2a)',advance='no') lead(l1),trim(gln(46+l1))
+   if(l1<lmax+1) then
+     write(6,'(a)') cbs
+   else
+     write(6,'(/)')
+   end if
  end do
 
  write(6,'(/a/)') trim(pse)

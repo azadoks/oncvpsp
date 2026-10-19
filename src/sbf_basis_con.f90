@@ -65,11 +65,11 @@
  allocate(sbf_or(irc,nbas))
 
  do ibas=1,nbas
-  do jj=1,irc
-   xx=qroot(ibas)*rr(jj)
-   call sbf8(ll1,xx,sb_out)
-   sbfar(jj,ibas)=rr(jj)*sb_out(ll1)
-  end do
+   do jj=1,irc
+     xx=qroot(ibas)*rr(jj)
+     call sbf8(ll1,xx,sb_out)
+     sbfar(jj,ibas)=rr(jj)*sb_out(ll1)
+   end do
  end do
 
 !perform sbf orthonormalization sum for overlap matrix
@@ -77,22 +77,22 @@
  sovlp(:,:)=0.0d0
  ro=rr(1)/sqrt(amesh)
  do ibas=1,nbas
-  do jj=ibas,nbas
+   do jj=ibas,nbas
 
-   sn=(sbfar(1,ibas)/rr(1)**ll)*(sbfar(1,jj)/rr(1)**ll)&
-&     *ro**(2*ll+3)/real(2*ll+3,dp)
+     sn=(sbfar(1,ibas)/rr(1)**ll)*(sbfar(1,jj)/rr(1)**ll)&
+&       *ro**(2*ll+3)/real(2*ll+3,dp)
 
-   do ii=1,irc-3
-     sn=sn+al*rr(ii)*sbfar(ii,ibas)*sbfar(ii,jj)
+     do ii=1,irc-3
+       sn=sn+al*rr(ii)*sbfar(ii,ibas)*sbfar(ii,jj)
+     end do
+
+     sn=sn + al*(23.0d0*rr(irc-2)*sbfar(irc-2,ibas)*sbfar(irc-2,jj)&
+&              + 28.0d0*rr(irc-1)*sbfar(irc-1,ibas)*sbfar(irc-1,jj)&
+&              +  9.0d0*rr(irc  )*sbfar(irc  ,ibas)*sbfar(irc  ,jj))/24.0d0
+
+     sovlp(ibas,jj)=sn
+     sovlp(jj,ibas)=sn
    end do
-
-   sn=sn + al*(23.0d0*rr(irc-2)*sbfar(irc-2,ibas)*sbfar(irc-2,jj)&
-&            + 28.0d0*rr(irc-1)*sbfar(irc-1,ibas)*sbfar(irc-1,jj)&
-&            +  9.0d0*rr(irc  )*sbfar(irc  ,ibas)*sbfar(irc  ,jj))/24.0d0
-
-   sovlp(ibas,jj)=sn
-   sovlp(jj,ibas)=sn
-  end do
  end do
 
 !find eigenvalues and eigenvectors of the overlap matrix
@@ -101,8 +101,8 @@
 
  call dsyev( 'V', 'U', nbas, sovlp, nbas, sev, work, 5*nbas, info )
  if(info /= 0) then
-  write(6,'(a,i4)') 'sbf_basis: overlap matrix eigenvalue error, info=',info
-  error stop 1
+   write(6,'(a,i4)') 'sbf_basis: overlap matrix eigenvalue error, info=',info
+   error stop 1
  end if
 
 !write(6,'(/a)') 'sbf overlap matrix eigenvalues'
@@ -112,26 +112,26 @@
 !note that we are reversing order so that the leading eigenvector is the
 !most linearly independent
  do ibas=1,nbas
-  if(sev(ibas)>0.0d0) then
-   tt=1.0d0/sqrt(sev(ibas))
-  else
-   write(6,'(a,f12.6)') 'sbfbasis: negative eigenvalue of overlap matrix'
-   error stop 1
-  end if
-  do jj=1,nbas
-   orbasis(jj,nbas-ibas+1)=tt*sovlp(jj,ibas)
-  end do
+   if(sev(ibas)>0.0d0) then
+     tt=1.0d0/sqrt(sev(ibas))
+   else
+     write(6,'(a,f12.6)') 'sbfbasis: negative eigenvalue of overlap matrix'
+     error stop 1
+   end if
+   do jj=1,nbas
+     orbasis(jj,nbas-ibas+1)=tt*sovlp(jj,ibas)
+   end do
  end do
 
 !find rc derivatives of basis funtction
  orbasis_der(:,:)=0.0d0
  do jj=1,nbas !sbf loop
-  call sbf_rc_der(ll,qroot(jj),rc,sbfder)
-  do ibas=1,nbas !orbasis loop
-   do ii=1,ncon_in
-    orbasis_der(ii,ibas)=orbasis_der(ii,ibas)+orbasis(jj,ibas)*sbfder(ii)
+   call sbf_rc_der(ll,qroot(jj),rc,sbfder)
+   do ibas=1,nbas !orbasis loop
+     do ii=1,ncon_in
+       orbasis_der(ii,ibas)=orbasis_der(ii,ibas)+orbasis(jj,ibas)*sbfder(ii)
+     end do
    end do
-  end do
  end do
 
 !find orthogonal basis radial functiona
@@ -148,21 +148,21 @@
  if(iprj>=2) then
    ro=rr(1)/sqrt(amesh)
    do kk=1,iprj-1
-    do jj=1,nbas
+     do jj=1,nbas
 
-     sn=(psopt(1,kk)/rr(1)**ll)*(sbf_or(1,jj)/rr(1)**ll)&
-  &     *ro**(2*ll+3)/real(2*ll+3,dp)
+       sn=(psopt(1,kk)/rr(1)**ll)*(sbf_or(1,jj)/rr(1)**ll)&
+&         *ro**(2*ll+3)/real(2*ll+3,dp)
 
-     do ii=1,irc-3
-       sn=sn+al*rr(ii)*psopt(ii,kk)*sbf_or(ii,jj)
-     end do
+       do ii=1,irc-3
+         sn=sn+al*rr(ii)*psopt(ii,kk)*sbf_or(ii,jj)
+       end do
 
-     sn=sn + al*(23.0d0*rr(irc-2)*psopt(irc-2,kk)*sbf_or(irc-2,jj)&
-  &            + 28.0d0*rr(irc-1)*psopt(irc-1,kk)*sbf_or(irc-1,jj)&
-  &            +  9.0d0*rr(irc  )*psopt(irc  ,kk)*sbf_or(irc  ,jj))/24.0d0
+       sn=sn + al*(23.0d0*rr(irc-2)*psopt(irc-2,kk)*sbf_or(irc-2,jj)&
+&                + 28.0d0*rr(irc-1)*psopt(irc-1,kk)*sbf_or(irc-1,jj)&
+&                +  9.0d0*rr(irc  )*psopt(irc  ,kk)*sbf_or(irc  ,jj))/24.0d0
 
-     orbasis_der(ncon_in+kk,jj)=sn
-    end do !jj
+       orbasis_der(ncon_in+kk,jj)=sn
+     end do !jj
    end do !kk
  end if !iprj>=2
 
