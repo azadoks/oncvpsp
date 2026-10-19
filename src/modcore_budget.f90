@@ -99,7 +99,7 @@
  if(2.0d0*sqrt(2.0d0*ecut) >= qmax) then
    write(6,'(/a,f10.2,a)') 'modcore_budget: ERROR stop - ecut beyond', &
 &        qmax**2/8.0d0,' Ha'
-   stop
+   error stop 1
  end if
 
  allocate(dc(mmax,5),core(mmax),sn(mmax),cs(mmax),sh(mmax),ch(mmax))
@@ -154,7 +154,7 @@
  end do
  if(irtop<4) then
    write(6,'(/a)') 'modcore_budget: ERROR stop - no core charge'
-   stop
+   error stop 1
  end if
 
 ! smallest r_s on the grid, by bisection in the index between rr(irtop)/50
@@ -239,6 +239,7 @@
  call model(is)
  call scan_errors(ifrom,ilast,errmax,ifail)
  fits = ifail==0
+ return
  end function fits
 
 ! the smallest index above ilo, which fails, that fits up to ilast;
@@ -269,6 +270,7 @@
    end if
  end do
  bisect=ib
+ return
  end function bisect
 
 ! reports that no model radius fits and stops
@@ -276,7 +278,7 @@
  write(6,'(/a,f10.6,a,f10.4,a,1p,e10.2,a)') &
 &      'modcore_budget: ERROR stop - no model core inside r =',rr(irtop), &
 &      ' needs less than',ecut,' Ha for an error of',errmax,' Ha'
- stop
+ error stop 1
  end subroutine no_model
 
 ! the Martins coefficients at rr(is), and in core the model inside rr(is)
@@ -301,6 +303,7 @@
  do kk=1,is-1
    core(kk)=exp(aco + bco*rr(kk)**2 + cco*rr(kk)**4)
  end do
+ return
  end subroutine model
 
 ! the model and its first 4 derivatives at rad, from n' = p' n with
@@ -330,6 +333,7 @@
      dd(kk+1)=dd(kk+1) + binom(kk-1,jj)*dp1(jj+1)*dd(kk-jj)
    end do
  end do
+ return
  end subroutine martins_derivatives
 
 ! the errors err(iq) at the density cutoffs iq*qstep, iq=ifirst..ilast, of
@@ -396,6 +400,7 @@
      return
    end if
  end do
+ return
  end subroutine scan_errors
 
 ! the error of the band-limited model bq of the model in core
@@ -414,6 +419,7 @@
    tt=tt + rr(ll)**3*(bq(ll) - core(ll))
  end do
  xc_error=abs(exc_sphere(bq) - e0 - vbg*al*tt)
+ return
  end function xc_error
 
 ! the exchange-correlation energy within the sphere of the valence charge
@@ -434,6 +440,7 @@
    exc_sphere=exc_sphere + rr(ll)**3*work(ll)*eps(ll)
  end do
  exc_sphere=al*exc_sphere
+ return
  end function exc_sphere
 
 ! the xc energy per electron and potential of the charge rho on rr(1:nx)
@@ -456,12 +463,13 @@
    call excpzca(rho,vx,exc,nx)
  else if(iexc == 4) then
    call excggc(rho,vx,exc,rr,nx)
- else if (iexc < 0) then
+ else if(iexc < 0) then
    call exc_libxc(iexc,al,rho,vx,exc,rr,nx)
  else
    write(6,'(/a,i4)') 'modcore_budget: ERROR bad input iexc =',iexc
-   stop
+   error stop 1
  end if
+ return
  end subroutine xc_eps
 
  end subroutine modcore_budget
@@ -514,13 +522,13 @@
  end do
  if(nend<2) then
    write(6,'(/a)') 'modcore_budget_ecut: ERROR stop - no residual energy curves'
-   stop
+   error stop 1
  end if
  if(total(nend)>errmax) then
    write(6,'(/a,1p,e10.2,a,0p,f10.2,a)') &
 &        'modcore_budget_ecut: ERROR stop - residual kinetic energy above', &
 &        errmax,' Ha at',0.5d0*qq(nend)**2,' Ha, the end of its tables'
-   stop
+   error stop 1
  end if
 
  klast=0

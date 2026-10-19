@@ -101,4 +101,5 @@
  d2mdiff=sqrt(ss/nv**2)
 
  deallocate(vo,vxct,rhot,dvxc)
+ return
  end subroutine der2exc

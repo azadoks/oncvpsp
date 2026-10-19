@@ -141,15 +141,15 @@
      nrmsum = 0.d0
      do jj=mmax,1,-1
        nrmsum = nrmsum + (uua(jj,ikap,ii)**2) * rr(jj)*al
-       if (nrmsum > 1.d-6) then
+       if(nrmsum > 1.d-6) then
          exit  ! Cutoff radius such that uu norm accurate to 10^-6
        end if
      end do
      jj=max(jj,1)
-     if (rr(jj) > uurcut) uurcut = rr(jj)
+     if(rr(jj) > uurcut) uurcut = rr(jj)
    end do
  end do
- if (uurcut > drl*dble(nrl-1)) then
+ if(uurcut > drl*dble(nrl-1)) then
    nrl = 1 + int(uurcut/drl)
    if(mod(nrl,2)/=0) nrl=nrl+1
    write(6,'(a,i5,a,f10.5)') "Updating nrl = ", nrl, " for uurcut = ", uurcut
@@ -594,7 +594,7 @@
 &          'size="',nrl,'"'
      write(6,'(t8,a)') &
 &          'columns="4"'
-     if (nwfc <= 9) then
+     if(nwfc <= 9) then
        write(6,'(t8,a,i1,a)') &
 &            'index="',nwfc,'"'
      else

@@ -72,49 +72,49 @@
  do l1 = 1, 4
 
    ll = l1 - 1
-   if (ll <= lmax) then
-     if (rxpsh < 0.0) then
+   if(ll <= lmax) then
+     if(rxpsh < 0.0) then
        irphs = irc(l1) + 2
      else
        irphs = 0
        do ii = 1,mmax
-         if (rr(ii) >= rxpsh) then
+         if(rr(ii) >= rxpsh) then
            irphs = ii
            exit
          end if
        end do
-       if (irphs == 0) then
+       if(irphs == 0) then
          write(6, '(/2a,f12.6,a,f12.6)') &
 &           'run_phsft: ERROR rxpsh beyond radial mesh', &
 &           ', rxpsh=', rxpsh, ', rr(mmax)=', rr(mmax)
          error stop 1
        end if
 ! check_data keeps rxpsh beyond every rc, so only a direct call gets here
-       if (irphs < irc(l1)) then
+       if(irphs < irc(l1)) then
          write(6, '(/2a,i0,2(a,f12.6))') &
 &           'run_phsft: WARNING rxpsh inside the core radius', &
 &           ', l=', ll, ', rxpsh=', rxpsh, ', rc=', rr(irc(l1))
        end if
      end if
    else
-     if (rxpsh < 0.0) then
+     if(rxpsh < 0.0) then
        irphs = irc(lloc + 1)
      else
        irphs = 0
        do ii = 1,mmax
-         if (rr(ii) >= rxpsh) then
+         if(rr(ii) >= rxpsh) then
            irphs = ii
            exit
          end if
        end do
-       if (irphs == 0) then
+       if(irphs == 0) then
          write(6, '(/2a,f12.6,a,f12.6)') &
 &           'run_phsft: ERROR rxpsh beyond radial mesh', &
 &           ', rxpsh=', rxpsh, ', rr(mmax)=', rr(mmax)
          error stop 1
        end if
 ! check_data keeps rxpsh beyond every rc, so only a direct call gets here
-       if (irphs < irc(lloc+1)) then
+       if(irphs < irc(lloc+1)) then
          write(6, '(/2a,i0,2(a,f12.6))') &
 &           'run_phsft: WARNING rxpsh inside ' // &
 &           'the local potential core radius', &

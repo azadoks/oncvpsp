@@ -1,6 +1,5 @@
  module input_text_m
- use, intrinsic :: iso_fortran_env, only: dp => real64, stdout => output_unit, &
-&                                         stderr => error_unit
+ use, intrinsic :: iso_fortran_env, only: dp => real64
  implicit none
  private
  public :: read_input_text, read_input_text_r, next_line
@@ -163,73 +162,73 @@
 
 ! atom and reference configuration
  call next_line(unit, line, inline)
- read (line, *, iostat=ios) atsym, zz, nc, nv, iexc, psfile
+ read(line, *, iostat=ios) atsym, zz, nc, nv, iexc, psfile
 ! counts beyond the array sizes would overrun before check_data runs
- if (ios == 0 .and. (nc < 0 .or. nv < 0 .or. nc + nv > 30)) ios = 999
+ if(ios == 0 .and. (nc < 0 .or. nv < 0 .or. nc + nv > 30)) ios = 999
  call read_error(ios, inline)
 
  do ii = 1, nc + nv
    call next_line(unit, line, inline)
-   read (line, *, iostat=ios) na(ii), la(ii), fa(ii)
+   read(line, *, iostat=ios) na(ii), la(ii), fa(ii)
    call read_error(ios, inline)
  end do
 
 ! pseudopotential and optimization
  call next_line(unit, line, inline)
- read (line, *, iostat=ios) lmax
- if (ios == 0 .and. lmax > 5) ios = 999
+ read(line, *, iostat=ios) lmax
+ if(ios == 0 .and. lmax > 5) ios = 999
  call read_error(ios, inline)
 
  do l1 = 1, lmax + 1
    call next_line(unit, line, inline)
-   read (line, *, iostat=ios) lt, rc(l1), ep(l1), ncon(l1), nbas(l1), &
+   read(line, *, iostat=ios) lt, rc(l1), ep(l1), ncon(l1), nbas(l1), &
 &    qcut(l1)
-   if (ios == 0 .and. lt /= l1 - 1) ios = 999
+   if(ios == 0 .and. lt /= l1 - 1) ios = 999
    call read_error(ios, inline)
  end do
 
 ! local potential
  call next_line(unit, line, inline)
- read (line, *, iostat=ios) lloc, lpopt, rc(5), dvloc0
+ read(line, *, iostat=ios) lloc, lpopt, rc(5), dvloc0
  call read_error(ios, inline)
 
 ! Vanderbilt-Kleinman-Bylander projectors
  do l1 = 1, lmax + 1
    call next_line(unit, line, inline)
-   read (line, *, iostat=ios) lt, nproj(l1), debl(l1)
-   if (ios == 0 .and. lt /= l1 - 1) ios = 999
+   read(line, *, iostat=ios) lt, nproj(l1), debl(l1)
+   if(ios == 0 .and. lt /= l1 - 1) ios = 999
    call read_error(ios, inline)
  end do
 
 ! model core charge
  call next_line(unit, line, inline)
 ! icmod=0,1,2,4[default grid] : icmod, fcfact
- read (line, *, iostat=ios) icmod, fcfact
+ read(line, *, iostat=ios) icmod, fcfact
 ! icmod==3 : icmod, fcfact, rcfact
- if (ios == 0 .and. icmod == 3) then
-   read (line, *, iostat=ios) icmod, fcfact, rcfact
+ if(ios == 0 .and. icmod == 3) then
+   read(line, *, iostat=ios) icmod, fcfact, rcfact
  end if
 ! icmod==6 : icmod, fcfact (cutoff, Ha; <= 0 for -fcfact, or 1 if 0, times
 !   the cutoff of the pseudo-waves), rcfact (xc energy error, Ha;
 !   default 1e-4)
- if (ios == 0 .and. icmod == 6) then
-   read (line, *, iostat=ios) icmod, fcfact, rcfact
-   if (ios /= 0) then
-     read (line, *, iostat=ios) icmod, fcfact
+ if(ios == 0 .and. icmod == 6) then
+   read(line, *, iostat=ios) icmod, fcfact, rcfact
+   if(ios /= 0) then
+     read(line, *, iostat=ios) icmod, fcfact
      rcfact = 1.d-4
    end if
  end if
 ! icmod==4[explicit grid]: icmod, fcfact(ignored), rcfact(ignored),
 !   fcfact_min, fcfact_max, fcfact_step,
 !   rcfact_min, rcfact_max, rcfact_step
- if (ios == 0 .and. (icmod == 4 .or. icmod == 5)) then
-   read (line, *, iostat=ios) icmod, fcfact, rcfact, &
+ if(ios == 0 .and. (icmod == 4 .or. icmod == 5)) then
+   read(line, *, iostat=ios) icmod, fcfact, rcfact, &
 &     fcfact_min, fcfact_max, fcfact_step, &
 &     rcfact_min, rcfact_max, rcfact_step
 ! icmod==4[implicit grid]: *_min, *_max, *_step not provided, fall back to
 !   defaults
-   if (ios /= 0) then
-     read (line, *, iostat=ios) icmod, fcfact
+   if(ios /= 0) then
+     read(line, *, iostat=ios) icmod, fcfact
      rcfact = 0.d0
      fcfact_min = 1.5d0
      fcfact_max = 6.0d0
@@ -243,42 +242,43 @@
 
 ! log derivative analysis
  call next_line(unit, line, inline)
- read (line, *, iostat=ios) epsh1, epsh2, depsh, rxpsh
- if (ios /= 0) then
-   read (line, *, iostat=ios) epsh1, epsh2, depsh
+ read(line, *, iostat=ios) epsh1, epsh2, depsh, rxpsh
+ if(ios /= 0) then
+   read(line, *, iostat=ios) epsh1, epsh2, depsh
    rxpsh = -1.d0  ! negative value for auto setting of radius
  end if
  call read_error(ios, inline)
 
 ! output grid
  call next_line(unit, line, inline)
- read (line, *, iostat=ios) rlmax, drl
+ read(line, *, iostat=ios) rlmax, drl
  call read_error(ios, inline)
 
 ! test configurations
  call next_line(unit, line, inline)
- read (line, *, iostat=ios) ncnf
- if (ios == 0 .and. ncnf > 4) ios = 999
+ read(line, *, iostat=ios) ncnf
+ if(ios == 0 .and. ncnf > 4) ios = 999
  call read_error(ios, inline)
 
  do jj = 2, ncnf + 1
    call next_line(unit, line, inline)
-   read (line, *, iostat=ios) nvcnf(jj)
-   if (ios == 0 .and. (nvcnf(jj) < 0 .or. nc + nvcnf(jj) > 30)) ios = 999
+   read(line, *, iostat=ios) nvcnf(jj)
+   if(ios == 0 .and. (nvcnf(jj) < 0 .or. nc + nvcnf(jj) > 30)) ios = 999
    call read_error(ios, inline)
    do ii = nc + 1, nc + nvcnf(jj)
      call next_line(unit, line, inline)
-     read (line, *, iostat=ios) nacnf(ii, jj), lacnf(ii, jj), facnf(ii, jj)
+     read(line, *, iostat=ios) nacnf(ii, jj), lacnf(ii, jj), facnf(ii, jj)
      call read_error(ios, inline)
    end do
  end do
 
 ! log mesh (optional, the last line): amesh, rr1, rmax
  call next_line(unit, line, inline, eof)
- if (.not. eof) then
-   read (line, *, iostat=ios) amesh, rr1, rmax
+ if(.not. eof) then
+   read(line, *, iostat=ios) amesh, rr1, rmax
    call read_error(ios, inline)
  end if
+ return
 
 ! end of reading input data
  end subroutine read_input_text
@@ -431,74 +431,74 @@
 
 ! atom and reference configuration
  call next_line(unit, line, inline)
- read (line, *, iostat=ios) atsym, zz, nc, nv, iexc, psfile
+ read(line, *, iostat=ios) atsym, zz, nc, nv, iexc, psfile
 ! counts beyond the array sizes would overrun before check_data runs
- if (ios == 0 .and. (nc < 0 .or. nv < 0 .or. nc + nv > 30)) ios = 999
+ if(ios == 0 .and. (nc < 0 .or. nv < 0 .or. nc + nv > 30)) ios = 999
  call read_error(ios, inline)
 
  do ii = 1, nc + nv
    call next_line(unit, line, inline)
-   read (line, *, iostat=ios) na(ii), la(ii), fa(ii)
+   read(line, *, iostat=ios) na(ii), la(ii), fa(ii)
    call read_error(ios, inline)
  end do
 
 ! pseudopotential and optimization
  call next_line(unit, line, inline)
- read (line, *, iostat=ios) lmax
- if (ios == 0 .and. lmax > 5) ios = 999
+ read(line, *, iostat=ios) lmax
+ if(ios == 0 .and. lmax > 5) ios = 999
  call read_error(ios, inline)
 
  do l1 = 1, lmax + 1
    call next_line(unit, line, inline)
-   read (line, *, iostat=ios) lt, rc(l1), ep(l1, 1), ncon(l1), nbas(l1), &
+   read(line, *, iostat=ios) lt, rc(l1), ep(l1, 1), ncon(l1), nbas(l1), &
 &    qcut(l1)
-   if (ios == 0 .and. lt /= l1 - 1) ios = 999
+   if(ios == 0 .and. lt /= l1 - 1) ios = 999
    call read_error(ios, inline)
    ep(l1, 2) = ep(l1, 1)
  end do
 
 ! local potential
  call next_line(unit, line, inline)
- read (line, *, iostat=ios) lloc, lpopt, rc(5), dvloc0
+ read(line, *, iostat=ios) lloc, lpopt, rc(5), dvloc0
  call read_error(ios, inline)
 
 ! Vanderbilt-Kleinman-Bylander projectors
  do l1 = 1, lmax + 1
    call next_line(unit, line, inline)
-   read (line, *, iostat=ios) lt, nproj(l1), debl(l1)
-   if (ios == 0 .and. lt /= l1 - 1) ios = 999
+   read(line, *, iostat=ios) lt, nproj(l1), debl(l1)
+   if(ios == 0 .and. lt /= l1 - 1) ios = 999
    call read_error(ios, inline)
  end do
 
 ! model core charge
  call next_line(unit, line, inline)
 ! icmod=0,1,2,4[default grid] : icmod, fcfact
- read (line, *, iostat=ios) icmod, fcfact
+ read(line, *, iostat=ios) icmod, fcfact
 ! icmod==3 : icmod, fcfact, rcfact
- if (ios == 0 .and. icmod == 3) then
-   read (line, *, iostat=ios) icmod, fcfact, rcfact
+ if(ios == 0 .and. icmod == 3) then
+   read(line, *, iostat=ios) icmod, fcfact, rcfact
  end if
 ! icmod==6 : icmod, fcfact (cutoff, Ha; <= 0 for -fcfact, or 1 if 0, times
 !   the cutoff of the pseudo-waves), rcfact (xc energy error, Ha;
 !   default 1e-4)
- if (ios == 0 .and. icmod == 6) then
-   read (line, *, iostat=ios) icmod, fcfact, rcfact
-   if (ios /= 0) then
-     read (line, *, iostat=ios) icmod, fcfact
+ if(ios == 0 .and. icmod == 6) then
+   read(line, *, iostat=ios) icmod, fcfact, rcfact
+   if(ios /= 0) then
+     read(line, *, iostat=ios) icmod, fcfact
      rcfact = 1.d-4
    end if
  end if
 ! icmod==4[explicit grid]: icmod, fcfact(ignored), rcfact(ignored),
 !   fcfact_min, fcfact_max, fcfact_step,
 !   rcfact_min, rcfact_max, rcfact_step
- if (ios == 0 .and. (icmod == 4 .or. icmod == 5)) then
-   read (line, *, iostat=ios) icmod, fcfact, rcfact, &
+ if(ios == 0 .and. (icmod == 4 .or. icmod == 5)) then
+   read(line, *, iostat=ios) icmod, fcfact, rcfact, &
 &     fcfact_min, fcfact_max, fcfact_step, &
 &     rcfact_min, rcfact_max, rcfact_step
 ! icmod==4[implicit grid]: *_min, *_max, *_step not provided, fall back to
 !   defaults
-   if (ios /= 0) then
-     read (line, *, iostat=ios) icmod, fcfact
+   if(ios /= 0) then
+     read(line, *, iostat=ios) icmod, fcfact
      rcfact = 0.d0
      fcfact_min = 1.5d0
      fcfact_max = 6.0d0
@@ -512,42 +512,43 @@
 
 ! log derivative analysis
  call next_line(unit, line, inline)
- read (line, *, iostat=ios) epsh1, epsh2, depsh, rxpsh
- if (ios /= 0) then
-   read (line, *, iostat=ios) epsh1, epsh2, depsh
+ read(line, *, iostat=ios) epsh1, epsh2, depsh, rxpsh
+ if(ios /= 0) then
+   read(line, *, iostat=ios) epsh1, epsh2, depsh
    rxpsh = -1.d0  ! negative value for auto setting of radius
  end if
  call read_error(ios, inline)
 
 ! output grid
  call next_line(unit, line, inline)
- read (line, *, iostat=ios) rlmax, drl
+ read(line, *, iostat=ios) rlmax, drl
  call read_error(ios, inline)
 
 ! test configurations
  call next_line(unit, line, inline)
- read (line, *, iostat=ios) ncnf
- if (ios == 0 .and. ncnf > 4) ios = 999
+ read(line, *, iostat=ios) ncnf
+ if(ios == 0 .and. ncnf > 4) ios = 999
  call read_error(ios, inline)
 
  do jj = 2, ncnf + 1
    call next_line(unit, line, inline)
-   read (line, *, iostat=ios) nvcnf(jj)
-   if (ios == 0 .and. (nvcnf(jj) < 0 .or. nc + nvcnf(jj) > 30)) ios = 999
+   read(line, *, iostat=ios) nvcnf(jj)
+   if(ios == 0 .and. (nvcnf(jj) < 0 .or. nc + nvcnf(jj) > 30)) ios = 999
    call read_error(ios, inline)
    do ii = nc + 1, nc + nvcnf(jj)
      call next_line(unit, line, inline)
-     read (line, *, iostat=ios) nacnf(ii, jj), lacnf(ii, jj), facnf(ii, jj)
+     read(line, *, iostat=ios) nacnf(ii, jj), lacnf(ii, jj), facnf(ii, jj)
      call read_error(ios, inline)
    end do
  end do
 
 ! log mesh (optional, the last line): amesh, rr1, rmax
  call next_line(unit, line, inline, eof)
- if (.not. eof) then
-   read (line, *, iostat=ios) amesh, rr1, rmax
+ if(.not. eof) then
+   read(line, *, iostat=ios) amesh, rr1, rmax
    call read_error(ios, inline)
  end if
+ return
 
 ! end of reading input data
  end subroutine read_input_text_r
@@ -579,26 +580,26 @@
  character(len=256) :: chunk
  integer :: ios, nread, first, inline0
 
- if (present(eof)) eof = .false.
+ if(present(eof)) eof = .false.
  inline0 = inline
  do
 ! a line of any length, read in chunks
    line = ''
    do
-     read (unit, '(a)', advance='no', size=nread, iostat=ios) chunk
+     read(unit, '(a)', advance='no', size=nread, iostat=ios) chunk
      line = line//chunk(1:nread)
-     if (ios /= 0) exit
+     if(ios /= 0) exit
    end do
    inline = inline + 1
-   if (present(eof) .and. is_iostat_end(ios) .and. len(line) == 0) then
+   if(present(eof) .and. is_iostat_end(ios) .and. len(line) == 0) then
      eof = .true.
      inline = inline0
      return
    end if
-   if (.not. is_iostat_eor(ios)) call read_error(ios, inline)
+   if(.not. is_iostat_eor(ios)) call read_error(ios, inline)
    first = verify(line, ' '//achar(9))
-   if (first > 0) then
-     if (line(first:first) /= '#') exit
+   if(first > 0) then
+     if(line(first:first) /= '#') exit
    end if
  end do
 
@@ -617,9 +618,9 @@
 !Input/output variables
  integer, intent(inout) :: inline
 
- if (ios /= 0) then
-   write (6, '(a,i4)') 'Read ERROR, input data file line', inline
-   write (6, '(a)') 'Program will stop'
+ if(ios /= 0) then
+   write(6, '(a,i4)') 'Read ERROR, input data file line', inline
+   write(6, '(a)') 'Program will stop'
    error stop 1
  end if
 

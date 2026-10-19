@@ -233,6 +233,7 @@
  end do
 
  deallocate(cf,src,usol,upr,upp)
+ return
  end subroutine outwf_all
 
  include 'adams.inc'

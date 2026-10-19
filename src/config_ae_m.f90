@@ -234,6 +234,7 @@
  cae%fat(:,:)=fat(:,:)
  cae%eat(:,:)=eat(:,:)
  cae%eaetst=eaetst
+ return
  end subroutine store_results
 
  end subroutine run_config_ae
@@ -265,6 +266,7 @@
  case default
 ! the atom converged: nothing to report
  end select
+ return
  end subroutine config_ae_warning
 
  subroutine run_config_ae_r(jj,nacnf,lacnf,facnf,nc,nvcnf,rr,zz, &
@@ -454,6 +456,7 @@
  cae%fat(:,:)=fat(:,:)
  cae%eat(:,:,:)=eat(:,:,:)
  cae%eaetst=eaetst
+ return
  end subroutine store_results
 
  end subroutine run_config_ae_r
@@ -497,6 +500,7 @@
  case default
 ! the atom converged: nothing to report
  end select
+ return
  end subroutine config_ae_r_warning
 
  end module config_ae_m

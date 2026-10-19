@@ -129,7 +129,7 @@
    call excpzca(rhot,vxc,exca,mmax)
  else if(iexc == 4) then
    call excggc(rhot,vxc,exca,rr,mmax)
- else if (iexc < 0) then
+ else if(iexc < 0) then
    call exc_libxc(iexc,al,rhot,vxc,exca,rr,mmax)
  else
    write(6,'(/a,i4)') 'vout: ERROR bad input iexc =',iexc
@@ -161,7 +161,7 @@
      call excpzca(rhoc,vxcd,excca,mmax)
    else if(iexc == 4) then
      call excggc(rhoc,vxcd,excca,rr,mmax)
-   else if (iexc < 0) then
+   else if(iexc < 0) then
      call exc_libxc(iexc,al,rhoc,vxcd,excca,rr,mmax)
    else
      write(6,'(/a,i4)') 'vout: ERROR bad input iexc =',iexc

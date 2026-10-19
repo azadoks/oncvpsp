@@ -1,6 +1,5 @@
  module input_toml_m
- use, intrinsic :: iso_fortran_env, only: dp => real64, stdout => output_unit, &
-&                                         stderr => error_unit
+ use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
 ! TOML Fortran library: documentation at toml-f.readthedocs.io
  use tomlf, only: toml_table, toml_array, toml_keyval, toml_error, toml_stat, &
 &                 toml_load, get_value, len
@@ -189,15 +188,15 @@
  psfile = ' '
 
  call toml_load(table, unit, error=error)
- if (allocated(error)) then
+ if(allocated(error)) then
    call input_error('cannot parse the input: '//error%message)
  end if
- if (.not. allocated(table)) call input_error('cannot parse the input')
+ if(.not. allocated(table)) call input_error('cannot parse the input')
 
 ! atom
  call get_section(table, 'oncvpsp', child)
  call get_string(child, 'oncvpsp', 'atsym', tmp_str)
- if (len_trim(tmp_str) < 1 .or. len_trim(tmp_str) > 2) then
+ if(len_trim(tmp_str) < 1 .or. len_trim(tmp_str) > 2) then
    call input_error('atsym in [oncvpsp] must have 1 or 2 characters, '// &
 &    'got "'//tmp_str//'"')
  end if
@@ -207,7 +206,7 @@
  call get_int(child, 'oncvpsp', 'nv', nv)
  call get_int(child, 'oncvpsp', 'iexc', iexc)
 ! counts beyond the array sizes would overrun before check_data runs
- if (nc < 0 .or. nv < 0 .or. nc + nv > 30) then
+ if(nc < 0 .or. nv < 0 .or. nc + nv > 30) then
    call input_error('nc and nv in [oncvpsp] must be >= 0 with nc + nv <= 30')
  end if
 
@@ -220,7 +219,7 @@
 ! pseudopotential and optimization
  call get_section(table, 'pseudopotentials', child)
  call get_int(child, 'pseudopotentials', 'lmax', lmax)
- if (lmax < 0 .or. lmax > 5) then
+ if(lmax < 0 .or. lmax > 5) then
    call input_error('lmax in [pseudopotentials] must be in 0..5')
  end if
  call get_int_array(child, 'pseudopotentials', 'l', lmax + 1, lt)
@@ -248,17 +247,17 @@
 ! model core charge; check_data validates icmod and the values
  call get_section(table, 'model_core_charge', child)
  call get_int(child, 'model_core_charge', 'icmod', icmod)
- select case (icmod)
- case (1, 2, 6)
+ select case(icmod)
+ case(1, 2, 6)
    call get_real(child, 'model_core_charge', 'fcfact', fcfact)
- case (3)
+ case(3)
    call get_real(child, 'model_core_charge', 'fcfact', fcfact)
    call get_real(child, 'model_core_charge', 'rcfact', rcfact)
  case default
    call get_real(child, 'model_core_charge', 'fcfact', fcfact, 0.0_dp)
  end select
- select case (icmod)
- case (4, 5)
+ select case(icmod)
+ case(4, 5)
 ! fcfact and rcfact are ignored; the grid of the Teter parameters
    call get_real(child, 'model_core_charge', 'rcfact', rcfact, 0.0_dp)
    call get_real(child, 'model_core_charge', 'fcfact_min', fcfact_min, &
@@ -273,7 +272,7 @@
 &    rcfact_max)
    call get_real(child, 'model_core_charge', 'rcfact_step', rcfact_step, &
 &    rcfact_step)
- case (6)
+ case(6)
    call get_real(child, 'model_core_charge', 'rcfact', rcfact, 1.0e-4_dp)
  case default
 ! no further keys
@@ -293,18 +292,18 @@
 
 ! log mesh (optional)
  call get_value(table, 'log_mesh', child, requested=.false., stat=stat)
- if (associated(child)) then
+ if(associated(child)) then
    call get_real(child, 'log_mesh', 'amesh', amesh, -1.0_dp)
    call get_real(child, 'log_mesh', 'rr1', rr1, -1.0_dp)
    call get_real(child, 'log_mesh', 'rmax', rmax, -1.0_dp)
- else if (stat /= toml_stat%success) then
+ else if(stat /= toml_stat%success) then
    call input_error('[log_mesh] must be a table')
  end if
 
 ! pseudopotential output file
  call get_section(table, 'pp_output', child)
  call get_string(child, 'pp_output', 'psfile', tmp_str)
- if (len_trim(tmp_str) < 1 .or. len_trim(tmp_str) > 4) then
+ if(len_trim(tmp_str) < 1 .or. len_trim(tmp_str) > 4) then
    call input_error('psfile in [pp_output] must have 1 to 4 characters, '// &
 &    'got "'//tmp_str//'"')
  end if
@@ -314,28 +313,28 @@
 ! reference core states the driver copies in
  call get_value(table, 'test_configurations', arr, requested=.false., &
 &  stat=stat)
- if (stat /= toml_stat%success) then
+ if(stat /= toml_stat%success) then
    call input_error('test_configurations must be an array of tables, '// &
 &    '[[test_configurations]]')
  end if
- if (associated(arr)) then
+ if(associated(arr)) then
    ncnf = len(arr)
-   if (ncnf > 4) then
+   if(ncnf > 4) then
      call input_error('at most 4 [[test_configurations]] are allowed')
    end if
    do jj = 2, ncnf + 1
      call get_value(arr, jj - 1, child, stat=stat)
-     if (.not. associated(child)) then
+     if(.not. associated(child)) then
        call input_error('test_configurations must be an array of tables, ' // &
 &                       '[[test_configurations]]')
      end if
 ! the number of valence states is that of n
      call get_value(child, 'n', narr, requested=.false., stat=stat)
-     if (.not. associated(narr)) then
+     if(.not. associated(narr)) then
        call key_error('test_configurations', 'n', stat, 'an array')
      end if
      nvcnf(jj) = len(narr)
-     if (nc + nvcnf(jj) > 30) then
+     if(nc + nvcnf(jj) > 30) then
        call input_error('nc plus the states of a [[test_configurations]]'// &
 &        ' must be <= 30')
      end if
@@ -347,6 +346,7 @@
 &      facnf(nc + 1:, jj))
    end do
  end if
+ return
  end subroutine read_input_toml
 
 ! Reads the TOML input of the fully-relativistic driver: that of
@@ -481,9 +481,10 @@
 &                     amesh, rr1, rmax)
  ep(:, 1) = ep1(:)
  ep(:, 2) = ep1(:)
+ return
  end subroutine read_input_toml_r
 
-! report an input error on stdout (the output file) and stderr, and stop
+! report an input error in the output (unit 6) and on stderr, and stop
  subroutine input_error(message)
 
 !message  description of the error
@@ -491,10 +492,10 @@
 !Input variables
  character(len=*), intent(in) :: message
 
- write (stdout, '(a)') 'TOML input ERROR: '//message
- write (stdout, '(a)') 'Program will stop'
- write (stderr, '(a)') 'Error: '//message
- stop 1
+ write(6,'(a)') 'TOML input ERROR: '//message
+ write(6,'(a)') 'Program will stop'
+ write(stderr,'(a)') 'Error: '//message
+ error stop 1
  end subroutine input_error
 
 ! the table [name] of the document
@@ -518,10 +519,11 @@
 
 ! a missing key leaves child null with success, a mistyped one with an error
  call get_value(table, name, child, requested=.false., stat=stat)
- if (.not. associated(child)) then
-   if (stat == toml_stat%success) call input_error('missing table ['//name//']')
+ if(.not. associated(child)) then
+   if(stat == toml_stat%success) call input_error('missing table ['//name//']')
    call input_error('['//name//'] must be a table')
  end if
+ return
  end subroutine get_section
 
 ! report a key that a lookup did not return: missing for missing_key, or
@@ -537,11 +539,12 @@
  character(len=*), intent(in) :: section, key, what
  integer, intent(in) :: stat
 
- if (stat == toml_stat%missing_key .or. stat == toml_stat%success) then
+ if(stat == toml_stat%missing_key .or. stat == toml_stat%success) then
    call input_error('missing key '//key//' in ['//section//']')
  else
    call input_error(key//' in ['//section//'] must be '//what)
  end if
+ return
  end subroutine key_error
 
 ! an integer key, required
@@ -565,9 +568,10 @@
  integer :: stat
 
  call get_value(table, key, val, stat=stat)
- if (stat /= toml_stat%success) then
+ if(stat /= toml_stat%success) then
    call key_error(section, key, stat, 'an integer')
  end if
+ return
  end subroutine get_int
 
 ! a real key (an integer is converted), required unless default is given
@@ -592,15 +596,16 @@
  integer :: stat
 
  call get_value(table, key, ptr, requested=.false., stat=stat)
- if (.not. associated(ptr)) then
-   if (present(default) .and. stat == toml_stat%success) then
+ if(.not. associated(ptr)) then
+   if(present(default) .and. stat == toml_stat%success) then
      val = default
      return
    end if
    call key_error(section, key, stat, 'a number')
  end if
  call get_value(ptr, val, stat=stat)
- if (stat /= toml_stat%success) call key_error(section, key, stat, 'a number')
+ if(stat /= toml_stat%success) call key_error(section, key, stat, 'a number')
+ return
  end subroutine get_real
 
 ! a string key, required
@@ -624,9 +629,10 @@
  integer :: stat
 
  call get_value(table, key, val, stat=stat)
- if (stat /= toml_stat%success .or. .not. allocated(val)) then
+ if(stat /= toml_stat%success .or. .not. allocated(val)) then
    call key_error(section, key, stat, 'a string')
  end if
+ return
  end subroutine get_string
 
 ! the array key of a table, required, with nn elements
@@ -653,12 +659,13 @@
  character(len=24) :: counts
 
  call get_value(table, key, arr, requested=.false., stat=stat)
- if (.not. associated(arr)) call key_error(section, key, stat, 'an array')
- if (len(arr) /= nn) then
-   write (counts, '(i0,a,i0)') len(arr), ' instead of ', nn
+ if(.not. associated(arr)) call key_error(section, key, stat, 'an array')
+ if(len(arr) /= nn) then
+   write(counts, '(i0,a,i0)') len(arr), ' instead of ', nn
    call input_error(key//' in ['//section//'] has '//trim(counts)// &
 &    ' elements')
  end if
+ return
  end subroutine get_array
 
 ! an integer array key, required, with nn elements
@@ -685,10 +692,11 @@
  call get_array(table, section, key, nn, arr)
  do ii = 1, nn
    call get_value(arr, ii, vals(ii), stat=stat)
-   if (stat /= toml_stat%success) then
+   if(stat /= toml_stat%success) then
      call input_error(key//' in ['//section//'] must hold integers')
    end if
  end do
+ return
  end subroutine get_int_array
 
 ! a real array key (integers are converted), required, with nn elements
@@ -715,10 +723,11 @@
  call get_array(table, section, key, nn, arr)
  do ii = 1, nn
    call get_value(arr, ii, vals(ii), stat=stat)
-   if (stat /= toml_stat%success) then
+   if(stat /= toml_stat%success) then
      call input_error(key//' in ['//section//'] must hold numbers')
    end if
  end do
+ return
  end subroutine get_real_array
 
 ! the angular momenta of the rows of a section must be 0..lmax in order
@@ -736,10 +745,11 @@
  integer :: l1
 
  do l1 = 1, lmax + 1
-   if (lt(l1) /= l1 - 1) then
+   if(lt(l1) /= l1 - 1) then
      call input_error('l in ['//section//'] must be 0, 1, ..., lmax in order')
    end if
  end do
+ return
  end subroutine check_l
 
  end module input_toml_m

@@ -9,6 +9,8 @@ ignore = [
     "C091",  # external-procedure: (same)
     "C092",  # procedure-not-in-module: one external routine per file (rule 2)
 ]
+# the legacy files keep to 80 columns
+line-length = 80
 # imported code, kept as written upstream
 extend-exclude = [
     "src/exc_off_pbe.f",

@@ -78,17 +78,17 @@
  call xc_functl_init_functl(functls(1),id(1),3,0.d0,nspin,deriv_method)
  call xc_functl_init_functl(functls(2),id(2),3,0.d0,nspin,deriv_method)
 
- if (functprinted==0) then
+ if(functprinted==0) then
    call xc_functl_write_info(functls(1), 6)
    call xc_functl_write_info(functls(2), 6)
-   write (*,*)
+   write(*,*)
    functprinted = 1
  end if
 
 ! no use of vtau kin en density optional argument
 ! ip is an ionization potential parameter for certain xc functionals, not
 ! supported here. Set to 0.5 Ha
- allocate (ip(nspin))
+ allocate(ip(nspin))
  ip = 0.5_dp
  tau_dummy = 0.0d0
  vtau_dummy = 0.0d0
@@ -114,11 +114,12 @@
 ! finish
  call xc_functl_end(functls(1))
  call xc_functl_end(functls(2))
- deallocate (ip)
+ deallocate(ip)
  deallocate(vv, ee)
  deallocate(dpr, dppr, dlap)
  deallocate(tau_dummy, vtau_dummy)
  deallocate(rho_loc)
+ return
 
  end subroutine exc_libxc
 
@@ -204,5 +205,6 @@
    dppr(ii) = (dppn(ii) - al * dpn(ii)) / (al * rr(ii))**2
    dlap(ii) = (dppn(ii) + al * dpn(ii)) / (al * rr(ii))**2
  end do
+ return
 
  end subroutine derivs

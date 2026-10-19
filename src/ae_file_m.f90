@@ -330,6 +330,7 @@
  type(config_ae_t), intent(out) :: cae
 
  cae=cae_file(find_config(jj,nc,nvcnf,nacnf,lacnf,facnf))
+ return
  end subroutine ae_file_config
 
  subroutine ae_file_config_r(jj,nc,nvcnf,nacnf,lacnf,facnf,cae)
@@ -353,6 +354,7 @@
  type(config_ae_r_t), intent(out) :: cae
 
  cae=cae_r_file(find_config(jj,nc,nvcnf,nacnf,lacnf,facnf))
+ return
  end subroutine ae_file_config_r
 
  subroutine write_head(fname,unit,irel,atsym,zz,nc,nv,iexc,na,la,fa, &
@@ -392,13 +394,14 @@
 &     status='replace',action='write',iostat=ios)
  if(ios/=0) then
    write(6,'(2a)') 'write_ae_file: ERROR cannot open ',trim(fname)
-   stop 1
+   error stop 1
  end if
 
  write(unit) magic,version,irel
  write(unit) atsym,zz,nc,nv,iexc
  write(unit) na(1:nc+nv),la(1:nc+nv),fa(1:nc+nv)
  write(unit) mmax,rr(1:mmax)
+ return
  end subroutine write_head
 
  subroutine read_head(fname,unit,irel,atsym,zz,nc,nv,iexc,na,la,fa, &
@@ -444,31 +447,31 @@
 &     status='old',action='read',iostat=ios)
  if(ios/=0) then
    write(6,'(2a)') 'read_ae_file: ERROR cannot open ',trim(fname)
-   stop 1
+   error stop 1
  end if
 
  read(unit,iostat=ios) magic_f,version_f,irel_f
  if(ios/=0 .or. magic_f/=magic) then
    write(6,'(2a)') 'read_ae_file: ERROR not an all-electron data file: ', &
 &        trim(fname)
-   stop 1
+   error stop 1
  end if
 !the magic string reads the same in either byte order, so a file from a
 !machine of the other byte order shows up as a byte-swapped version
  if(version_f/=version .and. byteswap(version_f)==version) then
    write(6,'(2a)') 'read_ae_file: ERROR file was written on a machine', &
 &        ' with the other byte order'
-   stop 1
+   error stop 1
  end if
  if(version_f/=version) then
    write(6,'(a,i4,a,i4)') 'read_ae_file: ERROR file format version', &
 &        version_f,' but this program reads version',version
-   stop 1
+   error stop 1
  end if
  if(irel_f/=irel) then
    write(6,'(2a)') 'read_ae_file: ERROR file was written with a different', &
 &        ' relativistic treatment'
-   stop 1
+   error stop 1
  end if
 
  read(unit) atsym_f,zz_f,nc_f,nv_f,iexc_f
@@ -476,29 +479,30 @@
 &   .or. iexc_f/=iexc) then
    write(6,'(2a)') 'read_ae_file: ERROR atsym, z, nc, nv or iexc differ', &
 &        ' from the input'
-   stop 1
+   error stop 1
  end if
  read(unit) na_f(1:nc+nv),la_f(1:nc+nv),fa_f(1:nc+nv)
  if(any(na_f(1:nc+nv)/=na(1:nc+nv)) .or. any(la_f(1:nc+nv)/=la(1:nc+nv)) &
 &   .or. any(differ(fa_f(1:nc+nv),fa(1:nc+nv)))) then
    write(6,'(2a)') 'read_ae_file: ERROR reference configuration differs', &
 &        ' from the input'
-   stop 1
+   error stop 1
  end if
 
  read(unit) mmax_f
  if(mmax_f/=mmax) then
    write(6,'(a,2i8)') 'read_ae_file: ERROR radial mesh size differs', &
 &        mmax_f,mmax
-   stop 1
+   error stop 1
  end if
  allocate(rr_f(mmax))
  read(unit) rr_f(1:mmax)
  if(any(abs(rr_f(1:mmax)-rr(1:mmax))>rtol*rr(1:mmax))) then
    write(6,'(2a)') 'read_ae_file: ERROR radial mesh differs from the', &
 &        ' one this program builds'
-   stop 1
+   error stop 1
  end if
+ return
  end subroutine read_head
 
  subroutine write_config_key(unit,jj,nc,nvcnf,nacnf,lacnf,facnf)
@@ -522,6 +526,7 @@
 
  nt=nc+nvcnf(jj)
  write(unit) nvcnf(jj),nacnf(1:nt,jj),lacnf(1:nt,jj),facnf(1:nt,jj)
+ return
  end subroutine write_config_key
 
  subroutine read_config_key(unit,jj,nc)
@@ -540,6 +545,7 @@
  read(unit) nvcnf_file(jj)
  nt=nc+nvcnf_file(jj)
  read(unit) nacnf_file(1:nt,jj),lacnf_file(1:nt,jj),facnf_file(1:nt,jj)
+ return
  end subroutine read_config_key
 
  integer function find_config(jj,nc,nvcnf,nacnf,lacnf,facnf)
@@ -573,7 +579,7 @@
 
  write(6,'(a,i2,a)') 'ae_file_config: ERROR test configuration',jj-1, &
 &     ' is not in the all-electron data file'
- stop 1
+ error stop 1
  end function find_config
 
  elemental logical function differ(aa,bb)
@@ -587,6 +593,7 @@
 !Input variables
  real(dp), intent(in) :: aa,bb
  differ=abs(aa-bb)>rtol*max(1.0d0,abs(aa),abs(bb))
+ return
  end function differ
 
  integer function byteswap(ii)
@@ -601,6 +608,7 @@
  integer(int8) :: bytes(storage_size(ii)/8)
  bytes=transfer(ii,bytes)
  byteswap=transfer(bytes(size(bytes):1:-1),ii)
+ return
  end function byteswap
 
  end module ae_file_m

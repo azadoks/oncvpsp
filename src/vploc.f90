@@ -78,7 +78,7 @@
    cco=( -dvv(ii)+d2vv(ii)*rr(ii))/(8*rr(ii)**3)
    aco=vv(ii)-bco*rr(ii)**2-cco*rr(ii)**4
 
- else if (lpopt == 2) then
+ else if(lpopt == 2) then
 
    bco=( 5*dvv(ii)-d2vv(ii)*rr(ii))/(8*rr(ii)**3)
    cco=(-3*dvv(ii)+d2vv(ii)*rr(ii))/(12*rr(ii)**5)

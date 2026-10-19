@@ -43,9 +43,7 @@
 !   (oncvpspr_ps.x), this program is split into all-electron and
 !   pseudopotential stages as oncvpsp.F90 is; see there and ae_file_m.
 !
- use, intrinsic :: iso_fortran_env, only: stdin => input_unit, &
-&                                         stdout => output_unit, &
-&                                         stderr => error_unit
+ use, intrinsic :: iso_fortran_env, only: stdin => input_unit
  use m_psmlout, only: psmlout_r
  use build_info_m, only: write_build_info
  use input_text_m, only: read_input_text_r
@@ -153,55 +151,56 @@
      call get_command_argument(iarg, arg)
      select case(arg)
      case('-h', '--help')
-       write (stdout, '(a)') 'Usage: '//ONCVPSP_EXE//' [options]'
-       write (stdout, '(a)') 'Options:'
-       write (stdout, '(a)') '  -h, --help       ' // &
+       write(6,'(a)') 'Usage: '//ONCVPSP_EXE//' [options]'
+       write(6,'(a)') 'Options:'
+       write(6,'(a)') '  -h, --help       ' // &
 &                            'Show this help message and exit'
-       write (stdout, '(a)') '  -v, --version    ' // &
+       write(6,'(a)') '  -v, --version    ' // &
 &                            'Show version information and exit'
-       write (stdout, '(a)') '  -i, --input      ' // &
+       write(6,'(a)') '  -i, --input      ' // &
 &                            'Read the input from a text file ' // &
 &                            'instead of stdin'
-       write (stdout, '(a)') '  -t, --toml-input ' // &
+       write(6,'(a)') '  -t, --toml-input ' // &
 &                            'Read the input from a TOML file'
 #if defined(ONCVPSP_AE_ONLY)
-       write (stdout, '(a)') '  -a, --ae-file    ' // &
+       write(6,'(a)') '  -a, --ae-file    ' // &
 &                            'All-electron data file to write (required)'
 #elif defined(ONCVPSP_PS_ONLY)
-       write (stdout, '(a)') '  -a, --ae-file    ' // &
+       write(6,'(a)') '  -a, --ae-file    ' // &
 &                            'All-electron data file written by ' // &
 &                            'oncvpspr_ae.x (required)'
 #endif
        stop 0
      case('-v', '--version')
-       write (stdout, '(a)') 'ONCVPSP (fully-relativistic) version 4.0.1'
-       call write_build_info(stdout,ONCVPSP_EXE,ONCVPSP_TREATMENT)
+       write(6,'(a)') 'ONCVPSP (fully-relativistic) version 4.0.1'
+       call write_build_info(6,ONCVPSP_EXE,ONCVPSP_TREATMENT)
        stop 0
      case('-i', '--input')
-       if (iarg + 1 > command_argument_count()) then
-         write (stderr, '(a)') 'Error: --input requires a filename argument'
-         stop 1
+       if(iarg + 1 > command_argument_count()) then
+         write(6,'(/a)') 'oncvpsp_r: ERROR --input requires a file name'
+         error stop 1
        end if
        call get_command_argument(iarg + 1, input_filename)
        input_mode = INPUT_TEXT
 #if (defined WITH_TOML)
      case('-t', '--toml-input')
-       if (iarg + 1 > command_argument_count()) then
-         write (stderr, '(a)') &
-&              'Error: --toml-input requires a filename argument'
-         stop 1
+       if(iarg + 1 > command_argument_count()) then
+         write(6,'(/a)') 'oncvpsp_r: ERROR --toml-input requires a file name'
+         error stop 1
        end if
        call get_command_argument(iarg + 1, input_filename)
        input_mode = INPUT_TOML
 #else
      case('-t', '--toml-input')
-       error stop 'Error: TOML input support not enabled in this build.'
+       write(6,'(/2a)') 'oncvpsp_r: ERROR TOML input is not enabled', &
+&            ' in this build'
+       error stop 1
 #endif
 #if defined(ONCVPSP_SPLIT)
      case('-a', '--ae-file')
-       if (iarg + 1 > command_argument_count()) then
-         write (stderr, '(a)') 'Error: --ae-file requires a filename argument'
-         stop 1
+       if(iarg + 1 > command_argument_count()) then
+         write(6,'(/a)') 'oncvpsp_r: ERROR --ae-file requires a file name'
+         error stop 1
        end if
        call get_command_argument(iarg + 1, ae_filename)
 #endif
@@ -211,9 +210,9 @@
  end block parse_args
 
 #if defined(ONCVPSP_SPLIT)
- if (len_trim(ae_filename) == 0) then
-   write (stderr, '(a)') 'Error: '//ONCVPSP_EXE//' requires --ae-file'
-   stop 1
+ if(len_trim(ae_filename) == 0) then
+   write(6,'(/3a)') 'oncvpsp_r: ERROR ',ONCVPSP_EXE,' requires --ae-file'
+   error stop 1
  end if
 #endif
 
@@ -234,7 +233,7 @@
  case(INPUT_TEXT)
    open(newunit=unit, file=input_filename, status='old', action='read', &
 &       iostat=ios)
-   if (ios /= 0) then
+   if(ios /= 0) then
      write(6, '(/2a)') &
 &       'oncvpsp_r: ERROR cannot open input file, file=', &
 &       trim(input_filename)
@@ -256,7 +255,7 @@
  case(INPUT_TOML)
    open(newunit=unit, file=input_filename, status='old', action='read', &
 &       iostat=ios)
-   if (ios /= 0) then
+   if(ios /= 0) then
      write(6, '(/2a)') &
 &       'oncvpsp_r: ERROR cannot open input file, file=', &
 &       trim(input_filename)
@@ -276,8 +275,9 @@
    close(unit)
 #endif
  case default
-   write (stderr, '(a,i2)') 'Error: Unknown input mode =', input_mode
-   stop 1
+   write(6,'(/a,i0)') 'oncvpsp_r: ERROR unknown input mode, input_mode=', &
+&        input_mode
+   error stop 1
  end select
 
  nvcnf(1)=nv

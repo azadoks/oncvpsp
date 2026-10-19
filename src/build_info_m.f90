@@ -41,6 +41,7 @@
 
  write(iunit,'(10a)') 'build: ',program,' (',treatment,'), commit ', &
 &      build_commit,', source ',build_source,', compiled ',build_time
+ return
 
  end subroutine write_build_info
 

@@ -210,7 +210,7 @@
  nval   = nv
 
  norbs = ncore + nval
- allocate (nsh(norbs), lsh(norbs), fsh(norbs))
+ allocate(nsh(norbs), lsh(norbs), fsh(norbs))
 
  total_valence_charge = 0.0_dp
  ncp = ncore + 1
@@ -218,30 +218,30 @@
    nsh(ii) = na(ii)
    lsh(ii) = la(ii)
    fsh(ii) = fa(ii)
-   if (ii > ncore) then
+   if(ii > ncore) then
      total_valence_charge =   total_valence_charge + fsh(ii)
    end if
  end do
 
  npots = lmax + 1
- allocate (ll(npots), nn(npots), ff(npots))
+ allocate(ll(npots), nn(npots), ff(npots))
  do ii = 1, npots
    ll(ii) = ii - 1
    found = .false.
 ! look for the appropriate shell in the valence
    do jj = ncp, norbs
-     if (lsh(jj) == ll(ii)) then
+     if(lsh(jj) == ll(ii)) then
        found = .true.
        nn(ii) = nsh(jj)
        ff(ii) = fsh(jj)
        exit
      end if
    end do
-   if (.not. found) then
+   if(.not. found) then
 ! generate the appropriate effective n
      nn(ii) = ll(ii) + 1
      do jj = 1, ncore
-       if (lsh(jj) == ll(ii)) then
+       if(lsh(jj) == ll(ii)) then
          nn(ii) = nn(ii) + 1
        end if
        ff(ii) = 0.0_dp
@@ -254,7 +254,7 @@
  polarized = .false.
  polattrib = "no"
  there_is_core = (icmod >= 1)
- if (there_is_core) then
+ if(there_is_core) then
    coreattrib = "yes"
  else
    coreattrib = "no"
@@ -296,7 +296,7 @@
  call my_add_attribute(xf,"atomic-number",str(zz))
  call my_add_attribute(xf,"z-pseudo",str(zion))
  call my_add_attribute(xf,"flavor",psflavor)
- if (srel) then
+ if(srel) then
    call my_add_attribute(xf,"relativity","scalar")
  else
    call my_add_attribute(xf,"relativity","no")
@@ -362,7 +362,7 @@
  call xml_EndElement(xf,"grid")
 
  call xml_NewElement(xf,"semilocal-potentials")
- if (srel) then
+ if(srel) then
    call my_add_attribute(xf,"set","scalar_relativistic")
  else
    call my_add_attribute(xf,"set","non_relativistic")
@@ -393,7 +393,7 @@
  call xml_EndElement(xf,"valence-charge")
 
 
- if (there_is_core) then
+ if(there_is_core) then
    rcore = rr(irct)
    call xml_NewElement(xf,"pseudocore-charge")
    call my_add_attribute(xf,"matching-radius",str(rcore))
@@ -423,7 +423,7 @@
 
  vlocal => vpuns(:,lloc+1)
  call xml_NewElement(xf,"local-potential")
- if (lloc > lmax) then
+ if(lloc > lmax) then
    call my_add_attribute(xf,"type","oncv-fit")
  else
    call my_add_attribute(xf,"type","l="//str(lloc))
@@ -437,7 +437,7 @@
  call xml_EndElement(xf,"local-potential")
 
  call xml_NewElement(xf,"projectors")
- if (srel) then
+ if(srel) then
    call my_add_attribute(xf,"set","scalar_relativistic")
  else
    call my_add_attribute(xf,"set","non_relativistic")
@@ -465,6 +465,7 @@
  write(6,'(/a)') 'END_PSP'
 
  deallocate(f0,r0)
+ return
 
  contains
  subroutine do_configuration()
@@ -476,18 +477,19 @@
  call xml_NewElement(xf,"valence-configuration")
  call my_add_attribute(xf,"total-valence-charge", str(total_valence_charge))
  do ii = ncp, norbs
-   if (fsh(ii) < 1.0e-10_dp) cycle
+   if(fsh(ii) < 1.0e-10_dp) cycle
    call xml_NewElement(xf,"shell")
    call my_add_attribute(xf,"n",str(nsh(ii)))
    call my_add_attribute(xf,"l",lsymb(lsh(ii)))
    call my_add_attribute(xf,"occupation",str(fsh(ii)))
-   if (polarized) then
+   if(polarized) then
      call my_add_attribute(xf,"occupation-down",str(fdown(ii)))
      call my_add_attribute(xf,"occupation-up",str(fup(ii)))
    end if
    call xml_EndElement(xf,"shell")
  end do
  call xml_EndElement(xf,"valence-configuration")
+ return
  end subroutine do_configuration
 
  end subroutine psmlout
@@ -680,7 +682,7 @@
  nval   = nv
 
  norbs = ncore + nval
- allocate (nsh(norbs), lsh(norbs), fsh(norbs))
+ allocate(nsh(norbs), lsh(norbs), fsh(norbs))
 
  total_valence_charge = 0.0_dp
  ncp = ncore + 1
@@ -688,30 +690,30 @@
    nsh(ii) = na(ii)
    lsh(ii) = la(ii)
    fsh(ii) = fa(ii)
-   if (ii > ncore) then
+   if(ii > ncore) then
      total_valence_charge =   total_valence_charge + fsh(ii)
    end if
  end do
 
  npots = lmax + 1
- allocate (ll(npots), nn(npots), ff(npots))
+ allocate(ll(npots), nn(npots), ff(npots))
  do ii = 1, npots
    ll(ii) = ii - 1
    found = .false.
 ! look for the appropriate shell in the valence
    do jj = ncp, norbs
-     if (lsh(jj) == ll(ii)) then
+     if(lsh(jj) == ll(ii)) then
        found = .true.
        nn(ii) = nsh(jj)
        ff(ii) = fsh(jj)
        exit
      end if
    end do
-   if (.not. found) then
+   if(.not. found) then
 ! generate the appropriate effective n
      nn(ii) = ll(ii) + 1
      do jj = 1, ncore
-       if (lsh(jj) == ll(ii)) then
+       if(lsh(jj) == ll(ii)) then
          nn(ii) = nn(ii) + 1
        end if
        ff(ii) = 0.0_dp
@@ -724,7 +726,7 @@
  polarized = .false.
  polattrib = "no"
  there_is_core = (icmod >= 1)
- if (there_is_core) then
+ if(there_is_core) then
    coreattrib = "yes"
  else
    coreattrib = "no"
@@ -833,7 +835,7 @@
 !
  allocate(f0(nr))
 
- if (trim(psfile)=="psp8") then
+ if(trim(psfile)=="psp8") then
 
    call xml_NewElement(xf,"semilocal-potentials")
    call my_add_attribute(xf,"set","scalar_relativistic")
@@ -875,7 +877,7 @@
 
    do ii = 1, npots
      l1 = ii
-     if (ii == 1) then
+     if(ii == 1) then
        jval = 0.0
 ! last index:  1: j=l+1/2; 2: j=l-1/2; l=0,j=0 stored in index 1
        vps(:) = vpuns(:,l1,1)
@@ -915,7 +917,7 @@
  call xml_EndElement(xf,"valence-charge")
 
 
- if (there_is_core) then
+ if(there_is_core) then
    rcore = rr(irct)
    call xml_NewElement(xf,"pseudocore-charge")
    call my_add_attribute(xf,"matching-radius",str(rcore))
@@ -946,7 +948,7 @@
 
  vlocal => vpuns(:,lloc+1,1)
  call xml_NewElement(xf,"local-potential")
- if (lloc > lmax) then
+ if(lloc > lmax) then
    call my_add_attribute(xf,"type","oncv-fit")
  else
    call my_add_attribute(xf,"type","l="//str(lloc))
@@ -962,7 +964,7 @@
 !
 !     Scalar-relativistic projectors
 !
- if (trim(psfile)=="psp8") then
+ if(trim(psfile)=="psp8") then
 
 ! set up projector number for sr_so calculations based on non-zero coefficients
    npr_sr(:)=0
@@ -1015,7 +1017,7 @@
    do l1=1,lmax+1
      if(l1==lloc+1) cycle
 
-     if (l1 == 1) then
+     if(l1 == 1) then
 ! l=0, only one j=0
        jval = 0.0
 
@@ -1057,6 +1059,7 @@
  write(6,'(/a)') 'END_PSP'
 
  deallocate(f0,r0)
+ return
 
  contains
  subroutine do_configuration()
@@ -1068,18 +1071,19 @@
  call xml_NewElement(xf,"valence-configuration")
  call my_add_attribute(xf,"total-valence-charge", str(total_valence_charge))
  do ii = ncp, norbs
-   if (fsh(ii) < 1.0e-10_dp) cycle
+   if(fsh(ii) < 1.0e-10_dp) cycle
    call xml_NewElement(xf,"shell")
    call my_add_attribute(xf,"n",str(nsh(ii)))
    call my_add_attribute(xf,"l",lsymb(lsh(ii)))
    call my_add_attribute(xf,"occupation",str(fsh(ii)))
-   if (polarized) then
+   if(polarized) then
      call my_add_attribute(xf,"occupation-down",str(fdown(ii)))
      call my_add_attribute(xf,"occupation-up",str(fup(ii)))
    end if
    call xml_EndElement(xf,"shell")
  end do
  call xml_EndElement(xf,"valence-configuration")
+ return
  end subroutine do_configuration
 
 
@@ -1237,6 +1241,7 @@
    write(line,'(3es24.16)') log_mesh
    call add(line)
  end if
+ return
 
  contains
 
@@ -1249,6 +1254,7 @@
 !Input variables
  character(len=*), intent(in) :: text
  call xml_AddPcData(xf,trim(text),line_feed=.true.)
+ return
  end subroutine add
 
  end subroutine echo_input
@@ -1272,6 +1278,7 @@
  type(xmlf_t), intent(inout)   :: xf
 
  call xml_AddAttribute(xf,name,trim(value))
+ return
  end subroutine my_add_attribute
 
  subroutine add_zero_r(ff,rr,f0)
@@ -1293,12 +1300,13 @@
  real(dp) :: r2
 
  npts = size(ff)
- if (size(f0) /= npts +1) error stop "nr /= npts + 1 in add_zero_r"
+ if(size(f0) /= npts +1) error stop "nr /= npts + 1 in add_zero_r"
  do ii = 1, npts
    f0(ii+1) = ff(ii)
  end do
  r2 = rr(1)/(rr(2)-rr(1))
  f0(1) = ff(2) - (ff(3)-ff(2))*r2
+ return
 
  end subroutine add_zero_r
 
@@ -1354,24 +1362,24 @@
  type(xmlf_t), intent(inout)   :: xf
 
  call xml_NewElement(xf,trim(class))
- if (present(set))  call my_add_attribute(xf,"set",set)
+ if(present(set))  call my_add_attribute(xf,"set",set)
 
 ! we might want to check input values
- if (present(nn))  call my_add_attribute(xf,"n",str(nn))
- if (present(ll))  call my_add_attribute(xf,"l",lsymb(ll))
- if (present(jj))  call my_add_attribute(xf,"j", &
+ if(present(nn))  call my_add_attribute(xf,"n",str(nn))
+ if(present(ll))  call my_add_attribute(xf,"l",lsymb(ll))
+ if(present(jj))  call my_add_attribute(xf,"j", &
 &                                        str(jj,format="(f3.1)"))
 ! spin: +0.5 or -0.5
- if (present(ss))  call my_add_attribute(xf,"s", &
+ if(present(ss))  call my_add_attribute(xf,"s", &
 &                                        str(ss,format="(f4.1)"))
 
- if (present(seq)) call my_add_attribute(xf,"seq",str(seq))
+ if(present(seq)) call my_add_attribute(xf,"seq",str(seq))
 
- if (present(rc))  call my_add_attribute(xf,"rc",str(rc))
- if (present(ekb))  call my_add_attribute(xf,"ekb",str(ekb))
+ if(present(rc))  call my_add_attribute(xf,"rc",str(rc))
+ if(present(ekb))  call my_add_attribute(xf,"ekb",str(ekb))
 
- if (present(flavor))  call my_add_attribute(xf,"flavor",flavor)
- if (present(type))  call my_add_attribute(xf,"type",type)
+ if(present(flavor))  call my_add_attribute(xf,"flavor",flavor)
+ if(present(type))  call my_add_attribute(xf,"type",type)
 
  call xml_NewElement(xf,"radfunc")
  call xml_NewElement(xf,"data")
@@ -1380,6 +1388,7 @@
  call xml_EndElement(xf,"radfunc")
 
  call xml_EndElement(xf,trim(class))
+ return
 
  end subroutine write_psml_item
 
