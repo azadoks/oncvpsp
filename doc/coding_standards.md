@@ -279,6 +279,12 @@ YAML and TOML files and the scripts' shebangs, and run
   since 4.0.1;
 - [ruff](https://docs.astral.sh/ruff) on the Python, with `ruff.toml`.
 
+`.editorconfig` tells editors the same whitespace rules (LF line endings,
+no trailing whitespace, one final newline, spaces not tabs, 2-column
+Fortran indentation, 80 columns) so that files come out of the editor
+already conforming. Most editors honour it natively or with the
+[EditorConfig](https://editorconfig.org) plugin.
+
 fortitude uses its default rules, without the four that conflict with the
 rules above: double-quoted strings (S241), and three that ask for modules
 or `implicit none (external)` in place of external procedures (C003, C091,

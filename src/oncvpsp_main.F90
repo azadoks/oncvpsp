@@ -46,7 +46,7 @@
 !        pseudopotential stage only
 !
  use, intrinsic :: iso_fortran_env, only: stdin => input_unit
- use psmlout_m, only: psmlout, psmlout_r
+ use psmlout_m, only: psmlout
  use build_info_m, only: write_build_info
  use input_text_m, only: read_input_text
  use config_ae_m, only: run_config_ae
@@ -1070,23 +1070,20 @@
      if(rhomod(ii,1)/=rhoc(ii)) exit
      irct=ii
    end do
-   if(irel==2) then
-     call psmlout_r(lmax,lloc,rc,vkb,evkb,mxprj,nproj,rr,vpsml,rho,rhomod, &
-&                   irct, &
-&                   vsr,esr,vso,eso, &
-&                   zz,zion,mmax,iexc,icmod,nrl,drl,atsym,epstot, &
-&                   na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&                   fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact0,rcfact, &
-&                   fcgrid,rcgrid, &
-&                   epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh)
-   else
-     call psmlout(lmax,lloc,rc,vkb,evkb,mxprj,nproj,rr,vpuns,rho,rhomod, &
-&                 irct, srel, &
-&                 zz,zion,mmax,iexc,icmod,nrl,drl,atsym,epstot, &
-&                 na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&                 fa,rc0,ep(1,1),qcut,debl,facnf,dvloc0,fcfact0,rcfact, &
-&                 fcgrid,rcgrid,epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh)
+!the fully-relativistic semi-local potentials are vp-vo for each kappa,
+!without the corrections of vpuns (see doc/fr_merge_plan.md)
+   if(irel/=2) then
+     allocate(vpsml(mmax,5,1))
+     vpsml(:,:,1)=vpuns(:,:)
    end if
+   call psmlout(lmax,lloc,rc,vkb,evkb,mxprj,nproj,rr,vpsml,rho,rhomod, &
+&               irct, &
+&               vsr,esr,vso,eso, &
+&               zz,zion,mmax,iexc,icmod,nrl,drl,atsym,epstot, &
+&               na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
+&               fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact0,rcfact, &
+&               fcgrid,rcgrid, &
+&               epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,irel,nkap)
  end if
 
  stop

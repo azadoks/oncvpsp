@@ -107,7 +107,8 @@ stay separate and what they share moves to common routines.
       section and a few header lines
 - [x] `upfout` / `upfout_r`, merged: they differ in the kappa loops, the
       header attributes and the spin-orbit section
-- [ ] The shared parts of `psmlout` / `psmlout_r`
+- [x] `psmlout` / `psmlout_r`, merged: `irel` replaces the logical `srel`,
+      and the fr potential and projector sets are the `irel==2` branch
 
 ### Phase 6: documentation
 
@@ -141,6 +142,15 @@ physical reason, kept behind `irel` until decided:
   orbital's norm starts at `mmax-1` in sr, `mmax` in fr; sr sets the first
   point of the interpolated local potential to its value at r=0, fr keeps
   the extrapolated one
+- the PSML semi-local potentials: sr writes `vpuns`, with the unscreening
+  corrections (the tail beyond the charge and the smoothing to -zion/r),
+  fr writes `vp-vo` for each kappa without them
+
+### Found on the way
+
+- `psmlout` is called only for `psfile` 'psml' or 'both', so its fr branch
+  for `psfile=='psp8'` (separate scalar-relativistic and spin-orbit sets)
+  never runs; it was unreachable before the merge too
 
 ### Fixed on the way
 
