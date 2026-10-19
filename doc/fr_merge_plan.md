@@ -16,7 +16,8 @@ has got. Tick a box when its commit is in.
   (`_ae.x` + `_ps.x`) with the single ones. The reference comparisons
   ignore text, so the outputs are also compared line for line with those
   of the code before the merge (53bd8ac), apart from the build line and
-  dates. One commit per step.
+  dates, as are the help, version and argument-error messages of every
+  executable. One commit per step.
 - **Little preprocessor.** No new `#if` blocks. Which equation is solved
   is an integer argument, `irel` (0 nr, 1 sr, 2 fr), tested at run time.
 - **Interfaces that C could call.** A merged or new routine takes integer
@@ -85,8 +86,10 @@ The fr path had 3 reference tests to the sr path's 28.
       the stage (whole, all-electron only, pseudopotential only), with each
       executable a short program calling it; drop `oncvpsp_r.F90` and the
       `#if`s of the driver
-- [ ] The fr-only steps (`sr_so_r`, `run_diag_sr_so_r`, the second ghost
-      test, the averaged unscreening) under `irel==2`
+- [x] The fr-only steps (`sr_so_r`, `run_diag_sr_so_r`, the second ghost
+      test, the averaged unscreening) under `irel==2`: `oncvpsp.F90` and
+      `oncvpsp_r.F90` differ only in their headers and the setting of
+      `irel`
 
 ### Phase 5: output
 

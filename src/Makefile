@@ -27,9 +27,8 @@ OBJS_ALL =	aeatom.o boundstate.o build_info_m.o check_data.o const_basis.o const
 		lschpsbar.o vrel.o ae_file_m.o config_ae_m.o sratom.o input_echo_m.o \
 		relatom.o fphsft.o run_phsft.o scatstate.o wellstate.o \
 		psatom.o run_config.o run_diag.o renorm_r.o run_plot.o \
-		run_vkb.o
-
-OBJS_NRSR =	fpovlp.o gnu_script.o linout.o upfout.o
+		run_vkb.o fpovlp.o gnu_script.o linout.o upfout.o gnu_script_r.o \
+		linout_r.o run_diag_sr_so_r.o sr_so_r.o upfout_r.o
 
 OBJS_SR =	psmlout_m.o oncvpsp.o
 
@@ -43,23 +42,19 @@ OBJS_NR_AE =	psmlout_m.o oncvpspnr_ae.o
 
 OBJS_NR_PS =	psmlout_m.o oncvpspnr_ps.o
 
-OBJS_RLIB =	fpovlp.o gnu_script_r.o linout_r.o \
-		run_diag_sr_so_r.o \
-		sr_so_r.o upfout_r.o
+OBJS_R =	psmlout_m.o oncvpsp_r.o
 
-OBJS_R =	psmlout_m.o oncvpsp_r.o $(OBJS_RLIB)
+OBJS_R_AE =	psmlout_m.o oncvpspr_ae.o
 
-OBJS_R_AE =	psmlout_m.o oncvpspr_ae.o $(OBJS_RLIB)
+OBJS_R_PS =	psmlout_m.o oncvpspr_ps.o
 
-OBJS_R_PS =	psmlout_m.o oncvpspr_ps.o $(OBJS_RLIB)
+OBJS_OPSP =     $(OBJS_SR) $(OBJS_ALL) $(OBJS_LIBXC)
 
-OBJS_OPSP =     $(OBJS_SR) $(OBJS_NRSR) $(OBJS_ALL) $(OBJS_LIBXC)
-
-OBJS_OPSPNR = 	$(OBJS_NR) $(OBJS_NRSR) $(OBJS_ALL) $(OBJS_LIBXC)
+OBJS_OPSPNR = 	$(OBJS_NR) $(OBJS_ALL) $(OBJS_LIBXC)
 
 OBJS_OPSPR = 	$(OBJS_R) $(OBJS_ALL) $(OBJS_LIBXC)
 
-OBJS_SPLIT =	$(OBJS_NRSR) $(OBJS_ALL) $(OBJS_LIBXC)
+OBJS_SPLIT =	$(OBJS_ALL) $(OBJS_LIBXC)
 
 all:	oncvpsp oncvpspnr oncvpspr oncvpsp_ae oncvpsp_ps oncvpspnr_ae oncvpspnr_ps \
 	oncvpspr_ae oncvpspr_ps
@@ -90,7 +85,7 @@ lschpsbar.o lschvkbb.o vkboutwf.o vout.o: adams.inc
 exc_libxc.o: functionals.o
 
 # Every routine uses constants_m
-$(filter-out constants_m.o,$(sort $(OBJS_ALL) $(OBJS_NRSR) $(OBJS_RLIB) \
+$(filter-out constants_m.o,$(sort $(OBJS_ALL) \
 	$(OBJS_LIBXC) psmlout_m.o $(DRIVERS_NRSR) $(DRIVERS_R))): constants_m.o
 
 
@@ -116,11 +111,11 @@ oncvpspnr_ae:	$(OBJS_NR_AE) $(OBJS_SPLIT)
 oncvpspnr_ps:	$(OBJS_NR_PS) $(OBJS_SPLIT)
 		$(FLINKER) -o oncvpspnr_ps.x $(OBJS_NR_PS) $(OBJS_SPLIT) $(LIBS) $(WXML_LIB)
 
-oncvpspr_ae:	$(OBJS_R_AE) $(OBJS_ALL) $(OBJS_LIBXC)
-		$(FLINKER) -o oncvpspr_ae.x $(OBJS_R_AE) $(OBJS_ALL) $(OBJS_LIBXC) $(LIBS) $(WXML_LIB)
+oncvpspr_ae:	$(OBJS_R_AE) $(OBJS_SPLIT)
+		$(FLINKER) -o oncvpspr_ae.x $(OBJS_R_AE) $(OBJS_SPLIT) $(LIBS) $(WXML_LIB)
 
-oncvpspr_ps:	$(OBJS_R_PS) $(OBJS_ALL) $(OBJS_LIBXC)
-		$(FLINKER) -o oncvpspr_ps.x $(OBJS_R_PS) $(OBJS_ALL) $(OBJS_LIBXC) $(LIBS) $(WXML_LIB)
+oncvpspr_ps:	$(OBJS_R_PS) $(OBJS_SPLIT)
+		$(FLINKER) -o oncvpspr_ps.x $(OBJS_R_PS) $(OBJS_SPLIT) $(LIBS) $(WXML_LIB)
 
 .SUFFIXES:
 .SUFFIXES: .c .o .f .f90 .F90

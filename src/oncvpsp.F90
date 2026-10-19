@@ -22,11 +22,6 @@
 #if !defined(ONCVPSP_EXE)
 #define ONCVPSP_EXE 'oncvpsp.x'
 #endif
-#if defined(ONCVPSP_NONREL)
-#define ONCVPSP_TREATMENT 'non-relativistic'
-#else
-#define ONCVPSP_TREATMENT 'scalar-relativistic'
-#endif
  program oncvpsp
 !
 ! Creates and tests optimized norm-conserving Vanderbilt or Kleinman-Bylander
@@ -51,7 +46,7 @@
 !   same output.  Both read the same input.  See ae_file_m.
 !
  use, intrinsic :: iso_fortran_env, only: stdin => input_unit
- use psmlout_m, only: psmlout
+ use psmlout_m, only: psmlout, psmlout_r
  use build_info_m, only: write_build_info
  use input_text_m, only: read_input_text
 #if defined(ONCVPSP_AE_ONLY)
@@ -84,23 +79,23 @@
  integer :: nproj(6)
  integer :: ncon(6),nbas(6)
 
- real(dp) :: al,amesh,csc,csc1,deblt,depsh,depsht,drl,eeel
+ real(dp) :: al,amesh,csc,csc1,depsh,depsht,drl,eeel
  real(dp) :: eeig,eexc
  real(dp) :: emax,epsh1,epsh1t,epsh2,epsh2t,rxpsh
  real(dp) :: et,etest,emin,sls
- real(dp) :: fcfact,fcfact0,rcfact,dvloc0
+ real(dp) :: fcfact,fcfact0,rcfact,dvloc0,soscale
  real(dp) :: fcfact_min,fcfact_max,fcfact_step
  real(dp) :: rcfact_min,rcfact_max,rcfact_step
  real(dp) :: fcgrid(3),rcgrid(3)
  real(dp) :: rr1,rcion,rciont,rcmax,rct,rlmax,rpkt
  real(dp) :: amesh_in,rr1_in,rmax_in,rmax,log_mesh(3)
  real(dp) :: sf,zz,zion,zval,etot
- real(dp) :: xdummy,fj,cnorm
+ real(dp) :: fj,cnorm
 !
  real(dp) :: cl(6),debl(6),ea(30,2),ep(6,2),fa(30),facnf(30,5)
  real(dp) :: qcut(6),qmsbf(6),rc(6),rc0(6)
- real(dp) :: rpk(30)
- real(dp) :: epstot
+ real(dp) :: rpk(30,2)
+ real(dp) :: epstot,eps_srso
  real(dp), parameter :: eps=1.0d-8
 
  real(dp), allocatable :: evkb(:,:,:),cvgplt(:,:,:,:,:),qq(:,:)
@@ -118,16 +113,24 @@
  real(dp), allocatable :: epa(:,:,:)
  real(dp), allocatable :: uua(:,:,:),upa(:,:,:)
  real(dp), allocatable :: vr(:,:,:,:)
+!fully-relativistic only: scalar-relativistic and spin-orbit projectors, and
+!the semi-local potentials for psmlout_r
+ real(dp), allocatable :: vsr(:,:,:),vso(:,:,:),esr(:,:),eso(:,:)
+ real(dp), allocatable :: vpsml(:,:,:)
 
 !all-electron results for the test configurations (see run_config_ae)
  integer :: istcnf(5),ierrcnf(5),itcnf(5),kerrcnf(5)
  integer :: nvtcnf(5),natcnf(30,5),latcnf(30,5)
- real(dp) :: fatcnf(30,3,5),eatcnf(30,3,5),etstcnf(5)
+ real(dp) :: fatcnf(30,3,5),etstcnf(5)
+ real(dp), allocatable :: eatcnf(:,:,:,:)
 
  character(len=2) :: atsym
  character(len=4) :: psfile
 
- logical :: srel,cset
+ logical :: srel
+!names in the messages: the equation solved and the program
+ character(len=19) :: treatment
+ character(len=9) :: pname
 
  integer, parameter :: INPUT_STDIN=1, INPUT_TEXT=2, INPUT_TOML=3
  integer :: input_mode
@@ -137,28 +140,46 @@
 
  input_mode = INPUT_STDIN
 
- write(6,'(a/a//)') &
-&      'ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
-&      ONCVPSP_TREATMENT//' version 4.0.1 03/01/2019'
+#if defined(ONCVPSP_NONREL)
+ irel=0
+#else
+ irel=1
+#endif
+!the arrays indexed by l have a last index for kappa (see doc/fr_merge_plan.md):
+!1 for j=l+1/2 and 2 for j=l-1/2 when fully relativistic, only 1 otherwise
+ srel=irel/=0
+ if(irel==2) then
+   nkap=2
+   treatment='fully-relativistic'
+   pname='oncvpsp_r'
+ else
+   nkap=1
+   if(irel==0) then
+     treatment='non-relativistic'
+   else
+     treatment='scalar-relativistic'
+   end if
+   pname='oncvpsp'
+ end if
+ allocate(eatcnf(30,nkap,3,5))
+
+ if(irel==2) then
+   write(6,'(a/a//)') &
+&        'ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
+&        'relativistic version 4.0.1 03/01/2019'
+ else
+   write(6,'(a/a//)') &
+&        'ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
+&        trim(treatment)//' version 4.0.1 03/01/2019'
+ end if
 
  write(6,'(a/a/a//)') &
 &      'While it is not required under the terms of the GNU GPL, it is',&
 &      'suggested that you cite D. R. Hamann, Phys. Rev. B 88, 085117 (2013)', &
 &      'in any publication utilizing these pseudopotentials.'
 
- call write_build_info(6,ONCVPSP_EXE,ONCVPSP_TREATMENT)
+ call write_build_info(6,ONCVPSP_EXE,trim(treatment))
  write(6,'(/)')
-
-#if defined(ONCVPSP_NONREL)
- irel=0
-#else
- irel=1
-#endif
- srel=irel==1
-!the arrays indexed by l have a last index for kappa (see doc/fr_merge_plan.md),
-!1 for j=l+1/2 and 2 for j=l-1/2 in the fully-relativistic code, and only 1
-!here
- nkap=1
 
  parse_args: block
    integer :: iarg
@@ -182,22 +203,24 @@
        write(6,'(a)') '  -a, --ae-file    ' // &
 &                            'All-electron data file to write (required)'
 #elif defined(ONCVPSP_PS_ONLY)
-       write(6,'(a)') '  -a, --ae-file    ' // &
-&                            'All-electron data file written by ' // &
-&                            'the matching _ae.x (required)'
+       if(irel==2) then
+         write(6,'(a)') '  -a, --ae-file    ' // &
+&                              'All-electron data file written by ' // &
+&                              'oncvpspr_ae.x (required)'
+       else
+         write(6,'(a)') '  -a, --ae-file    ' // &
+&                              'All-electron data file written by ' // &
+&                              'the matching _ae.x (required)'
+       end if
 #endif
        stop 0
      case('-v', '--version')
-#if defined(ONCVPSP_NONREL)
-       write(6,'(a)') 'ONCVPSP (non-relativistic) version 4.0.1'
-#else
-       write(6,'(a)') 'ONCVPSP (scalar-relativistic) version 4.0.1'
-#endif
-       call write_build_info(6,ONCVPSP_EXE,ONCVPSP_TREATMENT)
+       write(6,'(3a)') 'ONCVPSP (',trim(treatment),') version 4.0.1'
+       call write_build_info(6,ONCVPSP_EXE,trim(treatment))
        stop 0
      case('-i', '--input')
        if(iarg + 1 > command_argument_count()) then
-         write(6,'(/a)') 'oncvpsp: ERROR --input requires a file name'
+         write(6,'(/3a)') trim(pname),': ERROR --input requires a file name'
          error stop 1
        end if
        call get_command_argument(iarg + 1, input_filename)
@@ -205,21 +228,22 @@
 #if (defined WITH_TOML)
      case('-t', '--toml-input')
        if(iarg + 1 > command_argument_count()) then
-         write(6,'(/a)') 'oncvpsp: ERROR --toml-input requires a file name'
+         write(6,'(/3a)') trim(pname), &
+&              ': ERROR --toml-input requires a file name'
          error stop 1
        end if
        call get_command_argument(iarg + 1, input_filename)
        input_mode = INPUT_TOML
 #else
      case('-t', '--toml-input')
-       write(6,'(/2a)') 'oncvpsp: ERROR TOML input is not enabled', &
+       write(6,'(/3a)') trim(pname),': ERROR TOML input is not enabled', &
 &            ' in this build'
        error stop 1
 #endif
 #if defined(ONCVPSP_SPLIT)
      case('-a', '--ae-file')
        if(iarg + 1 > command_argument_count()) then
-         write(6,'(/a)') 'oncvpsp: ERROR --ae-file requires a file name'
+         write(6,'(/3a)') trim(pname),': ERROR --ae-file requires a file name'
          error stop 1
        end if
        call get_command_argument(iarg + 1, ae_filename)
@@ -231,7 +255,7 @@
 
 #if defined(ONCVPSP_SPLIT)
  if(len_trim(ae_filename) == 0) then
-   write(6,'(/3a)') 'oncvpsp: ERROR ',ONCVPSP_EXE,' requires --ae-file'
+   write(6,'(/4a)') trim(pname),': ERROR ',ONCVPSP_EXE,' requires --ae-file'
    error stop 1
  end if
 #endif
@@ -254,7 +278,7 @@
    open(newunit=unit, file=input_filename, status='old', action='read', &
 &       iostat=ios)
    if(ios /= 0) then
-     write(6, '(/2a)') 'oncvpsp: ERROR cannot open input file, file=', &
+     write(6, '(/3a)') trim(pname),': ERROR cannot open input file, file=', &
 &       trim(input_filename)
      error stop 1
    end if
@@ -275,7 +299,7 @@
    open(newunit=unit, file=input_filename, status='old', action='read', &
 &       iostat=ios)
    if(ios /= 0) then
-     write(6, '(/2a)') 'oncvpsp: ERROR cannot open input file, file=', &
+     write(6, '(/3a)') trim(pname),': ERROR cannot open input file, file=', &
 &       trim(input_filename)
      error stop 1
    end if
@@ -293,7 +317,7 @@
    close(unit)
 #endif
  case default
-   write(6,'(/a,i0)') 'oncvpsp: ERROR unknown input mode, input_mode=', &
+   write(6,'(/2a,i0)') trim(pname),': ERROR unknown input mode, input_mode=', &
 &        input_mode
    error stop 1
  end select
@@ -324,14 +348,15 @@
  call check_data(atsym,zz,fcfact,rcfact,fcgrid,rcgrid,epsh1,epsh2,depsh, &
 &                rxpsh,rlmax,drl, &
 &                fa,facnf, &
-&                rc,ep(1,1),qcut,debl,nc,nv,iexc,lmax,lloc,lpopt,icmod, &
+&                rc,ep,qcut,debl,nc,nv,iexc,lmax,lloc,lpopt,icmod, &
 &                ncnf,na,la,nvcnf,nacnf,lacnf,ncon,nbas,nproj,psfile, &
 &                amesh_in,rr1_in,rmax_in)
 
  nrl=int((rlmax/drl)-0.5d0)+1
 
-!PWSCF wants an even number of mesh pointe
- if(mod(nrl,2)/=0) nrl=nrl+1
+!PWSCF wants an even number of mesh pointe (not made so when fully
+!relativistic, see doc/fr_merge_plan.md)
+ if(mod(nrl,2)/=0 .and. irel/=2) nrl=nrl+1
 
 !log mesh: the input values, or the built-in ones for those 0 or less
  if(amesh_in>0.0d0) then
@@ -347,7 +372,7 @@
    rr1=rr1_in
  else
    rr1=0.0005d0/zz
-   rr1=min(rr1,0.0005d0/10)
+   if(irel/=2) rr1=min(rr1,0.0005d0/10)
  end if
  if(rmax_in>0.0d0) then
    rmax=rmax_in
@@ -383,6 +408,8 @@
  allocate(npa(mxprj,6))
  allocate(epa(mxprj,6,nkap))
  allocate(uua(mmax,mxprj,nkap),upa(mmax,mxprj,nkap))
+ allocate(vsr(mmax,2*mxprj,4),vso(mmax,2*mxprj,4))
+ allocate(esr(2*mxprj,4),eso(2*mxprj,4))
  allocate(vr(mmax,mxprj,6,nkap))
 
  vr(:,:,:,:)=0.0d0
@@ -445,7 +472,14 @@
 &      '      ',psfile
  write(6,'(a/a)') '#','#   n    l    f        energy (Ha)'
  do ii=1,nc+nv
-   write(6,'(2i5,f8.2,1pe18.7)') na(ii),la(ii),fa(ii),ea(ii,1)
+   if(irel/=2) then
+     write(6,'(2i5,f8.2,1pe18.7)') na(ii),la(ii),fa(ii),ea(ii,1)
+   else if(la(ii)==0) then
+     write(6,'(2i5,f8.2,1p,d18.7)') na(ii),la(ii),fa(ii),ea(ii,1)
+     ea(ii,2)=ea(ii,1)
+   else
+     write(6,'(2i5,f8.2,1p,2d18.7)') na(ii),la(ii),fa(ii),ea(ii,1),ea(ii,2)
+   end if
  end do
 
  write(6,'(a/a/a)') '#','# PSEUDOPOTENTIAL AND OPTIMIZATION','# lmax'
@@ -492,14 +526,15 @@
  write(6,'(//a)') 'Reference configufation results'
  write(6,'(a,i6)') '  iterations',it
  if(it >= 100) then
-   write(6,'(a)') 'oncvpsp: ERROR all-electron reference atom not converged'
+   write(6,'(2a)') trim(pname), &
+&        ': ERROR all-electron reference atom not converged'
    error stop 1
  end if
  write(6,'(a,1p,d18.8)') '  all-electron total energy (Ha)',etot
 
 #if defined(ONCVPSP_AE_ONLY)
 !all-electron halves of the test configurations; their pseudo-atom halves
-!and all output about them come from oncvpsp_ps.x
+!and all output about them come from the matching _ps.x
  do jj=1,ncnf+1
    call run_config_ae(jj,nacnf,lacnf,facnf,nc,nvcnf,rr,zz, &
 &                     mmax,iexc,ea,irel,nkap,istcnf,ierrcnf,itcnf,kerrcnf, &
@@ -828,6 +863,25 @@
    irps=max(irps,irc(l1))
  end do !kk
 
+ if(irel==2) then
+! decomposition into scalar-relativistic and spin-orbit projectors
+
+   call sr_so_r(lmax,irc,nproj,rr,mmax,mxprj,evkb,vkb, &
+&               vsr,esr,vso,eso)
+
+! set smallest components to zero (will be dropped in psp8 output)
+   eps_srso=1.0d-3
+   do l1=1,lmax+1
+     if(nproj(l1)>0) then
+       do iprj=2,2*nproj(l1)
+         if(abs(esr(iprj,l1))<eps_srso*abs(esr(1,l1))) esr(iprj,l1)=0.0d0
+         if(l1==1) cycle
+         if(abs(eso(iprj,l1))<eps_srso*abs(eso(1,l1))) eso(iprj,l1)=0.0d0
+       end do
+     end if
+   end do
+ end if
+
  allocate(rhomod(mmax,5))
 
  rhomod(:,:)=0.0d0
@@ -869,13 +923,46 @@
  call run_diag(lmax,npa,epa,lloc,irc, &
 &               vkb,evkb,nproj,rr,vfull,vp,zz,mmax,mxprj,irel,nkap)
 
- call run_ghosts(lmax,la,ea(1,1),nc,nv,lloc,irc,qmsbf, &
-&                    vkb,evkb,nproj,rr,vp,mmax,mxprj)
+ if(irel==2) then
+   call run_diag_sr_so_r(lmax,npa,epa,lloc,irc, &
+&                        vsr,esr,vso,eso,nproj,rr,vfull,vp,zz,mmax,mxprj)
 
-! unscreen semi-local potentials
+! save full info for psml
+   allocate(vpsml(mmax,5,2))
+   do l1=1,max(lmax+1,lloc+1)
+     vpsml(:,l1,1) = vp(:,l1,1) - vo(:)
+     vpsml(:,l1,2) = vp(:,l1,2) - vo(:)
+   end do
+
+! ghost testing
+
+   write(6,'(/a)') 'Ghost test for J = L + 1/2'
+ end if
+
+ call run_ghosts(lmax,la,ea(1,1),nc,nv,lloc,irc,qmsbf, &
+&                vkb(1,1,1,1),evkb(1,1,1),nproj,rr,vp,mmax,mxprj)
+
+ if(irel==2) then
+   write(6,'(/a)') 'Ghost test for J = L - 1/2'
+   vkb(:,:,1,2)=vkb(:,:,1,1)
+   evkb(:,1,2)=evkb(:,1,1)
+   call run_ghosts(lmax,la,ea(1,2),nc,nv,lloc,irc,qmsbf, &
+&                  vkb(1,1,1,2),evkb(1,1,2),nproj,rr,vp,mmax,mxprj)
+   vkb(:,:,1,2)=0.0d0
+   evkb(:,1,2)=0.0d0
+ end if
+
+! unscreen semi-local potentials, taking the scalar-relativistic average
+! when fully relativistic
 
  do l1=1,max(lmax+1,lloc+1)
-   vpuns(:,l1)=vp(:,l1,1)-vo(:)
+   ll=l1-1
+   if(irel/=2 .or. ll==0 .or. ll==4) then
+     vpuns(:,l1)=vp(:,l1,1)-vo(:)
+   else
+     vpuns(:,l1)=(dble(ll+1)*vp(:,l1,1)+ dble(ll)*vp(:,l1,2))/dble(2*ll+1) &
+&                -vo(:)
+   end if
  end do
 
 !fix unscreening error due to greater range of all-electron charge
@@ -943,26 +1030,48 @@
  call run_phsft(lmax,lloc,nproj,epa,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
 &               rr,vfull,vp,zz,mmax,mxprj,irc,irel,nkap)
 
- call gnu_script(epa,evkb,lmax,lloc,mxprj,nproj)
+ if(irel==2) then
+   call gnu_script_r(epa,evkb,lmax,lloc,mxprj,nproj)
+ else
+   call gnu_script(epa,evkb,lmax,lloc,mxprj,nproj)
+ end if
 
  if(trim(psfile)=='psp8' .or. trim(psfile)=='both') then
-
-
-   call linout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
-&              rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym, &
-&              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&              fa,rc0,ep(1,1),qcut,debl,facnf,dvloc0,fcfact,fcfact0,rcfact, &
-&              fcgrid,rcgrid, &
-&              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh)
+   if(irel==2) then
+     soscale=1.0d0
+     call linout_r(lmax,lloc,rc,vsr,esr,vso,eso,nproj,rr,vpuns,rho,rhomod, &
+&                  rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym, &
+&                  soscale, &
+&                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
+&                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,fcfact0,rcfact, &
+&                  fcgrid,rcgrid, &
+&                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh)
+   else
+     call linout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
+&                rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym, &
+&                na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
+&                fa,rc0,ep(1,1),qcut,debl,facnf,dvloc0,fcfact,fcfact0,rcfact, &
+&                fcgrid,rcgrid, &
+&                epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh)
+   end if
  end if
 
  if(trim(psfile)=='upf' .or. trim(psfile)=='both') then
-   call upfout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
-&              zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
-&              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&              fa,rc0,ep(1,1),qcut,debl,facnf,dvloc0,fcfact0,rcfact, &
-&              fcgrid,rcgrid,epsh1,epsh2,depsh,rxpsh,rlmax,psfile,uupsa, &
-&              ea(1,1),log_mesh)
+   if(irel==2) then
+     call upfout_r(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
+&                  zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
+&                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
+&                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact0,rcfact, &
+&                  fcgrid,rcgrid, &
+&                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,uupsa,ea,log_mesh)
+   else
+     call upfout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
+&                zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
+&                na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
+&                fa,rc0,ep(1,1),qcut,debl,facnf,dvloc0,fcfact0,rcfact, &
+&                fcgrid,rcgrid,epsh1,epsh2,depsh,rxpsh,rlmax,psfile,uupsa, &
+&                ea(1,1),log_mesh)
+   end if
  end if
 
 
@@ -978,12 +1087,23 @@
      if(rhomod(ii,1)/=rhoc(ii)) exit
      irct=ii
    end do
-   call psmlout(lmax,lloc,rc,vkb,evkb,mxprj,nproj,rr,vpuns,rho,rhomod, &
-&             irct, srel, &
-&             zz,zion,mmax,iexc,icmod,nrl,drl,atsym,epstot, &
-&             na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&             fa,rc0,ep(1,1),qcut,debl,facnf,dvloc0,fcfact0,rcfact, &
-&             fcgrid,rcgrid,epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh)
+   if(irel==2) then
+     call psmlout_r(lmax,lloc,rc,vkb,evkb,mxprj,nproj,rr,vpsml,rho,rhomod, &
+&                   irct, &
+&                   vsr,esr,vso,eso, &
+&                   zz,zion,mmax,iexc,icmod,nrl,drl,atsym,epstot, &
+&                   na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
+&                   fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact0,rcfact, &
+&                   fcgrid,rcgrid, &
+&                   epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh)
+   else
+     call psmlout(lmax,lloc,rc,vkb,evkb,mxprj,nproj,rr,vpuns,rho,rhomod, &
+&                 irct, srel, &
+&                 zz,zion,mmax,iexc,icmod,nrl,drl,atsym,epstot, &
+&                 na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
+&                 fa,rc0,ep(1,1),qcut,debl,facnf,dvloc0,fcfact0,rcfact, &
+&                 fcgrid,rcgrid,epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh)
+   end if
  end if
 
  stop
