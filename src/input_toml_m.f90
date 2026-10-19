@@ -5,14 +5,14 @@
 &                 toml_load, get_value, len
  implicit none
  private
- public :: read_input_toml, read_input_toml_r
+ public :: read_input_toml
  contains
 
-! Reads the TOML input of the scalar- and non-relativistic drivers: the
-! same data as read_input_text, with the same defaults and the same checks
-! against the array sizes (check_data validates the values afterwards).
-! Every table and key is required unless stated otherwise; a missing or
-! mistyped one stops the program with a message naming it.
+! Reads the TOML input: the same data as read_input_text, with the same
+! defaults and the same checks against the array sizes (check_data
+! validates the values afterwards).  Every table and key is required unless
+! stated otherwise; a missing or mistyped one stops the program with a
+! message naming it.
 !
 !   [oncvpsp]                  atsym, z, nc, nv, iexc
 !   [reference_configuration]  n, l, f                (nc + nv each)
@@ -75,8 +75,9 @@
  integer, intent(out) :: lmax
 !> Core radii for pseudopotentials (rc(5) is the local potential's)
  real(dp), intent(out) :: rc(6)
-!> Pseudopotential energies
- real(dp), intent(out) :: ep(6)
+!> Pseudopotential energies, the input value for both j=l+1/2 and l-1/2
+!> (only the fully-relativistic code uses the second)
+ real(dp), intent(out) :: ep(6, 2)
 !> Number of matching constraints for each pseudopotential
  integer, intent(out) :: ncon(6)
 !> Number of basis functions for each pseudopotential
@@ -172,7 +173,7 @@
  fcfact = 0.0_dp
  rcfact = 0.0_dp
  rc(:) = 0.0_dp
- ep(:) = 0.0_dp
+ ep(:, :) = 0.0_dp
  rxpsh = -1.0_dp  ! negative value for auto setting of radius
  fcfact_min = 1.5_dp
  fcfact_max = 6.0_dp
@@ -225,7 +226,8 @@
  call get_int_array(child, 'pseudopotentials', 'l', lmax + 1, lt)
  call check_l(lt, lmax, 'pseudopotentials')
  call get_real_array(child, 'pseudopotentials', 'rc', lmax + 1, rc)
- call get_real_array(child, 'pseudopotentials', 'ep', lmax + 1, ep)
+ call get_real_array(child, 'pseudopotentials', 'ep', lmax + 1, ep(:, 1))
+ ep(:, 2) = ep(:, 1)
  call get_int_array(child, 'pseudopotentials', 'ncon', lmax + 1, ncon)
  call get_int_array(child, 'pseudopotentials', 'nbas', lmax + 1, nbas)
  call get_real_array(child, 'pseudopotentials', 'qcut', lmax + 1, qcut)
@@ -348,141 +350,6 @@
  end if
  return
  end subroutine read_input_toml
-
-! Reads the TOML input of the fully-relativistic driver: that of
-! read_input_toml, with the same ep for both kappa, as read_input_text_r
- subroutine read_input_toml_r(unit, &
-&                             atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
-&                             lmax, rc, ep, ncon, nbas, qcut, &
-&                             lloc, lpopt, dvloc0, nproj, debl, &
-&                             icmod, fcfact, rcfact, &
-&                             fcfact_min, fcfact_max, fcfact_step, &
-&                             rcfact_min, rcfact_max, rcfact_step, &
-&                             epsh1, epsh2, depsh, rxpsh, &
-&                             rlmax, drl, &
-&                             ncnf, nvcnf, nacnf, lacnf, facnf, &
-&                             amesh, rr1, rmax)
- implicit none
-!Input variables
-!> The Fortran unit number to read from
- integer, intent(in) :: unit
-
-!Output variables
-! [Atom and reference configuration]
-!> Atomic symbol
- character(len=2), intent(out) :: atsym
-!> Atomic number
- real(dp), intent(out) :: zz
-!> Number of core states
- integer, intent(out) :: nc
-!> Number of valence states
- integer, intent(out) :: nv
-!> Exchange-correlation functional code
- integer, intent(out) :: iexc
-!> Pseudopotential output file format flag
- character(len=4), intent(out) :: psfile
-!> Principal quantum number array
- integer, intent(out) :: na(30)
-!> Orbital angular momentum quantum number array
- integer, intent(out) :: la(30)
-!> Occupation number array
- real(dp), intent(out) :: fa(30)
-! [Pseudopotential and optimization]
-!> Maximum angular momentum
- integer, intent(out) :: lmax
-!> Core radii for pseudopotentials (rc(5) is the local potential's)
- real(dp), intent(out) :: rc(6)
-!> Pseudopotential energies for both kappa
- real(dp), intent(out) :: ep(6, 2)
-!> Number of matching constraints for each pseudopotential
- integer, intent(out) :: ncon(6)
-!> Number of basis functions for each pseudopotential
- integer, intent(out) :: nbas(6)
-!> Residual-energy cutoff wave vector for each pseudopotential
- real(dp), intent(out) :: qcut(6)
-! [Local potential]
-!> Angular momentum used for local potential
- integer, intent(out) :: lloc
-!> Polynomial type of the local potential
- integer, intent(out) :: lpopt
-!> Local potential offset at origin
- real(dp), intent(out) :: dvloc0
-! [Vanderbilt-Kleinman-Bylander projectors]
-!> Number of projectors for each angular momentum
- integer, intent(out) :: nproj(6)
-!> Energy added to ep for the second projector (Ha)
- real(dp), intent(out) :: debl(6)
-! [Model core charge]
-!> Model core charge flag
- integer, intent(out) :: icmod
-!> Scaling factor for core charge
- real(dp), intent(out) :: fcfact
-!> Core charge width factor
- real(dp), intent(out) :: rcfact
-!> Scaling factor range minimum for optimization
- real(dp), intent(out) :: fcfact_min
-!> Scaling factor range maximum for optimization
- real(dp), intent(out) :: fcfact_max
-!> Scaling factor step size for optimization
- real(dp), intent(out) :: fcfact_step
-!> Core charge width factor minimum for optimization
- real(dp), intent(out) :: rcfact_min
-!> Core charge width factor maximum for optimization
- real(dp), intent(out) :: rcfact_max
-!> Core charge width factor step size for optimization
- real(dp), intent(out) :: rcfact_step
-! [Log derivative analysis]
-!> Lower bound of energy range for log derivative analysis
- real(dp), intent(out) :: epsh1
-!> Upper bound of energy range for log derivative analysis
- real(dp), intent(out) :: epsh2
-!> Energy step size for log derivative analysis
- real(dp), intent(out) :: depsh
-!> Radius for log derivative analysis
- real(dp), intent(out) :: rxpsh
-! [Output grid]
-!> Maximum radius for output grid
- real(dp), intent(out) :: rlmax
-!> Grid spacing for output grid
- real(dp), intent(out) :: drl
-! [Test configurations]
-!> Number of test configurations
- integer, intent(out) :: ncnf
-!> Number of valence states in test configurations
- integer, intent(out) :: nvcnf(5)
-!> Principal quantum number array for test configurations
- integer, intent(out) :: nacnf(30, 5)
-!> Orbital angular momentum quantum number array for test configurations
- integer, intent(out) :: lacnf(30, 5)
-!> Occupation number array for test configurations
- real(dp), intent(out) :: facnf(30, 5)
-!> Ratio of successive points of the log radial mesh
-!> (0 or less for the default)
- real(dp), intent(out) :: amesh
-!> First point of the log radial mesh (0 or less for the default)
- real(dp), intent(out) :: rr1
-!> Outer radius of the log radial mesh (0 or less for the default)
- real(dp), intent(out) :: rmax
-
-!Local variables
-!> Pseudopotential energies as read
- real(dp) :: ep1(6)
-
- call read_input_toml(unit, &
-&                     atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
-&                     lmax, rc, ep1, ncon, nbas, qcut, &
-&                     lloc, lpopt, dvloc0, nproj, debl, &
-&                     icmod, fcfact, rcfact, &
-&                     fcfact_min, fcfact_max, fcfact_step, &
-&                     rcfact_min, rcfact_max, rcfact_step, &
-&                     epsh1, epsh2, depsh, rxpsh, &
-&                     rlmax, drl, &
-&                     ncnf, nvcnf, nacnf, lacnf, facnf, &
-&                     amesh, rr1, rmax)
- ep(:, 1) = ep1(:)
- ep(:, 2) = ep1(:)
- return
- end subroutine read_input_toml_r
 
 ! report an input error in the output (unit 6) and on stderr, and stop
  subroutine input_error(message)

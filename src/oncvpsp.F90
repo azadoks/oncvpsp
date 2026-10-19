@@ -240,7 +240,7 @@
  case(INPUT_STDIN)
    call read_input_text(stdin, inline, &
 &                       atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
-&                       lmax, rc, ep(1,1), ncon, nbas, qcut, &
+&                       lmax, rc, ep, ncon, nbas, qcut, &
 &                       lloc, lpopt, dvloc0, nproj, debl, &
 &                       icmod, fcfact, rcfact, &
 &                       fcfact_min, fcfact_max, fcfact_step, &
@@ -259,7 +259,7 @@
    end if
    call read_input_text(unit, inline, &
 &                       atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
-&                       lmax, rc, ep(1,1), ncon, nbas, qcut, &
+&                       lmax, rc, ep, ncon, nbas, qcut, &
 &                       lloc, lpopt, dvloc0, nproj, debl, &
 &                       icmod, fcfact, rcfact, &
 &                       fcfact_min, fcfact_max, fcfact_step, &
@@ -280,7 +280,7 @@
    end if
    call read_input_toml(unit, &
 &                       atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
-&                       lmax, rc, ep(1,1), ncon, nbas, qcut, &
+&                       lmax, rc, ep, ncon, nbas, qcut, &
 &                       lloc, lpopt, dvloc0, nproj, debl, &
 &                       icmod, fcfact, rcfact, &
 &                       fcfact_min, fcfact_max, fcfact_step, &

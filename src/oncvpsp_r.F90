@@ -46,7 +46,7 @@
  use, intrinsic :: iso_fortran_env, only: stdin => input_unit
  use psmlout_m, only: psmlout_r
  use build_info_m, only: write_build_info
- use input_text_m, only: read_input_text_r
+ use input_text_m, only: read_input_text
 #if defined(ONCVPSP_AE_ONLY)
  use config_ae_m, only: run_config_ae
  use ae_file_m, only: write_ae_file
@@ -56,7 +56,7 @@
  use config_ae_m, only: run_config_ae
 #endif
 #if (defined WITH_TOML)
- use input_toml_m, only: read_input_toml_r
+ use input_toml_m, only: read_input_toml
 #endif
  use constants_m, only: dp, mxprj
  use input_echo_m, only: write_icmod, write_epsh
@@ -228,17 +228,17 @@
  ios = 0
  select case(input_mode)
  case(INPUT_STDIN)
-   call read_input_text_r(stdin, inline, &
-&                         atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
-&                         lmax, rc, ep, ncon, nbas, qcut, &
-&                         lloc, lpopt, dvloc0, nproj, debl, &
-&                         icmod, fcfact, rcfact, &
-&                         fcfact_min, fcfact_max, fcfact_step, &
-&                         rcfact_min, rcfact_max, rcfact_step, &
-&                         epsh1, epsh2, depsh, rxpsh, &
-&                         rlmax, drl, &
-&                         ncnf, nvcnf, nacnf, lacnf, facnf, &
-&                         amesh_in, rr1_in, rmax_in)
+   call read_input_text(stdin, inline, &
+&                       atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
+&                       lmax, rc, ep, ncon, nbas, qcut, &
+&                       lloc, lpopt, dvloc0, nproj, debl, &
+&                       icmod, fcfact, rcfact, &
+&                       fcfact_min, fcfact_max, fcfact_step, &
+&                       rcfact_min, rcfact_max, rcfact_step, &
+&                       epsh1, epsh2, depsh, rxpsh, &
+&                       rlmax, drl, &
+&                       ncnf, nvcnf, nacnf, lacnf, facnf, &
+&                       amesh_in, rr1_in, rmax_in)
  case(INPUT_TEXT)
    open(newunit=unit, file=input_filename, status='old', action='read', &
 &       iostat=ios)
@@ -248,17 +248,17 @@
 &       trim(input_filename)
      error stop 1
    end if
-   call read_input_text_r(unit, inline, &
-&                         atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
-&                         lmax, rc, ep, ncon, nbas, qcut, &
-&                         lloc, lpopt, dvloc0, nproj, debl, &
-&                         icmod, fcfact, rcfact, &
-&                         fcfact_min, fcfact_max, fcfact_step, &
-&                         rcfact_min, rcfact_max, rcfact_step, &
-&                         epsh1, epsh2, depsh, rxpsh, &
-&                         rlmax, drl, &
-&                         ncnf, nvcnf, nacnf, lacnf, facnf, &
-&                         amesh_in, rr1_in, rmax_in)
+   call read_input_text(unit, inline, &
+&                       atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
+&                       lmax, rc, ep, ncon, nbas, qcut, &
+&                       lloc, lpopt, dvloc0, nproj, debl, &
+&                       icmod, fcfact, rcfact, &
+&                       fcfact_min, fcfact_max, fcfact_step, &
+&                       rcfact_min, rcfact_max, rcfact_step, &
+&                       epsh1, epsh2, depsh, rxpsh, &
+&                       rlmax, drl, &
+&                       ncnf, nvcnf, nacnf, lacnf, facnf, &
+&                       amesh_in, rr1_in, rmax_in)
    close(unit)
 #if (defined WITH_TOML)
  case(INPUT_TOML)
@@ -270,17 +270,17 @@
 &       trim(input_filename)
      error stop 1
    end if
-   call read_input_toml_r(unit, &
-&                         atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
-&                         lmax, rc, ep, ncon, nbas, qcut, &
-&                         lloc, lpopt, dvloc0, nproj, debl, &
-&                         icmod, fcfact, rcfact, &
-&                         fcfact_min, fcfact_max, fcfact_step, &
-&                         rcfact_min, rcfact_max, rcfact_step, &
-&                         epsh1, epsh2, depsh, rxpsh, &
-&                         rlmax, drl, &
-&                         ncnf, nvcnf, nacnf, lacnf, facnf, &
-&                         amesh_in, rr1_in, rmax_in)
+   call read_input_toml(unit, &
+&                       atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
+&                       lmax, rc, ep, ncon, nbas, qcut, &
+&                       lloc, lpopt, dvloc0, nproj, debl, &
+&                       icmod, fcfact, rcfact, &
+&                       fcfact_min, fcfact_max, fcfact_step, &
+&                       rcfact_min, rcfact_max, rcfact_step, &
+&                       epsh1, epsh2, depsh, rxpsh, &
+&                       rlmax, drl, &
+&                       ncnf, nvcnf, nacnf, lacnf, facnf, &
+&                       amesh_in, rr1_in, rmax_in)
    close(unit)
 #endif
  case default

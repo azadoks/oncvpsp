@@ -125,7 +125,7 @@
  integer :: unit, inline
  character(len=2) :: atsym
  character(len=4) :: psfile
- real(dp) :: zz, fa(30), rc(6), ep(6), qcut(6), dvloc0, debl(6)
+ real(dp) :: zz, fa(30), rc(6), ep(6, 2), qcut(6), dvloc0, debl(6)
  real(dp) :: fcfact, rcfact, fcfact_min, fcfact_max, fcfact_step
  real(dp) :: rcfact_min, rcfact_max, rcfact_step
  real(dp) :: epsh1, epsh2, depsh, rxpsh, rlmax, drl, facnf(30, 5)
@@ -195,7 +195,8 @@
 &           .and. all(la(1:5) == [0, 0, 1, 0, 1]) &
 &           .and. all(fa(1:5) == [2, 2, 6, 2, 2]), 'reference configuration')
  call check(lmax == 2 .and. all(rc(1:3) == 2.7_dp) &
-&           .and. all(ep(1:3) == [0.0_dp, 0.0_dp, 0.1_dp]) &
+&           .and. all(ep(1:3, 1) == [0.0_dp, 0.0_dp, 0.1_dp]) &
+&           .and. all(ep(1:3, 2) == ep(1:3, 1)) &
 &           .and. all(ncon(1:3) == 5) .and. all(nbas(1:3) == 8) &
 &           .and. all(qcut(1:3) == 5), &
 &           'pseudopotential and optimization')
