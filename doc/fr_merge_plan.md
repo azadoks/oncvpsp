@@ -74,7 +74,7 @@ The fr path had 3 reference tests to the sr path's 28.
 - [x] `run_phsft` / `run_phsft_r`
 - [x] `run_diag` / `run_diag_r`
 - [x] `run_plot` / `run_plot_r`
-- [ ] `run_vkb` / `run_vkb_r`
+- [x] `run_vkb` / `run_vkb_r`
 - [ ] The projector loop of the driver (from `npa` to `run_optimize`)
       and the pseudo-wave-function loop after `run_vkb`
 
@@ -118,7 +118,8 @@ physical reason, kept behind `irel` until decided:
 - when `wellstate` finds the well state with more nodes than asked for,
   fr keeps its n in `npa` and sr the n asked for; sr stops if `lschfb`
   fails in the well, fr goes on
-- the error-message prefixes and some numeric formats (`e` and `d`)
+- the error-message prefixes and some numeric formats (`e` and `d`);
+  `run_vkb` prints kappa with the B-matrix Hermiticity errors in fr only
 - the plot data of `run_plot`: fr writes every point of the potentials,
   starts the wave functions a step further out, labels j=l+1/2 with -l,
   and averages the convergence profiles over kappa
@@ -133,3 +134,6 @@ Behaviour changed by a merge, in paths that no test reaches:
   kappa=l+1, which `ldiracfb` rejects, so the search always failed; the
   merged `run_config_ae` uses -(l+1). It also records the error code of a
   failed sr search in `ierrcnf`, as fr did.
+- `run_vkb` declared `pswf(mmax,mxprj,5)` for an actual of 4 columns of
+  l; the merged routine declares 4. Its fatal overlap-matrix message is
+  fr's wording ("sovl matrix eigenvalue ERROR") in sr too.

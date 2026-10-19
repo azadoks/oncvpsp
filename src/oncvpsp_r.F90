@@ -697,8 +697,8 @@
 
  write(6,'(/a,a)') 'Construct Vanderbilt / Kleinmman-Bylander projectors'
 
- call run_vkb_r(lmax,lloc,lpopt,dvloc0,irc,nproj,rr,mmax,mxprj,pswf,vfull,vp, &
-&             evkb,vkb,nlim,vr)
+ call run_vkb(lmax,lloc,lpopt,dvloc0,irc,nproj,rr,mmax,mxprj,pswf,vfull,vp, &
+&             evkb,vkb,nlim,vr,irel,nkap)
 
 ! accumulate charge and eigenvalues
 ! pseudo wave functions are calculated with VKB projectors for

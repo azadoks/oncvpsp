@@ -637,7 +637,7 @@
  write(6,'(/a,a)') 'Construct Vanderbilt / Kleinmman-Bylander projectors'
 
  call run_vkb(lmax,lloc,lpopt,dvloc0,irc,nproj,rr,mmax,mxprj,pswf, &
-&             vfull,vp,evkb,vkb,nlim,vr)
+&             vfull,vp,evkb,vkb,nlim,vr,irel,nkap)
 
 !restore this to its proper value
  nproj(lloc+1)=0
