@@ -38,7 +38,7 @@
  use constants_m, only: dp
  implicit none
 
-!input variables
+!Input variables
  integer, intent(in) :: ncon,nbas
  real(dp), intent(in) :: orbasis(nbas,nbas),orbasis_der(ncon,nbas),cons(ncon)
 

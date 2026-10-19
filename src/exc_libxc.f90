@@ -21,7 +21,8 @@ subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax)
 !
 !  interface to libxc library for potential and energy density calculation
 !
- use functionals_m
+ use functionals_m, only: xc_functl_t, xc_functl_init_functl, xc_functl_get_vxc, &
+&                         xc_functl_write_info, xc_functl_end, XC_DERIV_NUMERICAL
  use constants_m, only: dp, pi
  implicit none
 
@@ -32,7 +33,7 @@ subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax)
  integer, intent(in) :: mmax, iexc
  integer :: ii, unit
 
-! local
+!Local variables
  integer ::  id(2), ifunc
  integer, save :: functprinted = 0
  type(xc_functl_t) :: functls(2)
@@ -78,7 +79,8 @@ subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax)
  end if
 
 ! no use of vtau kin en density optional argument
-! ip is an ionization potential parameter for certain xc functionals, not supported here. Set to 0.5 Ha
+! ip is an ionization potential parameter for certain xc functionals, not
+! supported here. Set to 0.5 Ha
  allocate (ip(nspin))
  ip = 0.5_dp
  tau_dummy = 0.0d0
@@ -126,7 +128,7 @@ subroutine derivs(mmax, rho, al, rr, dpr, dppr, dlap)
  real(dp), intent(in) :: rho(mmax)
  real(dp), intent(out) :: dpr(mmax), dppr(mmax), dlap(mmax)
 
-! local vars
+!Local variables
  integer :: i
  real(dp) :: dpn(mmax), dppn(mmax)
  real(dp) :: c11,c12,c13,c14,c15

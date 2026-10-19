@@ -30,7 +30,6 @@
 !vv  local pseudopotential
 !uu  output radial wave function (*rr)
 !up  d(uu)/dr
-!zz  atomic number
 !mmax  size of log grid
 !mch matching mesh point for inward-outward integrations
 
@@ -40,7 +39,6 @@
 !Input variables
  integer, intent(in) :: mmax,mch
  real(dp), intent(in) :: rr(mmax),vv(mmax),vkb(mmax)
- real(dp) :: zz
  integer, intent(in) :: nn,ll
  real(dp), intent(in) :: ee
 
@@ -61,8 +59,8 @@
  allocate(upp(mmax),cf(mmax))
 
 
- al = 0.01d0 * dlog(rr(101) / rr(1))
- amesh = dexp(al)
+ al = 0.01d0 * log(rr(101) / rr(1))
+ amesh = exp(al)
 
  ierr = 0
 

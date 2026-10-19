@@ -26,7 +26,7 @@
  subroutine modcore2(icmod,rhops,rhotps,rhoc,rhoae,rhotae,rhomod, &
 &                   fcfact,rcfact,irps,mmax,rr,nc,nv,la,zion,iexc)
 
-!icmod  3 coefficient optimizaion, 4 for specivied fcfact and rfact
+!icmod  (not used)
 !rhops  state-by-state pseudocharge density
 !rhotps  total pseudocharge density
 !rhoc  core-charge density
@@ -34,7 +34,7 @@
 !rhotae  total all-electron valence charge density
 !rhomod  model core density and 4 derivatives
 !fcfact  prefactor for model amplitude (multiplies crossover value)
-!rcfact  prefactor for model scale (multiplies crossover radius)
+!rcfact  (not used)
 !irps  rr index of maximum rc
 !mmax  dimension of log grid
 !rr log radial grid
@@ -145,7 +145,7 @@
  end do
  write(6,'(/a,1p,e16.6)') 'rms 2nd derivative error',d2mdiff
 
- al = 0.01d0 * dlog(rr(101) / rr(1))
+ al = 0.01d0 * log(rr(101) / rr(1))
 
 ! core charge density for Louie-Froyen-Cohen correction
 

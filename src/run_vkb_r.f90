@@ -1,4 +1,4 @@
-
+!
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
@@ -50,7 +50,7 @@
 real(dp), intent(in) :: vr(mmax,mxprj,6,2)
  real(dp), intent(in) :: dvloc0
 
-!Input/Output variables
+!Input/output variables
  real(dp), intent(inout) :: vp(mmax,5,2)
  real(dp), intent(inout) :: vkb(mmax,mxprj,4,2),evkb(mxprj,4,2)
 

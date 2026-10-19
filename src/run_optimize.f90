@@ -102,7 +102,7 @@
  dqout=0.5000001d0  !linear mesh spacing for final E_resid(q) interpolation
                     !increment is to avoid exact commnesurability with dq mesh
 
- al = 0.01d0 * dlog(rr(101) / rr(1))
+ al = 0.01d0 * log(rr(101) / rr(1))
  rc=rr(irc)
  l1=ll+1
 

@@ -46,7 +46,7 @@
  integer, intent(inout) :: irc
  integer :: nder
 
-!local variables
+!Local variables
  integer :: ii,jj
  real(dp),allocatable :: work(:,:)
 

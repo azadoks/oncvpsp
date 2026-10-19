@@ -476,7 +476,7 @@ write(6,'(/a/)') 'd2excps - pseudofunction derivatives with core correction'
 !7-point numerical first derivatives applied successively
 !skip non-blended section for 1st and 2nd derivatives
 
- al = 0.01d0 * dlog(rr(101) / rr(1))
+ al = 0.01d0 * log(rr(101) / rr(1))
 
  do jj=2,3
   do ii=ircross-6,mmax-3

@@ -64,8 +64,8 @@
  real(dp), allocatable :: upp(:),cf(:),dv(:),fr(:),frp(:)
  allocate(upp(mmax),cf(mmax),dv(mmax),fr(mmax),frp(mmax))
 
- al = 0.01d0 * dlog(rr(101) / rr(1))
- amesh = dexp(al)
+ al = 0.01d0 * log(rr(101) / rr(1))
+ amesh = exp(al)
 
 ! convergence factor for solution of schroedinger eq.  if calculated
 ! correction to eigenvalue is smaller in magnitude than eps times
@@ -87,9 +87,9 @@
   fss=1.0d-12
  end if
 
- if(ll==0) gamma=dsqrt(1.0d0-fss*zz**2)
- if(ll>0) gamma=(ll*dsqrt(ll**2-fss*zz**2) + &
-& (ll+1)*dsqrt((ll+1)**2-fss*zz**2))/(2*ll+1)
+ if(ll==0) gamma=sqrt(1.0d0-fss*zz**2)
+ if(ll>0) gamma=(ll*sqrt(ll**2-fss*zz**2) + &
+& (ll+1)*sqrt((ll+1)**2-fss*zz**2))/(2*ll+1)
 
  sls=ll*(ll+1)
 
@@ -98,9 +98,9 @@
  do ii=1,mmax
    if(ll==0) then
 ! ad-hock step to eliminate probelms from absurd emin for ll=0
-     emin=dmin1(emin,vv(ii)+0.25d0/rr(ii)**2)
+     emin=min(emin,vv(ii)+0.25d0/rr(ii)**2)
    else
-     emin=dmin1(emin,vv(ii)+0.5d0*sls/rr(ii)**2)
+     emin=min(emin,vv(ii)+0.5d0*sls/rr(ii)**2)
    end if
  end do
  if(ee==0.0d0) ee=0.5d0*(emax+emin)
@@ -191,7 +191,7 @@
 
      nin=mch+2.3d0/al
      if(nin+4>mmax) nin=mmax-4
-     xkap=dsqrt(sls/rr(nin)**2 + 2.0d0*(vv(nin)-ee))
+     xkap=sqrt(sls/rr(nin)**2 + 2.0d0*(vv(nin)-ee))
 
      do ii=nin,nin+4
        uu(ii)=exp(-xkap*(rr(ii)-rr(nin)))
@@ -224,7 +224,7 @@
 
 ! perform normalization sum
 
-     ro=rr(1)/dsqrt(amesh)
+     ro=rr(1)/sqrt(amesh)
      sn=ro**(2.0d0*gamma+1.0d0)/(2.0d0*gamma+1.0d0)
 
      do ii=1,nin-3
@@ -237,7 +237,7 @@
 
 ! normalize u
 
-     cn=1.0d0/dsqrt(sn)
+     cn=1.0d0/sqrt(sn)
      uout=cn*uout
      upout=cn*upout
      upin=cn*upin
@@ -256,7 +256,7 @@
 
 ! convergence test and possible exit
 
-     if(dabs(de)<dmax1(dabs(ee),0.2d0)*eps) then
+     if(abs(de)<max(abs(ee),0.2d0)*eps) then
        ierr = 0
        exit
      end if

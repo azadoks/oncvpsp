@@ -40,7 +40,7 @@
 !Output variables
  real(dp), intent(out) :: vxc(mmax),exc(mmax)
 
-!Local vafriables
+!Local variables
  real(dp) ::  rh,rs
  real(dp) :: conrs,convx,conex
  integer :: ii
@@ -63,4 +63,3 @@
  end do
  return
  end subroutine excwig
-

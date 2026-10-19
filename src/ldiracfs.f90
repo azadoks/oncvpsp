@@ -50,7 +50,7 @@
 !Output variables
  integer, intent(out) :: ierr
 
-!Local Variables
+!Local variables
 
  real(dp), allocatable :: gu(:),fu(:),gup(:),fup(:),cf(:)
 
@@ -64,7 +64,7 @@
  cc=c_light
  cci=1.0d0/cc
 
- al = 0.01d0 * dlog(rr(101) / rr(1))
+ al = 0.01d0 * log(rr(101) / rr(1))
  amesh = exp(al)
 
 ! convergence factor for solution of Dirac eq.  if calculated
@@ -135,7 +135,7 @@
 
 ! perform normalization sum
 
- ro=rr(1)/dsqrt(amesh)
+ ro=rr(1)/sqrt(amesh)
  sn=((1.0d0+cof**2)*ro**(2.0d0*gam+1.0d0))/(2.0d0*gam+1.0d0)
 
  do ii=1,mch-3
@@ -148,7 +148,7 @@
 
 ! normalize u
 
- cn=1.0d0/dsqrt(sn)
+ cn=1.0d0/sqrt(sn)
  uout=cn*uout
  upout=cn*upout
 
@@ -182,4 +182,3 @@
  include 'adams.inc'
 
  end subroutine ldiracfs
-

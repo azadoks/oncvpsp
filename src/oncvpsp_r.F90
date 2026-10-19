@@ -43,7 +43,8 @@
 !   (oncvpspr_ps.x), this program is split into all-electron and
 !   pseudopotential stages as oncvpsp.F90 is; see there and ae_file_m.
 !
- use, intrinsic :: iso_fortran_env, only: stdin => input_unit, stdout => output_unit, stderr => error_unit
+ use, intrinsic :: iso_fortran_env, only: stdin => input_unit, &
+&                                         stdout => output_unit, stderr => error_unit
  use m_psmlout, only: psmlout_r
  use build_info_m, only: write_build_info
  use input_text_m, only: read_input_text_r
@@ -156,12 +157,14 @@
           write (stdout, '(a)') 'Options:'
           write (stdout, '(a)') '  -h, --help       Show this help message and exit'
           write (stdout, '(a)') '  -v, --version    Show version information and exit'
-          write (stdout, '(a)') '  -i, --input      Read the input from a text file instead of stdin'
+          write (stdout, '(a)') '  -i, --input      Read the input from a text file ' // &
+&                               'instead of stdin'
           write (stdout, '(a)') '  -t, --toml-input Read the input from a TOML file'
 #if defined(ONCVPSP_AE_ONLY)
           write (stdout, '(a)') '  -a, --ae-file    All-electron data file to write (required)'
 #elif defined(ONCVPSP_PS_ONLY)
-          write (stdout, '(a)') '  -a, --ae-file    All-electron data file written by oncvpspr_ae.x (required)'
+          write (stdout, '(a)') '  -a, --ae-file    All-electron data file written by ' // &
+&                               'oncvpspr_ae.x (required)'
 #endif
           stop 0
        case('-v', '--version')
@@ -304,7 +307,7 @@
 !amesh=1.0015d0
  end if
 
- al=dlog(amesh)
+ al=log(amesh)
  if(rr1_in>0.0d0) then
   rr1=rr1_in
  else
@@ -316,7 +319,7 @@
  else
   rmax=45.0d0
  end if
- mmax=dlog(rmax/rr1)/al
+ mmax=log(rmax/rr1)/al
 !the log mesh for the echoes of the input, only when the input sets it, so that the
 !output of an input without it is unchanged
  log_mesh(:)=0.0d0
@@ -382,7 +385,7 @@
 
  rcmax=0.0d0
  do l1=1,lmax+1
-   rcmax=dmax1(rcmax,rc(l1))
+   rcmax=max(rcmax,rc(l1))
  end do
  do l1=1,lmax+1
    if(rc(l1)==0.0d0) then
@@ -490,7 +493,7 @@
     exit
    end if
   end do
-  rcmax=dmax1(rcmax,rc(l1))
+  rcmax=max(rcmax,rc(l1))
  end do
 
 !

@@ -1,4 +1,4 @@
-!:
+!
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
@@ -80,8 +80,8 @@
 
  allocate(uu(mmax),up(mmax))
 
- al = 0.01d0 * dlog(rr(101)/rr(1))
- amesh = dexp(al)
+ al = 0.01d0 * log(rr(101)/rr(1))
+ amesh = exp(al)
  eps=1.0d-4 !threshold for negative-energy ghost report
  tht=0.0d0 !sets barrier boundary conditions to zero
 
@@ -104,7 +104,7 @@
 !Barrier is set at mbfact*rc
 
    mbfact=3
-   mbar = idint(dlog(mbfact*rr(irc(l1))/rr(1))/al+1.0d0)
+   mbar = int(log(mbfact*rr(irc(l1))/rr(1))/al+1.0d0)
 ! lschpsbar starts the solution at mbar:mbar+4
    if(mbar+4>mmax) then
      write(6,'(/2a,i0,a,i0)') 'run_ghosts: ERROR barrier radius beyond', &
@@ -119,7 +119,7 @@
 ! Estimate maximum basis set size nbmax based on ll=0 sbf
 ! with 20% allowance for binding by local potential
 
-   nbmax=idint(2.0d0*dsqrt(1.2d0*ebcut(l1))*rr(mbar)/pi)
+   nbmax=int(2.0d0*sqrt(1.2d0*ebcut(l1))*rr(mbar)/pi)
 
    lwork=3*nbmax
 
@@ -207,7 +207,7 @@
        end if
 
        do ii=1,10
-         et=dmin1(ee-eps,ee*(1.0d0+eps))
+         et=min(ee-eps,ee*(1.0d0+eps))
          if(hmev(jj)<et) then
            write(6,'(4x,i4,16x,f16.6,f10.2,a)') ll,hmev(jj),ecut, &
 &                '  WARNING - GHOST(-)'
@@ -235,7 +235,7 @@
 &                    uu,up,mmax,mch)
        if(ierr/=0) ee=0.0d0
        do jj=1,10
-         et=dmin1(ee-eps,ee*(1.0d0+eps))
+         et=min(ee-eps,ee*(1.0d0+eps))
          if(hmev(jj)<et) then
            write(6,'(4x,i4,16x,f16.6,f10.2,a)') ll,hmev(jj),ecut, &
 &                '  WARNING - GHOST(-)'
@@ -256,8 +256,8 @@
          uu(:)=uu(:)+hmat(ii,jj)*uua(:,ii)
        end do
 
-       ro=rr(1)/dsqrt(amesh)
-       sn=(ro*uu(1))**2/dfloat(2*ll+4)
+       ro=rr(1)/sqrt(amesh)
+       sn=(ro*uu(1))**2/real(2*ll+4,dp)
 
        do ii=1,mbar-3
          sn=sn+al*(rr(ii)*uu(ii))**2

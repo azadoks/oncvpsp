@@ -52,8 +52,8 @@
  integer :: ii,node
 
 
- al = 0.01d0 * dlog(rr(101) / rr(1))
- amesh = dexp(al)
+ al = 0.01d0 * log(rr(101) / rr(1))
+ amesh = exp(al)
 
 ! null arrays to remove leftover garbage
 
@@ -64,7 +64,7 @@
 
 !perform normalization sum
 
- ro=rr(1)/dsqrt(amesh)
+ ro=rr(1)/sqrt(amesh)
  sn=ro**(2*ll+3)/(2*ll+3)
 
  do ii=1,mch-3
@@ -77,7 +77,7 @@
 
 !normalize u
 
- cn=1.0d0/dsqrt(sn)
+ cn=1.0d0/sqrt(sn)
 
  do ii=1,mch
    up(ii)=cn*up(ii)

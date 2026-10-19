@@ -74,21 +74,21 @@
  allocate(u2(mmax),up(mmax),ur(mmax,2),urp(mmax,2))
 
 
- al = 0.01d0 * dlog(rr(101)/rr(1))
+ al = 0.01d0 * log(rr(101)/rr(1))
 
  write(6,'(/a)') 'DATA FOR PLOTTING'
 
- n1 = idint(dlog(drl/rr(1))/al+1.0d0)
- n2 = idint(dlog(dfloat(nrl)*drl/rr(1))/al+1.0d0)
+ n1 = int(log(drl/rr(1))/al+1.0d0)
+ n2 = int(log(real(nrl,dp)*drl/rr(1))/al+1.0d0)
  n3=0
  do l1=1,lmax+1
    n3=max(n3,irc(l1)-1)
  end do
 
- n4=min(n2,idint(dlog((rr(n3)+1.0d0)/rr(1))/al))
- n3=idint(dlog(1.1d0*rr(n3)/rr(1))/al+1.0d0)
+ n4=min(n2,int(log((rr(n3)+1.0d0)/rr(1))/al))
+ n3=int(log(1.1d0*rr(n3)/rr(1))/al+1.0d0)
 
- dr=dmin1(drl,rr(n4)/200)
+ dr=min(drl,rr(n4)/200)
  write(6,'(/2a/)') ' radii, charge,',' pseudopotentials (ll=0, 1, lmax)'
  r0=rr(n1)-dr
  do ii=n1,n4
@@ -113,7 +113,7 @@
  end do
 
  write(6,'(//2a/)') ' radii, charge,',' core charge, model core charge'
- dr=dmin1(drl,rr(n2)/200.0d0)
+ dr=min(drl,rr(n2)/200.0d0)
  r0=rr(n1)-dr
  do ii=n1,n2
    if(rr(ii)>r0) then
@@ -190,7 +190,7 @@
        sgnps=sign(1.0d0,u2(n2))
      end if
 
-     dr=dmin1(drl,rr(n2)/200)
+     dr=min(drl,rr(n2)/200)
      r0=rr(n1)+dr
      do ii = n1, n2
        if(rr(ii)>r0) then
@@ -209,7 +209,7 @@
 ! orthonormal projector plots
 
    write(6,'(/)')
-   dr=dmin1(drl,rr(n3)/200)
+   dr=min(drl,rr(n3)/200)
    r0=rr(n1)-dr
    do ii=n1,n3
      if(rr(ii)>r0) then

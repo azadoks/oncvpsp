@@ -60,7 +60,7 @@
  logical :: convg
 
  l1=ll+1
- al = 0.01d0 * dlog(rr(101) / rr(1))
+ al = 0.01d0 * log(rr(101) / rr(1))
 
 !check for bound state with specified ll and nnin
 
@@ -73,8 +73,8 @@
    umax=0.0d0
    iumax=1
    do ii=mmax,1,-1
-     if(dabs(uu(ii))>=umax) then
-       umax=dabs(uu(ii))
+     if(abs(uu(ii))>=umax) then
+       umax=abs(uu(ii))
      else
        iumax=ii+1
        exit
@@ -186,7 +186,7 @@
          rwell=0.5d0*(rwmax+rwmin)
        else
          rwell=rwell*rwscale
-         if(rwell<dmax1(1.0d0,0.5d0*rr(irc))) exit
+         if(rwell<max(1.0d0,0.5d0*rr(irc))) exit
        end if
        cycle
      end if

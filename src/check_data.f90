@@ -32,7 +32,7 @@
  use constants_m, only: dp
  implicit none
 
-! Input variables
+!Input variables
  character(len=2), intent(in) :: atsym
  character(len=4), intent(in) :: psfile
 
@@ -45,7 +45,7 @@
  integer, intent(in) :: na(30),la(30),nvcnf(5),nacnf(30,5),lacnf(30,5)
  integer, intent(in) :: ncon(6),nbas(6),nproj(6)
 
-! Local variables
+!Local variables
  real(dp) :: cfloc(5)
  integer :: ierr,ii,jj,l1
 
@@ -313,4 +313,3 @@
 
  return
  end subroutine check_data
-

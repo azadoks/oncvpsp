@@ -36,7 +36,7 @@
 !dltq  step for search for qroots satisfying log derivative condition
 !qmax  maximum q for search
 
-!OUTPuT
+!OUTPUT
 !qroot  set of q's satisfying dj_l(q*r)/dr / jl(q*r) = ulgd
 
 

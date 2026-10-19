@@ -45,10 +45,10 @@
  real(dp), intent(out) :: uu(mmax),up(mmax)
  integer, intent(out) :: ierr,mch
 
-!Local Variables
+!Local variables
 
  real(dp) :: de,emax,emin
- real(dp) :: eps,exp,ro,sc
+ real(dp) :: eps,ro,sc
  real(dp) :: sls,sn,cn,uout,upin,upout,xkap
  real(dp) :: amesh,al,als
  integer :: ii, it,nint,node,nin
@@ -56,8 +56,8 @@
  real(dp), allocatable :: upp(:),cf(:)
  allocate(upp(mmax),cf(mmax))
 
- al = 0.01d0 * dlog(rr(101) / rr(1))
- amesh = dexp(al)
+ al = 0.01d0 * log(rr(101) / rr(1))
+ amesh = exp(al)
 
 ! convergence factor for solution of schroedinger eq.  if calculated
 ! correction to eigenvalue is smaller in magnitude than eps times
@@ -70,7 +70,7 @@
  emax=vv(mmax)+0.5d0*sls/rr(mmax)**2
  emin=0.0d0
  do ii=1,mmax
-   emin=dmin1(emin,vv(ii)+0.5d0*sls/rr(ii)**2)
+   emin=min(emin,vv(ii)+0.5d0*sls/rr(ii)**2)
  end do
  emin=4.0d0*emin
  if(ee>emax) ee=1.25d0*emax
@@ -139,7 +139,7 @@
 
      nin=mch+2.3d0/al
      if(nin+4>mmax) nin=mmax-4
-     xkap=dsqrt(sls/rr(nin)**2 + 2.0d0*(vv(nin)-ee))
+     xkap=sqrt(sls/rr(nin)**2 + 2.0d0*(vv(nin)-ee))
 
      do ii=nin,nin+4
        uu(ii)=exp(-xkap*(rr(ii)-rr(nin)))
@@ -172,8 +172,8 @@
 
 ! perform normalization sum
 
-     ro=rr(1)/dsqrt(amesh)
-     sn=ro**(2*ll+3)/dfloat(2*ll+3)
+     ro=rr(1)/sqrt(amesh)
+     sn=ro**(2*ll+3)/real(2*ll+3,dp)
 
      do ii=1,nin-3
        sn=sn+al*rr(ii)*uu(ii)**2
@@ -185,7 +185,7 @@
 
 ! normalize u
 
-     cn=1.0d0/dsqrt(sn)
+     cn=1.0d0/sqrt(sn)
      uout=cn*uout
      upout=cn*upout
      upin=cn*upin
@@ -204,7 +204,7 @@
 
 ! convergence test and possible exit
 
-     if(dabs(de)<dmax1(dabs(ee),0.2d0)*eps) then
+     if(abs(de)<max(abs(ee),0.2d0)*eps) then
        ierr = 0
        exit
      end if

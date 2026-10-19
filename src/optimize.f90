@@ -231,4 +231,3 @@
  deallocate(pswfopt,pswfopt_nu)
  return
  end subroutine optimize
-

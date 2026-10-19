@@ -64,7 +64,7 @@
 
  allocate(uu(mmax),up(mmax))
 
- al = 0.01d0 * dlog(rr(101)/rr(1))
+ al = 0.01d0 * log(rr(101)/rr(1))
 
 ! loop for diagnostic output using Vanderbilt Kleinman-Bylander projectors
 !
@@ -107,14 +107,14 @@
     if(l1==lloc+1) npr=0
 
     etest=epa(iprj,l1)
-    emax=etest+0.1d0*dabs(etest)+0.05d0
-    emin=etest-0.1d0*dabs(etest)-0.05d0
+    emax=etest+0.1d0*abs(etest)+0.05d0
+    emin=etest-0.1d0*abs(etest)-0.05d0
 
 
     if(epa(iprj,l1)<0.0d0) then
       sls=(l1-1)*l1
 
-      emax=dmin1(emax,0.0d0)
+      emax=min(emax,0.0d0)
 
       call lschvkbb(ll+iprj,ll,npr,ierr,etest,emin,emax, &
 &                   rr,vp(1,lloc+1),vkb(1,1,l1),evkb(1,l1), &
@@ -140,8 +140,8 @@
       end if
     end if !epa<0 (bound or not)
 
-    gam=dabs(umch/uu(mchf))
-    gpr=dabs(upmch/up(mchf))
+    gam=abs(umch/uu(mchf))
+    gpr=abs(upmch/up(mchf))
 !
     write(6,'(i4,6f12.7)') ll,rr(irc(l1)),rr(mchf),epa(iprj,l1), &
 &         etest-epa(iprj,l1),gam,gpr

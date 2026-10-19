@@ -34,7 +34,7 @@
  integer, intent(in) :: nproj(6)
  real(dp), intent(in) :: epa(mxprj,6,2),evkb(mxprj,4,2)
 
-!Output -- printing only
+!Output variables - printing only
 
 !Local variables
  integer :: ii,iprj,jj,l1,ll

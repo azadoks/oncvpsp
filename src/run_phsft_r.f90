@@ -90,7 +90,8 @@ subroutine run_phsft_r(lmax,lloc,nproj,epa,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
             end if
 ! check_data keeps rxpsh beyond every rc, so only a direct call gets here
             if (irphs < irc(l1)) then
-               write(6, '(/2a,i0,2(a,f12.6))') 'run_phsft_r: WARNING rxpsh inside the core radius', &
+               write(6, '(/2a,i0,2(a,f12.6))') &
+                  'run_phsft_r: WARNING rxpsh inside the core radius', &
                   ', l=', ll, ', rxpsh=', rxpsh, ', rc=', rr(irc(l1))
             end if
          end if
@@ -112,7 +113,8 @@ subroutine run_phsft_r(lmax,lloc,nproj,epa,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
             end if
 ! check_data keeps rxpsh beyond every rc, so only a direct call gets here
             if (irphs < irc(lloc+1)) then
-               write(6, '(/2a,i0,2(a,f12.6))') 'run_phsft_r: WARNING rxpsh inside the local potential core radius', &
+               write(6, '(/2a,i0,2(a,f12.6))') 'run_phsft_r: WARNING rxpsh inside ' // &
+                  'the local potential core radius', &
                   ', l=', ll, ', rxpsh=', rxpsh, ', rc=', rr(irc(lloc+1))
             end if
          end if
@@ -142,7 +144,7 @@ subroutine run_phsft_r(lmax,lloc,nproj,epa,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
          write(6,'(a,f6.2)') 'atan(r * ((d psi(r)/dr)/psi(r))), r=',rr(irphs)
          write(6,'(a/)') 'l, energy, all-electron, pseudopotential'
          do ii = 1, npsh
-            epsh = epsh2 - depsh * dfloat(ii - 1)
+            epsh = epsh2 - depsh * real(ii - 1,dp)
             if(ikap==1) then
                write(6,'(a, i6, 3f12.6)') '! ',-ll, epsh, pshf(ii), pshp(ii)
             else

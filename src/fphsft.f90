@@ -58,7 +58,7 @@
 
  allocate(uu(mmax),up(mmax))
 
- al = 0.01d0 * dlog(rr(101) / rr(1))
+ al = 0.01d0 * log(rr(101) / rr(1))
 
  pshoff = 0.0d0
 

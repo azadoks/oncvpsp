@@ -26,7 +26,7 @@
  subroutine modcore(icmod,rhops,rhotps,rhoc,rhoae,rhotae,rhomod, &
 &                   fcfact,rcfact,irps,mmax,rr,nc,nv,la,zion,iexc)
 
-!icmod  3 coefficient optimizaion, 4 for specivied fcfact and rfact
+!icmod  (not used)
 !rhops  state-by-state pseudocharge density
 !rhotps  total pseudocharge density
 !rhoc  core-charge density
@@ -34,7 +34,7 @@
 !rhotae  total all-electron valence charge density
 !rhomod  model core density and 4 derivatives
 !fcfact  prefactor for model amplitude (multiplies crossover value)
-!rcfact  prefactor for model scale (multiplies crossover radius)
+!rcfact  (not used)
 !irps  rr index of maximum rc
 !mmax  dimension of log grid
 !rr log radial grid
@@ -133,7 +133,7 @@
  end do
  write(6,'(/a,1p,e16.6)') 'rms 2nd derivative error',d2mdiff
 
- al = 0.01d0 * dlog(rr(101) / rr(1))
+ al = 0.01d0 * log(rr(101) / rr(1))
 
 ! core charge density for Louie-Froyen-Cohen correction
 
@@ -223,7 +223,7 @@
      do jj=1,5
        psum=psum+constm(ii,jj)*xpow(jj-ii+5)*aco(jj)
      end do
-     dermax=dmax1(dermax,psum)
+     dermax=max(dermax,psum)
    end do
 
 ! test maximum derivative and adjust a0
@@ -236,7 +236,7 @@
    end if
 
 ! success when maximum derivative bracketed just above zero
-   if(dermax>0.0d0 .and. dermax<eps*dabs(fmatch(2))) exit
+   if(dermax>0.0d0 .and. dermax<eps*abs(fmatch(2))) exit
 
    if(a0max==0.0d0) then
      a0=2.5d0*a0

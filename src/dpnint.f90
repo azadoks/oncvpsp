@@ -29,11 +29,11 @@
 
 
 !Input variables
- real(dp), intent(in) ::  xx(*),yy(*),tt(*)
+ real(dp), intent(in) :: xx(nn),yy(nn),tt(mm)
  integer, intent(in) :: nn,mm
 
 !Output variables
- real(dp), intent(out) :: ss(*)
+ real(dp), intent(out) :: ss(mm)
 
 !Local variables
  real(dp) :: sum,term,zz

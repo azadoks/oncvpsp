@@ -51,7 +51,7 @@
      rh=rho(ii)*pi4i
      rs=conrs/rh**thrd
      xx=rs/21.0d0
-     aln=dlog(1.0d0 + 1.0d0/xx)
+     aln=log(1.0d0 + 1.0d0/xx)
      ecp = aln+(xx**3*aln-xx*xx)+0.5d0*xx-thrd
 !    ecp = aln+(xx**3*aln-xx*xx)+xx/2-1.0d0/3.0d0
 !    exc(ii)=-0.458175d0/rs - 0.0225d0*ecp

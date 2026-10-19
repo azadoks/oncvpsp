@@ -22,11 +22,12 @@
 !
 module m_psmlout
   use constants_m, only: dp
+  implicit none
 
   public :: psmlout, psmlout_r
   private
 
-  character(len=1), dimension(0:4) :: lsymb = (/'s','p','d','f','g'/)
+  character(len=1), dimension(0:4), parameter :: lsymb = ['s','p','d','f','g']
 
   contains
 
@@ -62,8 +63,10 @@ module m_psmlout
 
   ! Alberto Garcia, February 1, 2015
 
-  use xmlf90_wxml     ! To write XML files
-  use m_libxc_list  ! For ease of libxc handling
+  use xmlf90_wxml, only: xmlf_t, str, xml_OpenUnit, xml_Close, xml_AddXMLDeclaration, &
+                         xml_NewElement, xml_EndElement, xml_AddArray
+  use m_libxc_list, only: libxc_t, XC_NOT_IMPL, XC_LDA_X, XC_LDA_C_PZ, XC_LDA_C_WIGNER, &
+                          XC_LDA_C_HL, XC_GGA_X_PBE, XC_GGA_C_PBE
 
  use constants_m, only: pi
  implicit none
@@ -115,7 +118,6 @@ module m_psmlout
   character(len=2) :: nameat
   character(len=40):: psflavor
 
-  character(len=1), dimension(0:4) :: lsymb = (/'s','p','d','f','g'/)
 
   character(len=30) :: xcfuntype, xcfunparam
   integer          :: ncore, nval, ncp, norbs, npots
@@ -225,26 +227,26 @@ module m_psmlout
   case(1)
      xcfuntype    = 'LDA'
      xcfunparam   = 'Wigner'
-     libxc_id = (/ XC_LDA_X, XC_LDA_C_WIGNER /)
+     libxc_id = [ XC_LDA_X, XC_LDA_C_WIGNER ]
   case(2)
      xcfuntype    = 'LDA'
      xcfunparam   = 'Hedin-Lundqvist'
-     libxc_id = (/ XC_LDA_X, XC_LDA_C_HL /)
+     libxc_id = [ XC_LDA_X, XC_LDA_C_HL ]
   case(3)
      xcfuntype    = 'LDA'
      xcfunparam   = 'Ceperley-Alder PZ'
-     libxc_id = (/ XC_LDA_X, XC_LDA_C_PZ /)
+     libxc_id = [ XC_LDA_X, XC_LDA_C_PZ ]
 
   case(4)
      xcfuntype    = 'GGA'
      xcfunparam   = 'Perdew-Burke-Ernzerhof'
-     libxc_id = (/ XC_GGA_X_PBE, XC_GGA_C_PBE /)
+     libxc_id = [ XC_GGA_X_PBE, XC_GGA_C_PBE ]
 
   case  default
 
      xcfuntype    = '-----'
      xcfunparam   = '-----'
-     libxc_id = (/  XC_NOT_IMPL, XC_NOT_IMPL /)   ! ???
+     libxc_id = [  XC_NOT_IMPL, XC_NOT_IMPL ]   ! ???
 
   end select
   !
@@ -488,8 +490,10 @@ end subroutine psmlout
 
   ! Alberto Garcia, February 1, 2015
 
-  use xmlf90_wxml     ! To write XML files
-  use m_libxc_list  ! For ease of libxc handling
+  use xmlf90_wxml, only: xmlf_t, str, xml_OpenUnit, xml_Close, xml_AddXMLDeclaration, &
+                         xml_NewElement, xml_EndElement, xml_AddArray
+  use m_libxc_list, only: libxc_t, XC_NOT_IMPL, XC_LDA_X, XC_LDA_C_PZ, XC_LDA_C_WIGNER, &
+                          XC_LDA_C_HL, XC_GGA_X_PBE, XC_GGA_C_PBE
 
  use constants_m, only: pi
  implicit none
@@ -541,7 +545,6 @@ end subroutine psmlout
   character(len=2) :: nameat
   character(len=40):: psflavor
 
-  character(len=1), dimension(0:4) :: lsymb = (/'s','p','d','f','g'/)
 
   character(len=30) :: xcfuntype, xcfunparam
   integer          :: ncore, nval, ncp, norbs, npots
@@ -652,26 +655,26 @@ end subroutine psmlout
   case(1)
      xcfuntype    = 'LDA'
      xcfunparam   = 'Wigner'
-     libxc_id = (/ XC_LDA_X, XC_LDA_C_WIGNER /)
+     libxc_id = [ XC_LDA_X, XC_LDA_C_WIGNER ]
   case(2)
      xcfuntype    = 'LDA'
      xcfunparam   = 'Hedin-Lundqvist'
-     libxc_id = (/ XC_LDA_X, XC_LDA_C_HL /)
+     libxc_id = [ XC_LDA_X, XC_LDA_C_HL ]
   case(3)
      xcfuntype    = 'LDA'
      xcfunparam   = 'Ceperley-Alder PZ'
-     libxc_id = (/ XC_LDA_X, XC_LDA_C_PZ /)
+     libxc_id = [ XC_LDA_X, XC_LDA_C_PZ ]
 
   case(4)
      xcfuntype    = 'GGA'
      xcfunparam   = 'Perdew-Burke-Ernzerhof'
-     libxc_id = (/ XC_GGA_X_PBE, XC_GGA_C_PBE /)
+     libxc_id = [ XC_GGA_X_PBE, XC_GGA_C_PBE ]
 
   case  default
 
      xcfuntype    = '-----'
      xcfunparam   = '-----'
-     libxc_id = (/  XC_NOT_IMPL, XC_NOT_IMPL /)   ! ???
+     libxc_id = [  XC_NOT_IMPL, XC_NOT_IMPL ]   ! ???
 
   end select
   !
@@ -1009,18 +1012,18 @@ end subroutine psmlout_r
 &                      nbas,qcut,lloc,lpopt,dvloc0,nproj,debl,icmod,fcfact, &
 &                      rcfact,fcgrid,rcgrid,epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
 &                      ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh)
-  use xmlf90_wxml
+  use xmlf90_wxml, only: xmlf_t, xml_AddPcData
   use input_echo_m, only: icmod_lines, epsh_lines, echo_len, echo_max
   implicit none
   type(xmlf_t), intent(inout) :: xf
-  character(len=2) :: atsym
-  character(len=4) :: psfile
-  integer :: nc,nv,iexc,lmax,lloc,lpopt,icmod,ncnf
-  integer :: na(30),la(30),ncon(6),nbas(6),nproj(6)
-  integer :: nvcnf(5),nacnf(30,5),lacnf(30,5)
-  real(dp) :: zz,fa(30),rc0(6),ep(6),qcut(6),debl(6),facnf(30,5)
-  real(dp) :: dvloc0,fcfact,epsh1,epsh2,depsh,rlmax,drl
-  real(dp) :: rcfact,fcgrid(3),rcgrid(3),rxpsh,log_mesh(3)
+  character(len=2), intent(in) :: atsym
+  character(len=4), intent(in) :: psfile
+  integer, intent(in) :: nc,nv,iexc,lmax,lloc,lpopt,icmod,ncnf
+  integer, intent(in) :: na(30),la(30),ncon(6),nbas(6),nproj(6)
+  integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
+  real(dp), intent(in) :: zz,fa(30),rc0(6),ep(6),qcut(6),debl(6),facnf(30,5)
+  real(dp), intent(in) :: dvloc0,fcfact,epsh1,epsh2,depsh,rlmax,drl
+  real(dp), intent(in) :: rcfact,fcgrid(3),rcgrid(3),rxpsh,log_mesh(3)
   character(len=100) :: line
   character(len=echo_len) :: text(echo_max)
   integer :: ii,jj,l1,ntext
@@ -1150,7 +1153,7 @@ end subroutine psmlout_r
                                flavor, type, set, &
                                f)
 
-       use xmlf90_wxml
+       use xmlf90_wxml, only: xmlf_t, str, xml_NewElement, xml_EndElement, xml_AddArray
 
 
        type(xmlf_t), intent(inout)   :: xf

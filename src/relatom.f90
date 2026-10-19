@@ -85,8 +85,8 @@
  sd=0.d0; sf=0.d0; sn=0.d0; eeig=0.d0; thl=0.d0; vn=0.d0; zion=0.d0
  nin=0; mch=0
 
- al = 0.01d0 * dlog(rr(101) / rr(1))
- amesh = dexp(al)
+ al = 0.01d0 * log(rr(101) / rr(1))
+ amesh = exp(al)
 
  do ii=1,mmax
   vi(ii)=tfapot(rr(ii),zz)

@@ -69,8 +69,8 @@
 ! relativistic - non-relativistic switch
  if(.not. srel) return
 
- al = 0.01d0 * dlog(rr(101) / rr(1))
- amesh = dexp(al)
+ al = 0.01d0 * log(rr(101) / rr(1))
+ amesh = exp(al)
 
 ! convergence factor for solution of schroedinger eq.  if calculated
 ! correction to eigenvalue is smaller in magnitude than eps times
@@ -81,9 +81,9 @@
 
  fss=(1.0d0/c_light)**2
 
- if(ll==0) gamma=dsqrt(1.0d0-fss*zz**2)
- if(ll>0) gamma=(ll*dsqrt(ll**2-fss*zz**2) + &
-& (ll+1)*dsqrt((ll+1)**2-fss*zz**2))/(2*ll+1)
+ if(ll==0) gamma=sqrt(1.0d0-fss*zz**2)
+ if(ll>0) gamma=(ll*sqrt(ll**2-fss*zz**2) + &
+& (ll+1)*sqrt((ll+1)**2-fss*zz**2))/(2*ll+1)
 
  sls=ll*(ll+1)
 
@@ -117,8 +117,7 @@
 
    do ii=1,mmax
      if(rr(ii)<0.5d0*rr(irc) .or. rr(ii)>1.5d0*rr(irc)) cycle
-     if(rr(ii)<0.5d0*rr(irc) .or. rr(ii)>2.5d0*rr(irc)) cycle
-     if(dabs(uu(ii))>eps) then
+     if(abs(uu(ii))>eps) then
        vr(ii)=0.5d0*(fr(ii) + frp(ii)*up(ii)/uu(ii))/(als*rr(ii)**2)
      end if
    end do

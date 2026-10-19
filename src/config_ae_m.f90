@@ -87,11 +87,11 @@
 !cae  all-electron results for this configuration
 
 !Input variables
- integer :: jj,mmax,iexc,nc
- integer :: nacnf(30,5),lacnf(30,5),nvcnf(5)
- real(dp) :: zz
- real(dp) :: facnf(30,5),ea(30),rr(mmax)
- logical :: srel
+ integer, intent(in) :: jj,mmax,iexc,nc
+ integer, intent(in) :: nacnf(30,5),lacnf(30,5),nvcnf(5)
+ real(dp), intent(in) :: zz
+ real(dp), intent(in) :: facnf(30,5),ea(30),rr(mmax)
+ logical, intent(in) :: srel
 
 !Output variables
  type(config_ae_t), intent(out) :: cae
@@ -157,7 +157,7 @@
 
 !set up array for maximally ionized intermediate state
    do kk=1,nc+nvt
-     fat(kk,2)=dmin1(fat(kk,1),fat(kk,3))
+     fat(kk,2)=min(fat(kk,1),fat(kk,3))
    end do
 
 
@@ -237,7 +237,7 @@
  subroutine config_ae_warning(jj,cae)
 ! prints the warning run_config gives when the all-electron atom for test
 ! configuration jj failed
- integer :: jj
+ integer, intent(in) :: jj
  type(config_ae_t), intent(in) :: cae
 
  select case(cae%stat)
@@ -253,6 +253,8 @@
   write(6,'(/a,3i4)') &
 &      'runconfig: WARNING lschfb convergence ERROR n,l,iter=', &
 &      cae%nat(cae%kerr),cae%lat(cae%kerr),cae%it
+ case default
+! the atom converged: nothing to report
  end select
  end subroutine config_ae_warning
 
@@ -275,10 +277,10 @@
 !cae  all-electron results for this configuration
 
 !Input variables
- integer :: jj,mmax,iexc,nc
- integer :: nacnf(30,5),lacnf(30,5),nvcnf(5)
- real(dp) :: zz
- real(dp) :: facnf(30,5),ea(30,2),rr(mmax)
+ integer, intent(in) :: jj,mmax,iexc,nc
+ integer, intent(in) :: nacnf(30,5),lacnf(30,5),nvcnf(5)
+ real(dp), intent(in) :: zz
+ real(dp), intent(in) :: facnf(30,5),ea(30,2),rr(mmax)
 
 !Output variables
  type(config_ae_r_t), intent(out) :: cae
@@ -348,7 +350,7 @@
 
 !set up array for maximally ionized intermediate state
    do kk=1,nc+nvt
-     fat(kk,2)=dmin1(fat(kk,1),fat(kk,3))
+     fat(kk,2)=min(fat(kk,1),fat(kk,3))
    end do
 
 
@@ -449,7 +451,7 @@
  subroutine config_ae_r_warning(jj,cae)
 ! prints the warning run_config_r gives when the all-electron atom for
 ! test configuration jj failed
- integer :: jj
+ integer, intent(in) :: jj
  type(config_ae_r_t), intent(in) :: cae
 
  integer :: ll
@@ -475,6 +477,8 @@
   write(6,'(/a,4i4)') &
 &      'runconfig: WARNING ldiracfb convergence ERROR n,l,kap,iter=', &
 &      cae%nat(cae%kerr),ll,ll,cae%it
+ case default
+! the atom converged: nothing to report
  end select
  end subroutine config_ae_r_warning
 

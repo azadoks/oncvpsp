@@ -36,10 +36,10 @@
  real(dp), intent(in) :: zz
  integer, intent(in) :: ll,kap,mmax
 
-!Output variable
+!Output variables
  real(dp), intent(out) :: cnorm
 
-!Input/Output variable
+!Input/output variables
  real(dp), intent(inout) :: uu(mmax,2)
 
 !Local variables
@@ -48,7 +48,7 @@
  real(dp) :: r0,gam,cc,cci
  integer :: ii,nin
 
- al = 0.01d0 * dlog(rr(101)/rr(1))
+ al = 0.01d0 * log(rr(101)/rr(1))
  amesh = exp(al)
 
  cc=c_light
@@ -58,7 +58,7 @@
 
  nin=0
  do ii=mmax,1,-1
-   if(dabs(uu(ii,1))>0.0d0) then
+   if(abs(uu(ii,1))>0.0d0) then
      nin=ii
      exit
    end if
@@ -69,7 +69,7 @@
    error stop 1
  end if
 
- r0=rr(1)/dsqrt(amesh)
+ r0=rr(1)/sqrt(amesh)
  sn=r0**(2.0d0*gam+1.0d0)/(2.d0*gam+1.0d0)
  sn=sn*(uu(1,1)**2)/rr(1)**(2.d0*gam)
 

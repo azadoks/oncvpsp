@@ -1,4 +1,4 @@
-!_der
+!
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
@@ -52,7 +52,7 @@
 !Local variables
  integer :: ii,jj,kk,ll1,ibas,info
  real(dp) :: al,amesh,ro,rc,sn,xx,tt
- real(dp) :: sb_out(10),sbfder(5),tder(6)
+ real(dp) :: sb_out(10),sbfder(5)
  real(dp), allocatable :: sbfar(:,:),sev(:),work(:),sovlp(:,:)
  real(dp), allocatable :: sbf_or(:,:)
 
@@ -80,7 +80,7 @@
   do jj=ibas,nbas
 
    sn=(sbfar(1,ibas)/rr(1)**ll)*(sbfar(1,jj)/rr(1)**ll)&
-&     *ro**(2*ll+3)/dfloat(2*ll+3)
+&     *ro**(2*ll+3)/real(2*ll+3,dp)
 
    do ii=1,irc-3
      sn=sn+al*rr(ii)*sbfar(ii,ibas)*sbfar(ii,jj)
@@ -151,7 +151,7 @@
     do jj=1,nbas
 
      sn=(psopt(1,kk)/rr(1)**ll)*(sbf_or(1,jj)/rr(1)**ll)&
-  &     *ro**(2*ll+3)/dfloat(2*ll+3)
+  &     *ro**(2*ll+3)/real(2*ll+3,dp)
 
      do ii=1,irc-3
        sn=sn+al*rr(ii)*psopt(ii,kk)*sbf_or(ii,jj)

@@ -1,5 +1,6 @@
 module input_text_m
-   use, intrinsic :: iso_fortran_env, only: dp => real64, stdout => output_unit, stderr => error_unit
+   use, intrinsic :: iso_fortran_env, only: dp => real64, stdout => output_unit, &
+                                            stderr => error_unit
    implicit none
    private
    public :: read_input_text, read_input_text_r, next_line
@@ -174,7 +175,7 @@ contains
       do l1 = 1, lmax + 1
          call next_line(unit, line, inline)
          read (line, *, iostat=ios) lt, rc(l1), ep(l1), ncon(l1), nbas(l1), qcut(l1)
-         if (lt /= l1 - 1) ios = 999
+         if (ios == 0 .and. lt /= l1 - 1) ios = 999
          call read_error(ios, inline)
       end do
 
@@ -187,7 +188,7 @@ contains
       do l1 = 1, lmax + 1
          call next_line(unit, line, inline)
          read (line, *, iostat=ios) lt, nproj(l1), debl(l1)
-         if (lt /= l1 - 1) ios = 999
+         if (ios == 0 .and. lt /= l1 - 1) ios = 999
          call read_error(ios, inline)
       end do
 
@@ -430,7 +431,7 @@ contains
       do l1 = 1, lmax + 1
          call next_line(unit, line, inline)
          read (line, *, iostat=ios) lt, rc(l1), ep(l1, 1), ncon(l1), nbas(l1), qcut(l1)
-         if (lt /= l1 - 1) ios = 999
+         if (ios == 0 .and. lt /= l1 - 1) ios = 999
          call read_error(ios, inline)
          ep(l1, 2) = ep(l1, 1)
       end do
@@ -444,7 +445,7 @@ contains
       do l1 = 1, lmax + 1
          call next_line(unit, line, inline)
          read (line, *, iostat=ios) lt, nproj(l1), debl(l1)
-         if (lt /= l1 - 1) ios = 999
+         if (ios == 0 .and. lt /= l1 - 1) ios = 999
          call read_error(ios, inline)
       end do
 
@@ -535,13 +536,13 @@ contains
       ! The end of the input is an error, unless eof is present: it is then set instead, and inline
       ! left at the line it had on entry
 
-      !Input variable
+      !Input variables
       integer, intent(in) :: unit
 
-      !Output variable
+      !Output variables
       character(len=:), allocatable, intent(out) :: line
 
-      !In/Out variable
+      !Input/output variables
       integer, intent(inout) :: inline
 
       !Optional output variable

@@ -28,8 +28,7 @@
 !nbas  number of sbf basis functions
 !mmax  index of largest radius for non-zero value of wave function
 !rr(mmax)  log radial mesh
-!dr  linear radial mesh spacing for Fourier transforms
-!dq  linear wave vector mesh spacing for residual kinetic energy integration
+!drdum, dqdum  (not used)
 !qmax  largest wave vector for E_res integration
 !qroot(nbas)  q values for sbfs in basis
 !uu(mmax)  r*all-electron wave function
@@ -298,11 +297,11 @@
 ! the inner loop of the E_resid q integration.
 
 !Input variables
- integer :: ll1,nr
- real(dp) :: qq,rlin(nr),sqr(nr),cqr(nr)
+ integer, intent(in) :: ll1,nr
+ real(dp), intent(in) :: qq,rlin(nr),sqr(nr),cqr(nr)
 
 !Output variables
- real(dp) :: rsbf(nr)
+ real(dp), intent(out) :: rsbf(nr)
 
 !Local variables
  real(dp) :: xx,xn,xs
@@ -362,6 +361,8 @@
    rsbf(ii)=rlin(ii)*((15.d0*sqr(ii)-15.d0*xx*cqr(ii) - 6.d0*xx**2*sqr(ii) &
 &           + xx**3*cqr(ii))/xx**4)
   end do
+ case default
+! ll1>4 returned above
  end select
 
  return

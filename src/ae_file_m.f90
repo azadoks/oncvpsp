@@ -79,15 +79,15 @@
 !cae  run_config_ae results for all configurations
 
 !Input variables
- character(len=*) :: fname
- logical :: srel
- character(len=2) :: atsym
- integer :: nc,nv,iexc,mmax,it,ncnf
- integer :: na(30),la(30),nvcnf(5),nacnf(30,5),lacnf(30,5)
- real(dp) :: zz,etot
- real(dp) :: fa(30),ea(30),facnf(30,5)
- real(dp) :: rr(mmax),rhoc(mmax),rho(mmax),vfull(mmax)
- type(config_ae_t) :: cae(5)
+ character(len=*), intent(in) :: fname
+ logical, intent(in) :: srel
+ character(len=2), intent(in) :: atsym
+ integer, intent(in) :: nc,nv,iexc,mmax,it,ncnf
+ integer, intent(in) :: na(30),la(30),nvcnf(5),nacnf(30,5),lacnf(30,5)
+ real(dp), intent(in) :: zz,etot
+ real(dp), intent(in) :: fa(30),ea(30),facnf(30,5)
+ real(dp), intent(in) :: rr(mmax),rhoc(mmax),rho(mmax),vfull(mmax)
+ type(config_ae_t), intent(in) :: cae(5)
 
 !Local variables
  integer :: unit,jj
@@ -116,14 +116,14 @@
 ! run_config_ae_r
 
 !Input variables
- character(len=*) :: fname
- character(len=2) :: atsym
- integer :: nc,nv,iexc,mmax,it,ncnf
- integer :: na(30),la(30),nvcnf(5),nacnf(30,5),lacnf(30,5)
- real(dp) :: zz,etot
- real(dp) :: fa(30),ea(30,2),facnf(30,5)
- real(dp) :: rr(mmax),rhoc(mmax),rho(mmax),vfull(mmax)
- type(config_ae_r_t) :: cae(5)
+ character(len=*), intent(in) :: fname
+ character(len=2), intent(in) :: atsym
+ integer, intent(in) :: nc,nv,iexc,mmax,it,ncnf
+ integer, intent(in) :: na(30),la(30),nvcnf(5),nacnf(30,5),lacnf(30,5)
+ real(dp), intent(in) :: zz,etot
+ real(dp), intent(in) :: fa(30),ea(30,2),facnf(30,5)
+ real(dp), intent(in) :: rr(mmax),rhoc(mmax),rho(mmax),vfull(mmax)
+ type(config_ae_r_t), intent(in) :: cae(5)
 
 !Local variables
  integer :: unit,jj
@@ -160,14 +160,19 @@
 !Output variables
 !it, etot, ea, rhoc, rho, vfull  sratom results for the reference atom
 
- character(len=*) :: fname
- logical :: srel
- character(len=2) :: atsym
- integer :: nc,nv,iexc,mmax,it
- integer :: na(30),la(30)
- real(dp) :: zz,etot
- real(dp) :: fa(30),ea(30)
- real(dp) :: rr(mmax),rhoc(mmax),rho(mmax),vfull(mmax)
+!Input variables
+ character(len=*), intent(in) :: fname
+ logical, intent(in) :: srel
+ character(len=2), intent(in) :: atsym
+ integer, intent(in) :: nc,nv,iexc,mmax
+ integer, intent(in) :: na(30),la(30)
+ real(dp), intent(in) :: zz
+ real(dp), intent(in) :: fa(30),rr(mmax)
+
+!Output variables
+ integer, intent(out) :: it
+ real(dp), intent(out) :: etot
+ real(dp), intent(out) :: ea(30),rhoc(mmax),rho(mmax),vfull(mmax)
 
 !Local variables
  integer :: unit,jj
@@ -195,13 +200,18 @@
 
 ! fully-relativistic read_ae_file
 
- character(len=*) :: fname
- character(len=2) :: atsym
- integer :: nc,nv,iexc,mmax,it
- integer :: na(30),la(30)
- real(dp) :: zz,etot
- real(dp) :: fa(30),ea(30,2)
- real(dp) :: rr(mmax),rhoc(mmax),rho(mmax),vfull(mmax)
+!Input variables
+ character(len=*), intent(in) :: fname
+ character(len=2), intent(in) :: atsym
+ integer, intent(in) :: nc,nv,iexc,mmax
+ integer, intent(in) :: na(30),la(30)
+ real(dp), intent(in) :: zz
+ real(dp), intent(in) :: fa(30),rr(mmax)
+
+!Output variables
+ integer, intent(out) :: it
+ real(dp), intent(out) :: etot
+ real(dp), intent(out) :: ea(30,2),rhoc(mmax),rho(mmax),vfull(mmax)
 
 !Local variables
  integer :: unit,jj
@@ -232,9 +242,9 @@
 ! configuration is not in the file
 
 !Input variables
- integer :: jj,nc
- integer :: nvcnf(5),nacnf(30,5),lacnf(30,5)
- real(dp) :: facnf(30,5)
+ integer, intent(in) :: jj,nc
+ integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
+ real(dp), intent(in) :: facnf(30,5)
 
 !Output variables
  type(config_ae_t), intent(out) :: cae
@@ -247,9 +257,9 @@
 ! fully-relativistic ae_file_config
 
 !Input variables
- integer :: jj,nc
- integer :: nvcnf(5),nacnf(30,5),lacnf(30,5)
- real(dp) :: facnf(30,5)
+ integer, intent(in) :: jj,nc
+ integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
+ real(dp), intent(in) :: facnf(30,5)
 
 !Output variables
  type(config_ae_r_t), intent(out) :: cae
@@ -261,13 +271,14 @@
 &                      mmax,rr)
 ! opens fname and writes everything before the reference atom results
 
- character(len=*) :: fname
- integer :: unit,irel
- character(len=2) :: atsym
- integer :: nc,nv,iexc,mmax
- integer :: na(30),la(30)
- real(dp) :: zz
- real(dp) :: fa(30),rr(mmax)
+ character(len=*), intent(in) :: fname
+ integer, intent(in) :: irel
+ integer, intent(out) :: unit
+ character(len=2), intent(in) :: atsym
+ integer, intent(in) :: nc,nv,iexc,mmax
+ integer, intent(in) :: na(30),la(30)
+ real(dp), intent(in) :: zz
+ real(dp), intent(in) :: fa(30),rr(mmax)
 
  integer :: ios
 
@@ -289,13 +300,14 @@
 ! opens fname, checks it against this run's input and reads rr; stops if
 ! the file was written for a different atom or relativistic treatment
 
- character(len=*) :: fname
- integer :: unit,irel
- character(len=2) :: atsym
- integer :: nc,nv,iexc,mmax
- integer :: na(30),la(30)
- real(dp) :: zz
- real(dp) :: fa(30),rr(mmax)
+ character(len=*), intent(in) :: fname
+ integer, intent(in) :: irel
+ integer, intent(out) :: unit
+ character(len=2), intent(in) :: atsym
+ integer, intent(in) :: nc,nv,iexc,mmax
+ integer, intent(in) :: na(30),la(30)
+ real(dp), intent(in) :: zz
+ real(dp), intent(in) :: fa(30),rr(mmax)
 
  character(len=8) :: magic_f
  character(len=2) :: atsym_f
@@ -366,9 +378,9 @@
  end subroutine read_head
 
  subroutine write_config_key(unit,jj,nc,nvcnf,nacnf,lacnf,facnf)
- integer :: unit,jj,nc
- integer :: nvcnf(5),nacnf(30,5),lacnf(30,5)
- real(dp) :: facnf(30,5)
+ integer, intent(in) :: unit,jj,nc
+ integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
+ real(dp), intent(in) :: facnf(30,5)
 
  integer :: nt
 
@@ -377,7 +389,7 @@
  end subroutine write_config_key
 
  subroutine read_config_key(unit,jj,nc)
- integer :: unit,jj,nc
+ integer, intent(in) :: unit,jj,nc
 
  integer :: nt
 
@@ -389,9 +401,9 @@
  integer function find_config(jj,nc,nvcnf,nacnf,lacnf,facnf)
 ! index in the file of test configuration jj of this run; stops if it is
 ! not there
- integer :: jj,nc
- integer :: nvcnf(5),nacnf(30,5),lacnf(30,5)
- real(dp) :: facnf(30,5)
+ integer, intent(in) :: jj,nc
+ integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
+ real(dp), intent(in) :: facnf(30,5)
 
  integer :: kk,nt
 

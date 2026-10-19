@@ -65,9 +65,11 @@ contains
       unit = scratch_input(lines, final_newline=.false.)
       inline = 0
       call next_line(unit, line, inline)
-      call check(line == '  first data' .and. inline == 5, 'next_line skips blank and comment lines')
+      call check(line == '  first data' .and. inline == 5, &
+                 'next_line skips blank and comment lines')
       call next_line(unit, line, inline)
-      call check(line == repeat('x', 600)//' long' .and. inline == 7, 'next_line reads a long line whole')
+      call check(line == repeat('x', 600)//' long' .and. inline == 7, &
+                 'next_line reads a long line whole')
       call next_line(unit, line, inline)
       call check(line == 'last' .and. inline == 8, 'next_line reads a last line without a newline')
       call next_line(unit, line, inline, eof)
@@ -149,11 +151,14 @@ contains
                  .and. psfile == 'psp8', 'atom')
       call check(all(na(1:5) == [1, 2, 2, 3, 3]) .and. all(la(1:5) == [0, 0, 1, 0, 1]) &
                  .and. all(fa(1:5) == [2, 2, 6, 2, 2]), 'reference configuration')
-      call check(lmax == 2 .and. all(rc(1:3) == 2.7_dp) .and. all(ep(1:3) == [0.0_dp, 0.0_dp, 0.1_dp]) &
+      call check(lmax == 2 .and. all(rc(1:3) == 2.7_dp) &
+                 .and. all(ep(1:3) == [0.0_dp, 0.0_dp, 0.1_dp]) &
                  .and. all(ncon(1:3) == 5) .and. all(nbas(1:3) == 8) .and. all(qcut(1:3) == 5), &
                  'pseudopotential and optimization')
-      call check(lloc == 4 .and. lpopt == 5 .and. rc(5) == 2.7_dp .and. dvloc0 == 0, 'local potential')
-      call check(all(nproj(1:3) == 2) .and. all(debl(1:3) == [1.0_dp, 0.75_dp, 0.75_dp]), 'projectors')
+      call check(lloc == 4 .and. lpopt == 5 .and. rc(5) == 2.7_dp .and. dvloc0 == 0, &
+                 'local potential')
+      call check(all(nproj(1:3) == 2) .and. all(debl(1:3) == [1.0_dp, 0.75_dp, 0.75_dp]), &
+                 'projectors')
       call check(icmod == 1 .and. fcfact == 0.25_dp, 'model core charge')
       call check(epsh1 == -2 .and. epsh2 == 2 .and. depsh == 0.02_dp .and. rxpsh < 0, &
                  'log derivative analysis')

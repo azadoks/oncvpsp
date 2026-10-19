@@ -145,7 +145,7 @@
 
 !perform normalization sum
 
- ro=rr(1)/dsqrt(amesh)
+ ro=rr(1)/sqrt(amesh)
  sn=ro**(2.0d0*gamma+1.0d0)/(2.0d0*gamma+1.0d0)
 
  do ii=1,mch-3
@@ -158,7 +158,7 @@
 
 !normalize u
 
- cn=1.0d0/dsqrt(sn)
+ cn=1.0d0/sqrt(sn)
  uout=cn*uout
  upout=cn*upout
 

@@ -116,7 +116,7 @@ real(dp) :: rc,rn
  end if
 
 ! lower cutoff for node counting to avoid small-r noise
- rn=dmax1(0.10d0*rc, 0.05d0)
+ rn=max(0.10d0*rc, 0.05d0)
 
  node=0
  do ii=6,mch
@@ -141,9 +141,13 @@ real(dp) :: rc,rn
 ! recurrences can overlap; each solution is computed exactly as those
 ! routines compute it
 
- integer :: nkb
- real(dp) :: uh(mmax),uph(mmax),uk(mmax,*),upk(mmax,*)
+!Input variables
+ integer, intent(in) :: nkb
 
+!Output variables
+ real(dp), intent(out) :: uh(mmax),uph(mmax),uk(mmax,nkb),upk(mmax,nkb)
+
+!Local variables
  real(dp) :: al,als,amesh,cn,ro,sls,sn,akb,ckb
  integer :: ii,it,kk,nsol,nn
  real(dp), allocatable :: cf(:),src(:,:),u(:,:),upr(:,:),upp(:,:)
@@ -153,8 +157,8 @@ real(dp) :: rc,rn
  nn=max(mch,4)
  allocate(cf(nn),src(nn,nsol),u(nn,nsol),upr(nn,nsol),upp(nn,nsol))
 
- al = 0.01d0 * dlog(rr(101) / rr(1))
- amesh = dexp(al)
+ al = 0.01d0 * log(rr(101) / rr(1))
+ amesh = exp(al)
  sls=ll*(ll+1)
  als=al**2
 
@@ -202,7 +206,7 @@ real(dp) :: rc,rn
  end do
 
 ! normalize the homogeneous solution as lschps does
- ro=rr(1)/dsqrt(amesh)
+ ro=rr(1)/sqrt(amesh)
  sn=ro**(2*ll+3)/(2*ll+3)
  do ii=1,mch-3
    sn=sn+al*rr(ii)*u(ii,1)**2
@@ -210,7 +214,7 @@ real(dp) :: rc,rn
  sn =sn + al*(23.0d0*rr(mch-2)*u(mch-2,1)**2 &
 &           + 28.0d0*rr(mch-1)*u(mch-1,1)**2 &
 &          +  9.0d0*rr(mch  )*u(mch  ,1)**2)/24.0d0
- cn=1.0d0/dsqrt(sn)
+ cn=1.0d0/sqrt(sn)
 
  uh(:)=0.0d0
  uph(:)=0.0d0

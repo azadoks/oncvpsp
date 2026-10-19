@@ -41,18 +41,18 @@
  use constants_m, only: dp
  implicit none
 
-! Input variables
+!Input variables
  real(dp), intent(in) :: rhotot(mmax),rhoc(mmax),rho(mmax,nv),rr(mmax)
  real(dp), intent(in) :: d2ref(nv,nv)
  real(dp), intent(in) :: zion
  integer, intent(in) :: la(nv+nc)
  integer, intent(in) :: iexc,nc,nv,ircut,mmax
 
-! Output variables
+!Output variables
  real(dp), intent(out) :: d2exc(nv,nv)
  real(dp), intent(out) :: d2mdiff
 
-! Local variables
+!Local variables
  real(dp) :: hh,eeel,eexc,ss
  real(dp), allocatable :: vo(:),vxct(:),rhot(:),dvxc(:,:)
  integer :: ii,jj,kk,l1

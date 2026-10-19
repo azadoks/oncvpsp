@@ -43,14 +43,14 @@
  integer, intent(in) :: nn,ll
  logical, intent(in) :: srel
 
-!Output variable
+!Output variables
  real(dp), intent(out) :: ss
 
 !Local variables
  real(dp) :: r0,amesh,al,fss,gamma
  integer :: ii
 
- al = 0.01d0 * dlog(rr(101)/rr(1))
+ al = 0.01d0 * log(rr(101)/rr(1))
  amesh = exp(al)
 
  if(srel) then
@@ -59,11 +59,11 @@
   fss=1.0d-12
  end if
 
- if(ll==0) gamma=dsqrt(1.0d0-fss*zz**2)
- if(ll>0) gamma=(ll*dsqrt(ll**2-fss*zz**2) + &
-& (ll+1)*dsqrt((ll+1)**2-fss*zz**2))/(2*ll+1)
+ if(ll==0) gamma=sqrt(1.0d0-fss*zz**2)
+ if(ll>0) gamma=(ll*sqrt(ll**2-fss*zz**2) + &
+& (ll+1)*sqrt((ll+1)**2-fss*zz**2))/(2*ll+1)
 
- r0=rr(1)/dsqrt(amesh)
+ r0=rr(1)/sqrt(amesh)
  ss=r0**(2.0d0*gamma+1.0d0)/(2.d0*gamma+1.0d0)
  ss=(ss*gg(1)*hh(1))/rr(1)**(2.d0*gamma)
 

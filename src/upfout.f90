@@ -98,7 +98,7 @@
  nrl = nrlin
 
 ! adjust nrl to properly accomodate atomic orbitals
- al = dlog(rr(2)/rr(1))
+ al = log(rr(2)/rr(1))
  uurcut = 0.d0
  do ii=1,nv
    nrmsum = 0.d0

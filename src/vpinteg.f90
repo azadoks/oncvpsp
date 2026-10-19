@@ -30,18 +30,18 @@
  real(dp), intent(in) :: gg(nn),hh(nn),rr(nn)
  integer, intent(in) :: nn,mm
 
-!Output variable
+!Output variables
  real(dp), intent(out) :: ss
 
 !Local variables
  real(dp) :: r0,amesh,al
  integer :: ii
 
- al = 0.01d0 * dlog(rr(101)/rr(1))
+ al = 0.01d0 * log(rr(101)/rr(1))
  amesh = exp(al)
 
- r0=rr(1)/dsqrt(amesh)
- ss=r0**(mm+1)*(gg(1)*hh(1)/rr(1)**mm)/dfloat(mm+1)
+ r0=rr(1)/sqrt(amesh)
+ ss=r0**(mm+1)*(gg(1)*hh(1)/rr(1)**mm)/real(mm+1,dp)
 
  do ii = 4, nn - 3
    ss =  ss + al*gg(ii)*hh(ii)*rr(ii)

@@ -51,7 +51,7 @@
  real(dp), intent(out) :: uu(mmax),up(mmax)
  integer, intent(out) :: ierr
 
-!Local Variables
+!Local variables
 
  real(dp) :: de,uumax
  real(dp) :: eps,ro,sc,stht,ctht
@@ -63,8 +63,8 @@
  real(dp), allocatable :: upp(:),cf(:)
  allocate(upp(mmax),cf(mmax))
 
- al = 0.01d0 * dlog(rr(101) / rr(1))
- amesh = dexp(al)
+ al = 0.01d0 * log(rr(101) / rr(1))
+ amesh = exp(al)
  stht=sin(pi*tht)
  ctht=cos(pi*tht)
 
@@ -92,7 +92,7 @@
 ! avoid error in classical turning point search
  imin=max(imin,2)
 
- if(ee<emin) ee=dmin1(emin+5.0d0, 0.5d0*(emin+emax))
+ if(ee<emin) ee=min(emin+5.0d0, 0.5d0*(emin+emax))
  node=0
  de=0.0d0
  mch=0
@@ -146,7 +146,7 @@
        up(ii+1)=up(ii)+aio(upp,ii)
        uu(ii+1)=uu(ii)+aio(up,ii)
      end do
-     uumax=dmax1(uumax,abs(uu(ii+1)))
+     uumax=max(uumax,abs(uu(ii+1)))
    end do
 
    do ii=4,mch-1
@@ -168,7 +168,7 @@
      nin=mch+2.3d0/al
      if(nin<mbar-4) then
        if(nin+4>mmax) nin=mmax-4
-       xkap=dsqrt(sls/rr(nin)**2 + 2.0d0*(vv(nin)-ee))
+       xkap=sqrt(sls/rr(nin)**2 + 2.0d0*(vv(nin)-ee))
 
        do ii=nin,nin+4
          uu(ii)=exp(-xkap*(rr(ii)-rr(nin)))
@@ -184,7 +184,7 @@
 !   point with sinh or sin
 
        xkap2=sls/rr(mbar)**2 + 2.0d0*(vv(mbar)-ee)
-       xkap=dsqrt(dabs(xkap2))
+       xkap=sqrt(abs(xkap2))
 
 
        do ii=mbar,mbar+4
@@ -237,8 +237,8 @@
 
 ! perform normalization sum
 
-     ro=rr(1)/dsqrt(amesh)
-     sn=ro**(2*ll+3)/dfloat(2*ll+3)
+     ro=rr(1)/sqrt(amesh)
+     sn=ro**(2*ll+3)/real(2*ll+3,dp)
      do ii=1,nin-3
        sn=sn+al*rr(ii)*uu(ii)**2
      end do
@@ -249,7 +249,7 @@
 
 ! normalize u
 
-     cn=1.0d0/dsqrt(sn)
+     cn=1.0d0/sqrt(sn)
      uout=cn*uout
      upout=cn*upout
      upin=cn*upin
@@ -269,7 +269,7 @@
 ! convergence test and possible exit
 
 
-     if(dabs(de)<dmax1(dabs(ee),0.2d0)*eps) then
+     if(abs(de)<max(abs(ee),0.2d0)*eps) then
        ierr = 0
        exit
      end if

@@ -55,7 +55,7 @@
  real(dp), intent(in) :: rhov(mmax),rr(mmax)
  real(dp), intent(in) :: vpuns(mmax,5),vkb(mmax,mxprj,4,2),evkb(mxprj,4,2),rhomod(mmax,5)
 
-!Output variables  only printing
+!Output variables - printing only
 
 !Local variables
  integer :: ii,it,kk,ll,l1,ierr,nvt

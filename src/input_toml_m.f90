@@ -1,6 +1,9 @@
 module input_toml_m
-   use, intrinsic :: iso_fortran_env, only: dp => real64, stdout => output_unit, stderr => error_unit
-   use tomlf  ! TOML Fortran library: documentation at toml-f.readthedocs.io
+   use, intrinsic :: iso_fortran_env, only: dp => real64, stdout => output_unit, &
+                                            stderr => error_unit
+   ! TOML Fortran library: documentation at toml-f.readthedocs.io
+   use tomlf, only: toml_table, toml_array, toml_keyval, toml_error, toml_stat, &
+                    toml_load, get_value, len
    implicit none
    private
    public :: read_input_toml, read_input_toml_r
@@ -41,11 +44,11 @@ module input_toml_m
                               ncnf, nvcnf, nacnf, lacnf, facnf, &
                               amesh, rr1, rmax)
       implicit none
-      ! Input variables
+      !Input variables
       !> The Fortran unit number to read from
       integer, intent(in) :: unit
 
-      ! Output variables
+      !Output variables
       ! [Atom and reference configuration]
       !> Atomic symbol
       character(len=2), intent(out) :: atsym
@@ -141,7 +144,7 @@ module input_toml_m
       !> Outer radius of the log radial mesh (0 or less for the default)
       real(dp), intent(out) :: rmax
 
-      ! Local variables
+      !Local variables
       !> The TOML document
       type(toml_table), allocatable :: table
       !> Parser error
@@ -257,6 +260,8 @@ module input_toml_m
          call get_real(child, 'model_core_charge', 'rcfact_step', rcfact_step, rcfact_step)
       case (6)
          call get_real(child, 'model_core_charge', 'rcfact', rcfact, 1.0e-4_dp)
+      case default
+         ! no further keys
       end select
 
       ! log derivative analysis
@@ -301,7 +306,8 @@ module input_toml_m
          do jj = 2, ncnf + 1
             call get_value(arr, jj - 1, child, stat=stat)
             if (.not. associated(child)) then
-               call input_error('test_configurations must be an array of tables, [[test_configurations]]')
+               call input_error('test_configurations must be an array of tables, ' // &
+                                '[[test_configurations]]')
             end if
             ! the number of valence states is that of n
             call get_value(child, 'n', narr, requested=.false., stat=stat)
@@ -477,7 +483,9 @@ module input_toml_m
       call get_array(table, section, key, n, arr)
       do ii = 1, n
          call get_value(arr, ii, vals(ii), stat=stat)
-         if (stat /= toml_stat%success) call input_error(key//' in ['//section//'] must hold integers')
+         if (stat /= toml_stat%success) then
+            call input_error(key//' in ['//section//'] must hold integers')
+         end if
       end do
    end subroutine get_int_array
 
@@ -492,7 +500,9 @@ module input_toml_m
       call get_array(table, section, key, n, arr)
       do ii = 1, n
          call get_value(arr, ii, vals(ii), stat=stat)
-         if (stat /= toml_stat%success) call input_error(key//' in ['//section//'] must hold numbers')
+         if (stat /= toml_stat%success) then
+            call input_error(key//' in ['//section//'] must hold numbers')
+         end if
       end do
    end subroutine get_real_array
 

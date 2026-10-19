@@ -64,12 +64,12 @@
  real(dp), parameter :: pi4=4.0_dp*pi
 
 !Input variables
- integer :: mmax,irmax,iexc
- real(dp) :: rhotps(mmax),rhoc(mmax),rr(mmax)
- real(dp) :: fcfact,ecutw,errmax
+ integer, intent(in) :: mmax,irmax,iexc
+ real(dp), intent(in) :: rhotps(mmax),rhoc(mmax),rr(mmax)
+ real(dp), intent(in) :: fcfact,ecutw,errmax
 
 !Output variables
- real(dp) :: rhomod(mmax,5)
+ real(dp), intent(out) :: rhomod(mmax,5)
 
 !background density (bohr**-3) and radius (bohr) of the error,
 !largest density cutoff and its step (bohr**-1),
@@ -93,7 +93,7 @@
    ecut=factor*ecutw
  end if
 
- al = 0.01d0 * dlog(rr(101) / rr(1))
+ al = 0.01d0 * log(rr(101) / rr(1))
  dq = qstep/npanel
  nq = nint(qmax/qstep)
 
@@ -417,11 +417,11 @@
  implicit none
 
 !Input variables
- integer :: ncurve,nprof
- real(dp) :: ecurve(2,ncurve,nprof),wcurve(nprof),errmax
+ integer, intent(in) :: ncurve,nprof
+ real(dp), intent(in) :: ecurve(2,ncurve,nprof),wcurve(nprof),errmax
 
 !Output variables
- real(dp) :: ecut
+ real(dp), intent(out) :: ecut
 
 !Local variables
  real(dp), allocatable :: total(:),qq(:)

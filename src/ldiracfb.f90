@@ -49,7 +49,7 @@
 !Output variables
  integer, intent(out) :: ierr
 
-!Local Variables
+!Local variables
 
  real(dp), allocatable :: gu(:),fu(:),gup(:),fup(:),cf(:)
 
@@ -63,7 +63,7 @@
  cc=c_light
  cci=1.0d0/cc
 
- al = 0.01d0 * dlog(rr(101) / rr(1))
+ al = 0.01d0 * log(rr(101) / rr(1))
  amesh = exp(al)
 
 ! convergence factor for solution of Dirac eq.  if calculated
@@ -95,9 +95,9 @@
  emax=vv(mmax)+0.5d0*sls/rr(mmax)**2
  emin=emax
  do ii=1,mmax
-   emin=dmin1(emin,vv(ii)+0.5d0*sls/rr(ii)**2)
+   emin=min(emin,vv(ii)+0.5d0*sls/rr(ii)**2)
  end do
- emin=dmax1(emin,-zz**2/nn**2)
+ emin=max(emin,-zz**2/nn**2)
  if(ee>emax) ee=0.5d0*(emax+emin)
  if(ee<emin) ee=0.5d0*(emax+emin)
  if(ee>emax) ee=0.5d0*(emax+emin)
@@ -176,7 +176,7 @@
 
      nin=mch+2.3d0/al
      if(nin+4>mmax) nin=mmax-4
-     xkap=dsqrt(sls/rr(nin)**2 + 2.0d0*(vv(nin)-ee))
+     xkap=sqrt(sls/rr(nin)**2 + 2.0d0*(vv(nin)-ee))
 
      do ii=nin,nin+4
        gu(ii)=exp(-xkap*(rr(ii)-rr(nin)))
@@ -221,7 +221,7 @@
 
 ! perform normalization sum
 
-     ro=rr(1)/dsqrt(amesh)
+     ro=rr(1)/sqrt(amesh)
      sn=((1.0d0+cof**2)*ro**(2.0d0*gam+1.0d0))/(2.0d0*gam+1.0d0)
 
      do ii=1,nin-3
@@ -234,7 +234,7 @@
 
 ! normalize u
 
-     cn=1.0d0/dsqrt(sn)
+     cn=1.0d0/sqrt(sn)
      uout=cn*uout
      upout=cn*upout
      upin=cn*upin
@@ -257,7 +257,7 @@
 
 ! convergence test and possible exit
 
-     if(dabs(de)<dmax1(dabs(ee),0.2d0)*eps) then
+     if(abs(de)<max(abs(ee),0.2d0)*eps) then
        ierr = 0
        exit
      end if
@@ -304,4 +304,3 @@
  include 'adams.inc'
 
  end subroutine ldiracfb
-

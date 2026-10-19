@@ -37,7 +37,7 @@
  real(dp), intent(out) :: sbfder(5)
  real(dp) :: xx
 !
-!local variables
+!Local variables
  real(dp) :: sb_out(10),sbfad(5,10)
  integer :: ii,ll
 

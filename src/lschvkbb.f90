@@ -42,7 +42,7 @@
  use constants_m, only: dp
  implicit none
 
-!Input Variables
+!Input variables
  real(dp), intent(in) :: rr(mmax),vloc(mmax),vkb(mmax,nvkb),evkb(nvkb)
  integer, intent(in) :: nn,ll,nvkb,mmax
 
@@ -67,8 +67,8 @@
  real(dp), allocatable :: upp(:),cf(:)
  allocate(upp(mmax),cf(mmax))
 
- al = 0.01d0 * dlog(rr(101) / rr(1))
- amesh = dexp(al)
+ al = 0.01d0 * log(rr(101) / rr(1))
+ amesh = exp(al)
  node=0
 
 ! convergence factor for solution of schroedinger eq.  if calculated
@@ -151,7 +151,7 @@
 
      nin=mch+2.3d0/al
      if(nin+4>mmax) nin=mmax-4
-     xkap=dsqrt(sls/rr(nin)**2 + 2.0d0*(vloc(nin)-ee))
+     xkap=sqrt(sls/rr(nin)**2 + 2.0d0*(vloc(nin)-ee))
 
      do ii=nin,nin+4
        uu(ii)=exp(-xkap*(rr(ii)-rr(nin)))
@@ -184,8 +184,8 @@
 
 ! perform normalization sum
 
-     ro=rr(1)/dsqrt(amesh)
-     sn=ro**(2*ll+3)/dfloat(2*ll+3)
+     ro=rr(1)/sqrt(amesh)
+     sn=ro**(2*ll+3)/real(2*ll+3,dp)
 
      do ii=1,nin-3
        sn=sn+al*rr(ii)*uu(ii)**2
@@ -197,7 +197,7 @@
 
 ! normalize u
 
-     cn=1.0d0/dsqrt(sn)
+     cn=1.0d0/sqrt(sn)
      uout=cn*uout
      upout=cn*upout
      upin=cn*upin
@@ -216,7 +216,7 @@
 
 ! convergence test and possible exit
 
-     if(dabs(de)<dmax1(dabs(ee),0.2d0)*eps) then
+     if(abs(de)<max(abs(ee),0.2d0)*eps) then
        ierr = 0
        exit
      end if

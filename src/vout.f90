@@ -38,7 +38,7 @@
 
  real(dp), parameter :: pi4=4.0_dp*pi
 
-!Input vaiables
+!Input variables
  integer, intent(in) :: iexc,mmax,mode
  real(dp), intent(in) :: rho(mmax),rhoc(mmax),rr(mmax)
  real(dp), intent(in) :: zion
@@ -63,7 +63,7 @@
  allocate(foutv(mmax),foutx(mmax),foutfc(mmax))
 
 
- al = 0.01d0 * dlog(rr(101) / rr(1))
+ al = 0.01d0 * log(rr(101) / rr(1))
 
  foutfc(:)=0.0d0
 
