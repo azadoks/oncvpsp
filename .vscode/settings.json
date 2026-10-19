@@ -20,7 +20,7 @@
     "fortran.formatting.formatter": "Disabled",
     "fortran.linter.compiler": "gfortran",
     "fortran.linter.includePaths": [
-        "${workspaceFolder}/build/modules",
+        "${workspaceFolder}/build/src/modules",
         "${workspaceFolder}/build/src",
         "${workspaceFolder}/build/_deps/*/include",
         "/usr/include"
