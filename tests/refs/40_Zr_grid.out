@@ -8240,7 +8240,7 @@ Zr    ONCVPSP-4.0.1  r_core=   2.21223   2.21223   2.01031
 # MODEL CORE CHARGE
 # icmod, fcfact, rcfact,
 #   fcfact_min, fcfact_max, fcfact_step, rcfact_min, rcfact_max, rcfact_step
-    4   1.00000   0.00000   2.00000   5.00000   0.25000   1.10000   1.60000   0.05000
+    4   0.00000   0.00000   2.00000   5.00000   0.25000   1.10000   1.60000   0.05000
 #
 # LOG DERIVATIVE ANALYSIS
 # epsh1, epsh2, depsh

@@ -24,7 +24,7 @@ OBJS_ALL =	build_info_m.o check_data.o const_basis.o constants_m.o dpnint.o eres
 		sbf_rc_der.o tfapot.o vkboutwf.o vkbphsft.o vout.o vpinteg.o \
 		vploc.o wf_rc_der.o modcore2.o gg1cc.o gp1cc.o gpp1cc.o \
 		der2exc.o modcore3.o modcore_budget.o sbf_basis_con.o run_ghosts.o \
-		lschpsbar.o vrel.o ae_file_m.o config_ae_m.o sratom.o write_icmod.o
+		lschpsbar.o vrel.o ae_file_m.o config_ae_m.o sratom.o input_echo_m.o
 
 OBJS_NRSR =	fphsft.o fpovlp.o gnu_script.o linout.o psatom.o \
 		relatom.o run_config.o run_diag.o run_phsft.o run_plot.o \
@@ -75,6 +75,7 @@ $(DRIVERS_NRSR) $(DRIVERS_R): ae_file_m.o
 oncvpsp_nr.o oncvpsp_ae.o oncvpsp_ps.o oncvpspnr_ae.o oncvpspnr_ps.o: oncvpsp.F90
 oncvpspr_ae.o oncvpspr_ps.o: oncvpsp_r.F90
 $(DRIVERS_NRSR) $(DRIVERS_R): build_info_m.o
+$(DRIVERS_NRSR) $(DRIVERS_R) linout.o linout_r.o upfout.o upfout_r.o m_psmlout.o: input_echo_m.o
 build_info_m.o: build_info.inc
 
 # Git commit, source state and build time, regenerated at every build (see ../cmake/BuildInfo.cmake)

@@ -8982,7 +8982,7 @@ Sr    ONCVPSP-4.0.1  r_core=   2.20661   2.41377   2.20661   2.20661
 #
 # MODEL CORE CHARGE
 # icmod, fcfact, rcfact
-    4   1.00000   0.00000
+    4   0.00000   0.00000
 #
 # LOG DERIVATIVE ANALYSIS
 # epsh1, epsh2, depsh

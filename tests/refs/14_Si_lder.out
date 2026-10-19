@@ -42,8 +42,8 @@ in any publication utilizing these pseudopotentials.
     1   0.25000   0.00000
 #
 # LOG DERIVATIVE ANALYSIS
-# epsh1, epsh2, depsh
-   -0.30    2.00    0.02
+# epsh1, epsh2, depsh, rxpsh
+   -0.30    2.00    0.02   3.50000
 #
 # OUTPUT GRID
 # rlmax, drl
@@ -7580,8 +7580,8 @@ Si    ONCVPSP-4.0.1  r_core=   2.70302   2.70302   2.70302
     1   0.25000   0.00000
 #
 # LOG DERIVATIVE ANALYSIS
-# epsh1, epsh2, depsh
-   -0.30    2.00    0.02
+# epsh1, epsh2, depsh, rxpsh
+   -0.30    2.00    0.02   3.50000
 #
 # OUTPUT GRID
 # rlmax, drl

@@ -34,8 +34,8 @@ module m_psmlout
 &                  irct, srel, &
 &                  zz,zion,mmax,iexc,icmod,nrl,drl,atsym,epstot, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact, &
-&                  epsh1,epsh2,depsh,rlmax,psfile)
+&                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact,fcgrid,rcgrid, &
+&                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh)
 
 !lmax  maximum angular momentum
 !lloc  l for local potential
@@ -58,6 +58,7 @@ module m_psmlout
 !atsym  atomic symbol
 !epstot  pseudoatom total energy
 !psfile  should be 'upf'
+!rcfact,fcgrid,rcgrid,rxpsh,log_mesh  echoed input, as in linout
 
   ! Alberto Garcia, February 1, 2015
 
@@ -87,7 +88,8 @@ module m_psmlout
  integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
  integer, intent(in) :: nc,nv,lpopt,ncnf
  real(dp), intent(in) :: fa(30),rc0(6),ep(6),qcut(6),debl(6),facnf(30,5)
- real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rlmax
+ real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rxpsh,rlmax
+ real(dp), intent(in) :: rcfact,fcgrid(3),rcgrid(3),log_mesh(3)
  character*4, intent(in) :: psfile
 
 !Local variables
@@ -151,9 +153,10 @@ module m_psmlout
   call xml_NewElement(xf,"input-file")
   call my_add_attribute(xf,"name","oncvpsp-input")
 !
-  call echo_input(xf,atsym,zz,nc,nv,iexc,psfile,na,la,fa,lmax,rc,ep,ncon, &
+  call echo_input(xf,atsym,zz,nc,nv,iexc,psfile,na,la,fa,lmax,rc0,ep,ncon, &
 &                 nbas,qcut,lloc,lpopt,dvloc0,nproj,debl,icmod,fcfact, &
-&                 epsh1,epsh2,depsh,rlmax,drl,ncnf,nvcnf,nacnf,lacnf,facnf)
+&                 rcfact,fcgrid,rcgrid,epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
+&                 ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh)
 
   call xml_EndElement(xf,"input-file")
   !
@@ -458,8 +461,8 @@ end subroutine psmlout
 &                  vsr,esr,vso,eso, &
 &                  zz,zion,mmax,iexc,icmod,nrl,drl,atsym,epstot, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact, &
-&                  epsh1,epsh2,depsh,rlmax,psfile)
+&                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact,fcgrid,rcgrid, &
+&                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh)
 
 !lmax  maximum angular momentum
 !lloc  l for local potential
@@ -512,7 +515,8 @@ end subroutine psmlout
  integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
  integer, intent(in) :: nc,nv,lpopt,ncnf
  real(dp), intent(in) :: fa(30),rc0(6),ep(6),qcut(6),debl(6),facnf(30,5)
- real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rlmax
+ real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rxpsh,rlmax
+ real(dp), intent(in) :: rcfact,fcgrid(3),rcgrid(3),log_mesh(3)
  character*4, intent(in) :: psfile
 
 
@@ -576,9 +580,10 @@ end subroutine psmlout
   call xml_NewElement(xf,"input-file")
   call my_add_attribute(xf,"name","oncvpsp-input")
 !
-  call echo_input(xf,atsym,zz,nc,nv,iexc,psfile,na,la,fa,lmax,rc,ep,ncon, &
+  call echo_input(xf,atsym,zz,nc,nv,iexc,psfile,na,la,fa,lmax,rc0,ep,ncon, &
 &                 nbas,qcut,lloc,lpopt,dvloc0,nproj,debl,icmod,fcfact, &
-&                 epsh1,epsh2,depsh,rlmax,drl,ncnf,nvcnf,nacnf,lacnf,facnf)
+&                 rcfact,fcgrid,rcgrid,epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
+&                 ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh)
 
   call xml_EndElement(xf,"input-file")
   !
@@ -998,11 +1003,14 @@ end subroutine do_configuration
 end subroutine psmlout_r
 
 ! echo the input data into the input-file element of the provenance, a
-! line at a time
- subroutine echo_input(xf,atsym,zz,nc,nv,iexc,psfile,na,la,fa,lmax,rc,ep,ncon, &
+! line at a time, in the form of the psp8 echo (linout), so that it can be
+! run again
+ subroutine echo_input(xf,atsym,zz,nc,nv,iexc,psfile,na,la,fa,lmax,rc0,ep,ncon, &
 &                      nbas,qcut,lloc,lpopt,dvloc0,nproj,debl,icmod,fcfact, &
-&                      epsh1,epsh2,depsh,rlmax,drl,ncnf,nvcnf,nacnf,lacnf,facnf)
+&                      rcfact,fcgrid,rcgrid,epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
+&                      ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh)
   use xmlf90_wxml
+  use input_echo_m, only: icmod_lines, epsh_lines, echo_len, echo_max
   implicit none
   type(xmlf_t), intent(inout) :: xf
   character*2 :: atsym
@@ -1010,18 +1018,20 @@ end subroutine psmlout_r
   integer :: nc,nv,iexc,lmax,lloc,lpopt,icmod,ncnf
   integer :: na(30),la(30),ncon(6),nbas(6),nproj(6)
   integer :: nvcnf(5),nacnf(30,5),lacnf(30,5)
-  real(dp) :: zz,fa(30),rc(6),ep(6),qcut(6),debl(6),facnf(30,5)
+  real(dp) :: zz,fa(30),rc0(6),ep(6),qcut(6),debl(6),facnf(30,5)
   real(dp) :: dvloc0,fcfact,epsh1,epsh2,depsh,rlmax,drl
+  real(dp) :: rcfact,fcgrid(3),rcgrid(3),rxpsh,log_mesh(3)
   character(len=100) :: line
-  integer :: ii,jj,l1
+  character(len=echo_len) :: text(echo_max)
+  integer :: ii,jj,l1,ntext
 
   call add('# ATOM AND REFERENCE CONFIGURATION')
-  call add('# atsym  z    nc    nv    iexc   psfile')
-  write(line,'(a,a,f6.2,3i6,2a)') '  ',trim(atsym),zz,nc,nv,iexc, &
+  call add('# atsym  z   nc   nv     iexc    psfile')
+  write(line,'(a,a,f6.2,2i5,i8,2a)') '  ',trim(atsym),zz,nc,nv,iexc, &
 &      '      ',trim(psfile)
   call add(line)
   call add('#')
-  call add('#   n    l    f        energy (Ha)')
+  call add('#   n    l    f')
   do ii=1,nc+nv
     write(line,'(2i5,f8.2)') na(ii),la(ii),fa(ii)
     call add(line)
@@ -1033,37 +1043,35 @@ end subroutine psmlout_r
   write(line,'(i5)')  lmax
   call add(line)
   call add('#')
-  call add('#   l,   rc,     ep,   ncon, nbas, qcut')
+  call add('#   l,   rc,      ep,       ncon, nbas, qcut')
   do l1=1,lmax+1
-    write(line,'(i5,2f8.2,2i5,f8.2)') l1-1,rc(l1),ep(l1),ncon(l1),nbas(l1),qcut(l1)
+    write(line,'(i5,2f10.5,2i5,f10.5)') l1-1,rc0(l1),ep(l1),ncon(l1),nbas(l1),qcut(l1)
     call add(line)
   end do
 
   call add('#')
   call add('# LOCAL POTENTIAL')
   call add('# lloc, lpopt,  rc(5),   dvloc0')
-  write(line,'(2i5,f10.2,a,f8.2)') lloc,lpopt,rc(5),'   ',dvloc0
+  write(line,'(2i5,f10.5,a,f10.5)') lloc,lpopt,rc0(5),'   ',dvloc0
   call add(line)
 
   call add('#')
   call add('# VANDERBILT-KLEINMAN-BYLANDER PROJECTORs')
   call add('# l, nproj, debl')
   do l1=1,lmax+1
-    write(line,'(2i5,f10.4)') l1-1,nproj(l1),debl(l1)
+    write(line,'(2i5,f10.5)') l1-1,nproj(l1),debl(l1)
     call add(line)
   end do
 
-  call add('#')
-  call add('# MODEL CORE CHARGE')
-  call add('# icmod, fcfact')
-  write(line,'(i5,f8.2,2i5,f8.2)') icmod,fcfact
-  call add(line)
+  call icmod_lines(icmod,fcfact,rcfact,fcgrid,rcgrid,text,ntext)
+  do ii=1,ntext
+    call add(text(ii))
+  end do
 
-  call add('#')
-  call add('# LOG DERIVATIVE ANALYSIS')
-  call add('# epsh1, epsh2, depsh')
-  write(line,'(3f8.2)') epsh1,epsh2,depsh
-  call add(line)
+  call epsh_lines(epsh1,epsh2,depsh,rxpsh,text,ntext)
+  do ii=1,ntext
+    call add(text(ii))
+  end do
 
   call add('#')
   call add('# OUTPUT GRID')
@@ -1087,6 +1095,14 @@ end subroutine psmlout_r
     end do
     call add('#')
   end do
+
+  if(log_mesh(1)>0.0d0) then
+    call add('#')
+    call add('# LOG MESH')
+    call add('# amesh, rr1, rmax')
+    write(line,'(3es24.16)') log_mesh
+    call add(line)
+  end if
 
  contains
 

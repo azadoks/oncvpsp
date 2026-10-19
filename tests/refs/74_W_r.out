@@ -16074,7 +16074,7 @@ Begin PSP_UPF
 #
 # MODEL CORE CHARGE
 # icmod, fcfact, rcfact
-    4   1.00000   0.00000
+    4   0.00000   0.00000
 #
 # LOG DERIVATIVE ANALYSIS
 # epsh1, epsh2, depsh

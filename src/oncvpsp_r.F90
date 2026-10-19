@@ -57,6 +57,7 @@
  use input_toml_m, only: read_input_toml_r
 #endif
  use constants_m, only: dp, mxprj
+ use input_echo_m, only: write_icmod, write_epsh
  implicit none
 
 !
@@ -79,7 +80,7 @@
  real(dp) :: eeig,eexc
  real(dp) :: emax,epsh1,epsh1t,epsh2,epsh2t,rxpsh
  real(dp) :: et,etest,emin,sls
- real(dp) :: fcfact,rcfact,dvloc0,soscale
+ real(dp) :: fcfact,fcfact0,rcfact,dvloc0,soscale
  real(dp) :: fcfact_min,fcfact_max,fcfact_step
  real(dp) :: rcfact_min,rcfact_max,rcfact_step
  real(dp) :: fcgrid(3),rcgrid(3)
@@ -390,6 +391,8 @@
 
  nproj(lloc+1)=0
  rc0(:)=rc(:)
+!input value, for the echoes (modcore3 resets fcfact for icmod=4)
+ fcfact0=fcfact
 
 ! output printing (echos input data, with all-electron eigenvalues added)
 
@@ -428,9 +431,7 @@
 
  call write_icmod(icmod,fcfact,rcfact,fcgrid,rcgrid)
 
- write(6,'(a/a/a)') '#','# LOG DERIVATIVE ANALYSIS', &
-&      '# epsh1, epsh2, depsh'
- write(6,'(3f8.2)') epsh1,epsh2,depsh
+ call write_epsh(epsh1,epsh2,depsh,rxpsh)
 
  write(6,'(a/a/a)') '#','# OUTPUT GRID','# rlmax, drl'
  write(6,'(2f8.4)') rlmax,drl
@@ -909,8 +910,8 @@
  call linout_r(lmax,lloc,rc,vsr,esr,vso,eso,nproj,rr,vpuns,rho,rhomod, &
 &             rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,soscale, &
 &             na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&             fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact,fcgrid,rcgrid, &
-&             epsh1,epsh2,depsh,rlmax,psfile,log_mesh)
+&             fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,fcfact0,rcfact,fcgrid,rcgrid, &
+&             epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh)
 
  end if
 
@@ -919,8 +920,8 @@
  call upfout_r(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
 &              zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
 &              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&              fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact,fcgrid,rcgrid, &
-&              epsh1,epsh2,depsh,rlmax,psfile,uupsa,ea,log_mesh)
+&              fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact0,rcfact,fcgrid,rcgrid, &
+&              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,uupsa,ea,log_mesh)
 
  end if
 
@@ -938,8 +939,8 @@
 &             vsr,esr,vso,eso, &
 &             zz,zion,mmax,iexc,icmod,nrl,drl,atsym,epstot, &
 &             na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&             fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact, &
-&             epsh1,epsh2,depsh,rlmax,psfile)
+&             fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact0,rcfact,fcgrid,rcgrid, &
+&             epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh)
  end if
 
  stop

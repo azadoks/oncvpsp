@@ -23,7 +23,7 @@
 &                  zz,zion,mmax,mxprj,iexc,icmod,nrlin,drl,atsym,epstot, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact,fcgrid,rcgrid, &
-&                  epsh1,epsh2,depsh,rlmax,psfile, uua,ea,log_mesh)
+&                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile, uua,ea,log_mesh)
 
 
 !lmax  maximum angular momentum
@@ -50,12 +50,13 @@
 !remaining input variables to be echoed:
 !  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf
 !  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact,fcgrid,rcgrid
-!  epsh1,epsh2,depsh,rlmax,psfile
+!  epsh1,epsh2,depsh,rxpsh,rlmax,psfile
 !log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets it (else 0)
 !uua pseudo-atomic orbital array
 !ea  psuedo-orbital eigenvalues
 
  use constants_m, only: dp, pi
+ use input_echo_m, only: write_icmod, write_epsh
  implicit none
 
 
@@ -76,7 +77,7 @@
  integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
  integer, intent(in) :: nc,nv,lpopt,ncnf
  real(dp), intent(in) :: fa(30),rc0(6),ep(6,2),qcut(6),debl(6),facnf(30,5),ea(30,2)
- real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rlmax
+ real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rxpsh,rlmax
  real(dp), intent(in) :: log_mesh(3)
  character*4, intent(in) :: psfile
 
@@ -246,9 +247,7 @@
 
  call write_icmod(icmod,fcfact,rcfact,fcgrid,rcgrid)
 
- write(6,'(a/a/a)') '#','# LOG DERIVATIVE ANALYSIS', &
-&      '# epsh1, epsh2, depsh'
- write(6,'(3f8.2)') epsh1,epsh2,depsh
+ call write_epsh(epsh1,epsh2,depsh,rxpsh)
 
  write(6,'(a/a/a)') '#','# OUTPUT GRID','# rlmax, drl'
  write(6,'(2f8.2)') rlmax,drl

@@ -22,8 +22,8 @@
  subroutine linout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
 &                  rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact,fcgrid,rcgrid, &
-&                  epsh1,epsh2,depsh,rlmax,psfile,log_mesh)
+&                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,fcfact0,rcfact,fcgrid,rcgrid, &
+&                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh)
 
 
 !lmax  maximum angular momentum
@@ -45,23 +45,26 @@
 !mxprj  dimension of number of projectors
 !iexc  type of exchange-correlation
 !icmod  1 if model core charge is used, otherwise 0
+!fcfact  model core amplitude prefactor, written as fchrg (1 for icmod=4)
+!fcfact0  input fcfact, for the echo
 !nrl size of linear radial grid
 !drl spacing of linear radial grid
 !atsym  atomic symbol
 !remaining input variables to be echoed:
 !  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf
-!  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact,fcgrid,rcgrid
-!  epsh1,epsh2,depsh,rlmax,psfile
+!  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact0,rcfact,fcgrid,rcgrid
+!  epsh1,epsh2,depsh,rxpsh,rlmax,psfile
 !log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets it (else 0)
 !psfile  should be 'psp8' or 'both'
 
  use constants_m, only: dp
+ use input_echo_m, only: write_icmod, write_epsh
  implicit none
 
 !Input variables
  integer, intent(in) :: lmax,lloc,iexc,mmax,mxprj,nrl,icmod
  integer, intent(in) :: nproj(6)
- real(dp), intent(in) :: drl,fcfact,rcfact,zz,zion
+ real(dp), intent(in) :: drl,fcfact,fcfact0,rcfact,zz,zion
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
  real(dp), intent(in) :: rr(mmax),vpuns(mmax,5),rho(mmax),vkb(mmax,mxprj,4)
  real(dp), intent(in) :: rhotae(mmax),rhoc(mmax)
@@ -75,7 +78,7 @@
  integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
  integer, intent(in) :: nc,nv,lpopt,ncnf
  real(dp), intent(in) :: fa(30),rc0(6),ep(6),qcut(6),debl(6),facnf(30,5)
- real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rlmax
+ real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rxpsh,rlmax
  real(dp), intent(in) :: log_mesh(3)
  character*4, intent(in) :: psfile
 
@@ -245,11 +248,9 @@
    write(6,'(2i5,f10.5)') l1-1,nproj(l1),debl(l1)
  end do
 
- call write_icmod(icmod,fcfact,rcfact,fcgrid,rcgrid)
+ call write_icmod(icmod,fcfact0,rcfact,fcgrid,rcgrid)
 
- write(6,'(a/a/a)') '#','# LOG DERIVATIVE ANALYSIS', &
-&      '# epsh1, epsh2, depsh'
- write(6,'(3f8.2)') epsh1,epsh2,depsh
+ call write_epsh(epsh1,epsh2,depsh,rxpsh)
 
  write(6,'(a/a/a)') '#','# OUTPUT GRID','# rlmax, drl'
  write(6,'(2f8.2)') rlmax,drl

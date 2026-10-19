@@ -45,6 +45,7 @@ Priorities:
 | P3 | 5 latent bugs: `qroots`, `ldirac*` series starts, `icmod=4` grid, `_tmp_input`, exit status of errors | no | fixed |
 | P3 | `functional_get_tau` (imported dead code) | no | kept |
 | P3 | Adams 1/24 coefficient in `adams.inc` | last digits only; refs pass unchanged | fixed |
+| P3 | input echoes that don't run again to the same output | echo lines only (5 refs) | fixed |
 | P3 | 5 cosmetic items | no | open |
 
 ## P1 (fixed)
@@ -246,6 +247,26 @@ Make binaries. New error messages follow the format in
   failures exit with status 1. The messages are unchanged, except that
   gfortran prints `ERROR STOP` instead of `STOP` before a stop code. The
   normal end of each driver still exits with 0.
+- **Input echo**: an input echoed in the output or in a psp8, UPF or PSML
+  file should run again to the same output. Checking every test input in
+  all three formats found these problems:
+  - No echo wrote `rxpsh`, so a rerun used the default radius. The echoes
+    now write it when the input sets it (`input_echo_m`'s `epsh_lines`),
+    which changes the two echoes in the 14_Si_lder ref.
+  - With `icmod=4`, `modcore3` sets `fcfact=1`, which the psp8 header
+    needs as `fchrg`. The psp8 and UPF echoes printed that value in place
+    of the input's. They now echo the input value (`fcfact0`, like
+    `rc0`). This changes one line of the psp8 echo in the 38_Sr_lxc,
+    40_Zr, 40_Zr_grid and 74_W_r refs.
+  - The PSML echo left out `rcfact`, the `icmod=4` grid, `rxpsh` and the
+    log mesh. It wrote `iexc` as `i6`, which overflowed for Libxc codes
+    (`******`), and the grid-adjusted `rc` to 2 decimals in place of the
+    input `rc0`. It now uses the formats of the psp8 echo and shares the
+    model core and log derivative sections with it (`input_echo_m`).
+
+  The `echo` tests (`scripts/echo_rerun_test.sh`) check the output echo
+  and the file echo for inputs that cover each of these. `08_O_wigner`
+  can't be checked with UPF, because UPF output doesn't support `iexc=1`.
 
 **Build and dead code**
 
@@ -346,9 +367,6 @@ What is left:
 1. **Cosmetic.** Fold the remaining [cosmetic](#cosmetic) items into the
    mechanical coding-standard pass in
    [Coding Standard Violations](coding_standard_violations.md#fixing).
-2. **Input echo**: the echoed input omits `rxpsh`, so a run from the
-   echoed input of a psp8 or UPF file uses the default radius. The PSML
-   echo also omits `rcfact` and the `icmod=4` grid.
 
 ## Dismissed
 

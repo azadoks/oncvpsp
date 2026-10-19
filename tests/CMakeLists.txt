@@ -141,6 +141,29 @@ foreach (psml_test IN ITEMS "sr:14_Si" "r:52_Te" "nr:08_O")
         $<TARGET_FILE:oncvpsp${rel}> "${data}/${test_name}.dat" "${CMAKE_CURRENT_BINARY_DIR}/psml_${rel}_${test_name}")
 endforeach ()
 
+# Input echoes: the input echoed in the output, and in the psp8, UPF or PSML file, run again, give the
+# same output (see scripts/echo_rerun_test.sh). The inputs cover rxpsh (14_Si_lder, and 52_Te with
+# rxpsh set), icmod=4 with its search grid (40_Zr_grid, 74_W), a Libxc iexc (83_Bi) and rc on the
+# grid (03_Li).
+set(te_rxpsh "s/^   -3\\.0  3\\.0  0\\.02$/   -3.0  3.0  0.02  3.5/")
+foreach (echo_test IN ITEMS
+        "sr:14_Si_lder:psp8" "sr:14_Si_lder:upf" "sr:14_Si_lder:psml"
+        "sr:40_Zr_grid:psp8" "sr:40_Zr_grid:upf" "sr:40_Zr_grid:psml"
+        "sr:83_Bi:psml" "sr:03_Li:psml" "nr:14_Si:psml"
+        "r:74_W:psp8" "r:74_W:psml" "r:52_Te:psp8" "r:52_Te:upf" "r:52_Te:psml")
+    string(REPLACE ":" ";" echo_test "${echo_test}")
+    list(GET echo_test 0 rel)
+    list(GET echo_test 1 test_name)
+    list(GET echo_test 2 format)
+    set(edit "")
+    if (test_name STREQUAL "52_Te")
+        set(edit "${te_rxpsh}")
+    endif ()
+    oncvpsp_test(echo_${format}_${rel}_${test_name} echo echo_rerun_test.sh
+        $<TARGET_FILE:oncvpsp${rel}> "${data}/${test_name}.dat" ${format}
+        "${CMAKE_CURRENT_BINARY_DIR}/echo_${format}_${rel}_${test_name}" "${edit}")
+endforeach ()
+
 # Text input from a pipe (as from a Python subprocess), which cannot be backspaced: the same output
 # as from a file, and an input ending early reported with the line the reader stopped at
 foreach (pipe_test IN ITEMS "sr:14_Si" "r:52_Te" "nr:08_O")
