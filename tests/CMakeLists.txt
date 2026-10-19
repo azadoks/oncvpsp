@@ -73,3 +73,38 @@ foreach(test_name ${oncvpspr_tests})
     )
     set_property(TEST ${test_name} PROPERTY LABEL "r")
 endforeach(test_name)
+
+set(oncvpspnr_tests
+    "08_O" "14_Si"
+)
+foreach(test_name ${oncvpspnr_tests})
+    set(test_dat "${CMAKE_SOURCE_DIR}/tests/data/${test_name}.dat")
+    set(test_out "${CMAKE_SOURCE_DIR}/tests/data/${test_name}_nr.out")
+    set(ref_out "${CMAKE_SOURCE_DIR}/tests/refs/${test_name}_nr.out")
+    set(diff_out "${CMAKE_SOURCE_DIR}/tests/data/${test_name}_nr.diff")
+    add_test(
+        NAME ${test_name}_nr
+        COMMAND bash -c "
+            TEMP1=${test_name}.tmp1
+            TEMP2=${test_name}.tmp2
+            $<TARGET_FILE:oncvpspnr> < ${test_dat} > ${test_out}
+            if [ \$? -ne 0 ]; then
+                echo 'oncvpspnr execution failed'
+                exit 1
+            fi
+            awk 'BEGIN{out=0}; {if(out == 1) {print}};\
+                /ATOM AND REFERENCE CONFIGURATION/{out=1}' ${ref_out} | \
+                sed -e /pspd/s/^/-/ | sed -e /date/s/^/-/ >$TEMP1
+            awk 'BEGIN{out=0}; {if(out == 1) {print}};\
+                /ATOM AND REFERENCE CONFIGURATION/{out=1}' ${test_out} | \
+                sed -e /pspd/s/^/-/ | sed -e /date/s/^/-/ >$TEMP2
+            perl ${CMAKE_SOURCE_DIR}/scripts/fldiff.pl -easy $TEMP1 $TEMP2 > ${diff_out}
+            rm -f $TEMP1 $TEMP2
+            grep -E 'Summary  : no significant difference|Summary  : different lines=\\s*[0-9]+ , max abs_diff= -?0\\.000e[\\+\\-]00 \\(.*\\), max rel_diff= -?0\\.000e[\\+\\-]00 \\(.*\\)' ${diff_out}
+            success=\$?
+            cat ${diff_out}
+            exit \$success
+        "
+    )
+    set_property(TEST ${test_name} PROPERTY LABEL "nr")
+endforeach(test_name)

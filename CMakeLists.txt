@@ -107,6 +107,11 @@ if(ONCVPSP_WITH_Libxc)
             set(Libxc_VERSION ${PkgConfig_Libxc_VERSION})
             set(Libxc_LIBRARIES PkgConfig::PkgConfig_Libxc PkgConfig::PkgConfig_LibxcFortran)
             set(Libxc_INCLUDE_DIRS ${PkgConfig_Libxc_INCLUDE_DIRS} ${PkgConfig_LibxcFortran_INCLUDE_DIRS})
+            # pkg-config drops system include dirs (e.g. /usr/include), but
+            # gfortran doesn't search them for .mod files
+            if(NOT Libxc_INCLUDE_DIRS)
+                set(Libxc_INCLUDE_DIRS ${PkgConfig_LibxcFortran_INCLUDEDIR})
+            endif()
             message(STATUS "Looking for Libxc via pkg-config - found")
         else()
             message(STATUS "Looking for Libxc via pkg-config - not found")

@@ -3,8 +3,13 @@
 Suspected bugs found while auditing dummy-argument `intent`s across `src/`,
 then triaged against the code, the callers, the input checks in
 `check_data.f90`, and the test inputs in `tests/data/`. The P1 and P2 issues
-have been fixed; P3 issues are still open. Line numbers refer to the code
-before the fixes.
+have been fixed. The P3 issues are open. Line
+numbers refer to the code before the fixes.
+
+Later issues come from the audits in
+[Fortran Best Practices](fortran_best_practices.md) and
+[Coding Standard Violations](coding_standard_violations.md). Their line
+numbers refer to commit `a672619`.
 
 Priorities:
 
@@ -30,6 +35,7 @@ Priorities:
 | P2 | `input_toml_m.f90` required keys read without `stat` | no | fixed |
 | P2 | `excwig.f90` `vxc`/`exc` unset for `rho<1e-15` | no | fixed |
 | P2 | `vkbphsft.f90` `dnpi` can be undefined | no | fixed |
+| P2 | `oncvpspnr.x` is scalar-relativistic | new tests (08_O_nr, 14_Si_nr) | fixed |
 | P3 | everything else below | no | open |
 
 ## P1 (fixed)
@@ -137,6 +143,22 @@ Priorities:
   semicore projector below the default `epsh1=-2`. No test hits it.
   - Fix: set `dnpi=0` at entry, optionally with a warning.
 
+- **`oncvpspnr.x` is not non-relativistic.** CMake builds it from
+  `oncvpsp.F90` with `RELATIVISTIC=0` (`src/CMakeLists.txt:121-124`), but no
+  source reads that macro. `oncvpsp.F90:114` hard-codes `srel=.true.`, so
+  the binary is identical to `oncvpsp.x`. The binary is installed, and
+  anyone running it silently gets scalar-relativistic pseudopotentials. No
+  test covers it.
+  - The old non-relativistic driver, `oncvpsp_nr.F90`, sets
+    `srel=.false.`, but CMake doesn't build it and it is stale (see
+    [Build](#build)).
+  - Fixed: `oncvpsp.F90` now sets `srel=.false.` when built with
+    `RELATIVISTIC=0`, and the banner, `--help` and `--version` text say
+    "non-relativistic". The check is `defined RELATIVISTIC &&
+    RELATIVISTIC == 0`, so a build without the macro stays
+    scalar-relativistic. New tests `08_O_nr` and `14_Si_nr` run
+    `oncvpspnr.x` against `tests/refs/*_nr.out`.
+
 ## P3 (open)
 
 ### Latent or unreachable in practice
@@ -194,6 +216,44 @@ Priorities:
   loop. That wastes work, but the result is bit-identical. With `mm<9` it
   reads `ss` beyond `mm`.
 
+- **`sratom.f90:198`, `relatom.f90:209`**: these return `ierr=100` when
+  the all-electron SCF doesn't converge, but `oncvpsp.F90:283` and
+  `oncvpsp_r.F90:278` never check it. A warning is printed and the run then
+  continues with the unconverged atom. Some other solver `ierr`s are also
+  ignored: `ldiracfs` in `run_plot_r.f90:178` and `ldiracfb` in
+  `wellstate_r.f90:154`, where the check has been commented out. In
+  `wellstate_r` the outer convergence loop still catches a bad `et`. Fix:
+  stop on `ierr/=0` after the AE solve.
+- **`upfout.f90:327`, `upfout_r.f90:350`**: the unsupported-`iexc` error
+  writes a string, an integer and a string with the format `(t8,a)`. On
+  format reversion the integer `iexc` meets an `a` descriptor, so gfortran
+  should abort with a runtime I/O error instead of printing the message.
+  This hasn't been tried. It is reachable with an unsupported libxc
+  functional and `psfile=upf`, and the run would stop either way. Fix:
+  `(t8,a,i0,a)`.
+- **Missing input file**: `oncvpsp.F90:171` opens with `iostat=ios` but
+  only checks `ios` after `read_input_text` has run. Tested: `oncvpsp.x -i
+  missing.dat` aborts with "Fortran runtime error: Cannot read from file
+  opened for WRITE" and exit code 2. The TOML reader reports the error
+  clearly. The same applies to `oncvpsp_r.F90`. Fix: check `ios` right
+  after `open`.
+- **Possibly used before being set.** Each case needs degenerate data:
+  - `ipk` in `run_vkb.f90:298`/`run_vkb_r.f90:331`: needs an identically
+    zero projector.
+  - `nin` in `renorm_r.f90:61`: needs an identically zero wave function.
+  - `iumax` in `wellstate.f90:78`/`wellstate_r.f90:81`: needs `|uu|` to be
+    monotonic over the whole grid.
+  - `rmatch`/`rhocmatch` in `modcore2.f90:89`: needs the core charge to
+    never exceed the pseudo valence charge, e.g. `nc=0`.
+  - `mmaxlin` in `eresid.f90:95`: needs `|uu|<=1e-10` everywhere.
+
+  Fix: initialise each variable before its search.
+- **`m_psmlout.f90:138,621`**: the PSML writer echoes the input through a
+  fixed-name scratch file, `_tmp_input`, in the working directory. It
+  doesn't check for I/O errors and never deletes the file. Two PSML runs in
+  the same directory can race. Fix: use `status='scratch'` or an internal
+  buffer.
+
 ### Dead code
 
 - **`lschpse.f90:78`**: uses `rr(ii)+0.5*sls/rr(ii)**2` where every sibling
@@ -205,8 +265,43 @@ Priorities:
   Delete it.
 - **`functionals.F90`**: in `functional_get_tau`, `n(1)`/`t(1)` are stale
   for `nspin=2`. The routine is never called.
-- **`src/oncpsp_nr.f90`**: is not built by CMake or Make. It is a stale
-  copy of `oncvpsp_nr.F90` from before the input module existed. Delete it.
+
+### Build
+
+- **`src/CMakeLists.txt`**: `fpovlp.f90` and `relatom.f90` are each listed
+  twice (lines 56/71 and 60/75). CMake ignores the duplicates.
+  `fpovlp_r.f90` is never compiled, and its only call site is commented
+  out.
+- **Legacy `src/Makefile`** (fixed): it didn't build. Checked on Linux
+  with gfortran:
+  - The committed `make.inc` held one developer's macOS paths, and its
+    `FCCPPFLAGS = -ansi` makes GNU `cpp` reject the `//` in the URLs in
+    the `.F90` licence headers. It is now `make.inc.example`, a blank
+    template that explains each setting and recommends
+    `-traditional-cpp -P`. `make.inc` itself is untracked and in
+    `.gitignore`, and the Makefiles stop with a message if it is missing
+    or unfilled.
+  - `input_text_m.o` was not in any object list, so the drivers failed
+    with "Cannot open module file 'input_text_m.mod'". It is now in
+    `OBJS_ALL`, with explicit module dependencies so `make -j` works.
+  - `oncvpspnr.x` was built from the stale `oncvpsp_nr.F90`, whose
+    `run_phsft` call omitted `rxpsh`, shifting every later argument. It
+    stopped with `ERROR: run_phsft: rxpsh= 0.00013 > rr(mmax)=****`. It is
+    now built from `oncvpsp.F90` with `-DRELATIVISTIC=0`, as in CMake, and
+    `oncvpsp_nr.F90` is deleted.
+  - All 28 `tests/refs` comparisons pass with the Make binaries (libxc
+    build), and the build without libxc (`exc_libxc_stub.o`) also links.
+- **CMake libxc include directories** (fixed): a fresh configure against
+  a system libxc (`/usr/include`, found via pkg-config) failed with
+  "Cannot open module file 'xc_f03_lib_m.mod'". pkg-config drops system
+  include directories, and `ONCVPSP_DEPENDENCY_INCLUDE_DIRS` was never
+  applied to any target. `CMakeLists.txt` now falls back to pkg-config's
+  `INCLUDEDIR`, and `src/CMakeLists.txt` passes each directory to
+  `oncvpsp` as a Fortran `-I` option. They are passed as options rather
+  than as include directories, which CMake would drop for `/usr/include`.
+- **`src/oncpsp_nr.f90`**: deleted. It was not built by CMake or Make; it
+  was a stale copy of `oncvpsp_nr.F90` from before the input module
+  existed.
 
 ### Cosmetic
 
@@ -237,50 +332,14 @@ Priorities:
   - local `srel` in `run_config_r`;
   - `drdum`/`dqdum` in `eresid`.
 
-## Untriaged
-
-These came up later, in the audits written up in
-[Fortran Best Practices](fortran_best_practices.md) and
-[Coding Standard Violations](coding_standard_violations.md). Items marked
-*(verified)* were checked against the code; the others have not been yet.
-
-- **`oncvpspnr.x` is not non-relativistic** *(verified)*. CMake builds it
-  from `oncvpsp.F90` with `RELATIVISTIC=0`, but no source reads that macro,
-  and `oncvpsp.F90:114` hard-codes `srel=.true.`. So the binary is the same
-  as the scalar-relativistic `oncvpsp.x`.
-- **`src/CMakeLists.txt` duplicates** *(verified)*. `fpovlp.f90` and
-  `relatom.f90` are each listed twice (lines 56/71 and 60/75).
-  `fpovlp_r.f90` is never compiled, although its only call site is
-  commented out anyway.
-- **Stale `oncvpsp_nr.F90`**. CMake doesn't build it, but the legacy
-  `src/Makefile` does.
-  - Its `run_phsft` call (line 620) has no `rxpsh`, so every argument after
-    that position is off by one.
-  - The Makefile also can't link the current drivers, because it doesn't
-    list `input_text_m.o`.
-- **`debl` shape mismatch**. `oncvpsp_r.F90:753,763` pass `debl(6)` to
-  `linout_r`/`upfout_r`, which declare `debl(6,2)`. It works only through
-  sequence association. `check_data.f90:37` declares `debl(5)`.
-- **Unconverged all-electron atom ignored**. `sratom`/`relatom` return
-  `ierr=100` on SCF non-convergence, but `oncvpsp.F90:283` and
-  `oncvpsp_r.F90:278` never check it. Some solver `ierr`s are also unchecked,
-  e.g. `run_plot_r.f90:178` and `wellstate_r.f90:154`.
-- **Garbled error message**. `upfout.f90:327` and `upfout_r.f90:350` apply
-  the format `(t8,a)` to the integer `iexc`.
-- **Missing input file reported misleadingly** *(verified)*. The main
-  programs `open(..., iostat=ios)` and then read straight away, so a missing
-  file shows up as a read error instead of "file not found".
-- **Scratch file**. `m_psmlout` writes `_tmp_input` into the working
-  directory without checking for errors, and never deletes it.
-- **Possibly used before being set**:
-  - `ipk` in `run_vkb`/`run_vkb_r`
-  - `nin` in `renorm_r`
-  - `iumax` in `wellstate`/`wellstate_r`
-  - `rmatch` in `modcore2`
-  - `mmaxlin` in `eresid`
-- **Imprecise constant**. The Adams 1/24 coefficient is written as
-  `4.16666666667d-2`, which is accurate only to about 1e-11. Fixing it
-  changes the last digits of the reference outputs.
+- `oncvpsp_r.F90:753,763` pass `debl(6)` to `linout_r`/`upfout_r`, which
+  declare `debl(6,2)`. This works by sequence association, and only
+  `debl(l1,1)` is read, which lies within the actual array.
+  `check_data.f90:37` declares `debl(5)` and reads at most `lmax+1<=4`.
+  Fix: declare `debl(6)` in both routines.
+- `aeo.f90`: the Adams 1/24 coefficient is written 4 times as
+  `4.16666666667d-2`, a relative error of about 8e-12. Writing it as
+  `1.0d0/24.0d0` would change the last digits of the refs.
 
 ## Dismissed
 

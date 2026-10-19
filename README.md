@@ -22,7 +22,8 @@ cmake --build build -t install
 
 ### With make
 
-1. Edit `make.inc` (or copy it from older oncvpsp-3*)
+1. `cp make.inc.example make.inc`, then fill in `make.inc` for your
+   compilers and libraries. `make.inc` is ignored by git.
 
 2. `make all >& make.log`
 
@@ -40,13 +41,13 @@ To take advantage of the improved graphics in release 3.1.1, gnuplot
 version 4.6 (or later) is required (see [release_notes.md](doc/release_notes.md)
 for a workaround if this is not available).
 
-To compile, edit `makefile.inc` in this directory appropriately for your
-libraries, compiler, and optimization flags. In the main directory,
+To compile, copy `make.inc.example` to `make.inc` in this directory and edit
+it appropriately for your libraries, compiler, and optimization flags. In the main directory,
 
     make all >& make.log
 
-and the executables `oncvpsp.x` and `oncvpsp_nr.x` should be created in `src`.
-As of version 2.0.1, the relativistic executable `oncvpsp_r.x` is also made.
+and the executables `oncvpsp.x` and `oncvpspnr.x` should be created in `src`.
+As of version 2.0.1, the relativistic executable `oncvpspr.x` is also made.
 I have most recently been using gfortran-4.7.2, but most of the code has
 been successfully compiled using an old ifort compiler.
 

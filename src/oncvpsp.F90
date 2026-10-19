@@ -104,15 +104,23 @@
 
  write(6,'(a/a//)') &
 &      'ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
+#if (defined RELATIVISTIC) && (RELATIVISTIC == 0)
+&      'non-relativistic version 4.0.1 03/01/2019'
+#else
 &      'scalar-relativistic version 4.0.1 03/01/2019'
+#endif
 
  write(6,'(a/a/a//)') &
 &      'While it is not required under the terms of the GNU GPL, it is',&
 &      'suggested that you cite D. R. Hamann, Phys. Rev. B 88, 085117 (2013)', &
 &      'in any publication utilizing these pseudopotentials.'
 
+! RELATIVISTIC=0 builds oncvpspnr.x; otherwise scalar-relativistic
+#if (defined RELATIVISTIC) && (RELATIVISTIC == 0)
+ srel=.false.
+#else
  srel=.true.
-!srel=.false.
+#endif
 
  parse_args: block
     integer :: i
@@ -121,14 +129,22 @@
        call get_command_argument(i, arg)
        select case(arg)
        case('-h', '--help')
+#if (defined RELATIVISTIC) && (RELATIVISTIC == 0)
+          write (stdout, '(a)') 'Usage: oncvpspnr.x [options]'
+#else
           write (stdout, '(a)') 'Usage: oncvpsp.x [options]'
+#endif
           write (stdout, '(a)') 'Options:'
           write (stdout, '(a)') '  -h, --help       Show this help message and exit'
           write (stdout, '(a)') '  -v, --version    Show version information and exit'
           write (stdout, '(a)') '  -i, --input      Specify input file (TOML). For legacy input, use stdin.'
           stop 0
        case('-v', '--version')
-          write (stdout, '(a)') 'ONCVPSP (scalar-realtivistic) version 4.0.1'
+#if (defined RELATIVISTIC) && (RELATIVISTIC == 0)
+          write (stdout, '(a)') 'ONCVPSP (non-relativistic) version 4.0.1'
+#else
+          write (stdout, '(a)') 'ONCVPSP (scalar-relativistic) version 4.0.1'
+#endif
           stop 0
        case('-i', '--input')
          if (i + 1 > command_argument_count()) then

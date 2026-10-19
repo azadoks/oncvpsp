@@ -98,6 +98,12 @@ endif ()
 add_library(oncvpsp STATIC ${src_oncvpsp})
 add_dependencies(oncvpsp wxml)
 target_link_libraries(oncvpsp wxml ${ONCVPSP_DEPENDENCY_LIBRARIES})
+# Passed as -I options rather than include directories because CMake drops
+# implicit directories such as /usr/include, which gfortran doesn't search
+# for .mod files
+foreach(dir ${ONCVPSP_DEPENDENCY_INCLUDE_DIRS})
+    target_compile_options(oncvpsp PUBLIC "$<$<COMPILE_LANGUAGE:Fortran>:-I${dir}>")
+endforeach()
 if (ONCVPSP_WITH_TOML)
     target_compile_definitions(oncvpsp PRIVATE WITH_TOML)
 endif ()

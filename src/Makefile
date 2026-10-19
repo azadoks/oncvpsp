@@ -4,9 +4,22 @@
 # University
 #
 
+ifeq ($(wildcard ../make.inc),)
+$(error ../make.inc not found. Copy ../make.inc.example to ../make.inc and fill it in)
+endif
 include ../make.inc
 
-OBJS_ALL =	aeo.o check_data.o const_basis.o dpnint.o eresid.o exchdl.o \
+ifeq ($(strip $(F90)),)
+$(error F90 is not set. Fill in ../make.inc (see ../make.inc.example))
+endif
+ifeq ($(strip $(FCCPP)),)
+$(error FCCPP is not set. Fill in ../make.inc (see ../make.inc.example))
+endif
+ifeq ($(strip $(OBJS_LIBXC)),)
+$(error OBJS_LIBXC is not set. Fill in ../make.inc (see ../make.inc.example))
+endif
+
+OBJS_ALL =	input_text_m.o aeo.o check_data.o const_basis.o dpnint.o eresid.o exchdl.o \
 		exc_off_pbe.o excpzca.o excwig.o ldiracfb.o ldiracfs.o \
 		lschfb.o lschfs.o lschkb.o lschpb.o lschpse.o lschps.o \
 		lschvkbbe.o lschvkbb.o lschvkbs.o modcore.o optimize.o \
@@ -43,6 +56,16 @@ wxml:
 #
 m_psmlout.o: wxml m_libxc_list.o
 INCLUDE_WXML=-I./xmlf90-wxml
+
+# module dependencies
+oncvpsp.o oncvpsp_nr.o oncvpsp_r.o: input_text_m.o m_psmlout.o
+exc_libxc.o: functionals.o
+
+# oncvpspnr.x uses the same driver as oncvpsp.x, preprocessed with
+# RELATIVISTIC=0 so that it sets srel=.false.
+oncvpsp_nr.o: oncvpsp.F90
+	$(FCCPP) $(FCCPPFLAGS) -DRELATIVISTIC=0 oncvpsp.F90 > oncvpsp_nr_cpp.f90
+	$(F90) $(FFLAGS) $(INC) $(INCLUDE_WXML) -o $@ -c oncvpsp_nr_cpp.f90
 
 
 

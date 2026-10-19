@@ -1,0 +1,69 @@
+# System-dependent makefile options for ONCVPSP (legacy make build)
+#
+# Copy this file to make.inc in this directory and fill it in before
+# running "make" here or in src:
+#
+#     cp make.inc.example make.inc
+#
+# make.inc is listed in .gitignore, so machine-specific settings are not
+# committed. Edit make.inc.example only to change the template itself.
+#
+# Run "make clean" in src after changing any of these settings.
+#
+# Copyright (c) 1989-2014 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
+# University
+
+##### Compilers #####
+#
+# F77, F90  Fortran compiler, e.g. gfortran, /opt/homebrew/bin/gfortran, ifx
+# CC        C compiler, e.g. gcc
+# FCCPP     C preprocessor applied to the .F90 sources, e.g. cpp, cpp-13
+#           (on macOS, use GNU cpp, not clang's)
+# FLINKER   linker, normally the Fortran compiler
+
+F77        =
+F90        =
+CC         =
+FCCPP      =
+FLINKER    = $(F90)
+
+##### Preprocessor flags #####
+#
+# FCCPP must leave Fortran source intact. With GNU cpp use
+#     FCCPPFLAGS = -traditional-cpp -P
+# Do not use -ansi: it makes cpp reject the "//" in the URLs in the
+# licence headers.
+
+FCCPPFLAGS =
+
+##### Optimization flags #####
+#
+# For example, with gfortran:
+#     FFLAGS = -O3 -ffast-math -funroll-loops -fallow-argument-mismatch
+#     CFLAGS = -O3
+# -fallow-argument-mismatch is needed with gfortran 10 and later.
+
+FFLAGS     =
+CFLAGS     =
+
+##### LAPACK and BLAS #####
+#
+# Libraries to link, with -L<dir> if they are not on the default search
+# path, for example:
+#     LIBS = -L/path/to/lapack/lib -llapack -lblas
+
+LIBS       =
+
+##### Libxc (optional) #####
+#
+# Without libxc, only the built-in functionals are available:
+#     OBJS_LIBXC = exc_libxc_stub.o
+#
+# With libxc 5 or later, use:
+#     OBJS_LIBXC  = functionals.o exc_libxc.o
+#     LIBS       += -L/path/to/libxc/lib -lxcf03 -lxc
+#     FFLAGS     += -I/path/to/libxc/include
+#     FCCPPFLAGS += -I/path/to/libxc/include
+# (Older libxc versions may provide -lxcf90 instead of -lxcf03.)
+
+OBJS_LIBXC =
