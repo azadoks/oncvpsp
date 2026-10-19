@@ -82,10 +82,13 @@ The fr path had 3 reference tests to the sr path's 28.
 
 ### Phase 4: one driver
 
-- [ ] Move the body of `oncvpsp.F90` into a subroutine taking `irel` and
+- [x] Move the body of `oncvpsp.F90` into a subroutine taking `irel` and
       the stage (whole, all-electron only, pseudopotential only), with each
       executable a short program calling it; drop `oncvpsp_r.F90` and the
-      `#if`s of the driver
+      `#if`s of the driver: `oncvpsp_main(irel,istage)` in
+      `oncvpsp_main.F90`, an external procedure so that
+      `check_interfaces.sh` checks its calls; the nine program files call
+      it, and only the `WITH_TOML` `#if`s are left
 - [x] The fr-only steps (`sr_so_r`, `run_diag_sr_so_r`, the second ghost
       test, the averaged unscreening) under `irel==2`: `oncvpsp.F90` and
       `oncvpsp_r.F90` differ only in their headers and the setting of

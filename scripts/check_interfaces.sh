@@ -46,7 +46,7 @@ work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 
 status=0
-# The drivers; all but oncvpsp.F90 and oncvpsp_r.F90 include one of those
+# The drivers, each a call of oncvpsp_main (in the sources above)
 for file in oncvpsp.F90 oncvpsp_nr.F90 oncvpsp_r.F90 oncvpsp_ae.F90 oncvpsp_ps.F90 \
             oncvpspnr_ae.F90 oncvpspnr_ps.F90 oncvpspr_ae.F90 oncvpspr_ps.F90; do
     all="$work/all.F90"

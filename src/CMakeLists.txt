@@ -38,6 +38,7 @@ set(src_oncvpsp
     modcore2.f90
     modcore3.f90
     modcore_budget.f90
+    oncvpsp_main.F90
     optimize.f90
     psatom.f90
     pspot.f90
@@ -135,7 +136,7 @@ oncvpsp_executable(oncvpspnr oncvpsp_nr.F90 oncvpspnr.x)
 oncvpsp_executable(oncvpspr oncvpsp_r.F90 oncvpspr.x)
 
 # All-electron and pseudopotential stages of the three drivers, which pass the all-electron atom through a
-# file (see oncvpsp.F90 and ae_file_m.f90)
+# file (see oncvpsp_main.F90 and ae_file_m.f90)
 oncvpsp_executable(oncvpspsr_ae oncvpsp_ae.F90 oncvpsp_ae.x)
 oncvpsp_executable(oncvpspsr_ps oncvpsp_ps.F90 oncvpsp_ps.x)
 oncvpsp_executable(oncvpspnr_ae oncvpspnr_ae.F90 oncvpspnr_ae.x)
