@@ -3,8 +3,9 @@
 Suspected bugs found while auditing dummy-argument `intent`s across `src/`,
 then triaged against the code, the callers, the input checks in
 `check_data.f90`, and the test inputs in `tests/data/`. The P1 and P2
-issues have been fixed, and so have the P3 issues apart from dead code
-that is kept on purpose. Line numbers refer to the code before the fixes.
+issues have been fixed, apart from one found later in the coding-standard
+pass ([P2 (open)](#p2-open)), and so have the P3 issues apart from dead
+code that is kept on purpose. Line numbers refer to the code before the fixes.
 
 The issues were found on `master`, and the fixes were then merged into
 `oncvpsp-opt`, which had fixed some of them independently. Where the two
@@ -41,6 +42,7 @@ Priorities:
 | P2 | `vkbphsft.f90` `dnpi` can be undefined | no | fixed |
 | P2 | `oncvpspnr.x` is scalar-relativistic | new tests (08_O_nr, 14_Si_nr) | fixed |
 | P2 | psp8 file without the model core for `icmod=6`, `fcfact<=0` | yes (14_Si_bca) | fixed |
+| P2 | `psmlout_r` reads the wrong projectors for `psfile='psp8'` | no (no test writes this) | open |
 | P3 | build, dead code, silent errors, bounds, argument mismatches (see [P3 (fixed)](#p3-fixed)) | no | fixed |
 | P3 | 5 latent bugs: `qroots`, `ldirac*` series starts, `icmod=4` grid, `_tmp_input`, exit status of errors | no | fixed |
 | P3 | `functional_get_tau` (imported dead code) | no | kept |
@@ -190,6 +192,24 @@ Priorities:
     `fcfact>0` write the same psp8 file as before. The psp8 block of the 14_Si_bca ref, which had
     recorded the missing core, now has it. Tests `psp8_core_sr_14_Si` and
     `psp8_core_r_74_W`.
+
+## P2 (open)
+
+- **`psmlout_m.f90` `psmlout_r`**: declares `vsr(mmax,4,4)`,
+  `vso(mmax,4,4)`, `esr(4,4)` and `eso(4,4)`, but `oncvpsp_r.F90`
+  allocates them as `(mmax,2*mxprj,4)` and `(2*mxprj,4)` with `mxprj=5`,
+  and `linout_r` declares them that way. The dummies are explicit-shape, so
+  for `l1>1` `vsr(:,jj,l1)` and `esr(jj,l1)` address the wrong columns
+  (column `jj+4*(l1-1)` of the actual array instead of `jj+10*(l1-1)`),
+  and the projector count looks only at the first 4 coefficients. Only the
+  `psfile='psp8'` branch of the fully-relativistic PSML output uses them,
+  so the scalar-relativistic and spin-orbit projectors written to the PSML
+  file of an FR run with `psp8` are wrong for `l>0`. The psp8 file itself
+  (from `linout_r`) is right. The shapes are those of 4.0.1. No test
+  reaches the branch: `psml_r_52_Te` uses `upf`, and the echo tests compare
+  only the echoed input. Fix: declare the four arrays as `linout_r` does
+  and count up to `2*mxprj`; add a PSML test of an FR `psp8` run. Found in
+  the coding-standard pass, October 2026.
 
 ## P3 (kept, or fixed later)
 
@@ -410,8 +430,8 @@ Make binaries. New error messages follow the format in
 
 ## Next steps
 
-Nothing is left open. The dead code in `functionals.F90` is kept on
-purpose.
+The `psmlout_r` projector shapes ([P2 (open)](#p2-open)) are open. The
+dead code in `functionals.F90` is kept on purpose.
 
 ## Dismissed
 

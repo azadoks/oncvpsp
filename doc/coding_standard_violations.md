@@ -3,7 +3,7 @@
 Style and consistency deviations found by auditing the 82 Fortran files in
 `src/` that `src/CMakeLists.txt` compiles (including the optional Libxc/TOML
 files and the two main programs). The vendored `src/xmlf90-wxml/` library is
-excluded. The mechanical items have since been fixed (see
+excluded. Every item has since been fixed or kept on purpose (see
 [Status](#status)); the rest of the page describes the code as it was.
 Line numbers refer to commit `7e9480a`, before any Known Issues fixes.
 
@@ -53,8 +53,9 @@ one-per-line declarations with `!>` doc comments. Imported code
 (`exc_off_pbe.f` from Perdew's group, `gg1cc.f90`/`gp1cc.f90`/`gpp1cc.f90` from
 ABINIT, `functionals.F90` from Octopus, `m_libxc_list.F90` from SIESTA) keeps
 its upstream style. `exc_off_pbe.f` says so itself (lines 21–22). Most of the
-violations below come from these two groups. Whether to exempt them, or to
-adopt the module style as a second sanctioned standard, is a project decision.
+violations below come from these two groups. The project has since
+exempted the imported code and converted the module files to the legacy
+style (see [Status](#status)).
 
 ## Status
 
@@ -94,8 +95,53 @@ Fixed:
 - the stray first lines, and `run_diag_sr_so_r.f90`'s copyright line;
 - the [cosmetic Known Issues](known_issues.md#cosmetic).
 
-Still open: the items under "Needs manual work or a decision" in
-[Fixing](#fixing), apart from the `use` statements and the unused names.
+A second pass (October 2026, commits `f5a2ab7` to `f7f76ca`) settled the
+items under "Needs manual work or a decision" in [Fixing](#fixing). The
+conventions it applied are now written down in
+[Coding Standards](coding_standards.md#conventions). It fixed:
+
+- **Indentation**, in Hamann's layout in every file, the module files
+  included: unit statements in column 2, 2-space steps, comments in
+  column 1, a leading `&` in column 1. `scripts/reindent.py` does this
+  and runs as a pre-commit hook. The objects compiled byte-identical.
+- **Line length**: at most 80 columns, enforced by fortitude.
+- **Headers**: a description for every routine and a comment for every
+  dummy argument; the stale argument comments corrected or removed.
+- **Section labels**: canonical labels in canonical order in every
+  routine, with the misfiled declarations moved.
+- **Names**: no one-letter names; `m_psmlout` renamed `psmlout_m`;
+  `double precision` in it replaced by `real(dp)`.
+- **Dead code**: the commented-out code removed; the alternative built-in
+  meshes in the main programs kept as prose. `oncvpsp_r.F90`'s `cmtskp`
+  and `read_error` and the uncompiled files had already gone.
+- **Statement forms**: `if(`, `write(` etc. without a space, and `return`
+  before the end of every procedure.
+- **Errors**: the command-line errors of the drivers in the documented
+  form on unit 6, `stdout` replaced by unit 6, and `error stop 1` in
+  `modcore_budget` (which exited with status 0), `ae_file_m` and
+  `input_toml_m`.
+
+The make build's outputs stayed identical, and the parse trees changed
+only where the renames, the error stops and the added `return`s were.
+
+Kept on purpose:
+
+- the imported files, which keep their upstream form;
+- copyright and license text: the years in `linout.f90`, `ldiracf*.f90`
+  and `exc_off_pbe.f`, and the missing headers of `input_text_m.f90` and
+  `input_toml_m.f90`, whose authors would have to add them;
+- the text of messages from 4.0.1, including the `test_data:` prefix in
+  `check_data`, the `_r` routines' non-`_r` prefixes, and the
+  list-directed `lmax` and `calling psmlout` prints, which the reference
+  outputs contain (see [Error messages](coding_standards.md#error-messages));
+- `derivs` in `exc_libxc.f90`, an external routine that `functionals.F90`
+  calls too, so it can't become internal, and a file of its own would need
+  a change to every user's `make.inc` (`OBJS_LIBXC`);
+- unused locals (e.g. `maxset` in `lschpsbar`, `cfloc` in `check_data`),
+  which fortitude's default rules don't flag.
+
+The pass also found a bug, now in
+[Known Issues](known_issues.md#p2-open).
 
 ## Summary
 
