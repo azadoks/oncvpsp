@@ -44,10 +44,11 @@ The fr path had 3 reference tests to the sr path's 28.
 
 ### Phase 1: one array layout
 
-- [ ] Give the per-l and per-level arrays of `oncvpsp.F90` the kappa
+- [x] Give the per-l and per-level arrays of `oncvpsp.F90` the kappa
       index (`ea`, `ep`, `epa`, `vp`, `vkb`, `evkb`, `pswf`, `uua`,
-      `uupsa`, `cvgplt`, `ecurve`, `wcurve`, `vr`), passing their first
-      element to the sr routines until they are merged
+      `uupsa`, `cvgplt`, `ecurve`, `wcurve`, `vr`). With `nkap=1` an sr
+      routine's explicit-shape dummy takes the whole array, by sequence
+      association, until the routine is merged
 
 ### Phase 2: choosing the equation in one place
 

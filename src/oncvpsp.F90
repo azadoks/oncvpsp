@@ -74,14 +74,13 @@
  integer :: jj,kk,ll,l1,lloc,lmax,lt,inline
  integer :: mch,mchf,mmax,n1,n2,nc,nlim,nlloc,nlmax,irpsh,nrl
  integer :: nv,irct,ncnf,nvt
- integer :: iprj
+ integer :: iprj,nkap
  integer,allocatable :: npa(:,:)
 !
  integer :: dtime(8),na(30),la(30),np(6)
  integer :: nacnf(30,5),lacnf(30,5),nvcnf(5)
- integer :: nat(30),lat(30),indxr(30),indxe(30)
  integer :: irc(6),nodes(4)
- integer :: nproj(6),npx(6),lpx(6)
+ integer :: nproj(6)
  integer :: ncon(6),nbas(6)
 
  real(dp) :: al,amesh,csc,csc1,deblt,depsh,depsht,drl,eeel
@@ -97,31 +96,27 @@
  real(dp) :: sf,zz,zion,zval,etot
  real(dp) :: xdummy
 !
- real(dp) :: cl(6),debl(6),ea(30),ep(6),fa(30),facnf(30,5)
- real(dp) :: fat(30,2)
- real(dp) :: fnp(6),fp(6)
+ real(dp) :: cl(6),debl(6),ea(30,2),ep(6,2),fa(30),facnf(30,5)
  real(dp) :: qcut(6),qmsbf(6),rc(6),rc0(6)
  real(dp) :: rpk(30)
- real(dp) :: epx(6),fpx(6)
  real(dp) :: epstot
  real(dp), parameter :: eps=1.0d-8
 
- real(dp), allocatable :: evkb(:,:),cvgplt(:,:,:,:),qq(:,:)
- real(dp), allocatable :: ecurve(:,:,:,:),wcurve(:,:)
+ real(dp), allocatable :: evkb(:,:,:),cvgplt(:,:,:,:,:),qq(:,:)
+ real(dp), allocatable :: ecurve(:,:,:,:,:),wcurve(:,:,:)
  real(dp) :: ecutw
  integer, parameter :: ncurve=1000
  real(dp), allocatable :: rr(:)
  real(dp), allocatable :: rho(:),rhoc(:),rhot(:)
  real(dp), allocatable :: uu(:),up(:)
- real(dp), allocatable :: vp(:,:),vfull(:),vkb(:,:,:),pswf(:,:,:)
- real(dp), allocatable :: vwell(:)
+ real(dp), allocatable :: vp(:,:,:),vfull(:),vkb(:,:,:,:),pswf(:,:,:,:)
  real(dp), allocatable :: vpuns(:,:)
  real(dp), allocatable :: vo(:),vxc(:)
  real(dp), allocatable :: rhomod(:,:),rhoae(:,:),rhops(:,:),rhotae(:)
- real(dp), allocatable :: uupsa(:,:) !pseudo-atomic orbitals array
- real(dp), allocatable :: epa(:,:),fpa(:,:)
- real(dp), allocatable :: uua(:,:),upa(:,:)
- real(dp), allocatable :: vr(:,:,:)
+ real(dp), allocatable :: uupsa(:,:,:) !pseudo-atomic orbitals array
+ real(dp), allocatable :: epa(:,:,:)
+ real(dp), allocatable :: uua(:,:,:),upa(:,:,:)
+ real(dp), allocatable :: vr(:,:,:,:)
 
 !all-electron results for the test configurations (see run_config_ae)
  integer :: istcnf(5),ierrcnf(5),itcnf(5),kerrcnf(5)
@@ -158,6 +153,10 @@
 #else
  srel=.true.
 #endif
+!the arrays indexed by l have a last index for kappa (see doc/fr_merge_plan.md),
+!1 for j=l+1/2 and 2 for j=l-1/2 in the fully-relativistic code, and only 1
+!here
+ nkap=1
 
  parse_args: block
    integer :: iarg
@@ -240,7 +239,7 @@
  case(INPUT_STDIN)
    call read_input_text(stdin, inline, &
 &                       atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
-&                       lmax, rc, ep, ncon, nbas, qcut, &
+&                       lmax, rc, ep(1,1), ncon, nbas, qcut, &
 &                       lloc, lpopt, dvloc0, nproj, debl, &
 &                       icmod, fcfact, rcfact, &
 &                       fcfact_min, fcfact_max, fcfact_step, &
@@ -259,7 +258,7 @@
    end if
    call read_input_text(unit, inline, &
 &                       atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
-&                       lmax, rc, ep, ncon, nbas, qcut, &
+&                       lmax, rc, ep(1,1), ncon, nbas, qcut, &
 &                       lloc, lpopt, dvloc0, nproj, debl, &
 &                       icmod, fcfact, rcfact, &
 &                       fcfact_min, fcfact_max, fcfact_step, &
@@ -280,7 +279,7 @@
    end if
    call read_input_toml(unit, &
 &                       atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
-&                       lmax, rc, ep, ncon, nbas, qcut, &
+&                       lmax, rc, ep(1,1), ncon, nbas, qcut, &
 &                       lloc, lpopt, dvloc0, nproj, debl, &
 &                       icmod, fcfact, rcfact, &
 &                       fcfact_min, fcfact_max, fcfact_step, &
@@ -323,7 +322,7 @@
  call check_data(atsym,zz,fcfact,rcfact,fcgrid,rcgrid,epsh1,epsh2,depsh, &
 &                rxpsh,rlmax,drl, &
 &                fa,facnf, &
-&                rc,ep,qcut,debl,nc,nv,iexc,lmax,lloc,lpopt,icmod, &
+&                rc,ep(1,1),qcut,debl,nc,nv,iexc,lmax,lloc,lpopt,icmod, &
 &                ncnf,na,la,nvcnf,nacnf,lacnf,ncon,nbas,nproj,psfile, &
 &                amesh_in,rr1_in,rmax_in)
 
@@ -370,23 +369,23 @@
 
  allocate(rr(mmax))
  allocate(rho(mmax),rhoc(mmax),rhot(mmax))
- allocate(uu(mmax),up(mmax),uupsa(mmax,30))
- allocate(evkb(mxprj,4), cvgplt(2,7,mxprj,4),qq(mxprj,mxprj))
- allocate(ecurve(2,ncurve,mxprj,4),wcurve(mxprj,4))
- allocate(vp(mmax,5),vfull(mmax),vkb(mmax,mxprj,4),pswf(mmax,mxprj,4))
- allocate(vwell(mmax))
+ allocate(uu(mmax),up(mmax),uupsa(mmax,nkap,nv))
+ allocate(evkb(mxprj,4,nkap),cvgplt(2,7,mxprj,4,nkap),qq(mxprj,mxprj))
+ allocate(ecurve(2,ncurve,mxprj,4,nkap),wcurve(mxprj,4,nkap))
+ allocate(vp(mmax,5,nkap),vfull(mmax),vkb(mmax,mxprj,4,nkap))
+ allocate(pswf(mmax,mxprj,4,nkap))
  allocate(vpuns(mmax,5))
  allocate(vo(mmax),vxc(mmax))
  allocate(rhoae(mmax,nv),rhops(mmax,nv),rhotae(mmax))
  allocate(npa(mxprj,6))
- allocate(epa(mxprj,6),fpa(mxprj,6))
- allocate(uua(mmax,mxprj),upa(mmax,mxprj))
- allocate(vr(mmax,mxprj,6))
+ allocate(epa(mxprj,6,nkap))
+ allocate(uua(mmax,mxprj,nkap),upa(mmax,mxprj,nkap))
+ allocate(vr(mmax,mxprj,6,nkap))
 
- vr(:,:,:)=0.0d0
- vp(:,:)=0.0d0
- vkb(:,:,:)=0.0d0
- epa(:,:)=0.0d0
+ vr(:,:,:,:)=0.0d0
+ vp(:,:,:)=0.0d0
+ vkb(:,:,:,:)=0.0d0
+ epa(:,:,:)=0.0d0
 
  do ii=1,mmax
    rr(ii)=rr1*exp(al*(ii-1))
@@ -398,7 +397,7 @@
 #if defined(ONCVPSP_PS_ONLY)
  call read_ae_file(ae_filename,srel,atsym,zz,nc,nv,iexc,na,la,fa, &
 &                  mmax,rr,ncnf,nvcnf,nacnf,lacnf,facnf, &
-&                  it,etot,ea,rhoc,rho,vfull,istcnf,ierrcnf,itcnf, &
+&                  it,etot,ea(1,1),rhoc,rho,vfull,istcnf,ierrcnf,itcnf, &
 &                  kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
 !sratom prints the libxc functional description on its first exc_libxc call
  if(iexc<0) then
@@ -408,7 +407,7 @@
    end block
  end if
 #else
- call sratom(na,la,ea,fa,rpk,nc,nc+nv,it,rhoc,rho, &
+ call sratom(na,la,ea(1,1),fa,rpk,nc,nc+nv,it,rhoc,rho, &
 &            rr,vfull,zz,mmax,iexc,etot,ierr,srel)
 #endif
 !
@@ -443,14 +442,14 @@
 &      '      ',psfile
  write(6,'(a/a)') '#','#   n    l    f        energy (Ha)'
  do ii=1,nc+nv
-   write(6,'(2i5,f8.2,1pe18.7)') na(ii),la(ii),fa(ii),ea(ii)
+   write(6,'(2i5,f8.2,1pe18.7)') na(ii),la(ii),fa(ii),ea(ii,1)
  end do
 
  write(6,'(a/a/a)') '#','# PSEUDOPOTENTIAL AND OPTIMIZATION','# lmax'
  write(6,'(i5)')  lmax
  write(6,'(a/a)') '#','#   l,   rc,      ep,       ncon, nbas, qcut'
  do l1=1,lmax+1
-   write(6,'(i5,2f10.5,2i5,f10.5)') l1-1,rc(l1),ep(l1),ncon(l1),&
+   write(6,'(i5,2f10.5,2i5,f10.5)') l1-1,rc(l1),ep(l1,1),ncon(l1),&
 &        nbas(l1),qcut(l1)
  end do
 
@@ -500,12 +499,12 @@
 !and all output about them come from oncvpsp_ps.x
  do jj=1,ncnf+1
    call run_config_ae(jj,nacnf,lacnf,facnf,nc,nvcnf,rr,zz, &
-&                     mmax,iexc,ea,srel,istcnf,ierrcnf,itcnf,kerrcnf, &
+&                     mmax,iexc,ea(1,1),srel,istcnf,ierrcnf,itcnf,kerrcnf, &
 &                     nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
  end do
 
  call write_ae_file(ae_filename,srel,atsym,zz,nc,nv,iexc,na,la,fa, &
-&                   mmax,rr,it,etot,ea,rhoc,rho,vfull, &
+&                   mmax,rr,it,etot,ea(1,1),rhoc,rho,vfull, &
 &                   ncnf,nvcnf,nacnf,lacnf,facnf,istcnf,ierrcnf,itcnf, &
 &                   kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
 
@@ -530,9 +529,9 @@
  end do
 
 !
- cvgplt(:,:,:,:)=0.0d0
- ecurve(:,:,:,:)=0.0d0
- wcurve(:,:)=0.0d0
+ cvgplt(:,:,:,:,:)=0.0d0
+ ecurve(:,:,:,:,:)=0.0d0
+ wcurve(:,:,:)=0.0d0
 !
 ! loop to construct pseudopotentials for all angular momenta
 !
@@ -548,7 +547,7 @@
    iprj=0
 !electrons filling each pseudo-wave in the cutoff of icmod 6: the shell's
 !for a scattering or empty state, else the occupation
-   wcurve(1:nproj(l1),l1)=dble(2*(2*ll+1))
+   wcurve(1:nproj(l1),l1,1)=dble(2*(2*ll+1))
 
 !get principal quantum number for the highest core state for this l
    npa(1,l1)=l1
@@ -561,7 +560,7 @@
      do kk=nc+1,nc+nv
        if(la(kk)==l1-1) then
          iprj=iprj+1
-         et=ea(kk)
+         et=ea(kk,1)
          call lschfb(na(kk),la(kk),ierr,et, &
 &                      rr,vfull,uu,up,zz,mmax,mch,srel)
          if(ierr /= 0) then
@@ -570,11 +569,11 @@
 &           na(kk),la(kk),it
            error stop 1
          end if
-         epa(iprj,l1)=ea(kk)
-         if(fa(kk)>0.0d0) wcurve(iprj,l1)=fa(kk)
+         epa(iprj,l1,1)=ea(kk,1)
+         if(fa(kk)>0.0d0) wcurve(iprj,l1,1)=fa(kk)
          npa(iprj,l1)=na(kk)
-         uua(:,iprj)=uu(:)
-         upa(:,iprj)=up(:)
+         uua(:,iprj,1)=uu(:)
+         upa(:,iprj,1)=up(:)
        end if !la(kk)==l1-1
        if(iprj==nproj(l1)) exit
      end do !kk
@@ -583,7 +582,7 @@
 !get all-electron well states for projectors
 !if there were no valence states, use ep from input data for 1st well state
 !otherwise shift up by input debl
-   if(iprj==0) epa(1,l1)=ep(l1)
+   if(iprj==0) epa(1,l1,1)=ep(l1,1)
    if(iprj<nproj(l1))then
      do kk=1,nproj(l1)-iprj
        iprj=iprj+1
@@ -595,37 +594,37 @@
          error stop 1
        end if
        if(iprj>1) then
-         epa(iprj,l1)=epa(iprj-1,l1)+debl(l1)
+         epa(iprj,l1,1)=epa(iprj-1,l1,1)+debl(l1)
          npa(iprj,l1)=npa(iprj-1,l1)+1
        end if
 
-       call wellstate(npa(iprj,l1),ll,irc(l1),epa(iprj,l1),rr, &
+       call wellstate(npa(iprj,l1),ll,irc(l1),epa(iprj,l1,1),rr, &
 &                     vfull,uu,up,zz,mmax,mch,srel)
-       uua(:,iprj)=uu(:)
-       upa(:,iprj)=up(:)
+       uua(:,iprj,1)=uu(:)
+       upa(:,iprj,1)=up(:)
      end do !kk
    end if !iprj<nproj(l1)
 
    do iprj=1,nproj(l1)
 
 !calculate relativistic correction to potential to force projectors to 0 at rc
-     call vrel(ll,epa(iprj,l1),rr,vfull,vr(1,iprj,l1),uua(1,iprj),upa(1,iprj), &
-&              zz,mmax,irc(l1),srel)
+     call vrel(ll,epa(iprj,l1,1),rr,vfull,vr(1,iprj,l1,1),uua(1,iprj,1), &
+&              upa(1,iprj,1),zz,mmax,irc(l1),srel)
 
    end do
 
 !get all-electron overlap matrix
    do jj=1,nproj(l1)
      do ii=1,jj
-       call fpovlp(uua(1,ii),uua(1,jj),irc(l1),ll,zz,qq(ii,jj),rr,srel)
+       call fpovlp(uua(1,ii,1),uua(1,jj,1),irc(l1),ll,zz,qq(ii,jj),rr,srel)
        qq(jj,ii)=qq(ii,jj)
      end do
    end do
 
-   call run_optimize(epa(1,l1),ll,mmax,mxprj,rr,uua,qq, &
+   call run_optimize(epa(1,l1,1),ll,mmax,mxprj,rr,uua,qq, &
 &                    irc(l1),qcut(l1),qmsbf(l1),ncon(l1),nbas(l1),nproj(l1), &
-&                    pswf(1,1,l1),vp(1,l1),vkb(1,1,l1),vfull,cvgplt(1,1,1,l1), &
-&                    ncurve,ecurve(1,1,1,l1))
+&                    pswf(1,1,l1,1),vp(1,l1,1),vkb(1,1,l1,1),vfull, &
+&                    cvgplt(1,1,1,l1,1),ncurve,ecurve(1,1,1,l1,1))
 
  end do !l1
 
@@ -633,8 +632,8 @@
 
  write(6,'(/a,a)') 'Construct Vanderbilt / Kleinmman-Bylander projectors'
 
- call run_vkb(lmax,lloc,lpopt,dvloc0,irc,nproj,rr,mmax,mxprj,pswf,vfull,vp, &
-&             evkb,vkb,nlim,vr)
+ call run_vkb(lmax,lloc,lpopt,dvloc0,irc,nproj,rr,mmax,mxprj,pswf, &
+&             vfull,vp,evkb,vkb,nlim,vr)
 
 !restore this to its proper value
  nproj(lloc+1)=0
@@ -648,7 +647,7 @@
 ! charge densities
 
 ! null charge and eigenvalue accumulators
- uupsa(:,:)=0.0d0
+ uupsa(:,:,:)=0.0d0
  eeig=0.0d0
  zval=0.0d0
  rho(:)=0.0d0
@@ -657,7 +656,7 @@
  irps=0
  do kk=1,nv
 
-   et=ea(nc+kk)
+   et=ea(nc+kk,1)
    ll=la(nc+kk)
    l1=ll+1
    call lschfb(na(nc+kk),ll,ierr,et, &
@@ -676,7 +675,7 @@
    emin=1.25d0*et
 
    call lschvkbb(ll+nodes(l1)+1,ll,nproj(l1),ierr,et,emin,emax, &
-&                rr,vp(1,lloc+1),vkb(1,1,l1),evkb(1,l1), &
+&                rr,vp(1,lloc+1,1),vkb(1,1,l1,1),evkb(1,l1,1), &
 &                uu,up,mmax,mch)
 
    if(ierr/=0) then
@@ -686,7 +685,7 @@
    end if
 
 ! save valence pseudo wave functions for upfout
-   uupsa(:,kk)=uu(:)
+   uupsa(:,1,kk)=uu(:)
 
    rhops(:,kk)=(uu(:)/rr(:))**2
    rho(:)=rho(:)+fa(nc+kk)*rhops(:,kk)
@@ -715,7 +714,7 @@
  else if(icmod==6) then
    ecutw=0.0d0
    if(fcfact<=0.0d0) then
-     call modcore_budget_ecut(ecurve,wcurve,ncurve,mxprj*4,rcfact,ecutw)
+     call modcore_budget_ecut(ecurve,wcurve,ncurve,mxprj*4*nkap,rcfact,ecutw)
    end if
    call modcore_budget(rho,rhoc,rhomod,fcfact,ecutw,rcfact, &
 &               minval(irc(1:lmax+1)),mmax,rr,iexc)
@@ -738,13 +737,13 @@
  call run_diag(lmax,npa,epa,lloc,irc, &
 &                    vkb,evkb,nproj,rr,vfull,vp,zz,mmax,mxprj,srel)
 
- call run_ghosts(lmax,la,ea,nc,nv,lloc,irc,qmsbf, &
+ call run_ghosts(lmax,la,ea(1,1),nc,nv,lloc,irc,qmsbf, &
 &                    vkb,evkb,nproj,rr,vp,mmax,mxprj)
 
 ! unscreen semi-local potentials
 
  do l1=1,max(lmax+1,lloc+1)
-   vpuns(:,l1)=vp(:,l1)-vo(:)
+   vpuns(:,l1)=vp(:,l1,1)-vo(:)
  end do
 
 !fix unscreening error due to greater range of all-electron charge
@@ -792,7 +791,7 @@
 
 #if !defined(ONCVPSP_PS_ONLY)
    call run_config_ae(jj,nacnf,lacnf,facnf,nc,nvcnf,rr,zz, &
-&                     mmax,iexc,ea,srel,istcnf,ierrcnf,itcnf,kerrcnf, &
+&                     mmax,iexc,ea(1,1),srel,istcnf,ierrcnf,itcnf,kerrcnf, &
 &                     nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
 #endif
 
@@ -820,7 +819,7 @@
    call linout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
 &              rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym, &
 &              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&              fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,fcfact0,rcfact, &
+&              fa,rc0,ep(1,1),qcut,debl,facnf,dvloc0,fcfact,fcfact0,rcfact, &
 &              fcgrid,rcgrid, &
 &              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh)
  end if
@@ -829,8 +828,9 @@
    call upfout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
 &              zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
 &              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&              fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact0,rcfact,fcgrid,rcgrid, &
-&              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,uupsa,ea,log_mesh)
+&              fa,rc0,ep(1,1),qcut,debl,facnf,dvloc0,fcfact0,rcfact, &
+&              fcgrid,rcgrid,epsh1,epsh2,depsh,rxpsh,rlmax,psfile,uupsa, &
+&              ea(1,1),log_mesh)
  end if
 
 
@@ -850,8 +850,8 @@
 &             irct, srel, &
 &             zz,zion,mmax,iexc,icmod,nrl,drl,atsym,epstot, &
 &             na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&             fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact0,rcfact,fcgrid,rcgrid, &
-&             epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh)
+&             fa,rc0,ep(1,1),qcut,debl,facnf,dvloc0,fcfact0,rcfact, &
+&             fcgrid,rcgrid,epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh)
  end if
 
  stop
