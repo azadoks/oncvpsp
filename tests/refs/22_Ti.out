@@ -293,6 +293,8 @@ B matrix Hermiticity error, ll=   2
 
   Orthonormal projector coefficients -5.5248E+00 -1.5691E+00
 
+Ionic tail switched over r =  2.4046 to  4.8092 a.u., converged in  4 steps
+
 Pseudoatom total energy  -57.437037
 
 
@@ -322,6 +324,13 @@ Diagnostic tests using Vanderbilt-Kleinman-Bylander pseudopotentials
 
  Testing for highly-localized positive-energy ghosts
        l    <radius>/rc     E Basis Diag.   E Cutoff
+
+Coulomb tail of the local potential
+  alpha_z = 4 pi int r**2 (V_loc + zion/r) dr  3.4824847027E+01 Ha bohr**3
+  alpha_z change, table cut at r =  6.00: -5.9983E-07
+  alpha_z change, table cut at r = 10.00: -5.6382E-07
+  |V_loc + zion/r| < 1e-10 beyond r =    6.2997
+  max |V_loc - V_ion| beyond rcmax  1.5789E-05
 
 Test configuration 0
 

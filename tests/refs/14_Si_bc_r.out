@@ -7,9 +7,6 @@ suggested that you cite D. R. Hamann, Phys. Rev. B 88, 085117 (2013)
 in any publication utilizing these pseudopotentials.
 
 
-build: oncvpspr.x (fully-relativistic), commit 5947faf554fc7e6ab6cefd01b2cb995b6b15ec15, source modified (diff 45037f622bb5), compiled 2026-10-19T17:18:05Z
-
-
 # ATOM AND REFERENCE CONFIGURATION
 # atsym  z   nc   nv     iexc    psfile
   Si 14.00    3    2       3      psp8
@@ -459,6 +456,8 @@ Model core correction: budgeted core (icmod 6)
   coefficients c0..c8  2.45850629E+02 -7.37821535E+02  7.27443391E+03 -4.28300874E+04  1.33657007E+05 -2.34793004E+05  2.33661952E+05 -1.22987831E+05  2.66093116E+04
   cutoff the model core needs     23.8050 Ha
 
+Ionic tail switched over r =  2.7030 to  5.4060 a.u., converged in  4 steps
+
 Pseudoatom total energy   -3.792998
 
 
@@ -523,6 +522,13 @@ Ghost test for J = L - 1/2
 
  Testing for highly-localized positive-energy ghosts
        l    <radius>/rc     E Basis Diag.   E Cutoff
+
+Coulomb tail of the local potential
+  alpha_z = 4 pi int r**2 (V_loc + zion/r) dr  2.4020781728E+01 Ha bohr**3
+  alpha_z change, table cut at r =  6.00:  8.6342E-07
+  alpha_z change, table cut at r = 10.00:  3.7334E-07
+  |V_loc + zion/r| < 1e-10 beyond r =    9.4369
+  max |V_loc - V_ion| beyond rcmax  3.0200E-06
 
 Test configuration 0
 

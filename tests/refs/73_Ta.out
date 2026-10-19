@@ -514,6 +514,8 @@ B matrix Hermiticity error, ll=   3
 
   Orthonormal projector coefficients -1.8737E+01 -1.1429E+01 -3.3922E+00
 
+Ionic tail switched over r =  1.4077 to  2.8154 a.u., converged in  7 steps
+
 Pseudoatom total energy-1269.498648
 
 
@@ -556,6 +558,13 @@ Diagnostic tests using Vanderbilt-Kleinman-Bylander pseudopotentials
  Testing for highly-localized positive-energy ghosts
        l    <radius>/rc     E Basis Diag.   E Cutoff
 
+Coulomb tail of the local potential
+  alpha_z = 4 pi int r**2 (V_loc + zion/r) dr  3.5205707521E+01 Ha bohr**3
+  alpha_z change, table cut at r =  6.00:  5.1458E-07
+  alpha_z change, table cut at r = 10.00:  3.0562E-07
+  |V_loc + zion/r| < 1e-10 beyond r =    3.8920
+  max |V_loc - V_ion| beyond rcmax  2.7348E-04
+
 Test configuration 0
 
    n   l     f        eae           eps        diff
@@ -576,8 +585,8 @@ Test configuration 0
 
     Total energies and differences
       AE_ref= -1.55953500D+04  AE_tst= -1.55953500D+04  dif=  0.00D+00
-      PS_ref= -1.26949865D+03  PS_tst= -1.26949857D+03  dif=  8.01D-05
-      PSP excitation error= -8.01D-05
+      PS_ref= -1.26949818D+03  PS_tst= -1.26949818D+03  dif= -5.51D-09
+      PSP excitation error=  5.51D-09
 
 Test configuration 1
 
@@ -600,7 +609,7 @@ Test configuration 1
     Total energies and differences
       AE_ref= -1.55953500D+04  AE_tst= -1.55950302D+04  dif=  3.20D-01
       PS_ref= -1.26949865D+03  PS_tst= -1.26917876D+03  dif=  3.20D-01
-      PSP excitation error= -1.86D-04
+      PSP excitation error= -1.08D-04
 
 Test configuration 2
 
@@ -623,7 +632,7 @@ Test configuration 2
     Total energies and differences
       AE_ref= -1.55953500D+04  AE_tst= -1.55950592D+04  dif=  2.91D-01
       PS_ref= -1.26949865D+03  PS_tst= -1.26920796D+03  dif=  2.91D-01
-      PSP excitation error= -2.61D-05
+      PSP excitation error=  5.36D-05
 
 Test configuration 3
 
@@ -646,7 +655,7 @@ Test configuration 3
     Total energies and differences
       AE_ref= -1.55953500D+04  AE_tst= -1.55936893D+04  dif=  1.66D+00
       PS_ref= -1.26949865D+03  PS_tst= -1.26783609D+03  dif=  1.66D+00
-      PSP excitation error= -1.94D-03
+      PSP excitation error= -1.87D-03
 
 DATA FOR PLOTTING
 

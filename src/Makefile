@@ -23,7 +23,8 @@ OBJS_ALL =	aeatom.o boundstate.o build_info_m.o check_data.o const_basis.o const
 		pspot.o qroots.o run_optimize.o sbf8.o \
 		sbf_rc_der.o tfapot.o vkboutwf.o vkbphsft.o vout.o vpinteg.o \
 		vploc.o wf_rc_der.o modcore2.o gg1cc.o gp1cc.o gpp1cc.o \
-		der2exc.o modcore3.o modcore_budget.o sbf_basis_con.o run_ghosts.o \
+		der2exc.o modcore3.o modcore_budget.o ionic_tail.o sbf_basis_con.o \
+		run_ghosts.o \
 		lschpsbar.o vrel.o ae_file_m.o config_ae_m.o sratom.o input_echo_m.o \
 		relatom.o fphsft.o run_phsft.o scatstate.o wellstate.o \
 		psatom.o run_config.o run_diag.o renorm_r.o run_plot.o \

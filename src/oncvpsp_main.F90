@@ -102,6 +102,8 @@
  real(dp), allocatable :: uu(:,:),up(:,:),vwell(:,:)
  real(dp), allocatable :: vp(:,:,:),vfull(:),vkb(:,:,:,:),pswf(:,:,:,:)
  real(dp), allocatable :: vpuns(:,:)
+!frozen-core ionic potential of the tail of the local potential
+ real(dp), allocatable :: vion(:)
  real(dp), allocatable :: vo(:),vxc(:)
  real(dp), allocatable :: rhomod(:,:),rhoae(:,:),rhops(:,:),rhotae(:)
  real(dp), allocatable :: uupsa(:,:,:) !pseudo-atomic orbitals array
@@ -929,6 +931,16 @@
 
  call vout(1,rho,rhomod(1,1),vo,vxc,zval,eeel,eexc,rr,mmax,iexc)
 
+! switch the screened potentials to the ionic tail beyond rcmax, iterating
+! the pseudo valence states with it to a fixed point (after the model core,
+! which V_ion uses)
+
+ allocate(vion(mmax))
+ call ionic_screening(nkap,nc,nv,la,fa,ea,lmax,lloc,nproj,rr,vp,vkb, &
+&                     evkb,mmax,mxprj,zz,zion,zval,iexc,rcmax,rhoc, &
+&                     rhotae,rhomod(1,1),rho,rhops,uupsa,eeig,vo,vxc, &
+&                     eeel,eexc,vion)
+
 ! total energy output
 
  epstot= eeig + eexc - 0.5d0*eeel
@@ -990,26 +1002,8 @@
    end if
  end do
 
-! smoothly force vpuns to -zion/r beyond rcmax, over a window of 1 a.u.,
-! with the 5th-order "smootherstep" 6x^5-15x^4+10x^3 (ported from METAPSP
-! ba95225), so the psp correction no longer depends on where the
-! unscreening data stops
- smooth_vloc: block
-   real(dp) :: xs,ss
-   do l1=1,max(lmax+1,lloc+1)
-     do ii=1,mmax
-       if(rr(ii)>rcmax) then
-         xs=1.0d0+(rcmax-rr(ii))
-         if(xs<=0.0d0) then
-           ss=0.0d0
-         else
-           ss=xs**3*(10.0d0+xs*(-15.0d0+6.0d0*xs))
-         end if
-         vpuns(ii,l1)=-zion/rr(ii)+(vpuns(ii,l1)+zion/rr(ii))*ss
-       end if
-     end do
-   end do
- end block smooth_vloc
+! how closely the local potential is -zion/r beyond rcmax
+ call coulomb_tail(vpuns(1,lloc+1),vion,rr,mmax,zion,rcmax)
 
 
 ! loop over reference plus test atom configurations

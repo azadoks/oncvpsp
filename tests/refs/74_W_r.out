@@ -838,6 +838,8 @@ d2excps - pseudofunction derivatives with core correction
 
 rms 2nd derivative error    6.596339E-04
 
+Ionic tail switched over r =  2.7138 to  7.0674 a.u., converged in  4 steps
+
 Pseudoatom total energy  -69.353139
 
 
@@ -929,6 +931,13 @@ Ghost test for J = L - 1/2
  Testing for highly-localized positive-energy ghosts
        l    <radius>/rc     E Basis Diag.   E Cutoff
 
+Coulomb tail of the local potential
+  alpha_z = 4 pi int r**2 (V_loc + zion/r) dr  6.2142022132E+01 Ha bohr**3
+  alpha_z change, table cut at r =  6.00:  6.5063E-06
+  alpha_z change, table cut at r = 10.00: -3.6731E-07
+  |V_loc + zion/r| < 1e-10 beyond r =    9.5314
+  max |V_loc - V_ion| beyond rcmax  1.4211E-05
+
 Test configuration 0
 
    n   l kap    f        eae           eps        diff
@@ -953,12 +962,12 @@ Test configuration 0
    5   1   1  2.0000   -1.85710441   -1.85711163   -7.21E-06
    5   2  -3  2.4000   -0.16170846   -0.16171152   -3.06E-06
    5   2   2  1.6000   -0.18872351   -0.18872494   -1.44E-06
-   6   0  -1  2.0000   -0.21733123   -0.21731611    1.51E-05
+   6   0  -1  2.0000   -0.21733123   -0.21733195   -7.22E-07
 
     Total energies and differences
       AE_ref= -1.61564270E+04  AE_tst= -1.61564270E+04  dif=  0.00E+00
-      PS_ref= -6.93531385E+01  PS_tst= -6.93530874E+01  dif=  5.11E-05
-      PSP excitation error= -5.11E-05
+      PS_ref= -6.93531299E+01  PS_tst= -6.93531299E+01  dif= -9.73E-11
+      PSP excitation error=  9.73E-11
 
 Test configuration 1
 
@@ -982,14 +991,14 @@ Test configuration 1
    5   0  -1  2.0000   -3.18512664   -3.18844100   -3.31E-03
    5   1  -2  4.0000   -1.77075010   -1.77158625   -8.36E-04
    5   1   1  2.0000   -2.13528211   -2.13648779   -1.21E-03
-   5   2  -3  2.4000   -0.42953079   -0.42948832    4.25E-05
-   5   2   2  1.6000   -0.45832253   -0.45831735    5.18E-06
-   6   0  -1  1.0000   -0.45877063   -0.45894757   -1.77E-04
+   5   2  -3  2.4000   -0.42953079   -0.42949947    3.13E-05
+   5   2   2  1.6000   -0.45832253   -0.45832815   -5.62E-06
+   6   0  -1  1.0000   -0.45877063   -0.45896536   -1.95E-04
 
     Total energies and differences
       AE_ref= -1.61564270E+04  AE_tst= -1.61560913E+04  dif=  3.36E-01
       PS_ref= -6.93531387E+01  PS_tst= -6.90172970E+01  dif=  3.36E-01
-      PSP excitation error= -1.14E-04
+      PSP excitation error= -7.95E-05
 
 Test configuration 2
 
@@ -1015,12 +1024,12 @@ Test configuration 2
    5   1   1  2.0000   -2.22915765   -2.22837658    7.81E-04
    5   2  -3  1.8000   -0.49269914   -0.49264798    5.12E-05
    5   2   2  1.2000   -0.52392803   -0.52379618    1.32E-04
-   6   0  -1  2.0000   -0.49195458   -0.49183180    1.23E-04
+   6   0  -1  2.0000   -0.49195458   -0.49184887    1.06E-04
 
     Total energies and differences
       AE_ref= -1.61564270E+04  AE_tst= -1.61560939E+04  dif=  3.33E-01
       PS_ref= -6.93531387E+01  PS_tst= -6.90200412E+01  dif=  3.33E-01
-      PSP excitation error= -3.03E-05
+      PSP excitation error=  1.09E-05
 
 Test configuration 3
 
@@ -1046,14 +1055,14 @@ Test configuration 3
    5   1   1  2.0000   -1.99689967   -1.99575996    1.14E-03
    5   2  -3  1.8000   -0.26447132   -0.26434773    1.24E-04
    5   2   2  1.2000   -0.29496022   -0.29473190    2.28E-04
-   6   0  -1  2.0000   -0.27880537   -0.27869945    1.06E-04
+   6   0  -1  2.0000   -0.27880537   -0.27871092    9.45E-05
    6   1  -2  0.6667   -0.08529782   -0.08534225   -4.44E-05
-   6   1   1  0.3333   -0.10985750   -0.10991981   -6.23E-05
+   6   1   1  0.3333   -0.10985750   -0.10993054   -7.30E-05
 
     Total energies and differences
       AE_ref= -1.61564270E+04  AE_tst= -1.61562780E+04  dif=  1.49E-01
       PS_ref= -6.93531387E+01  PS_tst= -6.92041435E+01  dif=  1.49E-01
-      PSP excitation error=  2.33E-05
+      PSP excitation error=  7.82E-05
 
 DATA FOR PLOTTING
 

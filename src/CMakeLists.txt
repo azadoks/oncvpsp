@@ -21,6 +21,7 @@ set(src_oncvpsp
     gg1cc.f90
     gp1cc.f90
     gpp1cc.f90
+    ionic_tail.f90
     ldiracfb.f90
     ldiracfs.f90
     lschfb.f90

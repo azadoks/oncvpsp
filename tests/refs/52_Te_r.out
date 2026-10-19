@@ -591,6 +591,8 @@ B matrix Hermiticity error, ll=  3  kap=  3
  Orthonormal spin-orbit projector coefficients, l =  3
   4.6110E-03  1.2134E-03 -3.0973E-05 -2.0345E-07
 
+Ionic tail switched over r =  3.1138 to  6.2275 a.u., converged in  3 steps
+
 Pseudoatom total energy  -87.789923
 
 
@@ -673,6 +675,13 @@ Ghost test for J = L - 1/2
        l    <radius>/rc     E Basis Diag.   E Cutoff
 
        0        0.997944        3.511608     29.20  WARNING - GHOST(+)
+
+Coulomb tail of the local potential
+  alpha_z = 4 pi int r**2 (V_loc + zion/r) dr  6.1586521007E+01 Ha bohr**3
+  alpha_z change, table cut at r =  6.00:  9.6461E-07
+  alpha_z change, table cut at r = 10.00:  3.7088E-07
+  |V_loc + zion/r| < 1e-10 beyond r =    9.7611
+  max |V_loc - V_ion| beyond rcmax  1.3399E-06
 
 Test configuration 0
 

@@ -408,6 +408,8 @@ d2excps - pseudofunction derivatives with core correction
 
 rms 2nd derivative error    1.111133E-03
 
+Ionic tail switched over r =  3.0010 to  6.0020 a.u., converged in  4 steps
+
 Pseudoatom total energy  -68.948277
 
 
@@ -442,6 +444,13 @@ Diagnostic tests using Vanderbilt-Kleinman-Bylander pseudopotentials
        l    <radius>/rc     E Basis Diag.   E Cutoff
 
        0        0.788344        3.817018     21.02  WARNING - GHOST(+)
+
+Coulomb tail of the local potential
+  alpha_z = 4 pi int r**2 (V_loc + zion/r) dr  7.3016732718E+01 Ha bohr**3
+  alpha_z change, table cut at r =  6.00:  1.7449E-06
+  alpha_z change, table cut at r = 10.00:  9.0054E-07
+  |V_loc + zion/r| < 1e-10 beyond r =   11.7382
+  max |V_loc - V_ion| beyond rcmax  1.5063E-05
 
 Test configuration 0
 

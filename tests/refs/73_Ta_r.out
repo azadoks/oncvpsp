@@ -837,6 +837,8 @@ B matrix Hermiticity error, ll=  3  kap=  3
  Orthonormal spin-orbit projector coefficients, l =  3
   4.3951E-02  3.3014E-02  1.7935E-02 -6.8374E-04 -5.7002E-06 -3.3245E-06
 
+Ionic tail switched over r =  1.4077 to  2.8154 a.u., converged in  6 steps
+
 Pseudoatom total energy-1269.685527
 
 
@@ -847,7 +849,7 @@ Diagnostic tests using Vanderbilt-Kleinman-Bylander pseudopotentials
 
    0  -1   1.3023987   1.3419424 -19.7817931   0.0000810   1.0008056   1.0005902
    0  -1   1.3023987   1.3419424  -2.6834221  -0.0000190   1.0002087   1.0002325
-   0  -1   1.3023987   1.3419424  -0.2066139   0.0000069   1.0001101   1.0000857
+   0  -1   1.3023987   1.3419424  -0.2066139  -0.0000020   1.0001525   1.0000828
 
    1  -2   1.3023987   1.3419424 -14.0350421  -0.0002211   1.0005387   1.0003973
    1   1   1.3023987   1.3419424 -16.3545754  -0.0001050   1.0005215   1.0003272
@@ -877,7 +879,7 @@ Diagnostic tests using Vanderbilt-Kleinman-Bylander pseudopotentials
 
    0  -1   1.3023987   1.3419424 -19.7817931   0.0000810   1.0008056   1.0005902
    0  -1   1.3023987   1.3419424  -2.6834221  -0.0000190   1.0002087   1.0002325
-   0  -1   1.3023987   1.3419424  -0.2066139   0.0000069   1.0001101   1.0000857
+   0  -1   1.3023987   1.3419424  -0.2066139  -0.0000020   1.0001525   1.0000828
 
    1  -2   1.3023987   1.3419424 -14.0350421  -0.0002145   1.0005729   1.0004318
    1   1   1.3023987   1.3419424 -16.3545754  -0.0001116   1.0004761   1.0002673
@@ -940,6 +942,13 @@ Ghost test for J = L - 1/2
  Testing for highly-localized positive-energy ghosts
        l    <radius>/rc     E Basis Diag.   E Cutoff
 
+Coulomb tail of the local potential
+  alpha_z = 4 pi int r**2 (V_loc + zion/r) dr  3.5220251702E+01 Ha bohr**3
+  alpha_z change, table cut at r =  6.00:  1.4038E-06
+  alpha_z change, table cut at r = 10.00:  8.2640E-07
+  |V_loc + zion/r| < 1e-10 beyond r =   10.5691
+  max |V_loc - V_ion| beyond rcmax  1.4447E-05
+
 Test configuration 0
 
    n   l kap    f        eae           eps        diff
@@ -968,8 +977,8 @@ Test configuration 0
 
     Total energies and differences
       AE_ref= -1.56166540E+04  AE_tst= -1.56166540E+04  dif=  0.00E+00
-      PS_ref= -1.26968553E+03  PS_tst= -1.26968558E+03  dif= -5.43E-05
-      PSP excitation error=  5.43E-05
+      PS_ref= -1.26968523E+03  PS_tst= -1.26968523E+03  dif=  3.86E-08
+      PSP excitation error= -3.86E-08
 
 Test configuration 1
 
@@ -1000,7 +1009,7 @@ Test configuration 1
     Total energies and differences
       AE_ref= -1.56166540E+04  AE_tst= -1.56163341E+04  dif=  3.20E-01
       PS_ref= -1.26968553E+03  PS_tst= -1.26936571E+03  dif=  3.20E-01
-      PSP excitation error=  4.68E-05
+      PSP excitation error= -5.74E-06
 
 Test configuration 2
 
@@ -1031,7 +1040,7 @@ Test configuration 2
     Total energies and differences
       AE_ref= -1.56166540E+04  AE_tst= -1.56163631E+04  dif=  2.91E-01
       PS_ref= -1.26968553E+03  PS_tst= -1.26939473E+03  dif=  2.91E-01
-      PSP excitation error=  7.66E-05
+      PSP excitation error=  2.69E-05
 
 Test configuration 3
 
@@ -1062,7 +1071,7 @@ Test configuration 3
     Total energies and differences
       AE_ref= -1.56166540E+04  AE_tst= -1.56149745E+04  dif=  1.68E+00
       PS_ref= -1.26968553E+03  PS_tst= -1.26800591E+03  dif=  1.68E+00
-      PSP excitation error= -8.89E-05
+      PSP excitation error= -1.41E-04
 
 DATA FOR PLOTTING
 

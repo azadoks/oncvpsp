@@ -89,6 +89,45 @@ irel, and the stage.  It has the following major sections:
    of the pseudocharge are computed (subroutine vout)and the pseudopotentials
    are "unscreened."
 
+   Beyond the largest core radius rcmax the screened potentials are the
+   all-electron potential, screened by the all-electron valence charge.
+   The pseudo valence charge differs from it there (by about 1e-4 of it
+   for a scalar- or fully relativistic reference), so unscreening with it
+   would leave the Hartree and exchange-correlation response to that
+   difference in the local potential: a long-ranged term that is not
+   ionic, and that plane-wave codes see through the G=0 term. Instead
+   (subroutine ionic_screening in ionic_tail.f90, after the ionic tail of
+   PseudoPotentialGenerators.jl) the screened potentials are switched,
+   from rcmax to where the frozen-core ionic potential
+
+       V_ion = -Z/r + V_H[n_c] + V_xc[n_c + n_v] - V_xc[n_v + rhomod]
+
+   is -zion/r to 1e-10 (or to 2 rcmax if that is further out), to
+   V_ion + V_Hxc[rho + rhomod], with the C-infinity switch
+   f(1-x)/(f(1-x)+f(x)), f(t) = exp(-1/t). The unscreened potentials are
+   then V_ion beyond the window, which keeps the core penetration and the
+   core-valence exchange-correlation. The pseudo valence states are
+   iterated with the switched local potential to a fixed point (1e-10),
+   so that the reference configuration stays a fixed point of the
+   pseudo-atom (PS_ref - PS_tst of test configuration 0 is round-off).
+   The model core is built before, and kept. The out file gives the
+   window and the number of steps:
+
+       Ionic tail switched over r =  2.7030 to  5.4060 a.u., converged in  5 steps
+
+   and, after the ghost tests, how closely the local potential is
+   -zion/r (subroutine coulomb_tail):
+
+       Coulomb tail of the local potential
+         alpha_z = 4 pi int r**2 (V_loc + zion/r) dr  2.2381270191E+01 Ha bohr**3
+         alpha_z change, table cut at r =  6.00:  3.9343E-07
+         alpha_z change, table cut at r = 10.00:  1.7178E-07
+         |V_loc + zion/r| < 1e-10 beyond r =    6.8728
+         max |V_loc - V_ion| beyond rcmax  8.1246E-06
+
+   alpha_z is the G=0 term of the energy over the whole log mesh (QE's
+   alpha = int r (r V_loc + 2 zion) dr in Ry is alpha_z/(2 pi)).
+
 6) The routine *run_diag* is next called to test the semi-local and separable
    pseudopotentials.  For bound states, the normalized bound-state
    eigenvalues and pseudo wave functions are calculated.  The eigenvalues
