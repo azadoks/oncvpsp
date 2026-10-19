@@ -19,27 +19,27 @@
  subroutine sratom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
 &           rr,vi,zz,mmax,iexc,etot,ierr,irel)
 
-! self-consistent scalar-relativistic all-electron atom
-! calculation using log mesh (non-relativistic when irel=0)
-
-!na  principal quantum number array, dimension ncv
-!la  angular-momenta
-!ea  eigenvalues (output)
-!fa  occupancies
-!rpk  radius of outermost peak of wave function
-!nc  number of core states
-!ncv  number of core+valence states
-!it  number of iterations (output)
-!rhoc  core charge (output)
-!rho  total core+valence charge (output)
-!rr  log radial mesh
-!vi  all-electron potential (output)
-!zz  atomic number
-!mmax  size of log grid
-!iexc  exchange-correlation function to be used
-!etot  all-electron total energy (output)
-!ierr  error flag
-!irel  0 non-relativistic, 1 scalar-relativistic
+!! self-consistent scalar-relativistic all-electron atom
+!! calculation using log mesh (non-relativistic when irel=0)
+!!
+!! @param na  principal quantum number array, dimension ncv
+!! @param la  angular-momenta
+!! @param ea  eigenvalues (output)
+!! @param fa  occupancies
+!! @param rpk  radius of outermost peak of wave function
+!! @param nc  number of core states
+!! @param ncv  number of core+valence states
+!! @param it  number of iterations (output)
+!! @param rhoc  core charge (output)
+!! @param rho  total core+valence charge (output)
+!! @param rr  log radial mesh
+!! @param vi  all-electron potential (output)
+!! @param zz  atomic number
+!! @param mmax  size of log grid
+!! @param iexc  exchange-correlation function to be used
+!! @param etot  all-electron total energy (output)
+!! @param ierr  error flag
+!! @param irel  0 non-relativistic, 1 scalar-relativistic
 
  use constants_m, only: dp
  implicit none

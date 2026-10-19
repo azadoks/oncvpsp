@@ -18,13 +18,13 @@
 !
  subroutine exchdl(rho,vxc,exc,mmax)
 
-!calculates Hedin-Lundquist exchange-correlation potential and energy
-!density
-
-!rho  charge density times 4 pi
-!vxc  exchange-correlation potential
-!exc  exchange-correlation energy density
-!mmax  dimension of log radial grid
+!! calculates Hedin-Lundquist exchange-correlation potential and energy
+!! density
+!!
+!! @param rho  charge density times 4 pi
+!! @param vxc  exchange-correlation potential
+!! @param exc  exchange-correlation energy density
+!! @param mmax  dimension of log radial grid
 
  use constants_m, only: dp, pi
  implicit none

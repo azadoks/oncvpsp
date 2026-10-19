@@ -8,12 +8,27 @@
  public :: read_input_toml
  contains
 
-! Reads the TOML input: the same data as read_input_text, with the same
-! defaults and the same checks against the array sizes (check_data
-! validates the values afterwards).  Every table and key is required unless
-! stated otherwise; a missing or mistyped one stops the program with a
-! message naming it.
-!
+ subroutine read_input_toml(unit, &
+&                           atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
+&                           lmax, rc, ep, ncon, nbas, qcut, &
+&                           lloc, lpopt, dvloc0, nproj, debl, &
+&                           icmod, fcfact, rcfact, &
+&                           fcfact_min, fcfact_max, fcfact_step, &
+&                           rcfact_min, rcfact_max, rcfact_step, &
+&                           epsh1, epsh2, depsh, rxpsh, &
+&                           rlmax, drl, &
+&                           ncnf, nvcnf, nacnf, lacnf, facnf, &
+&                           amesh, rr1, rmax)
+
+!! Reads the TOML input: the same data as read_input_text, with the same
+!! defaults and the same checks against the array sizes (check_data
+!! validates the values afterwards).  Every table and key is required unless
+!! stated otherwise; a missing or mistyped one stops the program with a
+!! message naming it.
+!!
+!! scripts/input_text_to_toml.py converts a text input to this form.  The
+!! tables and their keys are listed below.
+
 !   [oncvpsp]                  atsym, z, nc, nv, iexc
 !   [reference_configuration]  n, l, f                (nc + nv each)
 !   [pseudopotentials]         lmax, and l (0..lmax), rc, ep, ncon, nbas,
@@ -32,19 +47,7 @@
 !   [pp_output]                psfile
 !   [[test_configurations]]    n, l, f (valence states only; optional, up
 !                              to 4)
-!
-! scripts/input_text_to_toml.py converts a text input to this form.
- subroutine read_input_toml(unit, &
-&                           atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
-&                           lmax, rc, ep, ncon, nbas, qcut, &
-&                           lloc, lpopt, dvloc0, nproj, debl, &
-&                           icmod, fcfact, rcfact, &
-&                           fcfact_min, fcfact_max, fcfact_step, &
-&                           rcfact_min, rcfact_max, rcfact_step, &
-&                           epsh1, epsh2, depsh, rxpsh, &
-&                           rlmax, drl, &
-&                           ncnf, nvcnf, nacnf, lacnf, facnf, &
-&                           amesh, rr1, rmax)
+
  implicit none
 !Input variables
 !> The Fortran unit number to read from
@@ -351,10 +354,11 @@
  return
  end subroutine read_input_toml
 
-! report an input error in the output (unit 6) and on stderr, and stop
  subroutine input_error(message)
 
-!message  description of the error
+!! report an input error in the output (unit 6) and on stderr, and stop
+!!
+!! @param message  description of the error
 
 !Input variables
  character(len=*), intent(in) :: message
@@ -365,12 +369,14 @@
  error stop 1
  end subroutine input_error
 
-! the table [name] of the document
  subroutine get_section(table, name, child)
 
-!table  the TOML document
-!name  name of the table
-!child  the table [name]; the program stops if it is missing or not a table
+!! the table [name] of the document
+!!
+!! @param table  the TOML document
+!! @param name  name of the table
+!! @param child  the table [name]; the program stops if it is missing or not a
+!!               table
 
 !Input variables
  character(len=*), intent(in) :: name
@@ -393,14 +399,15 @@
  return
  end subroutine get_section
 
-! report a key that a lookup did not return: missing for missing_key, or
-! for success from a lookup with requested=.false., else mistyped
  subroutine key_error(section, key, stat, what)
 
-!section  name of the table holding the key
-!key  name of the key
-!stat  status of the lookup
-!what  the expected type, for the message (e.g. 'an integer')
+!! report a key that a lookup did not return: missing for missing_key, or
+!! for success from a lookup with requested=.false., else mistyped
+!!
+!! @param section  name of the table holding the key
+!! @param key  name of the key
+!! @param stat  status of the lookup
+!! @param what  the expected type, for the message (e.g. 'an integer')
 
 !Input variables
  character(len=*), intent(in) :: section, key, what
@@ -414,13 +421,14 @@
  return
  end subroutine key_error
 
-! an integer key, required
  subroutine get_int(table, section, key, val)
 
-!table  the table holding the key
-!section  name of the table, for messages
-!key  name of the key
-!val  the value of the key
+!! an integer key, required
+!!
+!! @param table  the table holding the key
+!! @param section  name of the table, for messages
+!! @param key  name of the key
+!! @param val  the value of the key
 
 !Input variables
  character(len=*), intent(in) :: section, key
@@ -441,14 +449,16 @@
  return
  end subroutine get_int
 
-! a real key (an integer is converted), required unless default is given
  subroutine get_real(table, section, key, val, default)
 
-!table  the table holding the key
-!section  name of the table, for messages
-!key  name of the key
-!val  the value of the key, or default if the key is missing
-!default  optional, the value for a missing key, which is then not required
+!! a real key (an integer is converted), required unless default is given
+!!
+!! @param table  the table holding the key
+!! @param section  name of the table, for messages
+!! @param key  name of the key
+!! @param val  the value of the key, or default if the key is missing
+!! @param default  optional, the value for a missing key, which is then not
+!!                 required
 
 !Input variables
  character(len=*), intent(in) :: section, key
@@ -475,13 +485,14 @@
  return
  end subroutine get_real
 
-! a string key, required
  subroutine get_string(table, section, key, val)
 
-!table  the table holding the key
-!section  name of the table, for messages
-!key  name of the key
-!val  the value of the key
+!! a string key, required
+!!
+!! @param table  the table holding the key
+!! @param section  name of the table, for messages
+!! @param key  name of the key
+!! @param val  the value of the key
 
 !Input variables
  character(len=*), intent(in) :: section, key
@@ -502,14 +513,15 @@
  return
  end subroutine get_string
 
-! the array key of a table, required, with nn elements
  subroutine get_array(table, section, key, nn, arr)
 
-!table  the table holding the key
-!section  name of the table, for messages
-!key  name of the key
-!nn  required number of elements
-!arr  the array of the key
+!! the array key of a table, required, with nn elements
+!!
+!! @param table  the table holding the key
+!! @param section  name of the table, for messages
+!! @param key  name of the key
+!! @param nn  required number of elements
+!! @param arr  the array of the key
 
 !Input variables
  character(len=*), intent(in) :: section, key
@@ -535,14 +547,15 @@
  return
  end subroutine get_array
 
-! an integer array key, required, with nn elements
  subroutine get_int_array(table, section, key, nn, vals)
 
-!table  the table holding the key
-!section  name of the table, for messages
-!key  name of the key
-!nn  required number of elements
-!vals  the values, in vals(1:nn); the rest is unchanged
+!! an integer array key, required, with nn elements
+!!
+!! @param table  the table holding the key
+!! @param section  name of the table, for messages
+!! @param key  name of the key
+!! @param nn  required number of elements
+!! @param vals  the values, in vals(1:nn); the rest is unchanged
 
 !Input variables
  character(len=*), intent(in) :: section, key
@@ -566,14 +579,15 @@
  return
  end subroutine get_int_array
 
-! a real array key (integers are converted), required, with nn elements
  subroutine get_real_array(table, section, key, nn, vals)
 
-!table  the table holding the key
-!section  name of the table, for messages
-!key  name of the key
-!nn  required number of elements
-!vals  the values, in vals(1:nn); the rest is unchanged
+!! a real array key (integers are converted), required, with nn elements
+!!
+!! @param table  the table holding the key
+!! @param section  name of the table, for messages
+!! @param key  name of the key
+!! @param nn  required number of elements
+!! @param vals  the values, in vals(1:nn); the rest is unchanged
 
 !Input variables
  character(len=*), intent(in) :: section, key
@@ -597,12 +611,13 @@
  return
  end subroutine get_real_array
 
-! the angular momenta of the rows of a section must be 0..lmax in order
  subroutine check_l(lt, lmax, section)
 
-!lt  the angular momenta of the rows
-!lmax  maximum angular momentum
-!section  name of the table, for messages
+!! the angular momenta of the rows of a section must be 0..lmax in order
+!!
+!! @param lt  the angular momenta of the rows
+!! @param lmax  maximum angular momentum
+!! @param section  name of the table, for messages
 
 !Input variables
  integer, intent(in) :: lt(:), lmax

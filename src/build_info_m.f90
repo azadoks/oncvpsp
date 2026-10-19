@@ -30,10 +30,12 @@
  contains
 
  subroutine write_build_info(iunit,program,treatment)
-!writes the one-line build description
-!iunit  output unit
-!program  name of the executable
-!treatment  relativistic treatment (non-, scalar- or fully-relativistic)
+!! writes the one-line build description
+!!
+!! @param iunit  output unit
+!! @param program  name of the executable
+!! @param treatment  relativistic treatment (non-, scalar- or
+!!                   fully-relativistic)
 
 !Input variables
  integer, intent(in) :: iunit

@@ -17,34 +17,32 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
  subroutine oncvpsp_main(irel,istage)
-!
-! Creates and tests optimized norm-conserving Vanderbilt or Kleinman-Bylander
-! pseudopotentials based on D. R. Hamann, Phys. Rev. B 88, 085117 (2013)
-! and references therein.
-!
-!   D. R. Hamann
-!   Mat-Sim Research LLC
-!   P.O. Box 742
-!   Murray Hill, NJ 07974
-!   USA
-!
-!   Developed from original "gncpp" code of March 8,1987
-!
-!   Output format for ABINIT pspcod=8 and upf format for quantumespresso
-!
-!   The whole of each executable: oncvpsp.x, oncvpspnr.x and oncvpspr.x and
-!   their _ae.x and _ps.x stages are short programs calling this with their
-!   irel and istage.  With istage=1 (the _ae.x), it solves only the
-!   all-electron atom and the all-electron halves of the test
-!   configurations, and writes them to the file given by --ae-file.  With
-!   istage=2 (the _ps.x), it reads that file instead of solving the
-!   all-electron atom and otherwise runs as with istage=0, with the same
-!   output.  Both read the same input.  See ae_file_m.
-!
-!irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
-!istage  0 the whole calculation, 1 the all-electron stage only, 2 the
-!        pseudopotential stage only
-!
+!! Creates and tests optimized norm-conserving Vanderbilt or Kleinman-Bylander
+!! pseudopotentials based on D. R. Hamann, Phys. Rev. B 88, 085117 (2013)
+!! and references therein.
+!!
+!!   D. R. Hamann
+!!   Mat-Sim Research LLC
+!!   P.O. Box 742
+!!   Murray Hill, NJ 07974
+!!   USA
+!!
+!!   Developed from original "gncpp" code of March 8,1987
+!!
+!!   Output format for ABINIT pspcod=8 and upf format for quantumespresso
+!!
+!!   The whole of each executable: oncvpsp.x, oncvpspnr.x and oncvpspr.x and
+!!   their _ae.x and _ps.x stages are short programs calling this with their
+!!   irel and istage.  With istage=1 (the _ae.x), it solves only the
+!!   all-electron atom and the all-electron halves of the test
+!!   configurations, and writes them to the file given by --ae-file.  With
+!!   istage=2 (the _ps.x), it reads that file instead of solving the
+!!   all-electron atom and otherwise runs as with istage=0, with the same
+!!   output.  Both read the same input.  See ae_file_m.
+!!
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param istage  0 the whole calculation, 1 the all-electron stage only, 2 the
+!!                pseudopotential stage only
  use, intrinsic :: iso_fortran_env, only: stdin => input_unit
  use psmlout_m, only: psmlout
  use build_info_m, only: write_build_info

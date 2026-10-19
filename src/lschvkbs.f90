@@ -18,20 +18,20 @@
 !
  subroutine lschvkbs(ll,ivkb,ee,rr,vloc,vkb,evkb,uu,up,mmax,mch)
 
-! Normalized scattering state for pseudopotential, fully non-local unless
-! ivkb=0, which should only happen if ll=lloc
-
-!ll  angular-momentum quantum number
-!ivkb  = 0, 1 or 2 VKB proectors to be used
-!ee  scattering state energy
-!rr  log radial mesh
-!vloc  local pseudopotential
-!vkb  VKB projectors
-!evkb  coefficients of VKB projectors
-!uu  output radial wave function (*rr)
-!up  d(uu)/dr
-!mmax  size of log grid
-!mch  index of radius to which uu is computed
+!! Normalized scattering state for pseudopotential, fully non-local unless
+!! ivkb=0, which should only happen if ll=lloc
+!!
+!! @param ll  angular-momentum quantum number
+!! @param ivkb  = 0, 1 or 2 VKB proectors to be used
+!! @param ee  scattering state energy
+!! @param rr  log radial mesh
+!! @param vloc  local pseudopotential
+!! @param vkb  VKB projectors
+!! @param evkb  coefficients of VKB projectors
+!! @param uu  output radial wave function (*rr)
+!! @param up  d(uu)/dr
+!! @param mmax  size of log grid
+!! @param mch  index of radius to which uu is computed
 
  use constants_m, only: dp
  implicit none

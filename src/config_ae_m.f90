@@ -35,45 +35,46 @@
 &                         mmax,iexc,ea,irel,nkap,istcnf,ierrcnf,itcnf, &
 &                         kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
 
-! solves the all-electron atom in the maximally-ionized and excited states
-! of test configuration jj, the all-electron half of the test-configuration
-! calculations.  These depend only on the configurations, not on the
-! pseudopotential, so oncvpsp_ae.x can compute them once for oncvpsp_ps.x
-! (see ae_file_m).  run_config_ps does the pseudo-atom half.
-
-!jj  index of current configufation
-!nacnf  principal quantum number array, all configurations
-!lacnf  angular-momenta array, all config.
-!facnf  occupancies, all config.
-!nc  number of core states
-!nvcnf  number of valence states, all config.
-!rr  log radial mesh
-!zz  atomic number
-!mmax  size of log grid
-!iexc  exchange-correlation function to be used
-!ea  reference configurattion eigenvalues, ea(:,1) for j=l+1/2 and
-!    ea(:,2) for j=l-1/2 when irel=2
-!irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
-!nkap  number of kappa per level: 1, or 2 for irel=2
-!istcnf  0 success, 1 all-electron atom failed, 2 the bound-state solver
-!        failed for an empty level (with j=l+1/2 when irel=2), 3 the
-!        same with j=l-1/2, all config.
-!ierrcnf  aeatom error code when istcnf==1, boundstate error code when
-!         istcnf>=2, all config.
-!itcnf  aeatom iteration count when istcnf/=0, all config.
-!kerrcnf  index in natcnf/latcnf of the level whose bound state failed when
-!         istcnf>=2, all config.
-!nvtcnf  number of merged valence levels, all config.
-!natcnf  merged level principal quantum numbers, reference levels first,
-!        all config.
-!latcnf  merged level angular momenta, all config.
-!fatcnf  merged level occupancies (:,1:3,jj): reference,
-!        maximally-ionized, excited, all config.
-!eatcnf  merged level all-electron eigenvalues (:,ikap,1:3,jj): reference,
-!        maximally-ionized, excited, all config.
-!etstcnf  all-electron total energy of the excited configuration, all
-!         config.
-!Only the column jj of istcnf through etstcnf is set.
+!! solves the all-electron atom in the maximally-ionized and excited states
+!! of test configuration jj, the all-electron half of the test-configuration
+!! calculations.  These depend only on the configurations, not on the
+!! pseudopotential, so oncvpsp_ae.x can compute them once for oncvpsp_ps.x
+!! (see ae_file_m).  run_config_ps does the pseudo-atom half.
+!!
+!! @param jj  index of current configufation
+!! @param nacnf  principal quantum number array, all configurations
+!! @param lacnf  angular-momenta array, all config.
+!! @param facnf  occupancies, all config.
+!! @param nc  number of core states
+!! @param nvcnf  number of valence states, all config.
+!! @param rr  log radial mesh
+!! @param zz  atomic number
+!! @param mmax  size of log grid
+!! @param iexc  exchange-correlation function to be used
+!! @param ea  reference configurattion eigenvalues, ea(:,1) for j=l+1/2 and
+!!            ea(:,2) for j=l-1/2 when irel=2
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param nkap  number of kappa per level: 1, or 2 for irel=2
+!! @param istcnf  0 success, 1 all-electron atom failed, 2 the bound-state
+!!                solver failed for an empty level (with j=l+1/2 when irel=2), 3
+!!                the same with j=l-1/2, all config.
+!! @param ierrcnf  aeatom error code when istcnf==1, boundstate error code when
+!!                 istcnf>=2, all config.
+!! @param itcnf  aeatom iteration count when istcnf/=0, all config.
+!! @param kerrcnf  index in natcnf/latcnf of the level whose bound state failed
+!!                 when istcnf>=2, all config.
+!! @param nvtcnf  number of merged valence levels, all config.
+!! @param natcnf  merged level principal quantum numbers, reference levels
+!!                first, all config.
+!! @param latcnf  merged level angular momenta, all config.
+!! @param fatcnf  merged level occupancies (:,1:3,jj): reference,
+!!                maximally-ionized, excited, all config.
+!! @param eatcnf  merged level all-electron eigenvalues (:,ikap,1:3,jj):
+!!                reference, maximally-ionized, excited, all config.
+!! @param etstcnf  all-electron total energy of the excited configuration, all
+!!                 config.
+!!
+!! Only the column jj of istcnf through etstcnf is set.
 
 !Input variables
  integer, intent(in) :: jj,mmax,iexc,nc,irel,nkap
@@ -237,7 +238,7 @@
  contains
 
  subroutine store_results
-! copies the results so far into column jj of the output arrays
+!! copies the results so far into column jj of the output arrays
  nvtcnf(jj)=nvt
  natcnf(:,jj)=nat(:)
  latcnf(:,jj)=lat(:)
@@ -251,13 +252,13 @@
 
  subroutine config_ae_warning(jj,irel,istcnf,ierrcnf,itcnf,kerrcnf, &
 &                             natcnf,latcnf)
-! prints the warning run_config_ps gives when the all-electron atom for test
-! configuration jj failed
-
-!jj  index of the configuration (1 for the reference)
-!irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
-!istcnf, ierrcnf, itcnf, kerrcnf, natcnf, latcnf  run_config_ae results, all
-!  configurations
+!! prints the warning run_config_ps gives when the all-electron atom for test
+!! configuration jj failed
+!!
+!! @param jj  index of the configuration (1 for the reference)
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param istcnf,ierrcnf,itcnf,kerrcnf,natcnf,latcnf  run_config_ae results, all
+!!        configurations
 
 !Input variables
  integer, intent(in) :: jj,irel

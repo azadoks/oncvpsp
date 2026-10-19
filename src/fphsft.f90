@@ -18,24 +18,24 @@
 !
  subroutine fphsft(ll,kap,epsh2,depsh,pshf,rr,vv,zz,mmax,mch,npsh,irel)
 
-! computes full potential scattering log derivatives
-! returns atan(rr(mch) * du/dr / u) which is sort-of like a phase shift
-! and easier to compare in plots than the log derivatives themselves
-! Pauli-type scalar-relativistic or non-relativistic calculation, or the
-! Dirac equation with the log derivatives of the large component only
-
-!ll  angular momentum
-!kap  =l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
-!epsh2  upper limit of energy scan
-!depsh  increment of scan
-!pshf  log derivatives "angles", as above
-!rr  radial log grid
-!vv  all-electron potential
-!zz  atomic number
-!mmax  dimension of rr, etc.
-!mch  index of radius for log der test
-!npsh  number of energy points in scan
-!irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! computes full potential scattering log derivatives
+!! returns atan(rr(mch) * du/dr / u) which is sort-of like a phase shift
+!! and easier to compare in plots than the log derivatives themselves
+!! Pauli-type scalar-relativistic or non-relativistic calculation, or the
+!! Dirac equation with the log derivatives of the large component only
+!!
+!! @param ll  angular momentum
+!! @param kap  =l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
+!! @param epsh2  upper limit of energy scan
+!! @param depsh  increment of scan
+!! @param pshf  log derivatives "angles", as above
+!! @param rr  radial log grid
+!! @param vv  all-electron potential
+!! @param zz  atomic number
+!! @param mmax  dimension of rr, etc.
+!! @param mch  index of radius for log der test
+!! @param npsh  number of energy points in scan
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 
  use constants_m, only: dp, pi
  implicit none

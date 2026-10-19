@@ -18,20 +18,20 @@
 !
  subroutine vkboutwf(ll,nvkb,ep,vkb,evkb,rr,vloc,uu,up,node,mmax,mch)
 
-! computes Vanderbilt / Kleinman-Bylander outward-integrated wave functions
-
-!ll  angular momentum
-!nvkb  number of projectors (0 for the local potential alone)
-!ep  energy at which wave function is to be calculated
-!vkb  Vanderbilt-Kleinman-Bylander projectors for this l
-!evkb  projector coefficients
-!rr  log radial mesh
-!vloc  local pseudopotential
-!uu  wave function
-!up  1st derivative of uu
-!node  count of number of nodes from 0 to rr(mch)
-!mmax  dimension of log mesh
-!mch  index of radius to which wave function is to be integrated
+!! computes Vanderbilt / Kleinman-Bylander outward-integrated wave functions
+!!
+!! @param ll  angular momentum
+!! @param nvkb  number of projectors (0 for the local potential alone)
+!! @param ep  energy at which wave function is to be calculated
+!! @param vkb  Vanderbilt-Kleinman-Bylander projectors for this l
+!! @param evkb  projector coefficients
+!! @param rr  log radial mesh
+!! @param vloc  local pseudopotential
+!! @param uu  wave function
+!! @param up  1st derivative of uu
+!! @param node  count of number of nodes from 0 to rr(mch)
+!! @param mmax  dimension of log mesh
+!! @param mch  index of radius to which wave function is to be integrated
 
  use constants_m, only: dp
  implicit none
@@ -133,16 +133,17 @@
 
  subroutine outwf_all(nkb,uh,uph,uk,upk)
 
-! computes the outward solutions of lschps (uh, uph) and of lschkb for
-! each of the nkb projectors (uk, upk), integrated in one loop so the
-! independent predictor-corrector recurrences can overlap; each solution
-! is computed exactly as those routines compute it
-
-!nkb  number of projectors
-!uh  homogeneous solution, normalized as in lschps
-!uph  1st derivative of uh
-!uk  inhomogeneous solutions with each projector as source, as in lschkb
-!upk  1st derivatives of uk
+!! computes the outward solutions of lschps (uh, uph) and of lschkb for
+!! each of the nkb projectors (uk, upk), integrated in one loop so the
+!! independent predictor-corrector recurrences can overlap; each solution
+!! is computed exactly as those routines compute it
+!!
+!! @param nkb  number of projectors
+!! @param uh  homogeneous solution, normalized as in lschps
+!! @param uph  1st derivative of uh
+!! @param uk  inhomogeneous solutions with each projector as source, as in
+!!            lschkb
+!! @param upk  1st derivatives of uk
 
 !Input variables
  integer, intent(in) :: nkb

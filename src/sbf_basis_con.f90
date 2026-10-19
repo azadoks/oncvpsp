@@ -19,24 +19,25 @@
  subroutine sbf_basis_con(ll,rr,mmax,irc,nbas,qroot,psopt,orbasis,orbasis_der, &
 &                     iprj,mxprj,ncon,ncon_in)
 
-! orthonormalize basis functions and derivatives at rc and form constraint
-! matrix based on derivative to be matched and overlaps with prior
-! optimized wave functions
-
-!ll  angujlar momentum
-!rr  log radial mesh
-!mmax  number of points in log radial mesh
-!irc  index rr such that rr(irc)=rc
-!nbas  number of basis functions
-!qroot  q values for j_l(q*r)
-!psopt  optimized projector wave functions for lower iprj
-!iprj  index of the projector being optimized
-!mxprj  dimension of psopt, maximum number of projectors
-!ncon  total number of constraints, ncon_in+iprj-1
-!ncon_in  number of value and derivative constraints at rc
-!orbasis  matrix for orthonormal basis (rows j_l, columns basis vectors)
-!orbasis_der  values and derivatives of orthonormal basis set at rc, and
-! norm constraint vectors from already-computed psopt
+!! orthonormalize basis functions and derivatives at rc and form constraint
+!! matrix based on derivative to be matched and overlaps with prior
+!! optimized wave functions
+!!
+!! @param ll  angujlar momentum
+!! @param rr  log radial mesh
+!! @param mmax  number of points in log radial mesh
+!! @param irc  index rr such that rr(irc)=rc
+!! @param nbas  number of basis functions
+!! @param qroot  q values for j_l(q*r)
+!! @param psopt  optimized projector wave functions for lower iprj
+!! @param iprj  index of the projector being optimized
+!! @param mxprj  dimension of psopt, maximum number of projectors
+!! @param ncon  total number of constraints, ncon_in+iprj-1
+!! @param ncon_in  number of value and derivative constraints at rc
+!! @param orbasis  matrix for orthonormal basis (rows j_l, columns basis
+!!                 vectors)
+!! @param orbasis_der  values and derivatives of orthonormal basis set at rc,
+!!                     and norm constraint vectors from already-computed psopt
 
  use constants_m, only: dp
  implicit none

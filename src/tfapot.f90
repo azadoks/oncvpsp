@@ -19,20 +19,20 @@
 ! tfapot
  function tfapot(rr,zz)
 
-! generalized Thomas-Fermi atomic potential
-
-!rr  radius (bohr)
-!zz  atomic number
-!tfapot  returned potential at rr (Ha)
-
-!...to an article of N. H. March ( "The Thomas-Fermi Approximation in
-! Quantum Mechanics", Adv. Phys. 6, 1 (1957)). He has the formula,
-! but it is not the result of his work. The original publication is:
-!     R. Latter, Phys. Rev. 99, 510 (1955).
-! He says that it''s an analytic fit to an improved calculation of the
-! potential distribution of a Thomas-Fermi atom without exchange first
-! performed by Miranda (C. Miranda, Mem. Acc. Italia 5, 285 (1934)).
-!                                 Alexander Seidl, TU Munich
+!! generalized Thomas-Fermi atomic potential
+!!
+!! @param rr  radius (bohr)
+!! @param zz  atomic number
+!! @return returned potential at rr (Ha)
+!!
+!! ...to an article of N. H. March ( "The Thomas-Fermi Approximation in
+!! Quantum Mechanics", Adv. Phys. 6, 1 (1957)). He has the formula,
+!! but it is not the result of his work. The original publication is:
+!!     R. Latter, Phys. Rev. 99, 510 (1955).
+!! He says that it''s an analytic fit to an improved calculation of the
+!! potential distribution of a Thomas-Fermi atom without exchange first
+!! performed by Miranda (C. Miranda, Mem. Acc. Italia 5, 285 (1934)).
+!!                                 Alexander Seidl, TU Munich
 
  use constants_m, only: dp
  implicit none

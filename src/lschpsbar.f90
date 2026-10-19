@@ -18,21 +18,22 @@
 !
  subroutine lschpsbar(nn,ll,ierr,ee,emin,emax,rr,vv,uu,up,mmax,mbar,tht)
 
-! Finds bound states of a semi-local pseudopotential
-
-!nn  principal quantum number
-!ll  angular-momentum quantum number
-!ierr  non-zero return if error
-!ee  bound-state energy, input guess and output calculated value (in/our)
-!emin  lower bound, potential minimum if ==0.0
-!emax  upper bound
-!rr  log radial mesh
-!vv  local psp
-!uu  output radial wave function (*rr)
-!up  d(uu)/dr
-!mmax  size of log grid
-!mbar  mesh point for infinite barrier
-!tht  phast-shift angle for boundary condition, units of pi
+!! Finds bound states of a semi-local pseudopotential
+!!
+!! @param nn  principal quantum number
+!! @param ll  angular-momentum quantum number
+!! @param ierr  non-zero return if error
+!! @param ee  bound-state energy, input guess and output calculated value
+!!            (in/our)
+!! @param emin  lower bound, potential minimum if ==0.0
+!! @param emax  upper bound
+!! @param rr  log radial mesh
+!! @param vv  local psp
+!! @param uu  output radial wave function (*rr)
+!! @param up  d(uu)/dr
+!! @param mmax  size of log grid
+!! @param mbar  mesh point for infinite barrier
+!! @param tht  phast-shift angle for boundary condition, units of pi
 
  use constants_m, only: dp, pi
  implicit none

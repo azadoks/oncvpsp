@@ -26,24 +26,24 @@
  subroutine modcore(icmod,rhops,rhotps,rhoc,rhoae,rhotae,rhomod, &
 &                   fcfact,rcfact,irps,mmax,rr,nc,nv,la,zion,iexc)
 
-!icmod  (not used)
-!rhops  state-by-state pseudocharge density
-!rhotps  total pseudocharge density
-!rhoc  core-charge density
-!rhoae  state-by-state all-electron valence charge density
-!rhotae  total all-electron valence charge density
-!rhomod  model core density and 4 derivatives
-!fcfact  the model is matched where rhoc equals fcfact times the total
-!        pseudocharge
-!rcfact  (not used)
-!irps  rr index of maximum rc
-!mmax  dimension of log grid
-!rr log radial grid
-!nc  number of core states
-!nv  number of valence states
-!la  angular-momenta
-!zion  ion charge
-!iexc  exchange-correlation function to be used
+!! @param icmod  (not used)
+!! @param rhops  state-by-state pseudocharge density
+!! @param rhotps  total pseudocharge density
+!! @param rhoc  core-charge density
+!! @param rhoae  state-by-state all-electron valence charge density
+!! @param rhotae  total all-electron valence charge density
+!! @param rhomod  model core density and 4 derivatives
+!! @param fcfact  the model is matched where rhoc equals fcfact times the total
+!!                pseudocharge
+!! @param rcfact  (not used)
+!! @param irps  rr index of maximum rc
+!! @param mmax  dimension of log grid
+!! @param rr  log radial grid
+!! @param nc  number of core states
+!! @param nv  number of valence states
+!! @param la  angular-momenta
+!! @param zion  ion charge
+!! @param iexc  exchange-correlation function to be used
 
  use constants_m, only: dp
  implicit none

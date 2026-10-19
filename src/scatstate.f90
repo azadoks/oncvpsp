@@ -18,24 +18,25 @@
 !
  subroutine scatstate(irel,nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch)
 
-!Integrates a scattering state of an all-electron atomic potential out to
-!mch: with the non-relativistic or scalar-relativistic Schroedinger equation
-!(lschfs), or with the Dirac equation (ldiracfs)
-
-!irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
-!nn  effective principal quantum number based on nodes inside mch (output)
-!ll  angular-momentum quantum number
-!kap  =l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
-!ierr  non-zero return if error
-!ee  energy of the state
-!rr  log radial mesh
-!zz  atomic number
-!vv  local atomic potential
-!uu  output radial wave function (*rr): uu(:,1) the Schroedinger function,
-!    or the Dirac large and small components
-!up  d(uu)/dr
-!mmax  size of log grid
-!mch  matching mesh point for inward-outward integrations
+!! Integrates a scattering state of an all-electron atomic potential out to
+!! mch: with the non-relativistic or scalar-relativistic Schroedinger equation
+!! (lschfs), or with the Dirac equation (ldiracfs)
+!!
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param nn  effective principal quantum number based on nodes inside mch
+!!            (output)
+!! @param ll  angular-momentum quantum number
+!! @param kap  =l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
+!! @param ierr  non-zero return if error
+!! @param ee  energy of the state
+!! @param rr  log radial mesh
+!! @param zz  atomic number
+!! @param vv  local atomic potential
+!! @param uu  output radial wave function (*rr): uu(:,1) the Schroedinger
+!!            function, or the Dirac large and small components
+!! @param up  d(uu)/dr
+!! @param mmax  size of log grid
+!! @param mch  matching mesh point for inward-outward integrations
 
  use constants_m, only: dp
  implicit none

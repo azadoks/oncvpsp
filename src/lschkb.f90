@@ -18,20 +18,20 @@
 !
  subroutine lschkb(nn,ll,ierr,ee,vkb,rr,vv,uu,up,mmax,mch)
 
-! outward integration of the inhomogeneous radial Schroedinger equation
-! on a logarithmic mesh with local potential and one proector term
-
-!nn  principal quantum number (not used)
-!ll  angular-momentum quantum number
-!ierr  non-zero return if error
-!ee  bound-state energy, input guess and output calculated value
-!vkb  Vanderbilt-Kleinman-bylander projector
-!rr  log radial mesh
-!vv  local pseudopotential
-!uu  output radial wave function (*rr)
-!up  d(uu)/dr
-!mmax  size of log grid
-!mch  matching mesh point for inward-outward integrations
+!! outward integration of the inhomogeneous radial Schroedinger equation
+!! on a logarithmic mesh with local potential and one proector term
+!!
+!! @param nn  principal quantum number (not used)
+!! @param ll  angular-momentum quantum number
+!! @param ierr  non-zero return if error
+!! @param ee  bound-state energy, input guess and output calculated value
+!! @param vkb  Vanderbilt-Kleinman-bylander projector
+!! @param rr  log radial mesh
+!! @param vv  local pseudopotential
+!! @param uu  output radial wave function (*rr)
+!! @param up  d(uu)/dr
+!! @param mmax  size of log grid
+!! @param mch  matching mesh point for inward-outward integrations
 
  use constants_m, only: dp
  implicit none

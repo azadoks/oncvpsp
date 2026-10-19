@@ -19,29 +19,31 @@
  subroutine run_diag_sr_so_r(lmax,npa,epa,lloc,irc, &
 &                    vsr,esr,vso,eso,nproj,rr,vfull,vp,zz,mmax,mxprj)
 
-!diagnostics for semi-local and Vanderbilt-Kleinman-bylander pseudopotentials
-!checks bound-state energies, norms, and slopes, and pseudo-bound state
-!quantities for positive-energy projectors by matching all-electron
-!log derivatives at rc.
-!Should test as essentially exact for non-relativitic calculations
-!Error for relativistic is B matrix Hermiticity error
-
-!lmax  maximum angular momentum
-!npa  principal quantum number for corresponding all-electron state
-!epa  bound-state or scattering state reference energies for vkb potentials
-!lloc  l for local potential
-!irc  core radii indices
-!vsr  normalized scalar-relativistic projectors
-!esr  energy coefficients of vsr
-!vso  normalized spin-orbit projectors
-!eso  energy coefficients of vso (multiplied by <L dot S> here)
-!nproj  number of vkb projectors for each l
-!rr  log radial grid
-!vfull  all-electron potential
-!vp  semi-local pseudopotentials (vp(:,5) is local potential if linear comb.)
-!zz  atomic number
-!mmax  size of radial grid
-!mxprj  dimension of number of projectors
+!! diagnostics for semi-local and Vanderbilt-Kleinman-bylander pseudopotentials
+!! checks bound-state energies, norms, and slopes, and pseudo-bound state
+!! quantities for positive-energy projectors by matching all-electron
+!! log derivatives at rc.
+!! Should test as essentially exact for non-relativitic calculations
+!! Error for relativistic is B matrix Hermiticity error
+!!
+!! @param lmax  maximum angular momentum
+!! @param npa  principal quantum number for corresponding all-electron state
+!! @param epa  bound-state or scattering state reference energies for vkb
+!!             potentials
+!! @param lloc  l for local potential
+!! @param irc  core radii indices
+!! @param vsr  normalized scalar-relativistic projectors
+!! @param esr  energy coefficients of vsr
+!! @param vso  normalized spin-orbit projectors
+!! @param eso  energy coefficients of vso (multiplied by <L dot S> here)
+!! @param nproj  number of vkb projectors for each l
+!! @param rr  log radial grid
+!! @param vfull  all-electron potential
+!! @param vp  semi-local pseudopotentials (vp(:,5) is local potential if linear
+!!            comb.)
+!! @param zz  atomic number
+!! @param mmax  size of radial grid
+!! @param mxprj  dimension of number of projectors
 
  use constants_m, only: dp
  implicit none

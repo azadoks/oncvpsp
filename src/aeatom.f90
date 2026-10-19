@@ -19,29 +19,29 @@
  subroutine aeatom(irel,nkap,na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
 &                  rr,vi,zz,mmax,iexc,etot,ierr)
 
-!self-consistent all-electron atom: non-relativistic or scalar-relativistic
-!(sratom) or fully-relativistic (relatom)
-
-!irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
-!nkap  number of kappa per level: 1, or 2 for irel=2
-!na  principal quantum number array, dimension ncv
-!la  angular-momenta
-!ea  eigenvalues, input guess (irel=2) and output; ea(:,1) for j=l+1/2,
-!    ea(:,2) for j=l-1/2 when irel=2
-!fa  occupancies
-!rpk  radius of outermost peak of wave function, indexed as ea
-!nc  number of core states
-!ncv  number of core+valence states
-!it  number of iterations (output)
-!rhoc  core charge density (output)
-!rho  total charge density (output)
-!rr  log radial mesh
-!vi  all-electron potential (output)
-!zz  atomic number
-!mmax  size of log grid
-!iexc  exchange-correlation function to be used
-!etot  all-electron total energy (output)
-!ierr  error flag
+!! self-consistent all-electron atom: non-relativistic or scalar-relativistic
+!! (sratom) or fully-relativistic (relatom)
+!!
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param nkap  number of kappa per level: 1, or 2 for irel=2
+!! @param na  principal quantum number array, dimension ncv
+!! @param la  angular-momenta
+!! @param ea  eigenvalues, input guess (irel=2) and output; ea(:,1) for j=l+1/2,
+!!            ea(:,2) for j=l-1/2 when irel=2
+!! @param fa  occupancies
+!! @param rpk  radius of outermost peak of wave function, indexed as ea
+!! @param nc  number of core states
+!! @param ncv  number of core+valence states
+!! @param it  number of iterations (output)
+!! @param rhoc  core charge density (output)
+!! @param rho  total charge density (output)
+!! @param rr  log radial mesh
+!! @param vi  all-electron potential (output)
+!! @param zz  atomic number
+!! @param mmax  size of log grid
+!! @param iexc  exchange-correlation function to be used
+!! @param etot  all-electron total energy (output)
+!! @param ierr  error flag
 
  use constants_m, only: dp
  implicit none

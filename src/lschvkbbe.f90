@@ -19,27 +19,26 @@
  subroutine lschvkbbe(nn,ll,nvkb,ierr,ee,uld,emin,emax, &
 &   rr,vloc,vkb,evkb,uu,up,mmax,mch)
 
-! integrates radial schroedinger equation for pseudopotential with
-! Vanderbilt-Kleinman-Bylander non-local projectors finding energy at
-! which desired log derivative uld is matched at point mch
-
-
-!nn  principal quantum number
-!ll  angular-momentum quantum number
-!nvkb  = number of VKB projectors to be used
-!ierr  non-zero return if error
-!ee  bound-state energy, input guess and output calculated value
-!uld  log derivative up/uu to be matched at mch
-!emin  externally generaated estimate of lower bound for ee
-!emax  externally generaated estimate of upper bound for ee
-!rr  log radial mesh
-!vloc  local part of psp
-!vkb  VKB projectors
-!evkb  coefficients of VKB projectors
-!uu  output radial wave function (*rr)
-!up  d(uu)/dr
-!mmax  size of log grid
-!mch  matching mesh point for inward-outward integrations
+!! integrates radial schroedinger equation for pseudopotential with
+!! Vanderbilt-Kleinman-Bylander non-local projectors finding energy at
+!! which desired log derivative uld is matched at point mch
+!!
+!! @param nn  principal quantum number
+!! @param ll  angular-momentum quantum number
+!! @param nvkb  = number of VKB projectors to be used
+!! @param ierr  non-zero return if error
+!! @param ee  bound-state energy, input guess and output calculated value
+!! @param uld  log derivative up/uu to be matched at mch
+!! @param emin  externally generaated estimate of lower bound for ee
+!! @param emax  externally generaated estimate of upper bound for ee
+!! @param rr  log radial mesh
+!! @param vloc  local part of psp
+!! @param vkb  VKB projectors
+!! @param evkb  coefficients of VKB projectors
+!! @param uu  output radial wave function (*rr)
+!! @param up  d(uu)/dr
+!! @param mmax  size of log grid
+!! @param mch  matching mesh point for inward-outward integrations
 
  use constants_m, only: dp
  implicit none

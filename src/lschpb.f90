@@ -18,18 +18,18 @@
 !
  subroutine lschpb(nn,ll,ierr,ee,rr,vv,uu,up,mmax,mch)
 
-! Finds bound states of a semi-local pseudopotential
-
-!nn  principal quantum number
-!ll  angular-momentum quantum number
-!ierr  non-zero return if error
-!ee  bound-state energy, input guess and output calculated value
-!rr  log radial mesh
-!vv  local psp
-!uu  output radial wave function (*rr)
-!up  d(uu)/dr
-!mmax  size of log grid
-!mch  matching mesh point for inward-outward integrations
+!! Finds bound states of a semi-local pseudopotential
+!!
+!! @param nn  principal quantum number
+!! @param ll  angular-momentum quantum number
+!! @param ierr  non-zero return if error
+!! @param ee  bound-state energy, input guess and output calculated value
+!! @param rr  log radial mesh
+!! @param vv  local psp
+!! @param uu  output radial wave function (*rr)
+!! @param up  d(uu)/dr
+!! @param mmax  size of log grid
+!! @param mch  matching mesh point for inward-outward integrations
 
  use constants_m, only: dp
  implicit none

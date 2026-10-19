@@ -135,6 +135,10 @@ recommendations, so opening the folder is most of the setup.
       diagnostics; fortls and fortitude work without one.
     - fortls reads `.fortls` at the top of the tree: the sources in `src`
       and `tests/unit`, `.inc` files included, with `WITH_TOML` defined.
+      Hovering over a routine, at its definition or at a `call`, shows its
+      `!!` header: the description and the `@param` arguments. Hovering
+      over a constant shows its `!>` or `!<` comment (see the Header
+      rules in [Coding Standards](coding_standards.md#conventions)).
     - The Python files are formatted on save by ruff.
 
    The tasks (Terminal > Run Task) are `pre-commit: this file`,

@@ -18,22 +18,22 @@
 !
  subroutine vrel(ll,ee,rr,vv,vr,uu,up,zz,mmax,irc,irel)
 
-! Finds an effective potential representing the Pauli-type scalar-relativistic
-! operators in the radial Schroedinger equation
-
-!ll  angular-momentum quantum number
-!ee  bound-state energy
-!rr  log radial mesh
-!vv  local atomic potential
-!vr  effective scalar-relativistic potential, set for
-!    0.5*rr(irc)<=rr<=1.5*rr(irc) and zero elsewhere
-!uu  radial wave function (*rr)
-!up  d(uu)/dr
-!zz  atomic number
-!mmax  size of log grid
-!irc  mesh index of the radius around which vr is calculated
-!irel  0 non-relativistic (vr is then not set), 1 scalar-, 2 fully-
-!      relativistic
+!! Finds an effective potential representing the Pauli-type scalar-relativistic
+!! operators in the radial Schroedinger equation
+!!
+!! @param ll  angular-momentum quantum number
+!! @param ee  bound-state energy
+!! @param rr  log radial mesh
+!! @param vv  local atomic potential
+!! @param vr  effective scalar-relativistic potential, set for
+!!            0.5*rr(irc)<=rr<=1.5*rr(irc) and zero elsewhere
+!! @param uu  radial wave function (*rr)
+!! @param up  d(uu)/dr
+!! @param zz  atomic number
+!! @param mmax  size of log grid
+!! @param irc  mesh index of the radius around which vr is calculated
+!! @param irel  0 non-relativistic (vr is then not set), 1 scalar-, 2 fully-
+!!              relativistic
 
  use constants_m, only: dp, c_light
  implicit none

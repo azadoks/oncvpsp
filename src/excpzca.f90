@@ -18,13 +18,13 @@
 !
  subroutine excpzca(rho,vxc,exc,mmax)
 
-!calculates Perdew-Zunger-Ceperly_Alder exchange-correlation potential
-! and energy density J. P. Perdew and A. Zunger, Phys. Rev. B23, 5048 (1981)
-
-!rho  charge density
-!vxc  exchange-correlation potential
-!exc  exchange-correlation energy density
-!mmax  dimension of log radial grid
+!! calculates Perdew-Zunger-Ceperly_Alder exchange-correlation potential
+!! and energy density J. P. Perdew and A. Zunger, Phys. Rev. B23, 5048 (1981)
+!!
+!! @param rho  charge density
+!! @param vxc  exchange-correlation potential
+!! @param exc  exchange-correlation energy density
+!! @param mmax  dimension of log radial grid
 
  use constants_m, only: dp, pi
  implicit none

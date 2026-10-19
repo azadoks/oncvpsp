@@ -17,8 +17,8 @@
 &                           ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                           amesh, rr1, rmax)
 
-!reads the text input file (see doc/32_Ge_annotated.dat), stopping on a
-!read error
+!! reads the text input file (see doc/32_Ge_annotated.dat), stopping on a
+!! read error
 
 !Input variables
 !> File unit number for input
@@ -286,17 +286,17 @@
  end subroutine read_input_text
 
  subroutine next_line(unit, line, inline, eof)
-! reads into line the next line of the input that is neither blank nor a
-! comment (one whose first nonblank character is #), and sets inline to its
-! line number. The data are then read from line rather than from unit, so
-! the input is never backspaced, and can come from a pipe. The end of the
-! input is an error, unless eof is present: it is then set instead, and
-! inline left at the line it had on entry
-
-!unit  input file unit
-!line  the line read, of any length
-!inline  line number of the last line read, updated on return
-!eof  optional, .true. if the input ended before another data line
+!! reads into line the next line of the input that is neither blank nor a
+!! comment (one whose first nonblank character is #), and sets inline to its
+!! line number. The data are then read from line rather than from unit, so
+!! the input is never backspaced, and can come from a pipe. The end of the
+!! input is an error, unless eof is present: it is then set instead, and
+!! inline left at the line it had on entry
+!!
+!! @param unit  input file unit
+!! @param line  the line read, of any length
+!! @param inline  line number of the last line read, updated on return
+!! @param eof  optional, .true. if the input ended before another data line
 
 !Input variables
  integer, intent(in) :: unit
@@ -339,10 +339,10 @@
  end subroutine next_line
 
  subroutine read_error(ios, inline)
-! report data read error and stop
-
-!ios  iostat of the read, non-zero for an error
-!inline  line number of the input file line being read
+!! report data read error and stop
+!!
+!! @param ios  iostat of the read, non-zero for an error
+!! @param inline  line number of the input file line being read
 
 !Input variables
  integer, intent(in) :: ios

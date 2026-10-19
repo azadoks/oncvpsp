@@ -19,25 +19,24 @@
  subroutine lschvkbb(nn,ll,nvkb,ierr,ee,emin,emax, &
 &   rr,vloc,vkb,evkb,uu,up,mmax,mch)
 
-! Finds bound states of a  pseudopotential with
-! Vanderbilt-Kleinman-Bylander non-local projectors
-
-
-!nn  principal quantum number
-!ll  angular-momentum quantum number
-!nvkb  = number of VKB projectors to be used
-!ierr  non-zero return if error
-!ee  bound-state energy, input guess and output calculated value
-!emin  externally generaated estimate of lower bound for ee
-!emax  externally generaated estimate of upper bound for ee
-!rr  log radial mesh
-!vloc  local part of psp
-!vkb  VKB projectors
-!evkb  coefficients of BKB projectors
-!uu  output radial wave function (*rr)
-!up  d(uu)/dr
-!mmax  size of log grid
-!mch  matching mesh point for inward-outward integrations
+!! Finds bound states of a  pseudopotential with
+!! Vanderbilt-Kleinman-Bylander non-local projectors
+!!
+!! @param nn  principal quantum number
+!! @param ll  angular-momentum quantum number
+!! @param nvkb  = number of VKB projectors to be used
+!! @param ierr  non-zero return if error
+!! @param ee  bound-state energy, input guess and output calculated value
+!! @param emin  externally generaated estimate of lower bound for ee
+!! @param emax  externally generaated estimate of upper bound for ee
+!! @param rr  log radial mesh
+!! @param vloc  local part of psp
+!! @param vkb  VKB projectors
+!! @param evkb  coefficients of BKB projectors
+!! @param uu  output radial wave function (*rr)
+!! @param up  d(uu)/dr
+!! @param mmax  size of log grid
+!! @param mch  matching mesh point for inward-outward integrations
 
  use constants_m, only: dp
  implicit none

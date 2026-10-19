@@ -18,12 +18,12 @@
 !
  subroutine sbf_rc_der(llin,qq,rc,sbfder)
 
-!calculate spherical Bessel function values and first four derivatives
-
-!llin  angular momentum l
-!qq  wave vector
-!rc  core radius
-!sbfder  values and first 4 derivatives of j_l(qq*rc)
+!! calculate spherical Bessel function values and first four derivatives
+!!
+!! @param llin  angular momentum l
+!! @param qq  wave vector
+!! @param rc  core radius
+!! @param sbfder  values and first 4 derivatives of j_l(qq*rc)
 
  use constants_m, only: dp
  implicit none

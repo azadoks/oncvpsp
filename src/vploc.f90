@@ -18,20 +18,20 @@
 !
  subroutine vploc(rr,vv,vp,dvloc0,irc,mmax,lpopt)
 
-!polynomial extrapolation of all-electron potential to rr=0
-
-!rr log radial mesh
-!vv all-electron  potential
-!vp pseudopotentials, vp(:,5) is local to be created by this routine
-!dvloc0  amplitude at rr==0 of smooth "null space" function to be added
-!irc  matching radius for polynomial potential
-!mmax  dimension of rr
-!lpopt  1-5, determines polynomial to be used
-!  1) match 2 derivatives, r**0,2,4
-!  2) match 2 derivatives, r**0,4,6
-!  3) match 3 derivatives, r**0,4,5,6
-!  4) match 3 derivatives, r**0,4,6,8
-!  5) match 3 derivatives, r**0,2,4,6
+!! polynomial extrapolation of all-electron potential to rr=0
+!!
+!! @param rr  log radial mesh
+!! @param vv  all-electron  potential
+!! @param vp  pseudopotentials, vp(:,5) is local to be created by this routine
+!! @param dvloc0  amplitude at rr==0 of smooth "null space" function to be added
+!! @param irc  matching radius for polynomial potential
+!! @param mmax  dimension of rr
+!! @param lpopt  1-5, determines polynomial to be used
+!!               1) match 2 derivatives, r**0,2,4
+!!               2) match 2 derivatives, r**0,4,6
+!!               3) match 3 derivatives, r**0,4,5,6
+!!               4) match 3 derivatives, r**0,4,6,8
+!!               5) match 3 derivatives, r**0,2,4,6
 
  use constants_m, only: dp
  implicit none

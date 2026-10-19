@@ -18,19 +18,19 @@
 !
  subroutine lschps(nn,ll,ierr,ee,rr,vv,uu,up,mmax,mch)
 
-! outward integration of Srcroedinger equation for semi-local pseudopotential
-! on a logarithmic mesh
-
-!nn  principal quantum number (not used actually)
-!ll  angular-momentum quantum number
-!ierr  non-zero return if error
-!ee  bound-state energy, input guess and output calculated value
-!rr  log radial mesh
-!vv  semi-local atomic pseudopotential
-!uu  output radial wave function (*rr)
-!up  d(uu)/dr
-!mmax  size of log grid
-!mch  matching mesh point for inward-outward integrations
+!! outward integration of Srcroedinger equation for semi-local pseudopotential
+!! on a logarithmic mesh
+!!
+!! @param nn  principal quantum number (not used actually)
+!! @param ll  angular-momentum quantum number
+!! @param ierr  non-zero return if error
+!! @param ee  bound-state energy, input guess and output calculated value
+!! @param rr  log radial mesh
+!! @param vv  semi-local atomic pseudopotential
+!! @param uu  output radial wave function (*rr)
+!! @param up  d(uu)/dr
+!! @param mmax  size of log grid
+!! @param mch  matching mesh point for inward-outward integrations
 
  use constants_m, only: dp
  implicit none

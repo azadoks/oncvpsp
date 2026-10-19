@@ -20,15 +20,16 @@
 
  subroutine gnu_script(epa,evkb,lmax,lloc,mxprj,nproj,nkap)
 
-!epa  wave function energies, last index 1 for j=l+1/2, 2 for j=l-1/2
-!     when nkap=2
-!evkb  projector coefficients, printed in the projector plot titles,
-!      last index as for epa
-!lmax  maximum angular momentum
-!lloc  angular momentum for local potential (lloc=4 for polynomial, etc.)
-!mxprj maximum number of projectors
-!nproj number of projectors for each l
-!nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
+!! @param epa  wave function energies, last index 1 for j=l+1/2, 2 for j=l-1/2
+!!             when nkap=2
+!! @param evkb  projector coefficients, printed in the projector plot titles,
+!!              last index as for epa
+!! @param lmax  maximum angular momentum
+!! @param lloc  angular momentum for local potential (lloc=4 for polynomial,
+!!              etc.)
+!! @param mxprj  maximum number of projectors
+!! @param nproj  number of projectors for each l
+!! @param nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
 
  use constants_m, only: dp
  implicit none

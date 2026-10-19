@@ -19,30 +19,32 @@
  subroutine run_diag(lmax,npa,epa,lloc,irc, &
 &                    vkb,evkb,nproj,rr,vfull,vp,zz,mmax,mxprj,irel,nkap)
 
-!diagnostics for semi-local and Vanderbilt-Kleinman-bylander pseudopotentials
-!checks bound-state energies, norms, and slopes, and pseudo-bound state
-!quantities for positive-energy projectors by matching all-electron
-!log derivatives at rc.
-!Should test as essentially exact for non-relativitic calculations
-!Error for relativistic is B matrix Hermiticity error
-
-!lmax  maximum angular momentum
-!npa  principal quantum number for corresponding all-electron state
-!epa  bound-state or scattering state reference energies for vkb potentials
-!     (last index 1 for j=l+1/2, 2 for j=l-1/2, as in vkb, evkb and vp)
-!lloc  l for local potential
-!irc  core radii indices
-!vkb  VKB projectors
-!evkb  coefficients of VKB projectors
-!nproj  number of vkb projectors for each l
-!rr  log radial grid
-!vfull  all-electron potential
-!vp  semi-local pseudopotentials (vp(:,5) is local potential if linear comb.)
-!zz  atomic number
-!mmax  size of radial grid
-!mxprj  dimension of number of projectors
-!irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
-!nkap  number of kappa per l: 1, or 2 for irel=2
+!! diagnostics for semi-local and Vanderbilt-Kleinman-bylander pseudopotentials
+!! checks bound-state energies, norms, and slopes, and pseudo-bound state
+!! quantities for positive-energy projectors by matching all-electron
+!! log derivatives at rc.
+!! Should test as essentially exact for non-relativitic calculations
+!! Error for relativistic is B matrix Hermiticity error
+!!
+!! @param lmax  maximum angular momentum
+!! @param npa  principal quantum number for corresponding all-electron state
+!! @param epa  bound-state or scattering state reference energies for vkb
+!!             potentials (last index 1 for j=l+1/2, 2 for j=l-1/2, as in vkb,
+!!             evkb and vp)
+!! @param lloc  l for local potential
+!! @param irc  core radii indices
+!! @param vkb  VKB projectors
+!! @param evkb  coefficients of VKB projectors
+!! @param nproj  number of vkb projectors for each l
+!! @param rr  log radial grid
+!! @param vfull  all-electron potential
+!! @param vp  semi-local pseudopotentials (vp(:,5) is local potential if linear
+!!            comb.)
+!! @param zz  atomic number
+!! @param mmax  size of radial grid
+!! @param mxprj  dimension of number of projectors
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param nkap  number of kappa per l: 1, or 2 for irel=2
 
  use constants_m, only: dp
  implicit none

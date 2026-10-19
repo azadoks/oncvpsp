@@ -18,18 +18,17 @@
 !
 
  subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax)
-!
-!  dummy substitute for interface to libxc library to allow successful
-!  build without this library
-!
-!iexc  exchange-correlation function to be used: -(1000*id1+id2) for
-!      the libxc functionals id1 and id2
-!al  log of the mesh ratio amesh of the log radial mesh
-!rho  charge density
-!vxc  exchange-correlation potential
-!exc  exchange-correlation energy density
-!rr  log radial mesh
-!mmax  dimension of log radial grid
+!!  dummy substitute for interface to libxc library to allow successful
+!!  build without this library
+!!
+!! @param iexc  exchange-correlation function to be used: -(1000*id1+id2) for
+!!              the libxc functionals id1 and id2
+!! @param al  log of the mesh ratio amesh of the log radial mesh
+!! @param rho  charge density
+!! @param vxc  exchange-correlation potential
+!! @param exc  exchange-correlation energy density
+!! @param rr  log radial mesh
+!! @param mmax  dimension of log radial grid
 
  use constants_m, only: dp
  implicit none

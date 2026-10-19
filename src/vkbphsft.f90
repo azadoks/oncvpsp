@@ -19,26 +19,26 @@
  subroutine vkbphsft(ll,ivkb,epsh2,depsh,ep,pshf,pshp, &
 & rr,vloc,vkb,evkb,mmax,mch,npsh)
 
-! computes Vanderfilt / Kleinman-Bylander scattering log derivatives
-! (or semi-local if ivkb==0)
-! returns atan(rr(mch) * du/dr / u) which is sort-of like a phase shift
-! and easier to compare in plots than the log derivatives themselves
-! Pauli-type scalar-relativistic calculation
-
-!ll  angular momentum
-!ivkb  number of projectors
-!epsh2  upper limit of energy scan
-!depsh  increment of scan
-!ep  reference energy for psp creation (bound or scattering)
-!pshf  all-electron log derivatives "angles", as above (input)
-!pshp  pseudopotential log derivatives "angles", as above (output)
-!rr  radial log grid
-!vloc  local part of psp
-!vkb  VKB projectors
-!evkb  coefficients of VKB projectors
-!mmax  dimension of rr, etc.
-!mch  index of radius for log der test
-!npsh  number of energy points in scan
+!! computes Vanderfilt / Kleinman-Bylander scattering log derivatives
+!! (or semi-local if ivkb==0)
+!! returns atan(rr(mch) * du/dr / u) which is sort-of like a phase shift
+!! and easier to compare in plots than the log derivatives themselves
+!! Pauli-type scalar-relativistic calculation
+!!
+!! @param ll  angular momentum
+!! @param ivkb  number of projectors
+!! @param epsh2  upper limit of energy scan
+!! @param depsh  increment of scan
+!! @param ep  reference energy for psp creation (bound or scattering)
+!! @param pshf  all-electron log derivatives "angles", as above (input)
+!! @param pshp  pseudopotential log derivatives "angles", as above (output)
+!! @param rr  radial log grid
+!! @param vloc  local part of psp
+!! @param vkb  VKB projectors
+!! @param evkb  coefficients of VKB projectors
+!! @param mmax  dimension of rr, etc.
+!! @param mch  index of radius for log der test
+!! @param npsh  number of energy points in scan
 
  use constants_m, only: dp, pi
  implicit none

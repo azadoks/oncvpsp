@@ -20,9 +20,9 @@
 
  subroutine sbf8(nm,xx,sb_out)
 
-!nm  maximum angular momentum wanted plus 1
-!xx  argument of spherical bessel function
-!sb_out  output of sbf_l(xx) for l=0,...,nm-1
+!! @param nm  maximum angular momentum wanted plus 1
+!! @param xx  argument of spherical bessel function
+!! @param sb_out  output of sbf_l(xx) for l=0,...,nm-1
 
  use constants_m, only: dp, pi
  implicit none

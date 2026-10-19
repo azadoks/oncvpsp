@@ -18,16 +18,16 @@
 !
  subroutine wf_rc_der(rr,uu,al,rc,irc,mmax,uorder)
 
-!calculate derivatives of radial wave functin at core radius rc
-
-!rr  log radial mesh
-!uu  rr*radial wavefunction
-!al  log of radial mesh factor
-!mmax  last point used on radial mesh
-!irc  index of radial mesh point used as rc
-!rc  input core radius.  If irc = 0 on input, irc is calculated and rc
-!    is exact mesh point value on output (next larger point)
-!uorder  value and four derivatives of uu/rr at final rc
+!! calculate derivatives of radial wave functin at core radius rc
+!!
+!! @param rr  log radial mesh
+!! @param uu  rr*radial wavefunction
+!! @param al  log of radial mesh factor
+!! @param mmax  last point used on radial mesh
+!! @param irc  index of radial mesh point used as rc
+!! @param rc  input core radius.  If irc = 0 on input, irc is calculated and rc
+!!            is exact mesh point value on output (next larger point)
+!! @param uorder  value and four derivatives of uu/rr at final rc
 
  use constants_m, only: dp
  implicit none

@@ -18,17 +18,17 @@
 !
  subroutine vpinteg(gg,hh,nn,mm,ss,rr)
 
-! integrals that go into construction of Vanderbilt separable pseudopotential
-
-! product of functions gg*hh goes like rr**mm at rr -> 0
-! integral on usual log mesh from 1 to nn
-
-!gg  first function in the integrand
-!hh  second function in the integrand
-!nn  outer integration limit (mesh index)
-!mm  power of rr in the small-rr behaviour of gg*hh
-!ss  integral of gg*hh on the log mesh
-!rr  log radial mesh
+!! integrals that go into construction of Vanderbilt separable pseudopotential
+!!
+!! product of functions gg*hh goes like rr**mm at rr -> 0
+!! integral on usual log mesh from 1 to nn
+!!
+!! @param gg  first function in the integrand
+!! @param hh  second function in the integrand
+!! @param nn  outer integration limit (mesh index)
+!! @param mm  power of rr in the small-rr behaviour of gg*hh
+!! @param ss  integral of gg*hh on the log mesh
+!! @param rr  log radial mesh
 
  use constants_m, only: dp
  implicit none

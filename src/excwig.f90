@@ -18,13 +18,13 @@
 !
  subroutine excwig(rho,vxc,exc,mmax)
 
-! Wigner ingerpolation formula for exchange-correlation potential and
-! energy density
-
-!rho  charge density
-!vxc  exchange-correlation potential
-!exc  exchange-correlation energy density
-!mmax  dimension of log radial grid
+!! Wigner ingerpolation formula for exchange-correlation potential and
+!! energy density
+!!
+!! @param rho  charge density
+!! @param vxc  exchange-correlation potential
+!! @param exc  exchange-correlation energy density
+!! @param mmax  dimension of log radial grid
 
  use constants_m, only: dp, pi
  implicit none

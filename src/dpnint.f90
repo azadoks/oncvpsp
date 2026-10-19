@@ -18,18 +18,18 @@
 !
  subroutine dpnint(xx, yy, nn, tt, ss, mm)
 
-! local polynomial interpolation of data yy on nn points xx
-! giving values ss on mm points tt
-! npoly sets order of polynomial
-! xx must be ordered in ascending order
-! output mm interpolated values ss on points tt
-
-!xx  points of the input data (ascending)
-!yy  input data values on xx
-!nn  number of input points
-!tt  points at which to interpolate (tt(1) may be 0, see below)
-!ss  interpolated values on tt
-!mm  number of output points
+!! local polynomial interpolation of data yy on nn points xx
+!! giving values ss on mm points tt
+!! npoly sets order of polynomial
+!! xx must be ordered in ascending order
+!! output mm interpolated values ss on points tt
+!!
+!! @param xx  points of the input data (ascending)
+!! @param yy  input data values on xx
+!! @param nn  number of input points
+!! @param tt  points at which to interpolate (tt(1) may be 0, see below)
+!! @param ss  interpolated values on tt
+!! @param mm  number of output points
 
  use constants_m, only: dp
  implicit none

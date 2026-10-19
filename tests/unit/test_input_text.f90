@@ -27,10 +27,10 @@
 
  subroutine check(ok, what)
 
-!counts and reports a failed check
-
-!ok  result of the check
-!what  what was checked
+!! counts and reports a failed check
+!!
+!! @param ok  result of the check
+!! @param what  what was checked
 
 !Input variables
  logical, intent(in) :: ok
@@ -45,11 +45,11 @@
 
  integer function scratch_input(lines, final_newline) result(unit)
 
-!opens a scratch file holding lines, with or without a newline after the
-!last, and returns its unit
-
-!lines  the lines of the file
-!final_newline  .true. to end the last line with a newline
+!! opens a scratch file holding lines, with or without a newline after the
+!! last, and returns its unit
+!!
+!! @param lines  the lines of the file
+!! @param final_newline  .true. to end the last line with a newline
 
 !Input variables
  character(len=*), intent(in) :: lines(:)
@@ -73,7 +73,7 @@
 
  subroutine test_next_line()
 
-!checks next_line on comments, blank, long and unterminated lines
+!! checks next_line on comments, blank, long and unterminated lines
 
 !Local variables
  character(len=700) :: lines(8)
@@ -109,12 +109,12 @@
 
  subroutine test_read_input_text(final_newline, with_mesh)
 
-!checks read_input_text on 14_Si.dat, with blank lines and comments inside
-!the blocks, a long line and comments after the data, and with or without
-!the optional log mesh line
-
-!final_newline  .true. to end the last line with a newline
-!with_mesh  .true. to add the log mesh line
+!! checks read_input_text on 14_Si.dat, with blank lines and comments inside
+!! the blocks, a long line and comments after the data, and with or without
+!! the optional log mesh line
+!!
+!! @param final_newline  .true. to end the last line with a newline
+!! @param with_mesh  .true. to add the log mesh line
 
 !Input variables
  logical, intent(in) :: final_newline, with_mesh

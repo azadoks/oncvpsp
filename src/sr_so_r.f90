@@ -19,23 +19,23 @@
  subroutine sr_so_r(lmax,irc,nproj,rr,mmax,mxprj,evkb,vkb, &
 &                       vsr,esr,vso,eso)
 
-! reformulates non-local potentials based on j = l +/- 1/2 to scalar-
-! relativistic and L dot S projectors
-! uses relationship <L dot S> = (J^2 - L^2 - S^2)/2
-! so L dot S = +/- l/2 for j = l +/- 1/2
-
-!lmax  maximum angular momentum
-!irc  core radii indices
-!nproj  number of projectors for each l
-!rr  log radial grid
-!mmax  size of radial grid
-!mxprj  dimension of number of projectors
-!vkb  vkb projectors for each l and j=l+/-1/2
-!evkb  coefficients of VKB projectors for each l and j=l+/-1/2
-!vsr  normalized scalar-relativistic projectors
-!esr  energy coefficients of vsr
-!vso  normalized spin-orbit projectors
-!eso  energy coefficients of vso, to be multiplied by <L dot S>
+!! reformulates non-local potentials based on j = l +/- 1/2 to scalar-
+!! relativistic and L dot S projectors
+!! uses relationship <L dot S> = (J^2 - L^2 - S^2)/2
+!! so L dot S = +/- l/2 for j = l +/- 1/2
+!!
+!! @param lmax  maximum angular momentum
+!! @param irc  core radii indices
+!! @param nproj  number of projectors for each l
+!! @param rr  log radial grid
+!! @param mmax  size of radial grid
+!! @param mxprj  dimension of number of projectors
+!! @param vkb  vkb projectors for each l and j=l+/-1/2
+!! @param evkb  coefficients of VKB projectors for each l and j=l+/-1/2
+!! @param vsr  normalized scalar-relativistic projectors
+!! @param esr  energy coefficients of vsr
+!! @param vso  normalized spin-orbit projectors
+!! @param eso  energy coefficients of vso, to be multiplied by <L dot S>
 
  use constants_m, only: dp
  implicit none

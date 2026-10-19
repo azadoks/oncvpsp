@@ -54,14 +54,14 @@ looks like this:
 !
  subroutine shift_pot(rr,vv,rcut,vshift,mmax,nshift)
 
-!adds a constant to a potential inside a radius
-
-!rr  log radial mesh
-!vv  potential (Ha), shifted on output
-!rcut  radius inside which vv is shifted (bohr)
-!vshift  the shift (Ha)
-!mmax  size of the log radial mesh
-!nshift  number of mesh points shifted
+!! adds a constant to a potential inside a radius
+!!
+!! @param rr  log radial mesh
+!! @param vv  potential (Ha), shifted on output
+!! @param rcut  radius inside which vv is shifted (bohr)
+!! @param vshift  the shift (Ha)
+!! @param mmax  size of the log radial mesh
+!! @param nshift  number of mesh points shifted
 
  use constants_m, only: dp
  implicit none
@@ -128,12 +128,26 @@ looks like this:
 
 - The `!` + copyright + GPL block heads every file; a new file carries the
   GPL notice under its own authors' copyright.
-- A description, as `!` comments, right after the `subroutine` or
+- A description, as `!!` comments, right after the `subroutine` or
   `function` statement (rule 8).
-- Then one `!name  description` line for each dummy argument (rule 9),
-  name and description separated by two spaces, with units (bohr, Ha)
-  where they apply. Module routines may instead put a `!>` comment above
-  each declaration.
+- Then, after an empty `!!` line, one `!! @param name  description` line
+  for each dummy argument (rule 9), name and description separated by
+  two spaces, with units (bohr, Ha) where they apply; continuation lines
+  are indented under the description. A function result is
+  `!! @return description`. Arguments described together are named
+  `a,b` or `a..b` (a through b in argument order).
+- The description and the arguments are one block of `!!` lines, with no
+  blank or plain `!` line inside it, and nothing between it and the
+  statement but blank lines. These are the doc comments that fortls,
+  the language server of the Modern Fortran extension, shows on hover
+  (see [Developer setup](developer_setup.md)); a plain `!` comment is
+  not shown, and a blank line ends the block (fortls keeps only the last
+  block). Text that would not read well run together, such as a table,
+  goes in plain `!` comments after the block.
+- Module constants (and any module variable) have a `!>` comment above
+  the declaration, or a `!<` comment after it on the same line, with one
+  name per documented declaration. A module may have a `!>` description
+  above its `module` statement, as `constants_m` does.
 
 **Declarations.**
 
@@ -168,7 +182,8 @@ hand.
   `case` are in the opener's column, and `case` in the column of
   `select case`.
 - Full-line comments in column 1. A comment line describes what follows
-  it; prose comments start with `! ` and lower case.
+  it; prose comments start with `! ` and lower case, and doc comments
+  (see Header) with `!! `, `!> ` or `!< `.
 - Continuation lines start with `&` in column 1, and the line before ends
   with `&`. The text after the `&` is aligned for reading.
 - At most 80 columns.

@@ -23,20 +23,20 @@
  subroutine der2exc(rhotot,rhoc,rho,rr,d2exc,d2ref,d2mdiff, &
 &                   zion,iexc,nc,nv,la,ircut,mmax)
 
-! rhotot  total valence charge, all-electron of pseudo
-! rhoc  core charge, all-electron or model
-! rho  valence state-by-state charge (one-electron)
-! rr  log radial grid
-! d2exc  Exc 2nd-derivative matrix
-! d2ref  reference matrix
-! d2mdiff root-mean-squared differrenc between d2exc and d2ref
-! zion  ion potential
-! iexc  exchange-correlation type
-! nc  number of core states
-! nv  number of valence states
-! la  array of l values for all-electron atom
-! ircut  maximum-radius for which all-electron and pseudo charges differ
-! mmax  dimensiion of log grid
+!! @param rhotot  total valence charge, all-electron of pseudo
+!! @param rhoc  core charge, all-electron or model
+!! @param rho  valence state-by-state charge (one-electron)
+!! @param rr  log radial grid
+!! @param d2exc  Exc 2nd-derivative matrix
+!! @param d2ref  reference matrix
+!! @param d2mdiff  root-mean-squared differrenc between d2exc and d2ref
+!! @param zion  ion potential
+!! @param iexc  exchange-correlation type
+!! @param nc  number of core states
+!! @param nv  number of valence states
+!! @param la  array of l values for all-electron atom
+!! @param ircut  maximum-radius for which all-electron and pseudo charges differ
+!! @param mmax  dimensiion of log grid
 
  use constants_m, only: dp
  implicit none

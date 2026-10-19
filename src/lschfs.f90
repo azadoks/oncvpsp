@@ -18,23 +18,24 @@
 !
  subroutine lschfs(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,irel)
 
-! integrates radial Pauli-type scalar-relativistic equation
-! on a logarithmic mesh
-! modified routine to be used in finding norm-conserving
-! pseudopotential
-
-!nn  effective principal quantum number based on nodes inside mch (output)
-!ll  angular-momentum quantum number
-!ierr  non-zero return if error
-!ee  bound-state energy, input guess and output calculated value
-!rr  log radial mesh
-!vv  local atomic potential
-!uu  output radial wave function (*rr)
-!up  d(uu)/dr
-!zz  atomic number
-!mmax  size of log grid
-!mch  matching mesh point for inward-outward integrations
-!irel  0 non-relativistic, 1 scalar-relativistic
+!! integrates radial Pauli-type scalar-relativistic equation
+!! on a logarithmic mesh
+!! modified routine to be used in finding norm-conserving
+!! pseudopotential
+!!
+!! @param nn  effective principal quantum number based on nodes inside mch
+!!            (output)
+!! @param ll  angular-momentum quantum number
+!! @param ierr  non-zero return if error
+!! @param ee  bound-state energy, input guess and output calculated value
+!! @param rr  log radial mesh
+!! @param vv  local atomic potential
+!! @param uu  output radial wave function (*rr)
+!! @param up  d(uu)/dr
+!! @param zz  atomic number
+!! @param mmax  size of log grid
+!! @param mch  matching mesh point for inward-outward integrations
+!! @param irel  0 non-relativistic, 1 scalar-relativistic
 
  use constants_m, only: dp, c_light
  implicit none

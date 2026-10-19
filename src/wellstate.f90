@@ -19,25 +19,26 @@
  subroutine wellstate(nnin,ll,kap,irc,ep,rr,vfull,vwell, &
 &                     uu,up,zz,mmax,mch,irel)
 
-!creates quantum well to confine positive-energy state, and calculates
-!the resulting all-electron wave function
-
-!nnin  principal quantum number of well state (input); that of the well
-!       state found, which may have more nodes (output)
-!ll  angular momentum
-!kap  l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
-!irc  index of core radius
-!ep  target energy for well state (>0); reset if a bound state is used
-!    or a negative energy was specified
-!rr  log radial mesh
-!vfull  all-electron potential
-!vwell  potential with binding well, for the ikap=2 calculation when irel=2
-!uu  all-electron well-bound wave function
-!up  d(uu)/dr
-!zz  atomic number
-!mmax  size of log radial mesh
-!mch  matching mesh point for inward-outward integrations
-!irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! creates quantum well to confine positive-energy state, and calculates
+!! the resulting all-electron wave function
+!!
+!! @param nnin  principal quantum number of well state (input); that of the well
+!!              state found, which may have more nodes (output)
+!! @param ll  angular momentum
+!! @param kap  l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
+!! @param irc  index of core radius
+!! @param ep  target energy for well state (>0); reset if a bound state is used
+!!            or a negative energy was specified
+!! @param rr  log radial mesh
+!! @param vfull  all-electron potential
+!! @param vwell  potential with binding well, for the ikap=2 calculation when
+!!               irel=2
+!! @param uu  all-electron well-bound wave function
+!! @param up  d(uu)/dr
+!! @param zz  atomic number
+!! @param mmax  size of log radial mesh
+!! @param mch  matching mesh point for inward-outward integrations
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 
  use constants_m, only: dp
  implicit none

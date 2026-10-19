@@ -47,17 +47,19 @@
  subroutine modcore_budget(rhotps,rhoc,rhomod,fcfact,ecutw,errmax,irmax, &
 &                           mmax,rr,iexc)
 
-!rhotps  total pseudocharge density
-!rhoc  core-charge density
-!rhomod  model core density and 4 derivatives
-!fcfact  plane-wave cutoff (Ha) the model must not need more than, if > 0;
-!        else 0 for ecutw, or minus the multiple of ecutw
-!ecutw  cutoff (Ha) the pseudo-waves need for errmax (used if fcfact <= 0)
-!errmax  exchange-correlation energy error (Ha) that defines the needed cutoff
-!irmax  rr index of the largest r_s (smallest rc)
-!mmax  dimension of log grid
-!rr log radial grid
-!iexc  exchange-correlation function to be used
+!! @param rhotps  total pseudocharge density
+!! @param rhoc  core-charge density
+!! @param rhomod  model core density and 4 derivatives
+!! @param fcfact  plane-wave cutoff (Ha) the model must not need more than, if >
+!!                0; else 0 for ecutw, or minus the multiple of ecutw
+!! @param ecutw  cutoff (Ha) the pseudo-waves need for errmax (used if fcfact <=
+!!               0)
+!! @param errmax  exchange-correlation energy error (Ha) that defines the needed
+!!                cutoff
+!! @param irmax  rr index of the largest r_s (smallest rc)
+!! @param mmax  dimension of log grid
+!! @param rr  log radial grid
+!! @param iexc  exchange-correlation function to be used
 
  use constants_m, only: dp, pi
  implicit none
@@ -224,12 +226,13 @@
 
  contains
 
-! whether the model of radius rr(is) has errors below errmax at the
-! density cutoffs ifrom..ilast
  logical function fits(is,ilast)
 
-!is  rr index of the model radius
-!ilast  last density cutoff index tested
+!! whether the model of radius rr(is) has errors below errmax at the
+!! density cutoffs ifrom..ilast
+!!
+!! @param is  rr index of the model radius
+!! @param ilast  last density cutoff index tested
 
 !Input variables
  integer, intent(in) :: is,ilast
@@ -242,13 +245,14 @@
  return
  end function fits
 
-! the smallest index above ilo, which fails, that fits up to ilast;
-! ihi fits
  integer function bisect(ilo,ihi,ilast)
 
-!ilo  lower rr index of the bracket, a model radius that fails
-!ihi  upper rr index of the bracket, a model radius that fits
-!ilast  last density cutoff index tested
+!! the smallest index above ilo, which fails, that fits up to ilast;
+!! ihi fits
+!!
+!! @param ilo  lower rr index of the bracket, a model radius that fails
+!! @param ihi  upper rr index of the bracket, a model radius that fits
+!! @param ilast  last density cutoff index tested
 
 !Input variables
  integer, intent(in) :: ilo,ihi,ilast
@@ -273,19 +277,20 @@
  return
  end function bisect
 
-! reports that no model radius fits and stops
  subroutine no_model()
+!! reports that no model radius fits and stops
  write(6,'(/a,f10.6,a,f10.4,a,1p,e10.2,a)') &
 &      'modcore_budget: ERROR stop - no model core inside r =',rr(irtop), &
 &      ' needs less than',ecut,' Ha for an error of',errmax,' Ha'
  error stop 1
  end subroutine no_model
 
-! the Martins coefficients at rr(is), and in core the model inside rr(is)
-! and the core charge beyond
  subroutine model(is)
 
-!is  rr index of the model radius
+!! the Martins coefficients at rr(is), and in core the model inside rr(is)
+!! and the core charge beyond
+!!
+!! @param is  rr index of the model radius
 
 !Input variables
  integer, intent(in) :: is
@@ -306,12 +311,13 @@
  return
  end subroutine model
 
-! the model and its first 4 derivatives at rad, from n' = p' n with
-! p = a + b r**2 + c r**4: n(k) = sum_j C(k-1,j) p(j+1) n(k-1-j)
  subroutine martins_derivatives(rad,dd)
 
-!rad  radius (bohr)
-!dd  the model and its first 4 derivatives at rad
+!! the model and its first 4 derivatives at rad, from n' = p' n with
+!! p = a + b r**2 + c r**4: n(k) = sum_j C(k-1,j) p(j+1) n(k-1-j)
+!!
+!! @param rad  radius (bohr)
+!! @param dd  the model and its first 4 derivatives at rad
 
 !Input variables
  real(dp), intent(in) :: rad
@@ -336,18 +342,19 @@
  return
  end subroutine martins_derivatives
 
-! the errors err(iq) at the density cutoffs iq*qstep, iq=ifirst..ilast, of
-! the model in core, up to the first above elimit (its index in ifail,
-! else 0).  With ilast=0 instead the band-limited models of the cutoffs
-! 1..ifrom-1 are kept in rqs.
-! The band-limited model is built up panel by panel (midpoints, width dq),
-! the sines and cosines of the midpoints by rotation
  subroutine scan_errors(ifirst,ilast,elimit,ifail)
 
-!ifirst  first density cutoff index whose error is tested
-!ilast  last density cutoff index, or 0 to keep the band-limited models
-!elimit  error limit (Ha)
-!ifail  index of the first cutoff with an error above elimit, else 0
+!! the errors err(iq) at the density cutoffs iq*qstep, iq=ifirst..ilast, of
+!! the model in core, up to the first above elimit (its index in ifail,
+!! else 0).  With ilast=0 instead the band-limited models of the cutoffs
+!! 1..ifrom-1 are kept in rqs.
+!! The band-limited model is built up panel by panel (midpoints, width dq),
+!! the sines and cosines of the midpoints by rotation
+!!
+!! @param ifirst  first density cutoff index whose error is tested
+!! @param ilast  last density cutoff index, or 0 to keep the band-limited models
+!! @param elimit  error limit (Ha)
+!! @param ifail  index of the first cutoff with an error above elimit, else 0
 
 !Input variables
  integer, intent(in) :: ifirst,ilast
@@ -403,10 +410,11 @@
  return
  end subroutine scan_errors
 
-! the error of the band-limited model bq of the model in core
  real(dp) function xc_error(bq)
 
-!bq  band-limited model core charge on rr(1:nx)
+!! the error of the band-limited model bq of the model in core
+!!
+!! @param bq  band-limited model core charge on rr(1:nx)
 
 !Input variables
  real(dp), intent(in) :: bq(nx)
@@ -422,11 +430,12 @@
  return
  end function xc_error
 
-! the exchange-correlation energy within the sphere of the valence charge
-! on the background plus the core charge cc
  real(dp) function exc_sphere(cc)
 
-!cc  core charge on rr(1:nx)
+!! the exchange-correlation energy within the sphere of the valence charge
+!! on the background plus the core charge cc
+!!
+!! @param cc  core charge on rr(1:nx)
 
 !Input variables
  real(dp), intent(in) :: cc(nx)
@@ -443,12 +452,13 @@
  return
  end function exc_sphere
 
-! the xc energy per electron and potential of the charge rho on rr(1:nx)
  subroutine xc_eps(rho,exc,vx)
 
-!rho  charge density on rr(1:nx)
-!exc  exchange-correlation energy per electron
-!vx  exchange-correlation potential
+!! the xc energy per electron and potential of the charge rho on rr(1:nx)
+!!
+!! @param rho  charge density on rr(1:nx)
+!! @param exc  exchange-correlation energy per electron
+!! @param vx  exchange-correlation potential
 
 !Input/output variables
  real(dp), intent(inout) :: rho(nx)
@@ -474,22 +484,23 @@
 
  end subroutine modcore_budget
 
-! the cutoff ecut (Ha) the pseudo-waves need for the error errmax (Ha per
-! atom): the root of the total residual kinetic energy sum_i w_i E_i(ecut),
-! with E_i the error per electron of pseudo-wave i and w_i the electrons
-! that fill it, the ecut_for_error of PseudoPotentialGenerators.jl.
-! ecurve(:,:,i) holds the cutoffs and E_i of run_optimize on its mesh,
-! zero beyond its end; wcurve(i)=0 skips it.  log E is interpolated
-! linearly in q between the mesh points, as for the convergence profiles
  subroutine modcore_budget_ecut(ecurve,wcurve,ncurve,nprof,errmax,ecut)
 
-!ecurve  residual kinetic energy curves: ecurve(1,:,i) cutoffs (Ha),
-!        ecurve(2,:,i) error per electron E_i (Ha) of pseudo-wave i
-!wcurve  electrons filling each pseudo-wave (0 skips it)
-!ncurve  number of points per curve
-!nprof  number of curves (pseudo-waves)
-!errmax  error (Ha per atom) that defines the needed cutoff
-!ecut  cutoff (Ha) the pseudo-waves need for errmax
+!! the cutoff ecut (Ha) the pseudo-waves need for the error errmax (Ha per
+!! atom): the root of the total residual kinetic energy sum_i w_i E_i(ecut),
+!! with E_i the error per electron of pseudo-wave i and w_i the electrons
+!! that fill it, the ecut_for_error of PseudoPotentialGenerators.jl.
+!! ecurve(:,:,i) holds the cutoffs and E_i of run_optimize on its mesh,
+!! zero beyond its end; wcurve(i)=0 skips it.  log E is interpolated
+!! linearly in q between the mesh points, as for the convergence profiles
+!!
+!! @param ecurve  residual kinetic energy curves: ecurve(1,:,i) cutoffs (Ha),
+!!                ecurve(2,:,i) error per electron E_i (Ha) of pseudo-wave i
+!! @param wcurve  electrons filling each pseudo-wave (0 skips it)
+!! @param ncurve  number of points per curve
+!! @param nprof  number of curves (pseudo-waves)
+!! @param errmax  error (Ha per atom) that defines the needed cutoff
+!! @param ecut  cutoff (Ha) the pseudo-waves need for errmax
 
  use constants_m, only: dp
  implicit none

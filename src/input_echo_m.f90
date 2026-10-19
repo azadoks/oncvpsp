@@ -30,22 +30,25 @@
  public :: icmod_lines, epsh_lines, write_icmod, write_epsh
  public :: write_input_echo
 
-!length and number of the lines returned by the *_lines routines
- integer, parameter, public :: echo_len=100, echo_max=5
+!> length of the lines returned by the *_lines routines
+ integer, parameter, public :: echo_len=100
+!> maximum number of lines returned by the *_lines routines
+ integer, parameter, public :: echo_max=5
 
  contains
 
-! MODEL CORE CHARGE section
-! the icmod=4 search grid is written only when it differs from the default
  subroutine icmod_lines(icmod,fcfact,rcfact,fcgrid,rcgrid,text,ntext)
 
-!icmod  model core charge option
-!fcfact  prefactor for model amplitude
-!rcfact  prefactor for model scale
-!fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
-!rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
-!text  the lines of the section
-!ntext  number of lines
+!! MODEL CORE CHARGE section
+!! the icmod=4 search grid is written only when it differs from the default
+!!
+!! @param icmod  model core charge option
+!! @param fcfact  prefactor for model amplitude
+!! @param rcfact  prefactor for model scale
+!! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
+!! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
+!! @param text  the lines of the section
+!! @param ntext  number of lines
 
 !Input variables
  integer, intent(in) :: icmod
@@ -84,16 +87,17 @@
  return
  end subroutine icmod_lines
 
-! LOG DERIVATIVE ANALYSIS section
-! rxpsh is written only when the input sets it (the readers set -1 otherwise)
  subroutine epsh_lines(epsh1,epsh2,depsh,rxpsh,text,ntext)
 
-!epsh1  lower limit of the log derivative analysis energy range (Ha)
-!epsh2  upper limit of the log derivative analysis energy range (Ha)
-!depsh  energy step (Ha)
-!rxpsh  radius of the analysis, negative for the default
-!text  the lines of the section
-!ntext  number of lines
+!! LOG DERIVATIVE ANALYSIS section
+!! rxpsh is written only when the input sets it (the readers set -1 otherwise)
+!!
+!! @param epsh1  lower limit of the log derivative analysis energy range (Ha)
+!! @param epsh2  upper limit of the log derivative analysis energy range (Ha)
+!! @param depsh  energy step (Ha)
+!! @param rxpsh  radius of the analysis, negative for the default
+!! @param text  the lines of the section
+!! @param ntext  number of lines
 
 !Input variables
  real(dp), intent(in) :: epsh1,epsh2,depsh,rxpsh
@@ -116,14 +120,15 @@
  return
  end subroutine epsh_lines
 
-! writes the MODEL CORE CHARGE section to unit 6
  subroutine write_icmod(icmod,fcfact,rcfact,fcgrid,rcgrid)
 
-!icmod  model core charge option
-!fcfact  prefactor for model amplitude
-!rcfact  prefactor for model scale
-!fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
-!rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
+!! writes the MODEL CORE CHARGE section to unit 6
+!!
+!! @param icmod  model core charge option
+!! @param fcfact  prefactor for model amplitude
+!! @param rcfact  prefactor for model scale
+!! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
+!! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 
 !Input variables
  integer, intent(in) :: icmod
@@ -140,13 +145,14 @@
  return
  end subroutine write_icmod
 
-! writes the LOG DERIVATIVE ANALYSIS section to unit 6
  subroutine write_epsh(epsh1,epsh2,depsh,rxpsh)
 
-!epsh1  lower limit of the log derivative analysis energy range (Ha)
-!epsh2  upper limit of the log derivative analysis energy range (Ha)
-!depsh  energy step (Ha)
-!rxpsh  radius of the analysis, negative for the default
+!! writes the LOG DERIVATIVE ANALYSIS section to unit 6
+!!
+!! @param epsh1  lower limit of the log derivative analysis energy range (Ha)
+!! @param epsh2  upper limit of the log derivative analysis energy range (Ha)
+!! @param depsh  energy step (Ha)
+!! @param rxpsh  radius of the analysis, negative for the default
 
 !Input variables
  real(dp), intent(in) :: epsh1,epsh2,depsh,rxpsh
@@ -167,14 +173,15 @@
 &                            icmod,fcfact,rcfact,fcgrid,rcgrid, &
 &                            epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
 &                            ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh)
-! writes the echo of the input data to unit 6, from the reference
-! configuration to the log mesh, as the psp8 and UPF files carry it
-
-!nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
-!iformat  1 for the psp8 file, 2 for the UPF file
-!(the other arguments are the input data, as read by the input readers;
-!rc0 the input core radii, ep the energies for the first kappa and fcfact
-!the input value)
+!! writes the echo of the input data to unit 6, from the reference
+!! configuration to the log mesh, as the psp8 and UPF files carry it
+!!
+!! @param nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
+!! @param iformat  1 for the psp8 file, 2 for the UPF file
+!!
+!! (the other arguments are the input data, as read by the input readers;
+!! rc0 the input core radii, ep the energies for the first kappa and fcfact
+!! the input value)
 
 !Input variables
  integer, intent(in) :: nkap,iformat

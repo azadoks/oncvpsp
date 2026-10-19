@@ -19,35 +19,37 @@
  subroutine run_phsft(lmax,lloc,nproj,epa,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
 &                      rr,vfull,vp,zz,mmax,mxprj,irc,irel,nkap)
 
-! computes log derivatives, actually atan(r * ((d psi(r)/dr)/psi(r)))
-! at rr(irphs) comparing all-electron with Vanderbilt-Kleinman-Bylander
-! results for 1 and 2 projectors, or the semi-local pseudpotential
-! when that is the local potential for some l
-! the computed quantity is reminiscent of a scattering phase shift, but isn't
-! for irel=2, the data for j=l+1/2 and j=l-1/2 follow each other, the
-! former labelled with -l
-
-!lmax  maximum angular momentum
-!lloc  l for local potential
-!nproj  number of VKB projectors for each l
-!epa  bound-state or scattering state reference energies for vkb potentials
-!     (last index 1 for j=l+1/2, 2 for j=l-1/2, as in vkb, evkb and vp)
-!epsh1  low energy limit for "phase shift" calculation
-!epsh2  high energy limit for "phase shift" calculation
-!depsh  energy increment
-!rxpsh  radius (bohr) at which log derivatives are computed; if negative,
-!       rr(irc(l)+2) is used, and rr(irc(lloc)) for l>lmax
-!vkb  VKB projectors
-!evkb  coefficients of VKB projectors
-!rr  log radial grid
-!vfull  all-electron potential
-!vp  semi-local pseudopotentials (vp(:,5) is local potential if linear comb.)
-!zz  atomic number
-!mmax  size of radial grid
-!mxprj  dimension of number of projectors
-!irc  core radii indices
-!irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
-!nkap  number of kappa per l: 1, or 2 for irel=2
+!! computes log derivatives, actually atan(r * ((d psi(r)/dr)/psi(r)))
+!! at rr(irphs) comparing all-electron with Vanderbilt-Kleinman-Bylander
+!! results for 1 and 2 projectors, or the semi-local pseudpotential
+!! when that is the local potential for some l
+!! the computed quantity is reminiscent of a scattering phase shift, but isn't
+!! for irel=2, the data for j=l+1/2 and j=l-1/2 follow each other, the
+!! former labelled with -l
+!!
+!! @param lmax  maximum angular momentum
+!! @param lloc  l for local potential
+!! @param nproj  number of VKB projectors for each l
+!! @param epa  bound-state or scattering state reference energies for vkb
+!!             potentials (last index 1 for j=l+1/2, 2 for j=l-1/2, as in vkb,
+!!             evkb and vp)
+!! @param epsh1  low energy limit for "phase shift" calculation
+!! @param epsh2  high energy limit for "phase shift" calculation
+!! @param depsh  energy increment
+!! @param rxpsh  radius (bohr) at which log derivatives are computed; if
+!!               negative, rr(irc(l)+2) is used, and rr(irc(lloc)) for l>lmax
+!! @param vkb  VKB projectors
+!! @param evkb  coefficients of VKB projectors
+!! @param rr  log radial grid
+!! @param vfull  all-electron potential
+!! @param vp  semi-local pseudopotentials (vp(:,5) is local potential if linear
+!!            comb.)
+!! @param zz  atomic number
+!! @param mmax  size of radial grid
+!! @param mxprj  dimension of number of projectors
+!! @param irc  core radii indices
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param nkap  number of kappa per l: 1, or 2 for irel=2
 
  use constants_m, only: dp
  implicit none

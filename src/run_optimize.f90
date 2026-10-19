@@ -20,31 +20,33 @@
 &                      irc,qcut,qmsbf,ncon_in,nbas_in,npr, &
 &                      psopt,vpsp,vkb,vae,cvgplt,ncurve,ecurve)
 
-! calls routines to generate optimized pseudo wave function and semi-local
-! pseudopotential and prints diagnostic information on process and
-! convergence performance
-
-!eig  energy at which pseudo wave function is computed
-!ll  angular momentum
-!mmax  dimension of log grid
-!mxprj  dimension of number of projectors
-!rr  log radial grid
-!uua  all-electron wave functions (*rr) for the projectors
-!qq  matrix of norms and overlaps of the uua inside rc
-!irc  index of core radius
-!qcut  q cutoff defining residual energy
-!qmsbf  maximum q in sbfs for this ll
-!ncon_in  number of constraints for matching psuedo and AE wave functions
-!nbas_in  number of basis functions for pseudo wave function
-!npr  number of projectors for this ll
-!psopt  optimized pseudo wave function(s)
-!vpsp  corresponding pseudopotential
-!vkb  Vanderbilt-Kleinman-Bylander projectors (without local v correction)
-!vae  all-electron potential
-!cvgplt  energy error vs. cutoff energy for plotting
-!ncurve  dimension of ecurve
-!ecurve  cutoff energy and energy error per electron on the E_resid(q) mesh,
-!        zero beyond its end
+!! calls routines to generate optimized pseudo wave function and semi-local
+!! pseudopotential and prints diagnostic information on process and
+!! convergence performance
+!!
+!! @param eig  energy at which pseudo wave function is computed
+!! @param ll  angular momentum
+!! @param mmax  dimension of log grid
+!! @param mxprj  dimension of number of projectors
+!! @param rr  log radial grid
+!! @param uua  all-electron wave functions (*rr) for the projectors
+!! @param qq  matrix of norms and overlaps of the uua inside rc
+!! @param irc  index of core radius
+!! @param qcut  q cutoff defining residual energy
+!! @param qmsbf  maximum q in sbfs for this ll
+!! @param ncon_in  number of constraints for matching psuedo and AE wave
+!!                 functions
+!! @param nbas_in  number of basis functions for pseudo wave function
+!! @param npr  number of projectors for this ll
+!! @param psopt  optimized pseudo wave function(s)
+!! @param vpsp  corresponding pseudopotential
+!! @param vkb  Vanderbilt-Kleinman-Bylander projectors (without local v
+!!             correction)
+!! @param vae  all-electron potential
+!! @param cvgplt  energy error vs. cutoff energy for plotting
+!! @param ncurve  dimension of ecurve
+!! @param ecurve  cutoff energy and energy error per electron on the E_resid(q)
+!!                mesh, zero beyond its end
 
  use constants_m, only: dp
  implicit none

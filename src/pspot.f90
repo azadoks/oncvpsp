@@ -19,25 +19,25 @@
  subroutine pspot(ipr,ll,rr,irc,mmax,al,nbas,qroot,eig,uu,pswfopt_sb, &
 &           psopt,vae,vpsp,vkb,ekin_num)
 
-!calculates optimized pseudopotential from coefficients of optimized
-!pseudo wave function and all-electron wave function
-
-!ipr  1 for first projector, 2 for second which usually has a node
-!ll  angular momentum
-!rr  log radial mesh
-!irc  index of rc
-!mmax  last point of rr
-!al  log of mesh spacing factor
-!nbas  number of sbfs
-!qroot  q's for set of sbf
-!eig  eigenvalue of all-electron wave function
-!uu  rr*all-electron wave function
-!pswfopt_sb  sbf coefficients for optimized pseudo wave function
-!vae  all-electron potential
-!psopt  rr * pseudo wave function on log grid
-!vpsp  pseudopotential
-!vkb  (epsilon-T)*phi component of chi projector
-!ekin_num  total radial kinetic energy
+!! calculates optimized pseudopotential from coefficients of optimized
+!! pseudo wave function and all-electron wave function
+!!
+!! @param ipr  1 for first projector, 2 for second which usually has a node
+!! @param ll  angular momentum
+!! @param rr  log radial mesh
+!! @param irc  index of rc
+!! @param mmax  last point of rr
+!! @param al  log of mesh spacing factor
+!! @param nbas  number of sbfs
+!! @param qroot  q's for set of sbf
+!! @param eig  eigenvalue of all-electron wave function
+!! @param uu  rr*all-electron wave function
+!! @param pswfopt_sb  sbf coefficients for optimized pseudo wave function
+!! @param vae  all-electron potential
+!! @param psopt  rr * pseudo wave function on log grid
+!! @param vpsp  pseudopotential
+!! @param vkb  (epsilon-T)*phi component of chi projector
+!! @param ekin_num  total radial kinetic energy
 
  use constants_m, only: dp
  implicit none

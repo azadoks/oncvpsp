@@ -18,20 +18,20 @@
 !
  subroutine qroots(ll,rc,ulgd,nroot,dltq,qmax,qroot)
 
-!calculate q values for spherical Bessel function orthogonal basis inside r_c
-!all having specified log derivative ulgd at rc
-!1st and 3rd output roots do not correspond to these conditions, rather
-!0.5 times the first matching root, and the average of the 1st and second
-!matching roots
-
-!ll  angular momentum
-!rc  core radius
-!ulgd  log derivaive of all-electron radial wave function at rc
-!nroot  number of spherical Bessel functions matgching ulgd at rc (form
-!        orthogonal basis)
-!dltq  step for search for qroots satisfying log derivative condition
-!qmax  maximum q for search
-!qroot  set of q's satisfying dj_l(q*r)/dr / jl(q*r) = ulgd
+!! calculate q values for spherical Bessel function orthogonal basis inside r_c
+!! all having specified log derivative ulgd at rc
+!! 1st and 3rd output roots do not correspond to these conditions, rather
+!! 0.5 times the first matching root, and the average of the 1st and second
+!! matching roots
+!!
+!! @param ll  angular momentum
+!! @param rc  core radius
+!! @param ulgd  log derivaive of all-electron radial wave function at rc
+!! @param nroot  number of spherical Bessel functions matgching ulgd at rc (form
+!!               orthogonal basis)
+!! @param dltq  step for search for qroots satisfying log derivative condition
+!! @param qmax  maximum q for search
+!! @param qroot  set of q's satisfying dj_l(q*r)/dr / jl(q*r) = ulgd
 
  use constants_m, only: dp
  implicit none

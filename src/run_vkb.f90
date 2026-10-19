@@ -19,29 +19,29 @@
  subroutine run_vkb(lmax,lloc,lpopt,dvloc0,irc,nproj,rr,mmax,mxprj,pswf, &
 &                   vfull,vp,evkb,vkb,nlim,vr,irel,nkap)
 
-! computes Vanderbilt / Kleinman-Bylander non-local potentials
-
-!lmax  maximum angular momentum
-!lloc  l for local potential (lloc==4 => use linear combination)
-!lpopt  choice of polynomial for lloc==4
-!dvloc0  amplitude at rr==0 to be smoothely added for lloc==4
-!irc  core radii indices
-!nproj  number of projectors for each l
-!rr  log radial grid
-!mmax  size of radial grid
-!mxprj  dimension of number of projectors
-!pswf  pseudo wave functions
-!vfull  all-electron potential
-!vp  semi-local pseudopotentials for first projectors
-!     (vp(:,5) is local potential if lloc=4)
-!vkb  semi-local "potentials"*pswf (input); VKB projectors (output)
-!evkb  coefficients of VKB projectors (output)
-!nlim  index of maximum rc including that of vlocal (output)
-!vr  effective scalar-relativistic "potential" calculated in vrel
-!irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
-!nkap  number of kappa per l: 1, or 2 for irel=2
-!   (for pswf, vp, vkb, evkb and vr the last index is 1 for j=l+1/2,
-!   2 for j=l-1/2 when nkap=2)
+!! computes Vanderbilt / Kleinman-Bylander non-local potentials
+!!
+!! @param lmax  maximum angular momentum
+!! @param lloc  l for local potential (lloc==4 => use linear combination)
+!! @param lpopt  choice of polynomial for lloc==4
+!! @param dvloc0  amplitude at rr==0 to be smoothely added for lloc==4
+!! @param irc  core radii indices
+!! @param nproj  number of projectors for each l
+!! @param rr  log radial grid
+!! @param mmax  size of radial grid
+!! @param mxprj  dimension of number of projectors
+!! @param pswf  pseudo wave functions
+!! @param vfull  all-electron potential
+!! @param vp  semi-local pseudopotentials for first projectors
+!!            (vp(:,5) is local potential if lloc=4)
+!! @param vkb  semi-local "potentials"*pswf (input); VKB projectors (output)
+!! @param evkb  coefficients of VKB projectors (output)
+!! @param nlim  index of maximum rc including that of vlocal (output)
+!! @param vr  effective scalar-relativistic "potential" calculated in vrel
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param nkap  number of kappa per l: 1, or 2 for irel=2
+!!              (for pswf, vp, vkb, evkb and vr the last index is 1 for j=l+1/2,
+!!              2 for j=l-1/2 when nkap=2)
 
  use constants_m, only: dp
  implicit none

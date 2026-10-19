@@ -22,30 +22,31 @@
 &           rr,rcmax,mmax,mxprj,iexc,etot,nproj,vpuns,lloc,vkb,evkb,ierr, &
 &           nkap)
 
-!na  principal quantum number array, dimension nv
-!la  angular-momenta
-!ea  eigenvalues (input starting guess, output), ea(:,1) for j=l+1/2,
-!    ea(:,2) for j=l-1/2 when nkap=2
-!fat  occupancies, fat(:,1) reference and fat(:,2) new configuration
-!nv  number of valence states
-!it  number of iterations (output)
-!rhoc  core charge (model core charge of the pseudopotential)
-!rho  valence charge, input all-electron starting guess, output
-!     self-consistent pseudo valence charge
-!rr  log radial mesh
-!rcmax  maximum core radius for psp
-!mmax  size of log grid
-!mxprj  dimension of number of projectors
-!iexc  exchange-correlation function to be used
-!etot  pseudoatom total energy (output)
-!nproj  number of VKB projectora to use for each l
-!vpuns  unscreened semi-local pseudopotentials (plus differenv vloc if lloc==4)
-!lloc  index-1 of local potential
-!vkb   Vanderbilt-Kleinman-Bylander projectors, last index 1 for j=l+1/2,
-!      2 for j=l-1/2 when nkap=2
-!evkb VKB projector coefficients, last index as for vkb
-!ierr  non-zero return if error
-!nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
+!! @param na  principal quantum number array, dimension nv
+!! @param la  angular-momenta
+!! @param ea  eigenvalues (input starting guess, output), ea(:,1) for j=l+1/2,
+!!            ea(:,2) for j=l-1/2 when nkap=2
+!! @param fat  occupancies, fat(:,1) reference and fat(:,2) new configuration
+!! @param nv  number of valence states
+!! @param it  number of iterations (output)
+!! @param rhoc  core charge (model core charge of the pseudopotential)
+!! @param rho  valence charge, input all-electron starting guess, output
+!!             self-consistent pseudo valence charge
+!! @param rr  log radial mesh
+!! @param rcmax  maximum core radius for psp
+!! @param mmax  size of log grid
+!! @param mxprj  dimension of number of projectors
+!! @param iexc  exchange-correlation function to be used
+!! @param etot  pseudoatom total energy (output)
+!! @param nproj  number of VKB projectora to use for each l
+!! @param vpuns  unscreened semi-local pseudopotentials (plus differenv vloc if
+!!               lloc==4)
+!! @param lloc  index-1 of local potential
+!! @param vkb  Vanderbilt-Kleinman-Bylander projectors, last index 1 for
+!!             j=l+1/2, 2 for j=l-1/2 when nkap=2
+!! @param evkb  VKB projector coefficients, last index as for vkb
+!! @param ierr  non-zero return if error
+!! @param nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
 
  use constants_m, only: dp
  implicit none

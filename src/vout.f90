@@ -22,17 +22,18 @@
  subroutine vout(mode,rho,rhoc,vo,vxc,zion,eeel,eexc, &
 &                rr,mmax,iexc)
 
-!mode  1=> add rhoc to rho, 0 => don't
-!rho  total charge density or valence/pseudovalence charge density
-!rhoc  core charge density, full or model
-!vo  output total potential
-!vxc  output exchange-correlation potential
-!zion  charge of screened ion
-!eeel  electron-electron interaction energy
-!eexc  exchange-correlation correction to eigenvalue sum for total energy
-!rr  log radial mesh
-!mmax  dimension of log radial grid
-!iexc  exchange-correlation functional type (1-4 built in, <0 libxc)
+!! @param mode  1=> add rhoc to rho, 0 => don't
+!! @param rho  total charge density or valence/pseudovalence charge density
+!! @param rhoc  core charge density, full or model
+!! @param vo  output total potential
+!! @param vxc  output exchange-correlation potential
+!! @param zion  charge of screened ion
+!! @param eeel  electron-electron interaction energy
+!! @param eexc  exchange-correlation correction to eigenvalue sum for total
+!!              energy
+!! @param rr  log radial mesh
+!! @param mmax  dimension of log radial grid
+!! @param iexc  exchange-correlation functional type (1-4 built in, <0 libxc)
 
  use constants_m, only: dp, pi
  implicit none

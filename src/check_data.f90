@@ -22,50 +22,53 @@
 &                      ncnf,na,la,nvcnf,nacnf,lacnf,ncon,nbas,nproj,psfile, &
 &                      amesh,rr1,rmax)
 
-!check input data for various violations of size or sign
-!see annotated input document for all definitions
-!*cnf variables are arrays of the basis atomic configuration variables
-!to be used for the test configurations
-
-!atsym  atomic symbol
-!zz  atomic number
-!fcfact  prefactor for model core charge amplitude
-!rcfact  prefactor for model core charge scale (icmod=3), or error
-!        tolerance (icmod=6)
-!fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
-!rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
-!epsh1  lower limit of the log derivative analysis energy range (Ha)
-!epsh2  upper limit of the log derivative analysis energy range (Ha)
-!depsh  energy step of the log derivative analysis (Ha)
-!rxpsh  log derivative radius (bohr), negative for the default
-!rlmax  maximum radius of the linear output mesh (bohr)
-!drl  spacing of the linear output mesh (bohr)
-!fa  reference configuration occupancies
-!facnf  occupancies of the reference (1) and test configurations
-!rc  core radii for each l, rc(5) for the lloc=4 local potential (bohr)
-!ep  energies at which the pseudopotentials are generated (Ha)
-!qcut  residual-energy cutoff wave vectors for each l
-!debl  energy shifts for the second projectors for each l (Ha)
-!nc  number of core states
-!nv  number of valence states
-!iexc  exchange-correlation functional, negative for libxc
-!lmax  maximum angular momentum of the pseudopotential
-!lloc  angular momentum of the local potential, 4 for a polynomial
-!lpopt  type of polynomial continuation for lloc=4
-!icmod  model core charge option
-!ncnf  number of test configurations
-!na  reference configuration principal quantum numbers
-!la  reference configuration angular momenta
-!nvcnf  numbers of valence states of the reference and test configurations
-!nacnf  principal quantum numbers of the reference and test configurations
-!lacnf  angular momenta of the reference and test configurations
-!ncon  number of matching constraints for each l
-!nbas  number of basis functions for each l
-!nproj  number of projectors for each l
-!psfile  format of the pseudopotential file (psp8, upf, psml, both, none)
-!amesh  log mesh ratio, 0 or less for the default
-!rr1  first log mesh point (bohr), 0 or less for the default
-!rmax  outer radius of the log mesh (bohr), 0 or less for the default
+!! check input data for various violations of size or sign
+!! see annotated input document for all definitions
+!! *cnf variables are arrays of the basis atomic configuration variables
+!! to be used for the test configurations
+!!
+!! @param atsym  atomic symbol
+!! @param zz  atomic number
+!! @param fcfact  prefactor for model core charge amplitude
+!! @param rcfact  prefactor for model core charge scale (icmod=3), or error
+!!                tolerance (icmod=6)
+!! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
+!! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
+!! @param epsh1  lower limit of the log derivative analysis energy range (Ha)
+!! @param epsh2  upper limit of the log derivative analysis energy range (Ha)
+!! @param depsh  energy step of the log derivative analysis (Ha)
+!! @param rxpsh  log derivative radius (bohr), negative for the default
+!! @param rlmax  maximum radius of the linear output mesh (bohr)
+!! @param drl  spacing of the linear output mesh (bohr)
+!! @param fa  reference configuration occupancies
+!! @param facnf  occupancies of the reference (1) and test configurations
+!! @param rc  core radii for each l, rc(5) for the lloc=4 local potential (bohr)
+!! @param ep  energies at which the pseudopotentials are generated (Ha)
+!! @param qcut  residual-energy cutoff wave vectors for each l
+!! @param debl  energy shifts for the second projectors for each l (Ha)
+!! @param nc  number of core states
+!! @param nv  number of valence states
+!! @param iexc  exchange-correlation functional, negative for libxc
+!! @param lmax  maximum angular momentum of the pseudopotential
+!! @param lloc  angular momentum of the local potential, 4 for a polynomial
+!! @param lpopt  type of polynomial continuation for lloc=4
+!! @param icmod  model core charge option
+!! @param ncnf  number of test configurations
+!! @param na  reference configuration principal quantum numbers
+!! @param la  reference configuration angular momenta
+!! @param nvcnf  numbers of valence states of the reference and test
+!!               configurations
+!! @param nacnf  principal quantum numbers of the reference and test
+!!               configurations
+!! @param lacnf  angular momenta of the reference and test configurations
+!! @param ncon  number of matching constraints for each l
+!! @param nbas  number of basis functions for each l
+!! @param nproj  number of projectors for each l
+!! @param psfile  format of the pseudopotential file (psp8, upf, psml, both,
+!!                none)
+!! @param amesh  log mesh ratio, 0 or less for the default
+!! @param rr1  first log mesh point (bohr), 0 or less for the default
+!! @param rmax  outer radius of the log mesh (bohr), 0 or less for the default
 
  use constants_m, only: dp
  implicit none

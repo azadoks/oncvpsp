@@ -22,26 +22,28 @@
 &                  uu,pswf0_sb,pswfnull_sb, nqout,qout, &
 &                  eresid0,eresiddot,eresidmat)
 
-!ll  anglar momentum
-!irc  log mesh index of rc
-!nnull  number of unconstrained basis vectors for residual minimization
-!nbas  number of sbf basis functions
-!mmax  index of largest radius for non-zero value of wave function
-!rr(mmax)  log radial mesh
-!drdum, dqdum  (not used)
-!qmax  largest wave vector for E_res integration
-!qroot(nbas)  q values for sbfs in basis
-!uu(mmax)  r*all-electron wave function
-!pswf0_sb(nbas)  sbf basis  coefficients for constrained part of pseudo
-!                    wave function
-!pswfnull_sb(nbas,nnull)  sbf coefficients for unconstrained basis of pseudo
-!                       wave function
-!nqout  number of wave vector lower cutoffs
-!qout(nqout)  wave vector lower cutoffs for E_res for which output is wanted,
-!       rounded on output to nearest multiple of dq
-!eresid0(nqout)  set of <pswf0| E_resid |pswf0> matrix elements
-!eresiddot(nnull,nqout)  set of <pswfnull| E_resid |pswf0> matrix elements
-!eresidmat(nnull,nnull,nqout)  set of <pswfnull| E_res |pswfnull'> matrices
+!! @param ll  anglar momentum
+!! @param irc  log mesh index of rc
+!! @param nnull  number of unconstrained basis vectors for residual minimization
+!! @param nbas  number of sbf basis functions
+!! @param mmax  index of largest radius for non-zero value of wave function
+!! @param rr(mmax)  log radial mesh
+!! @param drdum,dqdum  (not used)
+!! @param qmax  largest wave vector for E_res integration
+!! @param qroot(nbas)  q values for sbfs in basis
+!! @param uu(mmax)  r*all-electron wave function
+!! @param pswf0_sb(nbas)  sbf basis  coefficients for constrained part of pseudo
+!!                        wave function
+!! @param pswfnull_sb(nbas,nnull)  sbf coefficients for unconstrained basis of
+!!                                 pseudo wave function
+!! @param nqout  number of wave vector lower cutoffs
+!! @param qout(nqout)  wave vector lower cutoffs for E_res for which output is
+!!                     wanted, rounded on output to nearest multiple of dq
+!! @param eresid0(nqout)  set of <pswf0| E_resid |pswf0> matrix elements
+!! @param eresiddot(nnull,nqout)  set of <pswfnull| E_resid |pswf0> matrix
+!!                                elements
+!! @param eresidmat(nnull,nnull,nqout)  set of <pswfnull| E_res |pswfnull'>
+!!                                      matrices
 
  use constants_m, only: dp, pi
  implicit none
@@ -287,18 +289,18 @@
  contains
 
  subroutine rsbf_lin(ll1,qq,rlin,sqr,cqr,nr,rsbf)
-! rlin(ii)*j_l(qq*rlin(ii)) for l=ll1-1 on the linear mesh rlin(nr), given
-! sqr=sin(qq*rlin) and cqr=cos(qq*rlin).  Same branches and formulas as
-! sbf8 for l<=3, written as loops over the mesh that vectorize; this is
-! the inner loop of the E_resid q integration.
-
-!ll1  angular momentum plus one
-!qq  wave vector
-!rlin  linear radial mesh
-!sqr  sin(qq*rlin)
-!cqr  cos(qq*rlin)
-!nr  number of points in rlin
-!rsbf  rlin*j_l(qq*rlin)
+!! rlin(ii)*j_l(qq*rlin(ii)) for l=ll1-1 on the linear mesh rlin(nr), given
+!! sqr=sin(qq*rlin) and cqr=cos(qq*rlin).  Same branches and formulas as
+!! sbf8 for l<=3, written as loops over the mesh that vectorize; this is
+!! the inner loop of the E_resid q integration.
+!!
+!! @param ll1  angular momentum plus one
+!! @param qq  wave vector
+!! @param rlin  linear radial mesh
+!! @param sqr  sin(qq*rlin)
+!! @param cqr  cos(qq*rlin)
+!! @param nr  number of points in rlin
+!! @param rsbf  rlin*j_l(qq*rlin)
 
 !Input variables
  integer, intent(in) :: ll1,nr

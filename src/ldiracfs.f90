@@ -18,20 +18,22 @@
 !
  subroutine ldiracfs(nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch)
 
-! Finds relativistic scattering states of an al-electron potential
-
-!nn  effective principal quantum number based on nodes inside mch (output)
-!ll  angular-momentum quantum number
-!kap  =l, -(l+1) for j=l -/+ 1/2
-!ierr  non-zero return if error
-!ee  bound-state energy, input guess and output calculated value
-!rr  log radial mesh
-!zz  atomic number
-!vv  local psp
-!uu(mmax,jj)  output radial wave functions (*rr) jj=1,2 for large, small
-!up  d(uu)/dr
-!mmax  size of log grid
-!mch  matching mesh point for inward-outward integrations
+!! Finds relativistic scattering states of an al-electron potential
+!!
+!! @param nn  effective principal quantum number based on nodes inside mch
+!!            (output)
+!! @param ll  angular-momentum quantum number
+!! @param kap  =l, -(l+1) for j=l -/+ 1/2
+!! @param ierr  non-zero return if error
+!! @param ee  bound-state energy, input guess and output calculated value
+!! @param rr  log radial mesh
+!! @param zz  atomic number
+!! @param vv  local psp
+!! @param uu(mmax,jj)  output radial wave functions (*rr) jj=1,2 for large,
+!!                     small
+!! @param up  d(uu)/dr
+!! @param mmax  size of log grid
+!! @param mch  matching mesh point for inward-outward integrations
 
  use constants_m, only: dp, c_light
  implicit none

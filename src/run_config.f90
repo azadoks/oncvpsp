@@ -21,30 +21,31 @@
 &                         rr,rcmax,mmax,mxprj,iexc,etot,epstot,nproj,vpuns, &
 &                         lloc,vkb,evkb,irel,nkap)
 
-! self-consistent pseudoatom calculation for test configuration jj, compared
-! with the all-electron results for the reference and test configurations
-
-!jj  index of current configuration
-!istcnf through etstcnf  all-electron results, all configurations, from
-!  run_config_ae
-!nc  number of core states
-!rhov  valence pseudo-charge of reference configuration
-!rhomod  model core charge
-!rr  log radial mesh
-!rcmax  maximum core radius for psp
-!mmax  size of log grid
-!mxprj  dimension of number of projectors
-!iexc  exchange-correlation function to be used
-!etot  reference configuration total energy
-!epstot  reference configuration pseudoatom total energy
-!nproj  number of VKB projectors to use for each l
-!vpuns  unscreened semi-local pseudopotentials (plus different vloc if lloc==4)
-!lloc  index-1 of local potential
-!vkb  Vanderbilt-Kleinman-Bylander projectors, last index 1 for j=l+1/2,
-!     2 for j=l-1/2 when irel=2
-!evkb  VKB projector coefficients, last index as for vkb
-!irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
-!nkap  number of kappa per l: 1, or 2 for irel=2
+!! self-consistent pseudoatom calculation for test configuration jj, compared
+!! with the all-electron results for the reference and test configurations
+!!
+!! @param jj  index of current configuration
+!! @param istcnf..etstcnf  all-electron results, all configurations, from
+!!                         run_config_ae
+!! @param nc  number of core states
+!! @param rhov  valence pseudo-charge of reference configuration
+!! @param rhomod  model core charge
+!! @param rr  log radial mesh
+!! @param rcmax  maximum core radius for psp
+!! @param mmax  size of log grid
+!! @param mxprj  dimension of number of projectors
+!! @param iexc  exchange-correlation function to be used
+!! @param etot  reference configuration total energy
+!! @param epstot  reference configuration pseudoatom total energy
+!! @param nproj  number of VKB projectors to use for each l
+!! @param vpuns  unscreened semi-local pseudopotentials (plus different vloc if
+!!               lloc==4)
+!! @param lloc  index-1 of local potential
+!! @param vkb  Vanderbilt-Kleinman-Bylander projectors, last index 1 for
+!!             j=l+1/2, 2 for j=l-1/2 when irel=2
+!! @param evkb  VKB projector coefficients, last index as for vkb
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param nkap  number of kappa per l: 1, or 2 for irel=2
 
  use config_ae_m, only: config_ae_warning
  use constants_m, only: dp
@@ -194,7 +195,7 @@
  contains
 
  subroutine write_results
-! the eigenvalues and energies of the all-electron and pseudo atoms
+!! the eigenvalues and energies of the all-electron and pseudo atoms
  write(6,'(/a)') '   n   l     f        eae           eps        diff'
  do ii=1,nc
    write(6,'(2i4,f8.4,f14.8)') nat(ii),lat(ii),fat(ii,3),eat(ii,1,3)
@@ -216,8 +217,8 @@
  end subroutine write_results
 
  subroutine write_results_r
-! write_results for irel=2, a line for each kappa with its share of the
-! occupation
+!! write_results for irel=2, a line for each kappa with its share of the
+!! occupation
  write(6,'(/a)') '   n   l kap    f        eae           eps        diff'
  do ii=1,nc
    ll = lat(ii)

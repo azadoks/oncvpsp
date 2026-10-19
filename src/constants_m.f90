@@ -16,7 +16,7 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
-! Kind and physical and numerical constants shared by all routines
+!> Kind and physical and numerical constants shared by all routines
 
  module constants_m
  use, intrinsic :: iso_fortran_env, only: real64
@@ -24,18 +24,17 @@
  private
  public :: dp, pi, c_light, mxprj
 
-!dp  kind of all real variables
+!> kind of all real variables
  integer, parameter :: dp=real64
 
-!pi  pi
+!> pi
  real(dp), parameter :: pi=3.141592653589793238462643383279502884197_dp
 
-!c_light  speed of light in atomic units (Hartree), 1/alpha
-!The 4.0.1 value is kept, rather than CODATA 137.035999..., so results are
-!unchanged
+!> speed of light in atomic units (Hartree), 1/alpha.  The 4.0.1 value is
+!> kept, rather than CODATA 137.035999..., so results are unchanged
  real(dp), parameter :: c_light=137.036_dp
 
-!mxprj  maximum number of projectors for each l
+!> maximum number of projectors for each l
  integer, parameter :: mxprj=5
 
  end module constants_m

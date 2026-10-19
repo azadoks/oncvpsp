@@ -18,24 +18,24 @@
 !
  subroutine boundstate(irel,nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch)
 
-!Finds a bound state of an all-electron atomic potential: with the
-!non-relativistic or scalar-relativistic Schroedinger equation (lschfb), or
-!with the Dirac equation (ldiracfb)
-
-!irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
-!nn  principal quantum number
-!ll  angular-momentum quantum number
-!kap  =l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
-!ierr  non-zero return if error
-!ee  bound-state energy, input guess and output calculated value
-!rr  log radial mesh
-!zz  atomic number
-!vv  local atomic potential
-!uu  output radial wave function (*rr): uu(:,1) the Schroedinger function,
-!    or the Dirac large and small components
-!up  d(uu)/dr
-!mmax  size of log grid
-!mch  matching mesh point for inward-outward integrations
+!! Finds a bound state of an all-electron atomic potential: with the
+!! non-relativistic or scalar-relativistic Schroedinger equation (lschfb), or
+!! with the Dirac equation (ldiracfb)
+!!
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param nn  principal quantum number
+!! @param ll  angular-momentum quantum number
+!! @param kap  =l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
+!! @param ierr  non-zero return if error
+!! @param ee  bound-state energy, input guess and output calculated value
+!! @param rr  log radial mesh
+!! @param zz  atomic number
+!! @param vv  local atomic potential
+!! @param uu  output radial wave function (*rr): uu(:,1) the Schroedinger
+!!            function, or the Dirac large and small components
+!! @param up  d(uu)/dr
+!! @param mmax  size of log grid
+!! @param mch  matching mesh point for inward-outward integrations
 
  use constants_m, only: dp
  implicit none

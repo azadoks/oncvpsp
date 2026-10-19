@@ -29,63 +29,69 @@
 &                  nkap)
 
 
-!lmax  maximum angular momentum
-!lloc  l for local potential
-!rc  core radii
-!vkb  VKB projectors, last index 1 for j=l+1/2, 2 for j=l-1/2 when nkap=2
-!evkb  coefficients of VKB projectors, last index as for vkb
-!nproj  number of vkb projectors for each l
-!rr  log radial grid
-!vpuns  unscreened semi-local pseudopotentials (vp(:,5) is local potential
-!  if linear combination is used)
-!rho  valence pseudocharge
-!rhomod  model core charge
-!zz  atomic number
-!zion  at this point, total valence charge (becomes psuedoion charge)
-!mmax  size of log radial grid
-!mxprj  dimension of number of projectors
-!iexc  type of exchange-correlation
-!icmod  1 if model core charge is used, otherwise 0
-!nrlin  size of linear radial grid (enlarged locally to fit the orbitals)
-!drl spacing of linear radial grid
-!atsym  atomic symbol
-!epstot  pseudoatom total energy
-!na  principal quantum numbers of the reference configuration states
-!la  angular momenta of the reference configuration states
-!ncon  number of matching constraints for each l
-!nbas  number of basis functions for each l
-!nvcnf  numbers of valence states of the reference and test configurations
-!nacnf  principal quantum numbers of the reference and test configurations
-!lacnf  angular momenta of the reference and test configurations
-!nc  number of core states
-!nv  number of valence states
-!lpopt  type of polynomial continuation for lloc=4
-!ncnf  number of test configurations
-!fa  occupations of the reference configuration states
-!rc0  core radii as read from the input (bohr), rc0(5) for lloc=4
-!ep  energies at which the pseudopotentials are generated (Ha), second
-!  index 1 for j=l+1/2, 2 for j=l-1/2 (ep(:,1) is echoed)
-!qcut  residual-energy cutoff wave vectors for each l
-!debl  energy shifts for the second projectors for each l (Ha)
-!facnf  occupancies of the reference and test configurations
-!dvloc0  r=0 shift of the lloc=4 local potential (Ha)
-!fcfact  prefactor for model core charge amplitude, as read from the input
-!rcfact  prefactor for model core charge scale (icmod=3), or error
-!  tolerance (icmod=6)
-!fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
-!rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
-!epsh1  lower limit of the log derivative analysis energy range (Ha)
-!epsh2  upper limit of the log derivative analysis energy range (Ha)
-!depsh  energy step of the log derivative analysis (Ha)
-!rxpsh  radius of the log derivative analysis (bohr), negative for default
-!rlmax  maximum radius of the linear output mesh (bohr)
-!psfile  pseudopotential file format, 'upf' or 'both'
-!log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets it
-!  (else 0)
-!uupsa  pseudo-atomic orbitals, second index 1 for j=l+1/2, 2 for j=l-1/2
-!       when nkap=2
-!ea  psuedo-orbital eigenvalues (Ha), second index as for uupsa
-!nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
+!! @param lmax  maximum angular momentum
+!! @param lloc  l for local potential
+!! @param rc  core radii
+!! @param vkb  VKB projectors, last index 1 for j=l+1/2, 2 for j=l-1/2 when
+!!             nkap=2
+!! @param evkb  coefficients of VKB projectors, last index as for vkb
+!! @param nproj  number of vkb projectors for each l
+!! @param rr  log radial grid
+!! @param vpuns  unscreened semi-local pseudopotentials (vp(:,5) is local
+!!               potential if linear combination is used)
+!! @param rho  valence pseudocharge
+!! @param rhomod  model core charge
+!! @param zz  atomic number
+!! @param zion  at this point, total valence charge (becomes psuedoion charge)
+!! @param mmax  size of log radial grid
+!! @param mxprj  dimension of number of projectors
+!! @param iexc  type of exchange-correlation
+!! @param icmod  1 if model core charge is used, otherwise 0
+!! @param nrlin  size of linear radial grid (enlarged locally to fit the
+!!               orbitals)
+!! @param drl  spacing of linear radial grid
+!! @param atsym  atomic symbol
+!! @param epstot  pseudoatom total energy
+!! @param na  principal quantum numbers of the reference configuration states
+!! @param la  angular momenta of the reference configuration states
+!! @param ncon  number of matching constraints for each l
+!! @param nbas  number of basis functions for each l
+!! @param nvcnf  numbers of valence states of the reference and test
+!!               configurations
+!! @param nacnf  principal quantum numbers of the reference and test
+!!               configurations
+!! @param lacnf  angular momenta of the reference and test configurations
+!! @param nc  number of core states
+!! @param nv  number of valence states
+!! @param lpopt  type of polynomial continuation for lloc=4
+!! @param ncnf  number of test configurations
+!! @param fa  occupations of the reference configuration states
+!! @param rc0  core radii as read from the input (bohr), rc0(5) for lloc=4
+!! @param ep  energies at which the pseudopotentials are generated (Ha), second
+!!            index 1 for j=l+1/2, 2 for j=l-1/2 (ep(:,1) is echoed)
+!! @param qcut  residual-energy cutoff wave vectors for each l
+!! @param debl  energy shifts for the second projectors for each l (Ha)
+!! @param facnf  occupancies of the reference and test configurations
+!! @param dvloc0  r=0 shift of the lloc=4 local potential (Ha)
+!! @param fcfact  prefactor for model core charge amplitude, as read from the
+!!                input
+!! @param rcfact  prefactor for model core charge scale (icmod=3), or error
+!!                tolerance (icmod=6)
+!! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
+!! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
+!! @param epsh1  lower limit of the log derivative analysis energy range (Ha)
+!! @param epsh2  upper limit of the log derivative analysis energy range (Ha)
+!! @param depsh  energy step of the log derivative analysis (Ha)
+!! @param rxpsh  radius of the log derivative analysis (bohr), negative for
+!!               default
+!! @param rlmax  maximum radius of the linear output mesh (bohr)
+!! @param psfile  pseudopotential file format, 'upf' or 'both'
+!! @param log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets
+!!                  it (else 0)
+!! @param uupsa  pseudo-atomic orbitals, second index 1 for j=l+1/2, 2 for
+!!               j=l-1/2 when nkap=2
+!! @param ea  psuedo-orbital eigenvalues (Ha), second index as for uupsa
+!! @param nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
 
  use constants_m, only: dp, pi
  use input_echo_m, only: write_input_echo

@@ -19,43 +19,43 @@
  subroutine run_ghosts(lmax,la,ea,nc,nv,lloc,irc,qmsbf, &
 &                    vkb,evkb,nproj,rr,vp,mmax,mxprj)
 
-! Two tests for ghosts;  The local potential is terminated by a hard wall
-! barrier at a radius of mbfact*rc, presently 3*rc.  A basis set is formed
-! from eigenstates this combination and used to compute a hamiltonian matrix
-! whose off-diagonal terms come exclusively from the non-local pojectors.
-! A cutoff is chosen to simulate a reasonably well converged plane-wave
-! calculation.  The hamiltoian is diagonalized, and the results used
-! as follows:
-!
-! Test 1) Negative eigenvalues are compared with those of the radial
-! Schroedinger equation for the full-range pseudopotential.  Those
-! lying below the Schroedinger Eq. results and which presumably have
-! more nodes are reported and tagged as GHOST(-).
-!
-! Test2) For barrier states with  positive eigenvalues, the average radius
-! is computed.  Such states could be ghost resonances, and highly localized
-! ones with <r>/rc<1 are reported as GHOST(+).  Real fairly localized
-! resonances can occur, particularly at lower energies, and the GHOST(+)
-! report is an indication that the log-derivative plot should be examined
-! carefully around the reported energy to see if the all-electron plot
-! has a corresponding drop of pi  (arctan(log der), of course).
-
-
-!lmax  maximum angular momentum
-!la  angular momenta of all-electron states
-!nc  number of core states
-!nv  number of valence states
-!ea  all-electron bound-state energies
-!lloc  l for local potential
-!irc  core radii indices
-!vkb  VKB projectors
-!qmsbf  maximum q in sbf basis for each l
-!evkb  coefficients of VKB projectors
-!nproj  number of vkb projectors for each l
-!rr  log radial grid
-!vp  semi-local pseudopotentials (vp(:,5) is local potential if linear comb.)
-!mmax  size of radial grid
-!mxprj  dimension of number of projectors
+!! Two tests for ghosts;  The local potential is terminated by a hard wall
+!! barrier at a radius of mbfact*rc, presently 3*rc.  A basis set is formed
+!! from eigenstates this combination and used to compute a hamiltonian matrix
+!! whose off-diagonal terms come exclusively from the non-local pojectors.
+!! A cutoff is chosen to simulate a reasonably well converged plane-wave
+!! calculation.  The hamiltoian is diagonalized, and the results used
+!! as follows:
+!!
+!! Test 1) Negative eigenvalues are compared with those of the radial
+!! Schroedinger equation for the full-range pseudopotential.  Those
+!! lying below the Schroedinger Eq. results and which presumably have
+!! more nodes are reported and tagged as GHOST(-).
+!!
+!! Test2) For barrier states with  positive eigenvalues, the average radius
+!! is computed.  Such states could be ghost resonances, and highly localized
+!! ones with <r>/rc<1 are reported as GHOST(+).  Real fairly localized
+!! resonances can occur, particularly at lower energies, and the GHOST(+)
+!! report is an indication that the log-derivative plot should be examined
+!! carefully around the reported energy to see if the all-electron plot
+!! has a corresponding drop of pi  (arctan(log der), of course).
+!!
+!! @param lmax  maximum angular momentum
+!! @param la  angular momenta of all-electron states
+!! @param nc  number of core states
+!! @param nv  number of valence states
+!! @param ea  all-electron bound-state energies
+!! @param lloc  l for local potential
+!! @param irc  core radii indices
+!! @param vkb  VKB projectors
+!! @param qmsbf  maximum q in sbf basis for each l
+!! @param evkb  coefficients of VKB projectors
+!! @param nproj  number of vkb projectors for each l
+!! @param rr  log radial grid
+!! @param vp  semi-local pseudopotentials (vp(:,5) is local potential if linear
+!!            comb.)
+!! @param mmax  size of radial grid
+!! @param mxprj  dimension of number of projectors
 
  use constants_m, only: dp, pi
  implicit none

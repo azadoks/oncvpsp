@@ -30,70 +30,74 @@
 &                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,nkap)
 
 
-!lmax  maximum angular momentum
-!lloc  l for local potential
-!rc  core radii
-!vkb  VKB projectors, written when nkap=1
-!evkb  coefficients of VKB projectors
-!vsr  normalized scalar-relativistic projectors, written with vso when
-!     nkap=2
-!esr  energy coefficients of vsr
-!vso  normalized spin-orbit projectors
-!eso  energy coefficients of vso
-!nproj  number of vkb projectors for each l
-!rr  log radial grid
-!vpuns  unscreened semi-local pseudopotentials (vpuns(:,5) is local
-!       potential if linear combination is used)
-!rho  valence pseudocharge
-!rhotae  all-electron valence charge
-!rhoc  all-electron core charge
-!rhomod  model core charge
-!zz  atomic number
-!zion  at this point, total valence charge (becomes psuedoion charge)
-!mmax  size of log radial grid
-!mxprj  dimension of number of projectors
-!iexc  type of exchange-correlation
-!icmod  1 if model core charge is used, otherwise 0
-!fcfact  model core amplitude prefactor (1 for icmod=4, cutoff for icmod=6)
-!fcfact0  input fcfact, for the echo
-!rcfact  prefactor for the model core charge scale
-!nrl  size of linear radial grid
-!drl  spacing of linear radial grid
-!atsym  atomic symbol
-!soscale  possible factor to boost or cut spin-orbit strength, not in use
-!         yet
-!nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
-!(the arguments from na on are input variables echoed in the psp8 file)
-!na  principal quantum numbers, reference configuration
-!la  angular momenta, reference configuration
-!ncon  number of matching constraints for each l
-!nbas  number of basis functions for each l
-!nvcnf  number of valence states, all configurations
-!nacnf  principal quantum numbers, all configurations
-!lacnf  angular momenta, all configurations
-!nc  number of core states
-!nv  number of valence states
-!lpopt  choice of polynomial for lloc==4
-!ncnf  number of test configurations
-!fa  occupancies, reference configuration
-!rc0  input core radii
-!ep  energies at which the pseudopotentials are generated (Ha), each kap
-!qcut  residual-energy cutoff wave vectors for each l
-!debl  energy shifts for the second projectors for each l (Ha)
-!facnf  occupancies, all configurations
-!dvloc0  amplitude at rr==0 of the function added to the local potential
-!        for lloc==4
-!fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
-!rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
-!epsh1  lower limit of the log derivative analysis energy range (Ha)
-!epsh2  upper limit of the log derivative analysis energy range (Ha)
-!depsh  energy step of the log derivative analysis (Ha)
-!rxpsh  radius (bohr) of the log derivative analysis, negative for the
-!       default
-!rlmax  maximum radius of the linear output mesh (bohr)
-!psfile  output format, should be 'psp8' or 'both'
-!log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets
-!          it (else 0)
+!! @param lmax  maximum angular momentum
+!! @param lloc  l for local potential
+!! @param rc  core radii
+!! @param vkb  VKB projectors, written when nkap=1
+!! @param evkb  coefficients of VKB projectors
+!! @param vsr  normalized scalar-relativistic projectors, written with vso when
+!!             nkap=2
+!! @param esr  energy coefficients of vsr
+!! @param vso  normalized spin-orbit projectors
+!! @param eso  energy coefficients of vso
+!! @param nproj  number of vkb projectors for each l
+!! @param rr  log radial grid
+!! @param vpuns  unscreened semi-local pseudopotentials (vpuns(:,5) is local
+!!               potential if linear combination is used)
+!! @param rho  valence pseudocharge
+!! @param rhotae  all-electron valence charge
+!! @param rhoc  all-electron core charge
+!! @param rhomod  model core charge
+!! @param zz  atomic number
+!! @param zion  at this point, total valence charge (becomes psuedoion charge)
+!! @param mmax  size of log radial grid
+!! @param mxprj  dimension of number of projectors
+!! @param iexc  type of exchange-correlation
+!! @param icmod  1 if model core charge is used, otherwise 0
+!! @param fcfact  model core amplitude prefactor (1 for icmod=4, cutoff for
+!!                icmod=6)
+!! @param fcfact0  input fcfact, for the echo
+!! @param rcfact  prefactor for the model core charge scale
+!! @param nrl  size of linear radial grid
+!! @param drl  spacing of linear radial grid
+!! @param atsym  atomic symbol
+!! @param soscale  possible factor to boost or cut spin-orbit strength, not in
+!!                 use yet
+!! @param nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
+!!
+!! (the arguments from na on are input variables echoed in the psp8 file)
+!!
+!! @param na  principal quantum numbers, reference configuration
+!! @param la  angular momenta, reference configuration
+!! @param ncon  number of matching constraints for each l
+!! @param nbas  number of basis functions for each l
+!! @param nvcnf  number of valence states, all configurations
+!! @param nacnf  principal quantum numbers, all configurations
+!! @param lacnf  angular momenta, all configurations
+!! @param nc  number of core states
+!! @param nv  number of valence states
+!! @param lpopt  choice of polynomial for lloc==4
+!! @param ncnf  number of test configurations
+!! @param fa  occupancies, reference configuration
+!! @param rc0  input core radii
+!! @param ep  energies at which the pseudopotentials are generated (Ha), each
+!!            kap
+!! @param qcut  residual-energy cutoff wave vectors for each l
+!! @param debl  energy shifts for the second projectors for each l (Ha)
+!! @param facnf  occupancies, all configurations
+!! @param dvloc0  amplitude at rr==0 of the function added to the local
+!!                potential for lloc==4
+!! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
+!! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
+!! @param epsh1  lower limit of the log derivative analysis energy range (Ha)
+!! @param epsh2  upper limit of the log derivative analysis energy range (Ha)
+!! @param depsh  energy step of the log derivative analysis (Ha)
+!! @param rxpsh  radius (bohr) of the log derivative analysis, negative for the
+!!               default
+!! @param rlmax  maximum radius of the linear output mesh (bohr)
+!! @param psfile  output format, should be 'psp8' or 'both'
+!! @param log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets
+!!                  it (else 0)
 
 
  use constants_m, only: dp

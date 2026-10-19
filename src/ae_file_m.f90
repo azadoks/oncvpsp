@@ -44,11 +44,11 @@
  private
  public :: write_ae_file, read_ae_file
 
- character(len=8), parameter :: magic='ONCVAE  '
- integer, parameter :: version=1
-!relative tolerance for comparing real input (zz, occupations) and the
-!radial mesh with the file: both programs parse the same input text, but
-!may be built by different compilers or with different flags
+ character(len=8), parameter :: magic='ONCVAE  ' !< first record of the file
+ integer, parameter :: version=1 !< format version
+!> relative tolerance for comparing real input (zz, occupations) and the
+!> radial mesh with the file: both programs parse the same input text, but
+!> may be built by different compilers or with different flags
  real(dp), parameter :: rtol=1.0d-12
 
  contains
@@ -58,34 +58,34 @@
 &                         ncnf,nvcnf,nacnf,lacnf,facnf,istcnf,ierrcnf,itcnf, &
 &                         kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
 
-! writes the all-electron data file: the aeatom results for the reference
-! atom and the run_config_ae results for all configurations
-
-!fname  file to write
-!irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
-!nkap  number of kappa per level: 1, or 2 for irel=2
-!atsym  atomic symbol
-!zz  atomic number
-!nc  number of core states
-!nv  number of valence states
-!iexc  exchange-correlation function to be used
-!na  principal quantum numbers, reference configuration
-!la  angular momenta, reference configuration
-!fa  occupancies, reference configuration
-!mmax  size of log grid
-!rr  log radial mesh
-!it  aeatom iteration count
-!etot  all-electron total energy (Ha)
-!ea  all-electron eigenvalues (Ha), kap=-(l+1) and kap=l if irel=2
-!rhoc  all-electron core charge density
-!rho  all-electron valence charge density
-!vfull  all-electron potential
-!ncnf  number of test configurations (not counting the reference)
-!nvcnf  number of valence states, all configurations
-!nacnf  principal quantum numbers, all configurations
-!lacnf  angular momenta, all configurations
-!facnf  occupancies, all configurations
-!istcnf through etstcnf  run_config_ae results, all configurations
+!! writes the all-electron data file: the aeatom results for the reference
+!! atom and the run_config_ae results for all configurations
+!!
+!! @param fname  file to write
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param nkap  number of kappa per level: 1, or 2 for irel=2
+!! @param atsym  atomic symbol
+!! @param zz  atomic number
+!! @param nc  number of core states
+!! @param nv  number of valence states
+!! @param iexc  exchange-correlation function to be used
+!! @param na  principal quantum numbers, reference configuration
+!! @param la  angular momenta, reference configuration
+!! @param fa  occupancies, reference configuration
+!! @param mmax  size of log grid
+!! @param rr  log radial mesh
+!! @param it  aeatom iteration count
+!! @param etot  all-electron total energy (Ha)
+!! @param ea  all-electron eigenvalues (Ha), kap=-(l+1) and kap=l if irel=2
+!! @param rhoc  all-electron core charge density
+!! @param rho  all-electron valence charge density
+!! @param vfull  all-electron potential
+!! @param ncnf  number of test configurations (not counting the reference)
+!! @param nvcnf  number of valence states, all configurations
+!! @param nacnf  principal quantum numbers, all configurations
+!! @param lacnf  angular momenta, all configurations
+!! @param facnf  occupancies, all configurations
+!! @param istcnf..etstcnf  run_config_ae results, all configurations
 
 !Input variables
  character(len=*), intent(in) :: fname
@@ -124,39 +124,39 @@
 &                        it,etot,ea,rhoc,rho,vfull,istcnf,ierrcnf,itcnf, &
 &                        kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
 
-! reads the all-electron data file: the reference atom and the
-! run_config_ae results for each configuration of this run, found in the
-! file by matching the configuration itself, so the file may hold more
-! test configurations than the input, in any order.  Stops if the file
-! was written for a different atom or relativistic treatment, or lacks a
-! configuration.  irel through facnf are this run's input, checked
-! against the file; it through etstcnf are read from it.
-
-!fname  file to read
-!irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
-!nkap  number of kappa per level: 1, or 2 for irel=2
-!atsym  atomic symbol
-!zz  atomic number
-!nc  number of core states
-!nv  number of valence states
-!iexc  exchange-correlation function to be used
-!na  principal quantum numbers, reference configuration
-!la  angular momenta, reference configuration
-!fa  occupancies, reference configuration
-!mmax  size of log grid
-!rr  log radial mesh
-!ncnf  number of test configurations (not counting the reference)
-!nvcnf  number of valence states, all configurations
-!nacnf  principal quantum numbers, all configurations
-!lacnf  angular momenta, all configurations
-!facnf  occupancies, all configurations
-!it  aeatom iteration count
-!etot  all-electron total energy (Ha)
-!ea  all-electron eigenvalues (Ha), kap=-(l+1) and kap=l if irel=2
-!rhoc  all-electron core charge density
-!rho  all-electron valence charge density
-!vfull  all-electron potential
-!istcnf through etstcnf  run_config_ae results, all configurations
+!! reads the all-electron data file: the reference atom and the
+!! run_config_ae results for each configuration of this run, found in the
+!! file by matching the configuration itself, so the file may hold more
+!! test configurations than the input, in any order.  Stops if the file
+!! was written for a different atom or relativistic treatment, or lacks a
+!! configuration.  irel through facnf are this run's input, checked
+!! against the file; it through etstcnf are read from it.
+!!
+!! @param fname  file to read
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param nkap  number of kappa per level: 1, or 2 for irel=2
+!! @param atsym  atomic symbol
+!! @param zz  atomic number
+!! @param nc  number of core states
+!! @param nv  number of valence states
+!! @param iexc  exchange-correlation function to be used
+!! @param na  principal quantum numbers, reference configuration
+!! @param la  angular momenta, reference configuration
+!! @param fa  occupancies, reference configuration
+!! @param mmax  size of log grid
+!! @param rr  log radial mesh
+!! @param ncnf  number of test configurations (not counting the reference)
+!! @param nvcnf  number of valence states, all configurations
+!! @param nacnf  principal quantum numbers, all configurations
+!! @param lacnf  angular momenta, all configurations
+!! @param facnf  occupancies, all configurations
+!! @param it  aeatom iteration count
+!! @param etot  all-electron total energy (Ha)
+!! @param ea  all-electron eigenvalues (Ha), kap=-(l+1) and kap=l if irel=2
+!! @param rhoc  all-electron core charge density
+!! @param rho  all-electron valence charge density
+!! @param vfull  all-electron potential
+!! @param istcnf..etstcnf  run_config_ae results, all configurations
 
 !Input variables
  character(len=*), intent(in) :: fname
@@ -216,21 +216,21 @@
 
  subroutine write_head(fname,unit,irel,atsym,zz,nc,nv,iexc,na,la,fa, &
 &                      mmax,rr)
-! opens fname and writes everything before the reference atom results
-
-!fname  file name
-!unit  unit number of the opened file
-!irel  0 non-, 1 scalar-, 2 fully-relativistic
-!atsym  atomic symbol
-!zz  atomic number
-!nc  number of core states
-!nv  number of valence states
-!iexc  exchange-correlation function to be used
-!na  principal quantum numbers, reference configuration
-!la  angular momenta, reference configuration
-!fa  occupancies, reference configuration
-!mmax  size of log grid
-!rr  log radial mesh
+!! opens fname and writes everything before the reference atom results
+!!
+!! @param fname  file name
+!! @param unit  unit number of the opened file
+!! @param irel  0 non-, 1 scalar-, 2 fully-relativistic
+!! @param atsym  atomic symbol
+!! @param zz  atomic number
+!! @param nc  number of core states
+!! @param nv  number of valence states
+!! @param iexc  exchange-correlation function to be used
+!! @param na  principal quantum numbers, reference configuration
+!! @param la  angular momenta, reference configuration
+!! @param fa  occupancies, reference configuration
+!! @param mmax  size of log grid
+!! @param rr  log radial mesh
 
 !Input variables
  character(len=*), intent(in) :: fname
@@ -263,22 +263,22 @@
 
  subroutine read_head(fname,unit,irel,atsym,zz,nc,nv,iexc,na,la,fa, &
 &                     mmax,rr)
-! opens fname, checks it against this run's input and reads rr; stops if
-! the file was written for a different atom or relativistic treatment
-
-!fname  file name
-!unit  unit number of the opened file
-!irel  expected treatment: 0 non-, 1 scalar-, 2 fully-relativistic
-!atsym  atomic symbol
-!zz  atomic number
-!nc  number of core states
-!nv  number of valence states
-!iexc  exchange-correlation function to be used
-!na  principal quantum numbers, reference configuration
-!la  angular momenta, reference configuration
-!fa  occupancies, reference configuration
-!mmax  size of log grid
-!rr  log radial mesh
+!! opens fname, checks it against this run's input and reads rr; stops if
+!! the file was written for a different atom or relativistic treatment
+!!
+!! @param fname  file name
+!! @param unit  unit number of the opened file
+!! @param irel  expected treatment: 0 non-, 1 scalar-, 2 fully-relativistic
+!! @param atsym  atomic symbol
+!! @param zz  atomic number
+!! @param nc  number of core states
+!! @param nv  number of valence states
+!! @param iexc  exchange-correlation function to be used
+!! @param na  principal quantum numbers, reference configuration
+!! @param la  angular momenta, reference configuration
+!! @param fa  occupancies, reference configuration
+!! @param mmax  size of log grid
+!! @param rr  log radial mesh
 
 !Input variables
  character(len=*), intent(in) :: fname
@@ -363,15 +363,15 @@
  end subroutine read_head
 
  subroutine write_config_key(unit,jj,nc,nvcnf,nacnf,lacnf,facnf)
-! writes configuration jj, the key by which match_config matches it
-
-!unit  unit number of the open file
-!jj  index of the configuration in this run (1 for the reference)
-!nc  number of core states
-!nvcnf  number of valence states, all configurations
-!nacnf  principal quantum numbers, all configurations
-!lacnf  angular momenta, all configurations
-!facnf  occupancies, all configurations
+!! writes configuration jj, the key by which match_config matches it
+!!
+!! @param unit  unit number of the open file
+!! @param jj  index of the configuration in this run (1 for the reference)
+!! @param nc  number of core states
+!! @param nvcnf  number of valence states, all configurations
+!! @param nacnf  principal quantum numbers, all configurations
+!! @param lacnf  angular momenta, all configurations
+!! @param facnf  occupancies, all configurations
 
 !Input variables
  integer, intent(in) :: unit,jj,nc
@@ -387,18 +387,18 @@
  end subroutine write_config_key
 
  subroutine match_config(unit,nc,ncnf,nvcnf,nacnf,lacnf,facnf,found,match)
-! reads the key of the next configuration in the file and flags the
-! configurations of this run, not found before, that it matches
-
-!unit  unit number of the open file
-!nc  number of core states
-!ncnf  number of test configurations (not counting the reference)
-!nvcnf  number of valence states, all configurations
-!nacnf  principal quantum numbers, all configurations
-!lacnf  angular momenta, all configurations
-!facnf  occupancies, all configurations
-!found  .true. for the configurations already found in the file
-!match  .true. for the configurations this key matches
+!! reads the key of the next configuration in the file and flags the
+!! configurations of this run, not found before, that it matches
+!!
+!! @param unit  unit number of the open file
+!! @param nc  number of core states
+!! @param ncnf  number of test configurations (not counting the reference)
+!! @param nvcnf  number of valence states, all configurations
+!! @param nacnf  principal quantum numbers, all configurations
+!! @param lacnf  angular momenta, all configurations
+!! @param facnf  occupancies, all configurations
+!! @param found  .true. for the configurations already found in the file
+!! @param match  .true. for the configurations this key matches
 
 !Input variables
  integer, intent(in) :: unit,nc,ncnf
@@ -431,10 +431,10 @@
  end subroutine match_config
 
  subroutine check_found(ncnf,found)
-! stops if a configuration of this run is not in the file
-
-!ncnf  number of test configurations (not counting the reference)
-!found  .true. for the configurations found in the file
+!! stops if a configuration of this run is not in the file
+!!
+!! @param ncnf  number of test configurations (not counting the reference)
+!! @param found  .true. for the configurations found in the file
 
 !Input variables
  integer, intent(in) :: ncnf
@@ -454,12 +454,12 @@
  end subroutine check_found
 
  elemental logical function differ(aa,bb)
-! .true. if aa and bb differ by more than rtol relative to the larger,
-! or absolutely for values below 1 (occupations of 0); not for the mesh,
-! whose points near the origin are far below 1
-
-!aa  first value
-!bb  second value
+!! .true. if aa and bb differ by more than rtol relative to the larger,
+!! or absolutely for values below 1 (occupations of 0); not for the mesh,
+!! whose points near the origin are far below 1
+!!
+!! @param aa  first value
+!! @param bb  second value
 
 !Input variables
  real(dp), intent(in) :: aa,bb
@@ -468,9 +468,9 @@
  end function differ
 
  integer function byteswap(ii)
-! ii with its bytes in reverse order
-
-!ii  integer to byte-swap
+!! ii with its bytes in reverse order
+!!
+!! @param ii  integer to byte-swap
 
 !Input variables
  integer, intent(in) :: ii

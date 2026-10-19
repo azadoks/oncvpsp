@@ -18,15 +18,15 @@
 !
  subroutine renorm_r(uu,rr,ll,kap,zz,mmax,cnorm)
 
-! renormalize Dirac wave function so that large component is normalized
-
-!uu  Dirac wave function
-!rr  log radial grid
-!ll  angular momentum
-!kap  Dirac kappa
-!zz  atomic number
-!mmax  size of radial grid
-!cnorm  renormalization coefficient
+!! renormalize Dirac wave function so that large component is normalized
+!!
+!! @param uu  Dirac wave function
+!! @param rr  log radial grid
+!! @param ll  angular momentum
+!! @param kap  Dirac kappa
+!! @param zz  atomic number
+!! @param mmax  size of radial grid
+!! @param cnorm  renormalization coefficient
 
  use constants_m, only: dp, c_light
  implicit none

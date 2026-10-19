@@ -24,25 +24,30 @@
 &                    pswfnull_sb,pswfnull_or,uunorm,ps0norm,eresidmin,&
 &                    pswfopt_sb,pswfopt_or,ekin_anal,eresq)
 
-!nnull  number of unconstrained basis vectors for residual minimization
-!nbas  number of sbf basis functions
-!pswf0_sb(nbas)  sbf basis  coefficients for constrained part of pseudo
-!                    wave function
-!pswf0_or(nbas)  or basis  coefficients
-!nqout  number of q values in [0,qmax] for which results are to be saved
-!qout(nqout)  q values in [0,qmax] for which residuals are to be calculated
-!eresid0(nqout)  set of <pswf0| E_resid |pswf0> matrix elements
-!eresiddot(nnull,nqout)  set of <pswfnull| E_resid |pswf0> matrix elements
-!eresidmat(nnull,nnull,nqout)  set of <pswfnull | E_resid |pswfnull'>
-!pswfnull_sb(nbas,nnull)  sbf coefficients of null-space eigenfunctions
-!pswfnull_or(nbas,nnull)  or basis coefficients of null-space eigenfunctions
-!uunorm  all-electron charge inside rc
-!ps0norm  ps0 charge inside rc
-!eresidmin  minimized E_resid for qout(1), the optimization cutoff
-!pswfopt_sb  optimized pseudowavefunction sbf coefficients
-!pswfopt_or  optimized pseudowavefunction or basis coefficients
-!ekin_anal  total pswf kinetic energy calculated analytically from E_resid
-!eresq(nqout)  E_resid for optimized pswf as a function of cutoff
+!! @param nnull  number of unconstrained basis vectors for residual minimization
+!! @param nbas  number of sbf basis functions
+!! @param pswf0_sb(nbas)  sbf basis  coefficients for constrained part of pseudo
+!!                        wave function
+!! @param pswf0_or(nbas)  or basis  coefficients
+!! @param nqout  number of q values in [0,qmax] for which results are to be
+!!               saved
+!! @param qout(nqout)  q values in [0,qmax] for which residuals are to be
+!!                     calculated
+!! @param eresid0(nqout)  set of <pswf0| E_resid |pswf0> matrix elements
+!! @param eresiddot(nnull,nqout)  set of <pswfnull| E_resid |pswf0> matrix
+!!                                elements
+!! @param eresidmat(nnull,nnull,nqout)  set of <pswfnull | E_resid |pswfnull'>
+!! @param pswfnull_sb(nbas,nnull)  sbf coefficients of null-space eigenfunctions
+!! @param pswfnull_or(nbas,nnull)  or basis coefficients of null-space
+!!                                 eigenfunctions
+!! @param uunorm  all-electron charge inside rc
+!! @param ps0norm  ps0 charge inside rc
+!! @param eresidmin  minimized E_resid for qout(1), the optimization cutoff
+!! @param pswfopt_sb  optimized pseudowavefunction sbf coefficients
+!! @param pswfopt_or  optimized pseudowavefunction or basis coefficients
+!! @param ekin_anal  total pswf kinetic energy calculated analytically from
+!!                   E_resid
+!! @param eresq(nqout)  E_resid for optimized pswf as a function of cutoff
 
  use constants_m, only: dp
  implicit none

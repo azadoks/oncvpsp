@@ -18,17 +18,16 @@
 !
 
  subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax)
-!
-!  interface to libxc library for potential and energy density calculation
-!
-!iexc  exchange-correlation function to be used: -(1000*id1+id2) for
-!      the libxc functionals id1 and id2
-!al  log of the mesh ratio amesh of the log radial mesh
-!rho  charge density
-!vxc  exchange-correlation potential
-!exc  exchange-correlation energy density
-!rr  log radial mesh
-!mmax  dimension of log radial grid
+!!  interface to libxc library for potential and energy density calculation
+!!
+!! @param iexc  exchange-correlation function to be used: -(1000*id1+id2) for
+!!              the libxc functionals id1 and id2
+!! @param al  log of the mesh ratio amesh of the log radial mesh
+!! @param rho  charge density
+!! @param vxc  exchange-correlation potential
+!! @param exc  exchange-correlation energy density
+!! @param rr  log radial mesh
+!! @param mmax  dimension of log radial grid
 
  use functionals_m, only: xc_functl_t, xc_functl_init_functl, &
 &                         xc_functl_get_vxc, xc_functl_write_info, &
@@ -125,17 +124,17 @@
 
 
  subroutine derivs(mmax, rho, al, rr, dpr, dppr, dlap)
-! first and second radial derivatives and Laplacian of rho on the log
-! mesh, by finite differences, for exc_libxc and functionals_m
-! NB: presumes incoming rho is properly scaled without 4pi or r**2 factors.
-
-!mmax  dimension of log radial grid
-!rho  charge density
-!al  log of the mesh ratio amesh of the log radial mesh
-!rr  log radial mesh
-!dpr  first radial derivative of rho
-!dppr  second radial derivative of rho
-!dlap  Laplacian of rho
+!! first and second radial derivatives and Laplacian of rho on the log
+!! mesh, by finite differences, for exc_libxc and functionals_m
+!! NB: presumes incoming rho is properly scaled without 4pi or r**2 factors.
+!!
+!! @param mmax  dimension of log radial grid
+!! @param rho  charge density
+!! @param al  log of the mesh ratio amesh of the log radial mesh
+!! @param rr  log radial mesh
+!! @param dpr  first radial derivative of rho
+!! @param dppr  second radial derivative of rho
+!! @param dlap  Laplacian of rho
 
  use constants_m, only: dp
  implicit none

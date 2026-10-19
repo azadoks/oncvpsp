@@ -22,20 +22,21 @@
 &                       pswf0_or,pswfnull_or, &
 &                       pswf0_sb,pswfnull_sb,ps0norm)
 
-!ncon  number of constraints
-!nbas  number of orthogonalized sbf basis functions
-!cons  constraints (value at rc and derivatives up to 4th)
-!orbasis  coefficients of sbfs in orthogonal basis
-!orbasis_der  values and derivatives of orthogonalized sbf basis
-!              functions at rc (constraint matrix)
-!pswf0_or  pswf0_sb in the orthogonalized basis
-!pswfnull_or  pswfnull_sb in the orthogonalized basis
-!pswf0_sb  linear combination of sbfs that matches cons at rc
-!pswfnull_sb  nbas-ncon linear combinations of sbfs satisfying value and ncon-1
-!           derivatives at rc == 0 (null space of constraint matrix)
-!          These form an orthonormal set, and are all orthogonal to
-!          the pswf0 combination (which is not normalized)
-!ps0norm  charge contained in ps0 inside rc
+!! @param ncon  number of constraints
+!! @param nbas  number of orthogonalized sbf basis functions
+!! @param cons  constraints (value at rc and derivatives up to 4th)
+!! @param orbasis  coefficients of sbfs in orthogonal basis
+!! @param orbasis_der  values and derivatives of orthogonalized sbf basis
+!!                     functions at rc (constraint matrix)
+!! @param pswf0_or  pswf0_sb in the orthogonalized basis
+!! @param pswfnull_or  pswfnull_sb in the orthogonalized basis
+!! @param pswf0_sb  linear combination of sbfs that matches cons at rc
+!! @param pswfnull_sb  nbas-ncon linear combinations of sbfs satisfying value
+!!                     and ncon-1 derivatives at rc == 0 (null space of
+!!                     constraint matrix) These form an orthonormal set, and are
+!!                     all orthogonal to the pswf0 combination (which is not
+!!                     normalized)
+!! @param ps0norm  charge contained in ps0 inside rc
 
  use constants_m, only: dp
  implicit none

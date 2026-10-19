@@ -20,33 +20,34 @@
 &                    vkb,evkb,nproj,rr,vfull,vp,vpuns,zz,mmax,mxprj,drl,nrl, &
 &                    rho,rhoc,rhomod,irel,nkap,cvgplt)
 
-! write output for plotting pseudopotentials, model core charge, and
-! all-electron and pseudo wave functions
-
-!lmax  maximum angular momentum
-!npa  principal quantum number for corresponding all-electron state
-!epa  bound-state or scattering state reference energies for vkb potentials
-!     (last index 1 for j=l+1/2, 2 for j=l-1/2, as in vkb, evkb, vp, cvgplt)
-!lloc  l for local potential
-!irc  indices of core radii
-!vkb  VKB projectors
-!evkb  coefficients of VKB projectors
-!nproj  number of vkb projectors for each l
-!rr  log radial grid
-!vfull  all-electron potential
-!vp  semi-local pseudopotentials
-!vpuns  unscreened vp
-!zz  atomic number
-!mmax  size of radial grid
-!mxprj  dimension of number of projectors
-!drl  spacing of linear radial mesh
-!nrl  number of points in linear radial mesh
-!rho  valence pseudocharge
-!rhoc  all-electron core charge
-!rhomod  model core charge
-!irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
-!nkap  number of kappa per l: 1, or 2 for irel=2
-!cvgplt  energy per electron error vs. cutoff (convergence profiles)
+!! write output for plotting pseudopotentials, model core charge, and
+!! all-electron and pseudo wave functions
+!!
+!! @param lmax  maximum angular momentum
+!! @param npa  principal quantum number for corresponding all-electron state
+!! @param epa  bound-state or scattering state reference energies for vkb
+!!             potentials (last index 1 for j=l+1/2, 2 for j=l-1/2, as in vkb,
+!!             evkb, vp, cvgplt)
+!! @param lloc  l for local potential
+!! @param irc  indices of core radii
+!! @param vkb  VKB projectors
+!! @param evkb  coefficients of VKB projectors
+!! @param nproj  number of vkb projectors for each l
+!! @param rr  log radial grid
+!! @param vfull  all-electron potential
+!! @param vp  semi-local pseudopotentials
+!! @param vpuns  unscreened vp
+!! @param zz  atomic number
+!! @param mmax  size of radial grid
+!! @param mxprj  dimension of number of projectors
+!! @param drl  spacing of linear radial mesh
+!! @param nrl  number of points in linear radial mesh
+!! @param rho  valence pseudocharge
+!! @param rhoc  all-electron core charge
+!! @param rhomod  model core charge
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param nkap  number of kappa per l: 1, or 2 for irel=2
+!! @param cvgplt  energy per electron error vs. cutoff (convergence profiles)
 
  use constants_m, only: dp
  implicit none

@@ -54,12 +54,12 @@
 
  subroutine check_case(name, rxpsh, nexpected)
 
-!runs name with rxpsh, its output going to a file, and counts its warnings
-
-!name  run_phsft for the non-relativistic case, run_phsft_r for the
-!      fully-relativistic one, whose messages it names
-!rxpsh  radius for the log-derivative analysis (bohr)
-!nexpected  number of warnings it should give
+!! runs name with rxpsh, its output going to a file, and counts its warnings
+!!
+!! @param name  run_phsft for the non-relativistic case, run_phsft_r for the
+!!              fully-relativistic one, whose messages it names
+!! @param rxpsh  radius for the log-derivative analysis (bohr)
+!! @param nexpected  number of warnings it should give
 
 !Input variables
  character(len=*), intent(in) :: name

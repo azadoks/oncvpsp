@@ -19,27 +19,27 @@
  subroutine relatom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
 &           rr,vi,zz,mmax,iexc,etot,ierr)
 
-! self-consistent fully-relativistic all-electron atom
-! calculation using log mesh
-! partially-occupied orbitals are weighted proportionally to 2j+1
-
-!na  principal quantum number array, dimension ncv
-!la  angular-momenta
-!ea  eigenvalues (output), ea(:,1) for j=l+1/2, ea(:,2) for j=l-1/2
-!fa  occupancies
-!rpk  radius of outermost peak of wave function, indexed as ea
-!nc  number of core states
-!ncv  number of core+valence states
-!it  number of iterations (output)
-!rhoc  core charge (output)
-!rho  total core+valence charge (output)
-!rr  log radial mesh
-!vi  all-electron potential (output)
-!zz  atomic number
-!mmax  size of log grid
-!iexc  exchange-correlation function to be used
-!etot  all-electron total energy (output)
-!ierr  error flag
+!! self-consistent fully-relativistic all-electron atom
+!! calculation using log mesh
+!! partially-occupied orbitals are weighted proportionally to 2j+1
+!!
+!! @param na  principal quantum number array, dimension ncv
+!! @param la  angular-momenta
+!! @param ea  eigenvalues (output), ea(:,1) for j=l+1/2, ea(:,2) for j=l-1/2
+!! @param fa  occupancies
+!! @param rpk  radius of outermost peak of wave function, indexed as ea
+!! @param nc  number of core states
+!! @param ncv  number of core+valence states
+!! @param it  number of iterations (output)
+!! @param rhoc  core charge (output)
+!! @param rho  total core+valence charge (output)
+!! @param rr  log radial mesh
+!! @param vi  all-electron potential (output)
+!! @param zz  atomic number
+!! @param mmax  size of log grid
+!! @param iexc  exchange-correlation function to be used
+!! @param etot  all-electron total energy (output)
+!! @param ierr  error flag
 
  use constants_m, only: dp
  implicit none
