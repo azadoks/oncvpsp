@@ -322,12 +322,12 @@ numbers refer to [Phases](#phases).
 | R-4 | `wf_rc_der`: 7-point stencils applied 4 times at `irc` | a, e | W | ODE-recursion derivatives at rc |
 | R-5 | `fpovlp`, `sbf_basis_con`: overlaps to `irc` with the (23,28,9)/24 end rule | c | W | `lm_integral` for all-electron overlaps; `sbf_overlap` (Lommel) for Bessel ones |
 | R-6 | `pspot`: inside/outside by mesh index; V_l joins V_AE at irc+1 | a, d | W | pieces with extensions; values by side of rc |
-| R-7 | `vploc`: 5-point stencils at irc(5)±6, polynomial for ii ≤ irc(5) | a, e | W | `lm_derivs` of V_AE at rc(5); polynomial evaluated analytically |
+| R-7 | `vploc`: v′, v″, v‴ at irc(5) by three nested 5-point stencils, polynomial for ii ≤ irc(5); round-off grows as al⁻³ (Fe: V_loc near 0 moves 3.6e-6, then 1.8e-5, as the mesh is halved twice) | a, e | W | derivatives of V_AE at rc(5) from a least-squares fit weighted by a C-infinity bump of fixed physical width (points enter and leave with zero weight, so the fit is smooth in rc(5) and does not amplify the noise as the mesh refines); polynomial evaluated analytically |
 | R-8 | `run_vkb`: support cut at irc; window `20(r/rr(irc) − 1)`, ff = (1−x²)², C¹; ff·vr·φ̃ with vr = Δ/2u | a, d | W | true rc; subtract ff·Δ[u_AE]/2 (D-4); same window shape; quadratures split at 0.95 rc, rc(5), rc |
 | R-9 | `vpinteg` to `irc`; points 1–3 skipped | c | W | piecewise `lm_integral` |
-| R-10 | `vkboutwf`, `lschvkbb`: rc found as the last nonzero vkb; overlaps to `mch` (rule changes with the turning point) | a, e | W | rc passed in; one fixed [0, rc] rule shared with run_vkb |
+| R-10 | `vkboutwf`, `lschvkbb`: rc found as the last nonzero vkb. Since e809a29 the overlaps end at irc and the Adams steps past irc use the source-free u″ at their back points (no O(al²) from the kink), both assuming the support ends on a node | a, e | W | rc passed in; one fixed [0, rc] rule shared with run_vkb, with the partial cell [rr(irc), rc]; the integration stops at rc exactly (partial step) and restarts beyond it from (u, u′) at rc, so no step straddles the kink |
 | R-11 | `vrel` window 0.5–1.5 rr(irc); 1e-10 threshold on u; vr = 0 points replaced by the average of their neighbours | a, g | W | replaced by Δ = u″ − u″_Schrödinger of the all-electron wave on [0.95 rc, rc], from the ODE (D-4): no division by u, no threshold |
-| R-12 | `wellstate`: well onset at rr(irc+5), x³ onset (C²); thresholds 0.75, 1.5 rr(irc) override `ep`; negative `ep` reset to 0.25 | a, d, g | W | onset at rc·amesh⁵ (continuous), C-infinity onset; overrides removed, the input `ep` is always used (D-1) |
+| R-12 | `wellstate`: well onset at rr(irc+5), x³ onset (C²), inside the ±12-point stencils of `wf_rc_der` (uord 4, 5 of well states O(al²), O(al) off); thresholds 0.75, 1.5 rr(irc) override `ep`; negative `ep` reset to 0.25 | a, d, g | W | onset at rc·amesh⁵ (continuous), C-infinity onset; the derivatives at rc come from the ODE (R-4), which sees V at rc only, so the onset beyond rc cannot reach them; overrides removed, the input `ep` is always used (D-1) |
 | R-13 | `ionic_window`: ra = rcmax (snapped); rcore = first mesh point where `|vion+zion/r|` < 1e-10; rb = max(rcore, 2ra) | a, g, h | W | continuous ra; rcore by `lm_root` of ln\|vion+zion/r\| − ln tol; smooth max |
 | R-14 | `run_diag` `mchf = max(irc)+5`; `run_phsft` rxpsh → irphs; `run_ghosts` mbar; `run_plot` n1..n4 | a | – | phase 6 |
 | R-15 | `upfout` `nrlproj`, `cutoff_radius_index`; `linout` rc+2·drl format switch | a, g | W | β exactly 0 beyond rc (phase 4); indices then harmless |
@@ -358,8 +358,9 @@ numbers refer to [Phases](#phases).
 | S-5 | `psatom` 204: SCF converged when the eigenvalue guess comes back unchanged | f | – | explicit criterion on eigenvalues and potential residual |
 | S-6 | `ionic_screening`: fixed point to 1e-10, 50 iterations | f | W | converge to round-off (Anderson), then a fixed polish |
 | S-7 | `lschvkbb` nin = mch + 2.3/al, truncation of the density tail | a, b | W (~0) | `inward_start` budget as in lschfb |
-| S-8 | matching point `mch` at the turning point index | h | W | below 1e-13 at amesh 1.006 (measured, emulation); keep |
+| S-8 | matching point `mch` at the turning point index; `lschfb`'s mch and `inward_start`'s nin are discrete in E (about 1e-12 in the all-electron eigenvalues) | h | W | below 1e-13 at amesh 1.006 (measured, emulation); keep. The all-electron atom does not depend on the scanned inputs, so its noise is a constant offset in a scan |
 | S-9 | `sr_flux_m`: series/RK4 switch at rs, RK4 step count by ceiling | g, i | W (~1e-13) | RK4 from r0 always; fixed step count |
+| S-10 | `exc_libxc`: ρ′, ρ″ of ρ_v + ρ̃_c by mesh stencils (`derivs`) across the kinks of the model core (r_s C², r* C⁴, the Teter cutoff C¹) and of ρ_v at rc | d, e | W (GGA) | ρ′, ρ″ from the pieces: the model core from its derivative columns, ρ_v from u, u′, u″ of the pseudo-waves |
 
 #### Model core (phase 5)
 
@@ -384,7 +385,7 @@ numbers refer to [Phases](#phases).
 
 | id | where | cat | W | decision |
 |---|---|---|---|---|
-| O-1 | `linout`, `upfout`: `dpnint` (switching 8-point Lagrange) of kinked arrays onto the linear mesh; ringing beyond rc | d, e | W | each output point from its piece by FH on that piece's extension; β ≡ 0 beyond rc |
+| O-1 | `linout`, `upfout`: `dpnint` (switching 8-point Lagrange) of kinked arrays onto the linear mesh; ringing beyond rc of about 1e-4 relative | d, e | W | each output point from its piece by FH on that piece's extension; β ≡ 0 beyond rc |
 | O-2 | `oncvpsp_main` 882–891 + `linout`: fr psp8 drops sr/so terms below 1e-3 of the first | g | W | write all; see D-2 |
 | O-3 | UPF numbers e20.10, PP_R f10.4 | b | W | 17 digits (done, phase 0) |
 | O-4 | `upfout` nrl extended to a tail-norm radius (1e-6) | g, i | W | length from rlmax only |
@@ -551,7 +552,7 @@ later phases can see 1e-10.
 
 - [ ] Unit tests: crossover root, closed-form a0, Teter derivatives
       against series and finite differences, written first
-- [ ] M-1…M-14
+- [ ] M-1…M-14; S-10 GGA gradients from the pieces
 - [ ] `match_order` (D-5): input key, minimum tail and Martins fill to
       C⁴, T2 row `slack` with `match_order = 4`
 - [ ] T2 rows fcfact, rcfact, icmod 4 grid, slack at G1
