@@ -266,7 +266,7 @@
 !! the ionic window, iterating the pseudo valence states (rho, rhops,
 !! uupsa, eeig) and their screening (vo, vxc, eeel, eexc) to a fixed point:
 !! until the local potential, weighted by rho, changes by no more than
-!! 1e-10.  The last states are those of the final vp
+!! 1e-13 Ha.  The last states are those of the final vp
 !!
 !! @param nkap  1 for scalar-relativistic or non-relativistic, 2 for
 !!              relativistic
@@ -324,6 +324,10 @@
 
 !Local variables
  real(dp), parameter :: tol=1.0d-10
+! the fixed point: it contracts 7-10 times a step to a floor of 1e-17 to
+! 5e-15 Ha (the reference inputs), so 1e-13 leaves the result within
+! 2e-14 of it, whatever the step count (doc/smoothness_plan.md, S-6)
+ real(dp), parameter :: tolfix=1.0d-13
  integer, parameter :: maxiter=50
  real(dp), allocatable :: ww(:),vp0(:,:,:),vnew(:),vnext(:,:),vsw(:)
  real(dp) :: ra,rb,change,sn,sd
@@ -347,7 +351,7 @@
 &                     mmax,mxprj,rho,rhops,uupsa,eeig)
    call vout(1,rho,rhomod,vo,vxc,zval,eeel,eexc,rr,mmax,iexc)
 ! change of the local potential where the valence electrons are; once it
-! is below tol, vp is kept as the potential whose states rho, eeig and
+! is below tolfix, vp is kept as the potential whose states rho, eeig and
 ! (through rho) vo are, so that the pseudo-atom SCF of the reference
 ! configuration starts at its own fixed point
    sn=0.0d0
@@ -359,7 +363,7 @@
      vnext(:,ik)=vnew(:)
    end do
    change=sqrt(sn/sd)
-   if(change<=tol) exit
+   if(change<=tolfix) exit
    if(iter==maxiter) then
      write(6,'(/a,i4,a,1p,e10.2)') &
 &          'ionic_screening: ERROR the ionic tail did not converge in', &
