@@ -81,9 +81,12 @@
 
 ! depth of the history of the Anderson mixing
  integer, parameter :: ndep=8
-! convergence threshold for the residual of the screening potential and
-! for the change of each eigenvalue (Ha)
- real(dp), parameter ::  tolres=1.0d-8
+! convergence threshold for the residual of the screening potential (Ha)
+! and for the change of each eigenvalue (relative to max(|E|,1 Ha)): 3
+! times the residual's round-off floor (3-4e-12 for Nd, Bi), so that the
+! energies are those of the fixed point, not of the path to it. At 1e-8
+! the terms of the total energy depended on that path to 3e-7 Ha
+ real(dp), parameter ::  tolres=1.0d-11
 
  allocate(uu(mmax),up(mmax))
  allocate(vsi(mmax),vso(mmax),vxc(mmax))
@@ -152,7 +155,7 @@
      end if
 
 ! each eigenvalue settled to tolres (see the convergence test below)
-     if(abs(ea(ii)-et)>tolres) convg=.false.
+     if(abs(ea(ii)-et)>tolres*max(abs(et),1.0d0)) convg=.false.
      ea(ii)=et
 
 ! accumulate charge and eigenvalues

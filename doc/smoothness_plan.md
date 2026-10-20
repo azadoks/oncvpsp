@@ -637,6 +637,14 @@ later phases can see 1e-10.
       projectors moves 1e-4, the stencils' error in (u/r)″ (2.4e-6) over a
       small u/r at rc (-0.013). G2: `debl[0]` 5e-10 → 4.9e-11, `ep[2]`
       8e-10 → 5.0e-10; the rest is S-8 (see there)
+- [x] AE SCF (`sratom`, `relatom`) to a screening residual of 1e-11 Ha
+      and eigenvalue changes of 1e-11 relative, 3 times the residual's
+      round-off floor (3-4e-12 for Nd, Bi), as S-5 did for `psatom`. At
+      1e-8 the energy terms depended on the SCF path to 3e-7 Ha, so any
+      1e-13 change in a solver moved them by that much. Total AE
+      iterations 6431 → 8516 on the 51 inputs, at most 40 in one SCF.
+      The AE totals move by ≤4e-10 Ha, the terms by ≤3.1e-7 (73_Ta_r),
+      the eigenvalues by ≤1e-7, the kernels by ≤5.4e-8
 - [ ] R-5 overlaps; R-6 pieces
 - [ ] Q-1…Q-4 residual kinetic energy at exact qcut, fixed quadratures
 - [ ] R-7 vploc at continuous rc(5); R-8…R-10 run_vkb, vpinteg,
