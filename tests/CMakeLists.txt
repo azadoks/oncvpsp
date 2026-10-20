@@ -1,11 +1,19 @@
-# The tests run the scripts in scripts/, which need bash and (for the comparison with the references)
-# perl and python3. Each test works in its own directory under this one, where its outputs are left.
+# The tests run the scripts in scripts/, which need bash and python3, and those that compare outputs
+# (scripts/compare_output.py) a Python with pyoncvpsp and upf-tools (cmake/OncvpspTestPython.cmake),
+# without which they are disabled. Each test works in its own directory under this one, where its
+# outputs are left.
 find_program(ONCVPSP_BASH bash)
-find_package(Perl)
 find_package(Python3 COMPONENTS Interpreter)
-if (NOT ONCVPSP_BASH OR NOT PERL_FOUND OR NOT Python3_Interpreter_FOUND)
-    message(WARNING "bash, perl or python3 not found; the tests are not available")
+if (NOT ONCVPSP_BASH OR NOT Python3_Interpreter_FOUND)
+    message(WARNING "bash or python3 not found; the tests are not available")
     return()
+endif ()
+include(OncvpspTestPython)
+set(ONCVPSP_TEST_PYTHON_DESCRIPTION "${ONCVPSP_TEST_PYTHON_DESCRIPTION}" PARENT_SCOPE)
+if (ONCVPSP_COMPARE_PYTHON)
+    set(test_python "${ONCVPSP_COMPARE_PYTHON}")
+else ()
+    set(test_python "${Python3_EXECUTABLE}")
 endif ()
 
 # Unit tests of the input readers
@@ -35,13 +43,21 @@ function(oncvpsp_test name label script)
         return()
     endif ()
     add_test(NAME ${name} COMMAND ${ONCVPSP_BASH} "${scripts}/${script}" ${ARGN})
-    set_tests_properties(${name} PROPERTIES LABELS ${label} ENVIRONMENT "ONCVPSP_PYTHON=${Python3_EXECUTABLE}")
+    set_tests_properties(${name} PROPERTIES LABELS ${label} ENVIRONMENT "ONCVPSP_PYTHON=${test_python}")
     if (NOT ONCVPSP_WITH_Libxc)
         foreach (input IN LISTS libxc_inputs)
             if (name MATCHES "(^|_)${input}(_r|_nr)?$")
                 set_tests_properties(${name} PROPERTIES DISABLED TRUE)
             endif ()
         endforeach ()
+    endif ()
+endfunction()
+
+# oncvpsp_compares(NAME): the test NAME (if it was added) compares outputs with
+# scripts/compare_output.py, or parses them with pyoncvpsp: disabled without its Python
+function(oncvpsp_compares name)
+    if (TEST ${name} AND NOT ONCVPSP_COMPARE_PYTHON)
+        set_tests_properties(${name} PROPERTIES DISABLED TRUE)
     endif ()
 endfunction()
 
@@ -61,6 +77,7 @@ foreach (test_name IN LISTS oncvpspsr_tests)
     oncvpsp_test(${test_name} sr ref_test.sh
         $<TARGET_FILE:oncvpspsr> "${data}/${test_name}.dat" "${CMAKE_CURRENT_SOURCE_DIR}/refs/${test_name}.out"
         "${CMAKE_CURRENT_BINARY_DIR}/${test_name}")
+    oncvpsp_compares(${test_name})
 endforeach ()
 
 set(oncvpspr_tests "52_Te" "74_W" "80_Hg"
@@ -83,6 +100,7 @@ foreach (test_name IN LISTS oncvpspr_tests)
     oncvpsp_test(${test_name}_r r ref_test.sh
         $<TARGET_FILE:oncvpspr> "${data}/${test_name}.dat" "${CMAKE_CURRENT_SOURCE_DIR}/refs/${test_name}_r.out"
         "${CMAKE_CURRENT_BINARY_DIR}/${test_name}_r")
+    oncvpsp_compares(${test_name}_r)
 endforeach ()
 
 set(oncvpspnr_tests "08_O" "14_Si" "03_Li" "07_N_dl" "14_Si_lder")
@@ -90,6 +108,7 @@ foreach (test_name IN LISTS oncvpspnr_tests)
     oncvpsp_test(${test_name}_nr nr ref_test.sh
         $<TARGET_FILE:oncvpspnr> "${data}/${test_name}.dat" "${CMAKE_CURRENT_SOURCE_DIR}/refs/${test_name}_nr.out"
         "${CMAKE_CURRENT_BINARY_DIR}/${test_name}_nr")
+    oncvpsp_compares(${test_name}_nr)
 endforeach ()
 
 # All-electron / pseudopotential split: oncvpsp_ae.x writes the all-electron atom to a file and
@@ -209,6 +228,7 @@ if (ONCVPSP_WITH_TOML)
         oncvpsp_test(toml_${rel}_${test_name} toml toml_test.sh
             $<TARGET_FILE:oncvpsp${rel}> "${data}/${test_name}.dat" "${data}/toml/${test_name}.toml"
             "${CMAKE_CURRENT_BINARY_DIR}/toml_${rel}_${test_name}")
+        oncvpsp_compares(toml_${rel}_${test_name})
     endforeach ()
 
     foreach (case IN ITEMS
