@@ -77,7 +77,8 @@ mesh step: the projectors end at rc with a kink, and the pseudo-atom solver
 built, and does not carry the kink into the steps beyond rc, either of which
 made it O(al^2) (-40 uHa for the 3d of Fe at amesh 1.006).  Scalar-
 relativistic runs keep a mesh-independent difference of a few uHa from the
-relativistic correction to the projectors (vrel).  Finally,  the total energies
+relativistic correction to the projectors (vrel), which run_vkb also takes
+out of a semi-local local potential (lloc<4), as it is vae+vr at rc.  Finally,  the total energies
 and eigenvalues of self-consistent pseudo atoms are compared with all-electron
 results for the reference and test valence configurations.  You should
 always look at these diagnostics, even if the automated graphics all look

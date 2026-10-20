@@ -92,8 +92,28 @@
  else
    l1=lloc+1
    vloc(:)=(dble(l1)*vp(:,l1,1) + dble(l1-1)*vp(:,l1,2))/dble(2*l1-1)
+ end if
+
+! a relativistic semi-local potential is vae + vr at rc and vae beyond: the
+! taper below takes out vr as it does from the projectors, so that vloc,
+! and with it every projector, is continuous at rc (it jumped by vr(rc),
+! about 1e-4 Ha, which the radial solvers integrated across at O(al))
+ if(lloc<4) then
+   l1=lloc+1
+   do ii=1,irc(l1)
+     xx=20.0d0*((rr(ii)/rr(irc(l1)))-1.0d0)
+     if(xx>-1.0d0) then
+       ff=(1.0d0-xx**2)**2
+       if(nkap==1) then
+         tt=vr(ii,1,l1,1)
+       else
+         tt=(dble(l1)*vr(ii,1,l1,1) + dble(l1-1)*vr(ii,1,l1,2))/dble(2*l1-1)
+       end if
+       vloc(ii)=vloc(ii)-ff*tt
+     end if
+   end do
    vp(:,l1,1)=vloc(:)
-   vp(:,l1,2)=vloc(:)
+   if(nkap==2) vp(:,l1,2)=vloc(:)
  end if
 
 
