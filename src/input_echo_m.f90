@@ -24,7 +24,7 @@
 
  module input_echo_m
 
- use constants_m, only: dp
+ use constants_m, only: dp, mxstate, mxcnf
  implicit none
  private
  public :: icmod_lines, epsh_lines, write_icmod, write_epsh
@@ -194,12 +194,13 @@
 !Input variables
  integer, intent(in) :: nkap,iformat
  integer, intent(in) :: nc,nv,iexc,lmax,lloc,lpopt,icmod,ncnf,upf_mesh
- integer, intent(in) :: na(30),la(30),ncon(6),nbas(6),nproj(6)
- integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
+ integer, intent(in) :: na(mxstate),la(mxstate),ncon(6),nbas(6),nproj(6)
+ integer, intent(in) :: nvcnf(mxcnf),nacnf(mxstate,mxcnf),lacnf(mxstate,mxcnf)
  real(dp), intent(in) :: zz,dvloc0,fcfact,rcfact
  real(dp), intent(in) :: slack
  real(dp), intent(in) :: epsh1,epsh2,depsh,rxpsh,rlmax,drl
- real(dp), intent(in) :: fa(30),rc0(6),ep(6),qcut(6),debl(6),facnf(30,5)
+ real(dp), intent(in) :: fa(mxstate),rc0(6),ep(6),qcut(6),debl(6)
+ real(dp), intent(in) :: facnf(mxstate,mxcnf)
  real(dp), intent(in) :: fcgrid(3),rcgrid(3),log_mesh(3)
  character(len=2), intent(in) :: atsym
  character(len=4), intent(in) :: psfile

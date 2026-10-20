@@ -48,14 +48,16 @@
 !! @param nkap  number of kappa per l: 1, or 2 for irel=2
 
  use config_ae_m, only: config_ae_warning
- use constants_m, only: dp
+ use constants_m, only: dp, mxstate, mxcnf
  implicit none
 
 !Input variables
 
- integer, intent(in) :: istcnf(5),ierrcnf(5),itcnf(5),kerrcnf(5)
- integer, intent(in) :: nvtcnf(5),natcnf(30,5),latcnf(30,5)
- real(dp), intent(in) :: fatcnf(30,3,5),eatcnf(30,nkap,3,5),etstcnf(5)
+ integer, intent(in) :: istcnf(mxcnf),ierrcnf(mxcnf),itcnf(mxcnf),kerrcnf(mxcnf)
+ integer, intent(in) :: nvtcnf(mxcnf),natcnf(mxstate,mxcnf)
+ integer, intent(in) :: latcnf(mxstate,mxcnf)
+ real(dp), intent(in) :: fatcnf(mxstate,3,mxcnf),eatcnf(mxstate,nkap,3,mxcnf)
+ real(dp), intent(in) :: etstcnf(mxcnf)
  integer, intent(in) :: jj,mmax,mxprj,iexc,nc,lloc,irel,nkap
  integer, intent(in) :: nproj(5)
  real(dp), intent(in) :: etot,epstot,rcmax
@@ -67,9 +69,10 @@
 !Local variables
  integer :: ii,it,kk,ll,l1,ierr,nvt
  integer :: ikap,kap,mkap
- integer :: nat(30),lat(30),natp(30),latp(30),nav(4)
+ integer :: nat(mxstate),lat(mxstate),natp(mxstate),latp(mxstate),nav(4)
  real(dp) :: eaetst,etsttot,fj
- real(dp) :: eat(30,nkap,3),fat(30,3),eatp(30,nkap),fatp(30,3)
+ real(dp) :: eat(mxstate,nkap,3),fat(mxstate,3),eatp(mxstate,nkap)
+ real(dp) :: fatp(mxstate,3)
 
  real(dp),allocatable :: rho(:),rhocps(:)
 

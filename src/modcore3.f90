@@ -50,12 +50,12 @@
 !! @param zion  ion charge
 !! @param iexc  exchange-correlation function to be used
 
- use constants_m, only: dp
+ use constants_m, only: dp, mxstate
  implicit none
 
 !Input variables
  integer, intent(in) :: icmod,nv,nc,iexc,irps,mmax
- integer, intent(in) :: la(30)
+ integer, intent(in) :: la(mxstate)
  real(dp), intent(in) :: rhoae(mmax,nv),rhops(mmax,nv),rhotae(mmax)
  real(dp), intent(in) :: rhotps(mmax),rhoc(mmax),rr(mmax)
  real(dp), intent(in) :: zion,rcfact

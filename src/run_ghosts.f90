@@ -57,14 +57,14 @@
 !! @param mmax  size of radial grid
 !! @param mxprj  dimension of number of projectors
 
- use constants_m, only: dp, pi
+ use constants_m, only: dp, pi, mxstate
  implicit none
 
 !Input variables
  integer, intent(in) :: nc,nv,lmax,lloc,mmax,mxprj
- integer, intent(in) :: la(30),irc(6),nproj(6)
+ integer, intent(in) :: la(mxstate),irc(6),nproj(6)
  real(dp), intent(in) :: rr(mmax),vp(mmax,5),vkb(mmax,mxprj,4)
- real(dp), intent(in) :: qmsbf(6),ea(30),evkb(mxprj,4)
+ real(dp), intent(in) :: qmsbf(6),ea(mxstate),evkb(mxprj,4)
 
 !Local variables
  integer :: ll,l1,ii,jj,kk,ierr,mbfact,mbar,mch,nn,npgh

@@ -191,13 +191,13 @@
 !! @param uupsa  pseudo valence wave functions
 !! @param eeig  sum of the occupied eigenvalues
 
- use constants_m, only: dp
+ use constants_m, only: dp, mxstate
  implicit none
 
 !Input variables
  integer, intent(in) :: nkap,nc,nv,lloc,mmax,mxprj
- integer, intent(in) :: la(30),nproj(6)
- real(dp), intent(in) :: fa(30),ea(30,2)
+ integer, intent(in) :: la(mxstate),nproj(6)
+ real(dp), intent(in) :: fa(mxstate),ea(mxstate,2)
  real(dp), intent(in) :: rr(mmax),vp(mmax,5,nkap)
  real(dp), intent(in) :: vkb(mmax,mxprj,4,nkap),evkb(mxprj,4,nkap)
 
@@ -302,13 +302,13 @@
 !! @param eexc  exchange-correlation correction to the eigenvalue sum
 !! @param vion  V_ion
 
- use constants_m, only: dp
+ use constants_m, only: dp, mxstate
  implicit none
 
 !Input variables
  integer, intent(in) :: nkap,nc,nv,lmax,lloc,mmax,mxprj,iexc
- integer, intent(in) :: la(30),nproj(6)
- real(dp), intent(in) :: fa(30),ea(30,2)
+ integer, intent(in) :: la(mxstate),nproj(6)
+ real(dp), intent(in) :: fa(mxstate),ea(mxstate,2)
  real(dp), intent(in) :: rr(mmax),vkb(mmax,mxprj,4,nkap),evkb(mxprj,4,nkap)
  real(dp), intent(in) :: zz,zion,zval,rcmax
  real(dp), intent(in) :: rhoc(mmax),rhotae(mmax),rhomod(mmax)

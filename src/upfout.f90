@@ -98,7 +98,7 @@
 !! @param ea  psuedo-orbital eigenvalues (Ha), second index as for uupsa
 !! @param nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
 
- use constants_m, only: dp, pi
+ use constants_m, only: dp, pi, mxstate, mxcnf
  use input_echo_m, only: write_input_echo
  implicit none
 
@@ -117,11 +117,12 @@
 
 !additional input for upf output to echo input file, all as defined
 ! in the main progam
- integer, intent(in) :: na(30),la(30),ncon(6),nbas(6)
- integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
+ integer, intent(in) :: na(mxstate),la(mxstate),ncon(6),nbas(6)
+ integer, intent(in) :: nvcnf(mxcnf),nacnf(mxstate,mxcnf),lacnf(mxstate,mxcnf)
  integer, intent(in) :: nc,nv,lpopt,ncnf
- real(dp), intent(in) :: fa(30),rc0(6),ep(6,nkap),qcut(6),debl(6),facnf(30,5)
- real(dp), intent(in) :: ea(30,nkap)
+ real(dp), intent(in) :: fa(mxstate),rc0(6),ep(6,nkap),qcut(6),debl(6)
+ real(dp), intent(in) :: facnf(mxstate,mxcnf)
+ real(dp), intent(in) :: ea(mxstate,nkap)
  real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rxpsh,rlmax
  real(dp), intent(in) :: log_mesh(3)
  character(len=4), intent(in) :: psfile

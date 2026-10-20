@@ -24,7 +24,7 @@
 ! codes.
 
  module config_ae_m
- use constants_m, only: dp
+ use constants_m, only: dp, mxstate, mxcnf
  implicit none
  private
  public :: run_config_ae, config_ae_warning
@@ -78,22 +78,25 @@
 
 !Input variables
  integer, intent(in) :: jj,mmax,iexc,nc,irel,nkap
- integer, intent(in) :: nacnf(30,5),lacnf(30,5),nvcnf(5)
+ integer, intent(in) :: nacnf(mxstate,mxcnf),lacnf(mxstate,mxcnf),nvcnf(mxcnf)
  real(dp), intent(in) :: zz
- real(dp), intent(in) :: facnf(30,5),ea(30,nkap),rr(mmax)
+ real(dp), intent(in) :: facnf(mxstate,mxcnf),ea(mxstate,nkap),rr(mmax)
 
 !Input/output variables
- integer, intent(inout) :: istcnf(5),ierrcnf(5),itcnf(5),kerrcnf(5)
- integer, intent(inout) :: nvtcnf(5),natcnf(30,5),latcnf(30,5)
- real(dp), intent(inout) :: fatcnf(30,3,5),eatcnf(30,nkap,3,5),etstcnf(5)
+ integer, intent(inout) :: istcnf(mxcnf),ierrcnf(mxcnf),itcnf(mxcnf)
+ integer, intent(inout) :: kerrcnf(mxcnf)
+ integer, intent(inout) :: nvtcnf(mxcnf),natcnf(mxstate,mxcnf)
+ integer, intent(inout) :: latcnf(mxstate,mxcnf)
+ real(dp), intent(inout) :: fatcnf(mxstate,3,mxcnf),eatcnf(mxstate,nkap,3,mxcnf)
+ real(dp), intent(inout) :: etstcnf(mxcnf)
 
 !Local variables
  integer :: ii,it,kk,ll,ierr,mch,nvt
  integer :: ikap,kap,mkap
- integer :: nat(30),lat(30)
- integer ::  indxr(30),indxe(30)
+ integer :: nat(mxstate),lat(mxstate)
+ integer ::  indxr(mxstate),indxe(mxstate)
  real(dp) :: et,eaetst,eterm(4),res
- real(dp) :: eat(30,nkap,3),fat(30,3),rpk(30,nkap)
+ real(dp) :: eat(mxstate,nkap,3),fat(mxstate,3),rpk(mxstate,nkap)
 
  real(dp),allocatable :: rho(:),rhoc(:),vfull(:)
  real(dp),allocatable :: uu(:,:),up(:,:)
@@ -262,8 +265,8 @@
 
 !Input variables
  integer, intent(in) :: jj,irel
- integer, intent(in) :: istcnf(5),ierrcnf(5),itcnf(5),kerrcnf(5)
- integer, intent(in) :: natcnf(30,5),latcnf(30,5)
+ integer, intent(in) :: istcnf(mxcnf),ierrcnf(mxcnf),itcnf(mxcnf),kerrcnf(mxcnf)
+ integer, intent(in) :: natcnf(mxstate,mxcnf),latcnf(mxstate,mxcnf)
 
 !Local variables
  integer :: ll

@@ -73,7 +73,7 @@
 !! @param rr1  first log mesh point (bohr), 0 or less for the default
 !! @param rmax  outer radius of the log mesh (bohr), 0 or less for the default
 
- use constants_m, only: dp
+ use constants_m, only: dp, mxstate, mxcnf
  implicit none
 
 !Input variables
@@ -84,10 +84,12 @@
  real(dp), intent(in) :: slack
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
  real(dp), intent(in) :: amesh,rr1,rmax
- real(dp), intent(in) :: fa(30),facnf(30,5),rc(6),ep(6),qcut(6),debl(6)
+ real(dp), intent(in) :: fa(mxstate),facnf(mxstate,mxcnf),rc(6),ep(6),qcut(6)
+ real(dp), intent(in) :: debl(6)
 
  integer, intent(in) :: nc,nv,iexc,lmax,lloc,lpopt,icmod,ncnf,upf_mesh
- integer, intent(in) :: na(30),la(30),nvcnf(5),nacnf(30,5),lacnf(30,5)
+ integer, intent(in) :: na(mxstate),la(mxstate),nvcnf(mxcnf)
+ integer, intent(in) :: nacnf(mxstate,mxcnf),lacnf(mxstate,mxcnf)
  integer, intent(in) :: ncon(6),nbas(6),nproj(6)
 
 !Local variables
@@ -117,8 +119,8 @@
    ierr=ierr+1
  end if
 
- if(nc+nv<=0 .or. nc+nv>30) then
-   write(6,'(a)') 'test_data: must have 1 <= nc+nv <=30'
+ if(nc+nv<=0 .or. nc+nv>mxstate) then
+   write(6,'(a,i0)') 'test_data: must have 1 <= nc+nv <=',mxstate
    ierr=ierr+1
  end if
 
@@ -330,8 +332,9 @@
    ierr=ierr+1
  end if
 
- if(ncnf<0 .or. ncnf>4)then
-   write(6,'(a)') 'test_data: must have 0 <= ncnf <= 4, skipping config. checks'
+ if(ncnf<0 .or. ncnf>mxcnf-1)then
+   write(6,'(a,i0,a)') 'test_data: must have 0 <= ncnf <= ',mxcnf-1, &
+&        ', skipping config. checks'
    ierr=ierr+1
  else
    do jj=2,ncnf+1

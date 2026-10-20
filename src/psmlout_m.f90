@@ -21,7 +21,7 @@
 ! Support for PSML file creation
 !
  module psmlout_m
- use constants_m, only: dp
+ use constants_m, only: dp, mxstate, mxcnf
  implicit none
 
  public :: psmlout
@@ -135,10 +135,11 @@
 
 !additional input to echo the input file, all as defined
 ! in the main progam
- integer, intent(in) :: na(30),la(30),ncon(6),nbas(6)
- integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
+ integer, intent(in) :: na(mxstate),la(mxstate),ncon(6),nbas(6)
+ integer, intent(in) :: nvcnf(mxcnf),nacnf(mxstate,mxcnf),lacnf(mxstate,mxcnf)
  integer, intent(in) :: nc,nv,lpopt,ncnf,upf_mesh
- real(dp), intent(in) :: fa(30),rc0(6),ep(6),qcut(6),debl(6),facnf(30,5)
+ real(dp), intent(in) :: fa(mxstate),rc0(6),ep(6),qcut(6),debl(6)
+ real(dp), intent(in) :: facnf(mxstate,mxcnf)
  real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rxpsh,rlmax
  real(dp), intent(in) :: rcfact,fcgrid(3),rcgrid(3),log_mesh(3)
  real(dp), intent(in) :: slack
@@ -642,9 +643,10 @@
  character(len=2), intent(in) :: atsym
  character(len=4), intent(in) :: psfile
  integer, intent(in) :: nc,nv,iexc,lmax,lloc,lpopt,icmod,ncnf,upf_mesh
- integer, intent(in) :: na(30),la(30),ncon(6),nbas(6),nproj(6)
- integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
- real(dp), intent(in) :: zz,fa(30),rc0(6),ep(6),qcut(6),debl(6),facnf(30,5)
+ integer, intent(in) :: na(mxstate),la(mxstate),ncon(6),nbas(6),nproj(6)
+ integer, intent(in) :: nvcnf(mxcnf),nacnf(mxstate,mxcnf),lacnf(mxstate,mxcnf)
+ real(dp), intent(in) :: zz,fa(mxstate),rc0(6),ep(6),qcut(6),debl(6)
+ real(dp), intent(in) :: facnf(mxstate,mxcnf)
  real(dp), intent(in) :: dvloc0,fcfact,epsh1,epsh2,depsh,rlmax,drl
  real(dp), intent(in) :: rcfact,fcgrid(3),rcgrid(3),rxpsh,log_mesh(3)
  real(dp), intent(in) :: slack

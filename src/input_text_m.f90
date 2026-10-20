@@ -1,5 +1,6 @@
  module input_text_m
  use, intrinsic :: iso_fortran_env, only: dp => real64
+ use constants_m, only: mxstate, mxcnf
  implicit none
  private
  public :: read_input_text, next_line
@@ -41,11 +42,11 @@
 !> Pseudopotential output file format flag
  character(len=4), intent(out) :: psfile
 !> Principal quantum number array
- integer, intent(out) :: na(30)
+ integer, intent(out) :: na(mxstate)
 !> Orbital angular momentum quantum number array
- integer, intent(out) :: la(30)
+ integer, intent(out) :: la(mxstate)
 !> Occupation number array
- real(dp), intent(out) :: fa(30)
+ real(dp), intent(out) :: fa(mxstate)
 ! [Pseudopotential and optimization]
 !> Maximum angular momentum
  integer, intent(out) :: lmax
@@ -113,13 +114,13 @@
 !> Number of test configurations
  integer, intent(out) :: ncnf
 !> Number of valence states in test configurations
- integer, intent(out) :: nvcnf(5)
+ integer, intent(out) :: nvcnf(mxcnf)
 !> Principal quantum number array for test configurations
- integer, intent(out) :: nacnf(30, 5)
+ integer, intent(out) :: nacnf(mxstate, mxcnf)
 !> Orbital angular momentum quantum number array for test configurations
- integer, intent(out) :: lacnf(30, 5)
+ integer, intent(out) :: lacnf(mxstate, mxcnf)
 !> Occupation number array for test configurations
- real(dp), intent(out) :: facnf(30, 5)
+ real(dp), intent(out) :: facnf(mxstate, mxcnf)
 ! [Log mesh]
 !> Ratio of successive points of the log radial mesh
 !> (0 or less for the default)
@@ -170,7 +171,7 @@
  call next_line(unit, line, inline)
  read(line, *, iostat=ios) atsym, zz, nc, nv, iexc, psfile
 ! counts beyond the array sizes would overrun before check_data runs
- if(ios == 0 .and. (nc < 0 .or. nv < 0 .or. nc + nv > 30)) ios = 999
+ if(ios == 0 .and. (nc < 0 .or. nv < 0 .or. nc + nv > mxstate)) ios = 999
  call read_error(ios, inline)
 
  do ii = 1, nc + nv
@@ -273,13 +274,13 @@
 ! test configurations
  call next_line(unit, line, inline)
  read(line, *, iostat=ios) ncnf
- if(ios == 0 .and. ncnf > 4) ios = 999
+ if(ios == 0 .and. ncnf > mxcnf - 1) ios = 999
  call read_error(ios, inline)
 
  do jj = 2, ncnf + 1
    call next_line(unit, line, inline)
    read(line, *, iostat=ios) nvcnf(jj)
-   if(ios == 0 .and. (nvcnf(jj) < 0 .or. nc + nvcnf(jj) > 30)) ios = 999
+   if(ios == 0 .and. (nvcnf(jj) < 0 .or. nc + nvcnf(jj) > mxstate)) ios = 999
    call read_error(ios, inline)
    do ii = nc + 1, nc + nvcnf(jj)
      call next_line(unit, line, inline)

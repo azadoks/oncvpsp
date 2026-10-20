@@ -45,7 +45,7 @@
 !! @param res  residual of the screening potential (output, ae_residual)
 !! @param ierr  error flag
 
- use constants_m, only: dp
+ use constants_m, only: dp, mxstate
  implicit none
 
 !Input variables
@@ -57,7 +57,7 @@
 
 !Input/output variables
  integer, intent(inout) :: ierr
- real(dp), intent(inout) :: ea(30,2),rpk(30,2)
+ real(dp), intent(inout) :: ea(mxstate,2),rpk(mxstate,2)
 
 !Output variables
  integer, intent(out) :: it

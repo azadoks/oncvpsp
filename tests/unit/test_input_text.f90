@@ -5,6 +5,7 @@
  program test_input_text
  use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
  use input_text_m, only: next_line, read_input_text
+ use constants_m, only: mxstate, mxcnf
  implicit none
 
 !Local variables
@@ -126,14 +127,15 @@
  integer :: unit, inline
  character(len=2) :: atsym
  character(len=4) :: psfile
- real(dp) :: zz, fa(30), rc(6), ep(6, 2), qcut(6), dvloc0, debl(6)
+ real(dp) :: zz, fa(mxstate), rc(6), ep(6, 2), qcut(6), dvloc0, debl(6)
  real(dp) :: fcfact, rcfact, slack, fcfact_min, fcfact_max, fcfact_step
  real(dp) :: rcfact_min, rcfact_max, rcfact_step
- real(dp) :: epsh1, epsh2, depsh, rxpsh, rlmax, drl, facnf(30, 5)
+ real(dp) :: epsh1, epsh2, depsh, rxpsh, rlmax, drl, facnf(mxstate, mxcnf)
  real(dp) :: amesh, rr1, rmax
- integer :: nc, nv, iexc, na(30), la(30), lmax, ncon(6), nbas(6)
+ integer :: nc, nv, iexc, na(mxstate), la(mxstate), lmax, ncon(6), nbas(6)
  integer :: lloc, lpopt, nproj(6)
- integer :: icmod, ncnf, nvcnf(5), nacnf(30, 5), lacnf(30, 5), upf_mesh
+ integer :: icmod, ncnf, nvcnf(mxcnf), nacnf(mxstate, mxcnf)
+ integer :: lacnf(mxstate, mxcnf), upf_mesh
 
  lines = [character(len=700) :: &
 &   '# atsym, z, nc, nv, iexc   psfile', &

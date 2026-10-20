@@ -39,7 +39,7 @@
 
  module ae_file_m
  use, intrinsic :: iso_fortran_env, only: int8
- use constants_m, only: dp
+ use constants_m, only: dp, mxstate, mxcnf
  implicit none
  private
  public :: write_ae_file, read_ae_file
@@ -95,13 +95,16 @@
  integer, intent(in) :: irel,nkap
  character(len=2), intent(in) :: atsym
  integer, intent(in) :: nc,nv,iexc,mmax,it,ncnf
- integer, intent(in) :: na(30),la(30),nvcnf(5),nacnf(30,5),lacnf(30,5)
+ integer, intent(in) :: na(mxstate),la(mxstate),nvcnf(mxcnf)
+ integer, intent(in) :: nacnf(mxstate,mxcnf),lacnf(mxstate,mxcnf)
  real(dp), intent(in) :: zz,etot,eterm(4),res
- real(dp), intent(in) :: fa(30),ea(30,nkap),facnf(30,5)
+ real(dp), intent(in) :: fa(mxstate),ea(mxstate,nkap),facnf(mxstate,mxcnf)
  real(dp), intent(in) :: rr(mmax),rhoc(mmax),rho(mmax),vfull(mmax)
- integer, intent(in) :: istcnf(5),ierrcnf(5),itcnf(5),kerrcnf(5)
- integer, intent(in) :: nvtcnf(5),natcnf(30,5),latcnf(30,5)
- real(dp), intent(in) :: fatcnf(30,3,5),eatcnf(30,nkap,3,5),etstcnf(5)
+ integer, intent(in) :: istcnf(mxcnf),ierrcnf(mxcnf),itcnf(mxcnf),kerrcnf(mxcnf)
+ integer, intent(in) :: nvtcnf(mxcnf),natcnf(mxstate,mxcnf)
+ integer, intent(in) :: latcnf(mxstate,mxcnf)
+ real(dp), intent(in) :: fatcnf(mxstate,3,mxcnf),eatcnf(mxstate,nkap,3,mxcnf)
+ real(dp), intent(in) :: etstcnf(mxcnf)
 
 !Local variables
  integer :: unit,jj
@@ -170,22 +173,26 @@
  integer, intent(in) :: irel,nkap
  character(len=2), intent(in) :: atsym
  integer, intent(in) :: nc,nv,iexc,mmax,ncnf
- integer, intent(in) :: na(30),la(30),nvcnf(5),nacnf(30,5),lacnf(30,5)
+ integer, intent(in) :: na(mxstate),la(mxstate),nvcnf(mxcnf)
+ integer, intent(in) :: nacnf(mxstate,mxcnf),lacnf(mxstate,mxcnf)
  real(dp), intent(in) :: zz
- real(dp), intent(in) :: fa(30),rr(mmax),facnf(30,5)
+ real(dp), intent(in) :: fa(mxstate),rr(mmax),facnf(mxstate,mxcnf)
 
 !Output variables
  integer, intent(out) :: it
  real(dp), intent(out) :: etot,eterm(4),res
- real(dp), intent(out) :: ea(30,nkap),rhoc(mmax),rho(mmax),vfull(mmax)
- integer, intent(out) :: istcnf(5),ierrcnf(5),itcnf(5),kerrcnf(5)
- integer, intent(out) :: nvtcnf(5),natcnf(30,5),latcnf(30,5)
- real(dp), intent(out) :: fatcnf(30,3,5),eatcnf(30,nkap,3,5),etstcnf(5)
+ real(dp), intent(out) :: ea(mxstate,nkap),rhoc(mmax),rho(mmax),vfull(mmax)
+ integer, intent(out) :: istcnf(mxcnf),ierrcnf(mxcnf),itcnf(mxcnf)
+ integer, intent(out) :: kerrcnf(mxcnf)
+ integer, intent(out) :: nvtcnf(mxcnf),natcnf(mxstate,mxcnf)
+ integer, intent(out) :: latcnf(mxstate,mxcnf)
+ real(dp), intent(out) :: fatcnf(mxstate,3,mxcnf),eatcnf(mxstate,nkap,3,mxcnf)
+ real(dp), intent(out) :: etstcnf(mxcnf)
 
 !Local variables
  integer :: unit,jj,kk,ncfg
- integer :: ist,ierr,itc,kerr,nvt,nat(30),lat(30)
- real(dp) :: eaetst,fat(30,3),eat(30,nkap,3)
+ integer :: ist,ierr,itc,kerr,nvt,nat(mxstate),lat(mxstate)
+ real(dp) :: eaetst,fat(mxstate,3),eat(mxstate,nkap,3)
  logical :: found(5),match(5)
 
  call read_head(fname,unit,irel,atsym,zz,nc,nv,iexc,na,la,fa, &
@@ -244,9 +251,9 @@
  integer, intent(in) :: irel
  character(len=2), intent(in) :: atsym
  integer, intent(in) :: nc,nv,iexc,mmax
- integer, intent(in) :: na(30),la(30)
+ integer, intent(in) :: na(mxstate),la(mxstate)
  real(dp), intent(in) :: zz
- real(dp), intent(in) :: fa(30),rr(mmax)
+ real(dp), intent(in) :: fa(mxstate),rr(mmax)
 
 !Output variables
  integer, intent(out) :: unit
@@ -292,9 +299,9 @@
  integer, intent(in) :: irel
  character(len=2), intent(in) :: atsym
  integer, intent(in) :: nc,nv,iexc,mmax
- integer, intent(in) :: na(30),la(30)
+ integer, intent(in) :: na(mxstate),la(mxstate)
  real(dp), intent(in) :: zz
- real(dp), intent(in) :: fa(30),rr(mmax)
+ real(dp), intent(in) :: fa(mxstate),rr(mmax)
 
 !Output variables
  integer, intent(out) :: unit
@@ -303,8 +310,8 @@
  character(len=8) :: magic_f
  character(len=2) :: atsym_f
  integer :: ios,version_f,irel_f,nc_f,nv_f,iexc_f,mmax_f
- integer :: na_f(30),la_f(30)
- real(dp) :: zz_f,fa_f(30)
+ integer :: na_f(mxstate),la_f(mxstate)
+ real(dp) :: zz_f,fa_f(mxstate)
  real(dp), allocatable :: rr_f(:)
 
  open(newunit=unit,file=fname,access='stream',form='unformatted', &
@@ -382,8 +389,8 @@
 
 !Input variables
  integer, intent(in) :: unit,jj,nc
- integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
- real(dp), intent(in) :: facnf(30,5)
+ integer, intent(in) :: nvcnf(mxcnf),nacnf(mxstate,mxcnf),lacnf(mxstate,mxcnf)
+ real(dp), intent(in) :: facnf(mxstate,mxcnf)
 
 !Local variables
  integer :: nt
@@ -409,8 +416,8 @@
 
 !Input variables
  integer, intent(in) :: unit,nc,ncnf
- integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
- real(dp), intent(in) :: facnf(30,5)
+ integer, intent(in) :: nvcnf(mxcnf),nacnf(mxstate,mxcnf),lacnf(mxstate,mxcnf)
+ real(dp), intent(in) :: facnf(mxstate,mxcnf)
  logical, intent(in) :: found(5)
 
 !Output variables
@@ -418,8 +425,8 @@
 
 !Local variables
  integer :: jj,nt,nvcnf_f
- integer :: nacnf_f(30),lacnf_f(30)
- real(dp) :: facnf_f(30)
+ integer :: nacnf_f(mxstate),lacnf_f(mxstate)
+ real(dp) :: facnf_f(mxstate)
 
  read(unit) nvcnf_f
  nt=nc+nvcnf_f

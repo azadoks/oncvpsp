@@ -52,7 +52,7 @@
 #if (defined WITH_TOML)
  use input_toml_m, only: read_input_toml
 #endif
- use constants_m, only: dp, mxprj
+ use constants_m, only: dp, mxprj, mxstate, mxcnf
  use input_echo_m, only: write_icmod, write_epsh
  implicit none
 
@@ -68,8 +68,8 @@
  integer :: ikap,kap,mkap
  integer,allocatable :: npa(:,:)
 !
- integer :: dtime(8),na(30),la(30),np(6)
- integer :: nacnf(30,5),lacnf(30,5),nvcnf(5)
+ integer :: dtime(8),na(mxstate),la(mxstate),np(6)
+ integer :: nacnf(mxstate,mxcnf),lacnf(mxstate,mxcnf),nvcnf(mxcnf)
  integer :: irc(6),nodes(4)
  integer :: nproj(6)
  integer :: ncon(6),nbas(6)
@@ -88,9 +88,10 @@
  real(dp) :: eterm(4)
  real(dp) :: fj,cnorm
 !
- real(dp) :: cl(6),debl(6),ea(30,2),ep(6,2),fa(30),facnf(30,5)
+ real(dp) :: cl(6),debl(6),ea(mxstate,2),ep(6,2),fa(mxstate)
+ real(dp) :: facnf(mxstate,mxcnf)
  real(dp) :: qcut(6),qmsbf(6),rc(6),rc0(6)
- real(dp) :: rpk(30,2)
+ real(dp) :: rpk(mxstate,2)
  real(dp) :: epstot,eps_srso
  real(dp), parameter :: eps=1.0d-8
 
@@ -121,9 +122,9 @@
  real(dp), allocatable :: vpsml(:,:,:)
 
 !all-electron results for the test configurations (see run_config_ae)
- integer :: istcnf(5),ierrcnf(5),itcnf(5),kerrcnf(5)
- integer :: nvtcnf(5),natcnf(30,5),latcnf(30,5)
- real(dp) :: fatcnf(30,3,5),etstcnf(5)
+ integer :: istcnf(mxcnf),ierrcnf(mxcnf),itcnf(mxcnf),kerrcnf(mxcnf)
+ integer :: nvtcnf(mxcnf),natcnf(mxstate,mxcnf),latcnf(mxstate,mxcnf)
+ real(dp) :: fatcnf(mxstate,3,mxcnf),etstcnf(mxcnf)
  real(dp), allocatable :: eatcnf(:,:,:,:)
 
  character(len=2) :: atsym
@@ -171,7 +172,7 @@
    exe=trim(exe)//'_ps'
  end if
  exe=trim(exe)//'.x'
- allocate(eatcnf(30,nkap,3,5))
+ allocate(eatcnf(mxstate,nkap,3,mxcnf))
 
  if(irel==2) then
    write(6,'(a/a//)') &

@@ -3,6 +3,7 @@
 ! TOML Fortran library: documentation at toml-f.readthedocs.io
  use tomlf, only: toml_table, toml_array, toml_keyval, toml_error, toml_stat, &
 &                 toml_load, get_value, len
+ use constants_m, only: mxstate, mxcnf
  implicit none
  private
  public :: read_input_toml
@@ -69,11 +70,11 @@
 !> Pseudopotential output file format flag
  character(len=4), intent(out) :: psfile
 !> Principal quantum number array
- integer, intent(out) :: na(30)
+ integer, intent(out) :: na(mxstate)
 !> Orbital angular momentum quantum number array
- integer, intent(out) :: la(30)
+ integer, intent(out) :: la(mxstate)
 !> Occupation number array
- real(dp), intent(out) :: fa(30)
+ real(dp), intent(out) :: fa(mxstate)
 ! [Pseudopotential and optimization]
 !> Maximum angular momentum
  integer, intent(out) :: lmax
@@ -141,13 +142,13 @@
 !> Number of test configurations
  integer, intent(out) :: ncnf
 !> Number of valence states in test configurations
- integer, intent(out) :: nvcnf(5)
+ integer, intent(out) :: nvcnf(mxcnf)
 !> Principal quantum number array for test configurations
- integer, intent(out) :: nacnf(30, 5)
+ integer, intent(out) :: nacnf(mxstate, mxcnf)
 !> Orbital angular momentum quantum number array for test configurations
- integer, intent(out) :: lacnf(30, 5)
+ integer, intent(out) :: lacnf(mxstate, mxcnf)
 !> Occupation number array for test configurations
- real(dp), intent(out) :: facnf(30, 5)
+ real(dp), intent(out) :: facnf(mxstate, mxcnf)
 !> Ratio of successive points of the log radial mesh
 !> (0 or less for the default)
  real(dp), intent(out) :: amesh
@@ -175,6 +176,8 @@
  integer :: lt(6)
 !> Temporary string
  character(len=:), allocatable :: tmp_str
+!> Message of an input error that names a limit
+ character(len=80) :: msg
 
 ! the defaults of read_input_text
  nproj(:) = 0
@@ -216,8 +219,10 @@
  call get_int(child, 'oncvpsp', 'nv', nv)
  call get_int(child, 'oncvpsp', 'iexc', iexc)
 ! counts beyond the array sizes would overrun before check_data runs
- if(nc < 0 .or. nv < 0 .or. nc + nv > 30) then
-   call input_error('nc and nv in [oncvpsp] must be >= 0 with nc + nv <= 30')
+ if(nc < 0 .or. nv < 0 .or. nc + nv > mxstate) then
+   write(msg, '(a,i0)') 'nc and nv in [oncvpsp] must be >= 0 with '// &
+&    'nc + nv <= ', mxstate
+   call input_error(trim(msg))
  end if
 
 ! reference configuration
@@ -332,8 +337,10 @@
  end if
  if(associated(arr)) then
    ncnf = len(arr)
-   if(ncnf > 4) then
-     call input_error('at most 4 [[test_configurations]] are allowed')
+   if(ncnf > mxcnf - 1) then
+     write(msg, '(a,i0,a)') 'at most ', mxcnf - 1, &
+&      ' [[test_configurations]] are allowed'
+     call input_error(trim(msg))
    end if
    do jj = 2, ncnf + 1
      call get_value(arr, jj - 1, child, stat=stat)
@@ -347,9 +354,10 @@
        call key_error('test_configurations', 'n', stat, 'an array')
      end if
      nvcnf(jj) = len(narr)
-     if(nc + nvcnf(jj) > 30) then
-       call input_error('nc plus the states of a [[test_configurations]]'// &
-&        ' must be <= 30')
+     if(nc + nvcnf(jj) > mxstate) then
+       write(msg, '(a,i0)') 'nc plus the states of a '// &
+&        '[[test_configurations]] must be <= ', mxstate
+       call input_error(trim(msg))
      end if
      call get_int_array(child, 'test_configurations', 'n', nvcnf(jj), &
 &      nacnf(nc + 1:, jj))
