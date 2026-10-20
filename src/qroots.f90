@@ -55,6 +55,8 @@
 
  qroot(:)=0.0d0
  iroot=2
+!the sign test reads dlgd_last at ii=1 too (.and. need not short-circuit)
+ dlgd_last=0.0d0
  do ii=1,nq
    qq=dltq*ii
    call sbf_rc_der(ll,qq,rc,sbfd)
