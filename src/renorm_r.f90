@@ -28,7 +28,8 @@
 !! @param mmax  size of radial grid
 !! @param cnorm  renormalization coefficient
 
- use constants_m, only: dp, c_light
+ use constants_m, only: dp
+ use relativity_m, only: c_light
  implicit none
 
 !Input variables

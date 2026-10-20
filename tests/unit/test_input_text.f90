@@ -132,7 +132,7 @@
  real(dp) :: fcfact, rcfact, slack, fcfact_min, fcfact_max, fcfact_step
  real(dp) :: rcfact_min, rcfact_max, rcfact_step
  real(dp) :: epsh1, epsh2, depsh, rxpsh, rlmax, drl, facnf(mxstate, mxcnf)
- real(dp) :: amesh, rr1, rmax
+ real(dp) :: amesh, rr1, rmax, c_light
  integer :: nc, nv, iexc, na(mxstate), la(mxstate), lmax, ncon(mxlin+1)
  integer :: nbas(mxlin+1)
  integer :: lloc, lpopt, nproj(mxlin+1)
@@ -176,8 +176,10 @@
 &   '# a comment after the data']
  if(with_mesh) then
    lines(25) = '    6.0  0.01  2000'
+   lines(2) = '    Si  14     3   2   3   psp8   137.0359895'
    all_lines = [character(len=700) :: lines, '# amesh, rr1, rmax', &
-&               '  1.003  -1  60.0', '# a comment after the mesh']
+&               '  1.003  -1  60.0', &
+&               '# a comment after the mesh']
  else
    all_lines = lines
  end if
@@ -192,7 +194,7 @@
 &                     epsh1, epsh2, depsh, rxpsh, &
 &                     rlmax, drl, upf_mesh, &
 &                     ncnf, nvcnf, nacnf, lacnf, facnf, &
-&                     amesh, rr1, rmax)
+&                     amesh, rr1, rmax, c_light)
  close(unit)
 
  call check(atsym == 'Si' .and. zz == 14 .and. nc == 3 .and. nv == 2 &
@@ -224,10 +226,12 @@
  if(with_mesh) then
    call check(upf_mesh == 2000, 'UPF mesh size')
    call check(amesh == 1.003_dp .and. rr1 < 0 .and. rmax == 60, 'log mesh')
+   call check(c_light == 137.0359895_dp, 'speed of light')
    call check(inline == 35, 'line number of the last data line')
  else
    call check(upf_mesh == 0, 'UPF mesh size default')
    call check(amesh < 0 .and. rr1 < 0 .and. rmax < 0, 'log mesh defaults')
+   call check(c_light < 0, 'speed of light default')
    call check(inline == 32, 'line number of the last data line')
  end if
  return

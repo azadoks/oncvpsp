@@ -34,7 +34,8 @@
 !! @param irel  0 non-relativistic, 1 scalar-, 2 fully-relativistic (the
 !!              scalar-relativistic overlap is used for both)
 
- use constants_m, only: dp, c_light
+ use constants_m, only: dp
+ use relativity_m, only: c_light
  implicit none
 
 !Input variables

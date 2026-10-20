@@ -32,6 +32,12 @@ adding more significant figures to constants, so that the output they
 generate and that using libxc look essentially identical to the compare.sh
 test.
 
+iexc=5 (excvwn.f90, Slater exchange and VWN correlation) agrees with
+-001007 to the printed digits.  iexc=6 adds the relativistic exchange of
+MacDonald and Vosko (exc_relx.f90) at the speed of light of the input
+(c_light), which Libxc's lda_x_rel (-532007) fixes at its own value; the
+psp8 and UPF files name the Libxc functional, -532007 or "RXC VWN".
+
 Meta-ggas and hybrid exc functions are not implemented in oncvpsp.  Metas
 may come is a subsequent release.  HF and hybrid functionals are incompatible
 with norm and generalized-norm conservation.

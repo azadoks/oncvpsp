@@ -54,7 +54,8 @@
 #endif
  use constants_m, only: dp, mxprj, mxstate, mxcnf, mxl, mxlin, mxkap, nrhomod
  use constants_m, only: nlev, nerrlv
- use input_echo_m, only: write_icmod, write_epsh
+ use input_echo_m, only: write_atom, write_icmod, write_epsh, write_mesh
+ use relativity_m, only: set_relativity
  implicit none
 
 !Input variables
@@ -84,7 +85,7 @@
  real(dp) :: rcfact_min,rcfact_max,rcfact_step
  real(dp) :: fcgrid(3),rcgrid(3)
  real(dp) :: rr1,rcion,rciont,rcmax,rct,rlmax,rpkt
- real(dp) :: amesh_in,rr1_in,rmax_in,rmax,log_mesh(3)
+ real(dp) :: amesh_in,rr1_in,rmax_in,rmax,log_mesh(3),c_light_in
  real(dp) :: sf,zz,zion,zval,etot,res
  real(dp) :: eterm(4)
  real(dp) :: fj,cnorm
@@ -284,7 +285,7 @@
 &                       epsh1, epsh2, depsh, rxpsh, &
 &                       rlmax, drl, upf_mesh, &
 &                       ncnf, nvcnf, nacnf, lacnf, facnf, &
-&                       amesh_in, rr1_in, rmax_in)
+&                       amesh_in, rr1_in, rmax_in, c_light_in)
  case(INPUT_TEXT)
    open(newunit=unit, file=input_filename, status='old', action='read', &
 &       iostat=ios)
@@ -303,7 +304,7 @@
 &                       epsh1, epsh2, depsh, rxpsh, &
 &                       rlmax, drl, upf_mesh, &
 &                       ncnf, nvcnf, nacnf, lacnf, facnf, &
-&                       amesh_in, rr1_in, rmax_in)
+&                       amesh_in, rr1_in, rmax_in, c_light_in)
    close(unit)
 #if (defined WITH_TOML)
  case(INPUT_TOML)
@@ -324,7 +325,7 @@
 &                       epsh1, epsh2, depsh, rxpsh, &
 &                       rlmax, drl, upf_mesh, &
 &                       ncnf, nvcnf, nacnf, lacnf, facnf, &
-&                       amesh_in, rr1_in, rmax_in)
+&                       amesh_in, rr1_in, rmax_in, c_light_in)
    close(unit)
 #endif
  case default
@@ -361,7 +362,8 @@
 &                fa,facnf, &
 &                rc,ep,qcut,debl,nc,nv,iexc,lmax,lloc,lpopt,icmod, &
 &                ncnf,na,la,nvcnf,nacnf,lacnf,ncon,nbas,nproj,psfile, &
-&                amesh_in,rr1_in,rmax_in)
+&                amesh_in,rr1_in,rmax_in,c_light_in)
+ call set_relativity(c_light_in)
 
  nrl=int((rlmax/drl)-0.5d0)+1
 
@@ -479,10 +481,7 @@
 
 ! output printing (echos input data, with all-electron eigenvalues added)
 
- write(6,'(a)') '# ATOM AND REFERENCE CONFIGURATION'
- write(6,'(a)') '# atsym  z   nc   nv     iexc    psfile'
- write(6,'(a,a,f6.2,2i5,i8,2a)') '  ',trim(atsym),zz,nc,nv,iexc, &
-&      '      ',psfile
+ call write_atom(atsym,zz,nc,nv,iexc,psfile)
  write(6,'(a/a)') '#','#   n    l    f        energy (Ha)'
  do ii=1,nc+nv
    if(irel/=2) then
@@ -536,10 +535,7 @@
    write(6,'(a)') '#'
  end do
 
- if(log_mesh(1)>0.0d0) then
-   write(6,'(a/a/a)') '#','# LOG MESH','# amesh, rr1, rmax'
-   write(6,'(3es24.16)') log_mesh
- end if
+ call write_mesh(log_mesh)
 
  write(6,'(//a)') 'Reference configufation results'
  write(6,'(a,i6)') '  iterations',it

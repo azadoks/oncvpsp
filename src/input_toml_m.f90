@@ -19,7 +19,7 @@
 &                           epsh1, epsh2, depsh, rxpsh, &
 &                           rlmax, drl, upf_mesh, &
 &                           ncnf, nvcnf, nacnf, lacnf, facnf, &
-&                           amesh, rr1, rmax)
+&                           amesh, rr1, rmax, c_light)
 
 !! Reads the TOML input: the same data as read_input_text, with the same
 !! defaults and the same checks against the array sizes (check_data
@@ -30,7 +30,8 @@
 !! scripts/input_text_to_toml.py converts a text input to this form.  The
 !! tables and their keys are listed below.
 
-!   [oncvpsp]                  atsym, z, nc, nv, iexc
+!   [oncvpsp]                  atsym, z, nc, nv, iexc, c_light (optional, 0
+!                              or less for the default)
 !   [reference_configuration]  n, l, f                (nc + nv each)
 !   [pseudopotentials]         lmax, and l (0..lmax), rc, ep, ncon, nbas,
 !                              qcut
@@ -156,6 +157,8 @@
  real(dp), intent(out) :: rr1
 !> Outer radius of the log radial mesh (0 or less for the default)
  real(dp), intent(out) :: rmax
+!> Speed of light (0 or less for the default)
+ real(dp), intent(out) :: c_light
 
 !Local variables
 !> The TOML document
@@ -217,6 +220,7 @@
  call get_real(child, 'oncvpsp', 'z', zz)
  call get_int(child, 'oncvpsp', 'nc', nc)
  call get_int(child, 'oncvpsp', 'nv', nv)
+ call get_real(child, 'oncvpsp', 'c_light', c_light, -1.0_dp)
  call get_int(child, 'oncvpsp', 'iexc', iexc)
 ! counts beyond the array sizes would overrun before check_data runs
  if(nc < 0 .or. nv < 0 .or. nc + nv > mxstate) then

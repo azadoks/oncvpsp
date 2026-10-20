@@ -35,7 +35,8 @@
 !! @param mmax  size of log grid
 !! @param mch  matching mesh point for inward-outward integrations
 
- use constants_m, only: dp, c_light
+ use constants_m, only: dp
+ use relativity_m, only: c_light
  implicit none
 
 !Input variables

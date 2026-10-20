@@ -20,7 +20,7 @@
 &                      depsh,rxpsh,rlmax,drl,upf_mesh,fa,facnf, &
 &                      rc,ep,qcut,debl,nc,nv,iexc,lmax,lloc,lpopt,icmod, &
 &                      ncnf,na,la,nvcnf,nacnf,lacnf,ncon,nbas,nproj,psfile, &
-&                      amesh,rr1,rmax)
+&                      amesh,rr1,rmax,c_light_in)
 
 !! check input data for various violations of size or sign
 !! see annotated input document for all definitions
@@ -72,6 +72,7 @@
 !! @param amesh  log mesh ratio, 0 or less for the default
 !! @param rr1  first log mesh point (bohr), 0 or less for the default
 !! @param rmax  outer radius of the log mesh (bohr), 0 or less for the default
+!! @param c_light_in  speed of light, 0 or less for the default
 
  use constants_m, only: dp, mxstate, mxcnf, mxl, mxlin
  implicit none
@@ -83,7 +84,7 @@
  real(dp), intent(in) :: zz,fcfact,rcfact,epsh1,epsh2,depsh,rxpsh,rlmax,drl
  real(dp), intent(in) :: slack
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
- real(dp), intent(in) :: amesh,rr1,rmax
+ real(dp), intent(in) :: amesh,rr1,rmax,c_light_in
  real(dp), intent(in) :: fa(mxstate),facnf(mxstate,mxcnf),rc(mxlin+1)
  real(dp), intent(in) :: ep(mxlin+1),qcut(mxlin+1)
  real(dp), intent(in) :: debl(mxlin+1)
@@ -125,8 +126,8 @@
    ierr=ierr+1
  end if
 
- if(iexc==0 .or. iexc>4) then
-   write(6,'(a)') 'test_data: must have iexc <=4, iexc /= 0.'
+ if(iexc==0 .or. iexc>6) then
+   write(6,'(a)') 'test_data: must have iexc <=6, iexc /= 0.'
    write(6,'(a)') '  negative values for libxc'
    ierr=ierr+1
  end if
@@ -330,6 +331,12 @@
 
  if(rmax>0.0d0 .and. rmax<=rlmax) then
    write(6,'(a)') 'test_data: must have rmax > rlmax'
+   ierr=ierr+1
+ end if
+
+ if(c_light_in>0.0d0 .and. c_light_in<1.0d0) then
+   write(6,'(a)') 'test_data: must have c_light >= 1.0, or 0 or less'// &
+&        ' for the default'
    ierr=ierr+1
  end if
 

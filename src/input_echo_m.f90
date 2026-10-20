@@ -25,9 +25,12 @@
  module input_echo_m
 
  use constants_m, only: dp, mxstate, mxcnf, mxlin
+ use relativity_m, only: c_light_default, c_light
  implicit none
  private
- public :: icmod_lines, epsh_lines, write_icmod, write_epsh
+ public :: atom_lines, icmod_lines, epsh_lines, mesh_lines
+ public :: write_atom, write_icmod, write_epsh
+ public :: write_mesh
  public :: write_input_echo
 
 !> length of the lines returned by the *_lines routines
@@ -36,6 +39,45 @@
  integer, parameter, public :: echo_max=5
 
  contains
+
+ subroutine atom_lines(atsym,zz,nc,nv,iexc,psfile,text,ntext)
+
+!! ATOM AND REFERENCE CONFIGURATION heading and first line, with the speed
+!! of light of relativity_m only when it is not the default
+!!
+!! @param atsym  atomic symbol
+!! @param zz  atomic number
+!! @param nc  number of core states
+!! @param nv  number of valence states
+!! @param iexc  exchange-correlation functional
+!! @param psfile  format of the pseudopotential file
+!! @param text  the lines of the section
+!! @param ntext  number of lines
+
+!Input variables
+ character(len=2), intent(in) :: atsym
+ character(len=4), intent(in) :: psfile
+ real(dp), intent(in) :: zz
+ integer, intent(in) :: nc,nv,iexc
+
+!Output variables
+ character(len=echo_len), intent(out) :: text(echo_max)
+ integer, intent(out) :: ntext
+
+ text(1)='# ATOM AND REFERENCE CONFIGURATION'
+ if(c_light/=c_light_default) then
+   text(2)='# atsym  z   nc   nv     iexc    psfile  c_light'
+   write(text(3),'(a,a,f6.2,2i5,i8,3a,es24.16)') '  ',trim(atsym),zz,nc, &
+&        nv,iexc,'      ',psfile,' ',c_light
+ else
+   text(2)='# atsym  z   nc   nv     iexc    psfile'
+   write(text(3),'(a,a,f6.2,2i5,i8,2a)') '  ',trim(atsym),zz,nc,nv,iexc, &
+&        '      ',trim(psfile)
+ end if
+ ntext=3
+
+ return
+ end subroutine atom_lines
 
  subroutine icmod_lines(icmod,fcfact,rcfact,slack,fcgrid,rcgrid,text,ntext)
 
@@ -126,6 +168,63 @@
  return
  end subroutine epsh_lines
 
+ subroutine mesh_lines(log_mesh,text,ntext)
+
+!! LOG MESH section, the optional last line of the input, written only
+!! when the input sets it
+!!
+!! @param log_mesh  amesh, rr1, rmax of the log mesh, 0 unless the input
+!!                  sets it
+!! @param text  the lines of the sections
+!! @param ntext  number of lines
+
+!Input variables
+ real(dp), intent(in) :: log_mesh(3)
+
+!Output variables
+ character(len=echo_len), intent(out) :: text(echo_max)
+ integer, intent(out) :: ntext
+
+ ntext=0
+ if(log_mesh(1)>0.0d0) then
+   text(1)='#'
+   text(2)='# LOG MESH'
+   text(3)='# amesh, rr1, rmax'
+   write(text(4),'(3es24.16)') log_mesh
+   ntext=4
+ end if
+
+ return
+ end subroutine mesh_lines
+
+ subroutine write_atom(atsym,zz,nc,nv,iexc,psfile)
+
+!! writes the ATOM AND REFERENCE CONFIGURATION heading and first line to
+!! unit 6 (see atom_lines)
+!!
+!! @param atsym  atomic symbol
+!! @param zz  atomic number
+!! @param nc  number of core states
+!! @param nv  number of valence states
+!! @param iexc  exchange-correlation functional
+!! @param psfile  format of the pseudopotential file
+
+!Input variables
+ character(len=2), intent(in) :: atsym
+ character(len=4), intent(in) :: psfile
+ real(dp), intent(in) :: zz
+ integer, intent(in) :: nc,nv,iexc
+
+!Local variables
+ character(len=echo_len) :: text(echo_max)
+ integer :: ii,ntext
+
+ call atom_lines(atsym,zz,nc,nv,iexc,psfile,text,ntext)
+ write(6,'(a)') (trim(text(ii)),ii=1,ntext)
+
+ return
+ end subroutine write_atom
+
  subroutine write_icmod(icmod,fcfact,rcfact,slack,fcgrid,rcgrid)
 
 !! writes the MODEL CORE CHARGE section to unit 6
@@ -175,6 +274,26 @@
  return
  end subroutine write_epsh
 
+ subroutine write_mesh(log_mesh)
+
+!! writes the LOG MESH section to unit 6 (see mesh_lines)
+!!
+!! @param log_mesh  amesh, rr1, rmax of the log mesh, 0 unless the input
+!!                  sets it
+
+!Input variables
+ real(dp), intent(in) :: log_mesh(3)
+
+!Local variables
+ character(len=echo_len) :: text(echo_max)
+ integer :: ii,ntext
+
+ call mesh_lines(log_mesh,text,ntext)
+ if(ntext>0) write(6,'(a)') (trim(text(ii)),ii=1,ntext)
+
+ return
+ end subroutine write_mesh
+
  subroutine write_input_echo(nkap,iformat,atsym,zz,nc,nv,iexc,psfile, &
 &                            na,la,fa,lmax,rc0,ep,ncon,nbas,qcut, &
 &                            lloc,lpopt,dvloc0,nproj,debl, &
@@ -208,12 +327,11 @@
  character(len=4), intent(in) :: psfile
 
 !Local variables
- integer :: ii,jj,l1
+ character(len=echo_len) :: text(echo_max)
+ integer :: ii,jj,l1,ntext
 
- write(6,'(a)') '# ATOM AND REFERENCE CONFIGURATION'
- write(6,'(a)') '# atsym  z   nc   nv     iexc    psfile'
- write(6,'(a,a,f6.2,2i5,i8,2a)') '  ',trim(atsym),zz,nc,nv,iexc, &
-&      '      ',trim(psfile)
+ call atom_lines(atsym,zz,nc,nv,iexc,psfile,text,ntext)
+ write(6,'(a)') (trim(text(ii)),ii=1,ntext)
 !the energy column is named, though not written, except in the sr psp8 file
  if(iformat==1 .and. nkap==1) then
    write(6,'(a/a)') '#','#   n    l    f'
@@ -269,10 +387,7 @@
    write(6,'(a)') '#'
  end do
 
- if(log_mesh(1)>0.0d0) then
-   write(6,'(a/a/a)') '#','# LOG MESH','# amesh, rr1, rmax'
-   write(6,'(3es24.16)') log_mesh
- end if
+ call write_mesh(log_mesh)
  return
  end subroutine write_input_echo
 

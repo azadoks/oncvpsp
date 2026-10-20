@@ -15,7 +15,8 @@ cd "$work"
 # patch FIELD FACTOR: multiply a real in the header of atom.ae by FACTOR, or
 # with FIELD=version reverse the bytes of the format version. The header is
 # magic(8 chars), version, irel, atsym(2 chars), zz, nc, nv, iexc,
-# na(nc+nv), la(nc+nv), fa(nc+nv), mmax, rr(mmax) in native byte order
+# na(nc+nv), la(nc+nv), fa(nc+nv), mmax, rr(mmax), c_light in native
+# byte order
 patch() {
     perl -e '
         my ($field, $factor) = @ARGV[1, 2];
@@ -26,7 +27,9 @@ patch() {
         my $nt = $nc + $nv;
         my $fa = $zz + 8 + 12 + 8 * $nt;
         my $rr = $fa + 8 * $nt + 4;
-        my %at = (zz => $zz, fa => $fa + 8 * ($nt - 1), rr => $rr + 8);
+        my $mmax = unpack("l", substr($buf, $rr - 4, 4));
+        my %at = (zz => $zz, fa => $fa + 8 * ($nt - 1), rr => $rr + 8,
+                  c_light => $rr + 8 * $mmax);
         if ($field eq "version") {
             substr($buf, 8, 4) = reverse substr($buf, 8, 4);
         } else {
@@ -44,6 +47,7 @@ case $case in
     zz)          patch zz 1.001;         expect='atsym, z, nc, nv or iexc differ' ;;
     fa)          patch fa 1.001;         expect='reference configuration differs' ;;
     mesh)        patch rr 1.000001;      expect='radial mesh differs' ;;
+    c_light)     patch c_light 1.001;    expect='c_light differs' ;;
     zz_roundoff) patch zz 1.00000000000001 ;;
     fa_roundoff) patch fa 1.00000000000001 ;;
     mesh_roundoff) patch rr 1.00000000000001 ;;

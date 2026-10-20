@@ -8,6 +8,10 @@ iexc==3 .or. iexc==-001009, 'functional="PZ"'
 
 iexc==4 .or. iexc==-101130, 'functional="PBE"'
 
+iexc==5 .or. iexc==-001007, 'functional="SLA  VWN  NOGX NOGC"'
+
+iexc==6 .or. iexc==-532007, 'functional="RXC  VWN  NOGX NOGC"'
+
 iexc==-109134, 'functional="PW91"'
 
 iexc==-116133, 'functional="PBESOL"'

@@ -12,9 +12,9 @@ rm -rf "$work"
 mkdir -p "$work"
 cd "$work"
 
-# psfile is the last field of the first data line
+# psfile is the sixth field of the first data line
 sed -e "$edit" "$dat" |
-    awk -v f="$format" '!/^#/ && !done {sub(/[^ ]+[ ]*$/, f); done=1} {print}' > in.dat
+    awk -v f="$format" '!/^#/ && !done {$6=f; done=1} {print}' > in.dat
 "$exe" < in.dat > in.out
 
 # rerun NAME: run NAME.dat, which must hold an input, and compare with in.out

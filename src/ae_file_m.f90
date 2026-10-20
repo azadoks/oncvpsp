@@ -31,6 +31,7 @@
 !   atsym, zz, nc, nv, iexc, na, la, fa         (checked against the input)
 !   mmax, rr                                   (log radial mesh, checked
 !                                               against the input mesh)
+!   c_light                                    (relativity_m, checked)
 !   it, etot, eterm, res, ea, rhoc, rho, vfull (reference atom, aeatom;
 !                                               ea(:,1:2) if irel=2)
 !   ncfg, then for each test configuration:
@@ -40,12 +41,13 @@
  module ae_file_m
  use, intrinsic :: iso_fortran_env, only: int8
  use constants_m, only: dp, mxstate, mxcnf, nlev
+ use relativity_m, only: c_light
  implicit none
  private
  public :: write_ae_file, read_ae_file
 
  character(len=8), parameter :: magic='ONCVAE  ' !< first record of the file
- integer, parameter :: version=2 !< format version
+ integer, parameter :: version=3 !< format version
 !> relative tolerance for comparing real input (zz, occupations) and the
 !> radial mesh with the file: both programs parse the same input text, but
 !> may be built by different compilers or with different flags
@@ -274,13 +276,15 @@
  write(unit) atsym,zz,nc,nv,iexc
  write(unit) na(1:nc+nv),la(1:nc+nv),fa(1:nc+nv)
  write(unit) mmax,rr(1:mmax)
+ write(unit) c_light
  return
  end subroutine write_head
 
  subroutine read_head(fname,unit,irel,atsym,zz,nc,nv,iexc,na,la,fa, &
 &                     mmax,rr)
 !! opens fname, checks it against this run's input and reads rr; stops if
-!! the file was written for a different atom or relativistic treatment
+!! the file was written for a different atom, relativistic treatment or
+!! speed of light
 !!
 !! @param fname  file name
 !! @param unit  unit number of the opened file
@@ -313,7 +317,7 @@
  character(len=2) :: atsym_f
  integer :: ios,version_f,irel_f,nc_f,nv_f,iexc_f,mmax_f
  integer :: na_f(mxstate),la_f(mxstate)
- real(dp) :: zz_f,fa_f(mxstate)
+ real(dp) :: zz_f,fa_f(mxstate),c_light_f
  real(dp), allocatable :: rr_f(:)
 
  open(newunit=unit,file=fname,access='stream',form='unformatted', &
@@ -373,6 +377,11 @@
  if(any(abs(rr_f(1:mmax)-rr(1:mmax))>rtol*rr(1:mmax))) then
    write(6,'(2a)') 'read_ae_file: ERROR radial mesh differs from the', &
 &        ' one this program builds'
+   error stop 1
+ end if
+ read(unit) c_light_f
+ if(differ(c_light_f,c_light)) then
+   write(6,'(2a)') 'read_ae_file: ERROR c_light differs from the input'
    error stop 1
  end if
  return

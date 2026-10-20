@@ -385,6 +385,15 @@
    write(6,'(t8,a)') &
 &      'functional="PBE"'
 
+ else if(iexc==5 .or. iexc==-001007) then
+   write(6,'(t8,a)') &
+&      'functional="SLA  VWN  NOGX NOGC"'
+
+!QE's relativistic Slater exchange (RXC)
+ else if(iexc==6 .or. iexc==-532007) then
+   write(6,'(t8,a)') &
+&      'functional="RXC  VWN  NOGX NOGC"'
+
  else if(iexc==-001012) then
    write(6,'(t8,a)') &
 &      'functional="SLA  PW   NOGX NOGC"'

@@ -653,6 +653,7 @@ class OncvpspInput:
     linear_mesh: LinearMeshConfiguration
     test_configurations: list[list[StateConfiguration]]
     log_mesh: LogMeshConfiguration | None = None
+    c_light: float | None = None
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, OncvpspInput):
@@ -674,6 +675,9 @@ class OncvpspInput:
             return False
         if self.psfile != other.psfile:
             logging.debug("psfile differs: %s != %s", self.psfile, other.psfile)
+            return False
+        if self.c_light != other.c_light:
+            logging.debug("c_light differs: %s != %s", self.c_light, other.c_light)
             return False
         if len(self.reference_configuration) != len(other.reference_configuration):
             logging.debug(
@@ -827,6 +831,7 @@ class OncvpspInput:
         nv = int(words[3])
         iexc = int(words[4])
         psfile = words[5]
+        c_light = fort_float(words[6]) if len(words) > 6 else None
 
         reference_configuration = [
             StateConfiguration.from_str(next(lines)) for _ in range(nc + nv)
@@ -880,6 +885,7 @@ class OncvpspInput:
             linear_mesh,
             test_configurations,
             log_mesh,
+            c_light,
         )
 
     @classmethod
@@ -972,6 +978,7 @@ class OncvpspInput:
                 if "log_mesh" in d
                 else None
             ),
+            c_light=d["oncvpsp"].get("c_light"),
         )
 
     def to_dict(self) -> dict[str, ty.Any]:
@@ -987,6 +994,7 @@ class OncvpspInput:
                 "nc": self.nc,
                 "nv": self.nv,
                 "iexc": self.iexc,
+                **({} if self.c_light is None else {"c_light": self.c_light}),
             },
             "linear_mesh": {
                 "a": self.linear_mesh.drl,

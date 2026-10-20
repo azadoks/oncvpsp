@@ -35,7 +35,8 @@
 !! @param irel  0 non-relativistic (vr is then not set), 1 scalar-, 2 fully-
 !!              relativistic
 
- use constants_m, only: dp, c_light
+ use constants_m, only: dp
+ use relativity_m, only: c_light
  implicit none
 
 !Input variables

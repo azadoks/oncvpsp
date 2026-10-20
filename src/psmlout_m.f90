@@ -114,7 +114,7 @@
 &                       xml_EndElement, xml_AddArray
  use m_libxc_list, only: libxc_t, XC_NOT_IMPL, XC_LDA_X, XC_LDA_C_PZ, &
 &                        XC_LDA_C_WIGNER, XC_LDA_C_HL, XC_GGA_X_PBE, &
-&                        XC_GGA_C_PBE
+&                        XC_GGA_C_PBE, XC_LDA_C_VWN, XC_LDA_X_REL
 
  use constants_m, only: pi
  implicit none
@@ -293,6 +293,16 @@
    xcfuntype    = 'GGA'
    xcfunparam   = 'Perdew-Burke-Ernzerhof'
    libxc_id = [ XC_GGA_X_PBE, XC_GGA_C_PBE ]
+
+ case(5)
+   xcfuntype    = 'LDA'
+   xcfunparam   = 'Vosko-Wilk-Nusair'
+   libxc_id = [ XC_LDA_X, XC_LDA_C_VWN ]
+!Libxc's lda_x_rel has its own speed of light
+ case(6)
+   xcfuntype    = 'LDA'
+   xcfunparam   = 'MacDonald-Vosko + VWN'
+   libxc_id = [ XC_LDA_X_REL, XC_LDA_C_VWN ]
 
  case  default
 
@@ -637,7 +647,8 @@
 !!                  linear output mesh (echoed when not 0)
 
  use xmlf90_wxml, only: xmlf_t, xml_AddPcData
- use input_echo_m, only: icmod_lines, epsh_lines, echo_len, echo_max
+ use input_echo_m, only: atom_lines, icmod_lines, epsh_lines, mesh_lines, &
+&                        echo_len, echo_max
  implicit none
 
 !Input variables
@@ -662,11 +673,10 @@
  character(len=echo_len) :: text(echo_max)
  integer :: ii,jj,l1,ntext
 
- call add('# ATOM AND REFERENCE CONFIGURATION')
- call add('# atsym  z   nc   nv     iexc    psfile')
- write(line,'(a,a,f6.2,2i5,i8,2a)') '  ',trim(atsym),zz,nc,nv,iexc, &
-&     '      ',trim(psfile)
- call add(line)
+ call atom_lines(atsym,zz,nc,nv,iexc,psfile,text,ntext)
+ do ii=1,ntext
+   call add(text(ii))
+ end do
  call add('#')
  call add('#   n    l    f')
  do ii=1,nc+nv
@@ -739,13 +749,10 @@
    call add('#')
  end do
 
- if(log_mesh(1)>0.0d0) then
-   call add('#')
-   call add('# LOG MESH')
-   call add('# amesh, rr1, rmax')
-   write(line,'(3es24.16)') log_mesh
-   call add(line)
- end if
+ call mesh_lines(log_mesh,text,ntext)
+ do ii=1,ntext
+   call add(text(ii))
+ end do
  return
 
  contains

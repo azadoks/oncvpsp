@@ -37,7 +37,8 @@
 !! @param mch  matching mesh point for inward-outward integrations
 !! @param irel  0 non-relativistic, 1 scalar-relativistic
 
- use constants_m, only: dp, c_light
+ use constants_m, only: dp
+ use relativity_m, only: c_light
  implicit none
 
 !Input variables

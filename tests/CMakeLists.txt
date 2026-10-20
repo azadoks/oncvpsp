@@ -101,7 +101,8 @@ endforeach ()
 
 # Damaged or mismatched all-electron data files: oncvpsp_ps.x must stop with a message naming the
 # problem, but accept differences within round-off (see scripts/ae_file_error_test.sh)
-foreach (case IN ITEMS "byte_order" "zz" "fa" "mesh" "zz_roundoff" "fa_roundoff" "mesh_roundoff")
+foreach (case IN ITEMS "byte_order" "zz" "fa" "mesh" "c_light" "zz_roundoff" "fa_roundoff"
+                       "mesh_roundoff")
     oncvpsp_test(ae_file_${case} split ae_file_error_test.sh
         $<TARGET_FILE:oncvpspsr> $<TARGET_FILE:oncvpspsr_ae> $<TARGET_FILE:oncvpspsr_ps>
         "${data}/14_Si.dat" ${case} "${CMAKE_CURRENT_BINARY_DIR}/ae_file_${case}")
@@ -203,23 +204,34 @@ endforeach ()
 # Input echoes: the input echoed in the output, and in the psp8, UPF or PSML file, run again, give the
 # same output (see scripts/echo_rerun_test.sh). The inputs cover rxpsh (14_Si_lder, and 52_Te with
 # rxpsh set), icmod=4 with its search grid (40_Zr_grid, 74_W), icmod=7 with slack (14_Si_hm), a
-# Libxc iexc (83_Bi) and rc on the grid (03_Li).
+# Libxc iexc (83_Bi), rc on the grid (03_Li), and iexc=6 with c_light on the first line (52_Te_c,
+# 14_Si_c).
 set(te_rxpsh "s/^   -3\\.0  3\\.0  0\\.02$/   -3.0  3.0  0.02  3.5/")
+set(te_c "s/^    Te  52\\.0   8   3   3   upf$/    Te  52.0   8   3   6   upf  137.0359895/")
+set(si_c "s/^    Si  14     3   2   3   psp8$/    Si  14     3   2   6   psp8  137.0359895/")
 foreach (echo_test IN ITEMS
         "sr:14_Si_lder:psp8" "sr:14_Si_lder:upf" "sr:14_Si_lder:psml"
         "sr:40_Zr_grid:psp8" "sr:40_Zr_grid:upf" "sr:40_Zr_grid:psml"
         "sr:83_Bi:psml" "sr:03_Li:psml" "nr:14_Si:psml" "sr:14_Si_hm:psp8"
-        "r:74_W:psp8" "r:74_W:psml" "r:52_Te:psp8" "r:52_Te:upf" "r:52_Te:psml")
+        "r:74_W:psp8" "r:74_W:psml" "r:52_Te:psp8" "r:52_Te:upf" "r:52_Te:psml"
+        "r:52_Te_c:psp8" "r:52_Te_c:upf" "r:52_Te_c:psml" "sr:14_Si_c:psp8" "sr:14_Si_c:psml")
     string(REPLACE ":" ";" echo_test "${echo_test}")
     list(GET echo_test 0 rel)
     list(GET echo_test 1 test_name)
     list(GET echo_test 2 format)
     set(edit "")
+    set(input "${test_name}")
     if (test_name STREQUAL "52_Te")
         set(edit "${te_rxpsh}")
+    elseif (test_name STREQUAL "52_Te_c")
+        set(edit "${te_c}")
+        set(input "52_Te")
+    elseif (test_name STREQUAL "14_Si_c")
+        set(edit "${si_c}")
+        set(input "14_Si")
     endif ()
     oncvpsp_test(echo_${format}_${rel}_${test_name} echo echo_rerun_test.sh
-        $<TARGET_FILE:oncvpsp${rel}> "${data}/${test_name}.dat" ${format}
+        $<TARGET_FILE:oncvpsp${rel}> "${data}/${input}.dat" ${format}
         "${CMAKE_CURRENT_BINARY_DIR}/echo_${format}_${rel}_${test_name}" "${edit}")
 endforeach ()
 

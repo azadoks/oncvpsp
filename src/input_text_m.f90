@@ -16,7 +16,7 @@
 &                           epsh1, epsh2, depsh, rxpsh, &
 &                           rlmax, drl, upf_mesh, &
 &                           ncnf, nvcnf, nacnf, lacnf, facnf, &
-&                           amesh, rr1, rmax)
+&                           amesh, rr1, rmax, c_light)
 
 !! reads the text input file (see doc/32_Ge_annotated.dat), stopping on a
 !! read error
@@ -129,6 +129,9 @@
  real(dp), intent(out) :: rr1
 !> Outer radius of the log radial mesh (0 or less for the default)
  real(dp), intent(out) :: rmax
+! [Atom, optional]
+!> Speed of light (0 or less for the default)
+ real(dp), intent(out) :: c_light
 
 !Local variables
 !> I/O status variable
@@ -163,13 +166,19 @@
  amesh = -1.d0  ! negative values for the built-in mesh
  rr1 = -1.d0
  rmax = -1.d0
+ c_light = -1.d0  ! negative value for the default
 
 ! read input data
  inline = 0
 
-! atom and reference configuration
+! atom and reference configuration, and optionally the speed of light
  call next_line(unit, line, inline)
- read(line, *, iostat=ios) atsym, zz, nc, nv, iexc, psfile
+ read(line, *, iostat=ios) atsym, zz, nc, nv, iexc, psfile, c_light
+! a line of six values ends before c_light; a bad value is an error
+ if(ios < 0) then
+   c_light = -1.d0
+   read(line, *, iostat=ios) atsym, zz, nc, nv, iexc, psfile
+ end if
 ! counts beyond the array sizes would overrun before check_data runs
  if(ios == 0 .and. (nc < 0 .or. nv < 0 .or. nc + nv > mxstate)) ios = 999
  call read_error(ios, inline)

@@ -15,6 +15,8 @@ set(src_oncvpsp
     dpnint.f90
     eresid.f90
     exc_off_pbe.f
+    exc_relx.f90
+    excvwn.f90
     exchdl.f90
     excpzca.f90
     excwig.f90
@@ -47,6 +49,7 @@ set(src_oncvpsp
     pspot.f90
     qroots.f90
     relatom.f90
+    relativity_m.f90
     renorm_r.f90
     run_config.f90
     run_diag.f90

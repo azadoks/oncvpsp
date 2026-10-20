@@ -211,6 +211,11 @@
    ixc_abinit=2
  else if(iexc==4) then
    ixc_abinit=11
+!Abinit has no built-in VWN; the Libxc codes (lda_x_rel has its own c)
+ else if(iexc==5) then
+   ixc_abinit=-001007
+ else if(iexc==6) then
+   ixc_abinit=-532007
  else if(iexc<0) then
    ixc_abinit=iexc
  end if

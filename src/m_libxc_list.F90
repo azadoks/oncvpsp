@@ -103,7 +103,8 @@ type(libxc_t), parameter  ::                  &
    XC_GGA_X_HJS_B88 = libxc_t("XC_GGA_X_HJS_B88", 527 , EXCH),  &
    XC_GGA_X_HJS_B97X = libxc_t("XC_GGA_X_HJS_B97X", 528 , EXCH),  &
    XC_GGA_X_ITYH = libxc_t("XC_GGA_X_ITYH", 529 , EXCH),  &
-   XC_GGA_X_SFAT = libxc_t("XC_GGA_X_SFAT", 530 , EXCH)
+   XC_GGA_X_SFAT = libxc_t("XC_GGA_X_SFAT", 530 , EXCH),  &
+   XC_LDA_X_REL = libxc_t("XC_LDA_X_REL", 532 , EXCH)
 
 ! Correlation
 

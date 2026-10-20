@@ -22,7 +22,7 @@
  use, intrinsic :: iso_fortran_env, only: real64
  implicit none
  private
- public :: dp, pi, c_light, mxprj, mxstate, mxcnf, mxl, mxlin, mxkap
+ public :: dp, pi, mxprj, mxstate, mxcnf, mxl, mxlin, mxkap
  public :: nrhomod, nlev, nerrlv, dqout
 
 !> kind of all real variables
@@ -30,10 +30,6 @@
 
 !> pi
  real(dp), parameter :: pi=3.141592653589793238462643383279502884197_dp
-
-!> speed of light in atomic units (Hartree), 1/alpha.  The 4.0.1 value is
-!> kept, rather than CODATA 137.035999..., so results are unchanged
- real(dp), parameter :: c_light=137.036_dp
 
 !> maximum number of projectors for each l
  integer, parameter :: mxprj=5

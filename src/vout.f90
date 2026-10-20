@@ -33,7 +33,7 @@
 !!              energy
 !! @param rr  log radial mesh
 !! @param mmax  dimension of log radial grid
-!! @param iexc  exchange-correlation functional type (1-4 built in, <0 libxc)
+!! @param iexc  exchange-correlation functional type (1-6 built in, <0 libxc)
 
  use constants_m, only: dp, pi
  implicit none
@@ -130,6 +130,9 @@
    call excpzca(rhot,vxc,exca,mmax)
  else if(iexc == 4) then
    call excggc(rhot,vxc,exca,rr,mmax)
+ else if(iexc == 5 .or. iexc == 6) then
+   call excvwn(rhot,vxc,exca,mmax)
+   if(iexc == 6) call exc_relx(rhot,vxc,exca,mmax)
  else if(iexc < 0) then
    call exc_libxc(iexc,al,rhot,vxc,exca,rr,mmax)
  else
@@ -162,6 +165,9 @@
      call excpzca(rhoc,vxcd,excca,mmax)
    else if(iexc == 4) then
      call excggc(rhoc,vxcd,excca,rr,mmax)
+   else if(iexc == 5 .or. iexc == 6) then
+     call excvwn(rhoc,vxcd,excca,mmax)
+     if(iexc == 6) call exc_relx(rhoc,vxcd,excca,mmax)
    else if(iexc < 0) then
      call exc_libxc(iexc,al,rhoc,vxcd,excca,rr,mmax)
    else

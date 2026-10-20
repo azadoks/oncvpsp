@@ -5,9 +5,16 @@
 ### nc number of core states
 ### nv number of valence states
 ### iexc  exchange-correlation functional: 1-Wigner, 2-Hedin-Lundquist,
-###  3-Perdew-Zunger-Ceperly-Alder, 4-Perdew-Burke-Enzerhof
+###  3-Perdew-Zunger-Ceperly-Alder, 4-Perdew-Burke-Enzerhof,
+###  5-Vosko-Wilk-Nusair (the LDA of the NIST atomic reference data),
+###  6-VWN with the relativistic exchange of MacDonald and Vosko at the
+###  speed of light c_light (the ScRLDA and RLDA of the NIST data);
+###  negative values for Libxc (doc/libxc_use.md)
 ### psfile format of pseudopotential file, psp8 for ABINIT, upf for PWSCF
 ###  both for psp8 and upf, none to write no pseudopotential file
+### c_light optional: the speed of light of the scalar- and fully-
+###  relativistic equations and of iexc=6 (default 137.036, 0 or less for
+###  the default; the NIST data use 137.0359895)
 #
 # atsym, z, nc, nv, iexc   psfile
     Ge  32.0   5   3   3   psp8
