@@ -94,7 +94,7 @@ further need new references. Before updating them, check what changed:
   projectors themselves can change while the kernel does not.
 - The `nist` tests (`scripts/nist_test.py`) compare the all-electron atom
   with the NIST atomic reference data to its stated accuracy (about 1e-6
-  Ha), with the data's functionals and speed of light (iexc 5 and 6,
+  Ha), with the data's functionals and speed of light (iexc 6 and 7,
   `c_light`). The few cases that miss it by a little (`EXPECTED_FAILURES`:
   LDA Po and some ScRLDA lanthanides, which other codes miss too) are
   expected to fail, and a test fails if one of them passes. ctest runs the

@@ -825,9 +825,9 @@
    call excpzca(rho,vx,exc,nx)
  else if(iexc == 4) then
    call excggc(rho,vx,exc,rr,nx)
- else if(iexc == 5 .or. iexc == 6) then
+ else if(iexc == 6 .or. iexc == 7) then
    call excvwn(rho,vx,exc,nx)
-   if(iexc == 6) call exc_relx(rho,vx,exc,nx)
+   if(iexc == 7) call exc_relx(rho,vx,exc,nx)
  else if(iexc < 0) then
    call exc_libxc(iexc,al,rho,vx,exc,rr,nx)
  else

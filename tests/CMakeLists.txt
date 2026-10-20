@@ -236,11 +236,11 @@ endforeach ()
 # Input echoes: the input echoed in the output, and in the psp8, UPF or PSML file, run again, give the
 # same output (see scripts/echo_rerun_test.sh). The inputs cover rxpsh (14_Si_lder, and 52_Te with
 # rxpsh set), icmod=4 with its search grid (40_Zr_grid, 74_W), icmod=7 with slack (14_Si_hm), a
-# Libxc iexc (83_Bi), rc on the grid (03_Li), and iexc=6 with c_light on the first line (52_Te_c,
+# Libxc iexc (83_Bi), rc on the grid (03_Li), and iexc=7 with c_light on the first line (52_Te_c,
 # 14_Si_c).
 set(te_rxpsh "s/^   -3\\.0  3\\.0  0\\.02$/   -3.0  3.0  0.02  3.5/")
-set(te_c "s/^    Te  52\\.0   8   3   3   upf$/    Te  52.0   8   3   6   upf  137.0359895/")
-set(si_c "s/^    Si  14     3   2   3   psp8$/    Si  14     3   2   6   psp8  137.0359895/")
+set(te_c "s/^    Te  52\\.0   8   3   3   upf$/    Te  52.0   8   3   7   upf  137.0359895/")
+set(si_c "s/^    Si  14     3   2   3   psp8$/    Si  14     3   2   7   psp8  137.0359895/")
 foreach (echo_test IN ITEMS
         "sr:14_Si_lder:psp8" "sr:14_Si_lder:upf" "sr:14_Si_lder:psml"
         "sr:40_Zr_grid:psp8" "sr:40_Zr_grid:upf" "sr:40_Zr_grid:psml"
@@ -315,6 +315,10 @@ oncvpsp_test(error_icmod7_slack_range errors error_test.sh
     $<TARGET_FILE:oncvpspsr> "test_data: must have 0.0<slack<=1.0 for icmod= 6 or 7"
     "${CMAKE_CURRENT_BINARY_DIR}/error_icmod7_slack_range"
     "${data}/14_Si_hm.dat" "s/^   7   0   1\\.0e-5   0\\.7$/   7   0   1.0e-5   1.5/")
+oncvpsp_test(error_iexc5_r2scan errors error_test.sh
+    $<TARGET_FILE:oncvpspsr> "test_data: iexc=5 is r2SCAN, METAPSP only"
+    "${CMAKE_CURRENT_BINARY_DIR}/error_iexc5_r2scan"
+    "${data}/14_Si.dat" "s/^    Si  14     3   2   3   psp8$/    Si  14     3   2   5   psp8/")
 oncvpsp_test(error_icmod4_bad_grid errors error_test.sh
     $<TARGET_FILE:oncvpspsr> "check_data: ERROR icmod=4 needs 0<fcfact_min<=fcfact_max and fcfact_step>0"
     "${CMAKE_CURRENT_BINARY_DIR}/error_icmod4_bad_grid"

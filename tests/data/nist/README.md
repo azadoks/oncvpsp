@@ -12,9 +12,9 @@ the U.S. government.
 
 | set | equation | exchange-correlation | ONCVPSP |
 |---|---|---|---|
-| LDA | Schrödinger | Slater, VWN | `oncvpspnr_ae.x`, iexc 5 |
-| ScRLDA | scalar-relativistic (Koelling-Harmon) | MacDonald-Vosko relativistic Slater, VWN | `oncvpsp_ae.x`, iexc 6 |
-| RLDA | Dirac | MacDonald-Vosko relativistic Slater, VWN | `oncvpspr_ae.x`, iexc 6 |
+| LDA | Schrödinger | Slater, VWN | `oncvpspnr_ae.x`, iexc 6 |
+| ScRLDA | scalar-relativistic (Koelling-Harmon) | MacDonald-Vosko relativistic Slater, VWN | `oncvpsp_ae.x`, iexc 7 |
+| RLDA | Dirac | MacDonald-Vosko relativistic Slater, VWN | `oncvpspr_ae.x`, iexc 7 |
 
 The relativistic sets use the speed of light 137.0359895 (CODATA 1986), in the
 equation and in the exchange; ONCVPSP's default is 137.036, so the inputs set it

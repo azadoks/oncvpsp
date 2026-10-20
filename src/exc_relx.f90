@@ -24,7 +24,7 @@
 !! beta = kF/c_light and mu = sqrt(1 + beta**2), the exchange energy density
 !! is multiplied by 1 - 1.5*((beta*mu - asinh(beta))/beta**2)**2 and the
 !! potential by 1.5*asinh(beta)/(beta*mu) - 0.5.  This is the exchange of
-!! the NIST atomic reference data (ScRLDA, RLDA; iexc=6, after excvwn) and
+!! the NIST atomic reference data (ScRLDA, RLDA; iexc=7, after excvwn) and
 !! of Libxc's lda_x_rel, whose speed of light is fixed.  rho, vxc and exc
 !! are as in excpzca
 !!

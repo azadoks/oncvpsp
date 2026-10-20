@@ -6,7 +6,7 @@ eigenvalues of the neutral atoms H-U and their first cations, for three sets:
 LDA (non-relativistic), ScRLDA (scalar-relativistic) and RLDA (Dirac).  NIST
 uses Slater exchange and VWN correlation, with the relativistic exchange of
 MacDonald and Vosko in ScRLDA and RLDA, and the speed of light 137.0359895.
-The inputs written here set exactly that: iexc=5 for LDA, iexc=6 and c_light
+The inputs written here set exactly that: iexc=6 for LDA, iexc=7 and c_light
 for ScRLDA and RLDA, on a log mesh fine enough for the stated accuracy of the
 data.  Only the all-electron program is run (oncvpspnr_ae.x for LDA,
 oncvpsp_ae.x for ScRLDA, oncvpspr_ae.x for RLDA); the pseudopotential part of
@@ -59,7 +59,7 @@ EXPECTED_FAILURES = {
 C_LIGHT_NIST = 137.0359895
 
 # iexc of each set, and whether it needs c_light
-SETS = {"LDA": (5, False), "ScRLDA": (6, True), "RLDA": (6, True)}
+SETS = {"LDA": (6, False), "ScRLDA": (7, True), "RLDA": (7, True)}
 
 # labels that NIST's files get wrong: (set, Z, charge, label) -> label.  The
 # ScRLDA file of neutral Pm labels its 3d eigenvalue "32".

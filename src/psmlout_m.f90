@@ -294,12 +294,12 @@
    xcfunparam   = 'Perdew-Burke-Ernzerhof'
    libxc_id = [ XC_GGA_X_PBE, XC_GGA_C_PBE ]
 
- case(5)
+ case(6)
    xcfuntype    = 'LDA'
    xcfunparam   = 'Vosko-Wilk-Nusair'
    libxc_id = [ XC_LDA_X, XC_LDA_C_VWN ]
 !Libxc's lda_x_rel has its own speed of light
- case(6)
+ case(7)
    xcfuntype    = 'LDA'
    xcfunparam   = 'MacDonald-Vosko + VWN'
    libxc_id = [ XC_LDA_X_REL, XC_LDA_C_VWN ]

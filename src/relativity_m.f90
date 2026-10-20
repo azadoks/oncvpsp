@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 !> The speed of light of the relativistic equations and of the relativistic
-!> exchange (iexc=6), set once from the input (set_relativity) and fixed
+!> exchange (iexc=7), set once from the input (set_relativity) and fixed
 !> afterwards.  The default is the value of the code before it could be set.
 
  module relativity_m

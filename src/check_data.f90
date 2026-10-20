@@ -126,8 +126,12 @@
    ierr=ierr+1
  end if
 
- if(iexc==0 .or. iexc>6) then
-   write(6,'(a)') 'test_data: must have iexc <=6, iexc /= 0.'
+!iexc=5 is r2SCAN in METAPSP, so it is kept free here
+ if(iexc==5) then
+   write(6,'(a)') 'test_data: iexc=5 is r2SCAN, METAPSP only'
+   ierr=ierr+1
+ else if(iexc==0 .or. iexc>7) then
+   write(6,'(a)') 'test_data: must have iexc <=7, iexc /= 0, 5.'
    write(6,'(a)') '  negative values for libxc'
    ierr=ierr+1
  end if
