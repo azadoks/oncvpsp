@@ -70,7 +70,7 @@
  real(dp) :: orbasis_it(nbas,nbas)
  real(dp) :: eres(nqout)
  real(dp) :: yy,tt,emin,rtsgn,sn
- real(dp) :: emin0,emin1,x1,x1min,x1max
+ real(dp) :: emin0,emin1,x1,x1min,x1max,dt,dtold,dx,den
  real(dp), allocatable :: work(:),wmat(:,:),wev(:),wvec(:)
  real(dp), allocatable :: eresidevec_nu(:,:)
  real(dp), allocatable :: pswfopt(:),pswfopt_nu(:)
@@ -186,6 +186,40 @@
    write(6,'(/a)') 'optimize: ERROR interval-halving search not converged'
    error stop 1
  end if
+
+! Newton's method on the constraint tt(x1) from the bracket's midpoint:
+! tt is smooth and increasing in x1, so a step takes x1 from the bracket's
+! eps to round-off, and the x_i do not depend on where the halving stopped
+! (doc/smoothness_plan.md, Q-6). Converged when a step was within the
+! round-off of tt (a few ulps of yy**2) or a few ulps of x1, the x_i then
+! evaluated at the moved x1
+ converged=.false.
+ dx=0.0d0
+ dtold=0.0d0
+ do iter=1,6
+   tt=x1**2-yy**2
+   dt=2.0d0*x1
+   do ii=2,nnull
+     den=eresideval(ii)-eresideval(1)+abs(eresiddot_ev(1))/x1
+     pswfopt(ii)=-eresiddot_ev(ii)/den
+     tt=tt+pswfopt(ii)**2
+     dt=dt+2.0d0*pswfopt(ii)**2*abs(eresiddot_ev(1))/(x1**2*den)
+   end do
+   if(iter>1 .and. (abs(dx)*dtold<=8.0d0*epsilon(1.0d0)*yy**2 .or. &
+&                   abs(dx)<=4.0d0*spacing(x1))) then
+     converged=.true.
+     exit
+   end if
+   dx=-tt/dt
+   dtold=dt
+   x1=x1+dx
+ end do
+ if(converged .eqv. .false.) then
+   write(6,'(/a,1p,e10.2)') &
+&        'optimize: ERROR Newton polish not converged, last step',dx
+   error stop 1
+ end if
+ pswfopt(1)=rtsgn*x1
 
  emin=eresid0(1)
  do ii=1,nnull

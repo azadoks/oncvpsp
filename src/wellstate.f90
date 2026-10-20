@@ -58,9 +58,13 @@
 
 !Local variables
  real(dp) :: al,cwell,et,xx,rwell,rwmax,rwmin,rwscale,umax
+ real(dp) :: fw,fwmin,fwmax,tolw
 
- real(dp),parameter :: eps=1.0d-8
- integer :: ii,iter,ierr,iumax,l1,itrwell,nn,nnloop
+! the well width solves E(rwell) = ep to round-off (doc/smoothness_plan.md,
+! Q-9): converged at a few ulps of ep, or when the bracket of rwell has
+! closed to a few ulps (E then within eps of ep, else an error)
+ real(dp),parameter :: eps=1.0d-10
+ integer :: ii,iter,ierr,iumax,l1,itrwell,nn,nnloop,iside
  logical :: convg
 
  l1=ll+1
@@ -134,6 +138,10 @@
    rwell=8.0d0*rr(irc)
    rwmax=0.0d0
    rwmin=0.0d0
+   fwmin=0.0d0
+   fwmax=0.0d0
+   iside=0
+   tolw=4.0d0*epsilon(1.0d0)*max(abs(ep),0.2d0)
 
    convg=.false.
 
@@ -160,25 +168,46 @@
        error stop 1
      end if
 
-     if(abs(et-ep)<eps) then
+     fw=et-ep
+     if(abs(fw)<=tolw) then
        ep=et
        convg=.true.
        exit
      end if
 
-!Interval-halving search after proper rwell has been bracketed
+!Illinois regula falsi after proper rwell has been bracketed: E falls as
+!the well widens, fwmin>0 at rwmin and fwmax<0 at rwmax; the end kept
+!twice in a row has its value halved
      if(rwmin>0.0d0 .and. rwmax>0.0d0) then
-       if(et>ep) then
+       if(fw>0.0d0) then
          rwmin=rwell
+         fwmin=fw
+         if(iside==1) fwmax=0.5d0*fwmax
+         iside=1
        else
          rwmax=rwell
+         fwmax=fw
+         if(iside==-1) fwmin=0.5d0*fwmin
+         iside=-1
        end if
-       rwell=0.5d0*(rwmax+rwmin)
+       if(rwmax-rwmin<=4.0d0*epsilon(1.0d0)*rwmax) then
+         if(abs(fw)>eps) then
+           write(6,'(a,i3,a,i3,a,1p,e10.2)') &
+&                'wellstate: ERROR E(rwell) jumps across ep, n=',nn, &
+&                ' l=',ll,' E-ep=',fw
+           error stop 1
+         end if
+         ep=et
+         convg=.true.
+         exit
+       end if
+       rwell=(rwmin*fwmax - rwmax*fwmin)/(fwmax - fwmin)
        cycle
      end if
 
      if(et>ep) then
        rwmin=rwell
+       fwmin=fw
        if(rwmax>0.0d0) then
          rwell=0.5d0*(rwmax+rwmin)
        else
@@ -189,6 +218,7 @@
 
      if(et<ep) then
        rwmax=rwell
+       fwmax=fw
        if(rwmin>0.0d0) then
          rwell=0.5d0*(rwmax+rwmin)
        else

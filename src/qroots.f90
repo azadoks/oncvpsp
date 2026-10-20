@@ -81,6 +81,7 @@
        dlgd=ulgd - sbfd(2)/sbfd(1)
        if(abs(dlgd)<eps) then
          iroot=iroot+1
+         call polish(qt)
          qroot(iroot)=qt
          found_root=.true.
          exit
@@ -112,4 +113,43 @@
  qroot(3)=qt
 
  return
+
+ contains
+
+ subroutine polish(qp)
+
+!! the root qp polished to round-off by Newton's method on the pole-free
+!! g(q) = ulgd*j_l(q rc) - q j_l'(q rc), whose root it is where j_l(q rc)
+!! is not 0: the bisection stops anywhere within eps of it, the polished
+!! root does not depend on where (doc/smoothness_plan.md, Q-5). Converged
+!! when a step was within the round-off of g or a few ulps of q, g then at
+!! the moved q
+!!
+!! @param qp  the root (in/out)
+
+ real(dp), intent(inout) :: qp
+ real(dp) :: gg,dg,dq,dgold,gscale
+ integer :: kk
+
+ dq=0.0d0
+ dgold=0.0d0
+ do kk=1,6
+   call sbf_rc_der(ll,qp,rc,sbfd)
+! sbfd(k+1) = d^k/dr^k j_l(q r) at rc, so d/dq of sbfd(k+1) is
+! (k sbfd(k+1) + rc sbfd(k+2))/q
+   gg=ulgd*sbfd(1) - sbfd(2)
+   dg=(ulgd*rc*sbfd(2) - sbfd(2) - rc*sbfd(3))/qp
+   gscale=abs(ulgd*sbfd(1)) + abs(sbfd(2))
+   if(kk>1 .and. (abs(dq)*dgold<=8.0d0*epsilon(1.0d0)*gscale .or. &
+&                 abs(dq)<=4.0d0*spacing(qp))) return
+   dq=-gg/dg
+   dgold=abs(dg)
+   qp=qp+dq
+ end do
+ write(6,'(/a,i0,a,es12.4,a,es10.2)') &
+&     'qroots: ERROR Newton polish not converged, ll=',ll,', q=',qp, &
+&     ', last step',dq
+ error stop 1
+ end subroutine polish
+
  end subroutine qroots
