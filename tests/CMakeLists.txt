@@ -107,6 +107,10 @@ foreach (case IN ITEMS "byte_order" "zz" "fa" "mesh" "zz_roundoff" "fa_roundoff"
         "${data}/14_Si.dat" ${case} "${CMAKE_CURRENT_BINARY_DIR}/ae_file_${case}")
 endforeach ()
 
+# All-electron SCF convergence on a mesh starting at 1e-8 bohr: see scripts/ae_scf_test.sh
+oncvpsp_test(ae_scf_nr_01_H mesh ae_scf_test.sh
+    $<TARGET_FILE:oncvpspnr_ae> "${data}/01_H_ae.dat" "${CMAKE_CURRENT_BINARY_DIR}/ae_scf_nr_01_H")
+
 # Log mesh input (the optional last line of the text input): see scripts/log_mesh_test.sh
 foreach (mesh_test IN ITEMS "sr:14_Si" "nr:29_Cu" "r:52_Te")
     string(REPLACE ":" ";" mesh_test "${mesh_test}")

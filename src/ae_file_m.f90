@@ -31,7 +31,7 @@
 !   atsym, zz, nc, nv, iexc, na, la, fa         (checked against the input)
 !   mmax, rr                                   (log radial mesh, checked
 !                                               against the input mesh)
-!   it, etot, ea, rhoc, rho, vfull             (reference atom, aeatom;
+!   it, etot, eterm, res, ea, rhoc, rho, vfull (reference atom, aeatom;
 !                                               ea(:,1:2) if irel=2)
 !   ncfg, then for each test configuration:
 !     nvcnf, nacnf, lacnf, facnf               (key, matched to the input)
@@ -45,7 +45,7 @@
  public :: write_ae_file, read_ae_file
 
  character(len=8), parameter :: magic='ONCVAE  ' !< first record of the file
- integer, parameter :: version=1 !< format version
+ integer, parameter :: version=2 !< format version
 !> relative tolerance for comparing real input (zz, occupations) and the
 !> radial mesh with the file: both programs parse the same input text, but
 !> may be built by different compilers or with different flags
@@ -54,7 +54,7 @@
  contains
 
  subroutine write_ae_file(fname,irel,nkap,atsym,zz,nc,nv,iexc,na,la,fa, &
-&                         mmax,rr,it,etot,ea,rhoc,rho,vfull, &
+&                         mmax,rr,it,etot,eterm,res,ea,rhoc,rho,vfull, &
 &                         ncnf,nvcnf,nacnf,lacnf,facnf,istcnf,ierrcnf,itcnf, &
 &                         kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
 
@@ -76,6 +76,9 @@
 !! @param rr  log radial mesh
 !! @param it  aeatom iteration count
 !! @param etot  all-electron total energy (Ha)
+!! @param eterm  kinetic, electron-nucleus, Hartree and exchange-correlation
+!!               energies (Ha)
+!! @param res  aeatom residual of the screening potential (Ha)
 !! @param ea  all-electron eigenvalues (Ha), kap=-(l+1) and kap=l if irel=2
 !! @param rhoc  all-electron core charge density
 !! @param rho  all-electron valence charge density
@@ -93,7 +96,7 @@
  character(len=2), intent(in) :: atsym
  integer, intent(in) :: nc,nv,iexc,mmax,it,ncnf
  integer, intent(in) :: na(30),la(30),nvcnf(5),nacnf(30,5),lacnf(30,5)
- real(dp), intent(in) :: zz,etot
+ real(dp), intent(in) :: zz,etot,eterm(4),res
  real(dp), intent(in) :: fa(30),ea(30,nkap),facnf(30,5)
  real(dp), intent(in) :: rr(mmax),rhoc(mmax),rho(mmax),vfull(mmax)
  integer, intent(in) :: istcnf(5),ierrcnf(5),itcnf(5),kerrcnf(5)
@@ -105,7 +108,7 @@
 
  call write_head(fname,unit,irel,atsym,zz,nc,nv,iexc,na,la,fa, &
 &                mmax,rr)
- write(unit) it,etot,ea(1:nc+nv,1:nkap)
+ write(unit) it,etot,eterm,res,ea(1:nc+nv,1:nkap)
  write(unit) rhoc(1:mmax),rho(1:mmax),vfull(1:mmax)
  write(unit) ncnf+1
  do jj=1,ncnf+1
@@ -121,7 +124,8 @@
 
  subroutine read_ae_file(fname,irel,nkap,atsym,zz,nc,nv,iexc,na,la,fa, &
 &                        mmax,rr,ncnf,nvcnf,nacnf,lacnf,facnf, &
-&                        it,etot,ea,rhoc,rho,vfull,istcnf,ierrcnf,itcnf, &
+&                        it,etot,eterm,res,ea,rhoc,rho,vfull, &
+&                        istcnf,ierrcnf,itcnf, &
 &                        kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
 
 !! reads the all-electron data file: the reference atom and the
@@ -152,6 +156,9 @@
 !! @param facnf  occupancies, all configurations
 !! @param it  aeatom iteration count
 !! @param etot  all-electron total energy (Ha)
+!! @param eterm  kinetic, electron-nucleus, Hartree and exchange-correlation
+!!               energies (Ha)
+!! @param res  aeatom residual of the screening potential (Ha)
 !! @param ea  all-electron eigenvalues (Ha), kap=-(l+1) and kap=l if irel=2
 !! @param rhoc  all-electron core charge density
 !! @param rho  all-electron valence charge density
@@ -169,7 +176,7 @@
 
 !Output variables
  integer, intent(out) :: it
- real(dp), intent(out) :: etot
+ real(dp), intent(out) :: etot,eterm(4),res
  real(dp), intent(out) :: ea(30,nkap),rhoc(mmax),rho(mmax),vfull(mmax)
  integer, intent(out) :: istcnf(5),ierrcnf(5),itcnf(5),kerrcnf(5)
  integer, intent(out) :: nvtcnf(5),natcnf(30,5),latcnf(30,5)
@@ -183,7 +190,7 @@
 
  call read_head(fname,unit,irel,atsym,zz,nc,nv,iexc,na,la,fa, &
 &               mmax,rr)
- read(unit) it,etot,ea(1:nc+nv,1:nkap)
+ read(unit) it,etot,eterm,res,ea(1:nc+nv,1:nkap)
  read(unit) rhoc(1:mmax),rho(1:mmax),vfull(1:mmax)
 
 ! copy the results of each configuration in the file to the configurations

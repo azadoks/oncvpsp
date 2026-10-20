@@ -95,6 +95,13 @@ LXC     Perdew & Zunger (LDA)
 Reference configufation results
   iterations    25
   all-electron total energy (Ha)   -1.90375449D+04
+  residual of the screening potential (Ha)  4.10E-10
+  energy terms (Ha)
+    total                    -19037.5448928439
+    kinetic                   21874.1233220792
+    electron-nucleus         -47969.7675421948
+    Hartree                    7412.9483804009
+    exchange-correlation       -354.8490531292
 
 Begin loop to  construct optimized pseudo wave functions
 and semi-local pseudopoentials for all angular momenta

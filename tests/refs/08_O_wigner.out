@@ -67,6 +67,13 @@ in any publication utilizing these pseudopotentials.
 Reference configufation results
   iterations    20
   all-electron total energy (Ha)   -7.43823482D+01
+  residual of the screening potential (Ha)  2.55E-11
+  energy terms (Ha)
+    total                       -74.3823481850
+    kinetic                      74.1245080684
+    electron-nucleus           -177.1234308921
+    Hartree                      36.2268884199
+    exchange-correlation         -7.6103137812
 
 Begin loop to  construct optimized pseudo wave functions
 and semi-local pseudopoentials for all angular momenta

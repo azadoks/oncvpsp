@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
  subroutine relatom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&           rr,vi,zz,mmax,iexc,etot,ierr)
+&           rr,vi,zz,mmax,iexc,etot,eterm,res,ierr)
 
 !! self-consistent fully-relativistic all-electron atom
 !! calculation using log mesh
@@ -34,11 +34,15 @@
 !! @param rhoc  core charge (output)
 !! @param rho  total core+valence charge (output)
 !! @param rr  log radial mesh
-!! @param vi  all-electron potential (output)
+!! @param vi  all-electron potential (output), the one the output orbitals
+!!            are eigenstates of
 !! @param zz  atomic number
 !! @param mmax  size of log grid
 !! @param iexc  exchange-correlation function to be used
 !! @param etot  all-electron total energy (output)
+!! @param eterm  kinetic, electron-nucleus, Hartree and exchange-correlation
+!!               energies (output)
+!! @param res  residual of the screening potential (output, ae_residual)
 !! @param ierr  error flag
 
  use constants_m, only: dp
@@ -57,7 +61,7 @@
 
 !Output variables
  integer, intent(out) :: it
- real(dp), intent(out) :: etot
+ real(dp), intent(out) :: etot,eterm(4),res
  real(dp), intent(out) :: rho(mmax),rhoc(mmax),vi(mmax)
 
 !Local variables
@@ -70,16 +74,19 @@
  logical :: convg
 
  real(dp), allocatable :: uu(:,:),up(:,:)
- real(dp), allocatable :: vo(:),vi1(:),vo1(:),vxc(:)
+ real(dp), allocatable :: vsi(:),vso(:),vsi1(:),vso1(:),vxc(:)
 
 ! blend parameter for Anderson iterative potential mixing
  real(dp), parameter ::  bl=0.5d0
+! convergence threshold for the residual of the screening potential (Ha)
+ real(dp), parameter ::  tolres=1.0d-8
 
  allocate(uu(mmax,2),up(mmax,2))
- allocate(vo(mmax),vi1(mmax),vo1(mmax),vxc(mmax))
+ allocate(vsi(mmax),vso(mmax),vsi1(mmax),vso1(mmax),vxc(mmax))
 
 ! why all this is necessary is unclear, but it seems to be
- uu(:,:)=0.d0; up(:,:)=0.d0; vo(:)=0.d0; vi1(:)=0.d0; vo1(:)=0.d0; vxc(:)=0.d0
+ uu(:,:)=0.d0; up(:,:)=0.d0; vso(:)=0.d0; vsi1(:)=0.d0; vso1(:)=0.d0
+ vxc(:)=0.d0
  dr=0.d0; eeel=0.d0; eexc=0.d0; et=0.d0; rl=0.d0; rl1=0.d0
  sd=0.d0; sf=0.d0; sn=0.d0; eeig=0.d0; thl=0.d0; vn=0.d0; zion=0.d0
  nin=0; mch=0
@@ -89,6 +96,12 @@
 
  do ii=1,mmax
    vi(ii)=tfapot(rr(ii),zz)
+ end do
+
+! the screening (Hartree plus exchange-correlation) potential is mixed,
+! and the nuclear potential added to it for the radial equation
+ do ii=1,mmax
+   vsi(ii)=vi(ii) + zz/rr(ii)
  end do
 
 ! starting approximation for energies
@@ -168,9 +181,18 @@
    end if
 
 
-! output potential
-   call vout(0,rho,rhoc,vo,vxc,sf-zz,eeel,eexc, &
+! output screening potential, and the energies of the orbitals of the
+! input one
+   call vout(0,rho,rhoc,vso,vxc,sf,eeel,eexc, &
 &            rr,mmax,iexc)
+   call ae_energies(rho,vsi,vxc,zz,eeig,eeel,eexc,rr,mmax,etot,eterm)
+
+! converged when no eigenvalue has moved and the screening potential is
+! self-consistent; the eigenvalues alone can stand still from a start far
+! from self-consistency
+   call ae_residual(rho,vsi,vso,sf,rr,mmax,res)
+   if(it<2 .or. res>tolres) convg=.false.
+   if(convg) exit
 
 ! generate next iteration using d. g. anderson''s
 ! method
@@ -179,8 +201,8 @@
      sn=0.0d0
      sd=0.0d0
      do ii=1,mmax
-       rl=vo(ii)-vi(ii)
-       rl1=vo1(ii)-vi1(ii)
+       rl=vso(ii)-vsi(ii)
+       rl1=vso1(ii)-vsi1(ii)
        dr=rl-rl1
        sn=sn + rl*dr*rr(ii)**2
        sd=sd + dr*dr*rr(ii)**2
@@ -189,14 +211,13 @@
    end if
 
    do ii=1,mmax
-     vn=(1.0d0-bl)*((1.0d0-thl)*vi(ii) + thl*vi1(ii)) &
-&     + bl*((1.0d0-thl)*vo(ii) + thl*vo1(ii))
-     vi1(ii)=vi(ii)
-     vo1(ii)=vo(ii)
-     vi(ii)=vn
+     vn=(1.0d0-bl)*((1.0d0-thl)*vsi(ii) + thl*vsi1(ii)) &
+&     + bl*((1.0d0-thl)*vso(ii) + thl*vso1(ii))
+     vsi1(ii)=vsi(ii)
+     vso1(ii)=vso(ii)
+     vsi(ii)=vn
+     vi(ii)=vn - zz/rr(ii)
    end do
-
-   if(convg) exit
 
    if(it==100 .and. .not. convg) then
      write(6,'(/a)') 'relatom: WARNING failed to converge'
@@ -208,17 +229,8 @@
    ierr=100
  end if
 
-! total energy output
-
-! output potential for e-e interactions
-
- call vout(0,rho,rhoc,vo,vxc,sf,eeel,eexc, &
-&          rr,mmax,iexc)
-
- etot =  eeig + eexc - 0.5d0*eeel
-
  deallocate(uu,up)
- deallocate(vo,vi1,vo1,vxc)
+ deallocate(vsi,vso,vsi1,vso1,vxc)
  return
 
  end subroutine relatom

@@ -23,7 +23,14 @@ irel, and the stage.  It has the following major sections:
 2) The routine sratom (relatom for the fully-relativistic code, both
    called through aeatom) will then run to perform a self-consistent scalar-
    relativistic calculation for the reference configuration of the atom,
-   as described in the input.  I strongly believe that neutral ground-state
+   as described in the input.  The screening (Hartree plus exchange-
+   correlation) potential is mixed, and the SCF is converged when no
+   eigenvalue moves and the root mean square change of the screening
+   potential over the electrons (ae_residual, as in RadialAtomicSolvers.jl)
+   is below 1e-8 Ha.  The total energy and its kinetic, electron-nucleus,
+   Hartree and exchange-correlation terms (ae_energies, as NIST defines them,
+   the kinetic energy from the eigenvalue sum) are printed with the
+   reference-configuration results.  I strongly believe that neutral ground-state
    reference configurations provide the best pseudopotentials for solids,
    and oncvpsp incorporates a number of features to facilitate their use.
    After some bookkeeping, the main program echoes the input data in a format

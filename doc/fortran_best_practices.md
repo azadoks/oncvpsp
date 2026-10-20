@@ -410,7 +410,10 @@ only for values that were assigned exactly, such as an input sentinel.
   `ea(ii)/=et`. The comment at `sratom.f90:132` says this relies on
   `lschfb` returning a bit-identical eigenvalue once its own `eps` is met. It
   works, but it is fragile under `-ffast-math` or a change to the solver. Use
-  `abs(ea(ii)-et) > tol`.
+  `abs(ea(ii)-et) > tol`. (`sratom` and `relatom` now also require at least
+  two iterations and a screening-potential residual below 1e-8 Ha: the
+  eigenvalues alone stood still at iteration 1 for H on a mesh starting at
+  1e-8 bohr, 0.29 Ha from self-consistency. `psatom` is unchanged.)
 - **Computed values.** These are the ones most worth rewriting:
   - `oncvpsp.F90:585`, `oncvpsp_r.F90:715`: `rho(ii)==0.0d0` finds the
     density tail.

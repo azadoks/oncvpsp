@@ -92,7 +92,7 @@
  integer :: ikap,kap,mkap
  integer :: nat(30),lat(30)
  integer ::  indxr(30),indxe(30)
- real(dp) :: et,eaetst
+ real(dp) :: et,eaetst,eterm(4),res
  real(dp) :: eat(30,nkap,3),fat(30,3),rpk(30,nkap)
 
  real(dp),allocatable :: rho(:),rhoc(:),vfull(:)
@@ -165,7 +165,7 @@
 !all-electron atom solution for maximally-ionized state
 
  call aeatom(irel,nkap,nat,lat,eat(1,1,2),fat(1,2),rpk,nc,nc+nvt,it, &
-&            rhoc,rho,rr,vfull,zz,mmax,iexc,eaetst,ierr)
+&            rhoc,rho,rr,vfull,zz,mmax,iexc,eaetst,eterm,res,ierr)
  if(ierr/=0) then
    call store_results
    istcnf(jj)=1
@@ -219,7 +219,7 @@
 !all-electron atom solution for excited state
 
  call aeatom(irel,nkap,nat,lat,eat(1,1,3),fat(1,3),rpk,nc,nc+nvt,it, &
-&            rhoc,rho,rr,vfull,zz,mmax,iexc,eaetst,ierr)
+&            rhoc,rho,rr,vfull,zz,mmax,iexc,eaetst,eterm,res,ierr)
  if(ierr/=0) then
    call store_results
    istcnf(jj)=1

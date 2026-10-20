@@ -84,7 +84,8 @@
  real(dp) :: fcgrid(3),rcgrid(3)
  real(dp) :: rr1,rcion,rciont,rcmax,rct,rlmax,rpkt
  real(dp) :: amesh_in,rr1_in,rmax_in,rmax,log_mesh(3)
- real(dp) :: sf,zz,zion,zval,etot
+ real(dp) :: sf,zz,zion,zval,etot,res
+ real(dp) :: eterm(4)
  real(dp) :: fj,cnorm
 !
  real(dp) :: cl(6),debl(6),ea(30,2),ep(6,2),fa(30),facnf(30,5)
@@ -434,7 +435,8 @@
  if(istage==2) then
    call read_ae_file(ae_filename,irel,nkap,atsym,zz,nc,nv,iexc,na,la,fa, &
 &                    mmax,rr,ncnf,nvcnf,nacnf,lacnf,facnf, &
-&                    it,etot,ea,rhoc,rho,vfull,istcnf,ierrcnf,itcnf, &
+&                    it,etot,eterm,res,ea,rhoc,rho,vfull, &
+&                    istcnf,ierrcnf,itcnf, &
 &                    kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
 !aeatom prints the libxc functional description on its first exc_libxc call
    if(iexc<0) then
@@ -445,7 +447,7 @@
    end if
  else
    call aeatom(irel,nkap,na,la,ea,fa,rpk,nc,nc+nv,it,rhoc,rho, &
-&              rr,vfull,zz,mmax,iexc,etot,ierr)
+&              rr,vfull,zz,mmax,iexc,etot,eterm,res,ierr)
  end if
 !
 !
@@ -538,6 +540,13 @@
    error stop 1
  end if
  write(6,'(a,1p,d18.8)') '  all-electron total energy (Ha)',etot
+ write(6,'(a,1p,e10.2)') '  residual of the screening potential (Ha)',res
+ write(6,'(a)') '  energy terms (Ha)'
+ write(6,'(a,f22.10)') '    total               ',etot
+ write(6,'(a,f22.10)') '    kinetic             ',eterm(1)
+ write(6,'(a,f22.10)') '    electron-nucleus    ',eterm(2)
+ write(6,'(a,f22.10)') '    Hartree             ',eterm(3)
+ write(6,'(a,f22.10)') '    exchange-correlation',eterm(4)
 
  if(istage==1) then
 !all-electron halves of the test configurations; their pseudo-atom halves
@@ -549,7 +558,7 @@
    end do
 
    call write_ae_file(ae_filename,irel,nkap,atsym,zz,nc,nv,iexc,na,la,fa, &
-&                     mmax,rr,it,etot,ea,rhoc,rho,vfull, &
+&                     mmax,rr,it,etot,eterm,res,ea,rhoc,rho,vfull, &
 &                     ncnf,nvcnf,nacnf,lacnf,facnf,istcnf,ierrcnf,itcnf, &
 &                     kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
 

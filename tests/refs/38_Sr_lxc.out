@@ -86,6 +86,13 @@ LXC     [1] J. P. Perdew, K. Burke, and M. Ernzerhof, Phys. Rev. Lett. 77, 3865 
 Reference configufation results
   iterations    20
   all-electron total energy (Ha)   -3.17949285D+03
+  residual of the screening potential (Ha)  1.21E-10
+  energy terms (Ha)
+    total                     -3179.4928517769
+    kinetic                    3260.5293309803
+    electron-nucleus          -7657.1749218064
+    Hartree                    1322.0726477426
+    exchange-correlation       -104.9199086935
 
 Begin loop to  construct optimized pseudo wave functions
 and semi-local pseudopoentials for all angular momenta

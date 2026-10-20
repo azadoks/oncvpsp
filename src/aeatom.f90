@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
  subroutine aeatom(irel,nkap,na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&                  rr,vi,zz,mmax,iexc,etot,ierr)
+&                  rr,vi,zz,mmax,iexc,etot,eterm,res,ierr)
 
 !! self-consistent all-electron atom: non-relativistic or scalar-relativistic
 !! (sratom) or fully-relativistic (relatom)
@@ -41,6 +41,9 @@
 !! @param mmax  size of log grid
 !! @param iexc  exchange-correlation function to be used
 !! @param etot  all-electron total energy (output)
+!! @param eterm  kinetic, electron-nucleus, Hartree and exchange-correlation
+!!               energies (output)
+!! @param res  residual of the screening potential (output, ae_residual)
 !! @param ierr  error flag
 
  use constants_m, only: dp
@@ -58,15 +61,15 @@
 
 !Output variables
  integer, intent(out) :: it
- real(dp), intent(out) :: etot
+ real(dp), intent(out) :: etot,eterm(4),res
  real(dp), intent(out) :: rho(mmax),rhoc(mmax),vi(mmax)
 
  if(irel==2) then
    call relatom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&               rr,vi,zz,mmax,iexc,etot,ierr)
+&               rr,vi,zz,mmax,iexc,etot,eterm,res,ierr)
  else
    call sratom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&              rr,vi,zz,mmax,iexc,etot,ierr,irel)
+&              rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,irel)
  end if
  return
  end subroutine aeatom
