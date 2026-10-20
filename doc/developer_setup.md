@@ -66,9 +66,8 @@ The `study` preset (in `build-study/`) is the `release` build (`-O3
 -ffast-math -funroll-loops`, the flags of the upstream `make.inc`) with
 `-march=native`, kept in its own directory for the oncvpsp-opt pseudopotential
 study. It is about 35 % faster than the `default` build (29_Cu and 83_Bi,
-scalar-relativistic) and moves the nonlocal kernels by about 1e-8, but only
-runs on CPUs like the one that built it. Fast math moves the projectors
-themselves further, so some reference tests fail with it.
+scalar-relativistic) and passes the same tests, as it moves the nonlocal
+kernels by about 1e-8, but only runs on CPUs like the one that built it.
 
 `ONCVPSP_WITH_FR=OFF` leaves out the fully-relativistic executables and their
 tests.
@@ -93,12 +92,18 @@ leaves its outputs in its own directory under `build/tests`.
 
 The reference outputs are in `tests/refs`, compared with `fldiff.pl` to a
 relative or absolute 1e-5 in every number, so changes that move the numbers
-further need new references. Before updating them, check what changed:
+further need new references. The projectors and their energies are left out
+of that comparison: they are not unique (any change of basis among the
+projectors of one l, or l and j, that keeps sum_ij |beta_i> D_ij <beta_j|
+leaves the pseudopotential the same), so they are never compared directly.
+Instead `scripts/kernel_diff.py` compares the nonlocal kernels of the psp8 and
+UPF files in the outputs, which must agree to 5e-5 (in the Frobenius norm,
+relative to the kernel, and for a spin-orbit kernel to the scalar-relativistic
+kernel of its l). Before updating the references, check what changed:
 
-- `scripts/psp8_kernel_diff.py OLD.out NEW.out` compares the
-  pseudopotentials by what a calculation uses, the nonlocal kernel
-  sum_i |beta_i> e_i <beta_i| of each l and the local potential. The
-  projectors themselves can change while the kernel does not.
+- `scripts/kernel_diff.py OLD.out NEW.out` compares the pseudopotentials by
+  what a calculation uses, the nonlocal kernel of each block and the local
+  potential.
 - The `nist` tests (`scripts/nist_test.py`) compare the all-electron atom
   with the NIST atomic reference data to its stated accuracy (about 1e-6
   Ha), with the data's functionals and speed of light (iexc 6 and 7,

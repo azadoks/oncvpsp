@@ -2,7 +2,9 @@
 """Updates a reference output minimally to a new output.
 
 The reference tests compare with fldiff, which allows a relative (or absolute)
-difference of 1e-5 in every number.  Regenerating a reference from a new output
+difference of 1e-5 in every number, apart from the projectors and their
+energies, which they compare by the nonlocal kernels instead
+(scripts/kernel_diff.py).  Regenerating a reference from a new output
 would move every number that changed in its last digits; this keeps the
 reference line wherever fldiff would accept it, and takes the new line only
 where a number moves beyond the tolerance or the text differs.  Lines are
@@ -12,7 +14,7 @@ echo (citation and build lines) is the reference's.  Prints how many lines
 changed.
 
 Look at what changed before patching: for the pseudopotential itself,
-scripts/psp8_kernel_diff.py compares the nonlocal kernel and the local
+scripts/kernel_diff.py compares the nonlocal kernel and the local
 potential, which a change of the projectors alone leaves the same.
 
 usage: ref_patch.py NEW.out REF.out [-o OUT]   (OUT defaults to REF.out)
