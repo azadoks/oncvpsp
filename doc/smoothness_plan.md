@@ -535,9 +535,9 @@ later phases can see 1e-10.
 - [x] T1 written against a stub (`logmesh_m`, `sbf_overlap`), red
 - [x] T2 registered in ctest (label `smooth`): 17 of 20 red, as the
       baseline says; the three green rows guard what is already smooth
-- [ ] Test comparisons through pyoncvpsp and upf-tools instead of
-      fldiff (branch `pyoncvpsp-tests`, in progress); `smooth_scan.py`
-      then reads outputs through them too
+- [x] Test comparisons through pyoncvpsp and upf-tools instead of
+      fldiff (on oncvpsp-opt, b4368a6); `smooth_scan.py` reads outputs
+      through them too (the baseline unchanged)
 
 #### Phase 1: primitives
 

@@ -76,9 +76,10 @@ endfunction()
 # TOML input through 41 values and fits each feature of the UPF file on the log mesh (nonlocal
 # kernels, V_loc, model core) with a polynomial; the residuals must be within the plan's goals and
 # no step between neighbouring values a jump. Written before the code, so labelled smooth (failing
-# until its phase is done; ctest -LE smooth leaves them out). The harness's own check is always run.
-add_test(NAME smooth_scan_self_test COMMAND ${Python3_EXECUTABLE} "${scripts}/smooth_scan.py" --self-test)
+# until its phase is done; ctest -LE smooth leaves them out). The harness checks itself (unit).
+add_test(NAME smooth_scan_self_test COMMAND ${test_python} "${scripts}/smooth_scan.py" --self-test)
 set_tests_properties(smooth_scan_self_test PROPERTIES LABELS unit)
+oncvpsp_compares(smooth_scan_self_test)
 # goals G1 (an input that was rounded or searched) and G2 (one that never was: the noise floor)
 set(smooth_g1 "kernel=1e-10,vloc=1e-10,core=1e-12")
 set(smooth_g2 "kernel=1e-12,vloc=1e-12,core=1e-12")
@@ -89,10 +90,11 @@ function(smooth_scan_test name rel input key groups tol)
         return()
     endif ()
     add_test(NAME smooth_${name}
-        COMMAND ${Python3_EXECUTABLE} "${scripts}/smooth_scan.py" $<TARGET_FILE:oncvpsp${rel}>
+        COMMAND ${test_python} "${scripts}/smooth_scan.py" $<TARGET_FILE:oncvpsp${rel}>
             "${data}/toml/${input}.toml" "${key}" ${ARGN} --groups ${groups} --tol ${tol}
             --max-jump 3 --jobs 4 --workdir "${CMAKE_CURRENT_BINARY_DIR}/smooth_${name}")
     set_tests_properties(smooth_${name} PROPERTIES LABELS smooth PROCESSORS 4)
+    oncvpsp_compares(smooth_${name})
     if (NOT ONCVPSP_WITH_Libxc AND input IN_LIST libxc_inputs)
         set_tests_properties(smooth_${name} PROPERTIES DISABLED TRUE)
     endif ()

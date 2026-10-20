@@ -16,7 +16,8 @@ parameter to the log mesh, leaves a residual of the order of its size. With
 exceeds it or a jump ratio exceeds --max-jump.
 
 The features come from the UPF file, written on the log mesh itself
-(upf_mesh, every few points of it), so they are the generator's own values
+(upf_mesh, every few points of it) and read with upf-tools, and from the
+output read with pyoncvpsp (compare_output.py), so they are the generator's own values
 with no interpolation onto another grid in between (the psp8 file's linear
 mesh is interpolated); the UPF writer gives 17 digits. They are what a
 calculation uses, never the projectors themselves (they are not unique; see
@@ -57,7 +58,8 @@ import tempfile
 import tomllib
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from kernel_diff import find, fortran_float, upf_array, upf_blocks  # noqa: E402
+from compare_output import upf_part  # noqa: E402
+from pyoncvpsp.io import OncvpspTextParser  # noqa: E402
 
 RADIUS_KEYS = {"rc", "rcloc", "rxpsh"}
 GROUPS = ("kernel", "vloc", "core", "tests")
@@ -127,60 +129,39 @@ def dump_toml(data):
 # Features of one output
 
 
-def upf_mesh(lines):
-    """PP_R of the UPF file."""
-    return upf_array(lines, find(lines, "<PP_R "))[0]
-
-
-def upf_core(lines):
-    """PP_NLCC of the UPF file, or None when it has none."""
-    start = find(lines, "<PP_NLCC")
-    return None if start is None else upf_array(lines, start)[0]
-
-
-def test_eigenvalues(lines):
-    """Pseudo-atom eigenvalues of the test configurations, in output order."""
-    values = []
-    inside = False
-    for line in lines:
-        if line.startswith("Test configuration"):
-            inside = True
-            continue
-        if inside and "Total energies" in line:
-            inside = False
-        tokens = line.split()
-        if inside and len(tokens) == 6 and tokens[0].isdigit():
-            values.append(fortran_float(tokens[4]))
-    return values
-
-
-def features(text, samples):
-    """{name: value} of one output, the names of the form group:label."""
-    lines = text.splitlines()
+def features(path, samples):
+    """{name: value} of the output at path, the names of the form group:label."""
+    parser = OncvpspTextParser(path=path, check=False)
+    upf, blocks = upf_part(parser.upf_string)
     out = {}
-    for name, matrix, betas, _, _ in upf_blocks(lines):
-        if betas is None:
-            continue
-        if matrix is None:
-            for k in samples:
-                out[f"vloc:r{k}"] = betas[0][k]
-            continue
-        nproj = len(betas)
+    for (_, ll, jj), block in blocks.items():
+        name = f"l{ll}" if jj is None else f"l{ll}j{jj:g}"
+        beta = block.beta[:, samples]
+        kern = beta.T @ block.dij @ beta
         for a, ka in enumerate(samples):
-            for kb in samples[a:]:
-                kern = sum(
-                    betas[i][ka] * matrix[i][j] * betas[j][kb]
-                    for i in range(nproj)
-                    for j in range(nproj)
-                )
-                out[f"kernel:{name}:r{ka},r{kb}"] = kern
-    core = upf_core(lines)
+            for b in range(a, len(samples)):
+                out[f"kernel:{name}:r{ka},r{samples[b]}"] = float(kern[a, b])
+    for k in samples:
+        out[f"vloc:r{k}"] = float(upf["local"][k])
+    core = upf.get("nlcc")
     if core is not None:
         for k in samples:
-            out[f"core:r{k}"] = core[k]
-    for i, eps in enumerate(test_eigenvalues(lines)):
+            out[f"core:r{k}"] = float(core[k])
+    eigs = (
+        state["eig_ps"]
+        for config in parser.output["test_configurations"]
+        for state in config
+        if state["eig_ps"] is not None
+    )
+    for i, eps in enumerate(eigs):
         out[f"tests:eps{i}"] = eps
     return out
+
+
+def upf_mesh(path):
+    """The radii of the UPF file of one output."""
+    parser = OncvpspTextParser(path=path, check=False)
+    return [float(r) for r in upf_part(parser.upf_string)[0]["mesh"]["r"]]
 
 
 # Least-squares polynomial fit (Legendre basis, modified Gram-Schmidt)
@@ -267,7 +248,7 @@ def run_one(exe, data, key, value, workdir, index):
         raise RuntimeError(
             f"{os.path.basename(exe)} failed for {key}={value!r} in {path}:\n{tail}"
         )
-    return result.stdout
+    return path / "out"
 
 
 def scan(args):
@@ -283,14 +264,14 @@ def scan(args):
 
     workdir = args.workdir or tempfile.mkdtemp(prefix="smooth_scan_")
     with concurrent.futures.ThreadPoolExecutor(args.jobs) as pool:
-        texts = list(
+        outputs = list(
             pool.map(
                 lambda kv: run_one(args.exe, data, args.key, kv[1], workdir, kv[0]),
                 enumerate(values),
             )
         )
 
-    mesh = upf_mesh(texts[0].splitlines())
+    mesh = upf_mesh(outputs[0])
     samples = sorted(
         {
             min(range(len(mesh)), key=lambda k: abs(mesh[k] - r))
@@ -306,8 +287,12 @@ def scan(args):
 
     groups = set(args.groups.split(","))
     runs = [
-        {n: v for n, v in features(t, samples).items() if n.split(":", 1)[0] in groups}
-        for t in texts
+        {
+            n: v
+            for n, v in features(out, samples).items()
+            if n.split(":", 1)[0] in groups
+        }
+        for out in outputs
     ]
     worst = analyse(ts, runs, args.degree)
 
