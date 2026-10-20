@@ -43,16 +43,25 @@ names), and whatever --ignore names; without --identical, nor the numbers of
 steps of the solvers (REFERENCE_IGNORE).  The PSML file is left out unless
 --psml is given: its values near r = 0 depend on the compiler flags.
 
+--identical is for outputs that must be the same (the same input read in two
+ways, or run in two ways): the base test and the kernels to 1e-10 (with
+-ffast-math a sum can round differently between two runs), the PSML files
+too, and, unless --no-lines is given, the lines: the outputs must have the
+same lines, apart from the build line and the lines naming a date, with the
+same text and numbers that pass the base test, which covers what pyoncvpsp
+does not parse.
+
 Prints, for each group of quantities, the largest differences found, and each
 quantity beyond its tolerance; the exit status is 1 if any quantity differs
-beyond its tolerance or is in only one output.
+beyond its tolerance or is in only one output, 2 if they cannot be compared.
 
-usage: compare_output.py A.out B.out [--identical] [--psml] [--ignore PATH]...
-                         [--kernel-tol TOL]
+usage: compare_output.py A.out B.out [--identical [--no-lines]] [--psml]
+                         [--ignore PATH]... [--kernel-tol TOL]
 
 PATH is a quantity as printed, with or without its indices, e.g.
 input.log_mesh, upf, plot_data.wavefunctions[].wfn_ps, or a pattern of them
-(fnmatch).
+(fnmatch); leaving out a quantity leaves out what is in it too (--ignore upf,
+the UPF file and its kernels).
 """
 
 import argparse
@@ -60,6 +69,7 @@ import fnmatch
 import math
 import re
 import sys
+import traceback
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -122,8 +132,9 @@ class Report:
     def ignored(self, path):
         generic = re.sub(r"\[\d+\]", "[]", path)
         return any(
-            fnmatch.fnmatchcase(p, pattern)
+            fnmatch.fnmatchcase(p, pattern + suffix)
             for pattern in self.ignore
+            for suffix in ("", ".*", "[[]*")
             for p in (path, generic)
         )
 
@@ -203,8 +214,8 @@ def compare_text(report, path, a, b):
     if NUMBER.sub("#", a).split() != NUMBER.sub("#", b).split():
         report.fail(path, f"text differs:\n    {a[:200]!r}\n    {b[:200]!r}")
         return
-    na = [float(x.replace("D", "E").replace("d", "e")) for x in NUMBER.findall(a)]
-    nb = [float(x.replace("D", "E").replace("d", "e")) for x in NUMBER.findall(b)]
+    na = [fortran_float(x) for x in NUMBER.findall(a)]
+    nb = [fortran_float(x) for x in NUMBER.findall(b)]
     compare_numbers(report, path, na, nb)
 
 
@@ -252,6 +263,52 @@ def compare(report, path, a, b):
         compare_text(report, path, a, b)
     elif a != b:
         report.fail(path, f"{a!r} and {b!r}")
+
+
+def compare_lines(report, path_a, path_b, limit=10):
+    """With --identical: the outputs have the same lines, apart from the build
+    line and the lines naming a date, with the same text and numbers that pass
+    the base test.  This covers what pyoncvpsp does not parse."""
+
+    def lines(path):
+        with open(path, encoding="latin-1") as f:
+            return [
+                (k + 1, line.rstrip("\n"))
+                for k, line in enumerate(f)
+                if not line.startswith("build: ") and "date" not in line
+            ]
+
+    lines_a, lines_b = lines(path_a), lines(path_b)
+    if len(lines_a) != len(lines_b):
+        report.fail("lines", f"{len(lines_a)} and {len(lines_b)} lines")
+    failed = 0
+    for (ka, a), (kb, b) in zip(lines_a, lines_b):
+        if a == b:
+            continue
+        where = f"line {ka} of A, {kb} of B"
+        if NUMBER.sub("#", a).split() != NUMBER.sub("#", b).split():
+            report.fail(where, f"text differs:\n    {a!r}\n    {b!r}")
+            failed += 1
+        else:
+            na = np.array([fortran_float(x) for x in NUMBER.findall(a)])
+            nb = np.array([fortran_float(x) for x in NUMBER.findall(b)])
+            diff = np.abs(na - nb)
+            sizes = np.abs(na) + np.abs(nb)
+            rel = np.where(diff > 0, diff / np.where(sizes > 0, sizes, 1.0), 0.0)
+            report.record("(lines)", float(diff.max()), float(rel.max()), 1)
+            if ((diff > report.base) & (diff > report.base * sizes)).any():
+                report.fail(
+                    where,
+                    f"numbers differ beyond {report.base:.3g}:\n    {a!r}\n    {b!r}",
+                )
+                failed += 1
+        if failed >= limit:
+            report.fail("lines", f"stopped after {limit} differing lines")
+            break
+
+
+def fortran_float(text):
+    return float(text.replace("D", "E").replace("d", "e"))
 
 
 # --- the pseudopotential files, with the projectors replaced by kernels ------
@@ -444,10 +501,16 @@ def main():
     parser.add_argument(
         "--identical",
         action="store_true",
-        help="outputs of the same run: base test 1e-10, kernels 1e-10",
+        help="outputs that must be the same: base test 1e-10, kernels 1e-10, the"
+        " PSML files and the lines too",
     )
     parser.add_argument(
         "--psml", action="store_true", help="compare the PSML files too"
+    )
+    parser.add_argument(
+        "--no-lines",
+        action="store_true",
+        help="with --identical, compare the parsed quantities only, not the lines",
     )
     parser.add_argument(
         "--ignore", action="append", default=[], metavar="PATH", help="leave out PATH"
@@ -459,10 +522,13 @@ def main():
     kernel_tol = args.kernel_tol or (1e-10 if args.identical else 5e-5)
     ignore = args.ignore + ([] if args.identical else REFERENCE_IGNORE)
     report = Report(base, ignore)
-    tree_a, blocks_a = load(args.a, args.psml)
-    tree_b, blocks_b = load(args.b, args.psml)
+    with_psml = args.psml or args.identical
+    tree_a, blocks_a = load(args.a, with_psml)
+    tree_b, blocks_b = load(args.b, with_psml)
     compare(report, "", tree_a, tree_b)
     kernel_lines = compare_kernels(report, blocks_a, blocks_b, kernel_tol)
+    if args.identical and not args.no_lines:
+        compare_lines(report, args.a, args.b)
 
     print(f"A: {args.a}\nB: {args.b}")
     print(
@@ -482,7 +548,7 @@ def main():
     print("\nNonlocal kernels, relative difference:")
     print("\n".join(kernel_lines) if kernel_lines else "  no psp8, UPF or PSML file")
     if report.failures:
-        print(f"\n{len(report.failures)} quantities differ beyond their tolerance:")
+        print(f"\n{len(report.failures)} differences beyond the tolerances:")
         for failure in report.failures:
             print(f"  {failure}")
         sys.exit(1)
@@ -490,4 +556,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:  # a failure to compare, not a difference: exit status 2
+        traceback.print_exc()
+        sys.exit(2)
