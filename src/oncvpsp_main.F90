@@ -458,12 +458,7 @@
 !
 !
 
-! Drop digits beyond 5 decimals for input rcs before making any use of them
- do l1=1,max(lmax+1,lloc+1)
-   jj=int(rc(l1)*10.0d5)
-   rc(l1)=jj/10.0d5
- end do
-
+! the core radii are used as given (doc/smoothness_plan.md, R-1)
  rcmax=0.0d0
  do l1=1,lmax+1
    rcmax=max(rcmax,rc(l1))
@@ -571,19 +566,20 @@
    stop
  end if
 
-!find log mesh point nearest input rc
+!the last log mesh point at or inside each rc, for the bookkeeping of the
+!routines that index the mesh (R-2); the radii themselves stay as given
  rcmax=0.0d0
  irc(:)=0
  do l1=1,max(lmax+1,lloc+1)
-   rct=rc(l1)
    irc(l1)=0
-   do ii=2,mmax
-     if(rr(ii)>rct) then
-       irc(l1)=ii
-       rc(l1)=rr(ii)
-       exit
-     end if
+   do ii=1,mmax
+     if(rr(ii)<=rc(l1)) irc(l1)=ii
    end do
+   if(rc(l1)>0.0d0 .and. irc(l1)<2) then
+     write(6,'(a,i2,a,es12.4)') &
+&         'oncvpsp: ERROR rc inside the mesh start for l=',l1-1,': rc=',rc(l1)
+     error stop 1
+   end if
    rcmax=max(rcmax,rc(l1))
  end do
 
@@ -751,14 +747,15 @@
 !get all-electron overlap matrix
      do jj=1,nproj(l1)
        do ii=1,jj
-         call fpovlp(uua(1,ii,ikap),uua(1,jj,ikap),mmax,rr(irc(l1)),ll,kap, &
+         call fpovlp(uua(1,ii,ikap),uua(1,jj,ikap),mmax,rc(l1),ll,kap, &
 &                    zz,qq(ii,jj),rr,irel)
          qq(jj,ii)=qq(ii,jj)
        end do
      end do
      call run_optimize(epa(1,l1,ikap),ll,kap,irel,mmax,mxprj,rr, &
 &                      uua(1,1,ikap),upa(1,1,ikap),qq, &
-&                      irc(l1),qcut(l1),qmsbf(l1),ncon(l1),nbas(l1),nproj(l1), &
+&                      rc(l1),irc(l1),qcut(l1),qmsbf(l1),ncon(l1),nbas(l1), &
+&                      nproj(l1), &
 &                      pswf(1,1,l1,ikap),vp(1,l1,ikap),vkb(1,1,l1,ikap), &
 &                      vfull,cvgplt(1,1,1,l1,ikap),ncurve,ecurve(1,1,1,l1,ikap))
 
@@ -769,7 +766,7 @@
 
  write(6,'(/a,a)') 'Construct Vanderbilt / Kleinmman-Bylander projectors'
 
- call run_vkb(lmax,lloc,lpopt,dvloc0,irc,nproj,rr,mmax,mxprj,pswf,vfull,vp, &
+ call run_vkb(lmax,lloc,lpopt,dvloc0,rc,irc,nproj,rr,mmax,mxprj,pswf,vfull,vp, &
 &             evkb,vkb,nlim,vr,irel,nkap)
 
 !restore this to its proper value

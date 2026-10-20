@@ -369,9 +369,9 @@ numbers refer to [Phases](#phases).
 
 | id | where | cat | W | decision |
 |---|---|---|---|---|
-| R-1 | `oncvpsp_main` 462–465: rc truncated to 6 decimals | b | W | remove |
-| R-2 | `oncvpsp_main` 575–588: rc → first mesh point beyond | a | W | remove; `irc` becomes only the last mesh point ≤ rc, for bookkeeping |
-| R-3 | `rcmax` = max of snapped rc | a | W | max of continuous rc |
+| R-1 | `oncvpsp_main` 462–465: rc truncated to 6 decimals | b | W | done in phase 3: removed |
+| R-2 | `oncvpsp_main` 575–588: rc → first mesh point beyond | a | W | done in phase 3: removed; `irc` is the last mesh point ≤ rc, for the routines that index the mesh (`pspot`'s pieces by side of rc, `wellstate`, `vrel`, `run_vkb`'s cut, the diagnostics); `run_optimize`, `fpovlp` and `run_vkb`'s windows take rc |
+| R-3 | `rcmax` = max of snapped rc | a | W | done in phase 3: max of the given rc |
 | R-4 | `wf_rc_der`: 7-point stencils applied 4 times at `irc` | a, e | W | ODE-recursion derivatives at rc |
 | R-5 | `fpovlp`, `sbf_basis_con`: overlaps to `irc` with the (23,28,9)/24 end rule | c | W | `lm_integral` for all-electron overlaps; `sbf_overlap` (Lommel) for Bessel ones |
 | R-6 | `pspot`: inside/outside by mesh index; V_l joins V_AE at irc+1 | a, d | W | pieces with extensions; values by side of rc |
@@ -635,7 +635,16 @@ later phases can see 1e-10.
       | 52_Te_r | so l=1 | 9.0e-4 | 3.9e-4 | 2.5e-4 |
       | 52_Te_r | so l=2 | 1.2e-4 | 3.3e-5 | 6.9e-6 |
       | 52_Te_r | so l=3 | 1.8e-5 | 1.1e-5 | 5.2e-6 |
-- [ ] R-1, R-2: rc continuous; `irc` the last point ≤ rc
+- [x] R-1, R-2, R-3: rc as given; `irc` the last point ≤ rc. On the T3
+      inputs (rc at the old rounding) the kernels move by ≤1e-9 against
+      170bc99, so the method is unchanged; on the references rc moves by
+      up to one mesh step (0.6 %), and with it the kernels (table in the
+      commit). The `rc[0]` scan goes from a staircase (1e-2, jumps) to
+      8.9e-6 with jumps of 2; `vloc` 2e-10; `rcloc` stays a staircase
+      (`vploc`, R-7). What remains indexes the mesh: `vpinteg` to `irc`
+      (R-9), `run_vkb`'s cut and the window term (R-8), `pspot`'s pieces
+      (R-6), `vploc` (R-7), `vrel` (R-11), `wellstate` (R-12), the model
+      core (phase 5)
 - [x] R-4 matching data at rc from the ODE (`ode_rc_der` in
       `run_optimize`, in vfull, which every well potential equals out to
       rr(irc+5)). Against the stencils: 1e-9 to 1e-7 relative on bound

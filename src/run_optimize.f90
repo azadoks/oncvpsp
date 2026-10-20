@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
  subroutine run_optimize(eig,ll,kap,irel,mmax,mxprj,rr,uua,upa,qq,&
-&                      irc,qcut,qmsbf,ncon_in,nbas_in,npr, &
+&                      rc,irc,qcut,qmsbf,ncon_in,nbas_in,npr, &
 &                      psopt,vpsp,vkb,vae,cvgplt,ncurve,ecurve)
 
 !! calls routines to generate optimized pseudo wave function and semi-local
@@ -34,7 +34,8 @@
 !! @param uua  all-electron wave functions (*rr) for the projectors
 !! @param upa  their derivatives in the mesh index, as the solvers return them
 !! @param qq  matrix of norms and overlaps of the uua inside rc
-!! @param irc  index of core radius
+!! @param rc  core radius (bohr)
+!! @param irc  last mesh point at or inside rc
 !! @param qcut  q cutoff defining residual energy
 !! @param qmsbf  maximum q in sbfs for this ll
 !! @param ncon_in  number of constraints for matching psuedo and AE wave
@@ -63,7 +64,7 @@
  real(dp), intent(in) :: rr(mmax)
  real(dp), intent(in) :: uua(mmax,mxprj),upa(mmax,mxprj),vae(mmax)
  real(dp), intent(in) :: qq(mxprj,mxprj)
- real(dp), intent(in) :: eig(mxprj),qcut
+ real(dp), intent(in) :: eig(mxprj),qcut,rc
 
 !Input/output variables
  integer, intent(inout) :: irc
@@ -78,7 +79,7 @@
 !Local variables
  real(dp), parameter :: Ha_eV=27.21138386d0 ! 1 Hartree, in eV
  real(dp) :: uord(5)
- real(dp) :: al,rc,ulgd,tt
+ real(dp) :: al,ulgd,tt
  real(dp) :: sn,ps0norm,amesh,ro
  real(dp) :: err,qerr,ehaerr,eeverr,dq
  real(dp) :: sbf(mmax)
@@ -105,7 +106,6 @@
 
 
  al = 0.01d0 * log(rr(101) / rr(1))
- rc=rr(irc)
  l1=ll+1
 
  nconmx=ncon_in+npr-1

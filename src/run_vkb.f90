@@ -16,7 +16,7 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine run_vkb(lmax,lloc,lpopt,dvloc0,irc,nproj,rr,mmax,mxprj,pswf, &
+ subroutine run_vkb(lmax,lloc,lpopt,dvloc0,rc,irc,nproj,rr,mmax,mxprj,pswf, &
 &                   vfull,vp,evkb,vkb,nlim,vr,irel,nkap)
 
 !! computes Vanderbilt / Kleinman-Bylander non-local potentials
@@ -25,7 +25,8 @@
 !! @param lloc  l for local potential (lloc==4 => use linear combination)
 !! @param lpopt  choice of polynomial for lloc==4
 !! @param dvloc0  amplitude at rr==0 to be smoothely added for lloc==4
-!! @param irc  core radii indices
+!! @param rc  core radii (bohr)
+!! @param irc  last mesh points at or inside the core radii
 !! @param nproj  number of projectors for each l
 !! @param rr  log radial grid
 !! @param mmax  size of radial grid
@@ -51,7 +52,7 @@
  integer, intent(in) :: irc(mxlin+1),nproj(mxlin+1)
  real(dp), intent(in) :: rr(mmax),pswf(mmax,mxprj,mxl+1,nkap),vfull(mmax)
  real(dp), intent(in) :: vr(mmax,mxprj,mxlin+1,nkap)
- real(dp), intent(in) :: dvloc0
+ real(dp), intent(in) :: dvloc0,rc(mxlin+1)
 
 !Input/output variables
  real(dp), intent(inout) :: vp(mmax,mxl+2,nkap)
@@ -101,7 +102,7 @@
  if(lloc<4) then
    l1=lloc+1
    do ii=1,irc(l1)
-     xx=20.0d0*((rr(ii)/rr(irc(l1)))-1.0d0)
+     xx=20.0d0*((rr(ii)/rc(l1))-1.0d0)
      if(xx>-1.0d0) then
        ff=(1.0d0-xx**2)**2
        if(nkap==1) then
@@ -137,7 +138,7 @@
 !incorporates scalar-relativistic "potential" in last 5% of [0:rc] to smoothly
 !force projectors to zero.
        do ii=1,irc(l1)
-         xx=20.0d0*((rr(ii)/rr(irc(l1)))-1.0d0)
+         xx=20.0d0*((rr(ii)/rc(l1))-1.0d0)
          if(xx>-1.0d0) then
            ff=(1.0d0-xx**2)**2
          else
