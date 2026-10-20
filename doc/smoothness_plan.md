@@ -628,7 +628,16 @@ later phases can see 1e-10.
       | 52_Te_r | so l=2 | 1.2e-4 | 3.3e-5 | 6.9e-6 |
       | 52_Te_r | so l=3 | 1.8e-5 | 1.1e-5 | 5.2e-6 |
 - [ ] R-1, R-2: rc continuous; `irc` the last point ≤ rc
-- [ ] R-4 matching data at rc from the ODE; R-5 overlaps; R-6 pieces
+- [x] R-4 matching data at rc from the ODE (`ode_rc_der` in
+      `run_optimize`, in vfull, which every well potential equals out to
+      rr(irc+5)). Against the stencils: 1e-9 to 1e-7 relative on bound
+      states, up to 1e-4 on the 4th derivative of well states (the well's
+      C² onset inside the stencils, R-12). Kernels move by at most 5.7e-6
+      (74_W_r); the consistency test's "vpsp" at rc for 74_W_r's third
+      projectors moves 1e-4, the stencils' error in (u/r)″ (2.4e-6) over a
+      small u/r at rc (-0.013). G2: `debl[0]` 5e-10 → 4.9e-11, `ep[2]`
+      8e-10 → 5.0e-10; the rest is S-8 (see there)
+- [ ] R-5 overlaps; R-6 pieces
 - [ ] Q-1…Q-4 residual kinetic energy at exact qcut, fixed quadratures
 - [ ] R-7 vploc at continuous rc(5); R-8…R-10 run_vkb, vpinteg,
       vkboutwf on a shared piecewise rule; R-11 vrel; S-1

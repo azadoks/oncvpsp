@@ -756,7 +756,8 @@
          qq(jj,ii)=qq(ii,jj)
        end do
      end do
-     call run_optimize(epa(1,l1,ikap),ll,mmax,mxprj,rr,uua(1,1,ikap),qq, &
+     call run_optimize(epa(1,l1,ikap),ll,kap,irel,mmax,mxprj,rr, &
+&                      uua(1,1,ikap),upa(1,1,ikap),qq, &
 &                      irc(l1),qcut(l1),qmsbf(l1),ncon(l1),nbas(l1),nproj(l1), &
 &                      pswf(1,1,l1,ikap),vp(1,l1,ikap),vkb(1,1,l1,ikap), &
 &                      vfull,cvgplt(1,1,1,l1,ikap),ncurve,ecurve(1,1,1,l1,ikap))

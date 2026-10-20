@@ -16,7 +16,7 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine run_optimize(eig,ll,mmax,mxprj,rr,uua,qq,&
+ subroutine run_optimize(eig,ll,kap,irel,mmax,mxprj,rr,uua,upa,qq,&
 &                      irc,qcut,qmsbf,ncon_in,nbas_in,npr, &
 &                      psopt,vpsp,vkb,vae,cvgplt,ncurve,ecurve)
 
@@ -26,10 +26,13 @@
 !!
 !! @param eig  energy at which pseudo wave function is computed
 !! @param ll  angular momentum
+!! @param kap  =l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param mmax  dimension of log grid
 !! @param mxprj  dimension of number of projectors
 !! @param rr  log radial grid
 !! @param uua  all-electron wave functions (*rr) for the projectors
+!! @param upa  their derivatives in the mesh index, as the solvers return them
 !! @param qq  matrix of norms and overlaps of the uua inside rc
 !! @param irc  index of core radius
 !! @param qcut  q cutoff defining residual energy
@@ -42,7 +45,9 @@
 !! @param vpsp  corresponding pseudopotential
 !! @param vkb  Vanderbilt-Kleinman-Bylander projectors (without local v
 !!             correction)
-!! @param vae  all-electron potential
+!! @param vae  all-electron potential; the well potentials of the scattering
+!!             states equal it out to rr(irc+5), so the derivatives of the uua
+!!             at rc are those of the radial equation in vae
 !! @param cvgplt  energy error vs. cutoff energy for plotting
 !! @param ncurve  dimension of ecurve
 !! @param ecurve  cutoff energy and energy error per electron on the E_resid(q)
@@ -52,9 +57,10 @@
  implicit none
 
 !Input variables
- integer, intent(in) :: ll,mmax,mxprj,ncon_in,nbas_in,npr,ncurve
+ integer, intent(in) :: ll,kap,irel,mmax,mxprj,ncon_in,nbas_in,npr,ncurve
  real(dp), intent(in) :: rr(mmax)
- real(dp), intent(in) :: uua(mmax,mxprj),vae(mmax),qq(mxprj,mxprj)
+ real(dp), intent(in) :: uua(mmax,mxprj),upa(mmax,mxprj),vae(mmax)
+ real(dp), intent(in) :: qq(mxprj,mxprj)
  real(dp), intent(in) :: eig(mxprj),qcut
 
 !Input/output variables
@@ -69,7 +75,7 @@
 
 !Local variables
  real(dp), parameter :: Ha_eV=27.21138386d0 ! 1 Hartree, in eV
- real(dp) :: uord(6)
+ real(dp) :: uord(5)
  real(dp) :: al,rc,ulgd,tt
  real(dp) :: sn,ps0norm,amesh,ro
  real(dp) :: err,lerr,qerr,ehaerr,eeverr
@@ -114,10 +120,10 @@
  nbas=nbas_in+npr-1
  allocate(qroot(nbas))
 
-!calculate derivatives of all-electron wave function at r_c
-!for the first projector to set sbf wave vectors for all projectors
+!calculate derivatives of all-electron wave function at r_c from the radial
+!equation for the first projector to set sbf wave vectors for all projectors
 
- call wf_rc_der(rr,uua(1,1),al,rc,irc,mmax,uord)
+ call ode_rc_der(irel,ll,kap,eig(1),rr,vae,uua(1,1),upa(1,1),mmax,rc,uord)
  ulgd=uord(2)/uord(1)
 
  qmax=200.0d0  !very large value should always allow nbas q's to be found
@@ -149,10 +155,12 @@
    allocate(pswfnull_sb(nbas,nnull))
    allocate(pswfnull_or(nbas,nnull))
 
-!calculate derivatives of all-electron wave function at r_c
-!to define basis set for current projector and derivative constraints
+!calculate derivatives of all-electron wave function at r_c from the radial
+!equation to define basis set for current projector and derivative
+!constraints
 
-   call wf_rc_der(rr,uua(1,iprj),al,rc,irc,mmax,uord)
+   call ode_rc_der(irel,ll,kap,eig(iprj),rr,vae,uua(1,iprj),upa(1,iprj), &
+&                  mmax,rc,uord)
 
 !q considered infinity for E_resid calculation
    qmax=dq*int(2.0d0*qroot(nbas)/dq)
