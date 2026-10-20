@@ -195,7 +195,7 @@
            write(6,'(//a,i2,a,i2,a,a/)') 'scattering, iprj=',iprj, &
 &               ',  l=',ll,', all-electron wave function', ', pseudo w-f'
          end if
-         call scatstate(irel,nn,ll,kap,ierr,epa(iprj,l1,ikap), &
+         call scatterstate(irel,nn,ll,kap,ierr,epa(iprj,l1,ikap), &
 &                       rr,zz,vfull,ur,urp,mmax,n2)
          if(irel==2) then
            if(ierr/=0) then

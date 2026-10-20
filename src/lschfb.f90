@@ -21,12 +21,8 @@
 !! Finds bound states of an all-electron atomic potential using
 !! Pauli-type  scalar-relativistic Schroedinger equation
 !!
-!! The Koelling-Harmon equation is integrated in its first-order flux form,
-!! as in RadialAtomicSolvers.jl, for uu and qq = (uu' - uu/r)/M with the
-!! relativistic mass M = 1 + (ee - vv)/(2c**2):
-!! uu' = uu/r + M*qq,  qq' = (l(l+1)/(M*r**2) + 2*(vv - ee))*uu - qq/r.
-!! It needs no dv/dr, whose finite differences of a GGA potential near the
-!! nucleus made the scalar-relativistic SCF diverge on fine meshes
+!! The Koelling-Harmon equation is integrated in its first-order flux form
+!! (sr_flux_m)
 !!
 !! @param nn  principal quantum number
 !! @param ll  angular-momentum quantum number
@@ -44,6 +40,7 @@
 
  use constants_m, only: dp
  use relativity_m, only: c_light
+ use sr_flux_m, only: sr_gamma, sr_flux_coefs, sr_outward
  implicit none
 
 !Input variables
@@ -98,10 +95,8 @@
    fss=0.0d0
  end if
 
-! the indicial exponent of the Koelling-Harmon equation, uu ~ r**gamma
- gamma=sqrt(ll*(ll+1)+1.0d0-fss*zz**2)
-! the non-relativistic equation (fss=0): u ~ r**(l+1) at the origin
- if(irel==0) gamma=ll+1
+! the indicial exponent, uu ~ r**gamma at the origin
+ gamma=sr_gamma(ll,zz,fss)
 
  sls=ll*(ll+1)
 
@@ -279,21 +274,14 @@
 
  real(dp), intent(in) :: et
 
- eecur=et
-
 ! coefficient array for u in the second-order equation, whose sign
 ! change gives the classical turning point
  do ii=1,mmax
    cf(ii)=als*sls + 2.0d0*als*(vv(ii)-et)*r2(ii)
  end do
 
-! relativistic mass and the coefficients of the flux form,
-! d(uu)/dn = al*uu + pm*qq, d(qq)/dn = qm*uu - al*qq
- do ii=1,mmax
-   xm(ii)=1.0d0+0.5d0*fss*(et-vv(ii))
-   pm(ii)=al*rr(ii)*xm(ii)
-   qm(ii)=al*rr(ii)*(sls/(xm(ii)*r2(ii)) + 2.0d0*(vv(ii)-et))
- end do
+ call sr_flux_coefs(ll,et,fss,al,rr,vv,mmax,xm,pm,qm)
+ eecur=et
 
  return
  end subroutine coefs
@@ -306,44 +294,8 @@
  integer, intent(in) :: mlast
  integer, intent(out) :: nnode
 
-! start wavefunction with series
-
- do ii=1,4
-   call origin_series(rr(ii),uu(ii),qq(ii))
-   call derivs_at(ii)
- end do
-
-! outward integration using predictor once, corrector
-! twice
- nnode=0
-
- do ii=4,mlast-1
-   uu(ii+1)=uu(ii)+aeo(up,ii)
-   qq(ii+1)=qq(ii)+aeo(qp,ii)
-   do it=1,2
-     call derivs_at(ii+1)
-     uu(ii+1)=uu(ii)+aio(up,ii)
-     qq(ii+1)=qq(ii)+aio(qp,ii)
-   end do
-   call derivs_at(ii+1)
-   if(uu(ii+1)*uu(ii) <= 0.0d0) nnode=nnode+1
- end do
-
-! the first points again, inward from the outward solution: the series of
-! the start is that of a model potential, and the kink where it meets the
-! integration is amplified by the derivatives of a GGA density
- if(mlast>=16) then
-   do ii=12,2,-1
-     uu(ii-1)=uu(ii)+aei(up,ii)
-     qq(ii-1)=qq(ii)+aei(qp,ii)
-     do it=1,2
-       call derivs_at(ii-1)
-       uu(ii-1)=uu(ii)+aii(up,ii)
-       qq(ii-1)=qq(ii)+aii(qp,ii)
-     end do
-     call derivs_at(ii-1)
-   end do
- end if
+ call sr_outward(ll,eecur,zz,fss,al,rr,vv,pm,qm,mmax,mlast, &
+&                uu,up,qq,qp,nnode)
 
  return
  end subroutine outward
@@ -422,72 +374,6 @@
 
  return
  end subroutine boxstate
-
- subroutine origin_series(rx,px,qx)
-
-!! uu (px) and qq (qx) at rx from their series at the origin for the
-!! potential -zz/r + d, d the screening at rr(1), at the energy of the last
-!! coefs. With M = (a + b*r)/r and w = d - ee, the flux form is
-!! r*P' = P + (a + b*r)*q and
-!! (a + b*r)*r*q' = (l(l+1) + (a + b*r)*(-2*zz + 2*w*r))*P - (a + b*r)*q.
-!! Inside zz/(2c**2) the mass is set by the nuclear potential, so r**gamma
-!! alone, or with a first-order term, is not the solution at rr(1) of the
-!! default mesh for light atoms; its error in the logarithmic derivative
-!! acts as a contact potential (1e-5 Ha for Na). The terms are summed as
-!! p_k*r**k, q_k*r**k, whose coefficients alone overflow. For l=0 the
-!! series is entire; for l>0 it converges inside r = a/b ~ zz/(2c**2), and
-!! beyond half of that the leading term is used, which for uu ~ r**(l+1)
-!! leaves no contact error
-
- real(dp), intent(in) :: rx
- real(dp), intent(out) :: px,qx
- real(dp) :: aa,bb,ww,dd,pk,qk,pk1,qk1,pk2,rk
- integer :: kk
-
- dd=vv(1)+zz/rr(1)
- ww=dd-eecur
- if(fss==0.0d0) then
-! P = sum p_k r**(l+1+k), q = P' - P/r
-   pk2=0.0d0; pk1=1.0d0
-   px=1.0d0; qx=ll
-   do kk=1,80
-     pk=(-2.0d0*zz*pk1*rx+2.0d0*ww*pk2*rx**2)/(kk*(2*ll+1+kk))
-     px=px+pk
-     qx=qx+(ll+kk)*pk
-     if(abs(pk)<1.0d-17*abs(px)) exit
-     pk2=pk1; pk1=pk
-   end do
-   px=px*rx**(ll+1)
-   qx=qx*rx**ll
-   return
- end if
- aa=0.5d0*fss*zz
- bb=1.0d0+0.5d0*fss*(eecur-dd)
- if(ll>0 .and. bb*rx>0.5d0*aa) then
-   px=rx**gamma
-   qx=(gamma-1.0d0)*rx**gamma/(aa+bb*rx)
-   return
- end if
-! P = sum p_k r**(gamma+k), q = sum q_k r**(gamma+k)
- pk2=0.0d0; pk1=1.0d0
- qk1=(gamma-1.0d0)/aa
- px=pk1; qx=qk1
- do kk=1,200
-   rk=(-bb*(gamma+kk)*qk1 + (2.0d0*ww*aa-2.0d0*zz*bb)*pk1)*rx &
-&    + 2.0d0*ww*bb*pk2*rx**2
-   pk=((gamma+kk+1)*bb*qk1*rx + rk)/(kk*(2.0d0*gamma+kk))
-   qk=((gamma+kk-1)*rk + (sls-2.0d0*zz*aa)*bb*qk1*rx) &
-&    /(aa*kk*(2.0d0*gamma+kk))
-   px=px+pk
-   qx=qx+qk
-   if(abs(pk)<1.0d-17*abs(px) .and. abs(qk)<1.0d-17*abs(qx)) exit
-   pk2=pk1; pk1=pk; qk1=qk
- end do
- px=px*rx**gamma
- qx=qx*rx**gamma
-
- return
- end subroutine origin_series
 
  subroutine derivs_at(jj)
 

@@ -23,6 +23,9 @@
 !! modified routine to be used in finding norm-conserving
 !! pseudopotential
 !!
+!! The Koelling-Harmon equation is integrated outward in its first-order
+!! flux form (sr_flux_m), as for the bound states (lschfb)
+!!
 !! @param nn  effective principal quantum number based on nodes inside mch
 !!            (output)
 !! @param ll  angular-momentum quantum number
@@ -39,6 +42,7 @@
 
  use constants_m, only: dp
  use relativity_m, only: c_light
+ use sr_flux_m, only: sr_gamma, sr_flux_coefs, sr_outward
  implicit none
 
 !Input variables
@@ -56,14 +60,14 @@
 
 !Local variables
  real(dp) :: amesh,al
- real(dp) :: als, cn
- real(dp) :: fss, tfss, gamma, ro, xx
- real(dp) :: sls, sn, uout, upout
- integer :: ii, it,node
+ real(dp) :: cn
+ real(dp) :: fss, gamma, ro
+ real(dp) :: sn
+ integer :: ii,node
 
- real(dp), allocatable :: upp(:),cf(:),dv(:),fr(:),frp(:)
+ real(dp), allocatable :: qq(:),qp(:),pm(:),qm(:),xm(:)
 
- allocate(upp(mmax),cf(mmax),dv(mmax),fr(mmax),frp(mmax))
+ allocate(qq(mmax),qp(mmax),pm(mmax),qm(mmax),xm(mmax))
 
 
  al = 0.01d0 * log(rr(101) / rr(1))
@@ -78,74 +82,18 @@
    fss=0.0d0
  end if
 
- if(ll==0) gamma=sqrt(1.0d0-fss*zz**2)
- if(ll>0) gamma=(ll*sqrt(ll**2-fss*zz**2) &
-& +(ll+1)*sqrt((ll+1)**2-fss*zz**2))/(2*ll+1)
-! the non-relativistic equation (fss=0): u ~ r**(l+1) at the origin
- if(irel==0) gamma=ll+1
-
- sls=ll*(ll+1)
+ gamma=sr_gamma(ll,zz,fss)
 
 ! null arrays to remove leftover garbage
 
  uu(:)=0.0d0
  up(:)=0.0d0
- upp(:)=0.0d0
+ qq(:)=0.0d0
+ qp(:)=0.0d0
 
- node=0
-
- als=al**2
-
-! coefficient array for u in differential eq.
- do ii=1,mmax
-   cf(ii)=als*sls + 2.0d0*als*(vv(ii)-ee)*rr(ii)**2
- end do
-
-! calculate dv/dr for darwin correction
- dv(:)=0.0d0
-
- dv(1)=(-50.d0*vv(1)+96.d0*vv(2)-72.d0*vv(3)+32.d0*vv(4) &
-&       -6.d0*vv(5))/(24.d0*al*rr(1))
- dv(2)=(-6.d0*vv(1)-20.d0*vv(2)+36.d0*vv(3)-12.d0*vv(4) &
-&       +2.d0*vv(5))/(24.d0*al*rr(2))
-
- do ii=3,mmax-2
-   dv(ii)=(2.d0*vv(ii-2)-16.d0*vv(ii-1)+16.d0*vv(ii+1) &
-&         -2.d0*vv(ii+2))/(24.d0*al*rr(ii))
- end do
-
-!  relativistic coefficient arrays for u (fr) and up (frp).
- do ii=1,mmax
-   tfss=fss
-   fr(ii)=als*(rr(ii)**2)*(-tfss*(vv(ii)-ee)**2 + 0.5d0*tfss*dv(ii)/ &
-&   (rr(ii)*(1.0d0+0.5d0*tfss*(ee-vv(ii)))))
-   frp(ii)=-al*rr(ii)*0.5d0*tfss*dv(ii)/(1.0d0+0.5d0*tfss*(ee-vv(ii)))
- end do
-
-! start wavefunction with series
-
- do ii=1,4
-   uu(ii)=rr(ii)**gamma
-   up(ii)=al*gamma*rr(ii)**gamma
-   upp(ii)=(al+frp(ii))*up(ii)+(cf(ii)+fr(ii))*uu(ii)
- end do
-
-! outward integration using predictor once, corrector
-! twice
-
- do ii=4,mch-1
-   uu(ii+1)=uu(ii)+aeo(up,ii)
-   up(ii+1)=up(ii)+aeo(upp,ii)
-   do it=1,2
-     upp(ii+1)=(al+frp(ii+1))*up(ii+1)+(cf(ii+1)+fr(ii+1))*uu(ii+1)
-     up(ii+1)=up(ii)+aio(upp,ii)
-     uu(ii+1)=uu(ii)+aio(up,ii)
-   end do
-   if(uu(ii+1)*uu(ii) <= 0.0d0) node=node+1
- end do
-
- uout=uu(mch)
- upout=up(mch)
+ call sr_flux_coefs(ll,ee,fss,al,rr,vv,mmax,xm,pm,qm)
+ call sr_outward(ll,ee,zz,fss,al,rr,vv,pm,qm,mmax,mch, &
+&                uu,up,qq,qp,node)
 
 !perform normalization sum
 
@@ -163,8 +111,6 @@
 !normalize u
 
  cn=1.0d0/sqrt(sn)
- uout=cn*uout
- upout=cn*upout
 
  do ii=1,mch
    up(ii)=cn*up(ii)
@@ -178,11 +124,7 @@
 !state with a barrier at mch
  nn=node+ll+1
 
- deallocate(upp,cf,dv,fr,frp)
+ deallocate(qq,qp,pm,qm,xm)
 
  return
- contains
-
- include 'adams.inc'
-
  end  subroutine lschfs

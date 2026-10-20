@@ -61,7 +61,7 @@ The fr path had 3 reference tests to the sr path's 28.
 - [x] Bound state (`boundstate`): one routine calling `lschfb` or
       `ldiracfb`, on `uu(mmax,2)`, `up(mmax,2)` (callers that need the
       large component normalized still call `renorm_r`)
-- [x] Scattering state (`scatstate`): the same for `lschfs` and `ldiracfs`
+- [x] Scattering state (`scatterstate`): the same for `lschfs` and `ldiracfs`
 - [x] All-electron atom (`aeatom`): the same for `sratom` and `relatom`
 
 ### Phase 3: merging the pairs

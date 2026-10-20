@@ -18,28 +18,31 @@
 !
 ! calculates all-electron wave function overlap intergrals
 
- subroutine fpovlp(gg,hh,nn,ll,zz,ss,rr,irel)
+ subroutine fpovlp(gg,hh,nn,ll,kap,zz,ss,rr,irel)
 
-!! product of all-elecctron scalar-relativistic wave functions gg*hh
-!! goes like rr**(2*gamma) as rr -> 0
+!! product of all-electron wave functions gg*hh goes like rr**(2*gamma) as
+!! rr -> 0, with the exponent of the equation that gave them: l+1, that of
+!! the Koelling-Harmon equation (sr_gamma) or, for the large components of
+!! the Dirac equation, sqrt(kap**2-(zz/c)**2), as in renorm_r
 !! integral on usual log mesh from rr=0 to rr(nn)
 !!
 !! @param gg  wave function one
 !! @param hh  wave function two
 !! @param nn  outer integration limit
 !! @param ll  angular momentum
+!! @param kap  Dirac kappa (irel=2 only)
 !! @param zz  nuclear charge
 !! @param ss  overlap output
 !! @param rr  log radial mesh
-!! @param irel  0 non-relativistic, 1 scalar-, 2 fully-relativistic (the
-!!              scalar-relativistic overlap is used for both)
+!! @param irel  0 non-relativistic, 1 scalar-, 2 fully-relativistic
 
  use constants_m, only: dp
  use relativity_m, only: c_light
+ use sr_flux_m, only: sr_gamma
  implicit none
 
 !Input variables
- integer, intent(in) :: nn,ll
+ integer, intent(in) :: nn,ll,kap
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: gg(nn),hh(nn),rr(nn)
  integer, intent(in) :: irel
@@ -60,11 +63,11 @@
    fss=0.0d0
  end if
 
- if(ll==0) gamma=sqrt(1.0d0-fss*zz**2)
- if(ll>0) gamma=(ll*sqrt(ll**2-fss*zz**2) + &
-& (ll+1)*sqrt((ll+1)**2-fss*zz**2))/(2*ll+1)
-! the non-relativistic equation (fss=0): u ~ r**(l+1) at the origin
- if(irel==0) gamma=ll+1
+ if(irel==2) then
+   gamma=sqrt(kap**2-fss*zz**2)
+ else
+   gamma=sr_gamma(ll,zz,fss)
+ end if
 
  r0=rr(1)/sqrt(amesh)
  ss=r0**(2.0d0*gamma+1.0d0)/(2.d0*gamma+1.0d0)

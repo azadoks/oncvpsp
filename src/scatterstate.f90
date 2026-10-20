@@ -16,7 +16,7 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine scatstate(irel,nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch)
+ subroutine scatterstate(irel,nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch)
 
 !! Integrates a scattering state of an all-electron atomic potential out to
 !! mch: with the non-relativistic or scalar-relativistic Schroedinger equation
@@ -59,4 +59,4 @@
    call lschfs(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,irel)
  end if
  return
- end subroutine scatstate
+ end subroutine scatterstate

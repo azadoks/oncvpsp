@@ -124,7 +124,7 @@
            error stop 1
          end if
        else
-         call scatstate(irel,nnae,ll,kap,ierr,etest, &
+         call scatterstate(irel,nnae,ll,kap,ierr,etest, &
 &                       rr,zz,vfull,ur,urp,mmax,mchf)
        end if
        cnorm=1.0d0

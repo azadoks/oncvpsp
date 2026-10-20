@@ -11,7 +11,7 @@ quantum number of the radial Dirac equations kappa (kap) =l, -(l+1) for
 j=l -/+ 1/2.
 
 The routines ldiracfb and ldiracfs are introduced for bound and scattering
-solutions of the radial Dirac equations; boundstate and scatstate call them
+solutions of the radial Dirac equations; boundstate and scatterstate call them
 or the Schroedinger solvers according to irel, and aeatom calls relatom or
 sratom.  The following routines take irel or nkap and incorporate the ikap
 loops and Dirac equations for full-potential calculations:

@@ -62,7 +62,8 @@ set(src_oncvpsp
     sbf_basis_con.f90
     sbf_rc_der.f90
     sbf8.f90
-    scatstate.f90
+    scatterstate.f90
+    sr_flux_m.f90
     sratom.f90
     tfapot.f90
     vkboutwf.f90

@@ -266,9 +266,6 @@ already in Known Issues:
   smoothing-mesh search.
 - `eresid.f90:95,101`: `mmaxlin` is set inside a search loop and then used
   as an allocation size.
-- `lschfb.f90:164`, `lschfs.f90:124`, `fpovlp.f90:67`: `gamma` is set by
-  `if(ll==0)` / `if(ll>0)`. This is a false positive, because `ll>=0`, but
-  `if/else` would make it provable.
 
 Already in Known Issues: `lschpsbar.f90:94` (`imin`), `modcore3.f90:75`
 (`ircross`), `vkbphsft.f90:158` (`dnpi`), `qroots`/`eresid` (`found_root`).

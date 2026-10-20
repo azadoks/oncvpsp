@@ -64,7 +64,7 @@
  do ii = 1,npsh
    epsh = epsh2-(ii-1)*depsh
 
-   call scatstate(irel,nn,ll,kap,ierr,epsh,rr,zz,vv,uu,up,mmax,mch)
+   call scatterstate(irel,nn,ll,kap,ierr,epsh,rr,zz,vv,uu,up,mmax,mch)
 
    phi = uu(mch,1)/rr(mch)
    phip = (up(mch,1)-al*uu(mch,1))/(al*rr(mch)**2)

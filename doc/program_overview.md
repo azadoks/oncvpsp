@@ -40,12 +40,16 @@ irel, and the stage.  It has the following major sections:
    and rr1 1e-8/Z, where it diverged for light atoms.  Inside
    r* ~ Z/(2c^2) the relativistic mass is set by the potential, and with a
    GGA that closes a loop potential -> orbital exponent -> density gradient
-   -> potential, whose modes grow with the mesh points per decade.  lschfb
-   integrates the Koelling-Harmon equation in its first-order flux form,
-   which needs no dV/dr; it starts from the series at the origin of that
+   -> potential, whose modes grow with the mesh points per decade.  lschfb,
+   and lschfs for the scattering states, integrate the Koelling-Harmon
+   equation in its first-order flux form (sr_flux_m), which needs no dV/dr;
+   they start from the series at the origin of that
    equation for -Z/r plus a constant (with the exponent
    sqrt(l(l+1)+1-(Z/c)^2)), whose logarithmic derivative at rr1 removes
-   what was a 1e-5 Ha error at the default rr1 for Na; and it converges
+   what was a 1e-5 Ha error at the default rr1 for Na.  That series converges
+   only inside r = Z/(2c^2), for every l, so points beyond a quarter of that
+   (rr1 of the default mesh for H) are reached from there by RK4 in ln r on
+   the same model equation.  lschfb converges
    each eigenvalue to 1e-12 relative (1e-10 left 4e-7 Ha in the 1s of U).
    The mixing (ae_mix) is Anderson over the last 8 iterations, with the
    residual filtered in ln r inside 10 r* (KerkerMixing).  The built-in PBE
