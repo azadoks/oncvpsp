@@ -438,7 +438,8 @@ class ModelCoreChargeConfiguration:
 
         Args:
             s: String in the format
-               "icmod [fcfact [fcfact_min fcfact_max fcfact_step [rcfact [rcfact_min rcfact_max rcfact_step]]]]]"
+               "icmod [fcfact [rcfact [fcfact_min fcfact_max fcfact_step
+               rcfact_min rcfact_max rcfact_step]]]" (the grid with icmod 4, 5)
 
         Returns:
             ModelCoreChargeConfiguration instance.
@@ -464,9 +465,9 @@ class ModelCoreChargeConfiguration:
             elif len(parts) == 9:
                 return cls(
                     icmod=icmod,
-                    fcfact_min=fort_float(parts[2]),
-                    fcfact_max=fort_float(parts[3]),
-                    fcfact_step=fort_float(parts[4]),
+                    fcfact_min=fort_float(parts[3]),
+                    fcfact_max=fort_float(parts[4]),
+                    fcfact_step=fort_float(parts[5]),
                     rcfact_min=fort_float(parts[6]),
                     rcfact_max=fort_float(parts[7]),
                     rcfact_step=fort_float(parts[8]),
