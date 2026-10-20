@@ -55,10 +55,10 @@
 !Local variables
 
  real(dp) :: de,uumax
- real(dp) :: eps,ro,sc,stht,ctht
+ real(dp) :: eps,epsnode,ro,sc,stht,ctht
  real(dp) :: sls,sn,cn,uout,upin,upout,ur,xkap,xkap2,xx
  real(dp) :: amesh,al,als
- integer :: ii,imin,it,mch,mchb,nint,node,nin
+ integer :: ii,imin,it,mch,mchb,nint,node,nin,nsmall
  logical :: maxset
 
  real(dp), allocatable :: upp(:),cf(:)
@@ -72,10 +72,17 @@
  nin=0
  mch=0
  mchb=0
-! convergence factor for solution of schroedinger eq.  if calculated
-! correction to eigenvalue is smaller in magnitude than eps times
-! the magnitude of the current guess, the current guess is not changed.
- eps=1.0d-8
+! convergence: two passes in a row whose energy correction de is smaller
+! in magnitude than eps*max(|ee|,0.2), the second at the energy with the
+! first's correction applied, so that the energy and function returned are
+! those of a pass at the corrected energy, whose own correction is far
+! below eps: the result does not depend on the start guess or the path
+! (doc/smoothness_plan.md, S-2 to S-4). A first correction already at
+! round-off (a guess from a converged SCF) needs no second pass
+ eps=1.0d-12
+ nsmall=-1
+! amplitude below which sign changes of uu are not counted as nodes
+ epsnode=1.0d-8
  ierr = 60
 
  sls=ll*(ll+1)
@@ -150,7 +157,7 @@
    end do
 
    do ii=4,mch-1
-     if(abs(uu(ii+1))>eps*uumax .or. abs(uu(ii))>eps*uumax) then
+     if(abs(uu(ii+1))>epsnode*uumax .or. abs(uu(ii))>epsnode*uumax) then
        if(uu(ii+1)*uu(ii) < 0.0d0) node=node+1
      end if
    end do
@@ -162,12 +169,12 @@
    de=0.0d0
    if(node-nn+ll+1==0) then
 
-! start inward integration at 10*classical turning
-! point with simple exponential
+! start inward integration with simple exponential where the
+! wave function has decayed to machine precision, if that is inside the
+! barrier
 
-     nin=mch+2.3d0/al
+     call inward_start(ll,ee,rr,vv,mch,mmax,nin)
      if(nin<mbar-4) then
-       if(nin+4>mmax) nin=mmax-4
        xkap=sqrt(sls/rr(nin)**2 + 2.0d0*(vv(nin)-ee))
 
        do ii=nin,nin+4
@@ -270,8 +277,12 @@
 
 
      if(abs(de)<max(abs(ee),0.2d0)*eps) then
-       ierr = 0
-       exit
+       if(nsmall==nint-1 .or. &
+&         abs(de)<=8.0d0*epsilon(1.0d0)*max(abs(ee),0.2d0)) then
+         ierr = 0
+         exit
+       end if
+       nsmall=nint
      end if
 
      if(de>0.0d0) then

@@ -78,7 +78,8 @@
 
 ! blend parameter for Anderson iterative potential mixing
  real(dp), parameter ::  bl=0.5d0
-! convergence threshold for the residual of the screening potential (Ha)
+! convergence threshold for the residual of the screening potential and
+! for the change of each eigenvalue (Ha)
  real(dp), parameter ::  tolres=1.0d-8
 
  allocate(uu(mmax,2),up(mmax,2))
@@ -160,8 +161,8 @@
          error stop 1
        end if
 
-! overall convergence criterion based on eps within lschfb
-       if(ea(ii,ikap)/= et) convg=.false.
+! each eigenvalue settled to tolres (see the convergence test below)
+       if(abs(ea(ii,ikap)-et)>tolres) convg=.false.
        ea(ii,ikap)=et
 
 ! accumulate charge and eigenvalues
@@ -193,9 +194,11 @@
 &            rr,mmax,iexc)
    call ae_energies(rho,vsi,vxc,zz,eeig,eeel,eexc,rr,mmax,etot,eterm)
 
-! converged when no eigenvalue has moved and the screening potential is
-! self-consistent; the eigenvalues alone can stand still from a start far
-! from self-consistency
+! converged when no eigenvalue has moved by more than tolres and the
+! screening potential is self-consistent; the eigenvalues alone can stand
+! still from a start far from self-consistency. ldiracfb returns the
+! energy of its last pass, never the guess unchanged, so unchanged
+! eigenvalues cannot be asked for (as in sratom)
    call ae_residual(rho,vsi,vso,sf,rr,mmax,res)
    if(it<2 .or. res>tolres) convg=.false.
    if(convg) exit

@@ -76,9 +76,9 @@
  integer :: nin,mch
  real(dp) :: amesh,al
  real(dp) :: dr,eeel,eexc,et,emin,emax,rl,rl1,sd,sn,sls,eeig
- real(dp) :: thl,vn,zval,dfa,fj
+ real(dp) :: thl,vn,zval,fj,res,wt
  real(dp) :: fa(mxstate)
- integer :: ii,jj,l1,icx,nprj
+ integer :: ii,jj,l1,itarget,nprj
  integer :: ikap,kap,ll,mkap
  logical :: convg
 
@@ -89,6 +89,11 @@
 
 ! blend parameter for Anderson iterative potential mixing
  real(dp), parameter ::  bl=0.5d0
+! convergence threshold for the residual of the screening potential and
+! for the change of each eigenvalue (Ha): near round-off, so that the
+! result does not depend on the iteration count (doc/smoothness_plan.md,
+! S-5)
+ real(dp), parameter ::  tolscf=1.0d-12
 
  ierr=0
 
@@ -121,8 +126,8 @@
    zval=zval+fa(ii)
  end do
 
-! test if new states are added
- icx=50
+! first iteration at the target occupations (none yet)
+ itarget=huge(1)
 
 ! screening potential for pseudocharge
 ! input rho is assumed to be valence rho from all-electron calculation
@@ -135,14 +140,9 @@
 ! big self  self-consietency loop
  do it=1,100
 
-! convergence is only to be considered if we are fully in  the target
-! configurtion
-
-   if(it>2) then
-     convg=.true.
-   else
-     convg=.false.
-   end if
+! convergence is only to be considered at the target occupations
+   convg=all(fa(1:nv)==fat(1:nv,2))
+   if(convg) itarget=min(itarget,it)
 
 ! solve for bound states in turn
 
@@ -200,8 +200,8 @@
          exit
        end if
 
-! overall convergence criterion based on eps within lschf*
-       if(ea(ii,ikap)/= et) convg=.false.
+! each eigenvalue settled to tolscf (see the convergence test below)
+       if(abs(ea(ii,ikap)-et)>tolscf) convg=.false.
        ea(ii,ikap)=et
 
 ! accumulate charge and eigenvalues
@@ -223,10 +223,15 @@
 ! output potential
    call vout(1,rho,rhoc,vo,vxc,zval,eeel,eexc,rr,mmax,iexc)
 
+! converged when no eigenvalue has moved by more than tolscf and the
+! screening potential is self-consistent to tolscf
+   call ae_residual(rho,vi,vo,zval,rr,mmax,res)
+   if(it<2 .or. res>tolscf) convg=.false.
+
 ! generate next iteration using d. g. anderson''s
-! method
+! method, once the previous iteration was at the target occupations too
    thl=0.0d0
-   if(it>icx+1) then
+   if(it>itarget) then
      sn=0.0d0
      sd=0.0d0
      do ii=1,mmax
@@ -258,15 +263,11 @@
      ierr=101
    end if
 
-! switch from reference to new configuration
-! new or increased occupancy added in second stage
+! switch from reference to new configuration in 50 steps, exactly the
+! new one from the 50th on (and throughout if they are the same)
+   wt=dble(min(it,50))/50.0d0
    do ii=1,nv
-     dfa=0.02d0*(fat(ii,2)-fat(ii,1))
-     if(it<=50) then
-       fa(ii)=0.02d0*(50-it)*fat(ii,1) + 0.02d0*it*fat(ii,2)
-     else
-       fa(ii)=fat(ii,2)
-     end if
+     fa(ii)=fat(ii,1) + wt*(fat(ii,2)-fat(ii,1))
    end do
 
 

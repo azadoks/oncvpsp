@@ -65,7 +65,7 @@
  real(dp) :: eps,fss,gamma,ro,sc
  real(dp) :: sls,sn,cn,uout,upin,upout,xkap
  real(dp) :: amesh,al,eecur
- integer :: ii,it,nint,node,nin
+ integer :: ii,it,nint,node,nin,nsmall
 
  real(dp), allocatable :: qq(:),qp(:),cf(:),pm(:),qm(:),xm(:),r2(:)
  allocate(qq(mmax),qp(mmax),cf(mmax),pm(mmax),qm(mmax),xm(mmax),r2(mmax))
@@ -73,12 +73,17 @@
  al = 0.01d0 * log(rr(101) / rr(1))
  amesh = exp(al)
 
-! convergence factor for solution of schroedinger eq.  if calculated
-! correction to eigenvalue is smaller in magnitude than eps times
-! the magnitude of the current guess, the current guess is not changed.
-! 1e-10 left 3.6e-7 Ha in the 1s of U, which the eigenvalue sum carries
-! into the total energy, and which depended on the SCF history
+! convergence: two passes in a row whose energy correction de is smaller
+! in magnitude than eps*max(|ee|,0.2), the second at the energy with the
+! first's correction applied, so that the energy and function returned are
+! those of a pass at the corrected energy, whose own correction is far
+! below eps: the result does not depend on the start guess or the path
+! (doc/smoothness_plan.md, S-2 to S-4). A first correction already at
+! round-off (a guess from a converged SCF) needs no second pass. 1e-10
+! left 3.6e-7 Ha in the 1s of U, which the eigenvalue sum carries into the
+! total energy, and which depended on the SCF history
  eps=1.0d-12
+ nsmall=-1
  ierr = 60
 
 ! check arguments
@@ -231,8 +236,12 @@
 ! convergence test and possible exit
 
      if(abs(de)<max(abs(ee),0.2d0)*eps) then
-       ierr = 0
-       exit
+       if(nsmall==nint-1 .or. &
+&         abs(de)<=8.0d0*epsilon(1.0d0)*max(abs(ee),0.2d0)) then
+         ierr = 0
+         exit
+       end if
+       nsmall=nint
      end if
 
      if(de>0.0d0) then

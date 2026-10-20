@@ -62,7 +62,7 @@
  real(dp) :: eps,ro,sc
  real(dp) :: sls,sn,cn,uout,upin,upout,xkap
  real(dp) :: amesh,al,als
- integer :: ii,kk,nint,node,nin
+ integer :: ii,kk,nint,node,nin,nsmall
 
  cc=c_light
  cci=1.0d0/cc
@@ -70,10 +70,15 @@
  al = 0.01d0 * log(rr(101) / rr(1))
  amesh = exp(al)
 
-! convergence factor for solution of Dirac eq.  if calculated
-! correction to eigenvalue is smaller in magnitude than eps times
-! the magnitude of the current guess, the current guess is not changed.
- eps=1.0d-10
+! convergence: two passes in a row whose energy correction de is smaller
+! in magnitude than eps*max(|ee|,0.2), the second at the energy with the
+! first's correction applied, so that the energy and function returned are
+! those of a pass at the corrected energy, whose own correction is far
+! below eps: the result does not depend on the start guess or the path
+! (doc/smoothness_plan.md, S-2 to S-4). A first correction already at
+! round-off (a guess from a converged SCF) needs no second pass
+ eps=1.0d-12
+ nsmall=-1
  ierr = 60
 
 ! check arguments
@@ -232,8 +237,12 @@
 ! convergence test and possible exit
 
      if(abs(de)<max(abs(ee),0.2d0)*eps) then
-       ierr = 0
-       exit
+       if(nsmall==nint-1 .or. &
+&         abs(de)<=8.0d0*epsilon(1.0d0)*max(abs(ee),0.2d0)) then
+         ierr = 0
+         exit
+       end if
+       nsmall=nint
      end if
 
      if(de>0.0d0) then

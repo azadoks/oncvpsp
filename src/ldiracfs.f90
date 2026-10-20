@@ -59,7 +59,7 @@
 
  real(dp) :: cc,cci,gam,cof
  real(dp) :: de,emax,emin
- real(dp) :: eps,ro,sc
+ real(dp) :: ro,sc
  real(dp) :: sls,sn,cn,uout,upout,xkap
  real(dp) :: amesh,al,als
  integer :: ii,kk,nint,nin,node
@@ -70,10 +70,6 @@
  al = 0.01d0 * log(rr(101) / rr(1))
  amesh = exp(al)
 
-! convergence factor for solution of Dirac eq.  if calculated
-! correction to eigenvalue is smaller in magnitude than eps times
-! the magnitude of the current guess, the current guess is not changed.
- eps=1.0d-10
  ierr = 60
 
 ! check arguments
