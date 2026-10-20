@@ -2,7 +2,7 @@
 # Checks the output for one test input against its reference in tests/refs
 # with compare_output.py, which parses both and compares them quantity by
 # quantity (see its usage): the numbers to their tolerances, the
-# pseudopotential by its nonlocal kernels |beta>D<beta| (to 5e-5) and its
+# pseudopotential by its nonlocal kernels |beta>D<beta| (to 1e-6) and its
 # local potential, never by the projectors and their energies, which are not
 # unique. The PSML file is left out: its values near r = 0 depend on the
 # compiler flags (see psml_test.sh).

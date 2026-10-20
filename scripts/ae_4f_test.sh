@@ -8,7 +8,7 @@
 #         the turning point, and the inward integration once started at 10
 #         times it, so that the total energy converged to first order in
 #         the mesh spacing (1e-3 Ha between amesh 1.006 and 1.0015); it must
-#         now agree to 2e-5 Ha
+#         now agree to 5e-6 Ha (it does to 1.8e-6)
 #
 # usage: ae_4f_test.sh AE_EXE INPUT.dat CASE WORKDIR
 set -euo pipefail
@@ -35,7 +35,7 @@ case $case in
         e1=$(energy m1.006); e2=$(energy m1.0015)
         echo "amesh 1.006: $e1 Ha; amesh 1.0015: $e2 Ha"
         awk -v a="$e1" -v b="$e2" \
-            'BEGIN {d = a - b; if (d < 0) d = -d; exit !(d < 2e-5)}' || {
+            'BEGIN {d = a - b; if (d < 0) d = -d; exit !(d < 5e-6)}' || {
             echo "ae_4f_test: ERROR the total energy is not converged in the mesh"
             exit 1
         } ;;

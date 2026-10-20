@@ -33,15 +33,16 @@ per set, l and j),
 
 whose difference in the Frobenius norm on the file's grid, relative to the
 norm of A's kernel (for a spin-orbit kernel, of the scalar-relativistic kernel
-of its l, to which it is a correction), must be at most --kernel-tol (5e-5;
+of its l, to which it is a correction), must be at most --kernel-tol (1e-6;
 1e-10 with --identical), and by the local potential, which is compared as any
 other radial function.
 
 Never compared: the date, the build line (it names the executable) and what
 follows from it (pyoncvpsp's stage), the lines of the messages (only their
-names), and whatever --ignore names; without --identical, nor the numbers of
-steps of the solvers (REFERENCE_IGNORE).  The PSML file is left out unless
---psml is given: its values near r = 0 depend on the compiler flags.
+names), and whatever --ignore names.  Without --identical, the numbers of
+steps of the solvers may differ by one (STEP_COUNTS).  The PSML file is left
+out unless --psml is given: its values near r = 0 depend on the compiler
+flags.
 
 --identical is for outputs that must be the same (the same input read in two
 ways, or run in two ways): the base test and the kernels to 1e-10 (with
@@ -77,36 +78,49 @@ from pyoncvpsp.io import OncvpspTextParser, parse_psml, parse_psp8
 from upf_tools import UPFDict
 
 # (pattern, atol, rtol): the first pattern matching a quantity's path, its
-# indices written [], sets the tolerance of its numbers (on top of the base
-# test, so that only tightens it).  Radial functions (arrays) are compared
-# relative to their largest |a| + |b|.  The rules tighten the base test where
-# its absolute 1e-5, or its relative 1e-5 of large numbers, says little; each
-# is three to ten times the largest difference between the references in
-# tests/refs and the outputs of the code they were last checked with.
+# indices written [] (a literal [ in the pattern), sets the tolerance of its
+# numbers (on top of the base test, so that only tightens it).  Radial
+# functions (arrays) are compared relative to their largest |a| + |b|.  The
+# rules tighten the base test where its absolute 1e-5, or its relative 1e-5
+# of large numbers, says little.  The noise they must pass is that of the
+# compiler flags: the outputs of the -O3 -march=native -ffast-math build
+# (the study preset) differ from the references, from the RelWithDebInfo
+# build, by at most 2e-10 Ha in the all-electron energies, 2e-8 Ha in the
+# eigenvalues and 5e-8 in the kernels.  Where a quantity is printed with
+# fewer digits, the rule allows about two units of its last digit.
 TOLERANCES = [
     # the input echoes, written by the same code from the same input
     ("input.*", 0.0, 1e-12),
     ("psp8.input", 0.0, 1e-12),
     ("upf.info.*", 0.0, 1e-12),
     ("psml.input", 0.0, 1e-12),
-    # total energies (Ha; the UPF's in Ry): 1e-5 relative is 0.4 Ha for Bi;
-    # they agree to 1e-3 Ha, and the terms of the all-electron energy to 4e-3 Ha
-    ("ae_reference_energies.total_energy", 3e-3, 0.0),
-    ("ae_reference_energies.terms.total", 3e-3, 0.0),
-    ("ae_reference_energies.terms.*", 1e-2, 0.0),
-    ("test_configuration_energies[].etot_*", 3e-3, 0.0),
-    ("pseudoatom_total_energy", 3e-3, 0.0),
-    ("upf.header.total_psenergy", 3e-3, 0.0),
+    # the all-electron energy (Ha): the terms with 10 decimals, the total
+    # also with 9 digits (1e-3 Ha for Bi)
+    ("ae_reference_energies.terms.*", 1e-8, 0.0),
+    ("ae_reference_energies.total_energy", 0.0, 5e-8),
+    # the energies of the test configurations, with 9 digits, and the
+    # pseudo-atom energy, with 6 decimals; their differences (3 digits)
+    # take the base test
+    ("test_configuration_energies[].etot_*_ref", 0.0, 5e-8),
+    ("test_configuration_energies[].etot_*_test", 0.0, 5e-8),
+    ("pseudoatom_total_energy", 2e-6, 0.0),
+    ("upf.header.total_psenergy", 0.0, 1e-9),
+    # the eigenvalues: of the reference configuration in the input echo with
+    # 8 digits (1e-5 relative is 0.07 Ha for the 1s of Bi), of the test
+    # configurations with 8 decimals
+    ("reference_configuration[].eig_ae", 0.0, 1e-7),
+    ("test_configurations[][].eig_*", 1e-7, 0.0),
     # d2Exc/dn_i dn_j (about 1e-2 Ha, 7 digits) and its rms error (1e-4 to
-    # 1e-3 Ha): they agree to 3e-8 and 4e-9 Ha
-    ("d2exc.*", 3e-7, 0.0),
+    # 1e-3 Ha)
+    ("d2exc.*", 3e-8, 0.0),
     ("d2exc_rmse", 5e-8, 0.0),
 ]
 
-# Left out of the comparison with a reference (not with --identical): the
-# steps of the solvers, which depend on the way they converge (the mixing of
-# the SCF), not on what they converge to, which is compared.
-REFERENCE_IGNORE = ["ae_reference_energies.iterations", "ionic_tail.steps"]
+# The steps of the solvers, which depend on the way they converge (the
+# mixing of the SCF) more than on what they converge to: compared with a
+# reference (not with --identical) to within this many steps, which the base
+# test, for numbers, cannot allow.
+STEP_COUNTS = {"ae_reference_energies.iterations": 1, "ionic_tail.steps": 1}
 
 NUMBER = re.compile(r"[-+]?(?:\d+\.\d*|\.\d+|\d+)(?:[eEdD][-+]?\d+)?")
 # record fields that name a record in the report
@@ -126,6 +140,7 @@ class Stats:
 class Report:
     base: float
     ignore: list
+    steps: bool = False
     failures: list = field(default_factory=list)
     stats: dict = field(default_factory=dict)
 
@@ -153,7 +168,7 @@ def rule(path):
     """(atol, rtol) of the first rule of TOLERANCES matching path, or None."""
     generic = re.sub(r"\[\d+\]", "[]", path)
     for pattern, atol, rtol in TOLERANCES:
-        if fnmatch.fnmatchcase(generic, pattern):
+        if fnmatch.fnmatchcase(generic, pattern.replace("[", "[[]")):
             return atol, rtol
     return None
 
@@ -190,6 +205,11 @@ def compare_numbers(report, path, a, b, scale=False):
     with np.errstate(divide="ignore", invalid="ignore"):
         rel = np.where(diff > 0, diff / pointwise, 0.0)
     report.record(path, float(diff.max()), float(rel.max()), a.size)
+    steps = STEP_COUNTS.get(re.sub(r"\[\d+\]", "[]", path))
+    if report.steps and steps is not None:
+        if diff.max() > steps:
+            report.fail(path, f"{a.max():g} and {b.max():g} steps (by {steps} at most)")
+        return
     bad = (diff > report.base) & (diff > report.base * pointwise)
     tolerance = f"{report.base:.3g} abs or rel"
     specific = rule(path)
@@ -519,9 +539,9 @@ def main():
     args = parser.parse_args()
 
     base = 1.01e-10 if args.identical else 1.01e-5
-    kernel_tol = args.kernel_tol or (1e-10 if args.identical else 5e-5)
-    ignore = args.ignore + ([] if args.identical else REFERENCE_IGNORE)
-    report = Report(base, ignore)
+    kernel_tol = args.kernel_tol or (1e-10 if args.identical else 1e-6)
+    ignore = args.ignore
+    report = Report(base, ignore, steps=not args.identical)
     with_psml = args.psml or args.identical
     tree_a, blocks_a = load(args.a, with_psml)
     tree_b, blocks_b = load(args.b, with_psml)

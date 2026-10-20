@@ -132,10 +132,14 @@ log derivatives, diagnostics, plot data, input echoes and the psp8, UPF
 quantity and each one beyond its tolerance. A number passes if it agrees
 within a relative or absolute 1e-5 (relative to |a| + |b|, the test of
 `fldiff.pl -easy`, which the tests used before) and within the rule for its
-quantity in `TOLERANCES`, which tightens it where 1e-5 says little (the
-total energies to 3e-3 Ha, d2Exc to 3e-7 Ha, the input echoes to 1e-12);
-integers are compared as numbers too, and text, with its numbers masked,
-must be the same. With `--identical`, for outputs that
+quantity in `TOLERANCES`, which tightens it where 1e-5 says little, to about
+two units of the last printed digit where the noise of the compiler flags
+(2e-10 Ha in the all-electron energies) is below it (the terms of the
+all-electron energy to 1e-8 Ha, the eigenvalues of the test configurations
+to 1e-7 Ha, d2Exc to 3e-8 Ha, the input echoes to 1e-12); integers are
+compared as numbers too, apart from the numbers of steps of the solvers,
+which may differ by one, and text, with its numbers masked, must be the
+same. With `--identical`, for outputs that
 must be the same (the TOML and text inputs, the split and the single
 program, a pipe and a file, the input echoes run again), the numbers must
 agree to 1e-10, and the lines must be the same too, which covers what
@@ -145,7 +149,7 @@ The projectors and their energies are never compared: they are not unique
 (any change of basis among the projectors of one l, or l and j, that keeps
 sum_ij |beta_i> D_ij <beta_j| leaves the pseudopotential the same). The
 nonlocal kernel of each block of the psp8, UPF and PSML files is compared
-instead, which must agree to 5e-5 (1e-10 with `--identical`) in the
+instead, which must agree to 1e-6 (1e-10 with `--identical`) in the
 Frobenius norm, relative to the kernel, and for a spin-orbit kernel to the
 scalar-relativistic kernel of its l; the local potential is compared point
 by point, to the base test.
