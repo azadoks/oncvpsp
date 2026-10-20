@@ -192,7 +192,7 @@
 !! uu and qq at the first four points, from the series at the origin of
 !! the flux form for the potential -zz/r + d (origin_series). With
 !! M = (a + b*r)/r the series converges only inside r = a/b ~ zz/(2c**2),
-!! for every l; points beyond a quarter of that (rr(1) of the default mesh
+!! for every l; points beyond an eighth of that (rr(1) of the default mesh
 !! for H) are reached from there by RK4 in ln r on the same model equation
 
  real(dp) :: rs,r0,px,qx
@@ -205,12 +205,13 @@
    return
  end if
 ! the radius is a/|b| for either sign of b, which a trial energy far below
-! the bound states can make negative
- if(4.0d0*abs(bb)*rr(4)<=aa) then
-   rs=rr(4)
- else
-   rs=0.25d0*aa/abs(bb)
- end if
+! the bound states can make negative. b = 1 + (ee - d)/(2c**2) is at most 1
+! for every energy below the screening at the origin (all bound and
+! scattering states), so rs = a/8 there: which points the series reaches
+! and the RK4 steps to the others do not depend on the energy, and the
+! solution is smooth in it (doc/smoothness_plan.md, S-9); a/8 is inside a
+! quarter of the radius for |b| <= 2
+ rs=0.125d0*aa/max(1.0d0,abs(bb))
  r0=min(rs,rr(1))
  call origin_series(r0,px,qx)
  do jj=1,4
@@ -282,7 +283,7 @@
 !! default mesh for light atoms; its error in the logarithmic derivative
 !! acts as a contact potential (1e-5 Ha for Na). The terms are summed as
 !! p_k*r**k, q_k*r**k, whose coefficients alone overflow. The relativistic
-!! series is used only inside a quarter of its radius a/b (origin_start)
+!! series is used only inside an eighth of its radius a/b (origin_start)
 
  real(dp), intent(in) :: rx
  real(dp), intent(out) :: px,qx
