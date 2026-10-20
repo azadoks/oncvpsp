@@ -23,8 +23,11 @@
         {
             "name": "study",
             "inherits": "release",
-            "displayName": "Release (-O3 -ffast-math -funroll-loops) in its own directory, for the oncvpsp-opt study",
-            "binaryDir": "${sourceDir}/build-study"
+            "displayName": "Release (-O3 -march=native -ffast-math -funroll-loops) in its own directory, for the oncvpsp-opt study",
+            "binaryDir": "${sourceDir}/build-study",
+            "cacheVariables": {
+                "CMAKE_Fortran_FLAGS_RELEASE": "-O3 -march=native -DNDEBUG"
+            }
         },
         {
             "name": "fetch",

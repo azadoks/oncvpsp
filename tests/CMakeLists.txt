@@ -27,8 +27,12 @@ set(data "${CMAKE_CURRENT_SOURCE_DIR}/data")
 # The inputs with Libxc functionals (iexc < 0), whose tests are disabled without Libxc
 set(libxc_inputs "38_Sr_lxc" "60_Nd_GHOST" "79_Au_lxc" "83_Bi")
 
-# oncvpsp_test(NAME LABEL SCRIPT ARGS...): run SCRIPT with ARGS, labelled LABEL
+# oncvpsp_test(NAME LABEL SCRIPT ARGS...): run SCRIPT with ARGS, labelled LABEL; not added when it
+# runs a fully-relativistic executable and those are not built (ONCVPSP_WITH_FR off)
 function(oncvpsp_test name label script)
+    if (NOT ONCVPSP_WITH_FR AND "${ARGN}" MATCHES "TARGET_FILE:oncvpspr[_>]")
+        return()
+    endif ()
     add_test(NAME ${name} COMMAND ${ONCVPSP_BASH} "${scripts}/${script}" ${ARGN})
     set_tests_properties(${name} PROPERTIES LABELS ${label})
     if (NOT ONCVPSP_WITH_Libxc)
@@ -139,7 +143,7 @@ if (Python3_Interpreter_FOUND)
             string(REPLACE ":" ";" part "${part}")
             list(GET part 0 part_name)
             list(GET part 1 zs)
-            if (set STREQUAL "RLDA" AND part_name STREQUAL "known")
+            if (set STREQUAL "RLDA" AND (part_name STREQUAL "known" OR NOT ONCVPSP_WITH_FR))
                 continue()
             endif ()
             add_test(NAME nist_${set}_${part_name}

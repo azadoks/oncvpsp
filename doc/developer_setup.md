@@ -63,9 +63,16 @@ ctest --preset default
 The `debug` preset (in `build-debug/`) adds run-time checks and
 floating-point traps, and is the one to use when something goes wrong.
 The `study` preset (in `build-study/`) is the `release` build (`-O3
--ffast-math -funroll-loops`, the flags of the upstream `make.inc`) kept in its
-own directory for the oncvpsp-opt pseudopotential study. Fast math moves
-the output in the last digits, so some reference tests fail with it.
+-ffast-math -funroll-loops`, the flags of the upstream `make.inc`) with
+`-march=native`, kept in its own directory for the oncvpsp-opt pseudopotential
+study. It is about 35 % faster than the `default` build (29_Cu and 83_Bi,
+scalar-relativistic) and moves the nonlocal kernels by about 1e-8, but only
+runs on CPUs like the one that built it. Fast math moves the projectors
+themselves further, so some reference tests fail with it.
+
+`ONCVPSP_WITH_FR=OFF` leaves out the fully-relativistic executables and their
+tests.
+
 `CMakeUserPresets.json` (ignored by git) is the place for personal presets
 such as compiler paths or `Libxc_ROOT`.
 

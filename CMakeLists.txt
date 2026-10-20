@@ -20,6 +20,7 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 ##########################################################
 option(ONCVPSP_WITH_Libxc "Enable Libxc support" ON)
 option(ONCVPSP_WITH_TOML "Enable TOML input support" ON)
+option(ONCVPSP_WITH_FR "Build the fully-relativistic executables (oncvpspr*.x)" ON)
 
 # Where each dependency comes from: AUTO uses the system's if it is found and works and otherwise
 # downloads and builds it (with CPM), SYSTEM requires the system's and FETCH always builds it
@@ -130,6 +131,9 @@ if (ONCVPSP_WITH_TOML)
     message(STATUS "  TOML input:  ${ONCVPSP_TOML_DESCRIPTION}")
 else ()
     message(STATUS "  TOML input:  disabled")
+endif ()
+if (NOT ONCVPSP_WITH_FR)
+    message(STATUS "  Fully-relativistic executables: disabled")
 endif ()
 message(STATUS "  Install to:  ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "")
