@@ -121,7 +121,8 @@ oncvpsp_test(ae_4f_mesh_sr_69_Tm mesh ae_4f_test.sh
     $<TARGET_FILE:oncvpspsr_ae> "${data}/69_Tm_ae.dat" mesh "${CMAKE_CURRENT_BINARY_DIR}/ae_4f_mesh_sr_69_Tm")
 
 # The all-electron atom against the NIST atomic reference data, to its stated accuracy, on the light
-# atoms and a few heavy ones, neutral and first cations (see scripts/nist_test.py and
+# atoms, a few heavy ones and the atoms of the cases expected to fail (EXPECTED_FAILURES in the
+# script, which fails if one of them passes), neutral and first cations (see scripts/nist_test.py and
 # tests/data/nist/README.md). The whole table is scripts/nist_test.py run by hand, e.g.
 #   scripts/nist_test.py build/bin/oncvpspr_ae.x RLDA tests/data/nist build/nist_RLDA --jobs 8
 find_package(Python3 COMPONENTS Interpreter)
@@ -130,10 +131,17 @@ if (Python3_Interpreter_FOUND)
         string(REPLACE ":" ";" nist_test "${nist_test}")
         list(GET nist_test 0 set)
         list(GET nist_test 1 rel)
-        foreach (part IN ITEMS "light:1-18" "heavy:29,54,64,79,92")
+        set(known "known:84")
+        if (set STREQUAL "ScRLDA")
+            set(known "known:62,65,66,69-71")
+        endif ()
+        foreach (part IN ITEMS "light:1-18" "heavy:29,54,64,79,92" "${known}")
             string(REPLACE ":" ";" part "${part}")
             list(GET part 0 part_name)
             list(GET part 1 zs)
+            if (set STREQUAL "RLDA" AND part_name STREQUAL "known")
+                continue()
+            endif ()
             add_test(NAME nist_${set}_${part_name}
                 COMMAND ${Python3_EXECUTABLE} "${scripts}/nist_test.py" $<TARGET_FILE:oncvpsp${rel}_ae>
                     ${set} "${data}/nist" "${CMAKE_CURRENT_BINARY_DIR}/nist_${set}_${part_name}" --z ${zs})

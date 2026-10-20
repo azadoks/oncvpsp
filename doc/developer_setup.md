@@ -95,8 +95,11 @@ further need new references. Before updating them, check what changed:
 - The `nist` tests (`scripts/nist_test.py`) compare the all-electron atom
   with the NIST atomic reference data to its stated accuracy (about 1e-6
   Ha), with the data's functionals and speed of light (iexc 5 and 6,
-  `c_light`). ctest runs the light atoms and a few heavy ones; the whole
-  table, 183 atoms and cations per set, is the script run by hand with
+  `c_light`). The few cases that miss it by a little (`EXPECTED_FAILURES`:
+  LDA Po and some ScRLDA lanthanides, which other codes miss too) are
+  expected to fail, and a test fails if one of them passes. ctest runs the
+  light atoms, a few heavy ones and those of the expected failures; the
+  whole table, 183 atoms and cations per set, is the script run by hand with
   `--jobs`.
 
 `scripts/ref_patch.py NEW.out tests/refs/NAME.out` then updates a reference
