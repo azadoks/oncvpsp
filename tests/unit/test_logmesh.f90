@@ -185,10 +185,13 @@
 
  subroutine check_interp_order()
 
-!! r**2 exp(-r): the error falls as al**(lm_blend+1), and is round-off on
-!! the default mesh
+!! r**2 exp(-r): the error falls as al**(lm_blend+1) on coarse meshes
+!! (al = 0.1, 0.05, on r in [0.3,3] where they resolve it; finer ones are
+!! at round-off already), and is round-off on the default mesh on [0.3,12]
 
- real(dp), parameter :: amesh(3) = [1.024_dp, 1.012_dp, 1.006_dp]
+ real(dp), parameter :: amesh(3) = [1.1051709180756477_dp, &
+&                                   1.0512710963760241_dp, 1.006_dp]
+ real(dp), parameter :: rtop(3) = [10.0_dp, 10.0_dp, 40.0_dp]
  real(dp) :: err(3)
  real(dp), allocatable :: rr(:), ff(:)
  real(dp) :: rq, fq
@@ -200,13 +203,13 @@
    ff(:) = texp(0, rr)
    err(im) = 0.0_dp
    do ii = 0, 199
-     rq = 0.3_dp*40.0_dp**(ii/199.0_dp)*1.000777_dp
+     rq = 0.3_dp*rtop(im)**(ii/199.0_dp)*1.000777_dp
      call lm_interp(rr, ff, mmax, rq, fq)
      err(im) = max(err(im), abs(fq - texp(0, rq)))
    end do
    deallocate(rr, ff)
  end do
- call check('interp_order 1.024/1.012', 2.0_dp**lm_blend*err(2), err(1))
+ call check('interp_order al 0.1/0.05', 2.0_dp**lm_blend*err(2), err(1))
  call check('interp_order 1.006', err(3), 1.0e-13_dp)
  end subroutine check_interp_order
 

@@ -154,10 +154,15 @@ barycentric rational interpolant** with blending degree d:
 It has no real poles. It reproduces polynomials of degree d in x, with
 error O(al^(d+1)). It is C-infinity in x, and stable in barycentric form.
 At a node it returns the node value exactly. It blends all local degree-d
-interpolants with weights that fall off as |x − x_i|^−(d+1). Summing only the nodes
-whose weight relative to the nearest is above machine epsilon (about 60
-cells each side for d = 6) keeps it local and cheap without a visible
-switch. **d = 6** (order 7). At al = ln 1.006 this is round-off for every
+interpolants with weights that fall off as |x − x_i|^−(d+1), but the
+far interpolants grow as |x − x_i|^d, so its cardinal functions fall off
+only as 1/|x − x_i|. Cutting the sum off near x (the first version of
+this plan proposed about 60 cells) would therefore make jumps of order
+1/60 of rough data, and of the size of the interpolation error itself
+for smooth data. The sum runs over the whole mesh instead: mmax
+operations per value (13 µs at mmax = 2300), exactly C-infinity, with
+round-off about eps·Σ_i |f_i|/(1 + |x − x_i|/al). **d = 6** (order 7;
+measured: the error of r²e^−r falls 206-fold from al = 0.1 to 0.05). At al = ln 1.006 this is round-off for every
 smooth function the generator handles at the radii of interest. The unit
 tests check reproduction, order, node exactness, and continuity of the
 slope on rough data (which a switching Lagrange stencil fails).
@@ -212,8 +217,13 @@ section) and then interpolated.
       ∫_0^a r² j_l(αr) j_l(βr) dr = a²[β j_l(αa) j_l'(βa) − α j_l'(αa) j_l(βa)]/(α² − β²)
       ∫_0^a r² j_l(αr)² dr = (a³/2)[j_l(αa)² − j_{l−1}(αa) j_{l+1}(αa)]
 
-  For α near β the first is evaluated by its Taylor series in (α − β),
-  so there is no cancellation. The same formula gives the Fourier–Bessel
+  Where these cancel, a series takes over: when both αa, βa ≤ 1.5 their
+  leading powers cancel exactly, and the integral's own power series
+  (a fixed number of terms) is used; when (β − α)a ≤ min(1, αa/4) the
+  numerator is expanded in (β − α) about αa, with the Taylor
+  coefficients of j_l from the Bessel equation, so there is no
+  cancellation. Both switches are smooth to round-off (measured ≤ 8e-15
+  relative). The equal-argument form follows from the second. The same formula gives the Fourier–Bessel
   transform of the inside piece at any q, so the residual kinetic energy
   needs no r-mesh inside rc at all. The kinetic energy inside rc is
   q_j²/2 times the overlap.
@@ -510,9 +520,10 @@ later phases can see 1e-10.
 
 #### Phase 1: primitives
 
-- [ ] `logmesh_m`: `lm_interp`, `lm_derivs`, `lm_cumint`,
-      `lm_integral`, `lm_root` (FH d = 6, truncated support)
-- [ ] `sbf_overlap` (Lommel, with the near-degenerate series)
+- [x] `logmesh_m`: `lm_interp`, `lm_derivs`, `lm_cumint`,
+      `lm_integral`, `lm_root` (FH d = 6, summed over the whole mesh)
+- [x] `sbf_overlap` (Lommel, with the small-argument and near-degenerate
+      series)
 - [ ] ODE-recursion derivatives of (u, q) for irel 0, 1, 2; measure
       against the stencil route on hydrogen and 14_Si (PBE)
 - [ ] T1 green
@@ -622,6 +633,8 @@ These change behaviour beyond numerics. Decided on review (2026-10-20).
 To fix in the phase that touches the code, or in phase 7.
 
 - `vpinteg` skips mesh points 1–3 (harmless, about 1e-12).
+- `sbf8` with nm = 3 or 4 leaves `sb_out(2)` (j_1) unset (latent: `eresid`
+  and `sbf_basis_con` read only `sb_out(nm)`).
 - `pspot` kinetic-energy origin term has the wrong power (diagnostic).
 - `sbf_basis_con` origin term divides by rr(1)^l instead of rr(1)^(l+1)
   (negligible).
