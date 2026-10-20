@@ -477,7 +477,8 @@ Written before the code they test. A test of a phase's code is written
 and committed (red) at the start of the phase, and the phase is done
 when it is green. All of these carry the ctest label `smooth` until the
 plan is complete, so `ctest -LE smooth` keeps the suite green on the
-branch in between.
+branch in between; the default test preset (`ctest --preset default`)
+leaves them out until phase 7 drops the label.
 
 - **T1 Unit tests of the primitives** (`tests/unit/test_logmesh.f90`,
   written, red against the stub `src/logmesh_m.f90` and

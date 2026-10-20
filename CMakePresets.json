@@ -53,7 +53,8 @@
             "name": "default",
             "configurePreset": "default",
             "output": {"outputOnFailure": true},
-            "execution": {"jobs": 8}
+            "execution": {"jobs": 8},
+            "filter": {"exclude": {"label": "smooth"}}
         },
         {"name": "debug", "inherits": "default", "configurePreset": "debug"},
         {"name": "release", "inherits": "default", "configurePreset": "release"},
