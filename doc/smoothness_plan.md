@@ -590,8 +590,9 @@ later phases can see 1e-10.
       1.8e-9 against u′/u at 1e-14. That is the round-off of the
       `wf_rc_der` stencils (eps/al³, eps/al⁴), which R-4 replaces by
       `ode_rc_der`.
-- [ ] References patched (after the oncvpsp-opt AE-energy refresh). At
-      the code before and after, on the 51 reference inputs:
+- [x] References regenerated on oncvpsp-opt's exact ones (eecbf77), each
+      keeping its header; the commit lists the changes per input. At the
+      code before and after, on the 51 reference inputs:
       - kernels move by at most 6.6e-8 (60_Nd_GHOST l=3: 1.9e-7);
       - `coulomb_tail.r_coulomb` moves in every reference (S-6);
       - 60_Nd_GHOST's truncation changes move by 2e-5;
