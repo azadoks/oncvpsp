@@ -33,12 +33,16 @@ set_tests_properties(unit_run_phsft PROPERTIES LABELS unit)
 # Unit tests of the operations at any radius on the log mesh (logmesh_m), the closed-form Bessel
 # overlaps (sbf_overlap) and the derivatives at rc from the radial equation (ode_rc_der), phase 1 of
 # doc/smoothness_plan.md
-foreach (unit_test logmesh ode_rc_der)
+foreach (unit_test logmesh ode_rc_der solver_path)
     add_executable(test_${unit_test} unit/test_${unit_test}.f90)
     target_link_libraries(test_${unit_test} PRIVATE oncvpsp::oncvpsp oncvpsp::compile_options)
     set_target_properties(test_${unit_test} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
     add_test(NAME unit_${unit_test} COMMAND test_${unit_test})
     set_tests_properties(unit_${unit_test} PROPERTIES LABELS unit)
+    # written before the code of its phase (doc/smoothness_plan.md): smooth until it is green
+    if (unit_test STREQUAL "solver_path")
+        set_tests_properties(unit_${unit_test} PROPERTIES LABELS "unit;smooth")
+    endif ()
 endforeach ()
 
 set(scripts "${PROJECT_SOURCE_DIR}/scripts")

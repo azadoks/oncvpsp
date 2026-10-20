@@ -552,7 +552,9 @@ later phases can see 1e-10.
 
 #### Phase 2: solvers to round-off
 
-- [ ] T5 written
+- [x] T5 written (`tests/unit/test_solver_path.f90`), red: from guesses
+      on either side, lschfb differs by up to 6e-13, ldiracfb 2p1/2 by
+      1e-10, lschvkbb by 7e-9, lschvkbbe by 3e-12, lschpsbar by 2.5e-9
 - [ ] S-2…S-4: final correction applied plus one step, tolerances
       1e-13, in lschvkbb, lschpsbar, lschvkbbe, lschfb, ldiracfb,
       ldiracfs
