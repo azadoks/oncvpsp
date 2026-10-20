@@ -54,6 +54,7 @@
 !!                mesh, zero beyond its end
 
  use constants_m, only: dp, nerrlv, pi
+ use, intrinsic :: iso_fortran_env, only: qp => real128
  use ugrid_m, only: ug_cross_down
  implicit none
 
@@ -82,8 +83,9 @@
  real(dp) :: err,qerr,ehaerr,eeverr,dq
  real(dp) :: sbf(mmax)
  real(dp) :: cons(10)
- real(dp), allocatable :: orbasis(:,:)
- real(dp), allocatable :: orbasis_der(:,:),pswf0_sb(:),pswfnull_sb(:,:)
+ real(qp), allocatable :: orbasis(:,:),orbasis_der(:,:)
+ real(qp), allocatable :: pswf0_sbq(:),pswfnull_sbq(:,:)
+ real(dp), allocatable :: pswf0_sb(:),pswfnull_sb(:,:)
  real(dp), allocatable :: pswf0_or(:),pswfnull_or(:,:)
  real(dp), allocatable :: work(:)
  integer :: ii,iprj,jj,l1,lmax,nbas,ncon,nconmx
@@ -150,6 +152,7 @@
    allocate(pswfopt_sb(nbas),pswfopt_or(nbas))
    allocate(pswfresid_sb(nbas,nnull))
    allocate(pswfnull_sb(nbas,nnull))
+   allocate(pswf0_sbq(nbas),pswfnull_sbq(nbas,nnull))
    allocate(pswfnull_or(nbas,nnull))
 
 !calculate derivatives of all-electron wave function at r_c from the radial
@@ -199,7 +202,9 @@
 !satisfying off-diagonal norm conservation
    call const_basis(nbas,ncon,cons,orbasis,orbasis_der, &
 &                   pswf0_or,pswfnull_or, &
-&                   pswf0_sb,pswfnull_sb,ps0norm)
+&                   pswf0_sbq,pswfnull_sbq,ps0norm)
+   pswf0_sb(:)=real(pswf0_sbq(:),dp)
+   pswfnull_sb(:,:)=real(pswfnull_sbq(:,:),dp)
 
 !calculate eigenvectors, eigenvalues, and inhomogeneous terms for
 !the residual energy for a set of q lower cutoffs
@@ -209,7 +214,7 @@
 !E_resid on the q grid, and at the exact qcut and the points of the
 !convergence curve (Q-1, Q-4)
    call eresid(ll,rc,nnull,nbas,mmax,nq,nqout,qout,rr,qmax,qroot, &
-&              uua(1,iprj),pswf0_sb,pswfnull_sb,e0,edot,emat, &
+&              uua(1,iprj),pswf0_sbq,pswfnull_sbq,e0,edot,emat, &
 &              eresid0,eresiddot,eresidmat)
 
    write(6,'(a,f7.2,a,f7.2,a)') '    Optimizing pswf for qcut=',qout(1), &
@@ -227,6 +232,12 @@
 
    write(6,'(a,1p,d10.2,a)') '    Residual kinetic energy error=', &
 &        eresidmin,' Ha'
+!the optimized coefficients from the quad-precision basis vectors (those
+!of optimize, from the rounded ones, carry their 1e4 cancellation)
+   do ii=1,nbas
+     pswfopt_sb(ii)=real(pswf0_sbq(ii) &
+&                        +sum(pswfnull_sbq(ii,:)*real(pswfopt_nu(:),qp)),dp)
+   end do
    psb(1:nbas,iprj)=pswfopt_sb(1:nbas)
 
 !the convergence curve of the optimized pseudo wave function on the q
@@ -299,6 +310,7 @@
    deallocate(pswfopt_sb,pswfopt_or)
    deallocate(pswfresid_sb)
    deallocate(pswfnull_sb)
+   deallocate(pswf0_sbq,pswfnull_sbq)
    deallocate(pswfnull_or)
    deallocate(eresiddot,eresidmat)
    deallocate(qout,eresq,eresid0)

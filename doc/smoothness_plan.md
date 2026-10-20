@@ -660,11 +660,19 @@ later phases can see 1e-10.
       (the extra wave vectors of `qroots`: the overlap matrix of 14_Si l=2
       has eigenvalues 4.8e-9 … 0.81), and the mesh integrals used before
       were accurate to 1e-8, so its last orthonormal function was mostly
-      their error. With Q-8: `ep[2]` 5.0e-10 → 6.5e-12. What is left is
+      their error. With Q-8: `ep[2]` 5.0e-10 → 6.5e-12. What was left was
       ε·κ of the matching solve (κ ≈ 350 after scaling) amplified by
       1/√λ_min ≈ 1.4e4 into the near-dependent direction of the basis,
-      harmless in φ̃ (the combination nearly cancels) but not in φ̃″, where
-      it does not: the inside-rc linear algebra in quad precision, next
+      harmless in φ̃ (the combination nearly cancels) but not in φ̃″. So
+      the linear algebra of the basis inside rc is in quad precision
+      (`sbf_q_m`: Bessel values, derivatives at rc and Lommel overlaps;
+      `qlinalg_m`: Jacobi eigen-solver; `sbf_basis_con`, `const_basis`,
+      and the inside transforms of `eresid` from the quad coefficients;
+      unit test `quadbasis`): `ep[2]` 1.8e-13, `debl[0]` 6.3e-14, `qcut[0]`
+      5.6e-13, all at G2. The kernels move by ≤1.8e-10 (what double
+      precision had lost); runtime unchanged (14_Si_r 2.7 s, 74_W_r 8.7 s:
+      the many overlaps of `eresid` share the Bessel values at rc, and
+      Lommel's form is kept in quad until it has cost 13 digits)
 - [ ] R-6 pieces
 - [x] Q-1…Q-4 residual kinetic energy at exact qcut, fixed quadratures
       (`ugrid_m`, unit test `ugrid`, `eresid` rewritten). T2 `qcut0` at G1
@@ -682,7 +690,7 @@ later phases can see 1e-10.
 - [ ] R-12 wellstate onset, overrides removed (D-1); R-3, R-13 ionic
       window
 - [ ] Q-8, Q-10
-- [ ] T2 rows rc, rcloc at G1 (qcut done); T3, T4 recorded
+- [ ] T2 rows rc, rcloc at G1 (qcut, debl, ep done at G2); T3, T4 recorded
 - [ ] References patched
 
 #### Phase 4: output

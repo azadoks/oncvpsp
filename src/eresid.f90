@@ -55,8 +55,10 @@
 !! @param qmax  largest q, taken as infinity (bohr^-1)
 !! @param qroot  wave vectors of the basis functions
 !! @param uu  all-electron wave function (*rr)
-!! @param pswf0_sb  basis coefficients of the constrained pseudo wave
-!! @param pswfnull_sb  basis coefficients of the null-space functions
+!! @param pswf0_sb  basis coefficients of the constrained pseudo wave (quad)
+!! @param pswfnull_sb  basis coefficients of the null-space functions (quad):
+!!                     the basis is nearly dependent, so their transforms
+!!                     are sums with 1e4 cancellation, formed in quad
 !! @param e0g  <ps0| E_resid |ps0> at each node of the grid
 !! @param edotg  <psnull| E_resid |ps0> at each node
 !! @param ematg  <psnull| E_resid |psnull'> at each node
@@ -65,16 +67,18 @@
 !! @param eresidmat  <psnull| E_resid |psnull'> at each qout
 
  use constants_m, only: dp, pi
+ use, intrinsic :: iso_fortran_env, only: qp => real128
  use logmesh_m, only: lm_interp, lm_ncell
  use ugrid_m, only: ug_weights, ug_cumint_down
+ use sbf_q_m, only: sbfq_overlap_vs, sbfq_value_slope
  implicit none
- external :: sbf_overlap, sbf8
+ external :: sbf8
 
 !Input variables
  integer, intent(in) :: ll,nnull,nbas,mmax,nq,nqout
  real(dp), intent(in) :: rc,qmax
- real(dp), intent(in) :: rr(mmax),uu(mmax),pswf0_sb(nbas),qout(nqout)
- real(dp), intent(in) :: pswfnull_sb(nbas,nnull)
+ real(dp), intent(in) :: rr(mmax),uu(mmax),qout(nqout)
+ real(qp), intent(in) :: pswf0_sb(nbas),pswfnull_sb(nbas,nnull)
  real(dp), intent(in) :: qroot(nbas)
 
 !Output variables
@@ -86,7 +90,8 @@
  real(dp), allocatable :: rlin(:),ulin(:),wr(:),sbf(:)
  real(dp), allocatable :: sqr(:),cqr(:),sdqr(:),cdqr(:)
  real(dp), allocatable :: g0(:),gdot(:,:),gmat(:,:,:),work(:)
- real(dp) :: sb_out(5),psnullq(nnull),ovl(nbas)
+ real(dp) :: sb_out(5),psnullq(nnull)
+ real(qp) :: ovl(nbas),ps0in,psnin(nnull),rcq,jq(nbas),jdq(nbas),jb,jdb
  real(dp) :: dq,hh,rend,qq,qq4,ps0q,tn,qa,qb,wg
  integer :: nr,nlast,ii,iq,jj,kk,ll1,ig,icell
 !steps between exact sin/cos(qq*rlin) evaluations in the q loop
@@ -104,6 +109,14 @@
 
  ll1=ll+1
  dq=qmax/dble(nq-1)
+
+!the basis functions' values and slopes at rc, for their overlaps with
+!j_l(q r) at each q (quad precision: the overlaps enter sums with 1e4
+!cancellation)
+ rcq=real(rc,qp)
+ do jj=1,nbas
+   call sbfq_value_slope(ll,real(qroot(jj),qp)*rcq,jq(jj),jdq(jj))
+ end do
 
 !the linear mesh from rc, with the spacing of qmax, to the last nonzero
 !point of uu (the solvers zero it beyond their inward start; a node there
@@ -278,15 +291,20 @@
  end do
 
 !transforms inside rc: the basis functions' overlaps with j_l(qq r), in
-!closed form
+!closed form, combined in quad precision
+ call sbfq_value_slope(ll,real(qq,qp)*rcq,jb,jdb)
  do jj=1,nbas
-   call sbf_overlap(ll,qroot(jj),qq,rc,ovl(jj))
+   call sbfq_overlap_vs(ll,real(qroot(jj),qp),real(qq,qp),rcq,jq(jj),jdq(jj), &
+&                       jb,jdb,ovl(jj))
  end do
- psnullq(:)=0.0d0
+ ps0in=0.0_qp
+ psnin(:)=0.0_qp
  do jj=1,nbas
-   ps0q=ps0q+pswf0_sb(jj)*ovl(jj)
-   psnullq(:)=psnullq(:)+pswfnull_sb(jj,:)*ovl(jj)
+   ps0in=ps0in+pswf0_sb(jj)*ovl(jj)
+   psnin(:)=psnin(:)+pswfnull_sb(jj,:)*ovl(jj)
  end do
+ ps0q=ps0q+real(ps0in,dp)
+ psnullq(:)=real(psnin(:),dp)
  return
  end subroutine transforms
 

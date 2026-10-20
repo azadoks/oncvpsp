@@ -68,6 +68,8 @@ set(src_oncvpsp
     sbf_overlap.f90
     scatterstate.f90
     sr_flux_m.f90
+    sbf_q_m.f90
+    qlinalg_m.f90
     ugrid_m.f90
     sratom.f90
     tfapot.f90
