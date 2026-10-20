@@ -751,8 +751,8 @@
 !get all-electron overlap matrix
      do jj=1,nproj(l1)
        do ii=1,jj
-         call fpovlp(uua(1,ii,ikap),uua(1,jj,ikap),irc(l1),ll,kap,zz, &
-&                    qq(ii,jj),rr,irel)
+         call fpovlp(uua(1,ii,ikap),uua(1,jj,ikap),mmax,rr(irc(l1)),ll,kap, &
+&                    zz,qq(ii,jj),rr,irel)
          qq(jj,ii)=qq(ii,jj)
        end do
      end do

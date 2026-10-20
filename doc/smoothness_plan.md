@@ -396,7 +396,7 @@ numbers refer to [Phases](#phases).
 | Q-5 | `qroots`: scan dq = 0.02, pole filter \|f·f_last\| < 1, bisection to \|f\| < 1e-12 | h, f | W | done in phase 2: the bisection's root Newton-polished on g(q) to round-off; the scan and pole filter stay (D-3) |
 | Q-6 | `optimize`: bisection to a 1e-10 bracket | f | W | done in phase 2: Newton polish of the norm constraint after the bisection |
 | Q-7 | `optimize`: hard-case sign of x₁ | h | W | intrinsic (two global minima); keep, warn |
-| Q-8 | `const_basis`: absolute 1e-8 singular-value threshold, values below left unscaled | g | W | relative threshold; error if rank-deficient |
+| Q-8 | `const_basis`: absolute 1e-8 singular-value threshold, values below left unscaled | g | W | done in phase 3: the rows of the constraint matrix (derivatives of orders 0–4 at rc, overlaps) are scaled to unit norm with their constraints, which changes nothing but the decomposition's accuracy (they differed by (q rc)⁴ and more, so the particular solution carried round-off at ε times that, 1e-11); an error if the smallest singular value is below 1e-10 of the largest |
 | Q-9 | `wellstate`: rwell by ×/÷0.8 then bisection to \|E − ep\| < 1e-8; ep := E | f, h | W | done in phase 2: Illinois regula falsi on E(rwell) − ep once bracketed, to round-off; a bracket closed on a residual above 1e-10 is an error |
 | Q-10 | `sbf8`: l = 2, 3 closed forms lose eps/x^l at small x | – | W | series below x ≈ 0.5 for l ≥ 2 |
 
@@ -653,7 +653,19 @@ later phases can see 1e-10.
       iterations 6431 → 8516 on the 51 inputs, at most 40 in one SCF.
       The AE totals move by ≤4e-10 Ha, the terms by ≤3.1e-7 (73_Ta_r),
       the eigenvalues by ≤1e-7, the kernels by ≤5.4e-8
-- [ ] R-5 overlaps; R-6 pieces
+- [x] R-5 overlaps: `sbf_basis_con` on the closed-form overlaps of
+      `sbf_overlap` (the overlap matrix, and the overlaps with the previous
+      pseudo-waves from their basis coefficients, so it no longer needs
+      the mesh); `fpovlp` on `lm_integral`. The basis is nearly dependent
+      (the extra wave vectors of `qroots`: the overlap matrix of 14_Si l=2
+      has eigenvalues 4.8e-9 … 0.81), and the mesh integrals used before
+      were accurate to 1e-8, so its last orthonormal function was mostly
+      their error. With Q-8: `ep[2]` 5.0e-10 → 6.5e-12. What is left is
+      ε·κ of the matching solve (κ ≈ 350 after scaling) amplified by
+      1/√λ_min ≈ 1.4e4 into the near-dependent direction of the basis,
+      harmless in φ̃ (the combination nearly cancels) but not in φ̃″, where
+      it does not: the inside-rc linear algebra in quad precision, next
+- [ ] R-6 pieces
 - [x] Q-1…Q-4 residual kinetic energy at exact qcut, fixed quadratures
       (`ugrid_m`, unit test `ugrid`, `eresid` rewritten). T2 `qcut0` at G1
       passes (kernel 1e-11), `debl0` at G2 passes (5.8e-12). References

@@ -16,86 +16,64 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine sbf_basis_con(ll,rr,mmax,irc,nbas,qroot,psopt,orbasis,orbasis_der, &
-&                     iprj,mxprj,ncon,ncon_in)
+ subroutine sbf_basis_con(ll,rc,nbas,qroot,psb,nbasmx,orbasis,orbasis_der, &
+&                         iprj,mxprj,ncon,ncon_in)
 
 !! orthonormalize basis functions and derivatives at rc and form constraint
 !! matrix based on derivative to be matched and overlaps with prior
-!! optimized wave functions
+!! optimized wave functions. Every overlap is the closed-form integral of
+!! two spherical Bessel functions inside rc (sbf_overlap), so the
+!! orthonormal basis is exact to round-off and smooth in rc: the basis is
+!! nearly dependent (the extra wave vectors of qroots; the overlap matrix
+!! has an eigenvalue of 5e-9), and the mesh integrals used before were
+!! accurate to about 1e-8, so its last orthonormal function was mostly
+!! their error (doc/smoothness_plan.md, R-5)
 !!
 !! @param ll  angujlar momentum
-!! @param rr  log radial mesh
-!! @param mmax  number of points in log radial mesh
-!! @param irc  index rr such that rr(irc)=rc
+!! @param rc  core radius (bohr)
 !! @param nbas  number of basis functions
 !! @param qroot  q values for j_l(q*r)
-!! @param psopt  optimized projector wave functions for lower iprj
-!! @param iprj  index of the projector being optimized
-!! @param mxprj  dimension of psopt, maximum number of projectors
-!! @param ncon  total number of constraints, ncon_in+iprj-1
-!! @param ncon_in  number of value and derivative constraints at rc
+!! @param psb  basis coefficients of the optimized pseudo wave functions of
+!!             the lower iprj (projector kk uses the first nbas-iprj+kk)
+!! @param nbasmx  first dimension of psb
 !! @param orbasis  matrix for orthonormal basis (rows j_l, columns basis
 !!                 vectors)
 !! @param orbasis_der  values and derivatives of orthonormal basis set at rc,
 !!                     and norm constraint vectors from already-computed psopt
+!! @param iprj  index of the projector being optimized
+!! @param mxprj  second dimension of psb, maximum number of projectors
+!! @param ncon  total number of constraints, ncon_in+iprj-1
+!! @param ncon_in  number of value and derivative constraints at rc
 
  use constants_m, only: dp
  implicit none
+ external :: sbf_overlap, sbf_rc_der, dsyev
 
 !Input variables
- integer, intent(in) :: ll,mmax,ncon,ncon_in,irc,nbas,iprj,mxprj
- real(dp), intent(in) :: rr(mmax),qroot(nbas)
- real(dp), intent(in) :: psopt(mmax,mxprj)
+ integer, intent(in) :: ll,nbas,nbasmx,iprj,mxprj,ncon,ncon_in
+ real(dp), intent(in) :: rc
+ real(dp), intent(in) :: qroot(nbas),psb(nbasmx,mxprj)
 
 !Output variables
- real(dp), intent(out) :: orbasis(nbas,nbas)
- real(dp), intent(out) :: orbasis_der(ncon,nbas)
+ real(dp), intent(out) :: orbasis(nbas,nbas),orbasis_der(ncon,nbas)
 
 !Local variables
- integer :: ii,jj,kk,ll1,ibas,info
- real(dp) :: al,amesh,ro,rc,sn,xx,tt
- real(dp) :: sb_out(10),sbfder(5)
- real(dp), allocatable :: sbfar(:,:),sev(:),work(:),sovlp(:,:)
- real(dp), allocatable :: sbf_or(:,:)
+ integer :: ii,jj,kk,ibas,info,nbk
+ real(dp) :: sn,tt
+ real(dp) :: sbfder(5)
+ real(dp), allocatable :: sev(:),work(:),sovlp(:,:),ovl(:,:),vv(:)
 
- ll1=ll+1
- rc=rr(irc)
- al = 0.01d0 * log(rr(101) / rr(1))
- amesh = exp(al)
+ allocate(sev(nbas),work(5*nbas),sovlp(nbas,nbas),ovl(nbas,nbas),vv(nbas))
 
- allocate(sbfar(irc,nbas),sev(nbas),work(5*nbas),sovlp(nbas,nbas))
- allocate(sbf_or(irc,nbas))
-
- do ibas=1,nbas
-   do jj=1,irc
-     xx=qroot(ibas)*rr(jj)
-     call sbf8(ll1,xx,sb_out)
-     sbfar(jj,ibas)=rr(jj)*sb_out(ll1)
-   end do
- end do
-
-!perform sbf orthonormalization sum for overlap matrix
-
- sovlp(:,:)=0.0d0
- ro=rr(1)/sqrt(amesh)
+!overlap matrix of the basis functions inside rc, in closed form
  do ibas=1,nbas
    do jj=ibas,nbas
-
-     sn=(sbfar(1,ibas)/rr(1)**ll)*(sbfar(1,jj)/rr(1)**ll)&
-&       *ro**(2*ll+3)/real(2*ll+3,dp)
-
-     do ii=1,irc-3
-       sn=sn+al*rr(ii)*sbfar(ii,ibas)*sbfar(ii,jj)
-     end do
-
-     sn=sn + al*(23.0d0*rr(irc-2)*sbfar(irc-2,ibas)*sbfar(irc-2,jj)&
-&              + 28.0d0*rr(irc-1)*sbfar(irc-1,ibas)*sbfar(irc-1,jj)&
-&              +  9.0d0*rr(irc  )*sbfar(irc  ,ibas)*sbfar(irc  ,jj))/24.0d0
-
-     sovlp(ibas,jj)=sn
-     sovlp(jj,ibas)=sn
+     call sbf_overlap(ll,qroot(ibas),qroot(jj),rc,sn)
+     ovl(ibas,jj)=sn
+     ovl(jj,ibas)=sn
    end do
  end do
+ sovlp(:,:)=ovl(:,:)
 
 !find eigenvalues and eigenvectors of the overlap matrix
 
@@ -133,39 +111,30 @@
    end do
  end do
 
-!find orthogonal basis radial functiona
- sbf_or(:,:)=0.0d0
- do jj=1,nbas !sbf loop
-   do ibas=1,nbas !orbasis loop
-     sbf_or(:,ibas)=sbf_or(:,ibas)+orbasis(jj,ibas)*sbfar(:,jj)
-   end do
- end do
-
-!find new or-basis representation of previous optimized wave functions
-!fill in last rows of orbssis_der constraint matrix for overlap constraint
+!fill in last rows of orbasis_der constraint matrix with the overlaps of
+!the orthonormal functions with the previous optimized wave functions,
+!<phi_j|psopt_kk> = sum_i orbasis(i,j) sum_m ovl(i,m) psb(m,kk)
 
  if(iprj>=2) then
-   ro=rr(1)/sqrt(amesh)
    do kk=1,iprj-1
-     do jj=1,nbas
-
-       sn=(psopt(1,kk)/rr(1)**ll)*(sbf_or(1,jj)/rr(1)**ll)&
-&         *ro**(2*ll+3)/real(2*ll+3,dp)
-
-       do ii=1,irc-3
-         sn=sn+al*rr(ii)*psopt(ii,kk)*sbf_or(ii,jj)
+     nbk=nbas-iprj+kk
+     do ii=1,nbas
+       vv(ii)=0.0d0
+       do jj=1,nbk
+         vv(ii)=vv(ii)+ovl(ii,jj)*psb(jj,kk)
        end do
-
-       sn=sn + al*(23.0d0*rr(irc-2)*psopt(irc-2,kk)*sbf_or(irc-2,jj)&
-&                + 28.0d0*rr(irc-1)*psopt(irc-1,kk)*sbf_or(irc-1,jj)&
-&                +  9.0d0*rr(irc  )*psopt(irc  ,kk)*sbf_or(irc  ,jj))/24.0d0
-
+     end do
+     do jj=1,nbas
+       sn=0.0d0
+       do ii=1,nbas
+         sn=sn+orbasis(ii,jj)*vv(ii)
+       end do
        orbasis_der(ncon_in+kk,jj)=sn
      end do !jj
    end do !kk
  end if !iprj>=2
 
- deallocate(sbfar,sbf_or,sev,work,sovlp)
+ deallocate(sev,work,sovlp,ovl,vv)
 
  return
  end subroutine sbf_basis_con

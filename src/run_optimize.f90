@@ -97,7 +97,7 @@
  real(dp), allocatable :: qout(:),eresq(:),eresg(:)
  real(dp), allocatable :: e0(:),edot(:,:),emat(:,:,:),pswfopt_nu(:)
 
- real(dp), allocatable :: pswfopt_sb(:),pswfopt_or(:)
+ real(dp), allocatable :: pswfopt_sb(:),pswfopt_or(:),psb(:,:)
  real(dp) :: eresidmin
  real(dp) :: ekin_anal,ekin_num,qmax
 
@@ -113,6 +113,8 @@
 !maximum basis size
  nbas=nbas_in+npr-1
  allocate(qroot(nbas))
+ allocate(psb(nbas,mxprj))
+ psb(:,:)=0.0d0
 
 !calculate derivatives of all-electron wave function at r_c from the radial
 !equation for the first projector to set sbf wave vectors for all projectors
@@ -177,8 +179,8 @@
    qout(2)=0.0d0
 
 !calculate orthogonal basis and constraint matrix
-   call sbf_basis_con(ll,rr,mmax,irc,nbas,qroot,psopt,orbasis,orbasis_der, &
-&                     iprj,mxprj,ncon,ncon_in)
+   call sbf_basis_con(ll,rc,nbas,qroot,psb,nbas_in+npr-1,orbasis, &
+&                     orbasis_der,iprj,mxprj,ncon,ncon_in)
 
 
 !load constraint vector for value/derivative matching
@@ -225,6 +227,7 @@
 
    write(6,'(a,1p,d10.2,a)') '    Residual kinetic energy error=', &
 &        eresidmin,' Ha'
+   psb(1:nbas,iprj)=pswfopt_sb(1:nbas)
 
 !the convergence curve of the optimized pseudo wave function on the q
 !grid, for the cutoffs at each error level (below) and the model core's
@@ -303,7 +306,7 @@
 
  end do !iprj
 
- deallocate(work,qroot)
+ deallocate(work,qroot,psb)
 
  return
 

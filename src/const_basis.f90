@@ -51,10 +51,12 @@
  real(dp), intent(out) :: ps0norm
 
 !Local variables
- real(dp) :: usvd(10,10),ss(10),work(100),con_tst(10)
+ real(dp) :: usvd(10,10),ss(10),work(100),con_tst(10),rscale(10)
  real(dp), allocatable :: amat(:,:),vt(:,:)
  real(dp) :: sn
- real(dp), parameter :: eps=1.d-8
+! the constraints are rank-deficient below this ratio of the smallest to
+! the largest singular value of the scaled constraint matrix
+ real(dp), parameter :: rankeps=1.d-10
  integer :: ii,jj,kk,info
 
 
@@ -62,9 +64,18 @@
 !     $                   WORK, LWORK, INFO )
  allocate(amat(10,nbas),vt(nbas,nbas))
 
-!save orbasis_der from overwrite
+!save orbasis_der from overwrite; each row of the constraint matrix (a
+!derivative of one order at rc, or an overlap) is scaled to unit norm, with
+!its constraint, which changes neither the solution set nor the null space
+!but the accuracy of the decomposition: the rows differ in size by the
+!derivative orders, (q rc)**4 and more, which the particular solution
+!returned as round-off at eps times that ratio (1e-11, doc/smoothness_plan.md
+!Q-8)
  amat(:,:)=0.0d0
- amat(1:ncon,:)=orbasis_der(1:ncon,:)
+ do ii=1,ncon
+   rscale(ii)=1.0d0/sqrt(sum(orbasis_der(ii,:)**2))
+   amat(ii,:)=rscale(ii)*orbasis_der(ii,:)
+ end do
 
 !singular value decomposition of constraint matrix
  call dgesvd('A','A',ncon,nbas,amat,10,ss,usvd,10,vt,nbas, &
@@ -75,20 +86,25 @@
    error stop 1
  end if
 
+ if(ss(ncon)<rankeps*ss(1)) then
+   write(6,'(/a,1p,e10.2)') &
+&        'const_basis: ERROR the constraints are linearly dependent, ', &
+&        'singular value ratio',ss(ncon)/ss(1)
+   error stop 1
+ end if
+
 !operate on constraint vector with usvd^transpose
  work(:)=0.0d0
  do ii=1,ncon
    work(ii)=0.0d0
    do jj=1,ncon
-     work(ii)=work(ii)+usvd(jj,ii)*cons(jj)
+     work(ii)=work(ii)+usvd(jj,ii)*rscale(jj)*cons(jj)
    end do
  end do
 
 !scale work with inverse transpose of singular value "matrix" ss
  do ii=1,ncon
-   if(abs(ss(ii))>eps) then
-     work(ii)=work(ii)/ss(ii)
-   end if
+   work(ii)=work(ii)/ss(ii)
  end do
 
 !form coefficient vector for basic matching pseudo wave function

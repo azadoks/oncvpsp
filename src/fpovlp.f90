@@ -18,17 +18,20 @@
 !
 ! calculates all-electron wave function overlap intergrals
 
- subroutine fpovlp(gg,hh,nn,ll,kap,zz,ss,rr,irel)
+ subroutine fpovlp(gg,hh,mmax,rc,ll,kap,zz,ss,rr,irel)
 
 !! product of all-electron wave functions gg*hh goes like rr**(2*gamma) as
 !! rr -> 0, with the exponent of the equation that gave them: l+1, that of
 !! the Koelling-Harmon equation (sr_gamma) or, for the large components of
 !! the Dirac equation, sqrt(kap**2-(zz/c)**2), as in renorm_r
-!! integral on usual log mesh from rr=0 to rr(nn)
+!! integral from rr=0 to rc: the power law below rr(1), the interpolated
+!! cumulative integral of lm_integral from there, so smooth in rc
+!! (doc/smoothness_plan.md, R-5)
 !!
 !! @param gg  wave function one
 !! @param hh  wave function two
-!! @param nn  outer integration limit
+!! @param mmax  size of the log radial mesh
+!! @param rc  outer integration limit (bohr)
 !! @param ll  angular momentum
 !! @param kap  Dirac kappa (irel=2 only)
 !! @param zz  nuclear charge
@@ -39,23 +42,20 @@
  use constants_m, only: dp
  use relativity_m, only: c_light
  use sr_flux_m, only: sr_gamma
+ use logmesh_m, only: lm_integral
  implicit none
 
 !Input variables
- integer, intent(in) :: nn,ll,kap
- real(dp), intent(in) :: zz
- real(dp), intent(in) :: gg(nn),hh(nn),rr(nn)
+ integer, intent(in) :: mmax,ll,kap
+ real(dp), intent(in) :: zz,rc
+ real(dp), intent(in) :: gg(mmax),hh(mmax),rr(mmax)
  integer, intent(in) :: irel
 
 !Output variables
  real(dp), intent(out) :: ss
 
 !Local variables
- real(dp) :: r0,amesh,al,fss,gamma
- integer :: ii
-
- al = 0.01d0 * log(rr(101)/rr(1))
- amesh = exp(al)
+ real(dp) :: fss,gamma,si
 
  if(irel/=0) then
    fss=(1.0d0/c_light)**2
@@ -69,18 +69,11 @@
    gamma=sr_gamma(ll,zz,fss)
  end if
 
- r0=rr(1)/sqrt(amesh)
- ss=r0**(2.0d0*gamma+1.0d0)/(2.d0*gamma+1.0d0)
- ss=(ss*gg(1)*hh(1))/rr(1)**(2.d0*gamma)
-
- do ii = 1, nn - 3
-   ss =  ss + al*gg(ii)*hh(ii)*rr(ii)
- end do
-
- ss=ss + al*(23.d0*rr(nn-2)*gg(nn-2)*hh(nn-2) &
-&        + 28.d0*rr(nn-1)*gg(nn-1)*hh(nn-1) &
-&        +  9.d0*rr(nn  )*gg(nn  )*hh(nn  ))/24.d0
-
+! the piece below rr(1) from the power law, the rest by the cumulative
+! integral (whose own start cancels between its two limits)
+ ss=gg(1)*hh(1)*rr(1)/(2.d0*gamma+1.0d0)
+ call lm_integral(rr,gg*hh,mmax,2*ll+2,rr(1),rc,si)
+ ss=ss+si
 
  return
  end subroutine fpovlp
