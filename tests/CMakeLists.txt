@@ -61,6 +61,54 @@ function(oncvpsp_compares name)
     endif ()
 endfunction()
 
+# Smooth dependence on the inputs (doc/smoothness_plan.md, T2): smooth_scan.py steps one input of a
+# TOML input through 41 values and fits each feature of the UPF file on the log mesh (nonlocal
+# kernels, V_loc, model core) with a polynomial; the residuals must be within the plan's goals and
+# no step between neighbouring values a jump. Written before the code, so labelled smooth (failing
+# until its phase is done; ctest -LE smooth leaves them out). The harness's own check is always run.
+add_test(NAME smooth_scan_self_test COMMAND ${Python3_EXECUTABLE} "${scripts}/smooth_scan.py" --self-test)
+set_tests_properties(smooth_scan_self_test PROPERTIES LABELS unit)
+# goals G1 (an input that was rounded or searched) and G2 (one that never was: the noise floor)
+set(smooth_g1 "kernel=1e-10,vloc=1e-10,core=1e-12")
+set(smooth_g2 "kernel=1e-12,vloc=1e-12,core=1e-12")
+# smooth_scan_test(NAME REL INPUT KEY GROUPS TOL WINDOW...): the scan of KEY of tests/data/toml/INPUT.toml
+# by oncvpsp<REL>.x over WINDOW (smooth_scan.py's --center/--cells/--span), features GROUPS
+function(smooth_scan_test name rel input key groups tol)
+    if (NOT ONCVPSP_WITH_TOML OR (rel STREQUAL "r" AND NOT ONCVPSP_WITH_FR))
+        return()
+    endif ()
+    add_test(NAME smooth_${name}
+        COMMAND ${Python3_EXECUTABLE} "${scripts}/smooth_scan.py" $<TARGET_FILE:oncvpsp${rel}>
+            "${data}/toml/${input}.toml" "${key}" ${ARGN} --groups ${groups} --tol ${tol}
+            --max-jump 3 --jobs 4 --workdir "${CMAKE_CURRENT_BINARY_DIR}/smooth_${name}")
+    set_tests_properties(smooth_${name} PROPERTIES LABELS smooth PROCESSORS 4)
+    if (NOT ONCVPSP_WITH_Libxc AND input IN_LIST libxc_inputs)
+        set_tests_properties(smooth_${name} PROPERTIES DISABLED TRUE)
+    endif ()
+endfunction()
+# core radii, local-potential radius (lpopt 5 and 1), qcut (phase 3)
+smooth_scan_test(sr_14_Si_rc0 sr 14_Si "pseudopotentials.rc[0]" kernel,vloc,core ${smooth_g1} --center 2.8)
+smooth_scan_test(sr_14_Si_rc1 sr 14_Si "pseudopotentials.rc[1]" kernel,vloc,core ${smooth_g1} --center 2.8)
+smooth_scan_test(sr_14_Si_rc2 sr 14_Si "pseudopotentials.rc[2]" kernel,vloc,core ${smooth_g1} --center 2.8)
+smooth_scan_test(sr_14_Si_rcloc sr 14_Si "local_potential.rcloc" kernel,vloc,core ${smooth_g1} --center 2.6)
+smooth_scan_test(sr_20_Ca_rcloc sr 20_Ca "local_potential.rcloc" kernel,vloc ${smooth_g1} --center 1.8)
+smooth_scan_test(sr_14_Si_qcut0 sr 14_Si "pseudopotentials.qcut[0]" kernel,vloc,core ${smooth_g1} --span 0.04)
+smooth_scan_test(nr_08_O_rc1 nr 08_O "pseudopotentials.rc[1]" kernel,vloc ${smooth_g1} --center 1.65)
+smooth_scan_test(r_52_Te_rc1 r 52_Te "pseudopotentials.rc[1]" kernel,vloc ${smooth_g1} --center 3.15)
+# inputs never rounded: the noise floor (phase 2)
+smooth_scan_test(sr_14_Si_dvloc0 sr 14_Si "local_potential.dvloc0" kernel,vloc,core ${smooth_g2} --span 0.02)
+smooth_scan_test(sr_14_Si_debl0 sr 14_Si "vkb_projectors.debl[0]" kernel,vloc,core ${smooth_g2} --span 0.02)
+smooth_scan_test(sr_14_Si_ep2 sr 14_Si "pseudopotentials.ep[2]" kernel,vloc,core ${smooth_g2} --span 0.02)
+smooth_scan_test(r_52_Te_dvloc0 r 52_Te "local_potential.dvloc0" kernel,vloc ${smooth_g2} --span 0.02)
+# model core, icmod 1, 2, 3, 4, 6, 7 (phase 5)
+smooth_scan_test(sr_14_Si_fcfact sr 14_Si "model_core_charge.fcfact" kernel,vloc,core ${smooth_g1} --span 0.02)
+smooth_scan_test(sr_79_Au_lxc_fcfact sr 79_Au_lxc "model_core_charge.fcfact" kernel,vloc,core ${smooth_g1} --span 0.02)
+smooth_scan_test(sr_34_Se_fcfact sr 34_Se "model_core_charge.fcfact" kernel,vloc,core ${smooth_g1} --span 0.02)
+smooth_scan_test(sr_34_Se_rcfact sr 34_Se "model_core_charge.rcfact" kernel,vloc,core ${smooth_g1} --span 0.02)
+smooth_scan_test(sr_40_Zr_grid_fcfact_min sr 40_Zr_grid "model_core_charge.fcfact_min" kernel,vloc,core ${smooth_g1} --span 0.02)
+smooth_scan_test(sr_14_Si_bc_ecut sr 14_Si_bc "model_core_charge.fcfact" kernel,vloc,core ${smooth_g1} --span 0.2)
+smooth_scan_test(sr_14_Si_hm_slack sr 14_Si_hm "model_core_charge.slack" kernel,vloc,core ${smooth_g1} --span 0.02)
+
 # Output against the references in tests/refs
 set(oncvpspsr_tests
     "03_Li" "07_N" "07_N_dl" "08_O" "14_Si"

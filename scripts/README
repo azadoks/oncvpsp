@@ -9,6 +9,10 @@ pseudopotentials by their nonlocal kernels and local potentials, with the
 standard library only; it and ref_patch.py are for changes of the reference
 outputs.
 
+smooth_scan.py steps one input through a fine window and measures how
+smoothly the pseudopotential follows it (doc/smoothness_plan.md); ctest runs
+it with the label smooth.
+
 reindent.py re-indents the Fortran sources in the layout of
 doc/coding_standards.md; pre-commit runs it, and with --stdin an editor
 can run it as a formatter (doc/developer_setup.md).
