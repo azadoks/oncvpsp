@@ -38,6 +38,7 @@ set(src_oncvpsp
     lschvkbb.f90
     lschvkbbe.f90
     lschvkbs.f90
+    logmesh_m.f90
     m_libxc_list.F90
     psmlout_m.f90
     modcore.f90
@@ -62,6 +63,7 @@ set(src_oncvpsp
     sbf_basis_con.f90
     sbf_rc_der.f90
     sbf8.f90
+    sbf_overlap.f90
     scatterstate.f90
     sr_flux_m.f90
     sratom.f90
