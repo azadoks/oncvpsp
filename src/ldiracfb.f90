@@ -23,7 +23,9 @@
 !! @param nn  principal quantum number
 !! @param ll  angular-momentum quantum number
 !! @param kap  =l, -(l+1) for j=l -/+ 1/2
-!! @param ierr  non-zero return if error
+!! @param ierr  non-zero return if error, 10 if there is no bound state
+!!              and the box state (large component 0 at rr(mmax)) is
+!!              returned
 !! @param ee  bound-state energy, input guess and output calculated value
 !! @param rr  log radial mesh
 !! @param zz  atomic number
@@ -55,7 +57,7 @@
  real(dp), allocatable :: gu(:),fu(:),gup(:),fup(:),cf(:)
 
  real(dp) :: cc,cci,gam,cof
- real(dp) :: de,emax,emin
+ real(dp) :: de,emax,emin,etop,elow
  real(dp) :: eps,ro,sc
  real(dp) :: sls,sn,cn,uout,upin,upout,xkap
  real(dp) :: amesh,al,als
@@ -112,8 +114,22 @@
 
  cof=(kap+gam)*(cc/zz)
 
+! top of the bracket: no bound state lies above it on the mesh;
+! highest energy found to have too few nodes
+ etop=emax
+ elow=etop
+
 ! return point for bound state convergence
  do nint=1,60
+
+! a bracket closed without a converged energy shift: there is no bound
+! state, which an occupied state can lack in an early, overshooting SCF
+! potential; the box state stands in for it
+   if(emax-emin<max(abs(ee),0.2d0)*eps) then
+     call boxstate()
+     ierr=10
+     exit
+   end if
 
 ! coefficient array for u in Schroedinger eq.
    do ii=1,mmax
@@ -129,54 +145,35 @@
      end if
    end do
 
-   if(mch==0) then
-     ierr=-1
-     return
+   if(mch==0 .and. cf(mmax)>0.0d0) then
+! classically forbidden everywhere: too low
+     emin=ee
+     elow=ee
+     ee=0.5d0*(emin+emax)
+     cycle
+   else if(mch==0) then
+! classically allowed at rr(mmax): too high
+     emax=ee
+     ee=0.5d0*(emin+emax)
+     cycle
    end if
 
-! start wavefunctions with series
-   do ii=1,5
-     gu(ii)=rr(ii)**gam
-     fu(ii)=cof*gu(ii)
-
-     fup(ii)= al*rr(ii)*(kap*fu(ii)/rr(ii) &
-&             + cci*(vv(ii) - ee)*gu(ii))
-
-     gup(ii)= al*rr(ii)*(-kap*gu(ii)/rr(ii) &
-&             + cci*(2.0d0*cc**2 + ee - vv(ii))*fu(ii))
-   end do
-
-! outward integration using predictor once, corrector
-! twice
-   node=0
-   do ii=5,mch-1
-
-     fu(ii+1)=fu(ii)+aeo(fup,ii)
-     gu(ii+1)=gu(ii)+aeo(gup,ii)
-
-     do kk=1,2
-       fup(ii+1)= al*rr(ii+1)*(kap*fu(ii+1)/rr(ii+1) &
-&               - cci*(ee - vv(ii+1))*gu(ii+1))
-
-       gup(ii+1)= al*rr(ii+1)*(-kap*gu(ii+1)/rr(ii+1) &
-&               + cci*(2.0d0*cc**2 + ee - vv(ii+1))*fu(ii+1))
-
-       fu(ii+1)=fu(ii)+aio(fup,ii)
-       gu(ii+1)=gu(ii)+aio(gup,ii)
-     end do
-     if(gu(ii+1)*gu(ii) <= 0.0d0) node=node+1
-   end do
+   call outward(mch,node)
 
    uout=gu(mch)
    upout=gup(mch)
 
-   if(node-nn+ll+1==0) then
+! start inward integration with simple exponential where the
+! wave function has decayed to machine precision
+   call inward_start(ll,ee,rr,vv,mch,mmax,nin)
 
-! start inward integration at 10*classical turning
-! point with simple exponential
+   if(node-nn+ll+1==0 .and. nin<=mch+4) then
+! no room for the inward integration: too high
+     emax=ee
+     ee=0.5d0*(emin+emax)
 
-     nin=mch+2.3d0/al
-     if(nin+4>mmax) nin=mmax-4
+   else if(node-nn+ll+1==0) then
+
      xkap=sqrt(sls/rr(nin)**2 + 2.0d0*(vv(nin)-ee))
 
      do ii=nin,nin+4
@@ -220,36 +217,11 @@
 
      upin=gup(mch)
 
-! perform normalization sum
-
-     ro=rr(1)/sqrt(amesh)
-     sn=((1.0d0+cof**2)*ro**(2.0d0*gam+1.0d0))/(2.0d0*gam+1.0d0)
-
-     do ii=1,nin-3
-       sn=sn+al*rr(ii)*(gu(ii)**2 + fu(ii)**2)
-     end do
-
-     sn=sn + al*(23.0d0*rr(nin-2)*(gu(nin-2)**2 + fu(nin-2)**2) &
-&              + 28.0d0*rr(nin-1)*(gu(nin-1)**2 + fu(nin-1)**2) &
-&              +  9.0d0*rr(nin  )*(gu(nin  )**2 + fu(nin  )**2))/24.0d0
-
 ! normalize u
-
-     cn=1.0d0/sqrt(sn)
+     call normalize(nin)
      uout=cn*uout
      upout=cn*upout
      upin=cn*upin
-
-     do ii=1,nin
-       gup(ii)=cn*gup(ii)
-       gu(ii)=cn*gu(ii)
-       fup(ii)=cn*fup(ii)
-       fu(ii)=cn*fu(ii)
-     end do
-     do ii=nin+1,mmax
-       gu(ii)=0.0d0
-       fu(ii)=0.0d0
-     end do
 
 ! perturbation theory for energy shift based on large component
 ! continuity of small component should follow
@@ -274,6 +246,7 @@
    else if(node-nn+ll+1<0) then
 ! too few nodes
      emin=ee
+     elow=ee
      ee=0.5d0*(emin+emax)
 
    else
@@ -301,6 +274,124 @@
  return
 
  contains
+
+ subroutine outward(mlast,nnode)
+
+!! outward integration from the series at the origin to mlast, at the
+!! energy ee, counting the nodes of the large component
+
+ integer, intent(in) :: mlast
+ integer, intent(out) :: nnode
+
+! start wavefunctions with series
+ do ii=1,5
+   gu(ii)=rr(ii)**gam
+   fu(ii)=cof*gu(ii)
+
+   fup(ii)= al*rr(ii)*(kap*fu(ii)/rr(ii) &
+&           + cci*(vv(ii) - ee)*gu(ii))
+
+   gup(ii)= al*rr(ii)*(-kap*gu(ii)/rr(ii) &
+&           + cci*(2.0d0*cc**2 + ee - vv(ii))*fu(ii))
+ end do
+
+! outward integration using predictor once, corrector
+! twice
+ nnode=0
+ do ii=5,mlast-1
+
+   fu(ii+1)=fu(ii)+aeo(fup,ii)
+   gu(ii+1)=gu(ii)+aeo(gup,ii)
+
+   do kk=1,2
+     fup(ii+1)= al*rr(ii+1)*(kap*fu(ii+1)/rr(ii+1) &
+&             - cci*(ee - vv(ii+1))*gu(ii+1))
+
+     gup(ii+1)= al*rr(ii+1)*(-kap*gu(ii+1)/rr(ii+1) &
+&             + cci*(2.0d0*cc**2 + ee - vv(ii+1))*fu(ii+1))
+
+     fu(ii+1)=fu(ii)+aio(fup,ii)
+     gu(ii+1)=gu(ii)+aio(gup,ii)
+   end do
+   if(gu(ii+1)*gu(ii) <= 0.0d0) nnode=nnode+1
+ end do
+
+ return
+ end subroutine outward
+
+ subroutine normalize(mlast)
+
+!! normalize the large and small components on 1..mlast, zero beyond
+
+ integer, intent(in) :: mlast
+
+! perform normalization sum
+
+ ro=rr(1)/sqrt(amesh)
+ sn=((1.0d0+cof**2)*ro**(2.0d0*gam+1.0d0))/(2.0d0*gam+1.0d0)
+
+ do ii=1,mlast-3
+   sn=sn+al*rr(ii)*(gu(ii)**2 + fu(ii)**2)
+ end do
+
+ sn=sn + al*(23.0d0*rr(mlast-2)*(gu(mlast-2)**2 + fu(mlast-2)**2) &
+&            + 28.0d0*rr(mlast-1)*(gu(mlast-1)**2 + fu(mlast-1)**2) &
+&            +  9.0d0*rr(mlast  )*(gu(mlast  )**2 + fu(mlast  )**2))/24.0d0
+
+ cn=1.0d0/sqrt(sn)
+
+ do ii=1,mlast
+   gup(ii)=cn*gup(ii)
+   gu(ii)=cn*gu(ii)
+   fup(ii)=cn*fup(ii)
+   fu(ii)=cn*fu(ii)
+ end do
+ do ii=mlast+1,mmax
+   gu(ii)=0.0d0
+   fu(ii)=0.0d0
+ end do
+
+ return
+ end subroutine normalize
+
+ subroutine boxstate()
+
+!! the state with nn-ll-1 nodes and a large component zero at rr(mmax),
+!! above elow (the box state of RadialAtomicSolvers.jl): the outward
+!! solution over the whole mesh gains a node each time it crosses zero
+!! at rr(mmax), so the energy is bisected on its node count
+
+ real(dp) :: eblo,ebhi
+ integer :: nb,jj
+
+ eblo=elow
+ ebhi=etop+1.0d0
+ do jj=1,60
+   ee=ebhi
+   call outward(mmax,nb)
+   if(nb>nn-ll-1) exit
+   eblo=ebhi
+   ebhi=etop+2.0d0*(ebhi-etop)
+ end do
+
+ do jj=1,200
+   ee=0.5d0*(eblo+ebhi)
+   call outward(mmax,nb)
+   if(nb>nn-ll-1) then
+     ebhi=ee
+   else
+     eblo=ee
+   end if
+   if(ebhi-eblo<max(abs(ee),0.2d0)*eps) exit
+ end do
+
+ ee=eblo
+ call outward(mmax,nb)
+ call normalize(mmax)
+ mch=mmax
+
+ return
+ end subroutine boxstate
 
  include 'adams.inc'
 

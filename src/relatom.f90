@@ -147,6 +147,12 @@
 
        call ldiracfb(na(ii),ll,kap,ierr,et, &
 &                  rr,zz,vi,uu,up,mmax,mch)
+! a state with no bound solution in this potential gets its box state;
+! the SCF goes on but cannot converge with it
+       if(ierr == 10) then
+         convg=.false.
+         ierr=0
+       end if
 
        if(ierr /= 0) then
          write(6,'(/2a,5i4)') 'relatom: ldiracfb convergence ERROR', &

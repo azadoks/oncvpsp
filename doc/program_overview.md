@@ -27,7 +27,15 @@ irel, and the stage.  It has the following major sections:
    correlation) potential is mixed, and the SCF is converged when no
    eigenvalue moves and the root mean square change of the screening
    potential over the electrons (ae_residual, as in RadialAtomicSolvers.jl)
-   is below 1e-8 Ha.  The total energy and its kinetic, electron-nucleus,
+   is below 1e-8 Ha.  The radial solvers (lschfb, ldiracfb) take two more
+   steps from RadialAtomicSolvers.jl.  They start the inward integration
+   where the WKB decay from the turning point reaches machine precision
+   (inward_start); the start at 10 times the turning point used before cut
+   the tail of a shallow 3d or 4f state, which made the energy first order
+   in the mesh.  And an occupied state with no bound solution in an early
+   SCF potential (the 4f of Yb) gets its box state, zero at the end of the
+   mesh, and the SCF goes on; it cannot converge with one.  The total
+   energy and its kinetic, electron-nucleus,
    Hartree and exchange-correlation terms (ae_energies, as NIST defines them,
    the kinetic energy from the eigenvalue sum) are printed with the
    reference-configuration results.  I strongly believe that neutral ground-state

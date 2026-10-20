@@ -136,6 +136,12 @@
      ierr = 0
      call lschfb(na(ii),la(ii),ierr,et, &
 &                rr,vi,uu,up,zz,mmax,mch,irel)
+! a state with no bound solution in this potential gets its box state;
+! the SCF goes on but cannot converge with it
+     if(ierr == 10) then
+       convg=.false.
+       ierr=0
+     end if
      if(ierr /= 0) then
        write(6,'(/a,3i4)') 'sratom123: lschfb convergence ERROR n,l,iter=', &
 &       na(ii),la(ii),it

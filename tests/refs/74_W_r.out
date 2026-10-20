@@ -770,7 +770,7 @@ B matrix Hermiticity error, ll=  3  kap= -4
 B matrix Hermiticity error, ll=  3  kap=  3
    1   2   -4.6704D-06
 
-  Orthonormal projector coefficients -1.9641E+00  1.3159E+00
+  Orthonormal projector coefficients -1.9641E+00  1.3158E+00
 
  Orthonormal scalar projector coefficients, l =  1
  -2.4248E+00 -3.8116E-01  1.7961E-01 -2.3019E-02 -1.1294E-04 -1.2829E-07
@@ -845,7 +845,7 @@ d2excps - pseudofunction derivatives with core correction
 
 rms 2nd derivative error    6.596339E-04
 
-Ionic tail switched over r =  2.7138 to  7.0674 a.u., converged in  4 steps
+Ionic tail switched over r =  2.7138 to  8.6615 a.u., converged in  3 steps
 
 Pseudoatom total energy  -69.353139
 
@@ -940,9 +940,9 @@ Ghost test for J = L - 1/2
 
 Coulomb tail of the local potential
   alpha_z = 4 pi int r**2 (V_loc + zion/r) dr  6.2142022132E+01 Ha bohr**3
-  alpha_z change, table cut at r =  6.00:  6.5063E-06
+  alpha_z change, table cut at r =  6.00: -8.4380E-05
   alpha_z change, table cut at r = 10.00: -3.6731E-07
-  |V_loc + zion/r| < 1e-10 beyond r =    9.5314
+  |V_loc + zion/r| < 1e-10 beyond r =   12.1808
   max |V_loc - V_ion| beyond rcmax  1.4211E-05
 
 Test configuration 0

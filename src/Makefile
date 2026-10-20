@@ -17,7 +17,7 @@ $(error OBJS_LIBXC is not set. Fill in ../make.inc (see ../make.inc.example))
 endif
 
 OBJS_ALL =	aeatom.o ae_scf.o boundstate.o build_info_m.o check_data.o const_basis.o constants_m.o dpnint.o eresid.o exchdl.o \
-		exc_off_pbe.o excpzca.o excwig.o input_text_m.o ldiracfb.o ldiracfs.o \
+		exc_off_pbe.o excpzca.o excwig.o input_text_m.o inward_start.o ldiracfb.o ldiracfs.o \
 		lschfb.o lschfs.o lschkb.o lschpb.o lschps.o \
 		lschvkbbe.o lschvkbb.o lschvkbs.o modcore.o optimize.o \
 		pspot.o qroots.o run_optimize.o sbf8.o \

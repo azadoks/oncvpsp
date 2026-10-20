@@ -111,6 +111,14 @@ endforeach ()
 oncvpsp_test(ae_scf_nr_01_H mesh ae_scf_test.sh
     $<TARGET_FILE:oncvpspnr_ae> "${data}/01_H_ae.dat" "${CMAKE_CURRENT_BINARY_DIR}/ae_scf_nr_01_H")
 
+# All-electron atom with a 4f shell: see scripts/ae_4f_test.sh
+oncvpsp_test(ae_4f_scf_sr_70_Yb mesh ae_4f_test.sh
+    $<TARGET_FILE:oncvpspsr_ae> "${data}/70_Yb_ae.dat" scf "${CMAKE_CURRENT_BINARY_DIR}/ae_4f_scf_sr_70_Yb")
+oncvpsp_test(ae_4f_scf_r_70_Yb mesh ae_4f_test.sh
+    $<TARGET_FILE:oncvpspr_ae> "${data}/70_Yb_ae.dat" scf "${CMAKE_CURRENT_BINARY_DIR}/ae_4f_scf_r_70_Yb")
+oncvpsp_test(ae_4f_mesh_sr_69_Tm mesh ae_4f_test.sh
+    $<TARGET_FILE:oncvpspsr_ae> "${data}/69_Tm_ae.dat" mesh "${CMAKE_CURRENT_BINARY_DIR}/ae_4f_mesh_sr_69_Tm")
+
 # Log mesh input (the optional last line of the text input): see scripts/log_mesh_test.sh
 foreach (mesh_test IN ITEMS "sr:14_Si" "nr:29_Cu" "r:52_Te")
     string(REPLACE ":" ";" mesh_test "${mesh_test}")
