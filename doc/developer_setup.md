@@ -81,10 +81,27 @@ checks every call against the definition of the routine it calls.
 
 `ctest --preset default` runs everything; `-L <label>` selects a part of it
 (`unit`, `sr`, `r`, `nr`, `split`, `mesh`, `toml`, `psml`, `pipe`,
-`errors`, `echo`, `psp8`) and `-R <regex>` a test by name. The reference
-outputs are in `tests/refs` and are compared as written, so changes that
-alter the numbers need new references. Each test leaves its outputs in its
-own directory under `build/tests`.
+`errors`, `echo`, `psp8`, `nist`) and `-R <regex>` a test by name. Each test
+leaves its outputs in its own directory under `build/tests`.
+
+The reference outputs are in `tests/refs`, compared with `fldiff.pl` to a
+relative or absolute 1e-5 in every number, so changes that move the numbers
+further need new references. Before updating them, check what changed:
+
+- `scripts/psp8_kernel_diff.py OLD.out NEW.out` compares the
+  pseudopotentials by what a calculation uses, the nonlocal kernel
+  sum_i |beta_i> e_i <beta_i| of each l and the local potential. The
+  projectors themselves can change while the kernel does not.
+- The `nist` tests (`scripts/nist_test.py`) compare the all-electron atom
+  with the NIST atomic reference data to its stated accuracy (about 1e-6
+  Ha), with the data's functionals and speed of light (iexc 5 and 6,
+  `c_light`). ctest runs the light atoms and a few heavy ones; the whole
+  table, 183 atoms and cations per set, is the script run by hand with
+  `--jobs`.
+
+`scripts/ref_patch.py NEW.out tests/refs/NAME.out` then updates a reference
+minimally: it keeps every line that fldiff accepts and takes the new one
+only where a number moves beyond the tolerance or the text changes.
 
 ## Editors
 

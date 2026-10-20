@@ -120,6 +120,30 @@ oncvpsp_test(ae_4f_scf_r_70_Yb mesh ae_4f_test.sh
 oncvpsp_test(ae_4f_mesh_sr_69_Tm mesh ae_4f_test.sh
     $<TARGET_FILE:oncvpspsr_ae> "${data}/69_Tm_ae.dat" mesh "${CMAKE_CURRENT_BINARY_DIR}/ae_4f_mesh_sr_69_Tm")
 
+# The all-electron atom against the NIST atomic reference data, to its stated accuracy, on the light
+# atoms and a few heavy ones, neutral and first cations (see scripts/nist_test.py and
+# tests/data/nist/README.md). The whole table is scripts/nist_test.py run by hand, e.g.
+#   scripts/nist_test.py build/bin/oncvpspr_ae.x RLDA tests/data/nist build/nist_RLDA --jobs 8
+find_package(Python3 COMPONENTS Interpreter)
+if (Python3_Interpreter_FOUND)
+    foreach (nist_test IN ITEMS "LDA:nr" "ScRLDA:sr" "RLDA:r")
+        string(REPLACE ":" ";" nist_test "${nist_test}")
+        list(GET nist_test 0 set)
+        list(GET nist_test 1 rel)
+        foreach (part IN ITEMS "light:1-18" "heavy:29,54,64,79,92")
+            string(REPLACE ":" ";" part "${part}")
+            list(GET part 0 part_name)
+            list(GET part 1 zs)
+            add_test(NAME nist_${set}_${part_name}
+                COMMAND ${Python3_EXECUTABLE} "${scripts}/nist_test.py" $<TARGET_FILE:oncvpsp${rel}_ae>
+                    ${set} "${data}/nist" "${CMAKE_CURRENT_BINARY_DIR}/nist_${set}_${part_name}" --z ${zs})
+            set_tests_properties(nist_${set}_${part_name} PROPERTIES LABELS nist)
+        endforeach ()
+    endforeach ()
+else ()
+    message(WARNING "python3 not found; the NIST tests are not available")
+endif ()
+
 # Log mesh input (the optional last line of the text input): see scripts/log_mesh_test.sh
 foreach (mesh_test IN ITEMS "sr:14_Si" "nr:29_Cu" "r:52_Te")
     string(REPLACE ":" ";" mesh_test "${mesh_test}")
