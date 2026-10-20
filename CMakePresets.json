@@ -21,6 +21,12 @@
             "cacheVariables": {"CMAKE_BUILD_TYPE": "Release"}
         },
         {
+            "name": "study",
+            "inherits": "release",
+            "displayName": "Release (-O3 -ffast-math -funroll-loops) in its own directory, for the oncvpsp-opt study",
+            "binaryDir": "${sourceDir}/build-study"
+        },
+        {
             "name": "fetch",
             "inherits": "default",
             "displayName": "RelWithDebInfo, building LAPACK, Libxc and toml-f instead of using the system's",
@@ -36,6 +42,7 @@
         {"name": "default", "configurePreset": "default"},
         {"name": "debug", "configurePreset": "debug"},
         {"name": "release", "configurePreset": "release"},
+        {"name": "study", "configurePreset": "study"},
         {"name": "fetch", "configurePreset": "fetch"}
     ],
     "testPresets": [
@@ -47,6 +54,7 @@
         },
         {"name": "debug", "inherits": "default", "configurePreset": "debug"},
         {"name": "release", "inherits": "default", "configurePreset": "release"},
+        {"name": "study", "inherits": "default", "configurePreset": "study"},
         {"name": "fetch", "inherits": "default", "configurePreset": "fetch"}
     ]
 }

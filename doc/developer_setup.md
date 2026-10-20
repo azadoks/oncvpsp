@@ -62,6 +62,10 @@ ctest --preset default
 
 The `debug` preset (in `build-debug/`) adds run-time checks and
 floating-point traps, and is the one to use when something goes wrong.
+The `study` preset (in `build-study/`) is the `release` build (`-O3
+-ffast-math -funroll-loops`, the flags of the upstream `make.inc`) kept in its
+own directory for the oncvpsp-opt pseudopotential study. Fast math moves
+the output in the last digits, so some reference tests fail with it.
 `CMakeUserPresets.json` (ignored by git) is the place for personal presets
 such as compiler paths or `Libxc_ROOT`.
 
