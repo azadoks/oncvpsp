@@ -196,6 +196,7 @@
      end do
      do ii=nin+1,mmax
        uu(ii)=0.0d0
+       up(ii)=0.0d0
      end do
 
 ! perturbation theory for energy shift

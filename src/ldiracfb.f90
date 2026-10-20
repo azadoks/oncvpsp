@@ -350,6 +350,8 @@
  do ii=mlast+1,mmax
    gu(ii)=0.0d0
    fu(ii)=0.0d0
+   gup(ii)=0.0d0
+   fup(ii)=0.0d0
  end do
 
  return

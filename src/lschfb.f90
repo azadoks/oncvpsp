@@ -329,6 +329,9 @@
  end do
  do ii=mlast+1,mmax
    uu(ii)=0.0d0
+   up(ii)=0.0d0
+   qq(ii)=0.0d0
+   qp(ii)=0.0d0
  end do
 
  return
