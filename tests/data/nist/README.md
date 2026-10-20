@@ -28,9 +28,9 @@ for the energy terms. `scripts/nist_test.py` runs ONCVPSP's all-electron atom
 on the data with exactly these tolerances, 1e-6 Ha for the total energy and
 2e-6 Ha for every eigenvalue, and prints the largest difference of the terms
 without testing it; ctest runs it on a selection (label `nist`). The cases
-that miss these tolerances, by up to 0.4e-6 Ha (LDA Po, and ScRLDA Sm, Tb, Dy,
-Tm, Yb+ and Lu, which the solvers of RadialAtomicSolvers.jl miss as well), are
-listed in the script as expected failures.
+that miss these tolerances, by up to 0.3e-6 Ha (ScRLDA Sm, Sm+, Tb, Er, Tm,
+Yb+ and Lu, lanthanides that the solvers of RadialAtomicSolvers.jl miss as
+well, and Fr), are listed in the script as expected failures.
 
 The files were made from the copy of the data in RadialAtomicSolvers.jl
 (`test/data/dftdata`), which agrees with NIST's pages (checked for U), and

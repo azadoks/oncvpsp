@@ -61,7 +61,7 @@ in any publication utilizing these pseudopotentials.
 
 
 Reference configufation results
-  iterations    22
+  iterations    13
   all-electron total energy (Ha)   -7.33408874D+00
   residual of the screening potential (Ha)  9.83E-12
   energy terms (Ha)
@@ -249,7 +249,7 @@ Coulomb tail of the local potential
   alpha_z = 4 pi int r**2 (V_loc + zion/r) dr  3.2851702937E+00 Ha bohr**3
   alpha_z change, table cut at r =  6.00:  9.4453E-07
   alpha_z change, table cut at r = 10.00:  6.3956E-07
-  |V_loc + zion/r| < 1e-10 beyond r =    8.4860
+  |V_loc + zion/r| < 1e-10 beyond r =    8.9020
   max |V_loc - V_ion| beyond rcmax  1.2871E-09
 
 Test configuration 0

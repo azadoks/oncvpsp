@@ -34,7 +34,24 @@ irel, and the stage.  It has the following major sections:
    the tail of a shallow 3d or 4f state, which made the energy first order
    in the mesh.  And an occupied state with no bound solution in an early
    SCF potential (the 4f of Yb) gets its box state, zero at the end of the
-   mesh, and the SCF goes on; it cannot converge with one.  The total
+   mesh, and the SCF goes on; it cannot converge with one.  The scalar-
+   relativistic SCF with a GGA also follows RadialAtomicSolvers.jl (its note
+   SR_SHOOTING_VPRIME.md), and converges on meshes down to amesh 1.00075
+   and rr1 1e-8/Z, where it diverged for light atoms.  Inside
+   r* ~ Z/(2c^2) the relativistic mass is set by the potential, and with a
+   GGA that closes a loop potential -> orbital exponent -> density gradient
+   -> potential, whose modes grow with the mesh points per decade.  lschfb
+   integrates the Koelling-Harmon equation in its first-order flux form,
+   which needs no dV/dr; it starts from the series at the origin of that
+   equation for -Z/r plus a constant (with the exponent
+   sqrt(l(l+1)+1-(Z/c)^2)), whose logarithmic derivative at rr1 removes
+   what was a 1e-5 Ha error at the default rr1 for Na; and it converges
+   each eigenvalue to 1e-12 relative (1e-10 left 4e-7 Ha in the 1s of U).
+   The mixing (ae_mix) is Anderson over the last 8 iterations, with the
+   residual filtered in ln r inside 10 r* (KerkerMixing).  The built-in PBE
+   (excggc) takes its potential in the divergence form of the Libxc path,
+   from the first derivative of the density only; the second derivative it
+   used was round-off noise at the first points of a fine mesh.  The total
    energy and its kinetic, electron-nucleus,
    Hartree and exchange-correlation terms (ae_energies, as NIST defines them,
    the kinetic energy from the eigenvalue sum) are printed with the

@@ -16,9 +16,10 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
-! Convergence measure and energy terms of the all-electron SCF of sratom
-! and relatom, which mix the screening (Hartree plus exchange-correlation)
-! potential and add the nuclear -zz/r to it for the radial equations
+! Convergence measure, energy terms and mixing of the all-electron SCF of
+! sratom and relatom, which mix the screening (Hartree plus exchange-
+! correlation) potential and add the nuclear -zz/r to it for the radial
+! equations
 
  subroutine ae_residual(rho,vsi,vso,sf,rr,mmax,res)
 
@@ -155,3 +156,136 @@
  end function radint
 
  end subroutine ae_energies
+
+ subroutine ae_mix(it,vsi,vso,hv,hr,ndep,zz,rr,mmax,irel)
+
+!! next input screening potential by Anderson mixing of the last ndep
+!! iterations, with the residual filtered in ln(r) near the nucleus for the
+!! scalar-relativistic equation (KerkerMixing of RadialAtomicSolvers.jl)
+!!
+!! Inside r* = (1-gamma)/zz ~ zz/(2c**2) the relativistic mass is set by
+!! the potential, which with a GGA closes a loop potential -> orbital
+!! exponent -> density gradient -> potential. Its modes there grow with the
+!! number of mesh points per decade, and the one-step Anderson mixing of
+!! sratom diverged for light atoms on fine meshes. The filter damps them;
+!! it does not change the fixed point.
+!!
+!! @param it  iteration number, 1 for the first
+!! @param vsi  input screening potential, the next one on output
+!! @param vso  output screening potential
+!! @param hv  history of input potentials, column 1 the newest
+!! @param hr  history of residuals vso - vsi
+!! @param ndep  depth of the history
+!! @param zz  atomic number
+!! @param rr  log radial mesh
+!! @param mmax  dimension of log radial grid
+!! @param irel  0 non-relativistic, 1 scalar-relativistic
+
+ use constants_m, only: dp
+ use relativity_m, only: c_light
+ implicit none
+
+!Input variables
+ integer, intent(in) :: it,ndep,mmax,irel
+ real(dp), intent(in) :: vso(mmax),rr(mmax),zz
+
+!Input/output variables
+ real(dp), intent(inout) :: vsi(mmax),hv(mmax,ndep),hr(mmax,ndep)
+
+!Local variables
+! blend parameter of the residual
+ real(dp), parameter :: bl=0.5d0
+! filter strength bfil/zz**2 (in ln(r) squared) inside rfil*r*
+ real(dp), parameter :: bfil=1.0d-4, rfil=10.0d0
+ real(dp) :: aa(ndep,ndep),bb(ndep)
+ real(dp) :: al,bk,rs
+ integer :: ii,jj,kk,nh,info
+ integer :: ipiv(ndep)
+
+ real(dp), allocatable :: res(:),vb(:),ww(:)
+
+ allocate(res(mmax),vb(mmax),ww(mmax))
+
+ al = 0.01d0 * log(rr(101) / rr(1))
+
+ do jj=ndep,2,-1
+   hv(:,jj)=hv(:,jj-1)
+   hr(:,jj)=hr(:,jj-1)
+ end do
+ hv(:,1)=vsi(:)
+ hr(:,1)=vso(:)-vsi(:)
+ nh=min(it,ndep)
+
+! the combination of the history of least residual, in the r**2 weight
+! of the one-step mixing this replaces
+ do ii=1,mmax
+   ww(ii)=rr(ii)**2
+ end do
+ res(:)=hr(:,1)
+ vb(:)=hv(:,1)
+ if(nh>1) then
+   do jj=2,nh
+     do kk=2,nh
+       aa(jj-1,kk-1)=sum(ww(:)*(hr(:,1)-hr(:,jj))*(hr(:,1)-hr(:,kk)))
+     end do
+     bb(jj-1)=sum(ww(:)*hr(:,1)*(hr(:,1)-hr(:,jj)))
+   end do
+   do jj=1,nh-1
+     aa(jj,jj)=aa(jj,jj)*(1.0d0+1.0d-10)
+   end do
+   call dgesv(nh-1,1,aa,ndep,ipiv,bb,ndep,info)
+   if(info==0) then
+     do jj=2,nh
+       res(:)=res(:)-bb(jj-1)*(hr(:,1)-hr(:,jj))
+       vb(:)=vb(:)-bb(jj-1)*(hv(:,1)-hv(:,jj))
+     end do
+   end if
+ end if
+
+ if(irel/=0) then
+   rs=rfil*(1.0d0-sqrt(1.0d0-(zz/c_light)**2))/zz
+   bk=bfil/zz**2
+   call kerker_filter()
+ end if
+
+ do ii=1,mmax
+   vsi(ii)=vb(ii)+bl*res(ii)
+ end do
+
+ deallocate(res,vb,ww)
+ return
+
+ contains
+
+ subroutine kerker_filter()
+
+!! res <- (1 + L)**(-1) res, L = -d/dx beta d/dx in x = ln(r), with
+!! beta = bk/(1 + (r/rs)**2), by finite volumes with no flux at the ends
+
+ real(dp), allocatable :: beta(:),dd(:)
+
+ allocate(beta(mmax),dd(mmax))
+
+! beta on the face between ii and ii+1, in mesh-index units
+ do ii=1,mmax-1
+   beta(ii)=bk/(1.0d0+rr(ii)*rr(ii+1)/rs**2)/al**2
+ end do
+ beta(mmax)=0.0d0
+
+! tridiagonal solve, sub- and superdiagonal -beta
+ dd(1)=1.0d0+beta(1)
+ do ii=2,mmax
+   dd(ii)=1.0d0+beta(ii)+beta(ii-1)
+   dd(ii)=dd(ii)-beta(ii-1)**2/dd(ii-1)
+   res(ii)=res(ii)+beta(ii-1)*res(ii-1)/dd(ii-1)
+ end do
+ res(mmax)=res(mmax)/dd(mmax)
+ do ii=mmax-1,1,-1
+   res(ii)=(res(ii)+beta(ii)*res(ii+1))/dd(ii)
+ end do
+
+ deallocate(beta,dd)
+ return
+ end subroutine kerker_filter
+
+ end subroutine ae_mix

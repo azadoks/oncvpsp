@@ -21,6 +21,13 @@
 !! Finds bound states of an all-electron atomic potential using
 !! Pauli-type  scalar-relativistic Schroedinger equation
 !!
+!! The Koelling-Harmon equation is integrated in its first-order flux form,
+!! as in RadialAtomicSolvers.jl, for uu and qq = (uu' - uu/r)/M with the
+!! relativistic mass M = 1 + (ee - vv)/(2c**2):
+!! uu' = uu/r + M*qq,  qq' = (l(l+1)/(M*r**2) + 2*(vv - ee))*uu - qq/r.
+!! It needs no dv/dr, whose finite differences of a GGA potential near the
+!! nucleus made the scalar-relativistic SCF diverge on fine meshes
+!!
 !! @param nn  principal quantum number
 !! @param ll  angular-momentum quantum number
 !! @param ierr  non-zero return if error, 10 if there is no bound state
@@ -58,13 +65,13 @@
 
  real(dp) :: als
  real(dp) :: de,emax,emin,etop,elow
- real(dp) :: eps,fss,tfss,gamma,ro,sc
+ real(dp) :: eps,fss,gamma,ro,sc
  real(dp) :: sls,sn,cn,uout,upin,upout,xkap
- real(dp) :: amesh,al,xx
+ real(dp) :: amesh,al,eecur
  integer :: ii,it,nint,node,nin
 
- real(dp), allocatable :: upp(:),cf(:),dv(:),fr(:),frp(:),r2(:)
- allocate(upp(mmax),cf(mmax),dv(mmax),fr(mmax),frp(mmax),r2(mmax))
+ real(dp), allocatable :: qq(:),qp(:),cf(:),pm(:),qm(:),xm(:),r2(:)
+ allocate(qq(mmax),qp(mmax),cf(mmax),pm(mmax),qm(mmax),xm(mmax),r2(mmax))
 
  al = 0.01d0 * log(rr(101) / rr(1))
  amesh = exp(al)
@@ -72,7 +79,9 @@
 ! convergence factor for solution of schroedinger eq.  if calculated
 ! correction to eigenvalue is smaller in magnitude than eps times
 ! the magnitude of the current guess, the current guess is not changed.
- eps=1.0d-10
+! 1e-10 left 3.6e-7 Ha in the 1s of U, which the eigenvalue sum carries
+! into the total energy, and which depended on the SCF history
+ eps=1.0d-12
  ierr = 60
 
 ! check arguments
@@ -89,9 +98,8 @@
    fss=0.0d0
  end if
 
- if(ll==0) gamma=sqrt(1.0d0-fss*zz**2)
- if(ll>0) gamma=(ll*sqrt(ll**2-fss*zz**2) + &
-& (ll+1)*sqrt((ll+1)**2-fss*zz**2))/(2*ll+1)
+! the indicial exponent of the Koelling-Harmon equation, uu ~ r**gamma
+ gamma=sqrt(ll*(ll+1)+1.0d0-fss*zz**2)
 ! the non-relativistic equation (fss=0): u ~ r**(l+1) at the origin
  if(irel==0) gamma=ll+1
 
@@ -114,26 +122,14 @@
 ! null arrays to remove leftover garbage
  uu(:)=0.0d0
  up(:)=0.0d0
- upp(:)=0.0d0
+ qq(:)=0.0d0
+ qp(:)=0.0d0
 
  als=al**2
 
-! squared radii and dv/dr for the darwin correction, which do not depend
-! on the energy
+! squared radii, which do not depend on the energy
  do ii=1,mmax
    r2(ii)=rr(ii)**2
- end do
-
- dv(:)=0.0d0
-
- dv(1)=(-50.d0*vv(1)+96.d0*vv(2)-72.d0*vv(3)+32.d0*vv(4) &
-&       -6.d0*vv(5))/(24.d0*al*rr(1))
- dv(2)=(-6.d0*vv(1)-20.d0*vv(2)+36.d0*vv(3)-12.d0*vv(4) &
-&       +2.d0*vv(5))/(24.d0*al*rr(2))
-
- do ii=3,mmax-2
-   dv(ii)=(2.d0*vv(ii-2)-16.d0*vv(ii-1)+16.d0*vv(ii+1) &
-&        -2.d0*vv(ii+2))/(24.d0*al*rr(ii))
  end do
 
 ! top of the bracket: no bound state lies above it on the mesh;
@@ -180,7 +176,7 @@
    call outward(mch,node)
 
    uout=uu(mch)
-   upout=up(mch)
+   upout=qq(mch)
 
 ! start inward integration with simple exponential where the
 ! wave function has decayed to machine precision
@@ -197,20 +193,21 @@
 
      do ii=nin,nin+4
        uu(ii)=exp(-xkap*(rr(ii)-rr(nin)))
-       up(ii)=-rr(ii)*al*xkap*uu(ii)
-       upp(ii)=(al+frp(ii))*up(ii)+(cf(ii)+fr(ii))*uu(ii)
+       qq(ii)=-(xkap+1.0d0/rr(ii))*uu(ii)/xm(ii)
+       call derivs_at(ii)
      end do
 
 ! integrate inward
 
      do ii=nin,mch+1,-1
        uu(ii-1)=uu(ii)+aei(up,ii)
-       up(ii-1)=up(ii)+aei(upp,ii)
+       qq(ii-1)=qq(ii)+aei(qp,ii)
        do it=1,2
-         upp(ii-1)=(al+frp(ii-1))*up(ii-1)+(cf(ii-1)+fr(ii-1))*uu(ii-1)
-         up(ii-1)=up(ii)+aii(upp,ii)
+         call derivs_at(ii-1)
          uu(ii-1)=uu(ii)+aii(up,ii)
+         qq(ii-1)=qq(ii)+aii(qp,ii)
        end do
+       call derivs_at(ii-1)
      end do
 
 ! scale outside wf for continuity
@@ -220,9 +217,11 @@
      do ii=mch,nin
        up(ii)=sc*up(ii)
        uu(ii)=sc*uu(ii)
+       qq(ii)=sc*qq(ii)
+       qp(ii)=sc*qp(ii)
      end do
 
-     upin=up(mch)
+     upin=qq(mch)
 
 ! normalize u
      call normalize(nin)
@@ -232,7 +231,7 @@
 
 ! perturbation theory for energy shift
 
-     de=0.5d0*uout*(upout-upin)/(al*rr(mch))
+     de=0.5d0*uout*(upout-upin)
 
 ! convergence test and possible exit
 
@@ -269,7 +268,7 @@
    up(:)=-up(:)
  end if
 
- deallocate(upp,cf,dv,fr,frp,r2)
+ deallocate(qq,qp,cf,pm,qm,xm,r2)
  return
 
  contains
@@ -280,17 +279,20 @@
 
  real(dp), intent(in) :: et
 
-! coefficient array for u in differential eq.
+ eecur=et
+
+! coefficient array for u in the second-order equation, whose sign
+! change gives the classical turning point
  do ii=1,mmax
    cf(ii)=als*sls + 2.0d0*als*(vv(ii)-et)*r2(ii)
  end do
 
-!  relativistic coefficient arrays for u (fr) and up (frp).
+! relativistic mass and the coefficients of the flux form,
+! d(uu)/dn = al*uu + pm*qq, d(qq)/dn = qm*uu - al*qq
  do ii=1,mmax
-   tfss=fss
-   fr(ii)=als*r2(ii)*(-tfss*(vv(ii)-et)**2 + 0.5d0*tfss*dv(ii)/ &
-&   (rr(ii)*(1.0d0+0.5d0*tfss*(et-vv(ii)))))
-   frp(ii)=-al*rr(ii)*0.5d0*tfss*dv(ii)/(1.0d0+0.5d0*tfss*(et-vv(ii)))
+   xm(ii)=1.0d0+0.5d0*fss*(et-vv(ii))
+   pm(ii)=al*rr(ii)*xm(ii)
+   qm(ii)=al*rr(ii)*(sls/(xm(ii)*r2(ii)) + 2.0d0*(vv(ii)-et))
  end do
 
  return
@@ -307,9 +309,8 @@
 ! start wavefunction with series
 
  do ii=1,4
-   uu(ii)=rr(ii)**gamma
-   up(ii)=al*gamma*rr(ii)**gamma
-   upp(ii)=(al+frp(ii))*up(ii)+(cf(ii)+fr(ii))*uu(ii)
+   call origin_series(rr(ii),uu(ii),qq(ii))
+   call derivs_at(ii)
  end do
 
 ! outward integration using predictor once, corrector
@@ -318,14 +319,31 @@
 
  do ii=4,mlast-1
    uu(ii+1)=uu(ii)+aeo(up,ii)
-   up(ii+1)=up(ii)+aeo(upp,ii)
+   qq(ii+1)=qq(ii)+aeo(qp,ii)
    do it=1,2
-     upp(ii+1)=(al+frp(ii+1))*up(ii+1)+(cf(ii+1)+fr(ii+1))*uu(ii+1)
-     up(ii+1)=up(ii)+aio(upp,ii)
+     call derivs_at(ii+1)
      uu(ii+1)=uu(ii)+aio(up,ii)
+     qq(ii+1)=qq(ii)+aio(qp,ii)
    end do
+   call derivs_at(ii+1)
    if(uu(ii+1)*uu(ii) <= 0.0d0) nnode=nnode+1
  end do
+
+! the first points again, inward from the outward solution: the series of
+! the start is that of a model potential, and the kink where it meets the
+! integration is amplified by the derivatives of a GGA density
+ if(mlast>=16) then
+   do ii=12,2,-1
+     uu(ii-1)=uu(ii)+aei(up,ii)
+     qq(ii-1)=qq(ii)+aei(qp,ii)
+     do it=1,2
+       call derivs_at(ii-1)
+       uu(ii-1)=uu(ii)+aii(up,ii)
+       qq(ii-1)=qq(ii)+aii(qp,ii)
+     end do
+     call derivs_at(ii-1)
+   end do
+ end if
 
  return
  end subroutine outward
@@ -354,6 +372,8 @@
  do ii=1,mlast
    up(ii)=cn*up(ii)
    uu(ii)=cn*uu(ii)
+   qq(ii)=cn*qq(ii)
+   qp(ii)=cn*qp(ii)
  end do
  do ii=mlast+1,mmax
    uu(ii)=0.0d0
@@ -402,6 +422,84 @@
 
  return
  end subroutine boxstate
+
+ subroutine origin_series(rx,px,qx)
+
+!! uu (px) and qq (qx) at rx from their series at the origin for the
+!! potential -zz/r + d, d the screening at rr(1), at the energy of the last
+!! coefs. With M = (a + b*r)/r and w = d - ee, the flux form is
+!! r*P' = P + (a + b*r)*q and
+!! (a + b*r)*r*q' = (l(l+1) + (a + b*r)*(-2*zz + 2*w*r))*P - (a + b*r)*q.
+!! Inside zz/(2c**2) the mass is set by the nuclear potential, so r**gamma
+!! alone, or with a first-order term, is not the solution at rr(1) of the
+!! default mesh for light atoms; its error in the logarithmic derivative
+!! acts as a contact potential (1e-5 Ha for Na). The terms are summed as
+!! p_k*r**k, q_k*r**k, whose coefficients alone overflow. For l=0 the
+!! series is entire; for l>0 it converges inside r = a/b ~ zz/(2c**2), and
+!! beyond half of that the leading term is used, which for uu ~ r**(l+1)
+!! leaves no contact error
+
+ real(dp), intent(in) :: rx
+ real(dp), intent(out) :: px,qx
+ real(dp) :: aa,bb,ww,dd,pk,qk,pk1,qk1,pk2,rk
+ integer :: kk
+
+ dd=vv(1)+zz/rr(1)
+ ww=dd-eecur
+ if(fss==0.0d0) then
+! P = sum p_k r**(l+1+k), q = P' - P/r
+   pk2=0.0d0; pk1=1.0d0
+   px=1.0d0; qx=ll
+   do kk=1,80
+     pk=(-2.0d0*zz*pk1*rx+2.0d0*ww*pk2*rx**2)/(kk*(2*ll+1+kk))
+     px=px+pk
+     qx=qx+(ll+kk)*pk
+     if(abs(pk)<1.0d-17*abs(px)) exit
+     pk2=pk1; pk1=pk
+   end do
+   px=px*rx**(ll+1)
+   qx=qx*rx**ll
+   return
+ end if
+ aa=0.5d0*fss*zz
+ bb=1.0d0+0.5d0*fss*(eecur-dd)
+ if(ll>0 .and. bb*rx>0.5d0*aa) then
+   px=rx**gamma
+   qx=(gamma-1.0d0)*rx**gamma/(aa+bb*rx)
+   return
+ end if
+! P = sum p_k r**(gamma+k), q = sum q_k r**(gamma+k)
+ pk2=0.0d0; pk1=1.0d0
+ qk1=(gamma-1.0d0)/aa
+ px=pk1; qx=qk1
+ do kk=1,200
+   rk=(-bb*(gamma+kk)*qk1 + (2.0d0*ww*aa-2.0d0*zz*bb)*pk1)*rx &
+&    + 2.0d0*ww*bb*pk2*rx**2
+   pk=((gamma+kk+1)*bb*qk1*rx + rk)/(kk*(2.0d0*gamma+kk))
+   qk=((gamma+kk-1)*rk + (sls-2.0d0*zz*aa)*bb*qk1*rx) &
+&    /(aa*kk*(2.0d0*gamma+kk))
+   px=px+pk
+   qx=qx+qk
+   if(abs(pk)<1.0d-17*abs(px) .and. abs(qk)<1.0d-17*abs(qx)) exit
+   pk2=pk1; pk1=pk; qk1=qk
+ end do
+ px=px*rx**gamma
+ qx=qx*rx**gamma
+
+ return
+ end subroutine origin_series
+
+ subroutine derivs_at(jj)
+
+!! derivatives on the mesh index of uu and qq at the point jj
+
+ integer, intent(in) :: jj
+
+ up(jj)=al*uu(jj)+pm(jj)*qq(jj)
+ qp(jj)=qm(jj)*uu(jj)-al*qq(jj)
+
+ return
+ end subroutine derivs_at
 
  include 'adams.inc'
 

@@ -26,52 +26,50 @@ c
 c Error (from Perdew''s group) corrected 12/27/00 in expression for FSS
 c in routine exchpbe. (See NOTES file.)
 c
+c The potential is that of the divergence form,
+c   vxc = df/dn - (1/r**2) d/dr (r**2 h),  h = 2 (df/dsigma) dn/dr,
+c f(n,sigma) the energy per volume and sigma = (dn/dr)**2, as in the
+c libxc path (functionals_m), rather than the form of PW86(24) with the
+c second derivative of n: its finite differences, divided by (al*r)**2,
+c are round-off noise at the inner points of a fine mesh, which held the
+c all-electron SCF of light atoms above its tolerance
+c
       use constants_m, only: dp
       implicit none
 c
       real*8, intent(in) :: rho(*),r(*)
       real*8, intent(out) :: vxc(*),exc(*)
-      real*8 amesh,al
-      real*8 fk,sk,g,ec,ecrs,eczet
+      real*8 al
+      real*8 fk,sk,ec,h
       integer i
       integer, intent(in) :: mmax
 c
-c      common/GAS/fk,sk,g,ec,ecrs,eczet
-c
-      real(dp), allocatable :: d(:),dpn(:),dppn(:),dpr(:)
-      real(dp), allocatable :: dppr(:),dlap(:)
+      real(dp), allocatable :: d(:),dpr(:),dppr(:),dlap(:)
+      real(dp), allocatable :: dfdn(:),hfl(:)
       real(dp) :: pi,pi4,pi4i
-      real(dp) :: c11,c12,c13,c14,c15,c21,c22,c23,c24,c25
       real(dp) :: thrd
       real(dp) :: conf,conrs
-      real(dp) :: s,u,v,ex,vx
-      real(dp) :: rs,zet,vcup,vcdn,zlfc
-      real(dp) :: t,uu,vv,ww,h,dvcup,dvcdn
+      real(dp) :: s,ex,vx,exunif,p0,fx,fs
+      real(dp) :: rs,vcup,vcdn,dvcup,dvcdn,t,t2,ecrs
+      real(dp) :: b,q4,q5,q8,q9,hb,bec,hrs,ht,dfds
+      real(dp), parameter :: ax=-0.738558766382022405884230032680836d0
+      real(dp), parameter :: um=0.2195149727645171d0,uk=0.8040d0
+      real(dp), parameter :: ul=um/uk
+      real(dp), parameter :: gamma=0.03109069086965489503494086371273d0
+      real(dp), parameter :: bet=0.06672455060314922d0
+      real(dp), parameter :: delt=bet/gamma
 c
       al = 0.01d0 * dlog(r(101) / r(1))
-      amesh = dexp(al)
 c
       thrd = 1.0d0 / 3.0d0
       pi=4.0d0*datan(1.0d0)
       pi4=4.0d0 * pi
 
-      allocate(d(mmax),dpn(mmax),dppn(mmax),dpr(mmax))
-      allocate(dppr(mmax),dlap(mmax))
+      allocate(d(mmax),dpr(mmax),dppr(mmax),dlap(mmax))
+      allocate(dfdn(mmax),hfl(mmax))
 c
       conf = (3.d0*pi**2)**thrd
       conrs = (3.d0/(4.d0*pi))**thrd
-c
-      c11 =   2.0d0 / 24.0d0
-      c12 = -16.0d0 / 24.0d0
-      c13 =   0.0d0 / 24.0d0
-      c14 =  16.0d0 / 24.0d0
-      c15 =  -2.0d0 / 24.0d0
-c
-      c21 =   -1.0d0 / 12.0d0
-      c22 =   16.0d0 / 12.0d0
-      c23 =  -30.0d0 / 12.0d0
-      c24 =   16.0d0 / 12.0d0
-      c25 =   -1.0d0 / 12.0d0
 c
 c d is properly scaled charge density
 c
@@ -80,117 +78,65 @@ c
         d(i) = pi4i * rho(i)
       end do
 c
-c n derivatives of d
-c     
-      do i = 3, mmax - 2
-        dpn(i) =  c11*d(i-2) + c12*d(i-1) + c14*d(i+1) + c15*d(i+2)
-        dppn(i) = c21*d(i-2) + c22*d(i-1) + c23*d(i)   + c24*d(i+1) 
-     &          + c25*d(i+2)
-      end do
+      call derivs(mmax, d, al, r, dpr, dppr, dlap)
 c
-c r derivatives of d
+c energy per electron, df/dn and the flux h at each point
 c
-      do i = 3, mmax - 2
-        dpr(i) = dpn(i) / (al * r(i))
-        dppr(i) = (dppn(i) - al * dpn(i)) / (al * r(i))**2
-        dlap(i) = (dppn(i) + al * dpn(i)) / (al * r(i))**2
-      end do
-c
-c set up input for Perdew''s subroutines and call them
-c
-      do i = 3, mmax - 2
-c
-C     SUBROUTINE EXCH(D,S,U,V,EX,VX)
-C  GGA91 EXCHANGE FOR A SPIN-UNPOLARIZED ELECTRONIC SYSTEM
-C  INPUT D : DENSITY
-C  INPUT S:  ABS(GRAD D)/(2*KF*D)
-C  INPUT U:  (GRAD D)*GRAD(ABS(GRAD D))/(D**2 * (2*KF)**3)
-C  INPUT V: (LAPLACIAN D)/(D*(2*KF)**2)
-C  OUTPUT:  EXCHANGE ENERGY PER ELECTRON (EX) AND POTENTIAL (VX)
-c
+      do i = 1, mmax
         if(d(i) .gt. 1.0d-18) then
 c
+c PBE exchange (EXCHPBE): f = n*exunif*Fx(s), Fs = (1/s) dFx/ds
+c
           fk = conf * d(i) ** thrd
-c
           s = dabs(dpr(i)) / (2.0d0 * fk * d(i))
+          exunif = ax * d(i) ** thrd
+          p0 = 1.0d0 + ul * s * s
+          fx = 1.0d0 + uk - uk / p0
+          fs = 2.0d0 * uk * ul / (p0 * p0)
+          ex = exunif * fx
+          vx = 4.0d0 * thrd * exunif * (fx - s * s * fs)
+          dfds = exunif * fs / (8.0d0 * fk * fk * d(i))
 c
-          u = dabs(dpr(i)) * dppr(i) / (d(i)**2 * (2.0d0 * fk)**3)
-c
-          v = dlap(i) / (d(i) * (2.0d0 * fk)**2)
-c
-C          call exchpbe(d(i),s,u,v,ex,vx)
-          call EXCHPBE(d(i),s,u,v,1,1,ex,vx)
-c
-C     SUBROUTINE CORLSD(RS,ZET,EC,VCUP,VCDN,ECRS,ECZET,ALFC)
-C  UNIFORM-GAS CORRELATION OF PERDEW AND WANG 1991
-C  INPUT: SEITZ RADIUS (RS), RELATIVE SPIN POLARIZATION (ZET)
-C  OUTPUT: CORRELATION ENERGY PER ELECTRON (EC), UP- AND DOWN-SPIN
-C     POTENTIALS (VCUP,VCDN), DERIVATIVES OF EC WRT RS (ECRS) & ZET (ECZET)
-C  OUTPUT: CORRELATION CONTRIBUTION (ALFC) TO THE SPIN STIFFNESS
-c
+c PBE correlation (CORPBE, zet = 0, g = 1): f = n*(ec + H(rs,t)),
+c with dH/drs and dH/dt from appendix E of [b] of CORPBE
 c
           rs = conrs / d(i)**thrd
-c
-          zet = 0.0d0
-          g = 1.0d0
-c
-C          call corlsd(rs,zet,ec,vcup,vcdn,ecrs,eczet,zlfc)
-c
-C     SUBROUTINE CORGGA(RS,ZET,T,UU,VV,WW,H,DVCUP,DVCDN)
-C  GGA91 CORRELATION
-C  INPUT RS: SEITZ RADIUS
-C  INPUT ZET: RELATIVE SPIN POLARIZATION
-C  INPUT T: ABS(GRAD D)/(D*2.*KS*G)
-C  INPUT UU: (GRAD D)*GRAD(ABS(GRAD D))/(D**2 * (2*KS*G)**3)
-C  INPUT VV: (LAPLACIAN D)/(D * (2*KS*G)**2)
-C  INPUT WW:  (GRAD D)*(GRAD ZET)/(D * (2*KS*G)**2
-C  OUTPUT H: NONLOCAL PART OF CORRELATION ENERGY PER ELECTRON
-C  OUTPUT DVCUP,DVCDN:  NONLOCAL PARTS OF CORRELATION POTENTIALS
-c note g = 1 for unpolarized case
-c
           sk = dsqrt(4.0d0 * fk / pi)
-c
           t = dabs(dpr(i)) / (d(i) * 2.0d0 * sk)
+          call CORPBE(rs,0.0d0,t,0.0d0,0.0d0,0.0d0,1,0,ec,vcup,vcdn,
+     &                h,dvcup,dvcdn)
+          ecrs = 3.0d0 * (ec - vcup) / rs
+          t2 = t * t
+          b = delt / (dexp(-ec / gamma) - 1.0d0)
+          q4 = 1.0d0 + b * t2
+          q5 = 1.0d0 + b * t2 + b * b * t2 * t2
+          q8 = q5 * q5 + delt * q4 * q5 * t2
+          q9 = 1.0d0 + 2.0d0 * b * t2
+          hb = -bet * b * t2**3 * (2.0d0 + b * t2) / q8
+          bec = b * b * (delt / b + 1.0d0) / bet
+          hrs = -rs * thrd * hb * bec * ecrs
+          ht = 2.0d0 * bet * q9 / q8
 c
-          uu = dabs(dpr(i)) * dppr(i) / (d(i)**2 * (2.0d0 * sk)**3)
-c
-          vv = dlap(i) / (d(i) * (2.0d0 * sk)**2)
-c
-          ww = 0.0d0
-c
-C          call corpbe(rs,zet,t,uu,vv,ww,h,dvcup,dvcdn)
-          call CORPBE(rs,zet,t,uu,vv,ww,1,1,ec,vcup,vcdn,
-     &                  h,dvcup,dvcdn)
-c
+          exc(i) = ex + ec + h
+          dfdn(i) = vx + vcup + h + hrs - 7.0d0 * t2 * ht / 6.0d0
+          hfl(i) = 2.0d0 * (dfds + ht / (8.0d0 * sk * sk * d(i)))
+     &           * dpr(i)
         else
-          ex = 0.0d0
-          vx = 0.0d0
-          ec = 0.0d0
-          vcup = 0.0d0
-          vcdn = 0.0d0
-          h = 0.0d0
-          dvcup = 0.0d0
-          dvcdn = 0.0d0
+          exc(i) = 0.0d0
+          dfdn(i) = 0.0d0
+          hfl(i) = 0.0d0
         end if
-c
-        vxc(i) = vx + 0.5d0 * (vcup + vcdn + dvcup + dvcdn)
-c
-        exc(i) = ex + ec + h
       end do
 c
-c assume end values are approximately constant
+c the divergence of the flux
 c
-      vxc(1) = vxc(3)
-      vxc(2) = vxc(3)
-      exc(1) = exc(3)
-      exc(2) = exc(3)
-      vxc(mmax - 1) = vxc(mmax - 2)
-      vxc(mmax) = vxc(mmax - 2)
-      exc(mmax - 1) = exc(mmax - 2)
-      exc(mmax) = exc(mmax - 2)
+      call derivs(mmax, hfl, al, r, dpr, dppr, dlap)
+      do i = 1, mmax
+        vxc(i) = dfdn(i) - (2.0d0 * hfl(i) / r(i) + dpr(i))
+      end do
 c
-      deallocate(d,dpn,dppn,dpr)
-      deallocate(dppr,dlap)
+      deallocate(d,dpr,dppr,dlap)
+      deallocate(dfdn,hfl)
 c
       return
       end subroutine excggc

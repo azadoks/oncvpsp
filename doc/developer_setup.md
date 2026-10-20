@@ -108,7 +108,7 @@ kernel of its l). Before updating the references, check what changed:
   with the NIST atomic reference data to its stated accuracy (about 1e-6
   Ha), with the data's functionals and speed of light (iexc 6 and 7,
   `c_light`). The few cases that miss it by a little (`EXPECTED_FAILURES`:
-  LDA Po and some ScRLDA lanthanides, which other codes miss too) are
+  some ScRLDA lanthanides, which other codes miss too, and Fr) are
   expected to fail, and a test fails if one of them passes. ctest runs the
   light atoms, a few heavy ones and those of the expected failures; the
   whole table, 183 atoms and cations per set, is the script run by hand with

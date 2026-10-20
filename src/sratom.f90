@@ -70,27 +70,29 @@
  real(dp) :: tfapot
  integer :: nin,mch
  real(dp) :: amesh,al
- real(dp) :: dr,eeel,eexc,et,rl,rl1,sd,sf,sn,eeig
- real(dp) :: thl,vn,zion
+ real(dp) :: eeel,eexc,et,sf,eeig
+ real(dp) :: zion
  integer :: ii,jj
  logical :: convg
 
  real(dp), allocatable :: uu(:),up(:)
- real(dp), allocatable :: vsi(:),vso(:),vsi1(:),vso1(:),vxc(:)
+ real(dp), allocatable :: vsi(:),vso(:),vxc(:)
+ real(dp), allocatable :: hv(:,:),hr(:,:)
 
-! blend parameter for Anderson iterative potential mixing
- real(dp), parameter ::  bl=0.5d0
+! depth of the history of the Anderson mixing
+ integer, parameter :: ndep=8
 ! convergence threshold for the residual of the screening potential (Ha)
  real(dp), parameter ::  tolres=1.0d-8
 
  allocate(uu(mmax),up(mmax))
- allocate(vsi(mmax),vso(mmax),vsi1(mmax),vso1(mmax),vxc(mmax))
+ allocate(vsi(mmax),vso(mmax),vxc(mmax))
+ allocate(hv(mmax,ndep),hr(mmax,ndep))
 
 ! why all this is necessary is unclear, but it seems to be
- uu(:)=0.d0; up(:)=0.d0; vso(:)=0.d0; vsi1(:)=0.d0; vso1(:)=0.d0
- vxc(:)=0.d0
- dr=0.d0; eeel=0.d0; eexc=0.d0; et=0.d0; rl=0.d0; rl1=0.d0
- sd=0.d0; sf=0.d0; sn=0.d0; eeig=0.d0; thl=0.d0; vn=0.d0; zion=0.d0
+ uu(:)=0.d0; up(:)=0.d0; vso(:)=0.d0
+ vxc(:)=0.d0; hv(:,:)=0.d0; hr(:,:)=0.d0
+ eeel=0.d0; eexc=0.d0; et=0.d0
+ sf=0.d0; eeig=0.d0; zion=0.d0
  nin=0; mch=0
 
  al = 0.01d0 * log(rr(101) / rr(1))
@@ -188,29 +190,10 @@
    if(it<2 .or. res>tolres) convg=.false.
    if(convg) exit
 
-! generate next iteration using d. g. anderson''s
-! method
-   thl=0.0d0
-   if(it>1) then
-     sn=0.0d0
-     sd=0.0d0
-     do ii=1,mmax
-       rl=vso(ii)-vsi(ii)
-       rl1=vso1(ii)-vsi1(ii)
-       dr=rl-rl1
-       sn=sn + rl*dr*rr(ii)**2
-       sd=sd + dr*dr*rr(ii)**2
-     end do
-     thl=sn/sd
-   end if
-
+! next input potential, by Anderson mixing of the last ndep iterations
+   call ae_mix(it,vsi,vso,hv,hr,ndep,zz,rr,mmax,irel)
    do ii=1,mmax
-     vn=(1.0d0-bl)*((1.0d0-thl)*vsi(ii) + thl*vsi1(ii)) &
-&     + bl*((1.0d0-thl)*vso(ii) + thl*vso1(ii))
-     vsi1(ii)=vsi(ii)
-     vso1(ii)=vso(ii)
-     vsi(ii)=vn
-     vi(ii)=vn - zz/rr(ii)
+     vi(ii)=vsi(ii) - zz/rr(ii)
    end do
 
    if(it==100 .and. .not. convg) then
@@ -224,7 +207,8 @@
  end if
 
  deallocate(uu,up)
- deallocate(vsi,vso,vsi1,vso1,vxc)
+ deallocate(vsi,vso,vxc)
+ deallocate(hv,hr)
  return
 
  end subroutine sratom
