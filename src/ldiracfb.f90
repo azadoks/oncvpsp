@@ -34,10 +34,13 @@
 !!                     small
 !! @param up  d(uu)/dr
 !! @param mmax  size of log grid
-!! @param mch  matching mesh point for inward-outward integrations
+!! @param mch  mesh point just beyond the classical turning point, where
+!!             the inward and outward integrations are matched (at the
+!!             continuous turning point, match_m)
 
  use constants_m, only: dp
  use relativity_m, only: c_light
+ use match_m, only: match_k, match_point, match_weights
  implicit none
 
 !Input variables
@@ -58,11 +61,15 @@
  real(dp), allocatable :: gu(:),fu(:),gup(:),fup(:),cf(:)
 
  real(dp) :: cc,cci,gam,cof
- real(dp) :: de,emax,emin,etop,elow
+ real(dp) :: de,deprev,emax,emin,etop,elow
  real(dp) :: eps,ro,sc
- real(dp) :: sls,sn,cn,uout,upin,upout,xkap
+ real(dp) :: sls,sn,cn,xkap,xmch
  real(dp) :: amesh,al,als
- integer :: ii,kk,nint,node,nin,nsmall
+ real(dp) :: go(-match_k-1:match_k),fo(-match_k-1:match_k)
+ real(dp) :: gpo(-match_k-1:match_k),fpo(-match_k-1:match_k)
+ real(dp) :: ww(-match_k-1:match_k),ss(-match_k-1:match_k)
+ integer :: ii,kk,nint,node,nin,lo,hi
+ logical :: polish
 
  cc=c_light
  cci=1.0d0/cc
@@ -70,15 +77,16 @@
  al = 0.01d0 * log(rr(101) / rr(1))
  amesh = exp(al)
 
-! convergence: two passes in a row whose energy correction de is smaller
-! in magnitude than eps*max(|ee|,0.2), the second at the energy with the
-! first's correction applied, so that the energy and function returned are
-! those of a pass at the corrected energy, whose own correction is far
-! below eps: the result does not depend on the start guess or the path
-! (doc/smoothness_plan.md, S-2 to S-4). A first correction already at
-! round-off (a guess from a converged SCF) needs no second pass
+! convergence: once the energy correction de is below eps*max(|ee|,0.2),
+! passes go on at the corrected energy until de is at round-off, 8 ulps of
+! max(|ee|,0.2), or stops halving (the round-off of de itself); the energy
+! and function returned are those of the last pass, whose correction is
+! not applied, so they are the fixed point to round-off and do not depend
+! on the start guess or the path (doc/smoothness_plan.md, S-2 to S-4, and
+! lschfb)
  eps=1.0d-12
- nsmall=-1
+ deprev=huge(1.0d0)
+ polish=.false.
  ierr = 60
 
 ! check arguments
@@ -130,8 +138,10 @@
 
 ! a bracket closed without a converged energy shift: there is no bound
 ! state, which an occupied state can lack in an early, overshooting SCF
-! potential; the box state stands in for it
-   if(emax-emin<max(abs(ee),0.2d0)*eps) then
+! potential; the box state stands in for it. Once a shift is below eps
+! the passes polish a converging energy, whose alternating shifts close
+! the bracket too
+   if(.not. polish .and. emax-emin<max(abs(ee),0.2d0)*eps) then
      call boxstate()
      ierr=10
      exit
@@ -164,21 +174,33 @@
      cycle
    end if
 
-   call outward(mch,node)
-
-   uout=gu(mch)
-   upout=gup(mch)
+! the outward solution, carried through the matching window
+! mch-1-match_k..mch+match_k (match_m), and the nodes of its large
+! component inside the turning point
+   lo=mch-1-match_k
+   hi=mch+match_k
+   call outward(min(hi,mmax),node)
+   node=0
+   do ii=5,mch-1
+     if(gu(ii+1)*gu(ii)<=0.0d0) node=node+1
+   end do
 
 ! start inward integration with simple exponential where the
 ! wave function has decayed to machine precision
    call inward_start(ll,ee,rr,vv,mch,mmax,nin)
 
-   if(node-nn+ll+1==0 .and. nin<=mch+4) then
+   if(node-nn+ll+1==0 .and. nin<=hi+4) then
 ! no room for the inward integration: too high
      emax=ee
      ee=0.5d0*(emin+emax)
 
    else if(node-nn+ll+1==0) then
+
+     call match_point(rr,cf,mmax,mch,xmch)
+     go(:)=gu(lo:hi)
+     fo(:)=fu(lo:hi)
+     gpo(:)=gup(lo:hi)
+     fpo(:)=fup(lo:hi)
 
      xkap=sqrt(sls/rr(nin)**2 + 2.0d0*(vv(nin)-ee))
 
@@ -193,7 +215,7 @@
      end do
 
 ! integrate inward
-     do ii=nin,mch+1,-1
+     do ii=nin,lo+1,-1
 
        fu(ii-1)=fu(ii)+aei(fup,ii)
        gu(ii-1)=gu(ii)+aei(gup,ii)
@@ -210,40 +232,49 @@
        end do
      end do
 
-! scale outside wf for continuity
+! perturbation theory for the energy shift based on the large component
+! at each point of the window, g_o (g'_o - g'_i g_o/g_i)/2 for the
+! normalized function (continuity of the small component should follow),
+! averaged with the bump weights; the inward solution scaled to the
+! outward one by the ratio of their weighted sums, and the two blended
+! across the window (match_m)
 
-     sc=uout/gu(mch)
+     call match_weights(xmch,lo,hi,ww,ss)
+     de=0.0d0
+     do ii=lo,hi
+       de=de+0.5d0*ww(ii-mch)*go(ii-mch) &
+&         *(gpo(ii-mch)-gup(ii)*go(ii-mch)/gu(ii))/(al*rr(ii))
+     end do
+     sc=sum(ww*go)/sum(ww*gu(lo:hi))
 
-     do ii=mch,nin
+     do ii=lo,nin
        gup(ii)=sc*gup(ii)
        gu(ii)=sc*gu(ii)
        fup(ii)=sc*fup(ii)
        fu(ii)=sc*fu(ii)
      end do
-
-     upin=gup(mch)
+     do ii=lo,hi
+       gu(ii)=(1.0d0-ss(ii-mch))*go(ii-mch)+ss(ii-mch)*gu(ii)
+       fu(ii)=(1.0d0-ss(ii-mch))*fo(ii-mch)+ss(ii-mch)*fu(ii)
+       gup(ii)=(1.0d0-ss(ii-mch))*gpo(ii-mch)+ss(ii-mch)*gup(ii)
+       fup(ii)=(1.0d0-ss(ii-mch))*fpo(ii-mch)+ss(ii-mch)*fup(ii)
+     end do
 
 ! normalize u
      call normalize(nin)
-     uout=cn*uout
-     upout=cn*upout
-     upin=cn*upin
-
-! perturbation theory for energy shift based on large component
-! continuity of small component should follow
-
-     de=0.5d0*uout*(upout-upin)/(al*rr(mch))
+     de=cn**2*de
 
 ! convergence test and possible exit
 
      if(abs(de)<max(abs(ee),0.2d0)*eps) then
-       if(nsmall==nint-1 .or. &
-&         abs(de)<=8.0d0*epsilon(1.0d0)*max(abs(ee),0.2d0)) then
+       if(abs(de)<=8.0d0*epsilon(1.0d0)*max(abs(ee),0.2d0) .or. &
+&         abs(de)>=0.5d0*abs(deprev)) then
          ierr = 0
          exit
        end if
-       nsmall=nint
+       polish=.true.
      end if
+     deprev=de
 
      if(de>0.0d0) then
        emin=ee

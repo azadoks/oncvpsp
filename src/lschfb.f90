@@ -35,12 +35,15 @@
 !! @param up  d(uu)/dr
 !! @param zz  atomic number
 !! @param mmax  size of log grid
-!! @param mch  matching mesh point for inward-outward integrations
+!! @param mch  mesh point just beyond the classical turning point, where
+!!             the inward and outward integrations are matched (at the
+!!             continuous turning point, match_m)
 !! @param irel  0 non-relativistic, 1 scalar-relativistic
 
  use constants_m, only: dp
  use relativity_m, only: c_light
  use sr_flux_m, only: sr_gamma, sr_flux_coefs, sr_outward
+ use match_m, only: match_k, match_point, match_weights
  implicit none
 
 !Input variables
@@ -61,11 +64,15 @@
 !Local variables
 
  real(dp) :: als
- real(dp) :: de,emax,emin,etop,elow
+ real(dp) :: de,deprev,emax,emin,etop,elow
  real(dp) :: eps,fss,gamma,ro,sc
- real(dp) :: sls,sn,cn,uout,upin,upout,xkap
+ real(dp) :: sls,sn,cn,xkap,xmch
  real(dp) :: amesh,al,eecur
- integer :: ii,it,nint,node,nin,nsmall
+ real(dp) :: uo(-match_k-1:match_k),qo(-match_k-1:match_k)
+ real(dp) :: upo(-match_k-1:match_k),qpo(-match_k-1:match_k)
+ real(dp) :: ww(-match_k-1:match_k),ss(-match_k-1:match_k)
+ integer :: ii,it,nint,node,nin,lo,hi
+ logical :: polish
 
  real(dp), allocatable :: qq(:),qp(:),cf(:),pm(:),qm(:),xm(:),r2(:)
  allocate(qq(mmax),qp(mmax),cf(mmax),pm(mmax),qm(mmax),xm(mmax),r2(mmax))
@@ -73,17 +80,21 @@
  al = 0.01d0 * log(rr(101) / rr(1))
  amesh = exp(al)
 
-! convergence: two passes in a row whose energy correction de is smaller
-! in magnitude than eps*max(|ee|,0.2), the second at the energy with the
-! first's correction applied, so that the energy and function returned are
-! those of a pass at the corrected energy, whose own correction is far
-! below eps: the result does not depend on the start guess or the path
-! (doc/smoothness_plan.md, S-2 to S-4). A first correction already at
-! round-off (a guess from a converged SCF) needs no second pass. 1e-10
-! left 3.6e-7 Ha in the 1s of U, which the eigenvalue sum carries into the
-! total energy, and which depended on the SCF history
+! convergence: once the energy correction de is below eps*max(|ee|,0.2),
+! passes go on at the corrected energy until de is at round-off, 8 ulps of
+! max(|ee|,0.2), or stops halving (the round-off of de itself); the energy
+! and function returned are those of the last pass, whose correction is
+! not applied, so they are the fixed point to round-off and do not depend
+! on the start guess or the path (doc/smoothness_plan.md, S-2 to S-4).
+! Stopping at the second pass below eps left that pass's correction,
+! 1e-15 to 1e-14 relative, as noise in a well state's energy as a function
+! of its well, which its well width and its tail carried into the
+! projectors at 1e-9. 1e-10 left 3.6e-7 Ha in the 1s of U, which the
+! eigenvalue sum carries into the total energy, and which depended on the
+! SCF history
  eps=1.0d-12
- nsmall=-1
+ deprev=huge(1.0d0)
+ polish=.false.
  ierr = 60
 
 ! check arguments
@@ -142,8 +153,10 @@
 
 ! a bracket closed without a converged energy shift: there is no bound
 ! state, which an occupied state can lack in an early, overshooting SCF
-! potential; the box state stands in for it
-   if(emax-emin<max(abs(ee),0.2d0)*eps) then
+! potential; the box state stands in for it. Once a shift is below eps
+! the passes polish a converging energy, whose alternating shifts close
+! the bracket too
+   if(.not. polish .and. emax-emin<max(abs(ee),0.2d0)*eps) then
      call boxstate()
      ierr=10
      exit
@@ -173,21 +186,33 @@
      cycle
    end if
 
-   call outward(mch,node)
-
-   uout=uu(mch)
-   upout=qq(mch)
+! the outward solution, carried through the matching window
+! mch-1-match_k..mch+match_k (match_m), and its nodes inside the turning
+! point
+   lo=mch-1-match_k
+   hi=mch+match_k
+   call outward(min(hi,mmax),node)
+   node=0
+   do ii=4,mch-1
+     if(uu(ii+1)*uu(ii)<=0.0d0) node=node+1
+   end do
 
 ! start inward integration with simple exponential where the
 ! wave function has decayed to machine precision
    call inward_start(ll,ee,rr,vv,mch,mmax,nin)
 
-   if(node-nn+ll+1==0 .and. nin<=mch+4) then
+   if(node-nn+ll+1==0 .and. nin<=hi+4) then
 ! no room for the inward integration: too high
      emax=ee
      ee=0.5d0*(emin+emax)
 
    else if(node-nn+ll+1==0) then
+
+     call match_point(rr,cf,mmax,mch,xmch)
+     uo(:)=uu(lo:hi)
+     qo(:)=qq(lo:hi)
+     upo(:)=up(lo:hi)
+     qpo(:)=qp(lo:hi)
 
      xkap=sqrt(sls/rr(nin)**2 + 2.0d0*(vv(nin)-ee))
 
@@ -199,7 +224,7 @@
 
 ! integrate inward
 
-     do ii=nin,mch+1,-1
+     do ii=nin,lo+1,-1
        uu(ii-1)=uu(ii)+aei(up,ii)
        qq(ii-1)=qq(ii)+aei(qp,ii)
        do it=1,2
@@ -210,39 +235,47 @@
        call derivs_at(ii-1)
      end do
 
-! scale outside wf for continuity
+! perturbation theory for the energy shift at each point of the window,
+! u_o (q_o - q_i u_o/u_i)/2 for the normalized function, averaged with
+! the bump weights; the inward solution scaled to the outward one by the
+! ratio of their weighted sums, and the two blended across the window
 
-     sc=uout/uu(mch)
+     call match_weights(xmch,lo,hi,ww,ss)
+     de=0.0d0
+     do ii=lo,hi
+       de=de+0.5d0*ww(ii-mch)*uo(ii-mch) &
+&         *(qo(ii-mch)-qq(ii)*uo(ii-mch)/uu(ii))
+     end do
+     sc=sum(ww*uo)/sum(ww*uu(lo:hi))
 
-     do ii=mch,nin
+     do ii=lo,nin
        up(ii)=sc*up(ii)
        uu(ii)=sc*uu(ii)
        qq(ii)=sc*qq(ii)
        qp(ii)=sc*qp(ii)
      end do
-
-     upin=qq(mch)
+     do ii=lo,hi
+       uu(ii)=(1.0d0-ss(ii-mch))*uo(ii-mch)+ss(ii-mch)*uu(ii)
+       qq(ii)=(1.0d0-ss(ii-mch))*qo(ii-mch)+ss(ii-mch)*qq(ii)
+       up(ii)=(1.0d0-ss(ii-mch))*upo(ii-mch)+ss(ii-mch)*up(ii)
+       qp(ii)=(1.0d0-ss(ii-mch))*qpo(ii-mch)+ss(ii-mch)*qp(ii)
+     end do
 
 ! normalize u
      call normalize(nin)
-     uout=cn*uout
-     upout=cn*upout
-     upin=cn*upin
-
-! perturbation theory for energy shift
-
-     de=0.5d0*uout*(upout-upin)
+     de=cn**2*de
 
 ! convergence test and possible exit
 
      if(abs(de)<max(abs(ee),0.2d0)*eps) then
-       if(nsmall==nint-1 .or. &
-&         abs(de)<=8.0d0*epsilon(1.0d0)*max(abs(ee),0.2d0)) then
+       if(abs(de)<=8.0d0*epsilon(1.0d0)*max(abs(ee),0.2d0) .or. &
+&         abs(de)>=0.5d0*abs(deprev)) then
          ierr = 0
          exit
        end if
-       nsmall=nint
+       polish=.true.
      end if
+     deprev=de
 
      if(de>0.0d0) then
        emin=ee

@@ -16,7 +16,8 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine vkboutwf(ll,nvkb,ep,vkb,evkb,rr,vloc,uu,up,node,mmax,mch)
+ subroutine vkboutwf(ll,nvkb,ep,vkb,evkb,rr,vloc,uu,up,node,mmax,mch, &
+&                    mnode)
 
 !! computes Vanderbilt / Kleinman-Bylander outward-integrated wave functions
 !!
@@ -29,9 +30,10 @@
 !! @param vloc  local pseudopotential
 !! @param uu  wave function
 !! @param up  1st derivative of uu
-!! @param node  count of number of nodes from 0 to rr(mch)
+!! @param node  count of number of nodes from 0 to rr(mnode)
 !! @param mmax  dimension of log mesh
 !! @param mch  index of radius to which wave function is to be integrated
+!! @param mnode  last point of the node count, <= mch
 
  use constants_m, only: dp
  implicit none
@@ -39,7 +41,7 @@
 !Input variables
  real(dp), intent(in) :: rr(mmax),vloc(mmax),vkb(mmax,nvkb),evkb(nvkb)
  real(dp), intent(in) :: ep
- integer, intent(in) :: nvkb,ll,mmax,mch
+ integer, intent(in) :: nvkb,ll,mmax,mch,mnode
 
 !Output variables
  real(dp), intent(out) :: uu(mmax),up(mmax)
@@ -123,7 +125,7 @@
  rn=max(0.10d0*rc, 0.05d0)
 
  node=0
- do ii=6,mch
+ do ii=6,mnode
 ! note historic evolution! nodes were counted beyond fixed radii of
 ! 0.5, 0.25, 0.10 and then 0.07 bohr before the cutoff rn above
    if(rr(ii)>rn .and. uu(ii-1)*uu(ii)<0.0d0) then

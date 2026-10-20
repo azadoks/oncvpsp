@@ -39,6 +39,7 @@ set(src_oncvpsp
     lschvkbbe.f90
     lschvkbs.f90
     logmesh_m.f90
+    match_m.f90
     m_libxc_list.F90
     psmlout_m.f90
     modcore.f90

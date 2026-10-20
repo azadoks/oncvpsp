@@ -60,7 +60,7 @@
  uu(:)=0.0d0
  up(:)=0.0d0
 
- call vkboutwf(ll,ivkb,ee,vkb,evkb,rr,vloc,uu,up,node,mmax,mch)
+ call vkboutwf(ll,ivkb,ee,vkb,evkb,rr,vloc,uu,up,node,mmax,mch,mch)
 
 !perform normalization sum
 

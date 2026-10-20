@@ -60,12 +60,12 @@
 
 !Local variables
  real(dp) :: cn
- real(dp) :: de
+ real(dp) :: de,deprev
  real(dp) :: eps,ro,sc
  real(dp) :: sls,sn,uout,upin,upout
  real(dp) :: amesh,al,als
  real(dp) :: rc,xkap
- integer :: ii,it,nin,nint,node,nsmall
+ integer :: ii,it,nin,nint,node
 
  real(dp), allocatable :: upp(:),cf(:)
  allocate(upp(mmax),cf(mmax))
@@ -73,15 +73,15 @@
  al = 0.01d0 * log(rr(101) / rr(1))
  amesh = exp(al)
 
-! convergence: two passes in a row whose energy correction de is smaller
-! in magnitude than eps*max(|ee|,0.2), the second at the energy with the
-! first's correction applied, so that the energy and function returned are
-! those of a pass at the corrected energy, whose own correction is far
-! below eps: the result does not depend on the start guess or the path
-! (doc/smoothness_plan.md, S-2 to S-4). A first correction already at
-! round-off (a guess from a converged SCF) needs no second pass
+! convergence: once the energy correction de is below eps*max(|ee|,0.2),
+! passes go on at the corrected energy until de is at round-off, 8 ulps of
+! max(|ee|,0.2), or stops halving (the round-off of de itself); the energy
+! and function returned are those of the last pass, whose correction is
+! not applied, so they are the fixed point to round-off and do not depend
+! on the start guess or the path (doc/smoothness_plan.md, S-2 to S-4, and
+! lschfb)
  eps=1.0d-12
- nsmall=-1
+ deprev=huge(1.0d0)
  ierr = 60
 
  sls=ll*(ll+1)
@@ -109,7 +109,7 @@
    nin=mch
 
 ! outward integration
-   call vkboutwf(ll,nvkb,ee,vkb,evkb,rr,vloc,uu,up,node,mmax,mch)
+   call vkboutwf(ll,nvkb,ee,vkb,evkb,rr,vloc,uu,up,node,mmax,mch,mch)
 
    uout=uu(mch)
    upout=up(mch)
@@ -155,13 +155,13 @@
 ! convergence test and possible exit
 
      if(abs(de)<max(abs(ee),0.2d0)*eps) then
-       if(nsmall==nint-1 .or. &
-&         abs(de)<=8.0d0*epsilon(1.0d0)*max(abs(ee),0.2d0)) then
+       if(abs(de)<=8.0d0*epsilon(1.0d0)*max(abs(ee),0.2d0) .or. &
+&         abs(de)>=0.5d0*abs(deprev)) then
          ierr = 0
          exit
        end if
-       nsmall=nint
      end if
+     deprev=de
 
      if(de>0.0d0) then
        emin=ee

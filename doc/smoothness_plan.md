@@ -295,6 +295,7 @@ The breakpoints and their continuity orders:
 | 3/b | Teter cutoff, icmod 2–4 | C¹ today; removed in phase 5 |
 | r_w | wellstate well onset | C² today; C-infinity after phase 3 |
 | ra, rb | ionic tail switch | C-infinity (`ionic_switch`) |
+| r(r_s = 1) | V_xc of PZ81 (iexc 3) | a jump of about 1e-5 Ha (the published coefficients, F-1, D-6) |
 
 #### Roots and optima
 
@@ -410,9 +411,16 @@ numbers refer to [Phases](#phases).
 | S-5 | `psatom` 204: SCF converged when the eigenvalue guess comes back unchanged | f | – | done: each eigenvalue moves by less than 1e-12 Ha and the screening residual (`ae_residual`) is below 1e-12, at the target occupations only (the ramp is now exact at its end); Anderson from the second iteration at them. `relatom` takes `sratom`'s criterion (\|ΔE\| < tolres), which unchanged eigenvalues needed |
 | S-6 | `ionic_screening`: fixed point to 1e-10, 50 iterations | f | W | done: plain iteration to 1e-13 Ha; it contracts 7–10 a step to a floor of 1e-17…5e-15 (the references), so no Anderson was needed. Moves `coulomb_tail.r_coulomb`, the 1e-10 radius, in every reference |
 | S-7 | `lschvkbb` nin = mch + 2.3/al, truncation of the density tail | a, b | W (~0) | done: `inward_start` in `lschvkbb` and in `lschpsbar` (inside the barrier) |
-| S-8 | matching point `mch` at the turning point index; `lschfb`'s mch and `inward_start`'s nin are discrete in E (about 1e-12 in the all-electron eigenvalues) | h | W | below 1e-13 at amesh 1.006 (measured, emulation); keep. The all-electron atom does not depend on the scanned inputs, so its noise is a constant offset in a scan |
+| S-8 | matching point `mch` at the turning point index; `lschfb`'s mch and `inward_start`'s nin are discrete in E (about 1e-12 in the all-electron eigenvalues) | h | W | done in phase 3: it was kept on the grounds that the all-electron atom does not depend on the scanned inputs, but well states do (their well width carried a sawtooth of 1.4e-13 Ha in E(rwell), in step with mch, into the ep scans). `match_m`: matched at the continuous turning point (an FH root), the energy correction the bump-weighted average over ±4 points of the pointwise one, the two solutions joined by a C-infinity step, in `lschfb`, `ldiracfb`, `lschvkbb` (kept beyond the projectors by a smooth maximum); `lschpsbar`'s barrier matching is phase 6 (R-14). The solvers also converge to round-off now (S-2 to S-4): the second pass below eps left its unapplied correction, up to 1e-14 relative, as noise. Unit test `matching`: E(Z) of hydrogen smooth to 4e-15 (was 3e-14 to 1e-13). nin stays discrete: the function there is at machine precision |
 | S-9 | `sr_flux_m`: series/RK4 switch at rs, RK4 step count by ceiling | g, i | W (~1e-13) | done: rs = a/(8 max(1, \|b\|)), constant in E for all bound and scattering states (\|b\| ≤ 1), so the series/RK4 branch and the step count are too |
 | S-10 | `exc_libxc`: ρ′, ρ″ of ρ_v + ρ̃_c by mesh stencils (`derivs`) across the kinks of the model core (r_s C², r* C⁴, the Teter cutoff C¹) and of ρ_v at rc | d, e | W (GGA) | ρ′, ρ″ from the pieces: the model core from its derivative columns, ρ_v from u, u′, u″ of the pseudo-waves |
+
+#### Exchange-correlation
+
+| id | where | cat | W | decision |
+|---|---|---|---|---|
+| F-1 | `excpzca`: PZ81's two branches meet at r_s = 1 with the published, rounded C = 0.0020 and D = −0.0116, so ε_xc and V_xc jump there (V_xc by about 1e-5 Ha); the radius where r_s = 1 moves with the density. The solvers integrate across the jump: the all-electron eigenvalue of a state matched near it depends on the matching point by up to 1e-8 Ha (3p of Ti, matched 1 to 3 points inside its turning point) | d | W | kept (D-6): noted, not changed |
+| F-2 | `excpzca`, `excvwn`, `excwig`, `exchdl`, `exc_relx`: V_xc and ε_xc set to 0 below ρ = 1e-20 (1e-15 for Wigner), a jump of up to 1e-7 Ha at the radius where ρ crosses it; `exc_off_pbe` below 1e-18, about 1e-6 Ha; libxc its own thresholds | g | W (tails) | kept (D-6): noted, not changed. Measured: computing the LDA functionals at every ρ > 0 moves the kernels by at most 3.3e-9 and the AE terms by 1e-10 (`exchdl` would need ln(1+1/x) and its ε_c by a series at large x, where the closed form cancels); PBE and libxc overflow as ρ → 0 and would need a smooth damping of f(n, ∇n) with its potential |
 
 #### Model core (phase 5)
 
@@ -729,6 +737,27 @@ These change behaviour beyond numerics. Decided on review (2026-10-20).
   becomes exp(a₀ + a₁r² + … + a₄r⁸), whose monotonicity on [0, r_s] is
   decided by the roots of its derivative. C⁴ has shown no practical
   benefit in the tests so far; the option is for smoothness.
+
+- **D-6 Exchange-correlation** (F-1, F-2). The xc implementations are
+  not changed; a variant would be a new iexc, not needed so far. The
+  published PZ81 coefficients
+  (libxc's XC_LDA_C_PZ, and the LDA of the plane-wave codes) leave a jump
+  in V_xc at r_s = 1; the exactly continuous ones (C and D from the
+  continuity of ε_c and dε_c/dr_s, libxc's XC_LDA_C_PZ_MOD) remove it
+  but change the functional: on the 30 iexc 3 references, AE total
+  energies by up to 9e-4 Ha and kernels by up to 3.6e-4. The jumps stay.
+  Planned, not for now: integrate around them. A registry of the known
+  breakpoints of each functional (a jump or kink in ε_xc or V_xc at a
+  density, such as PZ81's r_s = 1, or at a reduced gradient), for the
+  common LDAs and GGAs of solid-state work and for every one with a local
+  implementation here (iexc 1–7); the radii where the density crosses a
+  registered value are breakpoints of V, so the solvers' integrations,
+  the quadratures and the interpolants split there (as at rc) and the
+  jump of V_xc enters the Taylor data of `ode_rc_der` and the matching
+  as a known step. For a functional with no entry (libxc in general) the
+  fallback is today's treatment, integrating through, with its noise
+  noted. Not needed yet: the measured effect is at the solvers'
+  discretization error near the jump (1e-8 Ha in a 3p matched at it).
 
 ### Bugs found on the way
 

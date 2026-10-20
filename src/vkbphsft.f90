@@ -73,7 +73,7 @@
  do ii = 1,npsh
    epsh = epsh2-(ii-1)*depsh
 
-   call vkboutwf(ll,ivkb,epsh,vkb,evkb,rr,vloc,uu,up,node,mmax,mch)
+   call vkboutwf(ll,ivkb,epsh,vkb,evkb,rr,vloc,uu,up,node,mmax,mch,mch)
 
    phi = uu(mch)/rr(mch)
    phip = (up(mch)-al*uu(mch))/(al*rr(mch)**2)
@@ -108,7 +108,7 @@
          et=0.5d0*(emin+emax)
          shift2=0.0d0
 
-         call vkboutwf(ll,ivkb,et,vkb,evkb,rr,vloc,uu,up,node,mmax,mch)
+         call vkboutwf(ll,ivkb,et,vkb,evkb,rr,vloc,uu,up,node,mmax,mch,mch)
          phi = uu(mch)/rr(mch)
          phip = (up(mch)-al*uu(mch))/(al*rr(mch)**2)
          pst = atan2(rr(mch)*phip,phi) + pshoff

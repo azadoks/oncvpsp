@@ -36,9 +36,13 @@
 !! @param uu  output radial wave function (*rr)
 !! @param up  d(uu)/dr
 !! @param mmax  size of log grid
-!! @param mch  matching mesh point for inward-outward integrations
+!! @param mch  mesh point just beyond the matching point of the inward and
+!!             outward integrations: the continuous classical turning
+!!             point (match_m), or, if that is less, a point match_k+2
+!!             steps beyond the projectors (a smooth maximum of the two)
 
  use constants_m, only: dp
+ use match_m, only: match_k, match_point, match_weights, match_smax
  implicit none
 
 !Input variables
@@ -56,12 +60,15 @@
 
 !Local variables
  real(dp) :: cn
- real(dp) :: de
+ real(dp) :: de,deprev
  real(dp) :: eps,ro,sc
- real(dp) :: sls,sn,uout,upin,upout
+ real(dp) :: sls,sn
  real(dp) :: amesh,al,als
- real(dp) :: rc,xkap
- integer :: ii,it,jj,nin,nint,node,nsmall
+ real(dp) :: xkap,xmch
+ real(dp) :: uo(-match_k-1:match_k),upo(-match_k-1:match_k)
+ real(dp) :: ww(-match_k-1:match_k),ss(-match_k-1:match_k)
+ integer :: ii,it,ikb,nin,nint,node,lo,hi
+ logical :: room
 
  real(dp), allocatable :: upp(:),cf(:)
  allocate(upp(mmax),cf(mmax))
@@ -71,15 +78,15 @@
  node=0
  nin=mmax-4
 
-! convergence: two passes in a row whose energy correction de is smaller
-! in magnitude than eps*max(|ee|,0.2), the second at the energy with the
-! first's correction applied, so that the energy and function returned are
-! those of a pass at the corrected energy, whose own correction is far
-! below eps: the result does not depend on the start guess or the path
-! (doc/smoothness_plan.md, S-2 to S-4). A first correction already at
-! round-off (a guess from a converged SCF) needs no second pass
+! convergence: once the energy correction de is below eps*max(|ee|,0.2),
+! passes go on at the corrected energy until de is at round-off, 8 ulps of
+! max(|ee|,0.2), or stops halving (the round-off of de itself); the energy
+! and function returned are those of the last pass, whose correction is
+! not applied, so they are the fixed point to round-off and do not depend
+! on the start guess or the path (doc/smoothness_plan.md, S-2 to S-4, and
+! lschfb)
  eps=1.0d-12
- nsmall=-1
+ deprev=huge(1.0d0)
  ierr = 100
 
  sls=ll*(ll+1)
@@ -95,6 +102,17 @@
  upp(:)=0.0d0
 
  als=al**2
+
+! the projectors' last point
+ ikb=0
+ if(nvkb>0) then
+   do ii=mmax,1,-1
+     if(abs(vkb(ii,1))>0.0d0) then
+       ikb=ii
+       exit
+     end if
+   end do
+ end if
 
 ! return point for bound state convergence
  do nint=1,100
@@ -113,50 +131,51 @@
      end if
    end do
 
-   if(mch==1 .and. nvkb==0) then
-     write(6,'(/a)') 'lschvkbb: ERROR no classical turning point'
-     write(6,'(a,i2,a,i6)') 'lschvkbb: ERROR nvkb=',nvkb,'mch=',mch
-     write(6,'(a,i2,a,f8.4,a)') 'lschvkbb: ERROR l=',ll,'  e=',ee
+   if(mch==1 .and. cf(mmax)<=0.0d0) then
+! classically allowed at rr(mmax): too high
+     emax=0.5d0*(emax+ee)
+     ee=0.5d0*(emin+emax)
+     cycle
+   else if(mch==1 .and. nvkb==0) then
+! classically forbidden everywhere with no projectors: too low
+     emin=0.5d0*(emin+ee)
+     ee=0.5d0*(emin+emax)
+     cycle
    end if
 
-   if(nvkb>0) then
-! find cutoff radius for projectors
-     rc=0.0d0
-     do ii=mmax,1,-1
-       if(abs(vkb(ii,1))>0.0d0) then
-         rc=rr(ii)
-         exit
-       end if
-     end do
+! the matching point: the continuous turning point, kept clear of the
+! projectors by a smooth maximum so that the inward integration in the
+! local potential alone is valid over the whole window
+   xmch=0.0d0
+   if(mch>1) call match_point(rr,cf,mmax,mch,xmch)
+   if(nvkb>0) xmch=match_smax(xmch,dble(ikb+match_k+2))
+   mch=ceiling(xmch)
+   lo=mch-1-match_k
+   hi=mch+match_k
+   room=hi+4<=mmax-4
 
-     if(mch==1) rc=1.25d0*rc
-
-! adjust matching radius if necessary
-     if(rr(mch)<rc) then
-       do ii=mch,mmax
-         if(rr(ii)>rc) then
-           mch=ii
-           exit
-         end if
-       end do
-     end if
+! outward integration through the matching window, nodes counted to mch
+   if(room) then
+     call vkboutwf(ll,nvkb,ee,vkb,evkb,rr,vloc,uu,up,node,mmax,hi,mch)
+   else
+     call vkboutwf(ll,nvkb,ee,vkb,evkb,rr,vloc,uu,up,node,mmax,mmax,mch)
    end if
-! outward integration
-   call vkboutwf(ll,nvkb,ee,vkb,evkb,rr,vloc,uu,up,node,mmax,mch)
-
-   uout=uu(mch)
-   upout=up(mch)
 
 ! start inward integration with simple exponential where the
 ! wave function has decayed to machine precision
-   if(node-nn+ll+1==0) call inward_start(ll,ee,rr,vloc,mch,mmax,nin)
+   if(node-nn+ll+1==0 .and. room) then
+     call inward_start(ll,ee,rr,vloc,mch,mmax,nin)
+   end if
 
-   if(node-nn+ll+1==0 .and. nin<=mch+4) then
+   if(node-nn+ll+1==0 .and. (.not. room .or. nin<=hi+4)) then
 ! no room for the inward integration: too high
      emax=0.5d0*(emax+ee)
      ee=0.5d0*(emin+emax)
 
    else if(node-nn+ll+1==0) then
+
+     uo(:)=uu(lo:hi)
+     upo(:)=up(lo:hi)
 
      xkap=sqrt(sls/rr(nin)**2 + 2.0d0*(vloc(nin)-ee))
 
@@ -168,7 +187,7 @@
 
 ! integrate inward
 
-     do ii=nin,mch+1,-1
+     do ii=nin,lo+1,-1
        uu(ii-1)=uu(ii)+aei(up,ii)
        up(ii-1)=up(ii)+aei(upp,ii)
        do it=1,2
@@ -178,16 +197,28 @@
        end do
      end do
 
-! scale outside wf for continuity
+! perturbation theory for the energy shift at each point of the window,
+! u_o (u'_o - u'_i u_o/u_i)/2 for the normalized function, averaged with
+! the bump weights; the inward solution scaled to the outward one by the
+! ratio of their weighted sums, and the two blended across the window
+! (match_m)
 
-     sc=uout/uu(mch)
+     call match_weights(xmch,lo,hi,ww,ss)
+     de=0.0d0
+     do ii=lo,hi
+       de=de+0.5d0*ww(ii-mch)*uo(ii-mch) &
+&         *(upo(ii-mch)-up(ii)*uo(ii-mch)/uu(ii))/(al*rr(ii))
+     end do
+     sc=sum(ww*uo)/sum(ww*uu(lo:hi))
 
-     do ii=mch,nin
+     do ii=lo,nin
        up(ii)=sc*up(ii)
        uu(ii)=sc*uu(ii)
      end do
-
-     upin=up(mch)
+     do ii=lo,hi
+       uu(ii)=(1.0d0-ss(ii-mch))*uo(ii-mch)+ss(ii-mch)*uu(ii)
+       up(ii)=(1.0d0-ss(ii-mch))*upo(ii-mch)+ss(ii-mch)*up(ii)
+     end do
 
 ! perform normalization sum
 
@@ -205,9 +236,6 @@
 ! normalize u
 
      cn=1.0d0/sqrt(sn)
-     uout=cn*uout
-     upout=cn*upout
-     upin=cn*upin
 
      do ii=1,nin
        up(ii)=cn*up(ii)
@@ -217,21 +245,18 @@
        uu(ii)=0.0d0
        up(ii)=0.0d0
      end do
-
-! perturbation theory for energy shift
-
-     de=0.5d0*uout*(upout-upin)/(al*rr(mch))
+     de=cn**2*de
 
 ! convergence test and possible exit
 
      if(abs(de)<max(abs(ee),0.2d0)*eps) then
-       if(nsmall==nint-1 .or. &
-&         abs(de)<=8.0d0*epsilon(1.0d0)*max(abs(ee),0.2d0)) then
+       if(abs(de)<=8.0d0*epsilon(1.0d0)*max(abs(ee),0.2d0) .or. &
+&         abs(de)>=0.5d0*abs(deprev)) then
          ierr = 0
          exit
        end if
-       nsmall=nint
      end if
+     deprev=de
 
      if(de>0.0d0) then
        emin=0.5d0*(emin+ee)
