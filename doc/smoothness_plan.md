@@ -19,7 +19,7 @@ smoothness together, and the record of how it goes. Branch `smooooth`.
 - [Inventory and decisions](#inventory-and-decisions)
 - [Tests](#tests)
 - [Phases](#phases)
-- [Decisions for review](#decisions-for-review)
+- [Decisions](#decisions)
 - [Bugs found on the way](#bugs-found-on-the-way)
 
 ### Definitions and scope
@@ -258,9 +258,9 @@ The breakpoints and their continuity orders:
 | rc_l | χ, β | C^(ncon−3) |
 | rc(5) | V_loc, lpopt 1, 2 | C² |
 | rc(5) | V_loc, lpopt 3, 4, 5 | C³ |
-| 0.95·rc_l | the vr window of run_vkb | C¹ today; C-infinity after phase 3 |
+| 0.95·rc_l | the vr window of run_vkb | C¹ (kept, D-4); quadratures split there |
 | r* | model core, icmod 1 | C⁴ |
-| r_s | model core, icmod 6/7 | C² (C⁴ possible, see D-5) |
+| r_s | model core, icmod 6/7 | C² by default, C⁴ with `match_order = 4` (D-5) |
 | 3/b | Teter cutoff, icmod 2–4 | C¹ today; removed in phase 5 |
 | r_w | wellstate well onset | C² today; C-infinity after phase 3 |
 | ra, rb | ionic tail switch | C-infinity (`ionic_switch`) |
@@ -323,11 +323,11 @@ numbers refer to [Phases](#phases).
 | R-5 | `fpovlp`, `sbf_basis_con`: overlaps to `irc` with the (23,28,9)/24 end rule | c | W | `lm_integral` for all-electron overlaps; `sbf_overlap` (Lommel) for Bessel ones |
 | R-6 | `pspot`: inside/outside by mesh index; V_l joins V_AE at irc+1 | a, d | W | pieces with extensions; values by side of rc |
 | R-7 | `vploc`: 5-point stencils at irc(5)±6, polynomial for ii ≤ irc(5) | a, e | W | `lm_derivs` of V_AE at rc(5); polynomial evaluated analytically |
-| R-8 | `run_vkb`: support cut at irc; window `20(r/rr(irc) − 1)`, ff = (1−x²)², C¹ | a, d | W | true rc; C-infinity bump window; quadratures split at 0.95 rc, rc(5), rc |
+| R-8 | `run_vkb`: support cut at irc; window `20(r/rr(irc) − 1)`, ff = (1−x²)², C¹; ff·vr·φ̃ with vr = Δ/2u | a, d | W | true rc; subtract ff·Δ[u_AE]/2 (D-4); same window shape; quadratures split at 0.95 rc, rc(5), rc |
 | R-9 | `vpinteg` to `irc`; points 1–3 skipped | c | W | piecewise `lm_integral` |
 | R-10 | `vkboutwf`, `lschvkbb`: rc found as the last nonzero vkb; overlaps to `mch` (rule changes with the turning point) | a, e | W | rc passed in; one fixed [0, rc] rule shared with run_vkb |
-| R-11 | `vrel` window 0.5–1.5 rr(irc); 1e-10 threshold on u | a, g | W | evaluate only on [0.95 rc, rc] from the ODE; no threshold (u ≠ 0 there unless rc sits on a node, which pspot already rejects) |
-| R-12 | `wellstate`: well onset at rr(irc+5), x³ onset (C²); thresholds 0.75, 1.5 rr(irc) | a, d, g | W | onset at rc·amesh⁵ (continuous), C-infinity onset; thresholds: D-1 |
+| R-11 | `vrel` window 0.5–1.5 rr(irc); 1e-10 threshold on u; vr = 0 points replaced by the average of their neighbours | a, g | W | replaced by Δ = u″ − u″_Schrödinger of the all-electron wave on [0.95 rc, rc], from the ODE (D-4): no division by u, no threshold |
+| R-12 | `wellstate`: well onset at rr(irc+5), x³ onset (C²); thresholds 0.75, 1.5 rr(irc) override `ep`; negative `ep` reset to 0.25 | a, d, g | W | onset at rc·amesh⁵ (continuous), C-infinity onset; overrides removed, the input `ep` is always used (D-1) |
 | R-13 | `ionic_window`: ra = rcmax (snapped); rcore = first mesh point where `|vion+zion/r|` < 1e-10; rb = max(rcore, 2ra) | a, g, h | W | continuous ra; rcore by `lm_root` of ln\|vion+zion/r\| − ln tol; smooth max |
 | R-14 | `run_diag` `mchf = max(irc)+5`; `run_phsft` rxpsh → irphs; `run_ghosts` mbar; `run_plot` n1..n4 | a | – | phase 6 |
 | R-15 | `upfout` `nrlproj`, `cutoff_radius_index`; `linout` rc+2·drl format switch | a, g | W | β exactly 0 beyond rc (phase 4); indices then harmless |
@@ -535,7 +535,8 @@ later phases can see 1e-10.
 - [ ] Q-1…Q-4 residual kinetic energy at exact qcut, fixed quadratures
 - [ ] R-7 vploc at continuous rc(5); R-8…R-10 run_vkb, vpinteg,
       vkboutwf on a shared piecewise rule; R-11 vrel; S-1
-- [ ] R-12 wellstate onset; R-3, R-13 ionic window
+- [ ] R-12 wellstate onset, overrides removed (D-1); R-3, R-13 ionic
+      window
 - [ ] Q-8, Q-10
 - [ ] T2 rows rc, rcloc, qcut at G1; T3, T4 recorded
 - [ ] References patched
@@ -551,6 +552,8 @@ later phases can see 1e-10.
 - [ ] Unit tests: crossover root, closed-form a0, Teter derivatives
       against series and finite differences, written first
 - [ ] M-1…M-14
+- [ ] `match_order` (D-5): input key, minimum tail and Martins fill to
+      C⁴, T2 row `slack` with `match_order = 4`
 - [ ] T2 rows fcfact, rcfact, icmod 4 grid, slack at G1
 - [ ] References patched
 
@@ -569,35 +572,49 @@ later phases can see 1e-10.
       fixed where the phases did not already
 - [ ] `smooth` label dropped; T2 part of the default suite
 
-### Decisions for review
+### Decisions
 
-These change behaviour beyond numerics, so they need a decision before
-their phase.
+These change behaviour beyond numerics. Decided on review (2026-10-20).
 
-- **D-1 wellstate localisation thresholds** (R-12). Today a bound state
-  whose outermost peak is inside 0.75 rc replaces the input `ep`, and one
-  inside 1.5 rc forces `ep = 0.05`. Both thresholds are on a continuous
-  ratio. Proposal: decide by discrete facts only (a bound state of that n
-  exists, and the sign of the input `ep`), and keep the input `ep`
-  otherwise. Alternative: keep them as they are, as documented discrete
-  events.
-- **D-2 fr psp8 truncation** (O-2). Today scalar-relativistic and
-  spin-orbit terms below 1e-3 of the first are dropped. Proposal: write
-  them all. The files then hold up to 2·nproj terms per l where they hold
-  fewer now.
-- **D-3 Basis wave vectors** (Q-5). They come from the all-electron log
-  derivative at rc; when it crosses l/rc the lowest root passes through
-  0 and the basis changes discretely. Proposal: keep the method, find
-  the roots robustly, and treat the crossing as a discrete event.
-  Alternative: q_n = z_{l,n}/rc, independent of the all-electron
-  function, which is exactly smooth but changes every pseudopotential.
-- **D-4 The vr window** (R-8). It makes χ vanish at rc in sr and fr. A
-  C-infinity bump instead of (1 − x²)² changes the projectors slightly.
-  Proposal: the bump.
-- **D-5 icmod 6/7 matching order.** It is C² at r_s, so the 3rd and 4th
-  derivative columns of psp8 jump at r_s. Proposal: match to C⁴ (5
-  constraints of the 9 coefficients); Martins cannot, so it would need
-  extending or would keep C².
+- **D-1 wellstate overrides** (R-12). Removed. Today a bound state of
+  the requested n whose outermost peak is inside 0.75 rc replaces the
+  input `ep` with its own energy, one inside 1.5 rc forces `ep = 0.05`,
+  and a negative `ep` becomes 0.25. The input `ep` is now always used,
+  and the well is always built. The well only raises the energy, so an
+  `ep` below the free bound state of that n has no well state: that is
+  an input error, reported with the bound energy. 13 of the 51
+  references take an override today and change: 03_Li (nr, sr, fr),
+  20_Ca (sr, fr), 38_Sr_lxc (sr, fr), 56_Ba, 57_La, 74_W_r, 79_Au_lxc
+  (sr, fr), 80_Hg_r. In all of them the input `ep` is above the bound
+  state (57_La 4f: −0.10 against −0.111), so none becomes an error.
+- **D-2 fr psp8 truncation** (O-2). All terms are written. The files
+  then hold up to 2·nproj terms per l where they hold fewer now.
+- **D-3 Basis wave vectors** (Q-5). The method stays: the roots are found
+  robustly and the crossing of the lowest root through 0 is a discrete
+  event.
+- **D-4 The vr window** (R-8, R-11). As PseudoPotentialGenerators.jl
+  (`relativistic_taper`): subtract f·Δ[u_AE]/2, where Δ = u″ − [l(l+1)/r²
+  + 2(V − ε)]u is the difference of the all-electron u″ from the
+  Schrödinger one, instead of f·v_rel·φ̃ with v_rel = Δ/2u. It never
+  divides by u, so it needs neither `vrel`'s threshold nor its
+  neighbour average at nodes; it needs no knowledge of the equation, so
+  in fr it holds the spin-orbit term too; and it is evaluated at the true
+  rc. It differs from today by f·v_rel·(φ̃ − u_AE) = O((0.05 rc)^ncon).
+  The window f = (1 − x²)², x = 20(r/rc − 1), stays: it is C¹ at 0.95 rc,
+  a fixed kink in r that moves continuously with rc, so the quadratures
+  split there and the dependence on the inputs is smooth. Its shape is
+  arbitrary (PseudoPotentialGenerators.jl TODO C4: the narrow window
+  gives χ high-q content and B an asymmetry of up to 3e-3 of max|B|), but
+  changing it changes every sr and fr pseudopotential and is not a
+  smoothness question; it is left out of this plan.
+- **D-5 icmod 6/7 matching order.** An option, `match_order` in
+  `[model_core_charge]` (2 or 4, default 2, so the results do not
+  change). With 4 the fill matches the core charge to C⁴ at r_s and the
+  3rd and 4th derivative columns of psp8 are continuous there. The
+  minimum tail keeps 4 of its 9 coefficients free; the Martins fill
+  becomes exp(a₀ + a₁r² + … + a₄r⁸), whose monotonicity on [0, r_s] is
+  decided by the roots of its derivative. C⁴ has shown no practical
+  benefit in the tests so far; the option is for smoothness.
 
 ### Bugs found on the way
 
