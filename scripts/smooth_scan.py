@@ -351,12 +351,13 @@ def self_test():
         for t in ts
     ]
     failures = []
-    if analyse(ts, smooth, degree)["kernel"][0] > 1e-12:
-        failures.append("smooth function not fitted to 1e-12")
-    if analyse(ts, jump, degree)["kernel"][0] < 1e-8:
-        failures.append("jump of 1e-7 not seen at 1e-8")
-    if analyse(ts, kink, degree)["kernel"][0] < 1e-9:
-        failures.append("kink of slope 1e-6 not seen at 1e-9")
+    for degree in (degree, 10):
+        if analyse(ts, smooth, degree)["kernel"][0] > 1e-12:
+            failures.append(f"smooth function not fitted to 1e-12 at degree {degree}")
+        if analyse(ts, jump, degree)["kernel"][0] < 1e-8:
+            failures.append(f"jump of 1e-7 not seen at 1e-8 at degree {degree}")
+        if analyse(ts, kink, degree)["kernel"][0] < 1e-9:
+            failures.append(f"kink of slope 1e-6 not seen at 1e-9 at degree {degree}")
     data = {
         "t": [{"n": [1, 2]}],
         "a": {"x": 0.1 + 0.2, "s": 'p"q', "v": [2.7, 1e-5, 3]},

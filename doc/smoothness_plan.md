@@ -323,6 +323,27 @@ relative and near round-off: 1e-13 for eigenvalues; the SCF loops test
 both eigenvalues and the potential residual explicitly. An iteration
 that ends on its iteration limit is an error, not a result.
 
+As done in phase 2:
+
+- The eigen-solvers (lschfb, ldiracfb, lschvkbb, lschvkbbe, lschpsbar)
+  stop after two passes in a row whose perturbative correction is below
+  1e-12·max(|E|, 0.2). The second pass is at the energy with the first's
+  correction applied, and its energy and function are returned. Their
+  correction is Newton's step, so the second one is far below
+  round-off.
+- A Newton polish (qroots, optimize) stops when a step was within the
+  round-off of the residual, or within a few ulps of the unknown: at a
+  root of slope g′ the residual cannot get below ulp(x)·g′. The unknown
+  is then evaluated once more at the moved point.
+- A fixed point (ionic_screening) is iterated to a tolerance 20 times
+  above its measured floor (1e-13 Ha against 1e-17 to 5e-15). With a
+  contraction of 7–10 per step, the result is then within 2e-14 of the
+  fixed point.
+- A bracketed scalar equation (wellstate) is solved by Illinois regula
+  falsi. It stops at a few ulps of the residual, or when the bracket has
+  closed to a few ulps of the unknown. A closed bracket with a residual
+  above 1e-10 means a jump in the function, and the program stops.
+
 #### Policy branches
 
 A branch on a continuous quantity that picks between methods (use the
@@ -371,11 +392,11 @@ numbers refer to [Phases](#phases).
 | Q-2 | `eresid`: nq = qmax/dq + 1, top 3 intervals dropped; irclin, mmaxlin integer, tail cut at \|u\| < 1e-10 | i, c, g | W | fixed-count quadrature on [qcut, qmax]; inside piece by Lommel at each q; outside piece on a fixed grid to a fixed radius |
 | Q-3 | `run_optimize` 158–164: qmax = dq·int(2·qroot(nbas)/dq), max with 20, branch on qcut | i, g | W | qmax continuous (smooth max), or a fixed multiple plus an analytic tail |
 | Q-4 | `run_optimize` cvgplt/ecurve: linear interpolation assuming spacing dqout while eresid moved the q's | e, h | W (icmod 6/7) | E_r at exact q; crossings by root-finding on E_r(q), whose q-derivative is known |
-| Q-5 | `qroots`: scan dq = 0.02, pole filter \|f·f_last\| < 1, bisection to \|f\| < 1e-12 | h, f | W | roots of the pole-free g(q) = ulgd·j_l(q rc) − q j_l'(q rc), Newton-polished; see D-3 |
-| Q-6 | `optimize`: bisection to a 1e-10 bracket | f | W | Newton polish of the secular equation |
+| Q-5 | `qroots`: scan dq = 0.02, pole filter \|f·f_last\| < 1, bisection to \|f\| < 1e-12 | h, f | W | done in phase 2: the bisection's root Newton-polished on g(q) to round-off; the scan and pole filter stay (D-3) |
+| Q-6 | `optimize`: bisection to a 1e-10 bracket | f | W | done in phase 2: Newton polish of the norm constraint after the bisection |
 | Q-7 | `optimize`: hard-case sign of x₁ | h | W | intrinsic (two global minima); keep, warn |
 | Q-8 | `const_basis`: absolute 1e-8 singular-value threshold, values below left unscaled | g | W | relative threshold; error if rank-deficient |
-| Q-9 | `wellstate`: rwell by ×/÷0.8 then bisection to \|E − ep\| < 1e-8; ep := E | f, h | W | solve E(rwell) = ep by Brent to round-off |
+| Q-9 | `wellstate`: rwell by ×/÷0.8 then bisection to \|E − ep\| < 1e-8; ep := E | f, h | W | done in phase 2: Illinois regula falsi on E(rwell) − ep once bracketed, to round-off; a bracket closed on a residual above 1e-10 is an error |
 | Q-10 | `sbf8`: l = 2, 3 closed forms lose eps/x^l at small x | – | W | series below x ≈ 0.5 for l ≥ 2 |
 
 #### Solvers (phase 2)
@@ -383,14 +404,14 @@ numbers refer to [Phases](#phases).
 | id | where | cat | W | decision |
 |---|---|---|---|---|
 | S-1 | sr: V_l inside rc reproduces V+vr, outside V: V_l jumps by vr(rc) at rc | d | W | done on oncvpsp-opt (d1393c5): for lloc < 4 run_vkb applies the ff·vr window to the semi-local local potential, so V_loc(rc) = V_AE(rc) and every χ(rc) = 0; phase 3 moves it to the Δ form of D-4 with the rest of R-8 |
-| S-2 | `lschvkbb`, `lschpsbar`: eps 1e-8; result is the guess before the last correction | f | W (rho, unscreening) | apply the correction and one more step; eps 1e-13 relative |
-| S-3 | `lschvkbbe`, `ldiracfb`, `ldiracfs`: eps 1e-10, same | f | W | same |
-| S-4 | `lschfb`: eps 1e-12, same | f | W | same |
-| S-5 | `psatom` 204: SCF converged when the eigenvalue guess comes back unchanged | f | – | explicit criterion on eigenvalues and potential residual |
-| S-6 | `ionic_screening`: fixed point to 1e-10, 50 iterations | f | W | converge to round-off (Anderson), then a fixed polish |
-| S-7 | `lschvkbb` nin = mch + 2.3/al, truncation of the density tail | a, b | W (~0) | `inward_start` budget as in lschfb |
+| S-2 | `lschvkbb`, `lschpsbar`: eps 1e-8; result is the guess before the last correction | f | W (rho, unscreening) | done: two passes in a row below 1e-12·max(\|E\|, 0.2), the second at the corrected energy (none if the first correction is at round-off); T5 to 3e-15 |
+| S-3 | `lschvkbbe`, `ldiracfb`, `ldiracfs`: eps 1e-10, same | f | W | done, as S-2 (`ldiracfs` integrates outward only: its eps was unused, removed) |
+| S-4 | `lschfb`: eps 1e-12, same | f | W | done, as S-2 |
+| S-5 | `psatom` 204: SCF converged when the eigenvalue guess comes back unchanged | f | – | done: each eigenvalue moves by less than 1e-12 Ha and the screening residual (`ae_residual`) is below 1e-12, at the target occupations only (the ramp is now exact at its end); Anderson from the second iteration at them. `relatom` takes `sratom`'s criterion (\|ΔE\| < tolres), which unchanged eigenvalues needed |
+| S-6 | `ionic_screening`: fixed point to 1e-10, 50 iterations | f | W | done: plain iteration to 1e-13 Ha; it contracts 7–10 a step to a floor of 1e-17…5e-15 (the references), so no Anderson was needed. Moves `coulomb_tail.r_coulomb`, the 1e-10 radius, in every reference |
+| S-7 | `lschvkbb` nin = mch + 2.3/al, truncation of the density tail | a, b | W (~0) | done: `inward_start` in `lschvkbb` and in `lschpsbar` (inside the barrier) |
 | S-8 | matching point `mch` at the turning point index; `lschfb`'s mch and `inward_start`'s nin are discrete in E (about 1e-12 in the all-electron eigenvalues) | h | W | below 1e-13 at amesh 1.006 (measured, emulation); keep. The all-electron atom does not depend on the scanned inputs, so its noise is a constant offset in a scan |
-| S-9 | `sr_flux_m`: series/RK4 switch at rs, RK4 step count by ceiling | g, i | W (~1e-13) | RK4 from r0 always; fixed step count |
+| S-9 | `sr_flux_m`: series/RK4 switch at rs, RK4 step count by ceiling | g, i | W (~1e-13) | done: rs = a/(8 max(1, \|b\|)), constant in E for all bound and scattering states (\|b\| ≤ 1), so the series/RK4 branch and the step count are too |
 | S-10 | `exc_libxc`: ρ′, ρ″ of ρ_v + ρ̃_c by mesh stencils (`derivs`) across the kinks of the model core (r_s C², r* C⁴, the Teter cutoff C¹) and of ρ_v at rc | d, e | W (GGA) | ρ′, ρ″ from the pieces: the model core from its derivative columns, ρ_v from u, u′, u″ of the pseudo-waves |
 
 #### Model core (phase 5)
@@ -555,13 +576,27 @@ later phases can see 1e-10.
 - [x] T5 written (`tests/unit/test_solver_path.f90`), red: from guesses
       on either side, lschfb differs by up to 6e-13, ldiracfb 2p1/2 by
       1e-10, lschvkbb by 7e-9, lschvkbbe by 3e-12, lschpsbar by 2.5e-9
-- [ ] S-2…S-4: final correction applied plus one step, tolerances
-      1e-13, in lschvkbb, lschpsbar, lschvkbbe, lschfb, ldiracfb,
-      ldiracfs
-- [ ] S-5 psatom criterion; S-6 ionic_screening; S-7; S-9
-- [ ] Q-6 optimize, Q-5 qroots polish, Q-9 wellstate width by Brent
-- [ ] T2 rows `dvloc0`, `debl`, `ep` (well) at G2
-- [ ] References patched
+- [x] S-2…S-4 in lschvkbb, lschpsbar, lschvkbbe, lschfb, ldiracfb (see
+      Iterations); T5 green, to 3e-15
+- [x] S-5 psatom criterion (and relatom's); S-6 ionic_screening; S-7;
+      S-9
+- [x] Q-6 optimize, Q-5 qroots polish, Q-9 wellstate width (Illinois)
+- [ ] T2 rows `dvloc0`, `debl`, `ep` (well) at G2: `dvloc0` is at
+      2.4e-14 (14_Si) and 1.6e-14 (52_Te_r). Its 2.2e-9 at degree 6 was the
+      fit's own truncation (the kernel bends in dvloc0), so the G2 rows fit
+      with degree 10. `debl[0]` (5e-10) and `ep[2]` (8e-10) stay red until
+      phase 3: their noise is in the l block whose energy moves and is
+      already in the AE derivatives at rc, u‴/u at 1.5e-10 and u⁗/u at
+      1.8e-9 against u′/u at 1e-14. That is the round-off of the
+      `wf_rc_der` stencils (eps/al³, eps/al⁴), which R-4 replaces by
+      `ode_rc_der`.
+- [ ] References patched (after the oncvpsp-opt AE-energy refresh). At
+      the code before and after, on the 51 reference inputs:
+      - kernels move by at most 6.6e-8 (60_Nd_GHOST l=3: 1.9e-7);
+      - `coulomb_tail.r_coulomb` moves in every reference (S-6);
+      - 60_Nd_GHOST's truncation changes move by 2e-5;
+      - nothing else moves beyond the tolerances.
+      Runtime is 1.05–1.19 times the old (80_Hg_r 1.19, 74_W_r 1.15).
 
 #### Phase 3: continuous radii, qcut, projectors
 
@@ -676,14 +711,16 @@ To fix in the phase that touches the code, or in phase 7.
   the code does not do.
 - `lschfb`, `lschvkbb`, `ldiracfb`: `up`, `qq`, `gup`, `fup` beyond `nin`
   left unscaled (not latent: `up(2281)/(al r)` = 0.76 for hydrogen 1s on
-  the default mesh, where the state is 1e-16; reported to the
-  oncvpsp-opt session, whose files these are).
+  the default mesh, where the state is 1e-16). Fixed on oncvpsp-opt
+  (752a6e5), with `lschvkbbe` and `lschpb`.
 - `lschfb`, `lschfs`, `ldiracfb`, `ldiracfs`, `boundstate`,
   `scatterstate` document `up` as d(uu)/dr; it is d(uu)/dn = al·r·d(uu)/dr.
 - `lschpsbar` 204 uses `cf(mbar)` for `cf(ii)`.
 - `wellstate` 157 tests `ierr<0`, which lschfb never returns, so box
   states (`ierr=10`) can enter the bracketing.
-- `psatom` can declare convergence during the occupation ramp.
+- `psatom` can declare convergence during the occupation ramp (fixed in
+  phase 2, S-5).
+- `lschpb` has no caller.
 - The solvers' doc comments call `up` d(uu)/dr; it is d(uu)/dn = al·r·du/dr.
 - The `oncvpsp_main` comment on the rc rounding says "nearest" and "5
   decimals"; it is "next" and 6.
