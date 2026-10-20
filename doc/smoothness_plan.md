@@ -154,15 +154,28 @@ barycentric rational interpolant** with blending degree d:
 It has no real poles. It reproduces polynomials of degree d in x, with
 error O(al^(d+1)). It is C-infinity in x, and stable in barycentric form.
 At a node it returns the node value exactly. It blends all local degree-d
-interpolants with weights that fall off as |x − x_i|^−(d+1), but the
-far interpolants grow as |x − x_i|^d, so its cardinal functions fall off
-only as 1/|x − x_i|. Cutting the sum off near x (the first version of
-this plan proposed about 60 cells) would therefore make jumps of order
-1/60 of rough data, and of the size of the interpolation error itself
-for smooth data. The sum runs over the whole mesh instead: mmax
-operations per value (13 µs at mmax = 2300), exactly C-infinity, with
-round-off about eps·Σ_i |f_i|/(1 + |x − x_i|/al). **d = 6** (order 7;
-measured: the error of r²e^−r falls 206-fold from al = 0.1 to 0.05). At al = ln 1.006 this is round-off for every
+interpolants p_k with weights λ_k that fall off as |x − x_k|^−(d+1), but
+the far interpolants grow as |x − x_k|^d, so its cardinal functions fall
+off only as 1/|x − x_k|. Anything rough anywhere in the array therefore
+leaks everywhere at that rate: a kink, or values a solver left unset past
+its last point (that is how this was found: `lschfb`'s `up` beyond `nin`
+moved u′ at rc by 1e-4). Cutting the sum off near x (the first version of
+this plan proposed about 60 cells) would instead make jumps of that size.
+
+The interpolant used is **windowed**: each λ_k is multiplied by a
+C-infinity bump ω of the distance from x to the window's centre, 1 within
+10 steps and 0 beyond 20. In barycentric form the node weights become
+w_i(x) = (−1)^i Σ_k ω(|x − c_k|) C(d, i − k), smooth in x. The result is
+still C-infinity, interpolatory, and exact for polynomials of degree d;
+ω does not increase away from x, so Floater and Hormann's alternating-sum
+argument still excludes poles; and a node more than about 27 steps away
+has no influence at all (tested bit for bit). Locality is not a
+substitute for clean data: a consumer checks what it reads near the
+radius (`ode_rc_der` stops if u′ from the solver's du/dn and from
+stencils on u disagree beyond the solver's own error, which catches
+garbage within reach), and the solvers' arrays are fixed at the source. **d = 6** (order 7;
+measured: the error of r²e^−r falls 191-fold from al = 0.1 to 0.05, and
+is 8e-16 at al = ln 1.006; 5 µs per value). At al = ln 1.006 this is round-off for every
 smooth function the generator handles at the radii of interest. The unit
 tests check reproduction, order, node exactness, and continuity of the
 slope on rough data (which a switching Lagrange stencil fails).
@@ -194,10 +207,18 @@ section) and then interpolated.
   the fields above. For a smooth V this replaces eps/al^4 ≈ 1e-5
   round-off in the 4th derivative of u by eps/al^3 ≈ 1e-9 in V'''.
   For a GGA potential, whose own noise is above round-off, the two are
-  comparable. Phase 1 measures both on 14_Si (PBE) and hydrogen
-  (analytic), and the plan keeps the ODE route unless the measurement
-  says otherwise. The finite-difference route is still the cross-check
-  (T1).
+  comparable. Measured (phase 1, `ode_rc_der`, with u′ from the solver's
+  du/dn = al·r·du/dr, not from a stencil):
+  - hydrogen 1s solved by `boundstate` (nr), against the analytic state,
+    at amesh 1.006 / 1.003 / 1.0015: every derivative carries the
+    solver's own error in u (1.0e-10 / 6.5e-12 / 4.0e-13), the 4th up to
+    1.1e-10 / 8.7e-11 / 1.8e-9 (V‴ round-off); the stencils of
+    `wf_rc_der` reach 7.9e-7 / 2.6e-6 / 2.1e-5 in the 4th, growing as
+    the mesh refines;
+  - 14_Si (sr, PBE), bound 3s and 3p at a fixed rc: the ODE route agrees
+    across the three meshes to 1e-8 relative in the 3rd and 4th
+    derivatives; the stencils differ from it by up to 2e-6 in the 4th.
+  The ODE route is kept, with `wf_rc_der` as the cross-check (T1).
 
 #### Integrals
 
@@ -361,7 +382,7 @@ numbers refer to [Phases](#phases).
 
 | id | where | cat | W | decision |
 |---|---|---|---|---|
-| S-1 | sr: V_l inside rc reproduces V+vr, outside V: V_l jumps by vr(rc) at rc | d | W | the vr window (R-8) is what makes χ vanish at rc; also make the written V_l continuous for lloc < 4 (smooth switch of vr), phase 3 |
+| S-1 | sr: V_l inside rc reproduces V+vr, outside V: V_l jumps by vr(rc) at rc | d | W | done on oncvpsp-opt (d1393c5): for lloc < 4 run_vkb applies the ff·vr window to the semi-local local potential, so V_loc(rc) = V_AE(rc) and every χ(rc) = 0; phase 3 moves it to the Δ form of D-4 with the rest of R-8 |
 | S-2 | `lschvkbb`, `lschpsbar`: eps 1e-8; result is the guess before the last correction | f | W (rho, unscreening) | apply the correction and one more step; eps 1e-13 relative |
 | S-3 | `lschvkbbe`, `ldiracfb`, `ldiracfs`: eps 1e-10, same | f | W | same |
 | S-4 | `lschfb`: eps 1e-12, same | f | W | same |
@@ -524,9 +545,10 @@ later phases can see 1e-10.
       `lm_integral`, `lm_root` (FH d = 6, summed over the whole mesh)
 - [x] `sbf_overlap` (Lommel, with the small-argument and near-degenerate
       series)
-- [ ] ODE-recursion derivatives of (u, q) for irel 0, 1, 2; measure
-      against the stencil route on hydrogen and 14_Si (PBE)
-- [ ] T1 green
+- [x] ODE-recursion derivatives of (u, q) for irel 0, 1, 2
+      (`ode_rc_der`); measured against the stencil route on hydrogen and
+      14_Si (PBE), see Derivatives at a radius
+- [x] T1 green (`unit_logmesh`, `unit_ode_rc_der`)
 
 #### Phase 2: solvers to round-off
 
@@ -651,7 +673,11 @@ To fix in the phase that touches the code, or in phase 7.
 - `doc/core_correction.md` describes a blending (`fcrossover.f90`) that
   the code does not do.
 - `lschfb`, `lschvkbb`, `ldiracfb`: `up`, `qq`, `gup`, `fup` beyond `nin`
-  left unscaled (latent).
+  left unscaled (not latent: `up(2281)/(al r)` = 0.76 for hydrogen 1s on
+  the default mesh, where the state is 1e-16; reported to the
+  oncvpsp-opt session, whose files these are).
+- `lschfb`, `lschfs`, `ldiracfb`, `ldiracfs`, `boundstate`,
+  `scatterstate` document `up` as d(uu)/dr; it is d(uu)/dn = al·r·d(uu)/dr.
 - `lschpsbar` 204 uses `cf(mbar)` for `cf(ii)`.
 - `wellstate` 157 tests `ierr<0`, which lschfb never returns, so box
   states (`ierr=10`) can enter the bracketing.

@@ -27,12 +27,19 @@
 !> derivative fields made with fixed stencils (lm_derivs) and of the
 !> cumulative integral (lm_cumint, lm_integral).
 !>
-!> The interpolant sums over the whole mesh. Its cardinal functions fall
-!> off only as 1/|x-x_i|, so cutting the sum off near the radius would make
-!> a jump of that order for rough data; the whole sum costs mmax operations
-!> and is C-infinity. Its round-off is about eps*sum_i |f_i|/(1+|x-x_i|/al).
-!> The mesh is rr(i)=rr(1)*amesh**(i-1), as everywhere in the programs,
-!> with mmax>=11.
+!> The interpolant is made local without a switch. Floater-Hormann blends
+!> the degree-d interpolants p_k on the windows of nodes k..k+d with
+!> weights lambda_k(x) ~ |x-x_k|**-(d+1); the far p_k grow as |x-x_k|**d,
+!> so its cardinal functions fall off only as 1/|x-x_i|, and anything rough
+!> anywhere in the array (a kink, unset values past a solver's last point)
+!> leaks everywhere at that rate. Here each window's weight is also
+!> multiplied by a C-infinity bump omega of the distance from x to the
+!> window's centre, 1 within nwin1 steps and 0 beyond nwin2: the result is
+!> still C-infinity in x, interpolates, reproduces polynomials of degree d,
+!> and has no poles (omega does not increase away from x, so the
+!> alternating-sum argument of Floater and Hormann holds), and a node more
+!> than about nwin2+d steps away has no influence at all. The mesh is
+!> rr(i)=rr(1)*amesh**(i-1), as everywhere in the programs, with mmax>=11.
 
  module logmesh_m
  use constants_m, only: dp
@@ -51,6 +58,10 @@
 
 !> points of the cell-integration stencils: degree 7, 8th order
  integer, parameter :: ncell=8
+
+!> the window bump of the interpolant: 1 for a window centre within nwin1
+!> steps of x, falling smoothly to 0 at nwin2 steps
+ real(dp), parameter :: nwin1=10.0d0, nwin2=20.0d0
 
  contains
 
@@ -105,7 +116,8 @@
 !Local variables
  real(dp), allocatable :: field(:)
  real(dp) :: cc(0:2*nhalf,0:4,0:2*nhalf),dx(0:4),hh,tt
- integer :: ii,jj,kk,inode,ishift
+ integer :: ii,jj,kk,inode,ishift,ilo,ihi,nreach
+ integer :: have(0:2*nhalf)
 ! Stirling numbers of the first kind: r**k d^k/dr^k = sum_j s(k,j) d^j/dx^j
  real(dp), parameter :: stirling(4,4)=reshape([ &
 &   1.0d0, -1.0d0,  2.0d0, -6.0d0, &
@@ -117,17 +129,27 @@
  tt=mesh_position(rr,mmax,rq)
  inode=node_index(rr,mmax,rq,tt)
 
-! stencil weights for each position of the node in the 11-point window
- do ii=0,2*nhalf
-   call stencil_weights(ii,cc(:,:,ii))
- end do
-
-! d^k f/dx^k on the whole mesh, interpolated to rq; the window is centred
-! on the node, and shifted by ishift to fit at the ends of the mesh
+! d^k f/dx^k on the nodes the interpolant reaches (fh_value), interpolated
+! to rq; the stencil is centred on the node, and shifted by ishift to fit
+! at the ends of the mesh
  dx(0)=fh_value(ff,mmax,tt,inode)
+ nreach=ceiling(nwin2)+lm_blend+1
+ ilo=max(1,floor(tt)+1-nreach)
+ ihi=min(mmax,floor(tt)+1+nreach)
+! stencil weights for the positions of the node in its 11-point window
+! that occur (only the centred one away from the ends of the mesh)
+ have(:)=0
+ do ii=ilo,ihi
+   ishift=max(0,nhalf+1-ii) - max(0,ii+nhalf-mmax)
+   if(have(nhalf-ishift)==0) then
+     call stencil_weights(nhalf-ishift,cc(:,:,nhalf-ishift))
+     have(nhalf-ishift)=1
+   end if
+ end do
  allocate(field(mmax))
+ field(:)=0.0d0
  do kk=1,nder
-   do ii=1,mmax
+   do ii=ilo,ihi
      ishift=max(0,nhalf+1-ii) - max(0,ii+nhalf-mmax)
      field(ii)=0.0d0
      do jj=0,2*nhalf
@@ -437,11 +459,12 @@
 
  real(dp) function fh_value(ff,nn,tt,inode)
 
-!! Floater-Hormann interpolant of blending degree lm_blend through the
-!! values ff on equispaced nodes, at the position tt, in barycentric form
-!! (Floater and Hormann, Numer. Math. 107, 315 (2007)); node i has the weight
-!! (-1)**i sum_k binomial(d,i-k) over the windows k..k+d of the nodes that
-!! hold it, which is +/-2**d away from the ends
+!! the windowed Floater-Hormann interpolant (see the module description) of
+!! blending degree lm_blend through the values ff on equispaced nodes, at
+!! the position tt, in barycentric form (Floater and Hormann, Numer. Math.
+!! 107, 315 (2007)): node i has the weight
+!! (-1)**i sum_k omega(|tt-c_k|) binomial(d,i-k) over the windows k..k+d
+!! that hold it, c_k their centres; omega=1 gives Floater-Hormann
 !!
 !! @param ff  values on the nodes
 !! @param nn  number of nodes
@@ -454,29 +477,30 @@
 
 !Local variables
  real(dp) :: ww,dt,num,den
- integer :: ii,kk,id
+ integer :: ii,kk,id,ilo,ihi,nreach
 
  if(inode>0) then
    fh_value=ff(inode)
    return
  end if
  id=min(lm_blend,nn-1)
+! the nodes of the windows whose centres are within nwin2 of tt
+ nreach=ceiling(nwin2)+id+1
+ ilo=max(1,floor(tt)+1-nreach)
+ ihi=min(nn,floor(tt)+1+nreach)
  num=0.0d0
  den=0.0d0
- do ii=1,nn
+ do ii=ilo,ihi
    dt=tt-dble(ii-1)
    if(dt==0.0d0) then
      fh_value=ff(ii)
      return
    end if
-   if(ii>id .and. ii<=nn-id) then
-     ww=dble(2**id)
-   else
-     ww=0.0d0
-     do kk=max(1,ii-id),min(ii,nn-id)
-       ww=ww+binomial(id,ii-kk)
-     end do
-   end if
+   ww=0.0d0
+   do kk=max(1,ii-id),min(ii,nn-id)
+     ww=ww+window(abs(tt-dble(kk-1)-0.5d0*dble(id)))*binomial(id,ii-kk)
+   end do
+   if(ww==0.0d0) cycle
    if(mod(ii,2)==0) ww=-ww
    num=num+ww*ff(ii)/dt
    den=den+ww/dt
@@ -484,6 +508,33 @@
  fh_value=num/den
  return
  end function fh_value
+
+ real(dp) function window(ss)
+
+!! the C-infinity bump of the window weights: 1 for ss<=nwin1, 0 for
+!! ss>=nwin2, and the smooth step exp(-1/z)/(exp(-1/z)+exp(-1/(1-z)))
+!! between, z=(nwin2-ss)/(nwin2-nwin1)
+!!
+!! @param ss  distance of a window's centre from the position (steps)
+
+!Input variables
+ real(dp), intent(in) :: ss
+
+!Local variables
+ real(dp) :: zz,e1,e2
+
+ if(ss<=nwin1) then
+   window=1.0d0
+ else if(ss>=nwin2) then
+   window=0.0d0
+ else
+   zz=(nwin2-ss)/(nwin2-nwin1)
+   e1=exp(-1.0d0/zz)
+   e2=exp(-1.0d0/(1.0d0-zz))
+   window=e1/(e1+e2)
+ end if
+ return
+ end function window
 
  real(dp) function binomial(nn,kk)
 

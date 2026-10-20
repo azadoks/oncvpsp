@@ -30,15 +30,16 @@ set_target_properties(test_run_phsft PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAK
 add_test(NAME unit_run_phsft COMMAND test_run_phsft WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 set_tests_properties(unit_run_phsft PROPERTIES LABELS unit)
 
-# Unit tests of the operations at any radius on the log mesh (logmesh_m) and the closed-form Bessel
-# overlaps (sbf_overlap): written before the code (doc/smoothness_plan.md, phase 1), so labelled smooth
-# with the other tests of that plan, which fail until their phase is done (ctest -LE smooth leaves
-# them out)
-add_executable(test_logmesh unit/test_logmesh.f90)
-target_link_libraries(test_logmesh PRIVATE oncvpsp::oncvpsp oncvpsp::compile_options)
-set_target_properties(test_logmesh PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
-add_test(NAME unit_logmesh COMMAND test_logmesh)
-set_tests_properties(unit_logmesh PROPERTIES LABELS "unit;smooth")
+# Unit tests of the operations at any radius on the log mesh (logmesh_m), the closed-form Bessel
+# overlaps (sbf_overlap) and the derivatives at rc from the radial equation (ode_rc_der), phase 1 of
+# doc/smoothness_plan.md
+foreach (unit_test logmesh ode_rc_der)
+    add_executable(test_${unit_test} unit/test_${unit_test}.f90)
+    target_link_libraries(test_${unit_test} PRIVATE oncvpsp::oncvpsp oncvpsp::compile_options)
+    set_target_properties(test_${unit_test} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+    add_test(NAME unit_${unit_test} COMMAND test_${unit_test})
+    set_tests_properties(unit_${unit_test} PROPERTIES LABELS unit)
+endforeach ()
 
 set(scripts "${PROJECT_SOURCE_DIR}/scripts")
 set(data "${CMAKE_CURRENT_SOURCE_DIR}/data")

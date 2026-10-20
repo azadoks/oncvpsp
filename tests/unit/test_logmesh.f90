@@ -9,6 +9,8 @@
 !   interp_c1        rough data: the interpolant's slope is continuous
 !                    across mesh points (a local Lagrange stencil that
 !                    switches at the mesh points is not)
+!   interp_local     values set to 1e10 from 50 steps away change nothing
+!                    (a solver leaves its arrays unset past its last point)
 !   derivs           r**2 exp(-r): value and four derivatives at radii off
 !                    the mesh
 !   cumint           r**2 exp(-r) and r**4 exp(-r) integrated from 0 to each
@@ -37,6 +39,7 @@
  call check_interp_node()
  call check_interp_order()
  call check_interp_c1()
+ call check_interp_local()
  call check_derivs()
  call check_cumint()
  call check_integral()
@@ -242,6 +245,26 @@
  end do
  call check('interp_c1', err, 1.0e-2_dp*smax)
  end subroutine check_interp_c1
+
+ subroutine check_interp_local()
+
+!! values far from the radius have no influence at all
+
+ real(dp), allocatable :: rr(:), ff(:)
+ real(dp) :: rq, f0, f1
+ integer :: mmax, inear
+
+ call make_mesh(1.006_dp, rr, mmax)
+ allocate(ff(mmax))
+ ff(:) = texp(0, rr)
+ rq = 1.2345_dp
+ call lm_interp(rr, ff, mmax, rq, f0)
+ inear = int(log(rq/rr1)/log(1.006_dp)) + 1
+ ff(inear + 50:) = 1.0e10_dp
+ ff(:inear - 50) = -1.0e10_dp
+ call lm_interp(rr, ff, mmax, rq, f1)
+ call check('interp_local', abs(f1 - f0), 0.0_dp)
+ end subroutine check_interp_local
 
  subroutine check_derivs()
 
