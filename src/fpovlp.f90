@@ -57,12 +57,14 @@
  if(irel/=0) then
    fss=(1.0d0/c_light)**2
  else
-   fss=1.0d-12
+   fss=0.0d0
  end if
 
  if(ll==0) gamma=sqrt(1.0d0-fss*zz**2)
  if(ll>0) gamma=(ll*sqrt(ll**2-fss*zz**2) + &
 & (ll+1)*sqrt((ll+1)**2-fss*zz**2))/(2*ll+1)
+! the non-relativistic equation (fss=0): u ~ r**(l+1) at the origin
+ if(irel==0) gamma=ll+1
 
  r0=rr(1)/sqrt(amesh)
  ss=r0**(2.0d0*gamma+1.0d0)/(2.d0*gamma+1.0d0)
