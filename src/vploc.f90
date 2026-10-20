@@ -33,7 +33,7 @@
 !!               4) match 3 derivatives, r**0,4,6,8
 !!               5) match 3 derivatives, r**0,2,4,6
 
- use constants_m, only: dp
+ use constants_m, only: dp, mxl
  implicit none
 
 !Input variables
@@ -42,7 +42,7 @@
  real(dp), intent(in) :: rr(mmax),vv(mmax)
 
 !Input/output variables
- real(dp), intent(inout) :: vp(mmax,5)
+ real(dp), intent(inout) :: vp(mmax,mxl+2)
 
 !Local variables
  integer :: ii

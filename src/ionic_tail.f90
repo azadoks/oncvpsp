@@ -191,15 +191,15 @@
 !! @param uupsa  pseudo valence wave functions
 !! @param eeig  sum of the occupied eigenvalues
 
- use constants_m, only: dp, mxstate
+ use constants_m, only: dp, mxstate, mxl, mxlin, mxkap
  implicit none
 
 !Input variables
  integer, intent(in) :: nkap,nc,nv,lloc,mmax,mxprj
- integer, intent(in) :: la(mxstate),nproj(6)
- real(dp), intent(in) :: fa(mxstate),ea(mxstate,2)
- real(dp), intent(in) :: rr(mmax),vp(mmax,5,nkap)
- real(dp), intent(in) :: vkb(mmax,mxprj,4,nkap),evkb(mxprj,4,nkap)
+ integer, intent(in) :: la(mxstate),nproj(mxlin+1)
+ real(dp), intent(in) :: fa(mxstate),ea(mxstate,mxkap)
+ real(dp), intent(in) :: rr(mmax),vp(mmax,mxl+2,nkap)
+ real(dp), intent(in) :: vkb(mmax,mxprj,mxl+1,nkap),evkb(mxprj,mxl+1,nkap)
 
 !Output variables
  real(dp), intent(out) :: rho(mmax),rhops(mmax,nv),uupsa(mmax,nkap,nv)
@@ -209,7 +209,7 @@
  real(dp), allocatable :: uu(:),up(:)
  real(dp) :: et,emin,emax,fj,de
  integer :: kk,ll,l1,ikap,mkap,mch,ierr
- integer :: nodes(4)
+ integer :: nodes(mxl+1)
 
  allocate(uu(mmax),up(mmax))
  if(nkap==1) then
@@ -302,19 +302,20 @@
 !! @param eexc  exchange-correlation correction to the eigenvalue sum
 !! @param vion  V_ion
 
- use constants_m, only: dp, mxstate
+ use constants_m, only: dp, mxstate, mxl, mxlin, mxkap
  implicit none
 
 !Input variables
  integer, intent(in) :: nkap,nc,nv,lmax,lloc,mmax,mxprj,iexc
- integer, intent(in) :: la(mxstate),nproj(6)
- real(dp), intent(in) :: fa(mxstate),ea(mxstate,2)
- real(dp), intent(in) :: rr(mmax),vkb(mmax,mxprj,4,nkap),evkb(mxprj,4,nkap)
+ integer, intent(in) :: la(mxstate),nproj(mxlin+1)
+ real(dp), intent(in) :: fa(mxstate),ea(mxstate,mxkap)
+ real(dp), intent(in) :: rr(mmax),vkb(mmax,mxprj,mxl+1,nkap)
+ real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap)
  real(dp), intent(in) :: zz,zion,zval,rcmax
  real(dp), intent(in) :: rhoc(mmax),rhotae(mmax),rhomod(mmax)
 
 !Input/output variables
- real(dp), intent(inout) :: vp(mmax,5,nkap)
+ real(dp), intent(inout) :: vp(mmax,mxl+2,nkap)
  real(dp), intent(inout) :: rho(mmax),rhops(mmax,nv),uupsa(mmax,nkap,nv)
  real(dp), intent(inout) :: eeig,vo(mmax),vxc(mmax),eeel,eexc
 
@@ -329,7 +330,7 @@
  real(dp), external :: ionic_switch
  integer :: ii,l1,ik,iter
 
- allocate(ww(mmax),vp0(mmax,5,nkap),vnew(mmax),vnext(mmax,nkap),vsw(mmax))
+ allocate(ww(mmax),vp0(mmax,mxl+2,nkap),vnew(mmax),vnext(mmax,nkap),vsw(mmax))
 
  call ionic_tail(zz,zion,rhoc,rhotae,rhomod,rr,mmax,iexc,vion)
  call ionic_window(rr,mmax,zion,vion,rcmax,tol,ra,rb)

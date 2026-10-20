@@ -21,7 +21,7 @@
 ! Support for PSML file creation
 !
  module psmlout_m
- use constants_m, only: dp, mxstate, mxcnf
+ use constants_m, only: dp, mxstate, mxcnf, mxl, mxlin, nrhomod
  implicit none
 
  public :: psmlout
@@ -123,22 +123,23 @@
 !Input variables
  integer, intent(in) :: lmax
  integer, intent(in) :: lloc,iexc,mmax,nrl,icmod,irel,nkap
- integer, intent(in) :: nproj(6)
+ integer, intent(in) :: nproj(mxlin+1)
  integer, intent(in) :: irct ! index of point at which rho_core is matched
  integer, intent(in) :: mxprj ! maximum number of projectors for any l
  real(dp), intent(in) :: drl,fcfact,zz,zion,epstot
- real(dp), target, intent(in) :: rr(mmax),vpuns(mmax,5,nkap),rho(mmax)
- real(dp), target, intent(in) :: vkb(mmax,mxprj,4,nkap)
- real(dp), target, intent(in) :: rhomod(mmax,5)
- real(dp), intent(in) :: rc(6),evkb(mxprj,4,nkap)
+ real(dp), target, intent(in) :: rr(mmax),vpuns(mmax,mxl+2,nkap),rho(mmax)
+ real(dp), target, intent(in) :: vkb(mmax,mxprj,mxl+1,nkap)
+ real(dp), target, intent(in) :: rhomod(mmax,nrhomod)
+ real(dp), intent(in) :: rc(mxlin+1),evkb(mxprj,mxl+1,nkap)
  character(len=2), intent(in) :: atsym
 
 !additional input to echo the input file, all as defined
 ! in the main progam
- integer, intent(in) :: na(mxstate),la(mxstate),ncon(6),nbas(6)
+ integer, intent(in) :: na(mxstate),la(mxstate),ncon(mxlin+1),nbas(mxlin+1)
  integer, intent(in) :: nvcnf(mxcnf),nacnf(mxstate,mxcnf),lacnf(mxstate,mxcnf)
  integer, intent(in) :: nc,nv,lpopt,ncnf,upf_mesh
- real(dp), intent(in) :: fa(mxstate),rc0(6),ep(6),qcut(6),debl(6)
+ real(dp), intent(in) :: fa(mxstate),rc0(mxlin+1),ep(mxlin+1),qcut(mxlin+1)
+ real(dp), intent(in) :: debl(mxlin+1)
  real(dp), intent(in) :: facnf(mxstate,mxcnf)
  real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rxpsh,rlmax
  real(dp), intent(in) :: rcfact,fcgrid(3),rcgrid(3),log_mesh(3)
@@ -643,9 +644,11 @@
  character(len=2), intent(in) :: atsym
  character(len=4), intent(in) :: psfile
  integer, intent(in) :: nc,nv,iexc,lmax,lloc,lpopt,icmod,ncnf,upf_mesh
- integer, intent(in) :: na(mxstate),la(mxstate),ncon(6),nbas(6),nproj(6)
+ integer, intent(in) :: na(mxstate),la(mxstate),ncon(mxlin+1),nbas(mxlin+1)
+ integer, intent(in) :: nproj(mxlin+1)
  integer, intent(in) :: nvcnf(mxcnf),nacnf(mxstate,mxcnf),lacnf(mxstate,mxcnf)
- real(dp), intent(in) :: zz,fa(mxstate),rc0(6),ep(6),qcut(6),debl(6)
+ real(dp), intent(in) :: zz,fa(mxstate),rc0(mxlin+1),ep(mxlin+1),qcut(mxlin+1)
+ real(dp), intent(in) :: debl(mxlin+1)
  real(dp), intent(in) :: facnf(mxstate,mxcnf)
  real(dp), intent(in) :: dvloc0,fcfact,epsh1,epsh2,depsh,rlmax,drl
  real(dp), intent(in) :: rcfact,fcgrid(3),rcgrid(3),rxpsh,log_mesh(3)

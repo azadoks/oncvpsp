@@ -45,7 +45,7 @@
 !! @param zion  ion charge
 !! @param iexc  exchange-correlation function to be used
 
- use constants_m, only: dp, mxstate
+ use constants_m, only: dp, mxstate, nrhomod
  implicit none
 
 !Input variables
@@ -56,7 +56,7 @@
  real(dp), intent(in) :: zion,fcfact,rcfact
 
 !Output variables
- real(dp), intent(out) :: rhomod(mmax,5)
+ real(dp), intent(out) :: rhomod(mmax,nrhomod)
 
 !Local variables
 !convergence criterion

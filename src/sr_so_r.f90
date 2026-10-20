@@ -37,17 +37,18 @@
 !! @param vso  normalized spin-orbit projectors
 !! @param eso  energy coefficients of vso, to be multiplied by <L dot S>
 
- use constants_m, only: dp
+ use constants_m, only: dp, mxl, mxlin, mxkap
  implicit none
 
 !Input variables
  integer, intent(in) :: lmax,mmax,mxprj
- integer, intent(in) :: irc(6),nproj(6)
- real(dp), intent(in) :: rr(mmax),vkb(mmax,mxprj,4,2),evkb(mxprj,4,2)
+ integer, intent(in) :: irc(mxlin+1),nproj(mxlin+1)
+ real(dp), intent(in) :: rr(mmax),vkb(mmax,mxprj,mxl+1,mxkap)
+ real(dp), intent(in) :: evkb(mxprj,mxl+1,mxkap)
 
 !Input/output variables
- real(dp), intent(inout) :: vsr(mmax,2*mxprj,4),esr(2*mxprj,4)
- real(dp), intent(inout) :: vso(mmax,2*mxprj,4),eso(2*mxprj,4)
+ real(dp), intent(inout) :: vsr(mmax,2*mxprj,mxl+1),esr(2*mxprj,mxl+1)
+ real(dp), intent(inout) :: vso(mmax,2*mxprj,mxl+1),eso(2*mxprj,mxl+1)
 
 !Local variables
  integer :: lloc,lpopt

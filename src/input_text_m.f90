@@ -1,6 +1,6 @@
  module input_text_m
  use, intrinsic :: iso_fortran_env, only: dp => real64
- use constants_m, only: mxstate, mxcnf
+ use constants_m, only: mxstate, mxcnf, mxlin, mxkap
  implicit none
  private
  public :: read_input_text, next_line
@@ -51,16 +51,16 @@
 !> Maximum angular momentum
  integer, intent(out) :: lmax
 !> Core radii for pseudopotentials
- real(dp), intent(out) :: rc(6)
+ real(dp), intent(out) :: rc(mxlin+1)
 !> Pseudopotential energies, the input value for both j=l+1/2 and l-1/2
 !> (only the fully-relativistic code uses the second)
- real(dp), intent(out) :: ep(6, 2)
+ real(dp), intent(out) :: ep(mxlin+1, mxkap)
 !> Number of matching constraints for each pseudopotential
- integer, intent(out) :: ncon(6)
+ integer, intent(out) :: ncon(mxlin+1)
 !> Number of basis functions for each pseudopotential
- integer, intent(out) :: nbas(6)
+ integer, intent(out) :: nbas(mxlin+1)
 !> Residual-energy cutoff wave vector for each pseudopotential
- real(dp), intent(out) :: qcut(6)
+ real(dp), intent(out) :: qcut(mxlin+1)
 ! [Local potential]
 !> Angular momentum used for local potential
  integer, intent(out) :: lloc
@@ -70,9 +70,9 @@
  real(dp), intent(out) :: dvloc0
 ! [Vanderbilt-Kleinman-Bylander projectors]
 !> Number of projectors for each angular momentum
- integer, intent(out) :: nproj(6)
+ integer, intent(out) :: nproj(mxlin+1)
 !> Energy added to ep for the second projector (Ha)
- real(dp), intent(out) :: debl(6)
+ real(dp), intent(out) :: debl(mxlin+1)
 ! [Model core charge]
 !> Model core charge flag
  integer, intent(out) :: icmod
@@ -183,7 +183,7 @@
 ! pseudopotential and optimization
  call next_line(unit, line, inline)
  read(line, *, iostat=ios) lmax
- if(ios == 0 .and. lmax > 5) ios = 999
+ if(ios == 0 .and. lmax > mxlin) ios = 999
  call read_error(ios, inline)
 
  do l1 = 1, lmax + 1

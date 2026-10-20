@@ -48,7 +48,7 @@
 !! @param ecurve  cutoff energy and energy error per electron on the E_resid(q)
 !!                mesh, zero beyond its end
 
- use constants_m, only: dp, dqout
+ use constants_m, only: dp, dqout, nerrlv
  implicit none
 
 !Input variables
@@ -60,7 +60,7 @@
 !Input/output variables
  integer, intent(inout) :: irc
  real(dp), intent(inout) :: vpsp(mmax),vkb(mmax,mxprj)
- real(dp), intent(inout) :: cvgplt(2,7,mxprj)
+ real(dp), intent(inout) :: cvgplt(2,nerrlv,mxprj)
 
 !Output variables
  real(dp), intent(out) :: qmsbf
@@ -255,7 +255,7 @@
    write(6,'(a)') '         Ha          eV             Ha'
    leresq(:)=log(eresq(:))
    err=0.01d0
-   do jj=1,7
+   do jj=1,nerrlv
      lerr=log(err)
      do ii=3,nqout
        if(leresq(ii-1)>lerr .and. leresq(ii)<=lerr) then

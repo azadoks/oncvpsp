@@ -49,18 +49,19 @@
 !! @param nkap  number of kappa per l: 1, or 2 for irel=2
 !! @param cvgplt  energy per electron error vs. cutoff (convergence profiles)
 
- use constants_m, only: dp
+ use constants_m, only: dp, mxl, mxlin, nrhomod, nerrlv
  implicit none
 
 !Input variables
  integer, intent(in) :: lmax,lloc,mmax,mxprj,nrl,irel,nkap
- integer, intent(in) :: npa(mxprj,6),irc(6),nproj(6)
+ integer, intent(in) :: npa(mxprj,mxlin+1),irc(mxlin+1),nproj(mxlin+1)
  real(dp), intent(in) :: zz,drl
- real(dp), intent(in) :: rr(mmax),vp(mmax,5,nkap),vpuns(mmax,5),vfull(mmax)
- real(dp), intent(in) :: vkb(mmax,mxprj,4,nkap)
- real(dp), intent(in) :: rho(mmax),rhoc(mmax),rhomod(mmax,5)
- real(dp), intent(in) :: epa(mxprj,6,nkap),evkb(mxprj,4,nkap)
- real(dp), intent(in) :: cvgplt(2,7,mxprj,4,nkap)
+ real(dp), intent(in) :: rr(mmax),vp(mmax,mxl+2,nkap),vpuns(mmax,mxl+2)
+ real(dp), intent(in) :: vfull(mmax)
+ real(dp), intent(in) :: vkb(mmax,mxprj,mxl+1,nkap)
+ real(dp), intent(in) :: rho(mmax),rhoc(mmax),rhomod(mmax,nrhomod)
+ real(dp), intent(in) :: epa(mxprj,mxlin+1,nkap),evkb(mxprj,mxl+1,nkap)
+ real(dp), intent(in) :: cvgplt(2,nerrlv,mxprj,mxl+1,nkap)
 
 !Local variables
  integer :: ll,l1,ii,jj,ierr,mch,n1,n2,n3,n4,nn
@@ -254,14 +255,14 @@
    write(6,'(/a)') 'convergence profiles, (ll=0,lmax), kappa average'
    l1=1
    ll=l1-1
-   do jj=1,7
+   do jj=1,nerrlv
      if(cvgplt(1,jj,1,l1,1)/=0.d0) then
        write(6,'(a,i6,3f12.6)') '!C',ll,cvgplt(1,jj,1,l1,1),cvgplt(2,jj,1,l1,1)
      end if
    end do
    do l1=2,lmax+1
      ll=l1-1
-     do jj=1,7
+     do jj=1,nerrlv
        if(cvgplt(1,jj,1,l1,1)/=0.d0 .and. cvgplt(1,jj,1,l1,nkap)/=0.0d0) then
          write(6,'(a,i6,3f12.6)') '!C',ll,cvgplt(1,jj,1,l1,1), &
 &         0.5d0*(cvgplt(2,jj,1,l1,1)+cvgplt(2,jj,1,l1,nkap))
@@ -273,7 +274,7 @@
    write(6,*) 'lmax',lmax
    do l1=1,lmax+1
      ll=l1-1
-     do jj=1,7
+     do jj=1,nerrlv
        if(cvgplt(1,jj,1,l1,1)/=0.d0) then
          write(6,'(a,i6,3(f12.6,1x))') '!C',ll,cvgplt(1,jj,1,l1,1), &
 &              cvgplt(2,jj,1,l1,1)

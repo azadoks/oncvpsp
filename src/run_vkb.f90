@@ -43,22 +43,22 @@
 !!              (for pswf, vp, vkb, evkb and vr the last index is 1 for j=l+1/2,
 !!              2 for j=l-1/2 when nkap=2)
 
- use constants_m, only: dp
+ use constants_m, only: dp, mxl, mxlin
  implicit none
 
 !Input variables
  integer, intent(in) :: lmax,lloc,lpopt,mmax,mxprj,irel,nkap
- integer, intent(in) :: irc(6),nproj(6)
- real(dp), intent(in) :: rr(mmax),pswf(mmax,mxprj,4,nkap),vfull(mmax)
- real(dp), intent(in) :: vr(mmax,mxprj,6,nkap)
+ integer, intent(in) :: irc(mxlin+1),nproj(mxlin+1)
+ real(dp), intent(in) :: rr(mmax),pswf(mmax,mxprj,mxl+1,nkap),vfull(mmax)
+ real(dp), intent(in) :: vr(mmax,mxprj,mxlin+1,nkap)
  real(dp), intent(in) :: dvloc0
 
 !Input/output variables
- real(dp), intent(inout) :: vp(mmax,5,nkap)
- real(dp), intent(inout) :: vkb(mmax,mxprj,4,nkap)
+ real(dp), intent(inout) :: vp(mmax,mxl+2,nkap)
+ real(dp), intent(inout) :: vkb(mmax,mxprj,mxl+1,nkap)
 
 !Output variables
- real(dp), intent(out) :: evkb(mxprj,4,nkap)
+ real(dp), intent(out) :: evkb(mxprj,mxl+1,nkap)
  integer, intent(out) :: nlim
 
 !Local variables

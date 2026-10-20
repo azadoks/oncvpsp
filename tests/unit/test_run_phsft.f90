@@ -6,6 +6,7 @@
 ! at the first failure.
  program test_run_phsft
  use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
+ use constants_m, only: mxl, mxlin, mxkap
  implicit none
  external :: run_phsft
 
@@ -14,11 +15,11 @@
  real(dp), parameter :: zz = 1.0_dp, rr1 = 0.0005_dp, amesh = 1.012_dp
  real(dp), parameter :: epsh1 = -0.5_dp, epsh2 = 0.5_dp, depsh = 0.1_dp
 
- real(dp) :: rr(mmax), vfull(mmax), vp(mmax, 5), vp_r(mmax, 5, 2)
- real(dp) :: epa(mxprj, 6), epa_r(mxprj, 6, 2)
- real(dp) :: vkb(mmax, mxprj, 4), vkb_r(mmax, mxprj, 4, 2)
- real(dp) :: evkb(mxprj, 4), evkb_r(mxprj, 4, 2)
- integer :: nproj(6), irc(6), ii, nfail = 0
+ real(dp) :: rr(mmax), vfull(mmax), vp(mmax, mxl+2), vp_r(mmax, mxl+2, mxkap)
+ real(dp) :: epa(mxprj, mxlin+1), epa_r(mxprj, mxlin+1, mxkap)
+ real(dp) :: vkb(mmax, mxprj, mxl+1), vkb_r(mmax, mxprj, mxl+1, mxkap)
+ real(dp) :: evkb(mxprj, mxl+1), evkb_r(mxprj, mxl+1, mxkap)
+ integer :: nproj(mxlin+1), irc(mxlin+1), ii, nfail = 0
 
  do ii = 1, mmax
    rr(ii) = rr1*amesh**(ii - 1)

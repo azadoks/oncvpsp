@@ -48,7 +48,7 @@
 !! @param nkap  number of kappa per l: 1, or 2 for irel=2
 
  use config_ae_m, only: config_ae_warning
- use constants_m, only: dp, mxstate, mxcnf
+ use constants_m, only: dp, mxstate, mxcnf, mxl, mxlin, nrhomod, nlev
  implicit none
 
 !Input variables
@@ -56,23 +56,24 @@
  integer, intent(in) :: istcnf(mxcnf),ierrcnf(mxcnf),itcnf(mxcnf),kerrcnf(mxcnf)
  integer, intent(in) :: nvtcnf(mxcnf),natcnf(mxstate,mxcnf)
  integer, intent(in) :: latcnf(mxstate,mxcnf)
- real(dp), intent(in) :: fatcnf(mxstate,3,mxcnf),eatcnf(mxstate,nkap,3,mxcnf)
+ real(dp), intent(in) :: fatcnf(mxstate,nlev,mxcnf)
+ real(dp), intent(in) :: eatcnf(mxstate,nkap,nlev,mxcnf)
  real(dp), intent(in) :: etstcnf(mxcnf)
  integer, intent(in) :: jj,mmax,mxprj,iexc,nc,lloc,irel,nkap
- integer, intent(in) :: nproj(5)
+ integer, intent(in) :: nproj(mxlin+1)
  real(dp), intent(in) :: etot,epstot,rcmax
  real(dp), intent(in) :: rhov(mmax),rr(mmax)
- real(dp), intent(in) :: vpuns(mmax,5),vkb(mmax,mxprj,4,nkap)
- real(dp), intent(in) :: evkb(mxprj,4,nkap)
- real(dp), intent(in) :: rhomod(mmax,5)
+ real(dp), intent(in) :: vpuns(mmax,mxl+2),vkb(mmax,mxprj,mxl+1,nkap)
+ real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap)
+ real(dp), intent(in) :: rhomod(mmax,nrhomod)
 
 !Local variables
  integer :: ii,it,kk,ll,l1,ierr,nvt
  integer :: ikap,kap,mkap
- integer :: nat(mxstate),lat(mxstate),natp(mxstate),latp(mxstate),nav(4)
+ integer :: nat(mxstate),lat(mxstate),natp(mxstate),latp(mxstate),nav(mxl+1)
  real(dp) :: eaetst,etsttot,fj
- real(dp) :: eat(mxstate,nkap,3),fat(mxstate,3),eatp(mxstate,nkap)
- real(dp) :: fatp(mxstate,3)
+ real(dp) :: eat(mxstate,nkap,nlev),fat(mxstate,nlev),eatp(mxstate,nkap)
+ real(dp) :: fatp(mxstate,nlev)
 
  real(dp),allocatable :: rho(:),rhocps(:)
 

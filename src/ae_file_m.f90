@@ -39,7 +39,7 @@
 
  module ae_file_m
  use, intrinsic :: iso_fortran_env, only: int8
- use constants_m, only: dp, mxstate, mxcnf
+ use constants_m, only: dp, mxstate, mxcnf, nlev
  implicit none
  private
  public :: write_ae_file, read_ae_file
@@ -103,7 +103,8 @@
  integer, intent(in) :: istcnf(mxcnf),ierrcnf(mxcnf),itcnf(mxcnf),kerrcnf(mxcnf)
  integer, intent(in) :: nvtcnf(mxcnf),natcnf(mxstate,mxcnf)
  integer, intent(in) :: latcnf(mxstate,mxcnf)
- real(dp), intent(in) :: fatcnf(mxstate,3,mxcnf),eatcnf(mxstate,nkap,3,mxcnf)
+ real(dp), intent(in) :: fatcnf(mxstate,nlev,mxcnf)
+ real(dp), intent(in) :: eatcnf(mxstate,nkap,nlev,mxcnf)
  real(dp), intent(in) :: etstcnf(mxcnf)
 
 !Local variables
@@ -186,13 +187,14 @@
  integer, intent(out) :: kerrcnf(mxcnf)
  integer, intent(out) :: nvtcnf(mxcnf),natcnf(mxstate,mxcnf)
  integer, intent(out) :: latcnf(mxstate,mxcnf)
- real(dp), intent(out) :: fatcnf(mxstate,3,mxcnf),eatcnf(mxstate,nkap,3,mxcnf)
+ real(dp), intent(out) :: fatcnf(mxstate,nlev,mxcnf)
+ real(dp), intent(out) :: eatcnf(mxstate,nkap,nlev,mxcnf)
  real(dp), intent(out) :: etstcnf(mxcnf)
 
 !Local variables
  integer :: unit,jj,kk,ncfg
  integer :: ist,ierr,itc,kerr,nvt,nat(mxstate),lat(mxstate)
- real(dp) :: eaetst,fat(mxstate,3),eat(mxstate,nkap,3)
+ real(dp) :: eaetst,fat(mxstate,nlev),eat(mxstate,nkap,nlev)
  logical :: found(5),match(5)
 
  call read_head(fname,unit,irel,atsym,zz,nc,nv,iexc,na,la,fa, &

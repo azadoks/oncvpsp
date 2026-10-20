@@ -46,16 +46,16 @@
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param nkap  number of kappa per l: 1, or 2 for irel=2
 
- use constants_m, only: dp
+ use constants_m, only: dp, mxl, mxlin
  implicit none
 
 !Input variables
  integer, intent(in) :: lmax,lloc,mmax,mxprj,irel,nkap
- integer, intent(in) :: npa(mxprj,6),irc(6),nproj(6)
+ integer, intent(in) :: npa(mxprj,mxlin+1),irc(mxlin+1),nproj(mxlin+1)
  real(dp), intent(in) :: zz
- real(dp), intent(in) :: rr(mmax),vp(mmax,5,nkap),vfull(mmax)
- real(dp), intent(in) :: vkb(mmax,mxprj,4,nkap)
- real(dp), intent(in) :: epa(mxprj,6,nkap),evkb(mxprj,4,nkap)
+ real(dp), intent(in) :: rr(mmax),vp(mmax,mxl+2,nkap),vfull(mmax)
+ real(dp), intent(in) :: vkb(mmax,mxprj,mxl+1,nkap)
+ real(dp), intent(in) :: epa(mxprj,mxlin+1,nkap),evkb(mxprj,mxl+1,nkap)
 
 !Local variables
  integer :: ll,l1,ikap,kap,mkap,ierr,mch,mchf

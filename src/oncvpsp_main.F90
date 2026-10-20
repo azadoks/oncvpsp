@@ -52,7 +52,8 @@
 #if (defined WITH_TOML)
  use input_toml_m, only: read_input_toml
 #endif
- use constants_m, only: dp, mxprj, mxstate, mxcnf
+ use constants_m, only: dp, mxprj, mxstate, mxcnf, mxl, mxlin, mxkap, nrhomod
+ use constants_m, only: nlev, nerrlv
  use input_echo_m, only: write_icmod, write_epsh
  implicit none
 
@@ -68,11 +69,11 @@
  integer :: ikap,kap,mkap
  integer,allocatable :: npa(:,:)
 !
- integer :: dtime(8),na(mxstate),la(mxstate),np(6)
+ integer :: dtime(8),na(mxstate),la(mxstate),np(mxlin+1)
  integer :: nacnf(mxstate,mxcnf),lacnf(mxstate,mxcnf),nvcnf(mxcnf)
- integer :: irc(6),nodes(4)
- integer :: nproj(6)
- integer :: ncon(6),nbas(6)
+ integer :: irc(mxlin+1),nodes(mxl+1)
+ integer :: nproj(mxlin+1)
+ integer :: ncon(mxlin+1),nbas(mxlin+1)
 
  real(dp) :: al,amesh,csc,csc1,depsh,depsht,drl,eeel
  real(dp) :: eeig,eexc
@@ -88,10 +89,11 @@
  real(dp) :: eterm(4)
  real(dp) :: fj,cnorm
 !
- real(dp) :: cl(6),debl(6),ea(mxstate,2),ep(6,2),fa(mxstate)
+ real(dp) :: cl(mxlin+1),debl(mxlin+1),ea(mxstate,mxkap),ep(mxlin+1,mxkap)
+ real(dp) :: fa(mxstate)
  real(dp) :: facnf(mxstate,mxcnf)
- real(dp) :: qcut(6),qmsbf(6),rc(6),rc0(6)
- real(dp) :: rpk(mxstate,2)
+ real(dp) :: qcut(mxlin+1),qmsbf(mxlin+1),rc(mxlin+1),rc0(mxlin+1)
+ real(dp) :: rpk(mxstate,mxkap)
  real(dp) :: epstot,eps_srso
  real(dp), parameter :: eps=1.0d-8
 
@@ -124,7 +126,7 @@
 !all-electron results for the test configurations (see run_config_ae)
  integer :: istcnf(mxcnf),ierrcnf(mxcnf),itcnf(mxcnf),kerrcnf(mxcnf)
  integer :: nvtcnf(mxcnf),natcnf(mxstate,mxcnf),latcnf(mxstate,mxcnf)
- real(dp) :: fatcnf(mxstate,3,mxcnf),etstcnf(mxcnf)
+ real(dp) :: fatcnf(mxstate,nlev,mxcnf),etstcnf(mxcnf)
  real(dp), allocatable :: eatcnf(:,:,:,:)
 
  character(len=2) :: atsym
@@ -172,7 +174,7 @@
    exe=trim(exe)//'_ps'
  end if
  exe=trim(exe)//'.x'
- allocate(eatcnf(mxstate,nkap,3,mxcnf))
+ allocate(eatcnf(mxstate,nkap,nlev,mxcnf))
 
  if(irel==2) then
    write(6,'(a/a//)') &
@@ -407,19 +409,20 @@
  allocate(rho(mmax),rhoc(mmax),rhot(mmax))
  allocate(uu(mmax,2),up(mmax,2),uupsa(mmax,nkap,nv))
  allocate(vwell(mmax,mxprj))
- allocate(evkb(mxprj,4,nkap),cvgplt(2,7,mxprj,4,nkap),qq(mxprj,mxprj))
- allocate(ecurve(2,ncurve,mxprj,4,nkap))
- allocate(vp(mmax,5,nkap),vfull(mmax),vkb(mmax,mxprj,4,nkap))
- allocate(pswf(mmax,mxprj,4,nkap))
- allocate(vpuns(mmax,5))
+ allocate(evkb(mxprj,mxl+1,nkap),qq(mxprj,mxprj))
+ allocate(cvgplt(2,nerrlv,mxprj,mxl+1,nkap))
+ allocate(ecurve(2,ncurve,mxprj,mxl+1,nkap))
+ allocate(vp(mmax,mxl+2,nkap),vfull(mmax),vkb(mmax,mxprj,mxl+1,nkap))
+ allocate(pswf(mmax,mxprj,mxl+1,nkap))
+ allocate(vpuns(mmax,mxl+2))
  allocate(vo(mmax),vxc(mmax))
  allocate(rhoae(mmax,nv),rhops(mmax,nv),rhotae(mmax))
- allocate(npa(mxprj,6))
- allocate(epa(mxprj,6,nkap))
+ allocate(npa(mxprj,mxlin+1))
+ allocate(epa(mxprj,mxlin+1,nkap))
  allocate(uua(mmax,mxprj,nkap),upa(mmax,mxprj,nkap))
- allocate(vsr(mmax,2*mxprj,4),vso(mmax,2*mxprj,4))
- allocate(esr(2*mxprj,4),eso(2*mxprj,4))
- allocate(vr(mmax,mxprj,6,nkap))
+ allocate(vsr(mmax,2*mxprj,mxl+1),vso(mmax,2*mxprj,mxl+1))
+ allocate(esr(2*mxprj,mxl+1),eso(2*mxprj,mxl+1))
+ allocate(vr(mmax,mxprj,mxlin+1,nkap))
 
  vr(:,:,:,:)=0.0d0
  vp(:,:,:)=0.0d0
@@ -892,7 +895,7 @@
    end do
  end if
 
- allocate(rhomod(mmax,5))
+ allocate(rhomod(mmax,nrhomod))
 
  rhomod(:,:)=0.0d0
 
@@ -957,7 +960,7 @@
 &                        vsr,esr,vso,eso,nproj,rr,vfull,vp,zz,mmax,mxprj)
 
 ! save full info for psml
-   allocate(vpsml(mmax,5,2))
+   allocate(vpsml(mmax,mxl+2,mxkap))
    do l1=1,max(lmax+1,lloc+1)
      vpsml(:,l1,1) = vp(:,l1,1) - vo(:)
      vpsml(:,l1,2) = vp(:,l1,2) - vo(:)
@@ -1080,7 +1083,7 @@
 !the fully-relativistic semi-local potentials are vp-vo for each kappa,
 !without the corrections of vpuns (see doc/fr_merge_plan.md)
    if(irel/=2) then
-     allocate(vpsml(mmax,5,1))
+     allocate(vpsml(mmax,mxl+2,1))
      vpsml(:,:,1)=vpuns(:,:)
    end if
    call psmlout(lmax,lloc,rc,vkb,evkb,mxprj,nproj,rr,vpsml,rho,rhomod, &

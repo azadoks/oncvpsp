@@ -22,7 +22,8 @@
  use, intrinsic :: iso_fortran_env, only: real64
  implicit none
  private
- public :: dp, pi, c_light, mxprj, mxstate, mxcnf, dqout
+ public :: dp, pi, c_light, mxprj, mxstate, mxcnf, mxl, mxlin, mxkap
+ public :: nrhomod, nlev, nerrlv, dqout
 
 !> kind of all real variables
  integer, parameter :: dp=real64
@@ -42,6 +43,32 @@
 
 !> maximum number of configurations: the reference and up to mxcnf-1 tests
  integer, parameter :: mxcnf=5
+
+!> maximum l of the pseudopotentials and projectors (check_data): the arrays
+!> of the projectors have mxl+1 channels (l+1), those of the semi-local
+!> potentials mxl+2, the last for the local potential (lloc=4)
+ integer, parameter :: mxl=3
+
+!> largest lmax the input readers accept, so that they cannot overrun before
+!> check_data limits lmax to mxl: the per-l input arrays (rc, ep, ncon, ...)
+!> have mxlin+1 slots, rc(mxl+2) holding the radius of the local potential
+ integer, parameter :: mxlin=5
+
+!> maximum number of kappa per l (nkap): j=l+1/2, and j=l-1/2 when fully
+!> relativistic
+ integer, parameter :: mxkap=2
+
+!> number of columns of the model core charge rhomod: the charge and its
+!> first nrhomod-1 radial derivatives
+ integer, parameter :: nrhomod=5
+
+!> number of levels of each configuration: reference, maximally ionized and
+!> excited
+ integer, parameter :: nlev=3
+
+!> number of energy-error levels of the convergence profiles (cvgplt), from
+!> 1e-2 Ha down by half decades
+ integer, parameter :: nerrlv=7
 
 !> spacing (bohr**-1) of the q mesh of the "Energy error per electron"
 !> tables, as their interpolation assumes it (eresid moves the mesh points

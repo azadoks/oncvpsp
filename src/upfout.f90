@@ -98,29 +98,31 @@
 !! @param ea  psuedo-orbital eigenvalues (Ha), second index as for uupsa
 !! @param nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
 
- use constants_m, only: dp, pi, mxstate, mxcnf
+ use constants_m, only: dp, pi, mxstate, mxcnf, mxl, mxlin, nrhomod
  use input_echo_m, only: write_input_echo
  implicit none
 
 
 !Input variables
  integer, intent(in) :: lmax,lloc,iexc,mmax,mxprj,icmod,nrlin,nkap,upf_mesh
- integer, intent(in) :: nproj(6)
+ integer, intent(in) :: nproj(mxlin+1)
  real(dp), intent(in) :: drl,fcfact,rcfact,zz,zion,epstot
  real(dp), intent(in) :: slack
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
- real(dp), intent(in) :: rr(mmax),vpuns(mmax,5),rho(mmax),vkb(mmax,mxprj,4,nkap)
- real(dp), intent(in) :: rhomod(mmax,5)
- real(dp), intent(in) :: rc(6),evkb(mxprj,4,nkap)
+ real(dp), intent(in) :: rr(mmax),vpuns(mmax,mxl+2),rho(mmax)
+ real(dp), intent(in) :: vkb(mmax,mxprj,mxl+1,nkap)
+ real(dp), intent(in) :: rhomod(mmax,nrhomod)
+ real(dp), intent(in) :: rc(mxlin+1),evkb(mxprj,mxl+1,nkap)
  character(len=2), intent(in) :: atsym
  real(dp), intent(in) :: uupsa(mmax,nkap,nv)
 
 !additional input for upf output to echo input file, all as defined
 ! in the main progam
- integer, intent(in) :: na(mxstate),la(mxstate),ncon(6),nbas(6)
+ integer, intent(in) :: na(mxstate),la(mxstate),ncon(mxlin+1),nbas(mxlin+1)
  integer, intent(in) :: nvcnf(mxcnf),nacnf(mxstate,mxcnf),lacnf(mxstate,mxcnf)
  integer, intent(in) :: nc,nv,lpopt,ncnf
- real(dp), intent(in) :: fa(mxstate),rc0(6),ep(6,nkap),qcut(6),debl(6)
+ real(dp), intent(in) :: fa(mxstate),rc0(mxlin+1),ep(mxlin+1,nkap),qcut(mxlin+1)
+ real(dp), intent(in) :: debl(mxlin+1)
  real(dp), intent(in) :: facnf(mxstate,mxcnf)
  real(dp), intent(in) :: ea(mxstate,nkap)
  real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rxpsh,rlmax
@@ -197,7 +199,8 @@
    nrl=(nlog-1)/istr+1
  end if
 
- allocate(rhol(nrl),rl(nrl),vkbl(nrl,mxprj,4,nkap),vpl(nrl,5),rhomodl(nrl,5), &
+ allocate(rhol(nrl),rl(nrl),vkbl(nrl,mxprj,mxl+1,nkap),vpl(nrl,mxl+2), &
+&          rhomodl(nrl,nrhomod), &
 &          uual(nrl,nkap,nv),rabl(nrl))
 
 ! interpolation of everything onto linear output mesh, or the log mesh points

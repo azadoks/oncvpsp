@@ -91,7 +91,7 @@
 !! @param lprobe  angular momenta of the probes
 !! @param nprobe  number of probes (0 for icmod=6)
 
- use constants_m, only: dp, pi
+ use constants_m, only: dp, pi, nrhomod
  implicit none
 
 !Input variables
@@ -102,7 +102,7 @@
  real(dp), intent(in) :: fcfact,ecutw,errmax,slack,zion
 
 !Output variables
- real(dp), intent(out) :: rhomod(mmax,5)
+ real(dp), intent(out) :: rhomod(mmax,nrhomod)
 
 !Local variables
  real(dp), parameter :: pi4=4.0_dp*pi
@@ -152,7 +152,7 @@
  end if
  qhi=min(3.0d0*qlo,qmax)
 
- allocate(dc(mmax,5),core(mmax),sn(mmax),cs(mmax),sh(mmax),ch(mmax))
+ allocate(dc(mmax,nrhomod),core(mmax),sn(mmax),cs(mmax),sh(mmax),ch(mmax))
  allocate(err(nq))
 
 ! core charge derivatives,
@@ -906,15 +906,15 @@
 !! @param lprobe  angular momenta of the probes
 !! @param nprobe  number of probes
 
- use constants_m, only: dp
+ use constants_m, only: dp, mxl, mxlin
  implicit none
 
 !Input variables
  integer, intent(in) :: lmax,lloc,mmax,mxprj,nkap
- integer, intent(in) :: nproj(6)
- real(dp), intent(in) :: rr(mmax),vp(mmax,5,nkap)
- real(dp), intent(in) :: vkb(mmax,mxprj,4,nkap)
- real(dp), intent(in) :: epa(mxprj,6,nkap),evkb(mxprj,4,nkap)
+ integer, intent(in) :: nproj(mxlin+1)
+ real(dp), intent(in) :: rr(mmax),vp(mmax,mxl+2,nkap)
+ real(dp), intent(in) :: vkb(mmax,mxprj,mxl+1,nkap)
+ real(dp), intent(in) :: epa(mxprj,mxlin+1,nkap),evkb(mxprj,mxl+1,nkap)
 
 !Output variables
  real(dp), intent(out) :: probes(mmax,mxprj*(lmax+1))

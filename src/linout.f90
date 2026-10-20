@@ -104,31 +104,32 @@
 !!                  linear output mesh (echoed when not 0)
 
 
- use constants_m, only: dp, mxstate, mxcnf
+ use constants_m, only: dp, mxstate, mxcnf, mxl, mxlin, nrhomod
  use input_echo_m, only: write_input_echo
  implicit none
 
 !Input variables
  integer, intent(in) :: lmax,lloc,iexc,mmax,mxprj,nrl,icmod,nkap
- integer, intent(in) :: nproj(6)
+ integer, intent(in) :: nproj(mxlin+1)
  real(dp), intent(in) :: drl,fcfact,fcfact0,rcfact,zz,zion,soscale
  real(dp), intent(in) :: slack
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
- real(dp), intent(in) :: rr(mmax),vpuns(mmax,5),rho(mmax)
+ real(dp), intent(in) :: rr(mmax),vpuns(mmax,mxl+2),rho(mmax)
  real(dp), intent(in) :: rhotae(mmax),rhoc(mmax)
- real(dp), intent(in) :: vkb(mmax,mxprj,4,nkap),evkb(mxprj,4,nkap)
- real(dp), intent(in) :: vsr(mmax,2*mxprj,4),vso(mmax,2*mxprj,4)
- real(dp), intent(in) :: esr(2*mxprj,4),eso(2*mxprj,4)
- real(dp), intent(in) :: rhomod(mmax,5)
- real(dp), intent(in) :: rc(6)
+ real(dp), intent(in) :: vkb(mmax,mxprj,mxl+1,nkap),evkb(mxprj,mxl+1,nkap)
+ real(dp), intent(in) :: vsr(mmax,2*mxprj,mxl+1),vso(mmax,2*mxprj,mxl+1)
+ real(dp), intent(in) :: esr(2*mxprj,mxl+1),eso(2*mxprj,mxl+1)
+ real(dp), intent(in) :: rhomod(mmax,nrhomod)
+ real(dp), intent(in) :: rc(mxlin+1)
  character(len=2), intent(in) :: atsym
 
 !additional input for psp8 output to echo input file, all as defined
 ! in the main progam
- integer, intent(in) :: na(mxstate),la(mxstate),ncon(6),nbas(6)
+ integer, intent(in) :: na(mxstate),la(mxstate),ncon(mxlin+1),nbas(mxlin+1)
  integer, intent(in) :: nvcnf(mxcnf),nacnf(mxstate,mxcnf),lacnf(mxstate,mxcnf)
  integer, intent(in) :: nc,nv,lpopt,ncnf,upf_mesh
- real(dp), intent(in) :: fa(mxstate),rc0(6),ep(6,nkap),qcut(6),debl(6)
+ real(dp), intent(in) :: fa(mxstate),rc0(mxlin+1),ep(mxlin+1,nkap),qcut(mxlin+1)
+ real(dp), intent(in) :: debl(mxlin+1)
  real(dp), intent(in) :: facnf(mxstate,mxcnf)
  real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rxpsh,rlmax
  real(dp), intent(in) :: log_mesh(3)
@@ -136,7 +137,7 @@
 
 !Local variables
  integer :: ii,jj,ll,l1,ixc_abinit
- integer :: dtime(8),npr_sr(5),npr_so(5)
+ integer :: dtime(8),npr_sr(mxl+1),npr_so(mxl+1)
  real(dp) :: zero(20)
  real(dp) :: fchrg
  real(dp), allocatable :: rhomodl(:,:)
@@ -146,10 +147,10 @@
  character(len=2) :: pspd(3)
  character(len=48) :: version
 
- allocate(rhol(nrl),rl(nrl),vpl(nrl,5),rhomodl(nrl,5))
+ allocate(rhol(nrl),rl(nrl),vpl(nrl,mxl+2),rhomodl(nrl,nrhomod))
  allocate(rhotael(nrl),rhocl(nrl))
- allocate(vkbl(nrl,mxprj,4))
- allocate(vsrl(nrl,2*mxprj,4),vsol(nrl,2*mxprj,4))
+ allocate(vkbl(nrl,mxprj,mxl+1))
+ allocate(vsrl(nrl,2*mxprj,mxl+1),vsol(nrl,2*mxprj,mxl+1))
 
 ! set up projector number for sr_so calculations based on non-zero
 ! coefficients

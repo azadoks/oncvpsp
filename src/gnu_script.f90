@@ -31,13 +31,13 @@
 !! @param nproj  number of projectors for each l
 !! @param nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
 
- use constants_m, only: dp
+ use constants_m, only: dp, mxl, mxlin
  implicit none
 
 !Input variables
  integer, intent(in) :: lmax,lloc,mxprj,nkap
- integer, intent(in) :: nproj(6)
- real(dp), intent(in) :: epa(mxprj,6,nkap),evkb(mxprj,4,nkap)
+ integer, intent(in) :: nproj(mxlin+1)
+ real(dp), intent(in) :: epa(mxprj,mxlin+1,nkap),evkb(mxprj,mxl+1,nkap)
 
 !Local variables
  integer :: ii,iprj,jj,l1,ll

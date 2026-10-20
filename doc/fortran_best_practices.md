@@ -768,8 +768,21 @@ the tests compare.
      defined locally, except for the literals in the imported
      `exc_off_pbe.f`. These changes leave the output bit-identical. The
      1/24 coefficient is fixed.
-   - **Left:** the array limits (30/6/5/4) and the literal shapes of dummy
-     and local arrays. `tfapot.f90`'s `**.33333333d0` is also left.
+   - **Done:** the array limits. `constants_m` also holds `mxstate=30`
+     (states), `mxcnf=5` (reference and test configurations), `mxl=3`
+     (largest l; `mxl+1` projector channels, `mxl+2` semi-local potentials
+     with the local one last), `mxlin=5` (largest lmax the readers accept;
+     `mxlin+1` slots of the per-l input arrays), `mxkap=2`, `nrhomod=5`
+     (model core and 4 derivatives), `nlev=3` (levels of a configuration)
+     and `nerrlv=7` (convergence-profile error levels), and every
+     declaration with those meanings uses them. The extents are unchanged
+     except where they disagreed: `nproj(5)` in `psatom` and `run_config` is
+     `mxlin+1` like its actual, and `linout`'s `npr_sr(5)`, `npr_so(5)` are
+     `mxl+1`, the channels they count.
+   - **Left:** local scratch arrays (`usvd(10,10)`, `lpgh(20)`, ...),
+     small fixed tuples (`fcgrid(3)`, `log_mesh(3)`, `eterm(4)`), the pairs
+     `uu(mmax,2)`, `fat(:,2)` and `lschvkbs`'s two projectors, and
+     `tfapot.f90`'s `**.33333333d0`.
 7. **Move procedures into modules**, starting with the leaf routines (`aeo`
    family, `dpnint`, `vpinteg`, the `lsch*`/`ldirac*` solvers). Then switch
    their dummies to assumed shape and drop the redundant size arguments.

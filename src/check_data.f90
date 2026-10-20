@@ -73,7 +73,7 @@
 !! @param rr1  first log mesh point (bohr), 0 or less for the default
 !! @param rmax  outer radius of the log mesh (bohr), 0 or less for the default
 
- use constants_m, only: dp, mxstate, mxcnf
+ use constants_m, only: dp, mxstate, mxcnf, mxl, mxlin
  implicit none
 
 !Input variables
@@ -84,13 +84,14 @@
  real(dp), intent(in) :: slack
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
  real(dp), intent(in) :: amesh,rr1,rmax
- real(dp), intent(in) :: fa(mxstate),facnf(mxstate,mxcnf),rc(6),ep(6),qcut(6)
- real(dp), intent(in) :: debl(6)
+ real(dp), intent(in) :: fa(mxstate),facnf(mxstate,mxcnf),rc(mxlin+1)
+ real(dp), intent(in) :: ep(mxlin+1),qcut(mxlin+1)
+ real(dp), intent(in) :: debl(mxlin+1)
 
  integer, intent(in) :: nc,nv,iexc,lmax,lloc,lpopt,icmod,ncnf,upf_mesh
  integer, intent(in) :: na(mxstate),la(mxstate),nvcnf(mxcnf)
  integer, intent(in) :: nacnf(mxstate,mxcnf),lacnf(mxstate,mxcnf)
- integer, intent(in) :: ncon(6),nbas(6),nproj(6)
+ integer, intent(in) :: ncon(mxlin+1),nbas(mxlin+1),nproj(mxlin+1)
 
 !Local variables
  real(dp) :: cfloc(5)
@@ -153,8 +154,8 @@
    ierr=ierr+1
  end if
 
- if(lmax<0 .or. lmax>3) then
-   write(6,'(a)') 'test_data: 0 <= lmax <= 3'
+ if(lmax<0 .or. lmax>mxl) then
+   write(6,'(a,i0)') 'test_data: 0 <= lmax <= ',mxl
    ierr=ierr+1
  end if
 

@@ -3,7 +3,7 @@
 ! TOML Fortran library: documentation at toml-f.readthedocs.io
  use tomlf, only: toml_table, toml_array, toml_keyval, toml_error, toml_stat, &
 &                 toml_load, get_value, len
- use constants_m, only: mxstate, mxcnf
+ use constants_m, only: mxstate, mxcnf, mxlin, mxkap
  implicit none
  private
  public :: read_input_toml
@@ -79,16 +79,16 @@
 !> Maximum angular momentum
  integer, intent(out) :: lmax
 !> Core radii for pseudopotentials (rc(5) is the local potential's)
- real(dp), intent(out) :: rc(6)
+ real(dp), intent(out) :: rc(mxlin+1)
 !> Pseudopotential energies, the input value for both j=l+1/2 and l-1/2
 !> (only the fully-relativistic code uses the second)
- real(dp), intent(out) :: ep(6, 2)
+ real(dp), intent(out) :: ep(mxlin+1, mxkap)
 !> Number of matching constraints for each pseudopotential
- integer, intent(out) :: ncon(6)
+ integer, intent(out) :: ncon(mxlin+1)
 !> Number of basis functions for each pseudopotential
- integer, intent(out) :: nbas(6)
+ integer, intent(out) :: nbas(mxlin+1)
 !> Residual-energy cutoff wave vector for each pseudopotential
- real(dp), intent(out) :: qcut(6)
+ real(dp), intent(out) :: qcut(mxlin+1)
 ! [Local potential]
 !> Angular momentum used for local potential
  integer, intent(out) :: lloc
@@ -98,9 +98,9 @@
  real(dp), intent(out) :: dvloc0
 ! [Vanderbilt-Kleinman-Bylander projectors]
 !> Number of projectors for each angular momentum
- integer, intent(out) :: nproj(6)
+ integer, intent(out) :: nproj(mxlin+1)
 !> Energy added to ep for the second projector (Ha)
- real(dp), intent(out) :: debl(6)
+ real(dp), intent(out) :: debl(mxlin+1)
 ! [Model core charge]
 !> Model core charge flag
  integer, intent(out) :: icmod
@@ -173,7 +173,7 @@
 !> Configuration index
  integer :: jj
 !> Angular momenta of a section's rows
- integer :: lt(6)
+ integer :: lt(mxlin+1)
 !> Temporary string
  character(len=:), allocatable :: tmp_str
 !> Message of an input error that names a limit
@@ -234,8 +234,9 @@
 ! pseudopotential and optimization
  call get_section(table, 'pseudopotentials', child)
  call get_int(child, 'pseudopotentials', 'lmax', lmax)
- if(lmax < 0 .or. lmax > 5) then
-   call input_error('lmax in [pseudopotentials] must be in 0..5')
+ if(lmax < 0 .or. lmax > mxlin) then
+   write(msg, '(a,i0)') 'lmax in [pseudopotentials] must be in 0..', mxlin
+   call input_error(trim(msg))
  end if
  call get_int_array(child, 'pseudopotentials', 'l', lmax + 1, lt)
  call check_l(lt, lmax, 'pseudopotentials')

@@ -24,7 +24,7 @@
 ! codes.
 
  module config_ae_m
- use constants_m, only: dp, mxstate, mxcnf
+ use constants_m, only: dp, mxstate, mxcnf, nlev
  implicit none
  private
  public :: run_config_ae, config_ae_warning
@@ -87,7 +87,8 @@
  integer, intent(inout) :: kerrcnf(mxcnf)
  integer, intent(inout) :: nvtcnf(mxcnf),natcnf(mxstate,mxcnf)
  integer, intent(inout) :: latcnf(mxstate,mxcnf)
- real(dp), intent(inout) :: fatcnf(mxstate,3,mxcnf),eatcnf(mxstate,nkap,3,mxcnf)
+ real(dp), intent(inout) :: fatcnf(mxstate,nlev,mxcnf)
+ real(dp), intent(inout) :: eatcnf(mxstate,nkap,nlev,mxcnf)
  real(dp), intent(inout) :: etstcnf(mxcnf)
 
 !Local variables
@@ -96,7 +97,7 @@
  integer :: nat(mxstate),lat(mxstate)
  integer ::  indxr(mxstate),indxe(mxstate)
  real(dp) :: et,eaetst,eterm(4),res
- real(dp) :: eat(mxstate,nkap,3),fat(mxstate,3),rpk(mxstate,nkap)
+ real(dp) :: eat(mxstate,nkap,nlev),fat(mxstate,nlev),rpk(mxstate,nkap)
 
  real(dp),allocatable :: rho(:),rhoc(:),vfull(:)
  real(dp),allocatable :: uu(:,:),up(:,:)

@@ -48,17 +48,17 @@
 !! @param ierr  non-zero return if error
 !! @param nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
 
- use constants_m, only: dp, mxstate
+ use constants_m, only: dp, mxstate, mxl, mxlin
  implicit none
 
 !Input variables
 
  integer, intent(in) :: mmax,mxprj,iexc,nv,lloc,nkap
- integer, intent(in) :: na(nv),la(nv),nproj(5)
+ integer, intent(in) :: na(nv),la(nv),nproj(mxlin+1)
  real(dp), intent(in) :: rcmax
  real(dp), intent(in) :: fat(mxstate,2),rr(mmax)
- real(dp), intent(in) :: vpuns(mmax,5),vkb(mmax,mxprj,4,nkap)
- real(dp), intent(in) :: evkb(mxprj,4,nkap)
+ real(dp), intent(in) :: vpuns(mmax,mxl+2),vkb(mmax,mxprj,mxl+1,nkap)
+ real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap)
  real(dp), intent(in) :: rhoc(mmax)
 
 !Input/output variables

@@ -57,21 +57,21 @@
 !! @param mmax  size of radial grid
 !! @param mxprj  dimension of number of projectors
 
- use constants_m, only: dp, pi, mxstate
+ use constants_m, only: dp, pi, mxstate, mxl, mxlin
  implicit none
 
 !Input variables
  integer, intent(in) :: nc,nv,lmax,lloc,mmax,mxprj
- integer, intent(in) :: la(mxstate),irc(6),nproj(6)
- real(dp), intent(in) :: rr(mmax),vp(mmax,5),vkb(mmax,mxprj,4)
- real(dp), intent(in) :: qmsbf(6),ea(mxstate),evkb(mxprj,4)
+ integer, intent(in) :: la(mxstate),irc(mxlin+1),nproj(mxlin+1)
+ real(dp), intent(in) :: rr(mmax),vp(mmax,mxl+2),vkb(mmax,mxprj,mxl+1)
+ real(dp), intent(in) :: qmsbf(mxlin+1),ea(mxstate),evkb(mxprj,mxl+1)
 
 !Local variables
  integer :: ll,l1,ii,jj,kk,ierr,mbfact,mbar,mch,nn,npgh
  integer :: iprj,nprj,nbas,nbmax,lwork,info
- integer :: nodes(4),lpgh(20)
+ integer :: nodes(mxl+1),lpgh(20)
  real(dp) :: al,amesh,basfact,ee,ecut,eps,et,emin,emax,sn,ro,tht
- real(dp) :: cpgh(20),ebcut(6),epgh(20),rpgh(20)
+ real(dp) :: cpgh(20),ebcut(mxlin+1),epgh(20),rpgh(20)
  real(dp), allocatable :: uu(:),up(:)
  real(dp), allocatable :: gg0(:,:),hmat(:,:),hmev(:),work(:)
  real(dp), allocatable :: uua(:,:)

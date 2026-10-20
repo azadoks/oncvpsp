@@ -45,22 +45,22 @@
 !! @param mmax  size of radial grid
 !! @param mxprj  dimension of number of projectors
 
- use constants_m, only: dp
+ use constants_m, only: dp, mxl, mxlin, mxkap
  implicit none
 
 !Input variables
  integer, intent(in) :: lmax,lloc,mmax,mxprj
- integer, intent(in) :: npa(mxprj,6),irc(6),nproj(6)
+ integer, intent(in) :: npa(mxprj,mxlin+1),irc(mxlin+1),nproj(mxlin+1)
  real(dp), intent(in) :: zz
- real(dp), intent(in) :: rr(mmax),vp(mmax,5,2),vfull(mmax)
- real(dp), intent(in) :: vsr(mmax,2*mxprj,4),esr(2*mxprj,4)
- real(dp), intent(in) :: vso(mmax,2*mxprj,4),eso(2*mxprj,4)
- real(dp), intent(in) :: epa(mxprj,6,2)
+ real(dp), intent(in) :: rr(mmax),vp(mmax,mxl+2,mxkap),vfull(mmax)
+ real(dp), intent(in) :: vsr(mmax,2*mxprj,mxl+1),esr(2*mxprj,mxl+1)
+ real(dp), intent(in) :: vso(mmax,2*mxprj,mxl+1),eso(2*mxprj,mxl+1)
+ real(dp), intent(in) :: epa(mxprj,mxlin+1,mxkap)
 
 !Local variables
  integer :: nlim
- real(dp) :: vkb(mmax,mxprj,4,2)
- real(dp) :: evkb(mxprj,4,2)
+ real(dp) :: vkb(mmax,mxprj,mxl+1,mxkap)
+ real(dp) :: evkb(mxprj,mxl+1,mxkap)
  integer :: ll,l1,ikap,kap,mkap,ii,jj,ierr,mch,mchf,nvkbt
  integer :: iprj,nnae,nnp,npr
  real(dp) :: al,emax,emin,etest,sls,umch,upmch,uldf,gam,gpr,cnorm,fso
