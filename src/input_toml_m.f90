@@ -16,7 +16,7 @@
 &                           fcfact_min, fcfact_max, fcfact_step, &
 &                           rcfact_min, rcfact_max, rcfact_step, &
 &                           epsh1, epsh2, depsh, rxpsh, &
-&                           rlmax, drl, &
+&                           rlmax, drl, upf_mesh, &
 &                           ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                           amesh, rr1, rmax)
 
@@ -45,7 +45,7 @@
 !   [linear_mesh]              a (drl), rmax (rlmax)
 !   [log_mesh]                 amesh, rr1, rmax (optional table and keys, each
 !                              0 or less or missing for the built-in mesh)
-!   [pp_output]                psfile
+!   [pp_output]                psfile, upf_mesh (optional, 0)
 !   [[test_configurations]]    n, l, f (valence states only; optional, up
 !                              to 4)
 
@@ -135,6 +135,8 @@
  real(dp), intent(out) :: rlmax
 !> Grid spacing for output grid
  real(dp), intent(out) :: drl
+!> Most points of the log mesh of the UPF file (0 for the linear output grid)
+ integer, intent(out) :: upf_mesh
 ! [Test configurations]
 !> Number of test configurations
  integer, intent(out) :: ncnf
@@ -318,6 +320,7 @@
 &    'got "'//tmp_str//'"')
  end if
  psfile = trim(tmp_str)
+ call get_int(child, 'pp_output', 'upf_mesh', upf_mesh, 0)
 
 ! test configurations (optional): the valence states, after the
 ! reference core states the driver copies in
@@ -426,17 +429,20 @@
  return
  end subroutine key_error
 
- subroutine get_int(table, section, key, val)
+ subroutine get_int(table, section, key, val, default)
 
-!! an integer key, required
+!! an integer key, required unless default is given
 !!
 !! @param table  the table holding the key
 !! @param section  name of the table, for messages
 !! @param key  name of the key
-!! @param val  the value of the key
+!! @param val  the value of the key, or default if the key is missing
+!! @param default  optional, the value for a missing key, which is then not
+!!                 required
 
 !Input variables
  character(len=*), intent(in) :: section, key
+ integer, intent(in), optional :: default
 
 !Input/output variables
  type(toml_table), intent(inout) :: table
@@ -445,8 +451,16 @@
  integer, intent(out) :: val
 
 !Local variables
+ type(toml_keyval), pointer :: ptr
  integer :: stat
 
+ if(present(default)) then
+   call get_value(table, key, ptr, requested=.false., stat=stat)
+   if(.not. associated(ptr) .and. stat == toml_stat%success) then
+     val = default
+     return
+   end if
+ end if
  call get_value(table, key, val, stat=stat)
  if(stat /= toml_stat%success) then
    call key_error(section, key, stat, 'an integer')

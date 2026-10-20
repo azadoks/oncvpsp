@@ -37,7 +37,7 @@
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
 &                  slack,fcgrid,rcgrid, &
-&                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh, &
+&                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,upf_mesh, &
 &                  irel,nkap)
 
 !! writes the pseudopotential to the output in PSML format, between
@@ -102,6 +102,8 @@
 !! @param psfile  pseudopotential file format as read from the input
 !! @param log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets
 !!                  it (else 0)
+!! @param upf_mesh  most points of the log mesh of the UPF file, 0 for the
+!!                  linear output mesh (echoed when not 0)
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param nkap  number of kappa per l: 1, or 2 for irel=2
 !!
@@ -135,7 +137,7 @@
 ! in the main progam
  integer, intent(in) :: na(30),la(30),ncon(6),nbas(6)
  integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
- integer, intent(in) :: nc,nv,lpopt,ncnf
+ integer, intent(in) :: nc,nv,lpopt,ncnf,upf_mesh
  real(dp), intent(in) :: fa(30),rc0(6),ep(6),qcut(6),debl(6),facnf(30,5)
  real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rxpsh,rlmax
  real(dp), intent(in) :: rcfact,fcgrid(3),rcgrid(3),log_mesh(3)
@@ -207,7 +209,7 @@
  call echo_input(xf,atsym,zz,nc,nv,iexc,psfile,na,la,fa,lmax,rc0,ep,ncon, &
 &                nbas,qcut,lloc,lpopt,dvloc0,nproj,debl,icmod,fcfact, &
 &                rcfact,slack,fcgrid,rcgrid,epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
-&                ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh)
+&                ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh)
 
  call xml_EndElement(xf,"input-file")
 !
@@ -578,7 +580,7 @@
 &                      ncon,nbas,qcut,lloc,lpopt,dvloc0,nproj,debl,icmod, &
 &                      fcfact,rcfact,slack,fcgrid,rcgrid,epsh1,epsh2,depsh, &
 &                      rxpsh,rlmax,drl, &
-&                      ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh)
+&                      ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh)
 
 !! echoes the input data into the input-file element of the provenance, a
 !! line at a time, in the form of the psp8 echo (linout), so that it can be
@@ -629,6 +631,8 @@
 !! @param psfile  pseudopotential file format as read from the input
 !! @param log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets
 !!                  it (else 0)
+!! @param upf_mesh  most points of the log mesh of the UPF file, 0 for the
+!!                  linear output mesh (echoed when not 0)
 
  use xmlf90_wxml, only: xmlf_t, xml_AddPcData
  use input_echo_m, only: icmod_lines, epsh_lines, echo_len, echo_max
@@ -637,7 +641,7 @@
 !Input variables
  character(len=2), intent(in) :: atsym
  character(len=4), intent(in) :: psfile
- integer, intent(in) :: nc,nv,iexc,lmax,lloc,lpopt,icmod,ncnf
+ integer, intent(in) :: nc,nv,iexc,lmax,lloc,lpopt,icmod,ncnf,upf_mesh
  integer, intent(in) :: na(30),la(30),ncon(6),nbas(6),nproj(6)
  integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
  real(dp), intent(in) :: zz,fa(30),rc0(6),ep(6),qcut(6),debl(6),facnf(30,5)
@@ -704,8 +708,13 @@
 
  call add('#')
  call add('# OUTPUT GRID')
- call add('# rlmax, drl')
- write(line,'(2f8.2)') rlmax,drl
+ if(upf_mesh==0) then
+   call add('# rlmax, drl')
+   write(line,'(2f8.2)') rlmax,drl
+ else
+   call add('# rlmax, drl, upf_mesh')
+   write(line,'(2f8.2,i8)') rlmax,drl,upf_mesh
+ end if
  call add(line)
 
  call add('#')

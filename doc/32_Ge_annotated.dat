@@ -132,6 +132,10 @@
 ### drl mesh spacing of linear radial mesh for Abinit output. 0.02 is good
 ###     for "softer" psps, 0.01 is probably better with 1st row, 3d's, or
 ###     semi-core psps.
+### upf_mesh optional: 0 (or left out) for the UPF file on the linear mesh,
+###     else the UPF file on the log mesh, out to the radius of the linear
+###     mesh, at every istr-th point (istr the smallest stride leaving at most
+###     upf_mesh points) with nothing interpolated.  3500 is QE's limit.
 #
 # rlmax, drl
     4.0  0.01

@@ -18,7 +18,8 @@
 !
 ! interpolates various arrays onto linear radial mesh to create file
 ! for PWSCF input using the UPF file format, with the spin-orbit data when
-! fully relativistic
+! fully relativistic, or takes them at every istr-th point of the log mesh
+! (upf_mesh > 0), as generated, with nothing interpolated
 
  subroutine upfout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
 &                  zz,zion,mmax,mxprj,iexc,icmod,nrlin,drl,atsym,epstot, &
@@ -26,7 +27,7 @@
 &                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
 &                  slack,fcgrid,rcgrid, &
 &                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,uupsa,ea,log_mesh, &
-&                  nkap)
+&                  upf_mesh,nkap)
 
 
 !! @param lmax  maximum angular momentum
@@ -89,6 +90,9 @@
 !! @param psfile  pseudopotential file format, 'upf' or 'both'
 !! @param log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets
 !!                  it (else 0)
+!! @param upf_mesh  0 for the linear output mesh, else the most points of the
+!!                  log mesh of the file: every istr-th point of rr, out to
+!!                  the extent of the linear mesh
 !! @param uupsa  pseudo-atomic orbitals, second index 1 for j=l+1/2, 2 for
 !!               j=l-1/2 when nkap=2
 !! @param ea  psuedo-orbital eigenvalues (Ha), second index as for uupsa
@@ -100,7 +104,7 @@
 
 
 !Input variables
- integer, intent(in) :: lmax,lloc,iexc,mmax,mxprj,icmod,nrlin,nkap
+ integer, intent(in) :: lmax,lloc,iexc,mmax,mxprj,icmod,nrlin,nkap,upf_mesh
  integer, intent(in) :: nproj(6)
  real(dp), intent(in) :: drl,fcfact,rcfact,zz,zion,epstot
  real(dp), intent(in) :: slack
@@ -125,13 +129,13 @@
 !Output variables - printing only
 
 !Local variables
- integer :: nrl
+ integer :: nrl,istr,nlog
  integer :: ii,jj,ll,l1,iproj,ntotproj,nrlproj,nwfc
  integer :: ikap,mkap,jstart
  integer :: dtime(8)
  real(dp) :: djjj
- real(dp) :: al,nrmsum,uurcut,fj
- real(dp), allocatable :: rhomodl(:,:),dmat(:,:)
+ real(dp) :: al,nrmsum,uurcut,fj,rcmx
+ real(dp), allocatable :: rhomodl(:,:),dmat(:,:),rabl(:)
  real(dp),allocatable :: rhol(:),rl(:),vkbl(:,:,:,:),vpl(:,:),uual(:,:,:)
  character(len=5) :: lnames
  character(len=2) :: pspd(3)
@@ -179,19 +183,40 @@
    write(6,'(a,i5,a,f10.5)') "Updating nrl = ", nrl, " for uurcut = ", uurcut
  end if
 
+ istr=0
+ if(upf_mesh>0) then
+! log output mesh: the points of rr out to the extent of the linear mesh,
+! every istr-th of them, istr the smallest stride leaving at most upf_mesh
+   nlog=1
+   do ii=1,mmax
+     if(rr(ii)>drl*dble(nrl-1)) exit
+     nlog=ii
+   end do
+   istr=(nlog-1)/upf_mesh+1
+   nrl=(nlog-1)/istr+1
+ end if
+
  allocate(rhol(nrl),rl(nrl),vkbl(nrl,mxprj,4,nkap),vpl(nrl,5),rhomodl(nrl,5), &
-&          uual(nrl,nkap,nv))
+&          uual(nrl,nkap,nv),rabl(nrl))
 
-! interpolation of everything onto linear output mesh
+! interpolation of everything onto linear output mesh, or the log mesh points
 
- do  ii=1,nrl
-   rl(ii)=drl*dble(ii-1)
- end do
+ if(istr==0) then
+   do  ii=1,nrl
+     rl(ii)=drl*dble(ii-1)
+     rabl(ii)=drl
+   end do
+ else
+   do  ii=1,nrl
+     rl(ii)=rr(1+istr*(ii-1))
+     rabl(ii)=dble(istr)*al*rl(ii)
+   end do
+ end if
 !
  vpl(:,:)=0.0d0
- call dpnint(rr,vpuns(1,lloc+1),mmax,rl,vpl(1,lloc+1),nrl)
+ call outmesh(vpuns(1,lloc+1),vpl(1,lloc+1))
 ! override dpnint extrapolation to zero for vpl (in the sr code only)
- if(nkap==1) vpl(1,lloc+1)=vpuns(1,lloc+1)
+ if(nkap==1 .and. istr==0) vpl(1,lloc+1)=vpuns(1,lloc+1)
 
  do l1=1,lmax+1
    if(l1==lloc+1) cycle
@@ -205,16 +230,16 @@
    do ikap=1,mkap
      do jj=1,nproj(l1)
 
-       call dpnint(rr,vkb(1,jj,l1,ikap),mmax,rl,vkbl(1,jj,l1,ikap),nrl)
+       call outmesh(vkb(1,jj,l1,ikap),vkbl(1,jj,l1,ikap))
 
      end do !jj
    end do !ikap
  end do !l1
 
- call dpnint(rr,rho,mmax,rl,rhol,nrl)
+ call outmesh(rho,rhol)
 
  do jj=1,5
-   call dpnint(rr,rhomod(1,jj),mmax,rl,rhomodl(1,jj),nrl)
+   call outmesh(rhomod(1,jj),rhomodl(1,jj))
  end do
 
  nwfc = 0
@@ -227,7 +252,7 @@
    end if
    nwfc = nwfc + mkap
    do ikap=1,mkap
-     call dpnint(rr,uupsa(1,ikap,ii),mmax,rl,uual(1,ikap,ii),nrl)
+     call outmesh(uupsa(1,ikap,ii),uual(1,ikap,ii))
    end do
  end do
 
@@ -281,7 +306,7 @@
 &                       lloc,lpopt,dvloc0,nproj,debl, &
 &                       icmod,fcfact,rcfact,slack,fcgrid,rcgrid, &
 &                       epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
-&                       ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh)
+&                       ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh)
 
  write(6,'(a)') &
 &      '    </PP_INPUTFILE>'
@@ -431,6 +456,21 @@
 !make divisible by 4 to use for 0 compression below
  if(mod(nrlproj,4)/=0) nrlproj=nrlproj+2
 
+!on the log mesh, the first point beyond every core radius (where the
+!projectors are zero), made divisible by 4 as above
+ if(istr>0) then
+   rcmx=0.0d0
+   do l1=1,lmax+1
+     rcmx=max(rcmx,rc(l1))
+   end do
+   nrlproj=nrl
+   do ii=nrl,1,-1
+     if(rl(ii)<=rcmx) exit
+     nrlproj=ii
+   end do
+   nrlproj=min(4*((nrlproj+3)/4),nrl)
+ end if
+
  write(6,'(t8,a,i6,a)') &
 &      'mesh_size="',nrl,'"'
 
@@ -443,18 +483,32 @@
  write(6,'(t2,a)') &
 &      '<PP_MESH>'
 
- write(6,'(t4,a,i4,a)') &
-&      '<PP_R type="real"  size="',nrl,'" columns="8">'
+ if(istr==0) then
+   write(6,'(t4,a,i4,a)') &
+&        '<PP_R type="real"  size="',nrl,'" columns="8">'
 
- write(6,'(8f10.4)') (rl(ii),ii=1,nrl)
+   write(6,'(8f10.4)') (rl(ii),ii=1,nrl)
+ else
+   write(6,'(t4,a,i4,a)') &
+&        '<PP_R type="real"  size="',nrl,'" columns="4">'
+
+   write(6,'(1p,4e20.12)') (rl(ii),ii=1,nrl)
+ end if
 
  write(6,'(t4,a)') &
 &      '</PP_R>'
 
- write(6,'(t4,a,i4,a)') &
-&      '<PP_RAB type="real"  size="',nrl,'" columns="8">'
+ if(istr==0) then
+   write(6,'(t4,a,i4,a)') &
+&        '<PP_RAB type="real"  size="',nrl,'" columns="8">'
 
- write(6,'(8f10.4)') (drl,ii=1,nrl)
+   write(6,'(8f10.4)') (drl,ii=1,nrl)
+ else
+   write(6,'(t4,a,i4,a)') &
+&        '<PP_RAB type="real"  size="',nrl,'" columns="4">'
+
+   write(6,'(1p,4e20.12)') (rabl(ii),ii=1,nrl)
+ end if
 
  write(6,'(t4,a)') &
 &      '</PP_RAB>'
@@ -516,8 +570,13 @@
 &            'angular_momentum="',l1-1,'"'
        write(6,'(t8,a,i4,a)') &
 &            'cutoff_radius_index="',nrlproj,'"'
-       write(6,'(t8,a,1p,e20.10,a)') &
-&            'cutoff_radius="',(nrlproj-1)*drl,'" >'
+       if(istr==0) then
+         write(6,'(t8,a,1p,e20.10,a)') &
+&              'cutoff_radius="',(nrlproj-1)*drl,'" >'
+       else
+         write(6,'(t8,a,1p,e20.10,a)') &
+&              'cutoff_radius="',rl(nrlproj),'" >'
+       end if
 
        write(6,'(1p,4e20.10)') (vkbl(ii,jj,l1,ikap),ii=1,nrlproj)
        write(6,'(1p,4f3.0)') (0.d0,ii=nrlproj+1,nrl)
@@ -697,7 +756,37 @@
 ! write termination signal
  write(6,'(/a)') 'END_PSP'
 
- deallocate(rhol,rl,vkbl,vpl,rhomodl,dmat)
+ deallocate(rhol,rl,vkbl,vpl,rhomodl,dmat,rabl)
 
  return
+
+ contains
+
+ subroutine outmesh(ff,ffl)
+
+!! ff on the output mesh: interpolated onto the linear mesh, or taken at
+!! its log mesh points
+!!
+!! @param ff  function on the log radial grid rr
+!! @param ffl  ff on the output mesh rl
+
+!Input variables
+ real(dp), intent(in) :: ff(mmax)
+
+!Output variables
+ real(dp), intent(out) :: ffl(nrl)
+
+!Local variables
+ integer :: kk
+
+ if(istr==0) then
+   call dpnint(rr,ff,mmax,rl,ffl,nrl)
+ else
+   do kk=1,nrl
+     ffl(kk)=ff(1+istr*(kk-1))
+   end do
+ end if
+ return
+ end subroutine outmesh
+
  end subroutine upfout

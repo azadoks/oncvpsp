@@ -552,6 +552,8 @@ class LinearMeshConfiguration:
     drl: float
     "Maximum radius for the linear mesh"
     rlmax: float
+    "Most points of the log mesh of the UPF file (0 for the linear mesh), [pp_output] in TOML"
+    upf_mesh: int = 0
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, LinearMeshConfiguration):
@@ -564,6 +566,9 @@ class LinearMeshConfiguration:
         if abs(self.rlmax - other.rlmax) >= ATOL:
             logging.debug("rlmax differs: %f != %f", self.rlmax, other.rlmax)
             return False
+        if self.upf_mesh != other.upf_mesh:
+            logging.debug("upf_mesh differs: %d != %d", self.upf_mesh, other.upf_mesh)
+            return False
         return True
 
     @classmethod
@@ -571,16 +576,17 @@ class LinearMeshConfiguration:
         """Create a LinearMeshConfiguration from a string.
 
         Args:
-            s: String in the format "drl rlmax"
+            s: String in the format "rlmax drl [upf_mesh]"
 
         Returns:
             LinearMeshConfiguration instance.
         """
         parts = s.split()
-        if len(parts) != 2:
+        if len(parts) not in (2, 3):
             raise ValueError(f"Invalid linear mesh configuration: {s}")
         rlmax, drl = fort_float(parts[0]), fort_float(parts[1])
-        return cls(drl=drl, rlmax=rlmax)
+        upf_mesh = int(parts[2]) if len(parts) == 3 else 0
+        return cls(drl=drl, rlmax=rlmax, upf_mesh=upf_mesh)
 
 
 @dataclass
@@ -948,6 +954,7 @@ class OncvpspInput:
             linear_mesh=LinearMeshConfiguration(
                 drl=d["linear_mesh"]["a"],
                 rlmax=d["linear_mesh"]["rmax"],
+                upf_mesh=d["pp_output"].get("upf_mesh", 0),
             ),
             test_configurations=[
                 [
@@ -1040,6 +1047,8 @@ class OncvpspInput:
                 for cfg in self.test_configurations
             ],
         }
+        if self.linear_mesh.upf_mesh != 0:
+            d["pp_output"]["upf_mesh"] = self.linear_mesh.upf_mesh
         if self.log_mesh is not None:
             d["log_mesh"] = {
                 name: value

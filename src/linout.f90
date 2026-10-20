@@ -27,7 +27,8 @@
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,fcfact0,rcfact, &
 &                  slack,fcgrid,rcgrid, &
-&                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,nkap)
+&                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,upf_mesh, &
+&                  nkap)
 
 
 !! @param lmax  maximum angular momentum
@@ -99,6 +100,8 @@
 !! @param psfile  output format, should be 'psp8' or 'both'
 !! @param log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets
 !!                  it (else 0)
+!! @param upf_mesh  most points of the log mesh of the UPF file, 0 for the
+!!                  linear output mesh (echoed when not 0)
 
 
  use constants_m, only: dp
@@ -124,7 +127,7 @@
 ! in the main progam
  integer, intent(in) :: na(30),la(30),ncon(6),nbas(6)
  integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
- integer, intent(in) :: nc,nv,lpopt,ncnf
+ integer, intent(in) :: nc,nv,lpopt,ncnf,upf_mesh
  real(dp), intent(in) :: fa(30),rc0(6),ep(6,nkap),qcut(6),debl(6),facnf(30,5)
  real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rxpsh,rlmax
  real(dp), intent(in) :: log_mesh(3)
@@ -357,7 +360,7 @@
 &                       lloc,lpopt,dvloc0,nproj,debl, &
 &                       icmod,fcfact0,rcfact,slack,fcgrid,rcgrid, &
 &                       epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
-&                       ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh)
+&                       ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh)
 
 ! write termination signal
  write(6,'(a)') '</INPUT>'

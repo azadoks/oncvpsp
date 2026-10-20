@@ -111,10 +111,11 @@
 
 !! checks read_input_text on 14_Si.dat, with blank lines and comments inside
 !! the blocks, a long line and comments after the data, and with or without
-!! the optional log mesh line
+!! the optional log mesh line and UPF mesh size
 !!
 !! @param final_newline  .true. to end the last line with a newline
-!! @param with_mesh  .true. to add the log mesh line
+!! @param with_mesh  .true. to add the log mesh line, and upf_mesh to the
+!!                   output grid line
 
 !Input variables
  logical, intent(in) :: final_newline, with_mesh
@@ -132,7 +133,7 @@
  real(dp) :: amesh, rr1, rmax
  integer :: nc, nv, iexc, na(30), la(30), lmax, ncon(6), nbas(6)
  integer :: lloc, lpopt, nproj(6)
- integer :: icmod, ncnf, nvcnf(5), nacnf(30, 5), lacnf(30, 5)
+ integer :: icmod, ncnf, nvcnf(5), nacnf(30, 5), lacnf(30, 5), upf_mesh
 
  lines = [character(len=700) :: &
 &   '# atsym, z, nc, nv, iexc   psfile', &
@@ -170,6 +171,7 @@
 &   '    3    1    1.0', &
 &   '# a comment after the data']
  if(with_mesh) then
+   lines(25) = '    6.0  0.01  2000'
    all_lines = [character(len=700) :: lines, '# amesh, rr1, rmax', &
 &               '  1.003  -1  60.0', '# a comment after the mesh']
  else
@@ -184,7 +186,7 @@
 &                     fcfact_min, fcfact_max, fcfact_step, &
 &                     rcfact_min, rcfact_max, rcfact_step, &
 &                     epsh1, epsh2, depsh, rxpsh, &
-&                     rlmax, drl, &
+&                     rlmax, drl, upf_mesh, &
 &                     ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                     amesh, rr1, rmax)
  close(unit)
@@ -216,9 +218,11 @@
 &           .and. all(facnf(4:5, 2) == [2, 1]), &
 &           'test configurations')
  if(with_mesh) then
+   call check(upf_mesh == 2000, 'UPF mesh size')
    call check(amesh == 1.003_dp .and. rr1 < 0 .and. rmax == 60, 'log mesh')
    call check(inline == 35, 'line number of the last data line')
  else
+   call check(upf_mesh == 0, 'UPF mesh size default')
    call check(amesh < 0 .and. rr1 < 0 .and. rmax < 0, 'log mesh defaults')
    call check(inline == 32, 'line number of the last data line')
  end if

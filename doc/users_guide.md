@@ -47,7 +47,7 @@ eigenvalues to the configuration information.  This is formatted so that it
 can be copied and re-used as an input file (the eigenvalues will be ignored).
 The psp8, UPF and PSML files carry the same echo, without the eigenvalues,
 and each of these echoes runs again to the same output. Optional inputs
-(`rxpsh`, the `icmod=4` search grid and the log mesh) are echoed only when
+(`rxpsh`, the `icmod=4` search grid, the log mesh and `upf_mesh`) are echoed only when
 the input sets them, so older inputs echo as they always have.
 The code then loops over angular momenta and reports some information and
 consistency test results for each pseudo wave function. For unbound states,

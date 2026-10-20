@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
  subroutine check_data(atsym,zz,fcfact,rcfact,slack,fcgrid,rcgrid,epsh1,epsh2, &
-&                      depsh,rxpsh,rlmax,drl,fa,facnf, &
+&                      depsh,rxpsh,rlmax,drl,upf_mesh,fa,facnf, &
 &                      rc,ep,qcut,debl,nc,nv,iexc,lmax,lloc,lpopt,icmod, &
 &                      ncnf,na,la,nvcnf,nacnf,lacnf,ncon,nbas,nproj,psfile, &
 &                      amesh,rr1,rmax)
@@ -41,6 +41,8 @@
 !! @param rxpsh  log derivative radius (bohr), negative for the default
 !! @param rlmax  maximum radius of the linear output mesh (bohr)
 !! @param drl  spacing of the linear output mesh (bohr)
+!! @param upf_mesh  most points of the log mesh of the UPF file, 0 for the
+!!                  linear output mesh
 !! @param fa  reference configuration occupancies
 !! @param facnf  occupancies of the reference (1) and test configurations
 !! @param rc  core radii for each l, rc(5) for the lloc=4 local potential (bohr)
@@ -84,7 +86,7 @@
  real(dp), intent(in) :: amesh,rr1,rmax
  real(dp), intent(in) :: fa(30),facnf(30,5),rc(6),ep(6),qcut(6),debl(6)
 
- integer, intent(in) :: nc,nv,iexc,lmax,lloc,lpopt,icmod,ncnf
+ integer, intent(in) :: nc,nv,iexc,lmax,lloc,lpopt,icmod,ncnf,upf_mesh
  integer, intent(in) :: na(30),la(30),nvcnf(5),nacnf(30,5),lacnf(30,5)
  integer, intent(in) :: ncon(6),nbas(6),nproj(6)
 
@@ -305,6 +307,11 @@
 
  if(drl<=0.0d0) then
    write(6,'(a)') 'test_data: must have drl > 0.0'
+   ierr=ierr+1
+ end if
+
+ if(upf_mesh<0) then
+   write(6,'(a)') 'test_data: must have upf_mesh >= 0'
    ierr=ierr+1
  end if
 

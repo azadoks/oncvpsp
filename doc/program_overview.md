@@ -212,7 +212,14 @@ irel, and the stage.  It has the following major sections:
     input variable; psfile = none calls neither, so no pseudopotential
     file is written.  While all the psp files presently linked to PWSCF use
     a log mesh, the linear mesh works fine and produces results in excellent
-    agreement with ABINIT results.
+    agreement with ABINIT results.  With upf_mesh > 0 (the optional third
+    value of the output grid line), upfout writes the UPF file on the log
+    mesh instead: every istr-th point of it out to the radius of the linear
+    mesh, istr the smallest stride leaving at most upf_mesh points, with the
+    tables as generated at those points rather than interpolated (as
+    PseudoPotentialGenerators.jl does). QE stops on a mesh of more than its
+    ndmx = 3500 points, so 3500 is the natural value. The default, 0, keeps
+    the linear mesh, the one the reference tests compare.
 
 
 The auxiliary program *oncvpspnr.x* runs oncvpsp_main with irel=0, which

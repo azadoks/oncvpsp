@@ -63,7 +63,7 @@
  integer :: ii,ierr,iexc,iexct,ios,iprint,irps,it,icmod,lpopt
  integer :: jj,kk,ll,l1,lloc,lmax,lt,inline
  integer :: mch,mchf,mmax,n1,n2,nc,nlim,nlloc,nlmax,irpsh,nrl
- integer :: nv,irct,ncnf,nvt
+ integer :: nv,irct,ncnf,nvt,upf_mesh
  integer :: iprj,nkap,nnwell
  integer :: ikap,kap,mkap
  integer,allocatable :: npa(:,:)
@@ -279,7 +279,7 @@
 &                       fcfact_min, fcfact_max, fcfact_step, &
 &                       rcfact_min, rcfact_max, rcfact_step, &
 &                       epsh1, epsh2, depsh, rxpsh, &
-&                       rlmax, drl, &
+&                       rlmax, drl, upf_mesh, &
 &                       ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                       amesh_in, rr1_in, rmax_in)
  case(INPUT_TEXT)
@@ -298,7 +298,7 @@
 &                       fcfact_min, fcfact_max, fcfact_step, &
 &                       rcfact_min, rcfact_max, rcfact_step, &
 &                       epsh1, epsh2, depsh, rxpsh, &
-&                       rlmax, drl, &
+&                       rlmax, drl, upf_mesh, &
 &                       ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                       amesh_in, rr1_in, rmax_in)
    close(unit)
@@ -319,7 +319,7 @@
 &                       fcfact_min, fcfact_max, fcfact_step, &
 &                       rcfact_min, rcfact_max, rcfact_step, &
 &                       epsh1, epsh2, depsh, rxpsh, &
-&                       rlmax, drl, &
+&                       rlmax, drl, upf_mesh, &
 &                       ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                       amesh_in, rr1_in, rmax_in)
    close(unit)
@@ -354,7 +354,7 @@
  rcgrid=[rcfact_min,rcfact_max,rcfact_step]
 
  call check_data(atsym,zz,fcfact,rcfact,slack,fcgrid,rcgrid,epsh1,epsh2,depsh, &
-&                rxpsh,rlmax,drl, &
+&                rxpsh,rlmax,drl,upf_mesh, &
 &                fa,facnf, &
 &                rc,ep,qcut,debl,nc,nv,iexc,lmax,lloc,lpopt,icmod, &
 &                ncnf,na,la,nvcnf,nacnf,lacnf,ncon,nbas,nproj,psfile, &
@@ -513,8 +513,13 @@
 
  call write_epsh(epsh1,epsh2,depsh,rxpsh)
 
- write(6,'(a/a/a)') '#','# OUTPUT GRID','# rlmax, drl'
- write(6,'(2f8.4)') rlmax,drl
+ if(upf_mesh==0) then
+   write(6,'(a/a/a)') '#','# OUTPUT GRID','# rlmax, drl'
+   write(6,'(2f8.4)') rlmax,drl
+ else
+   write(6,'(a/a/a)') '#','# OUTPUT GRID','# rlmax, drl, upf_mesh'
+   write(6,'(2f8.4,i8)') rlmax,drl,upf_mesh
+ end if
 
  write(6,'(a/a/a)') '#','# TEST CONFIGURATIONS','# ncnf'
  write(6,'(i5)') ncnf
@@ -1045,7 +1050,7 @@
 &              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &              fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,fcfact0,rcfact, &
 &              slack,fcgrid,rcgrid, &
-&              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,nkap)
+&              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,upf_mesh,nkap)
  end if
 
  if(trim(psfile)=='upf' .or. trim(psfile)=='both') then
@@ -1054,7 +1059,8 @@
 &              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &              fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact0,rcfact, &
 &              slack,fcgrid,rcgrid, &
-&              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,uupsa,ea,log_mesh,nkap)
+&              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,uupsa,ea,log_mesh, &
+&              upf_mesh,nkap)
  end if
 
 
@@ -1082,7 +1088,8 @@
 &               na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &               fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact0,rcfact, &
 &               slack,fcgrid,rcgrid, &
-&               epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,irel,nkap)
+&               epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,upf_mesh, &
+&               irel,nkap)
  end if
 
  stop

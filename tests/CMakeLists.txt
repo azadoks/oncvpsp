@@ -131,6 +131,27 @@ foreach (mesh_test IN ITEMS "sr:14_Si" "nr:29_Cu" "r:52_Te")
     endforeach ()
 endforeach ()
 
+# UPF file on the log mesh (upf_mesh, the optional third value of the output grid line): see
+# scripts/upf_mesh_test.sh
+foreach (mesh_test IN ITEMS "sr:14_Si_UPF" "r:52_Te")
+    string(REPLACE ":" ";" mesh_test "${mesh_test}")
+    list(GET mesh_test 0 rel)
+    list(GET mesh_test 1 test_name)
+    set(mesh_cases "defaults" "log" "stride")
+    if (rel STREQUAL "sr")
+        list(APPEND mesh_cases "negative" "read")
+    endif ()
+    if (ONCVPSP_WITH_TOML)
+        list(APPEND mesh_cases "toml")
+    endif ()
+    foreach (case IN LISTS mesh_cases)
+        oncvpsp_test(upf_mesh_${rel}_${test_name}_${case} mesh upf_mesh_test.sh
+            $<TARGET_FILE:oncvpsp${rel}> "${data}/${test_name}.dat" ${case}
+            "${CMAKE_CURRENT_BINARY_DIR}/upf_mesh_${rel}_${test_name}_${case}"
+            "${data}/toml/${test_name}.toml")
+    endforeach ()
+endforeach ()
+
 # TOML input: every input in tests/data/toml (the TOML form of its tests/data/*.dat) must give the
 # output of the text input, and the reader must stop with a message naming the problem for each of the
 # changes in scripts/toml_error_test.sh

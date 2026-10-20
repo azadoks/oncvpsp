@@ -13,7 +13,7 @@
 &                           fcfact_min, fcfact_max, fcfact_step, &
 &                           rcfact_min, rcfact_max, rcfact_step, &
 &                           epsh1, epsh2, depsh, rxpsh, &
-&                           rlmax, drl, &
+&                           rlmax, drl, upf_mesh, &
 &                           ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                           amesh, rr1, rmax)
 
@@ -107,6 +107,8 @@
  real(dp), intent(out) :: rlmax
 !> Grid spacing for output grid
  real(dp), intent(out) :: drl
+!> Most points of the log mesh of the UPF file (0 for the linear output grid)
+ integer, intent(out) :: upf_mesh
 ! [Test configurations]
 !> Number of test configurations
  integer, intent(out) :: ncnf
@@ -258,9 +260,14 @@
  end if
  call read_error(ios, inline)
 
-! output grid
+! output grid: rlmax, drl, and optionally upf_mesh
  call next_line(unit, line, inline)
- read(line, *, iostat=ios) rlmax, drl
+ read(line, *, iostat=ios) rlmax, drl, upf_mesh
+! a line of two values ends before upf_mesh; a bad value is an error
+ if(ios < 0) then
+   read(line, *, iostat=ios) rlmax, drl
+   upf_mesh = 0  ! the UPF file on the linear output grid
+ end if
  call read_error(ios, inline)
 
 ! test configurations

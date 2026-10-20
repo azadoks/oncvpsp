@@ -180,7 +180,7 @@
 &                            lloc,lpopt,dvloc0,nproj,debl, &
 &                            icmod,fcfact,rcfact,slack,fcgrid,rcgrid, &
 &                            epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
-&                            ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh)
+&                            ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh)
 !! writes the echo of the input data to unit 6, from the reference
 !! configuration to the log mesh, as the psp8 and UPF files carry it
 !!
@@ -193,7 +193,7 @@
 
 !Input variables
  integer, intent(in) :: nkap,iformat
- integer, intent(in) :: nc,nv,iexc,lmax,lloc,lpopt,icmod,ncnf
+ integer, intent(in) :: nc,nv,iexc,lmax,lloc,lpopt,icmod,ncnf,upf_mesh
  integer, intent(in) :: na(30),la(30),ncon(6),nbas(6),nproj(6)
  integer, intent(in) :: nvcnf(5),nacnf(30,5),lacnf(30,5)
  real(dp), intent(in) :: zz,dvloc0,fcfact,rcfact
@@ -247,8 +247,13 @@
 
  call write_epsh(epsh1,epsh2,depsh,rxpsh)
 
- write(6,'(a/a/a)') '#','# OUTPUT GRID','# rlmax, drl'
- write(6,'(2f8.2)') rlmax,drl
+ if(upf_mesh==0) then
+   write(6,'(a/a/a)') '#','# OUTPUT GRID','# rlmax, drl'
+   write(6,'(2f8.2)') rlmax,drl
+ else
+   write(6,'(a/a/a)') '#','# OUTPUT GRID','# rlmax, drl, upf_mesh'
+   write(6,'(2f8.2,i8)') rlmax,drl,upf_mesh
+ end if
 
  write(6,'(a/a/a)') '#','# TEST CONFIGURATIONS','# ncnf'
  write(6,'(i5)') ncnf
