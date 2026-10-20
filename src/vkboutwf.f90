@@ -51,10 +51,11 @@
  real(dp), allocatable ::  gg0(:),gg(:,:)
  integer, allocatable :: ipiv(:)
 
- integer :: ii,jj,kk,info
+ integer :: ii,jj,kk,info,ikb
 
  uu(:)=0.0d0
  up(:)=0.0d0
+ ikb=0
 
 ! homogeneous solution, and the inhomogeneous solutions below, integrated
 ! together by outwf_all
@@ -63,9 +64,11 @@
  rc=0.0d0
  if(nvkb/=0) then
 ! find cutoff radius for projectors
+   ikb=mch
    do ii=mmax,1,-1
      if(abs(vkb(ii,1))>0.0d0) then
        rc=rr(ii)
+       ikb=min(ii,mch)
        exit
      end if
    end do
@@ -83,12 +86,13 @@
    call outwf_all(nvkb,uu,up,phi,phip)
 
 
-! projector matrix elements and coefficient matrix
+! projector matrix elements and coefficient matrix, integrated to the end
+! of the projectors' support, ikb, as run_vkb integrates the B matrix
    do jj=1,nvkb
-     call vpinteg(uu,vkb(1,jj),mch,2*ll+2,gg0(jj),rr)
+     call vpinteg(uu,vkb(1,jj),ikb,2*ll+2,gg0(jj),rr)
      gg0(jj)=evkb(jj)*gg0(jj)
      do ii=1,nvkb
-       call vpinteg(phi(1,ii),vkb(1,jj),mch,2*ll+2,gg(jj,ii),rr)
+       call vpinteg(phi(1,ii),vkb(1,jj),ikb,2*ll+2,gg(jj,ii),rr)
        gg(jj,ii)=-evkb(jj)*gg(jj,ii)
      end do
      gg(jj,jj)=1.0d0+gg(jj,jj)
@@ -153,7 +157,7 @@
 
 !Local variables
  real(dp) :: al,als,amesh,cn,ro,sls,sn,akb,ckb
- integer :: ii,it,kk,nsol,nn
+ integer :: ii,it,jj,kk,nsol,nn
  real(dp), allocatable :: cf(:),src(:,:),usol(:,:),upr(:,:),upp(:,:)
 
  nsol=nkb+1
@@ -192,6 +196,19 @@
  end do
 
  do ii=4,mch-1
+! the projectors end at ikb with a kink (the pseudo wave function joins
+! the all-electron one with a jump in its 3rd derivative), which the Adams
+! formulas of the steps past it would interpolate across, an O(al**2)
+! error in the log derivative beyond rc and so in the eigenvalue; their
+! back points take the source-free second derivative instead, that of the
+! solution outside continued inward
+   if(ii==ikb) then
+     do kk=2,nsol
+       do jj=max(1,ikb-3),ikb
+         upp(jj,kk)=upp(jj,kk)-src(jj,kk)
+       end do
+     end do
+   end if
    do kk=1,nsol
      usol(ii+1,kk)=usol(ii,kk)+aeo(upr(1,kk),ii)
      upr(ii+1,kk)=upr(ii,kk)+aeo(upp(1,kk),ii)

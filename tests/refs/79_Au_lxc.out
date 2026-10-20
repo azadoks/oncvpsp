@@ -91,7 +91,7 @@ LXC     Perdew & Zunger (LDA)
 
 
 Reference configufation results
-  iterations    29
+  iterations    21
   all-electron total energy (Ha)   -1.90013717D+04
   residual of the screening potential (Ha)  3.06E-10
   energy terms (Ha)
@@ -457,7 +457,7 @@ Coulomb tail of the local potential
   alpha_z = 4 pi int r**2 (V_loc + zion/r) dr  6.7447399568E+01 Ha bohr**3
   alpha_z change, table cut at r =  6.00:  4.8875E-07
   alpha_z change, table cut at r = 10.00:  1.8143E-07
-  |V_loc + zion/r| < 1e-10 beyond r =    8.1133
+  |V_loc + zion/r| < 1e-10 beyond r =    8.0649
   max |V_loc - V_ion| beyond rcmax  1.9129E-05
 
 Test configuration 0

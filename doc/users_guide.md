@@ -71,7 +71,13 @@ The "Diagnostic tests" results are explained in more detail in
 program_overview.txt.  Basically, e in and e test should closely match, and
 the norm and slope values should be close to one.  For two projectors and a
 non-relativistic calculation, the agreement should be within numerical
-convergence error for all these quantities.  Finally,  the total energies
+convergence error for all these quantities.  That error is O(al^4) in the
+mesh step: the projectors end at rc with a kink, and the pseudo-atom solver
+(vkboutwf) takes their overlaps over their support, as the B matrix is
+built, and does not carry the kink into the steps beyond rc, either of which
+made it O(al^2) (-40 uHa for the 3d of Fe at amesh 1.006).  Scalar-
+relativistic runs keep a mesh-independent difference of a few uHa from the
+relativistic correction to the projectors (vrel).  Finally,  the total energies
 and eigenvalues of self-consistent pseudo atoms are compared with all-electron
 results for the reference and test valence configurations.  You should
 always look at these diagnostics, even if the automated graphics all look

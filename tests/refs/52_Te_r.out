@@ -687,7 +687,7 @@ Coulomb tail of the local potential
   alpha_z = 4 pi int r**2 (V_loc + zion/r) dr  6.1586521007E+01 Ha bohr**3
   alpha_z change, table cut at r =  6.00:  9.6461E-07
   alpha_z change, table cut at r = 10.00:  3.7088E-07
-  |V_loc + zion/r| < 1e-10 beyond r =    9.7611
+  |V_loc + zion/r| < 1e-10 beyond r =    9.8197
   max |V_loc - V_ion| beyond rcmax  1.3399E-06
 
 Test configuration 0
@@ -11322,8 +11322,8 @@ set xlabel "Radius (a_B)"
 
 set title "P+ Ortho. Projs. evkb(:) =   1.71E+00   2.62E-01 Ha"
 
-plot    "<grep '!J     1' t1" using 3:4 title "Prj 1" with lines ls 1,\
-        "<grep '!J     1' t1" using 3:5 title "Prj 2" with lines ls 2
+plot    "<grep '!J    -1' t1" using 3:4 title "Prj 1" with lines ls 1,\
+        "<grep '!J    -1' t1" using 3:5 title "Prj 2" with lines ls 2
 
 
 pause -1 "Hit enter to continue"
@@ -11396,8 +11396,8 @@ set xlabel "Radius (a_B)"
 
 set title "D+ Ortho. Projs. evkb(:) =  -5.50E+00  -2.00E+00 Ha"
 
-plot    "<grep '!J     2' t1" using 3:4 title "Prj 1" with lines ls 1,\
-        "<grep '!J     2' t1" using 3:5 title "Prj 2" with lines ls 2
+plot    "<grep '!J    -2' t1" using 3:4 title "Prj 1" with lines ls 1,\
+        "<grep '!J    -2' t1" using 3:5 title "Prj 2" with lines ls 2
 
 
 pause -1 "Hit enter to continue"
@@ -11470,8 +11470,8 @@ set xlabel "Radius (a_B)"
 
 set title "F+ Ortho. Projs. evkb(:) =  -5.69E+00  -1.12E+00 Ha"
 
-plot    "<grep '!J     3' t1" using 3:4 title "Prj 1" with lines ls 1,\
-        "<grep '!J     3' t1" using 3:5 title "Prj 2" with lines ls 2
+plot    "<grep '!J    -3' t1" using 3:4 title "Prj 1" with lines ls 1,\
+        "<grep '!J    -3' t1" using 3:5 title "Prj 2" with lines ls 2
 
 
 pause -1 "Hit enter to continue"

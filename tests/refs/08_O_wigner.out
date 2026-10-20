@@ -65,7 +65,7 @@ in any publication utilizing these pseudopotentials.
 
 
 Reference configufation results
-  iterations    20
+  iterations    16
   all-electron total energy (Ha)   -7.43823482D+01
   residual of the screening potential (Ha)  2.55E-11
   energy terms (Ha)
@@ -211,7 +211,7 @@ Construct Vanderbilt / Kleinmman-Bylander projectors
 B matrix Hermiticity error, ll=   0
    1   2    8.5337E-05
 
-  Orthonormal projector coefficients  2.0739E+00 -3.0025E-01
+  Orthonormal projector coefficients  2.0740E+00 -3.0025E-01
 
 B matrix Hermiticity error, ll=   1
    1   2    4.8830E-05
@@ -248,7 +248,7 @@ Coulomb tail of the local potential
   alpha_z = 4 pi int r**2 (V_loc + zion/r) dr  8.2166974100E+00 Ha bohr**3
   alpha_z change, table cut at r =  6.00:  6.5440E-08
   alpha_z change, table cut at r = 10.00:  1.2117E-08
-  |V_loc + zion/r| < 1e-10 beyond r =    4.0903
+  |V_loc + zion/r| < 1e-10 beyond r =    4.0659
   max |V_loc - V_ion| beyond rcmax  3.1012E-05
 
 Test configuration 0
