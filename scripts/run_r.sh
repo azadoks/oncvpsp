@@ -4,8 +4,9 @@
 #_r is appended to the prefix of the output file
 #uses the fully-relativistic all-electron atom calculation
 
-PREFIX=/Users/mverstra/CODES/ONCVPSP/GITHUB_VERSION/oncvpsp
-BIN_DIR=/Users/mverstra/CODES/ONCVPSP/GITHUB_VERSION/oncvpsp/src
+# the executables: $ONCVPSP_BIN_DIR, or build/bin of the CMake build of
+# this tree
+BIN_DIR=${ONCVPSP_BIN_DIR:-$(cd "$(dirname "$0")/.." && pwd)/build/bin}
 
 INFILE=$1.dat
 

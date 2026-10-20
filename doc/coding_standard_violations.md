@@ -26,8 +26,7 @@ None.
   list-directed `lmax` and `calling psmlout` prints, which the reference
   outputs contain (see [Error messages](coding_standards.md#error-messages)).
 - `derivs` in `exc_libxc.f90`, an external routine that `functionals.F90`
-  calls too, so it can't become internal, and a file of its own would need
-  a change to every user's `make.inc` (`OBJS_LIBXC`).
+  calls too, so it can't become internal.
 - Derived types from the libraries and imported files: toml-f's in
   `input_toml_m`, and xmlf90's `xmlf_t` and `m_libxc_list`'s `libxc_t`
   in `psmlout_m` (see rule 3 under

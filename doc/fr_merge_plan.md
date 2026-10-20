@@ -14,7 +14,7 @@ istage)`, and `_r` is left only on the routines that exist for fr alone
 
 - **Output is unchanged.** Every step passes `ctest -j8` (the reference
   comparisons allow no numerical difference), `scripts/check_interfaces.sh`,
-  the legacy `make` check and the comparison of the split programs
+  the legacy `make` check (the make build has since been dropped) and the comparison of the split programs
   (`_ae.x` + `_ps.x`) with the single ones. The reference comparisons
   ignore text, so the outputs are also compared line for line with those
   of the code before the merge (53bd8ac), apart from the build line and

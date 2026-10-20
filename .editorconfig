@@ -37,10 +37,6 @@ indent_size = 2
 # two trailing spaces are a line break in Markdown
 trim_trailing_whitespace = false
 
-# make needs tabs
-[{Makefile,*.mk,make.inc*}]
-indent_style = tab
-
 # the license, kept verbatim
 [COPYING]
 insert_final_newline = unset

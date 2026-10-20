@@ -7,7 +7,9 @@
 
 NPROC=4
 
-PREFIX=/home/drh/oncvpsp-4.0.0
+# the executables: $ONCVPSP_BIN_DIR, or build/bin of the CMake build of
+# this tree
+BIN_DIR=${ONCVPSP_BIN_DIR:-$(cd "$(dirname "$0")/.." && pwd)/build/bin}
 
 nn=0
 
@@ -18,7 +20,7 @@ for ii do
 
 	OUTFILE=`echo $ii | sed -e s/.dat// `.out
 
-	$PREFIX/src/oncvpsp.x <$ii >$OUTFILE &
+	$BIN_DIR/oncvpsp.x <$ii >$OUTFILE &
 
 
        if [ $(($nn%$NPROC)) == 0 ]

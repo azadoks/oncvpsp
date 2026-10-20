@@ -202,7 +202,7 @@ irel, and the stage.  It has the following major sections:
 
 10) The routine gnuscript produces an input script for gnuplot, which is
     extracted and appropriately handled for plotting by the main shell
-    script tests/run.sh.
+    script scripts/run.sh.
 
 11) The routine linout creates a linear radial mesh, whose size and spacing
     are specified in the input data.  All relevant potentials and projectors
@@ -233,7 +233,7 @@ irel, and the stage.  It has the following major sections:
 The auxiliary program *oncvpspnr.x* runs oncvpsp_main with irel=0, which
 does non-relativistic all-electron calculations.  The only
 reason for including this feature is to support the discussion following
-Eq.(24) of the paper. The script *tests/run_nr.sh* calls it.
+Eq.(24) of the paper. The script *scripts/run_nr.sh* calls it.
 
 The subroutine *run_optimize* executes the math in Sec. II of the paper for
 each l, and has the following steps:

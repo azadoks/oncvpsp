@@ -69,12 +69,9 @@ the output in the last digits, so some reference tests fail with it.
 `CMakeUserPresets.json` (ignored by git) is the place for personal presets
 such as compiler paths or `Libxc_ROOT`.
 
-The legacy make build (`make.inc` from `make.inc.example`, then `make all`
-in the top directory) must keep working. Before pushing, check that it still
-builds, in a scratch copy of the tree so that `src/` is not littered with
-`.o` and `.mod` files. When adding or removing a source file, update both
-`src/CMakeLists.txt` and `src/Makefile` (`OBJS_ALL` and the module
-dependencies).
+CMake is the only build: the upstream make build (`make.inc`, `src/Makefile`
+and `tests/data/TEST.sh`) was dropped, as ctest covers its tests. A source
+file is added or removed in `src/CMakeLists.txt`.
 
 After changing any routine's argument list, run
 `scripts/check_interfaces.sh` (it needs a CMake build in `build/`), which

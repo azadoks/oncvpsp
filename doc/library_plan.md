@@ -20,8 +20,8 @@ modules.
 ### Rules
 
 - **Output is unchanged.** The rules of [Merging sr and fr](fr_merge_plan.md)
-  apply to every step: `ctest -j8`, `scripts/check_interfaces.sh`, the
-  legacy `make` check, line-for-line comparison of the outputs with those
+  apply to every step: `ctest -j8`, `scripts/check_interfaces.sh`,
+  line-for-line comparison of the outputs with those
   of the commit before the step, and one commit per step. The executables
   keep their command lines, messages and exit codes.
 - **No new `#if`.**
@@ -94,8 +94,7 @@ the library shares a process with other Fortran code.
       utilities (`aeo` family, `dpnint`, `vpinteg`, `der2exc`), the XC
       routines, the radial solvers (`lsch*`, `ldirac*`, `boundstate`), the
       pseudization and optimizer, the `run_*` drivers.
-- [ ] Each group updates `src/CMakeLists.txt` and the module dependencies in
-      `src/Makefile`.
+- [ ] Each group updates `src/CMakeLists.txt`.
 - [ ] Once all are done, `scripts/check_interfaces.sh` is no longer needed.
 
 ### Phase 5: the C interface
@@ -105,7 +104,7 @@ the library shares a process with other Fortran code.
       checked equal to `dp`), with character input as `c_char` arrays and
       every result in caller-allocated arrays.
 - [ ] A C header for it, and a shared library target (`liboncvpsp`) in
-      CMake. The legacy `make` build need not build it.
+      CMake.
 - [ ] A C test in `tests/` that runs one of the reference inputs through
       the interface and compares with the reference output.
 - [ ] Check that two runs in one process give the same results (the

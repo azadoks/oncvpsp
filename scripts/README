@@ -1,4 +1,6 @@
-The *.sh scripts are replicated in the tests directory.
+run.sh, run_nr.sh, run_r.sh and multirun*.sh find the executables in
+build/bin of the CMake build of this tree, or in $ONCVPSP_BIN_DIR.  The
+*_test.sh scripts are run by ctest (tests/CMakeLists.txt).
 
 The first line of fldiff.pl may have to be edited to specify the proper
 location of perl.

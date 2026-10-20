@@ -119,7 +119,7 @@ mismatches compile errors.
 - **(new) `oncvpsp_nr.F90:620`**: `run_phsft` is called without the `rxpsh`
   argument that was added in #34 (`run_phsft.f90:19`), so every later
   argument is shifted by one. CMake does not compile this file, but the legacy
-  `src/Makefile` does (`OBJS_NR`). See [section 2](#2-build-and-preprocessor).
+  `src/Makefile` (since removed) did (`OBJS_NR`). See [section 2](#2-build-and-preprocessor).
 
 Other shape inconsistencies are legal but fragile. `nproj` is `nproj(6)` in
 the callers (`oncvpsp.F90:56`) and `nproj(5)` in `psatom.f90:50`,
@@ -155,11 +155,8 @@ one intended.
   compiled. The fully-relativistic block probably meant `fpovlp_r.f90`, but
   `oncvpsp_r.F90:522` has the `fpovlp_r` call commented out in favour of
   `fpovlp`.
-- **Legacy `src/Makefile`.**
-  - It still builds `oncvpspnr.x` from `oncvpsp_nr.o`.
-  - It does not list `input_text_m.o` or `input_toml_m.o`, so it can no
-    longer link the current drivers.
-  - Either remove it or regenerate it from the CMake list.
+- **Legacy `src/Makefile`.** Removed with the rest of the make build; CMake
+  is the only build.
 - **Preprocessor use elsewhere.**
   - `WITH_TOML` (3 blocks each in `oncvpsp.F90`/`oncvpsp_r.F90`) is used
     cleanly.

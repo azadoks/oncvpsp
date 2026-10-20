@@ -85,7 +85,7 @@ After you've gotten through the above and have compiled the code
 following INSTALL, copy one of the `<prefix>.dat` files in tests/data to a
 directory of your own, run it using
 
-    ../tests/run.sh <prefix>
+    ../scripts/run.sh <prefix>
 
 The sample `<prefix>.dat` files in tests/data should provide a starting
 point to produce good psps for new elements. Reading the `<prefix>.out` files,
@@ -164,7 +164,6 @@ the examples. Then, pay attention to the plots.
    fully-non-local radial Schroedinger equation.  My present solution for
    this is to only start counting nodes for r>0.5 a_B (in the routine vkboutwf).
 
-8) The shell scripts run.sh run_nr.sh etc. assume everything has been left
-   in in place the directroy tree in which is was unpacked and built.
-   If you move the executables and scripts elsewhere, you can probbly
-   use set_path to fix things.
+8) The shell scripts run.sh run_nr.sh etc. find the executables in
+   build/bin of the CMake build of the tree they are in.  If you move the
+   executables elsewhere, set ONCVPSP_BIN_DIR to their directory.
