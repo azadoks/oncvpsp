@@ -19,7 +19,7 @@ cd "$work"
 
 "$exe" < "$dat" > dat.out
 "$exe" -t "$toml" > toml.out
-if ! "$python" "$scripts/compare_output.py" --identical --psml dat.out toml.out > toml.diff; then
+if ! "$python" "$scripts/compare_output.py" --identical dat.out toml.out > toml.diff; then
     cat toml.diff
     exit 1
 fi

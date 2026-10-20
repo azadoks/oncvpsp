@@ -4,9 +4,15 @@
 # on stdout, or, for a change within round-off, give the output of the
 # single program.
 #
+# The same output is one that compare_output.py --identical accepts (every
+# number to 1e-10, the text exactly, apart from the build line).
+#
 # usage: ae_file_error_test.sh FULL_EXE AE_EXE PS_EXE INPUT.dat CASE WORKDIR
+# The python, with pyoncvpsp and upf-tools, is $ONCVPSP_PYTHON, or python3.
 set -euo pipefail
 full=$1; ae=$2; ps=$3; dat=$4; case=$5; work=$6
+scripts=$(realpath "$(dirname "$0")")
+python=${ONCVPSP_PYTHON:-python3}
 mkdir -p "$work"
 cd "$work"
 
@@ -65,8 +71,11 @@ if [ "$expect" = same ]; then
         exit 1
     fi
     "$full" < "$dat" > full.out
-    cmp <(grep -v '^build: ' full.out) <(grep -v '^build: ' ps.out)
-    echo "case $case: output identical to the single program"
+    if ! "$python" "$scripts/compare_output.py" --identical full.out ps.out > ps.diff; then
+        cat ps.diff
+        exit 1
+    fi
+    echo "case $case: the same output as the single program"
 else
     if [ $status -eq 0 ]; then
         echo "case $case: oncvpsp_ps.x did not stop" >&2

@@ -18,11 +18,25 @@
 #   amesh, rr1, rmax, read  a bad value or line: the program must stop with a
 #                 message naming it
 #
+# The same output is one that compare_output.py --identical accepts (every
+# number to 1e-10, the text exactly).
+#
 # usage: log_mesh_test.sh FULL_EXE AE_EXE PS_EXE INPUT.dat CASE WORKDIR [INPUT.toml]
+# The python, with pyoncvpsp and upf-tools, is $ONCVPSP_PYTHON, or python3.
 set -euo pipefail
 full=$1; ae=$2; ps=$3; dat=$4; case=$5; work=$6; toml=${7:-}
+scripts=$(realpath "$(dirname "$0")")
+python=${ONCVPSP_PYTHON:-python3}
 mkdir -p "$work"
 cd "$work"
+
+# same A.out B.out: B is the same output as A
+same() {
+    if ! "$python" "$scripts/compare_output.py" --identical "$1" "$2" > "${2%.out}.diff"; then
+        cat "${2%.out}.diff"
+        exit 1
+    fi
+}
 
 # another mesh: finer, and further out, than the built-in one
 mesh='1.004 -1 50.0'
@@ -42,7 +56,7 @@ rerun_block() {
     awk -v start="$2" -v end="$3" '$0 ~ end {on=0} on; $0 ~ start {on=1}' "$1" > block.dat
     grep -q '^# LOG MESH$' block.dat
     "$full" < block.dat > block.out
-    cmp "$1" block.out
+    same "$1" block.out
 }
 
 # expect_stop OUT MESSAGE: the output ends with MESSAGE, and has no results
@@ -60,16 +74,22 @@ case $case in
     defaults)
         with_mesh '0 -1 0' < "$dat" > in.dat
         "$full" < in.dat > mesh.out
-        cmp base.out mesh.out ;;
+        same base.out mesh.out ;;
     explicit)
         with_mesh '1.006 -1 45' < "$dat" > in.dat
         "$full" < in.dat > mesh.out
         grep -q '^# LOG MESH$' mesh.out
-        cmp base.out <(drop_echo < mesh.out) ;;
+        drop_echo < mesh.out > mesh_no_echo.out
+        same base.out mesh_no_echo.out ;;
     rerun)
         with_mesh "$mesh" < "$dat" > in.dat
         "$full" < in.dat > mesh.out
-        if cmp -s <(grep -v '^build: ' base.out) <(drop_echo < mesh.out | grep -v '^build: '); then
+        drop_echo < mesh.out > mesh_no_echo.out
+        status=0
+        "$python" "$scripts/compare_output.py" --identical base.out mesh_no_echo.out \
+            > mesh_no_echo.diff || status=$?
+        if [ $status -ne 1 ]; then
+            cat mesh_no_echo.diff
             echo "the mesh input did not change the output"; exit 1
         fi
         awk '/^# ATOM AND REFERENCE CONFIGURATION$/ {on=1}
@@ -77,7 +97,7 @@ case $case in
              on' mesh.out > echo.dat
         grep -q '^# LOG MESH$' echo.dat
         "$full" < echo.dat > echo.out
-        cmp mesh.out echo.out
+        same mesh.out echo.out
         if grep -q '^<INPUT>$' mesh.out; then
             rerun_block mesh.out '^<INPUT>$' '^</INPUT>$'
         fi ;;
@@ -90,7 +110,7 @@ case $case in
         "$ae" -a atom.ae < in.dat > ae.out
         "$full" < in.dat > mesh.out
         "$ps" -a atom.ae < in.dat > ps.out
-        cmp <(grep -v '^build: ' mesh.out) <(grep -v '^build: ' ps.out) ;;
+        same mesh.out ps.out ;;
     split_differ)
         with_mesh "$mesh" < "$dat" > in.dat
         "$ae" -a atom.ae < in.dat > ae.out
@@ -101,7 +121,7 @@ case $case in
         { cat "$toml"; printf '\n[log_mesh]\namesh = 1.004\nrmax = 50\n'; } > in.toml
         "$full" < in.dat > mesh.out
         "$full" -t in.toml > toml.out
-        cmp mesh.out toml.out ;;
+        same mesh.out toml.out ;;
     amesh)
         with_mesh '0.999 -1 -1' < "$dat" > in.dat
         "$full" < in.dat > mesh.out || true

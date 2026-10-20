@@ -7,8 +7,13 @@
 # usage: toml_error_test.sh EXE DATA_DIR CASE WORKDIR
 # DATA_DIR is tests/data; the inputs are DATA_DIR/toml/14_Si.toml and, for
 # icmod 6, DATA_DIR/toml/14_Si_bca.toml
+# The same output is one that compare_output.py --identical accepts (every
+# number to 1e-10, the text exactly); the python, with pyoncvpsp and
+# upf-tools, is $ONCVPSP_PYTHON, or python3.
 set -euo pipefail
 exe=$1; data=$2; case=$3; work=$4
+scripts=$(realpath "$(dirname "$0")")
+python=${ONCVPSP_PYTHON:-python3}
 mkdir -p "$work"
 cd "$work"
 
@@ -117,7 +122,10 @@ esac
 if [ "$expect" = same ]; then
     "$exe" -t "$base" > base.out
     "$exe" -t in.toml > in.out
-    cmp base.out in.out
+    if ! "$python" "$scripts/compare_output.py" --identical base.out in.out > in.diff; then
+        cat in.diff
+        exit 1
+    fi
     echo "$case: same output as $(basename "$base")"
 else
     status=0

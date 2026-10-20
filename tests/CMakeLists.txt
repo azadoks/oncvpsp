@@ -121,6 +121,7 @@ foreach (split_test IN ITEMS "sr:14_Si" "sr:19_K_st" "sr:29_Cu" "sr:57_La" "nr:1
     oncvpsp_test(split_${rel}_${test_name} split split_test.sh
         $<TARGET_FILE:oncvpsp${rel}> $<TARGET_FILE:oncvpsp${rel}_ae> $<TARGET_FILE:oncvpsp${rel}_ps>
         "${data}/${test_name}.dat" "${CMAKE_CURRENT_BINARY_DIR}/split_${rel}_${test_name}")
+    oncvpsp_compares(split_${rel}_${test_name})
 endforeach ()
 
 # Damaged or mismatched all-electron data files: oncvpsp_ps.x must stop with a message naming the
@@ -130,6 +131,9 @@ foreach (case IN ITEMS "byte_order" "zz" "fa" "mesh" "c_light" "zz_roundoff" "fa
     oncvpsp_test(ae_file_${case} split ae_file_error_test.sh
         $<TARGET_FILE:oncvpspsr> $<TARGET_FILE:oncvpspsr_ae> $<TARGET_FILE:oncvpspsr_ps>
         "${data}/14_Si.dat" ${case} "${CMAKE_CURRENT_BINARY_DIR}/ae_file_${case}")
+    if (case MATCHES "_roundoff$")
+        oncvpsp_compares(ae_file_${case})
+    endif ()
 endforeach ()
 
 # All-electron SCF convergence on a mesh starting at 1e-8 bohr: see scripts/ae_scf_test.sh
@@ -188,6 +192,9 @@ foreach (mesh_test IN ITEMS "sr:14_Si" "nr:29_Cu" "r:52_Te")
             $<TARGET_FILE:oncvpsp${rel}> $<TARGET_FILE:oncvpsp${rel}_ae> $<TARGET_FILE:oncvpsp${rel}_ps>
             "${data}/${test_name}.dat" ${case} "${CMAKE_CURRENT_BINARY_DIR}/log_mesh_${rel}_${test_name}_${case}"
             "${data}/toml/${test_name}.toml")
+        if (case MATCHES "^(defaults|explicit|rerun|upf|split|toml)$")
+            oncvpsp_compares(log_mesh_${rel}_${test_name}_${case})
+        endif ()
     endforeach ()
 endforeach ()
 
@@ -209,6 +216,9 @@ foreach (mesh_test IN ITEMS "sr:14_Si_UPF" "r:52_Te")
             $<TARGET_FILE:oncvpsp${rel}> "${data}/${test_name}.dat" ${case}
             "${CMAKE_CURRENT_BINARY_DIR}/upf_mesh_${rel}_${test_name}_${case}"
             "${data}/toml/${test_name}.toml")
+        if (case MATCHES "^(defaults|log|stride|toml)$")
+            oncvpsp_compares(upf_mesh_${rel}_${test_name}_${case})
+        endif ()
     endforeach ()
 endforeach ()
 
@@ -240,6 +250,9 @@ if (ONCVPSP_WITH_TOML)
             "icmod6_default_slack")
         oncvpsp_test(toml_input_${case} toml toml_error_test.sh
             $<TARGET_FILE:oncvpspsr> "${data}" ${case} "${CMAKE_CURRENT_BINARY_DIR}/toml_input_${case}")
+        if (case MATCHES "^(integer_for_real|extra_keys|icmod6_default_rcfact|icmod6_default_slack)$")
+            oncvpsp_compares(toml_input_${case})
+        endif ()
     endforeach ()
 endif ()
 
@@ -285,6 +298,7 @@ foreach (echo_test IN ITEMS
     oncvpsp_test(echo_${format}_${rel}_${test_name} echo echo_rerun_test.sh
         $<TARGET_FILE:oncvpsp${rel}> "${data}/${input}.dat" ${format}
         "${CMAKE_CURRENT_BINARY_DIR}/echo_${format}_${rel}_${test_name}" "${edit}")
+    oncvpsp_compares(echo_${format}_${rel}_${test_name})
 endforeach ()
 
 # icmod=6 with fcfact<=0 (the cutoff taken from the pseudo-waves): the psp8 file must still carry the
@@ -295,6 +309,8 @@ oncvpsp_test(psp8_core_sr_14_Si psp8 psp8_core_test.sh
 oncvpsp_test(psp8_core_r_74_W psp8 psp8_core_test.sh
     $<TARGET_FILE:oncvpspr> "${data}/74_W.dat" "s/^    4  0\\.0$/    6  0.0  1.0d-3/"
     "${CMAKE_CURRENT_BINARY_DIR}/psp8_core_r_74_W")
+oncvpsp_compares(psp8_core_sr_14_Si)
+oncvpsp_compares(psp8_core_r_74_W)
 
 # Text input from a pipe (as from a Python subprocess), which cannot be backspaced: the same output
 # as from a file, and an input ending early reported with the line the reader stopped at
@@ -304,6 +320,7 @@ foreach (pipe_test IN ITEMS "sr:14_Si" "r:52_Te" "nr:08_O")
     list(GET pipe_test 1 test_name)
     oncvpsp_test(pipe_${rel}_${test_name} pipe pipe_test.sh
         $<TARGET_FILE:oncvpsp${rel}> "${data}/${test_name}.dat" "${CMAKE_CURRENT_BINARY_DIR}/pipe_${rel}_${test_name}")
+    oncvpsp_compares(pipe_${rel}_${test_name})
 endforeach ()
 oncvpsp_test(pipe_truncated pipe pipe_truncated_test.sh $<TARGET_FILE:oncvpspsr> "${data}/14_Si.dat")
 
