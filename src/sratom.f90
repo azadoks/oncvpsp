@@ -81,7 +81,8 @@
 
 ! depth of the history of the Anderson mixing
  integer, parameter :: ndep=8
-! convergence threshold for the residual of the screening potential (Ha)
+! convergence threshold for the residual of the screening potential and
+! for the change of each eigenvalue (Ha)
  real(dp), parameter ::  tolres=1.0d-8
 
  allocate(uu(mmax),up(mmax))
@@ -150,8 +151,8 @@
        error stop 1
      end if
 
-! overall convergence criterion based on eps within lschfb
-     if(ea(ii)/= et) convg=.false.
+! each eigenvalue settled to tolres (see the convergence test below)
+     if(abs(ea(ii)-et)>tolres) convg=.false.
      ea(ii)=et
 
 ! accumulate charge and eigenvalues
@@ -183,9 +184,12 @@
 &            rr,mmax,iexc)
    call ae_energies(rho,vsi,vxc,zz,eeig,eeel,eexc,rr,mmax,etot,eterm)
 
-! converged when no eigenvalue has moved and the screening potential is
-! self-consistent; the eigenvalues alone can stand still from a start far
-! from self-consistency
+! converged when no eigenvalue has moved by more than tolres and the
+! screening potential is self-consistent; the eigenvalues alone can stand
+! still from a start far from self-consistency. Unchanged eigenvalues were
+! once asked for, which a near-neutral mode of the scalar-relativistic GGA
+! potential at the nucleus can deny for ever (1e-9 Ha jitter with E_tot
+! converged to 1e-14 Ha, H at rr1 1e-5)
    call ae_residual(rho,vsi,vso,sf,rr,mmax,res)
    if(it<2 .or. res>tolres) convg=.false.
    if(convg) exit
