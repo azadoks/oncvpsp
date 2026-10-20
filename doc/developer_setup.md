@@ -90,18 +90,76 @@ checks every call against the definition of the routine it calls.
 `errors`, `echo`, `psp8`, `nist`) and `-R <regex>` a test by name. Each test
 leaves its outputs in its own directory under `build/tests`.
 
-The reference outputs are in `tests/refs`, compared with `fldiff.pl` to a
-relative or absolute 1e-5 in every number, so changes that move the numbers
-further need new references. The projectors and their energies are left out
-of that comparison: they are not unique (any change of basis among the
-projectors of one l, or l and j, that keeps sum_ij |beta_i> D_ij <beta_j|
-leaves the pseudopotential the same), so they are never compared directly.
-Instead `scripts/kernel_diff.py` compares the nonlocal kernels of the psp8 and
-UPF files in the outputs, which must agree to 5e-5 (in the Frobenius norm,
-relative to the kernel, and for a spin-orbit kernel to the scalar-relativistic
-kernel of its l). Before updating the references, check what changed:
+### The Python of the comparisons
 
-- `scripts/kernel_diff.py OLD.out NEW.out` compares the pseudopotentials by
+The tests that compare outputs (`scripts/compare_output.py`, below) need a
+Python with [pyoncvpsp](https://github.com/azadoks/pyoncvpsp), which parses
+the outputs and the psp8 and PSML files in them, and
+[upf-tools](https://pypi.org/project/upf-tools/), which parses the UPF
+files. The configuration finds it through three cache variables:
+
+- `ONCVPSP_TEST_PYTHON`: a Python that has both, e.g. that of a pyoncvpsp
+  checkout (`uv sync` there, then
+  `-DONCVPSP_TEST_PYTHON=/path/to/pyoncvpsp/.venv/bin/python`, after adding
+  upf-tools to it with `uv pip install upf-tools`).
+- Otherwise the configuration makes a virtual environment in the build tree,
+  `build/test-venv`, with `uv` if it is on `PATH` (else with `python3 -m
+  venv` and pip), and installs `ONCVPSP_PYONCVPSP` and `ONCVPSP_UPF_TOOLS`
+  into it. `ONCVPSP_PYONCVPSP` is a pip requirement, by default the
+  `oncvpsp-tests` branch of azadoks/pyoncvpsp, or a source directory, which
+  is installed editable, so that changes to it need no reconfiguration:
+
+  ```bash
+  cmake --preset default -DONCVPSP_PYONCVPSP=$HOME/src/pyoncvpsp
+  ```
+
+  `ONCVPSP_UPF_TOOLS` is a pip requirement, `upf-tools==0.2.0` by default.
+  The environment is made again when either changes; remove
+  `build/test-venv` to update a pyoncvpsp taken from a repository.
+
+The summary at the end of the configuration names the Python (`Test
+Python:`). Without one that imports both, CMake warns and the tests that
+compare outputs are disabled (ctest lists them as `Not Run (Disabled)`);
+the others still run.
+
+### Comparing outputs
+
+`scripts/compare_output.py A.out B.out` parses two outputs and compares them
+quantity by quantity, so that the comparison does not depend on how the
+lines line up: the energies, eigenvalues, test configurations, model core,
+log derivatives, diagnostics, plot data, input echoes and the psp8, UPF
+(and with `--psml` PSML) files. It prints the largest differences for each
+quantity and each one beyond its tolerance. A number passes if it agrees
+within a relative or absolute 1e-5 (relative to |a| + |b|, the test of
+`fldiff.pl -easy`, which the tests used before) and within the rule for its
+quantity in `TOLERANCES`, which tightens it where 1e-5 says little (the
+total energies to 3e-3 Ha, d2Exc to 3e-7 Ha, the input echoes to 1e-12);
+integers are compared as numbers too, and text, with its numbers masked,
+must be the same. With `--identical`, for outputs that
+must be the same (the TOML and text inputs, the split and the single
+program, a pipe and a file, the input echoes run again), the numbers must
+agree to 1e-10, and the lines must be the same too, which covers what
+pyoncvpsp does not parse.
+
+The projectors and their energies are never compared: they are not unique
+(any change of basis among the projectors of one l, or l and j, that keeps
+sum_ij |beta_i> D_ij <beta_j| leaves the pseudopotential the same). The
+nonlocal kernel of each block of the psp8, UPF and PSML files is compared
+instead, which must agree to 5e-5 (1e-10 with `--identical`) in the
+Frobenius norm, relative to the kernel, and for a spin-orbit kernel to the
+scalar-relativistic kernel of its l; the local potential is compared point
+by point, to the base test.
+
+### References
+
+The reference outputs are in `tests/refs`, compared with
+`compare_output.py`; changes that move the numbers beyond the tolerances
+need new references. Before updating them, check what changed:
+
+- `scripts/compare_output.py tests/refs/NAME.out build/tests/NAME/NAME.out`
+  (the reference tests leave this report in `build/tests/NAME/NAME.diff`).
+- `scripts/kernel_diff.py OLD NEW`, which needs only the standard library,
+  compares the pseudopotentials of two outputs, or psp8 or UPF files, by
   what a calculation uses, the nonlocal kernel of each block and the local
   potential.
 - The `nist` tests (`scripts/nist_test.py`) compare the all-electron atom
@@ -115,8 +173,10 @@ kernel of its l). Before updating the references, check what changed:
   `--jobs`.
 
 `scripts/ref_patch.py NEW.out tests/refs/NAME.out` then updates a reference
-minimally: it keeps every line that fldiff accepts and takes the new one
-only where a number moves beyond the tolerance or the text changes.
+minimally: it keeps every line within the base test (1e-5) and takes the new
+one only where a number moves beyond it or the text changes. Run the
+reference test afterwards, as a quantity with a tighter rule can still
+differ.
 
 ## Editors
 

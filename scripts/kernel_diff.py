@@ -20,14 +20,11 @@ outputs contain (between "Begin PSPCODE8" and "END_PSP", and "<UPF" and
 "</UPF>"); the files themselves can be given too.  With --tol, the exit status
 is 1 if any difference exceeds it, or the blocks do not match.
 
-With --mask, prints the file with the lines that hold projectors or their
-energies (the projector coefficients and the projector plots of the output, the
-projector blocks of the psp8 file and PP_BETA and PP_DIJ of the UPF file)
-starting with "-", which fldiff.pl skips: scripts/ref_test.sh compares the rest
-with fldiff and the kernels with this.
+It needs only the standard library, and reads bare psp8 and UPF files too;
+scripts/compare_output.py, which the tests use, compares the kernels in the
+same way along with everything else in two outputs.
 
 usage: kernel_diff.py A B [--tol TOL]
-       kernel_diff.py --mask FILE
 """
 
 import argparse
@@ -228,42 +225,11 @@ def compare(a, b, tol):
     return ok
 
 
-PROJECTOR_LINES = ("Orthonormal projector coefficients",)
-PROJECTOR_HEADERS = (
-    "Orthonormal scalar projector coefficients",
-    "Orthonormal spin-orbit projector coefficients",
-)
-
-
-def mask(path):
-    lines = open(path).read().split("\n")
-    masked = set()
-    for k, line in enumerate(lines):
-        if any(text in line for text in PROJECTOR_LINES) or line.startswith("!J"):
-            masked.add(k)
-        elif any(text in line for text in PROJECTOR_HEADERS):
-            masked.update((k, k + 1))
-    for name, matrix, _, first, last in psp8_blocks(lines) + upf_blocks(lines):
-        if matrix is not None or name == "UPF D_ij":
-            masked.update(range(first, last + 1))
-    sys.stdout.write(
-        "\n".join("-" + x if k in masked else x for k, x in enumerate(lines))
-    )
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n", 1)[0])
     parser.add_argument("files", nargs="+")
     parser.add_argument("--tol", type=float, help="fail above this difference")
-    parser.add_argument(
-        "--mask", action="store_true", help="print FILE with the projector lines masked"
-    )
     args = parser.parse_args()
-    if args.mask:
-        if len(args.files) != 1:
-            parser.error("--mask takes one file")
-        mask(args.files[0])
-        return
     if len(args.files) != 2:
         parser.error("give two files to compare")
     if not compare(*args.files, args.tol):

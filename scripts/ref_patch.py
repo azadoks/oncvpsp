@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 """Updates a reference output minimally to a new output.
 
-The reference tests compare with fldiff, which allows a relative (or absolute)
-difference of 1e-5 in every number, apart from the projectors and their
-energies, which they compare by the nonlocal kernels instead
-(scripts/kernel_diff.py).  Regenerating a reference from a new output
-would move every number that changed in its last digits; this keeps the
-reference line wherever fldiff would accept it, and takes the new line only
-where a number moves beyond the tolerance or the text differs.  Lines are
-aligned by their shape (the text with the numbers masked), so runs of lines
-that appear or disappear come from the new output.  The header above the input
-echo (citation and build lines) is the reference's.  Prints how many lines
-changed.
+The reference tests compare with scripts/compare_output.py, which allows a
+relative (or absolute) difference of 1e-5 in every number (the base test, that
+of fldiff.pl -easy, which they used before), tighter for some quantities, and
+compares the projectors and their energies by the nonlocal kernels instead.
+Regenerating a reference from a new output would move every number that
+changed in its last digits; this keeps the reference line wherever the base
+test accepts it, and takes the new line only where a number moves beyond it or
+the text differs.  Lines are aligned by their shape (the text with the numbers
+masked), so runs of lines that appear or disappear come from the new output.
+The header above the input echo (citation and build lines) is the reference's.
+Prints how many lines changed.
 
-Look at what changed before patching: for the pseudopotential itself,
-scripts/kernel_diff.py compares the nonlocal kernel and the local
-potential, which a change of the projectors alone leaves the same.
+Look at what changed before patching (compare_output.py REF.out NEW.out), and
+run the reference test after: a quantity with a tighter tolerance (the total
+energies, d2Exc) can still differ.
 
 usage: ref_patch.py NEW.out REF.out [-o OUT]   (OUT defaults to REF.out)
 """
@@ -38,7 +38,7 @@ def shape(line):
 
 
 def close(a, b):
-    """Whether fldiff accepts line b for reference line a."""
+    """Whether the base test accepts line b for reference line a."""
     if a == b or "pspd" in a or "date" in a:
         return True
     na, nb = NUMBER.findall(a), NUMBER.findall(b)

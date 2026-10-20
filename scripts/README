@@ -2,12 +2,12 @@ run.sh, run_nr.sh, run_r.sh and multirun*.sh find the executables in
 build/bin of the CMake build of this tree, or in $ONCVPSP_BIN_DIR.  The
 *_test.sh scripts and nist_test.py are run by ctest (tests/CMakeLists.txt).
 
-kernel_diff.py compares pseudopotentials by their nonlocal kernels (ref_test.sh
-uses it); it and ref_patch.py are for changes of the reference outputs
-(doc/developer_setup.md, Tests).
-
-The first line of fldiff.pl may have to be edited to specify the proper
-location of perl.
+compare_output.py compares two outputs quantity by quantity, parsed with
+pyoncvpsp and upf-tools (ref_test.sh and the tests of outputs that must be
+the same use it; doc/developer_setup.md, Tests). kernel_diff.py compares
+pseudopotentials by their nonlocal kernels and local potentials, with the
+standard library only; it and ref_patch.py are for changes of the reference
+outputs.
 
 reindent.py re-indents the Fortran sources in the layout of
 doc/coding_standards.md; pre-commit runs it, and with --stdin an editor
