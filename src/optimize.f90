@@ -22,7 +22,7 @@
  subroutine optimize(nnull,nbas,pswf0_sb,pswf0_or,nqout,qout,&
 &                    eresid0,eresiddot,eresidmat,&
 &                    pswfnull_sb,pswfnull_or,uunorm,ps0norm,eresidmin,&
-&                    pswfopt_sb,pswfopt_or,ekin_anal,eresq)
+&                    pswfopt_sb,pswfopt_or,ekin_anal,eresq,pswfopt_null)
 
 !! @param nnull  number of unconstrained basis vectors for residual minimization
 !! @param nbas  number of sbf basis functions
@@ -48,6 +48,9 @@
 !! @param ekin_anal  total pswf kinetic energy calculated analytically from
 !!                   E_resid
 !! @param eresq(nqout)  E_resid for optimized pswf as a function of cutoff
+!! @param pswfopt_null  null-space coefficients of the optimized pswf,
+!!                      pswfopt_sb = pswf0_sb
+!!                                   + sum_i pswfopt_null(i)*pswfnull_sb(:,i)
 
  use constants_m, only: dp
  implicit none
@@ -65,6 +68,7 @@
  real(dp), intent(out) :: eresq(nqout)
  real(dp), intent(out) :: eresidmin,ekin_anal
  real(dp), intent(out) :: pswfopt_sb(nbas),pswfopt_or(nbas)
+ real(dp), intent(out) :: pswfopt_null(nnull)
 
 !Local variables
  real(dp) :: orbasis_it(nbas,nbas)
@@ -262,6 +266,7 @@
    pswfopt_or(:)=pswfopt_or(:)+pswfopt_nu(ii)*pswfnull_or(:,ii)
  end do
 
+ pswfopt_null(:)=pswfopt_nu(:)
  deallocate(pswfopt,pswfopt_nu)
  return
  end subroutine optimize

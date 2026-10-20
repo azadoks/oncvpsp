@@ -979,11 +979,13 @@
 !! the cutoff ecut (Ha) of the pseudo-waves at the error errmax (Ha per
 !! electron): the largest over the pseudo-waves of the cutoff at which the
 !! energy error per electron of each falls to errmax, the "Energy error per
-!! electron / Cutoff" tables of run_optimize (the same interpolation, log E
-!! linear in q with the nominal spacing dqout, from the last crossing).
-!! ecurve(:,:,i) holds the cutoffs and errors of pseudo-wave i, zero beyond
-!! its end (all zero for no pseudo-wave); a pseudo-wave whose table does not
-!! reach errmax does not count, as it has no line in its table
+!! electron / Cutoff" tables of run_optimize (the same root-finding on the
+!! interpolant of log E over the curve's points, ug_cross_down, from the
+!! last crossing).
+!! ecurve(:,:,i) holds the cutoffs and errors of pseudo-wave i on a uniform
+!! grid in q from 0, zero beyond its end (all zero for no pseudo-wave); a
+!! pseudo-wave whose table does not reach errmax does not count, as it has
+!! no line in its table
 !!
 !! @param ecurve  residual kinetic energy curves: ecurve(1,:,i) cutoffs (Ha),
 !!                ecurve(2,:,i) error per electron (Ha) of pseudo-wave i
@@ -992,7 +994,8 @@
 !! @param errmax  error per electron (Ha) that defines the cutoff
 !! @param ecut  cutoff (Ha) of the pseudo-waves at errmax
 
- use constants_m, only: dp, dqout
+ use constants_m, only: dp
+ use ugrid_m, only: ug_cross_down
  implicit none
 
 !Input variables
@@ -1003,26 +1006,27 @@
  real(dp), intent(out) :: ecut
 
 !Local variables
- real(dp) :: lerr,q1,l0,l1,qerr,ecut1
- integer :: ip,kk
- logical :: found
+ real(dp) :: qerr,ecut1,dq
+ integer :: ip,kk,nk
+ logical :: found,found1
 
- lerr=log(errmax)
  ecut=0.0d0
  found=.false.
  do ip=1,nprof
    ecut1=-1.0d0
+! the curve's points, q=(k-1)*dq from q=0, up to its end
+   nk=ncurve
    do kk=2,ncurve
-     if(ecurve(1,kk,ip)<=0.0d0) exit
-     if(ecurve(2,kk-1,ip)<=0.0d0 .or. ecurve(2,kk,ip)<=0.0d0) cycle
-     l0=log(ecurve(2,kk-1,ip))
-     l1=log(ecurve(2,kk,ip))
-     if(l0>lerr .and. l1<=lerr) then
-       q1=sqrt(2.0d0*ecurve(1,kk,ip))
-       qerr=q1-dqout*(lerr-l1)/(l0-l1)
-       ecut1=0.5d0*qerr**2
+     if(ecurve(1,kk,ip)<=0.0d0) then
+       nk=kk-1
+       exit
      end if
    end do
+   if(nk>=2) then
+     dq=sqrt(2.0d0*ecurve(1,2,ip))
+     call ug_cross_down(ecurve(2,1:nk,ip),nk,dq,0.0d0,errmax,qerr,found1)
+     if(found1) ecut1=0.5d0*qerr**2
+   end if
    if(ecut1>=0.0d0) then
      found=.true.
      ecut=max(ecut,ecut1)

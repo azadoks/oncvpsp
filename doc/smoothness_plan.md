@@ -389,10 +389,10 @@ numbers refer to [Phases](#phases).
 
 | id | where | cat | W | decision |
 |---|---|---|---|---|
-| Q-1 | `eresid` 268–274: qcut → nearest node of a q-grid with dq = 2π/(150 rc) | a | W | E_r at exactly qcut |
-| Q-2 | `eresid`: nq = qmax/dq + 1, top 3 intervals dropped; irclin, mmaxlin integer, tail cut at \|u\| < 1e-10 | i, c, g | W | fixed-count quadrature on [qcut, qmax]; inside piece by Lommel at each q; outside piece on a fixed grid to a fixed radius |
-| Q-3 | `run_optimize` 158–164: qmax = dq·int(2·qroot(nbas)/dq), max with 20, branch on qcut | i, g | W | qmax continuous (smooth max), or a fixed multiple plus an analytic tail |
-| Q-4 | `run_optimize` cvgplt/ecurve: linear interpolation assuming spacing dqout while eresid moved the q's | e, h | W (icmod 6/7) | E_r at exact q; crossings by root-finding on E_r(q), whose q-derivative is known |
+| Q-1 | `eresid` 268–274: qcut → nearest node of a q-grid with dq = 2π/(150 rc) | a | W | done in phase 3: E_r at exactly qcut, the value at the next node of the q grid plus the partial cell by 8-point Gauss-Legendre with the transforms at its nodes |
+| Q-2 | `eresid`: nq = qmax/dq + 1, top 3 intervals dropped; irclin, mmaxlin integer, tail cut at \|u\| < 1e-10 | i, c, g | W | done in phase 3: the inside piece by `sbf_overlap` at each q (exact); the outside piece on a linear mesh from rc of spacing 2π/(75 qmax), continuous in rc and qmax, to the last nonzero point of u (the node count changes where u is at machine precision; a spacing set by the end point moved every node, and the 1e-12 interpolation error of u onto them jumped together), u by `lm_interp`, integrated by the 8th-order rule (`ugrid_m`); the q grid of continuous spacing qmax/(nq−1) with 150 points per 2π/rc, accumulated from qmax by the 8th-order cumulative rule (Kahan), from the small values up |
+| Q-3 | `run_optimize` 158–164: qmax = dq·int(2·qroot(nbas)/dq), max with 20, branch on qcut | i, g | W | done in phase 3: qmax = smax(smax(2 qroot(nbas), 20), 2 qcut), smax the C-infinity maximum (a+b+√((a−b)²+1))/2, within 0.5 bohr⁻¹ of the larger. The truncation at qmax stays, as a smooth bias. Considered and not taken: Parseval, E_r = T − (1/π)∫₀^q q'⁴F² (PseudoPotentialGenerators.jl `plane_wave.jl`), which needs no qmax and F below q only, but leaves E_r as the difference of two O(1 Ha) numbers, a round-off floor of ε·T/E_r ≈ 1e-11 at E_r = 1e-5 Ha (PPG's test notes a 1e-9 Ha floor); the direct sum from qmax down has the floor of E_r itself. An analytic tail beyond qmax (the transform's asymptotic form from the C^(ncon−1) matching) would remove the bias; phase 7 if wanted |
+| Q-4 | `run_optimize` cvgplt/ecurve: linear interpolation assuming spacing dqout while eresid moved the q's | e, h | W (icmod 6/7) | done in phase 3: the curve of the optimized wave on the q grid (its coefficients returned by `optimize`), the crossings by Brent on the FH interpolant of ln E in the grid's index (`ug_cross_down`), in `run_optimize` and in `modcore_budget_table` (which takes every nstep-th node of the grid as its table). `dqout` is no longer used |
 | Q-5 | `qroots`: scan dq = 0.02, pole filter \|f·f_last\| < 1, bisection to \|f\| < 1e-12 | h, f | W | done in phase 2: the bisection's root Newton-polished on g(q) to round-off; the scan and pole filter stay (D-3) |
 | Q-6 | `optimize`: bisection to a 1e-10 bracket | f | W | done in phase 2: Newton polish of the norm constraint after the bisection |
 | Q-7 | `optimize`: hard-case sign of x₁ | h | W | intrinsic (two global minima); keep, warn |
@@ -654,13 +654,23 @@ later phases can see 1e-10.
       The AE totals move by ≤4e-10 Ha, the terms by ≤3.1e-7 (73_Ta_r),
       the eigenvalues by ≤1e-7, the kernels by ≤5.4e-8
 - [ ] R-5 overlaps; R-6 pieces
-- [ ] Q-1…Q-4 residual kinetic energy at exact qcut, fixed quadratures
+- [x] Q-1…Q-4 residual kinetic energy at exact qcut, fixed quadratures
+      (`ugrid_m`, unit test `ugrid`, `eresid` rewritten). T2 `qcut0` at G1
+      passes (kernel 1e-11), `debl0` at G2 passes (5.8e-12). References
+      regenerated: the kernels move by up to 1.2e-2 (19_K_st), typically
+      2e-3, V_loc by up to 2e-2 (74_W_r, lloc 4 variants), which is the
+      exact qcut: on the T3 inputs (qcut already at the old rounding) the
+      kernels move by ≤4e-6, 60_Nd_GHOST 2e-5, 07_N 7e-5, 08_O 2e-5
+      (qmax by the smooth maximum where 2 qroot ≈ 20, and the exact
+      inside transforms). Runtime is unchanged (14_Si_r 2.7 → 2.5 s, 74_W_r
+      9.5 → 9.1 s, after `fh_value` evaluates each window once). `ep[2]`
+      stays at 5.0e-10, unchanged by this, so it is not in E_resid
 - [ ] R-7 vploc at continuous rc(5); R-8…R-10 run_vkb, vpinteg,
       vkboutwf on a shared piecewise rule; R-11 vrel; S-1
 - [ ] R-12 wellstate onset, overrides removed (D-1); R-3, R-13 ionic
       window
 - [ ] Q-8, Q-10
-- [ ] T2 rows rc, rcloc, qcut at G1; T3, T4 recorded
+- [ ] T2 rows rc, rcloc at G1 (qcut done); T3, T4 recorded
 - [ ] References patched
 
 #### Phase 4: output

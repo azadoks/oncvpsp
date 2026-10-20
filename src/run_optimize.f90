@@ -53,7 +53,8 @@
 !! @param ecurve  cutoff energy and energy error per electron on the E_resid(q)
 !!                mesh, zero beyond its end
 
- use constants_m, only: dp, dqout, nerrlv
+ use constants_m, only: dp, nerrlv, pi
+ use ugrid_m, only: ug_cross_down
  implicit none
 
 !Input variables
@@ -78,7 +79,7 @@
  real(dp) :: uord(5)
  real(dp) :: al,rc,ulgd,tt
  real(dp) :: sn,ps0norm,amesh,ro
- real(dp) :: err,lerr,qerr,ehaerr,eeverr
+ real(dp) :: err,qerr,ehaerr,eeverr,dq
  real(dp) :: sbf(mmax)
  real(dp) :: cons(10)
  real(dp), allocatable :: orbasis(:,:)
@@ -88,25 +89,18 @@
  integer :: ii,iprj,jj,l1,lmax,nbas,ncon,nconmx
  logical :: found_root
 
- integer :: nnull,nqout
+ integer :: nnull,nqout,nq,iq,kk,nstep
 
  real(dp), allocatable :: qroot(:),sbasis(:)
  real(dp), allocatable :: eresid0(:),eresiddot(:,:)
  real(dp), allocatable :: eresidmat(:,:,:),pswfresid_sb(:,:)
- real(dp), allocatable :: qout(:),eresq(:),leresq(:)
+ real(dp), allocatable :: qout(:),eresq(:),eresg(:)
+ real(dp), allocatable :: e0(:),edot(:,:),emat(:,:,:),pswfopt_nu(:)
 
  real(dp), allocatable :: pswfopt_sb(:),pswfopt_or(:)
  real(dp) :: eresidmin
  real(dp) :: ekin_anal,ekin_num,qmax
 
-!parameters whose default values here give well-converged results
-! increasing dq and/or dr will speed up the code at some cost
-! in optimization accuracy
- real(dp) :: dq,dr
- dq=0.02d0  !linear integration mesh spacing for above
- dr=0.02d0  !linear integration spacing for Fourier transforms
-!dqout (constants_m) is the linear mesh spacing for final E_resid(q)
-!interpolation; its increment is to avoid exact commnesurability with dq mesh
 
  al = 0.01d0 * log(rr(101) / rr(1))
  rc=rr(irc)
@@ -128,8 +122,9 @@
 
  qmax=200.0d0  !very large value should always allow nbas q's to be found
 
-!select wave vectors for spherical Bessel functions
- call qroots(ll,rc,ulgd,nbas,dq,qmax,qroot)
+!select wave vectors for spherical Bessel functions, scanned in steps of
+!0.02 (doc/smoothness_plan.md, Q-5, D-3)
+ call qroots(ll,rc,ulgd,nbas,0.02d0,qmax,qroot)
 
  qmsbf=qroot(nbas)
 
@@ -162,22 +157,24 @@
    call ode_rc_der(irel,ll,kap,eig(iprj),rr,vae,uua(1,iprj),upa(1,iprj), &
 &                  mmax,rc,uord)
 
-!q considered infinity for E_resid calculation
-   qmax=dq*int(2.0d0*qroot(nbas)/dq)
-   qmax=max(qmax,20.0d0)
-!keep qcut on the E_resid q mesh, which runs from qmax inward
-   if(qcut>qmax-4.0d0*dq) qmax=dq*int(2.0d0*qcut/dq)
+!q considered infinity for E_resid calculation: twice the largest basis
+!wave vector, at least 20 and at least twice qcut, by smooth maxima of
+!width 1 bohr^-1 (doc/smoothness_plan.md, Q-3); the q grid of E_resid has
+!150 points per 2 pi/rc, its spacing continuous in qmax and rc
+   qmax=smax(smax(2.0d0*qroot(nbas),20.0d0),2.0d0*qcut)
+   nq=1+nint(150.0d0*qmax*rc/(2.0d0*pi))
+   dq=qmax/dble(nq-1)
 
+!E_resid is wanted at the exact qcut and at q=0 (the kinetic energy)
+   nqout=2
 
-   nqout=2 + 0.75d0*qmax/dqout
-
-   allocate(qout(nqout),eresq(nqout),leresq(nqout),eresid0(nqout))
+   allocate(qout(nqout),eresq(nqout),eresid0(nqout))
    allocate(eresiddot(nnull,nqout),eresidmat(nnull,nnull,nqout))
+   allocate(e0(nq),edot(nq,nnull),emat(nq,nnull,nnull),eresg(nq))
+   allocate(pswfopt_nu(nnull))
 
    qout(1)=qcut
-   do ii=nqout,2,-1
-     qout(ii)=(ii-2)*dqout
-   end do
+   qout(2)=0.0d0
 
 !calculate orthogonal basis and constraint matrix
    call sbf_basis_con(ll,rr,mmax,irc,nbas,qroot,psopt,orbasis,orbasis_der, &
@@ -207,9 +204,11 @@
 
    write(6,'(/a,f10.6)') '    Fraction of norm inside rc',qq(iprj,iprj)
 
-   call eresid(ll,irc,nnull,nbas,mmax,rr,dr,dq,qmax,qroot, &
-&                    uua(1,iprj),pswf0_sb,pswfnull_sb, nqout,qout, &
-&                    eresid0,eresiddot,eresidmat)
+!E_resid on the q grid, and at the exact qcut and the points of the
+!convergence curve (Q-1, Q-4)
+   call eresid(ll,rc,nnull,nbas,mmax,nq,nqout,qout,rr,qmax,qroot, &
+&              uua(1,iprj),pswf0_sb,pswfnull_sb,e0,edot,emat, &
+&              eresid0,eresiddot,eresidmat)
 
    write(6,'(a,f7.2,a,f7.2,a)') '    Optimizing pswf for qcut=',qout(1), &
 &   ' a_B^-1,  ecut=',0.5d0*qout(1)**2,' Ha'
@@ -222,16 +221,30 @@
    call optimize(nnull,nbas,pswf0_sb,pswf0_or,nqout,qout,&
 &                eresid0,eresiddot,eresidmat,&
 &                pswfnull_sb,pswfnull_or,qq(iprj,iprj),ps0norm,eresidmin, &
-&                pswfopt_sb,pswfopt_or,ekin_anal,eresq)
+&                pswfopt_sb,pswfopt_or,ekin_anal,eresq,pswfopt_nu)
 
    write(6,'(a,1p,d10.2,a)') '    Residual kinetic energy error=', &
 &        eresidmin,' Ha'
 
-!the convergence curve on the uniform mesh qout(2:nqout)
+!the convergence curve of the optimized pseudo wave function on the q
+!grid, for the cutoffs at each error level (below) and the model core's
+!budget (modcore_budget_table, every nstep-th node so that it fits)
+   do iq=1,nq
+     eresg(iq)=e0(iq)
+     do jj=1,nnull
+       eresg(iq)=eresg(iq)+2.0d0*edot(iq,jj)*pswfopt_nu(jj)
+       do kk=1,nnull
+         eresg(iq)=eresg(iq)+pswfopt_nu(kk)*emat(iq,kk,jj)*pswfopt_nu(jj)
+       end do
+     end do
+   end do
+   nstep=1+(nq-2)/(ncurve-1)
    ecurve(:,:,iprj)=0.0d0
-   do ii=2,min(nqout,ncurve+1)
-     ecurve(1,ii-1,iprj)=0.5d0*qout(ii)**2
-     ecurve(2,ii-1,iprj)=eresq(ii)
+   do ii=1,ncurve
+     iq=1+(ii-1)*nstep
+     if(iq>nq) exit
+     ecurve(1,ii,iprj)=0.5d0*(dble(iq-1)*dq)**2
+     ecurve(2,ii,iprj)=eresg(iq)
    end do
 
 ! find the Vanderbilt projectors and optimized wave functions
@@ -261,20 +274,18 @@
 
    write(6,'(/a)') '    Energy error per electron        Cutoff'
    write(6,'(a)') '         Ha          eV             Ha'
-   leresq(:)=log(eresq(:))
+!the cutoffs at which the curve falls to each error level, by
+!root-finding on it
    err=0.01d0
    do jj=1,nerrlv
-     lerr=log(err)
-     do ii=3,nqout
-       if(leresq(ii-1)>lerr .and. leresq(ii)<=lerr) then
-         qerr=qout(ii)-dqout*(lerr-leresq(ii))/(leresq(ii-1)-leresq(ii))
-         cvgplt(1,jj,iprj)= 0.5d0*qerr**2
-         cvgplt(2,jj,iprj)= err
-         if(mod(jj,2)/=0) then
-           write(6,'(4x,2f12.5,f12.2)') err,err*Ha_eV,0.5d0*qerr**2
-         end if
+     call ug_cross_down(eresg,nq,dq,0.0d0,err,qerr,found_root)
+     if(found_root) then
+       cvgplt(1,jj,iprj)= 0.5d0*qerr**2
+       cvgplt(2,jj,iprj)= err
+       if(mod(jj,2)/=0) then
+         write(6,'(4x,2f12.5,f12.2)') err,err*Ha_eV,0.5d0*qerr**2
        end if
-     end do
+     end if
      err=sqrt(0.1d0)*err
    end do
 
@@ -287,11 +298,25 @@
    deallocate(pswfnull_sb)
    deallocate(pswfnull_or)
    deallocate(eresiddot,eresidmat)
-   deallocate(qout,eresq,leresq,eresid0)
+   deallocate(qout,eresq,eresid0)
+   deallocate(e0,edot,emat,eresg,pswfopt_nu)
 
  end do !iprj
 
  deallocate(work,qroot)
 
  return
+
+ contains
+
+ real(dp) function smax(aa,bb)
+
+!! a C-infinity maximum of two wave vectors, within 0.5 bohr^-1 of the
+!! larger: (a + b + sqrt((a-b)**2 + 1))/2
+
+ real(dp), intent(in) :: aa,bb
+
+ smax=0.5d0*(aa+bb+sqrt((aa-bb)**2+1.0d0))
+ end function smax
+
  end subroutine run_optimize

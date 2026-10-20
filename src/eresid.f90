@@ -18,289 +18,282 @@
 !
 ! calculates residual energy operator matrix elements as a function of q
 
- subroutine eresid(ll,irc,nnull,nbas,mmax,rr,drdum,dqdum,qmax,qroot, &
-&                  uu,pswf0_sb,pswfnull_sb, nqout,qout, &
+ subroutine eresid(ll,rc,nnull,nbas,mmax,nq,nqout,qout,rr,qmax,qroot, &
+&                  uu,pswf0_sb,pswfnull_sb,e0g,edotg,ematg, &
 &                  eresid0,eresiddot,eresidmat)
 
-!! @param ll  anglar momentum
-!! @param irc  log mesh index of rc
-!! @param nnull  number of unconstrained basis vectors for residual minimization
-!! @param nbas  number of sbf basis functions
-!! @param mmax  index of largest radius for non-zero value of wave function
-!! @param rr(mmax)  log radial mesh
-!! @param drdum,dqdum  (not used)
-!! @param qmax  largest wave vector for E_res integration
-!! @param qroot(nbas)  q values for sbfs in basis
-!! @param uu(mmax)  r*all-electron wave function
-!! @param pswf0_sb(nbas)  sbf basis  coefficients for constrained part of pseudo
-!!                        wave function
-!! @param pswfnull_sb(nbas,nnull)  sbf coefficients for unconstrained basis of
-!!                                 pseudo wave function
-!! @param nqout  number of wave vector lower cutoffs
-!! @param qout(nqout)  wave vector lower cutoffs for E_res for which output is
-!!                     wanted, rounded on output to nearest multiple of dq
-!! @param eresid0(nqout)  set of <pswf0| E_resid |pswf0> matrix elements
-!! @param eresiddot(nnull,nqout)  set of <pswfnull| E_resid |pswf0> matrix
-!!                                elements
-!! @param eresidmat(nnull,nnull,nqout)  set of <pswfnull| E_res |pswfnull'>
-!!                                      matrices
+!! residual kinetic energy matrix elements as functions of the lower
+!! cutoff q: E0(q) = (1/pi) int_q^{qmax} q'**4 |ps0(q')|**2 dq', and the
+!! same with the null-space functions in place of one or both ps0; on the
+!! uniform q grid q_i=(i-1) qmax/(nq-1), i=1..nq (e0g, edotg, ematg) and
+!! at the wave vectors qout (eresid0, eresiddot, eresidmat). The
+!! transform ps(q) = int_0^inf (r psi(r)) (r j_l(q r)) dr is the exact
+!! transform of the Bessel sum inside rc (sbf_overlap, Lommel's integrals)
+!! plus that of the all-electron function outside rc on a linear mesh
+!! from rc, of spacing 2 pi/(75 qmax) (75 points per period of qmax) to
+!! its last nonzero point: the nodes depend on rc and qmax only, so that
+!! the interpolation of uu onto them (lm_interp, 1e-12 of uu far out) is a
+!! smooth function of uu; integrated by the 8th-order rule of ugrid_m. The
+!! integrals over q accumulate from qmax by the same rule, from the small
+!! values up, so their round-off is that of their own size (Parseval,
+!! E_resid as the kinetic energy less the part below q, would leave the
+!! round-off of the kinetic energy, 1e-11 of an E_resid of 1e-5 Ha); at a
+!! q between the nodes, E is the value at the next node plus the integral
+!! over the partial cell by 8-point Gauss-Legendre, the transforms at its
+!! nodes evaluated directly. Everything is smooth in rc, qmax, qout and
+!! the functions (doc/smoothness_plan.md, Q-1 to Q-3)
+!!
+!! @param ll  angular momentum
+!! @param rc  core radius (bohr)
+!! @param nnull  number of null-space functions
+!! @param nbas  number of basis functions
+!! @param mmax  size of the log radial mesh
+!! @param nq  number of nodes of the q grid
+!! @param nqout  number of wave vectors at which E is wanted
+!! @param qout  those wave vectors, 0<=qout<qmax (bohr^-1)
+!! @param rr  log radial mesh
+!! @param qmax  largest q, taken as infinity (bohr^-1)
+!! @param qroot  wave vectors of the basis functions
+!! @param uu  all-electron wave function (*rr)
+!! @param pswf0_sb  basis coefficients of the constrained pseudo wave
+!! @param pswfnull_sb  basis coefficients of the null-space functions
+!! @param e0g  <ps0| E_resid |ps0> at each node of the grid
+!! @param edotg  <psnull| E_resid |ps0> at each node
+!! @param ematg  <psnull| E_resid |psnull'> at each node
+!! @param eresid0  <ps0| E_resid |ps0> at each qout
+!! @param eresiddot  <psnull| E_resid |ps0> at each qout
+!! @param eresidmat  <psnull| E_resid |psnull'> at each qout
 
  use constants_m, only: dp, pi
+ use logmesh_m, only: lm_interp, lm_ncell
+ use ugrid_m, only: ug_weights, ug_cumint_down
  implicit none
+ external :: sbf_overlap, sbf8
 
 !Input variables
- integer, intent(in) :: irc,ll,nnull,nbas,mmax,nqout
- real(dp), intent(in) :: rr(mmax),uu(mmax),pswf0_sb(nbas)
+ integer, intent(in) :: ll,nnull,nbas,mmax,nq,nqout
+ real(dp), intent(in) :: rc,qmax
+ real(dp), intent(in) :: rr(mmax),uu(mmax),pswf0_sb(nbas),qout(nqout)
  real(dp), intent(in) :: pswfnull_sb(nbas,nnull)
  real(dp), intent(in) :: qroot(nbas)
- real(dp), intent(in) :: drdum,dqdum,qmax
 
-!Input/output variables
- real(dp), intent(inout) :: qout(nqout)
- real(dp), intent(inout) :: eresid0(nqout),eresiddot(nnull,nqout)
- real(dp), intent(inout) :: eresidmat(nnull,nnull,nqout)
+!Output variables
+ real(dp), intent(out) :: e0g(nq),edotg(nq,nnull),ematg(nq,nnull,nnull)
+ real(dp), intent(out) :: eresid0(nqout),eresiddot(nnull,nqout)
+ real(dp), intent(out) :: eresidmat(nnull,nnull,nqout)
 
 !Local variables
- real(dp), allocatable :: rlin(:),uulin(:),sbf(:),ps0(:)
- real(dp), allocatable :: erdot(:),ereval(:),erevec(:,:)
- real(dp), allocatable :: psnull(:,:),tpsnull(:),psnullq(:)
- real(dp), allocatable :: dac0(:),dacdot(:,:),dacmat(:,:,:)
- real(dp), allocatable :: acdot(:),acmat(:,:)
- real(dp), allocatable :: work(:),wmat(:,:),wev(:),wvec(:)
+ real(dp), allocatable :: rlin(:),ulin(:),wr(:),sbf(:)
  real(dp), allocatable :: sqr(:),cqr(:),sdqr(:),cdqr(:)
- real(dp) :: sb_out(5)
- real(dp) :: ac0,rc,ps0q,tps0,xx,qq,qq4,sn,tn,td
- real(dp) :: dr,dq
-
- integer :: nrlin,nq,irclin,mmaxlin
- integer :: ii,info,iq,jj,kk,ll1
+ real(dp), allocatable :: g0(:),gdot(:,:),gmat(:,:,:),work(:)
+ real(dp) :: sb_out(5),psnullq(nnull),ovl(nbas)
+ real(dp) :: dq,hh,rend,qq,qq4,ps0q,tn,qa,qb,wg
+ integer :: nr,nlast,ii,iq,jj,kk,ll1,ig,icell
 !steps between exact sin/cos(qq*rlin) evaluations in the q loop
  integer, parameter :: nqseed=32
+!8-point Gauss-Legendre on [-1,1], for the partial cells
+ integer, parameter :: ngl=8
+ real(dp), parameter :: xgl(ngl)=[-0.9602898564975363d0, &
+&  -0.7966664774136267d0,-0.5255324099163290d0,-0.1834346424956498d0, &
+&   0.1834346424956498d0, 0.5255324099163290d0, 0.7966664774136267d0, &
+&   0.9602898564975363d0]
+ real(dp), parameter :: wgl(ngl)=[0.1012285362903763d0, &
+&   0.2223810344533745d0,0.3137066458778873d0,0.3626837833783620d0, &
+&   0.3626837833783620d0,0.3137066458778873d0,0.2223810344533745d0, &
+&   0.1012285362903763d0]
 
+ ll1=ll+1
+ dq=qmax/dble(nq-1)
 
-! new calculations of dq, dr
-! larger denominators yield better convergence at the cost of more time
-! (alternatives tried: 300 or 75 in place of 150 for dq, 150 in place
-! of 75 for dr)
- dq=2.0d0*pi/(150.0d0*rr(irc))
- dr=2.0d0*pi/(75.0d0*qmax)
-
-!set up linear radial mesh
- rc=rr(irc)
- irclin=rc/dr + 1.5d0
- dr=rc/(irclin-1)
-
- mmaxlin=0
+!the linear mesh from rc, with the spacing of qmax, to the last nonzero
+!point of uu (the solvers zero it beyond their inward start; a node there
+!is dropped or added at a value at machine precision)
+ nlast=0
  do ii=mmax,1,-1
-   if(abs(uu(ii))>1.0d-10) then
-     mmaxlin=rr(ii)/dr - 2.0d0
+   if(abs(uu(ii))>0.0d0) then
+     nlast=ii
      exit
    end if
  end do
- if(mmaxlin<irclin+6) then
-   write(6,'(/2a,i0,a,i0)') 'eresid: ERROR wave function vanishes too close', &
-&       ' to rc, mmaxlin=',mmaxlin,', irclin=',irclin
+ rend=0.0d0
+ if(nlast>0) rend=rr(nlast)
+ hh=2.0d0*pi/(75.0d0*qmax)
+ nr=0
+ if(rend>rc) nr=int((rend-rc)/hh)+1
+ if(nr<2*lm_ncell) then
+   write(6,'(/2a,f10.6,a,f10.6)') 'eresid: ERROR wave function vanishes', &
+&       ' too close to rc: rc=',rc,', last nonzero point',rend
    error stop 1
  end if
 
- allocate(rlin(mmaxlin),uulin(mmaxlin),ps0(mmaxlin))
- allocate(psnull(irclin,nnull),tpsnull(nnull),psnullq(nnull))
- allocate(sbf(mmaxlin))
- allocate(sqr(mmaxlin),cqr(mmaxlin),sdqr(mmaxlin),cdqr(mmaxlin))
- allocate(dac0(4),dacdot(nnull,4),dacmat(nnull,nnull,4))
- allocate(acdot(nnull),acmat(nnull,nnull))
+ allocate(rlin(nr),ulin(nr),wr(nr),sbf(nr))
+ allocate(sqr(nr),cqr(nr),sdqr(nr),cdqr(nr))
+ allocate(g0(nq),gdot(nq,nnull),gmat(nq,nnull,nnull),work(nq))
 
-
- do ii=1,mmaxlin
-   rlin(ii)=(ii-1)*dr
+ do ii=1,nr
+   rlin(ii)=rc+dble(ii-1)*hh
  end do
-
-!interpolate all-electron wave function onto linear mesh, even though we
-!will only use the tail region
-
- call dpnint(rr,uu,mmax,rlin,uulin,mmaxlin)
-
- do ii=irclin,mmaxlin
-   ps0(ii)=uulin(ii)
+ do ii=1,nr
+   call lm_interp(rr,uu,mmax,rlin(ii),ulin(ii))
  end do
-
-!set up constrained basis functions on linear grid inside rc (multiplied by r)
- ll1=ll+1
- do ii=1,irclin
-   tps0=0.0d0
-   tpsnull(:)=0.0d0
-   do jj=1,nbas
-     xx=rlin(ii)*qroot(jj)
-     call sbf8(ll1,xx,sb_out)
-     tps0      =tps0      +pswf0_sb(jj)     *sb_out(ll1)
-     tpsnull(:)=tpsnull(:)+pswfnull_sb(jj,:)*sb_out(ll1)
-   end do
-   ps0(ii)=rlin(ii)*tps0
-   psnull(ii,:)=rlin(ii)*tpsnull(:)
- end do
-
-!big q integration loop
-
-!q integrals are performed on all matrix elements simultaneously starting
-!inward from qmax (considered infinity) to qq=0, saving snapshots along the
-!way
-
- nq=qmax/dq+1
+ call ug_weights(nr,hh,wr)
 
 !sin and cos of dq*rlin, which step sin and cos of qq*rlin from one qq to
 !the next by rotation
- do ii=1,mmaxlin
+ do ii=1,nr
    sdqr(ii)=sin(dq*rlin(ii))
  end do
- do ii=1,mmaxlin
+ do ii=1,nr
    cdqr(ii)=cos(dq*rlin(ii))
  end do
 
-!null accumulators and running registers
-
- ac0=0.0d0
- acdot(:)=0.0d0
- acmat(:,:)=0.0d0
-
- dac0(:)=0.0d0
- dacdot(:,:)=0.0d0
- dacmat(:,:,:)=0.0d0
-
- do iq=nq,1,-1
-   qq=dq*(iq-1)
+!the integrands at each node of the q grid
+ do iq=1,nq
+   qq=dble(iq-1)*dq
 
 !sin and cos of qq*rlin, evaluated directly every nqseed steps and
-!otherwise rotated inward by dq*rlin from the previous qq
+!otherwise rotated by dq*rlin from the previous qq
 !(separate loops so sin and cos each vectorize)
-   if(mod(nq-iq,nqseed)==0) then
-     do ii=1,mmaxlin
+   if(mod(iq-1,nqseed)==0) then
+     do ii=1,nr
        sqr(ii)=sin(qq*rlin(ii))
      end do
-     do ii=1,mmaxlin
+     do ii=1,nr
        cqr(ii)=cos(qq*rlin(ii))
      end do
    else
-     do ii=1,mmaxlin
-       tn=sqr(ii)*cdqr(ii)-cqr(ii)*sdqr(ii)
-       cqr(ii)=cqr(ii)*cdqr(ii)+sqr(ii)*sdqr(ii)
+     do ii=1,nr
+       tn=sqr(ii)*cdqr(ii)+cqr(ii)*sdqr(ii)
+       cqr(ii)=cqr(ii)*cdqr(ii)-sqr(ii)*sdqr(ii)
        sqr(ii)=tn
      end do
    end if
 
-!sbfs on full rlin mesh for this qq
-!multiply by rlin for integration
-   call rsbf_lin(ll1,qq,rlin,sqr,cqr,mmaxlin,sbf)
-
-!Fourier transforms of basis functions
-!null functions exist for r<rc
-
-   ps0q=( 9.0d0*ps0(1       )*sbf(1       ) &
-&       +28.0d0*ps0(2       )*sbf(2       ) &
-&       +23.0d0*ps0(3       )*sbf(3    )    &
-&       +23.0d0*ps0(irclin-2)*sbf(irclin-2) &
-&       +28.0d0*ps0(irclin-1)*sbf(irclin-1) &
-&       + 9.0d0*ps0(irclin  )*sbf(irclin  ))/24.0d0
-
-   psnullq(:)=( 9.0d0*psnull(1       ,:)*sbf(1       ) &
-&             +28.0d0*psnull(2       ,:)*sbf(2       ) &
-&             +23.0d0*psnull(3       ,:)*sbf(3    )    &
-&             +23.0d0*psnull(irclin-2,:)*sbf(irclin-2) &
-&             +28.0d0*psnull(irclin-1,:)*sbf(irclin-1) &
-&             + 9.0d0*psnull(irclin  ,:)*sbf(irclin  ))/24.0d0
-
-   do ii=4,irclin-3
-     ps0q=ps0q+ps0(ii)*sbf(ii)
-   end do
-   do jj=1,nnull
-     do ii=4,irclin-3
-       psnullq(jj)=psnullq(jj)+psnull(ii,jj)*sbf(ii)
-     end do
-   end do
-
-   ps0q=ps0q +( 9.0d0*ps0(irclin   )*sbf(irclin   ) &
-&             +28.0d0*ps0(irclin+1 )*sbf(irclin+1 ) &
-&             +23.0d0*ps0(irclin+2 )*sbf(irclin+2 )    &
-&             +23.0d0*ps0(mmaxlin-2)*sbf(mmaxlin-2) &
-&             +28.0d0*ps0(mmaxlin-1)*sbf(mmaxlin-1) &
-&             + 9.0d0*ps0(mmaxlin  )*sbf(mmaxlin  ))/24.0d0
-
-   do ii=irclin+3,mmaxlin-3
-     ps0q=ps0q+ps0(ii)*sbf(ii)
-   end do
-
-   ps0q=dr*ps0q
-   psnullq(:)=dr*psnullq(:)
-
-!stuff integrands for E_resid q integration
-   qq4=dq*qq**4
-   dac0(1)=qq4*ps0q**2
-   dacdot(:,1)=qq4*ps0q*psnullq(:)
-   do jj=1,nnull
-     dacmat(:,jj,1)=qq4*psnullq(:)*psnullq(jj)
-   end do
-
-!inward integration as soon as dac arrays ("derivative accumulator arrays")
-!are full
-   if(iq<nq-3) then
-     ac0=ac0+(9.0d0*dac0(1)+19.0d0*dac0(2) &
-&        -5.0d0*dac0(3)+dac0(4))/24.0d0
-
-     acdot(:)=acdot(:)+(9.0d0*dacdot(:,1)+19.0d0*dacdot(:,2) &
-&        -5.0d0*dacdot(:,3)+dacdot(:,4))/24.0d0
-
-     acmat(:,:)=acmat(:,:)+(9.0d0*dacmat(:,:,1)+19.0d0*dacmat(:,:,2) &
-&        -5.0d0*dacmat(:,:,3)+dacmat(:,:,4))/24.0d0
+!q**4 makes the integrands zero at q=0 whatever the transforms
+   if(iq==1) then
+     g0(iq)=0.0d0
+     gdot(iq,:)=0.0d0
+     gmat(iq,:,:)=0.0d0
+     cycle
    end if
 
-!shift dac* arrays one step inward
+   call transforms(qq,ps0q,psnullq)
 
-   do ii=4,2,-1
-     dac0(ii)=dac0(ii-1)
-     dacdot(:,ii)=dacdot(:,ii-1)
-     dacmat(:,:,ii)=dacmat(:,:,ii-1)
+!integrands of the E_resid q integrals
+   qq4=qq**4
+   g0(iq)=qq4*ps0q**2
+   gdot(iq,:)=qq4*ps0q*psnullq(:)
+   do jj=1,nnull
+     gmat(iq,:,jj)=qq4*psnullq(:)*psnullq(jj)
    end do
-   dac0(1)=0.0d0
-   dacdot(:,1)=0.0d0
-   dacmat(:,:,1)=0.0d0
 
-!test if present qq value is a "save" point
+ end do !iq
+
+!integrals from each node to qmax
 !1/pi factor from implicit sbf*sbf integral
-   do ii=1,nqout
-     if(abs(qout(ii)-qq)<0.5d0*dq) then
-       eresid0(ii)=ac0/pi
-       eresiddot(:,ii)=acdot(:)/pi
-       eresidmat(:,:,ii)=acmat(:,:)/pi
-       qout(ii)=qq
-     end if
+ call ug_cumint_down(g0,nq,dq,e0g)
+ e0g(:)=e0g(:)/pi
+ do jj=1,nnull
+   call ug_cumint_down(gdot(:,jj),nq,dq,work)
+   edotg(:,jj)=work(:)/pi
+   do kk=1,nnull
+     call ug_cumint_down(gmat(:,kk,jj),nq,dq,work)
+     ematg(:,kk,jj)=work(:)/pi
    end do
+ end do
 
- end do !big iq loop
+!at each qout: the value at the next node plus the partial cell by
+!Gauss-Legendre, with the transforms at its nodes
+ do ii=1,nqout
+   if(qout(ii)<0.0d0 .or. qout(ii)>=qmax) then
+     write(6,'(a,es12.4,a,es12.4)') 'eresid: ERROR q off the grid, q=', &
+&        qout(ii),' qmax=',qmax
+     error stop 1
+   end if
+   icell=int(qout(ii)/dq)
+   qa=qout(ii)
+   qb=dble(icell+1)*dq
+   if(qa==dble(icell)*dq) then
+! on a node
+     eresid0(ii)=e0g(icell+1)
+     eresiddot(:,ii)=edotg(icell+1,:)
+     do jj=1,nnull
+       eresidmat(:,jj,ii)=ematg(icell+1,:,jj)
+     end do
+     cycle
+   end if
+   eresid0(ii)=e0g(icell+2)
+   eresiddot(:,ii)=edotg(icell+2,:)
+   do jj=1,nnull
+     eresidmat(:,jj,ii)=ematg(icell+2,:,jj)
+   end do
+   do ig=1,ngl
+     qq=0.5d0*(qa+qb)+0.5d0*(qb-qa)*xgl(ig)
+     wg=0.5d0*(qb-qa)*wgl(ig)/pi
+     do kk=1,nr
+       sqr(kk)=sin(qq*rlin(kk))
+     end do
+     do kk=1,nr
+       cqr(kk)=cos(qq*rlin(kk))
+     end do
+     call transforms(qq,ps0q,psnullq)
+     qq4=wg*qq**4
+     eresid0(ii)=eresid0(ii)+qq4*ps0q**2
+     eresiddot(:,ii)=eresiddot(:,ii)+qq4*ps0q*psnullq(:)
+     do jj=1,nnull
+       eresidmat(:,jj,ii)=eresidmat(:,jj,ii)+qq4*psnullq(:)*psnullq(jj)
+     end do
+   end do
+ end do
 
-
- deallocate(rlin,uulin,ps0)
- deallocate(psnull,tpsnull,psnullq)
- deallocate(sbf)
+ deallocate(rlin,ulin,wr,sbf)
  deallocate(sqr,cqr,sdqr,cdqr)
- deallocate(dac0,dacdot,dacmat)
- deallocate(acdot,acmat)
+ deallocate(g0,gdot,gmat,work)
 
  return
 
  contains
 
+ subroutine transforms(qq,ps0q,psnullq)
+
+!! the transforms at qq of ps0 (the Bessel sum inside rc, the all-electron
+!! tail outside) and of the null functions (inside rc only), from sin and
+!! cos of qq*rlin in sqr and cqr
+
+!Input variables
+ real(dp), intent(in) :: qq
+
+!Output variables
+ real(dp), intent(out) :: ps0q,psnullq(nnull)
+
+!Local variables
+ integer :: ii,jj
+
+!transform of the all-electron tail: rlin * j_l(qq rlin) on the linear
+!mesh, times uu, integrated
+ call rsbf_lin(ll1,qq,rlin,sqr,cqr,nr,sbf)
+ ps0q=0.0d0
+ do ii=1,nr
+   ps0q=ps0q+wr(ii)*ulin(ii)*sbf(ii)
+ end do
+
+!transforms inside rc: the basis functions' overlaps with j_l(qq r), in
+!closed form
+ do jj=1,nbas
+   call sbf_overlap(ll,qroot(jj),qq,rc,ovl(jj))
+ end do
+ psnullq(:)=0.0d0
+ do jj=1,nbas
+   ps0q=ps0q+pswf0_sb(jj)*ovl(jj)
+   psnullq(:)=psnullq(:)+pswfnull_sb(jj,:)*ovl(jj)
+ end do
+ return
+ end subroutine transforms
+
  subroutine rsbf_lin(ll1,qq,rlin,sqr,cqr,nr,rsbf)
-!! rlin(ii)*j_l(qq*rlin(ii)) for l=ll1-1 on the linear mesh rlin(nr), given
-!! sqr=sin(qq*rlin) and cqr=cos(qq*rlin).  Same branches and formulas as
-!! sbf8 for l<=3, written as loops over the mesh that vectorize; this is
-!! the inner loop of the E_resid q integration.
-!!
-!! @param ll1  angular momentum plus one
-!! @param qq  wave vector
-!! @param rlin  linear radial mesh
-!! @param sqr  sin(qq*rlin)
-!! @param cqr  cos(qq*rlin)
-!! @param nr  number of points in rlin
-!! @param rsbf  rlin*j_l(qq*rlin)
+
+!! rlin * j_l(qq rlin) on the linear mesh from sin and cos of qq rlin, by
+!! the closed forms for l<=3 (series at small argument) and sbf8 beyond
 
 !Input variables
  integer, intent(in) :: ll1,nr

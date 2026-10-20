@@ -47,6 +47,7 @@
  implicit none
  private
  public :: lm_blend, lm_interp, lm_derivs, lm_cumint, lm_integral, lm_root
+ public :: lm_ncell, lm_cell_weights, lm_fh_value
 
 !> blending degree d of the Floater-Hormann interpolant: it reproduces
 !> polynomials of degree d in ln(r), and its error is O(al**(d+1))
@@ -57,7 +58,8 @@
  integer, parameter :: nhalf=5
 
 !> points of the cell-integration stencils: degree 7, 8th order
- integer, parameter :: ncell=8
+ integer, parameter :: lm_ncell=8
+ integer, parameter :: ncell=lm_ncell
 
 !> the window bump of the interpolant: 1 for a window centre within nwin1
 !> steps of x, falling smoothly to 0 at nwin2 steps
@@ -477,7 +479,8 @@
 
 !Local variables
  real(dp) :: ww,dt,num,den
- integer :: ii,kk,id,ilo,ihi,nreach
+ real(dp) :: wk(2*(ceiling(nwin2)+lm_blend+1)+lm_blend+1),bin(0:lm_blend)
+ integer :: ii,kk,id,ilo,ihi,nreach,klo,khi
 
  if(inode>0) then
    fh_value=ff(inode)
@@ -488,6 +491,16 @@
  nreach=ceiling(nwin2)+id+1
  ilo=max(1,floor(tt)+1-nreach)
  ihi=min(nn,floor(tt)+1+nreach)
+! the window weights of the windows those nodes lie in, and the binomials,
+! once (the node loop below would evaluate each window id+1 times)
+ klo=max(1,ilo-id)
+ khi=min(ihi,nn-id)
+ do kk=klo,khi
+   wk(kk-klo+1)=window(abs(tt-dble(kk-1)-0.5d0*dble(id)))
+ end do
+ do kk=0,id
+   bin(kk)=binomial(id,kk)
+ end do
  num=0.0d0
  den=0.0d0
  do ii=ilo,ihi
@@ -498,7 +511,7 @@
    end if
    ww=0.0d0
    do kk=max(1,ii-id),min(ii,nn-id)
-     ww=ww+window(abs(tt-dble(kk-1)-0.5d0*dble(id)))*binomial(id,ii-kk)
+     ww=ww+wk(kk-klo+1)*bin(ii-kk)
    end do
    if(ww==0.0d0) cycle
    if(mod(ii,2)==0) ww=-ww
@@ -652,5 +665,45 @@
  end do
  return
  end subroutine cell_weights
+
+
+ subroutine lm_cell_weights(ishift,ww)
+
+!! the weights of the cell rule (cell_weights), for the uniform grids of
+!! ugrid_m
+
+!Input variables
+ integer, intent(in) :: ishift
+
+!Output variables
+ real(dp), intent(out) :: ww(ncell)
+
+ call cell_weights(ishift,ww)
+ return
+ end subroutine lm_cell_weights
+
+ real(dp) function lm_fh_value(ff,nn,tt)
+
+!! the interpolant (fh_value) of values on equispaced nodes at the position
+!! tt, in units of the spacing, 0 at the first node, for the uniform grids
+!! of ugrid_m
+!!
+!! @param ff  values on the nodes
+!! @param nn  number of nodes
+!! @param tt  position, 0<=tt<=nn-1
+
+!Input variables
+ integer, intent(in) :: nn
+ real(dp), intent(in) :: ff(nn),tt
+
+!Local variables
+ integer :: inode
+
+ inode=0
+ if(tt==dble(nint(tt))) inode=nint(tt)+1
+ if(inode<1 .or. inode>nn) inode=0
+ lm_fh_value=fh_value(ff,nn,tt,inode)
+ return
+ end function lm_fh_value
 
  end module logmesh_m
