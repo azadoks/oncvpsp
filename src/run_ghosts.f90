@@ -131,6 +131,7 @@
 
 ! nbas stays nbmax unless lschpsbar runs out of states below ebcut
    nbas=nbmax
+   ecut=ebcut(l1)
    do jj=1,nbmax
      nn=ll+jj
 
@@ -143,10 +144,15 @@
 
      if(ierr/=0) then
        if(emax/=ebcut(l1)) then
-         write(6,'(a,3i4,3f12.6)')  &
-&              'run_ghosts 143: lschpsbar ERROR ierr,nn,ll,ee,emin,emax', &
-&              ierr,nn,ll,ee,emin,emax
-         error stop 1
+! a barrier state below the cutoff that does not converge, a high one on
+! a coarse mesh whose wavelength at the barrier is a few mesh steps: the
+! basis stops below it, and the ghost test covers energies up to there
+         write(6,'(/a,i0,a,i0,a,f12.6,a/a,f10.2,a)') &
+&              'run_ghosts: WARNING barrier state n=',nn,' l=',ll, &
+&              ' near ',ee,' Ha not converged;', &
+&              'run_ghosts: WARNING basis cut there, ghost test to ', &
+&              emin,' Ha'
+         ecut=emin
        end if
        nbas=jj-1
        exit
@@ -163,8 +169,6 @@
      end do
 
    end do !jj
-
-   ecut=ebcut(l1)
 
 ! add non-local terms to hamiltonian matrix
    do jj=1,nbas
