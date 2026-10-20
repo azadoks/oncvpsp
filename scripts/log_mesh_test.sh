@@ -31,7 +31,10 @@ mesh='1.004 -1 50.0'
 with_mesh() { cat; echo "# amesh, rr1, rmax"; echo "$1"; }
 
 # drop_echo < OUT: the output without the echoes of the log mesh
-drop_echo() { perl -0pe 's/#\n# LOG MESH\n[^\n]*\n[^\n]*\n//g'; }
+drop_echo() {
+    python3 -c 'import re, sys
+sys.stdout.write(re.sub(r"#\n# LOG MESH\n[^\n]*\n[^\n]*\n", "", sys.stdin.read()))'
+}
 
 # rerun_block OUT START END: run the input between the lines START and END of
 # OUT again, which must set the mesh and give OUT

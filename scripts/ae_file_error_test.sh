@@ -18,27 +18,28 @@ cd "$work"
 # na(nc+nv), la(nc+nv), fa(nc+nv), mmax, rr(mmax), c_light in native
 # byte order
 patch() {
-    perl -e '
-        my ($field, $factor) = @ARGV[1, 2];
-        open(my $fh, "+<:raw", $ARGV[0]) or die "patch: $!";
-        local $/; my $buf = <$fh>;
-        my $zz = 8 + 4 + 4 + 2;
-        my ($nc, $nv) = unpack("l l", substr($buf, $zz + 8, 8));
-        my $nt = $nc + $nv;
-        my $fa = $zz + 8 + 12 + 8 * $nt;
-        my $rr = $fa + 8 * $nt + 4;
-        my $mmax = unpack("l", substr($buf, $rr - 4, 4));
-        my %at = (zz => $zz, fa => $fa + 8 * ($nt - 1), rr => $rr + 8,
-                  c_light => $rr + 8 * $mmax);
-        if ($field eq "version") {
-            substr($buf, 8, 4) = reverse substr($buf, 8, 4);
-        } else {
-            my $off = $at{$field} // die "patch: no field $field";
-            my $x = unpack("d", substr($buf, $off, 8));
-            substr($buf, $off, 8) = pack("d", $x * $factor);
-        }
-        seek($fh, 0, 0); print $fh $buf; close($fh);
-    ' atom.ae "$@"
+    python3 - atom.ae "$@" <<'PY'
+import struct
+import sys
+
+path, field = sys.argv[1:3]
+with open(path, "rb") as f:
+    buf = bytearray(f.read())
+zz = 8 + 4 + 4 + 2
+nc, nv = struct.unpack_from("=ii", buf, zz + 8)
+nt = nc + nv
+fa = zz + 8 + 12 + 8 * nt
+rr = fa + 8 * nt + 4
+(mmax,) = struct.unpack_from("=i", buf, rr - 4)
+at = {"zz": zz, "fa": fa + 8 * (nt - 1), "rr": rr + 8, "c_light": rr + 8 * mmax}
+if field == "version":
+    buf[8:12] = buf[8:12][::-1]
+else:
+    (x,) = struct.unpack_from("=d", buf, at[field])
+    struct.pack_into("=d", buf, at[field], x * float(sys.argv[3]))
+with open(path, "wb") as f:
+    f.write(buf)
+PY
 }
 
 expect=same
