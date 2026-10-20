@@ -602,7 +602,31 @@ later phases can see 1e-10.
 
 #### Phase 3: continuous radii, qcut, projectors
 
-- [ ] T6 written; T3 and T4 baselines recorded
+- [x] T6 written (`unit_ode_rc_der`, `unit_piecewise`; green, since it
+      tests the phase 1 operations on pieces: a C¹ kink split is exact to
+      8e-16 wherever it sits, one sampled array is off by 5e-12 to 1e-9).
+- [x] T3 baseline recorded. `scripts/t3_inputs.py` writes the 51 reference
+      inputs with rc, rc(5) and qcut where the code before this phase rounds
+      them. Run by 7507bb3 on those inputs, the kernels equal the references
+      exactly, and only the echoed inputs differ.
+- [x] T4 baseline recorded (`scripts/mesh_convergence.py`, the psp8 kernels
+      at amesh 1.012, 1.006, 1.003 against 1.0015). It is erratic, because
+      each mesh snaps rc to a different point:
+
+      | input | block | 1.012 | 1.006 | 1.003 |
+      |---|---|---|---|---|
+      | 14_Si | l=0 | 7.5e-3 | 7.5e-4 | 5.8e-3 |
+      | 14_Si | l=1 | 2.3e-2 | 9.9e-3 | 8.8e-3 |
+      | 14_Si | l=2 | 1.7e-2 | 2.7e-3 | 1.1e-2 |
+      | 08_O | l=0 | 7.7e-2 | 2.4e-2 | 9.1e-3 |
+      | 08_O | l=1 | 1.1e-2 | 1.6e-2 | 1.1e-2 |
+      | 52_Te_r | l=0 | 1.7e-2 | 4.7e-3 | 4.0e-3 |
+      | 52_Te_r | l=1 | 2.5e-2 | 1.2e-2 | 3.2e-3 |
+      | 52_Te_r | l=2 | 1.5e-2 | 4.5e-3 | 1.1e-3 |
+      | 52_Te_r | l=3 | 1.7e-2 | 1.1e-2 | 5.1e-3 |
+      | 52_Te_r | so l=1 | 9.0e-4 | 3.9e-4 | 2.5e-4 |
+      | 52_Te_r | so l=2 | 1.2e-4 | 3.3e-5 | 6.9e-6 |
+      | 52_Te_r | so l=3 | 1.8e-5 | 1.1e-5 | 5.2e-6 |
 - [ ] R-1, R-2: rc continuous; `irc` the last point ≤ rc
 - [ ] R-4 matching data at rc from the ODE; R-5 overlaps; R-6 pieces
 - [ ] Q-1…Q-4 residual kinetic energy at exact qcut, fixed quadratures
