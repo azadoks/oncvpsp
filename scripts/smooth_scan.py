@@ -18,14 +18,17 @@ exceeds it or a jump ratio exceeds --max-jump.
 The features come from the UPF file, written on the log mesh itself
 (upf_mesh, every few points of it) and read with upf-tools, and from the
 output read with pyoncvpsp (compare_output.py), so they are the generator's own values
-with no interpolation onto another grid in between (the psp8 file's linear
-mesh is interpolated); the UPF writer gives 17 digits. They are what a
+with no interpolation onto another grid in between; the UPF writer gives 17
+digits. With --output psp8 or upf they come instead from the psp8 file (14
+digits) or the UPF file on the linear output mesh, onto which the writers
+evaluate the functions (doc/smoothness_plan.md, O-1). They are what a
 calculation uses, never the projectors themselves (they are not unique; see
 kernel_diff.py):
 
   kernel  K(r, r') = sum_ij beta_i(r) D_ij beta_j(r') of each projector block
-          (each l, or l and j), at all pairs of the sample radii, relative to
-          the largest |K| over the pairs
+          (each l, or l and j; in psp8, scalar-relativistic and spin-orbit
+          per l), at all pairs of the sample radii, relative to the largest
+          |K| over the pairs
   vloc    the local potential at the sample radii, relative to its largest
           value there
   core    the model core charge at the sample radii, relative to its largest
@@ -33,14 +36,19 @@ kernel_diff.py):
   tests   the pseudo-atom eigenvalues of the test configurations (printed to
           8 decimals, so only a coarser --tol is meaningful for them)
 
-The sample radii are the points of the UPF mesh nearest to every --sample
+The sample radii are the points of the file's mesh nearest to every --sample
 bohr. For a parameter that is a radius (a key named rc, rcloc or rxpsh), the
-radii inside the scanned window (widened by two log-mesh steps) are dropped:
-there the functions are only as smooth as the matching at the radius makes
-them, which is a property of the construction, not of its numerics.
+radii inside the scanned window (widened by two steps of the file's log mesh,
+or of the generator's for a linear one), and inside 0.95 times it (where the
+projectors' taper starts), are dropped: there the functions are only as
+smooth as the matching at the radius makes them, which is a property of the
+construction, not of its numerics. The 8 points of the file's mesh on each
+side of each window are sampled too: an interpolant across the radius would
+reach them.
 
 usage: smooth_scan.py EXE BASE.toml KEY [--center X] [--cells N | --span S]
                       [--npts N] [--degree D] [--groups G,G]
+                      [--output log | psp8 | upf]
                       [--tol TOL | --tol G=TOL,G=TOL] [--max-jump R]
                       [--jobs J] [--workdir DIR]
        smooth_scan.py --self-test
@@ -58,7 +66,7 @@ import tempfile
 import tomllib
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from compare_output import upf_part  # noqa: E402
+from compare_output import psp8_part, upf_part  # noqa: E402
 from pyoncvpsp.io import OncvpspTextParser  # noqa: E402
 
 RADIUS_KEYS = {"rc", "rcloc", "rxpsh"}
@@ -66,6 +74,13 @@ GROUPS = ("kernel", "vloc", "core", "tests")
 # points of the UPF file's log mesh: every few of the generator's out to the
 # linear mesh's extent
 UPF_MESH = 600
+# points of the file's mesh sampled on each side of the window of a radius
+NEAR = 8
+# a core radius rc moves the start of the projectors' taper, TAPER rc
+# (run_vkb), as well as rc
+TAPER = 0.95
+# --output: the file the features come from, as (psfile, upf_mesh)
+OUTPUTS = {"log": ("upf", UPF_MESH), "psp8": ("psp8", 0), "upf": ("upf", 0)}
 
 
 # TOML input: read with tomllib, one value changed, written back
@@ -129,21 +144,38 @@ def dump_toml(data):
 # Features of one output
 
 
-def features(path, samples):
+def file_part(parser, output):
+    """(mesh, {name: Block}, local potential, model core or None) of the file
+    of --output in the parsed output."""
+    if output == "psp8":
+        psp8, blocks = psp8_part(parser.psp8_string)
+        named = {
+            (f"l{ll}" if kind == "scalar" else f"so_l{ll}"): block
+            for (_, kind, ll), block in blocks.items()
+        }
+        core = psp8["model_core"][0] if psp8["fchrg"] > 0.0 else None
+        return psp8["r"], named, psp8["local_potential"], core
+    upf, blocks = upf_part(parser.upf_string)
+    named = {
+        (f"l{ll}" if jj is None else f"l{ll}j{jj:g}"): block
+        for (_, ll, jj), block in blocks.items()
+    }
+    return upf["mesh"]["r"], named, upf["local"], upf.get("nlcc")
+
+
+def features(path, samples, output):
     """{name: value} of the output at path, the names of the form group:label."""
     parser = OncvpspTextParser(path=path, check=False)
-    upf, blocks = upf_part(parser.upf_string)
+    _, blocks, local, core = file_part(parser, output)
     out = {}
-    for (_, ll, jj), block in blocks.items():
-        name = f"l{ll}" if jj is None else f"l{ll}j{jj:g}"
+    for name, block in blocks.items():
         beta = block.beta[:, samples]
         kern = beta.T @ block.dij @ beta
         for a, ka in enumerate(samples):
             for b in range(a, len(samples)):
                 out[f"kernel:{name}:r{ka},r{samples[b]}"] = float(kern[a, b])
     for k in samples:
-        out[f"vloc:r{k}"] = float(upf["local"][k])
-    core = upf.get("nlcc")
+        out[f"vloc:r{k}"] = float(local[k])
     if core is not None:
         for k in samples:
             out[f"core:r{k}"] = float(core[k])
@@ -158,10 +190,10 @@ def features(path, samples):
     return out
 
 
-def upf_mesh(path):
-    """The radii of the UPF file of one output."""
+def file_mesh(path, output):
+    """The radii of the file of one output."""
     parser = OncvpspTextParser(path=path, check=False)
-    return [float(r) for r in upf_part(parser.upf_string)[0]["mesh"]["r"]]
+    return [float(r) for r in file_part(parser, output)[0]]
 
 
 # Least-squares polynomial fit (Legendre basis, modified Gram-Schmidt)
@@ -225,7 +257,7 @@ def analyse(ts, runs, degree):
 # Running the program
 
 
-def run_one(exe, data, key, value, workdir, index):
+def run_one(exe, data, key, value, workdir, index, output):
     data = {k: (dict(v) if isinstance(v, dict) else v) for k, v in data.items()}
     for k, v in data.items():
         if isinstance(v, dict):
@@ -233,9 +265,8 @@ def run_one(exe, data, key, value, workdir, index):
                 kk: (list(vv) if isinstance(vv, list) else vv) for kk, vv in v.items()
             }
     set_value(data, key, value)
-    # a UPF file on the log mesh, whatever the input asks for
-    data["pp_output"]["psfile"] = "upf"
-    data["pp_output"]["upf_mesh"] = UPF_MESH
+    # the file of --output, whatever the input asks for
+    data["pp_output"]["psfile"], data["pp_output"]["upf_mesh"] = OUTPUTS[output]
     path = pathlib.Path(workdir) / f"scan{index:03d}"
     path.mkdir(parents=True, exist_ok=True)
     (path / "in.toml").write_text(dump_toml(data))
@@ -266,12 +297,14 @@ def scan(args):
     with concurrent.futures.ThreadPoolExecutor(args.jobs) as pool:
         outputs = list(
             pool.map(
-                lambda kv: run_one(args.exe, data, args.key, kv[1], workdir, kv[0]),
+                lambda kv: run_one(
+                    args.exe, data, args.key, kv[1], workdir, kv[0], args.output
+                ),
                 enumerate(values),
             )
         )
 
-    mesh = upf_mesh(outputs[0])
+    mesh = file_mesh(outputs[0], args.output)
     samples = sorted(
         {
             min(range(len(mesh)), key=lambda k: abs(mesh[k] - r))
@@ -281,15 +314,30 @@ def scan(args):
         }
     )
     if parse_key(args.key)[1] in RADIUS_KEYS:
-        step = max(b / a for a, b in zip(mesh[1:], mesh[2:]))
+        if args.output == "log":
+            step = max(b / a for a, b in zip(mesh[1:], mesh[2:]))
+        else:
+            step = data.get("log_mesh", {}).get("amesh", 1.006)
         lo, hi = min(values) / step**2, max(values) * step**2
-        samples = [k for k in samples if not lo <= mesh[k] <= hi]
+        windows = [(lo, hi), (TAPER * lo, TAPER * hi)]
+        near = set()
+        for a, b in windows:
+            # the NEAR points of the mesh on each side of the window, which an
+            # interpolant across the radius would reach
+            below = [k for k in range(len(mesh)) if mesh[k] < a][-NEAR:]
+            above = [k for k in range(len(mesh)) if mesh[k] > b][:NEAR]
+            near |= set(below) | set(above)
+        samples = [
+            k
+            for k in sorted(set(samples) | near)
+            if not any(a <= mesh[k] <= b for a, b in windows)
+        ]
 
     groups = set(args.groups.split(","))
     runs = [
         {
             n: v
-            for n, v in features(out, samples).items()
+            for n, v in features(out, samples, args.output).items()
             if n.split(":", 1)[0] in groups
         }
         for out in outputs
@@ -298,7 +346,8 @@ def scan(args):
 
     print(
         f"{args.key}: {args.npts} values from {values[0]:.10g} to {values[-1]:.10g}"
-        f" (span {span:.4g}), degree {args.degree} fit, outputs in {workdir}"
+        f" (span {span:.4g}), degree {args.degree} fit, {args.output} file,"
+        f" outputs in {workdir}"
     )
     print(f"{'group':8s} {'residual':>10s} {'jump':>10s}  worst feature")
     tols = parse_tol(args.tol)
@@ -412,6 +461,13 @@ def main():
         "--max-jump",
         type=float,
         help="largest ratio of the largest step to the median step",
+    )
+    parser.add_argument(
+        "--output",
+        choices=sorted(OUTPUTS),
+        default="log",
+        help="file the features come from: the UPF file on the log mesh (default),"
+        " the psp8 file, or the UPF file on the linear mesh",
     )
     parser.add_argument("--jobs", type=int, default=os.cpu_count() or 1)
     parser.add_argument("--workdir")

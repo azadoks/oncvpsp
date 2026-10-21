@@ -126,6 +126,29 @@ smooth_scan_test(sr_14_Si_bc_ecut sr 14_Si_bc "model_core_charge.fcfact" kernel,
 # node between 1.06 and 1.1)
 smooth_scan_test(sr_14_Si_well_onset sr 14_Si "pseudopotentials.well_onset" kernel,vloc,core ${smooth_g1} --center 1.02 --span 0.01)
 smooth_scan_test(sr_14_Si_hm_slack sr 14_Si_hm "model_core_charge.slack" kernel,vloc,core ${smooth_g1} --span 0.02)
+# the psp8 file and the UPF file on the linear output mesh (phase 4, O-1): the writers interpolated
+# the functions on the log mesh across rc, so the points next to it moved with the nodes past it
+smooth_scan_test(sr_14_Si_rc0_psp8 sr 14_Si "pseudopotentials.rc[0]" kernel,vloc ${smooth_g1} --center 2.8 --output psp8)
+smooth_scan_test(sr_14_Si_rc0_upf sr 14_Si "pseudopotentials.rc[0]" kernel,vloc ${smooth_g1} --center 2.8 --output upf)
+smooth_scan_test(nr_08_O_rc1_psp8 nr 08_O "pseudopotentials.rc[1]" kernel,vloc ${smooth_g1} --center 1.65 --output psp8)
+smooth_scan_test(r_52_Te_rc1_psp8 r 52_Te "pseudopotentials.rc[1]" kernel,vloc ${smooth_g1} --center 3.15 --output psp8)
+smooth_scan_test(r_52_Te_rc1_upf r 52_Te "pseudopotentials.rc[1]" kernel,vloc ${smooth_g1} --center 3.15 --output upf)
+
+# The projectors of the psp8 and UPF files on the linear mesh are 0 beyond rc, and the fully-
+# relativistic psp8 file has every term (phase 4, O-1, O-2; see scripts/projector_output_test.py)
+foreach (projector_test IN ITEMS "sr:14_Si" "r:14_Si" "nr:08_O" "r:52_Te")
+    string(REPLACE ":" ";" projector_test "${projector_test}")
+    list(GET projector_test 0 rel)
+    list(GET projector_test 1 test_name)
+    if (NOT ONCVPSP_WITH_TOML OR (rel STREQUAL "r" AND NOT ONCVPSP_WITH_FR))
+        continue()
+    endif ()
+    add_test(NAME projector_output_${rel}_${test_name}
+        COMMAND ${test_python} "${scripts}/projector_output_test.py" $<TARGET_FILE:oncvpsp${rel}>
+            "${data}/toml/${test_name}.toml" "${CMAKE_CURRENT_BINARY_DIR}/projector_output_${rel}_${test_name}")
+    set_tests_properties(projector_output_${rel}_${test_name} PROPERTIES LABELS smooth)
+    oncvpsp_compares(projector_output_${rel}_${test_name})
+endforeach ()
 
 # Output against the references in tests/refs
 set(oncvpspsr_tests

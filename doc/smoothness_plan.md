@@ -868,8 +868,46 @@ later phases can see 1e-10.
 
 #### Phase 4: output
 
-- [ ] O-1 output meshes from the pieces; β ≡ 0 beyond rc
-- [ ] O-2, O-4, O-5 (after D-2)
+- [x] Tests written, red (`ctest -L smooth -R 'psp8|upf|projector'`):
+      - `smooth_scan.py --output psp8 | upf` takes the features from the
+        psp8 file or the UPF file on the linear mesh. For a radius it now
+        also leaves out 0.95 times the window (the taper's start moves
+        with rc: 52_Te's sample at 3.0 bohr sat in it, on the linear mesh
+        only), and samples the 8 points of the file's mesh on each side of
+        each window, which an interpolant across the radius reaches. The
+        log-mesh rows stay green with them. T2 rows, kernel / V_loc:
+        14_Si `rc[0]` psp8 5.9e-11 / 5.8e-14 (green: its points next to
+        rc lie in the taper's window), UPF 2.5e-10 with an infinite jump
+        (`nrlproj`, R-15, cuts the projectors at 4 + int(rc/drl) points);
+        08_O `rc[1]` psp8 1.4e-8; 52_Te `rc[1]` psp8 7.0e-9 (l=1 at 3.09
+        bohr), UPF 7.7e-9.
+      - `projector_output_{sr_14_Si,r_14_Si,nr_08_O,r_52_Te}`
+        (`scripts/projector_output_test.py`): every projector of the psp8
+        and UPF files 0 beyond its rc (today 2 points of psp8 and 4–10 of
+        UPF carry `dpnint`'s ringing, up to 1.9e-7 in 14_Si and 3.8e-5 in
+        52_Te, 9.4e-4 in a spin-orbit projector of 14_Si_r); the fr psp8
+        file with nproj scalar-relativistic terms for l = 0 and 2 nproj of
+        each kind for l > 0 (14_Si_r writes 2 of 4 for l = 1 and 2, and 3
+        of 4 spin-orbit terms for l = 2).
+- [ ] O-1 output meshes from the pieces; β ≡ 0 beyond rc. Each writer
+      evaluates every projector from its pieces (`vkbpw`, `vsrpw`,
+      `vsopw`) at the output radius, by the windowed FH interpolant of the
+      piece of the radius's segment (`pw_value`, new in `pieces_m`), 0
+      beyond rc; V_loc likewise from `vlocpw` less the screening; the
+      densities by FH on the log mesh in place of `dpnint`. R-15: `linout`'s
+      format switch and `upfout`'s `nrlproj` then only shorten the zeros
+      written
+- [ ] O-2 (D-2): every term of the fr decomposition written (no 1e-3
+      cut), so the diagnostics of `run_diag_sr_so_r` use them all too
+- [ ] O-4: reopened. The UPF mesh from rlmax only would cut the
+      pseudo-wave functions (PP_CHI) there: of their norm, 14_Si_UPF's 3p
+      would lose 5.8e-2, 32_Ge's 4p 1.7e-1, 52_Te_r's 5p 1.0e-2 (the
+      extension to where 1e-6 is left is what keeps them). The extension
+      changes only how many points are written, not a value at any
+      radius; to be decided before the step
+- [ ] O-5: the switch of V_loc to −zion/r where ρ = 0 by `ionic_switch`
+      at continuous radii. It reaches no written function inside rlmax;
+      it moves the pseudo-atom tests
 - [ ] References patched
 
 #### Phase 5: model core
