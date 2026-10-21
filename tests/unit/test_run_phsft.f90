@@ -23,7 +23,8 @@
  real(dp) :: evkb(mxprj, mxl+1), evkb_r(mxprj, mxl+1, mxkap)
  real(dp) :: rphs(4), pshae(npsh, 4, mxkap), pshps(npsh, 4, mxkap)
  type(piecewise_t) :: vlocpw, vkbpw(mxprj, mxl+1), vkbpw_r(mxprj, mxl+1, mxkap)
- integer :: nproj(mxlin+1), irc(mxlin+1), ii, nfail = 0
+ integer :: nproj(mxlin+1), ii, nfail = 0
+ real(dp) :: rc(mxlin+1)
 
  do ii = 1, mmax
    rr(ii) = rr1*amesh**(ii - 1)
@@ -38,17 +39,16 @@
 ! the local potential is one piece over the whole mesh
  call pw_alloc(vlocpw, mmax, 1, [0.0_dp, rr(mmax)])
  vlocpw%vals(:, 1) = vfull
-! every core radius at the first mesh point beyond 2 bohr, as the programs
-! place it
- irc(:) = findloc(rr > 2.0_dp, .true., dim=1)
+! every core radius at 2 bohr
+ rc(:) = 2.0_dp
 
 ! l=0 is the local potential's l, and l=1-3 are beyond lmax: 1 + 3 warnings
 ! inside rc
  call check_case('run_phsft', 1.0_dp, 4)
- call check_case('run_phsft', rr(irc(1)), 0)
+ call check_case('run_phsft', rc(1), 0)
  call check_case('run_phsft', 3.0_dp, 0)
  call check_case('run_phsft_r', 1.0_dp, 4)
- call check_case('run_phsft_r', rr(irc(1)), 0)
+ call check_case('run_phsft_r', rc(1), 0)
  call check_case('run_phsft_r', 3.0_dp, 0)
 
  if(nfail > 0) then
@@ -80,12 +80,12 @@
  open(unit=6, file=name//'.out', status='replace', action='write')
  if(name == 'run_phsft') then
    call run_phsft(lmax, lloc, nproj, epa, npsh, epsh2, depsh, rxpsh, &
-&                 vlocpw, vkbpw, evkb, rr, vfull, vp, zz, mmax, mxprj, irc, &
+&                 vlocpw, vkbpw, evkb, rr, vfull, vp, zz, mmax, mxprj, rc, &
 &                 0, 1, rphs, pshae, pshps)
  else
    call run_phsft(lmax, lloc, nproj, epa_r, npsh, epsh2, depsh, rxpsh, &
 &                 vlocpw, vkbpw_r, evkb_r, rr, vfull, vp_r, zz, mmax, mxprj, &
-&                 irc, 2, 2, rphs, pshae, pshps)
+&                 rc, 2, 2, rphs, pshae, pshps)
  end if
  close(6)
 

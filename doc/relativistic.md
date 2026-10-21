@@ -16,7 +16,7 @@ or the Schroedinger solvers according to irel, and aeatom calls relatom or
 sratom.  The following routines take irel or nkap and incorporate the ikap
 loops and Dirac equations for full-potential calculations:
 
-* fphsft
+* run_phsft (phsft_m)
 * gnu_script (plot lines are labeled S+, P+, P-, ... indicting j=l +/- 1/2)
 * linout
 * oncvpsp_main

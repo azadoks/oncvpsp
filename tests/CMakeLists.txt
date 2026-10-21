@@ -171,6 +171,11 @@ smooth_scan_test(sr_07_N_opt_qcut1 sr 07_N_opt "pseudopotentials.qcut[1]" ${smoo
 smooth_scan_test(sr_07_N_opt_debl0 sr 07_N_opt "vkb_projectors.debl[0]" ${smooth_opt_groups} ${smooth_opt} --span 0.02)
 smooth_scan_test(sr_07_N_opt_debl1 sr 07_N_opt "vkb_projectors.debl[1]" ${smooth_opt_groups} ${smooth_opt} --span 0.02)
 smooth_scan_test(sr_07_N_opt_rcloc sr 07_N_opt "local_potential.rcloc" ${smooth_opt_groups} ${smooth_opt} --center 1.19)
+# rxpsh, straddling the node 6e-6 above it (X-2): the phases are taken at rxpsh itself, no longer
+# at the first node beyond it (a staircase). At 11-12 Ha the l=2 angle turns by nearly pi within
+# ~0.01 bohr (k r ~ 19, so (phi, r phi') traces a thin ellipse), smooth but steep: a narrow window
+# and degree 10 (1.8e-11)
+smooth_scan_test(sr_07_N_opt_rxpsh sr 07_N_opt "log_derivative_analysis.rxpsh" ld "ld=3e-10" --span 0.004 --degree 10)
 # the psp8 file and the UPF file on the linear output mesh (phase 4, O-1): the writers interpolated
 # the functions on the log mesh across rc, so the points next to it moved with the nodes past it
 smooth_scan_test(sr_14_Si_rc0_psp8 sr 14_Si "pseudopotentials.rc[0]" kernel,vloc ${smooth_g1} --center 2.8 --output psp8)
@@ -203,7 +208,7 @@ set(oncvpspsr_tests
     "34_Se" "38_Sr_lxc" "40_Zr" "56_Ba" "57_La"
     "60_Nd_GHOST" "73_Ta" "79_Au_lxc" "83_Bi"
     "08_O_wigner"   # iexc=1 (excwig)
-    "14_Si_lder"    # rxpsh set, s projector below epsh1 (run_phsft, vkbphsft)
+    "14_Si_lder"    # rxpsh set, s projector below epsh1 (run_phsft, phsft_m)
     "40_Zr_grid"    # icmod=4 with an explicit search grid (modcore3)
     "14_Si_hm"      # icmod=7 with slack (modcore_budget, modcore_probes)
     "07_N_opt"      # the optimizer's setup (oncvpsp-opt): PBE (Libxc), icmod 6, rxpsh, its own

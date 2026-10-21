@@ -382,7 +382,7 @@ numbers refer to [Phases](#phases).
 | R-11 | `vrel` window 0.5–1.5 rr(irc); 1e-10 threshold on u; vr = 0 points replaced by the average of their neighbours | a, g | W | done in phase 3: `ae_delta` (unit test `ae_delta`), Δ = u″ − [l(l+1)/r² + 2(V−ε)]u at the nodes about the window from the first-order system (u, u′ = up/(al r), V′ by `lm_derivs`), no division by u; `vrel` removed. The local potential of lloc<4 keeps Δ/(2u) for its own taper (S-1), with an error if u has a node within reach of rc |
 | R-12 | `wellstate`: well onset at rr(irc+5), x³ onset (C²), inside the ±12-point stencils of `wf_rc_der` (uord 4, 5 of well states O(al²), O(al) off); thresholds 0.75, 1.5 rr(irc) override `ep`; negative `ep` reset to 0.25 | a, d, g | W | done in phase 3: onset at rc·amesh⁵ (continuous), then at rc·`well_onset`, an input of default 1.006⁵ that does not depend on the mesh (T4 at the end of phase 3); the well cwell x³/(1+x³) e^(−0.01/x), the well of before times a C-infinity factor within 5 % of 1 from x = 0.2 on, so that the states found are those of before (with e^(−1/x³), a different shape, 14_Si's kernels moved 7 % and 11 inputs found another n at the wall's lower limit; with e^(−0.1/x), still 11; with e^(−0.01/x) only 40_Zr's l=1, whose wall sat at the limit). The `rc[0]` scan 8.9e-6 → 4.4e-12. The overrides stay by default; `ep_as_given` (D-1, revised) |
 | R-13 | `ionic_window`: ra = rcmax (snapped); rcore = first mesh point where `|vion+zion/r|` < 1e-10; rb = max(rcore, 2ra) | a, g, h | W | done in phase 3: ra the largest given rc; rcore the root of the interpolant of (V_ion + zion/r)² − tol² between the mesh points where it crosses (`lm_root`; the square, not the log, as V_ion + zion/r may cross zero there); rb the C-infinity maximum of rcore and 2ra within 0.05 bohr |
-| R-14 | `run_diag` `mchf = max(irc)+5`; `run_phsft` rxpsh → irphs; `run_ghosts` mbar; `run_plot` n1..n4 | a | – | phase 6 |
+| R-14 | `run_diag` `mchf = max(irc)+5`; `run_phsft` rxpsh → irphs (X-2, done); `run_ghosts` mbar (X-3, done); `run_plot` n1..n4 | a | – | phase 6 |
 | R-15 | `upfout` `nrlproj`, `cutoff_radius_index`; `linout` rc+2·drl format switch | a, g | W | β exactly 0 beyond rc (phase 4); indices then harmless |
 
 #### Wave vectors, residual kinetic energy, optimisation (phase 3)
@@ -457,7 +457,7 @@ numbers refer to [Phases](#phases).
 | id | where | cat | decision |
 |---|---|---|---|
 | X-1 | `run_diag`, `run_diag_sr_so_r`: matching at mchf = max(irc)+5; renorm to the last nonzero point | a, c | continuous r_m = max(rc_l, rc_loc)·amesh⁵; (u, q) by FH at r_m |
-| X-2 | `run_phsft`: rxpsh → irphs; npsh = int(range/depsh); 2π unwrapping on any decrease; `vkbphsft` heuristic thresholds and nearest-grid alignment | a, i, g, h | exact rxpsh; fixed point count; branch-free angle (doubled-angle form, sign-invariant); offset at ep exactly |
+| X-2 | `run_phsft`: rxpsh → irphs; npsh = int(range/depsh); 2π unwrapping on any decrease; `vkbphsft` heuristic thresholds and nearest-grid alignment | a, i, g, h | done (`phsft_m`): (u, al r u′) interpolated to rxpsh exactly, the default rc·amesh² (rc of the local potential beyond lmax), the old node whenever rc is one; the phase followed in its doubled angle (sign-invariant) by continuation, the energy step halved until no step turns it by more than π/2, so no thresholds and no π or 2π corrections; aligned at ep itself. npsh kept: it depends on epsh1, epsh2 and depsh only, which the optimizer fixes |
 | X-3 | `run_ghosts`: barrier at mesh index mbar; basis = states below ebcut (count jumps) | a, i | done: the wall at 3 rc exactly, a node of the log mesh scaled by s ∈ [1, amesh) (V_loc and the projectors interpolated there from their pieces, `pw_value`, `pw_resample`); each barrier state's overlaps with the projectors weighted by `cinf_taper` of its energy, 1 to ebcut and 0 from 1.5 ebcut, so states enter at weight 0; the margins (e_basis against e_ref, the least ⟨r⟩/rc) in the DIAGNOSTICS block |
 | X-4 | `run_plot`: index ranges and thinning | a, h | fixed output grid (plots only) |
 | X-5 | `run_config`/`psatom`: see S-5; occupation ramp may exit early | f, g | explicit criterion; ramp completes |
@@ -628,7 +628,16 @@ So the order is:
    (60_Nd_GHOST l = 0, the states between ebcut and 1.5 ebcut; most by
    ≤ 1e-4), and 52_Te_r's l = 0 now reports GHOST(+) at ⟨r⟩/rc 0.995
    (the wall and the ratio at rc rather than at the mesh point below it).
-5. X-2: the phase shifts, with rxpsh honoured exactly.
+5. X-2: the phase shifts, with rxpsh honoured exactly. Done: with rxpsh
+   at the old node of every input, the phases are the old ones to 4e-15
+   modulo π (the first now in (−π/2, π/2], an all-electron curve can move
+   by π); the exceptions are two old π artifacts, where the all-electron
+   curve sat π above the pseudopotential's as its sign flipped (79_Au_lxc
+   l = 3 below −3 Ha, 34_Se l = 2 at its last energy), now aligned. At the
+   default radius (now rc·amesh², up to a mesh step from the old node) the
+   phases move by up to 0.27. A new N row scans rxpsh across a node (span
+   0.004, degree 10): ld 1.8e-11 (the old code: a staircase, jump ∞). Only
+   the log-derivative tables change.
 6. References, then phase 7.
 7. Low, for the optimizer: X-1, X-4…X-6, D-5, the M-12 ripple (below the
    finite-difference noise at h = 1e-4), M-14 (PSML), the psp8 model-core
@@ -1153,14 +1162,16 @@ So the order is:
 
 #### Phase 6: diagnostics
 
-- [ ] X-1, X-2, X-4, X-5
+- [ ] X-1, X-4, X-5
+- [x] X-2: the phases at rxpsh exactly, continuous in the energy (`phsft_m`)
 - [x] X-3: the ghost test on a wall at 3 rc exactly, a smooth basis
       cutoff, its margins in the DIAGNOSTICS block (≤ 9.5e-13 in the N
       rows)
 - [x] Machine-readable diagnostics block (O-6), parsed by pyoncvpsp: the
       Ecut crossings and the log derivatives to 17 digits; the N rows'
       ld and ecut at ≤ 3.7e-10
-- [ ] T2 rows rxpsh and the test eigenvalues at G1
+- [x] T2 row rxpsh (sr_07_N_opt_rxpsh, ld 1.8e-11)
+- [ ] T2 rows of the test eigenvalues at G1
 - [ ] References patched
 
 #### Phase 7: wrap-up

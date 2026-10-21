@@ -207,9 +207,11 @@ irel, and the stage.  It has the following major sections:
    printed on the standard output below the heading "DATA FOR PLOTTING."
 
 9) The routine *run_phsft* compares the log derivatives of the all-electron
-   and pseudo wave functions (bound or scattering) at the maximum *r_c*.
-   (When shallow cores are included, this value shifts to max(rc)+1.)
-   Since simple plots of log derivatives contain multiple divergences, and
+   and pseudo wave functions (bound or scattering) at the radius rxpsh, or
+   by default at rc(l) times amesh**2 (rc of the local potential for l
+   beyond lmax), the second mesh point beyond rc when rc is one; the
+   solutions are interpolated there, so the radius need not be a mesh
+   point.  Since simple plots of log derivatives contain multiple divergences, and
    are difficult to interpret visually, I plot atan(r * ((d psi(r)/dr)/psi(r)))
    at this radius, which is akin but not equal to a scattering phase shift.
    These are plotted using the specified number of vkb projectors.  If the
@@ -222,7 +224,14 @@ irel, and the stage.  It has the following major sections:
    serves as a ghost test.  A step in the pseudopotential plot which is not
    matched by one in the all-electron plot indicates a ghost.  The
    pseudopotential results are shifted by an appropriate multiple of
-   pi to align the plots at the first reference energy.
+   pi to align the plots at the first reference energy, where the two
+   solutions agree beyond rc.  The phase is that of the point
+   (psi, r d psi/dr), which is defined only up to pi, as a solution's sign
+   is arbitrary; *phsft_m* follows twice it, which is sign-invariant, from
+   each energy to the next, halving the step until no step turns it by more
+   than pi/2.  The curves are then continuous functions of the energy, the
+   radius and the potentials, with no corrections for jumps (see
+   ghosts.md).
 
 10) The routine gnuscript produces an input script for gnuplot, which is
     extracted and appropriately handled for plotting by the main shell

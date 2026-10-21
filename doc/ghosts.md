@@ -106,3 +106,14 @@ ignored.  It is also possible that a perversely sharp ghost step could
 be mistakenly canceled.  However, our two-projector potentials are
 remarkably free of real ghosts, while sign-changes have been found often
 enough to warrant the new procedure.
+
+Since 2026 (doc/smoothness_plan.md, X-2) the phases are computed by
+*phsft_m*, and the search is gone.  A sign change of psi and d psi/dr
+together leaves the line through (psi, r d psi/dr) where it is, so the
+phase is followed as twice the angle of that point, which does not see the
+sign, from each energy to the next; the step is halved until it turns the
+doubled angle by less than pi/2.  An abrupt sign-change jump then never
+appears, and a continuous step, a semi-core state or a ghost, is followed
+however sharp it is, down to a width of about 1e-12 of the energy step.
+The alignment is made at the projector's energy itself, not at the nearest
+energy of the scan.

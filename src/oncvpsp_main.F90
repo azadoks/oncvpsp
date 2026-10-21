@@ -1081,7 +1081,7 @@
  allocate(pshae(npsh,4,nkap),pshps(npsh,4,nkap))
  call run_phsft(lmax,lloc,nproj,epa,npsh,epsh2,depsh,rxpsh,vlocpw,vkbpw, &
 &               evkb, &
-&               rr,vfull,vp,zz,mmax,mxprj,irc,irel,nkap,rphs,pshae,pshps)
+&               rr,vfull,vp,zz,mmax,mxprj,rc,irel,nkap,rphs,pshae,pshps)
 
  call gnu_script(epa,evkb,lmax,lloc,mxprj,nproj,nkap)
 

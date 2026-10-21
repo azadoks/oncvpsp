@@ -22,7 +22,6 @@ set(src_oncvpsp
     exchdl.f90
     excpzca.f90
     excwig.f90
-    fphsft.f90
     inward_start.f90
     cinf_taper.f90
     ionic_tail.f90
@@ -71,6 +70,7 @@ set(src_oncvpsp
     scatterstate.f90
     sr_flux_m.f90
     sbf_q_m.f90
+    phsft_m.f90
     pieces_m.f90
     outmesh_m.f90
     vploc_m.f90
@@ -81,7 +81,6 @@ set(src_oncvpsp
     tfapot.f90
     vkboutwf.f90
     wf_rc_der.f90
-    vkbphsft.f90
     vout.f90
     vpinteg.f90
     wellstate.f90
