@@ -17,6 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
  subroutine pspot(ipr,ll,rr,irc,mmax,al,nbas,qroot,eig,uu,pswfopt_sb, &
+&                 psx,chix, &
 &           psopt,vae,vpsp,vkb,ekin_num)
 
 !! calculates optimized pseudopotential from coefficients of optimized
@@ -38,8 +39,13 @@
 !! @param vpsp  pseudopotential
 !! @param vkb  (epsilon-T)*phi component of chi projector
 !! @param ekin_num  total radial kinetic energy
+!! @param psx  the Bessel sum rr * pseudo wave function on the nodes up to
+!!             pw_reach+16 past irc, 0 beyond: the inside piece's smooth
+!!             extension past rc (pieces_m)
+!! @param chix  (eig - T) psx on the same nodes: the projector's seed
 
  use constants_m, only: dp
+ use pieces_m, only: pw_reach
  implicit none
 
 !Input variables
@@ -55,12 +61,13 @@
  real(dp), intent(out) :: psopt(mmax)
  real(dp), intent(out) :: vpsp(mmax)
  real(dp), intent(out) :: ekin_num
+ real(dp), intent(out) :: psx(mmax),chix(mmax)
 
 !Local variables
  real(dp), allocatable :: work(:,:)
  real(dp) :: sbfder(5)
  real(dp) :: amesh,tt,ddt,ske,ro
- integer :: ii,jj,kk,ll1
+ integer :: ii,jj,kk,ll1,nx
  integer :: ixp(4)
 
  allocate(work(mmax,5))
@@ -88,6 +95,23 @@
 &     -9.d0*work(ii+2,jj-1)+work(ii+3,jj-1))&
 &     /(60.d0*al*rr(ii))
    end do
+ end do
+
+!the inside piece and its seed on the nodes past rc too, as smooth
+!extensions for the integrals of pieces_m
+ nx=min(mmax,irc+pw_reach+16)
+ psx(:)=0.0d0
+ chix(:)=0.0d0
+ do ii=1,nx
+   tt=0.0d0
+   ddt=0.0d0
+   do jj=1,nbas
+     call sbf_rc_der(ll,qroot(jj),rr(ii),sbfder)
+     tt=tt+pswfopt_sb(jj)*rr(ii)*sbfder(1)
+     ddt=ddt+pswfopt_sb(jj)*(rr(ii)*sbfder(3)+2.0d0*sbfder(2))
+   end do
+   psx(ii)=tt
+   chix(ii)=eig*tt-0.5d0*(ll*ll1*tt/rr(ii)**2-ddt)
  end do
 
 !fill [0, rc] with rr * analytic pswf and 2nd derivatives

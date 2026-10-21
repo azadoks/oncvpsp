@@ -1,0 +1,233 @@
+!
+! Copyright (c) 2026 by Austin Zadoks
+!
+!
+! This program is free software: you can redistribute it and/or modify
+! it under the terms of the GNU General Public License as published by
+! the Free Software Foundation, either version 3 of the License, or
+! (at your option) any later version.
+!
+! This program is distributed in the hope that it will be useful,
+! but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+! GNU General Public License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+!
+!> Functions built from pieces on the log mesh (doc/smoothness_plan.md,
+!> R-6): a projector is a smooth function on [0, 0.95 rc], another on
+!> [0.95 rc, rc] (the taper), zero beyond, with a kink at each boundary;
+!> the local potential a polynomial inside rc(5) and the all-electron
+!> potential beyond. Each piece is kept as a smooth function on the whole
+!> mesh (its extension past its segment, which the piece's formula gives,
+!> at least pw_reach nodes past each boundary, 0 far away), and every
+!> operation is done per piece on that extension: an integral is the sum
+!> over the segments of lm_integral between the segment's bounds, so no
+!> stencil or interpolant spans a kink, and the result is smooth in the
+!> bounds.
+
+ module pieces_m
+ use constants_m, only: dp
+ use logmesh_m, only: lm_integral
+ implicit none
+ private
+ public :: piecewise_t, pw_maxseg, pw_reach, pw_alloc, pw_free
+ public :: pw_integral, pw_product_integral, pw_node_values, pw_segment
+
+!> the most segments a function has
+ integer, parameter :: pw_maxseg=4
+!> nodes on each side of a segment on which its piece must hold the piece's
+!> smooth extension: the reach of the interpolant and of the cell rule of
+!> lm_integral at the segment's bounds
+ integer, parameter :: pw_reach=32
+
+ type piecewise_t
+   integer :: nseg=0
+!> bound(k-1) < r <= bound(k) is segment k; bound(0)=0
+   real(dp) :: bound(0:pw_maxseg)=0.0d0
+!> vals(:,k) the k-th piece on the mesh
+   real(dp), allocatable :: vals(:,:)
+ end type piecewise_t
+
+ contains
+
+ subroutine pw_alloc(pw,mmax,nseg,bound)
+
+!! a piecewise function of nseg segments with the bounds given, its pieces
+!! zero
+!!
+!! @param pw  the function
+!! @param mmax  size of the log radial mesh
+!! @param nseg  number of segments, 1..pw_maxseg
+!! @param bound  bound(0..nseg), nondecreasing, bound(0)=0
+
+!Input variables
+ integer, intent(in) :: mmax,nseg
+ real(dp), intent(in) :: bound(0:nseg)
+
+!Output variables
+ type(piecewise_t), intent(out) :: pw
+
+!Local variables
+ integer :: kk
+
+ if(nseg<1 .or. nseg>pw_maxseg) then
+   write(6,'(a,i0)') 'pw_alloc: ERROR number of segments ',nseg
+   error stop 1
+ end if
+ do kk=1,nseg
+   if(bound(kk)<bound(kk-1)) then
+     write(6,'(a,i0)') 'pw_alloc: ERROR bounds out of order at segment ',kk
+     error stop 1
+   end if
+ end do
+ pw%nseg=nseg
+ pw%bound(:)=0.0d0
+ pw%bound(0:nseg)=bound(0:nseg)
+ allocate(pw%vals(mmax,nseg))
+ pw%vals(:,:)=0.0d0
+ return
+ end subroutine pw_alloc
+
+ subroutine pw_free(pw)
+
+!! releases the pieces
+
+ type(piecewise_t), intent(inout) :: pw
+
+ if(allocated(pw%vals)) deallocate(pw%vals)
+ pw%nseg=0
+ return
+ end subroutine pw_free
+
+ subroutine pw_integral(rr,mmax,mm,ff,pw,ss)
+
+!! int_0^bound(nseg) ff(r) pw(r) dr for a smooth ff given on the mesh:
+!! the sum over the segments of lm_integral of ff times the piece
+!!
+!! @param rr  log radial mesh
+!! @param mmax  size of the log radial mesh
+!! @param mm  power of r with which ff*pw goes to 0 at the origin
+!! @param ff  smooth function on the mesh
+!! @param pw  the piecewise function
+!! @param ss  the integral
+
+!Input variables
+ integer, intent(in) :: mmax,mm
+ real(dp), intent(in) :: rr(mmax),ff(mmax)
+ type(piecewise_t), intent(in) :: pw
+
+!Output variables
+ real(dp), intent(out) :: ss
+
+!Local variables
+ real(dp) :: sk
+ integer :: kk
+
+ ss=0.0d0
+ do kk=1,pw%nseg
+   if(pw%bound(kk)<=pw%bound(kk-1)) cycle
+   call lm_integral(rr,ff*pw%vals(:,kk),mmax,mm,pw%bound(kk-1), &
+&                   pw%bound(kk),sk)
+   ss=ss+sk
+ end do
+ return
+ end subroutine pw_integral
+
+ subroutine pw_product_integral(rr,mmax,mm,pwa,pwb,ss)
+
+!! int_0^bound(nseg) pwa(r) pwb(r) dr for two piecewise functions with the
+!! same segments
+!!
+!! @param rr  log radial mesh
+!! @param mmax  size of the log radial mesh
+!! @param mm  power of r with which the product goes to 0 at the origin
+!! @param pwa,pwb  the functions
+!! @param ss  the integral
+
+!Input variables
+ integer, intent(in) :: mmax,mm
+ real(dp), intent(in) :: rr(mmax)
+ type(piecewise_t), intent(in) :: pwa,pwb
+
+!Output variables
+ real(dp), intent(out) :: ss
+
+!Local variables
+ real(dp) :: sk
+ integer :: kk
+
+ if(pwa%nseg/=pwb%nseg .or. any(pwa%bound(0:pwa%nseg)/=pwb%bound(0:pwa%nseg))) &
+&  then
+   write(6,'(a)') 'pw_product_integral: ERROR the segments differ'
+   error stop 1
+ end if
+ ss=0.0d0
+ do kk=1,pwa%nseg
+   if(pwa%bound(kk)<=pwa%bound(kk-1)) cycle
+   call lm_integral(rr,pwa%vals(:,kk)*pwb%vals(:,kk),mmax,mm, &
+&                   pwa%bound(kk-1),pwa%bound(kk),sk)
+   ss=ss+sk
+ end do
+ return
+ end subroutine pw_product_integral
+
+ subroutine pw_node_values(rr,mmax,pw,ff)
+
+!! the function on the mesh: at each node the piece of the segment the
+!! node is in, 0 beyond the last bound
+!!
+!! @param rr  log radial mesh
+!! @param mmax  size of the log radial mesh
+!! @param pw  the piecewise function
+!! @param ff  its values at the nodes
+
+!Input variables
+ integer, intent(in) :: mmax
+ real(dp), intent(in) :: rr(mmax)
+ type(piecewise_t), intent(in) :: pw
+
+!Output variables
+ real(dp), intent(out) :: ff(mmax)
+
+!Local variables
+ integer :: ii,kk
+
+ do ii=1,mmax
+   kk=pw_segment(pw,rr(ii))
+   if(kk>0) then
+     ff(ii)=pw%vals(ii,kk)
+   else
+     ff(ii)=0.0d0
+   end if
+ end do
+ return
+ end subroutine pw_node_values
+
+ integer function pw_segment(pw,rq)
+
+!! the segment that holds the radius rq, bound(k-1) < rq <= bound(k)
+!! (segment 1 from the origin), or 0 beyond the last bound
+!!
+!! @param pw  the piecewise function
+!! @param rq  radius (bohr)
+
+!Input variables
+ type(piecewise_t), intent(in) :: pw
+ real(dp), intent(in) :: rq
+
+!Local variables
+ integer :: kk
+
+ pw_segment=0
+ do kk=1,pw%nseg
+   if(rq<=pw%bound(kk)) then
+     pw_segment=kk
+     return
+   end if
+ end do
+ return
+ end function pw_segment
+
+ end module pieces_m

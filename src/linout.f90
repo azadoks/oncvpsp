@@ -25,7 +25,9 @@
 &                  rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl, &
 &                  atsym,soscale, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,fcfact0,rcfact, &
+&                  fa,rc0,ep,qcut,ep_as_given,debl,facnf,dvloc0,fcfact, &
+&                  fcfact0, &
+&                  rcfact, &
 &                  slack,fcgrid,rcgrid, &
 &                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,upf_mesh, &
 &                  nkap)
@@ -129,6 +131,7 @@
  integer, intent(in) :: nvcnf(mxcnf),nacnf(mxstate,mxcnf),lacnf(mxstate,mxcnf)
  integer, intent(in) :: nc,nv,lpopt,ncnf,upf_mesh
  real(dp), intent(in) :: fa(mxstate),rc0(mxlin+1),ep(mxlin+1,nkap),qcut(mxlin+1)
+ logical, intent(in) :: ep_as_given
  real(dp), intent(in) :: debl(mxlin+1)
  real(dp), intent(in) :: facnf(mxstate,mxcnf)
  real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rxpsh,rlmax
@@ -363,7 +366,7 @@
 
  if(nkap==2) write(6,'(a)') '#Echo of input data for oncvpsp-4.0.1'
  call write_input_echo(nkap,1,atsym,zz,nc,nv,iexc,psfile, &
-&                       na,la,fa,lmax,rc0,ep(:,1),ncon,nbas,qcut, &
+&                       na,la,fa,lmax,rc0,ep(:,1),ncon,nbas,qcut,ep_as_given, &
 &                       lloc,lpopt,dvloc0,nproj,debl, &
 &                       icmod,fcfact0,rcfact,slack,fcgrid,rcgrid, &
 &                       epsh1,epsh2,depsh,rxpsh,rlmax,drl, &

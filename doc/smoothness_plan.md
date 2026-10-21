@@ -374,14 +374,14 @@ numbers refer to [Phases](#phases).
 | R-3 | `rcmax` = max of snapped rc | a | W | done in phase 3: max of the given rc |
 | R-4 | `wf_rc_der`: 7-point stencils applied 4 times at `irc` | a, e | W | ODE-recursion derivatives at rc |
 | R-5 | `fpovlp`, `sbf_basis_con`: overlaps to `irc` with the (23,28,9)/24 end rule | c | W | `lm_integral` for all-electron overlaps; `sbf_overlap` (Lommel) for Bessel ones |
-| R-6 | `pspot`: inside/outside by mesh index; V_l joins V_AE at irc+1 | a, d | W | pieces with extensions; values by side of rc |
-| R-7 | `vploc`: v′, v″, v‴ at irc(5) by three nested 5-point stencils, polynomial for ii ≤ irc(5); round-off grows as al⁻³ (Fe: V_loc near 0 moves 3.6e-6, then 1.8e-5, as the mesh is halved twice) | a, e | W | derivatives of V_AE at rc(5) from a least-squares fit weighted by a C-infinity bump of fixed physical width (points enter and leave with zero weight, so the fit is smooth in rc(5) and does not amplify the noise as the mesh refines); polynomial evaluated analytically |
-| R-8 | `run_vkb`: support cut at irc; window `20(r/rr(irc) − 1)`, ff = (1−x²)², C¹; ff·vr·φ̃ with vr = Δ/2u | a, d | W | true rc; subtract ff·Δ[u_AE]/2 (D-4); same window shape; quadratures split at 0.95 rc, rc(5), rc |
-| R-9 | `vpinteg` to `irc`; points 1–3 skipped | c | W | piecewise `lm_integral` |
+| R-6 | `pspot`: inside/outside by mesh index; V_l joins V_AE at irc+1 | a, d | W | done in phase 3: `pieces_m` (a function of up to 4 segments, each piece held on the whole mesh as its smooth extension, integrals per segment by `lm_integral`; unit test `pieces`); `pspot` returns the inside piece and its seed (ε − T)φ̃ on the nodes to past rc; `irc` is the last node ≤ rc, so the node values are by side of rc |
+| R-7 | `vploc`: v′, v″, v‴ at irc(5) by three nested 5-point stencils, polynomial for ii ≤ irc(5); round-off grows as al⁻³ (Fe: V_loc near 0 moves 3.6e-6, then 1.8e-5, as the mesh is halved twice) | a, e | W | done in phase 3 (`vploc_m`, unit test `vploc`): V, V′, V″, V‴ at rc(5) from `lm_derivs` (smooth in rc(5)); the polynomial evaluated analytically at any radius, its extension past rc(5) a piece of the projectors' integrals. The bump-weighted least-squares fit was tried: of degree 8 on the nodes within 0.25 bohr its V‴ was good to 2e-6 for V = −2/r + e^−r at 1.7 bohr (the truncation of a fit of fixed width for a potential with the derivatives of −Z/r), `lm_derivs` to 1e-9; its al⁻³ round-off (2e-11 on the default mesh) is a fixed pattern on the nodes, smooth in rc(5) through the interpolant |
+| R-8 | `run_vkb`: support cut at irc; window `20(r/rr(irc) − 1)`, ff = (1−x²)², C¹; ff·vr·φ̃ with vr = Δ/2u | a, d | W | done in phase 3: the projectors are `piecewise_t` with segments split at 0.95 rc, rc(5) (and 0.95 rc(5) for lloc<4) when inside, and rc; on each segment χ = seed − V_loc^piece φ̃ − f Δ/2 (D-4, `ae_delta`), every term its smooth extension; the B matrix, normalizations and overlaps by `pw_integral`/`pw_product_integral`; the orthonormal combinations act on the pieces; `vkbpw` returned beside the node values. On the T3 inputs the fr kernels move by ≤1.1e-4 (the Δ form), sr/nr by ≤1e-6 |
+| R-9 | `vpinteg` to `irc`; points 1–3 skipped | c | W | done in `run_vkb` (R-8); `vkboutwf`, `sr_so_r`, `run_ghosts` still use it on the node values (R-10) |
 | R-10 | `vkboutwf`, `lschvkbb`: rc found as the last nonzero vkb. Since e809a29 the overlaps end at irc and the Adams steps past irc use the source-free u″ at their back points (no O(al²) from the kink), both assuming the support ends on a node | a, e | W | rc passed in; one fixed [0, rc] rule shared with run_vkb, with the partial cell [rr(irc), rc]; the integration stops at rc exactly (partial step) and restarts beyond it from (u, u′) at rc, so no step straddles the kink |
-| R-11 | `vrel` window 0.5–1.5 rr(irc); 1e-10 threshold on u; vr = 0 points replaced by the average of their neighbours | a, g | W | replaced by Δ = u″ − u″_Schrödinger of the all-electron wave on [0.95 rc, rc], from the ODE (D-4): no division by u, no threshold |
-| R-12 | `wellstate`: well onset at rr(irc+5), x³ onset (C²), inside the ±12-point stencils of `wf_rc_der` (uord 4, 5 of well states O(al²), O(al) off); thresholds 0.75, 1.5 rr(irc) override `ep`; negative `ep` reset to 0.25 | a, d, g | W | onset at rc·amesh⁵ (continuous), C-infinity onset; the derivatives at rc come from the ODE (R-4), which sees V at rc only, so the onset beyond rc cannot reach them; overrides removed, the input `ep` is always used (D-1) |
-| R-13 | `ionic_window`: ra = rcmax (snapped); rcore = first mesh point where `|vion+zion/r|` < 1e-10; rb = max(rcore, 2ra) | a, g, h | W | continuous ra; rcore by `lm_root` of ln\|vion+zion/r\| − ln tol; smooth max |
+| R-11 | `vrel` window 0.5–1.5 rr(irc); 1e-10 threshold on u; vr = 0 points replaced by the average of their neighbours | a, g | W | done in phase 3: `ae_delta` (unit test `ae_delta`), Δ = u″ − [l(l+1)/r² + 2(V−ε)]u at the nodes about the window from the first-order system (u, u′ = up/(al r), V′ by `lm_derivs`), no division by u; `vrel` removed. The local potential of lloc<4 keeps Δ/(2u) for its own taper (S-1), with an error if u has a node within reach of rc |
+| R-12 | `wellstate`: well onset at rr(irc+5), x³ onset (C²), inside the ±12-point stencils of `wf_rc_der` (uord 4, 5 of well states O(al²), O(al) off); thresholds 0.75, 1.5 rr(irc) override `ep`; negative `ep` reset to 0.25 | a, d, g | W | done in phase 3: onset at rc·amesh⁵ (continuous); the well cwell x³/(1+x³) e^(−0.01/x), the well of before times a C-infinity factor within 5 % of 1 from x = 0.2 on, so that the states found are those of before (with e^(−1/x³), a different shape, 14_Si's kernels moved 7 % and 11 inputs found another n at the wall's lower limit; with e^(−0.1/x), still 11; with e^(−0.01/x) only 40_Zr's l=1, whose wall sat at the limit). The `rc[0]` scan 8.9e-6 → 4.4e-12. The overrides stay by default; `ep_as_given` (D-1, revised) |
+| R-13 | `ionic_window`: ra = rcmax (snapped); rcore = first mesh point where `|vion+zion/r|` < 1e-10; rb = max(rcore, 2ra) | a, g, h | W | done in phase 3: ra the largest given rc; rcore the root of the interpolant of (V_ion + zion/r)² − tol² between the mesh points where it crosses (`lm_root`; the square, not the log, as V_ion + zion/r may cross zero there); rb the C-infinity maximum of rcore and 2ra within 0.05 bohr |
 | R-14 | `run_diag` `mchf = max(irc)+5`; `run_phsft` rxpsh → irphs; `run_ghosts` mbar; `run_plot` n1..n4 | a | – | phase 6 |
 | R-15 | `upfout` `nrlproj`, `cutoff_radius_index`; `linout` rc+2·drl format switch | a, g | W | β exactly 0 beyond rc (phase 4); indices then harmless |
 
@@ -682,7 +682,7 @@ later phases can see 1e-10.
       precision had lost); runtime unchanged (14_Si_r 2.7 s, 74_W_r 8.7 s:
       the many overlaps of `eresid` share the Bessel values at rc, and
       Lommel's form is kept in quad until it has cost 13 digits)
-- [ ] R-6 pieces
+- [x] R-6 pieces (`pieces_m`)
 - [x] Q-1…Q-4 residual kinetic energy at exact qcut, fixed quadratures
       (`ugrid_m`, unit test `ugrid`, `eresid` rewritten). T2 `qcut0` at G1
       passes (kernel 1e-11), `debl0` at G2 passes (5.8e-12). References
@@ -694,10 +694,17 @@ later phases can see 1e-10.
       inside transforms). Runtime is unchanged (14_Si_r 2.7 → 2.5 s, 74_W_r
       9.5 → 9.1 s, after `fh_value` evaluates each window once). `ep[2]`
       stays at 5.0e-10, unchanged by this, so it is not in E_resid
-- [ ] R-7 vploc at continuous rc(5); R-8…R-10 run_vkb, vpinteg,
-      vkboutwf on a shared piecewise rule; R-11 vrel; S-1
-- [ ] R-12 wellstate onset, overrides removed (D-1); R-3, R-13 ionic
-      window
+- [x] R-7 vploc at continuous rc(5); R-8, R-9 run_vkb on the pieces;
+      R-11 vrel → `ae_delta`; S-1 (the local potential's taper in the Δ
+      form, Δ/(2u) on the window)
+- [ ] R-10 vkboutwf, lschvkbb, sr_so_r, run_ghosts on the pieces, the
+      pseudo-atom's integration restarted at rc
+- [x] R-12 wellstate onset; D-1 behind `ep_as_given`; R-13 ionic window.
+      Scans: `rc[0]` kernel 4.4e-12, `rc[2]` 8.2e-11, `rcloc` 9.3e-12 (its
+      row at degree 14: the kernel changes by 70 % across the window, so
+      the degree-6 fit's truncation was 1e-5), 08_O `rc[1]` 9.2e-12, all at
+      G1; `vloc` 6.8e-10 (14_Si), 4.5e-8 (08_O), from the pseudo-atom
+      (R-10)
 - [ ] Q-8, Q-10
 - [ ] T2 rows rc, rcloc at G1 (qcut, debl, ep done at G2); T3, T4 recorded
 - [ ] References patched
@@ -737,17 +744,21 @@ later phases can see 1e-10.
 
 These change behaviour beyond numerics. Decided on review (2026-10-20).
 
-- **D-1 wellstate overrides** (R-12). Removed. Today a bound state of
-  the requested n whose outermost peak is inside 0.75 rc replaces the
-  input `ep` with its own energy, one inside 1.5 rc forces `ep = 0.05`,
-  and a negative `ep` becomes 0.25. The input `ep` is now always used,
-  and the well is always built. The well only raises the energy, so an
-  `ep` below the free bound state of that n has no well state: that is
-  an input error, reported with the bound energy. 13 of the 51
-  references take an override today and change: 03_Li (nr, sr, fr),
-  20_Ca (sr, fr), 38_Sr_lxc (sr, fr), 56_Ba, 57_La, 74_W_r, 79_Au_lxc
-  (sr, fr), 80_Hg_r. In all of them the input `ep` is above the bound
-  state (57_La 4f: −0.10 against −0.111), so none becomes an error.
+- **D-1 wellstate overrides** (R-12). Revised 2026-10-21: kept by default,
+  behind an input flag. Today a bound state of the requested n whose
+  outermost peak is inside 0.75 rc replaces the input `ep` with its own
+  energy, one inside 1.5 rc forces `ep = 0.05`, and a negative `ep`
+  becomes 0.25. The first decision was to remove them and always use the
+  input `ep`; on the references that misbehaved: the "moderately
+  localized" 6p of 74_W_r, 80_Hg_r, 79_Au_lxc, the 2p of 03_Li and the 5d
+  of 56_Ba then had to be raised to `ep` by a wall 0.17 bohr past rc
+  (74_W_r's solution was inconsistent at rc), and 56_Ba's `ep = 0.0` (a
+  placeholder of the old convention) gave a state at exactly E = 0, on
+  which the diagnostics fail. So the overrides stay as the default, and
+  `ep_as_given = true` in `[pseudopotentials]` (TOML only) selects the
+  other behaviour: `ep` is always used, a bound state at or above `ep` is
+  an input error, and one below `ep` inside 1.5 rc is raised to it by a
+  wall as close as that takes.
 - **D-2 fr psp8 truncation** (O-2). All terms are written. The files
   then hold up to 2·nproj terms per l where they hold fewer now.
 - **D-3 Basis wave vectors** (Q-5). The method stays: the roots are found

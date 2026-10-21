@@ -33,7 +33,7 @@ set_tests_properties(unit_run_phsft PROPERTIES LABELS unit)
 # Unit tests of the operations at any radius on the log mesh (logmesh_m), the closed-form Bessel
 # overlaps (sbf_overlap) and the derivatives at rc from the radial equation (ode_rc_der), phase 1 of
 # doc/smoothness_plan.md
-foreach (unit_test logmesh ode_rc_der solver_path piecewise matching ugrid quadbasis)
+foreach (unit_test logmesh ode_rc_der solver_path piecewise matching ugrid quadbasis pieces vploc ae_delta)
     add_executable(test_${unit_test} unit/test_${unit_test}.f90)
     target_link_libraries(test_${unit_test} PRIVATE oncvpsp::oncvpsp oncvpsp::compile_options)
     set_target_properties(test_${unit_test} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
@@ -103,7 +103,7 @@ endfunction()
 smooth_scan_test(sr_14_Si_rc0 sr 14_Si "pseudopotentials.rc[0]" kernel,vloc,core ${smooth_g1} --center 2.8)
 smooth_scan_test(sr_14_Si_rc1 sr 14_Si "pseudopotentials.rc[1]" kernel,vloc,core ${smooth_g1} --center 2.8)
 smooth_scan_test(sr_14_Si_rc2 sr 14_Si "pseudopotentials.rc[2]" kernel,vloc,core ${smooth_g1} --center 2.8)
-smooth_scan_test(sr_14_Si_rcloc sr 14_Si "local_potential.rcloc" kernel,vloc,core ${smooth_g1} --center 2.6)
+smooth_scan_test(sr_14_Si_rcloc sr 14_Si "local_potential.rcloc" kernel,vloc,core ${smooth_g1} --center 2.6 --degree 14)
 smooth_scan_test(sr_20_Ca_rcloc sr 20_Ca "local_potential.rcloc" kernel,vloc ${smooth_g1} --center 1.8)
 smooth_scan_test(sr_14_Si_qcut0 sr 14_Si "pseudopotentials.qcut[0]" kernel,vloc,core ${smooth_g1} --span 0.04)
 smooth_scan_test(nr_08_O_rc1 nr 08_O "pseudopotentials.rc[1]" kernel,vloc ${smooth_g1} --center 1.65)

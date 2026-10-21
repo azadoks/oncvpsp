@@ -295,7 +295,7 @@
  end subroutine write_mesh
 
  subroutine write_input_echo(nkap,iformat,atsym,zz,nc,nv,iexc,psfile, &
-&                            na,la,fa,lmax,rc0,ep,ncon,nbas,qcut, &
+&                            na,la,fa,lmax,rc0,ep,ncon,nbas,qcut,ep_as_given, &
 &                            lloc,lpopt,dvloc0,nproj,debl, &
 &                            icmod,fcfact,rcfact,slack,fcgrid,rcgrid, &
 &                            epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
@@ -320,6 +320,7 @@
  real(dp), intent(in) :: slack
  real(dp), intent(in) :: epsh1,epsh2,depsh,rxpsh,rlmax,drl
  real(dp), intent(in) :: fa(mxstate),rc0(mxlin+1),ep(mxlin+1),qcut(mxlin+1)
+ logical, intent(in) :: ep_as_given
  real(dp), intent(in) :: debl(mxlin+1)
  real(dp), intent(in) :: facnf(mxstate,mxcnf)
  real(dp), intent(in) :: fcgrid(3),rcgrid(3),log_mesh(3)
@@ -353,6 +354,7 @@
    write(6,'(i5,2f10.5,2i5,f10.5)') l1-1,rc0(l1),ep(l1),ncon(l1),&
 &        nbas(l1),qcut(l1)
  end do
+ if(ep_as_given) write(6,'(a)') '#   ep_as_given = true'
 
  write(6,'(a/a/a,a)') '#','# LOCAL POTENTIAL','# lloc, lpopt,  rc(5),', &
 &      '   dvloc0'

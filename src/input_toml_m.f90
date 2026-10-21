@@ -19,7 +19,7 @@
 &                           epsh1, epsh2, depsh, rxpsh, &
 &                           rlmax, drl, upf_mesh, &
 &                           ncnf, nvcnf, nacnf, lacnf, facnf, &
-&                           amesh, rr1, rmax, c_light)
+&                           amesh, rr1, rmax, c_light, ep_as_given)
 
 !! Reads the TOML input: the same data as read_input_text, with the same
 !! defaults and the same checks against the array sizes (check_data
@@ -34,7 +34,8 @@
 !                              or less for the default)
 !   [reference_configuration]  n, l, f                (nc + nv each)
 !   [pseudopotentials]         lmax, and l (0..lmax), rc, ep, ncon, nbas,
-!                              qcut
+!                              qcut, ep_as_given (optional, false: the well
+!                              states take ep as given, see wellstate)
 !   [local_potential]          lloc, lpopt, rcloc, dvloc0
 !   [vkb_projectors]           l (0..lmax), nproj, debl
 !   [model_core_charge]        icmod, fcfact (icmod 1, 2, 3, 6, 7; else 0),
@@ -100,6 +101,8 @@
 ! [Vanderbilt-Kleinman-Bylander projectors]
 !> Number of projectors for each angular momentum
  integer, intent(out) :: nproj(mxlin+1)
+!> use ep as given for the well states (D-1), else wellstate's replacements
+ logical, intent(out) :: ep_as_given
 !> Energy added to ep for the second projector (Ha)
  real(dp), intent(out) :: debl(mxlin+1)
 ! [Model core charge]
@@ -250,6 +253,8 @@
  call get_int_array(child, 'pseudopotentials', 'ncon', lmax + 1, ncon)
  call get_int_array(child, 'pseudopotentials', 'nbas', lmax + 1, nbas)
  call get_real_array(child, 'pseudopotentials', 'qcut', lmax + 1, qcut)
+ call get_logical(child, 'pseudopotentials', 'ep_as_given', ep_as_given, &
+&                  .false.)
 
 ! local potential
  call get_section(table, 'local_potential', child)
@@ -441,6 +446,45 @@
  end if
  return
  end subroutine key_error
+
+ subroutine get_logical(table, section, key, val, default)
+
+!! a logical key, required unless default is given
+!!
+!! @param table  the table holding the key
+!! @param section  name of the table, for messages
+!! @param key  name of the key
+!! @param val  the value of the key, or default if the key is missing
+!! @param default  optional, the value for a missing key, which is then not
+!!                 required
+
+!Input variables
+ character(len=*), intent(in) :: section, key
+ logical, intent(in), optional :: default
+
+!Input/output variables
+ type(toml_table), intent(inout) :: table
+
+!Output variables
+ logical, intent(out) :: val
+
+!Local variables
+ type(toml_keyval), pointer :: ptr
+ integer :: stat
+
+ if(present(default)) then
+   call get_value(table, key, ptr, requested=.false., stat=stat)
+   if(.not. associated(ptr) .and. stat == toml_stat%success) then
+     val = default
+     return
+   end if
+ end if
+ call get_value(table, key, val, stat=stat)
+ if(stat /= toml_stat%success) then
+   call key_error(section, key, stat, 'a logical')
+ end if
+ return
+ end subroutine get_logical
 
  subroutine get_int(table, section, key, val, default)
 

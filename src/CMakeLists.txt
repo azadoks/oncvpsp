@@ -47,6 +47,7 @@ set(src_oncvpsp
     modcore3.f90
     modcore_budget.f90
     ode_rc_der.f90
+    ae_delta.f90
     oncvpsp_main.F90
     optimize.f90
     psatom.f90
@@ -69,18 +70,18 @@ set(src_oncvpsp
     scatterstate.f90
     sr_flux_m.f90
     sbf_q_m.f90
+    pieces_m.f90
+    vploc_m.f90
     qlinalg_m.f90
     ugrid_m.f90
     sratom.f90
     tfapot.f90
     vkboutwf.f90
+    wf_rc_der.f90
     vkbphsft.f90
     vout.f90
     vpinteg.f90
-    vploc.f90
-    vrel.f90
     wellstate.f90
-    wf_rc_der.f90
     input_echo_m.f90
     input_text_m.f90
     # Non-/scalar-relativistic files

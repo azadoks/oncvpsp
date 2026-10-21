@@ -16,19 +16,29 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine wellstate(nnin,ll,kap,irc,ep,rr,vfull,vwell, &
+ subroutine wellstate(nnin,ll,kap,rc,ep,epgiven,rr,vfull,vwell, &
 &                     uu,up,zz,mmax,mch,irel)
 
 !! creates quantum well to confine positive-energy state, and calculates
-!! the resulting all-electron wave function
+!! the resulting all-electron wave function. The well rises from the
+!! onset rc amesh**5 (continuous in rc, past the derivatives taken at rc)
+!! as cwell x**3/(1+x**3) exp(-0.01/x), x = (r-onset)/rwell: the well of
+!! before times a factor that makes it C-infinity at the onset and is
+!! within 5 % of 1 from x = 0.2 on, so the states it confines are those
+!! of before (doc/smoothness_plan.md, R-12). A bound state of this n and
+!! l localized inside 0.75 rc replaces ep by its own energy, one inside
+!! 1.5 rc replaces it by 0.05, and a negative ep becomes 0.25 (the
+!! behaviour of before); with epgiven the input ep is always used instead
+!! (D-1): a bound state at or above ep is an input error, and one below ep
+!! inside 1.5 rc is raised to ep by a wall as close as that takes
 !!
 !! @param nnin  principal quantum number of well state (input); that of the well
 !!              state found, which may have more nodes (output)
 !! @param ll  angular momentum
 !! @param kap  l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
-!! @param irc  index of core radius
-!! @param ep  target energy for well state (>0); reset if a bound state is used
-!!            or a negative energy was specified
+!! @param rc  core radius (bohr)
+!! @param ep  target energy for well state; the well state's energy on return
+!! @param epgiven  use ep as given (D-1), instead of the replacements above
 !! @param rr  log radial mesh
 !! @param vfull  all-electron potential
 !! @param vwell  potential with binding well, for the ikap=2 calculation when
@@ -46,7 +56,9 @@
 !Input variables
  real(dp), intent(in) :: rr(mmax),vfull(mmax)
  real(dp), intent(in) :: zz
- integer, intent(in) :: ll,kap,irc,mmax,irel
+ integer, intent(in) :: ll,kap,mmax,irel
+ real(dp), intent(in) :: rc
+ logical, intent(in) :: epgiven
 
 !Input/output variables
  real(dp), intent(inout) :: ep
@@ -57,7 +69,7 @@
  real(dp), intent(out) :: uu(mmax,2),up(mmax,2),vwell(mmax)
 
 !Local variables
- real(dp) :: al,cwell,et,xx,rwell,rwmax,rwmin,rwscale,umax
+ real(dp) :: al,amesh,cwell,et,xx,rwell,rwmax,rwmin,rwscale,ron,umax
  real(dp) :: fw,fwmin,fwmax,tolw
 
 ! the well width solves E(rwell) = ep to round-off (doc/smoothness_plan.md,
@@ -65,10 +77,12 @@
 ! closed to a few ulps (E then within eps of ep, else an error)
  real(dp),parameter :: eps=1.0d-10
  integer :: ii,iter,ierr,iumax,l1,itrwell,nn,nnloop,iside
- logical :: convg
+ logical :: convg,bound
 
  l1=ll+1
  al = 0.01d0 * log(rr(101) / rr(1))
+ amesh=exp(al)
+ ron=rc*amesh**5
 
 !check for bound state with specified ll and nnin
 
@@ -77,6 +91,7 @@
  call boundstate(irel,nnin,ll,kap,ierr,et,rr,zz,vfull,uu,up,mmax,mch)
 
 !if bound state is found, check its localization
+ bound=.false.
  if(ierr==0) then
    umax=0.0d0
    iumax=1
@@ -88,41 +103,57 @@
        exit
      end if
    end do
+   bound=rr(iumax)<1.5d0*rc
+ end if
 
+ if(epgiven) then
+!a bound state at or above ep cannot be raised to ep by the well: an input
+!error; one below ep and localized inside 1.5 rc only needs raising, by a
+!wall as close as that takes
+   if(ierr==0 .and. et>=ep) then
+     write(6,'(/a,i2,a,i2,a,f12.8/a,f12.8)') &
+&          'wellstate: ERROR a bound state exists for n=',nnin,' l=',ll, &
+&          ' at energy',et,'wellstate: ERROR above the requested ep=',ep
+     error stop 1
+   end if
+ else
+   bound=.false.
+   if(ierr==0) then
 !if bound state is localized compared to rc, use it and its energy
-   if(rr(iumax)<0.75d0*rr(irc)) then
-     ep=et
-     write(6,'(/a,i2,a,i2/a,f12.8/a)') &
-&          'WARNING wellstate: localized bound state found for n=', &
-&           nnin,' l=', ll,'WARNING this state with energy',ep, &
-&          'WARNING will be used for the first projector'
+     if(rr(iumax)<0.75d0*rc) then
+       ep=et
+       write(6,'(/a,i2,a,i2/a,f12.8/a)') &
+&            'WARNING wellstate: localized bound state found for n=', &
+&             nnin,' l=', ll,'WARNING this state with energy',ep, &
+&            'WARNING will be used for the first projector'
 
 !make sure vwell exists for ikap=2 calculation in this case
-     vwell(:)=vfull(:)
+       vwell(:)=vfull(:)
 
-     return
+       return
 
 !if moderately delocalized use very low-energy scattering state
-   else if(rr(iumax)<1.5d0*rr(irc)) then
+     else if(rr(iumax)<1.5d0*rc) then
 
-     ep=0.05d0
-     write(6,'(/a,i2,a,i2/a,f12.8/a)') &
-&          'WARNING wellstate: moderately localized bound state found for n=', &
-&          nnin,' l= ',ll,'WARNING scattering state with energy',ep, &
-&          'WARNING will be used for the first projector'
+       ep=0.05d0
+       write(6,'(/2a,i2,a,i2/a,f12.8/a)') &
+&            'WARNING wellstate: moderately localized bound state found', &
+&            ' for n=', &
+&            nnin,' l= ',ll,'WARNING scattering state with energy',ep, &
+&            'WARNING will be used for the first projector'
+     end if
    end if
- end if
 
 !if specified ep is retained and is negative
- if(ep<0.0d0) then
-   ep=0.25d0
-   write(6,'(/a,i2,a,i2/a,f12.8/a)') &
-&         'WARNING wellstate: negative energy specified for n=', &
-&         nnin,' l= ',ll, &
-&         'WARNING scattering state with energy',ep, &
-&         'WARNING will be used for the first projector'
+   if(ep<0.0d0) then
+     ep=0.25d0
+     write(6,'(/a,i2,a,i2/a,f12.8/a)') &
+&           'WARNING wellstate: negative energy specified for n=', &
+&           nnin,' l= ',ll, &
+&           'WARNING scattering state with energy',ep, &
+&           'WARNING will be used for the first projector'
+   end if
  end if
-
 
 !scale factor to decrease well width until trial energy exceeds target
  rwscale=0.8d0
@@ -135,7 +166,7 @@
  do nnloop=0,10
    nn=nnin+nnloop
 
-   rwell=8.0d0*rr(irc)
+   rwell=8.0d0*rc
    rwmax=0.0d0
    rwmin=0.0d0
    fwmin=0.0d0
@@ -153,10 +184,12 @@
        vwell(ii)=vfull(ii)
      end do
 
-!   start outside rc to keep numerical derivatives at rc accurate
-     do ii=irc+6,mmax
-       xx=(rr(ii)-rr(irc+5))/rwell
-       vwell(ii)=vwell(ii)+cwell*xx**3/(1.0d0+xx**3)
+!   the well starts past rc, where the matching data of the projectors are
+!   taken, and rises smoothly
+     do ii=1,mmax
+       if(rr(ii)<=ron) cycle
+       xx=(rr(ii)-ron)/rwell
+       vwell(ii)=vwell(ii)+cwell*xx**3/(1.0d0+xx**3)*exp(-0.01d0/xx)
      end do
 
 !find bound state in well
@@ -223,7 +256,9 @@
          rwell=0.5d0*(rwmax+rwmin)
        else
          rwell=rwell*rwscale
-         if(rwell<max(1.0d0,0.5d0*rr(irc))) exit
+! a wall closer than this is too steep for a state of this n, unless the
+! state is bound without the well: it then only needs raising
+         if(.not. bound .and. rwell<max(1.0d0,0.5d0*rc)) exit
        end if
        cycle
      end if
@@ -252,13 +287,13 @@
 &             '   Wellstate for l =',ll,'  n =',nn,' kap=',kap, &
 &             '     eigenvalue = ',et, &
 &             '     asymptotic potential = ',cwell, &
-&             '     half-point radius =',rr(irc)+rwell
+&             '     half-point radius =',ron+rwell
    else
      write(6,'(/a,i3,a,i3/a,f8.4,/a,f8.4/a,f8.4)') &
 &             '   Wellstate for l =',ll,'  n =',nn, &
 &             '     eigenvalue = ',et, &
 &             '     asymptotic potential = ',cwell, &
-&             '     half-point radius =',rr(irc)+rwell
+&             '     half-point radius =',ron+rwell
    end if
  end if
 

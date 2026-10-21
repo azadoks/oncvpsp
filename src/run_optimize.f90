@@ -18,7 +18,7 @@
 !
  subroutine run_optimize(eig,ll,kap,irel,mmax,mxprj,rr,uua,upa,qq,&
 &                      rc,irc,qcut,qmsbf,ncon_in,nbas_in,npr, &
-&                      psopt,vpsp,vkb,vae,cvgplt,ncurve,ecurve)
+&                      psopt,vpsp,vkb,vae,cvgplt,ncurve,ecurve,pswfx,chix)
 
 !! calls routines to generate optimized pseudo wave function and semi-local
 !! pseudopotential and prints diagnostic information on process and
@@ -53,6 +53,9 @@
 !! @param ncurve  dimension of ecurve
 !! @param ecurve  cutoff energy and energy error per electron on the E_resid(q)
 !!                mesh, zero beyond its end
+!! @param pswfx  the inside pieces of the pseudo wave functions (their Bessel
+!!               sums) on the nodes to past rc, 0 beyond (pspot)
+!! @param chix  (eig - T) pswfx, the projectors' seeds, the same
 
  use constants_m, only: dp, nerrlv, pi
  use, intrinsic :: iso_fortran_env, only: qp => real128
@@ -75,6 +78,7 @@
  real(dp), intent(out) :: qmsbf
  real(dp), intent(out) :: psopt(mmax,mxprj)
  real(dp), intent(out) :: ecurve(2,ncurve,mxprj)
+ real(dp), intent(out) :: pswfx(mmax,mxprj),chix(mmax,mxprj)
 
 !Local variables
  real(dp), parameter :: Ha_eV=27.21138386d0 ! 1 Hartree, in eV
@@ -264,7 +268,8 @@
 ! find the Vanderbilt projectors and optimized wave functions
 
    call pspot(iprj,ll,rr,irc,mmax,al,nbas,qroot,eig(iprj),uua(1,iprj), &
-&             pswfopt_sb,psopt(1,iprj),vae,work,vkb(1,iprj),ekin_num)
+&             pswfopt_sb,pswfx(1,iprj),chix(1,iprj),psopt(1,iprj),vae,work, &
+&             vkb(1,iprj),ekin_num)
 
 !semi-local potential
    if(iprj==1) then

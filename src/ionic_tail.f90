@@ -105,6 +105,7 @@
 !! @param rb  end of the window
 
  use constants_m, only: dp
+ use logmesh_m, only: lm_root
  implicit none
 
 !Input variables
@@ -116,18 +117,28 @@
  real(dp), intent(out) :: ra,rb
 
 !Local variables
+ real(dp), allocatable :: gg(:)
  real(dp) :: rcore
- integer :: ii
+ integer :: ii,ierr
 
+! rcore: the outermost radius where (V_ion + zion/r)**2 = tol**2, the root
+! of the interpolant between the mesh points where it crosses (R-13)
+ allocate(gg(mmax))
+ do ii=1,mmax
+   gg(ii)=(vion(ii)+zion/rr(ii))**2-tol**2
+ end do
  rcore=0.0d0
- do ii=mmax,1,-1
-   if(abs(vion(ii)+zion/rr(ii))>=tol) then
-     rcore=rr(min(ii+1,mmax))
+ do ii=mmax-1,1,-1
+   if(gg(ii)>=0.0d0) then
+     call lm_root(rr,gg,mmax,rr(ii),rr(ii+1),rcore,ierr)
+     if(ierr/=0) rcore=rr(ii+1)
      exit
    end if
  end do
+ deallocate(gg)
  ra=rcmax
- rb=max(rcore,2.0d0*ra)
+! a C-infinity maximum, within 0.05 bohr of the larger
+ rb=0.5d0*(rcore+2.0d0*ra+sqrt((rcore-2.0d0*ra)**2+0.01d0))
  return
  end subroutine ionic_window
 

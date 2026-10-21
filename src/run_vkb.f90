@@ -17,9 +17,18 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
  subroutine run_vkb(lmax,lloc,lpopt,dvloc0,rc,irc,nproj,rr,mmax,mxprj,pswf, &
-&                   vfull,vp,evkb,vkb,nlim,vr,irel,nkap)
+&                   pswfx,chix,vfull,vp,evkb,vkb,nlim,dlta,vrloc,irel,nkap, &
+&                   vkbpw)
 
-!! computes Vanderbilt / Kleinman-Bylander non-local potentials
+!! computes Vanderbilt / Kleinman-Bylander non-local potentials. The
+!! projectors are functions of pieces (pieces_m, doc/smoothness_plan.md
+!! R-6, R-8, R-9): a projector of channel l is (eig - T - V_loc) psi inside
+!! rc with a taper f Delta/2 on the last 5 % (D-4), zero beyond, and V_loc
+!! itself is a polynomial (lloc=4) or a tapered semi-local potential
+!! (lloc<4) inside its radius and the all-electron potential beyond, so a
+!! projector has a kink at 0.95 rc, at rc, and where V_loc is matched; each
+!! smooth piece is kept with its extension and every integral is taken per
+!! piece, so the projectors and their coefficients are smooth in the radii
 !!
 !! @param lmax  maximum angular momentum
 !! @param lloc  l for local potential (lloc==4 => use linear combination)
@@ -32,26 +41,39 @@
 !! @param mmax  size of radial grid
 !! @param mxprj  dimension of number of projectors
 !! @param pswf  pseudo wave functions
+!! @param pswfx  their inside pieces (the Bessel sums) on the nodes to past
+!!               rc (pspot)
+!! @param chix  (eig - T) pswfx, the projectors' seeds, the same
 !! @param vfull  all-electron potential
 !! @param vp  semi-local pseudopotentials for first projectors
 !!            (vp(:,5) is local potential if lloc=4)
-!! @param vkb  semi-local "potentials"*pswf (input); VKB projectors (output)
+!! @param vkb  VKB projectors on the mesh (output)
 !! @param evkb  coefficients of VKB projectors (output)
 !! @param nlim  index of maximum rc including that of vlocal (output)
-!! @param vr  effective scalar-relativistic "potential" calculated in vrel
+!! @param dlta  the relativistic term Delta of each all-electron wave about
+!!              its taper window (ae_delta)
+!! @param vrloc  Delta/(2u) of the first wave of channel lloc about its
+!!               window, for the taper of the local potential (lloc<4)
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param nkap  number of kappa per l: 1, or 2 for irel=2
-!!              (for pswf, vp, vkb, evkb and vr the last index is 1 for j=l+1/2,
-!!              2 for j=l-1/2 when nkap=2)
+!!              (for pswf, vp, vkb, evkb and dlta the last index is 1 for
+!!              j=l+1/2, 2 for j=l-1/2 when nkap=2)
+!! @param vkbpw  the projectors as functions of pieces (output)
 
  use constants_m, only: dp, mxl, mxlin
+ use pieces_m, only: piecewise_t, pw_maxseg, pw_reach, pw_alloc, pw_free, &
+&                    pw_integral, pw_product_integral, pw_node_values
+ use vploc_m, only: vploc_t, vploc_fit, vploc_mesh, vploc_eval
  implicit none
+ external :: dsyev
 
 !Input variables
  integer, intent(in) :: lmax,lloc,lpopt,mmax,mxprj,irel,nkap
  integer, intent(in) :: irc(mxlin+1),nproj(mxlin+1)
  real(dp), intent(in) :: rr(mmax),pswf(mmax,mxprj,mxl+1,nkap),vfull(mmax)
- real(dp), intent(in) :: vr(mmax,mxprj,mxlin+1,nkap)
+ real(dp), intent(in) :: pswfx(mmax,mxprj,mxl+1,nkap)
+ real(dp), intent(in) :: chix(mmax,mxprj,mxl+1,nkap)
+ real(dp), intent(in) :: dlta(mmax,mxprj,mxlin+1,nkap),vrloc(mmax,nkap)
  real(dp), intent(in) :: dvloc0,rc(mxlin+1)
 
 !Input/output variables
@@ -61,62 +83,85 @@
 !Output variables
  real(dp), intent(out) :: evkb(mxprj,mxl+1,nkap)
  integer, intent(out) :: nlim
+ type(piecewise_t), intent(out) :: vkbpw(mxprj,mxl+1,nkap)
 
 !Local variables
  integer :: lwork
- integer :: ii,ipk,jj,kk,ikap,ll,l1,info,np,kap,mkap
- real(dp) :: apk,sn,tt,qq12,xx,ff
+ integer :: ii,ipk,jj,kk,ikap,ll,l1,info,np,kap,mkap,nseg,iseg,nb,nbrk
+ real(dp) :: apk,sn,tt,xx,rcloc,rm,wj,bnd(0:pw_maxseg),brk(3)
  real(dp) :: bb(mxprj,mxprj),bbev(mxprj),bbi(mxprj,mxprj)
  real(dp) :: sovl(mxprj,mxprj),sovlev(mxprj),smhalf(mxprj,mxprj)
  real(dp) :: sphalf(mxprj,mxprj)
  real(dp) :: bbist(mxprj,mxprj),bbistev(mxprj),bbit(mxprj,mxprj)
- real(dp), allocatable :: vloc(:),vkbt(:,:),vkbst(:,:),work(:)
+ real(dp), allocatable :: vloc(:),vlin0(:),vlin1(:),vpiece(:),taper(:),work(:)
+ type(piecewise_t) :: pw(mxprj),pwt(mxprj)
+ type(vploc_t) :: cfloc
  logical :: sorted
 
- evkb(:,:,:)=0.0d0
-
  lwork=3*mxprj
- allocate(vloc(mmax),vkbt(mmax,mxprj),vkbst(mmax,mxprj),work(lwork))
+ allocate(vloc(mmax),vlin0(mmax),vlin1(mmax),vpiece(mmax),taper(mmax))
+ allocate(work(lwork))
 
-
-! calculate local potential
-! for nkap=2 use "scalar-relativistic" weighted average if real ll/=0 is
-! specified, and reset semi-local potential to this average (ie., there is
-! no SO for this l)
-
+! the local potential: its matching radius rcloc, its inside piece as
+! smooth functions on the mesh (vlin0 below 0.95 rcloc, vlin1 on the taper
+! window; the same polynomial for lloc=4), and its values on the nodes
+! (vloc, and vp of the channel)
  if(lloc==4) then
-   call vploc(rr,vfull,vp(1,1,1),dvloc0,irc(5),mmax,lpopt)
-   vloc(:)=vp(:,5,1)
+   rcloc=rc(5)
+   call vploc_fit(rr,vfull,mmax,rcloc,dvloc0,lpopt,cfloc)
+   call vploc_mesh(cfloc,rr,vfull,mmax,vp(:,5,1))
    if(nkap==2) vp(:,5,2)=vp(:,5,1)
- else if(nkap==1) then
-   vloc(:)=vp(:,lloc+1,1)
+   vloc(:)=vp(:,5,1)
+   do ii=1,mmax
+     vlin0(ii)=vploc_eval(cfloc,rr(ii))
+   end do
+   vlin1(:)=vlin0(:)
  else
+! the semi-local potential (eig - T) psi/psi of the channel's first wave,
+! for nkap=2 the "scalar-relativistic" weighted average of the two j (there
+! is then no SO for this l), with the taper f Delta/(2u) of S-1 as the
+! polynomial of the window
    l1=lloc+1
-   vloc(:)=(dble(l1)*vp(:,l1,1) + dble(l1-1)*vp(:,l1,2))/dble(2*l1-1)
- end if
-
-! a relativistic semi-local potential is vae + vr at rc and vae beyond: the
-! taper below takes out vr as it does from the projectors, so that vloc,
-! and with it every projector, is continuous at rc (it jumped by vr(rc),
-! about 1e-4 Ha, which the radial solvers integrated across at O(al))
- if(lloc<4) then
-   l1=lloc+1
-   do ii=1,irc(l1)
-     xx=20.0d0*((rr(ii)/rc(l1))-1.0d0)
-     if(xx>-1.0d0) then
-       ff=(1.0d0-xx**2)**2
-       if(nkap==1) then
-         tt=vr(ii,1,l1,1)
-       else
-         tt=(dble(l1)*vr(ii,1,l1,1) + dble(l1-1)*vr(ii,1,l1,2))/dble(2*l1-1)
+   rcloc=rc(l1)
+   nb=min(mmax,irc(l1)+pw_reach+16)
+   if(nkap==1 .or. l1==1) then
+     mkap=1
+   else
+     mkap=2
+   end if
+   vlin0(:)=0.0d0
+   vlin1(:)=0.0d0
+   do ikap=1,mkap
+     if(mkap==1) then
+       wj=1.0d0
+     else
+       wj=dble(l1-ikap+1)/dble(2*l1-1)
+     end if
+     do ii=1,nb
+       if(pswfx(ii,1,l1,ikap)==0.0d0) then
+         write(6,'(a,i2,a,f10.6)') 'run_vkb: ERROR node of the local', &
+&              ' channel''s pseudo wave within reach of rc, l=',lloc, &
+&              ' r=',rr(ii)
+         error stop 1
        end if
-       vloc(ii)=vloc(ii)-ff*tt
+       tt=chix(ii,1,l1,ikap)/pswfx(ii,1,l1,ikap)
+       xx=20.0d0*((rr(ii)/rcloc)-1.0d0)
+       vlin0(ii)=vlin0(ii)+wj*tt
+       vlin1(ii)=vlin1(ii)+wj*(tt-(1.0d0-xx**2)**2*vrloc(ii,ikap))
+     end do
+   end do
+   do ii=1,mmax
+     if(ii>irc(l1)) then
+       vloc(ii)=vfull(ii)
+     else if(rr(ii)<=0.95d0*rcloc) then
+       vloc(ii)=vlin0(ii)
+     else
+       vloc(ii)=vlin1(ii)
      end if
    end do
    vp(:,l1,1)=vloc(:)
    if(nkap==2) vp(:,l1,2)=vloc(:)
  end if
-
 
 ! Vanderbilt / Kleinman-Bylander projector construction
  nlim=irc(lloc+1)
@@ -128,51 +173,70 @@
    else
      mkap=2
    end if
-! loop on J = ll +/- 1/2
-   do ikap=1,mkap
-     if(ikap==1) kap=-(ll+1)
-     if(ikap==2) kap=  ll
+   nlim=max(nlim,irc(l1))
 
-     nlim=max(nlim,irc(l1))
-     do jj=1,nproj(l1)
-!incorporates scalar-relativistic "potential" in last 5% of [0:rc] to smoothly
-!force projectors to zero.
-       do ii=1,irc(l1)
-         xx=20.0d0*((rr(ii)/rc(l1))-1.0d0)
-         if(xx>-1.0d0) then
-           ff=(1.0d0-xx**2)**2
-         else
-           ff=0.0d0
-         end if
-
-         vkb(ii,jj,l1,ikap)=vkb(ii,jj,l1,ikap) &
-&                           -(vloc(ii)+ff*vr(ii,jj,l1,ikap))*pswf(ii,jj,l1,ikap)
-       end do
-       do ii=irc(l1)+1,mmax
-         vkb(ii,jj,l1,ikap)=0.0d0
-       end do
-     end do
-   end do !ikap
- end do !l1
-
-! Vanderbilt B-matrix construction
-
- do l1=1,lmax+1
-   if(l1==lloc+1) cycle
-   if(nproj(l1)==0) cycle
-   ll=l1-1
-   if(nkap==1 .or. l1==1) then
-     mkap=1
-   else
-     mkap=2
+! the segments of this channel's projectors: the kinks inside (0, rc) at
+! 0.95 rc (the taper), and at the local potential's rcloc and 0.95 rcloc
+! (lloc<4) if they fall inside, in order, then rc
+   nbrk=1
+   brk(1)=0.95d0*rc(l1)
+   if(rcloc<rc(l1)) then
+     nbrk=nbrk+1
+     brk(nbrk)=rcloc
    end if
+   if(lloc<4 .and. 0.95d0*rcloc<rc(l1) .and. 0.95d0*rcloc/=brk(1)) then
+     nbrk=nbrk+1
+     brk(nbrk)=0.95d0*rcloc
+   end if
+   do ii=1,nbrk-1
+     do jj=ii+1,nbrk
+       if(brk(jj)<brk(ii)) then
+         tt=brk(ii)
+         brk(ii)=brk(jj)
+         brk(jj)=tt
+       end if
+     end do
+   end do
+   nseg=nbrk+1
+   bnd(0)=0.0d0
+   bnd(1:nbrk)=brk(1:nbrk)
+   bnd(nseg)=rc(l1)
+
 ! loop on J = ll +/- 1/2
    do ikap=1,mkap
      if(ikap==1) kap=-(ll+1)
      if(ikap==2) kap=  ll
      np=nproj(l1)
+
+! the projectors' pieces: on each segment chi = (eig - T - V_loc) psi less
+! the taper f Delta/2 on the window, with V_loc's piece of the segment
+! and every term as its smooth extension
+     do jj=1,np
+       call pw_alloc(pw(jj),mmax,nseg,bnd(0:nseg))
+       do iseg=1,nseg
+         rm=0.5d0*(bnd(iseg-1)+bnd(iseg))
+         if(rm>rcloc) then
+           vpiece(:)=vfull(:)
+         else if(lloc<4 .and. rm>0.95d0*rcloc) then
+           vpiece(:)=vlin1(:)
+         else
+           vpiece(:)=vlin0(:)
+         end if
+         taper(:)=0.0d0
+         if(rm>0.95d0*rc(l1)) then
+           do ii=1,mmax
+             xx=20.0d0*((rr(ii)/rc(l1))-1.0d0)
+             taper(ii)=0.5d0*(1.0d0-xx**2)**2*dlta(ii,jj,l1,ikap)
+           end do
+         end if
+         pw(jj)%vals(:,iseg)=chix(:,jj,l1,ikap)-vpiece(:)*pswfx(:,jj,l1,ikap) &
+&                            -taper(:)
+       end do
+     end do
+
+! Vanderbilt B-matrix construction
      bb(:,:)=0.0d0
-     call vpinteg(pswf(1,1,l1,ikap),vkb(1,1,l1,ikap),irc(l1),2*l1,bb(1,1),rr)
+     call pw_integral(rr,mmax,2*l1,pswfx(:,1,l1,ikap),pw(1),bb(1,1))
      evkb(1,l1,ikap)=1.0d0/bb(1,1)
 ! this is Kleinman-Bylander result if nproj==1
 
@@ -180,8 +244,7 @@
 
        do jj=1,np
          do ii=1,np
-           call vpinteg(pswf(1,ii,l1,ikap),vkb(1,jj,l1,ikap),irc(l1),2*l1, &
-&                       bb(ii,jj),rr)
+           call pw_integral(rr,mmax,2*l1,pswfx(:,ii,l1,ikap),pw(jj),bb(ii,jj))
          end do
        end do
 
@@ -218,14 +281,14 @@
 ! take linear combinations to form diagonal projectors
 
        do jj=1,np
-         vkbt(:,jj)=vkb(:,jj,l1,ikap)
+         pwt(jj)=pw(jj)
        end do
 
        do jj=1,np
-         vkb(:,jj,l1,ikap)=0.0d0
+         pw(jj)%vals(:,:)=0.0d0
          evkb(jj,l1,ikap)=1.0d0/bbev(jj)
          do ii=1,np
-           vkb(:,jj,l1,ikap)=vkb(:,jj,l1,ikap)+bb(ii,jj)*vkbt(:,ii)
+           pw(jj)%vals(:,:)=pw(jj)%vals(:,:)+bb(ii,jj)*pwt(ii)%vals(:,:)
          end do
        end do
 
@@ -233,11 +296,12 @@
 
 ! normalize projectors
      do jj=1,np
-       call vpinteg(vkb(1,jj,l1,ikap),vkb(1,jj,l1,ikap),irc(l1),2*l1,sn,rr)
+       call pw_product_integral(rr,mmax,2*l1,pw(jj),pw(jj),sn)
+       call pw_node_values(rr,mmax,pw(jj),vkb(:,jj,l1,ikap))
        if(vkb(irc(l1)-10,jj,l1,ikap)>=0.0d0) then
-         vkb(:,jj,l1,ikap)=vkb(:,jj,l1,ikap)/sqrt(sn)
+         pw(jj)%vals(:,:)=pw(jj)%vals(:,:)/sqrt(sn)
        else
-         vkb(:,jj,l1,ikap)=-vkb(:,jj,l1,ikap)/sqrt(sn)
+         pw(jj)%vals(:,:)=-pw(jj)%vals(:,:)/sqrt(sn)
        end if
        evkb(jj,l1,ikap)=sn*evkb(jj,l1,ikap)
      end do
@@ -252,12 +316,11 @@
          sovl(jj,jj)=1.0d0
          bbi(jj,jj)=evkb(jj,l1,ikap)
          do ii=jj+1,np
-           call vpinteg(vkb(1,ii,l1,ikap),vkb(1,jj,l1,ikap),irc(l1),2*l1,sn,rr)
+           call pw_product_integral(rr,mmax,2*l1,pw(ii),pw(jj),sn)
            sovl(ii,jj)=sn
            sovl(jj,ii)=sn
          end do
        end do
-       call vpinteg(vkb(1,1,l1,ikap),vkb(1,2,l1,ikap),irc(l1),2*l1,sn,rr)
 
 ! find eigenvalues and eigenvectors of the overlap matrix
 
@@ -312,24 +375,29 @@
 
 ! take linear combinations to form orthonormal basis functions
 
-       vkbt(:,:)=vkb(:,:,l1,ikap)
-       vkbst(:,:)=0.0d0
+       do jj=1,np
+         pwt(jj)=pw(jj)
+         pw(jj)%vals(:,:)=0.0d0
+       end do
 
        do jj=1,np
          do ii=1,np
-           vkbst(:,jj)=vkbst(:,jj) + smhalf(ii,jj)*vkbt(:,ii)
+           pw(jj)%vals(:,:)=pw(jj)%vals(:,:) + smhalf(ii,jj)*pwt(ii)%vals(:,:)
          end do
        end do
 
 
 ! take linear combinations to form orthonormal projectors
 
-       vkb(:,:,L1,ikap)=0.0d0
+       do jj=1,np
+         pwt(jj)=pw(jj)
+         pw(jj)%vals(:,:)=0.0d0
+       end do
 
        do ii=1,np
          evkb(ii,l1,ikap)=bbistev(ii)
          do jj=1,np
-           vkb(:,ii,l1,ikap)=vkb(:,ii,l1,ikap) + bbist(jj,ii)*vkbst(:,jj)
+           pw(ii)%vals(:,:)=pw(ii)%vals(:,:) + bbist(jj,ii)*pwt(jj)%vals(:,:)
          end do
        end do
 
@@ -342,11 +410,11 @@
 
            if(abs(evkb(jj,l1,ikap))>abs(evkb(jj-1,l1,ikap))) then
              tt=evkb(jj-1,l1,ikap)
-             vkbt(:,1)=vkb(:,jj-1,l1,ikap)
+             pwt(1)=pw(jj-1)
              evkb(jj-1,l1,ikap)=evkb(jj,l1,ikap)
-             vkb(:,jj-1,l1,ikap)=vkb(:,jj,l1,ikap)
+             pw(jj-1)=pw(jj)
              evkb(jj,l1,ikap)=tt
-             vkb(:,jj,l1,ikap)=vkbt(:,1)
+             pw(jj)=pwt(1)
              sorted=.false.
            end if
          end do
@@ -356,24 +424,29 @@
        write(6,'(/a,1p,5e12.4)') '  Orthonormal projector coefficients',&
 &          (evkb(jj,l1,ikap),jj=1,np)
 
-! Set sign of projectors (physically irrelevant) so that they are positive
+     end if !nproj(l1)>=2
+
+! the projectors on the mesh; their sign (physically irrelevant) positive
 ! at their peak (needed for compaisons apparently)
 
-       do jj=1,np
-         apk=0.0d0
-         ipk=1
-         do ii=1,mmax
-           if(abs(vkb(ii,jj,l1,ikap))>apk) then
-             apk=abs(vkb(ii,jj,l1,ikap))
-             ipk=ii
-           end if
-         end do
-         if(vkb(ipk,jj,l1,ikap)<0.0d0) then
-           vkb(:,jj,l1,ikap)=-vkb(:,jj,l1,ikap)
+     do jj=1,np
+       call pw_node_values(rr,mmax,pw(jj),vkb(:,jj,l1,ikap))
+       apk=0.0d0
+       ipk=1
+       do ii=1,mmax
+         if(abs(vkb(ii,jj,l1,ikap))>apk) then
+           apk=abs(vkb(ii,jj,l1,ikap))
+           ipk=ii
          end if
        end do
-
-     end if !nproj(l1)>=2
+       if(vkb(ipk,jj,l1,ikap)<0.0d0) then
+         vkb(:,jj,l1,ikap)=-vkb(:,jj,l1,ikap)
+         pw(jj)%vals(:,:)=-pw(jj)%vals(:,:)
+       end if
+       vkbpw(jj,l1,ikap)=pw(jj)
+       call pw_free(pw(jj))
+       call pw_free(pwt(jj))
+     end do
 
      if(nproj(l1)<mxprj) then
        do jj=nproj(l1)+1, mxprj
@@ -384,7 +457,7 @@
    end do !ikap
  end do !l1
 
- deallocate(vloc,vkbt,vkbst,work)
+ deallocate(vloc,vlin0,vlin1,vpiece,taper,work)
 
  return
  end subroutine run_vkb
