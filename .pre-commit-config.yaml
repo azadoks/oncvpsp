@@ -8,7 +8,8 @@ exclude: |
     COPYING|
     tests/refs/.*|
     cmake/patches/.*|
-    src/(exc_off_pbe\.f|functionals\.F90|m_libxc_list\.F90|gg1cc\.f90|gp1cc\.f90|gpp1cc\.f90)
+    src/(exc_off_pbe\.f|functionals\.F90|m_libxc_list\.F90)|
+    tests/unit/(gg1cc|gp1cc|gpp1cc)\.f90
   )$
 # COPYING: the license, kept verbatim
 # tests/refs: reference outputs, compared as written

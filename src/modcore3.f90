@@ -18,15 +18,18 @@
 !
 ! Creates a Teter-function model core charge, amplitude fcfact times the
 ! core charge and scale rcfact times the radius at the core-valence
-! crossover, blended into the all-electron core charge.  The prefactors are
-! input (icmod=3) or optimized to reduce the Exc 2nd-derivative errors
-! (icmod=4).
+! crossover.  The prefactors are input (icmod=3) or optimized to reduce the
+! Exc 2nd-derivative errors (icmod=4).
+! The crossover is the root of ln(rhoc) - ln(rhotps), and the Teter function
+! and its derivatives are analytic everywhere, tapered to 0 by a C-infinity
+! switch between x = 3 and 4 instead of cut at 3 (modcore_m,
+! doc/smoothness_plan.md M-1, M-5, M-7).
 
 ! Performs analysis and based on "hardness" criterion described in
 ! Teter, Phys. Rev. B 48, 5031 (1993) , Appendix, as
 
  subroutine modcore3(icmod,rhops,rhotps,rhoc,rhoae,rhotae,rhomod, &
-&                   fcfact,rcfact,fcgrid,rcgrid,irps,mmax,rr,nc,nv,la,zion,iexc)
+&                   fcfact,rcfact,fcgrid,rcgrid,mmax,rr,nc,nv,la,zion,iexc)
 
 !! @param icmod  3 for specified fcfact and rcfact, 4 for coefficient
 !!               optimization
@@ -41,7 +44,6 @@
 !! @param rcfact  prefactor for model scale (multiplies crossover radius)
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
-!! @param irps  rr index of maximum rc
 !! @param mmax  dimension of log grid
 !! @param rr  log radial grid
 !! @param nc  number of core states
@@ -51,10 +53,12 @@
 !! @param iexc  exchange-correlation function to be used
 
  use constants_m, only: dp, mxstate, nrhomod
+ use logmesh_m, only: lm_derivs
+ use modcore_m, only: core_crossover, teter_core_derivs
  implicit none
 
 !Input variables
- integer, intent(in) :: icmod,nv,nc,iexc,irps,mmax
+ integer, intent(in) :: icmod,nv,nc,iexc,mmax
  integer, intent(in) :: la(mxstate)
  real(dp), intent(in) :: rhoae(mmax,nv),rhops(mmax,nv),rhotae(mmax)
  real(dp), intent(in) :: rhotps(mmax),rhoc(mmax),rr(mmax)
@@ -68,17 +72,10 @@
  real(dp), intent(out) :: rhomod(mmax,nrhomod)
 
 !Local variables
-!convergence criterion
- real(dp), parameter :: eps=1.0d-7
- real(dp), parameter :: blend=2.0d0
- real(dp) :: al,eeel,eexc
- real(dp) :: d2mdiff,rmatch,rhocmatch,r0,rcross
- real(dp) :: gg,tt,yy
- real(dp) :: drint,rtst,rint(20),fint(20) !ad-hoc smoothing variables
- real(dp), allocatable :: vxcae(:),vxcpsp(:),vo(:),d2excae(:,:),d2excps(:,:)
- real(dp), allocatable :: dvxcae(:,:),dvxcps(:,:),vxct(:)
- integer :: ii,ierr,ircc,ircross,irmod,iter,jj,kk
- integer :: iint !ad-hoc smoothing variables
+ real(dp) :: d2mdiff,rmatch,rhocmatch
+ real(dp) :: dd(1),gd(0:4)
+ real(dp), allocatable :: d2excae(:,:),d2excps(:,:)
+ integer :: ii,ierr,jj,kk
 
 !2-dimensional Nelder-Mead variables
  real(dp), parameter :: alpha_nm=1.0d0
@@ -92,21 +89,16 @@
  character(len=24) :: rowfmt
 
 
- allocate(vxcae(mmax),vxcpsp(mmax),vo(mmax))
- allocate(dvxcae(mmax,nv),dvxcps(mmax,nv),vxct(mmax))
  allocate(d2excae(nv,nv),d2excps(nv,nv))
 
  d2excae(:,:)=0.0d0
  d2excps(:,:)=0.0d0
 
-!set limit for d2Exc calculation to radius beyond which rhomod=rhoc
- irmod=mmax
-
  write(6,'(/a/a)') 'Model core correction analysis',&
 &                  '  based on d2Exc/dn_idn_j'
 
  call der2exc(rhotae,rhoc,rhoae,rr,d2excae,d2excps,d2mdiff, &
-&                   zion,iexc,nc,nv,la,irmod,mmax)
+&                   zion,iexc,nc,nv,la,rr(mmax),mmax)
 
  write(6,'(/a/)') 'd2excae - all-electron derivatives'
  do kk=1,nv
@@ -114,14 +106,11 @@
  end do
 
 
-! set model charge to zero
- rhomod(:,:)=0.0d0
-
 ! compute d2excps with no core correction
  rhomod(:,:)=0.0d0
 
  call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
-&                   zion,iexc,nc,nv,la,irmod,mmax)
+&                   zion,iexc,nc,nv,la,rr(mmax),mmax)
 
  write(6,'(/a/)') 'd2excps - pseudofunction derivatives with no core correction'
  do kk=1,nv
@@ -132,26 +121,15 @@
  d2ref=d2mdiff
 
 ! find valence pseudocharge - core charge crossover
- ircc = 0
- do ii = mmax,1,-1
-   if(rhoc(ii) > rhotps(ii)) then
-     ircc=ii
-     rmatch=rr(ircc)
-     rhocmatch=rhoc(ircc)
-     exit
-   end if
- end do
-
- if(ircc == 0) then
+ call core_crossover(rr,rhoc,rhotps,mmax,1.0d0,rmatch,ierr)
+ if(ierr/=0) then
    write(6,'(/a)') 'modcore3: ERROR ircc (core-valence charge crossover) &
 &        not found'
    error stop 1
- else
-   write(6,'(/a,2f10.4)') 'rmatch, rhocmatch',rmatch,rhocmatch
  end if
-
- gg=0.d0
- yy=0.d0
+ call lm_derivs(rr,rhoc,mmax,rmatch,0,dd)
+ rhocmatch=dd(1)
+ write(6,'(/a,2f10.4)') 'rmatch, rhocmatch',rmatch,rhocmatch
 
 !option for optimization
  if(icmod==4) then
@@ -185,25 +163,7 @@
      do jj=1,nfc
        xt(1)=(fcgrid(1)+fcgrid(3)*(jj-1))*rhocmatch
 
-       r0=1.5d0*xt(2)
-       do ii=mmax,1,-1
-         if(rr(ii)<r0) then
-           call gg1cc(gg,yy)
-           if(xt(1)*gg<rhoc(ii)) then
-             rcross=rr(ii)
-             exit
-           end if
-         end if
-       end do
-
-       do ii=1,mmax
-         yy=rr(ii)/xt(2)
-         call gg1cc(gg,yy)
-         rhomod(ii,1)= xt(1)*gg
-       end do
-
-       call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
-&                         zion,iexc,nc,nv,la,irmod,mmax)
+       call trial(xt,d2mdiff)
        fta(jj)=1.0d3*d2mdiff
 
        if(d2mdiff<d2min) then
@@ -228,30 +188,7 @@
 !Fill function values for initial simplex
 
    do kk=1,3
-     xt(:)=xx(:,kk)
-
-
-     r0=1.5d0*xt(2)
-     do ii=mmax,1,-1
-       if(rr(ii)<r0) then
-         call gg1cc(gg,yy)
-         if(xt(1)*gg<rhoc(ii)) then
-           rcross=rr(ii)
-           exit
-         end if
-       end if
-     end do
-
-     do ii=1,mmax
-       yy=rr(ii)/xt(2)
-       call gg1cc(gg,yy)
-       tt=(rr(ii)-r0-2.0d0*rcross)/(r0-rcross)
-       rhomod(ii,1)= xt(1)*gg
-     end do
-
-     call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
-&                       zion,iexc,nc,nv,la,irmod,mmax)
-     ff(kk)=d2mdiff
+     call trial(xx(:,kk),ff(kk))
 
 !  write(6,'(i4,a,2f10.4,1p,e14.4)') kk,'  xt',xt(1),xt(2),ff(kk)
    end do
@@ -293,28 +230,7 @@
 !(3) Reflection
      xr(:)=x0(:)+alpha_nm*(x0(:)-xx(:,3))
 
-
-     r0=1.5d0*xr(2)
-     do ii=mmax,1,-1
-       if(rr(ii)<r0) then
-         call gg1cc(gg,yy)
-         if(xr(1)*gg<rhoc(ii)) then
-           rcross=rr(ii)
-           exit
-         end if
-       end if
-     end do
-
-     do ii=1,mmax
-       yy=rr(ii)/xr(2)
-       call gg1cc(gg,yy)
-       tt=(rr(ii)-r0-2.0d0*rcross)/(r0-rcross)
-       rhomod(ii,1)= xr(1)*gg
-     end do
-
-     call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
-&                       zion,iexc,nc,nv,la,irmod,mmax)
-     fr=d2mdiff
+     call trial(xr,fr)
 
      if(ff(1)<= fr .and. fr<ff(2)) then
        ff(3)=fr ; xx(:,3)=xr(:)
@@ -325,27 +241,7 @@
      if(fr<ff(1)) then
        xe(:)=x0(:)+gamma_nm*(x0(:)-xx(:,3))
 
-       r0=1.5d0*xe(2)
-       do ii=mmax,1,-1
-         if(rr(ii)<r0) then
-           call gg1cc(gg,yy)
-           if(xe(1)*gg<rhoc(ii)) then
-             rcross=rr(ii)
-             exit
-           end if
-         end if
-       end do
-
-       do ii=1,mmax
-         yy=rr(ii)/xe(2)
-         call gg1cc(gg,yy)
-         tt=(rr(ii)-r0-2.0d0*rcross)/(r0-rcross)
-         rhomod(ii,1)= xe(1)*gg
-       end do
-
-       call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
-&                         zion,iexc,nc,nv,la,irmod,mmax)
-       fe=d2mdiff
+       call trial(xe,fe)
 
        if(fe<fr) then
          ff(3)=fe ; xx(:,3)=xe(:)
@@ -359,28 +255,7 @@
 !(5) Contraction
      xc(:)=x0(:)+rho_nm*(x0(:)-xx(:,3))
 
-
-     r0=1.5d0*xc(2)
-     do ii=mmax,1,-1
-       if(rr(ii)<r0) then
-         call gg1cc(gg,yy)
-         if(xc(1)*gg<rhoc(ii)) then
-           rcross=rr(ii)
-           exit
-         end if
-       end if
-     end do
-
-     do ii=1,mmax
-       yy=rr(ii)/xc(2)
-       call gg1cc(gg,yy)
-       tt=(rr(ii)-r0-2.0d0*rcross)/(r0-rcross)
-       rhomod(ii,1)= xc(1)*gg
-     end do
-
-     call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
-&                       zion,iexc,nc,nv,la,irmod,mmax)
-     fc=d2mdiff
+     call trial(xc,fc)
 !  write(6,'(i4,a,2f10.4,1p,e14.4)') kk,'  xc',xc(1),xc(2),fc
      if(fc<ff(3)) then
        ff(3)=fc ; xx(:,3)=xc(:)
@@ -391,27 +266,7 @@
      do jj=2,3
        xx(:,jj)=xx(:,1)+sigma_nm*(xx(:,jj)-xx(:,1))
 
-       r0=1.5d0*xx(2,jj)
-       do ii=mmax,1,-1
-         if(rr(ii)<r0) then
-           call gg1cc(gg,yy)
-           if(xx(1,jj)*gg<rhoc(ii)) then
-             rcross=rr(ii)
-             exit
-           end if
-         end if
-       end do
-
-       do ii=1,mmax
-         yy=rr(ii)/xx(2,jj)
-         call gg1cc(gg,yy)
-         tt=(rr(ii)-r0-2.0d0*rcross)/(r0-rcross)
-         rhomod(ii,1)= xx(1,jj)*gg
-       end do
-
-       call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
-&                         zion,iexc,nc,nv,la,irmod,mmax)
-       ff(jj)=d2mdiff
+       call trial(xx(:,jj),ff(jj))
 !  write(6,'(i4,a,2f10.4,1p,e14.4)') kk,' xrd',xx(1,jj),xx(2,jj),ff(jj)
      end do !jj
 
@@ -428,44 +283,17 @@
 &        'Teter function model core charge with specified parameters'
  end if
 
- r0=1.5d0*xx(2,1)
- ircross=0
- do ii=mmax,1,-1
-   if(rr(ii)<r0) then
-     yy=rr(ii)/xx(2,1)
-     call gg1cc(gg,yy)
-     if( xx(1,1)*gg<rhoc(ii)) then
-       rcross=rr(ii)
-       ircross=ii
-       exit
-     end if
-   end if
- end do
 
- if(ircross==0) then
-   write(6,'(/a)') 'modcore3: ERROR failed to find model core crossover'
-   error stop 1
- end if
-
-! blend the Teter function tail into the all-electron rhoc
-! first two derivatives are filled in analytically before the blend starts
- rhomod(:,:)=0.0d0
+! the Teter function and its derivatives, analytic everywhere (tapered)
  do ii=1,mmax
-   yy=rr(ii)/xx(2,1)
-   call gg1cc(gg,yy)
-   tt=(rr(ii)-r0-2.0d0*rr(ircross))/(r0-rr(ircross))
-
-   rhomod(ii,1)=xx(1,1)*gg
-   if(ii<ircross) then
-     call gp1cc(gg,yy)
-     rhomod(ii,2)=xx(1,1)*gg/xx(2,1)
-     call gpp1cc(gg,yy)
-     rhomod(ii,3)=xx(1,1)*gg/xx(2,1)**2
-   end if
+   call teter_core_derivs(rr(ii)/xx(2,1),4,gd)
+   do kk=0,4
+     rhomod(ii,kk+1)=xx(1,1)*gd(kk)/xx(2,1)**kk
+   end do
  end do
 
  call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
-&                   zion,iexc,nc,nv,la,irmod,mmax)
+&                   zion,iexc,nc,nv,la,rr(mmax),mmax)
 
  write(6,'(/a/)') 'd2excps - pseudofunction derivatives with core correction'
  do kk=1,nv
@@ -473,100 +301,34 @@
  end do
  write(6,'(/a,1p,e16.6)') 'rms 2nd derivative error',d2mdiff
 
-!7-point numerical first derivatives applied successively
-!skip non-blended section for 1st and 2nd derivatives
-
- al = 0.01d0 * log(rr(101) / rr(1))
-
- do jj=2,3
-   do ii=ircross-6,mmax-3
-     rhomod(ii,jj)=(-rhomod(ii-3,jj-1)+ 9.d0*rhomod(ii-2,jj-1)&
-&     -45.d0*rhomod(ii-1,jj-1)+45.d0*rhomod(ii+1,jj-1)&
-&     -9.d0*rhomod(ii+2,jj-1)+rhomod(ii+3,jj-1))&
-&     /(60.d0*al*rr(ii))
-   end do
- end do
-
-!ad-hoc treatment of numerical noise near origin
-!set up a mesh on which 2nd derivative will have a stable
-!polynomial representation
-!assumes dpnint remains 7th order
- drint=0.02d0*rr(ircross)
- rtst=0.5d0*drint
- do jj=1,4
-   do ii=1,ircross
-     if(rr(ii)>rtst) then
-       rint(4+jj)=rr(ii)
-       rint(5-jj)=-rr(ii)
-       fint(4+jj)=rhomod(ii,3)
-       fint(5-jj)=rhomod(ii,3)
-       iint=ii
-       rtst=rr(ii)+drint
-       exit
-     end if
-   end do
- end do
-
- call dpnint(rint,fint,8,rr,rhomod(1,3),iint-1)
-
- jj=4
- do ii=3*jj-8,mmax-3
-   rhomod(ii,jj)=(-rhomod(ii-3,jj-1)+ 9.d0*rhomod(ii-2,jj-1)&
-&   -45.d0*rhomod(ii-1,jj-1)+45.d0*rhomod(ii+1,jj-1)&
-&   -9.d0*rhomod(ii+2,jj-1)+rhomod(ii+3,jj-1))&
-&   /(60.d0*al*rr(ii))
- end do
-
-!set up a mesh on which 3rd derivative will have a stable
- drint=0.95d0*drint
- rtst=0.5d0*drint
- rtst=0.5d0*drint
- do jj=1,4
-   do ii=1,ircross
-     if(rr(ii)>rtst) then
-       rint(4+jj)=rr(ii)
-       rint(5-jj)=-rr(ii)
-       fint(4+jj)=rhomod(ii,4)
-       fint(5-jj)=-rhomod(ii,4)
-       iint=ii
-       rtst=rr(ii)+drint
-       exit
-     end if
-   end do
- end do
-
- call dpnint(rint,fint,8,rr,rhomod(1,4),iint-1)
-
- jj=5
- do ii=3*jj-8,mmax-3
-   rhomod(ii,jj)=(-rhomod(ii-3,jj-1)+ 9.d0*rhomod(ii-2,jj-1)&
-&   -45.d0*rhomod(ii-1,jj-1)+45.d0*rhomod(ii+1,jj-1)&
-&   -9.d0*rhomod(ii+2,jj-1)+rhomod(ii+3,jj-1))&
-&   /(60.d0*al*rr(ii))
- end do
-
-!set up a mesh on which 4th derivative will have a stable
- drint=0.95d0*drint
- rtst=0.5d0*drint
- do jj=1,4
-   do ii=1,ircross
-     if(rr(ii)>rtst) then
-       rint(4+jj)=rr(ii)
-       rint(5-jj)=-rr(ii)
-       fint(4+jj)=rhomod(ii,5)
-       fint(5-jj)=rhomod(ii,5)
-       iint=ii
-       rtst=rr(ii)+drint
-       exit
-     end if
-   end do
- end do
-
- call dpnint(rint,fint,8,rr,rhomod(1,5),iint-1)
-
- deallocate(vxcae,vxcpsp,vo)
- deallocate(dvxcae,dvxcps)
  deallocate(d2excae,d2excps)
 
  return
+
+ contains
+
+ subroutine trial(xm,fm)
+
+!! the rms 2nd-derivative error of a trial Teter model core
+!!
+!! @param xm  its amplitude and scale (bohr)
+!! @param fm  the rms 2nd-derivative error
+
+!Input variables
+ real(dp), intent(in) :: xm(2)
+
+!Output variables
+ real(dp), intent(out) :: fm
+
+!Local variables
+ integer :: im
+
+ do im=1,mmax
+   call teter_core_derivs(rr(im)/xm(2),0,gd)
+   rhomod(im,1)=xm(1)*gd(0)
+ end do
+ call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,fm, &
+&             zion,iexc,nc,nv,la,rr(mmax),mmax)
+ end subroutine trial
+
  end subroutine modcore3

@@ -43,7 +43,8 @@ endforeach ()
 
 # Unit tests of the pieces of the model core charges (modcore_m), phase 5 of doc/smoothness_plan.md:
 # written before the code, so labelled smooth until it is done
-add_executable(test_modcore unit/test_modcore.f90)
+add_executable(test_modcore unit/test_modcore.f90 unit/gg1cc.f90 unit/gp1cc.f90
+               unit/gpp1cc.f90)
 target_link_libraries(test_modcore PRIVATE oncvpsp::oncvpsp oncvpsp::compile_options)
 set_target_properties(test_modcore PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 add_test(NAME unit_modcore COMMAND test_modcore)

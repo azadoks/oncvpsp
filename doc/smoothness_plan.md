@@ -430,7 +430,7 @@ numbers refer to [Phases](#phases).
 | M-2 | `modcore`: derivatives at ircc by stencils | a, e | W | `lm_derivs` at r* |
 | M-3 | `modcore`: a0 by bisection to 1e-7, monotonicity checked only at mesh points | f, h | W | closed form: p' is affine in a0; critical points by companion matrix |
 | M-4 | `modcore2`: x by bisection to 1e-7 | f | W | Newton on the monotone x·g'/g |
-| M-5 | `gg1cc`, `gpp1cc`: Teter function cut to 0 at x = 3 (C¹); columns 4, 5 by stencils across it; `dpnint` patches near the origin (zeroing rhomod(1,3:5)) | d, e | W | no cutoff (it decays as x⁻¹⁰); analytic derivatives with series near 0; delete the patches |
+| M-5 | `gg1cc`, `gpp1cc`: Teter function cut to 0 at x = 3 (C¹); columns 4, 5 by stencils across it; `dpnint` patches near the origin (zeroing rhomod(1,3:5)) | d, e | W | analytic derivatives (h = √g a sum of five shifted sincs, series near their centres); delete the patches; revised: not "no cutoff" (the x⁻¹⁰ tail is far fatter than a core charge: V_ion then differs from −zion/r to 1e-10 out to 22.7 bohr in 79_Au_lxc instead of 6, and the outermost crossing of that tolerance hops between the lobes of sin²), but g tapered to 0 between x = 3 and 4 by the C∞ switch of `ionic_switch` |
 | M-6 | `modcore3`: grid argmin then Nelder–Mead to an f-spread of 1e-4; returns a vertex | h, f | W | keep grid and NM to choose the basin; then Newton (trust region) on ∇f = 0 to round-off |
 | M-7 | `modcore3` ircross, dead rcross loops | a | W | remove (analytic derivatives everywhere) |
 | M-8 | `modcore_budget` ifrom: first q of a 0.1 grid above the budget; the only way slack enters | a, b | W | tested cutoffs start at q_b exactly; max over q by grid plus Brent |
@@ -993,7 +993,27 @@ later phases can see 1e-10.
       stencils and `dpnint` patches near the origin), and the cutoff of
       icmod 6 (14_Si_bc, 7.2e-2 in the 3rd). T4 at the start of the
       phase is the one at the end of phase 4.
-- [ ] M-1…M-14; S-10 GGA gradients from the pieces
+- [x] M-1–M-5, M-7 (icmod 1–4). `modcore`, `modcore2`, `modcore3` match
+      at the root r* of ln ρ_c − ln(fcfact ρ̃_v) (`core_crossover`), with
+      the derivatives there interpolated (`lm_derivs`); icmod 1's a0 in
+      closed form; icmod 2's scale by Newton; the Teter function and its
+      four derivatives analytic everywhere, tapered to 0 over x = 3…4
+      (M-5 revised, above; the switch's e^(−1/t) counts as 0 below 1e-30,
+      as a model core of 1e-260 was written without its E); no ircross,
+      blend, stencils or `dpnint` patches. Beyond r*, icmod 1's columns
+      are `lm_derivs` of ρ_c at the mesh points. `der2exc` integrates to
+      a radius (`lm_integral`): max(rcmax, r*) for icmod 1, the mesh's end
+      otherwise. `gg1cc`, `gp1cc`, `gpp1cc` moved to tests/unit as the
+      references of `unit_modcore`. T2: fcfact of 14_Si (icmod 1) and
+      79_Au_lxc (icmod 2), rcfact of 34_Se and its psp8 core, green at
+      1e-13 or better; still red: 40_Zr_grid (M-6), the icmod 6/7 rows
+      (M-8…M-12), and the psp8 core of 14_Si's fcfact, 1.5e-4 (was 3.1e-2)
+      in the 4th derivative, which is only C⁰ in r* (a C⁴ match) and is
+      interpolated across the joint by the writers. The model core moves
+      by the snap of r* to the mesh (up to a step below the root; 34_Se:
+      rmatch 1.2470 → 1.2538, ρ_c there −3.9 %): kernels ≤ 7.6e-7, V_loc
+      ≤ 2.8e-3, model core 1e-3 to 6e-2 relative (largest in 34_Se)
+- [ ] M-6, M-8…M-14; S-10 GGA gradients from the pieces
 - [ ] `match_order` (D-5): input key, minimum tail and Martins fill to
       C⁴, T2 row `slack` with `match_order = 4`
 - [ ] T2 rows fcfact, rcfact, icmod 4 grid, slack at G1

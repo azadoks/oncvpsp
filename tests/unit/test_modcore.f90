@@ -9,6 +9,12 @@
 !              (1e-11 of (2 pi)**k) from 0 to 6, g > 0 beyond x = 3; and
 !              smooth: the 4th derivative on 41-point windows of width 0.04
 !              from 0 to 3.5 fits a polynomial of degree 8 to 1e-11
+!   taper      the model's Teter function, g tapered to 0 between x = 3 and
+!              4: g itself up to 3, 0 from 4, each derivative against an
+!              8th-order difference of the one below from 2.8 to 4.2 (1e-10
+!              of the largest there), and its 4th derivative smooth on
+!              windows of width 0.04 there (degree 8, 1e-11 of (2 pi)**4,
+!              as the bare function)
 !   crossover  the outermost root of ln(rhoc) - ln(fcfact rhotps) for
 !              analytic densities, one crossing and three, to 1e-12 bohr;
 !              smooth in fcfact (41 values, degree 6, 1e-12); no crossing
@@ -25,7 +31,7 @@
  program test_modcore
  use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
  use modcore_m, only: teter_derivs, core_crossover, poly_core_fit, &
-&                     teter_scale
+&                     teter_scale, teter_core_derivs
  implicit none
 
 !Local variables
@@ -34,7 +40,7 @@
  real(dp), allocatable :: rr(:), rhoc(:), rhotps(:)
  real(dp) :: al, gd(0:4), gl, xx, err, rstar, ref, ts(41), ys(41)
  real(dp) :: resid(41), fmatch(5), a0, aco(5), a0ref
- real(dp) :: xs(5), x0s(5)
+ real(dp) :: xs(5), x0s(5), gc(0:4), dmax(4)
  integer :: nfail = 0, mmax, ii, jj, kk, ierr
 
  al = log(amesh)
@@ -117,6 +123,52 @@
    err = max(err, maxval(abs(resid))/(2.0_dp*pi)**4)
  end do
  call check('teter smooth', err, 1.0e-11_dp)
+
+! taper: g itself up to x = 3, 0 from 4
+ err = 0.0_dp
+ do ii = 0, 300
+   xx = 0.01_dp*ii
+   call teter_derivs(xx, 4, gd)
+   call teter_core_derivs(xx, 4, gc)
+   err = max(err, maxval(abs(gc - gd)))
+ end do
+ do ii = 0, 20
+   xx = 4.0_dp + 0.13_dp*ii
+   call teter_core_derivs(xx, 4, gc)
+   err = max(err, maxval(abs(gc)))
+ end do
+ call check('taper ends', err, 0.0_dp)
+
+! taper: each derivative against the difference of the one below, relative
+! to the largest of each on [2.8, 4.2]
+ dmax(:) = 0.0_dp
+ do ii = 0, 1400
+   call teter_core_derivs(2.8_dp + 1.0e-3_dp*ii, 4, gc)
+   dmax(:) = max(dmax(:), abs(gc(1:4)))
+ end do
+ err = 0.0_dp
+ do ii = 0, 140
+   xx = 2.8_dp + 0.01_dp*ii + 0.003_dp
+   do kk = 1, 4
+     call teter_core_derivs(xx, kk, gc(0:kk))
+     err = max(err, abs(gc(kk) - fdiff_core(xx, kk - 1))/dmax(kk))
+   end do
+ end do
+ call check('taper derivatives', err, 1.0e-10_dp)
+
+! taper: smooth on windows of width 0.04
+ err = 0.0_dp
+ do jj = 0, 69
+   do ii = 1, 41
+     ts(ii) = 2.0_dp*(ii - 1)/40.0_dp - 1.0_dp
+     xx = 2.8_dp + 0.02_dp*jj + 0.02_dp*(ts(ii) + 1.0_dp)
+     call teter_core_derivs(xx, 4, gc)
+     ys(ii) = gc(4)
+   end do
+   call fit_residual(ts, ys, 8, resid)
+   err = max(err, maxval(abs(resid))/(2.0_dp*pi)**4)
+ end do
+ call check('taper smooth', err, 1.0e-11_dp)
 
 ! crossover: rhoc = 40 exp(-4r), rhotps = 2 r**2 exp(-r), one crossing
  rhoc(:) = 40.0_dp*exp(-4.0_dp*rr)
@@ -243,6 +295,28 @@
  end do
  fdiff = fdiff/hh
  end function fdiff
+
+ real(dp) function fdiff_core(xq, kk)
+
+!! the 8th-order centred difference of the kk-th derivative of the tapered
+!! Teter function at xq (away from 0)
+
+ real(dp), intent(in) :: xq
+ integer, intent(in) :: kk
+ real(dp), parameter :: hh = 1.0e-3_dp
+ real(dp), parameter :: cw(4) = [4.0_dp/5.0_dp, -1.0_dp/5.0_dp, &
+&                                4.0_dp/105.0_dp, -1.0_dp/280.0_dp]
+ real(dp) :: gp(0:4), gm(0:4)
+ integer :: mm
+
+ fdiff_core = 0.0_dp
+ do mm = 1, 4
+   call teter_core_derivs(xq + mm*hh, kk, gp(0:kk))
+   call teter_core_derivs(xq - mm*hh, kk, gm(0:kk))
+   fdiff_core = fdiff_core + cw(mm)*(gp(kk) - gm(kk))
+ end do
+ fdiff_core = fdiff_core/hh
+ end function fdiff_core
 
  real(dp) function lnratio(rq, fc, shell)
 

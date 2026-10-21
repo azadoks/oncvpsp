@@ -269,7 +269,7 @@
    allocate(d2ae(nprobe,nprobe),d2mod(nprobe,nprobe),d2zero(nprobe,nprobe))
    d2zero(:,:)=0.0d0
    call der2exc(rhotps,rhoc,probes,rr,d2ae,d2zero,mismatch, &
-&               zion,iexc,0,nprobe,lprobe,mmax,mmax)
+&               zion,iexc,0,nprobe,lprobe,rr(mmax),mmax)
    do ii=1,ncand
      call model(cidx(ii))
      cfill(ii)=ifill
@@ -277,7 +277,7 @@
      cmis(ii)=huge(1.0d0)
      if(ifill==0) cycle
      call der2exc(rhotps,core,probes,rr,d2mod,d2ae,cmis(ii), &
-&                 zion,iexc,0,nprobe,lprobe,mmax,mmax)
+&                 zion,iexc,0,nprobe,lprobe,rr(mmax),mmax)
    end do
 
 ! the order of the mismatch, stable (ties to the larger radius)

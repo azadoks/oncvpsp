@@ -63,7 +63,7 @@
  integer, intent(in) :: irel,istage
 
 !Local variables
- integer :: ii,ierr,iexc,iexct,ios,iprint,irps,it,icmod,lpopt
+ integer :: ii,ierr,iexc,iexct,ios,iprint,it,icmod,lpopt
  integer :: jj,kk,ll,l1,lloc,lmax,lt,inline
  integer :: mch,mchf,mmax,n1,n2,nc,nlim,nlloc,nlmax,irpsh,nrl
  integer :: nv,irct,ncnf,nvt,upf_mesh
@@ -825,7 +825,6 @@
  nodes(:)=0
  rhoae(:,:)=0.0d0
  rhotae(:)=0.0d0
- irps=0
  do kk=1,nv
    ll=la(nc+kk)
    l1=ll+1
@@ -903,7 +902,6 @@
    rho(:)=rho(:)+fa(nc+kk)*rhops(:,kk)
    zval=zval+fa(nc+kk)
    nodes(l1)=nodes(l1)+1
-   irps=max(irps,irc(l1))
  end do !kk
 
  if(irel==2) then
@@ -922,11 +920,11 @@
 
  if(icmod==1) then
    call modcore(icmod,rhops,rho,rhoc,rhoae,rhotae,rhomod, &
-&               fcfact,rcfact,irps,mmax,rr,nc,nv,la,zion,iexc)
+&               fcfact,rcfact,rcmax,mmax,rr,nc,nv,la,zion,iexc)
 
  else if(icmod==2) then
    call modcore2(icmod,rhops,rho,rhoc,rhoae,rhotae,rhomod, &
-&               fcfact,rcfact,irps,mmax,rr,nc,nv,la,zion,iexc)
+&               fcfact,rcfact,mmax,rr,nc,nv,la,zion,iexc)
 
  else if(icmod==6 .or. icmod==7) then
    ecutw=0.0d0
@@ -948,7 +946,7 @@
 
  else if(icmod>=3) then
    call modcore3(icmod,rhops,rho,rhoc,rhoae,rhotae,rhomod, &
-&               fcfact,rcfact,fcgrid,rcgrid,irps,mmax,rr,nc,nv,la,zion,iexc)
+&               fcfact,rcfact,fcgrid,rcgrid,mmax,rr,nc,nv,la,zion,iexc)
 
  end if
 

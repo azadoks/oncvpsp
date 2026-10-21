@@ -21,7 +21,7 @@
 ! differ from the all-electron wave functions
 !
  subroutine der2exc(rhotot,rhoc,rho,rr,d2exc,d2ref,d2mdiff, &
-&                   zion,iexc,nc,nv,la,ircut,mmax)
+&                   zion,iexc,nc,nv,la,rcut,mmax)
 
 !! @param rhotot  total valence charge, all-electron of pseudo
 !! @param rhoc  core charge, all-electron or model
@@ -35,18 +35,20 @@
 !! @param nc  number of core states
 !! @param nv  number of valence states
 !! @param la  array of l values for all-electron atom
-!! @param ircut  maximum-radius for which all-electron and pseudo charges differ
+!! @param rcut  radius to which the matrix elements are integrated, at least
+!!              that beyond which all-electron and pseudo charges agree (bohr)
 !! @param mmax  dimensiion of log grid
 
  use constants_m, only: dp
+ use logmesh_m, only: lm_integral
  implicit none
 
 !Input variables
  real(dp), intent(in) :: rhotot(mmax),rhoc(mmax),rho(mmax,nv),rr(mmax)
  real(dp), intent(in) :: d2ref(nv,nv)
- real(dp), intent(in) :: zion
+ real(dp), intent(in) :: zion,rcut
  integer, intent(in) :: la(nv+nc)
- integer, intent(in) :: iexc,nc,nv,ircut,mmax
+ integer, intent(in) :: iexc,nc,nv,mmax
 
 !Output variables
  real(dp), intent(out) :: d2exc(nv,nv)
@@ -82,13 +84,14 @@
 
  end do !kk
 
-! compute Exc 2nd-derivative wrt occupation numbers matrix
+! compute Exc 2nd-derivative wrt occupation numbers matrix, integrated to
+! the radius rcut (smooth in it)
 
  do kk=1,nv
    l1=la(nc+kk)+1
-   rhot(:)=rho(:,kk)*rr(:)**2
    do jj=1,nv
-     call vpinteg(rhot,dvxc(1,jj),ircut,2*l1,d2exc(kk,jj),rr)
+     rhot(:)=rho(:,kk)*rr(:)**2*dvxc(:,jj)
+     call lm_integral(rr,rhot,mmax,2*l1,0.0d0,rcut,d2exc(kk,jj))
    end do !jj
  end do !kk
 

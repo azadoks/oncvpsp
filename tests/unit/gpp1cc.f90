@@ -1,4 +1,6 @@
 !{\src2tex{textfont=tt}}
+!! The program no longer uses it (modcore_m, doc/smoothness_plan.md M-5):
+!! kept as the reference of tests/unit/test_modcore.f90.
 !!****f* ABINIT/gpp1cc
 !! NAME
 !! gpp1cc
