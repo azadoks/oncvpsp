@@ -87,7 +87,7 @@
  real(dp) :: fcgrid(3),rcgrid(3)
  real(dp) :: rr1,rcion,rciont,rcmax,rct,rlmax,rpkt
  real(dp) :: amesh_in,rr1_in,rmax_in,rmax,log_mesh(3),c_light_in
- real(dp) :: sf,zz,zion,zval,etot,res
+ real(dp) :: sf,sw,zz,zion,zval,etot,res
  real(dp) :: eterm(4)
  real(dp) :: fj,cnorm
 !
@@ -98,6 +98,7 @@
  real(dp) :: rpk(mxstate,mxkap)
  real(dp) :: epstot
  real(dp), parameter :: eps=1.0d-8
+ real(dp), external :: ionic_switch
 
  real(dp), allocatable :: evkb(:,:,:),cvgplt(:,:,:,:,:),qq(:,:)
  real(dp), allocatable :: ecurve(:,:,:,:,:)
@@ -1022,15 +1023,13 @@
    end if
  end do
 
-!fix unscreening error due to greater range of all-electron charge
- do ii=mmax,1,-1
-   if(rho(ii)==0.0d0) then
-     do l1=1,max(lmax+1,lloc+1)
-       vpuns(ii,l1)=-zion/rr(ii)
-     end do
-   else
-     exit
-   end if
+! -zion/r far out, where the all-electron charge outranges rho: switched
+! over the outer half of the mesh (O-5), not cut where rho underflows to 0
+ do ii=1,mmax
+   sw=ionic_switch(rr(ii),0.5d0*rr(mmax),rr(mmax))
+   do l1=1,max(lmax+1,lloc+1)
+     vpuns(ii,l1)=sw*vpuns(ii,l1)-(1.0d0-sw)*zion/rr(ii)
+   end do
  end do
 
 ! how closely the local potential is -zion/r beyond rcmax

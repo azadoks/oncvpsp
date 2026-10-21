@@ -449,7 +449,7 @@ numbers refer to [Phases](#phases).
 | O-2 | `oncvpsp_main` 882–891 + `linout`: fr psp8 drops sr/so terms below 1e-3 of the first | g | W | write all; see D-2 |
 | O-3 | UPF numbers e20.10, PP_R f10.4 | b | W | 17 digits (done, phase 0) |
 | O-4 | `upfout` nrl extended to a tail-norm radius (1e-6) | g, i | W | kept (user decision): only how many points are written |
-| O-5 | `oncvpsp_main` 997: vpuns = −zion/r where rho == 0 | g | W (~1e-10) | switch at a continuous radius with `ionic_switch` |
+| O-5 | `oncvpsp_main` 997: vpuns = −zion/r where rho == 0 | g | W (~1e-10) | switch over (r_max/2, r_max) with `ionic_switch` |
 | O-6 | printed diagnostics at f12.6–f14.8 and d10.2 | b | – | machine-readable block at 17 digits (phase 6) |
 
 #### Diagnostics (phase 6)
@@ -926,9 +926,13 @@ later phases can see 1e-10.
       1.0e-2 (the extension to where 1e-6 is left is what keeps them). The
       extension changes only how many points are written, not a value at
       any radius
-- [ ] O-5: the switch of V_loc to −zion/r where ρ = 0 by `ionic_switch`
-      at continuous radii. It reaches no written function inside rlmax;
-      it moves the pseudo-atom tests
+- [x] O-5: the unscreened potentials switched to −zion/r by
+      `ionic_switch` over the outer half of the log mesh, (r_max/2,
+      r_max), not set to it where ρ underflows to 0 (43.7–43.9 bohr of
+      44.5, by mesh index; V_loc + zion/r is ≤ 6e-17 there). The written
+      files are bit-identical; α_z's tail beyond 10 bohr moves by ≤ 1e-10
+      (19_K), the excitation errors of the pseudo-atom tests by ≤ 1.7e-11
+      (29_Cu)
 - [ ] References patched
 
 #### Phase 5: model core
