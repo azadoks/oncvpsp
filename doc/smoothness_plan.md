@@ -628,14 +628,31 @@ So the order is:
    (60_Nd_GHOST l = 0, the states between ebcut and 1.5 ebcut; most by
    ≤ 1e-4), and 52_Te_r's l = 0 now reports GHOST(+) at ⟨r⟩/rc 0.995
    (the wall and the ratio at rc rather than at the mesh point below it).
-5. S-10: GGA ρ′, ρ″ from the pieces. Moved after X-3: item 1 shows no
-   kink above 1e-11 in the optimizer's setup.
-6. X-2: the phase shifts, with rxpsh honoured exactly.
-7. References, then phase 7.
-8. Low, for the optimizer: X-1, X-4…X-6, D-5, the M-12 ripple (below the
+5. X-2: the phase shifts, with rxpsh honoured exactly.
+6. References, then phase 7.
+7. Low, for the optimizer: X-1, X-4…X-6, D-5, the M-12 ripple (below the
    finite-difference noise at h = 1e-4), M-14 (PSML), the psp8 model-core
    pieces. The UPF on the log mesh writes ρ_c's values, which are smooth
    already.
+8. S-10: GGA ρ′, ρ″ from the pieces, last (a small effect). Item 1 shows
+   no kink above 1e-11 in the optimizer's setup: a 5-point stencil across
+   a C² joint errs by a truncated power of the joint's offset in the
+   cell, which is C² in the joint's radius, so finite-difference
+   Jacobians do not see it. Scope: internal PBE (iexc 4), Libxc PBE and
+   PBEsol. Sketch from reading the code:
+   - ρ_v′, ρ_v″ from the solver's (u, al r u′) and u″ from the equation,
+     u″ = [l(l+1)/r² + 2(V − e)]u + 2 Σ_j evkb_j ⟨β_j|u⟩ β_j (main's
+     unscreening, `ionic_valence`, `psatom`); ρ̃_c′, ρ̃_c″ from the model
+     core's columns;
+   - the potential pointwise, without the stencil divergence of the
+     flux: internal PBE through `exchpbe`/`corpbe` with lpot = 1 (the
+     PW86(24) form, its U, V, W from the exact ρ′, ρ″); Libxc with fxc,
+     v = v_ρ − 2[v_σ(ρ″ + 2ρ′/r) + ρ′(v_ρσ ρ′ + 2 v_σσ ρ′ρ″)];
+   - `vout` with optional derivative arguments (into a module); the
+     stencil route kept where the density is all-electron. In
+     `ionic_tail` both V_xc of ρ_v^AE + ρ_c and of ρ_v^AE + ρ̃_c take the
+     same route, so that they cancel beyond the core radius; in
+     `der2exc` (icmod 6/7) the trial core needs its derivative columns.
 
 #### Phase 0: infrastructure
 
