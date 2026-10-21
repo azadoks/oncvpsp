@@ -897,6 +897,126 @@ later phases can see 1e-10.
       fixed where the phases did not already
 - [ ] `smooth` label dropped; T2 part of the default suite
 
+#### Phase 8: the kernels free of the well (follow-up)
+
+A follow-up, started once phases 4 to 7 are done. It changes the method,
+not only the numerics, so it needs its own review (D-7).
+
+**Why.** A well state is the atom's state at a positive energy ep (every
+second projector, and every first projector with a positive ep),
+confined by the well of `wellstate` so that it can be normalized. On
+[0, rc] the well changes nothing: it is flat to every order at its onset
+(≥ rc), so the state there is the atom's at ep, up to a factor, and the
+kernels do not see the factor. Beyond rc the well shapes the tail, and
+`eresid` transforms that tail (Q-2) for the residual kinetic energy that
+the optimization minimizes. So the kernels depend on the well's onset,
+height and width, and on its node count. Measured on 14_Si at amesh
+1.006 (onset rc·c, scratch build):
+- d‖K‖/d ln c is 0.45–0.48 for l=1 with today's tight box (n=4,
+  half-point radius 4.5 bohr), and 0.01–0.03 one node up (n=5, 7.9 bohr).
+- Where the well state takes another node, the kernels jump: 7 % for
+  l=1 at c ≈ 1.08, and 3e-3 between the larger boxes. The well's node
+  count is a hidden discrete variable, which changes with rc, ep and
+  debl (40_Zr's l=1 in T3).
+- With the tail removed from `eresid`, the optimization fails (a node in
+  the first pseudo-wave function): the tail is what makes the junction
+  at rc count.
+
+`well_onset` fixes the onset at a multiple of rc that does not depend on
+the mesh. The arbitrariness remains, and so do the jumps.
+
+**Method.** In `eresid`, the tail of a well state is the atom's free
+solution at ep, with no well, under a window that takes it to zero far
+from rc:
+
+    t(r) = u_free(r) w(r),  w(r) = erfc((r − R0)/L)/2,  r ≥ rc
+
+- u_free solves the radial equation in vfull at ep, outward from rc,
+  starting from the well state's u and u' at rc. Since the well state
+  solves the same equation on [rc, onset], u_free equals it there.
+  It is integrated on `eresid`'s own linear tail mesh (spacing
+  2π/(75 qmax)), with vfull by `lm_interp` (and −zion/r beyond the
+  log mesh's rmax, 45 bohr by default). On that mesh the integration
+  is accurate and does not depend on amesh; on the log mesh, a 4 bohr
+  wavelength at 60 bohr would get about 11 points.
+- erfc is analytic, so the window's spectrum falls as a Gaussian. Its
+  share of E_r above qcut is about exp(−((qcut − k)L)²/4), where k is
+  the state's wave number √(2ep). With (qcut − k)L ≥ 11 that is
+  below 1e-13.
+- R0 = rc + 6L. There w differs from 1 by erfc(6)/2 ≈ 1e-17, and its
+  derivatives by as little, so the tail joins the inner function as
+  the well state does. The tail ends at R0 + 6L.
+- L must be a smooth function of qcut and ep, with no branch:
+  - For ep < 0 (a negative ep with `ep_as_given`, or a second projector
+    below 0), u_free grows as e^(κr), κ = √(−2ep). Over the window
+    (R0 + 3L − rc = 9L) the Gaussian beats the growth once
+    (Δq L)²/4 − 9κL ≥ 30, with Δq = qcut − k; for ep ≥ 0 the same bound
+    with κ = 0 is the leakage bound above.
+  - So L is the positive root of (Δq L)²/4 − 9κL = 30, with k and κ
+    from a smooth split of ep: k = √(√(ep² + δ²) + ep) and
+    κ = √(√(ep² + δ²) − ep), with δ small. A max(0, ·) would put a kink
+    at ep = 0.
+  - qcut ≤ k (ep > qcut²/2, 12.5 Ha at qcut 5) is an input error: the
+    state then oscillates faster than the cutoff.
+- The well states are normalized to 1 inside rc instead of over all
+  space. The kernels do not see the change; the printed residual
+  energies and "Fraction of norm inside rc" of the well states do.
+- What stays:
+  - The well, for the energy overrides (the 0.75·rc and 1.5·rc tests,
+    D-1), which use the bound state, and for the printed half-point
+    radius.
+  - In the fr code, the well for the j = l−1/2 energy. It is the
+    eigenvalue of the j = l+1/2 well (D-7c), so `well_onset` still
+    matters there, smoothly.
+- Cost: the tail runs 12L from rc, about 44 bohr at Δq = 3, against 15
+  to 30 bohr today, so `eresid` takes about 2.5 times as long for these
+  states. To measure against G7.
+
+**Tests, written first:**
+- Unit (`eresid_tail`): the transform of a windowed sin(kr), l = 0, whose
+  exact transform is δ(q − k):
+  - (1/π)∫_qcut^qmax q⁴|F|² below 1e-13 of its total, for (qcut − k)L
+    at the bound. This is the window's leakage.
+  - The same for a growing e^(κr), with L from the ep < 0 bound.
+  - L, R0 and the end point smooth in (qcut, ep) across ep = 0.
+- Independence of the well: with the new tail, the kernels of 14_Si
+  and 08_O change by less than 1e-10 as `well_onset` goes from 1 to 2.5.
+  That range crosses the node switches, where today's kernels jump by
+  7 %. 52_Te_r's do too if D-7c takes the input ep for both j.
+- Independence of the window: R0 and L doubled, the kernels change by
+  less than 1e-10.
+- Smoothness across a former node switch: a smooth scan, at G1, of the
+  ep or debl input under which today's well state changes n. It is
+  found first and recorded with its jump today.
+- Mesh convergence: on nested meshes (the T4 measurement of phase 3),
+  the kernels of the well states converge at order ≥ 3, like those of
+  the bound states.
+- The rest of the T2 rows stay green.
+
+**Steps:**
+1. The tests above (red).
+2. `free_tail`, with `eresid` taking the tail from it for well states
+   behind the D-7 input (`well_tail`). Bound states keep their own tail.
+3. The new normalization of the well states, and the printed
+   diagnostics that follow from it.
+4. Validation on every reference, new tail against old:
+   - the kernels' change per block (the size of today's arbitrariness);
+   - the log derivatives at the analysis radius;
+   - the ghost test (60_Nd_GHOST, and no new ghosts);
+   - the test-configuration errors;
+   - the convergence profiles.
+   None may get worse beyond its noise.
+5. The default decided (D-7a); then the references are patched with the
+   change table.
+
+**Checklist:**
+- [ ] D-7 decided
+- [ ] Unit test `eresid_tail`; the independence, scan and mesh tests
+      (red)
+- [ ] `free_tail` and the window in `eresid`; normalization inside rc
+- [ ] Validation on the references recorded
+- [ ] References patched
+
 ### Decisions
 
 These change behaviour beyond numerics. Decided on review (2026-10-20).
@@ -965,6 +1085,21 @@ These change behaviour beyond numerics. Decided on review (2026-10-20).
   fallback is today's treatment, integrating through, with its noise
   noted. Not needed yet: the measured effect is at the solvers'
   discretization error near the jump (1e-8 Ha in a 3p matched at it).
+
+- **D-7 The tail of the well states** (phase 8). Open; decide at the
+  start of the phase.
+  - (a) Default: the free tail by default, or behind an input
+    (`well_tail`) with today's well tail as the default, as D-1 was
+    decided. The free tail removes an arbitrary choice and the node
+    jumps, but it moves the kernels of every well state by up to the
+    size of that arbitrariness (several % in 14_Si l=1).
+  - (b) Negative ep: the windowed growing solution, with L from the
+    bound in phase 8 (no branch at ep = 0), or the well kept for
+    ep ≤ 0. Keeping the well puts a policy branch (g) at ep = 0.
+  - (c) The fr code's j = l−1/2 energy: kept as the eigenvalue of the
+    j = l+1/2 well (the kernels then depend on the well through it,
+    smoothly), or the input ep for both j (a further change to the
+    method).
 
 ### Bugs found on the way
 
