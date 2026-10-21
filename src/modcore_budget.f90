@@ -376,7 +376,10 @@
    rs=minimum_radius(ib)
    call set_model(rs)
    mismatch=mismatch_at(log(rs))
-   if(err_max(qb,qmax,errmax)>errmax) then
+! r_s6 is a root of this error less errmax, so at r_s = r_s6 the two are
+! equal to round-off; the margin is above that and the M-12 ripple
+! (4e-8 relative), far below a radius that does not fit
+   if(err_max(qb,qmax,errmax)>errmax*(1.0d0+1.0d-7)) then
      write(6,'(/a,f12.6,a)') 'modcore_budget: WARNING the radius',rs, &
 &          ' of the least mismatch does not fit the budget'
    end if
