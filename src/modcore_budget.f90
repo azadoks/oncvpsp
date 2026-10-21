@@ -80,14 +80,15 @@
 ! by central differences, in it (M-10).  The radii above r_s of icmod 6
 ! fit, as the needed cutoff falls as the model softens.
 
- subroutine modcore_budget(icmod,rhotps,rhoc,rhomod,fcfact,ecutw,errmax, &
-&                          slack,rcmin,mmax,rr,iexc,zion,probes,lprobe, &
-&                          nprobe)
+ subroutine modcore_budget(icmod,rhotps,rhoc,rhomod,corepw,fcfact,ecutw, &
+&                          errmax,slack,rcmin,mmax,rr,iexc,zion,probes, &
+&                          lprobe,nprobe)
 
 !! @param icmod  6 for the smallest radius, 7 for the hardness-matched one
 !! @param rhotps  total pseudocharge density
 !! @param rhoc  core-charge density
 !! @param rhomod  model core density and 4 derivatives
+!! @param corepw  its pieces, split at r_s (modcore_m, core_pieces)
 !! @param fcfact  plane-wave cutoff (Ha) the model is made for, if > 0; else 0
 !!                for ecutw, or minus the multiple of ecutw
 !! @param ecutw  cutoff (Ha) of the pseudo-waves at errmax per electron (used
@@ -105,6 +106,8 @@
 !! @param nprobe  number of probes (0 for icmod=6)
 
  use constants_m, only: dp, pi, nrhomod
+ use modcore_m, only: core_pieces
+ use pieces_m, only: piecewise_t
  use logmesh_m, only: lm_derivs, lm_interp, lm_integral, lm_fh_reach, &
 &                     lm_blend
  implicit none
@@ -118,6 +121,7 @@
 
 !Output variables
  real(dp), intent(out) :: rhomod(mmax,nrhomod)
+ type(piecewise_t), intent(out) :: corepw(nrhomod)
 
  abstract interface
    real(dp) function scalar_fn(xx)
@@ -417,17 +421,7 @@
  ecore=qneed**2/8.0d0
 
 ! fill in model and derivatives, all-electron beyond r_s
- do ii=1,mmax
-   if(rr(ii)<rs) then
-     if(ifill==1) then
-       call tail_derivatives(rr(ii),rs,rhomod(ii,:))
-     else
-       call martins_derivatives(rr(ii),rhomod(ii,:))
-     end if
-   else
-     call lm_derivs(rr,rhoc,mmax,rr(ii),4,rhomod(ii,:))
-   end if
- end do
+ call core_pieces(rr,rhoc,mmax,rs,fill_derivatives,corepw,rhomod)
 
  if(icmod==7) then
    write(6,'(/a)') 'Model core correction: hardness-matched core (icmod 7)'
@@ -1441,7 +1435,8 @@
 
  subroutine tail_derivatives(rad,rs,dd)
 
-!! the minimum tail and its first 4 derivatives at rad <= rs: those of the
+!! the minimum tail and its first 4 derivatives at rad (beyond rs, its
+!! continuation, for the pieces of the model): those of the
 !! Legendre series in x = 2t - 1, t = (r/rs)**2, by the chain rule with
 !! t' = 2r/rs**2, t'' = 2/rs**2 (d/dt = 2 d/dx)
 !!
@@ -1471,6 +1466,27 @@
  dd(5)=pt(4)*t1**4 + 6.0d0*pt(3)*t1**2*t2 + 3.0d0*pt(2)*t2**2
  return
  end subroutine tail_derivatives
+
+ subroutine fill_derivatives(rad,dd)
+
+!! the fill of the model and its first 4 derivatives at rad
+!!
+!! @param rad  radius (bohr)
+!! @param dd  the fill and its first 4 derivatives at rad
+
+!Input variables
+ real(dp), intent(in) :: rad
+
+!Output variables
+ real(dp), intent(out) :: dd(5)
+
+ if(ifill==1) then
+   call tail_derivatives(rad,rs,dd)
+ else
+   call martins_derivatives(rad,dd)
+ end if
+ return
+ end subroutine fill_derivatives
 
  subroutine martins_derivatives(rad,dd)
 

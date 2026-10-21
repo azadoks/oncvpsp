@@ -62,9 +62,9 @@ or of the generator's for a linear one), and inside 0.95 times it (where the
 projectors' taper starts), are dropped: there the functions are only as
 smooth as the matching at the radius makes them, which is a property of the
 construction, not of its numerics. So are the radii swept by a breakpoint
-the output reports (the r_s of icmod 6 and 7), whatever the parameter. The 8
-points of the file's mesh on each side of each window are sampled too: an
-interpolant across the radius would reach them.
+the output reports (r* of icmod 1, r_s of icmod 6 and 7), whatever the
+parameter. The 8 points of the file's mesh on each side of each window are
+sampled too: an interpolant across the radius would reach them.
 
 usage: smooth_scan.py EXE BASE.toml KEY [--center X] [--cells N | --span S]
                       [--npts N] [--degree D] [--groups G,G]
@@ -97,9 +97,9 @@ UPF_MESH = 600
 # points of the file's mesh sampled on each side of the window of a radius
 NEAR = 8
 # breakpoints of the model core that move with the inputs, as the output
-# reports them: the radius r_s of icmod 6 and 7, a C2 joint (C4 with
-# match_order = 4)
-BREAKPOINTS = (re.compile(r"^\s*model radius r_s\s+([-+.0-9eE]+)"),)
+# reports them: r* of icmod 1, a C4 joint, and r_s of icmod 6 and 7, a C2
+# joint (C4 with match_order = 4)
+BREAKPOINTS = (re.compile(r"^\s*model radius r(?:\*|_s)\s+([-+.0-9eE]+)"),)
 # a core radius rc moves the start of the projectors' taper, TAPER rc
 # (run_vkb), as well as rc
 TAPER = 0.95

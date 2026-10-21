@@ -21,7 +21,7 @@
 ! fully relativistic
 
  subroutine linout(lmax,lloc,rc,vkbpw,evkb,vsrpw,esr,vsopw,eso,nproj,rr, &
-&                  vpuns,vlocpw,rho,rhomod, &
+&                  vpuns,vlocpw,rho,corepw, &
 &                  rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl, &
 &                  atsym,soscale, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
@@ -52,7 +52,8 @@
 !! @param rho  valence pseudocharge
 !! @param rhotae  all-electron valence charge
 !! @param rhoc  all-electron core charge
-!! @param rhomod  model core charge
+!! @param corepw  the model core charge and its first 4 derivatives, as
+!!                pieces split at its joint (modcore_m, core_pieces)
 !! @param zz  atomic number
 !! @param zion  at this point, total valence charge (becomes psuedoion charge)
 !! @param mmax  size of log radial grid
@@ -126,7 +127,7 @@
  real(dp), intent(in) :: esr(2*mxprj,mxl+1),eso(2*mxprj,mxl+1)
  type(piecewise_t), intent(in) :: vkbpw(mxprj,mxl+1,nkap),vlocpw
  type(piecewise_t), intent(in) :: vsrpw(2*mxprj,mxl+1),vsopw(2*mxprj,mxl+1)
- real(dp), intent(in) :: rhomod(mmax,nrhomod)
+ type(piecewise_t), intent(in) :: corepw(nrhomod)
  real(dp), intent(in) :: rc(mxlin+1)
  character(len=2), intent(in) :: atsym
 
@@ -211,7 +212,7 @@
  call om_values(rr,rhoc,mmax,rl,rhocl,nrl)
 
  do jj=1,5
-   call om_values(rr,rhomod(1,jj),mmax,rl,rhomodl(1,jj),nrl)
+   call om_piece_values(rr,mmax,corepw(jj),rl,rhomodl(1,jj),nrl)
  end do
 
 ! Output for Abinit input using pspcod=8

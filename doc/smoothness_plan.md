@@ -439,7 +439,7 @@ numbers refer to [Phases](#phases).
 | M-11 | `modcore_budget`: panel count ceiling(qhi−qlo), nxg = 20 + ceiling(qhi·r_s) | i | W | fixed counts: 80 window panels × 8 nodes, 400 fill nodes, 8 per mesh interval beyond r_s, GL5 per 0.1 of q (doubling any changes nothing printed); the fill in a Legendre basis in 2t − 1 (monomials had alternating 1e5 coefficients and 1e-11 noise), monotone exactly (p′ at the ends and the roots of p″) |
 | M-12 | `modcore_budget` outer integral from mesh index `is`; forward transform a plain sum across the C² joint | c, d | W | split at r_s, `lm_integral`; transforms split there too (fill by Gauss–Legendre on [0, r_s], beyond it the interpolant of ρ_c by Gauss–Legendre per mesh interval, the suffix sums tabulated once). The error's integral below r_s then sampled the fill, a polynomial of degree 16 in r/r_s, on the fixed log mesh, so its quadrature error rippled as r_s slid over the mesh (4e-12 on an error of 1e-4, ~1e-9 in r_s); fixed in phase 5: that integral on a log mesh of the same step ending at r_s (the functionals need a log mesh; Gauss nodes will not do for GGA), b_q there from the rotated sines, ρ_v interpolated; +1.3 s on 14_Si_bc |
 | M-13 | `modcore_budget_table`: linear interpolation in q with an assumed spacing, last crossing | e, h | W | done: the root by Q-4; the table now holds the whole q-grid curve (`ncurve` 4000, an error if a curve is longer) instead of every nstep-th node, whose interpolant changed when nstep = 1 + (nq−2)/999 did (nq is 829…1051 in 07_N_opt) |
-| M-14 | `oncvpsp_main` irct (PSML matching radius) | a | W (metadata) | write r* or r_s |
+| M-14 | `oncvpsp_main` irct (PSML matching radius) | a | W (metadata) | done: the joint, r* or r_s (with no joint, as before: the first point beyond which the model is the core charge); `number-of-continuous-derivatives` 2 for icmod 6/7, and the annotation by icmod |
 
 #### Output (phase 4)
 
@@ -642,8 +642,8 @@ So the order is:
    and 6 together; the kernels do not move, V_loc moves only where the
    model core does, the log derivatives everywhere (X-2).
 7. Low, for the optimizer: X-1, X-4…X-6, D-5, the M-12 ripple (done:
-   r_s smooth to 5e-12), M-14 (PSML), the psp8 model-core
-   pieces. The UPF on the log mesh writes ρ_c's values, which are smooth
+   r_s smooth to 5e-12), M-14 (PSML) and the psp8 model-core
+   pieces (both done: the psp8 core smooth to 1e-10). The UPF on the log mesh writes ρ_c's values, which are smooth
    already.
 8. S-10: GGA ρ′, ρ″ from the pieces, last (a small effect). Item 1 shows
    no kink above 1e-11 in the optimizer's setup: a 5-point stencil across
@@ -1149,9 +1149,25 @@ So the order is:
       14_Si_bca 0.670688 → 0.655583, 14.05 → 14.13, 6.6e-3, 2.4e-2;
       14_Si_hm 0.852000 → 0.836009, 23.46 → 23.76, 1.0e-2, 3.4e-2 (core:
       the value column relative; its 3rd–4th derivative columns move by
-      O(1) at the C² joint, which the writers' pieces will address)
+      O(1) at the C² joint, which the writers' pieces address: done below)
 - [x] M-13: the budget table holds the whole convergence curve
-- [ ] M-14; S-10 GGA gradients from the pieces
+- [x] The model core's pieces and M-14: `core_pieces` (modcore_m) keeps
+      a model with a joint (icmod 1 at r*, 6 and 7 at r_s) as two pieces
+      per column, the fill and the core charge's `lm_derivs`, each
+      continued lm_fh_reach() + 2 nodes past the joint; the psp8 and UPF
+      writers take each output point from its piece (`om_piece_values`),
+      as for the projectors (O-1). The fill's columns in 14_Si_bc's psp8
+      file are now the exact polynomial's derivatives to 1e-9 (the old
+      interpolant across the jump: 4.5e-2, a 4th derivative of −7.2e7
+      for 1.6e5). icmod 1 prints r* (`model radius r*`), and
+      smooth_scan.py drops the radii it sweeps, as for r_s. T2, psp8
+      core: 14_Si fcfact 5.4e-13 (was 1.5e-4), 34_Se rcfact 8.5e-13,
+      14_Si_bc fcfact 1.2e-10 at degree 24 (was 3.0e-2, kinked; the
+      floor is r_s's round-off in the steep 3rd derivative at 0.36 bohr,
+      the same at span 0.02). PSML: the matching radius is the joint
+      (M-14). References: only the psp8 core lines within a few points of
+      the joint, and the r* line
+- [ ] S-10 GGA gradients from the pieces
 - [ ] `match_order` (D-5): input key, minimum tail and Martins fill to
       C⁴, T2 row `slack` with `match_order = 4`
 - [ ] T2 rows fcfact, rcfact, icmod 4 grid, slack at G1

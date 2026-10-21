@@ -21,7 +21,7 @@
 ! fully relativistic, or takes them at every istr-th point of the log mesh
 ! (upf_mesh > 0), as generated, with nothing interpolated
 
- subroutine upfout(lmax,lloc,rc,vkbpw,evkb,nproj,rr,vpuns,vlocpw,rho,rhomod, &
+ subroutine upfout(lmax,lloc,rc,vkbpw,evkb,nproj,rr,vpuns,vlocpw,rho,corepw, &
 &                  zz,zion,mmax,mxprj,iexc,icmod,nrlin,drl,atsym,epstot, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &                  fa,rc0,ep,qcut,ep_as_given,well_onset,debl,facnf, &
@@ -44,7 +44,8 @@
 !! @param vlocpw  the screened local potential's pieces; vpuns(:,lloc+1)
 !!                less their node values is smooth
 !! @param rho  valence pseudocharge
-!! @param rhomod  model core charge
+!! @param corepw  the model core charge and its first 4 derivatives, as
+!!                pieces split at its joint (modcore_m, core_pieces)
 !! @param zz  atomic number
 !! @param zion  at this point, total valence charge (becomes psuedoion charge)
 !! @param mmax  size of log radial grid
@@ -116,7 +117,7 @@
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
  real(dp), intent(in) :: rr(mmax),vpuns(mmax,mxl+2),rho(mmax)
  type(piecewise_t), intent(in) :: vkbpw(mxprj,mxl+1,nkap),vlocpw
- real(dp), intent(in) :: rhomod(mmax,nrhomod)
+ type(piecewise_t), intent(in) :: corepw(nrhomod)
  real(dp), intent(in) :: rc(mxlin+1),evkb(mxprj,mxl+1,nkap)
  character(len=2), intent(in) :: atsym
  real(dp), intent(in) :: uupsa(mmax,nkap,nv)
@@ -253,7 +254,7 @@
  call om_values(rr,rho,mmax,rl,rhol,nrl)
 
  do jj=1,5
-   call om_values(rr,rhomod(1,jj),mmax,rl,rhomodl(1,jj),nrl)
+   call om_piece_values(rr,mmax,corepw(jj),rl,rhomodl(1,jj),nrl)
  end do
 
  nwfc = 0

@@ -149,11 +149,15 @@ smooth_scan_test(sr_14_Si_hm_slack sr 14_Si_hm "model_core_charge.slack" kernel,
     "kernel=1e-10,vloc=1e-10,core=1e-10" --span 0.02 --degree 14)
 smooth_scan_test(sr_14_Si_bc_slack sr 14_Si_bc "model_core_charge.slack" kernel,vloc,core
     "kernel=1e-10,vloc=3e-12,core=1e-11" --center 0.9 --span 0.02 --degree 10)
-# the model core of the psp8 file with its four derivatives, which the writer interpolates across
-# the model's joint (phase 5)
+# the model core of the psp8 file with its four derivatives, written from its pieces on each side of
+# the joint (r*, r_s; modcore_m core_pieces). 14_Si_bc's 3rd and 4th columns jump at r_s and are
+# steep just inside it: at 0.36 bohr (r_s 0.367) round-off in r_s leaves 1.2e-10 in the 3rd (the
+# same at span 0.02, any degree), and the span of 0.2 that moves r_s across mesh nodes needs
+# degree 24 (18 leaves 1.8e-9 of truncation; the interpolant across the joint: 3.0e-2, kinked)
 smooth_scan_test(sr_14_Si_fcfact_psp8 sr 14_Si "model_core_charge.fcfact" core ${smooth_g1} --span 0.02 --output psp8)
 smooth_scan_test(sr_34_Se_rcfact_psp8 sr 34_Se "model_core_charge.rcfact" core ${smooth_g1} --span 0.02 --output psp8)
-smooth_scan_test(sr_14_Si_bc_ecut_psp8 sr 14_Si_bc "model_core_charge.fcfact" core ${smooth_g1} --span 0.2 --output psp8)
+smooth_scan_test(sr_14_Si_bc_ecut_psp8 sr 14_Si_bc "model_core_charge.fcfact" core "core=3e-10"
+    --span 0.2 --degree 24 --output psp8)
 # the optimizer's setup (07_N_opt: PBE, icmod 6 at fcfact 65, lpopt 5): the inputs it varies and
 # the outputs it reads. ld and ecut from the DIAGNOSTICS block (O-6, 17 digits; up to 1.2e-10 and
 # 3.7e-10 measured); the core at the noise of icmod 6's search (~1e-11); the ghost tests' margins

@@ -37,14 +37,22 @@
 !> S(y) = sin(y)/y, u = 2 pi x: entire, with no removable singularity left
 !> to treat. S and its derivatives come from their power series for
 !> |y| <= 2 and from the closed form beyond, both to a few eps there.
+!>
+!> The model core reaches the writers as pieces (core_pieces): a model
+!> with a joint (icmod 1 at r*, 6 and 7 at r_s) is the fill inside it and
+!> the core charge beyond, each a smooth function past the joint, so the
+!> interpolants onto the output meshes do not span it (the psp8 file's
+!> derivative columns, of which the 3rd and 4th jump there for icmod 6
+!> and 7).
 
  module modcore_m
- use constants_m, only: dp, pi
- use logmesh_m, only: lm_root
+ use constants_m, only: dp, pi, nrhomod
+ use logmesh_m, only: lm_root, lm_derivs, lm_fh_reach
+ use pieces_m, only: piecewise_t, pw_alloc
  implicit none
  private
  public :: teter_derivs, teter_core_derivs, core_crossover, poly_core_fit
- public :: teter_scale
+ public :: teter_scale, core_pieces, core_pieces_smooth
 
 !> the weights of the shifted sinc functions of h, at the shifts k pi
  real(dp), parameter :: wsinc(-2:2)=[1.0d0/6.0d0, 2.0d0/3.0d0, 1.0d0, &
@@ -52,6 +60,15 @@
 
 !> the taper of the model's Teter function: 1 up to xtap1, 0 from xtap2
  real(dp), parameter :: xtap1=3.0d0, xtap2=4.0d0
+
+ abstract interface
+   subroutine core_fill(rad,dd)
+   import :: dp
+   implicit none
+   real(dp), intent(in) :: rad
+   real(dp), intent(out) :: dd(5)
+   end subroutine core_fill
+ end interface
 
  contains
 
@@ -579,5 +596,95 @@
    error stop 1
  end if
  end subroutine teter_scale
+
+ subroutine core_pieces(rr,rhoc,mmax,rj,fill,corepw,rhomod)
+
+!! the model core with a joint at rj as two pieces, each column of the
+!! model and its first 4 derivatives a piecewise function: the fill on
+!! [0, rj] and the core charge's derivatives (lm_derivs) beyond, each
+!! continued lm_fh_reach()+2 nodes past rj (the interpolant's reach) and 0
+!! farther, where the fill may overflow; and the model on the mesh, the
+!! fill below rj
+!!
+!! @param rr  log radial mesh
+!! @param rhoc  core charge
+!! @param mmax  size of the log radial mesh
+!! @param rj  the joint (bohr), inside the mesh
+!! @param fill  the fill and its first 4 derivatives at a radius
+!! @param corepw  the pieces of each column
+!! @param rhomod  the model and its first 4 derivatives on the mesh
+
+!Input variables
+ integer, intent(in) :: mmax
+ real(dp), intent(in) :: rr(mmax),rhoc(mmax),rj
+ procedure(core_fill) :: fill
+
+!Output variables
+ type(piecewise_t), intent(out) :: corepw(nrhomod)
+ real(dp), intent(out) :: rhomod(mmax,nrhomod)
+
+!Local variables
+ real(dp) :: dd(nrhomod)
+ integer :: ii,jj,kk,next
+
+ next=lm_fh_reach()+2
+ jj=count(rr(:)<=rj)
+ do kk=1,nrhomod
+   call pw_alloc(corepw(kk),mmax,2,[0.0d0,rj,rr(mmax)])
+ end do
+ do ii=1,min(mmax,jj+next)
+   call fill(rr(ii),dd)
+   do kk=1,nrhomod
+     corepw(kk)%vals(ii,1)=dd(kk)
+   end do
+ end do
+ do ii=max(1,jj+1-next),mmax
+   call lm_derivs(rr,rhoc,mmax,rr(ii),4,dd)
+   do kk=1,nrhomod
+     corepw(kk)%vals(ii,2)=dd(kk)
+   end do
+ end do
+ do kk=1,nrhomod
+   do ii=1,mmax
+     if(rr(ii)<rj) then
+       rhomod(ii,kk)=corepw(kk)%vals(ii,1)
+     else
+       rhomod(ii,kk)=corepw(kk)%vals(ii,2)
+     end if
+   end do
+ end do
+ return
+ end subroutine core_pieces
+
+ subroutine core_pieces_smooth(rr,rhomod,mmax,corepw)
+
+!! a model core with no joint as pieces of one segment each, a column
+!! ending at its last nonzero node (the end of a tapered Teter function)
+!!
+!! @param rr  log radial mesh
+!! @param rhomod  the model and its first 4 derivatives on the mesh
+!! @param mmax  size of the log radial mesh
+!! @param corepw  the pieces of each column
+
+!Input variables
+ integer, intent(in) :: mmax
+ real(dp), intent(in) :: rr(mmax),rhomod(mmax,nrhomod)
+
+!Output variables
+ type(piecewise_t), intent(out) :: corepw(nrhomod)
+
+!Local variables
+ integer :: kk,nlast
+
+ do kk=1,nrhomod
+   nlast=mmax
+   do while(nlast>1 .and. rhomod(nlast,kk)==0.0d0)
+     nlast=nlast-1
+   end do
+   call pw_alloc(corepw(kk),mmax,1,[0.0d0,rr(nlast)])
+   corepw(kk)%vals(:,1)=rhomod(:,kk)
+ end do
+ return
+ end subroutine core_pieces_smooth
 
  end module modcore_m

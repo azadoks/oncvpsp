@@ -32,7 +32,7 @@
  contains
 
  subroutine psmlout(lmax,lloc,rc,vkb,evkb,mxprj,nproj,rr,vpuns,rho,rhomod, &
-&                  irct, &
+&                  rcore, &
 &                  zz,zion,mmax,iexc,icmod,nrl,drl,atsym,epstot, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
@@ -56,7 +56,8 @@
 !!               potential if linear combination is used), last index as for vkb
 !! @param rho  valence pseudocharge
 !! @param rhomod  model core charge and its first four derivatives
-!! @param irct  index of the point at which the model core charge is matched
+!! @param rcore  radius beyond which the model core charge is the core
+!!               charge: its joint (doc/smoothness_plan.md, M-14)
 !! @param zz  atomic number
 !! @param zion  at this point, total valence charge (becomes psuedoion charge)
 !! @param mmax  size of log radial grid
@@ -124,9 +125,8 @@
  integer, intent(in) :: lmax
  integer, intent(in) :: lloc,iexc,mmax,nrl,icmod,irel,nkap
  integer, intent(in) :: nproj(mxlin+1)
- integer, intent(in) :: irct ! index of point at which rho_core is matched
  integer, intent(in) :: mxprj ! maximum number of projectors for any l
- real(dp), intent(in) :: drl,fcfact,zz,zion,epstot
+ real(dp), intent(in) :: drl,fcfact,zz,zion,epstot,rcore
  real(dp), target, intent(in) :: rr(mmax),vpuns(mmax,mxl+2,nkap),rho(mmax)
  real(dp), target, intent(in) :: vkb(mmax,mxprj,mxl+1,nkap)
  real(dp), target, intent(in) :: rhomod(mmax,nrhomod)
@@ -157,7 +157,7 @@
 
  integer   :: npts
  integer   :: ii, jj, l1, jk
- real(dp)  :: rcore, jval
+ real(dp)  :: jval
  real(dp)  :: total_valence_charge
  real(dp), pointer :: rgrid(:), chval(:), chcore(:)
  real(dp), pointer :: vlocal(:)
@@ -449,13 +449,23 @@
 
 
  if(there_is_core) then
-   rcore = rr(irct)
    call xml_NewElement(xf,"pseudocore-charge")
    call my_add_attribute(xf,"matching-radius",str(rcore))
-   call my_add_attribute(xf,"number-of-continuous-derivatives", &
-&                                 str(4))
-   call my_add_attribute(xf,"annotation",  &
-&               "Monotonic 8th-order polynomial with no linear term")
+! icmod 6 and 7 match the core charge to C2 at r_s
+   if(icmod==6 .or. icmod==7) then
+     call my_add_attribute(xf,"number-of-continuous-derivatives",str(2))
+   else
+     call my_add_attribute(xf,"number-of-continuous-derivatives",str(4))
+   end if
+   if(icmod==1) then
+     call my_add_attribute(xf,"annotation",  &
+&                 "Monotonic 8th-order polynomial with no linear term")
+   else if(icmod==6 .or. icmod==7) then
+     call my_add_attribute(xf,"annotation",  &
+&                 "Budgeted fill inside the matching radius")
+   else
+     call my_add_attribute(xf,"annotation","Teter function")
+   end if
    call xml_NewElement(xf,"radfunc")
 
    call xml_NewElement(xf,"data")

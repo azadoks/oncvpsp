@@ -29,7 +29,8 @@
 ! Teter, Phys. Rev. B 48, 5031 (1993) , Appendix, as
 
  subroutine modcore(icmod,rhops,rhotps,rhoc,rhoae,rhotae,rhomod, &
-&                   fcfact,rcfact,rcmax,mmax,rr,nc,nv,la,zion,iexc)
+&                   corepw,fcfact,rcfact,rcmax,mmax,rr,nc,nv,la,zion, &
+&                   iexc)
 
 !! @param icmod  (not used)
 !! @param rhops  state-by-state pseudocharge density
@@ -38,6 +39,7 @@
 !! @param rhoae  state-by-state all-electron valence charge density
 !! @param rhotae  total all-electron valence charge density
 !! @param rhomod  model core density and 4 derivatives
+!! @param corepw  its pieces, split at r* (modcore_m, core_pieces)
 !! @param fcfact  the model is matched where rhoc equals fcfact times the total
 !!                pseudocharge
 !! @param rcfact  (not used)
@@ -52,7 +54,8 @@
 
  use constants_m, only: dp, mxstate, nrhomod
  use logmesh_m, only: lm_derivs
- use modcore_m, only: core_crossover, poly_core_fit
+ use modcore_m, only: core_crossover, poly_core_fit, core_pieces
+ use pieces_m, only: piecewise_t
  implicit none
 
 !Input variables
@@ -64,12 +67,13 @@
 
 !Output variables
  real(dp), intent(out) :: rhomod(mmax,nrhomod)
+ type(piecewise_t), intent(out) :: corepw(nrhomod)
 
 !Local variables
- real(dp) :: a0,psum,fac,d2mdiff,rstar,rcut
- real(dp) :: aco(5),fmatch(5),dd(5)
+ real(dp) :: a0,d2mdiff,rstar,rcut
+ real(dp) :: aco(5),fmatch(5)
  real(dp), allocatable :: d2excae(:,:),d2excps(:,:)
- integer :: ii,ierr,jj,kk,ll
+ integer :: ierr,jj,kk
 
  allocate(d2excae(nv,nv),d2excps(nv,nv))
 
@@ -121,28 +125,7 @@
 
 ! fill in model and derivatives: the polynomial inside r*, the core charge
 ! outside
- do kk=1,mmax
-   if(rr(kk)<rstar) then
-     do ii=1,5
-       if(ii == 1) then
-         psum=a0
-       else
-         psum=0.0d0
-       end if
-       do jj=1,5
-         fac=1.0d0
-         do ll=0,ii-2
-           fac=fac*(jj+2-ll)
-         end do
-         psum=psum+fac*aco(jj)*rr(kk)**(jj+3-ii)
-       end do
-       rhomod(kk,ii)=psum
-     end do
-   else
-     call lm_derivs(rr,rhoc,mmax,rr(kk),4,dd)
-     rhomod(kk,:)=dd(:)
-   end if
- end do
+ call core_pieces(rr,rhoc,mmax,rstar,poly_fill,corepw,rhomod)
 
 
 !test model
@@ -150,6 +133,7 @@
 &                   zion,iexc,nc,nv,la,rcut,mmax)
 
  write(6,'(/a/)') 'Polynomial model core charge'
+ write(6,'(a,f12.6)') '  model radius r*',rstar
  write(6,'(/a/)') 'd2excps - pseudofunction derivatives with core correction'
 
  do kk=1,nv
@@ -160,4 +144,40 @@
  deallocate(d2excae,d2excps)
 
  return
+
+ contains
+
+ subroutine poly_fill(rad,dd)
+
+!! the polynomial a0 + sum_j aco(j) r**(j+2) and its first 4 derivatives
+!!
+!! @param rad  radius (bohr)
+!! @param dd  the polynomial and its derivatives at rad
+
+!Input variables
+ real(dp), intent(in) :: rad
+
+!Output variables
+ real(dp), intent(out) :: dd(5)
+
+!Local variables
+ real(dp) :: fac
+ integer :: ii,jj,ll
+
+ do ii=1,5
+   if(ii==1) then
+     dd(ii)=a0
+   else
+     dd(ii)=0.0d0
+   end if
+   do jj=1,5
+     fac=1.0d0
+     do ll=0,ii-2
+       fac=fac*(jj+2-ll)
+     end do
+     dd(ii)=dd(ii)+fac*aco(jj)*rad**(jj+3-ii)
+   end do
+ end do
+ end subroutine poly_fill
+
  end subroutine modcore

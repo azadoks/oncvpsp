@@ -54,6 +54,7 @@
 #endif
  use constants_m, only: dp, mxprj, mxstate, mxcnf, mxl, mxlin, mxkap, nrhomod
  use pieces_m, only: piecewise_t, pw_reach, pw_free
+ use modcore_m, only: core_pieces_smooth
  use constants_m, only: nlev, nerrlv, well_onset_default
  use input_echo_m, only: write_atom, write_icmod, write_epsh, write_mesh
  use relativity_m, only: set_relativity
@@ -66,7 +67,7 @@
  integer :: ii,ierr,iexc,iexct,ios,iprint,it,icmod,lpopt
  integer :: jj,kk,ll,l1,lloc,lmax,lt,inline
  integer :: mch,mchf,mmax,n1,n2,nc,nlim,nlloc,nlmax,irpsh,nrl
- integer :: nv,irct,ncnf,nvt,upf_mesh
+ integer :: nv,ncnf,nvt,upf_mesh
  integer :: iprj,nkap,nnwell,npsh
  integer :: ikap,kap,mkap
  integer,allocatable :: npa(:,:)
@@ -92,7 +93,7 @@
  real(dp) :: amesh_in,rr1_in,rmax_in,rmax,log_mesh(3),c_light_in
  real(dp) :: sf,sw,zz,zion,zval,etot,res
  real(dp) :: eterm(4),rphs(4)
- real(dp) :: fj,cnorm
+ real(dp) :: fj,cnorm,rcore
 !
  real(dp) :: cl(mxlin+1),debl(mxlin+1),ea(mxstate,mxkap),ep(mxlin+1,mxkap)
  real(dp) :: fa(mxstate)
@@ -129,6 +130,7 @@
  real(dp), allocatable :: dlta(:,:,:,:),vrloc(:,:),pswfx(:,:,:,:)
  type(piecewise_t), allocatable :: vkbpw(:,:,:)
  type(piecewise_t) :: vlocpw
+ type(piecewise_t) :: corepw(nrhomod)
  logical :: ep_as_given
  real(dp) :: well_onset
  real(dp), allocatable :: chix(:,:,:,:)
@@ -925,7 +927,7 @@
 ! or Teter function fit
 
  if(icmod==1) then
-   call modcore(icmod,rhops,rho,rhoc,rhoae,rhotae,rhomod, &
+   call modcore(icmod,rhops,rho,rhoc,rhoae,rhotae,rhomod,corepw, &
 &               fcfact,rcfact,rcmax,mmax,rr,nc,nv,la,zion,iexc)
 
  else if(icmod==2) then
@@ -945,7 +947,8 @@
 &                        mxprj, &
 &                        nkap,probes,lprobe,nprobe)
    end if
-   call modcore_budget(icmod,rho,rhoc,rhomod,fcfact,ecutw,rcfact,slack, &
+   call modcore_budget(icmod,rho,rhoc,rhomod,corepw,fcfact,ecutw,rcfact, &
+&               slack, &
 &               minval(rc(1:lmax+1)),mmax,rr,iexc,zion, &
 &               probes(:,1:nprobe),lprobe(1:nprobe),nprobe)
    deallocate(probes,lprobe)
@@ -955,6 +958,8 @@
 &               fcfact,rcfact,fcgrid,rcgrid,mmax,rr,nc,nv,la,zion,iexc)
 
  end if
+! the pieces of a model with no joint (the Teter function, or none)
+ if(corepw(1)%nseg==0) call core_pieces_smooth(rr,rhomod,mmax,corepw)
 
 ! screening potential for pseudocharge
 
@@ -1092,7 +1097,7 @@
  if(trim(psfile)=='psp8' .or. trim(psfile)=='both') then
    soscale=1.0d0
    call linout(lmax,lloc,rc,vkbpw,evkb,vsrpw,esr,vsopw,eso,nproj,rr,vpuns, &
-&              vlocpw,rho,rhomod,rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod, &
+&              vlocpw,rho,corepw,rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod, &
 &              nrl,drl, &
 &              atsym,soscale, &
 &              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
@@ -1103,7 +1108,7 @@
  end if
 
  if(trim(psfile)=='upf' .or. trim(psfile)=='both') then
-   call upfout(lmax,lloc,rc,vkbpw,evkb,nproj,rr,vpuns,vlocpw,rho,rhomod, &
+   call upfout(lmax,lloc,rc,vkbpw,evkb,nproj,rr,vpuns,vlocpw,rho,corepw, &
 &              zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
 &              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &              fa,rc0,ep,qcut,ep_as_given,well_onset,debl,facnf,dvloc0, &
@@ -1119,13 +1124,19 @@
 ! Write info for PSML format
 !
 !
-! irct: first point beyond which the model core equals the all-electron core
+! rcore: the radius beyond which the model core equals the all-electron
+! core, its joint (doc/smoothness_plan.md, M-14); with no joint, the
+! first point beyond which they are equal
 !
-   irct=mmax
-   do ii=mmax,1,-1
-     if(rhomod(ii,1)/=rhoc(ii)) exit
-     irct=ii
-   end do
+   if(corepw(1)%nseg==2) then
+     rcore=corepw(1)%bound(1)
+   else
+     rcore=rr(mmax)
+     do ii=mmax,1,-1
+       if(rhomod(ii,1)/=rhoc(ii)) exit
+       rcore=rr(ii)
+     end do
+   end if
 !the fully-relativistic semi-local potentials are vp-vo for each kappa,
 !without the corrections of vpuns (see doc/fr_merge_plan.md)
    if(irel/=2) then
@@ -1133,7 +1144,7 @@
      vpsml(:,:,1)=vpuns(:,:)
    end if
    call psmlout(lmax,lloc,rc,vkb,evkb,mxprj,nproj,rr,vpsml,rho,rhomod, &
-&               irct, &
+&               rcore, &
 &               zz,zion,mmax,iexc,icmod,nrl,drl,atsym,epstot, &
 &               na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &               fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact0,rcfact, &
