@@ -448,7 +448,7 @@ numbers refer to [Phases](#phases).
 | O-1 | `linout`, `upfout`: `dpnint` (switching 8-point Lagrange) of kinked arrays onto the linear mesh; ringing beyond rc of about 1e-4 relative | d, e | W | each output point from its piece by FH on that piece's extension; β ≡ 0 beyond rc |
 | O-2 | `oncvpsp_main` 882–891 + `linout`: fr psp8 drops sr/so terms below 1e-3 of the first | g | W | write all; see D-2 |
 | O-3 | UPF numbers e20.10, PP_R f10.4 | b | W | 17 digits (done, phase 0) |
-| O-4 | `upfout` nrl extended to a tail-norm radius (1e-6) | g, i | W | length from rlmax only |
+| O-4 | `upfout` nrl extended to a tail-norm radius (1e-6) | g, i | W | kept (user decision): only how many points are written |
 | O-5 | `oncvpsp_main` 997: vpuns = −zion/r where rho == 0 | g | W (~1e-10) | switch at a continuous radius with `ionic_switch` |
 | O-6 | printed diagnostics at f12.6–f14.8 and d10.2 | b | – | machine-readable block at 17 digits (phase 6) |
 
@@ -912,14 +912,20 @@ later phases can see 1e-10.
       jump at its crossover (phase 5), up to 4e-2 / 1e-1 of their largest
       value in 14_Si_bc / 14_Si_bca (the 4th derivative), ρ_mod itself
       ≤ 2e-7
-- [ ] O-2 (D-2): every term of the fr decomposition written (no 1e-3
-      cut), so the diagnostics of `run_diag_sr_so_r` use them all too
-- [ ] O-4: reopened. The UPF mesh from rlmax only would cut the
-      pseudo-wave functions (PP_CHI) there: of their norm, 14_Si_UPF's 3p
-      would lose 5.8e-2, 32_Ge's 4p 1.7e-1, 52_Te_r's 5p 1.0e-2 (the
-      extension to where 1e-6 is left is what keeps them). The extension
-      changes only how many points are written, not a value at any
-      radius; to be decided before the step
+- [x] O-2 (D-2): every term of the fr decomposition written (no 1e-3
+      cut), so the diagnostics of `run_diag_sr_so_r` use them all too.
+      `linout` writes 2 nproj scalar and spin-orbit terms per l > 0,
+      nproj scalar for l = 0. `projector_output_r_*` green. Only the fr
+      psp8 files move (2 or 3 more scalar and 1 or 2 more spin-orbit
+      terms per l); against 9796df1 their kernels change by the dropped
+      terms, 5.7e-7 (08_O_wigner_r) to 6.7e-4 (34_Se_r) relative; every
+      other output identical
+- [x] O-4: dropped, the extension kept. The UPF mesh from rlmax only
+      would cut the pseudo-wave functions (PP_CHI) there: of their norm,
+      14_Si_UPF's 3p would lose 5.8e-2, 32_Ge's 4p 1.7e-1, 52_Te_r's 5p
+      1.0e-2 (the extension to where 1e-6 is left is what keeps them). The
+      extension changes only how many points are written, not a value at
+      any radius
 - [ ] O-5: the switch of V_loc to −zion/r where ρ = 0 by `ionic_switch`
       at continuous radii. It reaches no written function inside rlmax;
       it moves the pseudo-atom tests

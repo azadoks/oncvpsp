@@ -161,15 +161,17 @@
  allocate(vkbl(nrl,mxprj,mxl+1))
  allocate(vsrl(nrl,2*mxprj,mxl+1),vsol(nrl,2*mxprj,mxl+1))
 
-! set up projector number for sr_so calculations based on non-zero
-! coefficients
+! every term of the sr_so decomposition (O-2): 2 nproj per l, nproj
+! scalar and none spin-orbit for l = 0
  npr_sr(:)=0 ; npr_so(:)=0
  if(nkap==2) then
    do l1=1,lmax+1
-     do ii=1,2*nproj(l1)
-       if(abs(esr(ii,l1))>0.0d0) npr_sr(l1)=npr_sr(l1)+1
-       if(abs(eso(ii,l1))>0.0d0) npr_so(l1)=npr_so(l1)+1
-     end do
+     if(l1==1) then
+       npr_sr(l1)=nproj(l1)
+     else
+       npr_sr(l1)=2*nproj(l1)
+       npr_so(l1)=2*nproj(l1)
+     end if
      write(6,'(a,3i4)') 'l1-1,npr_sr,npr_so',l1-1,npr_sr(l1),npr_so(l1)
    end do
  end if

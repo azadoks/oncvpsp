@@ -96,7 +96,7 @@
  real(dp) :: facnf(mxstate,mxcnf)
  real(dp) :: qcut(mxlin+1),qmsbf(mxlin+1),rc(mxlin+1),rc0(mxlin+1)
  real(dp) :: rpk(mxstate,mxkap)
- real(dp) :: epstot,eps_srso
+ real(dp) :: epstot
  real(dp), parameter :: eps=1.0d-8
 
  real(dp), allocatable :: evkb(:,:,:),cvgplt(:,:,:,:,:),qq(:,:)
@@ -910,18 +910,6 @@
 
    call sr_so_r(lmax,nproj,rr,mmax,mxprj,evkb,vkbpw, &
 &               vsr,esr,vso,eso,vsrpw,vsopw)
-
-! set smallest components to zero (will be dropped in psp8 output)
-   eps_srso=1.0d-3
-   do l1=1,lmax+1
-     if(nproj(l1)>0) then
-       do iprj=2,2*nproj(l1)
-         if(abs(esr(iprj,l1))<eps_srso*abs(esr(1,l1))) esr(iprj,l1)=0.0d0
-         if(l1==1) cycle
-         if(abs(eso(iprj,l1))<eps_srso*abs(eso(1,l1))) eso(iprj,l1)=0.0d0
-       end do
-     end if
-   end do
  end if
 
  allocate(rhomod(mmax,nrhomod))
