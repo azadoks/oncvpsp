@@ -37,7 +37,7 @@
 !!              potential, or that plus a smooth screening change)
 !! @param vlocpw  the screened local potential's pieces
 !! @param uu  wave function
-!! @param up  1st derivative of uu
+!! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param node  count of number of nodes from 0 to rr(mnode)
 !! @param mmax  dimension of log mesh
 !! @param mch  index of radius to which wave function is to be integrated

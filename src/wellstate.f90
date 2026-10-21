@@ -48,7 +48,7 @@
 !! @param vwell  potential with binding well, for the ikap=2 calculation when
 !!               irel=2
 !! @param uu  all-electron well-bound wave function
-!! @param up  d(uu)/dr
+!! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param zz  atomic number
 !! @param mmax  size of log radial mesh
 !! @param mch  matching mesh point for inward-outward integrations
@@ -198,11 +198,9 @@
 !find bound state in well
      et=ep
      call boundstate(irel,nn,ll,kap,ierr,et,rr,zz,vwell,uu,up,mmax,mch)
-     if(ierr<0 .and. irel/=2) then
-       write(6,'(a,i3,a,i3)') &
-&            'wellstate: ERROR lschfb convergence error, n=',nn,' l=',ll
-       error stop 1
-     end if
+! a trial well whose state did not converge (ierr/=0: a box state, ierr=10,
+! can stand in for it) only steers the bracketing; the state taken must
+! have converged (checked below)
 
      fw=et-ep
      if(abs(fw)<=tolw) then
@@ -268,7 +266,14 @@
 
    end do !itrwell
 
-   if(convg) exit
+   if(convg) then
+     if(ierr/=0) then
+       write(6,'(a,i3,a,i3)') &
+&            'wellstate: ERROR lschfb convergence error, n=',nn,' l=',ll
+       error stop 1
+     end if
+     exit
+   end if
  end do !nnloop
 
  if(.not. convg) then

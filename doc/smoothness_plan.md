@@ -1186,7 +1186,7 @@ So the order is:
       (`program_overview.md`); this page kept as the record
 - [x] Dead code removed (`lschpb`, `lschps`, `lschkb`, `vpinteg`: no
       caller left)
-- [ ] The bugs below fixed where the phases did not already
+- [x] The bugs below fixed where the phases did not already
 - [ ] `smooth` label dropped; T2 part of the default suite
 
 #### Phase 8: the kernels free of the well (follow-up)
@@ -1414,32 +1414,45 @@ To fix in the phase that touches the code, or in phase 7.
 - `sbf8` with nm = 3 or 4 leaves `sb_out(2)` (j_1) unset (latent: `eresid`
   and `sbf_basis_con` read only `sb_out(nm)`; fixed in phase 3, Q-10).
 - `pspot` kinetic-energy origin term has the wrong power (diagnostic).
+  Fixed in phase 7: ro^(2l+3)/(2l+3); the r-space kinetic energy moves
+  by ≤1.4e-7 relative.
 - `sbf_basis_con` origin term divides by rr(1)^l instead of rr(1)^(l+1)
-  (negligible).
+  (negligible; gone in phase 3, R-5: exact overlaps).
 - `const_basis` leaves components below its threshold unscaled instead
-  of zeroing them.
+  of zeroing them (fixed in phase 3, Q-8: an error instead).
 - `eresid` leaves `eresidmat(:,:,1)` unset if qcut sits exactly halfway
-  between grid points.
+  between grid points (gone in phase 3, Q-2).
 - `modcore` a0 bisection: `aco` stale when the loop runs out; degenerate
-  bracket when the first a0 is already monotone.
-- `modcore2`, `modcore3`: `rhomod(1,3:5)` set to 0 by `dpnint` (rr(1) ≠ 0).
+  bracket when the first a0 is already monotone (gone in phase 5, M-3).
+- `modcore2`, `modcore3`: `rhomod(1,3:5)` set to 0 by `dpnint` (rr(1) ≠ 0;
+  gone in phase 5, M-5).
 - `modcore3`: `xx` uninitialised if every grid value is ≥ 10 Ha; dead
-  `rcross` loops with a stale argument.
-- `gg1cc` series: sign of the x⁶ term (about 1e-17).
+  `rcross` loops with a stale argument (gone in phase 5, M-7). The first
+  fixed in phase 7: the grid's minimum starts at `huge`.
+- `gg1cc` series: sign of the x⁶ term (about 1e-17; gone in phase 5,
+  M-5: `modcore_m`).
 - `doc/core_correction.md` describes a blending (`fcrossover.f90`) that
-  the code does not do.
+  the code does not do. Fixed in phase 7: it describes the taper, and
+  Newton after Nelder-Mead.
 - `lschfb`, `lschvkbb`, `ldiracfb`: `up`, `qq`, `gup`, `fup` beyond `nin`
   left unscaled (not latent: `up(2281)/(al r)` = 0.76 for hydrogen 1s on
   the default mesh, where the state is 1e-16). Fixed on oncvpsp-opt
   (752a6e5), with `lschvkbbe` and `lschpb`.
 - `lschfb`, `lschfs`, `ldiracfb`, `ldiracfs`, `boundstate`,
   `scatterstate` document `up` as d(uu)/dr; it is d(uu)/dn = al·r·d(uu)/dr.
-- `lschpsbar` 204 uses `cf(mbar)` for `cf(ii)`.
+  Fixed in phase 7, with the other solvers, `wellstate` and `vkboutwf`.
+- `lschpsbar` 204 uses `cf(mbar)` for `cf(ii)`. Fixed in phase 7: the
+  ghost test's basis eigenvalues move by ≤1e-6 (32_Ge, 4.6e-7
+  relative), its margins by ≤3e-7.
 - `wellstate` 157 tests `ierr<0`, which lschfb never returns, so box
-  states (`ierr=10`) can enter the bracketing.
+  states (`ierr=10`) can enter the bracketing. Fixed in phase 7: they
+  still steer it (in 56_Ba, 14_Si_r, 74_W_r one trial each is a box
+  state, at an energy in line with its neighbours'), but the state taken
+  must have converged. No output changes.
 - `psatom` can declare convergence during the occupation ramp (fixed in
   phase 2, S-5).
 - `lschpb` has no caller (removed in phase 7, with `lschps`, `lschkb`).
-- The solvers' doc comments call `up` d(uu)/dr; it is d(uu)/dn = al·r·du/dr.
+- The solvers' doc comments call `up` d(uu)/dr; it is d(uu)/dn = al·r·du/dr
+  (fixed in phase 7).
 - The `oncvpsp_main` comment on the rc rounding says "nearest" and "5
-  decimals"; it is "next" and 6.
+  decimals"; it is "next" and 6 (gone in phase 3, R-1: rc as given).

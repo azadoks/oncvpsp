@@ -30,7 +30,7 @@
 !! @param vkbpw  VKB projectors as functions of pieces
 !! @param evkb  coefficients of VKB projectors
 !! @param uu  output radial wave function (*rr)
-!! @param up  d(uu)/dr
+!! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param mmax  size of log grid
 !! @param mch  index of radius to which uu is computed
 

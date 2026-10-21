@@ -30,7 +30,7 @@
 !! @param rr  log radial mesh
 !! @param vv  local psp
 !! @param uu  output radial wave function (*rr)
-!! @param up  d(uu)/dr
+!! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param mmax  size of log grid
 !! @param mbar  mesh point for infinite barrier
 !! @param tht  phast-shift angle for boundary condition, units of pi
@@ -208,7 +208,7 @@
            up(ii)=al*rr(ii)**2*(-ctht*cos(-xx) + xkap*stht*sin(-xx)) &
 &                 +al*uu(ii)
          end if
-         upp(ii)=al*up(ii)+cf(mbar)*uu(ii)
+         upp(ii)=al*up(ii)+cf(ii)*uu(ii)
        end do
 
      end if !nin<mbar

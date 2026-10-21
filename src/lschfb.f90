@@ -32,7 +32,7 @@
 !! @param rr  log radial mesh
 !! @param vv  local atomic potential
 !! @param uu  output radial wave function (*rr)
-!! @param up  d(uu)/dr
+!! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param zz  atomic number
 !! @param mmax  size of log grid
 !! @param mch  mesh point just beyond the classical turning point, where

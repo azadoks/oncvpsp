@@ -31,7 +31,7 @@
 !! @param vv  local psp
 !! @param uu(mmax,jj)  output radial wave functions (*rr) jj=1,2 for large,
 !!                     small
-!! @param up  d(uu)/dr
+!! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param mmax  size of log grid
 !! @param mch  matching mesh point for inward-outward integrations
 

@@ -34,7 +34,7 @@
 !! @param vv  local atomic potential
 !! @param uu  output radial wave function (*rr): uu(:,1) the Schroedinger
 !!            function, or the Dirac large and small components
-!! @param up  d(uu)/dr
+!! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param mmax  size of log grid
 !! @param mch  matching mesh point for inward-outward integrations
 

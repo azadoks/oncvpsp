@@ -60,12 +60,13 @@ icmod==2:
 
     Amplitude and scale of the Teter function are adjusted to fit the
     value and slope of the all-electron rhoc at the radius determined
-    as by fcfact as above.  This function is smoothly blended into the
-    all-electron rhoc between this radius and that of the first zero
-    of the Teter function (dimensionless argmument = 1.5).  This
-    ensures proper unscreening in the tail region and continuity of
-    at least 4 derivatives, using the function fcrossover.f90.  This is
-    in the spirit of LFC [1] but significantly improves convergence.
+    as by fcfact as above.  The Teter function is the model at every
+    radius; it is not blended into the all-electron rhoc (the
+    fcrossover.f90 that this note once described is not in the code).
+    It is tapered to 0 by a C-infinity switch between dimensionless
+    arguments 3 and 4, so that it and all its derivatives are
+    continuous (doc/smoothness_plan.md, M-5).  This is in the spirit of
+    LFC [1] but significantly improves convergence.
     The "before and after" Exc 2nd derivatives are computed but not
     used.  Amplitude and scale parameters consistent with options 3 and 4
     below are given in the out file.  This option is executed by modcore2.f90
@@ -85,23 +86,25 @@ icmod==3:
     These parameters are defined consisently with option 4 below.  They
     are also given the the out  files of options 2 and 4 as " amplitude
     prefactor, scale prefactor."  Note that "fcfact" in this context
-    has a DIFFERENT MEANING than in options 1 and 2.  Blending to the
-    all-electron rhoc is done as in option 2 above.  Exc 2nd derivatives
+    has a DIFFERENT MEANING than in options 1 and 2.  The Teter function
+    is tapered as in option 2 above.  Exc 2nd derivatives
     are computed but not used.  This option is executed by modcore3.f90.
 
 icmod==4:
 
-    The "blended" Teter function parameters are optimized to reduce Exc
-    2nd-derivative discrepancies in rhomod3.f90.  The optimization is
+    The Teter function parameters are optimized to reduce Exc
+    2nd-derivative discrepancies in modcore3.f90.  The optimization is
     initiated by finding the radius rmatch at which rhoc=pseudo-rho, and
     this charge value is stored as rhocmatch.  The core model is then
 
          rhomod(rr)=(fcfact*rhocmatch)*F_Teter(rr/(rcfact*rmatch))
 
-    with blending applied.  Exc 2nd derivatives are then computed on a
+    tapered as in option 2.  Exc 2nd derivatives are then computed on a
     coarse grid of plausible fcfact and rcfact values, the rms error
     is printed as a matrix in the out file.  The minimum on this grid
-    is then refined using the Nelder-Mead simplex algorithm.  This option
+    is then refined using the Nelder-Mead simplex algorithm, and Newton's
+    method finds the stationary point of that basin to round-off
+    (doc/smoothness_plan.md, M-6).  This option
     is now used by tests/data/40_Zr.dat, and an annotated version of the
     relevant section of tests/refs/40_Zr.out follows this text.  A 1-2
     order-of-magntude reduction of the rms error is often obtained.

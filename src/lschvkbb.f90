@@ -36,7 +36,7 @@
 !! @param vkbpw  VKB projectors as functions of pieces
 !! @param evkb  coefficients of BKB projectors
 !! @param uu  output radial wave function (*rr)
-!! @param up  d(uu)/dr
+!! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param mmax  size of log grid
 !! @param mch  mesh point just beyond the matching point of the inward and
 !!             outward integrations: the continuous classical turning

@@ -75,10 +75,12 @@
 
 
  ll1=ll+1
- ixp(1)=2
- ixp(2)=4
- ixp(3)=6
- ixp(4)=8
+! u T u goes as r**(2l+2) at the origin: its integral to ro is ro times
+! its value there over 2l+3
+ ixp(1)=3
+ ixp(2)=5
+ ixp(3)=7
+ ixp(4)=9
 
  do ii=1,mmax
    work(ii,1)=uu(ii)
@@ -165,7 +167,7 @@
  work(:,5)=work(:,1)*work(:,4)
 
  ro=rr(5)/sqrt(amesh)
- ske=((work(5,5))/rr(5)**ixp(ll1)) * ro**ixp(ll1)/ixp(ll1)
+ ske=work(5,5)*(ro/rr(5))**(ixp(ll1)-1)*ro/ixp(ll1)
 
  do ii=5,mmax-9
    ske=ske+al*rr(ii)*work(ii,5)

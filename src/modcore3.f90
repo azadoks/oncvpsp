@@ -156,7 +156,7 @@
      rowfmt='(f6.3,f8.3,*(f7.3))'
    end if
 
-   d2min=10.0d0
+   d2min=huge(1.0d0)
    write(6,'(/7x,*(f7.3))') (fcgrid(1)+fcgrid(3)*(jj-1), jj=1,nfc)
    write(6,'(a)') ''
    do  kk=1,nrc
