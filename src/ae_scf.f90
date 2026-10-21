@@ -289,3 +289,51 @@
  end subroutine kerker_filter
 
  end subroutine ae_mix
+
+ subroutine ae_converged(it,res,tolres,resbest,nflat,convg)
+
+!! whether the SCF is converged: convg on entry says each eigenvalue has
+!! settled; the residual must also be below tolres, or have stopped falling
+!! at its round-off floor (not halved in nstall iterations, and below
+!! resfloor). That floor depends on the mesh and the functional: 3-4e-12
+!! for Nd and Bi on the default mesh, ~2e-11 for PBE N on amesh 1.004 out
+!! to 45 bohr (rr1 7e-5), where a fixed 1e-11 was never reached; a
+!! stop on the floor is reported as a warning
+!!
+!! @param it  iteration
+!! @param res  residual of this iteration (ae_residual)
+!! @param tolres  threshold of the residual
+!! @param resbest  smallest residual so far by halvings (kept between calls)
+!! @param nflat  iterations since it last halved (kept between calls)
+!! @param convg  in: eigenvalues settled; out: converged
+
+ use constants_m, only: dp
+ implicit none
+
+!Input variables
+ integer, intent(in) :: it
+ real(dp), intent(in) :: res,tolres
+
+!Input/output variables
+ real(dp), intent(inout) :: resbest
+ integer, intent(inout) :: nflat
+ logical, intent(inout) :: convg
+
+!Local variables
+ integer, parameter :: nstall=5
+ real(dp), parameter :: resfloor=1.0d-9
+
+ if(it==1 .or. res<0.5d0*resbest) then
+   resbest=res
+   nflat=0
+ else
+   nflat=nflat+1
+ end if
+ if(it<2) convg=.false.
+ if(res>tolres .and. (res>resfloor .or. nflat<nstall)) convg=.false.
+ if(convg .and. res>tolres) then
+   write(6,'(/2a,es12.4,a,es12.4)') 'ae_converged: WARNING scf stopped ', &
+&        'on the round-off floor of the residual, res=',res,', tolres=',tolres
+ end if
+ return
+ end subroutine ae_converged

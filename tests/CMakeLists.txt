@@ -54,7 +54,7 @@ set(scripts "${PROJECT_SOURCE_DIR}/scripts")
 set(data "${CMAKE_CURRENT_SOURCE_DIR}/data")
 
 # The inputs with Libxc functionals (iexc < 0), whose tests are disabled without Libxc
-set(libxc_inputs "38_Sr_lxc" "60_Nd_GHOST" "79_Au_lxc" "83_Bi")
+set(libxc_inputs "07_N_opt" "38_Sr_lxc" "60_Nd_GHOST" "79_Au_lxc" "83_Bi")
 
 # oncvpsp_test(NAME LABEL SCRIPT ARGS...): run SCRIPT with ARGS, labelled LABEL; not added when it
 # runs a fully-relativistic executable and those are not built (ONCVPSP_WITH_FR off)
@@ -192,6 +192,8 @@ set(oncvpspsr_tests
     "14_Si_lder"    # rxpsh set, s projector below epsh1 (run_phsft, vkbphsft)
     "40_Zr_grid"    # icmod=4 with an explicit search grid (modcore3)
     "14_Si_hm"      # icmod=7 with slack (modcore_budget, modcore_probes)
+    "07_N_opt"      # the optimizer's setup (oncvpsp-opt): PBE (Libxc), icmod 6, rxpsh, its own
+                    # log mesh, where the AE SCF stops on its residual's floor (ae_converged)
 )
 foreach (test_name IN LISTS oncvpspsr_tests)
     oncvpsp_test(${test_name} sr ref_test.sh

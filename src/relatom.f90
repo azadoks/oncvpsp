@@ -72,6 +72,8 @@
  real(dp) :: thl,vn,zion,fj
  integer :: ii,jj,ll,ikap,kap,mkap
  logical :: convg
+ real(dp) :: resbest
+ integer :: nflat
 
  real(dp), allocatable :: uu(:,:),up(:,:)
  real(dp), allocatable :: vsi(:),vso(:),vsi1(:),vso1(:),vxc(:)
@@ -83,6 +85,8 @@
 ! times the residual's round-off floor (3-4e-12 for Nd, Bi), so that the
 ! energies are those of the fixed point, not of the path to it. At 1e-8
 ! the terms of the total energy depended on that path to 3e-7 Ha
+! (or at the residual's floor where a finer mesh puts it above this:
+! ae_converged)
  real(dp), parameter ::  tolres=1.0d-11
 
  allocate(uu(mmax,2),up(mmax,2))
@@ -203,7 +207,7 @@
 ! energy of its last pass, never the guess unchanged, so unchanged
 ! eigenvalues cannot be asked for (as in sratom)
    call ae_residual(rho,vsi,vso,sf,rr,mmax,res)
-   if(it<2 .or. res>tolres) convg=.false.
+   call ae_converged(it,res,tolres,resbest,nflat,convg)
    if(convg) exit
 
 ! generate next iteration using d. g. anderson''s

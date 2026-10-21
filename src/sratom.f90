@@ -74,6 +74,8 @@
  real(dp) :: zion
  integer :: ii,jj
  logical :: convg
+ real(dp) :: resbest
+ integer :: nflat
 
  real(dp), allocatable :: uu(:),up(:)
  real(dp), allocatable :: vsi(:),vso(:),vxc(:)
@@ -86,6 +88,8 @@
 ! times the residual's round-off floor (3-4e-12 for Nd, Bi), so that the
 ! energies are those of the fixed point, not of the path to it. At 1e-8
 ! the terms of the total energy depended on that path to 3e-7 Ha
+! (or at the residual's floor where a finer mesh puts it above this:
+! ae_converged)
  real(dp), parameter ::  tolres=1.0d-11
 
  allocate(uu(mmax),up(mmax))
@@ -194,7 +198,7 @@
 ! potential at the nucleus can deny for ever (1e-9 Ha jitter with E_tot
 ! converged to 1e-14 Ha, H at rr1 1e-5)
    call ae_residual(rho,vsi,vso,sf,rr,mmax,res)
-   if(it<2 .or. res>tolres) convg=.false.
+   call ae_converged(it,res,tolres,resbest,nflat,convg)
    if(convg) exit
 
 ! next input potential, by Anderson mixing of the last ndep iterations
