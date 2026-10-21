@@ -398,7 +398,7 @@ numbers refer to [Phases](#phases).
 | Q-7 | `optimize`: hard-case sign of x₁ | h | W | intrinsic (two global minima); keep, warn |
 | Q-8 | `const_basis`: absolute 1e-8 singular-value threshold, values below left unscaled | g | W | done in phase 3: the rows of the constraint matrix (derivatives of orders 0–4 at rc, overlaps) are scaled to unit norm with their constraints, which changes nothing but the decomposition's accuracy (they differed by (q rc)⁴ and more, so the particular solution carried round-off at ε times that, 1e-11); an error if the smallest singular value is below 1e-10 of the largest |
 | Q-9 | `wellstate`: rwell by ×/÷0.8 then bisection to \|E − ep\| < 1e-8; ep := E | f, h | W | done in phase 2: Illinois regula falsi on E(rwell) − ep once bracketed, to round-off; a bracket closed on a residual above 1e-10 is an error |
-| Q-10 | `sbf8`: l = 2, 3 closed forms lose eps/x^l at small x | – | W | series below x ≈ 0.5 for l ≥ 2 |
+| Q-10 | `sbf8`, `eresid`'s `rsbf_lin`: the closed forms of j_1…j_3 cancel at small x (relative loss 3ε/x², 45ε/x⁴, 1575ε/x⁶; from `eresid`'s sin and cos, rotated from one q to the next and so good only to an absolute δ, δ(2l−1)!!(2l+1)!!/x^(2l+1), j_0 included); `sbf8` with nm = 3, 4 leaves j_1 unset; its recursion starts at nm+1 below x = 1/15 (top orders off by 1e-9, a jump where the start moves); argument reduced by mod(x, 2π) in double | – | W | done in phase 3: `sbf_m` (unit test `sbf`): `sbf_trig`, j_0…j_3 from x, sin x, cos x, the power series below x = 0.5, 1.5, 2.5, 3.5 (where no term of the series exceeds its first, the sum is ≥0.48 of it, and the closed form has lost under 2ε), 2.6ε against quad precision relative to the envelope √(j_l² + j_(l+1)²), and 2.7e-14 from sin and cos off by 1e-14; `sbf_trig_rising`, r·j_l(qr) on rising radii for `eresid`, each form in its own loop (no runtime cost). `sbf8` takes its l ≤ 3 from `sbf_trig` (every order set, no `mod`) and starts the recursion at nm + 1.36x + 15 at every x: 0.62ε·max(10, x), the recursion's own round-off over its x oscillatory orders. The kernels of the references move by ≤3e-12 (74_W_r); nothing printed moves beyond its tolerance |
 
 #### Solvers (phase 2)
 
@@ -710,7 +710,9 @@ later phases can see 1e-10.
       the degree-6 fit's truncation was 1e-5), 08_O `rc[1]` 9.2e-12, all at
       G1; `vloc` 6.8e-10 (14_Si), 4.5e-8 (08_O), from the pseudo-atom
       (R-10)
-- [ ] Q-10
+- [x] Q-10 (`sbf_m`, unit test `sbf`): the low-order Bessel functions to
+      a few ε at every x. The kernels of the references move by ≤3e-12,
+      nothing printed beyond its tolerance; runtime unchanged
 - [x] T2 rows of phase 3 at G1, kernel / vloc: 14_Si `rc[0]` 4.4e-12 /
       5.6e-14, `rc[1]` 8.0e-12 / 5.9e-13 (fitted at degree 14, as `rcloc`:
       degree 6 leaves 1.3e-9 of truncation, 10 leaves 3.3e-11), `rc[2]`
@@ -829,7 +831,7 @@ To fix in the phase that touches the code, or in phase 7.
 
 - `vpinteg` skips mesh points 1–3 (harmless, about 1e-12).
 - `sbf8` with nm = 3 or 4 leaves `sb_out(2)` (j_1) unset (latent: `eresid`
-  and `sbf_basis_con` read only `sb_out(nm)`).
+  and `sbf_basis_con` read only `sb_out(nm)`; fixed in phase 3, Q-10).
 - `pspot` kinetic-energy origin term has the wrong power (diagnostic).
 - `sbf_basis_con` origin term divides by rr(1)^l instead of rr(1)^(l+1)
   (negligible).

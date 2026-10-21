@@ -24,7 +24,8 @@
 !! @param xx  argument of spherical bessel function
 !! @param sb_out  output of sbf_l(xx) for l=0,...,nm-1
 
- use constants_m, only: dp, pi
+ use constants_m, only: dp
+ use sbf_m, only: sbf_trig
  implicit none
 
 !Input variables
@@ -35,9 +36,8 @@
  real(dp), intent(inout) :: sb_out(nm)
 
 !Local variables
- real(dp), parameter :: pi2=2.0_dp*pi
  integer :: nlim,nn
- real(dp) :: cc,fn,sn,ss,xi,xn,xs,xmod
+ real(dp) :: cc,fn,sn,ss,xi,xn,xs
  real(dp),allocatable :: sb(:)
 
 
@@ -53,47 +53,34 @@
      sb_out(nn)=xn*(1.0d0 - xs*(1.0d0 - xs/(4*nn+6))/(2*nn+1))
      xn=xx*xn/(2*nn+1)
    end do
-!  trigonometric section (small l values)
- else if(nm==1) then
-   xmod=mod(xx,pi2)
-   ss=sin(xmod)
-   sb_out(1)=ss/xx
- else if(nm==2) then
-   xmod=mod(xx,pi2)
-   ss=sin(xmod)
-   cc=cos(xmod)
-   sb_out(1)=ss/xx
-   sb_out(2)=(ss-xx*cc)/xx**2
- else if(nm==3) then
-   xmod=mod(xx,pi2)
-   ss=sin(xmod)
-   cc=cos(xmod)
-   sb_out(1)=ss/xx
-   sb_out(3)=((3.0d0-xx**2)*ss - 3.0d0*xx*cc)/xx**3
- else if(nm==4) then
-   xmod=mod(xx,pi2)
-   ss=sin(xmod)
-   cc=cos(xmod)
-   sb_out(1)=ss/xx
-   sb_out(3)=((3.0d0-xx**2)*ss - 3.0d0*xx*cc)/xx**3
-   sb_out(4)=(15.d0*ss-15.d0*xx*cc - 6.d0*xx**2*ss + xx**3*cc )/xx**4
+!  trigonometric section (small l values), every order from sin and cos
+!  (sbf_trig: the series where the closed forms cancel)
+ else if(nm<=4) then
+   ss=sin(xx)
+   cc=cos(xx)
+   do nn=1,nm
+     sb_out(nn)=sbf_trig(nn-1,xx,ss,cc)
+   end do
  else
-!  recursion method (accurate for large l, slow for large arguments)
-   if(xx<1.0d0) then
-     nlim=nm+int(15.0d0*xx)+1
-   else
-     nlim=nm+int(1.36d0*xx)+15
-   end if
+!  recursion method (accurate for large l, slow for large arguments),
+!  started at order nm+1.36 xx+15 at every xx (the start's error is then
+!  below round-off; at small xx a start at nm+1 had cost the top orders
+!  1e-9 and jumped where it moved), normalized by
+!  sum_l (2l+1) j_l**2 = 1. Its round-off grows with the xx oscillatory
+!  orders it passes, about 0.6 eps xx
+   nlim=nm+int(1.36d0*xx)+15
    allocate(sb(nlim+1))
-   nn=nlim
    xi=1.0d0/xx
-   sb(nn+1)=0.0d0
-   sb(nn)=1.0d-18
-   sn=dble(2*nn-1)*1.0d-36
+   sb(nlim+1)=0.0d0
+   sb(nlim)=1.0d-18
    do nn=nlim-1,1,-1
      sb(nn)=dble(2*nn+1)*xi*sb(nn+1) - sb(nn+2)
+     if(abs(sb(nn))>1.0d150) then
+       sb(nn:nlim+1)=sb(nn:nlim+1)*1.0d-150
+     end if
    end do
-   do nn=1,nlim-1
+   sn=0.0d0
+   do nn=1,nlim
      sn=sn + dble(2*nn-1)*sb(nn)*sb(nn)
    end do
    fn=1.0d0/sqrt(sn)

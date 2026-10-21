@@ -71,6 +71,7 @@
  use logmesh_m, only: lm_interp, lm_ncell
  use ugrid_m, only: ug_weights, ug_cumint_down
  use sbf_q_m, only: sbfq_overlap_vs, sbfq_value_slope
+ use sbf_m, only: sbf_trig_rising
  implicit none
  external :: sbf8
 
@@ -311,7 +312,8 @@
  subroutine rsbf_lin(ll1,qq,rlin,sqr,cqr,nr,rsbf)
 
 !! rlin * j_l(qq rlin) on the linear mesh from sin and cos of qq rlin, by
-!! the closed forms for l<=3 (series at small argument) and sbf8 beyond
+!! sbf_trig_rising for l<=3 (the closed forms, the series where they
+!! cancel) and sbf8 beyond
 
 !Input variables
  integer, intent(in) :: ll1,nr
@@ -321,8 +323,7 @@
  real(dp), intent(out) :: rsbf(nr)
 
 !Local variables
- real(dp) :: xx,xn,xs
- integer :: ii,i0,nn
+ integer :: ii
 
  if(ll1>4) then
    do ii=1,nr
@@ -332,55 +333,7 @@
    return
  end if
 
-!rlin is increasing, so the small-argument points come first
- i0=nr+1
- do ii=1,nr
-   xx=qq*rlin(ii)
-   if(xx>=1.0d-3) then
-     i0=ii
-     exit
-   end if
-   if(xx<=1.0d-36) then
-     if(ll1==1) then
-       rsbf(ii)=rlin(ii)
-     else
-       rsbf(ii)=0.0d0
-     end if
-   else
-     xn=1.0d0
-     xs=0.5d0*xx**2
-     do nn=1,ll1-1
-       xn=xx*xn/(2*nn+1)
-     end do
-     rsbf(ii)=rlin(ii)*xn*(1.0d0 - xs*(1.0d0 - xs/(4*ll1+6))/(2*ll1+1))
-   end if
- end do
-
- select case(ll1)
- case(1)
-   do ii=i0,nr
-     xx=qq*rlin(ii)
-     rsbf(ii)=rlin(ii)*(sqr(ii)/xx)
-   end do
- case(2)
-   do ii=i0,nr
-     xx=qq*rlin(ii)
-     rsbf(ii)=rlin(ii)*((sqr(ii)-xx*cqr(ii))/xx**2)
-   end do
- case(3)
-   do ii=i0,nr
-     xx=qq*rlin(ii)
-     rsbf(ii)=rlin(ii)*(((3.0d0-xx**2)*sqr(ii) - 3.0d0*xx*cqr(ii))/xx**3)
-   end do
- case(4)
-   do ii=i0,nr
-     xx=qq*rlin(ii)
-     rsbf(ii)=rlin(ii)*((15.d0*sqr(ii)-15.d0*xx*cqr(ii) - 6.d0*xx**2*sqr(ii) &
-&             + xx**3*cqr(ii))/xx**4)
-   end do
- case default
-! ll1>4 returned above
- end select
+ call sbf_trig_rising(ll1-1,nr,qq,rlin,sqr,cqr,rsbf)
 
  return
  end subroutine rsbf_lin
