@@ -20,8 +20,8 @@
 ! for Abinit input using pspcod=8, with the spin-orbit projectors when
 ! fully relativistic
 
- subroutine linout(lmax,lloc,rc,vkb,evkb,vsr,esr,vso,eso,nproj,rr,vpuns, &
-&                  rho,rhomod, &
+ subroutine linout(lmax,lloc,rc,vkbpw,evkb,vsrpw,esr,vsopw,eso,nproj,rr, &
+&                  vpuns,vlocpw,rho,rhomod, &
 &                  rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl, &
 &                  atsym,soscale, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
@@ -36,17 +36,19 @@
 !! @param lmax  maximum angular momentum
 !! @param lloc  l for local potential
 !! @param rc  core radii
-!! @param vkb  VKB projectors, written when nkap=1
+!! @param vkbpw  VKB projectors' pieces, written when nkap=1
 !! @param evkb  coefficients of VKB projectors
-!! @param vsr  normalized scalar-relativistic projectors, written with vso when
-!!             nkap=2
-!! @param esr  energy coefficients of vsr
-!! @param vso  normalized spin-orbit projectors
-!! @param eso  energy coefficients of vso
+!! @param vsrpw  normalized scalar-relativistic projectors' pieces, written
+!!               with vsopw when nkap=2
+!! @param esr  energy coefficients of vsrpw
+!! @param vsopw  normalized spin-orbit projectors' pieces
+!! @param eso  energy coefficients of vsopw
 !! @param nproj  number of vkb projectors for each l
 !! @param rr  log radial grid
 !! @param vpuns  unscreened semi-local pseudopotentials (vpuns(:,5) is local
 !!               potential if linear combination is used)
+!! @param vlocpw  the screened local potential's pieces; vpuns(:,lloc+1)
+!!                less their node values is smooth
 !! @param rho  valence pseudocharge
 !! @param rhotae  all-electron valence charge
 !! @param rhoc  all-electron core charge
@@ -108,6 +110,8 @@
 
  use constants_m, only: dp, mxstate, mxcnf, mxl, mxlin, nrhomod
  use input_echo_m, only: write_input_echo
+ use outmesh_m, only: om_values, om_piece_values, om_local_values
+ use pieces_m, only: piecewise_t
  implicit none
 
 !Input variables
@@ -118,9 +122,10 @@
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
  real(dp), intent(in) :: rr(mmax),vpuns(mmax,mxl+2),rho(mmax)
  real(dp), intent(in) :: rhotae(mmax),rhoc(mmax)
- real(dp), intent(in) :: vkb(mmax,mxprj,mxl+1,nkap),evkb(mxprj,mxl+1,nkap)
- real(dp), intent(in) :: vsr(mmax,2*mxprj,mxl+1),vso(mmax,2*mxprj,mxl+1)
+ real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap)
  real(dp), intent(in) :: esr(2*mxprj,mxl+1),eso(2*mxprj,mxl+1)
+ type(piecewise_t), intent(in) :: vkbpw(mxprj,mxl+1,nkap),vlocpw
+ type(piecewise_t), intent(in) :: vsrpw(2*mxprj,mxl+1),vsopw(2*mxprj,mxl+1)
  real(dp), intent(in) :: rhomod(mmax,nrhomod)
  real(dp), intent(in) :: rc(mxlin+1)
  character(len=2), intent(in) :: atsym
@@ -169,7 +174,8 @@
    end do
  end if
 
-! interpolation of everything onto linear output mesh
+! everything on the linear output mesh, the projectors and the local
+! potential from their pieces (outmesh_m)
 !
  do  ii=1,nrl
    rl(ii)=drl*dble(ii-1)
@@ -177,32 +183,33 @@
 !
  vpl(:,:)=0.0d0
  l1=lloc+1
- call dpnint(rr,vpuns(1,l1),mmax,rl,vpl(1,l1),nrl)
+ call om_local_values(rr,vpuns(1,l1),mmax,vlocpw,rl,vpl(1,l1),nrl)
 
-! override dpnint extrapolation to zero for vpl
+! the value at the origin that of the first point of the log mesh
  vpl(1,l1)=vpuns(1,l1)
 
  do l1=1,lmax+1
    if(l1 /= lloc+1) then
      do jj=1,nproj(l1)
-       if(nkap==1) call dpnint(rr,vkb(1,jj,l1,1),mmax,rl,vkbl(1,jj,l1),nrl)
+       if(nkap==1) call om_piece_values(rr,mmax,vkbpw(jj,l1,1),rl, &
+&                                       vkbl(1,jj,l1),nrl)
      end do
      do jj=1,npr_sr(l1)
-       call dpnint(rr,vsr(1,jj,l1),mmax,rl,vsrl(1,jj,l1),nrl)
+       call om_piece_values(rr,mmax,vsrpw(jj,l1),rl,vsrl(1,jj,l1),nrl)
      end do
      do jj=1,npr_so(l1)
-       call dpnint(rr,vso(1,jj,l1),mmax,rl,vsol(1,jj,l1),nrl)
+       call om_piece_values(rr,mmax,vsopw(jj,l1),rl,vsol(1,jj,l1),nrl)
      end do
    end if
  end do
 
 
- call dpnint(rr,rho,mmax,rl,rhol,nrl)
- call dpnint(rr,rhotae,mmax,rl,rhotael,nrl)
- call dpnint(rr,rhoc,mmax,rl,rhocl,nrl)
+ call om_values(rr,rho,mmax,rl,rhol,nrl)
+ call om_values(rr,rhotae,mmax,rl,rhotael,nrl)
+ call om_values(rr,rhoc,mmax,rl,rhocl,nrl)
 
  do jj=1,5
-   call dpnint(rr,rhomod(1,jj),mmax,rl,rhomodl(1,jj),nrl)
+   call om_values(rr,rhomod(1,jj),mmax,rl,rhomodl(1,jj),nrl)
  end do
 
 ! Output for Abinit input using pspcod=8

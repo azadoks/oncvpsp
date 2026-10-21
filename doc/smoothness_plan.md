@@ -889,14 +889,29 @@ later phases can see 1e-10.
         file with nproj scalar-relativistic terms for l = 0 and 2 nproj of
         each kind for l > 0 (14_Si_r writes 2 of 4 for l = 1 and 2, and 3
         of 4 spin-orbit terms for l = 2).
-- [ ] O-1 output meshes from the pieces; β ≡ 0 beyond rc. Each writer
-      evaluates every projector from its pieces (`vkbpw`, `vsrpw`,
-      `vsopw`) at the output radius, by the windowed FH interpolant of the
-      piece of the radius's segment (`pw_value`, new in `pieces_m`), 0
-      beyond rc; V_loc likewise from `vlocpw` less the screening; the
-      densities by FH on the log mesh in place of `dpnint`. R-15: `linout`'s
-      format switch and `upfout`'s `nrlproj` then only shorten the zeros
-      written
+- [x] O-1 output meshes from the pieces; β ≡ 0 beyond rc. `outmesh_m`
+      (new): at each output radius the windowed FH interpolant
+      (`lm_interp`) of a smooth function, of the piece of the radius's
+      segment (`vkbpw`, `vsrpw`, `vsopw`; 0 beyond the last bound), or of
+      V_loc's piece of `vlocpw` plus the smooth remainder
+      vpuns − node values (the screening and the ionic tail, as in
+      `outwf_setup`). `linout` and `upfout` take the pieces in place of
+      `vkb`, `vsr`, `vso`; densities, model core and PP_CHI by FH, 0
+      beyond a function's last nonzero node (a model core of compact
+      support: FH left 1e-157 there, which `e21.13` cannot write).
+      The origin keeps `dpnint`'s limit (see the follow-ups). On the log
+      mesh (`upf_mesh` > 0) the values are the node values, unchanged.
+      R-15: `linout`'s format switch and `nrlproj` now only shorten zeros.
+      T2 rows, kernel: 14_Si `rc[0]` psp8 / UPF 4.4e-12 / 4.4e-12, 08_O
+      `rc[1]` psp8 9.2e-12, 52_Te `rc[1]` psp8 / UPF 2.7e-11 / 2.7e-11,
+      as on the log mesh. `projector_output_*`: 0 beyond rc everywhere;
+      the fr ones red on the term counts only (O-2). Outputs against
+      611d1da: kernels 2e-8 (14_Si, 22_Ti, 29_Cu) to 3e-5 (60_Nd) relative,
+      the ringing beyond rc removed; V_loc ≤ 4e-6, densities ≤ 1e-7,
+      PP_CHI ≤ 1e-9 absolute; the model core's derivative columns, which
+      jump at its crossover (phase 5), up to 4e-2 / 1e-1 of their largest
+      value in 14_Si_bc / 14_Si_bca (the 4th derivative), ρ_mod itself
+      ≤ 2e-7
 - [ ] O-2 (D-2): every term of the fr decomposition written (no 1e-3
       cut), so the diagnostics of `run_diag_sr_so_r` use them all too
 - [ ] O-4: reopened. The UPF mesh from rlmax only would cut the
@@ -1054,6 +1069,18 @@ from rc:
 - [ ] `free_tail` and the window in `eresid`; normalization inside rc
 - [ ] Validation on the references recorded
 - [ ] References patched
+
+#### Follow-ups (once everything above is done)
+
+- [ ] The `.dat` input brought as far as reasonably possible to parity
+      with the TOML input: the keys added on this branch (`ep_as_given`,
+      `well_onset`, `upf_mesh`, the log mesh, …) readable from `.dat`
+      too, or a documented reason why not
+- [ ] The value at the origin of the psp8 and linear-mesh UPF files:
+      `outmesh_m` keeps `dpnint`'s limit, the polynomial of degree 7
+      through the next 8 output points (0.01–0.08 bohr). Not yet trusted:
+      check it against the functions' known behaviour at r = 0 (r β → 0,
+      ρ'(0) = 0, V_loc finite) and against a fit on the log mesh
 
 ### Decisions
 

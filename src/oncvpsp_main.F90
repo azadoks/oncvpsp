@@ -1087,8 +1087,9 @@
 
  if(trim(psfile)=='psp8' .or. trim(psfile)=='both') then
    soscale=1.0d0
-   call linout(lmax,lloc,rc,vkb,evkb,vsr,esr,vso,eso,nproj,rr,vpuns,rho, &
-&              rhomod,rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl, &
+   call linout(lmax,lloc,rc,vkbpw,evkb,vsrpw,esr,vsopw,eso,nproj,rr,vpuns, &
+&              vlocpw,rho,rhomod,rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod, &
+&              nrl,drl, &
 &              atsym,soscale, &
 &              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &              fa,rc0,ep,qcut,ep_as_given,well_onset,debl,facnf,dvloc0, &
@@ -1098,7 +1099,7 @@
  end if
 
  if(trim(psfile)=='upf' .or. trim(psfile)=='both') then
-   call upfout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
+   call upfout(lmax,lloc,rc,vkbpw,evkb,nproj,rr,vpuns,vlocpw,rho,rhomod, &
 &              zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
 &              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &              fa,rc0,ep,qcut,ep_as_given,well_onset,debl,facnf,dvloc0, &

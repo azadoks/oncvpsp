@@ -21,7 +21,7 @@
 ! fully relativistic, or takes them at every istr-th point of the log mesh
 ! (upf_mesh > 0), as generated, with nothing interpolated
 
- subroutine upfout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
+ subroutine upfout(lmax,lloc,rc,vkbpw,evkb,nproj,rr,vpuns,vlocpw,rho,rhomod, &
 &                  zz,zion,mmax,mxprj,iexc,icmod,nrlin,drl,atsym,epstot, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &                  fa,rc0,ep,qcut,ep_as_given,well_onset,debl,facnf, &
@@ -34,13 +34,15 @@
 !! @param lmax  maximum angular momentum
 !! @param lloc  l for local potential
 !! @param rc  core radii
-!! @param vkb  VKB projectors, last index 1 for j=l+1/2, 2 for j=l-1/2 when
-!!             nkap=2
-!! @param evkb  coefficients of VKB projectors, last index as for vkb
+!! @param vkbpw  VKB projectors' pieces, last index 1 for j=l+1/2, 2 for
+!!               j=l-1/2 when nkap=2
+!! @param evkb  coefficients of VKB projectors, last index as for vkbpw
 !! @param nproj  number of vkb projectors for each l
 !! @param rr  log radial grid
 !! @param vpuns  unscreened semi-local pseudopotentials (vp(:,5) is local
 !!               potential if linear combination is used)
+!! @param vlocpw  the screened local potential's pieces; vpuns(:,lloc+1)
+!!                less their node values is smooth
 !! @param rho  valence pseudocharge
 !! @param rhomod  model core charge
 !! @param zz  atomic number
@@ -101,6 +103,8 @@
 
  use constants_m, only: dp, pi, mxstate, mxcnf, mxl, mxlin, nrhomod
  use input_echo_m, only: write_input_echo
+ use outmesh_m, only: om_values, om_piece_values, om_local_values
+ use pieces_m, only: piecewise_t
  implicit none
 
 
@@ -111,7 +115,7 @@
  real(dp), intent(in) :: slack
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
  real(dp), intent(in) :: rr(mmax),vpuns(mmax,mxl+2),rho(mmax)
- real(dp), intent(in) :: vkb(mmax,mxprj,mxl+1,nkap)
+ type(piecewise_t), intent(in) :: vkbpw(mxprj,mxl+1,nkap),vlocpw
  real(dp), intent(in) :: rhomod(mmax,nrhomod)
  real(dp), intent(in) :: rc(mxlin+1),evkb(mxprj,mxl+1,nkap)
  character(len=2), intent(in) :: atsym
@@ -206,7 +210,8 @@
 &          rhomodl(nrl,nrhomod), &
 &          uual(nrl,nkap,nv),rabl(nrl))
 
-! interpolation of everything onto linear output mesh, or the log mesh points
+! everything on the linear output mesh or the log mesh points, the
+! projectors and the local potential from their pieces (outmesh_m)
 
  if(istr==0) then
    do  ii=1,nrl
@@ -221,8 +226,9 @@
  end if
 !
  vpl(:,:)=0.0d0
- call outmesh(vpuns(1,lloc+1),vpl(1,lloc+1))
-! override dpnint extrapolation to zero for vpl (in the sr code only)
+ call om_local_values(rr,vpuns(1,lloc+1),mmax,vlocpw,rl,vpl(1,lloc+1),nrl)
+! the value at the origin that of the first point of the log mesh (in the
+! sr code only)
  if(nkap==1 .and. istr==0) vpl(1,lloc+1)=vpuns(1,lloc+1)
 
  do l1=1,lmax+1
@@ -237,16 +243,17 @@
    do ikap=1,mkap
      do jj=1,nproj(l1)
 
-       call outmesh(vkb(1,jj,l1,ikap),vkbl(1,jj,l1,ikap))
+       call om_piece_values(rr,mmax,vkbpw(jj,l1,ikap),rl, &
+&                           vkbl(1,jj,l1,ikap),nrl)
 
      end do !jj
    end do !ikap
  end do !l1
 
- call outmesh(rho,rhol)
+ call om_values(rr,rho,mmax,rl,rhol,nrl)
 
  do jj=1,5
-   call outmesh(rhomod(1,jj),rhomodl(1,jj))
+   call om_values(rr,rhomod(1,jj),mmax,rl,rhomodl(1,jj),nrl)
  end do
 
  nwfc = 0
@@ -259,7 +266,7 @@
    end if
    nwfc = nwfc + mkap
    do ikap=1,mkap
-     call outmesh(uupsa(1,ikap,ii),uual(1,ikap,ii))
+     call om_values(rr,uupsa(1,ikap,ii),mmax,rl,uual(1,ikap,ii),nrl)
    end do
  end do
 
@@ -765,34 +772,4 @@
  deallocate(rhol,rl,vkbl,vpl,rhomodl,dmat,rabl)
 
  return
-
- contains
-
- subroutine outmesh(ff,ffl)
-
-!! ff on the output mesh: interpolated onto the linear mesh, or taken at
-!! its log mesh points
-!!
-!! @param ff  function on the log radial grid rr
-!! @param ffl  ff on the output mesh rl
-
-!Input variables
- real(dp), intent(in) :: ff(mmax)
-
-!Output variables
- real(dp), intent(out) :: ffl(nrl)
-
-!Local variables
- integer :: kk
-
- if(istr==0) then
-   call dpnint(rr,ff,mmax,rl,ffl,nrl)
- else
-   do kk=1,nrl
-     ffl(kk)=ff(1+istr*(kk-1))
-   end do
- end if
- return
- end subroutine outmesh
-
  end subroutine upfout
