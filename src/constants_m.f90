@@ -23,7 +23,7 @@
  implicit none
  private
  public :: dp, pi, mxprj, mxstate, mxcnf, mxl, mxlin, mxkap
- public :: nrhomod, nlev, nerrlv, dqout
+ public :: nrhomod, nlev, nerrlv, dqout, well_onset_default
 
 !> kind of all real variables
  integer, parameter :: dp=real64
@@ -70,5 +70,10 @@
 !> tables, as their interpolation assumes it (eresid moves the mesh points
 !> onto its own q mesh, so the actual spacing differs slightly)
  real(dp), parameter :: dqout=0.5000001_dp
+
+!> default of well_onset, the onset of the well of the well states as a
+!> multiple of rc (wellstate): rc amesh**5 on the default mesh, where it was
+!> before it became an input
+ real(dp), parameter :: well_onset_default=1.006_dp**5
 
  end module constants_m

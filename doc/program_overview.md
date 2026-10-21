@@ -77,7 +77,10 @@ irel, and the stage.  It has the following major sections:
      (subroutines lschfb and wellstate).  The barrier potential is given
      in Eq.(17) of the paper.  To find a bound state at the desired
      energy ep, wellstate starts with a large r_b = 8*r_c and searches
-     for a suitable v_inf within the range [ep, ep + 1 Ha].
+     for a suitable v_inf within the range [ep, ep + 1 Ha].  The barrier
+     starts at well_onset*r_c (TOML input, at least 1, default 1.006**5,
+     where the mesh-dependent onset of before sat on the default mesh);
+     it is flat to every order there, so 1 is the natural limit.
 
   B) If two projectors using the norm-conserving Vanderbilt method are
      specified, the all-electron wave function with one additional node is

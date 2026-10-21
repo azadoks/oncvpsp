@@ -54,7 +54,7 @@
 #endif
  use constants_m, only: dp, mxprj, mxstate, mxcnf, mxl, mxlin, mxkap, nrhomod
  use pieces_m, only: piecewise_t, pw_reach, pw_free
- use constants_m, only: nlev, nerrlv
+ use constants_m, only: nlev, nerrlv, well_onset_default
  use input_echo_m, only: write_atom, write_icmod, write_epsh, write_mesh
  use relativity_m, only: set_relativity
  implicit none
@@ -123,6 +123,7 @@
  type(piecewise_t), allocatable :: vkbpw(:,:,:)
  type(piecewise_t) :: vlocpw
  logical :: ep_as_given
+ real(dp) :: well_onset
  real(dp), allocatable :: chix(:,:,:,:)
 !fully-relativistic only: scalar-relativistic and spin-orbit projectors, and
 !the semi-local potentials for psmlout_r
@@ -280,6 +281,7 @@
 
  ios = 0
  ep_as_given=.false.
+ well_onset=well_onset_default
  select case(input_mode)
  case(INPUT_STDIN)
    call read_input_text(stdin, inline, &
@@ -332,7 +334,8 @@
 &                       epsh1, epsh2, depsh, rxpsh, &
 &                       rlmax, drl, upf_mesh, &
 &                       ncnf, nvcnf, nacnf, lacnf, facnf, &
-&                       amesh_in, rr1_in, rmax_in, c_light_in, ep_as_given)
+&                       amesh_in, rr1_in, rmax_in, c_light_in, ep_as_given, &
+&                       well_onset)
    close(unit)
 #endif
  case default
@@ -713,12 +716,13 @@
 ! npa keeps the input n.
          if(ikap==1 .and. irel==2) then
            call wellstate(npa(iprj,l1),ll,kap,rc(l1),epa(iprj,l1,ikap), &
-&                         ep_as_given,rr,vfull,vwell(1,iprj),uu,up,zz,mmax, &
-&                         mch,irel)
+&                         ep_as_given,well_onset,rr,vfull,vwell(1,iprj),uu, &
+&                         up,zz,mmax,mch,irel)
          else if(ikap==1) then
            nnwell=npa(iprj,l1)
            call wellstate(nnwell,ll,kap,rc(l1),epa(iprj,l1,ikap),ep_as_given, &
-&                         rr,vfull,vwell(1,iprj),uu,up,zz,mmax,mch,irel)
+&                         well_onset,rr,vfull,vwell(1,iprj),uu,up,zz,mmax, &
+&                         mch,irel)
          else
            et=epa(iprj,l1,ikap)
            call boundstate(irel,npa(iprj,l1),ll,kap,ierr,epa(iprj,l1,ikap), &
@@ -1087,8 +1091,8 @@
 &              rhomod,rhotae,rhoc,zz,zion,mmax,mxprj,iexc,icmod,nrl,drl, &
 &              atsym,soscale, &
 &              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&              fa,rc0,ep,qcut,ep_as_given,debl,facnf,dvloc0,fcfact,fcfact0, &
-&              rcfact, &
+&              fa,rc0,ep,qcut,ep_as_given,well_onset,debl,facnf,dvloc0, &
+&              fcfact,fcfact0,rcfact, &
 &              slack,fcgrid,rcgrid, &
 &              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,upf_mesh,nkap)
  end if
@@ -1097,7 +1101,8 @@
    call upfout(lmax,lloc,rc,vkb,evkb,nproj,rr,vpuns,rho,rhomod, &
 &              zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
 &              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&              fa,rc0,ep,qcut,ep_as_given,debl,facnf,dvloc0,fcfact0,rcfact, &
+&              fa,rc0,ep,qcut,ep_as_given,well_onset,debl,facnf,dvloc0, &
+&              fcfact0,rcfact, &
 &              slack,fcgrid,rcgrid, &
 &              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,uupsa,ea,log_mesh, &
 &              upf_mesh,nkap)

@@ -380,7 +380,7 @@ numbers refer to [Phases](#phases).
 | R-9 | `vpinteg` to `irc`; points 1–3 skipped | c | W | done in phase 3: `run_vkb` (R-8), `sr_so_r` and `run_ghosts` on the pieces (`pw_product_integral`, `pw_integral`), `vkboutwf` per segment on its grid (R-10); `vpinteg` remains only in `der2exc` (phase 5) |
 | R-10 | `vkboutwf`, `lschvkbb`: rc found as the last nonzero vkb. Since e809a29 the overlaps end at irc and the Adams steps past irc use the source-free u″ at their back points (no O(al²) from the kink), both assuming the support ends on a node | a, e | W | done in phase 3 (`outwf_m`, unit test `outwf`): no integration on the nodes is smooth, since a step whose stencil spans a kink has an error that depends on where in the cell the kink falls (a restart on the nodes at the first node past the kink still jumps by one local truncation error, 1e-10, when the kink crosses a node); so each segment between kinks is integrated on its own grid, uniform in ln r with the mesh step, starting exactly at the segment's lower bound and running 32 points past its upper one: the first on the nodes from the power series at the first node, each later one from (u, u′) interpolated from the grid before; every segment primed by 3 Runge-Kutta steps in 4 sub-steps (so the Adams scheme starts from data exact to its own error), V and the projectors interpolated onto the grid from their pieces, the overlaps per segment by the cumulative 8th-order rule to the bound, the solution interpolated back to the nodes. Every operation then has the same form wherever the kinks sit. The method stays 4th order (the log derivative at r = 3 of the unit test's model falls 15.6, 15.4, 14.7 times on three halvings; truncation 2e-7 at the default step). The potential's pieces (`run_vkb`) and the projectors' are threaded to every solver; `lschvkbb`'s window stays beyond the last kink of either. The weights of the stencils and the cell rule are computed in quad once (they were recomputed per integral, 60 % of the runtime); the first segment's overlaps, most of the work, are dot products with the weights of `lm_integral` to its bound (`lm_integral_weights`, computed once per setup), in a compensated sum of four lanes or, with `ONCVPSP_BLAS_DOT`, one `dgemm`; the interpolants' weights are shared by u and u′ and by V and the sources. Against e3a587f the runs take 74_W_r 8.7 → 10.2 s (9.5 with BLAS), 14_Si_r 2.8 → 3.0 s, 32_Ge 2.5 → 3.1 s, 08_O_nr 1.0 → 1.2 s. More accurate: in the nr references the reference configuration's pseudo-atom eigenvalues meet the all-electron ones to 1.1e-9 Ha (03_Li, was 2.6e-8), 8.3e-10 (14_Si, was 2.0e-9), and 32_Ge's 3d to 4.1e-7 (was 1.1e-6); none got worse |
 | R-11 | `vrel` window 0.5–1.5 rr(irc); 1e-10 threshold on u; vr = 0 points replaced by the average of their neighbours | a, g | W | done in phase 3: `ae_delta` (unit test `ae_delta`), Δ = u″ − [l(l+1)/r² + 2(V−ε)]u at the nodes about the window from the first-order system (u, u′ = up/(al r), V′ by `lm_derivs`), no division by u; `vrel` removed. The local potential of lloc<4 keeps Δ/(2u) for its own taper (S-1), with an error if u has a node within reach of rc |
-| R-12 | `wellstate`: well onset at rr(irc+5), x³ onset (C²), inside the ±12-point stencils of `wf_rc_der` (uord 4, 5 of well states O(al²), O(al) off); thresholds 0.75, 1.5 rr(irc) override `ep`; negative `ep` reset to 0.25 | a, d, g | W | done in phase 3: onset at rc·amesh⁵ (continuous); the well cwell x³/(1+x³) e^(−0.01/x), the well of before times a C-infinity factor within 5 % of 1 from x = 0.2 on, so that the states found are those of before (with e^(−1/x³), a different shape, 14_Si's kernels moved 7 % and 11 inputs found another n at the wall's lower limit; with e^(−0.1/x), still 11; with e^(−0.01/x) only 40_Zr's l=1, whose wall sat at the limit). The `rc[0]` scan 8.9e-6 → 4.4e-12. The overrides stay by default; `ep_as_given` (D-1, revised) |
+| R-12 | `wellstate`: well onset at rr(irc+5), x³ onset (C²), inside the ±12-point stencils of `wf_rc_der` (uord 4, 5 of well states O(al²), O(al) off); thresholds 0.75, 1.5 rr(irc) override `ep`; negative `ep` reset to 0.25 | a, d, g | W | done in phase 3: onset at rc·amesh⁵ (continuous), then at rc·`well_onset`, an input of default 1.006⁵ that does not depend on the mesh (T4 at the end of phase 3); the well cwell x³/(1+x³) e^(−0.01/x), the well of before times a C-infinity factor within 5 % of 1 from x = 0.2 on, so that the states found are those of before (with e^(−1/x³), a different shape, 14_Si's kernels moved 7 % and 11 inputs found another n at the wall's lower limit; with e^(−0.1/x), still 11; with e^(−0.01/x) only 40_Zr's l=1, whose wall sat at the limit). The `rc[0]` scan 8.9e-6 → 4.4e-12. The overrides stay by default; `ep_as_given` (D-1, revised) |
 | R-13 | `ionic_window`: ra = rcmax (snapped); rcore = first mesh point where `|vion+zion/r|` < 1e-10; rb = max(rcore, 2ra) | a, g, h | W | done in phase 3: ra the largest given rc; rcore the root of the interpolant of (V_ion + zion/r)² − tol² between the mesh points where it crosses (`lm_root`; the square, not the log, as V_ion + zion/r may cross zero there); rb the C-infinity maximum of rcore and 2ra within 0.05 bohr |
 | R-14 | `run_diag` `mchf = max(irc)+5`; `run_phsft` rxpsh → irphs; `run_ghosts` mbar; `run_plot` n1..n4 | a | – | phase 6 |
 | R-15 | `upfout` `nrlproj`, `cutoff_radius_index`; `linout` rc+2·drl format switch | a, g | W | β exactly 0 beyond rc (phase 4); indices then harmless |
@@ -821,6 +821,47 @@ later phases can see 1e-10.
       With c = 1.006⁵, a run on the default mesh changes only by
       round-off.
       X-1's matching radius max(rc)·amesh⁵ has the same form.
+- [x] The well's onset an input: `well_onset` in [pseudopotentials]
+      (TOML; the text input takes the default), the onset as a multiple
+      of rc, at least 1, default 1.006⁵. 1 is the natural limit: the
+      well is flat to every order at its onset, so it can start at rc.
+      Set, it is echoed in the psp8 and UPF files as a comment, like
+      `ep_as_given`. The kernels still depend on the onset, on the
+      well's height and width, and on its node count (phase 8 removes
+      that).
+      Tests, written first and red:
+      - `well_onset_{sr_14_Si,nr_08_O,r_52_Te}`: the well states on amesh
+        1.006 and 1.012 agree to 5e-4 bohr in half-point radius (they
+        differed by 1e-2 to 9e-2), for the default and for 1; 1 differs
+        from the default; the echo appears only when set.
+      - `toml_input_well_onset_range` (below 1 is an error) and
+        `toml_input_well_onset_default`.
+      - The scan `smooth_sr_14_Si_well_onset` over [1.015, 1.025]:
+        kernel 3.1e-11, V_loc 8e-15. The kernel depends strongly on
+        the onset there (0.47 per unit ln c), so the window is half the
+        usual span; at 0.02, degree 6 leaves 4.9e-10 of fit truncation
+        (9.8e-11 at degree 10), with no jump.
+      Outputs: every reference is on the default mesh, where the onset
+      moves by round-off only (rc·1.006⁵ in place of rc·amesh⁵ with
+      amesh from the mesh), so no reference changes. Against 86589e6,
+      the kernels of the 51 references:
+
+      | input | kernel |
+      |---|---|
+      | 74_W_r | 1.5e-11 |
+      | 52_Te_r | 4.7e-12 |
+      | 73_Ta | 5.6e-13 |
+      | 34_Se | 5.1e-13 |
+      | 08_O_wigner_r | 4.4e-13 |
+      | others | <= 3.2e-13 |
+
+      V_loc moves by at most 7e-9 relative (07_N_dl_r, whose V_loc is
+      the semilocal l=2 potential of a well state, inverted from its
+      pseudo wave function), and otherwise by at most 1.5e-10
+      (79_Au_lxc_r). The fourth derivative of 14_Si_hm's model core at
+      r=0 moves by 1e-6 (a finite difference over 0.01 of a change of
+      1e-13). The eigenvalues and energies do not move beyond their
+      tolerances.
 - [x] References patched (R-10: `scripts/ref_patch.py` now takes the lines
       of the quantities with tolerances near their printed precision, the
       pseudo-atom energies and test eigenvalues, whenever they differ)

@@ -16,16 +16,19 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine wellstate(nnin,ll,kap,rc,ep,epgiven,rr,vfull,vwell, &
+ subroutine wellstate(nnin,ll,kap,rc,ep,epgiven,onset,rr,vfull,vwell, &
 &                     uu,up,zz,mmax,mch,irel)
 
 !! creates quantum well to confine positive-energy state, and calculates
-!! the resulting all-electron wave function. The well rises from the
-!! onset rc amesh**5 (continuous in rc, past the derivatives taken at rc)
-!! as cwell x**3/(1+x**3) exp(-0.01/x), x = (r-onset)/rwell: the well of
-!! before times a factor that makes it C-infinity at the onset and is
-!! within 5 % of 1 from x = 0.2 on, so the states it confines are those
-!! of before (doc/smoothness_plan.md, R-12). A bound state of this n and
+!! the resulting all-electron wave function. The well rises from
+!! ron = onset rc as cwell x**3/(1+x**3) exp(-0.01/x), x = (r-ron)/rwell.
+!! onset is the input well_onset, at least 1: the well is flat to every
+!! order at ron, so it leaves the function and its derivatives at rc those
+!! of the atom. Its default 1.006**5 is rc amesh**5 on the default mesh,
+!! where the onset was before, and does not depend on the mesh. The well
+!! is that of before times a factor that makes it C-infinity at the onset
+!! and is within 5 % of 1 from x = 0.2 on, so the states it confines are
+!! those of before (doc/smoothness_plan.md, R-12). A bound state of this n and
 !! l localized inside 0.75 rc replaces ep by its own energy, one inside
 !! 1.5 rc replaces it by 0.05, and a negative ep becomes 0.25 (the
 !! behaviour of before); with epgiven the input ep is always used instead
@@ -39,6 +42,7 @@
 !! @param rc  core radius (bohr)
 !! @param ep  target energy for well state; the well state's energy on return
 !! @param epgiven  use ep as given (D-1), instead of the replacements above
+!! @param onset  onset of the well as a multiple of rc (well_onset, >= 1)
 !! @param rr  log radial mesh
 !! @param vfull  all-electron potential
 !! @param vwell  potential with binding well, for the ikap=2 calculation when
@@ -59,6 +63,7 @@
  integer, intent(in) :: ll,kap,mmax,irel
  real(dp), intent(in) :: rc
  logical, intent(in) :: epgiven
+ real(dp), intent(in) :: onset
 
 !Input/output variables
  real(dp), intent(inout) :: ep
@@ -69,7 +74,7 @@
  real(dp), intent(out) :: uu(mmax,2),up(mmax,2),vwell(mmax)
 
 !Local variables
- real(dp) :: al,amesh,cwell,et,xx,rwell,rwmax,rwmin,rwscale,ron,umax
+ real(dp) :: cwell,et,xx,rwell,rwmax,rwmin,rwscale,ron,umax
  real(dp) :: fw,fwmin,fwmax,tolw
 
 ! the well width solves E(rwell) = ep to round-off (doc/smoothness_plan.md,
@@ -80,9 +85,7 @@
  logical :: convg,bound
 
  l1=ll+1
- al = 0.01d0 * log(rr(101) / rr(1))
- amesh=exp(al)
- ron=rc*amesh**5
+ ron=rc*onset
 
 !check for bound state with specified ll and nnin
 

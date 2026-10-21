@@ -3,7 +3,7 @@
 ! TOML Fortran library: documentation at toml-f.readthedocs.io
  use tomlf, only: toml_table, toml_array, toml_keyval, toml_error, toml_stat, &
 &                 toml_load, get_value, len
- use constants_m, only: mxstate, mxcnf, mxlin, mxkap
+ use constants_m, only: mxstate, mxcnf, mxlin, mxkap, well_onset_default
  implicit none
  private
  public :: read_input_toml
@@ -19,7 +19,8 @@
 &                           epsh1, epsh2, depsh, rxpsh, &
 &                           rlmax, drl, upf_mesh, &
 &                           ncnf, nvcnf, nacnf, lacnf, facnf, &
-&                           amesh, rr1, rmax, c_light, ep_as_given)
+&                           amesh, rr1, rmax, c_light, ep_as_given, &
+&                           well_onset)
 
 !! Reads the TOML input: the same data as read_input_text, with the same
 !! defaults and the same checks against the array sizes (check_data
@@ -35,7 +36,10 @@
 !   [reference_configuration]  n, l, f                (nc + nv each)
 !   [pseudopotentials]         lmax, and l (0..lmax), rc, ep, ncon, nbas,
 !                              qcut, ep_as_given (optional, false: the well
-!                              states take ep as given, see wellstate)
+!                              states take ep as given, see wellstate),
+!                              well_onset (optional, 1.006**5, at least 1:
+!                              the onset of the well of the well states as
+!                              a multiple of rc, see wellstate)
 !   [local_potential]          lloc, lpopt, rcloc, dvloc0
 !   [vkb_projectors]           l (0..lmax), nproj, debl
 !   [model_core_charge]        icmod, fcfact (icmod 1, 2, 3, 6, 7; else 0),
@@ -103,6 +107,8 @@
  integer, intent(out) :: nproj(mxlin+1)
 !> use ep as given for the well states (D-1), else wellstate's replacements
  logical, intent(out) :: ep_as_given
+!> onset of the well of the well states as a multiple of rc (wellstate)
+ real(dp), intent(out) :: well_onset
 !> Energy added to ep for the second projector (Ha)
  real(dp), intent(out) :: debl(mxlin+1)
 ! [Model core charge]
@@ -255,6 +261,11 @@
  call get_real_array(child, 'pseudopotentials', 'qcut', lmax + 1, qcut)
  call get_logical(child, 'pseudopotentials', 'ep_as_given', ep_as_given, &
 &                  .false.)
+ call get_real(child, 'pseudopotentials', 'well_onset', well_onset, &
+&              well_onset_default)
+ if(.not. (well_onset >= 1.0_dp)) then
+   call input_error('well_onset in [pseudopotentials] must be at least 1')
+ end if
 
 ! local potential
  call get_section(table, 'local_potential', child)

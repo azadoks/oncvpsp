@@ -122,6 +122,9 @@ smooth_scan_test(sr_34_Se_fcfact sr 34_Se "model_core_charge.fcfact" kernel,vloc
 smooth_scan_test(sr_34_Se_rcfact sr 34_Se "model_core_charge.rcfact" kernel,vloc,core ${smooth_g1} --span 0.02)
 smooth_scan_test(sr_40_Zr_grid_fcfact_min sr 40_Zr_grid "model_core_charge.fcfact_min" kernel,vloc,core ${smooth_g1} --span 0.02)
 smooth_scan_test(sr_14_Si_bc_ecut sr 14_Si_bc "model_core_charge.fcfact" kernel,vloc,core ${smooth_g1} --span 0.2)
+# the onset of the well (well_onset) where 14_Si's well states keep their n (l=1 takes another
+# node between 1.06 and 1.1)
+smooth_scan_test(sr_14_Si_well_onset sr 14_Si "pseudopotentials.well_onset" kernel,vloc,core ${smooth_g1} --center 1.02 --span 0.01)
 smooth_scan_test(sr_14_Si_hm_slack sr 14_Si_hm "model_core_charge.slack" kernel,vloc,core ${smooth_g1} --span 0.02)
 
 # Output against the references in tests/refs
@@ -310,12 +313,25 @@ if (ONCVPSP_WITH_TOML)
             "lmax_range" "array_length" "array_type" "not_an_array" "l_order"
             "icmod3_rcfact" "test_config_length" "test_config_count" "test_config_type"
             "integer_for_real" "extra_keys" "icmod6_default_rcfact"
-            "icmod6_default_slack")
+            "icmod6_default_slack" "well_onset_range" "well_onset_default")
         oncvpsp_test(toml_input_${case} toml toml_error_test.sh
             $<TARGET_FILE:oncvpspsr> "${data}" ${case} "${CMAKE_CURRENT_BINARY_DIR}/toml_input_${case}")
-        if (case MATCHES "^(integer_for_real|extra_keys|icmod6_default_rcfact|icmod6_default_slack)$")
+        if (case MATCHES "^(integer_for_real|extra_keys|icmod6_default_rcfact|icmod6_default_slack|well_onset_default)$")
             oncvpsp_compares(toml_input_${case})
         endif ()
+    endforeach ()
+endif ()
+
+# The onset of the well of the well states (well_onset in [pseudopotentials]): the same well states on
+# two log meshes, and the input sets it (see scripts/well_onset_test.sh)
+if (ONCVPSP_WITH_TOML)
+    foreach (well_test IN ITEMS "sr:14_Si" "nr:08_O" "r:52_Te")
+        string(REPLACE ":" ";" well_test "${well_test}")
+        list(GET well_test 0 rel)
+        list(GET well_test 1 test_name)
+        oncvpsp_test(well_onset_${rel}_${test_name} toml well_onset_test.sh
+            $<TARGET_FILE:oncvpsp${rel}> "${data}/toml/${test_name}.toml"
+            "${CMAKE_CURRENT_BINARY_DIR}/well_onset_${rel}_${test_name}")
     endforeach ()
 endif ()
 
