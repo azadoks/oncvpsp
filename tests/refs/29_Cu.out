@@ -350,7 +350,7 @@ Test configuration 0
 
     Total energies and differences
       AE_ref= -1.65225926D+03  AE_tst= -1.65225926D+03  dif=  0.00D+00
-      PS_ref= -1.78063560D+02  PS_tst= -1.78063560D+02  dif= -7.67D-13
+      PS_ref= -1.78063560D+02  PS_tst= -1.78063560D+02  dif= -9.24D-12
       PSP excitation error=  8.64D-12
 
 Test configuration 1

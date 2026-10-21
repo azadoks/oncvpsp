@@ -933,7 +933,36 @@ later phases can see 1e-10.
       files are bit-identical; α_z's tail beyond 10 bohr moves by ≤ 1e-10
       (19_K), the excitation errors of the pseudo-atom tests by ≤ 1.7e-11
       (29_Cu)
-- [ ] References patched
+- [x] T4 at the end of the phase. O-1 was the order-1 error that phase 3
+      left: from 1.012 to 1.006 the blocks converge at order 3 to 4.1
+      (52_Te_r l=2, already at 4.6e-8, at 1.4; 13 and 14 in 08_O, whose
+      1.012 run is off by 9e-3 as before), and at 1.006 every block is
+      within 1.1e-6 of the 1.0015 run (it was 7e-7 to 1.1e-2). From 1.006
+      to 1.003 five blocks keep order 3.4–4.5; the others sit at a floor
+      of 2e-8 to 8e-8 and wander on it (order −0.7 to 1.7). At 1.003
+      every block is 150 to 70 000 times closer to the 1.0015 run than
+      at the end of phase 3:
+
+      | input | block | 1.012 | 1.006 | 1.003 | order (1.006→1.003) |
+      |---|---|---|---|---|---|
+      | 14_Si | l=0 | 3.5e-7 | 3.7e-8 | 2.0e-8 | 0.91 |
+      | 14_Si | l=1 | 1.9e-5 | 1.1e-6 | 5.0e-8 | 4.48 |
+      | 14_Si | l=2 | 9.5e-6 | 5.9e-7 | 2.7e-8 | 4.44 |
+      | 08_O | l=0 | 9.2e-3 | 4.7e-7 | 6.8e-7 | −0.54 |
+      | 08_O | l=1 | 5.2e-4 | 7.5e-8 | 2.3e-8 | 1.71 |
+      | 52_Te_r | l=0 | 9.9e-7 | 8.7e-8 | 5.0e-8 | 0.81 |
+      | 52_Te_r | l=1 | 5.1e-7 | 6.6e-8 | 7.7e-8 | −0.22 |
+      | 52_Te_r | l=2 | 4.6e-8 | 1.7e-8 | 2.7e-8 | −0.65 |
+      | 52_Te_r | l=3 | 2.8e-7 | 2.5e-8 | 2.2e-8 | 0.18 |
+      | 52_Te_r | so l=1 | 2.9e-7 | 1.9e-8 | 1.7e-9 | 3.43 |
+      | 52_Te_r | so l=2 | 3.3e-8 | 2.1e-9 | 9.6e-11 | 4.47 |
+      | 52_Te_r | so l=3 | 8.5e-8 | 5.0e-9 | 2.6e-10 | 4.25 |
+
+      The floor's source is not yet known.
+- [x] References patched. `scripts/ref_patch.py --files` takes every
+      changed line of the psp8 and UPF files: the kernels are compared to
+      1e-6, and lines each kept within 1e-5 left five of them (32_Ge,
+      60_Nd_GHOST, 52_Te_r, 74_W_r, 38_Sr_lxc_r) up to 2e-6 off
 
 #### Phase 5: model core
 

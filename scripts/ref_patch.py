@@ -20,7 +20,13 @@ text differs.  Look at what changed before patching (compare_output.py REF.out
 NEW.out), and run the reference test after: another quantity with a tighter
 tolerance (d2Exc) can still differ.
 
-usage: ref_patch.py NEW.out REF.out [-o OUT]   (OUT defaults to REF.out)
+The kernels are compared to 1e-6, tighter than the 1e-5 by which a projector
+line is kept, so a kernel can fail although every line passes. With --files,
+the pseudopotential files (Begin PSPCODE8 or PSP_UPF to END_PSP) take every
+line whose text differs too.
+
+usage: ref_patch.py NEW.out REF.out [-o OUT] [--files]
+       (OUT defaults to REF.out)
 """
 
 import argparse
@@ -72,6 +78,7 @@ def main():
     parser.add_argument("new")
     parser.add_argument("ref")
     parser.add_argument("-o", "--out")
+    parser.add_argument("--files", action="store_true")
     args = parser.parse_args()
 
     new = open(args.new).read().split("\n")
@@ -85,10 +92,15 @@ def main():
     )
     out = []
     patched = replaced = 0
+    in_file = False
     for op, i1, i2, j1, j2 in matcher.get_opcodes():
         if op == "equal":
             for a, b in zip(ref[i1:i2], new[j1:j2]):
-                if close(a, b):
+                if a.startswith(("Begin PSPCODE8", "Begin PSP_UPF")):
+                    in_file = True
+                elif a.startswith("END_PSP"):
+                    in_file = False
+                if close(a, b) and not (args.files and in_file and a != b):
                     out.append(a)
                 else:
                     out.append(b)

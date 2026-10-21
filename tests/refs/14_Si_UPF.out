@@ -375,7 +375,7 @@ Test configuration 0
 
     Total energies and differences
       AE_ref= -2.88819831D+02  AE_tst= -2.88819831D+02  dif=  0.00D+00
-      PS_ref= -3.79201014D+00  PS_tst= -3.79201014D+00  dif=  0.00D+00
+      PS_ref= -3.79201014D+00  PS_tst= -3.79201014D+00  dif= -4.44D-15
       PSP excitation error= -4.00D-15
 
 Test configuration 1
@@ -4977,7 +4977,7 @@ Begin PSP_UPF
        core_correction="T"
        functional="PZ"
        z_valence="    4.00"
-       total_psenergy=" -7.5840202882004180E+00"
+       total_psenergy=" -7.5840202882004188E+00"
        rho_cutoff="  1.5050000000000001E+01"
        l_max="2"
        l_local="-1"
