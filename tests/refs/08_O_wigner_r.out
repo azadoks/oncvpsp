@@ -329,9 +329,9 @@ Ghost test for J = L + 1/2
  Testing for bound ghosts
    n   l    E NL Schr. Eq   E Basis Diag.   E Cutoff
 
-   1   0       -0.867583       -0.867331     73.62
+   1   0       -0.867583       -0.867357     73.62
 
-   2   1       -0.333440       -0.330964     86.75
+   2   1       -0.333439       -0.331124     86.75
 
  Testing for highly-localized positive-energy ghosts
        l    <radius>/rc     E Basis Diag.   E Cutoff
@@ -341,9 +341,9 @@ Ghost test for J = L - 1/2
  Testing for bound ghosts
    n   l    E NL Schr. Eq   E Basis Diag.   E Cutoff
 
-   1   0       -0.867583       -0.867331     73.62
+   1   0       -0.867583       -0.867357     73.62
 
-   2   1       -0.334776       -0.332327     86.75
+   2   1       -0.334775       -0.332485     86.75
 
  Testing for highly-localized positive-energy ghosts
        l    <radius>/rc     E Basis Diag.   E Cutoff
@@ -7096,6 +7096,14 @@ ld   3   2 -1.9199999999999999E+00  1.2777612513182148E+00  1.2786662024430793E+
 ld   3   2 -1.9399999999999999E+00  1.2784575164662788E+00  1.2793537689556669E+00
 ld   3   2 -1.9600000000000000E+00  1.2791495066914362E+00  1.2800371667857779E+00
 ld   3   2 -1.9800000000000000E+00  1.2798372624120984E+00  1.2807164347936224E+00
+# ghost l ikap n e_ref(Ha) e_basis(Ha)
+# ghost_r l ikap e(Ha) <r>/rc
+ghost   0   1   1 -8.6758303191030650E-01 -8.6735655824073399E-01
+ghost_r   0   1  9.9427898255382505E+00  1.4241973763506355E+00
+ghost   1   1   2 -3.3343870270106452E-01 -3.3112373886115792E-01
+ghost_r   1   1  1.1728364134151897E+02  1.5084973657524221E+00
+ghost   1   2   2 -3.3477536789999784E-01 -3.3248499123975400E-01
+ghost_r   1   2  1.1728364133826391E+02  1.5084973704144216E+00
 End DIAGNOSTICS
 l1-1,npr_sr,npr_so   0   2   0
 l1-1,npr_sr,npr_so   1   4   4

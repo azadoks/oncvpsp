@@ -324,16 +324,16 @@ Diagnostic tests using Vanderbilt-Kleinman-Bylander pseudopotentials
  Testing for bound ghosts
    n   l    E NL Schr. Eq   E Basis Diag.   E Cutoff
 
-   1   0       -0.439127       -0.439062     38.82
+   1   0       -0.439127       -0.439070     38.82
 
-   2   1       -0.148922       -0.146743     44.61
+   2   1       -0.148922       -0.146882     44.61
 
-   3   2       -1.086069       -1.086042    111.40
+   3   2       -1.086068       -1.086040    111.40
 
  Testing for highly-localized positive-energy ghosts
        l    <radius>/rc     E Basis Diag.   E Cutoff
 
-       0        0.893833        5.121890     38.82  WARNING - GHOST(+)
+       0        0.910024        5.077271     38.82  WARNING - GHOST(+)
 
 Coulomb tail of the local potential
   alpha_z = 4 pi int r**2 (V_loc + zion/r) dr  3.4801179171E+01 Ha bohr**3
@@ -5448,6 +5448,14 @@ ld   3   1 -1.9199999999999999E+00  1.3093681194690645E+00  1.3108403620490972E+
 ld   3   1 -1.9399999999999999E+00  1.3104354313487223E+00  1.3118805144527983E+00
 ld   3   1 -1.9600000000000000E+00  1.3114911308843356E+00  1.3129096795354416E+00
 ld   3   1 -1.9800000000000000E+00  1.3125354155696463E+00  1.3139280376269646E+00
+# ghost l ikap n e_ref(Ha) e_basis(Ha)
+# ghost_r l ikap e(Ha) <r>/rc
+ghost   0   1   1 -4.3912725300394378E-01 -4.3906954360636158E-01
+ghost_r   0   1  5.0772705915333454E+00  9.1002357717255034E-01
+ghost   1   1   2 -1.4892177637336543E-01 -1.4688197574396192E-01
+ghost_r   1   1  6.8692167665564776E+00  1.3654584772047753E+00
+ghost   2   1   3 -1.0860683183032160E+00 -1.0860402563712366E+00
+ghost_r   2   1  8.4656544322789557E+01  1.5135532387943522E+00
 End DIAGNOSTICS
 
 Begin PSPCODE8

@@ -237,9 +237,9 @@ Diagnostic tests using Vanderbilt-Kleinman-Bylander pseudopotentials
  Testing for bound ghosts
    n   l    E NL Schr. Eq   E Basis Diag.   E Cutoff
 
-   1   0       -0.871207       -0.870978     73.63
+   1   0       -0.871207       -0.870990     73.63
 
-   2   1       -0.338294       -0.336074     86.75
+   2   1       -0.338294       -0.336152     86.75
 
  Testing for highly-localized positive-energy ghosts
        l    <radius>/rc     E Basis Diag.   E Cutoff
@@ -4274,6 +4274,12 @@ ld   3   1 -1.9199999999999999E+00  1.2773209600951456E+00  1.2782368406929239E+
 ld   3   1 -1.9399999999999999E+00  1.2780174828629827E+00  1.2789245377599070E+00
 ld   3   1 -1.9600000000000000E+00  1.2787097357903221E+00  1.2796080718049523E+00
 ld   3   1 -1.9800000000000000E+00  1.2793977591798358E+00  1.2802874815703502E+00
+# ghost l ikap n e_ref(Ha) e_basis(Ha)
+# ghost_r l ikap e(Ha) <r>/rc
+ghost   0   1   1 -8.7120687789509632E-01 -8.7099048638985477E-01
+ghost_r   0   1  9.9396464347509603E+00  1.4230900836135558E+00
+ghost   1   1   2 -3.3829447668529156E-01 -3.3615151466583171E-01
+ghost_r   1   1  1.1728527237461006E+02  1.5085189773716778E+00
 End DIAGNOSTICS
 
 Begin PSPCODE8

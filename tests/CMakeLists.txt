@@ -159,10 +159,10 @@ smooth_scan_test(sr_34_Se_rcfact_psp8 sr 34_Se "model_core_charge.rcfact" core $
 smooth_scan_test(sr_14_Si_bc_ecut_psp8 sr 14_Si_bc "model_core_charge.fcfact" core ${smooth_g1} --span 0.2 --output psp8)
 # the optimizer's setup (07_N_opt: PBE, icmod 6 at fcfact 65, lpopt 5): the inputs it varies and
 # the outputs it reads. ld and ecut from the DIAGNOSTICS block (O-6, 17 digits; up to 1.2e-10 and
-# 3.7e-10 measured); the core at the noise of icmod 6's search (~1e-11); the bound-ghost test
-# is a staircase in rc (its basis cut at a mesh point, X-3), red. At the default rc[0] = rcloc,
-# and rc < rcloc is not allowed, so rc[0] is scanned above it and rcloc below
-set(smooth_opt "kernel=1e-10,vloc=1e-10,core=5e-11,ld=3e-10,ecut=1e-9,ghost=1e-5")
+# 3.7e-10 measured); the core at the noise of icmod 6's search (~1e-11); the ghost tests' margins
+# from the block too (X-3, up to 9.5e-13 measured). At the default rc[0] = rcloc, and
+# rc < rcloc is not allowed, so rc[0] is scanned above it and rcloc below
+set(smooth_opt "kernel=1e-10,vloc=1e-10,core=5e-11,ld=3e-10,ecut=1e-9,ghost=3e-12")
 set(smooth_opt_groups kernel,vloc,core,ld,ecut,ghost)
 smooth_scan_test(sr_07_N_opt_rc0 sr 07_N_opt "pseudopotentials.rc[0]" ${smooth_opt_groups} ${smooth_opt} --center 1.21)
 smooth_scan_test(sr_07_N_opt_rc1 sr 07_N_opt "pseudopotentials.rc[1]" ${smooth_opt_groups} ${smooth_opt})

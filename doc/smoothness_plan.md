@@ -458,7 +458,7 @@ numbers refer to [Phases](#phases).
 |---|---|---|---|
 | X-1 | `run_diag`, `run_diag_sr_so_r`: matching at mchf = max(irc)+5; renorm to the last nonzero point | a, c | continuous r_m = max(rc_l, rc_loc)·amesh⁵; (u, q) by FH at r_m |
 | X-2 | `run_phsft`: rxpsh → irphs; npsh = int(range/depsh); 2π unwrapping on any decrease; `vkbphsft` heuristic thresholds and nearest-grid alignment | a, i, g, h | exact rxpsh; fixed point count; branch-free angle (doubled-angle form, sign-invariant); offset at ep exactly |
-| X-3 | `run_ghosts`: barrier at mesh index mbar; basis = states below ebcut (count jumps) | a, i | continuous barrier radius; fixed basis with a smooth energy cutoff; print the ghost margins |
+| X-3 | `run_ghosts`: barrier at mesh index mbar; basis = states below ebcut (count jumps) | a, i | done: the wall at 3 rc exactly, a node of the log mesh scaled by s ∈ [1, amesh) (V_loc and the projectors interpolated there from their pieces, `pw_value`, `pw_resample`); each barrier state's overlaps with the projectors weighted by `cinf_taper` of its energy, 1 to ebcut and 0 from 1.5 ebcut, so states enter at weight 0; the margins (e_basis against e_ref, the least ⟨r⟩/rc) in the DIAGNOSTICS block |
 | X-4 | `run_plot`: index ranges and thinning | a, h | fixed output grid (plots only) |
 | X-5 | `run_config`/`psatom`: see S-5; occupation ramp may exit early | f, g | explicit criterion; ramp completes |
 | X-6 | `coulomb_tail`: α_z and its cut changes by the rectangle rule on the nodes; the 1e-10 radius the node past the last one above it, which sits at the noise floor of the unscreening (R-10 moved it 4.71 → 4.58 bohr in 14_Si nr as max \|V_loc − V_ion\| beyond rcmax fell 2.0e-9 → 5.8e-10) | c, a, g | `lm_integral`, cut at the radii exactly; the radius by `lm_root` as in R-13, reported with the noise floor beside it |
@@ -617,7 +617,17 @@ So the order is:
    as the diagnostics block's. Kernels unchanged; V_loc ≤ 5e-12, core
    ≤ 7e-10 (14_Si_bca, 14_Si_hm, 14_Si_hm_r: the inputs with
    fcfact ≤ 0).
-4. X-3: the ghost test continuous, with a printed margin.
+4. X-3: the ghost test continuous, with a printed margin. Done: the
+   ghost group of the N rows falls from 6.5e-4 (rc[1], the staircase) to
+   ≤ 9.5e-13, tolerance 3e-12, and a scan of 2e-6 in rc[1] centred where
+   the wall lands on a node shows no step (3.2e-13). The block gains
+   `ghost l ikap n e_ref e_basis` per row of the bound test and
+   `ghost_r l ikap e r` (the basis state of least ⟨r⟩/rc more than 0.05 Ha
+   above the reference, GHOST(+) below 1), parsed by pyoncvpsp. Only the
+   ghost tables change: the basis eigenvalues move by up to 4e-3 Ha
+   (60_Nd_GHOST l = 0, the states between ebcut and 1.5 ebcut; most by
+   ≤ 1e-4), and 52_Te_r's l = 0 now reports GHOST(+) at ⟨r⟩/rc 0.995
+   (the wall and the ratio at rc rather than at the mesh point below it).
 5. S-10: GGA ρ′, ρ″ from the pieces. Moved after X-3: item 1 shows no
    kink above 1e-11 in the optimizer's setup.
 6. X-2: the phase shifts, with rxpsh honoured exactly.
@@ -1126,7 +1136,10 @@ So the order is:
 
 #### Phase 6: diagnostics
 
-- [ ] X-1…X-5
+- [ ] X-1, X-2, X-4, X-5
+- [x] X-3: the ghost test on a wall at 3 rc exactly, a smooth basis
+      cutoff, its margins in the DIAGNOSTICS block (≤ 9.5e-13 in the N
+      rows)
 - [x] Machine-readable diagnostics block (O-6), parsed by pyoncvpsp: the
       Ecut crossings and the log derivatives to 17 digits; the N rows'
       ld and ecut at ≤ 3.7e-10

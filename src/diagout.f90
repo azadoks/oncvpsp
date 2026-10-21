@@ -20,7 +20,7 @@
 ! the tables above print to 6 or 2 decimals, to 17 significant digits.
 
  subroutine diagout(lmax,nproj,mxprj,nkap,cvgplt,npsh,epsh2,depsh,rphs, &
-&                   pshae,pshps)
+&                   pshae,pshps,ngh,ghn,ghe,ghp)
 
 !! writes the block "Begin DIAGNOSTICS" ... "End DIAGNOSTICS", one value
 !! per line, each line tagged with its quantity:
@@ -33,6 +33,16 @@
 !!
 !! ld l ikap e ae ps: atan(r u'/u) at that radius and energy e (Ha), of
 !! the all-electron and the pseudo wave (run_phsft)
+!!
+!! ghost l ikap n e_ref e_basis: a bound state of the nonlocal
+!! Schroedinger equation (Ha; 0 for the vacuum level when l has none) and
+!! the eigenvalue of the barrier-basis diagonalization matched to it
+!! (run_ghosts); a lower eigenvalue is a GHOST(-), reported below
+!! min(e_ref - 1e-4, e_ref*(1 + 1e-4)), so e_basis - e_ref is the margin
+!!
+!! ghost_r l ikap e r: of the basis eigenstates more than 0.05 Ha above
+!! the reference, the one of least <r>/rc: its energy and <r>/rc, a
+!! GHOST(+) below 1
 !!
 !! ikap is 1 for j=l+1/2 (and for nkap=1), 2 for j=l-1/2
 !!
@@ -47,8 +57,13 @@
 !! @param rphs  the radius of the log derivatives of each l
 !! @param pshae  the all-electron log derivatives
 !! @param pshps  the pseudopotential log derivatives
+!! @param ngh  rows of the bound-state ghost test per l and kap
+!! @param ghn  their principal quantum numbers
+!! @param ghe  their energies, e_ref and e_basis
+!! @param ghp  the least-localized-ghost margin per l and kap, e and <r>/rc
+!!             (0 if no state qualifies)
 
- use constants_m, only: dp, mxl, mxlin, nerrlv
+ use constants_m, only: dp, mxl, mxlin, nerrlv, mxstate, mxkap
  implicit none
 
 !Input variables
@@ -57,6 +72,8 @@
  real(dp), intent(in) :: cvgplt(2,nerrlv,mxprj,mxl+1,nkap)
  real(dp), intent(in) :: epsh2,depsh
  real(dp), intent(in) :: rphs(4),pshae(npsh,4,nkap),pshps(npsh,4,nkap)
+ integer, intent(in) :: ngh(mxl+1,mxkap),ghn(mxstate,mxl+1,mxkap)
+ real(dp), intent(in) :: ghe(2,mxstate,mxl+1,mxkap),ghp(2,mxl+1,mxkap)
 
 !Local variables
  integer :: ii,jj,l1,ikap,mkap,iprj
@@ -89,6 +106,21 @@
        write(6,'(a,2i4,1p,3e24.16)') 'ld',l1-1,ikap, &
 &            epsh2-depsh*real(ii-1,dp),pshae(ii,l1,ikap),pshps(ii,l1,ikap)
      end do
+   end do
+ end do
+ write(6,'(a)') '# ghost l ikap n e_ref(Ha) e_basis(Ha)'
+ write(6,'(a)') '# ghost_r l ikap e(Ha) <r>/rc'
+ do l1=1,lmax+1
+   mkap=nkap
+   if(l1==1) mkap=1
+   do ikap=1,mkap
+     do jj=1,ngh(l1,ikap)
+       write(6,'(a,3i4,1p,2e24.16)') 'ghost',l1-1,ikap,ghn(jj,l1,ikap), &
+&            ghe(:,jj,l1,ikap)
+     end do
+     if(ghp(2,l1,ikap)>0.0d0) then
+       write(6,'(a,2i4,1p,2e24.16)') 'ghost_r',l1-1,ikap,ghp(:,l1,ikap)
+     end if
    end do
  end do
  write(6,'(a)') 'End DIAGNOSTICS'

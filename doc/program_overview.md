@@ -232,9 +232,20 @@ irel, and the stage.  It has the following major sections:
     "End DIAGNOSTICS", for programs that read the output: the cutoffs at
     which each projector's convergence curve reaches every error level
     (1e-2 Ha down by half decades), and the log derivatives of *run_phsft*
-    with their radius, to 17 significant digits, one tagged value per line
-    (`ecut l ikap iproj err ecut`, `ld_r l ikap r`, `ld l ikap e ae ps`;
-    ikap is 1 for j=l+1/2 or a scalar-relativistic l, 2 for j=l-1/2).
+    with their radius, and the margins of the ghost tests, to 17
+    significant digits, one tagged value per line (`ecut l ikap iproj err
+    ecut`, `ld_r l ikap r`, `ld l ikap e ae ps`; ikap is 1 for j=l+1/2 or a
+    scalar-relativistic l, 2 for j=l-1/2). The ghost margins are, per row
+    of the bound-state test, the energy of the nonlocal Schroedinger
+    equation and the basis eigenvalue matched to it (`ghost l ikap n e_ref
+    e_basis`; a basis eigenvalue below min(e_ref - 1e-4, e_ref (1 + 1e-4))
+    is a GHOST(-)), and per channel the basis state of least <r>/rc more
+    than 0.05 Ha above the reference (`ghost_r l ikap e r`, a GHOST(+)
+    below 1). The ghost tests' basis is the states of the local potential
+    inside a hard wall at exactly 3 rc, each coupled to the projectors with
+    a weight that falls smoothly (C-infinity) from 1 at 1.25 times the
+    kinetic energy of the largest sbf of the optimization to 0 at 1.5
+    times that, so these values are smooth functions of the input.
 
 11) The routine linout creates a linear radial mesh, whose size and spacing
     are specified in the input data.  All relevant potentials and projectors

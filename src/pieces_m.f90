@@ -29,11 +29,12 @@
 
  module pieces_m
  use constants_m, only: dp
- use logmesh_m, only: lm_integral
+ use logmesh_m, only: lm_integral, lm_interp
  implicit none
  private
  public :: piecewise_t, pw_maxseg, pw_reach, pw_alloc, pw_free
  public :: pw_integral, pw_product_integral, pw_node_values, pw_segment
+ public :: pw_value, pw_resample
 
 !> the most segments a function has
  integer, parameter :: pw_maxseg=4
@@ -231,5 +232,62 @@
  end do
  return
  end function pw_segment
+
+ real(dp) function pw_value(rr,mmax,pw,rq)
+
+!! the function at a radius: the interpolant (lm_interp) of the piece of
+!! the segment that holds it, 0 beyond the last bound
+!!
+!! @param rr  log radial mesh
+!! @param mmax  size of the log radial mesh
+!! @param pw  the piecewise function
+!! @param rq  radius, rr(1) <= rq <= rr(mmax) (bohr)
+
+!Input variables
+ integer, intent(in) :: mmax
+ real(dp), intent(in) :: rr(mmax),rq
+ type(piecewise_t), intent(in) :: pw
+
+!Local variables
+ integer :: kk
+
+ pw_value=0.0d0
+ kk=pw_segment(pw,rq)
+ if(kk>0) call lm_interp(rr,pw%vals(:,kk),mmax,rq,pw_value)
+ return
+ end function pw_value
+
+ subroutine pw_resample(rr,mmax,pw,rb,nb,pwb)
+
+!! the function on another log mesh of the same step, rb(i) = s rr(i),
+!! s >= 1: the same bounds, each piece the interpolant (lm_interp) of the
+!! piece on rr at the nodes of rb up to rr(mmax), 0 beyond
+!!
+!! @param rr  log radial mesh
+!! @param mmax  size of the log radial meshes
+!! @param pw  the piecewise function on rr
+!! @param rb  the other mesh
+!! @param nb  the nodes of rb at which the pieces are needed, rb(nb)<=rr(mmax)
+!! @param pwb  the function on rb
+
+!Input variables
+ integer, intent(in) :: mmax,nb
+ real(dp), intent(in) :: rr(mmax),rb(mmax)
+ type(piecewise_t), intent(in) :: pw
+
+!Output variables
+ type(piecewise_t), intent(out) :: pwb
+
+!Local variables
+ integer :: ii,kk
+
+ call pw_alloc(pwb,mmax,pw%nseg,pw%bound(0:pw%nseg))
+ do kk=1,pw%nseg
+   do ii=1,nb
+     call lm_interp(rr,pw%vals(:,kk),mmax,rb(ii),pwb%vals(ii,kk))
+   end do
+ end do
+ return
+ end subroutine pw_resample
 
  end module pieces_m

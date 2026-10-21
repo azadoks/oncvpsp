@@ -76,6 +76,9 @@
  integer :: irc(mxlin+1),nodes(mxl+1)
  integer :: nproj(mxlin+1)
  integer :: ncon(mxlin+1),nbas(mxlin+1)
+! the ghost tests' margins for the diagnostics block (run_ghosts), per kap
+ integer :: ngh(mxl+1,mxkap),ghn(mxstate,mxl+1,mxkap)
+ real(dp) :: ghe(2,mxstate,mxl+1,mxkap),ghp(2,mxl+1,mxkap)
 
  real(dp) :: al,amesh,csc,csc1,depsh,depsht,drl,eeel
  real(dp) :: eeig,eexc
@@ -992,8 +995,13 @@
    write(6,'(/a)') 'Ghost test for J = L + 1/2'
  end if
 
- call run_ghosts(lmax,la,ea(1,1),nc,nv,lloc,irc,qmsbf, &
-&                vlocpw,vkbpw(:,:,1),evkb(1,1,1),nproj,rr,vp,mmax,mxprj)
+ ngh(:,:)=0
+ ghn(:,:,:)=0
+ ghe(:,:,:,:)=0.0d0
+ ghp(:,:,:)=0.0d0
+ call run_ghosts(lmax,la,ea(1,1),nc,nv,lloc,rc,qmsbf, &
+&                vlocpw,vkbpw(:,:,1),evkb(1,1,1),nproj,rr,vp,mmax,mxprj, &
+&                ngh(:,1),ghn(:,:,1),ghe(:,:,:,1),ghp(:,:,1))
 
  if(irel==2) then
    write(6,'(/a)') 'Ghost test for J = L - 1/2'
@@ -1002,8 +1010,9 @@
    do jj=1,nproj(1)
      vkbpw(jj,1,2)=vkbpw(jj,1,1)
    end do
-   call run_ghosts(lmax,la,ea(1,2),nc,nv,lloc,irc,qmsbf, &
-&                  vlocpw,vkbpw(:,:,2),evkb(1,1,2),nproj,rr,vp,mmax,mxprj)
+   call run_ghosts(lmax,la,ea(1,2),nc,nv,lloc,rc,qmsbf, &
+&                  vlocpw,vkbpw(:,:,2),evkb(1,1,2),nproj,rr,vp,mmax,mxprj, &
+&                  ngh(:,2),ghn(:,:,2),ghe(:,:,:,2),ghp(:,:,2))
    vkb(:,:,1,2)=0.0d0
    evkb(:,1,2)=0.0d0
    do jj=1,nproj(1)
@@ -1076,7 +1085,8 @@
 
  call gnu_script(epa,evkb,lmax,lloc,mxprj,nproj,nkap)
 
- call diagout(lmax,nproj,mxprj,nkap,cvgplt,npsh,epsh2,depsh,rphs,pshae,pshps)
+ call diagout(lmax,nproj,mxprj,nkap,cvgplt,npsh,epsh2,depsh,rphs,pshae, &
+&             pshps,ngh,ghn,ghe,ghp)
  deallocate(pshae,pshps)
 
  if(trim(psfile)=='psp8' .or. trim(psfile)=='both') then

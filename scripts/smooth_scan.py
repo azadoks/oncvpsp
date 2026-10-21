@@ -47,11 +47,13 @@ kernel_diff.py):
           (both from the output's DIAGNOSTICS block, 17 digits; without one,
           from the tables printed to 6 decimals and 0.01 Ha)
   ghost   the energies of the bound-ghost test, the radial equation's and
-          the basis's (printed to 6 decimals)
+          the basis's, and <r>/rc of the basis state the positive-energy
+          test comes closest to flagging (from the DIAGNOSTICS block; without
+          one, the energies of the table printed to 6 decimals)
 
 The last three are what the optimizer reads (doc/smoothness_plan.md, order
-of the remaining work); until O-6 prints them in full, only a --tol at
-their print resolution is meaningful.
+of the remaining work); from an output without the DIAGNOSTICS block only a
+--tol at their print resolution is meaningful.
 
 The sample radii are the points of the file's mesh nearest to every --sample
 bohr. For a parameter that is a radius (a key named rc, rcloc or rxpsh), the
@@ -228,10 +230,18 @@ def features(path, samples, output):
             tag += f"j{table['j']}"
         for err, cut in zip(table["eresid"], table["ecut"]):
             out[f"ecut:{tag}:{err:.0e}"] = float(cut)
-    for test in parser.output.get("bound_ghost_tests") or []:
+    margins = diagnostics.get("ghost_margins")
+    for test in margins or parser.output.get("bound_ghost_tests") or []:
         tag = f"n{test['n']}l{test['l']}"
+        if test.get("j") is not None:
+            tag += f"j{test['j']}"
+        elif test.get("set") is not None:
+            tag += f"s{test['set']}"
         out[f"ghost:{tag}:eig"] = test["eig"]
         out[f"ghost:{tag}:basis"] = test["eig_basis"]
+    for test in diagnostics.get("ghost_localization") or []:
+        tag = f"l{test['l']}" + ("" if test["j"] is None else f"j{test['j']}")
+        out[f"ghost:{tag}:r_over_rc"] = test["r_over_rc"]
     return out
 
 
