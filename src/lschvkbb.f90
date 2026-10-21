@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
  subroutine lschvkbb(nn,ll,nvkb,ierr,ee,emin,emax, &
-&   rr,vloc,vkb,evkb,uu,up,mmax,mch)
+&   rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,mch)
 
 !! Finds bound states of a  pseudopotential with
 !! Vanderbilt-Kleinman-Bylander non-local projectors
@@ -30,8 +30,10 @@
 !! @param emin  externally generaated estimate of lower bound for ee
 !! @param emax  externally generaated estimate of upper bound for ee
 !! @param rr  log radial mesh
-!! @param vloc  local part of psp
-!! @param vkb  VKB projectors
+!! @param vloc  local part of psp on the mesh (the screened local
+!!              potential, or that plus a smooth screening change)
+!! @param vlocpw  the screened local potential's pieces
+!! @param vkbpw  VKB projectors as functions of pieces
 !! @param evkb  coefficients of BKB projectors
 !! @param uu  output radial wave function (*rr)
 !! @param up  d(uu)/dr
@@ -39,15 +41,20 @@
 !! @param mch  mesh point just beyond the matching point of the inward and
 !!             outward integrations: the continuous classical turning
 !!             point (match_m), or, if that is less, a point match_k+2
-!!             steps beyond the projectors (a smooth maximum of the two)
+!!             steps beyond the last kink of the potential and the
+!!             projectors (a smooth maximum of the two), so that the inward
+!!             integration crosses no kink
 
  use constants_m, only: dp
  use match_m, only: match_k, match_point, match_weights, match_smax
+ use pieces_m, only: piecewise_t
+ use outwf_m, only: outwf_t, outwf_setup, outwf_solve, outwf_free
  implicit none
 
 !Input variables
- real(dp), intent(in) :: rr(mmax),vloc(mmax),vkb(mmax,nvkb),evkb(nvkb)
+ real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nvkb)
  integer, intent(in) :: nn,ll,nvkb,mmax
+ type(piecewise_t), intent(in) :: vlocpw,vkbpw(nvkb)
 
 !Input/output variables
  real(dp), intent(inout) :: emin,emax
@@ -67,8 +74,9 @@
  real(dp) :: xkap,xmch
  real(dp) :: uo(-match_k-1:match_k),upo(-match_k-1:match_k)
  real(dp) :: ww(-match_k-1:match_k),ss(-match_k-1:match_k)
- integer :: ii,it,ikb,nin,nint,node,lo,hi
+ integer :: ii,it,nin,nint,node,lo,hi
  logical :: room
+ type(outwf_t) :: ow
 
  real(dp), allocatable :: upp(:),cf(:)
  allocate(upp(mmax),cf(mmax))
@@ -103,16 +111,8 @@
 
  als=al**2
 
-! the projectors' last point
- ikb=0
- if(nvkb>0) then
-   do ii=mmax,1,-1
-     if(abs(vkb(ii,1))>0.0d0) then
-       ikb=ii
-       exit
-     end if
-   end do
- end if
+! the grids of the outward integration (outwf_m), once for this potential
+ call outwf_setup(ll,rr,mmax,vloc,vlocpw,nvkb,vkbpw,ow)
 
 ! return point for bound state convergence
  do nint=1,100
@@ -144,11 +144,11 @@
    end if
 
 ! the matching point: the continuous turning point, kept clear of the
-! projectors by a smooth maximum so that the inward integration in the
-! local potential alone is valid over the whole window
+! kinks by a smooth maximum so that the inward integration in the local
+! potential alone is valid over the whole window
    xmch=0.0d0
    if(mch>1) call match_point(rr,cf,mmax,mch,xmch)
-   if(nvkb>0) xmch=match_smax(xmch,dble(ikb+match_k+2))
+   if(ow%tlast>0.0d0) xmch=match_smax(xmch,ow%tlast+dble(match_k+2))
    mch=ceiling(xmch)
    lo=mch-1-match_k
    hi=mch+match_k
@@ -156,9 +156,9 @@
 
 ! outward integration through the matching window, nodes counted to mch
    if(room) then
-     call vkboutwf(ll,nvkb,ee,vkb,evkb,rr,vloc,uu,up,node,mmax,hi,mch)
+     call outwf_solve(ow,ee,evkb,hi,mch,uu,up,node)
    else
-     call vkboutwf(ll,nvkb,ee,vkb,evkb,rr,vloc,uu,up,node,mmax,mmax,mch)
+     call outwf_solve(ow,ee,evkb,mmax,mch,uu,up,node)
    end if
 
 ! start inward integration with simple exponential where the
@@ -284,6 +284,7 @@
    up(:)=-up(:)
  end if
 
+ call outwf_free(ow)
  deallocate(upp,cf)
  return
 

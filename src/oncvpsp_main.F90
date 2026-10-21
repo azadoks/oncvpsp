@@ -53,7 +53,7 @@
  use input_toml_m, only: read_input_toml
 #endif
  use constants_m, only: dp, mxprj, mxstate, mxcnf, mxl, mxlin, mxkap, nrhomod
- use pieces_m, only: piecewise_t, pw_reach
+ use pieces_m, only: piecewise_t, pw_reach, pw_free
  use constants_m, only: nlev, nerrlv
  use input_echo_m, only: write_atom, write_icmod, write_epsh, write_mesh
  use relativity_m, only: set_relativity
@@ -121,11 +121,13 @@
  real(dp), allocatable :: uua(:,:,:),upa(:,:,:)
  real(dp), allocatable :: dlta(:,:,:,:),vrloc(:,:),pswfx(:,:,:,:)
  type(piecewise_t), allocatable :: vkbpw(:,:,:)
+ type(piecewise_t) :: vlocpw
  logical :: ep_as_given
  real(dp), allocatable :: chix(:,:,:,:)
 !fully-relativistic only: scalar-relativistic and spin-orbit projectors, and
 !the semi-local potentials for psmlout_r
  real(dp), allocatable :: vsr(:,:,:),vso(:,:,:),esr(:,:),eso(:,:)
+ type(piecewise_t), allocatable :: vsrpw(:,:),vsopw(:,:)
  real(dp), allocatable :: vpsml(:,:,:)
 
 !all-electron results for the test configurations (see run_config_ae)
@@ -431,6 +433,7 @@
  allocate(esr(2*mxprj,mxl+1),eso(2*mxprj,mxl+1))
  allocate(dlta(mmax,mxprj,mxlin+1,nkap),vrloc(mmax,nkap))
  allocate(vkbpw(mxprj,mxl+1,nkap))
+ allocate(vsrpw(2*mxprj,mxl+1),vsopw(2*mxprj,mxl+1))
  allocate(pswfx(mmax,mxprj,mxl+1,nkap),chix(mmax,mxprj,mxl+1,nkap))
 
  dlta(:,:,:,:)=0.0d0
@@ -794,7 +797,8 @@
  write(6,'(/a,a)') 'Construct Vanderbilt / Kleinmman-Bylander projectors'
 
  call run_vkb(lmax,lloc,lpopt,dvloc0,rc,irc,nproj,rr,mmax,mxprj,pswf,pswfx, &
-&             chix,vfull,vp,evkb,vkb,nlim,dlta,vrloc,irel,nkap,vkbpw)
+&             chix,vfull,vp,evkb,vkb,nlim,dlta,vrloc,irel,nkap,vkbpw, &
+&             vlocpw)
 
 !restore this to its proper value
  nproj(lloc+1)=0
@@ -866,8 +870,8 @@
      end if
 
      call lschvkbb(ll+nodes(l1)+1,ll,nproj(l1),ierr,et,emin,emax, &
-&                  rr,vp(1,lloc+1,ikap),vkb(1,1,l1,ikap),evkb(1,l1,ikap), &
-&                  uu,up,mmax,mch)
+&                  rr,vp(1,lloc+1,ikap),vlocpw,vkbpw(1:nproj(l1),l1,ikap), &
+&                  evkb(1,l1,ikap),uu,up,mmax,mch)
      if(ierr /= 0) then
        if(irel==2) then
          write(6,'(a,i2,a,i2)') 'oncvpsp_r: lschvkbb convergence ERROR, n=',&
@@ -900,8 +904,8 @@
  if(irel==2) then
 ! decomposition into scalar-relativistic and spin-orbit projectors
 
-   call sr_so_r(lmax,irc,nproj,rr,mmax,mxprj,evkb,vkb, &
-&               vsr,esr,vso,eso)
+   call sr_so_r(lmax,nproj,rr,mmax,mxprj,evkb,vkbpw, &
+&               vsr,esr,vso,eso,vsrpw,vsopw)
 
 ! set smallest components to zero (will be dropped in psp8 output)
    eps_srso=1.0d-3
@@ -940,7 +944,8 @@
    allocate(probes(mmax,mxprj*(lmax+1)),lprobe(mxprj*(lmax+1)))
    nprobe=0
    if(icmod==7) then
-     call modcore_probes(lmax,lloc,nproj,epa,vp,vkb,evkb,rr,mmax,mxprj, &
+     call modcore_probes(lmax,lloc,nproj,epa,vp,vlocpw,vkbpw,evkb,rr,mmax, &
+&                        mxprj, &
 &                        nkap,probes,lprobe,nprobe)
    end if
    call modcore_budget(icmod,rho,rhoc,rhomod,fcfact,ecutw,rcfact,slack, &
@@ -963,8 +968,8 @@
 ! which V_ion uses)
 
  allocate(vion(mmax))
- call ionic_screening(nkap,nc,nv,la,fa,ea,lmax,lloc,nproj,rr,vp,vkb, &
-&                     evkb,mmax,mxprj,zz,zion,zval,iexc,rcmax,rhoc, &
+ call ionic_screening(nkap,nc,nv,la,fa,ea,lmax,lloc,nproj,rr,vp,vlocpw, &
+&                     vkbpw,evkb,mmax,mxprj,zz,zion,zval,iexc,rcmax,rhoc, &
 &                     rhotae,rhomod(1,1),rho,rhops,uupsa,eeig,vo,vxc, &
 &                     eeel,eexc,vion)
 
@@ -974,11 +979,12 @@
  write(6,'(/a,f12.6/)') 'Pseudoatom total energy', epstot
 
  call run_diag(lmax,npa,epa,lloc,irc, &
-&               vkb,evkb,nproj,rr,vfull,vp,zz,mmax,mxprj,irel,nkap)
+&               vlocpw,vkbpw,evkb,nproj,rr,vfull,vp,zz,mmax,mxprj,irel,nkap)
 
  if(irel==2) then
    call run_diag_sr_so_r(lmax,npa,epa,lloc,irc, &
-&                        vsr,esr,vso,eso,nproj,rr,vfull,vp,zz,mmax,mxprj)
+&                        vlocpw,vsrpw,esr,vsopw,eso,nproj,rr,vfull,vp,zz, &
+&                        mmax,mxprj)
 
 ! save full info for psml
    allocate(vpsml(mmax,mxl+2,mxkap))
@@ -993,16 +999,22 @@
  end if
 
  call run_ghosts(lmax,la,ea(1,1),nc,nv,lloc,irc,qmsbf, &
-&                vkb(1,1,1,1),evkb(1,1,1),nproj,rr,vp,mmax,mxprj)
+&                vlocpw,vkbpw(:,:,1),evkb(1,1,1),nproj,rr,vp,mmax,mxprj)
 
  if(irel==2) then
    write(6,'(/a)') 'Ghost test for J = L - 1/2'
    vkb(:,:,1,2)=vkb(:,:,1,1)
    evkb(:,1,2)=evkb(:,1,1)
+   do jj=1,nproj(1)
+     vkbpw(jj,1,2)=vkbpw(jj,1,1)
+   end do
    call run_ghosts(lmax,la,ea(1,2),nc,nv,lloc,irc,qmsbf, &
-&                  vkb(1,1,1,2),evkb(1,1,2),nproj,rr,vp,mmax,mxprj)
+&                  vlocpw,vkbpw(:,:,2),evkb(1,1,2),nproj,rr,vp,mmax,mxprj)
    vkb(:,:,1,2)=0.0d0
    evkb(:,1,2)=0.0d0
+   do jj=1,nproj(1)
+     call pw_free(vkbpw(jj,1,2))
+   end do
  end if
 
 ! unscreen semi-local potentials, taking the scalar-relativistic average
@@ -1052,17 +1064,19 @@
    call run_config_ps(jj,istcnf,ierrcnf,itcnf,kerrcnf,nvtcnf, &
 &                     natcnf,latcnf,fatcnf,eatcnf,etstcnf,nc,rhot,rhomod,rr, &
 &                     rcmax,mmax,mxprj,iexc,etot,epstot,nproj,vpuns, &
-&                     lloc,vkb,evkb,irel,nkap)
+&                     lloc,vlocpw,vkbpw,evkb,irel,nkap)
 
  end do !jj
 
  call run_plot(lmax,npa,epa,lloc,irc, &
-&               vkb,evkb,nproj,rr,vfull,vp,vpuns,zz,mmax,mxprj,drl,nrl, &
+&               vkb,vlocpw,vkbpw,evkb,nproj,rr,vfull,vp,vpuns,zz,mmax,mxprj, &
+&               drl,nrl, &
 &               rho,rhoc,rhomod,irel,nkap,cvgplt)
 
 
 
- call run_phsft(lmax,lloc,nproj,epa,epsh1,epsh2,depsh,rxpsh,vkb,evkb, &
+ call run_phsft(lmax,lloc,nproj,epa,epsh1,epsh2,depsh,rxpsh,vlocpw,vkbpw, &
+&               evkb, &
 &               rr,vfull,vp,zz,mmax,mxprj,irc,irel,nkap)
 
  call gnu_script(epa,evkb,lmax,lloc,mxprj,nproj,nkap)

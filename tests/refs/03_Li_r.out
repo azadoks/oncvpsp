@@ -361,12 +361,12 @@ Coulomb tail of the local potential
 Test configuration 0
 
    n   l kap    f        eae           eps        diff
-   1   0  -1  2.0000   -1.87793349   -1.87793324    2.53E-07
-   2   0  -1  1.0000   -0.10572013   -0.10572009    3.90E-08
+   1   0  -1  2.0000   -1.87793349   -1.87793324    2.56E-07
+   2   0  -1  1.0000   -0.10572013   -0.10572009    3.86E-08
 
     Total energies and differences
       AE_ref= -7.33488000E+00  AE_tst= -7.33488000E+00  dif=  0.00E+00
-      PS_ref= -6.68660261E+00  PS_tst= -6.68660261E+00  dif=  4.44E-15
+      PS_ref= -6.68660261E+00  PS_tst= -6.68660261E+00  dif=  1.78E-15
       PSP excitation error= -4.44E-15
 
 Test configuration 1
@@ -383,14 +383,14 @@ Test configuration 1
 Test configuration 2
 
    n   l kap    f        eae           eps        diff
-   1   0  -1  2.0000   -1.93093262   -1.92849139    2.44E-03
+   1   0  -1  2.0000   -1.93093262   -1.92849154    2.44E-03
    2   0  -1  0.0000   -0.12288833   -0.23998480   -1.17E-01
-   2   1  -2  0.6667   -0.05816438   -0.05818392   -1.95E-05
-   2   1   1  0.3333   -0.05816939   -0.05818853   -1.91E-05
+   2   1  -2  0.6667   -0.05816438   -0.05818389   -1.95E-05
+   2   1   1  0.3333   -0.05816939   -0.05818851   -1.91E-05
 
     Total energies and differences
       AE_ref= -7.33488000E+00  AE_tst= -7.27043003E+00  dif=  6.44E-02
-      PS_ref= -6.68660261E+00  PS_tst= -6.62213079E+00  dif=  6.45E-02
+      PS_ref= -6.68660261E+00  PS_tst= -6.62213071E+00  dif=  6.45E-02
       PSP excitation error= -2.19E-05
 
 DATA FOR PLOTTING

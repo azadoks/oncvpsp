@@ -16,18 +16,26 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine vkboutwf(ll,nvkb,ep,vkb,evkb,rr,vloc,uu,up,node,mmax,mch, &
-&                    mnode)
+ subroutine vkboutwf(ll,nvkb,ep,vkbpw,evkb,rr,vloc,vlocpw,uu,up,node,mmax, &
+&                    mch,mnode)
 
-!! computes Vanderbilt / Kleinman-Bylander outward-integrated wave functions
+!! computes Vanderbilt / Kleinman-Bylander outward-integrated wave functions:
+!! the homogeneous solution of the local potential plus the inhomogeneous
+!! ones of the projectors with the coefficients that make the projections
+!! self-consistent, each segment between the kinks of the potential and
+!! the projectors integrated on its own grid (outwf_m, doc/
+!! smoothness_plan.md R-10)
 !!
 !! @param ll  angular momentum
 !! @param nvkb  number of projectors (0 for the local potential alone)
 !! @param ep  energy at which wave function is to be calculated
-!! @param vkb  Vanderbilt-Kleinman-Bylander projectors for this l
+!! @param vkbpw  Vanderbilt-Kleinman-Bylander projectors for this l, as
+!!               functions of pieces
 !! @param evkb  projector coefficients
 !! @param rr  log radial mesh
-!! @param vloc  local pseudopotential
+!! @param vloc  local pseudopotential on the mesh (the screened local
+!!              potential, or that plus a smooth screening change)
+!! @param vlocpw  the screened local potential's pieces
 !! @param uu  wave function
 !! @param up  1st derivative of uu
 !! @param node  count of number of nodes from 0 to rr(mnode)
@@ -36,226 +44,25 @@
 !! @param mnode  last point of the node count, <= mch
 
  use constants_m, only: dp
+ use pieces_m, only: piecewise_t
+ use outwf_m, only: outwf_t, outwf_setup, outwf_solve, outwf_free
  implicit none
 
 !Input variables
- real(dp), intent(in) :: rr(mmax),vloc(mmax),vkb(mmax,nvkb),evkb(nvkb)
+ real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nvkb)
  real(dp), intent(in) :: ep
  integer, intent(in) :: nvkb,ll,mmax,mch,mnode
+ type(piecewise_t), intent(in) :: vkbpw(nvkb),vlocpw
 
 !Output variables
  real(dp), intent(out) :: uu(mmax),up(mmax)
  integer, intent(out) :: node
 
 !Local variables
- real(dp) :: rc,rn
- real(dp), allocatable ::  phi(:,:),phip(:,:),phi0(:),phi0p(:)
- real(dp), allocatable ::  gg0(:),gg(:,:)
- integer, allocatable :: ipiv(:)
+ type(outwf_t) :: ow
 
- integer :: ii,jj,kk,info,ikb
-
- uu(:)=0.0d0
- up(:)=0.0d0
- ikb=0
-
-! homogeneous solution, and the inhomogeneous solutions below, integrated
-! together by outwf_all
- if(nvkb==0) call outwf_all(nvkb,uu,up,uu,up)
-
- rc=0.0d0
- if(nvkb/=0) then
-! find cutoff radius for projectors
-   ikb=mch
-   do ii=mmax,1,-1
-     if(abs(vkb(ii,1))>0.0d0) then
-       rc=rr(ii)
-       ikb=min(ii,mch)
-       exit
-     end if
-   end do
-
-   allocate(phi(mmax,nvkb),phip(mmax,nvkb))
-   allocate(gg(nvkb,nvkb),gg0(nvkb))
-   allocate(ipiv(nvkb))
-
-   phi(:,:)=0.0d0
-   phip(:,:)=0.0d0
-   gg(:,:)=0.0d0
-   gg0(:)=0.0d0
-
-! inhomogeneous solutions
-   call outwf_all(nvkb,uu,up,phi,phip)
-
-
-! projector matrix elements and coefficient matrix, integrated to the end
-! of the projectors' support, ikb, as run_vkb integrates the B matrix
-   do jj=1,nvkb
-     call vpinteg(uu,vkb(1,jj),ikb,2*ll+2,gg0(jj),rr)
-     gg0(jj)=evkb(jj)*gg0(jj)
-     do ii=1,nvkb
-       call vpinteg(phi(1,ii),vkb(1,jj),ikb,2*ll+2,gg(jj,ii),rr)
-       gg(jj,ii)=-evkb(jj)*gg(jj,ii)
-     end do
-     gg(jj,jj)=1.0d0+gg(jj,jj)
-   end do
-
-! solve linear equations for coefficients
-
-!    SUBROUTINE DGESV( N, NRHS, A, LDA, IPIV, B, LDB, INFO )
-
-   call dgesv(nvkb, 1, gg, nvkb, ipiv, gg0, nvkb, info)
-   if(info/=0) then
-     write(6,'(/a,i4)') 'vkbout: dgesv ERROR, stopping info =',info
-     error stop 1
-   end if
-
-! output wave functions
-   do jj=1,nvkb
-     uu(:)=uu(:)+gg0(jj)*phi(:,jj)
-     up(:)=up(:)+gg0(jj)*phip(:,jj)
-   end do
-
-   deallocate(phi,phip)
-   deallocate(gg,gg0)
-   deallocate(ipiv)
- end if
-
-! lower cutoff for node counting to avoid small-r noise
- rn=max(0.10d0*rc, 0.05d0)
-
- node=0
- do ii=6,mnode
-! note historic evolution! nodes were counted beyond fixed radii of
-! 0.5, 0.25, 0.10 and then 0.07 bohr before the cutoff rn above
-   if(rr(ii)>rn .and. uu(ii-1)*uu(ii)<0.0d0) then
-     node=node+1
-   end if
- end do
-
+ call outwf_setup(ll,rr,mmax,vloc,vlocpw,nvkb,vkbpw,ow)
+ call outwf_solve(ow,ep,evkb,mch,mnode,uu,up,node)
+ call outwf_free(ow)
  return
-
- contains
-
- subroutine outwf_all(nkb,uh,uph,uk,upk)
-
-!! computes the outward solutions of lschps (uh, uph) and of lschkb for
-!! each of the nkb projectors (uk, upk), integrated in one loop so the
-!! independent predictor-corrector recurrences can overlap; each solution
-!! is computed exactly as those routines compute it
-!!
-!! @param nkb  number of projectors
-!! @param uh  homogeneous solution, normalized as in lschps
-!! @param uph  1st derivative of uh
-!! @param uk  inhomogeneous solutions with each projector as source, as in
-!!            lschkb
-!! @param upk  1st derivatives of uk
-
-!Input variables
- integer, intent(in) :: nkb
-
-!Output variables
- real(dp), intent(out) :: uh(mmax),uph(mmax),uk(mmax,nkb),upk(mmax,nkb)
-
-!Local variables
- real(dp) :: al,als,amesh,cn,ro,sls,sn,akb,ckb
- integer :: ii,it,jj,kk,nsol,nn
- real(dp), allocatable :: cf(:),src(:,:),usol(:,:),upr(:,:),upp(:,:)
-
- nsol=nkb+1
-!the start-up points 1..4 are set even when mch<4
- nn=max(mch,4)
- allocate(cf(nn),src(nn,nsol),usol(nn,nsol),upr(nn,nsol),upp(nn,nsol))
-
- al = 0.01d0 * log(rr(101) / rr(1))
- amesh = exp(al)
- sls=ll*(ll+1)
- als=al**2
-
- do ii=1,nn
-   cf(ii)=als*sls + 2.0d0*als*(vloc(ii)-ep)*rr(ii)**2
- end do
-
-! solution 1 homogeneous (lschps), kk+1 inhomogeneous for projector kk
-! (lschkb)
- src(:,1)=0.0d0
- do ii=1,4
-   usol(ii,1)=rr(ii)**(ll+1)
-   upr(ii,1)=al*(ll+1)*rr(ii)**(ll+1)
-   upp(ii,1)=al*upr(ii,1)+cf(ii)*usol(ii,1)
- end do
- do kk=1,nkb
-   do ii=1,nn
-     src(ii,kk+1)=2.0d0*als*vkb(ii,kk)*rr(ii)**2
-   end do
-   ckb = 2.0d0*vkb(1,kk)/rr(1)**(ll+1)
-   akb = ckb/(6.0d0+4.0d0*ll)
-   do ii=1,4
-     usol(ii,kk+1)=akb*rr(ii)**(ll+3)
-     upr(ii,kk+1)= al*(ll+3)*usol(ii,kk+1)
-     upp(ii,kk+1)= als*(ll+3)**2*usol(ii,kk+1)
-   end do
- end do
-
- do ii=4,mch-1
-! the projectors end at ikb with a kink (the pseudo wave function joins
-! the all-electron one with a jump in its 3rd derivative), which the Adams
-! formulas of the steps past it would interpolate across, an O(al**2)
-! error in the log derivative beyond rc and so in the eigenvalue; their
-! back points take the source-free second derivative instead, that of the
-! solution outside continued inward
-   if(ii==ikb) then
-     do kk=2,nsol
-       do jj=max(1,ikb-3),ikb
-         upp(jj,kk)=upp(jj,kk)-src(jj,kk)
-       end do
-     end do
-   end if
-   do kk=1,nsol
-     usol(ii+1,kk)=usol(ii,kk)+aeo(upr(1,kk),ii)
-     upr(ii+1,kk)=upr(ii,kk)+aeo(upp(1,kk),ii)
-   end do
-   do it=1,2
-     upp(ii+1,1)=al*upr(ii+1,1)+cf(ii+1)*usol(ii+1,1)
-     do kk=2,nsol
-       upp(ii+1,kk)=al*upr(ii+1,kk)+cf(ii+1)*usol(ii+1,kk) &
-&                  + src(ii+1,kk)
-     end do
-     do kk=1,nsol
-       upr(ii+1,kk)=upr(ii,kk)+aio(upp(1,kk),ii)
-       usol(ii+1,kk)=usol(ii,kk)+aio(upr(1,kk),ii)
-     end do
-   end do
- end do
-
-! normalize the homogeneous solution as lschps does
- ro=rr(1)/sqrt(amesh)
- sn=ro**(2*ll+3)/(2*ll+3)
- do ii=1,mch-3
-   sn=sn+al*rr(ii)*usol(ii,1)**2
- end do
- sn =sn + al*(23.0d0*rr(mch-2)*usol(mch-2,1)**2 &
-&           + 28.0d0*rr(mch-1)*usol(mch-1,1)**2 &
-&          +  9.0d0*rr(mch  )*usol(mch  ,1)**2)/24.0d0
- cn=1.0d0/sqrt(sn)
-
- uh(:)=0.0d0
- uph(:)=0.0d0
- do ii=1,mch
-   uph(ii)=cn*upr(ii,1)
-   uh(ii)=cn*usol(ii,1)
- end do
- do kk=1,nkb
-   uk(:,kk)=0.0d0
-   upk(:,kk)=0.0d0
-   uk(1:mch,kk)=usol(1:mch,kk+1)
-   upk(1:mch,kk)=upr(1:mch,kk+1)
- end do
-
- deallocate(cf,src,usol,upr,upp)
- return
- end subroutine outwf_all
-
- include 'adams.inc'
-
  end subroutine vkboutwf

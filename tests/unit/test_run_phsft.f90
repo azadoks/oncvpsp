@@ -7,6 +7,7 @@
  program test_run_phsft
  use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
  use constants_m, only: mxl, mxlin, mxkap
+ use pieces_m, only: piecewise_t, pw_alloc
  implicit none
  external :: run_phsft
 
@@ -17,8 +18,8 @@
 
  real(dp) :: rr(mmax), vfull(mmax), vp(mmax, mxl+2), vp_r(mmax, mxl+2, mxkap)
  real(dp) :: epa(mxprj, mxlin+1), epa_r(mxprj, mxlin+1, mxkap)
- real(dp) :: vkb(mmax, mxprj, mxl+1), vkb_r(mmax, mxprj, mxl+1, mxkap)
  real(dp) :: evkb(mxprj, mxl+1), evkb_r(mxprj, mxl+1, mxkap)
+ type(piecewise_t) :: vlocpw, vkbpw(mxprj, mxl+1), vkbpw_r(mxprj, mxl+1, mxkap)
  integer :: nproj(mxlin+1), irc(mxlin+1), ii, nfail = 0
 
  do ii = 1, mmax
@@ -29,9 +30,11 @@
  vp_r(:, :, 1) = vp
  vp_r(:, :, 2) = vp
  epa = 0.0_dp; epa_r = 0.0_dp
- vkb = 0.0_dp; vkb_r = 0.0_dp
  evkb = 0.0_dp; evkb_r = 0.0_dp
  nproj(:) = 0
+! the local potential is one piece over the whole mesh
+ call pw_alloc(vlocpw, mmax, 1, [0.0_dp, rr(mmax)])
+ vlocpw%vals(:, 1) = vfull
 ! every core radius at the first mesh point beyond 2 bohr, as the programs
 ! place it
  irc(:) = findloc(rr > 2.0_dp, .true., dim=1)
@@ -74,10 +77,12 @@
  open(unit=6, file=name//'.out', status='replace', action='write')
  if(name == 'run_phsft') then
    call run_phsft(lmax, lloc, nproj, epa, epsh1, epsh2, depsh, rxpsh, &
-&                 vkb, evkb, rr, vfull, vp, zz, mmax, mxprj, irc, 0, 1)
+&                 vlocpw, vkbpw, evkb, rr, vfull, vp, zz, mmax, mxprj, irc, &
+&                 0, 1)
  else
    call run_phsft(lmax, lloc, nproj, epa_r, epsh1, epsh2, depsh, rxpsh, &
-&                 vkb_r, evkb_r, rr, vfull, vp_r, zz, mmax, mxprj, irc, 2, 2)
+&                 vlocpw, vkbpw_r, evkb_r, rr, vfull, vp_r, zz, mmax, mxprj, &
+&                 irc, 2, 2)
  end if
  close(6)
 

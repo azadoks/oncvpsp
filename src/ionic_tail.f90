@@ -175,8 +175,8 @@
  return
  end function ionic_switch
 
- subroutine ionic_valence(nkap,nc,nv,la,fa,ea,lloc,nproj,rr,vp,vkb,evkb, &
-&                         mmax,mxprj,rho,rhops,uupsa,eeig)
+ subroutine ionic_valence(nkap,nc,nv,la,fa,ea,lloc,nproj,rr,vp,vlocpw, &
+&                         vkbpw,evkb,mmax,mxprj,rho,rhops,uupsa,eeig)
 
 !! the pseudo valence states of the local potential vp(:,lloc+1,:) and the
 !! VKB projectors, as oncvpsp_main solves them: rho, the state densities
@@ -193,7 +193,9 @@
 !! @param nproj  number of projectors for each l
 !! @param rr  log radial grid
 !! @param vp  screened semi-local and local pseudopotentials
-!! @param vkb  Vanderbilt-Kleinman-Bylander projectors
+!! @param vlocpw  the screened local potential's pieces
+!! @param vkbpw  Vanderbilt-Kleinman-Bylander projectors as functions of
+!!               pieces
 !! @param evkb  coefficients of the projectors
 !! @param mmax  dimension of log grid
 !! @param mxprj  dimension of number of projector
@@ -203,6 +205,7 @@
 !! @param eeig  sum of the occupied eigenvalues
 
  use constants_m, only: dp, mxstate, mxl, mxlin, mxkap
+ use pieces_m, only: piecewise_t
  implicit none
 
 !Input variables
@@ -210,7 +213,8 @@
  integer, intent(in) :: la(mxstate),nproj(mxlin+1)
  real(dp), intent(in) :: fa(mxstate),ea(mxstate,mxkap)
  real(dp), intent(in) :: rr(mmax),vp(mmax,mxl+2,nkap)
- real(dp), intent(in) :: vkb(mmax,mxprj,mxl+1,nkap),evkb(mxprj,mxl+1,nkap)
+ real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap)
+ type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1,nkap)
 
 !Output variables
  real(dp), intent(out) :: rho(mmax),rhops(mmax,nv),uupsa(mmax,nkap,nv)
@@ -250,7 +254,8 @@
      emax=(1.0d0-de)*et
      emin=(1.0d0+de)*et
      call lschvkbb(ll+nodes(l1)+1,ll,nproj(l1),ierr,et,emin,emax, &
-&                  rr,vp(1,lloc+1,ikap),vkb(1,1,l1,ikap),evkb(1,l1,ikap), &
+&                  rr,vp(1,lloc+1,ikap),vlocpw,vkbpw(1:nproj(l1),l1,ikap), &
+&                  evkb(1,l1,ikap), &
 &                  uu,up,mmax,mch)
      if(ierr/=0) then
        write(6,'(/a,3i4)') 'ionic_valence: ERROR lschvkbb n,l,ierr=', &
@@ -268,8 +273,9 @@
  return
  end subroutine ionic_valence
 
- subroutine ionic_screening(nkap,nc,nv,la,fa,ea,lmax,lloc,nproj,rr,vp,vkb, &
-&                           evkb,mmax,mxprj,zz,zion,zval,iexc,rcmax,rhoc, &
+ subroutine ionic_screening(nkap,nc,nv,la,fa,ea,lmax,lloc,nproj,rr,vp, &
+&                           vlocpw,vkbpw,evkb,mmax,mxprj,zz,zion,zval,iexc, &
+&                           rcmax,rhoc, &
 &                           rhotae,rhomod,rho,rhops,uupsa,eeig,vo,vxc, &
 &                           eeel,eexc,vion)
 
@@ -291,7 +297,9 @@
 !! @param nproj  number of projectors for each l
 !! @param rr  log radial grid
 !! @param vp  screened semi-local and local pseudopotentials
-!! @param vkb  Vanderbilt-Kleinman-Bylander projectors
+!! @param vlocpw  the screened local potential's pieces
+!! @param vkbpw  Vanderbilt-Kleinman-Bylander projectors as functions of
+!!               pieces
 !! @param evkb  coefficients of the projectors
 !! @param mmax  dimension of log grid
 !! @param mxprj  dimension of number of projector
@@ -314,14 +322,16 @@
 !! @param vion  V_ion
 
  use constants_m, only: dp, mxstate, mxl, mxlin, mxkap
+ use pieces_m, only: piecewise_t
  implicit none
 
 !Input variables
  integer, intent(in) :: nkap,nc,nv,lmax,lloc,mmax,mxprj,iexc
  integer, intent(in) :: la(mxstate),nproj(mxlin+1)
  real(dp), intent(in) :: fa(mxstate),ea(mxstate,mxkap)
- real(dp), intent(in) :: rr(mmax),vkb(mmax,mxprj,mxl+1,nkap)
+ real(dp), intent(in) :: rr(mmax)
  real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap)
+ type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1,nkap)
  real(dp), intent(in) :: zz,zion,zval,rcmax
  real(dp), intent(in) :: rhoc(mmax),rhotae(mmax),rhomod(mmax)
 
@@ -358,8 +368,8 @@
    vp(:,lloc+1,ik)=ww(:)*vp0(:,lloc+1,ik)+(1.0d0-ww(:))*(vion(:)+vo(:))
  end do
  do iter=1,maxiter
-   call ionic_valence(nkap,nc,nv,la,fa,ea,lloc,nproj,rr,vp,vkb,evkb, &
-&                     mmax,mxprj,rho,rhops,uupsa,eeig)
+   call ionic_valence(nkap,nc,nv,la,fa,ea,lloc,nproj,rr,vp,vlocpw,vkbpw, &
+&                     evkb,mmax,mxprj,rho,rhops,uupsa,eeig)
    call vout(1,rho,rhomod,vo,vxc,zval,eeel,eexc,rr,mmax,iexc)
 ! change of the local potential where the valence electrons are; once it
 ! is below tolfix, vp is kept as the potential whose states rho, eeig and

@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
  subroutine run_ghosts(lmax,la,ea,nc,nv,lloc,irc,qmsbf, &
-&                    vkb,evkb,nproj,rr,vp,mmax,mxprj)
+&                    vlocpw,vkbpw,evkb,nproj,rr,vp,mmax,mxprj)
 
 !! Two tests for ghosts;  The local potential is terminated by a hard wall
 !! barrier at a radius of mbfact*rc, presently 3*rc.  A basis set is formed
@@ -47,7 +47,8 @@
 !! @param ea  all-electron bound-state energies
 !! @param lloc  l for local potential
 !! @param irc  core radii indices
-!! @param vkb  VKB projectors
+!! @param vlocpw  the screened local potential's pieces
+!! @param vkbpw  VKB projectors as functions of pieces
 !! @param qmsbf  maximum q in sbf basis for each l
 !! @param evkb  coefficients of VKB projectors
 !! @param nproj  number of vkb projectors for each l
@@ -58,13 +59,15 @@
 !! @param mxprj  dimension of number of projectors
 
  use constants_m, only: dp, pi, mxstate, mxl, mxlin
+ use pieces_m, only: piecewise_t, pw_integral
  implicit none
 
 !Input variables
  integer, intent(in) :: nc,nv,lmax,lloc,mmax,mxprj
  integer, intent(in) :: la(mxstate),irc(mxlin+1),nproj(mxlin+1)
- real(dp), intent(in) :: rr(mmax),vp(mmax,mxl+2),vkb(mmax,mxprj,mxl+1)
+ real(dp), intent(in) :: rr(mmax),vp(mmax,mxl+2)
  real(dp), intent(in) :: qmsbf(mxlin+1),ea(mxstate),evkb(mxprj,mxl+1)
+ type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1)
 
 !Local variables
  integer :: ll,l1,ii,jj,kk,ierr,mbfact,mbar,mch,nn,npgh
@@ -163,9 +166,10 @@
 
      uua(:,jj)=uu(:)
 
-! oerlap of eigenfunction jj and projectors
+! overlap of eigenfunction jj and projectors, per piece (the barrier
+! state is smooth across the projectors' kinks)
      do iprj=1,nprj
-       call vpinteg(uu,vkb(1,iprj,l1),irc(l1),2*ll+2,gg0(iprj,jj),rr)
+       call pw_integral(rr,mmax,2*ll+2,uu,vkbpw(iprj,l1),gg0(iprj,jj))
      end do
 
    end do !jj
@@ -201,7 +205,7 @@
      emax=0.9d0*ea(nc+kk)
      emin=1.1d0*ea(nc+kk)
      call lschvkbb(nn,ll,nprj,ierr,ee,emin,emax, &
-&                  rr,vp(1,lloc+1),vkb(1,1,l1),evkb(1,l1), &
+&                  rr,vp(1,lloc+1),vlocpw,vkbpw(1:nprj,l1),evkb(1,l1), &
 &                  uu,up,mmax,mch)
      if(ierr/=0) then
        write(6,'(a,3i4,2f12.6)') 'run_ghosts: lschvkbb ERROR', &
@@ -233,7 +237,7 @@
      emax=0.0d0
      emin=2.0d0*ee
      call lschvkbb(ll+1,ll,nprj,ierr,ee,emin,emax, &
-&                  rr,vp(1,lloc+1),vkb(1,1,l1),evkb(1,l1), &
+&                  rr,vp(1,lloc+1),vlocpw,vkbpw(1:nprj,l1),evkb(1,l1), &
 &                  uu,up,mmax,mch)
      if(ierr/=0) ee=0.0d0
      do jj=1,10

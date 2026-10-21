@@ -17,7 +17,8 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
  subroutine run_diag(lmax,npa,epa,lloc,irc, &
-&                    vkb,evkb,nproj,rr,vfull,vp,zz,mmax,mxprj,irel,nkap)
+&                    vlocpw,vkbpw,evkb,nproj,rr,vfull,vp,zz,mmax,mxprj,irel, &
+&                    nkap)
 
 !! diagnostics for semi-local and Vanderbilt-Kleinman-bylander pseudopotentials
 !! checks bound-state energies, norms, and slopes, and pseudo-bound state
@@ -33,7 +34,8 @@
 !!             evkb and vp)
 !! @param lloc  l for local potential
 !! @param irc  core radii indices
-!! @param vkb  VKB projectors
+!! @param vlocpw  the screened local potential's pieces
+!! @param vkbpw  VKB projectors as functions of pieces
 !! @param evkb  coefficients of VKB projectors
 !! @param nproj  number of vkb projectors for each l
 !! @param rr  log radial grid
@@ -47,6 +49,7 @@
 !! @param nkap  number of kappa per l: 1, or 2 for irel=2
 
  use constants_m, only: dp, mxl, mxlin
+ use pieces_m, only: piecewise_t
  implicit none
 
 !Input variables
@@ -54,8 +57,8 @@
  integer, intent(in) :: npa(mxprj,mxlin+1),irc(mxlin+1),nproj(mxlin+1)
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: rr(mmax),vp(mmax,mxl+2,nkap),vfull(mmax)
- real(dp), intent(in) :: vkb(mmax,mxprj,mxl+1,nkap)
  real(dp), intent(in) :: epa(mxprj,mxlin+1,nkap),evkb(mxprj,mxl+1,nkap)
+ type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1,nkap)
 
 !Local variables
  integer :: ll,l1,ikap,kap,mkap,ierr,mch,mchf
@@ -144,7 +147,7 @@
          emax=min(emax,0.0d0)
 
          call lschvkbb(ll+iprj,ll,npr,ierr,etest,emin,emax, &
-&                      rr,vp(1,lloc+1,ikap),vkb(1,1,l1,ikap), &
+&                      rr,vp(1,lloc+1,ikap),vlocpw,vkbpw(1:npr,l1,ikap), &
 &                      evkb(1,l1,ikap),uu,up,mmax,mch)
          if(ierr/=0 .and. irel==2) then
            write(6,'(a,4i4,1p,2e16.8)') 'run_diag_r: lschvkbb ERROR', &
@@ -161,7 +164,7 @@
 
          nnp=nnae-npa(1,l1)+ll+1
          call lschvkbbe(nnp,ll,npr,ierr,etest,uldf,emin,emax, &
-&                       rr,vp(1,lloc+1,ikap),vkb(1,1,l1,ikap), &
+&                       rr,vp(1,lloc+1,ikap),vlocpw,vkbpw(1:npr,l1,ikap), &
 &                       evkb(1,l1,ikap),uu,up,mmax,mchf)
 
          if(ierr/=0 .and. irel==2) then

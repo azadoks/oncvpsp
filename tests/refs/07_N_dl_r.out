@@ -369,7 +369,7 @@ B matrix Hermiticity error, ll=  1  kap=  1
 
 Ionic tail switched over r =  1.7000 to  3.4029 a.u., converged in  8 steps
 
-Pseudoatom total energy   -9.595755
+Pseudoatom total energy   -9.595754
 
 
 Diagnostic tests using Vanderbilt-Kleinman-Bylander pseudopotentials
@@ -439,52 +439,52 @@ Test configuration 0
 
    n   l kap    f        eae           eps        diff
    1   0  -1  2.0000  -14.02055614
-   2   0  -1  2.0000   -0.67701888   -0.67702000   -1.12E-06
-   2   1  -2  2.0000   -0.26588629   -0.26588871   -2.43E-06
-   2   1   1  1.0000   -0.26659614   -0.26659597    1.64E-07
+   2   0  -1  2.0000   -0.67701888   -0.67702014   -1.26E-06
+   2   1  -2  2.0000   -0.26588629   -0.26588850   -2.22E-06
+   2   1   1  1.0000   -0.26659614   -0.26659576    3.75E-07
 
     Total energies and differences
       AE_ref= -5.40539089E+01  AE_tst= -5.40539089E+01  dif=  0.00E+00
-      PS_ref= -9.59575485E+00  PS_tst= -9.59575485E+00  dif=  0.00E+00
+      PS_ref= -9.59575406E+00  PS_tst= -9.59575406E+00  dif=  5.33E-15
       PSP excitation error=  0.00E+00
 
 Test configuration 1
 
    n   l kap    f        eae           eps        diff
    1   0  -1  2.0000  -14.64333265
-   2   0  -1  2.0000   -1.18515024   -1.18511107    3.92E-05
-   2   1  -2  1.3333   -0.76467755   -0.76116514    3.51E-03
-   2   1   1  0.6667   -0.76556849   -0.76203594    3.53E-03
+   2   0  -1  2.0000   -1.18515024   -1.18511113    3.91E-05
+   2   1  -2  1.3333   -0.76467755   -0.76116485    3.51E-03
+   2   1   1  0.6667   -0.76556849   -0.76203565    3.53E-03
 
     Total energies and differences
       AE_ref= -5.40539089E+01  AE_tst= -5.35492794E+01  dif=  5.05E-01
-      PS_ref= -9.59575485E+00  PS_tst= -9.09236894E+00  dif=  5.03E-01
+      PS_ref= -9.59575406E+00  PS_tst= -9.09236840E+00  dif=  5.03E-01
       PSP excitation error=  1.24E-03
 
 Test configuration 2
 
    n   l kap    f        eae           eps        diff
    1   0  -1  2.0000  -14.64545468
-   2   0  -1  1.0000   -1.18924753   -1.19239000   -3.14E-03
-   2   1  -2  2.0000   -0.76736249   -0.76895986   -1.60E-03
-   2   1   1  1.0000   -0.76824457   -0.76983413   -1.59E-03
+   2   0  -1  1.0000   -1.18924753   -1.19239005   -3.14E-03
+   2   1  -2  2.0000   -0.76736249   -0.76895956   -1.60E-03
+   2   1   1  1.0000   -0.76824457   -0.76983384   -1.59E-03
 
     Total energies and differences
       AE_ref= -5.40539089E+01  AE_tst= -5.31283990E+01  dif=  9.26E-01
-      PS_ref= -9.59575485E+00  PS_tst= -8.66896368E+00  dif=  9.27E-01
+      PS_ref= -9.59575406E+00  PS_tst= -8.66896280E+00  dif=  9.27E-01
       PSP excitation error= -1.28E-03
 
 Test configuration 3
 
    n   l kap    f        eae           eps        diff
    1   0  -1  2.0000  -15.42951157
-   2   0  -1  1.0000   -1.78632884   -1.79042418   -4.10E-03
-   2   1  -2  1.3333   -1.36877466   -1.36396330    4.81E-03
-   2   1   1  0.6667   -1.36985756   -1.36500394    4.85E-03
+   2   0  -1  1.0000   -1.78632884   -1.79042419   -4.10E-03
+   2   1  -2  1.3333   -1.36877466   -1.36396298    4.81E-03
+   2   1   1  0.6667   -1.36985756   -1.36500363    4.85E-03
 
     Total energies and differences
       AE_ref= -5.40539089E+01  AE_tst= -5.20688324E+01  dif=  1.99E+00
-      PS_ref= -9.59575485E+00  PS_tst= -7.61017889E+00  dif=  1.99E+00
+      PS_ref= -9.59575406E+00  PS_tst= -7.61017832E+00  dif=  1.99E+00
       PSP excitation error= -4.99E-04
 
 DATA FOR PLOTTING

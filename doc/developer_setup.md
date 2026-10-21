@@ -72,6 +72,13 @@ kernels by about 1e-8, but only runs on CPUs like the one that built it.
 `ONCVPSP_WITH_FR=OFF` leaves out the fully-relativistic executables and their
 tests.
 
+`ONCVPSP_BLAS_DOT=ON` computes the overlaps of the pseudo-atom's outward
+integration inside the first core radius (`outwf_overlaps`, most of their
+work) by one `dgemm` of the linked BLAS instead of a compensated sum in the
+code. It is faster with an optimized BLAS, but the results then depend on
+the BLAS at round-off (the references pass either way), so it is off by
+default.
+
 `CMakeUserPresets.json` (ignored by git) is the place for personal presets
 such as compiler paths or `Libxc_ROOT`.
 

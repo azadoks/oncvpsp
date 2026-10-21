@@ -13,9 +13,12 @@ masked), so runs of lines that appear or disappear come from the new output.
 The header above the input echo (citation and build lines) is the reference's.
 Prints how many lines changed.
 
-Look at what changed before patching (compare_output.py REF.out NEW.out), and
-run the reference test after: a quantity with a tighter tolerance (the total
-energies, d2Exc) can still differ.
+The lines of the quantities whose tolerance in compare_output.py is close to
+their printed precision (the pseudo-atom energies, the eigenvalues of the test
+configurations, the UPF file's total energy) take the new line whenever its
+text differs.  Look at what changed before patching (compare_output.py REF.out
+NEW.out), and run the reference test after: another quantity with a tighter
+tolerance (d2Exc) can still differ.
 
 usage: ref_patch.py NEW.out REF.out [-o OUT]   (OUT defaults to REF.out)
 """
@@ -27,6 +30,17 @@ import re
 TOL = 1.01e-5
 NUMBER = re.compile(r"[-+]?(?:\d+\.\d*|\.\d+|\d+)(?:[eEdD][-+]?\d+)?")
 ECHO = "# ATOM AND REFERENCE"
+# lines taken from the new output whenever their text differs
+EXACT = [
+    re.compile(r"^Pseudoatom total energy"),
+    re.compile(r"PS_ref=.*PS_tst="),
+    re.compile(r"total_psenergy="),
+    # n, l, (kap,) f, eae, eps, diff of a test configuration
+    re.compile(
+        r"^\s*\d+\s+\d+(\s+-?\d+)?\s+\d+\.\d{4}(\s+-?\d+\.\d{8}){2}"
+        r"\s+\S+[DE][-+]\d+$"
+    ),
+]
 
 
 def value(text):
@@ -41,6 +55,8 @@ def close(a, b):
     """Whether the base test accepts line b for reference line a."""
     if a == b or "pspd" in a or "date" in a:
         return True
+    if any(pattern.search(a) for pattern in EXACT):
+        return False
     na, nb = NUMBER.findall(a), NUMBER.findall(b)
     if shape(a) != shape(b) or len(na) != len(nb):
         return False

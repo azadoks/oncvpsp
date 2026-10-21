@@ -370,12 +370,12 @@ Test configuration 0
    1   0  2.0000  -65.35753623
    2   0  2.0000   -5.09838571
    2   1  6.0000   -3.51325168
-   3   0  2.0000   -0.39999502   -0.39999548   -4.52D-07
-   3   1  2.0000   -0.15319674   -0.15319685   -1.08D-07
+   3   0  2.0000   -0.39999502   -0.39999548   -4.51D-07
+   3   1  2.0000   -0.15319674   -0.15319685   -1.06D-07
 
     Total energies and differences
       AE_ref= -2.88819831D+02  AE_tst= -2.88819831D+02  dif=  0.00D+00
-      PS_ref= -3.79201016D+00  PS_tst= -3.79201016D+00  dif=  4.00D-15
+      PS_ref= -3.79201014D+00  PS_tst= -3.79201014D+00  dif=  0.00D+00
       PSP excitation error= -4.00D-15
 
 Test configuration 1
@@ -385,11 +385,11 @@ Test configuration 1
    2   0  2.0000   -5.50470440
    2   1  6.0000   -3.91952396
    3   0  1.0000   -0.72927753   -0.72957403   -2.97D-04
-   3   1  2.0000   -0.45476428   -0.45469525    6.90D-05
+   3   1  2.0000   -0.45476428   -0.45469524    6.90D-05
 
     Total energies and differences
       AE_ref= -2.88819831D+02  AE_tst= -2.88259691D+02  dif=  5.60D-01
-      PS_ref= -3.79201016D+00  PS_tst= -3.23172343D+00  dif=  5.60D-01
+      PS_ref= -3.79201014D+00  PS_tst= -3.23172342D+00  dif=  5.60D-01
       PSP excitation error= -1.47D-04
 
 Test configuration 2
@@ -403,7 +403,7 @@ Test configuration 2
 
     Total energies and differences
       AE_ref= -2.88819831D+02  AE_tst= -2.88532117D+02  dif=  2.88D-01
-      PS_ref= -3.79201016D+00  PS_tst= -3.50434684D+00  dif=  2.88D-01
+      PS_ref= -3.79201014D+00  PS_tst= -3.50434683D+00  dif=  2.88D-01
       PSP excitation error=  4.99D-05
 
 Test configuration 3
@@ -413,11 +413,11 @@ Test configuration 3
    2   0  2.0000   -5.93450132
    2   1  6.0000   -4.35040498
    3   0  1.0000   -1.07843572   -1.07849189   -5.62D-05
-   3   1  1.0000   -0.78201135   -0.78141662    5.95D-04
+   3   1  1.0000   -0.78201135   -0.78141661    5.95D-04
 
     Total energies and differences
       AE_ref= -2.88819831D+02  AE_tst= -2.87644636D+02  dif=  1.18D+00
-      PS_ref= -3.79201016D+00  PS_tst= -2.61692250D+00  dif=  1.18D+00
+      PS_ref= -3.79201014D+00  PS_tst= -2.61692249D+00  dif=  1.18D+00
       PSP excitation error=  1.07D-04
 
 DATA FOR PLOTTING

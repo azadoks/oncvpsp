@@ -260,7 +260,7 @@ Test configuration 0
 
     Total energies and differences
       AE_ref= -7.45249737D+01  AE_tst= -7.45249737D+01  dif=  0.00D+00
-      PS_ref= -1.56170135D+01  PS_tst= -1.56170135D+01  dif=  3.20D-14
+      PS_ref= -1.56170134D+01  PS_tst= -1.56170134D+01  dif=  5.33D-15
       PSP excitation error= -3.20D-14
 
 Test configuration 1
@@ -272,7 +272,7 @@ Test configuration 1
 
     Total energies and differences
       AE_ref= -7.45249737D+01  AE_tst= -7.39155416D+01  dif=  6.09D-01
-      PS_ref= -1.56170135D+01  PS_tst= -1.50093429D+01  dif=  6.08D-01
+      PS_ref= -1.56170134D+01  PS_tst= -1.50093429D+01  dif=  6.08D-01
       PSP excitation error=  1.76D-03
 
 Test configuration 2
@@ -284,7 +284,7 @@ Test configuration 2
 
     Total energies and differences
       AE_ref= -7.45249737D+01  AE_tst= -7.33702381D+01  dif=  1.15D+00
-      PS_ref= -1.56170135D+01  PS_tst= -1.44596779D+01  dif=  1.16D+00
+      PS_ref= -1.56170134D+01  PS_tst= -1.44596779D+01  dif=  1.16D+00
       PSP excitation error= -2.60D-03
 
 Test configuration 3
@@ -296,7 +296,7 @@ Test configuration 3
 
     Total energies and differences
       AE_ref= -7.45249737D+01  AE_tst= -7.21359923D+01  dif=  2.39D+00
-      PS_ref= -1.56170135D+01  PS_tst= -1.32252779D+01  dif=  2.39D+00
+      PS_ref= -1.56170134D+01  PS_tst= -1.32252779D+01  dif=  2.39D+00
       PSP excitation error= -2.75D-03
 
 DATA FOR PLOTTING

@@ -18,6 +18,9 @@
 !   integral         between radii off the mesh
 !   integral_c1      rough data: d/drb of the integral is continuous across
 !                    mesh points
+!   integral_weights rough data: the weights of the integral from 0 to rb
+!                    (off the mesh, at a mesh point, below the first one)
+!                    give lm_integral's value to round-off
 !   root             a root off the mesh, to round-off; no bracket, ierr=1
 !   sbf_overlap      against a 200-point Gauss-Legendre rule, for l=0..4,
 !                    including q1=q2 and q1 within 1e-9 of q2
@@ -26,7 +29,7 @@
  use, intrinsic :: iso_fortran_env, only: dp => real64, i8 => int64, &
 &                                       stderr => error_unit
  use logmesh_m, only: lm_blend, lm_interp, lm_derivs, lm_cumint, &
-&                     lm_integral, lm_root
+&                     lm_integral, lm_integral_weights, lm_root
  implicit none
  external :: sbf_overlap, sbf8
 
@@ -44,6 +47,7 @@
  call check_cumint()
  call check_integral()
  call check_integral_c1()
+ call check_integral_weights()
  call check_root()
  call check_sbf_overlap()
 
@@ -358,6 +362,34 @@
  real(dp), intent(in) :: xx
  prim = 2.0_dp - exp(-xx)*(xx**2 + 2.0_dp*xx + 2.0_dp)
  end function prim
+
+ subroutine check_integral_weights()
+
+!! rough data, r**mm near the origin: sum_i wts(i) ff(i) against lm_integral
+!! from 0 to rb, relative to sum_i |wts(i) ff(i)|
+
+ real(dp), allocatable :: rr(:), ff(:), wts(:)
+ real(dp) :: ss, sw, sa, err, rbs(3)
+ integer :: mmax, ii, ib, mm, nw
+
+ call make_mesh(1.006_dp, rr, mmax)
+ allocate(ff(mmax))
+ rbs = [3.14159_dp, rr(1234), 0.5_dp*rr(1)]
+ err = 0.0_dp
+ do mm = 2, 4, 2
+   do ii = 1, mmax
+     ff(ii) = rr(ii)**mm*exp(-rr(ii))*(1.0_dp + 0.1_dp*uniform())
+   end do
+   do ib = 1, 3
+     call lm_integral(rr, ff, mmax, mm, 0.0_dp, rbs(ib), ss)
+     call lm_integral_weights(rr, mmax, mm, rbs(ib), nw, wts)
+     sw = sum(wts(1:nw)*ff(1:nw))
+     sa = sum(abs(wts(1:nw)*ff(1:nw)))
+     err = max(err, abs(sw - ss)/sa)
+   end do
+ end do
+ call check('integral_weights', err, 1.0e-14_dp)
+ end subroutine check_integral_weights
 
  subroutine check_integral_c1()
 

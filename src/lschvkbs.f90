@@ -16,7 +16,7 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine lschvkbs(ll,ivkb,ee,rr,vloc,vkb,evkb,uu,up,mmax,mch)
+ subroutine lschvkbs(ll,ivkb,ee,rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,mch)
 
 !! Normalized scattering state for pseudopotential, fully non-local unless
 !! ivkb=0, which should only happen if ll=lloc
@@ -25,8 +25,9 @@
 !! @param ivkb  = 0, 1 or 2 VKB proectors to be used
 !! @param ee  scattering state energy
 !! @param rr  log radial mesh
-!! @param vloc  local pseudopotential
-!! @param vkb  VKB projectors
+!! @param vloc  local pseudopotential on the mesh
+!! @param vlocpw  its pieces
+!! @param vkbpw  VKB projectors as functions of pieces
 !! @param evkb  coefficients of VKB projectors
 !! @param uu  output radial wave function (*rr)
 !! @param up  d(uu)/dr
@@ -34,13 +35,15 @@
 !! @param mch  index of radius to which uu is computed
 
  use constants_m, only: dp
+ use pieces_m, only: piecewise_t
  implicit none
 
 !Input variables
  integer, intent(in) :: mmax,mch
- real(dp), intent(in) :: rr(mmax),vloc(mmax),vkb(mmax,2),evkb(2)
+ real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(ivkb)
  real(dp), intent(in) :: ee
  integer, intent(in) :: ivkb,ll
+ type(piecewise_t), intent(in) :: vlocpw,vkbpw(ivkb)
 
 !Output variables
  real(dp), intent(out) :: uu(mmax),up(mmax)
@@ -60,7 +63,7 @@
  uu(:)=0.0d0
  up(:)=0.0d0
 
- call vkboutwf(ll,ivkb,ee,vkb,evkb,rr,vloc,uu,up,node,mmax,mch,mch)
+ call vkboutwf(ll,ivkb,ee,vkbpw,evkb,rr,vloc,vlocpw,uu,up,node,mmax,mch,mch)
 
 !perform normalization sum
 

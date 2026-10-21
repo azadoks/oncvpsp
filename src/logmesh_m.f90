@@ -47,7 +47,8 @@
  implicit none
  private
  public :: lm_blend, lm_interp, lm_derivs, lm_cumint, lm_integral, lm_root
- public :: lm_ncell, lm_cell_weights, lm_fh_value
+ public :: lm_integral_weights
+ public :: lm_ncell, lm_cell_weights, lm_fh_value, lm_fh_weights, lm_fh_reach
 
 !> blending degree d of the Floater-Hormann interpolant: it reproduces
 !> polynomials of degree d in ln(r), and its error is O(al**(d+1))
@@ -64,6 +65,14 @@
 !> the window bump of the interpolant: 1 for a window centre within nwin1
 !> steps of x, falling smoothly to 0 at nwin2 steps
  real(dp), parameter :: nwin1=10.0d0, nwin2=20.0d0
+
+!> the weights of the stencils and of the cell rule, computed in quadruple
+!> precision once each (they are fixed numbers, and the integrals are
+!> taken many times per solver pass)
+ real(dp), save :: stencil_table(0:2*nhalf,0:4,0:2*nhalf)
+ logical, save :: stencil_have(0:2*nhalf)=.false.
+ real(dp), save :: cell_table(ncell,0:ncell-2)
+ logical, save :: cell_have(0:ncell-2)=.false.
 
  contains
 
@@ -193,6 +202,30 @@
 !Output variables
  real(dp), intent(out) :: cum(mmax)
 
+ call cumint_to(rr,ff,mmax,mm,mmax,cum)
+ return
+ end subroutine lm_cumint
+
+ subroutine cumint_to(rr,ff,mmax,mm,nlim,cum)
+
+!! lm_cumint to the mesh point nlim only: each value is the one of the whole
+!! mesh, since the running sum goes up from the origin and every cell keeps
+!! the stencil it has on the whole mesh
+!!
+!! @param rr  log radial mesh
+!! @param ff  integrand on the mesh
+!! @param mmax  size of the log radial mesh
+!! @param mm  power of r with which ff goes to 0 at the origin
+!! @param nlim  last mesh point wanted, 1..mmax
+!! @param cum  int_0^rr(i) ff dr in cum(i), i=1..nlim
+
+!Input variables
+ integer, intent(in) :: mmax,mm,nlim
+ real(dp), intent(in) :: rr(mmax),ff(mmax)
+
+!Output variables
+ real(dp), intent(out) :: cum(nlim)
+
 !Local variables
  real(dp) :: ww(ncell,0:ncell-2),hh,cell,sum_hi,sum_lo,yy,tmp
  integer :: ii,jj,istart,ishift
@@ -208,7 +241,7 @@
  sum_hi=ff(1)*rr(1)/dble(mm+1)
  sum_lo=0.0d0
  cum(1)=sum_hi
- do ii=1,mmax-1
+ do ii=1,nlim-1
    istart=min(max(ii-(ncell/2-1),1),mmax-ncell+1)
    ishift=ii-istart
    cell=0.0d0
@@ -222,7 +255,7 @@
    cum(ii+1)=sum_hi
  end do
  return
- end subroutine lm_cumint
+ end subroutine cumint_to
 
  subroutine lm_integral(rr,ff,mmax,mm,ra,rb,ss)
 
@@ -245,9 +278,18 @@
 
 !Local variables
  real(dp), allocatable :: cum(:)
+ integer :: nlim
 
- allocate(cum(mmax))
- call lm_cumint(rr,ff,mmax,mm,cum)
+! the cumulative integral only as far as the interpolant at max(ra,rb) reads
+! it (its nodes, and the windows they lie in), so the same as on the whole
+! mesh
+ nlim=mmax
+ if(max(ra,rb)>rr(1)) then
+   nlim=min(mmax,floor(mesh_position(rr,mmax,max(ra,rb))) + 2 &
+&       + lm_fh_reach() + lm_blend)
+ end if
+ allocate(cum(nlim))
+ call cumint_to(rr,ff,mmax,mm,nlim,cum)
  ss=cum_at(rb) - cum_at(ra)
  deallocate(cum)
  return
@@ -273,12 +315,83 @@
    cum_at=cum(1)*(rq/rr(1))**(mm+1)
  else
    tt=mesh_position(rr,mmax,rq)
-   cum_at=fh_value(cum,mmax,tt,node_index(rr,mmax,rq,tt))
+   cum_at=fh_value(cum,nlim,tt,node_index(rr,mmax,rq,tt))
  end if
  return
  end function cum_at
 
  end subroutine lm_integral
+
+ subroutine lm_integral_weights(rr,mmax,mm,rb,nw,wts)
+
+!! the weights of lm_integral from 0 to rb: the integral of any ff is
+!! sum_{i=1}^{nw} wts(i) ff(i), the linear functional lm_integral applies
+!! (the two agree to round-off), so that many integrals to one radius cost
+!! a product each (outwf_m)
+!!
+!! @param rr  log radial mesh
+!! @param mmax  size of the log radial mesh
+!! @param mm  power of r with which the integrands go to 0 at the origin
+!! @param rb  upper limit, 0<=rb<=rr(mmax) (bohr)
+!! @param nw  number of weights, the last mesh point they reach
+!! @param wts  the weights, wts(1:nw)
+
+!Input variables
+ integer, intent(in) :: mmax,mm
+ real(dp), intent(in) :: rr(mmax),rb
+
+!Output variables
+ integer, intent(out) :: nw
+ real(dp), allocatable, intent(out) :: wts(:)
+
+!Local variables
+ real(dp) :: ww(ncell,0:ncell-2),fw(2*lm_fh_reach()+2),hh,tt,tail,total
+ integer :: nlim,ilo,ihi,ii,jj,istart,ishift,inode
+
+ if(rb<rr(1)) then
+   nw=1
+   allocate(wts(1))
+   wts(1)=0.0d0
+   if(rb>0.0d0) wts(1)=rr(1)/dble(mm+1)*(rb/rr(1))**(mm+1)
+   return
+ end if
+
+! the interpolant's weights on the cumulative integral at rb, cut as in
+! lm_integral
+ tt=mesh_position(rr,mmax,rb)
+ nlim=min(mmax,floor(tt) + 2 + lm_fh_reach() + lm_blend)
+ inode=node_index(rr,mmax,rb,tt)
+ if(inode>0) then
+   ilo=inode
+   ihi=inode
+   fw(1)=1.0d0
+ else
+   call lm_fh_weights(nlim,tt,ilo,ihi,fw)
+ end if
+
+! cum(k) is the start rr(1) ff(1)/(mm+1) plus the cells below k, so cell c
+! enters with the weights at k > c, the tail of fw beyond c
+ hh=mesh_step(rr,mmax)
+ do ishift=0,ncell-2
+   call cell_weights(ishift,ww(:,ishift))
+ end do
+ nw=min(mmax,ihi+ncell/2)
+ allocate(wts(nw))
+ wts(:)=0.0d0
+ total=sum(fw(1:ihi-ilo+1))
+ wts(1)=rr(1)/dble(mm+1)*total
+ do ii=1,ihi-1
+   tail=total
+   if(ii>=ilo) tail=sum(fw(ii+2-ilo:ihi-ilo+1))
+   istart=min(max(ii-(ncell/2-1),1),mmax-ncell+1)
+   ishift=ii-istart
+   do jj=1,ncell
+     wts(istart+jj-1)=wts(istart+jj-1) &
+&                     + hh*tail*ww(jj,ishift)*rr(istart+jj-1)
+   end do
+ end do
+ return
+ end subroutine lm_integral_weights
 
  subroutine lm_root(rr,ff,mmax,ra,rb,rq,ierr)
 
@@ -587,6 +700,10 @@
  real(qp) :: wq(0:2*nhalf,0:4),xq(0:2*nhalf),zq,c1,c2,c3,c4,c5
  integer :: ii,jj,kk,mn
 
+ if(stencil_have(iz)) then
+   cc(:,:)=stencil_table(:,:,iz)
+   return
+ end if
  do ii=0,2*nhalf
    xq(ii)=real(ii,qp)
  end do
@@ -617,6 +734,8 @@
    c1=c2
  end do
  cc(:,:)=real(wq,dp)
+ stencil_table(:,:,iz)=cc(:,:)
+ stencil_have(iz)=.true.
  return
  end subroutine stencil_weights
 
@@ -639,6 +758,10 @@
  real(qp) :: poly(0:ncell-1),xq(ncell),den,acc
  integer :: ii,jj,kk,ndeg
 
+ if(cell_have(ishift)) then
+   ww(:)=cell_table(:,ishift)
+   return
+ end if
  do ii=1,ncell
    xq(ii)=real(ii-1-ishift,qp)
  end do
@@ -663,6 +786,8 @@
    end do
    ww(ii)=real(acc/den,dp)
  end do
+ cell_table(:,ishift)=ww(:)
+ cell_have(ishift)=.true.
  return
  end subroutine cell_weights
 
@@ -705,5 +830,77 @@
  lm_fh_value=fh_value(ff,nn,tt,inode)
  return
  end function lm_fh_value
+
+ pure integer function lm_fh_reach()
+
+!! the nodes on each side of a position that its interpolant (fh_value)
+!! can use: those of the windows whose centres are within nwin2 of it
+
+ lm_fh_reach=ceiling(nwin2)+lm_blend+1
+ return
+ end function lm_fh_reach
+
+ subroutine lm_fh_weights(nn,tt,ilo,ihi,wts)
+
+!! the weights of the interpolant (fh_value) at the position tt: its value
+!! is sum_{i=ilo}^{ihi} wts(i-ilo+1) ff(i). Away from the ends of the
+!! node range they depend on tt only through its fractional part, so one
+!! set serves every position with that offset (outwf_m)
+!!
+!! @param nn  number of nodes
+!! @param tt  position in units of the node spacing, 0 at the first node
+!! @param ilo,ihi  the range of nodes with weights
+!! @param wts  the weights, wts(1:ihi-ilo+1), of size 2*lm_fh_reach()+2
+!!             at least
+
+!Input variables
+ integer, intent(in) :: nn
+ real(dp), intent(in) :: tt
+
+!Output variables
+ integer, intent(out) :: ilo,ihi
+ real(dp), intent(out) :: wts(2*lm_fh_reach()+2)
+
+!Local variables
+ real(dp) :: ww,dt,den
+ real(dp) :: wk(2*(ceiling(nwin2)+lm_blend+1)+lm_blend+1),bin(0:lm_blend)
+ integer :: ii,kk,id,nreach,klo,khi,inode
+
+ inode=0
+ if(tt==dble(nint(tt))) inode=nint(tt)+1
+ if(inode>=1 .and. inode<=nn) then
+   ilo=inode
+   ihi=inode
+   wts(1)=1.0d0
+   return
+ end if
+ id=min(lm_blend,nn-1)
+ nreach=ceiling(nwin2)+id+1
+ ilo=max(1,floor(tt)+1-nreach)
+ ihi=min(nn,floor(tt)+1+nreach)
+ klo=max(1,ilo-id)
+ khi=min(ihi,nn-id)
+ do kk=klo,khi
+   wk(kk-klo+1)=window(abs(tt-dble(kk-1)-0.5d0*dble(id)))
+ end do
+ do kk=0,id
+   bin(kk)=binomial(id,kk)
+ end do
+ den=0.0d0
+ do ii=ilo,ihi
+   dt=tt-dble(ii-1)
+   ww=0.0d0
+   do kk=max(1,ii-id),min(ii,nn-id)
+     ww=ww+wk(kk-klo+1)*bin(ii-kk)
+   end do
+   if(mod(ii,2)==0) ww=-ww
+   wts(ii-ilo+1)=ww/dt
+   den=den+ww/dt
+ end do
+ do ii=ilo,ihi
+   wts(ii-ilo+1)=wts(ii-ilo+1)/den
+ end do
+ return
+ end subroutine lm_fh_weights
 
  end module logmesh_m

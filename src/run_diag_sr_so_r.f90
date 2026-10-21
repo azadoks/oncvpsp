@@ -17,7 +17,8 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
  subroutine run_diag_sr_so_r(lmax,npa,epa,lloc,irc, &
-&                    vsr,esr,vso,eso,nproj,rr,vfull,vp,zz,mmax,mxprj)
+&                    vlocpw,vsrpw,esr,vsopw,eso,nproj,rr,vfull,vp,zz,mmax, &
+&                    mxprj)
 
 !! diagnostics for semi-local and Vanderbilt-Kleinman-bylander pseudopotentials
 !! checks bound-state energies, norms, and slopes, and pseudo-bound state
@@ -32,9 +33,11 @@
 !!             potentials
 !! @param lloc  l for local potential
 !! @param irc  core radii indices
-!! @param vsr  normalized scalar-relativistic projectors
+!! @param vlocpw  the screened local potential's pieces
+!! @param vsrpw  normalized scalar-relativistic projectors, as functions of
+!!               pieces
 !! @param esr  energy coefficients of vsr
-!! @param vso  normalized spin-orbit projectors
+!! @param vsopw  normalized spin-orbit projectors, as functions of pieces
 !! @param eso  energy coefficients of vso (multiplied by <L dot S> here)
 !! @param nproj  number of vkb projectors for each l
 !! @param rr  log radial grid
@@ -46,6 +49,7 @@
 !! @param mxprj  dimension of number of projectors
 
  use constants_m, only: dp, mxl, mxlin, mxkap
+ use pieces_m, only: piecewise_t
  implicit none
 
 !Input variables
@@ -53,22 +57,22 @@
  integer, intent(in) :: npa(mxprj,mxlin+1),irc(mxlin+1),nproj(mxlin+1)
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: rr(mmax),vp(mmax,mxl+2,mxkap),vfull(mmax)
- real(dp), intent(in) :: vsr(mmax,2*mxprj,mxl+1),esr(2*mxprj,mxl+1)
- real(dp), intent(in) :: vso(mmax,2*mxprj,mxl+1),eso(2*mxprj,mxl+1)
+ real(dp), intent(in) :: esr(2*mxprj,mxl+1)
+ real(dp), intent(in) :: eso(2*mxprj,mxl+1)
  real(dp), intent(in) :: epa(mxprj,mxlin+1,mxkap)
+ type(piecewise_t), intent(in) :: vlocpw,vsrpw(2*mxprj,mxl+1)
+ type(piecewise_t), intent(in) :: vsopw(2*mxprj,mxl+1)
 
 !Local variables
- integer :: nlim
- real(dp) :: vkb(mmax,mxprj,mxl+1,mxkap)
- real(dp) :: evkb(mxprj,mxl+1,mxkap)
  integer :: ll,l1,ikap,kap,mkap,ii,jj,ierr,mch,mchf,nvkbt
  integer :: iprj,nnae,nnp,npr
  real(dp) :: al,emax,emin,etest,sls,umch,upmch,uldf,gam,gpr,cnorm,fso
  real(dp), allocatable :: uu(:),up(:),ur(:,:),urp(:,:)
- real(dp), allocatable :: evkbt(:),vkbt(:,:)
+ real(dp), allocatable :: evkbt(:)
+ type(piecewise_t), allocatable :: vkbtpw(:)
 
  allocate(uu(mmax),up(mmax),ur(mmax,2),urp(mmax,2))
- allocate(evkbt(4*mxprj),vkbt(mmax,4*mxprj))
+ allocate(evkbt(4*mxprj),vkbtpw(4*mxprj))
 
 
  al = 0.01d0 * log(rr(101)/rr(1))
@@ -102,22 +106,21 @@
        npr=nproj(l1)
 
 ! construct multi-projector potential
-       vkbt(:,:)=0.0d0
        evkbt(:)=0.0d0
        if(ikap==1) fso= 0.5d0*ll
        if(ikap==2) fso=-0.5d0*(ll+1)
        if(ll==0) then
          nvkbt=npr
          do ii=1,npr
-           vkbt(:,ii)=vsr(:,ii,l1)
+           vkbtpw(ii)=vsrpw(ii,l1)
            evkbt(ii)=esr(ii,l1)
          end do
        else
          nvkbt=4*npr
          do ii=1,2*npr
-           vkbt(:,ii)=vsr(:,ii,l1)
+           vkbtpw(ii)=vsrpw(ii,l1)
            evkbt(ii)=esr(ii,l1)
-           vkbt(:,2*npr+ii)=vso(:,ii,l1)
+           vkbtpw(2*npr+ii)=vsopw(ii,l1)
            evkbt(2*npr+ii)=fso*eso(ii,l1)
          end do
        end if
@@ -149,7 +152,7 @@
          emax=min(emax,0.0d0)
 
          call lschvkbb(ll+iprj,ll,nvkbt,ierr,etest,emin,emax, &
-&                      rr,vp(1,lloc+1,ikap),vkbt,evkbt, &
+&                      rr,vp(1,lloc+1,ikap),vlocpw,vkbtpw(1:nvkbt),evkbt, &
 &                      uu,up,mmax,mch)
          if(ierr/=0) then
            write(6,'(a,4i4,1p,2e16.8)') 'run_diag_sr_so_r: lschvkbb ERROR', &
@@ -162,7 +165,7 @@
 !     from all-electron node count
          nnp=nnae-npa(1,l1)+ll+1
          call lschvkbbe(nnp,ll,nvkbt,ierr,etest,uldf,emin,emax, &
-&                       rr,vp(1,lloc+1,ikap),vkbt,evkbt, &
+&                       rr,vp(1,lloc+1,ikap),vlocpw,vkbtpw(1:nvkbt),evkbt, &
 &                       uu,up,mmax,mchf)
 
          if(ierr/=0) then

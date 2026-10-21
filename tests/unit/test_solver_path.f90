@@ -14,21 +14,23 @@
 ! Stops with a non-zero code if any check failed.
  program test_solver_path
  use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
+ use pieces_m, only: piecewise_t, pw_alloc, pw_free
  implicit none
  external :: lschfb, ldiracfb, lschvkbb, lschvkbbe, lschpsbar
 
 !Local variables
  real(dp), parameter :: rr1 = 5.0e-5_dp, rmax = 45.0_dp, amesh = 1.006_dp
  real(dp), parameter :: tol_e = 1.0e-13_dp, tol_u = 1.0e-12_dp
- real(dp), allocatable :: rr(:), vv(:), vloc(:), vkb(:, :), uu(:, :), &
+ real(dp), allocatable :: rr(:), vv(:), vloc(:), uu(:, :), &
 &                         up(:, :), ud(:, :, :), udp(:, :, :)
+ type(piecewise_t) :: vlocpw, vkbpw(1)
  real(dp) :: al, ee(2), evkb(1), emin, emax, uld, rcut
  integer :: nfail = 0, mmax, ii, ip, ierr(2), mch(2), nn, ll, kap, mbar
  character(len=40) :: name
 
  al = log(amesh)
  mmax = int(log(rmax/rr1)/al)
- allocate(rr(mmax), vv(mmax), vloc(mmax), vkb(mmax, 1), uu(mmax, 2), &
+ allocate(rr(mmax), vv(mmax), vloc(mmax), uu(mmax, 2), &
 &         up(mmax, 2), ud(mmax, 2, 2), udp(mmax, 2, 2))
  do ii = 1, mmax
    rr(ii) = rr1*exp(al*(ii - 1))
@@ -37,6 +39,8 @@
  vloc(:) = -3.0_dp*exp(-0.5_dp*rr**2)
  evkb(1) = -1.0_dp
  rcut = 3.0_dp
+ call pw_alloc(vlocpw, mmax, 1, [0.0_dp, rr(mmax)])
+ vlocpw%vals(:, 1) = vloc
 
 ! lschfb: hydrogen, E = -1/(2n**2)
  do ip = 0, 1
@@ -69,17 +73,18 @@
  end do
 
 ! lschvkbb, then lschvkbbe at its log derivative: a Gaussian well, one
-! projector r**(l+1) (1 - (r/rcut)**2)**4 inside rcut per l
+! projector r**(l+1) (1 - (r/rcut)**2)**4 inside rcut per l, one piece
+! ending at rcut
  do ll = 0, 1
    nn = ll + 1
-   vkb(:, 1) = merge(rr**(ll + 1)*(1.0_dp - (rr/rcut)**2)**4, 0.0_dp, &
-&                    rr < rcut)
+   call pw_alloc(vkbpw(1), mmax, 1, [0.0_dp, rcut])
+   vkbpw(1)%vals(:, 1) = rr**(ll + 1)*(1.0_dp - (rr/rcut)**2)**4
    do ii = 1, 2
      ee(ii) = guess(merge(-1.3194_dp, -0.3914_dp, ll == 0), ii)
      emin = -3.0_dp
      emax = 0.0_dp
-     call lschvkbb(nn, ll, 1, ierr(ii), ee(ii), emin, emax, rr, vloc, vkb, &
-&                  evkb, uu(:, ii), up(:, ii), mmax, mch(ii))
+     call lschvkbb(nn, ll, 1, ierr(ii), ee(ii), emin, emax, rr, vloc, &
+&                  vlocpw, vkbpw, evkb, uu(:, ii), up(:, ii), mmax, mch(ii))
    end do
    write(name, '(a,i0,a,i0)') 'lschvkbb n ', nn, ' l ', ll
    call compare(name, uu)
@@ -91,10 +96,11 @@
      emin = -3.0_dp
      emax = 0.0_dp
      call lschvkbbe(nn, ll, 1, ierr(ii), ee(ii), uld, emin, emax, rr, vloc, &
-&                   vkb, evkb, uu(:, ii), up(:, ii), mmax, mch(ii))
+&                   vlocpw, vkbpw, evkb, uu(:, ii), up(:, ii), mmax, mch(ii))
    end do
    write(name, '(a,i0,a,i0)') 'lschvkbbe n ', nn, ' l ', ll
    call compare(name, uu)
+   call pw_free(vkbpw(1))
  end do
 
 ! lschpsbar: the Gaussian well with a barrier at 8 bohr, tht=0

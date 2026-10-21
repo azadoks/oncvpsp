@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
  subroutine vkbphsft(ll,ivkb,epsh2,depsh,ep,pshf,pshp, &
-& rr,vloc,vkb,evkb,mmax,mch,npsh)
+& rr,vloc,vlocpw,vkbpw,evkb,mmax,mch,npsh)
 
 !! computes Vanderfilt / Kleinman-Bylander scattering log derivatives
 !! (or semi-local if ivkb==0)
@@ -33,18 +33,22 @@
 !! @param pshf  all-electron log derivatives "angles", as above (input)
 !! @param pshp  pseudopotential log derivatives "angles", as above (output)
 !! @param rr  radial log grid
-!! @param vloc  local part of psp
-!! @param vkb  VKB projectors
+!! @param vloc  local part of psp on the mesh
+!! @param vlocpw  its pieces
+!! @param vkbpw  VKB projectors as functions of pieces
 !! @param evkb  coefficients of VKB projectors
 !! @param mmax  dimension of rr, etc.
 !! @param mch  index of radius for log der test
 !! @param npsh  number of energy points in scan
 
  use constants_m, only: dp, pi
+ use pieces_m, only: piecewise_t
+ use outwf_m, only: outwf_t, outwf_setup, outwf_solve, outwf_free
  implicit none
 !Input variables
  integer, intent(in) :: ll,ivkb,mmax,npsh,mch
- real(dp), intent(in) :: rr(mmax),vloc(mmax),vkb(mmax,ivkb),evkb(ivkb)
+ real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(ivkb)
+ type(piecewise_t), intent(in) :: vlocpw,vkbpw(ivkb)
  real(dp), intent(in) :: pshf(npsh)
  real(dp), intent(in) :: depsh,epsh2,ep
 
@@ -60,12 +64,14 @@
  logical :: jump,aligned
 
  real(dp), allocatable :: uu(:),up(:)
-
-
+ type(outwf_t) :: ow
 
  allocate(uu(mmax),up(mmax))
 
  al = 0.01d0 * log(rr(101) / rr(1))
+
+! the grids of the outward integration (outwf_m), once for every energy
+ call outwf_setup(ll,rr,mmax,vloc,vlocpw,ivkb,vkbpw,ow)
 
  pshoff = 0.0d0
  aligned = .false.
@@ -73,7 +79,7 @@
  do ii = 1,npsh
    epsh = epsh2-(ii-1)*depsh
 
-   call vkboutwf(ll,ivkb,epsh,vkb,evkb,rr,vloc,uu,up,node,mmax,mch,mch)
+   call outwf_solve(ow,epsh,evkb,mch,mch,uu,up,node)
 
    phi = uu(mch)/rr(mch)
    phip = (up(mch)-al*uu(mch))/(al*rr(mch)**2)
@@ -108,7 +114,7 @@
          et=0.5d0*(emin+emax)
          shift2=0.0d0
 
-         call vkboutwf(ll,ivkb,et,vkb,evkb,rr,vloc,uu,up,node,mmax,mch,mch)
+         call outwf_solve(ow,et,evkb,mch,mch,uu,up,node)
          phi = uu(mch)/rr(mch)
          phip = (up(mch)-al*uu(mch))/(al*rr(mch)**2)
          pst = atan2(rr(mch)*phip,phi) + pshoff
@@ -167,6 +173,7 @@
 
  pshp(:)=pshp(:)+dnpi
 
+ call outwf_free(ow)
  deallocate(uu,up)
  return
  end subroutine vkbphsft

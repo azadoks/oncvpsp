@@ -248,19 +248,19 @@ Coulomb tail of the local potential
   alpha_z = 4 pi int r**2 (V_loc + zion/r) dr  8.1986928124E+00 Ha bohr**3
   alpha_z change, table cut at r =  6.00: -5.8188E-11
   alpha_z change, table cut at r = 10.00: -1.1930E-11
-  |V_loc + zion/r| < 1e-10 beyond r =    2.6909
+  |V_loc + zion/r| < 1e-10 beyond r =    2.7726
   max |V_loc - V_ion| beyond rcmax  4.4047E-10
 
 Test configuration 0
 
    n   l     f        eae           eps        diff
    1   0  2.0000  -18.75890054
-   2   0  2.0000   -0.87120687   -0.87120688   -4.78D-09
-   2   1  4.0000   -0.33829448   -0.33829448    6.92D-09
+   2   0  2.0000   -0.87120687   -0.87120688   -4.26D-09
+   2   1  4.0000   -0.33829448   -0.33829448    6.87D-09
 
     Total energies and differences
       AE_ref= -7.44693317D+01  AE_tst= -7.44693317D+01  dif=  0.00D+00
-      PS_ref= -1.56092831D+01  PS_tst= -1.56092831D+01  dif=  3.55D-15
+      PS_ref= -1.56092831D+01  PS_tst= -1.56092831D+01  dif=  2.49D-14
       PSP excitation error= -3.55D-15
 
 Test configuration 1
@@ -284,7 +284,7 @@ Test configuration 2
 
     Total energies and differences
       AE_ref= -7.44693317D+01  AE_tst= -7.33164396D+01  dif=  1.15D+00
-      PS_ref= -1.56092831D+01  PS_tst= -1.44538436D+01  dif=  1.16D+00
+      PS_ref= -1.56092831D+01  PS_tst= -1.44538435D+01  dif=  1.16D+00
       PSP excitation error= -2.55D-03
 
 Test configuration 3

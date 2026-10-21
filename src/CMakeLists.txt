@@ -74,6 +74,7 @@ set(src_oncvpsp
     vploc_m.f90
     qlinalg_m.f90
     ugrid_m.f90
+    outwf_m.F90
     sratom.f90
     tfapot.f90
     vkboutwf.f90
@@ -120,7 +121,8 @@ target_include_directories(oncvpsp
     PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/modules"
     PRIVATE "${CMAKE_CURRENT_BINARY_DIR}"
 )
-target_compile_definitions(oncvpsp PUBLIC $<$<BOOL:${ONCVPSP_WITH_TOML}>:WITH_TOML>)
+target_compile_definitions(oncvpsp PUBLIC $<$<BOOL:${ONCVPSP_WITH_TOML}>:WITH_TOML>
+    $<$<BOOL:${ONCVPSP_BLAS_DOT}>:WITH_BLAS_DOT>)
 target_link_libraries(oncvpsp
     PUBLIC
         oncvpsp::lapack

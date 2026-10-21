@@ -39,8 +39,10 @@
  integer, parameter :: pw_maxseg=4
 !> nodes on each side of a segment on which its piece must hold the piece's
 !> smooth extension: the reach of the interpolant and of the cell rule of
-!> lm_integral at the segment's bounds
- integer, parameter :: pw_reach=32
+!> lm_integral at the segment's bounds, and of the grids of outwf_m, which
+!> run og_ext points past a segment's end and interpolate the piece there
+!> (og_ext + lm_fh_reach = 59)
+ integer, parameter :: pw_reach=64
 
  type piecewise_t
    integer :: nseg=0

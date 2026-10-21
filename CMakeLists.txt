@@ -21,6 +21,7 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 option(ONCVPSP_WITH_Libxc "Enable Libxc support" ON)
 option(ONCVPSP_WITH_TOML "Enable TOML input support" ON)
 option(ONCVPSP_WITH_FR "Build the fully-relativistic executables (oncvpspr*.x)" ON)
+option(ONCVPSP_BLAS_DOT "Pseudo-atom overlaps by the linked BLAS (faster; results depend on it at round-off)" OFF)
 
 # Where each dependency comes from: AUTO uses the system's if it is found and works and otherwise
 # downloads and builds it (with CPM), SYSTEM requires the system's and FETCH always builds it
@@ -134,6 +135,9 @@ else ()
 endif ()
 if (NOT ONCVPSP_WITH_FR)
     message(STATUS "  Fully-relativistic executables: disabled")
+endif ()
+if (ONCVPSP_BLAS_DOT)
+    message(STATUS "  Pseudo-atom overlaps: BLAS (dgemm)")
 endif ()
 if (ONCVPSP_TEST_PYTHON_DESCRIPTION)
     message(STATUS "  Test Python: ${ONCVPSP_TEST_PYTHON_DESCRIPTION}")

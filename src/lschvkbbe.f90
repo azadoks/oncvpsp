@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
  subroutine lschvkbbe(nn,ll,nvkb,ierr,ee,uld,emin,emax, &
-&   rr,vloc,vkb,evkb,uu,up,mmax,mch)
+&   rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,mch)
 
 !! integrates radial schroedinger equation for pseudopotential with
 !! Vanderbilt-Kleinman-Bylander non-local projectors finding energy at
@@ -32,8 +32,9 @@
 !! @param emin  externally generaated estimate of lower bound for ee
 !! @param emax  externally generaated estimate of upper bound for ee
 !! @param rr  log radial mesh
-!! @param vloc  local part of psp
-!! @param vkb  VKB projectors
+!! @param vloc  local part of psp on the mesh
+!! @param vlocpw  the screened local potential's pieces
+!! @param vkbpw  VKB projectors as functions of pieces
 !! @param evkb  coefficients of VKB projectors
 !! @param uu  output radial wave function (*rr)
 !! @param up  d(uu)/dr
@@ -41,13 +42,16 @@
 !! @param mch  matching mesh point for inward-outward integrations
 
  use constants_m, only: dp
+ use pieces_m, only: piecewise_t
+ use outwf_m, only: outwf_t, outwf_setup, outwf_solve, outwf_free
  implicit none
 
 !Input variables
  real(dp), intent(in) :: uld
- real(dp), intent(in) :: rr(mmax),vloc(mmax),vkb(mmax,nvkb),evkb(nvkb)
+ real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nvkb)
  integer, intent(in) :: nn,ll,nvkb,mmax
  integer, intent(in) :: mch
+ type(piecewise_t), intent(in) :: vlocpw,vkbpw(nvkb)
 
 !Input/output variables
  real(dp), intent(inout) :: emin,emax
@@ -64,8 +68,9 @@
  real(dp) :: eps,ro,sc
  real(dp) :: sls,sn,uout,upin,upout
  real(dp) :: amesh,al,als
- real(dp) :: rc,xkap
+ real(dp) :: xkap
  integer :: ii,it,nin,nint,node
+ type(outwf_t) :: ow
 
  real(dp), allocatable :: upp(:),cf(:)
  allocate(upp(mmax),cf(mmax))
@@ -98,6 +103,9 @@
 
  als=al**2
 
+! the grids of the outward integration (outwf_m), once for this potential
+ call outwf_setup(ll,rr,mmax,vloc,vlocpw,nvkb,vkbpw,ow)
+
 ! return point for bound state convergence
  do nint=1,60
 
@@ -109,7 +117,7 @@
    nin=mch
 
 ! outward integration
-   call vkboutwf(ll,nvkb,ee,vkb,evkb,rr,vloc,uu,up,node,mmax,mch,mch)
+   call outwf_solve(ow,ee,evkb,mch,mch,uu,up,node)
 
    uout=uu(mch)
    upout=up(mch)
@@ -183,6 +191,7 @@
    end if
  end do
 
+ call outwf_free(ow)
  deallocate(upp,cf)
  return
 

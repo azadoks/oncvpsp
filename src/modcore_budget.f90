@@ -883,8 +883,8 @@
 
  end subroutine modcore_budget
 
- subroutine modcore_probes(lmax,lloc,nproj,epa,vp,vkb,evkb,rr,mmax,mxprj, &
-&                         nkap,probes,lprobe,nprobe)
+ subroutine modcore_probes(lmax,lloc,nproj,epa,vp,vlocpw,vkbpw,evkb,rr, &
+&                         mmax,mxprj,nkap,probes,lprobe,nprobe)
 
 !! the probe densities of the hardness of icmod=7: for every projector
 !! iprj of every l, the eigenstate with iprj-1 nodes of the screened
@@ -898,7 +898,9 @@
 !! @param nproj  number of projectors for each l
 !! @param epa  reference energies of the projectors
 !! @param vp  screened semi-local and local pseudopotentials
-!! @param vkb  Vanderbilt-Kleinman-Bylander projectors
+!! @param vlocpw  the screened local potential's pieces
+!! @param vkbpw  Vanderbilt-Kleinman-Bylander projectors as functions of
+!!               pieces
 !! @param evkb  coefficients of the projectors
 !! @param rr  log radial grid
 !! @param mmax  dimension of log grid
@@ -910,14 +912,15 @@
 !! @param nprobe  number of probes
 
  use constants_m, only: dp, mxl, mxlin
+ use pieces_m, only: piecewise_t
  implicit none
 
 !Input variables
  integer, intent(in) :: lmax,lloc,mmax,mxprj,nkap
  integer, intent(in) :: nproj(mxlin+1)
  real(dp), intent(in) :: rr(mmax),vp(mmax,mxl+2,nkap)
- real(dp), intent(in) :: vkb(mmax,mxprj,mxl+1,nkap)
  real(dp), intent(in) :: epa(mxprj,mxlin+1,nkap),evkb(mxprj,mxl+1,nkap)
+ type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1,nkap)
 
 !Output variables
  real(dp), intent(out) :: probes(mmax,mxprj*(lmax+1))
@@ -956,7 +959,7 @@
          et=0.5d0*emin
        end if
        call lschvkbb(ll+iprj,ll,npr,ierr,et,emin,emax, &
-&                    rr,vp(1,lloc+1,ikap),vkb(1,1,l1,ikap), &
+&                    rr,vp(1,lloc+1,ikap),vlocpw,vkbpw(1:npr,l1,ikap), &
 &                    evkb(1,l1,ikap),uu,up,mmax,mch)
        if(ierr/=0 .or. et>=0.0d0) then
          bound=.false.

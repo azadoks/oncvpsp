@@ -16,44 +16,56 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine sr_so_r(lmax,irc,nproj,rr,mmax,mxprj,evkb,vkb, &
-&                       vsr,esr,vso,eso)
+ subroutine sr_so_r(lmax,nproj,rr,mmax,mxprj,evkb,vkbpw, &
+&                       vsr,esr,vso,eso,vsrpw,vsopw)
 
 !! reformulates non-local potentials based on j = l +/- 1/2 to scalar-
 !! relativistic and L dot S projectors
 !! uses relationship <L dot S> = (J^2 - L^2 - S^2)/2
 !! so L dot S = +/- l/2 for j = l +/- 1/2
 !!
+!! The projectors are functions of pieces (pieces_m): their overlaps are
+!! taken per piece, and the combinations act on the pieces, so the
+!! results are smooth in the core radii (doc/smoothness_plan.md, R-10)
+!!
 !! @param lmax  maximum angular momentum
-!! @param irc  core radii indices
 !! @param nproj  number of projectors for each l
 !! @param rr  log radial grid
 !! @param mmax  size of radial grid
 !! @param mxprj  dimension of number of projectors
-!! @param vkb  vkb projectors for each l and j=l+/-1/2
+!! @param vkbpw  vkb projectors for each l and j=l+/-1/2, as functions of
+!!               pieces
 !! @param evkb  coefficients of VKB projectors for each l and j=l+/-1/2
-!! @param vsr  normalized scalar-relativistic projectors
+!! @param vsr  normalized scalar-relativistic projectors on the mesh
 !! @param esr  energy coefficients of vsr
-!! @param vso  normalized spin-orbit projectors
+!! @param vso  normalized spin-orbit projectors on the mesh
 !! @param eso  energy coefficients of vso, to be multiplied by <L dot S>
+!! @param vsrpw  vsr as functions of pieces
+!! @param vsopw  vso as functions of pieces
 
  use constants_m, only: dp, mxl, mxlin, mxkap
+ use pieces_m, only: piecewise_t, pw_product_integral, pw_node_values, &
+&                    pw_free
  implicit none
 
 !Input variables
  integer, intent(in) :: lmax,mmax,mxprj
- integer, intent(in) :: irc(mxlin+1),nproj(mxlin+1)
- real(dp), intent(in) :: rr(mmax),vkb(mmax,mxprj,mxl+1,mxkap)
+ integer, intent(in) :: nproj(mxlin+1)
+ real(dp), intent(in) :: rr(mmax)
  real(dp), intent(in) :: evkb(mxprj,mxl+1,mxkap)
+ type(piecewise_t), intent(in) :: vkbpw(mxprj,mxl+1,mxkap)
 
 !Input/output variables
  real(dp), intent(inout) :: vsr(mmax,2*mxprj,mxl+1),esr(2*mxprj,mxl+1)
  real(dp), intent(inout) :: vso(mmax,2*mxprj,mxl+1),eso(2*mxprj,mxl+1)
 
+!Output variables
+ type(piecewise_t), intent(out) :: vsrpw(2*mxprj,mxl+1)
+ type(piecewise_t), intent(out) :: vsopw(2*mxprj,mxl+1)
+
 !Local variables
- integer :: lloc,lpopt
- integer :: ii,jj,kk,ierr,ik1,ik2,ip1,ip2,ipk,ll,l1,info,nn
- real(dp) :: apk,sn,tt,qq1mxprj
+ integer :: ii,jj,kk,ik1,ik2,ip1,ip2,ipk,ll,l1,info,nn
+ real(dp) :: apk,tt
  real(dp) :: sovl(2*mxprj,2*mxprj),sovlev(2*mxprj)
  real(dp) :: ascl(2*mxprj,2*mxprj),aso(2*mxprj,2*mxprj)
  real(dp) :: asclst(2*mxprj,2*mxprj),wsclst(2*mxprj)
@@ -61,10 +73,8 @@
  real(dp) :: asclt(2*mxprj,2*mxprj),asot(2*mxprj,2*mxprj)
  real(dp) :: sphalf(2*mxprj,2*mxprj),smhalf(2*mxprj,2*mxprj)
  real(dp) :: fscl(mxprj),fso(mxprj),work(10*mxprj)
- real(dp), allocatable :: vkbt(:,:),vkbst(:,:)
+ type(piecewise_t) :: pwt(2*mxprj),pwst(2*mxprj),pwswap
  logical :: sorted
-
- allocate(vkbt(mmax,2*mxprj),vkbst(mmax,2*mxprj))
 
  do l1=1,lmax+1
    ll=l1-1
@@ -76,7 +86,9 @@
      eso(:,l1)=0.0d0
      if(nproj(l1)>=1) then
        do ii=1,nproj(l1)
-         vsr(:,ii,l1)=vkb(:,ii,l1,1)
+         vsrpw(ii,l1)=vkbpw(ii,l1,1)
+         vsr(:,ii,l1)=0.0d0
+         call pw_node_values(rr,mmax,vsrpw(ii,l1),vsr(:,ii,l1))
          esr(ii,l1)=evkb(ii,l1,1)
        end do
      end if
@@ -95,7 +107,6 @@
    sovl(:,:)=0.0d0
    ascl(:,:)=0.0d0
    aso(:,:)=0.0d0
-   vkbt(:,:)=0.0d0
 
    do ik1=1,2
      do ip1=1,nproj(l1)
@@ -104,14 +115,14 @@
        ascl(ii,ii)=fscl(ik1)*evkb(ip1,l1,ik1)
        aso(ii,ii)=fso(ik1)*evkb(ip1,l1,ik1)
 
-       vkbt(:,ii)=vkb(:,ip1,l1,ik1)
+       pwt(ii)=vkbpw(ip1,l1,ik1)
 
        do ik2=1,2
          do ip2=1,nproj(l1)
            jj=ip2+(ik2-1)*nproj(l1)
 
-           call vpinteg(vkb(1,ip1,l1,ik1),vkb(1,ip2,l1,ik2),irc(l1),2*l1, &
-&                       sovl(ii,jj),rr)
+           call pw_product_integral(rr,mmax,2*l1,vkbpw(ip1,l1,ik1), &
+&                                   vkbpw(ip2,l1,ik2),sovl(ii,jj))
 
          end do
        end do
@@ -137,11 +148,11 @@
 
 ! take linear combinations to form orthonormal basis functions
 
-   vkbst(:,:)=0.0d0
-
    do jj=1,nn
+     pwst(jj)=pwt(1)
+     pwst(jj)%vals(:,:)=0.0d0
      do ii=1,nn
-       vkbst(:,jj)=vkbst(:,jj) + smhalf(ii,jj)*vkbt(:,ii)
+       pwst(jj)%vals(:,:)=pwst(jj)%vals(:,:) + smhalf(ii,jj)*pwt(ii)%vals(:,:)
      end do
    end do
 
@@ -199,9 +210,15 @@
    do ii=1,nn
      esr(ii,l1)=wsclst(ii)
      eso(ii,l1)=  wsost(ii)
+     vsrpw(ii,l1)=pwt(1)
+     vsrpw(ii,l1)%vals(:,:)=0.0d0
+     vsopw(ii,l1)=pwt(1)
+     vsopw(ii,l1)%vals(:,:)=0.0d0
      do jj=1,nn
-       vsr(:,ii,l1)=vsr(:,ii,l1) + asclst(jj,ii)*vkbst(:,jj)
-       vso(:,ii,l1)= vso(:,ii,l1) +   asost(jj,ii)*vkbst(:,jj)
+       vsrpw(ii,l1)%vals(:,:)=vsrpw(ii,l1)%vals(:,:) &
+&                            + asclst(jj,ii)*pwst(jj)%vals(:,:)
+       vsopw(ii,l1)%vals(:,:)=vsopw(ii,l1)%vals(:,:) &
+&                            + asost(jj,ii)*pwst(jj)%vals(:,:)
      end do
    end do
 
@@ -213,11 +230,11 @@
      do jj=2,nn
        if(abs(esr(jj-1,l1))<abs(esr(jj,l1))) then
          tt=esr(jj,l1)
-         vkbt(:,1)=vsr(:,jj,l1)
+         pwswap=vsrpw(jj,l1)
          esr(jj,l1)=esr(jj-1,l1)
-         vsr(:,jj,l1)=vsr(:,jj-1,l1)
+         vsrpw(jj,l1)=vsrpw(jj-1,l1)
          esr(jj-1,l1)=tt
-         vsr(:,jj-1,l1)=vkbt(:,1)
+         vsrpw(jj-1,l1)=pwswap
          sorted=.false.
        end if
      end do
@@ -229,11 +246,11 @@
      do jj=2,nn
        if(abs(eso(jj-1,l1))<abs(eso(jj,l1))) then
          tt=eso(jj,l1)
-         vkbt(:,1)=vso(:,jj,l1)
+         pwswap=vsopw(jj,l1)
          eso(jj,l1)=eso(jj-1,l1)
-         vso(:,jj,l1)=vso(:,jj-1,l1)
+         vsopw(jj,l1)=vsopw(jj-1,l1)
          eso(jj-1,l1)=tt
-         vso(:,jj-1,l1)=vkbt(:,1)
+         vsopw(jj-1,l1)=pwswap
          sorted=.false.
        end if
      end do
@@ -247,10 +264,11 @@
 &       ' Orthonormal spin-orbit projector coefficients, l = ',ll
    write(6,'(1p,6e12.4)') (eso(jj,l1),jj=1,nn)
 
-! Set sign of projectors (physically irrelevant) so that they are positive
-! at their peak (needed for compaisons apparently)
+! the projectors on the mesh, with their sign (physically irrelevant)
+! positive at their peak (needed for compaisons apparently)
 
    do jj=1,nn
+     call pw_node_values(rr,mmax,vsopw(jj,l1),vso(:,jj,l1))
      apk=0.0d0
      ipk=1
      do ii=1,mmax
@@ -261,7 +279,9 @@
      end do
      if(vso(ipk,jj,l1)<0.0d0) then
        vso(:,jj,l1)=-vso(:,jj,l1)
+       vsopw(jj,l1)%vals(:,:)=-vsopw(jj,l1)%vals(:,:)
      end if
+     call pw_node_values(rr,mmax,vsrpw(jj,l1),vsr(:,jj,l1))
      apk=0.0d0
      ipk=1
      do ii=1,mmax
@@ -272,11 +292,17 @@
      end do
      if(vsr(ipk,jj,l1)<0.0d0) then
        vsr(:,jj,l1)=-vsr(:,jj,l1)
+       vsrpw(jj,l1)%vals(:,:)=-vsrpw(jj,l1)%vals(:,:)
      end if
+   end do
+
+   do ii=1,nn
+     call pw_free(pwt(ii))
+     call pw_free(pwst(ii))
    end do
 
  end do ! l1
 
- deallocate(vkbt,vkbst)
+ call pw_free(pwswap)
  return
  end subroutine sr_so_r

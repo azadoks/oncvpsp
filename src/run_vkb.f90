@@ -18,7 +18,7 @@
 !
  subroutine run_vkb(lmax,lloc,lpopt,dvloc0,rc,irc,nproj,rr,mmax,mxprj,pswf, &
 &                   pswfx,chix,vfull,vp,evkb,vkb,nlim,dlta,vrloc,irel,nkap, &
-&                   vkbpw)
+&                   vkbpw,vlocpw)
 
 !! computes Vanderbilt / Kleinman-Bylander non-local potentials. The
 !! projectors are functions of pieces (pieces_m, doc/smoothness_plan.md
@@ -59,6 +59,9 @@
 !!              (for pswf, vp, vkb, evkb and dlta the last index is 1 for
 !!              j=l+1/2, 2 for j=l-1/2 when nkap=2)
 !! @param vkbpw  the projectors as functions of pieces (output)
+!! @param vlocpw  the screened local potential as a function of pieces
+!!                (output): its inside pieces and the all-electron
+!!                potential beyond rcloc, the last bound the mesh end
 
  use constants_m, only: dp, mxl, mxlin
  use pieces_m, only: piecewise_t, pw_maxseg, pw_reach, pw_alloc, pw_free, &
@@ -83,7 +86,7 @@
 !Output variables
  real(dp), intent(out) :: evkb(mxprj,mxl+1,nkap)
  integer, intent(out) :: nlim
- type(piecewise_t), intent(out) :: vkbpw(mxprj,mxl+1,nkap)
+ type(piecewise_t), intent(out) :: vkbpw(mxprj,mxl+1,nkap),vlocpw
 
 !Local variables
  integer :: lwork
@@ -161,6 +164,20 @@
    end do
    vp(:,l1,1)=vloc(:)
    if(nkap==2) vp(:,l1,2)=vloc(:)
+ end if
+
+! the local potential's pieces, with the node values of vloc
+ if(lloc==4) then
+   bnd(0:2)=[0.0d0,rcloc,rr(mmax)]
+   call pw_alloc(vlocpw,mmax,2,bnd(0:2))
+   vlocpw%vals(:,1)=vlin0(:)
+   vlocpw%vals(:,2)=vfull(:)
+ else
+   bnd(0:3)=[0.0d0,0.95d0*rcloc,rcloc,rr(mmax)]
+   call pw_alloc(vlocpw,mmax,3,bnd(0:3))
+   vlocpw%vals(:,1)=vlin0(:)
+   vlocpw%vals(:,2)=vlin1(:)
+   vlocpw%vals(:,3)=vfull(:)
  end if
 
 ! Vanderbilt / Kleinman-Bylander projector construction

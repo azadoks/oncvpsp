@@ -19,7 +19,7 @@
  subroutine run_config_ps(jj,istcnf,ierrcnf,itcnf,kerrcnf,nvtcnf, &
 &                         natcnf,latcnf,fatcnf,eatcnf,etstcnf,nc,rhov,rhomod, &
 &                         rr,rcmax,mmax,mxprj,iexc,etot,epstot,nproj,vpuns, &
-&                         lloc,vkb,evkb,irel,nkap)
+&                         lloc,vlocpw,vkbpw,evkb,irel,nkap)
 
 !! self-consistent pseudoatom calculation for test configuration jj, compared
 !! with the all-electron results for the reference and test configurations
@@ -41,14 +41,16 @@
 !! @param vpuns  unscreened semi-local pseudopotentials (plus different vloc if
 !!               lloc==4)
 !! @param lloc  index-1 of local potential
-!! @param vkb  Vanderbilt-Kleinman-Bylander projectors, last index 1 for
-!!             j=l+1/2, 2 for j=l-1/2 when irel=2
-!! @param evkb  VKB projector coefficients, last index as for vkb
+!! @param vlocpw  the screened local potential's pieces
+!! @param vkbpw  Vanderbilt-Kleinman-Bylander projectors as functions of
+!!               pieces, last index 1 for j=l+1/2, 2 for j=l-1/2 when irel=2
+!! @param evkb  VKB projector coefficients, last index as for vkbpw
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param nkap  number of kappa per l: 1, or 2 for irel=2
 
  use config_ae_m, only: config_ae_warning
  use constants_m, only: dp, mxstate, mxcnf, mxl, mxlin, nrhomod, nlev
+ use pieces_m, only: piecewise_t
  implicit none
 
 !Input variables
@@ -63,9 +65,10 @@
  integer, intent(in) :: nproj(mxlin+1)
  real(dp), intent(in) :: etot,epstot,rcmax
  real(dp), intent(in) :: rhov(mmax),rr(mmax)
- real(dp), intent(in) :: vpuns(mmax,mxl+2),vkb(mmax,mxprj,mxl+1,nkap)
+ real(dp), intent(in) :: vpuns(mmax,mxl+2)
  real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap)
  real(dp), intent(in) :: rhomod(mmax,nrhomod)
+ type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1,nkap)
 
 !Local variables
  integer :: ii,it,kk,ll,l1,ierr,nvt
@@ -140,7 +143,7 @@
 
  call psatom(natp,latp,eatp,fatp,nvt,it,rhocps,rho, &
 &           rr,rcmax,mmax,mxprj,iexc,etsttot,nproj,vpuns,lloc, &
-&           vkb,evkb,ierr,nkap)
+&           vlocpw,vkbpw,evkb,ierr,nkap)
 
  if(ierr/=0) then
    if(irel==2) then
@@ -167,7 +170,7 @@
 
  call psatom(natp,latp,eatp,fatp,nvt,it,rhocps,rho, &
 &           rr,rcmax,mmax,mxprj,iexc,etsttot,nproj,vpuns,lloc, &
-&           vkb,evkb,ierr,nkap)
+&           vlocpw,vkbpw,evkb,ierr,nkap)
 
  if(ierr/=0) then
    if(irel==2) then

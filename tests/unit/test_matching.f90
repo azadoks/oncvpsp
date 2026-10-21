@@ -15,6 +15,7 @@
 ! Stops with a non-zero code if any check failed.
  program test_matching
  use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
+ use pieces_m, only: piecewise_t, pw_alloc, pw_free
  implicit none
  external :: lschfb, ldiracfb, lschvkbb
 
@@ -23,7 +24,8 @@
  real(dp), parameter :: rr1 = 5.0e-5_dp, rmax = 45.0_dp, amesh = 1.006_dp
  real(dp), parameter :: tol_e = 1.0e-14_dp, tol_u = 1.0e-12_dp
  real(dp), parameter :: zlo = 1.0_dp, zhi = 1.1_dp
- real(dp), allocatable :: rr(:), vv(:), vkb(:, :), uu(:, :), up(:, :)
+ real(dp), allocatable :: rr(:), vv(:), uu(:, :), up(:, :)
+ type(piecewise_t) :: vpw, vkbpw(0)
  real(dp) :: al, zz, ee, emin, emax, evkb(1), es(npts), us(npts), zs(npts)
  real(dp) :: rq
  integer :: nfail = 0, mmax, ii, iz, ierr, mch, isolv, nn, ll, ist
@@ -31,11 +33,10 @@
 
  al = log(amesh)
  mmax = int(log(rmax/rr1)/al)
- allocate(rr(mmax), vv(mmax), vkb(mmax, 1), uu(mmax, 2), up(mmax, 2))
+ allocate(rr(mmax), vv(mmax), uu(mmax, 2), up(mmax, 2))
  do ii = 1, mmax
    rr(ii) = rr1*exp(al*(ii - 1))
  end do
- vkb(:, :) = 0.0_dp
  evkb(1) = 0.0_dp
 
  do isolv = 1, 4
@@ -60,8 +61,11 @@
        case(4)
          emin = -zz**2
          emax = 0.0_dp
-         call lschvkbb(nn, ll, 0, ierr, ee, emin, emax, rr, vv, vkb, evkb, &
-&                      uu(:, 1), up(:, 1), mmax, mch)
+         call pw_alloc(vpw, mmax, 1, [0.0_dp, rr(mmax)])
+         vpw%vals(:, 1) = vv
+         call lschvkbb(nn, ll, 0, ierr, ee, emin, emax, rr, vv, vpw, &
+&                      vkbpw, evkb, uu(:, 1), up(:, 1), mmax, mch)
+         call pw_free(vpw)
        case default
          ierr = -1
        end select

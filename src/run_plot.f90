@@ -17,8 +17,8 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
  subroutine run_plot(lmax,npa,epa,lloc,irc, &
-&                    vkb,evkb,nproj,rr,vfull,vp,vpuns,zz,mmax,mxprj,drl,nrl, &
-&                    rho,rhoc,rhomod,irel,nkap,cvgplt)
+&                    vkb,vlocpw,vkbpw,evkb,nproj,rr,vfull,vp,vpuns,zz,mmax, &
+&                    mxprj,drl,nrl,rho,rhoc,rhomod,irel,nkap,cvgplt)
 
 !! write output for plotting pseudopotentials, model core charge, and
 !! all-electron and pseudo wave functions
@@ -30,7 +30,9 @@
 !!             evkb, vp, cvgplt)
 !! @param lloc  l for local potential
 !! @param irc  indices of core radii
-!! @param vkb  VKB projectors
+!! @param vkb  VKB projectors on the mesh
+!! @param vlocpw  the screened local potential's pieces
+!! @param vkbpw  the projectors as functions of pieces
 !! @param evkb  coefficients of VKB projectors
 !! @param nproj  number of vkb projectors for each l
 !! @param rr  log radial grid
@@ -50,6 +52,7 @@
 !! @param cvgplt  energy per electron error vs. cutoff (convergence profiles)
 
  use constants_m, only: dp, mxl, mxlin, nrhomod, nerrlv
+ use pieces_m, only: piecewise_t
  implicit none
 
 !Input variables
@@ -59,6 +62,7 @@
  real(dp), intent(in) :: rr(mmax),vp(mmax,mxl+2,nkap),vpuns(mmax,mxl+2)
  real(dp), intent(in) :: vfull(mmax)
  real(dp), intent(in) :: vkb(mmax,mxprj,mxl+1,nkap)
+ type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1,nkap)
  real(dp), intent(in) :: rho(mmax),rhoc(mmax),rhomod(mmax,nrhomod)
  real(dp), intent(in) :: epa(mxprj,mxlin+1,nkap),evkb(mxprj,mxl+1,nkap)
  real(dp), intent(in) :: cvgplt(2,nerrlv,mxprj,mxl+1,nkap)
@@ -182,7 +186,7 @@
          emin=1.1d0*etest
 
          call lschvkbb(ll+iprj,ll,npr,ierr,etest,emin,emax, &
-&                      rr,vp(1,lloc+1,ikap),vkb(1,1,l1,ikap), &
+&                      rr,vp(1,lloc+1,ikap),vlocpw,vkbpw(1:npr,l1,ikap), &
 &                      evkb(1,l1,ikap),u2,up,mmax,mch)
          sgnae=1.0d0
          sgnps=1.0d0
@@ -208,7 +212,8 @@
          end if
 
          call lschvkbs(ll,npr,epa(iprj,l1,ikap),rr,vp(1,lloc+1,ikap), &
-&                      vkb(1,1,l1,ikap),evkb(1,l1,ikap),u2,up,mmax,n2)
+&                      vlocpw,vkbpw(1:npr,l1,ikap),evkb(1,l1,ikap),u2,up, &
+&                      mmax,n2)
          sgnae=sign(1.0d0,ur(n2,1))
          sgnps=sign(1.0d0,u2(n2))
        end if

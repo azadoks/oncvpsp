@@ -327,7 +327,7 @@ d2excps - pseudofunction derivatives with core correction
 
 rms 2nd derivative error    2.458182E-04
 
-Ionic tail switched over r =  2.7000 to  5.4026 a.u., converged in  5 steps
+Ionic tail switched over r =  2.7000 to  5.4026 a.u., converged in  4 steps
 
 Pseudoatom total energy   -3.786358
 
@@ -361,7 +361,7 @@ Coulomb tail of the local potential
   alpha_z = 4 pi int r**2 (V_loc + zion/r) dr  2.2353221774E+01 Ha bohr**3
   alpha_z change, table cut at r =  6.00:  2.7001E-10
   alpha_z change, table cut at r = 10.00:  1.1745E-10
-  |V_loc + zion/r| < 1e-10 beyond r =    4.7148
+  |V_loc + zion/r| < 1e-10 beyond r =    4.5759
   max |V_loc - V_ion| beyond rcmax  1.9919E-09
 
 Test configuration 0
@@ -370,12 +370,12 @@ Test configuration 0
    1   0  2.0000  -65.18455690
    2   0  2.0000   -5.07446376
    2   1  6.0000   -3.51438164
-   3   0  2.0000   -0.39831374   -0.39831374   -2.03D-09
-   3   1  2.0000   -0.15352592   -0.15352593   -1.70D-09
+   3   0  2.0000   -0.39831374   -0.39831374   -8.32D-10
+   3   1  2.0000   -0.15352592   -0.15352592   -5.06D-10
 
     Total energies and differences
       AE_ref= -2.88191975D+02  AE_tst= -2.88191975D+02  dif=  0.00D+00
-      PS_ref= -3.78635815D+00  PS_tst= -3.78635815D+00  dif=  1.78D-15
+      PS_ref= -3.78635814D+00  PS_tst= -3.78635814D+00  dif= -8.88D-16
       PSP excitation error= -1.78D-15
 
 Test configuration 1
@@ -389,7 +389,7 @@ Test configuration 1
 
     Total energies and differences
       AE_ref= -2.88191975D+02  AE_tst= -2.87633776D+02  dif=  5.58D-01
-      PS_ref= -3.78635815D+00  PS_tst= -3.22804415D+00  dif=  5.58D-01
+      PS_ref= -3.78635814D+00  PS_tst= -3.22804413D+00  dif=  5.58D-01
       PSP excitation error= -1.15D-04
 
 Test configuration 2
@@ -403,7 +403,7 @@ Test configuration 2
 
     Total energies and differences
       AE_ref= -2.88191975D+02  AE_tst= -2.87903865D+02  dif=  2.88D-01
-      PS_ref= -3.78635815D+00  PS_tst= -3.49831367D+00  dif=  2.88D-01
+      PS_ref= -3.78635814D+00  PS_tst= -3.49831366D+00  dif=  2.88D-01
       PSP excitation error=  6.55D-05
 
 Test configuration 3
@@ -417,7 +417,7 @@ Test configuration 3
 
     Total energies and differences
       AE_ref= -2.88191975D+02  AE_tst= -2.87018599D+02  dif=  1.17D+00
-      PS_ref= -3.78635815D+00  PS_tst= -2.61315757D+00  dif=  1.17D+00
+      PS_ref= -3.78635814D+00  PS_tst= -2.61315756D+00  dif=  1.17D+00
       PSP excitation error=  1.75D-04
 
 DATA FOR PLOTTING

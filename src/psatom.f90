@@ -19,8 +19,8 @@
 ! self-consistent pseudoatom calculation
 
  subroutine psatom(na,la,ea,fat,nv,it,rhoc,rho, &
-&           rr,rcmax,mmax,mxprj,iexc,etot,nproj,vpuns,lloc,vkb,evkb,ierr, &
-&           nkap)
+&           rr,rcmax,mmax,mxprj,iexc,etot,nproj,vpuns,lloc,vlocpw,vkbpw, &
+&           evkb,ierr,nkap)
 
 !! @param na  principal quantum number array, dimension nv
 !! @param la  angular-momenta
@@ -42,13 +42,15 @@
 !! @param vpuns  unscreened semi-local pseudopotentials (plus differenv vloc if
 !!               lloc==4)
 !! @param lloc  index-1 of local potential
-!! @param vkb  Vanderbilt-Kleinman-Bylander projectors, last index 1 for
-!!             j=l+1/2, 2 for j=l-1/2 when nkap=2
-!! @param evkb  VKB projector coefficients, last index as for vkb
+!! @param vlocpw  the screened local potential's pieces
+!! @param vkbpw  Vanderbilt-Kleinman-Bylander projectors as functions of
+!!               pieces, last index 1 for j=l+1/2, 2 for j=l-1/2 when nkap=2
+!! @param evkb  VKB projector coefficients, last index as for vkbpw
 !! @param ierr  non-zero return if error
 !! @param nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
 
  use constants_m, only: dp, mxstate, mxl, mxlin
+ use pieces_m, only: piecewise_t
  implicit none
 
 !Input variables
@@ -57,8 +59,9 @@
  integer, intent(in) :: na(nv),la(nv),nproj(mxlin+1)
  real(dp), intent(in) :: rcmax
  real(dp), intent(in) :: fat(mxstate,2),rr(mmax)
- real(dp), intent(in) :: vpuns(mmax,mxl+2),vkb(mmax,mxprj,mxl+1,nkap)
+ real(dp), intent(in) :: vpuns(mmax,mxl+2)
  real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap)
+ type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1,nkap)
  real(dp), intent(in) :: rhoc(mmax)
 
 !Input/output variables
@@ -183,7 +186,8 @@
        emin=1.10d0*ea(ii,ikap)
        emax=0.90d0*ea(ii,ikap)
        call lschvkbb(na(ii),la(ii),nproj(l1),ierr,et,emin,emax, &
-&                   rr,vtot,vkb(1,1,l1,ikap),evkb(1,l1,ikap),uu,up,mmax,mch)
+&                   rr,vtot,vlocpw,vkbpw(1:nproj(l1),l1,ikap), &
+&                   evkb(1,l1,ikap),uu,up,mmax,mch)
 
        if(ierr /= 0) then
          if(nkap==2) then

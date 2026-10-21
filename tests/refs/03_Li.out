@@ -216,9 +216,9 @@ B matrix Hermiticity error, ll=   1
 
   Orthonormal projector coefficients -1.4437E+00 -2.9861E-01
 
-Ionic tail switched over r =  3.0000 to  6.0004 a.u., converged in  5 steps
+Ionic tail switched over r =  3.0000 to  6.0004 a.u., converged in  6 steps
 
-Pseudoatom total energy   -6.686630
+Pseudoatom total energy   -6.686629
 
 
 Diagnostic tests using Vanderbilt-Kleinman-Bylander pseudopotentials
@@ -247,39 +247,39 @@ Coulomb tail of the local potential
   alpha_z = 4 pi int r**2 (V_loc + zion/r) dr  3.2673363060E+00 Ha bohr**3
   alpha_z change, table cut at r =  6.00: -1.6838E-09
   alpha_z change, table cut at r = 10.00: -1.3980E-09
-  |V_loc + zion/r| < 1e-10 beyond r =    5.5494
+  |V_loc + zion/r| < 1e-10 beyond r =    5.4834
   max |V_loc - V_ion| beyond rcmax  3.3094E-07
 
 Test configuration 0
 
    n   l     f        eae           eps        diff
-   1   0  2.0000   -1.87794447   -1.87794424    2.29D-07
-   2   0  1.0000   -0.10572056   -0.10572050    6.32D-08
+   1   0  2.0000   -1.87794447   -1.87794421    2.56D-07
+   2   0  1.0000   -0.10572056   -0.10572048    7.89D-08
 
     Total energies and differences
       AE_ref= -7.33488006D+00  AE_tst= -7.33488006D+00  dif=  0.00D+00
-      PS_ref= -6.68662958D+00  PS_tst= -6.68662958D+00  dif= -7.99D-15
+      PS_ref= -6.68662945D+00  PS_tst= -6.68662945D+00  dif=  8.88D-16
       PSP excitation error=  7.99D-15
 
 Test configuration 1
 
    n   l     f        eae           eps        diff
-   1   0  2.0000   -2.18982573   -2.18685250    2.97D-03
+   1   0  2.0000   -2.18982573   -2.18685242    2.97D-03
 
     Total energies and differences
       AE_ref= -7.33488006D+00  AE_tst= -7.14233661D+00  dif=  1.93D-01
-      PS_ref= -6.68662958D+00  PS_tst= -6.49406253D+00  dif=  1.93D-01
+      PS_ref= -6.68662945D+00  PS_tst= -6.49406243D+00  dif=  1.93D-01
       PSP excitation error= -2.36D-05
 
 Test configuration 2
 
    n   l     f        eae           eps        diff
-   1   0  2.0000   -1.93094056   -1.92851197    2.43D-03
+   1   0  2.0000   -1.93094056   -1.92851191    2.43D-03
    2   1  1.0000   -0.05816613   -0.05818713   -2.10D-05
 
     Total energies and differences
       AE_ref= -7.33488006D+00  AE_tst= -7.27043009D+00  dif=  6.44D-02
-      PS_ref= -6.68662958D+00  PS_tst= -6.62215734D+00  dif=  6.45D-02
+      PS_ref= -6.68662945D+00  PS_tst= -6.62215723D+00  dif=  6.45D-02
       PSP excitation error= -2.23D-05
 
 DATA FOR PLOTTING
