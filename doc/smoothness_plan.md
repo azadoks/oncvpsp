@@ -437,7 +437,7 @@ numbers refer to [Phases](#phases).
 | M-9 | `modcore_budget` r_s by integer bisection; irtop, ilo from snapped rc | h, a | W | bracket on the mesh, Brent on g(r_s) = max_q err − errmax; r_s in [r_top/50, r_top], r_top = min(rc) or the last radius with core charge (the real rc, not its index) |
 | M-10 | `modcore_budget` icmod 7 candidates snapped with nint, chosen by sorting | b, h | W | continuous 1-D minimisation of the mismatch on [r_s6, r_top]; revised: a ladder r_top/1.025ⁱ down to r_s6 picks the basin, then Brent on the central-difference slope of the mismatch in ln r_s (step 1e-2); the mismatch itself (`der2exc`) still reads the model core on the mesh, C² in r_s (S-10) |
 | M-11 | `modcore_budget`: panel count ceiling(qhi−qlo), nxg = 20 + ceiling(qhi·r_s) | i | W | fixed counts: 80 window panels × 8 nodes, 400 fill nodes, 8 per mesh interval beyond r_s, GL5 per 0.1 of q (doubling any changes nothing printed); the fill in a Legendre basis in 2t − 1 (monomials had alternating 1e5 coefficients and 1e-11 noise), monotone exactly (p′ at the ends and the roots of p″) |
-| M-12 | `modcore_budget` outer integral from mesh index `is`; forward transform a plain sum across the C² joint | c, d | W | split at r_s, `lm_integral`; transforms split there too (fill by Gauss–Legendre on [0, r_s], beyond it the interpolant of ρ_c by Gauss–Legendre per mesh interval, the suffix sums tabulated once). Known limit: the error's integral below r_s samples the fill, a polynomial of degree 16 in r/r_s, on the fixed log mesh, so its quadrature error ripples as r_s slides over the mesh (4e-12 on an error of 1e-4, period ~0.003 bohr; only the xc term, the linear one has exact moments): ~1e-9 in r_s, ~1e-6 of a finite-difference slope, ~1 % of a second difference; the T2 rows of 14_Si_bc carry it in their tolerances. Fix if curvature is needed: that integral on a log mesh of the same step ending at r_s (the functionals need a log mesh; Gauss nodes will not do for GGA), b_q there from the rotated sines, ρ_v interpolated; ~250–300 more points, ~+1.5 s on 14_Si_bc |
+| M-12 | `modcore_budget` outer integral from mesh index `is`; forward transform a plain sum across the C² joint | c, d | W | split at r_s, `lm_integral`; transforms split there too (fill by Gauss–Legendre on [0, r_s], beyond it the interpolant of ρ_c by Gauss–Legendre per mesh interval, the suffix sums tabulated once). The error's integral below r_s then sampled the fill, a polynomial of degree 16 in r/r_s, on the fixed log mesh, so its quadrature error rippled as r_s slid over the mesh (4e-12 on an error of 1e-4, ~1e-9 in r_s); fixed in phase 5: that integral on a log mesh of the same step ending at r_s (the functionals need a log mesh; Gauss nodes will not do for GGA), b_q there from the rotated sines, ρ_v interpolated; +1.3 s on 14_Si_bc |
 | M-13 | `modcore_budget_table`: linear interpolation in q with an assumed spacing, last crossing | e, h | W | done: the root by Q-4; the table now holds the whole q-grid curve (`ncurve` 4000, an error if a curve is longer) instead of every nstep-th node, whose interpolant changed when nstep = 1 + (nq−2)/999 did (nq is 829…1051 in 07_N_opt) |
 | M-14 | `oncvpsp_main` irct (PSML matching radius) | a | W (metadata) | write r* or r_s |
 
@@ -641,8 +641,8 @@ So the order is:
 6. References, then phase 7. References done: patched for phases 5
    and 6 together; the kernels do not move, V_loc moves only where the
    model core does, the log derivatives everywhere (X-2).
-7. Low, for the optimizer: X-1, X-4…X-6, D-5, the M-12 ripple (below the
-   finite-difference noise at h = 1e-4), M-14 (PSML), the psp8 model-core
+7. Low, for the optimizer: X-1, X-4…X-6, D-5, the M-12 ripple (done:
+   r_s smooth to 5e-12), M-14 (PSML), the psp8 model-core
    pieces. The UPF on the log mesh writes ρ_c's values, which are smooth
    already.
 8. S-10: GGA ρ′, ρ″ from the pieces, last (a small effect). Item 1 shows
@@ -1159,11 +1159,21 @@ So the order is:
       with a model core change beyond the log derivatives; V_loc by
       1.3e-3 to 2.7e-2 Ha, rho_mod by 3.2e-2 to 6.0 (the derivative
       columns more, at the C² joint), the kernels not at all
-- [ ] Revisit the icmod 6/7 quadrature ripple (M-12, known limit): ~1e-9
-      in r_s, carried in the tolerances of 14_Si_bc's T2 rows. Fix it
-      (the integral below r_s on a log mesh ending at r_s) if second
-      derivatives by finite differences are needed, then tighten those
-      rows
+- [x] Revisit the icmod 6/7 quadrature ripple (M-12, known limit): fixed.
+      The xc error's integral below r_s runs on its own log mesh, ri(k) =
+      r_s exp((k - kin) al), from at least rr(1) to the points its
+      interpolant reads beyond r_s; ρ_v is interpolated there, b_q taken
+      from the rotated sines (the spectrum's points are rr(1:nx), then
+      ri). Dense scan of 14_Si_bc's slack (81 points, degree 12): r_s
+      residual 3.0e-9 → 5.7e-12 (noise; the ripple's period was ~8
+      points), UPF core near the joint 4.7e-10 → 9.7e-13. T2: 14_Si_bc
+      slack at degree 10, core 2.7e-9 → 2.9e-12, V_loc 1.5e-9 → 8.6e-13
+      (degree 6 had hidden behind the ripple; the old code leaves 1.6e-9
+      at degree 10); 14_Si_bc fcfact had no ripple above its fit, now at
+      degree 18, core 9.6e-11 → 5.4e-12, V_loc 3.4e-11 → 1.9e-12;
+      14_Si_hm slack 3.6e-11 → 2.1e-11. Tolerances 1e-11/3e-12 and
+      2e-11/1e-11. r_s moves by ~1e-9, the needed cutoffs not at all;
+      14_Si_bc 4.7 → 6.0 s, 14_Si_hm 3.3 → 3.8 s
 
 #### Phase 6: diagnostics
 

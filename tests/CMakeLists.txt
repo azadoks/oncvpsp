@@ -135,23 +135,20 @@ smooth_scan_test(sr_34_Se_rcfact sr 34_Se "model_core_charge.rcfact" kernel,vloc
 smooth_scan_test(sr_40_Zr_grid_fcfact_min sr 40_Zr_grid "model_core_charge.fcfact_min" kernel,vloc,core
     "kernel=1e-10,vloc=1e-10,core=3e-12" --span 0.02)
 # icmod 6/7 (M-8..M-12): r_s is a root of the error of the model's density cutoffs, whose
-# integral over [0, r_s] samples the fill, a polynomial in (r/r_s)**2, on the fixed log mesh; as
-# r_s slides over the mesh that quadrature's error ripples (4e-12 on an error of 1e-4, period
-# ~0.003 bohr in r_s): ~1e-9 in r_s, the residuals of 14_Si_bc's scans (a period of ~4-7 points,
-# which no degree fits). Harmless for first derivatives by finite differences (~1e-6 of the
-# slope), not for second (~1%). The fix, if it is needed: that integral on a log mesh of the
-# same step scaled with r_s (doc/smoothness_plan.md, M-12). 14_Si_hm's residual is the xc
-# round-off (~2e-11 in r_s); degree 14 for the curvature over the wider fcfact span
+# integral over [0, r_s] is taken on a log mesh ending at r_s (on the fixed mesh its error rippled
+# with r_s, ~1e-9 in r_s, the residuals of 14_Si_bc's scans until M-12 was fixed). What is left is
+# the fit: degree 18 for the curvature over the wide fcfact span (14 leaves 1e-10), and 14_Si_hm's
+# xc round-off (~2e-11 in r_s)
 smooth_scan_test(sr_14_Si_bc_ecut sr 14_Si_bc "model_core_charge.fcfact" kernel,vloc,core
-    "kernel=1e-10,vloc=1e-10,core=3e-10" --span 0.2 --degree 14)
+    "kernel=1e-10,vloc=1e-11,core=2e-11" --span 0.2 --degree 18)
 # the onset of the well (well_onset) where 14_Si's well states keep their n (l=1 takes another
 # node between 1.06 and 1.1)
 smooth_scan_test(sr_14_Si_well_onset sr 14_Si "pseudopotentials.well_onset" kernel,vloc,core ${smooth_g1} --center 1.02 --span 0.01)
-# icmod 6/7: the xc round-off (14_Si_hm) and the quadrature ripple (14_Si_bc), as above
+# icmod 6/7: the xc round-off (14_Si_hm), as above; 14_Si_bc at degree 10 (6 leaves 3e-9)
 smooth_scan_test(sr_14_Si_hm_slack sr 14_Si_hm "model_core_charge.slack" kernel,vloc,core
     "kernel=1e-10,vloc=1e-10,core=1e-10" --span 0.02 --degree 14)
 smooth_scan_test(sr_14_Si_bc_slack sr 14_Si_bc "model_core_charge.slack" kernel,vloc,core
-    "kernel=1e-10,vloc=3e-9,core=5e-9" --center 0.9 --span 0.02)
+    "kernel=1e-10,vloc=3e-12,core=1e-11" --center 0.9 --span 0.02 --degree 10)
 # the model core of the psp8 file with its four derivatives, which the writer interpolates across
 # the model's joint (phase 5)
 smooth_scan_test(sr_14_Si_fcfact_psp8 sr 14_Si "model_core_charge.fcfact" core ${smooth_g1} --span 0.02 --output psp8)

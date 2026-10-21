@@ -149,7 +149,8 @@
  real(dp) :: tk(ngk),wk(ngk),tgi(ngi),wgi(ngi),xg(nxg),wxg(nxg)
  real(dp) :: pt(ngi),pg(ngi)
  real(dp), allocatable :: core(:),nval(:),work(:),eps(:),vxc(:),wf(:),wc(:)
- real(dp), allocatable :: fext(:),af(:),ac(:),swin(:)
+ real(dp), allocatable :: fext(:),af(:),ac(:),swin(:),xr(:),ri(:),nvi(:)
+ real(dp), allocatable :: wki(:),epi(:),vxi(:)
  real(dp), external :: cinf_taper
  real(dp), allocatable :: qn(:),wn(:),ot(:),og(:),sho(:),cho(:)
  real(dp), allocatable :: so0(:,:),co0(:,:),tab(:,:,:),tabw(:,:)
@@ -159,6 +160,7 @@
  real(dp), allocatable :: d2ae(:,:),d2mod(:,:),d2zero(:,:),cmis(:),crad(:)
  integer, allocatable :: cfill(:)
  integer :: ii,jj,kk,nq,npq,nqn,nin,nx,irtop,ifill,ncand,i0,iend,nout,js
+ integer :: kin,ni,nt
  integer :: irmx,irow,ip,ig
  real(dp) :: sa,ca,sb
  integer :: npdone,msnap,ib
@@ -298,30 +300,39 @@
    nin=ii
  end do
  nx=min(mmax,nin+lm_fh_reach()+lm_blend+10)
- allocate(core(mmax),nval(nx),work(nx),eps(nx),vxc(nx),rqp(nx))
- allocate(wf(nx),wc(nx),fext(nx),af(nx),ac(nx),swin(nx))
+! the mesh of the integral below r_s (set_model): ri(k) = r_s
+! exp((k-kin) al), from at least rr(1) to the points its interpolant reads
+! beyond r_s (r_s from r_lo, less the steps of the central differences).
+! The band-limited models are taken at xr: rr(1:nx), then ri
+ kin=floor((log(rlo/rr(1)) - 2.0d0*hmis)/al)+1
+ ni=kin+lm_fh_reach()+lm_blend+10
+ nt=nx+ni
+ allocate(core(mmax),nval(nx),work(nx),eps(nx),vxc(nx),rqp(nt))
+ allocate(wf(ni),wc(nx),fext(ni),af(ni),ac(nx),swin(nx))
+ allocate(xr(nt),ri(ni),nvi(ni),wki(ni),epi(ni),vxi(ni))
  do ii=1,nx
    swin(ii)=cinf_taper(rr(ii),taper*radius,radius)
  end do
- allocate(shr(nx),chr(nx),sr0(nx,ngk),cr0(nx,ngk),sr(nx,ngk),cr(nx,ngk))
- allocate(ntk(npq,ngk),rqs(nx,0:nq))
- shr(:)=sin(dq*rr(1:nx))
- chr(:)=cos(dq*rr(1:nx))
+ allocate(shr(nt),chr(nt),sr0(nt,ngk),cr0(nt,ngk),sr(nt,ngk),cr(nt,ngk))
+ allocate(ntk(npq,ngk),rqs(nt,0:nq))
+ xr(1:nx)=rr(1:nx)
+ shr(1:nx)=sin(dq*rr(1:nx))
+ chr(1:nx)=cos(dq*rr(1:nx))
  do kk=1,ngk
-   sr0(:,kk)=sin(tk(kk)*dq*rr(1:nx))
-   cr0(:,kk)=cos(tk(kk)*dq*rr(1:nx))
+   sr0(1:nx,kk)=sin(tk(kk)*dq*rr(1:nx))
+   cr0(1:nx,kk)=cos(tk(kk)*dq*rr(1:nx))
  end do
 
  nval(:)=pi4*background + rhotps(1:nx)
 
 ! the xc energy density of the valence charge on the core charge
  work(:)=nval(:) + rhoc(1:nx)
- call xc_eps(work,eps,vxc)
+ call xc_eps(work,eps,vxc,rr,nx)
  wc(:)=work(:)*eps(:)
 
 ! xc potential of the background alone
  work(:)=pi4*background
- call xc_eps(work,eps,vxc)
+ call xc_eps(work,eps,vxc,rr,nx)
  vbg=vxc(nx/2)
 
 ! smallest r_s, first with the cutoffs to q_b + quick; if a larger one
@@ -377,8 +388,8 @@
    call set_model(rs)
    mismatch=mismatch_at(log(rs))
 ! r_s6 is a root of this error less errmax, so at r_s = r_s6 the two are
-! equal to round-off; the margin is above that and the M-12 ripple
-! (4e-8 relative), far below a radius that does not fit
+! equal to round-off; the margin is above that, far below a radius that
+! does not fit
    if(err_max(qb,qmax,errmax)>errmax*(1.0d0+1.0d-7)) then
      write(6,'(/a,f12.6,a)') 'modcore_budget: WARNING the radius',rs, &
 &          ' of the least mismatch does not fit the budget'
@@ -467,6 +478,7 @@
  end if
 
  deallocate(core,nval,work,eps,vxc,wf,wc,fext,af,ac,swin,rqp,qn,wn)
+ deallocate(xr,ri,nvi,wki,epi,vxi)
  deallocate(ot,og,sho,cho)
  deallocate(so0,co0,tab,tabw,fx,fw,plg)
  deallocate(shr,chr,sr0,cr0,sr,cr,ntk,rqs)
@@ -643,8 +655,9 @@
 
 !! the model of radius rad: the fill (ifill 1 for the minimum tail in cpoly,
 !! 2 for Martins' in aco, bco, cco, 0 for none), in core the model inside
-!! rad and the core charge beyond, the nodes of its transform, and the
-!! xc energy density of the valence charge on it
+!! rad and the core charge beyond, the nodes of its transform, the mesh
+!! ri of the integral below rad, and the xc energy density of the valence
+!! charge on the fill there
 !!
 !! @param rad  model radius r_s (bohr)
 
@@ -709,17 +722,25 @@
    fw(kk)=rs*wxg(kk)*fx(kk)*fill_value(fx(kk))
  end do
 
-! the xc energy density of the valence charge on the fill, extended
-! beyond rs as far as the interpolant of the integrals to rs reads
- fext(:)=rhoc(1:nx)
- xe=rs*exp((lm_fh_reach()+lm_blend+10)*al)
- do kk=1,nx
-   if(rr(kk)>=xe) exit
-   fext(kk)=fill_value(rr(kk))
+! the mesh ri, its points of the band-limited models, the valence charge
+! there and the xc energy density of the valence charge on the fill,
+! extended beyond rs as far as the interpolant of the integral to rs reads
+ do kk=1,ni
+   ri(kk)=rs*exp((kk-kin)*al)
+   call lm_interp(rr,rhotps,mmax,ri(kk),nvi(kk))
+   fext(kk)=fill_value(ri(kk))
  end do
- work(:)=nval(:) + fext(:)
- call xc_eps(work,eps,vxc)
- wf(:)=work(:)*eps(:)
+ nvi(:)=pi4*background + nvi(:)
+ xr(nx+1:nt)=ri(:)
+ shr(nx+1:nt)=sin(dq*ri(:))
+ chr(nx+1:nt)=cos(dq*ri(:))
+ do kk=1,ngk
+   sr0(nx+1:nt,kk)=sin(tk(kk)*dq*ri(:))
+   cr0(nx+1:nt,kk)=cos(tk(kk)*dq*ri(:))
+ end do
+ wki(:)=nvi(:) + fext(:)
+ call xc_eps(wki,epi,vxi,ri,ni)
+ wf(:)=wki(:)*epi(:)
  return
  end subroutine set_model
 
@@ -1038,11 +1059,11 @@
      ntk(ip,ig)=(ss + tab(ip,ig,irow))/kq
 ! the band-limited model: (2/pi) w k n(k) sin(kr)/r
      tt=2.0d0/pi*wk(ig)*dq*kq*ntk(ip,ig)
-     do ll=1,nx
-       rqp(ll)=rqp(ll) + tt*sr(ll,ig)/rr(ll)
+     do ll=1,nt
+       rqp(ll)=rqp(ll) + tt*sr(ll,ig)/xr(ll)
      end do
 ! the next panel
-     do ll=1,nx
+     do ll=1,nt
        ss=sr(ll,ig)*chr(ll) + cr(ll,ig)*shr(ll)
        cr(ll,ig)=cr(ll,ig)*chr(ll) - sr(ll,ig)*shr(ll)
        sr(ll,ig)=ss
@@ -1067,7 +1088,7 @@
  real(dp), intent(in) :: qq
 
 !Local variables
- real(dp) :: bq(nx),kq,tt,qa,ww
+ real(dp) :: bq(nt),kq,tt,qa,ww
  integer :: m0,ip,ig,pf
  call spectrum(qq)
  m0=min(msnap,max(0,floor(qq/qstep)))
@@ -1077,7 +1098,7 @@
    do ig=1,ngk
      kq=(ip-1+tk(ig))*dq
      tt=2.0d0/pi*wk(ig)*dq*kq*ntk(ip,ig)
-     bq(:)=bq(:) + tt*sin(kq*rr(1:nx))/rr(1:nx)
+     bq(:)=bq(:) + tt*sin(kq*xr(:))/xr(:)
    end do
  end do
  qa=pf*dq
@@ -1086,7 +1107,7 @@
    do ig=1,ngk
      kq=qa + ww*tk(ig)
      tt=2.0d0/pi*wk(ig)*ww*kq*model_transform(kq)
-     bq(:)=bq(:) + tt*sin(kq*rr(1:nx))/rr(1:nx)
+     bq(:)=bq(:) + tt*sin(kq*xr(:))/xr(:)
    end do
  end if
  err_at=xc_error(bq)
@@ -1490,61 +1511,66 @@
 !! the joint and the error is not the small difference of two sums over
 !! the sphere
 !!
-!! Known limit: the part below rs samples the fill, a polynomial of
-!! degree 2*npow in r/rs, on the fixed log mesh, so its quadrature error
-!! ripples as rs slides over the mesh (4e-12 on an error of 1e-4, period
-!! ~0.003 bohr in r_s for 14_Si_bc): ~1e-9 in r_s, ~1e-6 of a finite
-!! difference slope, ~1% of a second difference.  Only the xc term
-!! carries it (the linear one has exact moments).  The fix, if needed:
-!! that part on a log mesh of step al ending at rs, so that the fill is
-!! sampled at the same relative points whatever rs (the functionals need
-!! a log mesh), with bq there from the rotated sines and nval
-!! interpolated (doc/smoothness_plan.md, M-12)
+!! The part below rs is taken on the mesh ri of step al ending at rs, so
+!! that the fill, a polynomial in r/rs, is sampled at the same relative
+!! points whatever rs: on the fixed mesh its quadrature error rippled as
+!! rs slid over the mesh (4e-12 on an error of 1e-4, period ~0.003 bohr,
+!! ~1e-9 in r_s; doc/smoothness_plan.md, M-12)
 !!
-!! @param bq  band-limited model core charge on rr(1:nx)
+!! @param bq  band-limited model core charge at xr: rr(1:nx), then ri
 
 !Input variables
- real(dp), intent(in) :: bq(nx)
+ real(dp), intent(in) :: bq(nt)
 
 !Local variables
  real(dp) :: si,so1
- work(:)=nval(:) + bq(:)
- call xc_eps(work,eps,vxc)
+ work(:)=nval(:) + bq(1:nx)
+ call xc_eps(work,eps,vxc,rr,nx)
  work(:)=work(:)*eps(:)
- af(:)=rr(1:nx)**2*(work(:) - wf(:) - vbg*(bq(:) - fext(:)))
- ac(:)=swin(:)*rr(1:nx)**2*(work(:) - wc(:) - vbg*(bq(:) - rhoc(1:nx)))
- call lm_integral(rr,af,nx,2,0.0d0,rs,si)
+ ac(:)=swin(:)*rr(1:nx)**2*(work(:) - wc(:) - vbg*(bq(1:nx) - rhoc(1:nx)))
+ wki(:)=nvi(:) + bq(nx+1:nt)
+ call xc_eps(wki,epi,vxi,ri,ni)
+ wki(:)=wki(:)*epi(:)
+ af(:)=ri(:)**2*(wki(:) - wf(:) - vbg*(bq(nx+1:nt) - fext(:)))
+ call lm_integral(ri,af,ni,2,0.0d0,rs,si)
  call lm_integral(rr,ac,nx,2,rs,radius,so1)
  xc_error=abs(si + so1)
  return
  end function xc_error
 
- subroutine xc_eps(rho,exc,vx)
+ subroutine xc_eps(rho,exc,vx,rm,nn)
 
-!! the xc energy per electron and potential of the charge rho on rr(1:nx)
+!! the xc energy per electron and potential of the charge rho on the log
+!! mesh rm (of step al, at least 101 points)
 !!
-!! @param rho  charge density on rr(1:nx)
+!! @param rho  charge density on rm
 !! @param exc  exchange-correlation energy per electron
 !! @param vx  exchange-correlation potential
+!! @param rm  log radial mesh
+!! @param nn  its size
+
+!Input variables
+ integer, intent(in) :: nn
+ real(dp), intent(in) :: rm(nn)
 
 !Input/output variables
- real(dp), intent(inout) :: rho(nx)
+ real(dp), intent(inout) :: rho(nn)
 
 !Output variables
- real(dp), intent(out) :: exc(nx),vx(nx)
+ real(dp), intent(out) :: exc(nn),vx(nn)
  if(iexc == 1) then
-   call excwig(rho,vx,exc,nx)
+   call excwig(rho,vx,exc,nn)
  else if(iexc == 2) then
-   call exchdl(rho,vx,exc,nx)
+   call exchdl(rho,vx,exc,nn)
  else if(iexc == 3) then
-   call excpzca(rho,vx,exc,nx)
+   call excpzca(rho,vx,exc,nn)
  else if(iexc == 4) then
-   call excggc(rho,vx,exc,rr,nx)
+   call excggc(rho,vx,exc,rm,nn)
  else if(iexc == 6 .or. iexc == 7) then
-   call excvwn(rho,vx,exc,nx)
-   if(iexc == 7) call exc_relx(rho,vx,exc,nx)
+   call excvwn(rho,vx,exc,nn)
+   if(iexc == 7) call exc_relx(rho,vx,exc,nn)
  else if(iexc < 0) then
-   call exc_libxc(iexc,al,rho,vx,exc,rr,nx)
+   call exc_libxc(iexc,al,rho,vx,exc,rm,nn)
  else
    write(6,'(/a,i4)') 'modcore_budget: ERROR bad input iexc =',iexc
    error stop 1
