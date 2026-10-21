@@ -32,7 +32,8 @@ kernel_diff.py):
   vloc    the local potential at the sample radii, relative to its largest
           value there
   core    the model core charge at the sample radii, relative to its largest
-          value there
+          value there; from the psp8 file also its four derivatives, each
+          relative to its own largest value
   tests   the pseudo-atom eigenvalues of the test configurations (printed to
           8 decimals, so only a coarser --tol is meaningful for them)
 
@@ -146,14 +147,15 @@ def dump_toml(data):
 
 def file_part(parser, output):
     """(mesh, {name: Block}, local potential, model core or None) of the file
-    of --output in the parsed output."""
+    of --output in the parsed output; the psp8 model core with its four
+    derivatives, shape (5, mesh)."""
     if output == "psp8":
         psp8, blocks = psp8_part(parser.psp8_string)
         named = {
             (f"l{ll}" if kind == "scalar" else f"so_l{ll}"): block
             for (_, kind, ll), block in blocks.items()
         }
-        core = psp8["model_core"][0] if psp8["fchrg"] > 0.0 else None
+        core = psp8["model_core"] if psp8["fchrg"] > 0.0 else None
         return psp8["r"], named, psp8["local_potential"], core
     upf, blocks = upf_part(parser.upf_string)
     named = {
@@ -177,8 +179,11 @@ def features(path, samples, output):
     for k in samples:
         out[f"vloc:r{k}"] = float(local[k])
     if core is not None:
-        for k in samples:
-            out[f"core:r{k}"] = float(core[k])
+        rows = core if hasattr(core[0], "__len__") else [core]
+        for d, row in enumerate(rows):
+            block = "core" if d == 0 else f"core:d{d}"
+            for k in samples:
+                out[f"{block}:r{k}"] = float(row[k])
     eigs = (
         state["eig_ps"]
         for config in parser.output["test_configurations"]

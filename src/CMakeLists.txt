@@ -46,6 +46,7 @@ set(src_oncvpsp
     modcore2.f90
     modcore3.f90
     modcore_budget.f90
+    modcore_m.f90
     ode_rc_der.f90
     ae_delta.f90
     oncvpsp_main.F90

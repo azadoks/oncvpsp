@@ -41,6 +41,14 @@ foreach (unit_test logmesh ode_rc_der solver_path piecewise matching ugrid quadb
     set_tests_properties(unit_${unit_test} PROPERTIES LABELS unit)
 endforeach ()
 
+# Unit tests of the pieces of the model core charges (modcore_m), phase 5 of doc/smoothness_plan.md:
+# written before the code, so labelled smooth until it is done
+add_executable(test_modcore unit/test_modcore.f90)
+target_link_libraries(test_modcore PRIVATE oncvpsp::oncvpsp oncvpsp::compile_options)
+set_target_properties(test_modcore PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+add_test(NAME unit_modcore COMMAND test_modcore)
+set_tests_properties(unit_modcore PROPERTIES LABELS smooth)
+
 set(scripts "${PROJECT_SOURCE_DIR}/scripts")
 set(data "${CMAKE_CURRENT_SOURCE_DIR}/data")
 
@@ -126,6 +134,12 @@ smooth_scan_test(sr_14_Si_bc_ecut sr 14_Si_bc "model_core_charge.fcfact" kernel,
 # node between 1.06 and 1.1)
 smooth_scan_test(sr_14_Si_well_onset sr 14_Si "pseudopotentials.well_onset" kernel,vloc,core ${smooth_g1} --center 1.02 --span 0.01)
 smooth_scan_test(sr_14_Si_hm_slack sr 14_Si_hm "model_core_charge.slack" kernel,vloc,core ${smooth_g1} --span 0.02)
+smooth_scan_test(sr_14_Si_bc_slack sr 14_Si_bc "model_core_charge.slack" kernel,vloc,core ${smooth_g1} --center 0.9 --span 0.02)
+# the model core of the psp8 file with its four derivatives, which the writer interpolates across
+# the model's joint (phase 5)
+smooth_scan_test(sr_14_Si_fcfact_psp8 sr 14_Si "model_core_charge.fcfact" core ${smooth_g1} --span 0.02 --output psp8)
+smooth_scan_test(sr_34_Se_rcfact_psp8 sr 34_Se "model_core_charge.rcfact" core ${smooth_g1} --span 0.02 --output psp8)
+smooth_scan_test(sr_14_Si_bc_ecut_psp8 sr 14_Si_bc "model_core_charge.fcfact" core ${smooth_g1} --span 0.2 --output psp8)
 # the psp8 file and the UPF file on the linear output mesh (phase 4, O-1): the writers interpolated
 # the functions on the log mesh across rc, so the points next to it moved with the nodes past it
 smooth_scan_test(sr_14_Si_rc0_psp8 sr 14_Si "pseudopotentials.rc[0]" kernel,vloc ${smooth_g1} --center 2.8 --output psp8)

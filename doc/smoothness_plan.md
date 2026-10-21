@@ -515,6 +515,8 @@ leaves them out until phase 7 drops the label.
   - `rcfact` for icmod 3;
   - the icmod 4 grid;
   - `slack` for icmod 6 and 7;
+  - the model core of the psp8 file with its four derivatives, for
+    icmod 1, 3 and 6 (added in phase 5);
   - rc for nr 08_O and fr 52_Te;
   - `rxpsh` and the test eigenvalues, added in phase 6 with the
     full-precision diagnostics they need.
@@ -966,8 +968,31 @@ later phases can see 1e-10.
 
 #### Phase 5: model core
 
-- [ ] Unit tests: crossover root, closed-form a0, Teter derivatives
+- [x] Unit tests: crossover root, closed-form a0, Teter derivatives
       against series and finite differences, written first
+      (`unit_modcore`, label smooth, against the stubs of `modcore_m`):
+      - Teter function g and its derivatives to the 4th with no cutoff,
+        against the closed form and `gg1cc`, `gp1cc`, `gpp1cc` away from
+        x = 0, ½, 1, against their series constants there, each
+        derivative against an 8th-order difference of the one below, and
+        smooth on 41-point windows of width 0.04 from 0 to 3.5;
+      - the crossover as the outermost root of ln ρ_c − ln(fcfact ρ̃_v),
+        for one and three crossings, and smooth in fcfact;
+      - the icmod 1 polynomial: the match at r*, p′/r² ≤ 0 on [0, r*]
+        and > 0 somewhere with a0 lowered by 1e-8, a0 against a
+        bisection on a fine grid, smooth in r*. The test is on p′/r²,
+        not p′: where the polynomial touches 0 at the origin (p′ ≈ δ r²
+        there), a grid of p′ cannot see it;
+      - the icmod 2 scale x at a given x g′/g, and ierr out of range.
+- [x] T2 rows added, red: `slack` for icmod 6 (14_Si_bc, about 0.9:
+      V_loc 1.7e-3, core 5.9e-3, infinite jump); the model core of the
+      psp8 file with its four derivatives (`smooth_scan.py`: from the
+      psp8 file the `core` group has each derivative too, scaled by its
+      own largest value) for fcfact of icmod 1 (14_Si, 3.1e-2 in the 4th
+      derivative), rcfact of icmod 3 (34_Se, 2.1e-5, no staircase: the
+      stencils and `dpnint` patches near the origin), and the cutoff of
+      icmod 6 (14_Si_bc, 7.2e-2 in the 3rd). T4 at the start of the
+      phase is the one at the end of phase 4.
 - [ ] M-1…M-14; S-10 GGA gradients from the pieces
 - [ ] `match_order` (D-5): input key, minimum tail and Martins fill to
       C⁴, T2 row `slack` with `match_order = 4`
