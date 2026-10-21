@@ -13,7 +13,10 @@ fitted to round-off (or to the window's truncation error, kept small by the
 window's width); a jump or a kink in it, such as one from rounding the
 parameter to the log mesh, leaves a residual of the order of its size. With
 --tol (one value, or group=value pairs), the exit status is 1 if a residual
-exceeds it or a jump ratio exceeds --max-jump.
+exceeds it or a jump ratio exceeds --max-jump. A step no larger than the
+group's --tol is not a jump: a feature that does not depend on the parameter
+at all (an optimum the search lands on from wherever it starts) has only
+noise for steps, and their ratio is ~3 for noise alone.
 
 The features come from the UPF file, written on the log mesh itself
 (upf_mesh, every few points of it) and read with upf-tools, and from the
@@ -239,7 +242,8 @@ def group_scales(center):
 
 
 def analyse(ts, runs, degree):
-    """{group: (worst relative residual, feature, jump ratio)}."""
+    """{group: (worst relative residual, feature, jump ratio, largest step
+    relative to the scale)}."""
     names = sorted(set.intersection(*(set(r) for r in runs)))
     center = runs[len(runs) // 2]
     scales = group_scales({n: center[n] for n in names})
@@ -255,8 +259,15 @@ def analyse(ts, runs, degree):
         )
         group = name.split(":", 1)[0]
         if group not in worst or rel > worst[group][0]:
-            worst[group] = (rel, name, jump)
+            worst[group] = (rel, name, jump, steps[-1] / scales[name])
     return worst
+
+
+def fails(rel, jump, step, tol, max_jump):
+    """A residual over tol, or a jump ratio over max_jump in steps over tol."""
+    if tol is not None and rel > tol:
+        return True
+    return max_jump is not None and jump > max_jump and (tol is None or step > tol)
 
 
 # Running the program
@@ -360,12 +371,10 @@ def scan(args):
     for group in GROUPS:
         if group not in worst:
             continue
-        rel, name, jump = worst[group]
+        rel, name, jump, step = worst[group]
         flag = ""
         tol = tols.get(group, tols.get(None))
-        if (tol is not None and rel > tol) or (
-            args.max_jump is not None and jump > args.max_jump
-        ):
+        if fails(rel, jump, step, tol, args.max_jump):
             flag = "  FAIL"
             status = 1
         print(f"{group:8s} {rel:10.2e} {jump:10.2e}  {name}{flag}")
@@ -412,6 +421,22 @@ def self_test():
             failures.append(f"jump of 1e-7 not seen at 1e-8 at degree {degree}")
         if analyse(ts, kink, degree)["kernel"][0] < 1e-9:
             failures.append(f"kink of slope 1e-6 not seen at 1e-9 at degree {degree}")
+    # a constant with noise of ~1e-14: steps under a tol of 1e-12 are no jump,
+    # however their ratio; a staircase (a parameter rounded) is one
+    noise = [
+        {"kernel:a:x": 1.0 + 1e-15 * (-1) ** k + (6e-15 if k == 20 else 0.0)}
+        for k in range(npts)
+    ]
+    rel, _, ratio, step = analyse(ts, noise, degree)["kernel"]
+    if ratio < 3.0 or fails(rel, ratio, step, 1e-12, 3.0):
+        failures.append("noise of ~1e-14 failed at tol 1e-12")
+    stairs = [
+        {"kernel:a:x": math.exp(math.sin(1.0 + span * round(4.0 * t) / 4.0))}
+        for t in ts
+    ]
+    _, _, ratio, step = analyse(ts, stairs, degree)["kernel"]
+    if not fails(0.0, ratio, step, 1e-9, 3.0):
+        failures.append("staircase passed the jump ratio at tol 1e-9")
     data = {
         "t": [{"n": [1, 2]}],
         "a": {"x": 0.1 + 0.2, "s": 'p"q', "v": [2.7, 1e-5, 3]},

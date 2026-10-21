@@ -431,7 +431,7 @@ numbers refer to [Phases](#phases).
 | M-3 | `modcore`: a0 by bisection to 1e-7, monotonicity checked only at mesh points | f, h | W | closed form: p' is affine in a0; critical points by companion matrix |
 | M-4 | `modcore2`: x by bisection to 1e-7 | f | W | Newton on the monotone x·g'/g |
 | M-5 | `gg1cc`, `gpp1cc`: Teter function cut to 0 at x = 3 (C¹); columns 4, 5 by stencils across it; `dpnint` patches near the origin (zeroing rhomod(1,3:5)) | d, e | W | analytic derivatives (h = √g a sum of five shifted sincs, series near their centres); delete the patches; revised: not "no cutoff" (the x⁻¹⁰ tail is far fatter than a core charge: V_ion then differs from −zion/r to 1e-10 out to 22.7 bohr in 79_Au_lxc instead of 6, and the outermost crossing of that tolerance hops between the lobes of sin²), but g tapered to 0 between x = 3 and 4 by the C∞ switch of `ionic_switch` |
-| M-6 | `modcore3`: grid argmin then Nelder–Mead to an f-spread of 1e-4; returns a vertex | h, f | W | keep grid and NM to choose the basin; then Newton (trust region) on ∇f = 0 to round-off |
+| M-6 | `modcore3`: grid argmin then Nelder–Mead to an f-spread of 1e-4; returns a vertex | h, f | W | keep grid and NM to choose the basin; then Newton (trust region) on ∇f = 0 to round-off; revised: to the noise of f instead, ~5e-13 in ln a (f carries ~1e-17 of der2exc's round-off on 1.2e-4, and the valley's soft curvature is 5e-4), by central differences along the Hessian's eigenvectors with steps ∝ 1/√λ (axis differences: ~1e-11) |
 | M-7 | `modcore3` ircross, dead rcross loops | a | W | remove (analytic derivatives everywhere) |
 | M-8 | `modcore_budget` ifrom: first q of a 0.1 grid above the budget; the only way slack enters | a, b | W | tested cutoffs start at q_b exactly; max over q by grid plus Brent |
 | M-9 | `modcore_budget` r_s by integer bisection; irtop, ilo from snapped rc | h, a | W | bracket on the mesh, Brent on g(r_s) = max_q err − errmax |
@@ -1013,7 +1013,20 @@ later phases can see 1e-10.
       by the snap of r* to the mesh (up to a step below the root; 34_Se:
       rmatch 1.2470 → 1.2538, ρ_c there −3.9 %): kernels ≤ 7.6e-7, V_loc
       ≤ 2.8e-3, model core 1e-3 to 6e-2 relative (largest in 34_Se)
-- [ ] M-6, M-8…M-14; S-10 GGA gradients from the pieces
+- [x] M-6 (icmod 4): after the grid and Nelder–Mead, Newton on the
+      central-difference gradient in (ln a, ln s), each difference along
+      an eigenvector of the Hessian (step 5e-3) with step 1e-3·√(λ₁/λₖ),
+      in a trust radius of 0.1; 8–14 steps to a step of 3e-12. The
+      stationary point no longer depends on the grid: 40_Zr and
+      40_Zr_grid (different grids) land on the same (2.3788, 1.5525). The
+      rms error falls in every icmod 4 input (40_Zr_grid_r 1.2097e-4 →
+      1.2057e-4); against 3b812b9: V_loc ≤ 1.1e-3, model core ≤ 7.9e-2
+      relative (40_Zr_grid_r), kernels unchanged. T2: fcfact_min of
+      40_Zr_grid green (V_loc 2.3e-14, core 9.0e-13; was 1.8e-3, 7.6e-2)
+      at a core tol of 3e-12, the noise above; smooth_scan.py no longer
+      counts a jump ratio in steps under the tol (pure noise has a ratio
+      ~3, and this row's output does not depend on its input at all)
+- [ ] M-8…M-14; S-10 GGA gradients from the pieces
 - [ ] `match_order` (D-5): input key, minimum tail and Martins fill to
       C⁴, T2 row `slack` with `match_order = 4`
 - [ ] T2 rows fcfact, rcfact, icmod 4 grid, slack at G1

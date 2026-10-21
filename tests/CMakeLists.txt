@@ -129,7 +129,11 @@ smooth_scan_test(sr_14_Si_fcfact sr 14_Si "model_core_charge.fcfact" kernel,vloc
 smooth_scan_test(sr_79_Au_lxc_fcfact sr 79_Au_lxc "model_core_charge.fcfact" kernel,vloc,core ${smooth_g1} --span 0.02)
 smooth_scan_test(sr_34_Se_fcfact sr 34_Se "model_core_charge.fcfact" kernel,vloc,core ${smooth_g1} --span 0.02)
 smooth_scan_test(sr_34_Se_rcfact sr 34_Se "model_core_charge.rcfact" kernel,vloc,core ${smooth_g1} --span 0.02)
-smooth_scan_test(sr_40_Zr_grid_fcfact_min sr 40_Zr_grid "model_core_charge.fcfact_min" kernel,vloc,core ${smooth_g1} --span 0.02)
+# icmod 4: the optimum does not move with the grid, so the scan sees only where Newton stops on
+# the noise of der2exc (~1e-17 on f = 1.2e-4) over the soft curvature of the valley (5e-4):
+# ~8e-13 in ln(amplitude), ~1e-12 in the core (M-6)
+smooth_scan_test(sr_40_Zr_grid_fcfact_min sr 40_Zr_grid "model_core_charge.fcfact_min" kernel,vloc,core
+    "kernel=1e-10,vloc=1e-10,core=3e-12" --span 0.02)
 smooth_scan_test(sr_14_Si_bc_ecut sr 14_Si_bc "model_core_charge.fcfact" kernel,vloc,core ${smooth_g1} --span 0.2)
 # the onset of the well (well_onset) where 14_Si's well states keep their n (l=1 takes another
 # node between 1.06 and 1.1)

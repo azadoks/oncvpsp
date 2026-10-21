@@ -23,7 +23,8 @@
 ! The crossover is the root of ln(rhoc) - ln(rhotps), and the Teter function
 ! and its derivatives are analytic everywhere, tapered to 0 by a C-infinity
 ! switch between x = 3 and 4 instead of cut at 3 (modcore_m,
-! doc/smoothness_plan.md M-1, M-5, M-7).
+! doc/smoothness_plan.md M-1, M-5, M-7).  For icmod=4 the coarse grid and
+! Nelder-Mead choose the basin and Newton finds its stationary point (M-6).
 
 ! Performs analysis and based on "hardness" criterion described in
 ! Teter, Phys. Rev. B 48, 5031 (1993) , Appendix, as
@@ -214,13 +215,9 @@
 !stopping criterion
      if(ff(3)-ff(1)<1.0d-4*d2ref) then
        write(6,'(a,i4,a)') ' converged in',kk-1,' steps'
-       write(6,'(a)') 'amplitude prefactor, scale prefactor'
-       write(6,'(2f10.4)') xx(1,1)/rhocmatch,xx(2,1)/rmatch
        exit
      else if(kk==101) then
        write(6,'(a,i4,a)') ' WARNING: not fully converged in 100 steps'
-       write(6,'(a)') 'amplitude prefactor, scale prefactor'
-       write(6,'(2f10.4)') xx(1,1)/rhocmatch,xx(2,1)/rmatch
        exit
      end if
 
@@ -271,6 +268,13 @@
      end do !jj
 
    end do !kk
+
+!Newton on the gradient from the best vertex, so the result is the
+!stationary point itself rather than wherever the simplex stopped
+!(doc/smoothness_plan.md M-6)
+   call newton_refine(xx(:,1))
+   write(6,'(a)') 'amplitude prefactor, scale prefactor'
+   write(6,'(2f10.4)') xx(1,1)/rhocmatch,xx(2,1)/rmatch
 
    write(6,'(/a)') 'Optimized Teter model core charge'
 
@@ -330,5 +334,98 @@
  call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,fm, &
 &             zion,iexc,nc,nv,la,rr(mmax),mmax)
  end subroutine trial
+
+ subroutine newton_refine(xm)
+
+!! Newton's method on the gradient of the rms error in (ln amplitude,
+!! ln scale), held inside a trust radius.  The valley of the error is
+!! narrow and curved (Hessian condition ~600 for 40_Zr), and der2exc is
+!! noisy at ~1e-17 on f ~ 1e-4, so the gradient is a central difference
+!! along each eigenvector of the Hessian, with a step hk ~ 1/sqrt(lambda_k):
+!! hj across the valley, longer along it.  The Hessian, for the directions
+!! only, takes the step hb, as its noise turns them and the turn moves the
+!! root through the valley's bend.  Axis differences at hj stop at ~1e-11
+!! in ln(amplitude); these at ~5e-13, the noise over the soft curvature.
+!! The steps and directions are smooth in the point, so the root is a
+!! smooth function of the inputs.
+!!
+!! @param xm  amplitude and scale (bohr), in: start, out: stationary point
+
+!Input/output variables
+ real(dp), intent(inout) :: xm(2)
+
+!Local variables
+ real(dp), parameter :: hj=1.0d-3,hb=5.0d-3,hcap=5.0d-2,trmax=0.1d0
+ real(dp), parameter :: tol=3.0d-12
+ real(dp) :: uu(2),ut(2),fs(-1:1,-1:1),hm(2,2),bb(2,2),lam(2),hk(2)
+ real(dp) :: f0,fp,fm,gk,ck,du(2),dnrm,tr,dt
+ integer :: it,ia,ib,kk
+
+ uu(:)=log(xm(:))
+ do it=1,30
+!Hessian at the step hb, for the directions and step lengths
+   do ib=-1,1
+     do ia=-1,1
+       ut(1)=uu(1)+ia*hb
+       ut(2)=uu(2)+ib*hb
+       call trial(exp(ut),fs(ia,ib))
+     end do
+   end do
+   f0=fs(0,0)
+   hm(1,1)=(fs(1,0)-2.0d0*f0+fs(-1,0))/hb**2
+   hm(2,2)=(fs(0,1)-2.0d0*f0+fs(0,-1))/hb**2
+   hm(1,2)=(fs(1,1)-fs(1,-1)-fs(-1,1)+fs(-1,-1))/(4.0d0*hb**2)
+   hm(2,1)=hm(1,2)
+   tr=0.5d0*(hm(1,1)+hm(2,2))
+   dt=sqrt((0.5d0*(hm(1,1)-hm(2,2)))**2+hm(1,2)**2)
+   lam(1)=tr+dt
+   lam(2)=tr-dt
+   if(abs(hm(1,1)-lam(2))>=abs(hm(2,2)-lam(2))) then
+     bb(:,2)=[hm(1,2),lam(2)-hm(1,1)]
+   else
+     bb(:,2)=[lam(2)-hm(2,2),hm(1,2)]
+   end if
+   if(dt==0.0d0) bb(:,2)=[0.0d0,1.0d0]
+   bb(:,2)=bb(:,2)/sqrt(bb(1,2)**2+bb(2,2)**2)
+   bb(:,1)=[bb(2,2),-bb(1,2)]
+
+!steps of equal rise in f, at most hcap
+   do kk=1,2
+     if(lam(kk)>0.0d0 .and. lam(1)>0.0d0) then
+       hk(kk)=min(hcap,hj*sqrt(lam(1)/lam(kk)))
+     else
+       hk(kk)=hj
+     end if
+   end do
+
+!Newton step along each direction
+   du(:)=0.0d0
+   do kk=1,2
+     ut(:)=uu(:)+hk(kk)*bb(:,kk)
+     call trial(exp(ut),fp)
+     ut(:)=uu(:)-hk(kk)*bb(:,kk)
+     call trial(exp(ut),fm)
+     gk=(fp-fm)/(2.0d0*hk(kk))
+     ck=(fp-2.0d0*f0+fm)/hk(kk)**2
+     if(ck>0.0d0) then
+       du(:)=du(:)-(gk/ck)*bb(:,kk)
+     else
+!not convex along this direction: descend to the trust radius
+       du(:)=du(:)-sign(trmax,gk)*bb(:,kk)
+     end if
+   end do
+   dnrm=sqrt(du(1)**2+du(2)**2)
+   if(dnrm>trmax) du(:)=du(:)*trmax/dnrm
+   uu(:)=uu(:)+du(:)
+   if(dnrm<tol) then
+     write(6,'(a,i4,a)') ' Newton refinement converged in',it,' steps'
+     xm(:)=exp(uu(:))
+     return
+   end if
+ end do
+ write(6,'(a,1p,e10.2)') ' WARNING: Newton refinement not converged, &
+&      last step',dnrm
+ xm(:)=exp(uu(:))
+ end subroutine newton_refine
 
  end subroutine modcore3
