@@ -39,6 +39,19 @@ kernel_diff.py):
           relative to its own largest value
   tests   the pseudo-atom eigenvalues of the test configurations (printed to
           8 decimals, so only a coarser --tol is meaningful for them)
+  ld      the pseudopotential's log-derivative phase at rxpsh, each l and
+          energy, as cos and sin of twice it: the phase is defined only up
+          to pi, and the doubled angle has no branch (printed to 6
+          decimals)
+  ecut    the cutoffs of each projector's convergence table, at its
+          energy errors 1e-2..1e-5 Ha, relative to the largest in the table
+          (printed to 0.01 Ha)
+  ghost   the energies of the bound-ghost test, the radial equation's and
+          the basis's (printed to 6 decimals)
+
+The last three are what the optimizer reads (doc/smoothness_plan.md, order
+of the remaining work); until O-6 prints them in full, only a --tol at
+their print resolution is meaningful.
 
 The sample radii are the points of the file's mesh nearest to every --sample
 bohr. For a parameter that is a radius (a key named rc, rcloc or rxpsh), the
@@ -75,7 +88,7 @@ from compare_output import psp8_part, upf_part  # noqa: E402
 from pyoncvpsp.io import OncvpspTextParser  # noqa: E402
 
 RADIUS_KEYS = {"rc", "rcloc", "rxpsh"}
-GROUPS = ("kernel", "vloc", "core", "tests")
+GROUPS = ("kernel", "vloc", "core", "tests", "ld", "ecut", "ghost")
 # points of the UPF file's log mesh: every few of the generator's out to the
 # linear mesh's extent
 UPF_MESH = 600
@@ -200,6 +213,22 @@ def features(path, samples, output):
     )
     for i, eps in enumerate(eigs):
         out[f"tests:eps{i}"] = eps
+    plots = parser.output["plot_data"]
+    for curve in plots.get("log_derivatives") or []:
+        tag = f"l{curve['l']}" + ("" if curve["j"] is None else f"j{curve['j']}")
+        for i, phase in enumerate(curve["log_deriv_ps"]):
+            out[f"ld:{tag}:cos:e{i}"] = math.cos(2.0 * phase)
+            out[f"ld:{tag}:sin:e{i}"] = math.sin(2.0 * phase)
+    for table in plots.get("convergence_profiles") or []:
+        tag = f"l{table['l']}p{table['iproj']}"
+        if table["j"] is not None:
+            tag += f"j{table['j']}"
+        for err, cut in zip(table["eresid"], table["ecut"]):
+            out[f"ecut:{tag}:{err:.0e}"] = float(cut)
+    for test in parser.output.get("bound_ghost_tests") or []:
+        tag = f"n{test['n']}l{test['l']}"
+        out[f"ghost:{tag}:eig"] = test["eig"]
+        out[f"ghost:{tag}:basis"] = test["eig_basis"]
     return out
 
 

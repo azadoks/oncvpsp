@@ -559,6 +559,55 @@ end, references patched in a final commit with the changes recorded.
 Solver hygiene comes before continuous radii so that the scans of the
 later phases can see 1e-10.
 
+#### Order of the remaining work (2026-10-21, after M-12)
+
+Reordered by what the optimizer (oncvpsp-opt, the GA/BO search and the
+planned Gauss–Newton on the log-derivative residuals) actually varies and
+reads. It varies rc, qcut and debl (or ep) per l, and rcloc. It always
+runs Libxc PBE (iexc −101130), icmod 6 (budget at the EOS ecutrho),
+lpopt 5, scalar-relativistic, with UPF on the log mesh; rxpsh is fixed
+at a mesh point just past the rc bound. It reads the Ecut convergence
+tables (log-interpolated at 1e-2…1e-5), the arctan log-derivative
+phases at rxpsh, the ghost test's eigenvalues (a hard reject),
+rho_core from the UPF, and the projector signs, all from stdout and the
+UPF. It uses no PSML or psp8. The gradient plan takes forward
+differences, h ≈ 1e-2 on [0, 1] now, limited by the f12.6 phases, and
+≈ 1e-4 with O-6. It uses a Jacobian only, no Hessians.
+
+The T2 rows so far scan kernels, V_loc and the core, and none in that
+setup: the icmod 6/7 rows are LDA, and the Libxc rows use other cores.
+So the order is:
+
+1. T2 rows in the optimizer's setup: its N input (PBE, icmod 6,
+   lpopt 5, UPF log mesh) scanned in rc, qcut, debl and rcloc, with
+   smooth_scan.py reading the phases at rxpsh, the Ecut crossings, the
+   ghost eigenvalues and UPF rho_core as well. This measures what is
+   kinked there, and is the acceptance test for the items below.
+   Done (sr_07_N_opt_* rows). Kernels ≤ 5.7e-12, V_loc ≤ 4.3e-12, core
+   ≤ 1.6e-11 (the noise of icmod 6's search). The LD phases (1.2–1.5e-6)
+   and Ecut (1.2–1.3e-4 relative) sit at their print resolution. The
+   bound-ghost test's basis energy is a staircase in rc (3.4e-4 Ha steps
+   for l = 1, every ~19 points, about one mesh step: its basis is cut at
+   a mesh point), red until X-3. rcloc moves no Ecut. The default has
+   rc[0] = rcloc, and rc < rcloc is refused (test_data), so a step down
+   in rc[0] or up in rcloc is infeasible there. Running the input also
+   showed the AE SCF regression fixed in b3a7c7d: a fixed 1e-11
+   residual is below the floor of this mesh.
+2. O-6: a machine-readable block at 17 digits with the phases at rxpsh,
+   the convergence tables and their crossings at 1e-2…1e-5 per
+   projector (Brent on the interpolant, as in Q-4), parsed by pyoncvpsp.
+3. M-13: the budget table's crossings, smooth in the requested cutoff
+   (runs on every trial).
+4. X-3: the ghost test continuous, with a printed margin.
+5. S-10: GGA ρ′, ρ″ from the pieces. Moved after X-3: item 1 shows no
+   kink above 1e-11 in the optimizer's setup.
+6. X-2: the phase shifts, with rxpsh honoured exactly.
+7. References, then phase 7.
+8. Low, for the optimizer: X-1, X-4…X-6, D-5, the M-12 ripple (below the
+   finite-difference noise at h = 1e-4), M-14 (PSML), the psp8 model-core
+   pieces. The UPF on the log mesh writes ρ_c's values, which are smooth
+   already.
+
 #### Phase 0: infrastructure
 
 - [x] UPF numbers to 17 digits (`upfout`): `e24.16` for every array and

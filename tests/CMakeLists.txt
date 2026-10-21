@@ -157,6 +157,20 @@ smooth_scan_test(sr_14_Si_bc_slack sr 14_Si_bc "model_core_charge.slack" kernel,
 smooth_scan_test(sr_14_Si_fcfact_psp8 sr 14_Si "model_core_charge.fcfact" core ${smooth_g1} --span 0.02 --output psp8)
 smooth_scan_test(sr_34_Se_rcfact_psp8 sr 34_Se "model_core_charge.rcfact" core ${smooth_g1} --span 0.02 --output psp8)
 smooth_scan_test(sr_14_Si_bc_ecut_psp8 sr 14_Si_bc "model_core_charge.fcfact" core ${smooth_g1} --span 0.2 --output psp8)
+# the optimizer's setup (07_N_opt: PBE, icmod 6 at fcfact 65, lpopt 5): the inputs it varies and
+# the outputs it reads. ld and ecut at their print resolution (f12.6 phases; Ecut to 0.01 Ha) until
+# O-6 prints them in full; the core at the noise of icmod 6's search (~1e-11); the bound-ghost test
+# is a staircase in rc (its basis cut at a mesh point, X-3), red. At the default rc[0] = rcloc,
+# and rc < rcloc is not allowed, so rc[0] is scanned above it and rcloc below
+set(smooth_opt "kernel=1e-10,vloc=1e-10,core=5e-11,ld=3e-6,ecut=1e-3,ghost=1e-5")
+set(smooth_opt_groups kernel,vloc,core,ld,ecut,ghost)
+smooth_scan_test(sr_07_N_opt_rc0 sr 07_N_opt "pseudopotentials.rc[0]" ${smooth_opt_groups} ${smooth_opt} --center 1.21)
+smooth_scan_test(sr_07_N_opt_rc1 sr 07_N_opt "pseudopotentials.rc[1]" ${smooth_opt_groups} ${smooth_opt})
+smooth_scan_test(sr_07_N_opt_qcut0 sr 07_N_opt "pseudopotentials.qcut[0]" ${smooth_opt_groups} ${smooth_opt} --span 0.04)
+smooth_scan_test(sr_07_N_opt_qcut1 sr 07_N_opt "pseudopotentials.qcut[1]" ${smooth_opt_groups} ${smooth_opt} --span 0.04)
+smooth_scan_test(sr_07_N_opt_debl0 sr 07_N_opt "vkb_projectors.debl[0]" ${smooth_opt_groups} ${smooth_opt} --span 0.02)
+smooth_scan_test(sr_07_N_opt_debl1 sr 07_N_opt "vkb_projectors.debl[1]" ${smooth_opt_groups} ${smooth_opt} --span 0.02)
+smooth_scan_test(sr_07_N_opt_rcloc sr 07_N_opt "local_potential.rcloc" ${smooth_opt_groups} ${smooth_opt} --center 1.19)
 # the psp8 file and the UPF file on the linear output mesh (phase 4, O-1): the writers interpolated
 # the functions on the log mesh across rc, so the points next to it moved with the nodes past it
 smooth_scan_test(sr_14_Si_rc0_psp8 sr 14_Si "pseudopotentials.rc[0]" kernel,vloc ${smooth_g1} --center 2.8 --output psp8)
