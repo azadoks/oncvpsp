@@ -638,7 +638,9 @@ So the order is:
    phases move by up to 0.27. A new N row scans rxpsh across a node (span
    0.004, degree 10): ld 1.8e-11 (the old code: a staircase, jump ∞). Only
    the log-derivative tables change.
-6. References, then phase 7.
+6. References, then phase 7. References done: patched for phases 5
+   and 6 together; the kernels do not move, V_loc moves only where the
+   model core does, the log derivatives everywhere (X-2).
 7. Low, for the optimizer: X-1, X-4…X-6, D-5, the M-12 ripple (below the
    finite-difference noise at h = 1e-4), M-14 (PSML), the psp8 model-core
    pieces. The UPF on the log mesh writes ρ_c's values, which are smooth
@@ -1153,7 +1155,10 @@ So the order is:
 - [ ] `match_order` (D-5): input key, minimum tail and Martins fill to
       C⁴, T2 row `slack` with `match_order = 4`
 - [ ] T2 rows fcfact, rcfact, icmod 4 grid, slack at G1
-- [ ] References patched
+- [x] References patched, with phase 6's (after X-2): only the inputs
+      with a model core change beyond the log derivatives; V_loc by
+      1.3e-3 to 2.7e-2 Ha, rho_mod by 3.2e-2 to 6.0 (the derivative
+      columns more, at the C² joint), the kernels not at all
 - [ ] Revisit the icmod 6/7 quadrature ripple (M-12, known limit): ~1e-9
       in r_s, carried in the tolerances of 14_Si_bc's T2 rows. Fix it
       (the integral below r_s on a log mesh ending at r_s) if second
@@ -1172,7 +1177,8 @@ So the order is:
       ld and ecut at ≤ 3.7e-10
 - [x] T2 row rxpsh (sr_07_N_opt_rxpsh, ld 1.8e-11)
 - [ ] T2 rows of the test eigenvalues at G1
-- [ ] References patched
+- [x] References patched (with phase 5's): the log-derivative tables
+      of every input
 
 #### Phase 7: wrap-up
 

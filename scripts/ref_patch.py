@@ -15,10 +15,10 @@ Prints how many lines changed.
 
 The lines of the quantities whose tolerance in compare_output.py is close to
 their printed precision (the pseudo-atom energies, the eigenvalues of the test
-configurations, the UPF file's total energy) take the new line whenever its
-text differs.  Look at what changed before patching (compare_output.py REF.out
-NEW.out), and run the reference test after: another quantity with a tighter
-tolerance (d2Exc) can still differ.
+configurations, the UPF file's total energy, the rows of the d2Exc matrices)
+take the new line whenever its text differs.  Look at what changed before
+patching (compare_output.py REF.out NEW.out), and run the reference test
+after: another quantity with a tighter tolerance can still differ.
 
 The kernels are compared to 1e-6, tighter than the 1e-5 by which a projector
 line is kept, so a kernel can fail although every line passes. With --files,
@@ -46,6 +46,8 @@ EXACT = [
         r"^\s*\d+\s+\d+(\s+-?\d+)?\s+\d+\.\d{4}(\s+-?\d+\.\d{8}){2}"
         r"\s+\S+[DE][-+]\d+$"
     ),
+    # a row of a d2Exc matrix
+    re.compile(r"^(\s+-?\d\.\d{6}D[-+]\d\d)+$"),
 ]
 
 
