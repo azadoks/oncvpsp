@@ -67,7 +67,7 @@
  integer :: jj,kk,ll,l1,lloc,lmax,lt,inline
  integer :: mch,mchf,mmax,n1,n2,nc,nlim,nlloc,nlmax,irpsh,nrl
  integer :: nv,irct,ncnf,nvt,upf_mesh
- integer :: iprj,nkap,nnwell
+ integer :: iprj,nkap,nnwell,npsh
  integer :: ikap,kap,mkap
  integer,allocatable :: npa(:,:)
 !
@@ -88,7 +88,7 @@
  real(dp) :: rr1,rcion,rciont,rcmax,rct,rlmax,rpkt
  real(dp) :: amesh_in,rr1_in,rmax_in,rmax,log_mesh(3),c_light_in
  real(dp) :: sf,sw,zz,zion,zval,etot,res
- real(dp) :: eterm(4)
+ real(dp) :: eterm(4),rphs(4)
  real(dp) :: fj,cnorm
 !
  real(dp) :: cl(mxlin+1),debl(mxlin+1),ea(mxstate,mxkap),ep(mxlin+1,mxkap)
@@ -102,6 +102,7 @@
 
  real(dp), allocatable :: evkb(:,:,:),cvgplt(:,:,:,:,:),qq(:,:)
  real(dp), allocatable :: ecurve(:,:,:,:,:)
+ real(dp), allocatable :: pshae(:,:,:),pshps(:,:,:)
  real(dp) :: ecutw
  integer, parameter :: ncurve=1000
  real(dp), allocatable :: rr(:)
@@ -1064,11 +1065,17 @@
 
 
 
- call run_phsft(lmax,lloc,nproj,epa,epsh1,epsh2,depsh,rxpsh,vlocpw,vkbpw, &
+!the energies of the log derivatives, from epsh2 down by depsh
+ npsh=int(((epsh2-epsh1)/depsh)-0.5d0)+1
+ allocate(pshae(npsh,4,nkap),pshps(npsh,4,nkap))
+ call run_phsft(lmax,lloc,nproj,epa,npsh,epsh2,depsh,rxpsh,vlocpw,vkbpw, &
 &               evkb, &
-&               rr,vfull,vp,zz,mmax,mxprj,irc,irel,nkap)
+&               rr,vfull,vp,zz,mmax,mxprj,irc,irel,nkap,rphs,pshae,pshps)
 
  call gnu_script(epa,evkb,lmax,lloc,mxprj,nproj,nkap)
+
+ call diagout(lmax,nproj,mxprj,nkap,cvgplt,npsh,epsh2,depsh,rphs,pshae,pshps)
+ deallocate(pshae,pshps)
 
  if(trim(psfile)=='psp8' .or. trim(psfile)=='both') then
    soscale=1.0d0

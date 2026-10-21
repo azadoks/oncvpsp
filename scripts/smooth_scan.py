@@ -41,11 +41,11 @@ kernel_diff.py):
           8 decimals, so only a coarser --tol is meaningful for them)
   ld      the pseudopotential's log-derivative phase at rxpsh, each l and
           energy, as cos and sin of twice it: the phase is defined only up
-          to pi, and the doubled angle has no branch (printed to 6
-          decimals)
+          to pi, and the doubled angle has no branch
   ecut    the cutoffs of each projector's convergence table, at its
           energy errors 1e-2..1e-5 Ha, relative to the largest in the table
-          (printed to 0.01 Ha)
+          (both from the output's DIAGNOSTICS block, 17 digits; without one,
+          from the tables printed to 6 decimals and 0.01 Ha)
   ghost   the energies of the bound-ghost test, the radial equation's and
           the basis's (printed to 6 decimals)
 
@@ -214,12 +214,15 @@ def features(path, samples, output):
     for i, eps in enumerate(eigs):
         out[f"tests:eps{i}"] = eps
     plots = parser.output["plot_data"]
-    for curve in plots.get("log_derivatives") or []:
+    diagnostics = parser.output.get("diagnostics") or {}
+    curves = diagnostics.get("log_derivatives", plots.get("log_derivatives"))
+    tables = diagnostics.get("ecut_crossings", plots.get("convergence_profiles"))
+    for curve in curves or []:
         tag = f"l{curve['l']}" + ("" if curve["j"] is None else f"j{curve['j']}")
         for i, phase in enumerate(curve["log_deriv_ps"]):
             out[f"ld:{tag}:cos:e{i}"] = math.cos(2.0 * phase)
             out[f"ld:{tag}:sin:e{i}"] = math.sin(2.0 * phase)
-    for table in plots.get("convergence_profiles") or []:
+    for table in tables or []:
         tag = f"l{table['l']}p{table['iproj']}"
         if table["j"] is not None:
             tag += f"j{table['j']}"

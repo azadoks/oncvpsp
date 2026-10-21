@@ -228,6 +228,14 @@ irel, and the stage.  It has the following major sections:
     extracted and appropriately handled for plotting by the main shell
     script scripts/run.sh.
 
+    The routine *diagout* then writes the block "Begin DIAGNOSTICS" to
+    "End DIAGNOSTICS", for programs that read the output: the cutoffs at
+    which each projector's convergence curve reaches every error level
+    (1e-2 Ha down by half decades), and the log derivatives of *run_phsft*
+    with their radius, to 17 significant digits, one tagged value per line
+    (`ecut l ikap iproj err ecut`, `ld_r l ikap r`, `ld l ikap e ae ps`;
+    ikap is 1 for j=l+1/2 or a scalar-relativistic l, 2 for j=l-1/2).
+
 11) The routine linout creates a linear radial mesh, whose size and spacing
     are specified in the input data.  All relevant potentials and projectors
     are interpolated onto this mesh, which is printed to the output file in

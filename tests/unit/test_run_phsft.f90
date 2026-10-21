@@ -14,11 +14,14 @@
 !Local variables
  integer, parameter :: mmax = 950, mxprj = 5, lmax = 0, lloc = 0
  real(dp), parameter :: zz = 1.0_dp, rr1 = 0.0005_dp, amesh = 1.012_dp
- real(dp), parameter :: epsh1 = -0.5_dp, epsh2 = 0.5_dp, depsh = 0.1_dp
+ real(dp), parameter :: epsh2 = 0.5_dp, depsh = 0.1_dp
+! the energies from epsh2 down to -0.5
+ integer, parameter :: npsh = 10
 
  real(dp) :: rr(mmax), vfull(mmax), vp(mmax, mxl+2), vp_r(mmax, mxl+2, mxkap)
  real(dp) :: epa(mxprj, mxlin+1), epa_r(mxprj, mxlin+1, mxkap)
  real(dp) :: evkb(mxprj, mxl+1), evkb_r(mxprj, mxl+1, mxkap)
+ real(dp) :: rphs(4), pshae(npsh, 4, mxkap), pshps(npsh, 4, mxkap)
  type(piecewise_t) :: vlocpw, vkbpw(mxprj, mxl+1), vkbpw_r(mxprj, mxl+1, mxkap)
  integer :: nproj(mxlin+1), irc(mxlin+1), ii, nfail = 0
 
@@ -76,13 +79,13 @@
 
  open(unit=6, file=name//'.out', status='replace', action='write')
  if(name == 'run_phsft') then
-   call run_phsft(lmax, lloc, nproj, epa, epsh1, epsh2, depsh, rxpsh, &
+   call run_phsft(lmax, lloc, nproj, epa, npsh, epsh2, depsh, rxpsh, &
 &                 vlocpw, vkbpw, evkb, rr, vfull, vp, zz, mmax, mxprj, irc, &
-&                 0, 1)
+&                 0, 1, rphs, pshae, pshps)
  else
-   call run_phsft(lmax, lloc, nproj, epa_r, epsh1, epsh2, depsh, rxpsh, &
+   call run_phsft(lmax, lloc, nproj, epa_r, npsh, epsh2, depsh, rxpsh, &
 &                 vlocpw, vkbpw_r, evkb_r, rr, vfull, vp_r, zz, mmax, mxprj, &
-&                 irc, 2, 2)
+&                 irc, 2, 2, rphs, pshae, pshps)
  end if
  close(6)
 

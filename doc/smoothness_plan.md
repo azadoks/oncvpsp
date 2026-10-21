@@ -450,7 +450,7 @@ numbers refer to [Phases](#phases).
 | O-3 | UPF numbers e20.10, PP_R f10.4 | b | W | 17 digits (done, phase 0) |
 | O-4 | `upfout` nrl extended to a tail-norm radius (1e-6) | g, i | W | kept (user decision): only how many points are written |
 | O-5 | `oncvpsp_main` 997: vpuns = −zion/r where rho == 0 | g | W (~1e-10) | switch over (r_max/2, r_max) with `cinf_taper` |
-| O-6 | printed diagnostics at f12.6–f14.8 and d10.2 | b | – | machine-readable block at 17 digits (phase 6) |
+| O-6 | printed diagnostics at f12.6–f14.8 and d10.2 | b | – | machine-readable block at 17 digits: done (`diagout`, the DIAGNOSTICS block: the Ecut crossings at every level and the log derivatives with their radius), parsed by pyoncvpsp (`diagnostics`) |
 
 #### Diagnostics (phase 6)
 
@@ -596,6 +596,15 @@ So the order is:
 2. O-6: a machine-readable block at 17 digits with the phases at rxpsh,
    the convergence tables and their crossings at 1e-2…1e-5 per
    projector (Brent on the interpolant, as in Q-4), parsed by pyoncvpsp.
+   Done: `diagout` writes the block after the gnuplot script, from
+   `cvgplt` (all seven levels, 1e-2 down by half decades) and the phases
+   `run_phsft` now returns; pyoncvpsp's `diagnostics` reads it, and
+   smooth_scan.py takes ld and ecut from it. In the N rows ld falls from
+   1.2–1.5e-6 to ≤ 1.2e-10 and ecut from 1.2–1.3e-4 to ≤ 3.7e-10, so their
+   tolerances are 3e-10 and 1e-9. The references gained the block only.
+   The fully-relativistic 14_Si shows what M-13 is for: the l = 1 curve
+   has a shoulder, and its 1e-4 crossing sits at 7.29 Ha after 3.85 Ha
+   at 3.2e-4, so the last crossing jumps when the shoulder passes a level.
 3. M-13: the budget table's crossings, smooth in the requested cutoff
    (runs on every trial).
 4. X-3: the ghost test continuous, with a printed margin.
@@ -1106,8 +1115,10 @@ So the order is:
 
 #### Phase 6: diagnostics
 
-- [ ] X-1…X-5; machine-readable diagnostics block (O-6), parsed by
-      pyoncvpsp
+- [ ] X-1…X-5
+- [x] Machine-readable diagnostics block (O-6), parsed by pyoncvpsp: the
+      Ecut crossings and the log derivatives to 17 digits; the N rows'
+      ld and ecut at ≤ 3.7e-10
 - [ ] T2 rows rxpsh and the test eigenvalues at G1
 - [ ] References patched
 

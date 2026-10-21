@@ -13,6 +13,7 @@ set(src_oncvpsp
     constants_m.f90
     der2exc.f90
     derivs.f90
+    diagout.f90
     dpnint.f90
     eresid.f90
     exc_off_pbe.f

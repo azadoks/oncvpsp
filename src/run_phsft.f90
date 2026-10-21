@@ -16,8 +16,9 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine run_phsft(lmax,lloc,nproj,epa,epsh1,epsh2,depsh,rxpsh,vlocpw, &
-&                      vkbpw,evkb,rr,vfull,vp,zz,mmax,mxprj,irc,irel,nkap)
+ subroutine run_phsft(lmax,lloc,nproj,epa,npsh,epsh2,depsh,rxpsh,vlocpw, &
+&                      vkbpw,evkb,rr,vfull,vp,zz,mmax,mxprj,irc,irel,nkap, &
+&                      rphs,pshae,pshps)
 
 !! computes log derivatives, actually atan(r * ((d psi(r)/dr)/psi(r)))
 !! at rr(irphs) comparing all-electron with Vanderbilt-Kleinman-Bylander
@@ -33,7 +34,7 @@
 !! @param epa  bound-state or scattering state reference energies for vkb
 !!             potentials (last index 1 for j=l+1/2, 2 for j=l-1/2, as in vkb,
 !!             evkb and vp)
-!! @param epsh1  low energy limit for "phase shift" calculation
+!! @param npsh  number of energies, from epsh2 down
 !! @param epsh2  high energy limit for "phase shift" calculation
 !! @param depsh  energy increment
 !! @param rxpsh  radius (bohr) at which log derivatives are computed; if
@@ -51,29 +52,35 @@
 !! @param irc  core radii indices
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param nkap  number of kappa per l: 1, or 2 for irel=2
+!! @param rphs  the radius of the log derivatives of each l (output)
+!! @param pshae  the all-electron log derivatives, per energy, l and kappa
+!!               (output; zero for l=0, ikap=2)
+!! @param pshps  the pseudopotential log derivatives, likewise (output)
 
  use constants_m, only: dp, mxl, mxlin
  use pieces_m, only: piecewise_t
  implicit none
 
 !Input variables
- integer, intent(in) :: lmax,lloc,mmax,mxprj,irel,nkap
+ integer, intent(in) :: lmax,lloc,mmax,mxprj,irel,nkap,npsh
  integer, intent(in) :: nproj(mxlin+1),irc(mxlin+1)
- real(dp), intent(in) :: epsh1,epsh2,depsh,zz,rxpsh
+ real(dp), intent(in) :: epsh2,depsh,zz,rxpsh
  real(dp), intent(in) :: rr(mmax),vp(mmax,mxl+2,nkap),epa(mxprj,mxlin+1,nkap)
  real(dp), intent(in) :: vfull(mmax)
  real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap)
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1,nkap)
 
+!Output variables
+ real(dp), intent(out) :: rphs(4),pshae(npsh,4,nkap),pshps(npsh,4,nkap)
+
 !Local variables
- integer :: ii,irphs,ll,l1,npsh
+ integer :: ii,irphs,ll,l1
  integer :: ikap,kap,mkap,lout
  real(dp) :: epsh
  character(len=11) :: rname
 
- real(dp),allocatable :: pshf(:),pshp(:)
-
- npsh=int(((epsh2-epsh1)/depsh)-0.5d0)+1
+ pshae(:,:,:)=0.0d0
+ pshps(:,:,:)=0.0d0
 
 !the routine named in the messages
  if(irel==2) then
@@ -81,8 +88,6 @@
  else
    rname='run_phsft'
  end if
-
- allocate(pshf(npsh),pshp(npsh))
 
 ! loop for phase shift calculation -- full, then local or Kleinman-
 ! Bylander / Vanderbilt
@@ -141,6 +146,7 @@
      end if
    end if
 
+   rphs(l1)=rr(irphs)
    if(nkap==1 .or. l1==1) then
      mkap=1
    else
@@ -150,13 +156,16 @@
    do ikap=1,mkap
      if(ikap==1) kap=-(ll+1)
      if(ikap==2) kap=  ll
-     call fphsft(ll,kap,epsh2,depsh,pshf,rr,vfull,zz,mmax,irphs,npsh,irel)
+     call fphsft(ll,kap,epsh2,depsh,pshae(1,l1,ikap),rr,vfull,zz,mmax, &
+&                irphs,npsh,irel)
      if(ll == lloc) then
-       call  vkbphsft(ll,0,epsh2,depsh,epa(1,l1,ikap),pshf,pshp, &
+       call  vkbphsft(ll,0,epsh2,depsh,epa(1,l1,ikap),pshae(1,l1,ikap), &
+&                          pshps(1,l1,ikap), &
 &                          rr,vp(1,lloc+1,ikap),vlocpw,vkbpw(1:0,l1,ikap), &
 &                          evkb(1,l1,ikap),mmax,irphs,npsh)
      else
-       call  vkbphsft(ll,nproj(l1),epsh2,depsh,epa(1,l1,ikap),pshf,pshp, &
+       call  vkbphsft(ll,nproj(l1),epsh2,depsh,epa(1,l1,ikap), &
+&                          pshae(1,l1,ikap),pshps(1,l1,ikap), &
 &                          rr,vp(1,lloc+1,ikap),vlocpw, &
 &                          vkbpw(1:nproj(l1),l1,ikap), &
 &                          evkb(1,l1,ikap),mmax,irphs,npsh)
@@ -169,10 +178,10 @@
      write(6,'(a/)') 'l, energy, all-electron, pseudopotential'
      do ii = 1, npsh
        epsh = epsh2 - depsh * real(ii - 1,dp)
-       write(6,'(a, i6, 3f12.6)') '! ',lout, epsh, pshf(ii), pshp(ii)
+       write(6,'(a, i6, 3f12.6)') '! ',lout, epsh, pshae(ii,l1,ikap), &
+&            pshps(ii,l1,ikap)
      end do
    end do !ikap
  end do !l1
- deallocate(pshf,pshp)
  return
  end subroutine run_phsft
