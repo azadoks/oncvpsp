@@ -438,7 +438,7 @@ numbers refer to [Phases](#phases).
 | M-10 | `modcore_budget` icmod 7 candidates snapped with nint, chosen by sorting | b, h | W | continuous 1-D minimisation of the mismatch on [r_s6, r_top]; revised: a ladder r_top/1.025ⁱ down to r_s6 picks the basin, then Brent on the central-difference slope of the mismatch in ln r_s (step 1e-2); the mismatch itself (`der2exc`) still reads the model core on the mesh, C² in r_s (S-10) |
 | M-11 | `modcore_budget`: panel count ceiling(qhi−qlo), nxg = 20 + ceiling(qhi·r_s) | i | W | fixed counts: 80 window panels × 8 nodes, 400 fill nodes, 8 per mesh interval beyond r_s, GL5 per 0.1 of q (doubling any changes nothing printed); the fill in a Legendre basis in 2t − 1 (monomials had alternating 1e5 coefficients and 1e-11 noise), monotone exactly (p′ at the ends and the roots of p″) |
 | M-12 | `modcore_budget` outer integral from mesh index `is`; forward transform a plain sum across the C² joint | c, d | W | split at r_s, `lm_integral`; transforms split there too (fill by Gauss–Legendre on [0, r_s], beyond it the interpolant of ρ_c by Gauss–Legendre per mesh interval, the suffix sums tabulated once). Known limit: the error's integral below r_s samples the fill, a polynomial of degree 16 in r/r_s, on the fixed log mesh, so its quadrature error ripples as r_s slides over the mesh (4e-12 on an error of 1e-4, period ~0.003 bohr; only the xc term, the linear one has exact moments): ~1e-9 in r_s, ~1e-6 of a finite-difference slope, ~1 % of a second difference; the T2 rows of 14_Si_bc carry it in their tolerances. Fix if curvature is needed: that integral on a log mesh of the same step ending at r_s (the functionals need a log mesh; Gauss nodes will not do for GGA), b_q there from the rotated sines, ρ_v interpolated; ~250–300 more points, ~+1.5 s on 14_Si_bc |
-| M-13 | `modcore_budget_table`: linear interpolation in q with an assumed spacing, last crossing | e, h | W | root of E_i(q) = errmax on exact E_r (Q-4) |
+| M-13 | `modcore_budget_table`: linear interpolation in q with an assumed spacing, last crossing | e, h | W | done: the root by Q-4; the table now holds the whole q-grid curve (`ncurve` 4000, an error if a curve is longer) instead of every nstep-th node, whose interpolant changed when nstep = 1 + (nq−2)/999 did (nq is 829…1051 in 07_N_opt) |
 | M-14 | `oncvpsp_main` irct (PSML matching radius) | a | W (metadata) | write r* or r_s |
 
 #### Output (phase 4)
@@ -609,7 +609,14 @@ So the order is:
    does not remove the jump. Not seen in the N rows. A continuous margin
    (the shoulder's height above the level) would be the G5 remedy.
 3. M-13: the budget table's crossings, smooth in the requested cutoff
-   (runs on every trial).
+   (runs on every trial). Done: the root-finding was Q-4's already; what
+   was left is the table of every nstep-th node of the curve, which
+   moved the crossing by up to 3e-8 Ha (52_Te; 2e-9 in 07_N_opt, where
+   nq of l = 1 p2 is 1051) and jumped when nstep did. The table holds the
+   whole curve now: the budget's Ecut is the same root on the same curve
+   as the diagnostics block's. Kernels unchanged; V_loc ≤ 5e-12, core
+   ≤ 7e-10 (14_Si_bca, 14_Si_hm, 14_Si_hm_r: the inputs with
+   fcfact ≤ 0).
 4. X-3: the ghost test continuous, with a printed margin.
 5. S-10: GGA ρ′, ρ″ from the pieces. Moved after X-3: item 1 shows no
    kink above 1e-11 in the optimizer's setup.
@@ -1105,7 +1112,8 @@ So the order is:
       14_Si_hm 0.852000 → 0.836009, 23.46 → 23.76, 1.0e-2, 3.4e-2 (core:
       the value column relative; its 3rd–4th derivative columns move by
       O(1) at the C² joint, which the writers' pieces will address)
-- [ ] M-13, M-14; S-10 GGA gradients from the pieces
+- [x] M-13: the budget table holds the whole convergence curve
+- [ ] M-14; S-10 GGA gradients from the pieces
 - [ ] `match_order` (D-5): input key, minimum tail and Martins fill to
       C⁴, T2 row `slack` with `match_order = 4`
 - [ ] T2 rows fcfact, rcfact, icmod 4 grid, slack at G1

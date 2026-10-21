@@ -96,7 +96,7 @@
  integer :: ii,iprj,jj,l1,lmax,nbas,ncon,nconmx
  logical :: found_root
 
- integer :: nnull,nqout,nq,iq,kk,nstep
+ integer :: nnull,nqout,nq,iq,kk
 
  real(dp), allocatable :: qroot(:),sbasis(:)
  real(dp), allocatable :: eresid0(:),eresiddot(:,:)
@@ -246,7 +246,8 @@
 
 !the convergence curve of the optimized pseudo wave function on the q
 !grid, for the cutoffs at each error level (below) and the model core's
-!budget (modcore_budget_table, every nstep-th node so that it fits)
+!budget (modcore_budget_table): all of it, as a table of every nstep-th
+!node changed its interpolant when nstep did (M-13)
    do iq=1,nq
      eresg(iq)=e0(iq)
      do jj=1,nnull
@@ -256,13 +257,15 @@
        end do
      end do
    end do
-   nstep=1+(nq-2)/(ncurve-1)
+   if(nq>ncurve) then
+     write(6,'(/2a,i0,a,i0)') 'run_optimize: ERROR q grid longer than', &
+&          ' the convergence curve, nq=',nq,', ncurve=',ncurve
+     error stop 1
+   end if
    ecurve(:,:,iprj)=0.0d0
-   do ii=1,ncurve
-     iq=1+(ii-1)*nstep
-     if(iq>nq) exit
-     ecurve(1,ii,iprj)=0.5d0*(dble(iq-1)*dq)**2
-     ecurve(2,ii,iprj)=eresg(iq)
+   do iq=1,nq
+     ecurve(1,iq,iprj)=0.5d0*(dble(iq-1)*dq)**2
+     ecurve(2,iq,iprj)=eresg(iq)
    end do
 
 ! find the Vanderbilt projectors and optimized wave functions

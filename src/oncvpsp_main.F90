@@ -104,7 +104,9 @@
  real(dp), allocatable :: ecurve(:,:,:,:,:)
  real(dp), allocatable :: pshae(:,:,:),pshps(:,:,:)
  real(dp) :: ecutw
- integer, parameter :: ncurve=1000
+! the points of a convergence curve: run_optimize's q grid, ~2400 for
+! nbas=14 and less than 3000 for qcut up to 15 at rc up to 4
+ integer, parameter :: ncurve=4000
  real(dp), allocatable :: rr(:)
  real(dp), allocatable :: rho(:),rhoc(:),rhot(:)
  real(dp), allocatable :: uu(:,:),up(:,:),vwell(:,:)

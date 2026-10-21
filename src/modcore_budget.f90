@@ -1695,9 +1695,9 @@
 !! the cutoff ecut (Ha) of the pseudo-waves at the error errmax (Ha per
 !! electron): the largest over the pseudo-waves of the cutoff at which the
 !! energy error per electron of each falls to errmax, the "Energy error per
-!! electron / Cutoff" tables of run_optimize (the same root-finding on the
-!! interpolant of log E over the curve's points, ug_cross_down, from the
-!! last crossing).
+!! electron / Cutoff" tables of run_optimize (the same curve and the same
+!! root-finding on the interpolant of log E over its points, ug_cross_down,
+!! from the last crossing).
 !! ecurve(:,:,i) holds the cutoffs and errors of pseudo-wave i on a uniform
 !! grid in q from 0, zero beyond its end (all zero for no pseudo-wave); a
 !! pseudo-wave whose table does not reach errmax does not count, as it has
