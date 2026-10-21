@@ -89,7 +89,7 @@
 !! the Teter function of the model core charges, g(x) s(x), and its
 !! derivatives at x >= 0: s the C-infinity switch f(1-t)/(f(1-t)+f(t)),
 !! f(t) = exp(-1/t), t = (x-xtap1)/(xtap2-xtap1), 1 up to xtap1 and 0 from
-!! xtap2 (as ionic_switch); the derivatives of s by Taylor arithmetic
+!! xtap2 (as cinf_taper); the derivatives of s by Taylor arithmetic
 !!
 !! @param xx  argument, x >= 0
 !! @param nder  highest derivative wanted, 0<=nder<=4

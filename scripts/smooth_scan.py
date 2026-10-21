@@ -46,9 +46,10 @@ radii inside the scanned window (widened by two steps of the file's log mesh,
 or of the generator's for a linear one), and inside 0.95 times it (where the
 projectors' taper starts), are dropped: there the functions are only as
 smooth as the matching at the radius makes them, which is a property of the
-construction, not of its numerics. The 8 points of the file's mesh on each
-side of each window are sampled too: an interpolant across the radius would
-reach them.
+construction, not of its numerics. So are the radii swept by a breakpoint
+the output reports (the r_s of icmod 6 and 7), whatever the parameter. The 8
+points of the file's mesh on each side of each window are sampled too: an
+interpolant across the radius would reach them.
 
 usage: smooth_scan.py EXE BASE.toml KEY [--center X] [--cells N | --span S]
                       [--npts N] [--degree D] [--groups G,G]
@@ -80,6 +81,10 @@ GROUPS = ("kernel", "vloc", "core", "tests")
 UPF_MESH = 600
 # points of the file's mesh sampled on each side of the window of a radius
 NEAR = 8
+# breakpoints of the model core that move with the inputs, as the output
+# reports them: the radius r_s of icmod 6 and 7, a C2 joint (C4 with
+# match_order = 4)
+BREAKPOINTS = (re.compile(r"^\s*model radius r_s\s+([-+.0-9eE]+)"),)
 # a core radius rc moves the start of the projectors' taper, TAPER rc
 # (run_vkb), as well as rc
 TAPER = 0.95
@@ -298,6 +303,20 @@ def run_one(exe, data, key, value, workdir, index, output):
     return path / "out"
 
 
+def breakpoints(outputs):
+    """The breakpoint radii the outputs report (BREAKPOINTS), over all runs:
+    the functions are only as smooth as the joint there, a property of the
+    construction, so the radii it sweeps are dropped as for a radius key."""
+    radii = []
+    for out in outputs:
+        for line in pathlib.Path(out).read_text().splitlines():
+            for pattern in BREAKPOINTS:
+                m = pattern.match(line)
+                if m:
+                    radii.append(float(m.group(1)))
+    return radii
+
+
 def scan(args):
     data = tomllib.loads(pathlib.Path(args.toml).read_text())
     center = float(get_value(data, args.key)) if args.center is None else args.center
@@ -329,13 +348,18 @@ def scan(args):
             )
         }
     )
+    if args.output == "log":
+        step = max(b / a for a, b in zip(mesh[1:], mesh[2:]))
+    else:
+        step = data.get("log_mesh", {}).get("amesh", 1.006)
+    windows = []
     if parse_key(args.key)[1] in RADIUS_KEYS:
-        if args.output == "log":
-            step = max(b / a for a, b in zip(mesh[1:], mesh[2:]))
-        else:
-            step = data.get("log_mesh", {}).get("amesh", 1.006)
         lo, hi = min(values) / step**2, max(values) * step**2
-        windows = [(lo, hi), (TAPER * lo, TAPER * hi)]
+        windows += [(lo, hi), (TAPER * lo, TAPER * hi)]
+    moved = breakpoints(outputs)
+    if moved:
+        windows += [(min(moved) / step**2, max(moved) * step**2)]
+    if windows:
         near = set()
         for a, b in windows:
             # the NEAR points of the mesh on each side of the window, which an

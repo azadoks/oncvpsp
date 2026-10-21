@@ -294,7 +294,7 @@ The breakpoints and their continuity orders:
 | r_s | model core, icmod 6/7 | C² by default, C⁴ with `match_order = 4` (D-5) |
 | 3/b | Teter cutoff, icmod 2–4 | C¹ today; removed in phase 5 |
 | r_w | wellstate well onset | C² today; C-infinity after phase 3 |
-| ra, rb | ionic tail switch | C-infinity (`ionic_switch`) |
+| ra, rb | ionic tail switch | C-infinity (`cinf_taper`) |
 | r(r_s = 1) | V_xc of PZ81 (iexc 3) | a jump of about 1e-5 Ha (the published coefficients, F-1, D-6) |
 
 #### Roots and optima
@@ -430,14 +430,14 @@ numbers refer to [Phases](#phases).
 | M-2 | `modcore`: derivatives at ircc by stencils | a, e | W | `lm_derivs` at r* |
 | M-3 | `modcore`: a0 by bisection to 1e-7, monotonicity checked only at mesh points | f, h | W | closed form: p' is affine in a0; critical points by companion matrix |
 | M-4 | `modcore2`: x by bisection to 1e-7 | f | W | Newton on the monotone x·g'/g |
-| M-5 | `gg1cc`, `gpp1cc`: Teter function cut to 0 at x = 3 (C¹); columns 4, 5 by stencils across it; `dpnint` patches near the origin (zeroing rhomod(1,3:5)) | d, e | W | analytic derivatives (h = √g a sum of five shifted sincs, series near their centres); delete the patches; revised: not "no cutoff" (the x⁻¹⁰ tail is far fatter than a core charge: V_ion then differs from −zion/r to 1e-10 out to 22.7 bohr in 79_Au_lxc instead of 6, and the outermost crossing of that tolerance hops between the lobes of sin²), but g tapered to 0 between x = 3 and 4 by the C∞ switch of `ionic_switch` |
+| M-5 | `gg1cc`, `gpp1cc`: Teter function cut to 0 at x = 3 (C¹); columns 4, 5 by stencils across it; `dpnint` patches near the origin (zeroing rhomod(1,3:5)) | d, e | W | analytic derivatives (h = √g a sum of five shifted sincs, series near their centres); delete the patches; revised: not "no cutoff" (the x⁻¹⁰ tail is far fatter than a core charge: V_ion then differs from −zion/r to 1e-10 out to 22.7 bohr in 79_Au_lxc instead of 6, and the outermost crossing of that tolerance hops between the lobes of sin²), but g tapered to 0 between x = 3 and 4 by the C∞ switch of `cinf_taper` |
 | M-6 | `modcore3`: grid argmin then Nelder–Mead to an f-spread of 1e-4; returns a vertex | h, f | W | keep grid and NM to choose the basin; then Newton (trust region) on ∇f = 0 to round-off; revised: to the noise of f instead, ~5e-13 in ln a (f carries ~1e-17 of der2exc's round-off on 1.2e-4, and the valley's soft curvature is 5e-4), by central differences along the Hessian's eigenvectors with steps ∝ 1/√λ (axis differences: ~1e-11) |
 | M-7 | `modcore3` ircross, dead rcross loops | a | W | remove (analytic derivatives everywhere) |
-| M-8 | `modcore_budget` ifrom: first q of a 0.1 grid above the budget; the only way slack enters | a, b | W | tested cutoffs start at q_b exactly; max over q by grid plus Brent |
-| M-9 | `modcore_budget` r_s by integer bisection; irtop, ilo from snapped rc | h, a | W | bracket on the mesh, Brent on g(r_s) = max_q err − errmax |
-| M-10 | `modcore_budget` icmod 7 candidates snapped with nint, chosen by sorting | b, h | W | continuous 1-D minimisation of the mismatch on [r_s6, r_top] |
-| M-11 | `modcore_budget`: panel count ceiling(qhi−qlo), nxg = 20 + ceiling(qhi·r_s) | i | W | fixed counts |
-| M-12 | `modcore_budget` outer integral from mesh index `is`; forward transform a plain sum across the C² joint | c, d | W | split at r_s, `lm_integral` |
+| M-8 | `modcore_budget` ifrom: first q of a 0.1 grid above the budget; the only way slack enters | a, b | W | tested cutoffs start at q_b exactly; max over q by grid plus Brent; revised: the error sphere tapered by `cinf_taper` over 6…10 bohr (its hard edge rippled err(q) with period π/10 and the argmax hopped between ripples, kinking r_s); cutoffs to q_b + 1 first, extended to the peak + 1 when a later cutoff errs more at that r_s, so each r_s is a root of the max over all of them |
+| M-9 | `modcore_budget` r_s by integer bisection; irtop, ilo from snapped rc | h, a | W | bracket on the mesh, Brent on g(r_s) = max_q err − errmax; r_s in [r_top/50, r_top], r_top = min(rc) or the last radius with core charge (the real rc, not its index) |
+| M-10 | `modcore_budget` icmod 7 candidates snapped with nint, chosen by sorting | b, h | W | continuous 1-D minimisation of the mismatch on [r_s6, r_top]; revised: a ladder r_top/1.025ⁱ down to r_s6 picks the basin, then Brent on the central-difference slope of the mismatch in ln r_s (step 1e-2); the mismatch itself (`der2exc`) still reads the model core on the mesh, C² in r_s (S-10) |
+| M-11 | `modcore_budget`: panel count ceiling(qhi−qlo), nxg = 20 + ceiling(qhi·r_s) | i | W | fixed counts: 80 window panels × 8 nodes, 400 fill nodes, 8 per mesh interval beyond r_s, GL5 per 0.1 of q (doubling any changes nothing printed); the fill in a Legendre basis in 2t − 1 (monomials had alternating 1e5 coefficients and 1e-11 noise), monotone exactly (p′ at the ends and the roots of p″) |
+| M-12 | `modcore_budget` outer integral from mesh index `is`; forward transform a plain sum across the C² joint | c, d | W | split at r_s, `lm_integral`; transforms split there too (fill by Gauss–Legendre on [0, r_s], beyond it the interpolant of ρ_c by Gauss–Legendre per mesh interval, the suffix sums tabulated once). Known limit: the error's integral below r_s samples the fill, a polynomial of degree 16 in r/r_s, on the fixed log mesh, so its quadrature error ripples as r_s slides over the mesh (4e-12 on an error of 1e-4, period ~0.003 bohr; only the xc term, the linear one has exact moments): ~1e-9 in r_s, ~1e-6 of a finite-difference slope, ~1 % of a second difference; the T2 rows of 14_Si_bc carry it in their tolerances. Fix if curvature is needed: that integral on a log mesh of the same step ending at r_s (the functionals need a log mesh; Gauss nodes will not do for GGA), b_q there from the rotated sines, ρ_v interpolated; ~250–300 more points, ~+1.5 s on 14_Si_bc |
 | M-13 | `modcore_budget_table`: linear interpolation in q with an assumed spacing, last crossing | e, h | W | root of E_i(q) = errmax on exact E_r (Q-4) |
 | M-14 | `oncvpsp_main` irct (PSML matching radius) | a | W (metadata) | write r* or r_s |
 
@@ -449,7 +449,7 @@ numbers refer to [Phases](#phases).
 | O-2 | `oncvpsp_main` 882–891 + `linout`: fr psp8 drops sr/so terms below 1e-3 of the first | g | W | write all; see D-2 |
 | O-3 | UPF numbers e20.10, PP_R f10.4 | b | W | 17 digits (done, phase 0) |
 | O-4 | `upfout` nrl extended to a tail-norm radius (1e-6) | g, i | W | kept (user decision): only how many points are written |
-| O-5 | `oncvpsp_main` 997: vpuns = −zion/r where rho == 0 | g | W (~1e-10) | switch over (r_max/2, r_max) with `ionic_switch` |
+| O-5 | `oncvpsp_main` 997: vpuns = −zion/r where rho == 0 | g | W (~1e-10) | switch over (r_max/2, r_max) with `cinf_taper` |
 | O-6 | printed diagnostics at f12.6–f14.8 and d10.2 | b | – | machine-readable block at 17 digits (phase 6) |
 
 #### Diagnostics (phase 6)
@@ -929,7 +929,7 @@ later phases can see 1e-10.
       extension changes only how many points are written, not a value at
       any radius
 - [x] O-5: the unscreened potentials switched to −zion/r by
-      `ionic_switch` over the outer half of the log mesh, (r_max/2,
+      `cinf_taper` over the outer half of the log mesh, (r_max/2,
       r_max), not set to it where ρ underflows to 0 (43.7–43.9 bohr of
       44.5, by mesh index; V_loc + zion/r is ≤ 6e-17 there). The written
       files are bit-identical; α_z's tail beyond 10 bohr moves by ≤ 1e-10
@@ -1026,11 +1026,34 @@ later phases can see 1e-10.
       at a core tol of 3e-12, the noise above; smooth_scan.py no longer
       counts a jump ratio in steps under the tol (pure noise has a ratio
       ~3, and this row's output does not depend on its input at all)
-- [ ] M-8…M-14; S-10 GGA gradients from the pieces
+- [x] M-8–M-12 (icmod 6/7, `modcore_budget`): cutoffs from q_b exactly,
+      max over q by grid and Brent; r_s by Brent on the excess over
+      [r_top/50, r_top] (rcmin passed as a radius); icmod 7 by Brent on
+      the mismatch's slope in the basin of a ladder; fixed node counts;
+      transforms and the error's integral split at r_s; the fill in a
+      Legendre basis; the error sphere tapered by `cinf_taper` over
+      6…10 bohr (`ionic_switch` renamed, in its own file, as it tapers
+      more than the ionic tail). smooth_scan.py drops the radii the
+      reported r_s sweeps, as for radius keys. T2: 14_Si_bc fcfact
+      (degree 14) core 9.6e-11, V_loc 3.4e-11; 14_Si_hm slack (degree 14)
+      4.3e-11, 1.2e-11 (xc round-off); 14_Si_bc slack 2.7e-9, 1.5e-9 (the
+      quadrature ripple, M-12), each at a tol over its floor (was ~1e-6,
+      kinked). Against 8974b5c, kernels unchanged: 14_Si_bc r_s 0.370954
+      → 0.367395, Ecut 23.81 → 23.44 Ha, V_loc 2.7e-3, core 7.9e-3;
+      14_Si_bca 0.670688 → 0.655583, 14.05 → 14.13, 6.6e-3, 2.4e-2;
+      14_Si_hm 0.852000 → 0.836009, 23.46 → 23.76, 1.0e-2, 3.4e-2 (core:
+      the value column relative; its 3rd–4th derivative columns move by
+      O(1) at the C² joint, which the writers' pieces will address)
+- [ ] M-13, M-14; S-10 GGA gradients from the pieces
 - [ ] `match_order` (D-5): input key, minimum tail and Martins fill to
       C⁴, T2 row `slack` with `match_order = 4`
 - [ ] T2 rows fcfact, rcfact, icmod 4 grid, slack at G1
 - [ ] References patched
+- [ ] Revisit the icmod 6/7 quadrature ripple (M-12, known limit): ~1e-9
+      in r_s, carried in the tolerances of 14_Si_bc's T2 rows. Fix it
+      (the integral below r_s on a log mesh ending at r_s) if second
+      derivatives by finite differences are needed, then tighten those
+      rows
 
 #### Phase 6: diagnostics
 

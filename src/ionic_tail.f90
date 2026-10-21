@@ -17,8 +17,9 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 ! The ionic tail of the pseudopotentials, after PseudoPotentialGenerators.jl
-! (src/unscreening.jl: ionic_tail, ionic_switch, ionic_tail_window,
-! with_ionic_tail; src/verification.jl: coulomb_tail).
+! (src/unscreening.jl: ionic_tail, ionic_switch (here cinf_taper, in
+! cinf_taper.f90), ionic_tail_window, with_ionic_tail;
+! src/verification.jl: coulomb_tail).
 !
 ! Beyond the largest core radius rcmax the screened potentials vp are V_AE,
 ! screened by the all-electron valence density n_v.  Unscreening them with
@@ -141,39 +142,6 @@
  rb=0.5d0*(rcore+2.0d0*ra+sqrt((rcore-2.0d0*ra)**2+0.01d0))
  return
  end subroutine ionic_window
-
- real(dp) function ionic_switch(rad,ra,rb)
-
-!! C-infinity switch from 1 (r <= ra) to 0 (r >= rb): f(1-x)/(f(1-x)+f(x)),
-!! f(t) = exp(-1/t), x = (r-ra)/(rb-ra); its transform decays faster than
-!! any power of q, so it adds no plane-wave tail of its own
-!!
-!! @param rad  radius
-!! @param ra  start of the window
-!! @param rb  end of the window
-!! @return the switch at rad
-
- use constants_m, only: dp
- implicit none
-
-!Input variables
- real(dp), intent(in) :: rad,ra,rb
-
-!Local variables
- real(dp) :: xx,f0,f1
-
- if(rad<=ra) then
-   ionic_switch=1.0d0
- else if(rad>=rb) then
-   ionic_switch=0.0d0
- else
-   xx=(rad-ra)/(rb-ra)
-   f0=exp(-1.0d0/(1.0d0-xx))
-   f1=exp(-1.0d0/xx)
-   ionic_switch=f0/(f0+f1)
- end if
- return
- end function ionic_switch
 
  subroutine ionic_valence(nkap,nc,nv,la,fa,ea,lloc,nproj,rr,vp,vlocpw, &
 &                         vkbpw,evkb,mmax,mxprj,rho,rhops,uupsa,eeig)
@@ -352,7 +320,7 @@
  integer, parameter :: maxiter=50
  real(dp), allocatable :: ww(:),vp0(:,:,:),vnew(:),vnext(:,:),vsw(:)
  real(dp) :: ra,rb,change,sn,sd
- real(dp), external :: ionic_switch
+ real(dp), external :: cinf_taper
  integer :: ii,l1,ik,iter
 
  allocate(ww(mmax),vp0(mmax,mxl+2,nkap),vnew(mmax),vnext(mmax,nkap),vsw(mmax))
@@ -360,7 +328,7 @@
  call ionic_tail(zz,zion,rhoc,rhotae,rhomod,rr,mmax,iexc,vion)
  call ionic_window(rr,mmax,zion,vion,rcmax,tol,ra,rb)
  do ii=1,mmax
-   ww(ii)=ionic_switch(rr(ii),ra,rb)
+   ww(ii)=cinf_taper(rr(ii),ra,rb)
  end do
  vp0(:,:,:)=vp(:,:,:)
 

@@ -98,7 +98,7 @@
  real(dp) :: rpk(mxstate,mxkap)
  real(dp) :: epstot
  real(dp), parameter :: eps=1.0d-8
- real(dp), external :: ionic_switch
+ real(dp), external :: cinf_taper
 
  real(dp), allocatable :: evkb(:,:,:),cvgplt(:,:,:,:,:),qq(:,:)
  real(dp), allocatable :: ecurve(:,:,:,:,:)
@@ -940,7 +940,7 @@
 &                        nkap,probes,lprobe,nprobe)
    end if
    call modcore_budget(icmod,rho,rhoc,rhomod,fcfact,ecutw,rcfact,slack, &
-&               minval(irc(1:lmax+1)),mmax,rr,iexc,zion, &
+&               minval(rc(1:lmax+1)),mmax,rr,iexc,zion, &
 &               probes(:,1:nprobe),lprobe(1:nprobe),nprobe)
    deallocate(probes,lprobe)
 
@@ -1024,7 +1024,7 @@
 ! -zion/r far out, where the all-electron charge outranges rho: switched
 ! over the outer half of the mesh (O-5), not cut where rho underflows to 0
  do ii=1,mmax
-   sw=ionic_switch(rr(ii),0.5d0*rr(mmax),rr(mmax))
+   sw=cinf_taper(rr(ii),0.5d0*rr(mmax),rr(mmax))
    do l1=1,max(lmax+1,lloc+1)
      vpuns(ii,l1)=sw*vpuns(ii,l1)-(1.0d0-sw)*zion/rr(ii)
    end do

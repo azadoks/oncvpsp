@@ -23,6 +23,7 @@ set(src_oncvpsp
     excwig.f90
     fphsft.f90
     inward_start.f90
+    cinf_taper.f90
     ionic_tail.f90
     ldiracfb.f90
     ldiracfs.f90
