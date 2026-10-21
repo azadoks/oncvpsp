@@ -602,9 +602,12 @@ So the order is:
    smooth_scan.py takes ld and ecut from it. In the N rows ld falls from
    1.2–1.5e-6 to ≤ 1.2e-10 and ecut from 1.2–1.3e-4 to ≤ 3.7e-10, so their
    tolerances are 3e-10 and 1e-9. The references gained the block only.
-   The fully-relativistic 14_Si shows what M-13 is for: the l = 1 curve
-   has a shoulder, and its 1e-4 crossing sits at 7.29 Ha after 3.85 Ha
-   at 3.2e-4, so the last crossing jumps when the shoulder passes a level.
+   A discrete event that no item removes (G5): where a convergence curve
+   has a shoulder, the last crossing of a level jumps when the shoulder
+   passes it (fully-relativistic 14_Si, l = 1: 3.85 Ha at 3.2e-4, then
+   7.29 Ha at 1e-4). M-13 finds the same last crossing more exactly; it
+   does not remove the jump. Not seen in the N rows. A continuous margin
+   (the shoulder's height above the level) would be the G5 remedy.
 3. M-13: the budget table's crossings, smooth in the requested cutoff
    (runs on every trial).
 4. X-3: the ghost test continuous, with a printed margin.
