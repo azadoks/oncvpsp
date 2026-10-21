@@ -91,7 +91,7 @@ the library shares a process with other Fortran code.
 - [ ] Decide whether to do it at all: it touches nearly every file, which
       makes merging upstream fixes from `master` much harder.
 - [ ] If so, one group per commit, leaves first: the mesh and quadrature
-      utilities (`aeo` family, `dpnint`, `vpinteg`, `der2exc`), the XC
+      utilities (`aeo` family, `dpnint`, `der2exc`), the XC
       routines, the radial solvers (`lsch*`, `ldirac*`, `boundstate`), the
       pseudization and optimizer, the `run_*` drivers.
 - [ ] Each group updates `src/CMakeLists.txt`.

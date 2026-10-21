@@ -1184,8 +1184,9 @@ So the order is:
 
 - [ ] The numerics above moved into the permanent docs
       (`program_overview.md`); this page kept as the record
-- [ ] Dead code removed (`lschpb`, `lschps`, `lschkb`); the bugs below
-      fixed where the phases did not already
+- [x] Dead code removed (`lschpb`, `lschps`, `lschkb`, `vpinteg`: no
+      caller left)
+- [ ] The bugs below fixed where the phases did not already
 - [ ] `smooth` label dropped; T2 part of the default suite
 
 #### Phase 8: the kernels free of the well (follow-up)
@@ -1408,7 +1409,8 @@ These change behaviour beyond numerics. Decided on review (2026-10-20).
 
 To fix in the phase that touches the code, or in phase 7.
 
-- `vpinteg` skips mesh points 1–3 (harmless, about 1e-12).
+- `vpinteg` skips mesh points 1–3 (harmless, about 1e-12; removed in
+  phase 7, no caller left).
 - `sbf8` with nm = 3 or 4 leaves `sb_out(2)` (j_1) unset (latent: `eresid`
   and `sbf_basis_con` read only `sb_out(nm)`; fixed in phase 3, Q-10).
 - `pspot` kinetic-energy origin term has the wrong power (diagnostic).
@@ -1437,7 +1439,7 @@ To fix in the phase that touches the code, or in phase 7.
   states (`ierr=10`) can enter the bracketing.
 - `psatom` can declare convergence during the occupation ramp (fixed in
   phase 2, S-5).
-- `lschpb` has no caller.
+- `lschpb` has no caller (removed in phase 7, with `lschps`, `lschkb`).
 - The solvers' doc comments call `up` d(uu)/dr; it is d(uu)/dn = al·r·du/dr.
 - The `oncvpsp_main` comment on the rc rounding says "nearest" and "5
   decimals"; it is "next" and 6.

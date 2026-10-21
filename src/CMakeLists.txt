@@ -29,9 +29,6 @@ set(src_oncvpsp
     ldiracfs.f90
     lschfb.f90
     lschfs.f90
-    lschkb.f90
-    lschpb.f90
-    lschps.f90
     lschpsbar.f90
     lschvkbb.f90
     lschvkbbe.f90
@@ -82,7 +79,6 @@ set(src_oncvpsp
     vkboutwf.f90
     wf_rc_der.f90
     vout.f90
-    vpinteg.f90
     wellstate.f90
     input_echo_m.f90
     input_text_m.f90
