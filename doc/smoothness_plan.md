@@ -779,9 +779,48 @@ later phases can see 1e-10.
       Measured against the 1.0015 run, an order p shows as
       log2(2^p + 1) here, so p is only about 0.9 to 1.7. The solvers are
       4th order and the quadratures 8th, so something first order
-      remains. The candidate, not yet confirmed, is the psp8 output's
-      `dpnint` interpolation across the kinks at rc (O-1). Phase 4
-      measures it again.
+      remains.
+
+      It is not `dpnint`; it is the well's onset. This was measured on
+      nested meshes, amesh = 1.012^(2^-k) for k = 0..4 (rr1 does not
+      depend on amesh, so each mesh holds every point of the coarser
+      ones). The UPF file was written on the log mesh points
+      (`upf_mesh`), with no interpolation, and compared at the points
+      of the coarsest mesh. The order is log2(e_k/e_(k+1)), where e_k
+      is the change from mesh k to mesh k+1:
+      - The UPF and psp8 kernels change by the same amounts to three
+        digits, in every block of 14_Si, 08_O and 52_Te_r. Both
+        converge at order 1.0 to 1.3, tending to 1 (14_Si l=1: e =
+        1.46e-2, 7.08e-3, 3.44e-3, 1.69e-3).
+      - With one projector per l, 14_Si's l=0 and l=1 kernels change
+        by at most 2.5e-6. l=2 still converges at order 1 (its ep=0.1
+        state comes from `wellstate`). The first-order term is in the
+        kernels of well states: every second projector, and every
+        positive ep.
+      - The well state's half-point radius converges at order 1 too
+        (14_Si l=0: 7.1190, 7.1335, 7.1405, 7.1440, 7.1458), because
+        its onset rc·amesh⁵ (R-12) is rc(1 + 5 al) to first order.
+        With the onset fixed at rc·1.012⁵ on every mesh, the 14_Si
+        kernels converge at order 4.0–4.1 and then 3.3–3.5, to 1e-7.
+        The 08_O kernels converge at order 2 to 4 below its coarsest
+        mesh, which is off by 9e-3 with either onset. Probably the well
+        reaches the kernels through the tail beyond rc that `eresid`
+        transforms, but this was not checked.
+      - Below about 1e-6 the changes are erratic (1e-8 to 1.4e-6, the
+        largest at the finest mesh), in the bound-state kernels too: a
+        floor, not an order.
+      - With the onset fixed, `dpnint` shows: 08_O l=1 changes by
+        2.4e-6 in psp8 and 9.6e-8 in UPF. O-1 still has a target,
+        three orders down.
+      - V_loc changes by about 1e-9 in 08_O and 52_Te_r. In 14_Si it
+        jumps (e = 2.5e-4, 5e-10, 6.3e-5) because the icmod 1 model
+        core does (`nlcc` likewise): the crossover still falls on a
+        mesh point (phase 5).
+
+      The fix is to make the onset rc·c with c independent of the mesh.
+      With c = 1.006⁵, a run on the default mesh changes only by
+      round-off.
+      X-1's matching radius max(rc)·amesh⁵ has the same form.
 - [x] References patched (R-10: `scripts/ref_patch.py` now takes the lines
       of the quantities with tolerances near their printed precision, the
       pseudo-atom energies and test eigenvalues, whenever they differ)
