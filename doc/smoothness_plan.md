@@ -720,7 +720,68 @@ later phases can see 1e-10.
       1.4e-14; 20_Ca `rcloc` 4.7e-13 / 6.2e-12; 08_O `rc[1]` 9.2e-12 /
       5.8e-14; 52_Te `rc[1]` 2.7e-11 / 3.5e-14. At G2: 14_Si `dvloc0`
       7.8e-14, `debl[0]` 5.6e-14, `ep[2]` 2.4e-13, 52_Te `dvloc0` 1.2e-14
-- [ ] T3, T4 recorded at the end of the phase
+- [x] T3 at the end of the phase: the T3 inputs run by each commit of
+      the phase and diffed against the commit before. Largest kernel move
+      per commit:
+
+      | commit | items | kernel |
+      |---|---|---|
+      | 79b1cd8 | R-4 | 5.7e-6 (74_W_r) |
+      | a9e131c | AE SCF | 5.4e-8 |
+      | 8eae4dd | S-8 | 6.1e-7 (60_Nd_GHOST_r) |
+      | 6c310b9 | Q-1…Q-4 | 7.2e-5 (07_N) |
+      | bc00d9b | R-5, Q-8 | 5.9e-7 |
+      | 170bc99 | R-5 in quad | 2.1e-10 |
+      | 54c5267 | R-1…R-3 | 0 (rc already on its node) |
+      | e3a587f | R-6…R-13 | 1.9e-2 (40_Zr), 1.6e-3 (14_Si) |
+      | dc24b82 | R-10 | 1.4e-10 |
+      | 0971ea2 | Q-10 | 3.3e-12 |
+
+      Above G3a's 1e-6, each with its change of method:
+      - R-12: the well's factor exp(−0.01/x). With it removed (HEAD,
+        onset rr(irc+5) as before on these inputs), 40_Zr's 1.9e-2 (its
+        l=1 well state, n 5 → 6) and 14_Si's 1.6e-3 vanish against
+        170bc99.
+      - R-11: Δ from the first-order system instead of `vrel`, which took
+        Δ/u by stencils with thresholds and neighbour averages. What
+        remains without the well's factor is 2.1e-7 at most in the nr
+        inputs, where Δ ≡ 0, 1.2e-5 in sr (60_Nd_GHOST's l=3) and 1.1e-4
+        in fr (73_Ta_r), where Δ carries the spin-orbit term.
+      - Q-1…Q-4: E_r at the exact qcut, its inside part exact. The
+        kernels move by up to 7.2e-5 (07_N), 2.2e-5 (60_Nd_GHOST), 1.8e-5
+        (08_O_wigner_r). V_loc moves only through the model core of
+        icmod 6 and 7, by 2.9e-2 Ha (14_Si_bca) and 8.2e-3 (14_Si_hm):
+        qmax went from 20 to 20.06 by the smooth maximum (Q-3), and with
+        it the E_r from which the ecut budget sets the core. 14_Si_bc,
+        whose fcfact is given, moves by 1e-7.
+      - R-4: 5.7e-6, the stencils' error in the matching data.
+- [x] T4 at the end of the phase. The kernels now converge monotonically
+      in every block, where at the start each mesh snapped rc to a
+      different point. At 1.003 every block is 2.5 to 320 times closer
+      to the 1.0015 run than before. Only 14_Si l=1 at the coarse meshes
+      is 6–9 % worse (2.51e-2 at 1.012, against 2.31e-2):
+
+      | input | block | 1.012 | 1.006 | 1.003 | order (1.006→1.003) |
+      |---|---|---|---|---|---|
+      | 14_Si | l=0 | 1.8e-4 | 6.5e-5 | 1.9e-5 | 1.75 |
+      | 14_Si | l=1 | 2.5e-2 | 1.1e-2 | 3.5e-3 | 1.61 |
+      | 14_Si | l=2 | 3.9e-3 | 1.5e-3 | 4.8e-4 | 1.65 |
+      | 08_O | l=0 | 8.3e-3 | 4.2e-4 | 1.0e-4 | 2.06 |
+      | 08_O | l=1 | 6.2e-4 | 9.7e-5 | 3.4e-5 | 1.53 |
+      | 52_Te_r | l=0 | 4.0e-4 | 1.8e-4 | 6.1e-5 | 1.57 |
+      | 52_Te_r | l=1 | 2.2e-3 | 8.5e-4 | 2.7e-4 | 1.68 |
+      | 52_Te_r | l=2 | 1.5e-4 | 4.9e-5 | 1.4e-5 | 1.86 |
+      | 52_Te_r | l=3 | 4.7e-4 | 1.5e-4 | 4.1e-5 | 1.89 |
+      | 52_Te_r | so l=1 | 1.5e-4 | 6.2e-5 | 2.0e-5 | 1.62 |
+      | 52_Te_r | so l=2 | 2.1e-6 | 7.5e-7 | 2.2e-7 | 1.75 |
+      | 52_Te_r | so l=3 | 1.6e-6 | 7.1e-7 | 2.3e-7 | 1.61 |
+
+      Measured against the 1.0015 run, an order p shows as
+      log2(2^p + 1) here, so p is only about 0.9 to 1.7. The solvers are
+      4th order and the quadratures 8th, so something first order
+      remains. The candidate, not yet confirmed, is the psp8 output's
+      `dpnint` interpolation across the kinks at rc (O-1). Phase 4
+      measures it again.
 - [x] References patched (R-10: `scripts/ref_patch.py` now takes the lines
       of the quantities with tolerances near their printed precision, the
       pseudo-atom energies and test eigenvalues, whenever they differ)
