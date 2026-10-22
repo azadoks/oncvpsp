@@ -436,13 +436,19 @@ def scan(args):
         ]
 
     groups = set(args.groups.split(","))
+    # parsing an output is Python-bound (~1 s for 07_N_opt): in processes,
+    # as many as the runs
+    with concurrent.futures.ProcessPoolExecutor(args.jobs) as pool:
+        parsed = list(
+            pool.map(
+                features,
+                outputs,
+                [samples] * len(outputs),
+                [args.output] * len(outputs),
+            )
+        )
     runs = [
-        {
-            n: v
-            for n, v in features(out, samples, args.output).items()
-            if n.split(":", 1)[0] in groups
-        }
-        for out in outputs
+        {n: v for n, v in run.items() if n.split(":", 1)[0] in groups} for run in parsed
     ]
     worst = analyse(ts, runs, args.degree)
 

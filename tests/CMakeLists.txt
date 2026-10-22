@@ -93,7 +93,10 @@ oncvpsp_compares(smooth_scan_self_test)
 set(smooth_g1 "kernel=1e-10,vloc=1e-10,core=1e-12")
 set(smooth_g2 "kernel=1e-12,vloc=1e-12,core=1e-12")
 # smooth_scan_test(NAME REL INPUT KEY GROUPS TOL WINDOW...): the scan of KEY of tests/data/toml/INPUT.toml
-# by oncvpsp<REL>.x over WINDOW (smooth_scan.py's --center/--cells/--span), features GROUPS
+# by oncvpsp<REL>.x over WINDOW (smooth_scan.py's --center/--cells/--span), features GROUPS. Each row
+# runs ONCVPSP_SMOOTH_JOBS oncvpsp processes at once and reserves as many ctest processors: 4 for
+# the whole label (ctest -j N runs N/4 rows), the number of cores to run one row in the dev loop
+set(ONCVPSP_SMOOTH_JOBS 4 CACHE STRING "Concurrent oncvpsp runs of each smooth_scan test row")
 function(smooth_scan_test name rel input key groups tol)
     if (NOT ONCVPSP_WITH_TOML OR (rel STREQUAL "r" AND NOT ONCVPSP_WITH_FR))
         return()
@@ -101,8 +104,9 @@ function(smooth_scan_test name rel input key groups tol)
     add_test(NAME smooth_${name}
         COMMAND ${test_python} "${scripts}/smooth_scan.py" $<TARGET_FILE:oncvpsp${rel}>
             "${data}/toml/${input}.toml" "${key}" ${ARGN} --groups ${groups} --tol ${tol}
-            --max-jump 3 --jobs 4 --workdir "${CMAKE_CURRENT_BINARY_DIR}/smooth_${name}")
-    set_tests_properties(smooth_${name} PROPERTIES LABELS smooth PROCESSORS 4)
+            --max-jump 3 --jobs ${ONCVPSP_SMOOTH_JOBS}
+            --workdir "${CMAKE_CURRENT_BINARY_DIR}/smooth_${name}")
+    set_tests_properties(smooth_${name} PROPERTIES LABELS smooth PROCESSORS ${ONCVPSP_SMOOTH_JOBS})
     oncvpsp_compares(smooth_${name})
     if (NOT ONCVPSP_WITH_Libxc AND input IN_LIST libxc_inputs)
         set_tests_properties(smooth_${name} PROPERTIES DISABLED TRUE)

@@ -97,6 +97,13 @@ checks every call against the definition of the routine it calls.
 `errors`, `echo`, `psp8`, `nist`) and `-R <regex>` a test by name. Each test
 leaves its outputs in its own directory under `build/tests`.
 
+The smoothness scans (label `smooth`, `scripts/smooth_scan.py`) run 41
+oncvpsp processes per row, `ONCVPSP_SMOOTH_JOBS` of them at once (default
+4), and each row reserves as many ctest processors, so `ctest -j <cores>
+-L smooth` runs `<cores>/ONCVPSP_SMOOTH_JOBS` rows side by side. To run one
+row in the dev loop, configure with `-DONCVPSP_SMOOTH_JOBS=<cores>` (and
+run `ctest -j <cores>`).
+
 ### The Python of the comparisons
 
 The tests that compare outputs (`scripts/compare_output.py`, below) need a
