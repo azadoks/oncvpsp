@@ -73,6 +73,13 @@ the output reports (r* of icmod 1, r_s of icmod 6 and 7), whatever the
 parameter. The 8 points of the file's mesh on each side of each window are
 sampled too: an interpolant across the radius would reach them.
 
+KEY[*] moves every element of an array input by the same offset (e.g.
+pseudopotentials.rc[*], each core radius at once): --center is then the
+offset's centre (default 0), --cells counts cells at the first element, and
+each element's radius window is dropped as above. Each channel's features
+stay their own, so one scan does the work of one per channel for the
+outputs that depend on their own channel's inputs only.
+
 With --set KEY=VALUE (repeated as needed; VALUE in TOML, e.g.
 pseudopotentials.well_tail="free") the input is changed before the scan.
 
@@ -153,23 +160,26 @@ def psfile_of(outputs):
 
 
 def parse_key(key):
-    """('table', 'name', index or None) of KEY, e.g. pseudopotentials.rc[0]."""
-    match = re.fullmatch(r"(\w+)\.(\w+)(?:\[(\d+)\])?", key)
+    """('table', 'name', index, '*' or None) of KEY, e.g. pseudopotentials.rc[0]
+    or pseudopotentials.rc[*] (every element)."""
+    match = re.fullmatch(r"(\w+)\.(\w+)(?:\[(\d+|\*)\])?", key)
     if not match:
-        raise ValueError(f"KEY must be table.name or table.name[i], not {key!r}")
+        raise ValueError(
+            f"KEY must be table.name, table.name[i] or table.name[*], not {key!r}"
+        )
     table, name, index = match.groups()
-    return table, name, None if index is None else int(index)
+    return table, name, index if index in (None, "*") else int(index)
 
 
 def get_value(data, key):
     table, name, index = parse_key(key)
     value = data[table][name]
-    return value if index is None else value[index]
+    return value if index in (None, "*") else value[index]
 
 
 def set_value(data, key, value):
     table, name, index = parse_key(key)
-    if index is None:
+    if index in (None, "*"):
         data[table][name] = value
     else:
         data[table][name][index] = value
@@ -450,8 +460,10 @@ def sample_points(mesh, output, data, key, values, moved, spacing):
         step = data.get("log_mesh", {}).get("amesh", 1.006)
     windows = []
     if parse_key(key)[1] in RADIUS_KEYS:
-        lo, hi = min(values) / step**2, max(values) * step**2
-        windows += [(lo, hi), (TAPER * lo, TAPER * hi)]
+        # each element's values for KEY[*]
+        for column in zip(*values) if parse_key(key)[2] == "*" else [values]:
+            lo, hi = min(column) / step**2, max(column) * step**2
+            windows += [(lo, hi), (TAPER * lo, TAPER * hi)]
     if moved:
         windows += [(min(moved) / step**2, max(moved) * step**2)]
     if not windows:
@@ -473,13 +485,24 @@ def sample_points(mesh, output, data, key, values, moved, spacing):
 def scan(args):
     outputs = parse_outputs(args.output)
     data = apply_sets(tomllib.loads(pathlib.Path(args.toml).read_text()), args.set)
-    center = float(get_value(data, args.key)) if args.center is None else args.center
+    every = parse_key(args.key)[2] == "*"
+    if every:
+        # an offset to every element
+        base = [float(v) for v in get_value(data, args.key)]
+        center = 0.0 if args.center is None else args.center
+        start = base[0] + center
+    else:
+        center = (
+            float(get_value(data, args.key)) if args.center is None else args.center
+        )
+        start = center
     if args.span is not None:
         span = args.span
     else:
         amesh = data.get("log_mesh", {}).get("amesh", 1.006)
-        span = center * (amesh**args.cells - 1.0)
-    values = [center + span * (k / (args.npts - 1) - 0.5) for k in range(args.npts)]
+        span = start * (amesh**args.cells - 1.0)
+    offsets = [center + span * (k / (args.npts - 1) - 0.5) for k in range(args.npts)]
+    values = [[b + o for b in base] for o in offsets] if every else offsets
     ts = [2.0 * k / (args.npts - 1) - 1.0 for k in range(args.npts)]
 
     workdir = args.workdir or tempfile.mkdtemp(prefix="smooth_scan_")
@@ -526,7 +549,8 @@ def scan(args):
     worst = analyse(ts, runs, degree)
 
     print(
-        f"{args.key}: {args.npts} values from {values[0]:.10g} to {values[-1]:.10g}"
+        f"{args.key}: {args.npts} {'offsets' if every else 'values'} from"
+        f" {offsets[0]:.10g} to {offsets[-1]:.10g}"
         f" (span {span:.4g}), degree {args.degree} fit, {args.output} file,"
         f" outputs in {workdir}"
     )
@@ -627,7 +651,10 @@ def main():
     parser.add_argument("toml")
     parser.add_argument("key")
     parser.add_argument(
-        "--center", type=float, help="centre of the window (default: the input's value)"
+        "--center",
+        type=float,
+        help="centre of the window (default: the input's value; for KEY[*], of"
+        " the offset, default 0)",
     )
     parser.add_argument(
         "--cells",

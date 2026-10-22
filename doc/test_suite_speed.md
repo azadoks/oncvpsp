@@ -39,12 +39,19 @@ rerun when the all-electron or solver numerics change.
 2. [ ] A cheaper fully-relativistic input for the mode tests (log mesh,
        UPF mesh, echo, split, pipe), which run 52_Te or 74_W at 30–50 s a
        run but test the handling, not the atom.
-3. [ ] Merge the smooth rows that differ only in the file they read
+3. [x] Merge the smooth rows that differ only in the file they read
        (14_Si rc0, 52_Te rc1, 08_O rc1, and the fcfact and rcfact psp8
        pairs), now that one scan reads several files; and scan every
-       channel of a key at once (`rc[*]`, `qcut[*]`, `debl[*]`) in place
+       channel of a key at once (`rc[*]`, `qcut[*]`, `debl[*]`: every
+       element moved by the same offset, `--center` the offset's) in place
        of one row per channel, each channel's kernel still its own
-       feature. The tooling is done (c2a6ce2); the rows are not merged.
+       feature: 41 rows to 30 (`ctest -L smooth -j 16`: 599 s to 469 s
+       wall, 9006 to 6866 s·proc). Every channel at once on the linear meshes
+       found PZ81's jump at r_s = 1 spread by their interpolants (F-1 in
+       [smoothness_plan](smoothness_plan.md)), which the rows with one
+       channel, or the core on the psp8 file's core only, had not moved:
+       52_Te keeps rc[1] for the linear meshes, and the psp8 file's V_loc
+       is left out of the core rows.
 4. [ ] Commit the coverage tooling: a `coverage` preset in
        `CMakePresets.json` and a script that writes the coverage map and
        the covering-set report, so that both can be redone after any

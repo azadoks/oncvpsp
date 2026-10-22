@@ -143,27 +143,41 @@ function(smooth_scan_test name rel input key groups tol)
         set_tests_properties(smooth_${name} PROPERTIES DISABLED TRUE)
     endif ()
 endfunction()
-# core radii, local-potential radius (lpopt 5 and 1), qcut (phase 3); 14_Si's rc[1] and rcloc bend
-# the kernel enough over the window that degree 6 leaves 1e-9 and 1e-5 (degree 10: 3e-11 for rc[1])
-smooth_scan_test(sr_14_Si_rc0 sr 14_Si "pseudopotentials.rc[0]" kernel,vloc,core ${smooth_g1} --center 2.8)
-smooth_scan_test(sr_14_Si_rc1 sr 14_Si "pseudopotentials.rc[1]" kernel,vloc,core ${smooth_g1} --center 2.8 --degree 14)
-smooth_scan_test(sr_14_Si_rc2 sr 14_Si "pseudopotentials.rc[2]" kernel,vloc,core ${smooth_g1} --center 2.8)
+# core radii, local-potential radius (lpopt 5 and 1), qcut (phase 3). KEY[*] moves every channel's
+# value by the same offset (each channel's kernel its own feature), one row for what were one per
+# channel; with the psp8 and PSML files (phase 4, O-1: the writers interpolated the functions on
+# the log mesh across rc, so the points next to it moved with the nodes past it) and the UPF file
+# on the linear mesh, a row of its own (one run writes one UPF file). 14_Si's rc[1] and rcloc bend
+# the kernel enough over the window that degree 6 leaves 1e-9 and 1e-5 (degree 10: 3e-11 for rc[1]).
+# 52_Te's rc[*] moves r(r_s = 1), where PZ81's V_xc jumps (F-1, kept, D-6), across the nodes the
+# linear meshes' interpolants reach (1e-8 in V_loc there): the linear meshes with rc[1] alone
+smooth_scan_test(sr_14_Si_rc sr 14_Si "pseudopotentials.rc[*]" kernel,vloc,core ${smooth_g1} --center 0.1 --degree 14
+    --output log,psp8,psml)
+smooth_scan_test(sr_14_Si_rc_upf sr 14_Si "pseudopotentials.rc[*]" kernel,vloc ${smooth_g1} --center 0.1 --degree 14
+    --output upf)
 smooth_scan_test(sr_14_Si_rcloc sr 14_Si "local_potential.rcloc" kernel,vloc,core ${smooth_g1} --center 2.6 --degree 14)
 smooth_scan_test(sr_20_Ca_rcloc sr 20_Ca "local_potential.rcloc" kernel,vloc ${smooth_g1} --center 1.8)
-smooth_scan_test(sr_14_Si_qcut0 sr 14_Si "pseudopotentials.qcut[0]" kernel,vloc,core ${smooth_g1} --span 0.04)
-smooth_scan_test(nr_08_O_rc1 nr 08_O "pseudopotentials.rc[1]" kernel,vloc ${smooth_g1} --center 1.65)
-smooth_scan_test(r_52_Te_rc1 r 52_Te "pseudopotentials.rc[1]" kernel,vloc ${smooth_g1} --center 3.15)
+smooth_scan_test(sr_14_Si_qcut sr 14_Si "pseudopotentials.qcut[*]" kernel,vloc,core ${smooth_g1} --span 0.04)
+smooth_scan_test(nr_08_O_rc nr 08_O "pseudopotentials.rc[*]" kernel,vloc ${smooth_g1} --center 0.05 --output log,psp8)
+smooth_scan_test(r_52_Te_rc r 52_Te "pseudopotentials.rc[*]" kernel,vloc ${smooth_g1} --center 0.05)
+smooth_scan_test(r_52_Te_rc1_linear r 52_Te "pseudopotentials.rc[1]" kernel,vloc ${smooth_g1} --center 3.15
+    --output psp8,upf)
 # inputs never rounded: the noise floor (phase 2), fitted with degree 10 (the kernel bends enough in
 # dvloc0 that degree 6 leaves 2e-9 over the window; 10 still sees a jump of 1e-7 at 2e-8)
 smooth_scan_test(sr_14_Si_dvloc0 sr 14_Si "local_potential.dvloc0" kernel,vloc,core ${smooth_g2} --span 0.02 --degree 10)
-smooth_scan_test(sr_14_Si_debl0 sr 14_Si "vkb_projectors.debl[0]" kernel,vloc,core ${smooth_g2} --span 0.02 --degree 10)
+smooth_scan_test(sr_14_Si_debl sr 14_Si "vkb_projectors.debl[*]" kernel,vloc,core ${smooth_g2} --span 0.02 --degree 10)
 smooth_scan_test(sr_14_Si_ep2 sr 14_Si "pseudopotentials.ep[2]" kernel,vloc,core ${smooth_g2} --span 0.02 --degree 10)
 smooth_scan_test(r_52_Te_dvloc0 r 52_Te "local_potential.dvloc0" kernel,vloc ${smooth_g2} --span 0.02 --degree 10)
-# model core, icmod 1, 2, 3, 4, 6, 7 (phase 5)
-smooth_scan_test(sr_14_Si_fcfact sr 14_Si "model_core_charge.fcfact" kernel,vloc,core ${smooth_g1} --span 0.02)
+# model core, icmod 1, 2, 3, 4, 6, 7 (phase 5), and the model core of the psp8 file with its four
+# derivatives, written from its pieces on each side of the joint (r*, r_s; modcore_m core_pieces).
+# V_loc of the psp8 file is left out: the core moves r(r_s = 1), as rc does above (1e-8 at 1 bohr,
+# 14_Si; 9e-8, 34_Se)
+smooth_scan_test(sr_14_Si_fcfact sr 14_Si "model_core_charge.fcfact" kernel,vloc.log,core ${smooth_g1} --span 0.02
+    --output log,psp8)
 smooth_scan_test(sr_79_Au_lxc_fcfact sr 79_Au_lxc "model_core_charge.fcfact" kernel,vloc,core ${smooth_g1} --span 0.02)
 smooth_scan_test(sr_34_Se_fcfact sr 34_Se "model_core_charge.fcfact" kernel,vloc,core ${smooth_g1} --span 0.02)
-smooth_scan_test(sr_34_Se_rcfact sr 34_Se "model_core_charge.rcfact" kernel,vloc,core ${smooth_g1} --span 0.02)
+smooth_scan_test(sr_34_Se_rcfact sr 34_Se "model_core_charge.rcfact" kernel,vloc.log,core ${smooth_g1} --span 0.02
+    --output log,psp8)
 # icmod 4: the optimum does not move with the grid, so the scan sees only where Newton stops on
 # the noise of der2exc (~1e-17 on f = 1.2e-4) over the soft curvature of the valley (5e-4):
 # ~8e-13 in ln(amplitude), ~1e-12 in the core (M-6)
@@ -173,9 +187,14 @@ smooth_scan_test(sr_40_Zr_grid_fcfact_min sr 40_Zr_grid "model_core_charge.fcfac
 # integral over [0, r_s] is taken on a log mesh ending at r_s (on the fixed mesh its error rippled
 # with r_s, ~1e-9 in r_s, the residuals of 14_Si_bc's scans until M-12 was fixed). What is left is
 # the fit: degree 18 for the curvature over the wide fcfact span (14 leaves 1e-10), and 14_Si_hm's
-# xc round-off (~2e-11 in r_s)
+# xc round-off (~2e-11 in r_s). The psp8 file's 3rd and 4th columns of the core jump at r_s and are
+# steep just inside it: at 0.36 bohr (r_s 0.367) round-off in r_s leaves 1.2e-10 in the 3rd (the
+# same at span 0.02, any degree), and the span of 0.2 that moves r_s across mesh nodes needs degree
+# 24 (18 leaves 1.8e-9 of truncation; the interpolant across the joint: 3.0e-2, kinked). The 3rd
+# column's round-off there is 1.1e-10 to 4.3e-10 with 37 to 45 samples and either q grid of
+# run_optimize (dq = 2 pi/(150 rc) or 2 pi/(300 rc)): its tolerance above it, 1e-9
 smooth_scan_test(sr_14_Si_bc_ecut sr 14_Si_bc "model_core_charge.fcfact" kernel,vloc,core
-    "kernel=1e-10,vloc=1e-11,core=2e-11" --span 0.2 --degree 18)
+    "kernel=1e-10,vloc=1e-11,core=2e-11,core.psp8=1e-9" --span 0.2 --degree 18,psp8=24 --output log,psp8)
 # the onset of the well (well_onset) where 14_Si's well states keep their n (l=1 takes another
 # node between 1.06 and 1.1)
 smooth_scan_test(sr_14_Si_well_onset sr 14_Si "pseudopotentials.well_onset" kernel,vloc,core ${smooth_g1} --center 1.02 --span 0.01)
@@ -184,30 +203,17 @@ smooth_scan_test(sr_14_Si_hm_slack sr 14_Si_hm "model_core_charge.slack" kernel,
     "kernel=1e-10,vloc=1e-10,core=1e-10" --span 0.02 --degree 14)
 smooth_scan_test(sr_14_Si_bc_slack sr 14_Si_bc "model_core_charge.slack" kernel,vloc,core
     "kernel=1e-10,vloc=3e-12,core=1e-11" --center 0.9 --span 0.02 --degree 10)
-# the model core of the psp8 file with its four derivatives, written from its pieces on each side of
-# the joint (r*, r_s; modcore_m core_pieces). 14_Si_bc's 3rd and 4th columns jump at r_s and are
-# steep just inside it: at 0.36 bohr (r_s 0.367) round-off in r_s leaves 1.2e-10 in the 3rd (the
-# same at span 0.02, any degree), and the span of 0.2 that moves r_s across mesh nodes needs
-# degree 24 (18 leaves 1.8e-9 of truncation; the interpolant across the joint: 3.0e-2, kinked)
-smooth_scan_test(sr_14_Si_fcfact_psp8 sr 14_Si "model_core_charge.fcfact" core ${smooth_g1} --span 0.02 --output psp8)
-smooth_scan_test(sr_34_Se_rcfact_psp8 sr 34_Se "model_core_charge.rcfact" core ${smooth_g1} --span 0.02 --output psp8)
-# The 3rd column's round-off there is 1.1e-10 to 4.3e-10 with 37 to 45 samples and either q grid of
-# run_optimize (dq = 2 pi/(150 rc) or 2 pi/(300 rc)): the tolerance above it, 1e-9
-smooth_scan_test(sr_14_Si_bc_ecut_psp8 sr 14_Si_bc "model_core_charge.fcfact" core "core=1e-9"
-    --span 0.2 --degree 24 --output psp8)
 # the optimizer's setup (07_N_opt: PBE, icmod 6 at fcfact 65, lpopt 5): the inputs it varies and
 # the outputs it reads. ld and ecut from the DIAGNOSTICS block (O-6, 17 digits; up to 1.2e-10 and
 # 3.7e-10 measured); the core at the noise of icmod 6's search (~1e-11); the ghost tests' margins
 # from the block too (X-3, up to 9.5e-13 measured). At the default rc[0] = rcloc, and
-# rc < rcloc is not allowed, so rc[0] is scanned above it and rcloc below
+# rc < rcloc is not allowed, so the rc are scanned 0.01 above their values (rc[0] = 1.21) and rcloc
+# below
 set(smooth_opt "kernel=1e-10,vloc=1e-10,core=5e-11,ld=3e-10,ecut=1e-9,ghost=3e-12")
 set(smooth_opt_groups kernel,vloc,core,ld,ecut,ghost)
-smooth_scan_test(sr_07_N_opt_rc0 sr 07_N_opt "pseudopotentials.rc[0]" ${smooth_opt_groups} ${smooth_opt} --center 1.21)
-smooth_scan_test(sr_07_N_opt_rc1 sr 07_N_opt "pseudopotentials.rc[1]" ${smooth_opt_groups} ${smooth_opt})
-smooth_scan_test(sr_07_N_opt_qcut0 sr 07_N_opt "pseudopotentials.qcut[0]" ${smooth_opt_groups} ${smooth_opt} --span 0.04)
-smooth_scan_test(sr_07_N_opt_qcut1 sr 07_N_opt "pseudopotentials.qcut[1]" ${smooth_opt_groups} ${smooth_opt} --span 0.04)
-smooth_scan_test(sr_07_N_opt_debl0 sr 07_N_opt "vkb_projectors.debl[0]" ${smooth_opt_groups} ${smooth_opt} --span 0.02)
-smooth_scan_test(sr_07_N_opt_debl1 sr 07_N_opt "vkb_projectors.debl[1]" ${smooth_opt_groups} ${smooth_opt} --span 0.02)
+smooth_scan_test(sr_07_N_opt_rc sr 07_N_opt "pseudopotentials.rc[*]" ${smooth_opt_groups} ${smooth_opt} --center 0.01)
+smooth_scan_test(sr_07_N_opt_qcut sr 07_N_opt "pseudopotentials.qcut[*]" ${smooth_opt_groups} ${smooth_opt} --span 0.04)
+smooth_scan_test(sr_07_N_opt_debl sr 07_N_opt "vkb_projectors.debl[*]" ${smooth_opt_groups} ${smooth_opt} --span 0.02)
 smooth_scan_test(sr_07_N_opt_rcloc sr 07_N_opt "local_potential.rcloc" ${smooth_opt_groups} ${smooth_opt} --center 1.19)
 # rxpsh, straddling the node 6e-6 above it (X-2): the phases are taken at rxpsh itself, no longer
 # at the first node beyond it (a staircase). At 11-12 Ha the l=2 angle turns by nearly pi within
@@ -234,13 +240,6 @@ smooth_scan_test(sr_14_Si_rc1_free sr 14_Si "pseudopotentials.rc[1]" kernel,vloc
     --degree 14 --set ${smooth_free})
 smooth_scan_test(sr_14_Si_ep2_free sr 14_Si "pseudopotentials.ep[2]" kernel,vloc,core ${smooth_g1} --center 0.0
     --span 0.04 --degree 10 --set ${smooth_free} --set pseudopotentials.ep_as_given=true)
-# the psp8 file and the UPF file on the linear output mesh (phase 4, O-1): the writers interpolated
-# the functions on the log mesh across rc, so the points next to it moved with the nodes past it
-smooth_scan_test(sr_14_Si_rc0_psp8 sr 14_Si "pseudopotentials.rc[0]" kernel,vloc ${smooth_g1} --center 2.8 --output psp8)
-smooth_scan_test(sr_14_Si_rc0_upf sr 14_Si "pseudopotentials.rc[0]" kernel,vloc ${smooth_g1} --center 2.8 --output upf)
-smooth_scan_test(nr_08_O_rc1_psp8 nr 08_O "pseudopotentials.rc[1]" kernel,vloc ${smooth_g1} --center 1.65 --output psp8)
-smooth_scan_test(r_52_Te_rc1_psp8 r 52_Te "pseudopotentials.rc[1]" kernel,vloc ${smooth_g1} --center 3.15 --output psp8)
-smooth_scan_test(r_52_Te_rc1_upf r 52_Te "pseudopotentials.rc[1]" kernel,vloc ${smooth_g1} --center 3.15 --output upf)
 
 # The projectors of the psp8 and UPF files on the linear mesh are 0 beyond rc, and the fully-
 # relativistic psp8 file has every term (phase 4, O-1, O-2; see scripts/projector_output_test.py)
