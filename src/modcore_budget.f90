@@ -1231,7 +1231,9 @@
 
 !! a root of fun between xa0 and xb0, where fun changes sign, by Brent's
 !! method with no tolerance of its own: it stops when the bracket is a few
-!! rounding units wide (as lm_root)
+!! rounding units wide (as lm_root). Where fun jumps across zero (the fill
+!! type changes, a discrete event of doc/smoothness_plan.md) that is the
+!! root, and the jump is reported; the iteration limit is an error
 !!
 !! @param fun  the function
 !! @param xa0,xb0  the bracket
@@ -1241,7 +1243,7 @@
  real(dp), intent(in) :: xa0,xb0
 
 !Local variables
- real(dp) :: xa,xb,xc,fa,fb,fc,de,dlast,tol1,xm,pp,qq,rs1,ss
+ real(dp) :: xa,xb,xc,fa,fb,fc,de,dlast,tol1,xm,pp,qq,rs1,ss,fscale
  integer :: iter
 
  xa=xa0
@@ -1257,6 +1259,7 @@
 &between',xa,xb
    error stop 1
  end if
+ fscale=max(abs(fa),abs(fb))
  xc=xa
  fc=fa
  de=xb-xa
@@ -1279,6 +1282,12 @@
    tol1=epsilon(1.0d0)*(2.0d0*abs(xb)+1.0d-3)
    xm=0.5d0*(xc-xb)
    if(abs(xm)<=tol1 .or. fb==0.0d0) exit
+   if(iter==200) then
+     write(6,'(/a,es12.4,a,es12.4)') &
+&          'modcore_budget: ERROR zeroin not converged in 200 steps, x=',xb, &
+&          ', f=',fb
+     error stop 1
+   end if
    if(abs(dlast)>=tol1 .and. abs(fa)>abs(fb)) then
 ! inverse quadratic interpolation, or the secant
      ss=fb/fa
@@ -1315,13 +1324,19 @@
    fb=fun(xb)
  end do
  zeroin=xb
+! a continuous function is at its round-off on a bracket a few ulps wide
+ if(fb/=0.0d0 .and. min(abs(fb),abs(fc))>1.0d-6*fscale) then
+   write(6,'(/2a,es12.4,a,es12.4,a,es12.4)') 'modcore_budget: WARNING', &
+&        ' root at a jump of the function, x=',xb,', f from ',fc,' to ',fb
+ end if
  return
  end function zeroin
 
  real(dp) function fmin(fun,ax,bx)
 
 !! the least value of fun on [ax, bx], by Brent's method (golden section
-!! and parabolic steps) to a relative step of 1e-8, and at the ends
+!! and parabolic steps) to a relative step of 1e-8, and at the ends; the
+!! iteration limit is an error
 !!
 !! @param fun  the function
 !! @param ax,bx  the interval
@@ -1349,6 +1364,12 @@
    tol1=rtol*abs(xx) + 1.0d-12
    tol2=2.0d0*tol1
    if(abs(xx-xm)<=tol2-0.5d0*(bb-aa)) exit
+   if(iter==100) then
+     write(6,'(/a,es12.4,a,es12.4)') &
+&          'modcore_budget: ERROR fmin not converged in 100 steps, x=',xx, &
+&          ', bracket width=',bb-aa
+     error stop 1
+   end if
    if(abs(ee)>tol1) then
      rr1=(xx-ww)*(fxx-fvv)
      qq=(xx-vv)*(fxx-fww)
@@ -1629,6 +1650,11 @@
      z1=zz
      zz=z1 - p1/pp
      if(abs(zz-z1)<1.0d-15) exit
+     if(it==100) then
+       write(6,'(/a,i0,a,i0)') 'modcore_budget: ERROR gauss_legendre', &
+&            ' node not converged, nn=',nn,', node=',ii
+       error stop 1
+     end if
    end do
    xx(ii)=0.5d0*(xa+xb) - 0.5d0*(xb-xa)*zz
    xx(nn+1-ii)=0.5d0*(xa+xb) + 0.5d0*(xb-xa)*zz
@@ -1747,7 +1773,8 @@
 !! root-finding on the interpolant of log E over its points, ug_cross_down,
 !! from the last crossing).
 !! ecurve(:,:,i) holds the cutoffs and errors of pseudo-wave i on a uniform
-!! grid in q from 0, zero beyond its end (all zero for no pseudo-wave); a
+!! grid in q from below its spacing (eresid), zero beyond its end (all zero
+!! for no pseudo-wave); a
 !! pseudo-wave whose table does not reach errmax does not count, as it has
 !! no line in its table
 !!
@@ -1770,7 +1797,7 @@
  real(dp), intent(out) :: ecut
 
 !Local variables
- real(dp) :: qerr,ecut1,dq
+ real(dp) :: qerr,ecut1,dq,q1
  integer :: ip,kk,nk
  logical :: found,found1
 
@@ -1778,7 +1805,7 @@
  found=.false.
  do ip=1,nprof
    ecut1=-1.0d0
-! the curve's points, q=(k-1)*dq from q=0, up to its end
+! the curve's points, q=q1+(k-1)*dq, up to its end
    nk=ncurve
    do kk=2,ncurve
      if(ecurve(1,kk,ip)<=0.0d0) then
@@ -1787,8 +1814,9 @@
      end if
    end do
    if(nk>=2) then
-     dq=sqrt(2.0d0*ecurve(1,2,ip))
-     call ug_cross_down(ecurve(2,1:nk,ip),nk,dq,0.0d0,errmax,qerr,found1)
+     q1=sqrt(2.0d0*ecurve(1,1,ip))
+     dq=sqrt(2.0d0*ecurve(1,2,ip))-q1
+     call ug_cross_down(ecurve(2,1:nk,ip),nk,dq,q1,errmax,qerr,found1)
      if(found1) ecut1=0.5d0*qerr**2
    end if
    if(ecut1>=0.0d0) then

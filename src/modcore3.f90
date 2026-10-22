@@ -423,9 +423,9 @@
      return
    end if
  end do
- write(6,'(a,1p,e10.2)') ' WARNING: Newton refinement not converged, &
-&      last step',dnrm
- xm(:)=exp(uu(:))
+ write(6,'(/a,es12.4)') &
+&      'newton_refine: ERROR not converged in 30 steps, last step=',dnrm
+ error stop 1
  end subroutine newton_refine
 
  end subroutine modcore3

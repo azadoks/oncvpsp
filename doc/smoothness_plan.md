@@ -1488,7 +1488,15 @@ changing it:
       from its rr1 → 0 value, now 6e-7; fr outputs only: totals ≤7.9e-6
       Ha, AE eigenvalues ≤1.3e-6 relative 1.2e-8, kernels ≤1e-7.
 - [x] C-5, the free tail's width: fixed in d603e40
-- [ ] C-6, modcore_budget's silent limits and roots at a jump
+- [x] C-6, modcore_budget's silent limits and roots at a jump. Partly
+      as the audit says: the fill-type switch is already in the list of
+      discrete events above. `zeroin`, `fmin` and `gauss_legendre` stop
+      with an error on their iteration limits, as does modcore3's
+      Newton refinement (its Nelder–Mead start keeps its warning: its
+      point only seeds Newton). A Brent root whose bracket closes on a
+      jump (|f| above 1e-6 of the bracket's values at both ends, a
+      change of fill type) is reported with the jump, as G5 asks. No
+      output changes; no reference input or model-core scan reports one.
 - [ ] C-7, the ghost test's barrier basis without the ionic switch
 - [ ] C-8, ghost_r's hard entry at 0.05 Ha
 - [ ] C-9, der2exc's occupation step 0.15
