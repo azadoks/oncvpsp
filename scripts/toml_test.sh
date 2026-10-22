@@ -10,6 +10,8 @@
 #
 # usage: toml_test.sh EXE INPUT.dat INPUT.toml WORKDIR
 # The python, with pyoncvpsp and upf-tools, is $ONCVPSP_PYTHON, or python3.
+# $ONCVPSP_RUN, if set, is the output of EXE for INPUT.dat (run_test.sh),
+# read in place of running it.
 set -euo pipefail
 exe=$1; dat=$2; toml=$3; work=$4
 mkdir -p "$work"
@@ -17,7 +19,11 @@ scripts=$(realpath "$(dirname "$0")")
 python=${ONCVPSP_PYTHON:-python3}
 cd "$work"
 
-"$exe" < "$dat" > dat.out
+if [ -n "${ONCVPSP_RUN:-}" ]; then
+    cp "$ONCVPSP_RUN" dat.out
+else
+    "$exe" < "$dat" > dat.out
+fi
 "$exe" -t "$toml" > toml.out
 if ! "$python" "$scripts/compare_output.py" --identical dat.out toml.out > toml.diff; then
     cat toml.diff

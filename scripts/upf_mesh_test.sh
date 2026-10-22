@@ -68,13 +68,17 @@ expect_stop() {
     fi
 }
 
-"$full" < "$dat" > base.out
+# base: base.out, the output of the input itself (the cases that compare with it)
+base() { "$full" < "$dat" > base.out; }
+
 case $case in
     defaults)
+        base
         with_upf_mesh 0 < "$dat" > in.dat
         "$full" < in.dat > mesh.out
         same base.out mesh.out ;;
     log)
+        base
         with_upf_mesh 3500 < "$dat" > in.dat
         "$full" < in.dat > mesh.out
         grep -q '^# rlmax, drl, upf_mesh$' mesh.out

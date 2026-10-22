@@ -6,6 +6,8 @@
 #
 # usage: pipe_test.sh EXE INPUT.dat WORKDIR
 # The python, with pyoncvpsp and upf-tools, is $ONCVPSP_PYTHON, or python3.
+# $ONCVPSP_RUN, if set, is the output of EXE for INPUT.dat (run_test.sh),
+# read in place of running it.
 set -euo pipefail
 exe=$(realpath "$1"); dat=$(realpath "$2"); work=$3
 scripts=$(realpath "$(dirname "$0")")
@@ -13,7 +15,11 @@ python=${ONCVPSP_PYTHON:-python3}
 rm -rf "$work"
 mkdir -p "$work"
 cd "$work"
-"$exe" < "$dat" > file.out
+if [ -n "${ONCVPSP_RUN:-}" ]; then
+    cp "$ONCVPSP_RUN" file.out
+else
+    "$exe" < "$dat" > file.out
+fi
 # the input must come through a pipe, not a file
 # shellcheck disable=SC2002
 cat "$dat" | "$exe" > pipe.out

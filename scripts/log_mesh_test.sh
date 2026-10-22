@@ -69,19 +69,24 @@ expect_stop() {
     fi
 }
 
-"$full" < "$dat" > base.out
+# base: base.out, the output of the input itself (the cases that compare with it)
+base() { "$full" < "$dat" > base.out; }
+
 case $case in
     defaults)
+        base
         with_mesh '0 -1 0' < "$dat" > in.dat
         "$full" < in.dat > mesh.out
         same base.out mesh.out ;;
     explicit)
+        base
         with_mesh '1.006 -1 45' < "$dat" > in.dat
         "$full" < in.dat > mesh.out
         grep -q '^# LOG MESH$' mesh.out
         drop_echo < mesh.out > mesh_no_echo.out
         same base.out mesh_no_echo.out ;;
     rerun)
+        base
         with_mesh "$mesh" < "$dat" > in.dat
         "$full" < in.dat > mesh.out
         drop_echo < mesh.out > mesh_no_echo.out

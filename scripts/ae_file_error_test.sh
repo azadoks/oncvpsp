@@ -9,6 +9,9 @@
 #
 # usage: ae_file_error_test.sh FULL_EXE AE_EXE PS_EXE INPUT.dat CASE WORKDIR
 # The python, with pyoncvpsp and upf-tools, is $ONCVPSP_PYTHON, or python3.
+# $ONCVPSP_RUN and $ONCVPSP_AE_FILE, if set, are the output of FULL_EXE and
+# the all-electron file of AE_EXE for INPUT.dat (run_test.sh), read in place
+# of running them.
 set -euo pipefail
 full=$1; ae=$2; ps=$3; dat=$4; case=$5; work=$6
 scripts=$(realpath "$(dirname "$0")")
@@ -16,7 +19,11 @@ python=${ONCVPSP_PYTHON:-python3}
 mkdir -p "$work"
 cd "$work"
 
-"$ae" -a atom.ae < "$dat" > ae.out
+if [ -n "${ONCVPSP_AE_FILE:-}" ]; then
+    cp "$ONCVPSP_AE_FILE" atom.ae
+else
+    "$ae" -a atom.ae < "$dat" > ae.out
+fi
 
 # patch FIELD FACTOR: multiply a real in the header of atom.ae by FACTOR, or
 # with FIELD=version reverse the bytes of the format version. The header is
@@ -70,7 +77,11 @@ if [ "$expect" = same ]; then
         tail -3 ps.out >&2
         exit 1
     fi
-    "$full" < "$dat" > full.out
+    if [ -n "${ONCVPSP_RUN:-}" ]; then
+        cp "$ONCVPSP_RUN" full.out
+    else
+        "$full" < "$dat" > full.out
+    fi
     if ! "$python" "$scripts/compare_output.py" --identical full.out ps.out > ps.diff; then
         cat ps.diff
         exit 1

@@ -10,7 +10,8 @@
 # usage: ref_test.sh EXE INPUT.dat REF.out WORKDIR
 # The output and the comparison are left in WORKDIR as REF.out and REF.diff
 # (with REF the basename of the reference). The python, with pyoncvpsp and
-# upf-tools, is $ONCVPSP_PYTHON, or python3.
+# upf-tools, is $ONCVPSP_PYTHON, or python3. $ONCVPSP_RUN, if set, is the
+# output of EXE for INPUT.dat (run_test.sh), read in place of running it.
 set -euo pipefail
 exe=$(realpath "$1"); dat=$(realpath "$2"); ref=$(realpath "$3"); work=$4
 scripts=$(realpath "$(dirname "$0")")
@@ -19,7 +20,9 @@ mkdir -p "$work"
 cd "$work"
 name=$(basename "$ref" .out)
 
-if ! "$exe" < "$dat" > "$name.out"; then
+if [ -n "${ONCVPSP_RUN:-}" ]; then
+    cp "$ONCVPSP_RUN" "$name.out"
+elif ! "$exe" < "$dat" > "$name.out"; then
     echo "$(basename "$exe") failed on $(basename "$dat")" >&2
     tail -20 "$name.out" >&2
     exit 1

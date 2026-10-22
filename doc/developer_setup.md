@@ -97,6 +97,14 @@ checks every call against the definition of the routine it calls.
 `errors`, `echo`, `psp8`, `nist`) and `-R <regex>` a test by name. Each test
 leaves its outputs in its own directory under `build/tests`.
 
+The tests that read the plain output of an input (reference, TOML, pipe,
+split) or its all-electron file (split, `ae_file_*`) share one run of it:
+the CTest fixtures `run_<rel>_<input>` and `run_ae_<rel>_<input>`
+(`scripts/run_test.sh`) run it once and pass the file to them in
+`$ONCVPSP_RUN` and `$ONCVPSP_AE_FILE`. CTest adds a fixture to any selection
+that needs it, so `-R` and `-L` still work alone; the scripts run the
+program themselves when the variable is not set, as when run by hand.
+
 The inputs and the tests on each are the fewest that keep the coverage of
 `src/` of each kind of test (doc/smoothness_plan.md, "Optimize the test
 suite"). The `nist` tests are not among them: they check the all-electron

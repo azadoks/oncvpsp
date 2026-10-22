@@ -81,6 +81,37 @@ function(oncvpsp_compares name)
     endif ()
 endfunction()
 
+# oncvpsp_uses_run(NAME REL INPUT [AE]): the test NAME (if it was added) reads the output of
+# oncvpsp<REL>.x for tests/data/INPUT.dat from the fixture run_REL_INPUT ($ONCVPSP_RUN), or with
+# AE the all-electron file of oncvpsp<REL>_ae.x from run_ae_REL_INPUT ($ONCVPSP_AE_FILE): each
+# input is run once for all the tests that read it (scripts/run_test.sh)
+function(oncvpsp_uses_run name rel input)
+    if (NOT TEST ${name})
+        return()
+    endif ()
+    if (ARGN STREQUAL "AE")
+        set(fixture run_ae_${rel}_${input})
+        set(file "${CMAKE_CURRENT_BINARY_DIR}/${fixture}/atom.ae")
+        set(variable ONCVPSP_AE_FILE)
+        set(exe $<TARGET_FILE:oncvpsp${rel}_ae>)
+        set(ae_file "${file}")
+        set(out "${CMAKE_CURRENT_BINARY_DIR}/${fixture}/ae.out")
+    else ()
+        set(fixture run_${rel}_${input})
+        set(file "${CMAKE_CURRENT_BINARY_DIR}/${fixture}/${input}.out")
+        set(variable ONCVPSP_RUN)
+        set(exe $<TARGET_FILE:oncvpsp${rel}>)
+        set(ae_file "")
+        set(out "${file}")
+    endif ()
+    if (NOT TEST ${fixture})
+        oncvpsp_test(${fixture} run run_test.sh ${exe} "${data}/${input}.dat" "${out}" ${ae_file})
+        set_tests_properties(${fixture} PROPERTIES FIXTURES_SETUP ${fixture})
+    endif ()
+    set_property(TEST ${name} APPEND PROPERTY FIXTURES_REQUIRED ${fixture})
+    set_property(TEST ${name} APPEND PROPERTY ENVIRONMENT "${variable}=${file}")
+endfunction()
+
 # Smooth dependence on the inputs (doc/smoothness_plan.md, T2): smooth_scan.py steps one input of a
 # TOML input through 41 values and fits each feature of the UPF file on the log mesh (nonlocal
 # kernels, V_loc, model core) with a polynomial; the residuals must be within the plan's goals and
@@ -254,6 +285,7 @@ foreach (test_name IN LISTS oncvpspsr_tests)
         $<TARGET_FILE:oncvpspsr> "${data}/${test_name}.dat" "${CMAKE_CURRENT_SOURCE_DIR}/refs/${test_name}.out"
         "${CMAKE_CURRENT_BINARY_DIR}/${test_name}")
     oncvpsp_compares(${test_name})
+    oncvpsp_uses_run(${test_name} sr ${test_name})
 endforeach ()
 
 set(oncvpspr_tests "52_Te" "80_Hg"
@@ -271,6 +303,7 @@ foreach (test_name IN LISTS oncvpspr_tests)
         $<TARGET_FILE:oncvpspr> "${data}/${test_name}.dat" "${CMAKE_CURRENT_SOURCE_DIR}/refs/${test_name}_r.out"
         "${CMAKE_CURRENT_BINARY_DIR}/${test_name}_r")
     oncvpsp_compares(${test_name}_r)
+    oncvpsp_uses_run(${test_name}_r r ${test_name})
 endforeach ()
 
 set(oncvpspnr_tests "07_N_dl")
@@ -279,6 +312,7 @@ foreach (test_name IN LISTS oncvpspnr_tests)
         $<TARGET_FILE:oncvpspnr> "${data}/${test_name}.dat" "${CMAKE_CURRENT_SOURCE_DIR}/refs/${test_name}_nr.out"
         "${CMAKE_CURRENT_BINARY_DIR}/${test_name}_nr")
     oncvpsp_compares(${test_name}_nr)
+    oncvpsp_uses_run(${test_name}_nr nr ${test_name})
 endforeach ()
 
 # All-electron / pseudopotential split: oncvpsp_ae.x writes the all-electron atom to a file and
@@ -291,6 +325,8 @@ foreach (split_test IN ITEMS "sr:14_Si" "sr:57_La" "nr:14_Si" "nr:29_Cu" "r:52_T
         $<TARGET_FILE:oncvpsp${rel}> $<TARGET_FILE:oncvpsp${rel}_ae> $<TARGET_FILE:oncvpsp${rel}_ps>
         "${data}/${test_name}.dat" "${CMAKE_CURRENT_BINARY_DIR}/split_${rel}_${test_name}")
     oncvpsp_compares(split_${rel}_${test_name})
+    oncvpsp_uses_run(split_${rel}_${test_name} ${rel} ${test_name})
+    oncvpsp_uses_run(split_${rel}_${test_name} ${rel} ${test_name} AE)
 endforeach ()
 
 # Damaged or mismatched all-electron data files: oncvpsp_ps.x must stop with a message naming the
@@ -300,8 +336,10 @@ foreach (case IN ITEMS "byte_order" "zz" "fa" "mesh" "c_light" "zz_roundoff" "fa
     oncvpsp_test(ae_file_${case} split ae_file_error_test.sh
         $<TARGET_FILE:oncvpspsr> $<TARGET_FILE:oncvpspsr_ae> $<TARGET_FILE:oncvpspsr_ps>
         "${data}/14_Si.dat" ${case} "${CMAKE_CURRENT_BINARY_DIR}/ae_file_${case}")
+    oncvpsp_uses_run(ae_file_${case} sr 14_Si AE)
     if (case MATCHES "_roundoff$")
         oncvpsp_compares(ae_file_${case})
+        oncvpsp_uses_run(ae_file_${case} sr 14_Si)
     endif ()
 endforeach ()
 
@@ -412,6 +450,7 @@ if (ONCVPSP_WITH_TOML)
             $<TARGET_FILE:oncvpsp${rel}> "${data}/${test_name}.dat" "${data}/toml/${test_name}.toml"
             "${CMAKE_CURRENT_BINARY_DIR}/toml_${rel}_${test_name}")
         oncvpsp_compares(toml_${rel}_${test_name})
+        oncvpsp_uses_run(toml_${rel}_${test_name} ${rel} ${test_name})
     endforeach ()
 
     foreach (case IN ITEMS
@@ -531,6 +570,7 @@ foreach (pipe_test IN ITEMS "sr:14_Si" "r:52_Te" "nr:08_O")
     oncvpsp_test(pipe_${rel}_${test_name} pipe pipe_test.sh
         $<TARGET_FILE:oncvpsp${rel}> "${data}/${test_name}.dat" "${CMAKE_CURRENT_BINARY_DIR}/pipe_${rel}_${test_name}")
     oncvpsp_compares(pipe_${rel}_${test_name})
+    oncvpsp_uses_run(pipe_${rel}_${test_name} ${rel} ${test_name})
 endforeach ()
 oncvpsp_test(pipe_truncated pipe pipe_truncated_test.sh $<TARGET_FILE:oncvpspsr> "${data}/14_Si.dat")
 

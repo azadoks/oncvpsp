@@ -27,9 +27,15 @@ rerun when the all-electron or solver numerics change.
 
 ## Next
 
-1. [ ] Share one run among the tests that check it: CTest fixtures
-       (`FIXTURES_SETUP`/`FIXTURES_REQUIRED`) run each input once, and the
-       reference, TOML, echo, PSML and pipe checks read that output.
+1. [x] Share one run among the tests that check it: the CTest fixtures
+       `run_<rel>_<input>` and `run_ae_<rel>_<input>` (`scripts/run_test.sh`)
+       run each input, and its all-electron file, once; the reference, TOML,
+       pipe, split and `ae_file_*` tests read them. The log and UPF mesh
+       scripts run the input itself only in the cases that compare with it
+       (none of today's). Echo and PSML tests change the input, so run their
+       own. `ctest -LE "smooth|nist" -j 16`: 88 s to 74 s wall, 1354 to
+       1128 s·proc; with nist, 1737 to 1492 s·proc, the wall time (112 s)
+       set by `nist_RLDA_heavy`.
 2. [ ] A cheaper fully-relativistic input for the mode tests (log mesh,
        UPF mesh, echo, split, pipe), which run 52_Te or 74_W at 30–50 s a
        run but test the handling, not the atom.

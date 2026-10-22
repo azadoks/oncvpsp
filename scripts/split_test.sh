@@ -9,6 +9,9 @@
 #
 # usage: split_test.sh FULL_EXE AE_EXE PS_EXE INPUT.dat WORKDIR
 # The python, with pyoncvpsp and upf-tools, is $ONCVPSP_PYTHON, or python3.
+# $ONCVPSP_RUN and $ONCVPSP_AE_FILE, if set, are the output of FULL_EXE and
+# the all-electron file of AE_EXE for INPUT.dat (run_test.sh), read in place
+# of running them.
 set -euo pipefail
 full=$1; ae=$2; ps=$3; dat=$4; work=$5
 scripts=$(realpath "$(dirname "$0")")
@@ -27,8 +30,16 @@ same_output() {
     fi
 }
 
-"$ae" -a atom.ae < "$dat" > ae.out
-"$full" < "$dat" > full.out
+if [ -n "${ONCVPSP_AE_FILE:-}" ]; then
+    cp "$ONCVPSP_AE_FILE" atom.ae
+else
+    "$ae" -a atom.ae < "$dat" > ae.out
+fi
+if [ -n "${ONCVPSP_RUN:-}" ]; then
+    cp "$ONCVPSP_RUN" full.out
+else
+    "$full" < "$dat" > full.out
+fi
 "$ps" -a atom.ae < "$dat" > ps.out
 same_output full.out "$full" ps.out "$ps"
 
