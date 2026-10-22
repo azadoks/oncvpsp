@@ -297,7 +297,7 @@
 
 ! find the Vanderbilt projectors and optimized wave functions
 
-   call pspot(iprj,ll,rr,irc,mmax,al,nbas,qroot,eig(iprj),uua(1,iprj), &
+   call pspot(iprj,ll,rr,irc,rc,mmax,al,nbas,qroot,eig(iprj),uua(1,iprj), &
 &             pswfopt_sb,pswfx(1,iprj),chix(1,iprj),psopt(1,iprj),vae,work, &
 &             vkb(1,iprj),ekin_num)
 

@@ -16,7 +16,7 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine pspot(ipr,ll,rr,irc,mmax,al,nbas,qroot,eig,uu,pswfopt_sb, &
+ subroutine pspot(ipr,ll,rr,irc,rc,mmax,al,nbas,qroot,eig,uu,pswfopt_sb, &
 &                 psx,chix, &
 &           psopt,vae,vpsp,vkb,ekin_num)
 
@@ -26,7 +26,8 @@
 !! @param ipr  1 for first projector, 2 for second which usually has a node
 !! @param ll  angular momentum
 !! @param rr  log radial mesh
-!! @param irc  index of rc
+!! @param irc  last mesh point at or inside rc
+!! @param rc  core radius (bohr)
 !! @param mmax  last point of rr
 !! @param al  log of mesh spacing factor
 !! @param nbas  number of sbfs
@@ -38,7 +39,9 @@
 !! @param psopt  rr * pseudo wave function on log grid
 !! @param vpsp  pseudopotential
 !! @param vkb  (epsilon-T)*phi component of chi projector
-!! @param ekin_num  total radial kinetic energy
+!! @param ekin_num  total radial kinetic energy: the Bessel sum's to rc and
+!!                  the all-electron wave function's beyond, each by the
+!!                  rule of logmesh_m
 !! @param psx  the Bessel sum rr * pseudo wave function on the nodes up to
 !!             pw_reach+16 past irc, 0 beyond: the inside piece's smooth
 !!             extension past rc (pieces_m)
@@ -46,13 +49,14 @@
 
  use constants_m, only: dp
  use pieces_m, only: pw_reach
+ use logmesh_m, only: lm_derivs, lm_integral
  implicit none
 
 !Input variables
  integer, intent(in) :: ipr,ll,irc,mmax,nbas
  real(dp), intent(in) :: rr(mmax),qroot(nbas),uu(mmax),pswfopt_sb(nbas)
  real(dp), intent(in) :: vae(mmax)
- real(dp), intent(in) :: al,eig
+ real(dp), intent(in) :: al,eig,rc
 
 !Input/output variables
  real(dp), intent(inout) :: vkb(mmax)
@@ -66,22 +70,14 @@
 !Local variables
  real(dp), allocatable :: work(:,:)
  real(dp) :: sbfder(5)
- real(dp) :: amesh,tt,ddt,ske,ro
- integer :: ii,jj,kk,ll1,nx
- integer :: ixp(4)
+ real(dp) :: tt,ddt,ske,uder(2)
+ integer :: ii,jj,ll1,nx
 
  allocate(work(mmax,5))
  work(:,:)=0.0d0
 
 
  ll1=ll+1
-! u T u goes as r**(2l+2) at the origin: its integral to ro is ro times
-! its value there over 2l+3
- ixp(1)=3
- ixp(2)=5
- ixp(3)=7
- ixp(4)=9
-
  do ii=1,mmax
    work(ii,1)=uu(ii)
  end do
@@ -140,12 +136,6 @@
    psopt(ii)=work(ii,1)
  end do
 
-!integration for radial kinetic energy
-
- amesh = exp(al)
- ro=rr(5)/sqrt(amesh)
-
-
 !pseudopotential and node test
  do ii=1,irc
    if(abs(work(ii,1))>0.0d0) then
@@ -167,17 +157,24 @@
    vkb(ii)=vae(ii)*work(ii,1)
  end do
 
-!kinetic energy integrand
- work(:,5)=work(:,1)*work(:,4)
-
- ro=rr(5)/sqrt(amesh)
- ske=work(5,5)*(ro/rr(5))**(ixp(ll1)-1)*ro/ixp(ll1)
-
- do ii=5,mmax-9
-   ske=ske+al*rr(ii)*work(ii,5)
+!radial kinetic energy, split at rc itself (a sum over the mesh that
+!switched functions at irc, inside the cell of rc, was good to 3e-7 Ha in
+!60_Nd, O(h**3)): to rc, that of the Bessel sum, psx T psx = psx (eig psx -
+!chix), which goes as r**(2l+2) at the origin and is smooth past rc on
+!the nodes of psx; beyond, that of the all-electron function u, by parts,
+!u(rc) u'(rc)/2 + int_rc^inf (u'**2 + l(l+1) u**2/r**2)/2 dr, which needs
+!only its first derivative (as tail_kinetic does for the free tail). The
+!boundary term from psx, whose u'(rc) is the matched one of ode_rc_der,
+!as in the function E_resid transforms: that of the mesh differs from it
+!by the solver's error, O(h**4), 2e-8 Ha in 60_Nd
+ work(:,5)=psx(:)*(eig*psx(:)-chix(:))
+ call lm_integral(rr,work(:,5),mmax,2*ll+2,0.0d0,rc,ekin_num)
+ do ii=1,mmax
+   work(ii,5)=0.5d0*(work(ii,2)**2+dble(ll*ll1)*(uu(ii)/rr(ii))**2)
  end do
-
- ekin_num=ske
+ call lm_integral(rr,work(:,5),mmax,2*ll,rc,rr(mmax),ske)
+ call lm_derivs(rr,psx,mmax,rc,1,uder)
+ ekin_num=ekin_num+ske+0.5d0*uder(1)*uder(2)
 
  deallocate(work)
  return

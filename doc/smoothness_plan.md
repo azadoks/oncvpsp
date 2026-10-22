@@ -1474,7 +1474,10 @@ from rc:
       Fourier kinetic energy to q_infinity, the tail the curve leaves out
       plus the r-space integral's error: of either sign in the references
       (195 of 421 negative), |t| ≤ 5e-10 Ha in 14_Si, up to 5.4e-7 in the
-      f channels of 60_Nd and 73_Ta, so the error dominates):
+      f channels of 60_Nd and 73_Ta, so the error dominated; since the
+      r-space integral is split at rc (the Parseval item), 107 of 421
+      negative, ≤ 9.4e-11 in 14_Si, up to 1.4e-7 in 60_Nd f, mostly the
+      energy above q∞):
       1. Longer, denser Ecut tables: levels down to 1e-6 and 1e-7, or
          the whole E^r(Ecut) curve every 1–2 Ha to E^r < 1e-7.
       2. A Fourier convergence table for V_loc (its residual, or that of
@@ -1536,6 +1539,19 @@ from rc:
       q∞ doubled). So the truncation at q∞ biases the 1e-7 Ecut level in
       Nd f, and Parseval would fix it only with T_r good to 1e-8, which
       needs amesh 1.003 or a better quadrature at the default mesh.
+      Done 2026-10-22, the better quadrature (the user's request):
+      `pspot` sums no longer over the mesh, switching functions at irc
+      inside the cell of rc, but splits at rc. To rc, the Bessel sum's
+      ψ Tψ = ψ(εψ − χ) by `lm_integral` on its smooth extension past rc
+      (as the free tail's path already did); beyond, the AE wave's
+      gradient form, ½∫(u′² + l(l+1)u²/r²) + ½u(rc)u′(rc), the
+      boundary term from ψ: the AE mesh's u′(rc) differs from the
+      matched one by the solver's own O(h⁴) error (2e-8 Ha in Nd f), and
+      with it T_r converged only as h⁴. With ψ's, term (a) goes as about
+      h⁶, at amesh 1.006 6.6e-12 Ha in 14_Si, 1.1e-10 in 60_Nd and
+      5.9e-10 in 73_Ta (fr; it was 3e-7). What `ekin_check` shows now is
+      (b) and (c), and T_r is good enough for Parseval at the default
+      mesh.
 - [ ] Optimize the test suite (the user's request, 2026-10-22; not
       approved for work yet): more coverage for less wall time, by better
       choices of test cases and of what each computes. Where the time

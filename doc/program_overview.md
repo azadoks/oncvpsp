@@ -255,8 +255,10 @@ irel, and the stage.  It has the following major sections:
     (1e-2 Ha down by half decades to 1e-7, past the tables' 1e-5), the
     r-space kinetic energy of each wave less the Fourier one to the
     curve's q_infinity (`ekin_check l ikap iproj t`: by Parseval the
-    energy above q_infinity, which the curve leaves out, plus the error
-    of the r-space integral, which dominates it), and the log derivatives of *run_phsft*
+    energy above q_infinity, which the curve leaves out, plus the errors
+    of the q grid's quadrature, up to 1e-8 Ha, and of the r-space
+    integral, below 1e-9 Ha at the default mesh), and the log
+    derivatives of *run_phsft*
     with their radius, and the margins of the ghost tests, to 17
     significant digits, one tagged value per line (`ecut l ikap iproj err
     ecut`, `ld_r l ikap r`, `ld l ikap e ae ps`; ikap is 1 for j=l+1/2 or a
