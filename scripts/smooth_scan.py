@@ -22,9 +22,14 @@ The features come from the UPF file, written on the log mesh itself
 (upf_mesh, every few points of it) and read with upf-tools, and from the
 output read with pyoncvpsp (compare_output.py), so they are the generator's own values
 with no interpolation onto another grid in between; the UPF writer gives 17
-digits. With --output psp8 or upf they come instead from the psp8 file (14
-digits) or the UPF file on the linear output mesh, onto which the writers
-evaluate the functions (doc/smoothness_plan.md, O-1). They are what a
+digits. With --output psp8, upf or psml they come instead from the psp8 file
+(14 digits), the UPF file on the linear output mesh, onto which the writers
+evaluate the functions (doc/smoothness_plan.md, O-1), or the PSML file (on the
+generator's log mesh, 13 digits). A comma-separated list (e.g. log,psp8,psml)
+takes them from several files of each run (psfile = "both" writes all three;
+log and upf exclude each other, as one run writes one UPF file), and the
+groups below drawn from a file are reported for each, e.g. kernel.psp8. They
+are what a
 calculation uses, never the projectors themselves (they are not unique; see
 kernel_diff.py):
 
@@ -71,10 +76,16 @@ sampled too: an interpolant across the radius would reach them.
 With --set KEY=VALUE (repeated as needed; VALUE in TOML, e.g.
 pseudopotentials.well_tail="free") the input is changed before the scan.
 
+The groups kernel, vloc and core come from each file of --output: a group
+named alone is taken from all of them, one named with its file (core.log)
+from that file only. --tol and --degree take a value for a group of one file
+the same way (--tol core.psp8=1e-9, --degree 18,psp8=24: 24 for the groups of
+the psp8 file, 18 for the rest).
+
 usage: smooth_scan.py EXE BASE.toml KEY [--center X] [--cells N | --span S]
                       [--set KEY=VALUE ...]
-                      [--npts N] [--degree D] [--groups G,G]
-                      [--output log | psp8 | upf]
+                      [--npts N] [--degree D[,OUT=D]] [--groups G,G]
+                      [--output OUT[,OUT]] (OUT: log, psp8, upf, psml)
                       [--tol TOL | --tol G=TOL,G=TOL] [--max-jump R]
                       [--jobs J] [--workdir DIR]
        smooth_scan.py --self-test
@@ -92,11 +103,13 @@ import tempfile
 import tomllib
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from compare_output import psp8_part, upf_part  # noqa: E402
+from compare_output import psml_part, psp8_part, upf_part  # noqa: E402
 from pyoncvpsp.io import OncvpspTextParser  # noqa: E402
 
 RADIUS_KEYS = {"rc", "rcloc", "rxpsh"}
 GROUPS = ("kernel", "vloc", "core", "tests", "ld", "ecut", "ghost")
+# the groups drawn from the pseudopotential file, one of each per file
+FILE_GROUPS = ("kernel", "vloc", "core")
 # points of the UPF file's log mesh: every few of the generator's out to the
 # linear mesh's extent
 UPF_MESH = 600
@@ -110,7 +123,30 @@ BREAKPOINTS = (re.compile(r"^\s*model radius r(?:\*|_s)\s+([-+.0-9eE]+)"),)
 # (run_vkb), as well as rc
 TAPER = 0.95
 # --output: the file the features come from, as (psfile, upf_mesh)
-OUTPUTS = {"log": ("upf", UPF_MESH), "psp8": ("psp8", 0), "upf": ("upf", 0)}
+OUTPUTS = {
+    "log": ("upf", UPF_MESH),
+    "psp8": ("psp8", 0),
+    "upf": ("upf", 0),
+    "psml": ("psml", 0),
+}
+
+
+def parse_outputs(text):
+    """The files of --output, a comma-separated list of OUTPUTS."""
+    outputs = list(dict.fromkeys(text.split(",")))
+    unknown = [o for o in outputs if o not in OUTPUTS]
+    if unknown:
+        raise ValueError(f"--output: no file {', '.join(unknown)}")
+    if "log" in outputs and "upf" in outputs:
+        raise ValueError("--output: log and upf are both the UPF file of a run")
+    return outputs
+
+
+def psfile_of(outputs):
+    """(psfile, upf_mesh) of the input that writes the files of outputs."""
+    if len(outputs) == 1:
+        return OUTPUTS[outputs[0]]
+    return "both", UPF_MESH if "log" in outputs else 0
 
 
 # TOML input: read with tomllib, one value changed, written back
@@ -194,6 +230,19 @@ def file_part(parser, output):
         }
         core = psp8["model_core"] if psp8["fchrg"] > 0.0 else None
         return psp8["r"], named, psp8["local_potential"], core
+    if output == "psml":
+        psml, blocks = psml_part(parser.psml_string)
+        named = {
+            f"{kind}_l{ll}" + ("" if jj is None else f"j{jj:g}"): block
+            for (_, kind, ll, jj), block in blocks.items()
+        }
+        core = psml["core_charge"]
+        return (
+            psml["grid"],
+            named,
+            psml["local_potential"]["values"],
+            None if core is None else core["values"],
+        )
     upf, blocks = upf_part(parser.upf_string)
     named = {
         (f"l{ll}" if jj is None else f"l{ll}j{jj:g}"): block
@@ -202,25 +251,29 @@ def file_part(parser, output):
     return upf["mesh"]["r"], named, upf["local"], upf.get("nlcc")
 
 
-def features(path, samples, output):
-    """{name: value} of the output at path, the names of the form group:label."""
+def features(path, samples):
+    """{name: value} of the output at path, the names of the form group:label,
+    those of the files group.file:label, samples {file: indices on its mesh}."""
     parser = OncvpspTextParser(path=path, check=False)
-    _, blocks, local, core = file_part(parser, output)
     out = {}
-    for name, block in blocks.items():
-        beta = block.beta[:, samples]
-        kern = beta.T @ block.dij @ beta
-        for a, ka in enumerate(samples):
-            for b in range(a, len(samples)):
-                out[f"kernel:{name}:r{ka},r{samples[b]}"] = float(kern[a, b])
-    for k in samples:
-        out[f"vloc:r{k}"] = float(local[k])
-    if core is not None:
-        rows = core if hasattr(core[0], "__len__") else [core]
-        for d, row in enumerate(rows):
-            block = "core" if d == 0 else f"core:d{d}"
-            for k in samples:
-                out[f"{block}:r{k}"] = float(row[k])
+    for output, points in samples.items():
+        _, blocks, local, core = file_part(parser, output)
+        for name, block in blocks.items():
+            beta = block.beta[:, points]
+            kern = beta.T @ block.dij @ beta
+            for a, ka in enumerate(points):
+                for b in range(a, len(points)):
+                    out[f"kernel.{output}:{name}:r{ka},r{points[b]}"] = float(
+                        kern[a, b]
+                    )
+        for k in points:
+            out[f"vloc.{output}:r{k}"] = float(local[k])
+        if core is not None:
+            rows = core if hasattr(core[0], "__len__") else [core]
+            for d, row in enumerate(rows):
+                block = f"core.{output}" if d == 0 else f"core.{output}:d{d}"
+                for k in points:
+                    out[f"{block}:r{k}"] = float(row[k])
     eigs = (
         state["eig_ps"]
         for config in parser.output["test_configurations"]
@@ -310,21 +363,23 @@ def group_scales(center):
 
 def analyse(ts, runs, degree):
     """{group: (worst relative residual, feature, jump ratio, largest step
-    relative to the scale)}."""
+    relative to the scale)}; degree a number, or {group: degree}."""
     names = sorted(set.intersection(*(set(r) for r in runs)))
     center = runs[len(runs) // 2]
     scales = group_scales({n: center[n] for n in names})
     worst = {}
     for name in names:
         ys = [r[name] for r in runs]
-        resid = fit_residuals(ts, ys, degree)
+        group = name.split(":", 1)[0]
+        resid = fit_residuals(
+            ts, ys, degree if isinstance(degree, int) else degree[group]
+        )
         rel = max(abs(x) for x in resid) / scales[name]
         steps = sorted(abs(b - a) for a, b in zip(ys, ys[1:]))
         median = steps[len(steps) // 2]
         jump = (
             steps[-1] / median if median > 0.0 else math.inf if steps[-1] > 0 else 1.0
         )
-        group = name.split(":", 1)[0]
         if group not in worst or rel > worst[group][0]:
             worst[group] = (rel, name, jump, steps[-1] / scales[name])
     return worst
@@ -340,7 +395,7 @@ def fails(rel, jump, step, tol, max_jump):
 # Running the program
 
 
-def run_one(exe, data, key, value, workdir, index, output):
+def run_one(exe, data, key, value, workdir, index, outputs):
     data = {k: (dict(v) if isinstance(v, dict) else v) for k, v in data.items()}
     for k, v in data.items():
         if isinstance(v, dict):
@@ -348,8 +403,8 @@ def run_one(exe, data, key, value, workdir, index, output):
                 kk: (list(vv) if isinstance(vv, list) else vv) for kk, vv in v.items()
             }
     set_value(data, key, value)
-    # the file of --output, whatever the input asks for
-    data["pp_output"]["psfile"], data["pp_output"]["upf_mesh"] = OUTPUTS[output]
+    # the files of --output, whatever the input asks for
+    data["pp_output"]["psfile"], data["pp_output"]["upf_mesh"] = psfile_of(outputs)
     path = pathlib.Path(workdir) / f"scan{index:03d}"
     path.mkdir(parents=True, exist_ok=True)
     (path / "in.toml").write_text(dump_toml(data))
@@ -379,7 +434,44 @@ def breakpoints(outputs):
     return radii
 
 
+def sample_points(mesh, output, data, key, values, moved, spacing):
+    """The indices of the sample radii on the mesh of one file: every spacing
+    bohr, less the windows swept by a radius key and by the breakpoints moved,
+    plus the NEAR points on each side of each window."""
+    samples = sorted(
+        {
+            min(range(len(mesh)), key=lambda k: abs(mesh[k] - r))
+            for r in (spacing * j for j in range(1, int(mesh[-1] / spacing) + 1))
+        }
+    )
+    if output in ("log", "psml"):
+        step = max(b / a for a, b in zip(mesh[1:], mesh[2:]))
+    else:
+        step = data.get("log_mesh", {}).get("amesh", 1.006)
+    windows = []
+    if parse_key(key)[1] in RADIUS_KEYS:
+        lo, hi = min(values) / step**2, max(values) * step**2
+        windows += [(lo, hi), (TAPER * lo, TAPER * hi)]
+    if moved:
+        windows += [(min(moved) / step**2, max(moved) * step**2)]
+    if not windows:
+        return samples
+    near = set()
+    for a, b in windows:
+        # the NEAR points of the mesh on each side of the window, which an
+        # interpolant across the radius would reach
+        below = [k for k in range(len(mesh)) if mesh[k] < a][-NEAR:]
+        above = [k for k in range(len(mesh)) if mesh[k] > b][:NEAR]
+        near |= set(below) | set(above)
+    return [
+        k
+        for k in sorted(set(samples) | near)
+        if not any(a <= mesh[k] <= b for a, b in windows)
+    ]
+
+
 def scan(args):
+    outputs = parse_outputs(args.output)
     data = apply_sets(tomllib.loads(pathlib.Path(args.toml).read_text()), args.set)
     center = float(get_value(data, args.key)) if args.center is None else args.center
     if args.span is not None:
@@ -392,99 +484,82 @@ def scan(args):
 
     workdir = args.workdir or tempfile.mkdtemp(prefix="smooth_scan_")
     with concurrent.futures.ThreadPoolExecutor(args.jobs) as pool:
-        outputs = list(
+        runs_out = list(
             pool.map(
                 lambda kv: run_one(
-                    args.exe, data, args.key, kv[1], workdir, kv[0], args.output
+                    args.exe, data, args.key, kv[1], workdir, kv[0], outputs
                 ),
                 enumerate(values),
             )
         )
 
-    mesh = file_mesh(outputs[0], args.output)
-    samples = sorted(
-        {
-            min(range(len(mesh)), key=lambda k: abs(mesh[k] - r))
-            for r in (
-                args.sample * j for j in range(1, int(mesh[-1] / args.sample) + 1)
-            )
-        }
-    )
-    if args.output == "log":
-        step = max(b / a for a, b in zip(mesh[1:], mesh[2:]))
-    else:
-        step = data.get("log_mesh", {}).get("amesh", 1.006)
-    windows = []
-    if parse_key(args.key)[1] in RADIUS_KEYS:
-        lo, hi = min(values) / step**2, max(values) * step**2
-        windows += [(lo, hi), (TAPER * lo, TAPER * hi)]
-    moved = breakpoints(outputs)
-    if moved:
-        windows += [(min(moved) / step**2, max(moved) * step**2)]
-    if windows:
-        near = set()
-        for a, b in windows:
-            # the NEAR points of the mesh on each side of the window, which an
-            # interpolant across the radius would reach
-            below = [k for k in range(len(mesh)) if mesh[k] < a][-NEAR:]
-            above = [k for k in range(len(mesh)) if mesh[k] > b][:NEAR]
-            near |= set(below) | set(above)
-        samples = [
-            k
-            for k in sorted(set(samples) | near)
-            if not any(a <= mesh[k] <= b for a, b in windows)
-        ]
+    moved = breakpoints(runs_out)
+    samples = {
+        output: sample_points(
+            file_mesh(runs_out[0], output),
+            output,
+            data,
+            args.key,
+            values,
+            moved,
+            args.sample,
+        )
+        for output in outputs
+    }
 
     groups = set(args.groups.split(","))
     # parsing an output is Python-bound (~1 s for 07_N_opt): in processes,
     # as many as the runs
     with concurrent.futures.ProcessPoolExecutor(args.jobs) as pool:
-        parsed = list(
-            pool.map(
-                features,
-                outputs,
-                [samples] * len(outputs),
-                [args.output] * len(outputs),
-            )
-        )
-    runs = [
-        {n: v for n, v in run.items() if n.split(":", 1)[0] in groups} for run in parsed
-    ]
-    worst = analyse(ts, runs, args.degree)
+        parsed = list(pool.map(features, runs_out, [samples] * len(runs_out)))
+
+    def wanted(name):
+        group = name.split(":", 1)[0]
+        return group in groups or group.split(".")[0] in groups
+
+    runs = [{n: v for n, v in run.items() if wanted(n)} for run in parsed]
+    degrees = parse_tol(args.degree, int)
+    degree = {
+        g: degrees.get(g.partition(".")[2], degrees.get(None, 6))
+        for g in {n.split(":", 1)[0] for run in runs for n in run}
+    }
+    worst = analyse(ts, runs, degree)
 
     print(
         f"{args.key}: {args.npts} values from {values[0]:.10g} to {values[-1]:.10g}"
         f" (span {span:.4g}), degree {args.degree} fit, {args.output} file,"
         f" outputs in {workdir}"
     )
-    print(f"{'group':8s} {'residual':>10s} {'jump':>10s}  worst feature")
+    print(f"{'group':11s} {'residual':>10s} {'jump':>10s}  worst feature")
     tols = parse_tol(args.tol)
     status = 0
-    for group in GROUPS:
-        if group not in worst:
-            continue
+    order = {g: i for i, g in enumerate(GROUPS)}
+    for group in sorted(worst, key=lambda g: (order[g.split(".")[0]], g)):
         rel, name, jump, step = worst[group]
         flag = ""
-        tol = tols.get(group, tols.get(None))
+        tol = tols.get(group, tols.get(group.split(".")[0], tols.get(None)))
         if fails(rel, jump, step, tol, args.max_jump):
             flag = "  FAIL"
             status = 1
-        print(f"{group:8s} {rel:10.2e} {jump:10.2e}  {name}{flag}")
-    missing = groups - set(worst)
+        print(f"{group:11s} {rel:10.2e} {jump:10.2e}  {name}{flag}")
+    missing = {
+        g for g in groups if not any(w == g or w.split(".")[0] == g for w in worst)
+    }
     if missing:
         print(f"no features of group(s) {', '.join(sorted(missing))}  FAIL")
         status = 1
     return status
 
 
-def parse_tol(text):
-    """{group: tol} from 'TOL' (key None: every group) or 'G=TOL,G=TOL'."""
-    if text is None:
-        return {}
-    if "=" not in text:
-        return {None: float(text)}
-    pairs = (item.split("=") for item in text.split(","))
-    return {group: float(value) for group, value in pairs}
+def parse_tol(text, kind=float):
+    """{group: value} of --tol or --degree, 'V,G=V,G=V': V for every group
+    (key None), G=V for group G (kernel, or kernel.psp8 for that file's
+    group; for --degree a file, psp8, for its groups)."""
+    out = {}
+    for item in (text or "").split(",") if text else []:
+        name, _, value = item.rpartition("=")
+        out[name or None] = kind(value)
+    return out
 
 
 # Checks of the analysis on functions whose smoothness is known
@@ -570,7 +645,11 @@ def main():
         help="change the input before the scan (VALUE in TOML; repeatable)",
     )
     parser.add_argument("--npts", type=int, default=41)
-    parser.add_argument("--degree", type=int, default=6)
+    parser.add_argument(
+        "--degree",
+        default="6",
+        help="degree of the fit: D, or D,OUT=D for the groups of file OUT",
+    )
     parser.add_argument(
         "--sample",
         type=float,
@@ -592,10 +671,10 @@ def main():
     )
     parser.add_argument(
         "--output",
-        choices=sorted(OUTPUTS),
         default="log",
-        help="file the features come from: the UPF file on the log mesh (default),"
-        " the psp8 file, or the UPF file on the linear mesh",
+        help="files the features come from, comma-separated: log (the UPF file on"
+        " the log mesh, the default), psp8, upf (the UPF file on the linear mesh),"
+        " psml",
     )
     parser.add_argument("--jobs", type=int, default=os.cpu_count() or 1)
     parser.add_argument("--workdir")
