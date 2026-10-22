@@ -115,8 +115,9 @@
 !! the optional log mesh line and UPF mesh size
 !!
 !! @param final_newline  .true. to end the last line with a newline
-!! @param with_mesh  .true. to add the log mesh line, and upf_mesh to the
-!!                   output grid line
+!! @param with_mesh  .true. to add the log mesh line, upf_mesh to the
+!!                   output grid line, and ep_as_given, well_onset and
+!!                   well_tail to the lmax line
 
 !Input variables
  logical, intent(in) :: final_newline, with_mesh
@@ -138,6 +139,8 @@
  integer :: lloc, lpopt, nproj(mxlin+1)
  integer :: icmod, ncnf, nvcnf(mxcnf), nacnf(mxstate, mxcnf)
  integer :: lacnf(mxstate, mxcnf), upf_mesh
+ logical :: ep_as_given, well_tail_free
+ real(dp) :: well_onset
 
  lines = [character(len=700) :: &
 &   '# atsym, z, nc, nv, iexc   psfile', &
@@ -176,6 +179,7 @@
 &   '# a comment after the data']
  if(with_mesh) then
    lines(25) = '    6.0  0.01  2000'
+   lines(13) = '    2    1    1.5    1'
    lines(2) = '    Si  14     3   2   3   psp8   137.0359895'
    all_lines = [character(len=700) :: lines, '# amesh, rr1, rmax', &
 &               '  1.003  -1  60.0', &
@@ -194,7 +198,8 @@
 &                     epsh1, epsh2, depsh, rxpsh, &
 &                     rlmax, drl, upf_mesh, &
 &                     ncnf, nvcnf, nacnf, lacnf, facnf, &
-&                     amesh, rr1, rmax, c_light)
+&                     amesh, rr1, rmax, c_light, ep_as_given, &
+&                     well_onset, well_tail_free)
  close(unit)
 
  call check(atsym == 'Si' .and. zz == 14 .and. nc == 3 .and. nv == 2 &
@@ -227,11 +232,16 @@
    call check(upf_mesh == 2000, 'UPF mesh size')
    call check(amesh == 1.003_dp .and. rr1 < 0 .and. rmax == 60, 'log mesh')
    call check(c_light == 137.0359895_dp, 'speed of light')
+   call check(ep_as_given .and. well_onset == 1.5_dp .and. well_tail_free, &
+&             'ep_as_given, well_onset, well_tail')
    call check(inline == 35, 'line number of the last data line')
  else
    call check(upf_mesh == 0, 'UPF mesh size default')
    call check(amesh < 0 .and. rr1 < 0 .and. rmax < 0, 'log mesh defaults')
    call check(c_light < 0, 'speed of light default')
+   call check(.not. ep_as_given .and. well_onset == 1.006_dp**5 &
+&             .and. .not. well_tail_free, &
+&             'ep_as_given, well_onset, well_tail defaults')
    call check(inline == 32, 'line number of the last data line')
  end if
  return

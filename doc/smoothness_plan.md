@@ -1328,12 +1328,13 @@ from rc:
    change table.
 
 **Checklist:**
-- [ ] D-7 decided: (b) and (c) decided (2026-10-22, below); (a), the
-      default, after the validation, with the normalization's effect on
-      the convergence tables (below)
+- [x] D-7 decided (2026-10-22, below): `well_tail` with "well" the
+      default; the windowed growing tail for ep < 0; the j = l+1/2 well's
+      eigenvalue for j = l−1/2; the well states normalized inside rc, so
+      their convergence tables are on that scale
 - [x] Unit test `free_tail` (the plan's `eresid_tail`): the tail of
-      sin(kr) to 2.3e-12; the window's share of E_resid above qcut,
-      L against 2L, 6e-27 of the tail's own there, and 5e-18 for
+      sin(kr) to 1.5e-12; the window's share of E_resid above qcut,
+      L against 2L, 2e-27 of the tail's own there, and 5e-21 for
       sinh(κr) (L against 1.1L: at 2L the tail reaches e^34 and the
       transforms' round-off would dominate); L without a kink at ep = 0;
       `tail_kinetic` against ∫t(−t''/2) to 1e-13. The independence
@@ -1377,6 +1378,12 @@ from rc:
         below 0 as a bound state, as before. The references do not
         change.
       - Cost: 14_Si 2.0 s against 1.8 s, the 07_N_opt rows the same.
+      - L had √(81κ² + 60Δq²) under its root, the bound at 60 rather
+        than 30 (√2 too long for κ = 0; found by the numerics audit,
+        doc/numerics_audit.md C-5): fixed, the validation numbers below
+        the same at their printed precision.
+      - The `.dat` input: `ep_as_given`, `well_onset` and `well_tail` as
+        optional values of the lmax line (follow-ups, below).
 - [x] Validation on the references recorded (every input of
       tests/data/toml, nr, sr and fr, "free" against "well"):
       - Kernels: by the size of today's arbitrariness, per block 1e-5 to
@@ -1394,14 +1401,19 @@ from rc:
         73_Ta.
       - Mesh convergence (T4, mesh_convergence.py `--set`): 14_Si's well
         blocks at orders 4.0–4.5 as before; 08_O the same as before.
-- [ ] References patched (with D-7a; the default "well" changes none)
+- [x] References: none change (the default is "well")
 
 #### Follow-ups (once everything above is done)
 
-- [ ] The `.dat` input brought as far as reasonably possible to parity
-      with the TOML input: the keys added on this branch (`ep_as_given`,
-      `well_onset`, `upf_mesh`, the log mesh, …) readable from `.dat`
-      too, or a documented reason why not
+- [x] The `.dat` input brought to parity with the TOML input: `c_light`,
+      `upf_mesh` and the log mesh were already optional values; now the
+      lmax line is `lmax [ep_as_given [well_onset [well_tail]]]` (0 or 1;
+      0 or less for the default onset; 0 "well", 1 "free"), read like
+      the atom line's c_light (a line that ends early leaves the rest at
+      their defaults, a bad value is an error). The echoes (stdout, psp8,
+      UPF, PSML) write the three only when one is not its default, so a
+      re-run reproduces the input (echo tests `*_14_Si_wt`); pyoncvpsp's
+      `PseudoPotentialsInput` has the fields, in its dat and TOML forms
 - [ ] The value at the origin of the psp8 and linear-mesh UPF files:
       `outmesh_m` keeps `dpnint`'s limit, the polynomial of degree 7
       through the next 8 output points (0.01–0.08 bohr). Not yet trusted:
@@ -1494,9 +1506,14 @@ These change behaviour beyond numerics. Decided on review (2026-10-20).
   noted. Not needed yet: the measured effect is at the solvers'
   discretization error near the jump (1e-8 Ha in a 3p matched at it).
 
-- **D-7 The tail of the well states** (phase 8). (b) and (c) decided
-  2026-10-22: the windowed growing solution, and the eigenvalue of the
-  j = l+1/2 well. (a) open until the validation (phase 8).
+- **D-7 The tail of the well states** (phase 8). Decided 2026-10-22,
+  after the validation: (a) behind `well_tail`, "well" the default, as
+  D-1 (the optimizer sets "free"); (b) the windowed growing solution;
+  (c) the eigenvalue of the j = l+1/2 well. The well states with the
+  free tail are normalized to 1 inside rc (the free solution has no
+  finite norm, and any other choice depends on the window), so their
+  convergence tables are on that scale: 1 to 20 Ha higher at 1e-4 than
+  with the well's normalization, 119 Ha in 73_Ta.
   - (a) Default: the free tail by default, or behind an input
     (`well_tail`) with today's well tail as the default, as D-1 was
     decided. The free tail removes an arbitrary choice and the node

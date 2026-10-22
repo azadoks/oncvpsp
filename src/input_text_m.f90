@@ -1,6 +1,6 @@
  module input_text_m
  use, intrinsic :: iso_fortran_env, only: dp => real64
- use constants_m, only: mxstate, mxcnf, mxlin, mxkap
+ use constants_m, only: mxstate, mxcnf, mxlin, mxkap, well_onset_default
  implicit none
  private
  public :: read_input_text, next_line
@@ -16,7 +16,8 @@
 &                           epsh1, epsh2, depsh, rxpsh, &
 &                           rlmax, drl, upf_mesh, &
 &                           ncnf, nvcnf, nacnf, lacnf, facnf, &
-&                           amesh, rr1, rmax, c_light)
+&                           amesh, rr1, rmax, c_light, ep_as_given, &
+&                           well_onset, well_tail_free)
 
 !! reads the text input file (see doc/32_Ge_annotated.dat), stopping on a
 !! read error
@@ -50,6 +51,15 @@
 ! [Pseudopotential and optimization]
 !> Maximum angular momentum
  integer, intent(out) :: lmax
+!> Whether the well states take ep as given (wellstate; optional on the
+!> lmax line, 0 or 1)
+ logical, intent(out) :: ep_as_given
+!> Onset of the well of the well states as a multiple of rc (optional on
+!> the lmax line, 0 or less for the default)
+ real(dp), intent(out) :: well_onset
+!> Whether the well states take the free tail (free_tail_m; optional on
+!> the lmax line, 0 for "well", 1 for "free")
+ logical, intent(out) :: well_tail_free
 !> Core radii for pseudopotentials
  real(dp), intent(out) :: rc(mxlin+1)
 !> Pseudopotential energies, the input value for both j=l+1/2 and l-1/2
@@ -146,6 +156,8 @@
  character(len=:), allocatable :: line
 !> Whether the input has ended
  logical :: eof
+!> The optional values of the lmax line
+ integer :: igiven, itail
 
  nproj(:) = 0
  fcfact = 0.d0
@@ -189,11 +201,35 @@
    call read_error(ios, inline)
  end do
 
-! pseudopotential and optimization
+! pseudopotential and optimization: lmax, and optionally ep_as_given (0 or
+! 1), well_onset (0 or less for the default) and well_tail (0 for "well",
+! 1 for "free"); a line that ends early leaves the rest at their defaults,
+! a bad value is an error
  call next_line(unit, line, inline)
- read(line, *, iostat=ios) lmax
- if(ios == 0 .and. lmax > mxlin) ios = 999
+ itail = 0
+ read(line, *, iostat=ios) lmax, igiven, well_onset, itail
+ if(ios < 0) then
+   itail = 0
+   read(line, *, iostat=ios) lmax, igiven, well_onset
+ end if
+ if(ios < 0) then
+   well_onset = 0.d0
+   read(line, *, iostat=ios) lmax, igiven
+ end if
+ if(ios < 0) then
+   igiven = 0
+   read(line, *, iostat=ios) lmax
+ end if
+ if(ios == 0) then
+   if(lmax > mxlin .or. igiven < 0 .or. igiven > 1 .or. itail < 0 &
+&     .or. itail > 1 .or. (well_onset > 0.d0 .and. well_onset < 1.d0)) then
+     ios = 999
+   end if
+ end if
  call read_error(ios, inline)
+ ep_as_given = igiven == 1
+ well_tail_free = itail == 1
+ if(well_onset <= 0.d0) well_onset = well_onset_default
 
  do l1 = 1, lmax + 1
    call next_line(unit, line, inline)

@@ -28,8 +28,8 @@
  use relativity_m, only: c_light_default, c_light
  implicit none
  private
- public :: atom_lines, icmod_lines, epsh_lines, mesh_lines
- public :: write_atom, write_icmod, write_epsh
+ public :: atom_lines, lmax_lines, icmod_lines, epsh_lines, mesh_lines
+ public :: write_atom, write_lmax, write_icmod, write_epsh
  public :: write_mesh
  public :: write_input_echo
 
@@ -78,6 +78,51 @@
 
  return
  end subroutine atom_lines
+
+ subroutine lmax_lines(lmax,ep_as_given,well_onset,well_tail_free,text, &
+&                      ntext)
+
+!! the head of the PSEUDOPOTENTIAL AND OPTIMIZATION section, to the lmax
+!! line: ep_as_given (0 or 1), well_onset (0 for the default) and
+!! well_tail (0 for "well", 1 for "free") are written after lmax only when
+!! one of them is not its default
+!!
+!! @param lmax  maximum angular momentum
+!! @param ep_as_given  whether the well states take ep as given
+!! @param well_onset  onset of the well as a multiple of rc
+!! @param well_tail_free  whether the well states take the free tail
+!! @param text  the lines of the section
+!! @param ntext  number of lines
+
+!Input variables
+ integer, intent(in) :: lmax
+ logical, intent(in) :: ep_as_given,well_tail_free
+ real(dp), intent(in) :: well_onset
+
+!Output variables
+ character(len=echo_len), intent(out) :: text(echo_max)
+ integer, intent(out) :: ntext
+
+!Local variables
+ real(dp) :: onset
+
+ text(1)='#'
+ text(2)='# PSEUDOPOTENTIAL AND OPTIMIZATION'
+ if(ep_as_given .or. well_tail_free .or. well_onset/=well_onset_default) &
+& then
+   onset=0.0d0
+   if(well_onset/=well_onset_default) onset=well_onset
+   text(3)='# lmax, ep_as_given, well_onset, well_tail'
+   write(text(4),'(i5,i5,es24.16,i5)') lmax,merge(1,0,ep_as_given), &
+&        onset,merge(1,0,well_tail_free)
+ else
+   text(3)='# lmax'
+   write(text(4),'(i5)') lmax
+ end if
+ ntext=4
+
+ return
+ end subroutine lmax_lines
 
  subroutine icmod_lines(icmod,fcfact,rcfact,slack,fcgrid,rcgrid,text,ntext)
 
@@ -225,6 +270,31 @@
  return
  end subroutine write_atom
 
+ subroutine write_lmax(lmax,ep_as_given,well_onset,well_tail_free)
+
+!! writes the head of the PSEUDOPOTENTIAL AND OPTIMIZATION section, to the
+!! lmax line, to unit 6
+!!
+!! @param lmax  maximum angular momentum
+!! @param ep_as_given  whether the well states take ep as given
+!! @param well_onset  onset of the well as a multiple of rc
+!! @param well_tail_free  whether the well states take the free tail
+
+!Input variables
+ integer, intent(in) :: lmax
+ logical, intent(in) :: ep_as_given,well_tail_free
+ real(dp), intent(in) :: well_onset
+
+!Local variables
+ character(len=echo_len) :: text(echo_max)
+ integer :: ii,ntext
+
+ call lmax_lines(lmax,ep_as_given,well_onset,well_tail_free,text,ntext)
+ write(6,'(a)') (trim(text(ii)),ii=1,ntext)
+
+ return
+ end subroutine write_lmax
+
  subroutine write_icmod(icmod,fcfact,rcfact,slack,fcgrid,rcgrid)
 
 !! writes the MODEL CORE CHARGE section to unit 6
@@ -346,8 +416,8 @@
    write(6,'(2i5,f8.2)') na(ii),la(ii),fa(ii)
  end do
 
- write(6,'(a/a/a)') '#','# PSEUDOPOTENTIAL AND OPTIMIZATION','# lmax'
- write(6,'(i5)')  lmax
+ call lmax_lines(lmax,ep_as_given,well_onset,well_tail_free,text,ntext)
+ write(6,'(a)') (trim(text(ii)),ii=1,ntext)
  if(nkap==2) then
    write(6,'(a/a)') '#','#   l,   rc,     ep,   ncon, nbas, qcut'
  else
@@ -357,11 +427,6 @@
    write(6,'(i5,2f10.5,2i5,f10.5)') l1-1,rc0(l1),ep(l1),ncon(l1),&
 &        nbas(l1),qcut(l1)
  end do
- if(ep_as_given) write(6,'(a)') '#   ep_as_given = true'
- if(well_onset/=well_onset_default) then
-   write(6,'(a,es22.16)') '#   well_onset = ',well_onset
- end if
- if(well_tail_free) write(6,'(a)') '#   well_tail = "free"'
 
  write(6,'(a/a/a,a)') '#','# LOCAL POTENTIAL','# lloc, lpopt,  rc(5),', &
 &      '   dvloc0'

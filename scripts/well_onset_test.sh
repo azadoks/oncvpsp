@@ -13,7 +13,8 @@
 #     differed by 1e-2 and more);
 #   - the half-point radii with well_onset = 1 differ from those of the
 #     default by more than 1e-3 (the input is used);
-#   - the echo of the input carries well_onset only when it is set.
+#   - the echo of the input carries well_onset (on the lmax line) only
+#     when it is set.
 set -euo pipefail
 exe=$1; base=$2; work=$3
 mkdir -p "$work"
@@ -70,8 +71,9 @@ if grep -q 'well_onset' default.out; then
     echo "the default echoes well_onset" >&2
     fail=1
 fi
-if ! grep -q '^#   well_onset = ' one.out; then
-    echo "well_onset = 1 is not echoed" >&2
+if ! grep -A1 '^# lmax, ep_as_given, well_onset, well_tail$' one.out |
+        grep -Eq '^ +[0-9]+ +0 +1\.0+E\+00 +0$'; then
+    echo "well_onset = 1 is not echoed on the lmax line" >&2
     fail=1
 fi
 if [ $fail -ne 0 ]; then

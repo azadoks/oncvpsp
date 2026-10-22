@@ -457,17 +457,19 @@ endforeach ()
 # Input echoes: the input echoed in the output, and in the psp8, UPF or PSML file, run again, give the
 # same output (see scripts/echo_rerun_test.sh). The inputs cover rxpsh (14_Si_lder, and 52_Te with
 # rxpsh set), icmod=4 with its search grid (40_Zr_grid, 74_W), icmod=7 with slack (14_Si_hm), a
-# Libxc iexc (83_Bi), rc on the grid (03_Li), and iexc=7 with c_light on the first line (52_Te_c,
-# 14_Si_c).
+# Libxc iexc (83_Bi), rc on the grid (03_Li), iexc=7 with c_light on the first line (52_Te_c,
+# 14_Si_c), and ep_as_given, well_onset and well_tail = "free" on the lmax line (14_Si_wt).
 set(te_rxpsh "s/^   -3\\.0  3\\.0  0\\.02$/   -3.0  3.0  0.02  3.5/")
 set(te_c "s/^    Te  52\\.0   8   3   3   upf$/    Te  52.0   8   3   7   upf  137.0359895/")
 set(si_c "s/^    Si  14     3   2   3   psp8$/    Si  14     3   2   7   psp8  137.0359895/")
+set(si_wt "14s/^    2$/    2    1    1.2    1/")
 foreach (echo_test IN ITEMS
         "sr:14_Si_lder:psp8" "sr:14_Si_lder:upf" "sr:14_Si_lder:psml"
         "sr:40_Zr_grid:psp8" "sr:40_Zr_grid:upf" "sr:40_Zr_grid:psml"
         "sr:83_Bi:psml" "sr:03_Li:psml" "nr:14_Si:psml" "sr:14_Si_hm:psp8"
         "r:74_W:psp8" "r:74_W:psml" "r:52_Te:psp8" "r:52_Te:upf" "r:52_Te:psml"
-        "r:52_Te_c:psp8" "r:52_Te_c:upf" "r:52_Te_c:psml" "sr:14_Si_c:psp8" "sr:14_Si_c:psml")
+        "r:52_Te_c:psp8" "r:52_Te_c:upf" "r:52_Te_c:psml" "sr:14_Si_c:psp8" "sr:14_Si_c:psml"
+        "sr:14_Si_wt:psp8" "sr:14_Si_wt:upf" "sr:14_Si_wt:psml")
     string(REPLACE ":" ";" echo_test "${echo_test}")
     list(GET echo_test 0 rel)
     list(GET echo_test 1 test_name)
@@ -481,6 +483,9 @@ foreach (echo_test IN ITEMS
         set(input "52_Te")
     elseif (test_name STREQUAL "14_Si_c")
         set(edit "${si_c}")
+        set(input "14_Si")
+    elseif (test_name STREQUAL "14_Si_wt")
+        set(edit "${si_wt}")
         set(input "14_Si")
     endif ()
     oncvpsp_test(echo_${format}_${rel}_${test_name} echo echo_rerun_test.sh

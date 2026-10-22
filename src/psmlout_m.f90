@@ -38,7 +38,7 @@
 &                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
 &                  slack,fcgrid,rcgrid, &
 &                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,upf_mesh, &
-&                  irel,nkap)
+&                  irel,nkap,ep_as_given,well_onset,well_tail_free)
 
 !! writes the pseudopotential to the output in PSML format, between
 !! 'Begin PSML' and 'END_PSP' markers
@@ -107,6 +107,9 @@
 !!                  linear output mesh (echoed when not 0)
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param nkap  number of kappa per l: 1, or 2 for irel=2
+!! @param ep_as_given  whether the well states take ep as given
+!! @param well_onset  onset of the well of the well states, a multiple of rc
+!! @param well_tail_free  whether the well states take the free tail
 !!
 !! Alberto Garcia, February 1, 2015
 
@@ -144,6 +147,8 @@
  real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rxpsh,rlmax
  real(dp), intent(in) :: rcfact,fcgrid(3),rcgrid(3),log_mesh(3)
  real(dp), intent(in) :: slack
+ logical, intent(in) :: ep_as_given,well_tail_free
+ real(dp), intent(in) :: well_onset
  character(len=4), intent(in) :: psfile
 
 !Local variables
@@ -211,7 +216,8 @@
  call echo_input(xf,atsym,zz,nc,nv,iexc,psfile,na,la,fa,lmax,rc0,ep,ncon, &
 &                nbas,qcut,lloc,lpopt,dvloc0,nproj,debl,icmod,fcfact, &
 &                rcfact,slack,fcgrid,rcgrid,epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
-&                ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh)
+&                ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh, &
+&                ep_as_given,well_onset,well_tail_free)
 
  call xml_EndElement(xf,"input-file")
 !
@@ -602,7 +608,8 @@
 &                      ncon,nbas,qcut,lloc,lpopt,dvloc0,nproj,debl,icmod, &
 &                      fcfact,rcfact,slack,fcgrid,rcgrid,epsh1,epsh2,depsh, &
 &                      rxpsh,rlmax,drl, &
-&                      ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh)
+&                      ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh, &
+&                      ep_as_given,well_onset,well_tail_free)
 
 !! echoes the input data into the input-file element of the provenance, a
 !! line at a time, in the form of the psp8 echo (linout), so that it can be
@@ -655,10 +662,12 @@
 !!                  it (else 0)
 !! @param upf_mesh  most points of the log mesh of the UPF file, 0 for the
 !!                  linear output mesh (echoed when not 0)
+!! @param ep_as_given, well_onset, well_tail_free  echoed on the lmax line
+!!                  when one is not its default (lmax_lines)
 
  use xmlf90_wxml, only: xmlf_t, xml_AddPcData
- use input_echo_m, only: atom_lines, icmod_lines, epsh_lines, mesh_lines, &
-&                        echo_len, echo_max
+ use input_echo_m, only: atom_lines, lmax_lines, icmod_lines, epsh_lines, &
+&                        mesh_lines, echo_len, echo_max
  implicit none
 
 !Input variables
@@ -674,6 +683,8 @@
  real(dp), intent(in) :: dvloc0,fcfact,epsh1,epsh2,depsh,rlmax,drl
  real(dp), intent(in) :: rcfact,fcgrid(3),rcgrid(3),rxpsh,log_mesh(3)
  real(dp), intent(in) :: slack
+ logical, intent(in) :: ep_as_given,well_tail_free
+ real(dp), intent(in) :: well_onset
 
 !Input/output variables
  type(xmlf_t), intent(inout) :: xf
@@ -694,11 +705,10 @@
    call add(line)
  end do
 
- call add('#')
- call add('# PSEUDOPOTENTIAL AND OPTIMIZATION')
- call add('# lmax')
- write(line,'(i5)')  lmax
- call add(line)
+ call lmax_lines(lmax,ep_as_given,well_onset,well_tail_free,text,ntext)
+ do ii=1,ntext
+   call add(text(ii))
+ end do
  call add('#')
  call add('#   l,   rc,      ep,       ncon, nbas, qcut')
  do l1=1,lmax+1

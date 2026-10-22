@@ -145,7 +145,7 @@
 &       kk,'of the well state: raise qcut or lower its energy'
    error stop 1
  end if
- wl=(9.0d0*kp+sqrt(81.0d0*kp**2+2.0d0*wbound*dq**2))/(0.5d0*dq**2)
+ wl=(9.0d0*kp+sqrt(81.0d0*kp**2+wbound*dq**2))/(0.5d0*dq**2)
  return
  end subroutine free_tail_width
 

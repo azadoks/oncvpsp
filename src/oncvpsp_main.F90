@@ -58,7 +58,8 @@
  use free_tail_m, only: free_tail_log
  use logmesh_m, only: lm_fh_reach
  use constants_m, only: nlev, nerrlv, well_onset_default
- use input_echo_m, only: write_atom, write_icmod, write_epsh, write_mesh
+ use input_echo_m, only: write_atom, write_lmax, write_icmod, write_epsh, &
+&                        write_mesh
  use relativity_m, only: set_relativity
  implicit none
 
@@ -310,7 +311,8 @@
 &                       epsh1, epsh2, depsh, rxpsh, &
 &                       rlmax, drl, upf_mesh, &
 &                       ncnf, nvcnf, nacnf, lacnf, facnf, &
-&                       amesh_in, rr1_in, rmax_in, c_light_in)
+&                       amesh_in, rr1_in, rmax_in, c_light_in, ep_as_given, &
+&                       well_onset, well_tail_free)
  case(INPUT_TEXT)
    open(newunit=unit, file=input_filename, status='old', action='read', &
 &       iostat=ios)
@@ -329,7 +331,8 @@
 &                       epsh1, epsh2, depsh, rxpsh, &
 &                       rlmax, drl, upf_mesh, &
 &                       ncnf, nvcnf, nacnf, lacnf, facnf, &
-&                       amesh_in, rr1_in, rmax_in, c_light_in)
+&                       amesh_in, rr1_in, rmax_in, c_light_in, ep_as_given, &
+&                       well_onset, well_tail_free)
    close(unit)
 #if (defined WITH_TOML)
  case(INPUT_TOML)
@@ -523,8 +526,7 @@
    end if
  end do
 
- write(6,'(a/a/a)') '#','# PSEUDOPOTENTIAL AND OPTIMIZATION','# lmax'
- write(6,'(i5)')  lmax
+ call write_lmax(lmax,ep_as_given,well_onset,well_tail_free)
  write(6,'(a/a)') '#','#   l,   rc,      ep,       ncon, nbas, qcut'
  do l1=1,lmax+1
    write(6,'(i5,2f10.5,2i5,f10.5)') l1-1,rc(l1),ep(l1,1),ncon(l1),&
@@ -1195,7 +1197,7 @@
 &               fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact0,rcfact, &
 &               slack,fcgrid,rcgrid, &
 &               epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,upf_mesh, &
-&               irel,nkap)
+&               irel,nkap,ep_as_given,well_onset,well_tail_free)
  end if
 
  stop
