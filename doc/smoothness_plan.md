@@ -471,6 +471,8 @@ numbers refer to [Phases](#phases).
   (flagged, `ierr=10`).
 - The bound/scattering branch of the diagnostics at epa = 0.
 - A ghost exists or not (the margin is printed, G5).
+- The π multiple by which run_phsft aligns the pseudo phase to the
+  all-electron one (changes only where they differ by π/2).
 - B or S singular in `run_vkb` (a true pole of the kernel).
 - The hard case of `optimize` (Q-7).
 - The model-core fill type (minimum tail, Martins, none) and Martins
@@ -1497,8 +1499,25 @@ changing it:
       jump (|f| above 1e-6 of the bracket's values at both ends, a
       change of fill type) is reported with the jump, as G5 asks. No
       output changes; no reference input or model-core scan reports one.
-- [ ] C-7, the ghost test's barrier basis without the ionic switch
-- [ ] C-8, ghost_r's hard entry at 0.05 Ha
+- [x] C-7, the ghost test's barrier basis without the ionic switch:
+      confirmed (`vlocpw` alone, while lschvkbb's reference energies
+      use vp, switched to the ionic tail beyond rcmax). The basis now
+      takes vp's difference from `vlocpw` on the nodes, interpolated, as
+      `outwf_setup` does. Basis eigenvalues move by ≤9.8e-6 Ha (73_Ta_r),
+      most by 1e-7 to 1e-6, below the error the wall at 3 rc and the
+      basis cutoff put in the margins (on the matched bound rows 12
+      agree better, 29 slightly worse)
+- [x] C-8, ghost_r's hard entry at 0.05 Ha: states now enter from 0.025
+      Ha above the reference, their ⟨r⟩/rc divided by a C∞ weight that
+      reaches 1 at 0.05 Ha, in the margin and the GHOST(+) test alike
+      (a first try, the weight on 0.05–0.10 Ha, hid 56_Ba's GHOST(+) at
+      0.0588 Ha from the margin while the flag still showed it). States
+      at or above 0.05 Ha are treated as before, so no margin or
+      GHOST(+) of the references changes. The audit's other cases are
+      discrete events: the pairing after a GHOST(−) skip is the ghost
+      event itself, the π·anint alignment of run_phsft can only change
+      where the phases differ by π/2 (a failed log-derivative match),
+      and the basis cut where lschpsbar fails is reported
 - [ ] C-9, der2exc's occupation step 0.15
 - [ ] C-10, eresid's q spacing qmax/(nq − 1), nq an integer
 - [ ] C-11, V_l near the origin by cancellation

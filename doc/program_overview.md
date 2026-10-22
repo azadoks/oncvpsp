@@ -262,8 +262,13 @@ irel, and the stage.  It has the following major sections:
     e_basis`; a basis eigenvalue below min(e_ref - 1e-4, e_ref (1 + 1e-4))
     is a GHOST(-)), and per channel the basis state of least <r>/rc more
     than 0.05 Ha above the reference (`ghost_r l ikap e r`, a GHOST(+)
-    below 1). The ghost tests' basis is the states of the local potential
-    inside a hard wall at exactly 3 rc, each coupled to the projectors with
+    below 1). States from 0.025 Ha above the reference enter with their
+    <r>/rc divided by a weight rising smoothly from 0 there to 1 at
+    0.05 Ha, in the margin and in the GHOST(+) test alike, so that the
+    least does not jump as a state crosses 0.05 Ha. The ghost tests'
+    basis is the states of the local potential (with its switch to the
+    ionic tail beyond rcmax, as in every other solver) inside a hard
+    wall at exactly 3 rc, each coupled to the projectors with
     a weight that falls smoothly (C-infinity) from 1 at 1.25 times the
     kinetic energy of the largest sbf of the optimization to 0 at 1.5
     times that, so these values are smooth functions of the input.

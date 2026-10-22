@@ -71,12 +71,14 @@
 !! @param ghn  their principal quantum numbers
 !! @param ghe  their energies: (1) of the nonlocal Schroedinger equation
 !!             (0 for the vacuum level), (2) of the basis diagonalization
-!! @param ghp  per l, the basis state of least <r>/rc above the reference
-!!             by 0.05 Ha: (1) its energy, (2) <r>/rc; 0 if none
+!! @param ghp  per l, the basis state of least <r>/rc above the reference,
+!!             <r>/rc divided by a weight rising from 0 at 0.025 Ha above
+!!             it to 1 at 0.05 Ha: (1) its energy, (2) that ratio; 0 if none
 
  use constants_m, only: dp, pi, mxstate, mxl, mxlin
  use pieces_m, only: piecewise_t, pw_integral, pw_value, pw_resample, &
-&                    pw_free
+&                    pw_free, pw_node_values
+ use logmesh_m, only: lm_interp
  implicit none
 
 !Input variables
@@ -95,9 +97,9 @@
  integer :: iprj,nprj,nbas,nbmax,lwork,info
  integer :: nodes(mxl+1),lpgh(20)
  real(dp) :: al,amesh,ee,ecut,eps,et,emin,emax,sn,ro,tht
- real(dp) :: rbar,vmin,ebtop,ww
+ real(dp) :: rbar,vmin,ebtop,ww,vs
  real(dp) :: cpgh(20),ebcut(mxlin+1),epgh(20),rpgh(20)
- real(dp), allocatable :: uu(:),up(:),rb(:),vb(:)
+ real(dp), allocatable :: uu(:),up(:),rb(:),vb(:),vsw(:)
  real(dp), allocatable :: gg0(:,:),hmat(:,:),hmev(:),work(:)
  real(dp), allocatable :: uua(:,:)
  type(piecewise_t) :: vkbb(mxprj)
@@ -106,7 +108,15 @@
 ! the largest kinetic energy of the sbf basis to 0 at ebfact times that
  real(dp), parameter :: mbfact=3.0d0,basfact=1.25d0,ebfact=1.5d0
 
- allocate(uu(mmax),up(mmax),rb(mmax),vb(mmax))
+ allocate(uu(mmax),up(mmax),rb(mmax),vb(mmax),vsw(mmax))
+
+! the local potential is vp(:,lloc+1), the pieces vlocpw plus the switch
+! to the ionic tail beyond rcmax (ionic_screening), a smooth function on
+! the nodes that is interpolated, as in outwf_setup; the reference
+! energies of lschvkbb are those of the same potential
+! (doc/numerics_audit.md, C-7)
+ call pw_node_values(rr,mmax,vlocpw,vsw)
+ vsw(:)=vp(:,lloc+1)-vsw(:)
 
  al = 0.01d0 * log(rr(101)/rr(1))
  amesh = exp(al)
@@ -153,7 +163,8 @@
    vmin=0.0d0
    do ii=1,mmax
      if(rb(ii)<=rr(mmax)) then
-       vb(ii)=pw_value(rr,mmax,vlocpw,rb(ii))
+       call lm_interp(rr,vsw,mmax,rb(ii),vs)
+       vb(ii)=pw_value(rr,mmax,vlocpw,rb(ii))+vs
      else
        vb(ii)=vp(mmax,lloc+1)
      end if
@@ -338,17 +349,23 @@
 &              + 28.0d0*(rb(mbar-1)*uu(mbar-1))**2 &
 &              +  9.0d0*(rb(mbar  )*uu(mbar  ))**2)/24.0d0
 
-     if(hmev(jj)>ee+0.05d0) then
-       if(ghp(2,l1)==0.0d0 .or. sn/rc(l1)<ghp(2,l1)) then
-         ghp(:,l1)=[hmev(jj),sn/rc(l1)]
+! the margin: the least <r>/rc over the states above the reference, each
+! divided by a C-infinity weight in its energy, 1 from 0.05 Ha above the
+! reference (the states the test took before) and 0 at 0.025 Ha, so that
+! a state entering does not make the least jump; a GHOST(+) is a state
+! whose ratio is below 1, the margin below 1 (doc/numerics_audit.md, C-8)
+     ww=1.0d0-cinf_taper(hmev(jj),ee+0.025d0,ee+0.05d0)
+     if(ww>0.0d0) then
+       if(ghp(2,l1)==0.0d0 .or. sn/(rc(l1)*ww)<ghp(2,l1)) then
+         ghp(:,l1)=[hmev(jj),sn/(rc(l1)*ww)]
        end if
-     end if
-     if(sn<rc(l1) .and. hmev(jj)>ee+0.05d0 .and. npgh<20) then
-       npgh=npgh+1
-       lpgh(npgh)=ll
-       epgh(npgh)=hmev(jj)
-       rpgh(npgh)=sn/rc(l1)
-       cpgh(npgh)=ecut
+       if(sn<rc(l1)*ww .and. npgh<20) then
+         npgh=npgh+1
+         lpgh(npgh)=ll
+         epgh(npgh)=hmev(jj)
+         rpgh(npgh)=sn/(rc(l1)*ww)
+         cpgh(npgh)=ecut
+       end if
      end if
    end do
 
@@ -368,6 +385,6 @@
    end do
  end if
 
- deallocate(uu,up,rb,vb)
+ deallocate(uu,up,rb,vb,vsw)
  return
  end subroutine run_ghosts
