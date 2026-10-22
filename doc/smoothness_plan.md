@@ -1487,6 +1487,25 @@ from rc:
          safe.
       6. No step adaptivity: a fixed mesh and a fixed operation count
          keep the solution C∞ in E and V.
+      7. With it, the audit's §6c item 2: the AE quadrature (radint,
+         vout's eeel and its AM4 Hartree potential) by `lm_cumint`, whose
+         head must then take a real power (2γ−2 for relativistic s
+         densities; an integer one undoes C-3). Alone it does not pay,
+         measured 2026-10-22 on 14_Si, 07_N, 74_W (sr) and 80_Hg (fr),
+         amesh 1.024 … 1.00075 against 1.00075: the AE total energy
+         converges as al⁴ in both builds, the quadrature is 5–6 % of
+         the error at every mesh, and the ODE is the rest.
+
+         | atom  | build     | 1.024   | 1.012   | 1.006   | 1.003  |
+         |-------|-----------|---------|---------|---------|--------|
+         | 80_Hg | AM4 + 4th | 1.19e-3 | 7.31e-5 | 3.52e-6 | 6.6e-7 |
+         | 80_Hg | lm_cumint | 1.13e-3 | 6.94e-5 | 3.29e-6 | 6.5e-7 |
+         | 74_W  | AM4 + 4th | 8.92e-4 | 5.80e-5 | 3.73e-6 | 7.6e-7 |
+         | 74_W  | lm_cumint | 8.43e-4 | 5.49e-5 | 3.53e-6 | 7.5e-7 |
+
+         14_Si and 07_N reach about 1e-7, where the differences stop
+         falling smoothly, at amesh 1.012; there the quadrature changes
+         etot by 1.4e-6 at 1.024 and by less than 1e-8 at 1.006.
 
 #### Numerics audit (2026-10-22)
 

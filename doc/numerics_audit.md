@@ -2,7 +2,7 @@
 
 The audit covers the working tree at 9c78c3a plus the uncommitted changes: free_tail_m, `eresid`'s new tail argument, `wellprj` in the diagnostics, and `smooth_scan.py`. Another session was editing `free_tail_m.f90` and `doc/smoothness_plan.md` while the audit ran, so line numbers in those files are approximate.
 
-**Status.** C-1 to C-11 are resolved; the status column of §6b gives the commits, and "Numerics audit" in doc/smoothness_plan.md how each was checked and what changed. C-12 to C-18 and §6c are open.
+**Status.** C-1 to C-11 are resolved; the status column of §6b gives the commits, and "Numerics audit" in doc/smoothness_plan.md how each was checked and what changed. C-12 to C-18 and §6c are open; §6c item 2 is deferred to the configurable Adams–Moulton order in doc/smoothness_plan.md, since with the AM4 ODE it removes only 5–6 % of the AE mesh error (measured there).
 
 **Notation**
 - Log mesh: r_i = rr1·amesh^(i−1), x = ln r, h = al = ln amesh. Default: amesh 1.006, rr1 = min(5e-4/Z, 5e-5) (nr and sr) or 5e-4/Z (fr), rmax 45, mmax = int(ln(rmax/rr1)/al).
@@ -205,7 +205,7 @@ Documentation drift found along the way:
 ### 6c. Suggested improvements, roughly by payoff
 
 1. **Fix C-1 and C-2 now.** Both are one-liners and both are real failures.
-2. **Retire the 4th-order legacy quadrature in the AE layer.** Replace radint, vout's Hartree (AM4) and the normalizations with `lm_cumint`/`lm_integral`, with the correct head exponent (2γ−2 for relativistic s states) passed in. V_H then follows from two cumulative integrals, which the 8th-order rule gives directly. This removes C-3 and the two Gregory conventions, and should lift the AE mesh-convergence rate from h⁴ toward h⁸ wherever the ODE is not the limit. Measure with T4.
+2. **Retire the 4th-order legacy quadrature in the AE layer** (deferred: measured, the ODE limits the rate; see the status note). Replace radint, vout's Hartree (AM4) and the normalizations with `lm_cumint`/`lm_integral`, with the correct head exponent (2γ−2 for relativistic s states) passed in. V_H then follows from two cumulative integrals, which the 8th-order rule gives directly. This removes C-3 and the two Gregory conventions, and should lift the AE mesh-convergence rate from h⁴ toward h⁸ wherever the ODE is not the limit. Measure with T4.
 3. **Bring the Dirac solvers to the sr standard:** the series start (the Dirac analogue of `origin_series`, with the screening constant), PECECE, and inward re-integration of the first points (C-4). Then make relatom use `ae_mix`.
 4. **S-10 for the GGA:** ρ′ from the pieces and the 8th-order stencils (`lm_derivs`-style fields) instead of `derivs`. At the same time, decide whether the C² joint should stay C² (D-5).
 5. **Make iteration limits errors everywhere:** zeroin, fmin, gauss_legendre, Nelder–Mead and Newton in modcore3, boxstate, the series term limits, phsft depth, qroots skip. Add a residual check after Brent, as wellstate does, so that a "root" at a jump is caught (C-6, C-15).
