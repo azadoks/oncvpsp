@@ -160,7 +160,8 @@ other `_ps.x`) writes the pseudopotential data file, and
 prints the `ld_r` and `ld` lines of the DIAGNOSTICS block for each l, j
 and radius; one solution per energy serves all the radii. Without `-r`
 (radii) and `-e` (`emin,emax,de`) it uses the input's `rxpsh`, `epsh1`,
-`epsh2` and `depsh`, and reproduces the run's log derivatives. Every
+`epsh2` and `depsh`, and reproduces the run's log derivatives; `-l`
+(`l1,l2,...`) computes only those angular momenta. Every
 executable lists its options with `--help`.
 
 Setting `psfile` to `none` skips writing a pseudopotential file, and

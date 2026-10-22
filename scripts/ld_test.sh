@@ -5,7 +5,7 @@
 # of AE_EXE must then give the log derivatives of FULL_EXE's DIAGNOSTICS
 # block (every number to 1e-10), and the phases of each radius of a list of
 # radii (one inside the core radii, one beyond) must be those of that radius
-# alone (to 1e-12).
+# alone (to 1e-12), and the channels of -l those of every channel.
 #
 # usage: ld_test.sh FULL_EXE AE_EXE LD_EXE INPUT.dat WORKDIR
 # The python is $ONCVPSP_PYTHON, or python3. $ONCVPSP_RUN and
@@ -49,6 +49,7 @@ fi
 "$ld" -a atom.ae -p atom.ps -r 1.0 > r1.out
 "$ld" -a atom.ae -p atom.ps -r 3.5 > r2.out
 "$ld" -a atom.ae -p atom.ps -r 1.0,3.5 > r12.out
+"$ld" -a atom.ae -p atom.ps -r 1.0,3.5 -l 1 > l1.out
 
 "$python" - <<'EOF'
 import sys
@@ -83,4 +84,6 @@ compare(blocks("ld.out"), full, 1e-10, "oncvpsp_ld.x against the run")
 r12 = blocks("r12.out")
 alone = {**blocks("r1.out"), **blocks("r2.out")}
 compare(r12, alone, 1e-12, "two radii against each alone")
+compare(blocks("l1.out"), {k: v for k, v in r12.items() if k[0] == 1}, 0.0,
+        "l = 1 against every l")
 EOF

@@ -25,7 +25,8 @@
 ! DIAGNOSTICS block; each radius adds a block of the same lines:
 !   ld_r l ikap r(bohr)
 !   ld l ikap e(Ha) phase_ae phase_ps
-! for l=0..3 and each kappa of l, ikap 1 for j=l+1/2 and 2 for j=l-1/2.
+! for l=0..3 (or those of --channels) and each kappa of l, ikap 1 for
+! j=l+1/2 and 2 for j=l-1/2.
 
  program oncvpsp_ld
  use constants_m, only: dp
@@ -45,16 +46,20 @@
  character(len=1024) :: ae_filename,ps_filename,arg
  character(len=2) :: atsym
  character(len=19) :: treatment
- integer :: iarg,irel,mmax,nq,npsh,ii,iq,l1,ll,ikap,kap,nvkb,ios,lc
+ integer :: iarg,irel,mmax,nq,npsh,ii,iq,l1,ll,ikap,kap,nvkb,ios,lc,nl
+ integer :: lsel(4)
  real(dp) :: zz,c_light_f,epsh1,epsh2,depsh,amesh,rq(mxq),ee(3)
  real(dp), allocatable :: rr(:),vfull(:),pshae(:,:),pshps(:,:),rql(:)
  logical :: given_radii,given_energies
+!> the angular momenta whose log derivatives are computed
+ logical :: chan(0:3)
  type(ps_file_t) :: pf
 
  ae_filename=''
  ps_filename=''
  given_radii=.false.
  given_energies=.false.
+ chan(:)=.true.
  nq=0
  iarg=1
  do while(iarg<=command_argument_count())
@@ -84,6 +89,21 @@
        error stop 1
      end if
      given_radii=.true.
+   case('-l','--channels')
+     call next_arg(arg)
+     nl=min(count_list(arg),size(lsel)+1)
+     lsel(:)=-1
+     ios=1
+     if(nl<=size(lsel)) read(arg,*,iostat=ios) lsel(1:nl)
+     if(ios/=0) lsel(1)=-1
+     if(any(lsel(1:min(nl,size(lsel)))<0) &
+&       .or. any(lsel(1:min(nl,size(lsel)))>3)) then
+       write(6,'(2a)') 'oncvpsp_ld: ERROR --channels must be values ', &
+&            'of l from 0 to 3 separated by commas'
+       error stop 1
+     end if
+     chan(:)=.false.
+     chan(lsel(1:nl))=.true.
    case('-e','--energies')
      call next_arg(arg)
      read(arg,*,iostat=ios) ee(1:3)
@@ -146,6 +166,7 @@
  write(6,'(a)') '# ld l ikap e(Ha) atan(r*u''/u)_ae atan(r*u''/u)_ps'
  do l1=1,4
    ll=l1-1
+   if(.not. chan(ll)) cycle
 !the input's radius of l, as run_phsft
    if(.not. given_radii) then
      nq=1
@@ -193,10 +214,11 @@
  write(6,'(a)') 'atom, atan(r u''/u - 1) at radii r over a grid of energies, as'
  write(6,'(a)') 'continuous phases (the pseudopotential''s aligned with the'
  write(6,'(a)') 'all-electron ones at the reference energy of each l), for'
- write(6,'(a)') 'l = 0..3 and, fully relativistic, each j. All the radii come'
- write(6,'(a)') 'from one solution per energy. Without -r or -e it prints'
- write(6,'(a)') 'the log derivatives of the run''s DIAGNOSTICS block. The'
- write(6,'(a)') 'output, on stdout, is a block per l, j and radius:'
+ write(6,'(a)') 'l = 0..3 (or those of -l) and, fully relativistic, each j.'
+ write(6,'(a)') 'All the radii come from one solution per energy. Without'
+ write(6,'(a)') '-r, -l or -e it prints the log derivatives of the run''s'
+ write(6,'(a)') 'DIAGNOSTICS block. The output, on stdout, is a block per'
+ write(6,'(a)') 'l, j and radius:'
  write(6,'(a)') '  ld_r l ikap r(bohr)'
  write(6,'(a)') '  ld l ikap e(Ha) phase_ae phase_ps'
  write(6,'(a)') 'ikap 1 for j = l+1/2 (and every l if not fully relativistic),'
@@ -217,6 +239,10 @@
  write(6,'(a)') '      The radii (bohr), each for every l; inside the core'
  write(6,'(a)') '      radii too. Default the input''s rxpsh, or for rxpsh < 0'
  write(6,'(a)') '      rc(l)*amesh**2 (rc of the local potential above lmax)'
+ write(6,'(a)') '  -l, --channels L1,L2,...'
+ write(6,'(a)') '      The angular momenta, from 0 to 3, whose log'
+ write(6,'(a)') '      derivatives are computed (both j of each when fully'
+ write(6,'(a)') '      relativistic). Default all four'
  write(6,'(a)') '  -e, --energies EMIN,EMAX,DE'
  write(6,'(a)') '      The energies (Ha), from EMAX down by DE to above EMIN.'
  write(6,'(a)') '      Default the input''s epsh1,epsh2,depsh'
