@@ -67,6 +67,7 @@ set(src_oncvpsp
     sbf_overlap.f90
     scatterstate.f90
     sr_flux_m.f90
+    dirac_m.f90
     sbf_q_m.f90
     phsft_m.f90
     pieces_m.f90

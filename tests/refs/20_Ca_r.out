@@ -79,11 +79,11 @@ Reference configufation results
   all-electron total energy (Ha)   -6.78693565D+02
   residual of the screening potential (Ha)  1.94E-12
   energy terms (Ha)
-    total                      -678.6935650216
-    kinetic                     683.5980966567
-    electron-nucleus          -1614.3423377977
-    Hartree                     286.3640533154
-    exchange-correlation        -34.3133771960
+    total                      -678.6935650282
+    kinetic                     683.5980969453
+    electron-nucleus          -1614.3423381005
+    Hartree                     286.3640533239
+    exchange-correlation        -34.3133771969
 
 Begin loop to  construct optimized pseudo wave functions
 and semi-local pseudopoentials for all angular momenta
@@ -537,7 +537,7 @@ Test configuration 0
 
     Total energies and differences
       AE_ref= -6.78693565E+02  AE_tst= -6.78693565E+02  dif=  0.00E+00
-      PS_ref= -3.67361257E+01  PS_tst= -3.67361257E+01  dif= -7.11E-15
+      PS_ref= -3.67361257E+01  PS_tst= -3.67361257E+01  dif=  2.84E-14
       PSP excitation error= -2.84E-14
 
 Test configuration 1

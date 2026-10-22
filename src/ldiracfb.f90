@@ -41,6 +41,7 @@
  use constants_m, only: dp
  use relativity_m, only: c_light
  use match_m, only: match_k, match_point, match_weights
+ use dirac_m, only: dirac_outward
  implicit none
 
 !Input variables
@@ -230,6 +231,10 @@
          fu(ii-1)=fu(ii)+aii(fup,ii)
          gu(ii-1)=gu(ii)+aii(gup,ii)
        end do
+       fup(ii-1)= al*rr(ii-1)*(kap*fu(ii-1)/rr(ii-1) &
+&               - cci*(ee - vv(ii-1))*gu(ii-1))
+       gup(ii-1)= al*rr(ii-1)*(-kap*gu(ii-1)/rr(ii-1) &
+&               + cci*(2.0d0*cc**2 + ee - vv(ii-1))*fu(ii-1))
      end do
 
 ! perturbation theory for the energy shift based on the large component
@@ -319,43 +324,12 @@
  subroutine outward(mlast,nnode)
 
 !! outward integration from the series at the origin to mlast, at the
-!! energy ee, counting the nodes of the large component
+!! energy ee, counting the nodes of the large component (dirac_m)
 
  integer, intent(in) :: mlast
  integer, intent(out) :: nnode
 
-! start wavefunctions with series
- do ii=1,5
-   gu(ii)=rr(ii)**gam
-   fu(ii)=cof*gu(ii)
-
-   fup(ii)= al*rr(ii)*(kap*fu(ii)/rr(ii) &
-&           + cci*(vv(ii) - ee)*gu(ii))
-
-   gup(ii)= al*rr(ii)*(-kap*gu(ii)/rr(ii) &
-&           + cci*(2.0d0*cc**2 + ee - vv(ii))*fu(ii))
- end do
-
-! outward integration using predictor once, corrector
-! twice
- nnode=0
- do ii=5,mlast-1
-
-   fu(ii+1)=fu(ii)+aeo(fup,ii)
-   gu(ii+1)=gu(ii)+aeo(gup,ii)
-
-   do kk=1,2
-     fup(ii+1)= al*rr(ii+1)*(kap*fu(ii+1)/rr(ii+1) &
-&             - cci*(ee - vv(ii+1))*gu(ii+1))
-
-     gup(ii+1)= al*rr(ii+1)*(-kap*gu(ii+1)/rr(ii+1) &
-&             + cci*(2.0d0*cc**2 + ee - vv(ii+1))*fu(ii+1))
-
-     fu(ii+1)=fu(ii)+aio(fup,ii)
-     gu(ii+1)=gu(ii)+aio(gup,ii)
-   end do
-   if(gu(ii+1)*gu(ii) <= 0.0d0) nnode=nnode+1
- end do
+ call dirac_outward(ll,kap,ee,zz,al,rr,vv,mmax,mlast,gu,fu,gup,fup,nnode)
 
  return
  end subroutine outward

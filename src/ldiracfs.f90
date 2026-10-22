@@ -37,6 +37,7 @@
 
  use constants_m, only: dp
  use relativity_m, only: c_light
+ use dirac_m, only: dirac_outward
  implicit none
 
 !Input variables
@@ -62,7 +63,7 @@
  real(dp) :: ro,sc
  real(dp) :: sls,sn,cn,uout,upout,xkap
  real(dp) :: amesh,al,als
- integer :: ii,kk,nint,nin,node
+ integer :: ii,nint,nin,node
 
  cc=c_light
  cci=1.0d0/cc
@@ -96,37 +97,8 @@
 
  cof=(kap+gam)*(cc/zz)
 
-! start wavefunctions with series
- do ii=1,5
-   gu(ii)=rr(ii)**gam
-   fu(ii)=cof*gu(ii)
-
-   fup(ii)= al*rr(ii)*(kap*fu(ii)/rr(ii) &
-&         + cci*(vv(ii) - ee)*gu(ii))
-
-   gup(ii)= al*rr(ii)*(-kap*gu(ii)/rr(ii) &
-&           + cci*(2.0d0*cc**2 + ee - vv(ii))*fu(ii))
- end do
-
-! outward integration using predictor once, corrector
-! twice
- do ii=5,mch-1
-
-   fu(ii+1)=fu(ii)+aeo(fup,ii)
-   gu(ii+1)=gu(ii)+aeo(gup,ii)
-
-   do kk=1,2
-     fup(ii+1)= al*rr(ii+1)*(kap*fu(ii+1)/rr(ii+1) &
-&             - cci*(ee - vv(ii+1))*gu(ii+1))
-
-     gup(ii+1)= al*rr(ii+1)*(-kap*gu(ii+1)/rr(ii+1) &
-&             + cci*(2.0d0*cc**2 + ee - vv(ii+1))*fu(ii+1))
-
-     fu(ii+1)=fu(ii)+aio(fup,ii)
-     gu(ii+1)=gu(ii)+aio(gup,ii)
-   end do
-   if(gu(ii+1)*gu(ii) <= 0.0d0) node=node+1
- end do
+! outward from the series at the origin (dirac_m)
+ call dirac_outward(ll,kap,ee,zz,al,rr,vv,mmax,mch,gu,fu,gup,fup,node)
 
  uout=gu(mch)
  upout=gup(mch)
@@ -175,9 +147,5 @@
  deallocate(gu,fu,gup,fup)
  deallocate(cf)
  return
-
- contains
-
- include 'adams.inc'
 
  end subroutine ldiracfs

@@ -1436,6 +1436,64 @@ from rc:
       block; budget slack·Ecut_w (times −fcfact if fcfact < 0), qlo from
       Ecut_w. pyoncvpsp's `ModelCoreChargeInput` gets the field and its
       dat and TOML writers
+- [ ] Diagnostics asked for by the oncvpsp-opt session (2026-10-22), as
+      transferability proxies for the optimizer's guardrails; opt-in or
+      additive DIAGNOSTICS output, none approved yet, in its order:
+      1. Longer, denser Ecut tables: levels down to 1e-6 and 1e-7, or
+         the whole E^r(Ecut) curve every 1–2 Ha to E^r < 1e-7.
+      2. A Fourier convergence table for V_loc (its residual, or that of
+         its energy, against Ecut).
+      3. Projector conditioning per channel: the condition number of B,
+         the KB energies, the largest projector coefficient.
+      4. Test configurations in DIAGNOSTICS, machine-readable: AE − PS
+         total-energy difference against the reference configuration,
+         and the eigenvalue errors.
+      5. Log derivatives at a second radius (optional rxpsh2) or over a
+         wider energy range.
+      6. Model-core extent: where the model core and the AE core fall
+         below 1e-2 and 1e-4 of their value at rc; optionally its
+         minimum and the r of its maximum (a hollow core).
+      7. (Lower priority, larger) AE against PS in a confined atom
+         (harmonic or soft wall, a few strengths): eigenvalue and energy
+         shifts, a stand-in for compression.
+
+#### Numerics audit (2026-10-22)
+
+`doc/numerics_audit.md` (a peer session's audit of the branch at
+9c78c3a; kept out of the repository by its author) ranks 18 findings.
+C-1 to C-11 are resolved here, each checked against the code before
+changing it:
+
+- [x] C-1, psatom's occupation ramp (fa0b95e). fat1 + 1·(fat2 − fat1)
+      need not round to fat2, and the convergence test compared the two
+      exactly: a test configuration 2 → 0.1 was dropped. Confirmed by a
+      run; the occupations are fat2 itself from the 50th iteration; test
+      `occupation_ramp_sr_14_Si`.
+- [x] C-2, aeatom's ierr not tested for the reference configuration
+      (fa0b95e): now an error. The audit's other half, ae_converged's
+      stop on a residual stalled below 1e-9, is kept: it is a
+      convergence test at the floor of the residual, with a warning,
+      not an iteration limit.
+- [x] C-3, the head below rr(1) of the AE energy integrals (260d2af):
+      the density's power through its first two nodes added to the
+      nominal one (`lm_head`). Hg's kinetic energy no longer depends on
+      rr(1) (22675.6866 → 22675.7192 at the default mesh, 22675.7193 at
+      rr1 → 0); the energy terms of heavy atoms move by up to 0.049 Ha,
+      totals by ≤3.3e-7 Ha, kernels not at all.
+- [x] C-4, the Dirac solvers' start: r^γ alone at five points, and
+      PECEC. `dirac_m` (shared by ldiracfb, ldiracfs) starts from the
+      series at the origin for −Z/r + d, integrates PECECE and the first
+      points again inward, as `sr_flux_m`; ldiracfb's inward integration
+      is PECECE too. Hg's total energy at its default mesh was 8.4e-6 Ha
+      from its rr1 → 0 value, now 6e-7; fr outputs only: totals ≤7.9e-6
+      Ha, AE eigenvalues ≤1.3e-6 relative 1.2e-8, kernels ≤1e-7.
+- [x] C-5, the free tail's width: fixed in d603e40
+- [ ] C-6, modcore_budget's silent limits and roots at a jump
+- [ ] C-7, the ghost test's barrier basis without the ionic switch
+- [ ] C-8, ghost_r's hard entry at 0.05 Ha
+- [ ] C-9, der2exc's occupation step 0.15
+- [ ] C-10, eresid's q spacing qmax/(nq − 1), nq an integer
+- [ ] C-11, V_l near the origin by cancellation
 
 ### Decisions
 

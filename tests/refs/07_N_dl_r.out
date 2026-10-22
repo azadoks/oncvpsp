@@ -73,10 +73,10 @@ Reference configufation results
   all-electron total energy (Ha)   -5.40539089D+01
   residual of the screening potential (Ha)  4.48E-12
   energy terms (Ha)
-    total                       -54.0539089145
-    kinetic                      53.8220726373
-    electron-nucleus           -127.5438638489
-    Hartree                      25.8093384404
+    total                       -54.0539089142
+    kinetic                      53.8220726614
+    electron-nucleus           -127.5438638730
+    Hartree                      25.8093384407
     exchange-correlation         -6.1414561433
 
 Begin loop to  construct optimized pseudo wave functions
@@ -445,7 +445,7 @@ Test configuration 0
 
     Total energies and differences
       AE_ref= -5.40539089E+01  AE_tst= -5.40539089E+01  dif=  0.00E+00
-      PS_ref= -9.59575406E+00  PS_tst= -9.59575406E+00  dif=  0.00E+00
+      PS_ref= -9.59575406E+00  PS_tst= -9.59575406E+00  dif= -7.11E-15
       PSP excitation error=  0.00E+00
 
 Test configuration 1
@@ -458,7 +458,7 @@ Test configuration 1
 
     Total energies and differences
       AE_ref= -5.40539089E+01  AE_tst= -5.35492794E+01  dif=  5.05E-01
-      PS_ref= -9.59575406E+00  PS_tst= -9.09236840E+00  dif=  5.03E-01
+      PS_ref= -9.59575406E+00  PS_tst= -9.09236841E+00  dif=  5.03E-01
       PSP excitation error=  1.24E-03
 
 Test configuration 2
