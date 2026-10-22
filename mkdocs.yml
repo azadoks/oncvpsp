@@ -25,6 +25,7 @@ nav:
     - Coding Standard Violations: coding_standard_violations.md
     - Merging sr and fr: fr_merge_plan.md
     - Library and wrappers: library_plan.md
+    - Test suite speed: test_suite_speed.md
     - Release Notes: release_notes.md
 
 theme:
