@@ -1313,7 +1313,9 @@
    write(6,'(a)') '  -a, --ae-file FILE'
    write(6,'(3a)') '      Read the all-electron data file FILE, written by ', &
 &                  trim(full),'_ae.x'
-   write(6,'(a)') '      for the same atom, configurations and mesh (required)'
+   write(6,'(a)') '      for the same atom, reference configuration and mesh'
+   write(6,'(a)') '      (required); the input''s test configurations must'
+   write(6,'(a)') '      be among those the file was written for'
  end if
  if(istage/=1) then
    write(6,'(a)') '  -p, --ps-file FILE'
