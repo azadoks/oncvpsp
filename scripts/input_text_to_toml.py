@@ -670,6 +670,11 @@ class OncvpspInput:
     test_configurations: list[list[StateConfiguration]]
     log_mesh: LogMeshConfiguration | None = None
     c_light: float | None = None
+    "The optional values of the lmax line, at their defaults when absent"
+    ep_as_given: bool = False
+    well_onset: float | None = None
+    well_tail: str = "well"
+    wave_regularization: float = 0.0
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, OncvpspInput):
@@ -716,6 +721,15 @@ class OncvpspInput:
         if self.lmax != other.lmax:
             logging.debug("lmax differs: %d != %d", self.lmax, other.lmax)
             return False
+        for name in ("ep_as_given", "well_onset", "well_tail", "wave_regularization"):
+            if getattr(self, name) != getattr(other, name):
+                logging.debug(
+                    "%s differs: %s != %s",
+                    name,
+                    getattr(self, name),
+                    getattr(other, name),
+                )
+                return False
         if len(self.pseudopotentials) != len(other.pseudopotentials):
             logging.debug(
                 "pseudopotentials length differs: %d != %d",
@@ -853,7 +867,15 @@ class OncvpspInput:
             StateConfiguration.from_str(next(lines)) for _ in range(nc + nv)
         ]
 
-        lmax = int(next(lines))
+        # lmax, and optionally ep_as_given (0 or 1), well_onset (0 or less for
+        # the default), well_tail (0 for "well", 1 for "free") and
+        # wave_regularization
+        words = next(lines).split()
+        lmax = int(words[0])
+        ep_as_given = len(words) > 1 and int(words[1]) == 1
+        well_onset = fort_float(words[2]) if len(words) > 2 else 0.0
+        well_tail = "free" if len(words) > 3 and int(words[3]) == 1 else "well"
+        wave_regularization = fort_float(words[4]) if len(words) > 4 else 0.0
 
         pseudopotentials = [
             PseudopotentialConfiguration.from_str(next(lines)) for _ in range(lmax + 1)
@@ -902,6 +924,10 @@ class OncvpspInput:
             test_configurations,
             log_mesh,
             c_light,
+            ep_as_given,
+            well_onset if well_onset > 0 else None,
+            well_tail,
+            wave_regularization,
         )
 
     @classmethod
@@ -996,6 +1022,10 @@ class OncvpspInput:
                 else None
             ),
             c_light=d["oncvpsp"].get("c_light"),
+            ep_as_given=d["pseudopotentials"].get("ep_as_given", False),
+            well_onset=d["pseudopotentials"].get("well_onset"),
+            well_tail=d["pseudopotentials"].get("well_tail", "well"),
+            wave_regularization=d["pseudopotentials"].get("wave_regularization", 0.0),
         )
 
     def to_dict(self) -> dict[str, ty.Any]:
@@ -1073,6 +1103,14 @@ class OncvpspInput:
                 for cfg in self.test_configurations
             ],
         }
+        if self.ep_as_given:
+            d["pseudopotentials"]["ep_as_given"] = True
+        if self.well_onset is not None:
+            d["pseudopotentials"]["well_onset"] = self.well_onset
+        if self.well_tail != "well":
+            d["pseudopotentials"]["well_tail"] = self.well_tail
+        if self.wave_regularization != 0.0:
+            d["pseudopotentials"]["wave_regularization"] = self.wave_regularization
         if self.linear_mesh.upf_mesh != 0:
             d["pp_output"]["upf_mesh"] = self.linear_mesh.upf_mesh
         if self.log_mesh is not None:
