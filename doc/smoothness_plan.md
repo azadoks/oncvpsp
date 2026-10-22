@@ -1491,7 +1491,7 @@ from rc:
 #### Numerics audit (2026-10-22)
 
 `doc/numerics_audit.md` (a peer session's audit of the branch at
-9c78c3a; kept out of the repository by its author) ranks 18 findings.
+9c78c3a) ranks 18 findings.
 C-1 to C-11 are resolved here, each checked against the code before
 changing it:
 
