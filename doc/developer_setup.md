@@ -119,6 +119,30 @@ oncvpsp processes per row, `ONCVPSP_SMOOTH_JOBS` of them at once (default
 row in the dev loop, configure with `-DONCVPSP_SMOOTH_JOBS=<cores>` (and
 run `ctest -j <cores>`).
 
+### Coverage
+
+The `coverage` preset (`build-cov/`, `-O0 --coverage`) and
+`scripts/coverage.py` measure which lines and branches of `src/` each test
+runs, so that the choice of inputs and tests can be checked after any
+change:
+
+```bash
+cmake --preset coverage && cmake --build --preset coverage --parallel
+scripts/coverage.py run build-cov build-cov/cov -LE "smooth|nist"
+scripts/coverage.py report build-cov/cov --compare build-cov/cov-before \
+    --uncovered --cover
+```
+
+`run` runs the selected tests (`-L`, `-LE`, `-R` as for ctest), the
+fixtures first, each with its own `GCOV_PREFIX`, and writes `cov.json` (2.5
+min on 28 cores without smooth and nist).
+`report` prints the coverage in total and per file; `--compare` the lines
+and branches a run of an earlier tree covered and this one does not (and the
+tests that covered them); `--uncovered` the lines no test runs; `--cover`
+the fewest inputs, then the cheapest tests on them, that keep the coverage of
+each kind of test (reference, TOML, echo, split, ...); a test that reads a
+fixture's run (a reference test) is given the fixture's coverage.
+
 ### The Python of the comparisons
 
 The tests that compare outputs (`scripts/compare_output.py`, below) need a

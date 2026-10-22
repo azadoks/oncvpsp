@@ -61,10 +61,14 @@ rerun when the all-electron or solver numerics change.
        channel, or the core on the psp8 file's core only, had not moved:
        52_Te keeps rc[1] for the linear meshes, and the psp8 file's V_loc
        is left out of the core rows.
-4. [ ] Commit the coverage tooling: a `coverage` preset in
-       `CMakePresets.json` and a script that writes the coverage map and
-       the covering-set report, so that both can be redone after any
-       change.
+4. [x] Commit the coverage tooling: the `coverage` preset (`build-cov/`)
+       and `scripts/coverage.py` (`run`: each test with its own counters,
+       the fixtures first; `report`: totals per file, `--compare` with an
+       earlier run, `--uncovered`, and `--cover`, the fewest inputs and tests
+       that keep the coverage of each kind of test). It reproduces the
+       measure of item 2 (8713 lines, 9803 branches; 2.5 min on 28 cores)
+       and its cover the 28 inputs of the suite (73_Ta is the users guide's
+       example).
 5. [ ] Run the suite once in the Debug build (`-fcheck=all`, floating-point
        traps), which it has not been, to find out-of-bounds accesses and
        invalid operations that `-O2` hides.
