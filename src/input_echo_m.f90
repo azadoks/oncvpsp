@@ -79,24 +79,27 @@
  return
  end subroutine atom_lines
 
- subroutine lmax_lines(lmax,ep_as_given,well_onset,well_tail_free,text, &
+ subroutine lmax_lines(lmax,ep_as_given,well_onset,well_tail_free,wreg,text, &
 &                      ntext)
 
 !! the head of the PSEUDOPOTENTIAL AND OPTIMIZATION section, to the lmax
 !! line: ep_as_given (0 or 1), well_onset (0 for the default) and
 !! well_tail (0 for "well", 1 for "free") are written after lmax only when
-!! one of them is not its default
+!! one of them is not its default, and wave_regularization after them
+!! only when it is not 0
 !!
 !! @param lmax  maximum angular momentum
 !! @param ep_as_given  whether the well states take ep as given
 !! @param well_onset  onset of the well as a multiple of rc
 !! @param well_tail_free  whether the well states take the free tail
+!! @param wreg  the regularization of the pseudo-wave optimization
 !! @param text  the lines of the section
 !! @param ntext  number of lines
 
 !Input variables
  integer, intent(in) :: lmax
  logical, intent(in) :: ep_as_given,well_tail_free
+ real(dp), intent(in) :: wreg
  real(dp), intent(in) :: well_onset
 
 !Output variables
@@ -108,10 +111,14 @@
 
  text(1)='#'
  text(2)='# PSEUDOPOTENTIAL AND OPTIMIZATION'
- if(ep_as_given .or. well_tail_free .or. well_onset/=well_onset_default) &
-& then
-   onset=0.0d0
-   if(well_onset/=well_onset_default) onset=well_onset
+ onset=0.0d0
+ if(well_onset/=well_onset_default) onset=well_onset
+ if(wreg/=0.0d0) then
+   text(3)='# lmax, ep_as_given, well_onset, well_tail, wave_regularization'
+   write(text(4),'(i5,i5,es24.16,i5,es24.16)') lmax, &
+&        merge(1,0,ep_as_given),onset,merge(1,0,well_tail_free),wreg
+ else if(ep_as_given .or. well_tail_free .or. &
+&        well_onset/=well_onset_default) then
    text(3)='# lmax, ep_as_given, well_onset, well_tail'
    write(text(4),'(i5,i5,es24.16,i5)') lmax,merge(1,0,ep_as_given), &
 &        onset,merge(1,0,well_tail_free)
@@ -279,7 +286,7 @@
  return
  end subroutine write_atom
 
- subroutine write_lmax(lmax,ep_as_given,well_onset,well_tail_free)
+ subroutine write_lmax(lmax,ep_as_given,well_onset,well_tail_free,wreg)
 
 !! writes the head of the PSEUDOPOTENTIAL AND OPTIMIZATION section, to the
 !! lmax line, to unit 6
@@ -288,17 +295,19 @@
 !! @param ep_as_given  whether the well states take ep as given
 !! @param well_onset  onset of the well as a multiple of rc
 !! @param well_tail_free  whether the well states take the free tail
+!! @param wreg  the regularization of the pseudo-wave optimization
 
 !Input variables
  integer, intent(in) :: lmax
  logical, intent(in) :: ep_as_given,well_tail_free
+ real(dp), intent(in) :: wreg
  real(dp), intent(in) :: well_onset
 
 !Local variables
  character(len=echo_len) :: text(echo_max)
  integer :: ii,ntext
 
- call lmax_lines(lmax,ep_as_given,well_onset,well_tail_free,text,ntext)
+ call lmax_lines(lmax,ep_as_given,well_onset,well_tail_free,wreg,text,ntext)
  write(6,'(a)') (trim(text(ii)),ii=1,ntext)
 
  return
@@ -379,7 +388,7 @@
 
  subroutine write_input_echo(nkap,iformat,atsym,zz,nc,nv,iexc,psfile, &
 &                            na,la,fa,lmax,rc0,ep,ncon,nbas,qcut,ep_as_given, &
-&                            well_onset,well_tail_free,lloc,lpopt,dvloc0, &
+&                            well_onset,well_tail_free,wreg,lloc,lpopt,dvloc0, &
 &                            nproj,debl, &
 &                            icmod,fcfact,rcfact,slack,budget_weighted, &
 &                            fcgrid,rcgrid, &
@@ -409,6 +418,7 @@
  logical, intent(in) :: ep_as_given
  real(dp), intent(in) :: well_onset
  logical, intent(in) :: well_tail_free
+ real(dp), intent(in) :: wreg
  real(dp), intent(in) :: debl(mxlin+1)
  real(dp), intent(in) :: facnf(mxstate,mxcnf)
  real(dp), intent(in) :: fcgrid(3),rcgrid(3),log_mesh(3)
@@ -431,7 +441,7 @@
    write(6,'(2i5,f8.2)') na(ii),la(ii),fa(ii)
  end do
 
- call lmax_lines(lmax,ep_as_given,well_onset,well_tail_free,text,ntext)
+ call lmax_lines(lmax,ep_as_given,well_onset,well_tail_free,wreg,text,ntext)
  write(6,'(a)') (trim(text(ii)),ii=1,ntext)
  if(nkap==2) then
    write(6,'(a/a)') '#','#   l,   rc,     ep,   ncon, nbas, qcut'

@@ -287,6 +287,8 @@ set(oncvpspsr_tests
     "14_Si_bcw"     # icmod=6 with the weighted cutoff of the waves (modcore_budget_table)
     "07_N_opt"      # the optimizer's setup (oncvpsp-opt): PBE (Libxc), icmod 6, rxpsh, its own
                     # log mesh, where the AE SCF stops on its residual's floor (ae_converged)
+    "07_N_flat"     # the same at qcut[0] = 22, where E_resid(qcut) is flat to round-off and the
+                    # wave had a node: wave_regularization 1e-8 (optimize)
 )
 foreach (test_name IN LISTS oncvpspsr_tests)
     oncvpsp_test(${test_name} sr ref_test.sh
@@ -447,7 +449,7 @@ if (ONCVPSP_WITH_TOML)
     set(toml_tests
         "sr:03_Li" "sr:07_N_dl" "sr:07_N_opt" "sr:08_O" "sr:08_O_wigner" "sr:14_Si_bc" "sr:14_Si_bca"
         "sr:14_Si_bcw" "sr:20_Ca" "sr:32_Ge" "sr:34_Se" "sr:38_Sr_lxc" "sr:40_Zr" "sr:40_Zr_grid"
-        "sr:60_Nd_GHOST" "sr:79_Au_lxc"
+        "sr:60_Nd_GHOST" "sr:79_Au_lxc" "sr:07_N_flat"
         "r:07_N_dl" "r:14_Si_bc" "r:14_Si_hm" "r:20_Ca" "r:40_Zr_grid" "r:60_Nd_GHOST" "r:79_Au_lxc"
         "nr:14_Si")
     foreach (toml_test IN LISTS toml_tests)
@@ -469,10 +471,11 @@ if (ONCVPSP_WITH_TOML)
             "integer_for_real" "extra_keys" "icmod6_default_rcfact"
             "icmod6_default_slack" "well_onset_range" "well_onset_default"
             "well_tail_value" "well_tail_default" "budget_cutoff_value"
-            "budget_cutoff_default")
+            "budget_cutoff_default" "wave_regularization_value"
+            "wave_regularization_default")
         oncvpsp_test(toml_input_${case} toml toml_error_test.sh
             $<TARGET_FILE:oncvpspsr> "${data}" ${case} "${CMAKE_CURRENT_BINARY_DIR}/toml_input_${case}")
-        if (case MATCHES "^(integer_for_real|extra_keys|icmod6_default_rcfact|icmod6_default_slack|well_onset_default|well_tail_default|budget_cutoff_default)$")
+        if (case MATCHES "^(integer_for_real|extra_keys|icmod6_default_rcfact|icmod6_default_slack|well_onset_default|well_tail_default|budget_cutoff_default|wave_regularization_default)$")
             oncvpsp_compares(toml_input_${case})
         endif ()
     endforeach ()
@@ -523,15 +526,16 @@ endforeach ()
 # same output (see scripts/echo_rerun_test.sh). The inputs cover rxpsh (14_Si_lder), icmod=4 with its
 # search grid (40_Zr_grid), icmod=7 with slack (14_Si_hm), a Libxc iexc (83_Bi), rc on the grid
 # (03_Li), iexc=7 with c_light on the first line (14_Si_c), ep_as_given, well_onset and well_tail =
-# "free" on the lmax line (14_Si_wt), and budget_cutoff on the icmod line (14_Si_bcw); each in sr
-# or fr, the fr ones on inputs that run in seconds.
+# "free" on the lmax line (14_Si_wt), budget_cutoff on the icmod line (14_Si_bcw) and
+# wave_regularization on the lmax line (07_N_flat); each in sr or fr, the fr ones on inputs that run
+# in seconds.
 set(si_c "s/^    Si  14     3   2   3   psp8$/    Si  14     3   2   7   psp8  137.0359895/")
 set(si_wt "14s/^    2$/    2    1    1.2    1/")
 foreach (echo_test IN ITEMS
         "sr:14_Si_lder:psp8" "sr:40_Zr_grid:psp8" "sr:40_Zr_grid:upf"
         "sr:83_Bi:psml" "sr:03_Li:psml" "nr:14_Si:psml" "sr:14_Si_hm:psp8"
         "r:40_Zr_grid:psml" "r:14_Si_lder:psp8" "r:14_Si_c:upf" "r:14_Si_c:psml" "sr:14_Si_c:psp8"
-        "sr:14_Si_wt:upf" "sr:14_Si_bcw:psml" "r:14_Si_bcw:psp8")
+        "sr:14_Si_wt:upf" "sr:14_Si_bcw:psml" "r:14_Si_bcw:psp8" "sr:07_N_flat:upf")
     string(REPLACE ":" ";" echo_test "${echo_test}")
     list(GET echo_test 0 rel)
     list(GET echo_test 1 test_name)
@@ -607,6 +611,10 @@ oncvpsp_test(error_budget_cutoff_value errors error_test.sh
     $<TARGET_FILE:oncvpspsr> "Read ERROR, input data file line  34"
     "${CMAKE_CURRENT_BINARY_DIR}/error_budget_cutoff_value"
     "${data}/14_Si_bcw.dat" "s/^   6   0   1\\.0e-4   1\\.0   1$/   6   0   1.0e-4   1.0   2/")
+oncvpsp_test(error_wave_regularization_value errors error_test.sh
+    $<TARGET_FILE:oncvpspsr> "Read ERROR, input data file line  12"
+    "${CMAKE_CURRENT_BINARY_DIR}/error_wave_regularization_value"
+    "${data}/07_N_flat.dat" "s/      1e-08$/      -1e-08/")
 oncvpsp_test(error_iexc5_r2scan errors error_test.sh
     $<TARGET_FILE:oncvpspsr> "test_data: iexc=5 is r2SCAN, METAPSP only"
     "${CMAKE_CURRENT_BINARY_DIR}/error_iexc5_r2scan"

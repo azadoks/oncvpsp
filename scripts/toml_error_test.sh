@@ -140,6 +140,14 @@ case $case in
         base=$data/toml/14_Si_bca.toml
         set_key model_core_charge rcfact 'rcfact = 1.0e-4\nbudget_cutoff = "max"' \
             < "$base" > in.toml ;;
+    wave_regularization_value)
+        set_key pseudopotentials qcut 'qcut = [ 5.0, 5.0, 5.0,]\nwave_regularization = -1e-8' \
+            < "$base" > in.toml
+        expect='wave_regularization in [pseudopotentials] must be at least 0' ;;
+    wave_regularization_default)
+        # wave_regularization defaults to 0
+        set_key pseudopotentials qcut 'qcut = [ 5.0, 5.0, 5.0,]\nwave_regularization = 0.0' \
+            < "$base" > in.toml ;;
     *)
         echo "toml_error_test.sh: unknown case $case" >&2
         exit 2 ;;

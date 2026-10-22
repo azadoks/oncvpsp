@@ -19,7 +19,7 @@
  subroutine run_optimize(eig,ll,kap,irel,mmax,mxprj,rr,uua,upa,qq,&
 &                      freetl,rc,irc,qcut,qmsbf,ncon_in,nbas_in,npr, &
 &                      psopt,vpsp,vkb,vae,cvgplt,ncurve,ecurve,pswfx,chix, &
-&                      ektail)
+&                      ektail,wreg,optdg)
 
 !! calls routines to generate optimized pseudo wave function and semi-local
 !! pseudopotential and prints diagnostic information on process and
@@ -64,6 +64,12 @@
 !!                its r-space kinetic energy less the Fourier one to three
 !!                times q_infinity, the errors of the q grid's quadrature
 !!                and of the r-space integral
+!! @param wreg  the regularization of the optimization: wreg times E_resid
+!!              at qcut/4 is added to the E_resid at qcut it minimizes (0
+!!              for none)
+!! @param optdg  of each optimized wave: E_resid at qcut, the
+!!               regularization's term, and the smallest eigenvalue e1 and
+!!               |f1| of the minimization at qcut (optimize)
 
  use constants_m, only: dp, nerrlv, nerrdg, pi
  use, intrinsic :: iso_fortran_env, only: qp => real128
@@ -78,7 +84,7 @@
  real(dp), intent(in) :: rr(mmax)
  real(dp), intent(in) :: uua(mmax,mxprj),upa(mmax,mxprj),vae(mmax)
  real(dp), intent(in) :: qq(mxprj,mxprj)
- real(dp), intent(in) :: eig(mxprj),qcut,rc
+ real(dp), intent(in) :: eig(mxprj),qcut,rc,wreg
  logical, intent(in) :: freetl(mxprj)
 
 !Input/output variables
@@ -91,7 +97,7 @@
  real(dp), intent(out) :: psopt(mmax,mxprj)
  real(dp), intent(out) :: ecurve(2,ncurve,mxprj)
  real(dp), intent(out) :: pswfx(mmax,mxprj),chix(mmax,mxprj)
- real(dp), intent(out) :: ektail(2,mxprj)
+ real(dp), intent(out) :: ektail(2,mxprj),optdg(4,mxprj)
 
 !Local variables
  real(dp), parameter :: Ha_eV=27.21138386d0 ! 1 Hartree, in eV
@@ -155,6 +161,7 @@
 
  psopt(:,:)=0.0d0
  ektail(:,:)=0.0d0
+ optdg(:,:)=0.0d0
 
 ! loop over projectors
  do iprj=1,npr
@@ -193,8 +200,10 @@
    nq=1+int(qmax/dq)
    q0=qmax-dble(nq-1)*dq
 
-!E_resid is wanted at the exact qcut and at q=0 (the kinetic energy)
+!E_resid is wanted at the exact qcut and at q=0 (the kinetic energy),
+!and with the regularization at qcut/4
    nqout=2
+   if(wreg>0.0d0) nqout=3
 
    allocate(qout(nqout),eresq(nqout),eresid0(nqout))
    allocate(eresiddot(nnull,nqout),eresidmat(nnull,nnull,nqout))
@@ -203,6 +212,7 @@
 
    qout(1)=qcut
    qout(2)=0.0d0
+   if(nqout==3) qout(3)=0.25d0*qcut
 
 !calculate orthogonal basis and constraint matrix
    call sbf_basis_con(ll,rc,nbas,qroot,psb,nbas_in+npr-1,orbasis, &
@@ -265,7 +275,8 @@
    call optimize(nnull,nbas,pswf0_sb,pswf0_or,nqout,qout,&
 &                eresid0,eresiddot,eresidmat,&
 &                pswfnull_sb,pswfnull_or,qq(iprj,iprj),ps0norm,eresidmin, &
-&                pswfopt_sb,pswfopt_or,ekin_anal,eresq,pswfopt_nu)
+&                pswfopt_sb,pswfopt_or,ekin_anal,eresq,pswfopt_nu, &
+&                wreg,optdg(1,iprj))
 
    write(6,'(a,1p,d10.2,a)') '    Residual kinetic energy error=', &
 &        eresidmin,' Ha'

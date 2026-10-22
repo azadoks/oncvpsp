@@ -38,7 +38,7 @@
 &                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
 &                  slack,budget_weighted,fcgrid,rcgrid, &
 &                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,upf_mesh, &
-&                  irel,nkap,ep_as_given,well_onset,well_tail_free)
+&                  irel,nkap,ep_as_given,well_onset,well_tail_free,wreg)
 
 !! writes the pseudopotential to the output in PSML format, between
 !! 'Begin PSML' and 'END_PSP' markers
@@ -112,6 +112,7 @@
 !! @param ep_as_given  whether the well states take ep as given
 !! @param well_onset  onset of the well of the well states, a multiple of rc
 !! @param well_tail_free  whether the well states take the free tail
+!! @param wreg  the regularization of the pseudo-wave optimization
 !!
 !! Alberto Garcia, February 1, 2015
 
@@ -151,6 +152,7 @@
  real(dp), intent(in) :: slack
  logical, intent(in) :: budget_weighted
  logical, intent(in) :: ep_as_given,well_tail_free
+ real(dp), intent(in) :: wreg
  real(dp), intent(in) :: well_onset
  character(len=4), intent(in) :: psfile
 
@@ -221,7 +223,7 @@
 &                rcfact,slack,budget_weighted,fcgrid,rcgrid,epsh1,epsh2, &
 &                depsh,rxpsh,rlmax,drl, &
 &                ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh, &
-&                ep_as_given,well_onset,well_tail_free)
+&                ep_as_given,well_onset,well_tail_free,wreg)
 
  call xml_EndElement(xf,"input-file")
 !
@@ -614,7 +616,7 @@
 &                      epsh1,epsh2,depsh, &
 &                      rxpsh,rlmax,drl, &
 &                      ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh, &
-&                      ep_as_given,well_onset,well_tail_free)
+&                      ep_as_given,well_onset,well_tail_free,wreg)
 
 !! echoes the input data into the input-file element of the provenance, a
 !! line at a time, in the form of the psp8 echo (linout), so that it can be
@@ -669,7 +671,8 @@
 !!                  it (else 0)
 !! @param upf_mesh  most points of the log mesh of the UPF file, 0 for the
 !!                  linear output mesh (echoed when not 0)
-!! @param ep_as_given, well_onset, well_tail_free  echoed on the lmax line
+!! @param ep_as_given, well_onset, well_tail_free, wreg  echoed on the lmax
+!!        line
 !!                  when one is not its default (lmax_lines)
 
  use xmlf90_wxml, only: xmlf_t, xml_AddPcData
@@ -692,6 +695,7 @@
  real(dp), intent(in) :: slack
  logical, intent(in) :: budget_weighted
  logical, intent(in) :: ep_as_given,well_tail_free
+ real(dp), intent(in) :: wreg
  real(dp), intent(in) :: well_onset
 
 !Input/output variables
@@ -713,7 +717,7 @@
    call add(line)
  end do
 
- call lmax_lines(lmax,ep_as_given,well_onset,well_tail_free,text,ntext)
+ call lmax_lines(lmax,ep_as_given,well_onset,well_tail_free,wreg,text,ntext)
  do ii=1,ntext
    call add(text(ii))
  end do

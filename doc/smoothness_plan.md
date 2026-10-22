@@ -1513,7 +1513,8 @@ from rc:
       7. (Lower priority, larger) AE against PS in a confined atom
          (harmonic or soft wall, a few strengths): eigenvalue and energy
          shifts, a stand-in for compression.
-- [ ] (Proposed 2026-10-22 by the oncvpsp-opt session, not approved) A
+- [x] (Proposed 2026-10-22 by the oncvpsp-opt session; done 2026-10-22,
+      the user's request) A
       regularized pseudo-wave optimization, so the wave is determined for
       every input. At large qcut·rc E_resid(qcut) is flat to round-off in
       the null space (6 random N rows, rc0 2.7–3.8, qcut0 8.5–13.9: e1 ~
@@ -1531,6 +1532,45 @@ from rc:
       result. In DIAGNOSTICS per wave: E_resid(qcut) at the optimum, the
       regularization term's value, e1 and |f1|. Also asked for, separately:
       a warning when e1 and |f1| are at round-off.
+      Done: `wave_regularization` = w ([pseudopotentials], or the fifth
+      value of the lmax line), global; `optimize` minimizes E_resid(qcut)
+      + w E_resid(qcut/4) with the same secular solution, E_resid at
+      qcut/4 from eresid's third q (w = 0: two q, today's path, outputs
+      the same but the new lines, in 90 runs of the inputs, sr, fr and nr,
+      bar the last digits of two fr ghost lines that move with the memory
+      layout as the old binary's do). The distance to a reference wave was
+      not taken: pswf0 is orthogonal to the null space, so it adds nothing,
+      and the AE wave has nodes, which the flat null space can reproduce.
+      qcut/2 and 0.35 qcut are still nearly flat in the 6 rows (regularized
+      e1 5e-16 and 6e-12 at w = 1e-6), qcut/4 is not (2e-9). Warning
+      `optimize: WARNING E_resid flat to round-off` when e1 and |f1| are
+      both below 1e-12 Ha (6e-19–2e-17 and 2e-18–3e-16 in the 6 rows, at
+      least 9e-9 in the 181 waves of the references). The block's `opt l
+      ikap iproj e reg e1 f1`: E_resid(qcut), the term, e1 and |f1| of
+      E_resid(qcut) alone. Measured:
+      - The 6 rows: every w from 1e-12 to 1e-4 gives a nodeless wave
+        (E_resid(qcut) 4e-14–2e-11 at 1e-10, up to 4e-8 at 1e-4).
+      - 07_N_opt with qcut0 raised: the node error is not only the round-
+        off tie. At qcut0 17–18 e1 and |f1| are ~1e-11, determined, and
+        the minimum of E_resid(qcut) itself has the node; from 22 on it is
+        flat (e1 2.5e-14). With w = 1e-10 qcut0 16–30 run, but a qcut
+        scan at 17 meets the node at 16.98; w = 1e-8 runs everywhere.
+      - Smoothness (span 0.04 in qcut0, the optimizer's groups): at large
+        qcut the kernels have a floor of 1e-9 without the regularization
+        too (qcut0 14, w = 0: 1.2e-9, steps even, no jump), the round-off
+        of E_resid(qcut) over a weak curvature. With w = 1e-8 the scans at
+        qcut0 16, 17 and 22 are at that floor (kernels 1.7e-9–2.3e-9, ld
+        1.0e-9–3.6e-9, jump ratios ~1), where w = 0 has a jump of 158 in
+        ld at 16 and stops at 22. In N row 22 (rc0 3.44) the rc0 scan
+        falls from 8e-4 (w = 1e-10) to 2e-9 (1e-8) and 2e-10 (1e-6) in the
+        kernels; ld and ecut stay steep there (ecut with shoulder jumps,
+        G5).
+      - Cost on ordinary inputs: the kernels move in proportion to w,
+        2.8e-8 relative at 1e-10 and 2.8e-6 at 1e-8 (14_Si l = 0), 7.9e-9
+        and 7.9e-7 (07_N_opt). So w ~ 1e-8 for the optimizer's high-qcut
+        region, 0 elsewhere. Test: 07_N_flat (07_N_opt at qcut0 22, w =
+        1e-8; with w = 0 it warns and stops on the node), with its TOML
+        twin, an echo test, and errors for a negative value.
 - [x] (Proposed 2026-10-22; decided 2026-10-22: the curve to infinity,
       not by Parseval, not in the optimization) E_resid by Parseval: the
       residual kinetic energy as T_r − ∫₀^q t(k) dk, the r-space kinetic

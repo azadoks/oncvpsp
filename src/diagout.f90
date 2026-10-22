@@ -22,7 +22,7 @@
  subroutine diagout(lmax,nproj,mxprj,nkap,cvgplt,npsh,epsh2,depsh,rphs, &
 &                   pshae,pshps,ngh,ghn,ghe,ghp,wcut,errw,ecutw,wcurve, &
 &                   ektail,icmod,rr,mmax,rcmax,rhoc,corepw,lloc,evkb, &
-&                   bbeig,ncfg,ntcf,itcf,etcf,dtcf,cvloc,vlchk)
+&                   bbeig,ncfg,ntcf,itcf,etcf,dtcf,cvloc,vlchk,optdg)
 
 !! writes the block "Begin DIAGNOSTICS" ... "End DIAGNOSTICS", one value
 !! per line, each line tagged with its quantity:
@@ -103,6 +103,12 @@
 !! vloc_check e: the local energy per electron from the q grid less that
 !! from r space (Ha), the error of the transforms
 !!
+!! opt l ikap iproj e reg e1 f1: of the optimized wave of projector iproj,
+!! E_resid at qcut (Ha), the regularization's term (wave_regularization
+!! times E_resid at qcut/4, 0 without it) and the smallest eigenvalue e1
+!! and |f1| of the minimization at qcut (optimize): both at round-off
+!! leave the wave undetermined
+!!
 !! ikap is 1 for j=l+1/2 (and for nkap=1), 2 for j=l-1/2
 !!
 !! @param lmax  maximum angular momentum
@@ -145,6 +151,8 @@
 !! @param cvloc  the local potential's (Ecut, err) per level, Ecut 0 for
 !!               a level not reached
 !! @param vlchk  the local energy from the q grid less that from r space
+!! @param optdg  of each optimized wave: E_resid at qcut, the
+!!               regularization's term, e1 and |f1|
 
  use constants_m, only: dp, mxl, mxlin, nerrdg, nerrlv, mxstate, mxkap, &
 &                       nrhomod, mxcnf
@@ -172,6 +180,7 @@
  integer, intent(in) :: ntcf(mxcnf),itcf(3,2*mxstate,mxcnf)
  real(dp), intent(in) :: etcf(3,2*mxstate,mxcnf),dtcf(3,mxcnf)
  real(dp), intent(in) :: cvloc(2,nerrlv),vlchk
+ real(dp), intent(in) :: optdg(4,mxprj,mxl+1,nkap)
 
 !Local variables
  integer :: ii,jj,l1,ikap,mkap,iprj,kseg,np
@@ -191,6 +200,18 @@
 &                cvgplt(2,jj,iprj,l1,ikap),cvgplt(1,jj,iprj,l1,ikap)
          end if
        end do
+     end do
+   end do
+ end do
+
+ write(6,'(a)') '# opt l ikap iproj e(Ha) reg(Ha) e1(Ha) f1(Ha)'
+ do l1=1,lmax+1
+   mkap=nkap
+   if(l1==1) mkap=1
+   do ikap=1,mkap
+     do iprj=1,nproj(l1)
+       write(6,'(a,3i4,1p,4e24.16)') 'opt',l1-1,ikap,iprj, &
+&            optdg(:,iprj,l1,ikap)
      end do
    end do
  end do

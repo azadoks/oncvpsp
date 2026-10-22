@@ -20,7 +20,7 @@
 &                           rlmax, drl, upf_mesh, &
 &                           ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                           amesh, rr1, rmax, c_light, ep_as_given, &
-&                           well_onset, well_tail_free)
+&                           well_onset, well_tail_free, wreg)
 
 !! Reads the TOML input: the same data as read_input_text, with the same
 !! defaults and the same checks against the array sizes (check_data
@@ -42,7 +42,10 @@
 !                              a multiple of rc, see wellstate),
 !                              well_tail (optional, "well" or "free":
 !                              the tail of the well states in E_resid,
-!                              see free_tail_m)
+!                              see free_tail_m), wave_regularization
+!                              (optional, 0, at least 0: its weight on
+!                              E_resid at qcut/4 in the optimization, see
+!                              optimize)
 !   [local_potential]          lloc, lpopt, rcloc, dvloc0
 !   [vkb_projectors]           l (0..lmax), nproj, debl
 !   [model_core_charge]        icmod, fcfact (icmod 1, 2, 3, 6, 7; else 0),
@@ -114,6 +117,7 @@
 !> onset of the well of the well states as a multiple of rc (wellstate)
  real(dp), intent(out) :: well_onset
  logical, intent(out) :: well_tail_free
+ real(dp), intent(out) :: wreg
 !> Energy added to ep for the second projector (Ha)
  real(dp), intent(out) :: debl(mxlin+1)
 ! [Model core charge]
@@ -285,6 +289,13 @@
    call input_error('well_tail in [pseudopotentials] must be "well" or '// &
 &    '"free", got "'//tmp_str//'"')
  end select
+
+ call get_real(child, 'pseudopotentials', 'wave_regularization', wreg, &
+&              0.0_dp)
+ if(.not. (wreg >= 0.0_dp)) then
+   call input_error('wave_regularization in [pseudopotentials] must be '// &
+&    'at least 0')
+ end if
 
 ! local potential
  call get_section(table, 'local_potential', child)

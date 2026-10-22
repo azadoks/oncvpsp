@@ -24,7 +24,7 @@
  subroutine upfout(lmax,lloc,rc,vkbpw,evkb,nproj,rr,vpuns,vlocpw,rho,corepw, &
 &                  zz,zion,mmax,mxprj,iexc,icmod,nrlin,drl,atsym,epstot, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&                  fa,rc0,ep,qcut,ep_as_given,well_onset,well_tail_free, &
+&                  fa,rc0,ep,qcut,ep_as_given,well_onset,well_tail_free,wreg, &
 &                  debl,facnf, &
 &                  dvloc0,fcfact,rcfact, &
 &                  slack,budget_weighted,fcgrid,rcgrid, &
@@ -135,6 +135,7 @@
  logical, intent(in) :: ep_as_given
  real(dp), intent(in) :: well_onset
  logical, intent(in) :: well_tail_free
+ real(dp), intent(in) :: wreg
  real(dp), intent(in) :: debl(mxlin+1)
  real(dp), intent(in) :: facnf(mxstate,mxcnf)
  real(dp), intent(in) :: ea(mxstate,nkap)
@@ -323,7 +324,7 @@
 
  call write_input_echo(nkap,2,atsym,zz,nc,nv,iexc,psfile, &
 &                       na,la,fa,lmax,rc0,ep(:,1),ncon,nbas,qcut,ep_as_given, &
-&                       well_onset,well_tail_free,lloc,lpopt,dvloc0, &
+&                       well_onset,well_tail_free,wreg,lloc,lpopt,dvloc0, &
 &                       nproj,debl, &
 &                       icmod,fcfact,rcfact,slack,budget_weighted, &
 &                       fcgrid,rcgrid, &

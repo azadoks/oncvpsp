@@ -384,6 +384,28 @@ each l, and has the following steps:
    Eq.(11) to compute the convergence profile.  Finally, it finds
    the coefficients in the xi^O and xi^B basis sets.
 
+   Where qcut*rc is large, E^r(q_c) can be flat to round-off in the
+   space left by the constraints (its smallest eigenvalue e_1 ~ 1e-18
+   Ha, and f_1 ~ 1e-17): the minimum is then any wave of the right norm,
+   and the sign of x_1, between a nodeless wave and one with a node, is
+   set by the rounding of the quadratures. optimize warns when e_1 and
+   |f_1| are both below 1e-12 Ha (at least 9e-9 in the reference
+   inputs). With wave_regularization = w > 0 ([pseudopotentials] in the
+   TOML input, the fifth value of the lmax line of the text input; 0 by
+   default, which leaves the optimization as it was) it minimizes
+   E^r(q_c) + w E^r(q_c/4) instead: E^r at q_c/4 is not flat, so the
+   wave is determined, and the objective is smooth in the inputs. In the
+   six N inputs of the oncvpsp-opt session where the wave had a node
+   (rc 2.7-3.8, qcut 8.5-13.9), w = 1e-8 to 1e-4 gives a nodeless wave
+   with e_1 of the regularized problem 4e-11 to 6e-7 and E^r(q_c) up
+   to 2e-11 (w = 1e-8) and 4e-8 Ha (w = 1e-4). Before it is flat, at
+   somewhat lower qcut, the minimum of E^r(q_c) itself can have the
+   node; w = 1e-8 removes it there too (w = 1e-10 not everywhere), and
+   moves the kernels of ordinary inputs by up to 3e-6 relative, in
+   proportion to w (doc/smoothness_plan.md). The DIAGNOSTICS block
+   gives, per wave, E^r(q_c), the regularization's term, e_1 and |f_1|
+   (`opt l ikap iproj e reg e1 f1`).
+
 7) The routine pspot calculates the semi-local potential and the
    (epsilon_i - T)|ph_i> component of the |chi_i> projector, Eq.(18).
    It also calculates the total kinetic energy from the Laplacian to

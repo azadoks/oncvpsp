@@ -95,7 +95,7 @@
  real(dp) :: rr1,rcion,rciont,rcmax,rct,rlmax,rpkt
  real(dp) :: amesh_in,rr1_in,rmax_in,rmax,log_mesh(3),c_light_in
  real(dp) :: sf,sw,zz,zion,zval,etot,res
- real(dp) :: cvloc(2,nerrlv),vlchk
+ real(dp) :: cvloc(2,nerrlv),vlchk,wreg
  real(dp) :: eterm(4),rphs(4)
  real(dp) :: fj,cnorm,rcore,eptgt
 !
@@ -112,7 +112,7 @@
  real(dp), allocatable :: ecurve(:,:,:,:,:)
 !the r-space less the Fourier kinetic energy of each pseudo-wave
 !(run_optimize)
- real(dp), allocatable :: ektail(:,:,:,:)
+ real(dp), allocatable :: ektail(:,:,:,:),optdg(:,:,:,:)
 !the eigenvalues of the B matrices (run_vkb)
  real(dp), allocatable :: bbeig(:,:,:)
 !the test configurations (run_config_ps): rows of eigenvalues (-1 if one
@@ -311,6 +311,7 @@
  ep_as_given=.false.
  well_onset=well_onset_default
  well_tail_free=.false.
+ wreg=0.0d0
  select case(input_mode)
  case(INPUT_STDIN)
    call read_input_text(stdin, inline, &
@@ -324,7 +325,7 @@
 &                       rlmax, drl, upf_mesh, &
 &                       ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                       amesh_in, rr1_in, rmax_in, c_light_in, ep_as_given, &
-&                       well_onset, well_tail_free)
+&                       well_onset, well_tail_free, wreg)
  case(INPUT_TEXT)
    open(newunit=unit, file=input_filename, status='old', action='read', &
 &       iostat=ios)
@@ -344,7 +345,7 @@
 &                       rlmax, drl, upf_mesh, &
 &                       ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                       amesh_in, rr1_in, rmax_in, c_light_in, ep_as_given, &
-&                       well_onset, well_tail_free)
+&                       well_onset, well_tail_free, wreg)
    close(unit)
 #if (defined WITH_TOML)
  case(INPUT_TOML)
@@ -366,7 +367,7 @@
 &                       rlmax, drl, upf_mesh, &
 &                       ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                       amesh_in, rr1_in, rmax_in, c_light_in, ep_as_given, &
-&                       well_onset, well_tail_free)
+&                       well_onset, well_tail_free, wreg)
    close(unit)
 #endif
  case default
@@ -456,6 +457,7 @@
  allocate(cvgplt(2,nerrdg,mxprj,mxl+1,nkap))
  allocate(ecurve(2,ncurve,mxprj,mxl+1,nkap))
  allocate(ektail(2,mxprj,mxl+1,nkap),bbeig(mxprj,mxl+1,nkap))
+ allocate(optdg(4,mxprj,mxl+1,nkap))
  allocate(wcurve(mxprj,mxl+1,nkap))
  allocate(vp(mmax,mxl+2,nkap),vfull(mmax),vkb(mmax,mxprj,mxl+1,nkap))
  allocate(pswf(mmax,mxprj,mxl+1,nkap))
@@ -547,7 +549,7 @@
    end if
  end do
 
- call write_lmax(lmax,ep_as_given,well_onset,well_tail_free)
+ call write_lmax(lmax,ep_as_given,well_onset,well_tail_free,wreg)
  write(6,'(a/a)') '#','#   l,   rc,      ep,       ncon, nbas, qcut'
  do l1=1,lmax+1
    write(6,'(i5,2f10.5,2i5,f10.5)') l1-1,rc(l1),ep(l1,1),ncon(l1),&
@@ -644,6 +646,7 @@
  cvgplt(:,:,:,:,:)=0.0d0
  ecurve(:,:,:,:,:)=0.0d0
  ektail(:,:,:,:)=0.0d0
+ optdg(:,:,:,:)=0.0d0
  wcurve(:,:,:)=0.0d0
 !
 ! loop to construct pseudopotentials for all angular momenta
@@ -868,7 +871,7 @@
 &                      vfull,cvgplt(1,1,1,l1,ikap),ncurve, &
 &                      ecurve(1,1,1,l1,ikap), &
 &                      pswfx(1,1,l1,ikap),chix(1,1,l1,ikap), &
-&                      ektail(1,1,l1,ikap))
+&                      ektail(1,1,l1,ikap),wreg,optdg(1,1,l1,ikap))
 
 !the weights of its pseudo-waves in the weighted cutoff: the occupation of
 !each valence state (its share fj of J), or 2(2l+1) for the first wave of a
@@ -1182,7 +1185,7 @@
 &             pshps,ngh,ghn,ghe,ghp,(icmod==6 .or. icmod==7) &
 &             .and. fcfact<=0.0d0 .and. budget_weighted,rcfact,ecutw,wcurve, &
 &             ektail,icmod,rr,mmax,rcmax,rhoc,corepw,lloc,evkb,bbeig, &
-&             ncnf+1,ntcf,itcf,etcf,dtcf,cvloc,vlchk)
+&             ncnf+1,ntcf,itcf,etcf,dtcf,cvloc,vlchk,optdg)
  deallocate(pshae,pshps)
 
  if(trim(psfile)=='psp8' .or. trim(psfile)=='both') then
@@ -1192,7 +1195,7 @@
 &              nrl,drl, &
 &              atsym,soscale, &
 &              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&              fa,rc0,ep,qcut,ep_as_given,well_onset,well_tail_free,debl, &
+&              fa,rc0,ep,qcut,ep_as_given,well_onset,well_tail_free,wreg,debl, &
 &              facnf,dvloc0, &
 &              fcfact,fcfact0,rcfact, &
 &              slack,budget_weighted,fcgrid,rcgrid, &
@@ -1203,7 +1206,7 @@
    call upfout(lmax,lloc,rc,vkbpw,evkb,nproj,rr,vpuns,vlocpw,rho,corepw, &
 &              zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
 &              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&              fa,rc0,ep,qcut,ep_as_given,well_onset,well_tail_free,debl, &
+&              fa,rc0,ep,qcut,ep_as_given,well_onset,well_tail_free,wreg,debl, &
 &              facnf,dvloc0, &
 &              fcfact0,rcfact, &
 &              slack,budget_weighted,fcgrid,rcgrid, &
@@ -1243,7 +1246,7 @@
 &               fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact0,rcfact, &
 &               slack,budget_weighted,fcgrid,rcgrid, &
 &               epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,upf_mesh, &
-&               irel,nkap,ep_as_given,well_onset,well_tail_free)
+&               irel,nkap,ep_as_given,well_onset,well_tail_free,wreg)
  end if
 
  stop
