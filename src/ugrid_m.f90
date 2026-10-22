@@ -32,6 +32,16 @@
  implicit none
  private
  public :: ug_weights, ug_cumint_down, ug_interp, ug_root, ug_cross_down
+ public :: ug_brent, ug_fn
+
+!> a function of one variable, for ug_brent
+ abstract interface
+   real(dp) function ug_fn(xx)
+   import :: dp
+   implicit none
+   real(dp), intent(in) :: xx
+   end function ug_fn
+ end interface
 
  contains
 
@@ -152,8 +162,7 @@
  subroutine ug_root(ff,nn,ta,tb,tq,ierr)
 
 !! root, between the positions ta and tb, of the interpolant of ff, by
-!! Brent's method with no tolerance of its own: it stops when the bracket
-!! is a few rounding units wide
+!! Brent's method with no tolerance of its own (ug_brent)
 !!
 !! @param ff  values on the nodes
 !! @param nn  number of nodes
@@ -170,14 +179,45 @@
  real(dp), intent(out) :: tq
  integer, intent(out) :: ierr
 
+ call ug_brent(interpolant,ta,tb,tq,ierr)
+ return
+
+ contains
+
+ real(dp) function interpolant(tt)
+!! the interpolant of ff at the position tt
+ real(dp), intent(in) :: tt
+ interpolant=lm_fh_value(ff,nn,tt)
+ end function interpolant
+
+ end subroutine ug_root
+
+ subroutine ug_brent(fun,ta,tb,tq,ierr)
+
+!! root of fun between ta and tb by Brent's method with no tolerance of
+!! its own: it stops when the bracket is a few rounding units wide
+!!
+!! @param fun  the function
+!! @param ta,tb  bracket; fun must change sign between them
+!! @param tq  the root
+!! @param ierr  0, or 1 if fun has the same sign at ta and tb
+
+!Input variables
+ procedure(ug_fn) :: fun
+ real(dp), intent(in) :: ta,tb
+
+!Output variables
+ real(dp), intent(out) :: tq
+ integer, intent(out) :: ierr
+
 !Local variables
  real(dp) :: xa,xb,xc,fa,fb,fc,de,dlast,tol1,xm,pp,qq,rs,ss
  integer :: iter
 
  xa=ta
  xb=tb
- fa=lm_fh_value(ff,nn,xa)
- fb=lm_fh_value(ff,nn,xb)
+ fa=fun(xa)
+ fb=fun(xb)
  ierr=0
  tq=ta
  if(fa==0.0d0) return
@@ -243,11 +283,11 @@
    else
      xb=xb+sign(tol1,xm)
    end if
-   fb=lm_fh_value(ff,nn,xb)
+   fb=fun(xb)
  end do
  tq=xb
  return
- end subroutine ug_root
+ end subroutine ug_brent
 
  subroutine ug_cross_down(ff,nn,hh,x1,level,xq,found)
 

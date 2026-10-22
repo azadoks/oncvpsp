@@ -242,6 +242,9 @@ def features(path, samples, output):
             tag += f"j{table['j']}"
         for err, cut in zip(table["eresid"], table["ecut"]):
             out[f"ecut:{tag}:{err:.0e}"] = float(cut)
+    weighted = diagnostics.get("ecut_weighted")
+    if weighted:
+        out[f"ecut:weighted:{weighted['error']:.0e}"] = float(weighted["ecut"])
     margins = diagnostics.get("ghost_margins")
     for test in margins or parser.output.get("bound_ghost_tests") or []:
         tag = f"n{test['n']}l{test['l']}"

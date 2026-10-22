@@ -130,6 +130,16 @@ case $case in
         # well_tail defaults to "well"
         set_key pseudopotentials qcut 'qcut = [ 5.0, 5.0, 5.0,]\nwell_tail = "well"' \
             < "$base" > in.toml ;;
+    budget_cutoff_value)
+        base=$data/toml/14_Si_bca.toml
+        set_key model_core_charge rcfact 'rcfact = 1.0e-4\nbudget_cutoff = "mean"' \
+            < "$base" > in.toml
+        expect='budget_cutoff in [model_core_charge] must be "max" or "weighted", got "mean"' ;;
+    budget_cutoff_default)
+        # budget_cutoff defaults to "max"
+        base=$data/toml/14_Si_bca.toml
+        set_key model_core_charge rcfact 'rcfact = 1.0e-4\nbudget_cutoff = "max"' \
+            < "$base" > in.toml ;;
     *)
         echo "toml_error_test.sh: unknown case $case" >&2
         exit 2 ;;

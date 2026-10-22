@@ -124,7 +124,8 @@
  return
  end subroutine lmax_lines
 
- subroutine icmod_lines(icmod,fcfact,rcfact,slack,fcgrid,rcgrid,text,ntext)
+ subroutine icmod_lines(icmod,fcfact,rcfact,slack,budget_weighted,fcgrid, &
+&                       rcgrid,text,ntext)
 
 !! MODEL CORE CHARGE section
 !! the icmod=4 search grid is written only when it differs from the default
@@ -133,6 +134,8 @@
 !! @param fcfact  prefactor for model amplitude
 !! @param rcfact  prefactor for model scale
 !! @param slack  share of the cutoff the model core must fit (icmod=6, 7)
+!! @param budget_weighted  whether the cutoff of the pseudo-waves is that of
+!!                         their weighted mean (icmod=6, 7)
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 !! @param text  the lines of the section
@@ -142,6 +145,7 @@
  integer, intent(in) :: icmod
  real(dp), intent(in) :: fcfact,rcfact
  real(dp), intent(in) :: slack
+ logical, intent(in) :: budget_weighted
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
 
 !Output variables
@@ -162,6 +166,11 @@
 &   'rcfact_min, rcfact_max, rcfact_step'
    write(text(5),'(i5,8f10.5)') icmod,fcfact,rcfact,fcgrid(:),rcgrid(:)
    ntext=5
+ else if((icmod==6 .or. icmod==7) .and. budget_weighted) then
+!icmod=6, 7 budget_cutoff is written if not "max" (0), with slack before it
+   text(3)='# icmod, fcfact, rcfact, slack, budget_cutoff'
+   write(text(4),'(i5,f10.5,es12.4,f10.5,i5)') icmod,fcfact,rcfact,slack,1
+   ntext=4
  else if((icmod==6 .or. icmod==7) .and. slack/=1.0d0) then
 !icmod=6, 7 rcfact is an error tolerance, slack is written if not 1
    text(3)='# icmod, fcfact, rcfact, slack'
@@ -295,7 +304,7 @@
  return
  end subroutine write_lmax
 
- subroutine write_icmod(icmod,fcfact,rcfact,slack,fcgrid,rcgrid)
+ subroutine write_icmod(icmod,fcfact,rcfact,slack,budget_weighted,fcgrid,rcgrid)
 
 !! writes the MODEL CORE CHARGE section to unit 6
 !!
@@ -303,6 +312,8 @@
 !! @param fcfact  prefactor for model amplitude
 !! @param rcfact  prefactor for model scale
 !! @param slack  share of the cutoff the model core must fit (icmod=6, 7)
+!! @param budget_weighted  whether the cutoff of the pseudo-waves is that of
+!!                         their weighted mean (icmod=6, 7)
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 
@@ -310,13 +321,15 @@
  integer, intent(in) :: icmod
  real(dp), intent(in) :: fcfact,rcfact
  real(dp), intent(in) :: slack
+ logical, intent(in) :: budget_weighted
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
 
 !Local variables
  character(len=echo_len) :: text(echo_max)
  integer :: ii,ntext
 
- call icmod_lines(icmod,fcfact,rcfact,slack,fcgrid,rcgrid,text,ntext)
+ call icmod_lines(icmod,fcfact,rcfact,slack,budget_weighted,fcgrid,rcgrid, &
+&                 text,ntext)
  write(6,'(a)') (trim(text(ii)),ii=1,ntext)
 
  return
@@ -368,7 +381,8 @@
 &                            na,la,fa,lmax,rc0,ep,ncon,nbas,qcut,ep_as_given, &
 &                            well_onset,well_tail_free,lloc,lpopt,dvloc0, &
 &                            nproj,debl, &
-&                            icmod,fcfact,rcfact,slack,fcgrid,rcgrid, &
+&                            icmod,fcfact,rcfact,slack,budget_weighted, &
+&                            fcgrid,rcgrid, &
 &                            epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
 &                            ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh)
 !! writes the echo of the input data to unit 6, from the reference
@@ -389,6 +403,7 @@
  integer, intent(in) :: nvcnf(mxcnf),nacnf(mxstate,mxcnf),lacnf(mxstate,mxcnf)
  real(dp), intent(in) :: zz,dvloc0,fcfact,rcfact
  real(dp), intent(in) :: slack
+ logical, intent(in) :: budget_weighted
  real(dp), intent(in) :: epsh1,epsh2,depsh,rxpsh,rlmax,drl
  real(dp), intent(in) :: fa(mxstate),rc0(mxlin+1),ep(mxlin+1),qcut(mxlin+1)
  logical, intent(in) :: ep_as_given
@@ -438,7 +453,7 @@
    write(6,'(2i5,f10.5)') l1-1,nproj(l1),debl(l1)
  end do
 
- call write_icmod(icmod,fcfact,rcfact,slack,fcgrid,rcgrid)
+ call write_icmod(icmod,fcfact,rcfact,slack,budget_weighted,fcgrid,rcgrid)
 
  call write_epsh(epsh1,epsh2,depsh,rxpsh)
 

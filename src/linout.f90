@@ -29,7 +29,7 @@
 &                  debl,facnf, &
 &                  dvloc0,fcfact,fcfact0, &
 &                  rcfact, &
-&                  slack,fcgrid,rcgrid, &
+&                  slack,budget_weighted,fcgrid,rcgrid, &
 &                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,upf_mesh, &
 &                  nkap)
 
@@ -95,6 +95,8 @@
 !! @param dvloc0  amplitude at rr==0 of the function added to the local
 !!                potential for lloc==4
 !! @param slack  share of the cutoff the model core must fit (icmod=6, 7)
+!! @param budget_weighted  whether the cutoff of the pseudo-waves is that of
+!!                         their weighted mean (icmod=6, 7)
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 !! @param epsh1  lower limit of the log derivative analysis energy range (Ha)
@@ -121,6 +123,7 @@
  integer, intent(in) :: nproj(mxlin+1)
  real(dp), intent(in) :: drl,fcfact,fcfact0,rcfact,zz,zion,soscale
  real(dp), intent(in) :: slack
+ logical, intent(in) :: budget_weighted
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
  real(dp), intent(in) :: rr(mmax),vpuns(mmax,mxl+2),rho(mmax)
  real(dp), intent(in) :: rhotae(mmax),rhoc(mmax)
@@ -382,7 +385,8 @@
 &                       na,la,fa,lmax,rc0,ep(:,1),ncon,nbas,qcut,ep_as_given, &
 &                       well_onset,well_tail_free,lloc,lpopt,dvloc0, &
 &                       nproj,debl, &
-&                       icmod,fcfact0,rcfact,slack,fcgrid,rcgrid, &
+&                       icmod,fcfact0,rcfact,slack,budget_weighted, &
+&                       fcgrid,rcgrid, &
 &                       epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
 &                       ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh)
 

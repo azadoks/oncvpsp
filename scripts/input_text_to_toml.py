@@ -318,6 +318,8 @@ class ModelCoreChargeConfiguration:
     rcfact_step: float | None = None
     "Share of the cutoff the model core must fit (icmod 6, 7)"
     slack: float | None = None
+    'Cutoff of the pseudo-waves, "max" or "weighted" (icmod 6, 7)'
+    budget_cutoff: str | None = None
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, ModelCoreChargeConfiguration):
@@ -430,6 +432,13 @@ class ModelCoreChargeConfiguration:
             if abs(self.slack - other.slack) >= ATOL:
                 logging.debug("slack differs: %f != %f", self.slack, other.slack)
                 return False
+        if (self.budget_cutoff or "max") != (other.budget_cutoff or "max"):
+            logging.debug(
+                "budget_cutoff differs: %s != %s",
+                self.budget_cutoff,
+                other.budget_cutoff,
+            )
+            return False
         return True
 
     @classmethod
@@ -476,12 +485,18 @@ class ModelCoreChargeConfiguration:
                 raise ValueError(f"Invalid model core charge configuration: {s}")
         elif icmod in (6, 7):
             # icmod, fcfact (cutoff budget, Ha), rcfact (xc energy error, Ha; default
-            # 1e-5), slack (share of the budget the core must fit; default 1)
+            # 1e-5), slack (share of the budget the core must fit; default 1),
+            # budget_cutoff (0 "max", 1 "weighted"; default 0)
             return cls(
                 icmod=icmod,
                 fcfact=fort_float(parts[1]),
                 rcfact=fort_float(parts[2]) if len(parts) > 2 else None,
                 slack=fort_float(parts[3]) if len(parts) > 3 else None,
+                budget_cutoff=(
+                    ("weighted" if int(parts[4]) == 1 else "max")
+                    if len(parts) > 4
+                    else None
+                ),
             )
         else:
             raise ValueError(f"Invalid model core charge configuration: {s}")
@@ -951,6 +966,7 @@ class OncvpspInput:
                 rcfact_max=d["model_core_charge"].get("rcfact_max"),
                 rcfact_step=d["model_core_charge"].get("rcfact_step"),
                 slack=d["model_core_charge"].get("slack"),
+                budget_cutoff=d["model_core_charge"].get("budget_cutoff"),
             ),
             log_derivative_analysis=LogDerivativeConfiguration(
                 epsh1=d["log_derivative_analysis"]["epsh1"],
@@ -1037,6 +1053,7 @@ class OncvpspInput:
                 "rcfact_max": self.model_core_charge.rcfact_max,
                 "rcfact_step": self.model_core_charge.rcfact_step,
                 "slack": self.model_core_charge.slack,
+                "budget_cutoff": self.model_core_charge.budget_cutoff,
             },
             "log_derivative_analysis": {
                 "epsh1": self.log_derivative_analysis.epsh1,

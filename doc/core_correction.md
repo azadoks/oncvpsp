@@ -197,6 +197,30 @@ icmod==6:
     were truncated by ecutrho = 4 ecutwfc; it was the meaning of
     fcfact <= 0 here until the table maximum replaced it.
 
+    With budget_cutoff = "weighted" (TOML, in [model_core_charge]; 1 as a
+    5th value of the .dat icmod line, after slack, 0 for the default
+    "max"), the pseudo-wave cutoff is instead the root of the weighted
+    mean per electron, sum_i w_i E_i(ecut) = rcfact sum_i w_i, with w_i
+    the occupation of each occupied valence state (its share
+    (2J+1)/(2(2l+1)) for each J, fully relativistic), 2(2l+1) for the
+    first wave of a channel with none occupied, and 0 for every other
+    wave (the second projectors of the scattering states). Each E_i is
+    the convergence curve of run_optimize, interpolated as for the tables
+    (log E_i on its q grid); the root is the last crossing from above.
+    Unlike the maximum, which turns a corner where two waves' crossings
+    pass each other, the mean is smooth in the inputs. The out file gives
+    it on the line "pseudo-wave cutoff, weighted mean Ecut of the tables
+    at ...", and the DIAGNOSTICS block as `ecut_w err ecut`, with the
+    weights as `ecut_w_weight l ikap iproj w`. On tests/data/14_Si_bcw.dat
+    it is 9.31 Ha, against 14.13 Ha for the maximum, which an unoccupied
+    second projector sets.
+
+    ```
+        # MODEL CORE CHARGE
+        # icmod, fcfact, rcfact, slack, budget_cutoff (1: weighted)
+            6   0   1.0e-4   1.0   1
+    ```
+
 icmod==7:
 
     The core of icmod=6 (the same fill, inputs and cutoff test) at the

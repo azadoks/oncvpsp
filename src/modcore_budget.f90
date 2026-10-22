@@ -38,8 +38,9 @@
 ! ecut is fcfact (Ha) if fcfact > 0.  Otherwise it is the cutoff of the
 ! pseudo-waves at the same error per electron (ecutw, from
 ! modcore_budget_table: the largest Ecut of the "Energy error per electron"
-! tables), times -fcfact if fcfact < 0: a calculation runs at that cutoff
-! anyway.
+! tables, or with budget_cutoff = "weighted" that of their mean weighted by
+! the occupations), times -fcfact if fcfact < 0: a calculation runs at that
+! cutoff anyway.
 ! The model must fit slack*ecut (0 < slack <= 1), and is still made for
 ! the qlo of ecut.
 !
@@ -81,7 +82,8 @@
 ! fit, as the needed cutoff falls as the model softens.
 
  subroutine modcore_budget(icmod,rhotps,rhoc,rhomod,corepw,fcfact,ecutw, &
-&                          errmax,slack,rcmin,mmax,rr,iexc,zion,probes, &
+&                          weighted,errmax,slack,rcmin,mmax,rr,iexc,zion, &
+&                          probes, &
 &                          lprobe,nprobe)
 
 !! @param icmod  6 for the smallest radius, 7 for the hardness-matched one
@@ -93,6 +95,8 @@
 !!                for ecutw, or minus the multiple of ecutw
 !! @param ecutw  cutoff (Ha) of the pseudo-waves at errmax per electron (used
 !!               if fcfact <= 0)
+!! @param weighted  whether ecutw is that of the weighted mean of the
+!!                  pseudo-waves (modcore_budget_table), for the output
 !! @param errmax  exchange-correlation energy error (Ha) that defines the needed
 !!                cutoff
 !! @param slack  share of the cutoff the model must fit, 0 < slack <= 1
@@ -118,6 +122,7 @@
  real(dp), intent(in) :: rhotps(mmax),rhoc(mmax),rr(mmax)
  real(dp), intent(in) :: probes(mmax,nprobe)
  real(dp), intent(in) :: fcfact,ecutw,errmax,slack,zion,rcmin
+ logical, intent(in) :: weighted
 
 !Output variables
  real(dp), intent(out) :: rhomod(mmax,nrhomod)
@@ -428,7 +433,11 @@
  else
    write(6,'(/a)') 'Model core correction: budgeted core (icmod 6)'
  end if
- if(fcfact<=0.0d0) then
+ if(fcfact<=0.0d0 .and. weighted) then
+   write(6,'(a,1p,e10.2,a,0p,f12.4,a,f8.4)') &
+&        '  pseudo-wave cutoff, weighted mean Ecut of the tables at',errmax, &
+&        ' Ha/electron',ecutw,' Ha, times',factor
+ else if(fcfact<=0.0d0) then
    write(6,'(a,1p,e10.2,a,0p,f12.4,a,f8.4)') &
 &        '  pseudo-wave cutoff, largest Ecut of the tables at',errmax, &
 &        ' Ha/electron',ecutw,' Ha, times',factor
@@ -1764,48 +1773,65 @@
  return
  end subroutine modcore_probes
 
- subroutine modcore_budget_table(ecurve,ncurve,nprof,errmax,ecut)
+ subroutine modcore_budget_table(ecurve,ncurve,nprof,wcurve,weighted, &
+&                                errmax,ecut)
 
 !! the cutoff ecut (Ha) of the pseudo-waves at the error errmax (Ha per
-!! electron): the largest over the pseudo-waves of the cutoff at which the
-!! energy error per electron of each falls to errmax, the "Energy error per
-!! electron / Cutoff" tables of run_optimize (the same curve and the same
-!! root-finding on the interpolant of log E over its points, ug_cross_down,
-!! from the last crossing).
+!! electron).
+!! By default (weighted false) the largest over the pseudo-waves of the
+!! cutoff at which the energy error per electron of each falls to errmax,
+!! the "Energy error per electron / Cutoff" tables of run_optimize (the
+!! same curve and the same root-finding on the interpolant of log E over
+!! its points, ug_cross_down, from the last crossing); a pseudo-wave whose
+!! table does not reach errmax does not count, as it has no line in its
+!! table.
+!! With weighted true (budget_cutoff = "weighted"), the cutoff at which
+!! the weighted mean sum_i w_i E_i / sum_i w_i of the curves with a weight
+!! falls to errmax: each curve's log E interpolated as in ug_cross_down,
+!! on the range where all of them are positive, the last crossing from
+!! above on a grid of the finest spacing of the curves, and the root of
+!! the log of the mean less log errmax in it by Brent's method (ug_brent).
+!! Unlike the largest cutoff, the mean is smooth where two curves cross.
 !! ecurve(:,:,i) holds the cutoffs and errors of pseudo-wave i on a uniform
 !! grid in q from below its spacing (eresid), zero beyond its end (all zero
-!! for no pseudo-wave); a
-!! pseudo-wave whose table does not reach errmax does not count, as it has
-!! no line in its table
+!! for no pseudo-wave)
 !!
 !! @param ecurve  residual kinetic energy curves: ecurve(1,:,i) cutoffs (Ha),
 !!                ecurve(2,:,i) error per electron (Ha) of pseudo-wave i
 !! @param ncurve  number of points per curve
 !! @param nprof  number of curves (pseudo-waves)
+!! @param wcurve  weight of each curve in the weighted mean (weighted only)
+!! @param weighted  whether ecut is that of the weighted mean
 !! @param errmax  error per electron (Ha) that defines the cutoff
 !! @param ecut  cutoff (Ha) of the pseudo-waves at errmax
 
  use constants_m, only: dp
- use ugrid_m, only: ug_cross_down
+ use logmesh_m, only: lm_fh_value
+ use ugrid_m, only: ug_cross_down, ug_brent
  implicit none
 
 !Input variables
  integer, intent(in) :: ncurve,nprof
- real(dp), intent(in) :: ecurve(2,ncurve,nprof),errmax
+ real(dp), intent(in) :: ecurve(2,ncurve,nprof),wcurve(nprof),errmax
+ logical, intent(in) :: weighted
 
 !Output variables
  real(dp), intent(out) :: ecut
 
 !Local variables
- real(dp) :: qerr,ecut1,dq,q1
- integer :: ip,kk,nk
+ real(dp) :: qerr,ecut1,qa,qb,hs,xa,xb,fa,fb
+ real(dp) :: q1s(nprof),dqs(nprof)
+ real(dp), allocatable :: lf(:,:)
+ integer :: ip,kk,nk,ns,ierr
+ integer :: nks(nprof)
  logical :: found,found1
 
  ecut=0.0d0
  found=.false.
+ allocate(lf(ncurve,nprof))
+! the curve's points, q=q1+(k-1)*dq, up to its end (and, for the
+! weighted mean, up to its first value that is not positive)
  do ip=1,nprof
-   ecut1=-1.0d0
-! the curve's points, q=q1+(k-1)*dq, up to its end
    nk=ncurve
    do kk=2,ncurve
      if(ecurve(1,kk,ip)<=0.0d0) then
@@ -1813,23 +1839,109 @@
        exit
      end if
    end do
-   if(nk>=2) then
-     q1=sqrt(2.0d0*ecurve(1,1,ip))
-     dq=sqrt(2.0d0*ecurve(1,2,ip))-q1
-     call ug_cross_down(ecurve(2,1:nk,ip),nk,dq,q1,errmax,qerr,found1)
-     if(found1) ecut1=0.5d0*qerr**2
-   end if
-   if(ecut1>=0.0d0) then
-     found=.true.
-     ecut=max(ecut,ecut1)
+   nks(ip)=nk
+   if(nk<2) cycle
+   q1s(ip)=sqrt(2.0d0*ecurve(1,1,ip))
+   dqs(ip)=sqrt(2.0d0*ecurve(1,2,ip))-q1s(ip)
+   if(weighted) then
+     do kk=1,nk
+       if(.not. (ecurve(2,kk,ip)>0.0d0)) then
+         nks(ip)=kk-1
+         exit
+       end if
+       lf(kk,ip)=log(ecurve(2,kk,ip))
+     end do
    end if
  end do
- if(.not. found) then
-   write(6,'(/a,1p,e10.2,a)') &
-&        'modcore_budget_table: ERROR stop - no pseudo-wave reaches', &
-&        errmax,' Ha per electron in its table'
-   error stop 1
+
+ if(.not. weighted) then
+   do ip=1,nprof
+     ecut1=-1.0d0
+     if(nks(ip)>=2) then
+       call ug_cross_down(ecurve(2,1:nks(ip),ip),nks(ip),dqs(ip),q1s(ip), &
+&                         errmax,qerr,found1)
+       if(found1) ecut1=0.5d0*qerr**2
+     end if
+     if(ecut1>=0.0d0) then
+       found=.true.
+       ecut=max(ecut,ecut1)
+     end if
+   end do
+   if(.not. found) then
+     write(6,'(/a,1p,e10.2,a)') &
+&          'modcore_budget_table: ERROR stop - no pseudo-wave reaches', &
+&          errmax,' Ha per electron in its table'
+     error stop 1
+   end if
+   return
  end if
 
- return
+! the weighted mean: the range common to the curves with a weight
+ qa=0.0d0
+ qb=huge(1.0d0)
+ hs=huge(1.0d0)
+ do ip=1,nprof
+   if(.not. (wcurve(ip)>0.0d0)) cycle
+   if(nks(ip)<2) then
+     write(6,'(/a,i0,a)') 'modcore_budget_table: ERROR stop - pseudo-wave ', &
+&          ip,' has a weight and no convergence curve'
+     error stop 1
+   end if
+   qa=max(qa,q1s(ip))
+   qb=min(qb,q1s(ip)+dble(nks(ip)-1)*dqs(ip))
+   hs=min(hs,dqs(ip))
+ end do
+ if(.not. (qb<huge(1.0d0)) .or. qa>=qb) then
+   write(6,'(/a)') 'modcore_budget_table: ERROR stop - no weighted curves'
+   error stop 1
+ end if
+ fb=excess_mean(qb)
+ if(fb>0.0d0) then
+   write(6,'(/a,1p,e10.2,a)') &
+&        'modcore_budget_table: ERROR stop - the weighted mean does not'// &
+&        ' reach',errmax,' Ha per electron'
+   error stop 1
+ end if
+! the last crossing from above, from qb down
+ ns=max(1,ceiling((qb-qa)/hs))
+ xb=qb
+ do kk=1,ns
+   xa=max(qa,qb-dble(kk)*hs)
+   fa=excess_mean(xa)
+   if(fa>0.0d0) then
+     call ug_brent(excess_mean,xa,xb,qerr,ierr)
+     if(ierr/=0) then
+       write(6,'(a)') 'modcore_budget_table: ERROR the bracket lost its'// &
+&            ' sign change'
+       error stop 1
+     end if
+     ecut=0.5d0*qerr**2
+     return
+   end if
+   xb=xa
+ end do
+ write(6,'(/a,1p,e10.2,a)') &
+&      'modcore_budget_table: ERROR stop - the weighted mean is below', &
+&      errmax,' Ha per electron where the curves start'
+ error stop 1
+
+ contains
+
+ real(dp) function excess_mean(qq)
+!! log of the weighted mean of the curves at the wave vector qq, less
+!! log errmax
+ real(dp), intent(in) :: qq
+ real(dp) :: tt,sw,se
+ integer :: jp
+ sw=0.0d0
+ se=0.0d0
+ do jp=1,nprof
+   if(.not. (wcurve(jp)>0.0d0)) cycle
+   tt=min(max((qq-q1s(jp))/dqs(jp),0.0d0),dble(nks(jp)-1))
+   sw=sw+wcurve(jp)
+   se=se+wcurve(jp)*exp(lm_fh_value(lf(1:nks(jp),jp),nks(jp),tt))
+ end do
+ excess_mean=log(se/sw)-log(errmax)
+ end function excess_mean
+
  end subroutine modcore_budget_table

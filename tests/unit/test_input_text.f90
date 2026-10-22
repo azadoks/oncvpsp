@@ -116,8 +116,9 @@
 !!
 !! @param final_newline  .true. to end the last line with a newline
 !! @param with_mesh  .true. to add the log mesh line, upf_mesh to the
-!!                   output grid line, and ep_as_given, well_onset and
-!!                   well_tail to the lmax line
+!!                   output grid line, ep_as_given, well_onset and
+!!                   well_tail to the lmax line, and icmod 6 with slack and
+!!                   budget_cutoff
 
 !Input variables
  logical, intent(in) :: final_newline, with_mesh
@@ -139,7 +140,7 @@
  integer :: lloc, lpopt, nproj(mxlin+1)
  integer :: icmod, ncnf, nvcnf(mxcnf), nacnf(mxstate, mxcnf)
  integer :: lacnf(mxstate, mxcnf), upf_mesh
- logical :: ep_as_given, well_tail_free
+ logical :: ep_as_given, well_tail_free, budget_weighted
  real(dp) :: well_onset
 
  lines = [character(len=700) :: &
@@ -180,6 +181,7 @@
  if(with_mesh) then
    lines(25) = '    6.0  0.01  2000'
    lines(13) = '    2    1    1.5    1'
+   lines(23) = '   6    0.0    1.0e-6    0.8    1'
    lines(2) = '    Si  14     3   2   3   psp8   137.0359895'
    all_lines = [character(len=700) :: lines, '# amesh, rr1, rmax', &
 &               '  1.003  -1  60.0', &
@@ -192,7 +194,7 @@
 &                     atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
 &                     lmax, rc, ep, ncon, nbas, qcut, &
 &                     lloc, lpopt, dvloc0, nproj, debl, &
-&                     icmod, fcfact, rcfact, slack, &
+&                     icmod, fcfact, rcfact, slack, budget_weighted, &
 &                     fcfact_min, fcfact_max, fcfact_step, &
 &                     rcfact_min, rcfact_max, rcfact_step, &
 &                     epsh1, epsh2, depsh, rxpsh, &
@@ -219,7 +221,14 @@
  call check(all(nproj(1:3) == 2) &
 &           .and. all(debl(1:3) == [1.0_dp, 0.75_dp, 0.75_dp]), &
 &           'projectors')
- call check(icmod == 1 .and. fcfact == 0.25_dp, 'model core charge')
+ if(with_mesh) then
+   call check(icmod == 6 .and. fcfact == 0 .and. rcfact == 1.0e-6_dp &
+&             .and. slack == 0.8_dp .and. budget_weighted, &
+&             'model core charge, slack and budget_cutoff')
+ else
+   call check(icmod == 1 .and. fcfact == 0.25_dp .and. slack == 1 &
+&             .and. .not. budget_weighted, 'model core charge')
+ end if
  call check(epsh1 == -2 .and. epsh2 == 2 .and. depsh == 0.02_dp &
 &           .and. rxpsh < 0, &
 &           'log derivative analysis')

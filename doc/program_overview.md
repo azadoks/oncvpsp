@@ -272,6 +272,11 @@ irel, and the stage.  It has the following major sections:
     a weight that falls smoothly (C-infinity) from 1 at 1.25 times the
     kinetic energy of the largest sbf of the optimization to 0 at 1.5
     times that, so these values are smooth functions of the input.
+    With budget_cutoff = "weighted" (icmod 6, 7 with fcfact <= 0), the
+    block also gives the model core's budget, the cutoff of the
+    occupation-weighted mean of the convergence curves (`ecut_w err
+    ecut`), and the weights (`ecut_w_weight l ikap iproj w`, see
+    doc/core_correction.md).
 
 11) The routine linout creates a linear radial mesh, whose size and spacing
     are specified in the input data.  All relevant potentials and projectors

@@ -1453,8 +1453,10 @@ from rc:
       evaluated at the output radii, r = 0 included, instead of
       interpolated from the nodes. Only the core charge beyond the joint
       is tabulated and needs `lm_derivs`
-- [ ] Weighted wave cutoff for the icmod 6/7 budget (asked for by the
-      oncvpsp-opt session; kept in the plan, not yet approved):
+- [x] Weighted wave cutoff for the icmod 6/7 budget (asked for by the
+      oncvpsp-opt session; approved and done 2026-10-22, see
+      doc/core_correction.md; T2 row sr_07_N_opt_rc1_wcut, Ecut_w smooth
+      to 1.2e-11):
       `budget_cutoff = "max" | "weighted"` in `[model_core_charge]`, an
       optional 5th field after slack on the `.dat` icmod line (0 max, 1
       weighted), the default the current maximum. Ecut_w is the root of
@@ -1466,7 +1468,7 @@ from rc:
       dat and TOML writers
 - [ ] Diagnostics asked for by the oncvpsp-opt session (2026-10-22), as
       transferability proxies for the optimizer's guardrails; opt-in or
-      additive DIAGNOSTICS output, none approved yet, in its order:
+      additive DIAGNOSTICS output, approved 2026-10-22, in its order:
       1. Longer, denser Ecut tables: levels down to 1e-6 and 1e-7, or
          the whole E^r(Ecut) curve every 1–2 Ha to E^r < 1e-7.
       2. A Fourier convergence table for V_loc (its residual, or that of

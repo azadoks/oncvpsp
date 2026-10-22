@@ -36,7 +36,7 @@
 &                  zz,zion,mmax,iexc,icmod,nrl,drl,atsym,epstot, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
-&                  slack,fcgrid,rcgrid, &
+&                  slack,budget_weighted,fcgrid,rcgrid, &
 &                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,upf_mesh, &
 &                  irel,nkap,ep_as_given,well_onset,well_tail_free)
 
@@ -92,6 +92,8 @@
 !! @param rcfact  prefactor for model core charge scale (icmod=3), or error
 !!                tolerance (icmod=6)
 !! @param slack  share of the cutoff the model core must fit (icmod=6, 7)
+!! @param budget_weighted  whether the cutoff of the pseudo-waves is that of
+!!                         their weighted mean (icmod=6, 7)
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 !! @param epsh1  lower limit of the log derivative analysis energy range (Ha)
@@ -147,6 +149,7 @@
  real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rxpsh,rlmax
  real(dp), intent(in) :: rcfact,fcgrid(3),rcgrid(3),log_mesh(3)
  real(dp), intent(in) :: slack
+ logical, intent(in) :: budget_weighted
  logical, intent(in) :: ep_as_given,well_tail_free
  real(dp), intent(in) :: well_onset
  character(len=4), intent(in) :: psfile
@@ -215,7 +218,8 @@
 !
  call echo_input(xf,atsym,zz,nc,nv,iexc,psfile,na,la,fa,lmax,rc0,ep,ncon, &
 &                nbas,qcut,lloc,lpopt,dvloc0,nproj,debl,icmod,fcfact, &
-&                rcfact,slack,fcgrid,rcgrid,epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
+&                rcfact,slack,budget_weighted,fcgrid,rcgrid,epsh1,epsh2, &
+&                depsh,rxpsh,rlmax,drl, &
 &                ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh, &
 &                ep_as_given,well_onset,well_tail_free)
 
@@ -606,7 +610,8 @@
 
  subroutine echo_input(xf,atsym,zz,nc,nv,iexc,psfile,na,la,fa,lmax,rc0,ep, &
 &                      ncon,nbas,qcut,lloc,lpopt,dvloc0,nproj,debl,icmod, &
-&                      fcfact,rcfact,slack,fcgrid,rcgrid,epsh1,epsh2,depsh, &
+&                      fcfact,rcfact,slack,budget_weighted,fcgrid,rcgrid, &
+&                      epsh1,epsh2,depsh, &
 &                      rxpsh,rlmax,drl, &
 &                      ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh, &
 &                      ep_as_given,well_onset,well_tail_free)
@@ -649,6 +654,8 @@
 !! @param rcfact  prefactor for model core charge scale (icmod=3), or error
 !!                tolerance (icmod=6)
 !! @param slack  share of the cutoff the model core must fit (icmod=6, 7)
+!! @param budget_weighted  whether the cutoff of the pseudo-waves is that of
+!!                         their weighted mean (icmod=6, 7)
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 !! @param epsh1  lower limit of the log derivative analysis energy range (Ha)
@@ -683,6 +690,7 @@
  real(dp), intent(in) :: dvloc0,fcfact,epsh1,epsh2,depsh,rlmax,drl
  real(dp), intent(in) :: rcfact,fcgrid(3),rcgrid(3),rxpsh,log_mesh(3)
  real(dp), intent(in) :: slack
+ logical, intent(in) :: budget_weighted
  logical, intent(in) :: ep_as_given,well_tail_free
  real(dp), intent(in) :: well_onset
 
@@ -731,7 +739,8 @@
    call add(line)
  end do
 
- call icmod_lines(icmod,fcfact,rcfact,slack,fcgrid,rcgrid,text,ntext)
+ call icmod_lines(icmod,fcfact,rcfact,slack,budget_weighted,fcgrid,rcgrid, &
+&                 text,ntext)
  do ii=1,ntext
    call add(text(ii))
  end do

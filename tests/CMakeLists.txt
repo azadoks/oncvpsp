@@ -187,6 +187,12 @@ smooth_scan_test(sr_07_N_opt_rxpsh sr 07_N_opt "log_derivative_analysis.rxpsh" l
 set(smooth_free "pseudopotentials.well_tail=\"free\"")
 smooth_scan_test(sr_07_N_opt_rc1_free sr 07_N_opt "pseudopotentials.rc[1]" ${smooth_opt_groups} ${smooth_opt}
     --degree 14 --set ${smooth_free})
+# the weighted cutoff of the pseudo-waves for the model core's budget (budget_cutoff = "weighted",
+# fcfact 0): the occupation-weighted mean of the convergence curves, smooth where two channels'
+# crossings pass each other (the largest is not); ecut:weighted to 1.2e-11 measured
+set(smooth_wcut "model_core_charge.budget_cutoff=\"weighted\"")
+smooth_scan_test(sr_07_N_opt_rc1_wcut sr 07_N_opt "pseudopotentials.rc[1]" kernel,vloc,core,ecut ${smooth_opt}
+    --set model_core_charge.fcfact=0.0 --set ${smooth_wcut})
 smooth_scan_test(sr_14_Si_rc1_free sr 14_Si "pseudopotentials.rc[1]" kernel,vloc,core ${smooth_g1} --center 2.8
     --degree 14 --set ${smooth_free})
 smooth_scan_test(sr_14_Si_ep2_free sr 14_Si "pseudopotentials.ep[2]" kernel,vloc,core ${smooth_g1} --center 0.0
@@ -226,6 +232,7 @@ set(oncvpspsr_tests
     "14_Si_lder"    # rxpsh set, s projector below epsh1 (run_phsft, phsft_m)
     "40_Zr_grid"    # icmod=4 with an explicit search grid (modcore3)
     "14_Si_hm"      # icmod=7 with slack (modcore_budget, modcore_probes)
+    "14_Si_bcw"     # icmod=6 with the weighted cutoff of the waves (modcore_budget_table)
     "07_N_opt"      # the optimizer's setup (oncvpsp-opt): PBE (Libxc), icmod 6, rxpsh, its own
                     # log mesh, where the AE SCF stops on its residual's floor (ae_converged)
 )
@@ -243,6 +250,7 @@ set(oncvpspr_tests "52_Te" "74_W" "80_Hg"
     "14_Si"         # icmod=1
     "14_Si_bc"      # icmod=6
     "14_Si_hm"      # icmod=7 with slack
+    "14_Si_bcw"     # icmod=6 with the weighted cutoff, the weights split by J
     "14_Si_lder"    # rxpsh set
     "20_Ca"         # lpopt=1
     "34_Se"         # icmod=3
@@ -409,10 +417,11 @@ if (ONCVPSP_WITH_TOML)
             "icmod3_rcfact" "test_config_length" "test_config_count" "test_config_type"
             "integer_for_real" "extra_keys" "icmod6_default_rcfact"
             "icmod6_default_slack" "well_onset_range" "well_onset_default"
-            "well_tail_value" "well_tail_default")
+            "well_tail_value" "well_tail_default" "budget_cutoff_value"
+            "budget_cutoff_default")
         oncvpsp_test(toml_input_${case} toml toml_error_test.sh
             $<TARGET_FILE:oncvpspsr> "${data}" ${case} "${CMAKE_CURRENT_BINARY_DIR}/toml_input_${case}")
-        if (case MATCHES "^(integer_for_real|extra_keys|icmod6_default_rcfact|icmod6_default_slack|well_onset_default|well_tail_default)$")
+        if (case MATCHES "^(integer_for_real|extra_keys|icmod6_default_rcfact|icmod6_default_slack|well_onset_default|well_tail_default|budget_cutoff_default)$")
             oncvpsp_compares(toml_input_${case})
         endif ()
     endforeach ()
@@ -463,7 +472,8 @@ endforeach ()
 # same output (see scripts/echo_rerun_test.sh). The inputs cover rxpsh (14_Si_lder, and 52_Te with
 # rxpsh set), icmod=4 with its search grid (40_Zr_grid, 74_W), icmod=7 with slack (14_Si_hm), a
 # Libxc iexc (83_Bi), rc on the grid (03_Li), iexc=7 with c_light on the first line (52_Te_c,
-# 14_Si_c), and ep_as_given, well_onset and well_tail = "free" on the lmax line (14_Si_wt).
+# 14_Si_c), ep_as_given, well_onset and well_tail = "free" on the lmax line (14_Si_wt), and
+# budget_cutoff on the icmod line (14_Si_bcw).
 set(te_rxpsh "s/^   -3\\.0  3\\.0  0\\.02$/   -3.0  3.0  0.02  3.5/")
 set(te_c "s/^    Te  52\\.0   8   3   3   upf$/    Te  52.0   8   3   7   upf  137.0359895/")
 set(si_c "s/^    Si  14     3   2   3   psp8$/    Si  14     3   2   7   psp8  137.0359895/")
@@ -474,7 +484,8 @@ foreach (echo_test IN ITEMS
         "sr:83_Bi:psml" "sr:03_Li:psml" "nr:14_Si:psml" "sr:14_Si_hm:psp8"
         "r:74_W:psp8" "r:74_W:psml" "r:52_Te:psp8" "r:52_Te:upf" "r:52_Te:psml"
         "r:52_Te_c:psp8" "r:52_Te_c:upf" "r:52_Te_c:psml" "sr:14_Si_c:psp8" "sr:14_Si_c:psml"
-        "sr:14_Si_wt:psp8" "sr:14_Si_wt:upf" "sr:14_Si_wt:psml")
+        "sr:14_Si_wt:psp8" "sr:14_Si_wt:upf" "sr:14_Si_wt:psml"
+        "sr:14_Si_bcw:psp8" "sr:14_Si_bcw:upf" "sr:14_Si_bcw:psml" "r:14_Si_bcw:psp8")
     string(REPLACE ":" ";" echo_test "${echo_test}")
     list(GET echo_test 0 rel)
     list(GET echo_test 1 test_name)
@@ -550,6 +561,10 @@ oncvpsp_test(error_icmod7_slack_range errors error_test.sh
     $<TARGET_FILE:oncvpspsr> "test_data: must have 0.0<slack<=1.0 for icmod= 6 or 7"
     "${CMAKE_CURRENT_BINARY_DIR}/error_icmod7_slack_range"
     "${data}/14_Si_hm.dat" "s/^   7   0   1\\.0e-5   0\\.7$/   7   0   1.0e-5   1.5/")
+oncvpsp_test(error_budget_cutoff_value errors error_test.sh
+    $<TARGET_FILE:oncvpspsr> "Read ERROR, input data file line  34"
+    "${CMAKE_CURRENT_BINARY_DIR}/error_budget_cutoff_value"
+    "${data}/14_Si_bcw.dat" "s/^   6   0   1\\.0e-4   1\\.0   1$/   6   0   1.0e-4   1.0   2/")
 oncvpsp_test(error_iexc5_r2scan errors error_test.sh
     $<TARGET_FILE:oncvpspsr> "test_data: iexc=5 is r2SCAN, METAPSP only"
     "${CMAKE_CURRENT_BINARY_DIR}/error_iexc5_r2scan"

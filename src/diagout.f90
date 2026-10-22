@@ -20,7 +20,7 @@
 ! the tables above print to 6 or 2 decimals, to 17 significant digits.
 
  subroutine diagout(lmax,nproj,mxprj,nkap,cvgplt,npsh,epsh2,depsh,rphs, &
-&                   pshae,pshps,ngh,ghn,ghe,ghp)
+&                   pshae,pshps,ngh,ghn,ghe,ghp,wcut,errw,ecutw,wcurve)
 
 !! writes the block "Begin DIAGNOSTICS" ... "End DIAGNOSTICS", one value
 !! per line, each line tagged with its quantity:
@@ -44,6 +44,14 @@
 !! the reference, the one of least <r>/rc: its energy and <r>/rc, a
 !! GHOST(+) below 1
 !!
+!! ecut_w err ecut: the cutoff (Ha) at which the weighted mean of the
+!! residual kinetic energies per electron falls to err (Ha), the cutoff of
+!! the model core's budget with budget_cutoff = "weighted"
+!! (modcore_budget_table); only then written, with
+!!
+!! ecut_w_weight l ikap iproj w: the weight of each pseudo-wave in the mean
+!! (those with w > 0)
+!!
 !! ikap is 1 for j=l+1/2 (and for nkap=1), 2 for j=l-1/2
 !!
 !! @param lmax  maximum angular momentum
@@ -62,6 +70,10 @@
 !! @param ghe  their energies, e_ref and e_basis
 !! @param ghp  the least-localized-ghost margin per l and kap, e and <r>/rc
 !!             (0 if no state qualifies)
+!! @param wcut  whether to write the weighted cutoff
+!! @param errw  its error per electron (Ha)
+!! @param ecutw  the weighted cutoff (Ha)
+!! @param wcurve  the weights of the pseudo-waves
 
  use constants_m, only: dp, mxl, mxlin, nerrlv, mxstate, mxkap
  implicit none
@@ -74,6 +86,8 @@
  real(dp), intent(in) :: rphs(4),pshae(npsh,4,nkap),pshps(npsh,4,nkap)
  integer, intent(in) :: ngh(mxl+1,mxkap),ghn(mxstate,mxl+1,mxkap)
  real(dp), intent(in) :: ghe(2,mxstate,mxl+1,mxkap),ghp(2,mxl+1,mxkap)
+ logical, intent(in) :: wcut
+ real(dp), intent(in) :: errw,ecutw,wcurve(mxprj,mxl+1,nkap)
 
 !Local variables
  integer :: ii,jj,l1,ikap,mkap,iprj
@@ -94,6 +108,24 @@
      end do
    end do
  end do
+
+ if(wcut) then
+   write(6,'(a)') '# ecut_w err(Ha) ecut(Ha)'
+   write(6,'(a,1p,2e24.16)') 'ecut_w',errw,ecutw
+   write(6,'(a)') '# ecut_w_weight l ikap iproj w'
+   do l1=1,lmax+1
+     mkap=nkap
+     if(l1==1) mkap=1
+     do ikap=1,mkap
+       do iprj=1,mxprj
+         if(wcurve(iprj,l1,ikap)>0.0d0) then
+           write(6,'(a,3i4,1p,e24.16)') 'ecut_w_weight',l1-1,ikap,iprj, &
+&                wcurve(iprj,l1,ikap)
+         end if
+       end do
+     end do
+   end do
+ end if
 
  write(6,'(a)') '# ld_r l ikap r(bohr)'
  write(6,'(a)') '# ld l ikap e(Ha) atan(r*u''/u)_ae atan(r*u''/u)_ps'

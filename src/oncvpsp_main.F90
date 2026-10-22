@@ -111,6 +111,8 @@
  real(dp), allocatable :: ecurve(:,:,:,:,:)
  real(dp), allocatable :: pshae(:,:,:),pshps(:,:,:)
  real(dp) :: ecutw
+!weights of the pseudo-waves' curves in the weighted cutoff (budget_cutoff)
+ real(dp), allocatable :: wcurve(:,:,:)
 ! the points of a convergence curve: run_optimize's q grid, ~2400 for
 ! nbas=14 and less than 3000 for qcut up to 15 at rc up to 4
  integer, parameter :: ncurve=4000
@@ -138,7 +140,7 @@
  type(piecewise_t), allocatable :: vkbpw(:,:,:)
  type(piecewise_t) :: vlocpw
  type(piecewise_t) :: corepw(nrhomod)
- logical :: ep_as_given,well_tail_free
+ logical :: ep_as_given,well_tail_free,budget_weighted
  real(dp) :: well_onset
  real(dp), allocatable :: chix(:,:,:,:)
 !fully-relativistic only: scalar-relativistic and spin-orbit projectors, and
@@ -305,7 +307,7 @@
 &                       atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
 &                       lmax, rc, ep, ncon, nbas, qcut, &
 &                       lloc, lpopt, dvloc0, nproj, debl, &
-&                       icmod, fcfact, rcfact, slack, &
+&                       icmod, fcfact, rcfact, slack, budget_weighted, &
 &                       fcfact_min, fcfact_max, fcfact_step, &
 &                       rcfact_min, rcfact_max, rcfact_step, &
 &                       epsh1, epsh2, depsh, rxpsh, &
@@ -325,7 +327,7 @@
 &                       atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
 &                       lmax, rc, ep, ncon, nbas, qcut, &
 &                       lloc, lpopt, dvloc0, nproj, debl, &
-&                       icmod, fcfact, rcfact, slack, &
+&                       icmod, fcfact, rcfact, slack, budget_weighted, &
 &                       fcfact_min, fcfact_max, fcfact_step, &
 &                       rcfact_min, rcfact_max, rcfact_step, &
 &                       epsh1, epsh2, depsh, rxpsh, &
@@ -347,7 +349,7 @@
 &                       atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
 &                       lmax, rc, ep, ncon, nbas, qcut, &
 &                       lloc, lpopt, dvloc0, nproj, debl, &
-&                       icmod, fcfact, rcfact, slack, &
+&                       icmod, fcfact, rcfact, slack, budget_weighted, &
 &                       fcfact_min, fcfact_max, fcfact_step, &
 &                       rcfact_min, rcfact_max, rcfact_step, &
 &                       epsh1, epsh2, depsh, rxpsh, &
@@ -443,6 +445,7 @@
  allocate(evkb(mxprj,mxl+1,nkap),qq(mxprj,mxprj))
  allocate(cvgplt(2,nerrlv,mxprj,mxl+1,nkap))
  allocate(ecurve(2,ncurve,mxprj,mxl+1,nkap))
+ allocate(wcurve(mxprj,mxl+1,nkap))
  allocate(vp(mmax,mxl+2,nkap),vfull(mmax),vkb(mmax,mxprj,mxl+1,nkap))
  allocate(pswf(mmax,mxprj,mxl+1,nkap))
  allocate(vpuns(mmax,mxl+2))
@@ -550,7 +553,7 @@
    write(6,'(2i5,f10.5)') l1-1,nproj(l1),debl(l1)
  end do
 
- call write_icmod(icmod,fcfact,rcfact,slack,fcgrid,rcgrid)
+ call write_icmod(icmod,fcfact,rcfact,slack,budget_weighted,fcgrid,rcgrid)
 
  call write_epsh(epsh1,epsh2,depsh,rxpsh)
 
@@ -629,6 +632,7 @@
 !
  cvgplt(:,:,:,:,:)=0.0d0
  ecurve(:,:,:,:,:)=0.0d0
+ wcurve(:,:,:)=0.0d0
 !
 ! loop to construct pseudopotentials for all angular momenta
 !
@@ -853,6 +857,20 @@
 &                      ecurve(1,1,1,l1,ikap), &
 &                      pswfx(1,1,l1,ikap),chix(1,1,l1,ikap))
 
+!the weights of its pseudo-waves in the weighted cutoff: the occupation of
+!each valence state (its share fj of J), or 2(2l+1) for the first wave of a
+!channel with none occupied
+     jj=0
+     do kk=nc+1,nc+nv
+       if(la(kk)==ll .and. jj<nproj(l1)) then
+         jj=jj+1
+         wcurve(jj,l1,ikap)=fj*fa(kk)
+       end if
+     end do
+     if(.not. any(wcurve(:,l1,ikap)>0.0d0)) then
+       wcurve(1,l1,ikap)=fj*dble(2*(2*ll+1))
+     end if
+
    end do !ikap
    wellprj(:,l1)=inwell(:)
  end do !l1
@@ -989,7 +1007,8 @@
  else if(icmod==6 .or. icmod==7) then
    ecutw=0.0d0
    if(fcfact<=0.0d0) then
-     call modcore_budget_table(ecurve,ncurve,mxprj*4*nkap,rcfact,ecutw)
+     call modcore_budget_table(ecurve,ncurve,mxprj*4*nkap,wcurve, &
+&                              budget_weighted,rcfact,ecutw)
    end if
 !the probe densities of the hardness of icmod=7
    allocate(probes(mmax,mxprj*(lmax+1)),lprobe(mxprj*(lmax+1)))
@@ -999,7 +1018,8 @@
 &                        rr,mmax,mxprj, &
 &                        nkap,probes,lprobe,nprobe)
    end if
-   call modcore_budget(icmod,rho,rhoc,rhomod,corepw,fcfact,ecutw,rcfact, &
+   call modcore_budget(icmod,rho,rhoc,rhomod,corepw,fcfact,ecutw, &
+&               budget_weighted,rcfact, &
 &               slack, &
 &               minval(rc(1:lmax+1)),mmax,rr,iexc,zion, &
 &               probes(:,1:nprobe),lprobe(1:nprobe),nprobe)
@@ -1143,7 +1163,8 @@
  call gnu_script(epa,evkb,lmax,lloc,mxprj,nproj,nkap)
 
  call diagout(lmax,nproj,mxprj,nkap,cvgplt,npsh,epsh2,depsh,rphs,pshae, &
-&             pshps,ngh,ghn,ghe,ghp)
+&             pshps,ngh,ghn,ghe,ghp,(icmod==6 .or. icmod==7) &
+&             .and. fcfact<=0.0d0 .and. budget_weighted,rcfact,ecutw,wcurve)
  deallocate(pshae,pshps)
 
  if(trim(psfile)=='psp8' .or. trim(psfile)=='both') then
@@ -1156,7 +1177,7 @@
 &              fa,rc0,ep,qcut,ep_as_given,well_onset,well_tail_free,debl, &
 &              facnf,dvloc0, &
 &              fcfact,fcfact0,rcfact, &
-&              slack,fcgrid,rcgrid, &
+&              slack,budget_weighted,fcgrid,rcgrid, &
 &              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,upf_mesh,nkap)
  end if
 
@@ -1167,7 +1188,7 @@
 &              fa,rc0,ep,qcut,ep_as_given,well_onset,well_tail_free,debl, &
 &              facnf,dvloc0, &
 &              fcfact0,rcfact, &
-&              slack,fcgrid,rcgrid, &
+&              slack,budget_weighted,fcgrid,rcgrid, &
 &              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,uupsa,ea,log_mesh, &
 &              upf_mesh,nkap)
  end if
@@ -1202,7 +1223,7 @@
 &               zz,zion,mmax,iexc,icmod,nrl,drl,atsym,epstot, &
 &               na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &               fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact0,rcfact, &
-&               slack,fcgrid,rcgrid, &
+&               slack,budget_weighted,fcgrid,rcgrid, &
 &               epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,upf_mesh, &
 &               irel,nkap,ep_as_given,well_onset,well_tail_free)
  end if
