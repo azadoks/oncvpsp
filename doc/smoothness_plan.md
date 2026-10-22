@@ -1458,6 +1458,35 @@ from rc:
       7. (Lower priority, larger) AE against PS in a confined atom
          (harmonic or soft wall, a few strengths): eigenvalue and energy
          shifts, a stand-in for compression.
+- [ ] Configurable Adams–Moulton order in the radial ODE solvers (the
+      user's idea, listed 2026-10-22 at their request through another
+      session; not approved for work yet). Today: AB4 predictor and two
+      fixed-point AM4 corrector passes per mesh step (`adams.inc`, in
+      sr_flux_m, lschfb, lschpsbar, outwf_m, vout, dirac_m, ldiracfb,
+      lschvkbb), global error O(al⁴), while the interpolation,
+      derivatives and quadrature are of order 7–8 (audit §6a).
+      1. The implicit AM step solved exactly (a 2×2 linear solve; the
+         equations are linear): the true implicit method, cheaper, no
+         iteration-count artefact, still smooth (rational in the
+         coefficients, denominator ≈ 1).
+      2. `adams.inc` of order k, AB_k/AM_k coefficients for k = 4, 6, 8
+         (tabulated or from the generating functions); an input
+         `adams_order` (default 4, keeping parity), on the .dat line
+         with the mesh parameters.
+      3. The bootstrap from k: k start points (the series, with RK4 on
+         the model equation for relativistic points, whose steps are
+         far below al); the inward re-integration (12 points now) and
+         the exponential inward start of k points; a matching window
+         long enough for k-point histories.
+      4. Check that the model potential's start error stays below the
+         AM_k truncation at high order; extend the series radius or the
+         re-integration if not.
+      5. One binary, amesh 1.003 / 1.006 / 1.012 × order 4 / 6 / 8:
+         eigenvalues, kernels and V_loc (not projectors) should converge
+         as al⁴, al⁶, al⁸; then decide whether a coarser default mesh is
+         safe.
+      6. No step adaptivity: a fixed mesh and a fixed operation count
+         keep the solution C∞ in E and V.
 
 #### Numerics audit (2026-10-22)
 
@@ -1518,8 +1547,28 @@ changing it:
       event itself, the π·anint alignment of run_phsft can only change
       where the phases differ by π/2 (a failed log-derivative match),
       and the basis cut where lschpsbar fails is reported
-- [ ] C-9, der2exc's occupation step 0.15
-- [ ] C-10, eresid's q spacing qmax/(nq − 1), nq an integer
+- [x] C-9, der2exc's occupation step 0.15: checked, kept. Its
+      truncation error is 3.5e-6 of d2Exc (14_Si; 3.3e-7 for 83_Bi,
+      steps 0.15 to 0.001), and icmod 7's r_s and mismatch do not move
+      at printed precision for any step from 0.15 to 0.001, nor for the
+      slope's difference step from 1e-2 to 2.5e-3. Negative densities
+      do occur, in icmod 7's probes (14_Si_hm, 328 points inside rcut),
+      not icmod 1–4 as the audit has it; they persist at a step of 0.001
+      (221 points), so they are where the density is negligible, not
+      made by the step. A step of 0.01 was tried: icmod 4's optimum
+      moved (74_W_r V_loc by 6e-5) and 40_Zr's Newton refinement no
+      longer converged, so icmod 4's objective, as modcore3 samples it,
+      is not smooth at that scale.
+- [ ] icmod 4: why modcore3's optimum depends on der2exc's step at 1e-5
+      (the clipped near-zero densities are the first suspect); then
+      analytic f_xc (libxc can give it) in place of the differences
+- [x] C-10, eresid's q spacing qmax/(nq − 1), nq an integer: confirmed.
+      The grid is now q_i = qmax − (nq − i) dq with dq = 2π/(150 rc)
+      exactly, from below dq up to qmax: the spacing is continuous and
+      a node that appears enters at q = 0, where the integrands vanish
+      as q⁴. Its effect is at the quadrature's floor: the Ecut crossings
+      move by ≤1.3e-11 relative, as much as doubling the q points moves
+      either grid
 - [ ] C-11, V_l near the origin by cancellation
 
 ### Decisions

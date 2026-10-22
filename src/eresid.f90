@@ -18,15 +18,20 @@
 !
 ! calculates residual energy operator matrix elements as a function of q
 
- subroutine eresid(ll,rc,nnull,nbas,nq,nqout,qout,qmax,qroot,hh,nr, &
+ subroutine eresid(ll,rc,nnull,nbas,nq,dq,nqout,qout,qmax,qroot,hh,nr, &
 &                  ulin,pswf0_sb,pswfnull_sb,e0g,edotg,ematg, &
 &                  eresid0,eresiddot,eresidmat)
 
 !! residual kinetic energy matrix elements as functions of the lower
 !! cutoff q: E0(q) = (1/pi) int_q^{qmax} q'**4 |ps0(q')|**2 dq', and the
 !! same with the null-space functions in place of one or both ps0; on the
-!! uniform q grid q_i=(i-1) qmax/(nq-1), i=1..nq (e0g, edotg, ematg) and
-!! at the wave vectors qout (eresid0, eresiddot, eresidmat). The
+!! uniform q grid q_i = qmax - (nq-i) dq, i=1..nq, from below dq up to
+!! qmax (e0g, edotg, ematg), and at the wave vectors qout (eresid0,
+!! eresiddot, eresidmat). The grid's spacing is a continuous function of
+!! the inputs and its nodes move continuously with qmax; a node that
+!! appears enters at q = 0, where the integrands vanish as q**4 (the
+!! spacing qmax/(nq-1) with an integer nq jumped where nq did;
+!! doc/numerics_audit.md, C-10). The
 !! transform ps(q) = int_0^inf (r psi(r)) (r j_l(q r)) dr is the exact
 !! transform of the Bessel sum inside rc (sbf_overlap, Lommel's integrals)
 !! plus that of the all-electron tail outside rc on a linear mesh from rc,
@@ -49,6 +54,7 @@
 !! @param nnull  number of null-space functions
 !! @param nbas  number of basis functions
 !! @param nq  number of nodes of the q grid
+!! @param dq  its spacing
 !! @param nqout  number of wave vectors at which E is wanted
 !! @param qout  those wave vectors, 0<=qout<qmax (bohr^-1)
 !! @param qmax  largest q, taken as infinity (bohr^-1)
@@ -79,7 +85,7 @@
 !Input variables
  integer, intent(in) :: ll,nnull,nbas,nq,nqout,nr
  real(dp), intent(in) :: rc,qmax,hh
- real(dp), intent(in) :: ulin(nr),qout(nqout)
+ real(dp), intent(in) :: ulin(nr),qout(nqout),dq
  real(qp), intent(in) :: pswf0_sb(nbas),pswfnull_sb(nbas,nnull)
  real(dp), intent(in) :: qroot(nbas)
 
@@ -94,7 +100,7 @@
  real(dp), allocatable :: g0(:),gdot(:,:),gmat(:,:,:),work(:)
  real(dp) :: sb_out(5),psnullq(nnull)
  real(qp) :: ovl(nbas),ps0in,psnin(nnull),rcq,jq(nbas),jdq(nbas),jb,jdb
- real(dp) :: dq,qq,qq4,ps0q,tn,qa,qb,wg
+ real(dp) :: q0,qq,qq4,ps0q,tn,qa,qb,wg
  integer :: ii,iq,jj,kk,ll1,ig,icell
 !steps between exact sin/cos(qq*rlin) evaluations in the q loop
  integer, parameter :: nqseed=32
@@ -110,7 +116,12 @@
 &   0.1012285362903763d0]
 
  ll1=ll+1
- dq=qmax/dble(nq-1)
+ q0=qmax-dble(nq-1)*dq
+ if(q0<0.0d0) then
+   write(6,'(/a,i0,a,es12.4,a,es12.4)') 'eresid: ERROR q grid below 0, nq=', &
+&        nq,', dq=',dq,', qmax=',qmax
+   error stop 1
+ end if
 
 !the basis functions' values and slopes at rc, for their overlaps with
 !j_l(q r) at each q (quad precision: the overlaps enter sums with 1e4
@@ -146,7 +157,7 @@
 
 !the integrands at each node of the q grid
  do iq=1,nq
-   qq=dble(iq-1)*dq
+   qq=q0+dble(iq-1)*dq
 
 !sin and cos of qq*rlin, evaluated directly every nqseed steps and
 !otherwise rotated by dq*rlin from the previous qq
@@ -167,7 +178,7 @@
    end if
 
 !q**4 makes the integrands zero at q=0 whatever the transforms
-   if(iq==1) then
+   if(qq==0.0d0) then
      g0(iq)=0.0d0
      gdot(iq,:)=0.0d0
      gmat(iq,:,:)=0.0d0
@@ -207,10 +218,11 @@
 &        qout(ii),' qmax=',qmax
      error stop 1
    end if
-   icell=int(qout(ii)/dq)
+! icell -1 for a qout below the first node
+   icell=floor((qout(ii)-q0)/dq)
    qa=qout(ii)
-   qb=dble(icell+1)*dq
-   if(qa==dble(icell)*dq) then
+   qb=q0+dble(icell+1)*dq
+   if(qa==q0+dble(icell)*dq) then
 ! on a node
      eresid0(ii)=e0g(icell+1)
      eresiddot(:,ii)=edotg(icell+1,:)

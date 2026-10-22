@@ -90,7 +90,7 @@
  real(dp) :: uord(5)
  real(dp) :: al,ulgd,tt
  real(dp) :: sn,ps0norm,amesh,ro
- real(dp) :: err,qerr,ehaerr,eeverr,dq
+ real(dp) :: err,qerr,ehaerr,eeverr,dq,q0
  real(dp) :: sbf(mmax)
  real(dp) :: cons(10)
  real(qp), allocatable :: orbasis(:,:),orbasis_der(:,:)
@@ -174,10 +174,11 @@
 !q considered infinity for E_resid calculation: twice the largest basis
 !wave vector, at least 20 and at least twice qcut, by smooth maxima of
 !width 1 bohr^-1 (doc/smoothness_plan.md, Q-3); the q grid of E_resid has
-!150 points per 2 pi/rc, its spacing continuous in qmax and rc
+!150 points per 2 pi/rc, down from qmax to below dq (eresid)
    qmax=smax(smax(2.0d0*qroot(nbas),20.0d0),2.0d0*qcut)
-   nq=1+nint(150.0d0*qmax*rc/(2.0d0*pi))
-   dq=qmax/dble(nq-1)
+   dq=2.0d0*pi/(150.0d0*rc)
+   nq=1+int(qmax/dq)
+   q0=qmax-dble(nq-1)*dq
 
 !E_resid is wanted at the exact qcut and at q=0 (the kinetic energy)
    nqout=2
@@ -235,7 +236,7 @@
 
 !E_resid on the q grid, and at the exact qcut and the points of the
 !convergence curve (Q-1, Q-4)
-   call eresid(ll,rc,nnull,nbas,nq,nqout,qout,qmax,qroot,hh,nr,ulin, &
+   call eresid(ll,rc,nnull,nbas,nq,dq,nqout,qout,qmax,qroot,hh,nr,ulin, &
 &              pswf0_sbq,pswfnull_sbq,e0,edot,emat, &
 &              eresid0,eresiddot,eresidmat)
    deallocate(ulin)
@@ -283,7 +284,7 @@
    end if
    ecurve(:,:,iprj)=0.0d0
    do iq=1,nq
-     ecurve(1,iq,iprj)=0.5d0*(dble(iq-1)*dq)**2
+     ecurve(1,iq,iprj)=0.5d0*(q0+dble(iq-1)*dq)**2
      ecurve(2,iq,iprj)=eresg(iq)
    end do
 
@@ -330,7 +331,7 @@
 !root-finding on it
    err=0.01d0
    do jj=1,nerrlv
-     call ug_cross_down(eresg,nq,dq,0.0d0,err,qerr,found_root)
+     call ug_cross_down(eresg,nq,dq,q0,err,qerr,found_root)
      if(found_root) then
        cvgplt(1,jj,iprj)= 0.5d0*qerr**2
        cvgplt(2,jj,iprj)= err
