@@ -110,23 +110,30 @@
    do jj=1,nbas
      call sbf_rc_der(ll,qroot(jj),rr(ii),sbfder)
      tt=tt+pswfopt_sb(jj)*rr(ii)*sbfder(1)
-     ddt=ddt+pswfopt_sb(jj)*(rr(ii)*sbfder(3)+2.0d0*sbfder(2))
+     ddt=ddt+pswfopt_sb(jj)*qroot(jj)**2*rr(ii)*sbfder(1)
    end do
    psx(ii)=tt
-   chix(ii)=eig*tt-0.5d0*(ll*ll1*tt/rr(ii)**2-ddt)
+   chix(ii)=eig*tt-0.5d0*ddt
  end do
 
-!fill [0, rc] with rr * analytic pswf and 2nd derivatives
+!fill [0, rc] with rr * analytic pswf and its kinetic operator: for
+!u = r j_l(q r), l(l+1) u/r**2 - u'' = q**2 u (Bessel's equation), exactly;
+!the two terms of the left side go as r**(l-1) and cancel to r**(l+1),
+!which lost eps l(l+1)/r**2 near the origin (doc/numerics_audit.md, C-11)
  do ii=1,irc
    tt=0.0d0
    ddt=0.0d0
    do jj=1,nbas
      call sbf_rc_der(ll,qroot(jj),rr(ii),sbfder)
      tt=tt+pswfopt_sb(jj)*rr(ii)*sbfder(1)
-     ddt=ddt+pswfopt_sb(jj)*(rr(ii)*sbfder(3)+2.0d0*sbfder(2))
+     ddt=ddt+pswfopt_sb(jj)*qroot(jj)**2*rr(ii)*sbfder(1)
    end do
    work(ii,1)=tt
-   work(ii,3)=ddt
+   work(ii,4)=0.5d0*ddt
+ end do
+!beyond rc, that of the all-electron function from its numerical u''
+ do ii=irc+1,mmax
+   work(ii,4)=0.5d0*(ll*ll1*work(ii,1)/rr(ii)**2-work(ii,3))
  end do
 
  do ii=1,mmax
@@ -137,9 +144,6 @@
 
  amesh = exp(al)
  ro=rr(5)/sqrt(amesh)
-
-!kinetic operator on psopt including centrifugal term
- work(:,4)=0.5d0*(ll*ll1*work(:,1)/rr(:)**2-work(:,3))
 
 
 !pseudopotential and node test

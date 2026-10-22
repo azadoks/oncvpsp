@@ -1569,7 +1569,13 @@ changing it:
       as q⁴. Its effect is at the quadrature's floor: the Ecut crossings
       move by ≤1.3e-11 relative, as much as doubling the q points moves
       either grid
-- [ ] C-11, V_l near the origin by cancellation
+- [x] C-11, V_l near the origin by cancellation: confirmed. Inside rc,
+      pspot formed ½(l(l+1)u/r² − u″) from two terms that go as r^(l−1)
+      and cancel to r^(l+1); for u = r j_l(qr) it is ½q²u exactly
+      (Bessel's equation), now used (and in chix). Only V_l at the first
+      nodes changes: the psp8 value at r = 0 (written from rr(1)) of
+      07_N_dl's V_loc (l = 2) was 6.4e-7 Ha off the even continuation
+      of V_loc from r ≥ 0.01, now 5.6e-9; elsewhere ≤6e-12
 
 ### Decisions
 
