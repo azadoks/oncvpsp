@@ -1521,6 +1521,21 @@ from rc:
       r-space kinetic energy is good to 1e-10–5e-7 Ha in the references,
       no better than the 1e-7 level, so T_r would need a more accurate
       quadrature first.
+      Measured 2026-10-22 (14_Si, 60_Nd_GHOST, 73_Ta, sr and fr; amesh
+      1.012 to 1.00075, and copies with dq halved or q∞ doubled):
+      `ekin_check` is three terms. (a) T_r's mesh error, the largest at
+      the default mesh: O(h⁴) in 14_Si, about O(h³) in Nd and Ta, 3e-7
+      Ha in the Nd f channels at amesh 1.006 (it has the wrong sign
+      there). The jump at rc is in the third derivative of u·Tu (the
+      matched derivatives), so the cell of rc matters less than first
+      thought. (b) The q quadrature, dq = 2π/(150 rc): a mesh-independent
+      floor, 8.8e-11 in Si l=0 #2 and 8.4e-9 in the third Ta s
+      projector, gone with dq halved. (c) The energy above q∞, which is
+      the term Parseval would add: 9.3e-8 and 1.4e-7 Ha in the Nd f #2
+      waves, up to 1.2e-8 in the Ta f waves, below 1e-12 in Si (each gone with
+      q∞ doubled). So the truncation at q∞ biases the 1e-7 Ecut level in
+      Nd f, and Parseval would fix it only with T_r good to 1e-8, which
+      needs amesh 1.003 or a better quadrature at the default mesh.
 - [ ] Optimize the test suite (the user's request, 2026-10-22; not
       approved for work yet): more coverage for less wall time, by better
       choices of test cases and of what each computes. Where the time
