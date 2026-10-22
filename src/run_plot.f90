@@ -53,7 +53,7 @@
 !! @param nkap  number of kappa per l: 1, or 2 for irel=2
 !! @param cvgplt  energy per electron error vs. cutoff (convergence profiles)
 
- use constants_m, only: dp, mxl, mxlin, nrhomod, nerrlv
+ use constants_m, only: dp, mxl, mxlin, nrhomod, nerrlv, nerrdg
  use pieces_m, only: piecewise_t
  implicit none
 
@@ -68,7 +68,7 @@
  real(dp), intent(in) :: rho(mmax),rhoc(mmax),rhomod(mmax,nrhomod)
  real(dp), intent(in) :: epa(mxprj,mxlin+1,nkap),evkb(mxprj,mxl+1,nkap)
  logical, intent(in) :: wellprj(mxprj,mxlin+1)
- real(dp), intent(in) :: cvgplt(2,nerrlv,mxprj,mxl+1,nkap)
+ real(dp), intent(in) :: cvgplt(2,nerrdg,mxprj,mxl+1,nkap)
 
 !Local variables
  integer :: ll,l1,ii,jj,ierr,mch,n1,n2,n3,n4,nn

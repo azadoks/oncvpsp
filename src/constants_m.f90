@@ -23,7 +23,7 @@
  implicit none
  private
  public :: dp, pi, mxprj, mxstate, mxcnf, mxl, mxlin, mxkap
- public :: nrhomod, nlev, nerrlv, dqout, well_onset_default
+ public :: nrhomod, nlev, nerrlv, nerrdg, dqout, well_onset_default
 
 !> kind of all real variables
  integer, parameter :: dp=real64
@@ -62,9 +62,13 @@
 !> excited
  integer, parameter :: nlev=3
 
-!> number of energy-error levels of the convergence profiles (cvgplt), from
+!> number of energy-error levels of the convergence tables and profiles, from
 !> 1e-2 Ha down by half decades
  integer, parameter :: nerrlv=7
+
+!> number of the levels of cvgplt, the nerrlv of the tables and those of
+!> the DIAGNOSTICS block only, down to 1e-7 Ha
+ integer, parameter :: nerrdg=11
 
 !> spacing (bohr**-1) of the q mesh of the "Energy error per electron"
 !> tables, as their interpolation assumes it (eresid moves the mesh points

@@ -18,7 +18,7 @@
 !
  subroutine run_vkb(lmax,lloc,lpopt,dvloc0,rc,irc,nproj,rr,mmax,mxprj,pswf, &
 &                   pswfx,chix,vfull,vp,evkb,vkb,nlim,dlta,vrloc,irel,nkap, &
-&                   vkbpw,vlocpw)
+&                   vkbpw,vlocpw,bbeig)
 
 !! computes Vanderbilt / Kleinman-Bylander non-local potentials. The
 !! projectors are functions of pieces (pieces_m, doc/smoothness_plan.md
@@ -62,6 +62,9 @@
 !! @param vlocpw  the screened local potential as a function of pieces
 !!                (output): its inside pieces and the all-electron
 !!                potential beyond rcloc, the last bound the mesh end
+!! @param bbeig  the eigenvalues of each channel's symmetrized B matrix,
+!!               ascending (B itself for one projector; 0 where there is
+!!               none) (output)
 
  use constants_m, only: dp, mxl, mxlin
  use pieces_m, only: piecewise_t, pw_maxseg, pw_reach, pw_alloc, pw_free, &
@@ -87,6 +90,7 @@
  real(dp), intent(out) :: evkb(mxprj,mxl+1,nkap)
  integer, intent(out) :: nlim
  type(piecewise_t), intent(out) :: vkbpw(mxprj,mxl+1,nkap),vlocpw
+ real(dp), intent(out) :: bbeig(mxprj,mxl+1,nkap)
 
 !Local variables
  integer :: lwork
@@ -182,6 +186,7 @@
 
 ! Vanderbilt / Kleinman-Bylander projector construction
  nlim=irc(lloc+1)
+ bbeig(:,:,:)=0.0d0
  do l1=1,lmax+1
    if(l1==lloc+1) cycle
    ll=l1-1
@@ -255,6 +260,7 @@
      bb(:,:)=0.0d0
      call pw_integral(rr,mmax,2*l1,pswfx(:,1,l1,ikap),pw(1),bb(1,1))
      evkb(1,l1,ikap)=1.0d0/bb(1,1)
+     bbeig(1,l1,ikap)=bb(1,1)
 ! this is Kleinman-Bylander result if nproj==1
 
      if(nproj(l1)>=2) then
@@ -294,6 +300,7 @@
          write(6,'(a,i4)') 'run_vkb: B matrix eigenvalue ERROR, info=',info
          error stop 1
        end if
+       bbeig(1:np,l1,ikap)=bbev(1:np)
 
 ! take linear combinations to form diagonal projectors
 

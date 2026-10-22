@@ -19,7 +19,7 @@
  subroutine run_config_ps(jj,istcnf,ierrcnf,itcnf,kerrcnf,nvtcnf, &
 &                         natcnf,latcnf,fatcnf,eatcnf,etstcnf,nc,rhov,rhomod, &
 &                         rr,rcmax,mmax,mxprj,iexc,etot,epstot,nproj,vpuns, &
-&                         lloc,vlocpw,vkbpw,evkb,irel,nkap)
+&                         lloc,vlocpw,vkbpw,evkb,irel,nkap,ntc,itc,etc,dtc)
 
 !! self-consistent pseudoatom calculation for test configuration jj, compared
 !! with the all-electron results for the reference and test configurations
@@ -47,6 +47,15 @@
 !! @param evkb  VKB projector coefficients, last index as for vkbpw
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param nkap  number of kappa per l: 1, or 2 for irel=2
+!! @param ntc  rows of the table of eigenvalues, -1 if the configuration
+!!             failed (output)
+!! @param itc  n, l and ikap of each row, ikap 1 for j=l+1/2 (or an
+!!             l-channel), 2 for j=l-1/2 (output)
+!! @param etc  occupation, all-electron and pseudo eigenvalue (Ha) of each
+!!             row (output)
+!! @param dtc  the all-electron and pseudo total-energy differences from
+!!             the reference configuration and their difference, the
+!!             excitation error (Ha) (output)
 
  use config_ae_m, only: config_ae_warning
  use constants_m, only: dp, mxstate, mxcnf, mxl, mxlin, nrhomod, nlev
@@ -69,6 +78,10 @@
  real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap)
  real(dp), intent(in) :: rhomod(mmax,nrhomod)
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1,nkap)
+
+!Output variables
+ integer, intent(out) :: ntc,itc(3,2*mxstate)
+ real(dp), intent(out) :: etc(3,2*mxstate),dtc(3)
 
 !Local variables
  integer :: ii,it,kk,ll,l1,ierr,nvt
@@ -108,6 +121,10 @@
 ! The all-electron atoms for the maximally-ionized and excited
 ! configurations are computed by run_config_ae.
 
+ ntc=-1
+ itc(:,:)=0
+ etc(:,:)=0.0d0
+ dtc(:)=0.0d0
  if(istcnf(jj)/=0) then
    call config_ae_warning(jj,irel,istcnf,ierrcnf,itcnf,kerrcnf,natcnf,latcnf)
    return
@@ -204,6 +221,7 @@
  subroutine write_results
 !! the eigenvalues and energies of the all-electron and pseudo atoms
  write(6,'(/a)') '   n   l     f        eae           eps        diff'
+ ntc=0
  do ii=1,nc
    write(6,'(2i4,f8.4,f14.8)') nat(ii),lat(ii),fat(ii,3),eat(ii,1,3)
  end do
@@ -211,7 +229,11 @@
    if(fat(ii+nc,3)==0.0d0) cycle
    write(6,'(2i4,f8.4,2f14.8,1p,d12.2)') nat(ii+nc),lat(ii+nc),fat(ii+nc,3), &
 &   eat(ii+nc,1,3),eatp(ii,1),eatp(ii,1)-eat(ii+nc,1,3)
+   ntc=ntc+1
+   itc(:,ntc)=[nat(ii+nc),lat(ii+nc),1]
+   etc(:,ntc)=[fat(ii+nc,3),eat(ii+nc,1,3),eatp(ii,1)]
  end do
+ dtc(:)=[eaetst-etot,etsttot-epstot,eaetst-etot-etsttot+epstot]
 
  write(6,'(/a)') '    Total energies and differences'
  write(6,'(a,1p,d16.8,a,d16.8,a,d10.2)') '      AE_ref=',etot, &
@@ -227,6 +249,7 @@
 !! write_results for irel=2, a line for each kappa with its share of the
 !! occupation
  write(6,'(/a)') '   n   l kap    f        eae           eps        diff'
+ ntc=0
  do ii=1,nc
    ll = lat(ii)
    if(ll==0) then
@@ -265,8 +288,12 @@
      end if
      write(6,'(3i4,f8.4,2f14.8,1p,e12.2)') nat(ii+nc),lat(ii+nc),kap,fj, &
 &     eat(ii+nc,ikap,3),eatp(ii,ikap),eatp(ii,ikap)-eat(ii+nc,ikap,3)
+     ntc=ntc+1
+     itc(:,ntc)=[nat(ii+nc),lat(ii+nc),ikap]
+     etc(:,ntc)=[fj,eat(ii+nc,ikap,3),eatp(ii,ikap)]
    end do
  end do
+ dtc(:)=[eaetst-etot,etsttot-epstot,eaetst-etot-etsttot+epstot]
 
  write(6,'(/a)') '    Total energies and differences'
  write(6,'(a,1p,e16.8,a,e16.8,a,e10.2)') '      AE_ref=',etot, &

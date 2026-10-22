@@ -57,7 +57,7 @@
  use modcore_m, only: core_pieces_smooth
  use free_tail_m, only: free_tail_log
  use logmesh_m, only: lm_fh_reach
- use constants_m, only: nlev, nerrlv, well_onset_default
+ use constants_m, only: nlev, nerrdg, well_onset_default
  use input_echo_m, only: write_atom, write_lmax, write_icmod, write_epsh, &
 &                        write_mesh
  use relativity_m, only: set_relativity
@@ -109,6 +109,15 @@
 
  real(dp), allocatable :: evkb(:,:,:),cvgplt(:,:,:,:,:),qq(:,:)
  real(dp), allocatable :: ecurve(:,:,:,:,:)
+!the r-space less the Fourier kinetic energy of each pseudo-wave
+!(run_optimize)
+ real(dp), allocatable :: ektail(:,:,:)
+!the eigenvalues of the B matrices (run_vkb)
+ real(dp), allocatable :: bbeig(:,:,:)
+!the test configurations (run_config_ps): rows of eigenvalues (-1 if one
+!failed), their n, l, ikap and f, eae, eps, and the energy differences
+ integer :: ntcf(mxcnf),itcf(3,2*mxstate,mxcnf)
+ real(dp) :: etcf(3,2*mxstate,mxcnf),dtcf(3,mxcnf)
  real(dp), allocatable :: pshae(:,:,:),pshps(:,:,:)
  real(dp) :: ecutw
 !weights of the pseudo-waves' curves in the weighted cutoff (budget_cutoff)
@@ -443,8 +452,9 @@
  allocate(uu(mmax,2),up(mmax,2),uupsa(mmax,nkap,nv))
  allocate(vwell(mmax,mxprj))
  allocate(evkb(mxprj,mxl+1,nkap),qq(mxprj,mxprj))
- allocate(cvgplt(2,nerrlv,mxprj,mxl+1,nkap))
+ allocate(cvgplt(2,nerrdg,mxprj,mxl+1,nkap))
  allocate(ecurve(2,ncurve,mxprj,mxl+1,nkap))
+ allocate(ektail(mxprj,mxl+1,nkap),bbeig(mxprj,mxl+1,nkap))
  allocate(wcurve(mxprj,mxl+1,nkap))
  allocate(vp(mmax,mxl+2,nkap),vfull(mmax),vkb(mmax,mxprj,mxl+1,nkap))
  allocate(pswf(mmax,mxprj,mxl+1,nkap))
@@ -632,6 +642,7 @@
 !
  cvgplt(:,:,:,:,:)=0.0d0
  ecurve(:,:,:,:,:)=0.0d0
+ ektail(:,:,:)=0.0d0
  wcurve(:,:,:)=0.0d0
 !
 ! loop to construct pseudopotentials for all angular momenta
@@ -855,7 +866,8 @@
 &                      pswf(1,1,l1,ikap),vp(1,l1,ikap),vkb(1,1,l1,ikap), &
 &                      vfull,cvgplt(1,1,1,l1,ikap),ncurve, &
 &                      ecurve(1,1,1,l1,ikap), &
-&                      pswfx(1,1,l1,ikap),chix(1,1,l1,ikap))
+&                      pswfx(1,1,l1,ikap),chix(1,1,l1,ikap), &
+&                      ektail(1,l1,ikap))
 
 !the weights of its pseudo-waves in the weighted cutoff: the occupation of
 !each valence state (its share fj of J), or 2(2l+1) for the first wave of a
@@ -881,7 +893,7 @@
 
  call run_vkb(lmax,lloc,lpopt,dvloc0,rc,irc,nproj,rr,mmax,mxprj,pswf,pswfx, &
 &             chix,vfull,vp,evkb,vkb,nlim,dlta,vrloc,irel,nkap,vkbpw, &
-&             vlocpw)
+&             vlocpw,bbeig)
 
 !restore this to its proper value
  nproj(lloc+1)=0
@@ -1142,7 +1154,8 @@
    call run_config_ps(jj,istcnf,ierrcnf,itcnf,kerrcnf,nvtcnf, &
 &                     natcnf,latcnf,fatcnf,eatcnf,etstcnf,nc,rhot,rhomod,rr, &
 &                     rcmax,mmax,mxprj,iexc,etot,epstot,nproj,vpuns, &
-&                     lloc,vlocpw,vkbpw,evkb,irel,nkap)
+&                     lloc,vlocpw,vkbpw,evkb,irel,nkap,ntcf(jj), &
+&                     itcf(:,:,jj),etcf(:,:,jj),dtcf(:,jj))
 
  end do !jj
 
@@ -1164,7 +1177,9 @@
 
  call diagout(lmax,nproj,mxprj,nkap,cvgplt,npsh,epsh2,depsh,rphs,pshae, &
 &             pshps,ngh,ghn,ghe,ghp,(icmod==6 .or. icmod==7) &
-&             .and. fcfact<=0.0d0 .and. budget_weighted,rcfact,ecutw,wcurve)
+&             .and. fcfact<=0.0d0 .and. budget_weighted,rcfact,ecutw,wcurve, &
+&             ektail,icmod,rr,mmax,rcmax,rhoc,corepw,lloc,evkb,bbeig, &
+&             ncnf+1,ntcf,itcf,etcf,dtcf)
  deallocate(pshae,pshps)
 
  if(trim(psfile)=='psp8' .or. trim(psfile)=='both') then

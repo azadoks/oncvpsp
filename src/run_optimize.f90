@@ -18,7 +18,8 @@
 !
  subroutine run_optimize(eig,ll,kap,irel,mmax,mxprj,rr,uua,upa,qq,&
 &                      freetl,rc,irc,qcut,qmsbf,ncon_in,nbas_in,npr, &
-&                      psopt,vpsp,vkb,vae,cvgplt,ncurve,ecurve,pswfx,chix)
+&                      psopt,vpsp,vkb,vae,cvgplt,ncurve,ecurve,pswfx,chix, &
+&                      ektail)
 
 !! calls routines to generate optimized pseudo wave function and semi-local
 !! pseudopotential and prints diagnostic information on process and
@@ -58,8 +59,12 @@
 !! @param pswfx  the inside pieces of the pseudo wave functions (their Bessel
 !!               sums) on the nodes to past rc, 0 beyond (pspot)
 !! @param chix  (eig - T) pswfx, the projectors' seeds, the same
+!! @param ektail  the r-space kinetic energy of each optimized wave less the
+!!                Fourier one to q_infinity (Ha): the energy above
+!!                q_infinity, which E_resid leaves out, plus the r-space
+!!                integral's error
 
- use constants_m, only: dp, nerrlv, pi
+ use constants_m, only: dp, nerrlv, nerrdg, pi
  use, intrinsic :: iso_fortran_env, only: qp => real128
  use ugrid_m, only: ug_cross_down
  use free_tail_m, only: mesh_tail, free_tail, tail_kinetic
@@ -77,13 +82,14 @@
 !Input/output variables
  integer, intent(inout) :: irc
  real(dp), intent(inout) :: vpsp(mmax),vkb(mmax,mxprj)
- real(dp), intent(inout) :: cvgplt(2,nerrlv,mxprj)
+ real(dp), intent(inout) :: cvgplt(2,nerrdg,mxprj)
 
 !Output variables
  real(dp), intent(out) :: qmsbf
  real(dp), intent(out) :: psopt(mmax,mxprj)
  real(dp), intent(out) :: ecurve(2,ncurve,mxprj)
  real(dp), intent(out) :: pswfx(mmax,mxprj),chix(mmax,mxprj)
+ real(dp), intent(out) :: ektail(mxprj)
 
 !Local variables
  real(dp), parameter :: Ha_eV=27.21138386d0 ! 1 Hartree, in eV
@@ -142,6 +148,7 @@
  qmsbf=qroot(nbas)
 
  psopt(:,:)=0.0d0
+ ektail(:)=0.0d0
 
 ! loop over projectors
  do iprj=1,npr
@@ -315,6 +322,7 @@
      deallocate(tke)
    end if
 
+   ektail(iprj)=ekin_num-ekin_anal
    write(6,'(/a)') '    Total kinetic energy consistency test'
    write(6,'(a)') '      Fourier integration compared to d^2/dr^2 integral'
    write(6,'(a,f12.8,a,f12.8,a,f12.8)') '      Fourier',ekin_anal, &
@@ -328,14 +336,15 @@
    write(6,'(/a)') '    Energy error per electron        Cutoff'
    write(6,'(a)') '         Ha          eV             Ha'
 !the cutoffs at which the curve falls to each error level, by
-!root-finding on it
+!root-finding on it; the table shows the first nerrlv, the DIAGNOSTICS
+!block all of them
    err=0.01d0
-   do jj=1,nerrlv
+   do jj=1,nerrdg
      call ug_cross_down(eresg,nq,dq,q0,err,qerr,found_root)
      if(found_root) then
        cvgplt(1,jj,iprj)= 0.5d0*qerr**2
        cvgplt(2,jj,iprj)= err
-       if(mod(jj,2)/=0) then
+       if(mod(jj,2)/=0 .and. jj<=nerrlv) then
          write(6,'(4x,2f12.5,f12.2)') err,err*Ha_eV,0.5d0*qerr**2
        end if
      end if

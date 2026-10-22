@@ -252,7 +252,11 @@ irel, and the stage.  It has the following major sections:
     The routine *diagout* then writes the block "Begin DIAGNOSTICS" to
     "End DIAGNOSTICS", for programs that read the output: the cutoffs at
     which each projector's convergence curve reaches every error level
-    (1e-2 Ha down by half decades), and the log derivatives of *run_phsft*
+    (1e-2 Ha down by half decades to 1e-7, past the tables' 1e-5), the
+    r-space kinetic energy of each wave less the Fourier one to the
+    curve's q_infinity (`ekin_check l ikap iproj t`: by Parseval the
+    energy above q_infinity, which the curve leaves out, plus the error
+    of the r-space integral, which dominates it), and the log derivatives of *run_phsft*
     with their radius, and the margins of the ghost tests, to 17
     significant digits, one tagged value per line (`ecut l ikap iproj err
     ecut`, `ld_r l ikap r`, `ld l ikap e ae ps`; ikap is 1 for j=l+1/2 or a
@@ -276,7 +280,22 @@ irel, and the stage.  It has the following major sections:
     block also gives the model core's budget, the cutoff of the
     occupation-weighted mean of the convergence curves (`ecut_w err
     ecut`), and the weights (`ecut_w_weight l ikap iproj w`, see
-    doc/core_correction.md).
+    doc/core_correction.md). It also gives the conditioning of the
+    projectors per channel: the eigenvalues of the symmetrized B matrix
+    (`vkb_b l ikap i b`), their condition number (`vkb_cond l ikap c`)
+    and the orthonormal projectors' coefficients (`vkb_e l ikap i e`, the
+    eigenvalues of the nonlocal kernel, unlike the projectors themselves
+    independent of the basis); the test configurations' energy
+    differences from the reference configuration, all-electron, pseudo
+    and their difference (`test_config icfg de_ae de_ps err`, or
+    `test_config_failed icfg`), and their eigenvalues (`test_eig icfg n
+    l ikap f eae eps`); and, with a model core, its extent: the AE and
+    model core charges at rcmax (`core_rc r ae model`), the radii beyond
+    rcmax where each falls to 1e-2 and 1e-4 of that (`core_extent frac
+    r_ae r_model`), and the model's largest and smallest value on (0,
+    rcmax] with their radii (`core_model_max r rho`, `core_model_min r
+    rho`; a stationary point refined by Brent's method on the
+    derivative of its piece, so a hollow core's maximum moves smoothly).
 
 11) The routine linout creates a linear radial mesh, whose size and spacing
     are specified in the input data.  All relevant potentials and projectors

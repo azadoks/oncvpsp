@@ -1468,7 +1468,13 @@ from rc:
       dat and TOML writers
 - [ ] Diagnostics asked for by the oncvpsp-opt session (2026-10-22), as
       transferability proxies for the optimizer's guardrails; opt-in or
-      additive DIAGNOSTICS output, approved 2026-10-22, in its order:
+      additive DIAGNOSTICS output, approved 2026-10-22, in its order
+      (1, 3, 4 and 6 done 2026-10-22, see doc/program_overview.md, step
+      10; 1 with the levels, plus `ekin_check`, the r-space less the
+      Fourier kinetic energy to q_infinity, the tail the curve leaves out
+      plus the r-space integral's error: of either sign in the references
+      (195 of 421 negative), |t| ≤ 5e-10 Ha in 14_Si, up to 5.4e-7 in the
+      f channels of 60_Nd and 73_Ta, so the error dominates):
       1. Longer, denser Ecut tables: levels down to 1e-6 and 1e-7, or
          the whole E^r(Ecut) curve every 1–2 Ha to E^r < 1e-7.
       2. A Fourier convergence table for V_loc (its residual, or that of
@@ -1486,6 +1492,56 @@ from rc:
       7. (Lower priority, larger) AE against PS in a confined atom
          (harmonic or soft wall, a few strengths): eigenvalue and energy
          shifts, a stand-in for compression.
+- [ ] (Proposed 2026-10-22 by the oncvpsp-opt session, not approved) A
+      regularized pseudo-wave optimization, so the wave is determined for
+      every input. At large qcut·rc E_resid(qcut) is flat to round-off in
+      the null space (6 random N rows, rc0 2.7–3.8, qcut0 8.5–13.9: e1 ~
+      1e-18, |f1| ~ 1e-18–3e-16, |x1| ~ 0.7–0.86), and `optimize` takes
+      the sign of x1 from f1, so a ± pair of waves, one with a node, is
+      chosen by the quadrature's rounding (859c36c and d0a99ca chose
+      differently). The objective gains ε times a well-conditioned term,
+      for a unique wave smooth across E_resid(qcut) → 0 (not a sign
+      tie-break): E_resid at a lower q (a fraction of qcut, or the wave's
+      own crossing), or the squared distance from a reference wave (pswf0,
+      or the AE wave in r < rc), whichever is better conditioned and
+      smoother. ε an input (per channel if natural in the optimize call,
+      else global) in the TOML and as an optional trailing `.dat` field,
+      like budget_cutoff; ε = 0 the default and bit for bit today's
+      result. In DIAGNOSTICS per wave: E_resid(qcut) at the optimum, the
+      regularization term's value, e1 and |f1|. Also asked for, separately:
+      a warning when e1 and |f1| are at round-off.
+- [ ] (Proposed 2026-10-22, not approved) E_resid by Parseval: the
+      residual kinetic energy as T_r − ∫₀^q t(k) dk, the r-space kinetic
+      energy less the Fourier one below q, which is the residual to true
+      infinity, in place of ∫_q^q∞; in the curve and in the matrices of
+      `eresid` that the optimization minimizes (the basis' r-space
+      kinetic matrix less its part below qcut, in quad precision as the
+      null basis). It would drop q∞ and its smooth maximum (Q-3).
+      `ekin_check` bounds what it changes, and shows its obstacle: the
+      r-space kinetic energy is good to 1e-10–5e-7 Ha in the references,
+      no better than the 1e-7 level, so T_r would need a more accurate
+      quadrature first.
+- [ ] Optimize the test suite (the user's request, 2026-10-22; not
+      approved for work yet): more coverage for less wall time, by better
+      choices of test cases and of what each computes. Where the time
+      goes now (`ctest -LE smooth -j 16`, 310 tests, 186 s wall, about
+      2700 s·proc): toml 760, echo 556, mesh 490, nist 388, split 195,
+      r 187, sr 182 s·proc; the smooth label about 100 s per row at 4
+      jobs, before parsing the outputs in parallel (smooth_scan.py).
+      1. Measure the coverage first (gfortran --coverage, gcov or gcovr
+         per label), so that the choice is by what each test reaches,
+         not by habit.
+      2. Find the tests that rerun the same atom only to check another
+         output or input path (echo, toml, split, mesh): share one run's
+         outputs among the checks that read them, or use a light atom
+         (H, Li, N) where the heavy one adds nothing to what is tested.
+      3. Keep the heavy atoms (f shells, fully relativistic, GHOST)
+         where they cover what nothing lighter does, and say in
+         tests/CMakeLists.txt what each case is for.
+      4. Fewer scan points or rows where the fit allows it, and the rows
+         ordered so that ctest -j fills the cores (the longest first).
+      5. Add what the coverage shows is missing (error paths, rarely
+         taken branches of the solvers) at the time saved.
 - [ ] Configurable Adams–Moulton order in the radial ODE solvers (the
       user's idea, listed 2026-10-22 at their request through another
       session; not approved for work yet). Today: AB4 predictor and two

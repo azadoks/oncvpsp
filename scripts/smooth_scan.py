@@ -44,6 +44,8 @@ kernel_diff.py):
           to pi, and the doubled angle has no branch
   ecut    the cutoffs of each projector's convergence table, at its
           energy errors 1e-2..1e-5 Ha, relative to the largest in the table
+          (the block's levels to 1e-7 are left out: their last crossings
+          jump where a shoulder of the curve passes them)
           (both from the output's DIAGNOSTICS block, 17 digits; without one,
           from the tables printed to 6 decimals and 0.01 Ha)
   ghost   the energies of the bound-ghost test, the radial equation's and
@@ -241,7 +243,10 @@ def features(path, samples, output):
         if table["j"] is not None:
             tag += f"j{table['j']}"
         for err, cut in zip(table["eresid"], table["ecut"]):
-            out[f"ecut:{tag}:{err:.0e}"] = float(cut)
+            # the table's levels: below 1e-5 the last crossing jumps where a
+            # shoulder of the curve passes the level (G5)
+            if err > 0.99e-5:
+                out[f"ecut:{tag}:{err:.0e}"] = float(cut)
     weighted = diagnostics.get("ecut_weighted")
     if weighted:
         out[f"ecut:weighted:{weighted['error']:.0e}"] = float(weighted["ecut"])
