@@ -395,6 +395,7 @@ numbers refer to [Phases](#phases).
 | R-13 | `ionic_window`: ra = rcmax (snapped); rcore = first mesh point where `|vion+zion/r|` < 1e-10; rb = max(rcore, 2ra) | a, g, h | W | done in phase 3: ra the largest given rc; rcore the root of the interpolant of (V_ion + zion/r)² − tol² between the mesh points where it crosses (`lm_root`; the square, not the log, as V_ion + zion/r may cross zero there); rb the C-infinity maximum of rcore and 2ra within 0.05 bohr |
 | R-14 | `run_diag` `mchf = max(irc)+5`; `run_phsft` rxpsh → irphs (X-2, done); `run_ghosts` mbar (X-3, done); `run_plot` n1..n4 | a | – | phase 6 |
 | R-15 | `upfout` `nrlproj`, `cutoff_radius_index`; `linout` rc+2·drl format switch | a, g | W | β exactly 0 beyond rc (phase 4); indices then harmless |
+| R-16 | `outwf_m`: two breakpoints that cross (rcloc and 0.95 rc(l) or rc(l) of a channel with rcloc inside its rc). The thin segment between them is integrated on its own grid, restarted at both ends from the grid before, whose stencil reaches `og_ext` points past the segment into its piece's extension; that piece is a different one on either side of the crossing (in 20_Ca, V_ae without the taper below 0.95 rc(s) = 1.805, the polynomial V_loc with it above), so the restart error goes to the same value from both sides with different slopes: a kink in the l = 0 eigenvalues where rcloc = 0.95 rc(s) (3s slope 20 % off, 1.7e-11 Ha per 1.35e-4 bohr), carried into the pseudo valence density, V_loc beyond rcloc (1.8e-11 relative, 1.9 to 3.9 bohr) and the test configurations (1.0e-10 at 161 points, 5.8e-11 at 21; 1.2e-12 with rc(s) = 1.91, which moves 0.95 rc out of the window). The B matrix (`pw_integral`, per segment on the nodes) is smooth through it (2026-10-22) | d | W | open: noted, below G1 |
 
 #### Wave vectors, residual kinetic energy, optimisation (phase 3)
 
@@ -430,7 +431,7 @@ numbers refer to [Phases](#phases).
 
 | id | where | cat | W | decision |
 |---|---|---|---|---|
-| F-1 | `excpzca`: PZ81's two branches meet at r_s = 1 with the published, rounded C = 0.0020 and D = −0.0116, so ε_xc and V_xc jump there (V_xc by about 1e-5 Ha); the radius where r_s = 1 moves with the density. The solvers integrate across the jump: the all-electron eigenvalue of a state matched near it depends on the matching point by up to 1e-8 Ha (3p of Ti, matched 1 to 3 points inside its turning point). The output meshes' interpolants (`outmesh_m`) reach across it, so V_loc and the kernels of the psp8 file and of the UPF file on the linear mesh carry it over the interpolant's reach (14_Si, fcfact scanned: V_loc's 2nd difference spikes at the node it passes, 2.5e-5 off the fit there; on the linear mesh 0.79 to 1.03 bohr, up to 1.2e-5 Ha at 0.9 and 3e-8 relative at the sample at 1.0; 34_Se rcfact 9e-8; 52_Te with every rc moved, 1e-8, the spin-orbit kernel 5e-9). The smooth rows check those files' V_loc only under inputs that leave r(r_s = 1) in place (2026-10-22) | d | W | kept (D-6): noted, not changed |
+| F-1 | `excpzca`: PZ81's two branches meet at r_s = 1 with the published, rounded C = 0.0020 and D = −0.0116, so ε_xc and V_xc jump there (V_xc by about 1e-5 Ha); the radius where r_s = 1 moves with the density. The solvers integrate across the jump: the all-electron eigenvalue of a state matched near it depends on the matching point by up to 1e-8 Ha (3p of Ti, matched 1 to 3 points inside its turning point). The output meshes' interpolants (`outmesh_m`) reach across it, so V_loc and the kernels of the psp8 file and of the UPF file on the linear mesh carry it over the interpolant's reach (14_Si, fcfact scanned: V_loc's 2nd difference spikes at the node it passes, 2.5e-5 off the fit there; on the linear mesh 0.79 to 1.03 bohr, up to 1.2e-5 Ha at 0.9 and 3e-8 relative at the sample at 1.0; 34_Se rcfact 9e-8; 52_Te with every rc moved, 1e-8, the spin-orbit kernel 5e-9). The smooth rows check those files' V_loc only under inputs that leave r(r_s = 1) in place (2026-10-22). The pseudo-atom's test configurations carry it too: in 08_O's 2s1 2p4 the pseudo valence density at the origin is 0.212, below n(r_s = 1) = 0.2387, so r_s = 1 falls just outside it where the density is flat, and moves fast with rc: a sawtooth of 1.2e-10 Ha in the 2s eigenvalue each time it passes a node (8 times as rc moves by 0.02; residual 4.1e-11 with PZ81 in the code or Libxc, 1.3e-13 with PW92, 4.4e-12 with PBE) | d | W | kept (D-6): noted, not changed |
 | F-2 | `excpzca`, `excvwn`, `excwig`, `exchdl`, `exc_relx`: V_xc and ε_xc set to 0 below ρ = 1e-20 (1e-15 for Wigner), a jump of up to 1e-7 Ha at the radius where ρ crosses it; `exc_off_pbe` below 1e-18, about 1e-6 Ha; libxc its own thresholds | g | W (tails) | kept (D-6): noted, not changed. Measured: computing the LDA functionals at every ρ > 0 moves the kernels by at most 3.3e-9 and the AE terms by 1e-10 (`exchdl` would need ln(1+1/x) and its ε_c by a series at large x, where the closed form cancels); PBE and libxc overflow as ρ → 0 and would need a smooth damping of f(n, ∇n) with its potential |
 
 #### Model core (phase 5)
@@ -1234,12 +1235,11 @@ So the order is:
       total-energy difference from the reference, and is in the 19 rows
       whose input has test configurations, at 1e-10 (2026-10-22). Measured
       ≤ 3.9e-12, but 08_O rc 3.5e-11 and 20_Ca rcloc 9.0e-11, two
-      discrete defects of their own below G1, not yet explained: in 08_O
-      a sawtooth of 5e-11 Ha, period 5 scan points, in the pseudo 2s of
-      2s1 2p4 only (the all-electron side exact), and in 20_Ca a bump of
-      3e-11 Ha near one scan point in every configuration in proportion;
-      both the same with psatom's tolscf at 1e-14 (so not where its SCF
-      stops) and with PW92 in place of PZ81. Left out of the rows that
+      discrete defects below G1, explained since (2026-10-22): in 08_O a
+      sawtooth in the pseudo 2s of 2s1 2p4, PZ81's jump crossing nodes
+      (F-1; gone with PW92, contrary to the first look), and in
+      20_Ca a kink where rcloc crosses 0.95 rc(s) = 1.805, two breakpoints
+      of the outward integration (R-16). Left out of the rows that
       move r(r_s = 1) through the pseudo-atom's density (14_Si and 34_Se
       fcfact, 34_Se rcfact, 52_Te rc[*]): there PZ81's jump (F-1) steps
       the energy differences, residuals 2.8e-7 to 7.0e-7 (14_Si fcfact

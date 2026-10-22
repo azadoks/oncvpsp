@@ -125,9 +125,9 @@ set(smooth_g1 "kernel=1e-10,vloc=1e-10,core=1e-12,tests=1e-10")
 set(smooth_g2 "kernel=1e-12,vloc=1e-12,core=1e-12,tests=1e-10")
 # tests: the test configurations' eigenvalues and energy differences from the DIAGNOSTICS block
 # (phase 6), at G1 in every row whose input has test configurations (not 07_N_opt): <= 3.9e-12
-# measured but in 08_O rc (3.5e-11, a sawtooth of 5e-11 Ha with a period of 5 points in the pseudo
-# 2s of 2s1 2p4) and 20_Ca rcloc (9.0e-11, a bump of 3e-11 Ha in every configuration), the same
-# with psatom's tolscf at 1e-14 and with PW92 in place of PZ81; their source is not yet known. Not
+# measured but in 08_O rc (3.5e-11: PZ81's jump at r_s = 1 crossing nodes near the origin in the
+# pseudo 2s of 2s1 2p4, F-1) and 20_Ca rcloc (9.0e-11: a kink where rcloc crosses 0.95 rc(s), two
+# breakpoints of outwf_m's outward integration, R-16; doc/smoothness_plan.md). Not
 # in the rows that move r(r_s = 1) through the pseudo-atom's density (14_Si and 34_Se fcfact, 34_Se
 # rcfact, 52_Te rc[*]): PZ81's jump there (F-1, kept, D-6) steps the energy differences, residuals
 # 2.8e-7 to 7.0e-7 (14_Si fcfact with PW92 or PBE: 7e-15, 1.1e-14)
