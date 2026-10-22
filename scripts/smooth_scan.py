@@ -261,12 +261,14 @@ def file_part(parser, output):
     return upf["mesh"]["r"], named, upf["local"], upf.get("nlcc")
 
 
-def features(path, samples):
+def features(path, samples, groups=GROUPS):
     """{name: value} of the output at path, the names of the form group:label,
-    those of the files group.file:label, samples {file: indices on its mesh}."""
+    those of the files group.file:label, samples {file: indices on its mesh}.
+    Only the parts of the output that the groups read are parsed."""
     parser = OncvpspTextParser(path=path, check=False)
+    groups = {g.split(".")[0] for g in groups}
     out = {}
-    for output, points in samples.items():
+    for output, points in samples.items() if groups & set(FILE_GROUPS) else ():
         _, blocks, local, core = file_part(parser, output)
         for name, block in blocks.items():
             beta = block.beta[:, points]
@@ -284,47 +286,60 @@ def features(path, samples):
                 block = f"core.{output}" if d == 0 else f"core.{output}:d{d}"
                 for k in points:
                     out[f"{block}:r{k}"] = float(row[k])
-    eigs = (
-        state["eig_ps"]
-        for config in parser.output["test_configurations"]
-        for state in config
-        if state["eig_ps"] is not None
-    )
-    for i, eps in enumerate(eigs):
-        out[f"tests:eps{i}"] = eps
-    plots = parser.output["plot_data"]
-    diagnostics = parser.output.get("diagnostics") or {}
-    curves = diagnostics.get("log_derivatives", plots.get("log_derivatives"))
-    tables = diagnostics.get("ecut_crossings", plots.get("convergence_profiles"))
-    for curve in curves or []:
-        tag = f"l{curve['l']}" + ("" if curve["j"] is None else f"j{curve['j']}")
-        for i, phase in enumerate(curve["log_deriv_ps"]):
-            out[f"ld:{tag}:cos:e{i}"] = math.cos(2.0 * phase)
-            out[f"ld:{tag}:sin:e{i}"] = math.sin(2.0 * phase)
-    for table in tables or []:
-        tag = f"l{table['l']}p{table['iproj']}"
-        if table["j"] is not None:
-            tag += f"j{table['j']}"
-        for err, cut in zip(table["eresid"], table["ecut"]):
-            # the table's levels: below 1e-5 the last crossing jumps where a
-            # shoulder of the curve passes the level (G5)
-            if err > 0.99e-5:
-                out[f"ecut:{tag}:{err:.0e}"] = float(cut)
-    weighted = diagnostics.get("ecut_weighted")
-    if weighted:
-        out[f"ecut:weighted:{weighted['error']:.0e}"] = float(weighted["ecut"])
-    margins = diagnostics.get("ghost_margins")
-    for test in margins or parser.output.get("bound_ghost_tests") or []:
-        tag = f"n{test['n']}l{test['l']}"
-        if test.get("j") is not None:
-            tag += f"j{test['j']}"
-        elif test.get("set") is not None:
-            tag += f"s{test['set']}"
-        out[f"ghost:{tag}:eig"] = test["eig"]
-        out[f"ghost:{tag}:basis"] = test["eig_basis"]
-    for test in diagnostics.get("ghost_localization") or []:
-        tag = f"l{test['l']}" + ("" if test["j"] is None else f"j{test['j']}")
-        out[f"ghost:{tag}:r_over_rc"] = test["r_over_rc"]
+    if "tests" in groups:
+        eigs = (
+            state["eig_ps"]
+            for config in parser.test_configurations
+            for state in config
+            if state["eig_ps"] is not None
+        )
+        for i, eps in enumerate(eigs):
+            out[f"tests:eps{i}"] = eps
+    if not groups & {"ld", "ecut", "ghost"}:
+        return out
+    diagnostics = parser.diagnostics
+    if "ld" in groups:
+        curves = (
+            diagnostics["log_derivatives"]
+            if "log_derivatives" in diagnostics
+            else parser.log_derivatives
+        )
+        for curve in curves or []:
+            tag = f"l{curve['l']}" + ("" if curve["j"] is None else f"j{curve['j']}")
+            for i, phase in enumerate(curve["log_deriv_ps"]):
+                out[f"ld:{tag}:cos:e{i}"] = math.cos(2.0 * phase)
+                out[f"ld:{tag}:sin:e{i}"] = math.sin(2.0 * phase)
+    if "ecut" in groups:
+        tables = (
+            diagnostics["ecut_crossings"]
+            if "ecut_crossings" in diagnostics
+            else parser.convergence_profiles
+        )
+        for table in tables or []:
+            tag = f"l{table['l']}p{table['iproj']}"
+            if table["j"] is not None:
+                tag += f"j{table['j']}"
+            for err, cut in zip(table["eresid"], table["ecut"]):
+                # the table's levels: below 1e-5 the last crossing jumps where a
+                # shoulder of the curve passes the level (G5)
+                if err > 0.99e-5:
+                    out[f"ecut:{tag}:{err:.0e}"] = float(cut)
+        weighted = diagnostics.get("ecut_weighted")
+        if weighted:
+            out[f"ecut:weighted:{weighted['error']:.0e}"] = float(weighted["ecut"])
+    if "ghost" in groups:
+        margins = diagnostics.get("ghost_margins") or parser.bound_ghost_tests
+        for test in margins or []:
+            tag = f"n{test['n']}l{test['l']}"
+            if test.get("j") is not None:
+                tag += f"j{test['j']}"
+            elif test.get("set") is not None:
+                tag += f"s{test['set']}"
+            out[f"ghost:{tag}:eig"] = test["eig"]
+            out[f"ghost:{tag}:basis"] = test["eig_basis"]
+        for test in diagnostics.get("ghost_localization") or []:
+            tag = f"l{test['l']}" + ("" if test["j"] is None else f"j{test['j']}")
+            out[f"ghost:{tag}:r_over_rc"] = test["r_over_rc"]
     return out
 
 
@@ -531,10 +546,17 @@ def scan(args):
     }
 
     groups = set(args.groups.split(","))
-    # parsing an output is Python-bound (~1 s for 07_N_opt): in processes,
+    # parsing an output is Python-bound (~0.1 s, of the groups read): in processes,
     # as many as the runs
     with concurrent.futures.ProcessPoolExecutor(args.jobs) as pool:
-        parsed = list(pool.map(features, runs_out, [samples] * len(runs_out)))
+        parsed = list(
+            pool.map(
+                features,
+                runs_out,
+                [samples] * len(runs_out),
+                [groups] * len(runs_out),
+            )
+        )
 
     def wanted(name):
         group = name.split(":", 1)[0]

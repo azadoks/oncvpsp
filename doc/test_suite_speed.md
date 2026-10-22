@@ -77,9 +77,12 @@ rerun when the all-electron or solver numerics change.
 7. [ ] Measure how many scan points the smooth rows need: rerun the
        self-test's jumps and kinks at 21 and 31 points; if 21 still catch
        them, the smooth label halves.
-8. [ ] Parse only what each scan reads: `smooth_scan.py` parses the whole
-       output of each run, and with three files a run that grows
-       (pyoncvpsp's parser became 4.7 times faster on 2026-10-22,
-       2b17106, which helps either way).
+8. [x] Parse only what each scan reads: `smooth_scan.py` asked for the
+       parser's whole output; it now asks only for the parts of its groups
+       (the files for kernel, vloc and core, the test configurations, the
+       DIAGNOSTICS block). The features of the 16 scans of item 3 are the
+       same; a parse takes 0.034 s in place of 0.092 s (pyoncvpsp 5deacd6,
+       whose parser became 4.7 times faster on 2026-10-22), about 1 % of
+       the smooth label, whose time is the oncvpsp runs.
 9. [ ] Move `regen.sh`, which regenerates the references in parallel,
        into `scripts/`; with fixtures it reuses the same runs.
