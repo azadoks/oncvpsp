@@ -489,8 +489,15 @@
      end block
    end if
  else
+   ierr=0
    call aeatom(irel,nkap,na,la,ea,fa,rpk,nc,nc+nv,it,rhoc,rho, &
 &              rr,vfull,zz,mmax,iexc,etot,eterm,res,ierr)
+   if(ierr/=0) then
+     write(6,'(/a,i0,a,i0,a,es12.4)') &
+&          'oncvpsp: ERROR aeatom failed for the reference configuration'// &
+&          ', ierr=',ierr,', it=',it,', res=',res
+     error stop 1
+   end if
  end if
 !
 !

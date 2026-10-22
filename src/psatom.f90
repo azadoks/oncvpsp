@@ -269,10 +269,15 @@
 
 ! switch from reference to new configuration in 50 steps, exactly the
 ! new one from the 50th on (and throughout if they are the same)
-   wt=dble(min(it,50))/50.0d0
-   do ii=1,nv
-     fa(ii)=fat(ii,1) + wt*(fat(ii,2)-fat(ii,1))
-   end do
+! (assigned, since fat1 + 1*(fat2 - fat1) need not round to fat2)
+   if(it>=50) then
+     fa(1:nv)=fat(1:nv,2)
+   else
+     wt=dble(it)/50.0d0
+     do ii=1,nv
+       fa(ii)=fat(ii,1) + wt*(fat(ii,2)-fat(ii,1))
+     end do
+   end if
 
 
  end do !it

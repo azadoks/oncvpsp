@@ -296,6 +296,11 @@ endforeach ()
 oncvpsp_test(ae_scf_nr_01_H mesh ae_scf_test.sh
     $<TARGET_FILE:oncvpspnr_ae> "${data}/01_H_ae.dat" "${CMAKE_CURRENT_BINARY_DIR}/ae_scf_nr_01_H")
 
+# A test configuration whose occupation does not round back from the ramp:
+# see scripts/occupation_ramp_test.sh
+oncvpsp_test(occupation_ramp_sr_14_Si mesh occupation_ramp_test.sh
+    $<TARGET_FILE:oncvpspsr> "${data}/14_Si.dat" "${CMAKE_CURRENT_BINARY_DIR}/occupation_ramp_sr_14_Si")
+
 # All-electron atom with a 4f shell: see scripts/ae_4f_test.sh
 oncvpsp_test(ae_4f_scf_sr_70_Yb mesh ae_4f_test.sh
     $<TARGET_FILE:oncvpspsr_ae> "${data}/70_Yb_ae.dat" scf "${CMAKE_CURRENT_BINARY_DIR}/ae_4f_scf_sr_70_Yb")
