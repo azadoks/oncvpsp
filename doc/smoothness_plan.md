@@ -1620,6 +1620,42 @@ from rc:
          ordered so that ctest -j fills the cores (the longest first).
       5. Add what the coverage shows is missing (error paths, rarely
          taken branches of the solvers) at the time saved.
+      The user widened the aim the same day: the fewest inputs for the
+      broadest code coverage, first matching today's coverage, then
+      filling its gaps. The nist label is left out of the coverage: it
+      checks accuracy against reference all-electron data, and is rerun
+      when the all-electron or solver numerics change.
+      Done 2026-10-22 (step 1 and the first cut):
+      - Coverage per test from a -O0 --coverage build (gcov, every
+        test with its own GCOV_PREFIX): the non-smooth suite without
+        nist runs 88 % of the lines of src/ and 62 % of the branches
+        that gcov counts.
+      - Each test is put in a class by what it checks (ref against
+        tests/refs, toml against the text input, echo, split, log and
+        UPF mesh, pipe, psml, psp8 core, well onset and tail,
+        projector output, unit), and each class must keep its lines
+        and branches. Line coverage alone would not do: it drops the
+        14_Si reference test because the echo and mesh tests run the
+        same lines, but those do not compare the numbers with a
+        reference.
+      - The fewest inputs keeping every class's coverage are 29 of 37,
+        and on them 163 of 260 tests (greedy, by -O2 cost). Kept as
+        well: every error, toml_input and ae_file case (each a
+        documented message, some of it in toml-f, which is not
+        instrumented; 0.1–2 s each) and 73_Ta's reference (the example
+        of doc/users_guide.md). Removed: the inputs 07_N, 14_Si_st,
+        17_Cl, 19_K, 19_K_st, 22_Ti and 56_Ba, and 28 references no
+        test reads.
+      - `ctest -LE smooth -j 16`, the same parser for both:
+
+        | | tests | wall | s·proc | without nist |
+        |---|---|---|---|---|
+        | before | 264 | 185 s | 2729 | 2356 |
+        | after | 179 | 112 s | 1743 | 1360 |
+
+        Without nist (`ctest -LE "smooth|nist" -j 16`): 257 tests in
+        150 s wall before, 172 in 88 s after. With nist the wall time is
+        set by nist_RLDA_heavy (90 s).
 - [ ] Configurable Adams–Moulton order in the radial ODE solvers (the
       user's idea, listed 2026-10-22 at their request through another
       session; not approved for work yet). Today: AB4 predictor and two

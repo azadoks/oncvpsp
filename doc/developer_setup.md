@@ -97,6 +97,13 @@ checks every call against the definition of the routine it calls.
 `errors`, `echo`, `psp8`, `nist`) and `-R <regex>` a test by name. Each test
 leaves its outputs in its own directory under `build/tests`.
 
+The inputs and the tests on each are the fewest that keep the coverage of
+`src/` of each kind of test (doc/smoothness_plan.md, "Optimize the test
+suite"). The `nist` tests are not among them: they check the all-electron
+atom against reference data, and are needed only after changes to the
+all-electron or solver numerics, so `ctest -LE "smooth|nist"` is the dev
+loop.
+
 The smoothness scans (label `smooth`, `scripts/smooth_scan.py`) run 41
 oncvpsp processes per row, `ONCVPSP_SMOOTH_JOBS` of them at once (default
 4), and each row reserves as many ctest processors, so `ctest -j <cores>

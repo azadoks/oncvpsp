@@ -227,15 +227,22 @@ foreach (projector_test IN ITEMS "sr:14_Si" "r:14_Si" "nr:08_O" "r:52_Te")
     oncvpsp_compares(projector_output_${rel}_${test_name})
 endforeach ()
 
-# Output against the references in tests/refs
+# Output against the references in tests/refs. The lists here and below are the fewest inputs, and
+# on them the cheapest tests, that keep the coverage of each kind of test (the lines and branches of
+# src/ that the reference tests run, those the TOML tests run, ...) as it was with every input of
+# tests/data (2026-10-22, gcov; doc/smoothness_plan.md, "Optimize the test suite")
 set(oncvpspsr_tests
-    "03_Li" "07_N" "07_N_dl" "08_O" "14_Si"
-    "14_Si_bc" "14_Si_bca" "14_Si_st" "14_Si_UPF" "17_Cl" "19_K"
-    "19_K_st" "20_Ca" "22_Ti" "29_Cu" "32_Ge"
-    "34_Se" "38_Sr_lxc" "40_Zr" "56_Ba" "57_La"
-    "60_Nd_GHOST" "73_Ta" "79_Au_lxc" "83_Bi"
-    "08_O_wigner"   # iexc=1 (excwig)
-    "14_Si_lder"    # rxpsh set, s projector below epsh1 (run_phsft, phsft_m)
+    "03_Li"         # no core states
+    "14_Si"         # icmod=1
+    "14_Si_bc"      # icmod=6
+    "14_Si_bca"     # icmod=6 with fcfact=0 (the cutoff from the pseudo-waves)
+    "20_Ca"         # lpopt=1
+    "32_Ge"         # psfile both
+    "34_Se"         # icmod=3
+    "40_Zr"         # icmod=4
+    "60_Nd_GHOST"   # ghosts
+    "79_Au_lxc"     # icmod=2
+    "73_Ta"         # the example of doc/users_guide.md (replot.sh, doc/73_Ta_plots.pdf)
     "40_Zr_grid"    # icmod=4 with an explicit search grid (modcore3)
     "14_Si_hm"      # icmod=7 with slack (modcore_budget, modcore_probes)
     "14_Si_bcw"     # icmod=6 with the weighted cutoff of the waves (modcore_budget_table)
@@ -249,21 +256,14 @@ foreach (test_name IN LISTS oncvpspsr_tests)
     oncvpsp_compares(${test_name})
 endforeach ()
 
-set(oncvpspr_tests "52_Te" "74_W" "80_Hg"
-    "03_Li"         # no core states
+set(oncvpspr_tests "52_Te" "80_Hg"
     "07_N_dl"       # lloc<4
     "08_O_wigner"   # iexc=1
-    "14_Si"         # icmod=1
     "14_Si_bc"      # icmod=6
     "14_Si_hm"      # icmod=7 with slack
-    "14_Si_bcw"     # icmod=6 with the weighted cutoff, the weights split by J
-    "14_Si_lder"    # rxpsh set
     "20_Ca"         # lpopt=1
-    "34_Se"         # icmod=3
     "38_Sr_lxc"     # a single projector for one l
-    "40_Zr_grid"    # icmod=4 with an explicit search grid
     "60_Nd_GHOST"   # ghosts
-    "73_Ta"         # three projectors
     "79_Au_lxc"     # icmod=2
 )
 foreach (test_name IN LISTS oncvpspr_tests)
@@ -273,7 +273,7 @@ foreach (test_name IN LISTS oncvpspr_tests)
     oncvpsp_compares(${test_name}_r)
 endforeach ()
 
-set(oncvpspnr_tests "08_O" "14_Si" "03_Li" "07_N_dl" "14_Si_lder")
+set(oncvpspnr_tests "07_N_dl")
 foreach (test_name IN LISTS oncvpspnr_tests)
     oncvpsp_test(${test_name}_nr nr ref_test.sh
         $<TARGET_FILE:oncvpspnr> "${data}/${test_name}.dat" "${CMAKE_CURRENT_SOURCE_DIR}/refs/${test_name}_nr.out"
@@ -283,8 +283,7 @@ endforeach ()
 
 # All-electron / pseudopotential split: oncvpsp_ae.x writes the all-electron atom to a file and
 # oncvpsp_ps.x reads it (see scripts/split_test.sh)
-foreach (split_test IN ITEMS "sr:14_Si" "sr:19_K_st" "sr:29_Cu" "sr:57_La" "nr:14_Si" "nr:29_Cu"
-                             "r:52_Te" "r:80_Hg")
+foreach (split_test IN ITEMS "sr:14_Si" "sr:57_La" "nr:14_Si" "nr:29_Cu" "r:52_Te" "r:80_Hg")
     string(REPLACE ":" ";" split_test "${split_test}")
     list(GET split_test 0 rel)
     list(GET split_test 1 test_name)
@@ -351,14 +350,13 @@ foreach (nist_test IN ITEMS "LDA:nr" "ScRLDA:sr" "RLDA:r")
 endforeach ()
 
 # Log mesh input (the optional last line of the text input): see scripts/log_mesh_test.sh
-foreach (mesh_test IN ITEMS "sr:14_Si" "nr:29_Cu" "r:52_Te")
+foreach (mesh_test IN ITEMS "sr:14_Si:upf,split,amesh,rr1,rmax,read" "nr:29_Cu:split,split_differ"
+                            "r:52_Te:split_differ")
     string(REPLACE ":" ";" mesh_test "${mesh_test}")
     list(GET mesh_test 0 rel)
     list(GET mesh_test 1 test_name)
-    set(mesh_cases "defaults" "explicit" "rerun" "upf" "split" "split_differ")
-    if (rel STREQUAL "sr")
-        list(APPEND mesh_cases "amesh" "rr1" "rmax" "read")
-    endif ()
+    list(GET mesh_test 2 mesh_cases)
+    string(REPLACE "," ";" mesh_cases "${mesh_cases}")
     if (ONCVPSP_WITH_TOML)
         list(APPEND mesh_cases "toml")
     endif ()
@@ -375,14 +373,12 @@ endforeach ()
 
 # UPF file on the log mesh (upf_mesh, the optional third value of the output grid line): see
 # scripts/upf_mesh_test.sh
-foreach (mesh_test IN ITEMS "sr:14_Si_UPF" "r:52_Te")
+foreach (mesh_test IN ITEMS "sr:14_Si_UPF:negative,read" "r:52_Te:stride")
     string(REPLACE ":" ";" mesh_test "${mesh_test}")
     list(GET mesh_test 0 rel)
     list(GET mesh_test 1 test_name)
-    set(mesh_cases "defaults" "log" "stride")
-    if (rel STREQUAL "sr")
-        list(APPEND mesh_cases "negative" "read")
-    endif ()
+    list(GET mesh_test 2 mesh_cases)
+    string(REPLACE "," ";" mesh_cases "${mesh_cases}")
     if (ONCVPSP_WITH_TOML)
         list(APPEND mesh_cases "toml")
     endif ()
@@ -401,11 +397,13 @@ endforeach ()
 # output of the text input, and the reader must stop with a message naming the problem for each of the
 # changes in scripts/toml_error_test.sh
 if (ONCVPSP_WITH_TOML)
-    set(toml_tests ${oncvpspsr_tests})
-    list(TRANSFORM toml_tests PREPEND "sr:")
-    set(toml_r_tests ${oncvpspr_tests})
-    list(TRANSFORM toml_r_tests PREPEND "r:")
-    list(APPEND toml_tests ${toml_r_tests} "nr:14_Si" "nr:29_Cu")
+    set(toml_tests
+        "sr:03_Li" "sr:07_N_dl" "sr:07_N_opt" "sr:08_O" "sr:08_O_wigner" "sr:14_Si_bc" "sr:14_Si_bca"
+        "sr:14_Si_bcw" "sr:20_Ca" "sr:32_Ge" "sr:34_Se" "sr:38_Sr_lxc" "sr:40_Zr" "sr:40_Zr_grid"
+        "sr:60_Nd_GHOST" "sr:79_Au_lxc"
+        "r:07_N_dl" "r:14_Si_bc" "r:14_Si_hm" "r:20_Ca" "r:40_Zr_grid" "r:52_Te" "r:60_Nd_GHOST"
+        "r:79_Au_lxc" "r:80_Hg"
+        "nr:14_Si")
     foreach (toml_test IN LISTS toml_tests)
         string(REPLACE ":" ";" toml_test "${toml_test}")
         list(GET toml_test 0 rel)
@@ -485,13 +483,10 @@ set(te_c "s/^    Te  52\\.0   8   3   3   upf$/    Te  52.0   8   3   7   upf  1
 set(si_c "s/^    Si  14     3   2   3   psp8$/    Si  14     3   2   7   psp8  137.0359895/")
 set(si_wt "14s/^    2$/    2    1    1.2    1/")
 foreach (echo_test IN ITEMS
-        "sr:14_Si_lder:psp8" "sr:14_Si_lder:upf" "sr:14_Si_lder:psml"
-        "sr:40_Zr_grid:psp8" "sr:40_Zr_grid:upf" "sr:40_Zr_grid:psml"
+        "sr:14_Si_lder:psp8" "sr:40_Zr_grid:psp8" "sr:40_Zr_grid:upf"
         "sr:83_Bi:psml" "sr:03_Li:psml" "nr:14_Si:psml" "sr:14_Si_hm:psp8"
-        "r:74_W:psp8" "r:74_W:psml" "r:52_Te:psp8" "r:52_Te:upf" "r:52_Te:psml"
-        "r:52_Te_c:psp8" "r:52_Te_c:upf" "r:52_Te_c:psml" "sr:14_Si_c:psp8" "sr:14_Si_c:psml"
-        "sr:14_Si_wt:psp8" "sr:14_Si_wt:upf" "sr:14_Si_wt:psml"
-        "sr:14_Si_bcw:psp8" "sr:14_Si_bcw:upf" "sr:14_Si_bcw:psml" "r:14_Si_bcw:psp8")
+        "r:74_W:psml" "r:52_Te:psp8" "r:52_Te_c:upf" "r:52_Te_c:psml" "sr:14_Si_c:psp8"
+        "sr:14_Si_wt:upf" "sr:14_Si_bcw:psml" "r:14_Si_bcw:psp8")
     string(REPLACE ":" ";" echo_test "${echo_test}")
     list(GET echo_test 0 rel)
     list(GET echo_test 1 test_name)
