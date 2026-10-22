@@ -16,8 +16,8 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine wellstate(nnin,ll,kap,rc,ep,epgiven,onset,rr,vfull,vwell, &
-&                     uu,up,zz,mmax,mch,irel)
+ subroutine wellstate(nnin,ll,kap,rc,ep,epgiven,onset,nowell,rr,vfull,vwell, &
+&                     uu,up,zz,mmax,mch,irel,confined,eptgt)
 
 !! creates quantum well to confine positive-energy state, and calculates
 !! the resulting all-electron wave function. The well rises from
@@ -43,6 +43,10 @@
 !! @param ep  target energy for well state; the well state's energy on return
 !! @param epgiven  use ep as given (D-1), instead of the replacements above
 !! @param onset  onset of the well as a multiple of rc (well_onset, >= 1)
+!! @param nowell  no well: only the energy is wanted (the free tail of
+!!                free_tail_m, for which main solves the state at eptgt), so
+!!                return after the replacements above, with uu, up zero and
+!!                vwell vfull; a bound state at or above ep is then no error
 !! @param rr  log radial mesh
 !! @param vfull  all-electron potential
 !! @param vwell  potential with binding well, for the ikap=2 calculation when
@@ -53,6 +57,10 @@
 !! @param mmax  size of log radial mesh
 !! @param mch  matching mesh point for inward-outward integrations
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param confined  whether uu is confined by the well; not when it is the
+!!                  localized bound state (vwell is then vfull)
+!! @param eptgt  the energy the well's eigenvalue (ep on return) was found
+!!               for: the input ep or its replacement above
 
  use constants_m, only: dp
  implicit none
@@ -64,6 +72,7 @@
  real(dp), intent(in) :: rc
  logical, intent(in) :: epgiven
  real(dp), intent(in) :: onset
+ logical, intent(in) :: nowell
 
 !Input/output variables
  real(dp), intent(inout) :: ep
@@ -72,6 +81,8 @@
 
 !Output variables
  real(dp), intent(out) :: uu(mmax,2),up(mmax,2),vwell(mmax)
+ logical, intent(out) :: confined
+ real(dp), intent(out) :: eptgt
 
 !Local variables
  real(dp) :: cwell,et,xx,rwell,rwmax,rwmin,rwscale,ron,umax
@@ -86,6 +97,8 @@
 
  l1=ll+1
  ron=rc*onset
+ confined=.true.
+ eptgt=ep
 
 !check for bound state with specified ll and nnin
 
@@ -113,7 +126,7 @@
 !a bound state at or above ep cannot be raised to ep by the well: an input
 !error; one below ep and localized inside 1.5 rc only needs raising, by a
 !wall as close as that takes
-   if(ierr==0 .and. et>=ep) then
+   if(ierr==0 .and. et>=ep .and. .not. nowell) then
      write(6,'(/a,i2,a,i2,a,f12.8/a,f12.8)') &
 &          'wellstate: ERROR a bound state exists for n=',nnin,' l=',ll, &
 &          ' at energy',et,'wellstate: ERROR above the requested ep=',ep
@@ -132,6 +145,8 @@
 
 !make sure vwell exists for ikap=2 calculation in this case
        vwell(:)=vfull(:)
+       confined=.false.
+       eptgt=ep
 
        return
 
@@ -156,6 +171,20 @@
 &           'WARNING scattering state with energy',ep, &
 &           'WARNING will be used for the first projector'
    end if
+ end if
+
+!the energy the well's eigenvalue is found for
+ eptgt=ep
+
+ if(nowell) then
+   vwell(:)=vfull(:)
+   uu(:,:)=0.0d0
+   up(:,:)=0.0d0
+   write(6,'(/a,i3,a,i3/a,f8.4/a)') &
+&           '   Wellstate for l =',ll,'  n =',nnin, &
+&           '     eigenvalue = ',ep, &
+&           '     free tail, no well'
+   return
  end if
 
 !scale factor to decrease well width until trial energy exceeds target

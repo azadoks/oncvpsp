@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
  subroutine run_optimize(eig,ll,kap,irel,mmax,mxprj,rr,uua,upa,qq,&
-&                      rc,irc,qcut,qmsbf,ncon_in,nbas_in,npr, &
+&                      freetl,rc,irc,qcut,qmsbf,ncon_in,nbas_in,npr, &
 &                      psopt,vpsp,vkb,vae,cvgplt,ncurve,ecurve,pswfx,chix)
 
 !! calls routines to generate optimized pseudo wave function and semi-local
@@ -34,6 +34,8 @@
 !! @param uua  all-electron wave functions (*rr) for the projectors
 !! @param upa  their derivatives in the mesh index, as the solvers return them
 !! @param qq  matrix of norms and overlaps of the uua inside rc
+!! @param freetl  for each projector, whether E_resid takes the free tail
+!!                of its well state (free_tail_m) instead of the uua
 !! @param rc  core radius (bohr)
 !! @param irc  last mesh point at or inside rc
 !! @param qcut  q cutoff defining residual energy
@@ -60,6 +62,8 @@
  use constants_m, only: dp, nerrlv, pi
  use, intrinsic :: iso_fortran_env, only: qp => real128
  use ugrid_m, only: ug_cross_down
+ use free_tail_m, only: mesh_tail, free_tail, tail_kinetic
+ use logmesh_m, only: lm_integral
  implicit none
 
 !Input variables
@@ -68,6 +72,7 @@
  real(dp), intent(in) :: uua(mmax,mxprj),upa(mmax,mxprj),vae(mmax)
  real(dp), intent(in) :: qq(mxprj,mxprj)
  real(dp), intent(in) :: eig(mxprj),qcut,rc
+ logical, intent(in) :: freetl(mxprj)
 
 !Input/output variables
  integer, intent(inout) :: irc
@@ -92,11 +97,11 @@
  real(qp), allocatable :: pswf0_sbq(:),pswfnull_sbq(:,:)
  real(dp), allocatable :: pswf0_sb(:),pswfnull_sb(:,:)
  real(dp), allocatable :: pswf0_or(:),pswfnull_or(:,:)
- real(dp), allocatable :: work(:)
+ real(dp), allocatable :: work(:),ulin(:),dlin(:),tke(:)
  integer :: ii,iprj,jj,l1,lmax,nbas,ncon,nconmx
  logical :: found_root
 
- integer :: nnull,nqout,nq,iq,kk
+ integer :: nnull,nqout,nq,iq,kk,nr
 
  real(dp), allocatable :: qroot(:),sbasis(:)
  real(dp), allocatable :: eresid0(:),eresiddot(:,:)
@@ -106,7 +111,7 @@
 
  real(dp), allocatable :: pswfopt_sb(:),pswfopt_or(:),psb(:,:)
  real(dp) :: eresidmin
- real(dp) :: ekin_anal,ekin_num,qmax
+ real(dp) :: ekin_anal,ekin_num,qmax,hh,ekin_tail
 
 
  al = 0.01d0 * log(rr(101) / rr(1))
@@ -215,11 +220,25 @@
 
    write(6,'(/a,f10.6)') '    Fraction of norm inside rc',qq(iprj,iprj)
 
+!the all-electron tail on the linear mesh of E_resid, 75 points per
+!period of qmax: the wave function itself, or the free tail of a well
+!state (doc/smoothness_plan.md, phase 8)
+   hh=2.0d0*pi/(75.0d0*qmax)
+   if(freetl(iprj)) then
+     call free_tail(irel,ll,kap,eig(iprj),rr,vae,uua(1,iprj),upa(1,iprj), &
+&                   mmax,rc,qcut,hh,nr,ulin,dlin)
+     ekin_tail=tail_kinetic(ll,rc,hh,nr,ulin,dlin)
+     deallocate(dlin)
+   else
+     call mesh_tail(rr,uua(1,iprj),mmax,rc,hh,nr,ulin)
+   end if
+
 !E_resid on the q grid, and at the exact qcut and the points of the
 !convergence curve (Q-1, Q-4)
-   call eresid(ll,rc,nnull,nbas,mmax,nq,nqout,qout,rr,qmax,qroot, &
-&              uua(1,iprj),pswf0_sbq,pswfnull_sbq,e0,edot,emat, &
+   call eresid(ll,rc,nnull,nbas,nq,nqout,qout,qmax,qroot,hh,nr,ulin, &
+&              pswf0_sbq,pswfnull_sbq,e0,edot,emat, &
 &              eresid0,eresiddot,eresidmat)
+   deallocate(ulin)
 
    write(6,'(a,f7.2,a,f7.2,a)') '    Optimizing pswf for qcut=',qout(1), &
 &   ' a_B^-1,  ecut=',0.5d0*qout(1)**2,' Ha'
@@ -282,6 +301,17 @@
      do ii=irc+1,mmax
        vpsp(ii)=vae(ii)
      end do
+   end if
+
+!with the free tail, the r-space kinetic energy is that of the same
+!function: the Bessel sum's to rc (T pswfx = eig pswfx - chix, as u T u
+!goes as r**(2l+2) at the origin) and the tail's
+   if(freetl(iprj)) then
+     allocate(tke(mmax))
+     tke(:)=pswfx(:,iprj)*(eig(iprj)*pswfx(:,iprj)-chix(:,iprj))
+     call lm_integral(rr,tke,mmax,2*ll+2,0.0d0,rc,ekin_num)
+     ekin_num=ekin_num+ekin_tail
+     deallocate(tke)
    end if
 
    write(6,'(/a)') '    Total kinetic energy consistency test'

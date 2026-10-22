@@ -33,7 +33,7 @@ set_tests_properties(unit_run_phsft PROPERTIES LABELS unit)
 # Unit tests of the operations at any radius on the log mesh (logmesh_m), the closed-form Bessel
 # overlaps (sbf_overlap) and the derivatives at rc from the radial equation (ode_rc_der), phase 1 of
 # doc/smoothness_plan.md
-foreach (unit_test logmesh ode_rc_der solver_path piecewise matching ugrid quadbasis pieces vploc ae_delta outwf sbf)
+foreach (unit_test logmesh ode_rc_der solver_path piecewise matching ugrid quadbasis pieces vploc ae_delta outwf sbf free_tail)
     add_executable(test_${unit_test} unit/test_${unit_test}.f90)
     target_link_libraries(test_${unit_test} PRIVATE oncvpsp::oncvpsp oncvpsp::compile_options)
     set_target_properties(test_${unit_test} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
@@ -177,6 +177,20 @@ smooth_scan_test(sr_07_N_opt_rcloc sr 07_N_opt "local_potential.rcloc" ${smooth_
 # ~0.01 bohr (k r ~ 19, so (phi, r phi') traces a thin ellipse), smooth but steep: a narrow window
 # and degree 10 (1.8e-11)
 smooth_scan_test(sr_07_N_opt_rxpsh sr 07_N_opt "log_derivative_analysis.rxpsh" ld "ld=3e-10" --span 0.004 --degree 10)
+# the free tail of the well states (well_tail = "free", phase 8): the optimizer's rc[1], whose well
+# state's convergence table bends more (its 1e-5 crossing near 75 Ha, normalized inside rc), so
+# degree 14 (5e-12; degree 6 leaves 5e-7 of truncation); 14_Si's rc[1] (3.8e-12); and ep[2] of
+# 14_Si's l = 2, whose first projector is a well state, across 0 with ep_as_given (no branch there,
+# D-7b; the well found no state below 0.005 Ha). The ecut group is left out of the ep[2] row: its
+# 1e-5 crossing slides 0.7 Ha between -0.014 and -0.012 Ha, a shoulder of the curve passing the
+# level (G5)
+set(smooth_free "pseudopotentials.well_tail=\"free\"")
+smooth_scan_test(sr_07_N_opt_rc1_free sr 07_N_opt "pseudopotentials.rc[1]" ${smooth_opt_groups} ${smooth_opt}
+    --degree 14 --set ${smooth_free})
+smooth_scan_test(sr_14_Si_rc1_free sr 14_Si "pseudopotentials.rc[1]" kernel,vloc,core ${smooth_g1} --center 2.8
+    --degree 14 --set ${smooth_free})
+smooth_scan_test(sr_14_Si_ep2_free sr 14_Si "pseudopotentials.ep[2]" kernel,vloc,core ${smooth_g1} --center 0.0
+    --span 0.04 --degree 10 --set ${smooth_free} --set pseudopotentials.ep_as_given=true)
 # the psp8 file and the UPF file on the linear output mesh (phase 4, O-1): the writers interpolated
 # the functions on the log mesh across rc, so the points next to it moved with the nodes past it
 smooth_scan_test(sr_14_Si_rc0_psp8 sr 14_Si "pseudopotentials.rc[0]" kernel,vloc ${smooth_g1} --center 2.8 --output psp8)
@@ -389,10 +403,11 @@ if (ONCVPSP_WITH_TOML)
             "lmax_range" "array_length" "array_type" "not_an_array" "l_order"
             "icmod3_rcfact" "test_config_length" "test_config_count" "test_config_type"
             "integer_for_real" "extra_keys" "icmod6_default_rcfact"
-            "icmod6_default_slack" "well_onset_range" "well_onset_default")
+            "icmod6_default_slack" "well_onset_range" "well_onset_default"
+            "well_tail_value" "well_tail_default")
         oncvpsp_test(toml_input_${case} toml toml_error_test.sh
             $<TARGET_FILE:oncvpspsr> "${data}" ${case} "${CMAKE_CURRENT_BINARY_DIR}/toml_input_${case}")
-        if (case MATCHES "^(integer_for_real|extra_keys|icmod6_default_rcfact|icmod6_default_slack|well_onset_default)$")
+        if (case MATCHES "^(integer_for_real|extra_keys|icmod6_default_rcfact|icmod6_default_slack|well_onset_default|well_tail_default)$")
             oncvpsp_compares(toml_input_${case})
         endif ()
     endforeach ()
@@ -408,6 +423,24 @@ if (ONCVPSP_WITH_TOML)
         oncvpsp_test(well_onset_${rel}_${test_name} toml well_onset_test.sh
             $<TARGET_FILE:oncvpsp${rel}> "${data}/toml/${test_name}.toml"
             "${CMAKE_CURRENT_BINARY_DIR}/well_onset_${rel}_${test_name}")
+    endforeach ()
+endif ()
+
+# The free tail of the well states (well_tail = "free", doc/smoothness_plan.md, phase 8): nothing
+# depends on the well, so the outputs are the same for any well_onset (bit for bit, measured; with
+# the well's tail the kernels move by 5 % in 14_Si and 0.5 % in 08_O). Not the fr code, whose
+# j = l-1/2 energy is the eigenvalue of the j = l+1/2 well (D-7c)
+if (ONCVPSP_WITH_TOML)
+    foreach (tail_test IN ITEMS "sr:14_Si" "nr:08_O")
+        string(REPLACE ":" ";" tail_test "${tail_test}")
+        list(GET tail_test 0 rel)
+        list(GET tail_test 1 test_name)
+        add_test(NAME well_tail_${rel}_${test_name}
+            COMMAND ${test_python} "${scripts}/invariance_test.py" $<TARGET_FILE:oncvpsp${rel}>
+                "${data}/toml/${test_name}.toml" pseudopotentials.well_onset 1.0306 1.0 1.09 2.5
+                --set "pseudopotentials.well_tail=\"free\"" --groups kernel,vloc,ld,ecut,ghost
+                --tol 1e-12 --workdir "${CMAKE_CURRENT_BINARY_DIR}/well_tail_${rel}_${test_name}")
+        set_tests_properties(well_tail_${rel}_${test_name} PROPERTIES LABELS "toml;${rel}")
     endforeach ()
 endif ()
 

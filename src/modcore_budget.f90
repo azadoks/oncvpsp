@@ -1641,8 +1641,8 @@
  end subroutine modcore_budget
 
 
- subroutine modcore_probes(lmax,lloc,nproj,epa,vp,vlocpw,vkbpw,evkb,rr, &
-&                         mmax,mxprj,nkap,probes,lprobe,nprobe)
+ subroutine modcore_probes(lmax,lloc,nproj,epa,wellprj,vp,vlocpw,vkbpw, &
+&                         evkb,rr,mmax,mxprj,nkap,probes,lprobe,nprobe)
 
 !! the probe densities of the hardness of icmod=7: for every projector
 !! iprj of every l, the eigenstate with iprj-1 nodes of the screened
@@ -1655,6 +1655,8 @@
 !! @param lloc  index of local potential
 !! @param nproj  number of projectors for each l
 !! @param epa  reference energies of the projectors
+!! @param wellprj  whether each projector is a well state (its energy then
+!!                 of either sign), else a bound state
 !! @param vp  screened semi-local and local pseudopotentials
 !! @param vlocpw  the screened local potential's pieces
 !! @param vkbpw  Vanderbilt-Kleinman-Bylander projectors as functions of
@@ -1678,6 +1680,7 @@
  integer, intent(in) :: nproj(mxlin+1)
  real(dp), intent(in) :: rr(mmax),vp(mmax,mxl+2,nkap)
  real(dp), intent(in) :: epa(mxprj,mxlin+1,nkap),evkb(mxprj,mxl+1,nkap)
+ logical, intent(in) :: wellprj(mxprj,mxlin+1)
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1,nkap)
 
 !Output variables
@@ -1707,7 +1710,7 @@
        if(mkap==2 .and. ikap==1) fj=dble(ll+1)/dble(2*ll+1)
        if(mkap==2 .and. ikap==2) fj=dble(ll)/dble(2*ll+1)
        et=epa(iprj,l1,ikap)
-       if(epa(iprj,l1,1)<0.0d0) then
+       if(.not. wellprj(iprj,l1)) then
          emax=min(et+0.1d0*abs(et)+0.05d0,0.0d0)
          emin=et-0.1d0*abs(et)-0.05d0
        else

@@ -16,7 +16,7 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine run_plot(lmax,npa,epa,lloc,irc, &
+ subroutine run_plot(lmax,npa,epa,wellprj,lloc,irc, &
 &                    vkb,vlocpw,vkbpw,evkb,nproj,rr,vfull,vp,vpuns,zz,mmax, &
 &                    mxprj,drl,nrl,rho,rhoc,rhomod,irel,nkap,cvgplt)
 
@@ -28,6 +28,8 @@
 !! @param epa  bound-state or scattering state reference energies for vkb
 !!             potentials (last index 1 for j=l+1/2, 2 for j=l-1/2, as in vkb,
 !!             evkb, vp, cvgplt)
+!! @param wellprj  whether each projector is a well state (its energy then
+!!                 of either sign), else a bound state
 !! @param lloc  l for local potential
 !! @param irc  indices of core radii
 !! @param vkb  VKB projectors on the mesh
@@ -65,6 +67,7 @@
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1,nkap)
  real(dp), intent(in) :: rho(mmax),rhoc(mmax),rhomod(mmax,nrhomod)
  real(dp), intent(in) :: epa(mxprj,mxlin+1,nkap),evkb(mxprj,mxl+1,nkap)
+ logical, intent(in) :: wellprj(mxprj,mxlin+1)
  real(dp), intent(in) :: cvgplt(2,nerrlv,mxprj,mxl+1,nkap)
 
 !Local variables
@@ -156,7 +159,11 @@
      end if
 
      do iprj=1,nproj(l1)
-       if(epa(iprj,l1,ikap)<0.0d0) then
+! a bound state is plotted as one; so is the j = l-1/2 partner of a well
+! state below 0 (the eigenvalue of the j = l+1/2 well, D-7c), as before;
+! a well state's own energy can be below 0 too (ep_as_given)
+       if(epa(iprj,l1,ikap)<0.0d0 .and. &
+&         .not. (wellprj(iprj,l1) .and. ikap==1)) then
          if(irel==2) then
            write(6,'(//a,i2,a,i2,a,i2,a,a/)') 'n=',npa(iprj,l1),',  l=', &
 &                ll,', kap=',kap, ', all-electron wave function', &

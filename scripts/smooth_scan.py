@@ -66,7 +66,11 @@ the output reports (r* of icmod 1, r_s of icmod 6 and 7), whatever the
 parameter. The 8 points of the file's mesh on each side of each window are
 sampled too: an interpolant across the radius would reach them.
 
+With --set KEY=VALUE (repeated as needed; VALUE in TOML, e.g.
+pseudopotentials.well_tail="free") the input is changed before the scan.
+
 usage: smooth_scan.py EXE BASE.toml KEY [--center X] [--cells N | --span S]
+                      [--set KEY=VALUE ...]
                       [--npts N] [--degree D] [--groups G,G]
                       [--output log | psp8 | upf]
                       [--tol TOL | --tol G=TOL,G=TOL] [--max-jump R]
@@ -131,6 +135,14 @@ def set_value(data, key, value):
         data[table][name] = value
     else:
         data[table][name][index] = value
+
+
+def apply_sets(data, sets):
+    """data with each KEY=VALUE of sets applied, VALUE read as TOML."""
+    for item in sets or []:
+        key, _, text = item.partition("=")
+        set_value(data, key.strip(), tomllib.loads(f"v = {text}")["v"])
+    return data
 
 
 def toml_value(value):
@@ -360,7 +372,7 @@ def breakpoints(outputs):
 
 
 def scan(args):
-    data = tomllib.loads(pathlib.Path(args.toml).read_text())
+    data = apply_sets(tomllib.loads(pathlib.Path(args.toml).read_text()), args.set)
     center = float(get_value(data, args.key)) if args.center is None else args.center
     if args.span is not None:
         span = args.span
@@ -536,6 +548,12 @@ def main():
     )
     parser.add_argument(
         "--span", type=float, help="width of the window, instead of --cells"
+    )
+    parser.add_argument(
+        "--set",
+        action="append",
+        metavar="KEY=VALUE",
+        help="change the input before the scan (VALUE in TOML; repeatable)",
     )
     parser.add_argument("--npts", type=int, default=41)
     parser.add_argument("--degree", type=int, default=6)

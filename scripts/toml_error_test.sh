@@ -122,6 +122,14 @@ case $case in
         # well_onset defaults to 1.006**5
         set_key pseudopotentials qcut 'qcut = [ 5.0, 5.0, 5.0,]\nwell_onset = 1.030362166487776' \
             < "$base" > in.toml ;;
+    well_tail_value)
+        set_key pseudopotentials qcut 'qcut = [ 5.0, 5.0, 5.0,]\nwell_tail = "open"' \
+            < "$base" > in.toml
+        expect='well_tail in [pseudopotentials] must be "well" or "free", got "open"' ;;
+    well_tail_default)
+        # well_tail defaults to "well"
+        set_key pseudopotentials qcut 'qcut = [ 5.0, 5.0, 5.0,]\nwell_tail = "well"' \
+            < "$base" > in.toml ;;
     *)
         echo "toml_error_test.sh: unknown case $case" >&2
         exit 2 ;;

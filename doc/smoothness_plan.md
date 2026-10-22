@@ -1328,12 +1328,73 @@ from rc:
    change table.
 
 **Checklist:**
-- [ ] D-7 decided
-- [ ] Unit test `eresid_tail`; the independence, scan and mesh tests
-      (red)
-- [ ] `free_tail` and the window in `eresid`; normalization inside rc
-- [ ] Validation on the references recorded
-- [ ] References patched
+- [ ] D-7 decided: (b) and (c) decided (2026-10-22, below); (a), the
+      default, after the validation, with the normalization's effect on
+      the convergence tables (below)
+- [x] Unit test `free_tail` (the plan's `eresid_tail`): the tail of
+      sin(kr) to 2.3e-12; the window's share of E_resid above qcut,
+      L against 2L, 6e-27 of the tail's own there, and 5e-18 for
+      sinh(κr) (L against 1.1L: at 2L the tail reaches e^34 and the
+      transforms' round-off would dominate); L without a kink at ep = 0;
+      `tail_kinetic` against ∫t(−t''/2) to 1e-13. The independence
+      tests (`well_tail_sr_14_Si`, `well_tail_nr_08_O`,
+      scripts/invariance_test.py, `well_onset` 1, 1.03, 1.09, 2.5,
+      tol 1e-12) are red with the well's tail (kernels 6.5e-2 and
+      4.6e-3, ecut 0.28 and 0.29 relative). T2 rows `sr_07_N_opt_rc1_free`,
+      `sr_14_Si_rc1_free`, `sr_14_Si_ep2_free` (smooth_scan.py `--set`).
+      The window's independence is the unit test's (no input scales L).
+      The former node switch: the ep[2] row crosses ep = 0, where the
+      well found no state at all below 0.005 Ha; with the free tail there
+      is no n left to switch (nr, sr)
+- [x] `free_tail_m` and the window; normalization inside rc. As built:
+      - `well_tail = "well" | "free"` in [pseudopotentials] (TOML; the
+        default "well" until D-7a), echoed in the psp8 and UPF files.
+      - With "free", a well state is the atom's solution at exactly the
+        energy asked for: `wellstate` only resolves that energy (its
+        replacements, D-1) and, in the nr and sr codes, builds no well;
+        `scatterstate` integrates outward past the reach of everything
+        taken at or near rc (irc + pw_reach + 16 + the interpolants'
+        reach); normalized to 1 inside rc; the windowed free tail
+        beyond, on the log mesh (`free_tail_log`) and on eresid's mesh
+        (`free_tail`, Runge-Kutta, 2 steps per step). Two earlier
+        versions left 1e-9 in 14_Si's l = 1 kernel: the well state
+        itself, whose eigenvalue the well's bracket can leave 1e-10 from
+        ep, and Runge-Kutta values beyond rc next to the solver's inside
+        (each node changes source as rc crosses it: 3.9e-10 in the rc[1]
+        scan, 3.8e-12 now).
+      - The window ends at R0 + x_e L, x_e the root of
+        x² − κLx − 6κL = 39 (6.24 for κ = 0), where a growing tail is
+        1e-17 of its value at rc; R0 + 6L left e^(12κL) 1e-17, order 1
+        for κL ≥ 3.
+      - The r-space kinetic energy of the consistency test is that of
+        the same function: ∫₀^rc of the Bessel sum, and the tail's
+        t t'/2 + ∫(t'² + l(l+1)t²/r²)/2 (`tail_kinetic`); ratio
+        1.00000000.
+      - `run_diag`, `run_diag_sr_so_r`, `run_plot` and `modcore_probes`
+        took ep < 0 to mean a bound state: now a flag per projector
+        (`wellprj`), as a well state can have ep < 0 (ep_as_given);
+        `run_plot` still plots the fr j = l−1/2 partner of a well state
+        below 0 as a bound state, as before. The references do not
+        change.
+      - Cost: 14_Si 2.0 s against 1.8 s, the 07_N_opt rows the same.
+- [x] Validation on the references recorded (every input of
+      tests/data/toml, nr, sr and fr, "free" against "well"):
+      - Kernels: by the size of today's arbitrariness, per block 1e-5 to
+        7e-2 (14_Si l = 1 6.8e-2, 56_Ba l = 2 5.7e-2, 60_Nd_GHOST l = 1
+        up to 9.1e-2 fr), 0.16 at most (74_W nr l = 3).
+      - Test-configuration errors: the same to 3 digits everywhere.
+      - Log derivatives at rxpsh (RMS of the phase error over the
+        energies): the same within 1 % of itself, 74_W better
+        (0.194 → 0.181 sr).
+      - Ghosts: the same count everywhere; no new ones.
+      - Convergence tables: those of the bound-state projectors do not
+        move; those of the well states rise with their normalization
+        inside rc (a well state normalized over all space had only its
+        fraction inside rc there), at 1e-4 Ha by 1 to 20 Ha, 119 Ha in
+        73_Ta.
+      - Mesh convergence (T4, mesh_convergence.py `--set`): 14_Si's well
+        blocks at orders 4.0–4.5 as before; 08_O the same as before.
+- [ ] References patched (with D-7a; the default "well" changes none)
 
 #### Follow-ups (once everything above is done)
 
@@ -1433,8 +1494,9 @@ These change behaviour beyond numerics. Decided on review (2026-10-20).
   noted. Not needed yet: the measured effect is at the solvers'
   discretization error near the jump (1e-8 Ha in a 3p matched at it).
 
-- **D-7 The tail of the well states** (phase 8). Open; decide at the
-  start of the phase.
+- **D-7 The tail of the well states** (phase 8). (b) and (c) decided
+  2026-10-22: the windowed growing solution, and the eigenvalue of the
+  j = l+1/2 well. (a) open until the validation (phase 8).
   - (a) Default: the free tail by default, or behind an input
     (`well_tail`) with today's well tail as the default, as D-1 was
     decided. The free tail removes an arbitrary choice and the node

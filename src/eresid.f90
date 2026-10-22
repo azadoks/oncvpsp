@@ -18,8 +18,8 @@
 !
 ! calculates residual energy operator matrix elements as a function of q
 
- subroutine eresid(ll,rc,nnull,nbas,mmax,nq,nqout,qout,rr,qmax,qroot, &
-&                  uu,pswf0_sb,pswfnull_sb,e0g,edotg,ematg, &
+ subroutine eresid(ll,rc,nnull,nbas,nq,nqout,qout,qmax,qroot,hh,nr, &
+&                  ulin,pswf0_sb,pswfnull_sb,e0g,edotg,ematg, &
 &                  eresid0,eresiddot,eresidmat)
 
 !! residual kinetic energy matrix elements as functions of the lower
@@ -29,11 +29,12 @@
 !! at the wave vectors qout (eresid0, eresiddot, eresidmat). The
 !! transform ps(q) = int_0^inf (r psi(r)) (r j_l(q r)) dr is the exact
 !! transform of the Bessel sum inside rc (sbf_overlap, Lommel's integrals)
-!! plus that of the all-electron function outside rc on a linear mesh
-!! from rc, of spacing 2 pi/(75 qmax) (75 points per period of qmax) to
-!! its last nonzero point: the nodes depend on rc and qmax only, so that
-!! the interpolation of uu onto them (lm_interp, 1e-12 of uu far out) is a
-!! smooth function of uu; integrated by the 8th-order rule of ugrid_m. The
+!! plus that of the all-electron tail outside rc on a linear mesh from rc,
+!! of spacing hh = 2 pi/(75 qmax) (75 points per period of qmax): the
+!! nodes depend on rc and qmax only, so that the tail on them (free_tail_m:
+!! the wave function interpolated, 1e-12 of it far out, or the windowed
+!! free tail of a well state) is a smooth function of the inputs;
+!! integrated by the 8th-order rule of ugrid_m. The
 !! integrals over q accumulate from qmax by the same rule, from the small
 !! values up, so their round-off is that of their own size (Parseval,
 !! E_resid as the kinetic energy less the part below q, would leave the
@@ -47,14 +48,14 @@
 !! @param rc  core radius (bohr)
 !! @param nnull  number of null-space functions
 !! @param nbas  number of basis functions
-!! @param mmax  size of the log radial mesh
 !! @param nq  number of nodes of the q grid
 !! @param nqout  number of wave vectors at which E is wanted
 !! @param qout  those wave vectors, 0<=qout<qmax (bohr^-1)
-!! @param rr  log radial mesh
 !! @param qmax  largest q, taken as infinity (bohr^-1)
 !! @param qroot  wave vectors of the basis functions
-!! @param uu  all-electron wave function (*rr)
+!! @param hh  spacing of the linear mesh of the tail, 2 pi/(75 qmax)
+!! @param nr  number of its nodes, at least 2 lm_ncell
+!! @param ulin  the all-electron tail (*r) at rc + (i-1) hh
 !! @param pswf0_sb  basis coefficients of the constrained pseudo wave (quad)
 !! @param pswfnull_sb  basis coefficients of the null-space functions (quad):
 !!                     the basis is nearly dependent, so their transforms
@@ -68,7 +69,7 @@
 
  use constants_m, only: dp, pi
  use, intrinsic :: iso_fortran_env, only: qp => real128
- use logmesh_m, only: lm_interp, lm_ncell
+ use logmesh_m, only: lm_ncell
  use ugrid_m, only: ug_weights, ug_cumint_down
  use sbf_q_m, only: sbfq_overlap_vs, sbfq_value_slope
  use sbf_m, only: sbf_trig_rising
@@ -76,9 +77,9 @@
  external :: sbf8
 
 !Input variables
- integer, intent(in) :: ll,nnull,nbas,mmax,nq,nqout
- real(dp), intent(in) :: rc,qmax
- real(dp), intent(in) :: rr(mmax),uu(mmax),qout(nqout)
+ integer, intent(in) :: ll,nnull,nbas,nq,nqout,nr
+ real(dp), intent(in) :: rc,qmax,hh
+ real(dp), intent(in) :: ulin(nr),qout(nqout)
  real(qp), intent(in) :: pswf0_sb(nbas),pswfnull_sb(nbas,nnull)
  real(dp), intent(in) :: qroot(nbas)
 
@@ -88,13 +89,13 @@
  real(dp), intent(out) :: eresidmat(nnull,nnull,nqout)
 
 !Local variables
- real(dp), allocatable :: rlin(:),ulin(:),wr(:),sbf(:)
+ real(dp), allocatable :: rlin(:),wr(:),sbf(:)
  real(dp), allocatable :: sqr(:),cqr(:),sdqr(:),cdqr(:)
  real(dp), allocatable :: g0(:),gdot(:,:),gmat(:,:,:),work(:)
  real(dp) :: sb_out(5),psnullq(nnull)
  real(qp) :: ovl(nbas),ps0in,psnin(nnull),rcq,jq(nbas),jdq(nbas),jb,jdb
- real(dp) :: dq,hh,rend,qq,qq4,ps0q,tn,qa,qb,wg
- integer :: nr,nlast,ii,iq,jj,kk,ll1,ig,icell
+ real(dp) :: dq,qq,qq4,ps0q,tn,qa,qb,wg
+ integer :: ii,iq,jj,kk,ll1,ig,icell
 !steps between exact sin/cos(qq*rlin) evaluations in the q loop
  integer, parameter :: nqseed=32
 !8-point Gauss-Legendre on [-1,1], for the partial cells
@@ -119,36 +120,18 @@
    call sbfq_value_slope(ll,real(qroot(jj),qp)*rcq,jq(jj),jdq(jj))
  end do
 
-!the linear mesh from rc, with the spacing of qmax, to the last nonzero
-!point of uu (the solvers zero it beyond their inward start; a node there
-!is dropped or added at a value at machine precision)
- nlast=0
- do ii=mmax,1,-1
-   if(abs(uu(ii))>0.0d0) then
-     nlast=ii
-     exit
-   end if
- end do
- rend=0.0d0
- if(nlast>0) rend=rr(nlast)
- hh=2.0d0*pi/(75.0d0*qmax)
- nr=0
- if(rend>rc) nr=int((rend-rc)/hh)+1
+!the linear mesh of the tail
  if(nr<2*lm_ncell) then
-   write(6,'(/2a,f10.6,a,f10.6)') 'eresid: ERROR wave function vanishes', &
-&       ' too close to rc: rc=',rc,', last nonzero point',rend
+   write(6,'(/a,i0)') 'eresid: ERROR tail too short, nr=',nr
    error stop 1
  end if
 
- allocate(rlin(nr),ulin(nr),wr(nr),sbf(nr))
+ allocate(rlin(nr),wr(nr),sbf(nr))
  allocate(sqr(nr),cqr(nr),sdqr(nr),cdqr(nr))
  allocate(g0(nq),gdot(nq,nnull),gmat(nq,nnull,nnull),work(nq))
 
  do ii=1,nr
    rlin(ii)=rc+dble(ii-1)*hh
- end do
- do ii=1,nr
-   call lm_interp(rr,uu,mmax,rlin(ii),ulin(ii))
  end do
  call ug_weights(nr,hh,wr)
 
@@ -260,7 +243,7 @@
    end do
  end do
 
- deallocate(rlin,ulin,wr,sbf)
+ deallocate(rlin,wr,sbf)
  deallocate(sqr,cqr,sdqr,cdqr)
  deallocate(g0,gdot,gmat,work)
 

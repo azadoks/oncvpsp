@@ -82,6 +82,18 @@ irel, and the stage.  It has the following major sections:
      where the mesh-dependent onset of before sat on the default mesh);
      it is flat to every order there, so 1 is the natural limit.
 
+     With well_tail = "free" (TOML input; default "well") the well states
+     do not depend on the well (free_tail_m): the state is the atom's
+     solution at exactly ep, integrated outward (scatterstate) and
+     normalized to 1 inside r_c, and beyond r_c it is the free solution
+     at ep under an erfc window, t = u w, w = erfc((r - R0)/L)/2,
+     R0 = r_c + 6L, with L from qcut and ep so that the window's share of
+     the residual energy above qcut is about 1e-13; a negative ep (with
+     ep_as_given) gives a growing tail under the same window. wellstate
+     then only resolves the energy (its replacements of ep) and builds no
+     well, except in the fully-relativistic code, where the j = l-1/2
+     state takes the eigenvalue of the j = l+1/2 well as its energy.
+
   B) If two projectors using the norm-conserving Vanderbilt method are
      specified, the all-electron wave function with one additional node is
      calculated for either a second bound valence state (when the first

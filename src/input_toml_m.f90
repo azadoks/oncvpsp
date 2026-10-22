@@ -20,7 +20,7 @@
 &                           rlmax, drl, upf_mesh, &
 &                           ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                           amesh, rr1, rmax, c_light, ep_as_given, &
-&                           well_onset)
+&                           well_onset, well_tail_free)
 
 !! Reads the TOML input: the same data as read_input_text, with the same
 !! defaults and the same checks against the array sizes (check_data
@@ -39,7 +39,10 @@
 !                              states take ep as given, see wellstate),
 !                              well_onset (optional, 1.006**5, at least 1:
 !                              the onset of the well of the well states as
-!                              a multiple of rc, see wellstate)
+!                              a multiple of rc, see wellstate),
+!                              well_tail (optional, "well" or "free":
+!                              the tail of the well states in E_resid,
+!                              see free_tail_m)
 !   [local_potential]          lloc, lpopt, rcloc, dvloc0
 !   [vkb_projectors]           l (0..lmax), nproj, debl
 !   [model_core_charge]        icmod, fcfact (icmod 1, 2, 3, 6, 7; else 0),
@@ -109,6 +112,7 @@
  logical, intent(out) :: ep_as_given
 !> onset of the well of the well states as a multiple of rc (wellstate)
  real(dp), intent(out) :: well_onset
+ logical, intent(out) :: well_tail_free
 !> Energy added to ep for the second projector (Ha)
  real(dp), intent(out) :: debl(mxlin+1)
 ! [Model core charge]
@@ -266,6 +270,16 @@
  if(.not. (well_onset >= 1.0_dp)) then
    call input_error('well_onset in [pseudopotentials] must be at least 1')
  end if
+ call get_string(child, 'pseudopotentials', 'well_tail', tmp_str, 'well')
+ select case(tmp_str)
+ case('well')
+   well_tail_free = .false.
+ case('free')
+   well_tail_free = .true.
+ case default
+   call input_error('well_tail in [pseudopotentials] must be "well" or '// &
+&    '"free", got "'//tmp_str//'"')
+ end select
 
 ! local potential
  call get_section(table, 'local_potential', child)
@@ -572,17 +586,20 @@
  return
  end subroutine get_real
 
- subroutine get_string(table, section, key, val)
+ subroutine get_string(table, section, key, val, default)
 
-!! a string key, required
+!! a string key, required unless default is given
 !!
 !! @param table  the table holding the key
 !! @param section  name of the table, for messages
 !! @param key  name of the key
-!! @param val  the value of the key
+!! @param val  the value of the key, or default if the key is missing
+!! @param default  optional, the value for a missing key, which is then not
+!!                 required
 
 !Input variables
  character(len=*), intent(in) :: section, key
+ character(len=*), intent(in), optional :: default
 
 !Input/output variables
  type(toml_table), intent(inout) :: table
@@ -591,8 +608,16 @@
  character(len=:), allocatable, intent(out) :: val
 
 !Local variables
+ type(toml_keyval), pointer :: ptr
  integer :: stat
 
+ if(present(default)) then
+   call get_value(table, key, ptr, requested=.false., stat=stat)
+   if(.not. associated(ptr) .and. stat == toml_stat%success) then
+     val = default
+     return
+   end if
+ end if
  call get_value(table, key, val, stat=stat)
  if(stat /= toml_stat%success .or. .not. allocated(val)) then
    call key_error(section, key, stat, 'a string')

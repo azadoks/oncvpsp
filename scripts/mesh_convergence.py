@@ -9,8 +9,11 @@ ln(amesh). The kernels are those of the psp8 file, on its linear mesh, which
 does not change with amesh (doc/smoothness_plan.md, T4: the rates must not
 get worse in a phase that changes numerics).
 
+With --set KEY=VALUE (repeatable, VALUE in TOML) the input is changed first,
+as in smooth_scan.py.
+
 usage: mesh_convergence.py EXE BASE.toml [--amesh A A ...] [--ref A]
-                           [--workdir DIR]
+                           [--set KEY=VALUE ...] [--workdir DIR]
 """
 
 import argparse
@@ -23,7 +26,7 @@ import tomllib
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from compare_output import kernel_diff, kernel_norm2, load  # noqa: E402
-from smooth_scan import dump_toml  # noqa: E402
+from smooth_scan import apply_sets, dump_toml  # noqa: E402
 
 
 def run(exe, data, amesh, workdir):
@@ -51,10 +54,11 @@ def main():
     parser.add_argument("toml")
     parser.add_argument("--amesh", type=float, nargs="+", default=[1.012, 1.006, 1.003])
     parser.add_argument("--ref", type=float, default=1.0015)
+    parser.add_argument("--set", action="append", metavar="KEY=VALUE")
     parser.add_argument("--workdir")
     args = parser.parse_args()
 
-    data = tomllib.loads(pathlib.Path(args.toml).read_text())
+    data = apply_sets(tomllib.loads(pathlib.Path(args.toml).read_text()), args.set)
     exe = str(pathlib.Path(args.exe).resolve())
     workdir = args.workdir or tempfile.mkdtemp(prefix="mesh_convergence_")
     ref = run(exe, data, args.ref, workdir)

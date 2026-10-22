@@ -16,7 +16,7 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine run_diag_sr_so_r(lmax,npa,epa,lloc,irc, &
+ subroutine run_diag_sr_so_r(lmax,npa,epa,wellprj,lloc,irc, &
 &                    vlocpw,vsrpw,esr,vsopw,eso,nproj,rr,vfull,vp,zz,mmax, &
 &                    mxprj)
 
@@ -31,6 +31,8 @@
 !! @param npa  principal quantum number for corresponding all-electron state
 !! @param epa  bound-state or scattering state reference energies for vkb
 !!             potentials
+!! @param wellprj  whether each projector is a well state (its energy then
+!!                 of either sign), else a bound state
 !! @param lloc  l for local potential
 !! @param irc  core radii indices
 !! @param vlocpw  the screened local potential's pieces
@@ -60,6 +62,7 @@
  real(dp), intent(in) :: esr(2*mxprj,mxl+1)
  real(dp), intent(in) :: eso(2*mxprj,mxl+1)
  real(dp), intent(in) :: epa(mxprj,mxlin+1,mxkap)
+ logical, intent(in) :: wellprj(mxprj,mxlin+1)
  type(piecewise_t), intent(in) :: vlocpw,vsrpw(2*mxprj,mxl+1)
  type(piecewise_t), intent(in) :: vsopw(2*mxprj,mxl+1)
 
@@ -130,7 +133,7 @@
        mchf=max(irc(l1),irc(lloc+1))+5
 
        etest=epa(iprj,l1,ikap)
-       if(epa(iprj,l1,1)<0.0d0) then
+       if(.not. wellprj(iprj,l1)) then
          call ldiracfb(npa(iprj,l1),ll,kap,ierr,etest, &
 &                        rr,zz,vfull,ur,urp,mmax,mch)
        else
@@ -147,7 +150,7 @@
        emax=etest+0.1d0*abs(etest)+0.05d0
        emin=etest-0.1d0*abs(etest)-0.05d0
 
-       if(epa(iprj,l1,1)<0.0d0) then
+       if(.not. wellprj(iprj,l1)) then
          sls=(l1-1)*l1
          emax=min(emax,0.0d0)
 

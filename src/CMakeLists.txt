@@ -16,6 +16,7 @@ set(src_oncvpsp
     diagout.f90
     dpnint.f90
     eresid.f90
+    free_tail_m.f90
     exc_off_pbe.f
     exc_relx.f90
     excvwn.f90

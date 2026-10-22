@@ -296,7 +296,8 @@
 
  subroutine write_input_echo(nkap,iformat,atsym,zz,nc,nv,iexc,psfile, &
 &                            na,la,fa,lmax,rc0,ep,ncon,nbas,qcut,ep_as_given, &
-&                            well_onset,lloc,lpopt,dvloc0,nproj,debl, &
+&                            well_onset,well_tail_free,lloc,lpopt,dvloc0, &
+&                            nproj,debl, &
 &                            icmod,fcfact,rcfact,slack,fcgrid,rcgrid, &
 &                            epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
 &                            ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh)
@@ -322,6 +323,7 @@
  real(dp), intent(in) :: fa(mxstate),rc0(mxlin+1),ep(mxlin+1),qcut(mxlin+1)
  logical, intent(in) :: ep_as_given
  real(dp), intent(in) :: well_onset
+ logical, intent(in) :: well_tail_free
  real(dp), intent(in) :: debl(mxlin+1)
  real(dp), intent(in) :: facnf(mxstate,mxcnf)
  real(dp), intent(in) :: fcgrid(3),rcgrid(3),log_mesh(3)
@@ -359,6 +361,7 @@
  if(well_onset/=well_onset_default) then
    write(6,'(a,es22.16)') '#   well_onset = ',well_onset
  end if
+ if(well_tail_free) write(6,'(a)') '#   well_tail = "free"'
 
  write(6,'(a/a/a,a)') '#','# LOCAL POTENTIAL','# lloc, lpopt,  rc(5),', &
 &      '   dvloc0'

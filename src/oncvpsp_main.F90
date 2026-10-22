@@ -55,6 +55,8 @@
  use constants_m, only: dp, mxprj, mxstate, mxcnf, mxl, mxlin, mxkap, nrhomod
  use pieces_m, only: piecewise_t, pw_reach, pw_free
  use modcore_m, only: core_pieces_smooth
+ use free_tail_m, only: free_tail_log
+ use logmesh_m, only: lm_fh_reach
  use constants_m, only: nlev, nerrlv, well_onset_default
  use input_echo_m, only: write_atom, write_icmod, write_epsh, write_mesh
  use relativity_m, only: set_relativity
@@ -68,7 +70,7 @@
  integer :: jj,kk,ll,l1,lloc,lmax,lt,inline
  integer :: mch,mchf,mmax,n1,n2,nc,nlim,nlloc,nlmax,irpsh,nrl
  integer :: nv,ncnf,nvt,upf_mesh
- integer :: iprj,nkap,nnwell,npsh
+ integer :: iprj,nkap,nnwell,npsh,mfree
  integer :: ikap,kap,mkap
  integer,allocatable :: npa(:,:)
 !
@@ -93,7 +95,7 @@
  real(dp) :: amesh_in,rr1_in,rmax_in,rmax,log_mesh(3),c_light_in
  real(dp) :: sf,sw,zz,zion,zval,etot,res
  real(dp) :: eterm(4),rphs(4)
- real(dp) :: fj,cnorm,rcore
+ real(dp) :: fj,cnorm,rcore,eptgt
 !
  real(dp) :: cl(mxlin+1),debl(mxlin+1),ea(mxstate,mxkap),ep(mxlin+1,mxkap)
  real(dp) :: fa(mxstate)
@@ -114,6 +116,10 @@
  real(dp), allocatable :: rr(:)
  real(dp), allocatable :: rho(:),rhoc(:),rhot(:)
  real(dp), allocatable :: uu(:,:),up(:,:),vwell(:,:)
+!> whether each projector of an l is a well state, confined by its well,
+!> and of each l
+ logical :: inwell(mxprj)
+ logical, allocatable :: wellprj(:,:)
  real(dp), allocatable :: vp(:,:,:),vfull(:),vkb(:,:,:,:),pswf(:,:,:,:)
  real(dp), allocatable :: vpuns(:,:)
 !frozen-core ionic potential of the tail of the local potential
@@ -131,7 +137,7 @@
  type(piecewise_t), allocatable :: vkbpw(:,:,:)
  type(piecewise_t) :: vlocpw
  type(piecewise_t) :: corepw(nrhomod)
- logical :: ep_as_given
+ logical :: ep_as_given,well_tail_free
  real(dp) :: well_onset
  real(dp), allocatable :: chix(:,:,:,:)
 !fully-relativistic only: scalar-relativistic and spin-orbit projectors, and
@@ -291,6 +297,7 @@
  ios = 0
  ep_as_given=.false.
  well_onset=well_onset_default
+ well_tail_free=.false.
  select case(input_mode)
  case(INPUT_STDIN)
    call read_input_text(stdin, inline, &
@@ -344,7 +351,7 @@
 &                       rlmax, drl, upf_mesh, &
 &                       ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                       amesh_in, rr1_in, rmax_in, c_light_in, ep_as_given, &
-&                       well_onset)
+&                       well_onset, well_tail_free)
    close(unit)
 #endif
  case default
@@ -439,6 +446,8 @@
  allocate(vo(mmax),vxc(mmax))
  allocate(rhoae(mmax,nv),rhops(mmax,nv),rhotae(mmax))
  allocate(npa(mxprj,mxlin+1))
+ allocate(wellprj(mxprj,mxlin+1))
+ wellprj(:,:)=.false.
  allocate(epa(mxprj,mxlin+1,nkap))
  allocate(uua(mmax,mxprj,nkap),upa(mmax,mxprj,nkap))
  allocate(vsr(mmax,2*mxprj,mxl+1),vso(mmax,2*mxprj,mxl+1))
@@ -644,6 +653,7 @@
 
      uu(:,:)=0.0d0; qq(:,:)=0.0d0
      iprj=0
+     if(ikap==1) inwell(:)=.false.
 
 !get principal quantum number for the highest core state for this l
      npa(1,l1)=l1
@@ -725,13 +735,15 @@
 ! npa keeps the input n.
          if(ikap==1 .and. irel==2) then
            call wellstate(npa(iprj,l1),ll,kap,rc(l1),epa(iprj,l1,ikap), &
-&                         ep_as_given,well_onset,rr,vfull,vwell(1,iprj),uu, &
-&                         up,zz,mmax,mch,irel)
+&                         ep_as_given,well_onset,.false.,rr,vfull, &
+&                         vwell(1,iprj),uu,up,zz,mmax,mch,irel, &
+&                         inwell(iprj),eptgt)
          else if(ikap==1) then
            nnwell=npa(iprj,l1)
            call wellstate(nnwell,ll,kap,rc(l1),epa(iprj,l1,ikap),ep_as_given, &
-&                         well_onset,rr,vfull,vwell(1,iprj),uu,up,zz,mmax, &
-&                         mch,irel)
+&                         well_onset,well_tail_free,rr,vfull, &
+&                         vwell(1,iprj),uu,up,zz,mmax,mch,irel, &
+&                         inwell(iprj),eptgt)
          else
            et=epa(iprj,l1,ikap)
            call boundstate(irel,npa(iprj,l1),ll,kap,ierr,epa(iprj,l1,ikap), &
@@ -759,6 +771,36 @@
          end if
          uua(:,iprj,ikap)=uu(:,1)
          upa(:,iprj,ikap)=cnorm*up(:,1)
+!with the free tail, a well state is the atom's solution at exactly the
+!energy asked for (the well's eigenvalue only for j = l - 1/2, D-7c),
+!integrated outward past the reach of everything taken at or near rc
+!(ae_delta's nodes below, and the interpolants'); normalized inside rc,
+!as its norm over all space is the well's; and the windowed free tail
+!beyond, so that nothing sees the well but that energy
+!(doc/smoothness_plan.md, phase 8)
+         if(well_tail_free .and. inwell(iprj)) then
+           if(ikap==1) epa(iprj,l1,ikap)=eptgt
+           mfree=min(mmax,irc(l1)+pw_reach+16+lm_fh_reach()+2)
+           uu(:,:)=0.0d0
+           up(:,:)=0.0d0
+           call scatterstate(irel,nnwell,ll,kap,ierr,epa(iprj,l1,ikap),rr, &
+&                            zz,vfull,uu,up,mmax,mfree)
+           if(ierr/=0) then
+             write(6,'(a,i2,a,f12.8)') &
+&                  'oncvpsp: ERROR scattering state failed for l=',ll, &
+&                  ' at energy',epa(iprj,l1,ikap)
+             error stop 1
+           end if
+           uua(:,iprj,ikap)=uu(:,1)
+           upa(:,iprj,ikap)=up(:,1)
+           call fpovlp(uua(1,iprj,ikap),uua(1,iprj,ikap),mmax,rc(l1),ll, &
+&                      kap,zz,cnorm,rr,irel)
+           uua(:,iprj,ikap)=uua(:,iprj,ikap)/sqrt(cnorm)
+           upa(:,iprj,ikap)=upa(:,iprj,ikap)/sqrt(cnorm)
+           call free_tail_log(irel,ll,kap,epa(iprj,l1,ikap),rr,vfull, &
+&                             uua(1,iprj,ikap),upa(1,iprj,ikap),mmax, &
+&                             rc(l1),qcut(l1),mfree)
+         end if
        end do !kk
      end if !iprj<nproj(l1)
 
@@ -795,14 +837,15 @@
      end do
      call run_optimize(epa(1,l1,ikap),ll,kap,irel,mmax,mxprj,rr, &
 &                      uua(1,1,ikap),upa(1,1,ikap),qq, &
-&                      rc(l1),irc(l1),qcut(l1),qmsbf(l1),ncon(l1),nbas(l1), &
-&                      nproj(l1), &
+&                      well_tail_free .and. inwell(:),rc(l1),irc(l1), &
+&                      qcut(l1),qmsbf(l1),ncon(l1),nbas(l1),nproj(l1), &
 &                      pswf(1,1,l1,ikap),vp(1,l1,ikap),vkb(1,1,l1,ikap), &
 &                      vfull,cvgplt(1,1,1,l1,ikap),ncurve, &
 &                      ecurve(1,1,1,l1,ikap), &
 &                      pswfx(1,1,l1,ikap),chix(1,1,l1,ikap))
 
    end do !ikap
+   wellprj(:,l1)=inwell(:)
  end do !l1
 
 ! construct Vanderbilt / Kleinman-Bylander projectors
@@ -943,8 +986,8 @@
    allocate(probes(mmax,mxprj*(lmax+1)),lprobe(mxprj*(lmax+1)))
    nprobe=0
    if(icmod==7) then
-     call modcore_probes(lmax,lloc,nproj,epa,vp,vlocpw,vkbpw,evkb,rr,mmax, &
-&                        mxprj, &
+     call modcore_probes(lmax,lloc,nproj,epa,wellprj,vp,vlocpw,vkbpw,evkb, &
+&                        rr,mmax,mxprj, &
 &                        nkap,probes,lprobe,nprobe)
    end if
    call modcore_budget(icmod,rho,rhoc,rhomod,corepw,fcfact,ecutw,rcfact, &
@@ -980,11 +1023,11 @@
  epstot= eeig + eexc - 0.5d0*eeel
  write(6,'(/a,f12.6/)') 'Pseudoatom total energy', epstot
 
- call run_diag(lmax,npa,epa,lloc,irc, &
+ call run_diag(lmax,npa,epa,wellprj,lloc,irc, &
 &               vlocpw,vkbpw,evkb,nproj,rr,vfull,vp,zz,mmax,mxprj,irel,nkap)
 
  if(irel==2) then
-   call run_diag_sr_so_r(lmax,npa,epa,lloc,irc, &
+   call run_diag_sr_so_r(lmax,npa,epa,wellprj,lloc,irc, &
 &                        vlocpw,vsrpw,esr,vsopw,eso,nproj,rr,vfull,vp,zz, &
 &                        mmax,mxprj)
 
@@ -1074,7 +1117,7 @@
 
  end do !jj
 
- call run_plot(lmax,npa,epa,lloc,irc, &
+ call run_plot(lmax,npa,epa,wellprj,lloc,irc, &
 &               vkb,vlocpw,vkbpw,evkb,nproj,rr,vfull,vp,vpuns,zz,mmax,mxprj, &
 &               drl,nrl, &
 &               rho,rhoc,rhomod,irel,nkap,cvgplt)
@@ -1101,7 +1144,8 @@
 &              nrl,drl, &
 &              atsym,soscale, &
 &              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&              fa,rc0,ep,qcut,ep_as_given,well_onset,debl,facnf,dvloc0, &
+&              fa,rc0,ep,qcut,ep_as_given,well_onset,well_tail_free,debl, &
+&              facnf,dvloc0, &
 &              fcfact,fcfact0,rcfact, &
 &              slack,fcgrid,rcgrid, &
 &              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,upf_mesh,nkap)
@@ -1111,7 +1155,8 @@
    call upfout(lmax,lloc,rc,vkbpw,evkb,nproj,rr,vpuns,vlocpw,rho,corepw, &
 &              zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
 &              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&              fa,rc0,ep,qcut,ep_as_given,well_onset,debl,facnf,dvloc0, &
+&              fa,rc0,ep,qcut,ep_as_given,well_onset,well_tail_free,debl, &
+&              facnf,dvloc0, &
 &              fcfact0,rcfact, &
 &              slack,fcgrid,rcgrid, &
 &              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,uupsa,ea,log_mesh, &

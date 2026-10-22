@@ -16,7 +16,7 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine run_diag(lmax,npa,epa,lloc,irc, &
+ subroutine run_diag(lmax,npa,epa,wellprj,lloc,irc, &
 &                    vlocpw,vkbpw,evkb,nproj,rr,vfull,vp,zz,mmax,mxprj,irel, &
 &                    nkap)
 
@@ -32,6 +32,8 @@
 !! @param epa  bound-state or scattering state reference energies for vkb
 !!             potentials (last index 1 for j=l+1/2, 2 for j=l-1/2, as in vkb,
 !!             evkb and vp)
+!! @param wellprj  whether each projector is a well state (its energy then
+!!                 of either sign), else a bound state
 !! @param lloc  l for local potential
 !! @param irc  core radii indices
 !! @param vlocpw  the screened local potential's pieces
@@ -58,6 +60,7 @@
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: rr(mmax),vp(mmax,mxl+2,nkap),vfull(mmax)
  real(dp), intent(in) :: epa(mxprj,mxlin+1,nkap),evkb(mxprj,mxl+1,nkap)
+ logical, intent(in) :: wellprj(mxprj,mxlin+1)
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1,nkap)
 
 !Local variables
@@ -112,7 +115,7 @@
 !   all-electron state, its large component when irel=2, normalized as a
 !   Schroedinger function
        etest=epa(iprj,l1,ikap)
-       if(epa(iprj,l1,1)<0.0d0) then
+       if(.not. wellprj(iprj,l1)) then
          call boundstate(irel,npa(iprj,l1),ll,kap,ierr,etest, &
 &                        rr,zz,vfull,ur,urp,mmax,mch)
          if(ierr /= 0 .and. irel==2) then
@@ -142,7 +145,7 @@
        emax=etest+0.1d0*abs(etest)+0.05d0
        emin=etest-0.1d0*abs(etest)-0.05d0
 
-       if(epa(iprj,l1,1)<0.0d0) then
+       if(.not. wellprj(iprj,l1)) then
 
          emax=min(emax,0.0d0)
 
