@@ -38,6 +38,11 @@ from smooth_scan import (  # noqa: E402
 )
 
 
+def group_of(name):
+    """The group of a feature, kernel for kernel.log:..."""
+    return name.split(":", 1)[0].split(".")[0]
+
+
 def main():
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -62,7 +67,7 @@ def main():
     with concurrent.futures.ThreadPoolExecutor(len(values)) as pool:
         outputs = list(
             pool.map(
-                lambda kv: run_one(exe, data, args.key, kv[1], workdir, kv[0], "log"),
+                lambda kv: run_one(exe, data, args.key, kv[1], workdir, kv[0], ["log"]),
                 enumerate(values),
             )
         )
@@ -80,8 +85,8 @@ def main():
     runs = [
         {
             n: v
-            for n, v in features(out, samples, "log").items()
-            if n.split(":", 1)[0] in groups
+            for n, v in features(out, {"log": samples}).items()
+            if group_of(n) in groups
         }
         for out in outputs
     ]
@@ -95,7 +100,7 @@ def main():
     for group in GROUPS:
         if group not in groups:
             continue
-        mine = [n for n in names if n.split(":", 1)[0] == group]
+        mine = [n for n in names if group_of(n) == group]
         if not mine:
             print(f"{group:8s} no features  FAIL")
             status = 1
