@@ -1345,7 +1345,24 @@ from rc:
       `outmesh_m` keeps `dpnint`'s limit, the polynomial of degree 7
       through the next 8 output points (0.01–0.08 bohr). Not yet trusted:
       check it against the functions' known behaviour at r = 0 (r β → 0,
-      ρ'(0) = 0, V_loc finite) and against a fit on the log mesh
+      ρ'(0) = 0, V_loc finite) and against a fit on the log mesh. The
+      model core's fill and the Teter cores are closed forms with
+      analytic derivatives (`poly_fill`, `tail_derivatives`,
+      `martins_derivatives`, `teter_core_derivs`): their columns could be
+      evaluated at the output radii, r = 0 included, instead of
+      interpolated from the nodes. Only the core charge beyond the joint
+      is tabulated and needs `lm_derivs`
+- [ ] Weighted wave cutoff for the icmod 6/7 budget (asked for by the
+      oncvpsp-opt session; kept in the plan, not yet approved):
+      `budget_cutoff = "max" | "weighted"` in `[model_core_charge]`, an
+      optional 5th field after slack on the `.dat` icmod line (0 max, 1
+      weighted), the default the current maximum. Ecut_w is the root of
+      Σ w_i E^r_i(Ecut) = errmax Σ w_i, the weights the occupation of
+      each occupied valence wave, 2(2l+1) for the first wave of an empty
+      channel, 0 otherwise; Ecut_w and the weights in the DIAGNOSTICS
+      block; budget slack·Ecut_w (times −fcfact if fcfact < 0), qlo from
+      Ecut_w. pyoncvpsp's `ModelCoreChargeInput` gets the field and its
+      dat and TOML writers
 
 ### Decisions
 
