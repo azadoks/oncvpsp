@@ -252,7 +252,10 @@ irel, and the stage.  It has the following major sections:
     The routine *diagout* then writes the block "Begin DIAGNOSTICS" to
     "End DIAGNOSTICS", for programs that read the output: the cutoffs at
     which each projector's convergence curve reaches every error level
-    (1e-2 Ha down by half decades to 1e-7, past the tables' 1e-5), the
+    (1e-2 Ha down by half decades to 1e-7, past the tables' 1e-5; below
+    the tables' levels, on the curve plus `ekin_check`, the energy above
+    q_infinity that it leaves out, so a level it does not reach on its
+    q grid has no line), the
     r-space kinetic energy of each wave less the Fourier one to the
     curve's q_infinity (`ekin_check l ikap iproj t`: by Parseval the
     energy above q_infinity, which the curve leaves out, plus the errors

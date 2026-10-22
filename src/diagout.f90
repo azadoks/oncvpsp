@@ -30,13 +30,15 @@
 !! ecut l ikap iproj err ecut: the cutoff (Ha) at which the residual
 !! kinetic energy per electron of the optimized wave of projector iproj
 !! falls to err (Ha), for the levels err that it reaches, from 1e-2 down
-!! by half decades to 1e-7, below the tables' 1e-5 (run_optimize)
+!! by half decades to 1e-7, below the tables' 1e-5 (run_optimize); the
+!! levels below the tables' on the curve plus ekin_check
 !!
 !! ekin_check l ikap iproj t: the r-space kinetic energy of that wave less
 !! the Fourier one to the q_infinity of its curve (Ha): by Parseval the
-!! energy above q_infinity, which the curve leaves out (>= 0), plus the
-!! error of the r-space integral, which dominates it (either sign, up to
-!! 5e-7 Ha in the reference outputs)
+!! energy above q_infinity, which the curve leaves out (>= 0, up to
+!! 1.4e-7 Ha in the reference outputs), plus the errors of the q grid's
+!! quadrature (up to 1e-8 Ha, either sign) and of the r-space integral
+!! (below 1e-9 Ha at the default mesh)
 !!
 !! ld_r l ikap r: the radius (bohr) of the log derivatives of l, ikap
 !!

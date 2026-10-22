@@ -1513,7 +1513,8 @@ from rc:
       result. In DIAGNOSTICS per wave: E_resid(qcut) at the optimum, the
       regularization term's value, e1 and |f1|. Also asked for, separately:
       a warning when e1 and |f1| are at round-off.
-- [ ] (Proposed 2026-10-22, not approved) E_resid by Parseval: the
+- [x] (Proposed 2026-10-22; decided 2026-10-22, the diagnostics only)
+      E_resid by Parseval: the
       residual kinetic energy as T_r − ∫₀^q t(k) dk, the r-space kinetic
       energy less the Fourier one below q, which is the residual to true
       infinity, in place of ∫_q^q∞; in the curve and in the matrices of
@@ -1552,6 +1553,19 @@ from rc:
       5.9e-10 in 73_Ta (fr; it was 3e-7). What `ekin_check` shows now is
       (b) and (c), and T_r is good enough for Parseval at the default
       mesh.
+      Decided 2026-10-22 (the user's): not in the optimization. The tail
+      it adds, ≤ 1.4e-7 Ha, is far below the residuals the optimization
+      is asked for (1e-5–1e-3 Ha); T_r − ∫₀^q has T_r's 1e-10 floor where
+      the direct ∫_q^q∞ has E_r's own (e1 ~ 1e-18 in the flat rows of
+      the regularization item, which it would turn into noise); the q
+      quadrature (b) stays; and the matrices of `eresid` would need an
+      r-space kinetic matrix of the basis. In the diagnostics, yes:
+      `run_optimize` finds the DIAGNOSTICS levels below the tables'
+      (3.2e-6 to 1e-7) on the curve plus `ekin_check`, by Parseval the
+      curve to true infinity, good to (b), 1e-8 Ha. The tables, the plots,
+      `ecurve` (the model core's budget) and the levels to 1e-5 keep the
+      curve to q∞, whose tail is ≤ 1.4% of 1e-5. Below 1e-8 a level
+      would need dq halved.
 - [ ] Optimize the test suite (the user's request, 2026-10-22; not
       approved for work yet): more coverage for less wall time, by better
       choices of test cases and of what each computes. Where the time

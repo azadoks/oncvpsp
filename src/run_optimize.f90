@@ -337,10 +337,17 @@
    write(6,'(a)') '         Ha          eV             Ha'
 !the cutoffs at which the curve falls to each error level, by
 !root-finding on it; the table shows the first nerrlv, the DIAGNOSTICS
-!block all of them
+!block all of them. Below the table's levels the curve takes back the
+!energy above q_infinity, ektail by Parseval (to the q grid's quadrature,
+!1e-8 Ha), up to 1.4e-7 Ha in deep f channels: a level that the
+!corrected curve does not reach on the grid has no cutoff
    err=0.01d0
    do jj=1,nerrdg
-     call ug_cross_down(eresg,nq,dq,q0,err,qerr,found_root)
+     if(jj<=nerrlv) then
+       call ug_cross_down(eresg,nq,dq,q0,err,qerr,found_root)
+     else
+       call ug_cross_down(eresg+ektail(iprj),nq,dq,q0,err,qerr,found_root)
+     end if
      if(found_root) then
        cvgplt(1,jj,iprj)= 0.5d0*qerr**2
        cvgplt(2,jj,iprj)= err
