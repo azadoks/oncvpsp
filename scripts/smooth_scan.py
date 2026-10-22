@@ -42,8 +42,13 @@ kernel_diff.py):
   core    the model core charge at the sample radii, relative to its largest
           value there; from the psp8 file also its four derivatives, each
           relative to its own largest value
-  tests   the pseudo-atom eigenvalues of the test configurations (printed to
-          8 decimals, so only a coarser --tol is meaningful for them)
+  tests   the pseudo-atom eigenvalues of each test configuration, relative
+          to the largest |eigenvalue| of the configuration, and the pseudo-
+          atom's total-energy difference of each from the reference,
+          relative to the largest of them (from the DIAGNOSTICS block, 17
+          digits; a configuration that failed is left out; without the
+          block, the eigenvalues printed to 8 decimals, for which only a
+          coarser --tol is meaningful)
   ld      the pseudopotential's log-derivative phase at rxpsh, each l and
           energy, as cos and sin of twice it: the phase is defined only up
           to pi, and the doubled angle has no branch
@@ -296,7 +301,23 @@ def features(path, samples, groups=GROUPS):
                 block = f"core.{output}" if d == 0 else f"core.{output}:d{d}"
                 for k in points:
                     out[f"{block}:r{k}"] = float(row[k])
-    if "tests" in groups:
+    if not groups & {"tests", "ld", "ecut", "ghost"}:
+        return out
+    diagnostics = parser.diagnostics
+    if "tests" in groups and "test_configurations" in diagnostics:
+        for config in diagnostics["test_configurations"]:
+            if config["failed"]:
+                continue
+            index = config["index"]
+            for state in config["states"]:
+                tag = f"n{state['n']}l{state['l']}"
+                if state["j"] is not None:
+                    tag += f"j{state['j']}"
+                out[f"tests:c{index}:eps:{tag}"] = state["eig_ps"]
+            # the reference's is 0 but for round-off
+            if index > 0:
+                out[f"tests:de_ps:c{index}"] = config["de_ps"]
+    elif "tests" in groups:
         eigs = (
             state["eig_ps"]
             for config in parser.test_configurations
@@ -305,9 +326,6 @@ def features(path, samples, groups=GROUPS):
         )
         for i, eps in enumerate(eigs):
             out[f"tests:eps{i}"] = eps
-    if not groups & {"ld", "ecut", "ghost"}:
-        return out
-    diagnostics = parser.diagnostics
     if "ld" in groups:
         curves = (
             diagnostics["log_derivatives"]

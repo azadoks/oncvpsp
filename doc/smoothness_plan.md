@@ -1228,9 +1228,22 @@ So the order is:
       Ecut crossings and the log derivatives to 17 digits; the N rows'
       ld and ecut at ≤ 3.7e-10
 - [x] T2 row rxpsh (sr_07_N_opt_rxpsh, ld 1.8e-11)
-- [ ] T2 rows of the test eigenvalues at G1 (needs them at full
-      precision, in the DIAGNOSTICS block: the oncvpsp-opt session's
-      diagnostic 4 below)
+- [x] T2 rows of the test eigenvalues at G1: smooth_scan.py's tests
+      group reads the DIAGNOSTICS block's test configurations (17 digits;
+      diagnostic 4 below), each one's pseudo-atom eigenvalues and its
+      total-energy difference from the reference, and is in the 19 rows
+      whose input has test configurations, at 1e-10 (2026-10-22). Measured
+      ≤ 3.9e-12, but 08_O rc 3.5e-11 and 20_Ca rcloc 9.0e-11, two
+      discrete defects of their own below G1, not yet explained: in 08_O
+      a sawtooth of 5e-11 Ha, period 5 scan points, in the pseudo 2s of
+      2s1 2p4 only (the all-electron side exact), and in 20_Ca a bump of
+      3e-11 Ha near one scan point in every configuration in proportion;
+      both the same with psatom's tolscf at 1e-14 (so not where its SCF
+      stops) and with PW92 in place of PZ81. Left out of the rows that
+      move r(r_s = 1) through the pseudo-atom's density (14_Si and 34_Se
+      fcfact, 34_Se rcfact, 52_Te rc[*]): there PZ81's jump (F-1) steps
+      the energy differences, residuals 2.8e-7 to 7.0e-7 (14_Si fcfact
+      with PW92 or PBE: 7e-15 and 1.1e-14)
 - [x] References patched (with phase 5's): the log-derivative tables
       of every input
 
