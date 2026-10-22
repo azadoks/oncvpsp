@@ -304,6 +304,18 @@ irel, and the stage.  It has the following major sections:
     rcmax] with their radii (`core_model_max r rho`, `core_model_min r
     rho`; a stationary point refined by Brent's method on the
     derivative of its piece, so a hollow core's maximum moves smoothly).
+    Last, the Fourier convergence of the local potential (*vloc_cutoff*):
+    the wave cutoffs at which a plane-wave code's local energy of the
+    reference configuration's pseudo valence density n, summed over the
+    density's sphere |G| < 2 sqrt(2 Ecut), is converged to each level
+    from 1e-2 Ha per electron down by half decades to 1e-5 (`ecut_vloc
+    err ecut`). The truncation is bounded by (Cauchy-Schwarz)
+    [int_Q q^2 n(q)^2 dq int_Q q^2 V(q)^2 dq]^(1/2) / (2 pi^2 N), a
+    smooth function of the input (the tail of |n(q) V(q)|, up to 35 %
+    lower, has kinks at the zeros of n V); a spike of V_loc near the
+    origin shows in it. The transforms are taken on a uniform r grid to
+    q = 60 bohr^-1, and `vloc_check e` gives their local energy per
+    electron less the r-space one (3e-14 to 1.5e-9 Ha in the references).
 
 11) The routine linout creates a linear radial mesh, whose size and spacing
     are specified in the input data.  All relevant potentials and projectors

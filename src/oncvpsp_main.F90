@@ -57,7 +57,7 @@
  use modcore_m, only: core_pieces_smooth
  use free_tail_m, only: free_tail_log
  use logmesh_m, only: lm_fh_reach
- use constants_m, only: nlev, nerrdg, well_onset_default
+ use constants_m, only: nlev, nerrdg, nerrlv, well_onset_default
  use input_echo_m, only: write_atom, write_lmax, write_icmod, write_epsh, &
 &                        write_mesh
  use relativity_m, only: set_relativity
@@ -95,6 +95,7 @@
  real(dp) :: rr1,rcion,rciont,rcmax,rct,rlmax,rpkt
  real(dp) :: amesh_in,rr1_in,rmax_in,rmax,log_mesh(3),c_light_in
  real(dp) :: sf,sw,zz,zion,zval,etot,res
+ real(dp) :: cvloc(2,nerrlv),vlchk
  real(dp) :: eterm(4),rphs(4)
  real(dp) :: fj,cnorm,rcore,eptgt
 !
@@ -1175,11 +1176,13 @@
 
  call gnu_script(epa,evkb,lmax,lloc,mxprj,nproj,nkap)
 
+ call vloc_cutoff(rr,mmax,rho,vpuns(1,lloc+1),zion,cvloc,vlchk)
+
  call diagout(lmax,nproj,mxprj,nkap,cvgplt,npsh,epsh2,depsh,rphs,pshae, &
 &             pshps,ngh,ghn,ghe,ghp,(icmod==6 .or. icmod==7) &
 &             .and. fcfact<=0.0d0 .and. budget_weighted,rcfact,ecutw,wcurve, &
 &             ektail,icmod,rr,mmax,rcmax,rhoc,corepw,lloc,evkb,bbeig, &
-&             ncnf+1,ntcf,itcf,etcf,dtcf)
+&             ncnf+1,ntcf,itcf,etcf,dtcf,cvloc,vlchk)
  deallocate(pshae,pshps)
 
  if(trim(psfile)=='psp8' .or. trim(psfile)=='both') then

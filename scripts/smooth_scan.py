@@ -50,7 +50,8 @@ kernel_diff.py):
   ecut    the cutoffs of each projector's convergence table, at its
           energy errors 1e-2..1e-5 Ha, relative to the largest in the table
           (the block's levels to 1e-7 are left out: their last crossings
-          jump where a shoulder of the curve passes them)
+          jump where a shoulder of the curve passes them), and the local
+          potential's cutoffs at 1e-2..1e-5 Ha (ecut:vloc)
           (both from the output's DIAGNOSTICS block, 17 digits; without one,
           from the tables printed to 6 decimals and 0.01 Ha)
   ghost   the energies of the bound-ghost test, the radial equation's and
@@ -333,6 +334,9 @@ def features(path, samples, groups=GROUPS):
                 # shoulder of the curve passes the level (G5)
                 if err > 0.99e-5:
                     out[f"ecut:{tag}:{err:.0e}"] = float(cut)
+        vloc = diagnostics.get("vloc_cutoff")
+        for err, cut in zip(*(vloc[k] for k in ("eresid", "ecut"))) if vloc else ():
+            out[f"ecut:vloc:{err:.0e}"] = float(cut)
         weighted = diagnostics.get("ecut_weighted")
         if weighted:
             out[f"ecut:weighted:{weighted['error']:.0e}"] = float(weighted["ecut"])

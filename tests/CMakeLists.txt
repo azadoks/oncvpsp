@@ -206,7 +206,8 @@ smooth_scan_test(sr_14_Si_bc_slack sr 14_Si_bc "model_core_charge.slack" kernel,
 # the optimizer's setup (07_N_opt: PBE, icmod 6 at fcfact 65, lpopt 5): the inputs it varies and
 # the outputs it reads. ld and ecut from the DIAGNOSTICS block (O-6, 17 digits; up to 1.2e-10 and
 # 3.7e-10 measured); the core at the noise of icmod 6's search (~1e-11); the ghost tests' margins
-# from the block too (X-3, up to 9.5e-13 measured). At the default rc[0] = rcloc, and
+# from the block too (X-3, up to 9.5e-13 measured); ecut has the local potential's cutoffs too
+# (vloc_cutoff, up to 2.4e-12, 1.6e-11 in rc1_wcut). At the default rc[0] = rcloc, and
 # rc < rcloc is not allowed, so the rc are scanned 0.01 above their values (rc[0] = 1.21) and rcloc
 # below
 set(smooth_opt "kernel=1e-10,vloc=1e-10,core=5e-11,ld=3e-10,ecut=1e-9,ghost=3e-12")

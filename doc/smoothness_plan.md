@@ -1470,8 +1470,12 @@ from rc:
 - [ ] Diagnostics asked for by the oncvpsp-opt session (2026-10-22), as
       transferability proxies for the optimizer's guardrails; opt-in or
       additive DIAGNOSTICS output, approved 2026-10-22, in its order
-      (1, 3, 4 and 6 done 2026-10-22, see doc/program_overview.md, step
-      10; 1 with the levels, plus `ekin_check`, the r-space less the
+      (1, 2, 3, 4 and 6 done 2026-10-22, see doc/program_overview.md,
+      step 10; 2 as the cutoffs at which a Cauchy-Schwarz bound on the
+      truncation of the local energy of the pseudo valence density falls
+      to 1e-2..1e-5 Ha per electron, `ecut_vloc`, smooth to 1.0e-12 to
+      2.4e-12 in the 07_N_opt rows rc, qcut, debl and rcloc (1.6e-11 in
+      rc1_wcut), which the ecut group now checks; 1 with the levels, plus `ekin_check`, the r-space less the
       Fourier kinetic energy to q_infinity, the tail the curve leaves out
       plus the r-space integral's error: of either sign in the references
       (195 of 421 negative), |t| ≤ 5e-10 Ha in 14_Si, up to 5.4e-7 in the

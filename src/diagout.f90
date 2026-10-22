@@ -22,7 +22,7 @@
  subroutine diagout(lmax,nproj,mxprj,nkap,cvgplt,npsh,epsh2,depsh,rphs, &
 &                   pshae,pshps,ngh,ghn,ghe,ghp,wcut,errw,ecutw,wcurve, &
 &                   ektail,icmod,rr,mmax,rcmax,rhoc,corepw,lloc,evkb, &
-&                   bbeig,ncfg,ntcf,itcf,etcf,dtcf)
+&                   bbeig,ncfg,ntcf,itcf,etcf,dtcf,cvloc,vlchk)
 
 !! writes the block "Begin DIAGNOSTICS" ... "End DIAGNOSTICS", one value
 !! per line, each line tagged with its quantity:
@@ -94,6 +94,15 @@
 !! test_eig icfg n l ikap f eae eps: its valence states as in its table,
 !! the occupation and the all-electron and pseudo eigenvalues (Ha)
 !!
+!! ecut_vloc err ecut: the wave cutoff (Ha) at which the local energy of
+!! the reference configuration's pseudo valence density, summed over the
+!! density's sphere (2 sqrt(2 ecut)), is converged to err per electron
+!! (Ha), bounded by the tail of |n(q) V_loc(q)|, for the levels 1e-2 down
+!! by half decades to 1e-5 that it reaches (vloc_cutoff)
+!!
+!! vloc_check e: the local energy per electron from the q grid less that
+!! from r space (Ha), the error of the transforms
+!!
 !! ikap is 1 for j=l+1/2 (and for nkap=1), 2 for j=l-1/2
 !!
 !! @param lmax  maximum angular momentum
@@ -133,9 +142,12 @@
 !! @param itcf  n, l, ikap of each row
 !! @param etcf  f, eae, eps of each row
 !! @param dtcf  the AE and PS energy differences and the excitation error
+!! @param cvloc  the local potential's (Ecut, err) per level, Ecut 0 for
+!!               a level not reached
+!! @param vlchk  the local energy from the q grid less that from r space
 
- use constants_m, only: dp, mxl, mxlin, nerrdg, mxstate, mxkap, nrhomod, &
-&                       mxcnf
+ use constants_m, only: dp, mxl, mxlin, nerrdg, nerrlv, mxstate, mxkap, &
+&                       nrhomod, mxcnf
  use pieces_m, only: piecewise_t, pw_value, pw_node_values, pw_segment
  use logmesh_m, only: lm_interp, lm_root, lm_derivs
  use ugrid_m, only: ug_brent
@@ -159,6 +171,7 @@
  real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap),bbeig(mxprj,mxl+1,nkap)
  integer, intent(in) :: ntcf(mxcnf),itcf(3,2*mxstate,mxcnf)
  real(dp), intent(in) :: etcf(3,2*mxstate,mxcnf),dtcf(3,mxcnf)
+ real(dp), intent(in) :: cvloc(2,nerrlv),vlchk
 
 !Local variables
  integer :: ii,jj,l1,ikap,mkap,iprj,kseg,np
@@ -181,6 +194,15 @@
      end do
    end do
  end do
+
+ write(6,'(a)') '# ecut_vloc err(Ha) ecut(Ha)'
+ do jj=1,nerrlv
+   if(cvloc(1,jj)/=0.0d0) then
+     write(6,'(a,1p,2e24.16)') 'ecut_vloc',cvloc(2,jj),cvloc(1,jj)
+   end if
+ end do
+ write(6,'(a)') '# vloc_check e(Ha)'
+ write(6,'(a,1p,e24.16)') 'vloc_check',vlchk
 
  write(6,'(a)') '# ekin_tail l ikap iproj t(Ha)'
  do l1=1,lmax+1
