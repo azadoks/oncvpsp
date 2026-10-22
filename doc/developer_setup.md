@@ -112,9 +112,9 @@ atom against reference data, and are needed only after changes to the
 all-electron or solver numerics, so `ctest -LE "smooth|nist"` is the dev
 loop.
 
-The smoothness scans (label `smooth`, `scripts/smooth_scan.py`) run 41
-oncvpsp processes per row, `ONCVPSP_SMOOTH_JOBS` of them at once (default
-4), and each row reserves as many ctest processors, so `ctest -j <cores>
+The smoothness scans (label `smooth`, `scripts/smooth_scan.py`) run 21 to
+41 oncvpsp processes per row (by the degree of the fit),
+`ONCVPSP_SMOOTH_JOBS` of them at once (default 4), and each row reserves as many ctest processors, so `ctest -j <cores>
 -L smooth` runs `<cores>/ONCVPSP_SMOOTH_JOBS` rows side by side. To run one
 row in the dev loop, configure with `-DONCVPSP_SMOOTH_JOBS=<cores>` (and
 run `ctest -j <cores>`).

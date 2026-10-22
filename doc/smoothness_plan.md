@@ -55,7 +55,8 @@ tests leave those radii out (`smooth_scan.py`).
 
 ### Where it stands
 
-`scripts/smooth_scan.py` steps one input through 41 values over two
+`scripts/smooth_scan.py` steps one input through 41 values (since
+2026-10-22 21 to 41, by the degree of the fit) over two
 log-mesh cells (radii) or a small span (others), fits each feature with a
 degree-6 polynomial and reports the largest residual relative to the
 feature's scale, and the ratio of the largest step to the median step

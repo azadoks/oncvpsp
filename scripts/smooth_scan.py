@@ -3,7 +3,7 @@
 
 Runs the program on a TOML input with one parameter (KEY, e.g.
 pseudopotentials.rc[0]) stepped through NPTS equally spaced values over a
-small window, takes from each output the features below, fits each feature
+small window (by default as few as the fit's degree needs, below), takes from each output the features below, fits each feature
 with a polynomial of degree DEGREE in the parameter by least squares, and
 prints the largest residual of each group relative to its scale, and the
 ratio of the largest step between neighbouring values to the median step
@@ -80,6 +80,12 @@ each element's radius window is dropped as above. Each channel's features
 stay their own, so one scan does the work of one per channel for the
 outputs that depend on their own channel's inputs only.
 
+NPTS defaults to 21 values for a fit of degree 6 or less, 31 to degree
+14 and 41 above (the highest degree of --degree): the fewest at which the
+self-test's jump of 1e-7 and kink of slope 1e-6 still leave residuals above
+1e-8 and 1e-9 wherever they fall in the window (at degree 10, 21 values
+leave the jump 1.1e-8, so degree 10 takes 31).
+
 With --set KEY=VALUE (repeated as needed; VALUE in TOML, e.g.
 pseudopotentials.well_tail="free") the input is changed before the scan.
 
@@ -115,6 +121,9 @@ from pyoncvpsp.io import OncvpspTextParser  # noqa: E402
 
 RADIUS_KEYS = {"rc", "rcloc", "rxpsh"}
 GROUPS = ("kernel", "vloc", "core", "tests", "ld", "ecut", "ghost")
+# NPTS by the fit's highest degree: (degree, npts), the first that covers it,
+# else the last npts (self_test checks each pair)
+NPTS = ((6, 21), (14, 31), (24, 41))
 # the groups drawn from the pseudopotential file, one of each per file
 FILE_GROUPS = ("kernel", "vloc", "core")
 # points of the UPF file's log mesh: every few of the generator's out to the
@@ -499,6 +508,8 @@ def sample_points(mesh, output, data, key, values, moved, spacing):
 
 def scan(args):
     outputs = parse_outputs(args.output)
+    if args.npts is None:
+        args.npts = default_npts(parse_tol(args.degree, int) or {None: 6})
     data = apply_sets(tomllib.loads(pathlib.Path(args.toml).read_text()), args.set)
     every = parse_key(args.key)[2] == "*"
     if every:
@@ -597,6 +608,12 @@ def scan(args):
     return status
 
 
+def default_npts(degrees):
+    """NPTS for the highest of the fit's degrees, {group: degree}."""
+    top = max(degrees.values(), default=6)
+    return next((n for d, n in NPTS if top <= d), NPTS[-1][1])
+
+
 def parse_tol(text, kind=float):
     """{group: value} of --tol or --degree, 'V,G=V,G=V': V for every group
     (key None), G=V for group G (kernel, or kernel.psp8 for that file's
@@ -634,6 +651,23 @@ def self_test():
             failures.append(f"jump of 1e-7 not seen at 1e-8 at degree {degree}")
         if analyse(ts, kink, degree)["kernel"][0] < 1e-9:
             failures.append(f"kink of slope 1e-6 not seen at 1e-9 at degree {degree}")
+    # the default NPTS of the degrees the rows fit with (24 only for a
+    # truncation, 14_Si_bc's psp8 core), the jump and the kink anywhere inside
+    for deg in (6, 10, 14, 18):
+        n = default_npts({None: deg})
+        tn = [2.0 * k / (n - 1) - 1.0 for k in range(n)]
+        ys = [math.exp(math.sin(1.0 + span * t)) for t in tn]
+        for t0 in (-0.8 + 0.017 * i for i in range(95)):
+            jumped = [
+                {"kernel:a:x": y + (1e-7 if t > t0 else 0.0)} for t, y in zip(tn, ys)
+            ]
+            kinked = [
+                {"kernel:a:x": y + 1e-6 * max(0.0, t - t0)} for t, y in zip(tn, ys)
+            ]
+            if analyse(tn, jumped, deg)["kernel"][0] < 1e-8:
+                failures.append(f"jump at {t0:.3f} not seen, {n} values, degree {deg}")
+            if analyse(tn, kinked, deg)["kernel"][0] < 1e-9:
+                failures.append(f"kink at {t0:.3f} not seen, {n} values, degree {deg}")
     # a constant with noise of ~1e-14: steps under a tol of 1e-12 are no jump,
     # however their ratio; a staircase (a parameter rounded) is one
     noise = [
@@ -693,7 +727,9 @@ def main():
         metavar="KEY=VALUE",
         help="change the input before the scan (VALUE in TOML; repeatable)",
     )
-    parser.add_argument("--npts", type=int, default=41)
+    parser.add_argument(
+        "--npts", type=int, help="number of values (default: by the degree)"
+    )
     parser.add_argument(
         "--degree",
         default="6",

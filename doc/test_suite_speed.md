@@ -74,9 +74,21 @@ rerun when the all-electron or solver numerics change.
        invalid operations that `-O2` hides.
 6. [ ] Turn the gaps in coverage into a list: code that wants a test (the
        last step of the aim) or code that cannot be reached and can go.
-7. [ ] Measure how many scan points the smooth rows need: rerun the
-       self-test's jumps and kinks at 21 and 31 points; if 21 still catch
-       them, the smooth label halves.
+7. [x] Measure how many scan points the smooth rows need. The self-test's
+       jump of 1e-7 and kink of slope 1e-6, moved through the window, are
+       caught (residual above 1e-8 and 1e-9) with 21 points to degree 10
+       (the jump at 1.09e-8), 31 to degree 14 and 41 to degree 18, so 21
+       points do not do for every row. NPTS now defaults by the fit's
+       highest degree: 21 to degree 6 (16 rows), 31 to 14 (13), 41 above
+       (14_Si_bc_ecut), 780 runs in place of 1230; the self-test checks the
+       rule. Every row passes at its new count, the largest residual 0.83
+       of its tolerance (34_Se rcfact, psp8 core; nr_08_O_rc's kernel
+       7.3e-11 against 7.0e-11 at 41), and the four rows that see F-1 (the
+       psp8 or linear-mesh V_loc of 52_Te rc[*], 14_Si fcfact, 34_Se
+       rcfact) still fail at 21, by 6e-9 to 8e-8. `ctest -L smooth -j 16`:
+       469 to 372 s wall, 6866 to 5901 s·proc, measured under a load of
+       about 20 on 28 cores (other sessions' runs), so less than the 37 %
+       fewer runs; the wall time is set by 14_Si_bc_ecut (116 s).
 8. [x] Parse only what each scan reads: `smooth_scan.py` asked for the
        parser's whole output; it now asks only for the parts of its groups
        (the files for kernel, vloc and core, the test configurations, the

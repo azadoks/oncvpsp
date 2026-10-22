@@ -113,7 +113,7 @@ function(oncvpsp_uses_run name rel input)
 endfunction()
 
 # Smooth dependence on the inputs (doc/smoothness_plan.md, T2): smooth_scan.py steps one input of a
-# TOML input through 41 values and fits each feature of the UPF file on the log mesh (nonlocal
+# TOML input through 21 to 41 values (by the fit's degree) and fits each feature of the UPF file on the log mesh (nonlocal
 # kernels, V_loc, model core) with a polynomial; the residuals must be within the plan's goals and
 # no step between neighbouring values a jump. Written before the code, so labelled smooth (failing
 # until its phase is done; ctest -LE smooth leaves them out). The harness checks itself (unit).
