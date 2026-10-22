@@ -96,6 +96,11 @@ jump); never-snapped inputs sit on a noise floor of 1e-9 to 1e-8 from
 solver tolerances (eigen-solvers stopping at 1e-8, bisections at 1e-10);
 the icmod 4 Nelder–Mead search jumps outright.
 
+The table is kept as the baseline. Every row in it, and every row added
+since, has been brought to G1 or G2 or to the noise floor recorded with it
+under [Phases](#phases); what remains is in
+[Order of the remaining work](#order-of-the-remaining-work-2026-10-21-after-m-12).
+
 ### Goals
 
 Each goal is checked by a test in [Tests](#tests); the numbers are
@@ -141,9 +146,11 @@ the origin and from its breakpoints.
 
 #### Interpolation: Floater–Hormann in ln r
 
-For a value at an arbitrary radius the generator today uses `dpnint`, an
-8-point Lagrange interpolant whose stencil jumps as the point crosses a
-mesh node: its value is continuous there but its derivative is not.
+For a value at an arbitrary radius the generator used `dpnint`, an
+8-point Lagrange interpolant (now left only for the value at the origin
+of the output files, see the follow-ups) whose stencil jumps as the
+point crosses a mesh node: its value is continuous there but its
+derivative is not.
 Splines are smooth but only C^(k−1) with a global solve, and their high
 derivatives are poor. The choice here is the **Floater–Hormann
 barycentric rational interpolant** with blending degree d:
@@ -253,10 +260,12 @@ section) and then interpolated.
   function (with its smooth extension across the breakpoint, see Kinks),
   never as one sampled array across a kink.
 - **Fixed node counts.** Every quadrature whose extent depends on an
-  input keeps its node count and scales its nodes. This covers the q-grid
-  of the residual kinetic energy on [qcut, qmax], the Gauss panels of
-  modcore_budget, and the r-grid of eresid. This removes integer
-  truncations like `nq = qmax/dq + 1`.
+  input either keeps its node count and scales its nodes (the Gauss
+  panels of modcore_budget, the partial cell at qcut), or keeps its
+  spacing and gains nodes only where the integrand is negligible: the
+  r-grid of eresid at its end, where u is at machine precision (Q-2), and
+  its q-grid at q = 0, where the integrands vanish as q⁴ (C-10). This
+  removes integer truncations like `nq = qmax/dq + 1`.
 
 #### Kinks and breakpoints
 
@@ -291,9 +300,9 @@ The breakpoints and their continuity orders:
 | rc(5) | V_loc, lpopt 3, 4, 5 | C³ |
 | 0.95·rc_l | the vr window of run_vkb | C¹ (kept, D-4); quadratures split there |
 | r* | model core, icmod 1 | C⁴ |
-| r_s | model core, icmod 6/7 | C² by default, C⁴ with `match_order = 4` (D-5) |
-| 3/b | Teter cutoff, icmod 2–4 | C¹ today; removed in phase 5 |
-| r_w | wellstate well onset | C² today; C-infinity after phase 3 |
+| r_s | model core, icmod 6/7 | C² (C⁴ with `match_order = 4`, D-5, not built) |
+| 3/b … 4/b | Teter taper, icmod 2–4 | C-infinity (`cinf_taper`, M-5; was a C¹ cut at 3/b) |
+| r_w | wellstate well onset | C-infinity (R-12; was C²) |
 | ra, rb | ionic tail switch | C-infinity (`cinf_taper`) |
 | r(r_s = 1) | V_xc of PZ81 (iexc 3) | a jump of about 1e-5 Ha (the published coefficients, F-1, D-6) |
 
@@ -322,7 +331,8 @@ more Newton or secant step. Its result is then at the round-off of the
 fixed point, whatever the path or the iteration count. Tolerances are
 relative and near round-off: 1e-13 for eigenvalues; the SCF loops test
 both eigenvalues and the potential residual explicitly. An iteration
-that ends on its iteration limit is an error, not a result.
+that ends on its iteration limit is an error, not a result (C-6; still
+open: the qroots skip and the other limits of audit C-15).
 
 As done in phase 2:
 
@@ -372,12 +382,12 @@ numbers refer to [Phases](#phases).
 | R-1 | `oncvpsp_main` 462–465: rc truncated to 6 decimals | b | W | done in phase 3: removed |
 | R-2 | `oncvpsp_main` 575–588: rc → first mesh point beyond | a | W | done in phase 3: removed; `irc` is the last mesh point ≤ rc, for the routines that index the mesh (`pspot`'s pieces by side of rc, `wellstate`, `vrel`, `run_vkb`'s cut, the diagnostics); `run_optimize`, `fpovlp` and `run_vkb`'s windows take rc |
 | R-3 | `rcmax` = max of snapped rc | a | W | done in phase 3: max of the given rc |
-| R-4 | `wf_rc_der`: 7-point stencils applied 4 times at `irc` | a, e | W | ODE-recursion derivatives at rc |
-| R-5 | `fpovlp`, `sbf_basis_con`: overlaps to `irc` with the (23,28,9)/24 end rule | c | W | `lm_integral` for all-electron overlaps; `sbf_overlap` (Lommel) for Bessel ones |
+| R-4 | `wf_rc_der`: 7-point stencils applied 4 times at `irc` | a, e | W | done in phase 3: ODE-recursion derivatives at rc (`ode_rc_der`) |
+| R-5 | `fpovlp`, `sbf_basis_con`: overlaps to `irc` with the (23,28,9)/24 end rule | c | W | done in phase 3: `lm_integral` for all-electron overlaps; `sbf_overlap` (Lommel) for Bessel ones, in quad precision |
 | R-6 | `pspot`: inside/outside by mesh index; V_l joins V_AE at irc+1 | a, d | W | done in phase 3: `pieces_m` (a function of up to 4 segments, each piece held on the whole mesh as its smooth extension, integrals per segment by `lm_integral`; unit test `pieces`); `pspot` returns the inside piece and its seed (ε − T)φ̃ on the nodes to past rc; `irc` is the last node ≤ rc, so the node values are by side of rc |
 | R-7 | `vploc`: v′, v″, v‴ at irc(5) by three nested 5-point stencils, polynomial for ii ≤ irc(5); round-off grows as al⁻³ (Fe: V_loc near 0 moves 3.6e-6, then 1.8e-5, as the mesh is halved twice) | a, e | W | done in phase 3 (`vploc_m`, unit test `vploc`): V, V′, V″, V‴ at rc(5) from `lm_derivs` (smooth in rc(5)); the polynomial evaluated analytically at any radius, its extension past rc(5) a piece of the projectors' integrals. The bump-weighted least-squares fit was tried: of degree 8 on the nodes within 0.25 bohr its V‴ was good to 2e-6 for V = −2/r + e^−r at 1.7 bohr (the truncation of a fit of fixed width for a potential with the derivatives of −Z/r), `lm_derivs` to 1e-9; its al⁻³ round-off (2e-11 on the default mesh) is a fixed pattern on the nodes, smooth in rc(5) through the interpolant |
 | R-8 | `run_vkb`: support cut at irc; window `20(r/rr(irc) − 1)`, ff = (1−x²)², C¹; ff·vr·φ̃ with vr = Δ/2u | a, d | W | done in phase 3: the projectors are `piecewise_t` with segments split at 0.95 rc, rc(5) (and 0.95 rc(5) for lloc<4) when inside, and rc; on each segment χ = seed − V_loc^piece φ̃ − f Δ/2 (D-4, `ae_delta`), every term its smooth extension; the B matrix, normalizations and overlaps by `pw_integral`/`pw_product_integral`; the orthonormal combinations act on the pieces; `vkbpw` returned beside the node values. On the T3 inputs the fr kernels move by ≤1.1e-4 (the Δ form), sr/nr by ≤1e-6 |
-| R-9 | `vpinteg` to `irc`; points 1–3 skipped | c | W | done in phase 3: `run_vkb` (R-8), `sr_so_r` and `run_ghosts` on the pieces (`pw_product_integral`, `pw_integral`), `vkboutwf` per segment on its grid (R-10); `vpinteg` remains only in `der2exc` (phase 5) |
+| R-9 | `vpinteg` to `irc`; points 1–3 skipped | c | W | done in phase 3: `run_vkb` (R-8), `sr_so_r` and `run_ghosts` on the pieces (`pw_product_integral`, `pw_integral`), `vkboutwf` per segment on its grid (R-10); `der2exc` on `lm_integral` in phase 5, `vpinteg` removed in phase 7 |
 | R-10 | `vkboutwf`, `lschvkbb`: rc found as the last nonzero vkb. Since e809a29 the overlaps end at irc and the Adams steps past irc use the source-free u″ at their back points (no O(al²) from the kink), both assuming the support ends on a node | a, e | W | done in phase 3 (`outwf_m`, unit test `outwf`): no integration on the nodes is smooth, since a step whose stencil spans a kink has an error that depends on where in the cell the kink falls (a restart on the nodes at the first node past the kink still jumps by one local truncation error, 1e-10, when the kink crosses a node); so each segment between kinks is integrated on its own grid, uniform in ln r with the mesh step, starting exactly at the segment's lower bound and running 32 points past its upper one: the first on the nodes from the power series at the first node, each later one from (u, u′) interpolated from the grid before; every segment primed by 3 Runge-Kutta steps in 4 sub-steps (so the Adams scheme starts from data exact to its own error), V and the projectors interpolated onto the grid from their pieces, the overlaps per segment by the cumulative 8th-order rule to the bound, the solution interpolated back to the nodes. Every operation then has the same form wherever the kinks sit. The method stays 4th order (the log derivative at r = 3 of the unit test's model falls 15.6, 15.4, 14.7 times on three halvings; truncation 2e-7 at the default step). The potential's pieces (`run_vkb`) and the projectors' are threaded to every solver; `lschvkbb`'s window stays beyond the last kink of either. The weights of the stencils and the cell rule are computed in quad once (they were recomputed per integral, 60 % of the runtime); the first segment's overlaps, most of the work, are dot products with the weights of `lm_integral` to its bound (`lm_integral_weights`, computed once per setup), in a compensated sum of four lanes or, with `ONCVPSP_BLAS_DOT`, one `dgemm`; the interpolants' weights are shared by u and u′ and by V and the sources. Against e3a587f the runs take 74_W_r 8.7 → 10.2 s (9.5 with BLAS), 14_Si_r 2.8 → 3.0 s, 32_Ge 2.5 → 3.1 s, 08_O_nr 1.0 → 1.2 s. More accurate: in the nr references the reference configuration's pseudo-atom eigenvalues meet the all-electron ones to 1.1e-9 Ha (03_Li, was 2.6e-8), 8.3e-10 (14_Si, was 2.0e-9), and 32_Ge's 3d to 4.1e-7 (was 1.1e-6); none got worse |
 | R-11 | `vrel` window 0.5–1.5 rr(irc); 1e-10 threshold on u; vr = 0 points replaced by the average of their neighbours | a, g | W | done in phase 3: `ae_delta` (unit test `ae_delta`), Δ = u″ − [l(l+1)/r² + 2(V−ε)]u at the nodes about the window from the first-order system (u, u′ = up/(al r), V′ by `lm_derivs`), no division by u; `vrel` removed. The local potential of lloc<4 keeps Δ/(2u) for its own taper (S-1), with an error if u has a node within reach of rc |
 | R-12 | `wellstate`: well onset at rr(irc+5), x³ onset (C²), inside the ±12-point stencils of `wf_rc_der` (uord 4, 5 of well states O(al²), O(al) off); thresholds 0.75, 1.5 rr(irc) override `ep`; negative `ep` reset to 0.25 | a, d, g | W | done in phase 3: onset at rc·amesh⁵ (continuous), then at rc·`well_onset`, an input of default 1.006⁵ that does not depend on the mesh (T4 at the end of phase 3); the well cwell x³/(1+x³) e^(−0.01/x), the well of before times a C-infinity factor within 5 % of 1 from x = 0.2 on, so that the states found are those of before (with e^(−1/x³), a different shape, 14_Si's kernels moved 7 % and 11 inputs found another n at the wall's lower limit; with e^(−0.1/x), still 11; with e^(−0.01/x) only 40_Zr's l=1, whose wall sat at the limit). The `rc[0]` scan 8.9e-6 → 4.4e-12. The overrides stay by default; `ep_as_given` (D-1, revised) |
@@ -390,9 +400,9 @@ numbers refer to [Phases](#phases).
 | id | where | cat | W | decision |
 |---|---|---|---|---|
 | Q-1 | `eresid` 268–274: qcut → nearest node of a q-grid with dq = 2π/(150 rc) | a | W | done in phase 3: E_r at exactly qcut, the value at the next node of the q grid plus the partial cell by 8-point Gauss-Legendre with the transforms at its nodes |
-| Q-2 | `eresid`: nq = qmax/dq + 1, top 3 intervals dropped; irclin, mmaxlin integer, tail cut at \|u\| < 1e-10 | i, c, g | W | done in phase 3: the inside piece by `sbf_overlap` at each q (exact); the outside piece on a linear mesh from rc of spacing 2π/(75 qmax), continuous in rc and qmax, to the last nonzero point of u (the node count changes where u is at machine precision; a spacing set by the end point moved every node, and the 1e-12 interpolation error of u onto them jumped together), u by `lm_interp`, integrated by the 8th-order rule (`ugrid_m`); the q grid of continuous spacing qmax/(nq−1) with 150 points per 2π/rc, accumulated from qmax by the 8th-order cumulative rule (Kahan), from the small values up |
+| Q-2 | `eresid`: nq = qmax/dq + 1, top 3 intervals dropped; irclin, mmaxlin integer, tail cut at \|u\| < 1e-10 | i, c, g | W | done in phase 3: the inside piece by `sbf_overlap` at each q (exact); the outside piece on a linear mesh from rc of spacing 2π/(75 qmax), continuous in rc and qmax, to the last nonzero point of u (the node count changes where u is at machine precision; a spacing set by the end point moved every node, and the 1e-12 interpolation error of u onto them jumped together), u by `lm_interp`, integrated by the 8th-order rule (`ugrid_m`); the q grid q_i = qmax − (nq − i) dq, dq = 2π/(150 rc) exactly, a node entering at q = 0 (C-10; it was of spacing qmax/(nq−1), nq an integer), accumulated from qmax by the 8th-order cumulative rule (Kahan), from the small values up |
 | Q-3 | `run_optimize` 158–164: qmax = dq·int(2·qroot(nbas)/dq), max with 20, branch on qcut | i, g | W | done in phase 3: qmax = smax(smax(2 qroot(nbas), 20), 2 qcut), smax the C-infinity maximum (a+b+√((a−b)²+1))/2, within 0.5 bohr⁻¹ of the larger. The truncation at qmax stays, as a smooth bias. Considered and not taken: Parseval, E_r = T − (1/π)∫₀^q q'⁴F² (PseudoPotentialGenerators.jl `plane_wave.jl`), which needs no qmax and F below q only, but leaves E_r as the difference of two O(1 Ha) numbers, a round-off floor of ε·T/E_r ≈ 1e-11 at E_r = 1e-5 Ha (PPG's test notes a 1e-9 Ha floor); the direct sum from qmax down has the floor of E_r itself. An analytic tail beyond qmax (the transform's asymptotic form from the C^(ncon−1) matching) would remove the bias; phase 7 if wanted |
-| Q-4 | `run_optimize` cvgplt/ecurve: linear interpolation assuming spacing dqout while eresid moved the q's | e, h | W (icmod 6/7) | done in phase 3: the curve of the optimized wave on the q grid (its coefficients returned by `optimize`), the crossings by Brent on the FH interpolant of ln E in the grid's index (`ug_cross_down`), in `run_optimize` and in `modcore_budget_table` (which takes every nstep-th node of the grid as its table). `dqout` is no longer used |
+| Q-4 | `run_optimize` cvgplt/ecurve: linear interpolation assuming spacing dqout while eresid moved the q's | e, h | W (icmod 6/7) | done in phase 3: the curve of the optimized wave on the q grid (its coefficients returned by `optimize`), the crossings by Brent on the FH interpolant of ln E in the grid's index (`ug_cross_down`), in `run_optimize` and in `modcore_budget_table` (whose table is the whole curve since M-13). `dqout` is no longer used |
 | Q-5 | `qroots`: scan dq = 0.02, pole filter \|f·f_last\| < 1, bisection to \|f\| < 1e-12 | h, f | W | done in phase 2: the bisection's root Newton-polished on g(q) to round-off; the scan and pole filter stay (D-3) |
 | Q-6 | `optimize`: bisection to a 1e-10 bracket | f | W | done in phase 2: Newton polish of the norm constraint after the bisection |
 | Q-7 | `optimize`: hard-case sign of x₁ | h | W | intrinsic (two global minima); keep, warn |
@@ -426,18 +436,18 @@ numbers refer to [Phases](#phases).
 
 | id | where | cat | W | decision |
 |---|---|---|---|---|
-| M-1 | `modcore` ircc, `modcore2` ircc, `modcore3` ircc: crossover rhoc = fcfact·rhotps at a mesh point | a | W | `lm_root` of ln rhoc − ln(fcfact·rhotps); match at r* |
-| M-2 | `modcore`: derivatives at ircc by stencils | a, e | W | `lm_derivs` at r* |
-| M-3 | `modcore`: a0 by bisection to 1e-7, monotonicity checked only at mesh points | f, h | W | closed form: p' is affine in a0; critical points by companion matrix |
-| M-4 | `modcore2`: x by bisection to 1e-7 | f | W | Newton on the monotone x·g'/g |
-| M-5 | `gg1cc`, `gpp1cc`: Teter function cut to 0 at x = 3 (C¹); columns 4, 5 by stencils across it; `dpnint` patches near the origin (zeroing rhomod(1,3:5)) | d, e | W | analytic derivatives (h = √g a sum of five shifted sincs, series near their centres); delete the patches; revised: not "no cutoff" (the x⁻¹⁰ tail is far fatter than a core charge: V_ion then differs from −zion/r to 1e-10 out to 22.7 bohr in 79_Au_lxc instead of 6, and the outermost crossing of that tolerance hops between the lobes of sin²), but g tapered to 0 between x = 3 and 4 by the C∞ switch of `cinf_taper` |
-| M-6 | `modcore3`: grid argmin then Nelder–Mead to an f-spread of 1e-4; returns a vertex | h, f | W | keep grid and NM to choose the basin; then Newton (trust region) on ∇f = 0 to round-off; revised: to the noise of f instead, ~5e-13 in ln a (f carries ~1e-17 of der2exc's round-off on 1.2e-4, and the valley's soft curvature is 5e-4), by central differences along the Hessian's eigenvectors with steps ∝ 1/√λ (axis differences: ~1e-11) |
-| M-7 | `modcore3` ircross, dead rcross loops | a | W | remove (analytic derivatives everywhere) |
-| M-8 | `modcore_budget` ifrom: first q of a 0.1 grid above the budget; the only way slack enters | a, b | W | tested cutoffs start at q_b exactly; max over q by grid plus Brent; revised: the error sphere tapered by `cinf_taper` over 6…10 bohr (its hard edge rippled err(q) with period π/10 and the argmax hopped between ripples, kinking r_s); cutoffs to q_b + 1 first, extended to the peak + 1 when a later cutoff errs more at that r_s, so each r_s is a root of the max over all of them |
-| M-9 | `modcore_budget` r_s by integer bisection; irtop, ilo from snapped rc | h, a | W | bracket on the mesh, Brent on g(r_s) = max_q err − errmax; r_s in [r_top/50, r_top], r_top = min(rc) or the last radius with core charge (the real rc, not its index) |
-| M-10 | `modcore_budget` icmod 7 candidates snapped with nint, chosen by sorting | b, h | W | continuous 1-D minimisation of the mismatch on [r_s6, r_top]; revised: a ladder r_top/1.025ⁱ down to r_s6 picks the basin, then Brent on the central-difference slope of the mismatch in ln r_s (step 1e-2); the mismatch itself (`der2exc`) still reads the model core on the mesh, C² in r_s (S-10) |
-| M-11 | `modcore_budget`: panel count ceiling(qhi−qlo), nxg = 20 + ceiling(qhi·r_s) | i | W | fixed counts: 80 window panels × 8 nodes, 400 fill nodes, 8 per mesh interval beyond r_s, GL5 per 0.1 of q (doubling any changes nothing printed); the fill in a Legendre basis in 2t − 1 (monomials had alternating 1e5 coefficients and 1e-11 noise), monotone exactly (p′ at the ends and the roots of p″) |
-| M-12 | `modcore_budget` outer integral from mesh index `is`; forward transform a plain sum across the C² joint | c, d | W | split at r_s, `lm_integral`; transforms split there too (fill by Gauss–Legendre on [0, r_s], beyond it the interpolant of ρ_c by Gauss–Legendre per mesh interval, the suffix sums tabulated once). The error's integral below r_s then sampled the fill, a polynomial of degree 16 in r/r_s, on the fixed log mesh, so its quadrature error rippled as r_s slid over the mesh (4e-12 on an error of 1e-4, ~1e-9 in r_s); fixed in phase 5: that integral on a log mesh of the same step ending at r_s (the functionals need a log mesh; Gauss nodes will not do for GGA), b_q there from the rotated sines, ρ_v interpolated; +1.3 s on 14_Si_bc |
+| M-1 | `modcore` ircc, `modcore2` ircc, `modcore3` ircc: crossover rhoc = fcfact·rhotps at a mesh point | a | W | done in phase 5: `lm_root` of ln rhoc − ln(fcfact·rhotps); match at r* |
+| M-2 | `modcore`: derivatives at ircc by stencils | a, e | W | done in phase 5: `lm_derivs` at r* |
+| M-3 | `modcore`: a0 by bisection to 1e-7, monotonicity checked only at mesh points | f, h | W | done in phase 5: closed form: p' is affine in a0; critical points by companion matrix |
+| M-4 | `modcore2`: x by bisection to 1e-7 | f | W | done in phase 5: Newton on the monotone x·g'/g |
+| M-5 | `gg1cc`, `gpp1cc`: Teter function cut to 0 at x = 3 (C¹); columns 4, 5 by stencils across it; `dpnint` patches near the origin (zeroing rhomod(1,3:5)) | d, e | W | done in phase 5: analytic derivatives (h = √g a sum of five shifted sincs, series near their centres); delete the patches; revised: not "no cutoff" (the x⁻¹⁰ tail is far fatter than a core charge: V_ion then differs from −zion/r to 1e-10 out to 22.7 bohr in 79_Au_lxc instead of 6, and the outermost crossing of that tolerance hops between the lobes of sin²), but g tapered to 0 between x = 3 and 4 by the C∞ switch of `cinf_taper` |
+| M-6 | `modcore3`: grid argmin then Nelder–Mead to an f-spread of 1e-4; returns a vertex | h, f | W | done in phase 5: keep grid and NM to choose the basin; then Newton (trust region) on ∇f = 0 to round-off; revised: to the noise of f instead, ~5e-13 in ln a (f carries ~1e-17 of der2exc's round-off on 1.2e-4, and the valley's soft curvature is 5e-4), by central differences along the Hessian's eigenvectors with steps ∝ 1/√λ (axis differences: ~1e-11) |
+| M-7 | `modcore3` ircross, dead rcross loops | a | W | done in phase 5: removed (analytic derivatives everywhere) |
+| M-8 | `modcore_budget` ifrom: first q of a 0.1 grid above the budget; the only way slack enters | a, b | W | done in phase 5: tested cutoffs start at q_b exactly; max over q by grid plus Brent; revised: the error sphere tapered by `cinf_taper` over 6…10 bohr (its hard edge rippled err(q) with period π/10 and the argmax hopped between ripples, kinking r_s); cutoffs to q_b + 1 first, extended to the peak + 1 when a later cutoff errs more at that r_s, so each r_s is a root of the max over all of them |
+| M-9 | `modcore_budget` r_s by integer bisection; irtop, ilo from snapped rc | h, a | W | done in phase 5: bracket on the mesh, Brent on g(r_s) = max_q err − errmax; r_s in [r_top/50, r_top], r_top = min(rc) or the last radius with core charge (the real rc, not its index) |
+| M-10 | `modcore_budget` icmod 7 candidates snapped with nint, chosen by sorting | b, h | W | done in phase 5: continuous 1-D minimisation of the mismatch on [r_s6, r_top]; revised: a ladder r_top/1.025ⁱ down to r_s6 picks the basin, then Brent on the central-difference slope of the mismatch in ln r_s (step 1e-2); the mismatch itself (`der2exc`) still reads the model core on the mesh, C² in r_s (S-10) |
+| M-11 | `modcore_budget`: panel count ceiling(qhi−qlo), nxg = 20 + ceiling(qhi·r_s) | i | W | done in phase 5: fixed counts: 80 window panels × 8 nodes, 400 fill nodes, 8 per mesh interval beyond r_s, GL5 per 0.1 of q (doubling any changes nothing printed); the fill in a Legendre basis in 2t − 1 (monomials had alternating 1e5 coefficients and 1e-11 noise), monotone exactly (p′ at the ends and the roots of p″) |
+| M-12 | `modcore_budget` outer integral from mesh index `is`; forward transform a plain sum across the C² joint | c, d | W | done in phase 5: split at r_s, `lm_integral`; transforms split there too (fill by Gauss–Legendre on [0, r_s], beyond it the interpolant of ρ_c by Gauss–Legendre per mesh interval, the suffix sums tabulated once). The error's integral below r_s then sampled the fill, a polynomial of degree 16 in r/r_s, on the fixed log mesh, so its quadrature error rippled as r_s slid over the mesh (4e-12 on an error of 1e-4, ~1e-9 in r_s); fixed in phase 5: that integral on a log mesh of the same step ending at r_s (the functionals need a log mesh; Gauss nodes will not do for GGA), b_q there from the rotated sines, ρ_v interpolated; +1.3 s on 14_Si_bc |
 | M-13 | `modcore_budget_table`: linear interpolation in q with an assumed spacing, last crossing | e, h | W | done: the root by Q-4; the table now holds the whole q-grid curve (`ncurve` 4000, an error if a curve is longer) instead of every nstep-th node, whose interpolant changed when nstep = 1 + (nq−2)/999 did (nq is 829…1051 in 07_N_opt) |
 | M-14 | `oncvpsp_main` irct (PSML matching radius) | a | W (metadata) | done: the joint, r* or r_s (with no joint, as before: the first point beyond which the model is the core charge); `number-of-continuous-derivatives` 2 for icmod 6/7, and the annotation by icmod |
 
@@ -445,22 +455,22 @@ numbers refer to [Phases](#phases).
 
 | id | where | cat | W | decision |
 |---|---|---|---|---|
-| O-1 | `linout`, `upfout`: `dpnint` (switching 8-point Lagrange) of kinked arrays onto the linear mesh; ringing beyond rc of about 1e-4 relative | d, e | W | each output point from its piece by FH on that piece's extension; β ≡ 0 beyond rc |
-| O-2 | `oncvpsp_main` 882–891 + `linout`: fr psp8 drops sr/so terms below 1e-3 of the first | g | W | write all; see D-2 |
+| O-1 | `linout`, `upfout`: `dpnint` (switching 8-point Lagrange) of kinked arrays onto the linear mesh; ringing beyond rc of about 1e-4 relative | d, e | W | done in phase 4: each output point from its piece by FH on that piece's extension; β ≡ 0 beyond rc |
+| O-2 | `oncvpsp_main` 882–891 + `linout`: fr psp8 drops sr/so terms below 1e-3 of the first | g | W | done in phase 4: write all; see D-2 |
 | O-3 | UPF numbers e20.10, PP_R f10.4 | b | W | 17 digits (done, phase 0) |
 | O-4 | `upfout` nrl extended to a tail-norm radius (1e-6) | g, i | W | kept (user decision): only how many points are written |
-| O-5 | `oncvpsp_main` 997: vpuns = −zion/r where rho == 0 | g | W (~1e-10) | switch over (r_max/2, r_max) with `cinf_taper` |
+| O-5 | `oncvpsp_main` 997: vpuns = −zion/r where rho == 0 | g | W (~1e-10) | done in phase 4: switch over (r_max/2, r_max) with `cinf_taper` |
 | O-6 | printed diagnostics at f12.6–f14.8 and d10.2 | b | – | machine-readable block at 17 digits: done (`diagout`, the DIAGNOSTICS block: the Ecut crossings at every level and the log derivatives with their radius), parsed by pyoncvpsp (`diagnostics`) |
 
 #### Diagnostics (phase 6)
 
 | id | where | cat | decision |
 |---|---|---|---|
-| X-1 | `run_diag`, `run_diag_sr_so_r`: matching at mchf = max(irc)+5; renorm to the last nonzero point | a, c | continuous r_m = max(rc_l, rc_loc)·amesh⁵; (u, q) by FH at r_m |
+| X-1 | `run_diag`, `run_diag_sr_so_r`: matching at mchf = max(irc)+5; renorm to the last nonzero point | a, c | continuous r_m = max(rc_l, rc_loc)·c with c independent of the mesh (1.006⁵, as the well's onset: amesh⁵ would put a first-order mesh error in the diagnostic, phase 3's T4); (u, q) by FH at r_m |
 | X-2 | `run_phsft`: rxpsh → irphs; npsh = int(range/depsh); 2π unwrapping on any decrease; `vkbphsft` heuristic thresholds and nearest-grid alignment | a, i, g, h | done (`phsft_m`): (u, al r u′) interpolated to rxpsh exactly, the default rc·amesh² (rc of the local potential beyond lmax), the old node whenever rc is one; the phase followed in its doubled angle (sign-invariant) by continuation, the energy step halved until no step turns it by more than π/2, so no thresholds and no π or 2π corrections; aligned at ep itself. npsh kept: it depends on epsh1, epsh2 and depsh only, which the optimizer fixes |
 | X-3 | `run_ghosts`: barrier at mesh index mbar; basis = states below ebcut (count jumps) | a, i | done: the wall at 3 rc exactly, a node of the log mesh scaled by s ∈ [1, amesh) (V_loc and the projectors interpolated there from their pieces, `pw_value`, `pw_resample`); each barrier state's overlaps with the projectors weighted by `cinf_taper` of its energy, 1 to ebcut and 0 from 1.5 ebcut, so states enter at weight 0; the margins (e_basis against e_ref, the least ⟨r⟩/rc) in the DIAGNOSTICS block |
 | X-4 | `run_plot`: index ranges and thinning | a, h | fixed output grid (plots only) |
-| X-5 | `run_config`/`psatom`: see S-5; occupation ramp may exit early | f, g | explicit criterion; ramp completes |
+| X-5 | `run_config`/`psatom`: see S-5; occupation ramp may exit early | f, g | done: the explicit criterion of S-5 (phase 2), at the target occupations only; the ramp ends on them exactly (audit C-1) |
 | X-6 | `coulomb_tail`: α_z and its cut changes by the rectangle rule on the nodes; the 1e-10 radius the node past the last one above it, which sits at the noise floor of the unscreening (R-10 moved it 4.71 → 4.58 bohr in 14_Si nr as max \|V_loc − V_ion\| beyond rcmax fell 2.0e-9 → 5.8e-10) | c, a, g | `lm_integral`, cut at the radii exactly; the radius by `lm_root` as in R-13, reported with the noise floor beside it |
 
 #### Truly discrete (kept)
@@ -492,8 +502,8 @@ branch in between; the default test preset (`ctest --preset default`)
 leaves them out until phase 7 drops the label.
 
 - **T1 Unit tests of the primitives** (`tests/unit/test_logmesh.f90`,
-  written, red against the stub `src/logmesh_m.f90` and
-  `src/sbf_overlap.f90`). They check:
+  written red against stubs of `src/logmesh_m.f90` and
+  `src/sbf_overlap.f90`; green since phase 1). They check:
   - FH reproduction of degree-6 polynomials in ln r;
   - node exactness;
   - order 7 in al;
@@ -506,8 +516,9 @@ leaves them out until phase 7 drops the label.
   - Lommel overlaps for l = 0..4, including α = β and α = β(1+1e-9), to
     1e-13 against a 200-point Gauss rule.
 - **T2 Scan matrix** (`scripts/smooth_scan.py`, ctest
-  `smooth_<program>_<input>_<key>`, written, red). Every row of the
-  baseline table, and with them:
+  `smooth_<program>_<input>_<key>`, in `tests/CMakeLists.txt` with each
+  row's tolerance and the reason for any above its goal). Every row of
+  the baseline table, and with them:
   - each rc of 14_Si;
   - `rcloc` with lpopt 1 and 5;
   - `qcut`;
@@ -521,7 +532,10 @@ leaves them out until phase 7 drops the label.
     icmod 1, 3 and 6 (added in phase 5);
   - rc for nr 08_O and fr 52_Te;
   - `rxpsh` and the test eigenvalues, added in phase 6 with the
-    full-precision diagnostics they need.
+    full-precision diagnostics they need (`rxpsh` done; the test
+    eigenvalues are still read from their 8-decimal print);
+  - the optimizer's setup, 07_N_opt (`sr_07_N_opt_*`), with the phases,
+    Ecut crossings and ghost margins of the DIAGNOSTICS block.
 
   Each scan straddles mesh nodes. Thresholds are those of G1 and G2; a
   row's threshold is tightened to its goal when its phase is done.
@@ -643,10 +657,11 @@ So the order is:
 6. References, then phase 7. References done: patched for phases 5
    and 6 together; the kernels do not move, V_loc moves only where the
    model core does, the log derivatives everywhere (X-2).
-7. Low, for the optimizer: X-1, X-4…X-6, D-5, the M-12 ripple (done:
-   r_s smooth to 5e-12), M-14 (PSML) and the psp8 model-core
-   pieces (both done: the psp8 core smooth to 1e-10). The UPF on the log mesh writes ρ_c's values, which are smooth
-   already.
+7. Low, for the optimizer: X-1, X-4, X-6 and D-5 (open); X-5 (done by
+   S-5 and audit C-1), the M-12 ripple (done: r_s smooth to 5e-12), M-14
+   (PSML) and the psp8 model-core pieces (both done: the psp8 core smooth
+   to 1e-10). The UPF on the log mesh writes ρ_c's values, which are
+   smooth already.
 8. S-10: GGA ρ′, ρ″ from the pieces, last (a small effect). Item 1 shows
    no kink above 1e-11 in the optimizer's setup: a 5-point stencil across
    a C² joint errs by a truncated power of the joint's offset in the
@@ -701,7 +716,9 @@ So the order is:
 - [x] S-5 psatom criterion (and relatom's); S-6 ionic_screening; S-7;
       S-9
 - [x] Q-6 optimize, Q-5 qroots polish, Q-9 wellstate width (Illinois)
-- [ ] T2 rows `dvloc0`, `debl`, `ep` (well) at G2: `dvloc0` is at
+- [x] T2 rows `dvloc0`, `debl`, `ep` (well) at G2, reached in phase 3
+      (R-5 in quad: `debl[0]` 5.6e-14, `ep[2]` 2.4e-13). At the end of
+      phase 2: `dvloc0` was at
       2.4e-14 (14_Si) and 1.6e-14 (52_Te_r). Its 2.2e-9 at degree 6 was the
       fit's own truncation (the kernel bends in dvloc0), so the G2 rows fit
       with degree 10. `debl[0]` (5e-10) and `ep[2]` (8e-10) stay red until
@@ -932,9 +949,10 @@ So the order is:
       round-off.
       X-1's matching radius max(rc)·amesh⁵ has the same form.
 - [x] The well's onset an input: `well_onset` in [pseudopotentials]
-      (TOML; the text input takes the default), the onset as a multiple
-      of rc, at least 1, default 1.006⁵. 1 is the natural limit: the
-      well is flat to every order at its onset, so it can start at rc.
+      (TOML; the `.dat` input on its lmax line since the follow-ups),
+      the onset as a multiple of rc, at least 1, default 1.006⁵. 1 is
+      the natural limit: the well is flat to every order at its onset,
+      so it can start at rc.
       Set, it is echoed in the psp8 and UPF files as a comment, like
       `ep_as_given`. The kernels still depend on the onset, on the
       well's height and width, and on its node count (phase 8 removes
@@ -1172,7 +1190,10 @@ So the order is:
 - [ ] S-10 GGA gradients from the pieces
 - [ ] `match_order` (D-5): input key, minimum tail and Martins fill to
       C⁴, T2 row `slack` with `match_order = 4`
-- [ ] T2 rows fcfact, rcfact, icmod 4 grid, slack at G1
+- [x] T2 rows fcfact, rcfact, icmod 4 grid, slack: icmod 1–3 at G1;
+      icmod 4, 6 and 7 at the floors measured above (core 3e-12 to 1e-10,
+      V_loc 3e-12 to 1e-10), each tolerance and its reason in
+      `tests/CMakeLists.txt`
 - [x] References patched, with phase 6's (after X-2): only the inputs
       with a model core change beyond the log derivatives; V_loc by
       1.3e-3 to 2.7e-2 Ha, rho_mod by 3.2e-2 to 6.0 (the derivative
@@ -1195,7 +1216,9 @@ So the order is:
 
 #### Phase 6: diagnostics
 
-- [ ] X-1, X-4, X-5
+- [ ] X-1 (`run_diag`'s matching radius), X-4 (`run_plot`), X-6
+      (`coulomb_tail`)
+- [x] X-5: S-5 and audit C-1
 - [x] X-2: the phases at rxpsh exactly, continuous in the energy (`phsft_m`)
 - [x] X-3: the ghost test on a wall at 3 rc exactly, a smooth basis
       cutoff, its margins in the DIAGNOSTICS block (≤ 9.5e-13 in the N
@@ -1204,7 +1227,9 @@ So the order is:
       Ecut crossings and the log derivatives to 17 digits; the N rows'
       ld and ecut at ≤ 3.7e-10
 - [x] T2 row rxpsh (sr_07_N_opt_rxpsh, ld 1.8e-11)
-- [ ] T2 rows of the test eigenvalues at G1
+- [ ] T2 rows of the test eigenvalues at G1 (needs them at full
+      precision, in the DIAGNOSTICS block: the oncvpsp-opt session's
+      diagnostic 4 below)
 - [x] References patched (with phase 5's): the log-derivative tables
       of every input
 
@@ -1219,7 +1244,8 @@ So the order is:
 
 #### Phase 8: the kernels free of the well (follow-up)
 
-A follow-up, started once phases 4 to 7 are done. It changes the method,
+A follow-up, planned for after phases 4 to 7 and done (2026-10-22) with
+parts of phases 5 to 7 still open. It changes the method,
 not only the numerics, so it needs its own review (D-7).
 
 **Why.** A well state is the atom's state at a positive energy ep (every
@@ -1611,10 +1637,10 @@ These change behaviour beyond numerics. Decided on review (2026-10-20).
   (74_W_r's solution was inconsistent at rc), and 56_Ba's `ep = 0.0` (a
   placeholder of the old convention) gave a state at exactly E = 0, on
   which the diagnostics fail. So the overrides stay as the default, and
-  `ep_as_given = true` in `[pseudopotentials]` (TOML only) selects the
-  other behaviour: `ep` is always used, a bound state at or above `ep` is
-  an input error, and one below `ep` inside 1.5 rc is raised to it by a
-  wall as close as that takes.
+  `ep_as_given = true` in `[pseudopotentials]` (or on the `.dat` lmax
+  line, follow-ups) selects the other behaviour: `ep` is always used, a
+  bound state at or above `ep` is an input error, and one below `ep`
+  inside 1.5 rc is raised to it by a wall as close as that takes.
 - **D-2 fr psp8 truncation** (O-2). All terms are written. The files
   then hold up to 2·nproj terms per l where they hold fewer now.
 - **D-3 Basis wave vectors** (Q-5). The method stays: the roots are found
@@ -1731,9 +1757,8 @@ To fix in the phase that touches the code, or in phase 7.
   state, at an energy in line with its neighbours'), but the state taken
   must have converged. No output changes.
 - `psatom` can declare convergence during the occupation ramp (fixed in
-  phase 2, S-5).
+  phase 2, S-5), and its ramp need not end on the target occupations
+  (fixed by audit C-1).
 - `lschpb` has no caller (removed in phase 7, with `lschps`, `lschkb`).
-- The solvers' doc comments call `up` d(uu)/dr; it is d(uu)/dn = al·r·du/dr
-  (fixed in phase 7).
 - The `oncvpsp_main` comment on the rc rounding says "nearest" and "5
   decimals"; it is "next" and 6 (gone in phase 3, R-1: rc as given).
