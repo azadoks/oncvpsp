@@ -47,7 +47,7 @@
  implicit none
  private
  public :: lm_blend, lm_interp, lm_derivs, lm_cumint, lm_integral, lm_root
- public :: lm_integral_weights
+ public :: lm_integral_weights, lm_head
  public :: lm_ncell, lm_cell_weights, lm_fh_value, lm_fh_weights, lm_fh_reach
 
 !> blending degree d of the Floater-Hormann interpolant: it reproduces
@@ -515,6 +515,35 @@
  end function value_at
 
  end subroutine lm_root
+
+ real(dp) function lm_head(f1,rho1,rho2,al,pw)
+
+!! the integral over x = ln(r) below rr(1) of an integrand f = rho*g that
+!! goes as a power of r there, g as r**pw: f1/p, with p = pw + the power
+!! of the density through its first two nodes, ln(rho2/rho1)/al. With
+!! the density taken as constant (p = pw) the head is wrong where the
+!! density is relativistic: an s state goes as r**gamma, gamma =
+!! sqrt(1 - (Z/c)**2), and the density as r**(2 gamma - 2)
+!! (doc/numerics_audit.md, C-3). The density is used rather than f
+!! itself: a GGA potential is not smooth enough at the first nodes to
+!! give a power. Where rho1 or rho2 is not positive, p = pw
+!!
+!! @param f1  integrand at rr(1)
+!! @param rho1  density at rr(1)
+!! @param rho2  density at rr(2)
+!! @param al  step of the log mesh
+!! @param pw  power of g
+
+!Input variables
+ real(dp), intent(in) :: f1,rho1,rho2,al,pw
+
+ if(rho1>0.0d0 .and. rho2>0.0d0) then
+   lm_head=f1/(pw+log(rho2/rho1)/al)
+ else
+   lm_head=f1/pw
+ end if
+ return
+ end function lm_head
 
  real(dp) function mesh_step(rr,mmax)
 

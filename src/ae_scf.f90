@@ -82,6 +82,7 @@
 !!               energies (Ha)
 
  use constants_m, only: dp
+ use logmesh_m, only: lm_head
  implicit none
 
 !Input variables
@@ -137,7 +138,7 @@
  function radint(ff,pw)
 
 !! integral of ff/rr over rr on the log mesh, by vout's rule; the part
-!! below rr(1) is that of an integrand going as rr**(pw-1)
+!! below rr(1) is that of ff going as rr**pw times the density (lm_head)
 
 !Input variables
  real(dp), intent(in) :: ff(mmax)
@@ -150,7 +151,7 @@
  do ii=4,mmax
    radint=radint + ff(ii)
  end do
- radint=al*radint + ff(1)/pw
+ radint=al*radint + lm_head(ff(1),rho(1),rho(2),al,pw)
 
  return
  end function radint

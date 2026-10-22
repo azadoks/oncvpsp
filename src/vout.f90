@@ -36,6 +36,7 @@
 !! @param iexc  exchange-correlation functional (1-4, 6, 7 built in, <0 libxc)
 
  use constants_m, only: dp, pi
+ use logmesh_m, only: lm_head
  implicit none
 
 !Input variables
@@ -105,7 +106,7 @@
  do ii=4,mmax
    eeel=eeel + foutv(ii)
  end do
- eeel=al*eeel + foutv(1)/3.0d0
+ eeel=al*eeel + lm_head(foutv(1),rho(1),rho(2),al,3.0d0)
 
  if(mode == 0) then
    do ii = 1, mmax
@@ -185,11 +186,11 @@
    end do
  end if
 
- eexc=al*eexc + foutx(1)/3.0d0
+ eexc=al*eexc + lm_head(foutx(1),rho(1),rho(2),al,3.0d0)
 
 
  if(mode == 1) then
-   eexc=eexc + foutfc(1)/3.0d0
+   eexc=eexc + lm_head(foutfc(1),rhoc(1),rhoc(2),al,3.0d0)
  end if
 
  deallocate(rvp,rv,excca,difxc)
