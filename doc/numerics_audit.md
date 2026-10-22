@@ -190,7 +190,7 @@ None of these breaks smoothness in the scanned inputs: they sit in the all-elect
 | C-12 | low | `derivs.f90:84,89`: the 2nd-derivative end formulas have the wrong sign. Latent (only meta-GGA reads them). | ✓ verified |
 | C-13 | low | `sbfq_values` normalizes by j_0 = sin x / x, which loses relative accuracy as qrc approaches a zero of j_0 (nπ). Normalizing by the larger of j_0, j_1, or by Σ(2l+1)j_l² as sbf8 does, removes it. | ✓ code |
 | C-14 | low | sr_so_r has no guard on small S eigenvalues (light elements, j = l ± ½ nearly equal). | sub-audit |
-| C-15 | low | qroots skips a root on a bisection failure (warning). The Brent/fmin/gauss/phase-depth limits are silent. | sub-audit |
+| C-15 | low | qroots skips a root on a bisection failure (warning; done 2026-10-23: the bisection on the pole-free g cannot fail, smoothness_plan Q-5). The Brent/fmin/gauss/phase-depth limits are silent. | sub-audit |
 | C-16 | low | Origin values differ by format; fr PSML potentials lack the vpuns tail taper; UPF `nrlproj` is not clamped to nrl, and an odd nrl made even can pass rr(mmax). | sub-audit |
 | C-17 | low | Order claims: `lm_derivs`' comment says "8th order or better", but its one-sided end stencils give order 7 for k = 4. `lm_integral` at limits between nodes is order 7, not 8. The plan says the derivative stencils are "centred 8th order". | ✓ |
 | C-18 | info | Dead code: `dpnint`, `wf_rc_der` (only the test cross-check), the double-precision `sbf_overlap` (only a unit test), `rpk`, the negative-ierr branches in config_ae_m, assorted unused locals. | ✓ for the first three |

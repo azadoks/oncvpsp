@@ -146,7 +146,7 @@
      end if
      do ii=1,nb
        if(pswfx(ii,1,l1,ikap)==0.0d0) then
-         write(6,'(a,i2,a,f10.6)') 'run_vkb: ERROR node of the local', &
+         write(6,'(2a,i2,a,f10.6)') 'run_vkb: ERROR node of the local', &
 &              ' channel''s pseudo wave within reach of rc, l=',lloc, &
 &              ' r=',rr(ii)
          error stop 1

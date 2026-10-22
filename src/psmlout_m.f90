@@ -677,7 +677,7 @@
 
  use xmlf90_wxml, only: xmlf_t, xml_AddPcData
  use input_echo_m, only: atom_lines, lmax_lines, icmod_lines, epsh_lines, &
-&                        mesh_lines, echo_len, echo_max
+&                        mesh_lines, echo_len, echo_max, fx
  implicit none
 
 !Input variables
@@ -724,22 +724,22 @@
  call add('#')
  call add('#   l,   rc,      ep,       ncon, nbas, qcut')
  do l1=1,lmax+1
-   write(line,'(i5,2f10.5,2i5,f10.5)') l1-1,rc0(l1),ep(l1),ncon(l1), &
-&          nbas(l1),qcut(l1)
+   write(line,'(i5,2a,2i5,a)') l1-1,fx(rc0(l1),10,5),fx(ep(l1),10,5), &
+&          ncon(l1),nbas(l1),fx(qcut(l1),10,5)
    call add(line)
  end do
 
  call add('#')
  call add('# LOCAL POTENTIAL')
  call add('# lloc, lpopt,  rc(5),   dvloc0')
- write(line,'(2i5,f10.5,a,f10.5)') lloc,lpopt,rc0(5),'   ',dvloc0
+ write(line,'(2i5,3a)') lloc,lpopt,fx(rc0(5),10,5),'   ',fx(dvloc0,10,5)
  call add(line)
 
  call add('#')
  call add('# VANDERBILT-KLEINMAN-BYLANDER PROJECTORs')
  call add('# l, nproj, debl')
  do l1=1,lmax+1
-   write(line,'(2i5,f10.5)') l1-1,nproj(l1),debl(l1)
+   write(line,'(2i5,a)') l1-1,nproj(l1),fx(debl(l1),10,5)
    call add(line)
  end do
 
@@ -758,10 +758,10 @@
  call add('# OUTPUT GRID')
  if(upf_mesh==0) then
    call add('# rlmax, drl')
-   write(line,'(2f8.2)') rlmax,drl
+   write(line,'(2a)') fx(rlmax,8,2),fx(drl,8,2)
  else
    call add('# rlmax, drl, upf_mesh')
-   write(line,'(2f8.2,i8)') rlmax,drl,upf_mesh
+   write(line,'(2a,i8)') fx(rlmax,8,2),fx(drl,8,2),upf_mesh
  end if
  call add(line)
 

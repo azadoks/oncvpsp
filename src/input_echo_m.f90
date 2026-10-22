@@ -31,7 +31,7 @@
  public :: atom_lines, lmax_lines, icmod_lines, epsh_lines, mesh_lines
  public :: write_atom, write_lmax, write_icmod, write_epsh
  public :: write_mesh
- public :: write_input_echo
+ public :: write_input_echo, fx
 
 !> length of the lines returned by the *_lines routines
  integer, parameter, public :: echo_len=100
@@ -39,6 +39,42 @@
  integer, parameter, public :: echo_max=5
 
  contains
+
+ function fx(xx,ww,dd) result(field)
+
+!! xx as an fww.dd field with a leading blank: the field of fww.dd where the
+!! value leaves one, so that the echo of an ordinary input is unchanged,
+!! else widened until it does (an es field past 40 characters), so that
+!! an extreme value never runs into the field before it
+!!
+!! @param xx  value
+!! @param ww  width of the field
+!! @param dd  digits after the decimal point
+
+!Input variables
+ real(dp), intent(in) :: xx
+ integer, intent(in) :: ww,dd
+
+!Output variables
+ character(len=:), allocatable :: field
+
+!Local variables
+ character(len=48) :: buf
+ character(len=16) :: fmt
+ integer :: wt
+
+ do wt=ww,40
+   write(fmt,'(a,i0,a,i0,a)') '(f',wt,'.',dd,')'
+   write(buf,fmt) xx
+   if(buf(1:1)==' ' .and. index(buf(1:wt),'*')==0) then
+     field=buf(1:wt)
+     return
+   end if
+ end do
+ write(buf,'(es24.16)') xx
+ field=' '//trim(adjustl(buf))
+ return
+ end function fx
 
  subroutine atom_lines(atsym,zz,nc,nv,iexc,psfile,text,ntext)
 
@@ -67,12 +103,12 @@
  text(1)='# ATOM AND REFERENCE CONFIGURATION'
  if(c_light/=c_light_default) then
    text(2)='# atsym  z   nc   nv     iexc    psfile  c_light'
-   write(text(3),'(a,a,f6.2,2i5,i8,3a,es24.16)') '  ',trim(atsym),zz,nc, &
-&        nv,iexc,'      ',psfile,' ',c_light
+   write(text(3),'(3a,2i5,i8,3a,es24.16)') '  ',trim(atsym),fx(zz,6,2), &
+&        nc,nv,iexc,'      ',psfile,' ',c_light
  else
    text(2)='# atsym  z   nc   nv     iexc    psfile'
-   write(text(3),'(a,a,f6.2,2i5,i8,2a)') '  ',trim(atsym),zz,nc,nv,iexc, &
-&        '      ',trim(psfile)
+   write(text(3),'(3a,2i5,i8,2a)') '  ',trim(atsym),fx(zz,6,2),nc,nv, &
+&        iexc,'      ',trim(psfile)
  end if
  ntext=3
 
@@ -163,6 +199,7 @@
 !defaults, as set by the input readers
  real(dp), parameter :: fcgrid_def(3)=[1.5d0,6.0d0,0.5d0]
  real(dp), parameter :: rcgrid_def(3)=[1.0d0,1.9d0,0.1d0]
+ integer :: ii
 
  text(1)='#'
  text(2)='# MODEL CORE CHARGE'
@@ -171,24 +208,27 @@
    text(3)='# icmod, fcfact, rcfact,'
    text(4)='#   fcfact_min, fcfact_max, fcfact_step, '// &
 &   'rcfact_min, rcfact_max, rcfact_step'
-   write(text(5),'(i5,8f10.5)') icmod,fcfact,rcfact,fcgrid(:),rcgrid(:)
+   write(text(5),'(i5,8a)') icmod,fx(fcfact,10,5),fx(rcfact,10,5), &
+&        (fx(fcgrid(ii),10,5),ii=1,3),(fx(rcgrid(ii),10,5),ii=1,3)
    ntext=5
  else if((icmod==6 .or. icmod==7) .and. budget_weighted) then
 !icmod=6, 7 budget_cutoff is written if not "max" (0), with slack before it
    text(3)='# icmod, fcfact, rcfact, slack, budget_cutoff'
-   write(text(4),'(i5,f10.5,es12.4,f10.5,i5)') icmod,fcfact,rcfact,slack,1
+   write(text(4),'(i5,a,es12.4,a,i5)') icmod,fx(fcfact,10,5),rcfact, &
+&        fx(slack,10,5),1
    ntext=4
  else if((icmod==6 .or. icmod==7) .and. slack/=1.0d0) then
 !icmod=6, 7 rcfact is an error tolerance, slack is written if not 1
    text(3)='# icmod, fcfact, rcfact, slack'
-   write(text(4),'(i5,f10.5,es12.4,f10.5)') icmod,fcfact,rcfact,slack
+   write(text(4),'(i5,a,es12.4,a)') icmod,fx(fcfact,10,5),rcfact, &
+&        fx(slack,10,5)
    ntext=4
  else
    text(3)='# icmod, fcfact, rcfact'
    if(icmod==6 .or. icmod==7) then
-     write(text(4),'(i5,f10.5,es12.4)') icmod,fcfact,rcfact
+     write(text(4),'(i5,a,es12.4)') icmod,fx(fcfact,10,5),rcfact
    else
-     write(text(4),'(i5,2f10.5)') icmod,fcfact,rcfact
+     write(text(4),'(i5,2a)') icmod,fx(fcfact,10,5),fx(rcfact,10,5)
    end if
    ntext=4
  end if
@@ -219,10 +259,11 @@
  text(2)='# LOG DERIVATIVE ANALYSIS'
  if(rxpsh>=0.0d0) then
    text(3)='# epsh1, epsh2, depsh, rxpsh'
-   write(text(4),'(3f8.2,f10.5)') epsh1,epsh2,depsh,rxpsh
+   write(text(4),'(4a)') fx(epsh1,8,2),fx(epsh2,8,2),fx(depsh,8,2), &
+&        fx(rxpsh,10,5)
  else
    text(3)='# epsh1, epsh2, depsh'
-   write(text(4),'(3f8.2)') epsh1,epsh2,depsh
+   write(text(4),'(3a)') fx(epsh1,8,2),fx(epsh2,8,2),fx(depsh,8,2)
  end if
  ntext=4
 
@@ -449,18 +490,18 @@
    write(6,'(a/a)') '#','#   l,   rc,      ep,       ncon, nbas, qcut'
  end if
  do l1=1,lmax+1
-   write(6,'(i5,2f10.5,2i5,f10.5)') l1-1,rc0(l1),ep(l1),ncon(l1),&
-&        nbas(l1),qcut(l1)
+   write(6,'(i5,2a,2i5,a)') l1-1,fx(rc0(l1),10,5),fx(ep(l1),10,5), &
+&        ncon(l1),nbas(l1),fx(qcut(l1),10,5)
  end do
 
  write(6,'(a/a/a,a)') '#','# LOCAL POTENTIAL','# lloc, lpopt,  rc(5),', &
 &      '   dvloc0'
- write(6,'(2i5,f10.5,a,f10.5)') lloc,lpopt,rc0(5),'   ',dvloc0
+ write(6,'(2i5,3a)') lloc,lpopt,fx(rc0(5),10,5),'   ',fx(dvloc0,10,5)
 
  write(6,'(a/a/a)') '#','# VANDERBILT-KLEINMAN-BYLANDER PROJECTORs', &
 &      '# l, nproj, debl'
  do l1=1,lmax+1
-   write(6,'(2i5,f10.5)') l1-1,nproj(l1),debl(l1)
+   write(6,'(2i5,a)') l1-1,nproj(l1),fx(debl(l1),10,5)
  end do
 
  call write_icmod(icmod,fcfact,rcfact,slack,budget_weighted,fcgrid,rcgrid)
@@ -469,10 +510,10 @@
 
  if(upf_mesh==0) then
    write(6,'(a/a/a)') '#','# OUTPUT GRID','# rlmax, drl'
-   write(6,'(2f8.2)') rlmax,drl
+   write(6,'(2a)') fx(rlmax,8,2),fx(drl,8,2)
  else
    write(6,'(a/a/a)') '#','# OUTPUT GRID','# rlmax, drl, upf_mesh'
-   write(6,'(2f8.2,i8)') rlmax,drl,upf_mesh
+   write(6,'(2a,i8)') fx(rlmax,8,2),fx(drl,8,2),upf_mesh
  end if
 
  write(6,'(a/a/a)') '#','# TEST CONFIGURATIONS','# ncnf'

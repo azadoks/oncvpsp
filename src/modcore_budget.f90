@@ -1660,7 +1660,7 @@
      zz=z1 - p1/pp
      if(abs(zz-z1)<1.0d-15) exit
      if(it==100) then
-       write(6,'(/a,i0,a,i0)') 'modcore_budget: ERROR gauss_legendre', &
+       write(6,'(/2a,i0,a,i0)') 'modcore_budget: ERROR gauss_legendre', &
 &            ' node not converged, nn=',nn,', node=',ii
        error stop 1
      end if

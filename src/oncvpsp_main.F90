@@ -64,7 +64,7 @@
  use logmesh_m, only: lm_fh_reach
  use constants_m, only: nlev, nerrdg, nerrlv, well_onset_default
  use input_echo_m, only: write_atom, write_lmax, write_icmod, write_epsh, &
-&                        write_mesh
+&                        write_mesh, fx
  use relativity_m, only: set_relativity
  implicit none
 
@@ -128,9 +128,11 @@
  real(dp) :: ecutw
 !weights of the pseudo-waves' curves in the weighted cutoff (budget_cutoff)
  real(dp), allocatable :: wcurve(:,:,:)
-! the points of a convergence curve: run_optimize's q grid, ~2400 for
-! nbas=14 and less than 3000 for qcut up to 15 at rc up to 4
- integer, parameter :: ncurve=4000
+! the points of a convergence curve: run_optimize's q grid,
+! 1 + 24 rc max(2 q of the last basis function, 2 qcut, 20), ~2400 for
+! nbas=14 and less than 3000 for qcut up to 15 at rc up to 4; a buffer,
+! with room for qcut rc up to 160
+ integer, parameter :: ncurve=8000
  real(dp), allocatable :: rr(:)
  real(dp), allocatable :: rho(:),rhoc(:),rhot(:)
  real(dp), allocatable :: uu(:,:),up(:,:),vwell(:,:)
@@ -552,18 +554,18 @@
  call write_lmax(lmax,ep_as_given,well_onset,well_tail_free,wreg)
  write(6,'(a/a)') '#','#   l,   rc,      ep,       ncon, nbas, qcut'
  do l1=1,lmax+1
-   write(6,'(i5,2f10.5,2i5,f10.5)') l1-1,rc(l1),ep(l1,1),ncon(l1),&
-&        nbas(l1),qcut(l1)
+   write(6,'(i5,2a,2i5,a)') l1-1,fx(rc(l1),10,5),fx(ep(l1,1),10,5), &
+&        ncon(l1),nbas(l1),fx(qcut(l1),10,5)
  end do
 
  write(6,'(a/a/a,a)') '#','# LOCAL POTENTIAL','# lloc, lpopt,  rc(5),', &
 &      '   dvloc0'
- write(6,'(2i5,f10.5,a,f10.5)') lloc,lpopt,rc(5),'   ',dvloc0
+ write(6,'(2i5,3a)') lloc,lpopt,fx(rc(5),10,5),'   ',fx(dvloc0,10,5)
 
  write(6,'(a/a/a)') '#','# VANDERBILT-KLEINMAN-BYLANDER PROJECTORs', &
 &      '# l, nproj, debl'
  do l1=1,lmax+1
-   write(6,'(2i5,f10.5)') l1-1,nproj(l1),debl(l1)
+   write(6,'(2i5,a)') l1-1,nproj(l1),fx(debl(l1),10,5)
  end do
 
  call write_icmod(icmod,fcfact,rcfact,slack,budget_weighted,fcgrid,rcgrid)
@@ -572,10 +574,10 @@
 
  if(upf_mesh==0) then
    write(6,'(a/a/a)') '#','# OUTPUT GRID','# rlmax, drl'
-   write(6,'(2f8.4)') rlmax,drl
+   write(6,'(2a)') fx(rlmax,8,4),fx(drl,8,4)
  else
    write(6,'(a/a/a)') '#','# OUTPUT GRID','# rlmax, drl, upf_mesh'
-   write(6,'(2f8.4,i8)') rlmax,drl,upf_mesh
+   write(6,'(2a,i8)') fx(rlmax,8,4),fx(drl,8,4),upf_mesh
  end if
 
  write(6,'(a/a/a)') '#','# TEST CONFIGURATIONS','# ncnf'

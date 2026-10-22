@@ -44,62 +44,54 @@
  real(dp), intent(out) :: qroot(nroot)
 
 !Local variables
- real(dp), parameter :: eps=1.0d-12
-
  real(dp) :: sbfd(5)
- real(dp) :: al,qq,dlgd,dlgd_grid,dlgd_last,qhi,qlow,qt
- integer :: ii,jj,ll1,lmax,mmax,iroot,nq
- logical :: found_root
+ real(dp) :: qq,gg,glast,glow,gt,qhi,qlow,qt
+ integer :: ii,jj,iroot,nq
 
  nq=int(qmax/dltq)+1
 
+! the roots are those of the pole-free g(q) = ulgd*j_l(q rc) - q j_l'(q rc),
+! which are those of the log-derivative mismatch where j_l(q rc) is not 0
+! and g is never 0 where it is: every sign change of g on the grid brackets
+! a root, so no pole has to be told from a root. The mismatch itself, with a
+! pole beside each root for a large ulgd, made the grid's sign changes of
+! roots look like poles: for a Pb l=3 well state (ulgd = 65) every root
+! was skipped and the search ran out
  qroot(:)=0.0d0
  iroot=2
-!the sign test reads dlgd_last at ii=1 too (.and. need not short-circuit)
- dlgd_last=0.0d0
- do ii=1,nq
+ glast=gfun(dltq)
+ do ii=2,nq
    qq=dltq*ii
-   call sbf_rc_der(ll,qq,rc,sbfd)
-   dlgd=ulgd - sbfd(2)/sbfd(1)
-!keep the grid value for the next sign test; bisection overwrites dlgd
-   dlgd_grid=dlgd
-   found_root=.false.
-!interval halving to find root
-   if(ii>1 .and. dlgd*dlgd_last < 0.0d0 .and. &
-&          abs(dlgd*dlgd_last)<1.0d0) then
-     if(dlgd>0.0d0) then
-       qhi=qq
-       qlow=dltq*(ii-1)
-     else
-       qhi=dltq*(ii-1)
-       qlow=qq
-     end if
-
-     do jj=1,100
-       qt=0.5d0*(qhi+qlow)
-       call sbf_rc_der(ll,qt,rc,sbfd)
-       dlgd=ulgd - sbfd(2)/sbfd(1)
-       if(abs(dlgd)<eps) then
-         iroot=iroot+1
-         call polish(qt)
-         qroot(iroot)=qt
-         found_root=.true.
-         exit
-       end if
-       if(dlgd>0.0d0) then
+   gg=gfun(qq)
+   if(gg*glast<0.0d0 .or. gg==0.0d0) then
+! bisection to a bracket of a few ulps (or g = 0), then the Newton polish
+     qlow=qq-dltq
+     qhi=qq
+     glow=glast
+     do jj=1,200
+       qt=0.5d0*(qlow+qhi)
+       if(qhi-qlow<=4.0d0*spacing(qt)) exit
+       gt=gfun(qt)
+       if(gt==0.0d0) exit
+       if(gt*glow<0.0d0) then
          qhi=qt
        else
          qlow=qt
+         glow=gt
        end if
      end do
-     if(.not. found_root) then
-       write(6,'(/a,i0,a,es12.4,a,es12.4)') &
-&            'qroots: WARNING bisection failed, skipping', &
-&            ', ll=',ll,', qlow=',qlow,', qhi=',qhi
+     if(gg==0.0d0) qt=qq
+     call polish(qt)
+     iroot=iroot+1
+     qroot(iroot)=qt
+     if(iroot==nroot) exit
+! a root on the grid point itself is not counted again at the next one
+     if(gg==0.0d0) then
+       glast=gfun(qq+0.5d0*dltq)
+       cycle
      end if
    end if
-   if(iroot == nroot) exit
-   dlgd_last=dlgd_grid
+   glast=gg
  end do
  if(iroot<nroot) then
    write(6,'(a)') 'qroots: ERROR - failed to find nroot roots'
@@ -116,14 +108,21 @@
 
  contains
 
+ real(dp) function gfun(qp)
+!! g(q) = ulgd*j_l(q rc) - q j_l'(q rc), whose roots polish refines
+ real(dp), intent(in) :: qp
+ call sbf_rc_der(ll,qp,rc,sbfd)
+ gfun=ulgd*sbfd(1) - sbfd(2)
+ end function gfun
+
  subroutine polish(qp)
 
 !! the root qp polished to round-off by Newton's method on the pole-free
 !! g(q) = ulgd*j_l(q rc) - q j_l'(q rc), whose root it is where j_l(q rc)
-!! is not 0: the bisection stops anywhere within eps of it, the polished
-!! root does not depend on where (doc/smoothness_plan.md, Q-5). Converged
-!! when a step was within the round-off of g or a few ulps of q, g then at
-!! the moved q
+!! is not 0: the bisection stops anywhere within a few ulps of it, the
+!! polished root does not depend on where (doc/smoothness_plan.md, Q-5).
+!! Converged when a step was within the round-off of g or a few ulps of q,
+!! g then at the moved q
 !!
 !! @param qp  the root (in/out)
 

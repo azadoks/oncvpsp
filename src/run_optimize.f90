@@ -333,8 +333,9 @@
      end do
    end do
    if(nq>ncurve) then
-     write(6,'(/2a,i0,a,i0)') 'run_optimize: ERROR q grid longer than', &
-&          ' the convergence curve, nq=',nq,', ncurve=',ncurve
+     write(6,'(/2a,i0,a,i0/a)') 'run_optimize: ERROR q grid longer than', &
+&          ' the buffer of the convergence curve, nq=',nq,', ncurve=',ncurve, &
+&          '  (ncurve in oncvpsp_main; the grid grows with qcut*rc)'
      error stop 1
    end if
 
