@@ -252,15 +252,18 @@ irel, and the stage.  It has the following major sections:
     The routine *diagout* then writes the block "Begin DIAGNOSTICS" to
     "End DIAGNOSTICS", for programs that read the output: the cutoffs at
     which each projector's convergence curve reaches every error level
-    (1e-2 Ha down by half decades to 1e-7, past the tables' 1e-5; below
-    the tables' levels, on the curve plus `ekin_check`, the energy above
-    q_infinity that it leaves out, so a level it does not reach on its
-    q grid has no line), the
-    r-space kinetic energy of each wave less the Fourier one to the
-    curve's q_infinity (`ekin_check l ikap iproj t`: by Parseval the
-    energy above q_infinity, which the curve leaves out, plus the errors
-    of the q grid's quadrature, up to 1e-8 Ha, and of the r-space
-    integral, below 1e-9 Ha at the default mesh), and the log
+    (1e-2 Ha down by half decades to 1e-7, past the tables' 1e-5; a level
+    the curve does not reach on its q grid has no line; the curve, here
+    and in the tables and plots, is the residual to infinity, the q
+    integral to q_infinity plus its tail, while the optimization
+    minimizes the residual to q_infinity), the
+    curve's tail (`ekin_tail l ikap iproj t`, the residual kinetic
+    energy from q_infinity to three times that, up to 1.4e-7 Ha), the
+    r-space kinetic energy of each wave less the Fourier one to three
+    times q_infinity (`ekin_check l ikap iproj t`: by Parseval the
+    energy above that, below 1e-10 Ha, plus the errors of the q grid's
+    quadrature, up to 8e-9 Ha, and of the r-space integral, up to 5e-9
+    Ha at the default mesh), and the log
     derivatives of *run_phsft*
     with their radius, and the margins of the ghost tests, to 17
     significant digits, one tagged value per line (`ecut l ikap iproj err

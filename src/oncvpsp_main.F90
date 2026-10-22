@@ -111,7 +111,7 @@
  real(dp), allocatable :: ecurve(:,:,:,:,:)
 !the r-space less the Fourier kinetic energy of each pseudo-wave
 !(run_optimize)
- real(dp), allocatable :: ektail(:,:,:)
+ real(dp), allocatable :: ektail(:,:,:,:)
 !the eigenvalues of the B matrices (run_vkb)
  real(dp), allocatable :: bbeig(:,:,:)
 !the test configurations (run_config_ps): rows of eigenvalues (-1 if one
@@ -454,7 +454,7 @@
  allocate(evkb(mxprj,mxl+1,nkap),qq(mxprj,mxprj))
  allocate(cvgplt(2,nerrdg,mxprj,mxl+1,nkap))
  allocate(ecurve(2,ncurve,mxprj,mxl+1,nkap))
- allocate(ektail(mxprj,mxl+1,nkap),bbeig(mxprj,mxl+1,nkap))
+ allocate(ektail(2,mxprj,mxl+1,nkap),bbeig(mxprj,mxl+1,nkap))
  allocate(wcurve(mxprj,mxl+1,nkap))
  allocate(vp(mmax,mxl+2,nkap),vfull(mmax),vkb(mmax,mxprj,mxl+1,nkap))
  allocate(pswf(mmax,mxprj,mxl+1,nkap))
@@ -642,7 +642,7 @@
 !
  cvgplt(:,:,:,:,:)=0.0d0
  ecurve(:,:,:,:,:)=0.0d0
- ektail(:,:,:)=0.0d0
+ ektail(:,:,:,:)=0.0d0
  wcurve(:,:,:)=0.0d0
 !
 ! loop to construct pseudopotentials for all angular momenta
@@ -867,7 +867,7 @@
 &                      vfull,cvgplt(1,1,1,l1,ikap),ncurve, &
 &                      ecurve(1,1,1,l1,ikap), &
 &                      pswfx(1,1,l1,ikap),chix(1,1,l1,ikap), &
-&                      ektail(1,l1,ikap))
+&                      ektail(1,1,l1,ikap))
 
 !the weights of its pseudo-waves in the weighted cutoff: the occupation of
 !each valence state (its share fj of J), or 2(2l+1) for the first wave of a

@@ -160,7 +160,9 @@ smooth_scan_test(sr_14_Si_bc_slack sr 14_Si_bc "model_core_charge.slack" kernel,
 # degree 24 (18 leaves 1.8e-9 of truncation; the interpolant across the joint: 3.0e-2, kinked)
 smooth_scan_test(sr_14_Si_fcfact_psp8 sr 14_Si "model_core_charge.fcfact" core ${smooth_g1} --span 0.02 --output psp8)
 smooth_scan_test(sr_34_Se_rcfact_psp8 sr 34_Se "model_core_charge.rcfact" core ${smooth_g1} --span 0.02 --output psp8)
-smooth_scan_test(sr_14_Si_bc_ecut_psp8 sr 14_Si_bc "model_core_charge.fcfact" core "core=3e-10"
+# The 3rd column's round-off there is 1.1e-10 to 4.3e-10 with 37 to 45 samples and either q grid of
+# run_optimize (dq = 2 pi/(150 rc) or 2 pi/(300 rc)): the tolerance above it, 1e-9
+smooth_scan_test(sr_14_Si_bc_ecut_psp8 sr 14_Si_bc "model_core_charge.fcfact" core "core=1e-9"
     --span 0.2 --degree 24 --output psp8)
 # the optimizer's setup (07_N_opt: PBE, icmod 6 at fcfact 65, lpopt 5): the inputs it varies and
 # the outputs it reads. ld and ecut from the DIAGNOSTICS block (O-6, 17 digits; up to 1.2e-10 and

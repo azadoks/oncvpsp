@@ -59,13 +59,15 @@
 !! @param pswfx  the inside pieces of the pseudo wave functions (their Bessel
 !!               sums) on the nodes to past rc, 0 beyond (pspot)
 !! @param chix  (eig - T) pswfx, the projectors' seeds, the same
-!! @param ektail  the r-space kinetic energy of each optimized wave less the
-!!                Fourier one to q_infinity (Ha): the energy above
-!!                q_infinity, which E_resid leaves out, plus the r-space
-!!                integral's error
+!! @param ektail  of each optimized wave (Ha): (1,:) its E_resid from
+!!                q_infinity to three times that, the curve's tail; (2,:)
+!!                its r-space kinetic energy less the Fourier one to three
+!!                times q_infinity, the errors of the q grid's quadrature
+!!                and of the r-space integral
 
  use constants_m, only: dp, nerrlv, nerrdg, pi
  use, intrinsic :: iso_fortran_env, only: qp => real128
+ use logmesh_m, only: lm_ncell
  use ugrid_m, only: ug_cross_down
  use free_tail_m, only: mesh_tail, free_tail, tail_kinetic
  use logmesh_m, only: lm_integral
@@ -89,7 +91,7 @@
  real(dp), intent(out) :: psopt(mmax,mxprj)
  real(dp), intent(out) :: ecurve(2,ncurve,mxprj)
  real(dp), intent(out) :: pswfx(mmax,mxprj),chix(mmax,mxprj)
- real(dp), intent(out) :: ektail(mxprj)
+ real(dp), intent(out) :: ektail(2,mxprj)
 
 !Local variables
  real(dp), parameter :: Ha_eV=27.21138386d0 ! 1 Hartree, in eV
@@ -101,6 +103,7 @@
  real(dp) :: cons(10)
  real(qp), allocatable :: orbasis(:,:),orbasis_der(:,:)
  real(qp), allocatable :: pswf0_sbq(:),pswfnull_sbq(:,:)
+ real(qp), allocatable :: pswfopt_sbq(:),pswfnone(:,:)
  real(dp), allocatable :: pswf0_sb(:),pswfnull_sb(:,:)
  real(dp), allocatable :: pswf0_or(:),pswfnull_or(:,:)
  real(dp), allocatable :: work(:),ulin(:),dlin(:),tke(:)
@@ -118,6 +121,9 @@
  real(dp), allocatable :: pswfopt_sb(:),pswfopt_or(:),psb(:,:)
  real(dp) :: eresidmin
  real(dp) :: ekin_anal,ekin_num,qmax,hh,ekin_tail
+ real(dp) :: qmax2,hh2,dq2,qout2(1),etail(1),edum(0,1),emdum(0,0,1)
+ real(dp), allocatable :: e0t(:),edt(:,:),emt(:,:,:)
+ integer :: nq2,nr2
 
 
  al = 0.01d0 * log(rr(101) / rr(1))
@@ -148,7 +154,7 @@
  qmsbf=qroot(nbas)
 
  psopt(:,:)=0.0d0
- ektail(:)=0.0d0
+ ektail(:,:)=0.0d0
 
 ! loop over projectors
  do iprj=1,npr
@@ -265,16 +271,47 @@
 &        eresidmin,' Ha'
 !the optimized coefficients from the quad-precision basis vectors (those
 !of optimize, from the rounded ones, carry their 1e4 cancellation)
+   allocate(pswfopt_sbq(nbas),pswfnone(nbas,0))
    do ii=1,nbas
-     pswfopt_sb(ii)=real(pswf0_sbq(ii) &
-&                        +sum(pswfnull_sbq(ii,:)*real(pswfopt_nu(:),qp)),dp)
+     pswfopt_sbq(ii)=pswf0_sbq(ii) &
+&                    +sum(pswfnull_sbq(ii,:)*real(pswfopt_nu(:),qp))
+     pswfopt_sb(ii)=real(pswfopt_sbq(ii),dp)
    end do
    psb(1:nbas,iprj)=pswfopt_sb(1:nbas)
+
+!the curve's tail: E_resid of the optimized wave from qmax to 3 qmax, by
+!eresid with no null functions, down to lm_ncell cells below qmax (the
+!rule's cells about qmax centered whatever nq2). It is from the same
+!transforms as the curve, so smooth in the inputs where T_r less the
+!Fourier energy to qmax (Parseval) is not: T_r's mesh error, 1e-12 Ha in
+!07_N_opt, moves as rc crosses a cell, and at 1e-5 Ha the curve's slope
+!makes that 4e-7 Ha of Ecut. Above qmax the integrand has no structure
+!finer than 2 pi/rc: with 16 dq and 25 points per period of 3 qmax in
+!the tail mesh, the tail moves by 4e-13 Ha from dq and 75 points, in the
+!references, at 3% of the run time; beyond 3 qmax there is 5e-11 Ha
+!(4 and 6 qmax), beyond 2 qmax 8e-10 Ha, in the f channels of 60_Nd
+   qmax2=3.0d0*qmax
+   dq2=16.0d0*dq
+   hh2=2.0d0*pi/(25.0d0*qmax2)
+   if(freetl(iprj)) then
+     call free_tail(irel,ll,kap,eig(iprj),rr,vae,uua(1,iprj),upa(1,iprj), &
+&                   mmax,rc,qcut,hh2,nr2,ulin,dlin)
+     deallocate(dlin)
+   else
+     call mesh_tail(rr,uua(1,iprj),mmax,rc,hh2,nr2,ulin)
+   end if
+   nq2=min(1+int((qmax2-qmax)/dq2)+lm_ncell,1+int(qmax2/dq2))
+   qout2(1)=qmax
+   allocate(e0t(nq2),edt(nq2,0),emt(nq2,0,0))
+   call eresid(ll,rc,0,nbas,nq2,dq2,1,qout2,qmax2,qroot,hh2,nr2,ulin, &
+&              pswfopt_sbq,pswfnone,e0t,edt,emt,etail,edum,emdum)
+   ektail(1,iprj)=etail(1)
+   deallocate(ulin,e0t,edt,emt,pswfopt_sbq,pswfnone)
 
 !the convergence curve of the optimized pseudo wave function on the q
 !grid, for the cutoffs at each error level (below) and the model core's
 !budget (modcore_budget_table): all of it, as a table of every nstep-th
-!node changed its interpolant when nstep did (M-13)
+!node changed its interpolant when nstep did (M-13); with its tail, below
    do iq=1,nq
      eresg(iq)=e0(iq)
      do jj=1,nnull
@@ -289,11 +326,6 @@
 &          ' the convergence curve, nq=',nq,', ncurve=',ncurve
      error stop 1
    end if
-   ecurve(:,:,iprj)=0.0d0
-   do iq=1,nq
-     ecurve(1,iq,iprj)=0.5d0*(q0+dble(iq-1)*dq)**2
-     ecurve(2,iq,iprj)=eresg(iq)
-   end do
 
 ! find the Vanderbilt projectors and optimized wave functions
 
@@ -322,7 +354,17 @@
      deallocate(tke)
    end if
 
-   ektail(iprj)=ekin_num-ekin_anal
+   ektail(2,iprj)=ekin_num-ekin_anal-ektail(1,iprj)
+
+!the curve to infinity, with its tail above qmax, up to 1.4e-7 Ha in
+!deep f channels; the optimization keeps E_resid to qmax, its residuals
+!far above that (doc/smoothness_plan.md, Parseval)
+   eresg(:)=eresg(:)+ektail(1,iprj)
+   ecurve(:,:,iprj)=0.0d0
+   do iq=1,nq
+     ecurve(1,iq,iprj)=0.5d0*(q0+dble(iq-1)*dq)**2
+     ecurve(2,iq,iprj)=eresg(iq)
+   end do
    write(6,'(/a)') '    Total kinetic energy consistency test'
    write(6,'(a)') '      Fourier integration compared to d^2/dr^2 integral'
    write(6,'(a,f12.8,a,f12.8,a,f12.8)') '      Fourier',ekin_anal, &
@@ -337,17 +379,11 @@
    write(6,'(a)') '         Ha          eV             Ha'
 !the cutoffs at which the curve falls to each error level, by
 !root-finding on it; the table shows the first nerrlv, the DIAGNOSTICS
-!block all of them. Below the table's levels the curve takes back the
-!energy above q_infinity, ektail by Parseval (to the q grid's quadrature,
-!1e-8 Ha), up to 1.4e-7 Ha in deep f channels: a level that the
-!corrected curve does not reach on the grid has no cutoff
+!block all of them; a level that the curve, with its tail, does not reach
+!on the grid has no cutoff
    err=0.01d0
    do jj=1,nerrdg
-     if(jj<=nerrlv) then
-       call ug_cross_down(eresg,nq,dq,q0,err,qerr,found_root)
-     else
-       call ug_cross_down(eresg+ektail(iprj),nq,dq,q0,err,qerr,found_root)
-     end if
+     call ug_cross_down(eresg,nq,dq,q0,err,qerr,found_root)
      if(found_root) then
        cvgplt(1,jj,iprj)= 0.5d0*qerr**2
        cvgplt(2,jj,iprj)= err

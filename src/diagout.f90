@@ -30,15 +30,18 @@
 !! ecut l ikap iproj err ecut: the cutoff (Ha) at which the residual
 !! kinetic energy per electron of the optimized wave of projector iproj
 !! falls to err (Ha), for the levels err that it reaches, from 1e-2 down
-!! by half decades to 1e-7, below the tables' 1e-5 (run_optimize); the
-!! levels below the tables' on the curve plus ekin_check
+!! by half decades to 1e-7, below the tables' 1e-5 (run_optimize), on the
+!! curve with its tail: the q integral to q_infinity plus ekin_tail
+!!
+!! ekin_tail l ikap iproj t: the curve's tail, the residual kinetic energy
+!! of that wave from q_infinity to three times that (Ha), up to 1.4e-7 Ha
+!! in the reference outputs
 !!
 !! ekin_check l ikap iproj t: the r-space kinetic energy of that wave less
-!! the Fourier one to the q_infinity of its curve (Ha): by Parseval the
-!! energy above q_infinity, which the curve leaves out (>= 0, up to
-!! 1.4e-7 Ha in the reference outputs), plus the errors of the q grid's
-!! quadrature (up to 1e-8 Ha, either sign) and of the r-space integral
-!! (below 1e-9 Ha at the default mesh)
+!! the Fourier one to three times q_infinity (Ha): by Parseval the energy
+!! above that (below 1e-10 Ha in the reference outputs), plus the errors
+!! of the q grid's quadrature below q_infinity (up to 8e-9 Ha) and of the
+!! r-space integral (up to 5e-9 Ha at the default mesh), of either sign
 !!
 !! ld_r l ikap r: the radius (bohr) of the log derivatives of l, ikap
 !!
@@ -113,7 +116,9 @@
 !! @param errw  its error per electron (Ha)
 !! @param ecutw  the weighted cutoff (Ha)
 !! @param wcurve  the weights of the pseudo-waves
-!! @param ektail  the r-space less the Fourier kinetic energy of each wave
+!! @param ektail  of each wave: (1,:) the curve's tail, its E_resid from
+!!                q_infinity to three times that; (2,:) the r-space less
+!!                the Fourier kinetic energy to three times q_infinity
 !! @param icmod  the model core's kind, 0 for none
 !! @param rr  log radial mesh
 !! @param mmax  size of the log radial mesh
@@ -149,7 +154,7 @@
  integer, intent(in) :: icmod,mmax
  real(dp), intent(in) :: rr(mmax),rcmax,rhoc(mmax)
  type(piecewise_t), intent(in) :: corepw(nrhomod)
- real(dp), intent(in) :: ektail(mxprj,mxl+1,nkap)
+ real(dp), intent(in) :: ektail(2,mxprj,mxl+1,nkap)
  integer, intent(in) :: lloc,ncfg
  real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap),bbeig(mxprj,mxl+1,nkap)
  integer, intent(in) :: ntcf(mxcnf),itcf(3,2*mxstate,mxcnf)
@@ -177,6 +182,18 @@
    end do
  end do
 
+ write(6,'(a)') '# ekin_tail l ikap iproj t(Ha)'
+ do l1=1,lmax+1
+   mkap=nkap
+   if(l1==1) mkap=1
+   do ikap=1,mkap
+     do iprj=1,nproj(l1)
+       write(6,'(a,3i4,1p,e24.16)') 'ekin_tail',l1-1,ikap,iprj, &
+&            ektail(1,iprj,l1,ikap)
+     end do
+   end do
+ end do
+
  write(6,'(a)') '# ekin_check l ikap iproj t(Ha)'
  do l1=1,lmax+1
    mkap=nkap
@@ -184,7 +201,7 @@
    do ikap=1,mkap
      do iprj=1,nproj(l1)
        write(6,'(a,3i4,1p,e24.16)') 'ekin_check',l1-1,ikap,iprj, &
-&            ektail(iprj,l1,ikap)
+&            ektail(2,iprj,l1,ikap)
      end do
    end do
  end do

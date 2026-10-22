@@ -1513,8 +1513,8 @@ from rc:
       result. In DIAGNOSTICS per wave: E_resid(qcut) at the optimum, the
       regularization term's value, e1 and |f1|. Also asked for, separately:
       a warning when e1 and |f1| are at round-off.
-- [x] (Proposed 2026-10-22; decided 2026-10-22, the diagnostics only)
-      E_resid by Parseval: the
+- [x] (Proposed 2026-10-22; decided 2026-10-22: the curve to infinity,
+      not by Parseval, not in the optimization) E_resid by Parseval: the
       residual kinetic energy as T_r − ∫₀^q t(k) dk, the r-space kinetic
       energy less the Fourier one below q, which is the residual to true
       infinity, in place of ∫_q^q∞; in the curve and in the matrices of
@@ -1566,9 +1566,42 @@ from rc:
       `ecurve` (the model core's budget) and the levels to 1e-5 keep the
       curve to q∞, whose tail is ≤ 1.4% of 1e-5. Below 1e-8 a level
       would need dq halved.
-- [ ] Optimize the test suite (the user's request, 2026-10-22; not
-      approved for work yet): more coverage for less wall time, by better
-      choices of test cases and of what each computes. Where the time
+      Then, the same day (the user's: are both curves right, and why
+      not the tail everywhere?). The curve to infinity is the quantity
+      meant; the one to q∞ is low by the tail. But T_r − ∫₀^q carries
+      what ∫_q^q∞ does not: the q quadrature below q, (b), up to 8.4e-9
+      Ha, and T_r's mesh error. With (b) larger than the tail, in the
+      107 negative channels, the correction added noise (73_Ta p #3's
+      3.2e-7 level fell 6.3 Ha). dq = 2π/(300 rc) takes (b) to 2.1e-11
+      (against 600; +15% CPU), but T_r's mesh error remains: it moves
+      as rc crosses a cell of the mesh, and at 1e-5 Ha the curve's slope
+      turns 1.8e-12 Ha of it into 4e-7 Ha of Ecut (the smooth rows of
+      07_N_opt failed, ecut residual 1.1e-8 against 1e-9), and in
+      74_W_r's third projectors it is −5e-9 Ha at the default mesh
+      (−1.2e-11 at amesh 1.003). So the tail is not taken by Parseval.
+      It is the optimized wave's own E_resid from q∞ to 3q∞, by `eresid`
+      with no null functions, the same transforms as the curve: smooth
+      (that scan's residual back to 1.4e-11) and independent of the
+      r-space mesh (74_W_r d #3: 9.899e-9, 9.897e-9, 9.897e-9 Ha at
+      amesh 1.006, 1.003, 1.0015). Above q∞ the integrand has no
+      structure finer than 2π/rc: 16 dq and 25 points per period of 3q∞
+      in the tail's linear mesh move it by 4e-13 Ha from dq and 75
+      points; beyond 3q∞ there remains 5e-11 Ha (to 4q∞ and 6q∞), beyond
+      2q∞ 8e-10, in 60_Nd f. Its cost, the 54 references 12 runs at a
+      time: +3.0% of CPU (to 2q∞ on the curve's own grids it was +42%).
+      With the tail in q space, dq = 2π/(300 rc) moves no Ecut level by
+      more than 7e-5 Ha to 1e-5, 0.03 Ha at 1e-7, so dq stays. The curve
+      with its tail is now in the tables, the plots, `ecurve` (the model
+      core's budget) and every DIAGNOSTICS level (`ekin_tail`, ≤ 1.44e-7
+      Ha); the optimization and its "Residual kinetic energy error" line
+      keep E_resid to q∞. `ekin_check` is T_r less the Fourier energy to
+      3q∞: (b) and T_r's error, −5.0e-9 to 8.4e-9 Ha in the references.
+- [ ] Optimize the test suite (the user's request, 2026-10-22; approved
+      2026-10-22, next after the Parseval item): more coverage for less
+      wall time, by better choices of test cases and of what each
+      computes. The user's aim for the smooth label: the fewest inputs
+      that keep at least today's smoothness coverage (a map of what each
+      row exercises first, then the smallest set that covers it all). Where the time
       goes now (`ctest -LE smooth -j 16`, 310 tests, 186 s wall, about
       2700 s·proc): toml 760, echo 556, mesh 490, nist 388, split 195,
       r 187, sr 182 s·proc; the smooth label about 100 s per row at 4
