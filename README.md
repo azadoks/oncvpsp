@@ -144,6 +144,25 @@ subset of the test configurations that `oncvpsp_ae.x` was given; it stops
 with an error otherwise, or if the file was written for a different
 relativistic treatment or on a different radial mesh.
 
+### Log derivatives at any radii
+
+The log derivatives (`run_phsft`, 7 to 15 % of a run) can be taken out
+of the run and computed afterwards, at any radii and energies:
+
+    oncvpsp_ps.x --ae-file <prefix>.ae --ps-file <prefix>.ps \
+        --no-log-derivatives < <prefix>.dat > <prefix>.out
+    oncvpsp_ld.x -a <prefix>.ae -p <prefix>.ps -r 2.5,3.0,3.5 > <prefix>_ld.out
+
+`--ps-file` (also on `oncvpsp.x`, `oncvpspnr.x`, `oncvpspr.x` and the
+other `_ps.x`) writes the pseudopotential data file, and
+`--no-log-derivatives` leaves the log derivatives out of the output.
+`oncvpsp_ld.x`, for every relativistic treatment, reads the two files and
+prints the `ld_r` and `ld` lines of the DIAGNOSTICS block for each l, j
+and radius; one solution per energy serves all the radii. Without `-r`
+(radii) and `-e` (`emin,emax,de`) it uses the input's `rxpsh`, `epsh1`,
+`epsh2` and `depsh`, and reproduces the run's log derivatives. Every
+executable lists its options with `--help`.
+
 Setting `psfile` to `none` skips writing a pseudopotential file, and
 `ncnf` = 0 skips the test configurations other than the reference.
 

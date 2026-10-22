@@ -87,6 +87,7 @@ set(src_oncvpsp
     input_text_m.f90
     # Non-/scalar-relativistic files
     ae_file_m.f90
+    ps_file_m.f90
     fpovlp.f90
     gnu_script.f90
     linout.f90
@@ -162,5 +163,9 @@ if (ONCVPSP_WITH_FR)
     oncvpsp_executable(oncvpspr_ae oncvpspr_ae.F90 oncvpspr_ae.x)
     oncvpsp_executable(oncvpspr_ps oncvpspr_ps.F90 oncvpspr_ps.x)
 endif ()
+
+# Log derivatives at any radii and energies from the all-electron file and the pseudopotential file of
+# --ps-file (see oncvpsp_ld.f90 and ps_file_m.f90), for every relativistic treatment
+oncvpsp_executable(oncvpsp_ld oncvpsp_ld.f90 oncvpsp_ld.x)
 
 set(ONCVPSP_EXECUTABLES ${ONCVPSP_EXECUTABLES} PARENT_SCOPE)

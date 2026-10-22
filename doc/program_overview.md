@@ -223,7 +223,10 @@ irel, and the stage.  It has the following major sections:
    by default at rc(l) times amesh**2 (rc of the local potential for l
    beyond lmax), the second mesh point beyond rc when rc is one; the
    solutions are interpolated there, so the radius need not be a mesh
-   point.  Since simple plots of log derivatives contain multiple divergences, and
+   point.  oncvpsp_ld.x computes them afterwards at any radii and energies
+   from the all-electron file and the pseudopotential file of --ps-file
+   (ps_file_m), and --no-log-derivatives leaves them out of the run.
+   Since simple plots of log derivatives contain multiple divergences, and
    are difficult to interpret visually, I plot atan(r * ((d psi(r)/dr)/psi(r)))
    at this radius, which is akin but not equal to a scattering phase shift.
    These are plotted using the specified number of vkb projectors.  If the

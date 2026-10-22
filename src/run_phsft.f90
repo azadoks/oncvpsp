@@ -28,8 +28,9 @@
 !! for irel=2, the data for j=l+1/2 and j=l-1/2 follow each other, the
 !! former labelled with -l
 !! the phases are continuous in the energy, the radius and the potentials
-!! (phsft_m); the pseudopotential's are shifted by the multiple of pi that
-!! makes them equal the all-electron ones at the reference energy epa
+!! (phsft_m, phsft_pair); the pseudopotential's are shifted by the multiple
+!! of pi that makes them equal the all-electron ones at the reference
+!! energy epa
 !!
 !! @param lmax  maximum angular momentum
 !! @param lloc  l for local potential
@@ -63,8 +64,7 @@
 
  use constants_m, only: dp, mxl, mxlin, pi
  use pieces_m, only: piecewise_t
- use phsft_m, only: phsft_t, phsft_mch, phsft_ae_init, phsft_ps_init, &
-&                   phsft_free, phsft_scan
+ use phsft_m, only: phsft_mch, phsft_pair
  implicit none
 
 !Input variables
@@ -82,9 +82,8 @@
 !Local variables
  integer :: ii,ll,l1,lc,nvkb
  integer :: ikap,kap,mkap,lout
- real(dp) :: epsh,rq,amesh,palae,palps
+ real(dp) :: epsh,rq,amesh
  character(len=11) :: rname
- type(phsft_t), target :: ps
 
  pshae(:,:,:)=0.0d0
  pshps(:,:,:)=0.0d0
@@ -148,24 +147,15 @@
    do ikap=1,mkap
      if(ikap==1) kap=-(ll+1)
      if(ikap==2) kap=  ll
-     call phsft_ae_init(irel,ll,kap,rr,vfull,zz,mmax,rq,ps)
-     call phsft_scan(ps,epsh2,depsh,npsh,epa(1,l1,ikap), &
-&                    pshae(:,l1,ikap),palae)
-     call phsft_free(ps)
      if(ll == lloc) then
        nvkb = 0
      else
        nvkb = nproj(l1)
      end if
-     call phsft_ps_init(ll,nvkb,rr,vp(1,lloc+1,ikap),vlocpw, &
-&                       vkbpw(1:nvkb,l1,ikap),evkb(1:nvkb,l1,ikap), &
-&                       mmax,rq,ps)
-     call phsft_scan(ps,epsh2,depsh,npsh,epa(1,l1,ikap), &
-&                    pshps(:,l1,ikap),palps)
-     call phsft_free(ps)
-! aligned with the all-electron phases at the reference energy, where the
-! two solutions agree beyond the core radius
-     pshps(:,l1,ikap)=pshps(:,l1,ikap)+pi*anint((palae-palps)/pi)
+     call phsft_pair(irel,ll,kap,nvkb,rr,vfull,zz,vp(1,lloc+1,ikap),vlocpw, &
+&                    vkbpw(1:nvkb,l1,ikap),evkb(1:nvkb,l1,ikap),mmax,1, &
+&                    [rq],npsh,epsh2,depsh,epa(1,l1,ikap), &
+&                    pshae(:,l1,ikap),pshps(:,l1,ikap))
 
      lout=ll
      if(nkap==2 .and. ikap==1) lout=-ll

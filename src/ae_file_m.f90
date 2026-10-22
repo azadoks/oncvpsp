@@ -44,7 +44,7 @@
  use relativity_m, only: c_light
  implicit none
  private
- public :: write_ae_file, read_ae_file
+ public :: write_ae_file, read_ae_file, read_ae_potential, byteswap
 
  character(len=8), parameter :: magic='ONCVAE  ' !< first record of the file
  integer, parameter :: version=3 !< format version
@@ -313,38 +313,13 @@
  integer, intent(out) :: unit
 
 !Local variables
- character(len=8) :: magic_f
  character(len=2) :: atsym_f
- integer :: ios,version_f,irel_f,nc_f,nv_f,iexc_f,mmax_f
+ integer :: irel_f,nc_f,nv_f,iexc_f,mmax_f
  integer :: na_f(mxstate),la_f(mxstate)
  real(dp) :: zz_f,fa_f(mxstate),c_light_f
  real(dp), allocatable :: rr_f(:)
 
- open(newunit=unit,file=fname,access='stream',form='unformatted', &
-&     status='old',action='read',iostat=ios)
- if(ios/=0) then
-   write(6,'(2a)') 'read_ae_file: ERROR cannot open ',trim(fname)
-   error stop 1
- end if
-
- read(unit,iostat=ios) magic_f,version_f,irel_f
- if(ios/=0 .or. magic_f/=magic) then
-   write(6,'(2a)') 'read_ae_file: ERROR not an all-electron data file: ', &
-&        trim(fname)
-   error stop 1
- end if
-!the magic string reads the same in either byte order, so a file from a
-!machine of the other byte order shows up as a byte-swapped version
- if(version_f/=version .and. byteswap(version_f)==version) then
-   write(6,'(2a)') 'read_ae_file: ERROR file was written on a machine', &
-&        ' with the other byte order'
-   error stop 1
- end if
- if(version_f/=version) then
-   write(6,'(a,i4,a,i4)') 'read_ae_file: ERROR file format version', &
-&        version_f,' but this program reads version',version
-   error stop 1
- end if
+ call open_ae(fname,unit,irel_f)
  if(irel_f/=irel) then
    write(6,'(2a)') 'read_ae_file: ERROR file was written with a different', &
 &        ' relativistic treatment'
@@ -386,6 +361,99 @@
  end if
  return
  end subroutine read_head
+
+ subroutine read_ae_potential(fname,irel,atsym,zz,mmax,rr,c_light_f,vfull)
+
+!! reads the atom, the mesh and the all-electron potential of the
+!! reference atom from the all-electron data file, without an input to
+!! check them against (oncvpsp_ld.x)
+!!
+!! @param fname  file to read
+!! @param irel  0 non-, 1 scalar-, 2 fully-relativistic
+!! @param atsym  atomic symbol
+!! @param zz  atomic number
+!! @param mmax  size of the log radial mesh
+!! @param rr  log radial mesh (allocated here)
+!! @param c_light_f  the speed of light of the file
+!! @param vfull  all-electron potential (allocated here)
+
+!Input variables
+ character(len=*), intent(in) :: fname
+
+!Output variables
+ integer, intent(out) :: irel,mmax
+ character(len=2), intent(out) :: atsym
+ real(dp), intent(out) :: zz,c_light_f
+ real(dp), allocatable, intent(out) :: rr(:),vfull(:)
+
+!Local variables
+ integer :: unit,nc,nv,iexc,nt,nkap,it
+ integer :: na(mxstate),la(mxstate)
+ real(dp) :: fa(mxstate),etot,eterm(4),res,ea(mxstate,2)
+ real(dp), allocatable :: rhoc(:),rho(:)
+
+ call open_ae(fname,unit,irel)
+ read(unit) atsym,zz,nc,nv,iexc
+ nt=nc+nv
+ read(unit) na(1:nt),la(1:nt),fa(1:nt)
+ read(unit) mmax
+ allocate(rr(mmax),vfull(mmax),rhoc(mmax),rho(mmax))
+ read(unit) rr(1:mmax)
+ read(unit) c_light_f
+ nkap=1
+ if(irel==2) nkap=2
+ read(unit) it,etot,eterm,res,ea(1:nt,1:nkap)
+ read(unit) rhoc(1:mmax),rho(1:mmax),vfull(1:mmax)
+ close(unit)
+ deallocate(rhoc,rho)
+ return
+ end subroutine read_ae_potential
+
+ subroutine open_ae(fname,unit,irel_f)
+!! opens fname and reads its first record, stopping if it is not an
+!! all-electron data file of this format version and byte order
+!!
+!! @param fname  file name
+!! @param unit  unit number of the opened file
+!! @param irel_f  the relativistic treatment of the file
+
+!Input variables
+ character(len=*), intent(in) :: fname
+
+!Output variables
+ integer, intent(out) :: unit,irel_f
+
+!Local variables
+ character(len=8) :: magic_f
+ integer :: ios,version_f
+
+ open(newunit=unit,file=fname,access='stream',form='unformatted', &
+&     status='old',action='read',iostat=ios)
+ if(ios/=0) then
+   write(6,'(2a)') 'read_ae_file: ERROR cannot open ',trim(fname)
+   error stop 1
+ end if
+
+ read(unit,iostat=ios) magic_f,version_f,irel_f
+ if(ios/=0 .or. magic_f/=magic) then
+   write(6,'(2a)') 'read_ae_file: ERROR not an all-electron data file: ', &
+&        trim(fname)
+   error stop 1
+ end if
+!the magic string reads the same in either byte order, so a file from a
+!machine of the other byte order shows up as a byte-swapped version
+ if(version_f/=version .and. byteswap(version_f)==version) then
+   write(6,'(2a)') 'read_ae_file: ERROR file was written on a machine', &
+&        ' with the other byte order'
+   error stop 1
+ end if
+ if(version_f/=version) then
+   write(6,'(a,i4,a,i4)') 'read_ae_file: ERROR file format version', &
+&        version_f,' but this program reads version',version
+   error stop 1
+ end if
+ return
+ end subroutine open_ae
 
  subroutine write_config_key(unit,jj,nc,nvcnf,nacnf,lacnf,facnf)
 !! writes configuration jj, the key by which match_config matches it

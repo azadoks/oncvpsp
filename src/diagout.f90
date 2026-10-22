@@ -267,9 +267,13 @@
    end do
  end if
 
- write(6,'(a)') '# ld_r l ikap r(bohr)'
- write(6,'(a)') '# ld l ikap e(Ha) atan(r*u''/u)_ae atan(r*u''/u)_ps'
+!none with --no-log-derivatives (npsh 0)
+ if(npsh>0) then
+   write(6,'(a)') '# ld_r l ikap r(bohr)'
+   write(6,'(a)') '# ld l ikap e(Ha) atan(r*u''/u)_ae atan(r*u''/u)_ps'
+ end if
  do l1=1,4
+   if(npsh==0) exit
    mkap=nkap
    if(l1==1) mkap=1
    do ikap=1,mkap

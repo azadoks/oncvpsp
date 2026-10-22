@@ -1506,7 +1506,26 @@ from rc:
          total-energy difference against the reference configuration,
          and the eigenvalue errors.
       5. Log derivatives at a second radius (optional rxpsh2) or over a
-         wider energy range.
+         wider energy range. Done 2026-10-22 as a separate executable, at
+         any radii (the user's request): `oncvpsp_ld.x` reads the
+         all-electron file and the pseudopotential file of `--ps-file`
+         (`ps_file_m`) and prints the DIAGNOSTICS `ld_r`/`ld` lines per
+         l, j and radius, by default the run's to the last digit (sr, nr
+         and fr, every input of tests/data); `--no-log-derivatives` takes
+         them out of the run (7 to 15 % of it: 73_Ta's `_ps.x` 7.05 s to
+         6.0 s, `oncvpsp_ld.x` 1.15 s for one radius, 1.6 s for 20).
+         `phsft_m` takes a set of radii from one solution per energy,
+         each radius continued on its own, so it gives the same phases
+         as alone (to 7e-14). Found on the way: the pseudopotential's
+         solution now runs past the projectors' support, without which a
+         radius inside rc took their projections only to it (52_Te s and
+         p at 2.5 bohr, rc 3.0 and 3.1: 3.5e-3; not reachable from the
+         run, whose rxpsh check_data keeps beyond every rc); and the
+         continuation misses a resonance narrower than the energy step,
+         where the doubled angle turns by 2 pi in one step (73_Ta's
+         all-electron 4f near -0.95 Ha at 2.6 bohr: the phases below it
+         are off by pi unless a halving happens to land in it, the
+         pseudopotential's too, through the alignment). Open.
       6. Model-core extent: where the model core and the AE core fall
          below 1e-2 and 1e-4 of their value at rc; optionally its
          minimum and the r of its maximum (a hollow core).

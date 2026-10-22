@@ -340,6 +340,19 @@ foreach (split_test IN ITEMS "sr:14_Si" "sr:57_La" "nr:14_Si" "nr:29_Cu" "r:03_L
     oncvpsp_uses_run(split_${rel}_${test_name} ${rel} ${test_name} AE)
 endforeach ()
 
+# Log derivatives from the all-electron and pseudopotential files (oncvpsp_ld.x): the run's with the
+# defaults, each radius of a list as alone, and --no-log-derivatives (see scripts/ld_test.sh)
+foreach (ld_test IN ITEMS "sr:14_Si" "nr:14_Si" "r:03_Li")
+    string(REPLACE ":" ";" ld_test "${ld_test}")
+    list(GET ld_test 0 rel)
+    list(GET ld_test 1 test_name)
+    oncvpsp_test(ld_${rel}_${test_name} split ld_test.sh
+        $<TARGET_FILE:oncvpsp${rel}> $<TARGET_FILE:oncvpsp${rel}_ae> $<TARGET_FILE:oncvpsp_ld>
+        "${data}/${test_name}.dat" "${CMAKE_CURRENT_BINARY_DIR}/ld_${rel}_${test_name}")
+    oncvpsp_uses_run(ld_${rel}_${test_name} ${rel} ${test_name})
+    oncvpsp_uses_run(ld_${rel}_${test_name} ${rel} ${test_name} AE)
+endforeach ()
+
 # Damaged or mismatched all-electron data files: oncvpsp_ps.x must stop with a message naming the
 # problem, but accept differences within round-off (see scripts/ae_file_error_test.sh)
 foreach (case IN ITEMS "byte_order" "zz" "fa" "mesh" "c_light" "zz_roundoff" "fa_roundoff"

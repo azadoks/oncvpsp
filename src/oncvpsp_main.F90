@@ -38,7 +38,11 @@
 !!   configurations, and writes them to the file given by --ae-file.  With
 !!   istage=2 (the _ps.x), it reads that file instead of solving the
 !!   all-electron atom and otherwise runs as with istage=0, with the same
-!!   output.  Both read the same input.  See ae_file_m.
+!!   output.  Both read the same input.  See ae_file_m.  Except in the
+!!   all-electron stage, --ps-file writes the pseudopotential for
+!!   oncvpsp_ld.x, which takes the log derivatives from it and the
+!!   all-electron file at any radii and energies (ps_file_m), and
+!!   --no-log-derivatives leaves them out of this run.
 !!
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param istage  0 the whole calculation, 1 the all-electron stage only, 2 the
@@ -49,6 +53,7 @@
  use input_text_m, only: read_input_text
  use config_ae_m, only: run_config_ae
  use ae_file_m, only: write_ae_file, read_ae_file
+ use ps_file_m, only: write_ps_file
 #if (defined WITH_TOML)
  use input_toml_m, only: read_input_toml
 #endif
@@ -178,9 +183,13 @@
  integer :: unit
  character(len=1024) :: input_filename
  character(len=1024) :: ae_filename
+ character(len=1024) :: ps_filename
+ logical :: skip_ld
 
  input_mode = INPUT_STDIN
  ae_filename=''
+ ps_filename=''
+ skip_ld=.false.
 
 !the arrays indexed by l have a last index for kappa (see doc/fr_merge_plan.md):
 !1 for j=l+1/2 and 2 for j=l-1/2 when fully relativistic, only 1 otherwise
@@ -212,24 +221,6 @@
  exe=trim(exe)//'.x'
  allocate(eatcnf(mxstate,nkap,nlev,mxcnf))
 
- if(irel==2) then
-   write(6,'(a/a//)') &
-&        'ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
-&        'relativistic version 4.0.1 03/01/2019'
- else
-   write(6,'(a/a//)') &
-&        'ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
-&        trim(treatment)//' version 4.0.1 03/01/2019'
- end if
-
- write(6,'(a/a/a//)') &
-&      'While it is not required under the terms of the GNU GPL, it is',&
-&      'suggested that you cite D. R. Hamann, Phys. Rev. B 88, 085117 (2013)', &
-&      'in any publication utilizing these pseudopotentials.'
-
- call write_build_info(6,trim(exe),trim(treatment))
- write(6,'(/)')
-
  parse_args: block
    integer :: iarg
    character(len=256) :: arg
@@ -237,34 +228,12 @@
      call get_command_argument(iarg, arg)
      select case(arg)
      case('-h', '--help')
-       write(6,'(a)') 'Usage: '//trim(exe)//' [options]'
-       write(6,'(a)') 'Options:'
-       write(6,'(a)') '  -h, --help       ' // &
-&                            'Show this help message and exit'
-       write(6,'(a)') '  -v, --version    ' // &
-&                            'Show version information and exit'
-       write(6,'(a)') '  -i, --input      ' // &
-&                            'Read the input from a text file ' // &
-&                            'instead of stdin'
-       write(6,'(a)') '  -t, --toml-input ' // &
-&                            'Read the input from a TOML file'
-       if(istage==1) then
-         write(6,'(a)') '  -a, --ae-file    ' // &
-&                              'All-electron data file to write (required)'
-       else if(istage==2 .and. irel==2) then
-         write(6,'(a)') '  -a, --ae-file    ' // &
-&                              'All-electron data file written by ' // &
-&                              'oncvpspr_ae.x (required)'
-       else if(istage==2) then
-         write(6,'(a)') '  -a, --ae-file    ' // &
-&                              'All-electron data file written by ' // &
-&                              'the matching _ae.x (required)'
-       end if
-       stop 0
+       call write_help()
+       stop
      case('-v', '--version')
        write(6,'(3a)') 'ONCVPSP (',trim(treatment),') version 4.0.1'
        call write_build_info(6,trim(exe),trim(treatment))
-       stop 0
+       stop
      case('-i', '--input')
        if(iarg + 1 > command_argument_count()) then
          write(6,'(/3a)') trim(pname),': ERROR --input requires a file name'
@@ -297,10 +266,41 @@
          end if
          call get_command_argument(iarg + 1, ae_filename)
        end if
+     case('-p', '--ps-file')
+!the all-electron stage has no pseudopotential
+       if(istage/=1) then
+         if(iarg + 1 > command_argument_count()) then
+           write(6,'(/3a)') trim(pname), &
+&                ': ERROR --ps-file requires a file name'
+           error stop 1
+         end if
+         call get_command_argument(iarg + 1, ps_filename)
+       end if
+     case('--no-log-derivatives')
+       skip_ld=(istage/=1)
      case default
      end select
    end do
  end block parse_args
+
+ if(irel==2) then
+   write(6,'(a/a//)') &
+&        'ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
+&        'relativistic version 4.0.1 03/01/2019'
+ else
+   write(6,'(a/a//)') &
+&        'ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
+&        trim(treatment)//' version 4.0.1 03/01/2019'
+ end if
+
+ write(6,'(a/a/a//)') &
+&      'While it is not required under the terms of the GNU GPL, it is',&
+&      'suggested that you cite D. R. Hamann, Phys. Rev. B 88, 085117 (2013)', &
+&      'in any publication utilizing these pseudopotentials.'
+
+ call write_build_info(6,trim(exe),trim(treatment))
+ write(6,'(/)')
+
 
  if(istage/=0 .and. len_trim(ae_filename) == 0) then
    write(6,'(/4a)') trim(pname),': ERROR ',trim(exe),' requires --ae-file'
@@ -1170,12 +1170,26 @@
 
 
 
-!the energies of the log derivatives, from epsh2 down by depsh
- npsh=int(((epsh2-epsh1)/depsh)-0.5d0)+1
- allocate(pshae(npsh,4,nkap),pshps(npsh,4,nkap))
- call run_phsft(lmax,lloc,nproj,epa,npsh,epsh2,depsh,rxpsh,vlocpw,vkbpw, &
-&               evkb, &
-&               rr,vfull,vp,zz,mmax,mxprj,rc,irel,nkap,rphs,pshae,pshps)
+!the pseudopotential for oncvpsp_ld.x
+ if(len_trim(ps_filename)/=0) then
+   call write_ps_file(trim(ps_filename),irel,nkap,atsym,zz,mmax,rr,lmax, &
+&                     lloc,nproj,rc,epsh1,epsh2,depsh,rxpsh,epa,vp,vlocpw, &
+&                     evkb,vkbpw)
+ end if
+
+!the energies of the log derivatives, from epsh2 down by depsh; none with
+!--no-log-derivatives
+ if(skip_ld) then
+   npsh=0
+   rphs(:)=0.0d0
+   allocate(pshae(npsh,4,nkap),pshps(npsh,4,nkap))
+ else
+   npsh=int(((epsh2-epsh1)/depsh)-0.5d0)+1
+   allocate(pshae(npsh,4,nkap),pshps(npsh,4,nkap))
+   call run_phsft(lmax,lloc,nproj,epa,npsh,epsh2,depsh,rxpsh,vlocpw,vkbpw, &
+&                 evkb, &
+&                 rr,vfull,vp,zz,mmax,mxprj,rc,irel,nkap,rphs,pshae,pshps)
+ end if
 
  call gnu_script(epa,evkb,lmax,lloc,mxprj,nproj,nkap)
 
@@ -1250,6 +1264,72 @@
  end if
 
  stop
+ contains
+
+ subroutine write_help()
+!! the usage of this executable: what it does and its options
+ character(len=16) :: full
+
+ full=exe(1:index(exe,'_')-1)
+ if(istage==0) full=exe
+ write(6,'(3a)') 'Usage: ',trim(exe),' [options] < INPUT.dat'
+ write(6,'(a)') ''
+ if(istage==0) then
+   write(6,'(3a)') 'Generates a ',trim(treatment),' optimized norm-conserving'
+   write(6,'(a)') 'Vanderbilt pseudopotential from the input (D. R. Hamann, PRB'
+   write(6,'(a)') '88, 085117 (2013)) and writes its tests and the'
+   write(6,'(a)') 'pseudopotential file(s) of the input''s psfile to stdout.'
+ else if(istage==1) then
+   write(6,'(3a)') 'The all-electron stage of ',trim(full),'.x: solves the'
+   write(6,'(3a)') trim(treatment),' all-electron atom and the all-electron'
+   write(6,'(a)') 'halves of the test configurations, which depend on no'
+   write(6,'(a)') 'pseudopotential input, and writes them to --ae-file for'
+   write(6,'(3a)') trim(full),'_ps.x. Its stdout is the all-electron part of'
+   write(6,'(3a)') 'the output of ',trim(full),'.x.'
+ else
+   write(6,'(3a)') 'The pseudopotential stage of ',trim(full),'.x: the same'
+   write(6,'(a)') 'input and output, but the all-electron atom is read from'
+   write(6,'(3a)') 'the --ae-file of ',trim(full),'_ae.x instead of solved,'
+   write(6,'(a)') 'so a loop over pseudopotential inputs solves it once.'
+ end if
+ write(6,'(a)') ''
+ write(6,'(a)') 'Options:'
+ write(6,'(a)') '  -h, --help'
+ write(6,'(a)') '      Show this help and exit'
+ write(6,'(a)') '  -v, --version'
+ write(6,'(a)') '      Show the version and the build, and exit'
+ write(6,'(a)') '  -i, --input FILE'
+ write(6,'(a)') '      Read the input, in the .dat text format, from FILE'
+ write(6,'(a)') '      instead of stdin'
+ write(6,'(a)') '  -t, --toml-input FILE'
+ write(6,'(a)') '      Read the input from the TOML file FILE'
+#if !(defined WITH_TOML)
+ write(6,'(a)') '      (not available: this build has no TOML)'
+#endif
+ if(istage==1) then
+   write(6,'(a)') '  -a, --ae-file FILE'
+   write(6,'(a)') '      Write the all-electron data file FILE (required)'
+ else if(istage==2) then
+   write(6,'(a)') '  -a, --ae-file FILE'
+   write(6,'(3a)') '      Read the all-electron data file FILE, written by ', &
+&                  trim(full),'_ae.x'
+   write(6,'(a)') '      for the same atom, configurations and mesh (required)'
+ end if
+ if(istage/=1) then
+   write(6,'(a)') '  -p, --ps-file FILE'
+   write(6,'(a)') '      Also write the pseudopotential data file FILE, from'
+   write(6,'(a)') '      which oncvpsp_ld.x computes the log derivatives at'
+   write(6,'(a)') '      any radii and energies'
+   write(6,'(a)') '  --no-log-derivatives'
+   write(6,'(a)') '      Leave out the log derivatives (their plot data and'
+   write(6,'(a)') '      the DIAGNOSTICS ld lines); oncvpsp_ld.x gives them'
+   write(6,'(a)') '      from --ps-file'
+ end if
+ write(6,'(a)') ''
+ write(6,'(a)') 'Errors are reported on stdout, with a nonzero exit status.'
+ return
+ end subroutine write_help
+
  end subroutine oncvpsp_main
 
 !! Local Variables:
