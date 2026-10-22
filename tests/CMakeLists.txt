@@ -287,7 +287,8 @@ foreach (test_name IN LISTS oncvpspsr_tests)
     oncvpsp_uses_run(${test_name} sr ${test_name})
 endforeach ()
 
-set(oncvpspr_tests "52_Te" "80_Hg"
+set(oncvpspr_tests
+    "52_Te" "80_Hg" # the fr inputs the docs measure; the fr mode tests run cheaper ones
     "07_N_dl"       # lloc<4
     "08_O_wigner"   # iexc=1
     "14_Si_bc"      # icmod=6
@@ -316,7 +317,7 @@ endforeach ()
 
 # All-electron / pseudopotential split: oncvpsp_ae.x writes the all-electron atom to a file and
 # oncvpsp_ps.x reads it (see scripts/split_test.sh)
-foreach (split_test IN ITEMS "sr:14_Si" "sr:57_La" "nr:14_Si" "nr:29_Cu" "r:52_Te" "r:80_Hg")
+foreach (split_test IN ITEMS "sr:14_Si" "sr:57_La" "nr:14_Si" "nr:29_Cu" "r:03_Li")
     string(REPLACE ":" ";" split_test "${split_test}")
     list(GET split_test 0 rel)
     list(GET split_test 1 test_name)
@@ -388,7 +389,7 @@ endforeach ()
 
 # Log mesh input (the optional last line of the text input): see scripts/log_mesh_test.sh
 foreach (mesh_test IN ITEMS "sr:14_Si:upf,split,amesh,rr1,rmax,read" "nr:29_Cu:split,split_differ"
-                            "r:52_Te:split_differ")
+                            "r:14_Si:split_differ")
     string(REPLACE ":" ";" mesh_test "${mesh_test}")
     list(GET mesh_test 0 rel)
     list(GET mesh_test 1 test_name)
@@ -410,7 +411,7 @@ endforeach ()
 
 # UPF file on the log mesh (upf_mesh, the optional third value of the output grid line): see
 # scripts/upf_mesh_test.sh
-foreach (mesh_test IN ITEMS "sr:14_Si_UPF:negative,read" "r:52_Te:stride")
+foreach (mesh_test IN ITEMS "sr:14_Si_UPF:negative,read" "r:14_Si_UPF:stride")
     string(REPLACE ":" ";" mesh_test "${mesh_test}")
     list(GET mesh_test 0 rel)
     list(GET mesh_test 1 test_name)
@@ -438,8 +439,7 @@ if (ONCVPSP_WITH_TOML)
         "sr:03_Li" "sr:07_N_dl" "sr:07_N_opt" "sr:08_O" "sr:08_O_wigner" "sr:14_Si_bc" "sr:14_Si_bca"
         "sr:14_Si_bcw" "sr:20_Ca" "sr:32_Ge" "sr:34_Se" "sr:38_Sr_lxc" "sr:40_Zr" "sr:40_Zr_grid"
         "sr:60_Nd_GHOST" "sr:79_Au_lxc"
-        "r:07_N_dl" "r:14_Si_bc" "r:14_Si_hm" "r:20_Ca" "r:40_Zr_grid" "r:52_Te" "r:60_Nd_GHOST"
-        "r:79_Au_lxc" "r:80_Hg"
+        "r:07_N_dl" "r:14_Si_bc" "r:14_Si_hm" "r:20_Ca" "r:40_Zr_grid" "r:60_Nd_GHOST" "r:79_Au_lxc"
         "nr:14_Si")
     foreach (toml_test IN LISTS toml_tests)
         string(REPLACE ":" ";" toml_test "${toml_test}")
@@ -472,7 +472,7 @@ endif ()
 # The onset of the well of the well states (well_onset in [pseudopotentials]): the same well states on
 # two log meshes, and the input sets it (see scripts/well_onset_test.sh)
 if (ONCVPSP_WITH_TOML)
-    foreach (well_test IN ITEMS "sr:14_Si" "nr:08_O" "r:52_Te")
+    foreach (well_test IN ITEMS "sr:14_Si" "nr:08_O" "r:14_Si")
         string(REPLACE ":" ";" well_test "${well_test}")
         list(GET well_test 0 rel)
         list(GET well_test 1 test_name)
@@ -502,7 +502,7 @@ endif ()
 
 # PSML output: written into the output like the psp8 and upf files, with no files left in the working
 # directory
-foreach (psml_test IN ITEMS "sr:14_Si" "r:52_Te" "nr:08_O")
+foreach (psml_test IN ITEMS "sr:14_Si" "r:14_Si" "nr:08_O")
     string(REPLACE ":" ";" psml_test "${psml_test}")
     list(GET psml_test 0 rel)
     list(GET psml_test 1 test_name)
@@ -511,19 +511,17 @@ foreach (psml_test IN ITEMS "sr:14_Si" "r:52_Te" "nr:08_O")
 endforeach ()
 
 # Input echoes: the input echoed in the output, and in the psp8, UPF or PSML file, run again, give the
-# same output (see scripts/echo_rerun_test.sh). The inputs cover rxpsh (14_Si_lder, and 52_Te with
-# rxpsh set), icmod=4 with its search grid (40_Zr_grid, 74_W), icmod=7 with slack (14_Si_hm), a
-# Libxc iexc (83_Bi), rc on the grid (03_Li), iexc=7 with c_light on the first line (52_Te_c,
-# 14_Si_c), ep_as_given, well_onset and well_tail = "free" on the lmax line (14_Si_wt), and
-# budget_cutoff on the icmod line (14_Si_bcw).
-set(te_rxpsh "s/^   -3\\.0  3\\.0  0\\.02$/   -3.0  3.0  0.02  3.5/")
-set(te_c "s/^    Te  52\\.0   8   3   3   upf$/    Te  52.0   8   3   7   upf  137.0359895/")
+# same output (see scripts/echo_rerun_test.sh). The inputs cover rxpsh (14_Si_lder), icmod=4 with its
+# search grid (40_Zr_grid), icmod=7 with slack (14_Si_hm), a Libxc iexc (83_Bi), rc on the grid
+# (03_Li), iexc=7 with c_light on the first line (14_Si_c), ep_as_given, well_onset and well_tail =
+# "free" on the lmax line (14_Si_wt), and budget_cutoff on the icmod line (14_Si_bcw); each in sr
+# or fr, the fr ones on inputs that run in seconds.
 set(si_c "s/^    Si  14     3   2   3   psp8$/    Si  14     3   2   7   psp8  137.0359895/")
 set(si_wt "14s/^    2$/    2    1    1.2    1/")
 foreach (echo_test IN ITEMS
         "sr:14_Si_lder:psp8" "sr:40_Zr_grid:psp8" "sr:40_Zr_grid:upf"
         "sr:83_Bi:psml" "sr:03_Li:psml" "nr:14_Si:psml" "sr:14_Si_hm:psp8"
-        "r:74_W:psml" "r:52_Te:psp8" "r:52_Te_c:upf" "r:52_Te_c:psml" "sr:14_Si_c:psp8"
+        "r:40_Zr_grid:psml" "r:14_Si_lder:psp8" "r:14_Si_c:upf" "r:14_Si_c:psml" "sr:14_Si_c:psp8"
         "sr:14_Si_wt:upf" "sr:14_Si_bcw:psml" "r:14_Si_bcw:psp8")
     string(REPLACE ":" ";" echo_test "${echo_test}")
     list(GET echo_test 0 rel)
@@ -531,12 +529,7 @@ foreach (echo_test IN ITEMS
     list(GET echo_test 2 format)
     set(edit "")
     set(input "${test_name}")
-    if (test_name STREQUAL "52_Te")
-        set(edit "${te_rxpsh}")
-    elseif (test_name STREQUAL "52_Te_c")
-        set(edit "${te_c}")
-        set(input "52_Te")
-    elseif (test_name STREQUAL "14_Si_c")
+    if (test_name STREQUAL "14_Si_c")
         set(edit "${si_c}")
         set(input "14_Si")
     elseif (test_name STREQUAL "14_Si_wt")
@@ -554,15 +547,15 @@ endforeach ()
 oncvpsp_test(psp8_core_sr_14_Si psp8 psp8_core_test.sh
     $<TARGET_FILE:oncvpspsr> "${data}/14_Si.dat" "s/^   1    0\\.25$/   6    0.0   1.0d-3/"
     "${CMAKE_CURRENT_BINARY_DIR}/psp8_core_sr_14_Si")
-oncvpsp_test(psp8_core_r_74_W psp8 psp8_core_test.sh
-    $<TARGET_FILE:oncvpspr> "${data}/74_W.dat" "s/^    4  0\\.0$/    6  0.0  1.0d-3/"
-    "${CMAKE_CURRENT_BINARY_DIR}/psp8_core_r_74_W")
+oncvpsp_test(psp8_core_r_60_Nd_GHOST psp8 psp8_core_test.sh
+    $<TARGET_FILE:oncvpspr> "${data}/60_Nd_GHOST.dat"
+    "s/^    1   0\\.25000   0\\.00000$/    6    0.0   1.0d-3/" "${CMAKE_CURRENT_BINARY_DIR}/psp8_core_r_60_Nd_GHOST")
 oncvpsp_compares(psp8_core_sr_14_Si)
-oncvpsp_compares(psp8_core_r_74_W)
+oncvpsp_compares(psp8_core_r_60_Nd_GHOST)
 
 # Text input from a pipe (as from a Python subprocess), which cannot be backspaced: the same output
 # as from a file, and an input ending early reported with the line the reader stopped at
-foreach (pipe_test IN ITEMS "sr:14_Si" "r:52_Te" "nr:08_O")
+foreach (pipe_test IN ITEMS "sr:14_Si" "r:14_Si" "nr:08_O")
     string(REPLACE ":" ";" pipe_test "${pipe_test}")
     list(GET pipe_test 0 rel)
     list(GET pipe_test 1 test_name)

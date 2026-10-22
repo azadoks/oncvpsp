@@ -36,9 +36,18 @@ rerun when the all-electron or solver numerics change.
        own. `ctest -LE "smooth|nist" -j 16`: 88 s to 74 s wall, 1354 to
        1128 s·proc; with nist, 1737 to 1492 s·proc, the wall time (112 s)
        set by `nist_RLDA_heavy`.
-2. [ ] A cheaper fully-relativistic input for the mode tests (log mesh,
-       UPF mesh, echo, split, pipe), which run 52_Te or 74_W at 30–50 s a
-       run but test the handling, not the atom.
+2. [x] The fully-relativistic mode tests (log and UPF mesh, echo, split,
+       pipe, PSML, well onset, psp8 core, TOML) on inputs that run in
+       seconds in place of 52_Te, 74_W and 80_Hg: 14_Si, 14_Si_UPF,
+       14_Si_lder, 40_Zr_grid; 03_Li for the split (its test configurations
+       differ only in l, as 80_Hg's, which the all-electron file's matching
+       needs) and 60_Nd_GHOST for the psp8 core (it reaches the edges of
+       `modcore_budget` that only 74_W did). The coverage of `src/`
+       without nist and smooth loses nothing and gains 11 lines and 8
+       branches (8702 to 8713, 9795 to 9803). 52_Te_r and 80_Hg_r stay as
+       references, the inputs the docs measure. `ctest -LE "smooth|nist"
+       -j 16`: 75 s to 70 s wall, 1152 to 959 s·proc; with nist 1499 to
+       1336 s·proc (the wall time, 115 s, still `nist_RLDA_heavy`'s).
 3. [x] Merge the smooth rows that differ only in the file they read
        (14_Si rc0, 52_Te rc1, 08_O rc1, and the fcfact and rcfact psp8
        pairs), now that one scan reads several files; and scan every
