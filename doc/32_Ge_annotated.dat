@@ -11,13 +11,14 @@
 ###  speed of light c_light (the ScRLDA and RLDA of the NIST data);
 ###  5 is METAPSP's r2SCAN and is rejected here;
 ###  negative values for Libxc (doc/libxc_use.md)
-### psfile format of pseudopotential file, psp8 for ABINIT, upf for PWSCF
-###  both for psp8 and upf, none to write no pseudopotential file
+### psfile format of pseudopotential file, psp8 for ABINIT, upf for PWSCF,
+###  psml for PSML, both for all three, none to write no pseudopotential
+###  file
 ### c_light optional: the speed of light of the scalar- and fully-
 ###  relativistic equations and of iexc=7 (default 137.036, 0 or less for
 ###  the default; the NIST data use 137.0359895)
 #
-# atsym, z, nc, nv, iexc   psfile
+# atsym, z, nc, nv, iexc   psfile, (c_light)
     Ge  32.0   5   3   3   psp8
 #
 #
@@ -37,9 +38,24 @@
 #
 # PSEUDOPOTENTIAL AND OPTIMIZATION
 #
-###lmax maximum angular momentum for which psp is calculated (<=3)
+### lmax maximum angular momentum for which psp is calculated (<=3)
+### The four values that may follow lmax on its line are optional; a line
+### that ends early keeps the defaults of the rest:
+### ep_as_given 0 (default) or 1: 1 has the well states take ep as given.
+###     By default a bound state of the well's n and l localized inside
+###     0.75 rc replaces ep by its own energy, one inside 1.5 rc replaces
+###     it by 0.05, and a negative ep becomes 0.25; with 1, a bound state at
+###     or above ep is an input error
+### well_onset onset of the barrier of the well states, as a multiple of rc
+###     (at least 1; 0 or less for the default 1.006**5)
+### well_tail 0 (default) or 1: 1 takes the tail of the well states beyond
+###     rc from the free solution at ep instead of the well (free_tail_m,
+###     doc/program_overview.md, 3A)
+### wave_regularization weight w (at least 0, default 0) of the residual
+###     energy at qcut/4 added to that at qcut in the optimization
+###     (doc/program_overview.md, 6)
 #
-# lmax
+# lmax, (ep_as_given, well_onset, well_tail, wave_regularization)
     2
 #
 #
@@ -52,8 +68,8 @@
 ### ncon number of constraints for pseudo wave function to match all-
 ###      electron wave function at rc, value + ncon-1 derivatives,
 ###      must be between 3 and 5 ("M" in the paper, Eq.(6))
-### nbas number of basis functions.  Must be between ncon+2 and ncon+5
-###      ("N" in the paper, Eqs.(4-5))
+### nbas number of basis functions.  Must be between ncon+2 and ncon+5,
+###      ncon+3 and ncon+5 for nproj=2 ("N" in the paper, Eqs.(4-5))
 ### qcut wave vector defining "residual energy" in the RRKJ method
 ###      ("q_c" in the paper, Eq.(1)
 #
@@ -89,8 +105,10 @@
 # VANDERBILT-KLEINMAN-BYLANDER PROJECTORs
 #
 ### l angular momentum
-### nproj number of projectors, 1 or 2.  automatically set to 0 for l=lloc
-### debl energy  added to basic psp  energy ep for 2nd projector
+### nproj number of projectors, 1 to 5 (usually 2).  automatically set
+###      to 0 for l=lloc
+### debl energy  added to basic psp  energy ep for 2nd projector (and to
+###      that of each projector for the next one)
 ###      automatically reset to match 2nd projector with 2nd bound state
 ###      at this l when it is occupied (ie., the psp is generated for a
 ###      correcponding-l shallow core state)
@@ -108,10 +126,15 @@
 ### fcfact radius for above determined by  rho_core(r)=fcfact*rho_pseudo_
 ###        valence(r) values 0.25-0.5 are usually good (look at plots)
 ###       For icmod = 3, fcfact has a different meaning and a third
-###       artument rcfact is added (see core_correction.md)
-###       For icmod = 4,, fcfact is ignored but must be present (0.0 OK)
+###       argument rcfact is added (see core_correction.md)
+###       For icmod = 4, fcfact is ignored but must be present (0.0 OK);
+###       rcfact and six values for the search grid may follow,
+###       fcfact_min, fcfact_max, fcfact_step, rcfact_min, rcfact_max,
+###       rcfact_step (default 1.5 6.0 0.5 1.0 1.9 0.1)
+###       For icmod = 6, 7: fcfact, rcfact, slack, budget_cutoff (see
+###       core_correction.md)
 #
-# icmod, fcfact, (rcfact), (slack)
+# icmod, fcfact, (rcfact), (slack), (budget_cutoff)
     0    0.25
 #
 # LOG DERIVATIVE ANALYSIS
@@ -127,9 +150,10 @@
 ###       evaluated; it must be larger than every rc (the program stops
 ###       otherwise).  Leave it out (or give a negative value) for the
 ###       default, just beyond rc for each l and at the rc of the local
-###       potential.  It is echoed only when set.
+###       potential.  It is echoed only when set.  oncvpsp_ld.x computes
+###       the log derivatives afterwards at any radii (README.md)
 #
-# epsh1, epsh2, depsh
+# epsh1, epsh2, depsh, (rxpsh)
    -2.0  2.0  0.02
 #
 # OUTPUT GRID
@@ -145,12 +169,12 @@
 ###     mesh, at every istr-th point (istr the smallest stride leaving at most
 ###     upf_mesh points) with nothing interpolated.  3500 is QE's limit.
 #
-# rlmax, drl
+# rlmax, drl, (upf_mesh)
     4.0  0.01
 #
 # TEST CONFIGURATIONS
 #
-### ncnf number of test configurations (<=4)  The reference config is always
+### ncnf number of test configurations (0 to 4)  The reference config is always
 ###      run first as a consistency check.  core always is the reference core
 ###      configuration.  The excitation energy of the configuration for the
 ###      pseudo-atom will be compared with the all-electron result.

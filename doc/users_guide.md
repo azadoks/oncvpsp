@@ -12,14 +12,14 @@ problems disussed in the last few paragraphs are highly improbable.
 You should start by reading the paper, and some of the references if
 necessary.  The input and output files in tests/data and tests/refs include
 all the "OV" pseudopotentials used in the Sec.IV tests in the paper. Next,
-I recommend reading ../INSTALL, and [program_overview](program_overview.md).
+I recommend reading the README, and [program_overview](program_overview.md).
 
 The gnuplot graphics are very important, and a good place to go next.
 The file 73_Ta_plots.pdf in this directory is a "slide show" which walks you
 through a sample of what you will see whenever you run the program.  After
-viewing the pdf, go to directory ../tests.refs and type
+viewing the pdf, go to directory tests/refs and type
 
-    ../replot.sh 73_Ta
+    ../../scripts/replot.sh 73_Ta
 
 If this doesn't produce the same sequence of plots, stop here and try to fix
 your gnuplot installation and accessibility.  Once this works,  it will pay to
@@ -30,16 +30,20 @@ adjustments of your input data can produce "nice" plots as exemplified by
 these cases.
 
 The input files for oncvpsp, examples of which you'll find in
-../tests/data, are NOT THE KEYWORD FILES YOU MAY BE USED TO.  The # comment
+tests/data, are NOT THE KEYWORD FILES YOU MAY BE USED TO.  The # comment
 lines define a strict template in which ALL input parameters must be specified,
-in the correct order.  There are no defaults.  (On the other hand,  there are
+in the correct order.  The only defaults are those of optional values at the
+end of some lines, and of the optional last line (the log mesh).  (On the
+other hand,  there are
 not so many input parameters, and you need to understand them all to get good results anyway.)
+The same input can be given as a TOML keyword file instead (see "TOML
+input" below).
 
 The file `32_Ge_annotated.dat` adds more comments (###) to the usual
 `*.dat` file describing each input variable.  Reading this should be your next
 assignment.  The code doesn't mind extra comments, and you can in fact
 use this as a combined template and abbreviated users' manual for your
-own calculations instead of the shorter versions in ../tests/data.
+own calculations instead of the shorter versions in tests/data.
 
 Next, look at `tests/refs/32_Ge.out`.  The output is pretty-much
 self-explanatory.  First, the input data is echoed, adding the all-electron
@@ -47,8 +51,10 @@ eigenvalues to the configuration information.  This is formatted so that it
 can be copied and re-used as an input file (the eigenvalues will be ignored).
 The psp8, UPF and PSML files carry the same echo, without the eigenvalues,
 and each of these echoes runs again to the same output. Optional inputs
-(`rxpsh`, the `icmod=4` search grid, the log mesh and `upf_mesh`) are echoed only when
-the input sets them, so older inputs echo as they always have.
+(`c_light`, the optional values of the lmax line, `rxpsh`, the `icmod=4`
+search grid, `slack` and `budget_cutoff` of `icmod` 6 and 7, the log mesh
+and `upf_mesh`) are echoed only when the input sets them, so older inputs
+echo as they always have.
 The code then loops over angular momenta and reports some information and
 consistency test results for each pseudo wave function. For unbound states,
 the 'half-point radius' is that at which the added barrier has reached half
@@ -68,7 +74,7 @@ As of release 2.0.1, orthonormal projectors are constructed by default,
 so the overlap is no longer reported.
 
 The "Diagnostic tests" results are explained in more detail in
-program_overview.txt.  Basically, e in and e test should closely match, and
+[program_overview](program_overview.md).  Basically, e in and e test should closely match, and
 the norm and slope values should be close to one.  For two projectors and a
 non-relativistic calculation, the agreement should be within numerical
 convergence error for all these quantities.  That error is O(al^4) in the
@@ -89,7 +95,7 @@ not you (plotting data, template for a custom gnuplot input script, and
 the psp file).
 
 After you've gotten through the above and have compiled the code
-following INSTALL, copy one of the `<prefix>.dat` files in tests/data to a
+following the README, copy one of the `<prefix>.dat` files in tests/data to a
 directory of your own, run it using
 
     ../scripts/run.sh <prefix>
@@ -98,6 +104,102 @@ The sample `<prefix>.dat` files in tests/data should provide a starting
 point to produce good psps for new elements. Reading the `<prefix>.out` files,
 you should be sure that the various consistency tests look good compared to
 the examples. Then, pay attention to the plots.
+
+### TOML input
+
+Every executable but `oncvpsp_ld.x` reads its input from a TOML file with
+`-t FILE` (`--toml-input`) instead of the text input on stdin (or of
+`-i FILE`). The TOML input is part of the build unless CMake is configured
+with `-DONCVPSP_WITH_TOML=OFF`. It holds the same values as the text input,
+with the same meanings, limits and defaults, as keys of named tables, so
+their order does not matter; a missing table or key that is not optional,
+or one of the wrong type, stops the program with a message naming it. The
+lists of the per-l rows hold one element per l, from 0 to lmax. The output,
+and the echo of the input in it and in the pseudopotential files, is that
+of the text input. tests/data/toml has the TOML form of every input of
+tests/data, and
+
+    scripts/input_text_to_toml.py -i <prefix>.dat -o <prefix>.toml
+
+converts a text input (with `--check`, it also reads the result back and
+compares it to the text input). The tables and keys, with the names of the
+text input where they differ (see `32_Ge_annotated.dat`):
+
+| table | keys |
+|---|---|
+| `[oncvpsp]` | `atsym` (string), `z`, `nc`, `nv`, `iexc`; `c_light` optional |
+| `[reference_configuration]` | `n`, `l`, `f`, lists of nc + nv |
+| `[pseudopotentials]` | `lmax`, and the lists `l`, `rc`, `ep`, `ncon`, `nbas`, `qcut`; optional `ep_as_given` (true or false), `well_onset`, `well_tail` (`"well"` or `"free"`), `wave_regularization` |
+| `[local_potential]` | `lloc`, `lpopt`, `rcloc` (the text input's rc(5)), `dvloc0` |
+| `[vkb_projectors]` | the lists `l`, `nproj`, `debl` |
+| `[model_core_charge]` | `icmod`; `fcfact` (required for icmod 1, 2, 3, 6, 7); `rcfact` (required for icmod 3; optional for 4, 6, 7); for icmod 4 the optional grid `fcfact_min`, `fcfact_max`, `fcfact_step`, `rcfact_min`, `rcfact_max`, `rcfact_step`; for icmod 6 and 7 the optional `slack` and `budget_cutoff` (`"max"` or `"weighted"`) |
+| `[log_derivative_analysis]` | `epsh1`, `epsh2`, `depsh`; `rxpsh` optional |
+| `[linear_mesh]` | `a` (drl), `rmax` (rlmax) |
+| `[log_mesh]` | optional table: `amesh`, `rr1`, `rmax`, each optional |
+| `[pp_output]` | `psfile` (string); `upf_mesh` optional |
+| `[[test_configurations]]` | optional, one table per test configuration (at most 4): `n`, `l`, `f`, lists of its valence states only |
+
+For example, tests/data/toml/32_Ge.toml, with two of its four test
+configurations:
+
+```toml
+[oncvpsp]
+atsym = "Ge"
+z = 32.0
+nc = 5
+nv = 3
+iexc = 3
+
+[reference_configuration]
+n = [1, 2, 2, 3, 3, 3, 4, 4]
+l = [0, 0, 1, 0, 1, 2, 0, 1]
+f = [2.0, 2.0, 6.0, 2.0, 6.0, 10.0, 2.0, 2.0]
+
+[pseudopotentials]
+lmax = 2
+l = [0, 1, 2]
+rc = [2.6, 2.6, 2.0]
+ep = [-0.0, -0.0, 0.0]
+ncon = [4, 4, 4]
+nbas = [8, 8, 9]
+qcut = [5.0, 5.2, 8.4]
+
+[local_potential]
+lloc = 4
+lpopt = 5
+rcloc = 2.0
+dvloc0 = 0.0
+
+[vkb_projectors]
+l = [0, 1, 2]
+nproj = [2, 2, 2]
+debl = [1.5, 1.5, 1.5]
+
+[model_core_charge]
+icmod = 0
+
+[log_derivative_analysis]
+epsh1 = -2.0
+epsh2 = 2.0
+depsh = 0.02
+
+[linear_mesh]
+a = 0.01
+rmax = 4.0
+
+[pp_output]
+psfile = "both"
+
+[[test_configurations]]
+n = [3, 4, 4]
+l = [2, 0, 1]
+f = [10.0, 1.0, 2.0]
+
+[[test_configurations]]
+n = [3, 4, 4]
+l = [2, 0, 1]
+f = [10.0, 2.0, 1.0]
+```
 
 ### Potential issues
 

@@ -116,6 +116,17 @@ icmod==4:
     only tells Abinit that a model core follows; the echoes repeat the
     input fcfact.
 
+    The coarse grid is fcfact_min to fcfact_max by fcfact_step and
+    rcfact_min to rcfact_max by rcfact_step, 1.5 to 6.0 by 0.5 and 1.0 to
+    1.9 by 0.1 by default. The input may set it, after an rcfact (ignored),
+    as in tests/data/40_Zr_grid.dat:
+
+        # icmod, fcfact, rcfact, fcfact_min, fcfact_max, fcfact_step,
+        #   rcfact_min, rcfact_max, rcfact_step
+            4   0.0   0.0   2.0   5.0   0.25   1.1   1.6   0.05
+
+    (the keys of the same names of [model_core_charge] in the TOML input).
+
 icmod==6:
 
     The all-electron core charge wherever the plane-wave cutoff affords

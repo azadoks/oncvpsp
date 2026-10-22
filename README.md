@@ -122,6 +122,13 @@ The non-relativistic executable `oncvpspnr.x` is run by `scripts/run_nr.sh`,
 and the fully-relativistic one `oncvpspr.x` by `scripts/run_r.sh`.
 Please see the files in `doc` directory for details on the code, input file format, etc.
 
+The executables read the text input from stdin, or from a file with
+`-i FILE`; `-t FILE` reads the same input as a TOML file instead. The text
+input is described in `doc/32_Ge_annotated.dat`, and the TOML input, with
+`scripts/input_text_to_toml.py`, which converts one to the other, in the
+[users' guide](doc/users_guide.md). Every executable lists its options
+with `--help`.
+
 ### Solving the all-electron atom once
 
 When the same atom is regenerated many times with different
@@ -161,8 +168,7 @@ prints the `ld_r` and `ld` lines of the DIAGNOSTICS block for each l, j
 and radius; one solution per energy serves all the radii. Without `-r`
 (radii) and `-e` (`emin,emax,de`) it uses the input's `rxpsh`, `epsh1`,
 `epsh2` and `depsh`, and reproduces the run's log derivatives; `-l`
-(`l1,l2,...`) computes only those angular momenta. Every
-executable lists its options with `--help`.
+(`l1,l2,...`) computes only those angular momenta.
 
 Setting `psfile` to `none` skips writing a pseudopotential file, and
 `ncnf` = 0 skips the test configurations other than the reference.

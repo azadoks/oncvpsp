@@ -78,11 +78,13 @@ irel, and the stage.  It has the following major sections:
      in Eq.(17) of the paper.  To find a bound state at the desired
      energy ep, wellstate starts with a large r_b = 8*r_c and searches
      for a suitable v_inf within the range [ep, ep + 1 Ha].  The barrier
-     starts at well_onset*r_c (TOML input, at least 1, default 1.006**5,
+     starts at well_onset*r_c (TOML input, or the third value of the lmax
+     line of the text input; at least 1, default 1.006**5,
      where the mesh-dependent onset of before sat on the default mesh);
      it is flat to every order there, so 1 is the natural limit.
 
-     With well_tail = "free" (TOML input; default "well") the well states
+     With well_tail = "free" (TOML input, or 1 as the fourth value of the
+     lmax line of the text input; default "well") the well states
      do not depend on the well (free_tail_m): the state is the atom's
      solution at exactly ep, integrated outward (scatterstate) and
      normalized to 1 inside r_c, and beyond r_c it is the free solution
