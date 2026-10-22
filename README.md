@@ -146,7 +146,7 @@ relativistic treatment or on a different radial mesh.
 
 ### Log derivatives at any radii
 
-The log derivatives (`run_phsft`, 7 to 15 % of a run) can be taken out
+The log derivatives (`run_phsft`) can be taken out
 of the run and computed afterwards, at any radii and energies:
 
     oncvpsp_ps.x --ae-file <prefix>.ae --ps-file <prefix>.ps \
