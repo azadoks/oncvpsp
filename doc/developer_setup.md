@@ -69,6 +69,21 @@ study. It is about 35 % faster than the `default` build (29_Cu and 83_Bi,
 scalar-relativistic) and passes the same tests, as it moves the nonlocal
 kernels by about 1e-8, but only runs on CPUs like the one that built it.
 
+The `profile` preset (in `build-profile/`) is the `default` build with frame
+pointers, for `perf`. Its call graphs need no DWARF unwinding, and perf
+resolves each caller to the line of its call:
+
+```bash
+cmake --preset profile && cmake --build --preset profile --parallel
+perf record -g -F 2000 build-profile/bin/oncvpsp.x < tests/data/14_Si.dat > out
+perf report --children --sort symbol -g none        # inclusive time per routine
+perf report --no-children -S eresid_ -g caller,0.5,callee,srcline   # by call site
+```
+
+The runtime libraries (libm, libquadmath) have no frame pointers, so a
+sample inside them loses its callers. `--call-graph dwarf` on any `-g`
+build recovers those, with files about thirty times larger.
+
 `ONCVPSP_WITH_FR=OFF` leaves out the fully-relativistic executables and their
 tests.
 
