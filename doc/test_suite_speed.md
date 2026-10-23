@@ -69,9 +69,15 @@ rerun when the all-electron or solver numerics change.
        measure of item 2 (8713 lines, 9803 branches; 2.5 min on 28 cores)
        and its cover the 28 inputs of the suite (73_Ta is the users guide's
        example).
-5. [ ] Run the suite once in the Debug build (`-fcheck=all`, floating-point
+5. [x] Run the suite once in the Debug build (`-fcheck=all`, floating-point
        traps), which it has not been, to find out-of-bounds accesses and
-       invalid operations that `-O2` hides.
+       invalid operations that `-O2` hides. Done 2026-10-23 (the `debug`
+       preset, gfortran 13.3, on a Zen 4 node): one defect, an overflow in
+       `qjacobi`, whose sweeps chased off-diagonal elements into underflow
+       until theta**2 overflowed (tt = 0 at -O2, the right limit; 88 runs
+       trapped in `sbf_basis_con`). Fixed in 98f6850 (nothing printed
+       moves); then 290 of 290 pass, 246 s wall at -j48, with no bounds,
+       invalid-operation or division trap.
 6. [ ] Turn the gaps in coverage into a list: code that wants a test (the
        last step of the aim) or code that cannot be reached and can go.
 7. [x] Measure how many scan points the smooth rows need. The self-test's
