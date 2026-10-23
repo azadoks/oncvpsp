@@ -239,10 +239,10 @@ smooth_scan_test(sr_07_N_opt_rxpsh sr 07_N_opt "log_derivative_analysis.rxpsh" l
 # the free tail of the well states (well_tail = "free", phase 8): the optimizer's rc[1], whose well
 # state's convergence table bends more (its 1e-5 crossing near 75 Ha, normalized inside rc), so
 # degree 14 (5e-12; degree 6 leaves 5e-7 of truncation); 14_Si's rc[1] (3.8e-12); and ep[2] of
-# 14_Si's l = 2, whose first projector is a well state, across 0 with ep_as_given (no branch there,
-# D-7b; the well found no state below 0.005 Ha). The ecut group is left out of the ep[2] row: its
-# 1e-5 crossing slides 0.7 Ha between -0.014 and -0.012 Ha, a shoulder of the curve passing the
-# level (G5)
+# 14_Si's l = 2, whose first projector is a well state, with ep_as_given, from 0 up: the free tail
+# is for ep >= 0 only (D-7, 2026-10-23), below 0 an input error (this row crossed 0 before, with no
+# branch there, D-7b). The ecut group is left out of the ep[2] row: its 1e-5 crossing slid 0.7 Ha
+# between -0.014 and -0.012 Ha, a shoulder of the curve passing the level (G5)
 set(smooth_free "pseudopotentials.well_tail=\"free\"")
 smooth_scan_test(sr_07_N_opt_rc1_free sr 07_N_opt "pseudopotentials.rc[1]" ${smooth_opt_groups} ${smooth_opt}
     --degree 14 --set ${smooth_free})
@@ -256,7 +256,7 @@ smooth_scan_test(sr_07_N_opt_rc1_wcut sr 07_N_opt "pseudopotentials.rc[1]" kerne
     --set model_core_charge.fcfact=0.0 --set ${smooth_wcut})
 smooth_scan_test(sr_14_Si_rc1_free sr 14_Si "pseudopotentials.rc[1]" kernel,vloc,core,tests ${smooth_g1} --center 2.8
     --degree 14 --set ${smooth_free})
-smooth_scan_test(sr_14_Si_ep2_free sr 14_Si "pseudopotentials.ep[2]" kernel,vloc,core,tests ${smooth_g1} --center 0.0
+smooth_scan_test(sr_14_Si_ep2_free sr 14_Si "pseudopotentials.ep[2]" kernel,vloc,core,tests ${smooth_g1} --center 0.02
     --span 0.04 --degree 10 --set ${smooth_free} --set pseudopotentials.ep_as_given=true)
 # the confined well (well_tail = "confined"): 14_Si's l = 0 well state across debl[0] = 0.8425, where
 # Hamann's well moves it from n = 4 to n = 5 (its kernel residual 6e-3, a step 825 times the median);

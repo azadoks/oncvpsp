@@ -147,7 +147,20 @@ rather than hidden.
   (kappa L)**2/4), and a low qcut made it overflow silently (E_resid
   6e171 Ha for an I d well state, a NaN in the optimization for N s).
   Such an input is now an error, like qcut not above the state's wave
-  vector, and the well's share is undefined there.
+  vector, and the well's share is undefined there. Commit: e781800.
+  That bound is not enough: below it, E_resid is computed from the
+  transform of a windowed tail whose peak grows as exp(6 kappa L), and
+  its round-off grows with the peak squared, from kappa L ~ 1.5
+  (oncvpsp-opt rows: I d at -1.61 Ha, kappa L 3.6, E_resid 2.5e3 Ha; N s
+  at -0.40, 6.1, 4.5e9; Cs p at -0.49, 7.8, 5e20; about 1 % of its
+  completed rows). So the free tail is now for ep >= 0 only (D-7, the
+  user's decision): a well state below 0 with `well_tail = "free"` is an
+  input error, which names the state and suggests a higher ep or
+  `well_tail = "confined"` or `"well"` (the input's ep; the j = l-1/2
+  state of the fully relativistic code keeps the well's eigenvalue,
+  D-7c). The test inputs' free-tail states are all above 0, so nothing
+  printed changes; the smoothness row of 14_Si's ep[2] with the free
+  tail now scans 0 to 0.04 Ha instead of across 0.
 - **`well_tail = "confined"` (D-8, off by default).** 4.0.1's well rises
   to ep + 0.5 Ha. As ep rises its wall steepens until no state of the
   asked n exists, and the state moves to n + 1, a jump in its tail and

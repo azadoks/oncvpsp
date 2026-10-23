@@ -1273,6 +1273,14 @@ So the order is:
 
 #### Phase 8: the kernels free of the well (follow-up)
 
+Revised 2026-10-23 (the user's decision): the free tail is for ep >= 0
+only. For ep < 0 its windowed tail grows as exp(6 kappa L), and the
+round-off of E_resid with its peak squared, from kappa L ~ 1.5 (an I d
+well state of oncvpsp-opt at -1.61 Ha, kappa L 3.6: E_resid 2.5e3 Ha);
+a well state below 0 with `well_tail = "free"` is an input error, and
+"confined" or "well" are the modes for it. See
+doc/changes_from_4.0.1.md, well states.
+
 A follow-up, planned for after phases 4 to 7 and done (2026-10-22) with
 parts of phases 5 to 7 still open. It changes the method,
 not only the numerics, so it needs its own review (D-7).

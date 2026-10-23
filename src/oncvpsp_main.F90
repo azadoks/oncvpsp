@@ -889,9 +889,21 @@
 !(ae_delta's nodes below, and the interpolants'); normalized inside rc,
 !as its norm over all space is the well's; and the windowed free tail
 !beyond, so that nothing sees the well but that energy
-!(doc/smoothness_plan.md, phase 8)
+!(doc/smoothness_plan.md, phase 8). Only for ep >= 0 (D-7, 2026-10-23):
+!below 0 the tail grows, and the round-off of E_resid, computed from the
+!transform of the windowed tail, grows with its peak squared, from kappa
+!L ~ 1.5 (free_tail_m)
          if(well_tail_free .and. inwell(iprj)) then
            if(ikap==1) epa(iprj,l1,ikap)=eptgt
+           if(ikap==1 .and. epa(iprj,l1,ikap)<0.0d0) then
+             write(6,'(/a/a,i2,a,i3,a,f12.6,a/a)') &
+&                 'oncvpsp: ERROR well_tail = "free" needs ep >= 0:', &
+&                 'the well state of l=',ll,', n=',npa(iprj,l1),' at ep=', &
+&                 epa(iprj,l1,ikap),' Ha has a growing tail;', &
+&                 'raise its ep (debl), or use well_tail = "confined"'// &
+&                 ' or "well"'
+             error stop 1
+           end if
            mfree=min(mmax,irc(l1)+pw_reach+16+lm_fh_reach()+2)
            uu(:,:)=0.0d0
            up(:,:)=0.0d0

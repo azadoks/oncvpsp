@@ -77,6 +77,13 @@ which `well_tail = "free"` removes. Another WARNING marks a well state
 whose wave vector is not below qcut: it oscillates faster than the
 cutoff, and no tail makes its cutoffs meaningful.
 
+`well_tail = "free"` needs every well state at ep >= 0. Below 0 the free
+tail grows, and its residual kinetic energy, computed from the transform
+of the windowed tail, carries round-off that grows with the tail's peak
+squared: 2.5e3 Ha for an I d state at -1.6 Ha, 5e20 Ha for a Cs p state
+at -0.49 Ha. Such an input is an error; raise the state's ep (`debl`),
+or use `well_tail = "confined"` or `"well"`.
+
 Last comes the cutoff convergence profile for the current wave function.
 
 After the pseudo-wave-function loop is completed, the projectors are
