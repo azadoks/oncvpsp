@@ -113,8 +113,9 @@ Every executable but `oncvpsp_ld.x` reads its input from a TOML file with
 with `-DONCVPSP_WITH_TOML=OFF`. It holds the same values as the text input,
 with the same meanings, limits and defaults, as keys of named tables, so
 their order does not matter; a missing table or key that is not optional,
-or one of the wrong type, stops the program with a message naming it. The
-lists of the per-l rows hold one element per l, from 0 to lmax. The output,
+or one of the wrong type, stops the program with a message naming it. So
+does a real that is not finite (`nan` or `inf`), here and in the text input,
+where it is the read error of its line. The lists of the per-l rows hold one element per l, from 0 to lmax. The output,
 and the echo of the input in it and in the pseudopotential files, is that
 of the text input. tests/data/toml has the TOML form of every input of
 tests/data, and

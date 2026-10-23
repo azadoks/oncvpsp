@@ -1,9 +1,9 @@
  module input_text_m
- use, intrinsic :: iso_fortran_env, only: dp => real64
+ use, intrinsic :: iso_fortran_env, only: dp => real64, int64
  use constants_m, only: mxstate, mxcnf, mxlin, mxkap, well_onset_default
  implicit none
  private
- public :: read_input_text, next_line
+ public :: read_input_text, next_line, finite
  contains
 
  subroutine read_input_text(unit, inline, &
@@ -201,11 +201,13 @@
  end if
 ! counts beyond the array sizes would overrun before check_data runs
  if(ios == 0 .and. (nc < 0 .or. nv < 0 .or. nc + nv > mxstate)) ios = 999
+ call check_finite(ios, [zz, c_light])
  call read_error(ios, inline)
 
  do ii = 1, nc + nv
    call next_line(unit, line, inline)
    read(line, *, iostat=ios) na(ii), la(ii), fa(ii)
+   call check_finite(ios, [fa(ii)])
    call read_error(ios, inline)
  end do
 
@@ -240,6 +242,7 @@
      ios = 999
    end if
  end if
+ call check_finite(ios, [well_onset, wreg])
  call read_error(ios, inline)
  ep_as_given = igiven == 1
  well_tail_free = itail == 1
@@ -250,6 +253,7 @@
    read(line, *, iostat=ios) lt, rc(l1), ep(l1, 1), ncon(l1), nbas(l1), &
 &    qcut(l1)
    if(ios == 0 .and. lt /= l1 - 1) ios = 999
+   call check_finite(ios, [rc(l1), ep(l1, 1), qcut(l1)])
    call read_error(ios, inline)
    ep(l1, 2) = ep(l1, 1)
  end do
@@ -257,6 +261,7 @@
 ! local potential
  call next_line(unit, line, inline)
  read(line, *, iostat=ios) lloc, lpopt, rc(5), dvloc0
+ call check_finite(ios, [rc(5), dvloc0])
  call read_error(ios, inline)
 
 ! Vanderbilt-Kleinman-Bylander projectors
@@ -264,6 +269,7 @@
    call next_line(unit, line, inline)
    read(line, *, iostat=ios) lt, nproj(l1), debl(l1)
    if(ios == 0 .and. lt /= l1 - 1) ios = 999
+   call check_finite(ios, [debl(l1)])
    call read_error(ios, inline)
  end do
 
@@ -318,6 +324,8 @@
      rcfact_step = 0.1d0
    end if
  end if
+ call check_finite(ios, [fcfact, rcfact, slack, fcfact_min, fcfact_max, &
+&  fcfact_step, rcfact_min, rcfact_max, rcfact_step])
  call read_error(ios, inline)
 
 ! log derivative analysis
@@ -327,6 +335,7 @@
    read(line, *, iostat=ios) epsh1, epsh2, depsh
    rxpsh = -1.d0  ! negative value for auto setting of radius
  end if
+ call check_finite(ios, [epsh1, epsh2, depsh, rxpsh])
  call read_error(ios, inline)
 
 ! output grid: rlmax, drl, and optionally upf_mesh
@@ -337,6 +346,7 @@
    read(line, *, iostat=ios) rlmax, drl
    upf_mesh = 0  ! the UPF file on the linear output grid
  end if
+ call check_finite(ios, [rlmax, drl])
  call read_error(ios, inline)
 
 ! test configurations
@@ -353,6 +363,7 @@
    do ii = nc + 1, nc + nvcnf(jj)
      call next_line(unit, line, inline)
      read(line, *, iostat=ios) nacnf(ii, jj), lacnf(ii, jj), facnf(ii, jj)
+     call check_finite(ios, [facnf(ii, jj)])
      call read_error(ios, inline)
    end do
  end do
@@ -361,6 +372,7 @@
  call next_line(unit, line, inline, eof)
  if(.not. eof) then
    read(line, *, iostat=ios) amesh, rr1, rmax
+   call check_finite(ios, [amesh, rr1, rmax])
    call read_error(ios, inline)
  end if
  return
@@ -420,6 +432,42 @@
 
  return
  end subroutine next_line
+
+ subroutine check_finite(ios, vals)
+!! makes a read that succeeded (ios == 0) an error if it gave a value that
+!! is not finite: list-directed input takes NaN and Inf as reals
+!!
+!! @param ios  iostat of the read, set to 999 for a value not finite
+!! @param vals  the reals the read gave
+
+!Input variables
+ real(dp), intent(in) :: vals(:)
+
+!Input/output variables
+ integer, intent(inout) :: ios
+
+ if(ios == 0 .and. .not. all(finite(vals))) ios = 999
+
+ return
+ end subroutine check_finite
+
+ elemental function finite(xx) result(ok)
+!! whether xx is finite (neither NaN nor Inf), from its exponent bits:
+!! under -ffast-math (-ffinite-math-only) a compiler may take ieee_is_nan
+!! and x /= x to be false
+!!
+!! @param xx  the value
+
+!Input variables
+ real(dp), intent(in) :: xx
+
+!Output variables
+ logical :: ok
+
+ ok = iand(shiftr(transfer(xx, 0_int64), 52), 2047_int64) /= 2047_int64
+
+ return
+ end function finite
 
  subroutine read_error(ios, inline)
 !! report data read error and stop

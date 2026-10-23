@@ -4,6 +4,7 @@
  use tomlf, only: toml_table, toml_array, toml_keyval, toml_error, toml_stat, &
 &                 toml_load, get_value, len
  use constants_m, only: mxstate, mxcnf, mxlin, mxkap, well_onset_default
+ use input_text_m, only: finite
  implicit none
  private
  public :: read_input_toml
@@ -579,7 +580,8 @@
 
  subroutine get_real(table, section, key, val, default)
 
-!! a real key (an integer is converted), required unless default is given
+!! a real key (an integer is converted), required unless default is given;
+!! nan and inf are errors
 !!
 !! @param table  the table holding the key
 !! @param section  name of the table, for messages
@@ -610,6 +612,9 @@
  end if
  call get_value(ptr, val, stat=stat)
  if(stat /= toml_stat%success) call key_error(section, key, stat, 'a number')
+ if(.not. finite(val)) then
+   call input_error(key//' in ['//section//'] must be finite')
+ end if
  return
  end subroutine get_real
 
@@ -720,7 +725,8 @@
 
  subroutine get_real_array(table, section, key, nn, vals)
 
-!! a real array key (integers are converted), required, with nn elements
+!! a real array key (integers are converted), required, with nn elements;
+!! nan and inf are errors
 !!
 !! @param table  the table holding the key
 !! @param section  name of the table, for messages
@@ -745,6 +751,9 @@
    call get_value(arr, ii, vals(ii), stat=stat)
    if(stat /= toml_stat%success) then
      call input_error(key//' in ['//section//'] must hold numbers')
+   end if
+   if(.not. finite(vals(ii))) then
+     call input_error(key//' in ['//section//'] must hold finite numbers')
    end if
  end do
  return

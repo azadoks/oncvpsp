@@ -144,6 +144,12 @@ case $case in
         set_key pseudopotentials qcut 'qcut = [ 5.0, 5.0, 5.0,]\nwave_regularization = -1e-8' \
             < "$base" > in.toml
         expect='wave_regularization in [pseudopotentials] must be at least 0' ;;
+    nan_real)
+        set_key model_core_charge fcfact 'fcfact = nan' < "$base" > in.toml
+        expect='fcfact in [model_core_charge] must be finite' ;;
+    inf_array)
+        set_key pseudopotentials rc 'rc = [ 2.7, inf, 2.7,]' < "$base" > in.toml
+        expect='rc in [pseudopotentials] must hold finite numbers' ;;
     wave_regularization_default)
         # wave_regularization defaults to 0
         set_key pseudopotentials qcut 'qcut = [ 5.0, 5.0, 5.0,]\nwave_regularization = 0.0' \

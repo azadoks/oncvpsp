@@ -491,7 +491,7 @@ if (ONCVPSP_WITH_TOML)
             "icmod6_default_slack" "well_onset_range" "well_onset_default"
             "well_tail_value" "well_tail_default" "budget_cutoff_value"
             "budget_cutoff_default" "wave_regularization_value"
-            "wave_regularization_default")
+            "wave_regularization_default" "nan_real" "inf_array")
         oncvpsp_test(toml_input_${case} toml toml_error_test.sh
             $<TARGET_FILE:oncvpspsr> "${data}" ${case} "${CMAKE_CURRENT_BINARY_DIR}/toml_input_${case}")
         if (case MATCHES "^(integer_for_real|extra_keys|icmod6_default_rcfact|icmod6_default_slack|well_onset_default|well_tail_default|budget_cutoff_default|wave_regularization_default)$")
@@ -638,6 +638,15 @@ oncvpsp_test(error_iexc5_r2scan errors error_test.sh
     $<TARGET_FILE:oncvpspsr> "test_data: iexc=5 is r2SCAN, METAPSP only"
     "${CMAKE_CURRENT_BINARY_DIR}/error_iexc5_r2scan"
     "${data}/14_Si.dat" "s/^    Si  14     3   2   3   psp8$/    Si  14     3   2   5   psp8/")
+# a real that is not finite (NaN or Inf, which list-directed input reads)
+oncvpsp_test(error_nan_real errors error_test.sh
+    $<TARGET_FILE:oncvpspsr> "Read ERROR, input data file line  33"
+    "${CMAKE_CURRENT_BINARY_DIR}/error_nan_real"
+    "${data}/14_Si.dat" "s/^   1    0\\.25$/   1    nan/")
+oncvpsp_test(error_inf_real errors error_test.sh
+    $<TARGET_FILE:oncvpspsr> "Read ERROR, input data file line  18"
+    "${CMAKE_CURRENT_BINARY_DIR}/error_inf_real"
+    "${data}/14_Si.dat" "s/^    1    2\\.70 /    1    inf /")
 oncvpsp_test(error_icmod4_bad_grid errors error_test.sh
     $<TARGET_FILE:oncvpspsr> "check_data: ERROR icmod=4 needs 0<fcfact_min<=fcfact_max and fcfact_step>0"
     "${CMAKE_CURRENT_BINARY_DIR}/error_icmod4_bad_grid"
