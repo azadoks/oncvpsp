@@ -101,6 +101,9 @@ The table is kept as the baseline. Every row in it, and every row added
 since, has been brought to G1 or G2 or to the noise floor recorded with it
 under [Phases](#phases); what remains is in
 [Order of the remaining work](#order-of-the-remaining-work-2026-10-21-after-m-12).
+Next, raised on 2026-10-23 at the user's request: the confined atom
+(item 7 of the diagnostics asked for by the oncvpsp-opt session), which
+also replaces the removed cutoffs at the valence energies.
 
 ### Goals
 
@@ -1541,9 +1544,26 @@ from rc:
       6. Model-core extent: where the model core and the AE core fall
          below 1e-2 and 1e-4 of their value at rc; optionally its
          minimum and the r of its maximum (a hollow core).
-      7. (Lower priority, larger) AE against PS in a confined atom
-         (harmonic or soft wall, a few strengths): eigenvalue and energy
-         shifts, a stand-in for compression.
+      7. (Next; raised 2026-10-23, the user's request, larger) AE
+         against PS in a confined atom (harmonic or soft wall, a few
+         strengths): eigenvalue and energy shifts, a stand-in for
+         compression; and, in the same confinement, the cutoff that a
+         channel with no occupied state needs at the energies of the
+         valence bands, in place of the cutoffs at the valence energies
+         (3eff290), removed 2026-10-23. Those continued the channel's
+         scattering state beyond rc into a model interstitial (the local
+         potential stepped to a flat level below the window), and the
+         number measured that model as much as the channel: with the step
+         8/qcut wide and centred 3 widths out, the tail grew in the
+         classically forbidden stretch before it, by 50 to 4500 in
+         amplitude in the references (2e9 in an oncvpsp-opt Li p row at
+         qcut 1.25, E_resid 5e13 Ha); a C-infinity ramp from rc removes
+         the growth (1.1 to 82) but its own spectrum sets the cutoff, the
+         1e-5 cutoff falling with the ramp's width, 56, 31, 25, 20 Ha for
+         0.5 to 4 bohr in Si d (15.6 before; Li p 94 to 22, Au f 119 to
+         39), with no plateau. A confinement with a physical boundary
+         condition (a Wigner-Seitz sphere: u' = 0 and u = 0 for the
+         bonding and antibonding edges) needs no invented tail.
 - [x] (Proposed 2026-10-22 by the oncvpsp-opt session; done 2026-10-22,
       the user's request) A
       regularized pseudo-wave optimization, so the wave is determined for

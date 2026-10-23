@@ -248,18 +248,6 @@ precision.
   differ by more than 10 % (84 of the 358 well states of the test
   inputs, 74_W's up to 94 %) or where qcut is not above the state's wave
   vector. Nothing else changes. Commit: 74b1c54.
-- **Cutoffs at the valence energies (new).** 4.0.1's convergence tables
-  are those of the pseudo-waves, at the projectors' energies; for a
-  channel with no occupied state (Si d) these are well states at energies
-  the input chose. The output now gives, for each such channel, the
-  cutoffs of its pseudo scattering state at three energies of the valence
-  window (the top 0.5 Ha of the occupied valence eigenvalues), normalized
-  to 1 inside rc and continued into a model interstitial where it
-  oscillates (`band_eresid`, `band_ecut` in DIAGNOSTICS). Si d: 15.0 to
-  15.6 Ha at 1e-5 per electron. Nothing else changes. Where qcut is not
-  above the interstitial wave vector at an energy, the state's cutoffs
-  are undefined: the row says so (`band_undefined`), where it stopped
-  the run.
 
 ### Numerics
 

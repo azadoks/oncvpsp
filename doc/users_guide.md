@@ -77,18 +77,6 @@ which `well_tail = "free"` removes. Another WARNING marks a well state
 whose wave vector is not below qcut: it oscillates faster than the
 cutoff, and no tail makes its cutoffs meaningful.
 
-For a channel with no occupied state (Si d), whose tables are those of
-well states at energies the input chose, the table "Cutoffs at the
-valence energies" gives the cutoff its charge in a solid needs: the
-channel's pseudo scattering state at three energies of the valence
-window (the top 0.5 Ha of the occupied valence eigenvalues), normalized
-to 1 inside rc, its residual energy at qcut and its cutoffs at 1e-2 to
-1e-5 Ha per electron. Beyond rc the state is continued into a model
-interstitial, the local potential going over to a level below the
-window, where band states oscillate; the 1e-5 cutoffs move by at most
-0.25 Ha with that model, the 1e-2 ones, at low q where the tail counts,
-by up to 0.6 Ha. Weight them by the charge the channel holds in a solid
-(`ecut_weight`).
 Last comes the cutoff convergence profile for the current wave function.
 
 After the pseudo-wave-function loop is completed, the projectors are

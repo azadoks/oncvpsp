@@ -19,7 +19,7 @@
  subroutine run_optimize(eig,ll,kap,irel,mmax,mxprj,rr,uua,upa,qq,&
 &                      freetl,wm,rc,irc,qcut,qmsbf,ncon_in,nbas_in,npr, &
 &                      psopt,vpsp,vkb,vae,cvgplt,ncurve,ecurve,pswfx,chix, &
-&                      ektail,wreg,optdg,wshare,qinf)
+&                      ektail,wreg,optdg,wshare)
 
 !! calls routines to generate optimized pseudo wave function and semi-local
 !! pseudopotential and prints diagnostic information on process and
@@ -79,7 +79,6 @@
 !!                that their difference is the well's share; (3) 1 for
 !!                these, -1 where the free tail is undefined (qcut not
 !!                above the state's wave vector), 0 for the other waves
-!! @param qinf  the q taken as infinity in E_resid (qmax), for band_ecut_m
 
  use constants_m, only: dp, nerrlv, nerrdg, pi
  use, intrinsic :: iso_fortran_env, only: qp => real128
@@ -111,7 +110,6 @@
  real(dp), intent(out) :: pswfx(mmax,mxprj),chix(mmax,mxprj)
  real(dp), intent(out) :: ektail(2,mxprj),optdg(4,mxprj)
  real(dp), intent(out) :: wshare(3,mxprj)
- real(dp), intent(out) :: qinf
 
 !Local variables
  real(dp), parameter :: Ha_eV=27.21138386d0 ! 1 Hartree, in eV
@@ -178,7 +176,6 @@
  psopt(:,:)=0.0d0
  ektail(:,:)=0.0d0
  wshare(:,:)=0.0d0
- qinf=0.0d0
  optdg(:,:)=0.0d0
 
 ! loop over projectors
@@ -214,7 +211,6 @@
 !width 1 bohr^-1 (doc/smoothness_plan.md, Q-3); the q grid of E_resid has
 !150 points per 2 pi/rc, down from qmax to below dq (eresid)
    qmax=smax(smax(2.0d0*qroot(nbas),20.0d0),2.0d0*qcut)
-   qinf=qmax
    dq=2.0d0*pi/(150.0d0*rc)
    nq=1+int(qmax/dq)
    q0=qmax-dble(nq-1)*dq
