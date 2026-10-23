@@ -241,9 +241,11 @@ smooth_scan_test(sr_07_N_opt_rc1_free sr 07_N_opt "pseudopotentials.rc[1]" ${smo
     --degree 14 --set ${smooth_free})
 # the weighted cutoff of the pseudo-waves for the model core's budget (budget_cutoff = "weighted",
 # fcfact 0): the occupation-weighted mean of the convergence curves, smooth where two channels'
-# crossings pass each other (the largest is not); ecut:weighted to 1.2e-11 measured
+# crossings pass each other (the largest is not); ecut:weighted to 1.2e-11 measured; the core
+# to 1e-10 (up to 5.0e-11 at -O2, 8.7e-11 under -ffast-math)
 set(smooth_wcut "model_core_charge.budget_cutoff=\"weighted\"")
-smooth_scan_test(sr_07_N_opt_rc1_wcut sr 07_N_opt "pseudopotentials.rc[1]" kernel,vloc,core,ecut ${smooth_opt}
+smooth_scan_test(sr_07_N_opt_rc1_wcut sr 07_N_opt "pseudopotentials.rc[1]" kernel,vloc,core,ecut
+    "kernel=1e-10,vloc=1e-10,core=1e-10,ecut=1e-9"
     --set model_core_charge.fcfact=0.0 --set ${smooth_wcut})
 smooth_scan_test(sr_14_Si_rc1_free sr 14_Si "pseudopotentials.rc[1]" kernel,vloc,core,tests ${smooth_g1} --center 2.8
     --degree 14 --set ${smooth_free})

@@ -6,7 +6,8 @@
 !             pieces each held on the whole mesh: int_0^b r**2 f dr by
 !             pw_integral, and int_0^b f**2 dr by pw_product_integral,
 !             against the closed forms to 1e-13; pw_node_values gives the
-!             values of the piece of each node's segment, 0 beyond b
+!             values of the piece of each node's segment, 0 beyond b, to
+!             8 epsilon (exact at -O2; -ffast-math moves an ulp)
 !   moving    the integrals of the same f with a and b stepped by a tenth
 !             of a mesh step: smooth to 1e-13 (the closed forms move with
 !             them)
@@ -55,7 +56,7 @@
      err = max(err, abs(fnode(ii)))
    end if
  end do
- call check('kink: node values', err, 0.0_dp)
+ call check('kink: node values', err, 8*epsilon(1.0_dp))
 
 ! moving
  err = 0.0_dp
