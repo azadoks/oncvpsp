@@ -33,7 +33,7 @@ set_tests_properties(unit_run_phsft PROPERTIES LABELS unit)
 # Unit tests of the operations at any radius on the log mesh (logmesh_m), the closed-form Bessel
 # overlaps (sbf_overlap) and the derivatives at rc from the radial equation (ode_rc_der), phase 1 of
 # doc/smoothness_plan.md
-foreach (unit_test logmesh ode_rc_der solver_path piecewise matching ugrid quadbasis pieces vploc ae_delta outwf sbf free_tail)
+foreach (unit_test logmesh ode_rc_der solver_path piecewise matching ugrid quadbasis pieces vploc ae_delta outwf sbf free_tail qroots)
     add_executable(test_${unit_test} unit/test_${unit_test}.f90)
     target_link_libraries(test_${unit_test} PRIVATE oncvpsp::oncvpsp oncvpsp::compile_options)
     set_target_properties(test_${unit_test} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
@@ -43,6 +43,10 @@ endforeach ()
 
 # Unit tests of the pieces of the model core charges (modcore_m), phase 5 of doc/smoothness_plan.md:
 # written before the code, so labelled smooth until it is done
+# the jump of the basis wave vectors where ulgd passes l/rc (test_qroots.f90):
+# known, so the probe passes while it fails; drop WILL_FAIL once fixed
+add_test(NAME unit_qroots_lcross COMMAND test_qroots lcross)
+set_tests_properties(unit_qroots_lcross PROPERTIES LABELS unit WILL_FAIL TRUE)
 add_executable(test_modcore unit/test_modcore.f90 unit/gg1cc.f90 unit/gp1cc.f90
                unit/gpp1cc.f90)
 target_link_libraries(test_modcore PRIVATE oncvpsp::oncvpsp oncvpsp::compile_options)
