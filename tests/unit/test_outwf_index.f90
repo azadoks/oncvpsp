@@ -34,7 +34,7 @@
  type(piecewise_t) :: vlocpw, vkbpw(1)
  type(outwf_t) :: ow
  real(dp) :: al, ee, evkb(1), rlast
- integer :: nfail = 0, mmax, ibox, icase, ll, ie, ne, node, neig, nall
+ integer :: nfail = 0, mmax, ibox, icase, ll, ie, ne, neig, nall
  integer :: nfd_below, nbad, norigin, nskip
 
  al = log(amesh)
@@ -66,7 +66,7 @@
        nskip = nskip + 1
        cycle
      end if
-     call outwf_solve(ow, ee, evkb, ibox, ibox, uu, up, node, neig)
+     call outwf_solve(ow, ee, evkb, ibox, ibox, uu, up, neig)
      nall = outwf_count(ow, 1, -1.0_dp, ibox)
      nfd_below = count(efd < ee)
      if(neig /= nfd_below) then

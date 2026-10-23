@@ -379,7 +379,7 @@
 !Local variables
  real(dp), allocatable :: uu(:,:),up(:,:)
  real(dp) :: uq,upq,xx,yy,hh
- integer :: nn,ierr,node,iq
+ integer :: nn,ierr,iq
 
  allocate(uu(ps%mmax,2),up(ps%mmax,2))
  uu(:,:)=0.0d0
@@ -389,7 +389,7 @@
    call scatterstate(ps%irel,nn,ps%ll,ps%kap,ierr,ee,ps%rr,ps%zz,ps%vv, &
 &                    uu,up,ps%mmax,ps%mch)
  else
-   call outwf_solve(ps%ow,ee,ps%evkb,ps%mch,ps%mch,uu(:,1),up(:,1),node)
+   call outwf_solve(ps%ow,ee,ps%evkb,ps%mch,ps%mch,uu(:,1),up(:,1))
  end if
  do iq=1,ps%nq
    call lm_interp(ps%rr(1:ps%mch),uu(1:ps%mch,1),ps%mch,ps%rq(iq),uq)

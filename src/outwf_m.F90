@@ -891,31 +891,31 @@
 !Local variables
  type(outwf_t) :: ow
  real(dp), allocatable :: uu(:),up(:)
- integer :: node
 
  allocate(uu(mmax),up(mmax))
  call outwf_setup(ll,rr,mmax,vloc,vlocpw,nsrc,srcpw,ow)
- call outwf_solve(ow,ee,evkb,mnode,mnode,uu,up,node,outwf_index_at)
+ call outwf_solve(ow,ee,evkb,mnode,mnode,uu,up,outwf_index_at)
  call outwf_free(ow)
  deallocate(uu,up)
  return
  end function outwf_index_at
 
- subroutine outwf_solve(ow,ep,evkb,mch,mnode,uu,up,node,neig)
+ subroutine outwf_solve(ow,ep,evkb,mch,mnode,uu,up,neig)
 
 !! the outward solution with the sources as Vanderbilt-Kleinman-Bylander
 !! projectors of coefficients evkb: the homogeneous solution plus the
 !! inhomogeneous ones with the coefficients that make the projections
-!! self-consistent (vkboutwf), on the nodes to mch, and its node count
+!! self-consistent (vkboutwf), on the nodes to mch, and optionally its
+!! eigenvalue index. Its node count is no measure of the energy: a node can
+!! enter at r = 0 without an eigenvalue passing (outwf_index)
 !!
 !! @param ow  the setup
 !! @param ep  energy (Ha)
 !! @param evkb  the projectors' coefficients
 !! @param mch  index of the radius to which the solution is wanted
-!! @param mnode  last point of the node count, <= mch
+!! @param mnode  the point R of the index, <= mch
 !! @param uu  the solution
 !! @param up  its derivative in the mesh index
-!! @param node  its sign changes to mnode
 !! @param neig  optional, the number of eigenvalues below ep on
 !!              (0, r(mnode)] (outwf_index)
 
@@ -928,13 +928,11 @@
 
 !Output variables
  real(dp), intent(out) :: uu(ow%mmax),up(ow%mmax)
- integer, intent(out) :: node
  integer, intent(out), optional :: neig
 
 !Local variables
  real(dp), allocatable :: gg(:,:),gg0(:),ovl(:,:)
  integer, allocatable :: ipiv(:)
- real(dp) :: rn
  integer :: ii,jj,info,nsrc
  external :: dgesv
 
@@ -965,8 +963,6 @@
    deallocate(ovl)
  end if
  call outwf_nodes(ow,1,mch,uu,up)
- rn=max(0.10d0*ow%rsrc,0.05d0)
- node=outwf_count(ow,1,rn,mnode)
  return
  end subroutine outwf_solve
 

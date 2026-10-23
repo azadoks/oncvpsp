@@ -16,8 +16,7 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine vkboutwf(ll,nvkb,ep,vkbpw,evkb,rr,vloc,vlocpw,uu,up,node,mmax, &
-&                    mch,mnode)
+ subroutine vkboutwf(ll,nvkb,ep,vkbpw,evkb,rr,vloc,vlocpw,uu,up,mmax,mch)
 
 !! computes Vanderbilt / Kleinman-Bylander outward-integrated wave functions:
 !! the homogeneous solution of the local potential plus the inhomogeneous
@@ -38,10 +37,8 @@
 !! @param vlocpw  the screened local potential's pieces
 !! @param uu  wave function
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
-!! @param node  count of number of nodes from 0 to rr(mnode)
 !! @param mmax  dimension of log mesh
 !! @param mch  index of radius to which wave function is to be integrated
-!! @param mnode  last point of the node count, <= mch
 
  use constants_m, only: dp
  use pieces_m, only: piecewise_t
@@ -51,18 +48,17 @@
 !Input variables
  real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nvkb)
  real(dp), intent(in) :: ep
- integer, intent(in) :: nvkb,ll,mmax,mch,mnode
+ integer, intent(in) :: nvkb,ll,mmax,mch
  type(piecewise_t), intent(in) :: vkbpw(nvkb),vlocpw
 
 !Output variables
  real(dp), intent(out) :: uu(mmax),up(mmax)
- integer, intent(out) :: node
 
 !Local variables
  type(outwf_t) :: ow
 
  call outwf_setup(ll,rr,mmax,vloc,vlocpw,nvkb,vkbpw,ow)
- call outwf_solve(ow,ep,evkb,mch,mnode,uu,up,node)
+ call outwf_solve(ow,ep,evkb,mch,mch,uu,up)
  call outwf_free(ow)
  return
  end subroutine vkboutwf

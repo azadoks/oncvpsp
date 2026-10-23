@@ -71,7 +71,7 @@
  real(dp) :: sls,sn,uout,upin,upout
  real(dp) :: amesh,al,als
  real(dp) :: xkap
- integer :: ii,it,nin,nint,node,neig
+ integer :: ii,it,nin,nint,neig
  type(outwf_t) :: ow
 
  real(dp), allocatable :: upp(:),cf(:)
@@ -119,7 +119,7 @@
    nin=mch
 
 ! outward integration
-   call outwf_solve(ow,ee,evkb,mch,mch,uu,up,node,neig)
+   call outwf_solve(ow,ee,evkb,mch,mch,uu,up,neig)
 
    uout=uu(mch)
    upout=up(mch)

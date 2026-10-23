@@ -74,7 +74,7 @@
  real(dp) :: xkap,xmch
  real(dp) :: uo(-match_k-1:match_k),upo(-match_k-1:match_k)
  real(dp) :: ww(-match_k-1:match_k),ss(-match_k-1:match_k)
- integer :: ii,it,nin,nint,node,lo,hi
+ integer :: ii,it,nin,nint,neig,lo,hi
  logical :: room
  type(outwf_t) :: ow
 
@@ -83,7 +83,7 @@
 
  al = 0.01d0 * log(rr(101) / rr(1))
  amesh = exp(al)
- node=0
+ neig=0
  nin=mmax-4
 
 ! convergence: once the energy correction de is below eps*max(|ee|,0.2),
@@ -154,25 +154,28 @@
    hi=mch+match_k
    room=hi+4<=mmax-4
 
-! outward integration through the matching window, nodes counted to mch
+! outward integration through the matching window, and the number of
+! eigenvalues below ee on (0, rr(mch)] (outwf_index; mch is beyond the last
+! kink, so beyond the projectors): a node count would also count nodes
+! that enter at r = 0 with the energy
    if(room) then
-     call outwf_solve(ow,ee,evkb,hi,mch,uu,up,node)
+     call outwf_solve(ow,ee,evkb,hi,mch,uu,up,neig)
    else
-     call outwf_solve(ow,ee,evkb,mmax,mch,uu,up,node)
+     call outwf_solve(ow,ee,evkb,mmax,mch,uu,up,neig)
    end if
 
 ! start inward integration with simple exponential where the
 ! wave function has decayed to machine precision
-   if(node-nn+ll+1==0 .and. room) then
+   if(neig-nn+ll+1==0 .and. room) then
      call inward_start(ll,ee,rr,vloc,mch,mmax,nin)
    end if
 
-   if(node-nn+ll+1==0 .and. (.not. room .or. nin<=hi+4)) then
+   if(neig-nn+ll+1==0 .and. (.not. room .or. nin<=hi+4)) then
 ! no room for the inward integration: too high
      emax=0.5d0*(emax+ee)
      ee=0.5d0*(emin+emax)
 
-   else if(node-nn+ll+1==0) then
+   else if(neig-nn+ll+1==0) then
 
      uo(:)=uu(lo:hi)
      upo(:)=up(lo:hi)
@@ -266,13 +269,13 @@
      ee=ee+de
      if(ee>emax .or. ee<emin) ee=0.5d0*(emax+emin)
 
-   else if(node-nn+ll+1<0) then
-! too few nodes
+   else if(neig-nn+ll+1<0) then
+! too few eigenvalues below ee
      emin=0.5d0*(emin+ee)
      ee=0.5d0*(emin+emax)
 
    else
-! too many nodes
+! too many eigenvalues below ee
      emax=0.5d0*(emax+ee)
      ee=0.5d0*(emin+emax)
    end if

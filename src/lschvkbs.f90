@@ -52,7 +52,7 @@
 !Local variables
  real(dp) :: amesh,al
  real(dp) :: cn,ro,sn
- integer :: ii,node
+ integer :: ii
 
 
  al = 0.01d0 * log(rr(101) / rr(1))
@@ -63,7 +63,7 @@
  uu(:)=0.0d0
  up(:)=0.0d0
 
- call vkboutwf(ll,ivkb,ee,vkbpw,evkb,rr,vloc,vlocpw,uu,up,node,mmax,mch,mch)
+ call vkboutwf(ll,ivkb,ee,vkbpw,evkb,rr,vloc,vlocpw,uu,up,mmax,mch)
 
 !perform normalization sum
 
