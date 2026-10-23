@@ -75,7 +75,14 @@
    do pp=1,nn-1
      do qq=pp+1,nn
        apq=bb(pp,qq)
-       if(apq==0.0_qp) cycle
+! an element below eps**2 of its diagonal moves nothing: zeroed rather
+! than rotated on into underflow, where theta**2 overflows
+       if(abs(apq)<=epsilon(1.0_qp)**2*(abs(bb(pp,pp))+abs(bb(qq,qq)))) &
+&        then
+         bb(pp,qq)=0.0_qp
+         bb(qq,pp)=0.0_qp
+         cycle
+       end if
 ! the rotation that annihilates bb(pp,qq) (Rutishauser's formulas)
        theta=0.5_qp*(bb(qq,qq)-bb(pp,pp))/apq
        tt=sign(1.0_qp,theta)/(abs(theta)+sqrt(1.0_qp+theta**2))
