@@ -96,6 +96,21 @@ irel, and the stage.  It has the following major sections:
      well, except in the fully-relativistic code, where the j = l-1/2
      state takes the eigenvalue of the j = l+1/2 well as its energy.
 
+     With well_tail = "confined" (TOML input, or 2 as the fourth value of
+     the lmax line) the barrier is x**3 exp(-0.01/x) Ha, x = (r - r_on)/r_b,
+     which rises without bound, and wellstate solves for r_b with the n
+     it is given only: the n of each l's first well state is well_n (TOML
+     [vkb_projectors], or an optional fourth value of the projector line;
+     default the n the well states start from), the next ones one more
+     each. The default barrier instead moves to more nodes when it would
+     be too steep, which made the tail, and the kernels, jump. The states
+     are normalized to 1 inside r_c, as with the free tail.
+
+     Every well state is solved on the log mesh continued beyond its end
+     until it decays to machine precision (well_mesh_m), and each one the
+     well confines reports its residual energy at qcut with the well's
+     tail and with the free tail ("well / free tail"), the well's share.
+
   B) If two projectors using the norm-conserving Vanderbilt method are
      specified, the all-electron wave function with one additional node is
      calculated for either a second bound valence state (when the first

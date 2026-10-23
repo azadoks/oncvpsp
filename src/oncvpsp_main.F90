@@ -65,7 +65,7 @@
  use logmesh_m, only: lm_fh_reach
  use constants_m, only: nlev, nerrdg, nerrlv, well_onset_default
  use input_echo_m, only: write_atom, write_lmax, write_icmod, write_epsh, &
-&                        write_mesh, fx
+&                        write_mesh, fx, vkb_head, vkb_line
  use relativity_m, only: set_relativity
  implicit none
 
@@ -161,6 +161,9 @@
  type(piecewise_t) :: vlocpw
  type(piecewise_t) :: corepw(nrhomod)
  logical :: ep_as_given,well_tail_free,budget_weighted
+!> the tail of the well states (0 "well", 1 "free", 2 "confined"), and the
+!> n of each l's first well state with "confined" (0 for the default)
+ integer :: well_tail,well_n(mxlin+1)
  real(dp) :: well_onset
  real(dp), allocatable :: chix(:,:,:,:)
 !fully-relativistic only: scalar-relativistic and spin-orbit projectors, and
@@ -315,7 +318,8 @@
  ios = 0
  ep_as_given=.false.
  well_onset=well_onset_default
- well_tail_free=.false.
+ well_tail=0
+ well_n(:)=0
  wreg=0.0d0
  select case(input_mode)
  case(INPUT_STDIN)
@@ -330,7 +334,7 @@
 &                       rlmax, drl, upf_mesh, &
 &                       ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                       amesh_in, rr1_in, rmax_in, c_light_in, ep_as_given, &
-&                       well_onset, well_tail_free, wreg)
+&                       well_onset, well_tail, wreg, well_n)
  case(INPUT_TEXT)
    open(newunit=unit, file=input_filename, status='old', action='read', &
 &       iostat=ios)
@@ -350,7 +354,7 @@
 &                       rlmax, drl, upf_mesh, &
 &                       ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                       amesh_in, rr1_in, rmax_in, c_light_in, ep_as_given, &
-&                       well_onset, well_tail_free, wreg)
+&                       well_onset, well_tail, wreg, well_n)
    close(unit)
 #if (defined WITH_TOML)
  case(INPUT_TOML)
@@ -372,7 +376,7 @@
 &                       rlmax, drl, upf_mesh, &
 &                       ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                       amesh_in, rr1_in, rmax_in, c_light_in, ep_as_given, &
-&                       well_onset, well_tail_free, wreg)
+&                       well_onset, well_tail, wreg, well_n)
    close(unit)
 #endif
  case default
@@ -380,6 +384,11 @@
 &        input_mode
    error stop 1
  end select
+ well_tail_free=well_tail==1
+ if(well_tail/=2 .and. any(well_n(:)>0)) then
+   write(6,'(/a)') 'oncvpsp: ERROR well_n is for well_tail = "confined" only'
+   error stop 1
+ end if
 
  nvcnf(1)=nv
  do ii=1,nc+nv
@@ -554,7 +563,7 @@
    end if
  end do
 
- call write_lmax(lmax,ep_as_given,well_onset,well_tail_free,wreg)
+ call write_lmax(lmax,ep_as_given,well_onset,well_tail,wreg)
  write(6,'(a/a)') '#','#   l,   rc,      ep,       ncon, nbas, qcut'
  do l1=1,lmax+1
    write(6,'(i5,2a,2i5,a)') l1-1,fx(rc(l1),10,5),fx(ep(l1,1),10,5), &
@@ -566,9 +575,9 @@
  write(6,'(2i5,3a)') lloc,lpopt,fx(rc(5),10,5),'   ',fx(dvloc0,10,5)
 
  write(6,'(a/a/a)') '#','# VANDERBILT-KLEINMAN-BYLANDER PROJECTORs', &
-&      '# l, nproj, debl'
+&      trim(vkb_head(lmax,well_n))
  do l1=1,lmax+1
-   write(6,'(2i5,a)') l1-1,nproj(l1),fx(debl(l1),10,5)
+   write(6,'(a)') trim(vkb_line(lmax,l1,nproj,debl,well_n))
  end do
 
  call write_icmod(icmod,fcfact,rcfact,slack,budget_weighted,fcgrid,rcgrid)
@@ -764,6 +773,17 @@
              npa(iprj,l1)=npa(iprj-1,l1)+1
            end if
          end if
+!with the confined well, the n of the channel's first well state is the
+!input's well_n, if set; the next ones follow by one each
+         if(well_tail==2 .and. kk==1 .and. ikap==1 .and. well_n(l1)>0) then
+           if(well_n(l1)<npa(iprj,l1)) then
+             write(6,'(/a,i2,a,i3,a,i3)') 'oncvpsp: ERROR well_n for l=',ll, &
+&                 ' is',well_n(l1),', below the first well state''s n,', &
+&                 npa(iprj,l1)
+             error stop 1
+           end if
+           npa(iprj,l1)=well_n(l1)
+         end if
 
 ! the well potential is calculated for the less-bound ikap=1 state and kept
 ! for ikap=2, which is more deeply bound and should always have a bound
@@ -772,13 +792,14 @@
 ! npa keeps the input n.
          if(ikap==1 .and. irel==2) then
            call wellstate(npa(iprj,l1),ll,kap,rc(l1),epa(iprj,l1,ikap), &
-&                         ep_as_given,well_onset,.false.,rr,vfull, &
+&                         ep_as_given,well_onset,well_tail==2,.false.,rr, &
+&                         vfull, &
 &                         vwell(1,iprj),uu,up,zz,mmax,mch,irel, &
 &                         inwell(iprj),eptgt,wmesh(iprj))
          else if(ikap==1) then
            nnwell=npa(iprj,l1)
            call wellstate(nnwell,ll,kap,rc(l1),epa(iprj,l1,ikap),ep_as_given, &
-&                         well_onset,well_tail_free,rr,vfull, &
+&                         well_onset,well_tail==2,well_tail_free,rr,vfull, &
 &                         vwell(1,iprj),uu,up,zz,mmax,mch,irel, &
 &                         inwell(iprj),eptgt,wmesh(iprj))
          else
@@ -825,6 +846,18 @@
          end if
          uua(:,iprj,ikap)=uu(:,1)
          upa(:,iprj,ikap)=cnorm*up(:,1)
+!with the confined well, a well state is normalized inside rc, as with the
+!free tail: its norm over all space is the well's, and would scale its
+!E_resid with the width of the well (the kernels do not see it)
+         if(well_tail==2 .and. wmesh(iprj)%mx>0) then
+           call fpovlp(uua(1,iprj,ikap),uua(1,iprj,ikap),mmax,rc(l1),ll, &
+&                      kap,zz,cnorm,rr,irel)
+           cnorm=1.0d0/sqrt(cnorm)
+           uua(:,iprj,ikap)=cnorm*uua(:,iprj,ikap)
+           upa(:,iprj,ikap)=cnorm*upa(:,iprj,ikap)
+           wmesh(iprj)%uu(:,:)=cnorm*wmesh(iprj)%uu(:,:)
+           wmesh(iprj)%up(:,:)=cnorm*wmesh(iprj)%up(:,:)
+         end if
 !with the free tail, a well state is the atom's solution at exactly the
 !energy asked for (the well's eigenvalue only for j = l - 1/2, D-7c),
 !integrated outward past the reach of everything taken at or near rc
@@ -1237,8 +1270,8 @@
 &              nrl,drl, &
 &              atsym,soscale, &
 &              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&              fa,rc0,ep,qcut,ep_as_given,well_onset,well_tail_free,wreg,debl, &
-&              facnf,dvloc0, &
+&              fa,rc0,ep,qcut,ep_as_given,well_onset,well_tail,wreg,debl, &
+&              well_n,facnf,dvloc0, &
 &              fcfact,fcfact0,rcfact, &
 &              slack,budget_weighted,fcgrid,rcgrid, &
 &              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,upf_mesh,nkap)
@@ -1248,8 +1281,8 @@
    call upfout(lmax,lloc,rc,vkbpw,evkb,nproj,rr,vpuns,vlocpw,rho,corepw, &
 &              zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
 &              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&              fa,rc0,ep,qcut,ep_as_given,well_onset,well_tail_free,wreg,debl, &
-&              facnf,dvloc0, &
+&              fa,rc0,ep,qcut,ep_as_given,well_onset,well_tail,wreg,debl, &
+&              well_n,facnf,dvloc0, &
 &              fcfact0,rcfact, &
 &              slack,budget_weighted,fcgrid,rcgrid, &
 &              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,uupsa,ea,log_mesh, &
@@ -1288,7 +1321,7 @@
 &               fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact0,rcfact, &
 &               slack,budget_weighted,fcgrid,rcgrid, &
 &               epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,upf_mesh, &
-&               irel,nkap,ep_as_given,well_onset,well_tail_free,wreg)
+&               irel,nkap,ep_as_given,well_onset,well_tail,wreg,well_n)
  end if
 
  stop

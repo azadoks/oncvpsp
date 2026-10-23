@@ -260,6 +260,8 @@ class KBProjectorConfiguration:
     nproj: int
     "Energy shift for unbound states"
     debl: float
+    'n of the first well state with well_tail = "confined" (0 for the default)'
+    well_n: int = 0
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, KBProjectorConfiguration):
@@ -275,6 +277,9 @@ class KBProjectorConfiguration:
         if abs(self.debl - other.debl) >= ATOL:
             logging.debug("debl differs: %f != %f", self.debl, other.debl)
             return False
+        if self.well_n != other.well_n:
+            logging.debug("well_n differs: %d != %d", self.well_n, other.well_n)
+            return False
         return True
 
     @classmethod
@@ -282,16 +287,17 @@ class KBProjectorConfiguration:
         """Create a KBProjectorConfiguration from a string.
 
         Args:
-            s: String in the format "l nproj debl"
+            s: String in the format "l nproj debl [well_n]"
 
         Returns:
             KBProjectorConfiguration instance.
         """
         parts = s.split()
-        if len(parts) != 3:
+        if len(parts) not in (3, 4):
             raise ValueError(f"Invalid KB projector configuration: {s}")
         l, nproj, debl = int(parts[0]), int(parts[1]), fort_float(parts[2])
-        return cls(l=l, nproj=nproj, debl=debl)
+        well_n = int(parts[3]) if len(parts) == 4 else 0
+        return cls(l=l, nproj=nproj, debl=debl, well_n=well_n)
 
 
 @dataclass
@@ -868,13 +874,15 @@ class OncvpspInput:
         ]
 
         # lmax, and optionally ep_as_given (0 or 1), well_onset (0 or less for
-        # the default), well_tail (0 for "well", 1 for "free") and
-        # wave_regularization
+        # the default), well_tail (0 for "well", 1 for "free", 2 for
+        # "confined") and wave_regularization
         words = next(lines).split()
         lmax = int(words[0])
         ep_as_given = len(words) > 1 and int(words[1]) == 1
         well_onset = fort_float(words[2]) if len(words) > 2 else 0.0
-        well_tail = "free" if len(words) > 3 and int(words[3]) == 1 else "well"
+        well_tail = (
+            ("well", "free", "confined")[int(words[3])] if len(words) > 3 else "well"
+        )
         wave_regularization = fort_float(words[4]) if len(words) > 4 else 0.0
 
         pseudopotentials = [
@@ -974,11 +982,14 @@ class OncvpspInput:
                 dvloc0=d["local_potential"]["dvloc0"],
             ),
             vkb_projectors=[
-                KBProjectorConfiguration(proj[0], proj[1], proj[2])
+                KBProjectorConfiguration(proj[0], proj[1], proj[2], proj[3])
                 for proj in zip(
                     d["vkb_projectors"]["l"],
                     d["vkb_projectors"]["nproj"],
                     d["vkb_projectors"]["debl"],
+                    d["vkb_projectors"].get(
+                        "well_n", [0] * len(d["vkb_projectors"]["l"])
+                    ),
                 )
             ],
             model_core_charge=ModelCoreChargeConfiguration(
@@ -1111,6 +1122,10 @@ class OncvpspInput:
             d["pseudopotentials"]["well_tail"] = self.well_tail
         if self.wave_regularization != 0.0:
             d["pseudopotentials"]["wave_regularization"] = self.wave_regularization
+        if any(proj.well_n for proj in self.vkb_projectors):
+            d["vkb_projectors"]["well_n"] = [
+                proj.well_n for proj in self.vkb_projectors
+            ]
         if self.linear_mesh.upf_mesh != 0:
             d["pp_output"]["upf_mesh"] = self.linear_mesh.upf_mesh
         if self.log_mesh is not None:

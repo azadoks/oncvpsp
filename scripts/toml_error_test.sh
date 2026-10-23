@@ -125,11 +125,15 @@ case $case in
     well_tail_value)
         set_key pseudopotentials qcut 'qcut = [ 5.0, 5.0, 5.0,]\nwell_tail = "open"' \
             < "$base" > in.toml
-        expect='well_tail in [pseudopotentials] must be "well" or "free", got "open"' ;;
+        expect='well_tail in [pseudopotentials] must be "well", "free" or "confined", got "open"' ;;
     well_tail_default)
         # well_tail defaults to "well"
         set_key pseudopotentials qcut 'qcut = [ 5.0, 5.0, 5.0,]\nwell_tail = "well"' \
             < "$base" > in.toml ;;
+    well_n_negative)
+        set_key vkb_projectors debl 'debl = [ 1.0, 0.75, 0.75,]\nwell_n = [ 0, -1, 0,]' \
+            < "$base" > in.toml
+        expect='well_n in [vkb_projectors] must be at least 0' ;;
     budget_cutoff_value)
         base=$data/toml/14_Si_bca.toml
         set_key model_core_charge rcfact 'rcfact = 1.0e-4\nbudget_cutoff = "mean"' \

@@ -140,7 +140,8 @@
  integer :: lloc, lpopt, nproj(mxlin+1)
  integer :: icmod, ncnf, nvcnf(mxcnf), nacnf(mxstate, mxcnf)
  integer :: lacnf(mxstate, mxcnf), upf_mesh
- logical :: ep_as_given, well_tail_free, budget_weighted
+ logical :: ep_as_given, budget_weighted
+ integer :: well_tail, well_n(mxlin+1)
  real(dp) :: wreg
  real(dp) :: well_onset
 
@@ -181,7 +182,8 @@
 &   '# a comment after the data']
  if(with_mesh) then
    lines(25) = '    6.0  0.01  2000'
-   lines(13) = '    2    1    1.5    1    2.5e-9'
+   lines(13) = '    2    1    1.5    2    2.5e-9'
+   lines(20) = '    1    2    0.75    5'
    lines(23) = '   6    0.0    1.0e-6    0.8    1'
    lines(2) = '    Si  14     3   2   3   psp8   137.0359895'
    all_lines = [character(len=700) :: lines, '# amesh, rr1, rmax', &
@@ -202,7 +204,7 @@
 &                     rlmax, drl, upf_mesh, &
 &                     ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                     amesh, rr1, rmax, c_light, ep_as_given, &
-&                     well_onset, well_tail_free, wreg)
+&                     well_onset, well_tail, wreg, well_n)
  close(unit)
 
  call check(atsym == 'Si' .and. zz == 14 .and. nc == 3 .and. nv == 2 &
@@ -242,18 +244,20 @@
    call check(upf_mesh == 2000, 'UPF mesh size')
    call check(amesh == 1.003_dp .and. rr1 < 0 .and. rmax == 60, 'log mesh')
    call check(c_light == 137.0359895_dp, 'speed of light')
-   call check(ep_as_given .and. well_onset == 1.5_dp .and. well_tail_free &
+   call check(ep_as_given .and. well_onset == 1.5_dp .and. well_tail == 2 &
 &             .and. wreg == 2.5e-9_dp, &
 &             'ep_as_given, well_onset, well_tail, wave_regularization')
+   call check(all(well_n(1:3) == [0, 5, 0]), 'well_n')
    call check(inline == 35, 'line number of the last data line')
  else
    call check(upf_mesh == 0, 'UPF mesh size default')
    call check(amesh < 0 .and. rr1 < 0 .and. rmax < 0, 'log mesh defaults')
    call check(c_light < 0, 'speed of light default')
    call check(.not. ep_as_given .and. well_onset == 1.006_dp**5 &
-&             .and. .not. well_tail_free .and. wreg == 0, &
+&             .and. well_tail == 0 .and. wreg == 0, &
 &             'ep_as_given, well_onset, well_tail, wave_regularization '// &
 &             'defaults')
+   call check(all(well_n(1:3) == 0), 'well_n default')
    call check(inline == 32, 'line number of the last data line')
  end if
  return

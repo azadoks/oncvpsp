@@ -38,7 +38,7 @@
 &                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
 &                  slack,budget_weighted,fcgrid,rcgrid, &
 &                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,upf_mesh, &
-&                  irel,nkap,ep_as_given,well_onset,well_tail_free,wreg)
+&                  irel,nkap,ep_as_given,well_onset,well_tail,wreg,well_n)
 
 !! writes the pseudopotential to the output in PSML format, between
 !! 'Begin PSML' and 'END_PSP' markers
@@ -111,8 +111,10 @@
 !! @param nkap  number of kappa per l: 1, or 2 for irel=2
 !! @param ep_as_given  whether the well states take ep as given
 !! @param well_onset  onset of the well of the well states, a multiple of rc
-!! @param well_tail_free  whether the well states take the free tail
+!! @param well_tail  the tail of the well states, 0 "well", 1 "free", 2
+!!                   "confined"
 !! @param wreg  the regularization of the pseudo-wave optimization
+!! @param well_n  n of the first well state of each l (0 for the default)
 !!
 !! Alberto Garcia, February 1, 2015
 
@@ -152,7 +154,8 @@
  real(dp), intent(in) :: rcfact,fcgrid(3),rcgrid(3),log_mesh(3)
  real(dp), intent(in) :: slack
  logical, intent(in) :: budget_weighted
- logical, intent(in) :: ep_as_given,well_tail_free
+ logical, intent(in) :: ep_as_given
+ integer, intent(in) :: well_tail,well_n(mxlin+1)
  real(dp), intent(in) :: wreg
  real(dp), intent(in) :: well_onset
  character(len=4), intent(in) :: psfile
@@ -224,7 +227,7 @@
 &                rcfact,slack,budget_weighted,fcgrid,rcgrid,epsh1,epsh2, &
 &                depsh,rxpsh,rlmax,drl, &
 &                ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh, &
-&                ep_as_given,well_onset,well_tail_free,wreg)
+&                ep_as_given,well_onset,well_tail,wreg,well_n)
 
  call xml_EndElement(xf,"input-file")
 !
@@ -617,7 +620,7 @@
 &                      epsh1,epsh2,depsh, &
 &                      rxpsh,rlmax,drl, &
 &                      ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh, &
-&                      ep_as_given,well_onset,well_tail_free,wreg)
+&                      ep_as_given,well_onset,well_tail,wreg,well_n)
 
 !! echoes the input data into the input-file element of the provenance, a
 !! line at a time, in the form of the psp8 echo (linout), so that it can be
@@ -672,13 +675,15 @@
 !!                  it (else 0)
 !! @param upf_mesh  most points of the log mesh of the UPF file, 0 for the
 !!                  linear output mesh (echoed when not 0)
-!! @param ep_as_given, well_onset, well_tail_free, wreg  echoed on the lmax
+!! @param ep_as_given, well_onset, well_tail, wreg  echoed on the lmax
 !!        line
 !!                  when one is not its default (lmax_lines)
+!! @param well_n  echoed on the projector lines when set (vkb_line)
 
  use xmlf90_wxml, only: xmlf_t, xml_AddPcData
  use input_echo_m, only: atom_lines, lmax_lines, icmod_lines, epsh_lines, &
-&                        mesh_lines, echo_len, echo_max, fx
+&                        mesh_lines, echo_len, echo_max, fx, vkb_head, &
+&                        vkb_line
  implicit none
 
 !Input variables
@@ -695,7 +700,8 @@
  real(dp), intent(in) :: rcfact,fcgrid(3),rcgrid(3),rxpsh,log_mesh(3)
  real(dp), intent(in) :: slack
  logical, intent(in) :: budget_weighted
- logical, intent(in) :: ep_as_given,well_tail_free
+ logical, intent(in) :: ep_as_given
+ integer, intent(in) :: well_tail,well_n(mxlin+1)
  real(dp), intent(in) :: wreg
  real(dp), intent(in) :: well_onset
 
@@ -718,7 +724,7 @@
    call add(line)
  end do
 
- call lmax_lines(lmax,ep_as_given,well_onset,well_tail_free,wreg,text,ntext)
+ call lmax_lines(lmax,ep_as_given,well_onset,well_tail,wreg,text,ntext)
  do ii=1,ntext
    call add(text(ii))
  end do
@@ -738,10 +744,9 @@
 
  call add('#')
  call add('# VANDERBILT-KLEINMAN-BYLANDER PROJECTORs')
- call add('# l, nproj, debl')
+ call add(vkb_head(lmax,well_n))
  do l1=1,lmax+1
-   write(line,'(2i5,a)') l1-1,nproj(l1),fx(debl(l1),10,5)
-   call add(line)
+   call add(vkb_line(lmax,l1,nproj,debl,well_n))
  end do
 
  call icmod_lines(icmod,fcfact,rcfact,slack,budget_weighted,fcgrid,rcgrid, &

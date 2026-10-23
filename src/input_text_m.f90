@@ -17,7 +17,7 @@
 &                           rlmax, drl, upf_mesh, &
 &                           ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                           amesh, rr1, rmax, c_light, ep_as_given, &
-&                           well_onset, well_tail_free, wreg)
+&                           well_onset, well_tail, wreg, well_n)
 
 !! reads the text input file (see doc/32_Ge_annotated.dat), stopping on a
 !! read error
@@ -57,9 +57,10 @@
 !> Onset of the well of the well states as a multiple of rc (optional on
 !> the lmax line, 0 or less for the default)
  real(dp), intent(out) :: well_onset
-!> Whether the well states take the free tail (free_tail_m; optional on
-!> the lmax line, 0 for "well", 1 for "free")
- logical, intent(out) :: well_tail_free
+!> The tail of the well states (optional on the lmax line): 0 "well",
+!> Hamann's well; 1 "free", the free tail (free_tail_m); 2 "confined",
+!> a wall that rises without bound, with the state's n as given
+ integer, intent(out) :: well_tail
  real(dp), intent(out) :: wreg
 !> Core radii for pseudopotentials
  real(dp), intent(out) :: rc(mxlin+1)
@@ -84,6 +85,9 @@
  integer, intent(out) :: nproj(mxlin+1)
 !> Energy added to ep for the second projector (Ha)
  real(dp), intent(out) :: debl(mxlin+1)
+!> n of the first well state of each l with well_tail 2 (optional on the
+!> projector line, 0 for the default)
+ integer, intent(out) :: well_n(mxlin+1)
 ! [Model core charge]
 !> Model core charge flag
  integer, intent(out) :: icmod
@@ -213,8 +217,9 @@
 
 ! pseudopotential and optimization: lmax, and optionally ep_as_given (0 or
 ! 1), well_onset (0 or less for the default), well_tail (0 for "well",
-! 1 for "free") and wave_regularization (at least 0); a line that ends
-! early leaves the rest at their defaults, a bad value is an error
+! 1 for "free", 2 for "confined") and wave_regularization (at least 0); a
+! line that ends early leaves the rest at their defaults, a bad value is
+! an error
  call next_line(unit, line, inline)
  itail = 0
  wreg = 0.d0
@@ -237,7 +242,7 @@
  end if
  if(ios == 0) then
    if(lmax > mxlin .or. igiven < 0 .or. igiven > 1 .or. itail < 0 &
-&     .or. itail > 1 .or. (well_onset > 0.d0 .and. well_onset < 1.d0) &
+&     .or. itail > 2 .or. (well_onset > 0.d0 .and. well_onset < 1.d0) &
 &     .or. .not. (wreg >= 0.d0)) then
      ios = 999
    end if
@@ -245,7 +250,7 @@
  call check_finite(ios, [well_onset, wreg])
  call read_error(ios, inline)
  ep_as_given = igiven == 1
- well_tail_free = itail == 1
+ well_tail = itail
  if(well_onset <= 0.d0) well_onset = well_onset_default
 
  do l1 = 1, lmax + 1
@@ -264,11 +269,17 @@
  call check_finite(ios, [rc(5), dvloc0])
  call read_error(ios, inline)
 
-! Vanderbilt-Kleinman-Bylander projectors
+! Vanderbilt-Kleinman-Bylander projectors: l, nproj, debl, and optionally
+! well_n (0 for the default, at least 0)
+ well_n(:) = 0
  do l1 = 1, lmax + 1
    call next_line(unit, line, inline)
-   read(line, *, iostat=ios) lt, nproj(l1), debl(l1)
-   if(ios == 0 .and. lt /= l1 - 1) ios = 999
+   read(line, *, iostat=ios) lt, nproj(l1), debl(l1), well_n(l1)
+   if(ios < 0) then
+     well_n(l1) = 0
+     read(line, *, iostat=ios) lt, nproj(l1), debl(l1)
+   end if
+   if(ios == 0 .and. (lt /= l1 - 1 .or. well_n(l1) < 0)) ios = 999
    call check_finite(ios, [debl(l1)])
    call read_error(ios, inline)
  end do

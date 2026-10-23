@@ -21,7 +21,7 @@
 &                           rlmax, drl, upf_mesh, &
 &                           ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                           amesh, rr1, rmax, c_light, ep_as_given, &
-&                           well_onset, well_tail_free, wreg)
+&                           well_onset, well_tail, wreg, well_n)
 
 !! Reads the TOML input: the same data as read_input_text, with the same
 !! defaults and the same checks against the array sizes (check_data
@@ -41,14 +41,18 @@
 !                              well_onset (optional, 1.006**5, at least 1:
 !                              the onset of the well of the well states as
 !                              a multiple of rc, see wellstate),
-!                              well_tail (optional, "well" or "free":
-!                              the tail of the well states in E_resid,
-!                              see free_tail_m), wave_regularization
+!                              well_tail (optional, "well", "free" or
+!                              "confined": the tail of the well states
+!                              in E_resid, see free_tail_m, and their
+!                              well, see wellstate), wave_regularization
 !                              (optional, 0, at least 0: its weight on
 !                              E_resid at qcut/4 in the optimization, see
 !                              optimize)
 !   [local_potential]          lloc, lpopt, rcloc, dvloc0
-!   [vkb_projectors]           l (0..lmax), nproj, debl
+!   [vkb_projectors]           l (0..lmax), nproj, debl, well_n
+!                              (optional, with well_tail = "confined"
+!                              only: the n of each l's first well state,
+!                              0 for the default)
 !   [model_core_charge]        icmod, fcfact (icmod 1, 2, 3, 6, 7; else 0),
 !                              rcfact (icmod 3; 1e-5 for icmod 6, 7; else
 !                              0), slack (icmod 6, 7; 1), budget_cutoff
@@ -117,10 +121,14 @@
  logical, intent(out) :: ep_as_given
 !> onset of the well of the well states as a multiple of rc (wellstate)
  real(dp), intent(out) :: well_onset
- logical, intent(out) :: well_tail_free
+!> the tail of the well states: 0 "well", 1 "free", 2 "confined"
+ integer, intent(out) :: well_tail
  real(dp), intent(out) :: wreg
 !> Energy added to ep for the second projector (Ha)
  real(dp), intent(out) :: debl(mxlin+1)
+!> n of the first well state of each l with well_tail 2 (0 for the
+!> default)
+ integer, intent(out) :: well_n(mxlin+1)
 ! [Model core charge]
 !> Model core charge flag
  integer, intent(out) :: icmod
@@ -283,12 +291,14 @@
  call get_string(child, 'pseudopotentials', 'well_tail', tmp_str, 'well')
  select case(tmp_str)
  case('well')
-   well_tail_free = .false.
+   well_tail = 0
  case('free')
-   well_tail_free = .true.
+   well_tail = 1
+ case('confined')
+   well_tail = 2
  case default
-   call input_error('well_tail in [pseudopotentials] must be "well" or '// &
-&    '"free", got "'//tmp_str//'"')
+   call input_error('well_tail in [pseudopotentials] must be "well", '// &
+&    '"free" or "confined", got "'//tmp_str//'"')
  end select
 
  call get_real(child, 'pseudopotentials', 'wave_regularization', wreg, &
@@ -311,6 +321,13 @@
  call check_l(lt, lmax, 'vkb_projectors')
  call get_int_array(child, 'vkb_projectors', 'nproj', lmax + 1, nproj)
  call get_real_array(child, 'vkb_projectors', 'debl', lmax + 1, debl)
+ well_n(:) = 0
+ if(child%has_key('well_n')) then
+   call get_int_array(child, 'vkb_projectors', 'well_n', lmax + 1, well_n)
+   if(any(well_n(1:lmax + 1) < 0)) then
+     call input_error('well_n in [vkb_projectors] must be at least 0')
+   end if
+ end if
 
 ! model core charge; check_data validates icmod and the values
  call get_section(table, 'model_core_charge', child)

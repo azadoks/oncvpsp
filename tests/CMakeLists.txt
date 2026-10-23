@@ -255,6 +255,12 @@ smooth_scan_test(sr_14_Si_rc1_free sr 14_Si "pseudopotentials.rc[1]" kernel,vloc
     --degree 14 --set ${smooth_free})
 smooth_scan_test(sr_14_Si_ep2_free sr 14_Si "pseudopotentials.ep[2]" kernel,vloc,core,tests ${smooth_g1} --center 0.0
     --span 0.04 --degree 10 --set ${smooth_free} --set pseudopotentials.ep_as_given=true)
+# the confined well (well_tail = "confined"): 14_Si's l = 0 well state across debl[0] = 0.8425, where
+# Hamann's well moves it from n = 4 to n = 5 (its kernel residual 6e-3, a step 825 times the median);
+# the confined well keeps n = 4 (1.2e-13)
+set(smooth_confined "pseudopotentials.well_tail=\"confined\"")
+smooth_scan_test(sr_14_Si_debl0_confined sr 14_Si "vkb_projectors.debl[0]" kernel,vloc,core,tests ${smooth_g1}
+    --center 0.8425 --span 0.01 --set ${smooth_confined})
 
 # The projectors of the psp8 and UPF files on the linear mesh are 0 beyond rc, and the fully-
 # relativistic psp8 file has every term (phase 4, O-1, O-2; see scripts/projector_output_test.py)
@@ -489,7 +495,7 @@ if (ONCVPSP_WITH_TOML)
             "icmod3_rcfact" "test_config_length" "test_config_count" "test_config_type"
             "integer_for_real" "extra_keys" "icmod6_default_rcfact"
             "icmod6_default_slack" "well_onset_range" "well_onset_default"
-            "well_tail_value" "well_tail_default" "budget_cutoff_value"
+            "well_tail_value" "well_tail_default" "well_n_negative" "budget_cutoff_value"
             "budget_cutoff_default" "wave_regularization_value"
             "wave_regularization_default" "nan_real" "inf_array")
         oncvpsp_test(toml_input_${case} toml toml_error_test.sh
@@ -547,6 +553,15 @@ if (ONCVPSP_WITH_TOML)
                 --tol 1e-7 --workdir "${CMAKE_CURRENT_BINARY_DIR}/well_rmax_${rel}_${test_name}")
         set_tests_properties(well_rmax_${rel}_${test_name} PROPERTIES LABELS "toml;${rel}")
     endforeach ()
+    # the confined well (well_tail = "confined"), whose d state at 0.02 Ha is held by a wall 1 Ha
+    # high at 39 bohr
+    add_test(NAME well_rmax_confined_sr_14_Si
+        COMMAND ${test_python} "${scripts}/invariance_test.py" $<TARGET_FILE:oncvpspsr>
+            "${data}/toml/14_Si.toml" log_mesh.rmax 45.0 60.0 80.0
+            --set "pseudopotentials.ep=[0.0,0.0,0.02]" --set "pseudopotentials.well_tail=\"confined\""
+            --groups kernel,vloc,tests,ld,ecut,ghost
+            --tol 1e-7 --workdir "${CMAKE_CURRENT_BINARY_DIR}/well_rmax_confined_sr_14_Si")
+    set_tests_properties(well_rmax_confined_sr_14_Si PROPERTIES LABELS "toml;sr")
 endif ()
 
 # PSML output: written into the output like the psp8 and upf files, with no files left in the working
@@ -563,16 +578,17 @@ endforeach ()
 # same output (see scripts/echo_rerun_test.sh). The inputs cover rxpsh (14_Si_lder), icmod=4 with its
 # search grid (40_Zr_grid), icmod=7 with slack (14_Si_hm), a Libxc iexc (83_Bi), rc on the grid
 # (03_Li), iexc=7 with c_light on the first line (14_Si_c), ep_as_given, well_onset and well_tail =
-# "free" on the lmax line (14_Si_wt), budget_cutoff on the icmod line (14_Si_bcw) and
-# wave_regularization on the lmax line (07_N_flat); each in sr or fr, the fr ones on inputs that run
-# in seconds.
+# "free" on the lmax line (14_Si_wt), well_tail = "confined" with well_n on a projector line
+# (14_Si_cw), budget_cutoff on the icmod line (14_Si_bcw) and wave_regularization on the lmax line
+# (07_N_flat); each in sr or fr, the fr ones on inputs that run in seconds.
 set(si_c "s/^    Si  14     3   2   3   psp8$/    Si  14     3   2   7   psp8  137.0359895/")
 set(si_wt "14s/^    2$/    2    1    1.2    1/")
+set(si_cw "14s/^    2$/    2    1    1.2    2/\ns/^    1    2    0\\.75$/    1    2    0.75    5/")
 foreach (echo_test IN ITEMS
         "sr:14_Si_lder:psp8" "sr:40_Zr_grid:psp8" "sr:40_Zr_grid:upf"
         "sr:83_Bi:psml" "sr:03_Li:psml" "nr:14_Si:psml" "sr:14_Si_hm:psp8"
         "r:40_Zr_grid:psml" "r:14_Si_lder:psp8" "r:14_Si_c:upf" "r:14_Si_c:psml" "sr:14_Si_c:psp8"
-        "sr:14_Si_wt:upf" "sr:14_Si_bcw:psml" "r:14_Si_bcw:psp8" "sr:07_N_flat:upf")
+        "sr:14_Si_wt:upf" "sr:14_Si_cw:psp8" "r:14_Si_cw:psml" "sr:14_Si_bcw:psml" "r:14_Si_bcw:psp8" "sr:07_N_flat:upf")
     string(REPLACE ":" ";" echo_test "${echo_test}")
     list(GET echo_test 0 rel)
     list(GET echo_test 1 test_name)
@@ -584,6 +600,9 @@ foreach (echo_test IN ITEMS
         set(input "14_Si")
     elseif (test_name STREQUAL "14_Si_wt")
         set(edit "${si_wt}")
+        set(input "14_Si")
+    elseif (test_name STREQUAL "14_Si_cw")
+        set(edit "${si_cw}")
         set(input "14_Si")
     endif ()
     oncvpsp_test(echo_${format}_${rel}_${test_name} echo echo_rerun_test.sh
@@ -656,6 +675,20 @@ oncvpsp_test(error_iexc5_r2scan errors error_test.sh
     $<TARGET_FILE:oncvpspsr> "test_data: iexc=5 is r2SCAN, METAPSP only"
     "${CMAKE_CURRENT_BINARY_DIR}/error_iexc5_r2scan"
     "${data}/14_Si.dat" "s/^    Si  14     3   2   3   psp8$/    Si  14     3   2   5   psp8/")
+# well_n (the n of the first well state of an l) is for well_tail = "confined" only, and not below
+# that state's n; well_tail is 0, 1 or 2
+oncvpsp_test(error_well_n_not_confined errors error_test.sh
+    $<TARGET_FILE:oncvpspsr> "oncvpsp: ERROR well_n is for well_tail = \"confined\" only"
+    "${CMAKE_CURRENT_BINARY_DIR}/error_well_n_not_confined"
+    "${data}/14_Si.dat" "s/^    1    2    0\\.75$/    1    2    0.75    5/")
+oncvpsp_test(error_well_n_below errors error_test.sh
+    $<TARGET_FILE:oncvpspsr> "below the first well state's n"
+    "${CMAKE_CURRENT_BINARY_DIR}/error_well_n_below"
+    "${data}/14_Si.dat" "14s/^    2$/    2    0    0.0    2/\ns/^    1    2    0\\.75$/    1    2    0.75    3/")
+oncvpsp_test(error_well_tail_value errors error_test.sh
+    $<TARGET_FILE:oncvpspsr> "Read ERROR, input data file line  14"
+    "${CMAKE_CURRENT_BINARY_DIR}/error_well_tail_value"
+    "${data}/14_Si.dat" "14s/^    2$/    2    0    0.0    3/")
 # a real that is not finite (NaN or Inf, which list-directed input reads)
 oncvpsp_test(error_nan_real errors error_test.sh
     $<TARGET_FILE:oncvpspsr> "Read ERROR, input data file line  33"

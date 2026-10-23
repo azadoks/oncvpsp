@@ -16,8 +16,8 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine wellstate(nnin,ll,kap,rc,ep,epgiven,onset,nowell,rr,vfull,vwell, &
-&                     uu,up,zz,mmax,mch,irel,confined,eptgt,wm)
+ subroutine wellstate(nnin,ll,kap,rc,ep,epgiven,onset,confwall,nowell,rr, &
+&                     vfull,vwell,uu,up,zz,mmax,mch,irel,confined,eptgt,wm)
 
 !! creates quantum well to confine positive-energy state, and calculates
 !! the resulting all-electron wave function. The well rises from
@@ -46,6 +46,15 @@
 !! @param ep  target energy for well state; the well state's energy on return
 !! @param epgiven  use ep as given (D-1), instead of the replacements above
 !! @param onset  onset of the well as a multiple of rc (well_onset, >= 1)
+!! @param confwall  the confined well (well_tail = "confined"): a wall
+!!                  x**3 exp(-0.01/x) Ha that rises without bound, and
+!!                  the state of n = nnin only. Its eigenvalues are then
+!!                  nondegenerate, each a smooth function of the width,
+!!                  and any ep above the atom's own state of that n has a
+!!                  width; Hamann's well holds only the states below its
+!!                  asymptote, ep + 0.5 Ha, and moved to more nodes where
+!!                  the wall would have been too steep, which made the
+!!                  state's tail, and the kernels, jump
 !! @param nowell  no well: only the energy is wanted (the free tail of
 !!                free_tail_m, for which main solves the state at eptgt), so
 !!                return after the replacements above, with uu, up zero and
@@ -81,6 +90,7 @@
  real(dp), intent(in) :: rc
  logical, intent(in) :: epgiven
  real(dp), intent(in) :: onset
+ logical, intent(in) :: confwall
  logical, intent(in) :: nowell
 
 !Input/output variables
@@ -102,7 +112,7 @@
 ! Q-9): converged at a few ulps of ep, or when the bracket of rwell has
 ! closed to a few ulps (E then within eps of ep, else an error)
  real(dp),parameter :: eps=1.0d-10
- integer :: ii,iter,ierr,iumax,l1,itrwell,nn,nnloop,iside
+ integer :: ii,iter,ierr,iumax,l1,itrwell,nn,nnloop,iside,nnhi
 !the continued mesh, vfull and the well on it, and the state
  real(dp), allocatable :: rx(:),vx(:),vw(:),ux(:,:),upx(:,:)
  integer :: mx,mneed,mchx
@@ -204,11 +214,15 @@
  rwscale=0.8d0
 
 !asymptotic potential value to give target bound state a "binding" energy
-!of 0.5 Ha
+!of 0.5 Ha; the confined wall is 1 Ha at x = 1 and has no asymptote
  cwell=ep+0.5d0
+ if(confwall) cwell=1.0d0
+ nnhi=10
+ if(confwall) nnhi=0
 
 !loop which will increment number of nodes before well wall gets too steep
- do nnloop=0,10
+!(the confined well keeps the n it is given)
+ do nnloop=0,nnhi
    nn=nnin+nnloop
 
    rwell=8.0d0*rc
@@ -238,7 +252,11 @@
        do ii=1,mx
          if(rx(ii)<=ron) cycle
          xx=(rx(ii)-ron)/rwell
-         vw(ii)=vw(ii)+cwell*xx**3/(1.0d0+xx**3)*exp(-0.01d0/xx)
+         if(confwall) then
+           vw(ii)=vw(ii)+cwell*xx**3*exp(-0.01d0/xx)
+         else
+           vw(ii)=vw(ii)+cwell*xx**3/(1.0d0+xx**3)*exp(-0.01d0/xx)
+         end if
        end do
        call wm_short(ll,ep,rx,vw,mx,mneed)
        if(mneed==0) exit
@@ -312,8 +330,13 @@
        else
          rwell=rwell*rwscale
 ! a wall closer than this is too steep for a state of this n, unless the
-! state is bound without the well: it then only needs raising
-         if(.not. bound .and. rwell<max(1.0d0,0.5d0*rc)) exit
+! state is bound without the well: it then only needs raising; the
+! confined well's energy rises without bound as it narrows
+         if(confwall) then
+           if(rwell<1.0d-2*rc) exit
+         else if(.not. bound .and. rwell<max(1.0d0,0.5d0*rc)) then
+           exit
+         end if
        end if
        cycle
      end if
@@ -340,6 +363,10 @@
 &     'ERROR wellstate: well potential iteration failed', &
 &     ' to converge, n=',nn,' l=',ll,' ep=',ep
    end if
+   if(confwall) then
+     write(6,'(a)') 'wellstate: ERROR with the confined well, ep must be '// &
+&         'above the atom''s own state of this n: raise ep or lower well_n'
+   end if
    error stop 1
  end if
 
@@ -354,7 +381,17 @@
  up(:,:)=upx(1:mmax,:)
  mch=min(mchx,mmax)
 
- if(cwell>0.0d0) then
+ if(confwall .and. irel==2) then
+   write(6,'(/a,i3,a,i3,a,i3/a,f8.4/a,f8.4)') &
+&           '   Wellstate for l =',ll,'  n =',nn,' kap=',kap, &
+&           '     eigenvalue = ',et, &
+&           '     confined, wall 1 Ha at r =',ron+rwell
+ else if(confwall) then
+   write(6,'(/a,i3,a,i3/a,f8.4/a,f8.4)') &
+&           '   Wellstate for l =',ll,'  n =',nn, &
+&           '     eigenvalue = ',et, &
+&           '     confined, wall 1 Ha at r =',ron+rwell
+ else if(cwell>0.0d0) then
    if(irel==2) then
      write(6,'(/a,i3,a,i3,a,i3/a,f8.4,/a,f8.4/a,f8.4)') &
 &             '   Wellstate for l =',ll,'  n =',nn,' kap=',kap, &

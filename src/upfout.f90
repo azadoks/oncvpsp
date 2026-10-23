@@ -24,8 +24,8 @@
  subroutine upfout(lmax,lloc,rc,vkbpw,evkb,nproj,rr,vpuns,vlocpw,rho,corepw, &
 &                  zz,zion,mmax,mxprj,iexc,icmod,nrlin,drl,atsym,epstot, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&                  fa,rc0,ep,qcut,ep_as_given,well_onset,well_tail_free,wreg, &
-&                  debl,facnf, &
+&                  fa,rc0,ep,qcut,ep_as_given,well_onset,well_tail,wreg, &
+&                  debl,well_n,facnf, &
 &                  dvloc0,fcfact,rcfact, &
 &                  slack,budget_weighted,fcgrid,rcgrid, &
 &                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,uupsa,ea,log_mesh, &
@@ -77,6 +77,7 @@
 !!            index 1 for j=l+1/2, 2 for j=l-1/2 (ep(:,1) is echoed)
 !! @param qcut  residual-energy cutoff wave vectors for each l
 !! @param debl  energy shifts for the second projectors for each l (Ha)
+!! @param well_n  n of the first well state of each l (0 for the default)
 !! @param facnf  occupancies of the reference and test configurations
 !! @param dvloc0  r=0 shift of the lloc=4 local potential (Ha)
 !! @param fcfact  prefactor for model core charge amplitude, as read from the
@@ -134,7 +135,8 @@
  real(dp), intent(in) :: fa(mxstate),rc0(mxlin+1),ep(mxlin+1,nkap),qcut(mxlin+1)
  logical, intent(in) :: ep_as_given
  real(dp), intent(in) :: well_onset
- logical, intent(in) :: well_tail_free
+ integer, intent(in) :: well_tail
+ integer, intent(in) :: well_n(mxlin+1)
  real(dp), intent(in) :: wreg
  real(dp), intent(in) :: debl(mxlin+1)
  real(dp), intent(in) :: facnf(mxstate,mxcnf)
@@ -324,8 +326,8 @@
 
  call write_input_echo(nkap,2,atsym,zz,nc,nv,iexc,psfile, &
 &                       na,la,fa,lmax,rc0,ep(:,1),ncon,nbas,qcut,ep_as_given, &
-&                       well_onset,well_tail_free,wreg,lloc,lpopt,dvloc0, &
-&                       nproj,debl, &
+&                       well_onset,well_tail,wreg,lloc,lpopt,dvloc0, &
+&                       nproj,debl,well_n, &
 &                       icmod,fcfact,rcfact,slack,budget_weighted, &
 &                       fcgrid,rcgrid, &
 &                       epsh1,epsh2,depsh,rxpsh,rlmax,drl, &

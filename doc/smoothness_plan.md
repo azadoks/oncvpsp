@@ -1972,6 +1972,22 @@ These change behaviour beyond numerics. Decided on review (2026-10-20).
     j = l+1/2 well (the kernels then depend on the well through it,
     smoothly), or the input ep for both j (a further change to the
     method).
+- **D-8 The confined well** (`well_tail = "confined"`). Decided
+  2026-10-23: a third tail, beside "well" and "free", for well states
+  that stay confined. Hamann's well rises to ep + 0.5 Ha and holds only
+  the states below that; as ep rises its wall steepens until no state of
+  that n exists, and the node loop moves the state to n + 1, a jump in
+  its tail and so in the kernels (14_Si's l = 0 at debl 0.84: 1.5e-2, 60
+  times the median step; Pb's p state flips 9/10/9/10 between debl 4.7
+  and 5.1). The confined wall rises without bound, x³ e^(−0.01/x) Ha, and
+  wellstate keeps the n it is given: E(rwell) runs monotonically from
+  the atom's own state of that n to infinity, so every ep above it has
+  one width, and nothing switches. The n of each l's first well state is
+  an input (`well_n`, its default the n the well states start from); a
+  tight wall adds content above qcut, which the well's-share line
+  reports (Pb's p at 4.57 Ha: kernel 1.3 from the free tail's at n = 7,
+  7e-3 at n = 9). The states are solved on the continued mesh
+  (well_mesh_m) and normalized inside rc, as with the free tail.
 
 ### Bugs found on the way
 

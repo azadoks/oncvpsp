@@ -48,9 +48,14 @@
 ###     or above ep is an input error
 ### well_onset onset of the barrier of the well states, as a multiple of rc
 ###     (at least 1; 0 or less for the default 1.006**5)
-### well_tail 0 (default) or 1: 1 takes the tail of the well states beyond
-###     rc from the free solution at ep instead of the well (free_tail_m,
-###     doc/program_overview.md, 3A)
+### well_tail 0 (default), 1 or 2: 1 takes the tail of the well states
+###     beyond rc from the free solution at ep instead of the well
+###     (free_tail_m, doc/program_overview.md, 3A); 2 confines them by a
+###     wall that rises without bound, and keeps the n of each well state
+###     (the first one's n is well_n below; by default the n the well
+###     states start from), where the default well moves a state to more
+###     nodes when its wall would be too steep, a jump in its tail and the
+###     kernels (wellstate)
 ### wave_regularization weight w (at least 0, default 0) of the residual
 ###     energy at qcut/4 added to that at qcut in the optimization
 ###     (doc/program_overview.md, 6)
@@ -112,8 +117,12 @@
 ###      automatically reset to match 2nd projector with 2nd bound state
 ###      at this l when it is occupied (ie., the psp is generated for a
 ###      correcponding-l shallow core state)
+### well_n optional, with well_tail 2 only: the n of the first well state
+###      of l (0 or absent for the default, the n after l's bound states);
+###      a higher n gives a gentler wall, whose tail adds less to E_resid
+###      above qcut (see "well / free tail" in the output)
 #
-#  l,nproj,   debl  (lmax+1 lines, l's in order)
+#  l,nproj,   debl, (well_n)  (lmax+1 lines, l's in order)
     0    2    1.50
     1    2    1.50
     2    2    1.50

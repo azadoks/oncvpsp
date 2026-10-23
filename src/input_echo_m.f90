@@ -32,7 +32,7 @@
  public :: atom_lines, lmax_lines, icmod_lines, epsh_lines, mesh_lines
  public :: write_atom, write_lmax, write_icmod, write_epsh
  public :: write_mesh
- public :: write_input_echo, fx, fe
+ public :: write_input_echo, fx, fe, vkb_head, vkb_line
 
 !> length of the lines returned by the *_lines routines
  integer, parameter, public :: echo_len=100
@@ -135,26 +135,26 @@
  return
  end subroutine atom_lines
 
- subroutine lmax_lines(lmax,ep_as_given,well_onset,well_tail_free,wreg,text, &
+ subroutine lmax_lines(lmax,ep_as_given,well_onset,well_tail,wreg,text, &
 &                      ntext)
 
 !! the head of the PSEUDOPOTENTIAL AND OPTIMIZATION section, to the lmax
 !! line: ep_as_given (0 or 1), well_onset (0 for the default) and
-!! well_tail (0 for "well", 1 for "free") are written after lmax only when
-!! one of them is not its default, and wave_regularization after them
-!! only when it is not 0
+!! well_tail (0 for "well", 1 for "free", 2 for "confined") are written
+!! after lmax only when one of them is not its default, and
+!! wave_regularization after them only when it is not 0
 !!
 !! @param lmax  maximum angular momentum
 !! @param ep_as_given  whether the well states take ep as given
 !! @param well_onset  onset of the well as a multiple of rc
-!! @param well_tail_free  whether the well states take the free tail
+!! @param well_tail  the tail of the well states, 0, 1 or 2
 !! @param wreg  the regularization of the pseudo-wave optimization
 !! @param text  the lines of the section
 !! @param ntext  number of lines
 
 !Input variables
- integer, intent(in) :: lmax
- logical, intent(in) :: ep_as_given,well_tail_free
+ integer, intent(in) :: lmax,well_tail
+ logical, intent(in) :: ep_as_given
  real(dp), intent(in) :: wreg
  real(dp), intent(in) :: well_onset
 
@@ -172,12 +172,12 @@
  if(wreg/=0.0d0) then
    text(3)='# lmax, ep_as_given, well_onset, well_tail, wave_regularization'
    write(text(4),'(i5,i5,es24.16,i5,es24.16)') lmax, &
-&        merge(1,0,ep_as_given),onset,merge(1,0,well_tail_free),wreg
- else if(ep_as_given .or. well_tail_free .or. &
+&        merge(1,0,ep_as_given),onset,well_tail,wreg
+ else if(ep_as_given .or. well_tail/=0 .or. &
 &        well_onset/=well_onset_default) then
    text(3)='# lmax, ep_as_given, well_onset, well_tail'
    write(text(4),'(i5,i5,es24.16,i5)') lmax,merge(1,0,ep_as_given), &
-&        onset,merge(1,0,well_tail_free)
+&        onset,well_tail
  else
    text(3)='# lmax'
    write(text(4),'(i5)') lmax
@@ -347,7 +347,7 @@
  return
  end subroutine write_atom
 
- subroutine write_lmax(lmax,ep_as_given,well_onset,well_tail_free,wreg)
+ subroutine write_lmax(lmax,ep_as_given,well_onset,well_tail,wreg)
 
 !! writes the head of the PSEUDOPOTENTIAL AND OPTIMIZATION section, to the
 !! lmax line, to unit 6
@@ -355,12 +355,12 @@
 !! @param lmax  maximum angular momentum
 !! @param ep_as_given  whether the well states take ep as given
 !! @param well_onset  onset of the well as a multiple of rc
-!! @param well_tail_free  whether the well states take the free tail
+!! @param well_tail  the tail of the well states, 0, 1 or 2
 !! @param wreg  the regularization of the pseudo-wave optimization
 
 !Input variables
- integer, intent(in) :: lmax
- logical, intent(in) :: ep_as_given,well_tail_free
+ integer, intent(in) :: lmax,well_tail
+ logical, intent(in) :: ep_as_given
  real(dp), intent(in) :: wreg
  real(dp), intent(in) :: well_onset
 
@@ -368,11 +368,48 @@
  character(len=echo_len) :: text(echo_max)
  integer :: ii,ntext
 
- call lmax_lines(lmax,ep_as_given,well_onset,well_tail_free,wreg,text,ntext)
+ call lmax_lines(lmax,ep_as_given,well_onset,well_tail,wreg,text,ntext)
  write(6,'(a)') (trim(text(ii)),ii=1,ntext)
 
  return
  end subroutine write_lmax
+
+ character(len=echo_len) function vkb_head(lmax,well_n)
+!! the column line of the VANDERBILT-KLEINMAN-BYLANDER PROJECTORs section:
+!! well_n is written only when the input sets it for some l
+!!
+!! @param lmax  maximum angular momentum
+!! @param well_n  n of the first well state of each l (0 for the default)
+
+!Input variables
+ integer, intent(in) :: lmax,well_n(mxlin+1)
+
+ if(any(well_n(1:lmax+1)>0)) then
+   vkb_head='# l, nproj, debl, well_n'
+ else
+   vkb_head='# l, nproj, debl'
+ end if
+ end function vkb_head
+
+ character(len=echo_len) function vkb_line(lmax,l1,nproj,debl,well_n)
+!! the line of l = l1-1 of that section
+!!
+!! @param lmax  maximum angular momentum
+!! @param l1  l+1
+!! @param nproj  number of projectors of each l
+!! @param debl  energy steps of each l
+!! @param well_n  n of the first well state of each l (0 for the default)
+
+!Input variables
+ integer, intent(in) :: lmax,l1,nproj(mxlin+1),well_n(mxlin+1)
+ real(dp), intent(in) :: debl(mxlin+1)
+
+ if(any(well_n(1:lmax+1)>0)) then
+   write(vkb_line,'(2i5,a,i5)') l1-1,nproj(l1),fx(debl(l1),10,5),well_n(l1)
+ else
+   write(vkb_line,'(2i5,a)') l1-1,nproj(l1),fx(debl(l1),10,5)
+ end if
+ end function vkb_line
 
  subroutine write_icmod(icmod,fcfact,rcfact,slack,budget_weighted,fcgrid,rcgrid)
 
@@ -449,8 +486,8 @@
 
  subroutine write_input_echo(nkap,iformat,atsym,zz,nc,nv,iexc,psfile, &
 &                            na,la,fa,lmax,rc0,ep,ncon,nbas,qcut,ep_as_given, &
-&                            well_onset,well_tail_free,wreg,lloc,lpopt,dvloc0, &
-&                            nproj,debl, &
+&                            well_onset,well_tail,wreg,lloc,lpopt,dvloc0, &
+&                            nproj,debl,well_n, &
 &                            icmod,fcfact,rcfact,slack,budget_weighted, &
 &                            fcgrid,rcgrid, &
 &                            epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
@@ -478,9 +515,10 @@
  real(dp), intent(in) :: fa(mxstate),rc0(mxlin+1),ep(mxlin+1),qcut(mxlin+1)
  logical, intent(in) :: ep_as_given
  real(dp), intent(in) :: well_onset
- logical, intent(in) :: well_tail_free
+ integer, intent(in) :: well_tail
  real(dp), intent(in) :: wreg
  real(dp), intent(in) :: debl(mxlin+1)
+ integer, intent(in) :: well_n(mxlin+1)
  real(dp), intent(in) :: facnf(mxstate,mxcnf)
  real(dp), intent(in) :: fcgrid(3),rcgrid(3),log_mesh(3)
  character(len=2), intent(in) :: atsym
@@ -502,7 +540,7 @@
    write(6,'(2i5,f8.2)') na(ii),la(ii),fa(ii)
  end do
 
- call lmax_lines(lmax,ep_as_given,well_onset,well_tail_free,wreg,text,ntext)
+ call lmax_lines(lmax,ep_as_given,well_onset,well_tail,wreg,text,ntext)
  write(6,'(a)') (trim(text(ii)),ii=1,ntext)
  if(nkap==2) then
    write(6,'(a/a)') '#','#   l,   rc,     ep,   ncon, nbas, qcut'
@@ -519,9 +557,9 @@
  write(6,'(2i5,3a)') lloc,lpopt,fx(rc0(5),10,5),'   ',fx(dvloc0,10,5)
 
  write(6,'(a/a/a)') '#','# VANDERBILT-KLEINMAN-BYLANDER PROJECTORs', &
-&      '# l, nproj, debl'
+&      trim(vkb_head(lmax,well_n))
  do l1=1,lmax+1
-   write(6,'(2i5,a)') l1-1,nproj(l1),fx(debl(l1),10,5)
+   write(6,'(a)') trim(vkb_line(lmax,l1,nproj,debl,well_n))
  end do
 
  call write_icmod(icmod,fcfact,rcfact,slack,budget_weighted,fcgrid,rcgrid)
