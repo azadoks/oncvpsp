@@ -123,7 +123,8 @@
 !! state of l there, normalized to 1
 !! inside rc, with the free tail (Ha per electron, band_ecut_m); and
 !! band_ecut l ikap e err ecut, its cutoff (Ha) at each error level err
-!! (1e-2 to 1e-5) that it reaches
+!! (1e-2 to 1e-5) that it reaches; band_undefined l ikap e in their place
+!! where qcut is not above the free tail's wave vector at e
 !!
 !! ikap is 1 for j=l+1/2 (and for nkap=1), 2 for j=l-1/2
 !!
@@ -270,6 +271,9 @@
        if(bandq(iprj,l1,ikap)>0.0d0) then
          write(6,'(a,2i4,1p,2e24.16)') 'band_eresid',l1-1,ikap, &
 &              fe(eband(iprj)),fe(bandq(iprj,l1,ikap))
+       else if(bandq(iprj,l1,ikap)<0.0d0) then
+         write(6,'(a,2i4,1p,e24.16)') 'band_undefined',l1-1,ikap, &
+&              fe(eband(iprj))
        end if
      end do
    end do

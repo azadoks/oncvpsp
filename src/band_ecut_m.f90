@@ -45,7 +45,7 @@
  use constants_m, only: dp, pi
  use pieces_m, only: piecewise_t, pw_reach
  use logmesh_m, only: lm_integral, lm_fh_reach
- use free_tail_m, only: free_tail_whole
+ use free_tail_m, only: free_tail_whole, free_tail_k
  use ugrid_m, only: ug_cross_down
  use, intrinsic :: iso_fortran_env, only: qp => real128
  implicit none
@@ -84,7 +84,9 @@
 !! @param irc  last mesh point at or inside rc
 !! @param qcut  cutoff wave vector of l
 !! @param qmax  q taken as infinity in the optimization of l
-!! @param eqcut  E_resid above qcut (Ha per electron inside rc)
+!! @param eqcut  E_resid above qcut (Ha per electron inside rc); -1 where
+!!               the free tail's wave vector is not below qcut, which
+!!               leaves it undefined (free_tail_width)
 !! @param ecut  the cutoff (Ha) at each level, 0 for a level not reached
 
  external :: eresid, lschvkbs
@@ -106,6 +108,13 @@
  real(qp) :: ps0(0),psn(0,0)
  integer :: mout,nq,nr,ii
  logical :: found
+
+!undefined where the tail oscillates as fast as the cutoff
+ if(free_tail_k(ee-vint)>=qcut) then
+   eqcut=-1.0d0
+   ecut(:)=0.0d0
+   return
+ end if
 
 !the state, past the reach of the interpolants at rc
  mout=min(mmax,irc+pw_reach+16+lm_fh_reach()+2)

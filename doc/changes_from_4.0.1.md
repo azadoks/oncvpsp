@@ -256,7 +256,10 @@ precision.
   window (the top 0.5 Ha of the occupied valence eigenvalues), normalized
   to 1 inside rc and continued into a model interstitial where it
   oscillates (`band_eresid`, `band_ecut` in DIAGNOSTICS). Si d: 15.0 to
-  15.6 Ha at 1e-5 per electron. Nothing else changes.
+  15.6 Ha at 1e-5 per electron. Nothing else changes. Where qcut is not
+  above the interstitial wave vector at an energy, the state's cutoffs
+  are undefined: the row says so (`band_undefined`), where it stopped
+  the run.
 
 ### Numerics
 

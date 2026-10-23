@@ -1224,8 +1224,14 @@
 &                       vkbpw(1:nproj(l1),l1,ikap),evkb(1:nproj(l1),l1,ikap), &
 &                       mmax,rc(l1),irc(l1),qcut(l1),qinf(l1), &
 &                       bandq(ie,l1,ikap),bandc(:,ie,l1,ikap))
-         write(6,'(a,i1,a,i1,f9.4,1p,e15.4,0p,4f8.2)') ' band l=',ll, &
-&             ' ikap=',ikap,eband(ie),bandq(ie,l1,ikap),bandc(:,ie,l1,ikap)
+         if(bandq(ie,l1,ikap)<0.0d0) then
+           write(6,'(a,i1,a,i1,f9.4,a)') ' band l=',ll,' ikap=',ikap, &
+&               eband(ie),'    undefined: qcut not above the wave vector'
+         else
+           write(6,'(a,i1,a,i1,f9.4,1p,e15.4,0p,4f8.2)') ' band l=',ll, &
+&               ' ikap=',ikap,eband(ie),bandq(ie,l1,ikap), &
+&               bandc(:,ie,l1,ikap)
+         end if
        end do
      end do
    end do
