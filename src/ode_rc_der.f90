@@ -27,8 +27,11 @@
 !! round-off of V''' (eps/al**3) instead of that of a fourth derivative of
 !! uu (eps/al**4): on hydrogen 1e-10 against 8e-7 for the stencils. uu and
 !! up must agree near rc: if uu' from up differs from uu' by stencils by
-!! more than 1e-6+100*al**4 relative (the solvers, 4th order, agree to
-!! 1e-9 on the default mesh and 6e-6 at amesh=1.05), the program stops
+!! more than 1e-6+100*(al*max(1,k rc))**4 relative, k the local wave
+!! number at rc, the program stops. The solvers are 4th order in the phase
+!! per mesh step, k al r: they agree to 1e-9 on the default mesh and 6e-6
+!! at amesh=1.05 for valence states, and to 1e-5 for well states 5-18 Ha
+!! up at rc 3-4 on amesh=1.004 (k al rc up to 0.08)
 !!
 !! @param irel  0 non-relativistic, 1 scalar-relativistic (the flux form
 !!              of sr_flux_m), 2 fully-relativistic (Dirac, uu the large
@@ -62,7 +65,7 @@
  integer, parameter :: nord=4
  real(dp) :: aa(2,2,0:nord-1),yy(2,0:nord),ud(2),udst(2),vd(nord)
  real(dp) :: vk(0:nord-1),rinv(0:nord),rinv2(0:nord-1),xm(0:nord-1)
- real(dp) :: xminv(0:nord-1),cc,fss,sls,rk,fact,al
+ real(dp) :: xminv(0:nord-1),cc,fss,sls,rk,fact,al,xk
  real(dp), allocatable :: dudr(:)
  integer :: kk,jj
 
@@ -89,7 +92,8 @@
  call lm_interp(rr,dudr,mmax,rc,ud(2))
  deallocate(dudr)
  call lm_derivs(rr,uu,mmax,rc,1,udst)
- if(abs(ud(2)-udst(2))>(1.0d-6+1.0d2*al**4) &
+ xk=sqrt(max(2.0d0*(ee-vk(0))-dble(ll*(ll+1))/rc**2,0.0d0))*rc
+ if(abs(ud(2)-udst(2))>(1.0d-6+1.0d2*(al*max(1.0d0,xk))**4) &
 &                      *(abs(udst(2))+abs(udst(1))/rc)) then
    write(6,'(/a,i2,a,f10.6/a,1p,2e20.12)') &
 &        'ode_rc_der: ERROR uu and up disagree for l=',ll,' at rc=',rc, &
