@@ -262,6 +262,8 @@ class KBProjectorConfiguration:
     debl: float
     'n of the first well state with well_tail = "confined" (0 for the default)'
     well_n: int = 0
+    "weight of the first wave in the pseudo-waves' cutoff (negative for the default)"
+    ecut_weight: float = -1.0
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, KBProjectorConfiguration):
@@ -280,6 +282,11 @@ class KBProjectorConfiguration:
         if self.well_n != other.well_n:
             logging.debug("well_n differs: %d != %d", self.well_n, other.well_n)
             return False
+        if abs(self.ecut_weight - other.ecut_weight) >= ATOL:
+            logging.debug(
+                "ecut_weight differs: %f != %f", self.ecut_weight, other.ecut_weight
+            )
+            return False
         return True
 
     @classmethod
@@ -287,17 +294,18 @@ class KBProjectorConfiguration:
         """Create a KBProjectorConfiguration from a string.
 
         Args:
-            s: String in the format "l nproj debl [well_n]"
+            s: String in the format "l nproj debl [well_n [ecut_weight]]"
 
         Returns:
             KBProjectorConfiguration instance.
         """
         parts = s.split()
-        if len(parts) not in (3, 4):
+        if len(parts) not in (3, 4, 5):
             raise ValueError(f"Invalid KB projector configuration: {s}")
         l, nproj, debl = int(parts[0]), int(parts[1]), fort_float(parts[2])
-        well_n = int(parts[3]) if len(parts) == 4 else 0
-        return cls(l=l, nproj=nproj, debl=debl, well_n=well_n)
+        well_n = int(parts[3]) if len(parts) > 3 else 0
+        ecut_weight = fort_float(parts[4]) if len(parts) > 4 else -1.0
+        return cls(l=l, nproj=nproj, debl=debl, well_n=well_n, ecut_weight=ecut_weight)
 
 
 @dataclass
@@ -993,13 +1001,16 @@ class OncvpspInput:
                 dvloc0=d["local_potential"]["dvloc0"],
             ),
             vkb_projectors=[
-                KBProjectorConfiguration(proj[0], proj[1], proj[2], proj[3])
+                KBProjectorConfiguration(proj[0], proj[1], proj[2], proj[3], proj[4])
                 for proj in zip(
                     d["vkb_projectors"]["l"],
                     d["vkb_projectors"]["nproj"],
                     d["vkb_projectors"]["debl"],
                     d["vkb_projectors"].get(
                         "well_n", [0] * len(d["vkb_projectors"]["l"])
+                    ),
+                    d["vkb_projectors"].get(
+                        "ecut_weight", [-1.0] * len(d["vkb_projectors"]["l"])
                     ),
                 )
             ],
@@ -1139,6 +1150,10 @@ class OncvpspInput:
         if any(proj.well_n for proj in self.vkb_projectors):
             d["vkb_projectors"]["well_n"] = [
                 proj.well_n for proj in self.vkb_projectors
+            ]
+        if any(proj.ecut_weight >= 0.0 for proj in self.vkb_projectors):
+            d["vkb_projectors"]["ecut_weight"] = [
+                proj.ecut_weight for proj in self.vkb_projectors
             ]
         if self.linear_mesh.upf_mesh != 0:
             d["pp_output"]["upf_mesh"] = self.linear_mesh.upf_mesh

@@ -384,24 +384,30 @@
  return
  end subroutine write_lmax
 
- character(len=echo_len) function vkb_head(lmax,well_n)
+ character(len=echo_len) function vkb_head(lmax,well_n,ecut_wt)
 !! the column line of the VANDERBILT-KLEINMAN-BYLANDER PROJECTORs section:
-!! well_n is written only when the input sets it for some l
+!! well_n is written only when the input sets it for some l, or sets
+!! ecut_weight, which follows it
 !!
 !! @param lmax  maximum angular momentum
 !! @param well_n  n of the first well state of each l (0 for the default)
+!! @param ecut_wt  cutoff weight of each l (negative for the default)
 
 !Input variables
  integer, intent(in) :: lmax,well_n(mxlin+1)
+ real(dp), intent(in) :: ecut_wt(mxlin+1)
 
- if(any(well_n(1:lmax+1)>0)) then
+ if(any(ecut_wt(1:lmax+1)>=0.0d0)) then
+   vkb_head='# l, nproj, debl, well_n, ecut_weight'
+ else if(any(well_n(1:lmax+1)>0)) then
    vkb_head='# l, nproj, debl, well_n'
  else
    vkb_head='# l, nproj, debl'
  end if
  end function vkb_head
 
- character(len=echo_len) function vkb_line(lmax,l1,nproj,debl,well_n)
+ character(len=echo_len) function vkb_line(lmax,l1,nproj,debl,well_n, &
+&                                           ecut_wt)
 !! the line of l = l1-1 of that section
 !!
 !! @param lmax  maximum angular momentum
@@ -409,12 +415,16 @@
 !! @param nproj  number of projectors of each l
 !! @param debl  energy steps of each l
 !! @param well_n  n of the first well state of each l (0 for the default)
+!! @param ecut_wt  cutoff weight of each l (negative for the default)
 
 !Input variables
  integer, intent(in) :: lmax,l1,nproj(mxlin+1),well_n(mxlin+1)
- real(dp), intent(in) :: debl(mxlin+1)
+ real(dp), intent(in) :: debl(mxlin+1),ecut_wt(mxlin+1)
 
- if(any(well_n(1:lmax+1)>0)) then
+ if(any(ecut_wt(1:lmax+1)>=0.0d0)) then
+   write(vkb_line,'(2i5,a,i5,a)') l1-1,nproj(l1),fx(debl(l1),10,5), &
+&        well_n(l1),fx(ecut_wt(l1),10,5)
+ else if(any(well_n(1:lmax+1)>0)) then
    write(vkb_line,'(2i5,a,i5)') l1-1,nproj(l1),fx(debl(l1),10,5),well_n(l1)
  else
    write(vkb_line,'(2i5,a)') l1-1,nproj(l1),fx(debl(l1),10,5)
@@ -498,7 +508,7 @@
  subroutine write_input_echo(nkap,iformat,atsym,zz,nc,nv,iexc,psfile, &
 &                            na,la,fa,lmax,rc0,ep,ncon,nbas,qcut,ep_as_given, &
 &                            well_onset,well_tail,wreg,lloc,lpopt,dvloc0, &
-&                            nproj,debl,well_n,well_norm, &
+&                            nproj,debl,well_n,well_norm,ecut_wt, &
 &                            icmod,fcfact,rcfact,slack,budget_cut, &
 &                            fcgrid,rcgrid, &
 &                            epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
@@ -531,6 +541,7 @@
  real(dp), intent(in) :: debl(mxlin+1)
  integer, intent(in) :: well_n(mxlin+1)
  integer, intent(in) :: well_norm
+ real(dp), intent(in) :: ecut_wt(mxlin+1)
  real(dp), intent(in) :: facnf(mxstate,mxcnf)
  real(dp), intent(in) :: fcgrid(3),rcgrid(3),log_mesh(3)
  character(len=2), intent(in) :: atsym
@@ -570,9 +581,9 @@
  write(6,'(2i5,3a)') lloc,lpopt,fx(rc0(5),10,5),'   ',fx(dvloc0,10,5)
 
  write(6,'(a/a/a)') '#','# VANDERBILT-KLEINMAN-BYLANDER PROJECTORs', &
-&      trim(vkb_head(lmax,well_n))
+&      trim(vkb_head(lmax,well_n,ecut_wt))
  do l1=1,lmax+1
-   write(6,'(a)') trim(vkb_line(lmax,l1,nproj,debl,well_n))
+   write(6,'(a)') trim(vkb_line(lmax,l1,nproj,debl,well_n,ecut_wt))
  end do
 
  call write_icmod(icmod,fcfact,rcfact,slack,budget_cut,fcgrid,rcgrid)

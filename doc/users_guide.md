@@ -145,7 +145,7 @@ text input where they differ (see `32_Ge_annotated.dat`):
 | `[reference_configuration]` | `n`, `l`, `f`, lists of nc + nv |
 | `[pseudopotentials]` | `lmax`, and the lists `l`, `rc`, `ep`, `ncon`, `nbas`, `qcut`; optional `ep_as_given` (true or false), `well_onset`, `well_tail` (`"well"`, `"free"` or `"confined"`), `wave_regularization`, `well_norm` (`"space"` or `"rc"`; by default that of `well_tail`) |
 | `[local_potential]` | `lloc`, `lpopt`, `rcloc` (the text input's rc(5)), `dvloc0` |
-| `[vkb_projectors]` | the lists `l`, `nproj`, `debl`; `well_n` optional, with `well_tail = "confined"` only |
+| `[vkb_projectors]` | the lists `l`, `nproj`, `debl`; `well_n` optional, with `well_tail = "confined"` only; `ecut_weight` optional (negative for the default), for channels with no occupied state only |
 | `[model_core_charge]` | `icmod`; `fcfact` (required for icmod 1, 2, 3, 6, 7); `rcfact` (required for icmod 3; optional for 4, 6, 7); for icmod 4 the optional grid `fcfact_min`, `fcfact_max`, `fcfact_step`, `rcfact_min`, `rcfact_max`, `rcfact_step`; for icmod 6 and 7 the optional `slack` and `budget_cutoff` (`"max"`, `"weighted"` or `"max_all"`) |
 | `[log_derivative_analysis]` | `epsh1`, `epsh2`, `depsh`; `rxpsh` optional |
 | `[linear_mesh]` | `a` (drl), `rmax` (rlmax) |

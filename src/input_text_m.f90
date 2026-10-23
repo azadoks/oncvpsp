@@ -18,7 +18,7 @@
 &                           ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                           amesh, rr1, rmax, c_light, ep_as_given, &
 &                           well_onset, well_tail, wreg, well_n, &
-&                           well_norm)
+&                           well_norm, ecut_wt)
 
 !! reads the text input file (see doc/32_Ge_annotated.dat), stopping on a
 !! read error
@@ -93,6 +93,10 @@
 !> n of the first well state of each l with well_tail 2 (optional on the
 !> projector line, 0 for the default)
  integer, intent(out) :: well_n(mxlin+1)
+!> Weight of the first pseudo-wave of each l with no occupied state in the
+!> cutoff of the pseudo-waves (optional on the projector line after well_n,
+!> negative for the default 2(2l+1))
+ real(dp), intent(out) :: ecut_wt(mxlin+1)
 ! [Model core charge]
 !> Model core charge flag
  integer, intent(out) :: icmod
@@ -281,17 +285,23 @@
  call read_error(ios, inline)
 
 ! Vanderbilt-Kleinman-Bylander projectors: l, nproj, debl, and optionally
-! well_n (0 for the default, at least 0)
+! well_n (0 for the default, at least 0) and ecut_weight (negative for the
+! default)
  well_n(:) = 0
+ ecut_wt(:) = -1.d0
  do l1 = 1, lmax + 1
    call next_line(unit, line, inline)
-   read(line, *, iostat=ios) lt, nproj(l1), debl(l1), well_n(l1)
+   read(line, *, iostat=ios) lt, nproj(l1), debl(l1), well_n(l1), ecut_wt(l1)
+   if(ios < 0) then
+     ecut_wt(l1) = -1.d0
+     read(line, *, iostat=ios) lt, nproj(l1), debl(l1), well_n(l1)
+   end if
    if(ios < 0) then
      well_n(l1) = 0
      read(line, *, iostat=ios) lt, nproj(l1), debl(l1)
    end if
    if(ios == 0 .and. (lt /= l1 - 1 .or. well_n(l1) < 0)) ios = 999
-   call check_finite(ios, [debl(l1)])
+   call check_finite(ios, [debl(l1), ecut_wt(l1)])
    call read_error(ios, inline)
  end do
 

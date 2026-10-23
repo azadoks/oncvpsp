@@ -22,7 +22,7 @@
 &                           ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                           amesh, rr1, rmax, c_light, ep_as_given, &
 &                           well_onset, well_tail, wreg, well_n, &
-&                           well_norm)
+&                           well_norm, ecut_wt)
 
 !! Reads the TOML input: the same data as read_input_text, with the same
 !! defaults and the same checks against the array sizes (check_data
@@ -55,7 +55,10 @@
 !   [vkb_projectors]           l (0..lmax), nproj, debl, well_n
 !                              (optional, with well_tail = "confined"
 !                              only: the n of each l's first well state,
-!                              0 for the default)
+!                              0 for the default), ecut_weight (optional:
+!                              the weight of the first wave of each l with
+!                              no occupied state in the pseudo-waves'
+!                              cutoff, negative for the default 2(2l+1))
 !   [model_core_charge]        icmod, fcfact (icmod 1, 2, 3, 6, 7; else 0),
 !                              rcfact (icmod 3; 1e-5 for icmod 6, 7; else
 !                              0), slack (icmod 6, 7; 1), budget_cutoff
@@ -136,6 +139,9 @@
 !> n of the first well state of each l with well_tail 2 (0 for the
 !> default)
  integer, intent(out) :: well_n(mxlin+1)
+!> weight of the first pseudo-wave of each l with no occupied state in the
+!> cutoff of the pseudo-waves (negative for the default 2(2l+1))
+ real(dp), intent(out) :: ecut_wt(mxlin+1)
 ! [Model core charge]
 !> Model core charge flag
  integer, intent(out) :: icmod
@@ -347,6 +353,11 @@
    if(any(well_n(1:lmax + 1) < 0)) then
      call input_error('well_n in [vkb_projectors] must be at least 0')
    end if
+ end if
+ ecut_wt(:) = -1.0_dp
+ if(child%has_key('ecut_weight')) then
+   call get_real_array(child, 'vkb_projectors', 'ecut_weight', lmax + 1, &
+&                      ecut_wt)
  end if
 
 ! model core charge; check_data validates icmod and the values

@@ -172,6 +172,9 @@
 !> space, 2 inside rc; and whether they are normalized inside rc
  integer :: well_norm
  logical :: well_norm_rc
+!> the weight of the first pseudo-wave of each l with no occupied state in
+!> the cutoff of the pseudo-waves (ecut_weight; negative for 2(2l+1))
+ real(dp) :: ecut_wt(mxlin+1)
  real(dp) :: well_onset
  real(dp), allocatable :: chix(:,:,:,:)
 !fully-relativistic only: scalar-relativistic and spin-orbit projectors, and
@@ -329,6 +332,7 @@
  well_tail=0
  well_n(:)=0
  well_norm=0
+ ecut_wt(:)=-1.0d0
  wreg=0.0d0
  select case(input_mode)
  case(INPUT_STDIN)
@@ -343,7 +347,8 @@
 &                       rlmax, drl, upf_mesh, &
 &                       ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                       amesh_in, rr1_in, rmax_in, c_light_in, ep_as_given, &
-&                       well_onset, well_tail, wreg, well_n, well_norm)
+&                       well_onset, well_tail, wreg, well_n, well_norm, &
+&                       ecut_wt)
  case(INPUT_TEXT)
    open(newunit=unit, file=input_filename, status='old', action='read', &
 &       iostat=ios)
@@ -363,7 +368,8 @@
 &                       rlmax, drl, upf_mesh, &
 &                       ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                       amesh_in, rr1_in, rmax_in, c_light_in, ep_as_given, &
-&                       well_onset, well_tail, wreg, well_n, well_norm)
+&                       well_onset, well_tail, wreg, well_n, well_norm, &
+&                       ecut_wt)
    close(unit)
 #if (defined WITH_TOML)
  case(INPUT_TOML)
@@ -385,7 +391,8 @@
 &                       rlmax, drl, upf_mesh, &
 &                       ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                       amesh_in, rr1_in, rmax_in, c_light_in, ep_as_given, &
-&                       well_onset, well_tail, wreg, well_n, well_norm)
+&                       well_onset, well_tail, wreg, well_n, well_norm, &
+&                       ecut_wt)
    close(unit)
 #endif
  case default
@@ -591,9 +598,9 @@
  write(6,'(2i5,3a)') lloc,lpopt,fx(rc(5),10,5),'   ',fx(dvloc0,10,5)
 
  write(6,'(a/a/a)') '#','# VANDERBILT-KLEINMAN-BYLANDER PROJECTORs', &
-&      trim(vkb_head(lmax,well_n))
+&      trim(vkb_head(lmax,well_n,ecut_wt))
  do l1=1,lmax+1
-   write(6,'(a)') trim(vkb_line(lmax,l1,nproj,debl,well_n))
+   write(6,'(a)') trim(vkb_line(lmax,l1,nproj,debl,well_n,ecut_wt))
  end do
 
  call write_icmod(icmod,fcfact,rcfact,slack,budget_cut,fcgrid,rcgrid)
@@ -952,9 +959,12 @@
 &                      ektail(1,1,l1,ikap),wreg,optdg(1,1,l1,ikap), &
 &                      wshare(1,1,l1,ikap))
 
-!the weights of its pseudo-waves in the weighted cutoff: the occupation of
-!each valence state (its share fj of J), or 2(2l+1) for the first wave of a
-!channel with none occupied
+!the weights of its pseudo-waves in the cutoff of the pseudo-waves (the
+!weighted mean, and which waves the largest is over): the occupation of
+!each valence state (its share fj of J), or for the first wave of a channel
+!with none occupied ecut_weight, by default 2(2l+1), as if the channel were
+!full; in a solid it holds about the charge that hybridization puts inside
+!rc, an input as the atom cannot give it
      jj=0
      do kk=nc+1,nc+nv
        if(la(kk)==ll .and. jj<nproj(l1)) then
@@ -963,7 +973,15 @@
        end if
      end do
      if(.not. any(wcurve(:,l1,ikap)>0.0d0)) then
-       wcurve(1,l1,ikap)=fj*dble(2*(2*ll+1))
+       if(ecut_wt(l1)>=0.0d0) then
+         wcurve(1,l1,ikap)=fj*ecut_wt(l1)
+       else
+         wcurve(1,l1,ikap)=fj*dble(2*(2*ll+1))
+       end if
+     else if(ecut_wt(l1)>=0.0d0) then
+       write(6,'(/a,i2,a)') 'oncvpsp: ERROR ecut_weight for l=',ll, &
+&           ' is for a channel with no occupied state; this one has one'
+       error stop 1
      end if
 
    end do !ikap
@@ -1289,7 +1307,7 @@
 &              atsym,soscale, &
 &              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &              fa,rc0,ep,qcut,ep_as_given,well_onset,well_tail,wreg,debl, &
-&              well_n,well_norm,facnf,dvloc0, &
+&              well_n,well_norm,ecut_wt,facnf,dvloc0, &
 &              fcfact,fcfact0,rcfact, &
 &              slack,budget_cut,fcgrid,rcgrid, &
 &              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,upf_mesh,nkap)
@@ -1300,7 +1318,7 @@
 &              zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
 &              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &              fa,rc0,ep,qcut,ep_as_given,well_onset,well_tail,wreg,debl, &
-&              well_n,well_norm,facnf,dvloc0, &
+&              well_n,well_norm,ecut_wt,facnf,dvloc0, &
 &              fcfact0,rcfact, &
 &              slack,budget_cut,fcgrid,rcgrid, &
 &              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,uupsa,ea,log_mesh, &
@@ -1340,7 +1358,7 @@
 &               slack,budget_cut,fcgrid,rcgrid, &
 &               epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,upf_mesh, &
 &               irel,nkap,ep_as_given,well_onset,well_tail,wreg,well_n, &
-&               well_norm)
+&               well_norm,ecut_wt)
  end if
 
  stop

@@ -601,19 +601,20 @@ endforeach ()
 # (03_Li), iexc=7 with c_light on the first line (14_Si_c), ep_as_given, well_onset and well_tail =
 # "free" on the lmax line (14_Si_wt), well_tail = "confined" with well_n on a projector line
 # (14_Si_cw), well_norm on the lmax line (14_Si_wn), budget_cutoff on the icmod line (14_Si_bcw;
-# "max_all" in 14_Si_hma) and
+# "max_all" in 14_Si_hma), ecut_weight on a projector line (14_Si_bcwe) and
 # wave_regularization on the lmax line (07_N_flat); each in sr or fr, the fr ones on inputs that run in seconds.
 set(si_c "s/^    Si  14     3   2   3   psp8$/    Si  14     3   2   7   psp8  137.0359895/")
 set(si_wt "14s/^    2$/    2    1    1.2    1/")
 set(si_wn "14s/^    2$/    2    0    0.0    0    0.0    2/")
 set(si_hma "s/^   7   0   1\\.0e-5   0\\.7$/   7   0   1.0e-5   0.7   2/")
+set(si_ew "s/^    2    2    0\\.75$/    2    2    0.75    0    0.3/")
 set(si_cw "14s/^    2$/    2    1    1.2    2/\ns/^    1    2    0\\.75$/    1    2    0.75    5/")
 foreach (echo_test IN ITEMS
         "sr:14_Si_lder:psp8" "sr:40_Zr_grid:psp8" "sr:40_Zr_grid:upf"
         "sr:83_Bi:psml" "sr:03_Li:psml" "nr:14_Si:psml" "sr:14_Si_hm:psp8"
         "r:40_Zr_grid:psml" "r:14_Si_lder:psp8" "r:14_Si_c:upf" "r:14_Si_c:psml" "sr:14_Si_c:psp8"
         "sr:14_Si_wt:upf" "sr:14_Si_wn:psp8" "sr:14_Si_cw:psp8" "r:14_Si_cw:psml" "sr:14_Si_bcw:psml" "r:14_Si_bcw:psp8"
-        "sr:14_Si_hma:upf" "sr:07_N_flat:upf")
+        "sr:14_Si_hma:upf" "r:14_Si_bcwe:psml" "sr:07_N_flat:upf")
     string(REPLACE ":" ";" echo_test "${echo_test}")
     list(GET echo_test 0 rel)
     list(GET echo_test 1 test_name)
@@ -626,6 +627,9 @@ foreach (echo_test IN ITEMS
     elseif (test_name STREQUAL "14_Si_wt")
         set(edit "${si_wt}")
         set(input "14_Si")
+    elseif (test_name STREQUAL "14_Si_bcwe")
+        set(edit "${si_ew}")
+        set(input "14_Si_bcw")
     elseif (test_name STREQUAL "14_Si_hma")
         set(edit "${si_hma}")
         set(input "14_Si_hm")
@@ -726,6 +730,11 @@ oncvpsp_test(error_well_norm_value errors error_test.sh
     $<TARGET_FILE:oncvpspsr> "Read ERROR, input data file line  14"
     "${CMAKE_CURRENT_BINARY_DIR}/error_well_norm_value"
     "${data}/14_Si.dat" "14s/^    2$/    2    0    0.0    0    0.0    3/")
+# ecut_weight is for a channel with no occupied state
+oncvpsp_test(error_ecut_weight_occupied errors error_test.sh
+    $<TARGET_FILE:oncvpspsr> "oncvpsp: ERROR ecut_weight for l= 1 is for a channel with no occupied state"
+    "${CMAKE_CURRENT_BINARY_DIR}/error_ecut_weight_occupied"
+    "${data}/14_Si.dat" "s/^    1    2    0\\.75$/    1    2    0.75    0    1.0/")
 oncvpsp_test(error_well_tail_value errors error_test.sh
     $<TARGET_FILE:oncvpspsr> "Read ERROR, input data file line  14"
     "${CMAKE_CURRENT_BINARY_DIR}/error_well_tail_value"

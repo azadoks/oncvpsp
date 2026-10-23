@@ -39,7 +39,7 @@
 &                  slack,budget_cut,fcgrid,rcgrid, &
 &                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,upf_mesh, &
 &                  irel,nkap,ep_as_given,well_onset,well_tail,wreg,well_n, &
-&                  well_norm)
+&                  well_norm,ecut_wt)
 
 !! writes the pseudopotential to the output in PSML format, between
 !! 'Begin PSML' and 'END_PSP' markers
@@ -118,6 +118,7 @@
 !! @param wreg  the regularization of the pseudo-wave optimization
 !! @param well_n  n of the first well state of each l (0 for the default)
 !! @param well_norm  the normalization of the well states, 0, 1 or 2
+!! @param ecut_wt  cutoff weight of each l (negative for the default)
 !!
 !! Alberto Garcia, February 1, 2015
 
@@ -159,6 +160,7 @@
  integer, intent(in) :: budget_cut
  logical, intent(in) :: ep_as_given
  integer, intent(in) :: well_tail,well_n(mxlin+1),well_norm
+ real(dp), intent(in) :: ecut_wt(mxlin+1)
  real(dp), intent(in) :: wreg
  real(dp), intent(in) :: well_onset
  character(len=4), intent(in) :: psfile
@@ -230,7 +232,8 @@
 &                rcfact,slack,budget_cut,fcgrid,rcgrid,epsh1,epsh2, &
 &                depsh,rxpsh,rlmax,drl, &
 &                ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh, &
-&                ep_as_given,well_onset,well_tail,wreg,well_n,well_norm)
+&                ep_as_given,well_onset,well_tail,wreg,well_n,well_norm, &
+&                ecut_wt)
 
  call xml_EndElement(xf,"input-file")
 !
@@ -623,7 +626,8 @@
 &                      epsh1,epsh2,depsh, &
 &                      rxpsh,rlmax,drl, &
 &                      ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh, &
-&                      ep_as_given,well_onset,well_tail,wreg,well_n,well_norm)
+&                      ep_as_given,well_onset,well_tail,wreg,well_n,well_norm, &
+&                ecut_wt)
 
 !! echoes the input data into the input-file element of the provenance, a
 !! line at a time, in the form of the psp8 echo (linout), so that it can be
@@ -684,6 +688,7 @@
 !!                  when one is not its default (lmax_lines)
 !! @param well_n  echoed on the projector lines when set (vkb_line)
 !! @param well_norm  echoed on the lmax line when not 0 (lmax_lines)
+!! @param ecut_wt  echoed on the projector lines when set (vkb_line)
 
  use xmlf90_wxml, only: xmlf_t, xml_AddPcData
  use input_echo_m, only: atom_lines, lmax_lines, icmod_lines, epsh_lines, &
@@ -707,6 +712,7 @@
  integer, intent(in) :: budget_cut
  logical, intent(in) :: ep_as_given
  integer, intent(in) :: well_tail,well_n(mxlin+1),well_norm
+ real(dp), intent(in) :: ecut_wt(mxlin+1)
  real(dp), intent(in) :: wreg
  real(dp), intent(in) :: well_onset
 
@@ -750,9 +756,9 @@
 
  call add('#')
  call add('# VANDERBILT-KLEINMAN-BYLANDER PROJECTORs')
- call add(vkb_head(lmax,well_n))
+ call add(vkb_head(lmax,well_n,ecut_wt))
  do l1=1,lmax+1
-   call add(vkb_line(lmax,l1,nproj,debl,well_n))
+   call add(vkb_line(lmax,l1,nproj,debl,well_n,ecut_wt))
  end do
 
  call icmod_lines(icmod,fcfact,rcfact,slack,budget_cut,fcgrid,rcgrid, &

@@ -127,8 +127,16 @@
 ###      of l (0 or absent for the default, the n after l's bound states);
 ###      a higher n gives a gentler wall, whose tail adds less to E_resid
 ###      above qcut (see "well / free tail" in the output)
+### ecut_weight optional, after well_n (write 0 for it): for an l with no
+###      occupied valence state, the weight of its first pseudo-wave in the
+###      cutoff of the pseudo-waves of icmod 6, 7 (the weighted mean, and
+###      the largest of "max", which leaves out a wave of weight 0);
+###      negative or absent for the default 2(2l+1), as if the channel were
+###      full. In a solid it holds about the charge hybridization puts
+###      inside rc (a few tenths of an electron for Si d). An error for an l
+###      with an occupied state
 #
-#  l,nproj,   debl, (well_n)  (lmax+1 lines, l's in order)
+#  l,nproj,   debl, (well_n), (ecut_weight)  (lmax+1 lines, l's in order)
     0    2    1.50
     1    2    1.50
     2    2    1.50

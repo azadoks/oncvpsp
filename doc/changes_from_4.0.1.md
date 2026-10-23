@@ -95,11 +95,13 @@ rather than hidden.
   each empty channel's first; over every wave with `budget_cutoff =
   "max_all"`), or, with `budget_cutoff = "weighted"`, the
   occupation-weighted mean (smooth where two waves' crossings pass each
-  other, which the maximum is not). With `fcfact` < 0 the budget is -fcfact times that
+  other, which the maximum is not). An empty channel's first wave weighs
+  2(2l+1), or its `ecut_weight` ([vkb_projectors]; 0 leaves it out of
+  the maximum too). With `fcfact` < 0 the budget is -fcfact times that
   cutoff. `slack` (0 < slack <= 1) makes the model fit slack times the
   budget. The method is ported from the BudgetedCore of
   PseudoPotentialGenerators.jl. Commits: 8fef166, dc1883b, f098dc9,
-  9b90162, 59d0ba8, d0a99ca.
+  9b90162, 59d0ba8, d0a99ca, 9ed4066 (the ground-state waves).
 - **icmod 7, hardness-matched core (new).** Of the radii that fit the
   budget, the one where the model core best reproduces the all-electron
   d2Exc/dn_i dn_j of the bound pseudo states. This is the

@@ -214,8 +214,15 @@ icmod==6:
     mean per electron, sum_i w_i E_i(ecut) = rcfact sum_i w_i, with w_i
     the occupation of each occupied valence state (its share
     (2J+1)/(2(2l+1)) for each J, fully relativistic), 2(2l+1) for the
-    first wave of a channel with none occupied, and 0 for every other
-    wave (the second projectors of the scattering states). Each E_i is
+    first wave of a channel with none occupied, or that channel's
+    ecut_weight when set (TOML [vkb_projectors], or a fifth value of its
+    projector line, after well_n), and 0 for every other wave (the
+    second projectors of the scattering states). 2(2l+1) counts an empty
+    channel as full; in a solid it holds about the charge hybridization
+    puts inside rc, which the atom cannot give, so ecut_weight is an
+    input. On 14_Si_bcw a Si d weight of 0.3 makes the weighted cutoff
+    9.00 Ha (9.31 at 10, 8.97 at 0); with "max", a weight of 0 leaves
+    the channel out (14_Si_hm: 10.93 Ha, against 11.51 set by d). Each E_i is
     the convergence curve of run_optimize, interpolated as for the tables
     (log E_i on its q grid); the root is the last crossing from above.
     Unlike the maximum, which turns a corner where two waves' crossings

@@ -143,6 +143,7 @@
  logical :: ep_as_given
  integer :: budget_cut
  integer :: well_tail, well_n(mxlin+1), well_norm
+ real(dp) :: ecut_wt(mxlin+1)
  real(dp) :: wreg
  real(dp) :: well_onset
 
@@ -185,6 +186,7 @@
    lines(25) = '    6.0  0.01  2000'
    lines(13) = '    2    1    1.5    2    2.5e-9    2'
    lines(20) = '    1    2    0.75    5'
+   lines(21) = '    2    2    0.75    0    0.3'
    lines(23) = '   6    0.0    1.0e-6    0.8    1'
    lines(2) = '    Si  14     3   2   3   psp8   137.0359895'
    all_lines = [character(len=700) :: lines, '# amesh, rr1, rmax', &
@@ -205,7 +207,8 @@
 &                     rlmax, drl, upf_mesh, &
 &                     ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                     amesh, rr1, rmax, c_light, ep_as_given, &
-&                     well_onset, well_tail, wreg, well_n, well_norm)
+&                     well_onset, well_tail, wreg, well_n, well_norm, &
+&                     ecut_wt)
  close(unit)
 
  call check(atsym == 'Si' .and. zz == 14 .and. nc == 3 .and. nv == 2 &
@@ -250,6 +253,7 @@
 &             'ep_as_given, well_onset, well_tail, wave_regularization')
    call check(all(well_n(1:3) == [0, 5, 0]), 'well_n')
    call check(well_norm == 2, 'well_norm')
+   call check(all(ecut_wt(1:3) == [-1.0_dp, -1.0_dp, 0.3_dp]), 'ecut_weight')
    call check(inline == 35, 'line number of the last data line')
  else
    call check(upf_mesh == 0, 'UPF mesh size default')
@@ -261,6 +265,7 @@
 &             'defaults')
    call check(all(well_n(1:3) == 0), 'well_n default')
    call check(well_norm == 0, 'well_norm default')
+   call check(all(ecut_wt(1:3) < 0), 'ecut_weight default')
    call check(inline == 32, 'line number of the last data line')
  end if
  return
