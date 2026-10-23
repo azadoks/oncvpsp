@@ -135,25 +135,27 @@
  return
  end subroutine atom_lines
 
- subroutine lmax_lines(lmax,ep_as_given,well_onset,well_tail,wreg,text, &
-&                      ntext)
+ subroutine lmax_lines(lmax,ep_as_given,well_onset,well_tail,wreg,well_norm, &
+&                      text,ntext)
 
 !! the head of the PSEUDOPOTENTIAL AND OPTIMIZATION section, to the lmax
 !! line: ep_as_given (0 or 1), well_onset (0 for the default) and
 !! well_tail (0 for "well", 1 for "free", 2 for "confined") are written
-!! after lmax only when one of them is not its default, and
-!! wave_regularization after them only when it is not 0
+!! after lmax only when one of them is not its default, wave_regularization
+!! after them only when it or well_norm is not 0, and well_norm (0 for that
+!! of well_tail, 1 all space, 2 inside rc) after it only when not 0
 !!
 !! @param lmax  maximum angular momentum
 !! @param ep_as_given  whether the well states take ep as given
 !! @param well_onset  onset of the well as a multiple of rc
 !! @param well_tail  the tail of the well states, 0, 1 or 2
 !! @param wreg  the regularization of the pseudo-wave optimization
+!! @param well_norm  the normalization of the well states, 0, 1 or 2
 !! @param text  the lines of the section
 !! @param ntext  number of lines
 
 !Input variables
- integer, intent(in) :: lmax,well_tail
+ integer, intent(in) :: lmax,well_tail,well_norm
  logical, intent(in) :: ep_as_given
  real(dp), intent(in) :: wreg
  real(dp), intent(in) :: well_onset
@@ -169,7 +171,12 @@
  text(2)='# PSEUDOPOTENTIAL AND OPTIMIZATION'
  onset=0.0d0
  if(well_onset/=well_onset_default) onset=well_onset
- if(wreg/=0.0d0) then
+ if(well_norm/=0) then
+   text(3)='# lmax, ep_as_given, well_onset, well_tail, '// &
+&          'wave_regularization, well_norm'
+   write(text(4),'(i5,i5,es24.16,i5,es24.16,i5)') lmax, &
+&        merge(1,0,ep_as_given),onset,well_tail,wreg,well_norm
+ else if(wreg/=0.0d0) then
    text(3)='# lmax, ep_as_given, well_onset, well_tail, wave_regularization'
    write(text(4),'(i5,i5,es24.16,i5,es24.16)') lmax, &
 &        merge(1,0,ep_as_given),onset,well_tail,wreg
@@ -347,7 +354,7 @@
  return
  end subroutine write_atom
 
- subroutine write_lmax(lmax,ep_as_given,well_onset,well_tail,wreg)
+ subroutine write_lmax(lmax,ep_as_given,well_onset,well_tail,wreg,well_norm)
 
 !! writes the head of the PSEUDOPOTENTIAL AND OPTIMIZATION section, to the
 !! lmax line, to unit 6
@@ -357,9 +364,10 @@
 !! @param well_onset  onset of the well as a multiple of rc
 !! @param well_tail  the tail of the well states, 0, 1 or 2
 !! @param wreg  the regularization of the pseudo-wave optimization
+!! @param well_norm  the normalization of the well states, 0, 1 or 2
 
 !Input variables
- integer, intent(in) :: lmax,well_tail
+ integer, intent(in) :: lmax,well_tail,well_norm
  logical, intent(in) :: ep_as_given
  real(dp), intent(in) :: wreg
  real(dp), intent(in) :: well_onset
@@ -368,7 +376,8 @@
  character(len=echo_len) :: text(echo_max)
  integer :: ii,ntext
 
- call lmax_lines(lmax,ep_as_given,well_onset,well_tail,wreg,text,ntext)
+ call lmax_lines(lmax,ep_as_given,well_onset,well_tail,wreg,well_norm,text, &
+&                ntext)
  write(6,'(a)') (trim(text(ii)),ii=1,ntext)
 
  return
@@ -487,7 +496,7 @@
  subroutine write_input_echo(nkap,iformat,atsym,zz,nc,nv,iexc,psfile, &
 &                            na,la,fa,lmax,rc0,ep,ncon,nbas,qcut,ep_as_given, &
 &                            well_onset,well_tail,wreg,lloc,lpopt,dvloc0, &
-&                            nproj,debl,well_n, &
+&                            nproj,debl,well_n,well_norm, &
 &                            icmod,fcfact,rcfact,slack,budget_weighted, &
 &                            fcgrid,rcgrid, &
 &                            epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
@@ -519,6 +528,7 @@
  real(dp), intent(in) :: wreg
  real(dp), intent(in) :: debl(mxlin+1)
  integer, intent(in) :: well_n(mxlin+1)
+ integer, intent(in) :: well_norm
  real(dp), intent(in) :: facnf(mxstate,mxcnf)
  real(dp), intent(in) :: fcgrid(3),rcgrid(3),log_mesh(3)
  character(len=2), intent(in) :: atsym
@@ -540,7 +550,8 @@
    write(6,'(2i5,f8.2)') na(ii),la(ii),fa(ii)
  end do
 
- call lmax_lines(lmax,ep_as_given,well_onset,well_tail,wreg,text,ntext)
+ call lmax_lines(lmax,ep_as_given,well_onset,well_tail,wreg,well_norm,text, &
+&                ntext)
  write(6,'(a)') (trim(text(ii)),ii=1,ntext)
  if(nkap==2) then
    write(6,'(a/a)') '#','#   l,   rc,     ep,   ncon, nbas, qcut'

@@ -164,6 +164,10 @@
 !> the tail of the well states (0 "well", 1 "free", 2 "confined"), and the
 !> n of each l's first well state with "confined" (0 for the default)
  integer :: well_tail,well_n(mxlin+1)
+!> the normalization of the well states: 0 that of well_tail, 1 all
+!> space, 2 inside rc; and whether they are normalized inside rc
+ integer :: well_norm
+ logical :: well_norm_rc
  real(dp) :: well_onset
  real(dp), allocatable :: chix(:,:,:,:)
 !fully-relativistic only: scalar-relativistic and spin-orbit projectors, and
@@ -320,6 +324,7 @@
  well_onset=well_onset_default
  well_tail=0
  well_n(:)=0
+ well_norm=0
  wreg=0.0d0
  select case(input_mode)
  case(INPUT_STDIN)
@@ -334,7 +339,7 @@
 &                       rlmax, drl, upf_mesh, &
 &                       ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                       amesh_in, rr1_in, rmax_in, c_light_in, ep_as_given, &
-&                       well_onset, well_tail, wreg, well_n)
+&                       well_onset, well_tail, wreg, well_n, well_norm)
  case(INPUT_TEXT)
    open(newunit=unit, file=input_filename, status='old', action='read', &
 &       iostat=ios)
@@ -354,7 +359,7 @@
 &                       rlmax, drl, upf_mesh, &
 &                       ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                       amesh_in, rr1_in, rmax_in, c_light_in, ep_as_given, &
-&                       well_onset, well_tail, wreg, well_n)
+&                       well_onset, well_tail, wreg, well_n, well_norm)
    close(unit)
 #if (defined WITH_TOML)
  case(INPUT_TOML)
@@ -376,7 +381,7 @@
 &                       rlmax, drl, upf_mesh, &
 &                       ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                       amesh_in, rr1_in, rmax_in, c_light_in, ep_as_given, &
-&                       well_onset, well_tail, wreg, well_n)
+&                       well_onset, well_tail, wreg, well_n, well_norm)
    close(unit)
 #endif
  case default
@@ -385,6 +390,13 @@
    error stop 1
  end select
  well_tail_free=well_tail==1
+!the free tail has no finite norm over all space
+ if(well_tail==1 .and. well_norm==1) then
+   write(6,'(/a)') 'oncvpsp: ERROR well_norm = "space" (1) is not defined '// &
+&       'for well_tail = "free": the free tail has no finite norm'
+   error stop 1
+ end if
+ well_norm_rc=well_norm==2 .or. (well_norm==0 .and. well_tail/=0)
  if(well_tail/=2 .and. any(well_n(:)>0)) then
    write(6,'(/a)') 'oncvpsp: ERROR well_n is for well_tail = "confined" only'
    error stop 1
@@ -563,7 +575,7 @@
    end if
  end do
 
- call write_lmax(lmax,ep_as_given,well_onset,well_tail,wreg)
+ call write_lmax(lmax,ep_as_given,well_onset,well_tail,wreg,well_norm)
  write(6,'(a/a)') '#','#   l,   rc,      ep,       ncon, nbas, qcut'
  do l1=1,lmax+1
    write(6,'(i5,2a,2i5,a)') l1-1,fx(rc(l1),10,5),fx(ep(l1,1),10,5), &
@@ -846,10 +858,12 @@
          end if
          uua(:,iprj,ikap)=uu(:,1)
          upa(:,iprj,ikap)=cnorm*up(:,1)
-!with the confined well, a well state is normalized inside rc, as with the
-!free tail: its norm over all space is the well's, and would scale its
-!E_resid with the width of the well (the kernels do not see it)
-         if(well_tail==2 .and. wmesh(iprj)%mx>0) then
+!a state the well confines is normalized inside rc with well_norm "rc",
+!and by default with the confined well, as with the free tail: its norm
+!over all space is the well's, and would scale its E_resid with the width
+!of the well; else over all space, as the solvers give it (the kernels
+!see neither)
+         if(well_norm_rc .and. wmesh(iprj)%mx>0) then
            call fpovlp(uua(1,iprj,ikap),uua(1,iprj,ikap),mmax,rc(l1),ll, &
 &                      kap,zz,cnorm,rr,irel)
            cnorm=1.0d0/sqrt(cnorm)
@@ -1271,7 +1285,7 @@
 &              atsym,soscale, &
 &              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &              fa,rc0,ep,qcut,ep_as_given,well_onset,well_tail,wreg,debl, &
-&              well_n,facnf,dvloc0, &
+&              well_n,well_norm,facnf,dvloc0, &
 &              fcfact,fcfact0,rcfact, &
 &              slack,budget_weighted,fcgrid,rcgrid, &
 &              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,upf_mesh,nkap)
@@ -1282,7 +1296,7 @@
 &              zz,zion,mmax,mxprj,iexc,icmod,nrl,drl,atsym,epstot, &
 &              na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &              fa,rc0,ep,qcut,ep_as_given,well_onset,well_tail,wreg,debl, &
-&              well_n,facnf,dvloc0, &
+&              well_n,well_norm,facnf,dvloc0, &
 &              fcfact0,rcfact, &
 &              slack,budget_weighted,fcgrid,rcgrid, &
 &              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,uupsa,ea,log_mesh, &
@@ -1321,7 +1335,8 @@
 &               fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact0,rcfact, &
 &               slack,budget_weighted,fcgrid,rcgrid, &
 &               epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,upf_mesh, &
-&               irel,nkap,ep_as_given,well_onset,well_tail,wreg,well_n)
+&               irel,nkap,ep_as_given,well_onset,well_tail,wreg,well_n, &
+&               well_norm)
  end if
 
  stop

@@ -39,7 +39,7 @@
 # PSEUDOPOTENTIAL AND OPTIMIZATION
 #
 ### lmax maximum angular momentum for which psp is calculated (<=3)
-### The four values that may follow lmax on its line are optional; a line
+### The five values that may follow lmax on its line are optional; a line
 ### that ends early keeps the defaults of the rest:
 ### ep_as_given 0 (default) or 1: 1 has the well states take ep as given.
 ###     By default a bound state of the well's n and l localized inside
@@ -59,8 +59,14 @@
 ### wave_regularization weight w (at least 0, default 0) of the residual
 ###     energy at qcut/4 added to that at qcut in the optimization
 ###     (doc/program_overview.md, 6)
+### well_norm 0 (default), 1 or 2: the normalization of the well states the
+###     well confines, 1 over all space, 2 inside rc; 0 takes that of
+###     well_tail (all space for 0, inside rc for 1 and 2). The kernels do
+###     not depend on it; the residual energies and cutoffs of the well
+###     states do. 1 with well_tail 1 is an error: the free tail has no
+###     finite norm
 #
-# lmax, (ep_as_given, well_onset, well_tail, wave_regularization)
+# lmax, (ep_as_given, well_onset, well_tail, wave_regularization, well_norm)
     2
 #
 #

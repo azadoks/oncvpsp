@@ -495,7 +495,8 @@ if (ONCVPSP_WITH_TOML)
             "icmod3_rcfact" "test_config_length" "test_config_count" "test_config_type"
             "integer_for_real" "extra_keys" "icmod6_default_rcfact"
             "icmod6_default_slack" "well_onset_range" "well_onset_default"
-            "well_tail_value" "well_tail_default" "well_n_negative" "budget_cutoff_value"
+            "well_tail_value" "well_tail_default" "well_n_negative" "well_norm_value"
+            "budget_cutoff_value"
             "budget_cutoff_default" "wave_regularization_value"
             "wave_regularization_default" "nan_real" "inf_array")
         oncvpsp_test(toml_input_${case} toml toml_error_test.sh
@@ -564,6 +565,23 @@ if (ONCVPSP_WITH_TOML)
     set_tests_properties(well_rmax_confined_sr_14_Si PROPERTIES LABELS "toml;sr")
 endif ()
 
+# The normalization of the well states (well_norm) scales each state, which the kernels do not see:
+# all space or inside rc give the same pseudopotential to round-off (6e-13 measured), for the well's
+# tail and the confined well; only the convergence tables move (49 % at 1e-5 in 14_Si's d)
+if (ONCVPSP_WITH_TOML)
+    foreach (norm_test IN ITEMS "sr:well" "r:confined")
+        string(REPLACE ":" ";" norm_test "${norm_test}")
+        list(GET norm_test 0 rel)
+        list(GET norm_test 1 tail)
+        add_test(NAME well_norm_${rel}_${tail}_14_Si
+            COMMAND ${test_python} "${scripts}/invariance_test.py" $<TARGET_FILE:oncvpsp${rel}>
+                "${data}/toml/14_Si.toml" pseudopotentials.well_norm "\"space\"" "\"rc\""
+                --set "pseudopotentials.well_tail=\"${tail}\"" --groups kernel,vloc,core,tests,ld,ghost
+                --tol 1e-11 --workdir "${CMAKE_CURRENT_BINARY_DIR}/well_norm_${rel}_${tail}_14_Si")
+        set_tests_properties(well_norm_${rel}_${tail}_14_Si PROPERTIES LABELS "toml;${rel}")
+    endforeach ()
+endif ()
+
 # PSML output: written into the output like the psp8 and upf files, with no files left in the working
 # directory
 foreach (psml_test IN ITEMS "sr:14_Si" "r:14_Si" "nr:08_O")
@@ -579,16 +597,17 @@ endforeach ()
 # search grid (40_Zr_grid), icmod=7 with slack (14_Si_hm), a Libxc iexc (83_Bi), rc on the grid
 # (03_Li), iexc=7 with c_light on the first line (14_Si_c), ep_as_given, well_onset and well_tail =
 # "free" on the lmax line (14_Si_wt), well_tail = "confined" with well_n on a projector line
-# (14_Si_cw), budget_cutoff on the icmod line (14_Si_bcw) and wave_regularization on the lmax line
-# (07_N_flat); each in sr or fr, the fr ones on inputs that run in seconds.
+# (14_Si_cw), well_norm on the lmax line (14_Si_wn), budget_cutoff on the icmod line (14_Si_bcw) and
+# wave_regularization on the lmax line (07_N_flat); each in sr or fr, the fr ones on inputs that run in seconds.
 set(si_c "s/^    Si  14     3   2   3   psp8$/    Si  14     3   2   7   psp8  137.0359895/")
 set(si_wt "14s/^    2$/    2    1    1.2    1/")
+set(si_wn "14s/^    2$/    2    0    0.0    0    0.0    2/")
 set(si_cw "14s/^    2$/    2    1    1.2    2/\ns/^    1    2    0\\.75$/    1    2    0.75    5/")
 foreach (echo_test IN ITEMS
         "sr:14_Si_lder:psp8" "sr:40_Zr_grid:psp8" "sr:40_Zr_grid:upf"
         "sr:83_Bi:psml" "sr:03_Li:psml" "nr:14_Si:psml" "sr:14_Si_hm:psp8"
         "r:40_Zr_grid:psml" "r:14_Si_lder:psp8" "r:14_Si_c:upf" "r:14_Si_c:psml" "sr:14_Si_c:psp8"
-        "sr:14_Si_wt:upf" "sr:14_Si_cw:psp8" "r:14_Si_cw:psml" "sr:14_Si_bcw:psml" "r:14_Si_bcw:psp8" "sr:07_N_flat:upf")
+        "sr:14_Si_wt:upf" "sr:14_Si_wn:psp8" "sr:14_Si_cw:psp8" "r:14_Si_cw:psml" "sr:14_Si_bcw:psml" "r:14_Si_bcw:psp8" "sr:07_N_flat:upf")
     string(REPLACE ":" ";" echo_test "${echo_test}")
     list(GET echo_test 0 rel)
     list(GET echo_test 1 test_name)
@@ -600,6 +619,9 @@ foreach (echo_test IN ITEMS
         set(input "14_Si")
     elseif (test_name STREQUAL "14_Si_wt")
         set(edit "${si_wt}")
+        set(input "14_Si")
+    elseif (test_name STREQUAL "14_Si_wn")
+        set(edit "${si_wn}")
         set(input "14_Si")
     elseif (test_name STREQUAL "14_Si_cw")
         set(edit "${si_cw}")
@@ -685,6 +707,16 @@ oncvpsp_test(error_well_n_below errors error_test.sh
     $<TARGET_FILE:oncvpspsr> "below the first well state's n"
     "${CMAKE_CURRENT_BINARY_DIR}/error_well_n_below"
     "${data}/14_Si.dat" "14s/^    2$/    2    0    0.0    2/\ns/^    1    2    0\\.75$/    1    2    0.75    3/")
+# well_norm (the normalization of the well states) is 0, 1 or 2, and "space" (1) is not defined for
+# the free tail
+oncvpsp_test(error_well_norm_free_space errors error_test.sh
+    $<TARGET_FILE:oncvpspsr> "oncvpsp: ERROR well_norm = \"space\" (1) is not defined for well_tail = \"free\""
+    "${CMAKE_CURRENT_BINARY_DIR}/error_well_norm_free_space"
+    "${data}/14_Si.dat" "14s/^    2$/    2    0    0.0    1    0.0    1/")
+oncvpsp_test(error_well_norm_value errors error_test.sh
+    $<TARGET_FILE:oncvpspsr> "Read ERROR, input data file line  14"
+    "${CMAKE_CURRENT_BINARY_DIR}/error_well_norm_value"
+    "${data}/14_Si.dat" "14s/^    2$/    2    0    0.0    0    0.0    3/")
 oncvpsp_test(error_well_tail_value errors error_test.sh
     $<TARGET_FILE:oncvpspsr> "Read ERROR, input data file line  14"
     "${CMAKE_CURRENT_BINARY_DIR}/error_well_tail_value"

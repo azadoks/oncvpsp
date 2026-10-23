@@ -26,7 +26,7 @@
 &                  atsym,soscale, &
 &                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &                  fa,rc0,ep,qcut,ep_as_given,well_onset,well_tail,wreg, &
-&                  debl,well_n,facnf, &
+&                  debl,well_n,well_norm,facnf, &
 &                  dvloc0,fcfact,fcfact0, &
 &                  rcfact, &
 &                  slack,budget_weighted,fcgrid,rcgrid, &
@@ -92,6 +92,7 @@
 !! @param qcut  residual-energy cutoff wave vectors for each l
 !! @param debl  energy shifts for the second projectors for each l (Ha)
 !! @param well_n  n of the first well state of each l (0 for the default)
+!! @param well_norm  the normalization of the well states, 0, 1 or 2
 !! @param facnf  occupancies, all configurations
 !! @param dvloc0  amplitude at rr==0 of the function added to the local
 !!                potential for lloc==4
@@ -146,6 +147,7 @@
  real(dp), intent(in) :: well_onset
  integer, intent(in) :: well_tail
  integer, intent(in) :: well_n(mxlin+1)
+ integer, intent(in) :: well_norm
  real(dp), intent(in) :: wreg
  real(dp), intent(in) :: debl(mxlin+1)
  real(dp), intent(in) :: facnf(mxstate,mxcnf)
@@ -391,7 +393,7 @@
  call write_input_echo(nkap,1,atsym,zz,nc,nv,iexc,psfile, &
 &                       na,la,fa,lmax,rc0,ep(:,1),ncon,nbas,qcut,ep_as_given, &
 &                       well_onset,well_tail,wreg,lloc,lpopt,dvloc0, &
-&                       nproj,debl,well_n, &
+&                       nproj,debl,well_n,well_norm, &
 &                       icmod,fcfact0,rcfact,slack,budget_weighted, &
 &                       fcgrid,rcgrid, &
 &                       epsh1,epsh2,depsh,rxpsh,rlmax,drl, &

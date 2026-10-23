@@ -130,6 +130,10 @@ case $case in
         # well_tail defaults to "well"
         set_key pseudopotentials qcut 'qcut = [ 5.0, 5.0, 5.0,]\nwell_tail = "well"' \
             < "$base" > in.toml ;;
+    well_norm_value)
+        set_key pseudopotentials qcut 'qcut = [ 5.0, 5.0, 5.0,]\nwell_norm = "all"' \
+            < "$base" > in.toml
+        expect='well_norm in [pseudopotentials] must be "space" or "rc", got "all"' ;;
     well_n_negative)
         set_key vkb_projectors debl 'debl = [ 1.0, 0.75, 0.75,]\nwell_n = [ 0, -1, 0,]' \
             < "$base" > in.toml

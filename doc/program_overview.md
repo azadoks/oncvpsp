@@ -106,6 +106,15 @@ irel, and the stage.  It has the following major sections:
      be too steep, which made the tail, and the kernels, jump. The states
      are normalized to 1 inside r_c, as with the free tail.
 
+     well_norm (TOML "space" or "rc", or 1 or 2 as the sixth value of the
+     lmax line) sets the normalization of the well states the well
+     confines: over all space, as the solvers give it (the default with
+     well_tail = "well"), or to 1 inside r_c (the default with "free" and
+     "confined"); "space" with "free" is an error. Scaling a state does
+     not change the kernels, but its residual energies, convergence table
+     and cutoffs scale with its square, so the cutoffs of different
+     well_tail modes compare only at the same well_norm.
+
      Every well state is solved on the log mesh continued beyond its end
      until it decays to machine precision (well_mesh_m), and each one the
      well confines reports its residual energy at qcut with the well's

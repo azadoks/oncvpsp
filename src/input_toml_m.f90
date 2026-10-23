@@ -21,7 +21,8 @@
 &                           rlmax, drl, upf_mesh, &
 &                           ncnf, nvcnf, nacnf, lacnf, facnf, &
 &                           amesh, rr1, rmax, c_light, ep_as_given, &
-&                           well_onset, well_tail, wreg, well_n)
+&                           well_onset, well_tail, wreg, well_n, &
+&                           well_norm)
 
 !! Reads the TOML input: the same data as read_input_text, with the same
 !! defaults and the same checks against the array sizes (check_data
@@ -47,7 +48,9 @@
 !                              well, see wellstate), wave_regularization
 !                              (optional, 0, at least 0: its weight on
 !                              E_resid at qcut/4 in the optimization, see
-!                              optimize)
+!                              optimize), well_norm (optional, "space" or
+!                              "rc": the normalization of the well
+!                              states; by default that of well_tail)
 !   [local_potential]          lloc, lpopt, rcloc, dvloc0
 !   [vkb_projectors]           l (0..lmax), nproj, debl, well_n
 !                              (optional, with well_tail = "confined"
@@ -124,6 +127,9 @@
 !> the tail of the well states: 0 "well", 1 "free", 2 "confined"
  integer, intent(out) :: well_tail
  real(dp), intent(out) :: wreg
+!> the normalization of the well states: 0 that of well_tail, 1 "space"
+!> (all space), 2 "rc" (inside rc)
+ integer, intent(out) :: well_norm
 !> Energy added to ep for the second projector (Ha)
  real(dp), intent(out) :: debl(mxlin+1)
 !> n of the first well state of each l with well_tail 2 (0 for the
@@ -307,6 +313,18 @@
    call input_error('wave_regularization in [pseudopotentials] must be '// &
 &    'at least 0')
  end if
+ call get_string(child, 'pseudopotentials', 'well_norm', tmp_str, '-')
+ select case(tmp_str)
+ case('-')
+   well_norm = 0
+ case('space')
+   well_norm = 1
+ case('rc')
+   well_norm = 2
+ case default
+   call input_error('well_norm in [pseudopotentials] must be "space" or '// &
+&    '"rc", got "'//tmp_str//'"')
+ end select
 
 ! local potential
  call get_section(table, 'local_potential', child)

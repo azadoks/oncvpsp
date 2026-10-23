@@ -681,6 +681,8 @@ class OncvpspInput:
     well_onset: float | None = None
     well_tail: str = "well"
     wave_regularization: float = 0.0
+    'None, or "space" or "rc": the normalization of the well states'
+    well_norm: str | None = None
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, OncvpspInput):
@@ -727,7 +729,13 @@ class OncvpspInput:
         if self.lmax != other.lmax:
             logging.debug("lmax differs: %d != %d", self.lmax, other.lmax)
             return False
-        for name in ("ep_as_given", "well_onset", "well_tail", "wave_regularization"):
+        for name in (
+            "ep_as_given",
+            "well_onset",
+            "well_tail",
+            "wave_regularization",
+            "well_norm",
+        ):
             if getattr(self, name) != getattr(other, name):
                 logging.debug(
                     "%s differs: %s != %s",
@@ -875,7 +883,8 @@ class OncvpspInput:
 
         # lmax, and optionally ep_as_given (0 or 1), well_onset (0 or less for
         # the default), well_tail (0 for "well", 1 for "free", 2 for
-        # "confined") and wave_regularization
+        # "confined"), wave_regularization and well_norm (0 for that of
+        # well_tail, 1 for "space", 2 for "rc")
         words = next(lines).split()
         lmax = int(words[0])
         ep_as_given = len(words) > 1 and int(words[1]) == 1
@@ -884,6 +893,7 @@ class OncvpspInput:
             ("well", "free", "confined")[int(words[3])] if len(words) > 3 else "well"
         )
         wave_regularization = fort_float(words[4]) if len(words) > 4 else 0.0
+        well_norm = (None, "space", "rc")[int(words[5])] if len(words) > 5 else None
 
         pseudopotentials = [
             PseudopotentialConfiguration.from_str(next(lines)) for _ in range(lmax + 1)
@@ -936,6 +946,7 @@ class OncvpspInput:
             well_onset if well_onset > 0 else None,
             well_tail,
             wave_regularization,
+            well_norm,
         )
 
     @classmethod
@@ -1037,6 +1048,7 @@ class OncvpspInput:
             well_onset=d["pseudopotentials"].get("well_onset"),
             well_tail=d["pseudopotentials"].get("well_tail", "well"),
             wave_regularization=d["pseudopotentials"].get("wave_regularization", 0.0),
+            well_norm=d["pseudopotentials"].get("well_norm"),
         )
 
     def to_dict(self) -> dict[str, ty.Any]:
@@ -1122,6 +1134,8 @@ class OncvpspInput:
             d["pseudopotentials"]["well_tail"] = self.well_tail
         if self.wave_regularization != 0.0:
             d["pseudopotentials"]["wave_regularization"] = self.wave_regularization
+        if self.well_norm is not None:
+            d["pseudopotentials"]["well_norm"] = self.well_norm
         if any(proj.well_n for proj in self.vkb_projectors):
             d["vkb_projectors"]["well_n"] = [
                 proj.well_n for proj in self.vkb_projectors

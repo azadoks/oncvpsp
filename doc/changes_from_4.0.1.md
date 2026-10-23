@@ -148,6 +148,16 @@ rather than hidden.
   a gentler wall, whose tail adds less to E_resid (the well's-share line
   says how much). The states are normalized inside rc, as with the free
   tail. Commit: 4286074.
+- **`well_norm` (off by default).** 4.0.1 normalized every well state
+  over all space, which for a confined state is the well's choice: a
+  wider well spreads the state and lowers its E_resid. `well_norm`
+  ("space" or "rc") sets the normalization of the states the well
+  confines; by default it is that of `well_tail` (all space for "well",
+  inside rc for "free" and "confined"), and "space" with "free" is an
+  error, as the free tail has no finite norm. The kernels do not depend
+  on it (6e-13 in 14_Si); the residual energies, convergence tables and
+  cutoffs of the well states do (49 % at 1e-5 in 14_Si's d), so cutoffs
+  of different `well_tail` modes compare at the same `well_norm`.
 
 #### Pseudo-wave optimization
 
