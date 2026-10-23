@@ -7,6 +7,8 @@ suggested that you cite D. R. Hamann, Phys. Rev. B 88, 085117 (2013)
 in any publication utilizing these pseudopotentials.
 
 
+
+
 # ATOM AND REFERENCE CONFIGURATION
 # atsym  z   nc   nv     iexc    psfile
   Ca 20.00    3    3       3      psp8
@@ -316,6 +318,13 @@ Diagnostic tests using Vanderbilt-Kleinman-Bylander pseudopotentials
 
    2   2.4914657   2.5671120  -0.0783472   0.0000001   1.0000253   1.0000252
    2   2.4914657   2.5671120   0.9216528   0.0000070   1.0000613   1.0000613
+
+Cutoffs at the valence energies: the pseudo scattering state of
+each l with no occupied state, normalized to 1 inside rc
+                e (Ha)  E_resid(qcut)  Ecut (Ha) at 1e-2 ... 1e-5
+ band l=2 ikap=1  -0.6422     1.7776E-05    7.99   10.68   12.35   25.04
+ band l=2 ikap=1  -0.3922     1.0847E-05    9.57   12.14   14.03   19.12
+ band l=2 ikap=1  -0.1422     5.4137E-06   11.19   13.74   15.66   17.26
 
  Testing for bound ghosts
    n   l    E NL Schr. Eq   E Basis Diag.   E Cutoff
@@ -5086,6 +5095,23 @@ opt   2   1   2  8.0911143470904778E-05  0.0000000000000000E+00  6.2206531902290
 # well_share l ikap iproj e_well(Ha) e_free(Ha)
 well_share   1   1   2  2.3332796094815977E-06  2.3373434242203556E-06
 well_share   2   1   2  8.0911143471057434E-05  8.0938944476627634E-05
+# band_eresid l ikap e(Ha) eresid(Ha)
+band_eresid   2   1 -6.4217519917253985E-01  1.7775703837287171E-05
+band_eresid   2   1 -3.9217519917253985E-01  1.0846794545325889E-05
+band_eresid   2   1 -1.4217519917253985E-01  5.4136726421484722E-06
+# band_ecut l ikap e(Ha) err(Ha) ecut(Ha)
+band_ecut   2   1 -6.4217519917253985E-01  1.0000000000000000E-02  7.9883746181754534E+00
+band_ecut   2   1 -6.4217519917253985E-01  1.0000000000000000E-03  1.0684389625060781E+01
+band_ecut   2   1 -6.4217519917253985E-01  1.0000000000000000E-04  1.2353849293075793E+01
+band_ecut   2   1 -6.4217519917253985E-01  1.0000000000000001E-05  2.5036864529536512E+01
+band_ecut   2   1 -3.9217519917253985E-01  1.0000000000000000E-02  9.5681619782626779E+00
+band_ecut   2   1 -3.9217519917253985E-01  1.0000000000000000E-03  1.2137506603622889E+01
+band_ecut   2   1 -3.9217519917253985E-01  1.0000000000000000E-04  1.4027955643959102E+01
+band_ecut   2   1 -3.9217519917253985E-01  1.0000000000000001E-05  1.9115354559284221E+01
+band_ecut   2   1 -1.4217519917253985E-01  1.0000000000000000E-02  1.1185949132669728E+01
+band_ecut   2   1 -1.4217519917253985E-01  1.0000000000000000E-03  1.3737107687588063E+01
+band_ecut   2   1 -1.4217519917253985E-01  1.0000000000000000E-04  1.5657535766401816E+01
+band_ecut   2   1 -1.4217519917253985E-01  1.0000000000000001E-05  1.7261683235797879E+01
 # ecut_vloc err(Ha) ecut(Ha)
 ecut_vloc  1.0000000000000000E-02  1.0461219375886728E+00
 ecut_vloc  3.1622776601683794E-03  1.9105572847162460E+00
