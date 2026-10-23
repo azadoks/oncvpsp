@@ -1,0 +1,551 @@
+!
+! Copyright (c) 2026 by Austin Zadoks
+!
+!
+! This program is free software: you can redistribute it and/or modify
+! it under the terms of the GNU General Public License as published by
+! the Free Software Foundation, either version 3 of the License, or
+! (at your option) any later version.
+!
+! This program is distributed in the hope that it will be useful,
+! but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+! GNU General Public License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+!
+! The confined atom, oncvpsp_confine.x (doc/smoothness_plan.md,
+! diagnostics item 7): the all-electron atom and the pseudopotential in a
+! Wigner-Seitz sphere, at the frozen potentials of the all-electron data
+! file of an _ae.x (ae_file_m) and the pseudopotential data file of a run
+! with --ps-file (ps_file_m), for any relativistic treatment.
+!
+! For each l and j and each radius rs of the sphere, the energies of the
+! band edges of the Wigner-Seitz rule: where r phi'/phi = 0 at rs (the
+! bottom of a band), -l-1 (its centre) and phi = 0 (its top), the roots of
+! the phases atan(r phi'/phi) - pi (nodes inside rs) of phsft_node_phase,
+! which fall monotonically with the energy beyond the core radii, so a
+! scan brackets every root whatever its step and Brent's method takes it
+! to round-off. The pseudopotential's phases are shifted by the multiple of
+! pi by which they differ from the all-electron ones at most energies, so
+! an all-electron root and the pseudopotential root of the same phase are
+! the same band's edge; n is the all-electron state's nodes inside rs plus
+! l+1. For each pseudopotential edge, the cutoff that the state needs in
+! the sphere, from the variational energies of ws_basis_m: a cutoff for
+! every channel at the energies of the valence bands, with no tail beyond
+! rs to invent. The output, on stdout:
+!   ws_r l ikap rs(bohr)
+!   ws l ikap edge n e_ae e_ps            (Ha; edge 1 bottom, 2 centre,
+!                                          3 top)
+!   ws_ecut l ikap edge n tol ecut        (Ha: the cutoff at which the
+!                                          energy error falls to tol)
+!   ws_floor l ikap edge n ecut err       (the error at the largest cutoff)
+!   ws_conv l ikap edge n ecut err        (--table: every basis size)
+!   ws_missing l ikap edge n e_ae         (no pseudopotential root of that
+!                                          phase in the scan)
+! for l=0..3 (or those of --channels) and each kappa of l, ikap 1 for
+! j=l+1/2 and 2 for j=l-1/2.
+
+ program oncvpsp_confine
+ use constants_m, only: dp, pi
+ use ae_file_m, only: read_ae_potential
+ use ps_file_m, only: ps_file_t, read_ps_file, ps_file_free
+ use phsft_m, only: phsft_t, phsft_ae_init, phsft_ps_init, phsft_free, &
+&                   phsft_node_phase, phsft_mch
+ use ws_basis_m, only: ws_edge_d, ws_convergence
+ use ugrid_m, only: ug_brent
+ use relativity_m, only: set_relativity
+ use build_info_m, only: write_build_info
+ implicit none
+
+!> relative tolerance of the comparison of the two files' meshes and
+!> constants, as in ae_file_m
+ real(dp), parameter :: rtol=1.0d-12
+!> the most radii of a run
+ integer, parameter :: mxq=100
+!> the most edges of a phase scan
+ integer, parameter :: mxedge=400
+!> the energy errors of the cutoffs (Ha)
+ real(dp), parameter :: tols(5)=[1.0d-2,1.0d-3,1.0d-4,1.0d-5,1.0d-6]
+!> the default radii, in units of the largest core radius
+ real(dp), parameter :: rsdef(3)=[1.25d0,1.5d0,2.0d0]
+!> the default step of the scan (Ha): it only brackets the roots of
+!> monotonic phases, which no step can miss
+ real(dp), parameter :: descan=0.1d0
+!> the scan of the pseudopotential's phases runs this far (Ha) beyond the
+!> energies of the all-electron edges, for their partners
+ real(dp), parameter :: emargin=1.0d0
+
+ character(len=1024) :: ae_filename,ps_filename,arg
+ character(len=2) :: atsym
+ character(len=19) :: treatment
+ integer :: iarg,irel,mmax,nq,ii,iq,l1,ll,ikap,kap,nvkb,ios,lc,nl
+ integer :: npsh,nae,nps,iedge,ie,je,nb,ierr,itol,nn
+ integer :: lsel(4)
+ integer :: kae(mxedge),kps(mxedge),edae(mxedge),edps(mxedge)
+ real(dp) :: zz,c_light_f,emin,emax,de,ecutmax,rcmax,rs,amesh,ee(3)
+ real(dp) :: rq(mxq),eae(mxedge),eps(mxedge),thal
+ real(dp), allocatable :: rr(:),vfull(:),shae(:,:),shps(:,:),ecut(:),err(:)
+ real(dp), allocatable :: egrid(:)
+ integer, allocatable :: ishift(:)
+ logical :: given_radii,given_energies,table
+!> the angular momenta of the output
+ logical :: chan(0:3)
+ type(ps_file_t) :: pf
+ type(phsft_t), target :: sae,sps
+!> the solver, the point of the scan and the phase of edges' root
+ type(phsft_t), pointer :: psol=>null()
+ real(dp) :: ph_e0,ph_tgt,ph_shift
+
+ ae_filename=''
+ ps_filename=''
+ given_radii=.false.
+ given_energies=.false.
+ table=.false.
+ ecutmax=200.0d0
+ chan(:)=.true.
+ nq=0
+ iarg=1
+ do while(iarg<=command_argument_count())
+   call get_command_argument(iarg,arg)
+   select case(arg)
+   case('-h','--help')
+     call write_help()
+     stop
+   case('-v','--version')
+     call write_build_info(6,'oncvpsp_confine.x','any relativistic treatment')
+     stop
+   case('-a','--ae-file')
+     call next_arg(ae_filename)
+   case('-p','--ps-file')
+     call next_arg(ps_filename)
+   case('-r','--radii')
+     call next_arg(arg)
+     nq=count_list(arg)
+     if(nq>mxq) then
+       write(6,'(a,i0,a)') 'oncvpsp_confine: ERROR more than ',mxq,' radii'
+       error stop 1
+     end if
+     read(arg,*,iostat=ios) rq(1:nq)
+     if(ios/=0 .or. nq<1 .or. any(rq(1:nq)<=0.0d0)) then
+       write(6,'(2a)') 'oncvpsp_confine: ERROR --radii must be positive ', &
+&            'numbers separated by commas'
+       error stop 1
+     end if
+     given_radii=.true.
+   case('-l','--channels')
+     call next_arg(arg)
+     nl=min(count_list(arg),size(lsel)+1)
+     lsel(:)=-1
+     ios=1
+     if(nl<=size(lsel)) read(arg,*,iostat=ios) lsel(1:nl)
+     if(ios/=0) lsel(1)=-1
+     if(any(lsel(1:min(nl,size(lsel)))<0) &
+&       .or. any(lsel(1:min(nl,size(lsel)))>3)) then
+       write(6,'(2a)') 'oncvpsp_confine: ERROR --channels must be ', &
+&            'values of l from 0 to 3 separated by commas'
+       error stop 1
+     end if
+     chan(:)=.false.
+     chan(lsel(1:nl))=.true.
+   case('-e','--energies')
+     call next_arg(arg)
+     read(arg,*,iostat=ios) ee(1:3)
+     if(ios/=0 .or. count_list(arg)/=3 .or. ee(3)<=0.0d0 &
+&       .or. ee(2)<=ee(1)) then
+       write(6,'(2a)') 'oncvpsp_confine: ERROR --energies must be ', &
+&            'emin,emax,de with emin < emax and de > 0'
+       error stop 1
+     end if
+     given_energies=.true.
+   case('-c','--ecut-max')
+     call next_arg(arg)
+     read(arg,*,iostat=ios) ecutmax
+     if(ios/=0 .or. ecutmax<=0.0d0) then
+       write(6,'(a)') 'oncvpsp_confine: ERROR --ecut-max must be positive'
+       error stop 1
+     end if
+   case('-t','--table')
+     table=.true.
+   case default
+     write(6,'(2a)') 'oncvpsp_confine: ERROR unknown argument ',trim(arg)
+     error stop 1
+   end select
+   iarg=iarg+1
+ end do
+ if(len_trim(ae_filename)==0 .or. len_trim(ps_filename)==0) then
+   write(6,'(a)') 'oncvpsp_confine: ERROR requires --ae-file and --ps-file'
+   error stop 1
+ end if
+
+ call read_ae_potential(trim(ae_filename),irel,atsym,zz,mmax,rr,c_light_f, &
+&                       vfull)
+ call read_ps_file(trim(ps_filename),pf)
+ if(pf%irel/=irel .or. pf%atsym/=atsym .or. differ(pf%zz,zz) &
+&   .or. pf%mmax/=mmax .or. differ(pf%c_light,c_light_f)) then
+   write(6,'(2a)') 'oncvpsp_confine: ERROR the files differ in ', &
+&       'relativistic treatment, atom, mesh size or c_light'
+   error stop 1
+ end if
+ if(any(abs(pf%rr(:)-rr(:))>rtol*rr(:))) then
+   write(6,'(a)') 'oncvpsp_confine: ERROR the files'' radial meshes differ'
+   error stop 1
+ end if
+ call set_relativity(c_light_f)
+
+ if(irel==0) then
+   treatment='non-relativistic'
+ else if(irel==1) then
+   treatment='scalar-relativistic'
+ else
+   treatment='fully-relativistic'
+ end if
+ call write_build_info(6,'oncvpsp_confine.x',trim(treatment))
+
+!the radii: beyond every core radius, where the two atoms' potentials are
+!the same and the phases comparable
+ lc=pf%lloc+1
+ rcmax=max(maxval(pf%rc(1:pf%lmax+1)),pf%rc(lc))
+ if(.not. given_radii) then
+   nq=size(rsdef)
+   rq(1:nq)=rsdef(:)*rcmax
+ end if
+ do iq=1,nq
+   if(rq(iq)<=rcmax) then
+     write(6,'(a,f10.5,a,f10.5,a)') 'oncvpsp_confine: ERROR the radius', &
+&         rq(iq),' is not beyond the largest core radius',rcmax,' bohr'
+     error stop 1
+   end if
+ end do
+
+!the window of the edges, that of the log derivatives
+ if(given_energies) then
+   emin=ee(1)
+   emax=ee(2)
+   de=ee(3)
+ else
+   emin=pf%epsh1
+   emax=pf%epsh2
+   de=descan
+ end if
+ npsh=int(((emax-emin+2.0d0*emargin)/de)-0.5d0)+1
+ amesh=rr(2)/rr(1)
+ allocate(shae(npsh,1),shps(npsh,1),egrid(npsh),ishift(npsh))
+ do ii=1,npsh
+   egrid(ii)=emax+emargin-de*dble(ii-1)
+ end do
+
+ write(6,'(a)') '# ws_r l ikap rs(bohr)'
+ write(6,'(a)') '# ws l ikap edge n e_ae(Ha) e_ps(Ha)'
+ write(6,'(a)') '# ws_ecut l ikap edge n tol(Ha) ecut(Ha)'
+ write(6,'(a)') '# ws_floor l ikap edge n ecut(Ha) err(Ha)'
+ if(table) write(6,'(a)') '# ws_conv l ikap edge n ecut(Ha) err(Ha)'
+ write(6,'(a)') '# ws_missing l ikap edge n e_ae(Ha)'
+ do l1=1,4
+   ll=l1-1
+   if(.not. chan(ll)) cycle
+   do ikap=1,merge(1,pf%nkap,l1==1)
+     kap=0
+     if(irel==2 .and. ikap==1) kap=-(ll+1)
+     if(irel==2 .and. ikap==2) kap=ll
+     nvkb=pf%nvkb(l1,ikap)
+     do iq=1,nq
+       rs=rq(iq)
+       write(6,'(a,2i4,1p,e24.16)') 'ws_r',ll,ikap,rs
+
+! the phases at rs on the grid, the pseudopotential's shifted by the
+! multiple of pi by which they differ from the all-electron ones at most
+! energies of the grid: they agree beyond the core radii but where they
+! turn steeply, at bound states, where a small difference in their
+! energies is a difference by pi in the phases (a narrow band, such as a
+! semicore state's in a large sphere, where the reference energy of
+! phsft_pair can be)
+       call phsft_ae_init(irel,ll,kap,rr,vfull,zz,mmax,1,rq(iq:iq),sae)
+       call phsft_ps_init(ll,nvkb,rr,pf%vloc(:,ikap),pf%vlocpw, &
+&                         pf%vkbpw(1:nvkb,l1,ikap),pf%evkb(1:nvkb,l1,ikap), &
+&                         mmax,1,rq(iq:iq),sps)
+       do ii=1,npsh
+         shae(ii,1)=phsft_node_phase(sae,1,egrid(ii))
+         shps(ii,1)=phsft_node_phase(sps,1,egrid(ii))
+         ishift(ii)=nint((shae(ii,1)-shps(ii,1))/pi)
+       end do
+       thal=pi*dble(majority(ishift))
+       shps(:,1)=shps(:,1)+thal
+
+       call edges(sae,shae(:,1),0.0d0,nae,eae,kae,edae)
+       call edges(sps,shps(:,1),thal,nps,eps,kps,edps)
+
+! every all-electron edge in the window, lowest first
+       call sort_edges(nae,eae,kae,edae)
+       do ie=1,nae
+         if(eae(ie)<emin .or. eae(ie)>emax) cycle
+         iedge=edae(ie)
+         nn=n_of(eae(ie))
+         je=0
+         do ii=1,nps
+           if(kps(ii)/=kae(ie) .or. edps(ii)/=iedge) cycle
+           if(je==0) then
+             je=ii
+           else if(abs(eps(ii)-eae(ie))<abs(eps(je)-eae(ie))) then
+             je=ii
+           end if
+         end do
+         if(je==0) then
+           write(6,'(a,4i4,1p,e24.16)') 'ws_missing',ll,ikap,iedge,nn, &
+&               eae(ie)
+           cycle
+         end if
+         write(6,'(a,4i4,1p,2e24.16)') 'ws',ll,ikap,iedge,nn,eae(ie),eps(je)
+
+! the cutoff of the pseudopotential's state
+         call ws_convergence(ll,iedge,rs,sqrt(2.0d0*ecutmax),rr,mmax, &
+&             pf%vloc(:,ikap),pf%vlocpw,nvkb,pf%vkbpw(1:nvkb,l1,ikap), &
+&             pf%evkb(1:nvkb,l1,ikap),eps(je),nb,ecut,err,ierr)
+         if(ierr/=0) cycle
+         do itol=1,size(tols)
+           call cutoff_at(tols(itol))
+         end do
+         write(6,'(a,4i4,1p,2e24.16)') 'ws_floor',ll,ikap,iedge,nn, &
+&             ecut(nb),err(nb)
+         if(table) then
+           do ii=1,nb
+             if(err(ii)==0.0d0) cycle
+             write(6,'(a,4i4,1p,2e24.16)') 'ws_conv',ll,ikap,iedge,nn, &
+&                 ecut(ii),err(ii)
+           end do
+         end if
+       end do
+       call phsft_free(sae)
+       call phsft_free(sps)
+     end do
+   end do
+ end do
+
+ deallocate(shae,shps,egrid,ishift)
+ call ps_file_free(pf)
+ deallocate(rr,vfull)
+ stop
+
+ contains
+
+ subroutine edges(sol,sh,shift,ned,eed,ked,ied)
+!! the edges of a scan: the energies at which the phase (plus shift)
+!! crosses atan(D) + k pi for the D of each edge, each to round-off by
+!! Brent's method in the interval of the grid that brackets it
+ type(phsft_t), intent(inout), target :: sol
+ real(dp), intent(in) :: sh(npsh),shift
+ integer, intent(out) :: ned,ked(mxedge),ied(mxedge)
+ real(dp), intent(out) :: eed(mxedge)
+ real(dp) :: thlo,thhi,er
+ integer :: jj,kk,jed,ierr2
+ psol=>sol
+ ph_shift=shift
+ ned=0
+ do jj=1,npsh-1
+   ph_e0=egrid(jj)
+   thlo=min(sh(jj),sh(jj+1))
+   thhi=max(sh(jj),sh(jj+1))
+   do jed=1,3
+     do kk=ceiling((thlo-target(jed))/pi),floor((thhi-target(jed))/pi)
+       ph_tgt=target(jed)+pi*dble(kk)
+! a crossing on the point below is the next interval's
+       if(ph_tgt==sh(jj+1) .and. jj<npsh-1) cycle
+       call ug_brent(phase,egrid(jj+1),ph_e0,er,ierr2)
+       if(ierr2/=0) cycle
+! a jump (a pair of nodes inside the projectors), not a root
+       if(abs(phase(er))>0.25d0*pi) cycle
+       if(ned==mxedge) then
+         write(6,'(a)') 'oncvpsp_confine: ERROR too many edges in the scan'
+         error stop 1
+       end if
+       ned=ned+1
+       eed(ned)=er
+       ked(ned)=kk
+       ied(ned)=jed
+     end do
+   end do
+ end do
+ nullify(psol)
+ end subroutine edges
+
+ real(dp) function phase(ex)
+!! the phase of psol at ex plus ph_shift, less ph_tgt
+ real(dp), intent(in) :: ex
+ phase=phsft_node_phase(psol,1,ex)+ph_shift-ph_tgt
+ end function phase
+
+ integer function majority(iv)
+!! the most frequent value, the smallest of a tie
+ integer, intent(in) :: iv(:)
+ integer :: jj,nc,nbest
+ nbest=0
+ majority=iv(1)
+ do jj=1,size(iv)
+   nc=count(iv(:)==iv(jj))
+   if(nc>nbest .or. (nc==nbest .and. iv(jj)<majority)) then
+     nbest=nc
+     majority=iv(jj)
+   end if
+ end do
+ end function majority
+
+ real(dp) function target(jed)
+!! atan(D) of an edge: 0, atan(-l-1), -pi/2
+ integer, intent(in) :: jed
+ if(jed==3) then
+   target=-0.5d0*pi
+ else
+   target=atan(ws_edge_d(ll,jed))
+ end if
+ end function target
+
+ subroutine sort_edges(ned,eed,ked,ied)
+!! ascending in energy, by insertion
+ integer, intent(in) :: ned
+ integer, intent(inout) :: ked(mxedge),ied(mxedge)
+ real(dp), intent(inout) :: eed(mxedge)
+ real(dp) :: et
+ integer :: jj,kk,kt,it
+ do jj=2,ned
+   et=eed(jj)
+   kt=ked(jj)
+   it=ied(jj)
+   kk=jj-1
+   do while(kk>=1)
+     if(eed(kk)<=et) exit
+     eed(kk+1)=eed(kk)
+     ked(kk+1)=ked(kk)
+     ied(kk+1)=ied(kk)
+     kk=kk-1
+   end do
+   eed(kk+1)=et
+   ked(kk+1)=kt
+   ied(kk+1)=it
+ end do
+ end subroutine sort_edges
+
+ integer function n_of(ex)
+!! the all-electron state's nodes inside rs, plus l+1
+ real(dp), intent(in) :: ex
+ real(dp), allocatable :: uu(:,:),up(:,:)
+ integer :: mch,jj,nnode,nn2,ierr2
+ mch=phsft_mch(rr,mmax,rs)
+ allocate(uu(mmax,2),up(mmax,2))
+ uu(:,:)=0.0d0
+ up(:,:)=0.0d0
+ nn2=0
+ call scatterstate(irel,nn2,ll,kap,ierr2,ex,rr,zz,vfull,uu,up,mmax,mch)
+ nnode=0
+ do jj=2,mmax
+   if(rr(jj)>rs) exit
+   if(uu(jj,1)*uu(jj-1,1)<0.0d0) nnode=nnode+1
+ end do
+ n_of=nnode+ll+1
+ deallocate(uu,up)
+ end function n_of
+
+ subroutine cutoff_at(tol)
+!! the cutoff at which the error falls to tol: between the first basis
+!! size below it and the one before, linear in ln(err) against the cutoff
+ real(dp), intent(in) :: tol
+ real(dp) :: ec
+ integer :: jj
+ do jj=1,nb
+   if(err(jj)==0.0d0 .and. jj<nb) cycle
+   if(err(jj)>=tol) cycle
+   if(jj==1 .or. err(jj)<=0.0d0) then
+     ec=ecut(jj)
+   else if(err(jj-1)<=0.0d0) then
+     ec=ecut(jj)
+   else
+     ec=ecut(jj-1)+(ecut(jj)-ecut(jj-1)) &
+&       *log(err(jj-1)/tol)/log(err(jj-1)/err(jj))
+   end if
+   write(6,'(a,4i4,1p,2e24.16)') 'ws_ecut',ll,ikap,iedge,nn,tol,ec
+   return
+ end do
+ end subroutine cutoff_at
+
+ subroutine write_help()
+!! the usage: what the program does and its options
+ write(6,'(a)') 'Usage: oncvpsp_confine.x -a AE_FILE -p PS_FILE [options]'
+ write(6,'(a)') ''
+ write(6,'(a)') 'A pseudopotential and its all-electron atom in a Wigner-Seitz'
+ write(6,'(a)') 'sphere of radius rs, at their frozen potentials: for each l'
+ write(6,'(a)') '(and j), the band edges of the Wigner-Seitz rule, where'
+ write(6,'(a)') 'r phi''/phi = 0 at rs (bottom), -l-1 (centre) and phi = 0'
+ write(6,'(a)') '(top), both atoms'' in the energy window; and the cutoff the'
+ write(6,'(a)') 'pseudopotential''s state needs in the sphere, from its'
+ write(6,'(a)') 'variational energy in the spherical Bessel functions of the'
+ write(6,'(a)') 'same boundary condition. The output, on stdout:'
+ write(6,'(a)') '  ws_r l ikap rs(bohr)'
+ write(6,'(a)') '  ws l ikap edge n e_ae(Ha) e_ps(Ha)'
+ write(6,'(a)') '  ws_ecut l ikap edge n tol(Ha) ecut(Ha)'
+ write(6,'(a)') '  ws_floor l ikap edge n ecut(Ha) err(Ha)'
+ write(6,'(a)') '  ws_conv l ikap edge n ecut(Ha) err(Ha)       (-t)'
+ write(6,'(a)') '  ws_missing l ikap edge n e_ae(Ha)'
+ write(6,'(a)') 'edge 1 bottom, 2 centre, 3 top; n the all-electron state''s'
+ write(6,'(a)') 'nodes inside rs plus l+1; ikap 1 for j = l+1/2 (and every l'
+ write(6,'(a)') 'if not fully relativistic), 2 for j = l-1/2. ws_ecut for the'
+ write(6,'(a)') 'errors 1e-2 to 1e-6 Ha that are reached; ws_missing for an'
+ write(6,'(a)') 'all-electron edge with no pseudopotential partner.'
+ write(6,'(a)') ''
+ write(6,'(a)') 'Options:'
+ write(6,'(a)') '  -h, --help'
+ write(6,'(a)') '      Show this help and exit'
+ write(6,'(a)') '  -v, --version'
+ write(6,'(a)') '      Show the build and exit'
+ write(6,'(a)') '  -a, --ae-file FILE'
+ write(6,'(a)') '      The all-electron data file of an _ae.x (required)'
+ write(6,'(a)') '  -p, --ps-file FILE'
+ write(6,'(a)') '      The pseudopotential data file of a run of oncvpsp.x,'
+ write(6,'(a)') '      oncvpspnr.x, oncvpspr.x or their _ps.x with --ps-file,'
+ write(6,'(a)') '      for the same atom, treatment and mesh (required)'
+ write(6,'(a)') '  -r, --radii R1,R2,...'
+ write(6,'(a)') '      The radii of the sphere (bohr), each beyond every core'
+ write(6,'(a)') '      radius. Default 1.25, 1.5 and 2 times the largest'
+ write(6,'(a)') '  -l, --channels L1,L2,...'
+ write(6,'(a)') '      The angular momenta, from 0 to 3 (both j of each when'
+ write(6,'(a)') '      fully relativistic). Default all four'
+ write(6,'(a)') '  -e, --energies EMIN,EMAX,DE'
+ write(6,'(a)') '      The window of the edges and the step of the scan of'
+ write(6,'(a)') '      the phases (Ha). Default the input''s epsh1,epsh2, and'
+ write(6,'(a)') '      0.1'
+ write(6,'(a)') '  -c, --ecut-max ECUT'
+ write(6,'(a)') '      The largest cutoff of the basis (Ha). Default 200'
+ write(6,'(a)') '  -t, --table'
+ write(6,'(a)') '      Also print the error at every basis size'
+ write(6,'(a)') ''
+ write(6,'(a)') 'Errors are reported on stdout, with a nonzero exit status.'
+ end subroutine write_help
+
+ subroutine next_arg(val)
+!! the value of the option at iarg, which it passes
+ character(len=1024), intent(out) :: val
+ if(iarg+1>command_argument_count()) then
+   call get_command_argument(iarg,val)
+   write(6,'(3a)') 'oncvpsp_confine: ERROR ',trim(val),' requires a value'
+   error stop 1
+ end if
+ iarg=iarg+1
+ call get_command_argument(iarg,val)
+ end subroutine next_arg
+
+ integer function count_list(str)
+!! the number of comma-separated items of str
+ character(len=*), intent(in) :: str
+ integer :: kk
+ count_list=1
+ do kk=1,len_trim(str)
+   if(str(kk:kk)==',') count_list=count_list+1
+ end do
+ end function count_list
+
+ elemental logical function differ(aa,bb)
+!! .true. if aa and bb differ by more than rtol relative to the larger
+ real(dp), intent(in) :: aa,bb
+ differ=abs(aa-bb)>rtol*max(1.0d0,abs(aa),abs(bb))
+ end function differ
+
+ end program oncvpsp_confine

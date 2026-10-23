@@ -128,7 +128,7 @@ the examples. Then, pay attention to the plots.
 
 ### TOML input
 
-Every executable but `oncvpsp_ld.x` reads its input from a TOML file with
+Every executable but `oncvpsp_ld.x` and `oncvpsp_confine.x` reads its input from a TOML file with
 `-t FILE` (`--toml-input`) instead of the text input on stdin (or of
 `-i FILE`). The TOML input is part of the build unless CMake is configured
 with `-DONCVPSP_WITH_TOML=OFF`. It holds the same values as the text input,

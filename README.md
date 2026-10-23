@@ -170,6 +170,31 @@ and radius; one solution per energy serves all the radii. Without `-r`
 `epsh2` and `depsh`, and reproduces the run's log derivatives; `-l`
 (`l1,l2,...`) computes only those angular momenta.
 
+### The confined atom
+
+The same two files give the pseudopotential and its all-electron atom in a
+Wigner-Seitz sphere, a stand-in for the atom in a solid:
+
+    oncvpsp_confine.x -a <prefix>.ae -p <prefix>.ps -r 3.0,3.5 > <prefix>_ws.out
+
+For each l, j and sphere radius `rs` (`-r`, by default 1.25, 1.5 and 2
+times the largest core radius) it finds the band edges of the
+Wigner-Seitz rule in the energy window (`-e emin,emax,de`, by default the
+input's `epsh1` and `epsh2`). The bottom of a band is where r phi'/phi = 0
+at `rs`, its centre where it is -l-1, and its top where phi = 0. The
+all-electron and pseudopotential energies are printed side by side (`ws`
+lines), with n the all-electron state's nodes inside `rs` plus l+1. For
+each pseudopotential edge it also prints the cutoff at which the state's
+energy in the sphere is converged to 1e-2 ... 1e-6 Ha (`ws_ecut`). This is
+the variational energy in the spherical Bessel functions of the same
+boundary condition, so channels with no occupied state get a cutoff at the
+energies of the valence bands too. `ws_floor` is the error at the largest
+cutoff (`-c`, by default 200 Ha), `-t` prints the error at every basis
+size (`ws_conv`), and `-l` restricts the angular momenta. The edges come
+from the roots of monotonic phases (atan(r phi'/phi) less pi per node
+inside `rs`), so they do not depend on the step `de` of the scan that
+brackets them.
+
 Setting `psfile` to `none` skips writing a pseudopotential file, and
 `ncnf` = 0 skips the test configurations other than the reference.
 

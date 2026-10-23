@@ -101,9 +101,11 @@ The table is kept as the baseline. Every row in it, and every row added
 since, has been brought to G1 or G2 or to the noise floor recorded with it
 under [Phases](#phases); what remains is in
 [Order of the remaining work](#order-of-the-remaining-work-2026-10-21-after-m-12).
-Next, raised on 2026-10-23 at the user's request: the confined atom
-(item 7 of the diagnostics asked for by the oncvpsp-opt session), which
-also replaces the removed cutoffs at the valence energies.
+In progress, raised on 2026-10-23 at the user's request: the confined atom
+(item 7 of the diagnostics asked for by the oncvpsp-opt session), a
+post-processing executable, `oncvpsp_confine.x`. Its Wigner-Seitz sphere
+(band edges and cutoffs, which replace the removed cutoffs at the valence
+energies) is done; the self-consistent atom in a soft wall is next.
 
 ### Goals
 
@@ -1552,7 +1554,7 @@ from rc:
       6. Model-core extent: where the model core and the AE core fall
          below 1e-2 and 1e-4 of their value at rc; optionally its
          minimum and the r of its maximum (a hollow core).
-      7. (Next; raised 2026-10-23, the user's request, larger) AE
+      7. (Raised 2026-10-23, the user's request, larger; in progress) AE
          against PS in a confined atom (harmonic or soft wall, a few
          strengths): eigenvalue and energy shifts, a stand-in for
          compression; and, in the same confinement, the cutoff that a
@@ -1572,6 +1574,30 @@ from rc:
          39), with no plateau. A confinement with a physical boundary
          condition (a Wigner-Seitz sphere: u' = 0 and u = 0 for the
          bonding and antibonding edges) needs no invented tail.
+         The sphere is done (2026-10-23), as a post-processing
+         executable, the user's request: `oncvpsp_confine.x` reads the
+         files of `oncvpsp_ld.x` and gives, per l, j and radius rs, the
+         Wigner-Seitz edges (r phi'/phi = 0, -l-1 and infinite at rs:
+         bottom, centre and top; on phi = u/r, the rule's, not u), AE and
+         PS at frozen potentials, and each PS edge's cutoff: its
+         variational energy in the r j_l(q r) of the same condition, which
+         are the free Hamiltonian's eigenstates in the sphere
+         (`ws_basis_m`). The edges are roots of atan(r phi'/phi) - pi
+         (nodes inside rs) (`phsft_node_phase`), monotonic beyond the core
+         radii for the PS too (the projectors' terms cancel in the
+         Wronskian of u and du/dE), so no scan step can miss one; the
+         continuation of phsft_m missed Si 3s at 5.4 bohr with 0.02 Ha
+         steps, where the phase turns by more than pi/2 within one (the
+         same aliasing as the 73_Ta 4f of item 5). The PS phases are
+         shifted by the multiple of pi they differ from the AE ones by at
+         most energies, not at ep: Li's s reference is its 1s, whose band
+         at 6 bohr is 1e-7 Ha wide, and the 2.6e-7 Ha between the AE and
+         PS 1s put the two phases pi apart at ep. 14_Si at 1.25 rc: valence
+         edges within 1e-5 Ha of the AE ones, 1e-5 Ha cutoffs 7 to 12 Ha
+         for s, 8 to 28 Ha for d from the bottom to the top of the 3d band.
+         The basis adds a q^-5 tail from V'(rs) at the bottom and centre,
+         none at the top, where the tails of the PS's kinks are as slow.
+         Next: the compression (a soft wall, self-consistent AE and PS).
 - [x] (Proposed 2026-10-22 by the oncvpsp-opt session; done 2026-10-22,
       the user's request) A
       regularized pseudo-wave optimization, so the wave is determined for

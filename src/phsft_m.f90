@@ -44,7 +44,7 @@
  implicit none
  private
  public :: phsft_t, phsft_mch, phsft_ae_init, phsft_ps_init, phsft_free
- public :: phsft_scan, phsft_pair
+ public :: phsft_scan, phsft_pair, phsft_node_phase
 
 !> the deepest halving of an energy step: a phase that turns by more than
 !> pi/2 within depsh/2**maxdepth is taken as it is found
@@ -320,6 +320,62 @@
  end do
  return
  end subroutine phsft_pair
+
+ real(dp) function phsft_node_phase(ps,iq,ee)
+
+!! the phase of radius iq at the energy ee with no continuation:
+!! atan(r phi'/phi) - pi (the nodes of u inside the radius), the Pruefer
+!! angle, continuous across a node's passing the radius. It falls as the
+!! energy rises wherever the radius is beyond the projectors (their terms
+!! cancel in the Wronskian of u and du/dE), so it is a monotonic function
+!! that a root search brackets with no step to alias a turn by pi
+!! (oncvpsp_confine.x). Nodes of the pseudo-wave function inside the
+!! projectors come and go in pairs only, if at all: a jump by 2 pi
+!!
+!! @param ps  the solver
+!! @param iq  the radius
+!! @param ee  energy (Ha)
+
+!Input/output variables
+ type(phsft_t), intent(inout), target :: ps
+
+!Input variables
+ integer, intent(in) :: iq
+ real(dp), intent(in) :: ee
+
+!Local variables
+ real(dp), allocatable :: uu(:,:),up(:,:)
+ real(dp) :: uq,upq
+ integer :: nn,ierr,jj,nnode,jlast
+
+ allocate(uu(ps%mmax,2),up(ps%mmax,2))
+ uu(:,:)=0.0d0
+ up(:,:)=0.0d0
+ if(ps%kind==1) then
+   nn=0
+   call scatterstate(ps%irel,nn,ps%ll,ps%kap,ierr,ee,ps%rr,ps%zz,ps%vv, &
+&                    uu,up,ps%mmax,ps%mch)
+ else
+   call outwf_solve(ps%ow,ee,ps%evkb,ps%mch,ps%mch,uu(:,1),up(:,1))
+ end if
+ call lm_interp(ps%rr(1:ps%mch),uu(1:ps%mch,1),ps%mch,ps%rq(iq),uq)
+ call lm_interp(ps%rr(1:ps%mch),up(1:ps%mch,1),ps%mch,ps%rq(iq),upq)
+ nnode=0
+ jlast=1
+ do jj=2,ps%mch
+   if(ps%rr(jj)>=ps%rq(iq)) exit
+   if(uu(jj,1)*uu(jj-1,1)<0.0d0) nnode=nnode+1
+   jlast=jj
+ end do
+ if(uq*uu(jlast,1)<0.0d0) nnode=nnode+1
+! r phi'/phi = r u'/u - 1, and al r u' is the solvers' derivative
+ phsft_node_phase=atan2(upq/ps%al-uq,uq)
+ if(phsft_node_phase>0.5d0*pi) phsft_node_phase=phsft_node_phase-pi
+ if(phsft_node_phase<=-0.5d0*pi) phsft_node_phase=phsft_node_phase+pi
+ phsft_node_phase=phsft_node_phase-pi*dble(nnode)
+ deallocate(uu,up)
+ return
+ end function phsft_node_phase
 
  recursive function follow(ps,iq,th0,e0,e1,da1,depth) result(th1)
 

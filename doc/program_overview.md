@@ -252,6 +252,9 @@ irel, and the stage.  It has the following major sections:
    point.  oncvpsp_ld.x computes them afterwards at any radii and energies
    from the all-electron file and the pseudopotential file of --ps-file
    (ps_file_m), and --no-log-derivatives leaves them out of the run.
+   oncvpsp_confine.x uses the same two files for the band edges of a
+   Wigner-Seitz sphere and the cutoffs of the pseudo states in it
+   (ws_basis_m; README, "The confined atom").
    Since simple plots of log derivatives contain multiple divergences, and
    are difficult to interpret visually, I plot atan(r * ((d psi(r)/dr)/psi(r)))
    at this radius, which is akin but not equal to a scattering phase shift.

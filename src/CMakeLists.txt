@@ -71,6 +71,7 @@ set(src_oncvpsp
     dirac_m.f90
     sbf_q_m.f90
     phsft_m.f90
+    ws_basis_m.f90
     pieces_m.f90
     outmesh_m.f90
     vploc_m.f90
@@ -169,5 +170,9 @@ endif ()
 # Log derivatives at any radii and energies from the all-electron file and the pseudopotential file of
 # --ps-file (see oncvpsp_ld.f90 and ps_file_m.f90), for every relativistic treatment
 oncvpsp_executable(oncvpsp_ld oncvpsp_ld.f90 oncvpsp_ld.x)
+
+# The confined atom: the band edges of a Wigner-Seitz sphere and the cutoffs of the pseudopotential's states
+# in it, from the same two files (see oncvpsp_confine.f90 and ws_basis_m.f90)
+oncvpsp_executable(oncvpsp_confine oncvpsp_confine.f90 oncvpsp_confine.x)
 
 set(ONCVPSP_EXECUTABLES ${ONCVPSP_EXECUTABLES} PARENT_SCOPE)

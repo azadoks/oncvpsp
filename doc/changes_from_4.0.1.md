@@ -255,6 +255,20 @@ precision.
   pi and 2 pi corrections, and is aligned at ep itself. `oncvpsp_ld.x`
   gives them at any radii and energies from a saved run. Commits:
   ab51d65, e6b38ed, e0c94b0.
+- **The confined atom (new), `oncvpsp_confine.x`.** From the
+  all-electron file and the `--ps-file` of a run, the band edges of a
+  Wigner-Seitz sphere of radius rs, all-electron against pseudopotential
+  at frozen potentials. The bottom is where r phi'/phi = 0 at rs, the
+  centre where it is -l-1, and the top where phi = 0. Each edge is the root
+  of a monotonic phase (atan(r phi'/phi) less pi per node inside rs,
+  `phsft_node_phase`), independent of the scan step. The run also gives the
+  cutoff each pseudo state needs in the sphere, from its variational energy
+  in the spherical Bessel functions of the same boundary condition
+  (`ws_basis_m`). This covers every channel at the energies of the valence
+  bands and replaces the band cutoffs removed earlier, which measured an
+  invented interstitial tail. Si d at rs = 1.25 rc: 1e-5 Ha at 8 to 28 Ha
+  from the bottom to the top of the 3d band (15.6 Ha from the old tail).
+  Nothing in the run's output changes.
 - **Well-state diagnostics** (`run_diag`) take the state's index from
   the pseudo-atom at epa rather than the all-electron node count, which
   can differ from it (see the eigenvalue index under Numerics). Commit:
@@ -527,8 +541,8 @@ Bugs that moved outputs, beyond those above:
   file. Commits: e083200, e42dd70, 8722505, 6d39ae9.
 - **Executables.** `oncvpsp*_ae.x` solve the all-electron atom once and
   `oncvpsp*_ps.x` reuse it (the optimizer's loop). `oncvpsp_ld.x` gives
-  log derivatives from saved runs, and `--ps-file` saves the
-  pseudopotential data. Every run prints its commit and build. Commits:
+  log derivatives from saved runs, `oncvpsp_confine.x` the confined atom,
+  and `--ps-file` saves the pseudopotential data. Every run prints its commit and build. Commits:
   1ca8f73, 37bcac2, 48b6d6a, e6b38ed, 1f11258.
 - **One code for nr, sr and fr.** The `_r` copies were merged into one
   driver, `oncvpsp_main(irel, istage)`. The physics is unchanged.

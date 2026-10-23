@@ -49,9 +49,11 @@ trap 'rm -rf "$work"' EXIT
 cd "$work"
 
 status=0
-# The drivers, each a call of oncvpsp_main (in the sources above)
+# The drivers, each a call of oncvpsp_main (in the sources above), and the
+# post-processing programs, which call external procedures too
 for file in oncvpsp.F90 oncvpsp_nr.F90 oncvpsp_r.F90 oncvpsp_ae.F90 oncvpsp_ps.F90 \
-            oncvpspnr_ae.F90 oncvpspnr_ps.F90 oncvpspr_ae.F90 oncvpspr_ps.F90; do
+            oncvpspnr_ae.F90 oncvpspnr_ps.F90 oncvpspr_ae.F90 oncvpspr_ps.F90 \
+            oncvpsp_ld.f90 oncvpsp_confine.f90; do
     all="$work/all.F90"
     : > "$all"
     for src in $sources exc_libxc_stub.f90; do
