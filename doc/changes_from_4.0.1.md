@@ -95,7 +95,10 @@ rather than hidden.
   each empty channel's first; over every wave with `budget_cutoff =
   "max_all"`), or, with `budget_cutoff = "weighted"`, the
   occupation-weighted mean (smooth where two waves' crossings pass each
-  other, which the maximum is not). An empty channel's first wave weighs
+  other, which the maximum is not). The mean runs to the end of the
+  longest curve, each shorter one held at its last value: the s curves
+  end near 200 Ha, below where a hard p wave at a small rc converges.
+  An empty channel's first wave weighs
   2(2l+1), or its `ecut_weight` ([vkb_projectors]; 0 leaves it out of
   the maximum too). With `fcfact` < 0 the budget is -fcfact times that
   cutoff. `slack` (0 < slack <= 1) makes the model fit slack times the

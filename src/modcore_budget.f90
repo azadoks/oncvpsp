@@ -1791,8 +1791,10 @@
 !! "max_all") they count too, as before.
 !! With weighted true (budget_cutoff = "weighted"), the cutoff at which
 !! the weighted mean sum_i w_i E_i / sum_i w_i of the curves with a weight
-!! falls to errmax: each curve's log E interpolated as in ug_cross_down,
-!! on the range where all of them are positive, the last crossing from
+!! falls to errmax: each curve's log E interpolated as in ug_cross_down
+!! up to its end or its first value that is not positive, and held at its
+!! last value beyond, from where all of them start to where the last ends;
+!! the last crossing from
 !! above on a grid of the finest spacing of the curves, and the root of
 !! the log of the mean less log errmax in it by Brent's method (ug_brent).
 !! Unlike the largest cutoff, the mean is smooth where two curves cross.
@@ -1883,9 +1885,12 @@
    return
  end if
 
-! the weighted mean: the range common to the curves with a weight
+! the weighted mean: from where all the curves with a weight start to
+! where the last ends, each held at its last value past its end (the
+! error falls with q, so the mean there is an upper bound); the s waves'
+! curves end far below the p waves' at a small p rc
  qa=0.0d0
- qb=huge(1.0d0)
+ qb=0.0d0
  hs=huge(1.0d0)
  do ip=1,nprof
    if(.not. (wcurve(ip)>0.0d0)) cycle
@@ -1895,10 +1900,10 @@
      error stop 1
    end if
    qa=max(qa,q1s(ip))
-   qb=min(qb,q1s(ip)+dble(nks(ip)-1)*dqs(ip))
+   qb=max(qb,q1s(ip)+dble(nks(ip)-1)*dqs(ip))
    hs=min(hs,dqs(ip))
  end do
- if(.not. (qb<huge(1.0d0)) .or. qa>=qb) then
+ if(.not. (hs<huge(1.0d0)) .or. qa>=qb) then
    write(6,'(/a)') 'modcore_budget_table: ERROR stop - no weighted curves'
    error stop 1
  end if
