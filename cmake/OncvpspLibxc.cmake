@@ -162,7 +162,12 @@ endif ()
 
 if (NOT _libxc_libraries)
     # Only the energies and their first and second derivatives (vxc, fxc) are used. The release archive
-    # is much faster to download than a clone of the repository.
+    # is much faster to download than a clone of the repository. Libxc stops on a build type other than
+    # Debug, Release or RelWithDebInfo (the trap preset's Trap), so it is built in Release under one.
+    set(_libxc_build_type "${CMAKE_BUILD_TYPE}")
+    if (NOT _libxc_build_type MATCHES "^([Dd][Ee][Bb][Uu][Gg]|[Rr][Ee][Ll][Ee][Aa][Ss][Ee]|[Rr][Ee][Ll][Ww][Ii][Tt][Hh][Dd][Ee][Bb][Ii][Nn][Ff][Oo])?$")
+        set(_libxc_build_type Release)
+    endif ()
     CPMAddPackage(
         NAME libxc
         VERSION ${_libxc_fetch_version}
@@ -171,8 +176,9 @@ if (NOT _libxc_libraries)
         EXCLUDE_FROM_ALL YES
         SYSTEM YES
         OPTIONS "BUILD_TESTING OFF" "BUILD_SHARED_LIBS OFF" "ENABLE_FORTRAN ON" "ENABLE_PYTHON OFF"
-                "ENABLE_XHOST OFF" "DISABLE_KXC ON" "DISABLE_LXC ON"
+                "ENABLE_XHOST OFF" "DISABLE_KXC ON" "DISABLE_LXC ON" "CMAKE_BUILD_TYPE ${_libxc_build_type}"
     )
+    unset(_libxc_build_type)
     # Libxc's targets give neither xc_version.h nor the Fortran modules to the targets that use them
     set_target_properties(xcf03 PROPERTIES Fortran_MODULE_DIRECTORY "${libxc_BINARY_DIR}/modules")
     add_library(oncvpsp_libxc_built INTERFACE)
