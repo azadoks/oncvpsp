@@ -140,7 +140,8 @@
  integer :: lloc, lpopt, nproj(mxlin+1)
  integer :: icmod, ncnf, nvcnf(mxcnf), nacnf(mxstate, mxcnf)
  integer :: lacnf(mxstate, mxcnf), upf_mesh
- logical :: ep_as_given, budget_weighted
+ logical :: ep_as_given
+ integer :: budget_cut
  integer :: well_tail, well_n(mxlin+1), well_norm
  real(dp) :: wreg
  real(dp) :: well_onset
@@ -197,7 +198,7 @@
 &                     atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
 &                     lmax, rc, ep, ncon, nbas, qcut, &
 &                     lloc, lpopt, dvloc0, nproj, debl, &
-&                     icmod, fcfact, rcfact, slack, budget_weighted, &
+&                     icmod, fcfact, rcfact, slack, budget_cut, &
 &                     fcfact_min, fcfact_max, fcfact_step, &
 &                     rcfact_min, rcfact_max, rcfact_step, &
 &                     epsh1, epsh2, depsh, rxpsh, &
@@ -226,11 +227,11 @@
 &           'projectors')
  if(with_mesh) then
    call check(icmod == 6 .and. fcfact == 0 .and. rcfact == 1.0e-6_dp &
-&             .and. slack == 0.8_dp .and. budget_weighted, &
+&             .and. slack == 0.8_dp .and. budget_cut == 1, &
 &             'model core charge, slack and budget_cutoff')
  else
    call check(icmod == 1 .and. fcfact == 0.25_dp .and. slack == 1 &
-&             .and. .not. budget_weighted, 'model core charge')
+&             .and. budget_cut == 0, 'model core charge')
  end if
  call check(epsh1 == -2 .and. epsh2 == 2 .and. depsh == 0.02_dp &
 &           .and. rxpsh < 0, &

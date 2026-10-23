@@ -492,14 +492,14 @@ class ModelCoreChargeConfiguration:
         elif icmod in (6, 7):
             # icmod, fcfact (cutoff budget, Ha), rcfact (xc energy error, Ha; default
             # 1e-5), slack (share of the budget the core must fit; default 1),
-            # budget_cutoff (0 "max", 1 "weighted"; default 0)
+            # budget_cutoff (0 "max", 1 "weighted", 2 "max_all"; default 0)
             return cls(
                 icmod=icmod,
                 fcfact=fort_float(parts[1]),
                 rcfact=fort_float(parts[2]) if len(parts) > 2 else None,
                 slack=fort_float(parts[3]) if len(parts) > 3 else None,
                 budget_cutoff=(
-                    ("weighted" if int(parts[4]) == 1 else "max")
+                    ("max", "weighted", "max_all")[int(parts[4])]
                     if len(parts) > 4
                     else None
                 ),

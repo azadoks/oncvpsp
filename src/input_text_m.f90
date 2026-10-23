@@ -10,7 +10,7 @@
 &                           atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
 &                           lmax, rc, ep, ncon, nbas, qcut, &
 &                           lloc, lpopt, dvloc0, nproj, debl, &
-&                           icmod, fcfact, rcfact, slack, budget_weighted, &
+&                           icmod, fcfact, rcfact, slack, budget_cut, &
 &                           fcfact_min, fcfact_max, fcfact_step, &
 &                           rcfact_min, rcfact_max, rcfact_step, &
 &                           epsh1, epsh2, depsh, rxpsh, &
@@ -108,10 +108,11 @@
  real(dp), intent(out) :: rcfact
 !> Share of the cutoff the model core must fit (icmod 6, 7)
  real(dp), intent(out) :: slack
-!> Whether the cutoff of the pseudo-waves is that of their weighted mean
-!> rather than the largest (icmod 6, 7; optional after slack, 0 "max", 1
-!> "weighted")
- logical, intent(out) :: budget_weighted
+!> The cutoff of the pseudo-waves (icmod 6, 7; optional after slack): 0
+!> "max", the largest over the ground-state waves (those of occupied
+!> states and each empty channel's first), 1 "weighted", their weighted
+!> mean, 2 "max_all", the largest over all waves
+ integer, intent(out) :: budget_cut
 !> Core charge width factor minimum for optimization
  real(dp), intent(out) :: rcfact_min
 !> Core charge width factor maximum for optimization
@@ -179,7 +180,7 @@
  fcfact = 0.d0
  rcfact = 0.d0
  slack = 1.d0
- budget_weighted = .false.
+ budget_cut = 0
  rc(:) = 0.d0
  ep(:, :) = 0.d0
  rxpsh = -1.d0  ! negative value for auto setting of radius
@@ -305,8 +306,9 @@
 ! icmod==6, 7 : icmod, fcfact (cutoff, Ha; <= 0 for -fcfact, or 1 if 0,
 !   times the cutoff of the pseudo-waves), rcfact (xc energy error, Ha;
 !   default 1e-5), slack (share of the cutoff the model must fit; default 1),
-!   budget_cutoff (0 for the largest cutoff of the pseudo-waves, 1 for that
-!   of their weighted mean; default 0, a bad value is an error)
+!   budget_cutoff (0 for the largest cutoff of the ground-state
+!   pseudo-waves, 1 for that of their weighted mean, 2 for the largest of
+!   all; default 0, a bad value is an error)
  if(ios == 0 .and. (icmod == 6 .or. icmod == 7)) then
    ibudget = 0
    read(line, *, iostat=ios) icmod, fcfact, rcfact, slack, ibudget
@@ -322,8 +324,8 @@
        rcfact = 1.d-5
      end if
    end if
-   if(ios == 0 .and. (ibudget < 0 .or. ibudget > 1)) ios = 999
-   budget_weighted = ibudget == 1
+   if(ios == 0 .and. (ibudget < 0 .or. ibudget > 2)) ios = 999
+   budget_cut = ibudget
  end if
 ! icmod==4[explicit grid]: icmod, fcfact(ignored), rcfact(ignored),
 !   fcfact_min, fcfact_max, fcfact_step,

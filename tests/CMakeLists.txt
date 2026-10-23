@@ -210,9 +210,12 @@ smooth_scan_test(sr_14_Si_bc_ecut sr 14_Si_bc "model_core_charge.fcfact" kernel,
 # the onset of the well (well_onset) where 14_Si's well states keep their n (l=1 takes another
 # node between 1.06 and 1.1)
 smooth_scan_test(sr_14_Si_well_onset sr 14_Si "pseudopotentials.well_onset" kernel,vloc,core,tests ${smooth_g1} --center 1.02 --span 0.01)
-# icmod 6/7: the xc round-off (14_Si_hm), as above; 14_Si_bc at degree 10 (6 leaves 3e-9)
+# icmod 6/7: the xc round-off (14_Si_hm), as above; 14_Si_bc at degree 10 (6 leaves 3e-9). 14_Si_hm
+# at its budget of before, over every wave ("max_all", 33.9 Ha): over the ground-state waves (11.5 Ha)
+# r_s is not the root of the budget there and steps by up to 1e-3 (smoothness_plan, bugs found)
 smooth_scan_test(sr_14_Si_hm_slack sr 14_Si_hm "model_core_charge.slack" kernel,vloc,core,tests
-    "kernel=1e-10,vloc=1e-10,core=1e-10,tests=1e-10" --span 0.02 --degree 14)
+    "kernel=1e-10,vloc=1e-10,core=1e-10,tests=1e-10" --span 0.02 --degree 14
+    --set "model_core_charge.budget_cutoff=\"max_all\"")
 smooth_scan_test(sr_14_Si_bc_slack sr 14_Si_bc "model_core_charge.slack" kernel,vloc,core,tests
     "kernel=1e-10,vloc=3e-12,core=1e-11,tests=1e-10" --center 0.9 --span 0.02 --degree 10)
 # the optimizer's setup (07_N_opt: PBE, icmod 6 at fcfact 65, lpopt 5): the inputs it varies and
@@ -597,17 +600,20 @@ endforeach ()
 # search grid (40_Zr_grid), icmod=7 with slack (14_Si_hm), a Libxc iexc (83_Bi), rc on the grid
 # (03_Li), iexc=7 with c_light on the first line (14_Si_c), ep_as_given, well_onset and well_tail =
 # "free" on the lmax line (14_Si_wt), well_tail = "confined" with well_n on a projector line
-# (14_Si_cw), well_norm on the lmax line (14_Si_wn), budget_cutoff on the icmod line (14_Si_bcw) and
+# (14_Si_cw), well_norm on the lmax line (14_Si_wn), budget_cutoff on the icmod line (14_Si_bcw;
+# "max_all" in 14_Si_hma) and
 # wave_regularization on the lmax line (07_N_flat); each in sr or fr, the fr ones on inputs that run in seconds.
 set(si_c "s/^    Si  14     3   2   3   psp8$/    Si  14     3   2   7   psp8  137.0359895/")
 set(si_wt "14s/^    2$/    2    1    1.2    1/")
 set(si_wn "14s/^    2$/    2    0    0.0    0    0.0    2/")
+set(si_hma "s/^   7   0   1\\.0e-5   0\\.7$/   7   0   1.0e-5   0.7   2/")
 set(si_cw "14s/^    2$/    2    1    1.2    2/\ns/^    1    2    0\\.75$/    1    2    0.75    5/")
 foreach (echo_test IN ITEMS
         "sr:14_Si_lder:psp8" "sr:40_Zr_grid:psp8" "sr:40_Zr_grid:upf"
         "sr:83_Bi:psml" "sr:03_Li:psml" "nr:14_Si:psml" "sr:14_Si_hm:psp8"
         "r:40_Zr_grid:psml" "r:14_Si_lder:psp8" "r:14_Si_c:upf" "r:14_Si_c:psml" "sr:14_Si_c:psp8"
-        "sr:14_Si_wt:upf" "sr:14_Si_wn:psp8" "sr:14_Si_cw:psp8" "r:14_Si_cw:psml" "sr:14_Si_bcw:psml" "r:14_Si_bcw:psp8" "sr:07_N_flat:upf")
+        "sr:14_Si_wt:upf" "sr:14_Si_wn:psp8" "sr:14_Si_cw:psp8" "r:14_Si_cw:psml" "sr:14_Si_bcw:psml" "r:14_Si_bcw:psp8"
+        "sr:14_Si_hma:upf" "sr:07_N_flat:upf")
     string(REPLACE ":" ";" echo_test "${echo_test}")
     list(GET echo_test 0 rel)
     list(GET echo_test 1 test_name)
@@ -620,6 +626,9 @@ foreach (echo_test IN ITEMS
     elseif (test_name STREQUAL "14_Si_wt")
         set(edit "${si_wt}")
         set(input "14_Si")
+    elseif (test_name STREQUAL "14_Si_hma")
+        set(edit "${si_hma}")
+        set(input "14_Si_hm")
     elseif (test_name STREQUAL "14_Si_wn")
         set(edit "${si_wn}")
         set(input "14_Si")
@@ -688,7 +697,7 @@ oncvpsp_test(error_icmod7_slack_range errors error_test.sh
 oncvpsp_test(error_budget_cutoff_value errors error_test.sh
     $<TARGET_FILE:oncvpspsr> "Read ERROR, input data file line  34"
     "${CMAKE_CURRENT_BINARY_DIR}/error_budget_cutoff_value"
-    "${data}/14_Si_bcw.dat" "s/^   6   0   1\\.0e-4   1\\.0   1$/   6   0   1.0e-4   1.0   2/")
+    "${data}/14_Si_bcw.dat" "s/^   6   0   1\\.0e-4   1\\.0   1$/   6   0   1.0e-4   1.0   3/")
 oncvpsp_test(error_wave_regularization_value errors error_test.sh
     $<TARGET_FILE:oncvpspsr> "Read ERROR, input data file line  12"
     "${CMAKE_CURRENT_BINARY_DIR}/error_wave_regularization_value"

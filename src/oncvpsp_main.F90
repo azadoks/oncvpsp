@@ -160,7 +160,11 @@
  type(piecewise_t), allocatable :: vkbpw(:,:,:)
  type(piecewise_t) :: vlocpw
  type(piecewise_t) :: corepw(nrhomod)
- logical :: ep_as_given,well_tail_free,budget_weighted
+ logical :: ep_as_given,well_tail_free
+!> the cutoff of the pseudo-waves for icmod 6, 7 (budget_cutoff): 0 the
+!> largest of the ground-state waves, 1 their weighted mean, 2 the largest
+!> of all
+ integer :: budget_cut
 !> the tail of the well states (0 "well", 1 "free", 2 "confined"), and the
 !> n of each l's first well state with "confined" (0 for the default)
  integer :: well_tail,well_n(mxlin+1)
@@ -332,7 +336,7 @@
 &                       atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
 &                       lmax, rc, ep, ncon, nbas, qcut, &
 &                       lloc, lpopt, dvloc0, nproj, debl, &
-&                       icmod, fcfact, rcfact, slack, budget_weighted, &
+&                       icmod, fcfact, rcfact, slack, budget_cut, &
 &                       fcfact_min, fcfact_max, fcfact_step, &
 &                       rcfact_min, rcfact_max, rcfact_step, &
 &                       epsh1, epsh2, depsh, rxpsh, &
@@ -352,7 +356,7 @@
 &                       atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
 &                       lmax, rc, ep, ncon, nbas, qcut, &
 &                       lloc, lpopt, dvloc0, nproj, debl, &
-&                       icmod, fcfact, rcfact, slack, budget_weighted, &
+&                       icmod, fcfact, rcfact, slack, budget_cut, &
 &                       fcfact_min, fcfact_max, fcfact_step, &
 &                       rcfact_min, rcfact_max, rcfact_step, &
 &                       epsh1, epsh2, depsh, rxpsh, &
@@ -374,7 +378,7 @@
 &                       atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
 &                       lmax, rc, ep, ncon, nbas, qcut, &
 &                       lloc, lpopt, dvloc0, nproj, debl, &
-&                       icmod, fcfact, rcfact, slack, budget_weighted, &
+&                       icmod, fcfact, rcfact, slack, budget_cut, &
 &                       fcfact_min, fcfact_max, fcfact_step, &
 &                       rcfact_min, rcfact_max, rcfact_step, &
 &                       epsh1, epsh2, depsh, rxpsh, &
@@ -592,7 +596,7 @@
    write(6,'(a)') trim(vkb_line(lmax,l1,nproj,debl,well_n))
  end do
 
- call write_icmod(icmod,fcfact,rcfact,slack,budget_weighted,fcgrid,rcgrid)
+ call write_icmod(icmod,fcfact,rcfact,slack,budget_cut,fcgrid,rcgrid)
 
  call write_epsh(epsh1,epsh2,depsh,rxpsh)
 
@@ -1099,7 +1103,7 @@
    ecutw=0.0d0
    if(fcfact<=0.0d0) then
      call modcore_budget_table(ecurve,ncurve,mxprj*4*nkap,wcurve, &
-&                              budget_weighted,rcfact,ecutw)
+&                              budget_cut==1,budget_cut==2,rcfact,ecutw)
    end if
 !the probe densities of the hardness of icmod=7
    allocate(probes(mmax,mxprj*(lmax+1)),lprobe(mxprj*(lmax+1)))
@@ -1110,7 +1114,7 @@
 &                        nkap,probes,lprobe,nprobe)
    end if
    call modcore_budget(icmod,rho,rhoc,rhomod,corepw,fcfact,ecutw, &
-&               budget_weighted,rcfact, &
+&               budget_cut==1,rcfact, &
 &               slack, &
 &               minval(rc(1:lmax+1)),mmax,rr,iexc,zion, &
 &               probes(:,1:nprobe),lprobe(1:nprobe),nprobe)
@@ -1272,7 +1276,7 @@
 
  call diagout(lmax,nproj,mxprj,nkap,cvgplt,npsh,epsh2,depsh,rphs,pshae, &
 &             pshps,ngh,ghn,ghe,ghp,(icmod==6 .or. icmod==7) &
-&             .and. fcfact<=0.0d0 .and. budget_weighted,rcfact,ecutw,wcurve, &
+&             .and. fcfact<=0.0d0 .and. budget_cut==1,rcfact,ecutw,wcurve, &
 &             ektail,icmod,rr,mmax,rcmax,rhoc,corepw,lloc,evkb,bbeig, &
 &             ncnf+1,ntcf,itcf,etcf,dtcf,cvloc,vlchk,optdg,wshare)
  deallocate(pshae,pshps)
@@ -1287,7 +1291,7 @@
 &              fa,rc0,ep,qcut,ep_as_given,well_onset,well_tail,wreg,debl, &
 &              well_n,well_norm,facnf,dvloc0, &
 &              fcfact,fcfact0,rcfact, &
-&              slack,budget_weighted,fcgrid,rcgrid, &
+&              slack,budget_cut,fcgrid,rcgrid, &
 &              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,upf_mesh,nkap)
  end if
 
@@ -1298,7 +1302,7 @@
 &              fa,rc0,ep,qcut,ep_as_given,well_onset,well_tail,wreg,debl, &
 &              well_n,well_norm,facnf,dvloc0, &
 &              fcfact0,rcfact, &
-&              slack,budget_weighted,fcgrid,rcgrid, &
+&              slack,budget_cut,fcgrid,rcgrid, &
 &              epsh1,epsh2,depsh,rxpsh,rlmax,psfile,uupsa,ea,log_mesh, &
 &              upf_mesh,nkap)
  end if
@@ -1333,7 +1337,7 @@
 &               zz,zion,mmax,iexc,icmod,nrl,drl,atsym,epstot, &
 &               na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
 &               fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact0,rcfact, &
-&               slack,budget_weighted,fcgrid,rcgrid, &
+&               slack,budget_cut,fcgrid,rcgrid, &
 &               epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,upf_mesh, &
 &               irel,nkap,ep_as_given,well_onset,well_tail,wreg,well_n, &
 &               well_norm)

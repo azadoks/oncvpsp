@@ -1774,17 +1774,21 @@
  end subroutine modcore_probes
 
  subroutine modcore_budget_table(ecurve,ncurve,nprof,wcurve,weighted, &
-&                                errmax,ecut)
+&                                allwaves,errmax,ecut)
 
 !! the cutoff ecut (Ha) of the pseudo-waves at the error errmax (Ha per
 !! electron).
-!! By default (weighted false) the largest over the pseudo-waves of the
+!! By default (weighted and allwaves false) the largest over the
+!! ground-state pseudo-waves, those with a weight (the waves of occupied
+!! states, and the first of each channel with none occupied), of the
 !! cutoff at which the energy error per electron of each falls to errmax,
 !! the "Energy error per electron / Cutoff" tables of run_optimize (the
 !! same curve and the same root-finding on the interpolant of log E over
 !! its points, ug_cross_down, from the last crossing); a pseudo-wave whose
 !! table does not reach errmax does not count, as it has no line in its
-!! table.
+!! table. The other waves, of well states at the energies debl adds,
+!! carry no charge in the ground state; with allwaves (budget_cutoff =
+!! "max_all") they count too, as before.
 !! With weighted true (budget_cutoff = "weighted"), the cutoff at which
 !! the weighted mean sum_i w_i E_i / sum_i w_i of the curves with a weight
 !! falls to errmax: each curve's log E interpolated as in ug_cross_down,
@@ -1802,6 +1806,8 @@
 !! @param nprof  number of curves (pseudo-waves)
 !! @param wcurve  weight of each curve in the weighted mean (weighted only)
 !! @param weighted  whether ecut is that of the weighted mean
+!! @param allwaves  whether the largest is over all waves, not only those
+!!                  with a weight (not weighted)
 !! @param errmax  error per electron (Ha) that defines the cutoff
 !! @param ecut  cutoff (Ha) of the pseudo-waves at errmax
 
@@ -1813,7 +1819,7 @@
 !Input variables
  integer, intent(in) :: ncurve,nprof
  real(dp), intent(in) :: ecurve(2,ncurve,nprof),wcurve(nprof),errmax
- logical, intent(in) :: weighted
+ logical, intent(in) :: weighted,allwaves
 
 !Output variables
  real(dp), intent(out) :: ecut
@@ -1856,6 +1862,7 @@
 
  if(.not. weighted) then
    do ip=1,nprof
+     if(.not. allwaves .and. .not. (wcurve(ip)>0.0d0)) cycle
      ecut1=-1.0d0
      if(nks(ip)>=2) then
        call ug_cross_down(ecurve(2,1:nks(ip),ip),nks(ip),dqs(ip),q1s(ip), &

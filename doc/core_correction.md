@@ -223,8 +223,17 @@ icmod==6:
     it on the line "pseudo-wave cutoff, weighted mean Ecut of the tables
     at ...", and the DIAGNOSTICS block as `ecut_w err ecut`, with the
     weights as `ecut_w_weight l ikap iproj w`. On tests/data/14_Si_bcw.dat
-    it is 9.31 Ha, against 14.13 Ha for the maximum, which an unoccupied
-    second projector sets.
+    it is 9.31 Ha, against 9.44 Ha for the maximum.
+
+    The maximum ("max", the default) is over the same ground-state waves,
+    those with a weight: the waves of the occupied states and the first of
+    each channel with none occupied. The others are well states at the
+    energies debl adds, which hold no charge in the ground state; with
+    budget_cutoff = "max_all" (2 in the .dat) the maximum is over every
+    wave, as it was before. Over every wave, 14_Si_bca's is 14.13 Ha, set
+    by the s channel's second projector, and 14_Si_hm's 33.94 Ha, set by
+    the d channel's second, at 0.85 Ha (9.44 and 11.51 Ha over the
+    ground-state waves).
 
     ```
         # MODEL CORE CHARGE

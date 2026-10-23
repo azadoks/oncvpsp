@@ -14,7 +14,7 @@
 &                           atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
 &                           lmax, rc, ep, ncon, nbas, qcut, &
 &                           lloc, lpopt, dvloc0, nproj, debl, &
-&                           icmod, fcfact, rcfact, slack, budget_weighted, &
+&                           icmod, fcfact, rcfact, slack, budget_cut, &
 &                           fcfact_min, fcfact_max, fcfact_step, &
 &                           rcfact_min, rcfact_max, rcfact_step, &
 &                           epsh1, epsh2, depsh, rxpsh, &
@@ -59,7 +59,8 @@
 !   [model_core_charge]        icmod, fcfact (icmod 1, 2, 3, 6, 7; else 0),
 !                              rcfact (icmod 3; 1e-5 for icmod 6, 7; else
 !                              0), slack (icmod 6, 7; 1), budget_cutoff
-!                              (icmod 6, 7; "max" or "weighted", "max"),
+!                              (icmod 6, 7; "max", "weighted" or
+!                              "max_all", "max"),
 !                              fcfact_min, fcfact_max, fcfact_step, rcfact_min,
 !                              rcfact_max, rcfact_step (optional, icmod 4 grid)
 !   [log_derivative_analysis]  epsh1, epsh2, depsh, rxpsh (optional, -1 for
@@ -150,9 +151,10 @@
  real(dp), intent(out) :: rcfact
 !> Share of the cutoff the model core must fit (icmod 6, 7)
  real(dp), intent(out) :: slack
-!> Whether the cutoff of the pseudo-waves is that of their weighted mean
-!> rather than the largest (icmod 6, 7; budget_cutoff "weighted")
- logical, intent(out) :: budget_weighted
+!> The cutoff of the pseudo-waves (icmod 6, 7; budget_cutoff): 0 "max",
+!> the largest over the ground-state waves, 1 "weighted", their weighted
+!> mean, 2 "max_all", the largest over all waves
+ integer, intent(out) :: budget_cut
 !> Core charge width factor minimum for optimization
  real(dp), intent(out) :: rcfact_min
 !> Core charge width factor maximum for optimization
@@ -223,7 +225,7 @@
  fcfact = 0.0_dp
  rcfact = 0.0_dp
  slack = 1.0_dp
- budget_weighted = .false.
+ budget_cut = 0
  rc(:) = 0.0_dp
  ep(:, :) = 0.0_dp
  rxpsh = -1.0_dp  ! negative value for auto setting of radius
@@ -382,12 +384,14 @@
 &    'max')
    select case(tmp_str)
    case('max')
-     budget_weighted = .false.
+     budget_cut = 0
    case('weighted')
-     budget_weighted = .true.
+     budget_cut = 1
+   case('max_all')
+     budget_cut = 2
    case default
-     call input_error('budget_cutoff in [model_core_charge] must be "max"'// &
-&      ' or "weighted", got "'//tmp_str//'"')
+     call input_error('budget_cutoff in [model_core_charge] must be "max",'// &
+&      ' "weighted" or "max_all", got "'//tmp_str//'"')
    end select
  case default
 ! no further keys

@@ -142,7 +142,7 @@ case $case in
         base=$data/toml/14_Si_bca.toml
         set_key model_core_charge rcfact 'rcfact = 1.0e-4\nbudget_cutoff = "mean"' \
             < "$base" > in.toml
-        expect='budget_cutoff in [model_core_charge] must be "max" or "weighted", got "mean"' ;;
+        expect='budget_cutoff in [model_core_charge] must be "max", "weighted" or "max_all", got "mean"' ;;
     budget_cutoff_default)
         # budget_cutoff defaults to "max"
         base=$data/toml/14_Si_bca.toml

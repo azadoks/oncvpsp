@@ -29,7 +29,7 @@
 &                  debl,well_n,well_norm,facnf, &
 &                  dvloc0,fcfact,fcfact0, &
 &                  rcfact, &
-&                  slack,budget_weighted,fcgrid,rcgrid, &
+&                  slack,budget_cut,fcgrid,rcgrid, &
 &                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,upf_mesh, &
 &                  nkap)
 
@@ -97,8 +97,9 @@
 !! @param dvloc0  amplitude at rr==0 of the function added to the local
 !!                potential for lloc==4
 !! @param slack  share of the cutoff the model core must fit (icmod=6, 7)
-!! @param budget_weighted  whether the cutoff of the pseudo-waves is that of
-!!                         their weighted mean (icmod=6, 7)
+!! @param budget_cut  the cutoff of the pseudo-waves (icmod=6, 7): 0 the
+!!                    largest of the ground-state waves, 1 their weighted
+!!                    mean, 2 the largest of all waves (budget_cutoff)
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 !! @param epsh1  lower limit of the log derivative analysis energy range (Ha)
@@ -125,7 +126,7 @@
  integer, intent(in) :: nproj(mxlin+1)
  real(dp), intent(in) :: drl,fcfact,fcfact0,rcfact,zz,zion,soscale
  real(dp), intent(in) :: slack
- logical, intent(in) :: budget_weighted
+ integer, intent(in) :: budget_cut
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
  real(dp), intent(in) :: rr(mmax),vpuns(mmax,mxl+2),rho(mmax)
  real(dp), intent(in) :: rhotae(mmax),rhoc(mmax)
@@ -394,7 +395,7 @@
 &                       na,la,fa,lmax,rc0,ep(:,1),ncon,nbas,qcut,ep_as_given, &
 &                       well_onset,well_tail,wreg,lloc,lpopt,dvloc0, &
 &                       nproj,debl,well_n,well_norm, &
-&                       icmod,fcfact0,rcfact,slack,budget_weighted, &
+&                       icmod,fcfact0,rcfact,slack,budget_cut, &
 &                       fcgrid,rcgrid, &
 &                       epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
 &                       ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh)

@@ -1993,6 +1993,15 @@ These change behaviour beyond numerics. Decided on review (2026-10-20).
 
 To fix in the phase that touches the code, or in phase 7.
 
+- icmod 7 at a low budget (2026-10-23, found when the default budget
+  became that of the ground-state waves): 14_Si_hm at budget 11.5 Ha,
+  slack 0.69 to 0.71, takes r_s = icmod 6's smallest fitting radius, but
+  the cutoff the model core needs there (7.934 Ha) is below the one it
+  must fit (7.941 Ha), so r_s is not the budget's root but some other
+  limit of the search, and its steps along slack vary by up to 1e-3
+  (smooth in the middle of the span). The slack scan of 14_Si_hm keeps
+  the budget of before ("max_all", 33.9 Ha) until this is understood.
+
 - `vpinteg` skips mesh points 1–3 (harmless, about 1e-12; removed in
   phase 7, no caller left).
 - `sbf8` with nm = 3 or 4 leaves `sb_out(2)` (j_1) unset (latent: `eresid`

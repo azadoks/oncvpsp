@@ -91,9 +91,11 @@ rather than hidden.
   exp(a + b r^2 + c r^4) is used. The budget is `fcfact` (Ha) when
   positive. When `fcfact` <= 0 it is taken from the pseudo-waves'
   convergence: by default the largest Ecut of the tables at `rcfact` per
-  electron, or, with `budget_cutoff = "weighted"`, the occupation-weighted
-  mean (smooth where two waves' crossings pass each other, which the
-  maximum is not). With `fcfact` < 0 the budget is -fcfact times that
+  electron over the ground-state waves (those of the occupied states and
+  each empty channel's first; over every wave with `budget_cutoff =
+  "max_all"`), or, with `budget_cutoff = "weighted"`, the
+  occupation-weighted mean (smooth where two waves' crossings pass each
+  other, which the maximum is not). With `fcfact` < 0 the budget is -fcfact times that
   cutoff. `slack` (0 < slack <= 1) makes the model fit slack times the
   budget. The method is ported from the BudgetedCore of
   PseudoPotentialGenerators.jl. Commits: 8fef166, dc1883b, f098dc9,
