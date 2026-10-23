@@ -97,6 +97,11 @@
 ! result does not depend on the iteration count (doc/smoothness_plan.md,
 ! S-5)
  real(dp), parameter ::  tolscf=1.0d-12
+! the relative energy correction at which the bound states stop while the
+! occupations still move to the target: those iterations only lead to the
+! target's start, and from it on the states are solved to round-off
+ real(dp), parameter ::  tolramp=1.0d-4
+ real(dp) :: etol
 
  ierr=0
 
@@ -146,6 +151,8 @@
 ! convergence is only to be considered at the target occupations
    convg=all(fa(1:nv)==fat(1:nv,2))
    if(convg) itarget=min(itarget,it)
+   etol=tolramp
+   if(convg) etol=0.0d0
 
 ! solve for bound states in turn
 
@@ -185,9 +192,9 @@
 
        emin=1.10d0*ea(ii,ikap)
        emax=0.90d0*ea(ii,ikap)
-       call lschvkbb(na(ii),la(ii),nproj(l1),ierr,et,emin,emax, &
-&                   rr,vtot,vlocpw,vkbpw(1:nproj(l1),l1,ikap), &
-&                   evkb(1,l1,ikap),uu,up,mmax,mch)
+       call lschvkbb_tol(na(ii),la(ii),nproj(l1),ierr,et,emin,emax, &
+&                       rr,vtot,vlocpw,vkbpw(1:nproj(l1),l1,ikap), &
+&                       evkb(1,l1,ikap),uu,up,mmax,mch,etol)
 
        if(ierr /= 0) then
          if(nkap==2) then

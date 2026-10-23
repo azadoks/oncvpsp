@@ -20,6 +20,30 @@
 &   rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,mch)
 
 !! Finds bound states of a  pseudopotential with
+!! Vanderbilt-Kleinman-Bylander non-local projectors, to round-off
+!! (lschvkbb_tol with no tolerance; the arguments are its)
+
+ use constants_m, only: dp
+ use pieces_m, only: piecewise_t
+ implicit none
+ external :: lschvkbb_tol
+
+ real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nvkb)
+ integer, intent(in) :: nn,ll,nvkb,mmax
+ type(piecewise_t), intent(in) :: vlocpw,vkbpw(nvkb)
+ real(dp), intent(inout) :: emin,emax,ee
+ real(dp), intent(out) :: uu(mmax),up(mmax)
+ integer, intent(out) :: ierr,mch
+
+ call lschvkbb_tol(nn,ll,nvkb,ierr,ee,emin,emax, &
+&                  rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,mch,0.0d0)
+ return
+ end subroutine lschvkbb
+
+ subroutine lschvkbb_tol(nn,ll,nvkb,ierr,ee,emin,emax, &
+&   rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,mch,etol)
+
+!! Finds bound states of a  pseudopotential with
 !! Vanderbilt-Kleinman-Bylander non-local projectors
 !!
 !! @param nn  principal quantum number
@@ -44,6 +68,9 @@
 !!             steps beyond the last kink of the potential and the
 !!             projectors (a smooth maximum of the two), so that the inward
 !!             integration crosses no kink
+!! @param etol  0 for the energy to round-off (below); otherwise the
+!!              relative energy correction at which to stop at once, for
+!!              the passes of an SCF whose potential is still moving
 
  use constants_m, only: dp
  use match_m, only: match_k, match_point, match_weights, match_smax
@@ -52,7 +79,7 @@
  implicit none
 
 !Input variables
- real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nvkb)
+ real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nvkb),etol
  integer, intent(in) :: nn,ll,nvkb,mmax
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(nvkb)
 
@@ -252,6 +279,10 @@
 
 ! convergence test and possible exit
 
+     if(abs(de)<max(abs(ee),0.2d0)*etol) then
+       ierr = 0
+       exit
+     end if
      if(abs(de)<max(abs(ee),0.2d0)*eps) then
        if(abs(de)<=8.0d0*epsilon(1.0d0)*max(abs(ee),0.2d0) .or. &
 &         abs(de)>=0.5d0*abs(deprev)) then
@@ -295,4 +326,4 @@
 
  include 'adams.inc'
 
- end subroutine lschvkbb
+ end subroutine lschvkbb_tol
