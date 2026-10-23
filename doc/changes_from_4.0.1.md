@@ -282,7 +282,10 @@ precision.
   (d = 6) in ln r, windowed by a C-infinity bump. Derivatives come from
   11-point stencil fields, cumulative integrals from 8th-order cells with
   compensated summation, and roots from Brent in ln r. `ugrid_m` gives
-  the same on uniform grids. Commits: a1b2a06, b47bc4d, 6c310b9.
+  the same on uniform grids. Commits: a1b2a06, b47bc4d, 6c310b9. The
+  bump's smooth step takes one exponential instead of two, and each
+  node's weight one division instead of two, for 2 to 3% of a run; this
+  moves outputs by up to 1e-9 relative where they amplify round-off.
 - **Piecewise functions (`pieces_m`).** A function with kinks is held as
   pieces, each a smooth extension over the whole mesh, so no stencil or
   interpolant spans a kink. Commit: e3a587f.
@@ -371,7 +374,7 @@ precision.
   energy correction of 1e-4, not at round-off (`lschvkbb_tol`): those
   iterations only lead to the target's start. This moves the test
   configurations' energies by about 1e-13 Ha, within the SCF's
-  tolerance, and saves 4 to 13% of a run.
+  tolerance, and saves 4 to 13% of a run. Commit: 3b60ff4.
 - **Repeated all-electron SCFs reused.** The all-electron atom depends
   only on its states and occupations. Test configuration 0 repeats the
   reference at both levels, and a configuration that only removes

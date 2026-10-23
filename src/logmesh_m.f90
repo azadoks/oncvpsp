@@ -657,8 +657,9 @@
    end do
    if(ww==0.0d0) cycle
    if(mod(ii,2)==0) ww=-ww
-   num=num+ww*ff(ii)/dt
-   den=den+ww/dt
+   ww=ww/dt
+   num=num+ww*ff(ii)
+   den=den+ww
  end do
  fh_value=num/den
  return
@@ -668,7 +669,9 @@
 
 !! the C-infinity bump of the window weights: 1 for ss<=nwin1, 0 for
 !! ss>=nwin2, and the smooth step exp(-1/z)/(exp(-1/z)+exp(-1/(1-z)))
-!! between, z=(nwin2-ss)/(nwin2-nwin1)
+!! between, z=(nwin2-ss)/(nwin2-nwin1); that is 1/(1+exp(t)), t=1/z-
+!! 1/(1-z), one exponential, taken as exp(-t)/(1+exp(-t)) for t>0 so
+!! that it cannot overflow
 !!
 !! @param ss  distance of a window's centre from the position (steps)
 
@@ -676,7 +679,7 @@
  real(dp), intent(in) :: ss
 
 !Local variables
- real(dp) :: zz,e1,e2
+ real(dp) :: zz,tt,ee
 
  if(ss<=nwin1) then
    window=1.0d0
@@ -684,9 +687,13 @@
    window=0.0d0
  else
    zz=(nwin2-ss)/(nwin2-nwin1)
-   e1=exp(-1.0d0/zz)
-   e2=exp(-1.0d0/(1.0d0-zz))
-   window=e1/(e1+e2)
+   tt=1.0d0/zz-1.0d0/(1.0d0-zz)
+   if(tt>0.0d0) then
+     ee=exp(-tt)
+     window=ee/(1.0d0+ee)
+   else
+     window=1.0d0/(1.0d0+exp(tt))
+   end if
  end if
  return
  end function window
@@ -924,7 +931,7 @@
    end do
    if(mod(ii,2)==0) ww=-ww
    wts(ii-ilo+1)=ww/dt
-   den=den+ww/dt
+   den=den+wts(ii-ilo+1)
  end do
  do ii=ilo,ihi
    wts(ii-ilo+1)=wts(ii-ilo+1)/den
