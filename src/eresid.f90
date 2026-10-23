@@ -39,7 +39,15 @@
 !! nodes depend on rc and qmax only, so that the tail on them (free_tail_m:
 !! the wave function interpolated, 1e-12 of it far out, or the windowed
 !! free tail of a well state) is a smooth function of the inputs;
-!! integrated by the 8th-order rule of ugrid_m. The
+!! integrated by the 8th-order rule of ugrid_m. For l<=3, r j_l(q r) is
+!! a sum of q**-k r**(1-k) sin or cos(q r), k=1..l+1, so the tail's
+!! transforms on the grid are those sums over the mesh, at every node at
+!! once by the chirp-z transform (czt_m: O(L log L), L>=nr+nq, for the
+!! O(nr nq) of the sums; their round-off is 1e-16 of max|ps|, that of the
+!! sums of sines being some 4e-16); at the lowest nodes, where those
+!! terms cancel (their sizes q**-k sum|u r**(1-k)| above a quarter of
+!! sum|u r|), and for l>3, they are the sums of rjl, as at the partial
+!! cells' points below. The
 !! integrals over q accumulate from qmax by the same rule, from the small
 !! values up, so their round-off is that of their own size (Parseval,
 !! E_resid as the kinetic energy less the part below q, would leave the
@@ -81,6 +89,7 @@
  use ugrid_m, only: ug_weights, ug_cumint_down
  use sbf_q_m, only: sbfq_overlap_vs, sbfq_value_slope
  use sbf_m, only: sbf_trig_rising
+ use czt_m, only: czt_plan_t, czt_plan, czt_apply, czt_free
  implicit none
  external :: sbf8
 
@@ -100,12 +109,23 @@
  real(dp), allocatable :: rlin(:),wr(:),sbf(:)
  real(dp), allocatable :: sqr(:),cqr(:),sdqr(:),cdqr(:)
  real(dp), allocatable :: g0(:),gdot(:,:),gmat(:,:,:),work(:)
+ real(dp), allocatable :: aw(:),tailg(:)
+ complex(dp), allocatable :: xin(:),fk(:,:)
+ type(czt_plan_t) :: plan
+ real(dp) :: pk(0:4),est,qlo
+ integer :: nqd,mq
  real(dp) :: sb_out(5),psnullq(nnull)
  real(qp) :: ovl(nbas),ps0in,psnin(nnull),rcq,jq(nbas),jdq(nbas),jb,jdb
  real(dp) :: q0,qq,qq4,ps0q,tn,qa,qb,wg
  integer :: ii,iq,jj,kk,ll1,ig,icell
 !steps between exact sin/cos(qq*rlin) evaluations in the q loop
  integer, parameter :: nqseed=32
+!fewest nodes for the chirp-z transform
+ integer, parameter :: nczt=16
+!|c_k| of the terms q**-k r**(1-k) sin or cos(q r) of r j_l(q r), l=0..3
+ real(dp), parameter :: ccoef(4,0:3)=reshape([1.0d0,0.0d0,0.0d0,0.0d0, &
+&  1.0d0,1.0d0,0.0d0,0.0d0, 1.0d0,3.0d0,3.0d0,0.0d0, &
+&  1.0d0,6.0d0,15.0d0,15.0d0],[4,4])
 !8-point Gauss-Legendre on [-1,1], for the partial cells
  integer, parameter :: ngl=8
  real(dp), parameter :: xgl(ngl)=[-0.9602898564975363d0, &
@@ -148,17 +168,45 @@
  end do
  call ug_weights(nr,hh,wr)
 
-!sin and cos of dq*rlin, which step sin and cos of qq*rlin from one qq to
-!the next by rotation
+!the tail's transforms at the nodes (above): the weighted tail, and the
+!nodes below the first where the terms of the closed forms stop cancelling
+ allocate(aw(nr),tailg(nq))
+ aw(:)=wr(:)*ulin(:)
+ tailg(:)=0.0d0
+ nqd=nq
+ if(ll<=3) then
+   pk(:)=0.0d0
+   do ii=1,nr
+     if(rlin(ii)>0.0d0) then
+       do kk=0,ll+1
+         pk(kk)=pk(kk)+abs(aw(ii))*rlin(ii)**(1-kk)
+       end do
+     end if
+   end do
+   do iq=1,nq
+     qq=q0+dble(iq-1)*dq
+     if(qq==0.0d0) cycle
+     est=0.0d0
+     do kk=1,ll+1
+       est=est+ccoef(kk,ll)*pk(kk)/qq**kk
+     end do
+     if(est<=0.25d0*pk(0)) then
+       nqd=iq-1
+       exit
+     end if
+   end do
+   if(nq-nqd<nczt) nqd=nq
+ end if
+
+!the nodes below, by the sums: sin and cos of dq*rlin, which step sin and
+!cos of qq*rlin from one qq to the next by rotation
  do ii=1,nr
    sdqr(ii)=sin(dq*rlin(ii))
  end do
  do ii=1,nr
    cdqr(ii)=cos(dq*rlin(ii))
  end do
-
-!the integrands at each node of the q grid
- do iq=1,nq
+ do iq=1,nqd
    qq=q0+dble(iq-1)*dq
 
 !sin and cos of qq*rlin, evaluated directly every nqseed steps and
@@ -178,6 +226,40 @@
        sqr(ii)=tn
      end do
    end if
+   if(qq==0.0d0) cycle
+   tailg(iq)=tail_sum(qq)
+ end do
+
+!the nodes above, by the chirp-z transform: F_k(q) = sum aw r**(1-k)
+!exp(i q r) on q = qlo + m dq, r = rlin(1) + n hh, is exp(i q rlin(1))
+!times the transform of aw r**(1-k) exp(i qlo n hh) at the angle dq hh
+ if(nqd<nq) then
+   mq=nq-nqd
+   qlo=q0+dble(nqd)*dq
+   allocate(xin(0:nr-1),fk(0:mq-1,ll+1))
+   call czt_plan(nr,mq,dq*hh,plan)
+   do kk=1,ll+1
+     do ii=1,nr
+       xin(ii-1)=(0.0d0,0.0d0)
+       if(rlin(ii)>0.0d0) then
+         xin(ii-1)=aw(ii)*rlin(ii)**(1-kk) &
+&                 *cmplx(cos(qlo*dble(ii-1)*hh),sin(qlo*dble(ii-1)*hh),dp)
+       end if
+     end do
+     call czt_apply(plan,xin,fk(:,kk))
+   end do
+   call czt_free(plan)
+   do iq=nqd+1,nq
+     qq=q0+dble(iq-1)*dq
+     fk(iq-nqd-1,:)=fk(iq-nqd-1,:)*cmplx(cos(qq*rlin(1)),sin(qq*rlin(1)),dp)
+     tailg(iq)=czt_combine(qq,fk(iq-nqd-1,:))
+   end do
+   deallocate(xin,fk)
+ end if
+
+!the integrands at each node of the q grid
+ do iq=1,nq
+   qq=q0+dble(iq-1)*dq
 
 !q**4 makes the integrands zero at q=0 whatever the transforms
    if(qq==0.0d0) then
@@ -187,7 +269,7 @@
      cycle
    end if
 
-   call transforms(qq,ps0q,psnullq)
+   call transforms(qq,tailg(iq),ps0q,psnullq)
 
 !integrands of the E_resid q integrals
    qq4=qq**4
@@ -247,7 +329,7 @@
      do kk=1,nr
        cqr(kk)=cos(qq*rlin(kk))
      end do
-     call transforms(qq,ps0q,psnullq)
+     call transforms(qq,tail_sum(qq),ps0q,psnullq)
      qq4=wg*qq**4
      eresid0(ii)=eresid0(ii)+qq4*ps0q**2
      eresiddot(:,ii)=eresiddot(:,ii)+qq4*ps0q*psnullq(:)
@@ -260,33 +342,72 @@
  deallocate(rlin,wr,sbf)
  deallocate(sqr,cqr,sdqr,cdqr)
  deallocate(g0,gdot,gmat,work)
+ deallocate(aw,tailg)
 
  return
 
  contains
 
- subroutine transforms(qq,ps0q,psnullq)
+ real(dp) function tail_sum(qq)
 
-!! the transforms at qq of ps0 (the Bessel sum inside rc, the all-electron
-!! tail outside) and of the null functions (inside rc only), from sin and
-!! cos of qq*rlin in sqr and cqr
+!! the tail's transform at qq by its sum, from sin and cos of qq*rlin in
+!! sqr and cqr
 
 !Input variables
  real(dp), intent(in) :: qq
+
+!Local variables
+ integer :: ii
+
+ call rsbf_lin(ll1,qq,rlin,sqr,cqr,nr,sbf)
+ tail_sum=0.0d0
+ do ii=1,nr
+   tail_sum=tail_sum+aw(ii)*sbf(ii)
+ end do
+ return
+ end function tail_sum
+
+ real(dp) function czt_combine(qq,ff)
+
+!! the tail's transform at qq from F_k = sum aw r**(1-k) exp(i qq r):
+!! the closed forms of r j_l(qq r), their sines from Im F_k and cosines
+!! from Re F_k
+
+!Input variables
+ real(dp), intent(in) :: qq
+ complex(dp), intent(in) :: ff(ll+1)
+
+ select case(ll)
+ case(0)
+   czt_combine=aimag(ff(1))/qq
+ case(1)
+   czt_combine=aimag(ff(2))/qq**2-real(ff(1),dp)/qq
+ case(2)
+   czt_combine=3.0d0*aimag(ff(3))/qq**3-aimag(ff(1))/qq &
+&             -3.0d0*real(ff(2),dp)/qq**2
+ case default
+   czt_combine=15.0d0*aimag(ff(4))/qq**4-6.0d0*aimag(ff(2))/qq**2 &
+&             -15.0d0*real(ff(3),dp)/qq**3+real(ff(1),dp)/qq
+ end select
+ return
+ end function czt_combine
+
+ subroutine transforms(qq,tailq,ps0q,psnullq)
+
+!! the transforms at qq of ps0 (the Bessel sum inside rc, the all-electron
+!! tail outside, whose transform is tailq) and of the null functions
+!! (inside rc only)
+
+!Input variables
+ real(dp), intent(in) :: qq,tailq
 
 !Output variables
  real(dp), intent(out) :: ps0q,psnullq(nnull)
 
 !Local variables
- integer :: ii,jj
+ integer :: jj
 
-!transform of the all-electron tail: rlin * j_l(qq rlin) on the linear
-!mesh, times uu, integrated
- call rsbf_lin(ll1,qq,rlin,sqr,cqr,nr,sbf)
- ps0q=0.0d0
- do ii=1,nr
-   ps0q=ps0q+wr(ii)*ulin(ii)*sbf(ii)
- end do
+ ps0q=tailq
 
 !transforms inside rc: the basis functions' overlaps with j_l(qq r), in
 !closed form, combined in quad precision

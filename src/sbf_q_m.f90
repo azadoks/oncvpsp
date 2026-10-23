@@ -261,7 +261,7 @@
  real(qp), intent(out) :: ss
 
  if(max(q1,q2)*rc>1.5_qp .and. abs(q2-q1)>1.0e-13_qp*min(q1,q2)) then
-   ss=rc**2*(q2*j1*jd2 - q1*jd1*j2)/((q1-q2)*(q1+q2))
+   ss=(rc*rc)*(q2*j1*jd2 - q1*jd1*j2)/((q1-q2)*(q1+q2))
  else
    call sbfq_overlap(ll,q1,q2,rc,ss)
  end if

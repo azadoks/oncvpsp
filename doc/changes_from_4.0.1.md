@@ -285,7 +285,8 @@ precision.
   the same on uniform grids. Commits: a1b2a06, b47bc4d, 6c310b9. The
   bump's smooth step takes one exponential instead of two, and each
   node's weight one division instead of two, for 2 to 3% of a run; this
-  moves outputs by up to 1e-9 relative where they amplify round-off.
+  moves outputs by up to 1e-9 relative where they amplify round-off
+  (c60094f).
 - **Piecewise functions (`pieces_m`).** A function with kinks is held as
   pieces, each a smooth extension over the whole mesh, so no stencil or
   interpolant spans a kink. Commit: e3a587f.
@@ -401,7 +402,16 @@ precision.
   (the sin/cos rotation, 1.3-2x faster), 6c310b9, 23d54d2, 8e777ba
   (M-13). The curve's tail above qmax reuses the curve's tail mesh and
   function, which it had rebuilt at a spacing equal up to round-off. This
-  moves its cutoffs by about 1e-15 relative (410344c).
+  moves its cutoffs by about 1e-15 relative (410344c). The tail's
+  transforms on the q grid are chirp-z transforms (`czt_m`, Bluestein's
+  convolution by FFT): for l <= 3, r j_l(qr) is a sum of
+  q^-k r^(1-k) sin or cos(qr), so each of those l+1 sums over the tail
+  mesh comes at every node at once, in O(L log L) instead of O(nr nq).
+  Their round-off is 1e-16 of the transform's largest value, below the
+  4e-16 of the sums of sines they replace. At the lowest nodes, where
+  those terms cancel, and for l > 3, the tail is still summed directly.
+  E_resid takes a fifth of the time it did; kernels move by at most
+  2e-11 and cutoffs by about 1e-10 relative.
 - **Basis roots (`qroots`).** The roots are found on the pole-free
   g(q) = ulgd j_l(q rc) - q j_l'(q rc) and Newton-polished. 4.0.1 tested
   the log-derivative mismatch and rejected large sign changes as poles,
