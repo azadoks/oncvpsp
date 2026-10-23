@@ -159,6 +159,7 @@
  use pieces_m, only: piecewise_t, pw_value, pw_node_values, pw_segment
  use logmesh_m, only: lm_interp, lm_root, lm_derivs
  use ugrid_m, only: ug_brent
+ use input_echo_m, only: fe
  implicit none
 
 !Input variables
@@ -197,7 +198,7 @@
        do jj=1,nerrdg
          if(cvgplt(1,jj,iprj,l1,ikap)/=0.0d0) then
            write(6,'(a,3i4,1p,2e24.16)') 'ecut',l1-1,ikap,iprj, &
-&                cvgplt(2,jj,iprj,l1,ikap),cvgplt(1,jj,iprj,l1,ikap)
+&                fe(cvgplt(2,jj,iprj,l1,ikap)),cvgplt(1,jj,iprj,l1,ikap)
          end if
        end do
      end do
@@ -211,7 +212,7 @@
    do ikap=1,mkap
      do iprj=1,nproj(l1)
        write(6,'(a,3i4,1p,4e24.16)') 'opt',l1-1,ikap,iprj, &
-&            optdg(:,iprj,l1,ikap)
+&            fe(optdg(:,iprj,l1,ikap))
      end do
    end do
  end do
@@ -219,11 +220,11 @@
  write(6,'(a)') '# ecut_vloc err(Ha) ecut(Ha)'
  do jj=1,nerrlv
    if(cvloc(1,jj)/=0.0d0) then
-     write(6,'(a,1p,2e24.16)') 'ecut_vloc',cvloc(2,jj),cvloc(1,jj)
+     write(6,'(a,1p,2e24.16)') 'ecut_vloc',fe(cvloc(2,jj)),cvloc(1,jj)
    end if
  end do
  write(6,'(a)') '# vloc_check e(Ha)'
- write(6,'(a,1p,e24.16)') 'vloc_check',vlchk
+ write(6,'(a,1p,e24.16)') 'vloc_check',fe(vlchk)
 
  write(6,'(a)') '# ekin_tail l ikap iproj t(Ha)'
  do l1=1,lmax+1
@@ -232,7 +233,7 @@
    do ikap=1,mkap
      do iprj=1,nproj(l1)
        write(6,'(a,3i4,1p,e24.16)') 'ekin_tail',l1-1,ikap,iprj, &
-&            ektail(1,iprj,l1,ikap)
+&            fe(ektail(1,iprj,l1,ikap))
      end do
    end do
  end do
@@ -244,14 +245,14 @@
    do ikap=1,mkap
      do iprj=1,nproj(l1)
        write(6,'(a,3i4,1p,e24.16)') 'ekin_check',l1-1,ikap,iprj, &
-&            ektail(2,iprj,l1,ikap)
+&            fe(ektail(2,iprj,l1,ikap))
      end do
    end do
  end do
 
  if(wcut) then
    write(6,'(a)') '# ecut_w err(Ha) ecut(Ha)'
-   write(6,'(a,1p,2e24.16)') 'ecut_w',errw,ecutw
+   write(6,'(a,1p,2e24.16)') 'ecut_w',fe(errw),ecutw
    write(6,'(a)') '# ecut_w_weight l ikap iproj w'
    do l1=1,lmax+1
      mkap=nkap
@@ -260,7 +261,7 @@
        do iprj=1,mxprj
          if(wcurve(iprj,l1,ikap)>0.0d0) then
            write(6,'(a,3i4,1p,e24.16)') 'ecut_w_weight',l1-1,ikap,iprj, &
-&                wcurve(iprj,l1,ikap)
+&                fe(wcurve(iprj,l1,ikap))
          end if
        end do
      end do
@@ -292,7 +293,7 @@
    do ikap=1,mkap
      do jj=1,ngh(l1,ikap)
        write(6,'(a,3i4,1p,2e24.16)') 'ghost',l1-1,ikap,ghn(jj,l1,ikap), &
-&            ghe(:,jj,l1,ikap)
+&            fe(ghe(:,jj,l1,ikap))
      end do
      if(ghp(2,l1,ikap)>0.0d0) then
        write(6,'(a,2i4,1p,2e24.16)') 'ghost_r',l1-1,ikap,ghp(:,l1,ikap)
@@ -311,13 +312,13 @@
      if(np==0) cycle
      do iprj=1,np
        write(6,'(a,3i4,1p,e24.16)') 'vkb_b',l1-1,ikap,iprj, &
-&            bbeig(iprj,l1,ikap)
+&            fe(bbeig(iprj,l1,ikap))
      end do
      write(6,'(a,2i4,1p,e24.16)') 'vkb_cond',l1-1,ikap, &
 &          maxval(abs(bbeig(1:np,l1,ikap)))/minval(abs(bbeig(1:np,l1,ikap)))
      do iprj=1,np
        write(6,'(a,3i4,1p,e24.16)') 'vkb_e',l1-1,ikap,iprj, &
-&            evkb(iprj,l1,ikap)
+&            fe(evkb(iprj,l1,ikap))
      end do
    end do
  end do
@@ -329,10 +330,10 @@
      write(6,'(a,i4)') 'test_config_failed',jj-1
      cycle
    end if
-   write(6,'(a,i4,1p,3e24.16)') 'test_config',jj-1,dtcf(:,jj)
+   write(6,'(a,i4,1p,3e24.16)') 'test_config',jj-1,fe(dtcf(:,jj))
    do ii=1,ntcf(jj)
      write(6,'(a,4i4,1p,3e24.16)') 'test_eig',jj-1,itcf(:,ii,jj), &
-&          etcf(:,ii,jj)
+&          fe(etcf(:,ii,jj))
    end do
  end do
 
@@ -342,7 +343,7 @@
    call lm_interp(rr,rhoc,mmax,rcmax,aerc)
    mdrc=pw_value(rr,mmax,corepw(1),rcmax)
    write(6,'(a)') '# core_rc r(bohr) rho_ae rho_model'
-   write(6,'(a,1p,3e24.16)') 'core_rc',rcmax,aerc,mdrc
+   write(6,'(a,1p,3e24.16)') 'core_rc',rcmax,fe(aerc),fe(mdrc)
    write(6,'(a)') '# core_extent frac r_ae(bohr) r_model(bohr)'
    frac=1.0d-2
    do jj=1,2
@@ -353,9 +354,9 @@
    end do
    call model_extrema(rext,fext)
    write(6,'(a)') '# core_model_max r(bohr) rho'
-   write(6,'(a,1p,2e24.16)') 'core_model_max',rext(1),fext(1)
+   write(6,'(a,1p,2e24.16)') 'core_model_max',rext(1),fe(fext(1))
    write(6,'(a)') '# core_model_min r(bohr) rho'
-   write(6,'(a,1p,2e24.16)') 'core_model_min',rext(2),fext(2)
+   write(6,'(a,1p,2e24.16)') 'core_model_min',rext(2),fe(fext(2))
    deallocate(fmd)
  end if
  write(6,'(a)') 'End DIAGNOSTICS'

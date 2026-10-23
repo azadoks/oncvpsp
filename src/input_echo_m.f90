@@ -21,6 +21,7 @@
 ! them echo as they always have. The *_lines routines return the lines,
 ! for the PSML echo; write_icmod and write_epsh write them to unit 6.
 ! write_input_echo writes the whole echo of the psp8 and UPF files.
+! fx and fe shape single values for the output files' fields.
 
  module input_echo_m
 
@@ -31,7 +32,7 @@
  public :: atom_lines, lmax_lines, icmod_lines, epsh_lines, mesh_lines
  public :: write_atom, write_lmax, write_icmod, write_epsh
  public :: write_mesh
- public :: write_input_echo, fx
+ public :: write_input_echo, fx, fe
 
 !> length of the lines returned by the *_lines routines
  integer, parameter, public :: echo_len=100
@@ -75,6 +76,25 @@
  field=' '//trim(adjustl(buf))
  return
  end function fx
+
+ elemental function fe(xx) result(yy)
+
+!! xx for an E field that has no exponent width (e24.16, not e24.16e3): 0
+!! where |xx| < 1e-99, whose 3-digit exponent would be written in place
+!! of the E ("2.1869480064996404-119"), which many readers reject
+!!
+!! @param xx  value
+
+!Input variables
+ real(dp), intent(in) :: xx
+
+!Output variables
+ real(dp) :: yy
+
+ yy=xx
+ if(abs(xx)<1.0d-99) yy=0.0d0
+ return
+ end function fe
 
  subroutine atom_lines(atsym,zz,nc,nv,iexc,psfile,text,ntext)
 

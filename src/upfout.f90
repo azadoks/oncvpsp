@@ -106,7 +106,7 @@
 !! @param nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
 
  use constants_m, only: dp, pi, mxstate, mxcnf, mxl, mxlin, nrhomod
- use input_echo_m, only: write_input_echo
+ use input_echo_m, only: write_input_echo, fe
  use outmesh_m, only: om_values, om_piece_values, om_local_values
  use pieces_m, only: piecewise_t
  implicit none
@@ -529,7 +529,7 @@
  if(istr==0) then
    write(6,'(1p,4e24.16)') (drl,ii=1,nrl)
  else
-   write(6,'(1p,4e24.16)') (rabl(ii),ii=1,nrl)
+   write(6,'(1p,4e24.16)') (fe(rabl(ii)),ii=1,nrl)
  end if
 
  write(6,'(t4,a)') &
@@ -542,7 +542,7 @@
  write(6,'(a,i4,a)') &
 &      '  <PP_LOCAL type="real"  size="',nrl,'" columns="4">'
 
- write(6,'(1p,4e24.16)') (2.0d0*vpl(ii,lloc+1),ii=1,nrl)
+ write(6,'(1p,4e24.16)') (fe(2.0d0*vpl(ii,lloc+1)),ii=1,nrl)
 
  write(6,'(a)') &
 &      '  </PP_LOCAL>'
@@ -600,7 +600,7 @@
 &              'cutoff_radius="',rl(nrlproj),'" >'
        end if
 
-       write(6,'(1p,4e24.16)') (vkbl(ii,jj,l1,ikap),ii=1,nrlproj)
+       write(6,'(1p,4e24.16)') (fe(vkbl(ii,jj,l1,ikap)),ii=1,nrlproj)
        write(6,'(1p,4f3.0)') (0.d0,ii=nrlproj+1,nrl)
 
        if(iproj<=9) then
@@ -617,7 +617,7 @@
  write(6,'(t4,a,i4,a)') &
 &      '<PP_DIJ type="real"  size="',ntotproj**2,'" columns="4">'
 
- write(6,'(1p,4e24.16)') ((dmat(ii,jj),ii=1,ntotproj),jj=1,ntotproj)
+ write(6,'(1p,4e24.16)') ((fe(dmat(ii,jj)),ii=1,ntotproj),jj=1,ntotproj)
 
  write(6,'(t4,a)') &
 &      '</PP_DIJ>'
@@ -673,7 +673,7 @@
      write(6,'(t8,a,i1,a)') &
 &             'l="',l1,'" >'
 
-     write(6,'(1p,4e24.16)') (uual(jj,ikap,ii),jj=1,nrl)
+     write(6,'(1p,4e24.16)') (fe(uual(jj,ikap,ii)),jj=1,nrl)
 
      if(nwfc <= 9) then
        write(6,'(t4,a,i1,a)') &
@@ -691,7 +691,7 @@
    write(6,'(t2,a,i4,a)') &
 &        '<PP_NLCC type="real"  size="',nrl,'" columns="4">'
 
-   write(6,'(1p,4e24.16)') (rhomodl(ii,1)/(4.0d0*pi),ii=1,nrl)
+   write(6,'(1p,4e24.16)') (fe(rhomodl(ii,1)/(4.0d0*pi)),ii=1,nrl)
 
    write(6,'(t2,a)') &
 &        '</PP_NLCC>'
@@ -700,7 +700,7 @@
  write(6,'(t2,a,i4,a)') &
 &      '<PP_RHOATOM type="real"  size="',nrl,'" columns="4">'
 
- write(6,'(1p,4e24.16)') ((rl(ii)**2)*rhol(ii),ii=1,nrl)
+ write(6,'(1p,4e24.16)') (fe((rl(ii)**2)*rhol(ii)),ii=1,nrl)
 
  write(6,'(t2,a)') &
 &      '</PP_RHOATOM>'

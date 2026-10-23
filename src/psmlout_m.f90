@@ -119,6 +119,7 @@
  use xmlf90_wxml, only: xmlf_t, str, xml_OpenUnit, xml_Close, &
 &                       xml_AddXMLDeclaration, xml_NewElement, &
 &                       xml_EndElement, xml_AddArray
+ use input_echo_m, only: fe
  use m_libxc_list, only: libxc_t, XC_NOT_IMPL, XC_LDA_X, XC_LDA_C_PZ, &
 &                        XC_LDA_C_WIGNER, XC_LDA_C_HL, XC_GGA_X_PBE, &
 &                        XC_GGA_C_PBE, XC_LDA_C_VWN, XC_LDA_X_REL
@@ -454,7 +455,7 @@
 
  call xml_NewElement(xf,"data")
  call add_zero_r(chval(1:npts),rgrid,f0)
- call xml_AddArray(xf,f0(1:nr))
+ call xml_AddArray(xf,fe(f0(1:nr)))
  call xml_EndElement(xf,"data")
  call xml_EndElement(xf,"radfunc")
  call xml_EndElement(xf,"valence-charge")
@@ -482,7 +483,7 @@
 
    call xml_NewElement(xf,"data")
    call add_zero_r(chcore(1:npts),rgrid,f0)
-   call xml_AddArray(xf,f0(1:nr))
+   call xml_AddArray(xf,fe(f0(1:nr)))
    call xml_EndElement(xf,"data")
    call xml_EndElement(xf,"radfunc")
    call xml_EndElement(xf,"pseudocore-charge")
@@ -508,7 +509,7 @@
  call xml_NewElement(xf,"radfunc")
  call xml_NewElement(xf,"data")
  call add_zero_r(vlocal(1:npts),rgrid,f0)
- call xml_AddArray(xf,f0(1:nr))
+ call xml_AddArray(xf,fe(f0(1:nr)))
  call xml_EndElement(xf,"data")
  call xml_EndElement(xf,"radfunc")
  call xml_EndElement(xf,"local-potential")
@@ -882,6 +883,7 @@
 
  use xmlf90_wxml, only: xmlf_t, str, xml_NewElement, xml_EndElement, &
 &                       xml_AddArray
+ use input_echo_m, only: fe
 
 !Input variables
  character(len=*), intent(in)  :: class
@@ -928,7 +930,7 @@
 
  call xml_NewElement(xf,"radfunc")
  call xml_NewElement(xf,"data")
- call xml_AddArray(xf,ff(:))
+ call xml_AddArray(xf,fe(ff(:)))
  call xml_EndElement(xf,"data")
  call xml_EndElement(xf,"radfunc")
 

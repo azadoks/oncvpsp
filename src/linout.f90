@@ -113,7 +113,7 @@
 
 
  use constants_m, only: dp, mxstate, mxcnf, mxl, mxlin, nrhomod
- use input_echo_m, only: write_input_echo
+ use input_echo_m, only: write_input_echo, fe
  use outmesh_m, only: om_values, om_piece_values, om_local_values
  use pieces_m, only: piecewise_t
  implicit none
@@ -304,22 +304,24 @@
    if(ll==lloc) then
      write(6,'(i4)') ll
      do ii = 1,nrl
-       write(6,'(i6,1p,2e21.13)') ii,rl(ii),vpl(ii,l1)
+       write(6,'(i6,1p,2e21.13)') ii,rl(ii),fe(vpl(ii,l1))
      end do
    else if(nkap==1 .and. nproj(l1)>0) then
-     write(6,'(i4,23x,1p,6e21.13)') ll,(evkb(jj,l1,1),jj=1,nproj(l1))
+     write(6,'(i4,23x,1p,6e21.13)') ll,(fe(evkb(jj,l1,1)),jj=1,nproj(l1))
      do ii = 1,nrl
        if(rl(ii)<=rc(l1)+2.0d0*drl) then
-         write(6,'(i6,1p,6e21.13)') ii,rl(ii),(vkbl(ii,jj,l1),jj=1,nproj(l1))
+         write(6,'(i6,1p,6e21.13)') ii,rl(ii), &
+&              (fe(vkbl(ii,jj,l1)),jj=1,nproj(l1))
        else
          write(6,'(i6,f6.2,6f4.0)') ii,rl(ii),(vkbl(ii,jj,l1),jj=1,nproj(l1))
        end if
      end do
    else if(nkap==2 .and. npr_sr(l1)>0) then
-     write(6,'(i4,23x,1p,10e21.13)') ll,(esr(jj,l1),jj=1,npr_sr(l1))
+     write(6,'(i4,23x,1p,10e21.13)') ll,(fe(esr(jj,l1)),jj=1,npr_sr(l1))
      do ii = 1,nrl
        if(rl(ii)<=rc(l1)+2.0d0*drl) then
-         write(6,'(i6,1p,11e21.13)') ii,rl(ii),(vsrl(ii,jj,l1),jj=1,npr_sr(l1))
+         write(6,'(i6,1p,11e21.13)') ii,rl(ii), &
+&              (fe(vsrl(ii,jj,l1)),jj=1,npr_sr(l1))
        else
          write(6,'(i6,f6.2,10f4.0)') ii,rl(ii),(zero(jj),jj=1,npr_sr(l1))
        end if
@@ -331,7 +333,7 @@
  if(lloc>lmax) then
    write(6,'(i4)') lloc
    do ii = 1,nrl
-     write(6,'(i6,1p,2e21.13)') ii,rl(ii),vpl(ii,lloc+1)
+     write(6,'(i6,1p,2e21.13)') ii,rl(ii),fe(vpl(ii,lloc+1))
    end do
  end if
 
@@ -339,10 +341,11 @@
  do l1=2,lmax+1
    ll=l1-1
    if(npr_so(l1)>0) then
-     write(6,'(i4,23x,1p,20e21.13)') ll,(soscale*eso(jj,l1),jj=1,npr_so(l1))
+     write(6,'(i4,23x,1p,20e21.13)') ll,(fe(soscale*eso(jj,l1)),jj=1,npr_so(l1))
      do ii = 1,nrl
        if(rl(ii)<=rc(l1)+2.0d0*drl) then
-         write(6,'(i6,1p,11e21.13)') ii,rl(ii),(vsol(ii,jj,l1),jj=1,npr_so(l1))
+         write(6,'(i6,1p,11e21.13)') ii,rl(ii), &
+&              (fe(vsol(ii,jj,l1)),jj=1,npr_so(l1))
        else
          write(6,'(i6,f6.2,10f4.0)') ii,rl(ii),(zero(jj),jj=1,npr_so(l1))
        end if
@@ -354,13 +357,14 @@
  if(fchrg>0.0d0) then
    do ii=1,nrl
      write(6,'(i6,1p,6e21.13)') ii,rl(ii),  &
-&      (rhomodl(ii,jj),jj=1,5)
+&      (fe(rhomodl(ii,jj)),jj=1,5)
    end do
  end if
 
 ! write pseudo valence, all-electron valence and all-electron core charges
  do ii=1,nrl
-   write(6,'(i6,1p,4e21.13)') ii,rl(ii),rhol(ii),rhotael(ii),rhocl(ii)
+   write(6,'(i6,1p,4e21.13)') ii,rl(ii), &
+&        fe(rhol(ii)),fe(rhotael(ii)),fe(rhocl(ii))
  end do
 
  if(nkap==1) then
