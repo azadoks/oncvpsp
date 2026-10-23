@@ -26,6 +26,7 @@ nav:
     - Merging sr and fr: fr_merge_plan.md
     - Library and wrappers: library_plan.md
     - Test suite speed: test_suite_speed.md
+    - Changes from 4.0.1: changes_from_4.0.1.md
     - Release Notes: release_notes.md
 
 theme:
