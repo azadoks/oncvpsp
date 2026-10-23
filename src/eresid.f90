@@ -50,7 +50,9 @@
 !! the functions (doc/smoothness_plan.md, Q-1 to Q-3)
 !!
 !! @param ll  angular momentum
-!! @param rc  core radius (bohr)
+!! @param rc  core radius (bohr), the start of the tail's linear mesh; 0
+!!            with no basis (nbas 0), for a whole function given on that
+!!            mesh (band_ecut_m)
 !! @param nnull  number of null-space functions
 !! @param nbas  number of basis functions
 !! @param nq  number of nodes of the q grid
@@ -288,7 +290,7 @@
 
 !transforms inside rc: the basis functions' overlaps with j_l(qq r), in
 !closed form, combined in quad precision
- call sbfq_value_slope(ll,real(qq,qp)*rcq,jb,jdb)
+ if(nbas>0) call sbfq_value_slope(ll,real(qq,qp)*rcq,jb,jdb)
  do jj=1,nbas
    call sbfq_overlap_vs(ll,real(qroot(jj),qp),real(qq,qp),rcq,jq(jj),jdq(jj), &
 &                       jb,jdb,ovl(jj))

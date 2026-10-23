@@ -45,7 +45,7 @@
  implicit none
  private
  public :: mesh_tail, free_tail, free_tail_log, free_tail_width
- public :: tail_kinetic, free_tail_k
+ public :: tail_kinetic, free_tail_k, free_tail_whole
 
 !> the leakage bound: L solves (dq L)**2/4 - 9 kappa L = wbound
  real(dp), parameter :: wbound=30.0d0
@@ -212,6 +212,74 @@
  deallocate(rlin)
  return
  end subroutine free_tail
+
+ subroutine free_tail_whole(irel,ll,kap,ee,rr,vv,uu,up,mmax,rc,qcut,hh,nr, &
+&                           ulin)
+!! a state on the linear mesh (i-1) hh from 0 to the end of the window
+!! (above): uu interpolated (lm_interp) inside rc, 0 at r = 0 and below
+!! rr(1), and its windowed free tail beyond, the solution of the radial
+!! equation in vv continued from uu and up at rc (band_ecut_m); nsub
+!! Runge-Kutta steps per mesh step
+!!
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2
+!!              fully-relativistic
+!! @param ll  angular momentum
+!! @param kap  =l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
+!! @param ee  the state's energy (Ha)
+!! @param rr  log radial mesh
+!! @param vv  the potential beyond rc
+!! @param uu  the state (*rr), out past the interpolants' reach at rc
+!! @param up  its derivative in the mesh index (al*r*d(uu)/dr)
+!! @param mmax  size of the log radial mesh
+!! @param rc  core radius (bohr)
+!! @param qcut  the cutoff wave vector (bohr^-1)
+!! @param hh  spacing of the linear mesh
+!! @param nr  number of its nodes
+!! @param ulin  the state on them
+
+!Input variables
+ integer, intent(in) :: irel,ll,kap,mmax
+ real(dp), intent(in) :: ee,rc,qcut,hh
+ real(dp), intent(in) :: rr(mmax),vv(mmax),uu(mmax),up(mmax)
+
+!Output variables
+ integer, intent(out) :: nr
+ real(dp), allocatable, intent(out) :: ulin(:)
+
+!Local variables
+ real(dp), allocatable :: rout(:),uout(:),dout(:)
+ real(dp) :: wl,rad
+ integer :: ii,i0
+
+ call free_tail_width(qcut,ee,wl)
+ nr=int((rc+(wcen+window_end(ee,wl))*wl)/hh)+1
+ allocate(ulin(nr))
+!the first node at or beyond rc
+ i0=nr+1
+ do ii=1,nr
+   rad=dble(ii-1)*hh
+   if(rad>=rc) then
+     i0=ii
+     exit
+   end if
+   if(rad<rr(1)) then
+     ulin(ii)=0.0d0
+   else
+     call lm_interp(rr,uu,mmax,rad,ulin(ii))
+   end if
+ end do
+ if(i0<=nr) then
+   allocate(rout(nr-i0+1),uout(nr-i0+1),dout(nr-i0+1))
+   do ii=i0,nr
+     rout(ii-i0+1)=dble(ii-1)*hh
+   end do
+   call free_solve(irel,ll,kap,ee,rr,vv,uu,up,mmax,rc,rc,wl,nr-i0+1, &
+&                  rout,hh/dble(nsub),uout,dout)
+   ulin(i0:nr)=uout(:)
+   deallocate(rout,uout,dout)
+ end if
+ return
+ end subroutine free_tail_whole
 
  subroutine free_tail_log(irel,ll,kap,ee,rr,vv,uu,up,mmax,rc,qcut,istart)
 

@@ -23,7 +23,7 @@
 &                   pshae,pshps,ngh,ghn,ghe,ghp,wcut,errw,ecutw,wcurve, &
 &                   ektail,icmod,rr,mmax,rcmax,rhoc,corepw,lloc,evkb, &
 &                   bbeig,ncfg,ntcf,itcf,etcf,dtcf,cvloc,vlchk,optdg, &
-&                   wshare)
+&                   wshare,nband,eband,bandq,bandc)
 
 !! writes the block "Begin DIAGNOSTICS" ... "End DIAGNOSTICS", one value
 !! per line, each line tagged with its quantity:
@@ -117,6 +117,14 @@
 !! ikap iproj in its place where qcut is not above the state's wave
 !! vector, which makes its cutoffs meaningless
 !!
+!! band_eresid l ikap e eres: for each l with no occupied state, at each
+!! energy e (Ha) of the valence window (from the lowest valence eigenvalue
+!! to the highest occupied), E_resid above qcut of the pseudo scattering
+!! state of l there, normalized to 1
+!! inside rc, with the free tail (Ha per electron, band_ecut_m); and
+!! band_ecut l ikap e err ecut, its cutoff (Ha) at each error level err
+!! (1e-2 to 1e-5) that it reaches
+!!
 !! ikap is 1 for j=l+1/2 (and for nkap=1), 2 for j=l-1/2
 !!
 !! @param lmax  maximum angular momentum
@@ -164,6 +172,10 @@
 !! @param wshare  of each optimized wave: E_resid at qcut with the well's
 !!                tail and with the free tail, and 1 for a confined well
 !!                state, -1 where the free tail is undefined, 0 otherwise
+!! @param nband  number of energies of the valence window (0 for none)
+!! @param eband  the energies
+!! @param bandq  E_resid at qcut at each energy, l and kappa
+!! @param bandc  the cutoffs at the levels band_lev, 0 for one not reached
 
  use constants_m, only: dp, mxl, mxlin, nerrdg, nerrlv, mxstate, mxkap, &
 &                       nrhomod, mxcnf
@@ -171,6 +183,7 @@
  use logmesh_m, only: lm_interp, lm_root, lm_derivs
  use ugrid_m, only: ug_brent
  use input_echo_m, only: fe
+ use band_ecut_m, only: nband_lev, band_lev
  implicit none
 
 !Input variables
@@ -194,6 +207,9 @@
  real(dp), intent(in) :: cvloc(2,nerrlv),vlchk
  real(dp), intent(in) :: optdg(4,mxprj,mxl+1,nkap)
  real(dp), intent(in) :: wshare(3,mxprj,mxl+1,nkap)
+ integer, intent(in) :: nband
+ real(dp), intent(in) :: eband(3),bandq(3,mxlin+1,nkap)
+ real(dp), intent(in) :: bandc(nband_lev,3,mxlin+1,nkap)
 
 !Local variables
  integer :: ii,jj,l1,ikap,mkap,iprj,kseg,np
@@ -241,6 +257,35 @@
        else if(wshare(3,iprj,l1,ikap)<0.0d0) then
          write(6,'(a,3i4)') 'well_share_undefined',l1-1,ikap,iprj
        end if
+     end do
+   end do
+ end do
+
+ write(6,'(a)') '# band_eresid l ikap e(Ha) eresid(Ha)'
+ do l1=1,lmax+1
+   mkap=nkap
+   if(l1==1) mkap=1
+   do ikap=1,mkap
+     do iprj=1,nband
+       if(bandq(iprj,l1,ikap)>0.0d0) then
+         write(6,'(a,2i4,1p,2e24.16)') 'band_eresid',l1-1,ikap, &
+&              fe(eband(iprj)),fe(bandq(iprj,l1,ikap))
+       end if
+     end do
+   end do
+ end do
+ write(6,'(a)') '# band_ecut l ikap e(Ha) err(Ha) ecut(Ha)'
+ do l1=1,lmax+1
+   mkap=nkap
+   if(l1==1) mkap=1
+   do ikap=1,mkap
+     do iprj=1,nband
+       do jj=1,nband_lev
+         if(bandc(jj,iprj,l1,ikap)>0.0d0) then
+           write(6,'(a,2i4,1p,3e24.16)') 'band_ecut',l1-1,ikap, &
+&                fe(eband(iprj)),band_lev(jj),bandc(jj,iprj,l1,ikap)
+         end if
+       end do
      end do
    end do
  end do

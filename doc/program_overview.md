@@ -115,6 +115,16 @@ irel, and the stage.  It has the following major sections:
      and cutoffs scale with its square, so the cutoffs of different
      well_tail modes compare only at the same well_norm.
 
+     For each channel with no occupied state, after the pseudo-atom, the
+     cutoffs at the valence energies (band_ecut_m): the channel's pseudo
+     scattering state (lschvkbs) at three energies of the valence window,
+     normalized to 1 inside r_c, continued beyond r_c in a model
+     interstitial (the local potential going over, by an erf step of
+     width 8/qcut, to a flat level 0.2 Ha below the window, so that the
+     tail oscillates rather than grows) under free_tail_m's window, and
+     its residual energy curve by eresid on one linear mesh from r = 0.
+     The DIAGNOSTICS block has them as band_eresid and band_ecut.
+
      Every well state is solved on the log mesh continued beyond its end
      until it decays to machine precision (well_mesh_m), and each one the
      well confines reports its residual energy at qcut with the well's

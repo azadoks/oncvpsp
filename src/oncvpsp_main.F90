@@ -62,6 +62,8 @@
  use modcore_m, only: core_pieces_smooth
  use free_tail_m, only: free_tail_log
  use well_mesh_m, only: well_mesh_t
+ use band_ecut_m, only: band_ecut, nband_lev, band_lev, band_width, &
+&                       band_vint
  use logmesh_m, only: lm_fh_reach
  use constants_m, only: nlev, nerrdg, nerrlv, well_onset_default
  use input_echo_m, only: write_atom, write_lmax, write_icmod, write_epsh, &
@@ -175,6 +177,13 @@
 !> the weight of the first pseudo-wave of each l with no occupied state in
 !> the cutoff of the pseudo-waves (ecut_weight; negative for 2(2l+1))
  real(dp) :: ecut_wt(mxlin+1)
+!> the cutoffs at the valence energies (band_ecut_m): the q taken as
+!> infinity of each l, the energies, and per energy, l and kappa E_resid at
+!> qcut and the cutoffs at the levels band_lev
+ real(dp) :: qinf(mxlin+1),eband(3)
+ real(dp), allocatable :: bandq(:,:,:),bandc(:,:,:,:)
+ integer :: nband,ie
+ real(dp) :: elo,ehi
  real(dp) :: well_onset
  real(dp), allocatable :: chix(:,:,:,:)
 !fully-relativistic only: scalar-relativistic and spin-orbit projectors, and
@@ -957,7 +966,7 @@
 &                      ecurve(1,1,1,l1,ikap), &
 &                      pswfx(1,1,l1,ikap),chix(1,1,l1,ikap), &
 &                      ektail(1,1,l1,ikap),wreg,optdg(1,1,l1,ikap), &
-&                      wshare(1,1,l1,ikap))
+&                      wshare(1,1,l1,ikap),qinf(l1))
 
 !the weights of its pseudo-waves in the cutoff of the pseudo-waves (the
 !weighted mean, and which waves the largest is over): the occupation of
@@ -1168,6 +1177,56 @@
  call run_diag(lmax,npa,epa,wellprj,lloc,irc, &
 &               vlocpw,vkbpw,evkb,nproj,rr,vfull,vp,zz,mmax,mxprj,irel,nkap)
 
+!the cutoff of each channel at the valence energies, the top band_width
+!of the occupied valence eigenvalues (from the highest down to the lowest
+!or band_width below it, a valence band's width, which leaves out the
+!semicore states): its pseudo scattering
+!state there, normalized to 1 inside rc, with the free tail
+!(band_ecut_m), for each channel with no occupied state (Si d): the
+!measure of the cutoff its charge in a solid needs, which the convergence
+!tables of its well states, at energies the input chose, are not (a
+!channel with an occupied state has it in the table of that state)
+ allocate(bandq(3,mxlin+1,nkap),bandc(nband_lev,3,mxlin+1,nkap))
+ bandq(:,:,:)=0.0d0
+ bandc(:,:,:,:)=0.0d0
+ nband=0
+ if(nv>0) then
+   elo=minval(ea(nc+1:nc+nv,1))
+   ehi=elo
+   do kk=nc+1,nc+nv
+     if(fa(kk)>0.0d0) ehi=max(ehi,ea(kk,1))
+   end do
+   elo=max(elo,ehi-band_width)
+   if(ehi-elo>1.0d-6) then
+     nband=3
+     eband(:)=elo+(ehi-elo)*[0.0d0,0.5d0,1.0d0]
+   else
+     nband=1
+     eband(1)=elo
+   end if
+   write(6,'(/a/a/a)') &
+&       'Cutoffs at the valence energies: the pseudo scattering state of', &
+&       'each l with no occupied state, normalized to 1 inside rc', &
+&       '                e (Ha)  E_resid(qcut)  Ecut (Ha) at 1e-2 ... 1e-5'
+   do l1=1,lmax+1
+     ll=l1-1
+     if(any(la(nc+1:nc+nv)==ll .and. fa(nc+1:nc+nv)>0.0d0)) cycle
+     mkap=nkap
+     if(ll==0) mkap=1
+     do ikap=1,mkap
+       do ie=1,nband
+         call band_ecut(ll,nproj(l1),eband(ie),elo-band_vint,rr, &
+&                       vp(1,lloc+1,ikap),vlocpw, &
+&                       vkbpw(1:nproj(l1),l1,ikap),evkb(1:nproj(l1),l1,ikap), &
+&                       mmax,rc(l1),irc(l1),qcut(l1),qinf(l1), &
+&                       bandq(ie,l1,ikap),bandc(:,ie,l1,ikap))
+         write(6,'(a,i1,a,i1,f9.4,1p,e15.4,0p,4f8.2)') ' band l=',ll, &
+&             ' ikap=',ikap,eband(ie),bandq(ie,l1,ikap),bandc(:,ie,l1,ikap)
+       end do
+     end do
+   end do
+ end if
+
  if(irel==2) then
    call run_diag_sr_so_r(lmax,npa,epa,wellprj,lloc,irc, &
 &                        vlocpw,vsrpw,esr,vsopw,eso,nproj,rr,vfull,vp,zz, &
@@ -1296,7 +1355,8 @@
 &             pshps,ngh,ghn,ghe,ghp,(icmod==6 .or. icmod==7) &
 &             .and. fcfact<=0.0d0 .and. budget_cut==1,rcfact,ecutw,wcurve, &
 &             ektail,icmod,rr,mmax,rcmax,rhoc,corepw,lloc,evkb,bbeig, &
-&             ncnf+1,ntcf,itcf,etcf,dtcf,cvloc,vlchk,optdg,wshare)
+&             ncnf+1,ntcf,itcf,etcf,dtcf,cvloc,vlchk,optdg,wshare,nband,eband, &
+&             bandq,bandc)
  deallocate(pshae,pshps)
 
  if(trim(psfile)=='psp8' .or. trim(psfile)=='both') then

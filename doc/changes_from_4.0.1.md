@@ -101,7 +101,8 @@ rather than hidden.
   cutoff. `slack` (0 < slack <= 1) makes the model fit slack times the
   budget. The method is ported from the BudgetedCore of
   PseudoPotentialGenerators.jl. Commits: 8fef166, dc1883b, f098dc9,
-  9b90162, 59d0ba8, d0a99ca, 9ed4066 (the ground-state waves).
+  9b90162, 59d0ba8, d0a99ca, 9ed4066 (the ground-state waves), 270c1e6
+  (ecut_weight).
 - **icmod 7, hardness-matched core (new).** Of the radii that fit the
   budget, the one where the model core best reproduces the all-electron
   d2Exc/dn_i dn_j of the bound pseudo states. This is the
@@ -247,6 +248,15 @@ precision.
   differ by more than 10 % (84 of the 358 well states of the test
   inputs, 74_W's up to 94 %) or where qcut is not above the state's wave
   vector. Nothing else changes. Commit: 74b1c54.
+- **Cutoffs at the valence energies (new).** 4.0.1's convergence tables
+  are those of the pseudo-waves, at the projectors' energies; for a
+  channel with no occupied state (Si d) these are well states at energies
+  the input chose. The output now gives, for each such channel, the
+  cutoffs of its pseudo scattering state at three energies of the valence
+  window (the top 0.5 Ha of the occupied valence eigenvalues), normalized
+  to 1 inside rc and continued into a model interstitial where it
+  oscillates (`band_eresid`, `band_ecut` in DIAGNOSTICS). Si d: 15.0 to
+  15.6 Ha at 1e-5 per electron. Nothing else changes.
 
 ### Numerics
 
