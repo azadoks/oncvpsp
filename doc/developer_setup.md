@@ -68,6 +68,10 @@ The `study` preset (in `build-study/`) is the `release` build (`-O3
 study. It is about 35 % faster than the `default` build (29_Cu and 83_Bi,
 scalar-relativistic) and passes the same tests, as it moves the nonlocal
 kernels by about 1e-8, but only runs on CPUs like the one that built it.
+The `trap` preset (in `build-trap/`) is the `study` build without
+`-ffast-math` and with the floating-point traps of `debug`, so that a NaN, a
+division by zero or an overflow stops a run where it is made, with a
+backtrace.
 
 The `profile` preset (in `build-profile/`) is the `default` build with frame
 pointers, for `perf`. Its call graphs need no DWARF unwinding, and perf
@@ -100,6 +104,39 @@ such as compiler paths or `Libxc_ROOT`.
 CMake is the only build: the upstream make build (`make.inc`, `src/Makefile`
 and `tests/data/TEST.sh`) was dropped, as ctest covers its tests. A source
 file is added or removed in `src/CMakeLists.txt`.
+
+### On thor (PSI)
+
+The thor cluster (login node `lms-login.psi.ch`) builds with gcc-toolset-13,
+the system OpenBLAS, and a Libxc 7.0.0 installed in `~/software/libxc/7.0.0`:
+
+```bash
+source /opt/rh/gcc-toolset-13/enable      # or: scl enable gcc-toolset-13 -- bash
+cmake --preset default \
+    -DLAPACK_LIBRARIES=/usr/lib64/libopenblas.so.0 \
+    -DBLAS_LIBRARIES=/usr/lib64/libopenblas.so.0 \
+    -DLibxc_ROOT=$HOME/software/libxc/7.0.0
+cmake --build build -j 4
+```
+
+The same three options go with `--preset debug`, `study` or `trap`, once per
+build directory, since the cache keeps them.
+
+- OpenBLAS is given by path because the system has only the versioned
+  `libopenblas.so.0`, which `find_package(LAPACK)` does not find.
+- The Libxc install is static and has the Fortran interface (`libxcf03.a`),
+  built with the same toolchain. Without `Libxc_ROOT` the build downloads and
+  builds Libxc 7.0.0 itself, which works but takes a few minutes per build
+  directory. toml-f and xmlf90 are downloaded either way.
+- The login node is an Intel Xeon (Ice Lake), and the compute nodes are AMD:
+  thor1–6 Zen 3, thor7–10 Zen 4. `-march=native` in `study` and `trap` then
+  builds for the login node, with AVX-512 instructions that Zen 3 does not
+  have. For runs on the compute nodes, build there, or replace `-march=native`
+  with `-march=znver3` in `CMAKE_Fortran_FLAGS_RELEASE` (`study`) or
+  `CMAKE_Fortran_FLAGS_TRAP` (`trap`).
+- Run the tests through Slurm, not on the login node. The `short`
+  partition (2 h) is enough: the Debug suite takes about 4 minutes on a
+  compute node.
 
 After changing any routine's argument list, run
 `scripts/check_interfaces.sh` (it needs a CMake build in `build/`), which
