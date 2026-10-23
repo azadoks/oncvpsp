@@ -35,7 +35,8 @@
 !> free solution everywhere. The
 !> window's spectrum falls as a Gaussian, and L (free_tail_width) puts its
 !> share of E_resid above qcut below about 1e-13, for growing tails (ep <
-!> 0) as well, smoothly in qcut and ep.
+!> 0) as well, smoothly in qcut and ep, while kappa L <= 12
+!> (free_tail_defined).
 
  module free_tail_m
  use constants_m, only: dp, pi
@@ -45,10 +46,12 @@
  implicit none
  private
  public :: mesh_tail, free_tail, free_tail_log, free_tail_width
- public :: tail_kinetic, free_tail_k
+ public :: tail_kinetic, free_tail_k, free_tail_defined
 
 !> the leakage bound: L solves (dq L)**2/4 - 9 kappa L = wbound
  real(dp), parameter :: wbound=30.0d0
+!> the largest kappa L for which that bound holds (free_tail_width)
+ real(dp), parameter :: klmax=12.0d0
 !> the width in energy of the smooth split of ep into k and kappa (Ha)
  real(dp), parameter :: dsplit=1.0d-2
 !> the window's centre from rc, in L
@@ -120,7 +123,11 @@
 !! sqrt(-2 ep) split smoothly at ep = 0, k = sqrt(sqrt(ep**2 + d**2) + ep)
 !! and kappa = sqrt(sqrt(ep**2 + d**2) - ep), d = 0.01 Ha, so that L has
 !! no kink there. qcut <= k is an input error: the state then oscillates
-!! faster than the cutoff
+!! faster than the cutoff. So is kappa L > 12: the windowed tail
+!! exp(kappa (r - rc)) erfc((r - R0)/L)/2 peaks at exp(6 kappa L +
+!! (kappa L)**2/4), which exceeds the exp(9 kappa L) of the bound beyond
+!! kappa L = 12 (an I d well state at -0.50 Ha with qcut 1.43: kappa L
+!! 20.7, the tail 3e99 times its value at rc, E_resid 6e171 Ha)
 !!
 !! @param qcut  the cutoff wave vector (bohr^-1)
 !! @param ee  the state's energy ep (Ha)
@@ -146,8 +153,36 @@
    error stop 1
  end if
  wl=(9.0d0*kp+sqrt(81.0d0*kp**2+wbound*dq**2))/(0.5d0*dq**2)
+ if(kp*wl>klmax) then
+   write(6,'(/a,f10.6,a,f10.6/a,f8.2,a/a)') &
+&       'free_tail_width: ERROR the free tail of the well state at',ee, &
+&       ' Ha with qcut=',qcut,'grows too fast for its window (kappa L =', &
+&       kp*wl,' > 12): raise qcut or the state''s energy'
+   error stop 1
+ end if
  return
  end subroutine free_tail_width
+
+ logical function free_tail_defined(qcut,ee)
+!! whether the free tail of a state at ee is defined at qcut: qcut above
+!! its wave vector k, and kappa L <= 12 (free_tail_width)
+!!
+!! @param qcut  the cutoff wave vector (bohr^-1)
+!! @param ee  the state's energy (Ha)
+
+!Input variables
+ real(dp), intent(in) :: qcut,ee
+
+!Local variables
+ real(dp) :: kp,dq,wl
+
+ free_tail_defined=.false.
+ dq=qcut-free_tail_k(ee)
+ if(dq<=0.0d0) return
+ kp=sqrt(sqrt(ee**2+dsplit**2)-ee)
+ wl=(9.0d0*kp+sqrt(81.0d0*kp**2+wbound*dq**2))/(0.5d0*dq**2)
+ free_tail_defined=kp*wl<=klmax
+ end function free_tail_defined
 
  real(dp) function free_tail_k(ee)
 !! the wave vector k of a state at ee, sqrt(2 ee) split smoothly at ee = 0

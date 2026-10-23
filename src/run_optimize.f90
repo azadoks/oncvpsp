@@ -84,7 +84,8 @@
  use, intrinsic :: iso_fortran_env, only: qp => real128
  use logmesh_m, only: lm_ncell
  use ugrid_m, only: ug_cross_down
- use free_tail_m, only: mesh_tail, free_tail, tail_kinetic, free_tail_k
+ use free_tail_m, only: mesh_tail, free_tail, tail_kinetic, free_tail_k, &
+&                       free_tail_defined
  use well_mesh_m, only: well_mesh_t
  use logmesh_m, only: lm_integral
  implicit none
@@ -314,7 +315,7 @@
 !itself oscillates faster than the cutoff, and no tail makes them
 !meaningful
    if(wm(iprj)%mx>0 .and. .not. freetl(iprj)) then
-     if(qcut>free_tail_k(eig(iprj))) then
+     if(free_tail_defined(qcut,eig(iprj))) then
 !   with the well's tail, from the minimization's quadratic form at qcut;
 !   with the free tail, by eresid on the grid's nodes from lm_ncell cells
 !   below qcut (the rule's cells about qcut centred) up to qmax
@@ -339,10 +340,16 @@
        end if
      else
        wshare(3,iprj)=-1.0d0
-       write(6,'(a,f8.4/a)') &
-&           '    WARNING qcut is not above this well state''s wave vector', &
-&           free_tail_k(eig(iprj)), &
-&           '    WARNING it oscillates faster: its cutoffs are not meaningful'
+       if(qcut<=free_tail_k(eig(iprj))) then
+         write(6,'(a,f8.4/a)') &
+&             '    WARNING qcut is not above this well state''s wave vector', &
+&             free_tail_k(eig(iprj)), &
+&             '    WARNING it oscillates faster: its cutoffs are not meaningful'
+       else
+         write(6,'(a/a)') &
+&             '    WARNING this well state''s free tail grows too fast for', &
+&             '    WARNING its window at qcut (kappa L > 12): no share'
+       end if
      end if
    end if
 

@@ -141,7 +141,13 @@ rather than hidden.
   ep = 0, so a growing tail for ep < 0 is allowed. Nothing then depends
   on a well (outputs identical for `well_onset` 1 to 2.5). The fully
   relativistic code keeps the j = l+1/2 well's eigenvalue for j = l-1/2.
-  Commits: 7323a34, d603e40.
+  Commits: 7323a34, d603e40. The window's bound holds while kappa L
+  <= 12 (kappa the tail's growth rate, L the window's width): beyond
+  that the windowed tail of an ep < 0 state peaks at exp(6 kappa L +
+  (kappa L)**2/4), and a low qcut made it overflow silently (E_resid
+  6e171 Ha for an I d well state, a NaN in the optimization for N s).
+  Such an input is now an error, like qcut not above the state's wave
+  vector, and the well's share is undefined there.
 - **`well_tail = "confined"` (D-8, off by default).** 4.0.1's well rises
   to ep + 0.5 Ha. As ep rises its wall steepens until no state of the
   asked n exists, and the state moves to n + 1, a jump in its tail and

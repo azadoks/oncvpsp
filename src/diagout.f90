@@ -114,8 +114,9 @@
 !! state confined by its well (well_tail = "well"), E_resid at qcut with the
 !! well's tail and with the free tail at its energy (Ha), the same wave
 !! inside rc: e_well - e_free is the well's share; well_share_undefined l
-!! ikap iproj in its place where qcut is not above the state's wave
-!! vector, which makes its cutoffs meaningless
+!! ikap iproj in its place where the free tail is not defined
+!! (free_tail_defined): qcut not above the state's wave vector, which
+!! makes its cutoffs meaningless, or kappa L > 12
 !!
 !! ikap is 1 for j=l+1/2 (and for nkap=1), 2 for j=l-1/2
 !!
