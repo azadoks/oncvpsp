@@ -45,7 +45,7 @@
  implicit none
  private
  public :: mesh_tail, free_tail, free_tail_log, free_tail_width
- public :: tail_kinetic
+ public :: tail_kinetic, free_tail_k
 
 !> the leakage bound: L solves (dq L)**2/4 - 9 kappa L = wbound
  real(dp), parameter :: wbound=30.0d0
@@ -136,7 +136,7 @@
  real(dp) :: ss,kk,kp,dq
 
  ss=sqrt(ee**2+dsplit**2)
- kk=sqrt(ss+ee)
+ kk=free_tail_k(ee)
  kp=sqrt(ss-ee)
  dq=qcut-kk
  if(dq<=0.0d0) then
@@ -148,6 +148,18 @@
  wl=(9.0d0*kp+sqrt(81.0d0*kp**2+wbound*dq**2))/(0.5d0*dq**2)
  return
  end subroutine free_tail_width
+
+ real(dp) function free_tail_k(ee)
+!! the wave vector k of a state at ee, sqrt(2 ee) split smoothly at ee = 0
+!! as in free_tail_width; the free tail is defined for qcut > k
+!!
+!! @param ee  the state's energy (Ha)
+
+!Input variables
+ real(dp), intent(in) :: ee
+
+ free_tail_k=sqrt(sqrt(ee**2+dsplit**2)+ee)
+ end function free_tail_k
 
  subroutine free_tail(irel,ll,kap,ee,rr,vv,uu,up,mmax,rc,qcut,hh,nr,ulin, &
 &                     dlin,wscale)

@@ -118,7 +118,7 @@
  real(dp), allocatable :: ecurve(:,:,:,:,:)
 !the r-space less the Fourier kinetic energy of each pseudo-wave
 !(run_optimize)
- real(dp), allocatable :: ektail(:,:,:,:),optdg(:,:,:,:)
+ real(dp), allocatable :: ektail(:,:,:,:),optdg(:,:,:,:),wshare(:,:,:,:)
 !the eigenvalues of the B matrices (run_vkb)
  real(dp), allocatable :: bbeig(:,:,:)
 !the test configurations (run_config_ps): rows of eigenvalues (-1 if one
@@ -462,7 +462,7 @@
  allocate(cvgplt(2,nerrdg,mxprj,mxl+1,nkap))
  allocate(ecurve(2,ncurve,mxprj,mxl+1,nkap))
  allocate(ektail(2,mxprj,mxl+1,nkap),bbeig(mxprj,mxl+1,nkap))
- allocate(optdg(4,mxprj,mxl+1,nkap))
+ allocate(optdg(4,mxprj,mxl+1,nkap),wshare(3,mxprj,mxl+1,nkap))
  allocate(wcurve(mxprj,mxl+1,nkap))
  allocate(vp(mmax,mxl+2,nkap),vfull(mmax),vkb(mmax,mxprj,mxl+1,nkap))
  allocate(pswf(mmax,mxprj,mxl+1,nkap))
@@ -652,6 +652,7 @@
  ecurve(:,:,:,:,:)=0.0d0
  ektail(:,:,:,:)=0.0d0
  optdg(:,:,:,:)=0.0d0
+ wshare(:,:,:,:)=0.0d0
  wcurve(:,:,:)=0.0d0
 !
 ! loop to construct pseudopotentials for all angular momenta
@@ -897,7 +898,8 @@
 &                      vfull,cvgplt(1,1,1,l1,ikap),ncurve, &
 &                      ecurve(1,1,1,l1,ikap), &
 &                      pswfx(1,1,l1,ikap),chix(1,1,l1,ikap), &
-&                      ektail(1,1,l1,ikap),wreg,optdg(1,1,l1,ikap))
+&                      ektail(1,1,l1,ikap),wreg,optdg(1,1,l1,ikap), &
+&                      wshare(1,1,l1,ikap))
 
 !the weights of its pseudo-waves in the weighted cutoff: the occupation of
 !each valence state (its share fj of J), or 2(2l+1) for the first wave of a
@@ -1225,7 +1227,7 @@
 &             pshps,ngh,ghn,ghe,ghp,(icmod==6 .or. icmod==7) &
 &             .and. fcfact<=0.0d0 .and. budget_weighted,rcfact,ecutw,wcurve, &
 &             ektail,icmod,rr,mmax,rcmax,rhoc,corepw,lloc,evkb,bbeig, &
-&             ncnf+1,ntcf,itcf,etcf,dtcf,cvloc,vlchk,optdg)
+&             ncnf+1,ntcf,itcf,etcf,dtcf,cvloc,vlchk,optdg,wshare)
  deallocate(pshae,pshps)
 
  if(trim(psfile)=='psp8' .or. trim(psfile)=='both') then

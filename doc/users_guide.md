@@ -68,6 +68,14 @@ conditions, Eq.(23).  The constraint-consistency test should be very well
 satisfied, or there is an error in the code. The following output is just
 information ("Fraction of norm ...").  For the kinetic energy and potential
 tests, the ratio should be close to one, and the difference should be small.
+For a well state confined by its well, a line compares its residual
+kinetic energy at qcut with the well's tail and with the free tail at
+the same energy (that of `well_tail = "free"`): inside rc it is the same
+wave, so the difference is the well's alone. A WARNING marks a change of
+more than 10 %: the cutoffs of that wave then carry the arbitrary well,
+which `well_tail = "free"` removes. Another WARNING marks a well state
+whose wave vector is not below qcut: it oscillates faster than the
+cutoff, and no tail makes its cutoffs meaningful.
 Last comes the cutoff convergence profile for the current wave function.
 
 After the pseudo-wave-function loop is completed, the projectors are

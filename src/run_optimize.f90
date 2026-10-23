@@ -19,7 +19,7 @@
  subroutine run_optimize(eig,ll,kap,irel,mmax,mxprj,rr,uua,upa,qq,&
 &                      freetl,wm,rc,irc,qcut,qmsbf,ncon_in,nbas_in,npr, &
 &                      psopt,vpsp,vkb,vae,cvgplt,ncurve,ecurve,pswfx,chix, &
-&                      ektail,wreg,optdg)
+&                      ektail,wreg,optdg,wshare)
 
 !! calls routines to generate optimized pseudo wave function and semi-local
 !! pseudopotential and prints diagnostic information on process and
@@ -73,12 +73,18 @@
 !! @param optdg  of each optimized wave: E_resid at qcut, the
 !!               regularization's term, and the smallest eigenvalue e1 and
 !!               |f1| of the minimization at qcut (optimize)
+!! @param wshare  of each optimized wave of a confined well state (wm), its
+!!                E_resid at qcut with the well's tail (1) and with the
+!!                free tail at its energy (2), the same wave inside rc, so
+!!                that their difference is the well's share; (3) 1 for
+!!                these, -1 where the free tail is undefined (qcut not
+!!                above the state's wave vector), 0 for the other waves
 
  use constants_m, only: dp, nerrlv, nerrdg, pi
  use, intrinsic :: iso_fortran_env, only: qp => real128
  use logmesh_m, only: lm_ncell
  use ugrid_m, only: ug_cross_down
- use free_tail_m, only: mesh_tail, free_tail, tail_kinetic
+ use free_tail_m, only: mesh_tail, free_tail, tail_kinetic, free_tail_k
  use well_mesh_m, only: well_mesh_t
  use logmesh_m, only: lm_integral
  implicit none
@@ -103,6 +109,7 @@
  real(dp), intent(out) :: ecurve(2,ncurve,mxprj)
  real(dp), intent(out) :: pswfx(mmax,mxprj),chix(mmax,mxprj)
  real(dp), intent(out) :: ektail(2,mxprj),optdg(4,mxprj)
+ real(dp), intent(out) :: wshare(3,mxprj)
 
 !Local variables
  real(dp), parameter :: Ha_eV=27.21138386d0 ! 1 Hartree, in eV
@@ -121,7 +128,7 @@
  integer :: ii,iprj,jj,l1,lmax,nbas,ncon,nconmx
  logical :: found_root
 
- integer :: nnull,nqout,nq,iq,kk,nr
+ integer :: nnull,nqout,nq,iq,kk,nr,nrw,nqs
 
  real(dp), allocatable :: qroot(:),sbasis(:)
  real(dp), allocatable :: eresid0(:),eresiddot(:,:)
@@ -135,6 +142,8 @@
  real(dp) :: qmax2,hh2,dq2,qout2(1),etail(1),edum(0,1),emdum(0,0,1)
  real(dp), allocatable :: e0t(:),edt(:,:),emt(:,:,:)
  integer :: nq2,nr2
+!the well's share of E_resid at qcut
+ real(dp) :: ewell(1),efree(1),share
 
 
  al = 0.01d0 * log(rr(101) / rr(1))
@@ -166,6 +175,7 @@
 
  psopt(:,:)=0.0d0
  ektail(:,:)=0.0d0
+ wshare(:,:)=0.0d0
  optdg(:,:)=0.0d0
 
 ! loop over projectors
@@ -296,6 +306,46 @@
      pswfopt_sb(ii)=real(pswfopt_sbq(ii),dp)
    end do
    psb(1:nbas,iprj)=pswfopt_sb(1:nbas)
+
+!the well's share of E_resid at qcut: that of the optimized wave with the
+!well's tail, and with the free tail at its energy (free_tail_m), which
+!adds nothing above qcut; inside rc it is the same wave, so the difference
+!is the well's alone. The cutoffs of a wave whose share is large carry the
+!arbitrary well; with qcut not above the state's wave vector the state
+!itself oscillates faster than the cutoff, and no tail makes them
+!meaningful
+   if(wm(iprj)%mx>0 .and. .not. freetl(iprj)) then
+     if(qcut>free_tail_k(eig(iprj))) then
+!   with the well's tail, from the minimization's quadratic form at qcut;
+!   with the free tail, by eresid on the grid's nodes from lm_ncell cells
+!   below qcut (the rule's cells about qcut centred) up to qmax
+       ewell(1)=eresid0(1)+2.0d0*sum(eresiddot(:,1)*pswfopt_nu(:)) &
+&               +dot_product(pswfopt_nu,matmul(eresidmat(:,:,1),pswfopt_nu))
+       nqs=min(nq,1+int((qmax-qcut)/dq)+lm_ncell)
+       allocate(e0t(nqs),edt(nqs,0),emt(nqs,0,0))
+       call free_tail(irel,ll,kap,eig(iprj),rr,vae,uua(1,iprj), &
+&                     upa(1,iprj),mmax,rc,qcut,hh,nrw,ulin,dlin)
+       call eresid(ll,rc,0,nbas,nqs,dq,1,qout(1:1),qmax,qroot,hh,nrw,ulin, &
+&                  pswfopt_sbq,pswfnone,e0t,edt,emt,efree,edum,emdum)
+       deallocate(ulin,dlin,e0t,edt,emt)
+       wshare(:,iprj)=[ewell(1),efree(1),1.0d0]
+       share=ewell(1)-efree(1)
+       write(6,'(a,1p,2d10.2,a)') &
+&           '    Residual kinetic energy at qcut, well / free tail=', &
+&           ewell(1),efree(1),' Ha'
+       if(abs(share)>0.1d0*abs(efree(1))) then
+         write(6,'(a,f8.1,a/a)') '    WARNING the well''s tail changes it by', &
+&             100.0d0*share/efree(1),' %:', &
+&             '    WARNING the cutoffs of this wave carry the well'
+       end if
+     else
+       wshare(3,iprj)=-1.0d0
+       write(6,'(a,f8.4/a)') &
+&           '    WARNING qcut is not above this well state''s wave vector', &
+&           free_tail_k(eig(iprj)), &
+&           '    WARNING it oscillates faster: its cutoffs are not meaningful'
+     end if
+   end if
 
 !the curve's tail: E_resid of the optimized wave from qmax to 3 qmax, by
 !eresid with no null functions, down to lm_ncell cells below qmax (the

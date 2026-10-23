@@ -22,7 +22,8 @@
  subroutine diagout(lmax,nproj,mxprj,nkap,cvgplt,npsh,epsh2,depsh,rphs, &
 &                   pshae,pshps,ngh,ghn,ghe,ghp,wcut,errw,ecutw,wcurve, &
 &                   ektail,icmod,rr,mmax,rcmax,rhoc,corepw,lloc,evkb, &
-&                   bbeig,ncfg,ntcf,itcf,etcf,dtcf,cvloc,vlchk,optdg)
+&                   bbeig,ncfg,ntcf,itcf,etcf,dtcf,cvloc,vlchk,optdg, &
+&                   wshare)
 
 !! writes the block "Begin DIAGNOSTICS" ... "End DIAGNOSTICS", one value
 !! per line, each line tagged with its quantity:
@@ -109,6 +110,13 @@
 !! and |f1| of the minimization at qcut (optimize): both at round-off
 !! leave the wave undetermined
 !!
+!! well_share l ikap iproj e_well e_free: of the optimized wave of a well
+!! state confined by its well (well_tail = "well"), E_resid at qcut with the
+!! well's tail and with the free tail at its energy (Ha), the same wave
+!! inside rc: e_well - e_free is the well's share; well_share_undefined l
+!! ikap iproj in its place where qcut is not above the state's wave
+!! vector, which makes its cutoffs meaningless
+!!
 !! ikap is 1 for j=l+1/2 (and for nkap=1), 2 for j=l-1/2
 !!
 !! @param lmax  maximum angular momentum
@@ -153,6 +161,9 @@
 !! @param vlchk  the local energy from the q grid less that from r space
 !! @param optdg  of each optimized wave: E_resid at qcut, the
 !!               regularization's term, e1 and |f1|
+!! @param wshare  of each optimized wave: E_resid at qcut with the well's
+!!                tail and with the free tail, and 1 for a confined well
+!!                state, -1 where the free tail is undefined, 0 otherwise
 
  use constants_m, only: dp, mxl, mxlin, nerrdg, nerrlv, mxstate, mxkap, &
 &                       nrhomod, mxcnf
@@ -182,6 +193,7 @@
  real(dp), intent(in) :: etcf(3,2*mxstate,mxcnf),dtcf(3,mxcnf)
  real(dp), intent(in) :: cvloc(2,nerrlv),vlchk
  real(dp), intent(in) :: optdg(4,mxprj,mxl+1,nkap)
+ real(dp), intent(in) :: wshare(3,mxprj,mxl+1,nkap)
 
 !Local variables
  integer :: ii,jj,l1,ikap,mkap,iprj,kseg,np
@@ -213,6 +225,22 @@
      do iprj=1,nproj(l1)
        write(6,'(a,3i4,1p,4e24.16)') 'opt',l1-1,ikap,iprj, &
 &            fe(optdg(:,iprj,l1,ikap))
+     end do
+   end do
+ end do
+
+ write(6,'(a)') '# well_share l ikap iproj e_well(Ha) e_free(Ha)'
+ do l1=1,lmax+1
+   mkap=nkap
+   if(l1==1) mkap=1
+   do ikap=1,mkap
+     do iprj=1,nproj(l1)
+       if(wshare(3,iprj,l1,ikap)>0.0d0) then
+         write(6,'(a,3i4,1p,2e24.16)') 'well_share',l1-1,ikap,iprj, &
+&              fe(wshare(1:2,iprj,l1,ikap))
+       else if(wshare(3,iprj,l1,ikap)<0.0d0) then
+         write(6,'(a,3i4)') 'well_share_undefined',l1-1,ikap,iprj
+       end if
      end do
    end do
  end do
