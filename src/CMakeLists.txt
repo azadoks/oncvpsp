@@ -83,6 +83,7 @@ set(src_oncvpsp
     wf_rc_der.f90
     vout.f90
     wellstate.f90
+    well_mesh_m.f90
     input_echo_m.f90
     input_text_m.f90
     # Non-/scalar-relativistic files

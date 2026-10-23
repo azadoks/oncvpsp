@@ -195,7 +195,8 @@ def get_value(data, key):
 def set_value(data, key, value):
     table, name, index = parse_key(key)
     if index in (None, "*"):
-        data[table][name] = value
+        # an optional table the input leaves out, e.g. [log_mesh]
+        data.setdefault(table, {})[name] = value
     else:
         data[table][name][index] = value
 

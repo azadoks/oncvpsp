@@ -58,7 +58,12 @@ echo as they always have.
 The code then loops over angular momenta and reports some information and
 consistency test results for each pseudo wave function. For unbound states,
 the 'half-point radius' is that at which the added barrier has reached half
-its asymptotic value.  The qq values are the generalized norm-conserving
+its asymptotic value. A well state is solved on the log mesh continued
+past its end (`rmax`) as far as the state needs to decay to machine
+precision, and the output says how far ("mesh continued to r ="). The
+well rises only 0.5 Ha above the state, so that is about 36 bohr past
+the wall, and far more for a wide well (a small energy); the end of the
+mesh is then not a box for it, and nothing depends on `rmax`.  The qq values are the generalized norm-conserving
 conditions, Eq.(23).  The constraint-consistency test should be very well
 satisfied, or there is an error in the code. The following output is just
 information ("Fraction of norm ...").  For the kinetic energy and potential

@@ -97,6 +97,7 @@ Everything new on this branch goes through these modules, so their properties se
 | `ode_rc_der`, phsft_m | u and up at rc, rxpsh | FH | |
 | `mesh_tail` / `eresid` | u → linear tail mesh | FH of u to its last nonzero node | |
 | `free_tail_m` | V at the RK4 stages | FH inside the mesh; **V(rmax)·rmax/r beyond** (Coulomb extrapolation) | Valid for the ionic V_AE. |
+| `well_mesh_m` | V_AE on the log mesh continued past rmax, for the well states | **V(rmax)·rmax/r beyond**, as `free_tail_m` | The mesh ends where the state's WKB decay beyond the well's turning point reaches machine precision (C-19). |
 | `outwf_m` | V and sources onto the segment grids, and the solution back to the nodes | FH with offset | Restart per segment by interpolation. |
 | run_ghosts | V_loc, β onto the scaled mesh s·rr (wall at 3rc exactly) | `pw_value`, `pw_resample` | See concern C-7. |
 | outmesh_m (psp8, UPF) | All written arrays on the linear mesh | FH per piece; 0 beyond the last bound | `om_values` interpolates ρ_v (C^(ncon−1) at rc) as one smooth array. That is the only remaining interpolant across a kink in the output (small). |
@@ -194,6 +195,7 @@ None of these breaks smoothness in the scanned inputs: they sit in the all-elect
 | C-16 | low | Origin values differ by format; fr PSML potentials lack the vpuns tail taper; UPF `nrlproj` is not clamped to nrl, and an odd nrl made even can pass rr(mmax). | sub-audit |
 | C-17 | low | Order claims: `lm_derivs`' comment says "8th order or better", but its one-sided end stencils give order 7 for k = 4. `lm_integral` at limits between nodes is order 7, not 8. The plan says the derivative stencils are "centred 8th order". | ✓ |
 | C-18 | info | Dead code: `dpnint`, `wf_rc_der` (only the test cross-check), the double-precision `sbf_overlap` (only a unit test), `rpk`, the negative-ierr branches in config_ae_m, assorted unused locals. | ✓ for the first three |
+| C-19 | high | The end of the log mesh was a box for the well states. A well state at a small energy (a wide well) reaches out to and past rmax, where the solvers took u = 0: its energy, its tail in E_resid and so the kernel depended on rmax. 14_Si's d well state at 0.02 Ha (half-point radius 75 bohr): kernel 2e-2, its 3e-5 Ha cutoff 95 % between rmax 45 and 60; Pb's f well state at 0.05 Ha 8.7e-4; in the test inputs 74_W's f state 1.7e-7. Everything else moves with rmax only by the SCF's round-off floor (~1e-9, at most 1e-7 in 07_N's log derivatives), measured over every test input at rmax 45, 60, 80. The default well rises only 0.5 Ha above the state, so its WKB decay reaches machine precision about 36 bohr past the wall: most well states of the test inputs met inward_start's fallback, u = 0 at rr(mmax − 4), at e^-30 or so. | **fixed** (`well_mesh_m`: the well states solved on the mesh continued as far as they need, 56 to 70 bohr in the test inputs; their kernels move by at most 3e-8, 74_W's by 1.5e-6; test `well_rmax_*`) |
 
 Documentation drift found along the way:
 - program_overview says the SCF converges at 1e-8; the code uses 1e-11.

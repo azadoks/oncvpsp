@@ -531,6 +531,24 @@ if (ONCVPSP_WITH_TOML)
     endforeach ()
 endif ()
 
+# The end of the log mesh (rmax) is not a box for the well states (well_mesh_m): 14_Si's d well state
+# at 0.02 Ha, half-point radius 75 bohr, is solved on the mesh continued past rmax as far as it needs,
+# so nothing moves with rmax but the SCF's round-off floor, ~1e-9 (bounded by the mesh's end at 45
+# bohr, its kernel moved by 2e-2 and its 3e-5 Ha cutoff by 95 %)
+if (ONCVPSP_WITH_TOML)
+    foreach (rmax_test IN ITEMS "sr:14_Si" "r:14_Si" "nr:14_Si")
+        string(REPLACE ":" ";" rmax_test "${rmax_test}")
+        list(GET rmax_test 0 rel)
+        list(GET rmax_test 1 test_name)
+        add_test(NAME well_rmax_${rel}_${test_name}
+            COMMAND ${test_python} "${scripts}/invariance_test.py" $<TARGET_FILE:oncvpsp${rel}>
+                "${data}/toml/${test_name}.toml" log_mesh.rmax 45.0 60.0 80.0
+                --set "pseudopotentials.ep=[0.0,0.0,0.02]" --groups kernel,vloc,tests,ld,ecut,ghost
+                --tol 1e-7 --workdir "${CMAKE_CURRENT_BINARY_DIR}/well_rmax_${rel}_${test_name}")
+        set_tests_properties(well_rmax_${rel}_${test_name} PROPERTIES LABELS "toml;${rel}")
+    endforeach ()
+endif ()
+
 # PSML output: written into the output like the psp8 and upf files, with no files left in the working
 # directory
 foreach (psml_test IN ITEMS "sr:14_Si" "r:14_Si" "nr:08_O")

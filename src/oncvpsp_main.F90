@@ -61,6 +61,7 @@
  use pieces_m, only: piecewise_t, pw_reach, pw_free
  use modcore_m, only: core_pieces_smooth
  use free_tail_m, only: free_tail_log
+ use well_mesh_m, only: well_mesh_t
  use logmesh_m, only: lm_fh_reach
  use constants_m, only: nlev, nerrdg, nerrlv, well_onset_default
  use input_echo_m, only: write_atom, write_lmax, write_icmod, write_epsh, &
@@ -76,7 +77,7 @@
  integer :: jj,kk,ll,l1,lloc,lmax,lt,inline
  integer :: mch,mchf,mmax,n1,n2,nc,nlim,nlloc,nlmax,irpsh,nrl
  integer :: nv,ncnf,nvt,upf_mesh
- integer :: iprj,nkap,nnwell,npsh,mfree
+ integer :: iprj,nkap,nnwell,npsh,mfree,mchx
  integer :: ikap,kap,mkap
  integer,allocatable :: npa(:,:)
 !
@@ -139,6 +140,8 @@
 !> whether each projector of an l is a well state, confined by its well,
 !> and of each l
  logical :: inwell(mxprj)
+!> each projector's confined well state on its continued mesh (well_mesh_m)
+ type(well_mesh_t) :: wmesh(mxprj)
  logical, allocatable :: wellprj(:,:)
  real(dp), allocatable :: vp(:,:,:),vfull(:),vkb(:,:,:,:),pswf(:,:,:,:)
  real(dp), allocatable :: vpuns(:,:)
@@ -662,6 +665,9 @@
  nproj(lloc+1)=1
  do l1=1,lmax+1
    vwell(:,:)=0.0d0
+   do jj=1,mxprj
+     wmesh(jj)%mx=0
+   end do
    ll=l1-1
    if(nkap==1 .or. ll==0) then
      mkap=1
@@ -767,17 +773,30 @@
            call wellstate(npa(iprj,l1),ll,kap,rc(l1),epa(iprj,l1,ikap), &
 &                         ep_as_given,well_onset,.false.,rr,vfull, &
 &                         vwell(1,iprj),uu,up,zz,mmax,mch,irel, &
-&                         inwell(iprj),eptgt)
+&                         inwell(iprj),eptgt,wmesh(iprj))
          else if(ikap==1) then
            nnwell=npa(iprj,l1)
            call wellstate(nnwell,ll,kap,rc(l1),epa(iprj,l1,ikap),ep_as_given, &
 &                         well_onset,well_tail_free,rr,vfull, &
 &                         vwell(1,iprj),uu,up,zz,mmax,mch,irel, &
-&                         inwell(iprj),eptgt)
+&                         inwell(iprj),eptgt,wmesh(iprj))
          else
            et=epa(iprj,l1,ikap)
-           call boundstate(irel,npa(iprj,l1),ll,kap,ierr,epa(iprj,l1,ikap), &
-&                          rr,zz,vwell(1,iprj),uu,up,mmax,mch)
+           if(wmesh(iprj)%mx>0) then
+!the j = l - 1/2 state in the well of j = l + 1/2, on its continued mesh
+             wmesh(iprj)%uu(:,:)=0.0d0
+             wmesh(iprj)%up(:,:)=0.0d0
+             call boundstate(irel,npa(iprj,l1),ll,kap,ierr, &
+&                            epa(iprj,l1,ikap),wmesh(iprj)%rr,zz, &
+&                            wmesh(iprj)%vv,wmesh(iprj)%uu,wmesh(iprj)%up, &
+&                            wmesh(iprj)%mx,mchx)
+             uu(:,:)=wmesh(iprj)%uu(1:mmax,:)
+             up(:,:)=wmesh(iprj)%up(1:mmax,:)
+           else
+             call boundstate(irel,npa(iprj,l1),ll,kap,ierr, &
+&                            epa(iprj,l1,ikap),rr,zz,vwell(1,iprj),uu,up, &
+&                            mmax,mch)
+           end if
 
            if(ierr /= 0) then
              write(6,'(a,i2,a,i2,a,i3,a,f12.6)') &
@@ -794,7 +813,11 @@
 &                   '     eigenvalue = ',et
          end if
 
-         if(irel==2) then
+         if(irel==2 .and. wmesh(iprj)%mx>0) then
+           call renorm_r(wmesh(iprj)%uu,wmesh(iprj)%rr,ll,kap,zz, &
+&                        wmesh(iprj)%mx,cnorm)
+           uu(:,:)=wmesh(iprj)%uu(1:mmax,:)
+         else if(irel==2) then
            call renorm_r(uu,rr,ll,kap,zz,mmax,cnorm)
          else
            cnorm=1.0d0
@@ -867,7 +890,8 @@
      end do
      call run_optimize(epa(1,l1,ikap),ll,kap,irel,mmax,mxprj,rr, &
 &                      uua(1,1,ikap),upa(1,1,ikap),qq, &
-&                      well_tail_free .and. inwell(:),rc(l1),irc(l1), &
+&                      well_tail_free .and. inwell(:),wmesh,rc(l1), &
+&                      irc(l1), &
 &                      qcut(l1),qmsbf(l1),ncon(l1),nbas(l1),nproj(l1), &
 &                      pswf(1,1,l1,ikap),vp(1,l1,ikap),vkb(1,1,l1,ikap), &
 &                      vfull,cvgplt(1,1,1,l1,ikap),ncurve, &

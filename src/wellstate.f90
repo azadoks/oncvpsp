@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
  subroutine wellstate(nnin,ll,kap,rc,ep,epgiven,onset,nowell,rr,vfull,vwell, &
-&                     uu,up,zz,mmax,mch,irel,confined,eptgt)
+&                     uu,up,zz,mmax,mch,irel,confined,eptgt,wm)
 
 !! creates quantum well to confine positive-energy state, and calculates
 !! the resulting all-electron wave function. The well rises from
@@ -33,7 +33,10 @@
 !! 1.5 rc replaces it by 0.05, and a negative ep becomes 0.25 (the
 !! behaviour of before); with epgiven the input ep is always used instead
 !! (D-1): a bound state at or above ep is an input error, and one below ep
-!! inside 1.5 rc is raised to ep by a wall as close as that takes
+!! inside 1.5 rc is raised to ep by a wall as close as that takes.
+!! The state is solved on the log mesh continued beyond rr(mmax) until its
+!! WKB decay beyond the wall at ep reaches machine precision (well_mesh_m),
+!! so the mesh's end is not a box for a wide well (numerics_audit C-19)
 !!
 !! @param nnin  principal quantum number of well state (input); that of the well
 !!              state found, which may have more nodes (output)
@@ -61,8 +64,14 @@
 !!                  localized bound state (vwell is then vfull)
 !! @param eptgt  the energy the well's eigenvalue (ep on return) was found
 !!               for: the input ep or its replacement above
+!! @param wm  the confined state on the log mesh continued as far as it
+!!            needs (well_mesh_m), with the well's potential; mx = 0 when
+!!            uu is not confined. The state is solved on it, so it does
+!!            not depend on rmax; uu, up and vwell are its first mmax
+!!            points
 
  use constants_m, only: dp
+ use well_mesh_m, only: well_mesh_t, wm_build, wm_short
  implicit none
 
 !Input variables
@@ -83,6 +92,7 @@
  real(dp), intent(out) :: uu(mmax,2),up(mmax,2),vwell(mmax)
  logical, intent(out) :: confined
  real(dp), intent(out) :: eptgt
+ type(well_mesh_t), intent(out) :: wm
 
 !Local variables
  real(dp) :: cwell,et,xx,rwell,rwmax,rwmin,rwscale,ron,umax
@@ -93,6 +103,9 @@
 ! closed to a few ulps (E then within eps of ep, else an error)
  real(dp),parameter :: eps=1.0d-10
  integer :: ii,iter,ierr,iumax,l1,itrwell,nn,nnloop,iside
+!the continued mesh, vfull and the well on it, and the state
+ real(dp), allocatable :: rx(:),vx(:),vw(:),ux(:,:),upx(:,:)
+ integer :: mx,mneed,mchx
  logical :: convg,bound
 
  l1=ll+1
@@ -211,22 +224,34 @@
    do itrwell=1,100
 
 
-!create well potential
-     do ii=1,mmax
-       vwell(ii)=vfull(ii)
-     end do
+!create well potential, on the log mesh continued until a state at ep
+!decays in it to machine precision (well_mesh_m)
+     mx=mmax
+     do
+       call wm_build(rr,vfull,mmax,mx,rx,vx)
+       if(allocated(vw)) deallocate(vw)
+       allocate(vw(mx))
+       vw(:)=vx(:)
 
 !   the well starts past rc, where the matching data of the projectors are
 !   taken, and rises smoothly
-     do ii=1,mmax
-       if(rr(ii)<=ron) cycle
-       xx=(rr(ii)-ron)/rwell
-       vwell(ii)=vwell(ii)+cwell*xx**3/(1.0d0+xx**3)*exp(-0.01d0/xx)
+       do ii=1,mx
+         if(rx(ii)<=ron) cycle
+         xx=(rx(ii)-ron)/rwell
+         vw(ii)=vw(ii)+cwell*xx**3/(1.0d0+xx**3)*exp(-0.01d0/xx)
+       end do
+       call wm_short(ll,ep,rx,vw,mx,mneed)
+       if(mneed==0) exit
+       mx=mneed
      end do
 
 !find bound state in well
+     if(allocated(ux)) deallocate(ux,upx)
+     allocate(ux(mx,2),upx(mx,2))
+     ux(:,:)=0.0d0
+     upx(:,:)=0.0d0
      et=ep
-     call boundstate(irel,nn,ll,kap,ierr,et,rr,zz,vwell,uu,up,mmax,mch)
+     call boundstate(irel,nn,ll,kap,ierr,et,rx,zz,vw,ux,upx,mx,mchx)
 ! a trial well whose state did not converge (ierr/=0: a box state, ierr=10,
 ! can stand in for it) only steers the bracketing; the state taken must
 ! have converged (checked below)
@@ -318,6 +343,17 @@
    error stop 1
  end if
 
+!the state and the well on the continued mesh, and their first mmax points
+ wm%mx=mx
+ wm%rr=rx
+ wm%vv=vw
+ wm%uu=ux
+ wm%up=upx
+ vwell(:)=vw(1:mmax)
+ uu(:,:)=ux(1:mmax,:)
+ up(:,:)=upx(1:mmax,:)
+ mch=min(mchx,mmax)
+
  if(cwell>0.0d0) then
    if(irel==2) then
      write(6,'(/a,i3,a,i3,a,i3/a,f8.4,/a,f8.4/a,f8.4)') &
@@ -335,6 +371,9 @@
  end if
 
 !carry over node count
+ if(mx>mmax) then
+   write(6,'(a,f8.2,a)') '     mesh continued to r =',rx(mx),' bohr'
+ end if
 
  nnin=nn
 

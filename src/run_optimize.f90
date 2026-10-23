@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
  subroutine run_optimize(eig,ll,kap,irel,mmax,mxprj,rr,uua,upa,qq,&
-&                      freetl,rc,irc,qcut,qmsbf,ncon_in,nbas_in,npr, &
+&                      freetl,wm,rc,irc,qcut,qmsbf,ncon_in,nbas_in,npr, &
 &                      psopt,vpsp,vkb,vae,cvgplt,ncurve,ecurve,pswfx,chix, &
 &                      ektail,wreg,optdg)
 
@@ -37,6 +37,9 @@
 !! @param qq  matrix of norms and overlaps of the uua inside rc
 !! @param freetl  for each projector, whether E_resid takes the free tail
 !!                of its well state (free_tail_m) instead of the uua
+!! @param wm  for each projector, a confined well state on its continued
+!!            mesh (well_mesh_m), whose tail E_resid takes beyond rr(mmax);
+!!            mx = 0 for the others
 !! @param rc  core radius (bohr)
 !! @param irc  last mesh point at or inside rc
 !! @param qcut  q cutoff defining residual energy
@@ -76,6 +79,7 @@
  use logmesh_m, only: lm_ncell
  use ugrid_m, only: ug_cross_down
  use free_tail_m, only: mesh_tail, free_tail, tail_kinetic
+ use well_mesh_m, only: well_mesh_t
  use logmesh_m, only: lm_integral
  implicit none
 
@@ -86,6 +90,7 @@
  real(dp), intent(in) :: qq(mxprj,mxprj)
  real(dp), intent(in) :: eig(mxprj),qcut,rc,wreg
  logical, intent(in) :: freetl(mxprj)
+ type(well_mesh_t), intent(in) :: wm(mxprj)
 
 !Input/output variables
  integer, intent(inout) :: irc
@@ -253,6 +258,8 @@
 &                   mmax,rc,qcut,hh,nr,ulin,dlin)
      ekin_tail=tail_kinetic(ll,rc,hh,nr,ulin,dlin)
      deallocate(dlin)
+   else if(wm(iprj)%mx>0) then
+     call mesh_tail(wm(iprj)%rr,wm(iprj)%uu(:,1),wm(iprj)%mx,rc,hh,nr,ulin)
    else
      call mesh_tail(rr,uua(1,iprj),mmax,rc,hh,nr,ulin)
    end if
@@ -308,6 +315,9 @@
      call free_tail(irel,ll,kap,eig(iprj),rr,vae,uua(1,iprj),upa(1,iprj), &
 &                   mmax,rc,qcut,hh2,nr2,ulin,dlin)
      deallocate(dlin)
+   else if(wm(iprj)%mx>0) then
+     call mesh_tail(wm(iprj)%rr,wm(iprj)%uu(:,1),wm(iprj)%mx,rc,hh2,nr2, &
+&                   ulin)
    else
      call mesh_tail(rr,uua(1,iprj),mmax,rc,hh2,nr2,ulin)
    end if
