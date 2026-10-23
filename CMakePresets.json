@@ -30,6 +30,16 @@
             }
         },
         {
+            "name": "trap",
+            "displayName": "-O3 -march=native with floating-point traps (invalid, zero, overflow) and no fast math, for the oncvpsp-opt study: a NaN or Inf stops the run where it is made",
+            "binaryDir": "${sourceDir}/build-trap",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Trap",
+                "CMAKE_Fortran_FLAGS_TRAP": "-O3 -march=native -funroll-loops -g -fbacktrace -ffpe-trap=invalid,zero,overflow -DNDEBUG",
+                "CMAKE_C_FLAGS_TRAP": "-O3 -march=native -DNDEBUG"
+            }
+        },
+        {
             "name": "fetch",
             "inherits": "default",
             "displayName": "RelWithDebInfo, building LAPACK, Libxc and toml-f instead of using the system's",
@@ -65,6 +75,7 @@
         {"name": "debug", "configurePreset": "debug"},
         {"name": "release", "configurePreset": "release"},
         {"name": "study", "configurePreset": "study"},
+        {"name": "trap", "configurePreset": "trap"},
         {"name": "fetch", "configurePreset": "fetch"},
         {"name": "profile", "configurePreset": "profile"},
         {"name": "coverage", "configurePreset": "coverage"}
@@ -80,6 +91,7 @@
         {"name": "debug", "inherits": "default", "configurePreset": "debug"},
         {"name": "release", "inherits": "default", "configurePreset": "release"},
         {"name": "study", "inherits": "default", "configurePreset": "study"},
+        {"name": "trap", "inherits": "default", "configurePreset": "trap"},
         {"name": "fetch", "inherits": "default", "configurePreset": "fetch"}
     ]
 }
