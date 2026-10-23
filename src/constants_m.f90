@@ -24,6 +24,7 @@
  private
  public :: dp, pi, mxprj, mxstate, mxcnf, mxl, mxlin, mxkap
  public :: nrhomod, nlev, nerrlv, nerrdg, dqout, well_onset_default
+ public :: ae_tolres
 
 !> kind of all real variables
  integer, parameter :: dp=real64
@@ -79,5 +80,14 @@
 !> multiple of rc (wellstate): rc amesh**5 on the default mesh, where it was
 !> before it became an input
  real(dp), parameter :: well_onset_default=1.006_dp**5
+
+!> convergence threshold of the all-electron SCF (sratom, relatom) for the
+!> residual of the screening potential (Ha) and for the change of each
+!> eigenvalue (relative to max(|E|,1 Ha)): 3 times the residual's
+!> round-off floor (3-4e-12 for Nd, Bi), so that the energies are those of
+!> the fixed point, not of the path to it. At 1e-8 the terms of the total
+!> energy depended on that path to 3e-7 Ha (or at the residual's floor
+!> where a finer mesh puts it above this: ae_converged)
+ real(dp), parameter :: ae_tolres=1.0e-11_dp
 
  end module constants_m

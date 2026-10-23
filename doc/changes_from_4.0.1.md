@@ -367,6 +367,13 @@ precision.
   the 50th iteration on, the occupations are exactly the targets. 4.0.1
   could stop during the occupation ramp, or never converge where the
   ramp did not round to the target. Commits: 60d4ad3, fa0b95e (C-1).
+- **Repeated all-electron SCFs reused.** The all-electron atom depends
+  only on its states and occupations. Test configuration 0 repeats the
+  reference at both levels, and a configuration that only removes
+  charge repeats its intermediate level at its excited one. 4.0.1 solved
+  each again; a run now reuses the earlier solution, to the same bits,
+  with its warning of a stop on the residual's round-off floor. This
+  saves 2 to 5 of the 9 SCFs of the test inputs.
 - **Ionic-tail fixed point** to 1e-13 Ha. Commit: 25de811 (S-6).
 - Tested against the NIST atomic reference data (LDA, ScRLDA, RLDA,
   H to U and cations) at NIST's stated accuracy (`ctest -L nist`;
@@ -384,7 +391,9 @@ precision.
   qmax is a C-infinity maximum. Ecut crossings are roots of the
   interpolant of ln E, not log-linear interpolation. Commits: 4c0ea5f
   (the sin/cos rotation, 1.3-2x faster), 6c310b9, 23d54d2, 8e777ba
-  (M-13).
+  (M-13). The curve's tail above qmax reuses the curve's tail mesh and
+  function, which it had rebuilt at a spacing equal up to round-off. This
+  moves its cutoffs by about 1e-15 relative.
 - **Basis roots (`qroots`).** The roots are found on the pole-free
   g(q) = ulgd j_l(q rc) - q j_l'(q rc) and Newton-polished. 4.0.1 tested
   the log-derivative mismatch and rejected large sign changes as poles,

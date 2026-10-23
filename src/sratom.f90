@@ -45,7 +45,7 @@
 !! @param ierr  error flag
 !! @param irel  0 non-relativistic, 1 scalar-relativistic
 
- use constants_m, only: dp
+ use constants_m, only: dp, ae_tolres
  implicit none
 
 !Input variables
@@ -83,14 +83,8 @@
 
 ! depth of the history of the Anderson mixing
  integer, parameter :: ndep=8
-! convergence threshold for the residual of the screening potential (Ha)
-! and for the change of each eigenvalue (relative to max(|E|,1 Ha)): 3
-! times the residual's round-off floor (3-4e-12 for Nd, Bi), so that the
-! energies are those of the fixed point, not of the path to it. At 1e-8
-! the terms of the total energy depended on that path to 3e-7 Ha
-! (or at the residual's floor where a finer mesh puts it above this:
-! ae_converged)
- real(dp), parameter ::  tolres=1.0d-11
+! convergence threshold of the residual and the eigenvalues (constants_m)
+ real(dp), parameter ::  tolres=ae_tolres
 
  allocate(uu(mmax),up(mmax))
  allocate(vsi(mmax),vso(mmax),vxc(mmax))

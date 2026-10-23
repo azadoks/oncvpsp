@@ -51,7 +51,7 @@
  use psmlout_m, only: psmlout
  use build_info_m, only: write_build_info
  use input_text_m, only: read_input_text
- use config_ae_m, only: run_config_ae
+ use config_ae_m, only: run_config_ae, aeatom_cached
  use ae_file_m, only: write_ae_file, read_ae_file
  use ps_file_m, only: write_ps_file
 #if (defined WITH_TOML)
@@ -552,8 +552,8 @@
    end if
  else
    ierr=0
-   call aeatom(irel,nkap,na,la,ea,fa,rpk,nc,nc+nv,it,rhoc,rho, &
-&              rr,vfull,zz,mmax,iexc,etot,eterm,res,ierr)
+   call aeatom_cached(irel,nkap,na,la,ea,fa,rpk,nc,nc+nv,it,rhoc,rho, &
+&                     rr,vfull,zz,mmax,iexc,etot,eterm,res,ierr)
    if(ierr/=0) then
      write(6,'(/a,i0,a,i0,a,es12.4)') &
 &          'oncvpsp: ERROR aeatom failed for the reference configuration'// &

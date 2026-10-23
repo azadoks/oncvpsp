@@ -45,7 +45,7 @@
 !! @param res  residual of the screening potential (output, ae_residual)
 !! @param ierr  error flag
 
- use constants_m, only: dp, mxstate, mxkap
+ use constants_m, only: dp, mxstate, mxkap, ae_tolres
  implicit none
 
 !Input variables
@@ -80,14 +80,8 @@
 
 ! blend parameter for Anderson iterative potential mixing
  real(dp), parameter ::  bl=0.5d0
-! convergence threshold for the residual of the screening potential (Ha)
-! and for the change of each eigenvalue (relative to max(|E|,1 Ha)): 3
-! times the residual's round-off floor (3-4e-12 for Nd, Bi), so that the
-! energies are those of the fixed point, not of the path to it. At 1e-8
-! the terms of the total energy depended on that path to 3e-7 Ha
-! (or at the residual's floor where a finer mesh puts it above this:
-! ae_converged)
- real(dp), parameter ::  tolres=1.0d-11
+! convergence threshold of the residual and the eigenvalues (constants_m)
+ real(dp), parameter ::  tolres=ae_tolres
 
  allocate(uu(mmax,2),up(mmax,2))
  allocate(vsi(mmax),vso(mmax),vsi1(mmax),vso1(mmax),vxc(mmax))

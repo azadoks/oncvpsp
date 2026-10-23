@@ -126,7 +126,7 @@
  real(qp), allocatable :: pswfopt_sbq(:),pswfnone(:,:)
  real(dp), allocatable :: pswf0_sb(:),pswfnull_sb(:,:)
  real(dp), allocatable :: pswf0_or(:),pswfnull_or(:,:)
- real(dp), allocatable :: work(:),ulin(:),dlin(:),tke(:)
+ real(dp), allocatable :: work(:),ulin(:),dlin(:),tke(:),ufree(:)
  integer :: ii,iprj,jj,l1,lmax,nbas,ncon,nconmx
  logical :: found_root
 
@@ -141,9 +141,9 @@
  real(dp), allocatable :: pswfopt_sb(:),pswfopt_or(:),psb(:,:)
  real(dp) :: eresidmin
  real(dp) :: ekin_anal,ekin_num,qmax,hh,ekin_tail
- real(dp) :: qmax2,hh2,dq2,qout2(1),etail(1),edum(0,1),emdum(0,0,1)
+ real(dp) :: qmax2,dq2,qout2(1),etail(1),edum(0,1),emdum(0,0,1)
  real(dp), allocatable :: e0t(:),edt(:,:),emt(:,:,:)
- integer :: nq2,nr2
+ integer :: nq2
 !the well's share of E_resid at qcut
  real(dp) :: ewell(1),efree(1),share
 
@@ -283,7 +283,6 @@
    call eresid(ll,rc,nnull,nbas,nq,dq,nqout,qout,qmax,qroot,hh,nr,ulin, &
 &              pswf0_sbq,pswfnull_sbq,e0,edot,emat, &
 &              eresid0,eresiddot,eresidmat)
-   deallocate(ulin)
 
    write(6,'(a,f7.2,a,f7.2,a)') '    Optimizing pswf for qcut=',qout(1), &
 &   ' a_B^-1,  ecut=',0.5d0*qout(1)**2,' Ha'
@@ -328,10 +327,10 @@
        nqs=min(nq,1+int((qmax-qcut)/dq)+lm_ncell)
        allocate(e0t(nqs),edt(nqs,0),emt(nqs,0,0))
        call free_tail(irel,ll,kap,eig(iprj),rr,vae,uua(1,iprj), &
-&                     upa(1,iprj),mmax,rc,qcut,hh,nrw,ulin,dlin)
-       call eresid(ll,rc,0,nbas,nqs,dq,1,qout(1:1),qmax,qroot,hh,nrw,ulin, &
+&                     upa(1,iprj),mmax,rc,qcut,hh,nrw,ufree,dlin)
+       call eresid(ll,rc,0,nbas,nqs,dq,1,qout(1:1),qmax,qroot,hh,nrw,ufree, &
 &                  pswfopt_sbq,pswfnone,e0t,edt,emt,efree,edum,emdum)
-       deallocate(ulin,dlin,e0t,edt,emt)
+       deallocate(ufree,dlin,e0t,edt,emt)
        wshare(:,iprj)=[ewell(1),efree(1),1.0d0]
        share=ewell(1)-efree(1)
        write(6,'(a,1p,2d10.2,a)') &
@@ -361,24 +360,15 @@
 !finer than 2 pi/rc: with 16 dq and 25 points per period of 3 qmax in
 !the tail mesh, the tail moves by 4e-13 Ha from dq and 75 points, in the
 !references, at 3% of the run time; beyond 3 qmax there is 5e-11 Ha
-!(4 and 6 qmax), beyond 2 qmax 8e-10 Ha, in the f channels of 60_Nd
+!(4 and 6 qmax), beyond 2 qmax 8e-10 Ha, in the f channels of 60_Nd. The
+!tail mesh is the curve's, whose 75 points per period of qmax are those
+!25, and so is the tail on it
    qmax2=3.0d0*qmax
    dq2=16.0d0*dq
-   hh2=2.0d0*pi/(25.0d0*qmax2)
-   if(freetl(iprj)) then
-     call free_tail(irel,ll,kap,eig(iprj),rr,vae,uua(1,iprj),upa(1,iprj), &
-&                   mmax,rc,qcut,hh2,nr2,ulin,dlin)
-     deallocate(dlin)
-   else if(wm(iprj)%mx>0) then
-     call mesh_tail(wm(iprj)%rr,wm(iprj)%uu(:,1),wm(iprj)%mx,rc,hh2,nr2, &
-&                   ulin)
-   else
-     call mesh_tail(rr,uua(1,iprj),mmax,rc,hh2,nr2,ulin)
-   end if
    nq2=min(1+int((qmax2-qmax)/dq2)+lm_ncell,1+int(qmax2/dq2))
    qout2(1)=qmax
    allocate(e0t(nq2),edt(nq2,0),emt(nq2,0,0))
-   call eresid(ll,rc,0,nbas,nq2,dq2,1,qout2,qmax2,qroot,hh2,nr2,ulin, &
+   call eresid(ll,rc,0,nbas,nq2,dq2,1,qout2,qmax2,qroot,hh,nr,ulin, &
 &              pswfopt_sbq,pswfnone,e0t,edt,emt,etail,edum,emdum)
    ektail(1,iprj)=etail(1)
    deallocate(ulin,e0t,edt,emt,pswfopt_sbq,pswfnone)

@@ -24,12 +24,110 @@
 ! codes.
 
  module config_ae_m
- use constants_m, only: dp, mxstate, mxcnf, nlev
+ use constants_m, only: dp, mxstate, mxcnf, nlev, ae_tolres
  implicit none
  private
- public :: run_config_ae, config_ae_warning
+ public :: run_config_ae, config_ae_warning, aeatom_cached
+
+!> a successful aeatom solution, with the inputs that determine it: sratom
+!> and relatom overwrite the eigenvalues' guess, so the atom is a function
+!> of these alone
+ type :: ae_entry_t
+   integer :: irel,nkap,nc,ncv,mmax,iexc,it
+   real(dp) :: zz,etot,eterm(4),res
+   integer, allocatable :: na(:),la(:)
+   real(dp), allocatable :: fa(:),rr(:),ea(:,:),rpk(:,:),rhoc(:),rho(:),vi(:)
+ end type ae_entry_t
+
+!> the solutions of this run (aeatom_cached)
+ type(ae_entry_t), save :: ae_cache(2*mxcnf+1)
+ integer, save :: nae_cache=0
 
  contains
+
+ subroutine aeatom_cached(irel,nkap,na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
+&                         rr,vi,zz,mmax,iexc,etot,eterm,res,ierr)
+
+!! aeatom, or the copy of its earlier solution with the same inputs. The
+!! reference configuration recurs as test configuration 0, at both levels
+!! of run_config_ae, and the excited level of a configuration that only
+!! takes charge away is its intermediate one; each was solved again, to
+!! the same bits. A failed solution is not kept, so that its warnings
+!! recur, and a reused one stopped on the residual's round-off floor
+!! repeats that warning. rpk comes back as that solution left it (rows
+!! 1..ncv). The arguments are those of aeatom
+
+ external :: aeatom, ae_floor_warning
+
+!Input variables
+ integer, intent(in) :: irel,nkap,mmax,iexc,nc,ncv
+ integer, intent(in) :: na(ncv),la(ncv)
+ real(dp), intent(in) :: zz
+ real(dp), intent(in) :: fa(ncv),rr(mmax)
+
+!Input/output variables
+ integer, intent(inout) :: ierr
+ real(dp), intent(inout) :: ea(mxstate,nkap),rpk(mxstate,nkap)
+
+!Output variables
+ integer, intent(out) :: it
+ real(dp), intent(out) :: etot,eterm(4),res
+ real(dp), intent(out) :: rho(mmax),rhoc(mmax),vi(mmax)
+
+!Local variables
+ integer :: ii
+
+ do ii=1,nae_cache
+   associate(ce=>ae_cache(ii))
+     if(ce%irel/=irel .or. ce%nkap/=nkap .or. ce%nc/=nc .or. &
+&       ce%ncv/=ncv .or. ce%mmax/=mmax .or. ce%iexc/=iexc .or. &
+&       ce%zz/=zz) cycle
+     if(any(ce%na/=na) .or. any(ce%la/=la) .or. any(ce%fa/=fa) .or. &
+&       any(ce%rr/=rr)) cycle
+     ea(1:ncv,:)=ce%ea
+     rpk(1:ncv,:)=ce%rpk
+     it=ce%it
+     rhoc(:)=ce%rhoc
+     rho(:)=ce%rho
+     vi(:)=ce%vi
+     etot=ce%etot
+     eterm(:)=ce%eterm
+     res=ce%res
+     ierr=0
+     if(res>ae_tolres) call ae_floor_warning(res,ae_tolres)
+     return
+   end associate
+ end do
+
+ call aeatom(irel,nkap,na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
+&            rr,vi,zz,mmax,iexc,etot,eterm,res,ierr)
+ if(ierr/=0 .or. nae_cache==size(ae_cache)) return
+
+ nae_cache=nae_cache+1
+ associate(ce=>ae_cache(nae_cache))
+   ce%irel=irel
+   ce%nkap=nkap
+   ce%nc=nc
+   ce%ncv=ncv
+   ce%mmax=mmax
+   ce%iexc=iexc
+   ce%zz=zz
+   ce%na=na
+   ce%la=la
+   ce%fa=fa
+   ce%rr=rr
+   ce%ea=ea(1:ncv,:)
+   ce%rpk=rpk(1:ncv,:)
+   ce%it=it
+   ce%rhoc=rhoc
+   ce%rho=rho
+   ce%vi=vi
+   ce%etot=etot
+   ce%eterm=eterm
+   ce%res=res
+ end associate
+ return
+ end subroutine aeatom_cached
 
  subroutine run_config_ae(jj,nacnf,lacnf,facnf,nc,nvcnf,rr,zz, &
 &                         mmax,iexc,ea,irel,nkap,istcnf,ierrcnf,itcnf, &
@@ -168,8 +266,9 @@
 
 !all-electron atom solution for maximally-ionized state
 
- call aeatom(irel,nkap,nat,lat,eat(1,1,2),fat(1,2),rpk,nc,nc+nvt,it, &
-&            rhoc,rho,rr,vfull,zz,mmax,iexc,eaetst,eterm,res,ierr)
+ call aeatom_cached(irel,nkap,nat,lat,eat(1,1,2),fat(1,2),rpk,nc, &
+&                   nc+nvt,it,rhoc,rho,rr,vfull,zz,mmax,iexc,eaetst,eterm, &
+&                   res,ierr)
  if(ierr/=0) then
    call store_results
    istcnf(jj)=1
@@ -222,8 +321,9 @@
 
 !all-electron atom solution for excited state
 
- call aeatom(irel,nkap,nat,lat,eat(1,1,3),fat(1,3),rpk,nc,nc+nvt,it, &
-&            rhoc,rho,rr,vfull,zz,mmax,iexc,eaetst,eterm,res,ierr)
+ call aeatom_cached(irel,nkap,nat,lat,eat(1,1,3),fat(1,3),rpk,nc, &
+&                   nc+nvt,it,rhoc,rho,rr,vfull,zz,mmax,iexc,eaetst,eterm, &
+&                   res,ierr)
  if(ierr/=0) then
    call store_results
    istcnf(jj)=1

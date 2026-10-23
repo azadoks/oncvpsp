@@ -332,9 +332,25 @@
  end if
  if(it<2) convg=.false.
  if(res>tolres .and. (res>resfloor .or. nflat<nstall)) convg=.false.
- if(convg .and. res>tolres) then
-   write(6,'(/2a,es12.4,a,es12.4)') 'ae_converged: WARNING scf stopped ', &
-&        'on the round-off floor of the residual, res=',res,', tolres=',tolres
- end if
+ if(convg .and. res>tolres) call ae_floor_warning(res,tolres)
  return
  end subroutine ae_converged
+
+ subroutine ae_floor_warning(res,tolres)
+
+!! the warning of an SCF stopped on the round-off floor of its residual
+!! (ae_converged; aeatom_cached repeats it for a solution it reuses)
+!!
+!! @param res  the residual at the stop
+!! @param tolres  its threshold
+
+ use constants_m, only: dp
+ implicit none
+
+!Input variables
+ real(dp), intent(in) :: res,tolres
+
+ write(6,'(/2a,es12.4,a,es12.4)') 'ae_converged: WARNING scf stopped ', &
+&      'on the round-off floor of the residual, res=',res,', tolres=',tolres
+ return
+ end subroutine ae_floor_warning
