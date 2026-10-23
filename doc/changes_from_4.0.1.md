@@ -346,6 +346,11 @@ precision.
   `lschvkbb` and `lschvkbbe` now bisect on the number of eigenvalues
   below E (`outwf_index`, from the inertia of the Schur complement of
   the projectors, by Haynsworth's theorem). Commits: d159196, bd574c9.
+  Where every energy tried has more eigenvalues below it than the state's
+  index allows, a state lies below the bracket (a bound ghost of the
+  projectors): `lschvkbb` returns ierr 200 instead of 100, and the
+  pseudo-atom's checks say so, where 4.0.1 ran out of iterations
+  silently.
 - Performance: the Adams formulas inlined, all projectors' outward
   solutions in one loop, energy-independent terms hoisted out of
   `lschfb`. Commits: 13c5b30, 9e59c13, 77d9cb0, c411754.

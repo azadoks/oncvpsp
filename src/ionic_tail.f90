@@ -228,6 +228,10 @@
      if(ierr/=0) then
        write(6,'(/a,3i4)') 'ionic_valence: ERROR lschvkbb n,l,ierr=', &
 &            ll+nodes(l1)+1,ll,ierr
+       if(ierr==200) write(6,'(a,i2,a,f12.6,a/a)') &
+&           'a state of l=',ll,' lies below',emin, &
+&           ' Ha that the node count does not expect:', &
+&           'a bound ghost of the projectors'
        error stop 1
      end if
      uupsa(:,ikap,kk)=uu(:)

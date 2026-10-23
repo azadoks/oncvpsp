@@ -49,7 +49,10 @@
 !! @param nn  principal quantum number
 !! @param ll  angular-momentum quantum number
 !! @param nvkb  = number of VKB projectors to be used
-!! @param ierr  non-zero return if error
+!! @param ierr  non-zero return if error: 100 not converged; 200 every
+!!              energy tried had more than nn-ll-1 states of l below it,
+!!              so a state the count does not expect (a ghost) lies below
+!!              emin
 !! @param ee  bound-state energy, input guess and output calculated value
 !! @param emin  externally generaated estimate of lower bound for ee
 !! @param emax  externally generaated estimate of upper bound for ee
@@ -102,7 +105,7 @@
  real(dp) :: uo(-match_k-1:match_k),upo(-match_k-1:match_k)
  real(dp) :: ww(-match_k-1:match_k),ss(-match_k-1:match_k)
  integer :: ii,it,nin,nint,neig,lo,hi
- logical :: room
+ logical :: room,toomany
  type(outwf_t) :: ow
 
  real(dp), allocatable :: upp(:),cf(:)
@@ -123,6 +126,7 @@
  eps=1.0d-12
  deprev=huge(1.0d0)
  ierr = 100
+ toomany=.true.
 
  sls=ll*(ll+1)
 
@@ -165,6 +169,7 @@
      cycle
    else if(mch==1 .and. nvkb==0) then
 ! classically forbidden everywhere with no projectors: too low
+     toomany=.false.
      emin=0.5d0*(emin+ee)
      ee=0.5d0*(emin+emax)
      cycle
@@ -193,6 +198,7 @@
 
 ! start inward integration with simple exponential where the
 ! wave function has decayed to machine precision
+   if(neig-nn+ll+1<=0) toomany=.false.
    if(neig-nn+ll+1==0 .and. room) then
      call inward_start(ll,ee,rr,vloc,mch,mmax,nin)
    end if
@@ -312,6 +318,7 @@
    end if
 
  end do
+ if(ierr/=0 .and. toomany) ierr=200
 !fix sign to be positive at rr->oo
  if(uu(mch)<0.0d0) then
    uu(:)=-uu(:)
