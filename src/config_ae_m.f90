@@ -76,6 +76,7 @@
 
 !Local variables
  integer :: ii
+ real(dp), allocatable :: vfree(:)
 
  do ii=1,nae_cache
    associate(ce=>ae_cache(ii))
@@ -99,8 +100,11 @@
    end associate
  end do
 
+ allocate(vfree(mmax))
+ vfree(:)=0.0d0
  call aeatom(irel,nkap,na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&            rr,vi,zz,mmax,iexc,etot,eterm,res,ierr)
+&            rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vfree)
+ deallocate(vfree)
  if(ierr/=0 .or. nae_cache==size(ae_cache)) return
 
  nae_cache=nae_cache+1

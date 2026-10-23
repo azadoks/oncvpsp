@@ -268,7 +268,17 @@ precision.
   bands and replaces the band cutoffs removed earlier, which measured an
   invented interstitial tail. Si d at rs = 1.25 rc: 1e-5 Ha at 8 to 28 Ha
   from the bottom to the top of the 3d band (15.6 Ha from the old tail).
-  Nothing in the run's output changes.
+  The program also compresses the atom: the self-consistent all-electron
+  atom and pseudo-atom of the reference configuration in a smooth wall,
+  1/2 k (r - r0)^2 exp(-0.5/(r - r0)) beyond r0, the largest core radius
+  by default, at a few strengths k. It gives their total-energy changes
+  from the free atom and their valence eigenvalues. For 14_Si at k = 0.1
+  Ha/bohr^2, the AE change is 55.280 mHa and the PS change 55.248 mHa.
+  `aeatom` and `psatom` take the wall as an argument, which is zero in
+  the run, and the pseudopotential file (format version 2) carries the
+  unscreened local potential, the valence and model-core densities and
+  iexc. Nothing in the run's output changes. Commit: 7041579 (the
+  sphere).
 - **Well-state diagnostics** (`run_diag`) take the state's index from
   the pseudo-atom at epa rather than the all-electron node count, which
   can differ from it (see the eigenvalue index under Numerics). Commit:

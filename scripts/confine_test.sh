@@ -2,7 +2,8 @@
 # Wigner-Seitz sphere of oncvpsp_confine.x from the all-electron and pseudopotential files: the band
 # edges of the valence bands agree with the all-electron atom's, each radius gives the same as alone,
 # the edges do not depend on the step of the scan that brackets them, and the cutoffs rise as the
-# error falls.
+# error falls; in the walls, the free atoms are the run's reference atoms and the pseudo-atom's
+# energy rises as the all-electron atom's does.
 #
 # Usage: confine_test.sh FULL_EXE AE_EXE CONFINE_EXE INPUT.dat WORKDIR
 set -euo pipefail
@@ -20,11 +21,11 @@ fi
 
 "$confine" -a atom.ae -p atom.ps > conf.out
 read -r r1 r2 < <(awk '$1 == "ws_r" {print $4}' conf.out | sort -g -u | head -2 | xargs)
-"$confine" -a atom.ae -p atom.ps -r "$r1" > r1.out
-"$confine" -a atom.ae -p atom.ps -r "$r2" > r2.out
-"$confine" -a atom.ae -p atom.ps -r "$r1,$r2" > r12.out
-"$confine" -a atom.ae -p atom.ps -r "$r1,$r2" -l 1 > l1.out
-"$confine" -a atom.ae -p atom.ps -r "$r1,$r2" -e -2.0,2.0,0.137 > step.out
+"$confine" -a atom.ae -p atom.ps -r "$r1" -w none > r1.out
+"$confine" -a atom.ae -p atom.ps -r "$r2" -w none > r2.out
+"$confine" -a atom.ae -p atom.ps -r "$r1,$r2" -w none > r12.out
+"$confine" -a atom.ae -p atom.ps -r "$r1,$r2" -l 1 -w none > l1.out
+"$confine" -a atom.ae -p atom.ps -r "$r1,$r2" -e -2.0,2.0,0.137 -w none > step.out
 
 "$python" - <<'EOF'
 import sys
@@ -94,4 +95,35 @@ r12 = blocks("r12.out")
 compare(r12, {**blocks("r1.out"), **blocks("r2.out")}, 1e-12, "two radii against each alone")
 compare(blocks("l1.out"), {k: v for k, v in r12.items() if k[0] == 1}, 0.0, "l = 1 against every l")
 compare(blocks("step.out"), r12, 1e-11, "a scan step of 0.137 Ha against the input's", (-1.9, 1.9))
+
+# the atom in walls: the free atoms are the run's reference, the energy rises with the wall,
+# and the pseudo-atom's rise is the all-electron atom's
+walls = {}
+eigs = {}
+for line in open("conf.out"):
+    w = line.split()
+    if w and w[0] == "wall":
+        walls[float(w[1])] = [float(x) for x in w[2:6]]
+    elif w and w[0] == "wall_eig":
+        eigs.setdefault(float(w[1]), []).append((float(w[5]), float(w[6])))
+    elif w and w[0] == "wall_failed":
+        sys.exit(f"confine_test.sh: no self-consistent atom in a wall: {line.strip()}")
+if sorted(walls) != [0.0, 0.01, 0.03, 0.1] or sorted(eigs) != sorted(walls):
+    sys.exit(f"confine_test.sh: walls {sorted(walls)}, eigenvalues for {sorted(eigs)}")
+ref = {}
+for line in open("full.out"):
+    for key in ("AE_ref=", "PS_ref="):
+        if key in line and key not in ref:
+            ref[key] = float(line.split(key)[1].split()[0].replace("D", "E"))
+etae, etps = walls[0.0][:2]
+if abs(etae - ref["AE_ref="]) > 1e-8 * abs(etae) or abs(etps - ref["PS_ref="]) > 1e-8 * abs(etps):
+    sys.exit(f"confine_test.sh: free atoms {etae} {etps} against the run's {ref}")
+ks = sorted(walls)
+for k1, k2 in zip(ks, ks[1:]):
+    if not (walls[k2][2] > walls[k1][2] and walls[k2][3] > walls[k1][3]):
+        sys.exit(f"confine_test.sh: the energy does not rise from wall {k1} to {k2}")
+worst = max(abs(v[3] - v[2]) for v in walls.values())
+if worst > 1e-4:
+    sys.exit(f"confine_test.sh: the PS and AE energy changes in the walls differ by {worst:.2e}")
+print(f"walls {ks[1:]}: free atoms the run's, energy changes AE - PS within {worst:.1e} Ha")
 EOF

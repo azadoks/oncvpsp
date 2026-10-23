@@ -46,6 +46,17 @@
 !                                          phase in the scan)
 ! for l=0..3 (or those of --channels) and each kappa of l, ikap 1 for
 ! j=l+1/2 and 2 for j=l-1/2.
+!
+! Then the atom compressed: the self-consistent all-electron atom (aeatom)
+! and pseudo-atom (psatom) of the reference configuration in a smooth wall
+! 1/2 k x**2 exp(-dwall/x), x = r - r0 beyond r0 (by default the largest
+! core radius), for a few strengths k, each from the free atom:
+!   wall_r0 r0(bohr)
+!   wall k etot_ae etot_ps de_ae de_ps    (Ha, k in Ha/bohr**2; de the
+!                                          change from the free atom, k=0)
+!   wall_eig k n l ikap e_ae e_ps         (the valence eigenvalues, Ha)
+!   wall_failed k atom                    (atom ae or ps: no
+!                                          self-consistent solution)
 
  program oncvpsp_confine
  use constants_m, only: dp, pi
@@ -56,6 +67,7 @@
  use ws_basis_m, only: ws_edge_d, ws_convergence
  use ugrid_m, only: ug_brent
  use relativity_m, only: set_relativity
+ use constants_m, only: mxstate, mxprj, mxl, mxlin
  use build_info_m, only: write_build_info
  implicit none
 
@@ -76,6 +88,13 @@
 !> the scan of the pseudopotential's phases runs this far (Ha) beyond the
 !> energies of the all-electron edges, for their partners
  real(dp), parameter :: emargin=1.0d0
+!> the default strengths of the wall (Ha/bohr**2)
+ real(dp), parameter :: kdef(3)=[0.01d0,0.03d0,0.1d0]
+!> the onset of the wall, x**2 exp(-dwall/x): smooth at r0, so that outwf_m
+!> takes it as part of the local potential (bohr)
+ real(dp), parameter :: dwall=0.5d0
+!> the most strengths of a run
+ integer, parameter :: mxk=20
 
  character(len=1024) :: ae_filename,ps_filename,arg
  character(len=2) :: atsym
@@ -89,7 +108,16 @@
  real(dp), allocatable :: rr(:),vfull(:),shae(:,:),shps(:,:),ecut(:),err(:)
  real(dp), allocatable :: egrid(:)
  integer, allocatable :: ishift(:)
- logical :: given_radii,given_energies,table
+ logical :: given_radii,given_energies,table,sphere,given_r0
+ integer :: nk,nc,nv,iexc,ik,ierrae,ierrps,kk,itae,itps,nkap
+ integer :: na(mxstate),la(mxstate),natp(mxstate),latp(mxstate),nav(4)
+ integer :: nprj(mxlin+1)
+ real(dp) :: fa(mxstate),ea(mxstate,2),r0,kwall(0:mxk)
+ real(dp) :: etae(0:mxk),etps(0:mxk),eae_k(mxstate,2),eps_k(mxstate,2)
+ real(dp) :: eaw(mxstate,2),rpk(mxstate,2),eterm(4),res,eatp(mxstate,2)
+ real(dp) :: fatp(mxstate,2)
+ real(dp), allocatable :: vext(:),rhoc(:),rhoa(:),vi(:),vpuns(:,:),rhops(:)
+ real(dp), allocatable :: eigae(:,:,:),eigps(:,:,:)
 !> the angular momenta of the output
  logical :: chan(0:3)
  type(ps_file_t) :: pf
@@ -103,6 +131,10 @@
  given_radii=.false.
  given_energies=.false.
  table=.false.
+ sphere=.true.
+ given_r0=.false.
+ nk=size(kdef)
+ kwall(1:nk)=kdef(:)
  ecutmax=200.0d0
  chan(:)=.true.
  nq=0
@@ -168,6 +200,34 @@
      end if
    case('-t','--table')
      table=.true.
+   case('-s','--no-sphere')
+     sphere=.false.
+   case('-w','--walls')
+     call next_arg(arg)
+     if(trim(arg)=='none') then
+       nk=0
+     else
+       nk=count_list(arg)
+       if(nk>mxk) then
+         write(6,'(a,i0,a)') 'oncvpsp_confine: ERROR more than ',mxk, &
+&             ' walls'
+         error stop 1
+       end if
+       read(arg,*,iostat=ios) kwall(1:nk)
+       if(ios/=0 .or. any(kwall(1:nk)<=0.0d0)) then
+         write(6,'(2a)') 'oncvpsp_confine: ERROR --walls must be positive ', &
+&              'numbers separated by commas, or none'
+         error stop 1
+       end if
+     end if
+   case('-R','--wall-radius')
+     call next_arg(arg)
+     read(arg,*,iostat=ios) r0
+     if(ios/=0 .or. r0<=0.0d0) then
+       write(6,'(a)') 'oncvpsp_confine: ERROR --wall-radius must be positive'
+       error stop 1
+     end if
+     given_r0=.true.
    case default
      write(6,'(2a)') 'oncvpsp_confine: ERROR unknown argument ',trim(arg)
      error stop 1
@@ -180,12 +240,13 @@
  end if
 
  call read_ae_potential(trim(ae_filename),irel,atsym,zz,mmax,rr,c_light_f, &
-&                       vfull)
+&                       vfull,nc=nc,nv=nv,iexc=iexc,na=na,la=la,fa=fa,ea=ea)
  call read_ps_file(trim(ps_filename),pf)
  if(pf%irel/=irel .or. pf%atsym/=atsym .or. differ(pf%zz,zz) &
-&   .or. pf%mmax/=mmax .or. differ(pf%c_light,c_light_f)) then
+&   .or. pf%mmax/=mmax .or. differ(pf%c_light,c_light_f) &
+&   .or. pf%iexc/=iexc) then
    write(6,'(2a)') 'oncvpsp_confine: ERROR the files differ in ', &
-&       'relativistic treatment, atom, mesh size or c_light'
+&       'relativistic treatment, atom, mesh size, c_light or functional'
    error stop 1
  end if
  if(any(abs(pf%rr(:)-rr(:))>rtol*rr(:))) then
@@ -236,23 +297,24 @@
    egrid(ii)=emax+emargin-de*dble(ii-1)
  end do
 
- write(6,'(a)') '# ws_r l ikap rs(bohr)'
- write(6,'(a)') '# ws l ikap edge n e_ae(Ha) e_ps(Ha)'
- write(6,'(a)') '# ws_ecut l ikap edge n tol(Ha) ecut(Ha)'
- write(6,'(a)') '# ws_floor l ikap edge n ecut(Ha) err(Ha)'
- if(table) write(6,'(a)') '# ws_conv l ikap edge n ecut(Ha) err(Ha)'
- write(6,'(a)') '# ws_missing l ikap edge n e_ae(Ha)'
- do l1=1,4
-   ll=l1-1
-   if(.not. chan(ll)) cycle
-   do ikap=1,merge(1,pf%nkap,l1==1)
-     kap=0
-     if(irel==2 .and. ikap==1) kap=-(ll+1)
-     if(irel==2 .and. ikap==2) kap=ll
-     nvkb=pf%nvkb(l1,ikap)
-     do iq=1,nq
-       rs=rq(iq)
-       write(6,'(a,2i4,1p,e24.16)') 'ws_r',ll,ikap,rs
+ if(sphere) then
+   write(6,'(a)') '# ws_r l ikap rs(bohr)'
+   write(6,'(a)') '# ws l ikap edge n e_ae(Ha) e_ps(Ha)'
+   write(6,'(a)') '# ws_ecut l ikap edge n tol(Ha) ecut(Ha)'
+   write(6,'(a)') '# ws_floor l ikap edge n ecut(Ha) err(Ha)'
+   if(table) write(6,'(a)') '# ws_conv l ikap edge n ecut(Ha) err(Ha)'
+   write(6,'(a)') '# ws_missing l ikap edge n e_ae(Ha)'
+   do l1=1,4
+     ll=l1-1
+     if(.not. chan(ll)) cycle
+     do ikap=1,merge(1,pf%nkap,l1==1)
+       kap=0
+       if(irel==2 .and. ikap==1) kap=-(ll+1)
+       if(irel==2 .and. ikap==2) kap=ll
+       nvkb=pf%nvkb(l1,ikap)
+       do iq=1,nq
+         rs=rq(iq)
+         write(6,'(a,2i4,1p,e24.16)') 'ws_r',ll,ikap,rs
 
 ! the phases at rs on the grid, the pseudopotential's shifted by the
 ! multiple of pi by which they differ from the all-electron ones at most
@@ -261,66 +323,138 @@
 ! energies is a difference by pi in the phases (a narrow band, such as a
 ! semicore state's in a large sphere, where the reference energy of
 ! phsft_pair can be)
-       call phsft_ae_init(irel,ll,kap,rr,vfull,zz,mmax,1,rq(iq:iq),sae)
-       call phsft_ps_init(ll,nvkb,rr,pf%vloc(:,ikap),pf%vlocpw, &
-&                         pf%vkbpw(1:nvkb,l1,ikap),pf%evkb(1:nvkb,l1,ikap), &
-&                         mmax,1,rq(iq:iq),sps)
-       do ii=1,npsh
-         shae(ii,1)=phsft_node_phase(sae,1,egrid(ii))
-         shps(ii,1)=phsft_node_phase(sps,1,egrid(ii))
-         ishift(ii)=nint((shae(ii,1)-shps(ii,1))/pi)
-       end do
-       thal=pi*dble(majority(ishift))
-       shps(:,1)=shps(:,1)+thal
+         call phsft_ae_init(irel,ll,kap,rr,vfull,zz,mmax,1,rq(iq:iq),sae)
+         call phsft_ps_init(ll,nvkb,rr,pf%vloc(:,ikap),pf%vlocpw, &
+&                           pf%vkbpw(1:nvkb,l1,ikap),pf%evkb(1:nvkb,l1,ikap), &
+&                           mmax,1,rq(iq:iq),sps)
+         do ii=1,npsh
+           shae(ii,1)=phsft_node_phase(sae,1,egrid(ii))
+           shps(ii,1)=phsft_node_phase(sps,1,egrid(ii))
+           ishift(ii)=nint((shae(ii,1)-shps(ii,1))/pi)
+         end do
+         thal=pi*dble(majority(ishift))
+         shps(:,1)=shps(:,1)+thal
 
-       call edges(sae,shae(:,1),0.0d0,nae,eae,kae,edae)
-       call edges(sps,shps(:,1),thal,nps,eps,kps,edps)
+         call edges(sae,shae(:,1),0.0d0,nae,eae,kae,edae)
+         call edges(sps,shps(:,1),thal,nps,eps,kps,edps)
 
 ! every all-electron edge in the window, lowest first
-       call sort_edges(nae,eae,kae,edae)
-       do ie=1,nae
-         if(eae(ie)<emin .or. eae(ie)>emax) cycle
-         iedge=edae(ie)
-         nn=n_of(eae(ie))
-         je=0
-         do ii=1,nps
-           if(kps(ii)/=kae(ie) .or. edps(ii)/=iedge) cycle
+         call sort_edges(nae,eae,kae,edae)
+         do ie=1,nae
+           if(eae(ie)<emin .or. eae(ie)>emax) cycle
+           iedge=edae(ie)
+           nn=n_of(eae(ie))
+           je=0
+           do ii=1,nps
+             if(kps(ii)/=kae(ie) .or. edps(ii)/=iedge) cycle
+             if(je==0) then
+               je=ii
+             else if(abs(eps(ii)-eae(ie))<abs(eps(je)-eae(ie))) then
+               je=ii
+             end if
+           end do
            if(je==0) then
-             je=ii
-           else if(abs(eps(ii)-eae(ie))<abs(eps(je)-eae(ie))) then
-             je=ii
+             write(6,'(a,4i4,1p,e24.16)') 'ws_missing',ll,ikap,iedge,nn, &
+&                 eae(ie)
+             cycle
            end if
-         end do
-         if(je==0) then
-           write(6,'(a,4i4,1p,e24.16)') 'ws_missing',ll,ikap,iedge,nn, &
-&               eae(ie)
-           cycle
-         end if
-         write(6,'(a,4i4,1p,2e24.16)') 'ws',ll,ikap,iedge,nn,eae(ie),eps(je)
+           write(6,'(a,4i4,1p,2e24.16)') 'ws',ll,ikap,iedge,nn,eae(ie),eps(je)
 
 ! the cutoff of the pseudopotential's state
-         call ws_convergence(ll,iedge,rs,sqrt(2.0d0*ecutmax),rr,mmax, &
-&             pf%vloc(:,ikap),pf%vlocpw,nvkb,pf%vkbpw(1:nvkb,l1,ikap), &
-&             pf%evkb(1:nvkb,l1,ikap),eps(je),nb,ecut,err,ierr)
-         if(ierr/=0) cycle
-         do itol=1,size(tols)
-           call cutoff_at(tols(itol))
-         end do
-         write(6,'(a,4i4,1p,2e24.16)') 'ws_floor',ll,ikap,iedge,nn, &
-&             ecut(nb),err(nb)
-         if(table) then
-           do ii=1,nb
-             if(err(ii)==0.0d0) cycle
-             write(6,'(a,4i4,1p,2e24.16)') 'ws_conv',ll,ikap,iedge,nn, &
-&                 ecut(ii),err(ii)
+           call ws_convergence(ll,iedge,rs,sqrt(2.0d0*ecutmax),rr,mmax, &
+&               pf%vloc(:,ikap),pf%vlocpw,nvkb,pf%vkbpw(1:nvkb,l1,ikap), &
+&               pf%evkb(1:nvkb,l1,ikap),eps(je),nb,ecut,err,ierr)
+           if(ierr/=0) cycle
+           do itol=1,size(tols)
+             call cutoff_at(tols(itol))
            end do
-         end if
+           write(6,'(a,4i4,1p,2e24.16)') 'ws_floor',ll,ikap,iedge,nn, &
+&               ecut(nb),err(nb)
+           if(table) then
+             do ii=1,nb
+               if(err(ii)==0.0d0) cycle
+               write(6,'(a,4i4,1p,2e24.16)') 'ws_conv',ll,ikap,iedge,nn, &
+&                   ecut(ii),err(ii)
+             end do
+           end if
+         end do
+         call phsft_free(sae)
+         call phsft_free(sps)
        end do
-       call phsft_free(sae)
-       call phsft_free(sps)
      end do
    end do
- end do
+ end if
+
+!the atom in walls: k=0 the free atom
+ if(nk>0) then
+   if(.not. given_r0) r0=rcmax
+   kwall(0)=0.0d0
+   nkap=pf%nkap
+   allocate(vext(mmax),rhoc(mmax),rhoa(mmax),vi(mmax),rhops(mmax))
+   allocate(vpuns(mmax,mxl+2),eigae(mxstate,2,0:nk),eigps(mxstate,2,0:nk))
+   eigae(:,:,:)=0.0d0
+   eigps(:,:,:)=0.0d0
+   vpuns(:,:)=0.0d0
+   vpuns(:,pf%lloc+1)=pf%vpuns(:)
+   nprj(:)=0
+   do l1=1,4
+     nprj(l1)=pf%nvkb(l1,1)
+   end do
+! the valence states as run_config_ps numbers them, n from l+1
+   do l1=1,4
+     nav(l1)=l1-1
+   end do
+   do kk=1,nv
+     latp(kk)=la(nc+kk)
+     l1=latp(kk)+1
+     nav(l1)=nav(l1)+1
+     natp(kk)=nav(l1)
+     fatp(kk,:)=fa(nc+kk)
+   end do
+   write(6,'(a)') '# wall_r0 r0(bohr)'
+   write(6,'(2a)') '# wall k(Ha/bohr**2) etot_ae(Ha) etot_ps(Ha) de_ae(Ha)', &
+&        ' de_ps(Ha)'
+   write(6,'(a)') '# wall_eig k n l ikap e_ae(Ha) e_ps(Ha)'
+   write(6,'(a)') '# wall_failed k atom'
+   write(6,'(a,1p,e24.16)') 'wall_r0',r0
+   do ik=0,nk
+     do ii=1,mmax
+       vext(ii)=wall(kwall(ik),rr(ii)-r0)
+     end do
+     eaw(:,:)=ea(:,:)
+     rpk(:,:)=0.0d0
+     ierrae=0
+     call aeatom(irel,nkap,na,la,eaw(:,1:nkap),fa,rpk(:,1:nkap),nc,nc+nv, &
+&                itae,rhoc,rhoa,rr,vi,zz,mmax,iexc,etae(ik),eterm,res,ierrae, &
+&                vext)
+     eigae(:,:,ik)=eaw(:,:)
+     rhops(:)=pf%rhov(:)
+     eatp(1:nv,:)=ea(nc+1:nc+nv,:)
+     ierrps=0
+     call psatom(natp,latp,eatp(:,1:nkap),fatp,nv,itps,pf%rhomod,rhops, &
+&                rr,pf%rcmax,mmax,mxprj,iexc,etps(ik),nprj,vpuns,pf%lloc, &
+&                pf%vlocpw,pf%vkbpw(:,:,1:nkap),pf%evkb(:,:,1:nkap),ierrps, &
+&                nkap,vext)
+     eigps(1:nv,:,ik)=eatp(1:nv,:)
+     if(ierrae/=0) write(6,'(a,1p,e24.16,a)') 'wall_failed',kwall(ik),' ae'
+     if(ierrps/=0) write(6,'(a,1p,e24.16,a)') 'wall_failed',kwall(ik),' ps'
+     if(ik==0 .and. (ierrae/=0 .or. ierrps/=0)) then
+       write(6,'(a)') 'oncvpsp_confine: ERROR the free atom failed'
+       error stop 1
+     end if
+     if(ierrae/=0 .or. ierrps/=0) cycle
+     write(6,'(a,1p,5e24.16)') 'wall',kwall(ik),etae(ik),etps(ik), &
+&         etae(ik)-etae(0),etps(ik)-etps(0)
+     do kk=1,nv
+       ll=la(nc+kk)
+       do ikap=1,merge(1,nkap,ll==0)
+         write(6,'(a,1p,e24.16,3i4,2e24.16)') 'wall_eig',kwall(ik), &
+&             na(nc+kk),ll,ikap,eigae(nc+kk,ikap,ik),eigps(kk,ikap,ik)
+       end do
+     end do
+   end do
+   deallocate(vext,rhoc,rhoa,vi,rhops,vpuns,eigae,eigps)
+ end if
 
  deallocate(shae,shps,egrid,ishift)
  call ps_file_free(pf)
@@ -389,6 +523,13 @@
    end if
  end do
  end function majority
+
+ real(dp) function wall(kk,xx)
+!! the wall, 1/2 kk xx**2 exp(-dwall/xx) for xx > 0, 0 inside
+ real(dp), intent(in) :: kk,xx
+ wall=0.0d0
+ if(xx>0.0d0) wall=0.5d0*kk*xx**2*exp(-dwall/xx)
+ end function wall
 
  real(dp) function target(jed)
 !! atan(D) of an edge: 0, atan(-l-1), -pi/2
@@ -516,6 +657,14 @@
  write(6,'(a)') '      The largest cutoff of the basis (Ha). Default 200'
  write(6,'(a)') '  -t, --table'
  write(6,'(a)') '      Also print the error at every basis size'
+ write(6,'(a)') '  -s, --no-sphere'
+ write(6,'(a)') '      Leave out the Wigner-Seitz sphere'
+ write(6,'(a)') '  -w, --walls K1,K2,... | none'
+ write(6,'(a)') '      The strengths k of the wall (Ha/bohr**2), or none.'
+ write(6,'(a)') '      Default 0.01, 0.03 and 0.1'
+ write(6,'(a)') '  -R, --wall-radius R0'
+ write(6,'(a)') '      The onset of the wall (bohr). Default the largest'
+ write(6,'(a)') '      core radius'
  write(6,'(a)') ''
  write(6,'(a)') 'Errors are reported on stdout, with a nonzero exit status.'
  end subroutine write_help

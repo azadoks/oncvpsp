@@ -16,15 +16,19 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 ! pseudopotential data file passed from oncvpsp.x or oncvpsp_ps.x (and the
-! nr and fr ones, --ps-file) to oncvpsp_ld.x
+! nr and fr ones, --ps-file) to oncvpsp_ld.x and oncvpsp_confine.x
 !
 ! It holds what the log derivatives of run_phsft need of the
 ! pseudopotential: the screened local potential and its pieces, the
 ! projectors' pieces and coefficients, the reference energies at which the
 ! pseudopotential's phases are aligned with the all-electron ones, and the
 ! input's energies and radius of the log derivatives, oncvpsp_ld.x's
-! defaults.  The all-electron potential is that of the all-electron data
-! file (ae_file_m), which oncvpsp_ld.x reads with it.
+! defaults; and what the self-consistent pseudo-atom of psatom needs
+! besides (oncvpsp_confine.x's atom in a wall): the unscreened local
+! potential, the reference valence pseudo-density, the model core charge
+! and the exchange-correlation functional.  The all-electron potential and
+! the valence configuration are those of the all-electron data file
+! (ae_file_m), which both programs read with it.
 !
 ! The file is unformatted stream I/O in the native byte order:
 !   magic, format version, irel                (0 non-, 1 scalar-,
@@ -39,6 +43,11 @@
 !   vloc(1:mmax,1:nkap), vlocpw                (vp(:,lloc+1,:), screened)
 !   for l=0..3 and each kappa of l (one for l=0 or irel<2):
 !     nvkb, evkb(1:nvkb), vkbpw(1:nvkb)        (nvkb 0 for l=lloc)
+!   iexc, rcmax
+!   vpuns(1:mmax), rhov(1:mmax), rhomod(1:mmax) (the unscreened local
+!                                               potential, vpuns(:,lloc+1),
+!                                               the valence pseudo-density
+!                                               and the model core charge)
 ! a piecewise function (pieces_m) as nseg, bound(0:nseg), vals(:,1:nseg)
 
  module ps_file_m
@@ -51,21 +60,24 @@
  public :: ps_file_t, write_ps_file, read_ps_file, ps_file_free
 
  character(len=8), parameter :: magic='ONCVPS  ' !< first record of the file
- integer, parameter :: version=1 !< format version
+ integer, parameter :: version=2 !< format version
 
 !> the contents of the file
  type ps_file_t
-   integer :: irel=0,nkap=0,mmax=0,lmax=0,lloc=0
+   integer :: irel=0,nkap=0,mmax=0,lmax=0,lloc=0,iexc=0
    integer :: nproj(4)=0
 !> nvkb(l+1,ikap): the projectors of l and kappa in the file
    integer :: nvkb(4,2)=0
    character(len=2) :: atsym='  '
    real(dp) :: zz=0.0d0,c_light=0.0d0
    real(dp) :: rc(mxlin+1)=0.0d0
-   real(dp) :: epsh1=0.0d0,epsh2=0.0d0,depsh=0.0d0,rxpsh=0.0d0
+   real(dp) :: epsh1=0.0d0,epsh2=0.0d0,depsh=0.0d0,rxpsh=0.0d0,rcmax=0.0d0
    real(dp) :: epa(4,2)=0.0d0
    real(dp) :: evkb(mxprj,4,2)=0.0d0
    real(dp), allocatable :: rr(:),vloc(:,:)
+!> the unscreened local potential, the valence pseudo-density and the model
+!> core charge
+   real(dp), allocatable :: vpuns(:),rhov(:),rhomod(:)
    type(piecewise_t) :: vlocpw
    type(piecewise_t) :: vkbpw(mxprj,4,2)
  end type ps_file_t
@@ -74,7 +86,7 @@
 
  subroutine write_ps_file(fname,irel,nkap,atsym,zz,mmax,rr,lmax,lloc, &
 &                         nproj,rc,epsh1,epsh2,depsh,rxpsh,epa,vp,vlocpw, &
-&                         evkb,vkbpw)
+&                         evkb,vkbpw,iexc,rcmax,vpuns,rhov,rhomod)
 
 !! writes the pseudopotential data file
 !!
@@ -98,14 +110,20 @@
 !! @param vlocpw  the local potential's pieces
 !! @param evkb  coefficients of the projectors
 !! @param vkbpw  the projectors' pieces
+!! @param iexc  exchange-correlation function
+!! @param rcmax  maximum core radius
+!! @param vpuns  unscreened local potential
+!! @param rhov  valence pseudo-density of the reference configuration
+!! @param rhomod  model core charge
 
 !Input variables
  character(len=*), intent(in) :: fname
- integer, intent(in) :: irel,nkap,mmax,lmax,lloc
+ integer, intent(in) :: irel,nkap,mmax,lmax,lloc,iexc
  character(len=2), intent(in) :: atsym
  integer, intent(in) :: nproj(mxlin+1)
  real(dp), intent(in) :: zz,rr(mmax),rc(mxlin+1)
- real(dp), intent(in) :: epsh1,epsh2,depsh,rxpsh
+ real(dp), intent(in) :: epsh1,epsh2,depsh,rxpsh,rcmax
+ real(dp), intent(in) :: vpuns(mmax),rhov(mmax),rhomod(mmax)
  real(dp), intent(in) :: epa(mxprj,mxlin+1,nkap),vp(mmax,mxl+2,nkap)
  real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap)
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1,nkap)
@@ -140,6 +158,8 @@
      end do
    end do
  end do
+ write(unit) iexc,rcmax
+ write(unit) vpuns(1:mmax),rhov(1:mmax),rhomod(1:mmax)
  close(unit)
  return
  end subroutine write_ps_file
@@ -205,6 +225,9 @@
      end do
    end do
  end do
+ read(unit) pf%iexc,pf%rcmax
+ allocate(pf%vpuns(pf%mmax),pf%rhov(pf%mmax),pf%rhomod(pf%mmax))
+ read(unit) pf%vpuns(:),pf%rhov(:),pf%rhomod(:)
  close(unit)
  return
  end subroutine read_ps_file
@@ -223,6 +246,7 @@
 
  if(allocated(pf%rr)) deallocate(pf%rr)
  if(allocated(pf%vloc)) deallocate(pf%vloc)
+ if(allocated(pf%vpuns)) deallocate(pf%vpuns,pf%rhov,pf%rhomod)
  call pw_free(pf%vlocpw)
  do ikap=1,2
    do l1=1,4

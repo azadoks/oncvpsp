@@ -362,11 +362,13 @@
  return
  end subroutine read_head
 
- subroutine read_ae_potential(fname,irel,atsym,zz,mmax,rr,c_light_f,vfull)
+ subroutine read_ae_potential(fname,irel,atsym,zz,mmax,rr,c_light_f,vfull, &
+&                             nc,nv,iexc,na,la,fa,ea,etot)
 
 !! reads the atom, the mesh and the all-electron potential of the
 !! reference atom from the all-electron data file, without an input to
-!! check them against (oncvpsp_ld.x)
+!! check them against (oncvpsp_ld.x), and optionally its configuration,
+!! eigenvalues and total energy (oncvpsp_confine.x)
 !!
 !! @param fname  file to read
 !! @param irel  0 non-, 1 scalar-, 2 fully-relativistic
@@ -376,6 +378,14 @@
 !! @param rr  log radial mesh (allocated here)
 !! @param c_light_f  the speed of light of the file
 !! @param vfull  all-electron potential (allocated here)
+!! @param nc  number of core states
+!! @param nv  number of valence states
+!! @param iexc  exchange-correlation function
+!! @param na  principal quantum numbers, reference configuration
+!! @param la  angular momenta
+!! @param fa  occupancies
+!! @param ea  eigenvalues, ea(:,2) those of j=l-1/2 if irel=2
+!! @param etot  total energy (Ha)
 
 !Input variables
  character(len=*), intent(in) :: fname
@@ -385,27 +395,41 @@
  character(len=2), intent(out) :: atsym
  real(dp), intent(out) :: zz,c_light_f
  real(dp), allocatable, intent(out) :: rr(:),vfull(:)
+ integer, intent(out), optional :: nc,nv,iexc,na(mxstate),la(mxstate)
+ real(dp), intent(out), optional :: fa(mxstate),ea(mxstate,2),etot
 
 !Local variables
- integer :: unit,nc,nv,iexc,nt,nkap,it
- integer :: na(mxstate),la(mxstate)
- real(dp) :: fa(mxstate),etot,eterm(4),res,ea(mxstate,2)
+ integer :: unit,nc_f,nv_f,iexc_f,nt,nkap,it
+ integer :: na_f(mxstate),la_f(mxstate)
+ real(dp) :: fa_f(mxstate),etot_f,eterm(4),res,ea_f(mxstate,2)
  real(dp), allocatable :: rhoc(:),rho(:)
 
  call open_ae(fname,unit,irel)
- read(unit) atsym,zz,nc,nv,iexc
- nt=nc+nv
- read(unit) na(1:nt),la(1:nt),fa(1:nt)
+ read(unit) atsym,zz,nc_f,nv_f,iexc_f
+ nt=nc_f+nv_f
+ na_f(:)=0
+ la_f(:)=0
+ fa_f(:)=0.0d0
+ read(unit) na_f(1:nt),la_f(1:nt),fa_f(1:nt)
  read(unit) mmax
  allocate(rr(mmax),vfull(mmax),rhoc(mmax),rho(mmax))
  read(unit) rr(1:mmax)
  read(unit) c_light_f
  nkap=1
  if(irel==2) nkap=2
- read(unit) it,etot,eterm,res,ea(1:nt,1:nkap)
+ ea_f(:,:)=0.0d0
+ read(unit) it,etot_f,eterm,res,ea_f(1:nt,1:nkap)
  read(unit) rhoc(1:mmax),rho(1:mmax),vfull(1:mmax)
  close(unit)
  deallocate(rhoc,rho)
+ if(present(nc)) nc=nc_f
+ if(present(nv)) nv=nv_f
+ if(present(iexc)) iexc=iexc_f
+ if(present(na)) na(:)=na_f(:)
+ if(present(la)) la(:)=la_f(:)
+ if(present(fa)) fa(:)=fa_f(:)
+ if(present(ea)) ea(:,:)=ea_f(:,:)
+ if(present(etot)) etot=etot_f
  return
  end subroutine read_ae_potential
 

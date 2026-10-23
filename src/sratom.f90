@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
  subroutine sratom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&           rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,irel)
+&           rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,irel,vext)
 
 !! self-consistent scalar-relativistic all-electron atom
 !! calculation using log mesh (non-relativistic when irel=0)
@@ -55,6 +55,7 @@
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: fa(ncv),rr(mmax)
  integer, intent(in) :: irel
+ real(dp), intent(in) :: vext(mmax)
 
 !Input/output variables
  integer, intent(inout) :: ierr
@@ -139,7 +140,7 @@
      et=ea(ii)
      ierr = 0
      call lschfb(na(ii),la(ii),ierr,et, &
-&                rr,vi,uu,up,zz,mmax,mch,irel)
+&                rr,vext+vi,uu,up,zz,mmax,mch,irel)
 ! a state with no bound solution in this potential gets its box state;
 ! the SCF goes on but cannot converge with it
      if(ierr == 10) then
@@ -183,7 +184,8 @@
 ! input one
    call vout(0,rho,rhoc,vso,vxc,sf,eeel,eexc, &
 &            rr,mmax,iexc)
-   call ae_energies(rho,vsi,vxc,zz,eeig,eeel,eexc,rr,mmax,etot,eterm)
+   call ae_energies(rho,vsi,vxc,zz,eeig,eeel,eexc,rr,mmax,etot,eterm, &
+&                   vext)
 
 ! converged when no eigenvalue has moved by more than tolres and the
 ! screening potential is self-consistent; the eigenvalues alone can stand

@@ -91,7 +91,7 @@
  real(dp) :: eat(mxstate,nkap,nlev),fat(mxstate,nlev),eatp(mxstate,nkap)
  real(dp) :: fatp(mxstate,nlev)
 
- real(dp),allocatable :: rho(:),rhocps(:)
+ real(dp),allocatable :: rho(:),rhocps(:),vfree(:)
 
 ! atom tests comparing reference state and excited configuration for
 ! all-electron and pseudo atoms.  Total excitation energies and excited-
@@ -137,7 +137,8 @@
  eat(:,:,:)=eatcnf(:,:,:,jj)
  eaetst=etstcnf(jj)
 
- allocate(rho(mmax),rhocps(mmax))
+ allocate(rho(mmax),rhocps(mmax),vfree(mmax))
+ vfree(:)=0.0d0
 
 !first pseudoatom run from reference to maximally-ionized configuration
  do l1=1,4
@@ -160,7 +161,7 @@
 
  call psatom(natp,latp,eatp,fatp,nvt,it,rhocps,rho, &
 &           rr,rcmax,mmax,mxprj,iexc,etsttot,nproj,vpuns,lloc, &
-&           vlocpw,vkbpw,evkb,ierr,nkap)
+&           vlocpw,vkbpw,evkb,ierr,nkap,vfree)
 
  if(ierr/=0) then
    if(irel==2) then
@@ -173,7 +174,7 @@
 &          ' stg. 1', &
 &          ' WARNING no output for configuration',jj
    end if
-   deallocate(rho,rhocps)
+   deallocate(rho,rhocps,vfree)
    return
  end if
 
@@ -187,7 +188,7 @@
 
  call psatom(natp,latp,eatp,fatp,nvt,it,rhocps,rho, &
 &           rr,rcmax,mmax,mxprj,iexc,etsttot,nproj,vpuns,lloc, &
-&           vlocpw,vkbpw,evkb,ierr,nkap)
+&           vlocpw,vkbpw,evkb,ierr,nkap,vfree)
 
  if(ierr/=0) then
    if(irel==2) then
@@ -200,7 +201,7 @@
 &          ' stg. 2', &
 &          ' WARNING no output for configuration',jj
    end if
-   deallocate(rho,rhocps)
+   deallocate(rho,rhocps,vfree)
    return
  end if
 
@@ -212,7 +213,7 @@
    call write_results
  end if
 
- deallocate(rho,rhocps)
+ deallocate(rho,rhocps,vfree)
 
  return
 

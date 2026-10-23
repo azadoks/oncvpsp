@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
  subroutine aeatom(irel,nkap,na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&                  rr,vi,zz,mmax,iexc,etot,eterm,res,ierr)
+&                  rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vext)
 
 !! self-consistent all-electron atom: non-relativistic or scalar-relativistic
 !! (sratom) or fully-relativistic (relatom)
@@ -45,6 +45,8 @@
 !!               energies (output)
 !! @param res  residual of the screening potential (output, ae_residual)
 !! @param ierr  error flag
+!! @param vext  external potential the orbitals also see (a confining wall,
+!!              oncvpsp_confine.x), zero for the free atom; vi is without it
 
  use constants_m, only: dp, mxstate
  implicit none
@@ -53,7 +55,7 @@
  integer, intent(in) :: irel,nkap,mmax,iexc,nc,ncv
  integer, intent(in) :: na(ncv),la(ncv)
  real(dp), intent(in) :: zz
- real(dp), intent(in) :: fa(ncv),rr(mmax)
+ real(dp), intent(in) :: fa(ncv),rr(mmax),vext(mmax)
 
 !Input/output variables
  integer, intent(inout) :: ierr
@@ -66,10 +68,10 @@
 
  if(irel==2) then
    call relatom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&               rr,vi,zz,mmax,iexc,etot,eterm,res,ierr)
+&               rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vext)
  else
    call sratom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&              rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,irel)
+&              rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,irel,vext)
  end if
  return
  end subroutine aeatom

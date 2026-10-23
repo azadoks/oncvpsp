@@ -195,6 +195,18 @@ from the roots of monotonic phases (atan(r phi'/phi) less pi per node
 inside `rs`), so they do not depend on the step `de` of the scan that
 brackets them.
 
+It then compresses the atom. It solves the self-consistent all-electron
+atom and pseudo-atom of the reference configuration in a smooth wall,
+1/2 k x^2 exp(-0.5/x) with x = r - r0 beyond `r0` (`-R`, by default the
+largest core radius), for each strength k (`-w`, by default 0.01, 0.03
+and 0.1 Ha/bohr^2). The `wall` lines give the two total energies and
+their changes from the free atom, which should agree as closely as the
+pseudopotential is transferable. The `wall_eig` lines give the valence
+eigenvalues. `-w none` leaves the walls out and `-s` leaves out the
+sphere. The pseudopotential file has carried what the pseudo-atom needs
+(format version 2) since this tool was added, so older `.ps` files must
+be written again.
+
 Setting `psfile` to `none` skips writing a pseudopotential file, and
 `ncnf` = 0 skips the test configurations other than the reference.
 

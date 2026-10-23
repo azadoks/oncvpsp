@@ -1283,11 +1283,11 @@
 
 
 
-!the pseudopotential for oncvpsp_ld.x
+!the pseudopotential for oncvpsp_ld.x and oncvpsp_confine.x
  if(len_trim(ps_filename)/=0) then
    call write_ps_file(trim(ps_filename),irel,nkap,atsym,zz,mmax,rr,lmax, &
 &                     lloc,nproj,rc,epsh1,epsh2,depsh,rxpsh,epa,vp,vlocpw, &
-&                     evkb,vkbpw)
+&                     evkb,vkbpw,iexc,rcmax,vpuns(:,lloc+1),rho,rhomod(:,1))
  end if
 
 !the energies of the log derivatives, from epsh2 down by depsh; none with

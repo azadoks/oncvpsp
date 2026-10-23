@@ -61,7 +61,8 @@
  return
  end subroutine ae_residual
 
- subroutine ae_energies(rho,vsi,vxc,zz,eeig,eeel,eexc,rr,mmax,etot,eterm)
+ subroutine ae_energies(rho,vsi,vxc,zz,eeig,eeel,eexc,rr,mmax,etot,eterm, &
+&                       vext)
 
 !! total energy and its terms as RadialAtomicSolvers.jl and NIST define
 !! them, the kinetic energy from the eigenvalue sum less the potential
@@ -80,6 +81,9 @@
 !! @param etot  total energy (Ha)
 !! @param eterm  kinetic, electron-nucleus, Hartree and exchange-correlation
 !!               energies (Ha)
+!! @param vext  external potential the orbitals also see (a confining wall,
+!!              oncvpsp_confine.x; zero for the free atom), whose energy is
+!!              in etot but in no term
 
  use constants_m, only: dp
  use logmesh_m, only: lm_head
@@ -87,14 +91,14 @@
 
 !Input variables
  integer, intent(in) :: mmax
- real(dp), intent(in) :: rho(mmax),vsi(mmax),vxc(mmax),rr(mmax)
+ real(dp), intent(in) :: rho(mmax),vsi(mmax),vxc(mmax),rr(mmax),vext(mmax)
  real(dp), intent(in) :: zz,eeig,eeel,eexc
 
 !Output variables
  real(dp), intent(out) :: etot,eterm(4)
 
 !Local variables
- real(dp) :: al,ekin,enuc,ecoul,exc,escr
+ real(dp) :: al,ekin,enuc,ecoul,exc,escr,eext
  integer :: ii
 
  real(dp), allocatable :: ff(:)
@@ -115,6 +119,15 @@
  end do
  escr=radint(ff,3.0d0)
 
+! energy in the external potential
+ eext=0.0d0
+ if(any(vext(:)/=0.0d0)) then
+   do ii=1,mmax
+     ff(ii)=rho(ii)*vext(ii)*rr(ii)**3
+   end do
+   eext=radint(ff,3.0d0)
+ end if
+
 ! exchange-correlation energy from vout's correction to the eigenvalue sum
  do ii=1,mmax
    ff(ii)=rho(ii)*vxc(ii)*rr(ii)**3
@@ -122,9 +135,9 @@
  exc=eexc + radint(ff,3.0d0)
 
  ecoul=0.5d0*eeel
- ekin=eeig - enuc - escr
+ ekin=eeig - enuc - escr - eext
 
- etot=ekin + enuc + ecoul + exc
+ etot=ekin + enuc + ecoul + exc + eext
  eterm(1)=ekin
  eterm(2)=enuc
  eterm(3)=ecoul

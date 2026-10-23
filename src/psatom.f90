@@ -20,7 +20,7 @@
 
  subroutine psatom(na,la,ea,fat,nv,it,rhoc,rho, &
 &           rr,rcmax,mmax,mxprj,iexc,etot,nproj,vpuns,lloc,vlocpw,vkbpw, &
-&           evkb,ierr,nkap)
+&           evkb,ierr,nkap,vext)
 
 !! @param na  principal quantum number array, dimension nv
 !! @param la  angular-momenta
@@ -48,6 +48,12 @@
 !! @param evkb  VKB projector coefficients, last index as for vkbpw
 !! @param ierr  non-zero return if error
 !! @param nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
+!! @param vext  external potential the orbitals also see (a confining wall,
+!!              oncvpsp_confine.x, smooth, so outwf_m takes it as part of
+!!              the screening), zero for the free atom; nonzero, it is
+!!              ramped in with the occupations, and the eigenvalues, which
+!!              it can raise above 0, are bracketed around their last
+!!              values in place of 10 % of them
 
  use constants_m, only: dp, mxstate, mxl, mxlin
  use pieces_m, only: piecewise_t
@@ -62,7 +68,7 @@
  real(dp), intent(in) :: vpuns(mmax,mxl+2)
  real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap)
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1,nkap)
- real(dp), intent(in) :: rhoc(mmax)
+ real(dp), intent(in) :: rhoc(mmax),vext(mmax)
 
 !Input/output variables
  real(dp), intent(inout) :: ea(mxstate,nkap)
@@ -83,7 +89,8 @@
  real(dp) :: fa(mxstate)
  integer :: ii,jj,l1,itarget,nprj
  integer :: ikap,kap,ll,mkap
- logical :: convg
+ logical :: convg,walled
+ real(dp) :: wext
 
  real(dp), allocatable :: uu(:),up(:)
  real(dp), allocatable :: vo(:),vi1(:),vo1(:),vxc(:),vp(:)
@@ -136,6 +143,9 @@
 
 ! first iteration at the target occupations (none yet)
  itarget=huge(1)
+ walled=any(vext(:)/=0.0d0)
+ wext=1.0d0
+ if(walled) wext=1.0d0/50.0d0
 
 ! screening potential for pseudocharge
 ! input rho is assumed to be valence rho from all-electron calculation
@@ -149,7 +159,7 @@
  do it=1,100
 
 ! convergence is only to be considered at the target occupations
-   convg=all(fa(1:nv)==fat(1:nv,2))
+   convg=all(fa(1:nv)==fat(1:nv,2)) .and. wext==1.0d0
    if(convg) itarget=min(itarget,it)
    etol=tolramp
    if(convg) etol=0.0d0
@@ -159,6 +169,7 @@
    eeig=0.0d0
 
    vtot(:)=vpuns(:,lloc+1)+vi(:)
+   if(walled) vtot(:)=vtot(:)+wext*vext(:)
 
    rho(:)=0.0d0
 
@@ -192,6 +203,10 @@
 
        emin=1.10d0*ea(ii,ikap)
        emax=0.90d0*ea(ii,ikap)
+       if(walled) then
+         emin=ea(ii,ikap)-max(0.1d0*abs(ea(ii,ikap)),0.5d0)
+         emax=ea(ii,ikap)+max(0.1d0*abs(ea(ii,ikap)),0.5d0)
+       end if
        call lschvkbb_tol(na(ii),la(ii),nproj(l1),ierr,et,emin,emax, &
 &                       rr,vtot,vlocpw,vkbpw(1:nproj(l1),l1,ikap), &
 &                       evkb(1,l1,ikap),uu,up,mmax,mch,etol)
@@ -277,6 +292,7 @@
 ! switch from reference to new configuration in 50 steps, exactly the
 ! new one from the 50th on (and throughout if they are the same)
 ! (assigned, since fat1 + 1*(fat2 - fat1) need not round to fat2)
+   if(walled) wext=min(1.0d0,dble(it+1)/50.0d0)
    if(it>=50) then
      fa(1:nv)=fat(1:nv,2)
    else

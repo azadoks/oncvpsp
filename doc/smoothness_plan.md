@@ -105,7 +105,7 @@ In progress, raised on 2026-10-23 at the user's request: the confined atom
 (item 7 of the diagnostics asked for by the oncvpsp-opt session), a
 post-processing executable, `oncvpsp_confine.x`. Its Wigner-Seitz sphere
 (band edges and cutoffs, which replace the removed cutoffs at the valence
-energies) is done; the self-consistent atom in a soft wall is next.
+energies) and its self-consistent atom in a soft wall are done.
 
 ### Goals
 
@@ -1597,7 +1597,16 @@ from rc:
          for s, 8 to 28 Ha for d from the bottom to the top of the 3d band.
          The basis adds a q^-5 tail from V'(rs) at the bottom and centre,
          none at the top, where the tails of the PS's kinks are as slow.
-         Next: the compression (a soft wall, self-consistent AE and PS).
+         The compression is done too (2026-10-23): aeatom and psatom
+         self-consistent in a wall 1/2 k x^2 exp(-0.5/x), x = r - r0
+         beyond r0 = rcmax, C-infinity so outwf_m takes it into the local
+         potential, ramped in with psatom's occupations and with the
+         eigenvalues bracketed around their last values (the wall can
+         raise them above 0: Li 2s at k = 0.5). The free atoms reproduce
+         the run's AE_ref and PS_ref to the last digit. 14_Si at k = 0.01,
+         0.03 and 0.1 Ha/bohr^2: dE_AE - dE_PS = 2.7e-6, 9.0e-6 and 3.3e-5
+         Ha, 3p 1.1e-5 to 8.6e-5 Ha; 03_Li fr at 0.5: 1.2e-5 Ha, its 1s
+         semicore 4.2e-3 Ha.
 - [x] (Proposed 2026-10-22 by the oncvpsp-opt session; done 2026-10-22,
       the user's request) A
       regularized pseudo-wave optimization, so the wave is determined for
