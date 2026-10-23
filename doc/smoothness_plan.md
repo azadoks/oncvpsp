@@ -478,7 +478,18 @@ numbers refer to [Phases](#phases).
 #### Truly discrete (kept)
 
 - Node counts in every solver, and so the principal quantum number of a
-  reference.
+  reference. With projectors a node count is not discrete in this sense:
+  the projectors' terms start as r**(l+1) like the homogeneous solution,
+  and where they cancel at small r a node enters from r = 0 without an
+  eigenvalue passing, then moves out with the energy. The count from
+  max(0.1 rsrc, 0.05) bohr (Hamann's cutoff, vkboutwf) jumped where such
+  a node crossed it: the well-state diagnostic of a Pb input failed when
+  the free tail moved one from 0.23 to 0.38 bohr. `lschvkbbe` counts
+  eigenvalues below E on (0, R] instead (`outwf_index`, by the inertia
+  of the Schur complement of the projectors), which changes only where an
+  eigenvalue passes, and `run_diag` takes its target from the
+  pseudo-atom at epa rather than from the all-electron node count
+  (unit test `outwf_index`: the index against finite differences).
 - A bound state exists or not; `boundstate`'s box-state fallback
   (flagged, `ierr=10`).
 - The bound/scattering branch of the diagnostics at epa = 0.

@@ -273,6 +273,11 @@ f = [10.0, 2.0, 1.0]
    wave functions acquiring nodes at small radii, which can happen for the
    fully-non-local radial Schroedinger equation.  My present solution for
    this is to only start counting nodes for r>0.5 a_B (in the routine vkboutwf).
+   [Since then: such a node enters at r = 0 as the energy changes, without
+   an eigenvalue passing, and a count from a fixed radius jumps where it
+   crosses that radius. The diagnostics' scattering-state solver
+   (lschvkbbe) counts the eigenvalues below the energy instead
+   (outwf_index in outwf_m), which no such node changes.]
 
 8) The shell scripts run.sh run_nr.sh etc. find the executables in
    build/bin of the CMake build of the tree they are in.  If you move the

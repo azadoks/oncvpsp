@@ -47,7 +47,9 @@
  private
  public :: outwf_t, og_ext, outwf_setup, outwf_integrate, outwf_overlap
  public :: outwf_overlaps
- public :: outwf_combine, outwf_nodes, outwf_count, outwf_solve, outwf_free
+ public :: outwf_combine, outwf_nodes, outwf_count, outwf_index
+ public :: outwf_index_at
+ public :: outwf_solve, outwf_free
 
 !> the most segments: the breakpoints of the sources and of the potential
 !> are the same radii (0.95 rc, rc, 0.95 rcloc, rcloc), pw_maxseg at most
@@ -764,7 +766,142 @@
  return
  end function outwf_count
 
- subroutine outwf_solve(ow,ep,evkb,mch,mnode,uu,up,node)
+ integer function outwf_index(ow,evkb,ovl,mnode)
+
+!! the number of eigenvalues below the energy of the last outwf_integrate
+!! of the radial equation with the projectors of coefficients evkb on
+!! (0, R], u(R) = 0, R the last grid point of outwf_count at or below the
+!! mesh point mnode, which must lie beyond the sources' support. A node
+!! count of the solution with the projectors is not this number: the
+!! projectors' terms start as r**(l+1) as well, so where their sum and the
+!! homogeneous solution cancel at small r a node enters from r = 0 without
+!! an eigenvalue passing, and moves out with the energy. The index changes
+!! only where an eigenvalue passes. With A = H_loc - E on (0, R] and the
+!! sources B (H = H_loc + B D B^T, D = diag(evkb)), the inertia of the
+!! Schur complements (Haynsworth) gives
+!!   n_-(H - E) = n_-(A) + n_-(-D^-1 - B^T A^-1 B) - n_-(-D^-1)
+!! where n_-(A) is the node count of the homogeneous solution phi_1 on
+!! (0, R] (no node enters at 0 with a local potential), and
+!! A^-1 beta_j = -(phi_(1+j) - phi_(1+j)(R)/phi_1(R) phi_1), so that
+!! (-D^-1 - B^T A^-1 B)_ij = -delta_ij/evkb(i) + <beta_i|phi_(1+j)>
+!!   - phi_(1+j)(R)/phi_1(R) <beta_i|phi_1>
+!! (symmetric to the integration's truncation, and symmetrized). Sources
+!! with evkb = 0 drop out. Called before outwf_combine
+!!
+!! @param ow  the setup, integrated
+!! @param evkb  the projectors' coefficients
+!! @param ovl  the overlaps of outwf_overlaps
+!! @param mnode  the last mesh point counted
+
+!Input variables
+ type(outwf_t), intent(in), target :: ow
+ real(dp), intent(in) :: evkb(ow%nsrc),ovl(ow%nsrc+1,ow%nsrc)
+ integer, intent(in) :: mnode
+
+!Local variables
+ real(dp), allocatable :: mm(:,:),ev(:),fr(:),work(:)
+ real(dp) :: uprev,pm,tt,rlast
+ integer, allocatable :: isrc(:)
+ integer :: kk,jj,jlast,kl,jl,nloc,nact,ii,info
+ logical :: have
+ type(og_seg_t), pointer :: sg
+ external :: dsyev
+
+! the node count of phi_1 to R, as outwf_count, and the point R
+ nloc=0
+ pm=dble(mnode-1)
+ have=.false.
+ uprev=0.0d0
+ kl=1
+ jl=0
+ do kk=1,ow%nseg
+   sg=>ow%seg(kk)
+   if(sg%jmax<0) exit
+   if(kk<ow%nseg) then
+     tt=min(sg%tend,pm-sg%t0)
+   else
+     tt=pm-sg%t0
+   end if
+   jlast=min(sg%jmax,floor(tt))
+   do jj=0,jlast
+     if(have .and. uprev*sg%uu(jj,1)<0.0d0) nloc=nloc+1
+     uprev=sg%uu(jj,1)
+     have=.true.
+     kl=kk
+     jl=jj
+   end do
+   if(sg%t0+tt>=pm) exit
+ end do
+! a zero of phi_1 at R: R at the point before, with no node between
+ if(ow%seg(kl)%uu(jl,1)==0.0d0 .and. jl>0) jl=jl-1
+ rlast=ow%seg(kl)%rg(jl)
+ if(rlast<ow%rsrc) then
+   write(6,'(/a,1p,2e14.6)') 'outwf_index: ERROR R inside the sources,'// &
+&       ' R, rsrc=',rlast,ow%rsrc
+   error stop 1
+ end if
+
+ nact=count(evkb/=0.0d0)
+ outwf_index=nloc
+ if(nact==0) return
+ allocate(mm(nact,nact),ev(nact),fr(ow%nsrc+1),isrc(nact),work(3*nact+8))
+ isrc=pack([(jj,jj=1,ow%nsrc)],evkb/=0.0d0)
+ fr(:)=ow%seg(kl)%uu(jl,:)
+ do jj=1,nact
+   do ii=1,nact
+     mm(ii,jj)=ovl(isrc(jj)+1,isrc(ii)) &
+&             -fr(isrc(jj)+1)/fr(1)*ovl(1,isrc(ii))
+   end do
+ end do
+ mm=0.5d0*(mm+transpose(mm))
+ do jj=1,nact
+   mm(jj,jj)=mm(jj,jj)-1.0d0/evkb(isrc(jj))
+ end do
+ call dsyev('N','U',nact,mm,nact,ev,work,size(work),info)
+ if(info/=0) then
+   write(6,'(/a,i4)') 'outwf_index: dsyev ERROR, stopping info =',info
+   error stop 1
+ end if
+ outwf_index=nloc+count(ev<0.0d0)-count(evkb(isrc)>0.0d0)
+ deallocate(mm,ev,fr,isrc,work)
+ return
+ end function outwf_index
+
+ integer function outwf_index_at(ll,rr,mmax,vloc,vlocpw,nsrc,srcpw,evkb, &
+&                                ee,mnode)
+
+!! outwf_index of the solution at the energy ee, on its own setup
+!!
+!! @param ll  angular momentum
+!! @param rr  log radial mesh
+!! @param mmax  size of the mesh
+!! @param vloc  the local potential on the mesh
+!! @param vlocpw  its pieces
+!! @param nsrc  number of sources
+!! @param srcpw  the sources' pieces
+!! @param evkb  the projectors' coefficients
+!! @param ee  energy (Ha)
+!! @param mnode  the last mesh point counted
+
+!Input variables
+ integer, intent(in) :: ll,mmax,nsrc,mnode
+ real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nsrc),ee
+ type(piecewise_t), intent(in) :: vlocpw,srcpw(nsrc)
+
+!Local variables
+ type(outwf_t) :: ow
+ real(dp), allocatable :: uu(:),up(:)
+ integer :: node
+
+ allocate(uu(mmax),up(mmax))
+ call outwf_setup(ll,rr,mmax,vloc,vlocpw,nsrc,srcpw,ow)
+ call outwf_solve(ow,ee,evkb,mnode,mnode,uu,up,node,outwf_index_at)
+ call outwf_free(ow)
+ deallocate(uu,up)
+ return
+ end function outwf_index_at
+
+ subroutine outwf_solve(ow,ep,evkb,mch,mnode,uu,up,node,neig)
 
 !! the outward solution with the sources as Vanderbilt-Kleinman-Bylander
 !! projectors of coefficients evkb: the homogeneous solution plus the
@@ -779,6 +916,8 @@
 !! @param uu  the solution
 !! @param up  its derivative in the mesh index
 !! @param node  its sign changes to mnode
+!! @param neig  optional, the number of eigenvalues below ep on
+!!              (0, r(mnode)] (outwf_index)
 
 !Input/output variables
  type(outwf_t), intent(inout), target :: ow
@@ -790,6 +929,7 @@
 !Output variables
  real(dp), intent(out) :: uu(ow%mmax),up(ow%mmax)
  integer, intent(out) :: node
+ integer, intent(out), optional :: neig
 
 !Local variables
  real(dp), allocatable :: gg(:,:),gg0(:),ovl(:,:)
@@ -803,6 +943,7 @@
  if(nsrc>0) then
    allocate(gg(nsrc,nsrc),gg0(nsrc),ipiv(nsrc),ovl(nsrc+1,nsrc))
    call outwf_overlaps(ow,ovl)
+   if(present(neig)) neig=outwf_index(ow,evkb,ovl,mnode)
    do jj=1,nsrc
      gg0(jj)=evkb(jj)*ovl(1,jj)
      do ii=1,nsrc
@@ -817,6 +958,11 @@
    end if
    call outwf_combine(ow,gg0)
    deallocate(gg,gg0,ipiv,ovl)
+ end if
+ if(nsrc==0 .and. present(neig)) then
+   allocate(ovl(1,0))
+   neig=outwf_index(ow,evkb,ovl,mnode)
+   deallocate(ovl)
  end if
  call outwf_nodes(ow,1,mch,uu,up)
  rn=max(0.10d0*ow%rsrc,0.05d0)

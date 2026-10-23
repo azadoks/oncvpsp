@@ -21,7 +21,9 @@
 
 !! integrates radial schroedinger equation for pseudopotential with
 !! Vanderbilt-Kleinman-Bylander non-local projectors finding energy at
-!! which desired log derivative uld is matched at point mch
+!! which desired log derivative uld is matched at point mch, the root
+!! with nn-ll-1 eigenvalues below it on (0, rr(mch)] (outwf_index; a node
+!! count would also count nodes that enter at r = 0 with the energy)
 !!
 !! @param nn  principal quantum number
 !! @param ll  angular-momentum quantum number
@@ -69,7 +71,7 @@
  real(dp) :: sls,sn,uout,upin,upout
  real(dp) :: amesh,al,als
  real(dp) :: xkap
- integer :: ii,it,nin,nint,node
+ integer :: ii,it,nin,nint,node,neig
  type(outwf_t) :: ow
 
  real(dp), allocatable :: upp(:),cf(:)
@@ -117,12 +119,12 @@
    nin=mch
 
 ! outward integration
-   call outwf_solve(ow,ee,evkb,mch,mch,uu,up,node)
+   call outwf_solve(ow,ee,evkb,mch,mch,uu,up,node,neig)
 
    uout=uu(mch)
    upout=up(mch)
 
-   if(node-nn+ll+1==0) then
+   if(neig-nn+ll+1==0) then
 
      upin=uld*uout
 
@@ -179,13 +181,13 @@
      ee=ee+de
      if(ee>emax .or. ee<emin) ee=0.5d0*(emax+emin)
 
-   else if(node-nn+ll+1<0) then
-! too few nodes
+   else if(neig-nn+ll+1<0) then
+! too few eigenvalues below ee
      emin=ee
      ee=0.5d0*(emin+emax)
 
    else
-! too many nodes
+! too many eigenvalues below ee
      emax=ee
      ee=0.5d0*(emin+emax)
    end if

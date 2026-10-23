@@ -52,6 +52,7 @@
 
  use constants_m, only: dp, mxl, mxlin, mxkap
  use pieces_m, only: piecewise_t
+ use outwf_m, only: outwf_index_at
  implicit none
 
 !Input variables
@@ -164,9 +165,13 @@
 
          nnp=nnp+1
        else
-!     calculate effective pseudo wave function principal quantum number
-!     from all-electron node count
-         nnp=nnae-npa(1,l1)+ll+1
+!     the root with as many eigenvalues below it as the pseudo-atom has
+!     at epa, where the log derivatives match by construction: the root
+!     nearest epa. The all-electron node count is no target, as the
+!     pseudo-wave function may have a node that entered at r = 0 without
+!     an eigenvalue passing (outwf_index)
+         nnp=ll+1+outwf_index_at(ll,rr,mmax,vp(1,lloc+1,ikap),vlocpw,nvkbt, &
+&            vkbtpw(1:nvkbt),evkbt(1:nvkbt),epa(iprj,l1,ikap),mchf)
          call lschvkbbe(nnp,ll,nvkbt,ierr,etest,uldf,emin,emax, &
 &                       rr,vp(1,lloc+1,ikap),vlocpw,vkbtpw(1:nvkbt),evkbt, &
 &                       uu,up,mmax,mchf)

@@ -648,8 +648,7 @@ Diagnostic tests using Vanderbilt-Kleinman-Bylander pseudopotentials
    3  -4   2.5879149   2.6664896   0.7500000   0.0000028   1.0001208   1.0001208
    3   3   2.5879149   2.6664896   0.3597191  -0.0000001   0.9999427   0.9999427
    3  -4   2.5879149   2.6664896   2.7500000   0.0000130   1.0002296   1.0002296
-run_diag_r: lschvkbbe ERROR   2   3   3  60  2.74710566E+00  2.42239509E+00
-   3   3   2.5879149   2.6664896   2.7471057  -0.3247106 133.3756361  11.1164670
+   3   3   2.5879149   2.6664896   2.7471057   0.0000143   1.0005194   1.0005194
 
 Diagnostic tests using Vanderbilt-Kleinman-Bylander pseudopotentials
   relativistic with scalar and spin-orbit non-local projectors
@@ -672,8 +671,7 @@ Diagnostic tests using Vanderbilt-Kleinman-Bylander pseudopotentials
    3  -4   2.5879149   2.6664896   0.7500000   0.0000070   1.0001362   1.0001362
    3   3   2.5879149   2.6664896   0.3597191   0.0000082   0.9999524   0.9999524
    3  -4   2.5879149   2.6664896   2.7500000   0.0000130   1.0002296   1.0002296
-run_diag_r: lschvkbbe ERROR   2   3   3  60  2.74710566E+00  2.42239509E+00
-   3   3   2.5879149   2.6664896   2.7471057  -0.3247106 133.3756361  11.1164670
+   3   3   2.5879149   2.6664896   2.7471057   0.0000143   1.0005194   1.0005194
 
 Ghost test for J = L + 1/2
 
@@ -749,7 +747,7 @@ Test configuration 0
 
     Total energies and differences
       AE_ref= -9.62980932E+03  AE_tst= -9.62980932E+03  dif=  0.00E+00
-      PS_ref= -3.42906366E+01  PS_tst= -3.42906366E+01  dif=  1.42E-14
+      PS_ref= -3.42906366E+01  PS_tst= -3.42906366E+01  dif= -2.84E-14
       PSP excitation error=  0.00E+00
 
 DATA FOR PLOTTING
