@@ -33,6 +33,10 @@
 !> The integrals are by Gauss-Legendre panels between the kinks of the
 !> potential's and the projectors' pieces, each panel shorter than a
 !> radian of the largest q, so they are exact to round-off.
+!> All the eigenvalues in the full basis (ws_eigenvalues) at the top's
+!> condition, phi(rs) = 0, count the poles of the pseudopotential's
+!> r phi'/phi at rs below an energy, the count that makes its phase
+!> continuous where its nodes do not (oncvpsp_confine.x).
 
  module ws_basis_m
  use constants_m, only: dp, pi
@@ -42,7 +46,7 @@
  use ugrid_m, only: ug_brent
  implicit none
  private
- public :: ws_edge_d, ws_roots, ws_convergence
+ public :: ws_edge_d, ws_roots, ws_convergence, ws_eigenvalues
 
 !> Gauss-Legendre nodes per panel
  integer, parameter :: ngl=16
@@ -194,21 +198,115 @@
  real(dp), allocatable, intent(out) :: ecut(:),err(:)
 
 !Local variables
+ real(dp), allocatable :: hmat(:,:),hh(:,:),ev(:),work(:)
+ integer :: np,idx,lwork,info
+
+ call ws_hamiltonian(ll,iedge,rs,qmax,rr,mmax,vloc,vlocpw,nvkb,vkbpw,evkb, &
+&                    nb,ecut,hmat,ierr)
+ allocate(err(nb))
+ err(:)=0.0d0
+ if(ierr/=0) return
+
+!the first N of them, N = nb first for the index
+ allocate(hh(nb,nb),ev(nb))
+ lwork=max(1,3*nb)
+ allocate(work(lwork))
+ idx=0
+ do np=nb,1,-1
+   hh(1:np,1:np)=hmat(1:np,1:np)
+   call dsyev('N','U',np,hh,nb,ev,work,lwork,info)
+   if(info/=0) then
+     write(6,'(a,i0)') 'ws_convergence: ERROR dsyev info ',info
+     error stop 1
+   end if
+   if(np==nb) idx=minloc(abs(ev(1:nb)-eex),1)
+   if(np>=idx) err(np)=ev(idx)-eex
+ end do
+ deallocate(hmat,hh,ev,work)
+ return
+ end subroutine ws_convergence
+
+ subroutine ws_eigenvalues(ll,iedge,rs,qmax,rr,mmax,vloc,vlocpw,nvkb,vkbpw, &
+&                          evkb,nb,ev,ierr)
+
+!! the eigenvalues of the pseudo-Hamiltonian in all the basis functions of
+!! an edge's condition below qmax, lowest first: variational bounds on the
+!! states of that condition in the sphere, each above its state's energy
+!!
+!! @param ll  angular momentum, 0..3
+!! @param iedge  1 bottom, 2 centre, 3 top
+!! @param rs  radius of the sphere (bohr), beyond the projectors
+!! @param qmax  the largest q of the basis (bohr**-1)
+!! @param rr  log radial mesh
+!! @param mmax  size of the log radial mesh
+!! @param vloc  local potential on the mesh
+!! @param vlocpw  its pieces
+!! @param nvkb  number of projectors
+!! @param vkbpw  the projectors' pieces
+!! @param evkb  their coefficients
+!! @param nb  number of basis functions and eigenvalues (output)
+!! @param ev  the eigenvalues (Ha, output)
+!! @param ierr  0, or 1 if no basis function is below qmax (output)
+
+!Input variables
+ integer, intent(in) :: ll,iedge,mmax,nvkb
+ real(dp), intent(in) :: rs,qmax,rr(mmax),vloc(mmax),evkb(nvkb)
+ type(piecewise_t), intent(in) :: vlocpw,vkbpw(nvkb)
+
+!Output variables
+ integer, intent(out) :: nb,ierr
+ real(dp), allocatable, intent(out) :: ev(:)
+
+!Local variables
+ real(dp), allocatable :: ecut(:),hmat(:,:),work(:)
+ integer :: lwork,info
+
+ call ws_hamiltonian(ll,iedge,rs,qmax,rr,mmax,vloc,vlocpw,nvkb,vkbpw,evkb, &
+&                    nb,ecut,hmat,ierr)
+ allocate(ev(nb))
+ if(ierr/=0) return
+ lwork=max(1,3*nb)
+ allocate(work(lwork))
+ call dsyev('N','U',nb,hmat,nb,ev,work,lwork,info)
+ if(info/=0) then
+   write(6,'(a,i0)') 'ws_eigenvalues: ERROR dsyev info ',info
+   error stop 1
+ end if
+ deallocate(ecut,hmat,work)
+ return
+ end subroutine ws_eigenvalues
+
+ subroutine ws_hamiltonian(ll,iedge,rs,qmax,rr,mmax,vloc,vlocpw,nvkb,vkbpw, &
+&                          evkb,nb,ecut,hmat,ierr)
+
+!! the pseudo-Hamiltonian in the nb basis functions of an edge's condition
+!! below qmax, and their cutoffs q_n**2/2 (the arguments as
+!! ws_convergence's)
+
+!Input variables
+ integer, intent(in) :: ll,iedge,mmax,nvkb
+ real(dp), intent(in) :: rs,qmax,rr(mmax),vloc(mmax),evkb(nvkb)
+ type(piecewise_t), intent(in) :: vlocpw,vkbpw(nvkb)
+
+!Output variables
+ integer, intent(out) :: nb,ierr
+ real(dp), allocatable, intent(out) :: ecut(:),hmat(:,:)
+
+!Local variables
  real(dp), allocatable :: qq(:),rg(:),wg(:),vg(:),phi(:,:),proj(:,:)
- real(dp), allocatable :: hmat(:,:),hh(:,:),ev(:),work(:),dv(:),bounds(:)
+ real(dp), allocatable :: dv(:),bounds(:)
  real(dp) :: xg(ngl),wxg(ngl),dvq,ra,rb,hmax,ss,cc,xx
- integer :: ng,nbound,ii,jj,kk,np,ip,idx,lwork,info
+ integer :: ng,nbound,ii,jj,kk,np,ip
 
  ierr=0
  call ws_roots(ll,iedge,rs,qmax,nb,qq)
  if(nb==0) then
    ierr=1
-   allocate(ecut(0),err(0))
+   allocate(ecut(0),hmat(0,0))
    return
  end if
- allocate(ecut(nb),err(nb))
+ allocate(ecut(nb))
  ecut(:)=0.5d0*qq(:)**2
- err(:)=0.0d0
 
 !the panels: the kinks of the pieces inside the sphere, and no panel
 !longer than a radian of the largest q (or 0.1 bohr)
@@ -282,23 +380,7 @@
    end do
    hmat(jj,jj)=hmat(jj,jj)+ecut(jj)
  end do
-
-!the first N of them, N = nb first for the index
- allocate(hh(nb,nb),ev(nb))
- lwork=max(1,3*nb)
- allocate(work(lwork))
- idx=0
- do np=nb,1,-1
-   hh(1:np,1:np)=hmat(1:np,1:np)
-   call dsyev('N','U',np,hh,nb,ev,work,lwork,info)
-   if(info/=0) then
-     write(6,'(a,i0)') 'ws_convergence: ERROR dsyev info ',info
-     error stop 1
-   end if
-   if(np==nb) idx=minloc(abs(ev(1:nb)-eex),1)
-   if(np>=idx) err(np)=ev(idx)-eex
- end do
- deallocate(qq,rg,wg,vg,phi,proj,hmat,hh,ev,work,dv,bounds)
+ deallocate(qq,rg,wg,vg,phi,proj,dv,bounds)
  return
 
  contains
@@ -315,7 +397,7 @@
  end do
  end subroutine add_bounds
 
- end subroutine ws_convergence
+ end subroutine ws_hamiltonian
 
  subroutine sort(aa)
 !! ascending, by insertion (a few values)

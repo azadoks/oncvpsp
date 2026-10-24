@@ -4,8 +4,10 @@
 # the edges do not depend on the step of the scan that brackets them, and the cutoffs rise as the
 # error falls; in the walls, the free atoms are the run's reference atoms and the pseudo-atom's
 # energy rises as the all-electron atom's does. The summary line is that of the other lines. With
-# MODE ghost (an input with a ghost and a core state in the window) only that its band is ws_core and
-# the ghost is ws_extra.
+# MODE ghost (60_Nd_GHOST) only that the band of the core 4f is ws_core, that the window has no
+# pseudopotential-only edge (its f wave function gains a node inside the projectors, which once made
+# one at +0.051 Ha), and that the f ghost of the run's bound-ghost test at -50 Ha is ws_extra in a
+# window around it.
 #
 # Usage: confine_test.sh FULL_EXE AE_EXE CONFINE_EXE INPUT.dat WORKDIR [MODE]
 set -euo pipefail
@@ -24,7 +26,7 @@ fi
 
 "$confine" -a atom.ae -p atom.ps > conf.out
 if [ "$CONFINE_MODE" = ghost ]; then
-    : > r1.out; : > r2.out; : > r12.out; : > l1.out; : > step.out
+    "$confine" -a atom.ae -p atom.ps -l 3 -e -55,-45,0.1 -w none > ghost.out
 else
 read -r r1 r2 < <(awk '$1 == "ws_r" {print $4}' conf.out | sort -g -u | head -2 | xargs)
 "$confine" -a atom.ae -p atom.ps -r "$r1" -w none > r1.out
@@ -117,9 +119,12 @@ if os.environ["CONFINE_MODE"] == "ghost":
     extra = [l for l in lines if l[0] == "ws_extra"]
     if not core or any(l[1] != "3" or l[4] != "4" for l in core):
         sys.exit(f"confine_test.sh: the core 4f band is not ws_core: {core}")
-    if not extra or count("ws_missing"):
-        sys.exit(f"confine_test.sh: no ghost edge (ws_extra), or missing edges")
-    print(f"{len(core)} core-state edges, {len(extra)} pseudopotential-only edges")
+    if extra or count("ws_missing"):
+        sys.exit(f"confine_test.sh: pseudopotential-only or missing edges in the window: {extra}")
+    ghost = [float(l.split()[4]) for l in open("ghost.out") if l.startswith("ws_extra")]
+    if not ghost or any(abs(e + 50.06) > 0.05 for e in ghost):
+        sys.exit(f"confine_test.sh: the f ghost near -50 Ha is not ws_extra: {ghost}")
+    print(f"{len(core)} core-state edges, none pseudopotential-only; the f ghost at {ghost[0]:.4f} Ha")
     sys.exit(0)
 for k, b in conf.items():
     if b["missing"]:

@@ -193,8 +193,12 @@ cutoff (`-c`, by default 200 Ha), `-t` prints the error at every basis
 size (`ws_conv`), and `-l` restricts the angular momenta. The edges come
 from the roots of monotonic phases (atan(r phi'/phi) less pi per node
 inside `rs`), so they do not depend on the step `de` of the scan that
-brackets them. Each all-electron edge's partner is the pseudopotential edge
-of the same phase. What does not pair is named: `ws_missing` for an
+brackets them. The pseudopotential's phase counts the poles of its
+r phi'/phi at `rs` below the energy rather than its nodes, since its wave
+function can gain a node inside the projectors. The poles are the
+eigenvalues of the sphere with phi(rs) = 0 in the same basis as the cutoffs,
+each refined to the root of u(rs). Each all-electron edge's partner is the
+pseudopotential edge of the same phase. What does not pair is named: `ws_missing` for an
 all-electron edge with no partner, `ws_core` for one that is the band of a
 core state, `ws_extra` for a pseudopotential edge with no all-electron
 partner (a ghost in the window), and `ws_paired_off` for a pseudopotential

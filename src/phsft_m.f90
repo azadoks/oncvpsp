@@ -321,20 +321,25 @@
  return
  end subroutine phsft_pair
 
- real(dp) function phsft_node_phase(ps,iq,ee)
+ real(dp) function phsft_node_phase(ps,iq,ee,nodes,uq_out)
 
 !! the phase of radius iq at the energy ee with no continuation:
 !! atan(r phi'/phi) - pi (the nodes of u inside the radius), the Pruefer
-!! angle, continuous across a node's passing the radius. It falls as the
-!! energy rises wherever the radius is beyond the projectors (their terms
-!! cancel in the Wronskian of u and du/dE), so it is a monotonic function
-!! that a root search brackets with no step to alias a turn by pi
-!! (oncvpsp_confine.x). Nodes of the pseudo-wave function inside the
-!! projectors come and go in pairs only, if at all: a jump by 2 pi
+!! angle, continuous across a node's passing the radius. For a local
+!! potential it falls as the energy rises, a monotonic function that a
+!! root search brackets with no step to alias a turn by pi
+!! (oncvpsp_confine.x). A pseudo-wave function can gain or lose a node
+!! inside the projectors (Pb p with debl 4.7, at the same energy at every
+!! radius), where the phase jumps by pi: with nodes false, only the angle
+!! atan(r phi'/phi) in (-pi/2, pi/2], for the caller to count the poles of
+!! r phi'/phi below ee instead (ws_eigenvalues), which r phi'/phi falls
+!! between for any Hermitian potential
 !!
 !! @param ps  the solver
 !! @param iq  the radius
 !! @param ee  energy (Ha)
+!! @param nodes  whether to subtract pi per node (default true)
+!! @param uq_out  u at the radius (output)
 
 !Input/output variables
  type(phsft_t), intent(inout), target :: ps
@@ -342,6 +347,10 @@
 !Input variables
  integer, intent(in) :: iq
  real(dp), intent(in) :: ee
+ logical, intent(in), optional :: nodes
+
+!Output variables
+ real(dp), intent(out), optional :: uq_out
 
 !Local variables
  real(dp), allocatable :: uu(:,:),up(:,:)
@@ -372,6 +381,10 @@
  phsft_node_phase=atan2(upq/ps%al-uq,uq)
  if(phsft_node_phase>0.5d0*pi) phsft_node_phase=phsft_node_phase-pi
  if(phsft_node_phase<=-0.5d0*pi) phsft_node_phase=phsft_node_phase+pi
+ if(present(uq_out)) uq_out=uq
+ if(present(nodes)) then
+   if(.not. nodes) nnode=0
+ end if
  phsft_node_phase=phsft_node_phase-pi*dble(nnode)
  deallocate(uu,up)
  return

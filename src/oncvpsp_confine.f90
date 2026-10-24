@@ -25,11 +25,17 @@
 ! band edges of the Wigner-Seitz rule: where r phi'/phi = 0 at rs (the
 ! bottom of a band), -l-1 (its centre) and phi = 0 (its top), the roots of
 ! the phases atan(r phi'/phi) - pi (nodes inside rs) of phsft_node_phase,
-! which fall monotonically with the energy beyond the core radii, so a
-! scan brackets every root whatever its step and Brent's method takes it
-! to round-off. The pseudopotential's phases are shifted by the multiple of
-! pi by which they differ from the all-electron ones at most energies, so
-! an all-electron root and the pseudopotential root of the same phase are
+! which fall monotonically with the energy, so a scan brackets every root
+! whatever its step and Brent's method takes it to round-off. The
+! pseudopotential's phase counts instead the poles of its r phi'/phi at rs
+! below the energy, the states of phi(rs) = 0 in the sphere: its wave
+! function can gain a node inside the projectors (Pb p, I s with a large
+! debl), but r phi'/phi falls between its poles for any Hermitian
+! potential. They are the eigenvalues of ws_eigenvalues in the basis of
+! that condition, each taken to the root of u(rs) beside it. The
+! pseudopotential's phases are shifted by the multiple of pi by which
+! they differ from the all-electron ones at most energies, so an
+! all-electron root and the pseudopotential root of the same phase are
 ! the same band's edge; n is the all-electron state's nodes inside rs plus
 ! l+1. For each pseudopotential edge, the cutoff that the state needs in
 ! the sphere, from the variational energies of ws_basis_m: a cutoff for
@@ -83,7 +89,7 @@
  use ps_file_m, only: ps_file_t, read_ps_file, ps_file_free
  use phsft_m, only: phsft_t, phsft_ae_init, phsft_ps_init, phsft_free, &
 &                   phsft_node_phase, phsft_mch
- use ws_basis_m, only: ws_edge_d, ws_convergence
+ use ws_basis_m, only: ws_edge_d, ws_convergence, ws_eigenvalues
  use ugrid_m, only: ug_brent
  use relativity_m, only: set_relativity
  use constants_m, only: mxstate, mxprj, mxl, mxlin
@@ -146,6 +152,11 @@
 !> the solver, the point of the scan and the phase of edges' root
  type(phsft_t), pointer :: psol=>null()
  real(dp) :: ph_e0,ph_tgt,ph_shift
+!> the poles of the pseudopotential's r phi'/phi at rs (Ha), and whether
+!> the phase of psol counts them rather than its nodes
+ integer :: ndir
+ real(dp), allocatable :: edir(:)
+ logical :: ph_poles
 !> the partner of each all-electron edge (0 for none), and whether each
 !> pseudopotential edge is one
  integer :: jpair(mxedge)
@@ -372,16 +383,26 @@
          call phsft_ps_init(ll,nvkb,rr,pf%vloc(:,ikap),pf%vlocpw, &
 &                           pf%vkbpw(1:nvkb,l1,ikap),pf%evkb(1:nvkb,l1,ikap), &
 &                           mmax,1,rq(iq:iq),sps)
+         call ws_eigenvalues(ll,3,rs,sqrt(2.0d0*ecutmax),rr,mmax, &
+&             pf%vloc(:,ikap),pf%vlocpw,nvkb,pf%vkbpw(1:nvkb,l1,ikap), &
+&             pf%evkb(1:nvkb,l1,ikap),ndir,edir,ierr)
+         if(ierr/=0) ndir=0
+         call refine_poles(sps)
          do ii=1,npsh
-           shae(ii,1)=phsft_node_phase(sae,1,egrid(ii))
-           shps(ii,1)=phsft_node_phase(sps,1,egrid(ii))
+           psol=>sae
+           ph_poles=.false.
+           shae(ii,1)=phase_of(egrid(ii))
+           psol=>sps
+           ph_poles=.true.
+           shps(ii,1)=phase_of(egrid(ii))
            ishift(ii)=nint((shae(ii,1)-shps(ii,1))/pi)
          end do
          thal=pi*dble(majority(ishift))
          shps(:,1)=shps(:,1)+thal
 
-         call edges(sae,shae(:,1),0.0d0,nae,eae,kae,edae)
-         call edges(sps,shps(:,1),thal,nps,eps,kps,edps)
+         call edges(sae,.false.,shae(:,1),0.0d0,nae,eae,kae,edae)
+         call edges(sps,.true.,shps(:,1),thal,nps,eps,kps,edps)
+         deallocate(edir)
 
 ! every all-electron edge, lowest first, and its partner: the nearest
 ! pseudopotential edge of the same phase, over the whole scan, so that an
@@ -564,17 +585,22 @@
 
  contains
 
- subroutine edges(sol,sh,shift,ned,eed,ked,ied)
+ subroutine edges(sol,poles,sh,shift,ned,eed,ked,ied)
 !! the edges of a scan: the energies at which the phase (plus shift)
 !! crosses atan(D) + k pi for the D of each edge, each to round-off by
-!! Brent's method in the interval of the grid that brackets it
+!! Brent's method in the interval of the grid that brackets it; poles for
+!! the phase that counts the poles edir rather than the nodes, whose top
+!! edges (phi(rs) = 0) are the poles themselves, where the count steps: the
+!! k-th at the phase -pi/2 - (k-1) pi just below it
  type(phsft_t), intent(inout), target :: sol
+ logical, intent(in) :: poles
  real(dp), intent(in) :: sh(npsh),shift
  integer, intent(out) :: ned,ked(mxedge),ied(mxedge)
  real(dp), intent(out) :: eed(mxedge)
  real(dp) :: thlo,thhi,er
  integer :: jj,kk,jed,ierr2
  psol=>sol
+ ph_poles=poles
  ph_shift=shift
  ned=0
  do jj=1,npsh-1
@@ -582,6 +608,7 @@
    thlo=min(sh(jj),sh(jj+1))
    thhi=max(sh(jj),sh(jj+1))
    do jed=1,3
+     if(poles .and. jed==3) cycle
      do kk=ceiling((thlo-target(jed))/pi),floor((thhi-target(jed))/pi)
        ph_tgt=target(jed)+pi*dble(kk)
 ! a crossing on the point below is the next interval's
@@ -601,14 +628,89 @@
      end do
    end do
  end do
+ if(poles) then
+   do kk=1,ndir
+     if(edir(kk)<egrid(npsh) .or. edir(kk)>egrid(1)) cycle
+     if(ned==mxedge) then
+       write(6,'(a)') 'oncvpsp_confine: ERROR too many edges in the scan'
+       error stop 1
+     end if
+     ned=ned+1
+     eed(ned)=edir(kk)
+     ked(ned)=nint(shift/pi)-(kk-1)
+     ied(ned)=3
+   end do
+ end if
  nullify(psol)
  end subroutine edges
 
  real(dp) function phase(ex)
 !! the phase of psol at ex plus ph_shift, less ph_tgt
  real(dp), intent(in) :: ex
- phase=phsft_node_phase(psol,1,ex)+ph_shift-ph_tgt
+ phase=phase_of(ex)+ph_shift-ph_tgt
  end function phase
+
+ real(dp) function phase_of(ex)
+!! the phase of psol at ex: less pi per node inside rs, or with ph_poles
+!! per pole of r phi'/phi at rs below ex
+ real(dp), intent(in) :: ex
+ if(ph_poles) then
+   phase_of=phsft_node_phase(psol,1,ex,nodes=.false.) &
+&           -pi*dble(count(edir(1:ndir)<ex))
+ else
+   phase_of=phsft_node_phase(psol,1,ex)
+ end if
+ end function phase_of
+
+ subroutine refine_poles(sol)
+!! the poles edir in the scan, each from its variational value to the root
+!! of u(rs) beside it, in a bracket that grows from 1e-6 Ha on both sides
+!! until u changes sign, up to halfway to the poles beside it (or 1 Ha). A
+!! variational bound lies above the root of the same Hamiltonian, but
+!! the basis's quadrature of the pieces and the radial equation's differ,
+!! by 3e-8 Ha at 1.5 Ha in Si f, so the root can be on either side
+ type(phsft_t), intent(inout), target :: sol
+ real(dp) :: e0,u0,lo,hi,ww,er,elow,ehigh
+ integer :: kk,ierr2
+ logical :: found
+ psol=>sol
+ do kk=1,ndir
+   e0=edir(kk)
+   if(e0<egrid(npsh) .or. e0>egrid(1)) cycle
+   elow=e0-1.0d0
+   if(kk>1) elow=max(elow,0.5d0*(edir(kk-1)+e0))
+   ehigh=e0+1.0d0
+   if(kk<ndir) ehigh=min(ehigh,0.5d0*(e0+edir(kk+1)))
+   u0=u_rs(e0)
+   if(u0==0.0d0) cycle
+   ww=1.0d-6*max(1.0d0,abs(e0))
+   found=.false.
+   do
+     lo=max(e0-ww,elow)
+     hi=min(e0+ww,ehigh)
+     if(u_rs(lo)*u0<0.0d0) then
+       hi=e0
+       found=.true.
+     else if(u_rs(hi)*u0<0.0d0) then
+       lo=e0
+       found=.true.
+     end if
+     if(found .or. (lo<=elow .and. hi>=ehigh)) exit
+     ww=4.0d0*ww
+   end do
+   if(.not. found) cycle
+   call ug_brent(u_rs,lo,hi,er,ierr2)
+   if(ierr2==0) edir(kk)=er
+ end do
+ nullify(psol)
+ end subroutine refine_poles
+
+ real(dp) function u_rs(ex)
+!! u of psol at rs and the energy ex
+ real(dp), intent(in) :: ex
+ real(dp) :: th
+ th=phsft_node_phase(psol,1,ex,nodes=.false.,uq_out=u_rs)
+ end function u_rs
 
  integer function majority(iv)
 !! the most frequent value, the smallest of a tie
