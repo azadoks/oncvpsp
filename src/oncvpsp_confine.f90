@@ -76,12 +76,14 @@
 !                                          self-consistent solution)
 ! and last a summary of both:
 !   confine_summary max_de ecut4 ecut5 n_missing n_extra n_paired_off
-!                   n_wall_failed max_dde
+!                   n_wall_failed max_dde ecut4_top ecut5_top
 ! max_de the largest |e_ps - e_ae| of the edges below 0 (Ha), ecut4 and
 ! ecut5 the largest cutoffs of those edges at 1e-4 and 1e-5 Ha (Infinity
 ! if one does not reach it), the counts of the ws_missing, ws_extra,
-! ws_paired_off and wall_failed lines, and max_dde the largest
-! |de_ps - de_ae| of the walls (Ha); NaN and -1 for the parts left out.
+! ws_paired_off and wall_failed lines, max_dde the largest
+! |de_ps - de_ae| of the walls (Ha), and ecut4_top and ecut5_top those of
+! the top edges alone, whose errors have no tail from the potential's
+! slope at rs (ws_basis_m); NaN and -1 for the parts left out.
 
  program oncvpsp_confine
  use constants_m, only: dp, pi
@@ -162,11 +164,12 @@
  integer :: jpair(mxedge)
  logical :: used(mxedge)
 !> the summary: the counts of the lines, the largest |e_ps - e_ae| and
-!> cutoffs (1e-4, 1e-5 Ha) of the edges below 0, whether one of them does
-!> not reach it, and the largest |de_ps - de_ae| of the walls (-1 for none)
+!> cutoffs (1e-4, 1e-5 Ha; then those of the top edges alone) of the edges
+!> below 0, whether one of them does not reach it, and the largest
+!> |de_ps - de_ae| of the walls (-1 for none)
  integer :: nmiss,nextra,noff,nwfail
- real(dp) :: smax_de,scut(2),sdde,ec
- logical :: sinf(2)
+ real(dp) :: smax_de,scut(4),sdde,ec
+ logical :: sinf(4)
 
  ae_filename=''
  ps_filename=''
@@ -460,15 +463,18 @@
 &               pf%vloc(:,ikap),pf%vlocpw,nvkb,pf%vkbpw(1:nvkb,l1,ikap), &
 &               pf%evkb(1:nvkb,l1,ikap),eps(je),nb,ecut,err,ierr)
            if(ierr/=0) then
-             if(eae(ie)<0.0d0) sinf(:)=.true.
+             if(eae(ie)<0.0d0) sinf(1:2)=.true.
+             if(eae(ie)<0.0d0 .and. iedge==3) sinf(3:4)=.true.
              cycle
            end if
            do itol=1,size(tols)
              call cutoff_at(tols(itol),ec)
-! the summary's cutoffs, at 1e-4 and 1e-5 Ha
+! the summary's cutoffs, at 1e-4 and 1e-5 Ha, of all edges and of the top
              if(eae(ie)<0.0d0 .and. (itol==3 .or. itol==4)) then
-               if(ec<0.0d0) sinf(itol-2)=.true.
-               scut(itol-2)=max(scut(itol-2),ec)
+               do kk=itol-2,merge(itol,itol-2,iedge==3),2
+                 if(ec<0.0d0) sinf(kk)=.true.
+                 scut(kk)=max(scut(kk),ec)
+               end do
              end if
            end do
            write(6,'(a,4i4,1p,2e24.16)') 'ws_floor',ll,ikap,iedge,nn, &
@@ -572,11 +578,13 @@
    deallocate(vext,rhoc,rhoa,vi,rhops,vpuns,eigae,eigps)
  end if
 
- write(6,'(2a)') '# confine_summary max_de(Ha) ecut4(Ha) ecut5(Ha)', &
-&     ' n_missing n_extra n_paired_off n_wall_failed max_dde(Ha)'
- write(6,'(a,1p,3e24.16,4i6,e24.16)') 'confine_summary',summ(smax_de,.false.), &
-&     summ(scut(1),sinf(1)),summ(scut(2),sinf(2)),nmiss,nextra,noff,nwfail, &
-&     summ(sdde,.false.)
+ write(6,'(3a)') '# confine_summary max_de(Ha) ecut4(Ha) ecut5(Ha)', &
+&     ' n_missing n_extra n_paired_off n_wall_failed max_dde(Ha)', &
+&     ' ecut4_top(Ha) ecut5_top(Ha)'
+ write(6,'(a,1p,3e24.16,4i6,3e24.16)') 'confine_summary', &
+&     summ(smax_de,.false.),summ(scut(1),sinf(1)),summ(scut(2),sinf(2)), &
+&     nmiss,nextra,noff,nwfail,summ(sdde,.false.),summ(scut(3),sinf(3)), &
+&     summ(scut(4),sinf(4))
 
  deallocate(shae,shps,egrid,ishift)
  call ps_file_free(pf)
@@ -863,10 +871,13 @@
  write(6,'(a)') 'and last:'
  write(6,'(a)') '  confine_summary max_de ecut4 ecut5 n_missing n_extra'
  write(6,'(a)') '                  n_paired_off n_wall_failed max_dde'
+ write(6,'(a)') '                  ecut4_top ecut5_top'
  write(6,'(a)') 'the largest |e_ps - e_ae| and the largest cutoffs at 1e-4'
  write(6,'(a)') 'and 1e-5 Ha of the edges below 0 (Infinity if one does not'
- write(6,'(a)') 'reach it), the counts of those lines, and the largest'
- write(6,'(a)') '|de_ps - de_ae| of the walls; NaN and -1 for a part left out.'
+ write(6,'(a)') 'reach it), the counts of those lines, the largest'
+ write(6,'(a)') '|de_ps - de_ae| of the walls, and the cutoffs of the top'
+ write(6,'(a)') 'edges alone, free of the tail from the potential''s slope at'
+ write(6,'(a)') 'rs; NaN and -1 for a part left out.'
  write(6,'(a)') ''
  write(6,'(a)') 'Options:'
  write(6,'(a)') '  -h, --help'

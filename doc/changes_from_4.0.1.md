@@ -289,8 +289,11 @@ precision.
   and an edge of another phase nearer than the partner
   (`ws_paired_off`). A last `confine_summary` line gives the largest
   |e_ps - e_ae| and cutoffs at 1e-4 and 1e-5 Ha of the edges below 0,
-  the counts of those lines and of failed walls, and the largest
-  |de_ps - de_ae| of the walls. The pseudopotential's phase counts the
+  the counts of those lines and of failed walls, the largest
+  |de_ps - de_ae| of the walls, and the cutoffs of the top edges alone,
+  free of the boundary's tail (in the optimizer's Li fronts they still
+  need 45-51 Ry where the tables give 11-13, from the empty p channel the
+  budget leaves out). The pseudopotential's phase counts the
   poles of its r phi'/phi at rs rather than its nodes, as its wave
   function can gain a single node inside the projectors (Pb p, I s and Nd
   f in the optimizer's runs, where it paired every edge above it one

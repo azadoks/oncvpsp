@@ -92,12 +92,14 @@ summary = [w for w in lines if w[0] == "confine_summary"]
 if len(summary) != 1 or lines[-1][0] != "confine_summary":
     sys.exit("confine_test.sh: not one summary line, last")
 w = summary[0]
-got = [float(x) for x in w[1:4]] + [int(x) for x in w[4:8]] + [float(w[8])]
+got = [float(x) for x in w[1:4]] + [int(x) for x in w[4:8]] + [float(x) for x in w[8:11]]
 count = lambda kind: sum(1 for l in lines if l[0] == kind)
 neg = {(k, e) for k, b in conf.items() for e, v in b["ws"].items() if v[0] < 0.0}
-def worst_cut(tol):
+def worst_cut(tol, top=False):
     cuts = []
     for k, e in neg:
+        if top and e[0] != 3:
+            continue
         c = [c for t, c in conf[k]["ecut"].get(e, []) if t == tol]
         cuts.append(c[0] if c else math.inf)
     return max(cuts, default=math.nan)
@@ -105,9 +107,10 @@ kwalls = {float(l[1]): (float(l[4]), float(l[5])) for l in lines if l[0] == "wal
 want = [max((abs(conf[k]["ws"][e][1] - conf[k]["ws"][e][0]) for k, e in neg), default=math.nan),
         worst_cut(1e-4), worst_cut(1e-5),
         count("ws_missing"), count("ws_extra"), count("ws_paired_off"), count("wall_failed"),
-        max((abs(p - a) for k, (a, p) in kwalls.items() if k > 0), default=math.nan)]
+        max((abs(p - a) for k, (a, p) in kwalls.items() if k > 0), default=math.nan),
+        worst_cut(1e-4, True), worst_cut(1e-5, True)]
 for name, g, x in zip(("max_de", "ecut4", "ecut5", "n_missing", "n_extra", "n_paired_off",
-                       "n_wall_failed", "max_dde"), got, want):
+                       "n_wall_failed", "max_dde", "ecut4_top", "ecut5_top"), got, want):
     # max_dde from the printed changes, each rounded at the 1e-16 of a total energy
     tol = 1e-12 if name == "max_dde" else 1e-12 * abs(x)
     if not (g == x or (math.isnan(g) and math.isnan(x)) or abs(g - x) <= tol):

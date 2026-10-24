@@ -213,13 +213,17 @@ their changes from the free atom, which should agree as closely as the
 pseudopotential is transferable. The `wall_eig` lines give the valence
 eigenvalues. `-w none` leaves the walls out and `-s` leaves out the
 sphere. The last line, `confine_summary max_de ecut4 ecut5 n_missing n_extra
-n_paired_off n_wall_failed max_dde`, gives:
+n_paired_off n_wall_failed max_dde ecut4_top ecut5_top`, gives:
 
 - over the edges below 0, the largest |e_ps - e_ae|, and the largest
   cutoffs at 1e-4 and 1e-5 Ha (Infinity if one does not reach it);
 - the counts of the `ws_missing`, `ws_extra`, `ws_paired_off` and
   `wall_failed` lines;
-- the largest |de_ps - de_ae| of the walls.
+- the largest |de_ps - de_ae| of the walls;
+- the largest cutoffs at 1e-4 and 1e-5 Ha of the top edges below 0 alone.
+  The errors at the bottom and centre have a slow tail from the slope of
+  the potential at `rs`, a property of the boundary condition rather than
+  of the pseudopotential; the top's have none.
 
 A part that is left out gives NaN and -1. The pseudopotential file has carried what the pseudo-atom needs
 (format version 2) since this tool was added, so older `.ps` files must
