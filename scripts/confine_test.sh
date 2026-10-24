@@ -3,11 +3,14 @@
 # edges of the valence bands agree with the all-electron atom's, each radius gives the same as alone,
 # the edges do not depend on the step of the scan that brackets them, and the cutoffs rise as the
 # error falls; in the walls, the free atoms are the run's reference atoms and the pseudo-atom's
-# energy rises as the all-electron atom's does.
+# energy rises as the all-electron atom's does. The summary line is that of the other lines. With
+# MODE ghost (an input with a ghost and a core state in the window) only that its band is ws_core and
+# the ghost is ws_extra.
 #
-# Usage: confine_test.sh FULL_EXE AE_EXE CONFINE_EXE INPUT.dat WORKDIR
+# Usage: confine_test.sh FULL_EXE AE_EXE CONFINE_EXE INPUT.dat WORKDIR [MODE]
 set -euo pipefail
 full=$1; ae=$2; confine=$3; dat=$4; work=$5
+export CONFINE_MODE=${6:-}
 python=${ONCVPSP_PYTHON:-python3}
 mkdir -p "$work"
 cd "$work"
@@ -20,14 +23,20 @@ fi
 "$full" --no-log-derivatives --ps-file atom.ps < "$dat" > full.out
 
 "$confine" -a atom.ae -p atom.ps > conf.out
+if [ "$CONFINE_MODE" = ghost ]; then
+    : > r1.out; : > r2.out; : > r12.out; : > l1.out; : > step.out
+else
 read -r r1 r2 < <(awk '$1 == "ws_r" {print $4}' conf.out | sort -g -u | head -2 | xargs)
 "$confine" -a atom.ae -p atom.ps -r "$r1" -w none > r1.out
 "$confine" -a atom.ae -p atom.ps -r "$r2" -w none > r2.out
 "$confine" -a atom.ae -p atom.ps -r "$r1,$r2" -w none > r12.out
 "$confine" -a atom.ae -p atom.ps -r "$r1,$r2" -l 1 -w none > l1.out
 "$confine" -a atom.ae -p atom.ps -r "$r1,$r2" -e -2.0,2.0,0.137 -w none > step.out
+fi
 
 "$python" - <<'EOF'
+import math
+import os
 import sys
 
 def blocks(path):
@@ -74,6 +83,44 @@ def compare(a, b, tol, what, window=None):
 conf = blocks("conf.out")
 if not conf or not any(b["ws"] for b in conf.values()):
     sys.exit("confine_test.sh: no band edges in the output")
+
+# the summary from the other lines
+lines = [l.split() for l in open("conf.out") if l.strip() and not l.startswith("#")]
+summary = [w for w in lines if w[0] == "confine_summary"]
+if len(summary) != 1 or lines[-1][0] != "confine_summary":
+    sys.exit("confine_test.sh: not one summary line, last")
+w = summary[0]
+got = [float(x) for x in w[1:4]] + [int(x) for x in w[4:8]] + [float(w[8])]
+count = lambda kind: sum(1 for l in lines if l[0] == kind)
+neg = {(k, e) for k, b in conf.items() for e, v in b["ws"].items() if v[0] < 0.0}
+def worst_cut(tol):
+    cuts = []
+    for k, e in neg:
+        c = [c for t, c in conf[k]["ecut"].get(e, []) if t == tol]
+        cuts.append(c[0] if c else math.inf)
+    return max(cuts, default=math.nan)
+kwalls = {float(l[1]): (float(l[4]), float(l[5])) for l in lines if l[0] == "wall"}
+want = [max((abs(conf[k]["ws"][e][1] - conf[k]["ws"][e][0]) for k, e in neg), default=math.nan),
+        worst_cut(1e-4), worst_cut(1e-5),
+        count("ws_missing"), count("ws_extra"), count("ws_paired_off"), count("wall_failed"),
+        max((abs(p - a) for k, (a, p) in kwalls.items() if k > 0), default=math.nan)]
+for name, g, x in zip(("max_de", "ecut4", "ecut5", "n_missing", "n_extra", "n_paired_off",
+                       "n_wall_failed", "max_dde"), got, want):
+    # max_dde from the printed changes, each rounded at the 1e-16 of a total energy
+    tol = 1e-12 if name == "max_dde" else 1e-12 * abs(x)
+    if not (g == x or (math.isnan(g) and math.isnan(x)) or abs(g - x) <= tol):
+        sys.exit(f"confine_test.sh: summary {name} = {g}, from the lines {x}")
+print(f"summary: {' '.join(w[1:])}")
+
+if os.environ["CONFINE_MODE"] == "ghost":
+    core = [l for l in lines if l[0] == "ws_core"]
+    extra = [l for l in lines if l[0] == "ws_extra"]
+    if not core or any(l[1] != "3" or l[4] != "4" for l in core):
+        sys.exit(f"confine_test.sh: the core 4f band is not ws_core: {core}")
+    if not extra or count("ws_missing"):
+        sys.exit(f"confine_test.sh: no ghost edge (ws_extra), or missing edges")
+    print(f"{len(core)} core-state edges, {len(extra)} pseudopotential-only edges")
+    sys.exit(0)
 for k, b in conf.items():
     if b["missing"]:
         sys.exit(f"confine_test.sh: edges with no pseudopotential partner at {k}: {b['missing']}")

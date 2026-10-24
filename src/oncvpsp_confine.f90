@@ -44,6 +44,17 @@
 !   ws_conv l ikap edge n ecut err        (--table: every basis size)
 !   ws_missing l ikap edge n e_ae         (no pseudopotential root of that
 !                                          phase in the scan)
+!   ws_core l ikap edge n e_ae            (the same, the band of a core
+!                                          state, which the
+!                                          pseudopotential leaves out)
+!   ws_paired_off l ikap edge n e_ps      (a pseudopotential edge of
+!                                          another phase, nearer the
+!                                          all-electron one than its
+!                                          partner)
+!   ws_extra l ikap edge e_ps             (a pseudopotential edge with no
+!                                          all-electron partner: a state
+!                                          the all-electron atom has not,
+!                                          such as a ghost)
 ! for l=0..3 (or those of --channels) and each kappa of l, ikap 1 for
 ! j=l+1/2 and 2 for j=l-1/2.
 !
@@ -57,6 +68,14 @@
 !   wall_eig k n l ikap e_ae e_ps         (the valence eigenvalues, Ha)
 !   wall_failed k atom                    (atom ae or ps: no
 !                                          self-consistent solution)
+! and last a summary of both:
+!   confine_summary max_de ecut4 ecut5 n_missing n_extra n_paired_off
+!                   n_wall_failed max_dde
+! max_de the largest |e_ps - e_ae| of the edges below 0 (Ha), ecut4 and
+! ecut5 the largest cutoffs of those edges at 1e-4 and 1e-5 Ha (Infinity
+! if one does not reach it), the counts of the ws_missing, ws_extra,
+! ws_paired_off and wall_failed lines, and max_dde the largest
+! |de_ps - de_ae| of the walls (Ha); NaN and -1 for the parts left out.
 
  program oncvpsp_confine
  use constants_m, only: dp, pi
@@ -69,6 +88,8 @@
  use relativity_m, only: set_relativity
  use constants_m, only: mxstate, mxprj, mxl, mxlin
  use build_info_m, only: write_build_info
+ use, intrinsic :: ieee_arithmetic, only: ieee_value, ieee_quiet_nan, &
+&                                         ieee_positive_inf
  implicit none
 
 !> relative tolerance of the comparison of the two files' meshes and
@@ -125,6 +146,16 @@
 !> the solver, the point of the scan and the phase of edges' root
  type(phsft_t), pointer :: psol=>null()
  real(dp) :: ph_e0,ph_tgt,ph_shift
+!> the partner of each all-electron edge (0 for none), and whether each
+!> pseudopotential edge is one
+ integer :: jpair(mxedge)
+ logical :: used(mxedge)
+!> the summary: the counts of the lines, the largest |e_ps - e_ae| and
+!> cutoffs (1e-4, 1e-5 Ha) of the edges below 0, whether one of them does
+!> not reach it, and the largest |de_ps - de_ae| of the walls (-1 for none)
+ integer :: nmiss,nextra,noff,nwfail
+ real(dp) :: smax_de,scut(2),sdde,ec
+ logical :: sinf(2)
 
  ae_filename=''
  ps_filename=''
@@ -137,6 +168,14 @@
  kwall(1:nk)=kdef(:)
  ecutmax=200.0d0
  chan(:)=.true.
+ nmiss=-1
+ nextra=-1
+ noff=-1
+ nwfail=-1
+ smax_de=-1.0d0
+ scut(:)=-1.0d0
+ sinf(:)=.false.
+ sdde=-1.0d0
  nq=0
  iarg=1
  do while(iarg<=command_argument_count())
@@ -304,6 +343,12 @@
    write(6,'(a)') '# ws_floor l ikap edge n ecut(Ha) err(Ha)'
    if(table) write(6,'(a)') '# ws_conv l ikap edge n ecut(Ha) err(Ha)'
    write(6,'(a)') '# ws_missing l ikap edge n e_ae(Ha)'
+   write(6,'(a)') '# ws_core l ikap edge n e_ae(Ha)'
+   write(6,'(a)') '# ws_paired_off l ikap edge n e_ps(Ha)'
+   write(6,'(a)') '# ws_extra l ikap edge e_ps(Ha)'
+   nmiss=0
+   nextra=0
+   noff=0
    do l1=1,4
      ll=l1-1
      if(.not. chan(ll)) cycle
@@ -338,35 +383,72 @@
          call edges(sae,shae(:,1),0.0d0,nae,eae,kae,edae)
          call edges(sps,shps(:,1),thal,nps,eps,kps,edps)
 
-! every all-electron edge in the window, lowest first
+! every all-electron edge, lowest first, and its partner: the nearest
+! pseudopotential edge of the same phase, over the whole scan, so that an
+! edge in the window whose partner is outside it is not without one
          call sort_edges(nae,eae,kae,edae)
+         call sort_edges(nps,eps,kps,edps)
+         used(1:nps)=.false.
+         do ie=1,nae
+           jpair(ie)=0
+           do ii=1,nps
+             if(kps(ii)/=kae(ie) .or. edps(ii)/=edae(ie)) cycle
+             if(jpair(ie)==0) then
+               jpair(ie)=ii
+             else if(abs(eps(ii)-eae(ie))<abs(eps(jpair(ie))-eae(ie))) then
+               jpair(ie)=ii
+             end if
+           end do
+           if(jpair(ie)>0) used(jpair(ie))=.true.
+         end do
+
+! those in the window
          do ie=1,nae
            if(eae(ie)<emin .or. eae(ie)>emax) cycle
            iedge=edae(ie)
            nn=n_of(eae(ie))
-           je=0
-           do ii=1,nps
-             if(kps(ii)/=kae(ie) .or. edps(ii)/=iedge) cycle
-             if(je==0) then
-               je=ii
-             else if(abs(eps(ii)-eae(ie))<abs(eps(je)-eae(ie))) then
-               je=ii
-             end if
-           end do
+           je=jpair(ie)
            if(je==0) then
-             write(6,'(a,4i4,1p,e24.16)') 'ws_missing',ll,ikap,iedge,nn, &
-&                 eae(ie)
+! the band of a core state, which the pseudopotential leaves out
+             if(any(na(1:nc)==nn .and. la(1:nc)==ll)) then
+               write(6,'(a,4i4,1p,e24.16)') 'ws_core',ll,ikap,iedge,nn, &
+&                   eae(ie)
+             else
+               write(6,'(a,4i4,1p,e24.16)') 'ws_missing',ll,ikap,iedge, &
+&                   nn,eae(ie)
+               nmiss=nmiss+1
+             end if
              cycle
            end if
            write(6,'(a,4i4,1p,2e24.16)') 'ws',ll,ikap,iedge,nn,eae(ie),eps(je)
+! an edge of another phase nearer to it than its partner: the phases pair
+! a band of one atom with another band of the other
+           do ii=1,nps
+             if(ii==je .or. edps(ii)/=iedge) cycle
+             if(abs(eps(ii)-eae(ie))<abs(eps(je)-eae(ie))) then
+               write(6,'(a,4i4,1p,e24.16)') 'ws_paired_off',ll,ikap,iedge, &
+&                   nn,eps(ii)
+               noff=noff+1
+               exit
+             end if
+           end do
+           if(eae(ie)<0.0d0) smax_de=max(smax_de,abs(eps(je)-eae(ie)))
 
 ! the cutoff of the pseudopotential's state
            call ws_convergence(ll,iedge,rs,sqrt(2.0d0*ecutmax),rr,mmax, &
 &               pf%vloc(:,ikap),pf%vlocpw,nvkb,pf%vkbpw(1:nvkb,l1,ikap), &
 &               pf%evkb(1:nvkb,l1,ikap),eps(je),nb,ecut,err,ierr)
-           if(ierr/=0) cycle
+           if(ierr/=0) then
+             if(eae(ie)<0.0d0) sinf(:)=.true.
+             cycle
+           end if
            do itol=1,size(tols)
-             call cutoff_at(tols(itol))
+             call cutoff_at(tols(itol),ec)
+! the summary's cutoffs, at 1e-4 and 1e-5 Ha
+             if(eae(ie)<0.0d0 .and. (itol==3 .or. itol==4)) then
+               if(ec<0.0d0) sinf(itol-2)=.true.
+               scut(itol-2)=max(scut(itol-2),ec)
+             end if
            end do
            write(6,'(a,4i4,1p,2e24.16)') 'ws_floor',ll,ikap,iedge,nn, &
 &               ecut(nb),err(nb)
@@ -377,6 +459,14 @@
 &                   ecut(ii),err(ii)
              end do
            end if
+         end do
+
+! the pseudopotential's edges in the window that no all-electron edge
+! has as its partner
+         do ii=1,nps
+           if(used(ii) .or. eps(ii)<emin .or. eps(ii)>emax) cycle
+           write(6,'(a,3i4,1p,e24.16)') 'ws_extra',ll,ikap,edps(ii),eps(ii)
+           nextra=nextra+1
          end do
          call phsft_free(sae)
          call phsft_free(sps)
@@ -417,6 +507,7 @@
    write(6,'(a)') '# wall_eig k n l ikap e_ae(Ha) e_ps(Ha)'
    write(6,'(a)') '# wall_failed k atom'
    write(6,'(a,1p,e24.16)') 'wall_r0',r0
+   nwfail=0
    do ik=0,nk
      do ii=1,mmax
        vext(ii)=wall(kwall(ik),rr(ii)-r0)
@@ -442,9 +533,13 @@
        write(6,'(a)') 'oncvpsp_confine: ERROR the free atom failed'
        error stop 1
      end if
-     if(ierrae/=0 .or. ierrps/=0) cycle
+     if(ierrae/=0 .or. ierrps/=0) then
+       nwfail=nwfail+1
+       cycle
+     end if
      write(6,'(a,1p,5e24.16)') 'wall',kwall(ik),etae(ik),etps(ik), &
 &         etae(ik)-etae(0),etps(ik)-etps(0)
+     if(ik>0) sdde=max(sdde,abs(etps(ik)-etps(0)-etae(ik)+etae(0)))
      do kk=1,nv
        ll=la(nc+kk)
        do ikap=1,merge(1,nkap,ll==0)
@@ -455,6 +550,12 @@
    end do
    deallocate(vext,rhoc,rhoa,vi,rhops,vpuns,eigae,eigps)
  end if
+
+ write(6,'(2a)') '# confine_summary max_de(Ha) ecut4(Ha) ecut5(Ha)', &
+&     ' n_missing n_extra n_paired_off n_wall_failed max_dde(Ha)'
+ write(6,'(a,1p,3e24.16,4i6,e24.16)') 'confine_summary',summ(smax_de,.false.), &
+&     summ(scut(1),sinf(1)),summ(scut(2),sinf(2)),nmiss,nextra,noff,nwfail, &
+&     summ(sdde,.false.)
 
  deallocate(shae,shps,egrid,ishift)
  call ps_file_free(pf)
@@ -586,12 +687,14 @@
  deallocate(uu,up)
  end function n_of
 
- subroutine cutoff_at(tol)
-!! the cutoff at which the error falls to tol: between the first basis
-!! size below it and the one before, linear in ln(err) against the cutoff
+ subroutine cutoff_at(tol,ec)
+!! the cutoff ec at which the error falls to tol (-1 if it does not):
+!! between the first basis size below it and the one before, linear in
+!! ln(err) against the cutoff
  real(dp), intent(in) :: tol
- real(dp) :: ec
+ real(dp), intent(out) :: ec
  integer :: jj
+ ec=-1.0d0
  do jj=1,nb
    if(err(jj)==0.0d0 .and. jj<nb) cycle
    if(err(jj)>=tol) cycle
@@ -607,6 +710,19 @@
    return
  end do
  end subroutine cutoff_at
+
+ real(dp) function summ(xx,inf)
+!! a value of the summary: Infinity if inf, NaN if xx < 0 (none)
+ real(dp), intent(in) :: xx
+ logical, intent(in) :: inf
+ if(inf) then
+   summ=ieee_value(1.0d0,ieee_positive_inf)
+ else if(xx<0.0d0) then
+   summ=ieee_value(1.0d0,ieee_quiet_nan)
+ else
+   summ=xx
+ end if
+ end function summ
 
  subroutine write_help()
 !! the usage: what the program does and its options
@@ -631,6 +747,24 @@
  write(6,'(a)') 'if not fully relativistic), 2 for j = l-1/2. ws_ecut for the'
  write(6,'(a)') 'errors 1e-2 to 1e-6 Ha that are reached; ws_missing for an'
  write(6,'(a)') 'all-electron edge with no pseudopotential partner.'
+ write(6,'(a)') '  ws_core l ikap edge n e_ae(Ha)'
+ write(6,'(a)') '  ws_paired_off l ikap edge n e_ps(Ha)'
+ write(6,'(a)') '  ws_extra l ikap edge e_ps(Ha)'
+ write(6,'(a)') 'ws_core for one that is a core state''s band, ws_paired_off'
+ write(6,'(a)') 'for a pseudopotential edge of another phase nearer it than'
+ write(6,'(a)') 'its partner, ws_extra for a pseudopotential edge with no'
+ write(6,'(a)') 'all-electron partner (a ghost). Then the walls:'
+ write(6,'(a)') '  wall_r0 r0(bohr)'
+ write(6,'(a)') '  wall k etot_ae etot_ps de_ae de_ps     (Ha, Ha/bohr**2)'
+ write(6,'(a)') '  wall_eig k n l ikap e_ae(Ha) e_ps(Ha)'
+ write(6,'(a)') '  wall_failed k ae|ps'
+ write(6,'(a)') 'and last:'
+ write(6,'(a)') '  confine_summary max_de ecut4 ecut5 n_missing n_extra'
+ write(6,'(a)') '                  n_paired_off n_wall_failed max_dde'
+ write(6,'(a)') 'the largest |e_ps - e_ae| and the largest cutoffs at 1e-4'
+ write(6,'(a)') 'and 1e-5 Ha of the edges below 0 (Infinity if one does not'
+ write(6,'(a)') 'reach it), the counts of those lines, and the largest'
+ write(6,'(a)') '|de_ps - de_ae| of the walls; NaN and -1 for a part left out.'
  write(6,'(a)') ''
  write(6,'(a)') 'Options:'
  write(6,'(a)') '  -h, --help'

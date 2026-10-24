@@ -380,6 +380,11 @@ foreach (confine_test IN ITEMS "sr:14_Si" "nr:14_Si" "r:03_Li")
         "${data}/${test_name}.dat" "${CMAKE_CURRENT_BINARY_DIR}/confine_${rel}_${test_name}")
     oncvpsp_uses_run(confine_${rel}_${test_name} ${rel} ${test_name} AE)
 endforeach ()
+# a core state's band (4f) and a pseudopotential-only state (an f ghost) in the window
+oncvpsp_test(confine_sr_60_Nd_GHOST split confine_test.sh
+    $<TARGET_FILE:oncvpspsr> $<TARGET_FILE:oncvpspsr_ae> $<TARGET_FILE:oncvpsp_confine>
+    "${data}/60_Nd_GHOST.dat" "${CMAKE_CURRENT_BINARY_DIR}/confine_sr_60_Nd_GHOST" ghost)
+oncvpsp_uses_run(confine_sr_60_Nd_GHOST sr 60_Nd_GHOST AE)
 
 # Damaged or mismatched all-electron data files: oncvpsp_ps.x must stop with a message naming the
 # problem, but accept differences within round-off (see scripts/ae_file_error_test.sh)

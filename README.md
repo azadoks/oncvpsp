@@ -193,7 +193,12 @@ cutoff (`-c`, by default 200 Ha), `-t` prints the error at every basis
 size (`ws_conv`), and `-l` restricts the angular momenta. The edges come
 from the roots of monotonic phases (atan(r phi'/phi) less pi per node
 inside `rs`), so they do not depend on the step `de` of the scan that
-brackets them.
+brackets them. Each all-electron edge's partner is the pseudopotential edge
+of the same phase. What does not pair is named: `ws_missing` for an
+all-electron edge with no partner, `ws_core` for one that is the band of a
+core state, `ws_extra` for a pseudopotential edge with no all-electron
+partner (a ghost in the window), and `ws_paired_off` for a pseudopotential
+edge of another phase nearer than the partner.
 
 It then compresses the atom. It solves the self-consistent all-electron
 atom and pseudo-atom of the reference configuration in a smooth wall,
@@ -203,7 +208,16 @@ and 0.1 Ha/bohr^2). The `wall` lines give the two total energies and
 their changes from the free atom, which should agree as closely as the
 pseudopotential is transferable. The `wall_eig` lines give the valence
 eigenvalues. `-w none` leaves the walls out and `-s` leaves out the
-sphere. The pseudopotential file has carried what the pseudo-atom needs
+sphere. The last line, `confine_summary max_de ecut4 ecut5 n_missing n_extra
+n_paired_off n_wall_failed max_dde`, gives:
+
+- over the edges below 0, the largest |e_ps - e_ae|, and the largest
+  cutoffs at 1e-4 and 1e-5 Ha (Infinity if one does not reach it);
+- the counts of the `ws_missing`, `ws_extra`, `ws_paired_off` and
+  `wall_failed` lines;
+- the largest |de_ps - de_ae| of the walls.
+
+A part that is left out gives NaN and -1. The pseudopotential file has carried what the pseudo-atom needs
 (format version 2) since this tool was added, so older `.ps` files must
 be written again.
 

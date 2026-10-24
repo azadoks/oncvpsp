@@ -280,8 +280,17 @@ precision.
   `aeatom` and `psatom` take the wall as an argument, which is zero in
   the run, and the pseudopotential file (format version 2) carries the
   unscreened local potential, the valence and model-core densities and
-  iexc. Nothing in the run's output changes. Commit: 7041579 (the
-  sphere).
+  iexc. Nothing in the run's output changes. An edge's partner is the
+  pseudopotential edge of the same phase, and the output names what does
+  not pair: the band of a core state (`ws_core`, such as Nd 4f), a
+  pseudopotential edge with no all-electron partner (`ws_extra`, a ghost
+  in the window: an Nd f state at +0.051 Ha that vanishes outside rc),
+  and an edge of another phase nearer than the partner
+  (`ws_paired_off`). A last `confine_summary` line gives the largest
+  |e_ps - e_ae| and cutoffs at 1e-4 and 1e-5 Ha of the edges below 0,
+  the counts of those lines and of failed walls, and the largest
+  |de_ps - de_ae| of the walls. Commits: 7041579 (the sphere), 3eb250c
+  (the walls).
 - **Well-state diagnostics** (`run_diag`) take the state's index from
   the pseudo-atom at epa rather than the all-electron node count, which
   can differ from it (see the eigenvalue index under Numerics). Commit:
