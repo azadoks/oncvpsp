@@ -437,6 +437,12 @@ precision.
   iterations only lead to the target's start. This moves the test
   configurations' energies by about 1e-13 Ha, within the SCF's
   tolerance, and saves 4 to 13% of a run. Commit: 3b60ff4.
+  Like the all-electron SCF, it accepts a residual stalled at its
+  round-off floor, with the same warning (`ae_converged`). Li with an s
+  ghost almost bound stalled at 1.4-3e-12 Ha from the first iteration
+  and failed after 100, in the test configurations and the confined
+  atom's free atom. No test input reaches that floor, so their outputs
+  are unchanged.
 - **Repeated all-electron SCFs reused.** The all-electron atom depends
   only on its states and occupations. Test configuration 0 repeats the
   reference at both levels, and a configuration that only removes

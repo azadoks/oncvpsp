@@ -85,9 +85,9 @@
  integer :: nin,mch
  real(dp) :: amesh,al
  real(dp) :: dr,eeel,eexc,et,emin,emax,rl,rl1,sd,sn,sls,eeig
- real(dp) :: thl,vn,zval,fj,res,wt
+ real(dp) :: thl,vn,zval,fj,res,wt,resbest
  real(dp) :: fa(mxstate)
- integer :: ii,jj,l1,itarget,nprj
+ integer :: ii,jj,l1,itarget,nprj,nflat
  integer :: ikap,kap,ll,mkap
  logical :: convg,walled
  real(dp) :: wext
@@ -250,9 +250,11 @@
    call vout(1,rho,rhoc,vo,vxc,zval,eeel,eexc,rr,mmax,iexc)
 
 ! converged when no eigenvalue has moved by more than tolscf and the
-! screening potential is self-consistent to tolscf
+! screening potential is self-consistent to tolscf, or its residual has
+! stopped falling at its round-off floor (ae_converged): 1.4-3e-12 for
+! Li with a near-bound s ghost, where 1e-12 was never reached
    call ae_residual(rho,vi,vo,zval,rr,mmax,res)
-   if(it<2 .or. res>tolscf) convg=.false.
+   call ae_converged(it,res,tolscf,resbest,nflat,convg)
 
 ! generate next iteration using d. g. anderson''s
 ! method, once the previous iteration was at the target occupations too
