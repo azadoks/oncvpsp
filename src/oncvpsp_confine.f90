@@ -117,6 +117,10 @@
 !> the scan of the pseudopotential's phases runs this far (Ha) beyond the
 !> energies of the all-electron edges, for their partners
  real(dp), parameter :: emargin=1.0d0
+!> the points and spacing (Ha) of the phases' alignment about the
+!> reference energy
+ integer, parameter :: nanch=21
+ real(dp), parameter :: danch=0.05d0
 !> the default strengths of the wall (Ha/bohr**2)
  real(dp), parameter :: kdef(3)=[0.01d0,0.03d0,0.1d0]
 !> the onset of the wall, x**2 exp(-dwall/x): smooth at r0, so that outwf_m
@@ -133,10 +137,11 @@
  integer :: lsel(4)
  integer :: kae(mxedge),kps(mxedge),edae(mxedge),edps(mxedge)
  real(dp) :: zz,c_light_f,emin,emax,de,ecutmax,rcmax,rs,amesh,ee(3)
- real(dp) :: rq(mxq),eae(mxedge),eps(mxedge),thal
+ real(dp) :: rq(mxq),eae(mxedge),eps(mxedge),thal,ex,tt
  real(dp), allocatable :: rr(:),vfull(:),shae(:,:),shps(:,:),ecut(:),err(:)
  real(dp), allocatable :: egrid(:)
  integer, allocatable :: ishift(:)
+ integer :: ianch(nanch)
  logical :: given_radii,given_energies,table,sphere,given_r0
  integer :: nk,nc,nv,iexc,ik,ierrae,ierrps,kk,itae,itps,nkap
  integer :: na(mxstate),la(mxstate),natp(mxstate),latp(mxstate),nav(4)
@@ -376,12 +381,19 @@
          write(6,'(a,2i4,1p,e24.16)') 'ws_r',ll,ikap,rs
 
 ! the phases at rs on the grid, the pseudopotential's shifted by the
-! multiple of pi by which they differ from the all-electron ones at most
-! energies of the grid: they agree beyond the core radii but where they
-! turn steeply, at bound states, where a small difference in their
-! energies is a difference by pi in the phases (a narrow band, such as a
-! semicore state's in a large sphere, where the reference energy of
-! phsft_pair can be)
+! multiple of pi by which they differ from the all-electron ones near the
+! first projector's reference energy, where the pseudopotential matches
+! the all-electron log derivative by construction: the core states of l
+! below it, and a ghost below it too.  They agree beyond the core radii
+! but where they turn steeply, at bound states, where a small difference
+! in their energies is a difference by pi in the phases (a narrow band,
+! such as a semicore state's in a large sphere, where the reference
+! energy of phsft_pair can be): the most frequent multiple on +-0.5 Ha
+! of it.  Without projectors (l = lloc or beyond lmax), the most frequent
+! on the grid.  Over the grid of a wide window (epsh1 -12 Ha for Cs
+! sp), the multiple below a core band and that above several Ha, where
+! the pseudopotential no longer follows the atom, outnumbered the right
+! one and paired each band with the next one down
          call phsft_ae_init(irel,ll,kap,rr,vfull,zz,mmax,1,rq(iq:iq),sae)
          call phsft_ps_init(ll,nvkb,rr,pf%vloc(:,ikap),pf%vlocpw, &
 &                           pf%vkbpw(1:nvkb,l1,ikap),pf%evkb(1:nvkb,l1,ikap), &
@@ -400,7 +412,20 @@
            shps(ii,1)=phase_of(egrid(ii))
            ishift(ii)=nint((shae(ii,1)-shps(ii,1))/pi)
          end do
-         thal=pi*dble(majority(ishift))
+         if(nvkb>0) then
+           do ii=1,nanch
+             ex=pf%epa(l1,ikap)+danch*dble(ii-(nanch+1)/2)
+             psol=>sae
+             ph_poles=.false.
+             tt=phase_of(ex)
+             psol=>sps
+             ph_poles=.true.
+             ianch(ii)=nint((tt-phase_of(ex))/pi)
+           end do
+           thal=pi*dble(majority(ianch))
+         else
+           thal=pi*dble(majority(ishift))
+         end if
          shps(:,1)=shps(:,1)+thal
 
          call edges(sae,.false.,shae(:,1),0.0d0,nae,eae,kae,edae)

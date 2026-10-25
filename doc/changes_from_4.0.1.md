@@ -298,9 +298,17 @@ precision.
   function can gain a single node inside the projectors (Pb p, I s and Nd
   f in the optimizer's runs, where it paired every edge above it one
   band off). The poles are the eigenvalues of the sphere with phi(rs) = 0
-  (`ws_eigenvalues`), each refined to the root of u(rs). Commits: 7041579
-  (the sphere), 3eb250c (the walls), 5c91c31 (the unpaired edges and the
-  summary).
+  (`ws_eigenvalues`), each refined to the root of u(rs). The two phases
+  are aligned by the multiple of pi they differ by about the first
+  projector's reference energy, where the pseudopotential matches the
+  all-electron log derivative by construction (on the whole scan only
+  for a channel without projectors). The most frequent multiple of the
+  whole scan had paired every band with the next one down in a window
+  wide enough to take in a core band and the energies of several Ha
+  where the pseudopotential no longer follows the atom (the PseudoDojo
+  inputs' -12 Ha: max |e_ps - e_ae| 7.3 Ha for Cs, 3.6e-4 Ha now).
+  Commits: 7041579 (the sphere), 3eb250c (the walls), 5c91c31 (the
+  unpaired edges and the summary).
 - **Well-state diagnostics** (`run_diag`) take the state's index from
   the pseudo-atom at epa rather than the all-electron node count, which
   can differ from it (see the eigenvalue index under Numerics). Commit:

@@ -197,8 +197,11 @@ brackets them. The pseudopotential's phase counts the poles of its
 r phi'/phi at `rs` below the energy rather than its nodes, since its wave
 function can gain a node inside the projectors. The poles are the
 eigenvalues of the sphere with phi(rs) = 0 in the same basis as the cutoffs,
-each refined to the root of u(rs). Each all-electron edge's partner is the
-pseudopotential edge of the same phase. What does not pair is named: `ws_missing` for an
+each refined to the root of u(rs). The two phases are aligned by the multiple
+of pi they differ by about the first projector's reference energy, where the
+pseudopotential matches the atom by construction, so a window that takes in core
+bands or energies far above the valence does not shift the pairing. Each
+all-electron edge's partner is the pseudopotential edge of the same phase. What does not pair is named: `ws_missing` for an
 all-electron edge with no partner, `ws_core` for one that is the band of a
 core state, `ws_extra` for a pseudopotential edge with no all-electron
 partner (a ghost in the window), and `ws_paired_off` for a pseudopotential

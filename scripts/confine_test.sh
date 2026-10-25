@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Wigner-Seitz sphere of oncvpsp_confine.x from the all-electron and pseudopotential files: the band
 # edges of the valence bands agree with the all-electron atom's, each radius gives the same as alone,
-# the edges do not depend on the step of the scan that brackets them, and the cutoffs rise as the
-# error falls; in the walls, the free atoms are the run's reference atoms and the pseudo-atom's
+# the edges do not depend on the step of the scan that brackets them or on a window that takes in
+# core bands and energies where the pseudopotential no longer follows the atom (which once paired
+# each band with the next one down), and the cutoffs rise as the error falls; in the walls, the free atoms are the run's reference atoms and the pseudo-atom's
 # energy rises as the all-electron atom's does. The summary line is that of the other lines. With
 # MODE ghost (60_Nd_GHOST) only that the band of the core 4f is ws_core, that the window has no
 # pseudopotential-only edge (its f wave function gains a node inside the projectors, which once made
@@ -34,6 +35,7 @@ read -r r1 r2 < <(awk '$1 == "ws_r" {print $4}' conf.out | sort -g -u | head -2 
 "$confine" -a atom.ae -p atom.ps -r "$r1,$r2" -w none > r12.out
 "$confine" -a atom.ae -p atom.ps -r "$r1,$r2" -l 1 -w none > l1.out
 "$confine" -a atom.ae -p atom.ps -r "$r1,$r2" -e -2.0,2.0,0.137 -w none > step.out
+"$confine" -a atom.ae -p atom.ps -r "$r1,$r2" -e -12.0,13.0,0.1 -w none > wide.out
 fi
 
 "$python" - <<'EOF'
@@ -150,6 +152,7 @@ r12 = blocks("r12.out")
 compare(r12, {**blocks("r1.out"), **blocks("r2.out")}, 1e-12, "two radii against each alone")
 compare(blocks("l1.out"), {k: v for k, v in r12.items() if k[0] == 1}, 0.0, "l = 1 against every l")
 compare(blocks("step.out"), r12, 1e-11, "a scan step of 0.137 Ha against the input's", (-1.9, 1.9))
+compare(blocks("wide.out"), r12, 1e-11, "a window of -12..13 Ha against the input's", (-1.9, 1.9))
 
 # the atom in walls: the free atoms are the run's reference, the energy rises with the wall,
 # and the pseudo-atom's rise is the all-electron atom's
