@@ -82,6 +82,7 @@
  use pieces_m, only: piecewise_t
  use outwf_m, only: outwf_t, outwf_setup, outwf_solve, outwf_free
  use quad_m, only: log_norm
+ use inward2_m, only: inward2
  implicit none
 
 !Input variables
@@ -107,7 +108,7 @@
  real(dp) :: xkap,xmch
  real(dp) :: uo(-match_k-1:match_k),upo(-match_k-1:match_k)
  real(dp) :: ww(-match_k-1:match_k),ss(-match_k-1:match_k)
- integer :: ii,it,nin,nint,neig,lo,hi
+ integer :: ii,nin,nint,neig,lo,hi
  logical :: room,toomany
  type(outwf_t) :: ow
 
@@ -225,16 +226,7 @@
      end do
 
 ! integrate inward
-
-     do ii=nin,lo+1,-1
-       uu(ii-1)=uu(ii)+aei(up,ii)
-       up(ii-1)=up(ii)+aei(upp,ii)
-       do it=1,2
-         upp(ii-1)=al*up(ii-1)+cf(ii-1)*uu(ii-1)
-         up(ii-1)=up(ii)+aii(upp,ii)
-         uu(ii-1)=uu(ii)+aii(up,ii)
-       end do
-     end do
+     call inward2(al,cf,mmax,nin,lo,uu,up,upp)
 
 ! perturbation theory for the energy shift at each point of the window,
 ! u_o (u'_o - u'_i u_o/u_i)/2 for the normalized function, averaged with
@@ -309,9 +301,4 @@
  call outwf_free(ow)
  deallocate(upp,cf)
  return
-
- contains
-
- include 'adams.inc'
-
  end subroutine lschvkbb_tol

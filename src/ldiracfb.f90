@@ -39,7 +39,7 @@
 !!             continuous turning point, match_m)
 
  use constants_m, only: dp
- use boundsolve_m, only: bs_converged, bs_correct, bs_bisect
+ use boundsolve_m, only: bs_converged, bs_correct, bs_bisect, bs_box_energy
  use relativity_m, only: c_light
  use match_m, only: match_k, match_point, match_weights, match_blend
  use dirac_m, only: dirac_outward
@@ -353,41 +353,30 @@
  subroutine boxstate()
 
 !! the state with nn-ll-1 nodes and a large component zero at rr(mmax),
-!! above elow (the box state of RadialAtomicSolvers.jl): the outward
-!! solution over the whole mesh gains a node each time it crosses zero
-!! at rr(mmax), so the energy is bisected on its node count
+!! above elow (the box state of RadialAtomicSolvers.jl)
 
- real(dp) :: eblo,ebhi
- integer :: nb,jj
+ real(dp) :: eb
+ integer :: nb
 
- eblo=elow
- ebhi=etop+1.0d0
- do jj=1,60
-   ee=ebhi
-   call outward(mmax,nb)
-   if(nb>nn-ll-1) exit
-   eblo=ebhi
-   ebhi=etop+2.0d0*(ebhi-etop)
- end do
-
- do jj=1,200
-   ee=0.5d0*(eblo+ebhi)
-   call outward(mmax,nb)
-   if(nb>nn-ll-1) then
-     ebhi=ee
-   else
-     eblo=ee
-   end if
-   if(ebhi-eblo<max(abs(ee),0.2d0)*eps) exit
- end do
-
- ee=eblo
+ call bs_box_energy(elow,etop,nn-ll-1,eps,box_nodes,eb)
+ ee=eb
  call outward(mmax,nb)
  call normalize(mmax)
  mch=mmax
 
  return
  end subroutine boxstate
+
+ integer function box_nodes(e)
+
+!! the node count of the outward solution over the whole mesh at e
+
+ real(dp), intent(in) :: e
+
+ ee=e
+ call outward(mmax,box_nodes)
+ return
+ end function box_nodes
 
  include 'adams.inc'
 

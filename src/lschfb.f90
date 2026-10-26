@@ -41,9 +41,10 @@
 !! @param irel  0 non-relativistic, 1 scalar-relativistic
 
  use constants_m, only: dp
- use boundsolve_m, only: bs_converged, bs_correct, bs_bisect
+ use boundsolve_m, only: bs_converged, bs_correct, bs_bisect, bs_box_energy
  use relativity_m, only: c_light
- use sr_flux_m, only: sr_gamma, sr_flux_coefs, sr_outward
+ use sr_flux_m, only: sr_gamma, sr_flux_coefs, sr_outward, sr_inward, &
+&                     sr_derivs
  use match_m, only: match_k, match_point, match_weights, match_blend
  use quad_m, only: log_norm
  implicit none
@@ -73,7 +74,7 @@
  real(dp) :: uo(-match_k-1:match_k),qo(-match_k-1:match_k)
  real(dp) :: upo(-match_k-1:match_k),qpo(-match_k-1:match_k)
  real(dp) :: ww(-match_k-1:match_k),ss(-match_k-1:match_k)
- integer :: ii,it,nint,node,nin,lo,hi
+ integer :: ii,nint,node,nin,lo,hi
  logical :: polish
 
  real(dp), allocatable :: qq(:),qp(:),cf(:),pm(:),qm(:),xm(:),r2(:)
@@ -221,21 +222,11 @@
      do ii=nin,nin+4
        uu(ii)=exp(-xkap*(rr(ii)-rr(nin)))
        qq(ii)=-(xkap+1.0d0/rr(ii))*uu(ii)/xm(ii)
-       call derivs_at(ii)
+       call sr_derivs(al,pm,qm,mmax,uu,up,qq,qp,ii)
      end do
 
 ! integrate inward
-
-     do ii=nin,lo+1,-1
-       uu(ii-1)=uu(ii)+aei(up,ii)
-       qq(ii-1)=qq(ii)+aei(qp,ii)
-       do it=1,2
-         call derivs_at(ii-1)
-         uu(ii-1)=uu(ii)+aii(up,ii)
-         qq(ii-1)=qq(ii)+aii(qp,ii)
-       end do
-       call derivs_at(ii-1)
-     end do
+     call sr_inward(al,pm,qm,mmax,nin,lo,uu,up,qq,qp)
 
 ! perturbation theory for the energy shift at each point of the window,
 ! u_o (q_o - q_i u_o/u_i)/2 for the normalized function, averaged with
@@ -361,36 +352,13 @@
  subroutine boxstate()
 
 !! the state with nn-ll-1 nodes and u=0 at rr(mmax), above elow (the
-!! box state of RadialAtomicSolvers.jl): the outward solution over the
-!! whole mesh gains a node each time u(mmax) crosses zero, so the
-!! energy is bisected on its node count
+!! box state of RadialAtomicSolvers.jl)
 
- real(dp) :: eblo,ebhi
- integer :: nb,kk
+ real(dp) :: eb
+ integer :: nb
 
- eblo=elow
- ebhi=etop+1.0d0
- do kk=1,60
-   call coefs(ebhi)
-   call outward(mmax,nb)
-   if(nb>nn-ll-1) exit
-   eblo=ebhi
-   ebhi=etop+2.0d0*(ebhi-etop)
- end do
-
- do kk=1,200
-   ee=0.5d0*(eblo+ebhi)
-   call coefs(ee)
-   call outward(mmax,nb)
-   if(nb>nn-ll-1) then
-     ebhi=ee
-   else
-     eblo=ee
-   end if
-   if(ebhi-eblo<max(abs(ee),0.2d0)*eps) exit
- end do
-
- ee=eblo
+ call bs_box_energy(elow,etop,nn-ll-1,eps,box_nodes,eb)
+ ee=eb
  call coefs(ee)
  call outward(mmax,nb)
  call normalize(mmax)
@@ -399,18 +367,15 @@
  return
  end subroutine boxstate
 
- subroutine derivs_at(jj)
+ integer function box_nodes(e)
 
-!! derivatives on the mesh index of uu and qq at the point jj
+!! the node count of the outward solution over the whole mesh at e
 
- integer, intent(in) :: jj
+ real(dp), intent(in) :: e
 
- up(jj)=al*uu(jj)+pm(jj)*qq(jj)
- qp(jj)=qm(jj)*uu(jj)-al*qq(jj)
-
+ call coefs(e)
+ call outward(mmax,box_nodes)
  return
- end subroutine derivs_at
-
- include 'adams.inc'
+ end function box_nodes
 
  end subroutine lschfb

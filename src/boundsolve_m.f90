@@ -18,12 +18,21 @@
 !> The energy iteration the bound-state solvers share (lschfb, ldiracfb,
 !> lschvkbb, lschvkbbe, lschpsbar): the convergence test on the energy
 !> correction, and the steps of the energy inside its bracket, by the
-!> correction or, where the node count is wrong, by bisection.
+!> correction or, where the node count is wrong, by bisection; and the
+!> energy of the box state that stands in where there is no bound state.
  module boundsolve_m
  use constants_m, only: dp
  implicit none
  private
- public :: bs_converged, bs_correct, bs_bisect
+ public :: bs_converged, bs_correct, bs_bisect, bs_box_energy
+
+ abstract interface
+   integer function node_count(ee)
+   import :: dp
+   implicit none
+   real(dp), intent(in) :: ee
+   end function node_count
+ end interface
 
  contains
 
@@ -126,5 +135,59 @@
  ee=0.5d0*(emin+emax)
  return
  end subroutine bs_bisect
+
+ subroutine bs_box_energy(elow,etop,nnode,eps,nodes,ee)
+
+!! the energy of the box state (lschfb, ldiracfb): the state with nnode
+!! nodes and u=0 at the mesh end, above elow (the box state of
+!! RadialAtomicSolvers.jl). The outward solution over the whole mesh gains
+!! a node each time u at the mesh end crosses zero, so the energy is
+!! bisected on its node count: the bracket from elow is widened above etop
+!! by doubling until the count exceeds nnode, then bisected to a relative
+!! width eps (of max(|E|,0.2)); ee is its lower end, the highest energy
+!! found with nnode nodes or fewer
+!!
+!! @param elow  lower end of the bracket
+!! @param etop  energy above which the bracket's top is widened
+!! @param nnode  number of nodes of the box state
+!! @param eps  relative width of the final bracket
+!! @param nodes  the node count of the outward solution over the whole
+!!               mesh at an energy
+!! @param ee  the box state's energy
+
+!Input variables
+ real(dp), intent(in) :: elow,etop,eps
+ integer, intent(in) :: nnode
+ procedure(node_count) :: nodes
+
+!Output variables
+ real(dp), intent(out) :: ee
+
+!Local variables
+ real(dp) :: eblo,ebhi
+ integer :: kk
+
+ eblo=elow
+ ebhi=etop+1.0d0
+ do kk=1,60
+   if(nodes(ebhi)>nnode) exit
+   eblo=ebhi
+   ebhi=etop+2.0d0*(ebhi-etop)
+ end do
+
+ do kk=1,200
+   ee=0.5d0*(eblo+ebhi)
+   if(nodes(ee)>nnode) then
+     ebhi=ee
+   else
+     eblo=ee
+   end if
+   if(ebhi-eblo<max(abs(ee),0.2d0)*eps) exit
+ end do
+
+ ee=eblo
+
+ return
+ end subroutine bs_box_energy
 
  end module boundsolve_m

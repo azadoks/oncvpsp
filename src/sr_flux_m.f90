@@ -29,7 +29,7 @@
  use constants_m, only: dp
  implicit none
  private
- public :: sr_gamma, sr_flux_coefs, sr_outward
+ public :: sr_gamma, sr_flux_coefs, sr_outward, sr_inward, sr_derivs
 
  contains
 
@@ -148,7 +148,7 @@
 
  call origin_start()
  do ii=1,4
-   call derivs_at(ii)
+   call sr_derivs(al,pm,qm,mmax,uu,up,qq,qp,ii)
  end do
 
 ! outward integration using predictor once, corrector
@@ -159,29 +159,18 @@
    uu(ii+1)=uu(ii)+aeo(up,ii)
    qq(ii+1)=qq(ii)+aeo(qp,ii)
    do it=1,2
-     call derivs_at(ii+1)
+     call sr_derivs(al,pm,qm,mmax,uu,up,qq,qp,ii+1)
      uu(ii+1)=uu(ii)+aio(up,ii)
      qq(ii+1)=qq(ii)+aio(qp,ii)
    end do
-   call derivs_at(ii+1)
+   call sr_derivs(al,pm,qm,mmax,uu,up,qq,qp,ii+1)
    if(uu(ii+1)*uu(ii) <= 0.0d0) nnode=nnode+1
  end do
 
 ! the first points again, inward from the outward solution: the series of
 ! the start is that of a model potential, and the kink where it meets the
 ! integration is amplified by the derivatives of a GGA density
- if(mlast>=16) then
-   do ii=12,2,-1
-     uu(ii-1)=uu(ii)+aei(up,ii)
-     qq(ii-1)=qq(ii)+aei(qp,ii)
-     do it=1,2
-       call derivs_at(ii-1)
-       uu(ii-1)=uu(ii)+aii(up,ii)
-       qq(ii-1)=qq(ii)+aii(qp,ii)
-     end do
-     call derivs_at(ii-1)
-   end do
- end if
+ if(mlast>=16) call sr_inward(al,pm,qm,mmax,12,1,uu,up,qq,qp)
 
  return
 
@@ -326,19 +315,75 @@
  return
  end subroutine origin_series
 
- subroutine derivs_at(jj)
+ end subroutine sr_outward
+
+ subroutine sr_inward(al,pm,qm,mmax,ifrom,ito,uu,up,qq,qp)
+
+!! inward Adams integration of the flux form from ifrom down to ito, two
+!! corrector passes; uu, qq and their derivatives are given on
+!! ifrom..ifrom+3
+!!
+!! @param al  log of the mesh ratio
+!! @param pm  coefficient of qq in d(uu)/dn
+!! @param qm  coefficient of uu in d(qq)/dn
+!! @param mmax  size of the arrays
+!! @param ifrom  first point, given
+!! @param ito  last point integrated
+!! @param uu  radial wave function (*rr)
+!! @param up  d(uu)/dn
+!! @param qq  flux function
+!! @param qp  d(qq)/dn
+
+!Input variables
+ integer, intent(in) :: mmax,ifrom,ito
+ real(dp), intent(in) :: al,pm(mmax),qm(mmax)
+
+!Input/output variables
+ real(dp), intent(inout) :: uu(mmax),up(mmax),qq(mmax),qp(mmax)
+
+!Local variables
+ integer :: ii,it
+
+ do ii=ifrom,ito+1,-1
+   uu(ii-1)=uu(ii)+aei(up,ii)
+   qq(ii-1)=qq(ii)+aei(qp,ii)
+   do it=1,2
+     call sr_derivs(al,pm,qm,mmax,uu,up,qq,qp,ii-1)
+     uu(ii-1)=uu(ii)+aii(up,ii)
+     qq(ii-1)=qq(ii)+aii(qp,ii)
+   end do
+   call sr_derivs(al,pm,qm,mmax,uu,up,qq,qp,ii-1)
+ end do
+
+ return
+ end subroutine sr_inward
+
+ subroutine sr_derivs(al,pm,qm,mmax,uu,up,qq,qp,jj)
 
 !! derivatives on the mesh index of uu and qq at the point jj
+!!
+!! @param al  log of the mesh ratio
+!! @param pm  coefficient of qq in d(uu)/dn
+!! @param qm  coefficient of uu in d(qq)/dn
+!! @param mmax  size of the arrays
+!! @param uu  radial wave function (*rr)
+!! @param up  d(uu)/dn
+!! @param qq  flux function
+!! @param qp  d(qq)/dn
+!! @param jj  the point
 
- integer, intent(in) :: jj
+!Input variables
+ integer, intent(in) :: mmax,jj
+ real(dp), intent(in) :: al,pm(mmax),qm(mmax),uu(mmax),qq(mmax)
+
+!Input/output variables
+ real(dp), intent(inout) :: up(mmax),qp(mmax)
 
  up(jj)=al*uu(jj)+pm(jj)*qq(jj)
  qp(jj)=qm(jj)*uu(jj)-al*qq(jj)
 
  return
- end subroutine derivs_at
-
- end subroutine sr_outward
+ end subroutine sr_derivs
 
  include 'adams.inc'
 

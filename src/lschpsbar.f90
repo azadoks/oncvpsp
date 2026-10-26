@@ -38,6 +38,7 @@
  use constants_m, only: dp, pi
  use boundsolve_m, only: bs_converged, bs_correct, bs_bisect
  use quad_m, only: log_norm
+ use inward2_m, only: inward2
  implicit none
 
 
@@ -215,16 +216,7 @@
      end if !nin<mbar
 
 ! integrate inward
-
-     do ii=nin,mchb+1,-1
-       uu(ii-1)=uu(ii)+aei(up,ii)
-       up(ii-1)=up(ii)+aei(upp,ii)
-       do it=1,2
-         upp(ii-1)=al*up(ii-1)+cf(ii-1)*uu(ii-1)
-         up(ii-1)=up(ii)+aii(upp,ii)
-         uu(ii-1)=uu(ii)+aii(up,ii)
-       end do
-     end do
+     call inward2(al,cf,mmax,nin,mchb,uu,up,upp)
 
      do ii=nin+1,mmax
        uu(ii)=0.0d0
