@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
  subroutine aeatom(irel,nkap,na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&                  rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vext)
+&                  rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vext,warm)
 
 !! self-consistent all-electron atom: non-relativistic or scalar-relativistic
 !! (sratom) or fully-relativistic (relatom)
@@ -26,8 +26,8 @@
 !! @param nkap  number of kappa per level: 1, or 2 for irel=2
 !! @param na  principal quantum number array, dimension ncv
 !! @param la  angular-momenta
-!! @param ea  eigenvalues, input guess (irel=2) and output; ea(:,1) for j=l+1/2,
-!!            ea(:,2) for j=l-1/2 when irel=2
+!! @param ea  eigenvalues, input guess (irel=2 or warm) and output;
+!!            ea(:,1) for j=l+1/2, ea(:,2) for j=l-1/2 when irel=2
 !! @param fa  occupancies
 !! @param rpk  radius of outermost peak of wave function, indexed as ea
 !! @param nc  number of core states
@@ -36,7 +36,7 @@
 !! @param rhoc  core charge density (output)
 !! @param rho  total charge density (output)
 !! @param rr  log radial mesh
-!! @param vi  all-electron potential (output)
+!! @param vi  all-electron potential (output; input with warm)
 !! @param zz  atomic number
 !! @param mmax  size of log grid
 !! @param iexc  exchange-correlation function to be used
@@ -47,6 +47,9 @@
 !! @param ierr  error flag
 !! @param vext  external potential the orbitals also see (a confining wall,
 !!              oncvpsp_confine.x), zero for the free atom; vi is without it
+!! @param warm  start from vi and ea (the solution of a nearby potential,
+!!              oncvpsp_confine.x) instead of the Thomas-Fermi potential
+!!              and hydrogenic energies
 
  use constants_m, only: dp, mxstate
  implicit none
@@ -64,14 +67,16 @@
 !Output variables
  integer, intent(out) :: it
  real(dp), intent(out) :: etot,eterm(4),res
- real(dp), intent(out) :: rho(mmax),rhoc(mmax),vi(mmax)
+ real(dp), intent(out) :: rho(mmax),rhoc(mmax)
+ real(dp), intent(inout) :: vi(mmax)
+ logical, intent(in) :: warm
 
  if(irel==2) then
    call relatom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&               rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vext)
+&               rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vext,warm)
  else
    call sratom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&              rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,irel,vext)
+&              rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,irel,vext,warm)
  end if
  return
  end subroutine aeatom

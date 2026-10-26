@@ -108,6 +108,11 @@
 ! occupations still move to the target: those iterations only lead to the
 ! target's start, and from it on the states are solved to round-off
  real(dp), parameter ::  tolramp=1.0d-4
+! the iterations over which a wall is ramped in: in 50, those of the
+! occupations, 50 of the 68 iterations of Bi in 0.1 Ha/bohr**2; 10 hold
+! every wall of the test inputs that 50 did, up to 3 Ha/bohr**2 from the
+! free atom (oncvpsp_confine.x starts each wall from the one before)
+ integer, parameter :: nwramp=10
  real(dp) :: etol
 
  ierr=0
@@ -145,7 +150,7 @@
  itarget=huge(1)
  walled=any(vext(:)/=0.0d0)
  wext=1.0d0
- if(walled) wext=1.0d0/50.0d0
+ if(walled) wext=1.0d0/dble(nwramp)
 
 ! screening potential for pseudocharge
 ! input rho is assumed to be valence rho from all-electron calculation
@@ -293,8 +298,9 @@
 
 ! switch from reference to new configuration in 50 steps, exactly the
 ! new one from the 50th on (and throughout if they are the same)
-! (assigned, since fat1 + 1*(fat2 - fat1) need not round to fat2)
-   if(walled) wext=min(1.0d0,dble(it+1)/50.0d0)
+! (assigned, since fat1 + 1*(fat2 - fat1) need not round to fat2); a wall
+! in nwramp
+   if(walled) wext=min(1.0d0,dble(it+1)/dble(nwramp))
    if(it>=50) then
      fa(1:nv)=fat(1:nv,2)
    else

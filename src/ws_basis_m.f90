@@ -46,7 +46,16 @@
  use ugrid_m, only: ug_brent
  implicit none
  private
- public :: ws_edge_d, ws_roots, ws_convergence, ws_eigenvalues
+ public :: ws_edge_d, ws_roots, ws_convergence, ws_eigenvalues, ws_grid_init
+ public :: ws_grid_t
+
+!> the quadrature of a channel in the sphere (ws_grid_init): its points,
+!> weights, and the local potential and the projectors on them
+ type :: ws_grid_t
+   real(dp) :: rs=0.0d0,qmax=0.0d0
+   integer :: ng=0,nvkb=0
+   real(dp), allocatable :: rg(:),wg(:),vg(:),vkbg(:,:)
+ end type ws_grid_t
 
 !> Gauss-Legendre nodes per panel
  integer, parameter :: ngl=16
@@ -161,16 +170,13 @@
 
  end subroutine ws_roots
 
- subroutine ws_convergence(ll,iedge,rs,qmax,rr,mmax,vloc,vlocpw,nvkb, &
-&                          vkbpw,evkb,eex,nb,ecut,err,ierr)
+ subroutine ws_grid_init(rs,qmax,rr,mmax,vloc,vlocpw,nvkb,vkbpw,grid)
 
-!! the energy error of the pseudopotential state of an edge in the first N
-!! basis functions, N = 1..nb, against its energy eex from the radial
-!! equation: the eigenvalue of the same index in each, the index that of
-!! the eigenvalue nearest eex in all nb (0 for the N below it)
+!! the quadrature of a channel in the sphere and the pseudopotential on it,
+!! shared by the Hamiltonians of every edge's condition at rs: Gauss-
+!! Legendre panels between the kinks of the pieces inside the sphere, none
+!! longer than a radian of the largest q (or 0.1 bohr)
 !!
-!! @param ll  angular momentum, 0..3
-!! @param iedge  1 bottom, 2 centre, 3 top
 !! @param rs  radius of the sphere (bohr), beyond the projectors and the
 !!            local potential's core radius
 !! @param qmax  the largest q of the basis (bohr**-1)
@@ -180,7 +186,103 @@
 !! @param vlocpw  its pieces
 !! @param nvkb  number of projectors
 !! @param vkbpw  the projectors' pieces
-!! @param evkb  their coefficients
+!! @param grid  the quadrature and the potentials on it (output)
+
+!Input variables
+ integer, intent(in) :: mmax,nvkb
+ real(dp), intent(in) :: rs,qmax,rr(mmax),vloc(mmax)
+ type(piecewise_t), intent(in) :: vlocpw,vkbpw(nvkb)
+
+!Output variables
+ type(ws_grid_t), intent(out) :: grid
+
+!Local variables
+ real(dp), allocatable :: dv(:),bounds(:)
+ real(dp) :: xg(ngl),wxg(ngl),dvq,ra,rb,hmax
+ integer :: ng,nbound,ii,jj,kk,np,ip
+
+ grid%rs=rs
+ grid%qmax=qmax
+ grid%nvkb=nvkb
+
+ allocate(bounds(2+vlocpw%nseg+sum(vkbpw(:)%nseg)))
+ nbound=1
+ bounds(1)=rr(1)
+ call add_bounds(vlocpw)
+ do jj=1,nvkb
+   call add_bounds(vkbpw(jj))
+ end do
+ nbound=nbound+1
+ bounds(nbound)=rs
+ call sort(bounds(1:nbound))
+ hmax=min(0.1d0,1.0d0/max(qmax,1.0d0))
+ ng=0
+ do ii=1,nbound-1
+   if(bounds(ii+1)<=bounds(ii)) cycle
+   ng=ng+ngl*max(1,ceiling((bounds(ii+1)-bounds(ii))/hmax))
+ end do
+ grid%ng=ng
+ allocate(grid%rg(ng),grid%wg(ng),grid%vg(ng),grid%vkbg(nvkb,ng))
+ ng=0
+ do ii=1,nbound-1
+   if(bounds(ii+1)<=bounds(ii)) cycle
+   np=max(1,ceiling((bounds(ii+1)-bounds(ii))/hmax))
+   do ip=1,np
+     ra=bounds(ii)+(bounds(ii+1)-bounds(ii))*dble(ip-1)/dble(np)
+     rb=bounds(ii)+(bounds(ii+1)-bounds(ii))*dble(ip)/dble(np)
+     call gauss_legendre(ra,rb,ngl,xg,wxg)
+     grid%rg(ng+1:ng+ngl)=xg(:)
+     grid%wg(ng+1:ng+ngl)=wxg(:)
+     ng=ng+ngl
+   end do
+ end do
+
+!the local potential: its pieces, plus the smooth difference of the mesh
+!values from theirs (as outwf_m)
+ allocate(dv(mmax))
+ call pw_node_values(rr,mmax,vlocpw,dv)
+ dv(:)=vloc(:)-dv(:)
+ do kk=1,ng
+   call lm_interp(rr,dv,mmax,grid%rg(kk),dvq)
+   grid%vg(kk)=pw_value(rr,mmax,vlocpw,grid%rg(kk))+dvq
+ end do
+
+!the projectors
+ do kk=1,ng
+   do ii=1,nvkb
+     grid%vkbg(ii,kk)=pw_value(rr,mmax,vkbpw(ii),grid%rg(kk))
+   end do
+ end do
+ deallocate(dv,bounds)
+ return
+
+ contains
+
+ subroutine add_bounds(pw)
+!! the inner bounds of a piecewise function inside the sphere
+ type(piecewise_t), intent(in) :: pw
+ integer :: kb
+ do kb=1,pw%nseg
+   if(pw%bound(kb)>rr(1) .and. pw%bound(kb)<rs) then
+     nbound=nbound+1
+     bounds(nbound)=pw%bound(kb)
+   end if
+ end do
+ end subroutine add_bounds
+
+ end subroutine ws_grid_init
+
+ subroutine ws_convergence(ll,iedge,grid,evkb,eex,nb,ecut,err,ierr)
+
+!! the energy error of the pseudopotential state of an edge in the first N
+!! basis functions, N = 1..nb, against its energy eex from the radial
+!! equation: the eigenvalue of the same index in each, the index that of
+!! the eigenvalue nearest eex in all nb (0 for the N below it)
+!!
+!! @param ll  angular momentum, 0..3
+!! @param iedge  1 bottom, 2 centre, 3 top
+!! @param grid  the channel's quadrature in the sphere (ws_grid_init)
+!! @param evkb  the projectors' coefficients
 !! @param eex  the state's energy (Ha)
 !! @param nb  number of basis functions (output)
 !! @param ecut  q_N**2/2 of each N (Ha, output)
@@ -189,9 +291,9 @@
 !! @param ierr  0, or 1 if no basis function is below qmax (output)
 
 !Input variables
- integer, intent(in) :: ll,iedge,mmax,nvkb
- real(dp), intent(in) :: rs,qmax,rr(mmax),vloc(mmax),evkb(nvkb),eex
- type(piecewise_t), intent(in) :: vlocpw,vkbpw(nvkb)
+ integer, intent(in) :: ll,iedge
+ type(ws_grid_t), intent(in) :: grid
+ real(dp), intent(in) :: evkb(grid%nvkb),eex
 
 !Output variables
  integer, intent(out) :: nb,ierr
@@ -201,8 +303,7 @@
  real(dp), allocatable :: hmat(:,:),hh(:,:),ev(:),work(:)
  integer :: np,idx,lwork,info
 
- call ws_hamiltonian(ll,iedge,rs,qmax,rr,mmax,vloc,vlocpw,nvkb,vkbpw,evkb, &
-&                    nb,ecut,hmat,ierr)
+ call ws_hamiltonian(ll,iedge,grid,evkb,nb,ecut,hmat,ierr)
  allocate(err(nb))
  err(:)=0.0d0
  if(ierr/=0) return
@@ -226,8 +327,7 @@
  return
  end subroutine ws_convergence
 
- subroutine ws_eigenvalues(ll,iedge,rs,qmax,rr,mmax,vloc,vlocpw,nvkb,vkbpw, &
-&                          evkb,nb,ev,ierr)
+ subroutine ws_eigenvalues(ll,iedge,grid,evkb,nb,ev,ierr)
 
 !! the eigenvalues of the pseudo-Hamiltonian in all the basis functions of
 !! an edge's condition below qmax, lowest first: variational bounds on the
@@ -235,23 +335,16 @@
 !!
 !! @param ll  angular momentum, 0..3
 !! @param iedge  1 bottom, 2 centre, 3 top
-!! @param rs  radius of the sphere (bohr), beyond the projectors
-!! @param qmax  the largest q of the basis (bohr**-1)
-!! @param rr  log radial mesh
-!! @param mmax  size of the log radial mesh
-!! @param vloc  local potential on the mesh
-!! @param vlocpw  its pieces
-!! @param nvkb  number of projectors
-!! @param vkbpw  the projectors' pieces
-!! @param evkb  their coefficients
+!! @param grid  the channel's quadrature in the sphere (ws_grid_init)
+!! @param evkb  the projectors' coefficients
 !! @param nb  number of basis functions and eigenvalues (output)
 !! @param ev  the eigenvalues (Ha, output)
 !! @param ierr  0, or 1 if no basis function is below qmax (output)
 
 !Input variables
- integer, intent(in) :: ll,iedge,mmax,nvkb
- real(dp), intent(in) :: rs,qmax,rr(mmax),vloc(mmax),evkb(nvkb)
- type(piecewise_t), intent(in) :: vlocpw,vkbpw(nvkb)
+ integer, intent(in) :: ll,iedge
+ type(ws_grid_t), intent(in) :: grid
+ real(dp), intent(in) :: evkb(grid%nvkb)
 
 !Output variables
  integer, intent(out) :: nb,ierr
@@ -261,8 +354,7 @@
  real(dp), allocatable :: ecut(:),hmat(:,:),work(:)
  integer :: lwork,info
 
- call ws_hamiltonian(ll,iedge,rs,qmax,rr,mmax,vloc,vlocpw,nvkb,vkbpw,evkb, &
-&                    nb,ecut,hmat,ierr)
+ call ws_hamiltonian(ll,iedge,grid,evkb,nb,ecut,hmat,ierr)
  allocate(ev(nb))
  if(ierr/=0) return
  lwork=max(1,3*nb)
@@ -276,30 +368,28 @@
  return
  end subroutine ws_eigenvalues
 
- subroutine ws_hamiltonian(ll,iedge,rs,qmax,rr,mmax,vloc,vlocpw,nvkb,vkbpw, &
-&                          evkb,nb,ecut,hmat,ierr)
+ subroutine ws_hamiltonian(ll,iedge,grid,evkb,nb,ecut,hmat,ierr)
 
 !! the pseudo-Hamiltonian in the nb basis functions of an edge's condition
 !! below qmax, and their cutoffs q_n**2/2 (the arguments as
 !! ws_convergence's)
 
 !Input variables
- integer, intent(in) :: ll,iedge,mmax,nvkb
- real(dp), intent(in) :: rs,qmax,rr(mmax),vloc(mmax),evkb(nvkb)
- type(piecewise_t), intent(in) :: vlocpw,vkbpw(nvkb)
+ integer, intent(in) :: ll,iedge
+ type(ws_grid_t), intent(in) :: grid
+ real(dp), intent(in) :: evkb(grid%nvkb)
 
 !Output variables
  integer, intent(out) :: nb,ierr
  real(dp), allocatable, intent(out) :: ecut(:),hmat(:,:)
 
 !Local variables
- real(dp), allocatable :: qq(:),rg(:),wg(:),vg(:),phi(:,:),proj(:,:)
- real(dp), allocatable :: dv(:),bounds(:)
- real(dp) :: xg(ngl),wxg(ngl),dvq,ra,rb,hmax,ss,cc,xx
- integer :: ng,nbound,ii,jj,kk,np,ip
+ real(dp), allocatable :: qq(:),phi(:,:),proj(:,:),vphi(:,:)
+ real(dp) :: ss,cc,xx
+ integer :: ii,jj,kk
 
  ierr=0
- call ws_roots(ll,iedge,rs,qmax,nb,qq)
+ call ws_roots(ll,iedge,grid%rs,grid%qmax,nb,qq)
  if(nb==0) then
    ierr=1
    allocate(ecut(0),hmat(0,0))
@@ -308,95 +398,41 @@
  allocate(ecut(nb))
  ecut(:)=0.5d0*qq(:)**2
 
-!the panels: the kinks of the pieces inside the sphere, and no panel
-!longer than a radian of the largest q (or 0.1 bohr)
- allocate(bounds(2+vlocpw%nseg+sum(vkbpw(:)%nseg)))
- nbound=1
- bounds(1)=rr(1)
- call add_bounds(vlocpw)
- do jj=1,nvkb
-   call add_bounds(vkbpw(jj))
- end do
- nbound=nbound+1
- bounds(nbound)=rs
- call sort(bounds(1:nbound))
- hmax=min(0.1d0,1.0d0/max(qmax,1.0d0))
- ng=0
- do ii=1,nbound-1
-   if(bounds(ii+1)<=bounds(ii)) cycle
-   ng=ng+ngl*max(1,ceiling((bounds(ii+1)-bounds(ii))/hmax))
- end do
- allocate(rg(ng),wg(ng),vg(ng))
- ng=0
- do ii=1,nbound-1
-   if(bounds(ii+1)<=bounds(ii)) cycle
-   np=max(1,ceiling((bounds(ii+1)-bounds(ii))/hmax))
-   do ip=1,np
-     ra=bounds(ii)+(bounds(ii+1)-bounds(ii))*dble(ip-1)/dble(np)
-     rb=bounds(ii)+(bounds(ii+1)-bounds(ii))*dble(ip)/dble(np)
-     call gauss_legendre(ra,rb,ngl,xg,wxg)
-     rg(ng+1:ng+ngl)=xg(:)
-     wg(ng+1:ng+ngl)=wxg(:)
-     ng=ng+ngl
-   end do
- end do
-
-!the local potential: its pieces, plus the smooth difference of the mesh
-!values from theirs (as outwf_m)
- allocate(dv(mmax))
- call pw_node_values(rr,mmax,vlocpw,dv)
- dv(:)=vloc(:)-dv(:)
- do kk=1,ng
-   call lm_interp(rr,dv,mmax,rg(kk),dvq)
-   vg(kk)=pw_value(rr,mmax,vlocpw,rg(kk))+dvq
- end do
-
+ associate(ng=>grid%ng,rg=>grid%rg,wg=>grid%wg,vg=>grid%vg)
 !the normalized basis functions and their projections
- allocate(phi(ng,nb),proj(nvkb,nb))
- do jj=1,nb
-   do kk=1,ng
-     xx=qq(jj)*rg(kk)
-     ss=sin(xx)
-     cc=cos(xx)
-     phi(kk,jj)=rg(kk)*sbf_trig(ll,xx,ss,cc)
+   allocate(phi(ng,nb),proj(grid%nvkb,nb))
+   do jj=1,nb
+     do kk=1,ng
+       xx=qq(jj)*rg(kk)
+       ss=sin(xx)
+       cc=cos(xx)
+       phi(kk,jj)=rg(kk)*sbf_trig(ll,xx,ss,cc)
+     end do
+     phi(:,jj)=phi(:,jj)/sqrt(sum(wg(:)*phi(:,jj)**2))
    end do
-   phi(:,jj)=phi(:,jj)/sqrt(sum(wg(:)*phi(:,jj)**2))
- end do
- proj(:,:)=0.0d0
- do ii=1,nvkb
-   do kk=1,ng
-     proj(ii,:)=proj(ii,:)+wg(kk)*pw_value(rr,mmax,vkbpw(ii),rg(kk)) &
-&              *phi(kk,:)
+   proj(:,:)=0.0d0
+   do ii=1,grid%nvkb
+     do kk=1,ng
+       proj(ii,:)=proj(ii,:)+wg(kk)*grid%vkbg(ii,kk)*phi(kk,:)
+     end do
    end do
- end do
 
 !the Hamiltonian in all nb
- allocate(hmat(nb,nb))
- do jj=1,nb
-   do ii=1,jj
-     hmat(ii,jj)=sum(wg(:)*vg(:)*phi(:,ii)*phi(:,jj)) &
-&               +sum(evkb(:)*proj(:,ii)*proj(:,jj))
-     hmat(jj,ii)=hmat(ii,jj)
+   allocate(hmat(nb,nb),vphi(ng,nb))
+   do ii=1,nb
+     vphi(:,ii)=wg(:)*vg(:)*phi(:,ii)
    end do
-   hmat(jj,jj)=hmat(jj,jj)+ecut(jj)
- end do
- deallocate(qq,rg,wg,vg,phi,proj,dv,bounds)
+   hmat(:,:)=matmul(transpose(vphi),phi)
+   do jj=1,nb
+     do ii=1,jj
+       hmat(ii,jj)=hmat(ii,jj)+sum(evkb(:)*proj(:,ii)*proj(:,jj))
+       hmat(jj,ii)=hmat(ii,jj)
+     end do
+     hmat(jj,jj)=hmat(jj,jj)+ecut(jj)
+   end do
+ end associate
+ deallocate(qq,phi,proj,vphi)
  return
-
- contains
-
- subroutine add_bounds(pw)
-!! the inner bounds of a piecewise function inside the sphere
- type(piecewise_t), intent(in) :: pw
- integer :: kb
- do kb=1,pw%nseg
-   if(pw%bound(kb)>rr(1) .and. pw%bound(kb)<rs) then
-     nbound=nbound+1
-     bounds(nbound)=pw%bound(kb)
-   end if
- end do
- end subroutine add_bounds
-
  end subroutine ws_hamiltonian
 
  subroutine sort(aa)

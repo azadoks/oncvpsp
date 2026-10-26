@@ -307,8 +307,15 @@ precision.
   wide enough to take in a core band and the energies of several Ha
   where the pseudopotential no longer follows the atom (the PseudoDojo
   inputs' -12 Ha: max |e_ps - e_ae| 7.3 Ha for Cs, 3.6e-4 Ha now).
-  Commits: 7041579 (the sphere), 3eb250c (the walls), 5c91c31 (the
-  unpaired edges and the summary).
+  Each wall's atoms start from the wall before. The free all-electron
+  atom starts from the data file's potential (`aeatom`'s `warm`), and
+  the pseudo-atom ramps its wall in over 10 iterations rather than 50.
+  Each edge of a sphere shares the quadrature of its channel
+  (`ws_grid_init`). On the test inputs this cuts the instructions by 28-43
+  % (Bi 26.6 to 15.2 G), and the output changes at round-off: the walls'
+  energies by up to 1.3e-10 Ha, the edges by 1.6e-14 Ha, and the cutoffs
+  by up to 1e-7 relative. Commits: 7041579 (the sphere), 3eb250c (the
+  walls), 5c91c31 (the unpaired edges and the summary).
 - **Well-state diagnostics** (`run_diag`) take the state's index from
   the pseudo-atom at epa rather than the all-electron node count, which
   can differ from it (see the eigenvalue index under Numerics). Commit:

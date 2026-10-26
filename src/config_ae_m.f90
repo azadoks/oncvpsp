@@ -103,7 +103,7 @@
  allocate(vfree(mmax))
  vfree(:)=0.0d0
  call aeatom(irel,nkap,na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&            rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vfree)
+&            rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vfree,.false.)
  deallocate(vfree)
  if(ierr/=0 .or. nae_cache==size(ae_cache)) return
 

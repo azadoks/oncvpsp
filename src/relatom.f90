@@ -17,7 +17,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
  subroutine relatom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&           rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vext)
+&           rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vext,warm)
 
 !! self-consistent fully-relativistic all-electron atom
 !! calculation using log mesh
@@ -25,7 +25,8 @@
 !!
 !! @param na  principal quantum number array, dimension ncv
 !! @param la  angular-momenta
-!! @param ea  eigenvalues (output), ea(:,1) for j=l+1/2, ea(:,2) for j=l-1/2
+!! @param ea  eigenvalues (output; input with warm), ea(:,1) for j=l+1/2,
+!!            ea(:,2) for j=l-1/2
 !! @param fa  occupancies
 !! @param rpk  radius of outermost peak of wave function, indexed as ea
 !! @param nc  number of core states
@@ -34,8 +35,8 @@
 !! @param rhoc  core charge (output)
 !! @param rho  total core+valence charge (output)
 !! @param rr  log radial mesh
-!! @param vi  all-electron potential (output), the one the output orbitals
-!!            are eigenstates of
+!! @param vi  all-electron potential (output; input with warm), the one the
+!!            output orbitals are eigenstates of
 !! @param zz  atomic number
 !! @param mmax  size of log grid
 !! @param iexc  exchange-correlation function to be used
@@ -44,6 +45,10 @@
 !!               energies (output)
 !! @param res  residual of the screening potential (output, ae_residual)
 !! @param ierr  error flag
+!! @param vext  external potential the orbitals also see (aeatom)
+!! @param warm  start from vi and ea (the solution of a nearby potential,
+!!              oncvpsp_confine.x) instead of the Thomas-Fermi potential
+!!              and hydrogenic energies
 
  use constants_m, only: dp, mxstate, mxkap, ae_tolres
  implicit none
@@ -62,7 +67,9 @@
 !Output variables
  integer, intent(out) :: it
  real(dp), intent(out) :: etot,eterm(4),res
- real(dp), intent(out) :: rho(mmax),rhoc(mmax),vi(mmax)
+ real(dp), intent(out) :: rho(mmax),rhoc(mmax)
+ real(dp), intent(inout) :: vi(mmax)
+ logical, intent(in) :: warm
 
 !Local variables
  real(dp) :: tfapot
@@ -96,9 +103,11 @@
  al = 0.01d0 * log(rr(101) / rr(1))
  amesh = exp(al)
 
- do ii=1,mmax
-   vi(ii)=tfapot(rr(ii),zz)
- end do
+ if(.not. warm) then
+   do ii=1,mmax
+     vi(ii)=tfapot(rr(ii),zz)
+   end do
+ end if
 
 ! the screening (Hartree plus exchange-correlation) potential is mixed,
 ! and the nuclear potential added to it for the radial equation
@@ -111,6 +120,7 @@
  do ii=1,ncv
    sf=sf+fa(ii)
    zion=zz+1.0d0-sf
+   if(warm) cycle
    do ikap=1,2
      ea(ii,ikap)=-0.5d0*(zion/na(ii))**2
      if(ea(ii,ikap)>vi(mmax)) ea(ii,ikap)=2.0d0*vi(mmax)

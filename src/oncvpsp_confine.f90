@@ -91,7 +91,8 @@
  use ps_file_m, only: ps_file_t, read_ps_file, ps_file_free
  use phsft_m, only: phsft_t, phsft_ae_init, phsft_ps_init, phsft_free, &
 &                   phsft_node_phase, phsft_mch
- use ws_basis_m, only: ws_edge_d, ws_convergence, ws_eigenvalues
+ use ws_basis_m, only: ws_edge_d, ws_convergence, ws_eigenvalues, &
+&                       ws_grid_init, ws_grid_t
  use ugrid_m, only: ug_brent
  use relativity_m, only: set_relativity
  use constants_m, only: mxstate, mxprj, mxl, mxlin
@@ -156,6 +157,8 @@
  logical :: chan(0:3)
  type(ps_file_t) :: pf
  type(phsft_t), target :: sae,sps
+!> the quadrature of the channel in the sphere, shared by its edges
+ type(ws_grid_t) :: wsg
 !> the solver, the point of the scan and the phase of edges' root
  type(phsft_t), pointer :: psol=>null()
  real(dp) :: ph_e0,ph_tgt,ph_shift
@@ -398,9 +401,9 @@
          call phsft_ps_init(ll,nvkb,rr,pf%vloc(:,ikap),pf%vlocpw, &
 &                           pf%vkbpw(1:nvkb,l1,ikap),pf%evkb(1:nvkb,l1,ikap), &
 &                           mmax,1,rq(iq:iq),sps)
-         call ws_eigenvalues(ll,3,rs,sqrt(2.0d0*ecutmax),rr,mmax, &
-&             pf%vloc(:,ikap),pf%vlocpw,nvkb,pf%vkbpw(1:nvkb,l1,ikap), &
-&             pf%evkb(1:nvkb,l1,ikap),ndir,edir,ierr)
+         call ws_grid_init(rs,sqrt(2.0d0*ecutmax),rr,mmax,pf%vloc(:,ikap), &
+&             pf%vlocpw,nvkb,pf%vkbpw(1:nvkb,l1,ikap),wsg)
+         call ws_eigenvalues(ll,3,wsg,pf%evkb(1:nvkb,l1,ikap),ndir,edir,ierr)
          if(ierr/=0) ndir=0
          call refine_poles(sps)
          do ii=1,npsh
@@ -484,9 +487,8 @@
            if(eae(ie)<0.0d0) smax_de=max(smax_de,abs(eps(je)-eae(ie)))
 
 ! the cutoff of the pseudopotential's state
-           call ws_convergence(ll,iedge,rs,sqrt(2.0d0*ecutmax),rr,mmax, &
-&               pf%vloc(:,ikap),pf%vlocpw,nvkb,pf%vkbpw(1:nvkb,l1,ikap), &
-&               pf%evkb(1:nvkb,l1,ikap),eps(je),nb,ecut,err,ierr)
+           call ws_convergence(ll,iedge,wsg,pf%evkb(1:nvkb,l1,ikap),eps(je), &
+&               nb,ecut,err,ierr)
            if(ierr/=0) then
              if(eae(ie)<0.0d0) sinf(1:2)=.true.
              if(eae(ie)<0.0d0 .and. iedge==3) sinf(3:4)=.true.
@@ -560,19 +562,31 @@
    write(6,'(a)') '# wall_failed k atom'
    write(6,'(a,1p,e24.16)') 'wall_r0',r0
    nwfail=0
+   ierrae=0
+   ierrps=0
    do ik=0,nk
      do ii=1,mmax
        vext(ii)=wall(kwall(ik),rr(ii)-r0)
      end do
-     eaw(:,:)=ea(:,:)
+! each atom from the wall before (the free atom from the data file's
+! potential and the run's pseudo-density): the walls ramp the atom in
+     if(ik==0) then
+       eaw(:,:)=ea(:,:)
+       vi(:)=vfull(:)
+     else if(ierrae/=0) then
+       eaw(:,:)=eigae(:,:,0)
+       vi(:)=vfull(:)
+     end if
      rpk(:,:)=0.0d0
      ierrae=0
      call aeatom(irel,nkap,na,la,eaw(:,1:nkap),fa,rpk(:,1:nkap),nc,nc+nv, &
 &                itae,rhoc,rhoa,rr,vi,zz,mmax,iexc,etae(ik),eterm,res,ierrae, &
-&                vext)
+&                vext,.true.)
      eigae(:,:,ik)=eaw(:,:)
-     rhops(:)=pf%rhov(:)
-     eatp(1:nv,:)=ea(nc+1:nc+nv,:)
+     if(ik==0 .or. ierrps/=0) then
+       rhops(:)=pf%rhov(:)
+       eatp(1:nv,:)=ea(nc+1:nc+nv,:)
+     end if
      ierrps=0
      call psatom(natp,latp,eatp(:,1:nkap),fatp,nv,itps,pf%rhomod,rhops, &
 &                rr,pf%rcmax,mmax,mxprj,iexc,etps(ik),nprj,vpuns,pf%lloc, &
