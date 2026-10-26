@@ -58,11 +58,11 @@
 #endif
  use constants_m, only: dp, mxprj, mxstate, mxcnf, mxl, mxlin, mxkap, nrhomod
  use kappa_m, only: kap_count, kap_of, j_share
- use pieces_m, only: piecewise_t, pw_reach, pw_free
+ use pieces_m, only: piecewise_t, pw_free
  use modcore_m, only: core_pieces_smooth
- use free_tail_m, only: free_tail_log
  use well_mesh_m, only: well_mesh_t
- use logmesh_m, only: lm_fh_reach
+ use ae_projectors_m, only: ae_bound_projectors, ae_well_projectors, &
+&                           ae_delta_window, ae_overlap, ecut_weights
  use constants_m, only: nlev, nerrdg, nerrlv, well_onset_default
  use input_echo_m, only: write_atom, write_lmax, write_icmod, write_epsh, &
 &                        write_mesh, fx, vkb_head, vkb_line
@@ -81,7 +81,7 @@
  integer :: jj,kk,ll,l1,lloc,lmax,inline
  integer :: mch,mmax,nc,nlim,nrl
  integer :: nv,ncnf,upf_mesh
- integer :: iprj,nkap,nnwell,npsh,mfree,mchx
+ integer :: iprj,nkap,nnwell,npsh
  integer :: ikap,kap,mkap
  integer,allocatable :: npa(:,:)
 !
@@ -107,7 +107,7 @@
  real(dp) :: sw,zz,zion,zval,etot,res
  real(dp) :: cvloc(2,nerrlv),vlchk,wreg
  real(dp) :: eterm(4),rphs(4)
- real(dp) :: fj,cnorm,rcore,eptgt
+ real(dp) :: fj,rcore
 !
  real(dp) :: debl(mxlin+1),ea(mxstate,mxkap),ep(mxlin+1,mxkap)
  real(dp) :: fa(mxstate)
@@ -525,244 +525,23 @@
      if(nkap==2) fj=j_share(ll,ikap,1.0d0)
 
      uu(:,:)=0.0d0; qq(:,:)=0.0d0
-     iprj=0
      if(ikap==1) inwell(:)=.false.
 
-!get principal quantum number for the highest core state for this l
-     npa(1,l1)=l1
-     do kk=1,nc
-       if(la(kk)==l1-1) npa(1,l1)=na(kk)+1
-     end do !kk
-
-!get all-electron bound states for projectors
-     if(nv/=0) then
-       do kk=nc+1,nc+nv
-         if(la(kk)==l1-1) then
-           iprj=iprj+1
-           et=ea(kk,ikap)
-           call boundstate(irel,na(kk),ll,kap,ierr,et, &
-&                          rr,zz,vfull,uu,up,mmax,mch)
-           if(ierr /= 0) then
-             if(irel==2) then
-               write(6,'(a,i2,a,i2,a,i2)') &
-&                    'oncvpsp_r 409: ldiracfb convergence ERROR, n=',&
-&                     na(kk),'  l=',ll, 'kap-',kap
-             else
-               write(6,'(/a,3i4)') &
-&                    'oncvpsp-387: lschfb convergence ERROR n,l,iter=', &
-&                    na(kk),la(kk),it
-             end if
-             error stop 1
-           end if
-
-           epa(iprj,l1,ikap)=ea(kk,ikap)
-           npa(iprj,l1)=na(kk)
-           if(irel==2) then
-             call renorm_r(uu,rr,ll,kap,zz,mmax,cnorm)
-           else
-             cnorm=1.0d0
-           end if
-           uua(:,iprj,ikap)=uu(:,1)
-           upa(:,iprj,ikap)=cnorm*up(:,1)
-         end if !la(kk)==l1-1
-         if(iprj==nproj(l1)) exit
-       end do !kk
-     end if !nv/=0
-
-!get all-electron well states for projectors
-!if there were no valence states, use ep from input data for 1st well state
-!otherwise shift up by input debl
-
-     if(iprj==0) epa(1,l1,ikap)=ep(l1,ikap)
-     if(iprj<nproj(l1))then
-       do kk=1,nproj(l1)-iprj
-         iprj=iprj+1
-         if(iprj>1 .and. debl(l1)<=0.0d0) then
-           if(irel==2) then
-             write(6,'(a,f8.3,a,i2/a/a)') 'oncvpsp: ERROR debl =',debl(l1), &
-&                  ' for l=',ll, &
-&                  ' not allowed with 2 or more scattering states', &
-&                  'program will stop'
-           else
-             write(6,'(a,f8.3,a,i2/a/a)') 'oncvpsp: ERROR debl =',debl(l1), &
-&                  ' for l=',ll, &
-&                  ' ERROR not allowed with 2 or more scattering states', &
-&                  'program will stop'
-           end if
-           error stop 1
-         end if
-
-! npa is not reset for ikap=2 to retain same node count for consistency with
-! keeping same well potential as for ikap=1.
-         if(iprj>1) then
-           epa(iprj,l1,ikap)=epa(iprj-1,l1,ikap)+debl(l1)
-           if(ikap==1) then
-             npa(iprj,l1)=npa(iprj-1,l1)+1
-           end if
-         end if
-!with the confined well, the n of the channel's first well state is the
-!input's well_n, if set; the next ones follow by one each
-         if(well_tail==2 .and. kk==1 .and. ikap==1 .and. well_n(l1)>0) then
-           if(well_n(l1)<npa(iprj,l1)) then
-             write(6,'(/a,i2,a,i3,a,i3)') 'oncvpsp: ERROR well_n for l=',ll, &
-&                 ' is',well_n(l1),', below the first well state''s n,', &
-&                 npa(iprj,l1)
-             error stop 1
-           end if
-           npa(iprj,l1)=well_n(l1)
-         end if
-
-! the well potential is calculated for the less-bound ikap=1 state and kept
-! for ikap=2, which is more deeply bound and should always have a bound
-! state for this combination of npa and vwell.  For irel=2 npa takes the n
-! of the well state found, which can have more nodes than asked for; else
-! npa keeps the input n.
-         if(ikap==1 .and. irel==2) then
-           call wellstate(npa(iprj,l1),ll,kap,rc(l1),epa(iprj,l1,ikap), &
-&                         ep_as_given,well_onset,well_tail==2,.false.,rr, &
-&                         vfull, &
-&                         vwell(1,iprj),uu,up,zz,mmax,mch,irel, &
-&                         inwell(iprj),eptgt,wmesh(iprj))
-         else if(ikap==1) then
-           nnwell=npa(iprj,l1)
-           call wellstate(nnwell,ll,kap,rc(l1),epa(iprj,l1,ikap),ep_as_given, &
-&                         well_onset,well_tail==2,well_tail_free,rr,vfull, &
-&                         vwell(1,iprj),uu,up,zz,mmax,mch,irel, &
-&                         inwell(iprj),eptgt,wmesh(iprj))
-         else
-           et=epa(iprj,l1,ikap)
-           if(wmesh(iprj)%mx>0) then
-!the j = l - 1/2 state in the well of j = l + 1/2, on its continued mesh
-             wmesh(iprj)%uu(:,:)=0.0d0
-             wmesh(iprj)%up(:,:)=0.0d0
-             call boundstate(irel,npa(iprj,l1),ll,kap,ierr, &
-&                            epa(iprj,l1,ikap),wmesh(iprj)%rr,zz, &
-&                            wmesh(iprj)%vv,wmesh(iprj)%uu,wmesh(iprj)%up, &
-&                            wmesh(iprj)%mx,mchx)
-             uu(:,:)=wmesh(iprj)%uu(1:mmax,:)
-             up(:,:)=wmesh(iprj)%up(1:mmax,:)
-           else
-             call boundstate(irel,npa(iprj,l1),ll,kap,ierr, &
-&                            epa(iprj,l1,ikap),rr,zz,vwell(1,iprj),uu,up, &
-&                            mmax,mch)
-           end if
-
-           if(ierr /= 0) then
-             write(6,'(a,i2,a,i2,a,i3,a,f12.6)') &
-&                  'oncvpsp_r 474: ldiracfb convergence ERROR, n=',&
-&                   npa(iprj,l1),'  l=',ll, 'kap=',kap, ' epa=', &
-&                   epa(iprj,l1,ikap)
-
-             error stop 1
-           end if
-
-           write(6,'(/a,i3,a,i3,a,i3/a,f8.4)') &
-&                   '   Wellstate for l =',ll,'  n =',npa(iprj,l1), &
-&                   ' kap=',kap, &
-&                   '     eigenvalue = ',et
-         end if
-
-         if(irel==2 .and. wmesh(iprj)%mx>0) then
-           call renorm_r(wmesh(iprj)%uu,wmesh(iprj)%rr,ll,kap,zz, &
-&                        wmesh(iprj)%mx,cnorm)
-           uu(:,:)=wmesh(iprj)%uu(1:mmax,:)
-         else if(irel==2) then
-           call renorm_r(uu,rr,ll,kap,zz,mmax,cnorm)
-         else
-           cnorm=1.0d0
-         end if
-         uua(:,iprj,ikap)=uu(:,1)
-         upa(:,iprj,ikap)=cnorm*up(:,1)
-!a state the well confines is normalized inside rc with well_norm "rc",
-!and by default with the confined well, as with the free tail: its norm
-!over all space is the well's, and would scale its E_resid with the width
-!of the well; else over all space, as the solvers give it (the kernels
-!see neither)
-         if(well_norm_rc .and. wmesh(iprj)%mx>0) then
-           call fpovlp(uua(1,iprj,ikap),uua(1,iprj,ikap),mmax,rc(l1),ll, &
-&                      kap,zz,cnorm,rr,irel)
-           cnorm=1.0d0/sqrt(cnorm)
-           uua(:,iprj,ikap)=cnorm*uua(:,iprj,ikap)
-           upa(:,iprj,ikap)=cnorm*upa(:,iprj,ikap)
-           wmesh(iprj)%uu(:,:)=cnorm*wmesh(iprj)%uu(:,:)
-           wmesh(iprj)%up(:,:)=cnorm*wmesh(iprj)%up(:,:)
-         end if
-!with the free tail, a well state is the atom's solution at exactly the
-!energy asked for (the well's eigenvalue only for j = l - 1/2, D-7c),
-!integrated outward past the reach of everything taken at or near rc
-!(ae_delta's nodes below, and the interpolants'); normalized inside rc,
-!as its norm over all space is the well's; and the windowed free tail
-!beyond, so that nothing sees the well but that energy
-!(doc/smoothness_plan.md, phase 8). Only for ep >= 0 (D-7, 2026-10-23):
-!below 0 the tail grows, and the round-off of E_resid, computed from the
-!transform of the windowed tail, grows with its peak squared, from kappa
-!L ~ 1.5 (free_tail_m)
-         if(well_tail_free .and. inwell(iprj)) then
-           if(ikap==1) epa(iprj,l1,ikap)=eptgt
-           if(ikap==1 .and. epa(iprj,l1,ikap)<0.0d0) then
-             write(6,'(/a/a,i2,a,i3,a,f12.6,a/a)') &
-&                 'oncvpsp: ERROR well_tail = "free" needs ep >= 0:', &
-&                 'the well state of l=',ll,', n=',npa(iprj,l1),' at ep=', &
-&                 epa(iprj,l1,ikap),' Ha has a growing tail;', &
-&                 'raise its ep (debl), or use well_tail = "confined"'// &
-&                 ' or "well"'
-             error stop 1
-           end if
-           mfree=min(mmax,irc(l1)+pw_reach+16+lm_fh_reach()+2)
-           uu(:,:)=0.0d0
-           up(:,:)=0.0d0
-           call scatterstate(irel,nnwell,ll,kap,ierr,epa(iprj,l1,ikap),rr, &
-&                            zz,vfull,uu,up,mmax,mfree)
-           if(ierr/=0) then
-             write(6,'(a,i2,a,f12.8)') &
-&                  'oncvpsp: ERROR scattering state failed for l=',ll, &
-&                  ' at energy',epa(iprj,l1,ikap)
-             error stop 1
-           end if
-           uua(:,iprj,ikap)=uu(:,1)
-           upa(:,iprj,ikap)=up(:,1)
-           call fpovlp(uua(1,iprj,ikap),uua(1,iprj,ikap),mmax,rc(l1),ll, &
-&                      kap,zz,cnorm,rr,irel)
-           uua(:,iprj,ikap)=uua(:,iprj,ikap)/sqrt(cnorm)
-           upa(:,iprj,ikap)=upa(:,iprj,ikap)/sqrt(cnorm)
-           call free_tail_log(irel,ll,kap,epa(iprj,l1,ikap),rr,vfull, &
-&                             uua(1,iprj,ikap),upa(1,iprj,ikap),mmax, &
-&                             rc(l1),qcut(l1),mfree)
-         end if
-       end do !kk
-     end if !iprj<nproj(l1)
-
-     do iprj=1,nproj(l1)
-
-!the relativistic term Delta of the all-electron wave about the taper
-!window [0.95 rc, rc] (ae_delta, D-4), for the projectors; the local
-!potential of lloc<4 takes Delta/(2u) on the window (S-1)
-       ii=max(1,1+int(log(0.95d0*rc(l1)/rr(1))/al)-pw_reach-8)
-       jj=min(mmax,irc(l1)+pw_reach+16)
-       call ae_delta(irel,ll,kap,epa(iprj,l1,ikap),rr,vfull,uua(1,iprj,ikap), &
-&                    upa(1,iprj,ikap),mmax,ii,jj,dlta(1,iprj,l1,ikap))
-       if(l1==lloc+1 .and. iprj==1) then
-         do kk=ii,jj
-           if(uua(kk,1,ikap)==0.0d0) then
-             write(6,'(a,i2,a,f10.6)') &
-&                  'oncvpsp: ERROR node of the local channel l=',ll, &
-&                  ' all-electron wave near rc, at r=',rr(kk)
-             error stop 1
-           end if
-           vrloc(kk,ikap)=0.5d0*dlta(kk,1,l1,ikap)/uua(kk,1,ikap)
-         end do
-       end if
-     end do
-
-
-!get all-electron overlap matrix
-     do jj=1,nproj(l1)
-       do ii=1,jj
-         call fpovlp(uua(1,ii,ikap),uua(1,jj,ikap),mmax,rc(l1),ll,kap, &
-&                    zz,qq(ii,jj),rr,irel)
-         qq(jj,ii)=qq(ii,jj)
-       end do
-     end do
+     call ae_bound_projectors(irel,ll,kap,ikap,nc,nv,na,la,ea,nproj(l1),it, &
+&                             rr,zz,vfull,mmax,uu,up,iprj,epa(:,l1,ikap), &
+&                             npa(:,l1),uua(:,:,ikap),upa(:,:,ikap))
+     call ae_well_projectors(irel,ll,kap,ikap,nproj(l1),ep(l1,ikap), &
+&                            debl(l1),well_n(l1),ep_as_given,well_onset, &
+&                            well_tail,well_norm_rc,rc(l1),irc(l1), &
+&                            qcut(l1),rr,zz,vfull,mmax,uu,up,nnwell,iprj, &
+&                            epa(:,l1,ikap),npa(:,l1),uua(:,:,ikap), &
+&                            upa(:,:,ikap),vwell,inwell,wmesh)
+     call ae_delta_window(irel,ll,kap,nproj(l1),epa(:,l1,ikap),rr,vfull, &
+&                         uua(:,:,ikap),upa(:,:,ikap),mmax,al,rc(l1), &
+&                         irc(l1),l1==lloc+1,dlta(:,:,l1,ikap), &
+&                         vrloc(:,ikap))
+     call ae_overlap(irel,ll,kap,nproj(l1),uua(:,:,ikap),rr,zz,mmax,rc(l1), &
+&                    qq)
      call run_optimize(epa(1,l1,ikap),ll,kap,irel,mmax,mxprj,rr, &
 &                      uua(1,1,ikap),upa(1,1,ikap),qq, &
 &                      well_tail_free .and. inwell(:),wmesh,rc(l1), &
@@ -775,30 +554,9 @@
 &                      ektail(1,1,l1,ikap),wreg,optdg(1,1,l1,ikap), &
 &                      wshare(1,1,l1,ikap))
 
-!the weights of its pseudo-waves in the cutoff of the pseudo-waves (the
-!weighted mean, and which waves the largest is over): the occupation of
-!each valence state (its share fj of J), or for the first wave of a channel
-!with none occupied ecut_weight, by default 2(2l+1), as if the channel were
-!full; in a solid it holds about the charge that hybridization puts inside
-!rc, an input as the atom cannot give it
-     jj=0
-     do kk=nc+1,nc+nv
-       if(la(kk)==ll .and. jj<nproj(l1)) then
-         jj=jj+1
-         wcurve(jj,l1,ikap)=fj*fa(kk)
-       end if
-     end do
-     if(.not. any(wcurve(:,l1,ikap)>0.0d0)) then
-       if(ecut_wt(l1)>=0.0d0) then
-         wcurve(1,l1,ikap)=fj*ecut_wt(l1)
-       else
-         wcurve(1,l1,ikap)=fj*dble(2*(2*ll+1))
-       end if
-     else if(ecut_wt(l1)>=0.0d0) then
-       write(6,'(/a,i2,a)') 'oncvpsp: ERROR ecut_weight for l=',ll, &
-&           ' is for a channel with no occupied state; this one has one'
-       error stop 1
-     end if
+!the weights of its pseudo-waves in the cutoff of the pseudo-waves
+     call ecut_weights(ll,nc,nv,la,fa,fj,nproj(l1),ecut_wt(l1), &
+&                      wcurve(:,l1,ikap))
 
    end do !ikap
    wellprj(:,l1)=inwell(:)

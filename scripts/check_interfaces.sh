@@ -53,6 +53,7 @@ cd "$work"
 modules_of() {
     case $1 in
         oncvpsp_confine.f90) echo confine_ws_m.f90 confine_wall_m.f90 ;;
+        oncvpsp*.F90) echo ae_projectors_m.f90 ;;
     esac
 }
 
