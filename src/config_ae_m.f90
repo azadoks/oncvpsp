@@ -26,6 +26,7 @@
  module config_ae_m
  use constants_m, only: dp, mxstate, mxcnf, nlev, ae_tolres
  use kappa_m, only: kap_count, kap_of
+ use ae_scf_m, only: ae_floor_warning
  implicit none
  private
  public :: run_config_ae, config_ae_warning, aeatom_cached
@@ -58,7 +59,7 @@
 !! repeats that warning. rpk comes back as that solution left it (rows
 !! 1..ncv). The arguments are those of aeatom
 
- external :: aeatom, ae_floor_warning
+ external :: aeatom
 
 !Input variables
  integer, intent(in) :: irel,nkap,mmax,iexc,nc,ncv

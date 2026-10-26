@@ -52,6 +52,8 @@
 
  use constants_m, only: dp, mxstate, mxkap, ae_tolres
  use kappa_m, only: kap_count, kap_of, j_share
+ use ae_scf_m, only: ae_energies, ae_residual, ae_converged, &
+&                    ae_anderson1, ae_outer_peak
  implicit none
 
 !Input variables
@@ -76,9 +78,9 @@
  real(dp) :: tfapot
  integer :: nin,mch
  real(dp) :: amesh,al
- real(dp) :: dr,eeel,eexc,et,rl,rl1,sd,sf,sn,eeig
- real(dp) :: thl,vn,zion,fj
- integer :: ii,jj,ll,ikap,kap,mkap
+ real(dp) :: eeel,eexc,et,sf,eeig
+ real(dp) :: zion,fj
+ integer :: ii,ll,ikap,kap,mkap
  logical :: convg
  real(dp) :: resbest
  integer :: nflat
@@ -97,8 +99,8 @@
 ! why all this is necessary is unclear, but it seems to be
  uu(:,:)=0.d0; up(:,:)=0.d0; vso(:)=0.d0; vsi1(:)=0.d0; vso1(:)=0.d0
  vxc(:)=0.d0
- dr=0.d0; eeel=0.d0; eexc=0.d0; et=0.d0; rl=0.d0; rl1=0.d0
- sd=0.d0; sf=0.d0; sn=0.d0; eeig=0.d0; thl=0.d0; vn=0.d0; zion=0.d0
+ eeel=0.d0; eexc=0.d0; et=0.d0
+ sf=0.d0; eeig=0.d0; zion=0.d0
  nin=0; mch=0
 
  al = 0.01d0 * log(rr(101) / rr(1))
@@ -177,12 +179,7 @@
 
 
 ! find outermost peak of wavefunction
-       do jj=mch-1,1,-1
-         if(up(jj,1)*up(jj+1,1)<0.0d0) then
-           rpk(ii,ikap)=rr(jj)
-           exit
-         end if
-       end do
+       call ae_outer_peak(up(:,1),rr,mch,rpk(ii,ikap))
      end do
    end do
 
@@ -209,27 +206,9 @@
 
 ! generate next iteration using d. g. anderson''s
 ! method
-   thl=0.0d0
-   if(it>1) then
-     sn=0.0d0
-     sd=0.0d0
-     do ii=1,mmax
-       rl=vso(ii)-vsi(ii)
-       rl1=vso1(ii)-vsi1(ii)
-       dr=rl-rl1
-       sn=sn + rl*dr*rr(ii)**2
-       sd=sd + dr*dr*rr(ii)**2
-     end do
-     thl=sn/sd
-   end if
-
+   call ae_anderson1(it>1,vsi,vso,vsi1,vso1,rr,mmax,bl)
    do ii=1,mmax
-     vn=(1.0d0-bl)*((1.0d0-thl)*vsi(ii) + thl*vsi1(ii)) &
-&     + bl*((1.0d0-thl)*vso(ii) + thl*vso1(ii))
-     vsi1(ii)=vsi(ii)
-     vso1(ii)=vso(ii)
-     vsi(ii)=vn
-     vi(ii)=vn - zz/rr(ii)
+     vi(ii)=vsi(ii) - zz/rr(ii)
    end do
 
    if(it==100 .and. .not. convg) then

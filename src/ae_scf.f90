@@ -19,7 +19,15 @@
 ! Convergence measure, energy terms and mixing of the all-electron SCF of
 ! sratom and relatom, which mix the screening (Hartree plus exchange-
 ! correlation) potential and add the nuclear -zz/r to it for the radial
-! equations
+! equations; psatom shares the convergence test and the one-step mixing
+
+ module ae_scf_m
+ implicit none
+ private
+ public :: ae_residual, ae_energies, ae_mix, ae_converged, ae_floor_warning
+ public :: ae_anderson1, ae_outer_peak
+
+ contains
 
  subroutine ae_residual(rho,vsi,vso,sf,rr,mmax,res)
 
@@ -367,3 +375,92 @@
 &      'on the round-off floor of the residual, res=',res,', tolres=',tolres
  return
  end subroutine ae_floor_warning
+
+ subroutine ae_anderson1(mix,vi,vo,vi1,vo1,rr,mmax,bl)
+
+!! the next input potential by D. G. Anderson's method with one previous
+!! iteration (psatom, relatom): the input and output potentials vi, vo
+!! and those before, vi1, vo1, blended with bl, and those saved for the
+!! next; with mix false, plain linear mixing (thl = 0)
+!!
+!! @param mix  whether the previous iteration enters
+!! @param vi  input potential, the next on output
+!! @param vo  output potential
+!! @param vi1,vo1  the previous input and output potentials, this
+!!                 iteration's on output
+!! @param rr  log radial mesh
+!! @param mmax  size of the mesh
+!! @param bl  the blend of the output potential
+
+ use constants_m, only: dp
+ implicit none
+
+!Input variables
+ integer, intent(in) :: mmax
+ logical, intent(in) :: mix
+ real(dp), intent(in) :: vo(mmax),rr(mmax),bl
+
+!Input/output variables
+ real(dp), intent(inout) :: vi(mmax),vi1(mmax),vo1(mmax)
+
+!Local variables
+ real(dp) :: thl,sn,sd,rl,rl1,dr,vn
+ integer :: ii
+
+ thl=0.0d0
+ if(mix) then
+   sn=0.0d0
+   sd=0.0d0
+   do ii=1,mmax
+     rl=vo(ii)-vi(ii)
+     rl1=vo1(ii)-vi1(ii)
+     dr=rl-rl1
+     sn=sn + rl*dr*rr(ii)**2
+     sd=sd + dr*dr*rr(ii)**2
+   end do
+   thl=sn/sd
+ end if
+
+ do ii=1,mmax
+   vn=(1.0d0-bl)*((1.0d0-thl)*vi(ii) + thl*vi1(ii)) &
+&   + bl*((1.0d0-thl)*vo(ii) + thl*vo1(ii))
+   vi1(ii)=vi(ii)
+   vo1(ii)=vo(ii)
+   vi(ii)=vn
+ end do
+ return
+ end subroutine ae_anderson1
+
+ subroutine ae_outer_peak(up,rr,mch,rpk)
+
+!! the radius of the outermost extremum of a bound state inside mch, where
+!! its derivative up changes sign; rpk unchanged if there is none
+!!
+!! @param up  the derivative of the state on the mesh
+!! @param rr  log radial mesh
+!! @param mch  the last point
+!! @param rpk  the radius (output)
+
+ use constants_m, only: dp
+ implicit none
+
+!Input variables
+ integer, intent(in) :: mch
+ real(dp), intent(in) :: up(mch),rr(mch)
+
+!Input/output variables
+ real(dp), intent(inout) :: rpk
+
+!Local variables
+ integer :: jj
+
+ do jj=mch-1,1,-1
+   if(up(jj)*up(jj+1)<0.0d0) then
+     rpk=rr(jj)
+     exit
+   end if
+ end do
+ return
+ end subroutine ae_outer_peak
+
+ end module ae_scf_m

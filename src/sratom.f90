@@ -50,6 +50,8 @@
 !!              and hydrogenic energies
 
  use constants_m, only: dp, ae_tolres
+ use ae_scf_m, only: ae_energies, ae_residual, ae_converged, ae_mix, &
+&                    ae_outer_peak
  implicit none
 
 !Input variables
@@ -79,7 +81,7 @@
  real(dp) :: amesh,al
  real(dp) :: eeel,eexc,et,sf,eeig
  real(dp) :: zion
- integer :: ii,jj
+ integer :: ii
  logical :: convg
  real(dp) :: resbest
  integer :: nflat
@@ -175,12 +177,7 @@
 
 
 ! find outermost peak of wavefunction
-     do jj=mch-1,1,-1
-       if(up(jj)*up(jj+1)<0.0d0) then
-         rpk(ii)=rr(jj)
-         exit
-       end if
-     end do
+     call ae_outer_peak(up,rr,mch,rpk(ii))
 
    end do
 

@@ -57,6 +57,7 @@
 
  use constants_m, only: dp, mxstate, mxl, mxlin
  use kappa_m, only: kap_count, kap_of, j_share
+ use ae_scf_m, only: ae_residual, ae_converged, ae_anderson1
  use pieces_m, only: piecewise_t
  implicit none
 
@@ -85,10 +86,10 @@
  real(dp) :: vi(mmax)
  integer :: nin,mch
  real(dp) :: amesh,al
- real(dp) :: dr,eeel,eexc,et,emin,emax,rl,rl1,sd,sn,sls,eeig
- real(dp) :: thl,vn,zval,fj,res,wt,resbest
+ real(dp) :: eeel,eexc,et,emin,emax,eeig
+ real(dp) :: zval,fj,res,wt,resbest
  real(dp) :: fa(mxstate)
- integer :: ii,jj,l1,itarget,nprj,nflat
+ integer :: ii,l1,itarget,nprj,nflat
  integer :: ikap,kap,ll,mkap
  logical :: convg,walled
  real(dp) :: wext
@@ -127,9 +128,8 @@
  uu(:)=0.d0; up(:)=0.d0
  vo(:)=0.d0; vi1(:)=0.d0; vo1(:)=0.d0; vxc(:)=0.d0; vp(:)=0.d0
  vtot(:)=0.d0
- dr=0.d0; eeel=0.d0; eexc=0.d0; et=0.d0; emin=0.d0; emax=0.d0
- rl=0.d0; rl1=0.d0; sd=0.d0; sn=0.d0; sls=0.d0; eeig=0.d0
- thl=0.d0; vn=0.d0; zval=0.d0
+ eeel=0.d0; eexc=0.d0; et=0.d0; emin=0.d0; emax=0.d0
+ eeig=0.d0; zval=0.d0
  nin=0; mch=0
 
  al = 0.01d0 * log(rr(101) / rr(1))
@@ -257,27 +257,7 @@
 
 ! generate next iteration using d. g. anderson''s
 ! method, once the previous iteration was at the target occupations too
-   thl=0.0d0
-   if(it>itarget) then
-     sn=0.0d0
-     sd=0.0d0
-     do ii=1,mmax
-       rl=vo(ii)-vi(ii)
-       rl1=vo1(ii)-vi1(ii)
-       dr=rl-rl1
-       sn=sn + rl*dr*rr(ii)**2
-       sd=sd + dr*dr*rr(ii)**2
-     end do
-     thl=sn/sd
-   end if
-
-   do ii=1,mmax
-     vn=(1.0d0-bl)*((1.0d0-thl)*vi(ii) + thl*vi1(ii)) &
-&     + bl*((1.0d0-thl)*vo(ii) + thl*vo1(ii))
-     vi1(ii)=vi(ii)
-     vo1(ii)=vo(ii)
-     vi(ii)=vn
-   end do
+   call ae_anderson1(it>itarget,vi,vo,vi1,vo1,rr,mmax,bl)
 
    if(convg) exit
 
