@@ -46,7 +46,8 @@
 !! @param fa  reference configuration occupancies
 !! @param facnf  occupancies of the reference (1) and test configurations
 !! @param rc  core radii for each l, rc(5) for the lloc=4 local potential (bohr)
-!! @param ep  energies at which the pseudopotentials are generated (Ha)
+!! @param ep  energies at which the pseudopotentials are generated (Ha;
+!!            not checked)
 !! @param qcut  residual-energy cutoff wave vectors for each l
 !! @param debl  energy shifts for the second projectors for each l (Ha)
 !! @param nc  number of core states
@@ -95,15 +96,35 @@
  integer, intent(in) :: ncon(mxlin+1),nbas(mxlin+1),nproj(mxlin+1)
 
 !Local variables
- real(dp) :: cfloc(5)
- integer :: ierr,ii,jj,l1
-
- logical :: occ
-
- real(dp) :: sf,rcmax
+!the number of errors found
+ integer :: ierr
 
  ierr=0
 
+ call check_atom()
+
+ call check_channels()
+
+ call check_model_core()
+
+ call check_meshes()
+
+ call check_tests()
+
+ if(ierr>0) then
+   write(6,'(a,i4,a)') 'ERROR: test_data found',ierr,' ERROR; stopping'
+   error stop 1
+ end if
+
+ return
+
+ contains
+
+ subroutine check_atom()
+!! the atom, the file format, the functional and the reference
+!! configuration
+ integer :: ii
+ real(dp) :: sf
  if(trim(atsym)=='') then
    write(6,'(a)') 'test_data: must have non-blank atsym'
    ierr=ierr+1
@@ -159,6 +180,12 @@
    ierr=ierr+1
  end if
 
+ end subroutine check_atom
+
+ subroutine check_channels()
+!! lmax, and the core radius, constraints, basis, cutoff and projectors
+!! of each l and of the local potential
+ integer :: l1
  if(lmax<0 .or. lmax>mxl) then
    write(6,'(a,i0)') 'test_data: 0 <= lmax <= ',mxl
    ierr=ierr+1
@@ -169,15 +196,6 @@
      write(6,'(a,i4)') 'test_data: must have rc>0.0, l=',l1-1
      ierr=ierr+1
    end if
-   if(ep(l1)<=0.0d0) then
-     occ=.false.
-     do ii=nc+1,nc+nv
-       if(la(ii)==l1-1) then
-         occ=.true.
-       end if
-     end do
-   end if
-
    if(ncon(l1)<3 .or. ncon(l1)>5) then
      write(6,'(a,i4)') 'test_data: must have 3 <= ncon <= 5, l=',l1-1
      ierr=ierr+1
@@ -240,6 +258,10 @@
    end if
  end do
 
+ end subroutine check_channels
+
+ subroutine check_model_core()
+!! icmod and the parameters of its model core
  if((icmod<0 .or. icmod>4) .and. icmod/=6 .and. icmod/=7) then
    write(6,'(a)') 'test_data: must have 0<= icmod <=4 or icmod=6 or 7'
    ierr=ierr+1
@@ -282,6 +304,13 @@
    end if
  end if
 
+ end subroutine check_model_core
+
+ subroutine check_meshes()
+!! the energies and radius of the log derivatives, and the output and log
+!! meshes, against the largest core radius
+ integer :: l1
+ real(dp) :: rcmax
  if(epsh2<epsh1) then
    write(6,'(a)') 'test_data: must have epsh2 > epsh1'
    ierr=ierr+1
@@ -344,6 +373,12 @@
    ierr=ierr+1
  end if
 
+ end subroutine check_meshes
+
+ subroutine check_tests()
+!! the test configurations
+ integer :: ii,jj
+ real(dp) :: sf
  if(ncnf<0 .or. ncnf>mxcnf-1)then
    write(6,'(a,i0,a)') 'test_data: must have 0 <= ncnf <= ',mxcnf-1, &
 &        ', skipping config. checks'
@@ -377,10 +412,6 @@
    end do
  end if
 
- if(ierr>0) then
-   write(6,'(a,i4,a)') 'ERROR: test_data found',ierr,' ERROR; stopping'
-   error stop 1
- end if
+ end subroutine check_tests
 
- return
  end subroutine check_data
