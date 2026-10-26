@@ -112,89 +112,21 @@
 ! Q-9): converged at a few ulps of ep, or when the bracket of rwell has
 ! closed to a few ulps (E then within eps of ep, else an error)
  real(dp),parameter :: eps=1.0d-10
- integer :: ii,iter,ierr,iumax,l1,itrwell,nn,nnloop,iside,nnhi
+ integer :: ierr,iumax,itrwell,nn,nnloop,iside,nnhi
 !the continued mesh, vfull and the well on it, and the state
  real(dp), allocatable :: rx(:),vx(:),vw(:),ux(:,:),upx(:,:)
  integer :: mx,mneed,mchx
- logical :: convg,bound
+ logical :: convg,bound,done
 
- l1=ll+1
  ron=rc*onset
  confined=.true.
  eptgt=ep
 
 !check for bound state with specified ll and nnin
+ call find_bound()
 
- uu(:,:)=0.0d0 ; up(:,:)=0.0d0
- et=-0.1d0
- call boundstate(irel,nnin,ll,kap,ierr,et,rr,zz,vfull,uu,up,mmax,mch)
-
-!if bound state is found, check its localization
- bound=.false.
- if(ierr==0) then
-   umax=0.0d0
-   iumax=1
-   do ii=mmax,1,-1
-     if(abs(uu(ii,1))>=umax) then
-       umax=abs(uu(ii,1))
-     else
-       iumax=ii+1
-       exit
-     end if
-   end do
-   bound=rr(iumax)<1.5d0*rc
- end if
-
- if(epgiven) then
-!a bound state at or above ep cannot be raised to ep by the well: an input
-!error; one below ep and localized inside 1.5 rc only needs raising, by a
-!wall as close as that takes
-   if(ierr==0 .and. et>=ep .and. .not. nowell) then
-     write(6,'(/a,i2,a,i2,a,f12.8/a,f12.8)') &
-&          'wellstate: ERROR a bound state exists for n=',nnin,' l=',ll, &
-&          ' at energy',et,'wellstate: ERROR above the requested ep=',ep
-     error stop 1
-   end if
- else
-   bound=.false.
-   if(ierr==0) then
-!if bound state is localized compared to rc, use it and its energy
-     if(rr(iumax)<0.75d0*rc) then
-       ep=et
-       write(6,'(/a,i2,a,i2/a,f12.8/a)') &
-&            'WARNING wellstate: localized bound state found for n=', &
-&             nnin,' l=', ll,'WARNING this state with energy',ep, &
-&            'WARNING will be used for the first projector'
-
-!make sure vwell exists for ikap=2 calculation in this case
-       vwell(:)=vfull(:)
-       confined=.false.
-       eptgt=ep
-
-       return
-
-!if moderately delocalized use very low-energy scattering state
-     else if(rr(iumax)<1.5d0*rc) then
-
-       ep=0.05d0
-       write(6,'(/2a,i2,a,i2/a,f12.8/a)') &
-&            'WARNING wellstate: moderately localized bound state found', &
-&            ' for n=', &
-&            nnin,' l= ',ll,'WARNING scattering state with energy',ep, &
-&            'WARNING will be used for the first projector'
-     end if
-   end if
-
-!if specified ep is retained and is negative
-   if(ep<0.0d0) then
-     ep=0.25d0
-     write(6,'(/a,i2,a,i2/a,f12.8/a)') &
-&           'WARNING wellstate: negative energy specified for n=', &
-&           nnin,' l= ',ll, &
-&           'WARNING scattering state with energy',ep, &
-&           'WARNING will be used for the first projector'
-   end if
- end if
+ call target_energy(done)
+ if(done) return
 
 !the energy the well's eigenvalue is found for
  eptgt=ep
@@ -237,31 +169,9 @@
 
    do itrwell=1,100
 
-
 !create well potential, on the log mesh continued until a state at ep
 !decays in it to machine precision (well_mesh_m)
-     mx=mmax
-     do
-       call wm_build(rr,vfull,mmax,mx,rx,vx)
-       if(allocated(vw)) deallocate(vw)
-       allocate(vw(mx))
-       vw(:)=vx(:)
-
-!   the well starts past rc, where the matching data of the projectors are
-!   taken, and rises smoothly
-       do ii=1,mx
-         if(rx(ii)<=ron) cycle
-         xx=(rx(ii)-ron)/rwell
-         if(confwall) then
-           vw(ii)=vw(ii)+cwell*xx**3*exp(-0.01d0/xx)
-         else
-           vw(ii)=vw(ii)+cwell*xx**3/(1.0d0+xx**3)*exp(-0.01d0/xx)
-         end if
-       end do
-       call wm_short(ll,ep,rx,vw,mx,mneed)
-       if(mneed==0) exit
-       mx=mneed
-     end do
+     call well_potential()
 
 !find bound state in well
      if(allocated(ux)) deallocate(ux,upx)
@@ -381,6 +291,148 @@
  up(:,:)=upx(1:mmax,:)
  mch=min(mchx,mmax)
 
+ call report()
+
+!carry over node count
+ nnin=nn
+
+ return
+
+ contains
+
+ subroutine find_bound()
+
+!! the bound state of nnin and ll in vfull, if any (ierr 0, energy et), and
+!! whether it is localized inside 1.5 rc (bound)
+
+!Local variables
+ integer :: ii
+
+ uu(:,:)=0.0d0 ; up(:,:)=0.0d0
+ et=-0.1d0
+ call boundstate(irel,nnin,ll,kap,ierr,et,rr,zz,vfull,uu,up,mmax,mch)
+
+!if bound state is found, check its localization
+ bound=.false.
+ if(ierr==0) then
+   umax=0.0d0
+   iumax=1
+   do ii=mmax,1,-1
+     if(abs(uu(ii,1))>=umax) then
+       umax=abs(uu(ii,1))
+     else
+       iumax=ii+1
+       exit
+     end if
+   end do
+   bound=rr(iumax)<1.5d0*rc
+ end if
+ return
+ end subroutine find_bound
+
+ subroutine target_energy(done)
+
+!! the energy the well is built for: the input ep (epgiven), or its
+!! replacements above; done when the localized bound state replaces it,
+!! with no well (uu, up its own, vwell vfull)
+
+!Output variables
+ logical, intent(out) :: done
+
+ done=.false.
+ if(epgiven) then
+!a bound state at or above ep cannot be raised to ep by the well: an input
+!error; one below ep and localized inside 1.5 rc only needs raising, by a
+!wall as close as that takes
+   if(ierr==0 .and. et>=ep .and. .not. nowell) then
+     write(6,'(/a,i2,a,i2,a,f12.8/a,f12.8)') &
+&          'wellstate: ERROR a bound state exists for n=',nnin,' l=',ll, &
+&          ' at energy',et,'wellstate: ERROR above the requested ep=',ep
+     error stop 1
+   end if
+ else
+   bound=.false.
+   if(ierr==0) then
+!if bound state is localized compared to rc, use it and its energy
+     if(rr(iumax)<0.75d0*rc) then
+       ep=et
+       write(6,'(/a,i2,a,i2/a,f12.8/a)') &
+&            'WARNING wellstate: localized bound state found for n=', &
+&             nnin,' l=', ll,'WARNING this state with energy',ep, &
+&            'WARNING will be used for the first projector'
+
+!make sure vwell exists for ikap=2 calculation in this case
+       vwell(:)=vfull(:)
+       confined=.false.
+       eptgt=ep
+       done=.true.
+
+       return
+
+!if moderately delocalized use very low-energy scattering state
+     else if(rr(iumax)<1.5d0*rc) then
+
+       ep=0.05d0
+       write(6,'(/2a,i2,a,i2/a,f12.8/a)') &
+&            'WARNING wellstate: moderately localized bound state found', &
+&            ' for n=', &
+&            nnin,' l= ',ll,'WARNING scattering state with energy',ep, &
+&            'WARNING will be used for the first projector'
+     end if
+   end if
+
+!if specified ep is retained and is negative
+   if(ep<0.0d0) then
+     ep=0.25d0
+     write(6,'(/a,i2,a,i2/a,f12.8/a)') &
+&           'WARNING wellstate: negative energy specified for n=', &
+&           nnin,' l= ',ll, &
+&           'WARNING scattering state with energy',ep, &
+&           'WARNING will be used for the first projector'
+   end if
+ end if
+
+ return
+ end subroutine target_energy
+
+ subroutine well_potential()
+
+!! the well of width rwell on the log mesh continued until a state at ep
+!! decays in it to machine precision (well_mesh_m): rx, vx and vw on mx
+!! points
+
+!Local variables
+ integer :: ii
+
+ mx=mmax
+ do
+   call wm_build(rr,vfull,mmax,mx,rx,vx)
+   if(allocated(vw)) deallocate(vw)
+   allocate(vw(mx))
+   vw(:)=vx(:)
+
+!   the well starts past rc, where the matching data of the projectors are
+!   taken, and rises smoothly
+   do ii=1,mx
+     if(rx(ii)<=ron) cycle
+     xx=(rx(ii)-ron)/rwell
+     if(confwall) then
+       vw(ii)=vw(ii)+cwell*xx**3*exp(-0.01d0/xx)
+     else
+       vw(ii)=vw(ii)+cwell*xx**3/(1.0d0+xx**3)*exp(-0.01d0/xx)
+     end if
+   end do
+   call wm_short(ll,ep,rx,vw,mx,mneed)
+   if(mneed==0) exit
+   mx=mneed
+ end do
+ return
+ end subroutine well_potential
+
+ subroutine report()
+
+!! the well state's energy and well on output
+
  if(confwall .and. irel==2) then
    write(6,'(/a,i3,a,i3,a,i3/a,f8.4/a,f8.4)') &
 &           '   Wellstate for l =',ll,'  n =',nn,' kap=',kap, &
@@ -407,12 +459,10 @@
    end if
  end if
 
-!carry over node count
  if(mx>mmax) then
    write(6,'(a,f8.2,a)') '     mesh continued to r =',rx(mx),' bohr'
  end if
-
- nnin=nn
-
  return
+ end subroutine report
+
  end subroutine wellstate

@@ -108,14 +108,11 @@
  real(dp), allocatable :: sqr(:),cqr(:),sdqr(:),cdqr(:)
  real(dp), allocatable :: g0(:),gdot(:,:),gmat(:,:,:),work(:)
  real(dp), allocatable :: aw(:),tailg(:)
- complex(dp), allocatable :: xin(:),fk(:,:)
- type(czt_plan_t) :: plan
- real(dp) :: pk(0:4),est,qlo
- integer :: nqd,mq
- real(dp) :: sb_out(5),psnullq(nnull)
+ integer :: nqd
+ real(dp) :: sb_out(5)
  real(qp) :: ovl(nbas),ps0in,psnin(nnull),rcq,jq(nbas),jdq(nbas),jb,jdb
- real(dp) :: q0,qq,qq4,ps0q,tn,qa,qb,wg
- integer :: ii,iq,jj,kk,ll1,ig,icell
+ real(dp) :: q0
+ integer :: ii,jj,ll1
 !steps between exact sin/cos(qq*rlin) evaluations in the q loop
  integer, parameter :: nqseed=32
 !fewest nodes for the chirp-z transform
@@ -171,6 +168,38 @@
  allocate(aw(nr),tailg(nq))
  aw(:)=wr(:)*ulin(:)
  tailg(:)=0.0d0
+ call czt_split()
+
+!the nodes below, by the sums
+ call tail_by_sums()
+
+!the nodes above, by the chirp-z transform
+ if(nqd<nq) call tail_by_czt()
+
+!the integrands at each node of the q grid, their integrals from each node
+!to qmax, and the values at each qout
+ call node_integrals()
+ call at_qout()
+
+ deallocate(rlin,wr,sbf)
+ deallocate(sqr,cqr,sdqr,cdqr)
+ deallocate(g0,gdot,gmat,work)
+ deallocate(aw,tailg)
+
+ return
+
+ contains
+
+ subroutine czt_split()
+
+!! the first node nqd+1 from which the tail's transforms are those of the
+!! chirp-z transform: above the last where the closed forms' terms cancel
+!! (nqd=nq for l>3, or for fewer than nczt nodes above)
+
+!Local variables
+ real(dp) :: pk(0:4),est,qq
+ integer :: ii,iq,kk
+
  nqd=nq
  if(ll<=3) then
    pk(:)=0.0d0
@@ -195,9 +224,18 @@
    end do
    if(nq-nqd<nczt) nqd=nq
  end if
+ return
+ end subroutine czt_split
 
-!the nodes below, by the sums: sin and cos of dq*rlin, which step sin and
-!cos of qq*rlin from one qq to the next by rotation
+ subroutine tail_by_sums()
+
+!! the tail's transforms at the nodes 1..nqd by the sums: sin and cos of
+!! dq*rlin step sin and cos of qq*rlin from one qq to the next by rotation
+
+!Local variables
+ real(dp) :: qq,tn
+ integer :: ii,iq
+
  do ii=1,nr
    sdqr(ii)=sin(dq*rlin(ii))
  end do
@@ -227,35 +265,55 @@
    if(qq==0.0d0) cycle
    tailg(iq)=tail_sum(qq)
  end do
+ return
+ end subroutine tail_by_sums
 
-!the nodes above, by the chirp-z transform: F_k(q) = sum aw r**(1-k)
-!exp(i q r) on q = qlo + m dq, r = rlin(1) + n hh, is exp(i q rlin(1))
-!times the transform of aw r**(1-k) exp(i qlo n hh) at the angle dq hh
- if(nqd<nq) then
-   mq=nq-nqd
-   qlo=q0+dble(nqd)*dq
-   allocate(xin(0:nr-1),fk(0:mq-1,ll+1))
-   call czt_plan(nr,mq,dq*hh,plan)
-   do kk=1,ll+1
-     do ii=1,nr
-       xin(ii-1)=(0.0d0,0.0d0)
-       if(rlin(ii)>0.0d0) then
-         xin(ii-1)=aw(ii)*rlin(ii)**(1-kk) &
+ subroutine tail_by_czt()
+
+!! the tail's transforms at the nodes nqd+1..nq by the chirp-z transform:
+!! F_k(q) = sum aw r**(1-k) exp(i q r) on q = qlo + m dq, r = rlin(1) +
+!! n hh, is exp(i q rlin(1)) times the transform of aw r**(1-k) exp(i qlo
+!! n hh) at the angle dq hh
+
+!Local variables
+ complex(dp), allocatable :: xin(:),fk(:,:)
+ type(czt_plan_t) :: plan
+ real(dp) :: qlo,qq
+ integer :: ii,iq,kk,mq
+
+ mq=nq-nqd
+ qlo=q0+dble(nqd)*dq
+ allocate(xin(0:nr-1),fk(0:mq-1,ll+1))
+ call czt_plan(nr,mq,dq*hh,plan)
+ do kk=1,ll+1
+   do ii=1,nr
+     xin(ii-1)=(0.0d0,0.0d0)
+     if(rlin(ii)>0.0d0) then
+       xin(ii-1)=aw(ii)*rlin(ii)**(1-kk) &
 &                 *cmplx(cos(qlo*dble(ii-1)*hh),sin(qlo*dble(ii-1)*hh),dp)
-       end if
-     end do
-     call czt_apply(plan,xin,fk(:,kk))
+     end if
    end do
-   call czt_free(plan)
-   do iq=nqd+1,nq
-     qq=q0+dble(iq-1)*dq
-     fk(iq-nqd-1,:)=fk(iq-nqd-1,:)*cmplx(cos(qq*rlin(1)),sin(qq*rlin(1)),dp)
-     tailg(iq)=czt_combine(qq,fk(iq-nqd-1,:))
-   end do
-   deallocate(xin,fk)
- end if
+   call czt_apply(plan,xin,fk(:,kk))
+ end do
+ call czt_free(plan)
+ do iq=nqd+1,nq
+   qq=q0+dble(iq-1)*dq
+   fk(iq-nqd-1,:)=fk(iq-nqd-1,:)*cmplx(cos(qq*rlin(1)),sin(qq*rlin(1)),dp)
+   tailg(iq)=czt_combine(qq,fk(iq-nqd-1,:))
+ end do
+ deallocate(xin,fk)
+ return
+ end subroutine tail_by_czt
 
-!the integrands at each node of the q grid
+ subroutine node_integrals()
+
+!! the integrands at each node of the q grid and their integrals from
+!! each node to qmax: e0g, edotg, ematg
+
+!Local variables
+ real(dp) :: qq,qq4,ps0q,psnullq(nnull)
+ integer :: iq,jj,kk
+
  do iq=1,nq
    qq=q0+dble(iq-1)*dq
 
@@ -291,9 +349,18 @@
      ematg(:,kk,jj)=work(:)/pi
    end do
  end do
+ return
+ end subroutine node_integrals
 
-!at each qout: the value at the next node plus the partial cell by
-!Gauss-Legendre, with the transforms at its nodes
+ subroutine at_qout()
+
+!! E at each qout: the value at the next node plus the partial cell by
+!! Gauss-Legendre, with the transforms at its nodes
+
+!Local variables
+ real(dp) :: qq,qq4,ps0q,psnullq(nnull),qa,qb,wg
+ integer :: ii,jj,kk,ig,icell
+
  do ii=1,nqout
    if(qout(ii)<0.0d0 .or. qout(ii)>=qmax) then
      write(6,'(a,es12.4,a,es12.4)') 'eresid: ERROR q off the grid, q=', &
@@ -336,15 +403,8 @@
      end do
    end do
  end do
-
- deallocate(rlin,wr,sbf)
- deallocate(sqr,cqr,sdqr,cdqr)
- deallocate(g0,gdot,gmat,work)
- deallocate(aw,tailg)
-
  return
-
- contains
+ end subroutine at_qout
 
  real(dp) function tail_sum(qq)
 

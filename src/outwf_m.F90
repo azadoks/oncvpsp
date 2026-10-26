@@ -129,7 +129,7 @@
 !Local variables
  real(dp), allocatable :: vs(:),vn(:),fpiece(:)
  real(dp) :: al,als,sls,brk(2*pw_maxseg+2),tt,rm,plast
- integer :: ii,jj,kk,nbrk,nseg,npt,nsol,nsp,i1
+ integer :: kk,nbrk,nseg,npt,nsol
  type(og_seg_t), pointer :: sg
 
  allocate(vs(mmax),vn(mmax),fpiece(mmax))
@@ -149,7 +149,50 @@
  vs(:)=vloc(:)-vn(:)
 
 ! the breakpoints: the bounds of the potential and of the sources inside
-! the mesh, in order, each once
+! the mesh, in order, each once, and the segments between them
+ call breakpoints()
+
+ do kk=1,nseg
+   sg=>ow%seg(kk)
+   if(kk<nseg) then
+     rm=0.5d0*(ow%bound(kk-1)+ow%bound(kk))
+   else
+     rm=max(ow%bound(kk-1),rr(1))*exp(0.5d0*al)
+   end if
+   sg%ipv=pw_segment(vlocpw,rm)
+   if(sg%ipv==0) then
+     write(6,'(a)') &
+&          'outwf_setup: ERROR the potential''s pieces end inside the mesh'
+     error stop 1
+   end if
+   sg%ipb=0
+   if(nsrc>0) sg%ipb=pw_segment(srcpw(1),rm)
+   fpiece(:)=vlocpw%vals(:,sg%ipv)+vs(:)
+
+   if(kk==1) then
+     call first_grid()
+   else
+     call later_grid(kk)
+   end if
+   allocate(sg%uu(0:npt-1,nsol),sg%up(0:npt-1,nsol),sg%upp(0:npt-1,nsol))
+   sg%uu(:,:)=0.0d0
+   sg%up(:,:)=0.0d0
+   sg%upp(:,:)=0.0d0
+   sg%jmax=-1
+ end do
+ deallocate(vs,vn,fpiece)
+ return
+
+ contains
+
+ subroutine breakpoints()
+
+!! the bounds of the potential and of the sources inside the mesh, in
+!! order, each once (brk, nbrk), and the segments between them
+
+!Local variables
+ integer :: ii,jj,kk
+
  nbrk=0
  do kk=1,vlocpw%nseg
    call add_break(vlocpw%bound(kk))
@@ -189,115 +232,108 @@
  ow%bound(nseg)=rr(mmax)
  ow%tlast=0.0d0
  if(nbrk>0) ow%tlast=1.0d0+log(brk(nbrk)/rr(1))/al
+ return
+ end subroutine breakpoints
 
- do kk=1,nseg
-   sg=>ow%seg(kk)
-   if(kk<nseg) then
-     rm=0.5d0*(ow%bound(kk-1)+ow%bound(kk))
-   else
-     rm=max(ow%bound(kk-1),rr(1))*exp(0.5d0*al)
-   end if
-   sg%ipv=pw_segment(vlocpw,rm)
-   if(sg%ipv==0) then
-     write(6,'(a)') &
-&          'outwf_setup: ERROR the potential''s pieces end inside the mesh'
-     error stop 1
-   end if
-   sg%ipb=0
-   if(nsrc>0) sg%ipb=pw_segment(srcpw(1),rm)
-   fpiece(:)=vlocpw%vals(:,sg%ipv)+vs(:)
+ subroutine first_grid()
 
-   if(kk==1) then
-! the nodes up to the first bound and og_ext beyond
-     sg%t0=0.0d0
-     if(nseg>1) then
-       sg%tend=log(ow%bound(1)/rr(1))/al
-       i1=floor(sg%tend)+1
-       if(i1<4) then
-         write(6,'(a,es12.4)') &
+!! the first segment's grid: the nodes up to the first bound and og_ext
+!! beyond (all of them for one segment)
+
+!Local variables
+ integer :: jj,i1
+
+ sg%t0=0.0d0
+ if(nseg>1) then
+   sg%tend=log(ow%bound(1)/rr(1))/al
+   i1=floor(sg%tend)+1
+   if(i1<4) then
+     write(6,'(a,es12.4)') &
 &              'outwf_setup: ERROR breakpoint below the 4th node, r=', &
 &              ow%bound(1)
-         error stop 1
-       end if
-       npt=min(mmax,ceiling(sg%tend)+og_ext+1)
-       if(npt-1<ceiling(sg%tend)+og_ext) then
-         write(6,'(a,es12.4)') &
+     error stop 1
+   end if
+   npt=min(mmax,ceiling(sg%tend)+og_ext+1)
+   if(npt-1<ceiling(sg%tend)+og_ext) then
+     write(6,'(a,es12.4)') &
 &              'outwf_setup: ERROR breakpoint too close to the mesh end, r=', &
 &              ow%bound(1)
-         error stop 1
-       end if
-     else
-       sg%tend=plast
-       npt=mmax
-     end if
-     sg%npt=npt
-     allocate(sg%rg(0:npt-1),sg%cv(0:npt-1),sg%r2(0:npt-1))
-     allocate(sg%src(0:npt-1,nsrc),sg%beta(0:npt-1,nsrc))
-     sg%rg(0:npt-1)=rr(1:npt)
-     sg%cv(0:npt-1)=als*sls+2.0d0*als*fpiece(1:npt)*rr(1:npt)**2
-     sg%r2(0:npt-1)=2.0d0*als*rr(1:npt)**2
-     sg%beta(:,:)=0.0d0
-     sg%src(:,:)=0.0d0
-     do jj=1,nsrc
-       if(sg%ipb==0) exit
-       sg%beta(0:npt-1,jj)=srcpw(jj)%vals(1:npt,sg%ipb)
-       sg%src(0:npt-1,jj)=2.0d0*als*sg%beta(0:npt-1,jj)*rr(1:npt)**2
-     end do
-     call substeps(0.0d0)
-   else
-! a grid from the bound, the mesh step, to og_ext past the next bound or
-! to the mesh end
-     sg%t0=log(ow%bound(kk-1)/rr(1))/al
-     if(kk<nseg) then
-       sg%tend=log(ow%bound(kk)/rr(1))/al-sg%t0
-       npt=ceiling(sg%tend)+og_ext+1
-     else
-       sg%tend=plast-sg%t0
-       npt=floor(sg%tend)+1
-     end if
-     npt=min(npt,floor(plast-sg%t0)+1)
-     if(kk<nseg .and. npt-1<ceiling(sg%tend)+og_ext) then
-       write(6,'(a,es12.4)') &
+     error stop 1
+   end if
+ else
+   sg%tend=plast
+   npt=mmax
+ end if
+ sg%npt=npt
+ allocate(sg%rg(0:npt-1),sg%cv(0:npt-1),sg%r2(0:npt-1))
+ allocate(sg%src(0:npt-1,nsrc),sg%beta(0:npt-1,nsrc))
+ sg%rg(0:npt-1)=rr(1:npt)
+ sg%cv(0:npt-1)=als*sls+2.0d0*als*fpiece(1:npt)*rr(1:npt)**2
+ sg%r2(0:npt-1)=2.0d0*als*rr(1:npt)**2
+ sg%beta(:,:)=0.0d0
+ sg%src(:,:)=0.0d0
+ do jj=1,nsrc
+   if(sg%ipb==0) exit
+   sg%beta(0:npt-1,jj)=srcpw(jj)%vals(1:npt,sg%ipb)
+   sg%src(0:npt-1,jj)=2.0d0*als*sg%beta(0:npt-1,jj)*rr(1:npt)**2
+ end do
+ call substeps(0.0d0)
+ return
+ end subroutine first_grid
+
+ subroutine later_grid(kk)
+
+!! the grid of segment kk>1: from the bound, the mesh step, to og_ext past
+!! the next bound or to the mesh end
+
+!Input variables
+ integer, intent(in) :: kk
+
+!Local variables
+ integer :: jj
+
+ sg%t0=log(ow%bound(kk-1)/rr(1))/al
+ if(kk<nseg) then
+   sg%tend=log(ow%bound(kk)/rr(1))/al-sg%t0
+   npt=ceiling(sg%tend)+og_ext+1
+ else
+   sg%tend=plast-sg%t0
+   npt=floor(sg%tend)+1
+ end if
+ npt=min(npt,floor(plast-sg%t0)+1)
+ if(kk<nseg .and. npt-1<ceiling(sg%tend)+og_ext) then
+   write(6,'(a,es12.4)') &
 &            'outwf_setup: ERROR breakpoint too close to the mesh end, r=', &
 &            ow%bound(kk)
-       error stop 1
-     end if
-     if(sg%t0+nprime>plast) then
-       write(6,'(a,es12.4)') &
+   error stop 1
+ end if
+ if(sg%t0+nprime>plast) then
+   write(6,'(a,es12.4)') &
 &            'outwf_setup: ERROR breakpoint too close to the mesh end, r=', &
 &            ow%bound(kk-1)
-       error stop 1
-     end if
-     sg%npt=npt
-     allocate(sg%rg(0:npt-1),sg%cv(0:npt-1),sg%r2(0:npt-1))
-     allocate(sg%src(0:npt-1,nsrc),sg%beta(0:npt-1,nsrc))
-     do jj=0,npt-1
-       sg%rg(jj)=rr(1)*exp(al*(sg%t0+dble(jj)))
-     end do
-     sg%rg(0)=ow%bound(kk-1)
-     sg%r2(0:npt-1)=2.0d0*als*sg%rg(0:npt-1)**2
-     call fh_offset(fpiece,mmax,sg%t0,0,npt-1,sg%cv(0:npt-1))
-     sg%cv(0:npt-1)=als*sls+sg%cv(0:npt-1)*sg%r2(0:npt-1)
-     sg%beta(:,:)=0.0d0
-     sg%src(:,:)=0.0d0
-     do jj=1,nsrc
-       if(sg%ipb==0) exit
-       call fh_offset(srcpw(jj)%vals(:,sg%ipb),mmax,sg%t0,0,npt-1, &
-&                     sg%beta(0:npt-1,jj))
-       sg%src(0:npt-1,jj)=sg%beta(0:npt-1,jj)*sg%r2(0:npt-1)
-     end do
-     call substeps(sg%t0)
-   end if
-   allocate(sg%uu(0:npt-1,nsol),sg%up(0:npt-1,nsol),sg%upp(0:npt-1,nsol))
-   sg%uu(:,:)=0.0d0
-   sg%up(:,:)=0.0d0
-   sg%upp(:,:)=0.0d0
-   sg%jmax=-1
+   error stop 1
+ end if
+ sg%npt=npt
+ allocate(sg%rg(0:npt-1),sg%cv(0:npt-1),sg%r2(0:npt-1))
+ allocate(sg%src(0:npt-1,nsrc),sg%beta(0:npt-1,nsrc))
+ do jj=0,npt-1
+   sg%rg(jj)=rr(1)*exp(al*(sg%t0+dble(jj)))
  end do
- deallocate(vs,vn,fpiece)
+ sg%rg(0)=ow%bound(kk-1)
+ sg%r2(0:npt-1)=2.0d0*als*sg%rg(0:npt-1)**2
+ call fh_offset(fpiece,mmax,sg%t0,0,npt-1,sg%cv(0:npt-1))
+ sg%cv(0:npt-1)=als*sls+sg%cv(0:npt-1)*sg%r2(0:npt-1)
+ sg%beta(:,:)=0.0d0
+ sg%src(:,:)=0.0d0
+ do jj=1,nsrc
+   if(sg%ipb==0) exit
+   call fh_offset(srcpw(jj)%vals(:,sg%ipb),mmax,sg%t0,0,npt-1, &
+&                     sg%beta(0:npt-1,jj))
+   sg%src(0:npt-1,jj)=sg%beta(0:npt-1,jj)*sg%r2(0:npt-1)
+ end do
+ call substeps(sg%t0)
  return
-
- contains
+ end subroutine later_grid
 
  subroutine substeps(tq)
 
@@ -387,9 +423,9 @@
  type(outwf_t), intent(inout), target :: ow
 
 !Local variables
- real(dp) :: al,als,pm,akb,cf,hh,y1,y2,k1(2),k2(2),k3(2),k4(2),rb
- integer :: kk,jj,ii,it,isol,nsol,jmax,ll,istep,m0,mh,m1
- type(og_seg_t), pointer :: sg,prev
+ real(dp) :: al,als,pm,rb
+ integer :: kk,jj,nsol,jmax,ll,m0
+ type(og_seg_t), pointer :: sg
 
  al=ow%al
  als=al**2
@@ -429,85 +465,136 @@
    sg%jmax=jmax
 
    if(kk==1) then
-! the power series at the first node, as lschps and lschkb start: r**(l+1)
-! for the homogeneous solution, the particular solution of a source
-! going as r**(l+1) for the others
-     sg%uu(0,1)=sg%rg(0)**(ll+1)
-     sg%up(0,1)=al*dble(ll+1)*sg%uu(0,1)
-     do jj=1,ow%nsrc
-       akb=2.0d0*sg%beta(0,jj)/sg%rg(0)**(ll+1)/dble(6+4*ll)
-       sg%uu(0,jj+1)=akb*sg%rg(0)**(ll+3)
-       sg%up(0,jj+1)=al*dble(ll+3)*sg%uu(0,jj+1)
-     end do
+     call series_start()
    else
-! restart from the grid before, at this segment's lower bound
-     prev=>ow%seg(kk-1)
-     do isol=1,nsol
-       call ug_interp(prev%uu(0:prev%jmax,isol),prev%jmax+1,prev%tend,y1)
-       call ug_interp(prev%up(0:prev%jmax,isol),prev%jmax+1,prev%tend,y2)
-       sg%uu(0,isol)=y1
-       sg%up(0,isol)=y2
-     end do
+     call restart(kk)
    end if
 
 ! prime the first steps by classical Runge-Kutta in sub-steps
-   hh=1.0d0/dble(nsub)
-   do isol=1,nsol
-     y1=sg%uu(0,isol)
-     y2=sg%up(0,isol)
-     do istep=1,nprime*nsub
-       m0=2*(istep-1)
-       mh=2*istep-1
-       m1=2*istep
-       k1=rhs(m0,y1,y2)
-       k2=rhs(mh,y1+0.5d0*hh*k1(1),y2+0.5d0*hh*k1(2))
-       k3=rhs(mh,y1+0.5d0*hh*k2(1),y2+0.5d0*hh*k2(2))
-       k4=rhs(m1,y1+hh*k3(1),y2+hh*k3(2))
-       y1=y1+hh*(k1(1)+2.0d0*k2(1)+2.0d0*k3(1)+k4(1))/6.0d0
-       y2=y2+hh*(k1(2)+2.0d0*k2(2)+2.0d0*k3(2)+k4(2))/6.0d0
-       if(mod(istep,nsub)==0) then
-         sg%uu(istep/nsub,isol)=y1
-         sg%up(istep/nsub,isol)=y2
-       end if
-     end do
-     do ii=0,nprime
-       cf=sg%cv(ii)-ee*sg%r2(ii)
-       sg%upp(ii,isol)=al*sg%up(ii,isol)+cf*sg%uu(ii,isol)
-       if(isol>1) sg%upp(ii,isol)=sg%upp(ii,isol)+sg%src(ii,isol-1)
-     end do
-   end do
+   call prime()
 
 ! Adams predictor-corrector, two corrector passes, as the other
 ! integrators
-   do ii=nprime,jmax-1
-     do isol=1,nsol
-       sg%uu(ii+1,isol)=sg%uu(ii,isol)+aeo(sg%up(0,isol),ii+1)
-       sg%up(ii+1,isol)=sg%up(ii,isol)+aeo(sg%upp(0,isol),ii+1)
-     end do
-     cf=sg%cv(ii+1)-ee*sg%r2(ii+1)
-     do it=1,2
-       sg%upp(ii+1,1)=al*sg%up(ii+1,1)+cf*sg%uu(ii+1,1)
-       do isol=2,nsol
-         sg%upp(ii+1,isol)=al*sg%up(ii+1,isol)+cf*sg%uu(ii+1,isol) &
-&                         +sg%src(ii+1,isol-1)
-       end do
-       do isol=1,nsol
-         sg%up(ii+1,isol)=sg%up(ii,isol)+aio(sg%upp(0,isol),ii+1)
-         sg%uu(ii+1,isol)=sg%uu(ii,isol)+aio(sg%up(0,isol),ii+1)
-       end do
-     end do
-   end do
+   call march()
  end do
  return
 
  contains
 
- function rhs(mm,u1,u2)
+ subroutine series_start()
+
+!! the first segment's start: the power series at the first node, as
+!! lschps and lschkb start: r**(l+1) for the homogeneous solution, the
+!! particular solution of a source going as r**(l+1) for the others
+
+!Local variables
+ real(dp) :: akb
+ integer :: jj
+
+ sg%uu(0,1)=sg%rg(0)**(ll+1)
+ sg%up(0,1)=al*dble(ll+1)*sg%uu(0,1)
+ do jj=1,ow%nsrc
+   akb=2.0d0*sg%beta(0,jj)/sg%rg(0)**(ll+1)/dble(6+4*ll)
+   sg%uu(0,jj+1)=akb*sg%rg(0)**(ll+3)
+   sg%up(0,jj+1)=al*dble(ll+3)*sg%uu(0,jj+1)
+ end do
+ return
+ end subroutine series_start
+
+ subroutine restart(kk)
+
+!! segment kk>1 restarts from the grid before, at its lower bound
+
+!Input variables
+ integer, intent(in) :: kk
+
+!Local variables
+ real(dp) :: y1,y2
+ integer :: isol
+ type(og_seg_t), pointer :: prev
+
+ prev=>ow%seg(kk-1)
+ do isol=1,nsol
+   call ug_interp(prev%uu(0:prev%jmax,isol),prev%jmax+1,prev%tend,y1)
+   call ug_interp(prev%up(0:prev%jmax,isol),prev%jmax+1,prev%tend,y2)
+   sg%uu(0,isol)=y1
+   sg%up(0,isol)=y2
+ end do
+ return
+ end subroutine restart
+
+ subroutine prime()
+
+!! the first nprime steps of every solution by classical Runge-Kutta in
+!! nsub sub-steps each, and u'' at their points
+
+!Local variables
+ real(dp) :: cf,hh,y1,y2,k1(2),k2(2),k3(2),k4(2)
+ integer :: ii,isol,istep,m0,mh,m1
+
+ hh=1.0d0/dble(nsub)
+ do isol=1,nsol
+   y1=sg%uu(0,isol)
+   y2=sg%up(0,isol)
+   do istep=1,nprime*nsub
+     m0=2*(istep-1)
+     mh=2*istep-1
+     m1=2*istep
+     k1=rhs(m0,isol,y1,y2)
+     k2=rhs(mh,isol,y1+0.5d0*hh*k1(1),y2+0.5d0*hh*k1(2))
+     k3=rhs(mh,isol,y1+0.5d0*hh*k2(1),y2+0.5d0*hh*k2(2))
+     k4=rhs(m1,isol,y1+hh*k3(1),y2+hh*k3(2))
+     y1=y1+hh*(k1(1)+2.0d0*k2(1)+2.0d0*k3(1)+k4(1))/6.0d0
+     y2=y2+hh*(k1(2)+2.0d0*k2(2)+2.0d0*k3(2)+k4(2))/6.0d0
+     if(mod(istep,nsub)==0) then
+       sg%uu(istep/nsub,isol)=y1
+       sg%up(istep/nsub,isol)=y2
+     end if
+   end do
+   do ii=0,nprime
+     cf=sg%cv(ii)-ee*sg%r2(ii)
+     sg%upp(ii,isol)=al*sg%up(ii,isol)+cf*sg%uu(ii,isol)
+     if(isol>1) sg%upp(ii,isol)=sg%upp(ii,isol)+sg%src(ii,isol-1)
+   end do
+ end do
+ return
+ end subroutine prime
+
+ subroutine march()
+
+!! the Adams predictor-corrector steps from nprime to jmax
+
+!Local variables
+ real(dp) :: cf
+ integer :: ii,it,isol
+
+ do ii=nprime,jmax-1
+   do isol=1,nsol
+     sg%uu(ii+1,isol)=sg%uu(ii,isol)+aeo(sg%up(0,isol),ii+1)
+     sg%up(ii+1,isol)=sg%up(ii,isol)+aeo(sg%upp(0,isol),ii+1)
+   end do
+   cf=sg%cv(ii+1)-ee*sg%r2(ii+1)
+   do it=1,2
+     sg%upp(ii+1,1)=al*sg%up(ii+1,1)+cf*sg%uu(ii+1,1)
+     do isol=2,nsol
+       sg%upp(ii+1,isol)=al*sg%up(ii+1,isol)+cf*sg%uu(ii+1,isol) &
+&                         +sg%src(ii+1,isol-1)
+     end do
+     do isol=1,nsol
+       sg%up(ii+1,isol)=sg%up(ii,isol)+aio(sg%upp(0,isol),ii+1)
+       sg%uu(ii+1,isol)=sg%uu(ii,isol)+aio(sg%up(0,isol),ii+1)
+     end do
+   end do
+ end do
+ return
+ end subroutine march
+
+ function rhs(mm,isol,u1,u2)
 
 !! the right-hand side (u', u'') at the sub-step point mm for the solution
-!! isol of the enclosing loop
+!! isol
 
- integer, intent(in) :: mm
+ integer, intent(in) :: mm,isol
  real(dp), intent(in) :: u1,u2
  real(dp) :: rhs(2)
 
