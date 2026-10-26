@@ -72,14 +72,14 @@
  real(dp), intent(in) :: cvgplt(2,nerrdg,mxprj,mxl+1,nkap)
 
 !Local variables
- integer :: ll,l1,ii,jj,ierr,mch,n1,n2,n3,n4,nn
- integer :: iprj,npr,lout,iout
- integer :: ikap,kap,mkap
- real(dp) :: al,cnorm,emax,emin,etest,rmx,sgnae,sgnps
- real(dp) :: r0,dr
+ integer :: ll,l1,n1,n2,n3,n4,nn
+ integer :: ikap,mkap
+ real(dp) :: al
  real(dp), allocatable :: u2(:),up(:),ur(:,:),urp(:,:)
+!the points that are written of a plot, each beyond the last by dr
+ logical, allocatable :: keep(:)
 
- allocate(u2(mmax),up(mmax),ur(mmax,2),urp(mmax,2))
+ allocate(u2(mmax),up(mmax),ur(mmax,2),urp(mmax,2),keep(mmax))
 
  al = 0.01d0 * log(rr(101)/rr(1))
 
@@ -94,48 +94,8 @@
  n4=min(n2,int(log((rr(n3)+1.0d0)/rr(1))/al))
  n3=int(log(1.1d0*rr(n3)/rr(1))/al+1.0d0)
 
-!the fully-relativistic code writes every point of the potentials
- dr=min(drl,rr(n4)/200)
- write(6,'(/2a/)') ' radii, charge,',' pseudopotentials (ll=0, 1, lmax)'
- r0=rr(n1)-dr
- do ii=n1,n4
-   if(rr(ii)>r0 .or. irel==2) then
-     write(6,'(a,6(f12.7,1x))') '!p',rr(ii),rho(ii),(vpuns(ii,l1),l1=1,lmax+1)
-     r0=rr(ii)+dr
-   end if
- end do
-
- if(lloc == 4) then
-   r0=rr(n1)-dr
-   do ii=n1,n4
-     if(rr(ii)>r0) then
-       write(6,'(a, 2(f12.7,1x))') ' !L',rr(ii),vpuns(ii,lloc + 1)
-       r0=rr(ii)+dr
-     end if
-   end do
- end if
-
-! output for analysis of core charge and models
- rmx=0
- do ii=n1,n2
-   rmx=max(rmx,5.0d0*rho(ii),rhomod(ii,1))
- end do
-
- write(6,'(//2a/)') ' radii, charge,',' core charge, model core charge'
- dr=min(drl,rr(n2)/200.0d0)
- r0=rr(n1)-dr
- do ii=n1,n2
-   if(rr(ii)>r0) then
-     if(rhoc(ii)<rmx)then
-       write(6,'(a,8(f12.7,1x))') '!r',rr(ii),rho(ii),rhoc(ii), &
-&       rhomod(ii,1)
-     else if(rr(ii)>0.01d0) then
-       write(6,'(a,8(f12.7,1x))') '!r',rr(ii),rho(ii),rmx, &
-&      rhomod(ii,1)
-     end if
-     r0=rr(ii)+dr
-   end if
- end do
+ call write_potentials()
+ call write_charges()
 
 ! loop for wave function output, the all-electron functions (their large
 ! components when irel=2) normalized as Schroedinger functions; for
@@ -144,119 +104,215 @@
 
  do l1 = 1, lmax + 1
    ll = l1 - 1
-   npr=nproj(l1)
-   if(l1==lloc+1) npr=0
    mkap=kap_count(nkap,ll)
 ! loop on J = ll +/- 1/2 when nkap=2
    do ikap=1,mkap
-     kap=kap_of(ll,ikap)
+     call write_waves(l1,ikap)
+     call write_projectors(l1,ikap)
+   end do !ikap
+ end do !l1
 
-     do iprj=1,nproj(l1)
+ call write_profiles()
+
+ deallocate(u2,up,ur,urp,keep)
+ return
+
+ contains
+
+ subroutine thin_points(i1,i2,dr,r0)
+!! keep(i1:i2): the points of a plot from i1 to i2, each beyond r0, the
+!! last kept point plus dr (r0 at first the start)
+!!
+!! @param i1  first point
+!! @param i2  last point
+!! @param dr  least spacing of the points kept
+!! @param r0  start
+ integer, intent(in) :: i1,i2
+ real(dp), intent(in) :: dr
+ real(dp), intent(inout) :: r0
+ integer :: ii
+ do ii=i1,i2
+   keep(ii)=rr(ii)>r0
+   if(keep(ii)) r0=rr(ii)+dr
+ end do
+ end subroutine thin_points
+
+ subroutine write_potentials()
+!! the !p lines of the charge and the potentials, and !L of the local
+!! potential for lloc=4; the fully-relativistic code writes every point
+!! of the potentials
+ integer :: ii
+ real(dp) :: r0,dr
+ dr=min(drl,rr(n4)/200)
+ write(6,'(/2a/)') ' radii, charge,',' pseudopotentials (ll=0, 1, lmax)'
+ r0=rr(n1)-dr
+ call thin_points(n1,n4,dr,r0)
+ do ii=n1,n4
+   if(keep(ii) .or. irel==2) then
+     write(6,'(a,6(f12.7,1x))') '!p',rr(ii),rho(ii),(vpuns(ii,l1),l1=1,lmax+1)
+   end if
+ end do
+
+ if(lloc == 4) then
+   r0=rr(n1)-dr
+   call thin_points(n1,n4,dr,r0)
+   do ii=n1,n4
+     if(keep(ii)) then
+       write(6,'(a, 2(f12.7,1x))') ' !L',rr(ii),vpuns(ii,lloc + 1)
+     end if
+   end do
+ end if
+ end subroutine write_potentials
+
+ subroutine write_charges()
+!! the !r lines of the charge, the core charge (cut at rmx) and the model
+!! core charge, for the analysis of the model
+ integer :: ii
+ real(dp) :: r0,dr,rmx
+ rmx=0
+ do ii=n1,n2
+   rmx=max(rmx,5.0d0*rho(ii),rhomod(ii,1))
+ end do
+
+ write(6,'(//2a/)') ' radii, charge,',' core charge, model core charge'
+ dr=min(drl,rr(n2)/200.0d0)
+ r0=rr(n1)-dr
+ call thin_points(n1,n2,dr,r0)
+ do ii=n1,n2
+   if(keep(ii)) then
+     if(rhoc(ii)<rmx)then
+       write(6,'(a,8(f12.7,1x))') '!r',rr(ii),rho(ii),rhoc(ii), &
+&       rhomod(ii,1)
+     else if(rr(ii)>0.01d0) then
+       write(6,'(a,8(f12.7,1x))') '!r',rr(ii),rho(ii),rmx, &
+&      rhomod(ii,1)
+     end if
+   end if
+ end do
+ end subroutine write_charges
+
+ subroutine write_waves(l1,ikap)
+!! the & lines of the all-electron and pseudo wave functions of each
+!! projector of l1-1 and ikap: bound states as such, the others
+!! scattering states at their energies, both of the sign of the
+!! all-electron one at n2
+ integer, intent(in) :: l1,ikap
+ integer :: ii,iprj,npr,ierr,mch,kap,iout
+ real(dp) :: r0,dr,cnorm,emax,emin,etest,sgnae,sgnps
+ kap=kap_of(ll,ikap)
+ npr=nproj(l1)
+ if(l1==lloc+1) npr=0
+
+ do iprj=1,nproj(l1)
 ! a bound state is plotted as one; so is the j = l-1/2 partner of a well
 ! state below 0 (the eigenvalue of the j = l+1/2 well, D-7c), as before;
 ! a well state's own energy can be below 0 too (ep_as_given)
-       if(epa(iprj,l1,ikap)<0.0d0 .and. &
-&         .not. (wellprj(iprj,l1) .and. ikap==1)) then
-         if(irel==2) then
-           write(6,'(//a,i2,a,i2,a,i2,a,a/)') 'n=',npa(iprj,l1),',  l=', &
-&                ll,', kap=',kap, ', all-electron wave function', &
-&                ', pseudo w-f'
-         else
-           write(6,'(//a,i2,a,i2,a,a/)') 'n=',npa(iprj,l1),',  l=',ll, &
-&                ', all-electron wave function', ', pseudo w-f'
-         end if
+   if(epa(iprj,l1,ikap)<0.0d0 .and. &
+&     .not. (wellprj(iprj,l1) .and. ikap==1)) then
+     if(irel==2) then
+       write(6,'(//a,i2,a,i2,a,i2,a,a/)') 'n=',npa(iprj,l1),',  l=', &
+&            ll,', kap=',kap, ', all-electron wave function', &
+&            ', pseudo w-f'
+     else
+       write(6,'(//a,i2,a,i2,a,a/)') 'n=',npa(iprj,l1),',  l=',ll, &
+&            ', all-electron wave function', ', pseudo w-f'
+     end if
 
-         etest=epa(iprj,l1,ikap)
-         call boundstate(irel,npa(iprj,l1),ll,kap,ierr,etest, &
-&                        rr,zz,vfull,ur,urp,mmax,mch)
-         if(ierr /= 0 .and. irel==2) then
-           write(6,'(a,i2,a,i2,a,i2,a,i4)') &
-&                'run_plot_r 409: ldiracfb convergence ERROR, n=',&
-&                 npa(iprj,l1),'  l=',ll, 'kap-',kap,'  ierr=',ierr
-           error stop 1
-         else if(ierr /= 0) then
-           write(6,'(/a,3i4)') &
-&                'run_plot: lschfb convergence ERROR n,l,ierr=', &
-&                npa(iprj,l1),ll,ierr
-           error stop 1
-         end if
-         if(irel==2) call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm)
+     etest=epa(iprj,l1,ikap)
+     call boundstate(irel,npa(iprj,l1),ll,kap,ierr,etest, &
+&                    rr,zz,vfull,ur,urp,mmax,mch)
+     if(ierr /= 0 .and. irel==2) then
+       write(6,'(a,i2,a,i2,a,i2,a,i4)') &
+&            'run_plot_r 409: ldiracfb convergence ERROR, n=',&
+&             npa(iprj,l1),'  l=',ll, 'kap-',kap,'  ierr=',ierr
+       error stop 1
+     else if(ierr /= 0) then
+       write(6,'(/a,3i4)') &
+&            'run_plot: lschfb convergence ERROR n,l,ierr=', &
+&            npa(iprj,l1),ll,ierr
+       error stop 1
+     end if
+     if(irel==2) call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm)
 
-         emax=0.9d0*etest
-         emin=1.1d0*etest
+     emax=0.9d0*etest
+     emin=1.1d0*etest
 
-         call lschvkbb(ll+iprj,ll,npr,ierr,etest,emin,emax, &
-&                      rr,vp(1,lloc+1,ikap),vlocpw,vkbpw(1:npr,l1,ikap), &
-&                      evkb(1,l1,ikap),u2,up,mmax,mch)
-         sgnae=1.0d0
-         sgnps=1.0d0
-       else
-         if(irel==2) then
-           write(6,'(//a,i2,a,i2,a,i2,a,a/)') 'scattering, iprj=',iprj, &
-&               ',  l=',ll,', kap=',kap,', all-electron wave function', &
-&               ', pseudo w-f'
-         else
-           write(6,'(//a,i2,a,i2,a,a/)') 'scattering, iprj=',iprj, &
-&               ',  l=',ll,', all-electron wave function', ', pseudo w-f'
-         end if
-         call scatterstate(irel,nn,ll,kap,ierr,epa(iprj,l1,ikap), &
-&                       rr,zz,vfull,ur,urp,mmax,n2)
-         if(irel==2) then
-           if(ierr/=0) then
-             write(6,'(/2a,i0,a,i0,a,i0)') &
-&                  'run_plot_r: ERROR ldiracfs failed', &
-&                  ', ll=',ll,', kap=',kap,', ierr=',ierr
-             error stop 1
-           end if
-           call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm)
-         end if
-
-         call lschvkbs(ll,npr,epa(iprj,l1,ikap),rr,vp(1,lloc+1,ikap), &
-&                      vlocpw,vkbpw(1:npr,l1,ikap),evkb(1,l1,ikap),u2,up, &
-&                      mmax,n2)
-         sgnae=sign(1.0d0,ur(n2,1))
-         sgnps=sign(1.0d0,u2(n2))
+     call lschvkbb(ll+iprj,ll,npr,ierr,etest,emin,emax, &
+&                  rr,vp(1,lloc+1,ikap),vlocpw,vkbpw(1:npr,l1,ikap), &
+&                  evkb(1,l1,ikap),u2,up,mmax,mch)
+     sgnae=1.0d0
+     sgnps=1.0d0
+   else
+     if(irel==2) then
+       write(6,'(//a,i2,a,i2,a,i2,a,a/)') 'scattering, iprj=',iprj, &
+&           ',  l=',ll,', kap=',kap,', all-electron wave function', &
+&           ', pseudo w-f'
+     else
+       write(6,'(//a,i2,a,i2,a,a/)') 'scattering, iprj=',iprj, &
+&           ',  l=',ll,', all-electron wave function', ', pseudo w-f'
+     end if
+     call scatterstate(irel,nn,ll,kap,ierr,epa(iprj,l1,ikap), &
+&                   rr,zz,vfull,ur,urp,mmax,n2)
+     if(irel==2) then
+       if(ierr/=0) then
+         write(6,'(/2a,i0,a,i0,a,i0)') &
+&              'run_plot_r: ERROR ldiracfs failed', &
+&              ', ll=',ll,', kap=',kap,', ierr=',ierr
+         error stop 1
        end if
+       call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm)
+     end if
+
+     call lschvkbs(ll,npr,epa(iprj,l1,ikap),rr,vp(1,lloc+1,ikap), &
+&                  vlocpw,vkbpw(1:npr,l1,ikap),evkb(1,l1,ikap),u2,up, &
+&                  mmax,n2)
+     sgnae=sign(1.0d0,ur(n2,1))
+     sgnps=sign(1.0d0,u2(n2))
+   end if
 
 !the fully-relativistic code starts a step further out
-       dr=min(drl,rr(n2)/200.0d0)
-       if(irel==2) then
-         r0=rr(n1)+dr
-       else
-         r0=rr(n1)-dr
-       end if
-       iout=iprj
-       if(nkap==2 .and. ikap==1) iout=-iprj
-       do ii = n1, n2
-         if(rr(ii)>r0) then
-           write(6,'(a,i5,i1,3(f12.6,1x))') '&',iout,ll,rr(ii), &
-&                sgnae*ur(ii,1),sgnps*u2(ii)
-           r0=rr(ii)+dr
-         end if
-       end do
-     end do !iproj
-
-! orthonormal projector plots
-
-     write(6,'(/)')
-     dr=min(drl,rr(n3)/200.0d0)
+   dr=min(drl,rr(n2)/200.0d0)
+   if(irel==2) then
+     r0=rr(n1)+dr
+   else
      r0=rr(n1)-dr
-     lout=ll
-     if(nkap==2 .and. ikap==1) lout=-ll
-     do ii=n1,n3
-       if(rr(ii)>r0) then
-         write(6,'(a,i6,6(f12.6,1x))') '!J',lout,rr(ii), &
-&              (vkb(ii,jj,l1,ikap),jj=1,nproj(l1))
-         r0=rr(ii)+dr
-       end if
-     end do
-   end do !ikap
- end do !l1
-!
-! convergence profile plots
+   end if
+   iout=iprj
+   if(nkap==2 .and. ikap==1) iout=-iprj
+   call thin_points(n1,n2,dr,r0)
+   do ii = n1, n2
+     if(keep(ii)) then
+       write(6,'(a,i5,i1,3(f12.6,1x))') '&',iout,ll,rr(ii), &
+&            sgnae*ur(ii,1),sgnps*u2(ii)
+     end if
+   end do
+ end do !iproj
+ end subroutine write_waves
 
+ subroutine write_projectors(l1,ikap)
+!! the !J lines of the orthonormal projectors of l1-1 and ikap
+ integer, intent(in) :: l1,ikap
+ integer :: ii,jj,lout
+ real(dp) :: r0,dr
+ write(6,'(/)')
+ dr=min(drl,rr(n3)/200.0d0)
+ r0=rr(n1)-dr
+ lout=ll
+ if(nkap==2 .and. ikap==1) lout=-ll
+ call thin_points(n1,n3,dr,r0)
+ do ii=n1,n3
+   if(keep(ii)) then
+     write(6,'(a,i6,6(f12.6,1x))') '!J',lout,rr(ii), &
+&          (vkb(ii,jj,l1,ikap),jj=1,nproj(l1))
+   end if
+ end do
+ end subroutine write_projectors
+
+ subroutine write_profiles()
+!! the !C lines of the convergence profiles, the average over kappa for
+!! l>0 when fully relativistic
+ integer :: jj
  if(irel==2) then
-! the average over kappa for l>0
    write(6,'(/a)') 'convergence profiles, (ll=0,lmax), kappa average'
    l1=1
    ll=l1-1
@@ -287,7 +343,6 @@
      end do
    end do
  end if
+ end subroutine write_profiles
 
- deallocate(u2,up,ur,urp)
- return
  end subroutine run_plot
