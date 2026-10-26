@@ -51,6 +51,7 @@
 !!              and hydrogenic energies
 
  use constants_m, only: dp, mxstate, mxkap, ae_tolres
+ use kappa_m, only: kap_count, kap_of, j_share
  implicit none
 
 !Input variables
@@ -140,20 +141,11 @@
    eeig=0.0d0
    do ii=1,ncv
      ll = la(ii)
-     if(ll==0) then
-       mkap=1
-     else
-       mkap=2
-     end if
+     mkap=kap_count(2,ll)
 ! loop on J = ll +/- 1/2
      do ikap=1,mkap
-       if(ikap==1) then
-         kap=-(ll+1)
-         fj=dble(ll+1)*fa(ii)/dble(2*ll+1)
-       else
-         kap=  ll
-         fj=dble(ll)*fa(ii)/dble(2*ll+1)
-       end if
+       kap=kap_of(ll,ikap)
+       fj=j_share(ll,ikap,fa(ii))
        et=ea(ii,ikap)
        ierr = 0
 

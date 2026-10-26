@@ -168,6 +168,7 @@
 
  use constants_m, only: dp, mxl, mxlin, nerrdg, nerrlv, mxstate, mxkap, &
 &                       nrhomod, mxcnf
+ use kappa_m, only: kap_count
  use pieces_m, only: piecewise_t, pw_value, pw_node_values, pw_segment
  use logmesh_m, only: lm_interp, lm_root, lm_derivs
  use ugrid_m, only: ug_brent
@@ -204,8 +205,7 @@
  write(6,'(/a)') 'Begin DIAGNOSTICS'
  write(6,'(a)') '# ecut l ikap iproj err(Ha) ecut(Ha)'
  do l1=1,lmax+1
-   mkap=nkap
-   if(l1==1) mkap=1
+   mkap=kap_count(nkap,l1-1)
    do ikap=1,mkap
      do iprj=1,nproj(l1)
        do jj=1,nerrdg
@@ -220,8 +220,7 @@
 
  write(6,'(a)') '# opt l ikap iproj e(Ha) reg(Ha) e1(Ha) f1(Ha)'
  do l1=1,lmax+1
-   mkap=nkap
-   if(l1==1) mkap=1
+   mkap=kap_count(nkap,l1-1)
    do ikap=1,mkap
      do iprj=1,nproj(l1)
        write(6,'(a,3i4,1p,4e24.16)') 'opt',l1-1,ikap,iprj, &
@@ -232,8 +231,7 @@
 
  write(6,'(a)') '# well_share l ikap iproj e_well(Ha) e_free(Ha)'
  do l1=1,lmax+1
-   mkap=nkap
-   if(l1==1) mkap=1
+   mkap=kap_count(nkap,l1-1)
    do ikap=1,mkap
      do iprj=1,nproj(l1)
        if(wshare(3,iprj,l1,ikap)>0.0d0) then
@@ -257,8 +255,7 @@
 
  write(6,'(a)') '# ekin_tail l ikap iproj t(Ha)'
  do l1=1,lmax+1
-   mkap=nkap
-   if(l1==1) mkap=1
+   mkap=kap_count(nkap,l1-1)
    do ikap=1,mkap
      do iprj=1,nproj(l1)
        write(6,'(a,3i4,1p,e24.16)') 'ekin_tail',l1-1,ikap,iprj, &
@@ -269,8 +266,7 @@
 
  write(6,'(a)') '# ekin_check l ikap iproj t(Ha)'
  do l1=1,lmax+1
-   mkap=nkap
-   if(l1==1) mkap=1
+   mkap=kap_count(nkap,l1-1)
    do ikap=1,mkap
      do iprj=1,nproj(l1)
        write(6,'(a,3i4,1p,e24.16)') 'ekin_check',l1-1,ikap,iprj, &
@@ -284,8 +280,7 @@
    write(6,'(a,1p,2e24.16)') 'ecut_w',fe(errw),ecutw
    write(6,'(a)') '# ecut_w_weight l ikap iproj w'
    do l1=1,lmax+1
-     mkap=nkap
-     if(l1==1) mkap=1
+     mkap=kap_count(nkap,l1-1)
      do ikap=1,mkap
        do iprj=1,mxprj
          if(wcurve(iprj,l1,ikap)>0.0d0) then
@@ -304,8 +299,7 @@
  end if
  do l1=1,4
    if(npsh==0) exit
-   mkap=nkap
-   if(l1==1) mkap=1
+   mkap=kap_count(nkap,l1-1)
    do ikap=1,mkap
      write(6,'(a,2i4,1p,e24.16)') 'ld_r',l1-1,ikap,rphs(l1)
      do ii=1,npsh
@@ -317,8 +311,7 @@
  write(6,'(a)') '# ghost l ikap n e_ref(Ha) e_basis(Ha)'
  write(6,'(a)') '# ghost_r l ikap e(Ha) <r>/rc'
  do l1=1,lmax+1
-   mkap=nkap
-   if(l1==1) mkap=1
+   mkap=kap_count(nkap,l1-1)
    do ikap=1,mkap
      do jj=1,ngh(l1,ikap)
        write(6,'(a,3i4,1p,2e24.16)') 'ghost',l1-1,ikap,ghn(jj,l1,ikap), &
@@ -334,8 +327,7 @@
  write(6,'(a)') '# vkb_e l ikap i e(Ha)'
  do l1=1,lmax+1
    if(l1==lloc+1) cycle
-   mkap=nkap
-   if(l1==1) mkap=1
+   mkap=kap_count(nkap,l1-1)
    do ikap=1,mkap
      np=nproj(l1)
      if(np==0) cycle

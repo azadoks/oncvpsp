@@ -1452,6 +1452,7 @@
 !! @param nprobe  number of probes
 
  use constants_m, only: dp, mxl, mxlin
+ use kappa_m, only: kap_count
  use pieces_m, only: piecewise_t
  implicit none
 
@@ -1478,8 +1479,7 @@
  nprobe=0
  do l1=1,lmax+1
    ll=l1-1
-   mkap=1
-   if(nkap==2 .and. l1>1) mkap=2
+   mkap=kap_count(nkap,l1-1)
    npr=nproj(l1)
    if(l1==lloc+1) npr=0
    do iprj=1,max(1,nproj(l1))

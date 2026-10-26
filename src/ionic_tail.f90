@@ -173,6 +173,7 @@
 !! @param eeig  sum of the occupied eigenvalues
 
  use constants_m, only: dp, mxstate, mxl, mxlin, mxkap
+ use kappa_m, only: kap_count, j_share
  use pieces_m, only: piecewise_t
  implicit none
 
@@ -208,16 +209,10 @@
  do kk=1,nv
    ll=la(nc+kk)
    l1=ll+1
-   mkap=nkap
-   if(ll==0) mkap=1
+   mkap=kap_count(nkap,ll)
    do ikap=1,mkap
-     if(mkap==1) then
-       fj=1.0d0
-     else if(ikap==1) then
-       fj=dble(ll+1)/dble(2*ll+1)
-     else
-       fj=dble(ll)/dble(2*ll+1)
-     end if
+     fj=1.0d0
+     if(mkap==2) fj=j_share(ll,ikap,1.0d0)
      et=ea(nc+kk,ikap)
      emax=(1.0d0-de)*et
      emin=(1.0d0+de)*et

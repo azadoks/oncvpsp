@@ -110,6 +110,7 @@
 !! @param nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
 
  use constants_m, only: dp, pi, mxstate, mxcnf, mxl, mxlin, nrhomod
+ use kappa_m, only: kap_count, j_share
  use input_echo_m, only: write_input_echo, fe
  use outmesh_m, only: om_values, om_piece_values, om_local_values
  use pieces_m, only: piecewise_t
@@ -178,11 +179,7 @@
  uurcut = 0.d0
  do ii=1,nv
    l1 = la(nc+ii)
-   if(nkap==1 .or. l1==0) then
-     mkap=1
-   else
-     mkap=2
-   end if
+   mkap=kap_count(nkap,l1)
    do ikap=1,mkap
      nrmsum = 0.d0
 !the search starts at mmax-1 in the sr code and at mmax in the fr code
@@ -248,11 +245,7 @@
  do l1=1,lmax+1
    if(l1==lloc+1) cycle
    ll=l1-1
-   if(nkap==1 .or. ll==0) then
-     mkap=1
-   else
-     mkap=2
-   end if
+   mkap=kap_count(nkap,ll)
 ! loop on J = ll +/- 1/2
    do ikap=1,mkap
      do jj=1,nproj(l1)
@@ -273,11 +266,7 @@
  nwfc = 0
  do ii=1,nv
    l1 = la(nc+ii)
-   if(nkap==1 .or. l1==0) then
-     mkap=1
-   else
-     mkap=2
-   end if
+   mkap=kap_count(nkap,l1)
    nwfc = nwfc + mkap
    do ikap=1,mkap
      call om_values(rr,uupsa(1,ikap,ii),mmax,rl,uual(1,ikap,ii),nrl)
@@ -565,11 +554,7 @@
  do l1=1,lmax+1
    if(l1==lloc+1) cycle
    ll=l1-1
-   if(nkap==1 .or. ll==0) then
-     mkap=1
-   else
-     mkap=2
-   end if
+   mkap=kap_count(nkap,ll)
    do jj=1,nproj(l1)
 ! loop on J = ll +/- 1/2
      do ikap=mkap,1,-1
@@ -637,20 +622,11 @@
  nwfc = 0
  do ii=1,nv
    l1 = la(nc+ii)
-   if(nkap==1 .or. l1==0) then
-     mkap=1
-   else
-     mkap=2
-   end if
+   mkap=kap_count(nkap,l1)
    do ikap=1,mkap
      nwfc = nwfc + 1
-     if(nkap==1) then
-       fj=fa(nc+ii)
-     else if(ikap==1) then
-       fj=dble(l1+1)*fa(nc+ii)/dble(2*l1+1)
-     else
-       fj=dble(l1)*fa(nc+ii)/dble(2*l1+1)
-     end if
+     fj=fa(nc+ii)
+     if(nkap==2) fj=j_share(l1,ikap,fa(nc+ii))
      if(nwfc <= 9) then
        write(6,'(t4,a,i1)') &
 &            '<PP_CHI.',nwfc
@@ -721,11 +697,7 @@
    do l1=1,lmax+1
      if(l1==lloc+1) cycle
      ll=l1-1
-     if(ll==0) then
-       mkap=1
-     else
-       mkap=2
-     end if
+     mkap=kap_count(2,ll)
 ! loop on J = ll +/- 1/2
      do jj=1,nproj(l1)
        do ikap=mkap,1,-1
@@ -751,11 +723,7 @@
    nwfc = 0
    do ii=1,nv
      l1 = la(nc+ii)
-     if(l1==0) then
-       mkap=1
-     else
-       mkap=2
-     end if
+     mkap=kap_count(2,l1)
      do ikap=1,mkap
        nwfc = nwfc + 1
        if(ikap==1) then

@@ -51,6 +51,7 @@
 !! @param nkap  number of kappa per l: 1, or 2 for irel=2
 
  use constants_m, only: dp, mxl, mxlin
+ use kappa_m, only: kap_count, kap_of
  use pieces_m, only: piecewise_t
  use outwf_m, only: outwf_index_at
  implicit none
@@ -95,18 +96,10 @@
    ll = l1 - 1
    nnp=l1
    do iprj=1,max(1,nproj(l1))
-     if(nkap==1 .or. l1==1) then
-       mkap=1
-     else
-       mkap=2
-     end if
+     mkap=kap_count(nkap,l1-1)
 !  loop on J = ll +/- 1/2 when nkap=2
      do ikap=1,mkap
-       if(ikap==1) then
-         kap=-(ll+1)
-       else
-         kap=  ll
-       end if
+       kap=kap_of(ll,ikap)
 
        npr=nproj(l1)
 

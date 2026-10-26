@@ -54,6 +54,7 @@
 !! @param cvgplt  energy per electron error vs. cutoff (convergence profiles)
 
  use constants_m, only: dp, mxl, mxlin, nrhomod, nerrlv, nerrdg
+ use kappa_m, only: kap_count, kap_of
  use pieces_m, only: piecewise_t
  implicit none
 
@@ -145,18 +146,10 @@
    ll = l1 - 1
    npr=nproj(l1)
    if(l1==lloc+1) npr=0
-   if(nkap==1 .or. ll==0) then
-     mkap=1
-   else
-     mkap=2
-   end if
+   mkap=kap_count(nkap,ll)
 ! loop on J = ll +/- 1/2 when nkap=2
    do ikap=1,mkap
-     if(ikap==1) then
-       kap=-(ll+1)
-     else
-       kap=  ll
-     end if
+     kap=kap_of(ll,ikap)
 
      do iprj=1,nproj(l1)
 ! a bound state is plotted as one; so is the j = l-1/2 partner of a well

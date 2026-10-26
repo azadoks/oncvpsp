@@ -87,6 +87,7 @@
 
  program oncvpsp_confine
  use constants_m, only: dp, pi
+ use kappa_m, only: kap_of
  use ae_file_m, only: read_ae_potential
  use ps_file_m, only: ps_file_t, read_ps_file, ps_file_free
  use phsft_m, only: phsft_t, phsft_ae_init, phsft_ps_init, phsft_free, &
@@ -385,8 +386,7 @@
      if(.not. chan(ll)) cycle
      do ikap=1,merge(1,pf%nkap,l1==1)
        kap=0
-       if(irel==2 .and. ikap==1) kap=-(ll+1)
-       if(irel==2 .and. ikap==2) kap=ll
+       if(irel==2) kap=kap_of(ll,ikap)
        nvkb=pf%nvkb(l1,ikap)
 ! the solvers of the channel at every radius, and each sphere's
 ! quadrature and poles (refined to the roots of u(rs))

@@ -32,6 +32,7 @@
 !! @param nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
 
  use constants_m, only: dp, mxl, mxlin
+ use kappa_m, only: kap_count
  implicit none
 
 !Input variables
@@ -233,11 +234,7 @@
 !wave function plots
 
  do l1=1,lmax+1
-   if(nkap==1 .or. l1==1) then
-     mkap=1
-   else
-     mkap=2
-   end if
+   mkap=kap_count(nkap,l1-1)
 ! loop on J = ll +/- 1/2
    do ikap=1,mkap
 

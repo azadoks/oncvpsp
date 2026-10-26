@@ -63,6 +63,7 @@
 !! @param pshps  the pseudopotential log derivatives, likewise (output)
 
  use constants_m, only: dp, mxl, mxlin, pi
+ use kappa_m, only: kap_count, kap_of
  use pieces_m, only: piecewise_t
  use phsft_m, only: phsft_mch, phsft_pair
  implicit none
@@ -138,15 +139,10 @@
    end if
 
    rphs(l1)=rq
-   if(nkap==1 .or. l1==1) then
-     mkap=1
-   else
-     mkap=2
-   end if
+   mkap=kap_count(nkap,l1-1)
 ! loop on J = ll +/- 1/2 when irel=2
    do ikap=1,mkap
-     if(ikap==1) kap=-(ll+1)
-     if(ikap==2) kap=  ll
+     kap=kap_of(ll,ikap)
      if(ll == lloc) then
        nvkb = 0
      else

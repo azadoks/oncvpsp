@@ -60,6 +60,7 @@
  use config_ae_m, only: config_ae_warning
  use constants_m, only: dp, mxstate, mxcnf, mxl, mxlin, nrhomod, nlev
  use pieces_m, only: piecewise_t
+ use kappa_m, only: kap_count, kap_of, j_share
  implicit none
 
 !Input variables
@@ -253,40 +254,22 @@
  ntc=0
  do ii=1,nc
    ll = lat(ii)
-   if(ll==0) then
-     mkap=1
-   else
-     mkap=2
-   end if
+   mkap=kap_count(2,ll)
 ! loop on J = ll +/- 1/2
    do ikap=1,mkap
-     if(ikap==1) then
-       kap=-(ll+1)
-       fj=dble(ll+1)*fat(ii,3)/dble(2*ll+1)
-     else
-       kap=  ll
-       fj=dble(ll)*fat(ii,3)/dble(2*ll+1)
-     end if
+     kap=kap_of(ll,ikap)
+     fj=j_share(ll,ikap,fat(ii,3))
      write(6,'(3i4,f8.4,f14.8)') nat(ii),lat(ii),kap,fj,eat(ii,ikap,3)
    end do
  end do
 
  do ii=1,nvt
    ll = lat(ii+nc)
-   if(ll==0) then
-     mkap=1
-   else
-     mkap=2
-   end if
+   mkap=kap_count(2,ll)
 ! loop on J = ll +/- 1/2
    do ikap=1,mkap
-     if(ikap==1) then
-       kap=-(ll+1)
-       fj=dble(ll+1)*fat(ii+nc,3)/dble(2*ll+1)
-     else
-       kap=  ll
-       fj=dble(ll)*fat(ii+nc,3)/dble(2*ll+1)
-     end if
+     kap=kap_of(ll,ikap)
+     fj=j_share(ll,ikap,fat(ii+nc,3))
      write(6,'(3i4,f8.4,2f14.8,1p,e12.2)') nat(ii+nc),lat(ii+nc),kap,fj, &
 &     eat(ii+nc,ikap,3),eatp(ii,ikap),eatp(ii,ikap)-eat(ii+nc,ikap,3)
      ntc=ntc+1

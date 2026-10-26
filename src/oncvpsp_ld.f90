@@ -30,6 +30,7 @@
 
  program oncvpsp_ld
  use constants_m, only: dp
+ use kappa_m, only: kap_of
  use ae_file_m, only: read_ae_potential
  use ps_file_m, only: ps_file_t, read_ps_file, ps_file_free
  use phsft_m, only: phsft_pair
@@ -182,8 +183,7 @@
    rql=rq(1:nq)
    allocate(pshae(npsh,nq),pshps(npsh,nq))
    do ikap=1,merge(1,pf%nkap,l1==1)
-     if(ikap==1) kap=-(ll+1)
-     if(ikap==2) kap=ll
+     kap=kap_of(ll,ikap)
      nvkb=pf%nvkb(l1,ikap)
      call phsft_pair(irel,ll,kap,nvkb,rr,vfull,zz,pf%vloc(:,ikap), &
 &                    pf%vlocpw,pf%vkbpw(1:nvkb,l1,ikap), &

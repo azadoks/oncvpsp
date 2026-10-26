@@ -56,6 +56,7 @@
 !!              values in place of 10 % of them
 
  use constants_m, only: dp, mxstate, mxl, mxlin
+ use kappa_m, only: kap_count, kap_of, j_share
  use pieces_m, only: piecewise_t
  implicit none
 
@@ -187,22 +188,15 @@
      l1=la(ii)+1
 
      ll=la(ii)
-     if(nkap==1 .or. ll==0) then
-       mkap=1
-     else
-       mkap=2
-     end if
+     mkap=kap_count(nkap,ll)
 ! loop on J = ll +/- 1/2 when nkap=2, the occupation shared out as 2j+1
      do ikap=1,mkap
        if(nkap==1) then
          kap=0
          fj=fa(ii)
-       else if(ikap==1) then
-         kap=-(ll+1)
-         fj=dble(ll+1)*fa(ii)/dble(2*ll+1)
        else
-         kap=  ll
-         fj=dble(ll)*fa(ii)/dble(2*ll+1)
+         kap=kap_of(ll,ikap)
+         fj=j_share(ll,ikap,fa(ii))
        end if
        et=ea(ii,ikap)
 

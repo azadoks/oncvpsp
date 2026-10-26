@@ -58,6 +58,7 @@
  use input_toml_m, only: read_input_toml
 #endif
  use constants_m, only: dp, mxprj, mxstate, mxcnf, mxl, mxlin, mxkap, nrhomod
+ use kappa_m, only: kap_count, kap_of, j_share
  use pieces_m, only: piecewise_t, pw_reach, pw_free
  use modcore_m, only: core_pieces_smooth
  use free_tail_m, only: free_tail_log
@@ -702,23 +703,12 @@
      wmesh(jj)%mx=0
    end do
    ll=l1-1
-   if(nkap==1 .or. ll==0) then
-     mkap=1
-   else
-     mkap=2
-   end if
+   mkap=kap_count(nkap,ll)
 ! loop on J = ll +/- 1/2 when nkap=2; fj is the weight of each J
    do ikap=1,mkap
-     if(nkap==1) then
-       kap=-(ll+1)
-       fj=1.0d0
-     else if(ikap==1) then
-       kap=-(ll+1)
-       fj=dble(ll+1)/dble(2*ll+1)
-     else
-       kap=  ll
-       fj=dble(ll)/dble(2*ll+1)
-     end if
+     kap=kap_of(ll,ikap)
+     fj=1.0d0
+     if(nkap==2) fj=j_share(ll,ikap,1.0d0)
 
      uu(:,:)=0.0d0; qq(:,:)=0.0d0
      iprj=0
@@ -1032,22 +1022,11 @@
    ll=la(nc+kk)
    l1=ll+1
 
-   if(nkap==1 .or. ll==0) then
-     mkap=1
-   else
-     mkap=2
-   end if
+   mkap=kap_count(nkap,ll)
    do ikap=1,mkap
-     if(nkap==1) then
-       kap=-(ll+1)
-       fj=1.0d0
-     else if(ikap==1) then
-       kap=-(ll+1)
-       fj=dble(ll+1)/dble(2*ll+1)
-     else
-       kap=  ll
-       fj=dble(ll)/dble(2*ll+1)
-     end if
+     kap=kap_of(ll,ikap)
+     fj=1.0d0
+     if(nkap==2) fj=j_share(ll,ikap,1.0d0)
 
      et=ea(nc+kk,ikap)
 

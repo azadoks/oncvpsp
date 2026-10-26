@@ -67,6 +67,7 @@
 !!               none) (output)
 
  use constants_m, only: dp, mxl, mxlin
+ use kappa_m, only: kap_count, kap_of
  use pieces_m, only: piecewise_t, pw_maxseg, pw_reach, pw_alloc, pw_free, &
 &                    pw_integral, pw_product_integral, pw_node_values
  use vploc_m, only: vploc_t, vploc_fit, vploc_mesh, vploc_eval
@@ -131,11 +132,7 @@
    l1=lloc+1
    rcloc=rc(l1)
    nb=min(mmax,irc(l1)+pw_reach+16)
-   if(nkap==1 .or. l1==1) then
-     mkap=1
-   else
-     mkap=2
-   end if
+   mkap=kap_count(nkap,l1-1)
    vlin0(:)=0.0d0
    vlin1(:)=0.0d0
    do ikap=1,mkap
@@ -190,11 +187,7 @@
  do l1=1,lmax+1
    if(l1==lloc+1) cycle
    ll=l1-1
-   if(nkap==1 .or. l1==1) then
-     mkap=1
-   else
-     mkap=2
-   end if
+   mkap=kap_count(nkap,l1-1)
    nlim=max(nlim,irc(l1))
 
 ! the segments of this channel's projectors: the kinks inside (0, rc) at
@@ -226,8 +219,7 @@
 
 ! loop on J = ll +/- 1/2
    do ikap=1,mkap
-     if(ikap==1) kap=-(ll+1)
-     if(ikap==2) kap=  ll
+     kap=kap_of(ll,ikap)
      np=nproj(l1)
 
 ! the projectors' pieces: on each segment chi = (eig - T - V_loc) psi less

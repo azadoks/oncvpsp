@@ -25,6 +25,7 @@
 
  module config_ae_m
  use constants_m, only: dp, mxstate, mxcnf, nlev, ae_tolres
+ use kappa_m, only: kap_count, kap_of
  implicit none
  private
  public :: run_config_ae, config_ae_warning, aeatom_cached
@@ -289,18 +290,10 @@
  do kk=1,nc+nvt
    if(eat(kk,1,2)==0.0d0) then
      ll=lat(kk)
-     if(nkap==1 .or. ll==0) then
-       mkap=1
-     else
-       mkap=2
-     end if
+     mkap=kap_count(nkap,ll)
      et=0.0d0
      do ikap=1,mkap
-       if(ikap==1) then
-         kap=-(ll+1)
-       else
-         kap=ll
-       end if
+       kap=kap_of(ll,ikap)
        call boundstate(irel,nat(kk),ll,kap,ierr,et, &
 &                      rr,zz,vfull,uu,up,mmax,mch)
 !a negative ierr (no classical turning point) is accepted for j=l-1/2
