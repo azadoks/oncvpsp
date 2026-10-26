@@ -27,7 +27,7 @@
 
  subroutine run_vkb(lmax,lloc,lpopt,dvloc0,rc,irc,nproj,rr,mmax,mxprj,pswf, &
 &                   pswfx,chix,vfull,vp,evkb,vkb,nlim,dlta,vrloc,irel,nkap, &
-&                   vkbpw,vlocpw,bbeig)
+&                   vkbpw,vlocpw,bbeig,ifail)
 
 !! computes Vanderbilt / Kleinman-Bylander non-local potentials. The
 !! projectors are functions of pieces (pieces_m, doc/smoothness_plan.md
@@ -74,6 +74,7 @@
 !! @param bbeig  the eigenvalues of each channel's symmetrized B matrix,
 !!               ascending (B itself for one projector; 0 where there is
 !!               none) (output)
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, mxl, mxlin
  use kappa_m, only: kap_count, kap_of
@@ -103,6 +104,7 @@
  integer, intent(out) :: nlim
  type(piecewise_t), intent(out) :: vkbpw(mxprj,mxl+1,nkap),vlocpw
  real(dp), intent(out) :: bbeig(mxprj,mxl+1,nkap)
+ integer, intent(out) :: ifail
 
 !Local variables
  integer :: lwork
@@ -116,6 +118,7 @@
  type(piecewise_t) :: pw(mxprj),pwt(mxprj)
  type(vploc_t) :: cfloc
 
+ ifail=0
  lwork=3*mxprj
  allocate(vloc(mmax),vlin0(mmax),vlin1(mmax),vpiece(mmax),taper(mmax))
  allocate(work(lwork))
@@ -156,7 +159,8 @@
          write(6,'(2a,i2,a,f10.6)') 'run_vkb: ERROR node of the local', &
 &              ' channel''s pseudo wave within reach of rc, l=',lloc, &
 &              ' r=',rr(ii)
-         error stop 1
+         ifail=1
+         return
        end if
        tt=chix(ii,1,l1,ikap)/pswfx(ii,1,l1,ikap)
        xx=20.0d0*((rr(ii)/rcloc)-1.0d0)
@@ -300,7 +304,8 @@
        call dsyev( 'V', 'U', np, bb, mxprj, bbev, work, lwork, info )
        if(info /= 0) then
          write(6,'(a,i4)') 'run_vkb: B matrix eigenvalue ERROR, info=',info
-         error stop 1
+         ifail=1
+         return
        end if
        bbeig(1:np,l1,ikap)=bbev(1:np)
 
@@ -355,7 +360,8 @@
        call dsyev( 'V', 'U', np, sovl, mxprj, sovlev, work, lwork, info )
        if(info /= 0) then
          write(6,'(a,i4)') 'run_vkb: sovl matrix eigenvalue ERROR, info=',info
-         error stop 1
+         ifail=1
+         return
        end if
 
 ! construct S^(-1/2) AND s^(1/2)
@@ -372,7 +378,8 @@
        if(info /= 0) then
          write(6,'(a,i4)') &
 &              'run_vkb: B^(-1)* matrix eigenvalue ERROR, info=',info
-         error stop 1
+         ifail=1
+         return
        end if
 
 

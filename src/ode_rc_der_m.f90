@@ -24,7 +24,7 @@
 
  contains
 
- subroutine ode_rc_der(irel,ll,kap,ee,rr,vv,uu,up,mmax,rc,uorder)
+ subroutine ode_rc_der(irel,ll,kap,ee,rr,vv,uu,up,mmax,rc,uorder,ifail)
 
 !! value and four derivatives at any radius rc of uu/r, uu an all-electron
 !! wave function, from the radial equation it solves rather than from
@@ -56,6 +56,7 @@
 !! @param mmax  size of the log radial mesh
 !! @param rc  the radius (bohr)
 !! @param uorder  d^k(uu/r)/dr^k at rc in uorder(k+1), k=0..4
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
  use relativity_m, only: c_light
@@ -69,6 +70,7 @@
 
 !Output variables
  real(dp), intent(out) :: uorder(5)
+ integer, intent(out) :: ifail
 
 !Local variables
  integer, parameter :: nord=4
@@ -78,6 +80,7 @@
  real(dp), allocatable :: dudr(:)
  integer :: kk,jj
 
+ ifail=0
 ! Taylor coefficients about rc of V, 1/r, 1/r**2
  call lm_derivs(rr,vv,mmax,rc,nord-1,vd)
  fact=1.0d0
@@ -107,7 +110,8 @@
    write(6,'(/a,i2,a,f10.6/a,1p,2e20.12)') &
 &        'ode_rc_der: ERROR uu and up disagree for l=',ll,' at rc=',rc, &
 &        'uu'' from up and from stencils on uu:',ud(2),udst(2)
-   error stop 1
+   ifail=1
+   return
  end if
 
  aa(:,:,:)=0.0d0

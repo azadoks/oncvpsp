@@ -31,6 +31,7 @@
  implicit none
 
 !Local variables
+ integer :: ifail
  integer, parameter :: nroot = 8, nscan = 1001
  integer, parameter :: imatch(6) = [2, 4, 5, 6, 7, 8]
  real(dp), parameter :: rc = 1.7_dp, dltq = 0.02_dp, qmax = 200.0_dp
@@ -50,7 +51,8 @@
    do ll = 0, 3
      ulgds = [-5.0_dp, -1.0_dp, 0.5_dp*ll/rc - 0.3_dp, 20.0_dp, 65.0_dp]
      do kk = 1, size(ulgds)
-       call qroots(ll, rc, ulgds(kk), nroot, dltq, qmax, qroot)
+       call qroots(ll, rc, ulgds(kk), nroot, dltq, qmax, qroot, ifail)
+       if(ifail /= 0) error stop 1
        do ii = 2, nroot
          if(qroot(ii) <= qroot(ii - 1)) err = huge(1.0_dp)
        end do
@@ -68,8 +70,10 @@
 ! pole
    err = 0.0_dp
    do ll = 0, 3
-     call qroots(ll, rc, -1.0e12_dp, nroot, dltq, qmax, qa)
-     call qroots(ll, rc, 1.0e12_dp, nroot, dltq, qmax, qb)
+     call qroots(ll, rc, -1.0e12_dp, nroot, dltq, qmax, qa, ifail)
+     if(ifail /= 0) error stop 1
+     call qroots(ll, rc, 1.0e12_dp, nroot, dltq, qmax, qb, ifail)
+     if(ifail /= 0) error stop 1
      err = max(err, maxval(abs(qa - qb)/qb))
    end do
    call check('pole', err, 1.0e-9_dp)
@@ -83,7 +87,8 @@
      do ii = 1, nscan
        ss = -0.05_dp + 1.0e-4_dp*(ii - 1)
        ulgd = dble(ll)/rc + ss
-       call qroots(ll, rc, ulgd, nroot, dltq, qmax, qroot)
+       call qroots(ll, rc, ulgd, nroot, dltq, qmax, qroot, ifail)
+       if(ifail /= 0) error stop 1
        if(ii > 1) then
          if(maxval(abs(qroot - qlast)) > jump) then
            jump = maxval(abs(qroot - qlast))

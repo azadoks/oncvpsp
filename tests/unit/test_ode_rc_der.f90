@@ -23,6 +23,7 @@
  implicit none
 
 !Local variables
+ integer :: ifail
  real(dp), parameter :: rr1 = 5.0e-5_dp, rmax = 45.0_dp, amesh = 1.006_dp
  real(dp), parameter :: radii(3) = [0.7_dp, 1.2345_dp, 2.718281828459045_dp]
  real(dp), parameter :: tol(0:4) = [1.0e-13_dp, 1.0e-12_dp, 1.0e-10_dp, &
@@ -45,7 +46,8 @@
  do ii = 1, 3
    rc = radii(ii)
    call ode_rc_der(0, 0, -1, -0.5_dp, rr, vv, uu(:, 1), up(:, 1), mmax, &
-&                  rc, uorder)
+&                  rc, uorder, ifail)
+   if(ifail /= 0) error stop 1
    exact = 2.0_dp*exp(-rc)*[1.0_dp, -1.0_dp, 1.0_dp, -1.0_dp, 1.0_dp]
    call compare('nr 1s', uorder, exact)
  end do
@@ -54,7 +56,8 @@
  do ii = 1, 3
    rc = radii(ii)
    call ode_rc_der(0, 1, -2, -0.125_dp, rr, vv, uu(:, 1), up(:, 1), mmax, &
-&                  rc, uorder)
+&                  rc, uorder, ifail)
+   if(ifail /= 0) error stop 1
    exact = exp(-0.5_dp*rc)*[rc, 1.0_dp - 0.5_dp*rc, -1.0_dp + 0.25_dp*rc, &
 &                            0.75_dp - 0.125_dp*rc, -0.5_dp + 0.0625_dp*rc]
    call compare('nr 2p', uorder, exact)
@@ -67,7 +70,9 @@
  up(:, 1) = al*rr*(gam/rr - 1.0_dp)*uu(:, 1)
  do ii = 1, 3
    rc = radii(ii)
-   call ode_rc_der(2, 0, -1, ee, rr, vv, uu(:, 1), up(:, 1), mmax, rc, uorder)
+   call ode_rc_der(2, 0, -1, ee, rr, vv, uu(:, 1), up(:, 1), mmax, rc, uorder, &
+&        ifail)
+   if(ifail /= 0) error stop 1
    call power_exp(gam - 1.0_dp, rc, exact)
    call compare('fr 1s', uorder, exact)
  end do
@@ -78,7 +83,8 @@
    do ii = 1, 3
      rc = radii(ii)
      call ode_rc_der(0, 0, -1, ee, rr, vv, uu(:, 1), up(:, 1), mmax, rc, &
-&                    uorder)
+&                    uorder, ifail)
+     if(ifail /= 0) error stop 1
      exact = 2.0_dp*exp(-rc)*[1.0_dp, -1.0_dp, 1.0_dp, -1.0_dp, 1.0_dp]
      call compare_tol('nr 1s solved', uorder, exact, [(1.0e-9_dp, ii = 1, 5)])
    end do
@@ -90,7 +96,9 @@
    irc = 0
    rc = 1.2345_dp
    call wf_rc_der(rr, uu(:, 1), al, rc, irc, mmax, exact)
-   call ode_rc_der(1, 0, -1, ee, rr, vv, uu(:, 1), up(:, 1), mmax, rc, uorder)
+   call ode_rc_der(1, 0, -1, ee, rr, vv, uu(:, 1), up(:, 1), mmax, rc, uorder, &
+&        ifail)
+   if(ifail /= 0) error stop 1
    call compare_tol('sr 1s', uorder, exact, &
 &                   [1.0e-13_dp, 1.0e-9_dp, 1.0e-8_dp, 1.0e-7_dp, 1.0e-5_dp])
  end if

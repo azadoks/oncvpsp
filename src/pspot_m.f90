@@ -27,7 +27,7 @@
 
  subroutine pspot(ipr,ll,rr,irc,rc,mmax,al,nbas,qroot,eig,uu,pswfopt_sb, &
 &                 psx,chix, &
-&           psopt,vae,vpsp,vkb,ekin_num)
+&           psopt,vae,vpsp,vkb,ekin_num,ifail)
 
 !! calculates optimized pseudopotential from coefficients of optimized
 !! pseudo wave function and all-electron wave function
@@ -55,6 +55,7 @@
 !!             pw_reach+16 past irc, 0 beyond: the inside piece's smooth
 !!             extension past rc (pieces_m)
 !! @param chix  (eig - T) psx on the same nodes: the projector's seed
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
  use pieces_m, only: pw_reach
@@ -76,6 +77,7 @@
  real(dp), intent(out) :: vpsp(mmax)
  real(dp), intent(out) :: ekin_num
  real(dp), intent(out) :: psx(mmax),chix(mmax)
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp), allocatable :: work(:,:)
@@ -83,6 +85,7 @@
  real(dp) :: tt,ddt,ske,uder(2)
  integer :: ii,jj,ll1,nx
 
+ ifail=0
  allocate(work(mmax,5))
  work(:,:)=0.0d0
 
@@ -153,7 +156,8 @@
        write(6,'(a)') ' ERROR pspot:  first pseudo wave function has node, &
 &         program will stop'
        write(6,'(a)') ' ERROR pspot: try changing psp parameters for this l'
-       error stop 1
+       ifail=1
+       return
      end if
      vpsp(ii)=-work(ii,4)/work(ii,1) + eig
      vkb(ii)=-work(ii,4) + eig*work(ii,1)

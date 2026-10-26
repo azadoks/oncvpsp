@@ -25,7 +25,7 @@
 
  contains
 
- subroutine qroots(ll,rc,ulgd,nroot,dltq,qmax,qroot)
+ subroutine qroots(ll,rc,ulgd,nroot,dltq,qmax,qroot,ifail)
 
 !! calculate q values for spherical Bessel function orthogonal basis inside r_c
 !! all having specified log derivative ulgd at rc
@@ -41,6 +41,7 @@
 !! @param dltq  step for search for qroots satisfying log derivative condition
 !! @param qmax  maximum q for search
 !! @param qroot  set of q's satisfying dj_l(q*r)/dr / jl(q*r) = ulgd
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
  use sbf_rc_der_m, only: sbf_rc_der
@@ -52,12 +53,14 @@
 
 !Output variables
  real(dp), intent(out) :: qroot(nroot)
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp) :: sbfd(5)
  real(dp) :: qq,gg,glast,glow,gt,qhi,qlow,qt
  integer :: ii,jj,iroot,nq
 
+ ifail=0
  nq=int(qmax/dltq)+1
 
 ! the roots are those of the pole-free g(q) = ulgd*j_l(q rc) - q j_l'(q rc),
@@ -91,7 +94,8 @@
        end if
      end do
      if(gg==0.0d0) qt=qq
-     call polish(qt)
+     call polish(qt,ifail)
+     if(ifail/=0) return
      iroot=iroot+1
      qroot(iroot)=qt
      if(iroot==nroot) exit
@@ -105,7 +109,8 @@
  end do
  if(iroot<nroot) then
    write(6,'(a)') 'qroots: ERROR - failed to find nroot roots'
-   error stop 1
+   ifail=1
+   return
  end if
 
 !extra q values for needed flexibility to satisfy constraints
@@ -125,7 +130,7 @@
  gfun=ulgd*sbfd(1) - sbfd(2)
  end function gfun
 
- subroutine polish(qp)
+ subroutine polish(qp,ifail)
 
 !! the root qp polished to round-off by Newton's method on the pole-free
 !! g(q) = ulgd*j_l(q rc) - q j_l'(q rc), whose root it is where j_l(q rc)
@@ -135,11 +140,14 @@
 !! g then at the moved q
 !!
 !! @param qp  the root (in/out)
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  real(dp), intent(inout) :: qp
  real(dp) :: gg,dg,dq,dgold,gscale
  integer :: kk
+ integer, intent(out) :: ifail
 
+ ifail=0
  dq=0.0d0
  dgold=0.0d0
  do kk=1,6
@@ -158,7 +166,8 @@
  write(6,'(/a,i0,a,es12.4,a,es10.2)') &
 &     'qroots: ERROR Newton polish not converged, ll=',ll,', q=',qp, &
 &     ', last step',dq
- error stop 1
+ ifail=1
+ return
  end subroutine polish
 
  end subroutine qroots

@@ -78,9 +78,11 @@
  f1(:) = uu(:, 1, 1)*uu(:, 1, 2)
  do ir = 1, size(radii)
    call ode_rc_der(0, 0, -1, ee(1), rr, vv, uu(:, 1, 1), up(:, 1, 1), mmax, &
-&                  radii(ir), ord1)
+&                  radii(ir), ord1, ifail)
+   if(ifail /= 0) error stop 1
    call ode_rc_der(0, 0, -1, ee(2), rr, vv, uu(:, 1, 2), up(:, 1, 2), mmax, &
-&                  radii(ir), ord2)
+&                  radii(ir), ord2, ifail)
+   if(ifail /= 0) error stop 1
 ! u = r (u/r), u' = u/r + r (u/r)'
    wr = radii(ir)*ord1(1)*(ord2(1) + radii(ir)*ord2(2)) &
 &     - (ord1(1) + radii(ir)*ord1(2))*radii(ir)*ord2(1)

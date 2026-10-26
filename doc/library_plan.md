@@ -80,7 +80,7 @@ backtrace, and the exit status) unchanged:
       `outwf_m`, `lschvkbb`, `renorm_r`, the well states and free tails,
       and up through the atoms and configurations. A routine of a later
       step stops on the `ifail` of one of these until its own step.
-- [ ] The pseudization: `run_optimize`, `optimize`, `qroots`, `pspot`,
+- [x] The pseudization: `run_optimize`, `optimize`, `qroots`, `pspot`,
       `const_basis`, `sbf_basis_con`, `eresid`, `ode_rc_der`, `run_vkb`,
       `sr_so_r`.
 - [ ] The model cores: `modcore`, `modcore2`, `modcore3`,

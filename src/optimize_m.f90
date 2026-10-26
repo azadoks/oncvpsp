@@ -32,7 +32,7 @@
 &                    eresid0,eresiddot,eresidmat,&
 &                    pswfnull_sb,pswfnull_or,uunorm,ps0norm,eresidmin,&
 &                    pswfopt_sb,pswfopt_or,ekin_anal,eresq,pswfopt_null, &
-&                    wreg,optdg)
+&                    wreg,optdg,ifail)
 
 !! @param nnull  number of unconstrained basis vectors for residual minimization
 !! @param nbas  number of sbf basis functions
@@ -71,6 +71,7 @@
 !! @param optdg  E_resid(qout(1)) at the optimum, the regularization's
 !!               term wreg E_resid(qout(3)) there, and the smallest
 !!               eigenvalue e1 and |f1| of the problem at qout(1) alone
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
  use lapack_m, only: dsyev
@@ -92,6 +93,7 @@
  real(dp), intent(in) :: wreg
  real(dp), intent(out) :: pswfopt_null(nnull)
  real(dp), intent(out) :: optdg(4)
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp) :: emin
@@ -102,6 +104,7 @@
  real(dp), allocatable :: rmat(:,:),rev(:)
  integer :: ii,jj,kk,info
 
+ ifail=0
 !find eigenvalues and eigenvectors of saved E_resid matrix for qout(1)
 !which is meant to be the cutoff used for optimization
 
@@ -117,7 +120,8 @@
  call dsyev( 'V', 'U', nnull, wmat, nnull, wev, work, 5*nnull, info )
  if(info /= 0) then
    write(6,'(a,i4)') 'optimize: residual-energy eigenvalue ERROR, info=',info
-   error stop 1
+   ifail=1
+   return
  end if
 
 !convert <ps0| E_resid |psnull> vector from the null-space representation
@@ -143,7 +147,8 @@
    if(info /= 0) then
      write(6,'(a,i4)') 'optimize: residual-energy eigenvalue ERROR, info=', &
 &          info
-     error stop 1
+     ifail=1
+     return
    end if
    optdg(3)=rev(1)
    optdg(4)=abs(sum(eresiddot(:,1)*rmat(:,1)))
@@ -198,7 +203,8 @@
 
 
  call solve_norm_constraint(nnull,eresideval,eresiddot_ev,uunorm,ps0norm, &
-&                            pswfopt)
+&                            pswfopt,ifail)
+ if(ifail/=0) return
 
  emin=eresid0(1)
  do ii=1,nnull
@@ -258,7 +264,7 @@
  contains
 
  subroutine solve_norm_constraint(nnull,eresideval,eresiddot_ev,uunorm, &
-&                                 ps0norm,pswfopt)
+&                                 ps0norm,pswfopt,ifail)
 !! the x_i of Eq. (16) at the |x_1| that satisfies the norm constraint,
 !! Eq. (15): by interval halving on |x_1| from 0 to D_norm, then Newton's
 !! method; x_1 of the sign opposite to f_1's
@@ -269,6 +275,7 @@
 !! @param uunorm  all-electron norm inside rc
 !! @param ps0norm  norm of the constrained wave alone
 !! @param pswfopt  the x_i
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  integer, intent(in) :: nnull
@@ -277,6 +284,7 @@
 
 !Output variables
  real(dp), intent(inout) :: pswfopt(nnull)
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp) :: yy,tt,rtsgn,x1,x1min,x1max,dt,dtold,dx,den
@@ -285,10 +293,12 @@
  integer, parameter :: niter=100
  logical :: converged
 
+ ifail=0
  rtsgn=-sign(1.0d0, eresiddot_ev(1))
  if(ps0norm>uunorm) then
    write(6,'(/a)') 'optimize: ERROR ps0norm > uunorm, code will stop'
-   error stop 1
+   ifail=1
+   return
  end if
  yy=sqrt((uunorm-ps0norm))
 
@@ -322,7 +332,8 @@
 
  if(converged .eqv. .false.) then
    write(6,'(/a)') 'optimize: ERROR interval-halving search not converged'
-   error stop 1
+   ifail=1
+   return
  end if
 
 ! Newton's method on the constraint tt(x1) from the bracket's midpoint:
@@ -355,7 +366,8 @@
  if(converged .eqv. .false.) then
    write(6,'(/a,1p,e10.2)') &
 &        'optimize: ERROR Newton polish not converged, last step',dx
-   error stop 1
+   ifail=1
+   return
  end if
  pswfopt(1)=rtsgn*x1
  end subroutine solve_norm_constraint

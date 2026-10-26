@@ -29,7 +29,7 @@
 
  subroutine const_basis(nbas,ncon,cons,orbasis,orbasis_der,&
 &                       pswf0_or,pswfnull_or, &
-&                       pswf0_sb,pswfnull_sb,ps0norm)
+&                       pswf0_sb,pswfnull_sb,ps0norm,ifail)
 
 !! the particular solution of the matching constraints of least norm in the
 !! orthonormal basis, and an orthonormal basis of their null space, in
@@ -55,6 +55,7 @@
 !!                     all orthogonal to the pswf0 combination (which is not
 !!                     normalized) (quad)
 !! @param ps0norm  charge contained in ps0 inside rc
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
  use, intrinsic :: iso_fortran_env, only: qp => real128
@@ -70,6 +71,7 @@
  real(dp), intent(out) :: pswf0_or(nbas),pswfnull_or(nbas,nbas-ncon)
  real(qp), intent(out) :: pswf0_sb(nbas),pswfnull_sb(nbas,nbas-ncon)
  real(dp), intent(out) :: ps0norm
+ integer, intent(out) :: ifail
 
 !Local variables
  real(qp) :: amat(ncon,nbas),bq(ncon),gmat(nbas,nbas),lam(nbas),vv(nbas,nbas)
@@ -79,6 +81,7 @@
  real(qp), parameter :: rankeps=1.0e-10_qp
  integer :: ii,jj,kk,nnull
 
+ ifail=0
  nnull=nbas-ncon
 
 !the scaled constraint matrix and vector
@@ -100,7 +103,8 @@
 &        'const_basis: ERROR the constraints are linearly dependent, ', &
 &        'singular value ratio', &
 &        real(sqrt(max(lam(nnull+1),0.0_qp)/lam(nbas)),dp)
-   error stop 1
+   ifail=1
+   return
  end if
 
 !the least-norm particular solution

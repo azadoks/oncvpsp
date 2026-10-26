@@ -26,7 +26,7 @@
  contains
 
  subroutine sr_so_r(lmax,nproj,rr,mmax,mxprj,evkb,vkbpw, &
-&                       vsr,esr,vso,eso,vsrpw,vsopw)
+&                       vsr,esr,vso,eso,vsrpw,vsopw,ifail)
 
 !! reformulates non-local potentials based on j = l +/- 1/2 to scalar-
 !! relativistic and L dot S projectors
@@ -51,6 +51,7 @@
 !! @param eso  energy coefficients of vso, to be multiplied by <L dot S>
 !! @param vsrpw  vsr as functions of pieces
 !! @param vsopw  vso as functions of pieces
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, mxl, mxlin, mxkap
  use projbasis_m, only: pb_half_powers, pb_congruence, pb_combine, &
@@ -74,6 +75,7 @@
 !Output variables
  type(piecewise_t), intent(out) :: vsrpw(2*mxprj,mxl+1)
  type(piecewise_t), intent(out) :: vsopw(2*mxprj,mxl+1)
+ integer, intent(out) :: ifail
 
 !Local variables
  integer :: ii,jj,ik1,ik2,ip1,ip2,ll,l1,info,nn
@@ -85,6 +87,7 @@
  real(dp) :: fscl(mxprj),fso(mxprj),work(10*mxprj)
  type(piecewise_t) :: pwt(2*mxprj),pwst(2*mxprj)
 
+ ifail=0
  do l1=1,lmax+1
    ll=l1-1
 
@@ -142,7 +145,8 @@
 
    if(info /= 0) then
      write(6,'(a,i4)') 'sr_so_r: S matrix eigenvalue ERROR, info=',info
-     error stop 1
+     ifail=1
+     return
    end if
 
 ! construct S^(-1/2) AND s^(1/2)
@@ -169,7 +173,8 @@
 
    if(info /= 0) then
      write(6,'(a,i4)') 'sr_so_r: A* matrix eigenvalue ERROR, info=',info
-     error stop 1
+     ifail=1
+     return
    end if
 
    call dsyev( 'V', 'U', nn,  asost, 2*mxprj,  wsost, work, 10*mxprj, info )
@@ -177,7 +182,8 @@
 
    if(info /= 0) then
      write(6,'(a,i4)') 'sr_so_r: A* matrix eigenvalue ERROR, info=',info
-     error stop 1
+     ifail=1
+     return
    end if
 
 ! take linear combinations to form orthonormal projectors

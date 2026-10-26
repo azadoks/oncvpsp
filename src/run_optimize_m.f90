@@ -28,7 +28,7 @@
  subroutine run_optimize(eig,ll,kap,irel,mmax,mxprj,rr,uua,upa,qq,&
 &                      freetl,wm,rc,irc,qcut,qmsbf,ncon_in,nbas_in,npr, &
 &                      psopt,vpsp,vkb,vae,cvgplt,ncurve,ecurve,pswfx,chix, &
-&                      ektail,wreg,optdg,wshare)
+&                      ektail,wreg,optdg,wshare,ifail)
 
 !! calls routines to generate optimized pseudo wave function and semi-local
 !! pseudopotential and prints diagnostic information on process and
@@ -88,6 +88,7 @@
 !!                that their difference is the well's share; (3) 1 for
 !!                these, -1 where the free tail is undefined (qcut not
 !!                above the state's wave vector), 0 for the other waves
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, nerrlv, nerrdg, pi
  use, intrinsic :: iso_fortran_env, only: qp => real128
@@ -127,9 +128,9 @@
  real(dp), intent(out) :: pswfx(mmax,mxprj),chix(mmax,mxprj)
  real(dp), intent(out) :: ektail(2,mxprj),optdg(4,mxprj)
  real(dp), intent(out) :: wshare(3,mxprj)
+ integer, intent(out) :: ifail
 
 !Local variables
- integer :: ifail
  real(dp) :: uord(5)
  real(dp) :: al,ulgd
  real(dp) :: ps0norm
@@ -156,6 +157,7 @@
  real(dp) :: ekin_anal,ekin_num,qmax,hh,ekin_tail
  real(dp) :: edum(0,1),emdum(0,0,1)
 
+ ifail=0
  al = 0.01d0 * log(rr(101) / rr(1))
  l1=ll+1
 
@@ -172,14 +174,16 @@
 !calculate derivatives of all-electron wave function at r_c from the radial
 !equation for the first projector to set sbf wave vectors for all projectors
 
- call ode_rc_der(irel,ll,kap,eig(1),rr,vae,uua(1,1),upa(1,1),mmax,rc,uord)
+ call ode_rc_der(irel,ll,kap,eig(1),rr,vae,uua(1,1),upa(1,1),mmax,rc,uord,ifail)
+ if(ifail/=0) return
  ulgd=uord(2)/uord(1)
 
  qmax=200.0d0  !very large value should always allow nbas q's to be found
 
 !select wave vectors for spherical Bessel functions, scanned in steps of
 !0.02 (doc/smoothness_plan.md, Q-5, D-3)
- call qroots(ll,rc,ulgd,nbas,0.02d0,qmax,qroot)
+ call qroots(ll,rc,ulgd,nbas,0.02d0,qmax,qroot,ifail)
+ if(ifail/=0) return
 
  qmsbf=qroot(nbas)
 
@@ -214,7 +218,8 @@
 !constraints
 
    call ode_rc_der(irel,ll,kap,eig(iprj),rr,vae,uua(1,iprj),upa(1,iprj), &
-&                  mmax,rc,uord)
+&                  mmax,rc,uord,ifail)
+   if(ifail/=0) return
 
 !q considered infinity for E_resid calculation: twice the largest basis
 !wave vector, at least 20 and at least twice qcut, by smooth maxima of
@@ -241,7 +246,8 @@
 
 !calculate orthogonal basis and constraint matrix
    call sbf_basis_con(ll,rc,nbas,qroot,psb,nbas_in+npr-1,orbasis, &
-&                     orbasis_der,iprj,mxprj,ncon,ncon_in)
+&                     orbasis_der,iprj,mxprj,ncon,ncon_in,ifail)
+   if(ifail/=0) return
 
 
 !load constraint vector for value/derivative matching
@@ -260,7 +266,8 @@
 !satisfying off-diagonal norm conservation
    call const_basis(nbas,ncon,cons,orbasis,orbasis_der, &
 &                   pswf0_or,pswfnull_or, &
-&                   pswf0_sbq,pswfnull_sbq,ps0norm)
+&                   pswf0_sbq,pswfnull_sbq,ps0norm,ifail)
+   if(ifail/=0) return
    pswf0_sb(:)=real(pswf0_sbq(:),dp)
    pswfnull_sb(:,:)=real(pswfnull_sbq(:,:),dp)
 
@@ -276,23 +283,24 @@
    if(freetl(iprj)) then
      call free_tail(irel,ll,kap,eig(iprj),rr,vae,uua(1,iprj),upa(1,iprj), &
 &                   mmax,rc,qcut,hh,nr,ulin,dlin,ifail=ifail)
-     if(ifail/=0) error stop 1
+     if(ifail/=0) return
      ekin_tail=tail_kinetic(ll,rc,hh,nr,ulin,dlin)
      deallocate(dlin)
    else if(wm(iprj)%mx>0) then
      call mesh_tail(wm(iprj)%rr,wm(iprj)%uu(:,1),wm(iprj)%mx,rc,hh,nr,ulin, &
 &          ifail)
-     if(ifail/=0) error stop 1
+     if(ifail/=0) return
    else
      call mesh_tail(rr,uua(1,iprj),mmax,rc,hh,nr,ulin,ifail)
-     if(ifail/=0) error stop 1
+     if(ifail/=0) return
    end if
 
 !E_resid on the q grid, and at the exact qcut and the points of the
 !convergence curve (Q-1, Q-4)
    call eresid(ll,rc,nnull,nbas,nq,dq,nqout,qout,qmax,qroot,hh,nr,ulin, &
 &              pswf0_sbq,pswfnull_sbq,e0,edot,emat, &
-&              eresid0,eresiddot,eresidmat)
+&              eresid0,eresiddot,eresidmat,ifail)
+   if(ifail/=0) return
 
    write(6,'(a,f7.2,a,f7.2,a)') '    Optimizing pswf for qcut=',qout(1), &
 &   ' a_B^-1,  ecut=',0.5d0*qout(1)**2,' Ha'
@@ -306,7 +314,8 @@
 &                eresid0,eresiddot,eresidmat,&
 &                pswfnull_sb,pswfnull_or,qq(iprj,iprj),ps0norm,eresidmin, &
 &                pswfopt_sb,pswfopt_or,ekin_anal,eresq,pswfopt_nu, &
-&                wreg,optdg(1,iprj))
+&                wreg,optdg(1,iprj),ifail)
+   if(ifail/=0) return
 
    write(6,'(a,1p,d10.2,a)') '    Residual kinetic energy error=', &
 &        eresidmin,' Ha'
@@ -321,10 +330,14 @@
    psb(1:nbas,iprj)=pswfopt_sb(1:nbas)
 
 !the well's share of E_resid at qcut
-   if(wm(iprj)%mx>0 .and. .not. freetl(iprj)) call well_share(iprj)
+   if(wm(iprj)%mx>0 .and. .not. freetl(iprj)) then
+     call well_share(iprj,ifail)
+     if(ifail/=0) return
+   end if
 
 !the curve's tail: E_resid of the optimized wave from qmax to 3 qmax
-   call curve_tail(iprj)
+   call curve_tail(iprj,ifail)
+   if(ifail/=0) return
    deallocate(ulin,pswfopt_sbq,pswfnone)
 
 !the convergence curve of the optimized pseudo wave function on the q
@@ -336,14 +349,16 @@
      write(6,'(/2a,i0,a,i0/a)') 'run_optimize: ERROR q grid longer than', &
 &          ' the buffer of the convergence curve, nq=',nq,', ncurve=',ncurve, &
 &          '  (ncurve in oncvpsp_main; the grid grows with qcut*rc)'
-     error stop 1
+     ifail=1
+     return
    end if
 
 ! find the Vanderbilt projectors and optimized wave functions
 
    call pspot(iprj,ll,rr,irc,rc,mmax,al,nbas,qroot,eig(iprj),uua(1,iprj), &
 &             pswfopt_sb,pswfx(1,iprj),chix(1,iprj),psopt(1,iprj),vae,work, &
-&             vkb(1,iprj),ekin_num)
+&             vkb(1,iprj),ekin_num,ifail)
+   if(ifail/=0) return
 
 !semi-local potential
    if(iprj==1) then
@@ -412,7 +427,7 @@
 
  contains
 
- subroutine well_share(iprj)
+ subroutine well_share(iprj,ifail)
 !! the well's share of E_resid at qcut of projector iprj, a well state
 !! with the well's tail (wshare): that of the optimized wave with the
 !! well's tail, and with the free tail at its energy (free_tail_m), which
@@ -423,11 +438,13 @@
 !! makes them meaningful
 !!
 !! @param iprj  the projector
+!! @param ifail  0, or 1 after a failure, whose message is written
  integer, intent(in) :: iprj
+ integer, intent(out) :: ifail
  real(dp) :: ewell(1),efree(1),share
  real(dp), allocatable :: ufree(:),e0t(:),edt(:,:),emt(:,:,:)
  integer :: nqs,nrw
- integer :: ifail
+ ifail=0
  if(free_tail_defined(qcut,eig(iprj))) then
 !   with the well's tail, from the minimization's quadratic form at qcut;
 !   with the free tail, by eresid on the grid's nodes from lm_ncell cells
@@ -438,9 +455,10 @@
    allocate(e0t(nqs),edt(nqs,0),emt(nqs,0,0))
    call free_tail(irel,ll,kap,eig(iprj),rr,vae,uua(1,iprj), &
 &                   upa(1,iprj),mmax,rc,qcut,hh,nrw,ufree,dlin,ifail=ifail)
-   if(ifail/=0) error stop 1
+   if(ifail/=0) return
    call eresid(ll,rc,0,nbas,nqs,dq,1,qout(1:1),qmax,qroot,hh,nrw,ufree, &
-&                pswfopt_sbq,pswfnone,e0t,edt,emt,efree,edum,emdum)
+&                pswfopt_sbq,pswfnone,e0t,edt,emt,efree,edum,emdum,ifail)
+   if(ifail/=0) return
    deallocate(ufree,dlin,e0t,edt,emt)
    wshare(:,iprj)=[ewell(1),efree(1),1.0d0]
    share=ewell(1)-efree(1)
@@ -467,7 +485,7 @@
  end if
  end subroutine well_share
 
- subroutine curve_tail(iprj)
+ subroutine curve_tail(iprj,ifail)
 !! the curve's tail of projector iprj (ektail(1,iprj)): E_resid of the
 !! optimized wave from qmax to 3 qmax, by eresid with no null functions,
 !! down to lm_ncell cells below qmax (the rule's cells about qmax centered
@@ -484,17 +502,21 @@
 !! it
 !!
 !! @param iprj  the projector
+!! @param ifail  0, or 1 after a failure, whose message is written
  integer, intent(in) :: iprj
  real(dp) :: qmax2,dq2,qout2(1),etail(1)
  real(dp), allocatable :: e0t(:),edt(:,:),emt(:,:,:)
  integer :: nq2
+ integer, intent(out) :: ifail
+ ifail=0
  qmax2=3.0d0*qmax
  dq2=16.0d0*dq
  nq2=min(1+int((qmax2-qmax)/dq2)+lm_ncell,1+int(qmax2/dq2))
  qout2(1)=qmax
  allocate(e0t(nq2),edt(nq2,0),emt(nq2,0,0))
  call eresid(ll,rc,0,nbas,nq2,dq2,1,qout2,qmax2,qroot,hh,nr,ulin, &
-&              pswfopt_sbq,pswfnone,e0t,edt,emt,etail,edum,emdum)
+&              pswfopt_sbq,pswfnone,e0t,edt,emt,etail,edum,emdum,ifail)
+ if(ifail/=0) return
  ektail(1,iprj)=etail(1)
  deallocate(e0t,edt,emt)
  end subroutine curve_tail

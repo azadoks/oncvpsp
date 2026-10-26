@@ -566,7 +566,8 @@
 &                      ecurve(1,1,1,l1,ikap), &
 &                      pswfx(1,1,l1,ikap),chix(1,1,l1,ikap), &
 &                      ektail(1,1,l1,ikap),inp%wreg,optdg(1,1,l1,ikap), &
-&                      wshare(1,1,l1,ikap))
+&                      wshare(1,1,l1,ikap),ifail)
+     if(ifail/=0) error stop 1
 
 !the weights of its pseudo-waves in the cutoff of the pseudo-waves
      call ecut_weights(ll,inp%nc,inp%nv,inp%la,inp%fa,fj,inp%nproj(l1), &
@@ -585,7 +586,8 @@
  call run_vkb(inp%lmax,inp%lloc,inp%lpopt,inp%dvloc0,inp%rc,irc,inp%nproj,rr, &
 &             mmax,mxprj,pswf,pswfx, &
 &             chix,vfull,vp,evkb,vkb,nlim,dlta,vrloc,irel,nkap,vkbpw, &
-&             vlocpw,bbeig)
+&             vlocpw,bbeig,ifail)
+ if(ifail/=0) error stop 1
 
 !restore this to its proper value
  inp%nproj(inp%lloc+1)=0
@@ -608,7 +610,8 @@
 ! decomposition into scalar-relativistic and spin-orbit projectors
 
    call sr_so_r(inp%lmax,inp%nproj,rr,mmax,mxprj,evkb,vkbpw, &
-&               vsr,esr,vso,eso,vsrpw,vsopw)
+&               vsr,esr,vso,eso,vsrpw,vsopw,ifail)
+   if(ifail/=0) error stop 1
  end if
 
  allocate(rhomod(mmax,nrhomod))
