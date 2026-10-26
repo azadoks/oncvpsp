@@ -198,11 +198,40 @@
  real(dp), intent(in) :: wshare(3,mxprj,mxl+1,nkap)
 
 !Local variables
- integer :: ii,jj,l1,ikap,mkap,iprj,kseg,np
- real(dp) :: aerc,mdrc,frac,rae,rmd,rext(2),fext(2)
+!the model core on the mesh, its value at rcmax and the piece of slope
+ integer :: kseg
+ real(dp) :: mdrc
  real(dp), allocatable :: fmd(:)
 
  write(6,'(/a)') 'Begin DIAGNOSTICS'
+ call write_cutoffs()
+
+ call write_vloc()
+
+ write(6,'(a)') '# ekin_tail l ikap iproj t(Ha)'
+ call write_per_projector('ekin_tail',ektail(1,:,:,:))
+
+ write(6,'(a)') '# ekin_check l ikap iproj t(Ha)'
+ call write_per_projector('ekin_check',ektail(2,:,:,:))
+
+ if(wcut) call write_weighted()
+
+ call write_log_derivatives()
+ call write_ghosts()
+ call write_vkb()
+
+ call write_tests()
+
+ if(icmod>0) call write_core()
+ write(6,'(a)') 'End DIAGNOSTICS'
+
+ return
+
+ contains
+
+ subroutine write_cutoffs()
+!! the ecut, opt and well_share lines of each optimized wave
+ integer :: jj,l1,ikap,mkap,iprj
  write(6,'(a)') '# ecut l ikap iproj err(Ha) ecut(Ha)'
  do l1=1,lmax+1
    mkap=kap_count(nkap,l1-1)
@@ -243,7 +272,11 @@
      end do
    end do
  end do
+ end subroutine write_cutoffs
 
+ subroutine write_vloc()
+!! the ecut_vloc and vloc_check lines of the local potential
+ integer :: jj
  write(6,'(a)') '# ecut_vloc err(Ha) ecut(Ha)'
  do jj=1,nerrlv
    if(cvloc(1,jj)/=0.0d0) then
@@ -252,46 +285,49 @@
  end do
  write(6,'(a)') '# vloc_check e(Ha)'
  write(6,'(a,1p,e24.16)') 'vloc_check',fe(vlchk)
+ end subroutine write_vloc
 
- write(6,'(a)') '# ekin_tail l ikap iproj t(Ha)'
+ subroutine write_per_projector(tag,vv)
+!! a line tag l ikap iproj v of each projector's value vv
+!!
+!! @param tag  the line's name
+!! @param vv  the value of each projector, l and ikap
+ character(len=*), intent(in) :: tag
+ real(dp), intent(in) :: vv(mxprj,mxl+1,nkap)
+ integer :: l1,ikap,mkap,iprj
  do l1=1,lmax+1
    mkap=kap_count(nkap,l1-1)
    do ikap=1,mkap
      do iprj=1,nproj(l1)
-       write(6,'(a,3i4,1p,e24.16)') 'ekin_tail',l1-1,ikap,iprj, &
-&            fe(ektail(1,iprj,l1,ikap))
+       write(6,'(a,3i4,1p,e24.16)') tag,l1-1,ikap,iprj, &
+&            fe(vv(iprj,l1,ikap))
      end do
    end do
  end do
+ end subroutine write_per_projector
 
- write(6,'(a)') '# ekin_check l ikap iproj t(Ha)'
+ subroutine write_weighted()
+!! the ecut_w line of the weighted cutoff and the weights of the waves
+ integer :: l1,ikap,mkap,iprj
+ write(6,'(a)') '# ecut_w err(Ha) ecut(Ha)'
+ write(6,'(a,1p,2e24.16)') 'ecut_w',fe(errw),ecutw
+ write(6,'(a)') '# ecut_w_weight l ikap iproj w'
  do l1=1,lmax+1
    mkap=kap_count(nkap,l1-1)
    do ikap=1,mkap
-     do iprj=1,nproj(l1)
-       write(6,'(a,3i4,1p,e24.16)') 'ekin_check',l1-1,ikap,iprj, &
-&            fe(ektail(2,iprj,l1,ikap))
-     end do
-   end do
- end do
-
- if(wcut) then
-   write(6,'(a)') '# ecut_w err(Ha) ecut(Ha)'
-   write(6,'(a,1p,2e24.16)') 'ecut_w',fe(errw),ecutw
-   write(6,'(a)') '# ecut_w_weight l ikap iproj w'
-   do l1=1,lmax+1
-     mkap=kap_count(nkap,l1-1)
-     do ikap=1,mkap
-       do iprj=1,mxprj
-         if(wcurve(iprj,l1,ikap)>0.0d0) then
-           write(6,'(a,3i4,1p,e24.16)') 'ecut_w_weight',l1-1,ikap,iprj, &
+     do iprj=1,mxprj
+       if(wcurve(iprj,l1,ikap)>0.0d0) then
+         write(6,'(a,3i4,1p,e24.16)') 'ecut_w_weight',l1-1,ikap,iprj, &
 &                fe(wcurve(iprj,l1,ikap))
-         end if
-       end do
+       end if
      end do
    end do
- end if
+ end do
+ end subroutine write_weighted
 
+ subroutine write_log_derivatives()
+!! the ld_r and ld lines of the log derivatives
+ integer :: ii,l1,ikap,mkap
 !none with --no-log-derivatives (npsh 0)
  if(npsh>0) then
    write(6,'(a)') '# ld_r l ikap r(bohr)'
@@ -308,6 +344,11 @@
      end do
    end do
  end do
+ end subroutine write_log_derivatives
+
+ subroutine write_ghosts()
+!! the ghost and ghost_r lines of the ghost tests
+ integer :: jj,l1,ikap,mkap
  write(6,'(a)') '# ghost l ikap n e_ref(Ha) e_basis(Ha)'
  write(6,'(a)') '# ghost_r l ikap e(Ha) <r>/rc'
  do l1=1,lmax+1
@@ -322,6 +363,11 @@
      end if
    end do
  end do
+ end subroutine write_ghosts
+
+ subroutine write_vkb()
+!! the vkb_b, vkb_cond and vkb_e lines of the projectors
+ integer :: l1,ikap,mkap,iprj,np
  write(6,'(a)') '# vkb_b l ikap i b'
  write(6,'(a)') '# vkb_cond l ikap cond(B)'
  write(6,'(a)') '# vkb_e l ikap i e(Ha)'
@@ -343,7 +389,11 @@
      end do
    end do
  end do
+ end subroutine write_vkb
 
+ subroutine write_tests()
+!! the test_config and test_eig lines of the test configurations
+ integer :: ii,jj
  write(6,'(a)') '# test_config icfg de_ae(Ha) de_ps(Ha) err(Ha)'
  write(6,'(a)') '# test_eig icfg n l ikap f eae(Ha) eps(Ha)'
  do jj=1,ncfg
@@ -357,34 +407,34 @@
 &          fe(etcf(:,ii,jj))
    end do
  end do
+ end subroutine write_tests
 
- if(icmod>0) then
-   allocate(fmd(mmax))
-   call pw_node_values(rr,mmax,corepw(1),fmd)
-   call lm_interp(rr,rhoc,mmax,rcmax,aerc)
-   mdrc=pw_value(rr,mmax,corepw(1),rcmax)
-   write(6,'(a)') '# core_rc r(bohr) rho_ae rho_model'
-   write(6,'(a,1p,3e24.16)') 'core_rc',rcmax,fe(aerc),fe(mdrc)
-   write(6,'(a)') '# core_extent frac r_ae(bohr) r_model(bohr)'
-   frac=1.0d-2
-   do jj=1,2
-     rae=fall_to(rhoc,frac*aerc,0)
-     rmd=fall_to(fmd,frac*mdrc,1)
-     write(6,'(a,1p,3e24.16)') 'core_extent',frac,rae,rmd
-     frac=1.0d-2*frac
-   end do
-   call model_extrema(rext,fext)
-   write(6,'(a)') '# core_model_max r(bohr) rho'
-   write(6,'(a,1p,2e24.16)') 'core_model_max',rext(1),fe(fext(1))
-   write(6,'(a)') '# core_model_min r(bohr) rho'
-   write(6,'(a,1p,2e24.16)') 'core_model_min',rext(2),fe(fext(2))
-   deallocate(fmd)
- end if
- write(6,'(a)') 'End DIAGNOSTICS'
-
- return
-
- contains
+ subroutine write_core()
+!! the core_rc, core_extent, core_model_max and core_model_min lines of
+!! the model core
+ integer :: jj
+ real(dp) :: aerc,frac,rae,rmd,rext(2),fext(2)
+ allocate(fmd(mmax))
+ call pw_node_values(rr,mmax,corepw(1),fmd)
+ call lm_interp(rr,rhoc,mmax,rcmax,aerc)
+ mdrc=pw_value(rr,mmax,corepw(1),rcmax)
+ write(6,'(a)') '# core_rc r(bohr) rho_ae rho_model'
+ write(6,'(a,1p,3e24.16)') 'core_rc',rcmax,fe(aerc),fe(mdrc)
+ write(6,'(a)') '# core_extent frac r_ae(bohr) r_model(bohr)'
+ frac=1.0d-2
+ do jj=1,2
+   rae=fall_to(rhoc,frac*aerc,0)
+   rmd=fall_to(fmd,frac*mdrc,1)
+   write(6,'(a,1p,3e24.16)') 'core_extent',frac,rae,rmd
+   frac=1.0d-2*frac
+ end do
+ call model_extrema(rext,fext)
+ write(6,'(a)') '# core_model_max r(bohr) rho'
+ write(6,'(a,1p,2e24.16)') 'core_model_max',rext(1),fe(fext(1))
+ write(6,'(a)') '# core_model_min r(bohr) rho'
+ write(6,'(a,1p,2e24.16)') 'core_model_min',rext(2),fe(fext(2))
+ deallocate(fmd)
+ end subroutine write_core
 
  real(dp) function fall_to(ff,level,model)
 
