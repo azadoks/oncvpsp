@@ -782,9 +782,11 @@ the tests compare.
    their dummies to assumed shape and drop the redundant size arguments.
    Replace the sequence-association calls (`a(1,l1)` → `a(:,l1)`) at the
    same time.
-   - **Superseded** by [Library and wrappers](library_plan.md), phase 4:
-     the dummies stay explicit-shape, so that the routines remain callable
-     from C, and modules come after error codes and the driver split.
+   - **Done** as [Library and wrappers](library_plan.md), phase 4: every
+     procedure is a module procedure, and LAPACK is called through the
+     interfaces of `lapack_m`. The dummies stay explicit-shape, so that the
+     routines remain callable from C, and the sequence-association calls
+     are unchanged.
 8. **Merge the `foo`/`foo_r` twins**, beginning with the input readers and
    `psmlout`/`psmlout_r`.
 9. **Mechanical cleanup.**
