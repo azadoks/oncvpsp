@@ -93,11 +93,11 @@
  real(dp), intent(out) :: ghe(2,mxstate,mxl+1),ghp(2,mxl+1)
 
 !Local variables
- integer :: ll,l1,ii,jj,kk,ierr,mbar,mch,nn,npgh
- integer :: iprj,nprj,nbas,nbmax,lwork,info
+ integer :: ll,l1,jj,ierr,mbar,npgh
+ integer :: nprj,nbas,nbmax,lwork,info
  integer :: nodes(mxl+1),lpgh(20)
- real(dp) :: al,amesh,ee,ecut,eps,et,emin,emax,sn,ro,tht
- real(dp) :: rbar,vmin,ebtop,ww,vs
+ real(dp) :: al,amesh,ee,ecut,eps,emin,emax,tht
+ real(dp) :: rbar,vmin,ebtop,ww
  real(dp) :: cpgh(20),ebcut(mxlin+1),epgh(20),rpgh(20)
  real(dp), allocatable :: uu(:),up(:),rb(:),vb(:),vsw(:)
  real(dp), allocatable :: gg0(:,:),hmat(:,:),hmev(:),work(:)
@@ -142,37 +142,7 @@
    write(6,'()')
    ll = l1 - 1
 
-!Construct basis of local-pseidupotential plus hard-wall barrier eigenfunctions
-!Barrier is set at mbfact*rc, node mbar of the mesh rb = s*rr, the last
-!node of rr at or inside it scaled up onto it
-
-   rbar=mbfact*rc(l1)
-   mbar=1+int(log(rbar/rr(1))/al)
-   if(mbar>1 .and. rr(min(mbar,mmax))>rbar) mbar=mbar-1
-   if(mbar<mmax .and. rr(mbar+1)<=rbar) mbar=mbar+1
-! lschpsbar starts the solution at mbar:mbar+4, inside rr(mmax)
-   if(mbar+5>mmax) then
-     write(6,'(/2a,i0,a,i0)') 'run_ghosts: ERROR barrier radius beyond', &
-&          ' radial mesh, mbar=',mbar,', mmax=',mmax
-     error stop 1
-   end if
-   rb(:)=(rbar/rr(mbar))*rr(:)
-   rb(mbar)=rbar
-! the local potential on rb, its last node beyond rr(mmax) given the last
-! value
-   vmin=0.0d0
-   do ii=1,mmax
-     if(rb(ii)<=rr(mmax)) then
-       call lm_interp(rr,vsw,mmax,rb(ii),vs)
-       vb(ii)=pw_value(rr,mmax,vlocpw,rb(ii))+vs
-     else
-       vb(ii)=vp(mmax,lloc+1)
-     end if
-     if(ii<=mbar) vmin=min(vmin,vb(ii))
-   end do
-   do iprj=1,nprj
-     call pw_resample(rr,mmax,vkbpw(iprj,l1),rb,mbar+4,vkbb(iprj))
-   end do
+   call barrier_mesh(l1)
 
 ! Basis cutoff energy is based on largest q in sbf optimization basis
    ebcut(l1)= basfact*0.5d0*qmsbf(l1)**2
@@ -193,66 +163,10 @@
    hmev(:)=0.0d0
 
 
-! nbas stays nbmax unless lschpsbar runs out of states below ebtop
-   nbas=nbmax
-   ecut=ebcut(l1)
-   do jj=1,nbmax
-     nn=ll+jj
-
-     emin=0.0d0
-     emax=ebtop
-     ee=0.0d0
-
-     call lschpsbar(nn,ll,ierr,ee,emin,emax,rb,vb,uu,up, &
-&                   mmax,mbar,tht)
-
-     if(ierr/=0) then
-       if(emax/=ebtop) then
-! a barrier state below the cutoff that does not converge, a high one on
-! a coarse mesh whose wavelength at the barrier is a few mesh steps: the
-! basis stops below it, and the ghost test covers energies up to there
-         write(6,'(/a,i0,a,i0,a,f12.6,a/a,f10.2,a)') &
-&              'run_ghosts: WARNING barrier state n=',nn,' l=',ll, &
-&              ' near ',ee,' Ha not converged;', &
-&              'run_ghosts: WARNING basis cut there, ghost test to ', &
-&              emin,' Ha'
-         ecut=emin
-       end if
-       nbas=jj-1
-       exit
-     end if
-
-! barrier potential eigenvalues are contirbution to hamiltonian matrix diagonal
-     hmat(jj,jj)=ee
-
-     uua(:,jj)=uu(:)
-
-! overlap of eigenfunction jj and projectors, per piece (the barrier
-! state is smooth across the projectors' kinks), weighted by its energy
-     ww=cinf_taper(ee,ebcut(l1),ebtop)
-     do iprj=1,nprj
-       call pw_integral(rb,mmax,2*ll+2,uu,vkbb(iprj),gg0(iprj,jj))
-       gg0(iprj,jj)=ww*gg0(iprj,jj)
-     end do
-
-   end do !jj
-   if(nbas==nbmax) then
-     write(6,'(/2a,i0,a,i0)') 'run_ghosts: WARNING basis full below the', &
-&          ' cutoff, l=',ll,', nbmax=',nbmax
-   end if
-   do iprj=1,nprj
-     call pw_free(vkbb(iprj))
-   end do
+   call barrier_basis(l1)
 
 ! add non-local terms to hamiltonian matrix
-   do jj=1,nbas
-     do ii=1,jj
-       do iprj=1,nprj
-         hmat(ii,jj)=hmat(ii,jj)+evkb(iprj,l1)*gg0(iprj,ii)*gg0(iprj,jj)
-       end do
-       hmat(jj,ii)=hmat(ii,jj)
-     end  do
-   end do
+   call add_nonlocal(l1)
 
 ! find eigenvalues of the hamiltonian matrix
 
@@ -264,110 +178,9 @@
 &          info=',info
      error stop 1
    end if
-!treat valence states for this l
-   nn=ll
-   jj=0
-   do kk=1,nv
-     if(la(nc+kk)/=ll) cycle
-     jj=jj+1
-     nn=nn+1
-     ee=ea(nc+kk)
-     emax=0.9d0*ea(nc+kk)
-     emin=1.1d0*ea(nc+kk)
-     call lschvkbb(nn,ll,nprj,ierr,ee,emin,emax, &
-&                  rr,vp(1,lloc+1),vlocpw,vkbpw(1:nprj,l1),evkb(1,l1), &
-&                  uu,up,mmax,mch)
-     if(ierr/=0) then
-       write(6,'(a,3i4,2f12.6)') 'run_ghosts: lschvkbb ERROR', &
-&            nn,ll,ierr,ea(nc+kk),ee
-     end if
+   call bound_tests(l1)
 
-     do ii=1,10
-       et=min(ee-eps,ee*(1.0d0+eps))
-       if(hmev(jj)<et) then
-         write(6,'(4x,i4,16x,f16.6,f10.2,a)') ll,hmev(jj),ecut, &
-&              '  WARNING - GHOST(-)'
-         jj=jj+1
-       else
-         exit
-       end if
-     end do !ii
-
-     write(6,'(2i4,2f16.6,f10.2)') nn,ll,ee,hmev(jj),ecut
-     ngh(l1)=ngh(l1)+1
-     ghn(ngh(l1),l1)=nn
-     ghe(:,ngh(l1),l1)=[ee,hmev(jj)]
-   end do !kk
-
-!if there were no valence states, look for any nodeless bound state
-!if this fails, use vacuum level (0.0) to compare to basis-set states
-
-   if(jj==0) then
-     ee=-1.0d5
-     do kk=1,nv
-       ee=max(ee,ea(nc+kk))
-     end do
-     emax=0.0d0
-     emin=2.0d0*ee
-     call lschvkbb(ll+1,ll,nprj,ierr,ee,emin,emax, &
-&                  rr,vp(1,lloc+1),vlocpw,vkbpw(1:nprj,l1),evkb(1,l1), &
-&                  uu,up,mmax,mch)
-     if(ierr/=0) ee=0.0d0
-     do jj=1,10
-       et=min(ee-eps,ee*(1.0d0+eps))
-       if(hmev(jj)<et) then
-         write(6,'(4x,i4,16x,f16.6,f10.2,a)') ll,hmev(jj),ecut, &
-&              '  WARNING - GHOST(-)'
-       else
-         if(ee<0.0d0) then
-           write(6,'(2i4,2f16.6,f10.2)') ll+1,ll,ee,hmev(jj),ecut
-         end if
-         ngh(l1)=1
-         ghn(1,l1)=ll+1
-         ghe(:,1,l1)=[ee,hmev(jj)]
-         exit
-       end if
-     end do
-   end if
-
-!calculate mean radius of all eigenstates to look for highly localized
-!states which indicate postive-energy ghosts
-   do jj=1,nbas
-     uu(:)=0.0d0
-     do ii=1,nbas
-       uu(:)=uu(:)+hmat(ii,jj)*uua(:,ii)
-     end do
-
-     ro=rb(1)/sqrt(amesh)
-     sn=(ro*uu(1))**2/real(2*ll+4,dp)
-
-     do ii=1,mbar-3
-       sn=sn+al*(rb(ii)*uu(ii))**2
-     end do
-
-     sn=sn + al*(23.0d0*(rb(mbar-2)*uu(mbar-2))**2 &
-&              + 28.0d0*(rb(mbar-1)*uu(mbar-1))**2 &
-&              +  9.0d0*(rb(mbar  )*uu(mbar  ))**2)/24.0d0
-
-! the margin: the least <r>/rc over the states above the reference, each
-! divided by a C-infinity weight in its energy, 1 from 0.05 Ha above the
-! reference (the states the test took before) and 0 at 0.025 Ha, so that
-! a state entering does not make the least jump; a GHOST(+) is a state
-! whose ratio is below 1, the margin below 1 (doc/numerics_audit.md, C-8)
-     ww=1.0d0-cinf_taper(hmev(jj),ee+0.025d0,ee+0.05d0)
-     if(ww>0.0d0) then
-       if(ghp(2,l1)==0.0d0 .or. sn/(rc(l1)*ww)<ghp(2,l1)) then
-         ghp(:,l1)=[hmev(jj),sn/(rc(l1)*ww)]
-       end if
-       if(sn<rc(l1)*ww .and. npgh<20) then
-         npgh=npgh+1
-         lpgh(npgh)=ll
-         epgh(npgh)=hmev(jj)
-         rpgh(npgh)=sn/(rc(l1)*ww)
-         cpgh(npgh)=ecut
-       end if
-     end if
-   end do
+   call localized_states(l1)
 
 
    deallocate(gg0,hmat,hmev,work)
@@ -387,4 +200,237 @@
 
  deallocate(uu,up,rb,vb,vsw)
  return
+
+ contains
+
+ subroutine barrier_mesh(l1)
+!! the basis of local-pseudopotential plus hard-wall barrier
+!! eigenfunctions of l1-1: the barrier at mbfact*rc, node mbar of the mesh
+!! rb = s*rr, the last node of rr at or inside it scaled up onto it; the
+!! local potential vb on rb (vmin its least inside the barrier) and the
+!! projectors vkbb
+ integer, intent(in) :: l1
+ integer :: ii,iprj
+ real(dp) :: vs
+ rbar=mbfact*rc(l1)
+ mbar=1+int(log(rbar/rr(1))/al)
+ if(mbar>1 .and. rr(min(mbar,mmax))>rbar) mbar=mbar-1
+ if(mbar<mmax .and. rr(mbar+1)<=rbar) mbar=mbar+1
+! lschpsbar starts the solution at mbar:mbar+4, inside rr(mmax)
+ if(mbar+5>mmax) then
+   write(6,'(/2a,i0,a,i0)') 'run_ghosts: ERROR barrier radius beyond', &
+&          ' radial mesh, mbar=',mbar,', mmax=',mmax
+   error stop 1
+ end if
+ rb(:)=(rbar/rr(mbar))*rr(:)
+ rb(mbar)=rbar
+! the local potential on rb, its last node beyond rr(mmax) given the last
+! value
+ vmin=0.0d0
+ do ii=1,mmax
+   if(rb(ii)<=rr(mmax)) then
+     call lm_interp(rr,vsw,mmax,rb(ii),vs)
+     vb(ii)=pw_value(rr,mmax,vlocpw,rb(ii))+vs
+   else
+     vb(ii)=vp(mmax,lloc+1)
+   end if
+   if(ii<=mbar) vmin=min(vmin,vb(ii))
+ end do
+ do iprj=1,nprj
+   call pw_resample(rr,mmax,vkbpw(iprj,l1),rb,mbar+4,vkbb(iprj))
+ end do
+ end subroutine barrier_mesh
+
+ subroutine barrier_basis(l1)
+!! the barrier states of l1-1 below ebtop (nbas of them), the diagonal
+!! of the hamiltonian, and their overlaps with the projectors, weighted by
+!! their energies; ecut the cutoff of the basis
+ integer, intent(in) :: l1
+
+ integer :: jj,iprj,nn
+! nbas stays nbmax unless lschpsbar runs out of states below ebtop
+ nbas=nbmax
+ ecut=ebcut(l1)
+ do jj=1,nbmax
+   nn=ll+jj
+
+   emin=0.0d0
+   emax=ebtop
+   ee=0.0d0
+
+   call lschpsbar(nn,ll,ierr,ee,emin,emax,rb,vb,uu,up, &
+&                   mmax,mbar,tht)
+
+   if(ierr/=0) then
+     if(emax/=ebtop) then
+! a barrier state below the cutoff that does not converge, a high one on
+! a coarse mesh whose wavelength at the barrier is a few mesh steps: the
+! basis stops below it, and the ghost test covers energies up to there
+       write(6,'(/a,i0,a,i0,a,f12.6,a/a,f10.2,a)') &
+&              'run_ghosts: WARNING barrier state n=',nn,' l=',ll, &
+&              ' near ',ee,' Ha not converged;', &
+&              'run_ghosts: WARNING basis cut there, ghost test to ', &
+&              emin,' Ha'
+       ecut=emin
+     end if
+     nbas=jj-1
+     exit
+   end if
+
+! barrier potential eigenvalues are contirbution to hamiltonian matrix diagonal
+   hmat(jj,jj)=ee
+
+   uua(:,jj)=uu(:)
+
+! overlap of eigenfunction jj and projectors, per piece (the barrier
+! state is smooth across the projectors' kinks), weighted by its energy
+   ww=cinf_taper(ee,ebcut(l1),ebtop)
+   do iprj=1,nprj
+     call pw_integral(rb,mmax,2*ll+2,uu,vkbb(iprj),gg0(iprj,jj))
+     gg0(iprj,jj)=ww*gg0(iprj,jj)
+   end do
+
+ end do !jj
+ if(nbas==nbmax) then
+   write(6,'(/2a,i0,a,i0)') 'run_ghosts: WARNING basis full below the', &
+&          ' cutoff, l=',ll,', nbmax=',nbmax
+ end if
+ do iprj=1,nprj
+   call pw_free(vkbb(iprj))
+ end do
+ end subroutine barrier_basis
+
+ subroutine add_nonlocal(l1)
+!! the non-local terms of the hamiltonian matrix of l1-1
+ integer, intent(in) :: l1
+ integer :: ii,jj,iprj
+ do jj=1,nbas
+   do ii=1,jj
+     do iprj=1,nprj
+       hmat(ii,jj)=hmat(ii,jj)+evkb(iprj,l1)*gg0(iprj,ii)*gg0(iprj,jj)
+     end do
+     hmat(jj,ii)=hmat(ii,jj)
+   end  do
+ end do
+ end subroutine add_nonlocal
+
+ subroutine bound_tests(l1)
+!! the bound-state test of l1-1: each valence state of l against the
+!! basis eigenvalues, a lower one a GHOST(-); without valence states, any
+!! nodeless bound state, or the vacuum level (0.0); ee the energy of the
+!! last
+ integer, intent(in) :: l1
+ integer :: ii,jj,kk,nn,mch
+ real(dp) :: et
+!treat valence states for this l
+ nn=ll
+ jj=0
+ do kk=1,nv
+   if(la(nc+kk)/=ll) cycle
+   jj=jj+1
+   nn=nn+1
+   ee=ea(nc+kk)
+   emax=0.9d0*ea(nc+kk)
+   emin=1.1d0*ea(nc+kk)
+   call lschvkbb(nn,ll,nprj,ierr,ee,emin,emax, &
+&                  rr,vp(1,lloc+1),vlocpw,vkbpw(1:nprj,l1),evkb(1,l1), &
+&                  uu,up,mmax,mch)
+   if(ierr/=0) then
+     write(6,'(a,3i4,2f12.6)') 'run_ghosts: lschvkbb ERROR', &
+&            nn,ll,ierr,ea(nc+kk),ee
+   end if
+
+   do ii=1,10
+     et=min(ee-eps,ee*(1.0d0+eps))
+     if(hmev(jj)<et) then
+       write(6,'(4x,i4,16x,f16.6,f10.2,a)') ll,hmev(jj),ecut, &
+&              '  WARNING - GHOST(-)'
+       jj=jj+1
+     else
+       exit
+     end if
+   end do !ii
+
+   write(6,'(2i4,2f16.6,f10.2)') nn,ll,ee,hmev(jj),ecut
+   ngh(l1)=ngh(l1)+1
+   ghn(ngh(l1),l1)=nn
+   ghe(:,ngh(l1),l1)=[ee,hmev(jj)]
+ end do !kk
+
+!if there were no valence states, look for any nodeless bound state
+!if this fails, use vacuum level (0.0) to compare to basis-set states
+
+ if(jj==0) then
+   ee=-1.0d5
+   do kk=1,nv
+     ee=max(ee,ea(nc+kk))
+   end do
+   emax=0.0d0
+   emin=2.0d0*ee
+   call lschvkbb(ll+1,ll,nprj,ierr,ee,emin,emax, &
+&                  rr,vp(1,lloc+1),vlocpw,vkbpw(1:nprj,l1),evkb(1,l1), &
+&                  uu,up,mmax,mch)
+   if(ierr/=0) ee=0.0d0
+   do jj=1,10
+     et=min(ee-eps,ee*(1.0d0+eps))
+     if(hmev(jj)<et) then
+       write(6,'(4x,i4,16x,f16.6,f10.2,a)') ll,hmev(jj),ecut, &
+&              '  WARNING - GHOST(-)'
+     else
+       if(ee<0.0d0) then
+         write(6,'(2i4,2f16.6,f10.2)') ll+1,ll,ee,hmev(jj),ecut
+       end if
+       ngh(l1)=1
+       ghn(1,l1)=ll+1
+       ghe(:,1,l1)=[ee,hmev(jj)]
+       exit
+     end if
+   end do
+ end if
+ end subroutine bound_tests
+
+ subroutine localized_states(l1)
+!! the mean radius of each eigenstate of l1-1, to look for highly
+!! localized states, which indicate positive-energy ghosts
+ integer, intent(in) :: l1
+ integer :: ii,jj
+ real(dp) :: ro,sn,ww
+ do jj=1,nbas
+   uu(:)=0.0d0
+   do ii=1,nbas
+     uu(:)=uu(:)+hmat(ii,jj)*uua(:,ii)
+   end do
+
+   ro=rb(1)/sqrt(amesh)
+   sn=(ro*uu(1))**2/real(2*ll+4,dp)
+
+   do ii=1,mbar-3
+     sn=sn+al*(rb(ii)*uu(ii))**2
+   end do
+
+   sn=sn + al*(23.0d0*(rb(mbar-2)*uu(mbar-2))**2 &
+&              + 28.0d0*(rb(mbar-1)*uu(mbar-1))**2 &
+&              +  9.0d0*(rb(mbar  )*uu(mbar  ))**2)/24.0d0
+
+! the margin: the least <r>/rc over the states above the reference, each
+! divided by a C-infinity weight in its energy, 1 from 0.05 Ha above the
+! reference (the states the test took before) and 0 at 0.025 Ha, so that
+! a state entering does not make the least jump; a GHOST(+) is a state
+! whose ratio is below 1, the margin below 1 (doc/numerics_audit.md, C-8)
+   ww=1.0d0-cinf_taper(hmev(jj),ee+0.025d0,ee+0.05d0)
+   if(ww>0.0d0) then
+     if(ghp(2,l1)==0.0d0 .or. sn/(rc(l1)*ww)<ghp(2,l1)) then
+       ghp(:,l1)=[hmev(jj),sn/(rc(l1)*ww)]
+     end if
+     if(sn<rc(l1)*ww .and. npgh<20) then
+       npgh=npgh+1
+       lpgh(npgh)=ll
+       epgh(npgh)=hmev(jj)
+       rpgh(npgh)=sn/(rc(l1)*ww)
+       cpgh(npgh)=ecut
+     end if
+   end if
+ end do
+ end subroutine localized_states
+
  end subroutine run_ghosts
