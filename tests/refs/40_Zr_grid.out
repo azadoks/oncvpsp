@@ -420,7 +420,7 @@ Test configuration 0
 
     Total energies and differences
       AE_ref= -3.59459658D+03  AE_tst= -3.59459658D+03  dif=  0.00D+00
-      PS_ref= -4.75903216D+01  PS_tst= -4.75903216D+01  dif=  0.00D+00
+      PS_ref= -4.75903216D+01  PS_tst= -4.75903216D+01  dif=  1.42D-14
       PSP excitation error= -7.11D-15
 
 Test configuration 1
@@ -6514,7 +6514,7 @@ ghost_r   0   1  6.5882673684404471E+00  1.2902841573221893E+00
 ghost   1   1   2 -1.1943671384343377E+00 -1.1943663226588377E+00
 ghost_r   1   1  1.1436694803345032E+01  1.4938567250155443E+00
 ghost   2   1   3 -1.3732346168685139E-01 -1.3121097674633442E-01
-ghost_r   2   1  9.1251559739796562E+01  1.5154363572372778E+00
+ghost_r   2   1  9.1251452164187725E+01  1.5153242657408601E+00
 # vkb_b l ikap i b
 # vkb_cond l ikap cond(B)
 # vkb_e l ikap i e(Ha)

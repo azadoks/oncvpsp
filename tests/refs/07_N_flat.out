@@ -69,7 +69,7 @@ ae_converged: WARNING scf stopped on the round-off floor of the residual, res=  
 
 
 Reference configufation results
-  iterations    21
+  iterations    20
   all-electron total energy (Ha)   -5.44530405D+01
   residual of the screening potential (Ha)  1.98E-11
   energy terms (Ha)
@@ -278,7 +278,7 @@ ae_converged: WARNING scf stopped on the round-off floor of the residual, res=  
 
     Total energies and differences
       AE_ref= -5.44530405D+01  AE_tst= -5.44530405D+01  dif=  0.00D+00
-      PS_ref= -9.67199827D+00  PS_tst= -9.67199827D+00  dif=  2.66D-14
+      PS_ref= -9.67199827D+00  PS_tst= -9.67199827D+00  dif=  3.55D-15
       PSP excitation error= -2.66D-14
 
 DATA FOR PLOTTING
@@ -13954,7 +13954,7 @@ Begin PSP_UPF
        core_correction="T"
        functional="PBE"
        z_valence="    5.00"
-       total_psenergy=" -1.9343996531359977E+01"
+       total_psenergy=" -1.9343996531365903E+01"
        rho_cutoff="  1.0648072178879213E+01"
        l_max="1"
        l_local="-1"

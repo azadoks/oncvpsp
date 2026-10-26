@@ -88,8 +88,8 @@ Reference configufation results
   residual of the screening potential (Ha)  7.20E-12
   energy terms (Ha)
     total                    -19651.3688808252
-    kinetic                   22675.7193751785
-    electron-nucleus         -49598.2171384328
+    kinetic                   22675.7193752344
+    electron-nucleus         -49598.2171384925
     Hartree                    7633.9700309311
     exchange-correlation       -362.8411485020
 
@@ -753,7 +753,7 @@ Test configuration 0
 
     Total energies and differences
       AE_ref= -1.96513689E+04  AE_tst= -1.96513689E+04  dif=  0.00E+00
-      PS_ref= -4.04172761E+01  PS_tst= -4.04172761E+01  dif=  2.49E-13
+      PS_ref= -4.04172761E+01  PS_tst= -4.04172761E+01  dif=  2.27E-13
       PSP excitation error= -7.82E-14
 
 Test configuration 1
@@ -13666,11 +13666,11 @@ ghost_r   1   1  3.3457906937613946E+00  1.1620950177775271E+00
 ghost   1   2   2 -6.4428040895964406E-02 -6.1018582925844639E-02
 ghost_r   1   2  4.2482636267714922E+00  1.2178427749653882E+00
 ghost   2   1   3 -3.4413638683572606E-01 -3.4410938909898015E-01
-ghost_r   2   1  5.8673098358172197E+01  1.5135398383263818E+00
+ghost_r   2   1  5.8673028627426085E+01  1.5134272770372090E+00
 ghost   2   2   3 -4.1209969076529934E-01 -4.1208476195263527E-01
-ghost_r   2   2  5.8673086720927003E+01  1.5135348502838490E+00
+ghost_r   2   2  5.8673016989621928E+01  1.5134222890835853E+00
 ghost   3   1   4  0.0000000000000000E+00  2.3270533410190741E-01
-ghost_r   3   1  3.0295986785171554E+01  1.5138651919318147E+00
+ghost_r   3   1  3.0295961325732936E+01  1.5137894644423515E+00
 ghost   3   2   4  0.0000000000000000E+00  2.3268774062309830E-01
 ghost_r   3   2  1.3875870620348840E+00  1.5113414998044015E+00
 # vkb_b l ikap i b
@@ -20251,7 +20251,7 @@ Begin PSP_UPF
        core_correction="F"
        functional="PZ"
        z_valence="   12.00"
-       total_psenergy=" -8.0834552198296365E+01"
+       total_psenergy=" -8.0834552198295313E+01"
        rho_cutoff="  1.2250000000000000E+01"
        l_max="3"
        l_local="-1"

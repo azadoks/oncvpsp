@@ -77,7 +77,7 @@ LXC     [1] J. P. Perdew, K. Burke, and M. Ernzerhof, Phys. Rev. Lett. 77, 3865 
 
 
 Reference configufation results
-  iterations    25
+  iterations    26
   all-electron total energy (Ha)   -9.62980932D+03
   residual of the screening potential (Ha)  9.75E-12
   energy terms (Ha)
@@ -764,7 +764,7 @@ Test configuration 0
 
     Total energies and differences
       AE_ref= -9.62980932E+03  AE_tst= -9.62980932E+03  dif=  0.00E+00
-      PS_ref= -3.42906366E+01  PS_tst= -3.42906366E+01  dif= -2.84E-14
+      PS_ref= -3.42906366E+01  PS_tst= -3.42906366E+01  dif=  3.55E-14
       PSP excitation error=  0.00E+00
 
 DATA FOR PLOTTING
@@ -7045,7 +7045,7 @@ scattering, iprj= 1,  l= 3, kap=-4, all-electron wave function, pseudo w-f
 &   -13    1.364476    -0.049628    -0.282689
 &   -13    1.380899    -0.060085    -0.286979
 &   -13    1.397520    -0.070646    -0.291236
-&   -13    1.414340    -0.081307    -0.295463
+&   -13    1.414340    -0.081307    -0.295474
 &   -13    1.431363    -0.092066    -0.299676
 &   -13    1.448591    -0.102919    -0.303856
 &   -13    1.466027    -0.113862    -0.308020
@@ -7577,7 +7577,7 @@ scattering, iprj= 2,  l= 3, kap=-4, all-electron wave function, pseudo w-f
 &   -23    4.568337    -0.555223    -0.555229
 &   -23    4.595747    -0.541489    -0.541504
 &   -23    4.623322    -0.525488    -0.525513
-&   -23    4.651062    -0.507245    -0.507280
+&   -23    4.651062    -0.507245    -0.507291
 &   -23    4.678968    -0.486795    -0.486851
 &   -23    4.707042    -0.464184    -0.464250
 &   -23    4.735284    -0.439471    -0.439547

@@ -98,8 +98,8 @@ Reference configufation results
   residual of the screening potential (Ha)  1.12E-12
   energy terms (Ha)
     total                    -19001.3720437966
-    kinetic                   21260.4514221926
-    electron-nucleus         -47295.2983169991
+    kinetic                   21260.4514222418
+    electron-nucleus         -47295.2983170519
     Hartree                    7385.2864153533
     exchange-correlation       -351.8115643433
 
@@ -490,7 +490,7 @@ Test configuration 0
 
     Total energies and differences
       AE_ref= -1.90013720D+04  AE_tst= -1.90013720D+04  dif=  0.00D+00
-      PS_ref= -1.35638866D+02  PS_tst= -1.35638866D+02  dif=  1.62D-12
+      PS_ref= -1.35638866D+02  PS_tst= -1.35638866D+02  dif=  0.00D+00
       PSP excitation error= -7.67D-13
 
 Test configuration 1
@@ -8565,13 +8565,13 @@ ld   3   1 -4.9800000000000004E+00  4.6009860390079300E+00  4.6009854108190096E+
 # ghost_r l ikap e(Ha) <r>/rc
 ghost   0   1   1 -3.9976018282022361E+00 -3.9976006223265887E+00
 ghost   0   1   2 -2.2381177650001186E-01 -2.1906327969914471E-01
-ghost_r   0   1  5.9141405393623231E+01  1.5079484665685237E+00
+ghost_r   0   1  5.9141354386848668E+01  1.5078663271502446E+00
 ghost   1   1   2 -2.2072172570078323E+00 -2.2072151746513491E+00
 ghost_r   1   1 -1.0574884031738601E-02  1.4702073293098794E+00
 ghost   2   1   3 -2.6154557490364283E-01 -2.6144208374601363E-01
-ghost_r   2   1  6.3556566840443871E+01  1.5144316994502682E+00
+ghost_r   2   1  6.3556492118674271E+01  1.5143193417906249E+00
 ghost   3   1   4  0.0000000000000000E+00  2.3315283176438262E-01
-ghost_r   3   1  3.0183300159242190E+01  1.5117629229112908E+00
+ghost_r   3   1  3.0183274922828982E+01  1.5116876144906579E+00
 # vkb_b l ikap i b
 # vkb_cond l ikap cond(B)
 # vkb_e l ikap i e(Ha)
