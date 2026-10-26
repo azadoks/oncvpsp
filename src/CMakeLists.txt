@@ -84,6 +84,7 @@ set(src_oncvpsp
     projbasis_m.f90
     main_setup_m.F90
     ae_projectors_m.f90
+    ps_valence_m.f90
     cli_m.f90
     ae_ps_pair_m.f90
     confine_summary_m.f90

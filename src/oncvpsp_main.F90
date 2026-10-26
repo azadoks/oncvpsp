@@ -61,6 +61,7 @@
  use pieces_m, only: piecewise_t, pw_free
  use modcore_m, only: core_pieces_smooth
  use well_mesh_m, only: well_mesh_t
+ use ps_valence_m, only: valence_densities, unscreen_potentials
  use ae_projectors_m, only: ae_bound_projectors, ae_well_projectors, &
 &                           ae_delta_window, ae_overlap, ecut_weights
  use constants_m, only: nlev, nerrdg, nerrlv, well_onset_default
@@ -78,8 +79,8 @@
 
 !Local variables
  integer :: ii,ierr,iexc,ios,it,icmod,lpopt
- integer :: jj,kk,ll,l1,lloc,lmax,inline
- integer :: mch,mmax,nc,nlim,nrl
+ integer :: jj,ll,l1,lloc,lmax,inline
+ integer :: mmax,nc,nlim,nrl
  integer :: nv,ncnf,upf_mesh
  integer :: iprj,nkap,nnwell,npsh
  integer :: ikap,kap,mkap
@@ -87,7 +88,7 @@
 !
  integer :: na(mxstate),la(mxstate)
  integer :: nacnf(mxstate,mxcnf),lacnf(mxstate,mxcnf),nvcnf(mxcnf)
- integer :: irc(mxlin+1),nodes(mxl+1)
+ integer :: irc(mxlin+1)
  integer :: nproj(mxlin+1)
  integer :: ncon(mxlin+1),nbas(mxlin+1)
 ! the ghost tests' margins for the diagnostics block (run_ghosts), per kap
@@ -96,15 +97,14 @@
 
  real(dp) :: al,depsh,drl,eeel
  real(dp) :: eeig,eexc
- real(dp) :: emax,epsh1,epsh2,rxpsh
- real(dp) :: et,emin
+ real(dp) :: epsh1,epsh2,rxpsh
  real(dp) :: fcfact,fcfact0,rcfact,slack,dvloc0,soscale
  real(dp) :: fcfact_min,fcfact_max,fcfact_step
  real(dp) :: rcfact_min,rcfact_max,rcfact_step
  real(dp) :: fcgrid(3),rcgrid(3)
  real(dp) :: rcmax,rlmax
  real(dp) :: amesh_in,rr1_in,rmax_in,log_mesh(3),c_light_in
- real(dp) :: sw,zz,zion,zval,etot,res
+ real(dp) :: zz,zion,zval,etot,res
  real(dp) :: cvloc(2,nerrlv),vlchk,wreg
  real(dp) :: eterm(4),rphs(4)
  real(dp) :: fj,rcore
@@ -116,7 +116,6 @@
  real(dp) :: rpk(mxstate,mxkap)
  real(dp) :: epstot
  real(dp), parameter :: eps=1.0d-8
- real(dp), external :: cinf_taper
 
  real(dp), allocatable :: evkb(:,:,:),cvgplt(:,:,:,:,:),qq(:,:)
  real(dp), allocatable :: ecurve(:,:,:,:,:)
@@ -581,86 +580,9 @@
 ! get all-electron and pseudopotential valence-state by valence-state
 ! charge densities
 
-! null charge and eigenvalue accumulators
- uupsa(:,:,:)=0.0d0
- eeig=0.0d0
- zval=0.0d0
- rhops(:,:)=0.0d0
- rho(:)=0.0d0
- nodes(:)=0
- rhoae(:,:)=0.0d0
- rhotae(:)=0.0d0
- do kk=1,nv
-   ll=la(nc+kk)
-   l1=ll+1
-
-   mkap=kap_count(nkap,ll)
-   do ikap=1,mkap
-     kap=kap_of(ll,ikap)
-     fj=1.0d0
-     if(nkap==2) fj=j_share(ll,ikap,1.0d0)
-
-     et=ea(nc+kk,ikap)
-
-     call boundstate(irel,na(nc+kk),ll,kap,ierr,et, &
-&                    rr,zz,vfull,uu,up,mmax,mch)
-     if(ierr /= 0) then
-       if(irel==2) then
-         write(6,'(a,i2,a,i2,a,i2,a,i4)') &
-&              'oncvpsp_r 541: ldiracfb convergence ERROR, n=',&
-&               na(nc+kk),'  l=',ll, '  kap-',kap,'  ierr=',ierr
-       else
-         write(6,'(/a,3i4)') &
-&              'oncvpsp-461: lschfb convergence ERROR n,l,iter=', &
-&              na(nc+kk),la(nc+kk),it
-       end if
-       error stop 1
-     end if
-
-     if(irel==2) then
-       rhoae(:,kk)=rhoae(:,kk)+fj*((uu(:,1)/rr(:))**2 + (uu(:,2)/rr(:))**2)
-       emax=0.90d0*et
-       emin=1.10d0*et
-     else
-       rhoae(:,kk)=(uu(:,1)/rr(:))**2
-       emax=0.75d0*et
-       emin=1.25d0*et
-     end if
-
-     call lschvkbb(ll+nodes(l1)+1,ll,nproj(l1),ierr,et,emin,emax, &
-&                  rr,vp(1,lloc+1,ikap),vlocpw,vkbpw(1:nproj(l1),l1,ikap), &
-&                  evkb(1,l1,ikap),uu,up,mmax,mch)
-     if(ierr /= 0) then
-       if(irel==2) then
-         write(6,'(a,i2,a,i2)') 'oncvpsp_r: lschvkbb convergence ERROR, n=',&
-&         ll+1,'  l=',ll
-       else
-         write(6,'(a,3i4)') 'oncvpsp: lschvkbb ERROR',ll+nodes(l1)+1,ll,ierr
-         if(ierr==200) write(6,'(a,i2,a,f12.6,a/a)') &
-&             'a state of l=',ll,' lies below',emin, &
-&             ' Ha that the node count does not expect:', &
-&             'a bound ghost of the projectors'
-         flush(6)
-       end if
-       error stop 1
-     end if
-
-! save valence pseudo wave functions for upfout
-     uupsa(:,ikap,kk)=uu(:,1)
-
-     if(irel==2) then
-       rhops(:,kk)=rhops(:,kk)+fj*(uu(:,1)/rr(:))**2
-     else
-       rhops(:,kk)=(uu(:,1)/rr(:))**2
-     end if
-     eeig=eeig+fa(nc+kk)*fj*et
-
-   end do !ikap
-   rhotae(:)=rhotae(:)+fa(nc+kk)*rhoae(:,kk)
-   rho(:)=rho(:)+fa(nc+kk)*rhops(:,kk)
-   zval=zval+fa(nc+kk)
-   nodes(l1)=nodes(l1)+1
- end do !kk
+ call valence_densities(irel,nkap,nc,nv,na,la,fa,ea,it,lloc,nproj,rr,zz, &
+&                       vfull,vp,vlocpw,vkbpw,evkb,mmax,uu,up,uupsa,eeig, &
+&                       zval,rho,rhops,rhoae,rhotae)
 
  if(irel==2) then
 ! decomposition into scalar-relativistic and spin-orbit projectors
@@ -778,26 +700,8 @@
  end if
 
 ! unscreen semi-local potentials, taking the scalar-relativistic average
-! when fully relativistic
-
- do l1=1,max(lmax+1,lloc+1)
-   ll=l1-1
-   if(irel/=2 .or. ll==0 .or. ll==4) then
-     vpuns(:,l1)=vp(:,l1,1)-vo(:)
-   else
-     vpuns(:,l1)=(dble(ll+1)*vp(:,l1,1)+ dble(ll)*vp(:,l1,2))/dble(2*ll+1) &
-&                -vo(:)
-   end if
- end do
-
-! -zion/r far out, where the all-electron charge outranges rho: switched
-! over the outer half of the mesh (O-5), not cut where rho underflows to 0
- do ii=1,mmax
-   sw=cinf_taper(rr(ii),0.5d0*rr(mmax),rr(mmax))
-   do l1=1,max(lmax+1,lloc+1)
-     vpuns(ii,l1)=sw*vpuns(ii,l1)-(1.0d0-sw)*zion/rr(ii)
-   end do
- end do
+! when fully relativistic; -zion/r far out
+ call unscreen_potentials(irel,lmax,lloc,vp,vo,zion,rr,mmax,nkap,vpuns)
 
 ! how closely the local potential is -zion/r beyond rcmax
  call coulomb_tail(vpuns(1,lloc+1),vion,rr,mmax,zion,rcmax)
