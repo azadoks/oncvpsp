@@ -69,7 +69,7 @@ rather than hidden.
   V_ion = -Z/r + V_H[n_c] + V_xc[n_c + n_v] - V_xc[n_v + rhomod].
   The switch is a C-infinity step from rcmax to where V_ion reaches
   -zion/r to 1e-10. The pseudo valence states are iterated with it to a
-  fixed point (`src/ionic_tail.f90`). The method follows
+  fixed point (`src/ionic_tail_m.f90`). The method follows
   PseudoPotentialGenerators.jl. Over the outer half of the log mesh
   (fixed radii far beyond any rc) the potentials are switched to
   -zion/r. The reference configuration's pseudo-atom then reproduces

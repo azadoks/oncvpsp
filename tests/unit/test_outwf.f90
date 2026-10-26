@@ -33,6 +33,7 @@
  use pieces_m, only: piecewise_t, pw_alloc, pw_free, pw_node_values
  use outwf_m, only: outwf_t, outwf_setup, outwf_integrate, outwf_overlap, &
 &                   outwf_nodes, outwf_count, outwf_free
+ use lapack_m, only: dgels
  implicit none
 
 !Local variables
@@ -212,7 +213,6 @@
  real(dp), intent(out) :: res(41)
  real(dp) :: aa(41, ndeg + 1), bb(41), work(2048)
  integer :: j1, k1, info
- external :: dgels
 
  do j1 = 1, 41
    do k1 = 0, ndeg

@@ -128,6 +128,7 @@
 &                     lm_blend
  use cinf_taper_m, only: cinf_taper
  use der2exc_m, only: der2exc
+ use lapack_m, only: dhseqr
  implicit none
 
 !Input variables
@@ -788,7 +789,6 @@
  real(dp) :: cx(0:npow),d2(0:npow-2),hess(npow-2,npow-2)
  real(dp) :: wr(npow-2),wi(npow-2),zz(1,1),wkh(4*npow),tr,vv,vd
  integer :: kk,jj,nd,info,it
- external :: dhseqr
  tail_monotone=.false.
  if(leg_value(-1.0d0,1)>0.0d0) return
  if(leg_value(1.0d0,1)>0.0d0) return

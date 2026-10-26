@@ -686,6 +686,7 @@
 !! @param ovl  ovl(isol,jsrc), int phi_isol beta_jsrc dr
 
 !Input variables
+ use lapack_m, only: dgemm
  type(outwf_t), intent(in), target :: ow
 
 !Output variables
@@ -697,7 +698,6 @@
  real(dp) :: ss
  integer :: nn
  type(og_seg_t), pointer :: sg
- external :: dgemm
 
  ovl(:,:)=0.0d0
  sg=>ow%seg(1)
@@ -881,6 +881,7 @@
 !! @param mnode  the last mesh point counted
 
 !Input variables
+ use lapack_m, only: dsyev
  type(outwf_t), intent(in), target :: ow
  real(dp), intent(in) :: evkb(ow%nsrc),ovl(ow%nsrc+1,ow%nsrc)
  integer, intent(in) :: mnode
@@ -892,7 +893,6 @@
  integer :: kk,jj,jlast,kl,jl,nloc,nact,ii,info
  logical :: have
  type(og_seg_t), pointer :: sg
- external :: dsyev
 
 ! the node count of phi_1 to R, as outwf_count, and the point R
  nloc=0
@@ -1007,6 +1007,7 @@
 !!              (0, r(mnode)] (outwf_index)
 
 !Input/output variables
+ use lapack_m, only: dgesv
  type(outwf_t), intent(inout), target :: ow
 
 !Input variables
@@ -1021,7 +1022,6 @@
  real(dp), allocatable :: gg(:,:),gg0(:),ovl(:,:)
  integer, allocatable :: ipiv(:)
  integer :: ii,jj,info,nsrc
- external :: dgesv
 
  nsrc=ow%nsrc
  call outwf_integrate(ow,ep,mch)

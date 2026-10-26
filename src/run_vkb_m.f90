@@ -82,8 +82,8 @@
  use pieces_m, only: piecewise_t, pw_maxseg, pw_reach, pw_alloc, pw_free, &
 &                    pw_integral, pw_product_integral, pw_node_values
  use vploc_m, only: vploc_t, vploc_fit, vploc_mesh, vploc_eval
+ use lapack_m, only: dsyev
  implicit none
- external :: dsyev
 
 !Input variables
  integer, intent(in) :: lmax,lloc,lpopt,mmax,mxprj,irel,nkap

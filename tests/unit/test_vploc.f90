@@ -16,6 +16,7 @@
  program test_vploc
  use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
  use vploc_m, only: vploc_t, vploc_fit, vploc_eval
+ use lapack_m, only: dgels
  implicit none
 
 !Local variables
@@ -149,7 +150,6 @@
  real(dp), intent(out) :: res(41)
  real(dp) :: aa(41, ndeg + 1), bb(41), work(2048)
  integer :: jj, kk, info
- external :: dgels
 
  do jj = 1, 41
    do kk = 0, ndeg

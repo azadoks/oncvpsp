@@ -69,7 +69,7 @@ icmod==2:
     LFC [1] but significantly improves convergence.
     The "before and after" Exc 2nd derivatives are computed but not
     used.  Amplitude and scale parameters consistent with options 3 and 4
-    below are given in the out file.  This option is executed by modcore2.f90
+    below are given in the out file.  This option is executed by modcore2_m.f90
 
 icmod==3:
 
@@ -171,7 +171,7 @@ icmod==6:
     With slack < 1 the model is still made for the qlo of ecut, but must
     fit slack*ecut: a core made for its own, lower cutoff converges worse
     in plane waves. This is the BudgetedCore of PseudoPotentialGenerators.jl
-    (PPG), executed by modcore_budget.f90; tests/data/14_Si_bc.dat uses it.
+    (PPG), executed by modcore_budget_m.f90; tests/data/14_Si_bc.dat uses it.
     On the same core and valence charges it gives PPG's r_s within the grid
     spacing, and the same fill and core cutoff (Si, Li, Na, K, Zn, Ga, N,
     I, Pb, Cs; TM, PBE).
@@ -196,7 +196,7 @@ icmod==6:
     the out file at that error, interpolated as they are, so the cutoff
     one would run at. The out file gives it on the line "pseudo-wave
     cutoff, largest Ecut of the tables at ...", and modcore_budget_table
-    (in modcore_budget.f90) computes it; a wave whose table does not reach
+    (in modcore_budget_m.f90) computes it; a wave whose table does not reach
     rcfact does not count. tests/data/14_Si_bca.dat uses it.
 
     PPG's default budget (ecut_for_error) is instead the root of the total

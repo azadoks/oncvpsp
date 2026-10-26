@@ -14,22 +14,16 @@ None.
 
 ## Kept on purpose
 
-- The imported files (`exc_off_pbe.f`, `functionals.F90`,
+- The imported files (`exc_off_pbe_m.f`, `functionals.F90`,
   `gg1cc`/`gp1cc`/`gpp1cc` and `m_libxc_list.F90`), which keep their
   upstream form so that they can be kept in sync with their sources.
-- Copyright and license text: the years in `linout.f90`, `ldiracf*.f90`
-  and `exc_off_pbe.f`, and the missing headers of `input_text_m.f90` and
+- Copyright and license text: the years in `linout_m.f90`, `ldiracf*_m.f90`
+  and `exc_off_pbe_m.f`, and the missing headers of `input_text_m.f90` and
   `input_toml_m.f90`, whose authors would have to add them.
 - The text of messages from 4.0.1, including the `test_data:` prefix in
   `check_data`, the prefixes of the fully-relativistic messages (the
   names of the former `_r` routines, or of the sr ones), and the
   list-directed `lmax` and `calling psmlout` prints, which the reference
   outputs contain (see [Error messages](coding_standards.md#error-messages)).
-- `derivs` in `exc_libxc.f90`, an external routine that `functionals.F90`
-  calls too, so it can't become internal.
-- Derived types from the libraries and imported files: toml-f's in
-  `input_toml_m`, and xmlf90's `xmlf_t` and `m_libxc_list`'s `libxc_t`
-  in `psmlout_m` (see rule 3 under
-  [Conventions](coding_standards.md#conventions)).
 - Unused locals (e.g. `maxset` in `lschpsbar`, `cfloc` in `check_data`),
   which fortitude's default rules don't flag.

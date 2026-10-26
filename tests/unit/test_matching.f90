@@ -19,6 +19,7 @@
  use ldiracfb_m, only: ldiracfb
  use lschfb_m, only: lschfb
  use lschvkbb_m, only: lschvkbb
+ use lapack_m, only: dgels
  implicit none
 
 !Local variables
@@ -107,7 +108,6 @@
  real(dp), intent(in) :: ys(npts), scale, tol
  real(dp) :: aa(npts, ndeg + 1), bb(npts), work(64*(ndeg + 1)), tt
  integer :: jj, kk, info
- external :: dgels
 
  do jj = 1, npts
    tt = 2.0_dp*(zs(jj) - zlo)/(zhi - zlo) - 1.0_dp

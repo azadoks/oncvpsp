@@ -57,6 +57,7 @@
 &                       pb_sort_abs, pb_sign_at_peak
  use pieces_m, only: piecewise_t, pw_product_integral, pw_node_values, &
 &                    pw_free
+ use lapack_m, only: dsyev
  implicit none
 
 !Input variables

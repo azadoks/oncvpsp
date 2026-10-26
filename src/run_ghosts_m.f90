@@ -92,6 +92,7 @@
  use cinf_taper_m, only: cinf_taper
  use lschpsbar_m, only: lschpsbar
  use lschvkbb_m, only: lschvkbb
+ use lapack_m, only: dsyev
  implicit none
 
 !Input variables

@@ -21,6 +21,7 @@
  use pieces_m, only: piecewise_t, pw_alloc, pw_free
  use outwf_m, only: outwf_t, outwf_setup, outwf_solve, outwf_count, &
 &                   outwf_free
+ use lapack_m, only: dsyev
  implicit none
 
 !Local variables
@@ -112,7 +113,6 @@
  real(dp), allocatable :: hh(:, :), work(:), rq(:), bq(:)
  real(dp) :: hq
  integer :: i1, info
- external :: dsyev
 
  allocate(hh(nfd, nfd), work(64*nfd), rq(nfd), bq(nfd))
  hq = rb/(nfd + 1)

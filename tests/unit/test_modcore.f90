@@ -32,6 +32,7 @@
  use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
  use modcore_m, only: teter_derivs, core_crossover, poly_core_fit, &
 &                     teter_scale, teter_core_derivs
+ use lapack_m, only: dgels, dgesv
  implicit none
 
 !Local variables
@@ -416,7 +417,6 @@
  real(dp), intent(out) :: acoq(5)
  real(dp) :: amat(5, 5), unit(5)
  integer :: ipvt(5), info, jj, kk
- external :: dgesv
 
  do jj = 1, 5
    unit(:) = 0.0_dp
@@ -488,7 +488,6 @@
  real(dp), intent(out) :: res(41)
  real(dp) :: aa(41, ndeg + 1), bb(41), work(2048)
  integer :: jj, kk, info
- external :: dgels
 
  do jj = 1, 41
    do kk = 0, ndeg

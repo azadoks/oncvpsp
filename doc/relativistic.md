@@ -69,7 +69,7 @@ maintain compatibility  with the scalar-relativistic data structure, the
 variable soscale, currently 1.0, can be reset or read in after the
 standard data.  The routine sr_sr_r performs the decomposition, and
 run_diag_sr_so re-runs the diagnostics using a multi-projector version
-of vkboutwf.f90 and the truncated versions of the sr-so projectors.
+of vkboutwf_m.f90 and the truncated versions of the sr-so projectors.
 
 The psp8 format (introduced originally into ABINIT by me ten years or so
 ago) was intended for increased flexibility, along with some other

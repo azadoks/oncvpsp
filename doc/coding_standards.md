@@ -97,19 +97,33 @@ looks like this:
 
 **Files.**
 
-- One external routine per file, named after it (rule 2). Helpers used
-  by one routine only are internal procedures after `contains`, or
-  functions in an include file (`adams.inc`).
+- Every procedure is in a module; there are no external procedures, and
+  the only program units outside modules are the main programs. This
+  replaces rules 2 and 3 on this branch: the compiler checks every call
+  against its definition, and the names stay out of the global
+  namespace.
+- One module per file, `<name>_m` in `<name>_m.f90`. A module around a
+  single routine is named after it (`lschfb_m` holds `lschfb`; `modcore`
+  is in `modcore1_m`, as `modcore_m` holds the helpers the model cores
+  share), one that gathers several after their subject (`boundsolve_m`).
+  It starts `implicit none`, `private` and a `public` list, and callers
+  `use` it with an `only` list in the procedure that makes the call.
 - `.f90`, or `.F90` when the file uses the preprocessor.
-- Modules are named `<name>_m`, in `<name>_m.f90`.
-- Rule 3 is read as: no global state. A module may hold parameters
-  (`constants_m`) and procedures (`ae_file_m`), but no variables, so
-  everything that changes is passed as arguments. There are no derived
-  types of our own: values that belong together are separate arrays
-  with a common index, like the test-configuration input `nacnf(30,5)`,
-  `lacnf(30,5)` and `facnf(30,5)`. Types that a
-  library defines (toml-f's `toml_table`, xmlf90's `xmlf_t`) are used
-  where its calls need them.
+- Helpers used by one routine only are internal procedures after
+  `contains`, private procedures of its module, or functions in an
+  include file (`adams.inc`).
+- The external libraries are called through interfaces: LAPACK and BLAS
+  through `lapack_m`, which declares the routines ONCVPSP calls as the
+  reference LAPACK does, libxc through its own Fortran module.
+- No global state, which is what is left of rule 3: a module holds
+  parameters (`constants_m`), types and procedures, but no variables, so
+  everything that changes is passed as arguments.
+- Derived types are allowed for values that belong together and are
+  passed together (`piecewise_t` in `pieces_m`, the integrator state in
+  `outwf_m`). Older code keeps separate arrays with a common index, like
+  the test-configuration input `nacnf(30,5)`, `lacnf(30,5)` and
+  `facnf(30,5)`. Types that a library defines (toml-f's `toml_table`,
+  xmlf90's `xmlf_t`) are used where its calls need them.
 - The non-, scalar- and fully-relativistic codes share their routines.
   A routine whose work depends on the equation takes `irel` (0 non-, 1
   scalar-, 2 fully-relativistic), tested at run time, rather than a
@@ -120,9 +134,11 @@ looks like this:
   solver. `_r` is left only on routines that exist for the
   fully-relativistic code alone (`sr_so_r`, `renorm_r`). See
   [Merging sr and fr](fr_merge_plan.md).
-- A new routine takes integer and `real(dp)` scalars and explicit-shape
-  arrays, with their sizes as arguments, so that C could call it: no
-  logical, optional, assumed-shape, allocatable or pointer dummies.
+- The entry points a C wrapper will call (see [Library
+  plan](library_plan.md)) take integer and `real(dp)` scalars and
+  explicit-shape arrays, with their sizes as arguments: no logical,
+  optional, assumed-shape, allocatable, pointer or derived-type dummies.
+  Routines inside the library may take derived types.
 
 **Header.**
 
@@ -165,7 +181,8 @@ looks like this:
   [Kinds and constants](#kinds-and-constants)); literals are written
   `1.0d0`.
 - Explicit-shape (`rr(mmax)`) or allocatable arrays; no assumed-size
-  (`*`) dummies, except in `adams.inc`.
+  (`*`) dummies, except in `adams.inc` and the LAPACK interfaces of
+  `lapack_m`.
 
 **Names.**
 
@@ -312,16 +329,18 @@ already conforming. Most editors honour it natively or with the
 Setup](developer_setup.md) has the installation of the tools and the VS Code
 setup that runs `reindent.py` as the formatter and fortitude in the editor.
 
-fortitude uses its default rules, without the four that conflict with the
-rules above: double-quoted strings (S241), and three that ask for modules
-or `implicit none (external)` in place of external procedures (C003, C091,
-C092). Among other things it wants `intent` on every argument, `only` on
+fortitude uses its default rules, without the two that conflict with the
+rules above: double-quoted strings (S241), and `implicit none (type,
+external)` (C003), which is Fortran 2018. Its rules against external
+procedures (C091, C092) are on, so a routine outside a module or an
+`external` declaration fails the check; `lapack_m.f90` alone may have
+assumed-size arrays (C071). Among other things it wants `intent` on every argument, `only` on
 every `use`, `==` rather than `.eq.`, `end do` rather than `enddo`,
 `character(len=N)`, `::` in every declaration, generic intrinsics (`log`,
 not `dlog`), no assumed-size (`*`) arrays, and lines of at most 80
 columns (set in `fortitude.toml`). `fortitude check --fix` fixes some of these itself.
 
-The imported files (`exc_off_pbe.f`, `functionals.F90`,
+The imported files (`exc_off_pbe_m.f`, `functionals.F90`,
 `gg1cc`/`gp1cc`/`gpp1cc` and `m_libxc_list.F90`) are excluded from the
 hooks, so that they can be kept in sync with their sources, and so are the
 reference outputs in `tests/refs`, the patches in `cmake/patches` and

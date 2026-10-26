@@ -3,7 +3,7 @@
 References to "the paper" are to oncvpsp6.pdf, which is reproduced in this
 directory (now published as Phys. Rev. B 88, 085117 (2013)).
 
-The calculation is the subroutine oncvpsp_main (oncvpsp_main.F90).  Each
+The calculation is the subroutine oncvpsp_main (oncvpsp_main_m.F90).  Each
 executable (oncvpsp.x, oncvpspnr.x, oncvpspr.x and their _ae.x and _ps.x
 stages) is a short program calling it with the relativistic treatment,
 irel, and the stage.  It has the following major sections:
@@ -173,7 +173,7 @@ irel, and the stage.  It has the following major sections:
    would leave the Hartree and exchange-correlation response to that
    difference in the local potential: a long-ranged term that is not
    ionic, and that plane-wave codes see through the G=0 term. Instead
-   (subroutine ionic_screening in ionic_tail.f90, after the ionic tail of
+   (subroutine ionic_screening in ionic_tail_m.f90, after the ionic tail of
    PseudoPotentialGenerators.jl) the screened potentials are switched,
    from rcmax to where the frozen-core ionic potential
 

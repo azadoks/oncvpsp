@@ -205,6 +205,7 @@
 
  use constants_m, only: dp
  use relativity_m, only: c_light
+ use lapack_m, only: dgesv
  implicit none
 
 !Input variables

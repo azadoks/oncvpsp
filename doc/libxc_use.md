@@ -22,7 +22,7 @@ iexc= -101130 (Perdew-Burke-Ernzerhof)
 ```
 
 PWSCF does not appear to support libxc yet, and iexc for a subset of what they
-do support is properly translated in src/upfout.f90 (search for
+do support is properly translated in src/upfout_m.f90 (search for
 "functional=").  Feel free to add to these.  The presently-
 implemented translations and the full list of pwscf functionals is in
 pwscf_exc.txt in this directory.
@@ -32,9 +32,9 @@ adding more significant figures to constants, so that the output they
 generate and that using libxc look essentially identical to the compare.sh
 test.
 
-iexc=6 (excvwn.f90, Slater exchange and VWN correlation) agrees with
+iexc=6 (excvwn_m.f90, Slater exchange and VWN correlation) agrees with
 -001007 to the printed digits.  iexc=7 adds the relativistic exchange of
-MacDonald and Vosko (exc_relx.f90) at the speed of light of the input
+MacDonald and Vosko (exc_relx_m.f90) at the speed of light of the input
 (c_light), which Libxc's lda_x_rel (-532007) fixes at its own value; the
 psp8 and UPF files name the Libxc functional, -532007 or "RXC VWN".
 

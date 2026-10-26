@@ -522,7 +522,7 @@ leaves them out until phase 7 drops the label.
 
 - **T1 Unit tests of the primitives** (`tests/unit/test_logmesh.f90`,
   written red against stubs of `src/logmesh_m.f90` and
-  `src/sbf_overlap.f90`; green since phase 1). They check:
+  `src/sbf_overlap_m.f90`; green since phase 1). They check:
   - FH reproduction of degree-6 polynomials in ln r;
   - node exactness;
   - order 7 in al;

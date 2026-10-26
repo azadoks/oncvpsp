@@ -138,9 +138,8 @@ build directory, since the cache keeps them.
   partition (2 h) is enough: the Debug suite takes about 4 minutes on a
   compute node.
 
-After changing any routine's argument list, run
-`scripts/check_interfaces.sh` (it needs a CMake build in `build/`), which
-checks every call against the definition of the routine it calls.
+Every routine is in a module, so the compiler checks every call against
+the definition of the routine it calls.
 
 ## Tests
 

@@ -5,10 +5,10 @@
 # standards
 ignore = [
     "S241",  # bad-quote-string: strings are quoted with '
-    "C003",  # implicit-external-procedures: the routines are external
-    "C091",  # external-procedure: (same)
-    "C092",  # procedure-not-in-module: one external routine per file (rule 2)
+    "C003",  # implicit-external-procedures: implicit none (external) is F2018
 ]
+# the LAPACK interfaces declare their arrays as LAPACK does, assumed-size
+per-file-ignores = { "src/lapack_m.f90" = ["C071"] }
 # the legacy files keep to 80 columns
 line-length = 80
 # imported code, kept as written upstream

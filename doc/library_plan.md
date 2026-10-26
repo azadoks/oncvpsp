@@ -10,8 +10,8 @@ output and the output files, and ends with `error stop` when anything fails.
 This is the plan for turning it into a library with a C interface, and
 wrappers on top of that.
 
-Moving routines into modules is part of the plan but not its first step.
-Wrappers never call the internal routines, module or external: compilers
+Moving routines into modules was part of the plan, though not needed for
+wrapping, and is done (phase 4). Wrappers never call the internal routines, module or external: compilers
 name their symbols differently (`vrel_`, `__m_MOD_vrel`, `m_mp_vrel_`), so
 the only portable entry points are `bind(C)` routines. What blocks wrapping
 is the program-style behaviour (`stop`, unit 6, files), not the lack of
@@ -20,12 +20,13 @@ modules.
 ### Rules
 
 - **Output is unchanged.** The rules of [Merging sr and fr](fr_merge_plan.md)
-  apply to every step: `ctest -j8`, `scripts/check_interfaces.sh`,
+  apply to every step: `ctest -j8`,
   line-for-line comparison of the outputs with those
   of the commit before the step, and one commit per step. The executables
   keep their command lines, messages and exit codes.
 - **No new `#if`.**
-- **Interfaces that C could call.** Dummies stay integer and `real(dp)`
+- **Interfaces that C could call.** The dummies of the entry points (the
+  `bind(C)` routines and `oncvpsp_run`) are integer and `real(dp)`
   scalars and explicit-shape arrays with their sizes passed in. This is
   what `bind(C)`, ctypes, cffi, f2py and Julia's `ccall` all handle without
   copies, so the internal routines are not switched to assumed shape (as
@@ -37,13 +38,13 @@ modules.
 ### Phase 1: errors returned, not stopped
 
 There are 56 `stop`/`error stop` lines in 34 files. Those in
-`oncvpsp_main.F90` (the command line and the input file) stay. Every other
+`oncvpsp_main_m.F90` (the command line and the input file) stay. Every other
 one becomes an error code:
 
 - [ ] Each routine that can fail gets an `ierr` argument (0 for success) and
       returns at the failure, after writing its message as now.
 - [ ] Each caller tests `ierr` and passes it up, as `boundstate` and
-      `lschvkbb` already are at `oncvpsp_main.F90:630,835`.
+      `lschvkbb` already are at `oncvpsp_main_m.F90:630,835`.
 - [ ] `oncvpsp_main` turns a non-zero `ierr` into `error stop 1`, so the
       executables behave as before.
 - [ ] A list of the codes, by routine, in this page or in the headers.
@@ -66,7 +67,7 @@ text elsewhere, or nowhere.
 
 ### Phase 3: a driver split in three
 
-`oncvpsp_main.F90` (1090 lines) is split into:
+`oncvpsp_main_m.F90` (1090 lines) is split into:
 
 - [ ] `oncvpsp_run(...)`: the calculation, from the input values (as
       arguments) to the results (as arrays), with `ierr`. No command line,
@@ -84,18 +85,17 @@ number of projectors, the mesh). Either the caller passes maximum sizes
 
 ### Phase 4: routines into modules
 
-Optional for the wrappers, but it makes every call checked by the compiler
-and takes the routine names out of the global namespace, which matters once
-the library shares a process with other Fortran code.
+Done on smooooth: every procedure is a module procedure, so every call is
+checked by the compiler and the routine names are out of the global
+namespace (see [Coding standards](coding_standards.md)).
 
-- [ ] Decide whether to do it at all: it touches nearly every file, which
-      makes merging upstream fixes from `master` much harder.
-- [ ] If so, one group per commit, leaves first: the mesh and quadrature
-      utilities (`aeo` family, `dpnint`, `der2exc`), the XC
-      routines, the radial solvers (`lsch*`, `ldirac*`, `boundstate`), the
-      pseudization and optimizer, the `run_*` drivers.
-- [ ] Each group updates `src/CMakeLists.txt`.
-- [ ] Once all are done, `scripts/check_interfaces.sh` is no longer needed.
+- [x] One group per commit, leaves first: the XC, mesh and Bessel-basis
+      routines; the radial solvers; the atom, pseudization and model-core
+      routines; the `run_*` drivers and the output writers. Each `foo.f90`
+      became `foo_m.f90`, and the output is byte-identical.
+- [x] LAPACK and BLAS called through the interfaces of `lapack_m`.
+- [x] `scripts/check_interfaces.sh` removed; fortitude's rules against
+      external procedures (C091, C092) are on.
 
 ### Phase 5: the C interface
 
@@ -108,7 +108,7 @@ the library shares a process with other Fortran code.
 - [ ] A C test in `tests/` that runs one of the reference inputs through
       the interface and compares with the reference output.
 - [ ] Check that two runs in one process give the same results (the
-      `save` in `exc_libxc.f90` changes what is printed, not the numbers).
+      `save` in `exc_libxc_m.f90` changes what is printed, not the numbers).
 
 ### Phase 6: wrappers
 

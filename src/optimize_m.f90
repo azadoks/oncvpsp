@@ -73,6 +73,7 @@
 !!               eigenvalue e1 and |f1| of the problem at qout(1) alone
 
  use constants_m, only: dp
+ use lapack_m, only: dsyev
  implicit none
 
 !Input variables

@@ -292,6 +292,7 @@
 !! @param ierr  0, or 1 if no basis function is below qmax (output)
 
 !Input variables
+ use lapack_m, only: dsyev
  integer, intent(in) :: ll,iedge
  type(ws_grid_t), intent(in) :: grid
  real(dp), intent(in) :: evkb(grid%nvkb),eex
@@ -343,6 +344,7 @@
 !! @param ierr  0, or 1 if no basis function is below qmax (output)
 
 !Input variables
+ use lapack_m, only: dsyev
  integer, intent(in) :: ll,iedge
  type(ws_grid_t), intent(in) :: grid
  real(dp), intent(in) :: evkb(grid%nvkb)

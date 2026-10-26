@@ -423,6 +423,7 @@
 !! @param aco  coefficients of r**3..r**7
 
 !Input variables
+ use lapack_m, only: dgesv, dhseqr
  real(dp), intent(in) :: rstar,fmatch(5)
 
 !Output variables
@@ -432,7 +433,6 @@
  real(dp) :: amat(5,5),acoa(5),acob(5),qa(0:4),cub(0:3),hess(3,3)
  real(dp) :: wr(3),wi(3),zz(1,1),work(16),rq,fac
  integer :: ipvt(5),info,jj,kk,mm,ncub
- external :: dgesv,dhseqr
 
 ! pA: the match with a0 = 0
  do jj=1,5

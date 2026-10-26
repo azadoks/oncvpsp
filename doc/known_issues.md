@@ -3,7 +3,7 @@
 Suspected bugs in `src/`, found by auditing the code (dummy-argument
 `intent`s, [Fortran Best Practices](fortran_best_practices.md) and
 [Coding Standard Violations](coding_standard_violations.md)) and triaged
-against the callers, the input checks in `check_data.f90` and the test
+against the callers, the input checks in `check_data_m.f90` and the test
 inputs in `tests/data/`. The issues that have been fixed are no longer
 listed; their fixes and the reasons for them are in the commit messages
 (up to `264a1a4`).
@@ -39,22 +39,22 @@ None.
 
 Each of these was checked and turned out not to be a bug:
 
-- `sbf_basis_con.f90` bounds: `check_data` enforces `3<=ncon<=5`, and
+- `sbf_basis_con_m.f90` bounds: `check_data` enforces `3<=ncon<=5`, and
   `run_optimize` sets `ncon=ncon_in+iprj-1`.
-- `fpovlp.f90` `rr(101)`: `irc` is always far above 101 on the log mesh.
-- `optimize.f90` `nnull==0`: `check_data` guarantees `nnull>=2`.
-- `linout.f90` `zero(20)`: `npr_sr` and `npr_so` are ≤10.
+- `fpovlp_m.f90` `rr(101)`: `irc` is always far above 101 on the log mesh.
+- `optimize_m.f90` `nnull==0`: `check_data` guarantees `nnull>=2`.
+- `linout_m.f90` `zero(20)`: `npr_sr` and `npr_so` are ≤10.
 - `vrel.f90` edge reads: the rc window keeps `ii` in the interior.
-- `run_ghosts.f90` `hmev` past `nbas`: `hmev` has size `nbmax` and is
+- `run_ghosts_m.f90` `hmev` past `nbas`: `hmev` has size `nbmax` and is
   zeroed. `dsyev` with N=0 is a legal quick return.
-- `qroots.f90` `nroot>=4`: `check_data` guarantees it.
+- `qroots_m.f90` `nroot>=4`: `check_data` guarantees it.
 - `input_toml_m.f90` icmod range: `check_data` rejects values outside 0–4,
   6 and 7 for both readers.
-- `linout.f90` `ixc_abinit`: `check_data` rejects `iexc>4`.
+- `linout_m.f90` `ixc_abinit`: `check_data` rejects `iexc>4`.
 - `sratom`/`relatom` `ierr=100` unchecked: the drivers already stop with
   "ERROR all-electron reference atom not converged" when `it>=100`, and
   every other failure inside `sratom`/`relatom` stops there.
-- `wellstate.f90` with `irel=2` doesn't check the `ldiracfb` error in
+- `wellstate_m.f90` with `irel=2` doesn't check the `ldiracfb` error in
   its well search: the search retries with a new well radius when
   `ldiracfb` fails, and the outer convergence test catches a bad `et`.
   With `irel<2` it does stop on an `lschfb` error, but checking for
