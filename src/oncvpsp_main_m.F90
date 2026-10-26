@@ -381,7 +381,8 @@
    ierr=0
    call aeatom_cached(irel,nkap,inp%na,inp%la,ea,inp%fa,rpk,inp%nc, &
 &                     inp%nc+inp%nv,it,rhoc,rho, &
-&                     rr,vfull,inp%zz,mmax,inp%iexc,etot,eterm,res,ierr)
+&                     rr,vfull,inp%zz,mmax,inp%iexc,etot,eterm,res,ierr,ifail)
+   if(ifail/=0) error stop 1
    if(ierr/=0) then
      write(6,'(/a,i0,a,i0,a,es12.4)') &
 &          'oncvpsp: ERROR aeatom failed for the reference configuration'// &
@@ -479,7 +480,9 @@
      call run_config_ae(jj,inp%nacnf,inp%lacnf,inp%facnf,inp%nc,inp%nvcnf,rr, &
 &                       inp%zz, &
 &                       mmax,inp%iexc,ea,irel,nkap,istcnf,ierrcnf,itcnf, &
-&                       kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
+&                       kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf, &
+&                       ifail)
+     if(ifail/=0) error stop 1
    end do
 
    call write_ae_file(ae_filename,irel,nkap,inp%atsym,inp%zz,inp%nc,inp%nv, &
@@ -533,7 +536,8 @@
      call ae_bound_projectors(irel,ll,kap,ikap,inp%nc,inp%nv,inp%na,inp%la, &
 &                             ea,inp%nproj(l1),it, &
 &                             rr,inp%zz,vfull,mmax,uu,up,iprj,epa(:,l1,ikap), &
-&                             npa(:,l1),uua(:,:,ikap),upa(:,:,ikap))
+&                             npa(:,l1),uua(:,:,ikap),upa(:,:,ikap),ifail)
+     if(ifail/=0) error stop 1
      call ae_well_projectors(irel,ll,kap,ikap,inp%nproj(l1),inp%ep(l1,ikap), &
 &                            inp%debl(l1),inp%well_n(l1),inp%ep_as_given, &
 &                            inp%well_onset, &
@@ -541,11 +545,13 @@
 &                            inp%qcut(l1),rr,inp%zz,vfull,mmax,uu,up,nnwell, &
 &                            iprj, &
 &                            epa(:,l1,ikap),npa(:,l1),uua(:,:,ikap), &
-&                            upa(:,:,ikap),vwell,inwell,wmesh)
+&                            upa(:,:,ikap),vwell,inwell,wmesh,ifail)
+     if(ifail/=0) error stop 1
      call ae_delta_window(irel,ll,kap,inp%nproj(l1),epa(:,l1,ikap),rr,vfull, &
 &                         uua(:,:,ikap),upa(:,:,ikap),mmax,al,inp%rc(l1), &
 &                         irc(l1),l1==inp%lloc+1,dlta(:,:,l1,ikap), &
-&                         vrloc(:,ikap))
+&                         vrloc(:,ikap),ifail)
+     if(ifail/=0) error stop 1
      call ae_overlap(irel,ll,kap,inp%nproj(l1),uua(:,:,ikap),rr,inp%zz,mmax, &
 &                    inp%rc(l1), &
 &                    qq)
@@ -565,7 +571,8 @@
 !the weights of its pseudo-waves in the cutoff of the pseudo-waves
      call ecut_weights(ll,inp%nc,inp%nv,inp%la,inp%fa,fj,inp%nproj(l1), &
 &                      inp%ecut_wt(l1), &
-&                      wcurve(:,l1,ikap))
+&                      wcurve(:,l1,ikap),ifail)
+     if(ifail/=0) error stop 1
 
    end do !ikap
    wellprj(:,l1)=inwell(:)
@@ -594,7 +601,8 @@
  call valence_densities(irel,nkap,inp%nc,inp%nv,inp%na,inp%la,inp%fa,ea,it, &
 &                       inp%lloc,inp%nproj,rr,inp%zz, &
 &                       vfull,vp,vlocpw,vkbpw,evkb,mmax,uu,up,uupsa,eeig, &
-&                       zval,rho,rhops,rhoae,rhotae)
+&                       zval,rho,rhops,rhoae,rhotae,ifail)
+ if(ifail/=0) error stop 1
 
  if(irel==2) then
 ! decomposition into scalar-relativistic and spin-orbit projectors
@@ -634,7 +642,8 @@
      call modcore_probes(inp%lmax,inp%lloc,inp%nproj,epa,wellprj,vp,vlocpw, &
 &                        vkbpw,evkb, &
 &                        rr,mmax,mxprj, &
-&                        nkap,probes,lprobe,nprobe)
+&                        nkap,probes,lprobe,nprobe,ifail)
+     if(ifail/=0) error stop 1
    end if
    call modcore_budget(inp%icmod,rho,rhoc,rhomod,corepw,inp%fcfact,ecutw, &
 &               inp%budget_cut==1,inp%rcfact, &
@@ -666,7 +675,8 @@
 &                     vkbpw,evkb,mmax,mxprj,inp%zz,zion,zval,inp%iexc,rcmax, &
 &                     rhoc, &
 &                     rhotae,rhomod(1,1),rho,rhops,uupsa,eeig,vo,vxc, &
-&                     eeel,eexc,vion)
+&                     eeel,eexc,vion,ifail)
+ if(ifail/=0) error stop 1
 
 ! total energy output
 
@@ -744,7 +754,9 @@
      call run_config_ae(jj,inp%nacnf,inp%lacnf,inp%facnf,inp%nc,inp%nvcnf,rr, &
 &                       inp%zz, &
 &                       mmax,inp%iexc,ea,irel,nkap,istcnf,ierrcnf,itcnf, &
-&                       kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
+&                       kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf, &
+&                       ifail)
+     if(ifail/=0) error stop 1
    end if
 
    call run_config_ps(jj,istcnf,ierrcnf,itcnf,kerrcnf,nvtcnf, &
@@ -752,7 +764,8 @@
 &                     rr, &
 &                     rcmax,mmax,mxprj,inp%iexc,etot,epstot,inp%nproj,vpuns, &
 &                     inp%lloc,vlocpw,vkbpw,evkb,irel,nkap,ntcf(jj), &
-&                     itcf(:,:,jj),etcf(:,:,jj),dtcf(:,jj))
+&                     itcf(:,:,jj),etcf(:,:,jj),dtcf(:,jj),ifail)
+   if(ifail/=0) error stop 1
 
  end do !jj
 

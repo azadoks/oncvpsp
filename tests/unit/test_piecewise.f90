@@ -21,6 +21,7 @@
  implicit none
 
 !Local variables
+ integer :: ifail
  real(dp), parameter :: rr1 = 5.0e-5_dp, rmax = 45.0_dp, amesh = 1.006_dp
  real(dp), parameter :: rb = 6.0_dp
  real(dp), parameter :: offsets(5) = [0.0_dp, 0.25_dp, 0.5_dp, 0.75_dp, &
@@ -66,7 +67,8 @@
    ee(ii) = -0.5_dp/ii**2
    mch = 0
    call boundstate(0, ii, 0, -1, ierr, ee(ii), rr, 1.0_dp, vv, uu(:, :, ii), &
-&                  up(:, :, ii), mmax, mch)
+&                  up(:, :, ii), mmax, mch, ifail)
+   if(ifail /= 0) error stop 1
    if(ierr /= 0) then
      write(stderr, '(a,i0,a,i0)') 'FAILED: wronskian: boundstate n ', ii, &
 &      ' ierr ', ierr

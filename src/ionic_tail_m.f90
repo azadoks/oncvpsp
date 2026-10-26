@@ -154,7 +154,7 @@
  end subroutine ionic_window
 
  subroutine ionic_valence(nkap,nc,nv,la,fa,ea,lloc,nproj,rr,vp,vlocpw, &
-&                         vkbpw,evkb,mmax,mxprj,rho,rhops,uupsa,eeig)
+&                         vkbpw,evkb,mmax,mxprj,rho,rhops,uupsa,eeig,ifail)
 
 !! the pseudo valence states of the local potential vp(:,lloc+1,:) and the
 !! VKB projectors, as oncvpsp_main solves them: rho, the state densities
@@ -181,6 +181,7 @@
 !! @param rhops  state-by-state pseudo valence charge (one electron)
 !! @param uupsa  pseudo valence wave functions
 !! @param eeig  sum of the occupied eigenvalues
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, mxstate, mxl, mxlin, mxkap
  use kappa_m, only: kap_count, j_share
@@ -199,6 +200,7 @@
 !Output variables
  real(dp), intent(out) :: rho(mmax),rhops(mmax,nv),uupsa(mmax,nkap,nv)
  real(dp), intent(out) :: eeig
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp), allocatable :: uu(:),up(:)
@@ -206,6 +208,7 @@
  integer :: kk,ll,l1,ikap,mkap,mch,ierr
  integer :: nodes(mxl+1)
 
+ ifail=0
  allocate(uu(mmax),up(mmax))
  if(nkap==1) then
    de=0.25d0
@@ -230,7 +233,8 @@
      call lschvkbb(ll+nodes(l1)+1,ll,nproj(l1),ierr,et,emin,emax, &
 &                  rr,vp(1,lloc+1,ikap),vlocpw,vkbpw(1:nproj(l1),l1,ikap), &
 &                  evkb(1,l1,ikap), &
-&                  uu,up,mmax,mch)
+&                  uu,up,mmax,mch,ifail)
+     if(ifail/=0) return
      if(ierr/=0) then
        write(6,'(/a,3i4)') 'ionic_valence: ERROR lschvkbb n,l,ierr=', &
 &            ll+nodes(l1)+1,ll,ierr
@@ -238,7 +242,8 @@
 &           'a state of l=',ll,' lies below',emin, &
 &           ' Ha that the node count does not expect:', &
 &           'a bound ghost of the projectors'
-       error stop 1
+       ifail=1
+       return
      end if
      uupsa(:,ikap,kk)=uu(:)
      rhops(:,kk)=rhops(:,kk)+fj*(uu(:)/rr(:))**2
@@ -255,7 +260,7 @@
 &                           vlocpw,vkbpw,evkb,mmax,mxprj,zz,zion,zval,iexc, &
 &                           rcmax,rhoc, &
 &                           rhotae,rhomod,rho,rhops,uupsa,eeig,vo,vxc, &
-&                           eeel,eexc,vion)
+&                           eeel,eexc,vion,ifail)
 
 !! switches the screened potentials vp to V_ion + V_Hxc[rho + rhomod] over
 !! the ionic window, iterating the pseudo valence states (rho, rhops,
@@ -298,6 +303,7 @@
 !! @param eeel  electron-electron interaction energy
 !! @param eexc  exchange-correlation correction to the eigenvalue sum
 !! @param vion  V_ion
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, mxstate, mxl, mxlin, mxkap
  use pieces_m, only: piecewise_t
@@ -322,6 +328,7 @@
 
 !Output variables
  real(dp), intent(out) :: vion(mmax)
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp), parameter :: tol=1.0d-10
@@ -334,6 +341,7 @@
  real(dp) :: ra,rb,change,sn,sd
  integer :: ii,l1,ik,iter
 
+ ifail=0
  allocate(ww(mmax),vp0(mmax,mxl+2,nkap),vnew(mmax),vnext(mmax,nkap),vsw(mmax))
 
  call ionic_tail(zz,zion,rhoc,rhotae,rhomod,rr,mmax,iexc,vion)
@@ -348,7 +356,8 @@
  end do
  do iter=1,maxiter
    call ionic_valence(nkap,nc,nv,la,fa,ea,lloc,nproj,rr,vp,vlocpw,vkbpw, &
-&                     evkb,mmax,mxprj,rho,rhops,uupsa,eeig)
+&                     evkb,mmax,mxprj,rho,rhops,uupsa,eeig,ifail)
+   if(ifail/=0) return
    call vout(1,rho,rhomod,vo,vxc,zval,eeel,eexc,rr,mmax,iexc)
 ! change of the local potential where the valence electrons are; once it
 ! is below tolfix, vp is kept as the potential whose states rho, eeig and
@@ -368,7 +377,8 @@
      write(6,'(/a,i4,a,1p,e10.2)') &
 &          'ionic_screening: ERROR the ionic tail did not converge in', &
 &          maxiter,' steps, change =',change
-     error stop 1
+     ifail=1
+     return
    end if
    vp(:,lloc+1,:)=vnext(:,:)
  end do

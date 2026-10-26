@@ -28,7 +28,8 @@
  subroutine run_config_ps(jj,istcnf,ierrcnf,itcnf,kerrcnf,nvtcnf, &
 &                         natcnf,latcnf,fatcnf,eatcnf,etstcnf,nc,rhov,rhomod, &
 &                         rr,rcmax,mmax,mxprj,iexc,etot,epstot,nproj,vpuns, &
-&                         lloc,vlocpw,vkbpw,evkb,irel,nkap,ntc,itc,etc,dtc)
+&                         lloc,vlocpw,vkbpw,evkb,irel,nkap,ntc,itc,etc,dtc, &
+&                         ifail)
 
 !! self-consistent pseudoatom calculation for test configuration jj, compared
 !! with the all-electron results for the reference and test configurations
@@ -65,6 +66,7 @@
 !! @param dtc  the all-electron and pseudo total-energy differences from
 !!             the reference configuration and their difference, the
 !!             excitation error (Ha) (output)
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use config_ae_m, only: config_ae_warning
  use constants_m, only: dp, mxstate, mxcnf, mxl, mxlin, nrhomod, nlev
@@ -93,6 +95,7 @@
 !Output variables
  integer, intent(out) :: ntc,itc(3,2*mxstate)
  real(dp), intent(out) :: etc(3,2*mxstate),dtc(3)
+ integer, intent(out) :: ifail
 
 !Local variables
  integer :: ii,it,kk,ll,l1,ierr,nvt
@@ -104,6 +107,7 @@
 
  real(dp),allocatable :: rho(:),rhocps(:),vfree(:)
 
+ ifail=0
 ! atom tests comparing reference state and excited configuration for
 ! all-electron and pseudo atoms.  Total excitation energies and excited-
 ! -configuration eigenvalues are compared
@@ -172,7 +176,8 @@
 
  call psatom(natp,latp,eatp,fatp,nvt,it,rhocps,rho, &
 &           rr,rcmax,mmax,mxprj,iexc,etsttot,nproj,vpuns,lloc, &
-&           vlocpw,vkbpw,evkb,ierr,nkap,vfree)
+&           vlocpw,vkbpw,evkb,ierr,nkap,vfree,ifail)
+ if(ifail/=0) return
 
  if(ierr/=0) then
    if(irel==2) then
@@ -199,7 +204,8 @@
 
  call psatom(natp,latp,eatp,fatp,nvt,it,rhocps,rho, &
 &           rr,rcmax,mmax,mxprj,iexc,etsttot,nproj,vpuns,lloc, &
-&           vlocpw,vkbpw,evkb,ierr,nkap,vfree)
+&           vlocpw,vkbpw,evkb,ierr,nkap,vfree,ifail)
+ if(ifail/=0) return
 
  if(ierr/=0) then
    if(irel==2) then

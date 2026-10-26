@@ -51,6 +51,7 @@
  real(dp) :: eaw(mxstate,2),rpk(mxstate,2),eterm(4),res,ea_ps(mxstate,2)
  real(dp), allocatable :: vext(:),rhoc(:),rhoa(:),vi(:),vpuns(:,:),rhops(:)
  real(dp), allocatable :: eigae(:,:,:),eigps(:,:,:)
+ integer :: ifail
 
  kwall(0)=0.0d0
  nkap=pf%nkap
@@ -91,7 +92,8 @@
    ierrae=0
    call aeatom(irel,nkap,na,la,eaw(:,1:nkap),fa,rpk(:,1:nkap),nc,nc+nv, &
 &              itae,rhoc,rhoa,rr,vi,zz,mmax,iexc,etae(ik),eterm,res,ierrae, &
-&              vext,.true.)
+&              vext,.true.,ifail)
+   if(ifail/=0) error stop 1
    eigae(:,:,ik)=eaw(:,:)
    if(ik==0 .or. ierrps/=0) then
      rhops(:)=pf%rhov(:)
@@ -101,7 +103,8 @@
    call psatom(na_ps,la_ps,ea_ps(:,1:nkap),fa_ps,nv,itps,pf%rhomod,rhops, &
 &              rr,pf%rcmax,mmax,mxprj,iexc,etps(ik),nprj,vpuns,pf%lloc, &
 &              pf%vlocpw,pf%vkbpw(:,:,1:nkap),pf%evkb(:,:,1:nkap),ierrps, &
-&              nkap,vext)
+&              nkap,vext,ifail)
+   if(ifail/=0) error stop 1
    eigps(1:nv,:,ik)=ea_ps(1:nv,:)
    if(ierrae/=0) write(6,'(a,1p,e24.16,a)') 'wall_failed',kwall(ik),' ae'
    if(ierrps/=0) write(6,'(a,1p,e24.16,a)') 'wall_failed',kwall(ik),' ps'

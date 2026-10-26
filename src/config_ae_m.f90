@@ -48,7 +48,7 @@
  contains
 
  subroutine aeatom_cached(irel,nkap,na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&                         rr,vi,zz,mmax,iexc,etot,eterm,res,ierr)
+&                         rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,ifail)
 
 !! aeatom, or the copy of its earlier solution with the same inputs. The
 !! reference configuration recurs as test configuration 0, at both levels
@@ -75,11 +75,13 @@
  integer, intent(out) :: it
  real(dp), intent(out) :: etot,eterm(4),res
  real(dp), intent(out) :: rho(mmax),rhoc(mmax),vi(mmax)
+ integer, intent(out) :: ifail
 
 !Local variables
  integer :: ii
  real(dp), allocatable :: vfree(:)
 
+ ifail=0
  do ii=1,nae_cache
    associate(ce=>ae_cache(ii))
      if(ce%irel/=irel .or. ce%nkap/=nkap .or. ce%nc/=nc .or. &
@@ -105,7 +107,8 @@
  allocate(vfree(mmax))
  vfree(:)=0.0d0
  call aeatom(irel,nkap,na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&            rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vfree,.false.)
+&            rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vfree,.false.,ifail)
+ if(ifail/=0) return
  deallocate(vfree)
  if(ierr/=0 .or. nae_cache==size(ae_cache)) return
 
@@ -137,7 +140,8 @@
 
  subroutine run_config_ae(jj,nacnf,lacnf,facnf,nc,nvcnf,rr,zz, &
 &                         mmax,iexc,ea,irel,nkap,istcnf,ierrcnf,itcnf, &
-&                         kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
+&                         kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf, &
+&                         ifail)
 
 !! solves the all-electron atom in the maximally-ionized and excited states
 !! of test configuration jj, the all-electron half of the test-configuration
@@ -177,6 +181,7 @@
 !!                reference, maximally-ionized, excited, all config.
 !! @param etstcnf  all-electron total energy of the excited configuration, all
 !!                 config.
+!! @param ifail  0, or 1 after a failure, whose message is written
 !!
 !! Only the column jj of istcnf through etstcnf is set.
 
@@ -196,6 +201,9 @@
  real(dp), intent(inout) :: eatcnf(mxstate,nkap,nlev,mxcnf)
  real(dp), intent(inout) :: etstcnf(mxcnf)
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
  integer :: ii,it,kk,ll,ierr,mch,nvt
  integer :: ikap,kap,mkap
@@ -207,6 +215,7 @@
  real(dp),allocatable :: rho(:),rhoc(:),vfull(:)
  real(dp),allocatable :: uu(:,:),up(:,:)
 
+ ifail=0
  allocate(rho(mmax),rhoc(mmax),vfull(mmax))
  allocate(uu(mmax,2),up(mmax,2))
 
@@ -275,7 +284,8 @@
 
  call aeatom_cached(irel,nkap,nat,lat,eat(1,1,2),fat(1,2),rpk,nc, &
 &                   nc+nvt,it,rhoc,rho,rr,vfull,zz,mmax,iexc,eaetst,eterm, &
-&                   res,ierr)
+&                   res,ierr,ifail)
+ if(ifail/=0) return
  if(ierr/=0) then
    call store_results
    istcnf(jj)=1
@@ -297,7 +307,8 @@
      do ikap=1,mkap
        kap=kap_of(ll,ikap)
        call boundstate(irel,nat(kk),ll,kap,ierr,et, &
-&                      rr,zz,vfull,uu,up,mmax,mch)
+&                      rr,zz,vfull,uu,up,mmax,mch,ifail)
+       if(ifail/=0) return
 !a negative ierr (no classical turning point) is accepted for j=l-1/2
        if(ierr>0 .or. (ierr/=0 .and. ikap==1)) then
          call store_results
@@ -322,7 +333,8 @@
 
  call aeatom_cached(irel,nkap,nat,lat,eat(1,1,3),fat(1,3),rpk,nc, &
 &                   nc+nvt,it,rhoc,rho,rr,vfull,zz,mmax,iexc,eaetst,eterm, &
-&                   res,ierr)
+&                   res,ierr,ifail)
+ if(ifail/=0) return
  if(ierr/=0) then
    call store_results
    istcnf(jj)=1

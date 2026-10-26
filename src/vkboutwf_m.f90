@@ -25,7 +25,7 @@
 
  contains
 
- subroutine vkboutwf(ll,nvkb,ep,vkbpw,evkb,rr,vloc,vlocpw,uu,up,mmax,mch)
+ subroutine vkboutwf(ll,nvkb,ep,vkbpw,evkb,rr,vloc,vlocpw,uu,up,mmax,mch,ifail)
 
 !! computes Vanderbilt / Kleinman-Bylander outward-integrated wave functions:
 !! the homogeneous solution of the local potential plus the inhomogeneous
@@ -48,6 +48,7 @@
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param mmax  dimension of log mesh
 !! @param mch  index of radius to which wave function is to be integrated
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
  use pieces_m, only: piecewise_t
@@ -62,12 +63,16 @@
 
 !Output variables
  real(dp), intent(out) :: uu(mmax),up(mmax)
+ integer, intent(out) :: ifail
 
 !Local variables
  type(outwf_t) :: ow
 
- call outwf_setup(ll,rr,mmax,vloc,vlocpw,nvkb,vkbpw,ow)
- call outwf_solve(ow,ep,evkb,mch,mch,uu,up)
+ ifail=0
+ call outwf_setup(ll,rr,mmax,vloc,vlocpw,nvkb,vkbpw,ow,ifail)
+ if(ifail/=0) return
+ call outwf_solve(ow,ep,evkb,mch,mch,uu,up,ifail=ifail)
+ if(ifail/=0) return
  call outwf_free(ow)
  return
  end subroutine vkboutwf

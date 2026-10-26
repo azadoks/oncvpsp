@@ -52,14 +52,16 @@
    integer, intent(in) :: mch,mlast
    end function bs_outward
 
-   subroutine bs_match(ee,mch,nin,lo,hi,de)
+   subroutine bs_match(ee,mch,nin,lo,hi,de,ifail)
 !! the inward solution from nin, matched to the outward one across the
-!! window lo..hi around mch and normalized; de, the energy correction
+!! window lo..hi around mch and normalized; de, the energy correction;
+!! ifail, 0 or 1 after a failure, whose message is written
    import :: dp
    implicit none
    real(dp), intent(in) :: ee
    integer, intent(in) :: mch,nin,lo,hi
    real(dp), intent(out) :: de
+   integer, intent(out) :: ifail
    end subroutine bs_match
 
    subroutine bs_box(elow,etop,ee)
@@ -262,7 +264,7 @@
  end subroutine bs_turning_point
 
  subroutine bs_solve(nn,ll,rr,vv,mmax,eps,setup,outward,match,box, &
-&                    ee,emin,emax,mch,ierr)
+&                    ee,emin,emax,mch,ierr,ifail)
 
 !! the energy iteration of the all-electron bound-state solvers: from ee
 !! in the bracket emin..emax, the turning point, the outward solution and
@@ -288,6 +290,7 @@
 !! @param emin,emax  the bracket
 !! @param mch  the matching point, mmax for the box state
 !! @param ierr  0 converged, 10 box state, 60 not converged in 60 passes
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use match_m, only: match_k
  use inward_start_m, only: inward_start
@@ -305,12 +308,14 @@
 
 !Output variables
  integer, intent(out) :: mch,ierr
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp) :: de,deprev,etop,elow
  integer :: nint,node,nin,lo,hi
  logical :: polish
 
+ ifail=0
  deprev=huge(1.0d0)
  polish=.false.
  ierr=60
@@ -370,7 +375,8 @@
 
    else if(node-nn+ll+1==0) then
 
-     call match(ee,mch,nin,lo,hi,de)
+     call match(ee,mch,nin,lo,hi,de,ifail)
+     if(ifail/=0) return
 
 ! convergence test and possible exit
      if(bs_converged(de,deprev,ee,eps,polish)) then

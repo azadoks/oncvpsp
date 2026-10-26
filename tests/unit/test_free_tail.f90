@@ -22,6 +22,7 @@
  implicit none
 
 !Local variables
+ integer :: ifail
  real(dp), parameter :: pi = 3.14159265358979323846_dp
  real(dp), parameter :: rc = 2.0_dp, qcut = 5.0_dp, qmax = 20.0_dp
  integer, parameter :: mmax = 2000
@@ -44,8 +45,10 @@
  uu(:) = sin(kk*rr)
  up(:) = al*rr*kk*cos(kk*rr)
  call free_tail(0, 0, -1, ee, rr, vv, uu, up, mmax, rc, qcut, hh, nr, &
-&               ulin, dlin)
- call free_tail_width(qcut, ee, wl)
+&               ulin, dlin, ifail=ifail)
+ if(ifail /= 0) error stop 1
+ call free_tail_width(qcut, ee, wl, ifail)
+ if(ifail /= 0) error stop 1
  r0 = rc + 6.0_dp*wl
  err = 0.0_dp
  do ii = 1, nr
@@ -75,7 +78,8 @@
 
 ! leakage
  call free_tail(0, 0, -1, ee, rr, vv, uu, up, mmax, rc, qcut, hh, n2, &
-&               u2, d2, 2.0_dp)
+&               u2, d2, 2.0_dp, ifail=ifail)
+ if(ifail /= 0) error stop 1
  call check('leakage sin(k r)', leak(), 1.0e-13_dp)
 
 ! growing
@@ -84,9 +88,11 @@
  uu(:) = sinh(kp*rr)
  up(:) = al*rr*kp*cosh(kp*rr)
  call free_tail(0, 0, -1, ee, rr, vv, uu, up, mmax, rc, qcut, hh, nr, &
-&               ulin, dlin)
+&               ulin, dlin, ifail=ifail)
+ if(ifail /= 0) error stop 1
  call free_tail(0, 0, -1, ee, rr, vv, uu, up, mmax, rc, qcut, hh, n2, &
-&               u2, d2, 1.1_dp)
+&               u2, d2, 1.1_dp, ifail=ifail)
+ if(ifail /= 0) error stop 1
  call check('leakage sinh(kappa r)', leak(), 1.0e-13_dp)
 
 ! width
@@ -109,10 +115,14 @@
 
  real(dp), intent(in) :: hd
  real(dp) :: lm, l0, lp
+ integer :: ifail
 
- call free_tail_width(qcut, -hd, lm)
- call free_tail_width(qcut, 0.0_dp, l0)
- call free_tail_width(qcut, hd, lp)
+ call free_tail_width(qcut, -hd, lm, ifail)
+ if(ifail /= 0) error stop 1
+ call free_tail_width(qcut, 0.0_dp, l0, ifail)
+ if(ifail /= 0) error stop 1
+ call free_tail_width(qcut, hd, lp, ifail)
+ if(ifail /= 0) error stop 1
  second = (lm - 2.0_dp*l0 + lp)/hd**2
  end function second
 

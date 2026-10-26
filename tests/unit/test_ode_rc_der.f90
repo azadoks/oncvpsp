@@ -111,12 +111,15 @@
 !! @param irel  0 non-, 1 scalar-relativistic
 
  integer, intent(in) :: irel
+ integer :: ifail
 
  ee = -0.5_dp
  uu(:, :) = 0.0_dp
  up(:, :) = 0.0_dp
  mch = 0
- call boundstate(irel, 1, 0, -1, ierr, ee, rr, 1.0_dp, vv, uu, up, mmax, mch)
+ call boundstate(irel, 1, 0, -1, ierr, ee, rr, 1.0_dp, vv, uu, up, mmax, mch, &
+&      ifail)
+ if(ifail /= 0) error stop 1
  if(ierr /= 0) then
    write(stderr, '(a,i0,a,i0)') 'FAILED: irel ', irel, &
 &    ' 1s: boundstate ierr ', ierr

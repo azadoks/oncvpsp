@@ -29,7 +29,7 @@
 
  subroutine psatom(na,la,ea,fat,nv,it,rhoc,rho, &
 &           rr,rcmax,mmax,mxprj,iexc,etot,nproj,vpuns,lloc,vlocpw,vkbpw, &
-&           evkb,ierr,nkap,vext)
+&           evkb,ierr,nkap,vext,ifail)
 
 !! @param na  principal quantum number array, dimension nv
 !! @param la  angular-momenta
@@ -63,6 +63,7 @@
 !!              ramped in with the occupations, and the eigenvalues, which
 !!              it can raise above 0, are bracketed around their last
 !!              values in place of 10 % of them
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, mxstate, mxl, mxlin
  use kappa_m, only: kap_count, kap_of, j_share
@@ -91,6 +92,7 @@
  integer, intent(out) :: ierr
  integer, intent(out) :: it
  real(dp), intent(out) :: etot
+ integer, intent(out) :: ifail
 
 !Local variables
  integer :: okb
@@ -128,6 +130,7 @@
  integer, parameter :: nwramp=10
  real(dp) :: etol
 
+ ifail=0
  ierr=0
 
  allocate(uu(mmax),up(mmax))
@@ -219,7 +222,8 @@
        end if
        call lschvkbb_tol(na(ii),la(ii),nproj(l1),ierr,et,emin,emax, &
 &                       rr,vtot,vlocpw,vkbpw(1:nproj(l1),l1,ikap), &
-&                       evkb(1,l1,ikap),uu,up,mmax,mch,etol)
+&                       evkb(1,l1,ikap),uu,up,mmax,mch,etol,ifail)
+       if(ifail/=0) return
 
        if(ierr /= 0) then
          if(nkap==2) then

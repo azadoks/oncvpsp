@@ -25,7 +25,7 @@
 
  contains
 
- subroutine renorm_r(uu,rr,ll,kap,zz,mmax,cnorm)
+ subroutine renorm_r(uu,rr,ll,kap,zz,mmax,cnorm,ifail)
 
 !! renormalize Dirac wave function so that large component is normalized
 !!
@@ -36,6 +36,7 @@
 !! @param zz  atomic number
 !! @param mmax  size of radial grid
 !! @param cnorm  renormalization coefficient
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
  use relativity_m, only: c_light
@@ -52,6 +53,7 @@
 
 !Output variables
  real(dp), intent(out) :: cnorm
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp) :: sn
@@ -59,6 +61,7 @@
  real(dp) :: gam,cc,cci
  integer :: ii,nin
 
+ ifail=0
  al = 0.01d0 * log(rr(101)/rr(1))
  amesh = exp(al)
 
@@ -77,7 +80,8 @@
  if(nin<4) then
    write(6,'(/a,i0,a,i0)') 'renorm_r: ERROR wave function is zero, ll=',ll, &
 &        ', kap=',kap
-   error stop 1
+   ifail=1
+   return
  end if
 
  sn=log_norm(rr,uu(1:nin,1)**2,nin,ll,gam)

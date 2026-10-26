@@ -1884,7 +1884,7 @@
  end function xc_error
 
  subroutine modcore_probes(lmax,lloc,nproj,epa,wellprj,vp,vlocpw,vkbpw, &
-&                         evkb,rr,mmax,mxprj,nkap,probes,lprobe,nprobe)
+&                         evkb,rr,mmax,mxprj,nkap,probes,lprobe,nprobe,ifail)
 
 !! the probe densities of the hardness of icmod=7: for every projector
 !! iprj of every l, the eigenstate with iprj-1 nodes of the screened
@@ -1912,6 +1912,7 @@
 !! @param probes  probe densities, (u/r)**2 normalized to one electron
 !! @param lprobe  angular momenta of the probes
 !! @param nprobe  number of probes
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, mxl, mxlin
  use kappa_m, only: kap_count
@@ -1931,6 +1932,7 @@
  real(dp), intent(out) :: probes(mmax,mxprj*(lmax+1))
  integer, intent(out) :: lprobe(mxprj*(lmax+1))
  integer, intent(out) :: nprobe
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp), allocatable :: uu(:),up(:),dens(:)
@@ -1938,6 +1940,7 @@
  integer :: l1,ll,iprj,ikap,mkap,npr,ierr,mch
  logical :: bound
 
+ ifail=0
  allocate(uu(mmax),up(mmax),dens(mmax))
  nprobe=0
  do l1=1,lmax+1
@@ -1964,7 +1967,8 @@
        end if
        call lschvkbb(ll+iprj,ll,npr,ierr,et,emin,emax, &
 &                    rr,vp(1,lloc+1,ikap),vlocpw,vkbpw(1:npr,l1,ikap), &
-&                    evkb(1,l1,ikap),uu,up,mmax,mch)
+&                    evkb(1,l1,ikap),uu,up,mmax,mch,ifail)
+       if(ifail/=0) return
        if(ierr/=0 .or. et>=0.0d0) then
          bound=.false.
          exit

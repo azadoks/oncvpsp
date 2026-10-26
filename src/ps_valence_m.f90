@@ -31,7 +31,7 @@
 
  subroutine valence_densities(irel,nkap,nc,nv,na,la,fa,ea,it,lloc,nproj, &
 &                             rr,zz,vfull,vp,vlocpw,vkbpw,evkb,mmax,uu,up, &
-&                             uupsa,eeig,zval,rho,rhops,rhoae,rhotae)
+&                             uupsa,eeig,zval,rho,rhops,rhoae,rhotae,ifail)
 !! the valence states, all-electron (in vfull) and pseudo (with the VKB
 !! projectors, for the most consistent unscreening), state by state: their
 !! densities rhoae and rhops (of the share of each J when fully
@@ -51,7 +51,9 @@
  real(dp), intent(out) :: rhops(mmax,nv),rhoae(mmax,nv),rhotae(mmax)
  integer :: nodes(mxl+1),kk,ll,l1,mkap,ikap,kap,ierr,mch
  real(dp) :: fj,et,emin,emax
+ integer, intent(out) :: ifail
 
+ ifail=0
 ! null charge and eigenvalue accumulators
  uupsa(:,:,:)=0.0d0
  eeig=0.0d0
@@ -74,7 +76,8 @@
      et=ea(nc+kk,ikap)
 
      call boundstate(irel,na(nc+kk),ll,kap,ierr,et, &
-&                    rr,zz,vfull,uu,up,mmax,mch)
+&                    rr,zz,vfull,uu,up,mmax,mch,ifail)
+     if(ifail/=0) return
      if(ierr /= 0) then
        if(irel==2) then
          write(6,'(a,i2,a,i2,a,i2,a,i4)') &
@@ -85,7 +88,8 @@
 &              'oncvpsp-461: lschfb convergence ERROR n,l,iter=', &
 &              na(nc+kk),la(nc+kk),it
        end if
-       error stop 1
+       ifail=1
+       return
      end if
 
      if(irel==2) then
@@ -100,7 +104,8 @@
 
      call lschvkbb(ll+nodes(l1)+1,ll,nproj(l1),ierr,et,emin,emax, &
 &                  rr,vp(1,lloc+1,ikap),vlocpw,vkbpw(1:nproj(l1),l1,ikap), &
-&                  evkb(1,l1,ikap),uu,up,mmax,mch)
+&                  evkb(1,l1,ikap),uu,up,mmax,mch,ifail)
+     if(ifail/=0) return
      if(ierr /= 0) then
        if(irel==2) then
          write(6,'(a,i2,a,i2)') 'oncvpsp_r: lschvkbb convergence ERROR, n=',&
@@ -113,7 +118,8 @@
 &             'a bound ghost of the projectors'
          flush(6)
        end if
-       error stop 1
+       ifail=1
+       return
      end if
 
 ! save valence pseudo wave functions for upfout

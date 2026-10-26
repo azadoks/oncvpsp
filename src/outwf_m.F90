@@ -102,7 +102,7 @@
 
  contains
 
- subroutine outwf_setup(ll,rr,mmax,vloc,vlocpw,nsrc,srcpw,ow)
+ subroutine outwf_setup(ll,rr,mmax,vloc,vlocpw,nsrc,srcpw,ow,ifail)
 
 !! the segments and their grids, with the potential and the sources on
 !! them: everything that does not depend on the energy
@@ -117,6 +117,7 @@
 !! @param nsrc  number of sources
 !! @param srcpw  the sources' pieces, all with the same bounds
 !! @param ow  the setup
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  integer, intent(in) :: ll,mmax,nsrc
@@ -125,6 +126,7 @@
 
 !Output variables
  type(outwf_t), intent(out), target :: ow
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp), allocatable :: vs(:),vn(:),fpiece(:)
@@ -132,6 +134,7 @@
  integer :: kk,nbrk,nseg,npt,nsol
  type(og_seg_t), pointer :: sg
 
+ ifail=0
  allocate(vs(mmax),vn(mmax),fpiece(mmax))
  ow%ll=ll
  ow%mmax=mmax
@@ -150,7 +153,8 @@
 
 ! the breakpoints: the bounds of the potential and of the sources inside
 ! the mesh, in order, each once, and the segments between them
- call breakpoints()
+ call breakpoints(ifail)
+ if(ifail/=0) return
 
  do kk=1,nseg
    sg=>ow%seg(kk)
@@ -163,16 +167,19 @@
    if(sg%ipv==0) then
      write(6,'(a)') &
 &          'outwf_setup: ERROR the potential''s pieces end inside the mesh'
-     error stop 1
+     ifail=1
+     return
    end if
    sg%ipb=0
    if(nsrc>0) sg%ipb=pw_segment(srcpw(1),rm)
    fpiece(:)=vlocpw%vals(:,sg%ipv)+vs(:)
 
    if(kk==1) then
-     call first_grid()
+     call first_grid(ifail)
+     if(ifail/=0) return
    else
-     call later_grid(kk)
+     call later_grid(kk,ifail)
+     if(ifail/=0) return
    end if
    allocate(sg%uu(0:npt-1,nsol),sg%up(0:npt-1,nsol),sg%upp(0:npt-1,nsol))
    sg%uu(:,:)=0.0d0
@@ -185,14 +192,18 @@
 
  contains
 
- subroutine breakpoints()
+ subroutine breakpoints(ifail)
 
 !! the bounds of the potential and of the sources inside the mesh, in
 !! order, each once (brk, nbrk), and the segments between them
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
  integer :: ii,jj,kk
 
+ ifail=0
  nbrk=0
  do kk=1,vlocpw%nseg
    call add_break(vlocpw%bound(kk))
@@ -223,7 +234,8 @@
  end do
  if(nbrk>og_maxseg-1) then
    write(6,'(a,i0)') 'outwf_setup: ERROR too many breakpoints ',nbrk
-   error stop 1
+   ifail=1
+   return
  end if
  nseg=nbrk+1
  ow%nseg=nseg
@@ -235,14 +247,18 @@
  return
  end subroutine breakpoints
 
- subroutine first_grid()
+ subroutine first_grid(ifail)
 
 !! the first segment's grid: the nodes up to the first bound and og_ext
 !! beyond (all of them for one segment)
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
  integer :: jj,i1
 
+ ifail=0
  sg%t0=0.0d0
  if(nseg>1) then
    sg%tend=log(ow%bound(1)/rr(1))/al
@@ -251,14 +267,16 @@
      write(6,'(a,es12.4)') &
 &              'outwf_setup: ERROR breakpoint below the 4th node, r=', &
 &              ow%bound(1)
-     error stop 1
+     ifail=1
+     return
    end if
    npt=min(mmax,ceiling(sg%tend)+og_ext+1)
    if(npt-1<ceiling(sg%tend)+og_ext) then
      write(6,'(a,es12.4)') &
 &              'outwf_setup: ERROR breakpoint too close to the mesh end, r=', &
 &              ow%bound(1)
-     error stop 1
+     ifail=1
+     return
    end if
  else
    sg%tend=plast
@@ -281,7 +299,7 @@
  return
  end subroutine first_grid
 
- subroutine later_grid(kk)
+ subroutine later_grid(kk,ifail)
 
 !! the grid of segment kk>1: from the bound, the mesh step, to og_ext past
 !! the next bound or to the mesh end
@@ -289,9 +307,13 @@
 !Input variables
  integer, intent(in) :: kk
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
  integer :: jj
 
+ ifail=0
  sg%t0=log(ow%bound(kk-1)/rr(1))/al
  if(kk<nseg) then
    sg%tend=log(ow%bound(kk)/rr(1))/al-sg%t0
@@ -305,13 +327,15 @@
    write(6,'(a,es12.4)') &
 &            'outwf_setup: ERROR breakpoint too close to the mesh end, r=', &
 &            ow%bound(kk)
-   error stop 1
+   ifail=1
+   return
  end if
  if(sg%t0+nprime>plast) then
    write(6,'(a,es12.4)') &
 &            'outwf_setup: ERROR breakpoint too close to the mesh end, r=', &
 &            ow%bound(kk-1)
-   error stop 1
+   ifail=1
+   return
  end if
  sg%npt=npt
  allocate(sg%rg(0:npt-1),sg%cv(0:npt-1),sg%r2(0:npt-1))
@@ -853,7 +877,7 @@
  return
  end function outwf_count
 
- integer function outwf_index(ow,evkb,ovl,mnode)
+ integer function outwf_index(ow,evkb,ovl,mnode,ifail)
 
 !! the number of eigenvalues below the energy of the last outwf_integrate
 !! of the radial equation with the projectors of coefficients evkb on
@@ -879,12 +903,16 @@
 !! @param evkb  the projectors' coefficients
 !! @param ovl  the overlaps of outwf_overlaps
 !! @param mnode  the last mesh point counted
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  use lapack_m, only: dsyev
  type(outwf_t), intent(in), target :: ow
  real(dp), intent(in) :: evkb(ow%nsrc),ovl(ow%nsrc+1,ow%nsrc)
  integer, intent(in) :: mnode
+
+!Output variables
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp), allocatable :: mm(:,:),ev(:),fr(:),work(:)
@@ -894,6 +922,7 @@
  logical :: have
  type(og_seg_t), pointer :: sg
 
+ ifail=0
 ! the node count of phi_1 to R, as outwf_count, and the point R
  nloc=0
  pm=dble(mnode-1)
@@ -925,7 +954,8 @@
  if(rlast<ow%rsrc) then
    write(6,'(/a,1p,2e14.6)') 'outwf_index: ERROR R inside the sources,'// &
 &       ' R, rsrc=',rlast,ow%rsrc
-   error stop 1
+   ifail=1
+   return
  end if
 
  nact=count(evkb/=0.0d0)
@@ -947,7 +977,8 @@
  call dsyev('N','U',nact,mm,nact,ev,work,size(work),info)
  if(info/=0) then
    write(6,'(/a,i4)') 'outwf_index: dsyev ERROR, stopping info =',info
-   error stop 1
+   ifail=1
+   return
  end if
  outwf_index=nloc+count(ev<0.0d0)-count(evkb(isrc)>0.0d0)
  deallocate(mm,ev,fr,isrc,work)
@@ -955,7 +986,7 @@
  end function outwf_index
 
  integer function outwf_index_at(ll,rr,mmax,vloc,vlocpw,nsrc,srcpw,evkb, &
-&                                ee,mnode)
+&                                ee,mnode,ifail)
 
 !! outwf_index of the solution at the energy ee, on its own setup
 !!
@@ -969,25 +1000,32 @@
 !! @param evkb  the projectors' coefficients
 !! @param ee  energy (Ha)
 !! @param mnode  the last mesh point counted
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  integer, intent(in) :: ll,mmax,nsrc,mnode
  real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nsrc),ee
  type(piecewise_t), intent(in) :: vlocpw,srcpw(nsrc)
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
  type(outwf_t) :: ow
  real(dp), allocatable :: uu(:),up(:)
 
+ ifail=0
  allocate(uu(mmax),up(mmax))
- call outwf_setup(ll,rr,mmax,vloc,vlocpw,nsrc,srcpw,ow)
- call outwf_solve(ow,ee,evkb,mnode,mnode,uu,up,outwf_index_at)
+ call outwf_setup(ll,rr,mmax,vloc,vlocpw,nsrc,srcpw,ow,ifail)
+ if(ifail/=0) return
+ call outwf_solve(ow,ee,evkb,mnode,mnode,uu,up,outwf_index_at,ifail=ifail)
+ if(ifail/=0) return
  call outwf_free(ow)
  deallocate(uu,up)
  return
  end function outwf_index_at
 
- subroutine outwf_solve(ow,ep,evkb,mch,mnode,uu,up,neig)
+ subroutine outwf_solve(ow,ep,evkb,mch,mnode,uu,up,neig,ifail)
 
 !! the outward solution with the sources as Vanderbilt-Kleinman-Bylander
 !! projectors of coefficients evkb: the homogeneous solution plus the
@@ -1005,6 +1043,7 @@
 !! @param up  its derivative in the mesh index
 !! @param neig  optional, the number of eigenvalues below ep on
 !!              (0, r(mnode)] (outwf_index)
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input/output variables
  use lapack_m, only: dgesv
@@ -1017,18 +1056,23 @@
 !Output variables
  real(dp), intent(out) :: uu(ow%mmax),up(ow%mmax)
  integer, intent(out), optional :: neig
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp), allocatable :: gg(:,:),gg0(:),ovl(:,:)
  integer, allocatable :: ipiv(:)
  integer :: ii,jj,info,nsrc
 
+ ifail=0
  nsrc=ow%nsrc
  call outwf_integrate(ow,ep,mch)
  if(nsrc>0) then
    allocate(gg(nsrc,nsrc),gg0(nsrc),ipiv(nsrc),ovl(nsrc+1,nsrc))
    call outwf_overlaps(ow,ovl)
-   if(present(neig)) neig=outwf_index(ow,evkb,ovl,mnode)
+   if(present(neig)) then
+     neig=outwf_index(ow,evkb,ovl,mnode,ifail)
+     if(ifail/=0) return
+   end if
    do jj=1,nsrc
      gg0(jj)=evkb(jj)*ovl(1,jj)
      do ii=1,nsrc
@@ -1039,14 +1083,16 @@
    call dgesv(nsrc,1,gg,nsrc,ipiv,gg0,nsrc,info)
    if(info/=0) then
      write(6,'(/a,i4)') 'outwf_solve: dgesv ERROR, stopping info =',info
-     error stop 1
+     ifail=1
+     return
    end if
    call outwf_combine(ow,gg0)
    deallocate(gg,gg0,ipiv,ovl)
  end if
  if(nsrc==0 .and. present(neig)) then
    allocate(ovl(1,0))
-   neig=outwf_index(ow,evkb,ovl,mnode)
+   neig=outwf_index(ow,evkb,ovl,mnode,ifail)
+   if(ifail/=0) return
    deallocate(ovl)
  end if
  call outwf_nodes(ow,1,mch,uu,up)

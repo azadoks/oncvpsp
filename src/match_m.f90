@@ -49,7 +49,7 @@
 
  contains
 
- subroutine match_point(rr,cf,mmax,mch,xm)
+ subroutine match_point(rr,cf,mmax,mch,xm,ifail)
 
 !! continuous mesh index xm in [mch-1,mch] of the root of the interpolant
 !! of cf, which changes sign from <=0 to >0 between rr(mch-1) and rr(mch)
@@ -59,6 +59,7 @@
 !! @param mmax  size of the log radial mesh
 !! @param mch  the mesh point just beyond the sign change
 !! @param xm  the continuous index of the root (1 at rr(1))
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  integer, intent(in) :: mmax,mch
@@ -66,20 +67,24 @@
 
 !Output variables
  real(dp), intent(out) :: xm
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp) :: rq,al
  integer :: ierr
 
+ ifail=0
  if(mch-1-match_k<2 .or. mch+match_k>mmax) then
    write(6,'(a,i6,a,i6)') 'match_point: ERROR matching window at mch=', &
 &        mch,' leaves the mesh, mmax=',mmax
-   error stop 1
+   ifail=1
+   return
  end if
  call lm_root(rr,cf,mmax,rr(mch-1),rr(mch),rq,ierr)
  if(ierr/=0) then
    write(6,'(a,i6)') 'match_point: ERROR no sign change below mch=',mch
-   error stop 1
+   ifail=1
+   return
  end if
  al=log(rr(mch)/rr(mch-1))
  xm=dble(mch-1) + log(rq/rr(mch-1))/al

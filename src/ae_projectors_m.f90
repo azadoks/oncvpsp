@@ -35,7 +35,8 @@
  contains
 
  subroutine ae_bound_projectors(irel,ll,kap,ikap,nc,nv,na,la,ea,nproj,it, &
-&                               rr,zz,vfull,mmax,uu,up,iprj,epa,npa,uua,upa)
+&                               rr,zz,vfull,mmax,uu,up,iprj,epa,npa,uua,upa, &
+&                               ifail)
 !! the bound valence states of l (at most nproj), the first iprj
 !! projectors' states; and npa(1), the n above the highest core state of l
  use boundstate_m, only: boundstate
@@ -49,7 +50,9 @@
  integer, intent(inout) :: npa(mxprj)
  real(dp) :: et,cnorm
  integer :: kk,ierr,mch
+ integer, intent(out) :: ifail
 
+ ifail=0
  iprj=0
 !get principal quantum number for the highest core state for this l
  npa(1)=ll+1
@@ -64,7 +67,8 @@
        iprj=iprj+1
        et=ea(kk,ikap)
        call boundstate(irel,na(kk),ll,kap,ierr,et, &
-&                      rr,zz,vfull,uu,up,mmax,mch)
+&                      rr,zz,vfull,uu,up,mmax,mch,ifail)
+       if(ifail/=0) return
        if(ierr /= 0) then
          if(irel==2) then
            write(6,'(a,i2,a,i2,a,i2)') &
@@ -75,13 +79,15 @@
 &                'oncvpsp-387: lschfb convergence ERROR n,l,iter=', &
 &                na(kk),la(kk),it
          end if
-         error stop 1
+         ifail=1
+         return
        end if
 
        epa(iprj)=ea(kk,ikap)
        npa(iprj)=na(kk)
        if(irel==2) then
-         call renorm_r(uu,rr,ll,kap,zz,mmax,cnorm)
+         call renorm_r(uu,rr,ll,kap,zz,mmax,cnorm,ifail)
+         if(ifail/=0) return
        else
          cnorm=1.0d0
        end if
@@ -97,7 +103,7 @@
 &                              ep_as_given,well_onset,well_tail, &
 &                              well_norm_rc,rc,irc,qcut,rr,zz,vfull,mmax, &
 &                              uu,up,nnwell,iprj,epa,npa,uua,upa,vwell, &
-&                              inwell,wmesh)
+&                              inwell,wmesh,ifail)
 !! the well states of the projectors iprj+1 to nproj: the first at ep if
 !! there are no bound ones, the next ones debl above; their wells are
 !! those of ikap=1, kept for ikap=2 (vwell, wmesh). nnwell is the n of the
@@ -119,7 +125,9 @@
  real(dp) :: et,cnorm,eptgt
  integer :: kk,ierr,mch,mchx
  logical :: well_tail_free
+ integer, intent(out) :: ifail
 
+ ifail=0
  well_tail_free=well_tail==1
 !get all-electron well states for projectors
 !if there were no valence states, use ep from input data for 1st well state
@@ -141,7 +149,8 @@
 &            ' ERROR not allowed with 2 or more scattering states', &
 &            'program will stop'
      end if
-     error stop 1
+     ifail=1
+     return
    end if
 
 ! npa is not reset for ikap=2 to retain same node count for consistency with
@@ -159,7 +168,8 @@
        write(6,'(/a,i2,a,i3,a,i3)') 'oncvpsp: ERROR well_n for l=',ll, &
 &           ' is',well_n,', below the first well state''s n,', &
 &           npa(iprj)
-       error stop 1
+       ifail=1
+       return
      end if
      npa(iprj)=well_n
    end if
@@ -174,13 +184,15 @@
 &                   ep_as_given,well_onset,well_tail==2,.false.,rr, &
 &                   vfull, &
 &                   vwell(1,iprj),uu,up,zz,mmax,mch,irel, &
-&                   inwell(iprj),eptgt,wmesh(iprj))
+&                   inwell(iprj),eptgt,wmesh(iprj),ifail)
+     if(ifail/=0) return
    else if(ikap==1) then
      nnwell=npa(iprj)
      call wellstate(nnwell,ll,kap,rc,epa(iprj),ep_as_given, &
 &                   well_onset,well_tail==2,well_tail_free,rr,vfull, &
 &                   vwell(1,iprj),uu,up,zz,mmax,mch,irel, &
-&                   inwell(iprj),eptgt,wmesh(iprj))
+&                   inwell(iprj),eptgt,wmesh(iprj),ifail)
+     if(ifail/=0) return
    else
      et=epa(iprj)
      if(wmesh(iprj)%mx>0) then
@@ -190,13 +202,15 @@
        call boundstate(irel,npa(iprj),ll,kap,ierr, &
 &                      epa(iprj),wmesh(iprj)%rr,zz, &
 &                      wmesh(iprj)%vv,wmesh(iprj)%uu,wmesh(iprj)%up, &
-&                      wmesh(iprj)%mx,mchx)
+&                      wmesh(iprj)%mx,mchx,ifail)
+       if(ifail/=0) return
        uu(:,:)=wmesh(iprj)%uu(1:mmax,:)
        up(:,:)=wmesh(iprj)%up(1:mmax,:)
      else
        call boundstate(irel,npa(iprj),ll,kap,ierr, &
 &                      epa(iprj),rr,zz,vwell(1,iprj),uu,up, &
-&                      mmax,mch)
+&                      mmax,mch,ifail)
+       if(ifail/=0) return
      end if
 
      if(ierr /= 0) then
@@ -205,7 +219,8 @@
 &             npa(iprj),'  l=',ll, 'kap=',kap, ' epa=', &
 &             epa(iprj)
 
-       error stop 1
+       ifail=1
+       return
      end if
 
      write(6,'(/a,i3,a,i3,a,i3/a,f8.4)') &
@@ -216,10 +231,12 @@
 
    if(irel==2 .and. wmesh(iprj)%mx>0) then
      call renorm_r(wmesh(iprj)%uu,wmesh(iprj)%rr,ll,kap,zz, &
-&                  wmesh(iprj)%mx,cnorm)
+&                  wmesh(iprj)%mx,cnorm,ifail)
+     if(ifail/=0) return
      uu(:,:)=wmesh(iprj)%uu(1:mmax,:)
    else if(irel==2) then
-     call renorm_r(uu,rr,ll,kap,zz,mmax,cnorm)
+     call renorm_r(uu,rr,ll,kap,zz,mmax,cnorm,ifail)
+     if(ifail/=0) return
    else
      cnorm=1.0d0
    end if
@@ -243,13 +260,14 @@
      if(ikap==1) epa(iprj)=eptgt
      call free_tail_state(irel,ll,kap,ikap,nnwell,npa(iprj),epa(iprj), &
 &                         rc,irc,qcut,rr,zz,vfull,mmax,uu,up,uua(:,iprj), &
-&                         upa(:,iprj))
+&                         upa(:,iprj),ifail)
+     if(ifail/=0) return
    end if
  end do !kk
  end subroutine ae_well_projectors
 
  subroutine free_tail_state(irel,ll,kap,ikap,nnwell,nn,ee,rc,irc,qcut,rr, &
-&                           zz,vfull,mmax,uu,up,ua,pa)
+&                           zz,vfull,mmax,uu,up,ua,pa,ifail)
 !! with the free tail, a well state is the atom's solution at exactly the
 !! energy asked for (the well's eigenvalue only for j = l - 1/2, D-7c),
 !! integrated outward past the reach of everything taken at or near rc
@@ -269,6 +287,8 @@
  real(dp), intent(out) :: ua(mmax),pa(mmax)
  real(dp) :: cnorm
  integer :: mfree,ierr
+ integer, intent(out) :: ifail
+ ifail=0
  if(ikap==1 .and. ee<0.0d0) then
    write(6,'(/a/a,i2,a,i3,a,f12.6,a/a)') &
 &       'oncvpsp: ERROR well_tail = "free" needs ep >= 0:', &
@@ -276,7 +296,8 @@
 &       ee,' Ha has a growing tail;', &
 &       'raise its ep (debl), or use well_tail = "confined"'// &
 &       ' or "well"'
-   error stop 1
+   ifail=1
+   return
  end if
  mfree=min(mmax,irc+pw_reach+16+lm_fh_reach()+2)
  uu(:,:)=0.0d0
@@ -287,7 +308,8 @@
    write(6,'(a,i2,a,f12.8)') &
 &        'oncvpsp: ERROR scattering state failed for l=',ll, &
 &        ' at energy',ee
-   error stop 1
+   ifail=1
+   return
  end if
  ua(:)=uu(:,1)
  pa(:)=up(:,1)
@@ -297,11 +319,12 @@
  pa(:)=pa(:)/sqrt(cnorm)
  call free_tail_log(irel,ll,kap,ee,rr,vfull, &
 &                   ua,pa,mmax, &
-&                   rc,qcut,mfree)
+&                   rc,qcut,mfree,ifail)
+ if(ifail/=0) return
  end subroutine free_tail_state
 
  subroutine ae_delta_window(irel,ll,kap,nproj,epa,rr,vfull,uua,upa,mmax, &
-&                           al,rc,irc,local,dlta,vrloc)
+&                           al,rc,irc,local,dlta,vrloc,ifail)
 !! the relativistic term Delta of the all-electron wave about the taper
 !! window [0.95 rc, rc] (ae_delta, D-4), for the projectors; the local
 !! potential of lloc<4 (local) takes Delta/(2u) on the window (S-1)
@@ -312,6 +335,8 @@
  logical, intent(in) :: local
  real(dp), intent(inout) :: dlta(mmax,mxprj),vrloc(mmax)
  integer :: iprj,ii,jj,kk
+ integer, intent(out) :: ifail
+ ifail=0
  do iprj=1,nproj
    ii=max(1,1+int(log(0.95d0*rc/rr(1))/al)-pw_reach-8)
    jj=min(mmax,irc+pw_reach+16)
@@ -323,7 +348,8 @@
          write(6,'(a,i2,a,f10.6)') &
 &              'oncvpsp: ERROR node of the local channel l=',ll, &
 &              ' all-electron wave near rc, at r=',rr(kk)
-         error stop 1
+         ifail=1
+         return
        end if
        vrloc(kk)=0.5d0*dlta(kk,1)/uua(kk,1)
      end do
@@ -347,7 +373,7 @@
  end do
  end subroutine ae_overlap
 
- subroutine ecut_weights(ll,nc,nv,la,fa,fj,nproj,ecut_wt,wcurve)
+ subroutine ecut_weights(ll,nc,nv,la,fa,fj,nproj,ecut_wt,wcurve,ifail)
 !! the weights of the pseudo-waves of l in the cutoff of the pseudo-waves
 !! (the weighted mean, and which waves the largest is over): the
 !! occupation of each valence state (its share fj of J), or for the first
@@ -359,6 +385,8 @@
  real(dp), intent(in) :: fa(mxstate),fj,ecut_wt
  real(dp), intent(inout) :: wcurve(mxprj)
  integer :: jj,kk
+ integer, intent(out) :: ifail
+ ifail=0
  jj=0
  do kk=nc+1,nc+nv
    if(la(kk)==ll .and. jj<nproj) then
@@ -375,7 +403,8 @@
  else if(ecut_wt>=0.0d0) then
    write(6,'(/a,i2,a)') 'oncvpsp: ERROR ecut_weight for l=',ll, &
 &       ' is for a channel with no occupied state; this one has one'
-   error stop 1
+   ifail=1
+   return
  end if
  end subroutine ecut_weights
 

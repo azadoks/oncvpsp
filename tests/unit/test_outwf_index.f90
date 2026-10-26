@@ -25,6 +25,7 @@
  implicit none
 
 !Local variables
+ integer :: ifail
  real(dp), parameter :: rr1 = 5.0e-5_dp, rmax = 45.0_dp, amesh = 1.006_dp
  real(dp), parameter :: rc = 3.0_dp, rbox = 4.0_dp, de = 0.05_dp
  real(dp), parameter :: emin = -3.0_dp, emax = 6.0_dp, egap = 0.01_dp
@@ -58,7 +59,8 @@
    call pw_alloc(vkbpw(1), mmax, 1, [0.0_dp, rc])
    vkbpw(1)%vals(:, 1) = rr**(ll + 1)*(1.0_dp - (rr/rc)**2)**4
    call fd_eigenvalues(ll, evkb(1), rlast, efd)
-   call outwf_setup(ll, rr, mmax, vloc, vlocpw, 1, vkbpw, ow)
+   call outwf_setup(ll, rr, mmax, vloc, vlocpw, 1, vkbpw, ow, ifail)
+   if(ifail /= 0) error stop 1
    nbad = 0
    nskip = 0
    do ie = 1, ne
@@ -67,7 +69,8 @@
        nskip = nskip + 1
        cycle
      end if
-     call outwf_solve(ow, ee, evkb, ibox, ibox, uu, up, neig)
+     call outwf_solve(ow, ee, evkb, ibox, ibox, uu, up, neig, ifail=ifail)
+     if(ifail /= 0) error stop 1
      nall = outwf_count(ow, 1, -1.0_dp, ibox)
      nfd_below = count(efd < ee)
      if(neig /= nfd_below) then

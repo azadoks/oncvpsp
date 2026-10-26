@@ -26,7 +26,7 @@
  contains
 
  subroutine relatom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&           rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vext,warm)
+&           rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vext,warm,ifail)
 
 !! self-consistent fully-relativistic all-electron atom
 !! calculation using log mesh
@@ -58,6 +58,7 @@
 !! @param warm  start from vi and ea (the solution of a nearby potential,
 !!              oncvpsp_confine.x) instead of the Thomas-Fermi potential
 !!              and hydrogenic energies
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, mxstate, mxkap, ae_tolres
  use kappa_m, only: kap_count, kap_of, j_share
@@ -85,6 +86,7 @@
  real(dp), intent(out) :: rho(mmax),rhoc(mmax)
  real(dp), intent(inout) :: vi(mmax)
  logical, intent(in) :: warm
+ integer, intent(out) :: ifail
 
 !Local variables
  integer :: nin,mch
@@ -104,6 +106,7 @@
 ! convergence threshold of the residual and the eigenvalues (constants_m)
  real(dp), parameter ::  tolres=ae_tolres
 
+ ifail=0
  allocate(uu(mmax,2),up(mmax,2))
  allocate(vsi(mmax),vso(mmax),vsi1(mmax),vso1(mmax),vxc(mmax))
 
@@ -163,7 +166,8 @@
        ierr = 0
 
        call ldiracfb(na(ii),ll,kap,ierr,et, &
-&                  rr,zz,vext+vi,uu,up,mmax,mch)
+&                  rr,zz,vext+vi,uu,up,mmax,mch,ifail)
+       if(ifail/=0) return
 ! a state with no bound solution in this potential gets its box state;
 ! the SCF goes on but cannot converge with it
        if(ierr == 10) then
@@ -174,7 +178,8 @@
        if(ierr /= 0) then
          write(6,'(/2a,5i4)') 'relatom: ldiracfb convergence ERROR', &
 &             ' n,l,kap,iter,ierr=',na(ii),ll,kap,it,ierr
-         error stop 1
+         ifail=1
+         return
        end if
 
 ! each eigenvalue settled to tolres (see the convergence test below)

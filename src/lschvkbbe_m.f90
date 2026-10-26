@@ -26,7 +26,7 @@
  contains
 
  subroutine lschvkbbe(nn,ll,nvkb,ierr,ee,uld,emin,emax, &
-&   rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,mch)
+&   rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,mch,ifail)
 
 !! integrates radial schroedinger equation for pseudopotential with
 !! Vanderbilt-Kleinman-Bylander non-local projectors finding energy at
@@ -51,6 +51,7 @@
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param mmax  size of log grid
 !! @param mch  matching mesh point for inward-outward integrations
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
  use boundsolve_m, only: bs_converged, bs_correct, bs_bisect
@@ -73,6 +74,7 @@
 !Output variables
  real(dp), intent(out) :: uu(mmax),up(mmax)
  integer, intent(out) :: ierr
+ integer, intent(out) :: ifail
 
 
 !Local variables
@@ -84,6 +86,7 @@
  integer :: ii,nin,nint,neig
  type(outwf_t) :: ow
 
+ ifail=0
  al = 0.01d0 * log(rr(101) / rr(1))
  amesh = exp(al)
 
@@ -107,7 +110,8 @@
  up(:)=0.0d0
 
 ! the grids of the outward integration (outwf_m), once for this potential
- call outwf_setup(ll,rr,mmax,vloc,vlocpw,nvkb,vkbpw,ow)
+ call outwf_setup(ll,rr,mmax,vloc,vlocpw,nvkb,vkbpw,ow,ifail)
+ if(ifail/=0) return
 
 ! return point for bound state convergence
  do nint=1,60
@@ -115,7 +119,8 @@
    nin=mch
 
 ! outward integration
-   call outwf_solve(ow,ee,evkb,mch,mch,uu,up,neig)
+   call outwf_solve(ow,ee,evkb,mch,mch,uu,up,neig,ifail=ifail)
+   if(ifail/=0) return
 
    uout=uu(mch)
    upout=up(mch)

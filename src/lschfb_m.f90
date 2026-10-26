@@ -25,7 +25,7 @@
 
  contains
 
- subroutine lschfb(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,irel)
+ subroutine lschfb(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,irel,ifail)
 
 !! Finds bound states of an all-electron atomic potential using
 !! Pauli-type  scalar-relativistic Schroedinger equation
@@ -48,6 +48,7 @@
 !!             the inward and outward integrations are matched (at the
 !!             continuous turning point, match_m)
 !! @param irel  0 non-relativistic, 1 scalar-relativistic
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
  use boundsolve_m, only: bs_box_energy, bs_solve, bs_turning_point
@@ -73,6 +74,7 @@
 
 !Output variables
  integer, intent(out) :: ierr
+ integer, intent(out) :: ifail
 
 !Local variables
 
@@ -84,6 +86,7 @@
  integer :: ii
 
  real(dp), allocatable :: qq(:),qp(:),cf(:),pm(:),qm(:),xm(:),r2(:)
+ ifail=0
  allocate(qq(mmax),qp(mmax),cf(mmax),pm(mmax),qm(mmax),xm(mmax),r2(mmax))
 
  al = 0.01d0 * log(rr(101) / rr(1))
@@ -152,7 +155,8 @@
 
 ! the energy iteration (boundsolve_m)
  call bs_solve(nn,ll,rr,vv,mmax,eps,setup,outward_nodes,match,boxstate, &
-&              ee,emin,emax,mch,ierr)
+&              ee,emin,emax,mch,ierr,ifail)
+ if(ifail/=0) return
 
 !fix sign to be positive at rr->oo
  if(uu(mch)<0.0d0) then
@@ -214,7 +218,7 @@
  return
  end function outward_nodes
 
- subroutine match(et,mchs,nin,lo,hi,de)
+ subroutine match(et,mchs,nin,lo,hi,de,ifail)
 
 !! the inward solution from nin at et, matched to the outward one across
 !! lo..hi and normalized, and the energy correction de
@@ -228,8 +232,11 @@
  real(dp) :: upo(-match_k-1:match_k),qpo(-match_k-1:match_k)
  real(dp) :: ww(-match_k-1:match_k),ss(-match_k-1:match_k)
  integer :: jj
+ integer, intent(out) :: ifail
 
- call match_point(rr,cf,mmax,mchs,xmch)
+ ifail=0
+ call match_point(rr,cf,mmax,mchs,xmch,ifail)
+ if(ifail/=0) return
  uo(:)=uu(lo:hi)
  qo(:)=qq(lo:hi)
  upo(:)=up(lo:hi)

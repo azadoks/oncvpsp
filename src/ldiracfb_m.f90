@@ -25,7 +25,7 @@
 
  contains
 
- subroutine ldiracfb(nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch)
+ subroutine ldiracfb(nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch,ifail)
 
 !! Finds relativistic bound states of an al-electron potential
 !!
@@ -46,6 +46,7 @@
 !! @param mch  mesh point just beyond the classical turning point, where
 !!             the inward and outward integrations are matched (at the
 !!             continuous turning point, match_m)
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
  use boundsolve_m, only: bs_box_energy, bs_solve, bs_turning_point
@@ -68,6 +69,7 @@
 
 !Output variables
  integer, intent(out) :: ierr
+ integer, intent(out) :: ifail
 
 !Local variables
 
@@ -80,6 +82,7 @@
  real(dp) :: amesh,al,eecur
  integer :: ii
 
+ ifail=0
  cc=c_light
  cci=1.0d0/cc
 
@@ -137,7 +140,8 @@
 
 ! the energy iteration (boundsolve_m)
  call bs_solve(nn,ll,rr,vv,mmax,eps,setup,outward_nodes,match,boxstate, &
-&              ee,emin,emax,mch,ierr)
+&              ee,emin,emax,mch,ierr,ifail)
+ if(ifail/=0) return
 
 ! copy local arrays for output
  uu(:,1)=gu(:)
@@ -194,7 +198,7 @@
  return
  end function outward_nodes
 
- subroutine match(et,mchs,nin,lo,hi,de)
+ subroutine match(et,mchs,nin,lo,hi,de,ifail)
 
 !! the inward solution from nin at et, matched to the outward one across
 !! lo..hi and normalized, and the energy correction de
@@ -208,8 +212,11 @@
  real(dp) :: gpo(-match_k-1:match_k),fpo(-match_k-1:match_k)
  real(dp) :: ww(-match_k-1:match_k),ss(-match_k-1:match_k)
  integer :: jj,kk
+ integer, intent(out) :: ifail
 
- call match_point(rr,cf,mmax,mchs,xmch)
+ ifail=0
+ call match_point(rr,cf,mmax,mchs,xmch,ifail)
+ if(ifail/=0) return
  go(:)=gu(lo:hi)
  fo(:)=fu(lo:hi)
  gpo(:)=gup(lo:hi)

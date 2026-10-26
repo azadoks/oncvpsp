@@ -129,6 +129,7 @@
  real(dp), intent(out) :: wshare(3,mxprj)
 
 !Local variables
+ integer :: ifail
  real(dp) :: uord(5)
  real(dp) :: al,ulgd
  real(dp) :: ps0norm
@@ -274,13 +275,17 @@
    hh=2.0d0*pi/(75.0d0*qmax)
    if(freetl(iprj)) then
      call free_tail(irel,ll,kap,eig(iprj),rr,vae,uua(1,iprj),upa(1,iprj), &
-&                   mmax,rc,qcut,hh,nr,ulin,dlin)
+&                   mmax,rc,qcut,hh,nr,ulin,dlin,ifail=ifail)
+     if(ifail/=0) error stop 1
      ekin_tail=tail_kinetic(ll,rc,hh,nr,ulin,dlin)
      deallocate(dlin)
    else if(wm(iprj)%mx>0) then
-     call mesh_tail(wm(iprj)%rr,wm(iprj)%uu(:,1),wm(iprj)%mx,rc,hh,nr,ulin)
+     call mesh_tail(wm(iprj)%rr,wm(iprj)%uu(:,1),wm(iprj)%mx,rc,hh,nr,ulin, &
+&          ifail)
+     if(ifail/=0) error stop 1
    else
-     call mesh_tail(rr,uua(1,iprj),mmax,rc,hh,nr,ulin)
+     call mesh_tail(rr,uua(1,iprj),mmax,rc,hh,nr,ulin,ifail)
+     if(ifail/=0) error stop 1
    end if
 
 !E_resid on the q grid, and at the exact qcut and the points of the
@@ -422,6 +427,7 @@
  real(dp) :: ewell(1),efree(1),share
  real(dp), allocatable :: ufree(:),e0t(:),edt(:,:),emt(:,:,:)
  integer :: nqs,nrw
+ integer :: ifail
  if(free_tail_defined(qcut,eig(iprj))) then
 !   with the well's tail, from the minimization's quadratic form at qcut;
 !   with the free tail, by eresid on the grid's nodes from lm_ncell cells
@@ -431,7 +437,8 @@
    nqs=min(nq,1+int((qmax-qcut)/dq)+lm_ncell)
    allocate(e0t(nqs),edt(nqs,0),emt(nqs,0,0))
    call free_tail(irel,ll,kap,eig(iprj),rr,vae,uua(1,iprj), &
-&                   upa(1,iprj),mmax,rc,qcut,hh,nrw,ufree,dlin)
+&                   upa(1,iprj),mmax,rc,qcut,hh,nrw,ufree,dlin,ifail=ifail)
+   if(ifail/=0) error stop 1
    call eresid(ll,rc,0,nbas,nqs,dq,1,qout(1:1),qmax,qroot,hh,nrw,ufree, &
 &                pswfopt_sbq,pswfnone,e0t,edt,emt,efree,edum,emdum)
    deallocate(ufree,dlin,e0t,edt,emt)

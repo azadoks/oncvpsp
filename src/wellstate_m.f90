@@ -26,7 +26,8 @@
  contains
 
  subroutine wellstate(nnin,ll,kap,rc,ep,epgiven,onset,confwall,nowell,rr, &
-&                     vfull,vwell,uu,up,zz,mmax,mch,irel,confined,eptgt,wm)
+&                     vfull,vwell,uu,up,zz,mmax,mch,irel,confined,eptgt,wm, &
+&                     ifail)
 
 !! creates quantum well to confine positive-energy state, and calculates
 !! the resulting all-electron wave function. The well rises from
@@ -87,6 +88,7 @@
 !!            uu is not confined. The state is solved on it, so it does
 !!            not depend on rmax; uu, up and vwell are its first mmax
 !!            points
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
  use well_mesh_m, only: well_mesh_t, wm_build, wm_short
@@ -113,6 +115,7 @@
  logical, intent(out) :: confined
  real(dp), intent(out) :: eptgt
  type(well_mesh_t), intent(out) :: wm
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp) :: cwell,et,xx,rwell,rwmax,rwmin,rwscale,ron,umax
@@ -128,14 +131,17 @@
  integer :: mx,mneed,mchx
  logical :: convg,bound,done
 
+ ifail=0
  ron=rc*onset
  confined=.true.
  eptgt=ep
 
 !check for bound state with specified ll and nnin
- call find_bound()
+ call find_bound(ifail)
+ if(ifail/=0) return
 
- call target_energy(done)
+ call target_energy(done,ifail)
+ if(ifail/=0) return
  if(done) return
 
 !the energy the well's eigenvalue is found for
@@ -181,7 +187,8 @@
 
 !create well potential, on the log mesh continued until a state at ep
 !decays in it to machine precision (well_mesh_m)
-     call well_potential()
+     call well_potential(ifail)
+     if(ifail/=0) return
 
 !find bound state in well
      if(allocated(ux)) deallocate(ux,upx)
@@ -189,7 +196,8 @@
      ux(:,:)=0.0d0
      upx(:,:)=0.0d0
      et=ep
-     call boundstate(irel,nn,ll,kap,ierr,et,rx,zz,vw,ux,upx,mx,mchx)
+     call boundstate(irel,nn,ll,kap,ierr,et,rx,zz,vw,ux,upx,mx,mchx,ifail)
+     if(ifail/=0) return
 ! a trial well whose state did not converge (ierr/=0: a box state, ierr=10,
 ! can stand in for it) only steers the bracketing; the state taken must
 ! have converged (checked below)
@@ -221,7 +229,8 @@
            write(6,'(a,i3,a,i3,a,1p,e10.2)') &
 &                'wellstate: ERROR E(rwell) jumps across ep, n=',nn, &
 &                ' l=',ll,' E-ep=',fw
-           error stop 1
+           ifail=1
+           return
          end if
          ep=et
          convg=.true.
@@ -267,7 +276,8 @@
      if(ierr/=0) then
        write(6,'(a,i3,a,i3)') &
 &            'wellstate: ERROR lschfb convergence error, n=',nn,' l=',ll
-       error stop 1
+       ifail=1
+       return
      end if
      exit
    end if
@@ -287,7 +297,8 @@
      write(6,'(a)') 'wellstate: ERROR with the confined well, ep must be '// &
 &         'above the atom''s own state of this n: raise ep or lower well_n'
    end if
-   error stop 1
+   ifail=1
+   return
  end if
 
 !the state and the well on the continued mesh, and their first mmax points
@@ -310,17 +321,22 @@
 
  contains
 
- subroutine find_bound()
+ subroutine find_bound(ifail)
 
 !! the bound state of nnin and ll in vfull, if any (ierr 0, energy et), and
 !! whether it is localized inside 1.5 rc (bound)
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
  integer :: ii
 
+ ifail=0
  uu(:,:)=0.0d0 ; up(:,:)=0.0d0
  et=-0.1d0
- call boundstate(irel,nnin,ll,kap,ierr,et,rr,zz,vfull,uu,up,mmax,mch)
+ call boundstate(irel,nnin,ll,kap,ierr,et,rr,zz,vfull,uu,up,mmax,mch,ifail)
+ if(ifail/=0) return
 
 !if bound state is found, check its localization
  bound=.false.
@@ -340,7 +356,7 @@
  return
  end subroutine find_bound
 
- subroutine target_energy(done)
+ subroutine target_energy(done,ifail)
 
 !! the energy the well is built for: the input ep (epgiven), or its
 !! replacements above; done when the localized bound state replaces it,
@@ -348,7 +364,9 @@
 
 !Output variables
  logical, intent(out) :: done
+ integer, intent(out) :: ifail
 
+ ifail=0
  done=.false.
  if(epgiven) then
 !a bound state at or above ep cannot be raised to ep by the well: an input
@@ -358,7 +376,8 @@
      write(6,'(/a,i2,a,i2,a,f12.8/a,f12.8)') &
 &          'wellstate: ERROR a bound state exists for n=',nnin,' l=',ll, &
 &          ' at energy',et,'wellstate: ERROR above the requested ep=',ep
-     error stop 1
+     ifail=1
+     return
    end if
  else
    bound=.false.
@@ -405,15 +424,19 @@
  return
  end subroutine target_energy
 
- subroutine well_potential()
+ subroutine well_potential(ifail)
 
 !! the well of width rwell on the log mesh continued until a state at ep
 !! decays in it to machine precision (well_mesh_m): rx, vx and vw on mx
 !! points
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
  integer :: ii
 
+ ifail=0
  mx=mmax
  do
    call wm_build(rr,vfull,mmax,mx,rx,vx)
@@ -432,7 +455,8 @@
        vw(ii)=vw(ii)+cwell*xx**3/(1.0d0+xx**3)*exp(-0.01d0/xx)
      end if
    end do
-   call wm_short(ll,ep,rx,vw,mx,mneed)
+   call wm_short(ll,ep,rx,vw,mx,mneed,ifail)
+   if(ifail/=0) return
    if(mneed==0) exit
    mx=mneed
  end do

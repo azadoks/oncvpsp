@@ -23,6 +23,7 @@
  implicit none
 
 !Local variables
+ integer :: ifail
  integer, parameter :: npts = 41, ndeg = 10
  real(dp), parameter :: rr1 = 5.0e-5_dp, rmax = 45.0_dp, amesh = 1.006_dp
  real(dp), parameter :: tol_e = 1.0e-14_dp, tol_u = 1.0e-12_dp
@@ -57,17 +58,20 @@
        select case(isolv)
        case(1, 2)
          call lschfb(nn, ll, ierr, ee, rr, vv, uu(:, 1), up(:, 1), zz, &
-&                    mmax, mch, isolv - 1)
+&                    mmax, mch, isolv - 1, ifail)
+         if(ifail /= 0) error stop 1
        case(3)
          call ldiracfb(nn, ll, -(ll + 1), ierr, ee, rr, zz, vv, uu, up, &
-&                      mmax, mch)
+&                      mmax, mch, ifail)
+         if(ifail /= 0) error stop 1
        case(4)
          emin = -zz**2
          emax = 0.0_dp
          call pw_alloc(vpw, mmax, 1, [0.0_dp, rr(mmax)])
          vpw%vals(:, 1) = vv
          call lschvkbb(nn, ll, 0, ierr, ee, emin, emax, rr, vv, vpw, &
-&                      vkbpw, evkb, uu(:, 1), up(:, 1), mmax, mch)
+&                      vkbpw, evkb, uu(:, 1), up(:, 1), mmax, mch, ifail)
+         if(ifail /= 0) error stop 1
          call pw_free(vpw)
        case default
          ierr = -1

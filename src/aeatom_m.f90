@@ -26,7 +26,7 @@
  contains
 
  subroutine aeatom(irel,nkap,na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&                  rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vext,warm)
+&                  rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vext,warm,ifail)
 
 !! self-consistent all-electron atom: non-relativistic or scalar-relativistic
 !! (sratom) or fully-relativistic (relatom)
@@ -59,6 +59,7 @@
 !! @param warm  start from vi and ea (the solution of a nearby potential,
 !!              oncvpsp_confine.x) instead of the Thomas-Fermi potential
 !!              and hydrogenic energies
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, mxstate
  use relatom_m, only: relatom
@@ -81,13 +82,17 @@
  real(dp), intent(out) :: rho(mmax),rhoc(mmax)
  real(dp), intent(inout) :: vi(mmax)
  logical, intent(in) :: warm
+ integer, intent(out) :: ifail
 
+ ifail=0
  if(irel==2) then
    call relatom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&               rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vext,warm)
+&               rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vext,warm,ifail)
+   if(ifail/=0) return
  else
    call sratom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&              rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,irel,vext,warm)
+&              rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,irel,vext,warm,ifail)
+   if(ifail/=0) return
  end if
  return
  end subroutine aeatom

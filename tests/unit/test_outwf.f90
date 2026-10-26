@@ -128,6 +128,7 @@
  type(outwf_t) :: ow
  real(dp) :: alq, bnd(0:2)
  integer :: isol, jsrc, im
+ integer :: ifail
 
  alq = log(am)
  allocate(rr(mm), vv(mm), uu(mm), up(mm))
@@ -154,7 +155,8 @@
    spw(2)%vals(:, 2) = spw(2)%vals(:, 2) - (rr - b1q)**2
  end if
 
- call outwf_setup(ll, rr, mm, vv, vpw, 2, spw, ow)
+ call outwf_setup(ll, rr, mm, vv, vpw, 2, spw, ow, ifail)
+ if(ifail /= 0) error stop 1
  call outwf_integrate(ow, ee, i3q)
  do isol = 1, 3
    call outwf_nodes(ow, isol, i3q, uu, up)
@@ -184,6 +186,7 @@
  type(outwf_t) :: ow
  real(dp) :: alq, bnd(0:2)
  integer :: i20, im
+ integer :: ifail
 
  alq = log(am)
  allocate(rr(mm), vv(mm))
@@ -196,7 +199,8 @@
  vpw%vals(:, 1) = -2.0_dp/rr
  vpw%vals(:, 2) = -2.0_dp/rr
  call pw_node_values(rr, mm, vpw, vv)
- call outwf_setup(ll, rr, mm, vv, vpw, 0, spw, ow)
+ call outwf_setup(ll, rr, mm, vv, vpw, 0, spw, ow, ifail)
+ if(ifail /= 0) error stop 1
  call outwf_integrate(ow, -0.35_dp, i20)
  nodeq = outwf_count(ow, 1, 0.05_dp, i20)
  call outwf_free(ow)

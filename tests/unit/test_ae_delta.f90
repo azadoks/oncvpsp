@@ -18,6 +18,7 @@
  implicit none
 
 !Local variables
+ integer :: ifail
  real(dp), parameter :: rr1 = 5.0e-5_dp, rmax = 45.0_dp, amesh = 1.006_dp
  real(dp), parameter :: zz = 50.0_dp
  real(dp), allocatable :: rr(:), vv(:), uu(:, :), up(:, :), delta(:)
@@ -41,7 +42,9 @@
    uu(:, :) = 0.0_dp
    up(:, :) = 0.0_dp
    mch = 0
-   call boundstate(irel, 2, 1, kap, ierr, ee, rr, zz, vv, uu, up, mmax, mch)
+   call boundstate(irel, 2, 1, kap, ierr, ee, rr, zz, vv, uu, up, mmax, mch, &
+&        ifail)
+   if(ifail /= 0) error stop 1
    if(ierr /= 0) then
      write(stderr, '(a,a,a,i0)') 'FAILED: ', names(irel), ' boundstate ierr ', &
 &      ierr

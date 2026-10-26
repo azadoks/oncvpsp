@@ -61,7 +61,9 @@ with it set, so the failure reaches `oncvpsp_main`, which ends with
   `pw_product_integral` and `outwf_setup`'s sources, `add_zero_r`'s sizes,
   the `ug_*` node counts, grid positions, brackets and `ug_fmin`'s
   iterations, `diagout`'s and `modcore_budget_table`'s brackets,
-  `eresid`'s q grid, and `gauss_legendre`'s Newton iterations.
+  `eresid`'s q grid, `gauss_legendre`'s Newton iterations, and
+  `dirac_outward`'s series at the origin, which converges at any energy
+  of the solvers' brackets.
 - `exc_libxc`'s stub (a build without libxc given a libxc functional)
   still stops; `check_data` should reject the functional instead.
 - The imported `functionals.F90` keeps its `stop`s.
@@ -73,10 +75,11 @@ backtrace, and the exit status) unchanged:
 - [x] The readers: `read_input_text`, `read_input_toml`, `check_data`,
       the all-electron and pseudopotential data files (`ae_file_m`,
       `ps_file_m`, `load_pair`).
-- [ ] The radial solvers and their callers: `match_point`,
-      `dirac_outward`, `bs_solve`, `lschfb`, `ldiracfb`, `ldiracfs`,
-      `boundstate`, `scatterstate`, `outwf_m`, `lschvkbb`, `renorm_r`,
-      the well states, and up through the atoms and configurations.
+- [x] The radial solvers and their callers: `match_point`, `bs_solve`
+      (its `match` callback), `lschfb`, `ldiracfb`, `boundstate`,
+      `outwf_m`, `lschvkbb`, `renorm_r`, the well states and free tails,
+      and up through the atoms and configurations. A routine of a later
+      step stops on the `ifail` of one of these until its own step.
 - [ ] The pseudization: `run_optimize`, `optimize`, `qroots`, `pspot`,
       `const_basis`, `sbf_basis_con`, `eresid`, `ode_rc_der`, `run_vkb`,
       `sr_so_r`.

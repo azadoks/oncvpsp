@@ -150,13 +150,15 @@
 
 !Output variables
  type(phsft_t), intent(out), target :: ps
+ integer :: ifail
 
  ps%kind=2
  ps%ll=ll
  ps%nvkb=nvkb
  call common_init(rr,mmax,nq,rq,ps)
  ps%evkb=evkb
- call outwf_setup(ll,rr,mmax,vloc,vlocpw,nvkb,vkbpw,ps%ow)
+ call outwf_setup(ll,rr,mmax,vloc,vlocpw,nvkb,vkbpw,ps%ow,ifail)
+ if(ifail/=0) error stop 1
 !the projections need the solution over the projectors' support, also for
 !radii inside it
  if(nvkb>0) then
@@ -421,6 +423,7 @@
  integer, intent(in) :: mch
  real(dp), intent(out) :: uu(ps%mmax,2),up(ps%mmax,2)
  integer :: nn,ierr
+ integer :: ifail
  uu(:,:)=0.0d0
  up(:,:)=0.0d0
  if(ps%kind==1) then
@@ -428,7 +431,8 @@
    call scatterstate(ps%irel,nn,ps%ll,ps%kap,ierr,ee,ps%rr,ps%zz,ps%vv, &
 &                    uu,up,ps%mmax,mch)
  else
-   call outwf_solve(ps%ow,ee,ps%evkb,mch,mch,uu(:,1),up(:,1))
+   call outwf_solve(ps%ow,ee,ps%evkb,mch,mch,uu(:,1),up(:,1),ifail=ifail)
+   if(ifail/=0) error stop 1
  end if
  end subroutine solve
 
@@ -516,6 +520,7 @@
  real(dp) :: da(ps%nq)
 
 !Local variables
+ integer :: ifail
  real(dp), allocatable :: uu(:,:),up(:,:)
  real(dp) :: uq,upq,xx,yy,hh
  integer :: nn,ierr,iq
@@ -528,7 +533,8 @@
    call scatterstate(ps%irel,nn,ps%ll,ps%kap,ierr,ee,ps%rr,ps%zz,ps%vv, &
 &                    uu,up,ps%mmax,ps%mch)
  else
-   call outwf_solve(ps%ow,ee,ps%evkb,ps%mch,ps%mch,uu(:,1),up(:,1))
+   call outwf_solve(ps%ow,ee,ps%evkb,ps%mch,ps%mch,uu(:,1),up(:,1),ifail=ifail)
+   if(ifail/=0) error stop 1
  end if
  do iq=1,ps%nq
    call lm_interp(ps%rr(1:ps%mch),uu(1:ps%mch,1),ps%mch,ps%rq(iq),uq)

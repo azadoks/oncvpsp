@@ -213,6 +213,7 @@
  integer, intent(in) :: l1,ikap
  integer :: ii,iprj,npr,ierr,mch,kap,iout
  real(dp) :: r0,dr,cnorm,emax,emin,etest,sgnae,sgnps
+ integer :: ifail
  kap=kap_of(ll,ikap)
  npr=nproj(l1)
  if(l1==lloc+1) npr=0
@@ -234,7 +235,8 @@
 
      etest=epa(iprj,l1,ikap)
      call boundstate(irel,npa(iprj,l1),ll,kap,ierr,etest, &
-&                    rr,zz,vfull,ur,urp,mmax,mch)
+&                    rr,zz,vfull,ur,urp,mmax,mch,ifail)
+     if(ifail/=0) error stop 1
      if(ierr /= 0 .and. irel==2) then
        write(6,'(a,i2,a,i2,a,i2,a,i4)') &
 &            'run_plot_r 409: ldiracfb convergence ERROR, n=',&
@@ -246,14 +248,18 @@
 &            npa(iprj,l1),ll,ierr
        error stop 1
      end if
-     if(irel==2) call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm)
+     if(irel==2) then
+       call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm,ifail)
+       if(ifail/=0) error stop 1
+     end if
 
      emax=0.9d0*etest
      emin=1.1d0*etest
 
      call lschvkbb(ll+iprj,ll,npr,ierr,etest,emin,emax, &
 &                  rr,vp(1,lloc+1,ikap),vlocpw,vkbpw(1:npr,l1,ikap), &
-&                  evkb(1,l1,ikap),u2,up,mmax,mch)
+&                  evkb(1,l1,ikap),u2,up,mmax,mch,ifail)
+     if(ifail/=0) error stop 1
      sgnae=1.0d0
      sgnps=1.0d0
    else
@@ -274,12 +280,14 @@
 &              ', ll=',ll,', kap=',kap,', ierr=',ierr
          error stop 1
        end if
-       call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm)
+       call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm,ifail)
+       if(ifail/=0) error stop 1
      end if
 
      call lschvkbs(ll,npr,epa(iprj,l1,ikap),rr,vp(1,lloc+1,ikap), &
 &                  vlocpw,vkbpw(1:npr,l1,ikap),evkb(1,l1,ikap),u2,up, &
-&                  mmax,n2)
+&                  mmax,n2,ifail)
+     if(ifail/=0) error stop 1
      sgnae=sign(1.0d0,ur(n2,1))
      sgnps=sign(1.0d0,u2(n2))
    end if

@@ -335,6 +335,7 @@
  integer, intent(in) :: l1
  integer :: ii,jj,kk,nn,mch
  real(dp) :: et
+ integer :: ifail
 !treat valence states for this l
  nn=ll
  jj=0
@@ -347,7 +348,8 @@
    emin=1.1d0*ea(nc+kk)
    call lschvkbb(nn,ll,nprj,ierr,ee,emin,emax, &
 &                  rr,vp(1,lloc+1),vlocpw,vkbpw(1:nprj,l1),evkb(1,l1), &
-&                  uu,up,mmax,mch)
+&                  uu,up,mmax,mch,ifail)
+   if(ifail/=0) error stop 1
    if(ierr/=0) then
      write(6,'(a,3i4,2f12.6)') 'run_ghosts: lschvkbb ERROR', &
 &            nn,ll,ierr,ea(nc+kk),ee
@@ -382,7 +384,8 @@
    emin=2.0d0*ee
    call lschvkbb(ll+1,ll,nprj,ierr,ee,emin,emax, &
 &                  rr,vp(1,lloc+1),vlocpw,vkbpw(1:nprj,l1),evkb(1,l1), &
-&                  uu,up,mmax,mch)
+&                  uu,up,mmax,mch,ifail)
+   if(ifail/=0) error stop 1
    if(ierr/=0) ee=0.0d0
    do jj=1,10
      et=min(ee-eps,ee*(1.0d0+eps))
