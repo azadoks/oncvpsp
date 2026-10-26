@@ -49,7 +49,6 @@
 !!                pseudopotential stage only
  use, intrinsic :: iso_fortran_env, only: stdin => input_unit
  use psmlout_m, only: psmlout
- use build_info_m, only: write_build_info
  use input_text_m, only: read_input_text
  use config_ae_m, only: run_config_ae, aeatom_cached
  use ae_file_m, only: write_ae_file, read_ae_file
@@ -68,21 +67,25 @@
  use input_echo_m, only: write_atom, write_lmax, write_icmod, write_epsh, &
 &                        write_mesh, fx, vkb_head, vkb_line
  use relativity_m, only: set_relativity
+ use main_setup_m, only: main_names, parse_command_line, write_banner, &
+&                        make_log_mesh, write_reference_results, &
+&                        core_radius_points, INPUT_STDIN, INPUT_TEXT, &
+&                        INPUT_TOML
  implicit none
 
 !Input variables
  integer, intent(in) :: irel,istage
 
 !Local variables
- integer :: ii,ierr,iexc,iexct,ios,iprint,it,icmod,lpopt
- integer :: jj,kk,ll,l1,lloc,lmax,lt,inline
- integer :: mch,mchf,mmax,n1,n2,nc,nlim,nlloc,nlmax,irpsh,nrl
- integer :: nv,ncnf,nvt,upf_mesh
+ integer :: ii,ierr,iexc,ios,it,icmod,lpopt
+ integer :: jj,kk,ll,l1,lloc,lmax,inline
+ integer :: mch,mmax,nc,nlim,nrl
+ integer :: nv,ncnf,upf_mesh
  integer :: iprj,nkap,nnwell,npsh,mfree,mchx
  integer :: ikap,kap,mkap
  integer,allocatable :: npa(:,:)
 !
- integer :: dtime(8),na(mxstate),la(mxstate),np(mxlin+1)
+ integer :: na(mxstate),la(mxstate)
  integer :: nacnf(mxstate,mxcnf),lacnf(mxstate,mxcnf),nvcnf(mxcnf)
  integer :: irc(mxlin+1),nodes(mxl+1)
  integer :: nproj(mxlin+1)
@@ -91,22 +94,22 @@
  integer :: ngh(mxl+1,mxkap),ghn(mxstate,mxl+1,mxkap)
  real(dp) :: ghe(2,mxstate,mxl+1,mxkap),ghp(2,mxl+1,mxkap)
 
- real(dp) :: al,amesh,csc,csc1,depsh,depsht,drl,eeel
+ real(dp) :: al,depsh,drl,eeel
  real(dp) :: eeig,eexc
- real(dp) :: emax,epsh1,epsh1t,epsh2,epsh2t,rxpsh
- real(dp) :: et,etest,emin,sls
+ real(dp) :: emax,epsh1,epsh2,rxpsh
+ real(dp) :: et,emin
  real(dp) :: fcfact,fcfact0,rcfact,slack,dvloc0,soscale
  real(dp) :: fcfact_min,fcfact_max,fcfact_step
  real(dp) :: rcfact_min,rcfact_max,rcfact_step
  real(dp) :: fcgrid(3),rcgrid(3)
- real(dp) :: rr1,rcion,rciont,rcmax,rct,rlmax,rpkt
- real(dp) :: amesh_in,rr1_in,rmax_in,rmax,log_mesh(3),c_light_in
- real(dp) :: sf,sw,zz,zion,zval,etot,res
+ real(dp) :: rcmax,rlmax
+ real(dp) :: amesh_in,rr1_in,rmax_in,log_mesh(3),c_light_in
+ real(dp) :: sw,zz,zion,zval,etot,res
  real(dp) :: cvloc(2,nerrlv),vlchk,wreg
  real(dp) :: eterm(4),rphs(4)
  real(dp) :: fj,cnorm,rcore,eptgt
 !
- real(dp) :: cl(mxlin+1),debl(mxlin+1),ea(mxstate,mxkap),ep(mxlin+1,mxkap)
+ real(dp) :: debl(mxlin+1),ea(mxstate,mxkap),ep(mxlin+1,mxkap)
  real(dp) :: fa(mxstate)
  real(dp) :: facnf(mxstate,mxcnf)
  real(dp) :: qcut(mxlin+1),qmsbf(mxlin+1),rc(mxlin+1),rc0(mxlin+1)
@@ -198,7 +201,6 @@
  character(len=9) :: pname
  character(len=16) :: exe
 
- integer, parameter :: INPUT_STDIN=1, INPUT_TEXT=2, INPUT_TOML=3
  integer :: input_mode
  integer :: unit
  character(len=1024) :: input_filename
@@ -206,121 +208,11 @@
  character(len=1024) :: ps_filename
  logical :: skip_ld
 
- input_mode = INPUT_STDIN
- ae_filename=''
- ps_filename=''
- skip_ld=.false.
-
-!the arrays indexed by l have a last index for kappa (see doc/fr_merge_plan.md):
-!1 for j=l+1/2 and 2 for j=l-1/2 when fully relativistic, only 1 otherwise
- if(irel==2) then
-   nkap=2
-   treatment='fully-relativistic'
-   pname='oncvpsp_r'
- else
-   nkap=1
-   if(irel==0) then
-     treatment='non-relativistic'
-   else
-     treatment='scalar-relativistic'
-   end if
-   pname='oncvpsp'
- end if
- if(irel==0) then
-   exe='oncvpspnr'
- else if(irel==1) then
-   exe='oncvpsp'
- else
-   exe='oncvpspr'
- end if
- if(istage==1) then
-   exe=trim(exe)//'_ae'
- else if(istage==2) then
-   exe=trim(exe)//'_ps'
- end if
- exe=trim(exe)//'.x'
+ call main_names(irel,istage,nkap,treatment,pname,exe)
  allocate(eatcnf(mxstate,nkap,nlev,mxcnf))
-
- parse_args: block
-   integer :: iarg
-   character(len=256) :: arg
-   do iarg = 1, command_argument_count()
-     call get_command_argument(iarg, arg)
-     select case(arg)
-     case('-h', '--help')
-       call write_help()
-       stop
-     case('-v', '--version')
-       write(6,'(3a)') 'ONCVPSP (',trim(treatment),') version 4.0.1'
-       call write_build_info(6,trim(exe),trim(treatment))
-       stop
-     case('-i', '--input')
-       if(iarg + 1 > command_argument_count()) then
-         write(6,'(/3a)') trim(pname),': ERROR --input requires a file name'
-         error stop 1
-       end if
-       call get_command_argument(iarg + 1, input_filename)
-       input_mode = INPUT_TEXT
-#if (defined WITH_TOML)
-     case('-t', '--toml-input')
-       if(iarg + 1 > command_argument_count()) then
-         write(6,'(/3a)') trim(pname), &
-&              ': ERROR --toml-input requires a file name'
-         error stop 1
-       end if
-       call get_command_argument(iarg + 1, input_filename)
-       input_mode = INPUT_TOML
-#else
-     case('-t', '--toml-input')
-       write(6,'(/3a)') trim(pname),': ERROR TOML input is not enabled', &
-&            ' in this build'
-       error stop 1
-#endif
-     case('-a', '--ae-file')
-!only the stages take an all-electron data file; the whole program ignores it
-       if(istage/=0) then
-         if(iarg + 1 > command_argument_count()) then
-           write(6,'(/3a)') trim(pname), &
-&                ': ERROR --ae-file requires a file name'
-           error stop 1
-         end if
-         call get_command_argument(iarg + 1, ae_filename)
-       end if
-     case('-p', '--ps-file')
-!the all-electron stage has no pseudopotential
-       if(istage/=1) then
-         if(iarg + 1 > command_argument_count()) then
-           write(6,'(/3a)') trim(pname), &
-&                ': ERROR --ps-file requires a file name'
-           error stop 1
-         end if
-         call get_command_argument(iarg + 1, ps_filename)
-       end if
-     case('--no-log-derivatives')
-       skip_ld=(istage/=1)
-     case default
-     end select
-   end do
- end block parse_args
-
- if(irel==2) then
-   write(6,'(a/a//)') &
-&        'ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
-&        'relativistic version 4.0.1 03/01/2019'
- else
-   write(6,'(a/a//)') &
-&        'ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
-&        trim(treatment)//' version 4.0.1 03/01/2019'
- end if
-
- write(6,'(a/a/a//)') &
-&      'While it is not required under the terms of the GNU GPL, it is',&
-&      'suggested that you cite D. R. Hamann, Phys. Rev. B 88, 085117 (2013)', &
-&      'in any publication utilizing these pseudopotentials.'
-
- call write_build_info(6,trim(exe),trim(treatment))
- write(6,'(/)')
-
+ call parse_command_line(istage,treatment,pname,exe,input_mode, &
+&                        input_filename,ae_filename,ps_filename,skip_ld)
+ call write_banner(irel,treatment,exe)
 
  if(istage/=0 .and. len_trim(ae_filename) == 0) then
    write(6,'(/4a)') trim(pname),': ERROR ',trim(exe),' requires --ae-file'
@@ -337,20 +229,8 @@
  wreg=0.0d0
  select case(input_mode)
  case(INPUT_STDIN)
-   call read_input_text(stdin, inline, &
-&                       atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
-&                       lmax, rc, ep, ncon, nbas, qcut, &
-&                       lloc, lpopt, dvloc0, nproj, debl, &
-&                       icmod, fcfact, rcfact, slack, budget_cut, &
-&                       fcfact_min, fcfact_max, fcfact_step, &
-&                       rcfact_min, rcfact_max, rcfact_step, &
-&                       epsh1, epsh2, depsh, rxpsh, &
-&                       rlmax, drl, upf_mesh, &
-&                       ncnf, nvcnf, nacnf, lacnf, facnf, &
-&                       amesh_in, rr1_in, rmax_in, c_light_in, ep_as_given, &
-&                       well_onset, well_tail, wreg, well_n, well_norm, &
-&                       ecut_wt)
- case(INPUT_TEXT)
+   unit=stdin
+ case(INPUT_TEXT,INPUT_TOML)
    open(newunit=unit, file=input_filename, status='old', action='read', &
 &       iostat=ios)
    if(ios /= 0) then
@@ -358,29 +238,13 @@
 &       trim(input_filename)
      error stop 1
    end if
-   call read_input_text(unit, inline, &
-&                       atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
-&                       lmax, rc, ep, ncon, nbas, qcut, &
-&                       lloc, lpopt, dvloc0, nproj, debl, &
-&                       icmod, fcfact, rcfact, slack, budget_cut, &
-&                       fcfact_min, fcfact_max, fcfact_step, &
-&                       rcfact_min, rcfact_max, rcfact_step, &
-&                       epsh1, epsh2, depsh, rxpsh, &
-&                       rlmax, drl, upf_mesh, &
-&                       ncnf, nvcnf, nacnf, lacnf, facnf, &
-&                       amesh_in, rr1_in, rmax_in, c_light_in, ep_as_given, &
-&                       well_onset, well_tail, wreg, well_n, well_norm, &
-&                       ecut_wt)
-   close(unit)
+ case default
+   write(6,'(/2a,i0)') trim(pname),': ERROR unknown input mode, input_mode=', &
+&        input_mode
+   error stop 1
+ end select
+ if(input_mode==INPUT_TOML) then
 #if (defined WITH_TOML)
- case(INPUT_TOML)
-   open(newunit=unit, file=input_filename, status='old', action='read', &
-&       iostat=ios)
-   if(ios /= 0) then
-     write(6, '(/3a)') trim(pname),': ERROR cannot open input file, file=', &
-&       trim(input_filename)
-     error stop 1
-   end if
    call read_input_toml(unit, &
 &                       atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
 &                       lmax, rc, ep, ncon, nbas, qcut, &
@@ -394,13 +258,23 @@
 &                       amesh_in, rr1_in, rmax_in, c_light_in, ep_as_given, &
 &                       well_onset, well_tail, wreg, well_n, well_norm, &
 &                       ecut_wt)
-   close(unit)
 #endif
- case default
-   write(6,'(/2a,i0)') trim(pname),': ERROR unknown input mode, input_mode=', &
-&        input_mode
-   error stop 1
- end select
+ else
+   call read_input_text(unit, inline, &
+&                       atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
+&                       lmax, rc, ep, ncon, nbas, qcut, &
+&                       lloc, lpopt, dvloc0, nproj, debl, &
+&                       icmod, fcfact, rcfact, slack, budget_cut, &
+&                       fcfact_min, fcfact_max, fcfact_step, &
+&                       rcfact_min, rcfact_max, rcfact_step, &
+&                       epsh1, epsh2, depsh, rxpsh, &
+&                       rlmax, drl, upf_mesh, &
+&                       ncnf, nvcnf, nacnf, lacnf, facnf, &
+&                       amesh_in, rr1_in, rmax_in, c_light_in, ep_as_given, &
+&                       well_onset, well_tail, wreg, well_n, well_norm, &
+&                       ecut_wt)
+ end if
+ if(input_mode/=INPUT_STDIN) close(unit)
  well_tail_free=well_tail==1
 !the free tail has no finite norm over all space
  if(well_tail==1 .and. well_norm==1) then
@@ -451,34 +325,7 @@
 !relativistic, see doc/fr_merge_plan.md)
  if(mod(nrl,2)/=0 .and. irel/=2) nrl=nrl+1
 
-!log mesh: the input values, or the built-in ones for those 0 or less
- if(amesh_in>0.0d0) then
-   amesh=amesh_in
- else
-!Alternative built-in meshes: amesh=1.012d0 (coarser), or 1.003d0 and
-!1.0015d0 (finer)
-   amesh=1.006d0
- end if
-
- al=log(amesh)
- if(rr1_in>0.0d0) then
-   rr1=rr1_in
- else
-   rr1=0.0005d0/zz
-   if(irel/=2) rr1=min(rr1,0.0005d0/10)
- end if
- if(rmax_in>0.0d0) then
-   rmax=rmax_in
- else
-   rmax=45.0d0
- end if
- mmax=log(rmax/rr1)/al
-!the log mesh for the echoes of the input, only when the input sets it, so
-!that the output of an input without it is unchanged
- log_mesh(:)=0.0d0
- if(amesh_in>0.0d0 .or. rr1_in>0.0d0 .or. rmax_in>0.0d0) then
-   log_mesh(:)=[amesh,rr1,rmax]
- end if
+ call make_log_mesh(irel,zz,amesh_in,rr1_in,rmax_in,al,mmax,rr,log_mesh)
 
 !calculate zion for output
  zion=zz
@@ -487,7 +334,6 @@
  end do
 
 
- allocate(rr(mmax))
  allocate(rho(mmax),rhoc(mmax),rhot(mmax))
  allocate(uu(mmax,2),up(mmax,2),uupsa(mmax,nkap,nv))
  allocate(vwell(mmax,mxprj))
@@ -521,10 +367,6 @@
  vp(:,:,:)=0.0d0
  vkb(:,:,:,:)=0.0d0
  epa(:,:,:)=0.0d0
-
- do ii=1,mmax
-   rr(ii)=rr1*exp(al*(ii-1))
- end do
 
 !
 ! full potential atom solution
@@ -629,21 +471,7 @@
 
  call write_mesh(log_mesh)
 
- write(6,'(//a)') 'Reference configufation results'
- write(6,'(a,i6)') '  iterations',it
- if(it >= 100) then
-   write(6,'(2a)') trim(pname), &
-&        ': ERROR all-electron reference atom not converged'
-   error stop 1
- end if
- write(6,'(a,1p,d18.8)') '  all-electron total energy (Ha)',etot
- write(6,'(a,1p,e10.2)') '  residual of the screening potential (Ha)',res
- write(6,'(a)') '  energy terms (Ha)'
- write(6,'(a,f22.10)') '    total               ',etot
- write(6,'(a,f22.10)') '    kinetic             ',eterm(1)
- write(6,'(a,f22.10)') '    electron-nucleus    ',eterm(2)
- write(6,'(a,f22.10)') '    Hartree             ',eterm(3)
- write(6,'(a,f22.10)') '    exchange-correlation',eterm(4)
+ call write_reference_results(pname,it,etot,res,eterm)
 
  if(istage==1) then
 !all-electron halves of the test configurations; their pseudo-atom halves
@@ -663,22 +491,8 @@
    stop
  end if
 
-!the last log mesh point at or inside each rc, for the bookkeeping of the
-!routines that index the mesh (R-2); the radii themselves stay as given
- rcmax=0.0d0
- irc(:)=0
- do l1=1,max(lmax+1,lloc+1)
-   irc(l1)=0
-   do ii=1,mmax
-     if(rr(ii)<=rc(l1)) irc(l1)=ii
-   end do
-   if(rc(l1)>0.0d0 .and. irc(l1)<2) then
-     write(6,'(a,i2,a,es12.4)') &
-&         'oncvpsp: ERROR rc inside the mesh start for l=',l1-1,': rc=',rc(l1)
-     error stop 1
-   end if
-   rcmax=max(rcmax,rc(l1))
- end do
+!the last log mesh point at or inside each rc (R-2)
+ call core_radius_points(lmax,lloc,rc,rr,mmax,irc,rcmax)
 
 !
  cvgplt(:,:,:,:,:)=0.0d0
@@ -1357,73 +1171,6 @@
  end if
 
  stop
- contains
-
- subroutine write_help()
-!! the usage of this executable: what it does and its options
- character(len=16) :: full
-
- full=exe(1:index(exe,'_')-1)
- if(istage==0) full=exe
- write(6,'(3a)') 'Usage: ',trim(exe),' [options] < INPUT.dat'
- write(6,'(a)') ''
- if(istage==0) then
-   write(6,'(3a)') 'Generates a ',trim(treatment),' optimized norm-conserving'
-   write(6,'(a)') 'Vanderbilt pseudopotential from the input (D. R. Hamann, PRB'
-   write(6,'(a)') '88, 085117 (2013)) and writes its tests and the'
-   write(6,'(a)') 'pseudopotential file(s) of the input''s psfile to stdout.'
- else if(istage==1) then
-   write(6,'(3a)') 'The all-electron stage of ',trim(full),'.x: solves the'
-   write(6,'(3a)') trim(treatment),' all-electron atom and the all-electron'
-   write(6,'(a)') 'halves of the test configurations, which depend on no'
-   write(6,'(a)') 'pseudopotential input, and writes them to --ae-file for'
-   write(6,'(3a)') trim(full),'_ps.x. Its stdout is the all-electron part of'
-   write(6,'(3a)') 'the output of ',trim(full),'.x.'
- else
-   write(6,'(3a)') 'The pseudopotential stage of ',trim(full),'.x: the same'
-   write(6,'(a)') 'input and output, but the all-electron atom is read from'
-   write(6,'(3a)') 'the --ae-file of ',trim(full),'_ae.x instead of solved,'
-   write(6,'(a)') 'so a loop over pseudopotential inputs solves it once.'
- end if
- write(6,'(a)') ''
- write(6,'(a)') 'Options:'
- write(6,'(a)') '  -h, --help'
- write(6,'(a)') '      Show this help and exit'
- write(6,'(a)') '  -v, --version'
- write(6,'(a)') '      Show the version and the build, and exit'
- write(6,'(a)') '  -i, --input FILE'
- write(6,'(a)') '      Read the input, in the .dat text format, from FILE'
- write(6,'(a)') '      instead of stdin'
- write(6,'(a)') '  -t, --toml-input FILE'
- write(6,'(a)') '      Read the input from the TOML file FILE'
-#if !(defined WITH_TOML)
- write(6,'(a)') '      (not available: this build has no TOML)'
-#endif
- if(istage==1) then
-   write(6,'(a)') '  -a, --ae-file FILE'
-   write(6,'(a)') '      Write the all-electron data file FILE (required)'
- else if(istage==2) then
-   write(6,'(a)') '  -a, --ae-file FILE'
-   write(6,'(3a)') '      Read the all-electron data file FILE, written by ', &
-&                  trim(full),'_ae.x'
-   write(6,'(a)') '      for the same atom, reference configuration and mesh'
-   write(6,'(a)') '      (required); the input''s test configurations must'
-   write(6,'(a)') '      be among those the file was written for'
- end if
- if(istage/=1) then
-   write(6,'(a)') '  -p, --ps-file FILE'
-   write(6,'(a)') '      Also write the pseudopotential data file FILE, from'
-   write(6,'(a)') '      which oncvpsp_ld.x computes the log derivatives at'
-   write(6,'(a)') '      any radii and energies'
-   write(6,'(a)') '  --no-log-derivatives'
-   write(6,'(a)') '      Leave out the log derivatives (their plot data and'
-   write(6,'(a)') '      the DIAGNOSTICS ld lines); oncvpsp_ld.x gives them'
-   write(6,'(a)') '      from --ps-file'
- end if
- write(6,'(a)') ''
- write(6,'(a)') 'Errors are reported on stdout, with a nonzero exit status.'
- return
- end subroutine write_help
 
  end subroutine oncvpsp_main
 
