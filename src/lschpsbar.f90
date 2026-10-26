@@ -36,6 +36,7 @@
 !! @param tht  phast-shift angle for boundary condition, units of pi
 
  use constants_m, only: dp, pi
+ use boundsolve_m, only: bs_converged, bs_correct, bs_bisect
  implicit none
 
 
@@ -276,30 +277,19 @@
 ! convergence test and possible exit
 
 
-     if(abs(de)<max(abs(ee),0.2d0)*eps) then
-       if(abs(de)<=8.0d0*epsilon(1.0d0)*max(abs(ee),0.2d0) .or. &
-&         abs(de)>=0.5d0*abs(deprev)) then
-         ierr = 0
-         exit
-       end if
+     if(bs_converged(de,deprev,ee,eps)) then
+       ierr = 0
+       exit
      end if
      deprev=de
 
-     if(de>0.0d0) then
-       emin=ee
-     else
-       emax=ee
-     end if
-     ee=ee+de
-     if(ee>emax .or. ee<emin) ee=0.5d0*(emax+emin)
+     call bs_correct(de,ee,emin,emax,.false.)
    else if(node-nn+ll+1<0) then
 ! too few nodes
-     emin=ee
-     ee=0.5d0*(emin+emax)
+     call bs_bisect(ee,emin,emax,.true.,.false.)
    else
 ! too many nodes
-     emax=ee
-     ee=0.5d0*(emin+emax)
+     call bs_bisect(ee,emin,emax,.false.,.false.)
    end if
 
  end do !nint

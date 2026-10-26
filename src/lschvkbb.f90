@@ -76,6 +76,7 @@
 !!              the passes of an SCF whose potential is still moving
 
  use constants_m, only: dp
+ use boundsolve_m, only: bs_converged, bs_correct, bs_bisect
  use match_m, only: match_k, match_point, match_weights, match_smax
  use pieces_m, only: piecewise_t
  use outwf_m, only: outwf_t, outwf_setup, outwf_solve, outwf_free
@@ -289,32 +290,21 @@
        ierr = 0
        exit
      end if
-     if(abs(de)<max(abs(ee),0.2d0)*eps) then
-       if(abs(de)<=8.0d0*epsilon(1.0d0)*max(abs(ee),0.2d0) .or. &
-&         abs(de)>=0.5d0*abs(deprev)) then
-         ierr = 0
-         exit
-       end if
+     if(bs_converged(de,deprev,ee,eps)) then
+       ierr = 0
+       exit
      end if
      deprev=de
 
-     if(de>0.0d0) then
-       emin=0.5d0*(emin+ee)
-     else
-       emax=0.5d0*(emax+ee)
-     end if
-     ee=ee+de
-     if(ee>emax .or. ee<emin) ee=0.5d0*(emax+emin)
+     call bs_correct(de,ee,emin,emax,.true.)
 
    else if(neig-nn+ll+1<0) then
 ! too few eigenvalues below ee
-     emin=0.5d0*(emin+ee)
-     ee=0.5d0*(emin+emax)
+     call bs_bisect(ee,emin,emax,.true.,.true.)
 
    else
 ! too many eigenvalues below ee
-     emax=0.5d0*(emax+ee)
-     ee=0.5d0*(emin+emax)
+     call bs_bisect(ee,emin,emax,.false.,.true.)
    end if
 
  end do

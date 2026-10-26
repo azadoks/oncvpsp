@@ -44,6 +44,7 @@
 !! @param mch  matching mesh point for inward-outward integrations
 
  use constants_m, only: dp
+ use boundsolve_m, only: bs_converged, bs_correct, bs_bisect
  use pieces_m, only: piecewise_t
  use outwf_m, only: outwf_t, outwf_setup, outwf_solve, outwf_free
  implicit none
@@ -68,14 +69,11 @@
  real(dp) :: cn
  real(dp) :: de,deprev
  real(dp) :: eps,ro,sc
- real(dp) :: sls,sn,uout,upin,upout
- real(dp) :: amesh,al,als
+ real(dp) :: sn,uout,upin,upout
+ real(dp) :: amesh,al
  real(dp) :: xkap
  integer :: ii,it,nin,nint,neig
  type(outwf_t) :: ow
-
- real(dp), allocatable :: upp(:),cf(:)
- allocate(upp(mmax),cf(mmax))
 
  al = 0.01d0 * log(rr(101) / rr(1))
  amesh = exp(al)
@@ -91,9 +89,6 @@
  deprev=huge(1.0d0)
  ierr = 60
 
- sls=ll*(ll+1)
-
-
  if(ee>emax) ee=1.25d0*emax
  if(ee<emin) ee=0.75d0*emin
  if(ee>emax) ee=0.5d0*(emax+emin)
@@ -101,20 +96,12 @@
 ! null arrays to remove leftover garbage
  uu(:)=0.0d0
  up(:)=0.0d0
- upp(:)=0.0d0
-
- als=al**2
 
 ! the grids of the outward integration (outwf_m), once for this potential
  call outwf_setup(ll,rr,mmax,vloc,vlocpw,nvkb,vkbpw,ow)
 
 ! return point for bound state convergence
  do nint=1,60
-
-! coefficient array for u in differential eq.
-   do ii=1,mmax
-     cf(ii)=als*sls + 2.0d0*als*(vloc(ii)-ee)*rr(ii)**2
-   end do
 
    nin=mch
 
@@ -164,37 +151,25 @@
 
 ! convergence test and possible exit
 
-     if(abs(de)<max(abs(ee),0.2d0)*eps) then
-       if(abs(de)<=8.0d0*epsilon(1.0d0)*max(abs(ee),0.2d0) .or. &
-&         abs(de)>=0.5d0*abs(deprev)) then
-         ierr = 0
-         exit
-       end if
+     if(bs_converged(de,deprev,ee,eps)) then
+       ierr = 0
+       exit
      end if
      deprev=de
 
-     if(de>0.0d0) then
-       emin=ee
-     else
-       emax=ee
-     end if
-     ee=ee+de
-     if(ee>emax .or. ee<emin) ee=0.5d0*(emax+emin)
+     call bs_correct(de,ee,emin,emax,.false.)
 
    else if(neig-nn+ll+1<0) then
 ! too few eigenvalues below ee
-     emin=ee
-     ee=0.5d0*(emin+emax)
+     call bs_bisect(ee,emin,emax,.true.,.false.)
 
    else
 ! too many eigenvalues below ee
-     emax=ee
-     ee=0.5d0*(emin+emax)
+     call bs_bisect(ee,emin,emax,.false.,.false.)
    end if
  end do
 
  call outwf_free(ow)
- deallocate(upp,cf)
  return
 
  end subroutine lschvkbbe
