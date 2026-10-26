@@ -12,6 +12,7 @@ set(src_oncvpsp
     const_basis_m.f90
     constants_m.f90
     lapack_m.f90
+    input_m.f90
     der2exc_m.f90
     derivs_m.f90
     diagout_m.f90

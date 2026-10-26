@@ -4,25 +4,14 @@
  use tomlf, only: toml_table, toml_array, toml_keyval, toml_error, toml_stat, &
 &                 toml_load, get_value, len
  use constants_m, only: mxstate, mxcnf, mxlin, mxkap, well_onset_default
+ use input_m, only: input_t
  use input_text_m, only: finite
  implicit none
  private
  public :: read_input_toml
  contains
 
- subroutine read_input_toml(unit, &
-&                           atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
-&                           lmax, rc, ep, ncon, nbas, qcut, &
-&                           lloc, lpopt, dvloc0, nproj, debl, &
-&                           icmod, fcfact, rcfact, slack, budget_cut, &
-&                           fcfact_min, fcfact_max, fcfact_step, &
-&                           rcfact_min, rcfact_max, rcfact_step, &
-&                           epsh1, epsh2, depsh, rxpsh, &
-&                           rlmax, drl, upf_mesh, &
-&                           ncnf, nvcnf, nacnf, lacnf, facnf, &
-&                           amesh, rr1, rmax, c_light, ep_as_given, &
-&                           well_onset, well_tail, wreg, well_n, &
-&                           well_norm, ecut_wt)
+ subroutine read_input_toml(unit, inp)
 
 !! Reads the TOML input: the same data as read_input_text, with the same
 !! defaults and the same checks against the array sizes (check_data
@@ -81,128 +70,8 @@
  integer, intent(in) :: unit
 
 !Output variables
-! [Atom and reference configuration]
-!> Atomic symbol
- character(len=2), intent(out) :: atsym
-!> Atomic number
- real(dp), intent(out) :: zz
-!> Number of core states
- integer, intent(out) :: nc
-!> Number of valence states
- integer, intent(out) :: nv
-!> Exchange-correlation functional code
- integer, intent(out) :: iexc
-!> Pseudopotential output file format flag
- character(len=4), intent(out) :: psfile
-!> Principal quantum number array
- integer, intent(out) :: na(mxstate)
-!> Orbital angular momentum quantum number array
- integer, intent(out) :: la(mxstate)
-!> Occupation number array
- real(dp), intent(out) :: fa(mxstate)
-! [Pseudopotential and optimization]
-!> Maximum angular momentum
- integer, intent(out) :: lmax
-!> Core radii for pseudopotentials (rc(5) is the local potential's)
- real(dp), intent(out) :: rc(mxlin+1)
-!> Pseudopotential energies, the input value for both j=l+1/2 and l-1/2
-!> (only the fully-relativistic code uses the second)
- real(dp), intent(out) :: ep(mxlin+1, mxkap)
-!> Number of matching constraints for each pseudopotential
- integer, intent(out) :: ncon(mxlin+1)
-!> Number of basis functions for each pseudopotential
- integer, intent(out) :: nbas(mxlin+1)
-!> Residual-energy cutoff wave vector for each pseudopotential
- real(dp), intent(out) :: qcut(mxlin+1)
-! [Local potential]
-!> Angular momentum used for local potential
- integer, intent(out) :: lloc
-!> Polynomial type of the local potential
- integer, intent(out) :: lpopt
-!> Local potential offset at origin
- real(dp), intent(out) :: dvloc0
-! [Vanderbilt-Kleinman-Bylander projectors]
-!> Number of projectors for each angular momentum
- integer, intent(out) :: nproj(mxlin+1)
-!> use ep as given for the well states (D-1), else wellstate's replacements
- logical, intent(out) :: ep_as_given
-!> onset of the well of the well states as a multiple of rc (wellstate)
- real(dp), intent(out) :: well_onset
-!> the tail of the well states: 0 "well", 1 "free", 2 "confined"
- integer, intent(out) :: well_tail
- real(dp), intent(out) :: wreg
-!> the normalization of the well states: 0 that of well_tail, 1 "space"
-!> (all space), 2 "rc" (inside rc)
- integer, intent(out) :: well_norm
-!> Energy added to ep for the second projector (Ha)
- real(dp), intent(out) :: debl(mxlin+1)
-!> n of the first well state of each l with well_tail 2 (0 for the
-!> default)
- integer, intent(out) :: well_n(mxlin+1)
-!> weight of the first pseudo-wave of each l with no occupied state in the
-!> cutoff of the pseudo-waves (negative for the default 2(2l+1))
- real(dp), intent(out) :: ecut_wt(mxlin+1)
-! [Model core charge]
-!> Model core charge flag
- integer, intent(out) :: icmod
-!> Scaling factor for core charge
- real(dp), intent(out) :: fcfact
-!> Scaling factor range minimum for optimization
- real(dp), intent(out) :: fcfact_min
-!> Scaling factor range maximum for optimization
- real(dp), intent(out) :: fcfact_max
-!> Scaling factor step size for optimization
- real(dp), intent(out) :: fcfact_step
-!> Core charge width factor
- real(dp), intent(out) :: rcfact
-!> Share of the cutoff the model core must fit (icmod 6, 7)
- real(dp), intent(out) :: slack
-!> The cutoff of the pseudo-waves (icmod 6, 7; budget_cutoff): 0 "max",
-!> the largest over the ground-state waves, 1 "weighted", their weighted
-!> mean, 2 "max_all", the largest over all waves
- integer, intent(out) :: budget_cut
-!> Core charge width factor minimum for optimization
- real(dp), intent(out) :: rcfact_min
-!> Core charge width factor maximum for optimization
- real(dp), intent(out) :: rcfact_max
-!> Core charge width factor step size for optimization
- real(dp), intent(out) :: rcfact_step
-! [Log derivative analysis]
-!> Lower bound of energy range for log derivative analysis
- real(dp), intent(out) :: epsh1
-!> Upper bound of energy range for log derivative analysis
- real(dp), intent(out) :: epsh2
-!> Energy step size for log derivative analysis
- real(dp), intent(out) :: depsh
-!> Radius for log derivative analysis
- real(dp), intent(out) :: rxpsh
-! [Output grid]
-!> Maximum radius for output grid
- real(dp), intent(out) :: rlmax
-!> Grid spacing for output grid
- real(dp), intent(out) :: drl
-!> Most points of the log mesh of the UPF file (0 for the linear output grid)
- integer, intent(out) :: upf_mesh
-! [Test configurations]
-!> Number of test configurations
- integer, intent(out) :: ncnf
-!> Number of valence states in test configurations
- integer, intent(out) :: nvcnf(mxcnf)
-!> Principal quantum number array for test configurations
- integer, intent(out) :: nacnf(mxstate, mxcnf)
-!> Orbital angular momentum quantum number array for test configurations
- integer, intent(out) :: lacnf(mxstate, mxcnf)
-!> Occupation number array for test configurations
- real(dp), intent(out) :: facnf(mxstate, mxcnf)
-!> Ratio of successive points of the log radial mesh
-!> (0 or less for the default)
- real(dp), intent(out) :: amesh
-!> First point of the log radial mesh (0 or less for the default)
- real(dp), intent(out) :: rr1
-!> Outer radius of the log radial mesh (0 or less for the default)
- real(dp), intent(out) :: rmax
-!> Speed of light (0 or less for the default)
- real(dp), intent(out) :: c_light
+!> The input values
+ type(input_t), intent(out) :: inp
 
 !Local variables
 !> The TOML document
@@ -226,260 +95,281 @@
 !> Message of an input error that names a limit
  character(len=80) :: msg
 
-! the defaults of read_input_text
- nproj(:) = 0
- fcfact = 0.0_dp
- rcfact = 0.0_dp
- slack = 1.0_dp
- budget_cut = 0
- rc(:) = 0.0_dp
- ep(:, :) = 0.0_dp
- rxpsh = -1.0_dp  ! negative value for auto setting of radius
- fcfact_min = 1.5_dp
- fcfact_max = 6.0_dp
- fcfact_step = 0.5_dp
- rcfact_min = 1.0_dp
- rcfact_max = 1.9_dp
- rcfact_step = 0.1_dp
- ncnf = 0
- amesh = -1.0_dp  ! negative values for the built-in mesh
- rr1 = -1.0_dp
- rmax = -1.0_dp
- atsym = ' '
- psfile = ' '
+ associate(atsym=>inp%atsym, zz=>inp%zz, nc=>inp%nc, nv=>inp%nv, &
+&          iexc=>inp%iexc, psfile=>inp%psfile, na=>inp%na, la=>inp%la, &
+&          fa=>inp%fa, lmax=>inp%lmax, rc=>inp%rc, ep=>inp%ep, ncon=>inp%ncon, &
+&          nbas=>inp%nbas, qcut=>inp%qcut, lloc=>inp%lloc, lpopt=>inp%lpopt, &
+&          dvloc0=>inp%dvloc0, nproj=>inp%nproj, debl=>inp%debl, &
+&          icmod=>inp%icmod, fcfact=>inp%fcfact, rcfact=>inp%rcfact, &
+&          slack=>inp%slack, budget_cut=>inp%budget_cut, &
+&          fcfact_min=>inp%fcfact_min, fcfact_max=>inp%fcfact_max, &
+&          fcfact_step=>inp%fcfact_step, rcfact_min=>inp%rcfact_min, &
+&          rcfact_max=>inp%rcfact_max, rcfact_step=>inp%rcfact_step, &
+&          epsh1=>inp%epsh1, epsh2=>inp%epsh2, depsh=>inp%depsh, &
+&          rxpsh=>inp%rxpsh, rlmax=>inp%rlmax, drl=>inp%drl, &
+&          upf_mesh=>inp%upf_mesh, ncnf=>inp%ncnf, nvcnf=>inp%nvcnf, &
+&          nacnf=>inp%nacnf, lacnf=>inp%lacnf, facnf=>inp%facnf, &
+&          amesh=>inp%amesh, rr1=>inp%rr1, rmax=>inp%rmax, &
+&          c_light=>inp%c_light, ep_as_given=>inp%ep_as_given, &
+&          well_onset=>inp%well_onset, well_tail=>inp%well_tail, &
+&          wreg=>inp%wreg, well_n=>inp%well_n, well_norm=>inp%well_norm, &
+&          ecut_wt=>inp%ecut_wt)
 
- call toml_load(table, unit, error=error)
- if(allocated(error)) then
-   call input_error('cannot parse the input: '//error%message)
- end if
- if(.not. allocated(table)) call input_error('cannot parse the input')
+! the defaults of read_input_text
+   nproj(:) = 0
+   fcfact = 0.0_dp
+   rcfact = 0.0_dp
+   slack = 1.0_dp
+   budget_cut = 0
+   rc(:) = 0.0_dp
+   ep(:, :) = 0.0_dp
+   rxpsh = -1.0_dp  ! negative value for auto setting of radius
+   fcfact_min = 1.5_dp
+   fcfact_max = 6.0_dp
+   fcfact_step = 0.5_dp
+   rcfact_min = 1.0_dp
+   rcfact_max = 1.9_dp
+   rcfact_step = 0.1_dp
+   ncnf = 0
+   amesh = -1.0_dp  ! negative values for the built-in mesh
+   rr1 = -1.0_dp
+   rmax = -1.0_dp
+   atsym = ' '
+   psfile = ' '
+
+   call toml_load(table, unit, error=error)
+   if(allocated(error)) then
+     call input_error('cannot parse the input: '//error%message)
+   end if
+   if(.not. allocated(table)) call input_error('cannot parse the input')
 
 ! atom
- call get_section(table, 'oncvpsp', child)
- call get_string(child, 'oncvpsp', 'atsym', tmp_str)
- if(len_trim(tmp_str) < 1 .or. len_trim(tmp_str) > 2) then
-   call input_error('atsym in [oncvpsp] must have 1 or 2 characters, '// &
-&    'got "'//tmp_str//'"')
- end if
- atsym = trim(tmp_str)
- call get_real(child, 'oncvpsp', 'z', zz)
- call get_int(child, 'oncvpsp', 'nc', nc)
- call get_int(child, 'oncvpsp', 'nv', nv)
- call get_real(child, 'oncvpsp', 'c_light', c_light, -1.0_dp)
- call get_int(child, 'oncvpsp', 'iexc', iexc)
+   call get_section(table, 'oncvpsp', child)
+   call get_string(child, 'oncvpsp', 'atsym', tmp_str)
+   if(len_trim(tmp_str) < 1 .or. len_trim(tmp_str) > 2) then
+     call input_error('atsym in [oncvpsp] must have 1 or 2 characters, '// &
+&      'got "'//tmp_str//'"')
+   end if
+   atsym = trim(tmp_str)
+   call get_real(child, 'oncvpsp', 'z', zz)
+   call get_int(child, 'oncvpsp', 'nc', nc)
+   call get_int(child, 'oncvpsp', 'nv', nv)
+   call get_real(child, 'oncvpsp', 'c_light', c_light, -1.0_dp)
+   call get_int(child, 'oncvpsp', 'iexc', iexc)
 ! counts beyond the array sizes would overrun before check_data runs
- if(nc < 0 .or. nv < 0 .or. nc + nv > mxstate) then
-   write(msg, '(a,i0)') 'nc and nv in [oncvpsp] must be >= 0 with '// &
-&    'nc + nv <= ', mxstate
-   call input_error(trim(msg))
- end if
+   if(nc < 0 .or. nv < 0 .or. nc + nv > mxstate) then
+     write(msg, '(a,i0)') 'nc and nv in [oncvpsp] must be >= 0 with '// &
+&      'nc + nv <= ', mxstate
+     call input_error(trim(msg))
+   end if
 
 ! reference configuration
- call get_section(table, 'reference_configuration', child)
- call get_int_array(child, 'reference_configuration', 'n', nc + nv, na)
- call get_int_array(child, 'reference_configuration', 'l', nc + nv, la)
- call get_real_array(child, 'reference_configuration', 'f', nc + nv, fa)
+   call get_section(table, 'reference_configuration', child)
+   call get_int_array(child, 'reference_configuration', 'n', nc + nv, na)
+   call get_int_array(child, 'reference_configuration', 'l', nc + nv, la)
+   call get_real_array(child, 'reference_configuration', 'f', nc + nv, fa)
 
 ! pseudopotential and optimization
- call get_section(table, 'pseudopotentials', child)
- call get_int(child, 'pseudopotentials', 'lmax', lmax)
- if(lmax < 0 .or. lmax > mxlin) then
-   write(msg, '(a,i0)') 'lmax in [pseudopotentials] must be in 0..', mxlin
-   call input_error(trim(msg))
- end if
- call get_int_array(child, 'pseudopotentials', 'l', lmax + 1, lt)
- call check_l(lt, lmax, 'pseudopotentials')
- call get_real_array(child, 'pseudopotentials', 'rc', lmax + 1, rc)
- call get_real_array(child, 'pseudopotentials', 'ep', lmax + 1, ep(:, 1))
- ep(:, 2) = ep(:, 1)
- call get_int_array(child, 'pseudopotentials', 'ncon', lmax + 1, ncon)
- call get_int_array(child, 'pseudopotentials', 'nbas', lmax + 1, nbas)
- call get_real_array(child, 'pseudopotentials', 'qcut', lmax + 1, qcut)
- call get_logical(child, 'pseudopotentials', 'ep_as_given', ep_as_given, &
-&                  .false.)
- call get_real(child, 'pseudopotentials', 'well_onset', well_onset, &
-&              well_onset_default)
- if(.not. (well_onset >= 1.0_dp)) then
-   call input_error('well_onset in [pseudopotentials] must be at least 1')
- end if
- call get_string(child, 'pseudopotentials', 'well_tail', tmp_str, 'well')
- select case(tmp_str)
- case('well')
-   well_tail = 0
- case('free')
-   well_tail = 1
- case('confined')
-   well_tail = 2
- case default
-   call input_error('well_tail in [pseudopotentials] must be "well", '// &
-&    '"free" or "confined", got "'//tmp_str//'"')
- end select
+   call get_section(table, 'pseudopotentials', child)
+   call get_int(child, 'pseudopotentials', 'lmax', lmax)
+   if(lmax < 0 .or. lmax > mxlin) then
+     write(msg, '(a,i0)') 'lmax in [pseudopotentials] must be in 0..', mxlin
+     call input_error(trim(msg))
+   end if
+   call get_int_array(child, 'pseudopotentials', 'l', lmax + 1, lt)
+   call check_l(lt, lmax, 'pseudopotentials')
+   call get_real_array(child, 'pseudopotentials', 'rc', lmax + 1, rc)
+   call get_real_array(child, 'pseudopotentials', 'ep', lmax + 1, ep(:, 1))
+   ep(:, 2) = ep(:, 1)
+   call get_int_array(child, 'pseudopotentials', 'ncon', lmax + 1, ncon)
+   call get_int_array(child, 'pseudopotentials', 'nbas', lmax + 1, nbas)
+   call get_real_array(child, 'pseudopotentials', 'qcut', lmax + 1, qcut)
+   call get_logical(child, 'pseudopotentials', 'ep_as_given', ep_as_given, &
+&                    .false.)
+   call get_real(child, 'pseudopotentials', 'well_onset', well_onset, &
+&                well_onset_default)
+   if(.not. (well_onset >= 1.0_dp)) then
+     call input_error('well_onset in [pseudopotentials] must be at least 1')
+   end if
+   call get_string(child, 'pseudopotentials', 'well_tail', tmp_str, 'well')
+   select case(tmp_str)
+   case('well')
+     well_tail = 0
+   case('free')
+     well_tail = 1
+   case('confined')
+     well_tail = 2
+   case default
+     call input_error('well_tail in [pseudopotentials] must be "well", '// &
+&      '"free" or "confined", got "'//tmp_str//'"')
+   end select
 
- call get_real(child, 'pseudopotentials', 'wave_regularization', wreg, &
-&              0.0_dp)
- if(.not. (wreg >= 0.0_dp)) then
-   call input_error('wave_regularization in [pseudopotentials] must be '// &
-&    'at least 0')
- end if
- call get_string(child, 'pseudopotentials', 'well_norm', tmp_str, '-')
- select case(tmp_str)
- case('-')
-   well_norm = 0
- case('space')
-   well_norm = 1
- case('rc')
-   well_norm = 2
- case default
-   call input_error('well_norm in [pseudopotentials] must be "space" or '// &
-&    '"rc", got "'//tmp_str//'"')
- end select
+   call get_real(child, 'pseudopotentials', 'wave_regularization', wreg, &
+&                0.0_dp)
+   if(.not. (wreg >= 0.0_dp)) then
+     call input_error('wave_regularization in [pseudopotentials] must be '// &
+&      'at least 0')
+   end if
+   call get_string(child, 'pseudopotentials', 'well_norm', tmp_str, '-')
+   select case(tmp_str)
+   case('-')
+     well_norm = 0
+   case('space')
+     well_norm = 1
+   case('rc')
+     well_norm = 2
+   case default
+     call input_error('well_norm in [pseudopotentials] must be "space" or '// &
+&      '"rc", got "'//tmp_str//'"')
+   end select
 
 ! local potential
- call get_section(table, 'local_potential', child)
- call get_int(child, 'local_potential', 'lloc', lloc)
- call get_int(child, 'local_potential', 'lpopt', lpopt)
- call get_real(child, 'local_potential', 'rcloc', rc(5))
- call get_real(child, 'local_potential', 'dvloc0', dvloc0)
+   call get_section(table, 'local_potential', child)
+   call get_int(child, 'local_potential', 'lloc', lloc)
+   call get_int(child, 'local_potential', 'lpopt', lpopt)
+   call get_real(child, 'local_potential', 'rcloc', rc(5))
+   call get_real(child, 'local_potential', 'dvloc0', dvloc0)
 
 ! Vanderbilt-Kleinman-Bylander projectors
- call get_section(table, 'vkb_projectors', child)
- call get_int_array(child, 'vkb_projectors', 'l', lmax + 1, lt)
- call check_l(lt, lmax, 'vkb_projectors')
- call get_int_array(child, 'vkb_projectors', 'nproj', lmax + 1, nproj)
- call get_real_array(child, 'vkb_projectors', 'debl', lmax + 1, debl)
- well_n(:) = 0
- if(child%has_key('well_n')) then
-   call get_int_array(child, 'vkb_projectors', 'well_n', lmax + 1, well_n)
-   if(any(well_n(1:lmax + 1) < 0)) then
-     call input_error('well_n in [vkb_projectors] must be at least 0')
+   call get_section(table, 'vkb_projectors', child)
+   call get_int_array(child, 'vkb_projectors', 'l', lmax + 1, lt)
+   call check_l(lt, lmax, 'vkb_projectors')
+   call get_int_array(child, 'vkb_projectors', 'nproj', lmax + 1, nproj)
+   call get_real_array(child, 'vkb_projectors', 'debl', lmax + 1, debl)
+   well_n(:) = 0
+   if(child%has_key('well_n')) then
+     call get_int_array(child, 'vkb_projectors', 'well_n', lmax + 1, well_n)
+     if(any(well_n(1:lmax + 1) < 0)) then
+       call input_error('well_n in [vkb_projectors] must be at least 0')
+     end if
    end if
- end if
- ecut_wt(:) = -1.0_dp
- if(child%has_key('ecut_weight')) then
-   call get_real_array(child, 'vkb_projectors', 'ecut_weight', lmax + 1, &
-&                      ecut_wt)
- end if
+   ecut_wt(:) = -1.0_dp
+   if(child%has_key('ecut_weight')) then
+     call get_real_array(child, 'vkb_projectors', 'ecut_weight', lmax + 1, &
+&                        ecut_wt)
+   end if
 
 ! model core charge; check_data validates icmod and the values
- call get_section(table, 'model_core_charge', child)
- call get_int(child, 'model_core_charge', 'icmod', icmod)
- select case(icmod)
- case(1, 2, 6, 7)
-   call get_real(child, 'model_core_charge', 'fcfact', fcfact)
- case(3)
-   call get_real(child, 'model_core_charge', 'fcfact', fcfact)
-   call get_real(child, 'model_core_charge', 'rcfact', rcfact)
- case default
-   call get_real(child, 'model_core_charge', 'fcfact', fcfact, 0.0_dp)
- end select
- select case(icmod)
- case(4, 5)
-! fcfact and rcfact are ignored; the grid of the Teter parameters
-   call get_real(child, 'model_core_charge', 'rcfact', rcfact, 0.0_dp)
-   call get_real(child, 'model_core_charge', 'fcfact_min', fcfact_min, &
-&    fcfact_min)
-   call get_real(child, 'model_core_charge', 'fcfact_max', fcfact_max, &
-&    fcfact_max)
-   call get_real(child, 'model_core_charge', 'fcfact_step', fcfact_step, &
-&    fcfact_step)
-   call get_real(child, 'model_core_charge', 'rcfact_min', rcfact_min, &
-&    rcfact_min)
-   call get_real(child, 'model_core_charge', 'rcfact_max', rcfact_max, &
-&    rcfact_max)
-   call get_real(child, 'model_core_charge', 'rcfact_step', rcfact_step, &
-&    rcfact_step)
- case(6, 7)
-   call get_real(child, 'model_core_charge', 'rcfact', rcfact, 1.0e-5_dp)
-   call get_real(child, 'model_core_charge', 'slack', slack, 1.0_dp)
-   call get_string(child, 'model_core_charge', 'budget_cutoff', tmp_str, &
-&    'max')
-   select case(tmp_str)
-   case('max')
-     budget_cut = 0
-   case('weighted')
-     budget_cut = 1
-   case('max_all')
-     budget_cut = 2
+   call get_section(table, 'model_core_charge', child)
+   call get_int(child, 'model_core_charge', 'icmod', icmod)
+   select case(icmod)
+   case(1, 2, 6, 7)
+     call get_real(child, 'model_core_charge', 'fcfact', fcfact)
+   case(3)
+     call get_real(child, 'model_core_charge', 'fcfact', fcfact)
+     call get_real(child, 'model_core_charge', 'rcfact', rcfact)
    case default
-     call input_error('budget_cutoff in [model_core_charge] must be "max",'// &
-&      ' "weighted" or "max_all", got "'//tmp_str//'"')
+     call get_real(child, 'model_core_charge', 'fcfact', fcfact, 0.0_dp)
    end select
- case default
+   select case(icmod)
+   case(4, 5)
+! fcfact and rcfact are ignored; the grid of the Teter parameters
+     call get_real(child, 'model_core_charge', 'rcfact', rcfact, 0.0_dp)
+     call get_real(child, 'model_core_charge', 'fcfact_min', fcfact_min, &
+&      fcfact_min)
+     call get_real(child, 'model_core_charge', 'fcfact_max', fcfact_max, &
+&      fcfact_max)
+     call get_real(child, 'model_core_charge', 'fcfact_step', fcfact_step, &
+&      fcfact_step)
+     call get_real(child, 'model_core_charge', 'rcfact_min', rcfact_min, &
+&      rcfact_min)
+     call get_real(child, 'model_core_charge', 'rcfact_max', rcfact_max, &
+&      rcfact_max)
+     call get_real(child, 'model_core_charge', 'rcfact_step', rcfact_step, &
+&      rcfact_step)
+   case(6, 7)
+     call get_real(child, 'model_core_charge', 'rcfact', rcfact, 1.0e-5_dp)
+     call get_real(child, 'model_core_charge', 'slack', slack, 1.0_dp)
+     call get_string(child, 'model_core_charge', 'budget_cutoff', tmp_str, &
+&      'max')
+     select case(tmp_str)
+     case('max')
+       budget_cut = 0
+     case('weighted')
+       budget_cut = 1
+     case('max_all')
+       budget_cut = 2
+     case default
+       call input_error('budget_cutoff in [model_core_charge] must be '// &
+&        '"max", "weighted" or "max_all", got "'//tmp_str//'"')
+     end select
+   case default
 ! no further keys
- end select
+   end select
 
 ! log derivative analysis
- call get_section(table, 'log_derivative_analysis', child)
- call get_real(child, 'log_derivative_analysis', 'epsh1', epsh1)
- call get_real(child, 'log_derivative_analysis', 'epsh2', epsh2)
- call get_real(child, 'log_derivative_analysis', 'depsh', depsh)
- call get_real(child, 'log_derivative_analysis', 'rxpsh', rxpsh, -1.0_dp)
+   call get_section(table, 'log_derivative_analysis', child)
+   call get_real(child, 'log_derivative_analysis', 'epsh1', epsh1)
+   call get_real(child, 'log_derivative_analysis', 'epsh2', epsh2)
+   call get_real(child, 'log_derivative_analysis', 'depsh', depsh)
+   call get_real(child, 'log_derivative_analysis', 'rxpsh', rxpsh, -1.0_dp)
 
 ! output grid
- call get_section(table, 'linear_mesh', child)
- call get_real(child, 'linear_mesh', 'a', drl)
- call get_real(child, 'linear_mesh', 'rmax', rlmax)
+   call get_section(table, 'linear_mesh', child)
+   call get_real(child, 'linear_mesh', 'a', drl)
+   call get_real(child, 'linear_mesh', 'rmax', rlmax)
 
 ! log mesh (optional)
- call get_value(table, 'log_mesh', child, requested=.false., stat=stat)
- if(associated(child)) then
-   call get_real(child, 'log_mesh', 'amesh', amesh, -1.0_dp)
-   call get_real(child, 'log_mesh', 'rr1', rr1, -1.0_dp)
-   call get_real(child, 'log_mesh', 'rmax', rmax, -1.0_dp)
- else if(stat /= toml_stat%success) then
-   call input_error('[log_mesh] must be a table')
- end if
+   call get_value(table, 'log_mesh', child, requested=.false., stat=stat)
+   if(associated(child)) then
+     call get_real(child, 'log_mesh', 'amesh', amesh, -1.0_dp)
+     call get_real(child, 'log_mesh', 'rr1', rr1, -1.0_dp)
+     call get_real(child, 'log_mesh', 'rmax', rmax, -1.0_dp)
+   else if(stat /= toml_stat%success) then
+     call input_error('[log_mesh] must be a table')
+   end if
 
 ! pseudopotential output file
- call get_section(table, 'pp_output', child)
- call get_string(child, 'pp_output', 'psfile', tmp_str)
- if(len_trim(tmp_str) < 1 .or. len_trim(tmp_str) > 4) then
-   call input_error('psfile in [pp_output] must have 1 to 4 characters, '// &
-&    'got "'//tmp_str//'"')
- end if
- psfile = trim(tmp_str)
- call get_int(child, 'pp_output', 'upf_mesh', upf_mesh, 0)
+   call get_section(table, 'pp_output', child)
+   call get_string(child, 'pp_output', 'psfile', tmp_str)
+   if(len_trim(tmp_str) < 1 .or. len_trim(tmp_str) > 4) then
+     call input_error('psfile in [pp_output] must have 1 to 4 characters, '// &
+&      'got "'//tmp_str//'"')
+   end if
+   psfile = trim(tmp_str)
+   call get_int(child, 'pp_output', 'upf_mesh', upf_mesh, 0)
 
 ! test configurations (optional): the valence states, after the
 ! reference core states the driver copies in
- call get_value(table, 'test_configurations', arr, requested=.false., &
-&  stat=stat)
- if(stat /= toml_stat%success) then
-   call input_error('test_configurations must be an array of tables, '// &
-&    '[[test_configurations]]')
- end if
- if(associated(arr)) then
-   ncnf = len(arr)
-   if(ncnf > mxcnf - 1) then
-     write(msg, '(a,i0,a)') 'at most ', mxcnf - 1, &
-&      ' [[test_configurations]] are allowed'
-     call input_error(trim(msg))
+   call get_value(table, 'test_configurations', arr, requested=.false., &
+&    stat=stat)
+   if(stat /= toml_stat%success) then
+     call input_error('test_configurations must be an array of tables, '// &
+&      '[[test_configurations]]')
    end if
-   do jj = 2, ncnf + 1
-     call get_value(arr, jj - 1, child, stat=stat)
-     if(.not. associated(child)) then
-       call input_error('test_configurations must be an array of tables, ' // &
-&                       '[[test_configurations]]')
-     end if
-! the number of valence states is that of n
-     call get_value(child, 'n', narr, requested=.false., stat=stat)
-     if(.not. associated(narr)) then
-       call key_error('test_configurations', 'n', stat, 'an array')
-     end if
-     nvcnf(jj) = len(narr)
-     if(nc + nvcnf(jj) > mxstate) then
-       write(msg, '(a,i0)') 'nc plus the states of a '// &
-&        '[[test_configurations]] must be <= ', mxstate
+   if(associated(arr)) then
+     ncnf = len(arr)
+     if(ncnf > mxcnf - 1) then
+       write(msg, '(a,i0,a)') 'at most ', mxcnf - 1, &
+&        ' [[test_configurations]] are allowed'
        call input_error(trim(msg))
      end if
-     call get_int_array(child, 'test_configurations', 'n', nvcnf(jj), &
-&      nacnf(nc + 1:, jj))
-     call get_int_array(child, 'test_configurations', 'l', nvcnf(jj), &
-&      lacnf(nc + 1:, jj))
-     call get_real_array(child, 'test_configurations', 'f', nvcnf(jj), &
-&      facnf(nc + 1:, jj))
-   end do
- end if
+     do jj = 2, ncnf + 1
+       call get_value(arr, jj - 1, child, stat=stat)
+       if(.not. associated(child)) then
+         call input_error('test_configurations must be an array of '// &
+&                         'tables, [[test_configurations]]')
+       end if
+! the number of valence states is that of n
+       call get_value(child, 'n', narr, requested=.false., stat=stat)
+       if(.not. associated(narr)) then
+         call key_error('test_configurations', 'n', stat, 'an array')
+       end if
+       nvcnf(jj) = len(narr)
+       if(nc + nvcnf(jj) > mxstate) then
+         write(msg, '(a,i0)') 'nc plus the states of a '// &
+&          '[[test_configurations]] must be <= ', mxstate
+         call input_error(trim(msg))
+       end if
+       call get_int_array(child, 'test_configurations', 'n', nvcnf(jj), &
+&        nacnf(nc + 1:, jj))
+       call get_int_array(child, 'test_configurations', 'l', nvcnf(jj), &
+&        lacnf(nc + 1:, jj))
+       call get_real_array(child, 'test_configurations', 'f', nvcnf(jj), &
+&        facnf(nc + 1:, jj))
+     end do
+   end if
+ end associate
  return
  end subroutine read_input_toml
 

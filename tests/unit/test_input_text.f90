@@ -5,7 +5,7 @@
  program test_input_text
  use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
  use input_text_m, only: next_line, read_input_text
- use constants_m, only: mxstate, mxcnf, mxlin, mxkap
+ use input_m, only: input_t
  implicit none
 
 !Local variables
@@ -127,25 +127,7 @@
  character(len=700) :: lines(33)
  character(len=700), allocatable :: all_lines(:)
  integer :: unit, inline
- character(len=2) :: atsym
- character(len=4) :: psfile
- real(dp) :: zz, fa(mxstate), rc(mxlin+1), ep(mxlin+1, mxkap), qcut(mxlin+1)
- real(dp) :: dvloc0, debl(mxlin+1)
- real(dp) :: fcfact, rcfact, slack, fcfact_min, fcfact_max, fcfact_step
- real(dp) :: rcfact_min, rcfact_max, rcfact_step
- real(dp) :: epsh1, epsh2, depsh, rxpsh, rlmax, drl, facnf(mxstate, mxcnf)
- real(dp) :: amesh, rr1, rmax, c_light
- integer :: nc, nv, iexc, na(mxstate), la(mxstate), lmax, ncon(mxlin+1)
- integer :: nbas(mxlin+1)
- integer :: lloc, lpopt, nproj(mxlin+1)
- integer :: icmod, ncnf, nvcnf(mxcnf), nacnf(mxstate, mxcnf)
- integer :: lacnf(mxstate, mxcnf), upf_mesh
- logical :: ep_as_given
- integer :: budget_cut
- integer :: well_tail, well_n(mxlin+1), well_norm
- real(dp) :: ecut_wt(mxlin+1)
- real(dp) :: wreg
- real(dp) :: well_onset
+ type(input_t) :: inp
 
  lines = [character(len=700) :: &
 &   '# atsym, z, nc, nv, iexc   psfile', &
@@ -196,78 +178,87 @@
    all_lines = lines
  end if
  unit = scratch_input(all_lines, final_newline)
- call read_input_text(unit, inline, &
-&                     atsym, zz, nc, nv, iexc, psfile, na, la, fa, &
-&                     lmax, rc, ep, ncon, nbas, qcut, &
-&                     lloc, lpopt, dvloc0, nproj, debl, &
-&                     icmod, fcfact, rcfact, slack, budget_cut, &
-&                     fcfact_min, fcfact_max, fcfact_step, &
-&                     rcfact_min, rcfact_max, rcfact_step, &
-&                     epsh1, epsh2, depsh, rxpsh, &
-&                     rlmax, drl, upf_mesh, &
-&                     ncnf, nvcnf, nacnf, lacnf, facnf, &
-&                     amesh, rr1, rmax, c_light, ep_as_given, &
-&                     well_onset, well_tail, wreg, well_n, well_norm, &
-&                     ecut_wt)
+ call read_input_text(unit, inline, inp)
  close(unit)
 
- call check(atsym == 'Si' .and. zz == 14 .and. nc == 3 .and. nv == 2 &
-&           .and. iexc == 3 .and. psfile == 'psp8', 'atom')
- call check(all(na(1:5) == [1, 2, 2, 3, 3]) &
-&           .and. all(la(1:5) == [0, 0, 1, 0, 1]) &
-&           .and. all(fa(1:5) == [2, 2, 6, 2, 2]), 'reference configuration')
- call check(lmax == 2 .and. all(rc(1:3) == 2.7_dp) &
-&           .and. all(ep(1:3, 1) == [0.0_dp, 0.0_dp, 0.1_dp]) &
-&           .and. all(ep(1:3, 2) == ep(1:3, 1)) &
-&           .and. all(ncon(1:3) == 5) .and. all(nbas(1:3) == 8) &
-&           .and. all(qcut(1:3) == 5), &
-&           'pseudopotential and optimization')
- call check(lloc == 4 .and. lpopt == 5 .and. rc(5) == 2.7_dp &
-&           .and. dvloc0 == 0, &
-&           'local potential')
- call check(all(nproj(1:3) == 2) &
-&           .and. all(debl(1:3) == [1.0_dp, 0.75_dp, 0.75_dp]), &
-&           'projectors')
- if(with_mesh) then
-   call check(icmod == 6 .and. fcfact == 0 .and. rcfact == 1.0e-6_dp &
-&             .and. slack == 0.8_dp .and. budget_cut == 1, &
-&             'model core charge, slack and budget_cutoff')
- else
-   call check(icmod == 1 .and. fcfact == 0.25_dp .and. slack == 1 &
-&             .and. budget_cut == 0, 'model core charge')
- end if
- call check(epsh1 == -2 .and. epsh2 == 2 .and. depsh == 0.02_dp &
-&           .and. rxpsh < 0, &
-&           'log derivative analysis')
- call check(rlmax == 6 .and. drl == 0.01_dp, 'output grid')
- call check(ncnf == 1 .and. nvcnf(2) == 2 .and. all(nacnf(4:5, 2) == 3) &
-&           .and. all(lacnf(4:5, 2) == [0, 1]) &
-&           .and. all(facnf(4:5, 2) == [2, 1]), &
-&           'test configurations')
- if(with_mesh) then
-   call check(upf_mesh == 2000, 'UPF mesh size')
-   call check(amesh == 1.003_dp .and. rr1 < 0 .and. rmax == 60, 'log mesh')
-   call check(c_light == 137.0359895_dp, 'speed of light')
-   call check(ep_as_given .and. well_onset == 1.5_dp .and. well_tail == 2 &
-&             .and. wreg == 2.5e-9_dp, &
-&             'ep_as_given, well_onset, well_tail, wave_regularization')
-   call check(all(well_n(1:3) == [0, 5, 0]), 'well_n')
-   call check(well_norm == 2, 'well_norm')
-   call check(all(ecut_wt(1:3) == [-1.0_dp, -1.0_dp, 0.3_dp]), 'ecut_weight')
-   call check(inline == 35, 'line number of the last data line')
- else
-   call check(upf_mesh == 0, 'UPF mesh size default')
-   call check(amesh < 0 .and. rr1 < 0 .and. rmax < 0, 'log mesh defaults')
-   call check(c_light < 0, 'speed of light default')
-   call check(.not. ep_as_given .and. well_onset == 1.006_dp**5 &
-&             .and. well_tail == 0 .and. wreg == 0, &
-&             'ep_as_given, well_onset, well_tail, wave_regularization '// &
-&             'defaults')
-   call check(all(well_n(1:3) == 0), 'well_n default')
-   call check(well_norm == 0, 'well_norm default')
-   call check(all(ecut_wt(1:3) < 0), 'ecut_weight default')
-   call check(inline == 32, 'line number of the last data line')
- end if
+ associate(atsym=>inp%atsym, zz=>inp%zz, nc=>inp%nc, nv=>inp%nv, &
+&          iexc=>inp%iexc, psfile=>inp%psfile, na=>inp%na, la=>inp%la, &
+&          fa=>inp%fa, lmax=>inp%lmax, rc=>inp%rc, ep=>inp%ep, ncon=>inp%ncon, &
+&          nbas=>inp%nbas, qcut=>inp%qcut, lloc=>inp%lloc, lpopt=>inp%lpopt, &
+&          dvloc0=>inp%dvloc0, nproj=>inp%nproj, debl=>inp%debl, &
+&          icmod=>inp%icmod, fcfact=>inp%fcfact, rcfact=>inp%rcfact, &
+&          slack=>inp%slack, budget_cut=>inp%budget_cut, &
+&          fcfact_min=>inp%fcfact_min, fcfact_max=>inp%fcfact_max, &
+&          fcfact_step=>inp%fcfact_step, rcfact_min=>inp%rcfact_min, &
+&          rcfact_max=>inp%rcfact_max, rcfact_step=>inp%rcfact_step, &
+&          epsh1=>inp%epsh1, epsh2=>inp%epsh2, depsh=>inp%depsh, &
+&          rxpsh=>inp%rxpsh, rlmax=>inp%rlmax, drl=>inp%drl, &
+&          upf_mesh=>inp%upf_mesh, ncnf=>inp%ncnf, nvcnf=>inp%nvcnf, &
+&          nacnf=>inp%nacnf, lacnf=>inp%lacnf, facnf=>inp%facnf, &
+&          amesh=>inp%amesh, rr1=>inp%rr1, rmax=>inp%rmax, &
+&          c_light=>inp%c_light, ep_as_given=>inp%ep_as_given, &
+&          well_onset=>inp%well_onset, well_tail=>inp%well_tail, &
+&          wreg=>inp%wreg, well_n=>inp%well_n, well_norm=>inp%well_norm, &
+&          ecut_wt=>inp%ecut_wt)
+
+   call check(atsym == 'Si' .and. zz == 14 .and. nc == 3 .and. nv == 2 &
+&             .and. iexc == 3 .and. psfile == 'psp8', 'atom')
+   call check(all(na(1:5) == [1, 2, 2, 3, 3]) &
+&             .and. all(la(1:5) == [0, 0, 1, 0, 1]) &
+&             .and. all(fa(1:5) == [2, 2, 6, 2, 2]), 'reference configuration')
+   call check(lmax == 2 .and. all(rc(1:3) == 2.7_dp) &
+&             .and. all(ep(1:3, 1) == [0.0_dp, 0.0_dp, 0.1_dp]) &
+&             .and. all(ep(1:3, 2) == ep(1:3, 1)) &
+&             .and. all(ncon(1:3) == 5) .and. all(nbas(1:3) == 8) &
+&             .and. all(qcut(1:3) == 5), &
+&             'pseudopotential and optimization')
+   call check(lloc == 4 .and. lpopt == 5 .and. rc(5) == 2.7_dp &
+&             .and. dvloc0 == 0, &
+&             'local potential')
+   call check(all(nproj(1:3) == 2) &
+&             .and. all(debl(1:3) == [1.0_dp, 0.75_dp, 0.75_dp]), &
+&             'projectors')
+   if(with_mesh) then
+     call check(icmod == 6 .and. fcfact == 0 .and. rcfact == 1.0e-6_dp &
+&               .and. slack == 0.8_dp .and. budget_cut == 1, &
+&               'model core charge, slack and budget_cutoff')
+   else
+     call check(icmod == 1 .and. fcfact == 0.25_dp .and. slack == 1 &
+&               .and. budget_cut == 0, 'model core charge')
+   end if
+   call check(epsh1 == -2 .and. epsh2 == 2 .and. depsh == 0.02_dp &
+&             .and. rxpsh < 0, &
+&             'log derivative analysis')
+   call check(rlmax == 6 .and. drl == 0.01_dp, 'output grid')
+   call check(ncnf == 1 .and. nvcnf(2) == 2 .and. all(nacnf(4:5, 2) == 3) &
+&             .and. all(lacnf(4:5, 2) == [0, 1]) &
+&             .and. all(facnf(4:5, 2) == [2, 1]), &
+&             'test configurations')
+   if(with_mesh) then
+     call check(upf_mesh == 2000, 'UPF mesh size')
+     call check(amesh == 1.003_dp .and. rr1 < 0 .and. rmax == 60, 'log mesh')
+     call check(c_light == 137.0359895_dp, 'speed of light')
+     call check(ep_as_given .and. well_onset == 1.5_dp .and. well_tail == 2 &
+&               .and. wreg == 2.5e-9_dp, &
+&               'ep_as_given, well_onset, well_tail, wave_regularization')
+     call check(all(well_n(1:3) == [0, 5, 0]), 'well_n')
+     call check(well_norm == 2, 'well_norm')
+     call check(all(ecut_wt(1:3) == [-1.0_dp, -1.0_dp, 0.3_dp]), 'ecut_weight')
+     call check(inline == 35, 'line number of the last data line')
+   else
+     call check(upf_mesh == 0, 'UPF mesh size default')
+     call check(amesh < 0 .and. rr1 < 0 .and. rmax < 0, 'log mesh defaults')
+     call check(c_light < 0, 'speed of light default')
+     call check(.not. ep_as_given .and. well_onset == 1.006_dp**5 &
+&               .and. well_tail == 0 .and. wreg == 0, &
+&               'ep_as_given, well_onset, well_tail, wave_regularization '// &
+&               'defaults')
+     call check(all(well_n(1:3) == 0), 'well_n default')
+     call check(well_norm == 0, 'well_norm default')
+     call check(all(ecut_wt(1:3) < 0), 'ecut_weight default')
+     call check(inline == 32, 'line number of the last data line')
+   end if
+ end associate
  return
  end subroutine test_read_input_text
 

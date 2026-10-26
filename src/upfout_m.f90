@@ -30,24 +30,15 @@
 ! fully relativistic, or takes them at every istr-th point of the log mesh
 ! (upf_mesh > 0), as generated, with nothing interpolated
 
- subroutine upfout(lmax,lloc,rc,vkbpw,evkb,nproj,rr,vpuns,vlocpw,rho,corepw, &
-&                  zz,zion,mmax,mxprj,iexc,icmod,nrlin,drl,atsym,epstot, &
-&                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&                  fa,rc0,ep,qcut,ep_as_given,well_onset,well_tail,wreg, &
-&                  debl,well_n,well_norm,ecut_wt,facnf, &
-&                  dvloc0,fcfact,rcfact, &
-&                  slack,budget_cut,fcgrid,rcgrid, &
-&                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,uupsa,ea,log_mesh, &
-&                  upf_mesh,nkap)
+ subroutine upfout(inp,vkbpw,evkb,rr,vpuns,vlocpw,rho,corepw,zion,mmax,mxprj, &
+&                  nrlin,epstot,rc0,fcfact,fcgrid,rcgrid,uupsa,ea,log_mesh, &
+&                  nkap)
 
 
-!! @param lmax  maximum angular momentum
-!! @param lloc  l for local potential
-!! @param rc  core radii
+!! @param inp  the input values (input_m)
 !! @param vkbpw  VKB projectors' pieces, last index 1 for j=l+1/2, 2 for
 !!               j=l-1/2 when nkap=2
 !! @param evkb  coefficients of VKB projectors, last index as for vkbpw
-!! @param nproj  number of vkb projectors for each l
 !! @param rr  log radial grid
 !! @param vpuns  unscreened semi-local pseudopotentials (vp(:,5) is local
 !!               potential if linear combination is used)
@@ -56,63 +47,19 @@
 !! @param rho  valence pseudocharge
 !! @param corepw  the model core charge and its first 4 derivatives, as
 !!                pieces split at its joint (modcore_m, core_pieces)
-!! @param zz  atomic number
 !! @param zion  at this point, total valence charge (becomes psuedoion charge)
 !! @param mmax  size of log radial grid
 !! @param mxprj  dimension of number of projectors
-!! @param iexc  type of exchange-correlation
-!! @param icmod  1 if model core charge is used, otherwise 0
 !! @param nrlin  size of linear radial grid (enlarged locally to fit the
 !!               orbitals)
-!! @param drl  spacing of linear radial grid
-!! @param atsym  atomic symbol
 !! @param epstot  pseudoatom total energy
-!! @param na  principal quantum numbers of the reference configuration states
-!! @param la  angular momenta of the reference configuration states
-!! @param ncon  number of matching constraints for each l
-!! @param nbas  number of basis functions for each l
-!! @param nvcnf  numbers of valence states of the reference and test
-!!               configurations
-!! @param nacnf  principal quantum numbers of the reference and test
-!!               configurations
-!! @param lacnf  angular momenta of the reference and test configurations
-!! @param nc  number of core states
-!! @param nv  number of valence states
-!! @param lpopt  type of polynomial continuation for lloc=4
-!! @param ncnf  number of test configurations
-!! @param fa  occupations of the reference configuration states
 !! @param rc0  core radii as read from the input (bohr), rc0(5) for lloc=4
-!! @param ep  energies at which the pseudopotentials are generated (Ha), second
-!!            index 1 for j=l+1/2, 2 for j=l-1/2 (ep(:,1) is echoed)
-!! @param qcut  residual-energy cutoff wave vectors for each l
-!! @param debl  energy shifts for the second projectors for each l (Ha)
-!! @param well_n  n of the first well state of each l (0 for the default)
-!! @param well_norm  the normalization of the well states, 0, 1 or 2
-!! @param ecut_wt  cutoff weight of each l (negative for the default)
-!! @param facnf  occupancies of the reference and test configurations
-!! @param dvloc0  r=0 shift of the lloc=4 local potential (Ha)
 !! @param fcfact  prefactor for model core charge amplitude, as read from the
 !!                input
-!! @param rcfact  prefactor for model core charge scale (icmod=3), or error
-!!                tolerance (icmod=6)
-!! @param slack  share of the cutoff the model core must fit (icmod=6, 7)
-!! @param budget_cut  the cutoff of the pseudo-waves (icmod=6, 7): 0 the
-!!                    largest of the ground-state waves, 1 their weighted
-!!                    mean, 2 the largest of all waves (budget_cutoff)
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
-!! @param epsh1  lower limit of the log derivative analysis energy range (Ha)
-!! @param epsh2  upper limit of the log derivative analysis energy range (Ha)
-!! @param depsh  energy step of the log derivative analysis (Ha)
-!! @param rxpsh  radius of the log derivative analysis (bohr), negative for
-!!               default
-!! @param rlmax  maximum radius of the linear output mesh (bohr)
-!! @param psfile  pseudopotential file format, 'upf' or 'both'
 !! @param log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets
 !!                  it (else 0)
-!! @param upf_mesh  0 for the linear output mesh, else the most points of the
-!!                  log mesh of the file: every istr-th point of rr, out to
-!!                  the extent of the linear mesh
 !! @param uupsa  pseudo-atomic orbitals, second index 1 for j=l+1/2, 2 for
 !!               j=l-1/2 when nkap=2
 !! @param ea  psuedo-orbital eigenvalues (Ha), second index as for uupsa
@@ -123,42 +70,25 @@
  use input_echo_m, only: write_input_echo, fe, date_stamp
  use outmesh_m, only: om_values, om_piece_values, om_local_values
  use pieces_m, only: piecewise_t
+ use input_m, only: input_t
  implicit none
 
 
 !Input variables
- integer, intent(in) :: lmax,lloc,iexc,mmax,mxprj,icmod,nrlin,nkap,upf_mesh
- integer, intent(in) :: nproj(mxlin+1)
- real(dp), intent(in) :: drl,fcfact,rcfact,zz,zion,epstot
- real(dp), intent(in) :: slack
- integer, intent(in) :: budget_cut
+ type(input_t), intent(in) :: inp
+ integer, intent(in) :: mmax,mxprj,nrlin,nkap
+ real(dp), intent(in) :: fcfact,zion,epstot
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
  real(dp), intent(in) :: rr(mmax),vpuns(mmax,mxl+2),rho(mmax)
  type(piecewise_t), intent(in) :: vkbpw(mxprj,mxl+1,nkap),vlocpw
  type(piecewise_t), intent(in) :: corepw(nrhomod)
- real(dp), intent(in) :: rc(mxlin+1),evkb(mxprj,mxl+1,nkap)
- character(len=2), intent(in) :: atsym
- real(dp), intent(in) :: uupsa(mmax,nkap,nv)
+ real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap)
+ real(dp), intent(in) :: uupsa(mmax,nkap,inp%nv)
 
-!additional input for upf output to echo input file, all as defined
-! in the main progam
- integer, intent(in) :: na(mxstate),la(mxstate),ncon(mxlin+1),nbas(mxlin+1)
- integer, intent(in) :: nvcnf(mxcnf),nacnf(mxstate,mxcnf),lacnf(mxstate,mxcnf)
- integer, intent(in) :: nc,nv,lpopt,ncnf
- real(dp), intent(in) :: fa(mxstate),rc0(mxlin+1),ep(mxlin+1,nkap),qcut(mxlin+1)
- logical, intent(in) :: ep_as_given
- real(dp), intent(in) :: well_onset
- integer, intent(in) :: well_tail
- integer, intent(in) :: well_n(mxlin+1)
- integer, intent(in) :: well_norm
- real(dp), intent(in) :: ecut_wt(mxlin+1)
- real(dp), intent(in) :: wreg
- real(dp), intent(in) :: debl(mxlin+1)
- real(dp), intent(in) :: facnf(mxstate,mxcnf)
+!the core radii as read (rc0), for the echo
+ real(dp), intent(in) :: rc0(mxlin+1)
  real(dp), intent(in) :: ea(mxstate,nkap)
- real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rxpsh,rlmax
  real(dp), intent(in) :: log_mesh(3)
- character(len=4), intent(in) :: psfile
 
 !Output variables - printing only
 
@@ -221,8 +151,8 @@
  integer :: ii,jj,l1,ikap,mkap,jstart
  real(dp) :: nrmsum,uurcut
  uurcut = 0.d0
- do ii=1,nv
-   l1 = la(nc+ii)
+ do ii=1,inp%nv
+   l1 = inp%la(inp%nc+ii)
    mkap=kap_count(nkap,l1)
    do ikap=1,mkap
      nrmsum = 0.d0
@@ -242,8 +172,8 @@
      if(rr(jj) > uurcut) uurcut = rr(jj)
    end do
  end do
- if(uurcut > drl*dble(nrl-1)) then
-   nrl = 1 + int(uurcut/drl)
+ if(uurcut > inp%drl*dble(nrl-1)) then
+   nrl = 1 + int(uurcut/inp%drl)
    if(mod(nrl,2)/=0) nrl=nrl+1
    write(6,'(a,i5,a,f10.5)') "Updating nrl = ", nrl, " for uurcut = ", uurcut
  end if
@@ -256,13 +186,13 @@
 !! and nrl its points
  integer :: ii,nlog
  istr=0
- if(upf_mesh>0) then
+ if(inp%upf_mesh>0) then
    nlog=1
    do ii=1,mmax
-     if(rr(ii)>drl*dble(nrl-1)) exit
+     if(rr(ii)>inp%drl*dble(nrl-1)) exit
      nlog=ii
    end do
-   istr=(nlog-1)/upf_mesh+1
+   istr=(nlog-1)/inp%upf_mesh+1
    nrl=(nlog-1)/istr+1
  end if
  end subroutine log_stride
@@ -273,12 +203,12 @@
  integer :: ii,jj,ll,l1,ikap,mkap
  allocate(rhol(nrl),rl(nrl),vkbl(nrl,mxprj,mxl+1,nkap),vpl(nrl,mxl+2), &
 &          rhomodl(nrl,nrhomod), &
-&          uual(nrl,nkap,nv),rabl(nrl))
+&          uual(nrl,nkap,inp%nv),rabl(nrl))
 
  if(istr==0) then
    do  ii=1,nrl
-     rl(ii)=drl*dble(ii-1)
-     rabl(ii)=drl
+     rl(ii)=inp%drl*dble(ii-1)
+     rabl(ii)=inp%drl
    end do
  else
    do  ii=1,nrl
@@ -288,18 +218,19 @@
  end if
 !
  vpl(:,:)=0.0d0
- call om_local_values(rr,vpuns(1,lloc+1),mmax,vlocpw,rl,vpl(1,lloc+1),nrl)
+ call om_local_values(rr,vpuns(1,inp%lloc+1),mmax,vlocpw,rl,vpl(1, &
+&                     inp%lloc+1),nrl)
 ! the value at the origin that of the first point of the log mesh (in the
 ! sr code only)
- if(nkap==1 .and. istr==0) vpl(1,lloc+1)=vpuns(1,lloc+1)
+ if(nkap==1 .and. istr==0) vpl(1,inp%lloc+1)=vpuns(1,inp%lloc+1)
 
- do l1=1,lmax+1
-   if(l1==lloc+1) cycle
+ do l1=1,inp%lmax+1
+   if(l1==inp%lloc+1) cycle
    ll=l1-1
    mkap=kap_count(nkap,ll)
 ! loop on J = ll +/- 1/2
    do ikap=1,mkap
-     do jj=1,nproj(l1)
+     do jj=1,inp%nproj(l1)
 
        call om_piece_values(rr,mmax,vkbpw(jj,l1,ikap),rl, &
 &                           vkbl(1,jj,l1,ikap),nrl)
@@ -315,8 +246,8 @@
  end do
 
  nwfc = 0
- do ii=1,nv
-   l1 = la(nc+ii)
+ do ii=1,inp%nv
+   l1 = inp%la(inp%nc+ii)
    mkap=kap_count(nkap,l1)
    nwfc = nwfc + mkap
    do ikap=1,mkap
@@ -330,21 +261,21 @@
 !! them
  integer :: l1,jj,ikap,mkap
  ntotproj=0
- do l1=1,lmax+1
-   if(l1/=lloc+1) then
+ do l1=1,inp%lmax+1
+   if(l1/=inp%lloc+1) then
      if(nkap==1 .or. l1==1) then
-       ntotproj=ntotproj+nproj(l1)
+       ntotproj=ntotproj+inp%nproj(l1)
      else
-       ntotproj=ntotproj+2*nproj(l1)
+       ntotproj=ntotproj+2*inp%nproj(l1)
      end if
    end if
  end do
  allocate(l1p(ntotproj),jjp(ntotproj),ikp(ntotproj))
  ntotproj=0
- do l1=1,lmax+1
-   if(l1==lloc+1) cycle
+ do l1=1,inp%lmax+1
+   if(l1==inp%lloc+1) cycle
    mkap=kap_count(nkap,l1-1)
-   do jj=1,nproj(l1)
+   do jj=1,inp%nproj(l1)
 ! loop on J = ll +/- 1/2
      do ikap=mkap,1,-1
        ntotproj=ntotproj+1
@@ -379,14 +310,20 @@
 
 ! output printing (echos input data)
 
- call write_input_echo(nkap,2,atsym,zz,nc,nv,iexc,psfile, &
-&                       na,la,fa,lmax,rc0,ep(:,1),ncon,nbas,qcut,ep_as_given, &
-&                       well_onset,well_tail,wreg,lloc,lpopt,dvloc0, &
-&                       nproj,debl,well_n,well_norm,ecut_wt, &
-&                       icmod,fcfact,rcfact,slack,budget_cut, &
+ call write_input_echo(nkap,2,inp%atsym,inp%zz,inp%nc,inp%nv,inp%iexc, &
+&                      inp%psfile, &
+&                       inp%na,inp%la,inp%fa,inp%lmax,rc0,inp%ep(:,1), &
+&                       inp%ncon,inp%nbas,inp%qcut,inp%ep_as_given, &
+&                       inp%well_onset,inp%well_tail,inp%wreg,inp%lloc, &
+&                       inp%lpopt,inp%dvloc0, &
+&                       inp%nproj,inp%debl,inp%well_n,inp%well_norm, &
+&                       inp%ecut_wt, &
+&                       inp%icmod,fcfact,inp%rcfact,inp%slack,inp%budget_cut, &
 &                       fcgrid,rcgrid, &
-&                       epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
-&                       ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh)
+&                       inp%epsh1,inp%epsh2,inp%depsh,inp%rxpsh,inp%rlmax, &
+&                       inp%drl, &
+&                       inp%ncnf,inp%nvcnf,inp%nacnf,inp%lacnf,inp%facnf, &
+&                       log_mesh,inp%upf_mesh)
 
  write(6,'(a)') &
 &      '    </PP_INPUTFILE>'
@@ -416,7 +353,7 @@
  write(6,'(t8,a)') &
 &      'comment=""'
  write(6,'(t8,a,a2,a)') &
-&      'element="',atsym,'"'
+&      'element="',inp%atsym,'"'
  write(6,'(t8,a)') &
 &      'pseudo_type="NC"'
  if(nkap==1) then
@@ -444,7 +381,7 @@
  write(6,'(t8,a)') &
 &      'has_gipaw="F"'
 
- if(icmod>=1) then
+ if(inp%icmod>=1) then
    write(6,'(t8,a)') &
 &      'core_correction="T"'
  else
@@ -465,21 +402,21 @@
 &      'rho_cutoff="',rl(nrl),'"'
 
  write(6,'(t8,a,i1,a)') &
-&      'l_max="',lmax,'"'
+&      'l_max="',inp%lmax,'"'
 
- if(lloc==4) then
+ if(inp%lloc==4) then
    write(6,'(t8,a)') &
 &      'l_local="-1"'
  else
    write(6,'(t8,a,i1,a)') &
-&      'l_local="',lloc,'"'
+&      'l_local="',inp%lloc,'"'
  end if
 
 ! the maximum linear mesh point for projectors
 
  nrlproj=0
- do l1=1,lmax+1
-   nrlproj=max(nrlproj,4+int(rc(l1)/drl))
+ do l1=1,inp%lmax+1
+   nrlproj=max(nrlproj,4+int(inp%rc(l1)/inp%drl))
  end do
 
  if(mod(nrlproj,2)/=0) nrlproj=nrlproj+1
@@ -490,8 +427,8 @@
 !projectors are zero), made divisible by 4 as above
  if(istr>0) then
    rcmx=0.0d0
-   do l1=1,lmax+1
-     rcmx=max(rcmx,rc(l1))
+   do l1=1,inp%lmax+1
+     rcmx=max(rcmx,inp%rc(l1))
    end do
    nrlproj=nrl
    do ii=nrl,1,-1
@@ -529,7 +466,7 @@
 &      '<PP_RAB type="real"  size="',nrl,'" columns="4">'
 
  if(istr==0) then
-   write(6,'(1p,4e24.16)') (drl,ii=1,nrl)
+   write(6,'(1p,4e24.16)') (inp%drl,ii=1,nrl)
  else
    write(6,'(1p,4e24.16)') (fe(rabl(ii)),ii=1,nrl)
  end if
@@ -543,7 +480,7 @@
  write(6,'(a,i4,a)') &
 &      '  <PP_LOCAL type="real"  size="',nrl,'" columns="4">'
 
- write(6,'(1p,4e24.16)') (fe(2.0d0*vpl(ii,lloc+1)),ii=1,nrl)
+ write(6,'(1p,4e24.16)') (fe(2.0d0*vpl(ii,inp%lloc+1)),ii=1,nrl)
 
  write(6,'(a)') &
 &      '  </PP_LOCAL>'
@@ -580,7 +517,7 @@
 &        'cutoff_radius_index="',nrlproj,'"'
    if(istr==0) then
      write(6,'(t8,a,1p,e24.16,a)') &
-&          'cutoff_radius="',(nrlproj-1)*drl,'" >'
+&          'cutoff_radius="',(nrlproj-1)*inp%drl,'" >'
    else
      write(6,'(t8,a,1p,e24.16,a)') &
 &          'cutoff_radius="',rl(nrlproj),'" >'
@@ -613,13 +550,13 @@
  write(6,'(t2,a)') &
 &      '<PP_PSWFC>'
  iwfc = 0
- do ii=1,nv
-   l1 = la(nc+ii)
+ do ii=1,inp%nv
+   l1 = inp%la(inp%nc+ii)
    mkap=kap_count(nkap,l1)
    do ikap=1,mkap
      iwfc = iwfc + 1
-     fj=fa(nc+ii)
-     if(nkap==2) fj=j_share(l1,ikap,fa(nc+ii))
+     fj=inp%fa(inp%nc+ii)
+     if(nkap==2) fj=j_share(l1,ikap,inp%fa(inp%nc+ii))
      write(6,'(t4,a,i0)') &
 &          '<PP_CHI.',iwfc
      write(6,'(t8,a)') &
@@ -633,9 +570,9 @@
      write(6,'(t8,a,f6.3,a)') &
 &          'occupation="',fj,'"'
      write(6,'(t8,a,1p,e24.16,a)') &
-&          'pseudo_energy="',2*ea(nc+ii,ikap),'"'
+&          'pseudo_energy="',2*ea(inp%nc+ii,ikap),'"'
      write(6,'(t8,a,i1,a,a)') &
-&          'label="',na(nc+ii),lnames(l1+1:l1+1),'"'
+&          'label="',inp%na(inp%nc+ii),lnames(l1+1:l1+1),'"'
      write(6,'(t8,a,i1,a)') &
 &             'l="',l1,'" >'
 
@@ -652,7 +589,7 @@
  subroutine write_densities()
 !! PP_NLCC, the model core with icmod >= 1, and PP_RHOATOM
  integer :: ii
- if(icmod>=1) then
+ if(inp%icmod>=1) then
    write(6,'(t2,a,i4,a)') &
 &        '<PP_NLCC type="real"  size="',nrl,'" columns="4">'
 
@@ -697,8 +634,8 @@
  end do
 
  iwfc = 0
- do ii=1,nv
-   l1 = la(nc+ii)
+ do ii=1,inp%nv
+   l1 = inp%la(inp%nc+ii)
    mkap=kap_count(2,l1)
    do ikap=1,mkap
      iwfc = iwfc + 1
@@ -729,7 +666,7 @@
 !! UPF has no name for
  character(len=20) :: name
 
- select case(iexc)
+ select case(inp%iexc)
  case(2)
    name='SLA  HL   NOGX NOGC'
  case(-000004)
@@ -759,7 +696,8 @@
    name='WC'
  case default
    write(6,'(t8,a,i0,a)') &
-&      'upfout: ERROR iexc = ',iexc,' is presently unsupported for UPF output'
+&      'upfout: ERROR iexc = ',inp%iexc, &
+&      ' is presently unsupported for UPF output'
    error stop 1
  end select
  end function upf_functional

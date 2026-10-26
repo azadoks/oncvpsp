@@ -240,10 +240,14 @@ coefficients as quotients (`1.0d0/24.0d0`), not as truncated decimals.
 
 ## Input echo
 
-The input is echoed in the output and in the psp8, UPF and PSML files, and
-each echo must run again to the same output (the `echo` tests check this).
-A new input value goes into all four echoes: the main programs, `linout`
-(`_r`), `upfout` (`_r`) and `echo_input` in `psmlout_m`, or into a section
+The input is read into an `input_t` (`input_m`), which the readers
+(`read_input_text`, `read_input_toml`), `check_data` and the writers take
+whole. A new input value is a component of `input_t`, documented there,
+read by both readers. The input is echoed in the output and in the psp8,
+UPF and PSML files, and each echo must run again to the same output (the
+`echo` tests check this). A new input value goes into all four echoes:
+the main programs, `linout` (`_r`), `upfout` (`_r`) and `echo_input` in
+`psmlout_m`, or into a section
 of `input_echo_m`, which they share. An optional value is echoed only when
 the input sets it, so that older inputs echo as before (rule 12 above).
 Echo the value as read, not one the program has changed since (see `rc0`

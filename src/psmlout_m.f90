@@ -31,27 +31,17 @@
 
  contains
 
- subroutine psmlout(lmax,lloc,rc,vkb,evkb,mxprj,nproj,rr,vpuns,rho,rhomod, &
-&                  rcore, &
-&                  zz,zion,mmax,iexc,icmod,nrl,drl,atsym,epstot, &
-&                  na,la,ncon,nbas,nvcnf,nacnf,lacnf,nc,nv,lpopt,ncnf, &
-&                  fa,rc0,ep,qcut,debl,facnf,dvloc0,fcfact,rcfact, &
-&                  slack,budget_cut,fcgrid,rcgrid, &
-&                  epsh1,epsh2,depsh,rxpsh,rlmax,psfile,log_mesh,upf_mesh, &
-&                  irel,nkap,ep_as_given,well_onset,well_tail,wreg,well_n, &
-&                  well_norm,ecut_wt)
+ subroutine psmlout(inp,vkb,evkb,mxprj,rr,vpuns,rho,rhomod,rcore,zion,mmax, &
+&                   nrl,epstot,rc0,fcfact,fcgrid,rcgrid,log_mesh,irel,nkap)
 
 !! writes the pseudopotential to the output in PSML format, between
 !! 'Begin PSML' and 'END_PSP' markers
 !!
-!! @param lmax  maximum angular momentum
-!! @param lloc  l for local potential
-!! @param rc  core radii
+!! @param inp  the input values (input_m)
 !! @param vkb  VKB projectors, last index 1 for j=l+1/2, 2 for j=l-1/2 when
 !!             nkap=2
 !! @param evkb  coefficients of VKB projectors, last index as for vkb
 !! @param mxprj  dimension of number of projectors
-!! @param nproj  number of vkb projectors for each l
 !! @param rr  log radial grid
 !! @param vpuns  unscreened semi-local pseudopotentials (vp(:,5,1) is local
 !!               potential if linear combination is used), last index as for vkb
@@ -59,66 +49,19 @@
 !! @param rhomod  model core charge and its first four derivatives
 !! @param rcore  radius beyond which the model core charge is the core
 !!               charge: its joint (doc/smoothness_plan.md, M-14)
-!! @param zz  atomic number
 !! @param zion  at this point, total valence charge (becomes psuedoion charge)
 !! @param mmax  size of log radial grid
-!! @param iexc  type of exchange-correlation
-!! @param icmod  model core charge option, 0 if no model core charge is used
 !! @param nrl  size of linear radial grid (not used)
-!! @param drl  spacing of linear radial grid
-!! @param atsym  atomic symbol
 !! @param epstot  pseudoatom total energy (not used)
-!! @param na  principal quantum numbers of the reference configuration states
-!! @param la  angular momenta of the reference configuration states
-!! @param ncon  number of matching constraints for each l
-!! @param nbas  number of basis functions for each l
-!! @param nvcnf  numbers of valence states of the reference and test
-!!               configurations
-!! @param nacnf  principal quantum numbers of the reference and test
-!!               configurations
-!! @param lacnf  angular momenta of the reference and test configurations
-!! @param nc  number of core states
-!! @param nv  number of valence states
-!! @param lpopt  type of polynomial continuation for lloc=4
-!! @param ncnf  number of test configurations
-!! @param fa  occupations of the reference configuration states
 !! @param rc0  core radii as read from the input (bohr), rc0(5) for lloc=4
-!! @param ep  energies at which the pseudopotentials are generated (Ha)
-!! @param qcut  residual-energy cutoff wave vectors for each l
-!! @param debl  energy shifts for the second projectors for each l (Ha)
-!! @param facnf  occupancies of the reference and test configurations
-!! @param dvloc0  r=0 shift of the lloc=4 local potential (Ha)
 !! @param fcfact  prefactor for model core charge amplitude, as read from the
 !!                input
-!! @param rcfact  prefactor for model core charge scale (icmod=3), or error
-!!                tolerance (icmod=6)
-!! @param slack  share of the cutoff the model core must fit (icmod=6, 7)
-!! @param budget_cut  the cutoff of the pseudo-waves (icmod=6, 7): 0 the
-!!                    largest of the ground-state waves, 1 their weighted
-!!                    mean, 2 the largest of all waves (budget_cutoff)
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
-!! @param epsh1  lower limit of the log derivative analysis energy range (Ha)
-!! @param epsh2  upper limit of the log derivative analysis energy range (Ha)
-!! @param depsh  energy step of the log derivative analysis (Ha)
-!! @param rxpsh  radius of the log derivative analysis (bohr), negative for
-!!               default
-!! @param rlmax  maximum radius of the linear output mesh (bohr)
-!! @param psfile  pseudopotential file format as read from the input
 !! @param log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets
 !!                  it (else 0)
-!! @param upf_mesh  most points of the log mesh of the UPF file, 0 for the
-!!                  linear output mesh (echoed when not 0)
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param nkap  number of kappa per l: 1, or 2 for irel=2
-!! @param ep_as_given  whether the well states take ep as given
-!! @param well_onset  onset of the well of the well states, a multiple of rc
-!! @param well_tail  the tail of the well states, 0 "well", 1 "free", 2
-!!                   "confined"
-!! @param wreg  the regularization of the pseudo-wave optimization
-!! @param well_n  n of the first well state of each l (0 for the default)
-!! @param well_norm  the normalization of the well states, 0, 1 or 2
-!! @param ecut_wt  cutoff weight of each l (negative for the default)
 !!
 !! Alberto Garcia, February 1, 2015
 
@@ -131,39 +74,23 @@
 &                        XC_GGA_C_PBE, XC_LDA_C_VWN, XC_LDA_X_REL
 
  use constants_m, only: pi
+ use input_m, only: input_t
  implicit none
 
 
 !Input variables
- integer, intent(in) :: lmax
- integer, intent(in) :: lloc,iexc,mmax,nrl,icmod,irel,nkap
- integer, intent(in) :: nproj(mxlin+1)
+ type(input_t), intent(in) :: inp
+ integer, intent(in) :: mmax,nrl,irel,nkap
  integer, intent(in) :: mxprj ! maximum number of projectors for any l
- real(dp), intent(in) :: drl,fcfact,zz,zion,epstot,rcore
+ real(dp), intent(in) :: fcfact,zion,epstot,rcore
  real(dp), target, intent(in) :: rr(mmax),vpuns(mmax,mxl+2,nkap),rho(mmax)
  real(dp), target, intent(in) :: vkb(mmax,mxprj,mxl+1,nkap)
  real(dp), target, intent(in) :: rhomod(mmax,nrhomod)
- real(dp), intent(in) :: rc(mxlin+1),evkb(mxprj,mxl+1,nkap)
- character(len=2), intent(in) :: atsym
+ real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap)
 
-!additional input to echo the input file, all as defined
-! in the main progam
- integer, intent(in) :: na(mxstate),la(mxstate),ncon(mxlin+1),nbas(mxlin+1)
- integer, intent(in) :: nvcnf(mxcnf),nacnf(mxstate,mxcnf),lacnf(mxstate,mxcnf)
- integer, intent(in) :: nc,nv,lpopt,ncnf,upf_mesh
- real(dp), intent(in) :: fa(mxstate),rc0(mxlin+1),ep(mxlin+1),qcut(mxlin+1)
- real(dp), intent(in) :: debl(mxlin+1)
- real(dp), intent(in) :: facnf(mxstate,mxcnf)
- real(dp), intent(in) :: dvloc0,epsh1,epsh2,depsh,rxpsh,rlmax
- real(dp), intent(in) :: rcfact,fcgrid(3),rcgrid(3),log_mesh(3)
- real(dp), intent(in) :: slack
- integer, intent(in) :: budget_cut
- logical, intent(in) :: ep_as_given
- integer, intent(in) :: well_tail,well_n(mxlin+1),well_norm
- real(dp), intent(in) :: ecut_wt(mxlin+1)
- real(dp), intent(in) :: wreg
- real(dp), intent(in) :: well_onset
- character(len=4), intent(in) :: psfile
+!the core radii as read (rc0), for the echo
+ real(dp), intent(in) :: rc0(mxlin+1)
+ real(dp), intent(in) :: fcgrid(3),rcgrid(3),log_mesh(3)
 
 !Local variables
  type(xmlf_t) :: xf
@@ -256,13 +183,18 @@
  call xml_NewElement(xf,"input-file")
  call my_add_attribute(xf,"name","oncvpsp-input")
 !
- call echo_input(xf,atsym,zz,nc,nv,iexc,psfile,na,la,fa,lmax,rc0,ep,ncon, &
-&                nbas,qcut,lloc,lpopt,dvloc0,nproj,debl,icmod,fcfact, &
-&                rcfact,slack,budget_cut,fcgrid,rcgrid,epsh1,epsh2, &
-&                depsh,rxpsh,rlmax,drl, &
-&                ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh, &
-&                ep_as_given,well_onset,well_tail,wreg,well_n,well_norm, &
-&                ecut_wt)
+ call echo_input(xf,inp%atsym,inp%zz,inp%nc,inp%nv,inp%iexc,inp%psfile, &
+&                inp%na,inp%la,inp%fa,inp%lmax,rc0,inp%ep,inp%ncon, &
+&                inp%nbas,inp%qcut,inp%lloc,inp%lpopt,inp%dvloc0,inp%nproj, &
+&                inp%debl,inp%icmod,fcfact, &
+&                inp%rcfact,inp%slack,inp%budget_cut,fcgrid,rcgrid,inp%epsh1, &
+&                inp%epsh2, &
+&                inp%depsh,inp%rxpsh,inp%rlmax,inp%drl, &
+&                inp%ncnf,inp%nvcnf,inp%nacnf,inp%lacnf,inp%facnf,log_mesh, &
+&                inp%upf_mesh, &
+&                inp%ep_as_given,inp%well_onset,inp%well_tail,inp%wreg, &
+&                inp%well_n,inp%well_norm, &
+&                inp%ecut_wt)
 
  call xml_EndElement(xf,"input-file")
 !
@@ -276,21 +208,21 @@
 !! occupation
  integer :: ii,jj
  logical :: found
- norbs = nc + nv
+ norbs = inp%nc + inp%nv
  allocate(nsh(norbs), lsh(norbs), fsh(norbs))
 
  total_valence_charge = 0.0_dp
- ncp = nc + 1
+ ncp = inp%nc + 1
  do ii = 1, norbs
-   nsh(ii) = na(ii)
-   lsh(ii) = la(ii)
-   fsh(ii) = fa(ii)
-   if(ii > nc) then
+   nsh(ii) = inp%na(ii)
+   lsh(ii) = inp%la(ii)
+   fsh(ii) = inp%fa(ii)
+   if(ii > inp%nc) then
      total_valence_charge =   total_valence_charge + fsh(ii)
    end if
  end do
 
- npots = lmax + 1
+ npots = inp%lmax + 1
  allocate(ll(npots), nn(npots), ff(npots))
  do ii = 1, npots
    ll(ii) = ii - 1
@@ -307,7 +239,7 @@
    if(.not. found) then
 ! generate the appropriate effective n
      nn(ii) = ll(ii) + 1
-     do jj = 1, nc
+     do jj = 1, inp%nc
        if(lsh(jj) == ll(ii)) then
          nn(ii) = nn(ii) + 1
        end if
@@ -326,7 +258,7 @@
  character(len=4)      :: coreattrib
  integer :: ii
 
- if(icmod >= 1) then
+ if(inp%icmod >= 1) then
    coreattrib = "yes"
  else
    coreattrib = "no"
@@ -334,7 +266,7 @@
 
 ! XC name handling
 
- select case(iexc)
+ select case(inp%iexc)
 
  case(1)
    xcfuntype    = 'LDA'
@@ -374,8 +306,8 @@
 !
 !
  call xml_NewElement(xf,"header")
- call my_add_attribute(xf,"atomic-label",atsym)
- call my_add_attribute(xf,"atomic-number",str(zz))
+ call my_add_attribute(xf,"atomic-label",inp%atsym)
+ call my_add_attribute(xf,"atomic-number",str(inp%zz))
  call my_add_attribute(xf,"z-pseudo",str(zion))
  call my_add_attribute(xf,"flavor",psflavor)
  if(irel==2) then
@@ -390,7 +322,7 @@
 
  call xml_NewElement(xf,"exchange-correlation")
  call xml_NewElement(xf,"annotation")
- call my_add_attribute(xf,"oncvpsp-xc-code",str(iexc))
+ call my_add_attribute(xf,"oncvpsp-xc-code",str(inp%iexc))
  call my_add_attribute(xf,"oncvpsp-xc-type",trim(xcfuntype))
  call my_add_attribute(xf,"oncvpsp-xc-authors",trim(xcfunparam))
  call xml_EndElement(xf,"annotation")
@@ -476,7 +408,7 @@
        call add_zero_r(vps(1:npts),rgrid,f0)
        call write_psml_item(xf, class="slps", &
 &                     nn=nn(ii), ll=ll(ii), jj=jval, &
-&                     rc=rc(ii),flavor=psflavor,&
+&                     rc=inp%rc(ii),flavor=psflavor,&
 &                     ff=f0)
      else
        do jj=1,2
@@ -485,7 +417,7 @@
          call add_zero_r(vps(1:npts),rgrid,f0)
          call write_psml_item(xf, class="slps", &
 &                    nn=nn(ii), ll=ll(ii), jj=jval, &
-&                    rc=rc(ii),flavor=psflavor,&
+&                    rc=inp%rc(ii),flavor=psflavor,&
 &                    ff=f0)
        end do
      end if
@@ -503,7 +435,7 @@
      call add_zero_r(vps(1:npts),rgrid,f0)
      call write_psml_item(xf, class="slps", &
 &                         nn=nn(ii), ll=ll(ii), &
-&                         rc=rc(ii),flavor=psflavor,&
+&                         rc=inp%rc(ii),flavor=psflavor,&
 &                         ff=f0)
    end do vpsd
    call xml_EndElement(xf,"semilocal-potentials")
@@ -527,19 +459,19 @@
  call xml_EndElement(xf,"valence-charge")
 
 
- if(icmod >= 1) then
+ if(inp%icmod >= 1) then
    call xml_NewElement(xf,"pseudocore-charge")
    call my_add_attribute(xf,"matching-radius",str(rcore))
 ! icmod 6 and 7 match the core charge to C2 at r_s
-   if(icmod==6 .or. icmod==7) then
+   if(inp%icmod==6 .or. inp%icmod==7) then
      call my_add_attribute(xf,"number-of-continuous-derivatives",str(2))
    else
      call my_add_attribute(xf,"number-of-continuous-derivatives",str(4))
    end if
-   if(icmod==1) then
+   if(inp%icmod==1) then
      call my_add_attribute(xf,"annotation",  &
 &                 "Monotonic 8th-order polynomial with no linear term")
-   else if(icmod==6 .or. icmod==7) then
+   else if(inp%icmod==6 .or. inp%icmod==7) then
      call my_add_attribute(xf,"annotation",  &
 &                 "Budgeted fill inside the matching radius")
    else
@@ -559,14 +491,14 @@
  subroutine write_local()
 !! the local-potential element
  call xml_NewElement(xf,"local-potential")
- if(lloc > lmax) then
+ if(inp%lloc > inp%lmax) then
    call my_add_attribute(xf,"type","oncv-fit")
  else
-   call my_add_attribute(xf,"type","l="//str(lloc))
+   call my_add_attribute(xf,"type","l="//str(inp%lloc))
  end if
  call xml_NewElement(xf,"radfunc")
  call xml_NewElement(xf,"data")
- call add_zero_r(vpuns(1:npts,lloc+1,1),rgrid,f0)
+ call add_zero_r(vpuns(1:npts,inp%lloc+1,1),rgrid,f0)
  call xml_AddArray(xf,fe(f0(1:nr)))
  call xml_EndElement(xf,"data")
  call xml_EndElement(xf,"radfunc")
@@ -582,14 +514,14 @@
    call xml_NewElement(xf,"projectors")
    call my_add_attribute(xf,"set","lj")
 
-   do l1=1,lmax+1
-     if(l1==lloc+1) cycle
+   do l1=1,inp%lmax+1
+     if(l1==inp%lloc+1) cycle
 
      if(l1 == 1) then
 ! l=0, only one j=0
        jval = 0.0
 
-       do jj=1,nproj(l1)
+       do jj=1,inp%nproj(l1)
          call add_zero_r(vkb(:,jj,l1,1),rgrid,f0)
          call write_psml_item(xf, class="proj", &
 &                          seq=jj, ll=l1-1, jj=jval, &
@@ -602,7 +534,7 @@
 ! two j values
        do jk=1,2
          jval = l1-1 + (3-2*jk)*0.5  ! convert (1,2) to (1,-1)*1/2
-         do jj=1,nproj(l1)
+         do jj=1,inp%nproj(l1)
            call add_zero_r(vkb(:,jj,l1,jk),rgrid,f0)
            call write_psml_item(xf, class="proj", &
 &                          seq=jj, ll=l1-1, jj=jval, &
@@ -623,9 +555,9 @@
      call my_add_attribute(xf,"set","non_relativistic")
    end if
 
-   do l1=1,lmax+1
-     if(l1==lloc+1) cycle
-     do jj=1,nproj(l1)
+   do l1=1,inp%lmax+1
+     if(l1==inp%lloc+1) cycle
+     do jj=1,inp%nproj(l1)
        call add_zero_r(vkb(:,jj,l1,1),rgrid,f0)
        call write_psml_item(xf, class="proj", &
 &                           seq=jj, ll=l1-1, &
