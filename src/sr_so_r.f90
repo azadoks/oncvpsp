@@ -44,6 +44,8 @@
 !! @param vsopw  vso as functions of pieces
 
  use constants_m, only: dp, mxl, mxlin, mxkap
+ use projbasis_m, only: pb_half_powers, pb_congruence, pb_combine, &
+&                       pb_sort_abs, pb_sign_at_peak
  use pieces_m, only: piecewise_t, pw_product_integral, pw_node_values, &
 &                    pw_free
  implicit none
@@ -64,17 +66,14 @@
  type(piecewise_t), intent(out) :: vsopw(2*mxprj,mxl+1)
 
 !Local variables
- integer :: ii,jj,kk,ik1,ik2,ip1,ip2,ipk,ll,l1,info,nn
- real(dp) :: apk,tt
+ integer :: ii,jj,ik1,ik2,ip1,ip2,ll,l1,info,nn
  real(dp) :: sovl(2*mxprj,2*mxprj),sovlev(2*mxprj)
  real(dp) :: ascl(2*mxprj,2*mxprj),aso(2*mxprj,2*mxprj)
  real(dp) :: asclst(2*mxprj,2*mxprj),wsclst(2*mxprj)
  real(dp) :: asost(2*mxprj,2*mxprj),wsost(2*mxprj)
- real(dp) :: asclt(2*mxprj,2*mxprj),asot(2*mxprj,2*mxprj)
  real(dp) :: sphalf(2*mxprj,2*mxprj),smhalf(2*mxprj,2*mxprj)
  real(dp) :: fscl(mxprj),fso(mxprj),work(10*mxprj)
- type(piecewise_t) :: pwt(2*mxprj),pwst(2*mxprj),pwswap
- logical :: sorted
+ type(piecewise_t) :: pwt(2*mxprj),pwst(2*mxprj)
 
  do l1=1,lmax+1
    ll=l1-1
@@ -138,48 +137,19 @@
 
 ! construct S^(-1/2) AND s^(1/2)
 
-   do jj=1,nn
-     tt=sqrt(sovlev(jj))
-     do ii=1,nn
-       sphalf(ii,jj)=tt*sovl(ii,jj)
-       smhalf(ii,jj)=sovl(ii,jj)/tt
-     end do
-   end do
+   call pb_half_powers(sovl,sovlev,nn,2*mxprj,sphalf,smhalf)
 
 ! take linear combinations to form orthonormal basis functions
 
    do jj=1,nn
      pwst(jj)=pwt(1)
-     pwst(jj)%vals(:,:)=0.0d0
-     do ii=1,nn
-       pwst(jj)%vals(:,:)=pwst(jj)%vals(:,:) + smhalf(ii,jj)*pwt(ii)%vals(:,:)
-     end do
    end do
+   call pb_combine(smhalf,2*mxprj,pwt,nn,pwst)
 
 ! construct A^(-1)* = S^(1/2)^T A^(-1) S^(1/2)
 
-   asclt(:,:)=0.0d0
-   asclst(:,:)=0.0d0
-   asot(:,:)=0.0d0
-   asost(:,:)=0.0d0
-
-   do ii=1,nn
-     do jj=1,nn
-       do kk=1,nn
-         asclt(ii,jj)=asclt(ii,jj)+ascl(ii,kk)*sphalf(kk,jj)
-         asot(ii,jj) =asot(ii,jj) + aso(ii,kk)*sphalf(kk,jj)
-       end do
-     end do
-   end do
-
-   do ii=1,nn
-     do jj=1,nn
-       do kk=1,nn
-         asclst(ii,jj)=asclst(ii,jj)+asclt(kk,jj)*sphalf(kk,ii)
-         asost(ii,jj) =asost(ii,jj) + asot(kk,jj)*sphalf(kk,ii)
-       end do
-     end do
-   end do
+   call pb_congruence(ascl,sphalf,nn,2*mxprj,asclst)
+   call pb_congruence(aso,sphalf,nn,2*mxprj,asost)
 
 ! find eigenvalues and eigenvectors of the A* matrices
 
@@ -211,51 +181,16 @@
      esr(ii,l1)=wsclst(ii)
      eso(ii,l1)=  wsost(ii)
      vsrpw(ii,l1)=pwt(1)
-     vsrpw(ii,l1)%vals(:,:)=0.0d0
      vsopw(ii,l1)=pwt(1)
-     vsopw(ii,l1)%vals(:,:)=0.0d0
-     do jj=1,nn
-       vsrpw(ii,l1)%vals(:,:)=vsrpw(ii,l1)%vals(:,:) &
-&                            + asclst(jj,ii)*pwst(jj)%vals(:,:)
-       vsopw(ii,l1)%vals(:,:)=vsopw(ii,l1)%vals(:,:) &
-&                            + asost(jj,ii)*pwst(jj)%vals(:,:)
-     end do
    end do
+   call pb_combine(asclst,2*mxprj,pwst,nn,vsrpw(1:nn,l1))
+   call pb_combine(asost,2*mxprj,pwst,nn,vsopw(1:nn,l1))
 
 ! bubble-sort on coefficient magnitudes for scalar and then s-o
 ! (Yes, I know bubble-sort is the least-efficient sorting algorithm.)
 
-   do ii=1,100
-     sorted=.true.
-     do jj=2,nn
-       if(abs(esr(jj-1,l1))<abs(esr(jj,l1))) then
-         tt=esr(jj,l1)
-         pwswap=vsrpw(jj,l1)
-         esr(jj,l1)=esr(jj-1,l1)
-         vsrpw(jj,l1)=vsrpw(jj-1,l1)
-         esr(jj-1,l1)=tt
-         vsrpw(jj-1,l1)=pwswap
-         sorted=.false.
-       end if
-     end do
-     if(sorted) exit
-   end do
-
-   do ii=1,100
-     sorted=.true.
-     do jj=2,nn
-       if(abs(eso(jj-1,l1))<abs(eso(jj,l1))) then
-         tt=eso(jj,l1)
-         pwswap=vsopw(jj,l1)
-         eso(jj,l1)=eso(jj-1,l1)
-         vsopw(jj,l1)=vsopw(jj-1,l1)
-         eso(jj-1,l1)=tt
-         vsopw(jj-1,l1)=pwswap
-         sorted=.false.
-       end if
-     end do
-     if(sorted) exit
-   end do
+   call pb_sort_abs(esr(1:nn,l1),vsrpw(1:nn,l1),nn)
+   call pb_sort_abs(eso(1:nn,l1),vsopw(1:nn,l1),nn)
 
    write(6,'(/a,i2)') &
 &       ' Orthonormal scalar projector coefficients, l = ',ll
@@ -268,32 +203,8 @@
 ! positive at their peak (needed for compaisons apparently)
 
    do jj=1,nn
-     call pw_node_values(rr,mmax,vsopw(jj,l1),vso(:,jj,l1))
-     apk=0.0d0
-     ipk=1
-     do ii=1,mmax
-       if(abs(vso(ii,jj,l1))>apk) then
-         apk=abs(vso(ii,jj,l1))
-         ipk=ii
-       end if
-     end do
-     if(vso(ipk,jj,l1)<0.0d0) then
-       vso(:,jj,l1)=-vso(:,jj,l1)
-       vsopw(jj,l1)%vals(:,:)=-vsopw(jj,l1)%vals(:,:)
-     end if
-     call pw_node_values(rr,mmax,vsrpw(jj,l1),vsr(:,jj,l1))
-     apk=0.0d0
-     ipk=1
-     do ii=1,mmax
-       if(abs(vsr(ii,jj,l1))>apk) then
-         apk=abs(vsr(ii,jj,l1))
-         ipk=ii
-       end if
-     end do
-     if(vsr(ipk,jj,l1)<0.0d0) then
-       vsr(:,jj,l1)=-vsr(:,jj,l1)
-       vsrpw(jj,l1)%vals(:,:)=-vsrpw(jj,l1)%vals(:,:)
-     end if
+     call pb_sign_at_peak(rr,mmax,vsopw(jj,l1),vso(:,jj,l1))
+     call pb_sign_at_peak(rr,mmax,vsrpw(jj,l1),vsr(:,jj,l1))
    end do
 
    do ii=1,nn
@@ -303,6 +214,5 @@
 
  end do ! l1
 
- call pw_free(pwswap)
  return
  end subroutine sr_so_r

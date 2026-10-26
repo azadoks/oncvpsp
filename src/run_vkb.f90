@@ -68,6 +68,8 @@
 
  use constants_m, only: dp, mxl, mxlin
  use kappa_m, only: kap_count, kap_of
+ use projbasis_m, only: pb_half_powers, pb_congruence, pb_combine, &
+&                       pb_sort_abs, pb_sign_at_peak
  use pieces_m, only: piecewise_t, pw_maxseg, pw_reach, pw_alloc, pw_free, &
 &                    pw_integral, pw_product_integral, pw_node_values
  use vploc_m, only: vploc_t, vploc_fit, vploc_mesh, vploc_eval
@@ -95,16 +97,15 @@
 
 !Local variables
  integer :: lwork
- integer :: ii,ipk,jj,kk,ikap,ll,l1,info,np,kap,mkap,nseg,iseg,nb,nbrk
- real(dp) :: apk,sn,tt,xx,rcloc,rm,wj,bnd(0:pw_maxseg),brk(3)
+ integer :: ii,jj,ikap,ll,l1,info,np,kap,mkap,nseg,iseg,nb,nbrk
+ real(dp) :: sn,tt,xx,rcloc,rm,wj,bnd(0:pw_maxseg),brk(3)
  real(dp) :: bb(mxprj,mxprj),bbev(mxprj),bbi(mxprj,mxprj)
  real(dp) :: sovl(mxprj,mxprj),sovlev(mxprj),smhalf(mxprj,mxprj)
  real(dp) :: sphalf(mxprj,mxprj)
- real(dp) :: bbist(mxprj,mxprj),bbistev(mxprj),bbit(mxprj,mxprj)
+ real(dp) :: bbist(mxprj,mxprj),bbistev(mxprj)
  real(dp), allocatable :: vloc(:),vlin0(:),vlin1(:),vpiece(:),taper(:),work(:)
  type(piecewise_t) :: pw(mxprj),pwt(mxprj)
  type(vploc_t) :: cfloc
- logical :: sorted
 
  lwork=3*mxprj
  allocate(vloc(mmax),vlin0(mmax),vlin1(mmax),vpiece(mmax),taper(mmax))
@@ -350,34 +351,11 @@
 
 ! construct S^(-1/2) AND s^(1/2)
 
-       do jj=1,np
-         tt=sqrt(sovlev(jj))
-         do ii=1,np
-           sphalf(ii,jj)=tt*sovl(ii,jj)
-           smhalf(ii,jj)=sovl(ii,jj)/tt
-         end do
-       end do
+       call pb_half_powers(sovl,sovlev,np,mxprj,sphalf,smhalf)
 
 ! construct B^(-1)* = S^(1/2)^T B^(-1) S^(1/2)
 
-       bbit(:,:)=0.0d0
-       bbist(:,:)=0.0d0
-
-       do ii=1,np
-         do jj=1,np
-           do kk=1,np
-             bbit(ii,jj)=bbit(ii,jj)+bbi(ii,kk)*sphalf(kk,jj)
-           end do
-         end do
-       end do
-
-       do ii=1,np
-         do jj=1,np
-           do kk=1,np
-             bbist(ii,jj)=bbist(ii,jj)+bbit(kk,jj)*sphalf(kk,ii)
-           end do
-         end do
-       end do
+       call pb_congruence(bbi,sphalf,np,mxprj,bbist)
 
 !      SUBROUTINE DSYEV( JOBZ, UPLO, N, A, LDA, W, WORK, LWORK, INFO )
 
@@ -393,49 +371,22 @@
 
        do jj=1,np
          pwt(jj)=pw(jj)
-         pw(jj)%vals(:,:)=0.0d0
        end do
-
-       do jj=1,np
-         do ii=1,np
-           pw(jj)%vals(:,:)=pw(jj)%vals(:,:) + smhalf(ii,jj)*pwt(ii)%vals(:,:)
-         end do
-       end do
+       call pb_combine(smhalf,mxprj,pwt,np,pw)
 
 
 ! take linear combinations to form orthonormal projectors
 
        do jj=1,np
          pwt(jj)=pw(jj)
-         pw(jj)%vals(:,:)=0.0d0
+         evkb(jj,l1,ikap)=bbistev(jj)
        end do
-
-       do ii=1,np
-         evkb(ii,l1,ikap)=bbistev(ii)
-         do jj=1,np
-           pw(ii)%vals(:,:)=pw(ii)%vals(:,:) + bbist(jj,ii)*pwt(jj)%vals(:,:)
-         end do
-       end do
+       call pb_combine(bbist,mxprj,pwt,np,pw)
 
 ! re-order if necessary so first projector has largest magnitude coefficient
 ! which is consistent with relativistic sr_so_r.f90 output
 
-       do ii=1,100
-         sorted=.true.
-         do jj=2,np
-
-           if(abs(evkb(jj,l1,ikap))>abs(evkb(jj-1,l1,ikap))) then
-             tt=evkb(jj-1,l1,ikap)
-             pwt(1)=pw(jj-1)
-             evkb(jj-1,l1,ikap)=evkb(jj,l1,ikap)
-             pw(jj-1)=pw(jj)
-             evkb(jj,l1,ikap)=tt
-             pw(jj)=pwt(1)
-             sorted=.false.
-           end if
-         end do
-         if(sorted) exit
-       end do
+       call pb_sort_abs(evkb(1:np,l1,ikap),pw(1:np),np)
 
        write(6,'(/a,1p,5e12.4)') '  Orthonormal projector coefficients',&
 &          (evkb(jj,l1,ikap),jj=1,np)
@@ -446,19 +397,7 @@
 ! at their peak (needed for compaisons apparently)
 
      do jj=1,np
-       call pw_node_values(rr,mmax,pw(jj),vkb(:,jj,l1,ikap))
-       apk=0.0d0
-       ipk=1
-       do ii=1,mmax
-         if(abs(vkb(ii,jj,l1,ikap))>apk) then
-           apk=abs(vkb(ii,jj,l1,ikap))
-           ipk=ii
-         end if
-       end do
-       if(vkb(ipk,jj,l1,ikap)<0.0d0) then
-         vkb(:,jj,l1,ikap)=-vkb(:,jj,l1,ikap)
-         pw(jj)%vals(:,:)=-pw(jj)%vals(:,:)
-       end if
+       call pb_sign_at_peak(rr,mmax,pw(jj),vkb(:,jj,l1,ikap))
        vkbpw(jj,l1,ikap)=pw(jj)
        call pw_free(pw(jj))
        call pw_free(pwt(jj))

@@ -81,6 +81,7 @@ set(src_oncvpsp
     xc_dispatch_m.f90
     boundsolve_m.f90
     kappa_m.f90
+    projbasis_m.f90
     outwf_m.F90
     sratom.f90
     tfapot.f90
