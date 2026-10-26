@@ -15,6 +15,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module diagout_m
+
+ implicit none
+ private
+ public :: diagout
+
+ contains
+
 ! The machine-readable block of the diagnostics, for programs that read the
 ! output (an optimizer taking finite differences of them): the values that
 ! the tables above print to 6 or 2 decimals, to 17 significant digits.
@@ -515,3 +524,5 @@
  end function slope
 
  end subroutine diagout
+
+ end module diagout_m

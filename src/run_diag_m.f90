@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module run_diag_m
+
+ implicit none
+ private
+ public :: run_diag
+
+ contains
+
  subroutine run_diag(lmax,npa,epa,wellprj,lloc,irc, &
 &                    vlocpw,vkbpw,evkb,nproj,rr,vfull,vp,zz,mmax,mxprj,irel, &
 &                    nkap,iso,vsrpw,esr,vsopw,eso)
@@ -273,3 +282,5 @@
  end subroutine assemble_projectors
 
  end subroutine run_diag
+
+ end module run_diag_m

@@ -7,13 +7,13 @@ set(src_oncvpsp
     aeatom_m.f90
     boundstate_m.f90
     build_info_m.f90
-    check_data.f90
+    check_data_m.f90
     config_ae_m.f90
     const_basis_m.f90
     constants_m.f90
     der2exc_m.f90
     derivs_m.f90
-    diagout.f90
+    diagout_m.f90
     vloc_cutoff_m.f90
     dpnint_m.f90
     eresid_m.f90
@@ -47,7 +47,7 @@ set(src_oncvpsp
     modcore_m.f90
     ode_rc_der_m.f90
     ae_delta_m.f90
-    oncvpsp_main.F90
+    oncvpsp_main_m.F90
     optimize_m.f90
     psatom_m.f90
     pspot_m.f90
@@ -55,13 +55,13 @@ set(src_oncvpsp
     relatom_m.f90
     relativity_m.f90
     renorm_r_m.f90
-    run_config.f90
-    run_diag.f90
-    run_ghosts.f90
+    run_config_m.f90
+    run_diag_m.f90
+    run_ghosts_m.f90
     run_optimize_m.f90
-    run_phsft.f90
-    run_plot.f90
-    run_vkb.f90
+    run_phsft_m.f90
+    run_plot_m.f90
+    run_vkb_m.f90
     sbf_basis_con_m.f90
     sbf_rc_der_m.f90
     sbf8_m.f90
@@ -106,9 +106,9 @@ set(src_oncvpsp
     ae_file_m.f90
     ps_file_m.f90
     fpovlp_m.f90
-    gnu_script.f90
-    linout.f90
-    upfout.f90
+    gnu_script_m.f90
+    linout_m.f90
+    upfout_m.f90
     # Fully-relativistic files
     sr_so_r_m.f90
 )
@@ -170,7 +170,7 @@ if (ONCVPSP_WITH_FR)
 endif ()
 
 # All-electron and pseudopotential stages of the three drivers, which pass the all-electron atom through a
-# file (see oncvpsp_main.F90 and ae_file_m.f90)
+# file (see oncvpsp_main_m.F90 and ae_file_m.f90)
 oncvpsp_executable(oncvpspsr_ae oncvpsp_ae.F90 oncvpsp_ae.x)
 oncvpsp_executable(oncvpspsr_ps oncvpsp_ps.F90 oncvpsp_ps.x)
 oncvpsp_executable(oncvpspnr_ae oncvpspnr_ae.F90 oncvpspnr_ae.x)

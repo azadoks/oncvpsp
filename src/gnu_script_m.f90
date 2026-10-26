@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module gnu_script_m
+
+ implicit none
+ private
+ public :: gnu_script
+
+ contains
+
 ! creates appropriate input file for GNUPLOT
 
  subroutine gnu_script(epa,evkb,lmax,lloc,mxprj,nproj,nkap)
@@ -358,3 +367,5 @@
 
  return
  end subroutine gnu_script
+
+ end module gnu_script_m

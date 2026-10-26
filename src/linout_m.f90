@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module linout_m
+
+ implicit none
+ private
+ public :: linout
+
+ contains
+
 ! interpolates various arrays onto linear radial mesh to create file
 ! for Abinit input using pspcod=8, with the spin-orbit projectors when
 ! fully relativistic
@@ -404,3 +413,5 @@
  end subroutine proj_block
 
  end subroutine linout
+
+ end module linout_m

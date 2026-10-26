@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module run_plot_m
+
+ implicit none
+ private
+ public :: run_plot
+
+ contains
+
  subroutine run_plot(lmax,npa,epa,wellprj,lloc,irc, &
 &                    vkb,vlocpw,vkbpw,evkb,nproj,rr,vfull,vp,vpuns,zz,mmax, &
 &                    mxprj,drl,nrl,rho,rhoc,rhomod,irel,nkap,cvgplt)
@@ -351,3 +360,5 @@
  end subroutine write_profiles
 
  end subroutine run_plot
+
+ end module run_plot_m

@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module run_ghosts_m
+
+ implicit none
+ private
+ public :: run_ghosts
+
+ contains
+
  subroutine run_ghosts(lmax,la,ea,nc,nv,lloc,rc,qmsbf, &
 &                    vlocpw,vkbpw,evkb,nproj,rr,vp,mmax,mxprj, &
 &                    ngh,ghn,ghe,ghp)
@@ -430,3 +439,5 @@
  end subroutine localized_states
 
  end subroutine run_ghosts
+
+ end module run_ghosts_m

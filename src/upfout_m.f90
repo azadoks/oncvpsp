@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module upfout_m
+
+ implicit none
+ private
+ public :: upfout
+
+ contains
+
 ! interpolates various arrays onto linear radial mesh to create file
 ! for PWSCF input using the UPF file format, with the spin-orbit data when
 ! fully relativistic, or takes them at every istr-th point of the log mesh
@@ -756,3 +765,5 @@
  end function upf_functional
 
  end subroutine upfout
+
+ end module upfout_m

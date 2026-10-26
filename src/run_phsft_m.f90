@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module run_phsft_m
+
+ implicit none
+ private
+ public :: run_phsft
+
+ contains
+
  subroutine run_phsft(lmax,lloc,nproj,epa,npsh,epsh2,depsh,rxpsh,vlocpw, &
 &                      vkbpw,evkb,rr,vfull,vp,zz,mmax,mxprj,rc,irel,nkap, &
 &                      rphs,pshae,pshps)
@@ -167,3 +176,5 @@
  end do !l1
  return
  end subroutine run_phsft
+
+ end module run_phsft_m

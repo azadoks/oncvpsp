@@ -8,8 +8,8 @@
  use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
  use constants_m, only: mxl, mxlin, mxkap
  use pieces_m, only: piecewise_t, pw_alloc
+ use run_phsft_m, only: run_phsft
  implicit none
- external :: run_phsft
 
 !Local variables
  integer, parameter :: mmax = 950, mxprj = 5, lmax = 0, lloc = 0

@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module oncvpsp_main_m
+
+ implicit none
+ private
+ public :: oncvpsp_main
+
+ contains
+
  subroutine oncvpsp_main(irel,istage)
 !! Creates and tests optimized norm-conserving Vanderbilt or Kleinman-Bylander
 !! pseudopotentials based on D. R. Hamann, Phys. Rev. B 88, 085117 (2013)
@@ -64,6 +73,17 @@
 &                            modcore_probes
  use run_optimize_m, only: run_optimize
  use vloc_cutoff_m, only: vloc_cutoff
+ use check_data_m, only: check_data
+ use diagout_m, only: diagout
+ use gnu_script_m, only: gnu_script
+ use linout_m, only: linout
+ use run_config_m, only: run_config_ps
+ use run_diag_m, only: run_diag
+ use run_ghosts_m, only: run_ghosts
+ use run_phsft_m, only: run_phsft
+ use run_plot_m, only: run_plot
+ use run_vkb_m, only: run_vkb
+ use upfout_m, only: upfout
 #if (defined WITH_TOML)
  use input_toml_m, only: read_input_toml
 #endif
@@ -852,3 +872,5 @@
 !! mode: f90
 !! coding: utf-8
 !! End:
+
+ end module oncvpsp_main_m

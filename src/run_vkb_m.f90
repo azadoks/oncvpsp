@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module run_vkb_m
+
+ implicit none
+ private
+ public :: run_vkb
+
+ contains
+
  subroutine run_vkb(lmax,lloc,lpopt,dvloc0,rc,irc,nproj,rr,mmax,mxprj,pswf, &
 &                   pswfx,chix,vfull,vp,evkb,vkb,nlim,dlta,vrloc,irel,nkap, &
 &                   vkbpw,vlocpw,bbeig)
@@ -416,3 +425,5 @@
 
  return
  end subroutine run_vkb
+
+ end module run_vkb_m

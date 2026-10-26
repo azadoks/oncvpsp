@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module check_data_m
+
+ implicit none
+ private
+ public :: check_data
+
+ contains
+
  subroutine check_data(atsym,zz,fcfact,rcfact,slack,fcgrid,rcgrid,epsh1,epsh2, &
 &                      depsh,rxpsh,rlmax,drl,upf_mesh,fa,facnf, &
 &                      rc,ep,qcut,debl,nc,nv,iexc,lmax,lloc,lpopt,icmod, &
@@ -415,3 +424,5 @@
  end subroutine check_tests
 
  end subroutine check_data
+
+ end module check_data_m

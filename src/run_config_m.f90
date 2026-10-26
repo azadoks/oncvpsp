@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module run_config_m
+
+ implicit none
+ private
+ public :: run_config_ps
+
+ contains
+
  subroutine run_config_ps(jj,istcnf,ierrcnf,itcnf,kerrcnf,nvtcnf, &
 &                         natcnf,latcnf,fatcnf,eatcnf,etstcnf,nc,rhov,rhomod, &
 &                         rr,rcmax,mmax,mxprj,iexc,etot,epstot,nproj,vpuns, &
@@ -291,3 +300,5 @@
  end subroutine write_results_r
 
  end subroutine run_config_ps
+
+ end module run_config_m
