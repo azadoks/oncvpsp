@@ -17,11 +17,121 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 
+!> The model cores of icmod 6 and 7 (modcore_budget), the probes of the
+!> hardness of icmod 7 (modcore_probes), and the table of the pseudo-wave
+!> cutoffs the budget starts from (modcore_budget_table).  The search of
+!> modcore_budget runs in phases over its state, a budget_ctx.
  module modcore_budget_m
 
+ use constants_m, only: dp, pi, nrhomod
+ use modcore_m, only: core_pieces
+ use ugrid_m, only: ug_brent, ug_fmin
+ use quad_m, only: gauss_legendre
+ use xc_dispatch_m, only: exc_dispatch
+ use pieces_m, only: piecewise_t
+ use logmesh_m, only: lm_derivs, lm_interp, lm_integral, lm_fh_reach, &
+&                     lm_blend
+ use cinf_taper_m, only: cinf_taper
+ use der2exc_m, only: der2exc
+ use lapack_m, only: dhseqr
  implicit none
  private
  public :: modcore_budget,modcore_probes,modcore_budget_table
+
+ real(dp), parameter :: pi4=4.0_dp*pi !< 4 pi
+!> background density of the error (bohr**-3)
+ real(dp), parameter :: background=5.0d-3
+!> radius of the sphere of the error (bohr)
+ real(dp), parameter :: radius=10.0d0
+!> where the taper of the sphere starts, as a share of its radius
+ real(dp), parameter :: taper=0.6d0
+!> largest density cutoff (bohr**-1)
+ real(dp), parameter :: qmax=120.0d0
+!> step of the grid of density cutoffs (bohr**-1)
+ real(dp), parameter :: qstep=0.1d0
+!> the cutoffs past q_b of the first search (bohr**-1)
+ real(dp), parameter :: quick=1.0d0
+!> panels of the band-limited transform per step
+ integer, parameter :: npanel=1
+!> Gauss-Legendre nodes of each panel of the band-limited transform
+ integer, parameter :: ngk=5
+!> nodes of the transform on [0, r_s]
+ integer, parameter :: nxg=400
+!> nodes per mesh interval beyond r_s (each of these converged: twice as
+!> many move nothing printed)
+ integer, parameter :: ngi=8
+!> highest power (r/r_s)**(2*npow) of the minimum tail
+ integer, parameter :: npow=8
+!> Gauss-Legendre nodes per panel of the window of the minimum tail
+ integer, parameter :: ngq=8
+!> panels of the window of the minimum tail
+ integer, parameter :: nwin=80
+!> icmod=7: ratio of the radii of the basin
+ real(dp), parameter :: ratio=1.025d0
+!> icmod=7: step in ln r_s of the central differences
+ real(dp), parameter :: hmis=1.0d-2
+!> names of the fills: none, minimum tail, Martins
+ character(len=2), parameter :: fillname(0:2)=['- ','MT','M ']
+
+ abstract interface
+   real(dp) function scalar_fn(xx)
+   import :: dp
+   implicit none
+   real(dp), intent(in) :: xx
+   end function scalar_fn
+ end interface
+
+!> The state of the search of modcore_budget, which its phases and the
+!> procedures of the model, its transform and its error share
+ type :: budget_ctx
+!> the inputs (modcore_budget)
+   integer :: mmax,iexc,nprobe
+   integer, allocatable :: lprobe(:)
+   real(dp), allocatable :: rr(:),rhoc(:),rhotps(:),probes(:,:)
+   real(dp) :: errmax,zion
+!> the cutoffs: the budget's ecut and its share budget (Ha), the window
+!> qlo..qhi of the minimum tail, q_b, the end of the search qend, and
+!> where the error peaks qpk (bohr**-1)
+   real(dp) :: ecut,budget,factor,qlo,qhi,qb,qend,qext,qpk
+!> the radii: the largest and smallest r_s, the model's, that of icmod 6
+   real(dp) :: rtop,rlo,rs,rs6
+   integer :: irtop
+!> the log mesh's al, the step of the band-limited transform dq, and the
+!> sizes and offsets of the tables and meshes
+   real(dp) :: al,dq
+   integer :: nq,npq,nqn,i0,iend,nout,irmx,nin,nx,kin,ni,nt
+!> the fill: its type ifill (0 none, 1 minimum tail, 2 Martins), its
+!> Legendre and power coefficients, Martins' coefficients
+   integer :: ifill
+   real(dp) :: cleg(0:npow),cpoly(0:npow),aco,bco,cco
+!> the state of the transform tables (spectrum, outer_transform)
+   integer :: irow,js,npdone,msnap
+!> Gauss-Legendre nodes and weights
+   real(dp) :: tk(ngk),wk(ngk),tgi(ngi),wgi(ngi),xg(nxg),wxg(nxg)
+   real(dp) :: pt(ngi),pg(ngi)
+!> the window of the minimum tail and the core charge's transform beyond
+!> r_s
+   real(dp), allocatable :: qn(:),wn(:),ot(:),og(:),sho(:),cho(:)
+   real(dp), allocatable :: so0(:,:),co0(:,:),tab(:,:,:),tabw(:,:)
+   real(dp), allocatable :: fx(:),fw(:),plg(:,:)
+!> the error's meshes and densities
+   real(dp), allocatable :: core(:),nval(:),work(:),eps(:),vxc(:),wf(:)
+   real(dp), allocatable :: wc(:),fext(:),af(:),ac(:),swin(:),xr(:),ri(:)
+   real(dp), allocatable :: nvi(:),wki(:),epi(:),vxi(:)
+   real(dp), allocatable :: shr(:),chr(:),sr0(:,:),cr0(:,:),sr(:,:)
+   real(dp), allocatable :: cr(:,:),ntk(:,:),rqs(:,:),rqp(:)
+   real(dp) :: vbg
+!> the needed cutoff (bohr**-1, Ha), and whether the search was extended
+   real(dp) :: qneed,ecore
+   logical :: full
+!> icmod=7: the hardness and its mismatch, the radii of the basin, their
+!> fills and mismatches
+   real(dp), allocatable :: d2ae(:,:),d2mod(:,:),d2zero(:,:)
+   real(dp) :: mismatch
+   real(dp), allocatable :: crad(:),cmis(:)
+   integer, allocatable :: cfill(:)
+   integer :: ncand
+ end type budget_ctx
 
  contains
 
@@ -118,19 +228,6 @@
 !! @param lprobe  angular momenta of the probes
 !! @param nprobe  number of probes (0 for icmod=6)
 
- use constants_m, only: dp, pi, nrhomod
- use modcore_m, only: core_pieces
- use ugrid_m, only: ug_brent, ug_fmin
- use quad_m, only: gauss_legendre
- use xc_dispatch_m, only: exc_dispatch
- use pieces_m, only: piecewise_t
- use logmesh_m, only: lm_derivs, lm_interp, lm_integral, lm_fh_reach, &
-&                     lm_blend
- use cinf_taper_m, only: cinf_taper
- use der2exc_m, only: der2exc
- use lapack_m, only: dhseqr
- implicit none
-
 !Input variables
  integer, intent(in) :: icmod,mmax,iexc,nprobe
  integer, intent(in) :: lprobe(nprobe)
@@ -143,109 +240,156 @@
  real(dp), intent(out) :: rhomod(mmax,nrhomod)
  type(piecewise_t), intent(out) :: corepw(nrhomod)
 
- abstract interface
-   real(dp) function scalar_fn(xx)
-   import :: dp
-   implicit none
-   real(dp), intent(in) :: xx
-   end function scalar_fn
- end interface
+!Local variables
+ type(budget_ctx) :: bc
+
+ call budget_init(bc,rhotps,rhoc,fcfact,ecutw,errmax,slack,rcmin,mmax,rr, &
+&                 iexc,zion,probes,lprobe,nprobe)
+ call budget_tables(bc)
+ call budget_sphere(bc)
+ call budget_search6(bc)
+ if(icmod==7) call budget_hardness7(bc)
+ call budget_needed_cut(bc)
+
+! fill in model and derivatives, all-electron beyond r_s
+ call core_pieces(rr,rhoc,mmax,bc%rs,fill,corepw,rhomod)
+
+ call budget_report(bc,icmod,fcfact,weighted,ecutw,slack,rcmin)
+
+ return
+
+ contains
+
+ subroutine fill(rad,dd)
+
+!! the fill of the model of this search and its first 4 derivatives at
+!! rad (fill_derivatives), for core_pieces
+!!
+!! @param rad  radius (bohr)
+!! @param dd  the fill and its first 4 derivatives at rad
+
+!Input variables
+ real(dp), intent(in) :: rad
+
+!Output variables
+ real(dp), intent(out) :: dd(5)
+
+ call fill_derivatives(bc,rad,dd)
+ return
+ end subroutine fill
+
+ end subroutine modcore_budget
+
+ subroutine budget_init(bc,rhotps,rhoc,fcfact,ecutw,errmax,slack,rcmin, &
+&                       mmax,rr,iexc,zion,probes,lprobe,nprobe)
+
+!! the cutoffs of the budget, the q grid of the band-limited
+!! transforms, and the largest and smallest radii r_s; the
+!! inputs are kept in bc
+!!
+!! @param bc  the state of the search
+!! @param rhotps..nprobe  as in modcore_budget
+
+!Input variables
+ integer, intent(in) :: mmax,iexc,nprobe
+ integer, intent(in) :: lprobe(nprobe)
+ real(dp), intent(in) :: rhotps(mmax),rhoc(mmax),rr(mmax)
+ real(dp), intent(in) :: probes(mmax,nprobe)
+ real(dp), intent(in) :: fcfact,ecutw,errmax,slack,zion,rcmin
+
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
 
 !Local variables
- real(dp), parameter :: pi4=4.0_dp*pi
-!background density (bohr**-3) and radius (bohr) of the error,
-!largest density cutoff and its grid (bohr**-1), the cutoffs past q_b
-!of the first search
- real(dp), parameter :: background=5.0d-3, radius=10.0d0, taper=0.6d0
- real(dp), parameter :: qmax=120.0d0, qstep=0.1d0, quick=1.0d0
-!panels of the band-limited transform per step and their Gauss-Legendre
-!nodes, nodes of the transform on [0, r_s], nodes per mesh interval beyond
-!(each converged: twice as many move nothing printed)
- integer, parameter :: npanel=1, ngk=5, nxg=400, ngi=8
-!highest power (r/r_s)**(2*npow) of the minimum tail, Gauss-Legendre nodes
-!per panel of its window, panels of the window
- integer, parameter :: npow=8, ngq=8, nwin=80
-!icmod=7: step of the radii, step in ln r_s of the central differences
- real(dp), parameter :: ratio=1.025d0, hmis=1.0d-2
- real(dp) :: al,dq,vbg,ecore,aco,bco,cco,ecut,budget,factor,qlo,qhi,qb
- real(dp) :: cpoly(0:npow),cleg(0:npow),mismatch,rs,rs6,rtop,rlo,qend
- real(dp) :: qneed,tt,ee,qpk,qext
- real(dp) :: tk(ngk),wk(ngk),tgi(ngi),wgi(ngi),xg(nxg),wxg(nxg)
- real(dp) :: pt(ngi),pg(ngi)
- real(dp), allocatable :: core(:),nval(:),work(:),eps(:),vxc(:),wf(:),wc(:)
- real(dp), allocatable :: fext(:),af(:),ac(:),swin(:),xr(:),ri(:),nvi(:)
- real(dp), allocatable :: wki(:),epi(:),vxi(:)
- real(dp), allocatable :: qn(:),wn(:),ot(:),og(:),sho(:),cho(:)
- real(dp), allocatable :: so0(:,:),co0(:,:),tab(:,:,:),tabw(:,:)
- real(dp), allocatable :: fx(:),fw(:),plg(:,:)
- real(dp), allocatable :: shr(:),chr(:),sr0(:,:),cr0(:,:),sr(:,:),cr(:,:)
- real(dp), allocatable :: ntk(:,:),rqs(:,:),rqp(:)
- real(dp), allocatable :: d2ae(:,:),d2mod(:,:),d2zero(:,:),cmis(:),crad(:)
- integer, allocatable :: cfill(:)
- integer :: ii,jj,kk,nq,npq,nqn,nin,nx,irtop,ifill,ncand,i0,iend,nout,js
- integer :: kin,ni,nt
- integer :: irmx,irow,ip,ig
- real(dp) :: sa,ca,sb
- integer :: npdone,msnap,ib
- logical :: full
- character(len=2), parameter :: fillname(0:2)=['- ','MT','M ']
+ integer :: ii
+
+ bc%mmax=mmax
+ bc%iexc=iexc
+ bc%nprobe=nprobe
+ bc%rr=rr
+ bc%rhoc=rhoc
+ bc%rhotps=rhotps
+ bc%probes=probes
+ bc%lprobe=lprobe
+ bc%errmax=errmax
+ bc%zion=zion
 
  if(fcfact>0.0d0) then
-   ecut=fcfact
+   bc%ecut=fcfact
  else
-   factor=1.0d0
-   if(fcfact<0.0d0) factor=-fcfact
-   ecut=factor*ecutw
+   bc%factor=1.0d0
+   if(fcfact<0.0d0) bc%factor=-fcfact
+   bc%ecut=bc%factor*ecutw
  end if
- budget=slack*ecut
+ bc%budget=slack*bc%ecut
 
- al = 0.01d0 * log(rr(101) / rr(1))
- dq = qstep/npanel
- nq = nint(qmax/qstep)
- npq = nq*npanel
+ bc%al = 0.01d0 * log(bc%rr(101) / bc%rr(1))
+ bc%dq = qstep/npanel
+ bc%nq = nint(qmax/qstep)
+ bc%npq = bc%nq*npanel
 
- qlo=2.0d0*sqrt(2.0d0*ecut)
- if(qlo >= qmax) then
+ bc%qlo=2.0d0*sqrt(2.0d0*bc%ecut)
+ if(bc%qlo >= qmax) then
    write(6,'(/a,f10.2,a)') 'modcore_budget: ERROR stop - ecut beyond', &
 &        qmax**2/8.0d0,' Ha'
    error stop 1
  end if
- qhi=min(3.0d0*qlo,qmax)
+ bc%qhi=min(3.0d0*bc%qlo,qmax)
 ! the first density cutoff that decides whether the model fits budget
- qb=2.0d0*sqrt(2.0d0*budget)
+ bc%qb=2.0d0*sqrt(2.0d0*bc%budget)
 
 ! the largest r_s: the smallest rc, or the last radius at which the core
 ! charge and the derivatives matched there are not zero
- irtop=0
- do ii=1,mmax-6
-   if(.not. all(rhoc(ii:ii+6)>0.0d0)) exit
-   irtop=ii
+ bc%irtop=0
+ do ii=1,bc%mmax-6
+   if(.not. all(bc%rhoc(ii:ii+6)>0.0d0)) exit
+   bc%irtop=ii
  end do
- if(irtop<4) then
+ if(bc%irtop<4) then
    write(6,'(/a)') 'modcore_budget: ERROR stop - no core charge'
    error stop 1
  end if
- rtop=min(rcmin,rr(irtop))
- rlo=rtop/50.0d0
- if(qmax*rtop > 2.0d0*(nxg-50)) then
+ bc%rtop=min(rcmin,bc%rr(bc%irtop))
+ bc%rlo=bc%rtop/50.0d0
+ if(qmax*bc%rtop > 2.0d0*(nxg-50)) then
    write(6,'(/a,f10.4,a)') 'modcore_budget: ERROR stop - r_s up to', &
-&        rtop,' bohr needs more nodes of the transform'
+&        bc%rtop,' bohr needs more nodes of the transform'
    error stop 1
  end if
 
- call gauss_legendre(0.0d0,1.0d0,ngk,tk,wk)
- call gauss_legendre(0.0d0,1.0d0,ngi,tgi,wgi)
- call gauss_legendre(0.0d0,1.0d0,nxg,xg,wxg)
+ return
+ end subroutine budget_init
+
+ subroutine budget_tables(bc)
+
+!! the Gauss-Legendre nodes, the window of the minimum tail, the
+!! tables of the core charge's transform beyond r_s and the
+!! Legendre polynomials of the fill
+!!
+!! @param bc  the state of the search
+
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
+
+!Local variables
+ integer :: ig,ii,ip,jj,kk
+ real(dp) :: ca,sa,sb,tt
+
+ call gauss_legendre(0.0d0,1.0d0,ngk,bc%tk,bc%wk)
+ call gauss_legendre(0.0d0,1.0d0,ngi,bc%tgi,bc%wgi)
+ call gauss_legendre(0.0d0,1.0d0,nxg,bc%xg,bc%wxg)
 
 ! the window of the minimum tail: nwin Gauss-Legendre panels on
 ! [qlo, qhi], the weights times q**2
- nqn=ngq*nwin
- allocate(qn(nqn),wn(nqn))
+ bc%nqn=ngq*nwin
+ allocate(bc%qn(bc%nqn),bc%wn(bc%nqn))
  do ii=1,nwin
-   call gauss_legendre(qlo+(ii-1)*(qhi-qlo)/nwin,qlo+ii*(qhi-qlo)/nwin, &
-&                      ngq,qn((ii-1)*ngq+1:ii*ngq),wn((ii-1)*ngq+1:ii*ngq))
+   call gauss_legendre(bc%qlo+(ii-1)*(bc%qhi-bc%qlo)/nwin, &
+&                      bc%qlo+ii*(bc%qhi-bc%qlo)/nwin, &
+&                      ngq,bc%qn((ii-1)*ngq+1:ii*ngq), &
+&                                bc%wn((ii-1)*ngq+1:ii*ngq))
  end do
- wn(:)=wn(:)*qn(:)**2
+ bc%wn(:)=bc%wn(:)*bc%qn(:)**2
 
 ! the core charge's transform beyond r_s: Gauss-Legendre in ln r on each
 ! mesh interval from below r_lo (and the steps of the central differences)
@@ -255,192 +399,291 @@
 ! nodes of the band-limited transform and of the window, from each mesh
 ! point r_s can lie below on: tab(:,:,i), tabw(:,i) over the intervals
 ! from i on, the sines rotated from one panel to the next
- tt=maxval(rr(:)**3*rhoc(:))
- iend=1
- do ii=1,mmax-2
-   if(rr(ii)**3*rhoc(ii)>1.0d-14*tt) iend=ii+1
+ tt=maxval(bc%rr(:)**3*bc%rhoc(:))
+ bc%iend=1
+ do ii=1,bc%mmax-2
+   if(bc%rr(ii)**3*bc%rhoc(ii)>1.0d-14*tt) bc%iend=ii+1
  end do
- i0=max(1,floor(log(rlo/(1.05d0*rr(1)))/al))
- if(iend<=i0+1) then
+ bc%i0=max(1,floor(log(bc%rlo/(1.05d0*bc%rr(1)))/bc%al))
+ if(bc%iend<=bc%i0+1) then
    write(6,'(/a)') 'modcore_budget: ERROR stop - no core charge'
    error stop 1
  end if
- nout=ngi*(iend-i0)
- allocate(ot(nout),og(nout),sho(nout),cho(nout))
- allocate(so0(nout,ngk),co0(nout,ngk))
- do ii=i0,iend-1
+ bc%nout=ngi*(bc%iend-bc%i0)
+ allocate(bc%ot(bc%nout),bc%og(bc%nout),bc%sho(bc%nout),bc%cho(bc%nout))
+ allocate(bc%so0(bc%nout,ngk),bc%co0(bc%nout,ngk))
+ do ii=bc%i0,bc%iend-1
    do kk=1,ngi
-     jj=(ii-i0)*ngi+kk
-     ot(jj)=rr(ii)*exp(al*tgi(kk))
-     call lm_interp(rr,rhoc,mmax,ot(jj),tt)
-     og(jj)=al*wgi(kk)*ot(jj)**2*tt
+     jj=(ii-bc%i0)*ngi+kk
+     bc%ot(jj)=bc%rr(ii)*exp(bc%al*bc%tgi(kk))
+     call lm_interp(bc%rr,bc%rhoc,bc%mmax,bc%ot(jj),tt)
+     bc%og(jj)=bc%al*bc%wgi(kk)*bc%ot(jj)**2*tt
    end do
  end do
- sho(:)=sin(dq*ot(:))
- cho(:)=cos(dq*ot(:))
+ bc%sho(:)=sin(bc%dq*bc%ot(:))
+ bc%cho(:)=cos(bc%dq*bc%ot(:))
  do kk=1,ngk
-   so0(:,kk)=sin(tk(kk)*dq*ot(:))
-   co0(:,kk)=cos(tk(kk)*dq*ot(:))
+   bc%so0(:,kk)=sin(bc%tk(kk)*bc%dq*bc%ot(:))
+   bc%co0(:,kk)=cos(bc%tk(kk)*bc%dq*bc%ot(:))
  end do
- irmx=min(iend,floor(log(rtop*exp(2.0d0*hmis)/rr(1))/al)+3)
- allocate(tab(npq,ngk,i0:irmx),tabw(nqn,i0:irmx))
- allocate(rqp(npq*ngk))
- rqp(:)=0.0d0
- tabw(:,i0)=0.0d0
- do ii=iend-1,i0,-1
-   if(ii+1<=irmx) then
-     tab(:,:,ii+1)=reshape(rqp,[npq,ngk])
-     tabw(:,ii+1)=tabw(:,i0)
+ bc%irmx=min(bc%iend,floor(log(bc%rtop*exp(2.0d0*hmis)/bc%rr(1))/bc%al)+3)
+ allocate(bc%tab(bc%npq,ngk,bc%i0:bc%irmx),bc%tabw(bc%nqn,bc%i0:bc%irmx))
+ allocate(bc%rqp(bc%npq*ngk))
+ bc%rqp(:)=0.0d0
+ bc%tabw(:,bc%i0)=0.0d0
+ do ii=bc%iend-1,bc%i0,-1
+   if(ii+1<=bc%irmx) then
+     bc%tab(:,:,ii+1)=reshape(bc%rqp,[bc%npq,ngk])
+     bc%tabw(:,ii+1)=bc%tabw(:,bc%i0)
    end if
    do kk=1,ngi
-     jj=(ii-i0)*ngi+kk
+     jj=(ii-bc%i0)*ngi+kk
      do ig=1,ngk
-       sa=so0(jj,ig)
-       ca=co0(jj,ig)
-       do ip=1,npq
-         rqp(ip+(ig-1)*npq)=rqp(ip+(ig-1)*npq) + og(jj)*sa
-         sb=sa*cho(jj) + ca*sho(jj)
-         ca=ca*cho(jj) - sa*sho(jj)
+       sa=bc%so0(jj,ig)
+       ca=bc%co0(jj,ig)
+       do ip=1,bc%npq
+         bc%rqp(ip+(ig-1)*bc%npq)=bc%rqp(ip+(ig-1)*bc%npq) + bc%og(jj)*sa
+         sb=sa*bc%cho(jj) + ca*bc%sho(jj)
+         ca=ca*bc%cho(jj) - sa*bc%sho(jj)
          sa=sb
        end do
      end do
-     tabw(:,i0)=tabw(:,i0) + og(jj)*sin(qn(:)*ot(jj))
+     bc%tabw(:,bc%i0)=bc%tabw(:,bc%i0) + bc%og(jj)*sin(bc%qn(:)*bc%ot(jj))
    end do
  end do
- tab(:,:,i0)=reshape(rqp,[npq,ngk])
- deallocate(rqp)
- allocate(fx(nxg),fw(nxg),plg(nxg,0:npow))
+ bc%tab(:,:,bc%i0)=reshape(bc%rqp,[bc%npq,ngk])
+ deallocate(bc%rqp)
+ allocate(bc%fx(nxg),bc%fw(nxg),bc%plg(nxg,0:npow))
 ! the Legendre polynomials of the fill at the nodes on [0, r_s]
  do ii=1,nxg
-   call legendre_derivs(2.0d0*xg(ii)**2-1.0d0,0,plg(ii,:))
+   call legendre_derivs(2.0d0*bc%xg(ii)**2-1.0d0,0,bc%plg(ii,:))
  end do
+
+ return
+ end subroutine budget_tables
+
+ subroutine budget_sphere(bc)
+
+!! the sphere of the error, the meshes of its integrals, and the
+!! xc energy density of the valence charge on the core charge and
+!! the potential of the background
+!!
+!! @param bc  the state of the search
+
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
+
+!Local variables
+ integer :: ii,kk
 
 ! the sphere of the error, and the points its integrals' interpolant
 ! reads beyond it
- nin=0
- do ii=1,mmax
-   if(rr(ii)>radius) exit
-   nin=ii
+ bc%nin=0
+ do ii=1,bc%mmax
+   if(bc%rr(ii)>radius) exit
+   bc%nin=ii
  end do
- nx=min(mmax,nin+lm_fh_reach()+lm_blend+10)
+ bc%nx=min(bc%mmax,bc%nin+lm_fh_reach()+lm_blend+10)
 ! the mesh of the integral below r_s (set_model): ri(k) = r_s
 ! exp((k-kin) al), from at least rr(1) to the points its interpolant reads
 ! beyond r_s (r_s from r_lo, less the steps of the central differences).
 ! The band-limited models are taken at xr: rr(1:nx), then ri
- kin=floor((log(rlo/rr(1)) - 2.0d0*hmis)/al)+1
- ni=kin+lm_fh_reach()+lm_blend+10
- nt=nx+ni
- allocate(core(mmax),nval(nx),work(nx),eps(nx),vxc(nx),rqp(nt))
- allocate(wf(ni),wc(nx),fext(ni),af(ni),ac(nx),swin(nx))
- allocate(xr(nt),ri(ni),nvi(ni),wki(ni),epi(ni),vxi(ni))
- do ii=1,nx
-   swin(ii)=cinf_taper(rr(ii),taper*radius,radius)
+ bc%kin=floor((log(bc%rlo/bc%rr(1)) - 2.0d0*hmis)/bc%al)+1
+ bc%ni=bc%kin+lm_fh_reach()+lm_blend+10
+ bc%nt=bc%nx+bc%ni
+ allocate(bc%core(bc%mmax),bc%nval(bc%nx),bc%work(bc%nx),bc%eps(bc%nx), &
+&         bc%vxc(bc%nx),bc%rqp(bc%nt))
+ allocate(bc%wf(bc%ni),bc%wc(bc%nx),bc%fext(bc%ni),bc%af(bc%ni), &
+&         bc%ac(bc%nx),bc%swin(bc%nx))
+ allocate(bc%xr(bc%nt),bc%ri(bc%ni),bc%nvi(bc%ni),bc%wki(bc%ni), &
+&         bc%epi(bc%ni),bc%vxi(bc%ni))
+ do ii=1,bc%nx
+   bc%swin(ii)=cinf_taper(bc%rr(ii),taper*radius,radius)
  end do
- allocate(shr(nt),chr(nt),sr0(nt,ngk),cr0(nt,ngk),sr(nt,ngk),cr(nt,ngk))
- allocate(ntk(npq,ngk),rqs(nt,0:nq))
- xr(1:nx)=rr(1:nx)
- shr(1:nx)=sin(dq*rr(1:nx))
- chr(1:nx)=cos(dq*rr(1:nx))
+ allocate(bc%shr(bc%nt),bc%chr(bc%nt),bc%sr0(bc%nt,ngk),bc%cr0(bc%nt,ngk), &
+&         bc%sr(bc%nt,ngk),bc%cr(bc%nt,ngk))
+ allocate(bc%ntk(bc%npq,ngk),bc%rqs(bc%nt,0:bc%nq))
+ bc%xr(1:bc%nx)=bc%rr(1:bc%nx)
+ bc%shr(1:bc%nx)=sin(bc%dq*bc%rr(1:bc%nx))
+ bc%chr(1:bc%nx)=cos(bc%dq*bc%rr(1:bc%nx))
  do kk=1,ngk
-   sr0(1:nx,kk)=sin(tk(kk)*dq*rr(1:nx))
-   cr0(1:nx,kk)=cos(tk(kk)*dq*rr(1:nx))
+   bc%sr0(1:bc%nx,kk)=sin(bc%tk(kk)*bc%dq*bc%rr(1:bc%nx))
+   bc%cr0(1:bc%nx,kk)=cos(bc%tk(kk)*bc%dq*bc%rr(1:bc%nx))
  end do
 
- nval(:)=pi4*background + rhotps(1:nx)
+ bc%nval(:)=pi4*background + bc%rhotps(1:bc%nx)
 
 ! the xc energy density of the valence charge on the core charge
- work(:)=nval(:) + rhoc(1:nx)
- call exc_dispatch(iexc,al,work,vxc,eps,rr,nx,'modcore_budget')
- wc(:)=work(:)*eps(:)
+ bc%work(:)=bc%nval(:) + bc%rhoc(1:bc%nx)
+ call exc_dispatch(bc%iexc,bc%al,bc%work,bc%vxc,bc%eps,bc%rr,bc%nx, &
+&                  'modcore_budget')
+ bc%wc(:)=bc%work(:)*bc%eps(:)
 
 ! xc potential of the background alone
- work(:)=pi4*background
- call exc_dispatch(iexc,al,work,vxc,eps,rr,nx,'modcore_budget')
- vbg=vxc(nx/2)
+ bc%work(:)=pi4*background
+ call exc_dispatch(bc%iexc,bc%al,bc%work,bc%vxc,bc%eps,bc%rr,bc%nx, &
+&                  'modcore_budget')
+ bc%vbg=bc%vxc(bc%nx/2)
+
+ return
+ end subroutine budget_sphere
+
+ subroutine budget_search6(bc)
+
+!! the smallest radius r_s whose model fits the budget (icmod 6)
+!!
+!! @param bc  the state of the search
+
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
 
 ! smallest r_s, first with the cutoffs to q_b + quick; if a larger one
 ! has a larger error at that r_s, again with those up to it + quick: each
 ! r_s found is a root of the largest error over all cutoffs less errmax
 ! once it is confirmed, whatever the range it was found with
- full=.false.
- qend=min(qmax,qb+quick)
+ bc%full=.false.
+ bc%qend=min(qmax,bc%qb+quick)
  do
-   rs=smallest_radius()
-   call set_model(rs)
-   if(qend>=qmax) exit
-   if(err_max(qend,qmax,errmax)<=errmax) exit
-   full=.true.
-   qend=min(qmax,qpk+quick)
+   bc%rs=smallest_radius(bc)
+   call set_model(bc,bc%rs)
+   if(bc%qend>=qmax) exit
+   if(err_max(bc,bc%qend,qmax,bc%errmax)<=bc%errmax) exit
+   bc%full=.true.
+   bc%qend=min(qmax,bc%qpk+quick)
  end do
- rs6=rs
- qext=qend
- qend=qmax
+ bc%rs6=bc%rs
+ bc%qext=bc%qend
+ bc%qend=qmax
 
-! icmod=7: the radii from the largest one down to r_s of icmod 6, their
-! hardness mismatch, and the minimum in the basin of the least of them
- if(icmod==7) then
-   kk=max(0,floor(log(rtop/rs6)/log(ratio)))
-   allocate(crad(kk+2),cfill(kk+2),cmis(kk+2))
-   ncand=0
-   do ii=0,kk
-     tt=rtop/ratio**ii
-     if(tt<=rs6) exit
-     ncand=ncand+1
-     crad(ncand)=tt
-   end do
-   ncand=ncand+1
-   crad(ncand)=rs6
+ return
+ end subroutine budget_search6
 
-   allocate(d2ae(nprobe,nprobe),d2mod(nprobe,nprobe),d2zero(nprobe,nprobe))
-   d2zero(:,:)=0.0d0
-   call der2exc(rhotps,rhoc,probes,rr,d2ae,d2zero,mismatch, &
-&               zion,iexc,0,nprobe,lprobe,rr(mmax),mmax)
-   ib=0
-   do ii=1,ncand
-     cmis(ii)=mismatch_at(log(crad(ii)))
-     cfill(ii)=ifill
-     if(ifill==0) cycle
-     if(ib==0) then
-       ib=ii
-     else if(cmis(ii)<cmis(ib)) then
-       ib=ii
-     end if
-   end do
-   if(ib==0) call no_model()
-   rs=minimum_radius(ib)
-   call set_model(rs)
-   mismatch=mismatch_at(log(rs))
+ subroutine budget_hardness7(bc)
+
+!! the radius of icmod 7: the minimum of the hardness mismatch
+!! in the basin of the least of the radii from the largest one
+!! down to r_s of icmod 6
+!!
+!! @param bc  the state of the search
+
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
+
+!Local variables
+ integer :: ib,ii,kk
+ real(dp) :: tt
+
+ kk=max(0,floor(log(bc%rtop/bc%rs6)/log(ratio)))
+ allocate(bc%crad(kk+2),bc%cfill(kk+2),bc%cmis(kk+2))
+ bc%ncand=0
+ do ii=0,kk
+   tt=bc%rtop/ratio**ii
+   if(tt<=bc%rs6) exit
+   bc%ncand=bc%ncand+1
+   bc%crad(bc%ncand)=tt
+ end do
+ bc%ncand=bc%ncand+1
+ bc%crad(bc%ncand)=bc%rs6
+
+ allocate(bc%d2ae(bc%nprobe,bc%nprobe),bc%d2mod(bc%nprobe,bc%nprobe), &
+&         bc%d2zero(bc%nprobe,bc%nprobe))
+ bc%d2zero(:,:)=0.0d0
+ call der2exc(bc%rhotps,bc%rhoc,bc%probes,bc%rr,bc%d2ae,bc%d2zero,bc%mismatch, &
+&               bc%zion,bc%iexc,0,bc%nprobe,bc%lprobe,bc%rr(bc%mmax),bc%mmax)
+ ib=0
+ do ii=1,bc%ncand
+   bc%cmis(ii)=mismatch_at(bc,log(bc%crad(ii)))
+   bc%cfill(ii)=bc%ifill
+   if(bc%ifill==0) cycle
+   if(ib==0) then
+     ib=ii
+   else if(bc%cmis(ii)<bc%cmis(ib)) then
+     ib=ii
+   end if
+ end do
+ if(ib==0) call no_model(bc)
+ bc%rs=minimum_radius(bc,ib)
+ call set_model(bc,bc%rs)
+ bc%mismatch=mismatch_at(bc,log(bc%rs))
 ! r_s6 is a root of this error less errmax, so at r_s = r_s6 the two are
 ! equal to round-off; the margin is above that, far below a radius that
 ! does not fit
-   if(err_max(qb,qmax,errmax)>errmax*(1.0d0+1.0d-7)) then
-     write(6,'(/a,f12.6,a)') 'modcore_budget: WARNING the radius',rs, &
+ if(err_max(bc,bc%qb,qmax,bc%errmax)>bc%errmax*(1.0d0+1.0d-7)) then
+   write(6,'(/a,f12.6,a)') 'modcore_budget: WARNING the radius',bc%rs, &
 &          ' of the least mismatch does not fit the budget'
-   end if
  end if
 
-! the cutoff the model needs: q**2/8 for the last density cutoff q below
-! q_b whose error is errmax
- call set_model(rs)
- call spectrum(qb)
- qneed=0.0d0
- tt=qb
- ee=err_at(qb)-errmax
- do kk=ceiling(qb/qstep)-1,1,-1
+ return
+ end subroutine budget_hardness7
+
+ subroutine budget_needed_cut(bc)
+
+!! the cutoff the model needs: q**2/8 for the last density
+!! cutoff q below q_b whose error is errmax
+!!
+!! @param bc  the state of the search
+
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
+
+!Local variables
+ integer :: kk
+ real(dp) :: ee,tt
+
+ call set_model(bc,bc%rs)
+ call spectrum(bc,bc%qb)
+ bc%qneed=0.0d0
+ tt=bc%qb
+ ee=err_at(bc,bc%qb)-bc%errmax
+ do kk=ceiling(bc%qb/qstep)-1,1,-1
    if(ee>=0.0d0) then
-     qneed=tt
+     bc%qneed=tt
      exit
    end if
-   if(err_grid(kk)>errmax) then
-     qneed=zeroin(excess,kk*qstep,tt)
+   if(err_grid(bc,kk)>bc%errmax) then
+     bc%qneed=zeroin(excess_of,kk*qstep,tt)
      exit
    end if
    tt=kk*qstep
  end do
- ecore=qneed**2/8.0d0
+ bc%ecore=bc%qneed**2/8.0d0
 
-! fill in model and derivatives, all-electron beyond r_s
- call core_pieces(rr,rhoc,mmax,rs,fill_derivatives,corepw,rhomod)
+ return
+
+ contains
+
+ real(dp) function excess_of(xx)
+
+!! excess of this search, for zeroin
+!!
+!! @param xx  the argument
+
+!Input variables
+ real(dp), intent(in) :: xx
+
+ excess_of=excess(bc,xx)
+ return
+ end function excess_of
+
+ end subroutine budget_needed_cut
+
+ subroutine budget_report(bc,icmod,fcfact,weighted,ecutw,slack,rcmin)
+
+!! the report of the model core
+!!
+!! @param bc  the state of the search
+!! @param icmod..rcmin  as in modcore_budget
+
+!Input variables
+ integer, intent(in) :: icmod
+ real(dp), intent(in) :: fcfact,ecutw,slack,rcmin
+ logical, intent(in) :: weighted
+
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
+
+!Local variables
+ integer :: ii
 
  if(icmod==7) then
    write(6,'(/a)') 'Model core correction: hardness-matched core (icmod 7)'
@@ -449,226 +692,303 @@
  end if
  if(fcfact<=0.0d0 .and. weighted) then
    write(6,'(a,1p,e10.2,a,0p,f12.4,a,f8.4)') &
-&        '  pseudo-wave cutoff, weighted mean Ecut of the tables at',errmax, &
-&        ' Ha/electron',ecutw,' Ha, times',factor
+&        '  pseudo-wave cutoff, weighted mean Ecut of the tables at', &
+& bc%errmax, &
+&        ' Ha/electron',ecutw,' Ha, times',bc%factor
  else if(fcfact<=0.0d0) then
    write(6,'(a,1p,e10.2,a,0p,f12.4,a,f8.4)') &
-&        '  pseudo-wave cutoff, largest Ecut of the tables at',errmax, &
-&        ' Ha/electron',ecutw,' Ha, times',factor
+&        '  pseudo-wave cutoff, largest Ecut of the tables at',bc%errmax, &
+&        ' Ha/electron',ecutw,' Ha, times',bc%factor
  end if
- write(6,'(a,f12.4,a,1p,e10.2,a)') '  cutoff budget',ecut, &
-&      ' Ha for an xc energy error of',errmax,' Ha'
+ write(6,'(a,f12.4,a,1p,e10.2,a)') '  cutoff budget',bc%ecut, &
+&      ' Ha for an xc energy error of',bc%errmax,' Ha'
  write(6,'(a,f8.4,a,f12.4,a)') '  slack',slack, &
-&      ', the model core must fit',budget,' Ha'
- write(6,'(a,f12.6,a,f10.6)') '  model radius r_s',rs, &
+&      ', the model core must fit',bc%budget,' Ha'
+ write(6,'(a,f12.6,a,f10.6)') '  model radius r_s',bc%rs, &
 &      '  smallest rc',rcmin
- if(rr(irtop)<rcmin) then
-   write(6,'(a,f12.6)') '  last radius with core charge',rr(irtop)
+ if(bc%rr(bc%irtop)<rcmin) then
+   write(6,'(a,f12.6)') '  last radius with core charge',bc%rr(bc%irtop)
  end if
- if(full) then
+ if(bc%full) then
    write(6,'(a,f10.4,a)') '  (the error peaks beyond the first &
-&cutoffs: found with those up to',qext,' bohr**-1)'
+&cutoffs: found with those up to',bc%qext,' bohr**-1)'
  end if
- if(ifill==1) then
+ if(bc%ifill==1) then
    write(6,'(a)') '  fill minimum tail'
-   call legendre_powers(.true.,cleg,cpoly)
-   write(6,'(a,1p,9e16.8)') '  coefficients c0..c8',cpoly(:)
+   call legendre_powers(.true.,bc%cleg,bc%cpoly)
+   write(6,'(a,1p,9e16.8)') '  coefficients c0..c8',bc%cpoly(:)
  else
    write(6,'(a)') '  fill Martins'
-   write(6,'(a,1p,3e16.8)') '  a, b, c',aco,bco,cco
+   write(6,'(a,1p,3e16.8)') '  a, b, c',bc%aco,bc%bco,bc%cco
  end if
- write(6,'(a,f12.4,a)') '  cutoff the model core needs',ecore,' Ha'
+ write(6,'(a,f12.4,a)') '  cutoff the model core needs',bc%ecore,' Ha'
  if(icmod==7) then
-   write(6,'(a,f12.6)') '  smallest fitting radius (icmod 6)',rs6
-   write(6,'(a,1p,e12.4,a)') '  hardness mismatch',mismatch,' Ha'
+   write(6,'(a,f12.6)') '  smallest fitting radius (icmod 6)',bc%rs6
+   write(6,'(a,1p,e12.4,a)') '  hardness mismatch',bc%mismatch,' Ha'
    write(6,'(a)') '  radii of the basin: r_s, fill, hardness mismatch (Ha)'
-   do ii=1,ncand
-     if(cfill(ii)==0) then
-       write(6,'(f12.6,2x,a2,a12)') crad(ii),fillname(0),'-'
+   do ii=1,bc%ncand
+     if(bc%cfill(ii)==0) then
+       write(6,'(f12.6,2x,a2,a12)') bc%crad(ii),fillname(0),'-'
      else
-       write(6,'(f12.6,2x,a2,1p,e12.4)') crad(ii),fillname(cfill(ii)), &
-&            cmis(ii)
+       write(6,'(f12.6,2x,a2,1p,e12.4)') bc%crad(ii),fillname(bc%cfill(ii)), &
+&            bc%cmis(ii)
      end if
    end do
    write(6,'(a)') ''
-   deallocate(crad,cfill,cmis,d2ae,d2mod,d2zero)
+   deallocate(bc%crad,bc%cfill,bc%cmis,bc%d2ae,bc%d2mod,bc%d2zero)
  end if
 
- deallocate(core,nval,work,eps,vxc,wf,wc,fext,af,ac,swin,rqp,qn,wn)
- deallocate(xr,ri,nvi,wki,epi,vxi)
- deallocate(ot,og,sho,cho)
- deallocate(so0,co0,tab,tabw,fx,fw,plg)
- deallocate(shr,chr,sr0,cr0,sr,cr,ntk,rqs)
-
  return
+ end subroutine budget_report
 
- contains
-
- real(dp) function smallest_radius()
+ real(dp) function smallest_radius(bc)
 
 !! the smallest r_s in [r_lo, r_top] whose model fits, with the density
 !! cutoffs up to qend: bisection over the mesh points between them, then
 !! Brent's method on the largest error less errmax in ln r_s (excess_rs)
+!!
+!! @param bc  the state of the search
+
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
 
 !Local variables
  integer :: ia,ib,imid,ilo,ihi
  real(dp) :: ga
- if(excess_rs(log(rtop))>0.0d0) call no_model()
- smallest_radius=rlo
- ga=excess_rs(log(rlo))
- if(ga<=0.0d0) return
+ associate(rlo=>bc%rlo,rr=>bc%rr,rtop=>bc%rtop)
+   if(excess_rs(bc,log(rtop))>0.0d0) call no_model(bc)
+   smallest_radius=rlo
+   ga=excess_rs(bc,log(rlo))
+   if(ga<=0.0d0) return
 ! the mesh points strictly between r_lo and r_top, ilo..ihi; ia fails,
 ! ib fits, ilo-1 standing for r_lo and ihi+1 for r_top
- ilo=1
- do while(rr(ilo)<=rlo)
-   ilo=ilo+1
- end do
- ihi=ilo-1
- do while(rr(ihi+1)<rtop)
-   ihi=ihi+1
- end do
- ia=ilo-1
- ib=ihi+1
- do while(ib-ia>1)
-   imid=(ia+ib)/2
-   if(excess_rs(log(rr(imid)))>0.0d0) then
-     ia=imid
-   else
-     ib=imid
-   end if
- end do
- smallest_radius=exp(zeroin(excess_rs,log(radius_of(ia)), &
-&                           log(radius_of(ib))))
+   ilo=1
+   do while(rr(ilo)<=rlo)
+     ilo=ilo+1
+   end do
+   ihi=ilo-1
+   do while(rr(ihi+1)<rtop)
+     ihi=ihi+1
+   end do
+   ia=ilo-1
+   ib=ihi+1
+   do while(ib-ia>1)
+     imid=(ia+ib)/2
+     if(excess_rs(bc,log(rr(imid)))>0.0d0) then
+       ia=imid
+     else
+       ib=imid
+     end if
+   end do
+   smallest_radius=exp(zeroin(excess_rs_of,log(radius_of(bc,ia)), &
+&                             log(radius_of(bc,ib))))
+ end associate
  return
+
+ contains
+
+ real(dp) function excess_rs_of(xx)
+
+!! excess_rs of this search, for zeroin
+!!
+!! @param xx  the argument
+
+!Input variables
+ real(dp), intent(in) :: xx
+
+ excess_rs_of=excess_rs(bc,xx)
+ return
+ end function excess_rs_of
+
  end function smallest_radius
 
- real(dp) function radius_of(ii)
+ real(dp) function radius_of(bc,ii)
 
 !! rr(ii), r_lo below the points of the bisection and r_top above them
 !!
+!! @param bc  the state of the search
 !! @param ii  index
 
 !Input variables
  integer, intent(in) :: ii
- if(rr(ii)<=rlo) then
-   radius_of=rlo
- else if(rr(ii)>=rtop) then
-   radius_of=rtop
- else
-   radius_of=rr(ii)
- end if
+
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
+ associate(rlo=>bc%rlo,rr=>bc%rr,rtop=>bc%rtop)
+   if(rr(ii)<=rlo) then
+     radius_of=rlo
+   else if(rr(ii)>=rtop) then
+     radius_of=rtop
+   else
+     radius_of=rr(ii)
+   end if
+ end associate
  return
  end function radius_of
 
- real(dp) function excess_rs(uu)
+ real(dp) function excess_rs(bc,uu)
 
 !! the largest error over the density cutoffs q_b..qend of the model of
 !! radius exp(uu), less errmax; errmax if the radius has no model
 !!
+!! @param bc  the state of the search
 !! @param uu  ln r_s
 
 !Input variables
  real(dp), intent(in) :: uu
- call set_model(exp(uu))
- if(ifill==0) then
-   excess_rs=errmax
-   return
- end if
- excess_rs=err_max(qb,qend,errmax) - errmax
+
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
+ associate(errmax=>bc%errmax,ifill=>bc%ifill,qb=>bc%qb,qend=>bc%qend)
+   call set_model(bc,exp(uu))
+   if(ifill==0) then
+     excess_rs=errmax
+     return
+   end if
+   excess_rs=err_max(bc,qb,qend,errmax) - errmax
+ end associate
  return
  end function excess_rs
 
- real(dp) function excess(qq)
+ real(dp) function excess(bc,qq)
 
 !! the error at the density cutoff qq less errmax
 !!
+!! @param bc  the state of the search
 !! @param qq  density cutoff (bohr**-1)
 
 !Input variables
  real(dp), intent(in) :: qq
- excess=err_at(qq) - errmax
+
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
+ associate(errmax=>bc%errmax)
+   excess=err_at(bc,qq) - errmax
+ end associate
  return
  end function excess
 
- real(dp) function mismatch_at(uu)
+ real(dp) function mismatch_at(bc,uu)
 
 !! the hardness mismatch of the model of radius exp(uu); huge if the
 !! radius has no model
 !!
+!! @param bc  the state of the search
 !! @param uu  ln r_s
 
 !Input variables
  real(dp), intent(in) :: uu
 
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
+
 !Local variables
  real(dp) :: mm
- call set_model(exp(uu))
- mismatch_at=huge(1.0d0)
- if(ifill==0) return
- call der2exc(rhotps,core,probes,rr,d2mod,d2ae,mm, &
-&             zion,iexc,0,nprobe,lprobe,rr(mmax),mmax)
- mismatch_at=mm
+ associate(core=>bc%core,d2ae=>bc%d2ae,d2mod=>bc%d2mod,iexc=>bc%iexc, &
+&          ifill=>bc%ifill,lprobe=>bc%lprobe,mmax=>bc%mmax,nprobe=>bc%nprobe, &
+&          probes=>bc%probes,rhotps=>bc%rhotps,rr=>bc%rr,zion=>bc%zion)
+   call set_model(bc,exp(uu))
+   mismatch_at=huge(1.0d0)
+   if(ifill==0) return
+   call der2exc(rhotps,core,probes,rr,d2mod,d2ae,mm, &
+&               zion,iexc,0,nprobe,lprobe,rr(mmax),mmax)
+   mismatch_at=mm
+ end associate
  return
  end function mismatch_at
 
- real(dp) function slope_at(uu)
+ real(dp) function slope_at(bc,uu)
 
 !! the derivative of the hardness mismatch in ln r_s, by central
 !! differences of step hmis
 !!
+!! @param bc  the state of the search
 !! @param uu  ln r_s
 
 !Input variables
  real(dp), intent(in) :: uu
- slope_at=(mismatch_at(uu+hmis) - mismatch_at(uu-hmis))/(2.0d0*hmis)
+
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
+ slope_at=(mismatch_at(bc,uu+hmis) - mismatch_at(bc,uu-hmis))/(2.0d0*hmis)
  return
  end function slope_at
 
- real(dp) function minimum_radius(ib)
+ real(dp) function minimum_radius(bc,ib)
 
 !! the radius of the least hardness mismatch in the basin of the radius
 !! crad(ib): the root of its slope between the neighbours of crad(ib),
 !! or an end of [r_s of icmod 6, r_top] where the slope points out of it
 !!
+!! @param bc  the state of the search
 !! @param ib  index of the radius of the least mismatch of the list
 
 !Input variables
  integer, intent(in) :: ib
 
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
+
 !Local variables
  real(dp) :: ua,ub,sa,sb
  integer :: ia,ic
- ia=min(ncand,ib+1)
- ic=max(1,ib-1)
- minimum_radius=crad(ib)
- if(ia==ib) then
-   if(slope_at(log(crad(ib)))>=0.0d0) return
- end if
- if(ic==ib) then
-   if(slope_at(log(crad(ib)))<=0.0d0) return
- end if
- ua=log(crad(ia))
- ub=log(crad(ic))
- sa=slope_at(ua)
- sb=slope_at(ub)
- if(sa>0.0d0 .or. sb<0.0d0) then
-   write(6,'(/a,f12.6)') 'modcore_budget: WARNING no minimum of the &
+ associate(crad=>bc%crad,mismatch=>bc%mismatch,ncand=>bc%ncand)
+   ia=min(ncand,ib+1)
+   ic=max(1,ib-1)
+   minimum_radius=crad(ib)
+   if(ia==ib) then
+     if(slope_at(bc,log(crad(ib)))>=0.0d0) return
+   end if
+   if(ic==ib) then
+     if(slope_at(bc,log(crad(ib)))<=0.0d0) return
+   end if
+   ua=log(crad(ia))
+   ub=log(crad(ic))
+   sa=slope_at(bc,ua)
+   sb=slope_at(bc,ub)
+   if(sa>0.0d0 .or. sb<0.0d0) then
+     write(6,'(/a,f12.6)') 'modcore_budget: WARNING no minimum of the &
 &mismatch bracketed about',crad(ib)
-   return
- end if
- minimum_radius=exp(zeroin(slope_at,ua,ub))
+     return
+   end if
+   minimum_radius=exp(zeroin(slope_at_of,ua,ub))
+ end associate
  return
+
+ contains
+
+ real(dp) function slope_at_of(xx)
+
+!! slope_at of this search, for zeroin
+!!
+!! @param xx  the argument
+
+!Input variables
+ real(dp), intent(in) :: xx
+
+ slope_at_of=slope_at(bc,xx)
+ return
+ end function slope_at_of
+
  end function minimum_radius
 
- subroutine no_model()
+ subroutine no_model(bc)
 !! reports that no model radius fits and stops
- write(6,'(/a,f10.6,a,f10.4,a,1p,e10.2,a)') &
-&      'modcore_budget: ERROR stop - no model core inside rc =',rtop, &
-&      ' needs less than',budget,' Ha for an error of',errmax,' Ha'
- error stop 1
+!!
+!! @param bc  the state of the search
+
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
+ associate(budget=>bc%budget,errmax=>bc%errmax,rtop=>bc%rtop)
+
+   write(6,'(/a,f10.6,a,f10.4,a,1p,e10.2,a)') &
+&        'modcore_budget: ERROR stop - no model core inside rc =',rtop, &
+&        ' needs less than',budget,' Ha for an error of',errmax,' Ha'
+   error stop 1
+ end associate
  end subroutine no_model
 
- subroutine set_model(rad)
+ subroutine set_model(bc,rad)
 
 !! the model of radius rad: the fill (ifill 1 for the minimum tail in cpoly,
 !! 2 for Martins' in aco, bco, cco, 0 for none), in core the model inside
@@ -676,169 +996,197 @@
 !! ri of the integral below rad, and the xc energy density of the valence
 !! charge on the fill there
 !!
+!! @param bc  the state of the search
 !! @param rad  model radius r_s (bohr)
 
 !Input variables
  real(dp), value :: rad
 
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
+
 !Local variables
  real(dp) :: dm(3),l1,l2,xs,xe
  integer :: kk,is
+ associate(aco=>bc%aco,al=>bc%al,bco=>bc%bco,cco=>bc%cco,chr=>bc%chr, &
+&          core=>bc%core,cr0=>bc%cr0,dq=>bc%dq,epi=>bc%epi,fext=>bc%fext, &
+&          fw=>bc%fw,fx=>bc%fx,i0=>bc%i0,iexc=>bc%iexc,ifill=>bc%ifill, &
+&          irmx=>bc%irmx,irow=>bc%irow,js=>bc%js,kin=>bc%kin,mmax=>bc%mmax, &
+&          msnap=>bc%msnap,ni=>bc%ni,npdone=>bc%npdone,nt=>bc%nt,nvi=>bc%nvi, &
+&          nx=>bc%nx,pg=>bc%pg,pt=>bc%pt,rhoc=>bc%rhoc,rhotps=>bc%rhotps, &
+&          ri=>bc%ri,rr=>bc%rr,rs=>bc%rs,shr=>bc%shr,sr0=>bc%sr0,tgi=>bc%tgi, &
+&          tk=>bc%tk,vxi=>bc%vxi,wf=>bc%wf,wgi=>bc%wgi,wki=>bc%wki, &
+&          wxg=>bc%wxg,xg=>bc%xg,xr=>bc%xr)
 
- rs=rad
- npdone=0
- msnap=0
- core(:)=rhoc(:)
- call lm_derivs(rr,rhoc,mmax,rs,2,dm)
+   rs=rad
+   npdone=0
+   msnap=0
+   core(:)=rhoc(:)
+   call lm_derivs(rr,rhoc,mmax,rs,2,dm)
 
 ! the nodes of the transform beyond rs: the mesh intervals from is+1 on,
 ! and Gauss-Legendre on the part [rs, rr(is+1)] of interval is
- is=max(1,floor(log(rs/rr(1))/al)+1)
- do while(rr(is+1)<=rs)
-   is=is+1
- end do
- js=(is+1-i0)*ngi+1
- irow=is+1
- if(irow>irmx) then
-   write(6,'(/a)') 'modcore_budget: ERROR stop - r_s beyond the table'
-   error stop 1
- end if
- xs=log(rs)
- xe=log(rr(is+1))
- do kk=1,ngi
-   pt(kk)=exp(xs + (xe-xs)*tgi(kk))
-   call lm_interp(rr,rhoc,mmax,pt(kk),l1)
-   pg(kk)=(xe-xs)*wgi(kk)*pt(kk)**2*l1
- end do
+   is=max(1,floor(log(rs/rr(1))/al)+1)
+   do while(rr(is+1)<=rs)
+     is=is+1
+   end do
+   js=(is+1-i0)*ngi+1
+   irow=is+1
+   if(irow>irmx) then
+     write(6,'(/a)') 'modcore_budget: ERROR stop - r_s beyond the table'
+     error stop 1
+   end if
+   xs=log(rs)
+   xe=log(rr(is+1))
+   do kk=1,ngi
+     pt(kk)=exp(xs + (xe-xs)*tgi(kk))
+     call lm_interp(rr,rhoc,mmax,pt(kk),l1)
+     pg(kk)=(xe-xs)*wgi(kk)*pt(kk)**2*l1
+   end do
 
- call min_tail(dm)
- ifill=0
- if(tail_monotone()) then
-   ifill=1
-   do kk=1,mmax
-     if(rr(kk)>=rs) exit
-     core(kk)=poly((rr(kk)/rs)**2)
-   end do
- else
-   l1=dm(2)/dm(1)
-   l2=dm(3)/dm(1) - l1**2
-   cco=(rs*l2 - l1)/(8.0d0*rs**3)
-   bco=(l1 - 4.0d0*cco*rs**3)/(2.0d0*rs)
-   aco=log(dm(1)) - bco*rs**2 - cco*rs**4
-   if(bco>0.0d0 .or. bco + 2.0d0*cco*rs**2>0.0d0) return
-   ifill=2
-   do kk=1,mmax
-     if(rr(kk)>=rs) exit
-     core(kk)=exp(aco + bco*rr(kk)**2 + cco*rr(kk)**4)
-   end do
- end if
+   call min_tail(bc,dm)
+   ifill=0
+   if(tail_monotone(bc)) then
+     ifill=1
+     do kk=1,mmax
+       if(rr(kk)>=rs) exit
+       core(kk)=poly(bc,(rr(kk)/rs)**2)
+     end do
+   else
+     l1=dm(2)/dm(1)
+     l2=dm(3)/dm(1) - l1**2
+     cco=(rs*l2 - l1)/(8.0d0*rs**3)
+     bco=(l1 - 4.0d0*cco*rs**3)/(2.0d0*rs)
+     aco=log(dm(1)) - bco*rs**2 - cco*rs**4
+     if(bco>0.0d0 .or. bco + 2.0d0*cco*rs**2>0.0d0) return
+     ifill=2
+     do kk=1,mmax
+       if(rr(kk)>=rs) exit
+       core(kk)=exp(aco + bco*rr(kk)**2 + cco*rr(kk)**4)
+     end do
+   end if
 
 ! the fill's transform on [0, rs]: int r**2 n j0(kr) dr = sum fw sin(k fx)/k
- fx(:)=rs*xg(:)
- do kk=1,nxg
-   fw(kk)=rs*wxg(kk)*fx(kk)*fill_value(fx(kk))
- end do
+   fx(:)=rs*xg(:)
+   do kk=1,nxg
+     fw(kk)=rs*wxg(kk)*fx(kk)*fill_value(bc,fx(kk))
+   end do
 
 ! the mesh ri, its points of the band-limited models, the valence charge
 ! there and the xc energy density of the valence charge on the fill,
 ! extended beyond rs as far as the interpolant of the integral to rs reads
- do kk=1,ni
-   ri(kk)=rs*exp((kk-kin)*al)
-   call lm_interp(rr,rhotps,mmax,ri(kk),nvi(kk))
-   fext(kk)=fill_value(ri(kk))
- end do
- nvi(:)=pi4*background + nvi(:)
- xr(nx+1:nt)=ri(:)
- shr(nx+1:nt)=sin(dq*ri(:))
- chr(nx+1:nt)=cos(dq*ri(:))
- do kk=1,ngk
-   sr0(nx+1:nt,kk)=sin(tk(kk)*dq*ri(:))
-   cr0(nx+1:nt,kk)=cos(tk(kk)*dq*ri(:))
- end do
- wki(:)=nvi(:) + fext(:)
- call exc_dispatch(iexc,al,wki,vxi,epi,ri,ni,'modcore_budget')
- wf(:)=wki(:)*epi(:)
+   do kk=1,ni
+     ri(kk)=rs*exp((kk-kin)*al)
+     call lm_interp(rr,rhotps,mmax,ri(kk),nvi(kk))
+     fext(kk)=fill_value(bc,ri(kk))
+   end do
+   nvi(:)=pi4*background + nvi(:)
+   xr(nx+1:nt)=ri(:)
+   shr(nx+1:nt)=sin(dq*ri(:))
+   chr(nx+1:nt)=cos(dq*ri(:))
+   do kk=1,ngk
+     sr0(nx+1:nt,kk)=sin(tk(kk)*dq*ri(:))
+     cr0(nx+1:nt,kk)=cos(tk(kk)*dq*ri(:))
+   end do
+   wki(:)=nvi(:) + fext(:)
+   call exc_dispatch(iexc,al,wki,vxi,epi,ri,ni,'modcore_budget')
+   wf(:)=wki(:)*epi(:)
+ end associate
  return
  end subroutine set_model
 
- real(dp) function fill_value(rad)
+ real(dp) function fill_value(bc,rad)
 
 !! the fill at rad <= rs
 !!
+!! @param bc  the state of the search
 !! @param rad  radius (bohr)
 
 !Input variables
  real(dp), intent(in) :: rad
- if(ifill==1) then
-   fill_value=poly((rad/rs)**2)
- else
-   fill_value=exp(aco + bco*rad**2 + cco*rad**4)
- end if
+
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
+ associate(aco=>bc%aco,bco=>bc%bco,cco=>bc%cco,ifill=>bc%ifill,rs=>bc%rs)
+   if(ifill==1) then
+     fill_value=poly(bc,(rad/rs)**2)
+   else
+     fill_value=exp(aco + bco*rad**2 + cco*rad**4)
+   end if
+ end associate
  return
  end function fill_value
 
- logical function tail_monotone()
+ logical function tail_monotone(bc)
 
 !! whether the minimum tail p, as a function of x = 2(r/rs)**2 - 1, does
 !! not rise on [-1, 1]: p' <= 0 at -1, at 1, and at the roots of p'' in
 !! between (companion matrix of p'' in powers of x, the roots polished by
 !! Newton's method; a nearly real root counts by its real part, a point of
 !! [-1, 1] all the same); p' from the Legendre series
+!!
+!! @param bc  the state of the search
+
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
 
 !Local variables
  real(dp) :: cx(0:npow),d2(0:npow-2),hess(npow-2,npow-2)
  real(dp) :: wr(npow-2),wi(npow-2),zz(1,1),wkh(4*npow),tr,vv,vd
  integer :: kk,jj,nd,info,it
- tail_monotone=.false.
- if(leg_value(-1.0d0,1)>0.0d0) return
- if(leg_value(1.0d0,1)>0.0d0) return
- tail_monotone=.true.
- call legendre_powers(.false.,cleg,cx)
- do kk=2,npow
-   d2(kk-2)=kk*(kk-1)*cx(kk)
- end do
- nd=npow-2
- do while(nd>0)
-   if(d2(nd)/=0.0d0) exit
-   nd=nd-1
- end do
- if(nd==0) return
- hess(:,:)=0.0d0
- do kk=1,nd
-   hess(1,kk)=-d2(nd-kk)/d2(nd)
-   if(kk>1) hess(kk,kk-1)=1.0d0
- end do
- call dhseqr('E','N',nd,1,nd,hess,npow-2,wr,wi,zz,1,wkh,size(wkh),info)
- if(info/=0) then
-   write(6,'(/a,i4)') 'modcore_budget: ERROR dhseqr info =',info
-   error stop 1
- end if
- do kk=1,nd
-   tr=wr(kk)
-   do it=1,2
-     vv=d2(nd)
-     vd=0.0d0
-     do jj=nd-1,0,-1
-       vd=vd*tr + vv
-       vv=vv*tr + d2(jj)
-     end do
-     if(vd==0.0d0) exit
-     tr=tr - vv/vd
+ associate(cleg=>bc%cleg)
+   tail_monotone=.false.
+   if(leg_value(bc,-1.0d0,1)>0.0d0) return
+   if(leg_value(bc,1.0d0,1)>0.0d0) return
+   tail_monotone=.true.
+   call legendre_powers(.false.,cleg,cx)
+   do kk=2,npow
+     d2(kk-2)=kk*(kk-1)*cx(kk)
    end do
-   if(tr>-1.0d0 .and. tr<1.0d0) then
-     if(leg_value(tr,1)>0.0d0) then
-       tail_monotone=.false.
-       return
-     end if
+   nd=npow-2
+   do while(nd>0)
+     if(d2(nd)/=0.0d0) exit
+     nd=nd-1
+   end do
+   if(nd==0) return
+   hess(:,:)=0.0d0
+   do kk=1,nd
+     hess(1,kk)=-d2(nd-kk)/d2(nd)
+     if(kk>1) hess(kk,kk-1)=1.0d0
+   end do
+   call dhseqr('E','N',nd,1,nd,hess,npow-2,wr,wi,zz,1,wkh,size(wkh),info)
+   if(info/=0) then
+     write(6,'(/a,i4)') 'modcore_budget: ERROR dhseqr info =',info
+     error stop 1
    end if
- end do
+   do kk=1,nd
+     tr=wr(kk)
+     do it=1,2
+       vv=d2(nd)
+       vd=0.0d0
+       do jj=nd-1,0,-1
+         vd=vd*tr + vv
+         vv=vv*tr + d2(jj)
+       end do
+       if(vd==0.0d0) exit
+       tr=tr - vv/vd
+     end do
+     if(tr>-1.0d0 .and. tr<1.0d0) then
+       if(leg_value(bc,tr,1)>0.0d0) then
+         tail_monotone=.false.
+         return
+       end if
+     end if
+   end do
+ end associate
  return
  end function tail_monotone
 
- real(dp) function leg_value(xx,mm)
+ real(dp) function leg_value(bc,xx,mm)
 
 !! the mm-th derivative in x of the Legendre series cleg at xx
 !!
+!! @param bc  the state of the search
 !! @param xx  argument, 2(r/rs)**2 - 1
 !! @param mm  order of the derivative, 0..4
 
@@ -846,10 +1194,15 @@
  real(dp), intent(in) :: xx
  integer, intent(in) :: mm
 
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
+
 !Local variables
  real(dp) :: pl(0:npow,0:4)
- call legendre_derivs(xx,mm,pl(:,0:mm))
- leg_value=sum(cleg(:)*pl(:,mm))
+ associate(cleg=>bc%cleg)
+   call legendre_derivs(xx,mm,pl(:,0:mm))
+   leg_value=sum(cleg(:)*pl(:,mm))
+ end associate
  return
  end function leg_value
 
@@ -922,19 +1275,23 @@
  return
  end subroutine legendre_powers
 
- real(dp) function poly(tt)
+ real(dp) function poly(bc,tt)
 
 !! the minimum tail at (r/r_s)**2 = tt
 !!
+!! @param bc  the state of the search
 !! @param tt  (r/r_s)**2
 
 !Input variables
  real(dp), intent(in) :: tt
- poly=leg_value(2.0d0*tt-1.0d0,0)
+
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
+ poly=leg_value(bc,2.0d0*tt-1.0d0,0)
  return
  end function poly
 
- subroutine min_tail(dm)
+ subroutine min_tail(bc,dm)
 
 !! the Legendre coefficients cleg of the minimum tail of radius rs: the least
 !! squares of W (A c + b) with C c = d (LAPACK dgglse), where A c is the
@@ -944,100 +1301,120 @@
 !! the square root of the weights, and C c = d the match of the core
 !! charge and its first two derivatives at r_s
 !!
+!! @param bc  the state of the search
 !! @param dm  the core charge and its first two derivatives at r_s
 
 !Input variables
  real(dp), intent(in) :: dm(3)
 
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
+
 !Local variables
  real(dp), allocatable :: amat(:,:),cvec(:),wk(:)
  real(dp) :: bmat(3,0:npow),dvec(3),tt,qx,jx,xx,wx
  integer :: ii,jj,kk,info,lwork
- lwork=nqn+npow+1+64*(nqn+npow+1)
- allocate(amat(nqn,0:npow),cvec(nqn),wk(lwork))
+ associate(cleg=>bc%cleg,irow=>bc%irow,nqn=>bc%nqn,pg=>bc%pg,plg=>bc%plg, &
+&          pt=>bc%pt,qn=>bc%qn,rs=>bc%rs,tabw=>bc%tabw,wn=>bc%wn,wxg=>bc%wxg, &
+&          xg=>bc%xg)
+   lwork=nqn+npow+1+64*(nqn+npow+1)
+   allocate(amat(nqn,0:npow),cvec(nqn),wk(lwork))
 
- amat(:,:)=0.0d0
- do ii=1,nqn
-   do jj=1,nxg
-     xx=rs*xg(jj)
-     wx=rs*wxg(jj)
-     qx=qn(ii)*xx
-     jx=wx*xx**2*j0(qx)
-     do kk=0,npow
-       amat(ii,kk)=amat(ii,kk) + jx*plg(jj,kk)
+   amat(:,:)=0.0d0
+   do ii=1,nqn
+     do jj=1,nxg
+       xx=rs*xg(jj)
+       wx=rs*wxg(jj)
+       qx=qn(ii)*xx
+       jx=wx*xx**2*j0(qx)
+       do kk=0,npow
+         amat(ii,kk)=amat(ii,kk) + jx*plg(jj,kk)
+       end do
      end do
+     tt=tabw(ii,irow)
+     do jj=1,ngi
+       tt=tt + pg(jj)*sin(qn(ii)*pt(jj))
+     end do
+     cvec(ii)=-sqrt(wn(ii))*tt/qn(ii)
+     amat(ii,:)=sqrt(wn(ii))*amat(ii,:)
    end do
-   tt=tabw(ii,irow)
-   do jj=1,ngi
-     tt=tt + pg(jj)*sin(qn(ii)*pt(jj))
-   end do
-   cvec(ii)=-sqrt(wn(ii))*tt/qn(ii)
-   amat(ii,:)=sqrt(wn(ii))*amat(ii,:)
- end do
 
 ! the match, row m scaled by rs**m: with x = 2(r/rs)**2 - 1, rs d/dr =
 ! 4 d/dx and rs**2 d2/dr2 = 16 d2/dx2 + 4 d/dx at x = 1, where
 ! P_k' = k(k+1)/2 and P_k'' = (k-1)k(k+1)(k+2)/8
- do kk=0,npow
-   bmat(1,kk)=1.0d0
-   bmat(2,kk)=2.0d0*kk*(kk+1)
-   bmat(3,kk)=2.0d0*(kk-1)*kk*(kk+1)*(kk+2) + 2.0d0*kk*(kk+1)
- end do
- dvec(:)=[dm(1),dm(2)*rs,dm(3)*rs**2]
+   do kk=0,npow
+     bmat(1,kk)=1.0d0
+     bmat(2,kk)=2.0d0*kk*(kk+1)
+     bmat(3,kk)=2.0d0*(kk-1)*kk*(kk+1)*(kk+2) + 2.0d0*kk*(kk+1)
+   end do
+   dvec(:)=[dm(1),dm(2)*rs,dm(3)*rs**2]
 
- call dgglse(nqn,npow+1,3,amat,nqn,bmat,3,cvec,dvec,cleg,wk,lwork,info)
- if(info/=0) then
-   write(6,'(/a,i4)') 'modcore_budget: ERROR stop - dgglse info =',info
-   error stop 1
- end if
- deallocate(amat,cvec,wk)
+   call dgglse(nqn,npow+1,3,amat,nqn,bmat,3,cvec,dvec,cleg,wk,lwork,info)
+   if(info/=0) then
+     write(6,'(/a,i4)') 'modcore_budget: ERROR stop - dgglse info =',info
+     error stop 1
+   end if
+   deallocate(amat,cvec,wk)
+ end associate
  return
  end subroutine min_tail
 
- real(dp) function outer_transform(kk)
+ real(dp) function outer_transform(bc,kk)
 
 !! int_{r_s}^infinity r**2 rhoc j0(kk r) dr
 !!
+!! @param bc  the state of the search
 !! @param kk  wave number (bohr**-1), > 0
 
 !Input variables
  real(dp), intent(in) :: kk
 
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
+
 !Local variables
  real(dp) :: ss
  integer :: jj
- ss=0.0d0
- do jj=1,ngi
-   ss=ss + pg(jj)*sin(kk*pt(jj))
- end do
- do jj=js,nout
-   ss=ss + og(jj)*sin(kk*ot(jj))
- end do
- outer_transform=ss/kk
+ associate(js=>bc%js,nout=>bc%nout,og=>bc%og,ot=>bc%ot,pg=>bc%pg,pt=>bc%pt)
+   ss=0.0d0
+   do jj=1,ngi
+     ss=ss + pg(jj)*sin(kk*pt(jj))
+   end do
+   do jj=js,nout
+     ss=ss + og(jj)*sin(kk*ot(jj))
+   end do
+   outer_transform=ss/kk
+ end associate
  return
  end function outer_transform
 
- real(dp) function model_transform(kk)
+ real(dp) function model_transform(bc,kk)
 
 !! int_0^infinity r**2 n j0(kk r) dr of the model n
 !!
+!! @param bc  the state of the search
 !! @param kk  wave number (bohr**-1), > 0
 
 !Input variables
  real(dp), intent(in) :: kk
 
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
+
 !Local variables
  real(dp) :: ss
  integer :: jj
- ss=0.0d0
- do jj=1,nxg
-   ss=ss + fw(jj)*sin(kk*fx(jj))
- end do
- model_transform=ss/kk + outer_transform(kk)
+ associate(fw=>bc%fw,fx=>bc%fx)
+   ss=0.0d0
+   do jj=1,nxg
+     ss=ss + fw(jj)*sin(kk*fx(jj))
+   end do
+   model_transform=ss/kk + outer_transform(bc,kk)
+ end associate
  return
  end function model_transform
 
- subroutine spectrum(qe)
+ subroutine spectrum(bc,qe)
 
 !! the model's transform ntk at the nodes of the panels of width dq up to
 !! qe (and the next grid point), and the band-limited models rqs(:,m) at
@@ -1046,104 +1423,127 @@
 !! panel) rotated from one panel to the next, those of the partial
 !! interval at rs computed
 !!
+!! @param bc  the state of the search
 !! @param qe  largest density cutoff needed (bohr**-1)
 
 !Input variables
  real(dp), intent(in) :: qe
 
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
+
 !Local variables
  real(dp) :: kq,ss,tt
  integer :: mlast,ip,ig,jj,ll
- mlast=min(nq,ceiling(qe/qstep)+1)
- if(msnap>=mlast) return
- if(npdone==0) then
-   sr(:,:)=sr0(:,:)
-   cr(:,:)=cr0(:,:)
-   rqs(:,0)=0.0d0
-   rqp(:)=0.0d0
- end if
- do ip=npdone+1,mlast*npanel
-   do ig=1,ngk
-     kq=(ip-1+tk(ig))*dq
-     ss=0.0d0
-     do jj=1,nxg
-       ss=ss + fw(jj)*sin(kq*fx(jj))
-     end do
-     do jj=1,ngi
-       ss=ss + pg(jj)*sin(kq*pt(jj))
-     end do
-     ntk(ip,ig)=(ss + tab(ip,ig,irow))/kq
+ associate(chr=>bc%chr,cr=>bc%cr,cr0=>bc%cr0,dq=>bc%dq,fw=>bc%fw,fx=>bc%fx, &
+&          irow=>bc%irow,msnap=>bc%msnap,npdone=>bc%npdone,nq=>bc%nq, &
+&          nt=>bc%nt,ntk=>bc%ntk,pg=>bc%pg,pt=>bc%pt,rqp=>bc%rqp,rqs=>bc%rqs, &
+&          shr=>bc%shr,sr=>bc%sr,sr0=>bc%sr0,tab=>bc%tab,tk=>bc%tk,wk=>bc%wk, &
+&          xr=>bc%xr)
+   mlast=min(nq,ceiling(qe/qstep)+1)
+   if(msnap>=mlast) return
+   if(npdone==0) then
+     sr(:,:)=sr0(:,:)
+     cr(:,:)=cr0(:,:)
+     rqs(:,0)=0.0d0
+     rqp(:)=0.0d0
+   end if
+   do ip=npdone+1,mlast*npanel
+     do ig=1,ngk
+       kq=(ip-1+tk(ig))*dq
+       ss=0.0d0
+       do jj=1,nxg
+         ss=ss + fw(jj)*sin(kq*fx(jj))
+       end do
+       do jj=1,ngi
+         ss=ss + pg(jj)*sin(kq*pt(jj))
+       end do
+       ntk(ip,ig)=(ss + tab(ip,ig,irow))/kq
 ! the band-limited model: (2/pi) w k n(k) sin(kr)/r
-     tt=2.0d0/pi*wk(ig)*dq*kq*ntk(ip,ig)
-     do ll=1,nt
-       rqp(ll)=rqp(ll) + tt*sr(ll,ig)/xr(ll)
-     end do
+       tt=2.0d0/pi*wk(ig)*dq*kq*ntk(ip,ig)
+       do ll=1,nt
+         rqp(ll)=rqp(ll) + tt*sr(ll,ig)/xr(ll)
+       end do
 ! the next panel
-     do ll=1,nt
-       ss=sr(ll,ig)*chr(ll) + cr(ll,ig)*shr(ll)
-       cr(ll,ig)=cr(ll,ig)*chr(ll) - sr(ll,ig)*shr(ll)
-       sr(ll,ig)=ss
+       do ll=1,nt
+         ss=sr(ll,ig)*chr(ll) + cr(ll,ig)*shr(ll)
+         cr(ll,ig)=cr(ll,ig)*chr(ll) - sr(ll,ig)*shr(ll)
+         sr(ll,ig)=ss
+       end do
      end do
+     if(mod(ip,npanel)==0) rqs(:,ip/npanel)=rqp(:)
    end do
-   if(mod(ip,npanel)==0) rqs(:,ip/npanel)=rqp(:)
- end do
- npdone=mlast*npanel
- msnap=mlast
+   npdone=mlast*npanel
+   msnap=mlast
+ end associate
  return
  end subroutine spectrum
 
- real(dp) function err_at(qq)
+ real(dp) function err_at(bc,qq)
 
 !! the error of the density cutoff qq: the band-limited model from the
 !! last grid point below qq, the whole panels after it and the part of
 !! the last panel up to qq, at its own Gauss-Legendre nodes
 !!
+!! @param bc  the state of the search
 !! @param qq  density cutoff (bohr**-1), 0 <= qq <= qmax
 
 !Input variables
  real(dp), intent(in) :: qq
 
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
+
 !Local variables
- real(dp) :: bq(nt),kq,tt,qa,ww
+ real(dp) :: bq(bc%nt),kq,tt,qa,ww
  integer :: m0,ip,ig,pf
- call spectrum(qq)
- m0=min(msnap,max(0,floor(qq/qstep)))
- bq(:)=rqs(:,m0)
- pf=max(m0*npanel,floor(qq/dq))
- do ip=m0*npanel+1,pf
-   do ig=1,ngk
-     kq=(ip-1+tk(ig))*dq
-     tt=2.0d0/pi*wk(ig)*dq*kq*ntk(ip,ig)
-     bq(:)=bq(:) + tt*sin(kq*xr(:))/xr(:)
+ associate(dq=>bc%dq,msnap=>bc%msnap,nt=>bc%nt,ntk=>bc%ntk,rqs=>bc%rqs, &
+&          tk=>bc%tk,wk=>bc%wk,xr=>bc%xr)
+   call spectrum(bc,qq)
+   m0=min(msnap,max(0,floor(qq/qstep)))
+   bq(:)=rqs(:,m0)
+   pf=max(m0*npanel,floor(qq/dq))
+   do ip=m0*npanel+1,pf
+     do ig=1,ngk
+       kq=(ip-1+tk(ig))*dq
+       tt=2.0d0/pi*wk(ig)*dq*kq*ntk(ip,ig)
+       bq(:)=bq(:) + tt*sin(kq*xr(:))/xr(:)
+     end do
    end do
- end do
- qa=pf*dq
- ww=qq-qa
- if(ww>0.0d0) then
-   do ig=1,ngk
-     kq=qa + ww*tk(ig)
-     tt=2.0d0/pi*wk(ig)*ww*kq*model_transform(kq)
-     bq(:)=bq(:) + tt*sin(kq*xr(:))/xr(:)
-   end do
- end if
- err_at=xc_error(bq)
+   qa=pf*dq
+   ww=qq-qa
+   if(ww>0.0d0) then
+     do ig=1,ngk
+       kq=qa + ww*tk(ig)
+       tt=2.0d0/pi*wk(ig)*ww*kq*model_transform(bc,kq)
+       bq(:)=bq(:) + tt*sin(kq*xr(:))/xr(:)
+     end do
+   end if
+   err_at=xc_error(bc,bq)
+ end associate
  return
  end function err_at
 
- real(dp) function err_grid(mm)
+ real(dp) function err_grid(bc,mm)
 
 !! the error of the density cutoff mm*qstep of the grid
 !!
+!! @param bc  the state of the search
 !! @param mm  index of the cutoff
 
 !Input variables
  integer, intent(in) :: mm
- call spectrum(mm*qstep)
- err_grid=xc_error(rqs(:,mm))
+
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
+ associate(rqs=>bc%rqs)
+   call spectrum(bc,mm*qstep)
+   err_grid=xc_error(bc,rqs(:,mm))
+ end associate
  return
  end function err_grid
 
- real(dp) function err_max(qa,qe,elim)
+ real(dp) function err_max(bc,qa,qe,elim)
 
 !! the largest error over the density cutoffs qa..qe: on the grid qa,
 !! m*qstep, qe; if that is above elim, the grid's largest (only whether
@@ -1152,6 +1552,7 @@
 !! maximum of the grid whose parabola peaks within 1% of the result.
 !! qpk the grid point of the largest
 !!
+!! @param bc  the state of the search
 !! @param qa  first density cutoff (bohr**-1)
 !! @param qe  last density cutoff (bohr**-1)
 !! @param elim  error limit (Ha)
@@ -1159,46 +1560,67 @@
 !Input variables
  real(dp), intent(in) :: qa,qe,elim
 
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
+
 !Local variables
  real(dp), allocatable :: tq(:),eq(:)
  integer :: nn,mm,ii,ilo,ihi,imx
- call spectrum(qe)
- allocate(tq(nint((qe-qa)/qstep)+3),eq(nint((qe-qa)/qstep)+3))
- nn=1
- tq(1)=qa
- eq(1)=err_at(qa)
- do mm=floor(qa/qstep)+1,nq
-   if(mm*qstep>=qe) exit
-   if(mm*qstep<=qa) cycle
-   nn=nn+1
-   tq(nn)=mm*qstep
-   eq(nn)=err_grid(mm)
- end do
- if(qe>qa) then
-   nn=nn+1
-   tq(nn)=qe
-   eq(nn)=err_at(qe)
- end if
- imx=maxloc(eq(1:nn),1)
- qpk=tq(imx)
- err_max=eq(imx)
- if(err_max>elim .or. nn==1) then
-   deallocate(tq,eq)
-   return
- end if
- err_max=max(err_max,-ug_fmin(neg_err,tq(max(1,imx-1)),tq(min(nn,imx+1))))
- do ii=1,nn
-   if(ii==imx) cycle
-   ilo=max(1,ii-1)
-   ihi=min(nn,ii+1)
-   if(eq(ii)<eq(ilo) .or. eq(ii)<eq(ihi)) cycle
-   if(nn>=3) then
-     if(parabola_peak(tq,eq,nn,ii)<0.99d0*err_max) cycle
+ associate(nq=>bc%nq,qpk=>bc%qpk)
+   call spectrum(bc,qe)
+   allocate(tq(nint((qe-qa)/qstep)+3),eq(nint((qe-qa)/qstep)+3))
+   nn=1
+   tq(1)=qa
+   eq(1)=err_at(bc,qa)
+   do mm=floor(qa/qstep)+1,nq
+     if(mm*qstep>=qe) exit
+     if(mm*qstep<=qa) cycle
+     nn=nn+1
+     tq(nn)=mm*qstep
+     eq(nn)=err_grid(bc,mm)
+   end do
+   if(qe>qa) then
+     nn=nn+1
+     tq(nn)=qe
+     eq(nn)=err_at(bc,qe)
    end if
-   err_max=max(err_max,-ug_fmin(neg_err,tq(ilo),tq(ihi)))
- end do
- deallocate(tq,eq)
+   imx=maxloc(eq(1:nn),1)
+   qpk=tq(imx)
+   err_max=eq(imx)
+   if(err_max>elim .or. nn==1) then
+     deallocate(tq,eq)
+     return
+   end if
+   err_max=max(err_max,-ug_fmin(neg_err_of,tq(max(1,imx-1)),tq(min(nn,imx+1))))
+   do ii=1,nn
+     if(ii==imx) cycle
+     ilo=max(1,ii-1)
+     ihi=min(nn,ii+1)
+     if(eq(ii)<eq(ilo) .or. eq(ii)<eq(ihi)) cycle
+     if(nn>=3) then
+       if(parabola_peak(tq,eq,nn,ii)<0.99d0*err_max) cycle
+     end if
+     err_max=max(err_max,-ug_fmin(neg_err_of,tq(ilo),tq(ihi)))
+   end do
+   deallocate(tq,eq)
+ end associate
  return
+
+ contains
+
+ real(dp) function neg_err_of(xx)
+
+!! neg_err of this search, for ug_fmin
+!!
+!! @param xx  the argument
+
+!Input variables
+ real(dp), intent(in) :: xx
+
+ neg_err_of=neg_err(bc,xx)
+ return
+ end function neg_err_of
+
  end function err_max
 
  real(dp) function parabola_peak(tq,eq,nn,ii)
@@ -1237,15 +1659,19 @@
  return
  end function parabola_peak
 
- real(dp) function neg_err(qq)
+ real(dp) function neg_err(bc,qq)
 
 !! minus the error of the density cutoff qq
 !!
+!! @param bc  the state of the search
 !! @param qq  density cutoff (bohr**-1)
 
 !Input variables
  real(dp), intent(in) :: qq
- neg_err=-err_at(qq)
+
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
+ neg_err=-err_at(bc,qq)
  return
  end function neg_err
 
@@ -1307,13 +1733,14 @@
  return
  end function j0
 
- subroutine tail_derivatives(rad,rs,dd)
+ subroutine tail_derivatives(bc,rad,rs,dd)
 
 !! the minimum tail and its first 4 derivatives at rad (beyond rs, its
 !! continuation, for the pieces of the model): those of the
 !! Legendre series in x = 2t - 1, t = (r/rs)**2, by the chain rule with
 !! t' = 2r/rs**2, t'' = 2/rs**2 (d/dt = 2 d/dx)
 !!
+!! @param bc  the state of the search
 !! @param rad  radius (bohr)
 !! @param rs  model radius r_s (bohr)
 !! @param dd  the model and its first 4 derivatives at rad
@@ -1321,57 +1748,72 @@
 !Input variables
  real(dp), intent(in) :: rad,rs
 
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
+
 !Output variables
  real(dp), intent(out) :: dd(5)
 
 !Local variables
  real(dp) :: pl(0:npow,0:4),pt(0:4),t1,t2
  integer :: mm
- call legendre_derivs(2.0d0*(rad/rs)**2-1.0d0,4,pl)
- do mm=0,4
-   pt(mm)=2.0d0**mm*sum(cleg(:)*pl(:,mm))
- end do
- t1=2.0d0*rad/rs**2
- t2=2.0d0/rs**2
- dd(1)=pt(0)
- dd(2)=pt(1)*t1
- dd(3)=pt(2)*t1**2 + pt(1)*t2
- dd(4)=pt(3)*t1**3 + 3.0d0*pt(2)*t1*t2
- dd(5)=pt(4)*t1**4 + 6.0d0*pt(3)*t1**2*t2 + 3.0d0*pt(2)*t2**2
+ associate(cleg=>bc%cleg)
+   call legendre_derivs(2.0d0*(rad/rs)**2-1.0d0,4,pl)
+   do mm=0,4
+     pt(mm)=2.0d0**mm*sum(cleg(:)*pl(:,mm))
+   end do
+   t1=2.0d0*rad/rs**2
+   t2=2.0d0/rs**2
+   dd(1)=pt(0)
+   dd(2)=pt(1)*t1
+   dd(3)=pt(2)*t1**2 + pt(1)*t2
+   dd(4)=pt(3)*t1**3 + 3.0d0*pt(2)*t1*t2
+   dd(5)=pt(4)*t1**4 + 6.0d0*pt(3)*t1**2*t2 + 3.0d0*pt(2)*t2**2
+ end associate
  return
  end subroutine tail_derivatives
 
- subroutine fill_derivatives(rad,dd)
+ subroutine fill_derivatives(bc,rad,dd)
 
 !! the fill of the model and its first 4 derivatives at rad
 !!
+!! @param bc  the state of the search
 !! @param rad  radius (bohr)
 !! @param dd  the fill and its first 4 derivatives at rad
 
 !Input variables
  real(dp), intent(in) :: rad
 
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
+
 !Output variables
  real(dp), intent(out) :: dd(5)
+ associate(ifill=>bc%ifill,rs=>bc%rs)
 
- if(ifill==1) then
-   call tail_derivatives(rad,rs,dd)
- else
-   call martins_derivatives(rad,dd)
- end if
+   if(ifill==1) then
+     call tail_derivatives(bc,rad,rs,dd)
+   else
+     call martins_derivatives(bc,rad,dd)
+   end if
+ end associate
  return
  end subroutine fill_derivatives
 
- subroutine martins_derivatives(rad,dd)
+ subroutine martins_derivatives(bc,rad,dd)
 
 !! the model and its first 4 derivatives at rad, from n' = p' n with
 !! p = a + b r**2 + c r**4: n(k) = sum_j C(k-1,j) p(j+1) n(k-1-j)
 !!
+!! @param bc  the state of the search
 !! @param rad  radius (bohr)
 !! @param dd  the model and its first 4 derivatives at rad
 
 !Input variables
  real(dp), intent(in) :: rad
+
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
 
 !Output variables
  real(dp), intent(out) :: dd(5)
@@ -1381,19 +1823,21 @@
  integer :: kk,jj
  integer, parameter :: binom(0:3,0:3)=reshape([1,1,1,1, 0,1,2,3, &
 &                                              0,0,1,3, 0,0,0,1],[4,4])
- dp1=[2.0d0*bco*rad + 4.0d0*cco*rad**3, 2.0d0*bco + 12.0d0*cco*rad**2, &
-&     24.0d0*cco*rad, 24.0d0*cco]
- dd(1)=exp(aco + bco*rad**2 + cco*rad**4)
- do kk=1,4
-   dd(kk+1)=0.0d0
-   do jj=0,kk-1
-     dd(kk+1)=dd(kk+1) + binom(kk-1,jj)*dp1(jj+1)*dd(kk-jj)
+ associate(aco=>bc%aco,bco=>bc%bco,cco=>bc%cco)
+   dp1=[2.0d0*bco*rad + 4.0d0*cco*rad**3, 2.0d0*bco + 12.0d0*cco*rad**2, &
+&       24.0d0*cco*rad, 24.0d0*cco]
+   dd(1)=exp(aco + bco*rad**2 + cco*rad**4)
+   do kk=1,4
+     dd(kk+1)=0.0d0
+     do jj=0,kk-1
+       dd(kk+1)=dd(kk+1) + binom(kk-1,jj)*dp1(jj+1)*dd(kk-jj)
+     end do
    end do
- end do
+ end associate
  return
  end subroutine martins_derivatives
 
- real(dp) function xc_error(bq)
+ real(dp) function xc_error(bc,bq)
 
 !! the error of the band-limited model bq of the model: the integral
 !! split at rs (lm_integral), of the fill's terms below and the core
@@ -1407,29 +1851,37 @@
 !! rs slid over the mesh (4e-12 on an error of 1e-4, period ~0.003 bohr,
 !! ~1e-9 in r_s; doc/smoothness_plan.md, M-12)
 !!
+!! @param bc  the state of the search
 !! @param bq  band-limited model core charge at xr: rr(1:nx), then ri
+!!             (size nt)
 
 !Input variables
- real(dp), intent(in) :: bq(nt)
+ real(dp), intent(in) :: bq(:)
+
+!Input/output variables
+ type(budget_ctx), intent(inout) :: bc
 
 !Local variables
  real(dp) :: si,so1
- work(:)=nval(:) + bq(1:nx)
- call exc_dispatch(iexc,al,work,vxc,eps,rr,nx,'modcore_budget')
- work(:)=work(:)*eps(:)
- ac(:)=swin(:)*rr(1:nx)**2*(work(:) - wc(:) - vbg*(bq(1:nx) - rhoc(1:nx)))
- wki(:)=nvi(:) + bq(nx+1:nt)
- call exc_dispatch(iexc,al,wki,vxi,epi,ri,ni,'modcore_budget')
- wki(:)=wki(:)*epi(:)
- af(:)=ri(:)**2*(wki(:) - wf(:) - vbg*(bq(nx+1:nt) - fext(:)))
- call lm_integral(ri,af,ni,2,0.0d0,rs,si)
- call lm_integral(rr,ac,nx,2,rs,radius,so1)
- xc_error=abs(si + so1)
+ associate(ac=>bc%ac,af=>bc%af,al=>bc%al,epi=>bc%epi,eps=>bc%eps, &
+&          fext=>bc%fext,iexc=>bc%iexc,ni=>bc%ni,nt=>bc%nt,nval=>bc%nval, &
+&          nvi=>bc%nvi,nx=>bc%nx,rhoc=>bc%rhoc,ri=>bc%ri,rr=>bc%rr,rs=>bc%rs, &
+&          swin=>bc%swin,vbg=>bc%vbg,vxc=>bc%vxc,vxi=>bc%vxi,wc=>bc%wc, &
+&          wf=>bc%wf,wki=>bc%wki,work=>bc%work)
+   work(:)=nval(:) + bq(1:nx)
+   call exc_dispatch(iexc,al,work,vxc,eps,rr,nx,'modcore_budget')
+   work(:)=work(:)*eps(:)
+   ac(:)=swin(:)*rr(1:nx)**2*(work(:) - wc(:) - vbg*(bq(1:nx) - rhoc(1:nx)))
+   wki(:)=nvi(:) + bq(nx+1:nt)
+   call exc_dispatch(iexc,al,wki,vxi,epi,ri,ni,'modcore_budget')
+   wki(:)=wki(:)*epi(:)
+   af(:)=ri(:)**2*(wki(:) - wf(:) - vbg*(bq(nx+1:nt) - fext(:)))
+   call lm_integral(ri,af,ni,2,0.0d0,rs,si)
+   call lm_integral(rr,ac,nx,2,rs,radius,so1)
+   xc_error=abs(si + so1)
+ end associate
  return
  end function xc_error
-
- end subroutine modcore_budget
-
 
  subroutine modcore_probes(lmax,lloc,nproj,epa,wellprj,vp,vlocpw,vkbpw, &
 &                         evkb,rr,mmax,mxprj,nkap,probes,lprobe,nprobe)
