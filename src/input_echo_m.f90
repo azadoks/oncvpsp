@@ -18,9 +18,10 @@
 !
 ! sections of the input echo whose form depends on the input
 ! optional inputs are written only when they are set, so inputs without
-! them echo as they always have. The *_lines routines return the lines,
-! for the PSML echo; write_icmod and write_epsh write them to unit 6.
-! write_input_echo writes the whole echo of the psp8 and UPF files.
+! them echo as they always have. The *_lines routines return the lines of a
+! section; write_icmod and write_epsh write them to unit 6.
+! input_echo_lines returns the whole echo of the psp8, UPF and PSML files,
+! and write_input_echo writes it to unit 6.
 ! fx and fe shape single values for the output files' fields.
 
  module input_echo_m
@@ -32,7 +33,8 @@
  public :: atom_lines, lmax_lines, icmod_lines, epsh_lines, mesh_lines
  public :: write_atom, write_lmax, write_icmod, write_epsh
  public :: write_mesh
- public :: write_input_echo, fx, fe, vkb_head, vkb_line
+ public :: write_input_echo, input_echo_lines
+ public :: fx, fe, vkb_head, vkb_line
 
 !> length of the lines returned by the *_lines routines
  integer, parameter, public :: echo_len=100
@@ -505,19 +507,23 @@
  return
  end subroutine write_mesh
 
- subroutine write_input_echo(nkap,iformat,atsym,zz,nc,nv,iexc,psfile, &
+ subroutine input_echo_lines(nkap,iformat,atsym,zz,nc,nv,iexc,psfile, &
 &                            na,la,fa,lmax,rc0,ep,ncon,nbas,qcut,ep_as_given, &
 &                            well_onset,well_tail,wreg,lloc,lpopt,dvloc0, &
 &                            nproj,debl,well_n,well_norm,ecut_wt, &
 &                            icmod,fcfact,rcfact,slack,budget_cut, &
 &                            fcgrid,rcgrid, &
 &                            epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
-&                            ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh)
-!! writes the echo of the input data to unit 6, from the reference
-!! configuration to the log mesh, as the psp8 and UPF files carry it
+&                            ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh, &
+&                           text,ntext)
+!! the echo of the input data, from the reference configuration to the log
+!! mesh, as the psp8, UPF and PSML files carry it, line by line
 !!
 !! @param nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
-!! @param iformat  1 for the psp8 file, 2 for the UPF file
+!! @param iformat  1 for the psp8 file (and PSML, with nkap 1), 2 for the
+!!                 UPF file
+!! @param text  the lines (output)
+!! @param ntext  their number (output)
 !!
 !! (the other arguments are the input data, as read by the input readers;
 !! rc0 the input core radii, ep the energies for the first kappa and fcfact
@@ -547,69 +553,177 @@
  character(len=2), intent(in) :: atsym
  character(len=4), intent(in) :: psfile
 
-!Local variables
- character(len=echo_len) :: text(echo_max)
- integer :: ii,jj,l1,ntext
+!Output variables
+ character(len=echo_len), allocatable, intent(out) :: text(:)
+ integer, intent(out) :: ntext
 
- call atom_lines(atsym,zz,nc,nv,iexc,psfile,text,ntext)
- write(6,'(a)') (trim(text(ii)),ii=1,ntext)
+!Local variables
+ character(len=echo_len) :: part(echo_max),line
+ integer :: ii,jj,l1,npart
+
+ allocate(text(64))
+ ntext=0
+
+ call atom_lines(atsym,zz,nc,nv,iexc,psfile,part,npart)
+ call put_part()
 !the energy column is named, though not written, except in the sr psp8 file
+ call put('#')
  if(iformat==1 .and. nkap==1) then
-   write(6,'(a/a)') '#','#   n    l    f'
+   call put('#   n    l    f')
  else
-   write(6,'(a/a)') '#','#   n    l    f        energy (Ha)'
+   call put('#   n    l    f        energy (Ha)')
  end if
  do ii=1,nc+nv
-   write(6,'(2i5,f8.2)') na(ii),la(ii),fa(ii)
+   write(line,'(2i5,f8.2)') na(ii),la(ii),fa(ii)
+   call put(line)
  end do
 
- call lmax_lines(lmax,ep_as_given,well_onset,well_tail,wreg,well_norm,text, &
-&                ntext)
- write(6,'(a)') (trim(text(ii)),ii=1,ntext)
+ call lmax_lines(lmax,ep_as_given,well_onset,well_tail,wreg,well_norm,part, &
+&                npart)
+ call put_part()
+ call put('#')
  if(nkap==2) then
-   write(6,'(a/a)') '#','#   l,   rc,     ep,   ncon, nbas, qcut'
+   call put('#   l,   rc,     ep,   ncon, nbas, qcut')
  else
-   write(6,'(a/a)') '#','#   l,   rc,      ep,       ncon, nbas, qcut'
+   call put('#   l,   rc,      ep,       ncon, nbas, qcut')
  end if
  do l1=1,lmax+1
-   write(6,'(i5,2a,2i5,a)') l1-1,fx(rc0(l1),10,5),fx(ep(l1),10,5), &
+   write(line,'(i5,2a,2i5,a)') l1-1,fx(rc0(l1),10,5),fx(ep(l1),10,5), &
 &        ncon(l1),nbas(l1),fx(qcut(l1),10,5)
+   call put(line)
  end do
 
- write(6,'(a/a/a,a)') '#','# LOCAL POTENTIAL','# lloc, lpopt,  rc(5),', &
-&      '   dvloc0'
- write(6,'(2i5,3a)') lloc,lpopt,fx(rc0(5),10,5),'   ',fx(dvloc0,10,5)
+ call put('#')
+ call put('# LOCAL POTENTIAL')
+ call put('# lloc, lpopt,  rc(5),   dvloc0')
+ write(line,'(2i5,3a)') lloc,lpopt,fx(rc0(5),10,5),'   ',fx(dvloc0,10,5)
+ call put(line)
 
- write(6,'(a/a/a)') '#','# VANDERBILT-KLEINMAN-BYLANDER PROJECTORs', &
-&      trim(vkb_head(lmax,well_n,ecut_wt))
+ call put('#')
+ call put('# VANDERBILT-KLEINMAN-BYLANDER PROJECTORs')
+ call put(vkb_head(lmax,well_n,ecut_wt))
  do l1=1,lmax+1
-   write(6,'(a)') trim(vkb_line(lmax,l1,nproj,debl,well_n,ecut_wt))
+   call put(vkb_line(lmax,l1,nproj,debl,well_n,ecut_wt))
  end do
 
- call write_icmod(icmod,fcfact,rcfact,slack,budget_cut,fcgrid,rcgrid)
+ call icmod_lines(icmod,fcfact,rcfact,slack,budget_cut,fcgrid,rcgrid, &
+&                 part,npart)
+ call put_part()
 
- call write_epsh(epsh1,epsh2,depsh,rxpsh)
+ call epsh_lines(epsh1,epsh2,depsh,rxpsh,part,npart)
+ call put_part()
 
+ call put('#')
+ call put('# OUTPUT GRID')
  if(upf_mesh==0) then
-   write(6,'(a/a/a)') '#','# OUTPUT GRID','# rlmax, drl'
-   write(6,'(2a)') fx(rlmax,8,2),fx(drl,8,2)
+   call put('# rlmax, drl')
+   write(line,'(2a)') fx(rlmax,8,2),fx(drl,8,2)
  else
-   write(6,'(a/a/a)') '#','# OUTPUT GRID','# rlmax, drl, upf_mesh'
-   write(6,'(2a,i8)') fx(rlmax,8,2),fx(drl,8,2),upf_mesh
+   call put('# rlmax, drl, upf_mesh')
+   write(line,'(2a,i8)') fx(rlmax,8,2),fx(drl,8,2),upf_mesh
  end if
+ call put(line)
 
- write(6,'(a/a/a)') '#','# TEST CONFIGURATIONS','# ncnf'
- write(6,'(i5)') ncnf
- write(6,'(a/a)') '# nvcnf','#   n    l    f'
+ call put('#')
+ call put('# TEST CONFIGURATIONS')
+ call put('# ncnf')
+ write(line,'(i5)') ncnf
+ call put(line)
+ call put('# nvcnf')
+ call put('#   n    l    f')
  do jj=2,ncnf+1
-   write(6,'(i5)') nvcnf(jj)
+   write(line,'(i5)') nvcnf(jj)
+   call put(line)
    do ii=nc+1,nc+nvcnf(jj)
-     write(6,'(2i5,f8.2)') nacnf(ii,jj),lacnf(ii,jj),facnf(ii,jj)
+     write(line,'(2i5,f8.2)') nacnf(ii,jj),lacnf(ii,jj),facnf(ii,jj)
+     call put(line)
    end do
-   write(6,'(a)') '#'
+   call put('#')
  end do
 
- call write_mesh(log_mesh)
+ call mesh_lines(log_mesh,part,npart)
+ call put_part()
+ return
+
+ contains
+
+ subroutine put(str)
+!! appends a line
+ character(len=*), intent(in) :: str
+ character(len=echo_len), allocatable :: tmp(:)
+ if(ntext==size(text)) then
+   allocate(tmp(2*size(text)))
+   tmp(1:ntext)=text(1:ntext)
+   call move_alloc(tmp,text)
+ end if
+ ntext=ntext+1
+ text(ntext)=str
+ end subroutine put
+
+ subroutine put_part()
+!! appends the lines of part
+ integer :: kk
+ do kk=1,npart
+   call put(part(kk))
+ end do
+ end subroutine put_part
+
+ end subroutine input_echo_lines
+
+ subroutine write_input_echo(nkap,iformat,atsym,zz,nc,nv,iexc,psfile, &
+&                            na,la,fa,lmax,rc0,ep,ncon,nbas,qcut,ep_as_given, &
+&                            well_onset,well_tail,wreg,lloc,lpopt,dvloc0, &
+&                            nproj,debl,well_n,well_norm,ecut_wt, &
+&                            icmod,fcfact,rcfact,slack,budget_cut, &
+&                            fcgrid,rcgrid, &
+&                            epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
+&                            ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh)
+!! writes the echo of the input data to unit 6 (input_echo_lines)
+!!
+!! @param nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
+!! @param iformat  1 for the psp8 file, 2 for the UPF file
+!!
+!! (the other arguments are the input data, as read by the input readers)
+
+!Input variables
+ integer, intent(in) :: nkap,iformat
+ integer, intent(in) :: nc,nv,iexc,lmax,lloc,lpopt,icmod,ncnf,upf_mesh
+ integer, intent(in) :: na(mxstate),la(mxstate),ncon(mxlin+1),nbas(mxlin+1)
+ integer, intent(in) :: nproj(mxlin+1)
+ integer, intent(in) :: nvcnf(mxcnf),nacnf(mxstate,mxcnf),lacnf(mxstate,mxcnf)
+ real(dp), intent(in) :: zz,dvloc0,fcfact,rcfact
+ real(dp), intent(in) :: slack
+ integer, intent(in) :: budget_cut
+ real(dp), intent(in) :: epsh1,epsh2,depsh,rxpsh,rlmax,drl
+ real(dp), intent(in) :: fa(mxstate),rc0(mxlin+1),ep(mxlin+1),qcut(mxlin+1)
+ logical, intent(in) :: ep_as_given
+ real(dp), intent(in) :: well_onset
+ integer, intent(in) :: well_tail
+ real(dp), intent(in) :: wreg
+ real(dp), intent(in) :: debl(mxlin+1)
+ integer, intent(in) :: well_n(mxlin+1)
+ integer, intent(in) :: well_norm
+ real(dp), intent(in) :: ecut_wt(mxlin+1)
+ real(dp), intent(in) :: facnf(mxstate,mxcnf)
+ real(dp), intent(in) :: fcgrid(3),rcgrid(3),log_mesh(3)
+ character(len=2), intent(in) :: atsym
+ character(len=4), intent(in) :: psfile
+
+!Local variables
+ character(len=echo_len), allocatable :: text(:)
+ integer :: ii,ntext
+
+ call input_echo_lines(nkap,iformat,atsym,zz,nc,nv,iexc,psfile, &
+&                      na,la,fa,lmax,rc0,ep,ncon,nbas,qcut,ep_as_given, &
+&                      well_onset,well_tail,wreg,lloc,lpopt,dvloc0, &
+&                      nproj,debl,well_n,well_norm,ecut_wt, &
+&                      icmod,fcfact,rcfact,slack,budget_cut,fcgrid,rcgrid, &
+&                      epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
+&                      ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh, &
+&                      text,ntext)
+ do ii=1,ntext
+   write(6,'(a)') trim(text(ii))
+ end do
  return
  end subroutine write_input_echo
 

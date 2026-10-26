@@ -691,9 +691,7 @@
 !! @param ecut_wt  echoed on the projector lines when set (vkb_line)
 
  use xmlf90_wxml, only: xmlf_t, xml_AddPcData
- use input_echo_m, only: atom_lines, lmax_lines, icmod_lines, epsh_lines, &
-&                        mesh_lines, echo_len, echo_max, fx, vkb_head, &
-&                        vkb_line
+ use input_echo_m, only: input_echo_lines, echo_len
  implicit none
 
 !Input variables
@@ -720,87 +718,18 @@
  type(xmlf_t), intent(inout) :: xf
 
 !Local variables
- character(len=100) :: line
- character(len=echo_len) :: text(echo_max)
- integer :: ii,jj,l1,ntext
+ character(len=echo_len), allocatable :: text(:)
+ integer :: ii,ntext
 
- call atom_lines(atsym,zz,nc,nv,iexc,psfile,text,ntext)
- do ii=1,ntext
-   call add(text(ii))
- end do
- call add('#')
- call add('#   n    l    f')
- do ii=1,nc+nv
-   write(line,'(2i5,f8.2)') na(ii),la(ii),fa(ii)
-   call add(line)
- end do
-
- call lmax_lines(lmax,ep_as_given,well_onset,well_tail,wreg,well_norm, &
-&                text,ntext)
- do ii=1,ntext
-   call add(text(ii))
- end do
- call add('#')
- call add('#   l,   rc,      ep,       ncon, nbas, qcut')
- do l1=1,lmax+1
-   write(line,'(i5,2a,2i5,a)') l1-1,fx(rc0(l1),10,5),fx(ep(l1),10,5), &
-&          ncon(l1),nbas(l1),fx(qcut(l1),10,5)
-   call add(line)
- end do
-
- call add('#')
- call add('# LOCAL POTENTIAL')
- call add('# lloc, lpopt,  rc(5),   dvloc0')
- write(line,'(2i5,3a)') lloc,lpopt,fx(rc0(5),10,5),'   ',fx(dvloc0,10,5)
- call add(line)
-
- call add('#')
- call add('# VANDERBILT-KLEINMAN-BYLANDER PROJECTORs')
- call add(vkb_head(lmax,well_n,ecut_wt))
- do l1=1,lmax+1
-   call add(vkb_line(lmax,l1,nproj,debl,well_n,ecut_wt))
- end do
-
- call icmod_lines(icmod,fcfact,rcfact,slack,budget_cut,fcgrid,rcgrid, &
-&                 text,ntext)
- do ii=1,ntext
-   call add(text(ii))
- end do
-
- call epsh_lines(epsh1,epsh2,depsh,rxpsh,text,ntext)
- do ii=1,ntext
-   call add(text(ii))
- end do
-
- call add('#')
- call add('# OUTPUT GRID')
- if(upf_mesh==0) then
-   call add('# rlmax, drl')
-   write(line,'(2a)') fx(rlmax,8,2),fx(drl,8,2)
- else
-   call add('# rlmax, drl, upf_mesh')
-   write(line,'(2a,i8)') fx(rlmax,8,2),fx(drl,8,2),upf_mesh
- end if
- call add(line)
-
- call add('#')
- call add('# TEST CONFIGURATIONS')
- call add('# ncnf')
- write(line,'(i5)') ncnf
- call add(line)
- call add('# nvcnf')
- call add('#   n    l    f')
- do jj=2,ncnf+1
-   write(line,'(i5)') nvcnf(jj)
-   call add(line)
-   do ii=nc+1,nc+nvcnf(jj)
-     write(line,'(2i5,f8.2)') nacnf(ii,jj),lacnf(ii,jj),facnf(ii,jj)
-     call add(line)
-   end do
-   call add('#')
- end do
-
- call mesh_lines(log_mesh,text,ntext)
+! the psp8 echo of the scalar-relativistic code
+ call input_echo_lines(1,1,atsym,zz,nc,nv,iexc,psfile, &
+&                      na,la,fa,lmax,rc0,ep,ncon,nbas,qcut,ep_as_given, &
+&                      well_onset,well_tail,wreg,lloc,lpopt,dvloc0, &
+&                      nproj,debl,well_n,well_norm,ecut_wt, &
+&                      icmod,fcfact,rcfact,slack,budget_cut,fcgrid,rcgrid, &
+&                      epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
+&                      ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh, &
+&                      text,ntext)
  do ii=1,ntext
    call add(text(ii))
  end do
