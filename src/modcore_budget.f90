@@ -113,6 +113,7 @@
  use modcore_m, only: core_pieces
  use ugrid_m, only: ug_brent, ug_fmin
  use quad_m, only: gauss_legendre
+ use xc_dispatch_m, only: exc_dispatch
  use pieces_m, only: piecewise_t
  use logmesh_m, only: lm_derivs, lm_interp, lm_integral, lm_fh_reach, &
 &                     lm_blend
@@ -338,12 +339,12 @@
 
 ! the xc energy density of the valence charge on the core charge
  work(:)=nval(:) + rhoc(1:nx)
- call xc_eps(work,eps,vxc,rr,nx)
+ call exc_dispatch(iexc,al,work,vxc,eps,rr,nx,'modcore_budget')
  wc(:)=work(:)*eps(:)
 
 ! xc potential of the background alone
  work(:)=pi4*background
- call xc_eps(work,eps,vxc,rr,nx)
+ call exc_dispatch(iexc,al,work,vxc,eps,rr,nx,'modcore_budget')
  vbg=vxc(nx/2)
 
 ! smallest r_s, first with the cutoffs to q_b + quick; if a larger one
@@ -744,7 +745,7 @@
    cr0(nx+1:nt,kk)=cos(tk(kk)*dq*ri(:))
  end do
  wki(:)=nvi(:) + fext(:)
- call xc_eps(wki,epi,vxi,ri,ni)
+ call exc_dispatch(iexc,al,wki,vxi,epi,ri,ni,'modcore_budget')
  wf(:)=wki(:)*epi(:)
  return
  end subroutine set_model
@@ -1404,11 +1405,11 @@
 !Local variables
  real(dp) :: si,so1
  work(:)=nval(:) + bq(1:nx)
- call xc_eps(work,eps,vxc,rr,nx)
+ call exc_dispatch(iexc,al,work,vxc,eps,rr,nx,'modcore_budget')
  work(:)=work(:)*eps(:)
  ac(:)=swin(:)*rr(1:nx)**2*(work(:) - wc(:) - vbg*(bq(1:nx) - rhoc(1:nx)))
  wki(:)=nvi(:) + bq(nx+1:nt)
- call xc_eps(wki,epi,vxi,ri,ni)
+ call exc_dispatch(iexc,al,wki,vxi,epi,ri,ni,'modcore_budget')
  wki(:)=wki(:)*epi(:)
  af(:)=ri(:)**2*(wki(:) - wf(:) - vbg*(bq(nx+1:nt) - fext(:)))
  call lm_integral(ri,af,ni,2,0.0d0,rs,si)
@@ -1416,46 +1417,6 @@
  xc_error=abs(si + so1)
  return
  end function xc_error
-
- subroutine xc_eps(rho,exc,vx,rm,nn)
-
-!! the xc energy per electron and potential of the charge rho on the log
-!! mesh rm (of step al, at least 101 points)
-!!
-!! @param rho  charge density on rm
-!! @param exc  exchange-correlation energy per electron
-!! @param vx  exchange-correlation potential
-!! @param rm  log radial mesh
-!! @param nn  its size
-
-!Input variables
- integer, intent(in) :: nn
- real(dp), intent(in) :: rm(nn)
-
-!Input/output variables
- real(dp), intent(inout) :: rho(nn)
-
-!Output variables
- real(dp), intent(out) :: exc(nn),vx(nn)
- if(iexc == 1) then
-   call excwig(rho,vx,exc,nn)
- else if(iexc == 2) then
-   call exchdl(rho,vx,exc,nn)
- else if(iexc == 3) then
-   call excpzca(rho,vx,exc,nn)
- else if(iexc == 4) then
-   call excggc(rho,vx,exc,rm,nn)
- else if(iexc == 6 .or. iexc == 7) then
-   call excvwn(rho,vx,exc,nn)
-   if(iexc == 7) call exc_relx(rho,vx,exc,nn)
- else if(iexc < 0) then
-   call exc_libxc(iexc,al,rho,vx,exc,rm,nn)
- else
-   write(6,'(/a,i4)') 'modcore_budget: ERROR bad input iexc =',iexc
-   error stop 1
- end if
- return
- end subroutine xc_eps
 
  end subroutine modcore_budget
 

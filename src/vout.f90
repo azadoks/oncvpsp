@@ -37,6 +37,7 @@
 
  use constants_m, only: dp, pi
  use logmesh_m, only: lm_head
+ use xc_dispatch_m, only: exc_dispatch
  implicit none
 
 !Input variables
@@ -123,23 +124,7 @@
 
 ! exchange-correlation potential added
 
- if(iexc == 1) then
-   call excwig(rhot,vxc,exca,mmax)
- else if(iexc == 2) then
-   call exchdl(rhot,vxc,exca,mmax)
- else if(iexc == 3) then
-   call excpzca(rhot,vxc,exca,mmax)
- else if(iexc == 4) then
-   call excggc(rhot,vxc,exca,rr,mmax)
- else if(iexc == 6 .or. iexc == 7) then
-   call excvwn(rhot,vxc,exca,mmax)
-   if(iexc == 7) call exc_relx(rhot,vxc,exca,mmax)
- else if(iexc < 0) then
-   call exc_libxc(iexc,al,rhot,vxc,exca,rr,mmax)
- else
-   write(6,'(/a,i4)') 'vout: ERROR bad input iexc =',iexc
-   error stop 1
- end if
+ call exc_dispatch(iexc,al,rhot,vxc,exca,rr,mmax,'vout')
 
  do ii = 1, mmax
    difxc(ii)=exca(ii) - vxc(ii)
@@ -158,23 +143,7 @@
  end do
 
  if(mode == 1 .and. rhoc(1) /= 0.0d0) then
-   if(iexc == 1) then
-     call excwig(rhoc,vxcd,excca,mmax)
-   else if(iexc == 2) then
-     call exchdl(rhoc,vxcd,excca,mmax)
-   else if(iexc == 3) then
-     call excpzca(rhoc,vxcd,excca,mmax)
-   else if(iexc == 4) then
-     call excggc(rhoc,vxcd,excca,rr,mmax)
-   else if(iexc == 6 .or. iexc == 7) then
-     call excvwn(rhoc,vxcd,excca,mmax)
-     if(iexc == 7) call exc_relx(rhoc,vxcd,excca,mmax)
-   else if(iexc < 0) then
-     call exc_libxc(iexc,al,rhoc,vxcd,excca,rr,mmax)
-   else
-     write(6,'(/a,i4)') 'vout: ERROR bad input iexc =',iexc
-     error stop 1
-   end if
+   call exc_dispatch(iexc,al,rhoc,vxcd,excca,rr,mmax,'vout')
 
    do ii=1,mmax
      foutfc(ii)=rhoc(ii)*(exca(ii) - excca(ii))*rr(ii)**3

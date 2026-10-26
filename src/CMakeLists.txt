@@ -78,6 +78,7 @@ set(src_oncvpsp
     qlinalg_m.f90
     ugrid_m.f90
     quad_m.f90
+    xc_dispatch_m.f90
     outwf_m.F90
     sratom.f90
     tfapot.f90
