@@ -19,12 +19,15 @@
 !> lschvkbb, lschvkbbe, lschpsbar): the convergence test on the energy
 !> correction, and the steps of the energy inside its bracket, by the
 !> correction or, where the node count is wrong, by bisection; and the
-!> energy of the box state that stands in where there is no bound state.
+!> energy of the box state that stands in where there is no bound state;
+!> and the whole iteration of the all-electron solvers (lschfb, ldiracfb),
+!> bs_solve, over the steps that depend on the equation.
  module boundsolve_m
  use constants_m, only: dp
  implicit none
  private
- public :: bs_converged, bs_correct, bs_bisect, bs_box_energy
+ public :: bs_converged, bs_correct, bs_bisect, bs_box_energy, bs_solve, &
+&          bs_turning_point
 
  abstract interface
    integer function node_count(ee)
@@ -32,6 +35,41 @@
    implicit none
    real(dp), intent(in) :: ee
    end function node_count
+
+   subroutine bs_setup(ee,mch)
+!! the equation's coefficients at the energy ee, and the classical turning
+!! point mch from them (bs_turning_point)
+   import :: dp
+   implicit none
+   real(dp), intent(in) :: ee
+   integer, intent(out) :: mch
+   end subroutine bs_setup
+
+   integer function bs_outward(mch,mlast)
+!! the outward solution at the energy of the last bs_setup, up to mlast;
+!! its nodes inside the turning point mch
+   implicit none
+   integer, intent(in) :: mch,mlast
+   end function bs_outward
+
+   subroutine bs_match(ee,mch,nin,lo,hi,de)
+!! the inward solution from nin, matched to the outward one across the
+!! window lo..hi around mch and normalized; de, the energy correction
+   import :: dp
+   implicit none
+   real(dp), intent(in) :: ee
+   integer, intent(in) :: mch,nin,lo,hi
+   real(dp), intent(out) :: de
+   end subroutine bs_match
+
+   subroutine bs_box(elow,etop,ee)
+!! the box state (bs_box_energy) above elow, widened above etop, and its
+!! energy ee
+   import :: dp
+   implicit none
+   real(dp), intent(in) :: elow,etop
+   real(dp), intent(out) :: ee
+   end subroutine bs_box
  end interface
 
  contains
@@ -189,5 +227,173 @@
 
  return
  end subroutine bs_box_energy
+
+ subroutine bs_turning_point(cf,mmax,mch)
+
+!! the classical turning point: the outermost mch with cf(mch-1)<=0 and
+!! cf(mch)>0, cf the coefficient of u in the second-order equation;
+!! mch=0 where none is found and cf(mmax)<=0 (classically allowed at the
+!! mesh end, the energy too high), mch=-1 where none is found and
+!! cf(mmax)>0 (forbidden everywhere, too low)
+!!
+!! @param cf  the coefficient, positive where classically forbidden
+!! @param mmax  size of the mesh
+!! @param mch  the turning point, or 0 or -1
+
+!Input variables
+ integer, intent(in) :: mmax
+ real(dp), intent(in) :: cf(mmax)
+
+!Output variables
+ integer, intent(out) :: mch
+
+!Local variables
+ integer :: ii
+
+ mch=0
+ do ii=mmax,2,-1
+   if(cf(ii-1)<=0.d0 .and. cf(ii)>0.d0) then
+     mch=ii
+     exit
+   end if
+ end do
+ if(mch==0 .and. cf(mmax)>0.0d0) mch=-1
+ return
+ end subroutine bs_turning_point
+
+ subroutine bs_solve(nn,ll,rr,vv,mmax,eps,setup,outward,match,box, &
+&                    ee,emin,emax,mch,ierr)
+
+!! the energy iteration of the all-electron bound-state solvers: from ee
+!! in the bracket emin..emax, the turning point, the outward solution and
+!! its node count; with the right count the inward solution matched to it
+!! and the energy moved by its correction, otherwise the bracket bisected.
+!! Once a correction is below eps the passes go on at the corrected
+!! energy until it is converged (bs_converged), and the energy and
+!! function are those of the last pass. A bracket that closes before that
+!! has no bound state, and the box state stands in for it
+!!
+!! @param nn  principal quantum number
+!! @param ll  angular momentum
+!! @param rr  log radial mesh
+!! @param vv  potential (Ha)
+!! @param mmax  size of the mesh
+!! @param eps  relative convergence threshold of the energy
+!! @param setup  the coefficients and turning point at an energy
+!! @param outward  the outward solution and its node count
+!! @param match  the inward solution, the match, normalization and the
+!!               energy correction
+!! @param box  the box state
+!! @param ee  the start energy on input, the energy on output (Ha)
+!! @param emin,emax  the bracket
+!! @param mch  the matching point, mmax for the box state
+!! @param ierr  0 converged, 10 box state, 60 not converged in 60 passes
+
+ use match_m, only: match_k
+ use inward_start_m, only: inward_start
+
+!Input variables
+ integer, intent(in) :: nn,ll,mmax
+ real(dp), intent(in) :: rr(mmax),vv(mmax),eps
+ procedure(bs_setup) :: setup
+ procedure(bs_outward) :: outward
+ procedure(bs_match) :: match
+ procedure(bs_box) :: box
+
+!Input/output variables
+ real(dp), intent(inout) :: ee,emin,emax
+
+!Output variables
+ integer, intent(out) :: mch,ierr
+
+!Local variables
+ real(dp) :: de,deprev,etop,elow
+ integer :: nint,node,nin,lo,hi
+ logical :: polish
+
+ deprev=huge(1.0d0)
+ polish=.false.
+ ierr=60
+ mch=0
+
+! top of the bracket: no bound state lies above it on the mesh;
+! highest energy found to have too few nodes
+ etop=emax
+ elow=etop
+
+! return point for bound state convergence
+ do nint=1,60
+
+! a bracket closed without a converged energy shift: there is no bound
+! state, which an occupied state can lack in an early, overshooting SCF
+! potential; the box state stands in for it. Once a shift is below eps
+! the passes polish a converging energy, whose alternating shifts close
+! the bracket too
+   if(.not. polish .and. emax-emin<max(abs(ee),0.2d0)*eps) then
+     call box(elow,etop,ee)
+     mch=mmax
+     ierr=10
+     exit
+   end if
+
+   call setup(ee,mch)
+
+   if(mch==-1) then
+! classically forbidden everywhere: too low
+     mch=0
+     emin=ee
+     elow=ee
+     ee=0.5d0*(emin+emax)
+     cycle
+   else if(mch==0) then
+! classically allowed at rr(mmax): too high
+     emax=ee
+     ee=0.5d0*(emin+emax)
+     cycle
+   end if
+
+! the outward solution, carried through the matching window
+! mch-1-match_k..mch+match_k (match_m), and its nodes inside the turning
+! point
+   lo=mch-1-match_k
+   hi=mch+match_k
+   node=outward(mch,min(hi,mmax))
+
+! start inward integration with simple exponential where the
+! wave function has decayed to machine precision
+   call inward_start(ll,ee,rr,vv,mch,mmax,nin)
+
+   if(node-nn+ll+1==0 .and. nin<=hi+4) then
+! no room for the inward integration: too high
+     emax=ee
+     ee=0.5d0*(emin+emax)
+
+   else if(node-nn+ll+1==0) then
+
+     call match(ee,mch,nin,lo,hi,de)
+
+! convergence test and possible exit
+     if(bs_converged(de,deprev,ee,eps,polish)) then
+       ierr=0
+       exit
+     end if
+     deprev=de
+
+     call bs_correct(de,ee,emin,emax,.false.)
+
+   else if(node-nn+ll+1<0) then
+! too few nodes
+     elow=ee
+     call bs_bisect(ee,emin,emax,.true.,.false.)
+
+   else
+! too many nodes
+     call bs_bisect(ee,emin,emax,.false.,.false.)
+   end if
+
+ end do
+
+ return
+ end subroutine bs_solve
 
  end module boundsolve_m

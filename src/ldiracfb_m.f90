@@ -48,7 +48,7 @@
 !!             continuous turning point, match_m)
 
  use constants_m, only: dp
- use boundsolve_m, only: bs_converged, bs_correct, bs_bisect, bs_box_energy
+ use boundsolve_m, only: bs_box_energy, bs_solve, bs_turning_point
  use relativity_m, only: c_light
  use match_m, only: match_k, match_point, match_weights, match_blend
  use dirac_m, only: dirac_outward
@@ -74,15 +74,11 @@
  real(dp), allocatable :: gu(:),fu(:),gup(:),fup(:),cf(:)
 
  real(dp) :: cc,cci,gam,cof
- real(dp) :: de,deprev,emax,emin,etop,elow
- real(dp) :: eps,sc
- real(dp) :: sls,sn,cn,xkap,xmch
- real(dp) :: amesh,al
- real(dp) :: go(-match_k-1:match_k),fo(-match_k-1:match_k)
- real(dp) :: gpo(-match_k-1:match_k),fpo(-match_k-1:match_k)
- real(dp) :: ww(-match_k-1:match_k),ss(-match_k-1:match_k)
- integer :: ii,kk,nint,node,nin,lo,hi
- logical :: polish
+ real(dp) :: emax,emin
+ real(dp) :: eps
+ real(dp) :: sls,sn,cn
+ real(dp) :: amesh,al,eecur
+ integer :: ii
 
  cc=c_light
  cci=1.0d0/cc
@@ -98,8 +94,6 @@
 ! on the start guess or the path (doc/smoothness_plan.md, S-2 to S-4, and
 ! lschfb)
  eps=1.0d-12
- deprev=huge(1.0d0)
- polish=.false.
  ierr = 60
 
 ! check arguments
@@ -141,165 +135,9 @@
 
  cof=(kap+gam)*(cc/zz)
 
-! top of the bracket: no bound state lies above it on the mesh;
-! highest energy found to have too few nodes
- etop=emax
- elow=etop
-
-! return point for bound state convergence
- do nint=1,60
-
-! a bracket closed without a converged energy shift: there is no bound
-! state, which an occupied state can lack in an early, overshooting SCF
-! potential; the box state stands in for it. Once a shift is below eps
-! the passes polish a converging energy, whose alternating shifts close
-! the bracket too
-   if(.not. polish .and. emax-emin<max(abs(ee),0.2d0)*eps) then
-     call boxstate()
-     ierr=10
-     exit
-   end if
-
-! coefficient array for u in Schroedinger eq.
-   do ii=1,mmax
-     cf(ii)=sls + 2.0d0*(vv(ii)-ee)*rr(ii)**2
-   end do
-
-! find classical turning point for matching
-   mch=0
-   do ii=mmax,2,-1
-     if(cf(ii-1)<=0.d0 .and. cf(ii)>0.d0) then
-       mch=ii
-       exit
-     end if
-   end do
-
-   if(mch==0 .and. cf(mmax)>0.0d0) then
-! classically forbidden everywhere: too low
-     emin=ee
-     elow=ee
-     ee=0.5d0*(emin+emax)
-     cycle
-   else if(mch==0) then
-! classically allowed at rr(mmax): too high
-     emax=ee
-     ee=0.5d0*(emin+emax)
-     cycle
-   end if
-
-! the outward solution, carried through the matching window
-! mch-1-match_k..mch+match_k (match_m), and the nodes of its large
-! component inside the turning point
-   lo=mch-1-match_k
-   hi=mch+match_k
-   call outward(min(hi,mmax),node)
-   node=0
-   do ii=5,mch-1
-     if(gu(ii+1)*gu(ii)<=0.0d0) node=node+1
-   end do
-
-! start inward integration with simple exponential where the
-! wave function has decayed to machine precision
-   call inward_start(ll,ee,rr,vv,mch,mmax,nin)
-
-   if(node-nn+ll+1==0 .and. nin<=hi+4) then
-! no room for the inward integration: too high
-     emax=ee
-     ee=0.5d0*(emin+emax)
-
-   else if(node-nn+ll+1==0) then
-
-     call match_point(rr,cf,mmax,mch,xmch)
-     go(:)=gu(lo:hi)
-     fo(:)=fu(lo:hi)
-     gpo(:)=gup(lo:hi)
-     fpo(:)=fup(lo:hi)
-
-     xkap=sqrt(sls/rr(nin)**2 + 2.0d0*(vv(nin)-ee))
-
-     do ii=nin,nin+4
-       gu(ii)=exp(-xkap*(rr(ii)-rr(nin)))
-       fu(ii)=0.5d0*cci*(-xkap+kap/rr(ii))*gu(ii)
-
-       fup(ii)= al*rr(ii)*(kap*fu(ii)/rr(ii) &
-&               + cci*(vv(ii) - ee)*gu(ii))
-       gup(ii)= al*rr(ii)*(-kap*gu(ii)/rr(ii) &
-&               + cci*(2.0d0*cc**2 + ee - vv(ii))*fu(ii))
-     end do
-
-! integrate inward
-     do ii=nin,lo+1,-1
-
-       fu(ii-1)=fu(ii)+aei(fup,ii)
-       gu(ii-1)=gu(ii)+aei(gup,ii)
-
-       do kk=1,2
-         fup(ii-1)= al*rr(ii-1)*(kap*fu(ii-1)/rr(ii-1) &
-&                 - cci*(ee - vv(ii-1))*gu(ii-1))
-
-         gup(ii-1)= al*rr(ii-1)*(-kap*gu(ii-1)/rr(ii-1) &
-&                 + cci*(2.0d0*cc**2 + ee - vv(ii-1))*fu(ii-1))
-
-         fu(ii-1)=fu(ii)+aii(fup,ii)
-         gu(ii-1)=gu(ii)+aii(gup,ii)
-       end do
-       fup(ii-1)= al*rr(ii-1)*(kap*fu(ii-1)/rr(ii-1) &
-&               - cci*(ee - vv(ii-1))*gu(ii-1))
-       gup(ii-1)= al*rr(ii-1)*(-kap*gu(ii-1)/rr(ii-1) &
-&               + cci*(2.0d0*cc**2 + ee - vv(ii-1))*fu(ii-1))
-     end do
-
-! perturbation theory for the energy shift based on the large component
-! at each point of the window, g_o (g'_o - g'_i g_o/g_i)/2 for the
-! normalized function (continuity of the small component should follow),
-! averaged with the bump weights; the inward solution scaled to the
-! outward one by the ratio of their weighted sums, and the two blended
-! across the window (match_m)
-
-     call match_weights(xmch,lo,hi,ww,ss)
-     de=0.0d0
-     do ii=lo,hi
-       de=de+0.5d0*ww(ii-mch)*go(ii-mch) &
-&         *(gpo(ii-mch)-gup(ii)*go(ii-mch)/gu(ii))/(al*rr(ii))
-     end do
-     sc=sum(ww*go)/sum(ww*gu(lo:hi))
-
-     do ii=lo,nin
-       gup(ii)=sc*gup(ii)
-       gu(ii)=sc*gu(ii)
-       fup(ii)=sc*fup(ii)
-       fu(ii)=sc*fu(ii)
-     end do
-     call match_blend(lo,hi,mch,ss,go,gu)
-     call match_blend(lo,hi,mch,ss,fo,fu)
-     call match_blend(lo,hi,mch,ss,gpo,gup)
-     call match_blend(lo,hi,mch,ss,fpo,fup)
-
-! normalize u
-     call normalize(nin)
-     de=cn**2*de
-
-! convergence test and possible exit
-
-     if(bs_converged(de,deprev,ee,eps,polish)) then
-       ierr = 0
-       exit
-     end if
-     deprev=de
-
-     call bs_correct(de,ee,emin,emax,.false.)
-
-   else if(node-nn+ll+1<0) then
-! too few nodes
-     elow=ee
-     call bs_bisect(ee,emin,emax,.true.,.false.)
-
-   else
-! too many nodes
-     call bs_bisect(ee,emin,emax,.false.,.false.)
-   end if
-
- end do
+! the energy iteration (boundsolve_m)
+ call bs_solve(nn,ll,rr,vv,mmax,eps,setup,outward_nodes,match,boxstate, &
+&              ee,emin,emax,mch,ierr)
 
 ! copy local arrays for output
  uu(:,1)=gu(:)
@@ -319,6 +157,131 @@
 
  contains
 
+ subroutine setup(et,mchs)
+
+!! the coefficient for the turning point at et, and the classical turning
+!! point mchs
+
+ real(dp), intent(in) :: et
+ integer, intent(out) :: mchs
+
+ eecur=et
+! coefficient array for u in Schroedinger eq.
+ do ii=1,mmax
+   cf(ii)=sls + 2.0d0*(vv(ii)-et)*rr(ii)**2
+ end do
+ call bs_turning_point(cf,mmax,mchs)
+
+ return
+ end subroutine setup
+
+ integer function outward_nodes(mchs,mlast)
+
+!! the outward solution up to mlast and the nodes of its large component
+!! inside mchs
+
+ integer, intent(in) :: mchs,mlast
+
+ integer :: jj,node
+
+ call outward(mlast,node)
+ node=0
+ do jj=5,mchs-1
+   if(gu(jj+1)*gu(jj)<=0.0d0) node=node+1
+ end do
+ outward_nodes=node
+
+ return
+ end function outward_nodes
+
+ subroutine match(et,mchs,nin,lo,hi,de)
+
+!! the inward solution from nin at et, matched to the outward one across
+!! lo..hi and normalized, and the energy correction de
+
+ real(dp), intent(in) :: et
+ integer, intent(in) :: mchs,nin,lo,hi
+ real(dp), intent(out) :: de
+
+ real(dp) :: sc,xkap,xmch
+ real(dp) :: go(-match_k-1:match_k),fo(-match_k-1:match_k)
+ real(dp) :: gpo(-match_k-1:match_k),fpo(-match_k-1:match_k)
+ real(dp) :: ww(-match_k-1:match_k),ss(-match_k-1:match_k)
+ integer :: jj,kk
+
+ call match_point(rr,cf,mmax,mchs,xmch)
+ go(:)=gu(lo:hi)
+ fo(:)=fu(lo:hi)
+ gpo(:)=gup(lo:hi)
+ fpo(:)=fup(lo:hi)
+
+ xkap=sqrt(sls/rr(nin)**2 + 2.0d0*(vv(nin)-et))
+
+ do jj=nin,nin+4
+   gu(jj)=exp(-xkap*(rr(jj)-rr(nin)))
+   fu(jj)=0.5d0*cci*(-xkap+kap/rr(jj))*gu(jj)
+
+   fup(jj)= al*rr(jj)*(kap*fu(jj)/rr(jj) &
+&           + cci*(vv(jj) - et)*gu(jj))
+   gup(jj)= al*rr(jj)*(-kap*gu(jj)/rr(jj) &
+&           + cci*(2.0d0*cc**2 + et - vv(jj))*fu(jj))
+ end do
+
+! integrate inward
+ do jj=nin,lo+1,-1
+
+   fu(jj-1)=fu(jj)+aei(fup,jj)
+   gu(jj-1)=gu(jj)+aei(gup,jj)
+
+   do kk=1,2
+     fup(jj-1)= al*rr(jj-1)*(kap*fu(jj-1)/rr(jj-1) &
+&             - cci*(et - vv(jj-1))*gu(jj-1))
+
+     gup(jj-1)= al*rr(jj-1)*(-kap*gu(jj-1)/rr(jj-1) &
+&             + cci*(2.0d0*cc**2 + et - vv(jj-1))*fu(jj-1))
+
+     fu(jj-1)=fu(jj)+aii(fup,jj)
+     gu(jj-1)=gu(jj)+aii(gup,jj)
+   end do
+   fup(jj-1)= al*rr(jj-1)*(kap*fu(jj-1)/rr(jj-1) &
+&           - cci*(et - vv(jj-1))*gu(jj-1))
+   gup(jj-1)= al*rr(jj-1)*(-kap*gu(jj-1)/rr(jj-1) &
+&           + cci*(2.0d0*cc**2 + et - vv(jj-1))*fu(jj-1))
+ end do
+
+! perturbation theory for the energy shift based on the large component
+! at each point of the window, g_o (g'_o - g'_i g_o/g_i)/2 for the
+! normalized function (continuity of the small component should follow),
+! averaged with the bump weights; the inward solution scaled to the
+! outward one by the ratio of their weighted sums, and the two blended
+! across the window (match_m)
+
+ call match_weights(xmch,lo,hi,ww,ss)
+ de=0.0d0
+ do jj=lo,hi
+   de=de+0.5d0*ww(jj-mchs)*go(jj-mchs) &
+&     *(gpo(jj-mchs)-gup(jj)*go(jj-mchs)/gu(jj))/(al*rr(jj))
+ end do
+ sc=sum(ww*go)/sum(ww*gu(lo:hi))
+
+ do jj=lo,nin
+   gup(jj)=sc*gup(jj)
+   gu(jj)=sc*gu(jj)
+   fup(jj)=sc*fup(jj)
+   fu(jj)=sc*fu(jj)
+ end do
+ call match_blend(lo,hi,mchs,ss,go,gu)
+ call match_blend(lo,hi,mchs,ss,fo,fu)
+ call match_blend(lo,hi,mchs,ss,gpo,gup)
+ call match_blend(lo,hi,mchs,ss,fpo,fup)
+
+! normalize u
+ call normalize(nin)
+ de=cn**2*de
+
+ return
+ end subroutine match
+
  subroutine outward(mlast,nnode)
 
 !! outward integration from the series at the origin to mlast, at the
@@ -327,7 +290,8 @@
  integer, intent(in) :: mlast
  integer, intent(out) :: nnode
 
- call dirac_outward(ll,kap,ee,zz,al,rr,vv,mmax,mlast,gu,fu,gup,fup,nnode)
+ call dirac_outward(ll,kap,eecur,zz,al,rr,vv,mmax,mlast,gu,fu,gup,fup, &
+&                   nnode)
 
  return
  end subroutine outward
@@ -360,19 +324,20 @@
  return
  end subroutine normalize
 
- subroutine boxstate()
+ subroutine boxstate(elow,etop,eb)
 
-!! the state with nn-ll-1 nodes and a large component zero at rr(mmax),
-!! above elow (the box state of RadialAtomicSolvers.jl)
+!! the box state above elow, widened above etop (bs_box_energy), and its
+!! energy eb
 
- real(dp) :: eb
+ real(dp), intent(in) :: elow,etop
+ real(dp), intent(out) :: eb
+
  integer :: nb
 
  call bs_box_energy(elow,etop,nn-ll-1,eps,box_nodes,eb)
- ee=eb
+ eecur=eb
  call outward(mmax,nb)
  call normalize(mmax)
- mch=mmax
 
  return
  end subroutine boxstate
@@ -383,7 +348,7 @@
 
  real(dp), intent(in) :: e
 
- ee=e
+ eecur=e
  call outward(mmax,box_nodes)
  return
  end function box_nodes
