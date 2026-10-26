@@ -53,6 +53,7 @@
  private
  public :: teter_derivs, teter_core_derivs, core_crossover, poly_core_fit
  public :: teter_scale, core_pieces, core_pieces_smooth
+ public :: d2exc_baseline, d2exc_report
 
 !> the weights of the shifted sinc functions of h, at the shifts k pi
  real(dp), parameter :: wsinc(-2:2)=[1.0d0/6.0d0, 2.0d0/3.0d0, 1.0d0, &
@@ -686,5 +687,99 @@
  end do
  return
  end subroutine core_pieces_smooth
+
+ subroutine d2exc_baseline(rhotae,rhoc,rhoae,rhotps,rhops,rr,zion,iexc,nc, &
+&                          nv,la,rcut,mmax,rhomod,d2excae,d2excps,d2mdiff)
+
+!! the start of the model core analysis the model cores share: the
+!! all-electron second derivatives of Exc in the occupations, and those of
+!! the pseudo-atom with no core correction, written with their rms
+!! difference
+!!
+!! @param rhotae  all-electron total charge
+!! @param rhoc  core charge
+!! @param rhoae  all-electron valence charges
+!! @param rhotps  pseudo total valence charge
+!! @param rhops  pseudo valence charges
+!! @param rr  log radial mesh
+!! @param zion  ion charge
+!! @param iexc  exchange-correlation type
+!! @param nc  number of core states
+!! @param nv  number of valence states
+!! @param la  angular momenta of the states
+!! @param rcut  radius of the Exc integrals
+!! @param mmax  size of the log radial mesh
+!! @param rhomod  the model core, zero on return
+!! @param d2excae  all-electron second derivatives
+!! @param d2excps  pseudo-atom second derivatives with no core correction
+!! @param d2mdiff  their rms difference
+
+!Input variables
+ integer, intent(in) :: iexc,nc,nv,mmax
+ integer, intent(in) :: la(nv+nc)
+ real(dp), intent(in) :: rhotae(mmax),rhoc(mmax),rhoae(mmax,nv)
+ real(dp), intent(in) :: rhotps(mmax),rhops(mmax,nv),rr(mmax)
+ real(dp), intent(in) :: zion,rcut
+
+!Output variables
+ real(dp), intent(out) :: rhomod(mmax,nrhomod)
+ real(dp), intent(inout) :: d2excae(nv,nv),d2excps(nv,nv)
+ real(dp), intent(out) :: d2mdiff
+
+!Local variables
+ integer :: jj,kk
+ external :: der2exc
+
+ write(6,'(/a/a)') 'Model core correction analysis',&
+&                  '  based on d2Exc/dn_idn_j'
+
+! get derivatives of all-electron xc energy
+
+ call der2exc(rhotae,rhoc,rhoae,rr,d2excae,d2excps,d2mdiff, &
+&                   zion,iexc,nc,nv,la,rcut,mmax)
+
+ write(6,'(/a/)') 'd2excae - all-electron derivatives'
+ do kk=1,nv
+   write(6,'(1p,4d16.6)') (d2excae(kk,jj),jj=1,nv)
+ end do
+
+! compute d2excps with no core correction
+ rhomod(:,:)=0.0d0
+
+ call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
+&                   zion,iexc,nc,nv,la,rcut,mmax)
+
+ call d2exc_report('d2excps - pseudofunction derivatives with no core '// &
+&                  'correction',d2excps,nv,d2mdiff)
+
+ return
+ end subroutine d2exc_baseline
+
+ subroutine d2exc_report(title,d2excps,nv,d2mdiff)
+
+!! writes the pseudo-atom's second derivatives of Exc under title, and
+!! their rms difference from the all-electron ones
+!!
+!! @param title  the heading
+!! @param d2excps  the pseudo-atom's second derivatives
+!! @param nv  number of valence states
+!! @param d2mdiff  their rms difference from the all-electron ones
+
+!Input variables
+ character(len=*), intent(in) :: title
+ integer, intent(in) :: nv
+ real(dp), intent(in) :: d2excps(nv,nv),d2mdiff
+
+!Local variables
+ integer :: jj,kk
+
+ write(6,'(/a/)') title
+ do kk=1,nv
+   write(6,'(1p,4d16.6)') (d2excps(kk,jj),jj=1,nv)
+ end do
+ write(6,'(/a,1p,e16.6)') 'rms 2nd derivative error',d2mdiff
+
+ return
+ end subroutine d2exc_report
 
  end module modcore_m

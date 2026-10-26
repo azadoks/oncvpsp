@@ -54,7 +54,8 @@
 
  use constants_m, only: dp, mxstate, nrhomod
  use logmesh_m, only: lm_derivs
- use modcore_m, only: core_crossover, poly_core_fit, core_pieces
+ use modcore_m, only: core_crossover, poly_core_fit, core_pieces, &
+&                     d2exc_baseline, d2exc_report
  use pieces_m, only: piecewise_t
  implicit none
 
@@ -73,7 +74,7 @@
  real(dp) :: a0,d2mdiff,rstar,rcut
  real(dp) :: aco(5),fmatch(5)
  real(dp), allocatable :: d2excae(:,:),d2excps(:,:)
- integer :: ierr,jj,kk
+ integer :: ierr
 
  allocate(d2excae(nv,nv),d2excps(nv,nv))
 
@@ -90,32 +91,8 @@
 !set limit for d2Exc calculation to radius beyond which rhomod=rhoc
  rcut=max(rcmax,rstar)
 
- write(6,'(/a/a)') 'Model core correction analysis',&
-&                  '  based on d2Exc/dn_idn_j'
-
-
-! get derivatives of all-electron xc energy
-
- call der2exc(rhotae,rhoc,rhoae,rr,d2excae,d2excps,d2mdiff, &
-&                   zion,iexc,nc,nv,la,rcut,mmax)
-
- write(6,'(/a/)') 'd2excae - all-electron derivatives'
- do kk=1,nv
-   write(6,'(1p,4d16.6)') (d2excae(kk,jj),jj=1,nv)
- end do
-
-
-! compute d2excps with no core correction
- rhomod(:,:)=0.0d0
-
- call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
-&                   zion,iexc,nc,nv,la,rcut,mmax)
-
- write(6,'(/a/)') 'd2excps - pseudofunction derivatives with no core correction'
- do kk=1,nv
-   write(6,'(1p,4d16.6)') (d2excps(kk,jj),jj=1,nv)
- end do
- write(6,'(/a,1p,e16.6)') 'rms 2nd derivative error',d2mdiff
+ call d2exc_baseline(rhotae,rhoc,rhoae,rhotps,rhops,rr,zion,iexc,nc,nv, &
+&                    la,rcut,mmax,rhomod,d2excae,d2excps,d2mdiff)
 
 ! core charge and its derivatives at r*, and the barely monotonic
 ! polynomial that matches them
@@ -134,12 +111,8 @@
 
  write(6,'(/a/)') 'Polynomial model core charge'
  write(6,'(a,f12.6)') '  model radius r*',rstar
- write(6,'(/a/)') 'd2excps - pseudofunction derivatives with core correction'
-
- do kk=1,nv
-   write(6,'(1p,4d16.6)') (d2excps(kk,jj),jj=1,nv)
- end do
- write(6,'(/a,1p,e16.6)') 'rms 2nd derivative error',d2mdiff
+ call d2exc_report('d2excps - pseudofunction derivatives with core '// &
+&                  'correction',d2excps,nv,d2mdiff)
 
  deallocate(d2excae,d2excps)
 
