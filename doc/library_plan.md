@@ -1,6 +1,6 @@
 ## A library and Python/Julia wrappers
 
-**Status: to do. Nothing here has started.**
+**Status: in progress. Phase 4 is done; phase 1 is under way.**
 
 The goal is to call ONCVPSP from Python and Julia: pass in an input, get
 back the pseudopotential and the test results as arrays, and never take the
@@ -37,21 +37,57 @@ modules.
 
 ### Phase 1: errors returned, not stopped
 
-There are 56 `stop`/`error stop` lines in 34 files. Those in
-`oncvpsp_main_m.F90` (the command line and the input file) stay. Every other
-one becomes an error code:
+A routine that can fail returns, instead of stopping, with a last argument
+`ifail`: 0 on success, 1 after a failure whose message it has written
+(unit 6, as before). Every caller tests it right after the call and returns
+with it set, so the failure reaches `oncvpsp_main`, which ends with
+`error stop 1` as before: the output and the exit status do not change.
 
-- [ ] Each routine that can fail gets an `ierr` argument (0 for success) and
-      returns at the failure, after writing its message as now.
-- [ ] Each caller tests `ierr` and passes it up, as `boundstate` and
-      `lschvkbb` already are at `oncvpsp_main_m.F90:630,835`.
-- [ ] `oncvpsp_main` turns a non-zero `ierr` into `error stop 1`, so the
-      executables behave as before.
-- [ ] A list of the codes, by routine, in this page or in the headers.
+- `ifail` is a new argument, not the existing `ierr`. The solvers'
+  `ierr` (`lschfb`, `ldiracfb`, `lschvkbb`, `scatterstate`, ...) carries
+  codes that some callers accept and go on from (a state that did not
+  converge, 100; a ghost below the node count, 200); folding the failures
+  into it would let those callers carry on after one. `ifail` has one
+  meaning: the calculation cannot go on.
+- A procedure with optional arguments gets `ifail` last, passed by
+  keyword (`ifail=ifail`), so that it cannot land in an optional slot.
+- A reader that fails after opening its file closes it first.
+- Checks of conditions the code has just established, or that
+  `check_data` has already validated, stay `error stop 1`: they are bugs,
+  not failures, and returning from them would put `ifail` on every call of
+  the XC routines and of the uniform-grid quadratures. They are `vout`'s
+  `mode`, `exc_dispatch`'s `iexc`, `sbf_rc_der`'s and `sbfq_rc_der`'s
+  `llin`, `vploc_fit`'s `lpopt`, the segments of `pw_alloc`,
+  `pw_product_integral` and `outwf_setup`'s sources, `add_zero_r`'s sizes,
+  the `ug_*` node counts, grid positions, brackets and `ug_fmin`'s
+  iterations, `diagout`'s and `modcore_budget_table`'s brackets,
+  `eresid`'s q grid, and `gauss_legendre`'s Newton iterations.
+- `exc_libxc`'s stub (a build without libxc given a libxc functional)
+  still stops; `check_data` should reject the functional instead.
+- The imported `functionals.F90` keeps its `stop`s.
 
-Order: the leaf routines first (`dpnint`, `qroots`, `vout`, `sbf_*`), then
-upwards. The imported `functionals.F90` keeps its `stop`s; `exc_libxc`
-checks the functional before calling it.
+Steps, one commit each, every one with the outputs of the reference
+inputs and of a corpus of failing inputs (stdout, and stderr up to the
+backtrace, and the exit status) unchanged:
+
+- [x] The readers: `read_input_text`, `read_input_toml`, `check_data`,
+      the all-electron and pseudopotential data files (`ae_file_m`,
+      `ps_file_m`, `load_pair`).
+- [ ] The radial solvers and their callers: `match_point`,
+      `dirac_outward`, `bs_solve`, `lschfb`, `ldiracfb`, `ldiracfs`,
+      `boundstate`, `scatterstate`, `outwf_m`, `lschvkbb`, `renorm_r`,
+      the well states, and up through the atoms and configurations.
+- [ ] The pseudization: `run_optimize`, `optimize`, `qroots`, `pspot`,
+      `const_basis`, `sbf_basis_con`, `eresid`, `ode_rc_der`, `run_vkb`,
+      `sr_so_r`.
+- [ ] The model cores: `modcore`, `modcore2`, `modcore3`,
+      `modcore_budget` (whose root and minimum searches call back into
+      routines that can fail) and `modcore_budget_table`.
+- [ ] The tests and the writers: `run_diag`, `run_plot`, `run_ghosts`,
+      `run_phsft`, `phsft_m`, the confinement of `oncvpsp_confine`,
+      `outmesh_m`, `upfout`, `dpnint`.
+- [ ] `oncvpsp_main`'s own stops on the results (the command line and the
+      input file stay): they move with phase 3.
 
 ### Phase 2: output to a chosen unit
 

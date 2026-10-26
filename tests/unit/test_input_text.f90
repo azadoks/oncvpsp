@@ -77,6 +77,7 @@
 !! checks next_line on comments, blank, long and unterminated lines
 
 !Local variables
+ integer :: ifail
  character(len=700) :: lines(8)
  character(len=:), allocatable :: line
  integer :: unit, inline
@@ -92,16 +93,20 @@
  lines(8) = 'last'
  unit = scratch_input(lines, final_newline=.false.)
  inline = 0
- call next_line(unit, line, inline)
+ call next_line(unit, line, inline, ifail=ifail)
+ if(ifail /= 0) error stop 1
  call check(line == '  first data' .and. inline == 5, &
 &           'next_line skips blank and comment lines')
- call next_line(unit, line, inline)
+ call next_line(unit, line, inline, ifail=ifail)
+ if(ifail /= 0) error stop 1
  call check(line == repeat('x', 600)//' long' .and. inline == 7, &
 &           'next_line reads a long line whole')
- call next_line(unit, line, inline)
+ call next_line(unit, line, inline, ifail=ifail)
+ if(ifail /= 0) error stop 1
  call check(line == 'last' .and. inline == 8, &
 &           'next_line reads a last line without a newline')
- call next_line(unit, line, inline, eof)
+ call next_line(unit, line, inline, eof, ifail=ifail)
+ if(ifail /= 0) error stop 1
  call check(eof .and. inline == 8, &
 &           'next_line reports the end of the input when asked')
  close(unit)
@@ -124,6 +129,7 @@
  logical, intent(in) :: final_newline, with_mesh
 
 !Local variables
+ integer :: ifail
  character(len=700) :: lines(33)
  character(len=700), allocatable :: all_lines(:)
  integer :: unit, inline
@@ -178,7 +184,8 @@
    all_lines = lines
  end if
  unit = scratch_input(all_lines, final_newline)
- call read_input_text(unit, inline, inp)
+ call read_input_text(unit, inline, inp, ifail)
+ if(ifail /= 0) error stop 1
  close(unit)
 
  associate(atsym=>inp%atsym, zz=>inp%zz, nc=>inp%nc, nv=>inp%nv, &

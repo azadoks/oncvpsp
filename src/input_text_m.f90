@@ -7,9 +7,9 @@
  public :: read_input_text, next_line, finite
  contains
 
- subroutine read_input_text(unit, inline, inp)
+ subroutine read_input_text(unit, inline, inp, ifail)
 
-!! reads the text input file (see doc/32_Ge_annotated.dat), stopping on a
+!! reads the text input file (see doc/32_Ge_annotated.dat), failing on a
 !! read error
 
 !Input variables
@@ -21,6 +21,8 @@
  integer, intent(out) :: inline
 !> The input values
  type(input_t), intent(out) :: inp
+!> 0, or 1 after a failure, whose message is written
+ integer, intent(out) :: ifail
 
 !Local variables
 !> I/O status variable
@@ -40,6 +42,7 @@
 !> The optional budget_cutoff of the icmod line
  integer :: ibudget
 
+ ifail = 0
  associate(atsym=>inp%atsym, zz=>inp%zz, nc=>inp%nc, nv=>inp%nv, &
 &          iexc=>inp%iexc, psfile=>inp%psfile, na=>inp%na, la=>inp%la, &
 &          fa=>inp%fa, lmax=>inp%lmax, rc=>inp%rc, ep=>inp%ep, ncon=>inp%ncon, &
@@ -86,7 +89,8 @@
    inline = 0
 
 ! atom and reference configuration, and optionally the speed of light
-   call next_line(unit, line, inline)
+   call next_line(unit, line, inline, ifail=ifail)
+   if(ifail /= 0) return
    read(line, *, iostat=ios) atsym, zz, nc, nv, iexc, psfile, c_light
 ! a line of six values ends before c_light; a bad value is an error
    if(ios < 0) then
@@ -96,13 +100,16 @@
 ! counts beyond the array sizes would overrun before check_data runs
    if(ios == 0 .and. (nc < 0 .or. nv < 0 .or. nc + nv > mxstate)) ios = 999
    call check_finite(ios, [zz, c_light])
-   call read_error(ios, inline)
+   call read_error(ios, inline, ifail)
+   if(ifail /= 0) return
 
    do ii = 1, nc + nv
-     call next_line(unit, line, inline)
+     call next_line(unit, line, inline, ifail=ifail)
+     if(ifail /= 0) return
      read(line, *, iostat=ios) na(ii), la(ii), fa(ii)
      call check_finite(ios, [fa(ii)])
-     call read_error(ios, inline)
+     call read_error(ios, inline, ifail)
+     if(ifail /= 0) return
    end do
 
 ! pseudopotential and optimization: lmax, and optionally ep_as_given (0 or
@@ -110,7 +117,8 @@
 ! 1 for "free", 2 for "confined"), wave_regularization (at least 0) and
 ! well_norm (0, 1 or 2); a line that ends early leaves the rest at their
 ! defaults, a bad value is an error
-   call next_line(unit, line, inline)
+   call next_line(unit, line, inline, ifail=ifail)
+   if(ifail /= 0) return
    itail = 0
    wreg = 0.d0
    well_norm = 0
@@ -143,26 +151,31 @@
      end if
    end if
    call check_finite(ios, [well_onset, wreg])
-   call read_error(ios, inline)
+   call read_error(ios, inline, ifail)
+   if(ifail /= 0) return
    ep_as_given = igiven == 1
    well_tail = itail
    if(well_onset <= 0.d0) well_onset = well_onset_default
 
    do l1 = 1, lmax + 1
-     call next_line(unit, line, inline)
+     call next_line(unit, line, inline, ifail=ifail)
+     if(ifail /= 0) return
      read(line, *, iostat=ios) lt, rc(l1), ep(l1, 1), ncon(l1), nbas(l1), &
 &      qcut(l1)
      if(ios == 0 .and. lt /= l1 - 1) ios = 999
      call check_finite(ios, [rc(l1), ep(l1, 1), qcut(l1)])
-     call read_error(ios, inline)
+     call read_error(ios, inline, ifail)
+     if(ifail /= 0) return
      ep(l1, 2) = ep(l1, 1)
    end do
 
 ! local potential
-   call next_line(unit, line, inline)
+   call next_line(unit, line, inline, ifail=ifail)
+   if(ifail /= 0) return
    read(line, *, iostat=ios) lloc, lpopt, rc(5), dvloc0
    call check_finite(ios, [rc(5), dvloc0])
-   call read_error(ios, inline)
+   call read_error(ios, inline, ifail)
+   if(ifail /= 0) return
 
 ! Vanderbilt-Kleinman-Bylander projectors: l, nproj, debl, and optionally
 ! well_n (0 for the default, at least 0) and ecut_weight (negative for the
@@ -170,7 +183,8 @@
    well_n(:) = 0
    ecut_wt(:) = -1.d0
    do l1 = 1, lmax + 1
-     call next_line(unit, line, inline)
+     call next_line(unit, line, inline, ifail=ifail)
+     if(ifail /= 0) return
      read(line, *, iostat=ios) lt, nproj(l1), debl(l1), well_n(l1), ecut_wt(l1)
      if(ios < 0) then
        ecut_wt(l1) = -1.d0
@@ -182,11 +196,13 @@
      end if
      if(ios == 0 .and. (lt /= l1 - 1 .or. well_n(l1) < 0)) ios = 999
      call check_finite(ios, [debl(l1), ecut_wt(l1)])
-     call read_error(ios, inline)
+     call read_error(ios, inline, ifail)
+     if(ifail /= 0) return
    end do
 
 ! model core charge
-   call next_line(unit, line, inline)
+   call next_line(unit, line, inline, ifail=ifail)
+   if(ifail /= 0) return
 ! icmod=0,1,2,4[default grid] : icmod, fcfact
    read(line, *, iostat=ios) icmod, fcfact
 ! icmod==3 : icmod, fcfact, rcfact
@@ -239,20 +255,24 @@
    end if
    call check_finite(ios, [fcfact, rcfact, slack, fcfact_min, fcfact_max, &
 &    fcfact_step, rcfact_min, rcfact_max, rcfact_step])
-   call read_error(ios, inline)
+   call read_error(ios, inline, ifail)
+   if(ifail /= 0) return
 
 ! log derivative analysis
-   call next_line(unit, line, inline)
+   call next_line(unit, line, inline, ifail=ifail)
+   if(ifail /= 0) return
    read(line, *, iostat=ios) epsh1, epsh2, depsh, rxpsh
    if(ios /= 0) then
      read(line, *, iostat=ios) epsh1, epsh2, depsh
      rxpsh = -1.d0  ! negative value for auto setting of radius
    end if
    call check_finite(ios, [epsh1, epsh2, depsh, rxpsh])
-   call read_error(ios, inline)
+   call read_error(ios, inline, ifail)
+   if(ifail /= 0) return
 
 ! output grid: rlmax, drl, and optionally upf_mesh
-   call next_line(unit, line, inline)
+   call next_line(unit, line, inline, ifail=ifail)
+   if(ifail /= 0) return
    read(line, *, iostat=ios) rlmax, drl, upf_mesh
 ! a line of two values ends before upf_mesh; a bad value is an error
    if(ios < 0) then
@@ -260,33 +280,42 @@
      upf_mesh = 0  ! the UPF file on the linear output grid
    end if
    call check_finite(ios, [rlmax, drl])
-   call read_error(ios, inline)
+   call read_error(ios, inline, ifail)
+   if(ifail /= 0) return
 
 ! test configurations
-   call next_line(unit, line, inline)
+   call next_line(unit, line, inline, ifail=ifail)
+   if(ifail /= 0) return
    read(line, *, iostat=ios) ncnf
    if(ios == 0 .and. ncnf > mxcnf - 1) ios = 999
-   call read_error(ios, inline)
+   call read_error(ios, inline, ifail)
+   if(ifail /= 0) return
 
    do jj = 2, ncnf + 1
-     call next_line(unit, line, inline)
+     call next_line(unit, line, inline, ifail=ifail)
+     if(ifail /= 0) return
      read(line, *, iostat=ios) nvcnf(jj)
      if(ios == 0 .and. (nvcnf(jj) < 0 .or. nc + nvcnf(jj) > mxstate)) ios = 999
-     call read_error(ios, inline)
+     call read_error(ios, inline, ifail)
+     if(ifail /= 0) return
      do ii = nc + 1, nc + nvcnf(jj)
-       call next_line(unit, line, inline)
+       call next_line(unit, line, inline, ifail=ifail)
+       if(ifail /= 0) return
        read(line, *, iostat=ios) nacnf(ii, jj), lacnf(ii, jj), facnf(ii, jj)
        call check_finite(ios, [facnf(ii, jj)])
-       call read_error(ios, inline)
+       call read_error(ios, inline, ifail)
+       if(ifail /= 0) return
      end do
    end do
 
 ! log mesh (optional, the last line): amesh, rr1, rmax
-   call next_line(unit, line, inline, eof)
+   call next_line(unit, line, inline, eof, ifail=ifail)
+   if(ifail /= 0) return
    if(.not. eof) then
      read(line, *, iostat=ios) amesh, rr1, rmax
      call check_finite(ios, [amesh, rr1, rmax])
-     call read_error(ios, inline)
+     call read_error(ios, inline, ifail)
+     if(ifail /= 0) return
    end if
  end associate
  return
@@ -294,7 +323,7 @@
 ! end of reading input data
  end subroutine read_input_text
 
- subroutine next_line(unit, line, inline, eof)
+ subroutine next_line(unit, line, inline, eof, ifail)
 !! reads into line the next line of the input that is neither blank nor a
 !! comment (one whose first nonblank character is #), and sets inline to its
 !! line number. The data are then read from line rather than from unit, so
@@ -306,6 +335,7 @@
 !! @param line  the line read, of any length
 !! @param inline  line number of the last line read, updated on return
 !! @param eof  optional, .true. if the input ended before another data line
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  integer, intent(in) :: unit
@@ -316,11 +346,13 @@
 !Output variables
  character(len=:), allocatable, intent(out) :: line
  logical, intent(out), optional :: eof
+ integer, intent(out) :: ifail
 
 !Local variables
  character(len=256) :: chunk
  integer :: ios, nread, first, inline0
 
+ ifail = 0
  if(present(eof)) eof = .false.
  inline0 = inline
  do
@@ -337,7 +369,10 @@
      inline = inline0
      return
    end if
-   if(.not. is_iostat_eor(ios)) call read_error(ios, inline)
+   if(.not. is_iostat_eor(ios)) then
+     call read_error(ios, inline, ifail)
+     if(ifail /= 0) return
+   end if
    first = verify(line, ' '//achar(9))
    if(first > 0) then
      if(line(first:first) /= '#') exit
@@ -383,22 +418,26 @@
  return
  end function finite
 
- subroutine read_error(ios, inline)
-!! report data read error and stop
+ subroutine read_error(ios, inline, ifail)
+!! report a data read error and fail
 !!
 !! @param ios  iostat of the read, non-zero for an error
 !! @param inline  line number of the input file line being read
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  integer, intent(in) :: ios
 
 !Input/output variables
  integer, intent(inout) :: inline
+ integer, intent(out) :: ifail
 
+ ifail = 0
  if(ios /= 0) then
    write(6, '(a,i4)') 'Read ERROR, input data file line', inline
    write(6, '(a)') 'Program will stop'
-   error stop 1
+   ifail = 1
+   return
  end if
 
  return

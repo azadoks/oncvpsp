@@ -257,17 +257,26 @@ and `fcfact0`).
 
 These rules were added after the list above. Messages that were in the
 4.0.1 release keep their text, because users' scripts and the reference
-outputs may depend on it, but they now stop with `error stop` so that
-failures exit with status 1. New messages follow these rules.
+outputs may depend on it, but failures now exit with status 1. New
+messages follow these rules.
 
-A fatal error is reported like this:
+A routine reports a failure it cannot recover from like this, and returns
+(see [Library and wrappers](library_plan.md), phase 1):
 
 ```fortran
  if(irphs==0) then
    write(6,'(/2a,f12.6,a,f12.6)') 'run_phsft: ERROR rxpsh beyond radial mesh', &
 &        ', rxpsh=',rxpsh,', rr(mmax)=',rr(mmax)
-   error stop 1
+   ifail=1
+   return
  end if
+```
+
+and each caller passes it on:
+
+```fortran
+ call run_phsft(...,ifail)
+ if(ifail/=0) return
 ```
 
 1) Write the message to unit 6, the output file, so it appears next to the
@@ -291,15 +300,20 @@ end one string and start another (`'...', &` / `&  '...'`) rather than
 continuing inside a string, which would copy the indentation into the
 message.
 
-5) Stop with `error stop 1`, not `stop`, so that the exit status is
-non-zero and scripts and CTest see the failure.
+5) Fail with `ifail=1` and `return`, `ifail` being the routine's last
+argument (0 on success). Only the programs, the command line and
+`oncvpsp_main` stop, with `error stop 1`, not `stop`, so that the exit
+status is non-zero and scripts and CTest see the failure. A check of a
+condition the code has just established, or that `check_data` has already
+validated, is a bug if it fails: it stays `error stop 1`.
 
 6) If a called routine reports a failure through `ierr`, the caller that
 decides to stop prints the message. It names the called routine and
 includes `ierr`, e.g. `oncvpsp: ERROR sratom failed, ierr=100`.
 
 7) A routine that already has an `ierr` argument should set `ierr` and
-return, not stop, when its callers can recover from the failure.
+return when its callers can recover from the failure; `ifail` is for the
+failures they cannot. The two are separate arguments.
 
 8) A warning has the same form with `WARNING` in place of `ERROR`, and the
 program continues.

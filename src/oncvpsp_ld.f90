@@ -49,6 +49,7 @@
 !> the angular momenta whose log derivatives are computed
  logical :: chan(0:3)
  type(ps_file_t) :: pf
+ integer :: ifail
 
  ae_filename=''
  ps_filename=''
@@ -93,7 +94,8 @@
  end if
 
  call load_pair('oncvpsp_ld',trim(ae_filename),trim(ps_filename),irel,zz, &
-&               mmax,rr,vfull,pf)
+&               mmax,rr,vfull,pf,ifail=ifail)
+ if(ifail/=0) error stop 1
 
 !the energies, from epsh2 down by depsh, as oncvpsp_main
  if(given_energies) then

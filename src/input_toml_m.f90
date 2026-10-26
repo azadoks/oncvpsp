@@ -11,13 +11,13 @@
  public :: read_input_toml
  contains
 
- subroutine read_input_toml(unit, inp)
+ subroutine read_input_toml(unit, inp, ifail)
 
 !! Reads the TOML input: the same data as read_input_text, with the same
 !! defaults and the same checks against the array sizes (check_data
 !! validates the values afterwards).  Every table and key is required unless
-!! stated otherwise; a missing or mistyped one stops the program with a
-!! message naming it.
+!! stated otherwise; a missing or mistyped one is a failure (ifail=1), with
+!! a message naming it.
 !!
 !! scripts/input_text_to_toml.py converts a text input to this form.  The
 !! tables and their keys are listed below.
@@ -72,6 +72,8 @@
 !Output variables
 !> The input values
  type(input_t), intent(out) :: inp
+!> 0, or 1 after a failure, whose message is written
+ integer, intent(out) :: ifail
 
 !Local variables
 !> The TOML document
@@ -95,6 +97,7 @@
 !> Message of an input error that names a limit
  character(len=80) :: msg
 
+ ifail = 0
  associate(atsym=>inp%atsym, zz=>inp%zz, nc=>inp%nc, nv=>inp%nv, &
 &          iexc=>inp%iexc, psfile=>inp%psfile, na=>inp%na, la=>inp%la, &
 &          fa=>inp%fa, lmax=>inp%lmax, rc=>inp%rc, ep=>inp%ep, ncon=>inp%ncon, &
@@ -139,59 +142,94 @@
 
    call toml_load(table, unit, error=error)
    if(allocated(error)) then
-     call input_error('cannot parse the input: '//error%message)
+     call input_error('cannot parse the input: '//error%message, ifail)
+     if(ifail /= 0) return
    end if
-   if(.not. allocated(table)) call input_error('cannot parse the input')
+   if(.not. allocated(table)) then
+     call input_error('cannot parse the input', ifail)
+     if(ifail /= 0) return
+   end if
 
 ! atom
-   call get_section(table, 'oncvpsp', child)
-   call get_string(child, 'oncvpsp', 'atsym', tmp_str)
+   call get_section(table, 'oncvpsp', child, ifail)
+   if(ifail /= 0) return
+   call get_string(child, 'oncvpsp', 'atsym', tmp_str, ifail=ifail)
+   if(ifail /= 0) return
    if(len_trim(tmp_str) < 1 .or. len_trim(tmp_str) > 2) then
      call input_error('atsym in [oncvpsp] must have 1 or 2 characters, '// &
-&      'got "'//tmp_str//'"')
+&      'got "'//tmp_str//'"', ifail)
+     if(ifail /= 0) return
    end if
    atsym = trim(tmp_str)
-   call get_real(child, 'oncvpsp', 'z', zz)
-   call get_int(child, 'oncvpsp', 'nc', nc)
-   call get_int(child, 'oncvpsp', 'nv', nv)
-   call get_real(child, 'oncvpsp', 'c_light', c_light, -1.0_dp)
-   call get_int(child, 'oncvpsp', 'iexc', iexc)
+   call get_real(child, 'oncvpsp', 'z', zz, ifail=ifail)
+   if(ifail /= 0) return
+   call get_int(child, 'oncvpsp', 'nc', nc, ifail=ifail)
+   if(ifail /= 0) return
+   call get_int(child, 'oncvpsp', 'nv', nv, ifail=ifail)
+   if(ifail /= 0) return
+   call get_real(child, 'oncvpsp', 'c_light', c_light, -1.0_dp, ifail=ifail)
+   if(ifail /= 0) return
+   call get_int(child, 'oncvpsp', 'iexc', iexc, ifail=ifail)
+   if(ifail /= 0) return
 ! counts beyond the array sizes would overrun before check_data runs
    if(nc < 0 .or. nv < 0 .or. nc + nv > mxstate) then
      write(msg, '(a,i0)') 'nc and nv in [oncvpsp] must be >= 0 with '// &
 &      'nc + nv <= ', mxstate
-     call input_error(trim(msg))
+     call input_error(trim(msg), ifail)
+     if(ifail /= 0) return
    end if
 
 ! reference configuration
-   call get_section(table, 'reference_configuration', child)
-   call get_int_array(child, 'reference_configuration', 'n', nc + nv, na)
-   call get_int_array(child, 'reference_configuration', 'l', nc + nv, la)
-   call get_real_array(child, 'reference_configuration', 'f', nc + nv, fa)
+   call get_section(table, 'reference_configuration', child, ifail)
+   if(ifail /= 0) return
+   call get_int_array(child, 'reference_configuration', 'n', nc + nv, na, ifail)
+   if(ifail /= 0) return
+   call get_int_array(child, 'reference_configuration', 'l', nc + nv, la, ifail)
+   if(ifail /= 0) return
+   call get_real_array(child, 'reference_configuration', 'f', nc + nv, fa, &
+&        ifail)
+   if(ifail /= 0) return
 
 ! pseudopotential and optimization
-   call get_section(table, 'pseudopotentials', child)
-   call get_int(child, 'pseudopotentials', 'lmax', lmax)
+   call get_section(table, 'pseudopotentials', child, ifail)
+   if(ifail /= 0) return
+   call get_int(child, 'pseudopotentials', 'lmax', lmax, ifail=ifail)
+   if(ifail /= 0) return
    if(lmax < 0 .or. lmax > mxlin) then
      write(msg, '(a,i0)') 'lmax in [pseudopotentials] must be in 0..', mxlin
-     call input_error(trim(msg))
+     call input_error(trim(msg), ifail)
+     if(ifail /= 0) return
    end if
-   call get_int_array(child, 'pseudopotentials', 'l', lmax + 1, lt)
-   call check_l(lt, lmax, 'pseudopotentials')
-   call get_real_array(child, 'pseudopotentials', 'rc', lmax + 1, rc)
-   call get_real_array(child, 'pseudopotentials', 'ep', lmax + 1, ep(:, 1))
+   call get_int_array(child, 'pseudopotentials', 'l', lmax + 1, lt, ifail)
+   if(ifail /= 0) return
+   call check_l(lt, lmax, 'pseudopotentials', ifail)
+   if(ifail /= 0) return
+   call get_real_array(child, 'pseudopotentials', 'rc', lmax + 1, rc, ifail)
+   if(ifail /= 0) return
+   call get_real_array(child, 'pseudopotentials', 'ep', lmax + 1, ep(:, 1), &
+&        ifail)
+   if(ifail /= 0) return
    ep(:, 2) = ep(:, 1)
-   call get_int_array(child, 'pseudopotentials', 'ncon', lmax + 1, ncon)
-   call get_int_array(child, 'pseudopotentials', 'nbas', lmax + 1, nbas)
-   call get_real_array(child, 'pseudopotentials', 'qcut', lmax + 1, qcut)
+   call get_int_array(child, 'pseudopotentials', 'ncon', lmax + 1, ncon, ifail)
+   if(ifail /= 0) return
+   call get_int_array(child, 'pseudopotentials', 'nbas', lmax + 1, nbas, ifail)
+   if(ifail /= 0) return
+   call get_real_array(child, 'pseudopotentials', 'qcut', lmax + 1, qcut, ifail)
+   if(ifail /= 0) return
    call get_logical(child, 'pseudopotentials', 'ep_as_given', ep_as_given, &
-&                    .false.)
+&                    .false., ifail=ifail)
+   if(ifail /= 0) return
    call get_real(child, 'pseudopotentials', 'well_onset', well_onset, &
-&                well_onset_default)
+&                well_onset_default, ifail=ifail)
+   if(ifail /= 0) return
    if(.not. (well_onset >= 1.0_dp)) then
-     call input_error('well_onset in [pseudopotentials] must be at least 1')
+     call input_error('well_onset in [pseudopotentials] must be at least 1', &
+&          ifail)
+     if(ifail /= 0) return
    end if
-   call get_string(child, 'pseudopotentials', 'well_tail', tmp_str, 'well')
+   call get_string(child, 'pseudopotentials', 'well_tail', tmp_str, 'well', &
+&        ifail=ifail)
+   if(ifail /= 0) return
    select case(tmp_str)
    case('well')
      well_tail = 0
@@ -201,16 +239,21 @@
      well_tail = 2
    case default
      call input_error('well_tail in [pseudopotentials] must be "well", '// &
-&      '"free" or "confined", got "'//tmp_str//'"')
+&      '"free" or "confined", got "'//tmp_str//'"', ifail)
+     if(ifail /= 0) return
    end select
 
    call get_real(child, 'pseudopotentials', 'wave_regularization', wreg, &
-&                0.0_dp)
+&                0.0_dp, ifail=ifail)
+   if(ifail /= 0) return
    if(.not. (wreg >= 0.0_dp)) then
      call input_error('wave_regularization in [pseudopotentials] must be '// &
-&      'at least 0')
+&      'at least 0', ifail)
+     if(ifail /= 0) return
    end if
-   call get_string(child, 'pseudopotentials', 'well_norm', tmp_str, '-')
+   call get_string(child, 'pseudopotentials', 'well_norm', tmp_str, '-', &
+&        ifail=ifail)
+   if(ifail /= 0) return
    select case(tmp_str)
    case('-')
      well_norm = 0
@@ -220,68 +263,103 @@
      well_norm = 2
    case default
      call input_error('well_norm in [pseudopotentials] must be "space" or '// &
-&      '"rc", got "'//tmp_str//'"')
+&      '"rc", got "'//tmp_str//'"', ifail)
+     if(ifail /= 0) return
    end select
 
 ! local potential
-   call get_section(table, 'local_potential', child)
-   call get_int(child, 'local_potential', 'lloc', lloc)
-   call get_int(child, 'local_potential', 'lpopt', lpopt)
-   call get_real(child, 'local_potential', 'rcloc', rc(5))
-   call get_real(child, 'local_potential', 'dvloc0', dvloc0)
+   call get_section(table, 'local_potential', child, ifail)
+   if(ifail /= 0) return
+   call get_int(child, 'local_potential', 'lloc', lloc, ifail=ifail)
+   if(ifail /= 0) return
+   call get_int(child, 'local_potential', 'lpopt', lpopt, ifail=ifail)
+   if(ifail /= 0) return
+   call get_real(child, 'local_potential', 'rcloc', rc(5), ifail=ifail)
+   if(ifail /= 0) return
+   call get_real(child, 'local_potential', 'dvloc0', dvloc0, ifail=ifail)
+   if(ifail /= 0) return
 
 ! Vanderbilt-Kleinman-Bylander projectors
-   call get_section(table, 'vkb_projectors', child)
-   call get_int_array(child, 'vkb_projectors', 'l', lmax + 1, lt)
-   call check_l(lt, lmax, 'vkb_projectors')
-   call get_int_array(child, 'vkb_projectors', 'nproj', lmax + 1, nproj)
-   call get_real_array(child, 'vkb_projectors', 'debl', lmax + 1, debl)
+   call get_section(table, 'vkb_projectors', child, ifail)
+   if(ifail /= 0) return
+   call get_int_array(child, 'vkb_projectors', 'l', lmax + 1, lt, ifail)
+   if(ifail /= 0) return
+   call check_l(lt, lmax, 'vkb_projectors', ifail)
+   if(ifail /= 0) return
+   call get_int_array(child, 'vkb_projectors', 'nproj', lmax + 1, nproj, ifail)
+   if(ifail /= 0) return
+   call get_real_array(child, 'vkb_projectors', 'debl', lmax + 1, debl, ifail)
+   if(ifail /= 0) return
    well_n(:) = 0
    if(child%has_key('well_n')) then
-     call get_int_array(child, 'vkb_projectors', 'well_n', lmax + 1, well_n)
+     call get_int_array(child, 'vkb_projectors', 'well_n', lmax + 1, well_n, &
+&          ifail)
+     if(ifail /= 0) return
      if(any(well_n(1:lmax + 1) < 0)) then
-       call input_error('well_n in [vkb_projectors] must be at least 0')
+       call input_error('well_n in [vkb_projectors] must be at least 0', ifail)
+       if(ifail /= 0) return
      end if
    end if
    ecut_wt(:) = -1.0_dp
    if(child%has_key('ecut_weight')) then
      call get_real_array(child, 'vkb_projectors', 'ecut_weight', lmax + 1, &
-&                        ecut_wt)
+&                        ecut_wt, ifail)
+     if(ifail /= 0) return
    end if
 
 ! model core charge; check_data validates icmod and the values
-   call get_section(table, 'model_core_charge', child)
-   call get_int(child, 'model_core_charge', 'icmod', icmod)
+   call get_section(table, 'model_core_charge', child, ifail)
+   if(ifail /= 0) return
+   call get_int(child, 'model_core_charge', 'icmod', icmod, ifail=ifail)
+   if(ifail /= 0) return
    select case(icmod)
    case(1, 2, 6, 7)
-     call get_real(child, 'model_core_charge', 'fcfact', fcfact)
+     call get_real(child, 'model_core_charge', 'fcfact', fcfact, ifail=ifail)
+     if(ifail /= 0) return
    case(3)
-     call get_real(child, 'model_core_charge', 'fcfact', fcfact)
-     call get_real(child, 'model_core_charge', 'rcfact', rcfact)
+     call get_real(child, 'model_core_charge', 'fcfact', fcfact, ifail=ifail)
+     if(ifail /= 0) return
+     call get_real(child, 'model_core_charge', 'rcfact', rcfact, ifail=ifail)
+     if(ifail /= 0) return
    case default
-     call get_real(child, 'model_core_charge', 'fcfact', fcfact, 0.0_dp)
+     call get_real(child, 'model_core_charge', 'fcfact', fcfact, 0.0_dp, &
+&          ifail=ifail)
+     if(ifail /= 0) return
    end select
    select case(icmod)
    case(4, 5)
 ! fcfact and rcfact are ignored; the grid of the Teter parameters
-     call get_real(child, 'model_core_charge', 'rcfact', rcfact, 0.0_dp)
+     call get_real(child, 'model_core_charge', 'rcfact', rcfact, 0.0_dp, &
+&          ifail=ifail)
+     if(ifail /= 0) return
      call get_real(child, 'model_core_charge', 'fcfact_min', fcfact_min, &
-&      fcfact_min)
+&      fcfact_min, ifail=ifail)
+     if(ifail /= 0) return
      call get_real(child, 'model_core_charge', 'fcfact_max', fcfact_max, &
-&      fcfact_max)
+&      fcfact_max, ifail=ifail)
+     if(ifail /= 0) return
      call get_real(child, 'model_core_charge', 'fcfact_step', fcfact_step, &
-&      fcfact_step)
+&      fcfact_step, ifail=ifail)
+     if(ifail /= 0) return
      call get_real(child, 'model_core_charge', 'rcfact_min', rcfact_min, &
-&      rcfact_min)
+&      rcfact_min, ifail=ifail)
+     if(ifail /= 0) return
      call get_real(child, 'model_core_charge', 'rcfact_max', rcfact_max, &
-&      rcfact_max)
+&      rcfact_max, ifail=ifail)
+     if(ifail /= 0) return
      call get_real(child, 'model_core_charge', 'rcfact_step', rcfact_step, &
-&      rcfact_step)
+&      rcfact_step, ifail=ifail)
+     if(ifail /= 0) return
    case(6, 7)
-     call get_real(child, 'model_core_charge', 'rcfact', rcfact, 1.0e-5_dp)
-     call get_real(child, 'model_core_charge', 'slack', slack, 1.0_dp)
+     call get_real(child, 'model_core_charge', 'rcfact', rcfact, 1.0e-5_dp, &
+&          ifail=ifail)
+     if(ifail /= 0) return
+     call get_real(child, 'model_core_charge', 'slack', slack, 1.0_dp, &
+&          ifail=ifail)
+     if(ifail /= 0) return
      call get_string(child, 'model_core_charge', 'budget_cutoff', tmp_str, &
-&      'max')
+&      'max', ifail=ifail)
+     if(ifail /= 0) return
      select case(tmp_str)
      case('max')
        budget_cut = 0
@@ -291,43 +369,61 @@
        budget_cut = 2
      case default
        call input_error('budget_cutoff in [model_core_charge] must be '// &
-&        '"max", "weighted" or "max_all", got "'//tmp_str//'"')
+&        '"max", "weighted" or "max_all", got "'//tmp_str//'"', ifail)
+       if(ifail /= 0) return
      end select
    case default
 ! no further keys
    end select
 
 ! log derivative analysis
-   call get_section(table, 'log_derivative_analysis', child)
-   call get_real(child, 'log_derivative_analysis', 'epsh1', epsh1)
-   call get_real(child, 'log_derivative_analysis', 'epsh2', epsh2)
-   call get_real(child, 'log_derivative_analysis', 'depsh', depsh)
-   call get_real(child, 'log_derivative_analysis', 'rxpsh', rxpsh, -1.0_dp)
+   call get_section(table, 'log_derivative_analysis', child, ifail)
+   if(ifail /= 0) return
+   call get_real(child, 'log_derivative_analysis', 'epsh1', epsh1, ifail=ifail)
+   if(ifail /= 0) return
+   call get_real(child, 'log_derivative_analysis', 'epsh2', epsh2, ifail=ifail)
+   if(ifail /= 0) return
+   call get_real(child, 'log_derivative_analysis', 'depsh', depsh, ifail=ifail)
+   if(ifail /= 0) return
+   call get_real(child, 'log_derivative_analysis', 'rxpsh', rxpsh, -1.0_dp, &
+&        ifail=ifail)
+   if(ifail /= 0) return
 
 ! output grid
-   call get_section(table, 'linear_mesh', child)
-   call get_real(child, 'linear_mesh', 'a', drl)
-   call get_real(child, 'linear_mesh', 'rmax', rlmax)
+   call get_section(table, 'linear_mesh', child, ifail)
+   if(ifail /= 0) return
+   call get_real(child, 'linear_mesh', 'a', drl, ifail=ifail)
+   if(ifail /= 0) return
+   call get_real(child, 'linear_mesh', 'rmax', rlmax, ifail=ifail)
+   if(ifail /= 0) return
 
 ! log mesh (optional)
    call get_value(table, 'log_mesh', child, requested=.false., stat=stat)
    if(associated(child)) then
-     call get_real(child, 'log_mesh', 'amesh', amesh, -1.0_dp)
-     call get_real(child, 'log_mesh', 'rr1', rr1, -1.0_dp)
-     call get_real(child, 'log_mesh', 'rmax', rmax, -1.0_dp)
+     call get_real(child, 'log_mesh', 'amesh', amesh, -1.0_dp, ifail=ifail)
+     if(ifail /= 0) return
+     call get_real(child, 'log_mesh', 'rr1', rr1, -1.0_dp, ifail=ifail)
+     if(ifail /= 0) return
+     call get_real(child, 'log_mesh', 'rmax', rmax, -1.0_dp, ifail=ifail)
+     if(ifail /= 0) return
    else if(stat /= toml_stat%success) then
-     call input_error('[log_mesh] must be a table')
+     call input_error('[log_mesh] must be a table', ifail)
+     if(ifail /= 0) return
    end if
 
 ! pseudopotential output file
-   call get_section(table, 'pp_output', child)
-   call get_string(child, 'pp_output', 'psfile', tmp_str)
+   call get_section(table, 'pp_output', child, ifail)
+   if(ifail /= 0) return
+   call get_string(child, 'pp_output', 'psfile', tmp_str, ifail=ifail)
+   if(ifail /= 0) return
    if(len_trim(tmp_str) < 1 .or. len_trim(tmp_str) > 4) then
      call input_error('psfile in [pp_output] must have 1 to 4 characters, '// &
-&      'got "'//tmp_str//'"')
+&      'got "'//tmp_str//'"', ifail)
+     if(ifail /= 0) return
    end if
    psfile = trim(tmp_str)
-   call get_int(child, 'pp_output', 'upf_mesh', upf_mesh, 0)
+   call get_int(child, 'pp_output', 'upf_mesh', upf_mesh, 0, ifail=ifail)
+   if(ifail /= 0) return
 
 ! test configurations (optional): the valence states, after the
 ! reference core states the driver copies in
@@ -335,67 +431,78 @@
 &    stat=stat)
    if(stat /= toml_stat%success) then
      call input_error('test_configurations must be an array of tables, '// &
-&      '[[test_configurations]]')
+&      '[[test_configurations]]', ifail)
+     if(ifail /= 0) return
    end if
    if(associated(arr)) then
      ncnf = len(arr)
      if(ncnf > mxcnf - 1) then
        write(msg, '(a,i0,a)') 'at most ', mxcnf - 1, &
 &        ' [[test_configurations]] are allowed'
-       call input_error(trim(msg))
+       call input_error(trim(msg), ifail)
+       if(ifail /= 0) return
      end if
      do jj = 2, ncnf + 1
        call get_value(arr, jj - 1, child, stat=stat)
        if(.not. associated(child)) then
          call input_error('test_configurations must be an array of '// &
-&                         'tables, [[test_configurations]]')
+&                         'tables, [[test_configurations]]', ifail)
+         if(ifail /= 0) return
        end if
 ! the number of valence states is that of n
        call get_value(child, 'n', narr, requested=.false., stat=stat)
        if(.not. associated(narr)) then
-         call key_error('test_configurations', 'n', stat, 'an array')
+         call key_error('test_configurations', 'n', stat, 'an array', ifail)
+         if(ifail /= 0) return
        end if
        nvcnf(jj) = len(narr)
        if(nc + nvcnf(jj) > mxstate) then
          write(msg, '(a,i0)') 'nc plus the states of a '// &
 &          '[[test_configurations]] must be <= ', mxstate
-         call input_error(trim(msg))
+         call input_error(trim(msg), ifail)
+         if(ifail /= 0) return
        end if
        call get_int_array(child, 'test_configurations', 'n', nvcnf(jj), &
-&        nacnf(nc + 1:, jj))
+&        nacnf(nc + 1:, jj), ifail)
+       if(ifail /= 0) return
        call get_int_array(child, 'test_configurations', 'l', nvcnf(jj), &
-&        lacnf(nc + 1:, jj))
+&        lacnf(nc + 1:, jj), ifail)
+       if(ifail /= 0) return
        call get_real_array(child, 'test_configurations', 'f', nvcnf(jj), &
-&        facnf(nc + 1:, jj))
+&        facnf(nc + 1:, jj), ifail)
+       if(ifail /= 0) return
      end do
    end if
  end associate
  return
  end subroutine read_input_toml
 
- subroutine input_error(message)
+ subroutine input_error(message, ifail)
 
-!! report an input error in the output (unit 6) and on stderr, and stop
+!! report an input error in the output (unit 6) and on stderr, and fail
 !!
 !! @param message  description of the error
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  character(len=*), intent(in) :: message
+ integer, intent(out) :: ifail
 
  write(6,'(a)') 'TOML input ERROR: '//message
  write(6,'(a)') 'Program will stop'
  write(stderr,'(a)') 'Error: '//message
- error stop 1
+ ifail = 1
+ return
  end subroutine input_error
 
- subroutine get_section(table, name, child)
+ subroutine get_section(table, name, child, ifail)
 
 !! the table [name] of the document
 !!
 !! @param table  the TOML document
 !! @param name  name of the table
-!! @param child  the table [name]; the program stops if it is missing or not a
-!!               table
+!! @param child  the table [name]; a failure if it is missing or not a table
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  character(len=*), intent(in) :: name
@@ -405,20 +512,26 @@
 
 !Output variables
  type(toml_table), pointer, intent(out) :: child
+ integer, intent(out) :: ifail
 
 !Local variables
  integer :: stat
 
+ ifail = 0
 ! a missing key leaves child null with success, a mistyped one with an error
  call get_value(table, name, child, requested=.false., stat=stat)
  if(.not. associated(child)) then
-   if(stat == toml_stat%success) call input_error('missing table ['//name//']')
-   call input_error('['//name//'] must be a table')
+   if(stat == toml_stat%success) then
+     call input_error('missing table ['//name//']', ifail)
+     if(ifail /= 0) return
+   end if
+   call input_error('['//name//'] must be a table', ifail)
+   if(ifail /= 0) return
  end if
  return
  end subroutine get_section
 
- subroutine key_error(section, key, stat, what)
+ subroutine key_error(section, key, stat, what, ifail)
 
 !! report a key that a lookup did not return: missing for missing_key, or
 !! for success from a lookup with requested=.false., else mistyped
@@ -427,20 +540,25 @@
 !! @param key  name of the key
 !! @param stat  status of the lookup
 !! @param what  the expected type, for the message (e.g. 'an integer')
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  character(len=*), intent(in) :: section, key, what
  integer, intent(in) :: stat
+ integer, intent(out) :: ifail
 
+ ifail = 0
  if(stat == toml_stat%missing_key .or. stat == toml_stat%success) then
-   call input_error('missing key '//key//' in ['//section//']')
+   call input_error('missing key '//key//' in ['//section//']', ifail)
+   if(ifail /= 0) return
  else
-   call input_error(key//' in ['//section//'] must be '//what)
+   call input_error(key//' in ['//section//'] must be '//what, ifail)
+   if(ifail /= 0) return
  end if
  return
  end subroutine key_error
 
- subroutine get_logical(table, section, key, val, default)
+ subroutine get_logical(table, section, key, val, default, ifail)
 
 !! a logical key, required unless default is given
 !!
@@ -450,6 +568,7 @@
 !! @param val  the value of the key, or default if the key is missing
 !! @param default  optional, the value for a missing key, which is then not
 !!                 required
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  character(len=*), intent(in) :: section, key
@@ -460,11 +579,13 @@
 
 !Output variables
  logical, intent(out) :: val
+ integer, intent(out) :: ifail
 
 !Local variables
  type(toml_keyval), pointer :: ptr
  integer :: stat
 
+ ifail = 0
  if(present(default)) then
    call get_value(table, key, ptr, requested=.false., stat=stat)
    if(.not. associated(ptr) .and. stat == toml_stat%success) then
@@ -474,12 +595,13 @@
  end if
  call get_value(table, key, val, stat=stat)
  if(stat /= toml_stat%success) then
-   call key_error(section, key, stat, 'a logical')
+   call key_error(section, key, stat, 'a logical', ifail)
+   if(ifail /= 0) return
  end if
  return
  end subroutine get_logical
 
- subroutine get_int(table, section, key, val, default)
+ subroutine get_int(table, section, key, val, default, ifail)
 
 !! an integer key, required unless default is given
 !!
@@ -489,6 +611,7 @@
 !! @param val  the value of the key, or default if the key is missing
 !! @param default  optional, the value for a missing key, which is then not
 !!                 required
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  character(len=*), intent(in) :: section, key
@@ -499,11 +622,13 @@
 
 !Output variables
  integer, intent(out) :: val
+ integer, intent(out) :: ifail
 
 !Local variables
  type(toml_keyval), pointer :: ptr
  integer :: stat
 
+ ifail = 0
  if(present(default)) then
    call get_value(table, key, ptr, requested=.false., stat=stat)
    if(.not. associated(ptr) .and. stat == toml_stat%success) then
@@ -513,12 +638,13 @@
  end if
  call get_value(table, key, val, stat=stat)
  if(stat /= toml_stat%success) then
-   call key_error(section, key, stat, 'an integer')
+   call key_error(section, key, stat, 'an integer', ifail)
+   if(ifail /= 0) return
  end if
  return
  end subroutine get_int
 
- subroutine get_real(table, section, key, val, default)
+ subroutine get_real(table, section, key, val, default, ifail)
 
 !! a real key (an integer is converted), required unless default is given;
 !! nan and inf are errors
@@ -529,6 +655,7 @@
 !! @param val  the value of the key, or default if the key is missing
 !! @param default  optional, the value for a missing key, which is then not
 !!                 required
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  character(len=*), intent(in) :: section, key
@@ -538,27 +665,36 @@
  type(toml_table), intent(inout) :: table
  real(dp), intent(inout) :: val
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
  type(toml_keyval), pointer :: ptr
  integer :: stat
 
+ ifail = 0
  call get_value(table, key, ptr, requested=.false., stat=stat)
  if(.not. associated(ptr)) then
    if(present(default) .and. stat == toml_stat%success) then
      val = default
      return
    end if
-   call key_error(section, key, stat, 'a number')
+   call key_error(section, key, stat, 'a number', ifail)
+   if(ifail /= 0) return
  end if
  call get_value(ptr, val, stat=stat)
- if(stat /= toml_stat%success) call key_error(section, key, stat, 'a number')
+ if(stat /= toml_stat%success) then
+   call key_error(section, key, stat, 'a number', ifail)
+   if(ifail /= 0) return
+ end if
  if(.not. finite(val)) then
-   call input_error(key//' in ['//section//'] must be finite')
+   call input_error(key//' in ['//section//'] must be finite', ifail)
+   if(ifail /= 0) return
  end if
  return
  end subroutine get_real
 
- subroutine get_string(table, section, key, val, default)
+ subroutine get_string(table, section, key, val, default, ifail)
 
 !! a string key, required unless default is given
 !!
@@ -568,6 +704,7 @@
 !! @param val  the value of the key, or default if the key is missing
 !! @param default  optional, the value for a missing key, which is then not
 !!                 required
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  character(len=*), intent(in) :: section, key
@@ -578,11 +715,13 @@
 
 !Output variables
  character(len=:), allocatable, intent(out) :: val
+ integer, intent(out) :: ifail
 
 !Local variables
  type(toml_keyval), pointer :: ptr
  integer :: stat
 
+ ifail = 0
  if(present(default)) then
    call get_value(table, key, ptr, requested=.false., stat=stat)
    if(.not. associated(ptr) .and. stat == toml_stat%success) then
@@ -592,12 +731,13 @@
  end if
  call get_value(table, key, val, stat=stat)
  if(stat /= toml_stat%success .or. .not. allocated(val)) then
-   call key_error(section, key, stat, 'a string')
+   call key_error(section, key, stat, 'a string', ifail)
+   if(ifail /= 0) return
  end if
  return
  end subroutine get_string
 
- subroutine get_array(table, section, key, nn, arr)
+ subroutine get_array(table, section, key, nn, arr, ifail)
 
 !! the array key of a table, required, with nn elements
 !!
@@ -606,6 +746,7 @@
 !! @param key  name of the key
 !! @param nn  required number of elements
 !! @param arr  the array of the key
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  character(len=*), intent(in) :: section, key
@@ -616,22 +757,28 @@
 
 !Output variables
  type(toml_array), pointer, intent(out) :: arr
+ integer, intent(out) :: ifail
 
 !Local variables
  integer :: stat
  character(len=24) :: counts
 
+ ifail = 0
  call get_value(table, key, arr, requested=.false., stat=stat)
- if(.not. associated(arr)) call key_error(section, key, stat, 'an array')
+ if(.not. associated(arr)) then
+   call key_error(section, key, stat, 'an array', ifail)
+   if(ifail /= 0) return
+ end if
  if(len(arr) /= nn) then
    write(counts, '(i0,a,i0)') len(arr), ' instead of ', nn
    call input_error(key//' in ['//section//'] has '//trim(counts)// &
-&    ' elements')
+&    ' elements', ifail)
+   if(ifail /= 0) return
  end if
  return
  end subroutine get_array
 
- subroutine get_int_array(table, section, key, nn, vals)
+ subroutine get_int_array(table, section, key, nn, vals, ifail)
 
 !! an integer array key, required, with nn elements
 !!
@@ -640,6 +787,7 @@
 !! @param key  name of the key
 !! @param nn  required number of elements
 !! @param vals  the values, in vals(1:nn); the rest is unchanged
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  character(len=*), intent(in) :: section, key
@@ -649,21 +797,27 @@
  type(toml_table), intent(inout) :: table
  integer, intent(inout) :: vals(:)
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
  type(toml_array), pointer :: arr
  integer :: ii, stat
 
- call get_array(table, section, key, nn, arr)
+ ifail = 0
+ call get_array(table, section, key, nn, arr, ifail)
+ if(ifail /= 0) return
  do ii = 1, nn
    call get_value(arr, ii, vals(ii), stat=stat)
    if(stat /= toml_stat%success) then
-     call input_error(key//' in ['//section//'] must hold integers')
+     call input_error(key//' in ['//section//'] must hold integers', ifail)
+     if(ifail /= 0) return
    end if
  end do
  return
  end subroutine get_int_array
 
- subroutine get_real_array(table, section, key, nn, vals)
+ subroutine get_real_array(table, section, key, nn, vals, ifail)
 
 !! a real array key (integers are converted), required, with nn elements;
 !! nan and inf are errors
@@ -673,6 +827,7 @@
 !! @param key  name of the key
 !! @param nn  required number of elements
 !! @param vals  the values, in vals(1:nn); the rest is unchanged
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  character(len=*), intent(in) :: section, key
@@ -682,41 +837,56 @@
  type(toml_table), intent(inout) :: table
  real(dp), intent(inout) :: vals(:)
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
  type(toml_array), pointer :: arr
  integer :: ii, stat
 
- call get_array(table, section, key, nn, arr)
+ ifail = 0
+ call get_array(table, section, key, nn, arr, ifail)
+ if(ifail /= 0) return
  do ii = 1, nn
    call get_value(arr, ii, vals(ii), stat=stat)
    if(stat /= toml_stat%success) then
-     call input_error(key//' in ['//section//'] must hold numbers')
+     call input_error(key//' in ['//section//'] must hold numbers', ifail)
+     if(ifail /= 0) return
    end if
    if(.not. finite(vals(ii))) then
-     call input_error(key//' in ['//section//'] must hold finite numbers')
+     call input_error(key//' in ['//section//'] must hold finite numbers', &
+&      ifail)
+     if(ifail /= 0) return
    end if
  end do
  return
  end subroutine get_real_array
 
- subroutine check_l(lt, lmax, section)
+ subroutine check_l(lt, lmax, section, ifail)
 
 !! the angular momenta of the rows of a section must be 0..lmax in order
 !!
 !! @param lt  the angular momenta of the rows
 !! @param lmax  maximum angular momentum
 !! @param section  name of the table, for messages
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  integer, intent(in) :: lt(:), lmax
  character(len=*), intent(in) :: section
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
  integer :: l1
 
+ ifail = 0
  do l1 = 1, lmax + 1
    if(lt(l1) /= l1 - 1) then
-     call input_error('l in ['//section//'] must be 0, 1, ..., lmax in order')
+     call input_error('l in ['//section//'] must be 0, 1, ..., lmax in order', &
+&          ifail)
+     if(ifail /= 0) return
    end if
  end do
  return

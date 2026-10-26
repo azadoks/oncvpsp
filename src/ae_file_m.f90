@@ -58,7 +58,8 @@
  subroutine write_ae_file(fname,irel,nkap,atsym,zz,nc,nv,iexc,na,la,fa, &
 &                         mmax,rr,it,etot,eterm,res,ea,rhoc,rho,vfull, &
 &                         ncnf,nvcnf,nacnf,lacnf,facnf,istcnf,ierrcnf,itcnf, &
-&                         kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
+&                         kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf, &
+&                         ifail)
 
 !! writes the all-electron data file: the aeatom results for the reference
 !! atom and the run_config_ae results for all configurations
@@ -91,6 +92,7 @@
 !! @param lacnf  angular momenta, all configurations
 !! @param facnf  occupancies, all configurations
 !! @param istcnf..etstcnf  run_config_ae results, all configurations
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  character(len=*), intent(in) :: fname
@@ -109,11 +111,16 @@
  real(dp), intent(in) :: eatcnf(mxstate,nkap,nlev,mxcnf)
  real(dp), intent(in) :: etstcnf(mxcnf)
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
  integer :: unit,jj
 
+ ifail=0
  call write_head(fname,unit,irel,atsym,zz,nc,nv,iexc,na,la,fa, &
-&                mmax,rr)
+&                mmax,rr,ifail)
+ if(ifail/=0) return
  write(unit) it,etot,eterm,res,ea(1:nc+nv,1:nkap)
  write(unit) rhoc(1:mmax),rho(1:mmax),vfull(1:mmax)
  write(unit) ncnf+1
@@ -132,7 +139,8 @@
 &                        mmax,rr,ncnf,nvcnf,nacnf,lacnf,facnf, &
 &                        it,etot,eterm,res,ea,rhoc,rho,vfull, &
 &                        istcnf,ierrcnf,itcnf, &
-&                        kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
+&                        kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf, &
+&                        ifail)
 
 !! reads the all-electron data file: the reference atom and the
 !! run_config_ae results for each configuration of this run, found in the
@@ -170,6 +178,7 @@
 !! @param rho  all-electron valence charge density
 !! @param vfull  all-electron potential
 !! @param istcnf..etstcnf  run_config_ae results, all configurations
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  character(len=*), intent(in) :: fname
@@ -192,6 +201,7 @@
  real(dp), intent(out) :: fatcnf(mxstate,nlev,mxcnf)
  real(dp), intent(out) :: eatcnf(mxstate,nkap,nlev,mxcnf)
  real(dp), intent(out) :: etstcnf(mxcnf)
+ integer, intent(out) :: ifail
 
 !Local variables
  integer :: unit,jj,kk,ncfg
@@ -199,8 +209,10 @@
  real(dp) :: eaetst,fat(mxstate,nlev),eat(mxstate,nkap,nlev)
  logical :: found(5),match(5)
 
+ ifail=0
  call read_head(fname,unit,irel,atsym,zz,nc,nv,iexc,na,la,fa, &
-&               mmax,rr)
+&               mmax,rr,ifail)
+ if(ifail/=0) return
  read(unit) it,etot,eterm,res,ea(1:nc+nv,1:nkap)
  read(unit) rhoc(1:mmax),rho(1:mmax),vfull(1:mmax)
 
@@ -226,14 +238,18 @@
      found(jj)=.true.
    end do
  end do
- call check_found(ncnf,found)
+ call check_found(ncnf,found,ifail)
+ if(ifail/=0) then
+   close(unit)
+   return
+ end if
 
  close(unit)
  return
  end subroutine read_ae_file
 
  subroutine write_head(fname,unit,irel,atsym,zz,nc,nv,iexc,na,la,fa, &
-&                      mmax,rr)
+&                      mmax,rr,ifail)
 !! opens fname and writes everything before the reference atom results
 !!
 !! @param fname  file name
@@ -249,6 +265,7 @@
 !! @param fa  occupancies, reference configuration
 !! @param mmax  size of log grid
 !! @param rr  log radial mesh
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  character(len=*), intent(in) :: fname
@@ -261,15 +278,18 @@
 
 !Output variables
  integer, intent(out) :: unit
+ integer, intent(out) :: ifail
 
 !Local variables
  integer :: ios
 
+ ifail=0
  open(newunit=unit,file=fname,access='stream',form='unformatted', &
 &     status='replace',action='write',iostat=ios)
  if(ios/=0) then
    write(6,'(2a)') 'write_ae_file: ERROR cannot open ',trim(fname)
-   error stop 1
+   ifail=1
+   return
  end if
 
  write(unit) magic,version,irel
@@ -281,8 +301,8 @@
  end subroutine write_head
 
  subroutine read_head(fname,unit,irel,atsym,zz,nc,nv,iexc,na,la,fa, &
-&                     mmax,rr)
-!! opens fname, checks it against this run's input and reads rr; stops if
+&                     mmax,rr,ifail)
+!! opens fname, checks it against this run's input and reads rr; fails if
 !! the file was written for a different atom, relativistic treatment or
 !! speed of light
 !!
@@ -299,6 +319,7 @@
 !! @param fa  occupancies, reference configuration
 !! @param mmax  size of log grid
 !! @param rr  log radial mesh
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  character(len=*), intent(in) :: fname
@@ -311,6 +332,7 @@
 
 !Output variables
  integer, intent(out) :: unit
+ integer, intent(out) :: ifail
 
 !Local variables
  character(len=2) :: atsym_f
@@ -319,11 +341,15 @@
  real(dp) :: zz_f,fa_f(mxstate),c_light_f
  real(dp), allocatable :: rr_f(:)
 
- call open_ae(fname,unit,irel_f)
+ ifail=0
+ call open_ae(fname,unit,irel_f,ifail)
+ if(ifail/=0) return
  if(irel_f/=irel) then
    write(6,'(2a)') 'read_ae_file: ERROR file was written with a different', &
 &        ' relativistic treatment'
-   error stop 1
+   ifail=1
+   close(unit)
+   return
  end if
 
  read(unit) atsym_f,zz_f,nc_f,nv_f,iexc_f
@@ -331,39 +357,49 @@
 &   .or. iexc_f/=iexc) then
    write(6,'(2a)') 'read_ae_file: ERROR atsym, z, nc, nv or iexc differ', &
 &        ' from the input'
-   error stop 1
+   ifail=1
+   close(unit)
+   return
  end if
  read(unit) na_f(1:nc+nv),la_f(1:nc+nv),fa_f(1:nc+nv)
  if(any(na_f(1:nc+nv)/=na(1:nc+nv)) .or. any(la_f(1:nc+nv)/=la(1:nc+nv)) &
 &   .or. any(differ(fa_f(1:nc+nv),fa(1:nc+nv)))) then
    write(6,'(2a)') 'read_ae_file: ERROR reference configuration differs', &
 &        ' from the input'
-   error stop 1
+   ifail=1
+   close(unit)
+   return
  end if
 
  read(unit) mmax_f
  if(mmax_f/=mmax) then
    write(6,'(a,2i8)') 'read_ae_file: ERROR radial mesh size differs', &
 &        mmax_f,mmax
-   error stop 1
+   ifail=1
+   close(unit)
+   return
  end if
  allocate(rr_f(mmax))
  read(unit) rr_f(1:mmax)
  if(any(abs(rr_f(1:mmax)-rr(1:mmax))>rtol*rr(1:mmax))) then
    write(6,'(2a)') 'read_ae_file: ERROR radial mesh differs from the', &
 &        ' one this program builds'
-   error stop 1
+   ifail=1
+   close(unit)
+   return
  end if
  read(unit) c_light_f
  if(differ(c_light_f,c_light)) then
    write(6,'(2a)') 'read_ae_file: ERROR c_light differs from the input'
-   error stop 1
+   ifail=1
+   close(unit)
+   return
  end if
  return
  end subroutine read_head
 
  subroutine read_ae_potential(fname,irel,atsym,zz,mmax,rr,c_light_f,vfull, &
-&                             nc,nv,iexc,na,la,fa,ea,etot)
+&                             nc,nv,iexc,na,la,fa,ea,etot,ifail)
 
 !! reads the atom, the mesh and the all-electron potential of the
 !! reference atom from the all-electron data file, without an input to
@@ -386,6 +422,7 @@
 !! @param fa  occupancies
 !! @param ea  eigenvalues, ea(:,2) those of j=l-1/2 if irel=2
 !! @param etot  total energy (Ha)
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  character(len=*), intent(in) :: fname
@@ -397,6 +434,7 @@
  real(dp), allocatable, intent(out) :: rr(:),vfull(:)
  integer, intent(out), optional :: nc,nv,iexc,na(mxstate),la(mxstate)
  real(dp), intent(out), optional :: fa(mxstate),ea(mxstate,2),etot
+ integer, intent(out) :: ifail
 
 !Local variables
  integer :: unit,nc_f,nv_f,iexc_f,nt,nkap,it
@@ -404,7 +442,9 @@
  real(dp) :: fa_f(mxstate),etot_f,eterm(4),res,ea_f(mxstate,2)
  real(dp), allocatable :: rhoc(:),rho(:)
 
- call open_ae(fname,unit,irel)
+ ifail=0
+ call open_ae(fname,unit,irel,ifail)
+ if(ifail/=0) return
  read(unit) atsym,zz,nc_f,nv_f,iexc_f
  nt=nc_f+nv_f
  na_f(:)=0
@@ -433,48 +473,58 @@
  return
  end subroutine read_ae_potential
 
- subroutine open_ae(fname,unit,irel_f)
-!! opens fname and reads its first record, stopping if it is not an
+ subroutine open_ae(fname,unit,irel_f,ifail)
+!! opens fname and reads its first record, failing if it is not an
 !! all-electron data file of this format version and byte order
 !!
 !! @param fname  file name
 !! @param unit  unit number of the opened file
 !! @param irel_f  the relativistic treatment of the file
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  character(len=*), intent(in) :: fname
 
 !Output variables
  integer, intent(out) :: unit,irel_f
+ integer, intent(out) :: ifail
 
 !Local variables
  character(len=8) :: magic_f
  integer :: ios,version_f
 
+ ifail=0
  open(newunit=unit,file=fname,access='stream',form='unformatted', &
 &     status='old',action='read',iostat=ios)
  if(ios/=0) then
    write(6,'(2a)') 'read_ae_file: ERROR cannot open ',trim(fname)
-   error stop 1
+   ifail=1
+   return
  end if
 
  read(unit,iostat=ios) magic_f,version_f,irel_f
  if(ios/=0 .or. magic_f/=magic) then
    write(6,'(2a)') 'read_ae_file: ERROR not an all-electron data file: ', &
 &        trim(fname)
-   error stop 1
+   ifail=1
+   close(unit)
+   return
  end if
 !the magic string reads the same in either byte order, so a file from a
 !machine of the other byte order shows up as a byte-swapped version
  if(version_f/=version .and. byteswap(version_f)==version) then
    write(6,'(2a)') 'read_ae_file: ERROR file was written on a machine', &
 &        ' with the other byte order'
-   error stop 1
+   ifail=1
+   close(unit)
+   return
  end if
  if(version_f/=version) then
    write(6,'(a,i4,a,i4)') 'read_ae_file: ERROR file format version', &
 &        version_f,' but this program reads version',version
-   error stop 1
+   ifail=1
+   close(unit)
+   return
  end if
  return
  end subroutine open_ae
@@ -547,24 +597,30 @@
  return
  end subroutine match_config
 
- subroutine check_found(ncnf,found)
-!! stops if a configuration of this run is not in the file
+ subroutine check_found(ncnf,found,ifail)
+!! fails if a configuration of this run is not in the file
 !!
 !! @param ncnf  number of test configurations (not counting the reference)
 !! @param found  .true. for the configurations found in the file
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  integer, intent(in) :: ncnf
  logical, intent(in) :: found(5)
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
  integer :: jj
 
+ ifail=0
  do jj=1,ncnf+1
    if(.not. found(jj)) then
      write(6,'(a,i2,a)') 'read_ae_file: ERROR test configuration',jj-1, &
 &         ' is not in the all-electron data file'
-     error stop 1
+     ifail=1
+     return
    end if
  end do
  return

@@ -120,6 +120,7 @@
  logical :: chan(0:3)
  type(ps_file_t) :: pf
  type(confine_summary_t) :: sm
+ integer :: ifail
 
  ae_filename=''
  ps_filename=''
@@ -208,7 +209,8 @@
 
  call load_pair('oncvpsp_confine',trim(ae_filename),trim(ps_filename),irel, &
 &               zz,mmax,rr,vfull,pf,nc=nc,nv=nv,iexc=iexc,na=na,la=la, &
-&               fa=fa,ea=ea)
+&               fa=fa,ea=ea,ifail=ifail)
+ if(ifail/=0) error stop 1
 
 !the radii: beyond every core radius, where the two atoms' potentials are
 !the same and the phases comparable

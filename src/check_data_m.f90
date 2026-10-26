@@ -25,7 +25,7 @@
 
  contains
 
- subroutine check_data(inp,fcgrid,rcgrid)
+ subroutine check_data(inp,fcgrid,rcgrid,ifail)
 
 !! check input data for various violations of size or sign
 !! see annotated input document for all definitions
@@ -36,6 +36,7 @@
 !!             copied into the first test configuration
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, mxstate, mxcnf, mxl, mxlin
  use input_m, only: input_t
@@ -45,10 +46,14 @@
  type(input_t), intent(in) :: inp
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
 !the number of errors found
  integer :: ierr
 
+ ifail=0
  ierr=0
 
  call check_atom()
@@ -63,7 +68,8 @@
 
  if(ierr>0) then
    write(6,'(a,i4,a)') 'ERROR: test_data found',ierr,' ERROR; stopping'
-   error stop 1
+   ifail=1
+   return
  end if
 
  return

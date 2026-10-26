@@ -86,7 +86,7 @@
 
  subroutine write_ps_file(fname,irel,nkap,atsym,zz,mmax,rr,lmax,lloc, &
 &                         nproj,rc,epsh1,epsh2,depsh,rxpsh,epa,vp,vlocpw, &
-&                         evkb,vkbpw,iexc,rcmax,vpuns,rhov,rhomod)
+&                         evkb,vkbpw,iexc,rcmax,vpuns,rhov,rhomod,ifail)
 
 !! writes the pseudopotential data file
 !!
@@ -115,6 +115,7 @@
 !! @param vpuns  unscreened local potential
 !! @param rhov  valence pseudo-density of the reference configuration
 !! @param rhomod  model core charge
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  character(len=*), intent(in) :: fname
@@ -128,14 +129,19 @@
  real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap)
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1,nkap)
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
  integer :: unit,ios,l1,ikap,jj,nvkb
 
+ ifail=0
  open(newunit=unit,file=fname,access='stream',form='unformatted', &
 &     status='replace',action='write',iostat=ios)
  if(ios/=0) then
    write(6,'(2a)') 'write_ps_file: ERROR cannot open ',trim(fname)
-   error stop 1
+   ifail=1
+   return
  end if
 
  write(unit) magic,version,irel
@@ -164,44 +170,54 @@
  return
  end subroutine write_ps_file
 
- subroutine read_ps_file(fname,pf)
+ subroutine read_ps_file(fname,pf,ifail)
 
 !! reads the pseudopotential data file
 !!
 !! @param fname  file to read
 !! @param pf  its contents
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  character(len=*), intent(in) :: fname
 
 !Output variables
  type(ps_file_t), intent(out) :: pf
+ integer, intent(out) :: ifail
 
 !Local variables
  character(len=8) :: magic_f
  integer :: unit,ios,version_f,l1,ikap,jj,nvkb
 
+ ifail=0
  open(newunit=unit,file=fname,access='stream',form='unformatted', &
 &     status='old',action='read',iostat=ios)
  if(ios/=0) then
    write(6,'(2a)') 'read_ps_file: ERROR cannot open ',trim(fname)
-   error stop 1
+   ifail=1
+   return
  end if
  read(unit,iostat=ios) magic_f,version_f,pf%irel
  if(ios/=0 .or. magic_f/=magic) then
    write(6,'(2a)') 'read_ps_file: ERROR not a pseudopotential data file: ', &
 &        trim(fname)
-   error stop 1
+   ifail=1
+   close(unit)
+   return
  end if
  if(version_f/=version .and. byteswap(version_f)==version) then
    write(6,'(2a)') 'read_ps_file: ERROR file was written on a machine', &
 &        ' with the other byte order'
-   error stop 1
+   ifail=1
+   close(unit)
+   return
  end if
  if(version_f/=version) then
    write(6,'(a,i4,a,i4)') 'read_ps_file: ERROR file format version', &
 &        version_f,' but this program reads version',version
-   error stop 1
+   ifail=1
+   close(unit)
+   return
  end if
 
  read(unit) pf%atsym,pf%zz,pf%nkap
@@ -213,7 +229,11 @@
  read(unit) pf%epsh1,pf%epsh2,pf%depsh,pf%rxpsh
  read(unit) pf%epa(1:4,1:pf%nkap)
  read(unit) pf%vloc(:,:)
- call read_pw(unit,pf%mmax,pf%vlocpw)
+ call read_pw(unit,pf%mmax,pf%vlocpw,ifail)
+ if(ifail/=0) then
+   close(unit)
+   return
+ end if
  do l1=1,4
    do ikap=1,nkap_of(pf%nkap,l1)
      read(unit) nvkb
@@ -221,7 +241,11 @@
      if(nvkb==0) cycle
      read(unit) pf%evkb(1:nvkb,l1,ikap)
      do jj=1,nvkb
-       call read_pw(unit,pf%mmax,pf%vkbpw(jj,l1,ikap))
+       call read_pw(unit,pf%mmax,pf%vkbpw(jj,l1,ikap),ifail)
+       if(ifail/=0) then
+         close(unit)
+         return
+       end if
      end do
    end do
  end do
@@ -280,16 +304,19 @@
  write(unit) pw%vals(:,1:pw%nseg)
  end subroutine write_pw
 
- subroutine read_pw(unit,mmax,pw)
+ subroutine read_pw(unit,mmax,pw,ifail)
 !! reads a piecewise function written by write_pw
  integer, intent(in) :: unit,mmax
  type(piecewise_t), intent(out) :: pw
  integer :: nseg
  real(dp) :: bound(0:pw_maxseg)
+ integer, intent(out) :: ifail
+ ifail=0
  read(unit) nseg
  if(nseg<1 .or. nseg>pw_maxseg) then
    write(6,'(a,i0)') 'read_ps_file: ERROR number of segments ',nseg
-   error stop 1
+   ifail=1
+   return
  end if
  read(unit) bound(0:nseg)
  call pw_alloc(pw,mmax,nseg,bound(0:nseg))

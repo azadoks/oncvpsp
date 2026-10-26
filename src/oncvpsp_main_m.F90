@@ -112,6 +112,7 @@
  integer, intent(in) :: irel,istage
 
 !Local variables
+ integer :: ifail
  integer :: ii,ierr,ios,it
  integer :: jj,ll,l1,inline
  integer :: mmax,nlim,nrl
@@ -261,10 +262,12 @@
  end select
  if(input_mode==INPUT_TOML) then
 #if (defined WITH_TOML)
-   call read_input_toml(unit, inp)
+   call read_input_toml(unit, inp, ifail)
+   if(ifail/=0) error stop 1
 #endif
  else
-   call read_input_text(unit, inline, inp)
+   call read_input_text(unit, inline, inp, ifail)
+   if(ifail/=0) error stop 1
  end if
  if(input_mode/=INPUT_STDIN) close(unit)
  well_tail_free=inp%well_tail==1
@@ -303,7 +306,8 @@
  fcgrid=[inp%fcfact_min,inp%fcfact_max,inp%fcfact_step]
  rcgrid=[inp%rcfact_min,inp%rcfact_max,inp%rcfact_step]
 
- call check_data(inp,fcgrid,rcgrid)
+ call check_data(inp,fcgrid,rcgrid,ifail)
+ if(ifail/=0) error stop 1
  call set_relativity(inp%c_light)
 
  nrl=int((inp%rlmax/inp%drl)-0.5d0)+1
@@ -364,7 +368,8 @@
 &                    mmax,rr,inp%ncnf,inp%nvcnf,inp%nacnf,inp%lacnf,inp%facnf, &
 &                    it,etot,eterm,res,ea,rhoc,rho,vfull, &
 &                    istcnf,ierrcnf,itcnf, &
-&                    kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
+&                    kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf,ifail)
+   if(ifail/=0) error stop 1
 !aeatom prints the libxc functional description on its first exc_libxc call
    if(inp%iexc<0) then
      block
@@ -482,7 +487,8 @@
 &                     mmax,rr,it,etot,eterm,res,ea,rhoc,rho,vfull, &
 &                     inp%ncnf,inp%nvcnf,inp%nacnf,inp%lacnf,inp%facnf, &
 &                     istcnf,ierrcnf,itcnf, &
-&                     kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf)
+&                     kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf,ifail)
+   if(ifail/=0) error stop 1
 
    write(6,'(/2a)') 'All-electron data written to ',trim(ae_filename)
    stop
@@ -765,7 +771,8 @@
 &                     inp%lloc,inp%nproj,inp%rc,inp%epsh1,inp%epsh2, &
 &                     inp%depsh,inp%rxpsh,epa,vp,vlocpw, &
 &                     evkb,vkbpw,inp%iexc,rcmax,vpuns(:,inp%lloc+1),rho, &
-&                     rhomod(:,1))
+&                     rhomod(:,1),ifail)
+   if(ifail/=0) error stop 1
  end if
 
 !the energies of the log derivatives, from epsh2 down by depsh; none with
