@@ -24,7 +24,7 @@
  use constants_m, only: dp
  implicit none
  private
- public :: dgels,dgemm,dgesv,dhseqr,dsyev
+ public :: dgels,dgemm,dgesv,dgglse,dhseqr,dsyev
 
  interface
 
@@ -58,6 +58,16 @@
    real(dp), intent(inout) :: aa(lda,*),bb(ldb,*)
    integer, intent(out) :: ipiv(*),info
    end subroutine dgesv
+
+   subroutine dgglse(mm,nn,pp,aa,lda,bb,ldb,cc,dd,xx,work,lwork,info)
+!! least squares of aa x - cc subject to bb x = dd
+   import :: dp
+   implicit none
+   integer, intent(in) :: mm,nn,pp,lda,ldb,lwork
+   real(dp), intent(inout) :: aa(lda,*),bb(ldb,*),cc(*),dd(*)
+   real(dp), intent(out) :: xx(*),work(*)
+   integer, intent(out) :: info
+   end subroutine dgglse
 
    subroutine dhseqr(job,compz,nn,ilo,ihi,hh,ldh,wr,wi,zz,ldz,work, &
 &                    lwork,info)

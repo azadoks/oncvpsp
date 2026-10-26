@@ -33,7 +33,7 @@
 &                     lm_blend
  use cinf_taper_m, only: cinf_taper
  use der2exc_m, only: der2exc
- use lapack_m, only: dhseqr
+ use lapack_m, only: dgglse, dhseqr
  implicit none
  private
  public :: modcore_budget,modcore_probes,modcore_budget_table

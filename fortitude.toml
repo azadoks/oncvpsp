@@ -5,7 +5,10 @@
 # standards
 ignore = [
     "S241",  # bad-quote-string: strings are quoted with '
-    "C003",  # implicit-external-procedures: implicit none (external) is F2018
+    # implicit-external-procedures: implicit none (type, external) is Fortran
+    # 2018; gfortran's -Werror=implicit-interface makes the same check
+    # (cmake/OncvpspCompilerOptions.cmake)
+    "C003",
 ]
 # the LAPACK interfaces declare their arrays as LAPACK does, assumed-size
 per-file-ignores = { "src/lapack_m.f90" = ["C071"] }

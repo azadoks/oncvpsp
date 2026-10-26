@@ -35,6 +35,30 @@
  use lapack_m, only: dgels, dgesv
  implicit none
 
+! the legacy Teter routines (imported, outside modules)
+ interface
+   subroutine gg1cc(gg1cc_xx,xx)
+   import :: dp
+   implicit none
+   real(dp), intent(in) :: xx
+   real(dp), intent(out) :: gg1cc_xx
+   end subroutine gg1cc
+
+   subroutine gp1cc(gp1cc_xx,xx)
+   import :: dp
+   implicit none
+   real(dp), intent(in) :: xx
+   real(dp), intent(out) :: gp1cc_xx
+   end subroutine gp1cc
+
+   subroutine gpp1cc(gpp1cc_xx,xx)
+   import :: dp
+   implicit none
+   real(dp), intent(in) :: xx
+   real(dp), intent(out) :: gpp1cc_xx
+   end subroutine gpp1cc
+ end interface
+
 !Local variables
  real(dp), parameter :: pi = 3.14159265358979323846_dp
  real(dp), parameter :: rr1 = 5.0e-5_dp, rmax = 45.0_dp, amesh = 1.006_dp

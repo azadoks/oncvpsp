@@ -335,14 +335,18 @@ setup that runs `reindent.py` as the formatter and fortitude in the editor.
 
 fortitude uses its default rules, without the two that conflict with the
 rules above: double-quoted strings (S241), and `implicit none (type,
-external)` (C003), which is Fortran 2018. Its rules against external
-procedures (C091, C092) are on, so a routine outside a module or an
-`external` declaration fails the check; `lapack_m.f90` alone may have
-assumed-size arrays (C071). Among other things it wants `intent` on every argument, `only` on
-every `use`, `==` rather than `.eq.`, `end do` rather than `enddo`,
-`character(len=N)`, `::` in every declaration, generic intrinsics (`log`,
-not `dlog`), no assumed-size (`*`) arrays, and lines of at most 80
-columns (set in `fortitude.toml`). `fortitude check --fix` fixes some of these itself.
+external)` (C003), which is Fortran 2018. The code keeps to Fortran 2008
+in that, and gets the check C003 asks for from gfortran instead:
+`-Werror=implicit-interface`, in every build type, makes a call of a
+procedure without an explicit interface a compile error. fortitude's
+rules against external procedures (C091, C092) are on, so a routine
+outside a module or an `external` declaration fails the check;
+`lapack_m.f90` alone may have assumed-size arrays (C071). Among other
+things fortitude wants `intent` on every argument, `only` on every `use`,
+`==` rather than `.eq.`, `end do` rather than `enddo`, `character(len=N)`,
+`::` in every declaration, generic intrinsics (`log`, not `dlog`), no
+assumed-size (`*`) arrays, and lines of at most 80 columns (set in
+`fortitude.toml`). `fortitude check --fix` fixes some of these itself.
 
 The imported files (`exc_off_pbe_m.f`, `functionals.F90`,
 `gg1cc`/`gp1cc`/`gpp1cc` and `m_libxc_list.F90`) are excluded from the
