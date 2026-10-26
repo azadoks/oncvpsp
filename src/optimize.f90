@@ -84,19 +84,13 @@
  real(dp), intent(out) :: optdg(4)
 
 !Local variables
- real(dp) :: orbasis_it(nbas,nbas)
- real(dp) :: eres(nqout)
- real(dp) :: yy,tt,emin,rtsgn,sn
- real(dp) :: emin0,emin1,x1,x1min,x1max,dt,dtold,dx,den
+ real(dp) :: emin
  real(dp), allocatable :: work(:),wmat(:,:),wev(:),wvec(:)
  real(dp), allocatable :: eresidevec_nu(:,:)
  real(dp), allocatable :: pswfopt(:),pswfopt_nu(:)
  real(dp), allocatable :: eresiddot_ev(:),eresideval(:)
  real(dp), allocatable :: rmat(:,:),rev(:)
- real(dp), parameter :: eps=1.d-10
- integer :: ii,iter,jj,kk,ll,nn,info
- integer, parameter :: niter=100
- logical :: converged
+ integer :: ii,jj,kk,info
 
 !find eigenvalues and eigenvectors of saved E_resid matrix for qout(1)
 !which is meant to be the cutoff used for optimization
@@ -193,6 +187,94 @@
 !   N-M = nnull
 
 
+ call solve_norm_constraint(nnull,eresideval,eresiddot_ev,uunorm,ps0norm, &
+&                            pswfopt)
+
+ emin=eresid0(1)
+ do ii=1,nnull
+   emin=emin+(2.0d0*eresiddot_ev(ii)*pswfopt(ii) &
+&             +eresideval(ii)*pswfopt(ii)**2)
+ end do
+ eresidmin=emin
+
+ ekin_anal=0.0d0
+!find cutoff-dependence of E_resid for optimized pswf
+!must transform pswfopt to the null basis representation to be
+!consistent with the input dot product and
+ allocate(work(nnull))
+ do ii=1,nnull
+   pswfopt_nu(ii)=0.0d0
+   do jj=1,nnull
+     pswfopt_nu(ii)=pswfopt_nu(ii)+eresidevec_nu(ii,jj)*pswfopt(jj)
+   end do
+ end do
+
+ do kk=1,nqout
+   emin=eresid0(kk)
+   work(:)=0.0d0
+   do ii=1,nnull
+     emin=emin+2.0d0*eresiddot(ii,kk)*pswfopt_nu(ii)
+     work(:)=work(:)+eresidmat(:,ii,kk)*pswfopt_nu(ii)
+   end do
+   do ii=1,nnull
+     emin=emin+pswfopt_nu(ii)*work(ii)
+   end do
+   eresq(kk)=emin
+   if(qout(kk)==0.0d0) ekin_anal=emin
+ end do
+
+!with the regularization, the E_resid at qout(1) of the wave found, and
+!the regularization's term
+ optdg(1)=eresq(1)
+ if(wreg>0.0d0) then
+   eresidmin=eresq(1)
+   optdg(2)=wreg*eresq(3)
+ else
+   optdg(2)=0.0d0
+ end if
+
+!calculate optimized pswf in sbf representation
+ pswfopt_sb(:)=pswf0_sb(:)
+ pswfopt_or(:)=pswf0_or(:)
+ do ii=1,nnull
+   pswfopt_sb(:)=pswfopt_sb(:)+pswfopt_nu(ii)*pswfnull_sb(:,ii)
+   pswfopt_or(:)=pswfopt_or(:)+pswfopt_nu(ii)*pswfnull_or(:,ii)
+ end do
+
+ pswfopt_null(:)=pswfopt_nu(:)
+ deallocate(pswfopt,pswfopt_nu)
+ return
+
+ contains
+
+ subroutine solve_norm_constraint(nnull,eresideval,eresiddot_ev,uunorm, &
+&                                 ps0norm,pswfopt)
+!! the x_i of Eq. (16) at the |x_1| that satisfies the norm constraint,
+!! Eq. (15): by interval halving on |x_1| from 0 to D_norm, then Newton's
+!! method; x_1 of the sign opposite to f_1's
+!!
+!! @param nnull  dimension of the null space
+!! @param eresideval  eigenvalues e_i of E_resid in the null space
+!! @param eresiddot_ev  linear terms f_i in the eigenvector representation
+!! @param uunorm  all-electron norm inside rc
+!! @param ps0norm  norm of the constrained wave alone
+!! @param pswfopt  the x_i
+
+!Input variables
+ integer, intent(in) :: nnull
+ real(dp), intent(in) :: eresideval(nnull),eresiddot_ev(nnull)
+ real(dp), intent(in) :: uunorm,ps0norm
+
+!Output variables
+ real(dp), intent(inout) :: pswfopt(nnull)
+
+!Local variables
+ real(dp) :: yy,tt,rtsgn,x1,x1min,x1max,dt,dtold,dx,den
+ real(dp), parameter :: eps=1.d-10
+ integer :: ii,iter
+ integer, parameter :: niter=100
+ logical :: converged
+
  rtsgn=-sign(1.0d0, eresiddot_ev(1))
  if(ps0norm>uunorm) then
    write(6,'(/a)') 'optimize: ERROR ps0norm > uunorm, code will stop'
@@ -266,59 +348,6 @@
    error stop 1
  end if
  pswfopt(1)=rtsgn*x1
+ end subroutine solve_norm_constraint
 
- emin=eresid0(1)
- do ii=1,nnull
-   emin=emin+(2.0d0*eresiddot_ev(ii)*pswfopt(ii) &
-&             +eresideval(ii)*pswfopt(ii)**2)
- end do
- eresidmin=emin
-
- ekin_anal=0.0d0
-!find cutoff-dependence of E_resid for optimized pswf
-!must transform pswfopt to the null basis representation to be
-!consistent with the input dot product and
- allocate(work(nnull))
- do ii=1,nnull
-   pswfopt_nu(ii)=0.0d0
-   do jj=1,nnull
-     pswfopt_nu(ii)=pswfopt_nu(ii)+eresidevec_nu(ii,jj)*pswfopt(jj)
-   end do
- end do
-
- do kk=1,nqout
-   emin=eresid0(kk)
-   work(:)=0.0d0
-   do ii=1,nnull
-     emin=emin+2.0d0*eresiddot(ii,kk)*pswfopt_nu(ii)
-     work(:)=work(:)+eresidmat(:,ii,kk)*pswfopt_nu(ii)
-   end do
-   do ii=1,nnull
-     emin=emin+pswfopt_nu(ii)*work(ii)
-   end do
-   eresq(kk)=emin
-   if(qout(kk)==0.0d0) ekin_anal=emin
- end do
-
-!with the regularization, the E_resid at qout(1) of the wave found, and
-!the regularization's term
- optdg(1)=eresq(1)
- if(wreg>0.0d0) then
-   eresidmin=eresq(1)
-   optdg(2)=wreg*eresq(3)
- else
-   optdg(2)=0.0d0
- end if
-
-!calculate optimized pswf in sbf representation
- pswfopt_sb(:)=pswf0_sb(:)
- pswfopt_or(:)=pswf0_or(:)
- do ii=1,nnull
-   pswfopt_sb(:)=pswfopt_sb(:)+pswfopt_nu(ii)*pswfnull_sb(:,ii)
-   pswfopt_or(:)=pswfopt_or(:)+pswfopt_nu(ii)*pswfnull_or(:,ii)
- end do
-
- pswfopt_null(:)=pswfopt_nu(:)
- deallocate(pswfopt,pswfopt_nu)
- return
  end subroutine optimize

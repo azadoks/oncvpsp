@@ -113,23 +113,20 @@
  real(dp), intent(out) :: wshare(3,mxprj)
 
 !Local variables
- real(dp), parameter :: Ha_eV=27.21138386d0 ! 1 Hartree, in eV
  real(dp) :: uord(5)
- real(dp) :: al,ulgd,tt
- real(dp) :: sn,ps0norm,amesh,ro
- real(dp) :: err,qerr,ehaerr,eeverr,dq,q0
- real(dp) :: sbf(mmax)
+ real(dp) :: al,ulgd
+ real(dp) :: ps0norm
+ real(dp) :: dq,q0
  real(dp) :: cons(10)
  real(qp), allocatable :: orbasis(:,:),orbasis_der(:,:)
  real(qp), allocatable :: pswf0_sbq(:),pswfnull_sbq(:,:)
  real(qp), allocatable :: pswfopt_sbq(:),pswfnone(:,:)
  real(dp), allocatable :: pswf0_sb(:),pswfnull_sb(:,:)
  real(dp), allocatable :: pswf0_or(:),pswfnull_or(:,:)
- real(dp), allocatable :: work(:),ulin(:),dlin(:),tke(:),ufree(:)
- integer :: ii,iprj,jj,l1,lmax,nbas,ncon,nconmx
- logical :: found_root
+ real(dp), allocatable :: work(:),ulin(:),dlin(:),tke(:)
+ integer :: ii,iprj,jj,l1,nbas,ncon,nconmx
 
- integer :: nnull,nqout,nq,iq,kk,nr,nrw,nqs
+ integer :: nnull,nqout,nq,iq,nr
 
  real(dp), allocatable :: qroot(:),sbasis(:)
  real(dp), allocatable :: eresid0(:),eresiddot(:,:)
@@ -140,12 +137,7 @@
  real(dp), allocatable :: pswfopt_sb(:),pswfopt_or(:),psb(:,:)
  real(dp) :: eresidmin
  real(dp) :: ekin_anal,ekin_num,qmax,hh,ekin_tail
- real(dp) :: qmax2,dq2,qout2(1),etail(1),edum(0,1),emdum(0,0,1)
- real(dp), allocatable :: e0t(:),edt(:,:),emt(:,:,:)
- integer :: nq2
-!the well's share of E_resid at qcut
- real(dp) :: ewell(1),efree(1),share
-
+ real(dp) :: edum(0,1),emdum(0,0,1)
 
  al = 0.01d0 * log(rr(101) / rr(1))
  l1=ll+1
@@ -307,88 +299,18 @@
    end do
    psb(1:nbas,iprj)=pswfopt_sb(1:nbas)
 
-!the well's share of E_resid at qcut: that of the optimized wave with the
-!well's tail, and with the free tail at its energy (free_tail_m), which
-!adds nothing above qcut; inside rc it is the same wave, so the difference
-!is the well's alone. The cutoffs of a wave whose share is large carry the
-!arbitrary well; with qcut not above the state's wave vector the state
-!itself oscillates faster than the cutoff, and no tail makes them
-!meaningful
-   if(wm(iprj)%mx>0 .and. .not. freetl(iprj)) then
-     if(free_tail_defined(qcut,eig(iprj))) then
-!   with the well's tail, from the minimization's quadratic form at qcut;
-!   with the free tail, by eresid on the grid's nodes from lm_ncell cells
-!   below qcut (the rule's cells about qcut centred) up to qmax
-       ewell(1)=eresid0(1)+2.0d0*sum(eresiddot(:,1)*pswfopt_nu(:)) &
-&               +dot_product(pswfopt_nu,matmul(eresidmat(:,:,1),pswfopt_nu))
-       nqs=min(nq,1+int((qmax-qcut)/dq)+lm_ncell)
-       allocate(e0t(nqs),edt(nqs,0),emt(nqs,0,0))
-       call free_tail(irel,ll,kap,eig(iprj),rr,vae,uua(1,iprj), &
-&                     upa(1,iprj),mmax,rc,qcut,hh,nrw,ufree,dlin)
-       call eresid(ll,rc,0,nbas,nqs,dq,1,qout(1:1),qmax,qroot,hh,nrw,ufree, &
-&                  pswfopt_sbq,pswfnone,e0t,edt,emt,efree,edum,emdum)
-       deallocate(ufree,dlin,e0t,edt,emt)
-       wshare(:,iprj)=[ewell(1),efree(1),1.0d0]
-       share=ewell(1)-efree(1)
-       write(6,'(a,1p,2d10.2,a)') &
-&           '    Residual kinetic energy at qcut, well / free tail=', &
-&           ewell(1),efree(1),' Ha'
-       if(abs(share)>0.1d0*abs(efree(1))) then
-         write(6,'(a,f8.1,a/a)') '    WARNING the well''s tail changes it by', &
-&             100.0d0*share/efree(1),' %:', &
-&             '    WARNING the cutoffs of this wave carry the well'
-       end if
-     else
-       wshare(3,iprj)=-1.0d0
-       if(qcut<=free_tail_k(eig(iprj))) then
-         write(6,'(a,f8.4/a)') &
-&             '    WARNING qcut is not above this well state''s wave vector', &
-&             free_tail_k(eig(iprj)), &
-&             '    WARNING it oscillates faster: its cutoffs are not meaningful'
-       else
-         write(6,'(a/a)') &
-&             '    WARNING this well state''s free tail grows too fast for', &
-&             '    WARNING its window at qcut (kappa L > 12): no share'
-       end if
-     end if
-   end if
+!the well's share of E_resid at qcut
+   if(wm(iprj)%mx>0 .and. .not. freetl(iprj)) call well_share(iprj)
 
-!the curve's tail: E_resid of the optimized wave from qmax to 3 qmax, by
-!eresid with no null functions, down to lm_ncell cells below qmax (the
-!rule's cells about qmax centered whatever nq2). It is from the same
-!transforms as the curve, so smooth in the inputs where T_r less the
-!Fourier energy to qmax (Parseval) is not: T_r's mesh error, 1e-12 Ha in
-!07_N_opt, moves as rc crosses a cell, and at 1e-5 Ha the curve's slope
-!makes that 4e-7 Ha of Ecut. Above qmax the integrand has no structure
-!finer than 2 pi/rc: with 16 dq and 25 points per period of 3 qmax in
-!the tail mesh, the tail moves by 4e-13 Ha from dq and 75 points, in the
-!references, at 3% of the run time; beyond 3 qmax there is 5e-11 Ha
-!(4 and 6 qmax), beyond 2 qmax 8e-10 Ha, in the f channels of 60_Nd. The
-!tail mesh is the curve's, whose 75 points per period of qmax are those
-!25, and so is the tail on it
-   qmax2=3.0d0*qmax
-   dq2=16.0d0*dq
-   nq2=min(1+int((qmax2-qmax)/dq2)+lm_ncell,1+int(qmax2/dq2))
-   qout2(1)=qmax
-   allocate(e0t(nq2),edt(nq2,0),emt(nq2,0,0))
-   call eresid(ll,rc,0,nbas,nq2,dq2,1,qout2,qmax2,qroot,hh,nr,ulin, &
-&              pswfopt_sbq,pswfnone,e0t,edt,emt,etail,edum,emdum)
-   ektail(1,iprj)=etail(1)
-   deallocate(ulin,e0t,edt,emt,pswfopt_sbq,pswfnone)
+!the curve's tail: E_resid of the optimized wave from qmax to 3 qmax
+   call curve_tail(iprj)
+   deallocate(ulin,pswfopt_sbq,pswfnone)
 
 !the convergence curve of the optimized pseudo wave function on the q
 !grid, for the cutoffs at each error level (below) and the model core's
 !budget (modcore_budget_table): all of it, as a table of every nstep-th
 !node changed its interpolant when nstep did (M-13); with its tail, below
-   do iq=1,nq
-     eresg(iq)=e0(iq)
-     do jj=1,nnull
-       eresg(iq)=eresg(iq)+2.0d0*edot(iq,jj)*pswfopt_nu(jj)
-       do kk=1,nnull
-         eresg(iq)=eresg(iq)+pswfopt_nu(kk)*emat(iq,kk,jj)*pswfopt_nu(jj)
-       end do
-     end do
-   end do
+   call resid_curve()
    if(nq>ncurve) then
      write(6,'(/2a,i0,a,i0/a)') 'run_optimize: ERROR q grid longer than', &
 &          ' the buffer of the convergence curve, nq=',nq,', ncurve=',ncurve, &
@@ -446,22 +368,7 @@
 
    write(6,'(/a)') '    Energy error per electron        Cutoff'
    write(6,'(a)') '         Ha          eV             Ha'
-!the cutoffs at which the curve falls to each error level, by
-!root-finding on it; the table shows the first nerrlv, the DIAGNOSTICS
-!block all of them; a level that the curve, with its tail, does not reach
-!on the grid has no cutoff
-   err=0.01d0
-   do jj=1,nerrdg
-     call ug_cross_down(eresg,nq,dq,q0,err,qerr,found_root)
-     if(found_root) then
-       cvgplt(1,jj,iprj)= 0.5d0*qerr**2
-       cvgplt(2,jj,iprj)= err
-       if(mod(jj,2)/=0 .and. jj<=nerrlv) then
-         write(6,'(4x,2f12.5,f12.2)') err,err*Ha_eV,0.5d0*qerr**2
-       end if
-     end if
-     err=sqrt(0.1d0)*err
-   end do
+   call curve_cutoffs(iprj)
 
    deallocate(sbasis)
    deallocate(orbasis)
@@ -483,6 +390,132 @@
  return
 
  contains
+
+ subroutine well_share(iprj)
+!! the well's share of E_resid at qcut of projector iprj, a well state
+!! with the well's tail (wshare): that of the optimized wave with the
+!! well's tail, and with the free tail at its energy (free_tail_m), which
+!! adds nothing above qcut; inside rc it is the same wave, so the
+!! difference is the well's alone. The cutoffs of a wave whose share is
+!! large carry the arbitrary well; with qcut not above the state's wave
+!! vector the state itself oscillates faster than the cutoff, and no tail
+!! makes them meaningful
+!!
+!! @param iprj  the projector
+ integer, intent(in) :: iprj
+ real(dp) :: ewell(1),efree(1),share
+ real(dp), allocatable :: ufree(:),e0t(:),edt(:,:),emt(:,:,:)
+ integer :: nqs,nrw
+ if(free_tail_defined(qcut,eig(iprj))) then
+!   with the well's tail, from the minimization's quadratic form at qcut;
+!   with the free tail, by eresid on the grid's nodes from lm_ncell cells
+!   below qcut (the rule's cells about qcut centred) up to qmax
+   ewell(1)=eresid0(1)+2.0d0*sum(eresiddot(:,1)*pswfopt_nu(:)) &
+&             +dot_product(pswfopt_nu,matmul(eresidmat(:,:,1),pswfopt_nu))
+   nqs=min(nq,1+int((qmax-qcut)/dq)+lm_ncell)
+   allocate(e0t(nqs),edt(nqs,0),emt(nqs,0,0))
+   call free_tail(irel,ll,kap,eig(iprj),rr,vae,uua(1,iprj), &
+&                   upa(1,iprj),mmax,rc,qcut,hh,nrw,ufree,dlin)
+   call eresid(ll,rc,0,nbas,nqs,dq,1,qout(1:1),qmax,qroot,hh,nrw,ufree, &
+&                pswfopt_sbq,pswfnone,e0t,edt,emt,efree,edum,emdum)
+   deallocate(ufree,dlin,e0t,edt,emt)
+   wshare(:,iprj)=[ewell(1),efree(1),1.0d0]
+   share=ewell(1)-efree(1)
+   write(6,'(a,1p,2d10.2,a)') &
+&         '    Residual kinetic energy at qcut, well / free tail=', &
+&         ewell(1),efree(1),' Ha'
+   if(abs(share)>0.1d0*abs(efree(1))) then
+     write(6,'(a,f8.1,a/a)') '    WARNING the well''s tail changes it by', &
+&           100.0d0*share/efree(1),' %:', &
+&           '    WARNING the cutoffs of this wave carry the well'
+   end if
+ else
+   wshare(3,iprj)=-1.0d0
+   if(qcut<=free_tail_k(eig(iprj))) then
+     write(6,'(a,f8.4/a)') &
+&           '    WARNING qcut is not above this well state''s wave vector', &
+&           free_tail_k(eig(iprj)), &
+&           '    WARNING it oscillates faster: its cutoffs are not meaningful'
+   else
+     write(6,'(a/a)') &
+&           '    WARNING this well state''s free tail grows too fast for', &
+&           '    WARNING its window at qcut (kappa L > 12): no share'
+   end if
+ end if
+ end subroutine well_share
+
+ subroutine curve_tail(iprj)
+!! the curve's tail of projector iprj (ektail(1,iprj)): E_resid of the
+!! optimized wave from qmax to 3 qmax, by eresid with no null functions,
+!! down to lm_ncell cells below qmax (the rule's cells about qmax centered
+!! whatever nq2). It is from the same transforms as the curve, so smooth
+!! in the inputs where T_r less the Fourier energy to qmax (Parseval) is
+!! not: T_r's mesh error, 1e-12 Ha in 07_N_opt, moves as rc crosses a
+!! cell, and at 1e-5 Ha the curve's slope makes that 4e-7 Ha of Ecut.
+!! Above qmax the integrand has no structure finer than 2 pi/rc: with 16
+!! dq and 25 points per period of 3 qmax in the tail mesh, the tail moves
+!! by 4e-13 Ha from dq and 75 points, in the references, at 3% of the run
+!! time; beyond 3 qmax there is 5e-11 Ha (4 and 6 qmax), beyond 2 qmax
+!! 8e-10 Ha, in the f channels of 60_Nd. The tail mesh is the curve's,
+!! whose 75 points per period of qmax are those 25, and so is the tail on
+!! it
+!!
+!! @param iprj  the projector
+ integer, intent(in) :: iprj
+ real(dp) :: qmax2,dq2,qout2(1),etail(1)
+ real(dp), allocatable :: e0t(:),edt(:,:),emt(:,:,:)
+ integer :: nq2
+ qmax2=3.0d0*qmax
+ dq2=16.0d0*dq
+ nq2=min(1+int((qmax2-qmax)/dq2)+lm_ncell,1+int(qmax2/dq2))
+ qout2(1)=qmax
+ allocate(e0t(nq2),edt(nq2,0),emt(nq2,0,0))
+ call eresid(ll,rc,0,nbas,nq2,dq2,1,qout2,qmax2,qroot,hh,nr,ulin, &
+&              pswfopt_sbq,pswfnone,e0t,edt,emt,etail,edum,emdum)
+ ektail(1,iprj)=etail(1)
+ deallocate(e0t,edt,emt)
+ end subroutine curve_tail
+
+ subroutine resid_curve()
+!! the convergence curve eresg of the optimized pseudo wave function on
+!! the q grid, from E_resid's quadratic form in the null space
+ integer :: iq,jj,kk
+ do iq=1,nq
+   eresg(iq)=e0(iq)
+   do jj=1,nnull
+     eresg(iq)=eresg(iq)+2.0d0*edot(iq,jj)*pswfopt_nu(jj)
+     do kk=1,nnull
+       eresg(iq)=eresg(iq)+pswfopt_nu(kk)*emat(iq,kk,jj)*pswfopt_nu(jj)
+     end do
+   end do
+ end do
+ end subroutine resid_curve
+
+ subroutine curve_cutoffs(iprj)
+!! the cutoffs of projector iprj at which the curve falls to each error
+!! level (cvgplt), by root-finding on it; the table shows the first
+!! nerrlv, the DIAGNOSTICS block all of them; a level that the curve,
+!! with its tail, does not reach on the grid has no cutoff
+!!
+!! @param iprj  the projector
+ integer, intent(in) :: iprj
+ real(dp), parameter :: Ha_eV=27.21138386d0 ! 1 Hartree, in eV
+ real(dp) :: err,qerr
+ integer :: jj
+ logical :: found_root
+ err=0.01d0
+ do jj=1,nerrdg
+   call ug_cross_down(eresg,nq,dq,q0,err,qerr,found_root)
+   if(found_root) then
+     cvgplt(1,jj,iprj)= 0.5d0*qerr**2
+     cvgplt(2,jj,iprj)= err
+     if(mod(jj,2)/=0 .and. jj<=nerrlv) then
+       write(6,'(4x,2f12.5,f12.2)') err,err*Ha_eV,0.5d0*qerr**2
+     end if
+   end if
+   err=sqrt(0.1d0)*err
+ end do
+ end subroutine curve_cutoffs
 
  real(dp) function smax(aa,bb)
 
