@@ -117,7 +117,7 @@
 
 
  use constants_m, only: dp, mxstate, mxcnf, mxl, mxlin, nrhomod
- use input_echo_m, only: write_input_echo, fe
+ use input_echo_m, only: write_input_echo, fe, date_stamp
  use outmesh_m, only: om_values, om_piece_values, om_local_values
  use pieces_m, only: piecewise_t
  implicit none
@@ -160,8 +160,7 @@
 
 !Local variables
  integer :: ii,jj,ll,l1,ixc_abinit
- integer :: dtime(8),npr_sr(mxl+1),npr_so(mxl+1)
- real(dp) :: zero(20)
+ integer :: npr_sr(mxl+1),npr_so(mxl+1)
  real(dp) :: fchrg
  real(dp), allocatable :: rhomodl(:,:)
  real(dp),allocatable :: rhol(:),rl(:),vpl(:,:)
@@ -247,25 +246,7 @@
    ixc_abinit=iexc
  end if
 
- call date_and_time(VALUES=dtime)
- ii=dtime(1)-2000
- if(ii<10) then
-   write(pspd(1),'(a,i1)') '0',ii
- else
-   write(pspd(1),'(i2)') ii
- end if
- ii=dtime(2)
- if(ii<10) then
-   write(pspd(2),'(a,i1)') '0',ii
- else
-   write(pspd(2),'(i2)') ii
- end if
- ii=dtime(3)
- if(ii<10) then
-   write(pspd(3),'(a,i1)') '0',ii
- else
-   write(pspd(3),'(i2)') ii
- end if
+ call date_stamp(pspd)
 
 !fchrg flags the model core for Abinit: fcfact, or 1 when fcfact<=0
 !(icmod=6 with the cutoff taken from the pseudo-waves)
@@ -304,7 +285,6 @@
 
 ! write the VKB projectors, or the scalar-relativistic ones, and the local
 ! potential if it is one of the semi-local potentials
- zero(:)=0.0d0
 
  do l1=1,lmax+1
    ll=l1-1
@@ -314,25 +294,11 @@
        write(6,'(i6,1p,2e21.13)') ii,rl(ii),fe(vpl(ii,l1))
      end do
    else if(nkap==1 .and. nproj(l1)>0) then
-     write(6,'(i4,23x,1p,6e21.13)') ll,(fe(evkb(jj,l1,1)),jj=1,nproj(l1))
-     do ii = 1,nrl
-       if(rl(ii)<=rc(l1)+2.0d0*drl) then
-         write(6,'(i6,1p,6e21.13)') ii,rl(ii), &
-&              (fe(vkbl(ii,jj,l1)),jj=1,nproj(l1))
-       else
-         write(6,'(i6,f6.2,6f4.0)') ii,rl(ii),(vkbl(ii,jj,l1),jj=1,nproj(l1))
-       end if
-     end do
+     call proj_block(ll,rc(l1),nproj(l1),evkb(:,l1,1),vkbl(:,:,l1),mxprj, &
+&                    .false.)
    else if(nkap==2 .and. npr_sr(l1)>0) then
-     write(6,'(i4,23x,1p,10e21.13)') ll,(fe(esr(jj,l1)),jj=1,npr_sr(l1))
-     do ii = 1,nrl
-       if(rl(ii)<=rc(l1)+2.0d0*drl) then
-         write(6,'(i6,1p,11e21.13)') ii,rl(ii), &
-&              (fe(vsrl(ii,jj,l1)),jj=1,npr_sr(l1))
-       else
-         write(6,'(i6,f6.2,10f4.0)') ii,rl(ii),(zero(jj),jj=1,npr_sr(l1))
-       end if
-     end do
+     call proj_block(ll,rc(l1),npr_sr(l1),esr(:,l1),vsrl(:,:,l1),2*mxprj, &
+&                    .true.)
    end if
  end do
 
@@ -348,15 +314,8 @@
  do l1=2,lmax+1
    ll=l1-1
    if(npr_so(l1)>0) then
-     write(6,'(i4,23x,1p,20e21.13)') ll,(fe(soscale*eso(jj,l1)),jj=1,npr_so(l1))
-     do ii = 1,nrl
-       if(rl(ii)<=rc(l1)+2.0d0*drl) then
-         write(6,'(i6,1p,11e21.13)') ii,rl(ii), &
-&              (fe(vsol(ii,jj,l1)),jj=1,npr_so(l1))
-       else
-         write(6,'(i6,f6.2,10f4.0)') ii,rl(ii),(zero(jj),jj=1,npr_so(l1))
-       end if
-     end do
+     call proj_block(ll,rc(l1),npr_so(l1),soscale*eso(:,l1),vsol(:,:,l1), &
+&                    2*mxprj,.true.)
    end if
  end do
 
@@ -410,4 +369,38 @@
  deallocate(vkbl,vsrl,vsol)
 
  return
+
+ contains
+
+ subroutine proj_block(ll,rcl,np,ee,vv,ldv,zero_tail)
+!! the block of the np projectors vv of l: l and their energies ee, then
+!! each point of the linear mesh, their values out to rc+2 drl and beyond
+!! 0, or with zero_tail their values in the same short field
+!!
+!! @param ll  angular momentum
+!! @param rcl  core radius of l
+!! @param np  number of projectors
+!! @param ee  energies of the projectors
+!! @param vv  projectors on the linear mesh
+!! @param ldv  second dimension of ee and vv
+!! @param zero_tail  0 beyond rc+2 drl, else the values
+ integer, intent(in) :: ll,np,ldv
+ real(dp), intent(in) :: rcl,ee(ldv),vv(nrl,ldv)
+ logical, intent(in) :: zero_tail
+ real(dp) :: zero(20)
+ integer :: ii,jj
+ zero(:)=0.0d0
+ write(6,'(i4,23x,1p,20e21.13)') ll,(fe(ee(jj)),jj=1,np)
+ do ii = 1,nrl
+   if(rl(ii)<=rcl+2.0d0*drl) then
+     write(6,'(i6,1p,21e21.13)') ii,rl(ii), &
+&          (fe(vv(ii,jj)),jj=1,np)
+   else if(zero_tail) then
+     write(6,'(i6,f6.2,20f4.0)') ii,rl(ii),(zero(jj),jj=1,np)
+   else
+     write(6,'(i6,f6.2,20f4.0)') ii,rl(ii),(vv(ii,jj),jj=1,np)
+   end if
+ end do
+ end subroutine proj_block
+
  end subroutine linout

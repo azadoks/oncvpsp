@@ -166,48 +166,22 @@
  character(len=4), intent(in) :: psfile
 
 !Local variables
- integer :: dtime(8)
-
-!-------
-!psml stuff
-
  type(xmlf_t) :: xf
- type(libxc_t) :: libxc_id(2)
 
- integer   :: npts
- integer   :: ii, jj, l1, jk
- real(dp)  :: jval
+ integer   :: npts,nr,ncp,norbs,npots
  real(dp)  :: total_valence_charge
- real(dp), pointer :: rgrid(:), chval(:), chcore(:)
- real(dp), pointer :: vlocal(:)
- real(dp), allocatable :: r0(:), f0(:), vps(:)
+ real(dp), pointer :: rgrid(:)
+ real(dp), allocatable :: r0(:), f0(:)
 
- character(len=100)    :: line
- character(len=4)      :: polattrib, coreattrib
- character(len=1)      :: pscode, char_dummy
- character(len=2) :: nameat
  character(len=40):: psflavor
-
-
- character(len=30) :: xcfuntype, xcfunparam
- integer          :: ncore, nval, ncp, norbs, npots
 
 !nsh, lsh, fsh  n, l and occupation of the reference configuration states
 !nn, ll, ff  n, l and occupation that label each semi-local potential
  integer, allocatable  :: nsh(:), lsh(:)
  integer, allocatable  :: nn(:), ll(:)
  real(dp), allocatable :: fsh(:), ff(:)
- real(dp), allocatable :: fdown(:), fup(:)
- integer :: nr
- character(len=10)     :: datestr
-
- logical :: tdopsp, nonrel, polarized, there_is_core, found
 
 !---
-
- call date_and_time(VALUES=dtime)
- write(datestr,"(i4,'-',i2.2,'-',i2.2)") dtime(1:3)
-
 
 ! the document goes to the output, between markers, as do the psp8 and
 ! upf files
@@ -220,6 +194,61 @@
  call my_add_attribute(xf,"version","0.8")
  call my_add_attribute(xf,"energy_unit","hartree")
  call my_add_attribute(xf,"length_unit","bohr")
+
+ call write_provenance()
+ call label_potentials()
+
+ psflavor ="Hamann's oncvpsp"
+
+ call write_header()
+
+!AG -- decide how to handle the case of Vlocal as one of the sl pots.
+
+
+!AG: decide whether to use a single mesh (Hamann's own) or have the
+! projectors use another one (linear, shorter)
+
+ npts = mmax
+ rgrid => rr(:)
+ nr = npts + 1
+ call write_grid()
+
+ allocate(f0(nr))
+ call write_semilocal()
+ call write_charges()
+
+ call xml_NewElement(xf,"pseudopotential-operator")
+ call my_add_attribute(xf,"version","0.1")
+ call my_add_attribute(xf,"energy_unit","hartree")
+ call my_add_attribute(xf,"length_unit","bohr")
+
+ call xml_NewElement(xf,"provenance")
+ call my_add_attribute(xf,"creator","oncvpsp 2.1.2+psml")
+ call xml_EndElement(xf,"provenance")
+
+ call write_local()
+ call write_projectors()
+
+ call xml_EndElement(xf,"pseudopotential-operator")
+
+ call xml_EndElement(xf,"psml")
+
+
+ call xml_Close(xf)
+ write(6,'(/a)') 'END_PSP'
+
+ deallocate(f0,r0)
+ return
+
+ contains
+
+ subroutine write_provenance()
+!! the provenance element: the code, the date and the input file
+ integer :: dtime(8)
+ character(len=10)     :: datestr
+
+ call date_and_time(VALUES=dtime)
+ write(datestr,"(i4,'-',i2.2,'-',i2.2)") dtime(1:3)
 
  call xml_NewElement(xf,"provenance")
  call my_add_attribute(xf,"creator","ONCVPSP-2.1.2+psml")
@@ -238,21 +267,25 @@
  call xml_EndElement(xf,"input-file")
 !
  call xml_EndElement(xf,"provenance")
+ end subroutine write_provenance
 
- nameat = atsym
- ncore  = nc
- nval   = nv
-
- norbs = ncore + nval
+ subroutine label_potentials()
+!! the shells of the reference configuration and the valence charge; and
+!! the n, l and occupation that label each semi-local potential: those of
+!! the valence state of its l, else n above the core states of l and no
+!! occupation
+ integer :: ii,jj
+ logical :: found
+ norbs = nc + nv
  allocate(nsh(norbs), lsh(norbs), fsh(norbs))
 
  total_valence_charge = 0.0_dp
- ncp = ncore + 1
+ ncp = nc + 1
  do ii = 1, norbs
    nsh(ii) = na(ii)
    lsh(ii) = la(ii)
    fsh(ii) = fa(ii)
-   if(ii > ncore) then
+   if(ii > nc) then
      total_valence_charge =   total_valence_charge + fsh(ii)
    end if
  end do
@@ -274,7 +307,7 @@
    if(.not. found) then
 ! generate the appropriate effective n
      nn(ii) = ll(ii) + 1
-     do jj = 1, ncore
+     do jj = 1, nc
        if(lsh(jj) == ll(ii)) then
          nn(ii) = nn(ii) + 1
        end if
@@ -282,13 +315,18 @@
      end do
    end if
  end do
+ end subroutine label_potentials
 
- psflavor ="Hamann's oncvpsp"
+ subroutine write_header()
+!! the header element: the atom, the relativity, the model core, the
+!! exchange-correlation functional (its libxc functionals) and the valence
+!! configuration
+ type(libxc_t) :: libxc_id(2)
+ character(len=30) :: xcfuntype, xcfunparam
+ character(len=4)      :: coreattrib
+ integer :: ii
 
- polarized = .false.
- polattrib = "no"
- there_is_core = (icmod >= 1)
- if(there_is_core) then
+ if(icmod >= 1) then
    coreattrib = "yes"
  else
    coreattrib = "no"
@@ -336,7 +374,7 @@
 !
 !
  call xml_NewElement(xf,"header")
- call my_add_attribute(xf,"atomic-label",nameat)
+ call my_add_attribute(xf,"atomic-label",atsym)
  call my_add_attribute(xf,"atomic-number",str(zz))
  call my_add_attribute(xf,"z-pseudo",str(zion))
  call my_add_attribute(xf,"flavor",psflavor)
@@ -347,7 +385,7 @@
  else
    call my_add_attribute(xf,"relativity","no")
  end if
- call my_add_attribute(xf,"polarized",polattrib)
+ call my_add_attribute(xf,"polarized","no")
  call my_add_attribute(xf,"core-corrections",coreattrib)
 
  call xml_NewElement(xf,"exchange-correlation")
@@ -373,21 +411,30 @@
 !
  call do_configuration()
  call xml_EndElement(xf,"header")
+ end subroutine write_header
 
-!AG -- decide how to handle the case of Vlocal as one of the sl pots.
+ subroutine do_configuration()
 
+!! writes the valence-configuration element of the header (not
+!! polarized)
+ integer :: ii
 
-!AG: decide whether to use a single mesh (Hamann's own) or have the
-! projectors use another one (linear, shorter)
+ call xml_NewElement(xf,"valence-configuration")
+ call my_add_attribute(xf,"total-valence-charge", str(total_valence_charge))
+ do ii = ncp, norbs
+   if(fsh(ii) < 1.0e-10_dp) cycle
+   call xml_NewElement(xf,"shell")
+   call my_add_attribute(xf,"n",str(nsh(ii)))
+   call my_add_attribute(xf,"l",lsymb(lsh(ii)))
+   call my_add_attribute(xf,"occupation",str(fsh(ii)))
+   call xml_EndElement(xf,"shell")
+ end do
+ call xml_EndElement(xf,"valence-configuration")
+ return
+ end subroutine do_configuration
 
- npts = mmax
- allocate(vps(npts))
-
- rgrid => rr(:)
- chval => rho(:)
- chcore => rhomod(:,1)
-
- nr = npts + 1
+ subroutine write_grid()
+!! the grid element: the log mesh with r=0 before it (r0)
  allocate(r0(nr))
  call add_zero_r(rgrid,rgrid,r0)
  r0(1) = 0.0_dp
@@ -407,8 +454,16 @@
  call xml_EndElement(xf,"grid-data")
 
  call xml_EndElement(xf,"grid")
+ end subroutine write_grid
 
- allocate(f0(nr))
+ subroutine write_semilocal()
+!! the semilocal-potentials element: of each l and j when fully
+!! relativistic (last index of vpuns 1 for j=l+1/2, 2 for j=l-1/2, l=0,
+!! j=0 in 1), else of each l
+ integer :: ii,jj,l1
+ real(dp)  :: jval
+ real(dp), allocatable :: vps(:)
+ allocate(vps(npts))
  if(irel==2) then
    call xml_NewElement(xf,"semilocal-potentials")
    call my_add_attribute(xf,"set","lj")
@@ -417,7 +472,6 @@
      l1 = ii
      if(ii == 1) then
        jval = 0.0
-! last index:  1: j=l+1/2; 2: j=l-1/2; l=0,j=0 stored in index 1
        vps(:) = vpuns(:,l1,1)
        call add_zero_r(vps(1:npts),rgrid,f0)
        call write_psml_item(xf, class="slps", &
@@ -427,7 +481,6 @@
      else
        do jj=1,2
          jval = ll(ii) + (3-2*jj)*0.5  ! convert (1,2) to (1,-1)*1/2
-! last index:  1: j=l+1/2; 2: j=l-1/2; l=0,j=0 stored in index 1
          vps(:) = vpuns(:,l1,jj)
          call add_zero_r(vps(1:npts),rgrid,f0)
          call write_psml_item(xf, class="slps", &
@@ -455,22 +508,26 @@
    end do vpsd
    call xml_EndElement(xf,"semilocal-potentials")
  end if
-!
-!--------
+ deallocate(vps)
+ end subroutine write_semilocal
+
+ subroutine write_charges()
+!! the valence-charge element, and with a model core the
+!! pseudocore-charge element
  call xml_NewElement(xf,"valence-charge")
  call my_add_attribute(xf,"total-charge",  &
 &                    str(total_valence_charge))
  call xml_NewElement(xf,"radfunc")
 
  call xml_NewElement(xf,"data")
- call add_zero_r(chval(1:npts),rgrid,f0)
+ call add_zero_r(rho(1:npts),rgrid,f0)
  call xml_AddArray(xf,fe(f0(1:nr)))
  call xml_EndElement(xf,"data")
  call xml_EndElement(xf,"radfunc")
  call xml_EndElement(xf,"valence-charge")
 
 
- if(there_is_core) then
+ if(icmod >= 1) then
    call xml_NewElement(xf,"pseudocore-charge")
    call my_add_attribute(xf,"matching-radius",str(rcore))
 ! icmod 6 and 7 match the core charge to C2 at r_s
@@ -491,24 +548,16 @@
    call xml_NewElement(xf,"radfunc")
 
    call xml_NewElement(xf,"data")
-   call add_zero_r(chcore(1:npts),rgrid,f0)
+   call add_zero_r(rhomod(1:npts,1),rgrid,f0)
    call xml_AddArray(xf,fe(f0(1:nr)))
    call xml_EndElement(xf,"data")
    call xml_EndElement(xf,"radfunc")
    call xml_EndElement(xf,"pseudocore-charge")
-   nullify(chcore)
  end if
+ end subroutine write_charges
 
- call xml_NewElement(xf,"pseudopotential-operator")
- call my_add_attribute(xf,"version","0.1")
- call my_add_attribute(xf,"energy_unit","hartree")
- call my_add_attribute(xf,"length_unit","bohr")
-
- call xml_NewElement(xf,"provenance")
- call my_add_attribute(xf,"creator","oncvpsp 2.1.2+psml")
- call xml_EndElement(xf,"provenance")
-
- vlocal => vpuns(:,lloc+1,1)
+ subroutine write_local()
+!! the local-potential element
  call xml_NewElement(xf,"local-potential")
  if(lloc > lmax) then
    call my_add_attribute(xf,"type","oncv-fit")
@@ -517,12 +566,18 @@
  end if
  call xml_NewElement(xf,"radfunc")
  call xml_NewElement(xf,"data")
- call add_zero_r(vlocal(1:npts),rgrid,f0)
+ call add_zero_r(vpuns(1:npts,lloc+1,1),rgrid,f0)
  call xml_AddArray(xf,fe(f0(1:nr)))
  call xml_EndElement(xf,"data")
  call xml_EndElement(xf,"radfunc")
  call xml_EndElement(xf,"local-potential")
+ end subroutine write_local
 
+ subroutine write_projectors()
+!! the projectors element: of each l and j when fully relativistic (l=0
+!! with j=0), else of each l
+ integer :: jj,l1,jk
+ real(dp)  :: jval
  if(irel==2) then
    call xml_NewElement(xf,"projectors")
    call my_add_attribute(xf,"set","lj")
@@ -581,42 +636,7 @@
 
    call xml_EndElement(xf,"projectors")
  end if
-
- call xml_EndElement(xf,"pseudopotential-operator")
-
- call xml_EndElement(xf,"psml")
-
-
- call xml_Close(xf)
- write(6,'(/a)') 'END_PSP'
-
- deallocate(f0,r0)
- return
-
- contains
- subroutine do_configuration()
-
-!! writes the valence-configuration element of the header; it has no
-!! arguments and uses the host's xf, ncp, norbs, nsh, lsh, fsh, polarized,
-!! fdown and fup
-
- call xml_NewElement(xf,"valence-configuration")
- call my_add_attribute(xf,"total-valence-charge", str(total_valence_charge))
- do ii = ncp, norbs
-   if(fsh(ii) < 1.0e-10_dp) cycle
-   call xml_NewElement(xf,"shell")
-   call my_add_attribute(xf,"n",str(nsh(ii)))
-   call my_add_attribute(xf,"l",lsymb(lsh(ii)))
-   call my_add_attribute(xf,"occupation",str(fsh(ii)))
-   if(polarized) then
-     call my_add_attribute(xf,"occupation-down",str(fdown(ii)))
-     call my_add_attribute(xf,"occupation-up",str(fup(ii)))
-   end if
-   call xml_EndElement(xf,"shell")
- end do
- call xml_EndElement(xf,"valence-configuration")
- return
- end subroutine do_configuration
+ end subroutine write_projectors
 
  end subroutine psmlout
 
