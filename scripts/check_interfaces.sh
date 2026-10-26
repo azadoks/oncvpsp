@@ -14,8 +14,9 @@
 # parent directory must hold build_info.inc. Build with CMake first.
 #
 # Not checked: the modules themselves (their procedures already have
-# explicit interfaces), exc_off_pbe.f (fixed form), and the libxc interface
-# (exc_libxc_stub.f90 is used in its place, so calls into it are checked
+# explicit interfaces), but those that call external procedures, which go
+# with their driver (modules_of); exc_off_pbe.f (fixed form); and the libxc
+# interface (exc_libxc_stub.f90 is used in its place, so calls into it are checked
 # against the stub's signature).
 
 set -euo pipefail
@@ -48,6 +49,13 @@ trap 'rm -rf "$work"' EXIT
 # .mod files there (an editor's linter leaves them) would shadow moddir's
 cd "$work"
 
+# The modules of a driver that call external procedures, checked with it
+modules_of() {
+    case $1 in
+        oncvpsp_confine.f90) echo confine_ws_m.f90 confine_wall_m.f90 ;;
+    esac
+}
+
 status=0
 # The drivers, each a call of oncvpsp_main (in the sources above), and the
 # post-processing programs, which call external procedures too
@@ -60,7 +68,10 @@ for file in oncvpsp.F90 oncvpsp_nr.F90 oncvpsp_r.F90 oncvpsp_ae.F90 oncvpsp_ps.F
         cat "$top/src/$src" >> "$all"
         echo >> "$all"
     done
-    cat "$top/src/$file" >> "$all"
+    for src in $(modules_of "$file") $file; do
+        cat "$top/src/$src" >> "$all"
+        echo >> "$all"
+    done
 
     label=$file
     if $FC -fsyntax-only -cpp -ffree-line-length-none -J "$work" -I "$moddir" \
@@ -79,7 +90,8 @@ for file in oncvpsp.F90 oncvpsp_nr.F90 oncvpsp_r.F90 oncvpsp_ae.F90 oncvpsp_ps.F
                 }
                 print
             }' <(line=1
-                 for src in $sources exc_libxc_stub.f90 $file; do
+                 for src in $sources exc_libxc_stub.f90 \
+                            $(modules_of "$file") $file; do
                      echo "$line $src"
                      line=$((line + $(wc -l < "$top/src/$src") + 1))
                  done) "$work/log"

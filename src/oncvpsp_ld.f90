@@ -31,25 +31,19 @@
  program oncvpsp_ld
  use constants_m, only: dp
  use kappa_m, only: kap_of
- use ae_file_m, only: read_ae_potential
- use ps_file_m, only: ps_file_t, read_ps_file, ps_file_free
+ use ps_file_m, only: ps_file_t, ps_file_free
  use phsft_m, only: phsft_pair
- use relativity_m, only: set_relativity
+ use cli_m, only: cli_next_arg, cli_radii, cli_channels, cli_energies
+ use ae_ps_pair_m, only: load_pair
  use build_info_m, only: write_build_info
  implicit none
 
-!> relative tolerance of the comparison of the two files' meshes and
-!> constants, as in ae_file_m
- real(dp), parameter :: rtol=1.0d-12
 !> the most radii of a run
  integer, parameter :: mxq=1000
 
  character(len=1024) :: ae_filename,ps_filename,arg
- character(len=2) :: atsym
- character(len=19) :: treatment
- integer :: iarg,irel,mmax,nq,npsh,ii,iq,l1,ll,ikap,kap,nvkb,ios,lc,nl
- integer :: lsel(4)
- real(dp) :: zz,c_light_f,epsh1,epsh2,depsh,amesh,rq(mxq),ee(3)
+ integer :: iarg,irel,mmax,nq,npsh,ii,iq,l1,ll,ikap,kap,nvkb,lc
+ real(dp) :: zz,epsh1,epsh2,depsh,amesh,rq(mxq),ee(3)
  real(dp), allocatable :: rr(:),vfull(:),pshae(:,:),pshps(:,:),rql(:)
  logical :: given_radii,given_energies
 !> the angular momenta whose log derivatives are computed
@@ -73,47 +67,19 @@
      call write_build_info(6,'oncvpsp_ld.x','any relativistic treatment')
      stop
    case('-a','--ae-file')
-     call next_arg(ae_filename)
+     call cli_next_arg('oncvpsp_ld',iarg,ae_filename)
    case('-p','--ps-file')
-     call next_arg(ps_filename)
+     call cli_next_arg('oncvpsp_ld',iarg,ps_filename)
    case('-r','--radii')
-     call next_arg(arg)
-     nq=count_list(arg)
-     if(nq>mxq) then
-       write(6,'(a,i0,a)') 'oncvpsp_ld: ERROR more than ',mxq,' radii'
-       error stop 1
-     end if
-     read(arg,*,iostat=ios) rq(1:nq)
-     if(ios/=0 .or. nq<1 .or. any(rq(1:nq)<=0.0d0)) then
-       write(6,'(2a)') 'oncvpsp_ld: ERROR --radii must be positive ', &
-&            'numbers separated by commas'
-       error stop 1
-     end if
+     call cli_next_arg('oncvpsp_ld',iarg,arg)
+     call cli_radii('oncvpsp_ld',arg,mxq,nq,rq)
      given_radii=.true.
    case('-l','--channels')
-     call next_arg(arg)
-     nl=min(count_list(arg),size(lsel)+1)
-     lsel(:)=-1
-     ios=1
-     if(nl<=size(lsel)) read(arg,*,iostat=ios) lsel(1:nl)
-     if(ios/=0) lsel(1)=-1
-     if(any(lsel(1:min(nl,size(lsel)))<0) &
-&       .or. any(lsel(1:min(nl,size(lsel)))>3)) then
-       write(6,'(2a)') 'oncvpsp_ld: ERROR --channels must be values ', &
-&            'of l from 0 to 3 separated by commas'
-       error stop 1
-     end if
-     chan(:)=.false.
-     chan(lsel(1:nl))=.true.
+     call cli_next_arg('oncvpsp_ld',iarg,arg)
+     call cli_channels('oncvpsp_ld',arg,chan)
    case('-e','--energies')
-     call next_arg(arg)
-     read(arg,*,iostat=ios) ee(1:3)
-     if(ios/=0 .or. count_list(arg)/=3 .or. ee(3)<=0.0d0 &
-&       .or. ee(2)<=ee(1)) then
-       write(6,'(2a)') 'oncvpsp_ld: ERROR --energies must be ', &
-&            'emin,emax,de with emin < emax and de > 0'
-       error stop 1
-     end if
+     call cli_next_arg('oncvpsp_ld',iarg,arg)
+     call cli_energies('oncvpsp_ld',arg,ee)
      given_energies=.true.
    case default
      write(6,'(2a)') 'oncvpsp_ld: ERROR unknown argument ',trim(arg)
@@ -126,29 +92,8 @@
    error stop 1
  end if
 
- call read_ae_potential(trim(ae_filename),irel,atsym,zz,mmax,rr,c_light_f, &
-&                       vfull)
- call read_ps_file(trim(ps_filename),pf)
- if(pf%irel/=irel .or. pf%atsym/=atsym .or. differ(pf%zz,zz) &
-&   .or. pf%mmax/=mmax .or. differ(pf%c_light,c_light_f)) then
-   write(6,'(2a)') 'oncvpsp_ld: ERROR the files differ in relativistic ', &
-&       'treatment, atom, mesh size or c_light'
-   error stop 1
- end if
- if(any(abs(pf%rr(:)-rr(:))>rtol*rr(:))) then
-   write(6,'(a)') 'oncvpsp_ld: ERROR the files'' radial meshes differ'
-   error stop 1
- end if
- call set_relativity(c_light_f)
-
- if(irel==0) then
-   treatment='non-relativistic'
- else if(irel==1) then
-   treatment='scalar-relativistic'
- else
-   treatment='fully-relativistic'
- end if
- call write_build_info(6,'oncvpsp_ld.x',trim(treatment))
+ call load_pair('oncvpsp_ld',trim(ae_filename),trim(ps_filename),irel,zz, &
+&               mmax,rr,vfull,pf)
 
 !the energies, from epsh2 down by depsh, as oncvpsp_main
  if(given_energies) then
@@ -251,33 +196,5 @@
  write(6,'(a)') ''
  write(6,'(a)') 'Errors are reported on stdout, with a nonzero exit status.'
  end subroutine write_help
-
- subroutine next_arg(val)
-!! the value of the option at iarg, which it passes
- character(len=1024), intent(out) :: val
- if(iarg+1>command_argument_count()) then
-   call get_command_argument(iarg,val)
-   write(6,'(3a)') 'oncvpsp_ld: ERROR ',trim(val),' requires a value'
-   error stop 1
- end if
- iarg=iarg+1
- call get_command_argument(iarg,val)
- end subroutine next_arg
-
- integer function count_list(str)
-!! the number of comma-separated items of str
- character(len=*), intent(in) :: str
- integer :: kk
- count_list=1
- do kk=1,len_trim(str)
-   if(str(kk:kk)==',') count_list=count_list+1
- end do
- end function count_list
-
- elemental logical function differ(aa,bb)
-!! .true. if aa and bb differ by more than rtol relative to the larger
- real(dp), intent(in) :: aa,bb
- differ=abs(aa-bb)>rtol*max(1.0d0,abs(aa),abs(bb))
- end function differ
 
  end program oncvpsp_ld

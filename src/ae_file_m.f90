@@ -44,7 +44,7 @@
  use relativity_m, only: c_light
  implicit none
  private
- public :: write_ae_file, read_ae_file, read_ae_potential, byteswap
+ public :: write_ae_file, read_ae_file, read_ae_potential, byteswap, differ
 
  character(len=8), parameter :: magic='ONCVAE  ' !< first record of the file
  integer, parameter :: version=3 !< format version
