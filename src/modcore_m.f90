@@ -404,7 +404,7 @@
  deallocate(lf)
  end subroutine core_crossover
 
- subroutine poly_core_fit(rstar,fmatch,a0,aco)
+ subroutine poly_core_fit(rstar,fmatch,a0,aco,ifail)
 
 !! the polynomial model core of icmod 1, p(r) = a0 + sum_j aco(j) r**(j+2),
 !! j=1..5, that matches fmatch at rstar and is barely monotonic on
@@ -421,6 +421,7 @@
 !! @param fmatch  the core charge and its first 4 derivatives at rstar
 !! @param a0  constant term
 !! @param aco  coefficients of r**3..r**7
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  use lapack_m, only: dgesv, dhseqr
@@ -428,12 +429,14 @@
 
 !Output variables
  real(dp), intent(out) :: a0,aco(5)
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp) :: amat(5,5),acoa(5),acob(5),qa(0:4),cub(0:3),hess(3,3)
  real(dp) :: wr(3),wi(3),zz(1,1),work(16),rq,fac
  integer :: ipvt(5),info,jj,kk,mm,ncub
 
+ ifail=0
 ! pA: the match with a0 = 0
  do jj=1,5
    do kk=0,4
@@ -449,7 +452,8 @@
  if(info/=0) then
    write(6,'(/a,i4)') 'poly_core_fit: ERROR singular match, dgesv info =', &
 &        info
-   error stop 1
+   ifail=1
+   return
  end if
 
 ! pB = c (r**7/7 - 2 rstar r**6/3 + 6 rstar**2 r**5/5 - rstar**3 r**4
@@ -485,7 +489,8 @@
    call dhseqr('E','N',ncub,1,ncub,hess,3,wr,wi,zz,1,work,size(work),info)
    if(info/=0) then
      write(6,'(/a,i4)') 'poly_core_fit: ERROR dhseqr info =',info
-     error stop 1
+     ifail=1
+     return
    end if
 ! every point of [0, rstar) bounds a0 from below, so a nearly real root
 ! may count by its real part
@@ -545,7 +550,7 @@
 
  end subroutine poly_core_fit
 
- subroutine teter_scale(ymatch,xx,ierr)
+ subroutine teter_scale(ymatch,xx,ierr,ifail)
 
 !! the argument x of the Teter function, 0 < x < 1.5, at which its
 !! logarithmic slope x g'(x)/g(x) = 2 x h'/h is ymatch (< 0); it falls
@@ -556,6 +561,7 @@
 !! @param ymatch  r rho'/rho of the core charge at the matching radius
 !! @param xx  the argument
 !! @param ierr  0, or 1 if ymatch is not in the range of x g'/g on (0, 1.5)
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  real(dp), intent(in) :: ymatch
@@ -563,11 +569,13 @@
 !Output variables
  real(dp), intent(out) :: xx
  integer, intent(out) :: ierr
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp) :: xa,xb,hd(0:4),ff,fd,dx,ll
  integer :: it,nsmall
 
+ ifail=0
  xx=0.0d0
  ierr=1
  if(.not. ymatch<0.0d0) return
@@ -594,7 +602,8 @@
  end do
  if(it>200) then
    write(6,'(/a)') 'teter_scale: ERROR not converged'
-   error stop 1
+   ifail=1
+   return
  end if
  end subroutine teter_scale
 

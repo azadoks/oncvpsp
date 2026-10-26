@@ -60,6 +60,7 @@
  end interface
 
 !Local variables
+ integer :: ifail
  real(dp), parameter :: pi = 3.14159265358979323846_dp
  real(dp), parameter :: rr1 = 5.0e-5_dp, rmax = 45.0_dp, amesh = 1.006_dp
  real(dp), allocatable :: rr(:), rhoc(:), rhotps(:)
@@ -231,7 +232,8 @@
      rstar = 0.8_dp
      fmatch = lorentz(rstar)
    end if
-   call poly_core_fit(rstar, fmatch, a0, aco)
+   call poly_core_fit(rstar, fmatch, a0, aco, ifail)
+   if(ifail /= 0) error stop 1
    err = 0.0_dp
    do kk = 0, 4
      err = max(err, abs(pval(a0, aco, rstar, kk) - fmatch(kk + 1)) &
@@ -252,7 +254,8 @@
    rstar = 1.1_dp*amesh**(0.5_dp*(ts(ii) + 1.0_dp))
    fmatch = 40.0_dp*exp(-4.0_dp*rstar)*[1.0_dp, -4.0_dp, 16.0_dp, &
 &                                        -64.0_dp, 256.0_dp]
-   call poly_core_fit(rstar, fmatch, ys(ii), aco)
+   call poly_core_fit(rstar, fmatch, ys(ii), aco, ifail)
+   if(ifail /= 0) error stop 1
  end do
  call fit_residual(ts, ys, 6, resid)
  call check('poly smooth', maxval(abs(resid))/maxval(abs(ys)), 1.0e-11_dp)
@@ -261,11 +264,13 @@
  x0s = [0.2_dp, 0.45_dp, 0.7_dp, 1.1_dp, 1.4_dp]
  err = 0.0_dp
  do ii = 1, size(x0s)
-   call teter_scale(log_slope(x0s(ii)), xx, ierr)
+   call teter_scale(log_slope(x0s(ii)), xx, ierr, ifail)
+   if(ifail /= 0) error stop 1
    err = max(err, abs(xx - x0s(ii)) + ierr)
  end do
  call check('scale', err, 1.0e-13_dp)
- call teter_scale(0.5_dp, xx, ierr)
+ call teter_scale(0.5_dp, xx, ierr, ifail)
+ if(ifail /= 0) error stop 1
  call check('scale out of range', real(abs(ierr - 1), dp), 0.0_dp)
 
  if(nfail > 0) then

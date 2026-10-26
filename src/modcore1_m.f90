@@ -39,7 +39,7 @@
 
  subroutine modcore(icmod,rhops,rhotps,rhoc,rhoae,rhotae,rhomod, &
 &                   corepw,fcfact,rcfact,rcmax,mmax,rr,nc,nv,la,zion, &
-&                   iexc)
+&                   iexc,ifail)
 
 !! @param icmod  (not used)
 !! @param rhops  state-by-state pseudocharge density
@@ -60,6 +60,7 @@
 !! @param la  angular-momenta
 !! @param zion  ion charge
 !! @param iexc  exchange-correlation function to be used
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, mxstate, nrhomod
  use logmesh_m, only: lm_derivs
@@ -79,6 +80,7 @@
 !Output variables
  real(dp), intent(out) :: rhomod(mmax,nrhomod)
  type(piecewise_t), intent(out) :: corepw(nrhomod)
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp) :: a0,d2mdiff,rstar,rcut
@@ -86,6 +88,7 @@
  real(dp), allocatable :: d2excae(:,:),d2excps(:,:)
  integer :: ierr
 
+ ifail=0
  allocate(d2excae(nv,nv),d2excps(nv,nv))
 
  d2excae(:,:)=0.0d0
@@ -95,7 +98,8 @@
  if(ierr/=0) then
    write(6,'(/a)') 'rhomod: ERROR ircc (core-valence charge crossover) &
 &        not found'
-   error stop 1
+   ifail=1
+   return
  end if
 
 !set limit for d2Exc calculation to radius beyond which rhomod=rhoc
@@ -108,7 +112,8 @@
 ! polynomial that matches them
 
  call lm_derivs(rr,rhoc,mmax,rstar,4,fmatch)
- call poly_core_fit(rstar,fmatch,a0,aco)
+ call poly_core_fit(rstar,fmatch,a0,aco,ifail)
+ if(ifail/=0) return
 
 ! fill in model and derivatives: the polynomial inside r*, the core charge
 ! outside

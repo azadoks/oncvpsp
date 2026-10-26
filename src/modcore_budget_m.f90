@@ -203,7 +203,7 @@
  subroutine modcore_budget(icmod,rhotps,rhoc,rhomod,corepw,fcfact,ecutw, &
 &                          weighted,errmax,slack,rcmin,mmax,rr,iexc,zion, &
 &                          probes, &
-&                          lprobe,nprobe)
+&                          lprobe,nprobe,ifail)
 
 !! @param icmod  6 for the smallest radius, 7 for the hardness-matched one
 !! @param rhotps  total pseudocharge density
@@ -227,6 +227,7 @@
 !! @param probes  probe densities of the hardness (icmod=7), one electron each
 !! @param lprobe  angular momenta of the probes
 !! @param nprobe  number of probes (0 for icmod=6)
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  integer, intent(in) :: icmod,mmax,iexc,nprobe
@@ -239,17 +240,26 @@
 !Output variables
  real(dp), intent(out) :: rhomod(mmax,nrhomod)
  type(piecewise_t), intent(out) :: corepw(nrhomod)
+ integer, intent(out) :: ifail
 
 !Local variables
  type(budget_ctx) :: bc
 
+ ifail=0
  call budget_init(bc,rhotps,rhoc,fcfact,ecutw,errmax,slack,rcmin,mmax,rr, &
-&                 iexc,zion,probes,lprobe,nprobe)
- call budget_tables(bc)
+&                 iexc,zion,probes,lprobe,nprobe,ifail)
+ if(ifail/=0) return
+ call budget_tables(bc,ifail)
+ if(ifail/=0) return
  call budget_sphere(bc)
- call budget_search6(bc)
- if(icmod==7) call budget_hardness7(bc)
- call budget_needed_cut(bc)
+ call budget_search6(bc,ifail)
+ if(ifail/=0) return
+ if(icmod==7) then
+   call budget_hardness7(bc,ifail)
+   if(ifail/=0) return
+ end if
+ call budget_needed_cut(bc,ifail)
+ if(ifail/=0) return
 
 ! fill in model and derivatives, all-electron beyond r_s
  call core_pieces(rr,rhoc,mmax,bc%rs,fill,corepw,rhomod)
@@ -281,7 +291,7 @@
  end subroutine modcore_budget
 
  subroutine budget_init(bc,rhotps,rhoc,fcfact,ecutw,errmax,slack,rcmin, &
-&                       mmax,rr,iexc,zion,probes,lprobe,nprobe)
+&                       mmax,rr,iexc,zion,probes,lprobe,nprobe,ifail)
 
 !! the cutoffs of the budget, the q grid of the band-limited
 !! transforms, and the largest and smallest radii r_s; the
@@ -289,6 +299,7 @@
 !!
 !! @param bc  the state of the search
 !! @param rhotps..nprobe  as in modcore_budget
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  integer, intent(in) :: mmax,iexc,nprobe
@@ -300,9 +311,13 @@
 !Input/output variables
  type(budget_ctx), intent(inout) :: bc
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
  integer :: ii
 
+ ifail=0
  bc%mmax=mmax
  bc%iexc=iexc
  bc%nprobe=nprobe
@@ -332,7 +347,8 @@
  if(bc%qlo >= qmax) then
    write(6,'(/a,f10.2,a)') 'modcore_budget: ERROR stop - ecut beyond', &
 &        qmax**2/8.0d0,' Ha'
-   error stop 1
+   ifail=1
+   return
  end if
  bc%qhi=min(3.0d0*bc%qlo,qmax)
 ! the first density cutoff that decides whether the model fits budget
@@ -347,34 +363,41 @@
  end do
  if(bc%irtop<4) then
    write(6,'(/a)') 'modcore_budget: ERROR stop - no core charge'
-   error stop 1
+   ifail=1
+   return
  end if
  bc%rtop=min(rcmin,bc%rr(bc%irtop))
  bc%rlo=bc%rtop/50.0d0
  if(qmax*bc%rtop > 2.0d0*(nxg-50)) then
    write(6,'(/a,f10.4,a)') 'modcore_budget: ERROR stop - r_s up to', &
 &        bc%rtop,' bohr needs more nodes of the transform'
-   error stop 1
+   ifail=1
+   return
  end if
 
  return
  end subroutine budget_init
 
- subroutine budget_tables(bc)
+ subroutine budget_tables(bc,ifail)
 
 !! the Gauss-Legendre nodes, the window of the minimum tail, the
 !! tables of the core charge's transform beyond r_s and the
 !! Legendre polynomials of the fill
 !!
 !! @param bc  the state of the search
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input/output variables
  type(budget_ctx), intent(inout) :: bc
+
+!Output variables
+ integer, intent(out) :: ifail
 
 !Local variables
  integer :: ig,ii,ip,jj,kk
  real(dp) :: ca,sa,sb,tt
 
+ ifail=0
  call gauss_legendre(0.0d0,1.0d0,ngk,bc%tk,bc%wk)
  call gauss_legendre(0.0d0,1.0d0,ngi,bc%tgi,bc%wgi)
  call gauss_legendre(0.0d0,1.0d0,nxg,bc%xg,bc%wxg)
@@ -407,7 +430,8 @@
  bc%i0=max(1,floor(log(bc%rlo/(1.05d0*bc%rr(1)))/bc%al))
  if(bc%iend<=bc%i0+1) then
    write(6,'(/a)') 'modcore_budget: ERROR stop - no core charge'
-   error stop 1
+   ifail=1
+   return
  end if
  bc%nout=ngi*(bc%iend-bc%i0)
  allocate(bc%ot(bc%nout),bc%og(bc%nout),bc%sho(bc%nout),bc%cho(bc%nout))
@@ -528,15 +552,18 @@
  return
  end subroutine budget_sphere
 
- subroutine budget_search6(bc)
+ subroutine budget_search6(bc,ifail)
 
 !! the smallest radius r_s whose model fits the budget (icmod 6)
 !!
 !! @param bc  the state of the search
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input/output variables
  type(budget_ctx), intent(inout) :: bc
+ integer, intent(out) :: ifail
 
+ ifail=0
 ! smallest r_s, first with the cutoffs to q_b + quick; if a larger one
 ! has a larger error at that r_s, again with those up to it + quick: each
 ! r_s found is a root of the largest error over all cutoffs less errmax
@@ -544,7 +571,8 @@
  bc%full=.false.
  bc%qend=min(qmax,bc%qb+quick)
  do
-   bc%rs=smallest_radius(bc)
+   bc%rs=smallest_radius(bc,ifail)
+   if(ifail/=0) return
    call set_model(bc,bc%rs)
    if(bc%qend>=qmax) exit
    if(err_max(bc,bc%qend,qmax,bc%errmax)<=bc%errmax) exit
@@ -558,21 +586,26 @@
  return
  end subroutine budget_search6
 
- subroutine budget_hardness7(bc)
+ subroutine budget_hardness7(bc,ifail)
 
 !! the radius of icmod 7: the minimum of the hardness mismatch
 !! in the basin of the least of the radii from the largest one
 !! down to r_s of icmod 6
 !!
 !! @param bc  the state of the search
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input/output variables
  type(budget_ctx), intent(inout) :: bc
+
+!Output variables
+ integer, intent(out) :: ifail
 
 !Local variables
  integer :: ib,ii,kk
  real(dp) :: tt
 
+ ifail=0
  kk=max(0,floor(log(bc%rtop/bc%rs6)/log(ratio)))
  allocate(bc%crad(kk+2),bc%cfill(kk+2),bc%cmis(kk+2))
  bc%ncand=0
@@ -601,8 +634,12 @@
      ib=ii
    end if
  end do
- if(ib==0) call no_model(bc)
- bc%rs=minimum_radius(bc,ib)
+ if(ib==0) then
+   call no_model(bc,ifail)
+   if(ifail/=0) return
+ end if
+ bc%rs=minimum_radius(bc,ib,ifail)
+ if(ifail/=0) return
  call set_model(bc,bc%rs)
  bc%mismatch=mismatch_at(bc,log(bc%rs))
 ! r_s6 is a root of this error less errmax, so at r_s = r_s6 the two are
@@ -616,20 +653,25 @@
  return
  end subroutine budget_hardness7
 
- subroutine budget_needed_cut(bc)
+ subroutine budget_needed_cut(bc,ifail)
 
 !! the cutoff the model needs: q**2/8 for the last density
 !! cutoff q below q_b whose error is errmax
 !!
 !! @param bc  the state of the search
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input/output variables
  type(budget_ctx), intent(inout) :: bc
+
+!Output variables
+ integer, intent(out) :: ifail
 
 !Local variables
  integer :: kk
  real(dp) :: ee,tt
 
+ ifail=0
  call set_model(bc,bc%rs)
  call spectrum(bc,bc%qb)
  bc%qneed=0.0d0
@@ -641,7 +683,8 @@
      exit
    end if
    if(err_grid(bc,kk)>bc%errmax) then
-     bc%qneed=zeroin(excess_of,kk*qstep,tt)
+     bc%qneed=zeroin(excess_of,kk*qstep,tt,ifail)
+     if(ifail/=0) return
      exit
    end if
    tt=kk*qstep
@@ -741,22 +784,30 @@
  return
  end subroutine budget_report
 
- real(dp) function smallest_radius(bc)
+ real(dp) function smallest_radius(bc,ifail)
 
 !! the smallest r_s in [r_lo, r_top] whose model fits, with the density
 !! cutoffs up to qend: bisection over the mesh points between them, then
 !! Brent's method on the largest error less errmax in ln r_s (excess_rs)
 !!
 !! @param bc  the state of the search
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input/output variables
  type(budget_ctx), intent(inout) :: bc
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
  integer :: ia,ib,imid,ilo,ihi
  real(dp) :: ga
+ ifail=0
  associate(rlo=>bc%rlo,rr=>bc%rr,rtop=>bc%rtop)
-   if(excess_rs(bc,log(rtop))>0.0d0) call no_model(bc)
+   if(excess_rs(bc,log(rtop))>0.0d0) then
+     call no_model(bc,ifail)
+     if(ifail/=0) return
+   end if
    smallest_radius=rlo
    ga=excess_rs(bc,log(rlo))
    if(ga<=0.0d0) return
@@ -781,7 +832,8 @@
      end if
    end do
    smallest_radius=exp(zeroin(excess_rs_of,log(radius_of(bc,ia)), &
-&                             log(radius_of(bc,ib))))
+&                             log(radius_of(bc,ib)),ifail))
+   if(ifail/=0) return
  end associate
  return
 
@@ -914,7 +966,7 @@
  return
  end function slope_at
 
- real(dp) function minimum_radius(bc,ib)
+ real(dp) function minimum_radius(bc,ib,ifail)
 
 !! the radius of the least hardness mismatch in the basin of the radius
 !! crad(ib): the root of its slope between the neighbours of crad(ib),
@@ -922,6 +974,7 @@
 !!
 !! @param bc  the state of the search
 !! @param ib  index of the radius of the least mismatch of the list
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  integer, intent(in) :: ib
@@ -929,9 +982,13 @@
 !Input/output variables
  type(budget_ctx), intent(inout) :: bc
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
  real(dp) :: ua,ub,sa,sb
  integer :: ia,ic
+ ifail=0
  associate(crad=>bc%crad,mismatch=>bc%mismatch,ncand=>bc%ncand)
    ia=min(ncand,ib+1)
    ic=max(1,ib-1)
@@ -951,7 +1008,8 @@
 &mismatch bracketed about',crad(ib)
      return
    end if
-   minimum_radius=exp(zeroin(slope_at_of,ua,ub))
+   minimum_radius=exp(zeroin(slope_at_of,ua,ub,ifail))
+   if(ifail/=0) return
  end associate
  return
 
@@ -972,19 +1030,23 @@
 
  end function minimum_radius
 
- subroutine no_model(bc)
+ subroutine no_model(bc,ifail)
 !! reports that no model radius fits and stops
 !!
 !! @param bc  the state of the search
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input/output variables
  type(budget_ctx), intent(inout) :: bc
+ integer, intent(out) :: ifail
+ ifail=0
  associate(budget=>bc%budget,errmax=>bc%errmax,rtop=>bc%rtop)
 
    write(6,'(/a,f10.6,a,f10.4,a,1p,e10.2,a)') &
 &        'modcore_budget: ERROR stop - no model core inside rc =',rtop, &
 &        ' needs less than',budget,' Ha for an error of',errmax,' Ha'
-   error stop 1
+   ifail=1
+   return
  end associate
  end subroutine no_model
 
@@ -1675,7 +1737,7 @@
  return
  end function neg_err
 
- real(dp) function zeroin(fun,xa0,xb0)
+ real(dp) function zeroin(fun,xa0,xb0,ifail)
 
 !! a root of fun between xa0 and xb0, where fun changes sign, by Brent's
 !! method with no tolerance of its own (ug_brent): it stops when the
@@ -1686,27 +1748,36 @@
 !!
 !! @param fun  the function
 !! @param xa0,xb0  the bracket
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  procedure(scalar_fn) :: fun
  real(dp), intent(in) :: xa0,xb0
+
+!Output variables
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp) :: fb,fc,fe(2)
  integer :: ierr
  logical :: conv
 
+ ifail=0
  call ug_brent(fun,xa0,xb0,zeroin,ierr,fq=fb,fo=fc,fends=fe,converged=conv)
  if(ierr/=0) then
    write(6,'(/a,1p,2e14.6)') 'modcore_budget: ERROR stop - no root &
 &between',xa0,xb0
-   error stop 1
+!  a defined result, for the caller's expression before its test of ifail
+   zeroin=xa0
+   ifail=1
+   return
  end if
  if(.not. conv) then
    write(6,'(/a,es12.4,a,es12.4)') &
 &        'modcore_budget: ERROR zeroin not converged in 200 steps, x=', &
 &        zeroin,', f=',fb
-   error stop 1
+   ifail=1
+   return
  end if
 ! a continuous function is at its round-off on a bracket a few ulps wide
  if(fb/=0.0d0 .and. min(abs(fb),abs(fc))>1.0d-6*max(abs(fe(1)),abs(fe(2)))) &
@@ -1986,7 +2057,7 @@
  end subroutine modcore_probes
 
  subroutine modcore_budget_table(ecurve,ncurve,nprof,wcurve,weighted, &
-&                                allwaves,errmax,ecut)
+&                                allwaves,errmax,ecut,ifail)
 
 !! the cutoff ecut (Ha) of the pseudo-waves at the error errmax (Ha per
 !! electron).
@@ -2024,6 +2095,7 @@
 !!                  with a weight (not weighted)
 !! @param errmax  error per electron (Ha) that defines the cutoff
 !! @param ecut  cutoff (Ha) of the pseudo-waves at errmax
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
  use logmesh_m, only: lm_fh_value
@@ -2037,6 +2109,7 @@
 
 !Output variables
  real(dp), intent(out) :: ecut
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp) :: qerr,ecut1,qa,qb,hs,xa,xb,fa,fb
@@ -2046,6 +2119,7 @@
  integer :: nks(nprof)
  logical :: found,found1
 
+ ifail=0
  ecut=0.0d0
  found=.false.
  allocate(lf(ncurve,nprof))
@@ -2092,7 +2166,8 @@
      write(6,'(/a,1p,e10.2,a)') &
 &          'modcore_budget_table: ERROR stop - no pseudo-wave reaches', &
 &          errmax,' Ha per electron in its table'
-     error stop 1
+     ifail=1
+     return
    end if
    return
  end if
@@ -2109,7 +2184,8 @@
    if(nks(ip)<2) then
      write(6,'(/a,i0,a)') 'modcore_budget_table: ERROR stop - pseudo-wave ', &
 &          ip,' has a weight and no convergence curve'
-     error stop 1
+     ifail=1
+     return
    end if
    qa=max(qa,q1s(ip))
    qb=max(qb,q1s(ip)+dble(nks(ip)-1)*dqs(ip))
@@ -2117,14 +2193,16 @@
  end do
  if(.not. (hs<huge(1.0d0)) .or. qa>=qb) then
    write(6,'(/a)') 'modcore_budget_table: ERROR stop - no weighted curves'
-   error stop 1
+   ifail=1
+   return
  end if
  fb=excess_mean(qb)
  if(fb>0.0d0) then
    write(6,'(/a,1p,e10.2,a)') &
 &        'modcore_budget_table: ERROR stop - the weighted mean does not'// &
 &        ' reach',errmax,' Ha per electron'
-   error stop 1
+   ifail=1
+   return
  end if
 ! the last crossing from above, from qb down
  ns=max(1,ceiling((qb-qa)/hs))
@@ -2137,7 +2215,8 @@
      if(ierr/=0) then
        write(6,'(a)') 'modcore_budget_table: ERROR the bracket lost its'// &
 &            ' sign change'
-       error stop 1
+       ifail=1
+       return
      end if
      ecut=0.5d0*qerr**2
      return
@@ -2147,7 +2226,8 @@
  write(6,'(/a,1p,e10.2,a)') &
 &      'modcore_budget_table: ERROR stop - the weighted mean is below', &
 &      errmax,' Ha per electron where the curves start'
- error stop 1
+ ifail=1
+ return
 
  contains
 

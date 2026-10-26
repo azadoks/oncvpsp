@@ -39,7 +39,8 @@
 ! Teter, Phys. Rev. B 48, 5031 (1993) , Appendix, as
 
  subroutine modcore3(icmod,rhops,rhotps,rhoc,rhoae,rhotae,rhomod, &
-&                   fcfact,rcfact,fcgrid,rcgrid,mmax,rr,nc,nv,la,zion,iexc)
+&                   fcfact,rcfact,fcgrid,rcgrid,mmax,rr,nc,nv,la,zion,iexc, &
+&                   ifail)
 
 !! @param icmod  3 for specified fcfact and rcfact, 4 for coefficient
 !!               optimization
@@ -61,6 +62,7 @@
 !! @param la  angular-momenta
 !! @param zion  ion charge
 !! @param iexc  exchange-correlation function to be used
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, mxstate, nrhomod
  use logmesh_m, only: lm_derivs
@@ -82,6 +84,7 @@
 
 !Output variables
  real(dp), intent(out) :: rhomod(mmax,nrhomod)
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp) :: d2mdiff,rmatch,rhocmatch
@@ -101,6 +104,7 @@
  character(len=24) :: rowfmt
 
 
+ ifail=0
  allocate(d2excae(nv,nv),d2excps(nv,nv))
 
  d2excae(:,:)=0.0d0
@@ -116,7 +120,8 @@
  if(ierr/=0) then
    write(6,'(/a)') 'modcore3: ERROR ircc (core-valence charge crossover) &
 &        not found'
-   error stop 1
+   ifail=1
+   return
  end if
  call lm_derivs(rr,rhoc,mmax,rmatch,0,dd)
  rhocmatch=dd(1)
@@ -262,7 +267,8 @@
 !Newton on the gradient from the best vertex, so the result is the
 !stationary point itself rather than wherever the simplex stopped
 !(doc/smoothness_plan.md M-6)
-   call newton_refine(xx(:,1))
+   call newton_refine(xx(:,1),ifail)
+   if(ifail/=0) return
    write(6,'(a)') 'amplitude prefactor, scale prefactor'
    write(6,'(2f10.4)') xx(1,1)/rhocmatch,xx(2,1)/rmatch
 
@@ -322,7 +328,7 @@
 &             zion,iexc,nc,nv,la,rr(mmax),mmax)
  end subroutine trial
 
- subroutine newton_refine(xm)
+ subroutine newton_refine(xm,ifail)
 
 !! Newton's method on the gradient of the rms error in (ln amplitude,
 !! ln scale), held inside a trust radius.  The valley of the error is
@@ -337,9 +343,13 @@
 !! smooth function of the inputs.
 !!
 !! @param xm  amplitude and scale (bohr), in: start, out: stationary point
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input/output variables
  real(dp), intent(inout) :: xm(2)
+
+!Output variables
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp), parameter :: hj=1.0d-3,hb=5.0d-3,hcap=5.0d-2,trmax=0.1d0
@@ -348,6 +358,7 @@
  real(dp) :: f0,fp,fm,gk,ck,du(2),dnrm,tr,dt
  integer :: it,ia,ib,kk
 
+ ifail=0
  uu(:)=log(xm(:))
  do it=1,30
 !Hessian at the step hb, for the directions and step lengths
@@ -412,7 +423,8 @@
  end do
  write(6,'(/a,es12.4)') &
 &      'newton_refine: ERROR not converged in 30 steps, last step=',dnrm
- error stop 1
+ ifail=1
+ return
  end subroutine newton_refine
 
  end subroutine modcore3

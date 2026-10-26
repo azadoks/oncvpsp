@@ -83,9 +83,14 @@ backtrace, and the exit status) unchanged:
 - [x] The pseudization: `run_optimize`, `optimize`, `qroots`, `pspot`,
       `const_basis`, `sbf_basis_con`, `eresid`, `ode_rc_der`, `run_vkb`,
       `sr_so_r`.
-- [ ] The model cores: `modcore`, `modcore2`, `modcore3`,
-      `modcore_budget` (whose root and minimum searches call back into
-      routines that can fail) and `modcore_budget_table`.
+- [x] The model cores: `modcore`, `modcore2`, `modcore3`,
+      `poly_core_fit`, `teter_scale`, `modcore_budget` (its steps,
+      `no_model`, and `zeroin` and its callers) and
+      `modcore_budget_table`. Nothing the searches call back can fail:
+      `set_model`'s three checks stay error stops (a radius beyond the
+      table, which covers the searched interval; `dhseqr` on the tail's
+      companion matrix; `dgglse` on constraints of full rank by
+      construction).
 - [ ] The tests and the writers: `run_diag`, `run_plot`, `run_ghosts`,
       `run_phsft`, `phsft_m`, the confinement of `oncvpsp_confine`,
       `outmesh_m`, `upfout`, `dpnint`.

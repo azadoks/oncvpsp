@@ -624,19 +624,22 @@
  if(inp%icmod==1) then
    call modcore(inp%icmod,rhops,rho,rhoc,rhoae,rhotae,rhomod,corepw, &
 &               inp%fcfact,inp%rcfact,rcmax,mmax,rr,inp%nc,inp%nv,inp%la, &
-&               zion,inp%iexc)
+&               zion,inp%iexc,ifail)
+   if(ifail/=0) error stop 1
 
  else if(inp%icmod==2) then
    call modcore2(inp%icmod,rhops,rho,rhoc,rhoae,rhotae,rhomod, &
 &               inp%fcfact,inp%rcfact,mmax,rr,inp%nc,inp%nv,inp%la,zion, &
-&               inp%iexc)
+&               inp%iexc,ifail)
+   if(ifail/=0) error stop 1
 
  else if(inp%icmod==6 .or. inp%icmod==7) then
    ecutw=0.0d0
    if(inp%fcfact<=0.0d0) then
      call modcore_budget_table(ecurve,ncurve,mxprj*4*nkap,wcurve, &
 &                              inp%budget_cut==1,inp%budget_cut==2, &
-&                              inp%rcfact,ecutw)
+&                              inp%rcfact,ecutw,ifail)
+     if(ifail/=0) error stop 1
    end if
 !the probe densities of the hardness of icmod=7
    allocate(probes(mmax,mxprj*(inp%lmax+1)),lprobe(mxprj*(inp%lmax+1)))
@@ -652,13 +655,15 @@
 &               inp%budget_cut==1,inp%rcfact, &
 &               inp%slack, &
 &               minval(inp%rc(1:inp%lmax+1)),mmax,rr,inp%iexc,zion, &
-&               probes(:,1:nprobe),lprobe(1:nprobe),nprobe)
+&               probes(:,1:nprobe),lprobe(1:nprobe),nprobe,ifail)
+   if(ifail/=0) error stop 1
    deallocate(probes,lprobe)
 
  else if(inp%icmod>=3) then
    call modcore3(inp%icmod,rhops,rho,rhoc,rhoae,rhotae,rhomod, &
 &               inp%fcfact,inp%rcfact,fcgrid,rcgrid,mmax,rr,inp%nc,inp%nv, &
-&               inp%la,zion,inp%iexc)
+&               inp%la,zion,inp%iexc,ifail)
+   if(ifail/=0) error stop 1
 
  end if
 ! the pieces of a model with no joint (the Teter function, or none)
