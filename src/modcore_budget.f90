@@ -111,6 +111,8 @@
 
  use constants_m, only: dp, pi, nrhomod
  use modcore_m, only: core_pieces
+ use ugrid_m, only: ug_brent, ug_fmin
+ use quad_m, only: gauss_legendre
  use pieces_m, only: piecewise_t
  use logmesh_m, only: lm_derivs, lm_interp, lm_integral, lm_fh_reach, &
 &                     lm_blend
@@ -1173,7 +1175,7 @@
    deallocate(tq,eq)
    return
  end if
- err_max=max(err_max,-fmin(neg_err,tq(max(1,imx-1)),tq(min(nn,imx+1))))
+ err_max=max(err_max,-ug_fmin(neg_err,tq(max(1,imx-1)),tq(min(nn,imx+1))))
  do ii=1,nn
    if(ii==imx) cycle
    ilo=max(1,ii-1)
@@ -1182,7 +1184,7 @@
    if(nn>=3) then
      if(parabola_peak(tq,eq,nn,ii)<0.99d0*err_max) cycle
    end if
-   err_max=max(err_max,-fmin(neg_err,tq(ilo),tq(ihi)))
+   err_max=max(err_max,-ug_fmin(neg_err,tq(ilo),tq(ihi)))
  end do
  deallocate(tq,eq)
  return
@@ -1239,10 +1241,11 @@
  real(dp) function zeroin(fun,xa0,xb0)
 
 !! a root of fun between xa0 and xb0, where fun changes sign, by Brent's
-!! method with no tolerance of its own: it stops when the bracket is a few
-!! rounding units wide (as lm_root). Where fun jumps across zero (the fill
-!! type changes, a discrete event of doc/smoothness_plan.md) that is the
-!! root, and the jump is reported; the iteration limit is an error
+!! method with no tolerance of its own (ug_brent): it stops when the
+!! bracket is a few rounding units wide (as lm_root). Where fun jumps
+!! across zero (the fill type changes, a discrete event of
+!! doc/smoothness_plan.md) that is the root, and the jump is reported; the
+!! iteration limit is an error
 !!
 !! @param fun  the function
 !! @param xa0,xb0  the bracket
@@ -1252,200 +1255,30 @@
  real(dp), intent(in) :: xa0,xb0
 
 !Local variables
- real(dp) :: xa,xb,xc,fa,fb,fc,de,dlast,tol1,xm,pp,qq,rs1,ss,fscale
- integer :: iter
+ real(dp) :: fb,fc,fe(2)
+ integer :: ierr
+ logical :: conv
 
- xa=xa0
- xb=xb0
- fa=fun(xa)
- fb=fun(xb)
- zeroin=xa
- if(fa==0.0d0) return
- zeroin=xb
- if(fb==0.0d0) return
- if(sign(1.0d0,fa)==sign(1.0d0,fb)) then
+ call ug_brent(fun,xa0,xb0,zeroin,ierr,fq=fb,fo=fc,fends=fe,converged=conv)
+ if(ierr/=0) then
    write(6,'(/a,1p,2e14.6)') 'modcore_budget: ERROR stop - no root &
-&between',xa,xb
+&between',xa0,xb0
    error stop 1
  end if
- fscale=max(abs(fa),abs(fb))
- xc=xa
- fc=fa
- de=xb-xa
- dlast=de
- do iter=1,200
-   if(sign(1.0d0,fb)==sign(1.0d0,fc)) then
-     xc=xa
-     fc=fa
-     de=xb-xa
-     dlast=de
-   end if
-   if(abs(fc)<abs(fb)) then
-     xa=xb
-     xb=xc
-     xc=xa
-     fa=fb
-     fb=fc
-     fc=fa
-   end if
-   tol1=epsilon(1.0d0)*(2.0d0*abs(xb)+1.0d-3)
-   xm=0.5d0*(xc-xb)
-   if(abs(xm)<=tol1 .or. fb==0.0d0) exit
-   if(iter==200) then
-     write(6,'(/a,es12.4,a,es12.4)') &
-&          'modcore_budget: ERROR zeroin not converged in 200 steps, x=',xb, &
-&          ', f=',fb
-     error stop 1
-   end if
-   if(abs(dlast)>=tol1 .and. abs(fa)>abs(fb)) then
-! inverse quadratic interpolation, or the secant
-     ss=fb/fa
-     if(xa==xc) then
-       pp=2.0d0*xm*ss
-       qq=1.0d0-ss
-     else
-       qq=fa/fc
-       rs1=fb/fc
-       pp=ss*(2.0d0*xm*qq*(qq-rs1)-(xb-xa)*(rs1-1.0d0))
-       qq=(qq-1.0d0)*(rs1-1.0d0)*(ss-1.0d0)
-     end if
-     if(pp>0.0d0) qq=-qq
-     pp=abs(pp)
-     if(2.0d0*pp<min(3.0d0*xm*qq-abs(tol1*qq),abs(dlast*qq))) then
-       dlast=de
-       de=pp/qq
-     else
-       de=xm
-       dlast=de
-     end if
-   else
-! bisection
-     de=xm
-     dlast=de
-   end if
-   xa=xb
-   fa=fb
-   if(abs(de)>tol1) then
-     xb=xb+de
-   else
-     xb=xb+sign(tol1,xm)
-   end if
-   fb=fun(xb)
- end do
- zeroin=xb
+ if(.not. conv) then
+   write(6,'(/a,es12.4,a,es12.4)') &
+&        'modcore_budget: ERROR zeroin not converged in 200 steps, x=', &
+&        zeroin,', f=',fb
+   error stop 1
+ end if
 ! a continuous function is at its round-off on a bracket a few ulps wide
- if(fb/=0.0d0 .and. min(abs(fb),abs(fc))>1.0d-6*fscale) then
+ if(fb/=0.0d0 .and. min(abs(fb),abs(fc))>1.0d-6*max(abs(fe(1)),abs(fe(2)))) &
+& then
    write(6,'(/2a,es12.4,a,es12.4,a,es12.4)') 'modcore_budget: WARNING', &
-&        ' root at a jump of the function, x=',xb,', f from ',fc,' to ',fb
+&        ' root at a jump of the function, x=',zeroin,', f from ',fc,' to ',fb
  end if
  return
  end function zeroin
-
- real(dp) function fmin(fun,ax,bx)
-
-!! the least value of fun on [ax, bx], by Brent's method (golden section
-!! and parabolic steps) to a relative step of 1e-8, and at the ends; the
-!! iteration limit is an error
-!!
-!! @param fun  the function
-!! @param ax,bx  the interval
-
-!Input variables
- procedure(scalar_fn) :: fun
- real(dp), intent(in) :: ax,bx
-
-!Local variables
- real(dp), parameter :: cgold=0.3819660112501051d0, rtol=1.0d-8
- real(dp) :: aa,bb,vv,ww,xx,ee,dd,fvv,fww,fxx,xm,tol1,tol2,rr1,qq,pp,uu,fu
- integer :: iter
- aa=min(ax,bx)
- bb=max(ax,bx)
- xx=aa + cgold*(bb-aa)
- vv=xx
- ww=xx
- ee=0.0d0
- dd=0.0d0
- fxx=fun(xx)
- fvv=fxx
- fww=fxx
- do iter=1,100
-   xm=0.5d0*(aa+bb)
-   tol1=rtol*abs(xx) + 1.0d-12
-   tol2=2.0d0*tol1
-   if(abs(xx-xm)<=tol2-0.5d0*(bb-aa)) exit
-   if(iter==100) then
-     write(6,'(/a,es12.4,a,es12.4)') &
-&          'modcore_budget: ERROR fmin not converged in 100 steps, x=',xx, &
-&          ', bracket width=',bb-aa
-     error stop 1
-   end if
-   if(abs(ee)>tol1) then
-     rr1=(xx-ww)*(fxx-fvv)
-     qq=(xx-vv)*(fxx-fww)
-     pp=(xx-vv)*qq - (xx-ww)*rr1
-     qq=2.0d0*(qq-rr1)
-     if(qq>0.0d0) pp=-pp
-     qq=abs(qq)
-     if(abs(pp)>=abs(0.5d0*qq*ee) .or. pp<=qq*(aa-xx) &
-&       .or. pp>=qq*(bb-xx)) then
-       if(xx>=xm) then
-         ee=aa-xx
-       else
-         ee=bb-xx
-       end if
-       dd=cgold*ee
-     else
-       ee=dd
-       dd=pp/qq
-       uu=xx+dd
-       if(uu-aa<tol2 .or. bb-uu<tol2) dd=sign(tol1,xm-xx)
-     end if
-   else
-     if(xx>=xm) then
-       ee=aa-xx
-     else
-       ee=bb-xx
-     end if
-     dd=cgold*ee
-   end if
-   if(abs(dd)>=tol1) then
-     uu=xx+dd
-   else
-     uu=xx+sign(tol1,dd)
-   end if
-   fu=fun(uu)
-   if(fu<=fxx) then
-     if(uu>=xx) then
-       aa=xx
-     else
-       bb=xx
-     end if
-     vv=ww
-     fvv=fww
-     ww=xx
-     fww=fxx
-     xx=uu
-     fxx=fu
-   else
-     if(uu<xx) then
-       aa=uu
-     else
-       bb=uu
-     end if
-     if(fu<=fww .or. ww==xx) then
-       vv=ww
-       fvv=fww
-       ww=uu
-       fww=fu
-     else if(fu<=fvv .or. vv==xx .or. vv==ww) then
-       vv=uu
-       fvv=fu
-     end if
-   end if
- end do
- fmin=min(fxx,fun(ax),fun(bx))
- return
- end function fmin
 
  real(dp) function j0(xx)
 
@@ -1623,55 +1456,6 @@
  end if
  return
  end subroutine xc_eps
-
- subroutine gauss_legendre(xa,xb,nn,xx,ww)
-
-!! the nn-point Gauss-Legendre nodes and weights on [xa, xb], the roots of
-!! P_nn by Newton's method
-!!
-!! @param xa  lower end
-!! @param xb  upper end
-!! @param nn  number of nodes
-!! @param xx  nodes
-!! @param ww  weights
-
-!Input variables
- real(dp), intent(in) :: xa,xb
- integer, intent(in) :: nn
-
-!Output variables
- real(dp), intent(out) :: xx(nn),ww(nn)
-
-!Local variables
- real(dp) :: zz,z1,p1,p2,p3,pp
- integer :: ii,jj,it
- do ii=1,(nn+1)/2
-   zz=cos(pi*(ii-0.25d0)/(nn+0.5d0))
-   do it=1,100
-     p1=1.0d0
-     p2=0.0d0
-     do jj=1,nn
-       p3=p2
-       p2=p1
-       p1=((2*jj-1)*zz*p2 - (jj-1)*p3)/jj
-     end do
-     pp=nn*(zz*p1 - p2)/(zz**2 - 1.0d0)
-     z1=zz
-     zz=z1 - p1/pp
-     if(abs(zz-z1)<1.0d-15) exit
-     if(it==100) then
-       write(6,'(/2a,i0,a,i0)') 'modcore_budget: ERROR gauss_legendre', &
-&            ' node not converged, nn=',nn,', node=',ii
-       error stop 1
-     end if
-   end do
-   xx(ii)=0.5d0*(xa+xb) - 0.5d0*(xb-xa)*zz
-   xx(nn+1-ii)=0.5d0*(xa+xb) + 0.5d0*(xb-xa)*zz
-   ww(ii)=(xb-xa)/((1.0d0 - zz**2)*pp**2)
-   ww(nn+1-ii)=ww(ii)
- end do
- return
- end subroutine gauss_legendre
 
  end subroutine modcore_budget
 

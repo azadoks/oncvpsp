@@ -44,6 +44,7 @@
  use logmesh_m, only: lm_interp
  use sbf_m, only: sbf_trig
  use ugrid_m, only: ug_brent
+ use quad_m, only: gauss_legendre
  implicit none
  private
  public :: ws_edge_d, ws_roots, ws_convergence, ws_eigenvalues, ws_grid_init
@@ -451,54 +452,5 @@
    aa(jj+1)=tt
  end do
  end subroutine sort
-
- subroutine gauss_legendre(xa,xb,nn,xx,ww)
-
-!! the nn-point Gauss-Legendre nodes and weights on [xa, xb], the roots of
-!! P_nn by Newton's method (as modcore_budget's)
-!!
-!! @param xa  lower end
-!! @param xb  upper end
-!! @param nn  number of nodes
-!! @param xx  nodes
-!! @param ww  weights
-
-!Input variables
- real(dp), intent(in) :: xa,xb
- integer, intent(in) :: nn
-
-!Output variables
- real(dp), intent(out) :: xx(nn),ww(nn)
-
-!Local variables
- real(dp) :: zz,z1,p1,p2,p3,pp
- integer :: ii,jj,it
- do ii=1,(nn+1)/2
-   zz=cos(pi*(ii-0.25d0)/(nn+0.5d0))
-   do it=1,100
-     p1=1.0d0
-     p2=0.0d0
-     do jj=1,nn
-       p3=p2
-       p2=p1
-       p1=((2*jj-1)*zz*p2 - (jj-1)*p3)/jj
-     end do
-     pp=nn*(zz*p1 - p2)/(zz**2 - 1.0d0)
-     z1=zz
-     zz=z1 - p1/pp
-     if(abs(zz-z1)<1.0d-15) exit
-     if(it==100) then
-       write(6,'(/2a,i0,a,i0)') 'ws_basis_m: ERROR gauss_legendre', &
-&            ' node not converged, nn=',nn,', node=',ii
-       error stop 1
-     end if
-   end do
-   xx(ii)=0.5d0*(xa+xb) - 0.5d0*(xb-xa)*zz
-   xx(nn+1-ii)=0.5d0*(xa+xb) + 0.5d0*(xb-xa)*zz
-   ww(ii)=(xb-xa)/((1.0d0 - zz**2)*pp**2)
-   ww(nn+1-ii)=ww(ii)
- end do
- return
- end subroutine gauss_legendre
 
  end module ws_basis_m
