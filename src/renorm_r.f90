@@ -30,7 +30,7 @@
 
  use constants_m, only: dp
  use relativity_m, only: c_light
- use quad_m, only: log_norm_sum
+ use quad_m, only: log_norm
  implicit none
 
 !Input variables
@@ -47,7 +47,7 @@
 !Local variables
  real(dp) :: sn
  real(dp) :: al,amesh
- real(dp) :: r0,gam,cc,cci
+ real(dp) :: gam,cc,cci
  integer :: ii,nin
 
  al = 0.01d0 * log(rr(101)/rr(1))
@@ -71,11 +71,7 @@
    error stop 1
  end if
 
- r0=rr(1)/sqrt(amesh)
- sn=r0**(2.0d0*gam+1.0d0)/(2.d0*gam+1.0d0)
- sn=sn*(uu(1,1)**2)/rr(1)**(2.d0*gam)
-
- sn=log_norm_sum(sn,al,rr,uu(:,1),nin)
+ sn=log_norm(rr,uu(1:nin,1)**2,nin,ll,gam)
 
 
  cnorm=sqrt(1.0d0/sn)

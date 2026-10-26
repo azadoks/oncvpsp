@@ -43,7 +43,7 @@
  use constants_m, only: dp
  use relativity_m, only: c_light
  use sr_flux_m, only: sr_gamma, sr_flux_coefs, sr_outward
- use quad_m, only: log_norm_sum
+ use quad_m, only: log_norm
  implicit none
 
 !Input variables
@@ -62,7 +62,7 @@
 !Local variables
  real(dp) :: amesh,al
  real(dp) :: cn
- real(dp) :: fss, gamma, ro
+ real(dp) :: fss,gamma
  real(dp) :: sn
  integer :: ii,node
 
@@ -98,10 +98,7 @@
 
 !perform normalization sum
 
- ro=rr(1)/sqrt(amesh)
- sn=ro**(2.0d0*gamma+1.0d0)/(2.0d0*gamma+1.0d0)
-
- sn=log_norm_sum(sn,al,rr,uu,mch)
+ sn=log_norm(rr,uu(1:mch)**2,mch,ll,gamma)
 
 !normalize u
 

@@ -38,6 +38,7 @@
  use constants_m, only: dp
  use relativity_m, only: c_light
  use dirac_m, only: dirac_outward
+ use quad_m, only: log_norm
  implicit none
 
 !Input variables
@@ -59,11 +60,9 @@
  real(dp), allocatable :: gu(:),fu(:),gup(:),fup(:),cf(:)
 
  real(dp) :: cc,cci,gam,cof
- real(dp) :: de,emax,emin
- real(dp) :: ro,sc
- real(dp) :: sls,sn,cn,uout,upout,xkap
- real(dp) :: amesh,al,als
- integer :: ii,nint,nin,node
+ real(dp) :: sn,cn,uout,upout
+ real(dp) :: amesh,al
+ integer :: ii,node
 
  cc=c_light
  cci=1.0d0/cc
@@ -106,16 +105,7 @@
 
 ! perform normalization sum
 
- ro=rr(1)/sqrt(amesh)
- sn=((1.0d0+cof**2)*ro**(2.0d0*gam+1.0d0))/(2.0d0*gam+1.0d0)
-
- do ii=1,mch-3
-   sn=sn+al*rr(ii)*(gu(ii)**2 + fu(ii)**2)
- end do
-
- sn=sn + al*(23.0d0*rr(mch-2)*(gu(mch-2)**2 + fu(mch-2)**2) &
-&          + 28.0d0*rr(mch-1)*(gu(mch-1)**2 + fu(mch-1)**2) &
-&              +  9.0d0*rr(mch  )*(gu(mch  )**2 + fu(mch  )**2))/24.0d0
+ sn=log_norm(rr,gu(1:mch)**2+fu(1:mch)**2,mch,ll,gam)
 
 ! normalize u
 

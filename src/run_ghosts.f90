@@ -79,6 +79,7 @@
  use pieces_m, only: piecewise_t, pw_integral, pw_value, pw_resample, &
 &                    pw_free, pw_node_values
  use logmesh_m, only: lm_interp
+ use quad_m, only: log_norm
  implicit none
 
 !Input variables
@@ -394,23 +395,16 @@
 !! localized states, which indicate positive-energy ghosts
  integer, intent(in) :: l1
  integer :: ii,jj
- real(dp) :: ro,sn,ww
+ real(dp) :: sn,ww
  do jj=1,nbas
    uu(:)=0.0d0
    do ii=1,nbas
      uu(:)=uu(:)+hmat(ii,jj)*uua(:,ii)
    end do
 
-   ro=rb(1)/sqrt(amesh)
-   sn=(ro*uu(1))**2/real(2*ll+4,dp)
-
-   do ii=1,mbar-3
-     sn=sn+al*(rb(ii)*uu(ii))**2
-   end do
-
-   sn=sn + al*(23.0d0*(rb(mbar-2)*uu(mbar-2))**2 &
-&              + 28.0d0*(rb(mbar-1)*uu(mbar-1))**2 &
-&              +  9.0d0*(rb(mbar  )*uu(mbar  ))**2)/24.0d0
+! <r> on the barrier's mesh, by the integral that normalized the states
+! (log_norm), r u**2 going as r**(2l+3)
+   sn=log_norm(rb,rb(1:mbar)*uu(1:mbar)**2,mbar,ll,dble(ll)+1.5d0)
 
 ! the margin: the least <r>/rc over the states above the reference, each
 ! divided by a C-infinity weight in its energy, 1 from 0.05 Ha above the

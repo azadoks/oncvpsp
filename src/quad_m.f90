@@ -21,9 +21,10 @@
 !> solvers.
  module quad_m
  use constants_m, only: dp, pi
+ use logmesh_m, only: lm_integral
  implicit none
  private
- public :: gauss_legendre, log_norm_sum
+ public :: gauss_legendre, log_norm
 
  contains
 
@@ -76,35 +77,29 @@
  return
  end subroutine gauss_legendre
 
- real(dp) function log_norm_sum(s0,al,rr,uu,nn)
+ real(dp) function log_norm(rr,ff,nn,ll,gam)
 
-!! the norm of uu out to rr(nn) on the log mesh, al the log of its ratio:
-!! s0, the part below rr(1), plus al r u**2 summed to nn-3 and the 3-point
-!! end correction (23, 28, 9)/24
+!! the integral of ff from 0 to rr(nn), ff going as r**(2 gam) at the
+!! origin: ff(1) rr(1)/(2 gam+1) below rr(1), the Floater-Hormann
+!! integral of lm_integral above it, from the first nn points alone (no
+!! value beyond rr(nn) is read), as fpovlp's overlaps
 !!
-!! @param s0  the part below rr(1)
-!! @param al  log of the mesh ratio
 !! @param rr  log radial mesh
-!! @param uu  the function
+!! @param ff  integrand: u**2, or g**2+f**2 of a Dirac solution
 !! @param nn  the last point
+!! @param ll  angular momentum (lm_integral's power at the origin, which
+!!            the limit rr(1) leaves out)
+!! @param gam  power of the solution at the origin, u ~ r**gam
 
 !Input variables
- integer, intent(in) :: nn
- real(dp), intent(in) :: s0,al,rr(nn),uu(nn)
+ integer, intent(in) :: nn,ll
+ real(dp), intent(in) :: rr(nn),ff(nn),gam
 
 !Local variables
- real(dp) :: sn
- integer :: ii
+ real(dp) :: si
 
- sn=s0
- do ii=1,nn-3
-   sn=sn+al*rr(ii)*uu(ii)**2
- end do
-
- sn=sn + al*(23.0d0*rr(nn-2)*uu(nn-2)**2 &
-&          + 28.0d0*rr(nn-1)*uu(nn-1)**2 &
-&          +  9.0d0*rr(nn  )*uu(nn  )**2)/24.0d0
- log_norm_sum=sn
- end function log_norm_sum
+ call lm_integral(rr,ff,nn,2*ll+2,rr(1),rr(nn),si)
+ log_norm=ff(1)*rr(1)/(2.0d0*gam+1.0d0)+si
+ end function log_norm
 
  end module quad_m

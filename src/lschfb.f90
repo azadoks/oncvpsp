@@ -45,7 +45,7 @@
  use relativity_m, only: c_light
  use sr_flux_m, only: sr_gamma, sr_flux_coefs, sr_outward
  use match_m, only: match_k, match_point, match_weights, match_blend
- use quad_m, only: log_norm_sum
+ use quad_m, only: log_norm
  implicit none
 
 !Input variables
@@ -67,7 +67,7 @@
 
  real(dp) :: als
  real(dp) :: de,deprev,emax,emin,etop,elow
- real(dp) :: eps,fss,gamma,ro,sc
+ real(dp) :: eps,fss,gamma,sc
  real(dp) :: sls,sn,cn,xkap,xmch
  real(dp) :: amesh,al,eecur
  real(dp) :: uo(-match_k-1:match_k),qo(-match_k-1:match_k)
@@ -338,10 +338,7 @@
 
 ! perform normalization sum
 
- ro=rr(1)/sqrt(amesh)
- sn=ro**(2.0d0*gamma+1.0d0)/(2.0d0*gamma+1.0d0)
-
- sn=log_norm_sum(sn,al,rr,uu,mlast)
+ sn=log_norm(rr,uu(1:mlast)**2,mlast,ll,gamma)
 
  cn=1.0d0/sqrt(sn)
 

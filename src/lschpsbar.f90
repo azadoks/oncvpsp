@@ -37,7 +37,7 @@
 
  use constants_m, only: dp, pi
  use boundsolve_m, only: bs_converged, bs_correct, bs_bisect
- use quad_m, only: log_norm_sum
+ use quad_m, only: log_norm
  implicit none
 
 
@@ -57,7 +57,7 @@
 !Local variables
 
  real(dp) :: de,deprev,uumax
- real(dp) :: eps,epsnode,ro,sc,stht,ctht
+ real(dp) :: eps,epsnode,sc,stht,ctht
  real(dp) :: sls,sn,cn,uout,upin,upout,xkap,xkap2,xx
  real(dp) :: amesh,al,als
  integer :: ii,imin,it,mch,mchb,nint,node,nin
@@ -245,9 +245,7 @@
 
 ! perform normalization sum
 
-     ro=rr(1)/sqrt(amesh)
-     sn=ro**(2*ll+3)/real(2*ll+3,dp)
-     sn=log_norm_sum(sn,al,rr,uu,nin)
+     sn=log_norm(rr,uu(1:nin)**2,nin,ll,dble(ll+1))
 
 ! normalize u
 

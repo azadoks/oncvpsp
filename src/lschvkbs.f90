@@ -36,7 +36,7 @@
 
  use constants_m, only: dp
  use pieces_m, only: piecewise_t
- use quad_m, only: log_norm_sum
+ use quad_m, only: log_norm
  implicit none
 
 !Input variables
@@ -52,7 +52,7 @@
 
 !Local variables
  real(dp) :: amesh,al
- real(dp) :: cn,ro,sn
+ real(dp) :: cn,sn
  integer :: ii
 
 
@@ -68,10 +68,7 @@
 
 !perform normalization sum
 
- ro=rr(1)/sqrt(amesh)
- sn=ro**(2*ll+3)/(2*ll+3)
-
- sn=log_norm_sum(sn,al,rr,uu,mch)
+ sn=log_norm(rr,uu(1:mch)**2,mch,ll,dble(ll+1))
 
 !normalize u
 

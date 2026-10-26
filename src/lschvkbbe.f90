@@ -47,7 +47,7 @@
  use boundsolve_m, only: bs_converged, bs_correct, bs_bisect
  use pieces_m, only: piecewise_t
  use outwf_m, only: outwf_t, outwf_setup, outwf_solve, outwf_free
- use quad_m, only: log_norm_sum
+ use quad_m, only: log_norm
  implicit none
 
 !Input variables
@@ -69,7 +69,7 @@
 !Local variables
  real(dp) :: cn
  real(dp) :: de,deprev
- real(dp) :: eps,ro
+ real(dp) :: eps
  real(dp) :: sn,uout,upin,upout
  real(dp) :: amesh,al
  integer :: ii,nin,nint,neig
@@ -117,10 +117,7 @@
 
 ! perform normalization sum
 
-     ro=rr(1)/sqrt(amesh)
-     sn=ro**(2*ll+3)/real(2*ll+3,dp)
-
-     sn=log_norm_sum(sn,al,rr,uu,nin)
+     sn=log_norm(rr,uu(1:nin)**2,nin,ll,dble(ll+1))
 
 ! normalize u
 

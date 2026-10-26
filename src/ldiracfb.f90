@@ -43,6 +43,7 @@
  use relativity_m, only: c_light
  use match_m, only: match_k, match_point, match_weights, match_blend
  use dirac_m, only: dirac_outward
+ use quad_m, only: log_norm
  implicit none
 
 !Input variables
@@ -64,9 +65,9 @@
 
  real(dp) :: cc,cci,gam,cof
  real(dp) :: de,deprev,emax,emin,etop,elow
- real(dp) :: eps,ro,sc
+ real(dp) :: eps,sc
  real(dp) :: sls,sn,cn,xkap,xmch
- real(dp) :: amesh,al,als
+ real(dp) :: amesh,al
  real(dp) :: go(-match_k-1:match_k),fo(-match_k-1:match_k)
  real(dp) :: gpo(-match_k-1:match_k),fpo(-match_k-1:match_k)
  real(dp) :: ww(-match_k-1:match_k),ss(-match_k-1:match_k)
@@ -329,16 +330,7 @@
 
 ! perform normalization sum
 
- ro=rr(1)/sqrt(amesh)
- sn=((1.0d0+cof**2)*ro**(2.0d0*gam+1.0d0))/(2.0d0*gam+1.0d0)
-
- do ii=1,mlast-3
-   sn=sn+al*rr(ii)*(gu(ii)**2 + fu(ii)**2)
- end do
-
- sn=sn + al*(23.0d0*rr(mlast-2)*(gu(mlast-2)**2 + fu(mlast-2)**2) &
-&            + 28.0d0*rr(mlast-1)*(gu(mlast-1)**2 + fu(mlast-1)**2) &
-&            +  9.0d0*rr(mlast  )*(gu(mlast  )**2 + fu(mlast  )**2))/24.0d0
+ sn=log_norm(rr,gu(1:mlast)**2+fu(1:mlast)**2,mlast,ll,gam)
 
  cn=1.0d0/sqrt(sn)
 

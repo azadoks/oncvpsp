@@ -424,6 +424,19 @@ precision.
   projectors): `lschvkbb` returns ierr 200 instead of 100, and the
   pseudo-atom's checks say so, where 4.0.1 ran out of iterations
   silently.
+- **Normalization by the Floater-Hormann integral.** The bound and
+  scattering solvers (`lschfb`, `lschfs`, `ldiracfb`, `ldiracfs`,
+  `lschvkbb`, `lschvkbbe`, `lschvkbs`, `lschpsbar`) and `renorm_r`
+  normalize with `quad_m`'s `log_norm`: the power law u(1)² rr(1)/(2γ+1)
+  below rr(1) and `lm_integral` above it, from the solution's points
+  alone, as `fpovlp`'s overlaps. 4.0.1 summed al r u² over the nodes with
+  a 3-point end correction and a power law below rr(1)/√amesh that
+  assumed u = r^γ. The ghost test's <r> takes the same integral on the
+  barrier's mesh. The kernels of the test inputs move by at most 3e-8,
+  V_loc by 2e-9, the AE energy terms by 6e-8 Ha (their total by 1e-10),
+  and the ghost test's <r>/rc by up to 1.3e-4. On 14_Si's meshes from
+  amesh 1.006 to 1.00075, <r>/rc is closer to its converged value than
+  before at every mesh.
 - Performance: the Adams formulas inlined, all projectors' outward
   solutions in one loop, energy-independent terms hoisted out of
   `lschfb`. Commits: 13c5b30, 9e59c13, 77d9cb0, c411754.
