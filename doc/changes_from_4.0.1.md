@@ -311,10 +311,12 @@ precision.
   atom starts from the data file's potential (`aeatom`'s `warm`), and
   the pseudo-atom ramps its wall in over 10 iterations rather than 50.
   Each edge of a sphere shares the quadrature of its channel
-  (`ws_grid_init`). On the test inputs this cuts the instructions by 28-43
-  % (Bi 26.6 to 15.2 G), and the output changes at round-off: the walls'
-  energies by up to 1.3e-10 Ha, the edges by 1.6e-14 Ha, and the cutoffs
-  by up to 1e-7 relative. Commits: 7041579 (the sphere), 3eb250c (the
+  (`ws_grid_init`), and the scan of a channel takes the phases of every
+  radius from one solution at each energy (`phsft_node_phases`; a root
+  still integrates only to its own radius). On the test inputs this cuts
+  the instructions by 45-52 % (Bi 26.6 to 13.2 G), and the output
+  changes at round-off: the walls' energies by up to 1.3e-10 Ha, the
+  edges by 2e-14 Ha, and the cutoffs by up to 1e-7 relative. Commits: 7041579 (the sphere), 3eb250c (the
   walls), 5c91c31 (the unpaired edges and the summary).
 - **Well-state diagnostics** (`run_diag`) take the state's index from
   the pseudo-atom at epa rather than the all-electron node count, which

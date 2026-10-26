@@ -44,7 +44,7 @@
  implicit none
  private
  public :: phsft_t, phsft_mch, phsft_ae_init, phsft_ps_init, phsft_free
- public :: phsft_scan, phsft_pair, phsft_node_phase
+ public :: phsft_scan, phsft_pair, phsft_node_phase, phsft_node_phases
 
 !> the deepest halving of an energy step: a phase that turns by more than
 !> pi/2 within depsh/2**maxdepth is taken as it is found
@@ -56,8 +56,10 @@
    integer :: kind=0
    integer :: irel=0,ll=0,kap=0,mmax=0,mch=0,nvkb=0,nq=0
    real(dp) :: zz=0.0d0,al=0.0d0
-!> the radii of the phases
+!> the radii of the phases, and the last point of the solution each needs
+!> alone (mch is the largest)
    real(dp), allocatable :: rq(:)
+   integer, allocatable :: mchq(:)
    real(dp), allocatable :: rr(:),vv(:),evkb(:)
    type(outwf_t) :: ow
  end type phsft_t
@@ -157,7 +159,10 @@
  call outwf_setup(ll,rr,mmax,vloc,vlocpw,nvkb,vkbpw,ps%ow)
 !the projections need the solution over the projectors' support, also for
 !radii inside it
- if(nvkb>0) ps%mch=max(ps%mch,phsft_mch(rr,mmax,ps%ow%rsrc))
+ if(nvkb>0) then
+   ps%mch=max(ps%mch,phsft_mch(rr,mmax,ps%ow%rsrc))
+   ps%mchq(:)=max(ps%mchq(:),phsft_mch(rr,mmax,ps%ow%rsrc))
+ end if
  return
  end subroutine phsft_ps_init
 
@@ -182,6 +187,7 @@
  ps%rr=rr
  ps%al=0.01d0*log(rr(101)/rr(1))
  ps%mch=0
+ allocate(ps%mchq(nq))
  do iq=1,nq
    mq=phsft_mch(rr,mmax,rq(iq))
    if(mq==0) then
@@ -191,6 +197,7 @@
      error stop 1
    end if
    ps%mch=max(ps%mch,mq)
+   ps%mchq(iq)=mq
  end do
  return
  end subroutine common_init
@@ -209,6 +216,7 @@
  if(allocated(ps%vv)) deallocate(ps%vv)
  if(allocated(ps%evkb)) deallocate(ps%evkb)
  if(allocated(ps%rq)) deallocate(ps%rq)
+ if(allocated(ps%mchq)) deallocate(ps%mchq)
  ps%kind=0
  ps%nq=0
  return
@@ -354,41 +362,101 @@
 
 !Local variables
  real(dp), allocatable :: uu(:,:),up(:,:)
- real(dp) :: uq,upq
- integer :: nn,ierr,jj,nnode,jlast
+ real(dp) :: uq
+ logical :: count_nodes
 
+ count_nodes=.true.
+ if(present(nodes)) count_nodes=nodes
  allocate(uu(ps%mmax,2),up(ps%mmax,2))
+ call solve(ps,ee,ps%mchq(iq),uu,up)
+ phsft_node_phase=angle_at(ps,iq,ps%mchq(iq),uu(:,1),up(:,1),count_nodes, &
+&                          uq)
+ if(present(uq_out)) uq_out=uq
+ deallocate(uu,up)
+ return
+ end function phsft_node_phase
+
+ subroutine phsft_node_phases(ps,ee,th,nodes)
+
+!! the phases of phsft_node_phase at every radius from one solution, out
+!! to the outermost (the scan of oncvpsp_confine.x)
+!!
+!! @param ps  the solver
+!! @param ee  energy (Ha)
+!! @param th  the phase of each radius (output)
+!! @param nodes  whether to subtract pi per node (default true)
+
+!Input/output variables
+ type(phsft_t), intent(inout), target :: ps
+
+!Input variables
+ real(dp), intent(in) :: ee
+ logical, intent(in), optional :: nodes
+
+!Output variables
+ real(dp), intent(out) :: th(ps%nq)
+
+!Local variables
+ real(dp), allocatable :: uu(:,:),up(:,:)
+ real(dp) :: uq
+ integer :: iq
+ logical :: count_nodes
+
+ count_nodes=.true.
+ if(present(nodes)) count_nodes=nodes
+ allocate(uu(ps%mmax,2),up(ps%mmax,2))
+ call solve(ps,ee,ps%mch,uu,up)
+ do iq=1,ps%nq
+   th(iq)=angle_at(ps,iq,ps%mch,uu(:,1),up(:,1),count_nodes,uq)
+ end do
+ deallocate(uu,up)
+ return
+ end subroutine phsft_node_phases
+
+ subroutine solve(ps,ee,mch,uu,up)
+!! the solution at ee out to the point mch
+ type(phsft_t), intent(inout), target :: ps
+ real(dp), intent(in) :: ee
+ integer, intent(in) :: mch
+ real(dp), intent(out) :: uu(ps%mmax,2),up(ps%mmax,2)
+ integer :: nn,ierr
  uu(:,:)=0.0d0
  up(:,:)=0.0d0
  if(ps%kind==1) then
    nn=0
    call scatterstate(ps%irel,nn,ps%ll,ps%kap,ierr,ee,ps%rr,ps%zz,ps%vv, &
-&                    uu,up,ps%mmax,ps%mch)
+&                    uu,up,ps%mmax,mch)
  else
-   call outwf_solve(ps%ow,ee,ps%evkb,ps%mch,ps%mch,uu(:,1),up(:,1))
+   call outwf_solve(ps%ow,ee,ps%evkb,mch,mch,uu(:,1),up(:,1))
  end if
- call lm_interp(ps%rr(1:ps%mch),uu(1:ps%mch,1),ps%mch,ps%rq(iq),uq)
- call lm_interp(ps%rr(1:ps%mch),up(1:ps%mch,1),ps%mch,ps%rq(iq),upq)
+ end subroutine solve
+
+ real(dp) function angle_at(ps,iq,mch,uu,up,count_nodes,uq)
+!! the phase of radius iq of a solution out to the point mch, and u there
+ type(phsft_t), intent(in) :: ps
+ integer, intent(in) :: iq,mch
+ real(dp), intent(in) :: uu(ps%mmax),up(ps%mmax)
+ logical, intent(in) :: count_nodes
+ real(dp), intent(out) :: uq
+ real(dp) :: upq
+ integer :: jj,nnode,jlast
+ call lm_interp(ps%rr(1:mch),uu(1:mch),mch,ps%rq(iq),uq)
+ call lm_interp(ps%rr(1:mch),up(1:mch),mch,ps%rq(iq),upq)
  nnode=0
  jlast=1
- do jj=2,ps%mch
+ do jj=2,mch
    if(ps%rr(jj)>=ps%rq(iq)) exit
-   if(uu(jj,1)*uu(jj-1,1)<0.0d0) nnode=nnode+1
+   if(uu(jj)*uu(jj-1)<0.0d0) nnode=nnode+1
    jlast=jj
  end do
- if(uq*uu(jlast,1)<0.0d0) nnode=nnode+1
+ if(uq*uu(jlast)<0.0d0) nnode=nnode+1
 ! r phi'/phi = r u'/u - 1, and al r u' is the solvers' derivative
- phsft_node_phase=atan2(upq/ps%al-uq,uq)
- if(phsft_node_phase>0.5d0*pi) phsft_node_phase=phsft_node_phase-pi
- if(phsft_node_phase<=-0.5d0*pi) phsft_node_phase=phsft_node_phase+pi
- if(present(uq_out)) uq_out=uq
- if(present(nodes)) then
-   if(.not. nodes) nnode=0
- end if
- phsft_node_phase=phsft_node_phase-pi*dble(nnode)
- deallocate(uu,up)
- return
- end function phsft_node_phase
+ angle_at=atan2(upq/ps%al-uq,uq)
+ if(angle_at>0.5d0*pi) angle_at=angle_at-pi
+ if(angle_at<=-0.5d0*pi) angle_at=angle_at+pi
+ if(.not. count_nodes) nnode=0
+ angle_at=angle_at-pi*dble(nnode)
+ end function angle_at
 
  recursive function follow(ps,iq,th0,e0,e1,da1,depth) result(th1)
 

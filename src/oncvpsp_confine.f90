@@ -90,7 +90,7 @@
  use ae_file_m, only: read_ae_potential
  use ps_file_m, only: ps_file_t, read_ps_file, ps_file_free
  use phsft_m, only: phsft_t, phsft_ae_init, phsft_ps_init, phsft_free, &
-&                   phsft_node_phase, phsft_mch
+&                   phsft_node_phase, phsft_node_phases, phsft_mch
  use ws_basis_m, only: ws_edge_d, ws_convergence, ws_eigenvalues, &
 &                       ws_grid_init, ws_grid_t
  use ugrid_m, only: ug_brent
@@ -138,7 +138,7 @@
  integer :: lsel(4)
  integer :: kae(mxedge),kps(mxedge),edae(mxedge),edps(mxedge)
  real(dp) :: zz,c_light_f,emin,emax,de,ecutmax,rcmax,rs,amesh,ee(3)
- real(dp) :: rq(mxq),eae(mxedge),eps(mxedge),thal,ex,tt
+ real(dp) :: rq(mxq),eae(mxedge),eps(mxedge),thal,ex
  real(dp), allocatable :: rr(:),vfull(:),shae(:,:),shps(:,:),ecut(:),err(:)
  real(dp), allocatable :: egrid(:)
  integer, allocatable :: ishift(:)
@@ -157,11 +157,20 @@
  logical :: chan(0:3)
  type(ps_file_t) :: pf
  type(phsft_t), target :: sae,sps
-!> the quadrature of the channel in the sphere, shared by its edges
- type(ws_grid_t) :: wsg
+!> the quadrature of the channel in each sphere, shared by its edges
+ type(ws_grid_t), allocatable :: wsg(:)
+!> the poles of each sphere (edir, ndir of the radius at hand)
+ type :: poles_t
+   real(dp), allocatable :: e(:)
+ end type poles_t
+ type(poles_t), allocatable :: polq(:)
+!> the phases of every radius at the anchors
+ real(dp), allocatable :: tanae(:,:),tanps(:,:)
 !> the solver, the point of the scan and the phase of edges' root
  type(phsft_t), pointer :: psol=>null()
  real(dp) :: ph_e0,ph_tgt,ph_shift
+!> the radius of psol's phase
+ integer :: ph_iq
 !> the poles of the pseudopotential's r phi'/phi at rs (Ha), and whether
 !> the phase of psol counts them rather than its nodes
  integer :: ndir
@@ -353,7 +362,7 @@
  end if
  npsh=int(((emax-emin+2.0d0*emargin)/de)-0.5d0)+1
  amesh=rr(2)/rr(1)
- allocate(shae(npsh,1),shps(npsh,1),egrid(npsh),ishift(npsh))
+ allocate(shae(npsh,nq),shps(npsh,nq),egrid(npsh),ishift(npsh))
  do ii=1,npsh
    egrid(ii)=emax+emargin-de*dble(ii-1)
  end do
@@ -379,9 +388,25 @@
        if(irel==2 .and. ikap==1) kap=-(ll+1)
        if(irel==2 .and. ikap==2) kap=ll
        nvkb=pf%nvkb(l1,ikap)
+! the solvers of the channel at every radius, and each sphere's
+! quadrature and poles (refined to the roots of u(rs))
+       call phsft_ae_init(irel,ll,kap,rr,vfull,zz,mmax,nq,rq(1:nq),sae)
+       call phsft_ps_init(ll,nvkb,rr,pf%vloc(:,ikap),pf%vlocpw, &
+&                         pf%vkbpw(1:nvkb,l1,ikap),pf%evkb(1:nvkb,l1,ikap), &
+&                         mmax,nq,rq(1:nq),sps)
+       allocate(wsg(nq),polq(nq),tanae(nanch,nq),tanps(nanch,nq))
        do iq=1,nq
-         rs=rq(iq)
-         write(6,'(a,2i4,1p,e24.16)') 'ws_r',ll,ikap,rs
+         call ws_grid_init(rq(iq),sqrt(2.0d0*ecutmax),rr,mmax, &
+&             pf%vloc(:,ikap),pf%vlocpw,nvkb,pf%vkbpw(1:nvkb,l1,ikap), &
+&             wsg(iq))
+         call ws_eigenvalues(ll,3,wsg(iq),pf%evkb(1:nvkb,l1,ikap),ndir, &
+&             edir,ierr)
+         if(ierr/=0) ndir=0
+         ph_iq=iq
+         call refine_poles(sps)
+         polq(iq)%e=edir(1:ndir)
+         deallocate(edir)
+       end do
 
 ! the phases at rs on the grid, the pseudopotential's shifted by the
 ! multiple of pi by which they differ from the all-electron ones near the
@@ -397,42 +422,38 @@
 ! sp), the multiple below a core band and that above several Ha, where
 ! the pseudopotential no longer follows the atom, outnumbered the right
 ! one and paired each band with the next one down
-         call phsft_ae_init(irel,ll,kap,rr,vfull,zz,mmax,1,rq(iq:iq),sae)
-         call phsft_ps_init(ll,nvkb,rr,pf%vloc(:,ikap),pf%vlocpw, &
-&                           pf%vkbpw(1:nvkb,l1,ikap),pf%evkb(1:nvkb,l1,ikap), &
-&                           mmax,1,rq(iq:iq),sps)
-         call ws_grid_init(rs,sqrt(2.0d0*ecutmax),rr,mmax,pf%vloc(:,ikap), &
-&             pf%vlocpw,nvkb,pf%vkbpw(1:nvkb,l1,ikap),wsg)
-         call ws_eigenvalues(ll,3,wsg,pf%evkb(1:nvkb,l1,ikap),ndir,edir,ierr)
-         if(ierr/=0) ndir=0
-         call refine_poles(sps)
+! (all the radii from one solution at each energy)
+       do ii=1,npsh
+         call scan_phases(egrid(ii),shae(ii,:),shps(ii,:))
+       end do
+       if(nvkb>0) then
+         do ii=1,nanch
+           ex=pf%epa(l1,ikap)+danch*dble(ii-(nanch+1)/2)
+           call scan_phases(ex,tanae(ii,:),tanps(ii,:))
+         end do
+       end if
+
+       do iq=1,nq
+         rs=rq(iq)
+         write(6,'(a,2i4,1p,e24.16)') 'ws_r',ll,ikap,rs
+         ph_iq=iq
+         ndir=size(polq(iq)%e)
+         edir=polq(iq)%e
          do ii=1,npsh
-           psol=>sae
-           ph_poles=.false.
-           shae(ii,1)=phase_of(egrid(ii))
-           psol=>sps
-           ph_poles=.true.
-           shps(ii,1)=phase_of(egrid(ii))
-           ishift(ii)=nint((shae(ii,1)-shps(ii,1))/pi)
+           ishift(ii)=nint((shae(ii,iq)-shps(ii,iq))/pi)
          end do
          if(nvkb>0) then
            do ii=1,nanch
-             ex=pf%epa(l1,ikap)+danch*dble(ii-(nanch+1)/2)
-             psol=>sae
-             ph_poles=.false.
-             tt=phase_of(ex)
-             psol=>sps
-             ph_poles=.true.
-             ianch(ii)=nint((tt-phase_of(ex))/pi)
+             ianch(ii)=nint((tanae(ii,iq)-tanps(ii,iq))/pi)
            end do
            thal=pi*dble(majority(ianch))
          else
            thal=pi*dble(majority(ishift))
          end if
-         shps(:,1)=shps(:,1)+thal
+         shps(:,iq)=shps(:,iq)+thal
 
-         call edges(sae,.false.,shae(:,1),0.0d0,nae,eae,kae,edae)
-         call edges(sps,.true.,shps(:,1),thal,nps,eps,kps,edps)
+         call edges(sae,.false.,shae(:,iq),0.0d0,nae,eae,kae,edae)
+         call edges(sps,.true.,shps(:,iq),thal,nps,eps,kps,edps)
          deallocate(edir)
 
 ! every all-electron edge, lowest first, and its partner: the nearest
@@ -487,8 +508,8 @@
            if(eae(ie)<0.0d0) smax_de=max(smax_de,abs(eps(je)-eae(ie)))
 
 ! the cutoff of the pseudopotential's state
-           call ws_convergence(ll,iedge,wsg,pf%evkb(1:nvkb,l1,ikap),eps(je), &
-&               nb,ecut,err,ierr)
+           call ws_convergence(ll,iedge,wsg(iq),pf%evkb(1:nvkb,l1,ikap), &
+&               eps(je),nb,ecut,err,ierr)
            if(ierr/=0) then
              if(eae(ie)<0.0d0) sinf(1:2)=.true.
              if(eae(ie)<0.0d0 .and. iedge==3) sinf(3:4)=.true.
@@ -522,9 +543,10 @@
            write(6,'(a,3i4,1p,e24.16)') 'ws_extra',ll,ikap,edps(ii),eps(ii)
            nextra=nextra+1
          end do
-         call phsft_free(sae)
-         call phsft_free(sps)
        end do
+       call phsft_free(sae)
+       call phsft_free(sps)
+       deallocate(wsg,polq,tanae,tanps)
      end do
    end do
  end if
@@ -691,6 +713,20 @@
  nullify(psol)
  end subroutine edges
 
+ subroutine scan_phases(ex,thae,thps)
+!! the phases of every radius at ex from one solution of each atom: the
+!! all-electron one's, and the pseudopotential's less pi per pole of each
+!! sphere below ex (phase_of)
+ real(dp), intent(in) :: ex
+ real(dp), intent(out) :: thae(nq),thps(nq)
+ integer :: jq
+ call phsft_node_phases(sae,ex,thae)
+ call phsft_node_phases(sps,ex,thps,nodes=.false.)
+ do jq=1,nq
+   thps(jq)=thps(jq)-pi*dble(count(polq(jq)%e<ex))
+ end do
+ end subroutine scan_phases
+
  real(dp) function phase(ex)
 !! the phase of psol at ex plus ph_shift, less ph_tgt
  real(dp), intent(in) :: ex
@@ -702,10 +738,10 @@
 !! per pole of r phi'/phi at rs below ex
  real(dp), intent(in) :: ex
  if(ph_poles) then
-   phase_of=phsft_node_phase(psol,1,ex,nodes=.false.) &
+   phase_of=phsft_node_phase(psol,ph_iq,ex,nodes=.false.) &
 &           -pi*dble(count(edir(1:ndir)<ex))
  else
-   phase_of=phsft_node_phase(psol,1,ex)
+   phase_of=phsft_node_phase(psol,ph_iq,ex)
  end if
  end function phase_of
 
@@ -756,7 +792,7 @@
 !! u of psol at rs and the energy ex
  real(dp), intent(in) :: ex
  real(dp) :: th
- th=phsft_node_phase(psol,1,ex,nodes=.false.,uq_out=u_rs)
+ th=phsft_node_phase(psol,ph_iq,ex,nodes=.false.,uq_out=u_rs)
  end function u_rs
 
  integer function majority(iv)
