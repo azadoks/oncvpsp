@@ -30,9 +30,6 @@ None.
 - **Unused arguments**: `icmod` and `rcfact` in `modcore`/`modcore2`.
   Removing them would change the routines' calls for programs that use the
   library. Their comments say they are not used.
-- **`run_diag_sr_so_r.f90`**: unlike `run_diag`, it doesn't stop on an
-  `ldiracfb` error. `run_diag` runs first with identical calls and does
-  stop.
 - **The sr/fr divergences**: where the scalar- and fully-relativistic
   codes differed for no evident reason before they were merged, both
   behaviours are kept behind `irel`; they are listed under
@@ -62,6 +59,6 @@ Each of these was checked and turned out not to be a bug:
   `ldiracfb` fails, and the outer convergence test catches a bad `et`.
   With `irel<2` it does stop on an `lschfb` error, but checking for
   `irel=2` could stop runs that now recover, so it is left as is.
-- Leaks in `vrel`, `run_diag_sr_so_r`, `run_config` and `modcore`:
+- Leaks in `vrel`, `run_diag`, `run_config` and `modcore`:
   these are local allocatables, which Fortran deallocates automatically on
   return.

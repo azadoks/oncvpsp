@@ -655,12 +655,13 @@
  write(6,'(/a,f12.6/)') 'Pseudoatom total energy', epstot
 
  call run_diag(lmax,npa,epa,wellprj,lloc,irc, &
-&               vlocpw,vkbpw,evkb,nproj,rr,vfull,vp,zz,mmax,mxprj,irel,nkap)
+&               vlocpw,vkbpw,evkb,nproj,rr,vfull,vp,zz,mmax,mxprj,irel,nkap, &
+&               0,vsrpw,esr,vsopw,eso)
 
  if(irel==2) then
-   call run_diag_sr_so_r(lmax,npa,epa,wellprj,lloc,irc, &
-&                        vlocpw,vsrpw,esr,vsopw,eso,nproj,rr,vfull,vp,zz, &
-&                        mmax,mxprj)
+   call run_diag(lmax,npa,epa,wellprj,lloc,irc, &
+&                 vlocpw,vkbpw,evkb,nproj,rr,vfull,vp,zz,mmax,mxprj,irel, &
+&                 nkap,1,vsrpw,esr,vsopw,eso)
 
 ! save full info for psml
    allocate(vpsml(mmax,mxl+2,mxkap))

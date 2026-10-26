@@ -18,7 +18,7 @@
 !
  subroutine run_diag(lmax,npa,epa,wellprj,lloc,irc, &
 &                    vlocpw,vkbpw,evkb,nproj,rr,vfull,vp,zz,mmax,mxprj,irel, &
-&                    nkap)
+&                    nkap,iso,vsrpw,esr,vsopw,eso)
 
 !! diagnostics for semi-local and Vanderbilt-Kleinman-bylander pseudopotentials
 !! checks bound-state energies, norms, and slopes, and pseudo-bound state
@@ -26,6 +26,9 @@
 !! log derivatives at rc.
 !! Should test as essentially exact for non-relativitic calculations
 !! Error for relativistic is B matrix Hermiticity error
+!! With iso=1 (fully relativistic) the projectors of each J are instead
+!! the scalar-relativistic ones and the spin-orbit ones times <L dot S>
+!! (sr_so_r)
 !!
 !! @param lmax  maximum angular momentum
 !! @param npa  principal quantum number for corresponding all-electron state
@@ -49,6 +52,14 @@
 !! @param mxprj  dimension of number of projectors
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param nkap  number of kappa per l: 1, or 2 for irel=2
+!! @param iso  0 the projectors vkbpw, evkb; 1 those of vsrpw..eso
+!! @param vsrpw  normalized scalar-relativistic projectors, as functions of
+!!               pieces (iso=1)
+!! @param esr  energy coefficients of vsr (iso=1)
+!! @param vsopw  normalized spin-orbit projectors, as functions of pieces
+!!               (iso=1)
+!! @param eso  energy coefficients of vso (multiplied by <L dot S> here;
+!!             iso=1)
 
  use constants_m, only: dp, mxl, mxlin
  use kappa_m, only: kap_count, kap_of
@@ -57,33 +68,49 @@
  implicit none
 
 !Input variables
- integer, intent(in) :: lmax,lloc,mmax,mxprj,irel,nkap
+ integer, intent(in) :: lmax,lloc,mmax,mxprj,irel,nkap,iso
  integer, intent(in) :: npa(mxprj,mxlin+1),irc(mxlin+1),nproj(mxlin+1)
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: rr(mmax),vp(mmax,mxl+2,nkap),vfull(mmax)
  real(dp), intent(in) :: epa(mxprj,mxlin+1,nkap),evkb(mxprj,mxl+1,nkap)
  logical, intent(in) :: wellprj(mxprj,mxlin+1)
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1,nkap)
+ real(dp), intent(in) :: esr(2*mxprj,mxl+1),eso(2*mxprj,mxl+1)
+ type(piecewise_t), intent(in) :: vsrpw(2*mxprj,mxl+1),vsopw(2*mxprj,mxl+1)
 
 !Local variables
- integer :: ll,l1,ikap,kap,mkap,ierr,mch,mchf
+ integer :: ll,l1,ikap,kap,mkap,ierr,mch,mchf,nvkbt
  integer :: iprj,nnae,nnp,npr
  real(dp) :: al,emax,emin,etest,umch,upmch,uldf,gam,gpr,cnorm
  real(dp), allocatable :: uu(:),up(:),ur(:,:),urp(:,:)
 
+ real(dp), allocatable :: evkbt(:)
+ type(piecewise_t), allocatable :: vkbtpw(:)
+ character(len=16) :: name
+
  allocate(uu(mmax),up(mmax),ur(mmax,2),urp(mmax,2))
+ allocate(evkbt(4*mxprj),vkbtpw(4*mxprj))
 
  al = 0.01d0 * log(rr(101)/rr(1))
 
 ! loop for diagnostic output using Vanderbilt Kleinman-Bylander projectors
 !
- if(irel==2) then
+ if(iso==1) then
+   name='run_diag_sr_so_r'
+   write(6,'(/a/a)') &
+& 'Diagnostic tests using Vanderbilt-Kleinman-Bylander pseudopotentials',&
+& '  relativistic with scalar and spin-orbit non-local projectors'
+   write(6,'(/2a)')'   l  kap   rcore       rmatch      e in        ', &
+&   'delta e    norm test   slope test'
+ else if(irel==2) then
+   name='run_diag_r'
    write(6,'(/a/a)') &
 &   'Diagnostic tests using Vanderbilt-Kleinman-Bylander pseudopotentials',&
 &   '  relativistic with J = L +/- 1/2 projectors'
    write(6,'(/2a)')'   l  kap   rcore       rmatch      e in        ', &
 &     'delta e    norm test   slope test'
  else
+   name='run_diag'
    write(6,'(/a/a)') &
 &   'Diagnostic tests using Vanderbilt-Kleinman-Bylander pseudopotentials',&
 &   '  1 or more projectors used as specified by nproj input data'
@@ -134,6 +161,7 @@
        uldf=upmch/umch
 
        if(l1==lloc+1) npr=0
+       call assemble_projectors(ll,l1,ikap,npr,nvkbt)
 
        etest=epa(iprj,l1,ikap)
        emax=etest+0.1d0*abs(etest)+0.05d0
@@ -143,11 +171,11 @@
 
          emax=min(emax,0.0d0)
 
-         call lschvkbb(ll+iprj,ll,npr,ierr,etest,emin,emax, &
-&                      rr,vp(1,lloc+1,ikap),vlocpw,vkbpw(1:npr,l1,ikap), &
-&                      evkb(1,l1,ikap),uu,up,mmax,mch)
+         call lschvkbb(ll+iprj,ll,nvkbt,ierr,etest,emin,emax, &
+&                      rr,vp(1,lloc+1,ikap),vlocpw,vkbtpw(1:nvkbt),evkbt, &
+&                      uu,up,mmax,mch)
          if(ierr/=0 .and. irel==2) then
-           write(6,'(a,4i4,1p,2e16.8)') 'run_diag_r: lschvkbb ERROR', &
+           write(6,'(a,4i4,1p,2e16.8)') trim(name)//': lschvkbb ERROR', &
 &                iprj,ll,kap,ierr,epa(iprj,l1,ikap),etest
          else if(ierr/=0) then
            write(6,'(a,3i4,1p,2e16.8)') 'run_diag: lschvkbb ERROR', &
@@ -162,14 +190,14 @@
 !     pseudo-wave function may have a node that entered at r = 0 without
 !     an eigenvalue passing (outwf_index)
 
-         nnp=ll+1+outwf_index_at(ll,rr,mmax,vp(1,lloc+1,ikap),vlocpw,npr, &
-&            vkbpw(1:npr,l1,ikap),evkb(1:npr,l1,ikap),epa(iprj,l1,ikap),mchf)
-         call lschvkbbe(nnp,ll,npr,ierr,etest,uldf,emin,emax, &
-&                       rr,vp(1,lloc+1,ikap),vlocpw,vkbpw(1:npr,l1,ikap), &
-&                       evkb(1,l1,ikap),uu,up,mmax,mchf)
+         nnp=ll+1+outwf_index_at(ll,rr,mmax,vp(1,lloc+1,ikap),vlocpw,nvkbt, &
+&            vkbtpw(1:nvkbt),evkbt(1:nvkbt),epa(iprj,l1,ikap),mchf)
+         call lschvkbbe(nnp,ll,nvkbt,ierr,etest,uldf,emin,emax, &
+&                       rr,vp(1,lloc+1,ikap),vlocpw,vkbtpw(1:nvkbt),evkbt, &
+&                       uu,up,mmax,mchf)
 
          if(ierr/=0 .and. irel==2) then
-           write(6,'(a,4i4,1p,2e16.8)') 'run_diag_r: lschvkbbe ERROR', &
+           write(6,'(a,4i4,1p,2e16.8)') trim(name)//': lschvkbbe ERROR', &
 &                iprj,ll,kap,ierr,epa(iprj,l1,ikap),etest
          else if(ierr/=0) then
            write(6,'(a,4i4,1p,2e16.8)') 'run_diag: lschvkbbe ERROR', &
@@ -192,6 +220,51 @@
    end do  !iprj
  end do !l1
 
- deallocate(uu,up,ur,urp)
+ deallocate(uu,up,ur,urp,evkbt,vkbtpw)
  return
+
+ contains
+
+ subroutine assemble_projectors(ll,l1,ikap,npr,nvkbt)
+!! the nvkbt projectors vkbtpw, evkbt of l and ikap: the npr of vkbpw,
+!! evkb, or with iso=1 the scalar-relativistic ones and the spin-orbit
+!! ones times <L dot S>
+!!
+!! @param ll  angular momentum
+!! @param l1  ll+1
+!! @param ikap  1 for j=l+1/2, 2 for j=l-1/2
+!! @param npr  number of projectors of l
+!! @param nvkbt  number of projectors of the channel
+ integer, intent(in) :: ll,l1,ikap,npr
+ integer, intent(out) :: nvkbt
+ real(dp) :: fso
+ integer :: ii
+ evkbt(:)=0.0d0
+ if(iso==0) then
+   nvkbt=npr
+   do ii=1,npr
+     vkbtpw(ii)=vkbpw(ii,l1,ikap)
+     evkbt(ii)=evkb(ii,l1,ikap)
+   end do
+   return
+ end if
+ if(ikap==1) fso= 0.5d0*ll
+ if(ikap==2) fso=-0.5d0*(ll+1)
+ if(ll==0) then
+   nvkbt=npr
+   do ii=1,npr
+     vkbtpw(ii)=vsrpw(ii,l1)
+     evkbt(ii)=esr(ii,l1)
+   end do
+ else
+   nvkbt=4*npr
+   do ii=1,2*npr
+     vkbtpw(ii)=vsrpw(ii,l1)
+     evkbt(ii)=esr(ii,l1)
+     vkbtpw(2*npr+ii)=vsopw(ii,l1)
+     evkbt(2*npr+ii)=fso*eso(ii,l1)
+   end do
+ end if
+ end subroutine assemble_projectors
+
  end subroutine run_diag

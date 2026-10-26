@@ -118,8 +118,8 @@ looks like this:
   j=l-1/2. Loops over it run to `mkap`, which is 1 when `nkap=1` or l=0.
   `boundstate`, `scatterstate` and `aeatom` choose the Schroedinger or Dirac
   solver. `_r` is left only on routines that exist for the
-  fully-relativistic code alone (`sr_so_r`, `run_diag_sr_so_r`,
-  `renorm_r`). See [Merging sr and fr](fr_merge_plan.md).
+  fully-relativistic code alone (`sr_so_r`, `renorm_r`). See
+  [Merging sr and fr](fr_merge_plan.md).
 - A new routine takes integer and `real(dp)` scalars and explicit-shape
   arrays, with their sizes as arguments, so that C could call it: no
   logical, optional, assumed-shape, allocatable or pointer dummies.

@@ -8,7 +8,8 @@ fully-relativistic (fr) program was a copy: a `foo_r` for most routines
 This was the plan for merging the two, and is the record of how it went.
 All its steps are done: every executable now runs `oncvpsp_main(irel,
 istage)`, and `_r` is left only on the routines that exist for fr alone
-(`sr_so_r`, `run_diag_sr_so_r`, `renorm_r`).
+(`sr_so_r`, `renorm_r`; `run_diag_sr_so_r` became `run_diag` with
+`iso=1`).
 
 ### Rules
 
