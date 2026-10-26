@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module sbf_basis_con_m
+
+ implicit none
+ private
+ public :: sbf_basis_con
+
+ contains
+
  subroutine sbf_basis_con(ll,rc,nbas,qroot,psb,nbasmx,orbasis,orbasis_der, &
 &                         iprj,mxprj,ncon,ncon_in)
 
@@ -136,3 +145,5 @@
 
  return
  end subroutine sbf_basis_con
+
+ end module sbf_basis_con_m

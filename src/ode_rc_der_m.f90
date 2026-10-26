@@ -15,6 +15,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module ode_rc_der_m
+
+ implicit none
+ private
+ public :: ode_rc_der
+
+ contains
+
  subroutine ode_rc_der(irel,ll,kap,ee,rr,vv,uu,up,mmax,rc,uorder)
 
 !! value and four derivatives at any radius rc of uu/r, uu an all-electron
@@ -169,3 +178,5 @@
  end do
  return
  end subroutine ode_rc_der
+
+ end module ode_rc_der_m

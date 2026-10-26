@@ -80,6 +80,7 @@
 &                    pw_free, pw_node_values
  use logmesh_m, only: lm_interp
  use quad_m, only: log_norm
+ use cinf_taper_m, only: cinf_taper
  implicit none
 
 !Input variables
@@ -104,7 +105,6 @@
  real(dp), allocatable :: gg0(:,:),hmat(:,:),hmev(:),work(:)
  real(dp), allocatable :: uua(:,:)
  type(piecewise_t) :: vkbb(mxprj)
- real(dp), external :: cinf_taper
 ! the wall at mbfact*rc; the basis weights fall from 1 at basfact times
 ! the largest kinetic energy of the sbf basis to 0 at ebfact times that
  real(dp), parameter :: mbfact=3.0d0,basfact=1.25d0,ebfact=1.5d0

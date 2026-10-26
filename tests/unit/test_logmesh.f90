@@ -30,8 +30,9 @@
 &                                       stderr => error_unit
  use logmesh_m, only: lm_blend, lm_interp, lm_derivs, lm_cumint, &
 &                     lm_integral, lm_integral_weights, lm_root
+ use sbf8_m, only: sbf8
+ use sbf_overlap_m, only: sbf_overlap
  implicit none
- external :: sbf_overlap, sbf8
 
 !Local variables
  real(dp), parameter :: rr1 = 5.0e-5_dp, rmax = 45.0_dp

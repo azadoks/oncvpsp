@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module exc_relx_m
+
+ implicit none
+ private
+ public :: exc_relx
+
+ contains
+
  subroutine exc_relx(rho,vxc,exc,mmax)
 
 !! adds the relativistic correction of the LDA (Slater) exchange of
@@ -71,3 +80,5 @@
 
  return
  end subroutine exc_relx
+
+ end module exc_relx_m

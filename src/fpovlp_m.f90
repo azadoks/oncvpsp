@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module fpovlp_m
+
+ implicit none
+ private
+ public :: fpovlp
+
+ contains
+
 ! calculates all-electron wave function overlap intergrals
 
  subroutine fpovlp(gg,hh,mmax,rc,ll,kap,zz,ss,rr,irel)
@@ -77,3 +86,5 @@
 
  return
  end subroutine fpovlp
+
+ end module fpovlp_m

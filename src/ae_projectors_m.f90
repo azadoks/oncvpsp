@@ -100,6 +100,7 @@
 !! there are no bound ones, the next ones debl above; their wells are
 !! those of ikap=1, kept for ikap=2 (vwell, wmesh). nnwell is the n of the
 !! last well state of ikap=1 that was not fully relativistic
+ use fpovlp_m, only: fpovlp
  integer, intent(in) :: irel,ll,kap,ikap,nproj,well_n,well_tail,irc,mmax
  real(dp), intent(in) :: ep,debl,well_onset,rc,qcut,rr(mmax),zz
  real(dp), intent(in) :: vfull(mmax)
@@ -254,6 +255,7 @@
 !! below 0 the tail grows, and the round-off of E_resid, computed from the
 !! transform of the windowed tail, grows with its peak squared, from kappa
 !! L ~ 1.5 (free_tail_m)
+ use fpovlp_m, only: fpovlp
  integer, intent(in) :: irel,ll,kap,ikap,nn,irc,mmax
  integer, intent(inout) :: nnwell
  real(dp), intent(in) :: ee,rc,qcut,rr(mmax),zz,vfull(mmax)
@@ -324,6 +326,7 @@
 
  subroutine ae_overlap(irel,ll,kap,nproj,uua,rr,zz,mmax,rc,qq)
 !! the overlap matrix of the projectors' all-electron states inside rc
+ use fpovlp_m, only: fpovlp
  integer, intent(in) :: irel,ll,kap,nproj,mmax
  real(dp), intent(in) :: uua(mmax,mxprj),rr(mmax),zz,rc
  real(dp), intent(inout) :: qq(mxprj,mxprj)

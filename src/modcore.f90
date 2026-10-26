@@ -57,6 +57,7 @@
  use modcore_m, only: core_crossover, poly_core_fit, core_pieces, &
 &                     d2exc_baseline, d2exc_report
  use pieces_m, only: piecewise_t
+ use der2exc_m, only: der2exc
  implicit none
 
 !Input variables

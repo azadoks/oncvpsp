@@ -57,6 +57,7 @@
  use logmesh_m, only: lm_derivs
  use modcore_m, only: core_crossover, teter_core_derivs, d2exc_baseline, &
 &                     d2exc_report
+ use der2exc_m, only: der2exc
  implicit none
 
 !Input variables

@@ -52,6 +52,8 @@
  use constants_m, only: dp, ae_tolres
  use ae_scf_m, only: ae_energies, ae_residual, ae_converged, ae_mix, &
 &                    ae_outer_peak
+ use tfapot_m, only: tfapot
+ use vout_m, only: vout
  implicit none
 
 !Input variables
@@ -76,7 +78,6 @@
  logical, intent(in) :: warm
 
 !Local variables
- real(dp) :: tfapot
  integer :: nin,mch
  real(dp) :: amesh,al
  real(dp) :: eeel,eexc,et,sf,eeig

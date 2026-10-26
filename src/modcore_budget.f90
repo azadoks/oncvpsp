@@ -117,6 +117,8 @@
  use pieces_m, only: piecewise_t
  use logmesh_m, only: lm_derivs, lm_interp, lm_integral, lm_fh_reach, &
 &                     lm_blend
+ use cinf_taper_m, only: cinf_taper
+ use der2exc_m, only: der2exc
  implicit none
 
 !Input variables
@@ -163,7 +165,6 @@
  real(dp), allocatable :: core(:),nval(:),work(:),eps(:),vxc(:),wf(:),wc(:)
  real(dp), allocatable :: fext(:),af(:),ac(:),swin(:),xr(:),ri(:),nvi(:)
  real(dp), allocatable :: wki(:),epi(:),vxi(:)
- real(dp), external :: cinf_taper
  real(dp), allocatable :: qn(:),wn(:),ot(:),og(:),sho(:),cho(:)
  real(dp), allocatable :: so0(:,:),co0(:,:),tab(:,:,:),tabw(:,:)
  real(dp), allocatable :: fx(:),fw(:),plg(:,:)

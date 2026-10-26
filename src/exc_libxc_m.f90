@@ -17,6 +17,14 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 
+ module exc_libxc_m
+
+ implicit none
+ private
+ public :: exc_libxc
+
+ contains
+
  subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax)
 !!  interface to libxc library for potential and energy density calculation
 !!
@@ -33,6 +41,7 @@
 &                         xc_functl_get_vxc, xc_functl_write_info, &
 &                         xc_functl_end, XC_DERIV_NUMERICAL
  use constants_m, only: dp, pi
+ use derivs_m, only: derivs
  implicit none
 
 !Input variables
@@ -121,3 +130,5 @@
  return
 
  end subroutine exc_libxc
+
+ end module exc_libxc_m

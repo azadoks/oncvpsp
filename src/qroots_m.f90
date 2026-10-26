@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module qroots_m
+
+ implicit none
+ private
+ public :: qroots
+
+ contains
+
  subroutine qroots(ll,rc,ulgd,nroot,dltq,qmax,qroot)
 
 !! calculate q values for spherical Bessel function orthogonal basis inside r_c
@@ -34,6 +43,7 @@
 !! @param qroot  set of q's satisfying dj_l(q*r)/dr / jl(q*r) = ulgd
 
  use constants_m, only: dp
+ use sbf_rc_der_m, only: sbf_rc_der
  implicit none
 
 !Input variables
@@ -152,3 +162,5 @@
  end subroutine polish
 
  end subroutine qroots
+
+ end module qroots_m

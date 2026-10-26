@@ -15,6 +15,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module cinf_taper_m
+
+ implicit none
+ private
+ public :: cinf_taper
+
+ contains
+
 ! The C-infinity taper from 1 to 0 over a window, used wherever a function
 ! must be cut off without a kink: the ionic tail, the Teter function of the
 ! model cores, the unscreened local potential where there is no charge,
@@ -52,3 +61,5 @@
  end if
  return
  end function cinf_taper
+
+ end module cinf_taper_m

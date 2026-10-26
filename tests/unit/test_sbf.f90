@@ -28,8 +28,8 @@
 &  ieee_is_finite
  use sbf_m, only: sbf_trig, sbf_trig_rising
  use sbf_q_m, only: sbfq_values
+ use sbf8_m, only: sbf8
  implicit none
- external :: sbf8
 
 !Local variables
  integer, parameter :: npt = 2002, lmax = 7

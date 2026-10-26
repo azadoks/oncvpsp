@@ -50,6 +50,7 @@
  use constants_m, only: dp
  use pieces_m, only: pw_reach
  use logmesh_m, only: lm_derivs, lm_integral
+ use sbf_rc_der_m, only: sbf_rc_der
  implicit none
 
 !Input variables

@@ -16,10 +16,21 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine excpzca(rho,vxc,exc,mmax)
 
-!! calculates Perdew-Zunger-Ceperly_Alder exchange-correlation potential
-!! and energy density J. P. Perdew and A. Zunger, Phys. Rev. B23, 5048 (1981)
+ module excvwn_m
+
+ implicit none
+ private
+ public :: excvwn
+
+ contains
+
+ subroutine excvwn(rho,vxc,exc,mmax)
+
+!! calculates the Slater exchange and Vosko-Wilk-Nusair correlation
+!! (the fit to the Ceperley-Alder results, "VWN5" of Libxc's lda_c_vwn)
+!! potential and energy density, S. H. Vosko, L. Wilk and M. Nusair,
+!! Can. J. Phys. 58, 1200 (1980): the LDA of the NIST atomic reference data
 !!
 !! @param rho  charge density
 !! @param vxc  exchange-correlation potential
@@ -38,52 +49,44 @@
 
 !Local variables
  real(dp), parameter :: pi4=4.0d0*pi
- real(dp), parameter :: pi4i=1.0d0/pi4
  real(dp), parameter :: thrd=1.0d0/3.0d0
- integer :: ii
- real(dp) :: rs,rh,sqrs,rsl,den
-
  real(dp), parameter :: conrs = (3.d0/(4.d0*pi))**thrd
  real(dp), parameter :: convx = (1.5d0/pi)**(2.0d0/3.0d0)
- real(dp), parameter ::conex = 0.75d0*convx
+ real(dp), parameter :: conex = 0.75d0*convx
 
+!paramagnetic VWN5 parameters
+ real(dp), parameter :: aa=0.0310907d0
+ real(dp), parameter :: bb=3.72744d0
+ real(dp), parameter :: cc=12.9352d0
+ real(dp), parameter :: x0=-0.10498d0
 
-!rs>1, Ceperley-Alder fit to QMC
- real(dp), parameter :: gam = -0.1423d0
- real(dp), parameter :: bt1 =  1.0529d0
- real(dp), parameter :: bt2 =  0.3334d0
+ integer :: ii
+ real(dp) :: qq,xx0,rs,xx,xxx,at,tq,ec,decdx
 
-!rs<1, Perdew-Zunger leading terms of RPA high-density expansion
-!AA and BB known from Gell-Mann & Bruckner
-!PZ adjust CC and DD for contiunity of exc and vxc at rs=1
- real(dp), parameter :: AA =   0.0311d0
- real(dp), parameter :: BB =  -0.0480d0
- real(dp), parameter :: CC =   0.0020d0
- real(dp), parameter :: DD =  -0.0116d0
-
-!libxc uses PZ's modified coefficients CC=0.0020191519406228 and
-!DD=-0.0116320663789130
+ qq=sqrt(4.0d0*cc - bb**2)
+ xx0=x0**2 + bb*x0 + cc
 
  do ii=1,mmax
    if(rho(ii)>1.0d-20) then
-     rh=rho(ii)/pi4
-     rs=conrs*rh**(-thrd)
-     if(rs > 1.0d0) then
-       sqrs=sqrt(rs)
-       den=1.0d0 + bt1*sqrs +bt2*rs
-       exc(ii)=-conex/rs + gam/den
-       vxc(ii)=-convx/rs + gam*(1.0d0 + (3.5d0*bt1*sqrs &
-&              + 4.0d0*bt2*rs)*thrd)/den**2
-     else
-       rsl=log(rs)
-       exc(ii)=-conex/rs + AA*rsl + BB + CC*rs*rsl + DD*rs
-       vxc(ii)=-convx/rs + AA*rsl + (BB-thrd*AA) + 2.0d0*thrd*CC*rs*rsl &
-&              + thrd*(2.0d0*DD-CC)*rs
-     end if
+     rs=conrs*(rho(ii)/pi4)**(-thrd)
+     xx=sqrt(rs)
+     xxx=xx**2 + bb*xx + cc
+     at=atan(qq/(2.0d0*xx + bb))
+     tq=(2.0d0*xx + bb)**2 + qq**2
+     ec=aa*(log(xx**2/xxx) + 2.0d0*bb/qq*at &
+&      - bb*x0/xx0*(log((xx - x0)**2/xxx) + 2.0d0*(bb + 2.0d0*x0)/qq*at))
+     decdx=aa*(2.0d0/xx - (2.0d0*xx + bb)/xxx - 4.0d0*bb/tq &
+&      - bb*x0/xx0*(2.0d0/(xx - x0) - (2.0d0*xx + bb)/xxx &
+&      - 4.0d0*(bb + 2.0d0*x0)/tq))
+! v = e - (rs/3) de/drs, with de/drs = (de/dx)/(2x)
+     exc(ii)=-conex/rs + ec
+     vxc(ii)=-convx/rs + ec - xx*decdx/6.0d0
    else
      vxc(ii)=0.0d0 ; exc(ii)=0.0d0
    end if
  end do
 
  return
- end subroutine excpzca
+ end subroutine excvwn
+
+ end module excvwn_m

@@ -58,6 +58,7 @@
 !! @param vion  V_ion
 
  use constants_m, only: dp
+ use vout_m, only: vout
  implicit none
 
 !Input variables
@@ -290,6 +291,8 @@
 
  use constants_m, only: dp, mxstate, mxl, mxlin, mxkap
  use pieces_m, only: piecewise_t
+ use cinf_taper_m, only: cinf_taper
+ use vout_m, only: vout
  implicit none
 
 !Input variables
@@ -319,7 +322,6 @@
  integer, parameter :: maxiter=50
  real(dp), allocatable :: ww(:),vp0(:,:,:),vnew(:),vnext(:,:),vsw(:)
  real(dp) :: ra,rb,change,sn,sd
- real(dp), external :: cinf_taper
  integer :: ii,l1,ik,iter
 
  allocate(ww(mmax),vp0(mmax,mxl+2,nkap),vnew(mmax),vnext(mmax,nkap),vsw(mmax))

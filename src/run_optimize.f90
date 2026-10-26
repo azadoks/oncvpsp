@@ -88,6 +88,10 @@
 &                       free_tail_defined
  use well_mesh_m, only: well_mesh_t
  use logmesh_m, only: lm_integral
+ use const_basis_m, only: const_basis
+ use ode_rc_der_m, only: ode_rc_der
+ use qroots_m, only: qroots
+ use sbf_basis_con_m, only: sbf_basis_con
  implicit none
 
 !Input variables

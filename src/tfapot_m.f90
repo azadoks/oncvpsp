@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module tfapot_m
+
+ implicit none
+ private
+ public :: tfapot
+
+ contains
+
 ! tfapot
  function tfapot(rr,zz)
 
@@ -58,3 +67,5 @@
 
  return
  end function tfapot
+
+ end module tfapot_m

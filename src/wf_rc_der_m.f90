@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module wf_rc_der_m
+
+ implicit none
+ private
+ public :: wf_rc_der
+
+ contains
+
  subroutine wf_rc_der(rr,uu,al,rc,irc,mmax,uorder)
 
 !! calculate derivatives of radial wave functin at core radius rc
@@ -87,3 +96,5 @@
 
  return
  end subroutine wf_rc_der
+
+ end module wf_rc_der_m

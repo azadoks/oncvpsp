@@ -364,6 +364,7 @@ contains
     !  e        - energy per-volume                                         !
     !  vtau     - extra term arising from MGGA potential                    !
     !-----------------------------------------------------------------------!
+ use derivs_m, only: derivs
     type(xc_functl_t), intent(inout) :: functl
     integer     ,       intent(in)    :: np
     real(8),           intent(in)    :: al

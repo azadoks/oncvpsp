@@ -59,6 +59,7 @@
  use kappa_m, only: kap_count, kap_of, j_share
  use ae_scf_m, only: ae_residual, ae_converged, ae_anderson1
  use pieces_m, only: piecewise_t
+ use vout_m, only: vout
  implicit none
 
 !Input variables

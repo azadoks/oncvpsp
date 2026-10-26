@@ -15,9 +15,8 @@
 #
 # Not checked: the modules themselves (their procedures already have
 # explicit interfaces), but those that call external procedures, which go
-# with their driver (modules_of); exc_off_pbe.f (fixed form); and the libxc
-# interface (exc_libxc_stub.f90 is used in its place, so calls into it are checked
-# against the stub's signature).
+# with their driver (modules_of). The libxc interface (exc_libxc_m) and the
+# PBE routines (exc_off_pbe_m) are modules now.
 
 set -euo pipefail
 
@@ -65,7 +64,7 @@ for file in oncvpsp.F90 oncvpsp_nr.F90 oncvpsp_r.F90 oncvpsp_ae.F90 oncvpsp_ps.F
             oncvpsp_ld.f90 oncvpsp_confine.f90; do
     all="$work/all.F90"
     : > "$all"
-    for src in $sources exc_libxc_stub.f90; do
+    for src in $sources; do
         cat "$top/src/$src" >> "$all"
         echo >> "$all"
     done
@@ -91,7 +90,7 @@ for file in oncvpsp.F90 oncvpsp_nr.F90 oncvpsp_r.F90 oncvpsp_ae.F90 oncvpsp_ps.F
                 }
                 print
             }' <(line=1
-                 for src in $sources exc_libxc_stub.f90 \
+                 for src in $sources \
                             $(modules_of "$file") $file; do
                      echo "$line $src"
                      line=$((line + $(wc -l < "$top/src/$src") + 1))

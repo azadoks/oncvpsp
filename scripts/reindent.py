@@ -274,7 +274,7 @@ def reindent(text, fname):
 # .pre-commit-config.yaml and fortitude.toml.  pre-commit never passes these
 # files; an editor formatting on save does, and gets them back unchanged.
 IMPORTED = (
-    "src/exc_off_pbe.f",
+    "src/exc_off_pbe_m.f",
     "src/functionals.F90",
     "src/m_libxc_list.F90",
     "src/gg1cc.f90",

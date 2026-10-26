@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module const_basis_m
+
+ implicit none
+ private
+ public :: const_basis
+
+ contains
+
 !calculates basis for residual energy minimization
 
  subroutine const_basis(nbas,ncon,cons,orbasis,orbasis_der,&
@@ -142,3 +151,5 @@
 
  return
  end subroutine const_basis
+
+ end module const_basis_m

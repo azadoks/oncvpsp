@@ -9,24 +9,24 @@ set(src_oncvpsp
     build_info_m.f90
     check_data.f90
     config_ae_m.f90
-    const_basis.f90
+    const_basis_m.f90
     constants_m.f90
-    der2exc.f90
-    derivs.f90
+    der2exc_m.f90
+    derivs_m.f90
     diagout.f90
     vloc_cutoff.f90
-    dpnint.f90
+    dpnint_m.f90
     eresid.f90
     free_tail_m.f90
-    exc_off_pbe.f
-    exc_relx.f90
-    excvwn.f90
-    exchdl.f90
-    excpzca.f90
-    excwig.f90
+    exc_off_pbe_m.f
+    exc_relx_m.f90
+    excvwn_m.f90
+    exchdl_m.f90
+    excpzca_m.f90
+    excwig_m.f90
     inward_start.f90
     inward2_m.f90
-    cinf_taper.f90
+    cinf_taper_m.f90
     ionic_tail.f90
     ldiracfb.f90
     ldiracfs.f90
@@ -45,13 +45,13 @@ set(src_oncvpsp
     modcore3.f90
     modcore_budget.f90
     modcore_m.f90
-    ode_rc_der.f90
+    ode_rc_der_m.f90
     ae_delta.f90
     oncvpsp_main.F90
     optimize.f90
     psatom.f90
     pspot.f90
-    qroots.f90
+    qroots_m.f90
     relatom.f90
     relativity_m.f90
     renorm_r.f90
@@ -62,11 +62,11 @@ set(src_oncvpsp
     run_phsft.f90
     run_plot.f90
     run_vkb.f90
-    sbf_basis_con.f90
-    sbf_rc_der.f90
-    sbf8.f90
+    sbf_basis_con_m.f90
+    sbf_rc_der_m.f90
+    sbf8_m.f90
     sbf_m.f90
-    sbf_overlap.f90
+    sbf_overlap_m.f90
     scatterstate.f90
     sr_flux_m.f90
     dirac_m.f90
@@ -93,10 +93,10 @@ set(src_oncvpsp
     confine_wall_m.f90
     outwf_m.F90
     sratom.f90
-    tfapot.f90
+    tfapot_m.f90
     vkboutwf.f90
-    wf_rc_der.f90
-    vout.f90
+    wf_rc_der_m.f90
+    vout_m.f90
     wellstate.f90
     well_mesh_m.f90
     czt_m.f90
@@ -105,7 +105,7 @@ set(src_oncvpsp
     # Non-/scalar-relativistic files
     ae_file_m.f90
     ps_file_m.f90
-    fpovlp.f90
+    fpovlp_m.f90
     gnu_script.f90
     linout.f90
     upfout.f90
@@ -113,9 +113,9 @@ set(src_oncvpsp
     sr_so_r.f90
 )
 if (ONCVPSP_WITH_Libxc)
-    list(APPEND src_oncvpsp functionals.F90 exc_libxc.f90)
+    list(APPEND src_oncvpsp functionals.F90 exc_libxc_m.f90)
 else ()
-    list(APPEND src_oncvpsp exc_libxc_stub.f90)
+    list(APPEND src_oncvpsp exc_libxc_stub_m.f90)
 endif ()
 if (ONCVPSP_WITH_TOML)
     list(APPEND src_oncvpsp input_toml_m.f90)

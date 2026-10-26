@@ -715,6 +715,7 @@
 !! @param d2mdiff  their rms difference
 
 !Input variables
+ use der2exc_m, only: der2exc
  integer, intent(in) :: iexc,nc,nv,mmax
  integer, intent(in) :: la(nv+nc)
  real(dp), intent(in) :: rhotae(mmax),rhoc(mmax),rhoae(mmax,nv)
@@ -728,7 +729,6 @@
 
 !Local variables
  integer :: jj,kk
- external :: der2exc
 
  write(6,'(/a/a)') 'Model core correction analysis',&
 &                  '  based on d2Exc/dn_idn_j'

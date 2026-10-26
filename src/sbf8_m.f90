@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module sbf8_m
+
+ implicit none
+ private
+ public :: sbf8
+
+ contains
+
 ! calculates spherical Bessel functions using recursion algorithm
 
  subroutine sbf8(nm,xx,sb_out)
@@ -89,3 +98,5 @@
  end if
  return
  end subroutine sbf8
+
+ end module sbf8_m

@@ -137,10 +137,10 @@
 !! the scalar-relativistic average when fully relativistic; and -zion/r
 !! far out, where the all-electron charge outranges rho: switched over
 !! the outer half of the mesh (O-5), not cut where rho underflows to 0
+ use cinf_taper_m, only: cinf_taper
  integer, intent(in) :: irel,lmax,lloc,mmax,nkap
  real(dp), intent(in) :: vp(mmax,mxl+2,nkap),vo(mmax),zion,rr(mmax)
  real(dp), intent(inout) :: vpuns(mmax,mxl+2)
- real(dp), external :: cinf_taper
  real(dp) :: sw
  integer :: ii,ll,l1
 

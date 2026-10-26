@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module der2exc_m
+
+ implicit none
+ private
+ public :: der2exc
+
+ contains
+
 ! computes the 2nd derivative of the contribution to the exchange-
 ! correlation energy from the region where the valence pseudo wave functions
 ! differ from the all-electron wave functions
@@ -41,6 +50,7 @@
 
  use constants_m, only: dp
  use logmesh_m, only: lm_integral
+ use vout_m, only: vout
  implicit none
 
 !Input variables
@@ -106,3 +116,5 @@
  deallocate(vo,vxct,rhot,dvxc)
  return
  end subroutine der2exc
+
+ end module der2exc_m

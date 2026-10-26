@@ -1,6 +1,6 @@
 !
 ! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
-! University
+! University, and M. Verstratte, University of Liege
 !
 !
 ! This program is free software: you can redistribute it and/or modify
@@ -16,53 +16,44 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine exchdl(rho,vxc,exc,mmax)
 
-!! calculates Hedin-Lundquist exchange-correlation potential and energy
-!! density
+ module exc_libxc_m
+
+ implicit none
+ private
+ public :: exc_libxc
+
+ contains
+
+ subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax)
+!!  dummy substitute for interface to libxc library to allow successful
+!!  build without this library
 !!
-!! @param rho  charge density times 4 pi
+!! @param iexc  exchange-correlation function to be used: -(1000*id1+id2) for
+!!              the libxc functionals id1 and id2
+!! @param al  log of the mesh ratio amesh of the log radial mesh
+!! @param rho  charge density
 !! @param vxc  exchange-correlation potential
 !! @param exc  exchange-correlation energy density
+!! @param rr  log radial mesh
 !! @param mmax  dimension of log radial grid
 
- use constants_m, only: dp, pi
+ use constants_m, only: dp
  implicit none
 
 !Input variables
- integer, intent(in) :: mmax
- real(dp), intent(in) :: rho(mmax)
+ integer, intent(in) :: mmax, iexc
+ real(dp), intent(in) :: al
+ real(dp), intent(in) :: rho(mmax),rr(mmax)
 
 !Output variables
  real(dp), intent(out) :: vxc(mmax),exc(mmax)
 
-!Local variables
- real(dp), parameter :: pi4=4.0d0*pi
- real(dp), parameter :: pi4i=1.0d0/pi4
- real(dp), parameter :: thrd=1.0d0/3.0d0
- integer :: ii
- real(dp) :: conrs,convx,conex
- real(dp) :: rs,ecp,aln,xx,rh
+ write(6,'(a,i8,a)') 'exc_libxc_stub: ERROR iexc = ',iexc,' requires libxc'
+ write(6,'(a)') 'The present oncvpsp executable was built without libxc.'
+ write(6,'(a)') 'Program will stop.'
 
- conrs = (3.d0/(4.d0*pi))**thrd
- convx = (1.5d0/pi)**(2.0d0/3.0d0)
- conex = 0.75d0*convx
+ error stop 1
+ end subroutine exc_libxc
 
-! Hedin-Lundqvist correlation
-
- do ii=1,mmax
-   if(rho(ii)>1.0d-20) then
-     rh=rho(ii)*pi4i
-     rs=conrs/rh**thrd
-     xx=rs/21.0d0
-     aln=log(1.0d0 + 1.0d0/xx)
-     ecp = aln+(xx**3*aln-xx*xx)+0.5d0*xx-thrd
-     exc(ii)=-conex/rs - 0.0225d0*ecp
-     vxc(ii)=-convx/rs - 0.0225d0*aln
-   else
-     vxc(ii)=0.0d0 ; exc(ii)=0.0d0
-   end if
- end do
-
- return
- end subroutine exchdl
+ end module exc_libxc_m

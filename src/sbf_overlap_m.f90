@@ -15,6 +15,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module sbf_overlap_m
+
+ implicit none
+ private
+ public :: sbf_overlap
+
+ contains
+
  subroutine sbf_overlap(ll,q1,q2,rc,ss)
 
 !! overlap of two spherical Bessel functions of one l inside a radius, in
@@ -30,6 +39,7 @@
 !! @param ss  the overlap
 
  use constants_m, only: dp
+ use sbf8_m, only: sbf8
  implicit none
 
 !Input variables
@@ -156,3 +166,5 @@
  end subroutine sbf_value_slope
 
  end subroutine sbf_overlap
+
+ end module sbf_overlap_m

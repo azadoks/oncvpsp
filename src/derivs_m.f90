@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module derivs_m
+
+ implicit none
+ private
+ public :: derivs
+
+ contains
+
  subroutine derivs(mmax, rho, al, rr, dpr, dppr, dlap)
 !! first and second radial derivatives and Laplacian of rho on the log
 !! mesh, by finite differences, for excggc, exc_libxc and functionals_m
@@ -100,3 +109,5 @@
  return
 
  end subroutine derivs
+
+ end module derivs_m

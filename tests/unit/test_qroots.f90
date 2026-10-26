@@ -26,8 +26,9 @@
 ! Stops with a non-zero code if any check failed.
  program test_qroots
  use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
+ use qroots_m, only: qroots
+ use sbf_rc_der_m, only: sbf_rc_der
  implicit none
- external :: qroots, sbf_rc_der
 
 !Local variables
  integer, parameter :: nroot = 8, nscan = 1001

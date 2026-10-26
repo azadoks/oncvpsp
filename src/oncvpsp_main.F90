@@ -53,6 +53,8 @@
  use config_ae_m, only: run_config_ae, aeatom_cached
  use ae_file_m, only: write_ae_file, read_ae_file
  use ps_file_m, only: write_ps_file
+ use exc_libxc_m, only: exc_libxc
+ use vout_m, only: vout
 #if (defined WITH_TOML)
  use input_toml_m, only: read_input_toml
 #endif

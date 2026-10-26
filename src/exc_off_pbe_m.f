@@ -16,6 +16,13 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+      module exc_off_pbe_m
+
+      private
+      public :: excggc
+
+      contains
+
 ! calculates PBE exchange-correlation potential and energy density
 
 ! The core of this routine was obtained from John Perdew a long time
@@ -34,6 +41,7 @@ c second derivative of n: its finite differences, divided by (al*r)**2,
 c are round-off noise at the inner points of a fine mesh, which held the
 c all-electron SCF of light atoms above its tolerance
 c
+      use derivs_m, only: derivs
       use constants_m, only: dp
       implicit none
 c
@@ -573,3 +581,5 @@ C     DVCUP = 0.0D0
 C     DVCDN = 0.0D0
       RETURN
       END
+
+      end module exc_off_pbe_m

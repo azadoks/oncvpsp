@@ -41,6 +41,13 @@
 !! @param who  the caller, for the error message
 
 !Input variables
+ use exc_libxc_m, only: exc_libxc
+ use exc_off_pbe_m, only: excggc
+ use exc_relx_m, only: exc_relx
+ use exchdl_m, only: exchdl
+ use excpzca_m, only: excpzca
+ use excvwn_m, only: excvwn
+ use excwig_m, only: excwig
  integer, intent(in) :: iexc,nn
  real(dp), intent(in) :: al,rho(nn),rr(nn)
  character(len=*), intent(in) :: who

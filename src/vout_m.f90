@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module vout_m
+
+ implicit none
+ private
+ public :: vout
+
+ contains
+
 ! calculates Hartree and exchange-correlation potentials and total-energy
 ! term to add to eigenvalue sum
 
@@ -172,3 +181,5 @@
  include 'adams.inc'
 
  end subroutine vout
+
+ end module vout_m

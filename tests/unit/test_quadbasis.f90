@@ -23,8 +23,9 @@
 &                                         stderr => error_unit
  use sbf_q_m, only: sbfq_values, sbfq_overlap, sbfq_rc_der
  use qlinalg_m, only: qjacobi
+ use sbf_overlap_m, only: sbf_overlap
+ use sbf_rc_der_m, only: sbf_rc_der
  implicit none
- external :: sbf_overlap, sbf_rc_der
 
 !Local variables
  real(qp), parameter :: xs(3) = [0.3_qp, 2.5_qp, 17.0_qp]

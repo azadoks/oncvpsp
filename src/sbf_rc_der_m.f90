@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module sbf_rc_der_m
+
+ implicit none
+ private
+ public :: sbf_rc_der
+
+ contains
+
  subroutine sbf_rc_der(llin,qq,rc,sbfder)
 
 !! calculate spherical Bessel function values and first four derivatives
@@ -26,6 +35,7 @@
 !! @param sbfder  values and first 4 derivatives of j_l(qq*rc)
 
  use constants_m, only: dp
+ use sbf8_m, only: sbf8
  implicit none
 
 !Input variables
@@ -96,3 +106,5 @@
 
  return
  end subroutine sbf_rc_der
+
+ end module sbf_rc_der_m

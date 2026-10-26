@@ -16,12 +16,21 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine excwig(rho,vxc,exc,mmax)
 
-!! Wigner ingerpolation formula for exchange-correlation potential and
-!! energy density
+ module exchdl_m
+
+ implicit none
+ private
+ public :: exchdl
+
+ contains
+
+ subroutine exchdl(rho,vxc,exc,mmax)
+
+!! calculates Hedin-Lundquist exchange-correlation potential and energy
+!! density
 !!
-!! @param rho  charge density
+!! @param rho  charge density times 4 pi
 !! @param vxc  exchange-correlation potential
 !! @param exc  exchange-correlation energy density
 !! @param mmax  dimension of log radial grid
@@ -31,7 +40,7 @@
 
 !Input variables
  integer, intent(in) :: mmax
- real(dp), intent(in) ::  rho(mmax)
+ real(dp), intent(in) :: rho(mmax)
 
 !Output variables
  real(dp), intent(out) :: vxc(mmax),exc(mmax)
@@ -40,25 +49,31 @@
  real(dp), parameter :: pi4=4.0d0*pi
  real(dp), parameter :: pi4i=1.0d0/pi4
  real(dp), parameter :: thrd=1.0d0/3.0d0
- real(dp) ::  rh,rs
- real(dp) :: conrs,convx,conex
  integer :: ii
+ real(dp) :: conrs,convx,conex
+ real(dp) :: rs,ecp,aln,xx,rh
 
  conrs = (3.d0/(4.d0*pi))**thrd
  convx = (1.5d0/pi)**(2.0d0/3.0d0)
  conex = 0.75d0*convx
 
-! Wigner interpolation formula, E. Wigner, Phys. Rev. 46, 1002 (1934).
+! Hedin-Lundqvist correlation
 
  do ii=1,mmax
-   if(rho(ii)>=1.0d-15) then
+   if(rho(ii)>1.0d-20) then
      rh=rho(ii)*pi4i
-     rs=conrs*rh**(-thrd)
-     vxc(ii)=-convx/rs - 0.44d0*(4.0d0*thrd*rs+7.8d0)/(rs+7.8d0)**2
-     exc(ii)=-conex/rs - 0.44d0/(rs+7.8d0)
+     rs=conrs/rh**thrd
+     xx=rs/21.0d0
+     aln=log(1.0d0 + 1.0d0/xx)
+     ecp = aln+(xx**3*aln-xx*xx)+0.5d0*xx-thrd
+     exc(ii)=-conex/rs - 0.0225d0*ecp
+     vxc(ii)=-convx/rs - 0.0225d0*aln
    else
      vxc(ii)=0.0d0 ; exc(ii)=0.0d0
    end if
  end do
+
  return
- end subroutine excwig
+ end subroutine exchdl
+
+ end module exchdl_m

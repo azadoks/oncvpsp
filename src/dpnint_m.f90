@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module dpnint_m
+
+ implicit none
+ private
+ public :: dpnint
+
+ contains
+
  subroutine dpnint(xx, yy, nn, tt, ss, mm)
 
 !! local polynomial interpolation of data yy on nn points xx
@@ -150,3 +159,5 @@
 
  return
  end subroutine dpnint
+
+ end module dpnint_m
