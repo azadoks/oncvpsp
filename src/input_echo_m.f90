@@ -34,7 +34,7 @@
  public :: write_atom, write_lmax, write_icmod, write_epsh
  public :: write_mesh
  public :: write_input_echo, input_echo_lines
- public :: fx, fe, vkb_head, vkb_line
+ public :: fx, fe, vkb_head, vkb_line, date_stamp
 
 !> length of the lines returned by the *_lines routines
  integer, parameter, public :: echo_len=100
@@ -97,6 +97,25 @@
  if(abs(xx)<1.0d-99) yy=0.0d0
  return
  end function fe
+
+ subroutine date_stamp(pspd)
+
+!! today's date as yy, mm and dd, two digits each (psp8 and UPF headers)
+!!
+!! @param pspd  year less 2000, month and day
+
+!Output variables
+ character(len=2), intent(out) :: pspd(3)
+
+!Local variables
+ integer :: dtime(8),ii
+
+ call date_and_time(VALUES=dtime)
+ dtime(1)=dtime(1)-2000
+ do ii=1,3
+   write(pspd(ii),'(i2.2)') dtime(ii)
+ end do
+ end subroutine date_stamp
 
  subroutine atom_lines(atsym,zz,nc,nv,iexc,psfile,text,ntext)
 
