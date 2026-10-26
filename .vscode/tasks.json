@@ -18,12 +18,6 @@
             "type": "shell",
             "command": "fortitude check --fix \"${file}\"; python3 scripts/reindent.py \"${file}\"",
             "problemMatcher": []
-        },
-        {
-            "label": "check interfaces (needs a build in build/)",
-            "type": "shell",
-            "command": "scripts/check_interfaces.sh",
-            "problemMatcher": []
         }
     ]
 }
