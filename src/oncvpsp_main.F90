@@ -55,6 +55,7 @@
  use ps_file_m, only: write_ps_file
  use exc_libxc_m, only: exc_libxc
  use vout_m, only: vout
+ use sr_so_r_m, only: sr_so_r
 #if (defined WITH_TOML)
  use input_toml_m, only: read_input_toml
 #endif

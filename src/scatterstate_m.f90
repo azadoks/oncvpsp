@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module scatterstate_m
+
+ implicit none
+ private
+ public :: scatterstate
+
+ contains
+
  subroutine scatterstate(irel,nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch)
 
 !! Integrates a scattering state of an all-electron atomic potential out to
@@ -39,6 +48,8 @@
 !! @param mch  matching mesh point for inward-outward integrations
 
  use constants_m, only: dp
+ use ldiracfs_m, only: ldiracfs
+ use lschfs_m, only: lschfs
  implicit none
 
 !Input variables
@@ -60,3 +71,5 @@
  end if
  return
  end subroutine scatterstate
+
+ end module scatterstate_m

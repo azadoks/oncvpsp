@@ -65,6 +65,11 @@
  use kappa_m, only: kap_count, kap_of
  use pieces_m, only: piecewise_t
  use outwf_m, only: outwf_index_at
+ use boundstate_m, only: boundstate
+ use lschvkbb_m, only: lschvkbb
+ use lschvkbbe_m, only: lschvkbbe
+ use renorm_r_m, only: renorm_r
+ use scatterstate_m, only: scatterstate
  implicit none
 
 !Input variables

@@ -415,6 +415,7 @@
 
  subroutine solve(ps,ee,mch,uu,up)
 !! the solution at ee out to the point mch
+ use scatterstate_m, only: scatterstate
  type(phsft_t), intent(inout), target :: ps
  real(dp), intent(in) :: ee
  integer, intent(in) :: mch
@@ -505,6 +506,7 @@
 !! @param ee  energy (Ha)
 
 !Input/output variables
+ use scatterstate_m, only: scatterstate
  type(phsft_t), intent(inout), target :: ps
 
 !Input variables

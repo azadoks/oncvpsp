@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module lschfs_m
+
+ implicit none
+ private
+ public :: lschfs
+
+ contains
+
  subroutine lschfs(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,irel)
 
 !! integrates radial Pauli-type scalar-relativistic equation
@@ -120,3 +129,5 @@
 
  return
  end  subroutine lschfs
+
+ end module lschfs_m

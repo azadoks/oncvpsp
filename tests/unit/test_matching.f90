@@ -16,8 +16,10 @@
  program test_matching
  use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
  use pieces_m, only: piecewise_t, pw_alloc, pw_free
+ use ldiracfb_m, only: ldiracfb
+ use lschfb_m, only: lschfb
+ use lschvkbb_m, only: lschvkbb
  implicit none
- external :: lschfb, ldiracfb, lschvkbb
 
 !Local variables
  integer, parameter :: npts = 41, ndeg = 10

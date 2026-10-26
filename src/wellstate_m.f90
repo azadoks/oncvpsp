@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module wellstate_m
+
+ implicit none
+ private
+ public :: wellstate
+
+ contains
+
  subroutine wellstate(nnin,ll,kap,rc,ep,epgiven,onset,confwall,nowell,rr, &
 &                     vfull,vwell,uu,up,zz,mmax,mch,irel,confined,eptgt,wm)
 
@@ -81,6 +90,7 @@
 
  use constants_m, only: dp
  use well_mesh_m, only: well_mesh_t, wm_build, wm_short
+ use boundstate_m, only: boundstate
  implicit none
 
 !Input variables
@@ -466,3 +476,5 @@
  end subroutine report
 
  end subroutine wellstate
+
+ end module wellstate_m

@@ -176,6 +176,7 @@
  use constants_m, only: dp, mxstate, mxl, mxlin, mxkap
  use kappa_m, only: kap_count, j_share
  use pieces_m, only: piecewise_t
+ use lschvkbb_m, only: lschvkbb
  implicit none
 
 !Input variables

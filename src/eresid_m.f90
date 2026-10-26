@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module eresid_m
+
+ implicit none
+ private
+ public :: eresid
+
+ contains
+
 ! calculates residual energy operator matrix elements as a function of q
 
  subroutine eresid(ll,rc,nnull,nbas,nq,dq,nqout,qout,qmax,qroot,hh,nr, &
@@ -515,3 +524,5 @@
  end subroutine rsbf_lin
 
  end subroutine  eresid
+
+ end module eresid_m

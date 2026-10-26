@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module ldiracfs_m
+
+ implicit none
+ private
+ public :: ldiracfs
+
+ contains
+
  subroutine ldiracfs(nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch)
 
 !! Finds relativistic scattering states of an al-electron potential
@@ -139,3 +148,5 @@
  return
 
  end subroutine ldiracfs
+
+ end module ldiracfs_m

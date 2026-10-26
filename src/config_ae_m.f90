@@ -181,6 +181,7 @@
 !! Only the column jj of istcnf through etstcnf is set.
 
 !Input variables
+ use boundstate_m, only: boundstate
  integer, intent(in) :: jj,mmax,iexc,nc,irel,nkap
  integer, intent(in) :: nacnf(mxstate,mxcnf),lacnf(mxstate,mxcnf),nvcnf(mxcnf)
  real(dp), intent(in) :: zz

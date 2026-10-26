@@ -38,6 +38,8 @@
 !! relativistic), the pseudo-waves uupsa for upfout, the all-electron
 !! valence density rhotae, the pseudo one rho, the valence charge zval and
 !! the sum of the pseudo eigenvalues eeig
+ use boundstate_m, only: boundstate
+ use lschvkbb_m, only: lschvkbb
  integer, intent(in) :: irel,nkap,nc,nv,na(mxstate),la(mxstate),it,lloc
  integer, intent(in) :: nproj(mxlin+1),mmax
  real(dp), intent(in) :: fa(mxstate),ea(mxstate,mxkap),rr(mmax),zz

@@ -92,6 +92,7 @@
  use ode_rc_der_m, only: ode_rc_der
  use qroots_m, only: qroots
  use sbf_basis_con_m, only: sbf_basis_con
+ use eresid_m, only: eresid
  implicit none
 
 !Input variables

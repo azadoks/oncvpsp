@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module renorm_r_m
+
+ implicit none
+ private
+ public :: renorm_r
+
+ contains
+
  subroutine renorm_r(uu,rr,ll,kap,zz,mmax,cnorm)
 
 !! renormalize Dirac wave function so that large component is normalized
@@ -80,3 +89,5 @@
 
  return
  end subroutine renorm_r
+
+ end module renorm_r_m

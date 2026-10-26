@@ -19,8 +19,8 @@
  use relativity_m, only: c_light
  use ode_rc_der_m, only: ode_rc_der
  use wf_rc_der_m, only: wf_rc_der
+ use boundstate_m, only: boundstate
  implicit none
- external :: boundstate
 
 !Local variables
  real(dp), parameter :: rr1 = 5.0e-5_dp, rmax = 45.0_dp, amesh = 1.006_dp

@@ -1,5 +1,5 @@
 !
-! Copyright (c) 1989-2012 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
+! Copyright (c) 1989-2019 by D. R. Hamann, Mat-Sim Research LLC and Rutgers
 ! University
 !
 !
@@ -16,43 +16,58 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine ldiracfb(nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch)
 
-!! Finds relativistic bound states of an al-electron potential
+ module lschfb_m
+
+ implicit none
+ private
+ public :: lschfb
+
+ contains
+
+ subroutine lschfb(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,irel)
+
+!! Finds bound states of an all-electron atomic potential using
+!! Pauli-type  scalar-relativistic Schroedinger equation
+!!
+!! The Koelling-Harmon equation is integrated in its first-order flux form
+!! (sr_flux_m)
 !!
 !! @param nn  principal quantum number
 !! @param ll  angular-momentum quantum number
-!! @param kap  =l, -(l+1) for j=l -/+ 1/2
 !! @param ierr  non-zero return if error, 10 if there is no bound state
-!!              and the box state (large component 0 at rr(mmax)) is
-!!              returned
+!!              and the box state (u=0 at rr(mmax)) is returned
 !! @param ee  bound-state energy, input guess and output calculated value
 !! @param rr  log radial mesh
-!! @param zz  atomic number
-!! @param vv  local psp
-!! @param uu(mmax,jj)  output radial wave functions (*rr) jj=1,2 for large,
-!!                     small
+!! @param vv  local atomic potential
+!! @param uu  output radial wave function (*rr)
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
+!! @param zz  atomic number
 !! @param mmax  size of log grid
 !! @param mch  mesh point just beyond the classical turning point, where
 !!             the inward and outward integrations are matched (at the
 !!             continuous turning point, match_m)
+!! @param irel  0 non-relativistic, 1 scalar-relativistic
 
  use constants_m, only: dp
  use boundsolve_m, only: bs_converged, bs_correct, bs_bisect, bs_box_energy
  use relativity_m, only: c_light
+ use sr_flux_m, only: sr_gamma, sr_flux_coefs, sr_outward, sr_inward, &
+&                     sr_derivs
  use match_m, only: match_k, match_point, match_weights, match_blend
- use dirac_m, only: dirac_outward
  use quad_m, only: log_norm
+ use inward_start_m, only: inward_start
  implicit none
 
 !Input variables
  real(dp), intent(in) :: rr(mmax),vv(mmax)
  real(dp), intent(in) :: zz
- integer, intent(in) :: nn,ll,kap,mmax
+ integer, intent(in) :: nn,ll
+ integer, intent(in) :: mmax
+ integer, intent(in) :: irel
 
 !Input/output variables
- real(dp), intent(inout) :: uu(mmax,2),up(mmax,2)
+ real(dp), intent(inout) :: uu(mmax),up(mmax)
  real(dp), intent(inout) :: ee
  integer, intent(inout) :: mch
 
@@ -61,21 +76,19 @@
 
 !Local variables
 
- real(dp), allocatable :: gu(:),fu(:),gup(:),fup(:),cf(:)
-
- real(dp) :: cc,cci,gam,cof
+ real(dp) :: als
  real(dp) :: de,deprev,emax,emin,etop,elow
- real(dp) :: eps,sc
+ real(dp) :: eps,fss,gamma,sc
  real(dp) :: sls,sn,cn,xkap,xmch
- real(dp) :: amesh,al
- real(dp) :: go(-match_k-1:match_k),fo(-match_k-1:match_k)
- real(dp) :: gpo(-match_k-1:match_k),fpo(-match_k-1:match_k)
+ real(dp) :: amesh,al,eecur
+ real(dp) :: uo(-match_k-1:match_k),qo(-match_k-1:match_k)
+ real(dp) :: upo(-match_k-1:match_k),qpo(-match_k-1:match_k)
  real(dp) :: ww(-match_k-1:match_k),ss(-match_k-1:match_k)
- integer :: ii,kk,nint,node,nin,lo,hi
+ integer :: ii,nint,node,nin,lo,hi
  logical :: polish
 
- cc=c_light
- cci=1.0d0/cc
+ real(dp), allocatable :: qq(:),qp(:),cf(:),pm(:),qm(:),xm(:),r2(:)
+ allocate(qq(mmax),qp(mmax),cf(mmax),pm(mmax),qm(mmax),xm(mmax),r2(mmax))
 
  al = 0.01d0 * log(rr(101) / rr(1))
  amesh = exp(al)
@@ -85,8 +98,13 @@
 ! max(|ee|,0.2), or stops halving (the round-off of de itself); the energy
 ! and function returned are those of the last pass, whose correction is
 ! not applied, so they are the fixed point to round-off and do not depend
-! on the start guess or the path (doc/smoothness_plan.md, S-2 to S-4, and
-! lschfb)
+! on the start guess or the path (doc/smoothness_plan.md, S-2 to S-4).
+! Stopping at the second pass below eps left that pass's correction,
+! 1e-15 to 1e-14 relative, as noise in a well state's energy as a function
+! of its well, which its well width and its tail carried into the
+! projectors at 1e-9. 1e-10 left 3.6e-7 Ha in the 1s of U, which the
+! eigenvalue sum carries into the total energy, and which depended on the
+! SCF history
  eps=1.0d-12
  deprev=huge(1.0d0)
  polish=.false.
@@ -94,42 +112,49 @@
 
 ! check arguments
  if(ll>nn-1) then
-   write(6,'(/a,i4,a,i4)') 'ldiracfb: ERROR ll =',ll,' > nn =',nn
+   write(6,'(/a,i4,a,i4)') 'lschfb: ERROR ll =',ll,' > nn =',nn
    ierr=1
    return
  end if
- if(kap/=ll .and. kap/=-(ll+1)) then
-   write(6,'(/a,i4,a,i4)') 'ldiracfb: ERROR kap =',kap,' ll =',ll
-   ierr=2
-   return
+
+! relativistic - non-relativistic switch
+ if(irel/=0) then
+   fss=(1.0d0/c_light)**2
+ else
+   fss=0.0d0
  end if
- if(zz<1.0d0) then
-   write(6,'(/a,f12.8)') 'ldiracfb: ERROR zz =',zz
-   ierr=3
-   return
- end if
+
+! the indicial exponent, uu ~ r**gamma at the origin
+ gamma=sr_gamma(ll,zz,fss)
 
  sls=ll*(ll+1)
 
-! usual limits from non-relativistic Schroedinger eq. should be OK
  emax=vv(mmax)+0.5d0*sls/rr(mmax)**2
  emin=emax
  do ii=1,mmax
-   emin=min(emin,vv(ii)+0.5d0*sls/rr(ii)**2)
+   if(ll==0) then
+! ad-hock step to eliminate probelms from absurd emin for ll=0
+     emin=min(emin,vv(ii)+0.25d0/rr(ii)**2)
+   else
+     emin=min(emin,vv(ii)+0.5d0*sls/rr(ii)**2)
+   end if
  end do
- emin=max(emin,-zz**2/nn**2)
- if(ee>emax) ee=0.5d0*(emax+emin)
+ if(ee==0.0d0) ee=0.5d0*(emax+emin)
  if(ee<emin) ee=0.5d0*(emax+emin)
  if(ee>emax) ee=0.5d0*(emax+emin)
 
- allocate(gu(mmax),fu(mmax),gup(mmax),fup(mmax),cf(mmax))
+! null arrays to remove leftover garbage
+ uu(:)=0.0d0
+ up(:)=0.0d0
+ qq(:)=0.0d0
+ qp(:)=0.0d0
 
-! null arrays
- gu(:)=0.0d0; fu(:)=0.0d0; gup(:)=0.0d0; fup(:)=0.0d0; cf(:)=0.0d0
+ als=al**2
 
- gam=sqrt(kap**2-(zz*cci)**2)
-
- cof=(kap+gam)*(cc/zz)
+! squared radii, which do not depend on the energy
+ do ii=1,mmax
+   r2(ii)=rr(ii)**2
+ end do
 
 ! top of the bracket: no bound state lies above it on the mesh;
 ! highest energy found to have too few nodes
@@ -150,10 +175,7 @@
      exit
    end if
 
-! coefficient array for u in Schroedinger eq.
-   do ii=1,mmax
-     cf(ii)=sls + 2.0d0*(vv(ii)-ee)*rr(ii)**2
-   end do
+   call coefs(ee)
 
 ! find classical turning point for matching
    mch=0
@@ -178,14 +200,14 @@
    end if
 
 ! the outward solution, carried through the matching window
-! mch-1-match_k..mch+match_k (match_m), and the nodes of its large
-! component inside the turning point
+! mch-1-match_k..mch+match_k (match_m), and its nodes inside the turning
+! point
    lo=mch-1-match_k
    hi=mch+match_k
    call outward(min(hi,mmax),node)
    node=0
-   do ii=5,mch-1
-     if(gu(ii+1)*gu(ii)<=0.0d0) node=node+1
+   do ii=4,mch-1
+     if(uu(ii+1)*uu(ii)<=0.0d0) node=node+1
    end do
 
 ! start inward integration with simple exponential where the
@@ -200,70 +222,45 @@
    else if(node-nn+ll+1==0) then
 
      call match_point(rr,cf,mmax,mch,xmch)
-     go(:)=gu(lo:hi)
-     fo(:)=fu(lo:hi)
-     gpo(:)=gup(lo:hi)
-     fpo(:)=fup(lo:hi)
+     uo(:)=uu(lo:hi)
+     qo(:)=qq(lo:hi)
+     upo(:)=up(lo:hi)
+     qpo(:)=qp(lo:hi)
 
      xkap=sqrt(sls/rr(nin)**2 + 2.0d0*(vv(nin)-ee))
 
      do ii=nin,nin+4
-       gu(ii)=exp(-xkap*(rr(ii)-rr(nin)))
-       fu(ii)=0.5d0*cci*(-xkap+kap/rr(ii))*gu(ii)
-
-       fup(ii)= al*rr(ii)*(kap*fu(ii)/rr(ii) &
-&               + cci*(vv(ii) - ee)*gu(ii))
-       gup(ii)= al*rr(ii)*(-kap*gu(ii)/rr(ii) &
-&               + cci*(2.0d0*cc**2 + ee - vv(ii))*fu(ii))
+       uu(ii)=exp(-xkap*(rr(ii)-rr(nin)))
+       qq(ii)=-(xkap+1.0d0/rr(ii))*uu(ii)/xm(ii)
+       call sr_derivs(al,pm,qm,mmax,uu,up,qq,qp,ii)
      end do
 
 ! integrate inward
-     do ii=nin,lo+1,-1
+     call sr_inward(al,pm,qm,mmax,nin,lo,uu,up,qq,qp)
 
-       fu(ii-1)=fu(ii)+aei(fup,ii)
-       gu(ii-1)=gu(ii)+aei(gup,ii)
-
-       do kk=1,2
-         fup(ii-1)= al*rr(ii-1)*(kap*fu(ii-1)/rr(ii-1) &
-&                 - cci*(ee - vv(ii-1))*gu(ii-1))
-
-         gup(ii-1)= al*rr(ii-1)*(-kap*gu(ii-1)/rr(ii-1) &
-&                 + cci*(2.0d0*cc**2 + ee - vv(ii-1))*fu(ii-1))
-
-         fu(ii-1)=fu(ii)+aii(fup,ii)
-         gu(ii-1)=gu(ii)+aii(gup,ii)
-       end do
-       fup(ii-1)= al*rr(ii-1)*(kap*fu(ii-1)/rr(ii-1) &
-&               - cci*(ee - vv(ii-1))*gu(ii-1))
-       gup(ii-1)= al*rr(ii-1)*(-kap*gu(ii-1)/rr(ii-1) &
-&               + cci*(2.0d0*cc**2 + ee - vv(ii-1))*fu(ii-1))
-     end do
-
-! perturbation theory for the energy shift based on the large component
-! at each point of the window, g_o (g'_o - g'_i g_o/g_i)/2 for the
-! normalized function (continuity of the small component should follow),
-! averaged with the bump weights; the inward solution scaled to the
-! outward one by the ratio of their weighted sums, and the two blended
-! across the window (match_m)
+! perturbation theory for the energy shift at each point of the window,
+! u_o (q_o - q_i u_o/u_i)/2 for the normalized function, averaged with
+! the bump weights; the inward solution scaled to the outward one by the
+! ratio of their weighted sums, and the two blended across the window
 
      call match_weights(xmch,lo,hi,ww,ss)
      de=0.0d0
      do ii=lo,hi
-       de=de+0.5d0*ww(ii-mch)*go(ii-mch) &
-&         *(gpo(ii-mch)-gup(ii)*go(ii-mch)/gu(ii))/(al*rr(ii))
+       de=de+0.5d0*ww(ii-mch)*uo(ii-mch) &
+&         *(qo(ii-mch)-qq(ii)*uo(ii-mch)/uu(ii))
      end do
-     sc=sum(ww*go)/sum(ww*gu(lo:hi))
+     sc=sum(ww*uo)/sum(ww*uu(lo:hi))
 
      do ii=lo,nin
-       gup(ii)=sc*gup(ii)
-       gu(ii)=sc*gu(ii)
-       fup(ii)=sc*fup(ii)
-       fu(ii)=sc*fu(ii)
+       up(ii)=sc*up(ii)
+       uu(ii)=sc*uu(ii)
+       qq(ii)=sc*qq(ii)
+       qp(ii)=sc*qp(ii)
      end do
-     call match_blend(lo,hi,mch,ss,go,gu)
-     call match_blend(lo,hi,mch,ss,fo,fu)
-     call match_blend(lo,hi,mch,ss,gpo,gup)
-     call match_blend(lo,hi,mch,ss,fpo,fup)
+     call match_blend(lo,hi,mch,ss,uo,uu)
+     call match_blend(lo,hi,mch,ss,qo,qq)
+     call match_blend(lo,hi,mch,ss,upo,up)
+     call match_blend(lo,hi,mch,ss,qpo,qp)
 
 ! normalize u
      call normalize(nin)
@@ -291,60 +288,72 @@
 
  end do
 
-! copy local arrays for output
- uu(:,1)=gu(:)
- up(:,1)=gup(:)
- uu(:,2)=fu(:)
- up(:,2)=fup(:)
-
 !fix sign to be positive at rr->oo
- if(uu(mch,1)<0.0d0) then
-   uu(:,:)=-uu(:,:)
-   up(:,:)=-up(:,:)
+ if(uu(mch)<0.0d0) then
+   uu(:)=-uu(:)
+   up(:)=-up(:)
  end if
 
- deallocate(gu,fu,gup,fup)
- deallocate(cf)
+ deallocate(qq,qp,cf,pm,qm,xm,r2)
  return
 
  contains
 
+ subroutine coefs(et)
+
+!! coefficient arrays of the radial equation at the energy et
+
+ real(dp), intent(in) :: et
+
+! coefficient array for u in the second-order equation, whose sign
+! change gives the classical turning point
+ do ii=1,mmax
+   cf(ii)=als*sls + 2.0d0*als*(vv(ii)-et)*r2(ii)
+ end do
+
+ call sr_flux_coefs(ll,et,fss,al,rr,vv,mmax,xm,pm,qm)
+ eecur=et
+
+ return
+ end subroutine coefs
+
  subroutine outward(mlast,nnode)
 
 !! outward integration from the series at the origin to mlast, at the
-!! energy ee, counting the nodes of the large component (dirac_m)
+!! energy of the last coefs, counting the nodes
 
  integer, intent(in) :: mlast
  integer, intent(out) :: nnode
 
- call dirac_outward(ll,kap,ee,zz,al,rr,vv,mmax,mlast,gu,fu,gup,fup,nnode)
+ call sr_outward(ll,eecur,zz,fss,al,rr,vv,pm,qm,mmax,mlast, &
+&                uu,up,qq,qp,nnode)
 
  return
  end subroutine outward
 
  subroutine normalize(mlast)
 
-!! normalize the large and small components on 1..mlast, zero beyond
+!! normalize u on 1..mlast, zero beyond
 
  integer, intent(in) :: mlast
 
 ! perform normalization sum
 
- sn=log_norm(rr,gu(1:mlast)**2+fu(1:mlast)**2,mlast,ll,gam)
+ sn=log_norm(rr,uu(1:mlast)**2,mlast,ll,gamma)
 
  cn=1.0d0/sqrt(sn)
 
  do ii=1,mlast
-   gup(ii)=cn*gup(ii)
-   gu(ii)=cn*gu(ii)
-   fup(ii)=cn*fup(ii)
-   fu(ii)=cn*fu(ii)
+   up(ii)=cn*up(ii)
+   uu(ii)=cn*uu(ii)
+   qq(ii)=cn*qq(ii)
+   qp(ii)=cn*qp(ii)
  end do
  do ii=mlast+1,mmax
-   gu(ii)=0.0d0
-   fu(ii)=0.0d0
-   gup(ii)=0.0d0
-   fup(ii)=0.0d0
+   uu(ii)=0.0d0
+   up(ii)=0.0d0
+   qq(ii)=0.0d0
+   qp(ii)=0.0d0
  end do
 
  return
@@ -352,14 +361,15 @@
 
  subroutine boxstate()
 
-!! the state with nn-ll-1 nodes and a large component zero at rr(mmax),
-!! above elow (the box state of RadialAtomicSolvers.jl)
+!! the state with nn-ll-1 nodes and u=0 at rr(mmax), above elow (the
+!! box state of RadialAtomicSolvers.jl)
 
  real(dp) :: eb
  integer :: nb
 
  call bs_box_energy(elow,etop,nn-ll-1,eps,box_nodes,eb)
  ee=eb
+ call coefs(ee)
  call outward(mmax,nb)
  call normalize(mmax)
  mch=mmax
@@ -373,11 +383,11 @@
 
  real(dp), intent(in) :: e
 
- ee=e
+ call coefs(e)
  call outward(mmax,box_nodes)
  return
  end function box_nodes
 
- include 'adams.inc'
+ end subroutine lschfb
 
- end subroutine ldiracfb
+ end module lschfb_m

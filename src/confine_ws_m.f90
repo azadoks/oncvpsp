@@ -565,6 +565,7 @@
 
  integer function n_of(irel,ll,kap,ex,rr,zz,vfull,mmax,rs)
 !! the all-electron state's nodes inside rs, plus l+1
+ use scatterstate_m, only: scatterstate
  integer, intent(in) :: irel,ll,kap,mmax
  real(dp), intent(in) :: ex,rr(mmax),zz,vfull(mmax),rs
  real(dp), allocatable :: uu(:,:),up(:,:)

@@ -5,7 +5,7 @@ set(src_oncvpsp
     # Common files
     ae_scf.f90
     aeatom.f90
-    boundstate.f90
+    boundstate_m.f90
     build_info_m.f90
     check_data.f90
     config_ae_m.f90
@@ -16,7 +16,7 @@ set(src_oncvpsp
     diagout.f90
     vloc_cutoff.f90
     dpnint_m.f90
-    eresid.f90
+    eresid_m.f90
     free_tail_m.f90
     exc_off_pbe_m.f
     exc_relx_m.f90
@@ -24,18 +24,18 @@ set(src_oncvpsp
     exchdl_m.f90
     excpzca_m.f90
     excwig_m.f90
-    inward_start.f90
+    inward_start_m.f90
     inward2_m.f90
     cinf_taper_m.f90
     ionic_tail.f90
-    ldiracfb.f90
-    ldiracfs.f90
-    lschfb.f90
-    lschfs.f90
-    lschpsbar.f90
-    lschvkbb.f90
-    lschvkbbe.f90
-    lschvkbs.f90
+    ldiracfb_m.f90
+    ldiracfs_m.f90
+    lschfb_m.f90
+    lschfs_m.f90
+    lschpsbar_m.f90
+    lschvkbb_m.f90
+    lschvkbbe_m.f90
+    lschvkbs_m.f90
     logmesh_m.f90
     match_m.f90
     m_libxc_list.F90
@@ -54,7 +54,7 @@ set(src_oncvpsp
     qroots_m.f90
     relatom.f90
     relativity_m.f90
-    renorm_r.f90
+    renorm_r_m.f90
     run_config.f90
     run_diag.f90
     run_ghosts.f90
@@ -67,7 +67,7 @@ set(src_oncvpsp
     sbf8_m.f90
     sbf_m.f90
     sbf_overlap_m.f90
-    scatterstate.f90
+    scatterstate_m.f90
     sr_flux_m.f90
     dirac_m.f90
     sbf_q_m.f90
@@ -94,10 +94,10 @@ set(src_oncvpsp
     outwf_m.F90
     sratom.f90
     tfapot_m.f90
-    vkboutwf.f90
+    vkboutwf_m.f90
     wf_rc_der_m.f90
     vout_m.f90
-    wellstate.f90
+    wellstate_m.f90
     well_mesh_m.f90
     czt_m.f90
     input_echo_m.f90
@@ -110,7 +110,7 @@ set(src_oncvpsp
     linout.f90
     upfout.f90
     # Fully-relativistic files
-    sr_so_r.f90
+    sr_so_r_m.f90
 )
 if (ONCVPSP_WITH_Libxc)
     list(APPEND src_oncvpsp functionals.F90 exc_libxc_m.f90)

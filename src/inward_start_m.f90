@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module inward_start_m
+
+ implicit none
+ private
+ public :: inward_start
+
+ contains
+
  subroutine inward_start(ll,ee,rr,vv,mch,mmax,nin)
 
 !! start of the inward integration of a bound state: the first point
@@ -70,3 +79,5 @@
 
  return
  end subroutine inward_start
+
+ end module inward_start_m

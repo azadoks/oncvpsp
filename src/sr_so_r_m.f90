@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module sr_so_r_m
+
+ implicit none
+ private
+ public :: sr_so_r
+
+ contains
+
  subroutine sr_so_r(lmax,nproj,rr,mmax,mxprj,evkb,vkbpw, &
 &                       vsr,esr,vso,eso,vsrpw,vsopw)
 
@@ -216,3 +225,5 @@
 
  return
  end subroutine sr_so_r
+
+ end module sr_so_r_m

@@ -54,6 +54,7 @@
 &                    ae_outer_peak
  use tfapot_m, only: tfapot
  use vout_m, only: vout
+ use lschfb_m, only: lschfb
  implicit none
 
 !Input variables

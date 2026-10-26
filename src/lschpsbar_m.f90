@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module lschpsbar_m
+
+ implicit none
+ private
+ public :: lschpsbar
+
+ contains
+
  subroutine lschpsbar(nn,ll,ierr,ee,emin,emax,rr,vv,uu,up,mmax,mbar,tht)
 
 !! Finds bound states of a semi-local pseudopotential
@@ -39,6 +48,7 @@
  use boundsolve_m, only: bs_converged, bs_correct, bs_bisect
  use quad_m, only: log_norm
  use inward2_m, only: inward2
+ use inward_start_m, only: inward_start
  implicit none
 
 
@@ -286,3 +296,5 @@
  include 'adams.inc'
 
  end subroutine lschpsbar
+
+ end module lschpsbar_m

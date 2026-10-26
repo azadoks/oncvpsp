@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module vkboutwf_m
+
+ implicit none
+ private
+ public :: vkboutwf
+
+ contains
+
  subroutine vkboutwf(ll,nvkb,ep,vkbpw,evkb,rr,vloc,vlocpw,uu,up,mmax,mch)
 
 !! computes Vanderbilt / Kleinman-Bylander outward-integrated wave functions:
@@ -62,3 +71,5 @@
  call outwf_free(ow)
  return
  end subroutine vkboutwf
+
+ end module vkboutwf_m

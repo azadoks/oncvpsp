@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module boundstate_m
+
+ implicit none
+ private
+ public :: boundstate
+
+ contains
+
  subroutine boundstate(irel,nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch)
 
 !! Finds a bound state of an all-electron atomic potential: with the
@@ -38,6 +47,8 @@
 !! @param mch  matching mesh point for inward-outward integrations
 
  use constants_m, only: dp
+ use ldiracfb_m, only: ldiracfb
+ use lschfb_m, only: lschfb
  implicit none
 
 !Input variables
@@ -60,3 +71,5 @@
  end if
  return
  end subroutine boundstate
+
+ end module boundstate_m

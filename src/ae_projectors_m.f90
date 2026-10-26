@@ -38,6 +38,8 @@
 &                               rr,zz,vfull,mmax,uu,up,iprj,epa,npa,uua,upa)
 !! the bound valence states of l (at most nproj), the first iprj
 !! projectors' states; and npa(1), the n above the highest core state of l
+ use boundstate_m, only: boundstate
+ use renorm_r_m, only: renorm_r
  integer, intent(in) :: irel,ll,kap,ikap,nc,nv,na(mxstate),la(mxstate)
  integer, intent(in) :: nproj,it,mmax
  real(dp), intent(in) :: ea(mxstate,mxkap),rr(mmax),zz,vfull(mmax)
@@ -101,6 +103,9 @@
 !! those of ikap=1, kept for ikap=2 (vwell, wmesh). nnwell is the n of the
 !! last well state of ikap=1 that was not fully relativistic
  use fpovlp_m, only: fpovlp
+ use boundstate_m, only: boundstate
+ use renorm_r_m, only: renorm_r
+ use wellstate_m, only: wellstate
  integer, intent(in) :: irel,ll,kap,ikap,nproj,well_n,well_tail,irc,mmax
  real(dp), intent(in) :: ep,debl,well_onset,rc,qcut,rr(mmax),zz
  real(dp), intent(in) :: vfull(mmax)
@@ -256,6 +261,7 @@
 !! transform of the windowed tail, grows with its peak squared, from kappa
 !! L ~ 1.5 (free_tail_m)
  use fpovlp_m, only: fpovlp
+ use scatterstate_m, only: scatterstate
  integer, intent(in) :: irel,ll,kap,ikap,nn,irc,mmax
  integer, intent(inout) :: nnwell
  real(dp), intent(in) :: ee,rc,qcut,rr(mmax),zz,vfull(mmax)

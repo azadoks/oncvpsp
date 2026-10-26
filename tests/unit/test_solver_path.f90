@@ -15,8 +15,12 @@
  program test_solver_path
  use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
  use pieces_m, only: piecewise_t, pw_alloc, pw_free
+ use ldiracfb_m, only: ldiracfb
+ use lschfb_m, only: lschfb
+ use lschpsbar_m, only: lschpsbar
+ use lschvkbb_m, only: lschvkbb
+ use lschvkbbe_m, only: lschvkbbe
  implicit none
- external :: lschfb, ldiracfb, lschvkbb, lschvkbbe, lschpsbar
 
 !Local variables
  real(dp), parameter :: rr1 = 5.0e-5_dp, rmax = 45.0_dp, amesh = 1.006_dp

@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module lschvkbs_m
+
+ implicit none
+ private
+ public :: lschvkbs
+
+ contains
+
  subroutine lschvkbs(ll,ivkb,ee,rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,mch)
 
 !! Normalized scattering state for pseudopotential, fully non-local unless
@@ -37,6 +46,7 @@
  use constants_m, only: dp
  use pieces_m, only: piecewise_t
  use quad_m, only: log_norm
+ use vkboutwf_m, only: vkboutwf
  implicit none
 
 !Input variables
@@ -84,3 +94,5 @@
 
  return
  end  subroutine lschvkbs
+
+ end module lschvkbs_m

@@ -56,6 +56,11 @@
  use constants_m, only: dp, mxl, mxlin, nrhomod, nerrlv, nerrdg
  use kappa_m, only: kap_count, kap_of
  use pieces_m, only: piecewise_t
+ use boundstate_m, only: boundstate
+ use lschvkbb_m, only: lschvkbb
+ use lschvkbs_m, only: lschvkbs
+ use renorm_r_m, only: renorm_r
+ use scatterstate_m, only: scatterstate
  implicit none
 
 !Input variables

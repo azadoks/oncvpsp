@@ -56,6 +56,7 @@
 &                    ae_anderson1, ae_outer_peak
  use tfapot_m, only: tfapot
  use vout_m, only: vout
+ use ldiracfb_m, only: ldiracfb
  implicit none
 
 !Input variables

@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module lschvkbbe_m
+
+ implicit none
+ private
+ public :: lschvkbbe
+
+ contains
+
  subroutine lschvkbbe(nn,ll,nvkb,ierr,ee,uld,emin,emax, &
 &   rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,mch)
 
@@ -164,3 +173,5 @@
  return
 
  end subroutine lschvkbbe
+
+ end module lschvkbbe_m

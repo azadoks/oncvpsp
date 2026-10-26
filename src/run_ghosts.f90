@@ -81,6 +81,8 @@
  use logmesh_m, only: lm_interp
  use quad_m, only: log_norm
  use cinf_taper_m, only: cinf_taper
+ use lschpsbar_m, only: lschpsbar
+ use lschvkbb_m, only: lschvkbb
  implicit none
 
 !Input variables
