@@ -41,7 +41,7 @@
  use constants_m, only: dp
  use boundsolve_m, only: bs_converged, bs_correct, bs_bisect
  use relativity_m, only: c_light
- use match_m, only: match_k, match_point, match_weights
+ use match_m, only: match_k, match_point, match_weights, match_blend
  use dirac_m, only: dirac_outward
  implicit none
 
@@ -259,12 +259,10 @@
        fup(ii)=sc*fup(ii)
        fu(ii)=sc*fu(ii)
      end do
-     do ii=lo,hi
-       gu(ii)=(1.0d0-ss(ii-mch))*go(ii-mch)+ss(ii-mch)*gu(ii)
-       fu(ii)=(1.0d0-ss(ii-mch))*fo(ii-mch)+ss(ii-mch)*fu(ii)
-       gup(ii)=(1.0d0-ss(ii-mch))*gpo(ii-mch)+ss(ii-mch)*gup(ii)
-       fup(ii)=(1.0d0-ss(ii-mch))*fpo(ii-mch)+ss(ii-mch)*fup(ii)
-     end do
+     call match_blend(lo,hi,mch,ss,go,gu)
+     call match_blend(lo,hi,mch,ss,fo,fu)
+     call match_blend(lo,hi,mch,ss,gpo,gup)
+     call match_blend(lo,hi,mch,ss,fpo,fup)
 
 ! normalize u
      call normalize(nin)

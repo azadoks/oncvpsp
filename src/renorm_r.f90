@@ -30,6 +30,7 @@
 
  use constants_m, only: dp
  use relativity_m, only: c_light
+ use quad_m, only: log_norm_sum
  implicit none
 
 !Input variables
@@ -74,13 +75,7 @@
  sn=r0**(2.0d0*gam+1.0d0)/(2.d0*gam+1.0d0)
  sn=sn*(uu(1,1)**2)/rr(1)**(2.d0*gam)
 
- do ii=1,nin-3
-   sn=sn+al*rr(ii)*uu(ii,1)**2
- end do
-
- sn=sn + al*(23.0d0*rr(nin-2)*uu(nin-2,1)**2 &
-&          + 28.0d0*rr(nin-1)*uu(nin-1,1)**2 &
-&          +  9.0d0*rr(nin  )*uu(nin  ,1)**2)/24.0d0
+ sn=log_norm_sum(sn,al,rr,uu(:,1),nin)
 
 
  cnorm=sqrt(1.0d0/sn)

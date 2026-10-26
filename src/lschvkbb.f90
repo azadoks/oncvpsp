@@ -77,9 +77,11 @@
 
  use constants_m, only: dp
  use boundsolve_m, only: bs_converged, bs_correct, bs_bisect
- use match_m, only: match_k, match_point, match_weights, match_smax
+ use match_m, only: match_k, match_point, match_weights, match_blend, &
+&                    match_smax
  use pieces_m, only: piecewise_t
  use outwf_m, only: outwf_t, outwf_setup, outwf_solve, outwf_free
+ use quad_m, only: log_norm_sum
  implicit none
 
 !Input variables
@@ -252,23 +254,15 @@
        up(ii)=sc*up(ii)
        uu(ii)=sc*uu(ii)
      end do
-     do ii=lo,hi
-       uu(ii)=(1.0d0-ss(ii-mch))*uo(ii-mch)+ss(ii-mch)*uu(ii)
-       up(ii)=(1.0d0-ss(ii-mch))*upo(ii-mch)+ss(ii-mch)*up(ii)
-     end do
+     call match_blend(lo,hi,mch,ss,uo,uu)
+     call match_blend(lo,hi,mch,ss,upo,up)
 
 ! perform normalization sum
 
      ro=rr(1)/sqrt(amesh)
      sn=ro**(2*ll+3)/real(2*ll+3,dp)
 
-     do ii=1,nin-3
-       sn=sn+al*rr(ii)*uu(ii)**2
-     end do
-
-     sn=sn + al*(23.0d0*rr(nin-2)*uu(nin-2)**2 &
-&              + 28.0d0*rr(nin-1)*uu(nin-1)**2 &
-&              +  9.0d0*rr(nin  )*uu(nin  )**2)/24.0d0
+     sn=log_norm_sum(sn,al,rr,uu,nin)
 
 ! normalize u
 

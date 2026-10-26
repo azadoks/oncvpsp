@@ -47,6 +47,7 @@
  use boundsolve_m, only: bs_converged, bs_correct, bs_bisect
  use pieces_m, only: piecewise_t
  use outwf_m, only: outwf_t, outwf_setup, outwf_solve, outwf_free
+ use quad_m, only: log_norm_sum
  implicit none
 
 !Input variables
@@ -68,11 +69,10 @@
 !Local variables
  real(dp) :: cn
  real(dp) :: de,deprev
- real(dp) :: eps,ro,sc
+ real(dp) :: eps,ro
  real(dp) :: sn,uout,upin,upout
  real(dp) :: amesh,al
- real(dp) :: xkap
- integer :: ii,it,nin,nint,neig
+ integer :: ii,nin,nint,neig
  type(outwf_t) :: ow
 
  al = 0.01d0 * log(rr(101) / rr(1))
@@ -120,13 +120,7 @@
      ro=rr(1)/sqrt(amesh)
      sn=ro**(2*ll+3)/real(2*ll+3,dp)
 
-     do ii=1,nin-3
-       sn=sn+al*rr(ii)*uu(ii)**2
-     end do
-
-     sn=sn + al*(23.0d0*rr(nin-2)*uu(nin-2)**2 &
-&              + 28.0d0*rr(nin-1)*uu(nin-1)**2 &
-&              +  9.0d0*rr(nin  )*uu(nin  )**2)/24.0d0
+     sn=log_norm_sum(sn,al,rr,uu,nin)
 
 ! normalize u
 

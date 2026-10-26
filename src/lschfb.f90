@@ -44,7 +44,8 @@
  use boundsolve_m, only: bs_converged, bs_correct, bs_bisect
  use relativity_m, only: c_light
  use sr_flux_m, only: sr_gamma, sr_flux_coefs, sr_outward
- use match_m, only: match_k, match_point, match_weights
+ use match_m, only: match_k, match_point, match_weights, match_blend
+ use quad_m, only: log_norm_sum
  implicit none
 
 !Input variables
@@ -255,12 +256,10 @@
        qq(ii)=sc*qq(ii)
        qp(ii)=sc*qp(ii)
      end do
-     do ii=lo,hi
-       uu(ii)=(1.0d0-ss(ii-mch))*uo(ii-mch)+ss(ii-mch)*uu(ii)
-       qq(ii)=(1.0d0-ss(ii-mch))*qo(ii-mch)+ss(ii-mch)*qq(ii)
-       up(ii)=(1.0d0-ss(ii-mch))*upo(ii-mch)+ss(ii-mch)*up(ii)
-       qp(ii)=(1.0d0-ss(ii-mch))*qpo(ii-mch)+ss(ii-mch)*qp(ii)
-     end do
+     call match_blend(lo,hi,mch,ss,uo,uu)
+     call match_blend(lo,hi,mch,ss,qo,qq)
+     call match_blend(lo,hi,mch,ss,upo,up)
+     call match_blend(lo,hi,mch,ss,qpo,qp)
 
 ! normalize u
      call normalize(nin)
@@ -342,13 +341,7 @@
  ro=rr(1)/sqrt(amesh)
  sn=ro**(2.0d0*gamma+1.0d0)/(2.0d0*gamma+1.0d0)
 
- do ii=1,mlast-3
-   sn=sn+al*rr(ii)*uu(ii)**2
- end do
-
- sn=sn + al*(23.0d0*rr(mlast-2)*uu(mlast-2)**2 &
-&            + 28.0d0*rr(mlast-1)*uu(mlast-1)**2 &
-&            +  9.0d0*rr(mlast  )*uu(mlast  )**2)/24.0d0
+ sn=log_norm_sum(sn,al,rr,uu,mlast)
 
  cn=1.0d0/sqrt(sn)
 

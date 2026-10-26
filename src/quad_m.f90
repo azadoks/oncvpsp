@@ -16,12 +16,14 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 !> Gauss-Legendre quadrature, for the integrals of the model core's budget
-!> (modcore_budget) and of the confined atom's basis (ws_basis_m).
+!> (modcore_budget) and of the confined atom's basis (ws_basis_m); and the
+!> norm of a radial function on the log mesh of the bound and scattering
+!> solvers.
  module quad_m
  use constants_m, only: dp, pi
  implicit none
  private
- public :: gauss_legendre
+ public :: gauss_legendre, log_norm_sum
 
  contains
 
@@ -73,5 +75,36 @@
  end do
  return
  end subroutine gauss_legendre
+
+ real(dp) function log_norm_sum(s0,al,rr,uu,nn)
+
+!! the norm of uu out to rr(nn) on the log mesh, al the log of its ratio:
+!! s0, the part below rr(1), plus al r u**2 summed to nn-3 and the 3-point
+!! end correction (23, 28, 9)/24
+!!
+!! @param s0  the part below rr(1)
+!! @param al  log of the mesh ratio
+!! @param rr  log radial mesh
+!! @param uu  the function
+!! @param nn  the last point
+
+!Input variables
+ integer, intent(in) :: nn
+ real(dp), intent(in) :: s0,al,rr(nn),uu(nn)
+
+!Local variables
+ real(dp) :: sn
+ integer :: ii
+
+ sn=s0
+ do ii=1,nn-3
+   sn=sn+al*rr(ii)*uu(ii)**2
+ end do
+
+ sn=sn + al*(23.0d0*rr(nn-2)*uu(nn-2)**2 &
+&          + 28.0d0*rr(nn-1)*uu(nn-1)**2 &
+&          +  9.0d0*rr(nn  )*uu(nn  )**2)/24.0d0
+ log_norm_sum=sn
+ end function log_norm_sum
 
  end module quad_m

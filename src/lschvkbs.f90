@@ -36,6 +36,7 @@
 
  use constants_m, only: dp
  use pieces_m, only: piecewise_t
+ use quad_m, only: log_norm_sum
  implicit none
 
 !Input variables
@@ -70,13 +71,7 @@
  ro=rr(1)/sqrt(amesh)
  sn=ro**(2*ll+3)/(2*ll+3)
 
- do ii=1,mch-3
-   sn=sn+al*rr(ii)*uu(ii)**2
- end do
-
- sn =sn + al*(23.0d0*rr(mch-2)*uu(mch-2)**2 &
-&           + 28.0d0*rr(mch-1)*uu(mch-1)**2 &
-&          +  9.0d0*rr(mch  )*uu(mch  )**2)/24.0d0
+ sn=log_norm_sum(sn,al,rr,uu,mch)
 
 !normalize u
 

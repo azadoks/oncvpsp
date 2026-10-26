@@ -42,7 +42,7 @@
  use logmesh_m, only: lm_root
  implicit none
  private
- public :: match_k, match_point, match_weights, match_smax
+ public :: match_k, match_point, match_weights, match_smax, match_blend
 
 !> half width, in mesh steps, of the matching window
  integer, parameter :: match_k=4
@@ -124,6 +124,33 @@
  ww(:)=ww(:)/sum(ww)
  return
  end subroutine match_weights
+
+ subroutine match_blend(lo,hi,mch,ss,fo,ff)
+
+!! the outward solution fo and the inward one ff blended across the
+!! window lo..hi by the step ss of match_weights: ff = (1-ss) fo + ss ff
+!!
+!! @param lo,hi  the points of the window
+!! @param mch  the matching point, at which fo and ss are indexed 0
+!! @param ss  step weights
+!! @param fo  outward solution on the window
+!! @param ff  inward solution, the blend on the window on return
+
+!Input variables
+ integer, intent(in) :: lo,hi,mch
+ real(dp), intent(in) :: ss(lo-mch:hi-mch),fo(lo-mch:hi-mch)
+
+!Input/output variables
+ real(dp), intent(inout) :: ff(hi)
+
+!Local variables
+ integer :: ii
+
+ do ii=lo,hi
+   ff(ii)=(1.0d0-ss(ii-mch))*fo(ii-mch)+ss(ii-mch)*ff(ii)
+ end do
+ return
+ end subroutine match_blend
 
  real(dp) function match_smax(aa,bb)
 
