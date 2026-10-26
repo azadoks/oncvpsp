@@ -16,19 +16,26 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
- subroutine relatom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&           rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vext,warm)
 
-!! self-consistent fully-relativistic all-electron atom
-!! calculation using log mesh
-!! partially-occupied orbitals are weighted proportionally to 2j+1
+ module sratom_m
+
+ implicit none
+ private
+ public :: sratom
+
+ contains
+
+ subroutine sratom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
+&           rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,irel,vext,warm)
+
+!! self-consistent scalar-relativistic all-electron atom
+!! calculation using log mesh (non-relativistic when irel=0)
 !!
 !! @param na  principal quantum number array, dimension ncv
 !! @param la  angular-momenta
-!! @param ea  eigenvalues (output; input with warm), ea(:,1) for j=l+1/2,
-!!            ea(:,2) for j=l-1/2
+!! @param ea  eigenvalues (output; input with warm)
 !! @param fa  occupancies
-!! @param rpk  radius of outermost peak of wave function, indexed as ea
+!! @param rpk  radius of outermost peak of wave function
 !! @param nc  number of core states
 !! @param ncv  number of core+valence states
 !! @param it  number of iterations (output)
@@ -45,18 +52,18 @@
 !!               energies (output)
 !! @param res  residual of the screening potential (output, ae_residual)
 !! @param ierr  error flag
+!! @param irel  0 non-relativistic, 1 scalar-relativistic
 !! @param vext  external potential the orbitals also see (aeatom)
 !! @param warm  start from vi and ea (the solution of a nearby potential,
 !!              oncvpsp_confine.x) instead of the Thomas-Fermi potential
 !!              and hydrogenic energies
 
- use constants_m, only: dp, mxstate, mxkap, ae_tolres
- use kappa_m, only: kap_count, kap_of, j_share
- use ae_scf_m, only: ae_energies, ae_residual, ae_converged, &
-&                    ae_anderson1, ae_outer_peak
+ use constants_m, only: dp, ae_tolres
+ use ae_scf_m, only: ae_energies, ae_residual, ae_converged, ae_mix, &
+&                    ae_outer_peak
  use tfapot_m, only: tfapot
  use vout_m, only: vout
- use ldiracfb_m, only: ldiracfb
+ use lschfb_m, only: lschfb
  implicit none
 
 !Input variables
@@ -64,15 +71,18 @@
  integer, intent(in) :: mmax,iexc,nc,ncv
  integer, intent(in) :: na(ncv),la(ncv)
  real(dp), intent(in) :: zz
- real(dp), intent(in) :: fa(ncv),rr(mmax),vext(mmax)
+ real(dp), intent(in) :: fa(ncv),rr(mmax)
+ integer, intent(in) :: irel
+ real(dp), intent(in) :: vext(mmax)
 
 !Input/output variables
  integer, intent(inout) :: ierr
- real(dp), intent(inout) :: ea(mxstate,mxkap),rpk(mxstate,mxkap)
+ real(dp), intent(inout) :: rpk(ncv)
 
 !Output variables
  integer, intent(out) :: it
  real(dp), intent(out) :: etot,eterm(4),res
+ real(dp), intent(inout) :: ea(ncv)
  real(dp), intent(out) :: rho(mmax),rhoc(mmax)
  real(dp), intent(inout) :: vi(mmax)
  logical, intent(in) :: warm
@@ -81,26 +91,28 @@
  integer :: nin,mch
  real(dp) :: amesh,al
  real(dp) :: eeel,eexc,et,sf,eeig
- real(dp) :: zion,fj
- integer :: ii,ll,ikap,kap,mkap
+ real(dp) :: zion
+ integer :: ii
  logical :: convg
  real(dp) :: resbest
  integer :: nflat
 
- real(dp), allocatable :: uu(:,:),up(:,:)
- real(dp), allocatable :: vsi(:),vso(:),vsi1(:),vso1(:),vxc(:)
+ real(dp), allocatable :: uu(:),up(:)
+ real(dp), allocatable :: vsi(:),vso(:),vxc(:)
+ real(dp), allocatable :: hv(:,:),hr(:,:)
 
-! blend parameter for Anderson iterative potential mixing
- real(dp), parameter ::  bl=0.5d0
+! depth of the history of the Anderson mixing
+ integer, parameter :: ndep=8
 ! convergence threshold of the residual and the eigenvalues (constants_m)
  real(dp), parameter ::  tolres=ae_tolres
 
- allocate(uu(mmax,2),up(mmax,2))
- allocate(vsi(mmax),vso(mmax),vsi1(mmax),vso1(mmax),vxc(mmax))
+ allocate(uu(mmax),up(mmax))
+ allocate(vsi(mmax),vso(mmax),vxc(mmax))
+ allocate(hv(mmax,ndep),hr(mmax,ndep))
 
 ! why all this is necessary is unclear, but it seems to be
- uu(:,:)=0.d0; up(:,:)=0.d0; vso(:)=0.d0; vsi1(:)=0.d0; vso1(:)=0.d0
- vxc(:)=0.d0
+ uu(:)=0.d0; up(:)=0.d0; vso(:)=0.d0
+ vxc(:)=0.d0; hv(:,:)=0.d0; hr(:,:)=0.d0
  eeel=0.d0; eexc=0.d0; et=0.d0
  sf=0.d0; eeig=0.d0; zion=0.d0
  nin=0; mch=0
@@ -126,11 +138,8 @@
    sf=sf+fa(ii)
    zion=zz+1.0d0-sf
    if(warm) cycle
-   do ikap=1,2
-     ea(ii,ikap)=-0.5d0*(zion/na(ii))**2
-     if(ea(ii,ikap)>vi(mmax)) ea(ii,ikap)=2.0d0*vi(mmax)
-   end do
-   if(la(ii)==0) ea(ii,2)=0.0d0
+   ea(ii)=-0.5d0*(zion/na(ii))**2
+   if(ea(ii)>vi(mmax)) ea(ii)=2.0d0*vi(mmax)
  end do
 
 ! big self  self-consietency loop
@@ -144,45 +153,43 @@
 ! solve for bound states in turn
    eeig=0.0d0
    do ii=1,ncv
-     ll = la(ii)
-     mkap=kap_count(2,ll)
-! loop on J = ll +/- 1/2
-     do ikap=1,mkap
-       kap=kap_of(ll,ikap)
-       fj=j_share(ll,ikap,fa(ii))
-       et=ea(ii,ikap)
-       ierr = 0
 
-       call ldiracfb(na(ii),ll,kap,ierr,et, &
-&                  rr,zz,vext+vi,uu,up,mmax,mch)
+! skip unoccupied states
+     if(fa(ii)==0.0d0) then
+       ea(ii)=0.0d0
+       cycle
+     end if
+     et=ea(ii)
+     ierr = 0
+     call lschfb(na(ii),la(ii),ierr,et, &
+&                rr,vext+vi,uu,up,zz,mmax,mch,irel)
 ! a state with no bound solution in this potential gets its box state;
 ! the SCF goes on but cannot converge with it
-       if(ierr == 10) then
-         convg=.false.
-         ierr=0
-       end if
-
-       if(ierr /= 0) then
-         write(6,'(/2a,5i4)') 'relatom: ldiracfb convergence ERROR', &
-&             ' n,l,kap,iter,ierr=',na(ii),ll,kap,it,ierr
-         error stop 1
-       end if
+     if(ierr == 10) then
+       convg=.false.
+       ierr=0
+     end if
+     if(ierr /= 0) then
+       write(6,'(/a,3i4)') 'sratom123: lschfb convergence ERROR n,l,iter=', &
+&       na(ii),la(ii),it
+       error stop 1
+     end if
 
 ! each eigenvalue settled to tolres (see the convergence test below)
-       if(abs(ea(ii,ikap)-et)>tolres*max(abs(et),1.0d0)) convg=.false.
-       ea(ii,ikap)=et
+     if(abs(ea(ii)-et)>tolres*max(abs(et),1.0d0)) convg=.false.
+     ea(ii)=et
 
 ! accumulate charge and eigenvalues
-       eeig = eeig + fj*ea(ii,ikap)
-       rho(:)=rho(:) + fj*((uu(:,1)/rr(:))**2 + (uu(:,2)/rr(:))**2)
-       if(ii<=nc) then
-         rhoc(:)=rhoc(:) + fj*((uu(:,1)/rr(:))**2 + (uu(:,2)/rr(:))**2)
-       end if
+     eeig = eeig + fa(ii) * ea(ii)
+     rho(:)=rho(:) + fa(ii)*(uu(:)/rr(:))**2
+     if(ii<=nc) then
+       rhoc(:)=rhoc(:) + fa(ii)*(uu(:)/rr(:))**2
+     end if
 
 
 ! find outermost peak of wavefunction
-       call ae_outer_peak(up(:,1),rr,mch,rpk(ii,ikap))
-     end do
+     call ae_outer_peak(up,rr,mch,rpk(ii))
+
    end do
 
    if(ierr/=0) then
@@ -199,22 +206,22 @@
 
 ! converged when no eigenvalue has moved by more than tolres and the
 ! screening potential is self-consistent; the eigenvalues alone can stand
-! still from a start far from self-consistency. ldiracfb returns the
-! energy of its last pass, never the guess unchanged, so unchanged
-! eigenvalues cannot be asked for (as in sratom)
+! still from a start far from self-consistency. Unchanged eigenvalues were
+! once asked for, which a near-neutral mode of the scalar-relativistic GGA
+! potential at the nucleus can deny for ever (1e-9 Ha jitter with E_tot
+! converged to 1e-14 Ha, H at rr1 1e-5)
    call ae_residual(rho,vsi,vso,sf,rr,mmax,res)
    call ae_converged(it,res,tolres,resbest,nflat,convg)
    if(convg) exit
 
-! generate next iteration using d. g. anderson''s
-! method
-   call ae_anderson1(it>1,vsi,vso,vsi1,vso1,rr,mmax,bl)
+! next input potential, by Anderson mixing of the last ndep iterations
+   call ae_mix(it,vsi,vso,hv,hr,ndep,zz,rr,mmax,irel)
    do ii=1,mmax
      vi(ii)=vsi(ii) - zz/rr(ii)
    end do
 
    if(it==100 .and. .not. convg) then
-     write(6,'(/a)') 'relatom: WARNING failed to converge'
+     write(6,'(/a)') 'sratom: WARNING failed to converge'
    end if
 
  end do !it
@@ -224,7 +231,10 @@
  end if
 
  deallocate(uu,up)
- deallocate(vsi,vso,vsi1,vso1,vxc)
+ deallocate(vsi,vso,vxc)
+ deallocate(hv,hr)
  return
 
- end subroutine relatom
+ end subroutine sratom
+
+ end module sratom_m

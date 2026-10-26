@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module aeatom_m
+
+ implicit none
+ private
+ public :: aeatom
+
+ contains
+
  subroutine aeatom(irel,nkap,na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
 &                  rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vext,warm)
 
@@ -52,6 +61,8 @@
 !!              and hydrogenic energies
 
  use constants_m, only: dp, mxstate
+ use relatom_m, only: relatom
+ use sratom_m, only: sratom
  implicit none
 
 !Input variables
@@ -80,3 +91,5 @@
  end if
  return
  end subroutine aeatom
+
+ end module aeatom_m

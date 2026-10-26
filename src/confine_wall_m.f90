@@ -37,6 +37,8 @@
 &                         nk,kwall,r0,sm)
 !! the wall lines of the strengths kwall(1:nk) beyond r0, kwall(0)=0 the
 !! free atom, and the walls' part of the summary
+ use aeatom_m, only: aeatom
+ use psatom_m, only: psatom
  type(ps_file_t), intent(in) :: pf
  integer, intent(in) :: irel,mmax,nc,nv,iexc,na(mxstate),la(mxstate),nk
  real(dp), intent(in) :: zz,rr(mmax),vfull(mmax),fa(mxstate)

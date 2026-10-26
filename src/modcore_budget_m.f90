@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module modcore_budget_m
+
+ implicit none
+ private
+ public :: modcore_budget,modcore_probes,modcore_budget_table
+
+ contains
+
 ! Creates the model core charge of icmod=6 and 7: the all-electron core
 ! charge wherever the plane-wave cutoff affords it.  Inside the radius r_s
 ! the model is a fill that matches the core charge and its first two
@@ -1704,3 +1713,5 @@
  end function excess_mean
 
  end subroutine modcore_budget_table
+
+ end module modcore_budget_m

@@ -56,6 +56,14 @@
  use exc_libxc_m, only: exc_libxc
  use vout_m, only: vout
  use sr_so_r_m, only: sr_so_r
+ use ionic_tail_m, only: coulomb_tail, ionic_screening
+ use modcore1_m, only: modcore
+ use modcore2_m, only: modcore2
+ use modcore3_m, only: modcore3
+ use modcore_budget_m, only: modcore_budget, modcore_budget_table, &
+&                            modcore_probes
+ use run_optimize_m, only: run_optimize
+ use vloc_cutoff_m, only: vloc_cutoff
 #if (defined WITH_TOML)
  use input_toml_m, only: read_input_toml
 #endif

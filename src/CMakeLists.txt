@@ -4,7 +4,7 @@
 set(src_oncvpsp
     # Common files
     ae_scf.f90
-    aeatom.f90
+    aeatom_m.f90
     boundstate_m.f90
     build_info_m.f90
     check_data.f90
@@ -14,7 +14,7 @@ set(src_oncvpsp
     der2exc_m.f90
     derivs_m.f90
     diagout.f90
-    vloc_cutoff.f90
+    vloc_cutoff_m.f90
     dpnint_m.f90
     eresid_m.f90
     free_tail_m.f90
@@ -27,7 +27,7 @@ set(src_oncvpsp
     inward_start_m.f90
     inward2_m.f90
     cinf_taper_m.f90
-    ionic_tail.f90
+    ionic_tail_m.f90
     ldiracfb_m.f90
     ldiracfs_m.f90
     lschfb_m.f90
@@ -40,25 +40,25 @@ set(src_oncvpsp
     match_m.f90
     m_libxc_list.F90
     psmlout_m.f90
-    modcore.f90
-    modcore2.f90
-    modcore3.f90
-    modcore_budget.f90
+    modcore1_m.f90
+    modcore2_m.f90
+    modcore3_m.f90
+    modcore_budget_m.f90
     modcore_m.f90
     ode_rc_der_m.f90
-    ae_delta.f90
+    ae_delta_m.f90
     oncvpsp_main.F90
-    optimize.f90
-    psatom.f90
-    pspot.f90
+    optimize_m.f90
+    psatom_m.f90
+    pspot_m.f90
     qroots_m.f90
-    relatom.f90
+    relatom_m.f90
     relativity_m.f90
     renorm_r_m.f90
     run_config.f90
     run_diag.f90
     run_ghosts.f90
-    run_optimize.f90
+    run_optimize_m.f90
     run_phsft.f90
     run_plot.f90
     run_vkb.f90
@@ -92,7 +92,7 @@ set(src_oncvpsp
     confine_ws_m.f90
     confine_wall_m.f90
     outwf_m.F90
-    sratom.f90
+    sratom_m.f90
     tfapot_m.f90
     vkboutwf_m.f90
     wf_rc_der_m.f90

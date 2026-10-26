@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module pspot_m
+
+ implicit none
+ private
+ public :: pspot
+
+ contains
+
  subroutine pspot(ipr,ll,rr,irc,rc,mmax,al,nbas,qroot,eig,uu,pswfopt_sb, &
 &                 psx,chix, &
 &           psopt,vae,vpsp,vkb,ekin_num)
@@ -180,3 +189,5 @@
  deallocate(work)
  return
  end subroutine pspot
+
+ end module pspot_m

@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module run_optimize_m
+
+ implicit none
+ private
+ public :: run_optimize
+
+ contains
+
  subroutine run_optimize(eig,ll,kap,irel,mmax,mxprj,rr,uua,upa,qq,&
 &                      freetl,wm,rc,irc,qcut,qmsbf,ncon_in,nbas_in,npr, &
 &                      psopt,vpsp,vkb,vae,cvgplt,ncurve,ecurve,pswfx,chix, &
@@ -93,6 +102,8 @@
  use qroots_m, only: qroots
  use sbf_basis_con_m, only: sbf_basis_con
  use eresid_m, only: eresid
+ use optimize_m, only: optimize
+ use pspot_m, only: pspot
  implicit none
 
 !Input variables
@@ -533,3 +544,5 @@
  end function smax
 
  end subroutine run_optimize
+
+ end module run_optimize_m

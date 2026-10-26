@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module ionic_tail_m
+
+ implicit none
+ private
+ public :: ionic_screening,coulomb_tail
+
+ contains
+
 ! The ionic tail of the pseudopotentials, after PseudoPotentialGenerators.jl
 ! (src/unscreening.jl: ionic_tail, ionic_switch (here cinf_taper, in
 ! cinf_taper.f90), ionic_tail_window, with_ionic_tail;
@@ -452,3 +461,5 @@
 
  return
  end subroutine coulomb_tail
+
+ end module ionic_tail_m

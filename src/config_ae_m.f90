@@ -59,7 +59,7 @@
 !! repeats that warning. rpk comes back as that solution left it (rows
 !! 1..ncv). The arguments are those of aeatom
 
- external :: aeatom
+ use aeatom_m, only: aeatom
 
 !Input variables
  integer, intent(in) :: irel,nkap,mmax,iexc,nc,ncv

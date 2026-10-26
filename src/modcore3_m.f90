@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module modcore3_m
+
+ implicit none
+ private
+ public :: modcore3
+
+ contains
+
 ! Creates a Teter-function model core charge, amplitude fcfact times the
 ! core charge and scale rcfact times the radius at the core-valence
 ! crossover.  The prefactors are input (icmod=3) or optimized to reduce the
@@ -407,3 +416,5 @@
  end subroutine newton_refine
 
  end subroutine modcore3
+
+ end module modcore3_m

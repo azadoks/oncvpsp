@@ -305,6 +305,7 @@
 !! the relativistic term Delta of the all-electron wave about the taper
 !! window [0.95 rc, rc] (ae_delta, D-4), for the projectors; the local
 !! potential of lloc<4 (local) takes Delta/(2u) on the window (S-1)
+ use ae_delta_m, only: ae_delta
  integer, intent(in) :: irel,ll,kap,nproj,mmax,irc
  real(dp), intent(in) :: epa(mxprj),rr(mmax),vfull(mmax)
  real(dp), intent(in) :: uua(mmax,mxprj),upa(mmax,mxprj),al,rc

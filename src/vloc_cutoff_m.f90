@@ -15,6 +15,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module vloc_cutoff_m
+
+ implicit none
+ private
+ public :: vloc_cutoff
+
+ contains
+
 ! The Fourier convergence of the local potential, for the DIAGNOSTICS
 ! block: the cutoffs at which a plane-wave code's local energy of the
 ! pseudo valence density is converged to the levels of the projectors'
@@ -160,3 +169,5 @@
  deallocate(xx,wx,fn,fv,gg,tt,wq,an,av)
  return
  end subroutine vloc_cutoff
+
+ end module vloc_cutoff_m

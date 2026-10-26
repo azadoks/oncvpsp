@@ -14,8 +14,8 @@
  use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
  use logmesh_m, only: lm_derivs
  use boundstate_m, only: boundstate
+ use ae_delta_m, only: ae_delta
  implicit none
- external :: ae_delta
 
 !Local variables
  real(dp), parameter :: rr1 = 5.0e-5_dp, rmax = 45.0_dp, amesh = 1.006_dp

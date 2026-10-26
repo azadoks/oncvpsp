@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module modcore2_m
+
+ implicit none
+ private
+ public :: modcore2
+
+ contains
+
 ! Creates a Teter-function model core charge whose amplitude and scale fit
 ! the value and slope of the all-electron core charge at the radius r* where
 ! it equals fcfact times the valence pseudocharge (icmod=2).
@@ -138,3 +147,5 @@
 
  return
  end subroutine modcore2
+
+ end module modcore2_m

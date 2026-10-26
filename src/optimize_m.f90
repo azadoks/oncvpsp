@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module optimize_m
+
+ implicit none
+ private
+ public :: optimize
+
+ contains
+
 ! calculates convergence-optimized pseudo-wave-function coefficients
 ! in orthonormal and spherical Bessel function bases
 
@@ -351,3 +360,5 @@
  end subroutine solve_norm_constraint
 
  end subroutine optimize
+
+ end module optimize_m

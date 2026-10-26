@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module modcore1_m
+
+ implicit none
+ private
+ public :: modcore
+
+ contains
+
 ! Creates monotonic polynomial model core charge matching all-electron
 ! core charge and 4 derivatives at the "crossover" radius r*, where the core
 ! charge equals fcfact times the pseudo valence charge.
@@ -155,3 +164,5 @@
  end subroutine poly_fill
 
  end subroutine modcore
+
+ end module modcore1_m

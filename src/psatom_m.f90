@@ -16,6 +16,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module psatom_m
+
+ implicit none
+ private
+ public :: psatom
+
+ contains
+
 ! self-consistent pseudoatom calculation
 
  subroutine psatom(na,la,ea,fat,nv,it,rhoc,rho, &
@@ -304,3 +313,5 @@
  return
 
  end subroutine psatom
+
+ end module psatom_m

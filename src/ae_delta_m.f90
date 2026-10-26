@@ -15,6 +15,15 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
+
+ module ae_delta_m
+
+ implicit none
+ private
+ public :: ae_delta
+
+ contains
+
  subroutine ae_delta(irel,ll,kap,ee,rr,vv,uu,up,mmax,i1,i2,delta)
 
 !! the relativistic term of the all-electron radial equation at the mesh
@@ -89,3 +98,5 @@
  end do
  return
  end subroutine ae_delta
+
+ end module ae_delta_m
