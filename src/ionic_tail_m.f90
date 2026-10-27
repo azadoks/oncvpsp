@@ -415,6 +415,11 @@
 !! dr over the whole table (the G=0 term of the energy, Ha bohr**3), its
 !! change when the table is cut at 6 and 10 bohr, the radius beyond which
 !! |vloc + zion/r| < 1e-10, and the largest |vloc - V_ion| beyond rcmax
+!! (the noise floor of the unscreening, below which that radius means
+!! nothing). The integrals are lm_integral's, cut at the radii exactly,
+!! and the radius is the root of the interpolant of (vloc + zion/r)**2 -
+!! 1e-10**2 past the last mesh point above it (lm_root), so all are
+!! smooth functions of the inputs (doc/smoothness_plan.md, X-6)
 !!
 !! @param vloc  unscreened local potential
 !! @param vion  V_ion
@@ -425,6 +430,7 @@
 !! @param iout  unit of the text output
 
  use constants_m, only: dp, pi
+ use logmesh_m, only: lm_integral, lm_root
  implicit none
 
 !Input variables
@@ -436,21 +442,25 @@
 !Local variables
  real(dp), parameter :: tol=1.0d-10
  real(dp), parameter :: radii(2)=[6.0d0,10.0d0]
- real(dp) :: al,alpha,cut,rcoul,dvmax,dv
- integer :: ii,jj
+ real(dp) :: alpha,cut,rcoul,dvmax,dv
+ real(dp), allocatable :: ff(:)
+ integer :: ii,jj,ierr
 
- al = 0.01d0 * log(rr(101) / rr(1))
-
- alpha=0.0d0
- do ii=1,mmax
-   alpha=alpha+rr(ii)**3*(vloc(ii)+zion/rr(ii))
- end do
- alpha=4.0d0*pi*al*alpha
+! r**2 (vloc + zion/r), which goes as r at the origin
+ allocate(ff(mmax))
+ ff(:)=rr(:)**2*vloc(:)+zion*rr(:)
+ call lm_integral(rr,ff,mmax,1,0.0d0,rr(mmax),alpha)
+ alpha=4.0d0*pi*alpha
 
  rcoul=rr(1)
  do ii=mmax,1,-1
    if(abs(vloc(ii)+zion/rr(ii))>=tol) then
      rcoul=rr(min(ii+1,mmax))
+     if(ii<mmax) then
+       ff(:)=(vloc(:)+zion/rr(:))**2-tol**2
+       call lm_root(rr,ff,mmax,rr(ii),rr(ii+1),rcoul,ierr)
+       if(ierr/=0) rcoul=rr(ii+1)
+     end if
      exit
    end if
  end do
@@ -466,18 +476,15 @@
  write(iout,'(a,1p,e18.10,a)') &
 &      '  alpha_z = 4 pi int r**2 (V_loc + zion/r) dr', &
 &      alpha,' Ha bohr**3'
+ ff(:)=rr(:)**2*vloc(:)+zion*rr(:)
  do jj=1,2
-   cut=0.0d0
-   do ii=1,mmax
-     if(rr(ii)>radii(jj)) exit
-     cut=cut+rr(ii)**3*(vloc(ii)+zion/rr(ii))
-   end do
-   cut=4.0d0*pi*al*cut
+   call lm_integral(rr,ff,mmax,1,min(radii(jj),rr(mmax)),rr(mmax),cut)
    write(iout,'(a,f6.2,a,1p,e12.4)') '  alpha_z change, table cut at r =', &
-&        radii(jj),':',cut-alpha
+&        radii(jj),':',-4.0d0*pi*cut
  end do
  write(iout,'(a,f10.4)') '  |V_loc + zion/r| < 1e-10 beyond r =',rcoul
  write(iout,'(a,1p,e12.4)') '  max |V_loc - V_ion| beyond rcmax',dvmax
+ deallocate(ff)
 
  return
  end subroutine coulomb_tail

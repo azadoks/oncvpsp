@@ -79,7 +79,7 @@ Everything new on this branch goes through these modules, so their properties se
 | vout, `ae_energies` (radint) ✓ | E_ee, E_xc, E_nuc, E_scr | Gregory start (9,28,23)/24, weight 1 to mmax, head f(1)/pw | 4 at the start, open end | **Head exponent ✓ is non-relativistic (pw = 2 for E_nuc, 3 for the others).** For sr/fr s states the density goes as r^(2γ−2), γ = √(1−(Z/c)²), so the exact head is f(1)/(2γ) or f(1)/(2γ+1). The sub-audit estimates ~0.16 Ha moved between E_kin and E_nuc for U (it cancels in etot) and ~1e-6 Ha left in etot through the f/3 terms. Not run. |
 | `ae_residual`, Anderson metrics | SCF residual, mixing inner products | Rectangle sums | 1–2 | Measures only. The metric differs between ae_residual (ρr³) and Anderson (r²). |
 | `inward_start` | ∫κ dr to pick nin | Trapezoid in r | 2 | Only selects an index. |
-| `coulomb_tail` | α_Z, its change at the cuts | Rectangle in x; cuts at 6 and 10 bohr **snapped to the mesh** | 2 | Diagnostic (X-6, open). |
+| `coulomb_tail` | α_Z, its change at the cuts | Rectangle in x; cuts at 6 and 10 bohr **snapped to the mesh** | 2 | Diagnostic (X-6; done 2026-10-27, `lm_integral` and `lm_root`). |
 | `upfout` uurcut | Tail norm → UPF nrl | Rectangle, inward | 1 | Picks a point count only (O-4, kept). |
 
 ### 3b. Bessel, Fourier and q-space integrals

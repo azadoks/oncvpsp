@@ -722,7 +722,7 @@ Coulomb tail of the local potential
   alpha_z = 4 pi int r**2 (V_loc + zion/r) dr  5.5503997677E+01 Ha bohr**3
   alpha_z change, table cut at r =  6.00:  1.0483E-05
   alpha_z change, table cut at r = 10.00:  3.2885E-10
-  |V_loc + zion/r| < 1e-10 beyond r =    7.4569
+  |V_loc + zion/r| < 1e-10 beyond r =    7.4507
   max |V_loc - V_ion| beyond rcmax  2.7511E-06
 
 Test configuration 0

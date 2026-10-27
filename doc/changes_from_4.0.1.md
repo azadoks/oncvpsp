@@ -75,7 +75,11 @@ rather than hidden.
   -zion/r. The reference configuration's pseudo-atom then reproduces
   the all-electron one to round-off again (73_Ta: 8e-5 -> 5e-9 Ha).
   A "Coulomb tail of the local potential" block reports alpha_z and the
-  radius where V_loc reaches -zion/r.
+  radius where V_loc reaches -zion/r. The integrals are the 8th-order
+  rule's (`lm_integral`), cut at 6 and 10 bohr exactly, and the radius
+  is the root of the interpolant (`lm_root`), not the mesh point past the
+  last one above 1e-10, so all are smooth in the inputs (X-6; 14_Si:
+  alpha_z moves by 1.4e-9 relative, the radius from 5.1574 to 5.1474).
 - Commits: 5e706ad (replaces the METAPSP smootherstep of 8b5cddd),
   25de811, a4f44c5.
 
