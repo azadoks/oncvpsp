@@ -16,6 +16,7 @@
  use boundstate_m, only: boundstate
  use ae_delta_m, only: ae_delta
  implicit none
+ integer, parameter :: iout=6
 
 !Local variables
  integer :: ifail
@@ -43,7 +44,7 @@
    up(:, :) = 0.0_dp
    mch = 0
    call boundstate(irel, 2, 1, kap, ierr, ee, rr, zz, vv, uu, up, mmax, mch, &
-&        ifail)
+&        iout, ifail)
    if(ifail /= 0) error stop 1
    if(ierr /= 0) then
      write(stderr, '(a,a,a,i0)') 'FAILED: ', names(irel), ' boundstate ierr ', &

@@ -24,7 +24,7 @@
 
  contains
 
- subroutine ode_rc_der(irel,ll,kap,ee,rr,vv,uu,up,mmax,rc,uorder,ifail)
+ subroutine ode_rc_der(irel,ll,kap,ee,rr,vv,uu,up,mmax,rc,uorder,iout,ifail)
 
 !! value and four derivatives at any radius rc of uu/r, uu an all-electron
 !! wave function, from the radial equation it solves rather than from
@@ -56,6 +56,7 @@
 !! @param mmax  size of the log radial mesh
 !! @param rc  the radius (bohr)
 !! @param uorder  d^k(uu/r)/dr^k at rc in uorder(k+1), k=0..4
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
@@ -70,6 +71,7 @@
 
 !Output variables
  real(dp), intent(out) :: uorder(5)
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -107,7 +109,7 @@
  xk=sqrt(max(2.0d0*(ee-vk(0))-dble(ll*(ll+1))/rc**2,0.0d0))*rc
  if(abs(ud(2)-udst(2))>(1.0d-6+1.0d2*(al*max(1.0d0,xk))**4) &
 &                      *(abs(udst(2))+abs(udst(1))/rc)) then
-   write(6,'(/a,i2,a,f10.6/a,1p,2e20.12)') &
+   write(iout,'(/a,i2,a,f10.6/a,1p,2e20.12)') &
 &        'ode_rc_der: ERROR uu and up disagree for l=',ll,' at rc=',rc, &
 &        'uu'' from up and from stencils on uu:',ud(2),udst(2)
    ifail=1

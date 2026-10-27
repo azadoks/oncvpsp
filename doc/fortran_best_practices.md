@@ -723,7 +723,9 @@ and silently truncates at column 72. Constructs such as `GOTO`, `COMMON` and
 Error messages on standard output get mixed into the main output file, which
 the tests compare.
 
-- **Unit 6.** 834 `write(6,…)` lines in 49 files. Errors go to unit 6 as
+- **Unit 6.** **Done** as [Library and wrappers](library_plan.md),
+  phase 2: the routines write to their argument `iout`, which the
+  programs set to 6. Found: 834 `write(6,…)` lines in 49 files. Errors go to unit 6 as
   well, except in `input_toml_m.f90` and parts of `oncvpsp*.F90`, which use
   `stderr`.
 - **Unit 5.** `read(5,*)` appears only in the dead `oncvpsp_r.F90:798`.

@@ -29,7 +29,7 @@
 
  subroutine psatom(na,la,ea,fat,nv,it,rhoc,rho, &
 &           rr,rcmax,mmax,mxprj,iexc,etot,nproj,vpuns,lloc,vlocpw,vkbpw, &
-&           evkb,ierr,nkap,vext,ifail)
+&           evkb,ierr,nkap,vext,iout,ifail)
 
 !! @param na  principal quantum number array, dimension nv
 !! @param la  angular-momenta
@@ -63,6 +63,7 @@
 !!              ramped in with the occupations, and the eigenvalues, which
 !!              it can raise above 0, are bracketed around their last
 !!              values in place of 10 % of them
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, mxstate, mxl, mxlin
@@ -92,6 +93,7 @@
  integer, intent(out) :: ierr
  integer, intent(out) :: it
  real(dp), intent(out) :: etot
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -222,20 +224,20 @@
        end if
        call lschvkbb_tol(na(ii),la(ii),nproj(l1),ierr,et,emin,emax, &
 &                       rr,vtot,vlocpw,vkbpw(1:nproj(l1),l1,ikap), &
-&                       evkb(1,l1,ikap),uu,up,mmax,mch,etol,ifail)
+&                       evkb(1,l1,ikap),uu,up,mmax,mch,etol,iout,ifail)
        if(ifail/=0) return
 
        if(ierr /= 0) then
          if(nkap==2) then
-           write(6,'(/a,3i4)') &
+           write(iout,'(/a,3i4)') &
 &                'psatom_r: WARNING lschvkbb convergence error n,l,kap,iter=', &
 &                 na(ii),la(ii),kap,it
          else
-           write(6,'(/a,3i4)') &
+           write(iout,'(/a,3i4)') &
 &                'psatom: WARNING lschvkbb convergence error n,l,iter=', &
 &                na(ii),la(ii),it
          end if
-         write(6,'(a,1p,4e14.6)') 'ea(ii),et,emin,emax',ea(ii,ikap),et, &
+         write(iout,'(a,1p,4e14.6)') 'ea(ii),et,emin,emax',ea(ii,ikap),et, &
 &              emin,emax
          exit
        end if
@@ -268,7 +270,7 @@
 ! stopped falling at its round-off floor (ae_converged): 1.4-3e-12 for
 ! Li with a near-bound s ghost, where 1e-12 was never reached
    call ae_residual(rho,vi,vo,zval,rr,mmax,res)
-   call ae_converged(it,res,tolscf,resbest,nflat,convg)
+   call ae_converged(it,res,tolscf,resbest,nflat,convg,iout)
 
 ! generate next iteration using d. g. anderson''s
 ! method, once the previous iteration was at the target occupations too
@@ -278,9 +280,9 @@
 
    if(it==100 .and. .not. convg) then
      if(nkap==2) then
-       write(6,'(/a)') 'psatom_r: WARNING potential failed to converge'
+       write(iout,'(/a)') 'psatom_r: WARNING potential failed to converge'
      else
-       write(6,'(/a)') 'psatom: potential failed to converge'
+       write(iout,'(/a)') 'psatom: potential failed to converge'
      end if
      ierr=101
    end if

@@ -26,7 +26,7 @@
  contains
 
  subroutine sbf_basis_con(ll,rc,nbas,qroot,psb,nbasmx,orbasis,orbasis_der, &
-&                         iprj,mxprj,ncon,ncon_in,ifail)
+&                         iprj,mxprj,ncon,ncon_in,iout,ifail)
 
 !! orthonormalize basis functions and derivatives at rc and form constraint
 !! matrix based on derivative to be matched and overlaps with prior
@@ -55,6 +55,7 @@
 !! @param mxprj  second dimension of psb, maximum number of projectors
 !! @param ncon  total number of constraints, ncon_in+iprj-1
 !! @param ncon_in  number of value and derivative constraints at rc
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
@@ -70,6 +71,7 @@
 
 !Output variables
  real(qp), intent(out) :: orbasis(nbas,nbas),orbasis_der(ncon,nbas)
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -101,7 +103,8 @@
    if(sev(ibas)>0.0_qp) then
      tt=1.0_qp/sqrt(sev(ibas))
    else
-     write(6,'(a,es12.4)') 'sbfbasis: negative eigenvalue of overlap matrix', &
+     write(iout,'(a,es12.4)') &
+&          'sbfbasis: negative eigenvalue of overlap matrix', &
 &         real(sev(ibas),dp)
      ifail=1
      return

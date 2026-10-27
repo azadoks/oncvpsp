@@ -29,7 +29,7 @@
 
  subroutine eresid(ll,rc,nnull,nbas,nq,dq,nqout,qout,qmax,qroot,hh,nr, &
 &                  ulin,pswf0_sb,pswfnull_sb,e0g,edotg,ematg, &
-&                  eresid0,eresiddot,eresidmat,ifail)
+&                  eresid0,eresiddot,eresidmat,iout,ifail)
 
 !! residual kinetic energy matrix elements as functions of the lower
 !! cutoff q: E0(q) = (1/pi) int_q^{qmax} q'**4 |ps0(q')|**2 dq', and the
@@ -89,6 +89,7 @@
 !! @param eresid0  <ps0| E_resid |ps0> at each qout
 !! @param eresiddot  <psnull| E_resid |ps0> at each qout
 !! @param eresidmat  <psnull| E_resid |psnull'> at each qout
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, pi
@@ -112,6 +113,7 @@
  real(dp), intent(out) :: e0g(nq),edotg(nq,nnull),ematg(nq,nnull,nnull)
  real(dp), intent(out) :: eresid0(nqout),eresiddot(nnull,nqout)
  real(dp), intent(out) :: eresidmat(nnull,nnull,nqout)
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -162,7 +164,7 @@
 
 !the linear mesh of the tail
  if(nr<2*lm_ncell) then
-   write(6,'(/a,i0)') 'eresid: ERROR tail too short, nr=',nr
+   write(iout,'(/a,i0)') 'eresid: ERROR tail too short, nr=',nr
    ifail=1
    return
  end if

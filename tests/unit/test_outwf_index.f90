@@ -23,6 +23,7 @@
 &                   outwf_free
  use lapack_m, only: dsyev
  implicit none
+ integer, parameter :: iout=6
 
 !Local variables
  integer :: ifail
@@ -59,7 +60,7 @@
    call pw_alloc(vkbpw(1), mmax, 1, [0.0_dp, rc])
    vkbpw(1)%vals(:, 1) = rr**(ll + 1)*(1.0_dp - (rr/rc)**2)**4
    call fd_eigenvalues(ll, evkb(1), rlast, efd)
-   call outwf_setup(ll, rr, mmax, vloc, vlocpw, 1, vkbpw, ow, ifail)
+   call outwf_setup(ll, rr, mmax, vloc, vlocpw, 1, vkbpw, ow, iout, ifail)
    if(ifail /= 0) error stop 1
    nbad = 0
    nskip = 0
@@ -69,7 +70,8 @@
        nskip = nskip + 1
        cycle
      end if
-     call outwf_solve(ow, ee, evkb, ibox, ibox, uu, up, neig, ifail=ifail)
+     call outwf_solve(ow, ee, evkb, ibox, ibox, uu, up, neig, &
+&          iout=iout, ifail=ifail)
      if(ifail /= 0) error stop 1
      nall = outwf_count(ow, 1, -1.0_dp, ibox)
      nfd_below = count(efd < ee)

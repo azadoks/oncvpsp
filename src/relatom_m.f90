@@ -26,7 +26,7 @@
  contains
 
  subroutine relatom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&           rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vext,warm,ifail)
+&           rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vext,warm,iout,ifail)
 
 !! self-consistent fully-relativistic all-electron atom
 !! calculation using log mesh
@@ -58,6 +58,7 @@
 !! @param warm  start from vi and ea (the solution of a nearby potential,
 !!              oncvpsp_confine.x) instead of the Thomas-Fermi potential
 !!              and hydrogenic energies
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, mxstate, mxkap, ae_tolres
@@ -86,6 +87,7 @@
  real(dp), intent(out) :: rho(mmax),rhoc(mmax)
  real(dp), intent(inout) :: vi(mmax)
  logical, intent(in) :: warm
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -166,7 +168,7 @@
        ierr = 0
 
        call ldiracfb(na(ii),ll,kap,ierr,et, &
-&                  rr,zz,vext+vi,uu,up,mmax,mch,ifail)
+&                  rr,zz,vext+vi,uu,up,mmax,mch,iout,ifail)
        if(ifail/=0) return
 ! a state with no bound solution in this potential gets its box state;
 ! the SCF goes on but cannot converge with it
@@ -176,7 +178,7 @@
        end if
 
        if(ierr /= 0) then
-         write(6,'(/2a,5i4)') 'relatom: ldiracfb convergence ERROR', &
+         write(iout,'(/2a,5i4)') 'relatom: ldiracfb convergence ERROR', &
 &             ' n,l,kap,iter,ierr=',na(ii),ll,kap,it,ierr
          ifail=1
          return
@@ -217,7 +219,7 @@
 ! energy of its last pass, never the guess unchanged, so unchanged
 ! eigenvalues cannot be asked for (as in sratom)
    call ae_residual(rho,vsi,vso,sf,rr,mmax,res)
-   call ae_converged(it,res,tolres,resbest,nflat,convg)
+   call ae_converged(it,res,tolres,resbest,nflat,convg,iout)
    if(convg) exit
 
 ! generate next iteration using d. g. anderson''s
@@ -228,7 +230,7 @@
    end do
 
    if(it==100 .and. .not. convg) then
-     write(6,'(/a)') 'relatom: WARNING failed to converge'
+     write(iout,'(/a)') 'relatom: WARNING failed to converge'
    end if
 
  end do !it

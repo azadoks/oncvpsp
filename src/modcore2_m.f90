@@ -38,7 +38,7 @@
 ! Teter, Phys. Rev. B 48, 5031 (1993) , Appendix, as
 
  subroutine modcore2(icmod,rhops,rhotps,rhoc,rhoae,rhotae,rhomod, &
-&                   fcfact,rcfact,mmax,rr,nc,nv,la,zion,iexc,ifail)
+&                   fcfact,rcfact,mmax,rr,nc,nv,la,zion,iexc,iout,ifail)
 
 !! @param icmod  (not used)
 !! @param rhops  state-by-state pseudocharge density
@@ -57,6 +57,7 @@
 !! @param la  angular-momenta
 !! @param zion  ion charge
 !! @param iexc  exchange-correlation function to be used
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, mxstate, nrhomod
@@ -75,6 +76,7 @@
 
 !Output variables
  real(dp), intent(out) :: rhomod(mmax,nrhomod)
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -94,7 +96,7 @@
 ! this is needed for compatability with icmod=3 option
  call core_crossover(rr,rhoc,rhotps,mmax,1.0d0,rmatch,ierr)
  if(ierr/=0) then
-   write(6,'(/2a)') 'modcore2: ERROR core charge never exceeds', &
+   write(iout,'(/2a)') 'modcore2: ERROR core charge never exceeds', &
 &        ' valence pseudocharge'
    ifail=1
    return
@@ -105,24 +107,24 @@
 ! find scaled valence pseudocharge - core charge crossover
  call core_crossover(rr,rhoc,rhotps,mmax,fcfact,rstar,ierr)
  if(ierr/=0) then
-   write(6,'(/a)') 'modcore2: ERROR ircc (core-valence charge crossover) &
+   write(iout,'(/a)') 'modcore2: ERROR ircc (core-valence charge crossover) &
 &        not found'
    ifail=1
    return
  end if
 
  call d2exc_baseline(rhotae,rhoc,rhoae,rhotps,rhops,rr,zion,iexc,nc,nv, &
-&                    la,rr(mmax),mmax,rhomod,d2excae,d2excps,d2mdiff)
+&                    la,rr(mmax),mmax,rhomod,d2excae,d2excps,d2mdiff,iout)
 
 ! Fit Teter function to value and slope at r*
 
  call lm_derivs(rr,rhoc,mmax,rstar,1,fmatch)
  ymatch=rstar*fmatch(2)/fmatch(1)
 
- call teter_scale(ymatch,xx,ierr,ifail)
+ call teter_scale(ymatch,xx,ierr,iout,ifail)
  if(ifail/=0) return
  if(ierr/=0) then
-   write(6,'(/a,1p,e12.4)') 'modcore2: ERROR no Teter scale for the slope', &
+   write(iout,'(/a,1p,e12.4)') 'modcore2: ERROR no Teter scale for the slope', &
 &        ymatch
    ifail=1
    return
@@ -132,8 +134,8 @@
  b0=xx/rstar
  a0=fmatch(1)/gd(0)
 
- write(6,'(/a)') 'amplitude prefactor, scale prefactor'
- write(6,'(2f10.4)') a0/rhocmatch,1.0d0/(b0*rmatch)
+ write(iout,'(/a)') 'amplitude prefactor, scale prefactor'
+ write(iout,'(2f10.4)') a0/rhocmatch,1.0d0/(b0*rmatch)
 
 
  do ii=1,mmax
@@ -148,7 +150,7 @@
 &                   zion,iexc,nc,nv,la,rr(mmax),mmax)
 
  call d2exc_report('d2excps - pseudofunction derivatives with core '// &
-&                  'correction',d2excps,nv,d2mdiff)
+&                  'correction',d2excps,nv,d2mdiff,iout)
 
  deallocate(d2excae,d2excps)
 

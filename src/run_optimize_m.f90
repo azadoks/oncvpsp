@@ -28,7 +28,7 @@
  subroutine run_optimize(eig,ll,kap,irel,mmax,mxprj,rr,uua,upa,qq,&
 &                      freetl,wm,rc,irc,qcut,qmsbf,ncon_in,nbas_in,npr, &
 &                      psopt,vpsp,vkb,vae,cvgplt,ncurve,ecurve,pswfx,chix, &
-&                      ektail,wreg,optdg,wshare,ifail)
+&                      ektail,wreg,optdg,wshare,iout,ifail)
 
 !! calls routines to generate optimized pseudo wave function and semi-local
 !! pseudopotential and prints diagnostic information on process and
@@ -88,6 +88,7 @@
 !!                that their difference is the well's share; (3) 1 for
 !!                these, -1 where the free tail is undefined (qcut not
 !!                above the state's wave vector), 0 for the other waves
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, nerrlv, nerrdg, pi
@@ -128,6 +129,7 @@
  real(dp), intent(out) :: pswfx(mmax,mxprj),chix(mmax,mxprj)
  real(dp), intent(out) :: ektail(2,mxprj),optdg(4,mxprj)
  real(dp), intent(out) :: wshare(3,mxprj)
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -174,7 +176,8 @@
 !calculate derivatives of all-electron wave function at r_c from the radial
 !equation for the first projector to set sbf wave vectors for all projectors
 
- call ode_rc_der(irel,ll,kap,eig(1),rr,vae,uua(1,1),upa(1,1),mmax,rc,uord,ifail)
+ call ode_rc_der(irel,ll,kap,eig(1),rr,vae,uua(1,1),upa(1,1),mmax,rc,uord, &
+&      iout,ifail)
  if(ifail/=0) return
  ulgd=uord(2)/uord(1)
 
@@ -182,7 +185,7 @@
 
 !select wave vectors for spherical Bessel functions, scanned in steps of
 !0.02 (doc/smoothness_plan.md, Q-5, D-3)
- call qroots(ll,rc,ulgd,nbas,0.02d0,qmax,qroot,ifail)
+ call qroots(ll,rc,ulgd,nbas,0.02d0,qmax,qroot,iout,ifail)
  if(ifail/=0) return
 
  qmsbf=qroot(nbas)
@@ -195,7 +198,7 @@
 ! loop over projectors
  do iprj=1,npr
 
-   write(6,'(/a,i4)') 'Calculating optimized projector #',iprj, &
+   write(iout,'(/a,i4)') 'Calculating optimized projector #',iprj, &
 &        ' for l=',ll
 
 !basis size and number of constraints for this projector
@@ -218,7 +221,7 @@
 !constraints
 
    call ode_rc_der(irel,ll,kap,eig(iprj),rr,vae,uua(1,iprj),upa(1,iprj), &
-&                  mmax,rc,uord,ifail)
+&                  mmax,rc,uord,iout,ifail)
    if(ifail/=0) return
 
 !q considered infinity for E_resid calculation: twice the largest basis
@@ -246,7 +249,7 @@
 
 !calculate orthogonal basis and constraint matrix
    call sbf_basis_con(ll,rc,nbas,qroot,psb,nbas_in+npr-1,orbasis, &
-&                     orbasis_der,iprj,mxprj,ncon,ncon_in,ifail)
+&                     orbasis_der,iprj,mxprj,ncon,ncon_in,iout,ifail)
    if(ifail/=0) return
 
 
@@ -266,7 +269,7 @@
 !satisfying off-diagonal norm conservation
    call const_basis(nbas,ncon,cons,orbasis,orbasis_der, &
 &                   pswf0_or,pswfnull_or, &
-&                   pswf0_sbq,pswfnull_sbq,ps0norm,ifail)
+&                   pswf0_sbq,pswfnull_sbq,ps0norm,iout,ifail)
    if(ifail/=0) return
    pswf0_sb(:)=real(pswf0_sbq(:),dp)
    pswfnull_sb(:,:)=real(pswfnull_sbq(:,:),dp)
@@ -274,7 +277,7 @@
 !calculate eigenvectors, eigenvalues, and inhomogeneous terms for
 !the residual energy for a set of q lower cutoffs
 
-   write(6,'(/a,f10.6)') '    Fraction of norm inside rc',qq(iprj,iprj)
+   write(iout,'(/a,f10.6)') '    Fraction of norm inside rc',qq(iprj,iprj)
 
 !the all-electron tail on the linear mesh of E_resid, 75 points per
 !period of qmax: the wave function itself, or the free tail of a well
@@ -282,16 +285,16 @@
    hh=2.0d0*pi/(75.0d0*qmax)
    if(freetl(iprj)) then
      call free_tail(irel,ll,kap,eig(iprj),rr,vae,uua(1,iprj),upa(1,iprj), &
-&                   mmax,rc,qcut,hh,nr,ulin,dlin,ifail=ifail)
+&                   mmax,rc,qcut,hh,nr,ulin,dlin,iout=iout,ifail=ifail)
      if(ifail/=0) return
      ekin_tail=tail_kinetic(ll,rc,hh,nr,ulin,dlin)
      deallocate(dlin)
    else if(wm(iprj)%mx>0) then
      call mesh_tail(wm(iprj)%rr,wm(iprj)%uu(:,1),wm(iprj)%mx,rc,hh,nr,ulin, &
-&          ifail)
+&          iout,ifail)
      if(ifail/=0) return
    else
-     call mesh_tail(rr,uua(1,iprj),mmax,rc,hh,nr,ulin,ifail)
+     call mesh_tail(rr,uua(1,iprj),mmax,rc,hh,nr,ulin,iout,ifail)
      if(ifail/=0) return
    end if
 
@@ -299,12 +302,12 @@
 !convergence curve (Q-1, Q-4)
    call eresid(ll,rc,nnull,nbas,nq,dq,nqout,qout,qmax,qroot,hh,nr,ulin, &
 &              pswf0_sbq,pswfnull_sbq,e0,edot,emat, &
-&              eresid0,eresiddot,eresidmat,ifail)
+&              eresid0,eresiddot,eresidmat,iout,ifail)
    if(ifail/=0) return
 
-   write(6,'(a,f7.2,a,f7.2,a)') '    Optimizing pswf for qcut=',qout(1), &
+   write(iout,'(a,f7.2,a,f7.2,a)') '    Optimizing pswf for qcut=',qout(1), &
 &   ' a_B^-1,  ecut=',0.5d0*qout(1)**2,' Ha'
-   write(6,'(a,f6.2,a,f7.1,a)') '    q_infinity defining residual KE=',&
+   write(iout,'(a,f6.2,a,f7.1,a)') '    q_infinity defining residual KE=',&
 &   qmax,'  (E_inf=',0.5d0*qmax**2,' Ha)'
 
 !find the null-basis coefficients which minimize the eresid while
@@ -314,10 +317,10 @@
 &                eresid0,eresiddot,eresidmat,&
 &                pswfnull_sb,pswfnull_or,qq(iprj,iprj),ps0norm,eresidmin, &
 &                pswfopt_sb,pswfopt_or,ekin_anal,eresq,pswfopt_nu, &
-&                wreg,optdg(1,iprj),ifail)
+&                wreg,optdg(1,iprj),iout,ifail)
    if(ifail/=0) return
 
-   write(6,'(a,1p,d10.2,a)') '    Residual kinetic energy error=', &
+   write(iout,'(a,1p,d10.2,a)') '    Residual kinetic energy error=', &
 &        eresidmin,' Ha'
 !the optimized coefficients from the quad-precision basis vectors (those
 !of optimize, from the rounded ones, carry their 1e4 cancellation)
@@ -346,7 +349,7 @@
 !node changed its interpolant when nstep did (M-13); with its tail, below
    call resid_curve()
    if(nq>ncurve) then
-     write(6,'(/2a,i0,a,i0/a)') 'run_optimize: ERROR q grid longer than', &
+     write(iout,'(/2a,i0,a,i0/a)') 'run_optimize: ERROR q grid longer than', &
 &          ' the buffer of the convergence curve, nq=',nq,', ncurve=',ncurve, &
 &          '  (ncurve in oncvpsp_main; the grid grows with qcut*rc)'
      ifail=1
@@ -357,7 +360,7 @@
 
    call pspot(iprj,ll,rr,irc,rc,mmax,al,nbas,qroot,eig(iprj),uua(1,iprj), &
 &             pswfopt_sb,pswfx(1,iprj),chix(1,iprj),psopt(1,iprj),vae,work, &
-&             vkb(1,iprj),ekin_num,ifail)
+&             vkb(1,iprj),ekin_num,iout,ifail)
    if(ifail/=0) return
 
 !semi-local potential
@@ -392,18 +395,19 @@
      ecurve(1,iq,iprj)=0.5d0*(q0+dble(iq-1)*dq)**2
      ecurve(2,iq,iprj)=eresg(iq)
    end do
-   write(6,'(/a)') '    Total kinetic energy consistency test'
-   write(6,'(a)') '      Fourier integration compared to d^2/dr^2 integral'
-   write(6,'(a,f12.8,a,f12.8,a,f12.8)') '      Fourier',ekin_anal, &
+   write(iout,'(/a)') '    Total kinetic energy consistency test'
+   write(iout,'(a)') '      Fourier integration compared to d^2/dr^2 integral'
+   write(iout,'(a,f12.8,a,f12.8,a,f12.8)') '      Fourier',ekin_anal, &
 &    '  r-space=',ekin_num,'  ratio=',ekin_anal/ekin_num
-   write(6,'(a)') '    Potential consistency test at r_c'
-   write(6,'(a,f12.8,a,f12.8,a,1p,d10.2)') '    "vpsp"=',work(irc),'  vae=', &
+   write(iout,'(a)') '    Potential consistency test at r_c'
+   write(iout,'(a,f12.8,a,f12.8,a,1p,d10.2)') '    "vpsp"=',work(irc), &
+&        '  vae=', &
 &    vae(irc),'  difference=',vae(irc)-work(irc)
 
 !interpolate the convergence behavior of the optimized pseudo wave function
 
-   write(6,'(/a)') '    Energy error per electron        Cutoff'
-   write(6,'(a)') '         Ha          eV             Ha'
+   write(iout,'(/a)') '    Energy error per electron        Cutoff'
+   write(iout,'(a)') '         Ha          eV             Ha'
    call curve_cutoffs(iprj)
 
    deallocate(sbasis)
@@ -454,31 +458,32 @@
    nqs=min(nq,1+int((qmax-qcut)/dq)+lm_ncell)
    allocate(e0t(nqs),edt(nqs,0),emt(nqs,0,0))
    call free_tail(irel,ll,kap,eig(iprj),rr,vae,uua(1,iprj), &
-&                   upa(1,iprj),mmax,rc,qcut,hh,nrw,ufree,dlin,ifail=ifail)
+&                   upa(1,iprj),mmax,rc,qcut,hh,nrw,ufree,dlin, &
+&                   iout=iout,ifail=ifail)
    if(ifail/=0) return
    call eresid(ll,rc,0,nbas,nqs,dq,1,qout(1:1),qmax,qroot,hh,nrw,ufree, &
-&                pswfopt_sbq,pswfnone,e0t,edt,emt,efree,edum,emdum,ifail)
+&                pswfopt_sbq,pswfnone,e0t,edt,emt,efree,edum,emdum,iout,ifail)
    if(ifail/=0) return
    deallocate(ufree,dlin,e0t,edt,emt)
    wshare(:,iprj)=[ewell(1),efree(1),1.0d0]
    share=ewell(1)-efree(1)
-   write(6,'(a,1p,2d10.2,a)') &
+   write(iout,'(a,1p,2d10.2,a)') &
 &         '    Residual kinetic energy at qcut, well / free tail=', &
 &         ewell(1),efree(1),' Ha'
    if(abs(share)>0.1d0*abs(efree(1))) then
-     write(6,'(a,f8.1,a/a)') '    WARNING the well''s tail changes it by', &
+     write(iout,'(a,f8.1,a/a)') '    WARNING the well''s tail changes it by', &
 &           100.0d0*share/efree(1),' %:', &
 &           '    WARNING the cutoffs of this wave carry the well'
    end if
  else
    wshare(3,iprj)=-1.0d0
    if(qcut<=free_tail_k(eig(iprj))) then
-     write(6,'(a,f8.4/a)') &
+     write(iout,'(a,f8.4/a)') &
 &           '    WARNING qcut is not above this well state''s wave vector', &
 &           free_tail_k(eig(iprj)), &
 &           '    WARNING it oscillates faster: its cutoffs are not meaningful'
    else
-     write(6,'(a/a)') &
+     write(iout,'(a/a)') &
 &           '    WARNING this well state''s free tail grows too fast for', &
 &           '    WARNING its window at qcut (kappa L > 12): no share'
    end if
@@ -515,7 +520,7 @@
  qout2(1)=qmax
  allocate(e0t(nq2),edt(nq2,0),emt(nq2,0,0))
  call eresid(ll,rc,0,nbas,nq2,dq2,1,qout2,qmax2,qroot,hh,nr,ulin, &
-&              pswfopt_sbq,pswfnone,e0t,edt,emt,etail,edum,emdum,ifail)
+&              pswfopt_sbq,pswfnone,e0t,edt,emt,etail,edum,emdum,iout,ifail)
  if(ifail/=0) return
  ektail(1,iprj)=etail(1)
  deallocate(e0t,edt,emt)
@@ -555,7 +560,7 @@
      cvgplt(1,jj,iprj)= 0.5d0*qerr**2
      cvgplt(2,jj,iprj)= err
      if(mod(jj,2)/=0 .and. jj<=nerrlv) then
-       write(6,'(4x,2f12.5,f12.2)') err,err*Ha_eV,0.5d0*qerr**2
+       write(iout,'(4x,2f12.5,f12.2)') err,err*Ha_eV,0.5d0*qerr**2
      end if
    end if
    err=sqrt(0.1d0)*err

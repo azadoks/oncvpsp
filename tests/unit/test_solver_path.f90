@@ -21,6 +21,7 @@
  use lschvkbb_m, only: lschvkbb
  use lschvkbbe_m, only: lschvkbbe
  implicit none
+ integer, parameter :: iout=6
 
 !Local variables
  integer :: ifail
@@ -54,7 +55,7 @@
      do ii = 1, 2
        ee(ii) = guess(-0.5_dp/nn**2, ii)
        call lschfb(nn, ll, ierr(ii), ee(ii), rr, vv, uu(:, ii), up(:, ii), &
-&                  1.0_dp, mmax, mch(ii), ip, ifail)
+&                  1.0_dp, mmax, mch(ii), ip, iout, ifail)
        if(ifail /= 0) error stop 1
      end do
      write(name, '(a,i0,a,i0,a,i0)') 'lschfb irel ', ip, ' n ', nn, ' l ', ll
@@ -70,7 +71,7 @@
    do ii = 1, 2
      ee(ii) = guess(-0.5_dp/nn**2, ii)
      call ldiracfb(nn, ll, kap, ierr(ii), ee(ii), rr, 1.0_dp, vv, &
-&                  ud(:, :, ii), udp(:, :, ii), mmax, mch(ii), ifail)
+&                  ud(:, :, ii), udp(:, :, ii), mmax, mch(ii), iout, ifail)
      if(ifail /= 0) error stop 1
      uu(:, ii) = ud(:, 1, ii)
      up(:, ii) = udp(:, 1, ii)
@@ -92,7 +93,7 @@
      emax = 0.0_dp
      call lschvkbb(nn, ll, 1, ierr(ii), ee(ii), emin, emax, rr, vloc, &
 &                  vlocpw, vkbpw, evkb, uu(:, ii), up(:, ii), mmax, mch(ii), &
-&                  ifail)
+&                  iout, ifail)
      if(ifail /= 0) error stop 1
    end do
    write(name, '(a,i0,a,i0)') 'lschvkbb n ', nn, ' l ', ll
@@ -106,7 +107,7 @@
      emax = 0.0_dp
      call lschvkbbe(nn, ll, 1, ierr(ii), ee(ii), uld, emin, emax, rr, vloc, &
 &                   vlocpw, vkbpw, evkb, uu(:, ii), up(:, ii), mmax, mch(ii), &
-&                   ifail)
+&                   iout, ifail)
      if(ifail /= 0) error stop 1
    end do
    write(name, '(a,i0,a,i0)') 'lschvkbbe n ', nn, ' l ', ll

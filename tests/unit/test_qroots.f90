@@ -29,6 +29,7 @@
  use qroots_m, only: qroots
  use sbf_rc_der_m, only: sbf_rc_der
  implicit none
+ integer, parameter :: iout=6
 
 !Local variables
  integer :: ifail
@@ -51,7 +52,7 @@
    do ll = 0, 3
      ulgds = [-5.0_dp, -1.0_dp, 0.5_dp*ll/rc - 0.3_dp, 20.0_dp, 65.0_dp]
      do kk = 1, size(ulgds)
-       call qroots(ll, rc, ulgds(kk), nroot, dltq, qmax, qroot, ifail)
+       call qroots(ll, rc, ulgds(kk), nroot, dltq, qmax, qroot, iout, ifail)
        if(ifail /= 0) error stop 1
        do ii = 2, nroot
          if(qroot(ii) <= qroot(ii - 1)) err = huge(1.0_dp)
@@ -70,9 +71,9 @@
 ! pole
    err = 0.0_dp
    do ll = 0, 3
-     call qroots(ll, rc, -1.0e12_dp, nroot, dltq, qmax, qa, ifail)
+     call qroots(ll, rc, -1.0e12_dp, nroot, dltq, qmax, qa, iout, ifail)
      if(ifail /= 0) error stop 1
-     call qroots(ll, rc, 1.0e12_dp, nroot, dltq, qmax, qb, ifail)
+     call qroots(ll, rc, 1.0e12_dp, nroot, dltq, qmax, qb, iout, ifail)
      if(ifail /= 0) error stop 1
      err = max(err, maxval(abs(qa - qb)/qb))
    end do
@@ -87,7 +88,7 @@
      do ii = 1, nscan
        ss = -0.05_dp + 1.0e-4_dp*(ii - 1)
        ulgd = dble(ll)/rc + ss
-       call qroots(ll, rc, ulgd, nroot, dltq, qmax, qroot, ifail)
+       call qroots(ll, rc, ulgd, nroot, dltq, qmax, qroot, iout, ifail)
        if(ifail /= 0) error stop 1
        if(ii > 1) then
          if(maxval(abs(qroot - qlast)) > jump) then

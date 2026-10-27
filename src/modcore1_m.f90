@@ -39,7 +39,7 @@
 
  subroutine modcore(icmod,rhops,rhotps,rhoc,rhoae,rhotae,rhomod, &
 &                   corepw,fcfact,rcfact,rcmax,mmax,rr,nc,nv,la,zion, &
-&                   iexc,ifail)
+&                   iexc,iout,ifail)
 
 !! @param icmod  (not used)
 !! @param rhops  state-by-state pseudocharge density
@@ -60,6 +60,7 @@
 !! @param la  angular-momenta
 !! @param zion  ion charge
 !! @param iexc  exchange-correlation function to be used
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, mxstate, nrhomod
@@ -80,6 +81,7 @@
 !Output variables
  real(dp), intent(out) :: rhomod(mmax,nrhomod)
  type(piecewise_t), intent(out) :: corepw(nrhomod)
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -96,7 +98,7 @@
 
  call core_crossover(rr,rhoc,rhotps,mmax,fcfact,rstar,ierr)
  if(ierr/=0) then
-   write(6,'(/a)') 'rhomod: ERROR ircc (core-valence charge crossover) &
+   write(iout,'(/a)') 'rhomod: ERROR ircc (core-valence charge crossover) &
 &        not found'
    ifail=1
    return
@@ -106,13 +108,13 @@
  rcut=max(rcmax,rstar)
 
  call d2exc_baseline(rhotae,rhoc,rhoae,rhotps,rhops,rr,zion,iexc,nc,nv, &
-&                    la,rcut,mmax,rhomod,d2excae,d2excps,d2mdiff)
+&                    la,rcut,mmax,rhomod,d2excae,d2excps,d2mdiff,iout)
 
 ! core charge and its derivatives at r*, and the barely monotonic
 ! polynomial that matches them
 
  call lm_derivs(rr,rhoc,mmax,rstar,4,fmatch)
- call poly_core_fit(rstar,fmatch,a0,aco,ifail)
+ call poly_core_fit(rstar,fmatch,a0,aco,iout,ifail)
  if(ifail/=0) return
 
 ! fill in model and derivatives: the polynomial inside r*, the core charge
@@ -124,10 +126,10 @@
  call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
 &                   zion,iexc,nc,nv,la,rcut,mmax)
 
- write(6,'(/a/)') 'Polynomial model core charge'
- write(6,'(a,f12.6)') '  model radius r*',rstar
+ write(iout,'(/a/)') 'Polynomial model core charge'
+ write(iout,'(a,f12.6)') '  model radius r*',rstar
  call d2exc_report('d2excps - pseudofunction derivatives with core '// &
-&                  'correction',d2excps,nv,d2mdiff)
+&                  'correction',d2excps,nv,d2mdiff,iout)
 
  deallocate(d2excae,d2excps)
 

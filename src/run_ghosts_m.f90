@@ -27,7 +27,7 @@
 
  subroutine run_ghosts(lmax,la,ea,nc,nv,lloc,rc,qmsbf, &
 &                    vlocpw,vkbpw,evkb,nproj,rr,vp,mmax,mxprj, &
-&                    ngh,ghn,ghe,ghp,ifail)
+&                    ngh,ghn,ghe,ghp,iout,ifail)
 
 !! Two tests for ghosts;  The local potential is terminated by a hard wall
 !! barrier at a radius of mbfact*rc, presently 3*rc.  A basis set is formed
@@ -83,6 +83,7 @@
 !! @param ghp  per l, the basis state of least <r>/rc above the reference,
 !!             <r>/rc divided by a weight rising from 0 at 0.025 Ha above
 !!             it to 1 at 0.05 Ha: (1) its energy, (2) that ratio; 0 if none
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, pi, mxstate, mxl, mxlin
@@ -106,6 +107,7 @@
 !Output variables
  integer, intent(out) :: ngh(mxl+1),ghn(mxstate,mxl+1)
  real(dp), intent(out) :: ghe(2,mxstate,mxl+1),ghp(2,mxl+1)
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -141,8 +143,8 @@
 
 ! loop for diagnostic output using Vanderbilt Kleinman-Bylander projectors
 
- write(6,'(/a)') ' Testing for bound ghosts'
- write(6,'(5a)') '   n','   l','    E NL Schr. Eq', &
+ write(iout,'(/a)') ' Testing for bound ghosts'
+ write(iout,'(5a)') '   n','   l','    E NL Schr. Eq', &
 &      '   E Basis Diag.','   E Cutoff'
 
  nodes(:)=0
@@ -155,7 +157,7 @@
    nprj=nproj(l1)
    if(nprj==0) cycle
 
-   write(6,'()')
+   write(iout,'()')
    ll = l1 - 1
 
    call barrier_mesh(l1,ifail)
@@ -191,7 +193,7 @@
 
    call dsyev( 'V', 'U', nbas, hmat, nbmax, hmev, work, lwork, info )
    if(info /= 0) then
-     write(6,'(a,i4)') 'run_ghosts: hamiltonian matrix eigenvalue ERROR, &
+     write(iout,'(a,i4)') 'run_ghosts: hamiltonian matrix eigenvalue ERROR, &
 &          info=',info
      ifail=1
      return
@@ -206,13 +208,13 @@
    deallocate(uua)
  end do !l1
 
- write(6,'(/a)') ' Testing for highly-localized positive-energy ghosts'
- write(6,'(5a)') '    ','   l','    <radius>/rc  ', &
+ write(iout,'(/a)') ' Testing for highly-localized positive-energy ghosts'
+ write(iout,'(5a)') '    ','   l','    <radius>/rc  ', &
 &      '   E Basis Diag.','   E Cutoff'
 
  if(npgh>0) then
    do jj=1,npgh
-     write(6,'(/4x,i4,2f16.6,f10.2,a)') lpgh(jj),rpgh(jj), &
+     write(iout,'(/4x,i4,2f16.6,f10.2,a)') lpgh(jj),rpgh(jj), &
 &          epgh(jj),cpgh(jj),'  WARNING - GHOST(+)'
    end do
  end if
@@ -239,7 +241,7 @@
  if(mbar<mmax .and. rr(mbar+1)<=rbar) mbar=mbar+1
 ! lschpsbar starts the solution at mbar:mbar+4, inside rr(mmax)
  if(mbar+5>mmax) then
-   write(6,'(/2a,i0,a,i0)') 'run_ghosts: ERROR barrier radius beyond', &
+   write(iout,'(/2a,i0,a,i0)') 'run_ghosts: ERROR barrier radius beyond', &
 &          ' radial mesh, mbar=',mbar,', mmax=',mmax
    ifail=1
    return
@@ -288,7 +290,7 @@
 ! a barrier state below the cutoff that does not converge, a high one on
 ! a coarse mesh whose wavelength at the barrier is a few mesh steps: the
 ! basis stops below it, and the ghost test covers energies up to there
-       write(6,'(/a,i0,a,i0,a,f12.6,a/a,f10.2,a)') &
+       write(iout,'(/a,i0,a,i0,a,f12.6,a/a,f10.2,a)') &
 &              'run_ghosts: WARNING barrier state n=',nn,' l=',ll, &
 &              ' near ',ee,' Ha not converged;', &
 &              'run_ghosts: WARNING basis cut there, ghost test to ', &
@@ -314,7 +316,7 @@
 
  end do !jj
  if(nbas==nbmax) then
-   write(6,'(/2a,i0,a,i0)') 'run_ghosts: WARNING basis full below the', &
+   write(iout,'(/2a,i0,a,i0)') 'run_ghosts: WARNING basis full below the', &
 &          ' cutoff, l=',ll,', nbmax=',nbmax
  end if
  do iprj=1,nprj
@@ -358,17 +360,17 @@
    emin=1.1d0*ea(nc+kk)
    call lschvkbb(nn,ll,nprj,ierr,ee,emin,emax, &
 &                  rr,vp(1,lloc+1),vlocpw,vkbpw(1:nprj,l1),evkb(1,l1), &
-&                  uu,up,mmax,mch,ifail)
+&                  uu,up,mmax,mch,iout,ifail)
    if(ifail/=0) return
    if(ierr/=0) then
-     write(6,'(a,3i4,2f12.6)') 'run_ghosts: lschvkbb ERROR', &
+     write(iout,'(a,3i4,2f12.6)') 'run_ghosts: lschvkbb ERROR', &
 &            nn,ll,ierr,ea(nc+kk),ee
    end if
 
    do ii=1,10
      et=min(ee-eps,ee*(1.0d0+eps))
      if(hmev(jj)<et) then
-       write(6,'(4x,i4,16x,f16.6,f10.2,a)') ll,hmev(jj),ecut, &
+       write(iout,'(4x,i4,16x,f16.6,f10.2,a)') ll,hmev(jj),ecut, &
 &              '  WARNING - GHOST(-)'
        jj=jj+1
      else
@@ -376,7 +378,7 @@
      end if
    end do !ii
 
-   write(6,'(2i4,2f16.6,f10.2)') nn,ll,ee,hmev(jj),ecut
+   write(iout,'(2i4,2f16.6,f10.2)') nn,ll,ee,hmev(jj),ecut
    ngh(l1)=ngh(l1)+1
    ghn(ngh(l1),l1)=nn
    ghe(:,ngh(l1),l1)=[ee,hmev(jj)]
@@ -394,17 +396,17 @@
    emin=2.0d0*ee
    call lschvkbb(ll+1,ll,nprj,ierr,ee,emin,emax, &
 &                  rr,vp(1,lloc+1),vlocpw,vkbpw(1:nprj,l1),evkb(1,l1), &
-&                  uu,up,mmax,mch,ifail)
+&                  uu,up,mmax,mch,iout,ifail)
    if(ifail/=0) return
    if(ierr/=0) ee=0.0d0
    do jj=1,10
      et=min(ee-eps,ee*(1.0d0+eps))
      if(hmev(jj)<et) then
-       write(6,'(4x,i4,16x,f16.6,f10.2,a)') ll,hmev(jj),ecut, &
+       write(iout,'(4x,i4,16x,f16.6,f10.2,a)') ll,hmev(jj),ecut, &
 &              '  WARNING - GHOST(-)'
      else
        if(ee<0.0d0) then
-         write(6,'(2i4,2f16.6,f10.2)') ll+1,ll,ee,hmev(jj),ecut
+         write(iout,'(2i4,2f16.6,f10.2)') ll+1,ll,ee,hmev(jj),ecut
        end if
        ngh(l1)=1
        ghn(1,l1)=ll+1

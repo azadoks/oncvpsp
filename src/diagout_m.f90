@@ -32,7 +32,7 @@
 &                   pshae,pshps,ngh,ghn,ghe,ghp,wcut,errw,ecutw,wcurve, &
 &                   ektail,icmod,rr,mmax,rcmax,rhoc,corepw,lloc,evkb, &
 &                   bbeig,ncfg,ntcf,itcf,etcf,dtcf,cvloc,vlchk,optdg, &
-&                   wshare)
+&                   wshare,iout)
 
 !! writes the block "Begin DIAGNOSTICS" ... "End DIAGNOSTICS", one value
 !! per line, each line tagged with its quantity:
@@ -174,6 +174,7 @@
 !! @param wshare  of each optimized wave: E_resid at qcut with the well's
 !!                tail and with the free tail, and 1 for a confined well
 !!                state, -1 where the free tail is undefined, 0 otherwise
+!! @param iout  unit of the text output
 
  use constants_m, only: dp, mxl, mxlin, nerrdg, nerrlv, mxstate, mxkap, &
 &                       nrhomod, mxcnf
@@ -205,6 +206,7 @@
  real(dp), intent(in) :: cvloc(2,nerrlv),vlchk
  real(dp), intent(in) :: optdg(4,mxprj,mxl+1,nkap)
  real(dp), intent(in) :: wshare(3,mxprj,mxl+1,nkap)
+ integer, intent(in) :: iout
 
 !Local variables
 !the model core on the mesh, its value at rcmax and the piece of slope
@@ -212,15 +214,15 @@
  real(dp) :: mdrc
  real(dp), allocatable :: fmd(:)
 
- write(6,'(/a)') 'Begin DIAGNOSTICS'
+ write(iout,'(/a)') 'Begin DIAGNOSTICS'
  call write_cutoffs()
 
  call write_vloc()
 
- write(6,'(a)') '# ekin_tail l ikap iproj t(Ha)'
+ write(iout,'(a)') '# ekin_tail l ikap iproj t(Ha)'
  call write_per_projector('ekin_tail',ektail(1,:,:,:))
 
- write(6,'(a)') '# ekin_check l ikap iproj t(Ha)'
+ write(iout,'(a)') '# ekin_check l ikap iproj t(Ha)'
  call write_per_projector('ekin_check',ektail(2,:,:,:))
 
  if(wcut) call write_weighted()
@@ -232,7 +234,7 @@
  call write_tests()
 
  if(icmod>0) call write_core()
- write(6,'(a)') 'End DIAGNOSTICS'
+ write(iout,'(a)') 'End DIAGNOSTICS'
 
  return
 
@@ -241,14 +243,14 @@
  subroutine write_cutoffs()
 !! the ecut, opt and well_share lines of each optimized wave
  integer :: jj,l1,ikap,mkap,iprj
- write(6,'(a)') '# ecut l ikap iproj err(Ha) ecut(Ha)'
+ write(iout,'(a)') '# ecut l ikap iproj err(Ha) ecut(Ha)'
  do l1=1,lmax+1
    mkap=kap_count(nkap,l1-1)
    do ikap=1,mkap
      do iprj=1,nproj(l1)
        do jj=1,nerrdg
          if(cvgplt(1,jj,iprj,l1,ikap)/=0.0d0) then
-           write(6,'(a,3i4,1p,2e24.16)') 'ecut',l1-1,ikap,iprj, &
+           write(iout,'(a,3i4,1p,2e24.16)') 'ecut',l1-1,ikap,iprj, &
 &                fe(cvgplt(2,jj,iprj,l1,ikap)),cvgplt(1,jj,iprj,l1,ikap)
          end if
        end do
@@ -256,27 +258,27 @@
    end do
  end do
 
- write(6,'(a)') '# opt l ikap iproj e(Ha) reg(Ha) e1(Ha) f1(Ha)'
+ write(iout,'(a)') '# opt l ikap iproj e(Ha) reg(Ha) e1(Ha) f1(Ha)'
  do l1=1,lmax+1
    mkap=kap_count(nkap,l1-1)
    do ikap=1,mkap
      do iprj=1,nproj(l1)
-       write(6,'(a,3i4,1p,4e24.16)') 'opt',l1-1,ikap,iprj, &
+       write(iout,'(a,3i4,1p,4e24.16)') 'opt',l1-1,ikap,iprj, &
 &            fe(optdg(:,iprj,l1,ikap))
      end do
    end do
  end do
 
- write(6,'(a)') '# well_share l ikap iproj e_well(Ha) e_free(Ha)'
+ write(iout,'(a)') '# well_share l ikap iproj e_well(Ha) e_free(Ha)'
  do l1=1,lmax+1
    mkap=kap_count(nkap,l1-1)
    do ikap=1,mkap
      do iprj=1,nproj(l1)
        if(wshare(3,iprj,l1,ikap)>0.0d0) then
-         write(6,'(a,3i4,1p,2e24.16)') 'well_share',l1-1,ikap,iprj, &
+         write(iout,'(a,3i4,1p,2e24.16)') 'well_share',l1-1,ikap,iprj, &
 &              fe(wshare(1:2,iprj,l1,ikap))
        else if(wshare(3,iprj,l1,ikap)<0.0d0) then
-         write(6,'(a,3i4)') 'well_share_undefined',l1-1,ikap,iprj
+         write(iout,'(a,3i4)') 'well_share_undefined',l1-1,ikap,iprj
        end if
      end do
    end do
@@ -286,14 +288,14 @@
  subroutine write_vloc()
 !! the ecut_vloc and vloc_check lines of the local potential
  integer :: jj
- write(6,'(a)') '# ecut_vloc err(Ha) ecut(Ha)'
+ write(iout,'(a)') '# ecut_vloc err(Ha) ecut(Ha)'
  do jj=1,nerrlv
    if(cvloc(1,jj)/=0.0d0) then
-     write(6,'(a,1p,2e24.16)') 'ecut_vloc',fe(cvloc(2,jj)),cvloc(1,jj)
+     write(iout,'(a,1p,2e24.16)') 'ecut_vloc',fe(cvloc(2,jj)),cvloc(1,jj)
    end if
  end do
- write(6,'(a)') '# vloc_check e(Ha)'
- write(6,'(a,1p,e24.16)') 'vloc_check',fe(vlchk)
+ write(iout,'(a)') '# vloc_check e(Ha)'
+ write(iout,'(a,1p,e24.16)') 'vloc_check',fe(vlchk)
  end subroutine write_vloc
 
  subroutine write_per_projector(tag,vv)
@@ -308,7 +310,7 @@
    mkap=kap_count(nkap,l1-1)
    do ikap=1,mkap
      do iprj=1,nproj(l1)
-       write(6,'(a,3i4,1p,e24.16)') tag,l1-1,ikap,iprj, &
+       write(iout,'(a,3i4,1p,e24.16)') tag,l1-1,ikap,iprj, &
 &            fe(vv(iprj,l1,ikap))
      end do
    end do
@@ -318,15 +320,15 @@
  subroutine write_weighted()
 !! the ecut_w line of the weighted cutoff and the weights of the waves
  integer :: l1,ikap,mkap,iprj
- write(6,'(a)') '# ecut_w err(Ha) ecut(Ha)'
- write(6,'(a,1p,2e24.16)') 'ecut_w',fe(errw),ecutw
- write(6,'(a)') '# ecut_w_weight l ikap iproj w'
+ write(iout,'(a)') '# ecut_w err(Ha) ecut(Ha)'
+ write(iout,'(a,1p,2e24.16)') 'ecut_w',fe(errw),ecutw
+ write(iout,'(a)') '# ecut_w_weight l ikap iproj w'
  do l1=1,lmax+1
    mkap=kap_count(nkap,l1-1)
    do ikap=1,mkap
      do iprj=1,mxprj
        if(wcurve(iprj,l1,ikap)>0.0d0) then
-         write(6,'(a,3i4,1p,e24.16)') 'ecut_w_weight',l1-1,ikap,iprj, &
+         write(iout,'(a,3i4,1p,e24.16)') 'ecut_w_weight',l1-1,ikap,iprj, &
 &                fe(wcurve(iprj,l1,ikap))
        end if
      end do
@@ -339,16 +341,16 @@
  integer :: ii,l1,ikap,mkap
 !none with --no-log-derivatives (npsh 0)
  if(npsh>0) then
-   write(6,'(a)') '# ld_r l ikap r(bohr)'
-   write(6,'(a)') '# ld l ikap e(Ha) atan(r*u''/u)_ae atan(r*u''/u)_ps'
+   write(iout,'(a)') '# ld_r l ikap r(bohr)'
+   write(iout,'(a)') '# ld l ikap e(Ha) atan(r*u''/u)_ae atan(r*u''/u)_ps'
  end if
  do l1=1,4
    if(npsh==0) exit
    mkap=kap_count(nkap,l1-1)
    do ikap=1,mkap
-     write(6,'(a,2i4,1p,e24.16)') 'ld_r',l1-1,ikap,rphs(l1)
+     write(iout,'(a,2i4,1p,e24.16)') 'ld_r',l1-1,ikap,rphs(l1)
      do ii=1,npsh
-       write(6,'(a,2i4,1p,3e24.16)') 'ld',l1-1,ikap, &
+       write(iout,'(a,2i4,1p,3e24.16)') 'ld',l1-1,ikap, &
 &            epsh2-depsh*real(ii-1,dp),pshae(ii,l1,ikap),pshps(ii,l1,ikap)
      end do
    end do
@@ -358,17 +360,17 @@
  subroutine write_ghosts()
 !! the ghost and ghost_r lines of the ghost tests
  integer :: jj,l1,ikap,mkap
- write(6,'(a)') '# ghost l ikap n e_ref(Ha) e_basis(Ha)'
- write(6,'(a)') '# ghost_r l ikap e(Ha) <r>/rc'
+ write(iout,'(a)') '# ghost l ikap n e_ref(Ha) e_basis(Ha)'
+ write(iout,'(a)') '# ghost_r l ikap e(Ha) <r>/rc'
  do l1=1,lmax+1
    mkap=kap_count(nkap,l1-1)
    do ikap=1,mkap
      do jj=1,ngh(l1,ikap)
-       write(6,'(a,3i4,1p,2e24.16)') 'ghost',l1-1,ikap,ghn(jj,l1,ikap), &
+       write(iout,'(a,3i4,1p,2e24.16)') 'ghost',l1-1,ikap,ghn(jj,l1,ikap), &
 &            fe(ghe(:,jj,l1,ikap))
      end do
      if(ghp(2,l1,ikap)>0.0d0) then
-       write(6,'(a,2i4,1p,2e24.16)') 'ghost_r',l1-1,ikap,ghp(:,l1,ikap)
+       write(iout,'(a,2i4,1p,2e24.16)') 'ghost_r',l1-1,ikap,ghp(:,l1,ikap)
      end if
    end do
  end do
@@ -377,9 +379,9 @@
  subroutine write_vkb()
 !! the vkb_b, vkb_cond and vkb_e lines of the projectors
  integer :: l1,ikap,mkap,iprj,np
- write(6,'(a)') '# vkb_b l ikap i b'
- write(6,'(a)') '# vkb_cond l ikap cond(B)'
- write(6,'(a)') '# vkb_e l ikap i e(Ha)'
+ write(iout,'(a)') '# vkb_b l ikap i b'
+ write(iout,'(a)') '# vkb_cond l ikap cond(B)'
+ write(iout,'(a)') '# vkb_e l ikap i e(Ha)'
  do l1=1,lmax+1
    if(l1==lloc+1) cycle
    mkap=kap_count(nkap,l1-1)
@@ -387,13 +389,13 @@
      np=nproj(l1)
      if(np==0) cycle
      do iprj=1,np
-       write(6,'(a,3i4,1p,e24.16)') 'vkb_b',l1-1,ikap,iprj, &
+       write(iout,'(a,3i4,1p,e24.16)') 'vkb_b',l1-1,ikap,iprj, &
 &            fe(bbeig(iprj,l1,ikap))
      end do
-     write(6,'(a,2i4,1p,e24.16)') 'vkb_cond',l1-1,ikap, &
+     write(iout,'(a,2i4,1p,e24.16)') 'vkb_cond',l1-1,ikap, &
 &          maxval(abs(bbeig(1:np,l1,ikap)))/minval(abs(bbeig(1:np,l1,ikap)))
      do iprj=1,np
-       write(6,'(a,3i4,1p,e24.16)') 'vkb_e',l1-1,ikap,iprj, &
+       write(iout,'(a,3i4,1p,e24.16)') 'vkb_e',l1-1,ikap,iprj, &
 &            fe(evkb(iprj,l1,ikap))
      end do
    end do
@@ -403,16 +405,16 @@
  subroutine write_tests()
 !! the test_config and test_eig lines of the test configurations
  integer :: ii,jj
- write(6,'(a)') '# test_config icfg de_ae(Ha) de_ps(Ha) err(Ha)'
- write(6,'(a)') '# test_eig icfg n l ikap f eae(Ha) eps(Ha)'
+ write(iout,'(a)') '# test_config icfg de_ae(Ha) de_ps(Ha) err(Ha)'
+ write(iout,'(a)') '# test_eig icfg n l ikap f eae(Ha) eps(Ha)'
  do jj=1,ncfg
    if(ntcf(jj)<0) then
-     write(6,'(a,i4)') 'test_config_failed',jj-1
+     write(iout,'(a,i4)') 'test_config_failed',jj-1
      cycle
    end if
-   write(6,'(a,i4,1p,3e24.16)') 'test_config',jj-1,fe(dtcf(:,jj))
+   write(iout,'(a,i4,1p,3e24.16)') 'test_config',jj-1,fe(dtcf(:,jj))
    do ii=1,ntcf(jj)
-     write(6,'(a,4i4,1p,3e24.16)') 'test_eig',jj-1,itcf(:,ii,jj), &
+     write(iout,'(a,4i4,1p,3e24.16)') 'test_eig',jj-1,itcf(:,ii,jj), &
 &          fe(etcf(:,ii,jj))
    end do
  end do
@@ -427,21 +429,21 @@
  call pw_node_values(rr,mmax,corepw(1),fmd)
  call lm_interp(rr,rhoc,mmax,rcmax,aerc)
  mdrc=pw_value(rr,mmax,corepw(1),rcmax)
- write(6,'(a)') '# core_rc r(bohr) rho_ae rho_model'
- write(6,'(a,1p,3e24.16)') 'core_rc',rcmax,fe(aerc),fe(mdrc)
- write(6,'(a)') '# core_extent frac r_ae(bohr) r_model(bohr)'
+ write(iout,'(a)') '# core_rc r(bohr) rho_ae rho_model'
+ write(iout,'(a,1p,3e24.16)') 'core_rc',rcmax,fe(aerc),fe(mdrc)
+ write(iout,'(a)') '# core_extent frac r_ae(bohr) r_model(bohr)'
  frac=1.0d-2
  do jj=1,2
    rae=fall_to(rhoc,frac*aerc,0)
    rmd=fall_to(fmd,frac*mdrc,1)
-   write(6,'(a,1p,3e24.16)') 'core_extent',frac,rae,rmd
+   write(iout,'(a,1p,3e24.16)') 'core_extent',frac,rae,rmd
    frac=1.0d-2*frac
  end do
  call model_extrema(rext,fext)
- write(6,'(a)') '# core_model_max r(bohr) rho'
- write(6,'(a,1p,2e24.16)') 'core_model_max',rext(1),fe(fext(1))
- write(6,'(a)') '# core_model_min r(bohr) rho'
- write(6,'(a,1p,2e24.16)') 'core_model_min',rext(2),fe(fext(2))
+ write(iout,'(a)') '# core_model_max r(bohr) rho'
+ write(iout,'(a,1p,2e24.16)') 'core_model_max',rext(1),fe(fext(1))
+ write(iout,'(a)') '# core_model_min r(bohr) rho'
+ write(iout,'(a,1p,2e24.16)') 'core_model_min',rext(2),fe(fext(2))
  deallocate(fmd)
  end subroutine write_core
 

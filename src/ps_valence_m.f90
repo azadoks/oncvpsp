@@ -31,7 +31,7 @@
 
  subroutine valence_densities(irel,nkap,nc,nv,na,la,fa,ea,it,lloc,nproj, &
 &                             rr,zz,vfull,vp,vlocpw,vkbpw,evkb,mmax,uu,up, &
-&                             uupsa,eeig,zval,rho,rhops,rhoae,rhotae,ifail)
+&                             uupsa,eeig,zval,rho,rhops,rhoae,rhotae,iout,ifail)
 !! the valence states, all-electron (in vfull) and pseudo (with the VKB
 !! projectors, for the most consistent unscreening), state by state: their
 !! densities rhoae and rhops (of the share of each J when fully
@@ -51,6 +51,7 @@
  real(dp), intent(out) :: rhops(mmax,nv),rhoae(mmax,nv),rhotae(mmax)
  integer :: nodes(mxl+1),kk,ll,l1,mkap,ikap,kap,ierr,mch
  real(dp) :: fj,et,emin,emax
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
  ifail=0
@@ -76,15 +77,15 @@
      et=ea(nc+kk,ikap)
 
      call boundstate(irel,na(nc+kk),ll,kap,ierr,et, &
-&                    rr,zz,vfull,uu,up,mmax,mch,ifail)
+&                    rr,zz,vfull,uu,up,mmax,mch,iout,ifail)
      if(ifail/=0) return
      if(ierr /= 0) then
        if(irel==2) then
-         write(6,'(a,i2,a,i2,a,i2,a,i4)') &
+         write(iout,'(a,i2,a,i2,a,i2,a,i4)') &
 &              'oncvpsp_r 541: ldiracfb convergence ERROR, n=',&
 &               na(nc+kk),'  l=',ll, '  kap-',kap,'  ierr=',ierr
        else
-         write(6,'(/a,3i4)') &
+         write(iout,'(/a,3i4)') &
 &              'oncvpsp-461: lschfb convergence ERROR n,l,iter=', &
 &              na(nc+kk),la(nc+kk),it
        end if
@@ -104,15 +105,15 @@
 
      call lschvkbb(ll+nodes(l1)+1,ll,nproj(l1),ierr,et,emin,emax, &
 &                  rr,vp(1,lloc+1,ikap),vlocpw,vkbpw(1:nproj(l1),l1,ikap), &
-&                  evkb(1,l1,ikap),uu,up,mmax,mch,ifail)
+&                  evkb(1,l1,ikap),uu,up,mmax,mch,iout,ifail)
      if(ifail/=0) return
      if(ierr /= 0) then
        if(irel==2) then
-         write(6,'(a,i2,a,i2)') 'oncvpsp_r: lschvkbb convergence ERROR, n=',&
+         write(iout,'(a,i2,a,i2)') 'oncvpsp_r: lschvkbb convergence ERROR, n=',&
 &         ll+1,'  l=',ll
        else
-         write(6,'(a,3i4)') 'oncvpsp: lschvkbb ERROR',ll+nodes(l1)+1,ll,ierr
-         if(ierr==200) write(6,'(a,i2,a,f12.6,a/a)') &
+         write(iout,'(a,3i4)') 'oncvpsp: lschvkbb ERROR',ll+nodes(l1)+1,ll,ierr
+         if(ierr==200) write(iout,'(a,i2,a,f12.6,a/a)') &
 &             'a state of l=',ll,' lies below',emin, &
 &             ' Ha that the node count does not expect:', &
 &             'a bound ghost of the projectors'

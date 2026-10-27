@@ -25,7 +25,7 @@
 
  contains
 
- subroutine lschfb(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,irel,ifail)
+ subroutine lschfb(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,irel,iout,ifail)
 
 !! Finds bound states of an all-electron atomic potential using
 !! Pauli-type  scalar-relativistic Schroedinger equation
@@ -48,6 +48,7 @@
 !!             the inward and outward integrations are matched (at the
 !!             continuous turning point, match_m)
 !! @param irel  0 non-relativistic, 1 scalar-relativistic
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
@@ -74,6 +75,7 @@
 
 !Output variables
  integer, intent(out) :: ierr
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -109,7 +111,7 @@
 
 ! check arguments
  if(ll>nn-1) then
-   write(6,'(/a,i4,a,i4)') 'lschfb: ERROR ll =',ll,' > nn =',nn
+   write(iout,'(/a,i4,a,i4)') 'lschfb: ERROR ll =',ll,' > nn =',nn
    ierr=1
    return
  end if
@@ -235,7 +237,7 @@
  integer, intent(out) :: ifail
 
  ifail=0
- call match_point(rr,cf,mmax,mchs,xmch,ifail)
+ call match_point(rr,cf,mmax,mchs,xmch,iout,ifail)
  if(ifail/=0) return
  uo(:)=uu(lo:hi)
  qo(:)=qq(lo:hi)

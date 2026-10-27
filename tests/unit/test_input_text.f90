@@ -7,6 +7,7 @@
  use input_text_m, only: next_line, read_input_text
  use input_m, only: input_t
  implicit none
+ integer, parameter :: iout=6
 
 !Local variables
  character(len=*), parameter :: tab = achar(9)
@@ -93,19 +94,19 @@
  lines(8) = 'last'
  unit = scratch_input(lines, final_newline=.false.)
  inline = 0
- call next_line(unit, line, inline, ifail=ifail)
+ call next_line(unit, line, inline, iout=iout, ifail=ifail)
  if(ifail /= 0) error stop 1
  call check(line == '  first data' .and. inline == 5, &
 &           'next_line skips blank and comment lines')
- call next_line(unit, line, inline, ifail=ifail)
+ call next_line(unit, line, inline, iout=iout, ifail=ifail)
  if(ifail /= 0) error stop 1
  call check(line == repeat('x', 600)//' long' .and. inline == 7, &
 &           'next_line reads a long line whole')
- call next_line(unit, line, inline, ifail=ifail)
+ call next_line(unit, line, inline, iout=iout, ifail=ifail)
  if(ifail /= 0) error stop 1
  call check(line == 'last' .and. inline == 8, &
 &           'next_line reads a last line without a newline')
- call next_line(unit, line, inline, eof, ifail=ifail)
+ call next_line(unit, line, inline, eof, iout=iout, ifail=ifail)
  if(ifail /= 0) error stop 1
  call check(eof .and. inline == 8, &
 &           'next_line reports the end of the input when asked')
@@ -184,7 +185,7 @@
    all_lines = lines
  end if
  unit = scratch_input(all_lines, final_newline)
- call read_input_text(unit, inline, inp, ifail)
+ call read_input_text(unit, inline, inp, iout, ifail)
  if(ifail /= 0) error stop 1
  close(unit)
 

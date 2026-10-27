@@ -19,6 +19,7 @@
  use ode_rc_der_m, only: ode_rc_der
  use boundstate_m, only: boundstate
  implicit none
+ integer, parameter :: iout=6
 
 !Local variables
  integer :: ifail
@@ -67,7 +68,7 @@
    ee(ii) = -0.5_dp/ii**2
    mch = 0
    call boundstate(0, ii, 0, -1, ierr, ee(ii), rr, 1.0_dp, vv, uu(:, :, ii), &
-&                  up(:, :, ii), mmax, mch, ifail)
+&                  up(:, :, ii), mmax, mch, iout, ifail)
    if(ifail /= 0) error stop 1
    if(ierr /= 0) then
      write(stderr, '(a,i0,a,i0)') 'FAILED: wronskian: boundstate n ', ii, &
@@ -78,10 +79,10 @@
  f1(:) = uu(:, 1, 1)*uu(:, 1, 2)
  do ir = 1, size(radii)
    call ode_rc_der(0, 0, -1, ee(1), rr, vv, uu(:, 1, 1), up(:, 1, 1), mmax, &
-&                  radii(ir), ord1, ifail)
+&                  radii(ir), ord1, iout, ifail)
    if(ifail /= 0) error stop 1
    call ode_rc_der(0, 0, -1, ee(2), rr, vv, uu(:, 1, 2), up(:, 1, 2), mmax, &
-&                  radii(ir), ord2, ifail)
+&                  radii(ir), ord2, iout, ifail)
    if(ifail /= 0) error stop 1
 ! u = r (u/r), u' = u/r + r (u/r)'
    wr = radii(ir)*ord1(1)*(ord2(1) + radii(ir)*ord2(2)) &

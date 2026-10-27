@@ -26,7 +26,7 @@
  contains
 
  subroutine lschvkbb(nn,ll,nvkb,ierr,ee,emin,emax, &
-&   rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,mch,ifail)
+&   rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,mch,iout,ifail)
 
 !! Finds bound states of a  pseudopotential with
 !! Vanderbilt-Kleinman-Bylander non-local projectors, to round-off
@@ -42,17 +42,18 @@
  real(dp), intent(inout) :: emin,emax,ee
  real(dp), intent(out) :: uu(mmax),up(mmax)
  integer, intent(out) :: ierr,mch
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
  ifail=0
  call lschvkbb_tol(nn,ll,nvkb,ierr,ee,emin,emax, &
-&                  rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,mch,0.0d0,ifail)
+&                  rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,mch,0.0d0,iout,ifail)
  if(ifail/=0) return
  return
  end subroutine lschvkbb
 
  subroutine lschvkbb_tol(nn,ll,nvkb,ierr,ee,emin,emax, &
-&   rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,mch,etol,ifail)
+&   rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,mch,etol,iout,ifail)
 
 !! Finds bound states of a  pseudopotential with
 !! Vanderbilt-Kleinman-Bylander non-local projectors
@@ -85,6 +86,7 @@
 !! @param etol  0 for the energy to round-off (below); otherwise the
 !!              relative energy correction at which to stop at once, for
 !!              the passes of an SCF whose potential is still moving
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
@@ -110,6 +112,7 @@
 !Output variables
  real(dp), intent(out) :: uu(mmax),up(mmax)
  integer, intent(out) :: ierr,mch
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 
@@ -162,7 +165,7 @@
  als=al**2
 
 ! the grids of the outward integration (outwf_m), once for this potential
- call outwf_setup(ll,rr,mmax,vloc,vlocpw,nvkb,vkbpw,ow,ifail)
+ call outwf_setup(ll,rr,mmax,vloc,vlocpw,nvkb,vkbpw,ow,iout,ifail)
  if(ifail/=0) return
 
 ! return point for bound state convergence
@@ -200,7 +203,7 @@
 ! potential alone is valid over the whole window
    xmch=0.0d0
    if(mch>1) then
-     call match_point(rr,cf,mmax,mch,xmch,ifail)
+     call match_point(rr,cf,mmax,mch,xmch,iout,ifail)
      if(ifail/=0) return
    end if
    if(ow%tlast>0.0d0) xmch=match_smax(xmch,ow%tlast+dble(match_k+2))
@@ -214,10 +217,10 @@
 ! kink, so beyond the projectors): a node count would also count nodes
 ! that enter at r = 0 with the energy
    if(room) then
-     call outwf_solve(ow,ee,evkb,hi,mch,uu,up,neig,ifail=ifail)
+     call outwf_solve(ow,ee,evkb,hi,mch,uu,up,neig,iout=iout,ifail=ifail)
      if(ifail/=0) return
    else
-     call outwf_solve(ow,ee,evkb,mmax,mch,uu,up,neig,ifail=ifail)
+     call outwf_solve(ow,ee,evkb,mmax,mch,uu,up,neig,iout=iout,ifail=ifail)
      if(ifail/=0) return
    end if
 

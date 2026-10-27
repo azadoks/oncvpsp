@@ -48,7 +48,7 @@
  contains
 
  subroutine aeatom_cached(irel,nkap,na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&                         rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,ifail)
+&                         rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,iout,ifail)
 
 !! aeatom, or the copy of its earlier solution with the same inputs. The
 !! reference configuration recurs as test configuration 0, at both levels
@@ -75,6 +75,7 @@
  integer, intent(out) :: it
  real(dp), intent(out) :: etot,eterm(4),res
  real(dp), intent(out) :: rho(mmax),rhoc(mmax),vi(mmax)
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -99,7 +100,7 @@
      eterm(:)=ce%eterm
      res=ce%res
      ierr=0
-     if(res>ae_tolres) call ae_floor_warning(res,ae_tolres)
+     if(res>ae_tolres) call ae_floor_warning(res,ae_tolres,iout)
      return
    end associate
  end do
@@ -107,7 +108,7 @@
  allocate(vfree(mmax))
  vfree(:)=0.0d0
  call aeatom(irel,nkap,na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&            rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vfree,.false.,ifail)
+&            rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vfree,.false.,iout,ifail)
  if(ifail/=0) return
  deallocate(vfree)
  if(ierr/=0 .or. nae_cache==size(ae_cache)) return
@@ -141,7 +142,7 @@
  subroutine run_config_ae(jj,nacnf,lacnf,facnf,nc,nvcnf,rr,zz, &
 &                         mmax,iexc,ea,irel,nkap,istcnf,ierrcnf,itcnf, &
 &                         kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf, &
-&                         ifail)
+&                         iout,ifail)
 
 !! solves the all-electron atom in the maximally-ionized and excited states
 !! of test configuration jj, the all-electron half of the test-configuration
@@ -181,6 +182,7 @@
 !!                reference, maximally-ionized, excited, all config.
 !! @param etstcnf  all-electron total energy of the excited configuration, all
 !!                 config.
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 !!
 !! Only the column jj of istcnf through etstcnf is set.
@@ -202,6 +204,7 @@
  real(dp), intent(inout) :: etstcnf(mxcnf)
 
 !Output variables
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -284,7 +287,7 @@
 
  call aeatom_cached(irel,nkap,nat,lat,eat(1,1,2),fat(1,2),rpk,nc, &
 &                   nc+nvt,it,rhoc,rho,rr,vfull,zz,mmax,iexc,eaetst,eterm, &
-&                   res,ierr,ifail)
+&                   res,ierr,iout,ifail)
  if(ifail/=0) return
  if(ierr/=0) then
    call store_results
@@ -307,7 +310,7 @@
      do ikap=1,mkap
        kap=kap_of(ll,ikap)
        call boundstate(irel,nat(kk),ll,kap,ierr,et, &
-&                      rr,zz,vfull,uu,up,mmax,mch,ifail)
+&                      rr,zz,vfull,uu,up,mmax,mch,iout,ifail)
        if(ifail/=0) return
 !a negative ierr (no classical turning point) is accepted for j=l-1/2
        if(ierr>0 .or. (ierr/=0 .and. ikap==1)) then
@@ -333,7 +336,7 @@
 
  call aeatom_cached(irel,nkap,nat,lat,eat(1,1,3),fat(1,3),rpk,nc, &
 &                   nc+nvt,it,rhoc,rho,rr,vfull,zz,mmax,iexc,eaetst,eterm, &
-&                   res,ierr,ifail)
+&                   res,ierr,iout,ifail)
  if(ifail/=0) return
  if(ierr/=0) then
    call store_results
@@ -366,7 +369,7 @@
  end subroutine run_config_ae
 
  subroutine config_ae_warning(jj,irel,istcnf,ierrcnf,itcnf,kerrcnf, &
-&                             natcnf,latcnf)
+&                             natcnf,latcnf,iout)
 !! prints the warning run_config_ps gives when the all-electron atom for test
 !! configuration jj failed
 !!
@@ -374,47 +377,51 @@
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param istcnf,ierrcnf,itcnf,kerrcnf,natcnf,latcnf  run_config_ae results, all
 !!        configurations
+!! @param iout  unit of the text output
 
 !Input variables
  integer, intent(in) :: jj,irel
  integer, intent(in) :: istcnf(mxcnf),ierrcnf(mxcnf),itcnf(mxcnf),kerrcnf(mxcnf)
  integer, intent(in) :: natcnf(mxstate,mxcnf),latcnf(mxstate,mxcnf)
+ integer, intent(in) :: iout
 
 !Local variables
  integer :: ll
 
  if(istcnf(jj)==1) then
    if(irel==2) then
-     write(6,'(a/a,i2)') 'run_config_r: WARNING  for AE atom,', &
+     write(iout,'(a/a,i2)') 'run_config_r: WARNING  for AE atom,', &
 &          ' WARNING no output for configuration',jj
    else
-     write(6,'(a/a,i2)') 'run_config: WARNING  for AE atom,', &
+     write(iout,'(a/a,i2)') 'run_config: WARNING  for AE atom,', &
 &          ' WARNING no output for configuration',jj
    end if
    if(ierrcnf(jj)==-1 .and. irel==2) then
-     write(6,'(a,i4)') &
+     write(iout,'(a,i4)') &
 &          'run_config_r: WARNING no classical turning point ' // &
 &          'error, iteration', &
 &          itcnf(jj)
    else if(ierrcnf(jj)==-1) then
-     write(6,'(a,i4)') 'no classical turning point error, iteration',itcnf(jj)
+     write(iout,'(a,i4)') 'no classical turning point error, iteration', &
+&          itcnf(jj)
    else if(irel==2) then
-     write(6,'(a)') 'run_config_r: WARNING self-consistency failed to converge'
+     write(iout,'(a)') &
+&          'run_config_r: WARNING self-consistency failed to converge'
    else
-     write(6,'(a)') 'run_config: WARNING self-consistency failed to converge'
+     write(iout,'(a)') 'run_config: WARNING self-consistency failed to converge'
    end if
  else if(istcnf(jj)>=2) then
    ll=latcnf(kerrcnf(jj),jj)
    if(irel/=2) then
-     write(6,'(/a,3i4)') &
+     write(iout,'(/a,3i4)') &
 &         'runconfig: WARNING lschfb convergence ERROR n,l,iter=', &
 &         natcnf(kerrcnf(jj),jj),ll,itcnf(jj)
    else if(istcnf(jj)==2) then
-     write(6,'(/a,4i4)') &
+     write(iout,'(/a,4i4)') &
 &         'runconfig: WARNING ldiracfb convergence ERROR n,l,kap,ierr=', &
 &         natcnf(kerrcnf(jj),jj),ll,-(ll+1),ierrcnf(jj)
    else
-     write(6,'(/a,4i4)') &
+     write(iout,'(/a,4i4)') &
 &         'runconfig: WARNING ldiracfb convergence ERROR n,l,kap,iter=', &
 &         natcnf(kerrcnf(jj),jj),ll,ll,itcnf(jj)
    end if

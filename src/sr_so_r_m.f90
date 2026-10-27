@@ -26,7 +26,7 @@
  contains
 
  subroutine sr_so_r(lmax,nproj,rr,mmax,mxprj,evkb,vkbpw, &
-&                       vsr,esr,vso,eso,vsrpw,vsopw,ifail)
+&                       vsr,esr,vso,eso,vsrpw,vsopw,iout,ifail)
 
 !! reformulates non-local potentials based on j = l +/- 1/2 to scalar-
 !! relativistic and L dot S projectors
@@ -51,6 +51,7 @@
 !! @param eso  energy coefficients of vso, to be multiplied by <L dot S>
 !! @param vsrpw  vsr as functions of pieces
 !! @param vsopw  vso as functions of pieces
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, mxl, mxlin, mxkap
@@ -75,6 +76,7 @@
 !Output variables
  type(piecewise_t), intent(out) :: vsrpw(2*mxprj,mxl+1)
  type(piecewise_t), intent(out) :: vsopw(2*mxprj,mxl+1)
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -144,7 +146,7 @@
    call dsyev( 'V', 'U', nn, sovl, 2*mxprj, sovlev, work, 10*mxprj, info )
 
    if(info /= 0) then
-     write(6,'(a,i4)') 'sr_so_r: S matrix eigenvalue ERROR, info=',info
+     write(iout,'(a,i4)') 'sr_so_r: S matrix eigenvalue ERROR, info=',info
      ifail=1
      return
    end if
@@ -172,7 +174,7 @@
    call dsyev( 'V', 'U', nn, asclst, 2*mxprj, wsclst, work, 10*mxprj, info )
 
    if(info /= 0) then
-     write(6,'(a,i4)') 'sr_so_r: A* matrix eigenvalue ERROR, info=',info
+     write(iout,'(a,i4)') 'sr_so_r: A* matrix eigenvalue ERROR, info=',info
      ifail=1
      return
    end if
@@ -181,7 +183,7 @@
 
 
    if(info /= 0) then
-     write(6,'(a,i4)') 'sr_so_r: A* matrix eigenvalue ERROR, info=',info
+     write(iout,'(a,i4)') 'sr_so_r: A* matrix eigenvalue ERROR, info=',info
      ifail=1
      return
    end if
@@ -208,12 +210,12 @@
    call pb_sort_abs(esr(1:nn,l1),vsrpw(1:nn,l1),nn)
    call pb_sort_abs(eso(1:nn,l1),vsopw(1:nn,l1),nn)
 
-   write(6,'(/a,i2)') &
+   write(iout,'(/a,i2)') &
 &       ' Orthonormal scalar projector coefficients, l = ',ll
-   write(6,'(1p,6e12.4)') (esr(jj,l1),jj=1,nn)
-   write(6,'(/a,i2)') &
+   write(iout,'(1p,6e12.4)') (esr(jj,l1),jj=1,nn)
+   write(iout,'(/a,i2)') &
 &       ' Orthonormal spin-orbit projector coefficients, l = ',ll
-   write(6,'(1p,6e12.4)') (eso(jj,l1),jj=1,nn)
+   write(iout,'(1p,6e12.4)') (eso(jj,l1),jj=1,nn)
 
 ! the projectors on the mesh, with their sign (physically irrelevant)
 ! positive at their peak (needed for compaisons apparently)

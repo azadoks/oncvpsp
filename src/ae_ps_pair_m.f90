@@ -36,7 +36,7 @@
  contains
 
  subroutine load_pair(prog,ae_filename,ps_filename,irel,zz,mmax,rr,vfull, &
-&                     pf,nc,nv,iexc,na,la,fa,ea,ifail)
+&                     pf,nc,nv,iexc,na,la,fa,ea,iout,ifail)
 !! the two files of program prog, which must be of the same relativistic
 !! treatment, atom, mesh and c_light (and functional, with iexc), and the
 !! all-electron atom's configuration if asked; sets c_light and writes
@@ -52,32 +52,33 @@
  character(len=19) :: treatment
  real(dp) :: c_light_f
  logical :: bad
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
  ifail=0
  call read_ae_potential(ae_filename,irel,atsym,zz,mmax,rr,c_light_f, &
 &                       vfull,nc=nc,nv=nv,iexc=iexc,na=na,la=la,fa=fa,ea=ea, &
-&                       ifail=ifail)
+&                       iout=iout,ifail=ifail)
  if(ifail/=0) return
- call read_ps_file(ps_filename,pf,ifail)
+ call read_ps_file(ps_filename,pf,iout,ifail)
  if(ifail/=0) return
  bad=pf%irel/=irel .or. pf%atsym/=atsym .or. differ(pf%zz,zz) &
 &   .or. pf%mmax/=mmax .or. differ(pf%c_light,c_light_f)
  if(present(iexc)) then
    if(bad .or. pf%iexc/=iexc) then
-     write(6,'(3a)') prog,': ERROR the files differ in ', &
+     write(iout,'(3a)') prog,': ERROR the files differ in ', &
 &         'relativistic treatment, atom, mesh size, c_light or functional'
      ifail=1
      return
    end if
  else if(bad) then
-   write(6,'(3a)') prog,': ERROR the files differ in relativistic ', &
+   write(iout,'(3a)') prog,': ERROR the files differ in relativistic ', &
 &       'treatment, atom, mesh size or c_light'
    ifail=1
    return
  end if
  if(any(abs(pf%rr(:)-rr(:))>rtol*rr(:))) then
-   write(6,'(2a)') prog,': ERROR the files'' radial meshes differ'
+   write(iout,'(2a)') prog,': ERROR the files'' radial meshes differ'
    ifail=1
    return
  end if

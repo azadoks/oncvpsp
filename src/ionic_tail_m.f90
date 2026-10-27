@@ -154,7 +154,7 @@
  end subroutine ionic_window
 
  subroutine ionic_valence(nkap,nc,nv,la,fa,ea,lloc,nproj,rr,vp,vlocpw, &
-&                         vkbpw,evkb,mmax,mxprj,rho,rhops,uupsa,eeig,ifail)
+&                         vkbpw,evkb,mmax,mxprj,rho,rhops,uupsa,eeig,iout,ifail)
 
 !! the pseudo valence states of the local potential vp(:,lloc+1,:) and the
 !! VKB projectors, as oncvpsp_main solves them: rho, the state densities
@@ -181,6 +181,7 @@
 !! @param rhops  state-by-state pseudo valence charge (one electron)
 !! @param uupsa  pseudo valence wave functions
 !! @param eeig  sum of the occupied eigenvalues
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, mxstate, mxl, mxlin, mxkap
@@ -200,6 +201,7 @@
 !Output variables
  real(dp), intent(out) :: rho(mmax),rhops(mmax,nv),uupsa(mmax,nkap,nv)
  real(dp), intent(out) :: eeig
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -233,12 +235,12 @@
      call lschvkbb(ll+nodes(l1)+1,ll,nproj(l1),ierr,et,emin,emax, &
 &                  rr,vp(1,lloc+1,ikap),vlocpw,vkbpw(1:nproj(l1),l1,ikap), &
 &                  evkb(1,l1,ikap), &
-&                  uu,up,mmax,mch,ifail)
+&                  uu,up,mmax,mch,iout,ifail)
      if(ifail/=0) return
      if(ierr/=0) then
-       write(6,'(/a,3i4)') 'ionic_valence: ERROR lschvkbb n,l,ierr=', &
+       write(iout,'(/a,3i4)') 'ionic_valence: ERROR lschvkbb n,l,ierr=', &
 &            ll+nodes(l1)+1,ll,ierr
-       if(ierr==200) write(6,'(a,i2,a,f12.6,a/a)') &
+       if(ierr==200) write(iout,'(a,i2,a,f12.6,a/a)') &
 &           'a state of l=',ll,' lies below',emin, &
 &           ' Ha that the node count does not expect:', &
 &           'a bound ghost of the projectors'
@@ -260,7 +262,7 @@
 &                           vlocpw,vkbpw,evkb,mmax,mxprj,zz,zion,zval,iexc, &
 &                           rcmax,rhoc, &
 &                           rhotae,rhomod,rho,rhops,uupsa,eeig,vo,vxc, &
-&                           eeel,eexc,vion,ifail)
+&                           eeel,eexc,vion,iout,ifail)
 
 !! switches the screened potentials vp to V_ion + V_Hxc[rho + rhomod] over
 !! the ionic window, iterating the pseudo valence states (rho, rhops,
@@ -303,6 +305,7 @@
 !! @param eeel  electron-electron interaction energy
 !! @param eexc  exchange-correlation correction to the eigenvalue sum
 !! @param vion  V_ion
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, mxstate, mxl, mxlin, mxkap
@@ -328,6 +331,7 @@
 
 !Output variables
  real(dp), intent(out) :: vion(mmax)
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -356,7 +360,7 @@
  end do
  do iter=1,maxiter
    call ionic_valence(nkap,nc,nv,la,fa,ea,lloc,nproj,rr,vp,vlocpw,vkbpw, &
-&                     evkb,mmax,mxprj,rho,rhops,uupsa,eeig,ifail)
+&                     evkb,mmax,mxprj,rho,rhops,uupsa,eeig,iout,ifail)
    if(ifail/=0) return
    call vout(1,rho,rhomod,vo,vxc,zval,eeel,eexc,rr,mmax,iexc)
 ! change of the local potential where the valence electrons are; once it
@@ -374,7 +378,7 @@
    change=sqrt(sn/sd)
    if(change<=tolfix) exit
    if(iter==maxiter) then
-     write(6,'(/a,i4,a,1p,e10.2)') &
+     write(iout,'(/a,i4,a,1p,e10.2)') &
 &          'ionic_screening: ERROR the ionic tail did not converge in', &
 &          maxiter,' steps, change =',change
      ifail=1
@@ -393,14 +397,14 @@
    end do
  end do
 
- write(6,'(/a,f8.4,a,f8.4,a,i3,a)') 'Ionic tail switched over r =',ra, &
+ write(iout,'(/a,f8.4,a,f8.4,a,i3,a)') 'Ionic tail switched over r =',ra, &
 &      ' to',rb,' a.u., converged in',iter,' steps'
 
  deallocate(ww,vp0,vnew,vnext,vsw)
  return
  end subroutine ionic_screening
 
- subroutine coulomb_tail(vloc,vion,rr,mmax,zion,rcmax)
+ subroutine coulomb_tail(vloc,vion,rr,mmax,zion,rcmax,iout)
 
 !! reports how closely the unscreened local potential vloc is -zion/r
 !! beyond rcmax, as plane-wave codes see it (coulomb_tail of
@@ -415,6 +419,7 @@
 !! @param mmax  dimension of log grid
 !! @param zion  ionic charge
 !! @param rcmax  largest core radius
+!! @param iout  unit of the text output
 
  use constants_m, only: dp, pi
  implicit none
@@ -423,6 +428,7 @@
  integer, intent(in) :: mmax
  real(dp), intent(in) :: vloc(mmax),vion(mmax),rr(mmax)
  real(dp), intent(in) :: zion,rcmax
+ integer, intent(in) :: iout
 
 !Local variables
  real(dp), parameter :: tol=1.0d-10
@@ -453,8 +459,9 @@
    dvmax=max(dvmax,dv)
  end do
 
- write(6,'(/a)') 'Coulomb tail of the local potential'
- write(6,'(a,1p,e18.10,a)') '  alpha_z = 4 pi int r**2 (V_loc + zion/r) dr', &
+ write(iout,'(/a)') 'Coulomb tail of the local potential'
+ write(iout,'(a,1p,e18.10,a)') &
+&      '  alpha_z = 4 pi int r**2 (V_loc + zion/r) dr', &
 &      alpha,' Ha bohr**3'
  do jj=1,2
    cut=0.0d0
@@ -463,11 +470,11 @@
      cut=cut+rr(ii)**3*(vloc(ii)+zion/rr(ii))
    end do
    cut=4.0d0*pi*al*cut
-   write(6,'(a,f6.2,a,1p,e12.4)') '  alpha_z change, table cut at r =', &
+   write(iout,'(a,f6.2,a,1p,e12.4)') '  alpha_z change, table cut at r =', &
 &        radii(jj),':',cut-alpha
  end do
- write(6,'(a,f10.4)') '  |V_loc + zion/r| < 1e-10 beyond r =',rcoul
- write(6,'(a,1p,e12.4)') '  max |V_loc - V_ion| beyond rcmax',dvmax
+ write(iout,'(a,f10.4)') '  |V_loc + zion/r| < 1e-10 beyond r =',rcoul
+ write(iout,'(a,1p,e12.4)') '  max |V_loc - V_ion| beyond rcmax',dvmax
 
  return
  end subroutine coulomb_tail

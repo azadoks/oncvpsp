@@ -32,7 +32,7 @@
 &                    eresid0,eresiddot,eresidmat,&
 &                    pswfnull_sb,pswfnull_or,uunorm,ps0norm,eresidmin,&
 &                    pswfopt_sb,pswfopt_or,ekin_anal,eresq,pswfopt_null, &
-&                    wreg,optdg,ifail)
+&                    wreg,optdg,iout,ifail)
 
 !! @param nnull  number of unconstrained basis vectors for residual minimization
 !! @param nbas  number of sbf basis functions
@@ -71,6 +71,7 @@
 !! @param optdg  E_resid(qout(1)) at the optimum, the regularization's
 !!               term wreg E_resid(qout(3)) there, and the smallest
 !!               eigenvalue e1 and |f1| of the problem at qout(1) alone
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
@@ -93,6 +94,7 @@
  real(dp), intent(in) :: wreg
  real(dp), intent(out) :: pswfopt_null(nnull)
  real(dp), intent(out) :: optdg(4)
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -119,7 +121,7 @@
 
  call dsyev( 'V', 'U', nnull, wmat, nnull, wev, work, 5*nnull, info )
  if(info /= 0) then
-   write(6,'(a,i4)') 'optimize: residual-energy eigenvalue ERROR, info=',info
+   write(iout,'(a,i4)') 'optimize: residual-energy eigenvalue ERROR, info=',info
    ifail=1
    return
  end if
@@ -145,7 +147,7 @@
    rmat(:,:)=eresidmat(:,:,1)
    call dsyev( 'V', 'U', nnull, rmat, nnull, rev, work, 5*nnull, info )
    if(info /= 0) then
-     write(6,'(a,i4)') 'optimize: residual-energy eigenvalue ERROR, info=', &
+     write(iout,'(a,i4)') 'optimize: residual-energy eigenvalue ERROR, info=', &
 &          info
      ifail=1
      return
@@ -157,7 +159,7 @@
    optdg(3)=wev(1)
    optdg(4)=abs(eresiddot_ev(1))
    if(optdg(3)<1.0d-12 .and. optdg(4)<1.0d-12) then
-     write(6,'(/a,1p,2e10.2/a)') 'optimize: WARNING E_resid flat to '// &
+     write(iout,'(/a,1p,2e10.2/a)') 'optimize: WARNING E_resid flat to '// &
 &          'round-off at qcut, e1, |f1|=',optdg(3),optdg(4), &
 &          '  the wave is not determined (see wave_regularization)'
    end if
@@ -296,7 +298,7 @@
  ifail=0
  rtsgn=-sign(1.0d0, eresiddot_ev(1))
  if(ps0norm>uunorm) then
-   write(6,'(/a)') 'optimize: ERROR ps0norm > uunorm, code will stop'
+   write(iout,'(/a)') 'optimize: ERROR ps0norm > uunorm, code will stop'
    ifail=1
    return
  end if
@@ -331,7 +333,7 @@
  end do
 
  if(converged .eqv. .false.) then
-   write(6,'(/a)') 'optimize: ERROR interval-halving search not converged'
+   write(iout,'(/a)') 'optimize: ERROR interval-halving search not converged'
    ifail=1
    return
  end if
@@ -364,7 +366,7 @@
    x1=x1+dx
  end do
  if(converged .eqv. .false.) then
-   write(6,'(/a,1p,e10.2)') &
+   write(iout,'(/a,1p,e10.2)') &
 &        'optimize: ERROR Newton polish not converged, last step',dx
    ifail=1
    return

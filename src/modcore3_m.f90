@@ -40,7 +40,7 @@
 
  subroutine modcore3(icmod,rhops,rhotps,rhoc,rhoae,rhotae,rhomod, &
 &                   fcfact,rcfact,fcgrid,rcgrid,mmax,rr,nc,nv,la,zion,iexc, &
-&                   ifail)
+&                   iout,ifail)
 
 !! @param icmod  3 for specified fcfact and rcfact, 4 for coefficient
 !!               optimization
@@ -62,6 +62,7 @@
 !! @param la  angular-momenta
 !! @param zion  ion charge
 !! @param iexc  exchange-correlation function to be used
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, mxstate, nrhomod
@@ -84,6 +85,7 @@
 
 !Output variables
  real(dp), intent(out) :: rhomod(mmax,nrhomod)
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -111,21 +113,21 @@
  d2excps(:,:)=0.0d0
 
  call d2exc_baseline(rhotae,rhoc,rhoae,rhotps,rhops,rr,zion,iexc,nc,nv, &
-&                    la,rr(mmax),mmax,rhomod,d2excae,d2excps,d2mdiff)
+&                    la,rr(mmax),mmax,rhomod,d2excae,d2excps,d2mdiff,iout)
 
  d2ref=d2mdiff
 
 ! find valence pseudocharge - core charge crossover
  call core_crossover(rr,rhoc,rhotps,mmax,1.0d0,rmatch,ierr)
  if(ierr/=0) then
-   write(6,'(/a)') 'modcore3: ERROR ircc (core-valence charge crossover) &
+   write(iout,'(/a)') 'modcore3: ERROR ircc (core-valence charge crossover) &
 &        not found'
    ifail=1
    return
  end if
  call lm_derivs(rr,rhoc,mmax,rmatch,0,dd)
  rhocmatch=dd(1)
- write(6,'(/a,2f10.4)') 'rmatch, rhocmatch',rmatch,rhocmatch
+ write(iout,'(/a,2f10.4)') 'rmatch, rhocmatch',rmatch,rhocmatch
 
 !option for optimization
  if(icmod==4) then
@@ -134,10 +136,10 @@
 
 !Coarse-grid search for minimum
 
-   write(6,'(/a)') 'Coarse scan for minimum error'
-   write(6,'(a)') '  matrix elements: rms 2nd-derivative errors (mHa)'
-   write(6,'(a)') '  column index : amplitude prefactor to rhocmatch'
-   write(6,'(a)') '  row index : scale prefactor to rmatch'
+   write(iout,'(/a)') 'Coarse scan for minimum error'
+   write(iout,'(a)') '  matrix elements: rms 2nd-derivative errors (mHa)'
+   write(iout,'(a)') '  column index : amplitude prefactor to rhocmatch'
+   write(iout,'(a)') '  row index : scale prefactor to rmatch'
 
    nfc=nint((fcgrid(2)-fcgrid(1))/fcgrid(3))+1
    nrc=nint((rcgrid(2)-rcgrid(1))/rcgrid(3))+1
@@ -152,8 +154,8 @@
    end if
 
    d2min=huge(1.0d0)
-   write(6,'(/7x,*(f7.3))') (fcgrid(1)+fcgrid(3)*(jj-1), jj=1,nfc)
-   write(6,'(a)') ''
+   write(iout,'(/7x,*(f7.3))') (fcgrid(1)+fcgrid(3)*(jj-1), jj=1,nfc)
+   write(iout,'(a)') ''
    do  kk=1,nrc
      xt(2)=(rcgrid(1)+rcgrid(3)*(kk-1))*rmatch
      do jj=1,nfc
@@ -168,7 +170,7 @@
        end if
 
      end do
-     write(6,rowfmt) rcgrid(1)+rcgrid(3)*(kk-1),(fta(jj),jj=1,nfc)
+     write(iout,rowfmt) rcgrid(1)+rcgrid(3)*(kk-1),(fta(jj),jj=1,nfc)
    end do
 
 !Initial Nelder-Mead simplex from coarse-search minimum, scaled to the
@@ -190,7 +192,7 @@
    end do
 
 !Nelder-Mead iteration loop
-   write(6,'(/a)') 'Nelder-Mead iteration'
+   write(iout,'(/a)') 'Nelder-Mead iteration'
    do kk=1,101
 
 !(1) Order (dumb bubble sort)
@@ -209,10 +211,10 @@
 
 !stopping criterion
      if(ff(3)-ff(1)<1.0d-4*d2ref) then
-       write(6,'(a,i4,a)') ' converged in',kk-1,' steps'
+       write(iout,'(a,i4,a)') ' converged in',kk-1,' steps'
        exit
      else if(kk==101) then
-       write(6,'(a,i4,a)') ' WARNING: not fully converged in 100 steps'
+       write(iout,'(a,i4,a)') ' WARNING: not fully converged in 100 steps'
        exit
      end if
 
@@ -269,17 +271,17 @@
 !(doc/smoothness_plan.md M-6)
    call newton_refine(xx(:,1),ifail)
    if(ifail/=0) return
-   write(6,'(a)') 'amplitude prefactor, scale prefactor'
-   write(6,'(2f10.4)') xx(1,1)/rhocmatch,xx(2,1)/rmatch
+   write(iout,'(a)') 'amplitude prefactor, scale prefactor'
+   write(iout,'(2f10.4)') xx(1,1)/rhocmatch,xx(2,1)/rmatch
 
-   write(6,'(/a)') 'Optimized Teter model core charge'
+   write(iout,'(/a)') 'Optimized Teter model core charge'
 
 !option for specifying prefactors as input
  else if(icmod==3) then
    xx(1,1)=fcfact*rhocmatch
    xx(2,1)=rcfact*rmatch
 
-   write(6,'(/a/)') &
+   write(iout,'(/a/)') &
 &        'Teter function model core charge with specified parameters'
  end if
 
@@ -296,7 +298,7 @@
 &                   zion,iexc,nc,nv,la,rr(mmax),mmax)
 
  call d2exc_report('d2excps - pseudofunction derivatives with core '// &
-&                  'correction',d2excps,nv,d2mdiff)
+&                  'correction',d2excps,nv,d2mdiff,iout)
 
  deallocate(d2excae,d2excps)
 
@@ -416,12 +418,12 @@
    if(dnrm>trmax) du(:)=du(:)*trmax/dnrm
    uu(:)=uu(:)+du(:)
    if(dnrm<tol) then
-     write(6,'(a,i4,a)') ' Newton refinement converged in',it,' steps'
+     write(iout,'(a,i4,a)') ' Newton refinement converged in',it,' steps'
      xm(:)=exp(uu(:))
      return
    end if
  end do
- write(6,'(/a,es12.4)') &
+ write(iout,'(/a,es12.4)') &
 &      'newton_refine: ERROR not converged in 30 steps, last step=',dnrm
  ifail=1
  return

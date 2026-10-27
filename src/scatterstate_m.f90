@@ -25,7 +25,7 @@
 
  contains
 
- subroutine scatterstate(irel,nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch)
+ subroutine scatterstate(irel,nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch,iout)
 
 !! Integrates a scattering state of an all-electron atomic potential out to
 !! mch: with the non-relativistic or scalar-relativistic Schroedinger equation
@@ -46,6 +46,7 @@
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param mmax  size of log grid
 !! @param mch  matching mesh point for inward-outward integrations
+!! @param iout  unit of the text output
 
  use constants_m, only: dp
  use ldiracfs_m, only: ldiracfs
@@ -60,12 +61,13 @@
 !Input/output variables
  real(dp), intent(inout) :: uu(mmax,2),up(mmax,2)
  integer, intent(inout) :: nn
+ integer, intent(in) :: iout
 
 !Output variables
  integer, intent(out) :: ierr
 
  if(irel==2) then
-   call ldiracfs(nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch)
+   call ldiracfs(nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch,iout)
  else
    call lschfs(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,irel)
  end if

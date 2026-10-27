@@ -93,7 +93,7 @@
  return
  end function phsft_mch
 
- subroutine phsft_ae_init(irel,ll,kap,rr,vv,zz,mmax,nq,rq,ps,ifail)
+ subroutine phsft_ae_init(irel,ll,kap,rr,vv,zz,mmax,nq,rq,ps,iout,ifail)
 
 !! the all-electron solver, at the radii rq
 !!
@@ -108,6 +108,7 @@
 !! @param nq  number of radii
 !! @param rq  radii of the phases, each with phsft_mch(rr,mmax,rq)>0
 !! @param ps  the solver
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
@@ -116,6 +117,7 @@
 
 !Output variables
  type(phsft_t), intent(out) :: ps
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
  ifail=0
@@ -124,13 +126,14 @@
  ps%ll=ll
  ps%kap=kap
  ps%zz=zz
- call common_init(rr,mmax,nq,rq,ps,ifail)
+ call common_init(rr,mmax,nq,rq,ps,iout,ifail)
  if(ifail/=0) return
  ps%vv=vv
  return
  end subroutine phsft_ae_init
 
- subroutine phsft_ps_init(ll,nvkb,rr,vloc,vlocpw,vkbpw,evkb,mmax,nq,rq,ps,ifail)
+ subroutine phsft_ps_init(ll,nvkb,rr,vloc,vlocpw,vkbpw,evkb,mmax,nq,rq,ps, &
+&      iout,ifail)
 
 !! the pseudopotential solver, local potential and nvkb projectors (none
 !! for the semi-local potential that is the local one), at the radii rq
@@ -146,6 +149,7 @@
 !! @param nq  number of radii
 !! @param rq  radii of the phases, each with phsft_mch(rr,mmax,rq)>0
 !! @param ps  the solver
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
@@ -156,15 +160,16 @@
 !Output variables
  type(phsft_t), intent(out), target :: ps
 
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
  ifail=0
  ps%kind=2
  ps%ll=ll
  ps%nvkb=nvkb
- call common_init(rr,mmax,nq,rq,ps,ifail)
+ call common_init(rr,mmax,nq,rq,ps,iout,ifail)
  if(ifail/=0) return
  ps%evkb=evkb
- call outwf_setup(ll,rr,mmax,vloc,vlocpw,nvkb,vkbpw,ps%ow,ifail)
+ call outwf_setup(ll,rr,mmax,vloc,vlocpw,nvkb,vkbpw,ps%ow,iout,ifail)
  if(ifail/=0) return
 !the projections need the solution over the projectors' support, also for
 !radii inside it
@@ -175,7 +180,7 @@
  return
  end subroutine phsft_ps_init
 
- subroutine common_init(rr,mmax,nq,rq,ps,ifail)
+ subroutine common_init(rr,mmax,nq,rq,ps,iout,ifail)
 
 !! the mesh, the radii and the last point of the solutions, that of the
 !! outermost radius
@@ -188,6 +193,7 @@
  type(phsft_t), intent(inout) :: ps
 
 !Output variables
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -204,7 +210,7 @@
  do iq=1,nq
    mq=phsft_mch(rr,mmax,rq(iq))
    if(mq==0) then
-     write(6,'(/a/a,1p,e12.4,a,e12.4)') &
+     write(iout,'(/a/a,1p,e12.4,a,e12.4)') &
 &          'phsft_m: ERROR the radius is too close to the end of the mesh', &
 &          ' rq=',rq(iq),' rr(mmax)=',rr(mmax)
      ifail=1
@@ -236,7 +242,7 @@
  return
  end subroutine phsft_free
 
- subroutine phsft_scan(ps,epsh2,depsh,npsh,eal,psh,pal,ifail)
+ subroutine phsft_scan(ps,epsh2,depsh,npsh,eal,psh,pal,iout,ifail)
 
 !! the phases at the energies epsh2, epsh2-depsh, ... (npsh of them), each
 !! followed from the one before, the first in (-pi/2, pi/2]; and the
@@ -249,6 +255,7 @@
 !! @param eal  the energy of pal
 !! @param psh  the phases, per energy and radius
 !! @param pal  the phases at eal, per radius
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input/output variables
@@ -260,6 +267,7 @@
 
 !Output variables
  real(dp), intent(out) :: psh(npsh,ps%nq),pal(ps%nq)
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -267,22 +275,22 @@
  integer :: ii,kk,iq
 
  ifail=0
- psh(1,:)=0.5d0*doubled_angle(ps,epsh2,ifail)
+ psh(1,:)=0.5d0*doubled_angle(ps,epsh2,iout,ifail)
  if(ifail/=0) return
  do ii=2,npsh
-   da(:)=doubled_angle(ps,energy(ii),ifail)
+   da(:)=doubled_angle(ps,energy(ii),iout,ifail)
    if(ifail/=0) return
    do iq=1,ps%nq
      psh(ii,iq)=follow(ps,iq,psh(ii-1,iq),energy(ii-1),energy(ii),da(iq),0, &
-&          ifail)
+&          iout,ifail)
      if(ifail/=0) return
    end do
  end do
  kk=min(npsh,max(1,nint((epsh2-eal)/depsh)+1))
- da(:)=doubled_angle(ps,eal,ifail)
+ da(:)=doubled_angle(ps,eal,iout,ifail)
  if(ifail/=0) return
  do iq=1,ps%nq
-   pal(iq)=follow(ps,iq,psh(kk,iq),energy(kk),eal,da(iq),0,ifail)
+   pal(iq)=follow(ps,iq,psh(kk,iq),energy(kk),eal,da(iq),0,iout,ifail)
    if(ifail/=0) return
  end do
  return
@@ -297,7 +305,8 @@
  end subroutine phsft_scan
 
  subroutine phsft_pair(irel,ll,kap,nvkb,rr,vfull,zz,vloc,vlocpw,vkbpw, &
-&                      evkb,mmax,nq,rq,npsh,epsh2,depsh,eal,pshae,pshps,ifail)
+&                      evkb,mmax,nq,rq,npsh,epsh2,depsh,eal,pshae,pshps, &
+&                      iout,ifail)
 
 !! the all-electron and the pseudopotential phases of one l and kappa at
 !! the radii rq and the energies of phsft_scan, the pseudopotential's
@@ -325,6 +334,7 @@
 !! @param eal  the reference energy of the alignment
 !! @param pshae  the all-electron phases, per energy and radius
 !! @param pshps  the pseudopotential phases, likewise
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
@@ -335,6 +345,7 @@
 
 !Output variables
  real(dp), intent(out) :: pshae(npsh,nq),pshps(npsh,nq)
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -343,14 +354,14 @@
  type(phsft_t), target :: ps
 
  ifail=0
- call phsft_ae_init(irel,ll,kap,rr,vfull,zz,mmax,nq,rq,ps,ifail)
+ call phsft_ae_init(irel,ll,kap,rr,vfull,zz,mmax,nq,rq,ps,iout,ifail)
  if(ifail/=0) return
- call phsft_scan(ps,epsh2,depsh,npsh,eal,pshae,palae,ifail)
+ call phsft_scan(ps,epsh2,depsh,npsh,eal,pshae,palae,iout,ifail)
  if(ifail/=0) return
  call phsft_free(ps)
- call phsft_ps_init(ll,nvkb,rr,vloc,vlocpw,vkbpw,evkb,mmax,nq,rq,ps,ifail)
+ call phsft_ps_init(ll,nvkb,rr,vloc,vlocpw,vkbpw,evkb,mmax,nq,rq,ps,iout,ifail)
  if(ifail/=0) return
- call phsft_scan(ps,epsh2,depsh,npsh,eal,pshps,palps,ifail)
+ call phsft_scan(ps,epsh2,depsh,npsh,eal,pshps,palps,iout,ifail)
  if(ifail/=0) return
  call phsft_free(ps)
  do iq=1,nq
@@ -359,7 +370,7 @@
  return
  end subroutine phsft_pair
 
- real(dp) function phsft_node_phase(ps,iq,ee,nodes,uq_out,ifail)
+ real(dp) function phsft_node_phase(ps,iq,ee,nodes,uq_out,iout,ifail)
 
 !! the phase of radius iq at the energy ee with no continuation:
 !! atan(r phi'/phi) - pi (the nodes of u inside the radius), the Pruefer
@@ -378,6 +389,7 @@
 !! @param ee  energy (Ha)
 !! @param nodes  whether to subtract pi per node (default true)
 !! @param uq_out  u at the radius (output)
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input/output variables
@@ -390,6 +402,7 @@
 
 !Output variables
  real(dp), intent(out), optional :: uq_out
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -401,7 +414,7 @@
  count_nodes=.true.
  if(present(nodes)) count_nodes=nodes
  allocate(uu(ps%mmax,2),up(ps%mmax,2))
- call solve(ps,ee,ps%mchq(iq),uu,up,ifail)
+ call solve(ps,ee,ps%mchq(iq),uu,up,iout,ifail)
  if(ifail/=0) return
  phsft_node_phase=angle_at(ps,iq,ps%mchq(iq),uu(:,1),up(:,1),count_nodes, &
 &                          uq)
@@ -410,7 +423,7 @@
  return
  end function phsft_node_phase
 
- subroutine phsft_node_phases(ps,ee,th,nodes,ifail)
+ subroutine phsft_node_phases(ps,ee,th,nodes,iout,ifail)
 
 !! the phases of phsft_node_phase at every radius from one solution, out
 !! to the outermost (the scan of oncvpsp_confine.x)
@@ -419,6 +432,7 @@
 !! @param ee  energy (Ha)
 !! @param th  the phase of each radius (output)
 !! @param nodes  whether to subtract pi per node (default true)
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input/output variables
@@ -430,6 +444,7 @@
 
 !Output variables
  real(dp), intent(out) :: th(ps%nq)
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -442,7 +457,7 @@
  count_nodes=.true.
  if(present(nodes)) count_nodes=nodes
  allocate(uu(ps%mmax,2),up(ps%mmax,2))
- call solve(ps,ee,ps%mch,uu,up,ifail)
+ call solve(ps,ee,ps%mch,uu,up,iout,ifail)
  if(ifail/=0) return
  do iq=1,ps%nq
    th(iq)=angle_at(ps,iq,ps%mch,uu(:,1),up(:,1),count_nodes,uq)
@@ -451,13 +466,14 @@
  return
  end subroutine phsft_node_phases
 
- subroutine solve(ps,ee,mch,uu,up,ifail)
+ subroutine solve(ps,ee,mch,uu,up,iout,ifail)
 !! the solution at ee out to the point mch
  use scatterstate_m, only: scatterstate
  type(phsft_t), intent(inout), target :: ps
  real(dp), intent(in) :: ee
  integer, intent(in) :: mch
  real(dp), intent(out) :: uu(ps%mmax,2),up(ps%mmax,2)
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
  integer :: nn,ierr
  ifail=0
@@ -466,9 +482,10 @@
  if(ps%kind==1) then
    nn=0
    call scatterstate(ps%irel,nn,ps%ll,ps%kap,ierr,ee,ps%rr,ps%zz,ps%vv, &
-&                    uu,up,ps%mmax,mch)
+&                    uu,up,ps%mmax,mch,iout)
  else
-   call outwf_solve(ps%ow,ee,ps%evkb,mch,mch,uu(:,1),up(:,1),ifail=ifail)
+   call outwf_solve(ps%ow,ee,ps%evkb,mch,mch,uu(:,1),up(:,1), &
+&        iout=iout,ifail=ifail)
    if(ifail/=0) return
  end if
  end subroutine solve
@@ -500,7 +517,7 @@
  angle_at=angle_at-pi*dble(nnode)
  end function angle_at
 
- recursive function follow(ps,iq,th0,e0,e1,da1,depth,ifail) result(th1)
+ recursive function follow(ps,iq,th0,e0,e1,da1,depth,iout,ifail) result(th1)
 
 !! the phase of radius iq at e1, continued from th0 at e0
 !!
@@ -511,6 +528,7 @@
 !! @param e1  the energy wanted
 !! @param da1  the doubled angle at e1
 !! @param depth  halvings so far
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input/output variables
@@ -522,6 +540,7 @@
 
 !Output variables
  real(dp) :: th1
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -532,11 +551,11 @@
  dd=dd-2.0d0*pi*anint(dd/(2.0d0*pi))
  if(abs(dd)>0.5d0*pi .and. depth<maxdepth) then
    em=0.5d0*(e0+e1)
-   dam(:)=doubled_angle(ps,em,ifail)
+   dam(:)=doubled_angle(ps,em,iout,ifail)
    if(ifail/=0) return
-   thm=follow(ps,iq,th0,e0,em,dam(iq),depth+1,ifail)
+   thm=follow(ps,iq,th0,e0,em,dam(iq),depth+1,iout,ifail)
    if(ifail/=0) return
-   th1=follow(ps,iq,thm,em,e1,da1,depth+1,ifail)
+   th1=follow(ps,iq,thm,em,e1,da1,depth+1,iout,ifail)
    if(ifail/=0) return
  else
    th1=th0+0.5d0*dd
@@ -544,13 +563,14 @@
  return
  end function follow
 
- function doubled_angle(ps,ee,ifail) result(da)
+ function doubled_angle(ps,ee,iout,ifail) result(da)
 
 !! twice the angle of (phi, r phi') at each radius, in (-pi, pi]: that of
 !! (u, u' - u/r) at the energy ee, the same for -u
 !!
 !! @param ps  the solver
 !! @param ee  energy (Ha)
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input/output variables
@@ -562,6 +582,7 @@
 
 !Output variables
  real(dp) :: da(ps%nq)
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -576,9 +597,10 @@
  if(ps%kind==1) then
    nn=0
    call scatterstate(ps%irel,nn,ps%ll,ps%kap,ierr,ee,ps%rr,ps%zz,ps%vv, &
-&                    uu,up,ps%mmax,ps%mch)
+&                    uu,up,ps%mmax,ps%mch,iout)
  else
-   call outwf_solve(ps%ow,ee,ps%evkb,ps%mch,ps%mch,uu(:,1),up(:,1),ifail=ifail)
+   call outwf_solve(ps%ow,ee,ps%evkb,ps%mch,ps%mch,uu(:,1),up(:,1), &
+&        iout=iout,ifail=ifail)
    if(ifail/=0) return
  end if
  do iq=1,ps%nq

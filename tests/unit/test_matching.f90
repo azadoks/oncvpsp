@@ -21,6 +21,7 @@
  use lschvkbb_m, only: lschvkbb
  use lapack_m, only: dgels
  implicit none
+ integer, parameter :: iout=6
 
 !Local variables
  integer :: ifail
@@ -58,11 +59,11 @@
        select case(isolv)
        case(1, 2)
          call lschfb(nn, ll, ierr, ee, rr, vv, uu(:, 1), up(:, 1), zz, &
-&                    mmax, mch, isolv - 1, ifail)
+&                    mmax, mch, isolv - 1, iout, ifail)
          if(ifail /= 0) error stop 1
        case(3)
          call ldiracfb(nn, ll, -(ll + 1), ierr, ee, rr, zz, vv, uu, up, &
-&                      mmax, mch, ifail)
+&                      mmax, mch, iout, ifail)
          if(ifail /= 0) error stop 1
        case(4)
          emin = -zz**2
@@ -70,7 +71,7 @@
          call pw_alloc(vpw, mmax, 1, [0.0_dp, rr(mmax)])
          vpw%vals(:, 1) = vv
          call lschvkbb(nn, ll, 0, ierr, ee, emin, emax, rr, vv, vpw, &
-&                      vkbpw, evkb, uu(:, 1), up(:, 1), mmax, mch, ifail)
+&                      vkbpw, evkb, uu(:, 1), up(:, 1), mmax, mch, iout, ifail)
          if(ifail /= 0) error stop 1
          call pw_free(vpw)
        case default

@@ -77,7 +77,7 @@
  return
  end subroutine wm_build
 
- subroutine wm_short(ll,ee,rx,vx,mx,mneed,ifail)
+ subroutine wm_short(ll,ee,rx,vx,mx,mneed,iout,ifail)
 !! whether a state at ee in the potential vx needs a longer mesh: mneed is
 !! 0 if the WKB decay beyond the potential's outer turning point reaches
 !! machine precision before mx-4 (inward_start's budget), else a size
@@ -89,6 +89,7 @@
 !! @param vx  potential on it
 !! @param mx  its size
 !! @param mneed  0, or the size to continue the mesh to
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
@@ -97,6 +98,7 @@
  real(dp), intent(in) :: rx(mx),vx(mx)
 !Output variables
  integer, intent(out) :: mneed
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 !Local variables
  real(dp) :: budget,sk,xk,xk1,sls,al
@@ -125,7 +127,7 @@
  al=log(rx(mx)/rx(1))/dble(mx-1)
  mneed=mx+max(10,ceiling(log(1.25d0)/al))
  if(rx(1)*exp(al*dble(mneed-1))>rlimit) then
-   write(6,'(/a,f8.4,a,i2,a,f10.1,a)') &
+   write(iout,'(/a,f8.4,a,i2,a,f10.1,a)') &
 &       'wm_short: ERROR the well state at',ee,' Ha, l=',ll, &
 &       ' does not decay within',rlimit,' bohr'
    ifail=1

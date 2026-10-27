@@ -38,13 +38,14 @@
 
  contains
 
- subroutine write_confine_summary(sm)
+ subroutine write_confine_summary(sm,iout)
 !! the header and the line of the summary
  type(confine_summary_t), intent(in) :: sm
- write(6,'(3a)') '# confine_summary max_de(Ha) ecut4(Ha) ecut5(Ha)', &
+ integer, intent(in) :: iout
+ write(iout,'(3a)') '# confine_summary max_de(Ha) ecut4(Ha) ecut5(Ha)', &
 &     ' n_missing n_extra n_paired_off n_wall_failed max_dde(Ha)', &
 &     ' ecut4_top(Ha) ecut5_top(Ha)'
- write(6,'(a,1p,3e24.16,4i6,3e24.16)') 'confine_summary', &
+ write(iout,'(a,1p,3e24.16,4i6,3e24.16)') 'confine_summary', &
 &     summ(sm%smax_de,.false.),summ(sm%scut(1),sm%sinf(1)), &
 &     summ(sm%scut(2),sm%sinf(2)),sm%nmiss,sm%nextra,sm%noff,sm%nwfail, &
 &     summ(sm%sdde,.false.),summ(sm%scut(3),sm%sinf(3)), &

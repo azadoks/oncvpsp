@@ -145,27 +145,28 @@
  end do
  end subroutine parse_command_line
 
- subroutine write_banner(irel,treatment,exe)
+ subroutine write_banner(irel,treatment,exe,iout)
 !! the version, the citation and the build
  integer, intent(in) :: irel
  character(len=*), intent(in) :: treatment,exe
+ integer, intent(in) :: iout
  if(irel==2) then
-   write(6,'(a/a//)') &
+   write(iout,'(a/a//)') &
 &        'ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
 &        'relativistic version 4.0.1 03/01/2019'
  else
-   write(6,'(a/a//)') &
+   write(iout,'(a/a//)') &
 &        'ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
 &        trim(treatment)//' version 4.0.1 03/01/2019'
  end if
 
- write(6,'(a/a/a//)') &
+ write(iout,'(a/a/a//)') &
 &      'While it is not required under the terms of the GNU GPL, it is',&
 &      'suggested that you cite D. R. Hamann, Phys. Rev. B 88, 085117 (2013)', &
 &      'in any publication utilizing these pseudopotentials.'
 
  call write_build_info(6,trim(exe),trim(treatment))
- write(6,'(/)')
+ write(iout,'(/)')
  end subroutine write_banner
 
  subroutine make_log_mesh(irel,zz,amesh_in,rr1_in,rmax_in,al,mmax,rr, &
@@ -213,27 +214,28 @@
  end do
  end subroutine make_log_mesh
 
- subroutine write_reference_results(pname,it,etot,res,eterm)
+ subroutine write_reference_results(pname,it,etot,res,eterm,iout)
 !! the all-electron reference atom's iterations, total energy, residual
 !! and energy terms; an error if it did not converge
  character(len=*), intent(in) :: pname
  integer, intent(in) :: it
  real(dp), intent(in) :: etot,res,eterm(4)
- write(6,'(//a)') 'Reference configufation results'
- write(6,'(a,i6)') '  iterations',it
+ integer, intent(in) :: iout
+ write(iout,'(//a)') 'Reference configufation results'
+ write(iout,'(a,i6)') '  iterations',it
  if(it >= 100) then
-   write(6,'(2a)') trim(pname), &
+   write(iout,'(2a)') trim(pname), &
 &        ': ERROR all-electron reference atom not converged'
    error stop 1
  end if
- write(6,'(a,1p,d18.8)') '  all-electron total energy (Ha)',etot
- write(6,'(a,1p,e10.2)') '  residual of the screening potential (Ha)',res
- write(6,'(a)') '  energy terms (Ha)'
- write(6,'(a,f22.10)') '    total               ',etot
- write(6,'(a,f22.10)') '    kinetic             ',eterm(1)
- write(6,'(a,f22.10)') '    electron-nucleus    ',eterm(2)
- write(6,'(a,f22.10)') '    Hartree             ',eterm(3)
- write(6,'(a,f22.10)') '    exchange-correlation',eterm(4)
+ write(iout,'(a,1p,d18.8)') '  all-electron total energy (Ha)',etot
+ write(iout,'(a,1p,e10.2)') '  residual of the screening potential (Ha)',res
+ write(iout,'(a)') '  energy terms (Ha)'
+ write(iout,'(a,f22.10)') '    total               ',etot
+ write(iout,'(a,f22.10)') '    kinetic             ',eterm(1)
+ write(iout,'(a,f22.10)') '    electron-nucleus    ',eterm(2)
+ write(iout,'(a,f22.10)') '    Hartree             ',eterm(3)
+ write(iout,'(a,f22.10)') '    exchange-correlation',eterm(4)
  end subroutine write_reference_results
 
  subroutine core_radius_points(lmax,lloc,rc,rr,mmax,irc,rcmax)

@@ -27,7 +27,7 @@
 
  subroutine run_vkb(lmax,lloc,lpopt,dvloc0,rc,irc,nproj,rr,mmax,mxprj,pswf, &
 &                   pswfx,chix,vfull,vp,evkb,vkb,nlim,dlta,vrloc,irel,nkap, &
-&                   vkbpw,vlocpw,bbeig,ifail)
+&                   vkbpw,vlocpw,bbeig,iout,ifail)
 
 !! computes Vanderbilt / Kleinman-Bylander non-local potentials. The
 !! projectors are functions of pieces (pieces_m, doc/smoothness_plan.md
@@ -74,6 +74,7 @@
 !! @param bbeig  the eigenvalues of each channel's symmetrized B matrix,
 !!               ascending (B itself for one projector; 0 where there is
 !!               none) (output)
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, mxl, mxlin
@@ -104,6 +105,7 @@
  integer, intent(out) :: nlim
  type(piecewise_t), intent(out) :: vkbpw(mxprj,mxl+1,nkap),vlocpw
  real(dp), intent(out) :: bbeig(mxprj,mxl+1,nkap)
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -156,7 +158,7 @@
      end if
      do ii=1,nb
        if(pswfx(ii,1,l1,ikap)==0.0d0) then
-         write(6,'(2a,i2,a,f10.6)') 'run_vkb: ERROR node of the local', &
+         write(iout,'(2a,i2,a,f10.6)') 'run_vkb: ERROR node of the local', &
 &              ' channel''s pseudo wave within reach of rc, l=',lloc, &
 &              ' r=',rr(ii)
          ifail=1
@@ -279,17 +281,17 @@
 
 ! symmetrize exactly
        if(irel==2) then
-         write(6,'(/a,i3,a,i3)') 'B matrix Hermiticity error, ll=',l1-1, &
+         write(iout,'(/a,i3,a,i3)') 'B matrix Hermiticity error, ll=',l1-1, &
 &              '  kap=',kap
        else
-         write(6,'(/a,i4)') 'B matrix Hermiticity error, ll=',l1-1
+         write(iout,'(/a,i4)') 'B matrix Hermiticity error, ll=',l1-1
        end if
        do jj=2,np
          do ii=1,jj-1
            if(irel==2) then
-             write(6,'(2i4,1p,d14.4)') ii,jj,bb(ii,jj)-bb(jj,ii)
+             write(iout,'(2i4,1p,d14.4)') ii,jj,bb(ii,jj)-bb(jj,ii)
            else
-             write(6,'(2i4,1p,e14.4)') ii,jj,bb(ii,jj)-bb(jj,ii)
+             write(iout,'(2i4,1p,e14.4)') ii,jj,bb(ii,jj)-bb(jj,ii)
            end if
            tt=0.5d0*(bb(ii,jj)+bb(jj,ii))
            bb(ii,jj)=tt
@@ -303,7 +305,7 @@
 
        call dsyev( 'V', 'U', np, bb, mxprj, bbev, work, lwork, info )
        if(info /= 0) then
-         write(6,'(a,i4)') 'run_vkb: B matrix eigenvalue ERROR, info=',info
+         write(iout,'(a,i4)') 'run_vkb: B matrix eigenvalue ERROR, info=',info
          ifail=1
          return
        end if
@@ -359,7 +361,8 @@
 
        call dsyev( 'V', 'U', np, sovl, mxprj, sovlev, work, lwork, info )
        if(info /= 0) then
-         write(6,'(a,i4)') 'run_vkb: sovl matrix eigenvalue ERROR, info=',info
+         write(iout,'(a,i4)') 'run_vkb: sovl matrix eigenvalue ERROR, info=', &
+&              info
          ifail=1
          return
        end if
@@ -376,7 +379,7 @@
 
        call dsyev( 'V', 'U', np , bbist, mxprj, bbistev, work, lwork, info )
        if(info /= 0) then
-         write(6,'(a,i4)') &
+         write(iout,'(a,i4)') &
 &              'run_vkb: B^(-1)* matrix eigenvalue ERROR, info=',info
          ifail=1
          return
@@ -404,7 +407,7 @@
 
        call pb_sort_abs(evkb(1:np,l1,ikap),pw(1:np),np)
 
-       write(6,'(/a,1p,5e12.4)') '  Orthonormal projector coefficients',&
+       write(iout,'(/a,1p,5e12.4)') '  Orthonormal projector coefficients',&
 &          (evkb(jj,l1,ikap),jj=1,np)
 
      end if !nproj(l1)>=2

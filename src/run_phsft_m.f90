@@ -27,7 +27,7 @@
 
  subroutine run_phsft(lmax,lloc,nproj,epa,npsh,epsh2,depsh,rxpsh,vlocpw, &
 &                      vkbpw,evkb,rr,vfull,vp,zz,mmax,mxprj,rc,irel,nkap, &
-&                      rphs,pshae,pshps,ifail)
+&                      rphs,pshae,pshps,iout,ifail)
 
 !! computes log derivatives, actually atan(r * ((d psi(r)/dr)/psi(r)))
 !! at the radius rphs comparing all-electron with Vanderbilt-Kleinman-Bylander
@@ -70,6 +70,7 @@
 !! @param pshae  the all-electron log derivatives, per energy, l and kappa
 !!               (output; zero for l=0, ikap=2)
 !! @param pshps  the pseudopotential log derivatives, likewise (output)
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, mxl, mxlin, pi
@@ -89,6 +90,7 @@
 
 !Output variables
  real(dp), intent(out) :: rphs(4),pshae(npsh,4,nkap),pshps(npsh,4,nkap)
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -131,7 +133,7 @@
      rq = rxpsh
    end if
    if(phsft_mch(rr,mmax,rq) == 0) then
-     write(6, '(/2a,f12.6,a,f12.6)') &
+     write(iout, '(/2a,f12.6,a,f12.6)') &
 &       trim(rname)//': ERROR rxpsh beyond radial mesh', &
 &       ', rxpsh=', rq, ', rr(mmax)=', rr(mmax)
      ifail = 1
@@ -140,11 +142,11 @@
 ! check_data keeps rxpsh beyond every rc, so only a direct call gets here
    if(rxpsh >= 0.0d0 .and. rq < rc(lc)) then
      if(ll <= lmax) then
-       write(6, '(/2a,i0,2(a,f12.6))') &
+       write(iout, '(/2a,i0,2(a,f12.6))') &
 &         trim(rname)//': WARNING rxpsh inside the core radius', &
 &         ', l=', ll, ', rxpsh=', rq, ', rc=', rc(lc)
      else
-       write(6, '(/2a,i0,2(a,f12.6))') &
+       write(iout, '(/2a,i0,2(a,f12.6))') &
 &         trim(rname)//': WARNING rxpsh inside ' // &
 &         'the local potential core radius', &
 &         ', l=', ll, ', rxpsh=', rq, ', rc=', rc(lc)
@@ -164,17 +166,17 @@
      call phsft_pair(irel,ll,kap,nvkb,rr,vfull,zz,vp(1,lloc+1,ikap),vlocpw, &
 &                    vkbpw(1:nvkb,l1,ikap),evkb(1:nvkb,l1,ikap),mmax,1, &
 &                    [rq],npsh,epsh2,depsh,epa(1,l1,ikap), &
-&                    pshae(:,l1,ikap),pshps(:,l1,ikap),ifail)
+&                    pshae(:,l1,ikap),pshps(:,l1,ikap),iout,ifail)
      if(ifail /= 0) return
 
      lout=ll
      if(nkap==2 .and. ikap==1) lout=-ll
-     write(6,'(/a,i2)') 'log derivativve data for plotting, l=',ll
-     write(6,'(a,f6.2)') 'atan(r * ((d psi(r)/dr)/psi(r))), r=',rq
-     write(6,'(a/)') 'l, energy, all-electron, pseudopotential'
+     write(iout,'(/a,i2)') 'log derivativve data for plotting, l=',ll
+     write(iout,'(a,f6.2)') 'atan(r * ((d psi(r)/dr)/psi(r))), r=',rq
+     write(iout,'(a/)') 'l, energy, all-electron, pseudopotential'
      do ii = 1, npsh
        epsh = epsh2 - depsh * real(ii - 1,dp)
-       write(6,'(a, i6, 3f12.6)') '! ',lout, epsh, pshae(ii,l1,ikap), &
+       write(iout,'(a, i6, 3f12.6)') '! ',lout, epsh, pshae(ii,l1,ikap), &
 &            pshps(ii,l1,ikap)
      end do
    end do !ikap

@@ -27,7 +27,7 @@
 
  subroutine wellstate(nnin,ll,kap,rc,ep,epgiven,onset,confwall,nowell,rr, &
 &                     vfull,vwell,uu,up,zz,mmax,mch,irel,confined,eptgt,wm, &
-&                     ifail)
+&                     iout,ifail)
 
 !! creates quantum well to confine positive-energy state, and calculates
 !! the resulting all-electron wave function. The well rises from
@@ -88,6 +88,7 @@
 !!            uu is not confined. The state is solved on it, so it does
 !!            not depend on rmax; uu, up and vwell are its first mmax
 !!            points
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
@@ -115,6 +116,7 @@
  logical, intent(out) :: confined
  real(dp), intent(out) :: eptgt
  type(well_mesh_t), intent(out) :: wm
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -151,7 +153,7 @@
    vwell(:)=vfull(:)
    uu(:,:)=0.0d0
    up(:,:)=0.0d0
-   write(6,'(/a,i3,a,i3/a,f8.4/a)') &
+   write(iout,'(/a,i3,a,i3/a,f8.4/a)') &
 &           '   Wellstate for l =',ll,'  n =',nnin, &
 &           '     eigenvalue = ',ep, &
 &           '     free tail, no well'
@@ -196,7 +198,7 @@
      ux(:,:)=0.0d0
      upx(:,:)=0.0d0
      et=ep
-     call boundstate(irel,nn,ll,kap,ierr,et,rx,zz,vw,ux,upx,mx,mchx,ifail)
+     call boundstate(irel,nn,ll,kap,ierr,et,rx,zz,vw,ux,upx,mx,mchx,iout,ifail)
      if(ifail/=0) return
 ! a trial well whose state did not converge (ierr/=0: a box state, ierr=10,
 ! can stand in for it) only steers the bracketing; the state taken must
@@ -226,7 +228,7 @@
        end if
        if(rwmax-rwmin<=4.0d0*epsilon(1.0d0)*rwmax) then
          if(abs(fw)>eps) then
-           write(6,'(a,i3,a,i3,a,1p,e10.2)') &
+           write(iout,'(a,i3,a,i3,a,1p,e10.2)') &
 &                'wellstate: ERROR E(rwell) jumps across ep, n=',nn, &
 &                ' l=',ll,' E-ep=',fw
            ifail=1
@@ -274,7 +276,7 @@
 
    if(convg) then
      if(ierr/=0) then
-       write(6,'(a,i3,a,i3)') &
+       write(iout,'(a,i3,a,i3)') &
 &            'wellstate: ERROR lschfb convergence error, n=',nn,' l=',ll
        ifail=1
        return
@@ -285,16 +287,17 @@
 
  if(.not. convg) then
    if(irel==2) then
-     write(6,'(a,a,i3,a,i3,a,i3,a,f8.4)') &
+     write(iout,'(a,a,i3,a,i3,a,i3,a,f8.4)') &
 &     'ERROR wellstate_r: well potential iteration failed', &
 &     ' to converge, n=',nn,' l=',ll,' kap=', kap,' ep=',ep
    else
-     write(6,'(a,a,i3,a,i3,a,f8.4)') &
+     write(iout,'(a,a,i3,a,i3,a,f8.4)') &
 &     'ERROR wellstate: well potential iteration failed', &
 &     ' to converge, n=',nn,' l=',ll,' ep=',ep
    end if
    if(confwall) then
-     write(6,'(a)') 'wellstate: ERROR with the confined well, ep must be '// &
+     write(iout,'(a)') &
+&          'wellstate: ERROR with the confined well, ep must be '// &
 &         'above the atom''s own state of this n: raise ep or lower well_n'
    end if
    ifail=1
@@ -335,7 +338,7 @@
  ifail=0
  uu(:,:)=0.0d0 ; up(:,:)=0.0d0
  et=-0.1d0
- call boundstate(irel,nnin,ll,kap,ierr,et,rr,zz,vfull,uu,up,mmax,mch,ifail)
+ call boundstate(irel,nnin,ll,kap,ierr,et,rr,zz,vfull,uu,up,mmax,mch,iout,ifail)
  if(ifail/=0) return
 
 !if bound state is found, check its localization
@@ -373,7 +376,7 @@
 !error; one below ep and localized inside 1.5 rc only needs raising, by a
 !wall as close as that takes
    if(ierr==0 .and. et>=ep .and. .not. nowell) then
-     write(6,'(/a,i2,a,i2,a,f12.8/a,f12.8)') &
+     write(iout,'(/a,i2,a,i2,a,f12.8/a,f12.8)') &
 &          'wellstate: ERROR a bound state exists for n=',nnin,' l=',ll, &
 &          ' at energy',et,'wellstate: ERROR above the requested ep=',ep
      ifail=1
@@ -385,7 +388,7 @@
 !if bound state is localized compared to rc, use it and its energy
      if(rr(iumax)<0.75d0*rc) then
        ep=et
-       write(6,'(/a,i2,a,i2/a,f12.8/a)') &
+       write(iout,'(/a,i2,a,i2/a,f12.8/a)') &
 &            'WARNING wellstate: localized bound state found for n=', &
 &             nnin,' l=', ll,'WARNING this state with energy',ep, &
 &            'WARNING will be used for the first projector'
@@ -402,7 +405,7 @@
      else if(rr(iumax)<1.5d0*rc) then
 
        ep=0.05d0
-       write(6,'(/2a,i2,a,i2/a,f12.8/a)') &
+       write(iout,'(/2a,i2,a,i2/a,f12.8/a)') &
 &            'WARNING wellstate: moderately localized bound state found', &
 &            ' for n=', &
 &            nnin,' l= ',ll,'WARNING scattering state with energy',ep, &
@@ -413,7 +416,7 @@
 !if specified ep is retained and is negative
    if(ep<0.0d0) then
      ep=0.25d0
-     write(6,'(/a,i2,a,i2/a,f12.8/a)') &
+     write(iout,'(/a,i2,a,i2/a,f12.8/a)') &
 &           'WARNING wellstate: negative energy specified for n=', &
 &           nnin,' l= ',ll, &
 &           'WARNING scattering state with energy',ep, &
@@ -455,7 +458,7 @@
        vw(ii)=vw(ii)+cwell*xx**3/(1.0d0+xx**3)*exp(-0.01d0/xx)
      end if
    end do
-   call wm_short(ll,ep,rx,vw,mx,mneed,ifail)
+   call wm_short(ll,ep,rx,vw,mx,mneed,iout,ifail)
    if(ifail/=0) return
    if(mneed==0) exit
    mx=mneed
@@ -468,24 +471,24 @@
 !! the well state's energy and well on output
 
  if(confwall .and. irel==2) then
-   write(6,'(/a,i3,a,i3,a,i3/a,f8.4/a,f8.4)') &
+   write(iout,'(/a,i3,a,i3,a,i3/a,f8.4/a,f8.4)') &
 &           '   Wellstate for l =',ll,'  n =',nn,' kap=',kap, &
 &           '     eigenvalue = ',et, &
 &           '     confined, wall 1 Ha at r =',ron+rwell
  else if(confwall) then
-   write(6,'(/a,i3,a,i3/a,f8.4/a,f8.4)') &
+   write(iout,'(/a,i3,a,i3/a,f8.4/a,f8.4)') &
 &           '   Wellstate for l =',ll,'  n =',nn, &
 &           '     eigenvalue = ',et, &
 &           '     confined, wall 1 Ha at r =',ron+rwell
  else if(cwell>0.0d0) then
    if(irel==2) then
-     write(6,'(/a,i3,a,i3,a,i3/a,f8.4,/a,f8.4/a,f8.4)') &
+     write(iout,'(/a,i3,a,i3,a,i3/a,f8.4,/a,f8.4/a,f8.4)') &
 &             '   Wellstate for l =',ll,'  n =',nn,' kap=',kap, &
 &             '     eigenvalue = ',et, &
 &             '     asymptotic potential = ',cwell, &
 &             '     half-point radius =',ron+rwell
    else
-     write(6,'(/a,i3,a,i3/a,f8.4,/a,f8.4/a,f8.4)') &
+     write(iout,'(/a,i3,a,i3/a,f8.4,/a,f8.4/a,f8.4)') &
 &             '   Wellstate for l =',ll,'  n =',nn, &
 &             '     eigenvalue = ',et, &
 &             '     asymptotic potential = ',cwell, &
@@ -494,7 +497,7 @@
  end if
 
  if(mx>mmax) then
-   write(6,'(a,f8.2,a)') '     mesh continued to r =',rx(mx),' bohr'
+   write(iout,'(a,f8.2,a)') '     mesh continued to r =',rx(mx),' bohr'
  end if
  return
  end subroutine report

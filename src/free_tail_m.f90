@@ -65,7 +65,7 @@
 
  contains
 
- subroutine mesh_tail(rr,uu,mmax,rc,hh,nr,ulin,ifail)
+ subroutine mesh_tail(rr,uu,mmax,rc,hh,nr,ulin,iout,ifail)
 
 !! uu on the linear mesh rc + (i-1) hh to its last nonzero point (the
 !! solvers zero it beyond their inward start; a node there is dropped or
@@ -78,6 +78,7 @@
 !! @param hh  spacing of the linear mesh
 !! @param nr  number of its nodes
 !! @param ulin  uu on them
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
@@ -87,6 +88,7 @@
 !Output variables
  integer, intent(out) :: nr
  real(dp), allocatable, intent(out) :: ulin(:)
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -106,7 +108,8 @@
  nr=0
  if(rend>rc) nr=int((rend-rc)/hh)+1
  if(nr<2*lm_ncell) then
-   write(6,'(/2a,f10.6,a,f10.6)') 'mesh_tail: ERROR wave function vanishes', &
+   write(iout,'(/2a,f10.6,a,f10.6)') &
+&        'mesh_tail: ERROR wave function vanishes', &
 &       ' too close to rc: rc=',rc,', last nonzero point',rend
    ifail=1
    return
@@ -118,7 +121,7 @@
  return
  end subroutine mesh_tail
 
- subroutine free_tail_width(qcut,ee,wl,ifail)
+ subroutine free_tail_width(qcut,ee,wl,iout,ifail)
 
 !! the window's width L, the positive root of (dq L)**2/4 - 9 kappa L =
 !! 30 with dq = qcut - k: the window's share of E_resid above qcut is
@@ -136,6 +139,7 @@
 !! @param qcut  the cutoff wave vector (bohr^-1)
 !! @param ee  the state's energy ep (Ha)
 !! @param wl  the width L (bohr)
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
@@ -143,6 +147,7 @@
 
 !Output variables
  real(dp), intent(out) :: wl
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -154,7 +159,7 @@
  kp=sqrt(ss-ee)
  dq=qcut-kk
  if(dq<=0.0d0) then
-   write(6,'(/a,f10.6,a,f10.6/a)') &
+   write(iout,'(/a,f10.6,a,f10.6/a)') &
 &       'free_tail_width: ERROR qcut=',qcut,' is not above the wave vector', &
 &       kk,'of the well state: raise qcut or lower its energy'
    ifail=1
@@ -162,7 +167,7 @@
  end if
  wl=(9.0d0*kp+sqrt(81.0d0*kp**2+wbound*dq**2))/(0.5d0*dq**2)
  if(kp*wl>klmax) then
-   write(6,'(/a,f10.6,a,f10.6/a,f8.2,a/a)') &
+   write(iout,'(/a,f10.6,a,f10.6/a,f8.2,a/a)') &
 &       'free_tail_width: ERROR the free tail of the well state at',ee, &
 &       ' Ha with qcut=',qcut,'grows too fast for its window (kappa L =', &
 &       kp*wl,' > 12): raise qcut or the state''s energy'
@@ -206,7 +211,7 @@
  end function free_tail_k
 
  subroutine free_tail(irel,ll,kap,ee,rr,vv,uu,up,mmax,rc,qcut,hh,nr,ulin, &
-&                     dlin,wscale,ifail)
+&                     dlin,wscale,iout,ifail)
 
 !! the windowed free tail of a well state on the linear mesh rc + (i-1) hh
 !! to R0 + x_e L (above), nsub Runge-Kutta steps per mesh step
@@ -228,6 +233,7 @@
 !! @param ulin  the tail on them
 !! @param dlin  its derivative
 !! @param wscale  optional, a factor on L, for the tests (default 1)
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
@@ -239,6 +245,7 @@
 !Output variables
  integer, intent(out) :: nr
  real(dp), allocatable, intent(out) :: ulin(:),dlin(:)
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -247,7 +254,7 @@
  integer :: ii
 
  ifail=0
- call free_tail_width(qcut,ee,wl,ifail)
+ call free_tail_width(qcut,ee,wl,iout,ifail)
  if(ifail/=0) return
  if(present(wscale)) wl=wscale*wl
  nr=int((wcen+window_end(ee,wl))*wl/hh)+1
@@ -261,7 +268,8 @@
  return
  end subroutine free_tail
 
- subroutine free_tail_log(irel,ll,kap,ee,rr,vv,uu,up,mmax,rc,qcut,istart,ifail)
+ subroutine free_tail_log(irel,ll,kap,ee,rr,vv,uu,up,mmax,rc,qcut,istart, &
+&      iout,ifail)
 
 !! the state's values beyond node istart on the log mesh, where its solver
 !! stopped, the windowed free tail (above) continued from that node, and
@@ -281,6 +289,7 @@
 !! @param rc  core radius (bohr)
 !! @param qcut  the cutoff wave vector (bohr^-1)
 !! @param istart  the last node of the solver's values, beyond rc
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
@@ -292,6 +301,7 @@
  real(dp), intent(inout) :: uu(mmax),up(mmax)
 
 !Output variables
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -300,7 +310,7 @@
  integer :: ii,i0,i1
 
  ifail=0
- call free_tail_width(qcut,ee,wl,ifail)
+ call free_tail_width(qcut,ee,wl,iout,ifail)
  if(ifail/=0) return
  i0=istart+1
  i1=count(rr(:)<=rc+(wcen+window_end(ee,wl))*wl)

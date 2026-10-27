@@ -96,6 +96,7 @@
  use confine_summary_m, only: confine_summary_t, write_confine_summary
  use build_info_m, only: write_build_info
  implicit none
+ integer, parameter :: iout=6
 
 !> the most radii of a run
  integer, parameter :: mxq=100
@@ -163,7 +164,7 @@
      call cli_next_arg('oncvpsp_confine',iarg,arg)
      read(arg,*,iostat=ios) ecutmax
      if(ios/=0 .or. ecutmax<=0.0d0) then
-       write(6,'(a)') 'oncvpsp_confine: ERROR --ecut-max must be positive'
+       write(iout,'(a)') 'oncvpsp_confine: ERROR --ecut-max must be positive'
        error stop 1
      end if
    case('-t','--table')
@@ -177,13 +178,14 @@
      else
        nk=cli_count_list(arg)
        if(nk>mxk) then
-         write(6,'(a,i0,a)') 'oncvpsp_confine: ERROR more than ',mxk, &
+         write(iout,'(a,i0,a)') 'oncvpsp_confine: ERROR more than ',mxk, &
 &             ' walls'
          error stop 1
        end if
        read(arg,*,iostat=ios) kwall(1:nk)
        if(ios/=0 .or. any(kwall(1:nk)<=0.0d0)) then
-         write(6,'(2a)') 'oncvpsp_confine: ERROR --walls must be positive ', &
+         write(iout,'(2a)') &
+&              'oncvpsp_confine: ERROR --walls must be positive ', &
 &              'numbers separated by commas, or none'
          error stop 1
        end if
@@ -192,24 +194,24 @@
      call cli_next_arg('oncvpsp_confine',iarg,arg)
      read(arg,*,iostat=ios) r0
      if(ios/=0 .or. r0<=0.0d0) then
-       write(6,'(a)') 'oncvpsp_confine: ERROR --wall-radius must be positive'
+       write(iout,'(a)') 'oncvpsp_confine: ERROR --wall-radius must be positive'
        error stop 1
      end if
      given_r0=.true.
    case default
-     write(6,'(2a)') 'oncvpsp_confine: ERROR unknown argument ',trim(arg)
+     write(iout,'(2a)') 'oncvpsp_confine: ERROR unknown argument ',trim(arg)
      error stop 1
    end select
    iarg=iarg+1
  end do
  if(len_trim(ae_filename)==0 .or. len_trim(ps_filename)==0) then
-   write(6,'(a)') 'oncvpsp_confine: ERROR requires --ae-file and --ps-file'
+   write(iout,'(a)') 'oncvpsp_confine: ERROR requires --ae-file and --ps-file'
    error stop 1
  end if
 
  call load_pair('oncvpsp_confine',trim(ae_filename),trim(ps_filename),irel, &
 &               zz,mmax,rr,vfull,pf,nc=nc,nv=nv,iexc=iexc,na=na,la=la, &
-&               fa=fa,ea=ea,ifail=ifail)
+&               fa=fa,ea=ea,iout=iout,ifail=ifail)
  if(ifail/=0) error stop 1
 
 !the radii: beyond every core radius, where the two atoms' potentials are
@@ -222,7 +224,7 @@
  end if
  do iq=1,nq
    if(rq(iq)<=rcmax) then
-     write(6,'(a,f10.5,a,f10.5,a)') 'oncvpsp_confine: ERROR the radius', &
+     write(iout,'(a,f10.5,a,f10.5,a)') 'oncvpsp_confine: ERROR the radius', &
 &         rq(iq),' is not beyond the largest core radius',rcmax,' bohr'
      error stop 1
    end if
@@ -240,16 +242,16 @@
  end if
 
  if(sphere) call confine_sphere(pf,irel,zz,mmax,rr,vfull,nc,na,la,chan,nq, &
-&                               rq(1:nq),emin,emax,de,ecutmax,table,sm)
+&                               rq(1:nq),emin,emax,de,ecutmax,table,sm,iout)
 
 !the atom in walls: k=0 the free atom
  if(nk>0) then
    if(.not. given_r0) r0=rcmax
    call confine_walls(pf,irel,zz,mmax,rr,vfull,nc,nv,iexc,na,la,fa,ea,nk, &
-&                     kwall(0:nk),r0,sm)
+&                     kwall(0:nk),r0,sm,iout)
  end if
 
- call write_confine_summary(sm)
+ call write_confine_summary(sm,iout)
 
  call ps_file_free(pf)
  deallocate(rr,vfull)
@@ -259,84 +261,91 @@
 
  subroutine write_help()
 !! the usage: what the program does and its options
- write(6,'(a)') 'Usage: oncvpsp_confine.x -a AE_FILE -p PS_FILE [options]'
- write(6,'(a)') ''
- write(6,'(a)') 'A pseudopotential and its all-electron atom in a Wigner-Seitz'
- write(6,'(a)') 'sphere of radius rs, at their frozen potentials: for each l'
- write(6,'(a)') '(and j), the band edges of the Wigner-Seitz rule, where'
- write(6,'(a)') 'r phi''/phi = 0 at rs (bottom), -l-1 (centre) and phi = 0'
- write(6,'(a)') '(top), both atoms'' in the energy window; and the cutoff the'
- write(6,'(a)') 'pseudopotential''s state needs in the sphere, from its'
- write(6,'(a)') 'variational energy in the spherical Bessel functions of the'
- write(6,'(a)') 'same boundary condition. The output, on stdout:'
- write(6,'(a)') '  ws_r l ikap rs(bohr)'
- write(6,'(a)') '  ws l ikap edge n e_ae(Ha) e_ps(Ha)'
- write(6,'(a)') '  ws_ecut l ikap edge n tol(Ha) ecut(Ha)'
- write(6,'(a)') '  ws_floor l ikap edge n ecut(Ha) err(Ha)'
- write(6,'(a)') '  ws_conv l ikap edge n ecut(Ha) err(Ha)       (-t)'
- write(6,'(a)') '  ws_missing l ikap edge n e_ae(Ha)'
- write(6,'(a)') 'edge 1 bottom, 2 centre, 3 top; n the all-electron state''s'
- write(6,'(a)') 'nodes inside rs plus l+1; ikap 1 for j = l+1/2 (and every l'
- write(6,'(a)') 'if not fully relativistic), 2 for j = l-1/2. ws_ecut for the'
- write(6,'(a)') 'errors 1e-2 to 1e-6 Ha that are reached; ws_missing for an'
- write(6,'(a)') 'all-electron edge with no pseudopotential partner.'
- write(6,'(a)') '  ws_core l ikap edge n e_ae(Ha)'
- write(6,'(a)') '  ws_paired_off l ikap edge n e_ps(Ha)'
- write(6,'(a)') '  ws_extra l ikap edge e_ps(Ha)'
- write(6,'(a)') 'ws_core for one that is a core state''s band, ws_paired_off'
- write(6,'(a)') 'for a pseudopotential edge of another phase nearer it than'
- write(6,'(a)') 'its partner, ws_extra for a pseudopotential edge with no'
- write(6,'(a)') 'all-electron partner (a ghost). Then the walls:'
- write(6,'(a)') '  wall_r0 r0(bohr)'
- write(6,'(a)') '  wall k etot_ae etot_ps de_ae de_ps     (Ha, Ha/bohr**2)'
- write(6,'(a)') '  wall_eig k n l ikap e_ae(Ha) e_ps(Ha)'
- write(6,'(a)') '  wall_failed k ae|ps'
- write(6,'(a)') 'and last:'
- write(6,'(a)') '  confine_summary max_de ecut4 ecut5 n_missing n_extra'
- write(6,'(a)') '                  n_paired_off n_wall_failed max_dde'
- write(6,'(a)') '                  ecut4_top ecut5_top'
- write(6,'(a)') 'the largest |e_ps - e_ae| and the largest cutoffs at 1e-4'
- write(6,'(a)') 'and 1e-5 Ha of the edges below 0 (Infinity if one does not'
- write(6,'(a)') 'reach it), the counts of those lines, the largest'
- write(6,'(a)') '|de_ps - de_ae| of the walls, and the cutoffs of the top'
- write(6,'(a)') 'edges alone, free of the tail from the potential''s slope at'
- write(6,'(a)') 'rs; NaN and -1 for a part left out.'
- write(6,'(a)') ''
- write(6,'(a)') 'Options:'
- write(6,'(a)') '  -h, --help'
- write(6,'(a)') '      Show this help and exit'
- write(6,'(a)') '  -v, --version'
- write(6,'(a)') '      Show the build and exit'
- write(6,'(a)') '  -a, --ae-file FILE'
- write(6,'(a)') '      The all-electron data file of an _ae.x (required)'
- write(6,'(a)') '  -p, --ps-file FILE'
- write(6,'(a)') '      The pseudopotential data file of a run of oncvpsp.x,'
- write(6,'(a)') '      oncvpspnr.x, oncvpspr.x or their _ps.x with --ps-file,'
- write(6,'(a)') '      for the same atom, treatment and mesh (required)'
- write(6,'(a)') '  -r, --radii R1,R2,...'
- write(6,'(a)') '      The radii of the sphere (bohr), each beyond every core'
- write(6,'(a)') '      radius. Default 1.25, 1.5 and 2 times the largest'
- write(6,'(a)') '  -l, --channels L1,L2,...'
- write(6,'(a)') '      The angular momenta, from 0 to 3 (both j of each when'
- write(6,'(a)') '      fully relativistic). Default all four'
- write(6,'(a)') '  -e, --energies EMIN,EMAX,DE'
- write(6,'(a)') '      The window of the edges and the step of the scan of'
- write(6,'(a)') '      the phases (Ha). Default the input''s epsh1,epsh2, and'
- write(6,'(a)') '      0.1'
- write(6,'(a)') '  -c, --ecut-max ECUT'
- write(6,'(a)') '      The largest cutoff of the basis (Ha). Default 200'
- write(6,'(a)') '  -t, --table'
- write(6,'(a)') '      Also print the error at every basis size'
- write(6,'(a)') '  -s, --no-sphere'
- write(6,'(a)') '      Leave out the Wigner-Seitz sphere'
- write(6,'(a)') '  -w, --walls K1,K2,... | none'
- write(6,'(a)') '      The strengths k of the wall (Ha/bohr**2), or none.'
- write(6,'(a)') '      Default 0.01, 0.03 and 0.1'
- write(6,'(a)') '  -R, --wall-radius R0'
- write(6,'(a)') '      The onset of the wall (bohr). Default the largest'
- write(6,'(a)') '      core radius'
- write(6,'(a)') ''
- write(6,'(a)') 'Errors are reported on stdout, with a nonzero exit status.'
+ write(iout,'(a)') 'Usage: oncvpsp_confine.x -a AE_FILE -p PS_FILE [options]'
+ write(iout,'(a)') ''
+ write(iout,'(a)') &
+&      'A pseudopotential and its all-electron atom in a Wigner-Seitz'
+ write(iout,'(a)') 'sphere of radius rs, at their frozen potentials: for each l'
+ write(iout,'(a)') '(and j), the band edges of the Wigner-Seitz rule, where'
+ write(iout,'(a)') 'r phi''/phi = 0 at rs (bottom), -l-1 (centre) and phi = 0'
+ write(iout,'(a)') &
+&      '(top), both atoms'' in the energy window; and the cutoff the'
+ write(iout,'(a)') 'pseudopotential''s state needs in the sphere, from its'
+ write(iout,'(a)') 'variational energy in the spherical Bessel functions of the'
+ write(iout,'(a)') 'same boundary condition. The output, on stdout:'
+ write(iout,'(a)') '  ws_r l ikap rs(bohr)'
+ write(iout,'(a)') '  ws l ikap edge n e_ae(Ha) e_ps(Ha)'
+ write(iout,'(a)') '  ws_ecut l ikap edge n tol(Ha) ecut(Ha)'
+ write(iout,'(a)') '  ws_floor l ikap edge n ecut(Ha) err(Ha)'
+ write(iout,'(a)') '  ws_conv l ikap edge n ecut(Ha) err(Ha)       (-t)'
+ write(iout,'(a)') '  ws_missing l ikap edge n e_ae(Ha)'
+ write(iout,'(a)') 'edge 1 bottom, 2 centre, 3 top; n the all-electron state''s'
+ write(iout,'(a)') 'nodes inside rs plus l+1; ikap 1 for j = l+1/2 (and every l'
+ write(iout,'(a)') &
+&      'if not fully relativistic), 2 for j = l-1/2. ws_ecut for the'
+ write(iout,'(a)') 'errors 1e-2 to 1e-6 Ha that are reached; ws_missing for an'
+ write(iout,'(a)') 'all-electron edge with no pseudopotential partner.'
+ write(iout,'(a)') '  ws_core l ikap edge n e_ae(Ha)'
+ write(iout,'(a)') '  ws_paired_off l ikap edge n e_ps(Ha)'
+ write(iout,'(a)') '  ws_extra l ikap edge e_ps(Ha)'
+ write(iout,'(a)') 'ws_core for one that is a core state''s band, ws_paired_off'
+ write(iout,'(a)') 'for a pseudopotential edge of another phase nearer it than'
+ write(iout,'(a)') 'its partner, ws_extra for a pseudopotential edge with no'
+ write(iout,'(a)') 'all-electron partner (a ghost). Then the walls:'
+ write(iout,'(a)') '  wall_r0 r0(bohr)'
+ write(iout,'(a)') '  wall k etot_ae etot_ps de_ae de_ps     (Ha, Ha/bohr**2)'
+ write(iout,'(a)') '  wall_eig k n l ikap e_ae(Ha) e_ps(Ha)'
+ write(iout,'(a)') '  wall_failed k ae|ps'
+ write(iout,'(a)') 'and last:'
+ write(iout,'(a)') '  confine_summary max_de ecut4 ecut5 n_missing n_extra'
+ write(iout,'(a)') '                  n_paired_off n_wall_failed max_dde'
+ write(iout,'(a)') '                  ecut4_top ecut5_top'
+ write(iout,'(a)') 'the largest |e_ps - e_ae| and the largest cutoffs at 1e-4'
+ write(iout,'(a)') 'and 1e-5 Ha of the edges below 0 (Infinity if one does not'
+ write(iout,'(a)') 'reach it), the counts of those lines, the largest'
+ write(iout,'(a)') '|de_ps - de_ae| of the walls, and the cutoffs of the top'
+ write(iout,'(a)') &
+&      'edges alone, free of the tail from the potential''s slope at'
+ write(iout,'(a)') 'rs; NaN and -1 for a part left out.'
+ write(iout,'(a)') ''
+ write(iout,'(a)') 'Options:'
+ write(iout,'(a)') '  -h, --help'
+ write(iout,'(a)') '      Show this help and exit'
+ write(iout,'(a)') '  -v, --version'
+ write(iout,'(a)') '      Show the build and exit'
+ write(iout,'(a)') '  -a, --ae-file FILE'
+ write(iout,'(a)') '      The all-electron data file of an _ae.x (required)'
+ write(iout,'(a)') '  -p, --ps-file FILE'
+ write(iout,'(a)') '      The pseudopotential data file of a run of oncvpsp.x,'
+ write(iout,'(a)') &
+&      '      oncvpspnr.x, oncvpspr.x or their _ps.x with --ps-file,'
+ write(iout,'(a)') '      for the same atom, treatment and mesh (required)'
+ write(iout,'(a)') '  -r, --radii R1,R2,...'
+ write(iout,'(a)') &
+&      '      The radii of the sphere (bohr), each beyond every core'
+ write(iout,'(a)') '      radius. Default 1.25, 1.5 and 2 times the largest'
+ write(iout,'(a)') '  -l, --channels L1,L2,...'
+ write(iout,'(a)') '      The angular momenta, from 0 to 3 (both j of each when'
+ write(iout,'(a)') '      fully relativistic). Default all four'
+ write(iout,'(a)') '  -e, --energies EMIN,EMAX,DE'
+ write(iout,'(a)') '      The window of the edges and the step of the scan of'
+ write(iout,'(a)') &
+&      '      the phases (Ha). Default the input''s epsh1,epsh2, and'
+ write(iout,'(a)') '      0.1'
+ write(iout,'(a)') '  -c, --ecut-max ECUT'
+ write(iout,'(a)') '      The largest cutoff of the basis (Ha). Default 200'
+ write(iout,'(a)') '  -t, --table'
+ write(iout,'(a)') '      Also print the error at every basis size'
+ write(iout,'(a)') '  -s, --no-sphere'
+ write(iout,'(a)') '      Leave out the Wigner-Seitz sphere'
+ write(iout,'(a)') '  -w, --walls K1,K2,... | none'
+ write(iout,'(a)') '      The strengths k of the wall (Ha/bohr**2), or none.'
+ write(iout,'(a)') '      Default 0.01, 0.03 and 0.1'
+ write(iout,'(a)') '  -R, --wall-radius R0'
+ write(iout,'(a)') '      The onset of the wall (bohr). Default the largest'
+ write(iout,'(a)') '      core radius'
+ write(iout,'(a)') ''
+ write(iout,'(a)') 'Errors are reported on stdout, with a nonzero exit status.'
  end subroutine write_help
 
  end program oncvpsp_confine

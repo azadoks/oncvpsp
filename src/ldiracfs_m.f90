@@ -25,7 +25,7 @@
 
  contains
 
- subroutine ldiracfs(nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch)
+ subroutine ldiracfs(nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch,iout)
 
 !! Finds relativistic scattering states of an al-electron potential
 !!
@@ -43,6 +43,7 @@
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param mmax  size of log grid
 !! @param mch  matching mesh point for inward-outward integrations
+!! @param iout  unit of the text output
 
  use constants_m, only: dp
  use relativity_m, only: c_light
@@ -60,6 +61,7 @@
 !Input/output variables
  real(dp), intent(inout) :: uu(mmax,2),up(mmax,2)
  integer, intent(inout) :: nn
+ integer, intent(in) :: iout
 
 !Output variables
  integer, intent(out) :: ierr
@@ -83,12 +85,12 @@
 
 ! check arguments
  if(kap/=ll .and. kap/=-(ll+1)) then
-   write(6,'(/a,i4,a,i4)') 'ldiracfs: ERROR kap =',kap,' ll =',ll
+   write(iout,'(/a,i4,a,i4)') 'ldiracfs: ERROR kap =',kap,' ll =',ll
    ierr=2
    return
  end if
  if(zz<1.0d0) then
-   write(6,'(/a,f12.8)') 'ldiracfs: ERROR zz =',zz
+   write(iout,'(/a,f12.8)') 'ldiracfs: ERROR zz =',zz
    ierr=3
    return
  end if

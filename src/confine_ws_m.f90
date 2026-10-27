@@ -72,7 +72,7 @@
  contains
 
  subroutine confine_sphere(pf,irel,zz,mmax,rr,vfull,nc,na,la,chan,nq,rq, &
-&                          emin,emax,de,ecutmax,table,sm)
+&                          emin,emax,de,ecutmax,table,sm,iout)
 !! the ws lines of every channel of chan at the radii rq, of the edges
 !! in [emin,emax] from a scan of step de, and the sphere's part of the
 !! summary
@@ -81,6 +81,7 @@
  real(dp), intent(in) :: zz,rr(mmax),vfull(mmax),rq(nq),emin,emax,de
  real(dp), intent(in) :: ecutmax
  logical, intent(in) :: chan(0:3),table
+ integer, intent(in) :: iout
  type(confine_summary_t), intent(inout) :: sm
  real(dp), allocatable :: egrid(:)
  integer :: npsh,ii,l1,ikap
@@ -91,15 +92,15 @@
    egrid(ii)=emax+emargin-de*dble(ii-1)
  end do
 
- write(6,'(a)') '# ws_r l ikap rs(bohr)'
- write(6,'(a)') '# ws l ikap edge n e_ae(Ha) e_ps(Ha)'
- write(6,'(a)') '# ws_ecut l ikap edge n tol(Ha) ecut(Ha)'
- write(6,'(a)') '# ws_floor l ikap edge n ecut(Ha) err(Ha)'
- if(table) write(6,'(a)') '# ws_conv l ikap edge n ecut(Ha) err(Ha)'
- write(6,'(a)') '# ws_missing l ikap edge n e_ae(Ha)'
- write(6,'(a)') '# ws_core l ikap edge n e_ae(Ha)'
- write(6,'(a)') '# ws_paired_off l ikap edge n e_ps(Ha)'
- write(6,'(a)') '# ws_extra l ikap edge e_ps(Ha)'
+ write(iout,'(a)') '# ws_r l ikap rs(bohr)'
+ write(iout,'(a)') '# ws l ikap edge n e_ae(Ha) e_ps(Ha)'
+ write(iout,'(a)') '# ws_ecut l ikap edge n tol(Ha) ecut(Ha)'
+ write(iout,'(a)') '# ws_floor l ikap edge n ecut(Ha) err(Ha)'
+ if(table) write(iout,'(a)') '# ws_conv l ikap edge n ecut(Ha) err(Ha)'
+ write(iout,'(a)') '# ws_missing l ikap edge n e_ae(Ha)'
+ write(iout,'(a)') '# ws_core l ikap edge n e_ae(Ha)'
+ write(iout,'(a)') '# ws_paired_off l ikap edge n e_ps(Ha)'
+ write(iout,'(a)') '# ws_extra l ikap edge e_ps(Ha)'
  sm%nmiss=0
  sm%nextra=0
  sm%noff=0
@@ -107,14 +108,14 @@
    if(.not. chan(l1-1)) cycle
    do ikap=1,merge(1,pf%nkap,l1==1)
      call ws_channel(pf,irel,zz,mmax,rr,vfull,nc,na,la,l1-1,ikap,nq,rq, &
-&                    egrid,emin,emax,ecutmax,table,sm)
+&                    egrid,emin,emax,ecutmax,table,sm,iout)
    end do
  end do
  deallocate(egrid)
  end subroutine confine_sphere
 
  subroutine ws_channel(pf,irel,zz,mmax,rr,vfull,nc,na,la,ll,ikap,nq,rq, &
-&                      egrid,emin,emax,ecutmax,table,sm)
+&                      egrid,emin,emax,ecutmax,table,sm,iout)
 !! the ws lines of l and ikap at every radius, from one scan of the
 !! phases of both atoms on egrid
  type(ps_file_t), intent(in) :: pf
@@ -122,6 +123,8 @@
  real(dp), intent(in) :: zz,rr(mmax),vfull(mmax),rq(nq),egrid(:),emin
  real(dp), intent(in) :: emax,ecutmax
  logical, intent(in) :: table
+!> unit of the text output
+ integer, intent(in) :: iout
  type(confine_summary_t), intent(inout) :: sm
  type(phsft_t), target :: sae,sps
 !> the quadrature of the channel in each sphere, shared by its edges
@@ -140,11 +143,11 @@
  nvkb=pf%nvkb(l1,ikap)
 ! the solvers of the channel at every radius, and each sphere's
 ! quadrature and poles (refined to the roots of u(rs))
- call phsft_ae_init(irel,ll,kap,rr,vfull,zz,mmax,nq,rq(1:nq),sae,ifail)
+ call phsft_ae_init(irel,ll,kap,rr,vfull,zz,mmax,nq,rq(1:nq),sae,iout,ifail)
  if(ifail/=0) error stop 1
  call phsft_ps_init(ll,nvkb,rr,pf%vloc(:,ikap),pf%vlocpw, &
 &                   pf%vkbpw(1:nvkb,l1,ikap),pf%evkb(1:nvkb,l1,ikap), &
-&                   mmax,nq,rq(1:nq),sps,ifail)
+&                   mmax,nq,rq(1:nq),sps,iout,ifail)
  if(ifail/=0) error stop 1
  allocate(wsg(nq),polq(nq),tanae(nanch,nq),tanps(nanch,nq))
  allocate(shae(npsh,nq),shps(npsh,nq))
@@ -177,19 +180,19 @@
 ! one and paired each band with the next one down
 ! (all the radii from one solution at each energy)
  do ii=1,npsh
-   call scan_phases(sae,sps,polq,egrid(ii),shae(ii,:),shps(ii,:))
+   call scan_phases(sae,sps,polq,egrid(ii),shae(ii,:),shps(ii,:),iout)
  end do
  if(nvkb>0) then
    do ii=1,nanch
      ex=pf%epa(l1,ikap)+danch*dble(ii-(nanch+1)/2)
-     call scan_phases(sae,sps,polq,ex,tanae(ii,:),tanps(ii,:))
+     call scan_phases(sae,sps,polq,ex,tanae(ii,:),tanps(ii,:),iout)
    end do
  end if
 
  do iq=1,nq
    call ws_radius(pf,irel,zz,mmax,rr,vfull,nc,na,la,ll,kap,ikap,nvkb, &
 &                 rq(iq),iq,sae,sps,polq(iq),wsg(iq),egrid,shae(:,iq), &
-&                 shps(:,iq),tanae(:,iq),tanps(:,iq),emin,emax,table,sm)
+&                 shps(:,iq),tanae(:,iq),tanps(:,iq),emin,emax,table,sm,iout)
  end do
  call phsft_free(sae)
  call phsft_free(sps)
@@ -198,7 +201,7 @@
 
  subroutine ws_radius(pf,irel,zz,mmax,rr,vfull,nc,na,la,ll,kap,ikap,nvkb, &
 &                     rs,iq,sae,sps,pol,wsg,egrid,shae,shps,tanae,tanps, &
-&                     emin,emax,table,sm)
+&                     emin,emax,table,sm,iout)
 !! the ws lines of l and ikap at the radius rs (the iq-th of the
 !! solvers), from the phases shae and shps of the scan and tanae and
 !! tanps of the anchors
@@ -212,6 +215,8 @@
  type(poles_t), intent(in) :: pol
  type(ws_grid_t), intent(in) :: wsg
  logical, intent(in) :: table
+!> unit of the text output
+ integer, intent(in) :: iout
  type(confine_summary_t), intent(inout) :: sm
  type(edges_t) :: eae,eps
  real(dp), allocatable :: ecut(:),err(:)
@@ -224,7 +229,7 @@
  integer :: npsh,ii,ie,je,iedge,nn,nb,ierr
 
  npsh=size(egrid)
- write(6,'(a,2i4,1p,e24.16)') 'ws_r',ll,ikap,rs
+ write(iout,'(a,2i4,1p,e24.16)') 'ws_r',ll,ikap,rs
  ph_iq=iq
  ndir=size(pol%e)
  edir=pol%e
@@ -268,25 +273,25 @@
  do ie=1,eae%n
    if(eae%e(ie)<emin .or. eae%e(ie)>emax) cycle
    iedge=eae%ied(ie)
-   nn=n_of(irel,ll,kap,eae%e(ie),rr,zz,vfull,mmax,rs)
+   nn=n_of(irel,ll,kap,eae%e(ie),rr,zz,vfull,mmax,rs,iout)
    je=jpair(ie)
    if(je==0) then
 ! the band of a core state, which the pseudopotential leaves out
      if(any(na(1:nc)==nn .and. la(1:nc)==ll)) then
-       write(6,'(a,4i4,1p,e24.16)') 'ws_core',ll,ikap,iedge,nn,eae%e(ie)
+       write(iout,'(a,4i4,1p,e24.16)') 'ws_core',ll,ikap,iedge,nn,eae%e(ie)
      else
-       write(6,'(a,4i4,1p,e24.16)') 'ws_missing',ll,ikap,iedge,nn,eae%e(ie)
+       write(iout,'(a,4i4,1p,e24.16)') 'ws_missing',ll,ikap,iedge,nn,eae%e(ie)
        sm%nmiss=sm%nmiss+1
      end if
      cycle
    end if
-   write(6,'(a,4i4,1p,2e24.16)') 'ws',ll,ikap,iedge,nn,eae%e(ie),eps%e(je)
+   write(iout,'(a,4i4,1p,2e24.16)') 'ws',ll,ikap,iedge,nn,eae%e(ie),eps%e(je)
 ! an edge of another phase nearer to it than its partner: the phases pair
 ! a band of one atom with another band of the other
    do ii=1,eps%n
      if(ii==je .or. eps%ied(ii)/=iedge) cycle
      if(abs(eps%e(ii)-eae%e(ie))<abs(eps%e(je)-eae%e(ie))) then
-       write(6,'(a,4i4,1p,e24.16)') 'ws_paired_off',ll,ikap,iedge,nn, &
+       write(iout,'(a,4i4,1p,e24.16)') 'ws_paired_off',ll,ikap,iedge,nn, &
 &           eps%e(ii)
        sm%noff=sm%noff+1
        exit
@@ -302,19 +307,19 @@
      if(eae%e(ie)<0.0d0 .and. iedge==3) sm%sinf(3:4)=.true.
      cycle
    end if
-   call ws_cutoffs(ll,ikap,iedge,nn,eae%e(ie)<0.0d0,nb,ecut,err,table,sm)
+   call ws_cutoffs(ll,ikap,iedge,nn,eae%e(ie)<0.0d0,nb,ecut,err,table,sm,iout)
  end do
 
 ! the pseudopotential's edges in the window that no all-electron edge
 ! has as its partner
  do ii=1,eps%n
    if(used(ii) .or. eps%e(ii)<emin .or. eps%e(ii)>emax) cycle
-   write(6,'(a,3i4,1p,e24.16)') 'ws_extra',ll,ikap,eps%ied(ii),eps%e(ii)
+   write(iout,'(a,3i4,1p,e24.16)') 'ws_extra',ll,ikap,eps%ied(ii),eps%e(ii)
    sm%nextra=sm%nextra+1
  end do
  end subroutine ws_radius
 
- subroutine ws_cutoffs(ll,ikap,iedge,nn,bound,nb,ecut,err,table,sm)
+ subroutine ws_cutoffs(ll,ikap,iedge,nn,bound,nb,ecut,err,table,sm,iout)
 !! the ws_ecut, ws_floor (and with table ws_conv) lines of an edge from
 !! the errors err of its state at the cutoffs ecut, and the summary's
 !! cutoffs, at 1e-4 and 1e-5 Ha, of all edges and of the top, of a bound
@@ -322,6 +327,7 @@
  integer, intent(in) :: ll,ikap,iedge,nn,nb
  logical, intent(in) :: bound,table
  real(dp), intent(in) :: ecut(nb),err(nb)
+ integer, intent(in) :: iout
  type(confine_summary_t), intent(inout) :: sm
  real(dp) :: ec
  integer :: itol,kk,ii
@@ -334,12 +340,12 @@
      end do
    end if
  end do
- write(6,'(a,4i4,1p,2e24.16)') 'ws_floor',ll,ikap,iedge,nn, &
+ write(iout,'(a,4i4,1p,2e24.16)') 'ws_floor',ll,ikap,iedge,nn, &
 &     ecut(nb),err(nb)
  if(table) then
    do ii=1,nb
      if(err(ii)==0.0d0) cycle
-     write(6,'(a,4i4,1p,2e24.16)') 'ws_conv',ll,ikap,iedge,nn, &
+     write(iout,'(a,4i4,1p,2e24.16)') 'ws_conv',ll,ikap,iedge,nn, &
 &         ecut(ii),err(ii)
    end do
  end if
@@ -365,7 +371,7 @@
      ec=ecut(jj-1)+(ecut(jj)-ecut(jj-1)) &
 &       *log(err(jj-1)/tol)/log(err(jj-1)/err(jj))
    end if
-   write(6,'(a,4i4,1p,2e24.16)') 'ws_ecut',ll,ikap,iedge,nn,tol,ec
+   write(iout,'(a,4i4,1p,2e24.16)') 'ws_ecut',ll,ikap,iedge,nn,tol,ec
    return
  end do
  end subroutine cutoff_at
@@ -433,19 +439,20 @@
  ed%ied(ed%n)=jed
  end subroutine add_edge
 
- subroutine scan_phases(sae,sps,polq,ex,thae,thps)
+ subroutine scan_phases(sae,sps,polq,ex,thae,thps,iout)
 !! the phases of every radius at ex from one solution of each atom: the
 !! all-electron one's, and the pseudopotential's less pi per pole of each
 !! sphere below ex (phase_of)
  type(phsft_t), intent(inout) :: sae,sps
  type(poles_t), intent(in) :: polq(:)
  real(dp), intent(in) :: ex
+ integer, intent(in) :: iout
  real(dp), intent(out) :: thae(:),thps(:)
  integer :: jq
  integer :: ifail
- call phsft_node_phases(sae,ex,thae,ifail=ifail)
+ call phsft_node_phases(sae,ex,thae,iout=iout,ifail=ifail)
  if(ifail/=0) error stop 1
- call phsft_node_phases(sps,ex,thps,nodes=.false.,ifail=ifail)
+ call phsft_node_phases(sps,ex,thps,nodes=.false.,iout=iout,ifail=ifail)
  if(ifail/=0) error stop 1
  do jq=1,size(polq)
    thps(jq)=thps(jq)-pi*dble(count(polq(jq)%e<ex))
@@ -455,20 +462,23 @@
  real(dp) function phase(ex)
 !! the phase of psol at ex plus ph_shift, less ph_tgt
  real(dp), intent(in) :: ex
- phase=phase_of(ex)+ph_shift-ph_tgt
+ integer, parameter :: iout=6
+ phase=phase_of(ex,iout)+ph_shift-ph_tgt
  end function phase
 
- real(dp) function phase_of(ex)
+ real(dp) function phase_of(ex,iout)
 !! the phase of psol at ex: less pi per node inside rs, or with ph_poles
 !! per pole of r phi'/phi at rs below ex
  real(dp), intent(in) :: ex
+ integer, intent(in) :: iout
  integer :: ifail
  if(ph_poles) then
-   phase_of=phsft_node_phase(psol,ph_iq,ex,nodes=.false.,ifail=ifail) &
+   phase_of=phsft_node_phase(psol,ph_iq,ex,nodes=.false., &
+&        iout=iout,ifail=ifail) &
 &           -pi*dble(count(edir(1:ndir)<ex))
    if(ifail/=0) error stop 1
  else
-   phase_of=phsft_node_phase(psol,ph_iq,ex,ifail=ifail)
+   phase_of=phsft_node_phase(psol,ph_iq,ex,iout=iout,ifail=ifail)
    if(ifail/=0) error stop 1
  end if
  end function phase_of
@@ -520,9 +530,11 @@
  real(dp) function u_rs(ex)
 !! u of psol at rs and the energy ex
  real(dp), intent(in) :: ex
+ integer, parameter :: iout=6
  real(dp) :: th
  integer :: ifail
- th=phsft_node_phase(psol,ph_iq,ex,nodes=.false.,uq_out=u_rs,ifail=ifail)
+ th=phsft_node_phase(psol,ph_iq,ex,nodes=.false.,uq_out=u_rs, &
+&      iout=iout,ifail=ifail)
  if(ifail/=0) error stop 1
  end function u_rs
 
@@ -574,11 +586,12 @@
  end do
  end subroutine sort_edges
 
- integer function n_of(irel,ll,kap,ex,rr,zz,vfull,mmax,rs)
+ integer function n_of(irel,ll,kap,ex,rr,zz,vfull,mmax,rs,iout)
 !! the all-electron state's nodes inside rs, plus l+1
  use scatterstate_m, only: scatterstate
  integer, intent(in) :: irel,ll,kap,mmax
  real(dp), intent(in) :: ex,rr(mmax),zz,vfull(mmax),rs
+ integer, intent(in) :: iout
  real(dp), allocatable :: uu(:,:),up(:,:)
  integer :: mch,jj,nnode,nn2,ierr2
  mch=phsft_mch(rr,mmax,rs)
@@ -586,7 +599,7 @@
  uu(:,:)=0.0d0
  up(:,:)=0.0d0
  nn2=0
- call scatterstate(irel,nn2,ll,kap,ierr2,ex,rr,zz,vfull,uu,up,mmax,mch)
+ call scatterstate(irel,nn2,ll,kap,ierr2,ex,rr,zz,vfull,uu,up,mmax,mch,iout)
  nnode=0
  do jj=2,mmax
    if(rr(jj)>rs) exit

@@ -25,7 +25,7 @@
 
  contains
 
- subroutine qroots(ll,rc,ulgd,nroot,dltq,qmax,qroot,ifail)
+ subroutine qroots(ll,rc,ulgd,nroot,dltq,qmax,qroot,iout,ifail)
 
 !! calculate q values for spherical Bessel function orthogonal basis inside r_c
 !! all having specified log derivative ulgd at rc
@@ -41,6 +41,7 @@
 !! @param dltq  step for search for qroots satisfying log derivative condition
 !! @param qmax  maximum q for search
 !! @param qroot  set of q's satisfying dj_l(q*r)/dr / jl(q*r) = ulgd
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
@@ -53,6 +54,7 @@
 
 !Output variables
  real(dp), intent(out) :: qroot(nroot)
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -108,7 +110,7 @@
    glast=gg
  end do
  if(iroot<nroot) then
-   write(6,'(a)') 'qroots: ERROR - failed to find nroot roots'
+   write(iout,'(a)') 'qroots: ERROR - failed to find nroot roots'
    ifail=1
    return
  end if
@@ -163,7 +165,7 @@
    dgold=abs(dg)
    qp=qp+dq
  end do
- write(6,'(/a,i0,a,es12.4,a,es10.2)') &
+ write(iout,'(/a,i0,a,es12.4,a,es10.2)') &
 &     'qroots: ERROR Newton polish not converged, ll=',ll,', q=',qp, &
 &     ', last step',dq
  ifail=1

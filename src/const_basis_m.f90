@@ -29,7 +29,7 @@
 
  subroutine const_basis(nbas,ncon,cons,orbasis,orbasis_der,&
 &                       pswf0_or,pswfnull_or, &
-&                       pswf0_sb,pswfnull_sb,ps0norm,ifail)
+&                       pswf0_sb,pswfnull_sb,ps0norm,iout,ifail)
 
 !! the particular solution of the matching constraints of least norm in the
 !! orthonormal basis, and an orthonormal basis of their null space, in
@@ -55,6 +55,7 @@
 !!                     all orthogonal to the pswf0 combination (which is not
 !!                     normalized) (quad)
 !! @param ps0norm  charge contained in ps0 inside rc
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
@@ -71,6 +72,7 @@
  real(dp), intent(out) :: pswf0_or(nbas),pswfnull_or(nbas,nbas-ncon)
  real(qp), intent(out) :: pswf0_sb(nbas),pswfnull_sb(nbas,nbas-ncon)
  real(dp), intent(out) :: ps0norm
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -99,7 +101,7 @@
  end do
  call qjacobi(nbas,gmat,lam,vv)
  if(lam(nnull+1)<rankeps**2*lam(nbas)) then
-   write(6,'(/a,1p,e10.2)') &
+   write(iout,'(/a,1p,e10.2)') &
 &        'const_basis: ERROR the constraints are linearly dependent, ', &
 &        'singular value ratio', &
 &        real(sqrt(max(lam(nnull+1),0.0_qp)/lam(nbas)),dp)
@@ -127,10 +129,10 @@
    con_tst(ii)=sum(orbasis_der(ii,:)*xor(:))
  end do
 
- write(6,'(/a)') '    Constraint consistency test'
- write(6,'(a)') '      pswf0 val/der aewf val/der     diff'
+ write(iout,'(/a)') '    Constraint consistency test'
+ write(iout,'(a)') '      pswf0 val/der aewf val/der     diff'
  do ii=1,ncon
-   write(6,'(4x,2f14.8,1p,d12.2)') real(con_tst(ii),dp),cons(ii), &
+   write(iout,'(4x,2f14.8,1p,d12.2)') real(con_tst(ii),dp),cons(ii), &
 &        real(con_tst(ii),dp)-cons(ii)
  end do
 

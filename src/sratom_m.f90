@@ -26,7 +26,7 @@
  contains
 
  subroutine sratom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&           rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,irel,vext,warm,ifail)
+&           rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,irel,vext,warm,iout,ifail)
 
 !! self-consistent scalar-relativistic all-electron atom
 !! calculation using log mesh (non-relativistic when irel=0)
@@ -57,6 +57,7 @@
 !! @param warm  start from vi and ea (the solution of a nearby potential,
 !!              oncvpsp_confine.x) instead of the Thomas-Fermi potential
 !!              and hydrogenic energies
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, ae_tolres
@@ -87,6 +88,7 @@
  real(dp), intent(out) :: rho(mmax),rhoc(mmax)
  real(dp), intent(inout) :: vi(mmax)
  logical, intent(in) :: warm
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -165,7 +167,7 @@
      et=ea(ii)
      ierr = 0
      call lschfb(na(ii),la(ii),ierr,et, &
-&                rr,vext+vi,uu,up,zz,mmax,mch,irel,ifail)
+&                rr,vext+vi,uu,up,zz,mmax,mch,irel,iout,ifail)
      if(ifail/=0) return
 ! a state with no bound solution in this potential gets its box state;
 ! the SCF goes on but cannot converge with it
@@ -174,7 +176,7 @@
        ierr=0
      end if
      if(ierr /= 0) then
-       write(6,'(/a,3i4)') 'sratom123: lschfb convergence ERROR n,l,iter=', &
+       write(iout,'(/a,3i4)') 'sratom123: lschfb convergence ERROR n,l,iter=', &
 &       na(ii),la(ii),it
        ifail=1
        return
@@ -216,7 +218,7 @@
 ! potential at the nucleus can deny for ever (1e-9 Ha jitter with E_tot
 ! converged to 1e-14 Ha, H at rr1 1e-5)
    call ae_residual(rho,vsi,vso,sf,rr,mmax,res)
-   call ae_converged(it,res,tolres,resbest,nflat,convg)
+   call ae_converged(it,res,tolres,resbest,nflat,convg,iout)
    if(convg) exit
 
 ! next input potential, by Anderson mixing of the last ndep iterations
@@ -226,7 +228,7 @@
    end do
 
    if(it==100 .and. .not. convg) then
-     write(6,'(/a)') 'sratom: WARNING failed to converge'
+     write(iout,'(/a)') 'sratom: WARNING failed to converge'
    end if
 
  end do !it

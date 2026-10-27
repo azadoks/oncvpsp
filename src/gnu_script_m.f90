@@ -27,7 +27,7 @@
 
 ! creates appropriate input file for GNUPLOT
 
- subroutine gnu_script(epa,evkb,lmax,lloc,mxprj,nproj,nkap)
+ subroutine gnu_script(epa,evkb,lmax,lloc,mxprj,nproj,nkap,iout)
 
 !! @param epa  wave function energies, last index 1 for j=l+1/2, 2 for j=l-1/2
 !!             when nkap=2
@@ -39,6 +39,7 @@
 !! @param mxprj  maximum number of projectors
 !! @param nproj  number of projectors for each l
 !! @param nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
+!! @param iout  unit of the text output
 
  use constants_m, only: dp, mxl, mxlin
  use kappa_m, only: kap_count
@@ -48,6 +49,7 @@
  integer, intent(in) :: lmax,lloc,mxprj,nkap
  integer, intent(in) :: nproj(mxlin+1)
  real(dp), intent(in) :: epa(mxprj,mxlin+1,nkap),evkb(mxprj,mxl+1,nkap)
+ integer, intent(in) :: iout
 
 !Local variables
  integer :: ii,iprj,jj,l1,ll
@@ -195,50 +197,50 @@
  gln(75)=''' t1" using 3:8 title "Prj 5" with lines ls 5'
 
 
- write(6,'(a)') 'GNUSCRIPT'
+ write(iout,'(a)') 'GNUSCRIPT'
 
  set='set term wxt font "arial,14" size 800,600'
- write(6,'(a/)') trim(set)
+ write(iout,'(a/)') trim(set)
  set='set termoption dash'
- write(6,'(a/)') trim(set)
+ write(iout,'(a/)') trim(set)
  set='set termoption noenhanced'
- write(6,'(a/)') trim(set)
+ write(iout,'(a/)') trim(set)
  do ii=1,12
-   write(6,'(a/)') trim(lset(ii))
+   write(iout,'(a/)') trim(lset(ii))
  end do
 
- write(6,'(a/)') trim(plot_title(1))
- write(6,'(a/)') trim(x_label(1))
+ write(iout,'(a/)') trim(plot_title(1))
+ write(iout,'(a/)') trim(x_label(1))
 
  do l1=1,lmax+1
-   write(6,'(2a)',advance='no') lead(l1),trim(gln(l1))
+   write(iout,'(2a)',advance='no') lead(l1),trim(gln(l1))
    if(l1<lmax+1 .or. lloc==4) then
-     write(6,'(a)') cbs
+     write(iout,'(a)') cbs
    else
-     write(6,'(/)')
+     write(iout,'(/)')
    end if
  end do
 
  if(lloc==4) then
    l1=5
-   write(6,'(2a)') lead(l1),trim(gln(l1))
+   write(iout,'(2a)') lead(l1),trim(gln(l1))
  end if
 
- write(6,'(/a/)') trim(pse)
+ write(iout,'(/a/)') trim(pse)
 
- write(6,'(a/)') trim(plot_title(2))
- write(6,'(a/)') trim(x_label(1))
+ write(iout,'(a/)') trim(plot_title(2))
+ write(iout,'(a/)') trim(x_label(1))
 
  do ii=1,3
-   write(6,'(2a)',advance='no') lead(ii),trim(gln(ii+5))
+   write(iout,'(2a)',advance='no') lead(ii),trim(gln(ii+5))
    if(ii<3) then
-     write(6,'(a)') cbs
+     write(iout,'(a)') cbs
    else
-     write(6,'(/)')
+     write(iout,'(/)')
    end if
  end do
 
- write(6,'(/a/)') trim(pse)
+ write(iout,'(/a/)') trim(pse)
 
 !wave function plots
 
@@ -249,71 +251,74 @@
 
      do iprj=1,nproj(l1)
 
-       write(6,'(a,i2,a,f7.2,a/)') trim(plot_title(3)),iprj,', E= ', &
+       write(iout,'(a,i2,a,f7.2,a/)') trim(plot_title(3)),iprj,', E= ', &
 &            epa(iprj,l1,ikap),' Ha"'
-       write(6,'(a/)') trim(x_label(1))
+       write(iout,'(a/)') trim(x_label(1))
        if(nkap==1) then
-         write(6,'(2a,i5,2a)') lead(1),trim(gln(60)),iprj,trim(gln(2*l1+7)),cbs
-         write(6,'(2a,i5, a)') lead(2),trim(gln(60)),iprj,trim(gln(2*l1+8))
+         write(iout,'(2a,i5,2a)') lead(1),trim(gln(60)),iprj, &
+&              trim(gln(2*l1+7)),cbs
+         write(iout,'(2a,i5, a)') lead(2),trim(gln(60)),iprj,trim(gln(2*l1+8))
        else if(ikap==1) then
-         write(6,'(2a,i5,2a)') lead(1),trim(gln(60)),-iprj,trim(gln(2*l1+7)),cbs
-         write(6,'(2a,i5, a)') lead(2),trim(gln(60)),-iprj,trim(gln(2*l1+8))
+         write(iout,'(2a,i5,2a)') lead(1),trim(gln(60)),-iprj, &
+&              trim(gln(2*l1+7)),cbs
+         write(iout,'(2a,i5, a)') lead(2),trim(gln(60)),-iprj,trim(gln(2*l1+8))
        else
-         write(6,'(2a,i5,2a)') lead(1),trim(gln(60)),iprj,trim(gln(2*l1+77)),cbs
-         write(6,'(2a,i5, a)') lead(2),trim(gln(60)),iprj,trim(gln(2*l1+78))
+         write(iout,'(2a,i5,2a)') lead(1),trim(gln(60)),iprj, &
+&              trim(gln(2*l1+77)),cbs
+         write(iout,'(2a,i5, a)') lead(2),trim(gln(60)),iprj,trim(gln(2*l1+78))
        end if
 
-       write(6,'(/a/)') trim(pse)
+       write(iout,'(/a/)') trim(pse)
 
      end do !iprj
 
 ! orthonormal projector plot
      ll=l1-1
      if(ll/=lloc) then
-       write(6,'(a/)') trim(x_label(1))
+       write(iout,'(a/)') trim(x_label(1))
        if(ikap==1) then
-         write(6,'(a,1p,5e11.2)',advance='no') trim(plot_title(6+l1)), &
+         write(iout,'(a,1p,5e11.2)',advance='no') trim(plot_title(6+l1)), &
 &              (evkb(jj,l1,ikap),jj=1,nproj(l1))
        else
-         write(6,'(a,1p,5e11.2)',advance='no') trim(plot_title(10+l1)), &
+         write(iout,'(a,1p,5e11.2)',advance='no') trim(plot_title(10+l1)), &
 &              (evkb(jj,l1,ikap),jj=1,nproj(l1))
        end if
-       write(6,'(a/)')    ' Ha"'
+       write(iout,'(a/)')    ' Ha"'
 
        do jj=1,nproj(l1)
 !run_plot labels the j=l+1/2 (ikap=1) projector lines with -l when nkap=2
          if(nkap==2 .and. ikap==1) then
-           write(6,'(2a,i6,a)',advance='no') lead(jj),trim(gln(70)), &
+           write(iout,'(2a,i6,a)',advance='no') lead(jj),trim(gln(70)), &
 &          -ll,trim(gln(70+jj))
          else
-           write(6,'(2a,i6,a)',advance='no') lead(jj),trim(gln(70)), &
+           write(iout,'(2a,i6,a)',advance='no') lead(jj),trim(gln(70)), &
 &          ll,trim(gln(70+jj))
          end if
          if(jj<nproj(l1)) then
-           write(6,'(a)') cbs
+           write(iout,'(a)') cbs
          else
-           write(6,'(/)')
+           write(iout,'(/)')
          end if
        end do
 
-       write(6,'(/a/)') trim(pse)
+       write(iout,'(/a/)') trim(pse)
 
      end if
 
 !  log derivative plots
 
-     write(6,'(a/)') trim(plot_title(5))
-     write(6,'(a/)') trim(x_label(2))
+     write(iout,'(a/)') trim(plot_title(5))
+     write(iout,'(a/)') trim(x_label(2))
 
      if(ikap==1) then
-       write(6,'(3a)') lead(1),trim(gln(4*l1+19)),cbs
-       write(6,'(2a)') lead(2),trim(gln(4*l1+20))
+       write(iout,'(3a)') lead(1),trim(gln(4*l1+19)),cbs
+       write(iout,'(2a)') lead(2),trim(gln(4*l1+20))
      else
-       write(6,'(3a)') lead(1),trim(gln(4*l1+21)),cbs
-       write(6,'(2a)') lead(2),trim(gln(4*l1+22))
+       write(iout,'(3a)') lead(1),trim(gln(4*l1+21)),cbs
+       write(iout,'(2a)') lead(2),trim(gln(4*l1+22))
      end if
 
-     write(6,'(/a/)') trim(pse)
+     write(iout,'(/a/)') trim(pse)
 
    end do !ikap
  end do !l1
@@ -324,19 +329,19 @@
  if(lmax<3) then
    do l1=lmax+2,4
 
-     write(6,'(a/)') trim(plot_title(5))
-     write(6,'(a/)') trim(x_label(2))
+     write(iout,'(a/)') trim(plot_title(5))
+     write(iout,'(a/)') trim(x_label(2))
 
      do ikap=1,nkap
        if(ikap==1) then
-         write(6,'(3a)') lead(1),trim(gln(4*l1+19)),cbs
-         write(6,'(2a)') lead(2),trim(gln(4*l1+20))
+         write(iout,'(3a)') lead(1),trim(gln(4*l1+19)),cbs
+         write(iout,'(2a)') lead(2),trim(gln(4*l1+20))
        else
-         write(6,'(3a)') lead(1),trim(gln(4*l1+21)),cbs
-         write(6,'(2a)') lead(2),trim(gln(4*l1+22))
+         write(iout,'(3a)') lead(1),trim(gln(4*l1+21)),cbs
+         write(iout,'(2a)') lead(2),trim(gln(4*l1+22))
        end if
 
-       write(6,'(/a/)') trim(pse)
+       write(iout,'(/a/)') trim(pse)
      end do !ikap
    end do !l1
  end if
@@ -344,26 +349,26 @@
 ! Convergence profile
 
  set='set  logscale y'
- write(6,'(a/)') trim(set)
+ write(iout,'(a/)') trim(set)
  set='set  grid'
- write(6,'(a/)') trim(set)
+ write(iout,'(a/)') trim(set)
  set='set  yrange [5.e-6:2.e-2]'
- write(6,'(a/)') trim(set)
- write(6,'(a/)') trim(plot_title(6))
- write(6,'(a/)') trim(x_label(3))
+ write(iout,'(a/)') trim(set)
+ write(iout,'(a/)') trim(plot_title(6))
+ write(iout,'(a/)') trim(x_label(3))
 
  do l1=1,lmax+1
-   write(6,'(2a)',advance='no') lead(l1),trim(gln(46+l1))
+   write(iout,'(2a)',advance='no') lead(l1),trim(gln(46+l1))
    if(l1<lmax+1) then
-     write(6,'(a)') cbs
+     write(iout,'(a)') cbs
    else
-     write(6,'(/)')
+     write(iout,'(/)')
    end if
  end do
 
- write(6,'(/a/)') trim(pse)
+ write(iout,'(/a/)') trim(pse)
 
- write(6,'(a)') 'END_GNU'
+ write(iout,'(a)') 'END_GNU'
 
  return
  end subroutine gnu_script

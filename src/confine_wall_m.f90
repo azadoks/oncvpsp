@@ -34,7 +34,7 @@
  contains
 
  subroutine confine_walls(pf,irel,zz,mmax,rr,vfull,nc,nv,iexc,na,la,fa,ea, &
-&                         nk,kwall,r0,sm)
+&                         nk,kwall,r0,sm,iout)
 !! the wall lines of the strengths kwall(1:nk) beyond r0, kwall(0)=0 the
 !! free atom, and the walls' part of the summary
  use aeatom_m, only: aeatom
@@ -43,6 +43,7 @@
  integer, intent(in) :: irel,mmax,nc,nv,iexc,na(mxstate),la(mxstate),nk
  real(dp), intent(in) :: zz,rr(mmax),vfull(mmax),fa(mxstate)
  real(dp), intent(in) :: ea(mxstate,2),r0
+ integer, intent(in) :: iout
  real(dp), intent(inout) :: kwall(0:nk)
  type(confine_summary_t), intent(inout) :: sm
  integer :: na_ps(mxstate),la_ps(mxstate),nprj(mxlin+1)
@@ -66,12 +67,12 @@
    nprj(ii)=pf%nvkb(ii,1)
  end do
  call valence_states(nc,nv,la,fa,na_ps,la_ps,fa_ps)
- write(6,'(a)') '# wall_r0 r0(bohr)'
- write(6,'(2a)') '# wall k(Ha/bohr**2) etot_ae(Ha) etot_ps(Ha) de_ae(Ha)', &
+ write(iout,'(a)') '# wall_r0 r0(bohr)'
+ write(iout,'(2a)') '# wall k(Ha/bohr**2) etot_ae(Ha) etot_ps(Ha) de_ae(Ha)', &
 &     ' de_ps(Ha)'
- write(6,'(a)') '# wall_eig k n l ikap e_ae(Ha) e_ps(Ha)'
- write(6,'(a)') '# wall_failed k atom'
- write(6,'(a,1p,e24.16)') 'wall_r0',r0
+ write(iout,'(a)') '# wall_eig k n l ikap e_ae(Ha) e_ps(Ha)'
+ write(iout,'(a)') '# wall_failed k atom'
+ write(iout,'(a,1p,e24.16)') 'wall_r0',r0
  sm%nwfail=0
  ierrae=0
  ierrps=0
@@ -92,7 +93,7 @@
    ierrae=0
    call aeatom(irel,nkap,na,la,eaw(:,1:nkap),fa,rpk(:,1:nkap),nc,nc+nv, &
 &              itae,rhoc,rhoa,rr,vi,zz,mmax,iexc,etae(ik),eterm,res,ierrae, &
-&              vext,.true.,ifail)
+&              vext,.true.,iout,ifail)
    if(ifail/=0) error stop 1
    eigae(:,:,ik)=eaw(:,:)
    if(ik==0 .or. ierrps/=0) then
@@ -103,24 +104,24 @@
    call psatom(na_ps,la_ps,ea_ps(:,1:nkap),fa_ps,nv,itps,pf%rhomod,rhops, &
 &              rr,pf%rcmax,mmax,mxprj,iexc,etps(ik),nprj,vpuns,pf%lloc, &
 &              pf%vlocpw,pf%vkbpw(:,:,1:nkap),pf%evkb(:,:,1:nkap),ierrps, &
-&              nkap,vext,ifail)
+&              nkap,vext,iout,ifail)
    if(ifail/=0) error stop 1
    eigps(1:nv,:,ik)=ea_ps(1:nv,:)
-   if(ierrae/=0) write(6,'(a,1p,e24.16,a)') 'wall_failed',kwall(ik),' ae'
-   if(ierrps/=0) write(6,'(a,1p,e24.16,a)') 'wall_failed',kwall(ik),' ps'
+   if(ierrae/=0) write(iout,'(a,1p,e24.16,a)') 'wall_failed',kwall(ik),' ae'
+   if(ierrps/=0) write(iout,'(a,1p,e24.16,a)') 'wall_failed',kwall(ik),' ps'
    if(ik==0 .and. (ierrae/=0 .or. ierrps/=0)) then
-     write(6,'(a)') 'oncvpsp_confine: ERROR the free atom failed'
+     write(iout,'(a)') 'oncvpsp_confine: ERROR the free atom failed'
      error stop 1
    end if
    if(ierrae/=0 .or. ierrps/=0) then
      sm%nwfail=sm%nwfail+1
      cycle
    end if
-   write(6,'(a,1p,5e24.16)') 'wall',kwall(ik),etae(ik),etps(ik), &
+   write(iout,'(a,1p,5e24.16)') 'wall',kwall(ik),etae(ik),etps(ik), &
 &       etae(ik)-etae(0),etps(ik)-etps(0)
    if(ik>0) sm%sdde=max(sm%sdde,abs(etps(ik)-etps(0)-etae(ik)+etae(0)))
    call write_wall_eig(nc,nv,na,la,nkap,kwall(ik),eigae(:,:,ik), &
-&                      eigps(:,:,ik))
+&                      eigps(:,:,ik),iout)
  end do
  deallocate(vext,rhoc,rhoa,vi,rhops,vpuns,eigae,eigps)
  end subroutine confine_walls
@@ -144,16 +145,17 @@
  end do
  end subroutine valence_states
 
- subroutine write_wall_eig(nc,nv,na,la,nkap,kk,eigae,eigps)
+ subroutine write_wall_eig(nc,nv,na,la,nkap,kk,eigae,eigps,iout)
 !! the wall_eig lines of the strength kk: the all-electron valence
 !! eigenvalues eigae(nc+1:nc+nv) and the pseudo-atom's eigps(1:nv)
  integer, intent(in) :: nc,nv,na(mxstate),la(mxstate),nkap
  real(dp), intent(in) :: kk,eigae(mxstate,2),eigps(mxstate,2)
+ integer, intent(in) :: iout
  integer :: jj,ll,ikap
  do jj=1,nv
    ll=la(nc+jj)
    do ikap=1,merge(1,nkap,ll==0)
-     write(6,'(a,1p,e24.16,3i4,2e24.16)') 'wall_eig',kk,na(nc+jj),ll, &
+     write(iout,'(a,1p,e24.16,3i4,2e24.16)') 'wall_eig',kk,na(nc+jj),ll, &
 &         ikap,eigae(nc+jj,ikap),eigps(jj,ikap)
    end do
  end do

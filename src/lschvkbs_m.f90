@@ -25,7 +25,8 @@
 
  contains
 
- subroutine lschvkbs(ll,ivkb,ee,rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,mch,ifail)
+ subroutine lschvkbs(ll,ivkb,ee,rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,mch, &
+&      iout,ifail)
 
 !! Normalized scattering state for pseudopotential, fully non-local unless
 !! ivkb=0, which should only happen if ll=lloc
@@ -42,6 +43,7 @@
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param mmax  size of log grid
 !! @param mch  index of radius to which uu is computed
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
@@ -59,6 +61,7 @@
 
 !Output variables
  real(dp), intent(out) :: uu(mmax),up(mmax)
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 
@@ -77,7 +80,7 @@
  uu(:)=0.0d0
  up(:)=0.0d0
 
- call vkboutwf(ll,ivkb,ee,vkbpw,evkb,rr,vloc,vlocpw,uu,up,mmax,mch,ifail)
+ call vkboutwf(ll,ivkb,ee,vkbpw,evkb,rr,vloc,vlocpw,uu,up,mmax,mch,iout,ifail)
  if(ifail/=0) return
 
 !perform normalization sum

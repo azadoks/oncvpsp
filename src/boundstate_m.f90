@@ -25,7 +25,8 @@
 
  contains
 
- subroutine boundstate(irel,nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch,ifail)
+ subroutine boundstate(irel,nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch, &
+&      iout,ifail)
 
 !! Finds a bound state of an all-electron atomic potential: with the
 !! non-relativistic or scalar-relativistic Schroedinger equation (lschfb), or
@@ -45,6 +46,7 @@
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param mmax  size of log grid
 !! @param mch  matching mesh point for inward-outward integrations
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
@@ -64,14 +66,15 @@
 
 !Output variables
  integer, intent(out) :: ierr
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
  ifail=0
  if(irel==2) then
-   call ldiracfb(nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch,ifail)
+   call ldiracfb(nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch,iout,ifail)
    if(ifail/=0) return
  else
-   call lschfb(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,irel,ifail)
+   call lschfb(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,irel,iout,ifail)
    if(ifail/=0) return
  end if
  return

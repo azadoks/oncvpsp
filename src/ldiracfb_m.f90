@@ -25,7 +25,7 @@
 
  contains
 
- subroutine ldiracfb(nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch,ifail)
+ subroutine ldiracfb(nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch,iout,ifail)
 
 !! Finds relativistic bound states of an al-electron potential
 !!
@@ -46,6 +46,7 @@
 !! @param mch  mesh point just beyond the classical turning point, where
 !!             the inward and outward integrations are matched (at the
 !!             continuous turning point, match_m)
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
@@ -69,6 +70,7 @@
 
 !Output variables
  integer, intent(out) :: ierr
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -101,17 +103,17 @@
 
 ! check arguments
  if(ll>nn-1) then
-   write(6,'(/a,i4,a,i4)') 'ldiracfb: ERROR ll =',ll,' > nn =',nn
+   write(iout,'(/a,i4,a,i4)') 'ldiracfb: ERROR ll =',ll,' > nn =',nn
    ierr=1
    return
  end if
  if(kap/=ll .and. kap/=-(ll+1)) then
-   write(6,'(/a,i4,a,i4)') 'ldiracfb: ERROR kap =',kap,' ll =',ll
+   write(iout,'(/a,i4,a,i4)') 'ldiracfb: ERROR kap =',kap,' ll =',ll
    ierr=2
    return
  end if
  if(zz<1.0d0) then
-   write(6,'(/a,f12.8)') 'ldiracfb: ERROR zz =',zz
+   write(iout,'(/a,f12.8)') 'ldiracfb: ERROR zz =',zz
    ierr=3
    return
  end if
@@ -215,7 +217,7 @@
  integer, intent(out) :: ifail
 
  ifail=0
- call match_point(rr,cf,mmax,mchs,xmch,ifail)
+ call match_point(rr,cf,mmax,mchs,xmch,iout,ifail)
  if(ifail/=0) return
  go(:)=gu(lo:hi)
  fo(:)=fu(lo:hi)

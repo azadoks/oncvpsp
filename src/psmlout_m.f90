@@ -32,7 +32,7 @@
  contains
 
  subroutine psmlout(inp,vkb,evkb,mxprj,rr,vpuns,rho,rhomod,rcore,zion,mmax, &
-&                   nrl,epstot,rc0,fcfact,fcgrid,rcgrid,log_mesh,irel,nkap)
+&                   nrl,epstot,rc0,fcfact,fcgrid,rcgrid,log_mesh,irel,nkap,iout)
 
 !! writes the pseudopotential to the output in PSML format, between
 !! 'Begin PSML' and 'END_PSP' markers
@@ -62,6 +62,7 @@
 !!                  it (else 0)
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param nkap  number of kappa per l: 1, or 2 for irel=2
+!! @param iout  unit of the text output
 !!
 !! Alberto Garcia, February 1, 2015
 
@@ -91,6 +92,7 @@
 !the core radii as read (rc0), for the echo
  real(dp), intent(in) :: rc0(mxlin+1)
  real(dp), intent(in) :: fcgrid(3),rcgrid(3),log_mesh(3)
+ integer, intent(in) :: iout
 
 !Local variables
  type(xmlf_t) :: xf
@@ -112,7 +114,7 @@
 
 ! the document goes to the output, between markers, as do the psp8 and
 ! upf files
- write(6,'(/a)') 'Begin PSML'
+ write(iout,'(/a)') 'Begin PSML'
  call xml_OpenUnit(6,xf, indent=.false.)
 
  call xml_AddXMLDeclaration(xf,"UTF-8")
@@ -162,7 +164,7 @@
 
 
  call xml_Close(xf)
- write(6,'(/a)') 'END_PSP'
+ write(iout,'(/a)') 'END_PSP'
 
  deallocate(f0,r0)
  return

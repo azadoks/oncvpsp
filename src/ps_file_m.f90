@@ -86,7 +86,7 @@
 
  subroutine write_ps_file(fname,irel,nkap,atsym,zz,mmax,rr,lmax,lloc, &
 &                         nproj,rc,epsh1,epsh2,depsh,rxpsh,epa,vp,vlocpw, &
-&                         evkb,vkbpw,iexc,rcmax,vpuns,rhov,rhomod,ifail)
+&                         evkb,vkbpw,iexc,rcmax,vpuns,rhov,rhomod,iout,ifail)
 
 !! writes the pseudopotential data file
 !!
@@ -115,6 +115,7 @@
 !! @param vpuns  unscreened local potential
 !! @param rhov  valence pseudo-density of the reference configuration
 !! @param rhomod  model core charge
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
@@ -130,6 +131,7 @@
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1,nkap)
 
 !Output variables
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -139,7 +141,7 @@
  open(newunit=unit,file=fname,access='stream',form='unformatted', &
 &     status='replace',action='write',iostat=ios)
  if(ios/=0) then
-   write(6,'(2a)') 'write_ps_file: ERROR cannot open ',trim(fname)
+   write(iout,'(2a)') 'write_ps_file: ERROR cannot open ',trim(fname)
    ifail=1
    return
  end if
@@ -170,12 +172,13 @@
  return
  end subroutine write_ps_file
 
- subroutine read_ps_file(fname,pf,ifail)
+ subroutine read_ps_file(fname,pf,iout,ifail)
 
 !! reads the pseudopotential data file
 !!
 !! @param fname  file to read
 !! @param pf  its contents
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
@@ -183,6 +186,7 @@
 
 !Output variables
  type(ps_file_t), intent(out) :: pf
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -193,27 +197,27 @@
  open(newunit=unit,file=fname,access='stream',form='unformatted', &
 &     status='old',action='read',iostat=ios)
  if(ios/=0) then
-   write(6,'(2a)') 'read_ps_file: ERROR cannot open ',trim(fname)
+   write(iout,'(2a)') 'read_ps_file: ERROR cannot open ',trim(fname)
    ifail=1
    return
  end if
  read(unit,iostat=ios) magic_f,version_f,pf%irel
  if(ios/=0 .or. magic_f/=magic) then
-   write(6,'(2a)') 'read_ps_file: ERROR not a pseudopotential data file: ', &
+   write(iout,'(2a)') 'read_ps_file: ERROR not a pseudopotential data file: ', &
 &        trim(fname)
    ifail=1
    close(unit)
    return
  end if
  if(version_f/=version .and. byteswap(version_f)==version) then
-   write(6,'(2a)') 'read_ps_file: ERROR file was written on a machine', &
+   write(iout,'(2a)') 'read_ps_file: ERROR file was written on a machine', &
 &        ' with the other byte order'
    ifail=1
    close(unit)
    return
  end if
  if(version_f/=version) then
-   write(6,'(a,i4,a,i4)') 'read_ps_file: ERROR file format version', &
+   write(iout,'(a,i4,a,i4)') 'read_ps_file: ERROR file format version', &
 &        version_f,' but this program reads version',version
    ifail=1
    close(unit)
@@ -229,7 +233,7 @@
  read(unit) pf%epsh1,pf%epsh2,pf%depsh,pf%rxpsh
  read(unit) pf%epa(1:4,1:pf%nkap)
  read(unit) pf%vloc(:,:)
- call read_pw(unit,pf%mmax,pf%vlocpw,ifail)
+ call read_pw(unit,pf%mmax,pf%vlocpw,iout,ifail)
  if(ifail/=0) then
    close(unit)
    return
@@ -241,7 +245,7 @@
      if(nvkb==0) cycle
      read(unit) pf%evkb(1:nvkb,l1,ikap)
      do jj=1,nvkb
-       call read_pw(unit,pf%mmax,pf%vkbpw(jj,l1,ikap),ifail)
+       call read_pw(unit,pf%mmax,pf%vkbpw(jj,l1,ikap),iout,ifail)
        if(ifail/=0) then
          close(unit)
          return
@@ -304,17 +308,18 @@
  write(unit) pw%vals(:,1:pw%nseg)
  end subroutine write_pw
 
- subroutine read_pw(unit,mmax,pw,ifail)
+ subroutine read_pw(unit,mmax,pw,iout,ifail)
 !! reads a piecewise function written by write_pw
  integer, intent(in) :: unit,mmax
  type(piecewise_t), intent(out) :: pw
  integer :: nseg
  real(dp) :: bound(0:pw_maxseg)
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
  ifail=0
  read(unit) nseg
  if(nseg<1 .or. nseg>pw_maxseg) then
-   write(6,'(a,i0)') 'read_ps_file: ERROR number of segments ',nseg
+   write(iout,'(a,i0)') 'read_ps_file: ERROR number of segments ',nseg
    ifail=1
    return
  end if

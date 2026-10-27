@@ -102,7 +102,7 @@
 
  contains
 
- subroutine outwf_setup(ll,rr,mmax,vloc,vlocpw,nsrc,srcpw,ow,ifail)
+ subroutine outwf_setup(ll,rr,mmax,vloc,vlocpw,nsrc,srcpw,ow,iout,ifail)
 
 !! the segments and their grids, with the potential and the sources on
 !! them: everything that does not depend on the energy
@@ -117,6 +117,7 @@
 !! @param nsrc  number of sources
 !! @param srcpw  the sources' pieces, all with the same bounds
 !! @param ow  the setup
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
@@ -126,6 +127,7 @@
 
 !Output variables
  type(outwf_t), intent(out), target :: ow
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -165,7 +167,7 @@
    end if
    sg%ipv=pw_segment(vlocpw,rm)
    if(sg%ipv==0) then
-     write(6,'(a)') &
+     write(iout,'(a)') &
 &          'outwf_setup: ERROR the potential''s pieces end inside the mesh'
      ifail=1
      return
@@ -233,7 +235,7 @@
    end do
  end do
  if(nbrk>og_maxseg-1) then
-   write(6,'(a,i0)') 'outwf_setup: ERROR too many breakpoints ',nbrk
+   write(iout,'(a,i0)') 'outwf_setup: ERROR too many breakpoints ',nbrk
    ifail=1
    return
  end if
@@ -264,7 +266,7 @@
    sg%tend=log(ow%bound(1)/rr(1))/al
    i1=floor(sg%tend)+1
    if(i1<4) then
-     write(6,'(a,es12.4)') &
+     write(iout,'(a,es12.4)') &
 &              'outwf_setup: ERROR breakpoint below the 4th node, r=', &
 &              ow%bound(1)
      ifail=1
@@ -272,7 +274,7 @@
    end if
    npt=min(mmax,ceiling(sg%tend)+og_ext+1)
    if(npt-1<ceiling(sg%tend)+og_ext) then
-     write(6,'(a,es12.4)') &
+     write(iout,'(a,es12.4)') &
 &              'outwf_setup: ERROR breakpoint too close to the mesh end, r=', &
 &              ow%bound(1)
      ifail=1
@@ -324,14 +326,14 @@
  end if
  npt=min(npt,floor(plast-sg%t0)+1)
  if(kk<nseg .and. npt-1<ceiling(sg%tend)+og_ext) then
-   write(6,'(a,es12.4)') &
+   write(iout,'(a,es12.4)') &
 &            'outwf_setup: ERROR breakpoint too close to the mesh end, r=', &
 &            ow%bound(kk)
    ifail=1
    return
  end if
  if(sg%t0+nprime>plast) then
-   write(6,'(a,es12.4)') &
+   write(iout,'(a,es12.4)') &
 &            'outwf_setup: ERROR breakpoint too close to the mesh end, r=', &
 &            ow%bound(kk-1)
    ifail=1
@@ -877,7 +879,7 @@
  return
  end function outwf_count
 
- integer function outwf_index(ow,evkb,ovl,mnode,ifail)
+ integer function outwf_index(ow,evkb,ovl,mnode,iout,ifail)
 
 !! the number of eigenvalues below the energy of the last outwf_integrate
 !! of the radial equation with the projectors of coefficients evkb on
@@ -903,6 +905,7 @@
 !! @param evkb  the projectors' coefficients
 !! @param ovl  the overlaps of outwf_overlaps
 !! @param mnode  the last mesh point counted
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
@@ -912,6 +915,7 @@
  integer, intent(in) :: mnode
 
 !Output variables
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -952,7 +956,7 @@
  if(ow%seg(kl)%uu(jl,1)==0.0d0 .and. jl>0) jl=jl-1
  rlast=ow%seg(kl)%rg(jl)
  if(rlast<ow%rsrc) then
-   write(6,'(/a,1p,2e14.6)') 'outwf_index: ERROR R inside the sources,'// &
+   write(iout,'(/a,1p,2e14.6)') 'outwf_index: ERROR R inside the sources,'// &
 &       ' R, rsrc=',rlast,ow%rsrc
    ifail=1
    return
@@ -976,7 +980,7 @@
  end do
  call dsyev('N','U',nact,mm,nact,ev,work,size(work),info)
  if(info/=0) then
-   write(6,'(/a,i4)') 'outwf_index: dsyev ERROR, stopping info =',info
+   write(iout,'(/a,i4)') 'outwf_index: dsyev ERROR, stopping info =',info
    ifail=1
    return
  end if
@@ -986,7 +990,7 @@
  end function outwf_index
 
  integer function outwf_index_at(ll,rr,mmax,vloc,vlocpw,nsrc,srcpw,evkb, &
-&                                ee,mnode,ifail)
+&                                ee,mnode,iout,ifail)
 
 !! outwf_index of the solution at the energy ee, on its own setup
 !!
@@ -1000,6 +1004,7 @@
 !! @param evkb  the projectors' coefficients
 !! @param ee  energy (Ha)
 !! @param mnode  the last mesh point counted
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
@@ -1008,6 +1013,7 @@
  type(piecewise_t), intent(in) :: vlocpw,srcpw(nsrc)
 
 !Output variables
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -1016,16 +1022,17 @@
 
  ifail=0
  allocate(uu(mmax),up(mmax))
- call outwf_setup(ll,rr,mmax,vloc,vlocpw,nsrc,srcpw,ow,ifail)
+ call outwf_setup(ll,rr,mmax,vloc,vlocpw,nsrc,srcpw,ow,iout,ifail)
  if(ifail/=0) return
- call outwf_solve(ow,ee,evkb,mnode,mnode,uu,up,outwf_index_at,ifail=ifail)
+ call outwf_solve(ow,ee,evkb,mnode,mnode,uu,up,outwf_index_at, &
+&      iout=iout,ifail=ifail)
  if(ifail/=0) return
  call outwf_free(ow)
  deallocate(uu,up)
  return
  end function outwf_index_at
 
- subroutine outwf_solve(ow,ep,evkb,mch,mnode,uu,up,neig,ifail)
+ subroutine outwf_solve(ow,ep,evkb,mch,mnode,uu,up,neig,iout,ifail)
 
 !! the outward solution with the sources as Vanderbilt-Kleinman-Bylander
 !! projectors of coefficients evkb: the homogeneous solution plus the
@@ -1043,6 +1050,7 @@
 !! @param up  its derivative in the mesh index
 !! @param neig  optional, the number of eigenvalues below ep on
 !!              (0, r(mnode)] (outwf_index)
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input/output variables
@@ -1056,6 +1064,7 @@
 !Output variables
  real(dp), intent(out) :: uu(ow%mmax),up(ow%mmax)
  integer, intent(out), optional :: neig
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -1070,7 +1079,7 @@
    allocate(gg(nsrc,nsrc),gg0(nsrc),ipiv(nsrc),ovl(nsrc+1,nsrc))
    call outwf_overlaps(ow,ovl)
    if(present(neig)) then
-     neig=outwf_index(ow,evkb,ovl,mnode,ifail)
+     neig=outwf_index(ow,evkb,ovl,mnode,iout,ifail)
      if(ifail/=0) return
    end if
    do jj=1,nsrc
@@ -1082,7 +1091,7 @@
    end do
    call dgesv(nsrc,1,gg,nsrc,ipiv,gg0,nsrc,info)
    if(info/=0) then
-     write(6,'(/a,i4)') 'outwf_solve: dgesv ERROR, stopping info =',info
+     write(iout,'(/a,i4)') 'outwf_solve: dgesv ERROR, stopping info =',info
      ifail=1
      return
    end if
@@ -1091,7 +1100,7 @@
  end if
  if(nsrc==0 .and. present(neig)) then
    allocate(ovl(1,0))
-   neig=outwf_index(ow,evkb,ovl,mnode,ifail)
+   neig=outwf_index(ow,evkb,ovl,mnode,iout,ifail)
    if(ifail/=0) return
    deallocate(ovl)
  end if

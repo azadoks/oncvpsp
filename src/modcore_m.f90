@@ -404,7 +404,7 @@
  deallocate(lf)
  end subroutine core_crossover
 
- subroutine poly_core_fit(rstar,fmatch,a0,aco,ifail)
+ subroutine poly_core_fit(rstar,fmatch,a0,aco,iout,ifail)
 
 !! the polynomial model core of icmod 1, p(r) = a0 + sum_j aco(j) r**(j+2),
 !! j=1..5, that matches fmatch at rstar and is barely monotonic on
@@ -421,6 +421,7 @@
 !! @param fmatch  the core charge and its first 4 derivatives at rstar
 !! @param a0  constant term
 !! @param aco  coefficients of r**3..r**7
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
@@ -429,6 +430,7 @@
 
 !Output variables
  real(dp), intent(out) :: a0,aco(5)
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -450,7 +452,7 @@
  acoa(:)=fmatch(:)
  call dgesv(5,1,amat,5,ipvt,acoa,5,info)
  if(info/=0) then
-   write(6,'(/a,i4)') 'poly_core_fit: ERROR singular match, dgesv info =', &
+   write(iout,'(/a,i4)') 'poly_core_fit: ERROR singular match, dgesv info =', &
 &        info
    ifail=1
    return
@@ -488,7 +490,7 @@
    end do
    call dhseqr('E','N',ncub,1,ncub,hess,3,wr,wi,zz,1,work,size(work),info)
    if(info/=0) then
-     write(6,'(/a,i4)') 'poly_core_fit: ERROR dhseqr info =',info
+     write(iout,'(/a,i4)') 'poly_core_fit: ERROR dhseqr info =',info
      ifail=1
      return
    end if
@@ -550,7 +552,7 @@
 
  end subroutine poly_core_fit
 
- subroutine teter_scale(ymatch,xx,ierr,ifail)
+ subroutine teter_scale(ymatch,xx,ierr,iout,ifail)
 
 !! the argument x of the Teter function, 0 < x < 1.5, at which its
 !! logarithmic slope x g'(x)/g(x) = 2 x h'/h is ymatch (< 0); it falls
@@ -561,6 +563,7 @@
 !! @param ymatch  r rho'/rho of the core charge at the matching radius
 !! @param xx  the argument
 !! @param ierr  0, or 1 if ymatch is not in the range of x g'/g on (0, 1.5)
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
@@ -569,6 +572,7 @@
 !Output variables
  real(dp), intent(out) :: xx
  integer, intent(out) :: ierr
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -601,7 +605,7 @@
    xx=xx+dx
  end do
  if(it>200) then
-   write(6,'(/a)') 'teter_scale: ERROR not converged'
+   write(iout,'(/a)') 'teter_scale: ERROR not converged'
    ifail=1
    return
  end if
@@ -698,7 +702,7 @@
  end subroutine core_pieces_smooth
 
  subroutine d2exc_baseline(rhotae,rhoc,rhoae,rhotps,rhops,rr,zion,iexc,nc, &
-&                          nv,la,rcut,mmax,rhomod,d2excae,d2excps,d2mdiff)
+&                          nv,la,rcut,mmax,rhomod,d2excae,d2excps,d2mdiff,iout)
 
 !! the start of the model core analysis the model cores share: the
 !! all-electron second derivatives of Exc in the occupations, and those of
@@ -722,6 +726,7 @@
 !! @param d2excae  all-electron second derivatives
 !! @param d2excps  pseudo-atom second derivatives with no core correction
 !! @param d2mdiff  their rms difference
+!! @param iout  unit of the text output
 
 !Input variables
  use der2exc_m, only: der2exc
@@ -730,6 +735,7 @@
  real(dp), intent(in) :: rhotae(mmax),rhoc(mmax),rhoae(mmax,nv)
  real(dp), intent(in) :: rhotps(mmax),rhops(mmax,nv),rr(mmax)
  real(dp), intent(in) :: zion,rcut
+ integer, intent(in) :: iout
 
 !Output variables
  real(dp), intent(out) :: rhomod(mmax,nrhomod)
@@ -739,7 +745,7 @@
 !Local variables
  integer :: jj,kk
 
- write(6,'(/a/a)') 'Model core correction analysis',&
+ write(iout,'(/a/a)') 'Model core correction analysis',&
 &                  '  based on d2Exc/dn_idn_j'
 
 ! get derivatives of all-electron xc energy
@@ -747,9 +753,9 @@
  call der2exc(rhotae,rhoc,rhoae,rr,d2excae,d2excps,d2mdiff, &
 &                   zion,iexc,nc,nv,la,rcut,mmax)
 
- write(6,'(/a/)') 'd2excae - all-electron derivatives'
+ write(iout,'(/a/)') 'd2excae - all-electron derivatives'
  do kk=1,nv
-   write(6,'(1p,4d16.6)') (d2excae(kk,jj),jj=1,nv)
+   write(iout,'(1p,4d16.6)') (d2excae(kk,jj),jj=1,nv)
  end do
 
 ! compute d2excps with no core correction
@@ -759,12 +765,12 @@
 &                   zion,iexc,nc,nv,la,rcut,mmax)
 
  call d2exc_report('d2excps - pseudofunction derivatives with no core '// &
-&                  'correction',d2excps,nv,d2mdiff)
+&                  'correction',d2excps,nv,d2mdiff,iout)
 
  return
  end subroutine d2exc_baseline
 
- subroutine d2exc_report(title,d2excps,nv,d2mdiff)
+ subroutine d2exc_report(title,d2excps,nv,d2mdiff,iout)
 
 !! writes the pseudo-atom's second derivatives of Exc under title, and
 !! their rms difference from the all-electron ones
@@ -773,20 +779,22 @@
 !! @param d2excps  the pseudo-atom's second derivatives
 !! @param nv  number of valence states
 !! @param d2mdiff  their rms difference from the all-electron ones
+!! @param iout  unit of the text output
 
 !Input variables
  character(len=*), intent(in) :: title
  integer, intent(in) :: nv
  real(dp), intent(in) :: d2excps(nv,nv),d2mdiff
+ integer, intent(in) :: iout
 
 !Local variables
  integer :: jj,kk
 
- write(6,'(/a/)') title
+ write(iout,'(/a/)') title
  do kk=1,nv
-   write(6,'(1p,4d16.6)') (d2excps(kk,jj),jj=1,nv)
+   write(iout,'(1p,4d16.6)') (d2excps(kk,jj),jj=1,nv)
  end do
- write(6,'(/a,1p,e16.6)') 'rms 2nd derivative error',d2mdiff
+ write(iout,'(/a,1p,e16.6)') 'rms 2nd derivative error',d2mdiff
 
  return
  end subroutine d2exc_report

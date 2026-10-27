@@ -20,6 +20,7 @@
  use free_tail_m, only: free_tail, free_tail_width, tail_kinetic
  use ugrid_m, only: ug_weights
  implicit none
+ integer, parameter :: iout=6
 
 !Local variables
  integer :: ifail
@@ -45,9 +46,9 @@
  uu(:) = sin(kk*rr)
  up(:) = al*rr*kk*cos(kk*rr)
  call free_tail(0, 0, -1, ee, rr, vv, uu, up, mmax, rc, qcut, hh, nr, &
-&               ulin, dlin, ifail=ifail)
+&               ulin, dlin, iout=iout, ifail=ifail)
  if(ifail /= 0) error stop 1
- call free_tail_width(qcut, ee, wl, ifail)
+ call free_tail_width(qcut, ee, wl, iout, ifail)
  if(ifail /= 0) error stop 1
  r0 = rc + 6.0_dp*wl
  err = 0.0_dp
@@ -78,7 +79,7 @@
 
 ! leakage
  call free_tail(0, 0, -1, ee, rr, vv, uu, up, mmax, rc, qcut, hh, n2, &
-&               u2, d2, 2.0_dp, ifail=ifail)
+&               u2, d2, 2.0_dp, iout=iout, ifail=ifail)
  if(ifail /= 0) error stop 1
  call check('leakage sin(k r)', leak(), 1.0e-13_dp)
 
@@ -88,10 +89,10 @@
  uu(:) = sinh(kp*rr)
  up(:) = al*rr*kp*cosh(kp*rr)
  call free_tail(0, 0, -1, ee, rr, vv, uu, up, mmax, rc, qcut, hh, nr, &
-&               ulin, dlin, ifail=ifail)
+&               ulin, dlin, iout=iout, ifail=ifail)
  if(ifail /= 0) error stop 1
  call free_tail(0, 0, -1, ee, rr, vv, uu, up, mmax, rc, qcut, hh, n2, &
-&               u2, d2, 1.1_dp, ifail=ifail)
+&               u2, d2, 1.1_dp, iout=iout, ifail=ifail)
  if(ifail /= 0) error stop 1
  call check('leakage sinh(kappa r)', leak(), 1.0e-13_dp)
 
@@ -117,11 +118,11 @@
  real(dp) :: lm, l0, lp
  integer :: ifail
 
- call free_tail_width(qcut, -hd, lm, ifail)
+ call free_tail_width(qcut, -hd, lm, iout, ifail)
  if(ifail /= 0) error stop 1
- call free_tail_width(qcut, 0.0_dp, l0, ifail)
+ call free_tail_width(qcut, 0.0_dp, l0, iout, ifail)
  if(ifail /= 0) error stop 1
- call free_tail_width(qcut, hd, lp, ifail)
+ call free_tail_width(qcut, hd, lp, iout, ifail)
  if(ifail /= 0) error stop 1
  second = (lm - 2.0_dp*l0 + lp)/hd**2
  end function second

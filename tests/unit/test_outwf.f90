@@ -35,6 +35,7 @@
 &                   outwf_nodes, outwf_count, outwf_free
  use lapack_m, only: dgels
  implicit none
+ integer, parameter :: iout=6
 
 !Local variables
  real(dp), parameter :: rr1 = 5.0e-5_dp, rmax = 45.0_dp, amesh = 1.006_dp
@@ -155,7 +156,7 @@
    spw(2)%vals(:, 2) = spw(2)%vals(:, 2) - (rr - b1q)**2
  end if
 
- call outwf_setup(ll, rr, mm, vv, vpw, 2, spw, ow, ifail)
+ call outwf_setup(ll, rr, mm, vv, vpw, 2, spw, ow, iout, ifail)
  if(ifail /= 0) error stop 1
  call outwf_integrate(ow, ee, i3q)
  do isol = 1, 3
@@ -199,7 +200,7 @@
  vpw%vals(:, 1) = -2.0_dp/rr
  vpw%vals(:, 2) = -2.0_dp/rr
  call pw_node_values(rr, mm, vpw, vv)
- call outwf_setup(ll, rr, mm, vv, vpw, 0, spw, ow, ifail)
+ call outwf_setup(ll, rr, mm, vv, vpw, 0, spw, ow, iout, ifail)
  if(ifail /= 0) error stop 1
  call outwf_integrate(ow, -0.35_dp, i20)
  nodeq = outwf_count(ow, 1, 0.05_dp, i20)

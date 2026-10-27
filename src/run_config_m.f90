@@ -29,7 +29,7 @@
 &                         natcnf,latcnf,fatcnf,eatcnf,etstcnf,nc,rhov,rhomod, &
 &                         rr,rcmax,mmax,mxprj,iexc,etot,epstot,nproj,vpuns, &
 &                         lloc,vlocpw,vkbpw,evkb,irel,nkap,ntc,itc,etc,dtc, &
-&                         ifail)
+&                         iout,ifail)
 
 !! self-consistent pseudoatom calculation for test configuration jj, compared
 !! with the all-electron results for the reference and test configurations
@@ -66,6 +66,7 @@
 !! @param dtc  the all-electron and pseudo total-energy differences from
 !!             the reference configuration and their difference, the
 !!             excitation error (Ha) (output)
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use config_ae_m, only: config_ae_warning
@@ -95,6 +96,7 @@
 !Output variables
  integer, intent(out) :: ntc,itc(3,2*mxstate)
  real(dp), intent(out) :: etc(3,2*mxstate),dtc(3)
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -141,7 +143,8 @@
  etc(:,:)=0.0d0
  dtc(:)=0.0d0
  if(istcnf(jj)/=0) then
-   call config_ae_warning(jj,irel,istcnf,ierrcnf,itcnf,kerrcnf,natcnf,latcnf)
+   call config_ae_warning(jj,irel,istcnf,ierrcnf,itcnf,kerrcnf,natcnf,latcnf, &
+&        iout)
    return
  end if
 
@@ -176,16 +179,16 @@
 
  call psatom(natp,latp,eatp,fatp,nvt,it,rhocps,rho, &
 &           rr,rcmax,mmax,mxprj,iexc,etsttot,nproj,vpuns,lloc, &
-&           vlocpw,vkbpw,evkb,ierr,nkap,vfree,ifail)
+&           vlocpw,vkbpw,evkb,ierr,nkap,vfree,iout,ifail)
  if(ifail/=0) return
 
  if(ierr/=0) then
    if(irel==2) then
-     write(6,'(a/a,i2)') &
+     write(iout,'(a/a,i2)') &
 &          'run_config_r: WARNING for fully non-local PS atom,', &
 &          ' WARNING no output for configuration',jj
    else
-     write(6,'(a,a/a,i2)') &
+     write(iout,'(a,a/a,i2)') &
 &          'run_config: WARNING for fully non-local PS atom,', &
 &          ' stg. 1', &
 &          ' WARNING no output for configuration',jj
@@ -204,16 +207,16 @@
 
  call psatom(natp,latp,eatp,fatp,nvt,it,rhocps,rho, &
 &           rr,rcmax,mmax,mxprj,iexc,etsttot,nproj,vpuns,lloc, &
-&           vlocpw,vkbpw,evkb,ierr,nkap,vfree,ifail)
+&           vlocpw,vkbpw,evkb,ierr,nkap,vfree,iout,ifail)
  if(ifail/=0) return
 
  if(ierr/=0) then
    if(irel==2) then
-     write(6,'(a/a,i2)') &
+     write(iout,'(a/a,i2)') &
 &          'run_config_r: WARNING for fully non-local PS atom,', &
 &          ' WARNING no output for configuration',jj
    else
-     write(6,'(a,a/a,i2)') &
+     write(iout,'(a,a/a,i2)') &
 &          'run_config: WARNING for fully non-local PS atom,', &
 &          ' stg. 2', &
 &          ' WARNING no output for configuration',jj
@@ -238,14 +241,15 @@
 
  subroutine write_results
 !! the eigenvalues and energies of the all-electron and pseudo atoms
- write(6,'(/a)') '   n   l     f        eae           eps        diff'
+ write(iout,'(/a)') '   n   l     f        eae           eps        diff'
  ntc=0
  do ii=1,nc
-   write(6,'(2i4,f8.4,f14.8)') nat(ii),lat(ii),fat(ii,3),eat(ii,1,3)
+   write(iout,'(2i4,f8.4,f14.8)') nat(ii),lat(ii),fat(ii,3),eat(ii,1,3)
  end do
  do ii=1,nvt
    if(fat(ii+nc,3)==0.0d0) cycle
-   write(6,'(2i4,f8.4,2f14.8,1p,d12.2)') nat(ii+nc),lat(ii+nc),fat(ii+nc,3), &
+   write(iout,'(2i4,f8.4,2f14.8,1p,d12.2)') nat(ii+nc),lat(ii+nc), &
+&        fat(ii+nc,3), &
 &   eat(ii+nc,1,3),eatp(ii,1),eatp(ii,1)-eat(ii+nc,1,3)
    ntc=ntc+1
    itc(:,ntc)=[nat(ii+nc),lat(ii+nc),1]
@@ -253,12 +257,12 @@
  end do
  dtc(:)=[eaetst-etot,etsttot-epstot,eaetst-etot-etsttot+epstot]
 
- write(6,'(/a)') '    Total energies and differences'
- write(6,'(a,1p,d16.8,a,d16.8,a,d10.2)') '      AE_ref=',etot, &
+ write(iout,'(/a)') '    Total energies and differences'
+ write(iout,'(a,1p,d16.8,a,d16.8,a,d10.2)') '      AE_ref=',etot, &
 & '  AE_tst=',eaetst,'  dif=',eaetst-etot
- write(6,'(a,1p,d16.8,a,d16.8,a,d10.2)') '      PS_ref=',epstot, &
+ write(iout,'(a,1p,d16.8,a,d16.8,a,d10.2)') '      PS_ref=',epstot, &
 & '  PS_tst=',etsttot,'  dif=',etsttot-epstot
- write(6,'(a,1p,d10.2)') '      PSP excitation error=', &
+ write(iout,'(a,1p,d10.2)') '      PSP excitation error=', &
 & eaetst-etot-etsttot+epstot
  return
  end subroutine write_results
@@ -266,7 +270,7 @@
  subroutine write_results_r
 !! write_results for irel=2, a line for each kappa with its share of the
 !! occupation
- write(6,'(/a)') '   n   l kap    f        eae           eps        diff'
+ write(iout,'(/a)') '   n   l kap    f        eae           eps        diff'
  ntc=0
  do ii=1,nc
    ll = lat(ii)
@@ -275,7 +279,7 @@
    do ikap=1,mkap
      kap=kap_of(ll,ikap)
      fj=j_share(ll,ikap,fat(ii,3))
-     write(6,'(3i4,f8.4,f14.8)') nat(ii),lat(ii),kap,fj,eat(ii,ikap,3)
+     write(iout,'(3i4,f8.4,f14.8)') nat(ii),lat(ii),kap,fj,eat(ii,ikap,3)
    end do
  end do
 
@@ -286,7 +290,7 @@
    do ikap=1,mkap
      kap=kap_of(ll,ikap)
      fj=j_share(ll,ikap,fat(ii+nc,3))
-     write(6,'(3i4,f8.4,2f14.8,1p,e12.2)') nat(ii+nc),lat(ii+nc),kap,fj, &
+     write(iout,'(3i4,f8.4,2f14.8,1p,e12.2)') nat(ii+nc),lat(ii+nc),kap,fj, &
 &     eat(ii+nc,ikap,3),eatp(ii,ikap),eatp(ii,ikap)-eat(ii+nc,ikap,3)
      ntc=ntc+1
      itc(:,ntc)=[nat(ii+nc),lat(ii+nc),ikap]
@@ -295,12 +299,12 @@
  end do
  dtc(:)=[eaetst-etot,etsttot-epstot,eaetst-etot-etsttot+epstot]
 
- write(6,'(/a)') '    Total energies and differences'
- write(6,'(a,1p,e16.8,a,e16.8,a,e10.2)') '      AE_ref=',etot, &
+ write(iout,'(/a)') '    Total energies and differences'
+ write(iout,'(a,1p,e16.8,a,e16.8,a,e10.2)') '      AE_ref=',etot, &
 & '  AE_tst=',eaetst,'  dif=',eaetst-etot
- write(6,'(a,1p,e16.8,a,e16.8,a,e10.2)') '      PS_ref=',epstot, &
+ write(iout,'(a,1p,e16.8,a,e16.8,a,e10.2)') '      PS_ref=',epstot, &
 & '  PS_tst=',etsttot,'  dif=',etsttot-epstot
- write(6,'(a,1p,e10.2)') '      PSP excitation error=', &
+ write(iout,'(a,1p,e10.2)') '      PSP excitation error=', &
 & eaetst-etot-etsttot+epstot
  return
  end subroutine write_results_r

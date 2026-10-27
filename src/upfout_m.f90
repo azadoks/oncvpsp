@@ -32,7 +32,7 @@
 
  subroutine upfout(inp,vkbpw,evkb,rr,vpuns,vlocpw,rho,corepw,zion,mmax,mxprj, &
 &                  nrlin,epstot,rc0,fcfact,fcgrid,rcgrid,uupsa,ea,log_mesh, &
-&                  nkap,ifail)
+&                  nkap,iout,ifail)
 
 
 !! @param inp  the input values (input_m)
@@ -64,6 +64,7 @@
 !!               j=l-1/2 when nkap=2
 !! @param ea  psuedo-orbital eigenvalues (Ha), second index as for uupsa
 !! @param nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, pi, mxstate, mxcnf, mxl, mxlin, nrhomod
@@ -94,6 +95,7 @@
 !Output variables - printing only
 
 !Output variables
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -128,7 +130,7 @@
 
 ! section for upf output for pwscf
 
- write(6,'(/a)') 'Begin PSP_UPF'
+ write(iout,'(/a)') 'Begin PSP_UPF'
 
  call write_info()
  call write_header(ifail)
@@ -140,11 +142,11 @@
 ! spin-orbit data, fully-relativistic only
  if(nkap==2) call write_spin_orb()
 
- write(6,'(a)') &
+ write(iout,'(a)') &
 &      '</UPF>'
 
 ! write termination signal
- write(6,'(/a)') 'END_PSP'
+ write(iout,'(/a)') 'END_PSP'
 
  deallocate(rhol,rl,vkbl,vpl,rhomodl,rabl,l1p,jjp,ikp)
 
@@ -182,7 +184,7 @@
  if(uurcut > inp%drl*dble(nrl-1)) then
    nrl = 1 + int(uurcut/inp%drl)
    if(mod(nrl,2)/=0) nrl=nrl+1
-   write(6,'(a,i5,a,f10.5)') "Updating nrl = ", nrl, " for uurcut = ", uurcut
+   write(iout,'(a,i5,a,f10.5)') "Updating nrl = ", nrl, " for uurcut = ", uurcut
  end if
  end subroutine orbital_extent
 
@@ -228,7 +230,7 @@
 !
  vpl(:,:)=0.0d0
  call om_local_values(rr,vpuns(1,inp%lloc+1),mmax,vlocpw,rl,vpl(1, &
-&                     inp%lloc+1),nrl,ifail)
+&                     inp%lloc+1),nrl,iout,ifail)
  if(ifail/=0) return
 ! the value at the origin that of the first point of the log mesh (in the
 ! sr code only)
@@ -243,18 +245,18 @@
      do jj=1,inp%nproj(l1)
 
        call om_piece_values(rr,mmax,vkbpw(jj,l1,ikap),rl, &
-&                           vkbl(1,jj,l1,ikap),nrl,ifail)
+&                           vkbl(1,jj,l1,ikap),nrl,iout,ifail)
        if(ifail/=0) return
 
      end do !jj
    end do !ikap
  end do !l1
 
- call om_values(rr,rho,mmax,rl,rhol,nrl,ifail)
+ call om_values(rr,rho,mmax,rl,rhol,nrl,iout,ifail)
  if(ifail/=0) return
 
  do jj=1,5
-   call om_piece_values(rr,mmax,corepw(jj),rl,rhomodl(1,jj),nrl,ifail)
+   call om_piece_values(rr,mmax,corepw(jj),rl,rhomodl(1,jj),nrl,iout,ifail)
    if(ifail/=0) return
  end do
 
@@ -264,7 +266,7 @@
    mkap=kap_count(nkap,l1)
    nwfc = nwfc + mkap
    do ikap=1,mkap
-     call om_values(rr,uupsa(1,ikap,ii),mmax,rl,uual(1,ikap,ii),nrl,ifail)
+     call om_values(rr,uupsa(1,ikap,ii),mmax,rl,uual(1,ikap,ii),nrl,iout,ifail)
      if(ifail/=0) return
    end do
  end do
@@ -303,10 +305,10 @@
 
  subroutine write_info()
 !! PP_INFO: the provenance and the input file
- write(6,'(a,/a)') &
+ write(iout,'(a,/a)') &
 &      '<UPF version="2.0.1">', &
 &      '  <PP_INFO>'
- write(6,'(/t2,a/t2,a/t2,a/t2,a/t2,a/t2,a//)') &
+ write(iout,'(/t2,a/t2,a/t2,a/t2,a/t2,a/t2,a//)') &
 &      'This pseudopotential file has been produced using the code', &
 &      'ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
 &      trim(version)//' version 4.0.1 06/20/2107 by D. R. Hamann', &
@@ -314,12 +316,12 @@
 &      'Documentation with the package provides a full discription of the', &
 &      'input data below.'
 
- write(6,'(t2,a/t2,a/t2,a/t2,a//)') &
+ write(iout,'(t2,a/t2,a/t2,a/t2,a//)') &
 &      'While it is not required under the terms of the GNU GPL, it is',&
 &      'suggested that you cite D. R. Hamann, Phys. Rev. B 88, 085117 (2013)',&
 &      'in any publication using these pseudopotentials.'
 
- write(6,'(a)') &
+ write(iout,'(a)') &
 &      '    <PP_INPUTFILE>'
 
 ! output printing (echos input data)
@@ -337,12 +339,12 @@
 &                       inp%epsh1,inp%epsh2,inp%depsh,inp%rxpsh,inp%rlmax, &
 &                       inp%drl, &
 &                       inp%ncnf,inp%nvcnf,inp%nacnf,inp%lacnf,inp%facnf, &
-&                       log_mesh,inp%upf_mesh)
+&                       log_mesh,inp%upf_mesh,iout)
 
- write(6,'(a)') &
+ write(iout,'(a)') &
 &      '    </PP_INPUTFILE>'
 
- write(6,'(a,3(/a))') &
+ write(iout,'(a,3(/a))') &
 &      '  </PP_INFO>', &
 &      '  <!--                               -->', &
 &      '  <!-- END OF HUMAN READABLE SECTION -->', &
@@ -358,74 +360,74 @@
  ifail=0
  fname=upf_functional(ifail)
  if(ifail/=0) return
- write(6,'(a)') &
+ write(iout,'(a)') &
 &      '    <PP_HEADER'
 
- write(6,'(t8,a)') &
+ write(iout,'(t8,a)') &
 &      'generated="Generated using ONCVPSP code by D. R. Hamann"'
- write(6,'(t8,a)') &
+ write(iout,'(t8,a)') &
 &      'author="anonymous"'
- write(6,'(t8,5a)') &
+ write(iout,'(t8,5a)') &
 &      'date="',pspd(:),'"'
- write(6,'(t8,a)') &
+ write(iout,'(t8,a)') &
 &      'comment=""'
- write(6,'(t8,a,a2,a)') &
+ write(iout,'(t8,a,a2,a)') &
 &      'element="',inp%atsym,'"'
- write(6,'(t8,a)') &
+ write(iout,'(t8,a)') &
 &      'pseudo_type="NC"'
  if(nkap==1) then
-   write(6,'(t8,a)') &
+   write(iout,'(t8,a)') &
 &        'relativistic="scalar"'
  else
-   write(6,'(t8,a)') &
+   write(iout,'(t8,a)') &
 &        'relativistic="full"'
  end if
- write(6,'(t8,a)') &
+ write(iout,'(t8,a)') &
 &      'is_ultrasoft="F"'
- write(6,'(t8,a)') &
+ write(iout,'(t8,a)') &
 &      'is_paw="F"'
- write(6,'(t8,a)') &
+ write(iout,'(t8,a)') &
 &      'is_coulomb="F"'
  if(nkap==1) then
-   write(6,'(t8,a)') &
+   write(iout,'(t8,a)') &
 &        'has_so="F"'
  else
-   write(6,'(t8,a)') &
+   write(iout,'(t8,a)') &
 &        'has_so="T"'
  end if
- write(6,'(t8,a)') &
+ write(iout,'(t8,a)') &
 &      'has_wfc="F"'
- write(6,'(t8,a)') &
+ write(iout,'(t8,a)') &
 &      'has_gipaw="F"'
 
  if(inp%icmod>=1) then
-   write(6,'(t8,a)') &
+   write(iout,'(t8,a)') &
 &      'core_correction="T"'
  else
-   write(6,'(t8,a)') &
+   write(iout,'(t8,a)') &
 &      'core_correction="F"'
  end if
 
- write(6,'(t8,3a)') &
+ write(iout,'(t8,3a)') &
 &      'functional="',trim(fname),'"'
 
- write(6,'(t8,a,f8.2,a)') &
+ write(iout,'(t8,a,f8.2,a)') &
 &      'z_valence="',zion,'"'
 
- write(6,'(t8,a,1p,e24.16,a)') &
+ write(iout,'(t8,a,1p,e24.16,a)') &
 &      'total_psenergy="',2*epstot,'"'
 
- write(6,'(t8,a,1p,e24.16,a)') &
+ write(iout,'(t8,a,1p,e24.16,a)') &
 &      'rho_cutoff="',rl(nrl),'"'
 
- write(6,'(t8,a,i1,a)') &
+ write(iout,'(t8,a,i1,a)') &
 &      'l_max="',inp%lmax,'"'
 
  if(inp%lloc==4) then
-   write(6,'(t8,a)') &
+   write(iout,'(t8,a)') &
 &      'l_local="-1"'
  else
-   write(6,'(t8,a,i1,a)') &
+   write(iout,'(t8,a,i1,a)') &
 &      'l_local="',inp%lloc,'"'
  end if
 
@@ -455,51 +457,51 @@
    nrlproj=min(4*((nrlproj+3)/4),nrl)
  end if
 
- write(6,'(t8,a,i6,a)') &
+ write(iout,'(t8,a,i6,a)') &
 &      'mesh_size="',nrl,'"'
 
- write(6,'(t8,a,i0,a)') &
+ write(iout,'(t8,a,i0,a)') &
 &      'number_of_wfc="',nwfc,'"'
 
- write(6,'(t8,a,i0,a)') &
+ write(iout,'(t8,a,i0,a)') &
 &      'number_of_proj="',ntotproj,'"/>' !end of PP_HEADER
  end subroutine write_header
 
  subroutine write_mesh_local()
 !! PP_MESH, and PP_LOCAL with a factor of 2 for Rydberg units
  integer :: ii
- write(6,'(t2,a)') &
+ write(iout,'(t2,a)') &
 &      '<PP_MESH>'
 
- write(6,'(t4,a,i4,a)') &
+ write(iout,'(t4,a,i4,a)') &
 &      '<PP_R type="real"  size="',nrl,'" columns="4">'
 
- write(6,'(1p,4e24.16)') (rl(ii),ii=1,nrl)
+ write(iout,'(1p,4e24.16)') (rl(ii),ii=1,nrl)
 
- write(6,'(t4,a)') &
+ write(iout,'(t4,a)') &
 &      '</PP_R>'
 
- write(6,'(t4,a,i4,a)') &
+ write(iout,'(t4,a,i4,a)') &
 &      '<PP_RAB type="real"  size="',nrl,'" columns="4">'
 
  if(istr==0) then
-   write(6,'(1p,4e24.16)') (inp%drl,ii=1,nrl)
+   write(iout,'(1p,4e24.16)') (inp%drl,ii=1,nrl)
  else
-   write(6,'(1p,4e24.16)') (fe(rabl(ii)),ii=1,nrl)
+   write(iout,'(1p,4e24.16)') (fe(rabl(ii)),ii=1,nrl)
  end if
 
- write(6,'(t4,a)') &
+ write(iout,'(t4,a)') &
 &      '</PP_RAB>'
 
- write(6,'(t2,a)') &
+ write(iout,'(t2,a)') &
 &      '</PP_MESH>'
 
- write(6,'(a,i4,a)') &
+ write(iout,'(a,i4,a)') &
 &      '  <PP_LOCAL type="real"  size="',nrl,'" columns="4">'
 
- write(6,'(1p,4e24.16)') (fe(2.0d0*vpl(ii,inp%lloc+1)),ii=1,nrl)
+ write(iout,'(1p,4e24.16)') (fe(2.0d0*vpl(ii,inp%lloc+1)),ii=1,nrl)
 
- write(6,'(a)') &
+ write(iout,'(a)') &
 &      '  </PP_LOCAL>'
  end subroutine write_mesh_local
 
@@ -507,7 +509,7 @@
 !! PP_NONLOCAL: the projectors and their coefficients, in Rydberg
  integer :: ii,jj,l1,ikap,iproj
  real(dp), allocatable :: dmat(:,:)
- write(6,'(t2,a)') &
+ write(iout,'(t2,a)') &
 &      '<PP_NONLOCAL>'
 
  allocate(dmat(ntotproj,ntotproj))
@@ -518,44 +520,44 @@
    jj=jjp(iproj)
    ikap=ikp(iproj)
    dmat(iproj,iproj)=2.0d0*evkb(jj,l1,ikap) !2 for Rydbergs
-   write(6,'(t4,a,i0)') &
+   write(iout,'(t4,a,i0)') &
 &        '<PP_BETA.',iproj
-   write(6,'(t8,a)') &
+   write(iout,'(t8,a)') &
 &        'type="real"'
-   write(6,'(t8,a,i4,a)') &
+   write(iout,'(t8,a,i4,a)') &
 &        'size="',nrl,'"'
-   write(6,'(t8,a)') &
+   write(iout,'(t8,a)') &
 &        'columns="4"'
-   write(6,'(t8,a,i0,a)') &
+   write(iout,'(t8,a,i0,a)') &
 &       'index="',iproj,'"'
-   write(6,'(t8,a,i1,a)') &
+   write(iout,'(t8,a,i1,a)') &
 &        'angular_momentum="',l1-1,'"'
-   write(6,'(t8,a,i4,a)') &
+   write(iout,'(t8,a,i4,a)') &
 &        'cutoff_radius_index="',nrlproj,'"'
    if(istr==0) then
-     write(6,'(t8,a,1p,e24.16,a)') &
+     write(iout,'(t8,a,1p,e24.16,a)') &
 &          'cutoff_radius="',(nrlproj-1)*inp%drl,'" >'
    else
-     write(6,'(t8,a,1p,e24.16,a)') &
+     write(iout,'(t8,a,1p,e24.16,a)') &
 &          'cutoff_radius="',rl(nrlproj),'" >'
    end if
 
-   write(6,'(1p,4e24.16)') (fe(vkbl(ii,jj,l1,ikap)),ii=1,nrlproj)
-   write(6,'(1p,4f3.0)') (0.d0,ii=nrlproj+1,nrl)
+   write(iout,'(1p,4e24.16)') (fe(vkbl(ii,jj,l1,ikap)),ii=1,nrlproj)
+   write(iout,'(1p,4f3.0)') (0.d0,ii=nrlproj+1,nrl)
 
-   write(6,'(t4,a,i0,a)') &
+   write(iout,'(t4,a,i0,a)') &
 &        '</PP_BETA.',iproj,'>'
  end do
 
- write(6,'(t4,a,i4,a)') &
+ write(iout,'(t4,a,i4,a)') &
 &      '<PP_DIJ type="real"  size="',ntotproj**2,'" columns="4">'
 
- write(6,'(1p,4e24.16)') ((fe(dmat(ii,jj)),ii=1,ntotproj),jj=1,ntotproj)
+ write(iout,'(1p,4e24.16)') ((fe(dmat(ii,jj)),ii=1,ntotproj),jj=1,ntotproj)
 
- write(6,'(t4,a)') &
+ write(iout,'(t4,a)') &
 &      '</PP_DIJ>'
 
- write(6,'(t2,a)') &
+ write(iout,'(t2,a)') &
 &      '</PP_NONLOCAL>'
  deallocate(dmat)
  end subroutine write_nonlocal
@@ -564,7 +566,7 @@
 !! PP_PSWFC: the pseudo-atomic orbitals, of each J when fully relativistic
  integer :: ii,jj,l1,ikap,mkap,iwfc
  real(dp) :: fj
- write(6,'(t2,a)') &
+ write(iout,'(t2,a)') &
 &      '<PP_PSWFC>'
  iwfc = 0
  do ii=1,inp%nv
@@ -574,32 +576,32 @@
      iwfc = iwfc + 1
      fj=inp%fa(inp%nc+ii)
      if(nkap==2) fj=j_share(l1,ikap,inp%fa(inp%nc+ii))
-     write(6,'(t4,a,i0)') &
+     write(iout,'(t4,a,i0)') &
 &          '<PP_CHI.',iwfc
-     write(6,'(t8,a)') &
+     write(iout,'(t8,a)') &
 &          'type="real"'
-     write(6,'(t8,a,i4,a)') &
+     write(iout,'(t8,a,i4,a)') &
 &          'size="',nrl,'"'
-     write(6,'(t8,a)') &
+     write(iout,'(t8,a)') &
 &          'columns="4"'
-     write(6,'(t8,a,i0,a)') &
+     write(iout,'(t8,a,i0,a)') &
 &          'index="',iwfc,'"'
-     write(6,'(t8,a,f6.3,a)') &
+     write(iout,'(t8,a,f6.3,a)') &
 &          'occupation="',fj,'"'
-     write(6,'(t8,a,1p,e24.16,a)') &
+     write(iout,'(t8,a,1p,e24.16,a)') &
 &          'pseudo_energy="',2*ea(inp%nc+ii,ikap),'"'
-     write(6,'(t8,a,i1,a,a)') &
+     write(iout,'(t8,a,i1,a,a)') &
 &          'label="',inp%na(inp%nc+ii),lnames(l1+1:l1+1),'"'
-     write(6,'(t8,a,i1,a)') &
+     write(iout,'(t8,a,i1,a)') &
 &             'l="',l1,'" >'
 
-     write(6,'(1p,4e24.16)') (fe(uual(jj,ikap,ii)),jj=1,nrl)
+     write(iout,'(1p,4e24.16)') (fe(uual(jj,ikap,ii)),jj=1,nrl)
 
-     write(6,'(t4,a,i0,a)') &
+     write(iout,'(t4,a,i0,a)') &
 &          '</PP_CHI.',iwfc,'>'
    end do
  end do
- write(6,'(t2,a)') &
+ write(iout,'(t2,a)') &
 &      '</PP_PSWFC>'
  end subroutine write_pswfc
 
@@ -607,21 +609,21 @@
 !! PP_NLCC, the model core with icmod >= 1, and PP_RHOATOM
  integer :: ii
  if(inp%icmod>=1) then
-   write(6,'(t2,a,i4,a)') &
+   write(iout,'(t2,a,i4,a)') &
 &        '<PP_NLCC type="real"  size="',nrl,'" columns="4">'
 
-   write(6,'(1p,4e24.16)') (fe(rhomodl(ii,1)/(4.0d0*pi)),ii=1,nrl)
+   write(iout,'(1p,4e24.16)') (fe(rhomodl(ii,1)/(4.0d0*pi)),ii=1,nrl)
 
-   write(6,'(t2,a)') &
+   write(iout,'(t2,a)') &
 &        '</PP_NLCC>'
  end if
 
- write(6,'(t2,a,i4,a)') &
+ write(iout,'(t2,a,i4,a)') &
 &      '<PP_RHOATOM type="real"  size="',nrl,'" columns="4">'
 
- write(6,'(1p,4e24.16)') (fe((rl(ii)**2)*rhol(ii)),ii=1,nrl)
+ write(iout,'(1p,4e24.16)') (fe((rl(ii)**2)*rhol(ii)),ii=1,nrl)
 
- write(6,'(t2,a)') &
+ write(iout,'(t2,a)') &
 &      '</PP_RHOATOM>'
  end subroutine write_densities
 
@@ -629,7 +631,7 @@
 !! PP_SPIN_ORB: l and j of each projector and each orbital
  integer :: ii,ll,l1,ikap,mkap,iproj,iwfc
  real(dp) :: djjj
- write(6,'(t2,a)') &
+ write(iout,'(t2,a)') &
 &    '<PP_SPIN_ORB>'
 
  do iproj=1,ntotproj
@@ -640,11 +642,11 @@
      djjj=ll-0.5d0
    end if
    if(iproj<=9) then
-     write(6,'(t4,a,i1,a,i1,a,i1,a,f3.1,a)') &
+     write(iout,'(t4,a,i1,a,i1,a,i1,a,f3.1,a)') &
 &        '<PP_RELBETA.',iproj,'  index="',iproj,'"  lll="',ll, &
 &        '" jjj="',djjj,'"/>'
    else
-     write(6,'(t4,a,i2,a,i2,a,i1,a,f3.1,a)') &
+     write(iout,'(t4,a,i2,a,i2,a,i1,a,f3.1,a)') &
 &        '<PP_RELBETA.',iproj,' index="',iproj,'" lll="',ll, &
 &        '" jjj="',djjj,'"/>'
    end if
@@ -662,18 +664,18 @@
        djjj=l1-0.5d0
      end if
      if(iwfc <= 9) then
-       write(6,'(t4,a,i1,a,i1,a,i1,a,f3.1,a,i1,a)') &
+       write(iout,'(t4,a,i1,a,i1,a,i1,a,f3.1,a,i1,a)') &
 &          '<PP_RELWFC.',iwfc,'  index="',iwfc,'"  lchi="',l1, &
 &          '" jchi="',djjj,'" nn="',ii,'"/>'
      else
-       write(6,'(t4,a,i2,a,i2,a,i1,a,f3.1,a,i1,a)') &
+       write(iout,'(t4,a,i2,a,i2,a,i1,a,f3.1,a,i1,a)') &
 &          '<PP_RELWFC.',iwfc,'  index="',iwfc,'"  lchi="',l1, &
 &          '" jchi="',djjj,'" nn="',ii,'"/>'
      end if
    end do
  end do
 
- write(6,'(t2,a)') &
+ write(iout,'(t2,a)') &
 &    '</PP_SPIN_ORB>'
  end subroutine write_spin_orb
 
@@ -714,7 +716,7 @@
  case(-118130)
    name='WC'
  case default
-   write(6,'(t8,a,i0,a)') &
+   write(iout,'(t8,a,i0,a)') &
 &      'upfout: ERROR iexc = ',inp%iexc, &
 &      ' is presently unsupported for UPF output'
    ifail=1

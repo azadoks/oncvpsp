@@ -52,7 +52,7 @@ looks like this:
 ! University
 ! ... (the GPL notice)
 !
- subroutine shift_pot(rr,vv,rcut,vshift,mmax,nshift)
+ subroutine shift_pot(rr,vv,rcut,vshift,mmax,nshift,iout)
 
 !! adds a constant to a potential inside a radius
 !!
@@ -62,12 +62,13 @@ looks like this:
 !! @param vshift  the shift (Ha)
 !! @param mmax  size of the log radial mesh
 !! @param nshift  number of mesh points shifted
+!! @param iout  unit of the text output
 
  use constants_m, only: dp
  implicit none
 
 !Input variables
- integer, intent(in) :: mmax
+ integer, intent(in) :: mmax,iout
  real(dp), intent(in) :: rr(mmax),rcut,vshift
 
 !Input/output variables
@@ -88,7 +89,7 @@ looks like this:
    end if
  end do
  if(nshift==0) then
-   write(6,'(/2a,f12.6)') 'shift_pot: WARNING no mesh point inside rcut', &
+   write(iout,'(/2a,f12.6)') 'shift_pot: WARNING no mesh point inside rcut', &
 &        ', rcut=',rcut
  end if
  return
@@ -214,9 +215,14 @@ hand.
 
 **Output.**
 
-- `write(6,'(…)')` with the format inline; no labeled `FORMAT`
-  statements, no list-directed (`*`) output in new code, and unit 6
-  rather than a named unit.
+- `write(iout,'(…)')` with the format inline; no labeled `FORMAT`
+  statements, and no list-directed (`*`) output in new code.
+- A routine that writes, or calls one that does, takes the unit of the
+  text output as an argument, `iout`, last but for `ifail`; internal
+  procedures use their host's. The programs, `oncvpsp_main` and the unit
+  tests pass 6 (`integer, parameter :: iout=6`). Only the command line
+  (`cli_m`, `parse_command_line`) and the checks that stay `error stop`
+  (rule 5 of [Error messages](#error-messages)) write to unit 6 itself.
 - Errors and warnings as in [Error messages](#error-messages).
 
 **Comments and dead code.**
@@ -265,7 +271,7 @@ A routine reports a failure it cannot recover from like this, and returns
 
 ```fortran
  if(irphs==0) then
-   write(6,'(/2a,f12.6,a,f12.6)') 'run_phsft: ERROR rxpsh beyond radial mesh', &
+   write(iout,'(/2a,f12.6,a,f12.6)') 'run_phsft: ERROR rxpsh beyond radial mesh', &
 &        ', rxpsh=',rxpsh,', rr(mmax)=',rr(mmax)
    ifail=1
    return
@@ -275,13 +281,13 @@ A routine reports a failure it cannot recover from like this, and returns
 and each caller passes it on:
 
 ```fortran
- call run_phsft(...,ifail)
+ call run_phsft(...,iout,ifail)
  if(ifail/=0) return
 ```
 
-1) Write the message to unit 6, the output file, so it appears next to the
-output that led up to it. This holds for every message, including
-command-line errors.
+1) Write the message to `iout`, the output file (unit 6 from the
+programs), so it appears next to the output that led up to it. This holds
+for every message; command-line errors go to unit 6.
 
 2) Start the message with a blank line (`/` at the start of the format).
 

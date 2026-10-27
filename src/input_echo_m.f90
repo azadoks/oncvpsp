@@ -348,7 +348,7 @@
  return
  end subroutine mesh_lines
 
- subroutine write_atom(atsym,zz,nc,nv,iexc,psfile)
+ subroutine write_atom(atsym,zz,nc,nv,iexc,psfile,iout)
 
 !! writes the ATOM AND REFERENCE CONFIGURATION heading and first line to
 !! unit 6 (see atom_lines)
@@ -359,24 +359,27 @@
 !! @param nv  number of valence states
 !! @param iexc  exchange-correlation functional
 !! @param psfile  format of the pseudopotential file
+!! @param iout  unit of the text output
 
 !Input variables
  character(len=2), intent(in) :: atsym
  character(len=4), intent(in) :: psfile
  real(dp), intent(in) :: zz
  integer, intent(in) :: nc,nv,iexc
+ integer, intent(in) :: iout
 
 !Local variables
  character(len=echo_len) :: text(echo_max)
  integer :: ii,ntext
 
  call atom_lines(atsym,zz,nc,nv,iexc,psfile,text,ntext)
- write(6,'(a)') (trim(text(ii)),ii=1,ntext)
+ write(iout,'(a)') (trim(text(ii)),ii=1,ntext)
 
  return
  end subroutine write_atom
 
- subroutine write_lmax(lmax,ep_as_given,well_onset,well_tail,wreg,well_norm)
+ subroutine write_lmax(lmax,ep_as_given,well_onset,well_tail,wreg,well_norm, &
+&      iout)
 
 !! writes the head of the PSEUDOPOTENTIAL AND OPTIMIZATION section, to the
 !! lmax line, to unit 6
@@ -387,12 +390,14 @@
 !! @param well_tail  the tail of the well states, 0, 1 or 2
 !! @param wreg  the regularization of the pseudo-wave optimization
 !! @param well_norm  the normalization of the well states, 0, 1 or 2
+!! @param iout  unit of the text output
 
 !Input variables
  integer, intent(in) :: lmax,well_tail,well_norm
  logical, intent(in) :: ep_as_given
  real(dp), intent(in) :: wreg
  real(dp), intent(in) :: well_onset
+ integer, intent(in) :: iout
 
 !Local variables
  character(len=echo_len) :: text(echo_max)
@@ -400,7 +405,7 @@
 
  call lmax_lines(lmax,ep_as_given,well_onset,well_tail,wreg,well_norm,text, &
 &                ntext)
- write(6,'(a)') (trim(text(ii)),ii=1,ntext)
+ write(iout,'(a)') (trim(text(ii)),ii=1,ntext)
 
  return
  end subroutine write_lmax
@@ -452,7 +457,7 @@
  end if
  end function vkb_line
 
- subroutine write_icmod(icmod,fcfact,rcfact,slack,budget_cut,fcgrid,rcgrid)
+ subroutine write_icmod(icmod,fcfact,rcfact,slack,budget_cut,fcgrid,rcgrid,iout)
 
 !! writes the MODEL CORE CHARGE section to unit 6
 !!
@@ -465,6 +470,7 @@
 !!                    mean, 2 the largest of all waves (budget_cutoff)
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
+!! @param iout  unit of the text output
 
 !Input variables
  integer, intent(in) :: icmod
@@ -472,6 +478,7 @@
  real(dp), intent(in) :: slack
  integer, intent(in) :: budget_cut
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
+ integer, intent(in) :: iout
 
 !Local variables
  character(len=echo_len) :: text(echo_max)
@@ -479,12 +486,12 @@
 
  call icmod_lines(icmod,fcfact,rcfact,slack,budget_cut,fcgrid,rcgrid, &
 &                 text,ntext)
- write(6,'(a)') (trim(text(ii)),ii=1,ntext)
+ write(iout,'(a)') (trim(text(ii)),ii=1,ntext)
 
  return
  end subroutine write_icmod
 
- subroutine write_epsh(epsh1,epsh2,depsh,rxpsh)
+ subroutine write_epsh(epsh1,epsh2,depsh,rxpsh,iout)
 
 !! writes the LOG DERIVATIVE ANALYSIS section to unit 6
 !!
@@ -492,36 +499,40 @@
 !! @param epsh2  upper limit of the log derivative analysis energy range (Ha)
 !! @param depsh  energy step (Ha)
 !! @param rxpsh  radius of the analysis, negative for the default
+!! @param iout  unit of the text output
 
 !Input variables
  real(dp), intent(in) :: epsh1,epsh2,depsh,rxpsh
+ integer, intent(in) :: iout
 
 !Local variables
  character(len=echo_len) :: text(echo_max)
  integer :: ii,ntext
 
  call epsh_lines(epsh1,epsh2,depsh,rxpsh,text,ntext)
- write(6,'(a)') (trim(text(ii)),ii=1,ntext)
+ write(iout,'(a)') (trim(text(ii)),ii=1,ntext)
 
  return
  end subroutine write_epsh
 
- subroutine write_mesh(log_mesh)
+ subroutine write_mesh(log_mesh,iout)
 
 !! writes the LOG MESH section to unit 6 (see mesh_lines)
 !!
 !! @param log_mesh  amesh, rr1, rmax of the log mesh, 0 unless the input
 !!                  sets it
+!! @param iout  unit of the text output
 
 !Input variables
  real(dp), intent(in) :: log_mesh(3)
+ integer, intent(in) :: iout
 
 !Local variables
  character(len=echo_len) :: text(echo_max)
  integer :: ii,ntext
 
  call mesh_lines(log_mesh,text,ntext)
- if(ntext>0) write(6,'(a)') (trim(text(ii)),ii=1,ntext)
+ if(ntext>0) write(iout,'(a)') (trim(text(ii)),ii=1,ntext)
 
  return
  end subroutine write_mesh
@@ -696,11 +707,13 @@
 &                            icmod,fcfact,rcfact,slack,budget_cut, &
 &                            fcgrid,rcgrid, &
 &                            epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
-&                            ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh)
+&                            ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh, &
+&                            iout)
 !! writes the echo of the input data to unit 6 (input_echo_lines)
 !!
 !! @param nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
 !! @param iformat  1 for the psp8 file, 2 for the UPF file
+!! @param iout  unit of the text output
 !!
 !! (the other arguments are the input data, as read by the input readers)
 
@@ -727,6 +740,7 @@
  real(dp), intent(in) :: fcgrid(3),rcgrid(3),log_mesh(3)
  character(len=2), intent(in) :: atsym
  character(len=4), intent(in) :: psfile
+ integer, intent(in) :: iout
 
 !Local variables
  character(len=echo_len), allocatable :: text(:)
@@ -741,7 +755,7 @@
 &                      ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh, &
 &                      text,ntext)
  do ii=1,ntext
-   write(6,'(a)') trim(text(ii))
+   write(iout,'(a)') trim(text(ii))
  end do
  return
  end subroutine write_input_echo

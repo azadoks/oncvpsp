@@ -31,7 +31,7 @@
 
  subroutine linout(inp,vkbpw,evkb,vsrpw,esr,vsopw,eso,rr,vpuns,vlocpw,rho, &
 &                  corepw,rhotae,rhoc,zion,mmax,mxprj,nrl,soscale,rc0,fcfact0, &
-&                  fcgrid,rcgrid,log_mesh,nkap,ifail)
+&                  fcgrid,rcgrid,log_mesh,nkap,iout,ifail)
 
 
 !! @param inp  the input values (input_m)
@@ -66,6 +66,7 @@
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 !! @param log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets
 !!                  it (else 0)
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 
@@ -94,6 +95,7 @@
  real(dp), intent(in) :: log_mesh(3)
 
 !Output variables
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -124,7 +126,7 @@
        npr_sr(l1)=2*inp%nproj(l1)
        npr_so(l1)=2*inp%nproj(l1)
      end if
-     write(6,'(a,3i4)') 'l1-1,npr_sr,npr_so',l1-1,npr_sr(l1),npr_so(l1)
+     write(iout,'(a,3i4)') 'l1-1,npr_sr,npr_so',l1-1,npr_sr(l1),npr_so(l1)
    end do
  end if
 
@@ -137,7 +139,7 @@
 !
  vpl(:,:)=0.0d0
  l1=inp%lloc+1
- call om_local_values(rr,vpuns(1,l1),mmax,vlocpw,rl,vpl(1,l1),nrl,ifail)
+ call om_local_values(rr,vpuns(1,l1),mmax,vlocpw,rl,vpl(1,l1),nrl,iout,ifail)
  if(ifail/=0) return
 
 ! the value at the origin that of the first point of the log mesh
@@ -148,31 +150,33 @@
      do jj=1,inp%nproj(l1)
        if(nkap==1) then
          call om_piece_values(rr,mmax,vkbpw(jj,l1,1),rl,vkbl(1,jj,l1),nrl, &
-&                             ifail)
+&                             iout,ifail)
          if(ifail/=0) return
        end if
      end do
      do jj=1,npr_sr(l1)
-       call om_piece_values(rr,mmax,vsrpw(jj,l1),rl,vsrl(1,jj,l1),nrl,ifail)
+       call om_piece_values(rr,mmax,vsrpw(jj,l1),rl,vsrl(1,jj,l1),nrl, &
+&            iout,ifail)
        if(ifail/=0) return
      end do
      do jj=1,npr_so(l1)
-       call om_piece_values(rr,mmax,vsopw(jj,l1),rl,vsol(1,jj,l1),nrl,ifail)
+       call om_piece_values(rr,mmax,vsopw(jj,l1),rl,vsol(1,jj,l1),nrl, &
+&            iout,ifail)
        if(ifail/=0) return
      end do
    end if
  end do
 
 
- call om_values(rr,rho,mmax,rl,rhol,nrl,ifail)
+ call om_values(rr,rho,mmax,rl,rhol,nrl,iout,ifail)
  if(ifail/=0) return
- call om_values(rr,rhotae,mmax,rl,rhotael,nrl,ifail)
+ call om_values(rr,rhotae,mmax,rl,rhotael,nrl,iout,ifail)
  if(ifail/=0) return
- call om_values(rr,rhoc,mmax,rl,rhocl,nrl,ifail)
+ call om_values(rr,rhoc,mmax,rl,rhocl,nrl,iout,ifail)
  if(ifail/=0) return
 
  do jj=1,5
-   call om_piece_values(rr,mmax,corepw(jj),rl,rhomodl(1,jj),nrl,ifail)
+   call om_piece_values(rr,mmax,corepw(jj),rl,rhomodl(1,jj),nrl,iout,ifail)
    if(ifail/=0) return
  end do
 
@@ -205,30 +209,30 @@
    if(fchrg<=0.0d0) fchrg=1.0d0
  end if
 
- write(6,'(/a)') 'Begin PSPCODE8'
- write(6,'(3a,4f10.5)') inp%atsym,'    ONCVPSP-4.0.1' &
+ write(iout,'(/a)') 'Begin PSPCODE8'
+ write(iout,'(3a,4f10.5)') inp%atsym,'    ONCVPSP-4.0.1' &
 &  ,'  r_core=',(inp%rc(l1),l1=1,inp%lmax+1)
- write(6,'(2f12.4, 5a)') inp%zz,zion, '      ', pspd,  &
+ write(iout,'(2f12.4, 5a)') inp%zz,zion, '      ', pspd,  &
 &  '    zatom,zion,pspd'
- write(6,'(i6,i8,i4,3i6, a)') 8, ixc_abinit,inp%lmax,inp%lloc, &
+ write(iout,'(i6,i8,i4,3i6, a)') 8, ixc_abinit,inp%lmax,inp%lloc, &
 &  nrl, 0, '    pspcod,pspxc,lmax,lloc,mmax,r2well'
- write(6,'(3f12.8, a)') rl(nrl),fchrg, 0.0,  &
+ write(iout,'(3f12.8, a)') rl(nrl),fchrg, 0.0,  &
 &  '    rchrg fchrg qchrg'
  if(nkap==1) then
-   write(6,'(5i6, a)') (inp%nproj(l1),l1=1,5),  &
+   write(iout,'(5i6, a)') (inp%nproj(l1),l1=1,5),  &
 &    '    nproj'
-   write(6,'(2i6, a)') 1,1, &
+   write(iout,'(2i6, a)') 1,1, &
 &    '           extension_switch'
  else
-   write(6,'(4i6, a)') npr_sr(1:4),'    nproj'
+   write(iout,'(4i6, a)') npr_sr(1:4),'    nproj'
 
 ! this is where abinit is informed that we have spin-orbit
-   write(6,'(2i6, a)') 3,1, &
+   write(iout,'(2i6, a)') 3,1, &
 &    '           extension_switch'
    if(soscale==1.d0) then
-     write(6,'(3i6, a)') npr_so(2:4),'    nprojso'
+     write(iout,'(3i6, a)') npr_so(2:4),'    nprojso'
    else
-     write(6,'(3i6, a,f6.2)') npr_so(2:4),'    nprojso  X,soscale', soscale
+     write(iout,'(3i6, a,f6.2)') npr_so(2:4),'    nprojso  X,soscale', soscale
    end if
  end if
 
@@ -238,9 +242,9 @@
  do l1=1,inp%lmax+1
    ll=l1-1
    if(ll==inp%lloc) then
-     write(6,'(i4)') ll
+     write(iout,'(i4)') ll
      do ii = 1,nrl
-       write(6,'(i6,1p,2e21.13)') ii,rl(ii),fe(vpl(ii,l1))
+       write(iout,'(i6,1p,2e21.13)') ii,rl(ii),fe(vpl(ii,l1))
      end do
    else if(nkap==1 .and. inp%nproj(l1)>0) then
      call proj_block(ll,inp%rc(l1),inp%nproj(l1),evkb(:,l1,1),vkbl(:,:,l1), &
@@ -254,9 +258,9 @@
 
 ! write general local potential if called for
  if(inp%lloc>inp%lmax) then
-   write(6,'(i4)') inp%lloc
+   write(iout,'(i4)') inp%lloc
    do ii = 1,nrl
-     write(6,'(i6,1p,2e21.13)') ii,rl(ii),fe(vpl(ii,inp%lloc+1))
+     write(iout,'(i6,1p,2e21.13)') ii,rl(ii),fe(vpl(ii,inp%lloc+1))
    end do
  end if
 
@@ -272,14 +276,14 @@
 ! write the model core charge if called for
  if(fchrg>0.0d0) then
    do ii=1,nrl
-     write(6,'(i6,1p,6e21.13)') ii,rl(ii),  &
+     write(iout,'(i6,1p,6e21.13)') ii,rl(ii),  &
 &      (fe(rhomodl(ii,jj)),jj=1,5)
    end do
  end if
 
 ! write pseudo valence, all-electron valence and all-electron core charges
  do ii=1,nrl
-   write(6,'(i6,1p,4e21.13)') ii,rl(ii), &
+   write(iout,'(i6,1p,4e21.13)') ii,rl(ii), &
 &        fe(rhol(ii)),fe(rhotael(ii)),fe(rhocl(ii))
  end do
 
@@ -288,20 +292,20 @@
  else
    version='#relativistic version 4.0.1 03/03/2109'
  end if
- write(6,'(a)') '<INPUT>'
- write(6,'(a/a/a/a)') &
+ write(iout,'(a)') '<INPUT>'
+ write(iout,'(a/a/a/a)') &
 &    '#', &
 &    '#ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)', &
 &    trim(version), &
 &    '#'
 
- write(6,'(a/a/a/a)') &
+ write(iout,'(a/a/a/a)') &
 &    '#While it is not required under the terms of the GNU GPL, it is',&
 &    '#suggested that you cite D. R. Hamann, Phys. Rev. B 88, 085117 (2013)', &
 &    '#in any publication utilizing these pseudopotentials.', &
 &    '#'
 
- if(nkap==2) write(6,'(a)') '#Echo of input data for oncvpsp-4.0.1'
+ if(nkap==2) write(iout,'(a)') '#Echo of input data for oncvpsp-4.0.1'
  call write_input_echo(nkap,1,inp%atsym,inp%zz,inp%nc,inp%nv,inp%iexc, &
 &                      inp%psfile, &
 &                       inp%na,inp%la,inp%fa,inp%lmax,rc0,inp%ep(:,1), &
@@ -315,11 +319,11 @@
 &                       inp%epsh1,inp%epsh2,inp%depsh,inp%rxpsh,inp%rlmax, &
 &                       inp%drl, &
 &                       inp%ncnf,inp%nvcnf,inp%nacnf,inp%lacnf,inp%facnf, &
-&                       log_mesh,inp%upf_mesh)
+&                       log_mesh,inp%upf_mesh,iout)
 
 ! write termination signal
- write(6,'(a)') '</INPUT>'
- write(6,'(/a)') 'END_PSP'
+ write(iout,'(a)') '</INPUT>'
+ write(iout,'(/a)') 'END_PSP'
 
  deallocate(rhol,rl,vpl,rhomodl,rhotael,rhocl)
  deallocate(vkbl,vsrl,vsol)
@@ -346,15 +350,15 @@
  real(dp) :: zero(20)
  integer :: ii,jj
  zero(:)=0.0d0
- write(6,'(i4,23x,1p,20e21.13)') ll,(fe(ee(jj)),jj=1,np)
+ write(iout,'(i4,23x,1p,20e21.13)') ll,(fe(ee(jj)),jj=1,np)
  do ii = 1,nrl
    if(rl(ii)<=rcl+2.0d0*inp%drl) then
-     write(6,'(i6,1p,21e21.13)') ii,rl(ii), &
+     write(iout,'(i6,1p,21e21.13)') ii,rl(ii), &
 &          (fe(vv(ii,jj)),jj=1,np)
    else if(zero_tail) then
-     write(6,'(i6,f6.2,20f4.0)') ii,rl(ii),(zero(jj),jj=1,np)
+     write(iout,'(i6,f6.2,20f4.0)') ii,rl(ii),(zero(jj),jj=1,np)
    else
-     write(6,'(i6,f6.2,20f4.0)') ii,rl(ii),(vv(ii,jj),jj=1,np)
+     write(iout,'(i6,f6.2,20f4.0)') ii,rl(ii),(vv(ii,jj),jj=1,np)
    end if
  end do
  end subroutine proj_block

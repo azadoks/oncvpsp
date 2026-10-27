@@ -27,7 +27,7 @@
 
  subroutine run_diag(lmax,npa,epa,wellprj,lloc,irc, &
 &                    vlocpw,vkbpw,evkb,nproj,rr,vfull,vp,zz,mmax,mxprj,irel, &
-&                    nkap,iso,vsrpw,esr,vsopw,eso,ifail)
+&                    nkap,iso,vsrpw,esr,vsopw,eso,iout,ifail)
 
 !! diagnostics for semi-local and Vanderbilt-Kleinman-bylander pseudopotentials
 !! checks bound-state energies, norms, and slopes, and pseudo-bound state
@@ -69,6 +69,7 @@
 !!               (iso=1)
 !! @param eso  energy coefficients of vso (multiplied by <L dot S> here;
 !!             iso=1)
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, mxl, mxlin
@@ -94,6 +95,7 @@
  type(piecewise_t), intent(in) :: vsrpw(2*mxprj,mxl+1),vsopw(2*mxprj,mxl+1)
 
 !Output variables
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -116,29 +118,29 @@
 !
  if(iso==1) then
    name='run_diag_sr_so_r'
-   write(6,'(/a/a)') &
+   write(iout,'(/a/a)') &
 & 'Diagnostic tests using Vanderbilt-Kleinman-Bylander pseudopotentials',&
 & '  relativistic with scalar and spin-orbit non-local projectors'
-   write(6,'(/2a)')'   l  kap   rcore       rmatch      e in        ', &
+   write(iout,'(/2a)')'   l  kap   rcore       rmatch      e in        ', &
 &   'delta e    norm test   slope test'
  else if(irel==2) then
    name='run_diag_r'
-   write(6,'(/a/a)') &
+   write(iout,'(/a/a)') &
 &   'Diagnostic tests using Vanderbilt-Kleinman-Bylander pseudopotentials',&
 &   '  relativistic with J = L +/- 1/2 projectors'
-   write(6,'(/2a)')'   l  kap   rcore       rmatch      e in        ', &
+   write(iout,'(/2a)')'   l  kap   rcore       rmatch      e in        ', &
 &     'delta e    norm test   slope test'
  else
    name='run_diag'
-   write(6,'(/a/a)') &
+   write(iout,'(/a/a)') &
 &   'Diagnostic tests using Vanderbilt-Kleinman-Bylander pseudopotentials',&
 &   '  1 or more projectors used as specified by nproj input data'
-   write(6,'(/2a)')'   l    rcore       rmatch      e in        ', &
+   write(iout,'(/2a)')'   l    rcore       rmatch      e in        ', &
 &     'delta e   norm test  slope test'
  end if
 !
  do l1 = 1, lmax + 1
-   write(6,'(a)') ''
+   write(iout,'(a)') ''
    ll = l1 - 1
    nnp=l1
    do iprj=1,max(1,nproj(l1))
@@ -157,16 +159,16 @@
        etest=epa(iprj,l1,ikap)
        if(.not. wellprj(iprj,l1)) then
          call boundstate(irel,npa(iprj,l1),ll,kap,ierr,etest, &
-&                        rr,zz,vfull,ur,urp,mmax,mch,ifail)
+&                        rr,zz,vfull,ur,urp,mmax,mch,iout,ifail)
          if(ifail/=0) return
          if(ierr /= 0 .and. irel==2) then
-           write(6,'(/a,4i4)') 'run_diag_r: ldiracfb convergence ERROR &
+           write(iout,'(/a,4i4)') 'run_diag_r: ldiracfb convergence ERROR &
 &         n,l,,kap,ierr=', &
 &          npa(iprj,l1),ll,kap,ierr
            ifail=1
            return
          else if(ierr /= 0) then
-           write(6,'(/a,3i4)') &
+           write(iout,'(/a,3i4)') &
 &                'run_diag: lschfb convergence ERROR n,l,ierr=', &
 &                npa(iprj,l1),ll,ierr
            ifail=1
@@ -174,11 +176,11 @@
          end if
        else
          call scatterstate(irel,nnae,ll,kap,ierr,etest, &
-&                       rr,zz,vfull,ur,urp,mmax,mchf)
+&                       rr,zz,vfull,ur,urp,mmax,mchf,iout)
        end if
        cnorm=1.0d0
        if(irel==2) then
-         call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm,ifail)
+         call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm,iout,ifail)
          if(ifail/=0) return
        end if
        umch=ur(mchf,1)
@@ -198,13 +200,13 @@
 
          call lschvkbb(ll+iprj,ll,nvkbt,ierr,etest,emin,emax, &
 &                      rr,vp(1,lloc+1,ikap),vlocpw,vkbtpw(1:nvkbt),evkbt, &
-&                      uu,up,mmax,mch,ifail)
+&                      uu,up,mmax,mch,iout,ifail)
          if(ifail/=0) return
          if(ierr/=0 .and. irel==2) then
-           write(6,'(a,4i4,1p,2e16.8)') trim(name)//': lschvkbb ERROR', &
+           write(iout,'(a,4i4,1p,2e16.8)') trim(name)//': lschvkbb ERROR', &
 &                iprj,ll,kap,ierr,epa(iprj,l1,ikap),etest
          else if(ierr/=0) then
-           write(6,'(a,3i4,1p,2e16.8)') 'run_diag: lschvkbb ERROR', &
+           write(iout,'(a,3i4,1p,2e16.8)') 'run_diag: lschvkbb ERROR', &
 &                iprj,ll,ierr,epa(iprj,l1,ikap),etest
          end if
 
@@ -217,18 +219,18 @@
 !     an eigenvalue passing (outwf_index)
 
          nnp=ll+1+outwf_index_at(ll,rr,mmax,vp(1,lloc+1,ikap),vlocpw,nvkbt, &
-&            vkbtpw(1:nvkbt),evkbt(1:nvkbt),epa(iprj,l1,ikap),mchf,ifail)
+&            vkbtpw(1:nvkbt),evkbt(1:nvkbt),epa(iprj,l1,ikap),mchf,iout,ifail)
          if(ifail/=0) return
          call lschvkbbe(nnp,ll,nvkbt,ierr,etest,uldf,emin,emax, &
 &                       rr,vp(1,lloc+1,ikap),vlocpw,vkbtpw(1:nvkbt),evkbt, &
-&                       uu,up,mmax,mchf,ifail)
+&                       uu,up,mmax,mchf,iout,ifail)
          if(ifail/=0) return
 
          if(ierr/=0 .and. irel==2) then
-           write(6,'(a,4i4,1p,2e16.8)') trim(name)//': lschvkbbe ERROR', &
+           write(iout,'(a,4i4,1p,2e16.8)') trim(name)//': lschvkbbe ERROR', &
 &                iprj,ll,kap,ierr,epa(iprj,l1,ikap),etest
          else if(ierr/=0) then
-           write(6,'(a,4i4,1p,2e16.8)') 'run_diag: lschvkbbe ERROR', &
+           write(iout,'(a,4i4,1p,2e16.8)') 'run_diag: lschvkbbe ERROR', &
 &                iprj,nnp,ll,ierr,epa(iprj,l1,ikap),etest
          end if
        end if !epa<0 (bound or not)
@@ -237,10 +239,10 @@
        gpr=abs(upmch/up(mchf))
 !
        if(irel==2) then
-         write(6,'(2i4,6f12.7)') ll,kap,rr(irc(l1)),rr(mchf), &
+         write(iout,'(2i4,6f12.7)') ll,kap,rr(irc(l1)),rr(mchf), &
 &              epa(iprj,l1,ikap),etest-epa(iprj,l1,ikap),gam,gpr
        else
-         write(6,'(i4,6f12.7)') ll,rr(irc(l1)),rr(mchf),epa(iprj,l1,ikap), &
+         write(iout,'(i4,6f12.7)') ll,rr(irc(l1)),rr(mchf),epa(iprj,l1,ikap), &
 &              etest-epa(iprj,l1,ikap),gam,gpr
        end if
 

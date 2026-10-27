@@ -37,6 +37,7 @@
  use ae_ps_pair_m, only: load_pair
  use build_info_m, only: write_build_info
  implicit none
+ integer, parameter :: iout=6
 
 !> the most radii of a run
  integer, parameter :: mxq=1000
@@ -83,18 +84,18 @@
      call cli_energies('oncvpsp_ld',arg,ee)
      given_energies=.true.
    case default
-     write(6,'(2a)') 'oncvpsp_ld: ERROR unknown argument ',trim(arg)
+     write(iout,'(2a)') 'oncvpsp_ld: ERROR unknown argument ',trim(arg)
      error stop 1
    end select
    iarg=iarg+1
  end do
  if(len_trim(ae_filename)==0 .or. len_trim(ps_filename)==0) then
-   write(6,'(a)') 'oncvpsp_ld: ERROR requires --ae-file and --ps-file'
+   write(iout,'(a)') 'oncvpsp_ld: ERROR requires --ae-file and --ps-file'
    error stop 1
  end if
 
  call load_pair('oncvpsp_ld',trim(ae_filename),trim(ps_filename),irel,zz, &
-&               mmax,rr,vfull,pf,ifail=ifail)
+&               mmax,rr,vfull,pf,iout=iout,ifail=ifail)
  if(ifail/=0) error stop 1
 
 !the energies, from epsh2 down by depsh, as oncvpsp_main
@@ -110,8 +111,8 @@
  npsh=int(((epsh2-epsh1)/depsh)-0.5d0)+1
  amesh=rr(2)/rr(1)
 
- write(6,'(a)') '# ld_r l ikap r(bohr)'
- write(6,'(a)') '# ld l ikap e(Ha) atan(r*u''/u)_ae atan(r*u''/u)_ps'
+ write(iout,'(a)') '# ld_r l ikap r(bohr)'
+ write(iout,'(a)') '# ld l ikap e(Ha) atan(r*u''/u)_ae atan(r*u''/u)_ps'
  do l1=1,4
    ll=l1-1
    if(.not. chan(ll)) cycle
@@ -135,12 +136,12 @@
      call phsft_pair(irel,ll,kap,nvkb,rr,vfull,zz,pf%vloc(:,ikap), &
 &                    pf%vlocpw,pf%vkbpw(1:nvkb,l1,ikap), &
 &                    pf%evkb(1:nvkb,l1,ikap),mmax,nq,rql,npsh,epsh2,depsh, &
-&                    pf%epa(l1,ikap),pshae,pshps,ifail)
+&                    pf%epa(l1,ikap),pshae,pshps,iout,ifail)
      if(ifail/=0) error stop 1
      do iq=1,nq
-       write(6,'(a,2i4,1p,e24.16)') 'ld_r',ll,ikap,rql(iq)
+       write(iout,'(a,2i4,1p,e24.16)') 'ld_r',ll,ikap,rql(iq)
        do ii=1,npsh
-         write(6,'(a,2i4,1p,3e24.16)') 'ld',ll,ikap, &
+         write(iout,'(a,2i4,1p,3e24.16)') 'ld',ll,ikap, &
 &              epsh2-depsh*real(ii-1,dp),pshae(ii,iq),pshps(ii,iq)
        end do
      end do
@@ -156,48 +157,54 @@
 
  subroutine write_help()
 !! the usage: what the program does and its options
- write(6,'(a)') 'Usage: oncvpsp_ld.x -a AE_FILE -p PS_FILE [options]'
- write(6,'(a)') ''
- write(6,'(a)') 'The log derivatives of a pseudopotential and its all-electron'
- write(6,'(a)') 'atom, atan(r u''/u - 1) at radii r over a grid of energies, as'
- write(6,'(a)') 'continuous phases (the pseudopotential''s aligned with the'
- write(6,'(a)') 'all-electron ones at the reference energy of each l), for'
- write(6,'(a)') 'l = 0..3 (or those of -l) and, fully relativistic, each j.'
- write(6,'(a)') 'All the radii come from one solution per energy. Without'
- write(6,'(a)') '-r, -l or -e it prints the log derivatives of the run''s'
- write(6,'(a)') 'DIAGNOSTICS block. The output, on stdout, is a block per'
- write(6,'(a)') 'l, j and radius:'
- write(6,'(a)') '  ld_r l ikap r(bohr)'
- write(6,'(a)') '  ld l ikap e(Ha) phase_ae phase_ps'
- write(6,'(a)') 'ikap 1 for j = l+1/2 (and every l if not fully relativistic),'
- write(6,'(a)') '2 for j = l-1/2.'
- write(6,'(a)') ''
- write(6,'(a)') 'Options:'
- write(6,'(a)') '  -h, --help'
- write(6,'(a)') '      Show this help and exit'
- write(6,'(a)') '  -v, --version'
- write(6,'(a)') '      Show the build and exit'
- write(6,'(a)') '  -a, --ae-file FILE'
- write(6,'(a)') '      The all-electron data file of an _ae.x (required)'
- write(6,'(a)') '  -p, --ps-file FILE'
- write(6,'(a)') '      The pseudopotential data file of a run of oncvpsp.x,'
- write(6,'(a)') '      oncvpspnr.x, oncvpspr.x or their _ps.x with --ps-file,'
- write(6,'(a)') '      for the same atom, treatment and mesh (required)'
- write(6,'(a)') '  -r, --radii R1,R2,...'
- write(6,'(a)') '      The radii (bohr), each for every l. The two phases are'
- write(6,'(a)') '      comparable only beyond rc of that l and of the local'
- write(6,'(a)') '      potential; inside, they differ by construction.'
- write(6,'(a)') '      Default the input''s rxpsh, or for rxpsh < 0'
- write(6,'(a)') '      rc(l)*amesh**2 (rc of the local potential above lmax)'
- write(6,'(a)') '  -l, --channels L1,L2,...'
- write(6,'(a)') '      The angular momenta, from 0 to 3, whose log'
- write(6,'(a)') '      derivatives are computed (both j of each when fully'
- write(6,'(a)') '      relativistic). Default all four'
- write(6,'(a)') '  -e, --energies EMIN,EMAX,DE'
- write(6,'(a)') '      The energies (Ha), from EMAX down by DE to above EMIN.'
- write(6,'(a)') '      Default the input''s epsh1,epsh2,depsh'
- write(6,'(a)') ''
- write(6,'(a)') 'Errors are reported on stdout, with a nonzero exit status.'
+ write(iout,'(a)') 'Usage: oncvpsp_ld.x -a AE_FILE -p PS_FILE [options]'
+ write(iout,'(a)') ''
+ write(iout,'(a)') &
+&      'The log derivatives of a pseudopotential and its all-electron'
+ write(iout,'(a)') &
+&      'atom, atan(r u''/u - 1) at radii r over a grid of energies, as'
+ write(iout,'(a)') 'continuous phases (the pseudopotential''s aligned with the'
+ write(iout,'(a)') 'all-electron ones at the reference energy of each l), for'
+ write(iout,'(a)') 'l = 0..3 (or those of -l) and, fully relativistic, each j.'
+ write(iout,'(a)') 'All the radii come from one solution per energy. Without'
+ write(iout,'(a)') '-r, -l or -e it prints the log derivatives of the run''s'
+ write(iout,'(a)') 'DIAGNOSTICS block. The output, on stdout, is a block per'
+ write(iout,'(a)') 'l, j and radius:'
+ write(iout,'(a)') '  ld_r l ikap r(bohr)'
+ write(iout,'(a)') '  ld l ikap e(Ha) phase_ae phase_ps'
+ write(iout,'(a)') &
+&      'ikap 1 for j = l+1/2 (and every l if not fully relativistic),'
+ write(iout,'(a)') '2 for j = l-1/2.'
+ write(iout,'(a)') ''
+ write(iout,'(a)') 'Options:'
+ write(iout,'(a)') '  -h, --help'
+ write(iout,'(a)') '      Show this help and exit'
+ write(iout,'(a)') '  -v, --version'
+ write(iout,'(a)') '      Show the build and exit'
+ write(iout,'(a)') '  -a, --ae-file FILE'
+ write(iout,'(a)') '      The all-electron data file of an _ae.x (required)'
+ write(iout,'(a)') '  -p, --ps-file FILE'
+ write(iout,'(a)') '      The pseudopotential data file of a run of oncvpsp.x,'
+ write(iout,'(a)') &
+&      '      oncvpspnr.x, oncvpspr.x or their _ps.x with --ps-file,'
+ write(iout,'(a)') '      for the same atom, treatment and mesh (required)'
+ write(iout,'(a)') '  -r, --radii R1,R2,...'
+ write(iout,'(a)') &
+&      '      The radii (bohr), each for every l. The two phases are'
+ write(iout,'(a)') '      comparable only beyond rc of that l and of the local'
+ write(iout,'(a)') '      potential; inside, they differ by construction.'
+ write(iout,'(a)') '      Default the input''s rxpsh, or for rxpsh < 0'
+ write(iout,'(a)') '      rc(l)*amesh**2 (rc of the local potential above lmax)'
+ write(iout,'(a)') '  -l, --channels L1,L2,...'
+ write(iout,'(a)') '      The angular momenta, from 0 to 3, whose log'
+ write(iout,'(a)') '      derivatives are computed (both j of each when fully'
+ write(iout,'(a)') '      relativistic). Default all four'
+ write(iout,'(a)') '  -e, --energies EMIN,EMAX,DE'
+ write(iout,'(a)') &
+&      '      The energies (Ha), from EMAX down by DE to above EMIN.'
+ write(iout,'(a)') '      Default the input''s epsh1,epsh2,depsh'
+ write(iout,'(a)') ''
+ write(iout,'(a)') 'Errors are reported on stdout, with a nonzero exit status.'
  end subroutine write_help
 
  end program oncvpsp_ld

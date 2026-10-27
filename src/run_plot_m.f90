@@ -27,7 +27,7 @@
 
  subroutine run_plot(lmax,npa,epa,wellprj,lloc,irc, &
 &                    vkb,vlocpw,vkbpw,evkb,nproj,rr,vfull,vp,vpuns,zz,mmax, &
-&                    mxprj,drl,nrl,rho,rhoc,rhomod,irel,nkap,cvgplt,ifail)
+&                    mxprj,drl,nrl,rho,rhoc,rhomod,irel,nkap,cvgplt,iout,ifail)
 
 !! write output for plotting pseudopotentials, model core charge, and
 !! all-electron and pseudo wave functions
@@ -61,6 +61,7 @@
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param nkap  number of kappa per l: 1, or 2 for irel=2
 !! @param cvgplt  energy per electron error vs. cutoff (convergence profiles)
+!! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, mxl, mxlin, nrhomod, nerrlv, nerrdg
@@ -87,6 +88,7 @@
  real(dp), intent(in) :: cvgplt(2,nerrdg,mxprj,mxl+1,nkap)
 
 !Output variables
+ integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -102,7 +104,7 @@
 
  al = 0.01d0 * log(rr(101)/rr(1))
 
- write(6,'(/a)') 'DATA FOR PLOTTING'
+ write(iout,'(/a)') 'DATA FOR PLOTTING'
 
  n1 = int(log(drl/rr(1))/al+1.0d0)
  n2 = int(log(real(nrl,dp)*drl/rr(1))/al+1.0d0)
@@ -164,12 +166,13 @@
  integer :: ii
  real(dp) :: r0,dr
  dr=min(drl,rr(n4)/200)
- write(6,'(/2a/)') ' radii, charge,',' pseudopotentials (ll=0, 1, lmax)'
+ write(iout,'(/2a/)') ' radii, charge,',' pseudopotentials (ll=0, 1, lmax)'
  r0=rr(n1)-dr
  call thin_points(n1,n4,dr,r0)
  do ii=n1,n4
    if(keep(ii) .or. irel==2) then
-     write(6,'(a,6(f12.7,1x))') '!p',rr(ii),rho(ii),(vpuns(ii,l1),l1=1,lmax+1)
+     write(iout,'(a,6(f12.7,1x))') '!p',rr(ii),rho(ii), &
+&          (vpuns(ii,l1),l1=1,lmax+1)
    end if
  end do
 
@@ -178,7 +181,7 @@
    call thin_points(n1,n4,dr,r0)
    do ii=n1,n4
      if(keep(ii)) then
-       write(6,'(a, 2(f12.7,1x))') ' !L',rr(ii),vpuns(ii,lloc + 1)
+       write(iout,'(a, 2(f12.7,1x))') ' !L',rr(ii),vpuns(ii,lloc + 1)
      end if
    end do
  end if
@@ -194,17 +197,17 @@
    rmx=max(rmx,5.0d0*rho(ii),rhomod(ii,1))
  end do
 
- write(6,'(//2a/)') ' radii, charge,',' core charge, model core charge'
+ write(iout,'(//2a/)') ' radii, charge,',' core charge, model core charge'
  dr=min(drl,rr(n2)/200.0d0)
  r0=rr(n1)-dr
  call thin_points(n1,n2,dr,r0)
  do ii=n1,n2
    if(keep(ii)) then
      if(rhoc(ii)<rmx)then
-       write(6,'(a,8(f12.7,1x))') '!r',rr(ii),rho(ii),rhoc(ii), &
+       write(iout,'(a,8(f12.7,1x))') '!r',rr(ii),rho(ii),rhoc(ii), &
 &       rhomod(ii,1)
      else if(rr(ii)>0.01d0) then
-       write(6,'(a,8(f12.7,1x))') '!r',rr(ii),rho(ii),rmx, &
+       write(iout,'(a,8(f12.7,1x))') '!r',rr(ii),rho(ii),rmx, &
 &      rhomod(ii,1)
      end if
    end if
@@ -217,7 +220,7 @@
 !! scattering states at their energies, both of the sign of the
 !! all-electron one at n2
  integer, intent(in) :: l1,ikap
- integer :: ii,iprj,npr,ierr,mch,kap,iout
+ integer :: ii,iprj,npr,ierr,mch,kap,ilabel
  integer, intent(out) :: ifail
  real(dp) :: r0,dr,cnorm,emax,emin,etest,sgnae,sgnps
  ifail=0
@@ -232,33 +235,33 @@
    if(epa(iprj,l1,ikap)<0.0d0 .and. &
 &     .not. (wellprj(iprj,l1) .and. ikap==1)) then
      if(irel==2) then
-       write(6,'(//a,i2,a,i2,a,i2,a,a/)') 'n=',npa(iprj,l1),',  l=', &
+       write(iout,'(//a,i2,a,i2,a,i2,a,a/)') 'n=',npa(iprj,l1),',  l=', &
 &            ll,', kap=',kap, ', all-electron wave function', &
 &            ', pseudo w-f'
      else
-       write(6,'(//a,i2,a,i2,a,a/)') 'n=',npa(iprj,l1),',  l=',ll, &
+       write(iout,'(//a,i2,a,i2,a,a/)') 'n=',npa(iprj,l1),',  l=',ll, &
 &            ', all-electron wave function', ', pseudo w-f'
      end if
 
      etest=epa(iprj,l1,ikap)
      call boundstate(irel,npa(iprj,l1),ll,kap,ierr,etest, &
-&                    rr,zz,vfull,ur,urp,mmax,mch,ifail)
+&                    rr,zz,vfull,ur,urp,mmax,mch,iout,ifail)
      if(ifail/=0) return
      if(ierr /= 0 .and. irel==2) then
-       write(6,'(a,i2,a,i2,a,i2,a,i4)') &
+       write(iout,'(a,i2,a,i2,a,i2,a,i4)') &
 &            'run_plot_r 409: ldiracfb convergence ERROR, n=',&
 &             npa(iprj,l1),'  l=',ll, 'kap-',kap,'  ierr=',ierr
        ifail=1
        return
      else if(ierr /= 0) then
-       write(6,'(/a,3i4)') &
+       write(iout,'(/a,3i4)') &
 &            'run_plot: lschfb convergence ERROR n,l,ierr=', &
 &            npa(iprj,l1),ll,ierr
        ifail=1
        return
      end if
      if(irel==2) then
-       call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm,ifail)
+       call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm,iout,ifail)
        if(ifail/=0) return
      end if
 
@@ -267,36 +270,36 @@
 
      call lschvkbb(ll+iprj,ll,npr,ierr,etest,emin,emax, &
 &                  rr,vp(1,lloc+1,ikap),vlocpw,vkbpw(1:npr,l1,ikap), &
-&                  evkb(1,l1,ikap),u2,up,mmax,mch,ifail)
+&                  evkb(1,l1,ikap),u2,up,mmax,mch,iout,ifail)
      if(ifail/=0) return
      sgnae=1.0d0
      sgnps=1.0d0
    else
      if(irel==2) then
-       write(6,'(//a,i2,a,i2,a,i2,a,a/)') 'scattering, iprj=',iprj, &
+       write(iout,'(//a,i2,a,i2,a,i2,a,a/)') 'scattering, iprj=',iprj, &
 &           ',  l=',ll,', kap=',kap,', all-electron wave function', &
 &           ', pseudo w-f'
      else
-       write(6,'(//a,i2,a,i2,a,a/)') 'scattering, iprj=',iprj, &
+       write(iout,'(//a,i2,a,i2,a,a/)') 'scattering, iprj=',iprj, &
 &           ',  l=',ll,', all-electron wave function', ', pseudo w-f'
      end if
      call scatterstate(irel,nn,ll,kap,ierr,epa(iprj,l1,ikap), &
-&                   rr,zz,vfull,ur,urp,mmax,n2)
+&                   rr,zz,vfull,ur,urp,mmax,n2,iout)
      if(irel==2) then
        if(ierr/=0) then
-         write(6,'(/2a,i0,a,i0,a,i0)') &
+         write(iout,'(/2a,i0,a,i0,a,i0)') &
 &              'run_plot_r: ERROR ldiracfs failed', &
 &              ', ll=',ll,', kap=',kap,', ierr=',ierr
          ifail=1
          return
        end if
-       call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm,ifail)
+       call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm,iout,ifail)
        if(ifail/=0) return
      end if
 
      call lschvkbs(ll,npr,epa(iprj,l1,ikap),rr,vp(1,lloc+1,ikap), &
 &                  vlocpw,vkbpw(1:npr,l1,ikap),evkb(1,l1,ikap),u2,up, &
-&                  mmax,n2,ifail)
+&                  mmax,n2,iout,ifail)
      if(ifail/=0) return
      sgnae=sign(1.0d0,ur(n2,1))
      sgnps=sign(1.0d0,u2(n2))
@@ -309,12 +312,12 @@
    else
      r0=rr(n1)-dr
    end if
-   iout=iprj
-   if(nkap==2 .and. ikap==1) iout=-iprj
+   ilabel=iprj
+   if(nkap==2 .and. ikap==1) ilabel=-iprj
    call thin_points(n1,n2,dr,r0)
    do ii = n1, n2
      if(keep(ii)) then
-       write(6,'(a,i5,i1,3(f12.6,1x))') '&',iout,ll,rr(ii), &
+       write(iout,'(a,i5,i1,3(f12.6,1x))') '&',ilabel,ll,rr(ii), &
 &            sgnae*ur(ii,1),sgnps*u2(ii)
      end if
    end do
@@ -326,7 +329,7 @@
  integer, intent(in) :: l1,ikap
  integer :: ii,jj,lout
  real(dp) :: r0,dr
- write(6,'(/)')
+ write(iout,'(/)')
  dr=min(drl,rr(n3)/200.0d0)
  r0=rr(n1)-dr
  lout=ll
@@ -334,7 +337,7 @@
  call thin_points(n1,n3,dr,r0)
  do ii=n1,n3
    if(keep(ii)) then
-     write(6,'(a,i6,6(f12.6,1x))') '!J',lout,rr(ii), &
+     write(iout,'(a,i6,6(f12.6,1x))') '!J',lout,rr(ii), &
 &          (vkb(ii,jj,l1,ikap),jj=1,nproj(l1))
    end if
  end do
@@ -345,31 +348,32 @@
 !! l>0 when fully relativistic
  integer :: jj
  if(irel==2) then
-   write(6,'(/a)') 'convergence profiles, (ll=0,lmax), kappa average'
+   write(iout,'(/a)') 'convergence profiles, (ll=0,lmax), kappa average'
    l1=1
    ll=l1-1
    do jj=1,nerrlv
      if(cvgplt(1,jj,1,l1,1)/=0.d0) then
-       write(6,'(a,i6,3f12.6)') '!C',ll,cvgplt(1,jj,1,l1,1),cvgplt(2,jj,1,l1,1)
+       write(iout,'(a,i6,3f12.6)') '!C',ll,cvgplt(1,jj,1,l1,1), &
+&            cvgplt(2,jj,1,l1,1)
      end if
    end do
    do l1=2,lmax+1
      ll=l1-1
      do jj=1,nerrlv
        if(cvgplt(1,jj,1,l1,1)/=0.d0 .and. cvgplt(1,jj,1,l1,nkap)/=0.0d0) then
-         write(6,'(a,i6,3f12.6)') '!C',ll,cvgplt(1,jj,1,l1,1), &
+         write(iout,'(a,i6,3f12.6)') '!C',ll,cvgplt(1,jj,1,l1,1), &
 &         0.5d0*(cvgplt(2,jj,1,l1,1)+cvgplt(2,jj,1,l1,nkap))
        end if
      end do
    end do
  else
-   write(6,'(/a)') 'convergence profiles, (ll=0,lmax)'
-   write(6,*) 'lmax',lmax
+   write(iout,'(/a)') 'convergence profiles, (ll=0,lmax)'
+   write(iout,*) 'lmax',lmax
    do l1=1,lmax+1
      ll=l1-1
      do jj=1,nerrlv
        if(cvgplt(1,jj,1,l1,1)/=0.d0) then
-         write(6,'(a,i6,3(f12.6,1x))') '!C',ll,cvgplt(1,jj,1,l1,1), &
+         write(iout,'(a,i6,3(f12.6,1x))') '!C',ll,cvgplt(1,jj,1,l1,1), &
 &              cvgplt(2,jj,1,l1,1)
        end if
      end do

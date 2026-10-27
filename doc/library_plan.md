@@ -1,6 +1,7 @@
 ## A library and Python/Julia wrappers
 
-**Status: in progress. Phase 4 is done; phase 1 is under way.**
+**Status: in progress. Phases 2 and 4 are done, and phase 1 but for the
+stops that move with phase 3.**
 
 The goal is to call ONCVPSP from Python and Julia: pass in an input, get
 back the pseudopotential and the test results as arrays, and never take the
@@ -101,15 +102,22 @@ backtrace, and the exit status) unchanged:
 
 ### Phase 2: output to a chosen unit
 
-598 `write(6,…)` lines in 45 files. A library has to be able to send that
-text elsewhere, or nowhere.
+A library has to be able to send the text output elsewhere, or nowhere.
 
-- [ ] Decide how the unit reaches the routines. Options: an `iout` argument
-      on every routine that writes (long argument lists, but explicit), or
-      one `integer, parameter` in `constants_m` that is opened on a file or
-      `/dev/null` (simpler, but a global unit).
-- [ ] Error messages go to the same unit as now, so the reference outputs
-      do not change.
+- [x] Every procedure that writes, or calls one that does, takes the unit
+      as an argument, `iout`, before `ifail` (by keyword where there are
+      optional arguments), and writes to it: 140 procedures. Internal
+      procedures use their host's `iout`. A module variable would have
+      been shorter, but it is the global state that the rules exclude.
+- [x] `oncvpsp_main`, the programs and the unit tests pass 6
+      (`integer, parameter :: iout=6`), so the output does not change.
+      `oncvpsp_confine`'s two callbacks of the root searches (`phase`,
+      `u_rs`), whose interfaces have no room for it, do the same.
+- [x] Unit 6 stays for the command line (`cli_m`, `parse_command_line`,
+      `write_help`) and for the messages of the checks that stay
+      `error stop` (phase 1): they are bugs, not output.
+- [ ] A caller that wants no output opens `/dev/null` (or `NUL`) and
+      passes its unit: with phase 3.
 
 ### Phase 3: a driver split in three
 
