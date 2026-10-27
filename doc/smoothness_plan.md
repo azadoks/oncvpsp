@@ -676,8 +676,8 @@ So the order is:
 6. References, then phase 7. References done: patched for phases 5
    and 6 together; the kernels do not move, V_loc moves only where the
    model core does, the log derivatives everywhere (X-2).
-7. Low, for the optimizer: D-5 (open); X-1, X-4 and X-6 (done
-   2026-10-27); X-5 (done by
+7. Low, for the optimizer: D-5 (deferred 2026-10-27, no current
+   motivation); X-1, X-4 and X-6 (done 2026-10-27); X-5 (done by
    S-5 and audit C-1), the M-12 ripple (done: r_s smooth to 5e-12), M-14
    (PSML) and the psp8 model-core pieces (both done: the psp8 core smooth
    to 1e-10). The UPF on the log mesh writes ρ_c's values, which are
@@ -1212,7 +1212,10 @@ So the order is:
 - [x] S-10 GGA gradients from the pieces: dropped (2026-10-27),
       RadialAtomicSolvers.jl showed the effect does not matter
 - [ ] `match_order` (D-5): input key, minimum tail and Martins fill to
-      C⁴, T2 row `slack` with `match_order = 4`
+      C⁴, T2 row `slack` with `match_order = 4`. Deferred (the user's
+      decision, 2026-10-27): low priority, with no current motivation;
+      S-10, the GGA across the C² joint, was dropped, and C⁴ has shown
+      no practical benefit
 - [x] T2 rows fcfact, rcfact, icmod 4 grid, slack: icmod 1–3 at G1;
       icmod 4, 6 and 7 at the floors measured above (core 3e-12 to 1e-10,
       V_loc 3e-12 to 1e-10), each tolerance and its reason in
@@ -1999,7 +2002,8 @@ These change behaviour beyond numerics. Decided on review (2026-10-20).
   minimum tail keeps 4 of its 9 coefficients free; the Martins fill
   becomes exp(a₀ + a₁r² + … + a₄r⁸), whose monotonicity on [0, r_s] is
   decided by the roots of its derivative. C⁴ has shown no practical
-  benefit in the tests so far; the option is for smoothness.
+  benefit in the tests so far; the option is for smoothness. Deferred
+  (2026-10-27): with S-10 dropped, nothing needs it now.
 
 - **D-6 Exchange-correlation** (F-1, F-2). The xc implementations are
   not changed; a variant would be a new iexc, not needed so far. The
