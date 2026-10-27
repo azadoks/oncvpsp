@@ -64,8 +64,8 @@ with it set, so the failure reaches `oncvpsp_main`, which ends with
   `eresid`'s q grid, `gauss_legendre`'s Newton iterations, and
   `dirac_outward`'s series at the origin, which converges at any energy
   of the solvers' brackets.
-- `exc_libxc`'s stub (a build without libxc given a libxc functional)
-  still stops; `check_data` should reject the functional instead.
+- A build without libxc refuses a libxc functional in `check_data`
+  (`have_libxc`), so `exc_libxc`'s stub, which stops, is not reached.
 - The imported `functionals.F90` keeps its `stop`s.
 
 Steps, one commit each, every one with the outputs of the reference

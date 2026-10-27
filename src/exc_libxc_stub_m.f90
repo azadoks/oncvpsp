@@ -21,13 +21,17 @@
 
  implicit none
  private
- public :: exc_libxc
+ public :: exc_libxc, have_libxc
+
+!> whether this build has libxc, for check_data
+ logical, parameter :: have_libxc=.false.
 
  contains
 
  subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax)
 !!  dummy substitute for interface to libxc library to allow successful
-!!  build without this library
+!!  build without this library; check_data has rejected the libxc
+!!  functionals (have_libxc), so this is not reached
 !!
 !! @param iexc  exchange-correlation function to be used: -(1000*id1+id2) for
 !!              the libxc functionals id1 and id2

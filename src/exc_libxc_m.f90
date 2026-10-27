@@ -21,7 +21,10 @@
 
  implicit none
  private
- public :: exc_libxc
+ public :: exc_libxc, have_libxc
+
+!> whether this build has libxc, for check_data
+ logical, parameter :: have_libxc=.true.
 
  contains
 

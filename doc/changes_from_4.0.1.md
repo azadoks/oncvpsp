@@ -223,6 +223,9 @@ rather than hidden.
   reference data. `iexc = 5` is refused: it is r2SCAN in METAPSP.
 - `c_light`: the speed of light is an input (default 137.036; NIST uses
   137.0359895).
+- A build without Libxc refuses a negative `iexc` in the input check
+  (`test_data: iexc = ... needs libxc, which this build lacks`) instead
+  of stopping at the first exchange-correlation call.
 - The non-relativistic solvers are truly non-relativistic. In 4.0.1 they
   used fss = 1e-12, a speed of light of 1e6 (4e-5 Ha in U), and the
   scalar-relativistic starting exponent for l > 0.

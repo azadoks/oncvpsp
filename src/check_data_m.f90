@@ -40,6 +40,7 @@
 
  use constants_m, only: dp, mxstate, mxcnf, mxl, mxlin
  use input_m, only: input_t
+ use exc_libxc_m, only: have_libxc
  implicit none
 
 !Input variables
@@ -111,6 +112,10 @@
  else if(inp%iexc==0 .or. inp%iexc>7) then
    write(6,'(a)') 'test_data: must have iexc <=7, iexc /= 0, 5.'
    write(6,'(a)') '  negative values for libxc'
+   ierr=ierr+1
+ else if(inp%iexc<0 .and. .not. have_libxc) then
+   write(6,'(a,i0,a)') 'test_data: iexc = ',inp%iexc, &
+&        ' needs libxc, which this build lacks'
    ierr=ierr+1
  end if
 
