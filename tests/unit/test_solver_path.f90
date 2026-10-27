@@ -20,6 +20,7 @@
  use lschpsbar_m, only: lschpsbar
  use lschvkbb_m, only: lschvkbb
  use lschvkbbe_m, only: lschvkbbe
+ use phsft_m, only: phsft_mch
  use relativity_m, only: c_light => c_light_default
  implicit none
  integer, parameter :: iout=6
@@ -31,7 +32,7 @@
  real(dp), allocatable :: rr(:), vv(:), vloc(:), uu(:, :), &
 &                         up(:, :), ud(:, :, :), udp(:, :, :)
  type(piecewise_t) :: vlocpw, vkbpw(1)
- real(dp) :: al, ee(2), evkb(1), emin, emax, uld, rcut
+ real(dp) :: al, ee(2), evkb(1), emin, emax, uld, rcut, rm
  integer :: nfail = 0, mmax, ii, ip, ierr(2), mch(2), nn, ll, kap, mbar
  character(len=40) :: name
 
@@ -101,14 +102,15 @@
    call compare(name, uu)
 
    uld = up(mch(1), 1)/uu(mch(1), 1)
-   mch(2) = mch(1)
+   rm = rr(mch(1))
+   mch(2) = phsft_mch(rr, mmax, rm)
    do ii = 1, 2
      ee(ii) = guess(merge(-1.3194_dp, -0.3914_dp, ll == 0), ii)
      emin = -3.0_dp
      emax = 0.0_dp
      call lschvkbbe(nn, ll, 1, ierr(ii), ee(ii), uld, emin, emax, rr, vloc, &
-&                   vlocpw, vkbpw, evkb, uu(:, ii), up(:, ii), mmax, mch(ii), &
-&                   iout, ifail)
+&                   vlocpw, vkbpw, evkb, uu(:, ii), up(:, ii), mmax, mch(2), &
+&                   rm, iout, ifail)
      if(ifail /= 0) error stop 1
    end do
    write(name, '(a,i0,a,i0)') 'lschvkbbe n ', nn, ' l ', ll

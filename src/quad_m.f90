@@ -25,7 +25,7 @@
  use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
- public :: gauss_legendre, log_norm
+ public :: gauss_legendre, log_norm, log_norm_to
 
  contains
 
@@ -102,5 +102,29 @@
  call lm_integral(rr,ff,nn,2*ll+2,rr(1),rr(nn),si)
  log_norm=ff(1)*rr(1)/(2.0d0*gam+1.0d0)+si
  end function log_norm
+
+ real(dp) function log_norm_to(rr,ff,nn,ll,gam,rq)
+
+!! log_norm to the radius rq instead of rr(nn), a smooth function of rq
+!!
+!! @param rr  log radial mesh
+!! @param ff  integrand: u**2, or g**2+f**2 of a Dirac solution
+!! @param nn  the last point read, far enough past rq for the interpolant
+!!            of lm_integral
+!! @param ll  angular momentum (lm_integral's power at the origin, which
+!!            the limit rr(1) leaves out)
+!! @param gam  power of the solution at the origin, u ~ r**gam
+!! @param rq  the upper limit, rr(1)<=rq<=rr(nn) (bohr)
+
+!Input variables
+ integer, intent(in) :: nn,ll
+ real(dp), intent(in) :: rr(nn),ff(nn),gam,rq
+
+!Local variables
+ real(dp) :: si
+
+ call lm_integral(rr,ff,nn,2*ll+2,rr(1),rq,si)
+ log_norm_to=ff(1)*rr(1)/(2.0d0*gam+1.0d0)+si
+ end function log_norm_to
 
  end module quad_m

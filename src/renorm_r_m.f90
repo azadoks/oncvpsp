@@ -25,7 +25,7 @@
 
  contains
 
- subroutine renorm_r(uu,rr,ll,kap,c_light,zz,mmax,cnorm,iout,ifail)
+ subroutine renorm_r(uu,rr,ll,kap,c_light,zz,mmax,cnorm,iout,ifail,rnorm)
 
 !! renormalize Dirac wave function so that large component is normalized
 !!
@@ -39,9 +39,12 @@
 !! @param cnorm  renormalization coefficient
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
+!! @param rnorm  the radius the large component is normalized to (a
+!!               scattering state's matching radius); absent, its last
+!!               nonzero point
 
  use constants_m, only: dp
- use quad_m, only: log_norm
+ use quad_m, only: log_norm, log_norm_to
  implicit none
 
 !Input variables
@@ -57,6 +60,7 @@
  real(dp), intent(out) :: cnorm
  integer, intent(in) :: iout
  integer, intent(out) :: ifail
+ real(dp), intent(in), optional :: rnorm
 
 !Local variables
  real(dp) :: sn
@@ -87,7 +91,11 @@
    return
  end if
 
- sn=log_norm(rr,uu(1:nin,1)**2,nin,ll,gam)
+ if(present(rnorm)) then
+   sn=log_norm_to(rr,uu(1:nin,1)**2,nin,ll,gam,rnorm)
+ else
+   sn=log_norm(rr,uu(1:nin,1)**2,nin,ll,gam)
+ end if
 
 
  cnorm=sqrt(1.0d0/sn)

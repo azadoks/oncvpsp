@@ -633,14 +633,14 @@
  epstot= eeig + eexc - 0.5d0*eeel
  write(iout,'(/a,f12.6/)') 'Pseudoatom total energy', epstot
 
- call run_diag(inp%lmax,npa,epa,wellprj,inp%lloc,irc, &
+ call run_diag(inp%lmax,npa,epa,wellprj,inp%lloc,inp%rc, &
 &               vlocpw,vkbpw,evkb,inp%nproj,rr,vfull,vp,inp%zz,mmax,mxprj, &
 &               irel,c_light,nkap, &
 &               0,vsrpw,esr,vsopw,eso,iout,ifail)
  if(ifail/=0) return
 
  if(irel==2) then
-   call run_diag(inp%lmax,npa,epa,wellprj,inp%lloc,irc, &
+   call run_diag(inp%lmax,npa,epa,wellprj,inp%lloc,inp%rc, &
 &                 vlocpw,vkbpw,evkb,inp%nproj,rr,vfull,vp,inp%zz,mmax,mxprj, &
 &                 irel,c_light, &
 &                 nkap,1,vsrpw,esr,vsopw,eso,iout,ifail)

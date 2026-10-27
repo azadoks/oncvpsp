@@ -24,6 +24,7 @@
  private
  public :: dp, pi, mxprj, mxstate, mxcnf, mxl, mxlin, mxkap
  public :: nrhomod, nlev, nerrlv, nerrdg, dqout, well_onset_default
+ public :: diag_match
  public :: ae_tolres
 
 !> kind of all real variables
@@ -80,6 +81,13 @@
 !> multiple of rc (wellstate): rc amesh**5 on the default mesh, where it was
 !> before it became an input
  real(dp), parameter :: well_onset_default=1.006_dp**5
+
+!> radius at which run_diag matches the pseudo to the all-electron
+!> functions, as a multiple of max(rc(l), rc(lloc)): the mesh point 5 past
+!> irc on the default mesh, where it was before it became continuous; a
+!> multiple independent of the mesh, as amesh**5 would put a first-order
+!> mesh error in the diagnostic (doc/smoothness_plan.md, X-1)
+ real(dp), parameter :: diag_match=1.006_dp**5
 
 !> convergence threshold of the all-electron SCF (sratom, relatom) for the
 !> residual of the screening potential (Ha) and for the change of each

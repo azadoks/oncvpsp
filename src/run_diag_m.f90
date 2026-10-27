@@ -25,14 +25,16 @@
 
  contains
 
- subroutine run_diag(lmax,npa,epa,wellprj,lloc,irc,vlocpw,vkbpw,evkb,nproj,rr, &
+ subroutine run_diag(lmax,npa,epa,wellprj,lloc,rc,vlocpw,vkbpw,evkb,nproj,rr, &
 &                    vfull,vp,zz,mmax,mxprj,irel,c_light,nkap,iso,vsrpw,esr, &
 &                    vsopw,eso,iout,ifail)
 
 !! diagnostics for semi-local and Vanderbilt-Kleinman-bylander pseudopotentials
 !! checks bound-state energies, norms, and slopes, and pseudo-bound state
 !! quantities for positive-energy projectors by matching all-electron
-!! log derivatives at rc.
+!! log derivatives at the radius rm = max(rc(l), rc(lloc)) diag_match, the
+!! functions interpolated there and a scattering state normalized to it,
+!! so every number is a smooth function of the radii.
 !! Should test as essentially exact for non-relativitic calculations
 !! Error for relativistic is B matrix Hermiticity error
 !! With iso=1 (fully relativistic) the projectors of each J are instead
@@ -47,7 +49,7 @@
 !! @param wellprj  whether each projector is a well state (its energy then
 !!                 of either sign), else a bound state
 !! @param lloc  l for local potential
-!! @param irc  core radii indices
+!! @param rc  core radii (bohr)
 !! @param vlocpw  the screened local potential's pieces
 !! @param vkbpw  VKB projectors as functions of pieces
 !! @param evkb  coefficients of VKB projectors
@@ -73,7 +75,11 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use constants_m, only: dp, mxl, mxlin
+ use constants_m, only: dp, mxl, mxlin, diag_match
+ use logmesh_m, only: lm_interp
+ use phsft_m, only: phsft_mch
+ use quad_m, only: log_norm_to
+ use sr_flux_m, only: sr_gamma
  use kappa_m, only: kap_count, kap_of
  use pieces_m, only: piecewise_t
  use outwf_m, only: outwf_index_at
@@ -87,8 +93,8 @@
 !Input variables
  integer, intent(in) :: lmax,lloc,mmax,mxprj,irel,nkap,iso
  real(dp), intent(in) :: c_light
- integer, intent(in) :: npa(mxprj,mxlin+1),irc(mxlin+1),nproj(mxlin+1)
- real(dp), intent(in) :: zz
+ integer, intent(in) :: npa(mxprj,mxlin+1),nproj(mxlin+1)
+ real(dp), intent(in) :: zz,rc(mxlin+1)
  real(dp), intent(in) :: rr(mmax),vp(mmax,mxl+2,nkap),vfull(mmax)
  real(dp), intent(in) :: epa(mxprj,mxlin+1,nkap),evkb(mxprj,mxl+1,nkap)
  logical, intent(in) :: wellprj(mxprj,mxlin+1)
@@ -103,7 +109,8 @@
 !Local variables
  integer :: ll,l1,ikap,kap,mkap,ierr,mch,mchf,nvkbt
  integer :: iprj,nnae,nnp,npr
- real(dp) :: al,emax,emin,etest,umch,upmch,uldf,gam,gpr,cnorm
+ real(dp) :: emax,emin,etest,umch,upmch,uldf,gam,gpr,cnorm
+ real(dp) :: rm,fss,uq,upq
  real(dp), allocatable :: uu(:),up(:),ur(:,:),urp(:,:)
 
  real(dp), allocatable :: evkbt(:)
@@ -114,7 +121,8 @@
  allocate(uu(mmax),up(mmax),ur(mmax,2),urp(mmax,2))
  allocate(evkbt(4*mxprj),vkbtpw(4*mxprj))
 
- al = 0.01d0 * log(rr(101)/rr(1))
+ fss=0.0d0
+ if(irel/=0) fss=(1.0d0/c_light)**2
 
 ! loop for diagnostic output using Vanderbilt Kleinman-Bylander projectors
 !
@@ -153,8 +161,15 @@
 
        npr=nproj(l1)
 
-!   find cutoff radius for projectors
-       mchf=max(irc(l1),irc(lloc+1))+5
+!   the matching radius, and the last mesh point its interpolants read
+       rm=max(rc(l1),rc(lloc+1))*diag_match
+       mchf=phsft_mch(rr,mmax,rm)
+       if(mchf==0) then
+         write(iout,'(/a,f12.6)') trim(name)// &
+&              ': ERROR matching radius beyond the mesh, rm=',rm
+         ifail=1
+         return
+       end if
 
 !   all-electron state, its large component when irel=2, normalized as a
 !   Schroedinger function
@@ -181,12 +196,21 @@
 &                       rr,zz,vfull,ur,urp,mmax,mchf,iout)
        end if
        cnorm=1.0d0
-       if(irel==2) then
+       if(irel==2 .and. wellprj(iprj,l1)) then
+         call renorm_r(ur,rr,ll,kap,c_light,zz,mmax,cnorm,iout,ifail,rnorm=rm)
+         if(ifail/=0) return
+       else if(irel==2) then
          call renorm_r(ur,rr,ll,kap,c_light,zz,mmax,cnorm,iout,ifail)
          if(ifail/=0) return
+       else if(wellprj(iprj,l1)) then
+!   a scattering state normalized to rm, as the pseudo-wave function
+         cnorm=1.0d0/sqrt(log_norm_to(rr,ur(1:mchf,1)**2,mchf,ll, &
+&              sr_gamma(ll,zz,fss),rm))
+         ur(1:mchf,1)=cnorm*ur(1:mchf,1)
        end if
-       umch=ur(mchf,1)
-       upmch=cnorm*urp(mchf,1)
+       call lm_interp(rr(1:mchf),ur(1:mchf,1),mchf,rm,umch)
+       call lm_interp(rr(1:mchf),urp(1:mchf,1),mchf,rm,upmch)
+       upmch=cnorm*upmch
        uldf=upmch/umch
 
        if(l1==lloc+1) npr=0
@@ -225,7 +249,7 @@
          if(ifail/=0) return
          call lschvkbbe(nnp,ll,nvkbt,ierr,etest,uldf,emin,emax, &
 &                       rr,vp(1,lloc+1,ikap),vlocpw,vkbtpw(1:nvkbt),evkbt, &
-&                       uu,up,mmax,mchf,iout,ifail)
+&                       uu,up,mmax,mchf,rm,iout,ifail)
          if(ifail/=0) return
 
          if(ierr/=0 .and. irel==2) then
@@ -237,14 +261,16 @@
          end if
        end if !epa<0 (bound or not)
 
-       gam=abs(umch/uu(mchf))
-       gpr=abs(upmch/up(mchf))
+       call lm_interp(rr(1:mchf),uu(1:mchf),mchf,rm,uq)
+       call lm_interp(rr(1:mchf),up(1:mchf),mchf,rm,upq)
+       gam=abs(umch/uq)
+       gpr=abs(upmch/upq)
 !
        if(irel==2) then
-         write(iout,'(2i4,6f12.7)') ll,kap,rr(irc(l1)),rr(mchf), &
+         write(iout,'(2i4,6f12.7)') ll,kap,rc(l1),rm, &
 &              epa(iprj,l1,ikap),etest-epa(iprj,l1,ikap),gam,gpr
        else
-         write(iout,'(i4,6f12.7)') ll,rr(irc(l1)),rr(mchf),epa(iprj,l1,ikap), &
+         write(iout,'(i4,6f12.7)') ll,rc(l1),rm,epa(iprj,l1,ikap), &
 &              etest-epa(iprj,l1,ikap),gam,gpr
        end if
 

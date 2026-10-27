@@ -26,20 +26,23 @@
  contains
 
  subroutine lschvkbbe(nn,ll,nvkb,ierr,ee,uld,emin,emax, &
-&   rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,mch,iout,ifail)
+&   rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,mch,rm,iout,ifail)
 
 !! integrates radial schroedinger equation for pseudopotential with
 !! Vanderbilt-Kleinman-Bylander non-local projectors finding energy at
-!! which desired log derivative uld is matched at point mch, the root
+!! which desired log derivative uld is matched at the radius rm, the root
 !! with nn-ll-1 eigenvalues below it on (0, rr(mch)] (outwf_index; a node
-!! count would also count nodes that enter at r = 0 with the energy)
+!! count would also count nodes that enter at r = 0 with the energy). The
+!! function and its derivative at rm are those of their interpolants
+!! (lm_interp), and the norm is the integral to rm, so the energy and the
+!! function are smooth functions of rm
 !!
 !! @param nn  principal quantum number
 !! @param ll  angular-momentum quantum number
 !! @param nvkb  = number of VKB projectors to be used
 !! @param ierr  non-zero return if error
 !! @param ee  bound-state energy, input guess and output calculated value
-!! @param uld  log derivative up/uu to be matched at mch
+!! @param uld  log derivative up/uu to be matched at rm
 !! @param emin  externally generaated estimate of lower bound for ee
 !! @param emax  externally generaated estimate of upper bound for ee
 !! @param rr  log radial mesh
@@ -47,10 +50,12 @@
 !! @param vlocpw  the screened local potential's pieces
 !! @param vkbpw  VKB projectors as functions of pieces
 !! @param evkb  coefficients of VKB projectors
-!! @param uu  output radial wave function (*rr)
+!! @param uu  output radial wave function (*rr) to mch, normalized to rm
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param mmax  size of log grid
-!! @param mch  matching mesh point for inward-outward integrations
+!! @param mch  the last mesh point integrated to, far enough past rm for
+!!             the interpolant (phsft_mch)
+!! @param rm  matching radius (bohr)
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
@@ -58,11 +63,12 @@
  use boundsolve_m, only: bs_converged, bs_correct, bs_bisect
  use pieces_m, only: piecewise_t
  use outwf_m, only: outwf_t, outwf_setup, outwf_solve, outwf_free
- use quad_m, only: log_norm
+ use quad_m, only: log_norm_to
+ use logmesh_m, only: lm_interp
  implicit none
 
 !Input variables
- real(dp), intent(in) :: uld
+ real(dp), intent(in) :: uld,rm
  real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nvkb)
  integer, intent(in) :: nn,ll,nvkb,mmax
  integer, intent(in) :: mch
@@ -124,8 +130,8 @@
    call outwf_solve(ow,ee,evkb,mch,mch,uu,up,neig,iout=iout,ifail=ifail)
    if(ifail/=0) return
 
-   uout=uu(mch)
-   upout=up(mch)
+   call lm_interp(rr(1:mch),uu(1:mch),mch,rm,uout)
+   call lm_interp(rr(1:mch),up(1:mch),mch,rm,upout)
 
    if(neig-nn+ll+1==0) then
 
@@ -133,7 +139,7 @@
 
 ! perform normalization sum
 
-     sn=log_norm(rr,uu(1:nin)**2,nin,ll,dble(ll+1))
+     sn=log_norm_to(rr,uu(1:nin)**2,nin,ll,dble(ll+1),rm)
 
 ! normalize u
 
@@ -153,7 +159,7 @@
 
 ! perturbation theory for energy shift
 
-     de=0.5d0*uout*(upout-upin)/(al*rr(mch))
+     de=0.5d0*uout*(upout-upin)/(al*rm)
 
 
 ! convergence test and possible exit

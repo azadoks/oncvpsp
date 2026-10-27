@@ -325,6 +325,19 @@ precision.
   the pseudo-atom at epa rather than the all-electron node count, which
   can differ from it (see the eigenvalue index under Numerics). Commit:
   d159196.
+- **The VKB diagnostic table at a continuous radius.** `run_diag`
+  matched at the mesh point max(irc) + 5, so its rmatch, energy shifts,
+  norm and slope tests were staircases in the radii (about 6e-7 per mesh
+  cell in 07_N_opt's slope test). It matches at rm = max(rc(l), rc(lloc))
+  1.006^5, the same radius on the default mesh, a multiple independent
+  of the mesh: the functions are interpolated there, a scattering state
+  is normalized to rm rather than to a mesh point, and the well states'
+  energies are the root of the log-derivative match at rm. The rcore
+  column is the input rc rather than the mesh point at or above it. In
+  07_N_opt over rc(s) 1.20 to 1.22 every column is smooth (jump ratio at
+  most 1.2); the l = 0 slope test keeps a ripple of 3e-9 at the mesh's
+  period, from interpolating the derivative arrays, 30 times below the
+  table's 7 decimals. Only the table's lines change in the references.
 - **The well's share of the cutoffs (new).** 4.0.1 did not say how much
   of a well state's residual kinetic energy came from its arbitrary
   well. For each well state confined by its well, the output now gives
