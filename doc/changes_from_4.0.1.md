@@ -596,8 +596,16 @@ precision.
   0.08 bohr, which missed the projectors' 0 by up to 3e-8 and the
   all-electron core density's cusp. It is now the Floater-Hormann
   interpolant in r through log-mesh points from rr(1) at r = 0
-  (`lm_origin`); only the first line of the psp8 data moves, and the
-  first value of each linear-mesh UPF array.
+  (`lm_origin`), in the psp8, UPF and PSML files alike (PSML took a
+  line through the 2nd and 3rd log-mesh points); only the first line of
+  the psp8 data moves, the first value of each linear-mesh UPF array and
+  of each PSML array.
+- **The model core in closed form.** Where the model core is a formula
+  (icmod 1's polynomial, the Teter function, the fill of icmod 6 and 7)
+  its columns on the output meshes and at r = 0 are the formula's
+  values, not interpolated from the log mesh; only the core charge beyond
+  a joint is interpolated. A few values move, most in the Teter taper
+  (79_Au_lxc, 4e-4 in the 4th derivative at 3.03 bohr).
 - **Fully relativistic psp8 (O-2, D-2).** 4.0.1 dropped scalar and
   spin-orbit terms below 1e-3 of the first, so a term could drop out as
   an input moved. Every term is now written. Commit: 870835b.

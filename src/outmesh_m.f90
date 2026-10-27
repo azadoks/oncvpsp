@@ -19,7 +19,8 @@
 !> (doc/smoothness_plan.md, O-1): at each output radius the interpolant
 !> (lm_interp) of a smooth function, or of the piece of the radius's
 !> segment of a piecewise one, 0 beyond its last bound, so no interpolant
-!> spans a kink and a projector is exactly 0 beyond its rc. An output point
+!> spans a kink and a projector is exactly 0 beyond its rc; a piece with a
+!> closed form (the model core's) is evaluated instead. An output point
 !> at the origin, below the log mesh, takes the value there of the
 !> interpolant in r of the log mesh's values (lm_origin), of the piece of
 !> the first segment for a piecewise function.
@@ -27,7 +28,7 @@
  module outmesh_m
  use constants_m, only: dp
  use logmesh_m, only: lm_interp, lm_origin
- use pieces_m, only: piecewise_t, pw_node_values, pw_segment
+ use pieces_m, only: piecewise_t, pw_node_values, pw_segment, pw_form_value
  implicit none
  private
  public :: om_values, om_piece_values, om_local_values
@@ -113,6 +114,7 @@
  do ii=1,nrl
    if(rl(ii)<rr(1)) cycle
    kk=pw_segment(pw,rl(ii))
+   if(pw_form_value(pw,kk,rl(ii),fl(ii))) cycle
    if(kk>0) then
      call lm_interp(rr,pw%vals(:,kk),mmax,rl(ii),fl(ii))
    else
@@ -120,6 +122,9 @@
    end if
  end do
  kk=pw_segment(pw,rr(1))
+ if(rl(1)<rr(1)) then
+   if(pw_form_value(pw,kk,0.0d0,fl(1))) return
+ end if
  if(kk>0) then
    call origin(rr,pw%vals(:,kk),mmax,rl,fl,nrl,iout,ifail)
    if(ifail/=0) return

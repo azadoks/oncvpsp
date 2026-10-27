@@ -66,7 +66,7 @@
 
  use constants_m, only: dp, mxstate, nrhomod
  use logmesh_m, only: lm_derivs
- use modcore_m, only: core_crossover, poly_core_fit, core_pieces, &
+ use modcore_m, only: core_crossover, poly_core_fit, core_pieces, poly_form, &
 &                     d2exc_baseline, d2exc_report
  use pieces_m, only: piecewise_t
  use der2exc_m, only: der2exc
@@ -121,7 +121,7 @@
 
 ! fill in model and derivatives: the polynomial inside r*, the core charge
 ! outside
- call core_pieces(rr,rhoc,mmax,rstar,poly_fill,corepw,rhomod)
+ call core_pieces(rr,rhoc,mmax,rstar,poly_form,[a0,aco],corepw,rhomod)
 
 
 !test model
@@ -136,41 +136,6 @@
  deallocate(d2excae,d2excps)
 
  return
-
- contains
-
- subroutine poly_fill(rad,dd)
-
-!! the polynomial a0 + sum_j aco(j) r**(j+2) and its first 4 derivatives
-!!
-!! @param rad  radius (bohr)
-!! @param dd  the polynomial and its derivatives at rad
-
-!Input variables
- real(dp), intent(in) :: rad
-
-!Output variables
- real(dp), intent(out) :: dd(5)
-
-!Local variables
- real(dp) :: fac
- integer :: ii,jj,ll
-
- do ii=1,5
-   if(ii==1) then
-     dd(ii)=a0
-   else
-     dd(ii)=0.0d0
-   end if
-   do jj=1,5
-     fac=1.0d0
-     do ll=0,ii-2
-       fac=fac*(jj+2-ll)
-     end do
-     dd(ii)=dd(ii)+fac*aco(jj)*rad**(jj+3-ii)
-   end do
- end do
- end subroutine poly_fill
 
  end subroutine modcore
 

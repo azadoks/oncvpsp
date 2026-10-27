@@ -1524,9 +1524,19 @@ from rc:
       mesh's values (07_N_opt 1.7e-8 → 5e-9 relative, 29_Cu 3e-12 →
       2e-10). In fr runs the all-electron densities diverge at r = 0
       (r^(2γ-2)); their r = 0 value is the interpolant's, not a limit.
-      The model core's columns are still taken from the nodes, not
-      evaluated in closed form. References: the r = 0 line of the psp8
-      files only (23 files)
+      References: the r = 0 line of the psp8 files only (23 files).
+      Then (same day): PSML's r = 0 value (`add_zero_r`, a line through
+      nodes 2 and 3) is `lm_origin`'s too, so psp8, UPF and PSML agree
+      there (14_Si to 13 digits); and the model core's columns are
+      evaluated in closed form wherever the model is one (icmod 1's
+      polynomial, the Teter function of icmod 2 to 5, the fill of 6 and
+      7 inside r_s): a piece may carry a closed form (`pw_set_form`,
+      pieces_m), which `pw_value` and `outmesh_m` evaluate between the
+      nodes and at r = 0 in place of the interpolant; only the core
+      charge beyond a joint is interpolated. The odd derivatives of
+      icmod 1 at r = 0 are now exactly 0; in the Teter taper (79_Au_lxc,
+      3.03 bohr) the interpolant had been 1e-8 off in the value and 4e-4
+      in the 4th derivative
 - [x] Weighted wave cutoff for the icmod 6/7 budget (asked for by the
       oncvpsp-opt session; approved and done 2026-10-22, see
       doc/core_correction.md; T2 row sr_07_N_opt_rc1_wcut, Ecut_w smooth

@@ -37,7 +37,7 @@
 ! Performs analysis and based on "hardness" criterion described in
 ! Teter, Phys. Rev. B 48, 5031 (1993) , Appendix, as
 
- subroutine modcore2(icmod,rhops,rhotps,rhoc,rhoae,rhotae,rhomod, &
+ subroutine modcore2(icmod,rhops,rhotps,rhoc,rhoae,rhotae,rhomod,corepw, &
 &                   fcfact,rcfact,mmax,rr,nc,nv,la,zion,iexc,c_light,iout,ifail)
 
 !! @param icmod  (not used)
@@ -47,6 +47,8 @@
 !! @param rhoae  state-by-state all-electron valence charge density
 !! @param rhotae  total all-electron valence charge density
 !! @param rhomod  model core density and 4 derivatives
+!! @param corepw  its pieces, one segment with the Teter function's closed
+!!                form (modcore_m, core_pieces_smooth)
 !! @param fcfact  the model is matched where rhoc equals fcfact times the total
 !!                pseudocharge
 !! @param rcfact  (not used)
@@ -64,7 +66,9 @@
  use constants_m, only: dp, mxstate, nrhomod
  use logmesh_m, only: lm_derivs
  use modcore_m, only: core_crossover, teter_derivs, teter_core_derivs, &
-&                     teter_scale, d2exc_baseline, d2exc_report
+&                     teter_scale, d2exc_baseline, d2exc_report, &
+&                     core_pieces_smooth, teter_form
+ use pieces_m, only: piecewise_t
  use der2exc_m, only: der2exc
  implicit none
 
@@ -78,6 +82,7 @@
 
 !Output variables
  real(dp), intent(out) :: rhomod(mmax,nrhomod)
+ type(piecewise_t), intent(out) :: corepw(nrhomod)
  integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
@@ -146,6 +151,7 @@
      rhomod(ii,kk+1)=a0*gd(kk)*b0**kk
    end do
  end do
+ call core_pieces_smooth(rr,rhomod,mmax,corepw,teter_form,[a0,1.0d0/b0])
 
 ! test model
  call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &

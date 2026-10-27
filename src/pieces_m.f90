@@ -25,7 +25,9 @@
 !> operation is done per piece on that extension: an integral is the sum
 !> over the segments of lm_integral between the segment's bounds, so no
 !> stencil or interpolant spans a kink, and the result is smooth in the
-!> bounds.
+!> bounds. A piece may also have a closed form (the model core's fill and
+!> Teter function), which then gives its values between the nodes, and at
+!> the origin, in place of the interpolant (pw_value, outmesh_m).
 
  module pieces_m
  use constants_m, only: dp
@@ -35,7 +37,7 @@
  private
  public :: piecewise_t, pw_maxseg, pw_reach, pw_alloc, pw_free
  public :: pw_integral, pw_product_integral, pw_node_values, pw_segment
- public :: pw_value, pw_resample
+ public :: pw_value, pw_resample, pw_form, pw_set_form, pw_form_value
 
 !> the most segments a function has
  integer, parameter :: pw_maxseg=4
@@ -46,12 +48,28 @@
 !> (og_ext + lm_fh_reach = 59)
  integer, parameter :: pw_reach=64
 
+ abstract interface
+!> a closed form of a piece: the function and its first 4 derivatives at
+!> rad, from the parameters par
+   subroutine pw_form(par,rad,dd)
+   import :: dp
+   implicit none
+   real(dp), intent(in) :: par(:),rad
+   real(dp), intent(out) :: dd(5)
+   end subroutine pw_form
+ end interface
+
  type piecewise_t
    integer :: nseg=0
 !> bound(k-1) < r <= bound(k) is segment k; bound(0)=0
    real(dp) :: bound(0:pw_maxseg)=0.0d0
 !> vals(:,k) the k-th piece on the mesh
    real(dp), allocatable :: vals(:,:)
+!> the segment whose piece has a closed form (0 none), the element of
+!> the form's result it is, the form and its parameters (pw_set_form)
+   integer :: iform=0,icol=1
+   real(dp), allocatable :: par(:)
+   procedure(pw_form), pointer, nopass :: form=>null()
  end type piecewise_t
 
  contains
@@ -92,8 +110,64 @@
  pw%bound(0:nseg)=bound(0:nseg)
  allocate(pw%vals(mmax,nseg))
  pw%vals(:,:)=0.0d0
+ pw%iform=0
  return
  end subroutine pw_alloc
+
+ subroutine pw_set_form(pw,iseg,form,par,icol)
+
+!! a closed form for the piece of segment iseg: element icol of what form
+!! returns (the function, icol=1, or its derivative icol-1)
+!!
+!! @param pw  the piecewise function
+!! @param iseg  the segment
+!! @param form  the closed form
+!! @param par  its parameters
+!! @param icol  the element of its result, 1..5
+
+!Input variables
+ integer, intent(in) :: iseg,icol
+ real(dp), intent(in) :: par(:)
+ procedure(pw_form) :: form
+
+!Input/output variables
+ type(piecewise_t), intent(inout) :: pw
+
+ pw%iform=iseg
+ pw%icol=icol
+ pw%par=par
+ pw%form=>form
+ return
+ end subroutine pw_set_form
+
+ logical function pw_form_value(pw,kk,rq,fq)
+
+!! whether the piece of segment kk has a closed form, and if so its value
+!! at rq in fq
+!!
+!! @param pw  the piecewise function
+!! @param kk  the segment
+!! @param rq  radius, 0 or more (bohr)
+!! @param fq  the value, when the piece has a closed form
+
+!Input variables
+ type(piecewise_t), intent(in) :: pw
+ integer, intent(in) :: kk
+ real(dp), intent(in) :: rq
+
+!Output variables
+ real(dp), intent(out) :: fq
+
+!Local variables
+ real(dp) :: dd(5)
+
+ fq=0.0d0
+ pw_form_value=(kk>0 .and. kk==pw%iform)
+ if(.not. pw_form_value) return
+ call pw%form(pw%par,rq,dd)
+ fq=dd(pw%icol)
+ return
+ end function pw_form_value
 
  subroutine pw_free(pw)
 
@@ -102,7 +176,9 @@
  type(piecewise_t), intent(inout) :: pw
 
  if(allocated(pw%vals)) deallocate(pw%vals)
+ if(allocated(pw%par)) deallocate(pw%par)
  pw%nseg=0
+ pw%iform=0
  return
  end subroutine pw_free
 
@@ -237,8 +313,9 @@
 
  real(dp) function pw_value(rr,mmax,pw,rq)
 
-!! the function at a radius: the interpolant (lm_interp) of the piece of
-!! the segment that holds it, 0 beyond the last bound
+!! the function at a radius: the closed form or the interpolant
+!! (lm_interp) of the piece of the segment that holds it, 0 beyond the
+!! last bound
 !!
 !! @param rr  log radial mesh
 !! @param mmax  size of the log radial mesh
@@ -255,6 +332,7 @@
 
  pw_value=0.0d0
  kk=pw_segment(pw,rq)
+ if(pw_form_value(pw,kk,rq,pw_value)) return
  if(kk>0) call lm_interp(rr,pw%vals(:,kk),mmax,rq,pw_value)
  return
  end function pw_value

@@ -278,31 +278,12 @@
  if(ifail/=0) return
 
 ! fill in model and derivatives, all-electron beyond r_s
- call core_pieces(rr,rhoc,mmax,bc%fill%rs,fill,corepw,rhomod)
+ call core_pieces(rr,rhoc,mmax,bc%fill%rs,fill_form,fill_pack(bc%fill), &
+&                  corepw,rhomod)
 
  call budget_report(bc,icmod,fcfact,weighted,ecutw,slack,rcmin,iout)
 
  return
-
- contains
-
- subroutine fill(rad,dd)
-
-!! the fill of the model of this search and its first 4 derivatives at
-!! rad (fill_derivatives), for core_pieces
-!!
-!! @param rad  radius (bohr)
-!! @param dd  the fill and its first 4 derivatives at rad
-
-!Input variables
- real(dp), intent(in) :: rad
-
-!Output variables
- real(dp), intent(out) :: dd(5)
-
- call fill_derivatives(bc%fill,rad,dd)
- return
- end subroutine fill
 
  end subroutine modcore_budget
 
@@ -1887,6 +1868,54 @@
  end associate
  return
  end subroutine tail_derivatives
+
+ function fill_pack(fl) result(par)
+
+!! the fill as the parameters of fill_form: ifill, r_s, the Legendre
+!! coefficients of the minimum tail and Martins' coefficients
+!!
+!! @param fl  the fill
+
+!Input variables
+ type(fill_t), intent(in) :: fl
+
+!Output variables
+ real(dp) :: par(npow+6)
+
+ par(1)=dble(fl%ifill)
+ par(2)=fl%rs
+ par(3:npow+3)=fl%cleg(0:npow)
+ par(npow+4:npow+6)=[fl%aco,fl%bco,fl%cco]
+ return
+ end function fill_pack
+
+ subroutine fill_form(par,rad,dd)
+
+!! the fill of fill_pack's parameters and its first 4 derivatives at rad
+!! (fill_derivatives), the closed form of the model's pieces inside r_s
+!!
+!! @param par  the fill's parameters (fill_pack)
+!! @param rad  radius (bohr)
+!! @param dd  the fill and its first 4 derivatives at rad
+
+!Input variables
+ real(dp), intent(in) :: par(:),rad
+
+!Output variables
+ real(dp), intent(out) :: dd(5)
+
+!Local variables
+ type(fill_t) :: fl
+
+ fl%ifill=nint(par(1))
+ fl%rs=par(2)
+ fl%cleg(0:npow)=par(3:npow+3)
+ fl%aco=par(npow+4)
+ fl%bco=par(npow+5)
+ fl%cco=par(npow+6)
+ call fill_derivatives(fl,rad,dd)
+ return
+ end subroutine fill_form
 
  subroutine fill_derivatives(fl,rad,dd)
 

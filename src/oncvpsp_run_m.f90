@@ -572,7 +572,7 @@
    if(ifail/=0) return
 
  else if(inp%icmod==2) then
-   call modcore2(inp%icmod,rhops,rho,rhoc,rhoae,rhotae,rhomod, &
+   call modcore2(inp%icmod,rhops,rho,rhoc,rhoae,rhotae,rhomod,corepw, &
 &               inp%fcfact,inp%rcfact,mmax,rr,inp%nc,inp%nv,inp%la,zion, &
 &               inp%iexc,c_light,iout,ifail)
    if(ifail/=0) return
@@ -603,13 +603,13 @@
    deallocate(probes,lprobe)
 
  else if(inp%icmod>=3) then
-   call modcore3(inp%icmod,rhops,rho,rhoc,rhoae,rhotae,rhomod, &
+   call modcore3(inp%icmod,rhops,rho,rhoc,rhoae,rhotae,rhomod,corepw, &
 &               inp%fcfact,inp%rcfact,fcgrid,rcgrid,mmax,rr,inp%nc,inp%nv, &
 &               inp%la,zion,inp%iexc,c_light,iout,ifail)
    if(ifail/=0) return
 
  end if
-! the pieces of a model with no joint (the Teter function, or none)
+! the pieces of no model
  if(corepw(1)%nseg==0) call core_pieces_smooth(rr,rhomod,mmax,corepw)
 
 ! screening potential for pseudocharge

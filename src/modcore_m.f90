@@ -43,16 +43,20 @@
 !> the core charge beyond, each a smooth function past the joint, so the
 !> interpolants onto the output meshes do not span it (the psp8 file's
 !> derivative columns, of which the 3rd and 4th jump there for icmod 6
-!> and 7).
+!> and 7). The fill, and the Teter function of a model with no joint, are
+!> closed forms (pw_form: poly_form, teter_form, the budget's fill_form),
+!> evaluated at the output radii and at the origin; only the core charge
+!> beyond a joint is interpolated.
 
  module modcore_m
  use constants_m, only: dp, pi, nrhomod
  use logmesh_m, only: lm_root, lm_derivs, lm_fh_reach
- use pieces_m, only: piecewise_t, pw_alloc
+ use pieces_m, only: piecewise_t, pw_alloc, pw_form, pw_set_form
  implicit none
  private
  public :: teter_derivs, teter_core_derivs, core_crossover, poly_core_fit
  public :: teter_scale, core_pieces, core_pieces_smooth
+ public :: poly_form, teter_form
  public :: d2exc_baseline, d2exc_report
 
 !> the weights of the shifted sinc functions of h, at the shifts k pi
@@ -61,15 +65,6 @@
 
 !> the taper of the model's Teter function: 1 up to xtap1, 0 from xtap2
  real(dp), parameter :: xtap1=3.0d0, xtap2=4.0d0
-
- abstract interface
-   subroutine core_fill(rad,dd)
-   import :: dp
-   implicit none
-   real(dp), intent(in) :: rad
-   real(dp), intent(out) :: dd(5)
-   end subroutine core_fill
- end interface
 
  contains
 
@@ -611,27 +606,28 @@
  end if
  end subroutine teter_scale
 
- subroutine core_pieces(rr,rhoc,mmax,rj,fill,corepw,rhomod)
+ subroutine core_pieces(rr,rhoc,mmax,rj,fill,par,corepw,rhomod)
 
 !! the model core with a joint at rj as two pieces, each column of the
 !! model and its first 4 derivatives a piecewise function: the fill on
-!! [0, rj] and the core charge's derivatives (lm_derivs) beyond, each
-!! continued lm_fh_reach()+2 nodes past rj (the interpolant's reach) and 0
-!! farther, where the fill may overflow; and the model on the mesh, the
-!! fill below rj
+!! [0, rj], its closed form, and the core charge's derivatives (lm_derivs)
+!! beyond, each continued lm_fh_reach()+2 nodes past rj (the interpolant's
+!! reach) and 0 farther, where the fill may overflow; and the model on the
+!! mesh, the fill below rj
 !!
 !! @param rr  log radial mesh
 !! @param rhoc  core charge
 !! @param mmax  size of the log radial mesh
 !! @param rj  the joint (bohr), inside the mesh
 !! @param fill  the fill and its first 4 derivatives at a radius
+!! @param par  the fill's parameters
 !! @param corepw  the pieces of each column
 !! @param rhomod  the model and its first 4 derivatives on the mesh
 
 !Input variables
  integer, intent(in) :: mmax
- real(dp), intent(in) :: rr(mmax),rhoc(mmax),rj
- procedure(core_fill) :: fill
+ real(dp), intent(in) :: rr(mmax),rhoc(mmax),rj,par(:)
+ procedure(pw_form) :: fill
 
 !Output variables
  type(piecewise_t), intent(out) :: corepw(nrhomod)
@@ -647,10 +643,13 @@
    call pw_alloc(corepw(kk),mmax,2,[0.0d0,rj,rr(mmax)])
  end do
  do ii=1,min(mmax,jj+next)
-   call fill(rr(ii),dd)
+   call fill(par,rr(ii),dd)
    do kk=1,nrhomod
      corepw(kk)%vals(ii,1)=dd(kk)
    end do
+ end do
+ do kk=1,nrhomod
+   call pw_set_form(corepw(kk),1,fill,par,kk)
  end do
  do ii=max(1,jj+1-next),mmax
    call lm_derivs(rr,rhoc,mmax,rr(ii),4,dd)
@@ -670,19 +669,24 @@
  return
  end subroutine core_pieces
 
- subroutine core_pieces_smooth(rr,rhomod,mmax,corepw)
+ subroutine core_pieces_smooth(rr,rhomod,mmax,corepw,form,par)
 
 !! a model core with no joint as pieces of one segment each, a column
-!! ending at its last nonzero node (the end of a tapered Teter function)
+!! ending at its last nonzero node (the end of a tapered Teter function),
+!! with the model's closed form if it has one
 !!
 !! @param rr  log radial mesh
 !! @param rhomod  the model and its first 4 derivatives on the mesh
 !! @param mmax  size of the log radial mesh
 !! @param corepw  the pieces of each column
+!! @param form  the model and its first 4 derivatives at a radius
+!! @param par  its parameters
 
 !Input variables
  integer, intent(in) :: mmax
  real(dp), intent(in) :: rr(mmax),rhomod(mmax,nrhomod)
+ procedure(pw_form), optional :: form
+ real(dp), intent(in), optional :: par(:)
 
 !Output variables
  type(piecewise_t), intent(out) :: corepw(nrhomod)
@@ -697,9 +701,74 @@
    end do
    call pw_alloc(corepw(kk),mmax,1,[0.0d0,rr(nlast)])
    corepw(kk)%vals(:,1)=rhomod(:,kk)
+   if(present(form)) call pw_set_form(corepw(kk),1,form,par,kk)
  end do
  return
  end subroutine core_pieces_smooth
+
+ subroutine poly_form(par,rad,dd)
+
+!! the polynomial a0 + sum_j aco(j) r**(j+2), j=1..5, of icmod 1
+!! (poly_core_fit) and its first 4 derivatives
+!!
+!! @param par  a0, aco(1:5)
+!! @param rad  radius (bohr)
+!! @param dd  the polynomial and its derivatives at rad
+
+!Input variables
+ real(dp), intent(in) :: par(:),rad
+
+!Output variables
+ real(dp), intent(out) :: dd(5)
+
+!Local variables
+ real(dp) :: fac
+ integer :: ii,jj,ll
+
+ do ii=1,5
+   if(ii==1) then
+     dd(ii)=par(1)
+   else
+     dd(ii)=0.0d0
+   end if
+   do jj=1,5
+! the term of r**(jj+2) differentiated ii-1 times, none past its degree
+     if(jj+3-ii<0) cycle
+     fac=1.0d0
+     do ll=0,ii-2
+       fac=fac*(jj+2-ll)
+     end do
+     dd(ii)=dd(ii)+fac*par(jj+1)*rad**(jj+3-ii)
+   end do
+ end do
+ return
+ end subroutine poly_form
+
+ subroutine teter_form(par,rad,dd)
+
+!! the model a g(r/b) s(r/b) of the Teter function (teter_core_derivs) and
+!! its first 4 derivatives
+!!
+!! @param par  the amplitude a and the scale b (bohr)
+!! @param rad  radius (bohr)
+!! @param dd  the model and its derivatives at rad
+
+!Input variables
+ real(dp), intent(in) :: par(:),rad
+
+!Output variables
+ real(dp), intent(out) :: dd(5)
+
+!Local variables
+ real(dp) :: gd(0:4)
+ integer :: kk
+
+ call teter_core_derivs(rad/par(2),4,gd)
+ do kk=0,4
+   dd(kk+1)=par(1)*gd(kk)/par(2)**kk
+ end do
+ return
+ end subroutine teter_form
 
  subroutine d2exc_baseline(rhotae,rhoc,rhoae,rhotps,rhops,rr,zion,iexc, &
 &                          c_light,nc,nv,la,rcut,mmax,rhomod,d2excae,d2excps, &

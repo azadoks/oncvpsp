@@ -23,6 +23,7 @@
  module psmlout_m
  use constants_m, only: dp, mxstate, mxcnf, mxl, mxlin, nrhomod
  use input_m, only: config_t
+ use logmesh_m, only: lm_origin
  implicit none
 
  public :: psmlout
@@ -723,7 +724,8 @@
 
  subroutine add_zero_r(ff,rr,f0)
 
-!! Adds an r=0 element to a grid function f0, extrapolating
+!! Adds an r=0 element to a grid function f0: the interpolant in r of
+!! the log-mesh values at r = 0 (lm_origin)
 !!
 !! @param ff  function on the log radial grid
 !! @param rr  log radial grid
@@ -736,16 +738,15 @@
  real(dp), intent(out) :: f0(:)
 
 !Local variables
- integer :: ii, npts
- real(dp) :: r2
+ integer :: ii, npts, ierr
 
  npts = size(ff)
  if(size(f0) /= npts +1) error stop "nr /= npts + 1 in add_zero_r"
  do ii = 1, npts
    f0(ii+1) = ff(ii)
  end do
- r2 = rr(1)/(rr(2)-rr(1))
- f0(1) = ff(2) - (ff(3)-ff(2))*r2
+ call lm_origin(rr(1:npts),ff,npts,f0(1),ierr)
+ if(ierr /= 0) error stop "add_zero_r: log mesh too short for lm_origin"
  return
 
  end subroutine add_zero_r

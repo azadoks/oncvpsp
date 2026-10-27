@@ -38,7 +38,8 @@
 ! Performs analysis and based on "hardness" criterion described in
 ! Teter, Phys. Rev. B 48, 5031 (1993) , Appendix, as
 
- subroutine modcore3(icmod,rhops,rhotps,rhoc,rhoae,rhotae,rhomod,fcfact, &
+ subroutine modcore3(icmod,rhops,rhotps,rhoc,rhoae,rhotae,rhomod,corepw, &
+&                   fcfact, &
 &                   rcfact,fcgrid,rcgrid,mmax,rr,nc,nv,la,zion,iexc,c_light, &
 &                   iout,ifail)
 
@@ -69,7 +70,8 @@
  use constants_m, only: dp, mxstate, nrhomod
  use logmesh_m, only: lm_derivs
  use modcore_m, only: core_crossover, teter_core_derivs, d2exc_baseline, &
-&                     d2exc_report
+&                     d2exc_report, core_pieces_smooth, teter_form
+ use pieces_m, only: piecewise_t
  use der2exc_m, only: der2exc
  implicit none
 
@@ -87,6 +89,7 @@
 
 !Output variables
  real(dp), intent(out) :: rhomod(mmax,nrhomod)
+ type(piecewise_t), intent(out) :: corepw(nrhomod)
  integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
@@ -295,6 +298,7 @@
      rhomod(ii,kk+1)=xx(1,1)*gd(kk)/xx(2,1)**kk
    end do
  end do
+ call core_pieces_smooth(rr,rhomod,mmax,corepw,teter_form,[xx(1,1),xx(2,1)])
 
  call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
 &                   zion,iexc,c_light,nc,nv,la,rr(mmax),mmax)
