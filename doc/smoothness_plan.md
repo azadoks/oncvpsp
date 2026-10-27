@@ -476,7 +476,7 @@ numbers refer to [Phases](#phases).
 | X-1 | `run_diag`, `run_diag_sr_so_r`: matching at mchf = max(irc)+5; renorm to the last nonzero point | a, c | done (2026-10-27): r_m = max(rc_l, rc_loc)·`diag_match`, 1.006⁵ independent of the mesh (amesh⁵ would put a first-order mesh error in the diagnostic, phase 3's T4); u and al r u′ by FH at r_m (`lm_interp`), a scattering state normalized to r_m (`log_norm_to`, `renorm_r`'s `rnorm`), `lschvkbbe` matching at r_m; rcore printed as the input rc. 07_N_opt rc(s) 1.20–1.22: jump ≤ 1.2, residuals ≤ 1e-12 except the l = 0 slope test and well-state energy shift, a mesh-period ripple of 3e-9 and 8e-10 from the interpolated derivative arrays (the table prints 1e-7) |
 | X-2 | `run_phsft`: rxpsh → irphs; npsh = int(range/depsh); 2π unwrapping on any decrease; `vkbphsft` heuristic thresholds and nearest-grid alignment | a, i, g, h | done (`phsft_m`): (u, al r u′) interpolated to rxpsh exactly, the default rc·amesh² (rc of the local potential beyond lmax), the old node whenever rc is one; the phase followed in its doubled angle (sign-invariant) by continuation, the energy step halved until no step turns it by more than π/2, so no thresholds and no π or 2π corrections; aligned at ep itself. npsh kept: it depends on epsh1, epsh2 and depsh only, which the optimizer fixes |
 | X-3 | `run_ghosts`: barrier at mesh index mbar; basis = states below ebcut (count jumps) | a, i | done: the wall at 3 rc exactly, a node of the log mesh scaled by s ∈ [1, amesh) (V_loc and the projectors interpolated there from their pieces, `pw_value`, `pw_resample`); each barrier state's overlaps with the projectors weighted by `cinf_taper` of its energy, 1 to ebcut and 0 from 1.5 ebcut, so states enter at weight 0; the margins (e_basis against e_ref, the least ⟨r⟩/rc) in the DIAGNOSTICS block |
-| X-4 | `run_plot`: index ranges and thinning | a, h | fixed output grid (plots only) |
+| X-4 | `run_plot`: index ranges and thinning | a, h | done (2026-10-27): mostly resolved already, as the plotted values are mesh-node values of functions phase 3 made smooth, and the thinning from rr(n1) by drl kept a fixed set of nodes whenever drl < rr(end)/200. What was left: each plot's spacing min(drl, rr(end)/200) with its own end, and the ends from irc. Now one spacing min(drl, rr(n2)/200) for all plots (n2 from drl and nrl only) and the ends at rc + 1 and 1.1 rc of the input rc; the line count at an end can still change by one (plots only) |
 | X-5 | `run_config`/`psatom`: see S-5; occupation ramp may exit early | f, g | done: the explicit criterion of S-5 (phase 2), at the target occupations only; the ramp ends on them exactly (audit C-1) |
 | X-6 | `coulomb_tail`: α_z and its cut changes by the rectangle rule on the nodes; the 1e-10 radius the node past the last one above it, which sits at the noise floor of the unscreening (R-10 moved it 4.71 → 4.58 bohr in 14_Si nr as max \|V_loc − V_ion\| beyond rcmax fell 2.0e-9 → 5.8e-10) | c, a, g | done (2026-10-27): `lm_integral`, cut at the radii exactly; the radius by `lm_root` on (V_loc + zion/r)² − 1e-20 past the last node above it; the noise floor (max \|V_loc − V_ion\| beyond rcmax) is the next line, as before. 07_N_opt rcloc 1.18–1.20: α_z smooth to 1e-10 of 5 (degree 10), the cuts at their 1e-12 noise, the radius independent of rcloc; in the references only the radius moves (5.1574 → 5.1474 in 14_Si) |
 
@@ -676,7 +676,7 @@ So the order is:
 6. References, then phase 7. References done: patched for phases 5
    and 6 together; the kernels do not move, V_loc moves only where the
    model core does, the log derivatives everywhere (X-2).
-7. Low, for the optimizer: X-4 and D-5 (open); X-1 and X-6 (done
+7. Low, for the optimizer: D-5 (open); X-1, X-4 and X-6 (done
    2026-10-27); X-5 (done by
    S-5 and audit C-1), the M-12 ripple (done: r_s smooth to 5e-12), M-14
    (PSML) and the psp8 model-core pieces (both done: the psp8 core smooth
@@ -1242,7 +1242,8 @@ So the order is:
 - [x] X-1: `run_diag` matching at r_m = max(rc_l, rc_loc)·1.006⁵
       exactly (2026-10-27)
 - [x] X-6: `coulomb_tail` by `lm_integral` and `lm_root` (2026-10-27)
-- [ ] X-4 (`run_plot`)
+- [x] X-4: `run_plot` on one fixed thinning, its ends at the input rc
+      (2026-10-27)
 - [x] X-5: S-5 and audit C-1
 - [x] X-2: the phases at rxpsh exactly, continuous in the energy (`phsft_m`)
 - [x] X-3: the ghost test on a wall at 3 rc exactly, a smooth basis

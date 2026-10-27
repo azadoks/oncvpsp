@@ -723,7 +723,7 @@
 
  end do !jj
 
- call run_plot(inp%lmax,npa,epa,wellprj,inp%lloc,irc, &
+ call run_plot(inp%lmax,npa,epa,wellprj,inp%lloc,inp%rc, &
 &               vkb,vlocpw,vkbpw,evkb,inp%nproj,rr,vfull,vp,vpuns,inp%zz, &
 &               mmax,mxprj, &
 &               inp%drl,nrl, &

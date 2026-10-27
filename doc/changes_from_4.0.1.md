@@ -342,6 +342,15 @@ precision.
   most 1.2); the l = 0 slope test keeps a ripple of 3e-9 at the mesh's
   period, from interpolating the derivative arrays, 30 times below the
   table's 7 decimals. Only the table's lines change in the references.
+- **The plot data on fixed points.** Every plot (`!p`, `!L`, `!r`, the
+  wave functions, `!J`) is thinned by one spacing, min(drl, rr(n2)/200),
+  from the same first point, and the potentials' and projectors' plots
+  end at rc + 1 and 1.1 rc of the input rc, not at mesh points derived
+  from it. 4.0.1 thinned each plot by its own spacing, rr(end)/200 where
+  that was below drl, so the points written moved with rc. The projector
+  plots of inputs with rc below about 1.8 bohr are coarser (drl, 0.01
+  bohr, instead of 0.0066 in 07_N), and a plot can gain or lose its last
+  point. Only plot lines change in the references.
 - **The well's share of the cutoffs (new).** 4.0.1 did not say how much
   of a well state's residual kinetic energy came from its arbitrary
   well. For each well state confined by its well, the output now gives

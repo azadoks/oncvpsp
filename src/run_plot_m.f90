@@ -25,12 +25,16 @@
 
  contains
 
- subroutine run_plot(lmax,npa,epa,wellprj,lloc,irc,vkb,vlocpw,vkbpw,evkb, &
+ subroutine run_plot(lmax,npa,epa,wellprj,lloc,rc,vkb,vlocpw,vkbpw,evkb, &
 &                    nproj,rr,vfull,vp,vpuns,zz,mmax,mxprj,drl,nrl,rho,rhoc, &
 &                    rhomod,irel,c_light,nkap,cvgplt,iout,ifail)
 
 !! write output for plotting pseudopotentials, model core charge, and
-!! all-electron and pseudo wave functions
+!! all-electron and pseudo wave functions. The points are the mesh points
+!! of one thinning, by the spacing dr=min(drl,rr(n2)/200) from rr(n1),
+!! which no core radius moves, so each plotted value is a smooth function
+!! of the radii; the plots of the potentials and projectors end at radii
+!! of the continuous rc (doc/smoothness_plan.md, X-4)
 !!
 !! @param lmax  maximum angular momentum
 !! @param npa  principal quantum number for corresponding all-electron state
@@ -40,7 +44,7 @@
 !! @param wellprj  whether each projector is a well state (its energy then
 !!                 of either sign), else a bound state
 !! @param lloc  l for local potential
-!! @param irc  indices of core radii
+!! @param rc  core radii (bohr)
 !! @param vkb  VKB projectors on the mesh
 !! @param vlocpw  the screened local potential's pieces
 !! @param vkbpw  the projectors as functions of pieces
@@ -78,8 +82,8 @@
 !Input variables
  integer, intent(in) :: lmax,lloc,mmax,mxprj,nrl,irel,nkap
  real(dp), intent(in) :: c_light
- integer, intent(in) :: npa(mxprj,mxlin+1),irc(mxlin+1),nproj(mxlin+1)
- real(dp), intent(in) :: zz,drl
+ integer, intent(in) :: npa(mxprj,mxlin+1),nproj(mxlin+1)
+ real(dp), intent(in) :: zz,drl,rc(mxlin+1)
  real(dp), intent(in) :: rr(mmax),vp(mmax,mxl+2,nkap),vpuns(mmax,mxl+2)
  real(dp), intent(in) :: vfull(mmax)
  real(dp), intent(in) :: vkb(mmax,mxprj,mxl+1,nkap)
@@ -96,7 +100,7 @@
 !Local variables
  integer :: ll,l1,n1,n2,n3,n4,nn
  integer :: ikap,mkap
- real(dp) :: al
+ real(dp) :: al,dr,rcm
  real(dp), allocatable :: u2(:),up(:),ur(:,:),urp(:,:)
 !the points that are written of a plot, each beyond the last by dr
  logical, allocatable :: keep(:)
@@ -110,12 +114,10 @@
 
  n1 = int(log(drl/rr(1))/al+1.0d0)
  n2 = int(log(real(nrl,dp)*drl/rr(1))/al+1.0d0)
- n3=0
- do l1=1,lmax+1
-   n3=max(n3,irc(l1)-1)
- end do
- n4=min(n2,int(log((rr(n3)+1.0d0)/rr(1))/al))
- n3=int(log(1.1d0*rr(n3)/rr(1))/al+1.0d0)
+ rcm=maxval(rc(1:lmax+1))
+ n4=min(n2,int(log((rcm+1.0d0)/rr(1))/al))
+ n3=int(log(1.1d0*rcm/rr(1))/al+1.0d0)
+ dr=min(drl,rr(n2)/200.0d0)
 
  call write_potentials()
  call write_charges()
@@ -166,8 +168,7 @@
 !! potential for lloc=4; the fully-relativistic code writes every point
 !! of the potentials
  integer :: ii
- real(dp) :: r0,dr
- dr=min(drl,rr(n4)/200)
+ real(dp) :: r0
  write(iout,'(/2a/)') ' radii, charge,',' pseudopotentials (ll=0, 1, lmax)'
  r0=rr(n1)-dr
  call thin_points(n1,n4,dr,r0)
@@ -193,14 +194,13 @@
 !! the !r lines of the charge, the core charge (cut at rmx) and the model
 !! core charge, for the analysis of the model
  integer :: ii
- real(dp) :: r0,dr,rmx
+ real(dp) :: r0,rmx
  rmx=0
  do ii=n1,n2
    rmx=max(rmx,5.0d0*rho(ii),rhomod(ii,1))
  end do
 
  write(iout,'(//2a/)') ' radii, charge,',' core charge, model core charge'
- dr=min(drl,rr(n2)/200.0d0)
  r0=rr(n1)-dr
  call thin_points(n1,n2,dr,r0)
  do ii=n1,n2
@@ -224,7 +224,7 @@
  integer, intent(in) :: l1,ikap
  integer :: ii,iprj,npr,ierr,mch,kap,ilabel
  integer, intent(out) :: ifail
- real(dp) :: r0,dr,cnorm,emax,emin,etest,sgnae,sgnps
+ real(dp) :: r0,cnorm,emax,emin,etest,sgnae,sgnps
  ifail=0
  kap=kap_of(ll,ikap)
  npr=nproj(l1)
@@ -308,7 +308,6 @@
    end if
 
 !the fully-relativistic code starts a step further out
-   dr=min(drl,rr(n2)/200.0d0)
    if(irel==2) then
      r0=rr(n1)+dr
    else
@@ -330,9 +329,8 @@
 !! the !J lines of the orthonormal projectors of l1-1 and ikap
  integer, intent(in) :: l1,ikap
  integer :: ii,jj,lout
- real(dp) :: r0,dr
+ real(dp) :: r0
  write(iout,'(/)')
- dr=min(drl,rr(n3)/200.0d0)
  r0=rr(n1)-dr
  lout=ll
  if(nkap==2 .and. ikap==1) lout=-ll
