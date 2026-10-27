@@ -3,10 +3,13 @@
 References to "the paper" are to oncvpsp6.pdf, which is reproduced in this
 directory (now published as Phys. Rev. B 88, 085117 (2013)).
 
-The calculation is the subroutine oncvpsp_main (oncvpsp_main_m.F90).  Each
-executable (oncvpsp.x, oncvpspnr.x, oncvpspr.x and their _ae.x and _ps.x
-stages) is a short program calling it with the relativistic treatment,
-irel, and the stage.  It has the following major sections:
+Each executable (oncvpsp.x, oncvpspnr.x, oncvpspr.x and their _ae.x and
+_ps.x stages) is a short program calling the subroutine oncvpsp_main
+(oncvpsp_main_m.F90) with the relativistic treatment, irel, and the stage.
+It reads the command line and the input, calls oncvpsp_run
+(oncvpsp_run_m.f90), the calculation and its tests, and writes the
+pseudopotential files from what that returns.  The calculation has the
+following major sections:
 
 1) Data readin: Oncvpsp reads an input file, say *32_Ge.dat*, from its standard
    input.  While this file may contain comment lines with the initial character

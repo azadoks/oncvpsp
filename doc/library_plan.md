@@ -1,7 +1,7 @@
 ## A library and Python/Julia wrappers
 
-**Status: in progress. Phases 2 and 4 are done, and phase 1 but for the
-stops that move with phase 3.**
+**Status: in progress. Phases 1 to 4 are done but for the test results
+as arrays (phase 3).**
 
 The goal is to call ONCVPSP from Python and Julia: pass in an input, get
 back the pseudopotential and the test results as arrays, and never take the
@@ -97,8 +97,8 @@ backtrace, and the exit status) unchanged:
       modules of `oncvpsp_confine` alone (`confine_ws_m`, `ws_basis_m`,
       `confine_wall_m`) are the program's, and stop on an `ifail` of the
       library: their phase searches call back into `phsft_m`.
-- [ ] `oncvpsp_main`'s own stops on the results (the command line and the
-      input file stay): they move with phase 3.
+- [x] `oncvpsp_main`'s own stops on the results (the command line and the
+      input file stay): they moved with phase 3 into `oncvpsp_run`.
 
 ### Phase 2: output to a chosen unit
 
@@ -121,21 +121,38 @@ A library has to be able to send the text output elsewhere, or nowhere.
 
 ### Phase 3: a driver split in three
 
-`oncvpsp_main_m.F90` (1090 lines) is split into:
+`oncvpsp_main_m.F90` (895 lines) is split into:
 
-- [ ] `oncvpsp_run(...)`: the calculation, from the input values (as
-      arguments) to the results (as arrays), with `ierr`. No command line,
-      no input file, no output files.
-- [ ] the readers, which fill the input arguments (`read_input_text`,
+- [x] `oncvpsp_run(irel,istage,inp,ae_filename,ps_filename,skip_ld,psp,iout,ifail)`
+      (`oncvpsp_run_m`): the calculation, from the input as read (an
+      `input_t`, which it completes as the writers echo it) to the
+      pseudopotential (a `results_t`, `psp`), with the tests' text on
+      `iout` and `ifail`. It ends with `ifail=1` where the driver
+      stopped (the input checks before `check_data`, the reference atom).
+      The staging files of `_ae.x`/`_ps.x` and `oncvpsp_ld.x` stay in it,
+      by name, blank for none: a library caller passes `istage=0` and
+      blank names.
+- [x] the readers, which fill the `input_t` (`read_input_text`,
       `read_input_toml`, already separate);
-- [ ] the writers (`linout`, `upfout`, `psp8`, `psmlout`), called by the
-      driver after `oncvpsp_run`;
-- [ ] `oncvpsp_main`, left as the command line, the readers, `oncvpsp_run`
-      and the writers.
+- [x] the writers (`linout`, `upfout`, `psmlout`), called by the
+      driver after `oncvpsp_run`, from `psp`;
+- [x] `oncvpsp_main`, left as the command line, the readers,
+      `oncvpsp_run` and the writers.
+- [ ] The test results (log derivatives, the diagnostics, the test
+      configurations, the convergence curves) in `psp` as arrays, not
+      only as text.
 
-Open question: the results whose size is known only during the run (the
-number of projectors, the mesh). Either the caller passes maximum sizes
-(`mxprj`, `mmax`), or a first call returns the sizes.
+The results whose size is known only during the run (the number of
+projectors, the mesh) are allocatable components of `results_t`, so the
+Fortran caller passes no sizes. The C interface (phase 5) cannot take a
+derived type: it either copies them into arrays of maximum sizes
+(`mxprj`, `mmax`) or holds them behind a handle with calls for the sizes
+and the arrays.
+
+The speed of light (`relativity_m`'s `c_light`, set from the input by
+`set_relativity`) is a module variable: two runs one after the other are
+fine, two at once in threads are not. Phase 5 moves it into an argument
+or documents the limit.
 
 ### Phase 4: routines into modules
 

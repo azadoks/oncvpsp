@@ -49,6 +49,7 @@ set(src_oncvpsp
     ode_rc_der_m.f90
     ae_delta_m.f90
     oncvpsp_main_m.F90
+    oncvpsp_run_m.f90
     optimize_m.f90
     psatom_m.f90
     pspot_m.f90
