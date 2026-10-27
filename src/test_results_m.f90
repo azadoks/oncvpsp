@@ -25,7 +25,8 @@
  use constants_m, only: dp, mxl, mxstate, mxkap, mxcnf, nerrlv
  implicit none
  private
- public :: logder_t, ghosts_t, configs_t, convergence_t, vloc_cut_t
+ public :: tests_t, logder_t, ghosts_t, configs_t, convergence_t, &
+&           weighted_cut_t, vloc_cut_t
 
 !> the log derivatives, atan(r u'/u) (run_phsft)
  type :: logder_t
@@ -91,14 +92,18 @@
 !> tail and with the free tail; (3) 1 for these, -1 where the free tail
 !> is undefined, 0 for the other waves (3,mxprj,mxl+1,nkap)
    real(dp), allocatable :: wshare(:,:,:,:)
-!> whether the model core's budget took the weighted cutoff (icmod 6, 7
-!> with fcfact <= 0 and budget_cutoff "weighted"), its error per
-!> electron and the cutoff (Ha)
-   logical :: weighted=.false.
-   real(dp) :: errw=0.0d0,ecutw=0.0d0
-!> the weight of each pseudo-wave in it (mxprj,mxl+1,nkap)
-   real(dp), allocatable :: weight(:,:,:)
  end type convergence_t
+
+!> the weighted cutoff of the model core's budget, the weighted mean of
+!> the pseudo-waves' convergence curves (modcore_budget_table)
+ type :: weighted_cut_t
+!> whether the budget took it (icmod 6, 7 with fcfact <= 0 and
+!> budget_cutoff "weighted"), its error per electron and the cutoff (Ha)
+   logical :: used=.false.
+   real(dp) :: errw=0.0d0,ecutw=0.0d0
+!> the weight of each pseudo-wave in the mean (mxprj,mxl+1,nkap)
+   real(dp), allocatable :: weight(:,:,:)
+ end type weighted_cut_t
 
 !> the convergence of the local energy of the reference pseudo valence
 !> density (vloc_cutoff)
@@ -110,5 +115,18 @@
 !> (Ha), the error of the transforms
    real(dp) :: check=0.0d0
  end type vloc_cut_t
+
+!> the results of all the tests
+ type :: tests_t
+   type(logder_t) :: logder
+   type(ghosts_t) :: ghosts
+   type(configs_t) :: configs
+   type(convergence_t) :: convergence
+   type(weighted_cut_t) :: weighted_cut
+   type(vloc_cut_t) :: vloc_cut
+!> the eigenvalues of the projectors' symmetrized B matrices (run_vkb),
+!> their condition (mxprj,mxl+1,nkap)
+   real(dp), allocatable :: bbeig(:,:,:)
+ end type tests_t
 
  end module test_results_m

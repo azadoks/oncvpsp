@@ -28,8 +28,8 @@
 ! output (an optimizer taking finite differences of them): the values that
 ! the tables above print to 6 or 2 decimals, to 17 significant digits.
 
- subroutine diagout(lmax,nproj,mxprj,nkap,cvg,ld,gh,cfg,vlc,icmod,rr,mmax, &
-&                   rcmax,rhoc,corepw,lloc,evkb,bbeig,iout)
+ subroutine diagout(lmax,nproj,mxprj,nkap,tests,icmod,rr,mmax,rcmax,rhoc, &
+&                   corepw,lloc,evkb,iout)
 
 !! writes the block "Begin DIAGNOSTICS" ... "End DIAGNOSTICS", one value
 !! per line, each line tagged with its quantity:
@@ -130,11 +130,7 @@
 !! @param nproj  number of projectors for each l
 !! @param mxprj  dimension of the number of projectors
 !! @param nkap  number of kappa per l: 1, or 2 for irel=2
-!! @param cvg  the convergence of the optimized waves
-!! @param ld  the log derivatives
-!! @param gh  the ghost tests
-!! @param cfg  the test configurations
-!! @param vlc  the convergence of the local energy
+!! @param tests  the results of the tests (test_results_m)
 !! @param icmod  the model core's kind, 0 for none
 !! @param rr  log radial mesh
 !! @param mmax  size of the log radial mesh
@@ -143,7 +139,6 @@
 !! @param corepw  the model core charge and its derivatives as pieces
 !! @param lloc  l of the local potential, 4 for the polynomial
 !! @param evkb  the projector coefficients
-!! @param bbeig  the eigenvalues of the B matrices
 !! @param iout  unit of the text output
 
  use constants_m, only: dp, mxl, mxlin, nerrdg, nerrlv, nrhomod
@@ -152,23 +147,19 @@
  use logmesh_m, only: lm_interp, lm_root, lm_derivs
  use ugrid_m, only: ug_brent
  use input_echo_m, only: fe
- use test_results_m, only: logder_t, ghosts_t, configs_t, convergence_t, &
-&                          vloc_cut_t
+ use test_results_m, only: tests_t, logder_t, ghosts_t, configs_t, &
+&                          convergence_t, weighted_cut_t, vloc_cut_t
  implicit none
 
 !Input variables
  integer, intent(in) :: lmax,mxprj,nkap
  integer, intent(in) :: nproj(mxlin+1)
- type(convergence_t), intent(in) :: cvg
- type(logder_t), intent(in) :: ld
- type(ghosts_t), intent(in) :: gh
- type(configs_t), intent(in) :: cfg
- type(vloc_cut_t), intent(in) :: vlc
+ type(tests_t), intent(in) :: tests
  integer, intent(in) :: icmod,mmax
  real(dp), intent(in) :: rr(mmax),rcmax,rhoc(mmax)
  type(piecewise_t), intent(in) :: corepw(nrhomod)
  integer, intent(in) :: lloc
- real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap),bbeig(mxprj,mxl+1,nkap)
+ real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap)
  integer, intent(in) :: iout
 
 !Local variables
@@ -178,23 +169,23 @@
  real(dp), allocatable :: fmd(:)
 
  write(iout,'(/a)') 'Begin DIAGNOSTICS'
- call write_cutoffs()
+ call write_cutoffs(tests%convergence)
 
- call write_vloc()
+ call write_vloc(tests%vloc_cut)
 
  write(iout,'(a)') '# ekin_tail l ikap iproj t(Ha)'
- call write_per_projector('ekin_tail',cvg%tail(1,:,:,:))
+ call write_per_projector('ekin_tail',tests%convergence%tail(1,:,:,:))
 
  write(iout,'(a)') '# ekin_check l ikap iproj t(Ha)'
- call write_per_projector('ekin_check',cvg%tail(2,:,:,:))
+ call write_per_projector('ekin_check',tests%convergence%tail(2,:,:,:))
 
- if(cvg%weighted) call write_weighted()
+ if(tests%weighted_cut%used) call write_weighted(tests%weighted_cut)
 
- call write_log_derivatives()
- call write_ghosts()
- call write_vkb()
+ call write_log_derivatives(tests%logder)
+ call write_ghosts(tests%ghosts)
+ call write_vkb(tests%bbeig)
 
- call write_tests()
+ call write_tests(tests%configs)
 
  if(icmod>0) call write_core()
  write(iout,'(a)') 'End DIAGNOSTICS'
@@ -203,8 +194,11 @@
 
  contains
 
- subroutine write_cutoffs()
+ subroutine write_cutoffs(cvg)
 !! the ecut, opt and well_share lines of each optimized wave
+!!
+!! @param cvg  the convergence of the optimized waves
+ type(convergence_t), intent(in) :: cvg
  integer :: jj,l1,ikap,mkap,iprj
  write(iout,'(a)') '# ecut l ikap iproj err(Ha) ecut(Ha)'
  do l1=1,lmax+1
@@ -248,8 +242,11 @@
  end do
  end subroutine write_cutoffs
 
- subroutine write_vloc()
+ subroutine write_vloc(vlc)
 !! the ecut_vloc and vloc_check lines of the local potential
+!!
+!! @param vlc  the convergence of the local energy
+ type(vloc_cut_t), intent(in) :: vlc
  integer :: jj
  write(iout,'(a)') '# ecut_vloc err(Ha) ecut(Ha)'
  do jj=1,nerrlv
@@ -280,27 +277,33 @@
  end do
  end subroutine write_per_projector
 
- subroutine write_weighted()
+ subroutine write_weighted(wc)
 !! the ecut_w line of the weighted cutoff and the weights of the waves
+!!
+!! @param wc  the weighted cutoff
+ type(weighted_cut_t), intent(in) :: wc
  integer :: l1,ikap,mkap,iprj
  write(iout,'(a)') '# ecut_w err(Ha) ecut(Ha)'
- write(iout,'(a,1p,2e24.16)') 'ecut_w',fe(cvg%errw),cvg%ecutw
+ write(iout,'(a,1p,2e24.16)') 'ecut_w',fe(wc%errw),wc%ecutw
  write(iout,'(a)') '# ecut_w_weight l ikap iproj w'
  do l1=1,lmax+1
    mkap=kap_count(nkap,l1-1)
    do ikap=1,mkap
      do iprj=1,mxprj
-       if(cvg%weight(iprj,l1,ikap)>0.0d0) then
+       if(wc%weight(iprj,l1,ikap)>0.0d0) then
          write(iout,'(a,3i4,1p,e24.16)') 'ecut_w_weight',l1-1,ikap,iprj, &
-&                fe(cvg%weight(iprj,l1,ikap))
+&                fe(wc%weight(iprj,l1,ikap))
        end if
      end do
    end do
  end do
  end subroutine write_weighted
 
- subroutine write_log_derivatives()
+ subroutine write_log_derivatives(ld)
 !! the ld_r and ld lines of the log derivatives
+!!
+!! @param ld  the log derivatives
+ type(logder_t), intent(in) :: ld
  integer :: ii,l1,ikap,mkap
 !none with --no-log-derivatives (ld%ne 0)
  if(ld%ne>0) then
@@ -320,8 +323,11 @@
  end do
  end subroutine write_log_derivatives
 
- subroutine write_ghosts()
+ subroutine write_ghosts(gh)
 !! the ghost and ghost_r lines of the ghost tests
+!!
+!! @param gh  the ghost tests
+ type(ghosts_t), intent(in) :: gh
  integer :: jj,l1,ikap,mkap
  write(iout,'(a)') '# ghost l ikap n e_ref(Ha) e_basis(Ha)'
  write(iout,'(a)') '# ghost_r l ikap e(Ha) <r>/rc'
@@ -339,8 +345,11 @@
  end do
  end subroutine write_ghosts
 
- subroutine write_vkb()
+ subroutine write_vkb(bbeig)
 !! the vkb_b, vkb_cond and vkb_e lines of the projectors
+!!
+!! @param bbeig  the eigenvalues of the B matrices
+ real(dp), intent(in) :: bbeig(mxprj,mxl+1,nkap)
  integer :: l1,ikap,mkap,iprj,np
  write(iout,'(a)') '# vkb_b l ikap i b'
  write(iout,'(a)') '# vkb_cond l ikap cond(B)'
@@ -365,8 +374,11 @@
  end do
  end subroutine write_vkb
 
- subroutine write_tests()
+ subroutine write_tests(cfg)
 !! the test_config and test_eig lines of the test configurations
+!!
+!! @param cfg  the test configurations
+ type(configs_t), intent(in) :: cfg
  integer :: ii,jj
  write(iout,'(a)') '# test_config icfg de_ae(Ha) de_ps(Ha) err(Ha)'
  write(iout,'(a)') '# test_eig icfg n l ikap f eae(Ha) eps(Ha)'

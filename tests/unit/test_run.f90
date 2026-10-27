@@ -10,7 +10,9 @@
  use input_text_m, only: read_input_text
  use input_echo_m, only: fe
  use kappa_m, only: kap_count
- use oncvpsp_run_m, only: oncvpsp_run, results_t
+ use oncvpsp_run_m, only: oncvpsp_run
+ use results_m, only: results_t
+ use test_results_m, only: tests_t
  implicit none
 
 !Local variables
@@ -27,7 +29,7 @@
  open(newunit=iout,status='scratch',action='readwrite')
  call run(psp1,iout)
  rewind(iout)
- call check_diagnostics(psp1,iout)
+ call check_diagnostics(psp1%tests,psp1%pot%nkap,iout)
  close(iout)
  if(nline==0) call fail('no DIAGNOSTICS lines checked')
 
@@ -62,13 +64,15 @@
  if(ifail/=0) error stop 'test_run: oncvpsp_run failed'
  end subroutine run
 
- subroutine check_diagnostics(psp,iu)
+ subroutine check_diagnostics(tt,nkap,iu)
 !! each line of the DIAGNOSTICS block that a test result prints against
 !! that result
 !!
-!! @param psp  the results
+!! @param tt  the results of the tests
+!! @param nkap  number of kappa per l
 !! @param iu  unit of the text output, rewound
- type(results_t), intent(in) :: psp
+ type(tests_t), intent(in) :: tt
+ integer, intent(in) :: nkap
  integer, intent(in) :: iu
  character(len=512) :: line
  character(len=32) :: tag
@@ -91,90 +95,90 @@
    select case(trim(tag))
    case('ld_r')
      read(line,*) tag,ll,ikap,xx(1)
-     call same(xx(1),psp%logder%r(ll+1),line)
+     call same(xx(1),tt%logder%r(ll+1),line)
      ild=0
    case('ld')
      read(line,*) tag,ll,ikap,xx(1:3)
      ild=ild+1
-     call same(xx(1),psp%logder%e(ild),line)
-     call same(xx(2),psp%logder%ae(ild,ll+1,ikap),line)
-     call same(xx(3),psp%logder%ps(ild,ll+1,ikap),line)
+     call same(xx(1),tt%logder%e(ild),line)
+     call same(xx(2),tt%logder%ae(ild,ll+1,ikap),line)
+     call same(xx(3),tt%logder%ps(ild,ll+1,ikap),line)
    case('ghost')
      read(line,*) tag,ll,ikap,nn,xx(1:2)
      ighost(ll+1,ikap)=ighost(ll+1,ikap)+1
      jj=ighost(ll+1,ikap)
-     if(nn/=psp%ghosts%n(jj,ll+1,ikap)) call fail(line)
-     call same(xx(1),fe(psp%ghosts%e(1,jj,ll+1,ikap)),line)
-     call same(xx(2),fe(psp%ghosts%e(2,jj,ll+1,ikap)),line)
+     if(nn/=tt%ghosts%n(jj,ll+1,ikap)) call fail(line)
+     call same(xx(1),fe(tt%ghosts%e(1,jj,ll+1,ikap)),line)
+     call same(xx(2),fe(tt%ghosts%e(2,jj,ll+1,ikap)),line)
    case('ghost_r')
      read(line,*) tag,ll,ikap,xx(1:2)
-     call same(xx(1),psp%ghosts%least(1,ll+1,ikap),line)
-     call same(xx(2),psp%ghosts%least(2,ll+1,ikap),line)
+     call same(xx(1),tt%ghosts%least(1,ll+1,ikap),line)
+     call same(xx(2),tt%ghosts%least(2,ll+1,ikap),line)
    case('test_config')
      read(line,*) tag,icfg,xx(1:3)
      irow=0
      do jj=1,3
-       call same(xx(jj),fe(psp%configs%de(jj,icfg+1)),line)
+       call same(xx(jj),fe(tt%configs%de(jj,icfg+1)),line)
      end do
    case('test_eig')
      read(line,*) tag,icfg,nn,ll,ikap,xx(1:3)
      irow=irow+1
-     if(any([nn,ll,ikap]/=psp%configs%state(:,irow,icfg+1))) call fail(line)
+     if(any([nn,ll,ikap]/=tt%configs%state(:,irow,icfg+1))) call fail(line)
      do jj=1,3
-       call same(xx(jj),fe(psp%configs%e(jj,irow,icfg+1)),line)
+       call same(xx(jj),fe(tt%configs%e(jj,irow,icfg+1)),line)
      end do
    case('ecut_vloc')
      read(line,*) tag,xx(1:2)
      do
        ivl=ivl+1
-       if(psp%vloc_cut%cut(1,ivl)/=0.0d0) exit
+       if(tt%vloc_cut%cut(1,ivl)/=0.0d0) exit
      end do
-     call same(xx(1),fe(psp%vloc_cut%cut(2,ivl)),line)
-     call same(xx(2),psp%vloc_cut%cut(1,ivl),line)
+     call same(xx(1),fe(tt%vloc_cut%cut(2,ivl)),line)
+     call same(xx(2),tt%vloc_cut%cut(1,ivl),line)
    case('vloc_check')
      read(line,*) tag,xx(1)
-     call same(xx(1),fe(psp%vloc_cut%check),line)
+     call same(xx(1),fe(tt%vloc_cut%check),line)
    case('ekin_tail','ekin_check')
      read(line,*) tag,ll,ikap,iprj,xx(1)
      jj=merge(1,2,trim(tag)=='ekin_tail')
-     call same(xx(1),fe(psp%convergence%tail(jj,iprj,ll+1,ikap)),line)
+     call same(xx(1),fe(tt%convergence%tail(jj,iprj,ll+1,ikap)),line)
    case('opt')
      read(line,*) tag,ll,ikap,iprj,xx(1:4)
      do jj=1,4
-       call same(xx(jj),fe(psp%convergence%opt(jj,iprj,ll+1,ikap)),line)
+       call same(xx(jj),fe(tt%convergence%opt(jj,iprj,ll+1,ikap)),line)
      end do
    case('ecut')
      read(line,*) tag,ll,ikap,iprj,xx(1:2)
-     if(.not. any(psp%convergence%cross(1,:,iprj,ll+1,ikap)==xx(2) .and. &
-&       fe(psp%convergence%cross(2,:,iprj,ll+1,ikap))==xx(1))) then
+     if(.not. any(tt%convergence%cross(1,:,iprj,ll+1,ikap)==xx(2) .and. &
+&       fe(tt%convergence%cross(2,:,iprj,ll+1,ikap))==xx(1))) then
        call fail(line)
      end if
    case('ecut_w')
      read(line,*) tag,xx(1:2)
-     if(.not. psp%convergence%weighted) call fail(line)
-     call same(xx(1),fe(psp%convergence%errw),line)
-     call same(xx(2),psp%convergence%ecutw,line)
+     if(.not. tt%weighted_cut%used) call fail(line)
+     call same(xx(1),fe(tt%weighted_cut%errw),line)
+     call same(xx(2),tt%weighted_cut%ecutw,line)
    case('ecut_w_weight')
      read(line,*) tag,ll,ikap,iprj,xx(1)
-     call same(xx(1),fe(psp%convergence%weight(iprj,ll+1,ikap)),line)
+     call same(xx(1),fe(tt%weighted_cut%weight(iprj,ll+1,ikap)),line)
    case('vkb_b')
      read(line,*) tag,ll,ikap,iprj,xx(1)
-     call same(xx(1),fe(psp%bbeig(iprj,ll+1,ikap)),line)
+     call same(xx(1),fe(tt%bbeig(iprj,ll+1,ikap)),line)
    case default
      cycle
    end select
    nline=nline+1
  end do
 !every row of the tables
- do jj=1,psp%configs%ncfg
-   if(psp%configs%nrow(jj)<=0) call fail('a test configuration failed')
+ do jj=1,tt%configs%ncfg
+   if(tt%configs%nrow(jj)<=0) call fail('a test configuration failed')
  end do
  do ll=0,3
-   do ikap=1,kap_count(psp%nkap,ll)
-     if(ighost(ll+1,ikap)/=psp%ghosts%nrow(ll+1,ikap)) call fail('ghost rows')
+   do ikap=1,kap_count(nkap,ll)
+     if(ighost(ll+1,ikap)/=tt%ghosts%nrow(ll+1,ikap)) call fail('ghost rows')
    end do
  end do
- if(size(psp%convergence%curve,2)==0) call fail('no convergence curve')
+ if(size(tt%convergence%curve,2)==0) call fail('no convergence curve')
  end subroutine check_diagnostics
 
  subroutine check_same(pa,pb)
@@ -183,16 +187,17 @@
 !! @param pa  those of the first
 !! @param pb  those of the second
  type(results_t), intent(in) :: pa,pb
- call differ(any(pa%evkb/=pb%evkb),'evkb')
- call differ(any(pa%vpuns/=pb%vpuns),'vpuns')
- call differ(any(pa%rhomod/=pb%rhomod),'rhomod')
- call differ(any(pa%logder%ae/=pb%logder%ae),'log derivatives ae')
- call differ(any(pa%logder%ps/=pb%logder%ps),'log derivatives ps')
- call differ(any(pa%ghosts%e/=pb%ghosts%e),'ghosts')
- call differ(any(pa%configs%e/=pb%configs%e),'test eigenvalues')
- call differ(any(pa%configs%de/=pb%configs%de),'test energies')
- call differ(any(pa%convergence%curve/=pb%convergence%curve),'curves')
- call differ(any(pa%vloc_cut%cut/=pb%vloc_cut%cut),'vloc cutoffs')
+ call differ(any(pa%pot%evkb/=pb%pot%evkb),'evkb')
+ call differ(any(pa%pot%vpuns/=pb%pot%vpuns),'vpuns')
+ call differ(any(pa%pot%rhomod/=pb%pot%rhomod),'rhomod')
+ call differ(any(pa%tests%logder%ae/=pb%tests%logder%ae),'log derivatives ae')
+ call differ(any(pa%tests%logder%ps/=pb%tests%logder%ps),'log derivatives ps')
+ call differ(any(pa%tests%ghosts%e/=pb%tests%ghosts%e),'ghosts')
+ call differ(any(pa%tests%configs%e/=pb%tests%configs%e),'test eigenvalues')
+ call differ(any(pa%tests%configs%de/=pb%tests%configs%de),'test energies')
+ call differ(any(pa%tests%convergence%curve/= &
+&                pb%tests%convergence%curve),'curves')
+ call differ(any(pa%tests%vloc_cut%cut/=pb%tests%vloc_cut%cut),'vloc cutoffs')
  end subroutine check_same
 
  subroutine differ(dd,what)

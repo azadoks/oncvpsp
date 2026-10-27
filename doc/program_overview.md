@@ -8,7 +8,9 @@ _ps.x stages) is a short program calling the subroutine oncvpsp_main
 (oncvpsp_main_m.F90) with the relativistic treatment, irel, and the stage.
 It reads the command line and the input, calls oncvpsp_run
 (oncvpsp_run_m.f90), the calculation and its tests, and writes the
-pseudopotential files from what that returns.  The calculation has the
+pseudopotential files from what that returns, a results_t (results_m.f90:
+the pseudopotential, a pseudo_t of pseudo_m.f90, and the tests), with
+write_psp_files (psp_files_m.f90).  The calculation has the
 following major sections:
 
 1) Data readin: Oncvpsp reads an input file, say *32_Ge.dat*, from its standard

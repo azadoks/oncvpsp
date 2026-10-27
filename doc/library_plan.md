@@ -126,7 +126,7 @@ A library has to be able to send the text output elsewhere, or nowhere.
 - [x] `oncvpsp_run(irel,istage,inp,ae_filename,ps_filename,skip_ld,psp,iout,ifail)`
       (`oncvpsp_run_m`): the calculation, from the input as read (an
       `input_t`, which it completes as the writers echo it) to the
-      pseudopotential (a `results_t`, `psp`), with the tests' text on
+      results (a `results_t`, `psp`, of `results_m`), with the tests' text on
       `iout` and `ifail`. It ends with `ifail=1` where the driver
       stopped (the input checks before `check_data`, the reference atom).
       The staging files of `_ae.x`/`_ps.x` and `oncvpsp_ld.x` stay in it,
@@ -134,24 +134,34 @@ A library has to be able to send the text output elsewhere, or nowhere.
       blank names.
 - [x] the readers, which fill the `input_t` (`read_input_text`,
       `read_input_toml`, already separate);
-- [x] the writers (`linout`, `upfout`, `psmlout`), called by the
-      driver after `oncvpsp_run`, from `psp`;
+- [x] the writers (`linout`, `upfout`, `psmlout`), called from `psp`
+      by `write_psp_files(inp,psp,iout,ifail)` (`psp_files_m`), which
+      writes the files that `psfile` asks for;
 - [x] `oncvpsp_main`, left as the command line, the readers,
-      `oncvpsp_run` and the writers.
-- [x] The test results in `psp` as arrays, not only as text: one type
-      per test (`test_results_m`), `logder_t` (the log derivatives),
-      `ghosts_t`, `configs_t` (the test configurations),
-      `convergence_t` (the crossings of the error levels, the curves,
-      their tails and the optimization's diagnostics) and `vloc_cut_t`,
-      plus the B matrices' eigenvalues (`psp%bbeig`). `diagout` writes
-      the DIAGNOSTICS block from them. `tests/unit/test_run.f90` checks
+      `oncvpsp_run` and `write_psp_files`.
+- [x] `results_t` holds the pseudopotential (`psp%pot`, a `pseudo_t`
+      of `pseudo_m`: the atom, the mesh, the projectors, the local and
+      semi-local potentials, the valence and model-core charges), what
+      the writers take besides (the all-electron charges and
+      eigenvalues, the PSML potentials, the orbitals), the input values
+      as read for the echoes (`psp%echo`, an `echo_t`) and the tests
+      (`psp%tests`).
+- [x] The test results in `psp` as arrays, not only as text: a
+      `tests_t` (`test_results_m`) of one type per test, `logder_t` (the
+      log derivatives), `ghosts_t`, `configs_t` (the test
+      configurations), `convergence_t` (the crossings of the error
+      levels, the curves, their tails and the optimization's
+      diagnostics), `weighted_cut_t` (the model core budget's weighted
+      cutoff) and `vloc_cut_t`, plus the B matrices' eigenvalues
+      (`psp%tests%bbeig`). `diagout` writes the DIAGNOSTICS block from
+      it. `tests/unit/test_run.f90` checks
       them against that block, which prints them exactly (nr, sr, fr,
       and the weighted cutoff). The tables of `run_diag` (the
       eigenvalues and log derivatives at rc of each projector's energy)
       and the plot data of `run_plot` stay text only.
 
 The results whose size is known only during the run (the number of
-projectors, the mesh) are allocatable components of `results_t`, so the
+projectors, the mesh) are allocatable components of the types, so the
 Fortran caller passes no sizes. The C interface (phase 5) cannot take a
 derived type: it either copies them into arrays of maximum sizes
 (`mxprj`, `mmax`) or holds them behind a handle with calls for the sizes

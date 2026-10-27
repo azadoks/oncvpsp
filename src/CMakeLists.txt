@@ -52,11 +52,14 @@ set(src_oncvpsp
     oncvpsp_run_m.f90
     optimize_m.f90
     psatom_m.f90
+    pseudo_m.f90
+    psp_files_m.f90
     pspot_m.f90
     qroots_m.f90
     relatom_m.f90
     relativity_m.f90
     renorm_r_m.f90
+    results_m.f90
     run_config_m.f90
     run_diag_m.f90
     run_ghosts_m.f90

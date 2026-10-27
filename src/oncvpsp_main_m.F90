@@ -57,18 +57,17 @@
 !! @param istage  0 the whole calculation, 1 the all-electron stage only, 2 the
 !!                pseudopotential stage only
  use, intrinsic :: iso_fortran_env, only: stdin => input_unit
- use psmlout_m, only: psmlout
  use input_text_m, only: read_input_text
- use linout_m, only: linout
- use upfout_m, only: upfout
 #if (defined WITH_TOML)
  use input_toml_m, only: read_input_toml
 #endif
- use constants_m, only: dp, mxprj, well_onset_default
+ use constants_m, only: well_onset_default
  use main_setup_m, only: main_names, parse_command_line, write_banner, &
 &                        INPUT_STDIN, INPUT_TEXT, INPUT_TOML
  use input_m, only: input_t
- use oncvpsp_run_m, only: oncvpsp_run, results_t
+ use oncvpsp_run_m, only: oncvpsp_run
+ use results_m, only: results_t
+ use psp_files_m, only: write_psp_files
  implicit none
  integer, parameter :: iout=6
 
@@ -81,7 +80,6 @@
 !Local variables
  integer :: ifail
  integer :: ios,inline,nkap
- real(dp) :: soscale
 
 !names in the messages: the equation solved and the program
  character(len=19) :: treatment
@@ -146,30 +144,8 @@
  if(ifail/=0) error stop 1
  if(istage==1) stop
 
- if(trim(inp%psfile)=='psp8' .or. trim(inp%psfile)=='both') then
-   soscale=1.0d0
-   call linout(inp,psp%vkbpw,psp%evkb,psp%vsrpw,psp%esr,psp%vsopw,psp%eso, &
-&              psp%rr,psp%vpuns,psp%vlocpw,psp%rho,psp%corepw,psp%rhotae, &
-&              psp%rhoc,psp%zion,psp%mmax,mxprj,psp%nrl,soscale,psp%rc0, &
-&              psp%fcfact0,psp%fcgrid,psp%rcgrid,psp%log_mesh,psp%nkap, &
-&              iout,ifail)
-   if(ifail/=0) error stop 1
- end if
-
- if(trim(inp%psfile)=='upf' .or. trim(inp%psfile)=='both') then
-   call upfout(inp,psp%vkbpw,psp%evkb,psp%rr,psp%vpuns,psp%vlocpw,psp%rho, &
-&              psp%corepw,psp%zion,psp%mmax,mxprj,psp%nrl,psp%epstot, &
-&              psp%rc0,psp%fcfact0,psp%fcgrid,psp%rcgrid,psp%uupsa,psp%ea, &
-&              psp%log_mesh,psp%nkap,iout,ifail)
-   if(ifail/=0) error stop 1
- end if
-
- if(trim(inp%psfile)=='psml' .or. trim(inp%psfile)=='both') then
-   call psmlout(inp,psp%vkb,psp%evkb,mxprj,psp%rr,psp%vpsml,psp%rho, &
-&               psp%rhomod,psp%rcore,psp%zion,psp%mmax,psp%nrl,psp%epstot, &
-&               psp%rc0,psp%fcfact0,psp%fcgrid,psp%rcgrid,psp%log_mesh, &
-&               irel,psp%nkap,iout)
- end if
+ call write_psp_files(inp,psp,iout,ifail)
+ if(ifail/=0) error stop 1
 
  stop
 

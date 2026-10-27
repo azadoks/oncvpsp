@@ -18,64 +18,23 @@
 !
 !
 !> The calculation of a pseudopotential, from its input to its tests and
-!> the arrays the writers take (linout, upfout, psmlout)
+!> the results (results_m)
  module oncvpsp_run_m
 
  use constants_m, only: dp, mxl, mxlin, mxstate, mxkap, nrhomod
  use pieces_m, only: piecewise_t
- use test_results_m, only: logder_t, ghosts_t, configs_t, convergence_t, &
-&                          vloc_cut_t
+ use results_m, only: results_t
  implicit none
  private
- public :: oncvpsp_run, results_t
+ public :: oncvpsp_run
 
-!> what the writers of the pseudopotential take
- type :: results_t
-!> size of the log radial mesh, of the linear mesh of the output, and the
-!> number of kappas (2 when fully relativistic)
-   integer :: mmax,nrl,nkap
-!> log radial mesh
-   real(dp), allocatable :: rr(:)
-!> the ion charge, and the pseudo-atom total energy
-   real(dp) :: zion,epstot
-!> the all-electron eigenvalues of the reference configuration
-   real(dp) :: ea(mxstate,mxkap)
-!> projector coefficients and projectors (and their pieces)
-   real(dp), allocatable :: evkb(:,:,:),vkb(:,:,:,:)
-   type(piecewise_t), allocatable :: vkbpw(:,:,:)
-!> fully relativistic: scalar-relativistic and spin-orbit projectors
-   real(dp), allocatable :: esr(:,:),eso(:,:)
-   type(piecewise_t), allocatable :: vsrpw(:,:),vsopw(:,:)
-!> unscreened semi-local potentials, those of the PSML file, and the
-!> local potential
-   real(dp), allocatable :: vpuns(:,:),vpsml(:,:,:)
-   type(piecewise_t) :: vlocpw
-!> valence, all-electron total and core charge, model cores and their
-!> pieces, and the radius beyond which the model core is the core
-   real(dp), allocatable :: rho(:),rhotae(:),rhoc(:),rhomod(:,:)
-   type(piecewise_t) :: corepw(nrhomod)
-   real(dp) :: rcore
-!> pseudo-atomic orbitals
-   real(dp), allocatable :: uupsa(:,:,:)
-!> the core radii and fcfact as read, the icmod=4 search grids and the
-!> log mesh as read, for the echoes
-   real(dp) :: rc0(mxlin+1),fcfact0,fcgrid(3),rcgrid(3),log_mesh(3)
-!> the eigenvalues of the B matrices (run_vkb)
-   real(dp), allocatable :: bbeig(:,:,:)
-!> the tests (test_results_m)
-   type(logder_t) :: logder
-   type(ghosts_t) :: ghosts
-   type(configs_t) :: configs
-   type(convergence_t) :: convergence
-   type(vloc_cut_t) :: vloc_cut
- end type results_t
 
  contains
 
  subroutine oncvpsp_run(irel,istage,inp,ae_filename,ps_filename,skip_ld, &
 &                       psp,iout,ifail)
 !! the pseudopotential of the input inp, and its tests: the text output
-!! to iout, and the arrays of the writers in psp. inp is completed
+!! to iout, and the pseudopotential and the tests in psp. inp is completed
 !! (configurations, core radii) as the writers echo it. With istage=1
 !! only the all-electron atom, written to ae_filename; with istage=2 that
 !! file in place of it. A ps_filename, if not blank, receives the
@@ -89,7 +48,7 @@
 !! @param ae_filename  the all-electron data file of istage 1 and 2
 !! @param ps_filename  the pseudopotential file for oncvpsp_ld.x, or blank
 !! @param skip_ld  whether to leave out the log derivatives
-!! @param psp  the arrays of the writers
+!! @param psp  the results (results_m)
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
  use config_ae_m, only: run_config_ae, aeatom_cached
@@ -823,44 +782,45 @@
  call vloc_cutoff(rr,mmax,rho,vpuns(1,inp%lloc+1),zion,cvloc,vlchk)
 
 !the tests' results
- psp%logder%ne=npsh
- allocate(psp%logder%e(npsh))
+ psp%tests%logder%ne=npsh
+ allocate(psp%tests%logder%e(npsh))
  do ii=1,npsh
-   psp%logder%e(ii)=inp%epsh2-inp%depsh*real(ii-1,dp)
+   psp%tests%logder%e(ii)=inp%epsh2-inp%depsh*real(ii-1,dp)
  end do
- psp%logder%r(:)=rphs(:)
- call move_alloc(pshae,psp%logder%ae)
- call move_alloc(pshps,psp%logder%ps)
- psp%ghosts%nrow(:,:)=ngh(:,:)
- psp%ghosts%n(:,:,:)=ghn(:,:,:)
- psp%ghosts%e(:,:,:,:)=ghe(:,:,:,:)
- psp%ghosts%least(:,:,:)=ghp(:,:,:)
- psp%configs%ncfg=inp%ncnf+1
- psp%configs%nrow(:)=ntcf(:)
- psp%configs%state(:,:,:)=itcf(:,:,:)
- psp%configs%e(:,:,:)=etcf(:,:,:)
- psp%configs%de(:,:)=dtcf(:,:)
- call move_alloc(cvgplt,psp%convergence%cross)
+ psp%tests%logder%r(:)=rphs(:)
+ call move_alloc(pshae,psp%tests%logder%ae)
+ call move_alloc(pshps,psp%tests%logder%ps)
+ psp%tests%ghosts%nrow(:,:)=ngh(:,:)
+ psp%tests%ghosts%n(:,:,:)=ghn(:,:,:)
+ psp%tests%ghosts%e(:,:,:,:)=ghe(:,:,:,:)
+ psp%tests%ghosts%least(:,:,:)=ghp(:,:,:)
+ psp%tests%configs%ncfg=inp%ncnf+1
+ psp%tests%configs%nrow(:)=ntcf(:)
+ psp%tests%configs%state(:,:,:)=itcf(:,:,:)
+ psp%tests%configs%e(:,:,:)=etcf(:,:,:)
+ psp%tests%configs%de(:,:)=dtcf(:,:)
+ call move_alloc(cvgplt,psp%tests%convergence%cross)
 !the curves to the end of the longest
  nq=0
  do ii=1,ncurve
    if(any(ecurve(1,ii,:,:,:)>0.0d0)) nq=ii
  end do
- psp%convergence%curve=ecurve(:,1:nq,:,:,:)
- call move_alloc(ektail,psp%convergence%tail)
- call move_alloc(optdg,psp%convergence%opt)
- call move_alloc(wshare,psp%convergence%wshare)
- psp%convergence%weighted=(inp%icmod==6 .or. inp%icmod==7) &
+ psp%tests%convergence%curve=ecurve(:,1:nq,:,:,:)
+ call move_alloc(ektail,psp%tests%convergence%tail)
+ call move_alloc(optdg,psp%tests%convergence%opt)
+ call move_alloc(wshare,psp%tests%convergence%wshare)
+ psp%tests%weighted_cut%used=(inp%icmod==6 .or. inp%icmod==7) &
 &                         .and. inp%fcfact<=0.0d0 .and. inp%budget_cut==1
- psp%convergence%errw=inp%rcfact
- psp%convergence%ecutw=ecutw
- call move_alloc(wcurve,psp%convergence%weight)
- psp%vloc_cut%cut(:,:)=cvloc(:,:)
- psp%vloc_cut%check=vlchk
+ psp%tests%weighted_cut%errw=inp%rcfact
+ psp%tests%weighted_cut%ecutw=ecutw
+ call move_alloc(wcurve,psp%tests%weighted_cut%weight)
+ psp%tests%vloc_cut%cut(:,:)=cvloc(:,:)
+ psp%tests%vloc_cut%check=vlchk
 
- call diagout(inp%lmax,inp%nproj,mxprj,nkap,psp%convergence,psp%logder, &
-&             psp%ghosts,psp%configs,psp%vloc_cut,inp%icmod,rr,mmax,rcmax, &
-&             rhoc,corepw,inp%lloc,evkb,bbeig,iout)
+ call move_alloc(bbeig,psp%tests%bbeig)
+
+ call diagout(inp%lmax,inp%nproj,mxprj,nkap,psp%tests,inp%icmod,rr,mmax, &
+&             rcmax,rhoc,corepw,inp%lloc,evkb,iout)
 
 ! Write info for PSML format
 !
@@ -885,37 +845,46 @@
    vpsml(:,:,1)=vpuns(:,:)
  end if
 
-!the arrays of the writers
- psp%mmax=mmax
+!the pseudopotential
+ psp%pot%atsym=inp%atsym
+ psp%pot%zz=inp%zz
+ psp%pot%zion=zion
+ psp%pot%c_light=inp%c_light
+ psp%pot%irel=irel
+ psp%pot%nkap=nkap
+ psp%pot%iexc=inp%iexc
+ psp%pot%mmax=mmax
+ call move_alloc(rr,psp%pot%rr)
+ psp%pot%lmax=inp%lmax
+ psp%pot%lloc=inp%lloc
+ psp%pot%nproj(:)=inp%nproj(:)
+ psp%pot%rcmax=rcmax
+ call move_alloc(evkb,psp%pot%evkb)
+ call move_alloc(vkb,psp%pot%vkb)
+ call move_alloc(vkbpw,psp%pot%vkbpw)
+ call move_alloc(esr,psp%pot%esr)
+ call move_alloc(eso,psp%pot%eso)
+ call move_alloc(vsrpw,psp%pot%vsrpw)
+ call move_alloc(vsopw,psp%pot%vsopw)
+ psp%pot%vlocpw=vlocpw
+ call move_alloc(vpuns,psp%pot%vpuns)
+ call move_alloc(rho,psp%pot%rho)
+ call move_alloc(rhomod,psp%pot%rhomod)
+ psp%pot%corepw(:)=corepw(:)
+!the rest the writers take
  psp%nrl=nrl
- psp%nkap=nkap
- psp%zion=zion
  psp%epstot=epstot
  psp%ea(:,:)=ea(:,:)
- psp%rcore=rcore
- psp%rc0(:)=rc0(:)
- psp%fcfact0=fcfact0
- psp%fcgrid(:)=fcgrid(:)
- psp%rcgrid(:)=rcgrid(:)
- psp%log_mesh(:)=log_mesh(:)
- psp%vlocpw=vlocpw
- psp%corepw(:)=corepw(:)
- call move_alloc(rr,psp%rr)
- call move_alloc(evkb,psp%evkb)
- call move_alloc(vkb,psp%vkb)
- call move_alloc(vkbpw,psp%vkbpw)
- call move_alloc(esr,psp%esr)
- call move_alloc(eso,psp%eso)
- call move_alloc(vsrpw,psp%vsrpw)
- call move_alloc(vsopw,psp%vsopw)
- call move_alloc(vpuns,psp%vpuns)
- call move_alloc(vpsml,psp%vpsml)
- call move_alloc(rho,psp%rho)
  call move_alloc(rhotae,psp%rhotae)
  call move_alloc(rhoc,psp%rhoc)
- call move_alloc(rhomod,psp%rhomod)
+ psp%rcore=rcore
+ call move_alloc(vpsml,psp%vpsml)
  call move_alloc(uupsa,psp%uupsa)
- call move_alloc(bbeig,psp%bbeig)
+ psp%echo%rc0(:)=rc0(:)
+ psp%echo%fcfact0=fcfact0
+ psp%echo%fcgrid(:)=fcgrid(:)
+ psp%echo%rcgrid(:)=rcgrid(:)
+ psp%echo%log_mesh(:)=log_mesh(:)
  return
  end subroutine oncvpsp_run
 
