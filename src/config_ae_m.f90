@@ -27,9 +27,32 @@
  use constants_m, only: dp, mxstate, mxcnf, nlev, ae_tolres
  use kappa_m, only: kap_count, kap_of
  use ae_scf_m, only: ae_floor_warning
+ use input_m, only: config_t
  implicit none
  private
- public :: run_config_ae, config_ae_warning, aeatom_cached
+ public :: run_config_ae, config_ae_warning, aeatom_cached, ae_config_t
+
+!> the all-electron half of a test configuration (run_config_ae): its
+!> levels merged with the reference's, the reference's first
+ type :: ae_config_t
+!> 0 success, 1 the all-electron atom failed, 2 the bound-state solver
+!> failed for an empty level (with j=l+1/2 when irel=2), 3 the same with
+!> j=l-1/2
+   integer :: ist=0
+!> aeatom's error code when ist=1, boundstate's when ist>=2; aeatom's
+!> iteration count when ist/=0; the index in nat, lat of the level whose
+!> bound state failed when ist>=2
+   integer :: ierr=0,it=0,kerr=0
+!> the number of merged valence levels, and their n and l
+   integer :: nvt=0
+   integer :: nat(mxstate)=0,lat(mxstate)=0
+!> their occupancies (:,1:3): reference, maximally-ionized, excited
+   real(dp) :: fat(mxstate,nlev)=0.0d0
+!> their all-electron eigenvalues (mxstate,nkap,nlev), the same
+   real(dp), allocatable :: eat(:,:,:)
+!> the all-electron total energy of the excited configuration
+   real(dp) :: etst=0.0d0
+ end type ae_config_t
 
 !> a successful aeatom solution, with the inputs that determine it: sratom
 !> and relatom overwrite the eigenvalues' guess, so the atom is a function
@@ -139,10 +162,8 @@
  return
  end subroutine aeatom_cached
 
- subroutine run_config_ae(jj,nacnf,lacnf,facnf,nc,nvcnf,rr,zz, &
-&                         mmax,iexc,ea,irel,nkap,istcnf,ierrcnf,itcnf, &
-&                         kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf, &
-&                         iout,ifail)
+ subroutine run_config_ae(jj,cnf,nc,rr,zz,mmax,iexc,ea,irel,nkap,aec,iout, &
+&                         ifail)
 
 !! solves the all-electron atom in the maximally-ionized and excited states
 !! of test configuration jj, the all-electron half of the test-configuration
@@ -151,11 +172,8 @@
 !! (see ae_file_m).  run_config_ps does the pseudo-atom half.
 !!
 !! @param jj  index of current configufation
-!! @param nacnf  principal quantum number array, all configurations
-!! @param lacnf  angular-momenta array, all config.
-!! @param facnf  occupancies, all config.
+!! @param cnf  the reference and test configurations (input_m)
 !! @param nc  number of core states
-!! @param nvcnf  number of valence states, all config.
 !! @param rr  log radial mesh
 !! @param zz  atomic number
 !! @param mmax  size of log grid
@@ -164,46 +182,19 @@
 !!            ea(:,2) for j=l-1/2 when irel=2
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param nkap  number of kappa per level: 1, or 2 for irel=2
-!! @param istcnf  0 success, 1 all-electron atom failed, 2 the bound-state
-!!                solver failed for an empty level (with j=l+1/2 when irel=2), 3
-!!                the same with j=l-1/2, all config.
-!! @param ierrcnf  aeatom error code when istcnf==1, boundstate error code when
-!!                 istcnf>=2, all config.
-!! @param itcnf  aeatom iteration count when istcnf/=0, all config.
-!! @param kerrcnf  index in natcnf/latcnf of the level whose bound state failed
-!!                 when istcnf>=2, all config.
-!! @param nvtcnf  number of merged valence levels, all config.
-!! @param natcnf  merged level principal quantum numbers, reference levels
-!!                first, all config.
-!! @param latcnf  merged level angular momenta, all config.
-!! @param fatcnf  merged level occupancies (:,1:3,jj): reference,
-!!                maximally-ionized, excited, all config.
-!! @param eatcnf  merged level all-electron eigenvalues (:,ikap,1:3,jj):
-!!                reference, maximally-ionized, excited, all config.
-!! @param etstcnf  all-electron total energy of the excited configuration, all
-!!                 config.
+!! @param aec  the all-electron half of configuration jj
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
-!!
-!! Only the column jj of istcnf through etstcnf is set.
 
 !Input variables
  use boundstate_m, only: boundstate
  integer, intent(in) :: jj,mmax,iexc,nc,irel,nkap
- integer, intent(in) :: nacnf(mxstate,mxcnf),lacnf(mxstate,mxcnf),nvcnf(mxcnf)
+ type(config_t), intent(in) :: cnf(mxcnf)
  real(dp), intent(in) :: zz
- real(dp), intent(in) :: facnf(mxstate,mxcnf),ea(mxstate,nkap),rr(mmax)
-
-!Input/output variables
- integer, intent(inout) :: istcnf(mxcnf),ierrcnf(mxcnf),itcnf(mxcnf)
- integer, intent(inout) :: kerrcnf(mxcnf)
- integer, intent(inout) :: nvtcnf(mxcnf),natcnf(mxstate,mxcnf)
- integer, intent(inout) :: latcnf(mxstate,mxcnf)
- real(dp), intent(inout) :: fatcnf(mxstate,nlev,mxcnf)
- real(dp), intent(inout) :: eatcnf(mxstate,nkap,nlev,mxcnf)
- real(dp), intent(inout) :: etstcnf(mxcnf)
+ real(dp), intent(in) :: ea(mxstate,nkap),rr(mmax)
 
 !Output variables
+ type(ae_config_t), intent(out) :: aec
  integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
@@ -222,10 +213,10 @@
  allocate(rho(mmax),rhoc(mmax),vfull(mmax))
  allocate(uu(mmax,2),up(mmax,2))
 
- istcnf(jj)=0
- ierrcnf(jj)=0
- itcnf(jj)=0
- kerrcnf(jj)=0
+ aec%ist=0
+ aec%ierr=0
+ aec%it=0
+ aec%kerr=0
 
  it=0
 
@@ -236,10 +227,10 @@
 ! set up cross indces of reference (r) and excited (e) cofigurations
  indxr(:)=0
  indxe(:)=0
- do ii=1,nc+nvcnf(1)
-   do kk=1,nc+nvcnf(jj)
-     if(nacnf(kk,jj)==nacnf(ii,1) .and. &
-&       lacnf(kk,jj)==lacnf(ii,1)) then
+ do ii=1,nc+cnf(1)%nv
+   do kk=1,nc+cnf(jj)%nv
+     if(cnf(jj)%n(kk)==cnf(1)%n(ii) .and. &
+&       cnf(jj)%l(kk)==cnf(1)%l(ii)) then
        indxr(ii)=kk
        indxe(kk)=ii
      end if
@@ -249,27 +240,27 @@
 ! set up merged list with reference levels first
 ! levels not present in one confguration or the other get zero occupancy
  eat(:,:,:)=0.0d0
- do ii=1,nc+nvcnf(1)
-   nat(ii)=nacnf(ii,1)
-   lat(ii)=lacnf(ii,1)
-   fat(ii,1)=facnf(ii,1)
+ do ii=1,nc+cnf(1)%nv
+   nat(ii)=cnf(1)%n(ii)
+   lat(ii)=cnf(1)%l(ii)
+   fat(ii,1)=cnf(1)%f(ii)
    eat(ii,:,1)=ea(ii,:)
    if(indxr(ii)>0) then
-     fat(ii,2)=facnf(indxr(ii),jj)
+     fat(ii,2)=cnf(jj)%f(indxr(ii))
    else
      fat(ii,2)=0.0d0
    end if
    fat(ii,3)=fat(ii,2)
  end do
 
- nvt=nvcnf(1)
- do kk=1,nc+nvcnf(jj)
+ nvt=cnf(1)%nv
+ do kk=1,nc+cnf(jj)%nv
    if(indxe(kk)==0) then
      nvt=nvt+1
-     nat(nc+nvt)=nacnf(kk,jj)
-     lat(nc+nvt)=lacnf(kk,jj)
+     nat(nc+nvt)=cnf(jj)%n(kk)
+     lat(nc+nvt)=cnf(jj)%l(kk)
      fat(nc+nvt,1)=0.0d0
-     fat(nc+nvt,3)=facnf(kk,jj)
+     fat(nc+nvt,3)=cnf(jj)%f(kk)
    end if
  end do
 
@@ -291,9 +282,9 @@
  if(ifail/=0) return
  if(ierr/=0) then
    call store_results
-   istcnf(jj)=1
-   ierrcnf(jj)=ierr
-   itcnf(jj)=it
+   aec%ist=1
+   aec%ierr=ierr
+   aec%it=it
    deallocate(rho,rhoc,vfull)
    deallocate(uu,up)
    return
@@ -315,10 +306,10 @@
 !a negative ierr (no classical turning point) is accepted for j=l-1/2
        if(ierr>0 .or. (ierr/=0 .and. ikap==1)) then
          call store_results
-         istcnf(jj)=1+ikap
-         ierrcnf(jj)=ierr
-         kerrcnf(jj)=kk
-         itcnf(jj)=it
+         aec%ist=1+ikap
+         aec%ierr=ierr
+         aec%kerr=kk
+         aec%it=it
          deallocate(rho,rhoc,vfull)
          deallocate(uu,up)
          return
@@ -340,9 +331,9 @@
  if(ifail/=0) return
  if(ierr/=0) then
    call store_results
-   istcnf(jj)=1
-   ierrcnf(jj)=ierr
-   itcnf(jj)=it
+   aec%ist=1
+   aec%ierr=ierr
+   aec%it=it
    deallocate(rho,rhoc,vfull)
    deallocate(uu,up)
    return
@@ -356,39 +347,36 @@
  contains
 
  subroutine store_results
-!! copies the results so far into column jj of the output arrays
- nvtcnf(jj)=nvt
- natcnf(:,jj)=nat(:)
- latcnf(:,jj)=lat(:)
- fatcnf(:,:,jj)=fat(:,:)
- eatcnf(:,:,:,jj)=eat(:,:,:)
- etstcnf(jj)=eaetst
+!! copies the results so far into aec
+ aec%nvt=nvt
+ aec%nat(:)=nat(:)
+ aec%lat(:)=lat(:)
+ aec%fat(:,:)=fat(:,:)
+ aec%eat=eat
+ aec%etst=eaetst
  return
  end subroutine store_results
 
  end subroutine run_config_ae
 
- subroutine config_ae_warning(jj,irel,istcnf,ierrcnf,itcnf,kerrcnf, &
-&                             natcnf,latcnf,iout)
+ subroutine config_ae_warning(jj,irel,aec,iout)
 !! prints the warning run_config_ps gives when the all-electron atom for test
 !! configuration jj failed
 !!
 !! @param jj  index of the configuration (1 for the reference)
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
-!! @param istcnf,ierrcnf,itcnf,kerrcnf,natcnf,latcnf  run_config_ae results, all
-!!        configurations
+!! @param aec  its all-electron half (run_config_ae)
 !! @param iout  unit of the text output
 
 !Input variables
  integer, intent(in) :: jj,irel
- integer, intent(in) :: istcnf(mxcnf),ierrcnf(mxcnf),itcnf(mxcnf),kerrcnf(mxcnf)
- integer, intent(in) :: natcnf(mxstate,mxcnf),latcnf(mxstate,mxcnf)
+ type(ae_config_t), intent(in) :: aec
  integer, intent(in) :: iout
 
 !Local variables
  integer :: ll
 
- if(istcnf(jj)==1) then
+ if(aec%ist==1) then
    if(irel==2) then
      write(iout,'(a/a,i2)') 'run_config_r: WARNING  for AE atom,', &
 &          ' WARNING no output for configuration',jj
@@ -396,34 +384,34 @@
      write(iout,'(a/a,i2)') 'run_config: WARNING  for AE atom,', &
 &          ' WARNING no output for configuration',jj
    end if
-   if(ierrcnf(jj)==-1 .and. irel==2) then
+   if(aec%ierr==-1 .and. irel==2) then
      write(iout,'(a,i4)') &
 &          'run_config_r: WARNING no classical turning point ' // &
 &          'error, iteration', &
-&          itcnf(jj)
-   else if(ierrcnf(jj)==-1) then
+&          aec%it
+   else if(aec%ierr==-1) then
      write(iout,'(a,i4)') 'no classical turning point error, iteration', &
-&          itcnf(jj)
+&          aec%it
    else if(irel==2) then
      write(iout,'(a)') &
 &          'run_config_r: WARNING self-consistency failed to converge'
    else
      write(iout,'(a)') 'run_config: WARNING self-consistency failed to converge'
    end if
- else if(istcnf(jj)>=2) then
-   ll=latcnf(kerrcnf(jj),jj)
+ else if(aec%ist>=2) then
+   ll=aec%lat(aec%kerr)
    if(irel/=2) then
      write(iout,'(/a,3i4)') &
 &         'runconfig: WARNING lschfb convergence ERROR n,l,iter=', &
-&         natcnf(kerrcnf(jj),jj),ll,itcnf(jj)
-   else if(istcnf(jj)==2) then
+&         aec%nat(aec%kerr),ll,aec%it
+   else if(aec%ist==2) then
      write(iout,'(/a,4i4)') &
 &         'runconfig: WARNING ldiracfb convergence ERROR n,l,kap,ierr=', &
-&         natcnf(kerrcnf(jj),jj),ll,-(ll+1),ierrcnf(jj)
+&         aec%nat(aec%kerr),ll,-(ll+1),aec%ierr
    else
      write(iout,'(/a,4i4)') &
 &         'runconfig: WARNING ldiracfb convergence ERROR n,l,kap,iter=', &
-&         natcnf(kerrcnf(jj),jj),ll,ll,itcnf(jj)
+&         aec%nat(aec%kerr),ll,ll,aec%it
    end if
  end if
  return

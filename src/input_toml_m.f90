@@ -112,8 +112,7 @@
 &          rcfact_max=>inp%rcfact_max, rcfact_step=>inp%rcfact_step, &
 &          epsh1=>inp%epsh1, epsh2=>inp%epsh2, depsh=>inp%depsh, &
 &          rxpsh=>inp%rxpsh, rlmax=>inp%rlmax, drl=>inp%drl, &
-&          upf_mesh=>inp%upf_mesh, ncnf=>inp%ncnf, nvcnf=>inp%nvcnf, &
-&          nacnf=>inp%nacnf, lacnf=>inp%lacnf, facnf=>inp%facnf, &
+&          upf_mesh=>inp%upf_mesh, ncnf=>inp%ncnf, cnf=>inp%cnf, &
 &          amesh=>inp%amesh, rr1=>inp%rr1, rmax=>inp%rmax, &
 &          c_light=>inp%c_light, ep_as_given=>inp%ep_as_given, &
 &          well_onset=>inp%well_onset, well_tail=>inp%well_tail, &
@@ -483,21 +482,21 @@
 &              iout, ifail)
          if(ifail /= 0) return
        end if
-       nvcnf(jj) = len(narr)
-       if(nc + nvcnf(jj) > mxstate) then
+       cnf(jj)%nv = len(narr)
+       if(nc + cnf(jj)%nv > mxstate) then
          write(msg, '(a,i0)') 'nc plus the states of a '// &
 &          '[[test_configurations]] must be <= ', mxstate
          call input_error(trim(msg), iout, ifail)
          if(ifail /= 0) return
        end if
-       call get_int_array(child, 'test_configurations', 'n', nvcnf(jj), &
-&        nacnf(nc + 1:, jj), iout, ifail)
+       call get_int_array(child, 'test_configurations', 'n', cnf(jj)%nv, &
+&        cnf(jj)%n(nc + 1:), iout, ifail)
        if(ifail /= 0) return
-       call get_int_array(child, 'test_configurations', 'l', nvcnf(jj), &
-&        lacnf(nc + 1:, jj), iout, ifail)
+       call get_int_array(child, 'test_configurations', 'l', cnf(jj)%nv, &
+&        cnf(jj)%l(nc + 1:), iout, ifail)
        if(ifail /= 0) return
-       call get_real_array(child, 'test_configurations', 'f', nvcnf(jj), &
-&        facnf(nc + 1:, jj), iout, ifail)
+       call get_real_array(child, 'test_configurations', 'f', cnf(jj)%nv, &
+&        cnf(jj)%f(nc + 1:), iout, ifail)
        if(ifail /= 0) return
      end do
    end if

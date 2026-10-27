@@ -57,8 +57,7 @@
 &          rcfact_max=>inp%rcfact_max, rcfact_step=>inp%rcfact_step, &
 &          epsh1=>inp%epsh1, epsh2=>inp%epsh2, depsh=>inp%depsh, &
 &          rxpsh=>inp%rxpsh, rlmax=>inp%rlmax, drl=>inp%drl, &
-&          upf_mesh=>inp%upf_mesh, ncnf=>inp%ncnf, nvcnf=>inp%nvcnf, &
-&          nacnf=>inp%nacnf, lacnf=>inp%lacnf, facnf=>inp%facnf, &
+&          upf_mesh=>inp%upf_mesh, ncnf=>inp%ncnf, cnf=>inp%cnf, &
 &          amesh=>inp%amesh, rr1=>inp%rr1, rmax=>inp%rmax, &
 &          c_light=>inp%c_light, ep_as_given=>inp%ep_as_given, &
 &          well_onset=>inp%well_onset, well_tail=>inp%well_tail, &
@@ -296,15 +295,17 @@
    do jj = 2, ncnf + 1
      call next_line(unit, line, inline, iout=iout, ifail=ifail)
      if(ifail /= 0) return
-     read(line, *, iostat=ios) nvcnf(jj)
-     if(ios == 0 .and. (nvcnf(jj) < 0 .or. nc + nvcnf(jj) > mxstate)) ios = 999
+     read(line, *, iostat=ios) cnf(jj)%nv
+     if(ios == 0) then
+       if(cnf(jj)%nv < 0 .or. nc + cnf(jj)%nv > mxstate) ios = 999
+     end if
      call read_error(ios, inline, iout, ifail)
      if(ifail /= 0) return
-     do ii = nc + 1, nc + nvcnf(jj)
+     do ii = nc + 1, nc + cnf(jj)%nv
        call next_line(unit, line, inline, iout=iout, ifail=ifail)
        if(ifail /= 0) return
-       read(line, *, iostat=ios) nacnf(ii, jj), lacnf(ii, jj), facnf(ii, jj)
-       call check_finite(ios, [facnf(ii, jj)])
+       read(line, *, iostat=ios) cnf(jj)%n(ii), cnf(jj)%l(ii), cnf(jj)%f(ii)
+       call check_finite(ios, [cnf(jj)%f(ii)])
        call read_error(ios, inline, iout, ifail)
        if(ifail /= 0) return
      end do

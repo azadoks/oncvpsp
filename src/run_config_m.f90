@@ -25,18 +25,15 @@
 
  contains
 
- subroutine run_config_ps(jj,istcnf,ierrcnf,itcnf,kerrcnf,nvtcnf, &
-&                         natcnf,latcnf,fatcnf,eatcnf,etstcnf,nc,rhov,rhomod, &
-&                         rr,rcmax,mmax,mxprj,iexc,etot,epstot,nproj,vpuns, &
-&                         lloc,vlocpw,vkbpw,evkb,irel,nkap,ntc,itc,etc,dtc, &
-&                         iout,ifail)
+ subroutine run_config_ps(jj,aec,nc,rhov,rhomod,rr,rcmax,mmax,mxprj,iexc, &
+&                         etot,epstot,nproj,vpuns,lloc,vlocpw,vkbpw,evkb, &
+&                         irel,nkap,ntc,itc,etc,dtc,iout,ifail)
 
 !! self-consistent pseudoatom calculation for test configuration jj, compared
 !! with the all-electron results for the reference and test configurations
 !!
 !! @param jj  index of current configuration
-!! @param istcnf..etstcnf  all-electron results, all configurations, from
-!!                         run_config_ae
+!! @param aec  its all-electron half (run_config_ae)
 !! @param nc  number of core states
 !! @param rhov  valence pseudo-charge of reference configuration
 !! @param rhomod  model core charge
@@ -69,8 +66,8 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use config_ae_m, only: config_ae_warning
- use constants_m, only: dp, mxstate, mxcnf, mxl, mxlin, nrhomod, nlev
+ use config_ae_m, only: config_ae_warning, ae_config_t
+ use constants_m, only: dp, mxstate, mxl, mxlin, nrhomod, nlev
  use pieces_m, only: piecewise_t
  use kappa_m, only: kap_count, kap_of, j_share
  use psatom_m, only: psatom
@@ -78,12 +75,7 @@
 
 !Input variables
 
- integer, intent(in) :: istcnf(mxcnf),ierrcnf(mxcnf),itcnf(mxcnf),kerrcnf(mxcnf)
- integer, intent(in) :: nvtcnf(mxcnf),natcnf(mxstate,mxcnf)
- integer, intent(in) :: latcnf(mxstate,mxcnf)
- real(dp), intent(in) :: fatcnf(mxstate,nlev,mxcnf)
- real(dp), intent(in) :: eatcnf(mxstate,nkap,nlev,mxcnf)
- real(dp), intent(in) :: etstcnf(mxcnf)
+ type(ae_config_t), intent(in) :: aec
  integer, intent(in) :: jj,mmax,mxprj,iexc,nc,lloc,irel,nkap
  integer, intent(in) :: nproj(mxlin+1)
  real(dp), intent(in) :: etot,epstot,rcmax
@@ -142,18 +134,17 @@
  itc(:,:)=0
  etc(:,:)=0.0d0
  dtc(:)=0.0d0
- if(istcnf(jj)/=0) then
-   call config_ae_warning(jj,irel,istcnf,ierrcnf,itcnf,kerrcnf,natcnf,latcnf, &
-&        iout)
+ if(aec%ist/=0) then
+   call config_ae_warning(jj,irel,aec,iout)
    return
  end if
 
- nvt=nvtcnf(jj)
- nat(:)=natcnf(:,jj)
- lat(:)=latcnf(:,jj)
- fat(:,:)=fatcnf(:,:,jj)
- eat(:,:,:)=eatcnf(:,:,:,jj)
- eaetst=etstcnf(jj)
+ nvt=aec%nvt
+ nat(:)=aec%nat(:)
+ lat(:)=aec%lat(:)
+ fat(:,:)=aec%fat(:,:)
+ eat(:,:,:)=aec%eat(:,:,:)
+ eaetst=aec%etst
 
  allocate(rho(mmax),rhocps(mmax),vfree(mmax))
  vfree(:)=0.0d0

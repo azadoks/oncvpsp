@@ -51,7 +51,7 @@
 !! @param psp  the results (results_m)
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
- use config_ae_m, only: run_config_ae, aeatom_cached
+ use config_ae_m, only: run_config_ae, aeatom_cached, ae_config_t
  use ae_file_m, only: write_ae_file, read_ae_file
  use ps_file_m, only: write_ps_file
  use exc_libxc_m, only: exc_libxc
@@ -80,7 +80,7 @@
  use ps_valence_m, only: valence_densities, unscreen_potentials
  use ae_projectors_m, only: ae_bound_projectors, ae_well_projectors, &
 &                           ae_delta_window, ae_overlap, ecut_weights
- use constants_m, only: nlev, nerrdg, nerrlv
+ use constants_m, only: nerrdg, nerrlv
  use input_echo_m, only: write_atom, write_lmax, write_icmod, write_epsh, &
 &                        write_mesh, fx, vkb_head, vkb_line
  use relativity_m, only: set_relativity, c_light
@@ -202,10 +202,7 @@
  real(dp), allocatable :: vpsml(:,:,:)
 
 !all-electron results for the test configurations (see run_config_ae)
- integer :: istcnf(mxcnf),ierrcnf(mxcnf),itcnf(mxcnf),kerrcnf(mxcnf)
- integer :: nvtcnf(mxcnf),natcnf(mxstate,mxcnf),latcnf(mxstate,mxcnf)
- real(dp) :: fatcnf(mxstate,nlev,mxcnf),etstcnf(mxcnf)
- real(dp), allocatable :: eatcnf(:,:,:,:)
+ type(ae_config_t) :: aec(mxcnf)
 
 
 !names in the messages: the equation solved and the program
@@ -215,7 +212,6 @@
 
  ifail=0
  call main_names(irel,istage,nkap,treatment,pname,exe)
- allocate(eatcnf(mxstate,nkap,nlev,mxcnf))
  well_tail_free=inp%well_tail==1
 !the free tail has no finite norm over all space
  if(inp%well_tail==1 .and. inp%well_norm==1) then
@@ -232,18 +228,18 @@
    return
  end if
 
- inp%nvcnf(1)=inp%nv
+ inp%cnf(1)%nv=inp%nv
  do ii=1,inp%nc+inp%nv
-   inp%nacnf(ii,1)=inp%na(ii)
-   inp%lacnf(ii,1)=inp%la(ii)
-   inp%facnf(ii,1)=inp%fa(ii)
+   inp%cnf(1)%n(ii)=inp%na(ii)
+   inp%cnf(1)%l(ii)=inp%la(ii)
+   inp%cnf(1)%f(ii)=inp%fa(ii)
  end do
 
  do jj=2,inp%ncnf+1
    do ii=1,inp%nc
-     inp%nacnf(ii,jj)=inp%na(ii)
-     inp%lacnf(ii,jj)=inp%la(ii)
-     inp%facnf(ii,jj)=inp%fa(ii)
+     inp%cnf(jj)%n(ii)=inp%na(ii)
+     inp%cnf(jj)%l(ii)=inp%la(ii)
+     inp%cnf(jj)%f(ii)=inp%fa(ii)
    end do
  end do
 
@@ -278,6 +274,8 @@
  allocate(uu(mmax,2),up(mmax,2),uupsa(mmax,nkap,inp%nv))
  allocate(vwell(mmax,mxprj))
  allocate(evkb(mxprj,mxl+1,nkap),qq(mxprj,mxprj))
+!the projectors beyond nproj and of lloc stay 0
+ evkb(:,:,:)=0.0d0
  allocate(cvgplt(2,nerrdg,mxprj,mxl+1,nkap))
  allocate(ecurve(2,ncurve,mxprj,mxl+1,nkap))
  allocate(ektail(2,mxprj,mxl+1,nkap),bbeig(mxprj,mxl+1,nkap))
@@ -314,11 +312,8 @@
  if(istage==2) then
    call read_ae_file(ae_filename,irel,nkap,inp%atsym,inp%zz,inp%nc,inp%nv, &
 &                    inp%iexc,inp%na,inp%la,inp%fa, &
-&                    mmax,rr,inp%ncnf,inp%nvcnf,inp%nacnf,inp%lacnf,inp%facnf, &
-&                    it,etot,eterm,res,ea,rhoc,rho,vfull, &
-&                    istcnf,ierrcnf,itcnf, &
-&                    kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf, &
-&                    iout,ifail)
+&                    mmax,rr,inp%ncnf,inp%cnf, &
+&                    it,etot,eterm,res,ea,rhoc,rho,vfull,aec,iout,ifail)
    if(ifail/=0) return
 !aeatom prints the libxc functional description on its first exc_libxc call
    if(inp%iexc<0) then
@@ -415,9 +410,10 @@
  write(iout,'(i5)') inp%ncnf
  write(iout,'(a/a)') '# nvcnf','#   n    l    f'
  do jj=2,inp%ncnf+1
-   write(iout,'(i5)') inp%nvcnf(jj)
-   do ii=inp%nc+1,inp%nc+inp%nvcnf(jj)
-     write(iout,'(2i5,f8.2)') inp%nacnf(ii,jj),inp%lacnf(ii,jj),inp%facnf(ii,jj)
+   write(iout,'(i5)') inp%cnf(jj)%nv
+   do ii=inp%nc+1,inp%nc+inp%cnf(jj)%nv
+     write(iout,'(2i5,f8.2)') inp%cnf(jj)%n(ii),inp%cnf(jj)%l(ii), &
+&                             inp%cnf(jj)%f(ii)
    end do
    write(iout,'(a)') '#'
  end do
@@ -430,21 +426,16 @@
 !all-electron halves of the test configurations; their pseudo-atom halves
 !and all output about them come from the matching _ps.x
    do jj=1,inp%ncnf+1
-     call run_config_ae(jj,inp%nacnf,inp%lacnf,inp%facnf,inp%nc,inp%nvcnf,rr, &
+     call run_config_ae(jj,inp%cnf,inp%nc,rr, &
 &                       inp%zz, &
-&                       mmax,inp%iexc,ea,irel,nkap,istcnf,ierrcnf,itcnf, &
-&                       kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf, &
-&                       iout,ifail)
+&                       mmax,inp%iexc,ea,irel,nkap,aec(jj),iout,ifail)
      if(ifail/=0) return
    end do
 
    call write_ae_file(ae_filename,irel,nkap,inp%atsym,inp%zz,inp%nc,inp%nv, &
 &                     inp%iexc,inp%na,inp%la,inp%fa, &
 &                     mmax,rr,it,etot,eterm,res,ea,rhoc,rho,vfull, &
-&                     inp%ncnf,inp%nvcnf,inp%nacnf,inp%lacnf,inp%facnf, &
-&                     istcnf,ierrcnf,itcnf, &
-&                     kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf, &
-&                     iout,ifail)
+&                     inp%ncnf,inp%cnf,aec,iout,ifail)
    if(ifail/=0) return
 
    write(iout,'(/2a)') 'All-electron data written to ',trim(ae_filename)
@@ -722,17 +713,13 @@
    rhot(:)=rho(:)
 
    if(istage/=2) then
-     call run_config_ae(jj,inp%nacnf,inp%lacnf,inp%facnf,inp%nc,inp%nvcnf,rr, &
+     call run_config_ae(jj,inp%cnf,inp%nc,rr, &
 &                       inp%zz, &
-&                       mmax,inp%iexc,ea,irel,nkap,istcnf,ierrcnf,itcnf, &
-&                       kerrcnf,nvtcnf,natcnf,latcnf,fatcnf,eatcnf,etstcnf, &
-&                       iout,ifail)
+&                       mmax,inp%iexc,ea,irel,nkap,aec(jj),iout,ifail)
      if(ifail/=0) return
    end if
 
-   call run_config_ps(jj,istcnf,ierrcnf,itcnf,kerrcnf,nvtcnf, &
-&                     natcnf,latcnf,fatcnf,eatcnf,etstcnf,inp%nc,rhot,rhomod, &
-&                     rr, &
+   call run_config_ps(jj,aec(jj),inp%nc,rhot,rhomod,rr, &
 &                     rcmax,mmax,mxprj,inp%iexc,etot,epstot,inp%nproj,vpuns, &
 &                     inp%lloc,vlocpw,vkbpw,evkb,irel,nkap,ntcf(jj), &
 &                     itcf(:,:,jj),etcf(:,:,jj),dtcf(:,jj),iout,ifail)

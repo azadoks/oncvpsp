@@ -318,7 +318,7 @@
 &                       fcgrid,rcgrid, &
 &                       inp%epsh1,inp%epsh2,inp%depsh,inp%rxpsh,inp%rlmax, &
 &                       inp%drl, &
-&                       inp%ncnf,inp%nvcnf,inp%nacnf,inp%lacnf,inp%facnf, &
+&                       inp%ncnf,inp%cnf, &
 &                       log_mesh,inp%upf_mesh,iout)
 
 ! write termination signal

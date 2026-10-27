@@ -22,6 +22,7 @@
 !
  module psmlout_m
  use constants_m, only: dp, mxstate, mxcnf, mxl, mxlin, nrhomod
+ use input_m, only: config_t
  implicit none
 
  public :: psmlout
@@ -192,7 +193,7 @@
 &                inp%rcfact,inp%slack,inp%budget_cut,fcgrid,rcgrid,inp%epsh1, &
 &                inp%epsh2, &
 &                inp%depsh,inp%rxpsh,inp%rlmax,inp%drl, &
-&                inp%ncnf,inp%nvcnf,inp%nacnf,inp%lacnf,inp%facnf,log_mesh, &
+&                inp%ncnf,inp%cnf,log_mesh, &
 &                inp%upf_mesh, &
 &                inp%ep_as_given,inp%well_onset,inp%well_tail,inp%wreg, &
 &                inp%well_n,inp%well_norm, &
@@ -579,7 +580,7 @@
 &                      fcfact,rcfact,slack,budget_cut,fcgrid,rcgrid, &
 &                      epsh1,epsh2,depsh, &
 &                      rxpsh,rlmax,drl, &
-&                      ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh, &
+&                      ncnf,cnf,log_mesh,upf_mesh, &
 &                      ep_as_given,well_onset,well_tail,wreg,well_n,well_norm, &
 &                ecut_wt)
 
@@ -600,11 +601,7 @@
 !! @param la  angular momenta of the reference configuration states
 !! @param ncon  number of matching constraints for each l
 !! @param nbas  number of basis functions for each l
-!! @param nvcnf  numbers of valence states of the reference and test
-!!               configurations
-!! @param nacnf  principal quantum numbers of the reference and test
-!!               configurations
-!! @param lacnf  angular momenta of the reference and test configurations
+!! @param cnf  the reference and test configurations (input_m)
 !! @param nc  number of core states
 !! @param nv  number of valence states
 !! @param lpopt  type of polynomial continuation for lloc=4
@@ -614,7 +611,6 @@
 !! @param ep  energies at which the pseudopotentials are generated (Ha)
 !! @param qcut  residual-energy cutoff wave vectors for each l
 !! @param debl  energy shifts for the second projectors for each l (Ha)
-!! @param facnf  occupancies of the reference and test configurations
 !! @param dvloc0  r=0 shift of the lloc=4 local potential (Ha)
 !! @param fcfact  prefactor for model core charge amplitude, as read from the
 !!                input
@@ -654,10 +650,9 @@
  integer, intent(in) :: nc,nv,iexc,lmax,lloc,lpopt,icmod,ncnf,upf_mesh
  integer, intent(in) :: na(mxstate),la(mxstate),ncon(mxlin+1),nbas(mxlin+1)
  integer, intent(in) :: nproj(mxlin+1)
- integer, intent(in) :: nvcnf(mxcnf),nacnf(mxstate,mxcnf),lacnf(mxstate,mxcnf)
+ type(config_t), intent(in) :: cnf(mxcnf)
  real(dp), intent(in) :: zz,fa(mxstate),rc0(mxlin+1),ep(mxlin+1),qcut(mxlin+1)
  real(dp), intent(in) :: debl(mxlin+1)
- real(dp), intent(in) :: facnf(mxstate,mxcnf)
  real(dp), intent(in) :: dvloc0,fcfact,epsh1,epsh2,depsh,rlmax,drl
  real(dp), intent(in) :: rcfact,fcgrid(3),rcgrid(3),rxpsh,log_mesh(3)
  real(dp), intent(in) :: slack
@@ -682,7 +677,7 @@
 &                      nproj,debl,well_n,well_norm,ecut_wt, &
 &                      icmod,fcfact,rcfact,slack,budget_cut,fcgrid,rcgrid, &
 &                      epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
-&                      ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh, &
+&                      ncnf,cnf,log_mesh,upf_mesh, &
 &                      text,ntext)
  do ii=1,ntext
    call add(text(ii))

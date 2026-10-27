@@ -201,8 +201,7 @@
 &          rcfact_max=>inp%rcfact_max, rcfact_step=>inp%rcfact_step, &
 &          epsh1=>inp%epsh1, epsh2=>inp%epsh2, depsh=>inp%depsh, &
 &          rxpsh=>inp%rxpsh, rlmax=>inp%rlmax, drl=>inp%drl, &
-&          upf_mesh=>inp%upf_mesh, ncnf=>inp%ncnf, nvcnf=>inp%nvcnf, &
-&          nacnf=>inp%nacnf, lacnf=>inp%lacnf, facnf=>inp%facnf, &
+&          upf_mesh=>inp%upf_mesh, ncnf=>inp%ncnf, cnf=>inp%cnf, &
 &          amesh=>inp%amesh, rr1=>inp%rr1, rmax=>inp%rmax, &
 &          c_light=>inp%c_light, ep_as_given=>inp%ep_as_given, &
 &          well_onset=>inp%well_onset, well_tail=>inp%well_tail, &
@@ -238,9 +237,9 @@
 &             .and. rxpsh < 0, &
 &             'log derivative analysis')
    call check(rlmax == 6 .and. drl == 0.01_dp, 'output grid')
-   call check(ncnf == 1 .and. nvcnf(2) == 2 .and. all(nacnf(4:5, 2) == 3) &
-&             .and. all(lacnf(4:5, 2) == [0, 1]) &
-&             .and. all(facnf(4:5, 2) == [2, 1]), &
+   call check(ncnf == 1 .and. cnf(2)%nv == 2 .and. all(cnf(2)%n(4:5) == 3) &
+&             .and. all(cnf(2)%l(4:5) == [0, 1]) &
+&             .and. all(cnf(2)%f(4:5) == [2, 1]), &
 &             'test configurations')
    if(with_mesh) then
      call check(upf_mesh == 2000, 'UPF mesh size')

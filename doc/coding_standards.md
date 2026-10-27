@@ -121,10 +121,14 @@ looks like this:
   everything that changes is passed as arguments.
 - Derived types are allowed for values that belong together and are
   passed together (`piecewise_t` in `pieces_m`, the integrator state in
-  `outwf_m`). Older code keeps separate arrays with a common index, like
-  the test-configuration input `nacnf(30,5)`, `lacnf(30,5)` and
-  `facnf(30,5)`. Types that a library defines (toml-f's `toml_table`,
-  xmlf90's `xmlf_t`) are used where its calls need them.
+  `outwf_m`, a configuration of the atom, `config_t` in `input_m`, the
+  results of a run, `results_t` in `results_m`). A type is named `_t`,
+  documents each component with `!>`, gives it a default value where one
+  makes sense, and a procedure that needs only part of a larger type
+  takes that part (`fill_t` in `modcore_budget_m`). Older code keeps
+  separate arrays with a common index, like the reference configuration's
+  `na`, `la` and `fa`. Types that a library defines (toml-f's
+  `toml_table`, xmlf90's `xmlf_t`) are used where its calls need them.
 - The non-, scalar- and fully-relativistic codes share their routines.
   A routine whose work depends on the equation takes `irel` (0 non-, 1
   scalar-, 2 fully-relativistic), tested at run time, rather than a

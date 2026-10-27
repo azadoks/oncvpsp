@@ -28,6 +28,7 @@
 
  use constants_m, only: dp, mxstate, mxcnf, mxlin, well_onset_default
  use relativity_m, only: c_light_default, c_light
+ use input_m, only: config_t
  implicit none
  private
  public :: atom_lines, lmax_lines, icmod_lines, epsh_lines, mesh_lines
@@ -544,7 +545,7 @@
 &                            icmod,fcfact,rcfact,slack,budget_cut, &
 &                            fcgrid,rcgrid, &
 &                            epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
-&                            ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh, &
+&                            ncnf,cnf,log_mesh,upf_mesh, &
 &                           text,ntext)
 !! the echo of the input data, from the reference configuration to the log
 !! mesh, as the psp8, UPF and PSML files carry it, line by line
@@ -564,7 +565,7 @@
  integer, intent(in) :: nc,nv,iexc,lmax,lloc,lpopt,icmod,ncnf,upf_mesh
  integer, intent(in) :: na(mxstate),la(mxstate),ncon(mxlin+1),nbas(mxlin+1)
  integer, intent(in) :: nproj(mxlin+1)
- integer, intent(in) :: nvcnf(mxcnf),nacnf(mxstate,mxcnf),lacnf(mxstate,mxcnf)
+ type(config_t), intent(in) :: cnf(mxcnf)
  real(dp), intent(in) :: zz,dvloc0,fcfact,rcfact
  real(dp), intent(in) :: slack
  integer, intent(in) :: budget_cut
@@ -578,7 +579,6 @@
  integer, intent(in) :: well_n(mxlin+1)
  integer, intent(in) :: well_norm
  real(dp), intent(in) :: ecut_wt(mxlin+1)
- real(dp), intent(in) :: facnf(mxstate,mxcnf)
  real(dp), intent(in) :: fcgrid(3),rcgrid(3),log_mesh(3)
  character(len=2), intent(in) :: atsym
  character(len=4), intent(in) :: psfile
@@ -662,10 +662,10 @@
  call put('# nvcnf')
  call put('#   n    l    f')
  do jj=2,ncnf+1
-   write(line,'(i5)') nvcnf(jj)
+   write(line,'(i5)') cnf(jj)%nv
    call put(line)
-   do ii=nc+1,nc+nvcnf(jj)
-     write(line,'(2i5,f8.2)') nacnf(ii,jj),lacnf(ii,jj),facnf(ii,jj)
+   do ii=nc+1,nc+cnf(jj)%nv
+     write(line,'(2i5,f8.2)') cnf(jj)%n(ii),cnf(jj)%l(ii),cnf(jj)%f(ii)
      call put(line)
    end do
    call put('#')
@@ -707,7 +707,7 @@
 &                            icmod,fcfact,rcfact,slack,budget_cut, &
 &                            fcgrid,rcgrid, &
 &                            epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
-&                            ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh, &
+&                            ncnf,cnf,log_mesh,upf_mesh, &
 &                            iout)
 !! writes the echo of the input data to unit 6 (input_echo_lines)
 !!
@@ -722,7 +722,7 @@
  integer, intent(in) :: nc,nv,iexc,lmax,lloc,lpopt,icmod,ncnf,upf_mesh
  integer, intent(in) :: na(mxstate),la(mxstate),ncon(mxlin+1),nbas(mxlin+1)
  integer, intent(in) :: nproj(mxlin+1)
- integer, intent(in) :: nvcnf(mxcnf),nacnf(mxstate,mxcnf),lacnf(mxstate,mxcnf)
+ type(config_t), intent(in) :: cnf(mxcnf)
  real(dp), intent(in) :: zz,dvloc0,fcfact,rcfact
  real(dp), intent(in) :: slack
  integer, intent(in) :: budget_cut
@@ -736,7 +736,6 @@
  integer, intent(in) :: well_n(mxlin+1)
  integer, intent(in) :: well_norm
  real(dp), intent(in) :: ecut_wt(mxlin+1)
- real(dp), intent(in) :: facnf(mxstate,mxcnf)
  real(dp), intent(in) :: fcgrid(3),rcgrid(3),log_mesh(3)
  character(len=2), intent(in) :: atsym
  character(len=4), intent(in) :: psfile
@@ -752,7 +751,7 @@
 &                      nproj,debl,well_n,well_norm,ecut_wt, &
 &                      icmod,fcfact,rcfact,slack,budget_cut,fcgrid,rcgrid, &
 &                      epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
-&                      ncnf,nvcnf,nacnf,lacnf,facnf,log_mesh,upf_mesh, &
+&                      ncnf,cnf,log_mesh,upf_mesh, &
 &                      text,ntext)
  do ii=1,ntext
    write(iout,'(a)') trim(text(ii))

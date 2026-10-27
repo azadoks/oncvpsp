@@ -22,7 +22,18 @@
  use constants_m, only: dp, mxstate, mxcnf, mxlin, mxkap
  implicit none
  private
- public :: input_t
+ public :: input_t, config_t
+
+!> A configuration of the atom: its states and their occupations
+ type :: config_t
+!> Number of valence states
+   integer :: nv=0
+!> Principal and angular-momentum quantum numbers and occupations of the
+!> states, the core states first (as many as the reference's nc)
+   integer :: n(mxstate)=0
+   integer :: l(mxstate)=0
+   real(dp) :: f(mxstate)=0.0d0
+ end type config_t
 
 !> The values of the input file
  type :: input_t
@@ -140,14 +151,10 @@
 ! [Test configurations]
 !> Number of test configurations
    integer :: ncnf
-!> Number of valence states in test configurations
-   integer :: nvcnf(mxcnf)
-!> Principal quantum number array for test configurations
-   integer :: nacnf(mxstate, mxcnf)
-!> Orbital angular momentum quantum number array for test configurations
-   integer :: lacnf(mxstate, mxcnf)
-!> Occupation number array for test configurations
-   real(dp) :: facnf(mxstate, mxcnf)
+!> The test configurations, cnf(2:ncnf+1) as read (their valence states);
+!> oncvpsp_run puts the reference configuration in cnf(1) and the core
+!> states in each
+   type(config_t) :: cnf(mxcnf)
 ! [Log mesh]
 !> Ratio of successive points of the log radial mesh
 !> (0 or less for the default)
