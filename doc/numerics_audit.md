@@ -4,6 +4,10 @@ The audit covers the working tree at 9c78c3a plus the uncommitted changes: free_
 
 **Status.** C-1 to C-11 are resolved; the status column of §6b gives the commits, and "Numerics audit" in doc/smoothness_plan.md how each was checked and what changed. C-12 to C-18 and §6c are open; §6c item 2 is deferred to the configurable Adams–Moulton order in doc/smoothness_plan.md, since with the AM4 ODE it removes only 5–6 % of the AE mesh error (measured there).
 
+**Note (2026-10-27).** Two items are closed without a code change, by the user's decision:
+- §6c item 4 (S-10, GGA ρ′ and ρ″ from the pieces) is dropped: RadialAtomicSolvers.jl showed that the 5-point stencils of `derivs` across the model-core joints do not matter. The question of the C² joint stays with D-5.
+- R-16 in doc/smoothness_plan.md, the kink of `outwf_m`'s per-segment restart where rcloc crosses 0.95 rc(l) (1.7e-11 Ha in the 3s of 20_Ca, at most 1e-10 in the test configurations), is resolved as within tolerance: it is below G1 and is kept as is.
+
 **Notation**
 - Log mesh: r_i = rr1·amesh^(i−1), x = ln r, h = al = ln amesh. Default: amesh 1.006, rr1 = min(5e-4/Z, 5e-5) (nr and sr) or 5e-4/Z (fr), rmax 45, mmax = int(ln(rmax/rr1)/al).
 - "Order p" means a global error of O(h^p).
@@ -209,7 +213,7 @@ Documentation drift found along the way:
 1. **Fix C-1 and C-2 now.** Both are one-liners and both are real failures.
 2. **Retire the 4th-order legacy quadrature in the AE layer** (deferred: measured, the ODE limits the rate; see the status note). Replace radint, vout's Hartree (AM4) and the normalizations with `lm_cumint`/`lm_integral`, with the correct head exponent (2γ−2 for relativistic s states) passed in. V_H then follows from two cumulative integrals, which the 8th-order rule gives directly. This removes C-3 and the two Gregory conventions, and should lift the AE mesh-convergence rate from h⁴ toward h⁸ wherever the ODE is not the limit. Measure with T4.
 3. **Bring the Dirac solvers to the sr standard:** the series start (the Dirac analogue of `origin_series`, with the screening constant), PECECE, and inward re-integration of the first points (C-4). Then make relatom use `ae_mix`.
-4. **S-10 for the GGA:** ρ′ from the pieces and the 8th-order stencils (`lm_derivs`-style fields) instead of `derivs`. At the same time, decide whether the C² joint should stay C² (D-5).
+4. **S-10 for the GGA** (dropped 2026-10-27, see the note at the top). ρ′ from the pieces and the 8th-order stencils (`lm_derivs`-style fields) instead of `derivs`. At the same time, decide whether the C² joint should stay C² (D-5).
 5. **Make iteration limits errors everywhere:** zeroin, fmin, gauss_legendre, Nelder–Mead and Newton in modcore3, boxstate, the series term limits, phsft depth, qroots skip. Add a residual check after Brent, as wellstate does, so that a "root" at a jump is caught (C-6, C-15).
 6. **Remove the remaining policy branches on continuous quantities,** or list them in the plan as discrete events with a printed margin (G5): the fill-type switch (C-6), the diagnostic reselections (C-8), and `eresid`'s nint (make dq a continuous function and keep nq fixed per input, as Q-2 intended) (C-10).
 7. ~~Resolve C-5~~ (done, d603e40); the q-grid resolution for long free tails (C-10) is adequate.
