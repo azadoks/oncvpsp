@@ -430,7 +430,7 @@ numbers refer to [Phases](#phases).
 | S-7 | `lschvkbb` nin = mch + 2.3/al, truncation of the density tail | a, b | W (~0) | done: `inward_start` in `lschvkbb` and in `lschpsbar` (inside the barrier) |
 | S-8 | matching point `mch` at the turning point index; `lschfb`'s mch and `inward_start`'s nin are discrete in E (about 1e-12 in the all-electron eigenvalues) | h | W | done in phase 3: it was kept on the grounds that the all-electron atom does not depend on the scanned inputs, but well states do (their well width carried a sawtooth of 1.4e-13 Ha in E(rwell), in step with mch, into the ep scans). `match_m`: matched at the continuous turning point (an FH root), the energy correction the bump-weighted average over ±4 points of the pointwise one, the two solutions joined by a C-infinity step, in `lschfb`, `ldiracfb`, `lschvkbb` (kept beyond the projectors by a smooth maximum); `lschpsbar`'s barrier matching is phase 6 (R-14). The solvers also converge to round-off now (S-2 to S-4): the second pass below eps left its unapplied correction, up to 1e-14 relative, as noise. Unit test `matching`: E(Z) of hydrogen smooth to 4e-15 (was 3e-14 to 1e-13). nin stays discrete: the function there is at machine precision |
 | S-9 | `sr_flux_m`: series/RK4 switch at rs, RK4 step count by ceiling | g, i | W (~1e-13) | done: rs = a/(8 max(1, \|b\|)), constant in E for all bound and scattering states (\|b\| ≤ 1), so the series/RK4 branch and the step count are too |
-| S-10 | `exc_libxc`: ρ′, ρ″ of ρ_v + ρ̃_c by mesh stencils (`derivs`) across the kinks of the model core (r_s C², r* C⁴, the Teter cutoff C¹) and of ρ_v at rc | d, e | W (GGA) | ρ′, ρ″ from the pieces: the model core from its derivative columns, ρ_v from u, u′, u″ of the pseudo-waves |
+| S-10 | `exc_libxc`: ρ′, ρ″ of ρ_v + ρ̃_c by mesh stencils (`derivs`) across the kinks of the model core (r_s C², r* C⁴, the Teter cutoff C¹) and of ρ_v at rc | d, e | W (GGA) | dropped (the user's decision, 2026-10-27): RadialAtomicSolvers.jl showed that the stencil derivatives across the joints do not matter (planned: ρ′, ρ″ from the pieces) |
 
 #### Exchange-correlation
 
@@ -681,7 +681,9 @@ So the order is:
    (PSML) and the psp8 model-core pieces (both done: the psp8 core smooth
    to 1e-10). The UPF on the log mesh writes ρ_c's values, which are
    smooth already.
-8. S-10: GGA ρ′, ρ″ from the pieces, last (a small effect). Item 1 shows
+8. S-10: dropped (the user's decision, 2026-10-27; RadialAtomicSolvers.jl
+   showed that it does not matter). The analysis as planned: GGA ρ′, ρ″
+   from the pieces, last (a small effect). Item 1 shows
    no kink above 1e-11 in the optimizer's setup: a 5-point stencil across
    a C² joint errs by a truncated power of the joint's offset in the
    cell, which is C² in the joint's radius, so finite-difference
@@ -1206,7 +1208,8 @@ So the order is:
       the same at span 0.02). PSML: the matching radius is the joint
       (M-14). References: only the psp8 core lines within a few points of
       the joint, and the r* line
-- [ ] S-10 GGA gradients from the pieces
+- [x] S-10 GGA gradients from the pieces: dropped (2026-10-27),
+      RadialAtomicSolvers.jl showed the effect does not matter
 - [ ] `match_order` (D-5): input key, minimum tail and Martins fill to
       C⁴, T2 row `slack` with `match_order = 4`
 - [x] T2 rows fcfact, rcfact, icmod 4 grid, slack: icmod 1–3 at G1;
