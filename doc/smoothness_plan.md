@@ -1536,7 +1536,17 @@ from rc:
       charge beyond a joint is interpolated. The odd derivatives of
       icmod 1 at r = 0 are now exactly 0; in the Teter taper (79_Au_lxc,
       3.03 bohr) the interpolant had been 1e-8 off in the value and 4e-4
-      in the 4th derivative
+      in the 4th derivative. Then (same day) the rest of audit C-16: the
+      fully relativistic PSML potentials (vp − vo per kappa) take the
+      switch to −zion/r over the outer half of the mesh that vpuns has
+      (O-5, `coulomb_switch`); UPF's `nrlproj` is clamped to the mesh
+      size; and an odd linear-mesh size, at `rlmax` or at the orbitals'
+      extent, is made even downward where upward would pass rr(mmax)
+      (`outmesh_m` refused such a mesh: 14_Si at rlmax 44.695, drl 0.02,
+      where rr(mmax) = 44.6995, now runs). Nothing printed moves: beyond
+      the core vp − vo is V_ion, already −zion/r to 1e-12, below PSML's
+      13 digits (14_Si and 80_Hg fr), and `nrlproj` stays below the
+      linear mesh, which `upfout` widens to the orbitals' extent
 - [x] Weighted wave cutoff for the icmod 6/7 budget (asked for by the
       oncvpsp-opt session; approved and done 2026-10-22, see
       doc/core_correction.md; T2 row sr_07_N_opt_rc1_wcut, Ecut_w smooth

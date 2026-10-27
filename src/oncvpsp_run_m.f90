@@ -78,7 +78,8 @@
  use kappa_m, only: kap_count, kap_of, j_share
  use modcore_m, only: core_pieces_smooth
  use well_mesh_m, only: well_mesh_t
- use ps_valence_m, only: valence_densities, unscreen_potentials
+ use ps_valence_m, only: valence_densities, unscreen_potentials, &
+&                       coulomb_switch
  use ae_projectors_m, only: ae_bound_projectors, ae_well_projectors, &
 &                           ae_delta_window, ae_overlap, ecut_weights
  use constants_m, only: nerrdg, nerrlv
@@ -260,13 +261,19 @@
  if(ifail/=0) return
  c_light=c_light_of(inp%c_light)
 
- nrl=int((inp%rlmax/inp%drl)-0.5d0)+1
-
-!PWSCF wants an even number of mesh pointe (not made so when fully
-!relativistic, see doc/fr_merge_plan.md)
- if(mod(nrl,2)/=0 .and. irel/=2) nrl=nrl+1
-
  call make_log_mesh(irel,inp%zz,inp%amesh,inp%rr1,inp%rmax,al,mmax,rr,log_mesh)
+
+!PWSCF wants an even number of mesh points (not made so when fully
+!relativistic, see doc/fr_merge_plan.md): one more, or one fewer where
+!one more would pass the log mesh
+ nrl=int((inp%rlmax/inp%drl)-0.5d0)+1
+ if(mod(nrl,2)/=0 .and. irel/=2) then
+   if(inp%drl*dble(nrl)<=rr(mmax)) then
+     nrl=nrl+1
+   else
+     nrl=nrl-1
+   end if
+ end if
 
 !calculate zion for output
  zion=inp%zz
@@ -646,11 +653,13 @@
 &                 nkap,1,vsrpw,esr,vsopw,eso,iout,ifail)
    if(ifail/=0) return
 
-! save full info for psml
+! save full info for psml, switched to -zion/r far out as vpuns is
    allocate(vpsml(mmax,mxl+2,mxkap))
    do l1=1,max(inp%lmax+1,inp%lloc+1)
      vpsml(:,l1,1) = vp(:,l1,1) - vo(:)
      vpsml(:,l1,2) = vp(:,l1,2) - vo(:)
+     call coulomb_switch(rr,mmax,zion,vpsml(:,l1,1))
+     call coulomb_switch(rr,mmax,zion,vpsml(:,l1,2))
    end do
 
 ! ghost testing

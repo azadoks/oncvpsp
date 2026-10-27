@@ -185,7 +185,13 @@
  end do
  if(uurcut > inp%drl*dble(nrl-1)) then
    nrl = 1 + int(uurcut/inp%drl)
-   if(mod(nrl,2)/=0) nrl=nrl+1
+   if(mod(nrl,2)/=0) then
+     if(inp%drl*dble(nrl)<=rr(mmax)) then
+       nrl=nrl+1
+     else
+       nrl=nrl-1
+     end if
+   end if
    write(iout,'(a,i5,a,f10.5)') "Updating nrl = ", nrl, " for uurcut = ", uurcut
  end if
  end subroutine orbital_extent
@@ -438,8 +444,9 @@
  end do
 
  if(mod(nrlproj,2)/=0) nrlproj=nrlproj+1
-!make divisible by 4 to use for 0 compression below
+!make divisible by 4 to use for 0 compression below, within the mesh
  if(mod(nrlproj,4)/=0) nrlproj=nrlproj+2
+ nrlproj=min(nrlproj,nrl)
 
 !on the log mesh, the first point beyond every core radius (where the
 !projectors are zero), made divisible by 4 as above

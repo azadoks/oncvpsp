@@ -635,6 +635,10 @@ Bugs that moved outputs, beyond those above:
   a672619.
 - `run_config` set the intermediate occupations of one stale index.
   Commits: 3dfb268, a672619.
+- The linear output mesh, made even by one more point, could end past
+  the log mesh (4.0.1 extrapolated there); it is now made even by one
+  fewer where one more would pass it. UPF's PP_BETA
+  `cutoff_radius_index` could exceed `mesh_size`; it is clamped to it.
 - `run_optimize` stored up to 9 constraints in `cons(6)`. `eresid`
   never filled qcut's matrices when qcut was within 4 dq of q_infinity.
   Commit: 3dfb268.

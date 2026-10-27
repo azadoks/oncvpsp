@@ -142,12 +142,13 @@ physical reason, kept behind `irel` until decided:
 - the test-configuration results table of `run_config_ps`: sr leaves out
   empty valence levels, fr lists every level once for each kappa
 - `upfout`: the search for the radius holding all but 1e-6 of each
-  orbital's norm starts at `mmax-1` in sr, `mmax` in fr; sr sets the first
-  point of the interpolated local potential to its value at r=0, fr keeps
-  the extrapolated one
+  orbital's norm starts at `mmax-1` in sr, `mmax` in fr; sr set the first
+  point of the interpolated local potential to its value at r=0, fr kept
+  the extrapolated one (since 2026-10-27 both `lm_origin`'s)
 - the PSML semi-local potentials: sr writes `vpuns`, with the unscreening
   corrections (the tail beyond the charge and the smoothing to -zion/r),
-  fr writes `vp-vo` for each kappa without them
+  fr writes `vp-vo` for each kappa without them (since 2026-10-27 with
+  the switch to -zion/r, `coulomb_switch`)
 
 ### Fixed on the way
 

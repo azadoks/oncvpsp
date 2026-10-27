@@ -25,7 +25,7 @@
  use pieces_m, only: piecewise_t
  implicit none
  private
- public :: valence_densities, unscreen_potentials
+ public :: valence_densities, unscreen_potentials, coulomb_switch
 
  contains
 
@@ -148,12 +148,10 @@
 !! the scalar-relativistic average when fully relativistic; and -zion/r
 !! far out, where the all-electron charge outranges rho: switched over
 !! the outer half of the mesh (O-5), not cut where rho underflows to 0
- use cinf_taper_m, only: cinf_taper
  integer, intent(in) :: irel,lmax,lloc,mmax,nkap
  real(dp), intent(in) :: vp(mmax,mxl+2,nkap),vo(mmax),zion,rr(mmax)
  real(dp), intent(inout) :: vpuns(mmax,mxl+2)
- real(dp) :: sw
- integer :: ii,ll,l1
+ integer :: ll,l1
 
  do l1=1,max(lmax+1,lloc+1)
    ll=l1-1
@@ -165,12 +163,24 @@
    end if
  end do
 
- do ii=1,mmax
-   sw=cinf_taper(rr(ii),0.5d0*rr(mmax),rr(mmax))
-   do l1=1,max(lmax+1,lloc+1)
-     vpuns(ii,l1)=sw*vpuns(ii,l1)-(1.0d0-sw)*zion/rr(ii)
-   end do
+ do l1=1,max(lmax+1,lloc+1)
+   call coulomb_switch(rr,mmax,zion,vpuns(:,l1))
  end do
  end subroutine unscreen_potentials
+
+ subroutine coulomb_switch(rr,mmax,zion,vv)
+!! vv switched to -zion/r over the outer half of the mesh (O-5)
+ use cinf_taper_m, only: cinf_taper
+ integer, intent(in) :: mmax
+ real(dp), intent(in) :: rr(mmax),zion
+ real(dp), intent(inout) :: vv(mmax)
+ real(dp) :: sw
+ integer :: ii
+
+ do ii=1,mmax
+   sw=cinf_taper(rr(ii),0.5d0*rr(mmax),rr(mmax))
+   vv(ii)=sw*vv(ii)-(1.0d0-sw)*zion/rr(ii)
+ end do
+ end subroutine coulomb_switch
 
  end module ps_valence_m
