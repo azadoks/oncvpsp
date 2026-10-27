@@ -30,7 +30,8 @@
  use input_m, only: config_t
  implicit none
  private
- public :: run_config_ae, config_ae_warning, aeatom_cached, ae_config_t
+ public :: run_config_ae, config_ae_warning, aeatom_cached, ae_config_t, &
+&           ae_cache_t
 
 !> the all-electron half of a test configuration (run_config_ae): its
 !> levels merged with the reference's, the reference's first
@@ -64,14 +65,18 @@
    real(dp), allocatable :: fa(:),rr(:),ea(:,:),rpk(:,:),rhoc(:),rho(:),vi(:)
  end type ae_entry_t
 
-!> the solutions of this run (aeatom_cached)
- type(ae_entry_t), save :: ae_cache(2*mxcnf+1)
- integer, save :: nae_cache=0
+!> the all-electron atoms of a run, the reference and two per test
+!> configuration (aeatom_cached), which a run owns and passes down
+ type :: ae_cache_t
+   integer :: n=0
+   type(ae_entry_t) :: entry(2*mxcnf+1)
+ end type ae_cache_t
 
  contains
 
- subroutine aeatom_cached(irel,nkap,na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&                         rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,iout,ifail)
+ subroutine aeatom_cached(cache,irel,nkap,na,la,ea,fa,rpk,nc,ncv,it,rhoc, &
+&                         rho,rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,iout, &
+&                         ifail)
 
 !! aeatom, or the copy of its earlier solution with the same inputs. The
 !! reference configuration recurs as test configuration 0, at both levels
@@ -80,7 +85,8 @@
 !! the same bits. A failed solution is not kept, so that its warnings
 !! recur, and a reused one stopped on the residual's round-off floor
 !! repeats that warning. rpk comes back as that solution left it (rows
-!! 1..ncv). The arguments are those of aeatom
+!! 1..ncv). cache holds the solutions of the run; the other arguments
+!! are those of aeatom
 
  use aeatom_m, only: aeatom
 
@@ -91,6 +97,7 @@
  real(dp), intent(in) :: fa(ncv),rr(mmax)
 
 !Input/output variables
+ type(ae_cache_t), intent(inout) :: cache
  integer, intent(inout) :: ierr
  real(dp), intent(inout) :: ea(mxstate,nkap),rpk(mxstate,nkap)
 
@@ -106,8 +113,8 @@
  real(dp), allocatable :: vfree(:)
 
  ifail=0
- do ii=1,nae_cache
-   associate(ce=>ae_cache(ii))
+ do ii=1,cache%n
+   associate(ce=>cache%entry(ii))
      if(ce%irel/=irel .or. ce%nkap/=nkap .or. ce%nc/=nc .or. &
 &       ce%ncv/=ncv .or. ce%mmax/=mmax .or. ce%iexc/=iexc .or. &
 &       ce%zz/=zz) cycle
@@ -134,10 +141,10 @@
 &            rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vfree,.false.,iout,ifail)
  if(ifail/=0) return
  deallocate(vfree)
- if(ierr/=0 .or. nae_cache==size(ae_cache)) return
+ if(ierr/=0 .or. cache%n==size(cache%entry)) return
 
- nae_cache=nae_cache+1
- associate(ce=>ae_cache(nae_cache))
+ cache%n=cache%n+1
+ associate(ce=>cache%entry(cache%n))
    ce%irel=irel
    ce%nkap=nkap
    ce%nc=nc
@@ -162,8 +169,8 @@
  return
  end subroutine aeatom_cached
 
- subroutine run_config_ae(jj,cnf,nc,rr,zz,mmax,iexc,ea,irel,nkap,aec,iout, &
-&                         ifail)
+ subroutine run_config_ae(cache,jj,cnf,nc,rr,zz,mmax,iexc,ea,irel,nkap,aec, &
+&                         iout,ifail)
 
 !! solves the all-electron atom in the maximally-ionized and excited states
 !! of test configuration jj, the all-electron half of the test-configuration
@@ -171,6 +178,7 @@
 !! pseudopotential, so oncvpsp_ae.x can compute them once for oncvpsp_ps.x
 !! (see ae_file_m).  run_config_ps does the pseudo-atom half.
 !!
+!! @param cache  the all-electron atoms of the run
 !! @param jj  index of current configufation
 !! @param cnf  the reference and test configurations (input_m)
 !! @param nc  number of core states
@@ -192,6 +200,9 @@
  type(config_t), intent(in) :: cnf(mxcnf)
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: ea(mxstate,nkap),rr(mmax)
+
+!Input/output variables
+ type(ae_cache_t), intent(inout) :: cache
 
 !Output variables
  type(ae_config_t), intent(out) :: aec
@@ -276,7 +287,7 @@
 
 !all-electron atom solution for maximally-ionized state
 
- call aeatom_cached(irel,nkap,nat,lat,eat(1,1,2),fat(1,2),rpk,nc, &
+ call aeatom_cached(cache,irel,nkap,nat,lat,eat(1,1,2),fat(1,2),rpk,nc, &
 &                   nc+nvt,it,rhoc,rho,rr,vfull,zz,mmax,iexc,eaetst,eterm, &
 &                   res,ierr,iout,ifail)
  if(ifail/=0) return
@@ -325,7 +336,7 @@
 
 !all-electron atom solution for excited state
 
- call aeatom_cached(irel,nkap,nat,lat,eat(1,1,3),fat(1,3),rpk,nc, &
+ call aeatom_cached(cache,irel,nkap,nat,lat,eat(1,1,3),fat(1,3),rpk,nc, &
 &                   nc+nvt,it,rhoc,rho,rr,vfull,zz,mmax,iexc,eaetst,eterm, &
 &                   res,ierr,iout,ifail)
  if(ifail/=0) return

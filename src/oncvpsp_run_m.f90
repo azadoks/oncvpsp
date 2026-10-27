@@ -51,7 +51,8 @@
 !! @param psp  the results (results_m)
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
- use config_ae_m, only: run_config_ae, aeatom_cached, ae_config_t
+ use config_ae_m, only: run_config_ae, aeatom_cached, ae_config_t, &
+&                       ae_cache_t
  use ae_file_m, only: write_ae_file, read_ae_file
  use ps_file_m, only: write_ps_file
  use exc_libxc_m, only: exc_libxc
@@ -203,6 +204,8 @@
 
 !all-electron results for the test configurations (see run_config_ae)
  type(ae_config_t) :: aec(mxcnf)
+!the all-electron atoms of this run, for the test configurations
+ type(ae_cache_t) :: cache
 
 
 !names in the messages: the equation solved and the program
@@ -324,7 +327,7 @@
    end if
  else
    ierr=0
-   call aeatom_cached(irel,nkap,inp%na,inp%la,ea,inp%fa,rpk,inp%nc, &
+   call aeatom_cached(cache,irel,nkap,inp%na,inp%la,ea,inp%fa,rpk,inp%nc, &
 &                     inp%nc+inp%nv,it,rhoc,rho, &
 &                     rr,vfull,inp%zz,mmax,inp%iexc,etot,eterm,res,ierr, &
 &                     iout,ifail)
@@ -426,7 +429,7 @@
 !all-electron halves of the test configurations; their pseudo-atom halves
 !and all output about them come from the matching _ps.x
    do jj=1,inp%ncnf+1
-     call run_config_ae(jj,inp%cnf,inp%nc,rr, &
+     call run_config_ae(cache,jj,inp%cnf,inp%nc,rr, &
 &                       inp%zz, &
 &                       mmax,inp%iexc,ea,irel,nkap,aec(jj),iout,ifail)
      if(ifail/=0) return
@@ -713,7 +716,7 @@
    rhot(:)=rho(:)
 
    if(istage/=2) then
-     call run_config_ae(jj,inp%cnf,inp%nc,rr, &
+     call run_config_ae(cache,jj,inp%cnf,inp%nc,rr, &
 &                       inp%zz, &
 &                       mmax,inp%iexc,ea,irel,nkap,aec(jj),iout,ifail)
      if(ifail/=0) return

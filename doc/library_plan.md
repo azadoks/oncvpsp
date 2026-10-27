@@ -167,10 +167,24 @@ derived type: it either copies them into arrays of maximum sizes
 (`mxprj`, `mmax`) or holds them behind a handle with calls for the sizes
 and the arrays.
 
-The speed of light (`relativity_m`'s `c_light`, set from the input by
-`set_relativity`) is a module variable: two runs one after the other are
-fine, two at once in threads are not. Phase 5 moves it into an argument
-or documents the limit.
+Three kinds of module variable are left, against the coding standards'
+"no global state":
+
+- the speed of light (`relativity_m`'s `c_light`, set from the input by
+  `set_relativity`): two runs one after the other are fine, two at once
+  in threads with different values are not. Phase 5 moves it into an
+  argument of the solvers, beside `irel`, or documents the limit;
+- the weights of the log mesh's stencils and cell rule (`logmesh_m`),
+  fixed numbers computed on first use: the same for every run, but their
+  first computation races in threads. Phase 5 computes them before any
+  run, or makes them parameters;
+- `exc_libxc_m`'s `functprinted`, which prints the libxc functional's
+  description once per process: a second run's output lacks it.
+
+The cache of all-electron atoms that the test configurations reuse is an
+`ae_cache_t` (`config_ae_m`) that `oncvpsp_run` owns and passes down, so
+a second run starts with an empty one; `tests/unit/test_run.f90` checks
+that run bit for bit.
 
 ### Phase 4: routines into modules
 
