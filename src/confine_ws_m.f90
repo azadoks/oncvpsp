@@ -59,17 +59,6 @@
    integer :: k(mxedge),ied(mxedge)
  end type edges_t
 
-!> the functions of ug_brent: the solver, the point of the scan and the
-!> phase of edges' root, at the radius ph_iq
- type(phsft_t), pointer :: psol=>null()
- real(dp) :: ph_e0,ph_tgt,ph_shift
- integer :: ph_iq
-!> the poles of the pseudopotential's r phi'/phi at rs (Ha), and whether
-!> the phase of psol counts them rather than its nodes
- integer :: ndir
- real(dp), allocatable :: edir(:)
- logical :: ph_poles
-
  contains
 
  subroutine confine_sphere(pf,irel,zz,mmax,rr,vfull,nc,na,la,chan,nq,rq, &
@@ -127,14 +116,16 @@
 !> unit of the text output
  integer, intent(in) :: iout
  type(confine_summary_t), intent(inout) :: sm
- type(phsft_t), target :: sae,sps
+ type(phsft_t) :: sae,sps
 !> the quadrature of the channel in each sphere, shared by its edges
  type(ws_grid_t), allocatable :: wsg(:)
  type(poles_t), allocatable :: polq(:)
 !> the phases of every radius on the grid and at the anchors
  real(dp), allocatable :: shae(:,:),shps(:,:),tanae(:,:),tanps(:,:)
  real(dp) :: ex
- integer :: l1,kap,nvkb,iq,ii,ierr,npsh
+!> the poles of the pseudopotential's r phi'/phi at a radius (Ha)
+ real(dp), allocatable :: edir(:)
+ integer :: l1,kap,nvkb,iq,ii,ierr,npsh,ndir
  integer :: ifail
 
  l1=ll+1
@@ -159,8 +150,7 @@
    call ws_eigenvalues(ll,3,wsg(iq),pf%pot%evkb(1:nvkb,l1,ikap),ndir, &
 &       edir,ierr)
    if(ierr/=0) ndir=0
-   ph_iq=iq
-   call refine_poles(sps,egrid)
+   call refine_poles(sps,iq,egrid,edir(1:ndir),iout)
    polq(iq)%e=edir(1:ndir)
    deallocate(edir)
  end do
@@ -212,7 +202,7 @@
  real(dp), intent(in) :: zz,rr(mmax),vfull(mmax),rs,egrid(:),shae(:)
  real(dp), intent(in) :: tanae(nanch),tanps(nanch),emin,emax
  real(dp), intent(inout) :: shps(:)
- type(phsft_t), intent(inout), target :: sae,sps
+ type(phsft_t), intent(inout) :: sae,sps
  type(poles_t), intent(in) :: pol
  type(ws_grid_t), intent(in) :: wsg
  logical, intent(in) :: table
@@ -231,9 +221,6 @@
 
  npsh=size(egrid)
  write(iout,'(a,2i4,1p,e24.16)') 'ws_r',ll,ikap,rs
- ph_iq=iq
- ndir=size(pol%e)
- edir=pol%e
  do ii=1,npsh
    ishift(ii)=nint((shae(ii)-shps(ii))/pi)
  end do
@@ -247,9 +234,8 @@
  end if
  shps(:)=shps(:)+thal
 
- call edges(sae,.false.,ll,egrid,shae,0.0d0,eae)
- call edges(sps,.true.,ll,egrid,shps,thal,eps)
- deallocate(edir)
+ call edges(sae,iq,.false.,pol%e,ll,egrid,shae,0.0d0,eae,iout)
+ call edges(sps,iq,.true.,pol%e,ll,egrid,shps,thal,eps,iout)
 
 ! every all-electron edge, lowest first, and its partner: the nearest
 ! pseudopotential edge of the same phase, over the whole scan, so that an
@@ -379,36 +365,35 @@
 
  end subroutine ws_cutoffs
 
- subroutine edges(sol,poles,ll,egrid,sh,shift,ed)
-!! the edges of a scan: the energies at which the phase (plus shift)
-!! crosses atan(D) + k pi for the D of each edge, each to round-off by
-!! Brent's method in the interval of the grid that brackets it; poles for
-!! the phase that counts the poles edir rather than the nodes, whose top
-!! edges (phi(rs) = 0) are the poles themselves, where the count steps: the
-!! k-th at the phase -pi/2 - (k-1) pi just below it
- type(phsft_t), intent(inout), target :: sol
+ subroutine edges(sol,iq,poles,edir,ll,egrid,sh,shift,ed,iout)
+!! the edges of a scan at the iq-th radius of sol: the energies at which
+!! the phase (plus shift) crosses atan(D) + k pi for the D of each edge,
+!! each to round-off by Brent's method in the interval of the grid that
+!! brackets it; poles for the phase that counts the poles edir rather than
+!! the nodes, whose top edges (phi(rs) = 0) are the poles themselves, where
+!! the count steps: the k-th at the phase -pi/2 - (k-1) pi just below it
+ type(phsft_t), intent(inout) :: sol
+ integer, intent(in) :: iq,ll
  logical, intent(in) :: poles
- integer, intent(in) :: ll
- real(dp), intent(in) :: egrid(:),sh(:),shift
+ real(dp), intent(in) :: edir(:),egrid(:),sh(:),shift
  type(edges_t), intent(out) :: ed
- real(dp) :: thlo,thhi,er
+!> unit of the text output
+ integer, intent(in) :: iout
+ real(dp) :: thlo,thhi,er,e0,tgt
  integer :: jj,kk,jed,ierr2,npsh
  npsh=size(egrid)
- psol=>sol
- ph_poles=poles
- ph_shift=shift
  ed%n=0
  do jj=1,npsh-1
-   ph_e0=egrid(jj)
+   e0=egrid(jj)
    thlo=min(sh(jj),sh(jj+1))
    thhi=max(sh(jj),sh(jj+1))
    do jed=1,3
      if(poles .and. jed==3) cycle
      do kk=ceiling((thlo-target(ll,jed))/pi),floor((thhi-target(ll,jed))/pi)
-       ph_tgt=target(ll,jed)+pi*dble(kk)
+       tgt=target(ll,jed)+pi*dble(kk)
 ! a crossing on the point below is the next interval's
-       if(ph_tgt==sh(jj+1) .and. jj<npsh-1) cycle
-       call ug_brent(phase,egrid(jj+1),ph_e0,er,ierr2)
+       if(tgt==sh(jj+1) .and. jj<npsh-1) cycle
+       call ug_brent(phase,egrid(jj+1),e0,er,ierr2)
        if(ierr2/=0) cycle
 ! a jump (a pair of nodes inside the projectors), not a root
        if(abs(phase(er))>0.25d0*pi) cycle
@@ -417,12 +402,20 @@
    end do
  end do
  if(poles) then
-   do kk=1,ndir
+   do kk=1,size(edir)
      if(edir(kk)<egrid(npsh) .or. edir(kk)>egrid(1)) cycle
      call add_edge(ed,edir(kk),nint(shift/pi)-(kk-1),3)
    end do
  end if
- nullify(psol)
+
+ contains
+
+ real(dp) function phase(ex)
+!! the phase of sol at ex plus shift, less tgt
+ real(dp), intent(in) :: ex
+ phase=phase_of(sol,iq,poles,edir,ex,iout)+shift-tgt
+ end function phase
+
  end subroutine edges
 
  subroutine add_edge(ed,ee,kk,jed)
@@ -460,43 +453,44 @@
  end do
  end subroutine scan_phases
 
- real(dp) function phase(ex)
-!! the phase of psol at ex plus ph_shift, less ph_tgt
- real(dp), intent(in) :: ex
- integer, parameter :: iout=6
- phase=phase_of(ex,iout)+ph_shift-ph_tgt
- end function phase
-
- real(dp) function phase_of(ex,iout)
-!! the phase of psol at ex: less pi per node inside rs, or with ph_poles
-!! per pole of r phi'/phi at rs below ex
- real(dp), intent(in) :: ex
+ real(dp) function phase_of(sol,iq,poles,edir,ex,iout)
+!! the phase of sol at ex at its iq-th radius: less pi per node inside rs,
+!! or with poles per pole of r phi'/phi at rs (edir) below ex
+ type(phsft_t), intent(inout) :: sol
+ integer, intent(in) :: iq
+ logical, intent(in) :: poles
+ real(dp), intent(in) :: edir(:),ex
  integer, intent(in) :: iout
  integer :: ifail
- if(ph_poles) then
-   phase_of=phsft_node_phase(psol,ph_iq,ex,nodes=.false., &
+ if(poles) then
+   phase_of=phsft_node_phase(sol,iq,ex,nodes=.false., &
 &        iout=iout,ifail=ifail) &
-&           -pi*dble(count(edir(1:ndir)<ex))
+&           -pi*dble(count(edir<ex))
    if(ifail/=0) error stop 1
  else
-   phase_of=phsft_node_phase(psol,ph_iq,ex,iout=iout,ifail=ifail)
+   phase_of=phsft_node_phase(sol,iq,ex,iout=iout,ifail=ifail)
    if(ifail/=0) error stop 1
  end if
  end function phase_of
 
- subroutine refine_poles(sol,egrid)
-!! the poles edir in the scan, each from its variational value to the root
-!! of u(rs) beside it, in a bracket that grows from 1e-6 Ha on both sides
-!! until u changes sign, up to halfway to the poles beside it (or 1 Ha). A
-!! variational bound lies above the root of the same Hamiltonian, but
-!! the basis's quadrature of the pieces and the radial equation's differ,
-!! by 3e-8 Ha at 1.5 Ha in Si f, so the root can be on either side
- type(phsft_t), intent(inout), target :: sol
+ subroutine refine_poles(sol,iq,egrid,edir,iout)
+!! the poles edir of the iq-th radius of sol in the scan, each from its
+!! variational value to the root of u(rs) beside it, in a bracket that
+!! grows from 1e-6 Ha on both sides until u changes sign, up to halfway to
+!! the poles beside it (or 1 Ha). A variational bound lies above the root
+!! of the same Hamiltonian, but the basis's quadrature of the pieces and
+!! the radial equation's differ, by 3e-8 Ha at 1.5 Ha in Si f, so the
+!! root can be on either side
+ type(phsft_t), intent(inout) :: sol
+ integer, intent(in) :: iq
  real(dp), intent(in) :: egrid(:)
+ real(dp), intent(inout) :: edir(:)
+!> unit of the text output
+ integer, intent(in) :: iout
  real(dp) :: e0,u0,lo,hi,ww,er,elow,ehigh
- integer :: kk,ierr2
+ integer :: kk,ierr2,ndir
  logical :: found
- psol=>sol
+ ndir=size(edir)
  do kk=1,ndir
    e0=edir(kk)
    if(e0<egrid(size(egrid)) .or. e0>egrid(1)) cycle
@@ -525,19 +519,20 @@
    call ug_brent(u_rs,lo,hi,er,ierr2)
    if(ierr2==0) edir(kk)=er
  end do
- nullify(psol)
- end subroutine refine_poles
+
+ contains
 
  real(dp) function u_rs(ex)
-!! u of psol at rs and the energy ex
+!! u of sol at rs and the energy ex
  real(dp), intent(in) :: ex
- integer, parameter :: iout=6
  real(dp) :: th
  integer :: ifail
- th=phsft_node_phase(psol,ph_iq,ex,nodes=.false.,uq_out=u_rs, &
+ th=phsft_node_phase(sol,iq,ex,nodes=.false.,uq_out=u_rs, &
 &      iout=iout,ifail=ifail)
  if(ifail/=0) error stop 1
  end function u_rs
+
+ end subroutine refine_poles
 
  integer function majority(iv)
 !! the most frequent value, the smallest of a tie

@@ -184,6 +184,11 @@ are parameters, rational numbers that `scripts/logmesh_weights.py`
 rounds once to double precision in `src/logmesh_weights.inc`, and the
 test `unit_logmesh_weights` checks that the file is what it writes.
 
+The root finds of `oncvpsp_confine`'s sphere scan (`confine_ws_m`) took
+their functions' data (the solver, the radius, the target phase, the
+poles) from module variables; the functions are internal procedures of
+the routines that search, which pass the data down.
+
 The cache of all-electron atoms that the test configurations reuse is an
 `ae_cache_t` (`config_ae_m`) that `oncvpsp_run` owns and passes down, so
 a second run starts with an empty one; `tests/unit/test_run.f90` checks
