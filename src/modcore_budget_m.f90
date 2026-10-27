@@ -20,7 +20,7 @@
 !> The model cores of icmod 6 and 7 (modcore_budget), the probes of the
 !> hardness of icmod 7 (modcore_probes), and the table of the pseudo-wave
 !> cutoffs the budget starts from (modcore_budget_table).  The search of
-!> modcore_budget runs in phases over its state, a budget_ctx.
+!> modcore_budget runs in phases over its state, a budget_t.
  module modcore_budget_m
 
  use constants_m, only: dp, pi, nrhomod
@@ -81,9 +81,22 @@
    end function scalar_fn
  end interface
 
+!> The fill of a model core inside its radius r_s
+ type :: fill_t
+!> the model radius r_s (bohr)
+   real(dp) :: rs=0.0d0
+!> the fill's kind: 0 none, 1 the minimum tail, 2 Martins'
+   integer :: ifill=0
+!> the minimum tail's Legendre coefficients in x = 2(r/r_s)**2 - 1, and its
+!> coefficients in powers of (r/r_s)**2 (for the report)
+   real(dp) :: cleg(0:npow)=0.0d0,cpoly(0:npow)=0.0d0
+!> Martins' fill, exp(a + b r**2 + c r**4)
+   real(dp) :: aco=0.0d0,bco=0.0d0,cco=0.0d0
+ end type fill_t
+
 !> The state of the search of modcore_budget, which its phases and the
 !> procedures of the model, its transform and its error share
- type :: budget_ctx
+ type :: budget_t
 !> the inputs (modcore_budget)
    integer :: mmax,iexc,nprobe
    integer, allocatable :: lprobe(:)
@@ -93,17 +106,15 @@
 !> qlo..qhi of the minimum tail, q_b, the end of the search qend, and
 !> where the error peaks qpk (bohr**-1)
    real(dp) :: ecut,budget,factor,qlo,qhi,qb,qend,qext,qpk
-!> the radii: the largest and smallest r_s, the model's, that of icmod 6
-   real(dp) :: rtop,rlo,rs,rs6
+!> the radii: the largest and smallest r_s, that of icmod 6
+   real(dp) :: rtop,rlo,rs6
    integer :: irtop
 !> the log mesh's al, the step of the band-limited transform dq, and the
 !> sizes and offsets of the tables and meshes
    real(dp) :: al,dq
    integer :: nq,npq,nqn,i0,iend,nout,irmx,nin,nx,kin,ni,nt
-!> the fill: its type ifill (0 none, 1 minimum tail, 2 Martins), its
-!> Legendre and power coefficients, Martins' coefficients
-   integer :: ifill
-   real(dp) :: cleg(0:npow),cpoly(0:npow),aco,bco,cco
+!> the model being tried: its radius and fill
+   type(fill_t) :: fill
 !> the state of the transform tables (spectrum, outer_transform)
    integer :: irow,js,npdone,msnap
 !> Gauss-Legendre nodes and weights
@@ -131,7 +142,7 @@
    real(dp), allocatable :: crad(:),cmis(:)
    integer, allocatable :: cfill(:)
    integer :: ncand
- end type budget_ctx
+ end type budget_t
 
  contains
 
@@ -245,7 +256,7 @@
  integer, intent(out) :: ifail
 
 !Local variables
- type(budget_ctx) :: bc
+ type(budget_t) :: bc
 
  ifail=0
  call budget_init(bc,rhotps,rhoc,fcfact,ecutw,errmax,slack,rcmin,mmax,rr, &
@@ -264,7 +275,7 @@
  if(ifail/=0) return
 
 ! fill in model and derivatives, all-electron beyond r_s
- call core_pieces(rr,rhoc,mmax,bc%rs,fill,corepw,rhomod)
+ call core_pieces(rr,rhoc,mmax,bc%fill%rs,fill,corepw,rhomod)
 
  call budget_report(bc,icmod,fcfact,weighted,ecutw,slack,rcmin,iout)
 
@@ -286,7 +297,7 @@
 !Output variables
  real(dp), intent(out) :: dd(5)
 
- call fill_derivatives(bc,rad,dd)
+ call fill_derivatives(bc%fill,rad,dd)
  return
  end subroutine fill
 
@@ -312,7 +323,7 @@
  real(dp), intent(in) :: fcfact,ecutw,errmax,slack,zion,rcmin
 
 !Input/output variables
- type(budget_ctx), intent(inout) :: bc
+ type(budget_t), intent(inout) :: bc
 
 !Output variables
  integer, intent(in) :: iout
@@ -393,7 +404,7 @@
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input/output variables
- type(budget_ctx), intent(inout) :: bc
+ type(budget_t), intent(inout) :: bc
 
 !Output variables
  integer, intent(in) :: iout
@@ -501,7 +512,7 @@
 !! @param bc  the state of the search
 
 !Input/output variables
- type(budget_ctx), intent(inout) :: bc
+ type(budget_t), intent(inout) :: bc
 
 !Local variables
  integer :: ii,kk
@@ -567,7 +578,7 @@
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input/output variables
- type(budget_ctx), intent(inout) :: bc
+ type(budget_t), intent(inout) :: bc
  integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
@@ -579,15 +590,15 @@
  bc%full=.false.
  bc%qend=min(qmax,bc%qb+quick)
  do
-   bc%rs=smallest_radius(bc,iout,ifail)
+   bc%fill%rs=smallest_radius(bc,iout,ifail)
    if(ifail/=0) return
-   call set_model(bc,bc%rs)
+   call set_model(bc,bc%fill%rs)
    if(bc%qend>=qmax) exit
    if(err_max(bc,bc%qend,qmax,bc%errmax)<=bc%errmax) exit
    bc%full=.true.
    bc%qend=min(qmax,bc%qpk+quick)
  end do
- bc%rs6=bc%rs
+ bc%rs6=bc%fill%rs
  bc%qext=bc%qend
  bc%qend=qmax
 
@@ -605,7 +616,7 @@
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input/output variables
- type(budget_ctx), intent(inout) :: bc
+ type(budget_t), intent(inout) :: bc
 
 !Output variables
  integer, intent(in) :: iout
@@ -636,8 +647,8 @@
  ib=0
  do ii=1,bc%ncand
    bc%cmis(ii)=mismatch_at(bc,log(bc%crad(ii)))
-   bc%cfill(ii)=bc%ifill
-   if(bc%ifill==0) cycle
+   bc%cfill(ii)=bc%fill%ifill
+   if(bc%fill%ifill==0) cycle
    if(ib==0) then
      ib=ii
    else if(bc%cmis(ii)<bc%cmis(ib)) then
@@ -648,15 +659,15 @@
    call no_model(bc,iout,ifail)
    if(ifail/=0) return
  end if
- bc%rs=minimum_radius(bc,ib,iout,ifail)
+ bc%fill%rs=minimum_radius(bc,ib,iout,ifail)
  if(ifail/=0) return
- call set_model(bc,bc%rs)
- bc%mismatch=mismatch_at(bc,log(bc%rs))
+ call set_model(bc,bc%fill%rs)
+ bc%mismatch=mismatch_at(bc,log(bc%fill%rs))
 ! r_s6 is a root of this error less errmax, so at r_s = r_s6 the two are
 ! equal to round-off; the margin is above that, far below a radius that
 ! does not fit
  if(err_max(bc,bc%qb,qmax,bc%errmax)>bc%errmax*(1.0d0+1.0d-7)) then
-   write(iout,'(/a,f12.6,a)') 'modcore_budget: WARNING the radius',bc%rs, &
+   write(iout,'(/a,f12.6,a)') 'modcore_budget: WARNING the radius',bc%fill%rs, &
 &          ' of the least mismatch does not fit the budget'
  end if
 
@@ -673,7 +684,7 @@
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input/output variables
- type(budget_ctx), intent(inout) :: bc
+ type(budget_t), intent(inout) :: bc
 
 !Output variables
  integer, intent(in) :: iout
@@ -684,7 +695,7 @@
  real(dp) :: ee,tt
 
  ifail=0
- call set_model(bc,bc%rs)
+ call set_model(bc,bc%fill%rs)
  call spectrum(bc,bc%qb)
  bc%qneed=0.0d0
  tt=bc%qb
@@ -736,7 +747,7 @@
  logical, intent(in) :: weighted
 
 !Input/output variables
- type(budget_ctx), intent(inout) :: bc
+ type(budget_t), intent(inout) :: bc
  integer, intent(in) :: iout
 
 !Local variables
@@ -761,7 +772,7 @@
 &      ' Ha for an xc energy error of',bc%errmax,' Ha'
  write(iout,'(a,f8.4,a,f12.4,a)') '  slack',slack, &
 &      ', the model core must fit',bc%budget,' Ha'
- write(iout,'(a,f12.6,a,f10.6)') '  model radius r_s',bc%rs, &
+ write(iout,'(a,f12.6,a,f10.6)') '  model radius r_s',bc%fill%rs, &
 &      '  smallest rc',rcmin
  if(bc%rr(bc%irtop)<rcmin) then
    write(iout,'(a,f12.6)') '  last radius with core charge',bc%rr(bc%irtop)
@@ -770,13 +781,13 @@
    write(iout,'(a,f10.4,a)') '  (the error peaks beyond the first &
 &cutoffs: found with those up to',bc%qext,' bohr**-1)'
  end if
- if(bc%ifill==1) then
+ if(bc%fill%ifill==1) then
    write(iout,'(a)') '  fill minimum tail'
-   call legendre_powers(.true.,bc%cleg,bc%cpoly)
-   write(iout,'(a,1p,9e16.8)') '  coefficients c0..c8',bc%cpoly(:)
+   call legendre_powers(.true.,bc%fill%cleg,bc%fill%cpoly)
+   write(iout,'(a,1p,9e16.8)') '  coefficients c0..c8',bc%fill%cpoly(:)
  else
    write(iout,'(a)') '  fill Martins'
-   write(iout,'(a,1p,3e16.8)') '  a, b, c',bc%aco,bc%bco,bc%cco
+   write(iout,'(a,1p,3e16.8)') '  a, b, c',bc%fill%aco,bc%fill%bco,bc%fill%cco
  end if
  write(iout,'(a,f12.4,a)') '  cutoff the model core needs',bc%ecore,' Ha'
  if(icmod==7) then
@@ -810,7 +821,7 @@
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input/output variables
- type(budget_ctx), intent(inout) :: bc
+ type(budget_t), intent(inout) :: bc
 
 !Output variables
  integer, intent(in) :: iout
@@ -882,7 +893,7 @@
  integer, intent(in) :: ii
 
 !Input/output variables
- type(budget_ctx), intent(inout) :: bc
+ type(budget_t), intent(inout) :: bc
  associate(rlo=>bc%rlo,rr=>bc%rr,rtop=>bc%rtop)
    if(rr(ii)<=rlo) then
      radius_of=rlo
@@ -907,8 +918,8 @@
  real(dp), intent(in) :: uu
 
 !Input/output variables
- type(budget_ctx), intent(inout) :: bc
- associate(errmax=>bc%errmax,ifill=>bc%ifill,qb=>bc%qb,qend=>bc%qend)
+ type(budget_t), intent(inout) :: bc
+ associate(errmax=>bc%errmax,ifill=>bc%fill%ifill,qb=>bc%qb,qend=>bc%qend)
    call set_model(bc,exp(uu))
    if(ifill==0) then
      excess_rs=errmax
@@ -930,7 +941,7 @@
  real(dp), intent(in) :: qq
 
 !Input/output variables
- type(budget_ctx), intent(inout) :: bc
+ type(budget_t), intent(inout) :: bc
  associate(errmax=>bc%errmax)
    excess=err_at(bc,qq) - errmax
  end associate
@@ -949,13 +960,14 @@
  real(dp), intent(in) :: uu
 
 !Input/output variables
- type(budget_ctx), intent(inout) :: bc
+ type(budget_t), intent(inout) :: bc
 
 !Local variables
  real(dp) :: mm
  associate(core=>bc%core,d2ae=>bc%d2ae,d2mod=>bc%d2mod,iexc=>bc%iexc, &
-&          ifill=>bc%ifill,lprobe=>bc%lprobe,mmax=>bc%mmax,nprobe=>bc%nprobe, &
-&          probes=>bc%probes,rhotps=>bc%rhotps,rr=>bc%rr,zion=>bc%zion)
+&          ifill=>bc%fill%ifill,lprobe=>bc%lprobe,mmax=>bc%mmax, &
+&          nprobe=>bc%nprobe,probes=>bc%probes,rhotps=>bc%rhotps,rr=>bc%rr, &
+&          zion=>bc%zion)
    call set_model(bc,exp(uu))
    mismatch_at=huge(1.0d0)
    if(ifill==0) return
@@ -978,7 +990,7 @@
  real(dp), intent(in) :: uu
 
 !Input/output variables
- type(budget_ctx), intent(inout) :: bc
+ type(budget_t), intent(inout) :: bc
  slope_at=(mismatch_at(bc,uu+hmis) - mismatch_at(bc,uu-hmis))/(2.0d0*hmis)
  return
  end function slope_at
@@ -998,7 +1010,7 @@
  integer, intent(in) :: ib
 
 !Input/output variables
- type(budget_ctx), intent(inout) :: bc
+ type(budget_t), intent(inout) :: bc
 
 !Output variables
  integer, intent(in) :: iout
@@ -1057,7 +1069,7 @@
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input/output variables
- type(budget_ctx), intent(inout) :: bc
+ type(budget_t), intent(inout) :: bc
  integer, intent(in) :: iout
  integer, intent(out) :: ifail
  ifail=0
@@ -1086,20 +1098,21 @@
  real(dp), value :: rad
 
 !Input/output variables
- type(budget_ctx), intent(inout) :: bc
+ type(budget_t), intent(inout) :: bc
 
 !Local variables
  real(dp) :: dm(3),l1,l2,xs,xe
  integer :: kk,is
- associate(aco=>bc%aco,al=>bc%al,bco=>bc%bco,cco=>bc%cco,chr=>bc%chr, &
-&          core=>bc%core,cr0=>bc%cr0,dq=>bc%dq,epi=>bc%epi,fext=>bc%fext, &
-&          fw=>bc%fw,fx=>bc%fx,i0=>bc%i0,iexc=>bc%iexc,ifill=>bc%ifill, &
-&          irmx=>bc%irmx,irow=>bc%irow,js=>bc%js,kin=>bc%kin,mmax=>bc%mmax, &
-&          msnap=>bc%msnap,ni=>bc%ni,npdone=>bc%npdone,nt=>bc%nt,nvi=>bc%nvi, &
-&          nx=>bc%nx,pg=>bc%pg,pt=>bc%pt,rhoc=>bc%rhoc,rhotps=>bc%rhotps, &
-&          ri=>bc%ri,rr=>bc%rr,rs=>bc%rs,shr=>bc%shr,sr0=>bc%sr0,tgi=>bc%tgi, &
-&          tk=>bc%tk,vxi=>bc%vxi,wf=>bc%wf,wgi=>bc%wgi,wki=>bc%wki, &
-&          wxg=>bc%wxg,xg=>bc%xg,xr=>bc%xr)
+ associate(aco=>bc%fill%aco,al=>bc%al,bco=>bc%fill%bco,cco=>bc%fill%cco, &
+&          chr=>bc%chr,core=>bc%core,cr0=>bc%cr0,dq=>bc%dq,epi=>bc%epi, &
+&          fext=>bc%fext,fw=>bc%fw,fx=>bc%fx,i0=>bc%i0,iexc=>bc%iexc, &
+&          ifill=>bc%fill%ifill,irmx=>bc%irmx,irow=>bc%irow,js=>bc%js, &
+&          kin=>bc%kin,mmax=>bc%mmax,msnap=>bc%msnap,ni=>bc%ni, &
+&          npdone=>bc%npdone,nt=>bc%nt,nvi=>bc%nvi,nx=>bc%nx,pg=>bc%pg, &
+&          pt=>bc%pt,rhoc=>bc%rhoc,rhotps=>bc%rhotps,ri=>bc%ri,rr=>bc%rr, &
+&          rs=>bc%fill%rs,shr=>bc%shr,sr0=>bc%sr0,tgi=>bc%tgi,tk=>bc%tk, &
+&          vxi=>bc%vxi,wf=>bc%wf,wgi=>bc%wgi,wki=>bc%wki,wxg=>bc%wxg, &
+&          xg=>bc%xg,xr=>bc%xr)
 
    rs=rad
    npdone=0
@@ -1129,11 +1142,11 @@
 
    call min_tail(bc,dm)
    ifill=0
-   if(tail_monotone(bc)) then
+   if(tail_monotone(bc%fill)) then
      ifill=1
      do kk=1,mmax
        if(rr(kk)>=rs) exit
-       core(kk)=poly(bc,(rr(kk)/rs)**2)
+       core(kk)=poly(bc%fill,(rr(kk)/rs)**2)
      end do
    else
      l1=dm(2)/dm(1)
@@ -1152,7 +1165,7 @@
 ! the fill's transform on [0, rs]: int r**2 n j0(kr) dr = sum fw sin(k fx)/k
    fx(:)=rs*xg(:)
    do kk=1,nxg
-     fw(kk)=rs*wxg(kk)*fx(kk)*fill_value(bc,fx(kk))
+     fw(kk)=rs*wxg(kk)*fx(kk)*fill_value(bc%fill,fx(kk))
    end do
 
 ! the mesh ri, its points of the band-limited models, the valence charge
@@ -1161,7 +1174,7 @@
    do kk=1,ni
      ri(kk)=rs*exp((kk-kin)*al)
      call lm_interp(rr,rhotps,mmax,ri(kk),nvi(kk))
-     fext(kk)=fill_value(bc,ri(kk))
+     fext(kk)=fill_value(bc%fill,ri(kk))
    end do
    nvi(:)=pi4*background + nvi(:)
    xr(nx+1:nt)=ri(:)
@@ -1178,21 +1191,21 @@
  return
  end subroutine set_model
 
- real(dp) function fill_value(bc,rad)
+ real(dp) function fill_value(fl,rad)
 
 !! the fill at rad <= rs
 !!
-!! @param bc  the state of the search
+!! @param fl  the fill
 !! @param rad  radius (bohr)
 
 !Input variables
  real(dp), intent(in) :: rad
 
-!Input/output variables
- type(budget_ctx), intent(inout) :: bc
- associate(aco=>bc%aco,bco=>bc%bco,cco=>bc%cco,ifill=>bc%ifill,rs=>bc%rs)
+!Input variables
+ type(fill_t), intent(in) :: fl
+ associate(aco=>fl%aco,bco=>fl%bco,cco=>fl%cco,ifill=>fl%ifill,rs=>fl%rs)
    if(ifill==1) then
-     fill_value=poly(bc,(rad/rs)**2)
+     fill_value=poly(fl,(rad/rs)**2)
    else
      fill_value=exp(aco + bco*rad**2 + cco*rad**4)
    end if
@@ -1200,7 +1213,7 @@
  return
  end function fill_value
 
- logical function tail_monotone(bc)
+ logical function tail_monotone(fl)
 
 !! whether the minimum tail p, as a function of x = 2(r/rs)**2 - 1, does
 !! not rise on [-1, 1]: p' <= 0 at -1, at 1, and at the roots of p'' in
@@ -1208,19 +1221,19 @@
 !! Newton's method; a nearly real root counts by its real part, a point of
 !! [-1, 1] all the same); p' from the Legendre series
 !!
-!! @param bc  the state of the search
+!! @param fl  the fill
 
-!Input/output variables
- type(budget_ctx), intent(inout) :: bc
+!Input variables
+ type(fill_t), intent(in) :: fl
 
 !Local variables
  real(dp) :: cx(0:npow),d2(0:npow-2),hess(npow-2,npow-2)
  real(dp) :: wr(npow-2),wi(npow-2),zz(1,1),wkh(4*npow),tr,vv,vd
  integer :: kk,jj,nd,info,it
- associate(cleg=>bc%cleg)
+ associate(cleg=>fl%cleg)
    tail_monotone=.false.
-   if(leg_value(bc,-1.0d0,1)>0.0d0) return
-   if(leg_value(bc,1.0d0,1)>0.0d0) return
+   if(leg_value(fl,-1.0d0,1)>0.0d0) return
+   if(leg_value(fl,1.0d0,1)>0.0d0) return
    tail_monotone=.true.
    call legendre_powers(.false.,cleg,cx)
    do kk=2,npow
@@ -1255,7 +1268,7 @@
        tr=tr - vv/vd
      end do
      if(tr>-1.0d0 .and. tr<1.0d0) then
-       if(leg_value(bc,tr,1)>0.0d0) then
+       if(leg_value(fl,tr,1)>0.0d0) then
          tail_monotone=.false.
          return
        end if
@@ -1265,11 +1278,11 @@
  return
  end function tail_monotone
 
- real(dp) function leg_value(bc,xx,mm)
+ real(dp) function leg_value(fl,xx,mm)
 
 !! the mm-th derivative in x of the Legendre series cleg at xx
 !!
-!! @param bc  the state of the search
+!! @param fl  the fill
 !! @param xx  argument, 2(r/rs)**2 - 1
 !! @param mm  order of the derivative, 0..4
 
@@ -1277,12 +1290,12 @@
  real(dp), intent(in) :: xx
  integer, intent(in) :: mm
 
-!Input/output variables
- type(budget_ctx), intent(inout) :: bc
+!Input variables
+ type(fill_t), intent(in) :: fl
 
 !Local variables
  real(dp) :: pl(0:npow,0:4)
- associate(cleg=>bc%cleg)
+ associate(cleg=>fl%cleg)
    call legendre_derivs(xx,mm,pl(:,0:mm))
    leg_value=sum(cleg(:)*pl(:,mm))
  end associate
@@ -1358,19 +1371,19 @@
  return
  end subroutine legendre_powers
 
- real(dp) function poly(bc,tt)
+ real(dp) function poly(fl,tt)
 
 !! the minimum tail at (r/r_s)**2 = tt
 !!
-!! @param bc  the state of the search
+!! @param fl  the fill
 !! @param tt  (r/r_s)**2
 
 !Input variables
  real(dp), intent(in) :: tt
 
-!Input/output variables
- type(budget_ctx), intent(inout) :: bc
- poly=leg_value(bc,2.0d0*tt-1.0d0,0)
+!Input variables
+ type(fill_t), intent(in) :: fl
+ poly=leg_value(fl,2.0d0*tt-1.0d0,0)
  return
  end function poly
 
@@ -1391,15 +1404,15 @@
  real(dp), intent(in) :: dm(3)
 
 !Input/output variables
- type(budget_ctx), intent(inout) :: bc
+ type(budget_t), intent(inout) :: bc
 
 !Local variables
  real(dp), allocatable :: amat(:,:),cvec(:),wk(:)
  real(dp) :: bmat(3,0:npow),dvec(3),tt,qx,jx,xx,wx
  integer :: ii,jj,kk,info,lwork
- associate(cleg=>bc%cleg,irow=>bc%irow,nqn=>bc%nqn,pg=>bc%pg,plg=>bc%plg, &
-&          pt=>bc%pt,qn=>bc%qn,rs=>bc%rs,tabw=>bc%tabw,wn=>bc%wn,wxg=>bc%wxg, &
-&          xg=>bc%xg)
+ associate(cleg=>bc%fill%cleg,irow=>bc%irow,nqn=>bc%nqn,pg=>bc%pg,plg=>bc%plg, &
+&          pt=>bc%pt,qn=>bc%qn,rs=>bc%fill%rs,tabw=>bc%tabw,wn=>bc%wn, &
+&          wxg=>bc%wxg,xg=>bc%xg)
    lwork=nqn+npow+1+64*(nqn+npow+1)
    allocate(amat(nqn,0:npow),cvec(nqn),wk(lwork))
 
@@ -1453,7 +1466,7 @@
  real(dp), intent(in) :: kk
 
 !Input/output variables
- type(budget_ctx), intent(inout) :: bc
+ type(budget_t), intent(inout) :: bc
 
 !Local variables
  real(dp) :: ss
@@ -1482,7 +1495,7 @@
  real(dp), intent(in) :: kk
 
 !Input/output variables
- type(budget_ctx), intent(inout) :: bc
+ type(budget_t), intent(inout) :: bc
 
 !Local variables
  real(dp) :: ss
@@ -1513,7 +1526,7 @@
  real(dp), intent(in) :: qe
 
 !Input/output variables
- type(budget_ctx), intent(inout) :: bc
+ type(budget_t), intent(inout) :: bc
 
 !Local variables
  real(dp) :: kq,ss,tt
@@ -1575,7 +1588,7 @@
  real(dp), intent(in) :: qq
 
 !Input/output variables
- type(budget_ctx), intent(inout) :: bc
+ type(budget_t), intent(inout) :: bc
 
 !Local variables
  real(dp) :: bq(bc%nt),kq,tt,qa,ww
@@ -1618,7 +1631,7 @@
  integer, intent(in) :: mm
 
 !Input/output variables
- type(budget_ctx), intent(inout) :: bc
+ type(budget_t), intent(inout) :: bc
  associate(rqs=>bc%rqs)
    call spectrum(bc,mm*qstep)
    err_grid=xc_error(bc,rqs(:,mm))
@@ -1644,7 +1657,7 @@
  real(dp), intent(in) :: qa,qe,elim
 
 !Input/output variables
- type(budget_ctx), intent(inout) :: bc
+ type(budget_t), intent(inout) :: bc
 
 !Local variables
  real(dp), allocatable :: tq(:),eq(:)
@@ -1753,7 +1766,7 @@
  real(dp), intent(in) :: qq
 
 !Input/output variables
- type(budget_ctx), intent(inout) :: bc
+ type(budget_t), intent(inout) :: bc
  neg_err=-err_at(bc,qq)
  return
  end function neg_err
@@ -1827,23 +1840,22 @@
  return
  end function j0
 
- subroutine tail_derivatives(bc,rad,rs,dd)
+ subroutine tail_derivatives(fl,rad,dd)
 
 !! the minimum tail and its first 4 derivatives at rad (beyond rs, its
 !! continuation, for the pieces of the model): those of the
 !! Legendre series in x = 2t - 1, t = (r/rs)**2, by the chain rule with
 !! t' = 2r/rs**2, t'' = 2/rs**2 (d/dt = 2 d/dx)
 !!
-!! @param bc  the state of the search
+!! @param fl  the fill
 !! @param rad  radius (bohr)
-!! @param rs  model radius r_s (bohr)
 !! @param dd  the model and its first 4 derivatives at rad
 
 !Input variables
- real(dp), intent(in) :: rad,rs
+ real(dp), intent(in) :: rad
 
-!Input/output variables
- type(budget_ctx), intent(inout) :: bc
+!Input variables
+ type(fill_t), intent(in) :: fl
 
 !Output variables
  real(dp), intent(out) :: dd(5)
@@ -1851,7 +1863,7 @@
 !Local variables
  real(dp) :: pl(0:npow,0:4),pt(0:4),t1,t2
  integer :: mm
- associate(cleg=>bc%cleg)
+ associate(cleg=>fl%cleg,rs=>fl%rs)
    call legendre_derivs(2.0d0*(rad/rs)**2-1.0d0,4,pl)
    do mm=0,4
      pt(mm)=2.0d0**mm*sum(cleg(:)*pl(:,mm))
@@ -1867,47 +1879,47 @@
  return
  end subroutine tail_derivatives
 
- subroutine fill_derivatives(bc,rad,dd)
+ subroutine fill_derivatives(fl,rad,dd)
 
 !! the fill of the model and its first 4 derivatives at rad
 !!
-!! @param bc  the state of the search
+!! @param fl  the fill
 !! @param rad  radius (bohr)
 !! @param dd  the fill and its first 4 derivatives at rad
 
 !Input variables
  real(dp), intent(in) :: rad
 
-!Input/output variables
- type(budget_ctx), intent(inout) :: bc
+!Input variables
+ type(fill_t), intent(in) :: fl
 
 !Output variables
  real(dp), intent(out) :: dd(5)
- associate(ifill=>bc%ifill,rs=>bc%rs)
+ associate(ifill=>fl%ifill,rs=>fl%rs)
 
    if(ifill==1) then
-     call tail_derivatives(bc,rad,rs,dd)
+     call tail_derivatives(fl,rad,dd)
    else
-     call martins_derivatives(bc,rad,dd)
+     call martins_derivatives(fl,rad,dd)
    end if
  end associate
  return
  end subroutine fill_derivatives
 
- subroutine martins_derivatives(bc,rad,dd)
+ subroutine martins_derivatives(fl,rad,dd)
 
 !! the model and its first 4 derivatives at rad, from n' = p' n with
 !! p = a + b r**2 + c r**4: n(k) = sum_j C(k-1,j) p(j+1) n(k-1-j)
 !!
-!! @param bc  the state of the search
+!! @param fl  the fill
 !! @param rad  radius (bohr)
 !! @param dd  the model and its first 4 derivatives at rad
 
 !Input variables
  real(dp), intent(in) :: rad
 
-!Input/output variables
- type(budget_ctx), intent(inout) :: bc
+!Input variables
+ type(fill_t), intent(in) :: fl
 
 !Output variables
  real(dp), intent(out) :: dd(5)
@@ -1917,7 +1929,7 @@
  integer :: kk,jj
  integer, parameter :: binom(0:3,0:3)=reshape([1,1,1,1, 0,1,2,3, &
 &                                              0,0,1,3, 0,0,0,1],[4,4])
- associate(aco=>bc%aco,bco=>bc%bco,cco=>bc%cco)
+ associate(aco=>fl%aco,bco=>fl%bco,cco=>fl%cco)
    dp1=[2.0d0*bco*rad + 4.0d0*cco*rad**3, 2.0d0*bco + 12.0d0*cco*rad**2, &
 &       24.0d0*cco*rad, 24.0d0*cco]
    dd(1)=exp(aco + bco*rad**2 + cco*rad**4)
@@ -1953,15 +1965,15 @@
  real(dp), intent(in) :: bq(:)
 
 !Input/output variables
- type(budget_ctx), intent(inout) :: bc
+ type(budget_t), intent(inout) :: bc
 
 !Local variables
  real(dp) :: si,so1
  associate(ac=>bc%ac,af=>bc%af,al=>bc%al,epi=>bc%epi,eps=>bc%eps, &
 &          fext=>bc%fext,iexc=>bc%iexc,ni=>bc%ni,nt=>bc%nt,nval=>bc%nval, &
-&          nvi=>bc%nvi,nx=>bc%nx,rhoc=>bc%rhoc,ri=>bc%ri,rr=>bc%rr,rs=>bc%rs, &
-&          swin=>bc%swin,vbg=>bc%vbg,vxc=>bc%vxc,vxi=>bc%vxi,wc=>bc%wc, &
-&          wf=>bc%wf,wki=>bc%wki,work=>bc%work)
+&          nvi=>bc%nvi,nx=>bc%nx,rhoc=>bc%rhoc,ri=>bc%ri,rr=>bc%rr, &
+&          rs=>bc%fill%rs,swin=>bc%swin,vbg=>bc%vbg,vxc=>bc%vxc,vxi=>bc%vxi, &
+&          wc=>bc%wc,wf=>bc%wf,wki=>bc%wki,work=>bc%work)
    work(:)=nval(:) + bq(1:nx)
    call exc_dispatch(iexc,al,work,vxc,eps,rr,nx,'modcore_budget')
    work(:)=work(:)*eps(:)
