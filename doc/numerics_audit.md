@@ -8,6 +8,8 @@ The audit covers the working tree at 9c78c3a plus the uncommitted changes: free_
 - §6c item 4 (S-10, GGA ρ′ and ρ″ from the pieces) is dropped: RadialAtomicSolvers.jl showed that the 5-point stencils of `derivs` across the model-core joints do not matter. The question of the C² joint stays with D-5.
 - R-16 in doc/smoothness_plan.md, the kink of `outwf_m`'s per-segment restart where rcloc crosses 0.95 rc(l) (1.7e-11 Ha in the 3s of 20_Ca, at most 1e-10 in the test configurations), is resolved as within tolerance: it is below G1 and is kept as is.
 
+**Note (2026-10-27, later).** The value at r = 0 of the output files (the outmesh `origin` row of §1 and the origin part of C-16) is now one convention: `lm_origin`, the Floater–Hormann interpolant in r of blending degree 6 through 10 log-mesh nodes a factor of 2 apart from rr(1), in the psp8, UPF and PSML files alike. The Lagrange extrapolation through the output points, the sr override of V_loc by vpuns(1) and PSML's line through nodes 2 and 3 are gone. Against a fit on the log mesh, r·β at r = 0 went from 3e-8 to 6e-10 and the model core from 2e-9 to 3e-11. V_loc(0) is fixed by the mesh data only to about 1e-8 Ha, because the log-mesh V_loc has its own structure below 1e-4 bohr. The model core's columns are now evaluated in closed form wherever the model is one, at r = 0 included. The rest of C-16 (the fr PSML taper, `nrlproj`) is open. Details are in doc/smoothness_plan.md, under the follow-up "The value at the origin".
+
 **Notation**
 - Log mesh: r_i = rr1·amesh^(i−1), x = ln r, h = al = ln amesh. Default: amesh 1.006, rr1 = min(5e-4/Z, 5e-5) (nr and sr) or 5e-4/Z (fr), rmax 45, mmax = int(ln(rmax/rr1)/al).
 - "Order p" means a global error of O(h^p).
@@ -105,7 +107,7 @@ Everything new on this branch goes through these modules, so their properties se
 | `outwf_m` | V and sources onto the segment grids, and the solution back to the nodes | FH with offset | Restart per segment by interpolation. |
 | run_ghosts | V_loc, β onto the scaled mesh s·rr (wall at 3rc exactly) | `pw_value`, `pw_resample` | See concern C-7. |
 | outmesh_m (psp8, UPF) | All written arrays on the linear mesh | FH per piece; 0 beyond the last bound | `om_values` interpolates ρ_v (C^(ncon−1) at rc) as one smooth array. That is the only remaining interpolant across a kink in the output (small). |
-| outmesh `origin` | r = 0 | Degree-7 Lagrange extrapolation through output points 2..9 | V_loc is overridden by vpuns(1) in psp8 and in sr linear UPF, but **fr UPF keeps the polynomial**. PSML uses linear extrapolation through nodes 2 and 3 (`add_zero_r`). Three conventions for one quantity. |
+| outmesh `origin` (replaced 2026-10-27 by `lm_origin`, see the notes at the top) | r = 0 | Degree-7 Lagrange extrapolation through output points 2..9 | V_loc is overridden by vpuns(1) in psp8 and in sr linear UPF, but **fr UPF keeps the polynomial**. PSML uses linear extrapolation through nodes 2 and 3 (`add_zero_r`). Three conventions for one quantity. |
 | upfout `upf_mesh` | Log-strided UPF mesh | Nodes exactly, rab = istr·al·r | No interpolation. |
 | ug_cross_down | Ecut at error levels | Brent on FH of ln E in the q index | Last crossing (a discrete event at shoulders). |
 | vploc_m | V_loc inside rc(5) | Analytic polynomial | |
