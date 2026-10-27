@@ -25,9 +25,9 @@
 
  contains
 
- subroutine run_diag(lmax,npa,epa,wellprj,lloc,irc, &
-&                    vlocpw,vkbpw,evkb,nproj,rr,vfull,vp,zz,mmax,mxprj,irel, &
-&                    nkap,iso,vsrpw,esr,vsopw,eso,iout,ifail)
+ subroutine run_diag(lmax,npa,epa,wellprj,lloc,irc,vlocpw,vkbpw,evkb,nproj,rr, &
+&                    vfull,vp,zz,mmax,mxprj,irel,c_light,nkap,iso,vsrpw,esr, &
+&                    vsopw,eso,iout,ifail)
 
 !! diagnostics for semi-local and Vanderbilt-Kleinman-bylander pseudopotentials
 !! checks bound-state energies, norms, and slopes, and pseudo-bound state
@@ -60,6 +60,7 @@
 !! @param mmax  size of radial grid
 !! @param mxprj  dimension of number of projectors
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param nkap  number of kappa per l: 1, or 2 for irel=2
 !! @param iso  0 the projectors vkbpw, evkb; 1 those of vsrpw..eso
 !! @param vsrpw  normalized scalar-relativistic projectors, as functions of
@@ -85,6 +86,7 @@
 
 !Input variables
  integer, intent(in) :: lmax,lloc,mmax,mxprj,irel,nkap,iso
+ real(dp), intent(in) :: c_light
  integer, intent(in) :: npa(mxprj,mxlin+1),irc(mxlin+1),nproj(mxlin+1)
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: rr(mmax),vp(mmax,mxl+2,nkap),vfull(mmax)
@@ -158,7 +160,7 @@
 !   Schroedinger function
        etest=epa(iprj,l1,ikap)
        if(.not. wellprj(iprj,l1)) then
-         call boundstate(irel,npa(iprj,l1),ll,kap,ierr,etest, &
+         call boundstate(irel,c_light,npa(iprj,l1),ll,kap,ierr,etest, &
 &                        rr,zz,vfull,ur,urp,mmax,mch,iout,ifail)
          if(ifail/=0) return
          if(ierr /= 0 .and. irel==2) then
@@ -175,12 +177,12 @@
            return
          end if
        else
-         call scatterstate(irel,nnae,ll,kap,ierr,etest, &
+         call scatterstate(irel,c_light,nnae,ll,kap,ierr,etest, &
 &                       rr,zz,vfull,ur,urp,mmax,mchf,iout)
        end if
        cnorm=1.0d0
        if(irel==2) then
-         call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm,iout,ifail)
+         call renorm_r(ur,rr,ll,kap,c_light,zz,mmax,cnorm,iout,ifail)
          if(ifail/=0) return
        end if
        umch=ur(mchf,1)

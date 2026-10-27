@@ -25,13 +25,14 @@
 
  contains
 
- subroutine aeatom(irel,nkap,na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
+ subroutine aeatom(irel,c_light,nkap,na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
 &                  rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vext,warm,iout,ifail)
 
 !! self-consistent all-electron atom: non-relativistic or scalar-relativistic
 !! (sratom) or fully-relativistic (relatom)
 !!
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param nkap  number of kappa per level: 1, or 2 for irel=2
 !! @param na  principal quantum number array, dimension ncv
 !! @param la  angular-momenta
@@ -69,6 +70,7 @@
 
 !Input variables
  integer, intent(in) :: irel,nkap,mmax,iexc,nc,ncv
+ real(dp), intent(in) :: c_light
  integer, intent(in) :: na(ncv),la(ncv)
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: fa(ncv),rr(mmax),vext(mmax)
@@ -88,12 +90,12 @@
 
  ifail=0
  if(irel==2) then
-   call relatom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&               rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vext,warm,iout,ifail)
+   call relatom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho,rr,vi,zz,mmax,iexc,c_light, &
+&               etot,eterm,res,ierr,vext,warm,iout,ifail)
    if(ifail/=0) return
  else
-   call sratom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&              rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,irel,vext,warm,iout,ifail)
+   call sratom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho,rr,vi,zz,mmax,iexc,etot, &
+&              eterm,res,ierr,irel,c_light,vext,warm,iout,ifail)
    if(ifail/=0) return
  end if
  return

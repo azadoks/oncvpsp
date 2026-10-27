@@ -27,7 +27,7 @@
 
  subroutine run_config_ps(jj,aec,nc,rhov,rhomod,rr,rcmax,mmax,mxprj,iexc, &
 &                         etot,epstot,nproj,vpuns,lloc,vlocpw,vkbpw,evkb, &
-&                         irel,nkap,ntc,itc,etc,dtc,iout,ifail)
+&                         irel,c_light,nkap,ntc,itc,etc,dtc,iout,ifail)
 
 !! self-consistent pseudoatom calculation for test configuration jj, compared
 !! with the all-electron results for the reference and test configurations
@@ -53,6 +53,7 @@
 !!               pieces, last index 1 for j=l+1/2, 2 for j=l-1/2 when irel=2
 !! @param evkb  VKB projector coefficients, last index as for vkbpw
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param nkap  number of kappa per l: 1, or 2 for irel=2
 !! @param ntc  rows of the table of eigenvalues, -1 if the configuration
 !!             failed (output)
@@ -77,6 +78,7 @@
 
  type(ae_config_t), intent(in) :: aec
  integer, intent(in) :: jj,mmax,mxprj,iexc,nc,lloc,irel,nkap
+ real(dp), intent(in) :: c_light
  integer, intent(in) :: nproj(mxlin+1)
  real(dp), intent(in) :: etot,epstot,rcmax
  real(dp), intent(in) :: rhov(mmax),rr(mmax)
@@ -169,7 +171,7 @@
  rhocps(:)=rhomod(:,1)
 
  call psatom(natp,latp,eatp,fatp,nvt,it,rhocps,rho, &
-&           rr,rcmax,mmax,mxprj,iexc,etsttot,nproj,vpuns,lloc, &
+&           rr,rcmax,mmax,mxprj,iexc,c_light,etsttot,nproj,vpuns,lloc, &
 &           vlocpw,vkbpw,evkb,ierr,nkap,vfree,iout,ifail)
  if(ifail/=0) return
 
@@ -197,7 +199,7 @@
  end do
 
  call psatom(natp,latp,eatp,fatp,nvt,it,rhocps,rho, &
-&           rr,rcmax,mmax,mxprj,iexc,etsttot,nproj,vpuns,lloc, &
+&           rr,rcmax,mmax,mxprj,iexc,c_light,etsttot,nproj,vpuns,lloc, &
 &           vlocpw,vkbpw,evkb,ierr,nkap,vfree,iout,ifail)
  if(ifail/=0) return
 

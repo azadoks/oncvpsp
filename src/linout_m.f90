@@ -29,12 +29,13 @@
 ! for Abinit input using pspcod=8, with the spin-orbit projectors when
 ! fully relativistic
 
- subroutine linout(inp,vkbpw,evkb,vsrpw,esr,vsopw,eso,rr,vpuns,vlocpw,rho, &
-&                  corepw,rhotae,rhoc,zion,mmax,mxprj,nrl,soscale,rc0,fcfact0, &
-&                  fcgrid,rcgrid,log_mesh,nkap,iout,ifail)
+ subroutine linout(inp,c_light,vkbpw,evkb,vsrpw,esr,vsopw,eso,rr,vpuns,vlocpw, &
+&                  rho,corepw,rhotae,rhoc,zion,mmax,mxprj,nrl,soscale,rc0, &
+&                  fcfact0,fcgrid,rcgrid,log_mesh,nkap,iout,ifail)
 
 
 !! @param inp  the input values (input_m)
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param vkbpw  VKB projectors' pieces, written when nkap=1
 !! @param evkb  coefficients of VKB projectors
 !! @param vsrpw  normalized scalar-relativistic projectors' pieces, written
@@ -79,6 +80,7 @@
 
 !Input variables
  type(input_t), intent(in) :: inp
+ real(dp), intent(in) :: c_light
  integer, intent(in) :: mmax,mxprj,nrl,nkap
  real(dp), intent(in) :: fcfact0,zion,soscale
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
@@ -306,7 +308,7 @@
 &    '#'
 
  if(nkap==2) write(iout,'(a)') '#Echo of input data for oncvpsp-4.0.1'
- call write_input_echo(nkap,1,inp%atsym,inp%zz,inp%nc,inp%nv,inp%iexc, &
+ call write_input_echo(nkap,1,inp%atsym,inp%zz,inp%nc,inp%nv,inp%iexc,c_light, &
 &                      inp%psfile, &
 &                       inp%na,inp%la,inp%fa,inp%lmax,rc0,inp%ep(:,1), &
 &                       inp%ncon,inp%nbas,inp%qcut,inp%ep_as_given, &

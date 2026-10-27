@@ -25,8 +25,8 @@
 
  contains
 
- subroutine run_phsft(lmax,lloc,nproj,epa,npsh,epsh2,depsh,rxpsh,vlocpw, &
-&                      vkbpw,evkb,rr,vfull,vp,zz,mmax,mxprj,rc,irel,nkap, &
+ subroutine run_phsft(lmax,lloc,nproj,epa,npsh,epsh2,depsh,rxpsh,vlocpw,vkbpw, &
+&                      evkb,rr,vfull,vp,zz,mmax,mxprj,rc,irel,c_light,nkap, &
 &                      rphs,pshae,pshps,iout,ifail)
 
 !! computes log derivatives, actually atan(r * ((d psi(r)/dr)/psi(r)))
@@ -65,6 +65,7 @@
 !! @param mxprj  dimension of number of projectors
 !! @param rc  core radii
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param nkap  number of kappa per l: 1, or 2 for irel=2
 !! @param rphs  the radius of the log derivatives of each l (output)
 !! @param pshae  the all-electron log derivatives, per energy, l and kappa
@@ -81,6 +82,7 @@
 
 !Input variables
  integer, intent(in) :: lmax,lloc,mmax,mxprj,irel,nkap,npsh
+ real(dp), intent(in) :: c_light
  integer, intent(in) :: nproj(mxlin+1)
  real(dp), intent(in) :: epsh2,depsh,zz,rxpsh
  real(dp), intent(in) :: rr(mmax),vp(mmax,mxl+2,nkap),epa(mxprj,mxlin+1,nkap)
@@ -163,10 +165,10 @@
      else
        nvkb = nproj(l1)
      end if
-     call phsft_pair(irel,ll,kap,nvkb,rr,vfull,zz,vp(1,lloc+1,ikap),vlocpw, &
-&                    vkbpw(1:nvkb,l1,ikap),evkb(1:nvkb,l1,ikap),mmax,1, &
-&                    [rq],npsh,epsh2,depsh,epa(1,l1,ikap), &
-&                    pshae(:,l1,ikap),pshps(:,l1,ikap),iout,ifail)
+     call phsft_pair(irel,c_light,ll,kap,nvkb,rr,vfull,zz,vp(1,lloc+1,ikap), &
+&                    vlocpw,vkbpw(1:nvkb,l1,ikap),evkb(1:nvkb,l1,ikap),mmax,1, &
+&                    [rq],npsh,epsh2,depsh,epa(1,l1,ikap),pshae(:,l1,ikap), &
+&                    pshps(:,l1,ikap),iout,ifail)
      if(ifail /= 0) return
 
      lout=ll

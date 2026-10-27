@@ -116,6 +116,8 @@
  integer :: na(mxstate),la(mxstate)
  real(dp) :: zz,emin,emax,de,ecutmax,rcmax,ee(3),rq(mxq),r0,kwall(0:mxk)
  real(dp) :: fa(mxstate),ea(mxstate,2)
+!> the speed of light of the files
+ real(dp) :: c_light
  real(dp), allocatable :: rr(:),vfull(:)
  logical :: given_radii,given_energies,table,sphere,given_r0
 !> the angular momenta of the output
@@ -211,7 +213,7 @@
  end if
 
  call load_pair('oncvpsp_confine',trim(ae_filename),trim(ps_filename),irel, &
-&               zz,mmax,rr,vfull,pf,nc=nc,nv=nv,iexc=iexc,na=na,la=la, &
+&               c_light,zz,mmax,rr,vfull,pf,nc=nc,nv=nv,iexc=iexc,na=na,la=la, &
 &               fa=fa,ea=ea,iout=iout,ifail=ifail)
  if(ifail/=0) error stop 1
  if(iexc<0) call exc_libxc_info(iexc,iout)
@@ -243,14 +245,15 @@
    de=descan
  end if
 
- if(sphere) call confine_sphere(pf,irel,zz,mmax,rr,vfull,nc,na,la,chan,nq, &
-&                               rq(1:nq),emin,emax,de,ecutmax,table,sm,iout)
+ if(sphere) call confine_sphere(pf,irel,c_light,zz,mmax,rr,vfull,nc,na,la, &
+&                               chan,nq,rq(1:nq),emin,emax,de,ecutmax,table, &
+&                               sm,iout)
 
 !the atom in walls: k=0 the free atom
  if(nk>0) then
    if(.not. given_r0) r0=rcmax
-   call confine_walls(pf,irel,zz,mmax,rr,vfull,nc,nv,iexc,na,la,fa,ea,nk, &
-&                     kwall(0:nk),r0,sm,iout)
+   call confine_walls(pf,irel,c_light,zz,mmax,rr,vfull,nc,nv,iexc,na,la,fa,ea, &
+&                     nk,kwall(0:nk),r0,sm,iout)
  end if
 
  call write_confine_summary(sm,iout)

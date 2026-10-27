@@ -15,6 +15,7 @@
  use logmesh_m, only: lm_derivs
  use boundstate_m, only: boundstate
  use ae_delta_m, only: ae_delta
+ use relativity_m, only: c_light => c_light_default
  implicit none
  integer, parameter :: iout=6
 
@@ -43,8 +44,8 @@
    uu(:, :) = 0.0_dp
    up(:, :) = 0.0_dp
    mch = 0
-   call boundstate(irel, 2, 1, kap, ierr, ee, rr, zz, vv, uu, up, mmax, mch, &
-&        iout, ifail)
+   call boundstate(irel,c_light, 2, 1, kap, ierr, ee, rr, zz, vv, uu, up, &
+&        mmax, mch,iout, ifail)
    if(ifail /= 0) error stop 1
    if(ierr /= 0) then
      write(stderr, '(a,a,a,i0)') 'FAILED: ', names(irel), ' boundstate ierr ', &
@@ -52,8 +53,8 @@
      nfail = nfail + 1
      cycle
    end if
-   call ae_delta(irel, 1, kap, ee, rr, vv, uu(:, 1), up(:, 1), mmax, i1, i2, &
-&                delta)
+   call ae_delta(irel,c_light, 1, kap, ee, rr, vv, uu(:, 1), up(:, 1), mmax, &
+&                i1, i2,delta)
    err = 0.0_dp
    big = 0.0_dp
    scale = 0.0_dp

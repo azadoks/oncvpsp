@@ -27,9 +27,9 @@
 
 ! self-consistent pseudoatom calculation
 
- subroutine psatom(na,la,ea,fat,nv,it,rhoc,rho, &
-&           rr,rcmax,mmax,mxprj,iexc,etot,nproj,vpuns,lloc,vlocpw,vkbpw, &
-&           evkb,ierr,nkap,vext,iout,ifail)
+ subroutine psatom(na,la,ea,fat,nv,it,rhoc,rho,rr,rcmax,mmax,mxprj,iexc, &
+&           c_light,etot,nproj,vpuns,lloc,vlocpw,vkbpw,evkb,ierr,nkap,vext, &
+&           iout,ifail)
 
 !! @param na  principal quantum number array, dimension nv
 !! @param la  angular-momenta
@@ -46,6 +46,7 @@
 !! @param mmax  size of log grid
 !! @param mxprj  dimension of number of projectors
 !! @param iexc  exchange-correlation function to be used
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param etot  pseudoatom total energy (output)
 !! @param nproj  number of VKB projectora to use for each l
 !! @param vpuns  unscreened semi-local pseudopotentials (plus differenv vloc if
@@ -77,6 +78,7 @@
 !Input variables
 
  integer, intent(in) :: mmax,mxprj,iexc,nv,lloc,nkap
+ real(dp), intent(in) :: c_light
  integer, intent(in) :: na(nv),la(nv),nproj(mxlin+1)
  real(dp), intent(in) :: rcmax
  real(dp), intent(in) :: fat(mxstate,2),rr(mmax)
@@ -174,7 +176,7 @@
 ! which shouldn''t be a bad approximation for a starting screened
 ! potential
 
- call vout(1,rho,rhoc,vi,vxc,zval,eeel,eexc,rr,mmax,iexc)
+ call vout(1,rho,rhoc,vi,vxc,zval,eeel,eexc,rr,mmax,iexc,c_light)
 
 
 ! big self  self-consietency loop
@@ -263,7 +265,7 @@
    end do
 
 ! output potential
-   call vout(1,rho,rhoc,vo,vxc,zval,eeel,eexc,rr,mmax,iexc)
+   call vout(1,rho,rhoc,vo,vxc,zval,eeel,eexc,rr,mmax,iexc,c_light)
 
 ! converged when no eigenvalue has moved by more than tolscf and the
 ! screening potential is self-consistent to tolscf, or its residual has
@@ -309,7 +311,7 @@
 ! output potential for e-e interactions
 
  call vout(1,rho,rhoc,vo,vxc,zval,eeel,eexc, &
-&          rr,mmax,iexc)
+&          rr,mmax,iexc,c_light)
 
  etot =  eeig + eexc - 0.5d0*eeel
 

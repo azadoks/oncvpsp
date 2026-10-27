@@ -38,7 +38,7 @@
 ! Teter, Phys. Rev. B 48, 5031 (1993) , Appendix, as
 
  subroutine modcore2(icmod,rhops,rhotps,rhoc,rhoae,rhotae,rhomod, &
-&                   fcfact,rcfact,mmax,rr,nc,nv,la,zion,iexc,iout,ifail)
+&                   fcfact,rcfact,mmax,rr,nc,nv,la,zion,iexc,c_light,iout,ifail)
 
 !! @param icmod  (not used)
 !! @param rhops  state-by-state pseudocharge density
@@ -57,6 +57,7 @@
 !! @param la  angular-momenta
 !! @param zion  ion charge
 !! @param iexc  exchange-correlation function to be used
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
@@ -69,6 +70,7 @@
 
 !Input variables
  integer, intent(in) :: icmod,nv,nc,iexc,mmax
+ real(dp), intent(in) :: c_light
  integer, intent(in) :: la(mxstate)
  real(dp), intent(in) :: rhoae(mmax,nv),rhops(mmax,nv),rhotae(mmax)
  real(dp), intent(in) :: rhotps(mmax),rhoc(mmax),rr(mmax)
@@ -113,8 +115,8 @@
    return
  end if
 
- call d2exc_baseline(rhotae,rhoc,rhoae,rhotps,rhops,rr,zion,iexc,nc,nv, &
-&                    la,rr(mmax),mmax,rhomod,d2excae,d2excps,d2mdiff,iout)
+ call d2exc_baseline(rhotae,rhoc,rhoae,rhotps,rhops,rr,zion,iexc,c_light,nc, &
+&                    nv,la,rr(mmax),mmax,rhomod,d2excae,d2excps,d2mdiff,iout)
 
 ! Fit Teter function to value and slope at r*
 
@@ -147,7 +149,7 @@
 
 ! test model
  call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
-&                   zion,iexc,nc,nv,la,rr(mmax),mmax)
+&                   zion,iexc,c_light,nc,nv,la,rr(mmax),mmax)
 
  call d2exc_report('d2excps - pseudofunction derivatives with core '// &
 &                  'correction',d2excps,nv,d2mdiff,iout)

@@ -61,13 +61,14 @@
 
  contains
 
- subroutine confine_sphere(pf,irel,zz,mmax,rr,vfull,nc,na,la,chan,nq,rq, &
-&                          emin,emax,de,ecutmax,table,sm,iout)
+ subroutine confine_sphere(pf,irel,c_light,zz,mmax,rr,vfull,nc,na,la,chan,nq, &
+&                          rq,emin,emax,de,ecutmax,table,sm,iout)
 !! the ws lines of every channel of chan at the radii rq, of the edges
 !! in [emin,emax] from a scan of step de, and the sphere's part of the
 !! summary
  type(ps_file_t), intent(in) :: pf
  integer, intent(in) :: irel,mmax,nc,na(mxstate),la(mxstate),nq
+ real(dp), intent(in) :: c_light
  real(dp), intent(in) :: zz,rr(mmax),vfull(mmax),rq(nq),emin,emax,de
  real(dp), intent(in) :: ecutmax
  logical, intent(in) :: chan(0:3),table
@@ -97,19 +98,20 @@
  do l1=1,4
    if(.not. chan(l1-1)) cycle
    do ikap=1,merge(1,pf%pot%nkap,l1==1)
-     call ws_channel(pf,irel,zz,mmax,rr,vfull,nc,na,la,l1-1,ikap,nq,rq, &
-&                    egrid,emin,emax,ecutmax,table,sm,iout)
+     call ws_channel(pf,irel,c_light,zz,mmax,rr,vfull,nc,na,la,l1-1,ikap,nq, &
+&                    rq,egrid,emin,emax,ecutmax,table,sm,iout)
    end do
  end do
  deallocate(egrid)
  end subroutine confine_sphere
 
- subroutine ws_channel(pf,irel,zz,mmax,rr,vfull,nc,na,la,ll,ikap,nq,rq, &
-&                      egrid,emin,emax,ecutmax,table,sm,iout)
+ subroutine ws_channel(pf,irel,c_light,zz,mmax,rr,vfull,nc,na,la,ll,ikap,nq, &
+&                      rq,egrid,emin,emax,ecutmax,table,sm,iout)
 !! the ws lines of l and ikap at every radius, from one scan of the
 !! phases of both atoms on egrid
  type(ps_file_t), intent(in) :: pf
  integer, intent(in) :: irel,mmax,nc,na(mxstate),la(mxstate),ll,ikap,nq
+ real(dp), intent(in) :: c_light
  real(dp), intent(in) :: zz,rr(mmax),vfull(mmax),rq(nq),egrid(:),emin
  real(dp), intent(in) :: emax,ecutmax
  logical, intent(in) :: table
@@ -135,7 +137,8 @@
  nvkb=pf%nvkb(l1,ikap)
 ! the solvers of the channel at every radius, and each sphere's
 ! quadrature and poles (refined to the roots of u(rs))
- call phsft_ae_init(irel,ll,kap,rr,vfull,zz,mmax,nq,rq(1:nq),sae,iout,ifail)
+ call phsft_ae_init(irel,c_light,ll,kap,rr,vfull,zz,mmax,nq,rq(1:nq),sae,iout, &
+&                   ifail)
  if(ifail/=0) error stop 1
  call phsft_ps_init(ll,nvkb,rr,pf%vloc(:,ikap),pf%pot%vlocpw, &
 &                   pf%pot%vkbpw(1:nvkb,l1,ikap),pf%pot%evkb(1:nvkb,l1,ikap), &
@@ -181,7 +184,7 @@
  end if
 
  do iq=1,nq
-   call ws_radius(pf,irel,zz,mmax,rr,vfull,nc,na,la,ll,kap,ikap,nvkb, &
+   call ws_radius(pf,irel,c_light,zz,mmax,rr,vfull,nc,na,la,ll,kap,ikap,nvkb, &
 &                 rq(iq),iq,sae,sps,polq(iq),wsg(iq),egrid,shae(:,iq), &
 &                 shps(:,iq),tanae(:,iq),tanps(:,iq),emin,emax,table,sm,iout)
  end do
@@ -190,14 +193,15 @@
  deallocate(wsg,polq,tanae,tanps,shae,shps)
  end subroutine ws_channel
 
- subroutine ws_radius(pf,irel,zz,mmax,rr,vfull,nc,na,la,ll,kap,ikap,nvkb, &
-&                     rs,iq,sae,sps,pol,wsg,egrid,shae,shps,tanae,tanps, &
+ subroutine ws_radius(pf,irel,c_light,zz,mmax,rr,vfull,nc,na,la,ll,kap,ikap, &
+&                     nvkb,rs,iq,sae,sps,pol,wsg,egrid,shae,shps,tanae,tanps, &
 &                     emin,emax,table,sm,iout)
 !! the ws lines of l and ikap at the radius rs (the iq-th of the
 !! solvers), from the phases shae and shps of the scan and tanae and
 !! tanps of the anchors
  type(ps_file_t), intent(in) :: pf
  integer, intent(in) :: irel,mmax,nc,na(mxstate),la(mxstate),ll,kap,ikap
+ real(dp), intent(in) :: c_light
  integer, intent(in) :: nvkb,iq
  real(dp), intent(in) :: zz,rr(mmax),vfull(mmax),rs,egrid(:),shae(:)
  real(dp), intent(in) :: tanae(nanch),tanps(nanch),emin,emax
@@ -260,7 +264,7 @@
  do ie=1,eae%n
    if(eae%e(ie)<emin .or. eae%e(ie)>emax) cycle
    iedge=eae%ied(ie)
-   nn=n_of(irel,ll,kap,eae%e(ie),rr,zz,vfull,mmax,rs,iout)
+   nn=n_of(irel,c_light,ll,kap,eae%e(ie),rr,zz,vfull,mmax,rs,iout)
    je=jpair(ie)
    if(je==0) then
 ! the band of a core state, which the pseudopotential leaves out
@@ -582,10 +586,11 @@
  end do
  end subroutine sort_edges
 
- integer function n_of(irel,ll,kap,ex,rr,zz,vfull,mmax,rs,iout)
+ integer function n_of(irel,c_light,ll,kap,ex,rr,zz,vfull,mmax,rs,iout)
 !! the all-electron state's nodes inside rs, plus l+1
  use scatterstate_m, only: scatterstate
  integer, intent(in) :: irel,ll,kap,mmax
+ real(dp), intent(in) :: c_light
  real(dp), intent(in) :: ex,rr(mmax),zz,vfull(mmax),rs
  integer, intent(in) :: iout
  real(dp), allocatable :: uu(:,:),up(:,:)
@@ -595,7 +600,8 @@
  uu(:,:)=0.0d0
  up(:,:)=0.0d0
  nn2=0
- call scatterstate(irel,nn2,ll,kap,ierr2,ex,rr,zz,vfull,uu,up,mmax,mch,iout)
+ call scatterstate(irel,c_light,nn2,ll,kap,ierr2,ex,rr,zz,vfull,uu,up,mmax, &
+&                  mch,iout)
  nnode=0
  do jj=2,mmax
    if(rr(jj)>rs) exit

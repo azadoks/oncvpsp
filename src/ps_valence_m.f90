@@ -29,9 +29,10 @@
 
  contains
 
- subroutine valence_densities(irel,nkap,nc,nv,na,la,fa,ea,it,lloc,nproj, &
-&                             rr,zz,vfull,vp,vlocpw,vkbpw,evkb,mmax,uu,up, &
-&                             uupsa,eeig,zval,rho,rhops,rhoae,rhotae,iout,ifail)
+ subroutine valence_densities(irel,c_light,nkap,nc,nv,na,la,fa,ea,it,lloc, &
+&                             nproj,rr,zz,vfull,vp,vlocpw,vkbpw,evkb,mmax,uu, &
+&                             up,uupsa,eeig,zval,rho,rhops,rhoae,rhotae,iout, &
+&                             ifail)
 !! the valence states, all-electron (in vfull) and pseudo (with the VKB
 !! projectors, for the most consistent unscreening), state by state: their
 !! densities rhoae and rhops (of the share of each J when fully
@@ -41,6 +42,7 @@
  use boundstate_m, only: boundstate
  use lschvkbb_m, only: lschvkbb
  integer, intent(in) :: irel,nkap,nc,nv,na(mxstate),la(mxstate),it,lloc
+ real(dp), intent(in) :: c_light
  integer, intent(in) :: nproj(mxlin+1),mmax
  real(dp), intent(in) :: fa(mxstate),ea(mxstate,mxkap),rr(mmax),zz
  real(dp), intent(in) :: vfull(mmax),vp(mmax,mxl+2,nkap)
@@ -76,7 +78,7 @@
 
      et=ea(nc+kk,ikap)
 
-     call boundstate(irel,na(nc+kk),ll,kap,ierr,et, &
+     call boundstate(irel,c_light,na(nc+kk),ll,kap,ierr,et, &
 &                    rr,zz,vfull,uu,up,mmax,mch,iout,ifail)
      if(ifail/=0) return
      if(ierr /= 0) then

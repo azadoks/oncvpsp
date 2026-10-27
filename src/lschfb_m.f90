@@ -25,7 +25,8 @@
 
  contains
 
- subroutine lschfb(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,irel,iout,ifail)
+ subroutine lschfb(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,irel,c_light,iout, &
+&                  ifail)
 
 !! Finds bound states of an all-electron atomic potential using
 !! Pauli-type  scalar-relativistic Schroedinger equation
@@ -48,12 +49,12 @@
 !!             the inward and outward integrations are matched (at the
 !!             continuous turning point, match_m)
 !! @param irel  0 non-relativistic, 1 scalar-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
  use boundsolve_m, only: bs_box_energy, bs_solve, bs_turning_point
- use relativity_m, only: c_light
  use sr_flux_m, only: sr_gamma, sr_flux_coefs, sr_outward, sr_inward, &
 &                     sr_derivs
  use match_m, only: match_k, match_point, match_weights, match_blend
@@ -67,6 +68,7 @@
  integer, intent(in) :: nn,ll
  integer, intent(in) :: mmax
  integer, intent(in) :: irel
+ real(dp), intent(in) :: c_light
 
 !Input/output variables
  real(dp), intent(inout) :: uu(mmax),up(mmax)

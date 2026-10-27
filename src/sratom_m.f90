@@ -25,8 +25,8 @@
 
  contains
 
- subroutine sratom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&           rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,irel,vext,warm,iout,ifail)
+ subroutine sratom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho,rr,vi,zz,mmax,iexc,etot, &
+&           eterm,res,ierr,irel,c_light,vext,warm,iout,ifail)
 
 !! self-consistent scalar-relativistic all-electron atom
 !! calculation using log mesh (non-relativistic when irel=0)
@@ -53,6 +53,7 @@
 !! @param res  residual of the screening potential (output, ae_residual)
 !! @param ierr  error flag
 !! @param irel  0 non-relativistic, 1 scalar-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param vext  external potential the orbitals also see (aeatom)
 !! @param warm  start from vi and ea (the solution of a nearby potential,
 !!              oncvpsp_confine.x) instead of the Thomas-Fermi potential
@@ -75,6 +76,7 @@
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: fa(ncv),rr(mmax)
  integer, intent(in) :: irel
+ real(dp), intent(in) :: c_light
  real(dp), intent(in) :: vext(mmax)
 
 !Input/output variables
@@ -167,7 +169,7 @@
      et=ea(ii)
      ierr = 0
      call lschfb(na(ii),la(ii),ierr,et, &
-&                rr,vext+vi,uu,up,zz,mmax,mch,irel,iout,ifail)
+&                rr,vext+vi,uu,up,zz,mmax,mch,irel,c_light,iout,ifail)
      if(ifail/=0) return
 ! a state with no bound solution in this potential gets its box state;
 ! the SCF goes on but cannot converge with it
@@ -207,7 +209,7 @@
 ! output screening potential, and the energies of the orbitals of the
 ! input one
    call vout(0,rho,rhoc,vso,vxc,sf,eeel,eexc, &
-&            rr,mmax,iexc)
+&            rr,mmax,iexc,c_light)
    call ae_energies(rho,vsi,vxc,zz,eeig,eeel,eexc,rr,mmax,etot,eterm, &
 &                   vext)
 
@@ -222,7 +224,7 @@
    if(convg) exit
 
 ! next input potential, by Anderson mixing of the last ndep iterations
-   call ae_mix(it,vsi,vso,hv,hr,ndep,zz,rr,mmax,irel)
+   call ae_mix(it,vsi,vso,hv,hr,ndep,zz,rr,mmax,irel,c_light)
    do ii=1,mmax
      vi(ii)=vsi(ii) - zz/rr(ii)
    end do

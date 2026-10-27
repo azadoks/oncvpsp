@@ -31,7 +31,7 @@
 !   atsym, zz, nc, nv, iexc, na, la, fa         (checked against the input)
 !   mmax, rr                                   (log radial mesh, checked
 !                                               against the input mesh)
-!   c_light                                    (relativity_m, checked)
+!   c_light                                    (the run's, checked)
 !   it, etot, eterm, res, ea, rhoc, rho, vfull (reference atom, aeatom;
 !                                               ea(:,1:2) if irel=2)
 !   ncfg, then for each test configuration:
@@ -41,7 +41,6 @@
  module ae_file_m
  use, intrinsic :: iso_fortran_env, only: int8
  use constants_m, only: dp, mxstate, mxcnf, nlev
- use relativity_m, only: c_light
  use input_m, only: config_t
  use config_ae_m, only: ae_config_t
  implicit none
@@ -57,15 +56,16 @@
 
  contains
 
- subroutine write_ae_file(fname,irel,nkap,atsym,zz,nc,nv,iexc,na,la,fa, &
-&                         mmax,rr,it,etot,eterm,res,ea,rhoc,rho,vfull, &
-&                         ncnf,cnf,aec,iout,ifail)
+ subroutine write_ae_file(fname,irel,c_light,nkap,atsym,zz,nc,nv,iexc,na,la, &
+&                         fa,mmax,rr,it,etot,eterm,res,ea,rhoc,rho,vfull,ncnf, &
+&                         cnf,aec,iout,ifail)
 
 !! writes the all-electron data file: the aeatom results for the reference
 !! atom and the run_config_ae results for all configurations
 !!
 !! @param fname  file to write
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param nkap  number of kappa per level: 1, or 2 for irel=2
 !! @param atsym  atomic symbol
 !! @param zz  atomic number
@@ -95,6 +95,7 @@
 !Input variables
  character(len=*), intent(in) :: fname
  integer, intent(in) :: irel,nkap
+ real(dp), intent(in) :: c_light
  character(len=2), intent(in) :: atsym
  integer, intent(in) :: nc,nv,iexc,mmax,it,ncnf
  type(config_t), intent(in) :: cnf(mxcnf)
@@ -112,7 +113,7 @@
  integer :: unit,jj
 
  ifail=0
- call write_head(fname,unit,irel,atsym,zz,nc,nv,iexc,na,la,fa, &
+ call write_head(fname,unit,irel,c_light,atsym,zz,nc,nv,iexc,na,la,fa, &
 &                mmax,rr,iout,ifail)
  if(ifail/=0) return
  write(unit) it,etot,eterm,res,ea(1:nc+nv,1:nkap)
@@ -129,7 +130,7 @@
  return
  end subroutine write_ae_file
 
- subroutine read_ae_file(fname,irel,nkap,atsym,zz,nc,nv,iexc,na,la,fa, &
+ subroutine read_ae_file(fname,irel,c_light,nkap,atsym,zz,nc,nv,iexc,na,la,fa, &
 &                        mmax,rr,ncnf,cnf, &
 &                        it,etot,eterm,res,ea,rhoc,rho,vfull,aec,iout,ifail)
 
@@ -143,6 +144,7 @@
 !!
 !! @param fname  file to read
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param nkap  number of kappa per level: 1, or 2 for irel=2
 !! @param atsym  atomic symbol
 !! @param zz  atomic number
@@ -172,6 +174,7 @@
 !Input variables
  character(len=*), intent(in) :: fname
  integer, intent(in) :: irel,nkap
+ real(dp), intent(in) :: c_light
  character(len=2), intent(in) :: atsym
  integer, intent(in) :: nc,nv,iexc,mmax,ncnf
  type(config_t), intent(in) :: cnf(mxcnf)
@@ -194,7 +197,7 @@
  logical :: found(5),match(5)
 
  ifail=0
- call read_head(fname,unit,irel,atsym,zz,nc,nv,iexc,na,la,fa, &
+ call read_head(fname,unit,irel,c_light,atsym,zz,nc,nv,iexc,na,la,fa, &
 &               mmax,rr,iout,ifail)
  if(ifail/=0) return
  read(unit) it,etot,eterm,res,ea(1:nc+nv,1:nkap)
@@ -232,13 +235,14 @@
  return
  end subroutine read_ae_file
 
- subroutine write_head(fname,unit,irel,atsym,zz,nc,nv,iexc,na,la,fa, &
+ subroutine write_head(fname,unit,irel,c_light,atsym,zz,nc,nv,iexc,na,la,fa, &
 &                      mmax,rr,iout,ifail)
 !! opens fname and writes everything before the reference atom results
 !!
 !! @param fname  file name
 !! @param unit  unit number of the opened file
 !! @param irel  0 non-, 1 scalar-, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param atsym  atomic symbol
 !! @param zz  atomic number
 !! @param nc  number of core states
@@ -255,6 +259,7 @@
 !Input variables
  character(len=*), intent(in) :: fname
  integer, intent(in) :: irel
+ real(dp), intent(in) :: c_light
  character(len=2), intent(in) :: atsym
  integer, intent(in) :: nc,nv,iexc,mmax
  integer, intent(in) :: na(mxstate),la(mxstate)
@@ -286,7 +291,7 @@
  return
  end subroutine write_head
 
- subroutine read_head(fname,unit,irel,atsym,zz,nc,nv,iexc,na,la,fa, &
+ subroutine read_head(fname,unit,irel,c_light,atsym,zz,nc,nv,iexc,na,la,fa, &
 &                     mmax,rr,iout,ifail)
 !! opens fname, checks it against this run's input and reads rr; fails if
 !! the file was written for a different atom, relativistic treatment or
@@ -295,6 +300,7 @@
 !! @param fname  file name
 !! @param unit  unit number of the opened file
 !! @param irel  expected treatment: 0 non-, 1 scalar-, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param atsym  atomic symbol
 !! @param zz  atomic number
 !! @param nc  number of core states
@@ -311,6 +317,7 @@
 !Input variables
  character(len=*), intent(in) :: fname
  integer, intent(in) :: irel
+ real(dp), intent(in) :: c_light
  character(len=2), intent(in) :: atsym
  integer, intent(in) :: nc,nv,iexc,mmax
  integer, intent(in) :: na(mxstate),la(mxstate)

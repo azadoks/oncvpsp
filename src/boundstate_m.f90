@@ -25,7 +25,7 @@
 
  contains
 
- subroutine boundstate(irel,nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch, &
+ subroutine boundstate(irel,c_light,nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch, &
 &      iout,ifail)
 
 !! Finds a bound state of an all-electron atomic potential: with the
@@ -33,6 +33,7 @@
 !! with the Dirac equation (ldiracfb)
 !!
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param nn  principal quantum number
 !! @param ll  angular-momentum quantum number
 !! @param kap  =l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
@@ -56,6 +57,7 @@
 
 !Input variables
  integer, intent(in) :: irel,nn,ll,kap,mmax
+ real(dp), intent(in) :: c_light
  real(dp), intent(in) :: rr(mmax),vv(mmax)
  real(dp), intent(in) :: zz
 
@@ -71,10 +73,10 @@
 
  ifail=0
  if(irel==2) then
-   call ldiracfb(nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch,iout,ifail)
+   call ldiracfb(nn,ll,kap,c_light,ierr,ee,rr,zz,vv,uu,up,mmax,mch,iout,ifail)
    if(ifail/=0) return
  else
-   call lschfb(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,irel,iout,ifail)
+   call lschfb(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,irel,c_light,iout,ifail)
    if(ifail/=0) return
  end if
  return

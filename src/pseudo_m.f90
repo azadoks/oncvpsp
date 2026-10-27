@@ -32,7 +32,7 @@
 !> the atom: its symbol, atomic number and ion charge, the equation (irel
 !> 0 non-, 1 scalar-, 2 fully-relativistic), the number of kappas per l
 !> (2 when fully relativistic), the exchange-correlation functional and
-!> the speed of light (relativity_m)
+!> the speed of light of the run (relativity_m)
    character(len=2) :: atsym='  '
    real(dp) :: zz=0.0d0,zion=0.0d0,c_light=0.0d0
    integer :: irel=0,nkap=0,iexc=0

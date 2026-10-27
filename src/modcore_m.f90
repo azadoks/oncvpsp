@@ -701,8 +701,9 @@
  return
  end subroutine core_pieces_smooth
 
- subroutine d2exc_baseline(rhotae,rhoc,rhoae,rhotps,rhops,rr,zion,iexc,nc, &
-&                          nv,la,rcut,mmax,rhomod,d2excae,d2excps,d2mdiff,iout)
+ subroutine d2exc_baseline(rhotae,rhoc,rhoae,rhotps,rhops,rr,zion,iexc, &
+&                          c_light,nc,nv,la,rcut,mmax,rhomod,d2excae,d2excps, &
+&                          d2mdiff,iout)
 
 !! the start of the model core analysis the model cores share: the
 !! all-electron second derivatives of Exc in the occupations, and those of
@@ -717,6 +718,7 @@
 !! @param rr  log radial mesh
 !! @param zion  ion charge
 !! @param iexc  exchange-correlation type
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param nc  number of core states
 !! @param nv  number of valence states
 !! @param la  angular momenta of the states
@@ -731,6 +733,7 @@
 !Input variables
  use der2exc_m, only: der2exc
  integer, intent(in) :: iexc,nc,nv,mmax
+ real(dp), intent(in) :: c_light
  integer, intent(in) :: la(nv+nc)
  real(dp), intent(in) :: rhotae(mmax),rhoc(mmax),rhoae(mmax,nv)
  real(dp), intent(in) :: rhotps(mmax),rhops(mmax,nv),rr(mmax)
@@ -751,7 +754,7 @@
 ! get derivatives of all-electron xc energy
 
  call der2exc(rhotae,rhoc,rhoae,rr,d2excae,d2excps,d2mdiff, &
-&                   zion,iexc,nc,nv,la,rcut,mmax)
+&                   zion,iexc,c_light,nc,nv,la,rcut,mmax)
 
  write(iout,'(/a/)') 'd2excae - all-electron derivatives'
  do kk=1,nv
@@ -762,7 +765,7 @@
  rhomod(:,:)=0.0d0
 
  call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
-&                   zion,iexc,nc,nv,la,rcut,mmax)
+&                   zion,iexc,c_light,nc,nv,la,rcut,mmax)
 
  call d2exc_report('d2excps - pseudofunction derivatives with no core '// &
 &                  'correction',d2excps,nv,d2mdiff,iout)

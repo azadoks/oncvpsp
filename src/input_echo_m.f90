@@ -27,7 +27,7 @@
  module input_echo_m
 
  use constants_m, only: dp, mxstate, mxcnf, mxlin, well_onset_default
- use relativity_m, only: c_light_default, c_light
+ use relativity_m, only: c_light_default
  use input_m, only: config_t
  implicit none
  private
@@ -118,16 +118,17 @@
  end do
  end subroutine date_stamp
 
- subroutine atom_lines(atsym,zz,nc,nv,iexc,psfile,text,ntext)
+ subroutine atom_lines(atsym,zz,nc,nv,iexc,c_light,psfile,text,ntext)
 
 !! ATOM AND REFERENCE CONFIGURATION heading and first line, with the speed
-!! of light of relativity_m only when it is not the default
+!! of light only when it is not the default
 !!
 !! @param atsym  atomic symbol
 !! @param zz  atomic number
 !! @param nc  number of core states
 !! @param nv  number of valence states
 !! @param iexc  exchange-correlation functional
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param psfile  format of the pseudopotential file
 !! @param text  the lines of the section
 !! @param ntext  number of lines
@@ -137,6 +138,7 @@
  character(len=4), intent(in) :: psfile
  real(dp), intent(in) :: zz
  integer, intent(in) :: nc,nv,iexc
+ real(dp), intent(in) :: c_light
 
 !Output variables
  character(len=echo_len), intent(out) :: text(echo_max)
@@ -349,7 +351,7 @@
  return
  end subroutine mesh_lines
 
- subroutine write_atom(atsym,zz,nc,nv,iexc,psfile,iout)
+ subroutine write_atom(atsym,zz,nc,nv,iexc,c_light,psfile,iout)
 
 !! writes the ATOM AND REFERENCE CONFIGURATION heading and first line to
 !! unit 6 (see atom_lines)
@@ -359,6 +361,7 @@
 !! @param nc  number of core states
 !! @param nv  number of valence states
 !! @param iexc  exchange-correlation functional
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param psfile  format of the pseudopotential file
 !! @param iout  unit of the text output
 
@@ -367,13 +370,14 @@
  character(len=4), intent(in) :: psfile
  real(dp), intent(in) :: zz
  integer, intent(in) :: nc,nv,iexc
+ real(dp), intent(in) :: c_light
  integer, intent(in) :: iout
 
 !Local variables
  character(len=echo_len) :: text(echo_max)
  integer :: ii,ntext
 
- call atom_lines(atsym,zz,nc,nv,iexc,psfile,text,ntext)
+ call atom_lines(atsym,zz,nc,nv,iexc,c_light,psfile,text,ntext)
  write(iout,'(a)') (trim(text(ii)),ii=1,ntext)
 
  return
@@ -538,7 +542,7 @@
  return
  end subroutine write_mesh
 
- subroutine input_echo_lines(nkap,iformat,atsym,zz,nc,nv,iexc,psfile, &
+ subroutine input_echo_lines(nkap,iformat,atsym,zz,nc,nv,iexc,c_light,psfile, &
 &                            na,la,fa,lmax,rc0,ep,ncon,nbas,qcut,ep_as_given, &
 &                            well_onset,well_tail,wreg,lloc,lpopt,dvloc0, &
 &                            nproj,debl,well_n,well_norm,ecut_wt, &
@@ -563,6 +567,7 @@
 !Input variables
  integer, intent(in) :: nkap,iformat
  integer, intent(in) :: nc,nv,iexc,lmax,lloc,lpopt,icmod,ncnf,upf_mesh
+ real(dp), intent(in) :: c_light
  integer, intent(in) :: na(mxstate),la(mxstate),ncon(mxlin+1),nbas(mxlin+1)
  integer, intent(in) :: nproj(mxlin+1)
  type(config_t), intent(in) :: cnf(mxcnf)
@@ -594,7 +599,7 @@
  allocate(text(64))
  ntext=0
 
- call atom_lines(atsym,zz,nc,nv,iexc,psfile,part,npart)
+ call atom_lines(atsym,zz,nc,nv,iexc,c_light,psfile,part,npart)
  call put_part()
 !the energy column is named, though not written, except in the sr psp8 file
  call put('#')
@@ -700,7 +705,7 @@
 
  end subroutine input_echo_lines
 
- subroutine write_input_echo(nkap,iformat,atsym,zz,nc,nv,iexc,psfile, &
+ subroutine write_input_echo(nkap,iformat,atsym,zz,nc,nv,iexc,c_light,psfile, &
 &                            na,la,fa,lmax,rc0,ep,ncon,nbas,qcut,ep_as_given, &
 &                            well_onset,well_tail,wreg,lloc,lpopt,dvloc0, &
 &                            nproj,debl,well_n,well_norm,ecut_wt, &
@@ -720,6 +725,7 @@
 !Input variables
  integer, intent(in) :: nkap,iformat
  integer, intent(in) :: nc,nv,iexc,lmax,lloc,lpopt,icmod,ncnf,upf_mesh
+ real(dp), intent(in) :: c_light
  integer, intent(in) :: na(mxstate),la(mxstate),ncon(mxlin+1),nbas(mxlin+1)
  integer, intent(in) :: nproj(mxlin+1)
  type(config_t), intent(in) :: cnf(mxcnf)
@@ -745,7 +751,7 @@
  character(len=echo_len), allocatable :: text(:)
  integer :: ii,ntext
 
- call input_echo_lines(nkap,iformat,atsym,zz,nc,nv,iexc,psfile, &
+ call input_echo_lines(nkap,iformat,atsym,zz,nc,nv,iexc,c_light,psfile, &
 &                      na,la,fa,lmax,rc0,ep,ncon,nbas,qcut,ep_as_given, &
 &                      well_onset,well_tail,wreg,lloc,lpopt,dvloc0, &
 &                      nproj,debl,well_n,well_norm,ecut_wt, &

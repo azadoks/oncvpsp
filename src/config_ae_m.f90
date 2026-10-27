@@ -74,9 +74,9 @@
 
  contains
 
- subroutine aeatom_cached(cache,irel,nkap,na,la,ea,fa,rpk,nc,ncv,it,rhoc, &
-&                         rho,rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,iout, &
-&                         ifail)
+ subroutine aeatom_cached(cache,irel,c_light,nkap,na,la,ea,fa,rpk,nc,ncv,it, &
+&                         rhoc,rho,rr,vi,zz,mmax,iexc,etot,eterm,res,ierr, &
+&                         iout,ifail)
 
 !! aeatom, or the copy of its earlier solution with the same inputs. The
 !! reference configuration recurs as test configuration 0, at both levels
@@ -92,6 +92,7 @@
 
 !Input variables
  integer, intent(in) :: irel,nkap,mmax,iexc,nc,ncv
+ real(dp), intent(in) :: c_light
  integer, intent(in) :: na(ncv),la(ncv)
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: fa(ncv),rr(mmax)
@@ -137,7 +138,7 @@
 
  allocate(vfree(mmax))
  vfree(:)=0.0d0
- call aeatom(irel,nkap,na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
+ call aeatom(irel,c_light,nkap,na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
 &            rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vfree,.false.,iout,ifail)
  if(ifail/=0) return
  deallocate(vfree)
@@ -169,8 +170,8 @@
  return
  end subroutine aeatom_cached
 
- subroutine run_config_ae(cache,jj,cnf,nc,rr,zz,mmax,iexc,ea,irel,nkap,aec, &
-&                         iout,ifail)
+ subroutine run_config_ae(cache,jj,cnf,nc,rr,zz,mmax,iexc,ea,irel,c_light, &
+&                         nkap,aec,iout,ifail)
 
 !! solves the all-electron atom in the maximally-ionized and excited states
 !! of test configuration jj, the all-electron half of the test-configuration
@@ -189,6 +190,7 @@
 !! @param ea  reference configurattion eigenvalues, ea(:,1) for j=l+1/2 and
 !!            ea(:,2) for j=l-1/2 when irel=2
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param nkap  number of kappa per level: 1, or 2 for irel=2
 !! @param aec  the all-electron half of configuration jj
 !! @param iout  unit of the text output
@@ -197,6 +199,7 @@
 !Input variables
  use boundstate_m, only: boundstate
  integer, intent(in) :: jj,mmax,iexc,nc,irel,nkap
+ real(dp), intent(in) :: c_light
  type(config_t), intent(in) :: cnf(mxcnf)
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: ea(mxstate,nkap),rr(mmax)
@@ -287,8 +290,8 @@
 
 !all-electron atom solution for maximally-ionized state
 
- call aeatom_cached(cache,irel,nkap,nat,lat,eat(1,1,2),fat(1,2),rpk,nc, &
-&                   nc+nvt,it,rhoc,rho,rr,vfull,zz,mmax,iexc,eaetst,eterm, &
+ call aeatom_cached(cache,irel,c_light,nkap,nat,lat,eat(1,1,2),fat(1,2),rpk, &
+&                   nc,nc+nvt,it,rhoc,rho,rr,vfull,zz,mmax,iexc,eaetst,eterm, &
 &                   res,ierr,iout,ifail)
  if(ifail/=0) return
  if(ierr/=0) then
@@ -311,7 +314,7 @@
      et=0.0d0
      do ikap=1,mkap
        kap=kap_of(ll,ikap)
-       call boundstate(irel,nat(kk),ll,kap,ierr,et, &
+       call boundstate(irel,c_light,nat(kk),ll,kap,ierr,et, &
 &                      rr,zz,vfull,uu,up,mmax,mch,iout,ifail)
        if(ifail/=0) return
 !a negative ierr (no classical turning point) is accepted for j=l-1/2
@@ -336,8 +339,8 @@
 
 !all-electron atom solution for excited state
 
- call aeatom_cached(cache,irel,nkap,nat,lat,eat(1,1,3),fat(1,3),rpk,nc, &
-&                   nc+nvt,it,rhoc,rho,rr,vfull,zz,mmax,iexc,eaetst,eterm, &
+ call aeatom_cached(cache,irel,c_light,nkap,nat,lat,eat(1,1,3),fat(1,3),rpk, &
+&                   nc,nc+nvt,it,rhoc,rho,rr,vfull,zz,mmax,iexc,eaetst,eterm, &
 &                   res,ierr,iout,ifail)
  if(ifail/=0) return
  if(ierr/=0) then

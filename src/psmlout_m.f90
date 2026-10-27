@@ -33,7 +33,8 @@
  contains
 
  subroutine psmlout(inp,vkb,evkb,mxprj,rr,vpuns,rho,rhomod,rcore,zion,mmax, &
-&                   nrl,epstot,rc0,fcfact,fcgrid,rcgrid,log_mesh,irel,nkap,iout)
+&                   nrl,epstot,rc0,fcfact,fcgrid,rcgrid,log_mesh,irel,c_light, &
+&                   nkap,iout)
 
 !! writes the pseudopotential to the output in PSML format, between
 !! 'Begin PSML' and 'END_PSP' markers
@@ -62,6 +63,7 @@
 !! @param log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets
 !!                  it (else 0)
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param nkap  number of kappa per l: 1, or 2 for irel=2
 !! @param iout  unit of the text output
 !!
@@ -83,6 +85,7 @@
 !Input variables
  type(input_t), intent(in) :: inp
  integer, intent(in) :: mmax,nrl,irel,nkap
+ real(dp), intent(in) :: c_light
  integer, intent(in) :: mxprj ! maximum number of projectors for any l
  real(dp), intent(in) :: fcfact,zion,epstot,rcore
  real(dp), target, intent(in) :: rr(mmax),vpuns(mmax,mxl+2,nkap),rho(mmax)
@@ -186,18 +189,14 @@
  call xml_NewElement(xf,"input-file")
  call my_add_attribute(xf,"name","oncvpsp-input")
 !
- call echo_input(xf,inp%atsym,inp%zz,inp%nc,inp%nv,inp%iexc,inp%psfile, &
-&                inp%na,inp%la,inp%fa,inp%lmax,rc0,inp%ep,inp%ncon, &
+ call echo_input(xf,inp%atsym,inp%zz,inp%nc,inp%nv,inp%iexc,c_light, &
+&                inp%psfile,inp%na,inp%la,inp%fa,inp%lmax,rc0,inp%ep,inp%ncon, &
 &                inp%nbas,inp%qcut,inp%lloc,inp%lpopt,inp%dvloc0,inp%nproj, &
-&                inp%debl,inp%icmod,fcfact, &
-&                inp%rcfact,inp%slack,inp%budget_cut,fcgrid,rcgrid,inp%epsh1, &
-&                inp%epsh2, &
-&                inp%depsh,inp%rxpsh,inp%rlmax,inp%drl, &
-&                inp%ncnf,inp%cnf,log_mesh, &
-&                inp%upf_mesh, &
-&                inp%ep_as_given,inp%well_onset,inp%well_tail,inp%wreg, &
-&                inp%well_n,inp%well_norm, &
-&                inp%ecut_wt)
+&                inp%debl,inp%icmod,fcfact,inp%rcfact,inp%slack, &
+&                inp%budget_cut,fcgrid,rcgrid,inp%epsh1,inp%epsh2,inp%depsh, &
+&                inp%rxpsh,inp%rlmax,inp%drl,inp%ncnf,inp%cnf,log_mesh, &
+&                inp%upf_mesh,inp%ep_as_given,inp%well_onset,inp%well_tail, &
+&                inp%wreg,inp%well_n,inp%well_norm,inp%ecut_wt)
 
  call xml_EndElement(xf,"input-file")
 !
@@ -575,14 +574,12 @@
 
  end subroutine psmlout
 
- subroutine echo_input(xf,atsym,zz,nc,nv,iexc,psfile,na,la,fa,lmax,rc0,ep, &
-&                      ncon,nbas,qcut,lloc,lpopt,dvloc0,nproj,debl,icmod, &
-&                      fcfact,rcfact,slack,budget_cut,fcgrid,rcgrid, &
-&                      epsh1,epsh2,depsh, &
-&                      rxpsh,rlmax,drl, &
-&                      ncnf,cnf,log_mesh,upf_mesh, &
-&                      ep_as_given,well_onset,well_tail,wreg,well_n,well_norm, &
-&                ecut_wt)
+ subroutine echo_input(xf,atsym,zz,nc,nv,iexc,c_light,psfile,na,la,fa,lmax, &
+&                      rc0,ep,ncon,nbas,qcut,lloc,lpopt,dvloc0,nproj,debl, &
+&                      icmod,fcfact,rcfact,slack,budget_cut,fcgrid,rcgrid, &
+&                      epsh1,epsh2,depsh,rxpsh,rlmax,drl,ncnf,cnf,log_mesh, &
+&                      upf_mesh,ep_as_given,well_onset,well_tail,wreg,well_n, &
+&                      well_norm,ecut_wt)
 
 !! echoes the input data into the input-file element of the provenance, a
 !! line at a time, in the form of the psp8 echo (linout), so that it can be
@@ -592,6 +589,7 @@
 !! @param atsym  atomic symbol
 !! @param zz  atomic number
 !! @param iexc  type of exchange-correlation
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param lmax  maximum angular momentum
 !! @param lloc  l for local potential
 !! @param nproj  number of vkb projectors for each l
@@ -648,6 +646,7 @@
  character(len=2), intent(in) :: atsym
  character(len=4), intent(in) :: psfile
  integer, intent(in) :: nc,nv,iexc,lmax,lloc,lpopt,icmod,ncnf,upf_mesh
+ real(dp), intent(in) :: c_light
  integer, intent(in) :: na(mxstate),la(mxstate),ncon(mxlin+1),nbas(mxlin+1)
  integer, intent(in) :: nproj(mxlin+1)
  type(config_t), intent(in) :: cnf(mxcnf)
@@ -671,7 +670,7 @@
  integer :: ii,ntext
 
 ! the psp8 echo of the scalar-relativistic code
- call input_echo_lines(1,1,atsym,zz,nc,nv,iexc,psfile, &
+ call input_echo_lines(1,1,atsym,zz,nc,nv,iexc,c_light,psfile, &
 &                      na,la,fa,lmax,rc0,ep,ncon,nbas,qcut,ep_as_given, &
 &                      well_onset,well_tail,wreg,lloc,lpopt,dvloc0, &
 &                      nproj,debl,well_n,well_norm,ecut_wt, &

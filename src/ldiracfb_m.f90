@@ -25,13 +25,15 @@
 
  contains
 
- subroutine ldiracfb(nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch,iout,ifail)
+ subroutine ldiracfb(nn,ll,kap,c_light,ierr,ee,rr,zz,vv,uu,up,mmax,mch,iout, &
+&                    ifail)
 
 !! Finds relativistic bound states of an al-electron potential
 !!
 !! @param nn  principal quantum number
 !! @param ll  angular-momentum quantum number
 !! @param kap  =l, -(l+1) for j=l -/+ 1/2
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param ierr  non-zero return if error, 10 if there is no bound state
 !!              and the box state (large component 0 at rr(mmax)) is
 !!              returned
@@ -51,7 +53,6 @@
 
  use constants_m, only: dp
  use boundsolve_m, only: bs_box_energy, bs_solve, bs_turning_point
- use relativity_m, only: c_light
  use match_m, only: match_k, match_point, match_weights, match_blend
  use dirac_m, only: dirac_outward
  use quad_m, only: log_norm
@@ -62,6 +63,7 @@
  real(dp), intent(in) :: rr(mmax),vv(mmax)
  real(dp), intent(in) :: zz
  integer, intent(in) :: nn,ll,kap,mmax
+ real(dp), intent(in) :: c_light
 
 !Input/output variables
  real(dp), intent(inout) :: uu(mmax,2),up(mmax,2)
@@ -299,7 +301,7 @@
  integer, intent(in) :: mlast
  integer, intent(out) :: nnode
 
- call dirac_outward(ll,kap,eecur,zz,al,rr,vv,mmax,mlast,gu,fu,gup,fup, &
+ call dirac_outward(ll,kap,c_light,eecur,zz,al,rr,vv,mmax,mlast,gu,fu,gup,fup, &
 &                   nnode)
 
  return

@@ -16,7 +16,7 @@
 ! first five derivatives. Stops with a non-zero code if any check failed.
  program test_ode_rc_der
  use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
- use relativity_m, only: c_light
+ use relativity_m, only: c_light => c_light_default
  use ode_rc_der_m, only: ode_rc_der
  use wf_rc_der_m, only: wf_rc_der
  use boundstate_m, only: boundstate
@@ -46,8 +46,8 @@
  up(:, 1) = al*rr*2.0_dp*(1.0_dp - rr)*exp(-rr)
  do ii = 1, 3
    rc = radii(ii)
-   call ode_rc_der(0, 0, -1, -0.5_dp, rr, vv, uu(:, 1), up(:, 1), mmax, &
-&                  rc, uorder, iout, ifail)
+   call ode_rc_der(0,c_light, 0, -1, -0.5_dp, rr, vv, uu(:, 1), up(:, 1), &
+&                  mmax,rc, uorder, iout, ifail)
    if(ifail /= 0) error stop 1
    exact = 2.0_dp*exp(-rc)*[1.0_dp, -1.0_dp, 1.0_dp, -1.0_dp, 1.0_dp]
    call compare('nr 1s', uorder, exact)
@@ -56,8 +56,8 @@
  up(:, 1) = al*rr*(2.0_dp*rr - 0.5_dp*rr**2)*exp(-0.5_dp*rr)
  do ii = 1, 3
    rc = radii(ii)
-   call ode_rc_der(0, 1, -2, -0.125_dp, rr, vv, uu(:, 1), up(:, 1), mmax, &
-&                  rc, uorder, iout, ifail)
+   call ode_rc_der(0,c_light, 1, -2, -0.125_dp, rr, vv, uu(:, 1), up(:, 1), &
+&                  mmax,rc, uorder, iout, ifail)
    if(ifail /= 0) error stop 1
    exact = exp(-0.5_dp*rc)*[rc, 1.0_dp - 0.5_dp*rc, -1.0_dp + 0.25_dp*rc, &
 &                            0.75_dp - 0.125_dp*rc, -0.5_dp + 0.0625_dp*rc]
@@ -71,8 +71,8 @@
  up(:, 1) = al*rr*(gam/rr - 1.0_dp)*uu(:, 1)
  do ii = 1, 3
    rc = radii(ii)
-   call ode_rc_der(2, 0, -1, ee, rr, vv, uu(:, 1), up(:, 1), mmax, rc, uorder, &
-&        iout, ifail)
+   call ode_rc_der(2,c_light, 0, -1, ee, rr, vv, uu(:, 1), up(:, 1), mmax, rc, &
+&        uorder,iout, ifail)
    if(ifail /= 0) error stop 1
    call power_exp(gam - 1.0_dp, rc, exact)
    call compare('fr 1s', uorder, exact)
@@ -83,8 +83,8 @@
  if(ierr == 0) then
    do ii = 1, 3
      rc = radii(ii)
-     call ode_rc_der(0, 0, -1, ee, rr, vv, uu(:, 1), up(:, 1), mmax, rc, &
-&                    uorder, iout, ifail)
+     call ode_rc_der(0,c_light, 0, -1, ee, rr, vv, uu(:, 1), up(:, 1), mmax, &
+&                    rc,uorder, iout, ifail)
      if(ifail /= 0) error stop 1
      exact = 2.0_dp*exp(-rc)*[1.0_dp, -1.0_dp, 1.0_dp, -1.0_dp, 1.0_dp]
      call compare_tol('nr 1s solved', uorder, exact, [(1.0e-9_dp, ii = 1, 5)])
@@ -97,8 +97,8 @@
    irc = 0
    rc = 1.2345_dp
    call wf_rc_der(rr, uu(:, 1), al, rc, irc, mmax, exact)
-   call ode_rc_der(1, 0, -1, ee, rr, vv, uu(:, 1), up(:, 1), mmax, rc, uorder, &
-&        iout, ifail)
+   call ode_rc_der(1,c_light, 0, -1, ee, rr, vv, uu(:, 1), up(:, 1), mmax, rc, &
+&        uorder,iout, ifail)
    if(ifail /= 0) error stop 1
    call compare_tol('sr 1s', uorder, exact, &
 &                   [1.0e-13_dp, 1.0e-9_dp, 1.0e-8_dp, 1.0e-7_dp, 1.0e-5_dp])
@@ -126,8 +126,8 @@
  uu(:, :) = 0.0_dp
  up(:, :) = 0.0_dp
  mch = 0
- call boundstate(irel, 1, 0, -1, ierr, ee, rr, 1.0_dp, vv, uu, up, mmax, mch, &
-&      iout, ifail)
+ call boundstate(irel,c_light, 1, 0, -1, ierr, ee, rr, 1.0_dp, vv, uu, up, &
+&      mmax, mch,iout, ifail)
  if(ifail /= 0) error stop 1
  if(ierr /= 0) then
    write(stderr, '(a,i0,a,i0)') 'FAILED: irel ', irel, &

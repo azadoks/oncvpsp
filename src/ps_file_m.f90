@@ -35,7 +35,7 @@
 !                                               2 fully-relativistic)
 !   atsym, zz, nkap
 !   mmax, rr                                   (log radial mesh)
-!   c_light                                    (relativity_m)
+!   c_light                                    (the run's)
 !   lmax, lloc, nproj(1:4), rc(1:mxlin+1)
 !   epsh1, epsh2, depsh, rxpsh
 !   epa(1:4,1:nkap)                            (the first projector's

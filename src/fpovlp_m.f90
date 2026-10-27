@@ -27,7 +27,7 @@
 
 ! calculates all-electron wave function overlap intergrals
 
- subroutine fpovlp(gg,hh,mmax,rc,ll,kap,zz,ss,rr,irel)
+ subroutine fpovlp(gg,hh,mmax,rc,ll,kap,zz,ss,rr,irel,c_light)
 
 !! product of all-electron wave functions gg*hh goes like rr**(2*gamma) as
 !! rr -> 0, with the exponent of the equation that gave them: l+1, that of
@@ -47,9 +47,9 @@
 !! @param ss  overlap output
 !! @param rr  log radial mesh
 !! @param irel  0 non-relativistic, 1 scalar-, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
 
  use constants_m, only: dp
- use relativity_m, only: c_light
  use sr_flux_m, only: sr_gamma
  use logmesh_m, only: lm_integral
  implicit none
@@ -59,6 +59,7 @@
  real(dp), intent(in) :: zz,rc
  real(dp), intent(in) :: gg(mmax),hh(mmax),rr(mmax)
  integer, intent(in) :: irel
+ real(dp), intent(in) :: c_light
 
 !Output variables
  real(dp), intent(out) :: ss

@@ -17,41 +17,40 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 !> The speed of light of the relativistic equations and of the relativistic
-!> exchange (iexc=7), set once from the input (set_relativity) and fixed
-!> afterwards.  The default is the value of the code before it could be set.
+!> exchange (iexc=7): its default, the value of the code before it could be
+!> set, and the value of a run from its input (c_light_of). The run passes
+!> it to the solvers and the exchange as an argument (c_light), so that two
+!> runs at once, in threads, can have different values.
 
  module relativity_m
  use constants_m, only: dp
  implicit none
  private
- public :: c_light_default, c_light, set_relativity
+ public :: c_light_default, c_light_of
 
 !> default speed of light in atomic units (Hartree), 1/alpha.  The 4.0.1
 !> value is kept, rather than CODATA 137.035999..., so results are unchanged
  real(dp), parameter :: c_light_default=137.036_dp
 
-!> speed of light of the scalar- and fully-relativistic equations and of
-!> the relativistic exchange
- real(dp), protected :: c_light=c_light_default
-
  contains
 
- subroutine set_relativity(c_light_in)
+ pure real(dp) function c_light_of(c_light_in)
 
-!! sets the speed of light from the input
+!! the speed of light of a run from the input's
 !!
-!! @param c_light_in  speed of light, 0 or less for c_light_default
+!! @param c_light_in  speed of light of the input, 0 or less for
+!!                    c_light_default
 
 !Input variables
  real(dp), intent(in) :: c_light_in
 
  if(c_light_in>0.0_dp) then
-   c_light=c_light_in
+   c_light_of=c_light_in
  else
-   c_light=c_light_default
+   c_light_of=c_light_default
  end if
 
  return
- end subroutine set_relativity
+ end function c_light_of
 
  end module relativity_m

@@ -179,7 +179,7 @@
 
  end subroutine ae_energies
 
- subroutine ae_mix(it,vsi,vso,hv,hr,ndep,zz,rr,mmax,irel)
+ subroutine ae_mix(it,vsi,vso,hv,hr,ndep,zz,rr,mmax,irel,c_light)
 
 !! next input screening potential by Anderson mixing of the last ndep
 !! iterations, with the residual filtered in ln(r) near the nucleus for the
@@ -202,14 +202,15 @@
 !! @param rr  log radial mesh
 !! @param mmax  dimension of log radial grid
 !! @param irel  0 non-relativistic, 1 scalar-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
 
  use constants_m, only: dp
- use relativity_m, only: c_light
  use lapack_m, only: dgesv
  implicit none
 
 !Input variables
  integer, intent(in) :: it,ndep,mmax,irel
+ real(dp), intent(in) :: c_light
  real(dp), intent(in) :: vso(mmax),rr(mmax),zz
 
 !Input/output variables

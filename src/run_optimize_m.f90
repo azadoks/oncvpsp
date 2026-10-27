@@ -25,7 +25,7 @@
 
  contains
 
- subroutine run_optimize(eig,ll,kap,irel,mmax,mxprj,rr,uua,upa,qq,&
+ subroutine run_optimize(eig,ll,kap,irel,c_light,mmax,mxprj,rr,uua,upa,qq,&
 &                      freetl,wm,rc,irc,qcut,qmsbf,ncon_in,nbas_in,npr, &
 &                      psopt,vpsp,vkb,vae,cvgplt,ncurve,ecurve,pswfx,chix, &
 &                      ektail,wreg,optdg,wshare,iout,ifail)
@@ -38,6 +38,7 @@
 !! @param ll  angular momentum
 !! @param kap  =l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param mmax  dimension of log grid
 !! @param mxprj  dimension of number of projectors
 !! @param rr  log radial grid
@@ -110,6 +111,7 @@
 
 !Input variables
  integer, intent(in) :: ll,kap,irel,mmax,mxprj,ncon_in,nbas_in,npr,ncurve
+ real(dp), intent(in) :: c_light
  real(dp), intent(in) :: rr(mmax)
  real(dp), intent(in) :: uua(mmax,mxprj),upa(mmax,mxprj),vae(mmax)
  real(dp), intent(in) :: qq(mxprj,mxprj)
@@ -176,8 +178,8 @@
 !calculate derivatives of all-electron wave function at r_c from the radial
 !equation for the first projector to set sbf wave vectors for all projectors
 
- call ode_rc_der(irel,ll,kap,eig(1),rr,vae,uua(1,1),upa(1,1),mmax,rc,uord, &
-&      iout,ifail)
+ call ode_rc_der(irel,c_light,ll,kap,eig(1),rr,vae,uua(1,1),upa(1,1),mmax,rc, &
+&      uord,iout,ifail)
  if(ifail/=0) return
  ulgd=uord(2)/uord(1)
 
@@ -220,8 +222,8 @@
 !equation to define basis set for current projector and derivative
 !constraints
 
-   call ode_rc_der(irel,ll,kap,eig(iprj),rr,vae,uua(1,iprj),upa(1,iprj), &
-&                  mmax,rc,uord,iout,ifail)
+   call ode_rc_der(irel,c_light,ll,kap,eig(iprj),rr,vae,uua(1,iprj),upa(1, &
+&                  iprj),mmax,rc,uord,iout,ifail)
    if(ifail/=0) return
 
 !q considered infinity for E_resid calculation: twice the largest basis
@@ -284,8 +286,8 @@
 !state (doc/smoothness_plan.md, phase 8)
    hh=2.0d0*pi/(75.0d0*qmax)
    if(freetl(iprj)) then
-     call free_tail(irel,ll,kap,eig(iprj),rr,vae,uua(1,iprj),upa(1,iprj), &
-&                   mmax,rc,qcut,hh,nr,ulin,dlin,iout=iout,ifail=ifail)
+     call free_tail(irel,c_light,ll,kap,eig(iprj),rr,vae,uua(1,iprj),upa(1, &
+&                   iprj),mmax,rc,qcut,hh,nr,ulin,dlin,iout=iout,ifail=ifail)
      if(ifail/=0) return
      ekin_tail=tail_kinetic(ll,rc,hh,nr,ulin,dlin)
      deallocate(dlin)
@@ -457,7 +459,7 @@
 &             +dot_product(pswfopt_nu,matmul(eresidmat(:,:,1),pswfopt_nu))
    nqs=min(nq,1+int((qmax-qcut)/dq)+lm_ncell)
    allocate(e0t(nqs),edt(nqs,0),emt(nqs,0,0))
-   call free_tail(irel,ll,kap,eig(iprj),rr,vae,uua(1,iprj), &
+   call free_tail(irel,c_light,ll,kap,eig(iprj),rr,vae,uua(1,iprj), &
 &                   upa(1,iprj),mmax,rc,qcut,hh,nrw,ufree,dlin, &
 &                   iout=iout,ifail=ifail)
    if(ifail/=0) return

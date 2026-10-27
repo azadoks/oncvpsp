@@ -23,7 +23,6 @@
  use constants_m, only: dp, mxstate
  use ae_file_m, only: read_ae_potential, differ
  use ps_file_m, only: ps_file_t, read_ps_file
- use relativity_m, only: set_relativity
  use build_info_m, only: write_build_info
  implicit none
  private
@@ -35,15 +34,16 @@
 
  contains
 
- subroutine load_pair(prog,ae_filename,ps_filename,irel,zz,mmax,rr,vfull, &
-&                     pf,nc,nv,iexc,na,la,fa,ea,iout,ifail)
+ subroutine load_pair(prog,ae_filename,ps_filename,irel,c_light,zz,mmax,rr, &
+&                     vfull,pf,nc,nv,iexc,na,la,fa,ea,iout,ifail)
 !! the two files of program prog, which must be of the same relativistic
 !! treatment, atom, mesh and c_light (and functional, with iexc), and the
-!! all-electron atom's configuration if asked; sets c_light and writes
-!! the build line
+!! all-electron atom's configuration if asked; writes the build line
  character(len=*), intent(in) :: prog,ae_filename,ps_filename
  integer, intent(out) :: irel,mmax
  real(dp), intent(out) :: zz
+!> the speed of light of the files
+ real(dp), intent(out) :: c_light
  real(dp), allocatable, intent(out) :: rr(:),vfull(:)
  type(ps_file_t), intent(out) :: pf
  integer, intent(out), optional :: nc,nv,iexc,na(mxstate),la(mxstate)
@@ -82,7 +82,7 @@
    ifail=1
    return
  end if
- call set_relativity(c_light_f)
+ c_light=c_light_f
 
  if(irel==0) then
    treatment='non-relativistic'

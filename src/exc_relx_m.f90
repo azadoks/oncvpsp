@@ -25,7 +25,7 @@
 
  contains
 
- subroutine exc_relx(rho,vxc,exc,mmax)
+ subroutine exc_relx(rho,vxc,exc,mmax,c_light)
 
 !! adds the relativistic correction of the LDA (Slater) exchange of
 !! A. H. MacDonald and S. H. Vosko, J. Phys. C 12, 2977 (1979) to an LDA
@@ -41,13 +41,14 @@
 !! @param vxc  exchange-correlation potential, corrected on output
 !! @param exc  exchange-correlation energy density, corrected on output
 !! @param mmax  dimension of log radial grid
+!! @param c_light  speed of light (Hartree atomic units)
 
  use constants_m, only: dp, pi
- use relativity_m, only: c_light
  implicit none
 
 !Input variables
  integer, intent(in) :: mmax
+ real(dp), intent(in) :: c_light
  real(dp), intent(in) :: rho(mmax)
 
 !Input/output variables

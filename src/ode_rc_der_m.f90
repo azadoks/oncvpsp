@@ -24,7 +24,8 @@
 
  contains
 
- subroutine ode_rc_der(irel,ll,kap,ee,rr,vv,uu,up,mmax,rc,uorder,iout,ifail)
+ subroutine ode_rc_der(irel,c_light,ll,kap,ee,rr,vv,uu,up,mmax,rc,uorder,iout, &
+&                      ifail)
 
 !! value and four derivatives at any radius rc of uu/r, uu an all-electron
 !! wave function, from the radial equation it solves rather than from
@@ -45,6 +46,7 @@
 !! @param irel  0 non-relativistic, 1 scalar-relativistic (the flux form
 !!              of sr_flux_m), 2 fully-relativistic (Dirac, uu the large
 !!              component)
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param ll  angular-momentum quantum number
 !! @param kap  =l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
 !! @param ee  energy of uu (Ha)
@@ -60,12 +62,12 @@
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
- use relativity_m, only: c_light
  use logmesh_m, only: lm_interp, lm_derivs
  implicit none
 
 !Input variables
  integer, intent(in) :: irel,ll,kap,mmax
+ real(dp), intent(in) :: c_light
  real(dp), intent(in) :: ee,rc
  real(dp), intent(in) :: rr(mmax),vv(mmax),uu(mmax),up(mmax)
 

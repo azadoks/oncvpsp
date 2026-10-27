@@ -26,7 +26,7 @@
  contains
 
  subroutine relatom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
-&           rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vext,warm,iout,ifail)
+&           rr,vi,zz,mmax,iexc,c_light,etot,eterm,res,ierr,vext,warm,iout,ifail)
 
 !! self-consistent fully-relativistic all-electron atom
 !! calculation using log mesh
@@ -49,6 +49,7 @@
 !! @param zz  atomic number
 !! @param mmax  size of log grid
 !! @param iexc  exchange-correlation function to be used
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param etot  all-electron total energy (output)
 !! @param eterm  kinetic, electron-nucleus, Hartree and exchange-correlation
 !!               energies (output)
@@ -73,6 +74,7 @@
 !Input variables
 
  integer, intent(in) :: mmax,iexc,nc,ncv
+ real(dp), intent(in) :: c_light
  integer, intent(in) :: na(ncv),la(ncv)
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: fa(ncv),rr(mmax),vext(mmax)
@@ -167,7 +169,7 @@
        et=ea(ii,ikap)
        ierr = 0
 
-       call ldiracfb(na(ii),ll,kap,ierr,et, &
+       call ldiracfb(na(ii),ll,kap,c_light,ierr,et, &
 &                  rr,zz,vext+vi,uu,up,mmax,mch,iout,ifail)
        if(ifail/=0) return
 ! a state with no bound solution in this potential gets its box state;
@@ -209,7 +211,7 @@
 ! output screening potential, and the energies of the orbitals of the
 ! input one
    call vout(0,rho,rhoc,vso,vxc,sf,eeel,eexc, &
-&            rr,mmax,iexc)
+&            rr,mmax,iexc,c_light)
    call ae_energies(rho,vsi,vxc,zz,eeig,eeel,eexc,rr,mmax,etot,eterm, &
 &                   vext)
 

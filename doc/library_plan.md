@@ -172,11 +172,14 @@ derived type: it either copies them into arrays of maximum sizes
 (`mxprj`, `mmax`) or holds them behind a handle with calls for the sizes
 and the arrays.
 
-One module variable is left, against the coding standards' "no global
-state": the speed of light (`relativity_m`'s `c_light`, set from the
-input by `set_relativity`). Two runs one after the other are fine, two
-at once in threads with different values are not. Phase 5 moves it into
-an argument of the solvers, beside `irel`, or documents the limit.
+The speed of light was a module variable (`relativity_m`'s `c_light`,
+set from the input by `set_relativity`), so two runs at once in threads
+with different values used one. It is an argument, `c_light`, of the
+solvers and the relativistic exchange and of the routines above them,
+beside `irel` or `iexc`: `oncvpsp_run` takes it from the input
+(`c_light_of`), `oncvpsp_ld.x` and `oncvpsp_confine.x` from the files
+(`load_pair`), and the types that carry `irel` or `iexc` to their
+procedures carry it too (`phsft_t`, `budget_t`).
 
 The weights of the log mesh's stencils and cell rule (`logmesh_m`) were
 computed on first use, a first computation that raced in threads; they

@@ -26,8 +26,8 @@
  contains
 
  subroutine wellstate(nnin,ll,kap,rc,ep,epgiven,onset,confwall,nowell,rr, &
-&                     vfull,vwell,uu,up,zz,mmax,mch,irel,confined,eptgt,wm, &
-&                     iout,ifail)
+&                     vfull,vwell,uu,up,zz,mmax,mch,irel,c_light,confined, &
+&                     eptgt,wm,iout,ifail)
 
 !! creates quantum well to confine positive-energy state, and calculates
 !! the resulting all-electron wave function. The well rises from
@@ -79,6 +79,7 @@
 !! @param mmax  size of log radial mesh
 !! @param mch  matching mesh point for inward-outward integrations
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param confined  whether uu is confined by the well; not when it is the
 !!                  localized bound state (vwell is then vfull)
 !! @param eptgt  the energy the well's eigenvalue (ep on return) was found
@@ -100,6 +101,7 @@
  real(dp), intent(in) :: rr(mmax),vfull(mmax)
  real(dp), intent(in) :: zz
  integer, intent(in) :: ll,kap,mmax,irel
+ real(dp), intent(in) :: c_light
  real(dp), intent(in) :: rc
  logical, intent(in) :: epgiven
  real(dp), intent(in) :: onset
@@ -198,7 +200,8 @@
      ux(:,:)=0.0d0
      upx(:,:)=0.0d0
      et=ep
-     call boundstate(irel,nn,ll,kap,ierr,et,rx,zz,vw,ux,upx,mx,mchx,iout,ifail)
+     call boundstate(irel,c_light,nn,ll,kap,ierr,et,rx,zz,vw,ux,upx,mx,mchx, &
+&                    iout,ifail)
      if(ifail/=0) return
 ! a trial well whose state did not converge (ierr/=0: a box state, ierr=10,
 ! can stand in for it) only steers the bracketing; the state taken must
@@ -338,7 +341,8 @@
  ifail=0
  uu(:,:)=0.0d0 ; up(:,:)=0.0d0
  et=-0.1d0
- call boundstate(irel,nnin,ll,kap,ierr,et,rr,zz,vfull,uu,up,mmax,mch,iout,ifail)
+ call boundstate(irel,c_light,nnin,ll,kap,ierr,et,rr,zz,vfull,uu,up,mmax,mch, &
+&                iout,ifail)
  if(ifail/=0) return
 
 !if bound state is found, check its localization

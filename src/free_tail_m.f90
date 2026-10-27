@@ -40,7 +40,6 @@
 
  module free_tail_m
  use constants_m, only: dp, pi
- use relativity_m, only: c_light
  use logmesh_m, only: lm_interp, lm_ncell
  use ugrid_m, only: ug_weights
  implicit none
@@ -210,14 +209,15 @@
  free_tail_k=sqrt(sqrt(ee**2+dsplit**2)+ee)
  end function free_tail_k
 
- subroutine free_tail(irel,ll,kap,ee,rr,vv,uu,up,mmax,rc,qcut,hh,nr,ulin, &
-&                     dlin,wscale,iout,ifail)
+ subroutine free_tail(irel,c_light,ll,kap,ee,rr,vv,uu,up,mmax,rc,qcut,hh,nr, &
+&                     ulin,dlin,wscale,iout,ifail)
 
 !! the windowed free tail of a well state on the linear mesh rc + (i-1) hh
 !! to R0 + x_e L (above), nsub Runge-Kutta steps per mesh step
 !!
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2
 !!              fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param ll  angular momentum
 !! @param kap  =l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
 !! @param ee  the state's energy (Ha)
@@ -238,6 +238,7 @@
 
 !Input variables
  integer, intent(in) :: irel,ll,kap,mmax
+ real(dp), intent(in) :: c_light
  real(dp), intent(in) :: ee,rc,qcut,hh
  real(dp), intent(in) :: rr(mmax),vv(mmax),uu(mmax),up(mmax)
  real(dp), intent(in), optional :: wscale
@@ -262,14 +263,14 @@
  do ii=1,nr
    rlin(ii)=rc+dble(ii-1)*hh
  end do
- call free_solve(irel,ll,kap,ee,rr,vv,uu,up,mmax,rc,rc,wl,nr,rlin, &
+ call free_solve(irel,c_light,ll,kap,ee,rr,vv,uu,up,mmax,rc,rc,wl,nr,rlin, &
 &                hh/dble(nsub),ulin,dlin)
  deallocate(rlin)
  return
  end subroutine free_tail
 
- subroutine free_tail_log(irel,ll,kap,ee,rr,vv,uu,up,mmax,rc,qcut,istart, &
-&      iout,ifail)
+ subroutine free_tail_log(irel,c_light,ll,kap,ee,rr,vv,uu,up,mmax,rc,qcut, &
+&      istart,iout,ifail)
 
 !! the state's values beyond node istart on the log mesh, where its solver
 !! stopped, the windowed free tail (above) continued from that node, and
@@ -278,6 +279,7 @@
 !!
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2
 !!              fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param ll  angular momentum
 !! @param kap  =l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
 !! @param ee  the state's energy (Ha)
@@ -294,6 +296,7 @@
 
 !Input variables
  integer, intent(in) :: irel,ll,kap,mmax,istart
+ real(dp), intent(in) :: c_light
  real(dp), intent(in) :: ee,rc,qcut
  real(dp), intent(in) :: rr(mmax),vv(mmax)
 
@@ -316,7 +319,7 @@
  i1=count(rr(:)<=rc+(wcen+window_end(ee,wl))*wl)
  if(i1<i0) return
  allocate(ut(i0:i1),dt(i0:i1))
- call free_solve(irel,ll,kap,ee,rr,vv,uu,up,mmax,rc,rr(istart),wl, &
+ call free_solve(irel,c_light,ll,kap,ee,rr,vv,uu,up,mmax,rc,rr(istart),wl, &
 &                i1-i0+1,rr(i0:i1),hlog,ut,dt)
  al=log(rr(mmax)/rr(1))/dble(mmax-1)
  do ii=i0,i1
@@ -350,7 +353,7 @@
  window_end=0.5d0*(kl+sqrt(kl**2+4.0d0*(wend+wcen*kl)))
  end function window_end
 
- subroutine free_solve(irel,ll,kap,ee,rr,vv,uu,up,mmax,rc,rs,wl,nout, &
+ subroutine free_solve(irel,c_light,ll,kap,ee,rr,vv,uu,up,mmax,rc,rs,wl,nout, &
 &                      rout,hmax,uout,dout)
 
 !! the windowed free solution and its derivative at the radii rout (rs <=
@@ -363,6 +366,7 @@
 
 !Input variables
  integer, intent(in) :: irel,ll,kap,mmax,nout
+ real(dp), intent(in) :: c_light
  real(dp), intent(in) :: ee,rc,rs,wl,hmax
  real(dp), intent(in) :: rr(mmax),vv(mmax),uu(mmax),up(mmax),rout(nout)
 

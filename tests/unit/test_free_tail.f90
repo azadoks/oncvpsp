@@ -19,6 +19,7 @@
  use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
  use free_tail_m, only: free_tail, free_tail_width, tail_kinetic
  use ugrid_m, only: ug_weights
+ use relativity_m, only: c_light => c_light_default
  implicit none
  integer, parameter :: iout=6
 
@@ -45,7 +46,7 @@
  ee = 0.5_dp*kk**2
  uu(:) = sin(kk*rr)
  up(:) = al*rr*kk*cos(kk*rr)
- call free_tail(0, 0, -1, ee, rr, vv, uu, up, mmax, rc, qcut, hh, nr, &
+ call free_tail(0,c_light, 0, -1, ee, rr, vv, uu, up, mmax, rc, qcut, hh, nr, &
 &               ulin, dlin, iout=iout, ifail=ifail)
  if(ifail /= 0) error stop 1
  call free_tail_width(qcut, ee, wl, iout, ifail)
@@ -78,7 +79,7 @@
  call check('kinetic', abs(tk - tk2)/abs(tk2), 1.0e-9_dp)
 
 ! leakage
- call free_tail(0, 0, -1, ee, rr, vv, uu, up, mmax, rc, qcut, hh, n2, &
+ call free_tail(0,c_light, 0, -1, ee, rr, vv, uu, up, mmax, rc, qcut, hh, n2, &
 &               u2, d2, 2.0_dp, iout=iout, ifail=ifail)
  if(ifail /= 0) error stop 1
  call check('leakage sin(k r)', leak(), 1.0e-13_dp)
@@ -88,10 +89,10 @@
  ee = -0.5_dp*kp**2
  uu(:) = sinh(kp*rr)
  up(:) = al*rr*kp*cosh(kp*rr)
- call free_tail(0, 0, -1, ee, rr, vv, uu, up, mmax, rc, qcut, hh, nr, &
+ call free_tail(0,c_light, 0, -1, ee, rr, vv, uu, up, mmax, rc, qcut, hh, nr, &
 &               ulin, dlin, iout=iout, ifail=ifail)
  if(ifail /= 0) error stop 1
- call free_tail(0, 0, -1, ee, rr, vv, uu, up, mmax, rc, qcut, hh, n2, &
+ call free_tail(0,c_light, 0, -1, ee, rr, vv, uu, up, mmax, rc, qcut, hh, n2, &
 &               u2, d2, 1.1_dp, iout=iout, ifail=ifail)
  if(ifail /= 0) error stop 1
  call check('leakage sinh(kappa r)', leak(), 1.0e-13_dp)

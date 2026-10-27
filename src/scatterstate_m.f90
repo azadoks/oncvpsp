@@ -25,13 +25,15 @@
 
  contains
 
- subroutine scatterstate(irel,nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch,iout)
+ subroutine scatterstate(irel,c_light,nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax, &
+&                        mch,iout)
 
 !! Integrates a scattering state of an all-electron atomic potential out to
 !! mch: with the non-relativistic or scalar-relativistic Schroedinger equation
 !! (lschfs), or with the Dirac equation (ldiracfs)
 !!
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param nn  effective principal quantum number based on nodes inside mch
 !!            (output)
 !! @param ll  angular-momentum quantum number
@@ -55,6 +57,7 @@
 
 !Input variables
  integer, intent(in) :: irel,ll,kap,mmax,mch
+ real(dp), intent(in) :: c_light
  real(dp), intent(in) :: rr(mmax),vv(mmax)
  real(dp), intent(in) :: zz,ee
 
@@ -67,9 +70,9 @@
  integer, intent(out) :: ierr
 
  if(irel==2) then
-   call ldiracfs(nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch,iout)
+   call ldiracfs(nn,ll,kap,c_light,ierr,ee,rr,zz,vv,uu,up,mmax,mch,iout)
  else
-   call lschfs(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,irel)
+   call lschfs(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,irel,c_light)
  end if
  return
  end subroutine scatterstate

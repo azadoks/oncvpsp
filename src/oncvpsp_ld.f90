@@ -45,6 +45,8 @@
  character(len=1024) :: ae_filename,ps_filename,arg
  integer :: iarg,irel,mmax,nq,npsh,ii,iq,l1,ll,ikap,kap,nvkb,lc
  real(dp) :: zz,epsh1,epsh2,depsh,amesh,rq(mxq),ee(3)
+!> the speed of light of the files
+ real(dp) :: c_light
  real(dp), allocatable :: rr(:),vfull(:),pshae(:,:),pshps(:,:),rql(:)
  logical :: given_radii,given_energies
 !> the angular momenta whose log derivatives are computed
@@ -94,8 +96,8 @@
    error stop 1
  end if
 
- call load_pair('oncvpsp_ld',trim(ae_filename),trim(ps_filename),irel,zz, &
-&               mmax,rr,vfull,pf,iout=iout,ifail=ifail)
+ call load_pair('oncvpsp_ld',trim(ae_filename),trim(ps_filename),irel, &
+&               c_light,zz,mmax,rr,vfull,pf,iout=iout,ifail=ifail)
  if(ifail/=0) error stop 1
 
 !the energies, from epsh2 down by depsh, as oncvpsp_main
@@ -133,7 +135,7 @@
    do ikap=1,merge(1,pf%pot%nkap,l1==1)
      kap=kap_of(ll,ikap)
      nvkb=pf%nvkb(l1,ikap)
-     call phsft_pair(irel,ll,kap,nvkb,rr,vfull,zz,pf%vloc(:,ikap), &
+     call phsft_pair(irel,c_light,ll,kap,nvkb,rr,vfull,zz,pf%vloc(:,ikap), &
 &                    pf%pot%vlocpw,pf%pot%vkbpw(1:nvkb,l1,ikap), &
 &                    pf%pot%evkb(1:nvkb,l1,ikap),mmax,nq,rql,npsh,epsh2,depsh, &
 &                    pf%epa(l1,ikap),pshae,pshps,iout,ifail)

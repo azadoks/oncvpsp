@@ -34,14 +34,15 @@
 
  contains
 
- subroutine ae_bound_projectors(irel,ll,kap,ikap,nc,nv,na,la,ea,nproj,it, &
-&                               rr,zz,vfull,mmax,uu,up,iprj,epa,npa,uua,upa, &
-&                               iout,ifail)
+ subroutine ae_bound_projectors(irel,c_light,ll,kap,ikap,nc,nv,na,la,ea,nproj, &
+&                               it,rr,zz,vfull,mmax,uu,up,iprj,epa,npa,uua, &
+&                               upa,iout,ifail)
 !! the bound valence states of l (at most nproj), the first iprj
 !! projectors' states; and npa(1), the n above the highest core state of l
  use boundstate_m, only: boundstate
  use renorm_r_m, only: renorm_r
  integer, intent(in) :: irel,ll,kap,ikap,nc,nv,na(mxstate),la(mxstate)
+ real(dp), intent(in) :: c_light
  integer, intent(in) :: nproj,it,mmax
  real(dp), intent(in) :: ea(mxstate,mxkap),rr(mmax),zz,vfull(mmax)
  real(dp), intent(inout) :: uu(mmax,2),up(mmax,2)
@@ -67,7 +68,7 @@
      if(la(kk)==ll) then
        iprj=iprj+1
        et=ea(kk,ikap)
-       call boundstate(irel,na(kk),ll,kap,ierr,et, &
+       call boundstate(irel,c_light,na(kk),ll,kap,ierr,et, &
 &                      rr,zz,vfull,uu,up,mmax,mch,iout,ifail)
        if(ifail/=0) return
        if(ierr /= 0) then
@@ -87,7 +88,7 @@
        epa(iprj)=ea(kk,ikap)
        npa(iprj)=na(kk)
        if(irel==2) then
-         call renorm_r(uu,rr,ll,kap,zz,mmax,cnorm,iout,ifail)
+         call renorm_r(uu,rr,ll,kap,c_light,zz,mmax,cnorm,iout,ifail)
          if(ifail/=0) return
        else
          cnorm=1.0d0
@@ -100,7 +101,7 @@
  end if !nv/=0
  end subroutine ae_bound_projectors
 
- subroutine ae_well_projectors(irel,ll,kap,ikap,nproj,ep,debl,well_n, &
+ subroutine ae_well_projectors(irel,c_light,ll,kap,ikap,nproj,ep,debl,well_n, &
 &                              ep_as_given,well_onset,well_tail, &
 &                              well_norm_rc,rc,irc,qcut,rr,zz,vfull,mmax, &
 &                              uu,up,nnwell,iprj,epa,npa,uua,upa,vwell, &
@@ -114,6 +115,7 @@
  use renorm_r_m, only: renorm_r
  use wellstate_m, only: wellstate
  integer, intent(in) :: irel,ll,kap,ikap,nproj,well_n,well_tail,irc,mmax
+ real(dp), intent(in) :: c_light
  real(dp), intent(in) :: ep,debl,well_onset,rc,qcut,rr(mmax),zz
  real(dp), intent(in) :: vfull(mmax)
  logical, intent(in) :: ep_as_given,well_norm_rc
@@ -185,14 +187,14 @@
      call wellstate(npa(iprj),ll,kap,rc,epa(iprj), &
 &                   ep_as_given,well_onset,well_tail==2,.false.,rr, &
 &                   vfull, &
-&                   vwell(1,iprj),uu,up,zz,mmax,mch,irel, &
+&                   vwell(1,iprj),uu,up,zz,mmax,mch,irel,c_light, &
 &                   inwell(iprj),eptgt,wmesh(iprj),iout,ifail)
      if(ifail/=0) return
    else if(ikap==1) then
      nnwell=npa(iprj)
      call wellstate(nnwell,ll,kap,rc,epa(iprj),ep_as_given, &
 &                   well_onset,well_tail==2,well_tail_free,rr,vfull, &
-&                   vwell(1,iprj),uu,up,zz,mmax,mch,irel, &
+&                   vwell(1,iprj),uu,up,zz,mmax,mch,irel,c_light, &
 &                   inwell(iprj),eptgt,wmesh(iprj),iout,ifail)
      if(ifail/=0) return
    else
@@ -201,7 +203,7 @@
 !the j = l - 1/2 state in the well of j = l + 1/2, on its continued mesh
        wmesh(iprj)%uu(:,:)=0.0d0
        wmesh(iprj)%up(:,:)=0.0d0
-       call boundstate(irel,npa(iprj),ll,kap,ierr, &
+       call boundstate(irel,c_light,npa(iprj),ll,kap,ierr, &
 &                      epa(iprj),wmesh(iprj)%rr,zz, &
 &                      wmesh(iprj)%vv,wmesh(iprj)%uu,wmesh(iprj)%up, &
 &                      wmesh(iprj)%mx,mchx,iout,ifail)
@@ -209,7 +211,7 @@
        uu(:,:)=wmesh(iprj)%uu(1:mmax,:)
        up(:,:)=wmesh(iprj)%up(1:mmax,:)
      else
-       call boundstate(irel,npa(iprj),ll,kap,ierr, &
+       call boundstate(irel,c_light,npa(iprj),ll,kap,ierr, &
 &                      epa(iprj),rr,zz,vwell(1,iprj),uu,up, &
 &                      mmax,mch,iout,ifail)
        if(ifail/=0) return
@@ -232,12 +234,12 @@
    end if
 
    if(irel==2 .and. wmesh(iprj)%mx>0) then
-     call renorm_r(wmesh(iprj)%uu,wmesh(iprj)%rr,ll,kap,zz, &
+     call renorm_r(wmesh(iprj)%uu,wmesh(iprj)%rr,ll,kap,c_light,zz, &
 &                  wmesh(iprj)%mx,cnorm,iout,ifail)
      if(ifail/=0) return
      uu(:,:)=wmesh(iprj)%uu(1:mmax,:)
    else if(irel==2) then
-     call renorm_r(uu,rr,ll,kap,zz,mmax,cnorm,iout,ifail)
+     call renorm_r(uu,rr,ll,kap,c_light,zz,mmax,cnorm,iout,ifail)
      if(ifail/=0) return
    else
      cnorm=1.0d0
@@ -251,7 +253,7 @@
 !see neither)
    if(well_norm_rc .and. wmesh(iprj)%mx>0) then
      call fpovlp(uua(1,iprj),uua(1,iprj),mmax,rc,ll, &
-&                kap,zz,cnorm,rr,irel)
+&                kap,zz,cnorm,rr,irel,c_light)
      cnorm=1.0d0/sqrt(cnorm)
      uua(:,iprj)=cnorm*uua(:,iprj)
      upa(:,iprj)=cnorm*upa(:,iprj)
@@ -260,7 +262,7 @@
    end if
    if(well_tail_free .and. inwell(iprj)) then
      if(ikap==1) epa(iprj)=eptgt
-     call free_tail_state(irel,ll,kap,ikap,nnwell,npa(iprj),epa(iprj), &
+     call free_tail_state(irel,c_light,ll,kap,ikap,nnwell,npa(iprj),epa(iprj), &
 &                         rc,irc,qcut,rr,zz,vfull,mmax,uu,up,uua(:,iprj), &
 &                         upa(:,iprj),iout,ifail)
      if(ifail/=0) return
@@ -268,8 +270,8 @@
  end do !kk
  end subroutine ae_well_projectors
 
- subroutine free_tail_state(irel,ll,kap,ikap,nnwell,nn,ee,rc,irc,qcut,rr, &
-&                           zz,vfull,mmax,uu,up,ua,pa,iout,ifail)
+ subroutine free_tail_state(irel,c_light,ll,kap,ikap,nnwell,nn,ee,rc,irc,qcut, &
+&                           rr,zz,vfull,mmax,uu,up,ua,pa,iout,ifail)
 !! with the free tail, a well state is the atom's solution at exactly the
 !! energy asked for (the well's eigenvalue only for j = l - 1/2, D-7c),
 !! integrated outward past the reach of everything taken at or near rc
@@ -283,6 +285,7 @@
  use fpovlp_m, only: fpovlp
  use scatterstate_m, only: scatterstate
  integer, intent(in) :: irel,ll,kap,ikap,nn,irc,mmax
+ real(dp), intent(in) :: c_light
  integer, intent(inout) :: nnwell
  real(dp), intent(in) :: ee,rc,qcut,rr(mmax),zz,vfull(mmax)
  real(dp), intent(inout) :: uu(mmax,2),up(mmax,2)
@@ -305,7 +308,7 @@
  mfree=min(mmax,irc+pw_reach+16+lm_fh_reach()+2)
  uu(:,:)=0.0d0
  up(:,:)=0.0d0
- call scatterstate(irel,nnwell,ll,kap,ierr,ee,rr, &
+ call scatterstate(irel,c_light,nnwell,ll,kap,ierr,ee,rr, &
 &                  zz,vfull,uu,up,mmax,mfree,iout)
  if(ierr/=0) then
    write(iout,'(a,i2,a,f12.8)') &
@@ -317,22 +320,23 @@
  ua(:)=uu(:,1)
  pa(:)=up(:,1)
  call fpovlp(ua,ua,mmax,rc,ll, &
-&            kap,zz,cnorm,rr,irel)
+&            kap,zz,cnorm,rr,irel,c_light)
  ua(:)=ua(:)/sqrt(cnorm)
  pa(:)=pa(:)/sqrt(cnorm)
- call free_tail_log(irel,ll,kap,ee,rr,vfull, &
+ call free_tail_log(irel,c_light,ll,kap,ee,rr,vfull, &
 &                   ua,pa,mmax, &
 &                   rc,qcut,mfree,iout,ifail)
  if(ifail/=0) return
  end subroutine free_tail_state
 
- subroutine ae_delta_window(irel,ll,kap,nproj,epa,rr,vfull,uua,upa,mmax, &
-&                           al,rc,irc,local,dlta,vrloc,iout,ifail)
+ subroutine ae_delta_window(irel,c_light,ll,kap,nproj,epa,rr,vfull,uua,upa, &
+&                           mmax,al,rc,irc,local,dlta,vrloc,iout,ifail)
 !! the relativistic term Delta of the all-electron wave about the taper
 !! window [0.95 rc, rc] (ae_delta, D-4), for the projectors; the local
 !! potential of lloc<4 (local) takes Delta/(2u) on the window (S-1)
  use ae_delta_m, only: ae_delta
  integer, intent(in) :: irel,ll,kap,nproj,mmax,irc
+ real(dp), intent(in) :: c_light
  real(dp), intent(in) :: epa(mxprj),rr(mmax),vfull(mmax)
  real(dp), intent(in) :: uua(mmax,mxprj),upa(mmax,mxprj),al,rc
  logical, intent(in) :: local
@@ -344,7 +348,7 @@
  do iprj=1,nproj
    ii=max(1,1+int(log(0.95d0*rc/rr(1))/al)-pw_reach-8)
    jj=min(mmax,irc+pw_reach+16)
-   call ae_delta(irel,ll,kap,epa(iprj),rr,vfull,uua(1,iprj), &
+   call ae_delta(irel,c_light,ll,kap,epa(iprj),rr,vfull,uua(1,iprj), &
 &                upa(1,iprj),mmax,ii,jj,dlta(1,iprj))
    if(local .and. iprj==1) then
      do kk=ii,jj
@@ -361,17 +365,18 @@
  end do
  end subroutine ae_delta_window
 
- subroutine ae_overlap(irel,ll,kap,nproj,uua,rr,zz,mmax,rc,qq)
+ subroutine ae_overlap(irel,c_light,ll,kap,nproj,uua,rr,zz,mmax,rc,qq)
 !! the overlap matrix of the projectors' all-electron states inside rc
  use fpovlp_m, only: fpovlp
  integer, intent(in) :: irel,ll,kap,nproj,mmax
+ real(dp), intent(in) :: c_light
  real(dp), intent(in) :: uua(mmax,mxprj),rr(mmax),zz,rc
  real(dp), intent(inout) :: qq(mxprj,mxprj)
  integer :: ii,jj
  do jj=1,nproj
    do ii=1,jj
      call fpovlp(uua(1,ii),uua(1,jj),mmax,rc,ll,kap, &
-&                zz,qq(ii,jj),rr,irel)
+&                zz,qq(ii,jj),rr,irel,c_light)
      qq(jj,ii)=qq(ii,jj)
    end do
  end do

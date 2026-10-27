@@ -24,7 +24,7 @@
 
  contains
 
- subroutine ae_delta(irel,ll,kap,ee,rr,vv,uu,up,mmax,i1,i2,delta)
+ subroutine ae_delta(irel,c_light,ll,kap,ee,rr,vv,uu,up,mmax,i1,i2,delta)
 
 !! the relativistic term of the all-electron radial equation at the mesh
 !! points i1..i2: Delta = u'' - [l(l+1)/r**2 + 2(V-E)] u, the difference of
@@ -38,6 +38,7 @@
 !! @param irel  0 non-relativistic (Delta = 0), 1 scalar-relativistic
 !!              (the flux form of sr_flux_m), 2 fully-relativistic (Dirac,
 !!              uu the large component)
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param ll  angular-momentum quantum number
 !! @param kap  =l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
 !! @param ee  energy of uu (Ha)
@@ -50,12 +51,12 @@
 !! @param delta  Delta at the points i1..i2, in delta(i1:i2)
 
  use constants_m, only: dp
- use relativity_m, only: c_light
  use logmesh_m, only: lm_derivs
  implicit none
 
 !Input variables
  integer, intent(in) :: irel,ll,kap,mmax,i1,i2
+ real(dp), intent(in) :: c_light
  real(dp), intent(in) :: ee
  real(dp), intent(in) :: rr(mmax),vv(mmax),uu(mmax),up(mmax)
 

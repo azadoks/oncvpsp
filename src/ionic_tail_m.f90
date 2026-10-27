@@ -52,7 +52,7 @@
 ! V_AE - V_Hxc[n_v + rhomod]: V_AE is the input potential of the last
 ! all-electron SCF step.
 
- subroutine ionic_tail(zz,zion,rhoc,rhotae,rhomod,rr,mmax,iexc,vion)
+ subroutine ionic_tail(zz,zion,rhoc,rhotae,rhomod,rr,mmax,iexc,c_light,vion)
 
 !! the frozen-core ionic potential V_ion of the all-electron atom
 !!
@@ -64,6 +64,7 @@
 !! @param rr  log radial grid
 !! @param mmax  dimension of log grid
 !! @param iexc  exchange-correlation function to be used
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param vion  V_ion
 
  use constants_m, only: dp
@@ -72,6 +73,7 @@
 
 !Input variables
  integer, intent(in) :: mmax,iexc
+ real(dp), intent(in) :: c_light
  real(dp), intent(in) :: zz,zion
  real(dp), intent(in) :: rhoc(mmax),rhotae(mmax),rhomod(mmax),rr(mmax)
 
@@ -87,12 +89,12 @@
 
 ! V_H[n_c], its charge fixed at the end of the mesh to zz-zion so that
 ! -Z/r + V_H[n_c] is -zion/r there
- call vout(0,rhoc,rhoc,vt,vxct,zz-zion,eeel,eexc,rr,mmax,iexc)
+ call vout(0,rhoc,rhoc,vt,vxct,zz-zion,eeel,eexc,rr,mmax,iexc,c_light)
  vion(:)=-zz/rr(:)+vt(:)-vxct(:)
 
- call vout(1,rhotae,rhoc,vt,vxct,zion,eeel,eexc,rr,mmax,iexc)
+ call vout(1,rhotae,rhoc,vt,vxct,zion,eeel,eexc,rr,mmax,iexc,c_light)
  vion(:)=vion(:)+vxct(:)
- call vout(1,rhotae,rhomod,vt,vxct,zion,eeel,eexc,rr,mmax,iexc)
+ call vout(1,rhotae,rhomod,vt,vxct,zion,eeel,eexc,rr,mmax,iexc,c_light)
  vion(:)=vion(:)-vxct(:)
 
  deallocate(vt,vxct)
@@ -258,11 +260,10 @@
  return
  end subroutine ionic_valence
 
- subroutine ionic_screening(nkap,nc,nv,la,fa,ea,lmax,lloc,nproj,rr,vp, &
-&                           vlocpw,vkbpw,evkb,mmax,mxprj,zz,zion,zval,iexc, &
-&                           rcmax,rhoc, &
-&                           rhotae,rhomod,rho,rhops,uupsa,eeig,vo,vxc, &
-&                           eeel,eexc,vion,iout,ifail)
+ subroutine ionic_screening(nkap,nc,nv,la,fa,ea,lmax,lloc,nproj,rr,vp,vlocpw, &
+&                           vkbpw,evkb,mmax,mxprj,zz,zion,zval,iexc,c_light, &
+&                           rcmax,rhoc,rhotae,rhomod,rho,rhops,uupsa,eeig,vo, &
+&                           vxc,eeel,eexc,vion,iout,ifail)
 
 !! switches the screened potentials vp to V_ion + V_Hxc[rho + rhomod] over
 !! the ionic window, iterating the pseudo valence states (rho, rhops,
@@ -292,6 +293,7 @@
 !! @param zion  ionic charge
 !! @param zval  valence charge
 !! @param iexc  exchange-correlation function to be used
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param rcmax  largest core radius
 !! @param rhoc  all-electron core charge
 !! @param rhotae  all-electron valence charge
@@ -316,6 +318,7 @@
 
 !Input variables
  integer, intent(in) :: nkap,nc,nv,lmax,lloc,mmax,mxprj,iexc
+ real(dp), intent(in) :: c_light
  integer, intent(in) :: la(mxstate),nproj(mxlin+1)
  real(dp), intent(in) :: fa(mxstate),ea(mxstate,mxkap)
  real(dp), intent(in) :: rr(mmax)
@@ -348,7 +351,7 @@
  ifail=0
  allocate(ww(mmax),vp0(mmax,mxl+2,nkap),vnew(mmax),vnext(mmax,nkap),vsw(mmax))
 
- call ionic_tail(zz,zion,rhoc,rhotae,rhomod,rr,mmax,iexc,vion)
+ call ionic_tail(zz,zion,rhoc,rhotae,rhomod,rr,mmax,iexc,c_light,vion)
  call ionic_window(rr,mmax,zion,vion,rcmax,tol,ra,rb)
  do ii=1,mmax
    ww(ii)=cinf_taper(rr(ii),ra,rb)
@@ -362,7 +365,7 @@
    call ionic_valence(nkap,nc,nv,la,fa,ea,lloc,nproj,rr,vp,vlocpw,vkbpw, &
 &                     evkb,mmax,mxprj,rho,rhops,uupsa,eeig,iout,ifail)
    if(ifail/=0) return
-   call vout(1,rho,rhomod,vo,vxc,zval,eeel,eexc,rr,mmax,iexc)
+   call vout(1,rho,rhomod,vo,vxc,zval,eeel,eexc,rr,mmax,iexc,c_light)
 ! change of the local potential where the valence electrons are; once it
 ! is below tolfix, vp is kept as the potential whose states rho, eeig and
 ! (through rho) vo are, so that the pseudo-atom SCF of the reference

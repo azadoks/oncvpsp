@@ -56,6 +56,8 @@
    integer :: kind=0
    integer :: irel=0,ll=0,kap=0,mmax=0,mch=0,nvkb=0,nq=0
    real(dp) :: zz=0.0d0,al=0.0d0
+!> the speed of light (irel>0)
+   real(dp) :: c_light=0.0d0
 !> the radii of the phases, and the last point of the solution each needs
 !> alone (mch is the largest)
    real(dp), allocatable :: rq(:)
@@ -93,12 +95,13 @@
  return
  end function phsft_mch
 
- subroutine phsft_ae_init(irel,ll,kap,rr,vv,zz,mmax,nq,rq,ps,iout,ifail)
+ subroutine phsft_ae_init(irel,c_light,ll,kap,rr,vv,zz,mmax,nq,rq,ps,iout,ifail)
 
 !! the all-electron solver, at the radii rq
 !!
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2
 !!              fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param ll  angular momentum
 !! @param kap  =l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
 !! @param rr  log radial mesh
@@ -113,6 +116,7 @@
 
 !Input variables
  integer, intent(in) :: irel,ll,kap,mmax,nq
+ real(dp), intent(in) :: c_light
  real(dp), intent(in) :: rr(mmax),vv(mmax),zz,rq(nq)
 
 !Output variables
@@ -123,6 +127,7 @@
  ifail=0
  ps%kind=1
  ps%irel=irel
+ ps%c_light=c_light
  ps%ll=ll
  ps%kap=kap
  ps%zz=zz
@@ -304,7 +309,7 @@
 
  end subroutine phsft_scan
 
- subroutine phsft_pair(irel,ll,kap,nvkb,rr,vfull,zz,vloc,vlocpw,vkbpw, &
+ subroutine phsft_pair(irel,c_light,ll,kap,nvkb,rr,vfull,zz,vloc,vlocpw,vkbpw, &
 &                      evkb,mmax,nq,rq,npsh,epsh2,depsh,eal,pshae,pshps, &
 &                      iout,ifail)
 
@@ -315,6 +320,7 @@
 !! the core radius
 !!
 !! @param irel  0 non-, 1 scalar-, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param ll  angular momentum
 !! @param kap  =l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
 !! @param nvkb  number of projectors
@@ -339,6 +345,7 @@
 
 !Input variables
  integer, intent(in) :: irel,ll,kap,nvkb,mmax,nq,npsh
+ real(dp), intent(in) :: c_light
  real(dp), intent(in) :: rr(mmax),vfull(mmax),zz,vloc(mmax),evkb(nvkb)
  real(dp), intent(in) :: rq(nq),epsh2,depsh,eal
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(nvkb)
@@ -354,7 +361,7 @@
  type(phsft_t), target :: ps
 
  ifail=0
- call phsft_ae_init(irel,ll,kap,rr,vfull,zz,mmax,nq,rq,ps,iout,ifail)
+ call phsft_ae_init(irel,c_light,ll,kap,rr,vfull,zz,mmax,nq,rq,ps,iout,ifail)
  if(ifail/=0) return
  call phsft_scan(ps,epsh2,depsh,npsh,eal,pshae,palae,iout,ifail)
  if(ifail/=0) return
@@ -481,8 +488,8 @@
  up(:,:)=0.0d0
  if(ps%kind==1) then
    nn=0
-   call scatterstate(ps%irel,nn,ps%ll,ps%kap,ierr,ee,ps%rr,ps%zz,ps%vv, &
-&                    uu,up,ps%mmax,mch,iout)
+   call scatterstate(ps%irel,ps%c_light,nn,ps%ll,ps%kap,ierr,ee,ps%rr,ps%zz, &
+&                    ps%vv,uu,up,ps%mmax,mch,iout)
  else
    call outwf_solve(ps%ow,ee,ps%evkb,mch,mch,uu(:,1),up(:,1), &
 &        iout=iout,ifail=ifail)
@@ -596,8 +603,8 @@
  up(:,:)=0.0d0
  if(ps%kind==1) then
    nn=0
-   call scatterstate(ps%irel,nn,ps%ll,ps%kap,ierr,ee,ps%rr,ps%zz,ps%vv, &
-&                    uu,up,ps%mmax,ps%mch,iout)
+   call scatterstate(ps%irel,ps%c_light,nn,ps%ll,ps%kap,ierr,ee,ps%rr,ps%zz, &
+&                    ps%vv,uu,up,ps%mmax,ps%mch,iout)
  else
    call outwf_solve(ps%ow,ee,ps%evkb,ps%mch,ps%mch,uu(:,1),up(:,1), &
 &        iout=iout,ifail=ifail)

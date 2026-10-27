@@ -25,7 +25,7 @@
 
  contains
 
- subroutine ldiracfs(nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch,iout)
+ subroutine ldiracfs(nn,ll,kap,c_light,ierr,ee,rr,zz,vv,uu,up,mmax,mch,iout)
 
 !! Finds relativistic scattering states of an al-electron potential
 !!
@@ -33,6 +33,7 @@
 !!            (output)
 !! @param ll  angular-momentum quantum number
 !! @param kap  =l, -(l+1) for j=l -/+ 1/2
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param ierr  non-zero return if error
 !! @param ee  bound-state energy, input guess and output calculated value
 !! @param rr  log radial mesh
@@ -46,7 +47,6 @@
 !! @param iout  unit of the text output
 
  use constants_m, only: dp
- use relativity_m, only: c_light
  use dirac_m, only: dirac_outward
  use quad_m, only: log_norm
  implicit none
@@ -55,6 +55,7 @@
  real(dp), intent(in) :: rr(mmax),vv(mmax)
  real(dp), intent(in) :: zz
  integer, intent(in) :: ll,kap,mmax
+ real(dp), intent(in) :: c_light
  real(dp), intent(in) :: ee
  integer, intent(in) :: mch
 
@@ -108,7 +109,7 @@
  cof=(kap+gam)*(cc/zz)
 
 ! outward from the series at the origin (dirac_m)
- call dirac_outward(ll,kap,ee,zz,al,rr,vv,mmax,mch,gu,fu,gup,fup,node)
+ call dirac_outward(ll,kap,c_light,ee,zz,al,rr,vv,mmax,mch,gu,fu,gup,fup,node)
 
  uout=gu(mch)
  upout=gup(mch)

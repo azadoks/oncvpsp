@@ -30,7 +30,7 @@
 ! term to add to eigenvalue sum
 
  subroutine vout(mode,rho,rhoc,vo,vxc,zion,eeel,eexc, &
-&                rr,mmax,iexc)
+&                rr,mmax,iexc,c_light)
 
 !! @param mode  1=> add rhoc to rho, 0 => don't
 !! @param rho  total charge density or valence/pseudovalence charge density
@@ -44,6 +44,7 @@
 !! @param rr  log radial mesh
 !! @param mmax  dimension of log radial grid
 !! @param iexc  exchange-correlation functional (1-4, 6, 7 built in, <0 libxc)
+!! @param c_light  speed of light (Hartree atomic units)
 
  use constants_m, only: dp, pi
  use logmesh_m, only: lm_head
@@ -52,6 +53,7 @@
 
 !Input variables
  integer, intent(in) :: iexc,mmax,mode
+ real(dp), intent(in) :: c_light
  real(dp), intent(in) :: rho(mmax),rhoc(mmax),rr(mmax)
  real(dp), intent(in) :: zion
 
@@ -134,7 +136,7 @@
 
 ! exchange-correlation potential added
 
- call exc_dispatch(iexc,al,rhot,vxc,exca,rr,mmax,'vout')
+ call exc_dispatch(iexc,c_light,al,rhot,vxc,exca,rr,mmax,'vout')
 
  do ii = 1, mmax
    difxc(ii)=exca(ii) - vxc(ii)
@@ -153,7 +155,7 @@
  end do
 
  if(mode == 1 .and. rhoc(1) /= 0.0d0) then
-   call exc_dispatch(iexc,al,rhoc,vxcd,excca,rr,mmax,'vout')
+   call exc_dispatch(iexc,c_light,al,rhoc,vxcd,excca,rr,mmax,'vout')
 
    do ii=1,mmax
      foutfc(ii)=rhoc(ii)*(exca(ii) - excca(ii))*rr(ii)**3

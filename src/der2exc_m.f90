@@ -30,7 +30,7 @@
 ! differ from the all-electron wave functions
 !
  subroutine der2exc(rhotot,rhoc,rho,rr,d2exc,d2ref,d2mdiff, &
-&                   zion,iexc,nc,nv,la,rcut,mmax)
+&                   zion,iexc,c_light,nc,nv,la,rcut,mmax)
 
 !! @param rhotot  total valence charge, all-electron of pseudo
 !! @param rhoc  core charge, all-electron or model
@@ -41,6 +41,7 @@
 !! @param d2mdiff  root-mean-squared differrenc between d2exc and d2ref
 !! @param zion  ion potential
 !! @param iexc  exchange-correlation type
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param nc  number of core states
 !! @param nv  number of valence states
 !! @param la  array of l values for all-electron atom
@@ -59,6 +60,7 @@
  real(dp), intent(in) :: zion,rcut
  integer, intent(in) :: la(nv+nc)
  integer, intent(in) :: iexc,nc,nv,mmax
+ real(dp), intent(in) :: c_light
 
 !Output variables
  real(dp), intent(out) :: d2exc(nv,nv)
@@ -77,19 +79,19 @@
    dvxc(:,kk)=0.0d0
 
    rhot(:)=rhotot(:)-2.d0*hh*rho(:,kk)
-   call vout(1,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,iexc)
+   call vout(1,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,iexc,c_light)
    dvxc(:,kk)=dvxc(:,kk)+( 2.0d0/(24.0d0*hh))*vxct(:)
 
    rhot(:)=rhotot(:)     -hh*rho(:,kk)
-   call vout(1,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,iexc)
+   call vout(1,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,iexc,c_light)
    dvxc(:,kk)=dvxc(:,kk)+(-16.0d0/(24.0d0*hh))*vxct(:)
 
    rhot(:)=rhotot(:)     +hh*rho(:,kk)
-   call vout(1,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,iexc)
+   call vout(1,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,iexc,c_light)
    dvxc(:,kk)=dvxc(:,kk)+( 16.0d0/(24.0d0*hh))*vxct(:)
 
    rhot(:)=rhotot(:)+2.d0*hh*rho(:,kk)
-   call vout(1,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,iexc)
+   call vout(1,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,iexc,c_light)
    dvxc(:,kk)=dvxc(:,kk)+(-2.0d0/(24.0d0*hh))*vxct(:)
 
  end do !kk

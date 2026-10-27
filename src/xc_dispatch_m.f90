@@ -27,12 +27,13 @@
 
  contains
 
- subroutine exc_dispatch(iexc,al,rho,vxc,exc,rr,nn,who)
+ subroutine exc_dispatch(iexc,c_light,al,rho,vxc,exc,rr,nn,who)
 
 !! the xc potential and energy per electron of rho on the log mesh rr
 !!
 !! @param iexc  exchange-correlation functional (1-4, 6, 7 built in, <0
 !!              libxc)
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param al  log of the mesh's step
 !! @param rho  charge density on rr
 !! @param vxc  exchange-correlation potential (output)
@@ -50,6 +51,7 @@
  use excvwn_m, only: excvwn
  use excwig_m, only: excwig
  integer, intent(in) :: iexc,nn
+ real(dp), intent(in) :: c_light
  real(dp), intent(in) :: al,rho(nn),rr(nn)
  character(len=*), intent(in) :: who
 
@@ -66,7 +68,7 @@
    call excggc(rho,vxc,exc,rr,nn)
  else if(iexc == 6 .or. iexc == 7) then
    call excvwn(rho,vxc,exc,nn)
-   if(iexc == 7) call exc_relx(rho,vxc,exc,nn)
+   if(iexc == 7) call exc_relx(rho,vxc,exc,nn,c_light)
  else if(iexc < 0) then
    call exc_libxc(iexc,al,rho,vxc,exc,rr,nn)
  else

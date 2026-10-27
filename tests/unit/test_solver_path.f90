@@ -20,6 +20,7 @@
  use lschpsbar_m, only: lschpsbar
  use lschvkbb_m, only: lschvkbb
  use lschvkbbe_m, only: lschvkbbe
+ use relativity_m, only: c_light => c_light_default
  implicit none
  integer, parameter :: iout=6
 
@@ -55,7 +56,7 @@
      do ii = 1, 2
        ee(ii) = guess(-0.5_dp/nn**2, ii)
        call lschfb(nn, ll, ierr(ii), ee(ii), rr, vv, uu(:, ii), up(:, ii), &
-&                  1.0_dp, mmax, mch(ii), ip, iout, ifail)
+&                  1.0_dp, mmax, mch(ii), ip,c_light, iout, ifail)
        if(ifail /= 0) error stop 1
      end do
      write(name, '(a,i0,a,i0,a,i0)') 'lschfb irel ', ip, ' n ', nn, ' l ', ll
@@ -70,7 +71,7 @@
    nn = ll + 1
    do ii = 1, 2
      ee(ii) = guess(-0.5_dp/nn**2, ii)
-     call ldiracfb(nn, ll, kap, ierr(ii), ee(ii), rr, 1.0_dp, vv, &
+     call ldiracfb(nn, ll, kap,c_light, ierr(ii), ee(ii), rr, 1.0_dp, vv, &
 &                  ud(:, :, ii), udp(:, :, ii), mmax, mch(ii), iout, ifail)
      if(ifail /= 0) error stop 1
      uu(:, ii) = ud(:, 1, ii)

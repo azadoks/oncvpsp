@@ -25,7 +25,7 @@
 
  contains
 
- subroutine renorm_r(uu,rr,ll,kap,zz,mmax,cnorm,iout,ifail)
+ subroutine renorm_r(uu,rr,ll,kap,c_light,zz,mmax,cnorm,iout,ifail)
 
 !! renormalize Dirac wave function so that large component is normalized
 !!
@@ -33,6 +33,7 @@
 !! @param rr  log radial grid
 !! @param ll  angular momentum
 !! @param kap  Dirac kappa
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param zz  atomic number
 !! @param mmax  size of radial grid
 !! @param cnorm  renormalization coefficient
@@ -40,7 +41,6 @@
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
- use relativity_m, only: c_light
  use quad_m, only: log_norm
  implicit none
 
@@ -48,6 +48,7 @@
  real(dp), intent(in) :: rr(mmax)
  real(dp), intent(in) :: zz
  integer, intent(in) :: ll,kap,mmax
+ real(dp), intent(in) :: c_light
 
 !Input/output variables
  real(dp), intent(inout) :: uu(mmax,2)

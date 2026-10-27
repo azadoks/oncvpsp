@@ -100,6 +100,7 @@
  type :: budget_t
 !> the inputs (modcore_budget)
    integer :: mmax,iexc,nprobe
+   real(dp) :: c_light
    integer, allocatable :: lprobe(:)
    real(dp), allocatable :: rr(:),rhoc(:),rhotps(:),probes(:,:)
    real(dp) :: errmax,zion
@@ -213,9 +214,8 @@
 ! fit, as the needed cutoff falls as the model softens.
 
  subroutine modcore_budget(icmod,rhotps,rhoc,rhomod,corepw,fcfact,ecutw, &
-&                          weighted,errmax,slack,rcmin,mmax,rr,iexc,zion, &
-&                          probes, &
-&                          lprobe,nprobe,iout,ifail)
+&                          weighted,errmax,slack,rcmin,mmax,rr,iexc,c_light, &
+&                          zion,probes,lprobe,nprobe,iout,ifail)
 
 !! @param icmod  6 for the smallest radius, 7 for the hardness-matched one
 !! @param rhotps  total pseudocharge density
@@ -235,6 +235,7 @@
 !! @param mmax  dimension of log grid
 !! @param rr  log radial grid
 !! @param iexc  exchange-correlation function to be used
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param zion  ion charge (for der2exc)
 !! @param probes  probe densities of the hardness (icmod=7), one electron each
 !! @param lprobe  angular momenta of the probes
@@ -244,6 +245,7 @@
 
 !Input variables
  integer, intent(in) :: icmod,mmax,iexc,nprobe
+ real(dp), intent(in) :: c_light
  integer, intent(in) :: lprobe(nprobe)
  real(dp), intent(in) :: rhotps(mmax),rhoc(mmax),rr(mmax)
  real(dp), intent(in) :: probes(mmax,nprobe)
@@ -261,7 +263,7 @@
 
  ifail=0
  call budget_init(bc,rhotps,rhoc,fcfact,ecutw,errmax,slack,rcmin,mmax,rr, &
-&                 iexc,zion,probes,lprobe,nprobe,iout,ifail)
+&                 iexc,c_light,zion,probes,lprobe,nprobe,iout,ifail)
  if(ifail/=0) return
  call budget_tables(bc,iout,ifail)
  if(ifail/=0) return
@@ -305,7 +307,8 @@
  end subroutine modcore_budget
 
  subroutine budget_init(bc,rhotps,rhoc,fcfact,ecutw,errmax,slack,rcmin, &
-&                       mmax,rr,iexc,zion,probes,lprobe,nprobe,iout,ifail)
+&                       mmax,rr,iexc,c_light,zion,probes,lprobe,nprobe,iout, &
+&                       ifail)
 
 !! the cutoffs of the budget, the q grid of the band-limited
 !! transforms, and the largest and smallest radii r_s; the
@@ -319,6 +322,7 @@
 !Input variables
  integer, intent(in) :: mmax,iexc,nprobe
  integer, intent(in) :: lprobe(nprobe)
+ real(dp), intent(in) :: c_light
  real(dp), intent(in) :: rhotps(mmax),rhoc(mmax),rr(mmax)
  real(dp), intent(in) :: probes(mmax,nprobe)
  real(dp), intent(in) :: fcfact,ecutw,errmax,slack,zion,rcmin
@@ -336,6 +340,7 @@
  ifail=0
  bc%mmax=mmax
  bc%iexc=iexc
+ bc%c_light=c_light
  bc%nprobe=nprobe
  bc%rr=rr
  bc%rhoc=rhoc
@@ -557,13 +562,13 @@
 
 ! the xc energy density of the valence charge on the core charge
  bc%work(:)=bc%nval(:) + bc%rhoc(1:bc%nx)
- call exc_dispatch(bc%iexc,bc%al,bc%work,bc%vxc,bc%eps,bc%rr,bc%nx, &
+ call exc_dispatch(bc%iexc,bc%c_light,bc%al,bc%work,bc%vxc,bc%eps,bc%rr,bc%nx, &
 &                  'modcore_budget')
  bc%wc(:)=bc%work(:)*bc%eps(:)
 
 ! xc potential of the background alone
  bc%work(:)=pi4*background
- call exc_dispatch(bc%iexc,bc%al,bc%work,bc%vxc,bc%eps,bc%rr,bc%nx, &
+ call exc_dispatch(bc%iexc,bc%c_light,bc%al,bc%work,bc%vxc,bc%eps,bc%rr,bc%nx, &
 &                  'modcore_budget')
  bc%vbg=bc%vxc(bc%nx/2)
 
@@ -644,7 +649,8 @@
 &         bc%d2zero(bc%nprobe,bc%nprobe))
  bc%d2zero(:,:)=0.0d0
  call der2exc(bc%rhotps,bc%rhoc,bc%probes,bc%rr,bc%d2ae,bc%d2zero,bc%mismatch, &
-&               bc%zion,bc%iexc,0,bc%nprobe,bc%lprobe,bc%rr(bc%mmax),bc%mmax)
+&               bc%zion,bc%iexc,bc%c_light,0,bc%nprobe,bc%lprobe, &
+&               bc%rr(bc%mmax),bc%mmax)
  ib=0
  do ii=1,bc%ncand
    bc%cmis(ii)=mismatch_at(bc,log(bc%crad(ii)))
@@ -966,14 +972,14 @@
 !Local variables
  real(dp) :: mm
  associate(core=>bc%core,d2ae=>bc%d2ae,d2mod=>bc%d2mod,iexc=>bc%iexc, &
-&          ifill=>bc%fill%ifill,lprobe=>bc%lprobe,mmax=>bc%mmax, &
-&          nprobe=>bc%nprobe,probes=>bc%probes,rhotps=>bc%rhotps,rr=>bc%rr, &
-&          zion=>bc%zion)
+&          c_light=>bc%c_light,ifill=>bc%fill%ifill,lprobe=>bc%lprobe, &
+&          mmax=>bc%mmax,nprobe=>bc%nprobe,probes=>bc%probes, &
+&          rhotps=>bc%rhotps,rr=>bc%rr,zion=>bc%zion)
    call set_model(bc,exp(uu))
    mismatch_at=huge(1.0d0)
    if(ifill==0) return
    call der2exc(rhotps,core,probes,rr,d2mod,d2ae,mm, &
-&               zion,iexc,0,nprobe,lprobe,rr(mmax),mmax)
+&               zion,iexc,c_light,0,nprobe,lprobe,rr(mmax),mmax)
    mismatch_at=mm
  end associate
  return
@@ -1107,13 +1113,13 @@
  associate(aco=>bc%fill%aco,al=>bc%al,bco=>bc%fill%bco,cco=>bc%fill%cco, &
 &          chr=>bc%chr,core=>bc%core,cr0=>bc%cr0,dq=>bc%dq,epi=>bc%epi, &
 &          fext=>bc%fext,fw=>bc%fw,fx=>bc%fx,i0=>bc%i0,iexc=>bc%iexc, &
-&          ifill=>bc%fill%ifill,irmx=>bc%irmx,irow=>bc%irow,js=>bc%js, &
-&          kin=>bc%kin,mmax=>bc%mmax,msnap=>bc%msnap,ni=>bc%ni, &
-&          npdone=>bc%npdone,nt=>bc%nt,nvi=>bc%nvi,nx=>bc%nx,pg=>bc%pg, &
-&          pt=>bc%pt,rhoc=>bc%rhoc,rhotps=>bc%rhotps,ri=>bc%ri,rr=>bc%rr, &
-&          rs=>bc%fill%rs,shr=>bc%shr,sr0=>bc%sr0,tgi=>bc%tgi,tk=>bc%tk, &
-&          vxi=>bc%vxi,wf=>bc%wf,wgi=>bc%wgi,wki=>bc%wki,wxg=>bc%wxg, &
-&          xg=>bc%xg,xr=>bc%xr)
+&          c_light=>bc%c_light,ifill=>bc%fill%ifill,irmx=>bc%irmx, &
+&          irow=>bc%irow,js=>bc%js,kin=>bc%kin,mmax=>bc%mmax,msnap=>bc%msnap, &
+&          ni=>bc%ni,npdone=>bc%npdone,nt=>bc%nt,nvi=>bc%nvi,nx=>bc%nx, &
+&          pg=>bc%pg,pt=>bc%pt,rhoc=>bc%rhoc,rhotps=>bc%rhotps,ri=>bc%ri, &
+&          rr=>bc%rr,rs=>bc%fill%rs,shr=>bc%shr,sr0=>bc%sr0,tgi=>bc%tgi, &
+&          tk=>bc%tk,vxi=>bc%vxi,wf=>bc%wf,wgi=>bc%wgi,wki=>bc%wki, &
+&          wxg=>bc%wxg,xg=>bc%xg,xr=>bc%xr)
 
    rs=rad
    npdone=0
@@ -1187,7 +1193,7 @@
      cr0(nx+1:nt,kk)=cos(tk(kk)*dq*ri(:))
    end do
    wki(:)=nvi(:) + fext(:)
-   call exc_dispatch(iexc,al,wki,vxi,epi,ri,ni,'modcore_budget')
+   call exc_dispatch(iexc,c_light,al,wki,vxi,epi,ri,ni,'modcore_budget')
    wf(:)=wki(:)*epi(:)
  end associate
  return
@@ -1973,16 +1979,17 @@
 !Local variables
  real(dp) :: si,so1
  associate(ac=>bc%ac,af=>bc%af,al=>bc%al,epi=>bc%epi,eps=>bc%eps, &
-&          fext=>bc%fext,iexc=>bc%iexc,ni=>bc%ni,nt=>bc%nt,nval=>bc%nval, &
-&          nvi=>bc%nvi,nx=>bc%nx,rhoc=>bc%rhoc,ri=>bc%ri,rr=>bc%rr, &
-&          rs=>bc%fill%rs,swin=>bc%swin,vbg=>bc%vbg,vxc=>bc%vxc,vxi=>bc%vxi, &
-&          wc=>bc%wc,wf=>bc%wf,wki=>bc%wki,work=>bc%work)
+&          fext=>bc%fext,iexc=>bc%iexc,c_light=>bc%c_light,ni=>bc%ni, &
+&          nt=>bc%nt,nval=>bc%nval,nvi=>bc%nvi,nx=>bc%nx,rhoc=>bc%rhoc, &
+&          ri=>bc%ri,rr=>bc%rr,rs=>bc%fill%rs,swin=>bc%swin,vbg=>bc%vbg, &
+&          vxc=>bc%vxc,vxi=>bc%vxi,wc=>bc%wc,wf=>bc%wf,wki=>bc%wki, &
+&          work=>bc%work)
    work(:)=nval(:) + bq(1:nx)
-   call exc_dispatch(iexc,al,work,vxc,eps,rr,nx,'modcore_budget')
+   call exc_dispatch(iexc,c_light,al,work,vxc,eps,rr,nx,'modcore_budget')
    work(:)=work(:)*eps(:)
    ac(:)=swin(:)*rr(1:nx)**2*(work(:) - wc(:) - vbg*(bq(1:nx) - rhoc(1:nx)))
    wki(:)=nvi(:) + bq(nx+1:nt)
-   call exc_dispatch(iexc,al,wki,vxi,epi,ri,ni,'modcore_budget')
+   call exc_dispatch(iexc,c_light,al,wki,vxi,epi,ri,ni,'modcore_budget')
    wki(:)=wki(:)*epi(:)
    af(:)=ri(:)**2*(wki(:) - wf(:) - vbg*(bq(nx+1:nt) - fext(:)))
    call lm_integral(ri,af,ni,2,0.0d0,rs,si)

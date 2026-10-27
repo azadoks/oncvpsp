@@ -39,14 +39,15 @@
 
  contains
 
- subroutine dirac_outward(ll,kap,ee,zz,al,rr,vv,mmax,mlast,gu,fu,gup,fup, &
-&                         nnode)
+ subroutine dirac_outward(ll,kap,c_light,ee,zz,al,rr,vv,mmax,mlast,gu,fu,gup, &
+&                         fup,nnode)
 
 !! outward integration from the series at the origin to mlast at the
 !! energy ee, counting the nodes of the large component from the 5th point
 !!
 !! @param ll  angular-momentum quantum number
 !! @param kap  =l, -(l+1) for j=l -/+ 1/2
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param ee  energy
 !! @param zz  atomic number
 !! @param al  log of the mesh ratio
@@ -60,10 +61,10 @@
 !! @param fup  d(fu)/dn on 1..mlast
 !! @param nnode  number of nodes of gu between the 5th point and mlast
 
- use relativity_m, only: c_light
 
 !Input variables
  integer, intent(in) :: ll,kap,mmax,mlast
+ real(dp), intent(in) :: c_light
  real(dp), intent(in) :: ee,zz,al
  real(dp), intent(in) :: rr(mmax),vv(mmax)
 

@@ -20,6 +20,7 @@
  use lschfb_m, only: lschfb
  use lschvkbb_m, only: lschvkbb
  use lapack_m, only: dgels
+ use relativity_m, only: c_light => c_light_default
  implicit none
  integer, parameter :: iout=6
 
@@ -59,11 +60,11 @@
        select case(isolv)
        case(1, 2)
          call lschfb(nn, ll, ierr, ee, rr, vv, uu(:, 1), up(:, 1), zz, &
-&                    mmax, mch, isolv - 1, iout, ifail)
+&                    mmax, mch, isolv - 1,c_light, iout, ifail)
          if(ifail /= 0) error stop 1
        case(3)
-         call ldiracfb(nn, ll, -(ll + 1), ierr, ee, rr, zz, vv, uu, up, &
-&                      mmax, mch, iout, ifail)
+         call ldiracfb(nn, ll, -(ll + 1),c_light, ierr, ee, rr, zz, vv, uu, &
+&                      up,mmax, mch, iout, ifail)
          if(ifail /= 0) error stop 1
        case(4)
          emin = -zz**2

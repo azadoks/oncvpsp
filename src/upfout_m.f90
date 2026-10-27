@@ -30,12 +30,13 @@
 ! fully relativistic, or takes them at every istr-th point of the log mesh
 ! (upf_mesh > 0), as generated, with nothing interpolated
 
- subroutine upfout(inp,vkbpw,evkb,rr,vpuns,vlocpw,rho,corepw,zion,mmax,mxprj, &
-&                  nrlin,epstot,rc0,fcfact,fcgrid,rcgrid,uupsa,ea,log_mesh, &
-&                  nkap,iout,ifail)
+ subroutine upfout(inp,c_light,vkbpw,evkb,rr,vpuns,vlocpw,rho,corepw,zion, &
+&                  mmax,mxprj,nrlin,epstot,rc0,fcfact,fcgrid,rcgrid,uupsa,ea, &
+&                  log_mesh,nkap,iout,ifail)
 
 
 !! @param inp  the input values (input_m)
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param vkbpw  VKB projectors' pieces, last index 1 for j=l+1/2, 2 for
 !!               j=l-1/2 when nkap=2
 !! @param evkb  coefficients of VKB projectors, last index as for vkbpw
@@ -78,6 +79,7 @@
 
 !Input variables
  type(input_t), intent(in) :: inp
+ real(dp), intent(in) :: c_light
  integer, intent(in) :: mmax,mxprj,nrlin,nkap
  real(dp), intent(in) :: fcfact,zion,epstot
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
@@ -326,7 +328,7 @@
 
 ! output printing (echos input data)
 
- call write_input_echo(nkap,2,inp%atsym,inp%zz,inp%nc,inp%nv,inp%iexc, &
+ call write_input_echo(nkap,2,inp%atsym,inp%zz,inp%nc,inp%nv,inp%iexc,c_light, &
 &                      inp%psfile, &
 &                       inp%na,inp%la,inp%fa,inp%lmax,rc0,inp%ep(:,1), &
 &                       inp%ncon,inp%nbas,inp%qcut,inp%ep_as_given, &

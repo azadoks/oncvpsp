@@ -25,7 +25,7 @@
 
  contains
 
- subroutine lschfs(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,irel)
+ subroutine lschfs(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,irel,c_light)
 
 !! integrates radial Pauli-type scalar-relativistic equation
 !! on a logarithmic mesh
@@ -48,9 +48,9 @@
 !! @param mmax  size of log grid
 !! @param mch  matching mesh point for inward-outward integrations
 !! @param irel  0 non-relativistic, 1 scalar-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
 
  use constants_m, only: dp
- use relativity_m, only: c_light
  use sr_flux_m, only: sr_gamma, sr_flux_coefs, sr_outward
  use quad_m, only: log_norm
  implicit none
@@ -61,6 +61,7 @@
  real(dp), intent(in) :: zz
  integer, intent(in) :: ll,mch
  integer, intent(in) :: irel
+ real(dp), intent(in) :: c_light
  real(dp), intent(in) :: ee
 
 !Output variables

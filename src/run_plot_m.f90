@@ -25,9 +25,9 @@
 
  contains
 
- subroutine run_plot(lmax,npa,epa,wellprj,lloc,irc, &
-&                    vkb,vlocpw,vkbpw,evkb,nproj,rr,vfull,vp,vpuns,zz,mmax, &
-&                    mxprj,drl,nrl,rho,rhoc,rhomod,irel,nkap,cvgplt,iout,ifail)
+ subroutine run_plot(lmax,npa,epa,wellprj,lloc,irc,vkb,vlocpw,vkbpw,evkb, &
+&                    nproj,rr,vfull,vp,vpuns,zz,mmax,mxprj,drl,nrl,rho,rhoc, &
+&                    rhomod,irel,c_light,nkap,cvgplt,iout,ifail)
 
 !! write output for plotting pseudopotentials, model core charge, and
 !! all-electron and pseudo wave functions
@@ -59,6 +59,7 @@
 !! @param rhoc  all-electron core charge
 !! @param rhomod  model core charge
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param nkap  number of kappa per l: 1, or 2 for irel=2
 !! @param cvgplt  energy per electron error vs. cutoff (convergence profiles)
 !! @param iout  unit of the text output
@@ -76,6 +77,7 @@
 
 !Input variables
  integer, intent(in) :: lmax,lloc,mmax,mxprj,nrl,irel,nkap
+ real(dp), intent(in) :: c_light
  integer, intent(in) :: npa(mxprj,mxlin+1),irc(mxlin+1),nproj(mxlin+1)
  real(dp), intent(in) :: zz,drl
  real(dp), intent(in) :: rr(mmax),vp(mmax,mxl+2,nkap),vpuns(mmax,mxl+2)
@@ -244,7 +246,7 @@
      end if
 
      etest=epa(iprj,l1,ikap)
-     call boundstate(irel,npa(iprj,l1),ll,kap,ierr,etest, &
+     call boundstate(irel,c_light,npa(iprj,l1),ll,kap,ierr,etest, &
 &                    rr,zz,vfull,ur,urp,mmax,mch,iout,ifail)
      if(ifail/=0) return
      if(ierr /= 0 .and. irel==2) then
@@ -261,7 +263,7 @@
        return
      end if
      if(irel==2) then
-       call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm,iout,ifail)
+       call renorm_r(ur,rr,ll,kap,c_light,zz,mmax,cnorm,iout,ifail)
        if(ifail/=0) return
      end if
 
@@ -283,7 +285,7 @@
        write(iout,'(//a,i2,a,i2,a,a/)') 'scattering, iprj=',iprj, &
 &           ',  l=',ll,', all-electron wave function', ', pseudo w-f'
      end if
-     call scatterstate(irel,nn,ll,kap,ierr,epa(iprj,l1,ikap), &
+     call scatterstate(irel,c_light,nn,ll,kap,ierr,epa(iprj,l1,ikap), &
 &                   rr,zz,vfull,ur,urp,mmax,n2,iout)
      if(irel==2) then
        if(ierr/=0) then
@@ -293,7 +295,7 @@
          ifail=1
          return
        end if
-       call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm,iout,ifail)
+       call renorm_r(ur,rr,ll,kap,c_light,zz,mmax,cnorm,iout,ifail)
        if(ifail/=0) return
      end if
 

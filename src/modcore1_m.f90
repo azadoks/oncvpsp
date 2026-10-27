@@ -39,7 +39,7 @@
 
  subroutine modcore(icmod,rhops,rhotps,rhoc,rhoae,rhotae,rhomod, &
 &                   corepw,fcfact,rcfact,rcmax,mmax,rr,nc,nv,la,zion, &
-&                   iexc,iout,ifail)
+&                   iexc,c_light,iout,ifail)
 
 !! @param icmod  (not used)
 !! @param rhops  state-by-state pseudocharge density
@@ -60,6 +60,7 @@
 !! @param la  angular-momenta
 !! @param zion  ion charge
 !! @param iexc  exchange-correlation function to be used
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
@@ -73,6 +74,7 @@
 
 !Input variables
  integer, intent(in) :: icmod,nv,nc,iexc,mmax
+ real(dp), intent(in) :: c_light
  integer, intent(in) :: la(mxstate)
  real(dp), intent(in) :: rhoae(mmax,nv),rhops(mmax,nv),rhotae(mmax)
  real(dp), intent(in) :: rhotps(mmax),rhoc(mmax),rr(mmax)
@@ -107,8 +109,8 @@
 !set limit for d2Exc calculation to radius beyond which rhomod=rhoc
  rcut=max(rcmax,rstar)
 
- call d2exc_baseline(rhotae,rhoc,rhoae,rhotps,rhops,rr,zion,iexc,nc,nv, &
-&                    la,rcut,mmax,rhomod,d2excae,d2excps,d2mdiff,iout)
+ call d2exc_baseline(rhotae,rhoc,rhoae,rhotps,rhops,rr,zion,iexc,c_light,nc, &
+&                    nv,la,rcut,mmax,rhomod,d2excae,d2excps,d2mdiff,iout)
 
 ! core charge and its derivatives at r*, and the barely monotonic
 ! polynomial that matches them
@@ -124,7 +126,7 @@
 
 !test model
  call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
-&                   zion,iexc,nc,nv,la,rcut,mmax)
+&                   zion,iexc,c_light,nc,nv,la,rcut,mmax)
 
  write(iout,'(/a/)') 'Polynomial model core charge'
  write(iout,'(a,f12.6)') '  model radius r*',rstar
