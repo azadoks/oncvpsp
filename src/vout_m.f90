@@ -19,6 +19,7 @@
 
  module vout_m
 
+ use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
  public :: vout
@@ -127,7 +128,7 @@
      rhot(ii) = rho(ii) + rhoc(ii)
    end do
  else
-   write(6,'(/a,i4)') 'vout: ERROR bad input mode =',mode
+   write(error_unit,'(/a,i4)') 'vout: ERROR bad input mode =',mode
    error stop 1
  end if
 

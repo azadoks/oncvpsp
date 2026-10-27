@@ -43,6 +43,7 @@
  use logmesh_m, only: lm_integral_weights, lm_fh_weights, lm_fh_reach
  use ugrid_m, only: ug_interp, ug_cumint_down
  use pieces_m, only: piecewise_t, pw_maxseg, pw_segment, pw_node_values
+ use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
  public :: outwf_t, og_ext, outwf_setup, outwf_integrate, outwf_overlap
@@ -216,7 +217,8 @@
      if(srcpw(jj)%nseg/=srcpw(1)%nseg .or. &
 &       any(srcpw(jj)%bound(0:srcpw(1)%nseg) &
 &           /=srcpw(1)%bound(0:srcpw(1)%nseg))) then
-       write(6,'(a)') 'outwf_setup: ERROR the sources'' segments differ'
+       write(error_unit,'(a)') &
+&           'outwf_setup: ERROR the sources'' segments differ'
        error stop 1
      end if
    end do

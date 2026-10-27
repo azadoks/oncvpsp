@@ -29,6 +29,7 @@
 &                       ws_grid_init, ws_grid_t
  use ugrid_m, only: ug_brent
  use confine_summary_m, only: confine_summary_t
+ use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
  public :: confine_sphere
@@ -430,7 +431,7 @@
  real(dp), intent(in) :: ee
  integer, intent(in) :: kk,jed
  if(ed%n==mxedge) then
-   write(6,'(a)') 'oncvpsp_confine: ERROR too many edges in the scan'
+   write(error_unit,'(a)') 'oncvpsp_confine: ERROR too many edges in the scan'
    error stop 1
  end if
  ed%n=ed%n+1

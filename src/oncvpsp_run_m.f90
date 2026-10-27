@@ -55,7 +55,7 @@
 &                       ae_cache_t
  use ae_file_m, only: write_ae_file, read_ae_file
  use ps_file_m, only: write_ps_file
- use exc_libxc_m, only: exc_libxc
+ use exc_libxc_m, only: exc_libxc_info
  use vout_m, only: vout
  use sr_so_r_m, only: sr_so_r
  use ionic_tail_m, only: coulomb_tail, ionic_screening
@@ -312,19 +312,13 @@
 !
 ! full potential atom solution
 !
+ if(inp%iexc<0) call exc_libxc_info(inp%iexc,iout)
  if(istage==2) then
    call read_ae_file(ae_filename,irel,nkap,inp%atsym,inp%zz,inp%nc,inp%nv, &
 &                    inp%iexc,inp%na,inp%la,inp%fa, &
 &                    mmax,rr,inp%ncnf,inp%cnf, &
 &                    it,etot,eterm,res,ea,rhoc,rho,vfull,aec,iout,ifail)
    if(ifail/=0) return
-!aeatom prints the libxc functional description on its first exc_libxc call
-   if(inp%iexc<0) then
-     block
-       real(dp) :: vxct(mmax),exct(mmax)
-       call exc_libxc(inp%iexc,al,rho,vxct,exct,rr,mmax)
-     end block
-   end if
  else
    ierr=0
    call aeatom_cached(cache,irel,nkap,inp%na,inp%la,ea,inp%fa,rpk,inp%nc, &

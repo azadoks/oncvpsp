@@ -25,6 +25,7 @@
 
  module sbf_q_m
  use, intrinsic :: iso_fortran_env, only: qp => real128
+ use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
  public :: sbfq_values, sbfq_value_slope, sbfq_overlap, sbfq_overlap_vs
@@ -292,7 +293,8 @@
  integer :: ii,ll
 
  if(llin>4) then
-   write(6,'(a,i4,a)') 'sbfq_rc_der: argument ERROR, llin = ',llin,' >4'
+   write(error_unit,'(a,i4,a)') &
+&       'sbfq_rc_der: argument ERROR, llin = ',llin,' >4'
    error stop 1
  end if
 

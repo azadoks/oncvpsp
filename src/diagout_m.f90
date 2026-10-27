@@ -18,6 +18,7 @@
 
  module diagout_m
 
+ use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
  public :: diagout
@@ -448,7 +449,8 @@
  ra=max(rcmax,rr(kk-1))
  call lm_root(rr,gg,mmax,ra,rr(kk),fall_to,ierr)
  if(ierr/=0) then
-   write(6,'(a)') 'diagout: ERROR the core charge''s bracket lost its sign'
+   write(error_unit,'(a)') &
+&       'diagout: ERROR the core charge''s bracket lost its sign'
    error stop 1
  end if
  deallocate(gg)

@@ -30,6 +30,7 @@
  module pieces_m
  use constants_m, only: dp
  use logmesh_m, only: lm_integral, lm_interp
+ use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
  public :: piecewise_t, pw_maxseg, pw_reach, pw_alloc, pw_free
@@ -76,12 +77,13 @@
  integer :: kk
 
  if(nseg<1 .or. nseg>pw_maxseg) then
-   write(6,'(a,i0)') 'pw_alloc: ERROR number of segments ',nseg
+   write(error_unit,'(a,i0)') 'pw_alloc: ERROR number of segments ',nseg
    error stop 1
  end if
  do kk=1,nseg
    if(bound(kk)<bound(kk-1)) then
-     write(6,'(a,i0)') 'pw_alloc: ERROR bounds out of order at segment ',kk
+     write(error_unit,'(a,i0)') &
+&         'pw_alloc: ERROR bounds out of order at segment ',kk
      error stop 1
    end if
  end do
@@ -163,7 +165,7 @@
 
  if(pwa%nseg/=pwb%nseg .or. any(pwa%bound(0:pwa%nseg)/=pwb%bound(0:pwa%nseg))) &
 &  then
-   write(6,'(a)') 'pw_product_integral: ERROR the segments differ'
+   write(error_unit,'(a)') 'pw_product_integral: ERROR the segments differ'
    error stop 1
  end if
  ss=0.0d0

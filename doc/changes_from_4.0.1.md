@@ -574,6 +574,11 @@ precision.
   5469c9f, 6278f71, 8d7fc0a.
 - **DIAGNOSTICS block**: tagged values at 17 digits, for scripts and the
   smoothness scans. Commit: e188eee.
+- **The libxc description** (`LXC` lines) is written once per run,
+  before the all-electron atom, to the run's output unit. 4.0.1 wrote it
+  to stdout once per process, at the first libxc call: the same place in
+  `oncvpsp*.x`, but mid-output in `oncvpsp_confine.x`, which now has it
+  first.
 
 #### Corrections to 4.0.1
 

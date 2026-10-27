@@ -19,6 +19,7 @@
 
  module eresid_m
 
+ use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
  public :: eresid
@@ -149,7 +150,8 @@
  ll1=ll+1
  q0=qmax-dble(nq-1)*dq
  if(q0<0.0d0) then
-   write(6,'(/a,i0,a,es12.4,a,es12.4)') 'eresid: ERROR q grid below 0, nq=', &
+   write(error_unit,'(/a,i0,a,es12.4,a,es12.4)') &
+&       'eresid: ERROR q grid below 0, nq=', &
 &        nq,', dq=',dq,', qmax=',qmax
    error stop 1
  end if
@@ -378,7 +380,8 @@
 
  do ii=1,nqout
    if(qout(ii)<0.0d0 .or. qout(ii)>=qmax) then
-     write(6,'(a,es12.4,a,es12.4)') 'eresid: ERROR q off the grid, q=', &
+     write(error_unit,'(a,es12.4,a,es12.4)') &
+&         'eresid: ERROR q off the grid, q=', &
 &        qout(ii),' qmax=',qmax
      error stop 1
    end if

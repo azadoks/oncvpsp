@@ -29,6 +29,7 @@
  module ugrid_m
  use constants_m, only: dp
  use logmesh_m, only: lm_ncell, lm_cell_weights, lm_fh_value
+ use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
  public :: ug_weights, ug_cumint_down, ug_interp, ug_root, ug_cross_down
@@ -67,7 +68,8 @@
  integer :: ii,jj,istart,ishift
 
  if(nn<lm_ncell) then
-   write(6,'(a,i0)') 'ug_weights: ERROR fewer nodes than the rule, nn=',nn
+   write(error_unit,'(a,i0)') &
+&       'ug_weights: ERROR fewer nodes than the rule, nn=',nn
    error stop 1
  end if
  do ishift=0,lm_ncell-2
@@ -107,7 +109,8 @@
  integer :: ii,jj,istart,ishift
 
  if(nn<lm_ncell) then
-   write(6,'(a,i0)') 'ug_cumint_down: ERROR fewer nodes than the rule, nn=', &
+   write(error_unit,'(a,i0)') &
+&       'ug_cumint_down: ERROR fewer nodes than the rule, nn=', &
 &        nn
    error stop 1
  end if
@@ -151,7 +154,8 @@
  real(dp), intent(out) :: fq
 
  if(tt<0.0d0 .or. tt>dble(nn-1)) then
-   write(6,'(a,es12.4,a,i0)') 'ug_interp: ERROR position off the grid, tt=', &
+   write(error_unit,'(a,es12.4,a,i0)') &
+&       'ug_interp: ERROR position off the grid, tt=', &
 &        tt,' nn=',nn
    error stop 1
  end if
@@ -342,7 +346,7 @@
    tol2=2.0d0*tol1
    if(abs(xx-xm)<=tol2-0.5d0*(bb-aa)) exit
    if(iter==100) then
-     write(6,'(/a,es12.4,a,es12.4)') &
+     write(error_unit,'(/a,es12.4,a,es12.4)') &
 &          'ugrid_m: ERROR ug_fmin not converged in 100 steps, x=',xx, &
 &          ', bracket width=',bb-aa
      error stop 1
@@ -459,7 +463,8 @@
    if(lf(ii-1)>0.0d0 .and. lf(ii)<=0.0d0) then
      call ug_root(lf(1:np),np,dble(ii-2),dble(ii-1),tq,ierr)
      if(ierr/=0) then
-       write(6,'(a)') 'ug_cross_down: ERROR the bracket lost its sign change'
+       write(error_unit,'(a)') &
+&           'ug_cross_down: ERROR the bracket lost its sign change'
        error stop 1
      end if
      xq=x1+hh*tq

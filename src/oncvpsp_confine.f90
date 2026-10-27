@@ -94,6 +94,7 @@
  use confine_ws_m, only: confine_sphere
  use confine_wall_m, only: confine_walls
  use confine_summary_m, only: confine_summary_t, write_confine_summary
+ use exc_libxc_m, only: exc_libxc_info
  use build_info_m, only: write_build_info
  implicit none
  integer, parameter :: iout=6
@@ -213,6 +214,7 @@
 &               zz,mmax,rr,vfull,pf,nc=nc,nv=nv,iexc=iexc,na=na,la=la, &
 &               fa=fa,ea=ea,iout=iout,ifail=ifail)
  if(ifail/=0) error stop 1
+ if(iexc<0) call exc_libxc_info(iexc,iout)
 
 !the radii: beyond every core radius, where the two atoms' potentials are
 !the same and the phases comparable

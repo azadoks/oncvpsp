@@ -19,9 +19,10 @@
 
  module exc_libxc_m
 
+ use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
- public :: exc_libxc, have_libxc
+ public :: exc_libxc, exc_libxc_info, have_libxc
 
 !> whether this build has libxc, for check_data
  logical, parameter :: have_libxc=.false.
@@ -53,11 +54,29 @@
 !Output variables
  real(dp), intent(out) :: vxc(mmax),exc(mmax)
 
- write(6,'(a,i8,a)') 'exc_libxc_stub: ERROR iexc = ',iexc,' requires libxc'
- write(6,'(a)') 'The present oncvpsp executable was built without libxc.'
- write(6,'(a)') 'Program will stop.'
+ write(error_unit,'(a,i8,a)') 'exc_libxc_stub: ERROR iexc = ',iexc, &
+&     ' requires libxc'
+ write(error_unit,'(a)') &
+&     'The present oncvpsp executable was built without libxc.'
+ write(error_unit,'(a)') 'Program will stop.'
 
  error stop 1
  end subroutine exc_libxc
+
+ subroutine exc_libxc_info(iexc,iout)
+!!  dummy substitute, not reached either (exc_libxc)
+!!
+!! @param iexc  exchange-correlation function to be used
+!! @param iout  unit of the text output
+
+ implicit none
+
+!Input variables
+ integer, intent(in) :: iexc,iout
+
+ write(iout,'(a,i8,a)') 'exc_libxc_stub: ERROR iexc = ',iexc, &
+&     ' requires libxc'
+ error stop 1
+ end subroutine exc_libxc_info
 
  end module exc_libxc_m

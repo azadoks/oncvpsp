@@ -225,8 +225,9 @@ hand.
   text output as an argument, `iout`, last but for `ifail`; internal
   procedures use their host's. The programs, `oncvpsp_main` and the unit
   tests pass 6 (`integer, parameter :: iout=6`). Only the command line
-  (`cli_m`, `parse_command_line`) and the checks that stay `error stop`
-  (rule 5 of [Error messages](#error-messages)) write to unit 6 itself.
+  (`cli_m`, `parse_command_line`) writes to unit 6 itself, and the checks
+  that stay `error stop` (rule 5 of [Error messages](#error-messages)) to
+  `error_unit`.
 - Errors and warnings as in [Error messages](#error-messages).
 
 **Comments and dead code.**
@@ -315,7 +316,8 @@ argument (0 on success). Only the programs, the command line and
 `oncvpsp_main` stop, with `error stop 1`, not `stop`, so that the exit
 status is non-zero and scripts and CTest see the failure. A check of a
 condition the code has just established, or that `check_data` has already
-validated, is a bug if it fails: it stays `error stop 1`.
+validated, is a bug if it fails: it stays `error stop 1`, with its message
+on `error_unit` (`use, intrinsic :: iso_fortran_env, only: error_unit`).
 
 6) If a called routine reports a failure through `ierr`, the caller that
 decides to stop prints the message. It names the called routine and

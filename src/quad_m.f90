@@ -22,6 +22,7 @@
  module quad_m
  use constants_m, only: dp, pi
  use logmesh_m, only: lm_integral
+ use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
  public :: gauss_legendre, log_norm
@@ -64,7 +65,7 @@
      zz=z1 - p1/pp
      if(abs(zz-z1)<1.0d-15) exit
      if(it==100) then
-       write(6,'(/2a,i0,a,i0)') 'quad_m: ERROR gauss_legendre', &
+       write(error_unit,'(/2a,i0,a,i0)') 'quad_m: ERROR gauss_legendre', &
 &            ' node not converged, nn=',nn,', node=',ii
        error stop 1
      end if

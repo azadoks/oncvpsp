@@ -20,6 +20,7 @@
 !> modcore_budget).
  module xc_dispatch_m
  use constants_m, only: dp
+ use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
  public :: exc_dispatch
@@ -69,7 +70,7 @@
  else if(iexc < 0) then
    call exc_libxc(iexc,al,rho,vxc,exc,rr,nn)
  else
-   write(6,'(/a,i4)') who//': ERROR bad input iexc =',iexc
+   write(error_unit,'(/a,i4)') who//': ERROR bad input iexc =',iexc
    error stop 1
  end if
  return

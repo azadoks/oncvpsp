@@ -45,6 +45,7 @@
  use sbf_m, only: sbf_trig
  use ugrid_m, only: ug_brent
  use quad_m, only: gauss_legendre
+ use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
  public :: ws_edge_d, ws_roots, ws_convergence, ws_eigenvalues, ws_grid_init
@@ -319,7 +320,7 @@
    hh(1:np,1:np)=hmat(1:np,1:np)
    call dsyev('N','U',np,hh,nb,ev,work,lwork,info)
    if(info/=0) then
-     write(6,'(a,i0)') 'ws_convergence: ERROR dsyev info ',info
+     write(error_unit,'(a,i0)') 'ws_convergence: ERROR dsyev info ',info
      error stop 1
    end if
    if(np==nb) idx=minloc(abs(ev(1:nb)-eex),1)
@@ -364,7 +365,7 @@
  allocate(work(lwork))
  call dsyev('N','U',nb,hmat,nb,ev,work,lwork,info)
  if(info/=0) then
-   write(6,'(a,i0)') 'ws_eigenvalues: ERROR dsyev info ',info
+   write(error_unit,'(a,i0)') 'ws_eigenvalues: ERROR dsyev info ',info
    error stop 1
  end if
  deallocate(ecut,hmat,work)

@@ -21,7 +21,7 @@
 
  implicit none
  private
- public :: exc_libxc, have_libxc
+ public :: exc_libxc, exc_libxc_info, have_libxc
 
 !> whether this build has libxc, for check_data
  logical, parameter :: have_libxc=.true.
@@ -41,7 +41,7 @@
 !! @param mmax  dimension of log radial grid
 
  use functionals_m, only: xc_functl_t, xc_functl_init_functl, &
-&                         xc_functl_get_vxc, xc_functl_write_info, &
+&                         xc_functl_get_vxc, &
 &                         xc_functl_end, XC_DERIV_NUMERICAL
  use constants_m, only: dp, pi
  use derivs_m, only: derivs
@@ -58,7 +58,6 @@
 !Local variables
  integer :: ii, unit
  integer ::  id(2), ifunc
- integer, save :: functprinted = 0
  type(xc_functl_t) :: functls(2)
  integer :: nspin, irel, deriv_method
  real(dp),allocatable :: ip(:)
@@ -88,13 +87,6 @@
  deriv_method = XC_DERIV_NUMERICAL
  call xc_functl_init_functl(functls(1),id(1),3,0.d0,nspin,deriv_method)
  call xc_functl_init_functl(functls(2),id(2),3,0.d0,nspin,deriv_method)
-
- if(functprinted==0) then
-   call xc_functl_write_info(functls(1), 6)
-   call xc_functl_write_info(functls(2), 6)
-   write(*,*)
-   functprinted = 1
- end if
 
 ! no use of vtau kin en density optional argument
 ! ip is an ionization potential parameter for certain xc functionals, not
@@ -133,5 +125,37 @@
  return
 
  end subroutine exc_libxc
+
+ subroutine exc_libxc_info(iexc,iout)
+!!  the description of the libxc functionals of iexc, written once per run
+!!  (oncvpsp_run)
+!!
+!! @param iexc  exchange-correlation function to be used: -(1000*id1+id2) for
+!!              the libxc functionals id1 and id2
+!! @param iout  unit of the text output
+
+ use functionals_m, only: xc_functl_t, xc_functl_init_functl, &
+&                         xc_functl_write_info, xc_functl_end, &
+&                         XC_DERIV_NUMERICAL
+ implicit none
+
+!Input variables
+ integer, intent(in) :: iexc,iout
+
+!Local variables
+ type(xc_functl_t) :: functls(2)
+ integer :: id(2)
+
+ id(1) = abs(iexc)/1000
+ id(2) = abs(iexc) - id(1)*1000
+ call xc_functl_init_functl(functls(1),id(1),3,0.d0,1,XC_DERIV_NUMERICAL)
+ call xc_functl_init_functl(functls(2),id(2),3,0.d0,1,XC_DERIV_NUMERICAL)
+ call xc_functl_write_info(functls(1), iout)
+ call xc_functl_write_info(functls(2), iout)
+ write(iout,'(a)') ''
+ call xc_functl_end(functls(1))
+ call xc_functl_end(functls(2))
+ return
+ end subroutine exc_libxc_info
 
  end module exc_libxc_m

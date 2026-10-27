@@ -34,6 +34,7 @@
  use cinf_taper_m, only: cinf_taper
  use der2exc_m, only: der2exc
  use lapack_m, only: dgglse, dhseqr
+ use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
  public :: modcore_budget,modcore_probes,modcore_budget_table
@@ -1129,7 +1130,8 @@
    js=(is+1-i0)*ngi+1
    irow=is+1
    if(irow>irmx) then
-     write(6,'(/a)') 'modcore_budget: ERROR stop - r_s beyond the table'
+     write(error_unit,'(/a)') &
+&         'modcore_budget: ERROR stop - r_s beyond the table'
      error stop 1
    end if
    xs=log(rs)
@@ -1252,7 +1254,7 @@
    end do
    call dhseqr('E','N',nd,1,nd,hess,npow-2,wr,wi,zz,1,wkh,size(wkh),info)
    if(info/=0) then
-     write(6,'(/a,i4)') 'modcore_budget: ERROR dhseqr info =',info
+     write(error_unit,'(/a,i4)') 'modcore_budget: ERROR dhseqr info =',info
      error stop 1
    end if
    do kk=1,nd
@@ -1447,7 +1449,8 @@
 
    call dgglse(nqn,npow+1,3,amat,nqn,bmat,3,cvec,dvec,cleg,wk,lwork,info)
    if(info/=0) then
-     write(6,'(/a,i4)') 'modcore_budget: ERROR stop - dgglse info =',info
+     write(error_unit,'(/a,i4)') &
+&         'modcore_budget: ERROR stop - dgglse info =',info
      error stop 1
    end if
    deallocate(amat,cvec,wk)

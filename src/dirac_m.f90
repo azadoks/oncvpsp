@@ -32,6 +32,7 @@
 
  module dirac_m
  use constants_m, only: dp
+ use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
  public :: dirac_outward
@@ -148,7 +149,7 @@
    fx=fx+qk
    if(abs(pk)<=1.0d-17*abs(gx) .and. abs(qk)<=1.0d-17*abs(fx)) exit
    if(kk==100) then
-     write(6,'(/a,i0,a,i0,a,es12.4,a,es12.4)') &
+     write(error_unit,'(/a,i0,a,i0,a,es12.4,a,es12.4)') &
 &          'dirac_outward: ERROR origin series not converged, l=',ll, &
 &          ', kap=',kap,', ee=',ee,', r=',rx
      error stop 1

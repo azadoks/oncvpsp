@@ -31,6 +31,7 @@
  module vploc_m
  use constants_m, only: dp
  use logmesh_m, only: lm_derivs
+ use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
  public :: vploc_t, vploc_fit, vploc_eval, vploc_mesh
@@ -108,7 +109,7 @@
    cf%dco=( 3*dvv-3*d2vv*rc+d3vv*rc**2)/(48*rc**5)
    cf%aco=v0-cf%bco*rc**2-cf%cco*rc**4-cf%dco*rc**6
  else
-   write(6,'(a,i0)') 'vploc_fit: ERROR lpopt ',lpopt
+   write(error_unit,'(a,i0)') 'vploc_fit: ERROR lpopt ',lpopt
    error stop 1
  end if
  return

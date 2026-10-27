@@ -19,6 +19,7 @@
 
  module sbf_rc_der_m
 
+ use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
  public :: sbf_rc_der
@@ -51,7 +52,7 @@
  integer :: ii,ll
 
  if(llin>4) then
-   write(6,'(a,i4,a)') 'sbf_rc_der: argument ERROR, llin = ',llin,&
+   write(error_unit,'(a,i4,a)') 'sbf_rc_der: argument ERROR, llin = ',llin,&
 &   ' >5'
    error stop 1
  end if

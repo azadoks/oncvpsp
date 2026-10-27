@@ -114,8 +114,13 @@ A library has to be able to send the text output elsewhere, or nowhere.
       `oncvpsp_confine`'s two callbacks of the root searches (`phase`,
       `u_rs`), whose interfaces have no room for it, do the same.
 - [x] Unit 6 stays for the command line (`cli_m`, `parse_command_line`,
-      `write_help`) and for the messages of the checks that stay
-      `error stop` (phase 1): they are bugs, not output.
+      `write_help`). The messages of the checks that stay `error stop`
+      (phase 1) go to stderr (`error_unit`), beside the stop's own: they
+      are bugs, not output, and a library's unit 6 is its host's.
+- [x] The libxc functionals' description goes to `iout`, once per run,
+      before the all-electron atom (`exc_libxc_info`, from `oncvpsp_run`,
+      and from `oncvpsp_confine` after it loads the atom), not to unit 6
+      once per process from the first `exc_libxc` call.
 - [x] A caller that wants no output opens `/dev/null` (or `NUL`) and
       passes its unit, as `tests/unit/test_run.f90` does.
 
@@ -167,7 +172,7 @@ derived type: it either copies them into arrays of maximum sizes
 (`mxprj`, `mmax`) or holds them behind a handle with calls for the sizes
 and the arrays.
 
-Three kinds of module variable are left, against the coding standards'
+Two kinds of module variable are left, against the coding standards'
 "no global state":
 
 - the speed of light (`relativity_m`'s `c_light`, set from the input by
@@ -177,9 +182,7 @@ Three kinds of module variable are left, against the coding standards'
 - the weights of the log mesh's stencils and cell rule (`logmesh_m`),
   fixed numbers computed on first use: the same for every run, but their
   first computation races in threads. Phase 5 computes them before any
-  run, or makes them parameters;
-- `exc_libxc_m`'s `functprinted`, which prints the libxc functional's
-  description once per process: a second run's output lacks it.
+  run, or makes them parameters.
 
 The cache of all-electron atoms that the test configurations reuse is an
 `ae_cache_t` (`config_ae_m`) that `oncvpsp_run` owns and passes down, so
@@ -210,8 +213,7 @@ namespace (see [Coding standards](coding_standards.md)).
       CMake.
 - [ ] A C test in `tests/` that runs one of the reference inputs through
       the interface and compares with the reference output.
-- [ ] Check that two runs in one process give the same results (the
-      `save` in `exc_libxc_m.f90` changes what is printed, not the numbers).
+- [ ] Check that two runs in one process give the same results.
       `tests/unit/test_run.f90` does so from Fortran, bit for bit, for one
       input at a time; the C test repeats it through the interface.
 
