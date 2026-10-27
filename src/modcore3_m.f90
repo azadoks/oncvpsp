@@ -219,8 +219,10 @@
        write(iout,'(a,i4,a)') ' converged in',kk-1,' steps'
        exit
      else if(kk==101) then
-       write(iout,'(a,i4,a)') ' WARNING: not fully converged in 100 steps'
-       exit
+       write(iout,'(a)') &
+&           'modcore3: ERROR Nelder-Mead not converged in 100 steps'
+       ifail=1
+       return
      end if
 
 !(2) Centroid

@@ -46,8 +46,8 @@
  public :: phsft_t, phsft_mch, phsft_ae_init, phsft_ps_init, phsft_free
  public :: phsft_scan, phsft_pair, phsft_node_phase, phsft_node_phases
 
-!> the deepest halving of an energy step: a phase that turns by more than
-!> pi/2 within depsh/2**maxdepth is taken as it is found
+!> the deepest halving of an energy step: a phase that still turns by more
+!> than pi/2 within depsh/2**maxdepth is an error
  integer, parameter :: maxdepth=40
 
  type phsft_t
@@ -556,7 +556,15 @@
  ifail=0
  dd=da1-2.0d0*th0
  dd=dd-2.0d0*pi*anint(dd/(2.0d0*pi))
- if(abs(dd)>0.5d0*pi .and. depth<maxdepth) then
+ if(abs(dd)>0.5d0*pi .and. depth>=maxdepth) then
+   write(iout,'(/a,es12.4,a,es12.4)') &
+&        'phsft: ERROR the phase turns by more than pi/2 between',e0, &
+&        ' and',e1
+   th1=th0
+   ifail=1
+   return
+ end if
+ if(abs(dd)>0.5d0*pi) then
    em=0.5d0*(e0+e1)
    dam(:)=doubled_angle(ps,em,iout,ifail)
    if(ifail/=0) return

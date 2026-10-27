@@ -43,6 +43,7 @@
 
  module logmesh_m
  use constants_m, only: dp
+ use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
  public :: lm_blend, lm_interp, lm_derivs, lm_cumint, lm_integral, lm_root
@@ -393,6 +394,7 @@
 !!               them
 !! @param rq  the root (bohr)
 !! @param ierr  0, or 1 if the interpolant has the same sign at ra and rb
+!!              (the iteration limit is an error)
 
 !Input variables
  integer, intent(in) :: mmax
@@ -479,6 +481,11 @@
    end if
    fb=value_at(xb)
  end do
+ if(iter>200) then
+   write(error_unit,'(a,es12.4,a,es12.4)') &
+&       'lm_root: ERROR not converged in 200 steps, r=',exp(xb),', f=',fb
+   error stop 1
+ end if
  rq=exp(xb)
  return
 

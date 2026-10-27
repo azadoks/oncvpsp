@@ -199,8 +199,8 @@
  subroutine ug_brent(fun,ta,tb,tq,ierr,fq,fo,fends,converged)
 
 !! root of fun between ta and tb by Brent's method with no tolerance of
-!! its own: it stops when the bracket is a few rounding units wide, or
-!! after 200 steps
+!! its own: it stops when the bracket is a few rounding units wide; after
+!! 200 steps it reports through converged, or without it stops in error
 !!
 !! @param fun  the function
 !! @param ta,tb  bracket; fun must change sign between them
@@ -307,6 +307,11 @@
    end if
    fb=fun(xb)
  end do
+ if(iter>200 .and. .not. present(converged)) then
+   write(error_unit,'(a,es12.4,a,es12.4)') &
+&       'ug_brent: ERROR not converged in 200 steps, t=',xb,', f=',fb
+   error stop 1
+ end if
  tq=xb
  if(present(fq)) fq=fb
  if(present(fo)) fo=fc

@@ -24,6 +24,7 @@
 !> bs_solve, over the steps that depend on the equation.
  module boundsolve_m
  use constants_m, only: dp
+ use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
  public :: bs_converged, bs_correct, bs_bisect, bs_box_energy, bs_solve, &
@@ -214,6 +215,12 @@
    eblo=ebhi
    ebhi=etop+2.0d0*(ebhi-etop)
  end do
+ if(kk>60) then
+   write(error_unit,'(a,i0,a,es12.4)') &
+&       'bs_box_energy: ERROR no energy with more than ',nnode, &
+&       ' nodes up to ',ebhi
+   error stop 1
+ end if
 
  do kk=1,200
    ee=0.5d0*(eblo+ebhi)
@@ -224,6 +231,11 @@
    end if
    if(ebhi-eblo<max(abs(ee),0.2d0)*eps) exit
  end do
+ if(kk>200) then
+   write(error_unit,'(a,es12.4)') &
+&       'bs_box_energy: ERROR bisection not converged in 200 steps, e=',ee
+   error stop 1
+ end if
 
  ee=eblo
 

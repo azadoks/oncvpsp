@@ -27,6 +27,7 @@
 
  module sr_flux_m
  use constants_m, only: dp
+ use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
  public :: sr_gamma, sr_flux_coefs, sr_outward, sr_inward, sr_derivs
@@ -290,6 +291,7 @@
      if(abs(pk)<1.0d-17*abs(px)) exit
      pk2=pk1; pk1=pk
    end do
+   if(kk>80) call series_error(rx)
    px=px*rx**(ll+1)
    qx=qx*rx**ll
    return
@@ -309,11 +311,21 @@
    if(abs(pk)<1.0d-17*abs(px) .and. abs(qk)<1.0d-17*abs(qx)) exit
    pk2=pk1; pk1=pk; qk1=qk
  end do
+ if(kk>200) call series_error(rx)
  px=px*rx**gamma
  qx=qx*rx**gamma
 
  return
  end subroutine origin_series
+
+ subroutine series_error(rx)
+!! the origin series at rx not converged: an error
+ real(dp), intent(in) :: rx
+ write(error_unit,'(/a,i0,a,es12.4,a,es12.4)') &
+&     'sr_outward: ERROR origin series not converged, l=',ll, &
+&     ', ee=',ee,', r=',rx
+ error stop 1
+ end subroutine series_error
 
  end subroutine sr_outward
 
