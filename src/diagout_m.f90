@@ -28,11 +28,8 @@
 ! output (an optimizer taking finite differences of them): the values that
 ! the tables above print to 6 or 2 decimals, to 17 significant digits.
 
- subroutine diagout(lmax,nproj,mxprj,nkap,cvgplt,npsh,epsh2,depsh,rphs, &
-&                   pshae,pshps,ngh,ghn,ghe,ghp,wcut,errw,ecutw,wcurve, &
-&                   ektail,icmod,rr,mmax,rcmax,rhoc,corepw,lloc,evkb, &
-&                   bbeig,ncfg,ntcf,itcf,etcf,dtcf,cvloc,vlchk,optdg, &
-&                   wshare,iout)
+ subroutine diagout(lmax,nproj,mxprj,nkap,cvg,ld,gh,cfg,vlc,icmod,rr,mmax, &
+&                   rcmax,rhoc,corepw,lloc,evkb,bbeig,iout)
 
 !! writes the block "Begin DIAGNOSTICS" ... "End DIAGNOSTICS", one value
 !! per line, each line tagged with its quantity:
@@ -133,25 +130,11 @@
 !! @param nproj  number of projectors for each l
 !! @param mxprj  dimension of the number of projectors
 !! @param nkap  number of kappa per l: 1, or 2 for irel=2
-!! @param cvgplt  the crossings, (Ecut, err) per level, projector, l, ikap
-!! @param npsh  number of energies of the log derivatives
-!! @param epsh2  the first (highest) energy
-!! @param depsh  the energy step (downwards)
-!! @param rphs  the radius of the log derivatives of each l
-!! @param pshae  the all-electron log derivatives
-!! @param pshps  the pseudopotential log derivatives
-!! @param ngh  rows of the bound-state ghost test per l and kap
-!! @param ghn  their principal quantum numbers
-!! @param ghe  their energies, e_ref and e_basis
-!! @param ghp  the least-localized-ghost margin per l and kap, e and <r>/rc
-!!             (0 if no state qualifies)
-!! @param wcut  whether to write the weighted cutoff
-!! @param errw  its error per electron (Ha)
-!! @param ecutw  the weighted cutoff (Ha)
-!! @param wcurve  the weights of the pseudo-waves
-!! @param ektail  of each wave: (1,:) the curve's tail, its E_resid from
-!!                q_infinity to three times that; (2,:) the r-space less
-!!                the Fourier kinetic energy to three times q_infinity
+!! @param cvg  the convergence of the optimized waves
+!! @param ld  the log derivatives
+!! @param gh  the ghost tests
+!! @param cfg  the test configurations
+!! @param vlc  the convergence of the local energy
 !! @param icmod  the model core's kind, 0 for none
 !! @param rr  log radial mesh
 !! @param mmax  size of the log radial mesh
@@ -161,51 +144,31 @@
 !! @param lloc  l of the local potential, 4 for the polynomial
 !! @param evkb  the projector coefficients
 !! @param bbeig  the eigenvalues of the B matrices
-!! @param ncfg  number of configurations, the reference and the tests
-!! @param ntcf  rows of each one's eigenvalue table, -1 if it failed
-!! @param itcf  n, l, ikap of each row
-!! @param etcf  f, eae, eps of each row
-!! @param dtcf  the AE and PS energy differences and the excitation error
-!! @param cvloc  the local potential's (Ecut, err) per level, Ecut 0 for
-!!               a level not reached
-!! @param vlchk  the local energy from the q grid less that from r space
-!! @param optdg  of each optimized wave: E_resid at qcut, the
-!!               regularization's term, e1 and |f1|
-!! @param wshare  of each optimized wave: E_resid at qcut with the well's
-!!                tail and with the free tail, and 1 for a confined well
-!!                state, -1 where the free tail is undefined, 0 otherwise
 !! @param iout  unit of the text output
 
- use constants_m, only: dp, mxl, mxlin, nerrdg, nerrlv, mxstate, mxkap, &
-&                       nrhomod, mxcnf
+ use constants_m, only: dp, mxl, mxlin, nerrdg, nerrlv, nrhomod
  use kappa_m, only: kap_count
  use pieces_m, only: piecewise_t, pw_value, pw_node_values, pw_segment
  use logmesh_m, only: lm_interp, lm_root, lm_derivs
  use ugrid_m, only: ug_brent
  use input_echo_m, only: fe
+ use test_results_m, only: logder_t, ghosts_t, configs_t, convergence_t, &
+&                          vloc_cut_t
  implicit none
 
 !Input variables
- integer, intent(in) :: lmax,mxprj,nkap,npsh
+ integer, intent(in) :: lmax,mxprj,nkap
  integer, intent(in) :: nproj(mxlin+1)
- real(dp), intent(in) :: cvgplt(2,nerrdg,mxprj,mxl+1,nkap)
- real(dp), intent(in) :: epsh2,depsh
- real(dp), intent(in) :: rphs(4),pshae(npsh,4,nkap),pshps(npsh,4,nkap)
- integer, intent(in) :: ngh(mxl+1,mxkap),ghn(mxstate,mxl+1,mxkap)
- real(dp), intent(in) :: ghe(2,mxstate,mxl+1,mxkap),ghp(2,mxl+1,mxkap)
- logical, intent(in) :: wcut
- real(dp), intent(in) :: errw,ecutw,wcurve(mxprj,mxl+1,nkap)
+ type(convergence_t), intent(in) :: cvg
+ type(logder_t), intent(in) :: ld
+ type(ghosts_t), intent(in) :: gh
+ type(configs_t), intent(in) :: cfg
+ type(vloc_cut_t), intent(in) :: vlc
  integer, intent(in) :: icmod,mmax
  real(dp), intent(in) :: rr(mmax),rcmax,rhoc(mmax)
  type(piecewise_t), intent(in) :: corepw(nrhomod)
- real(dp), intent(in) :: ektail(2,mxprj,mxl+1,nkap)
- integer, intent(in) :: lloc,ncfg
+ integer, intent(in) :: lloc
  real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap),bbeig(mxprj,mxl+1,nkap)
- integer, intent(in) :: ntcf(mxcnf),itcf(3,2*mxstate,mxcnf)
- real(dp), intent(in) :: etcf(3,2*mxstate,mxcnf),dtcf(3,mxcnf)
- real(dp), intent(in) :: cvloc(2,nerrlv),vlchk
- real(dp), intent(in) :: optdg(4,mxprj,mxl+1,nkap)
- real(dp), intent(in) :: wshare(3,mxprj,mxl+1,nkap)
  integer, intent(in) :: iout
 
 !Local variables
@@ -220,12 +183,12 @@
  call write_vloc()
 
  write(iout,'(a)') '# ekin_tail l ikap iproj t(Ha)'
- call write_per_projector('ekin_tail',ektail(1,:,:,:))
+ call write_per_projector('ekin_tail',cvg%tail(1,:,:,:))
 
  write(iout,'(a)') '# ekin_check l ikap iproj t(Ha)'
- call write_per_projector('ekin_check',ektail(2,:,:,:))
+ call write_per_projector('ekin_check',cvg%tail(2,:,:,:))
 
- if(wcut) call write_weighted()
+ if(cvg%weighted) call write_weighted()
 
  call write_log_derivatives()
  call write_ghosts()
@@ -249,9 +212,9 @@
    do ikap=1,mkap
      do iprj=1,nproj(l1)
        do jj=1,nerrdg
-         if(cvgplt(1,jj,iprj,l1,ikap)/=0.0d0) then
+         if(cvg%cross(1,jj,iprj,l1,ikap)/=0.0d0) then
            write(iout,'(a,3i4,1p,2e24.16)') 'ecut',l1-1,ikap,iprj, &
-&                fe(cvgplt(2,jj,iprj,l1,ikap)),cvgplt(1,jj,iprj,l1,ikap)
+&                fe(cvg%cross(2,jj,iprj,l1,ikap)),cvg%cross(1,jj,iprj,l1,ikap)
          end if
        end do
      end do
@@ -264,7 +227,7 @@
    do ikap=1,mkap
      do iprj=1,nproj(l1)
        write(iout,'(a,3i4,1p,4e24.16)') 'opt',l1-1,ikap,iprj, &
-&            fe(optdg(:,iprj,l1,ikap))
+&            fe(cvg%opt(:,iprj,l1,ikap))
      end do
    end do
  end do
@@ -274,10 +237,10 @@
    mkap=kap_count(nkap,l1-1)
    do ikap=1,mkap
      do iprj=1,nproj(l1)
-       if(wshare(3,iprj,l1,ikap)>0.0d0) then
+       if(cvg%wshare(3,iprj,l1,ikap)>0.0d0) then
          write(iout,'(a,3i4,1p,2e24.16)') 'well_share',l1-1,ikap,iprj, &
-&              fe(wshare(1:2,iprj,l1,ikap))
-       else if(wshare(3,iprj,l1,ikap)<0.0d0) then
+&              fe(cvg%wshare(1:2,iprj,l1,ikap))
+       else if(cvg%wshare(3,iprj,l1,ikap)<0.0d0) then
          write(iout,'(a,3i4)') 'well_share_undefined',l1-1,ikap,iprj
        end if
      end do
@@ -290,12 +253,12 @@
  integer :: jj
  write(iout,'(a)') '# ecut_vloc err(Ha) ecut(Ha)'
  do jj=1,nerrlv
-   if(cvloc(1,jj)/=0.0d0) then
-     write(iout,'(a,1p,2e24.16)') 'ecut_vloc',fe(cvloc(2,jj)),cvloc(1,jj)
+   if(vlc%cut(1,jj)/=0.0d0) then
+     write(iout,'(a,1p,2e24.16)') 'ecut_vloc',fe(vlc%cut(2,jj)),vlc%cut(1,jj)
    end if
  end do
  write(iout,'(a)') '# vloc_check e(Ha)'
- write(iout,'(a,1p,e24.16)') 'vloc_check',fe(vlchk)
+ write(iout,'(a,1p,e24.16)') 'vloc_check',fe(vlc%check)
  end subroutine write_vloc
 
  subroutine write_per_projector(tag,vv)
@@ -321,15 +284,15 @@
 !! the ecut_w line of the weighted cutoff and the weights of the waves
  integer :: l1,ikap,mkap,iprj
  write(iout,'(a)') '# ecut_w err(Ha) ecut(Ha)'
- write(iout,'(a,1p,2e24.16)') 'ecut_w',fe(errw),ecutw
+ write(iout,'(a,1p,2e24.16)') 'ecut_w',fe(cvg%errw),cvg%ecutw
  write(iout,'(a)') '# ecut_w_weight l ikap iproj w'
  do l1=1,lmax+1
    mkap=kap_count(nkap,l1-1)
    do ikap=1,mkap
      do iprj=1,mxprj
-       if(wcurve(iprj,l1,ikap)>0.0d0) then
+       if(cvg%weight(iprj,l1,ikap)>0.0d0) then
          write(iout,'(a,3i4,1p,e24.16)') 'ecut_w_weight',l1-1,ikap,iprj, &
-&                fe(wcurve(iprj,l1,ikap))
+&                fe(cvg%weight(iprj,l1,ikap))
        end if
      end do
    end do
@@ -339,19 +302,19 @@
  subroutine write_log_derivatives()
 !! the ld_r and ld lines of the log derivatives
  integer :: ii,l1,ikap,mkap
-!none with --no-log-derivatives (npsh 0)
- if(npsh>0) then
+!none with --no-log-derivatives (ld%ne 0)
+ if(ld%ne>0) then
    write(iout,'(a)') '# ld_r l ikap r(bohr)'
    write(iout,'(a)') '# ld l ikap e(Ha) atan(r*u''/u)_ae atan(r*u''/u)_ps'
  end if
  do l1=1,4
-   if(npsh==0) exit
+   if(ld%ne==0) exit
    mkap=kap_count(nkap,l1-1)
    do ikap=1,mkap
-     write(iout,'(a,2i4,1p,e24.16)') 'ld_r',l1-1,ikap,rphs(l1)
-     do ii=1,npsh
+     write(iout,'(a,2i4,1p,e24.16)') 'ld_r',l1-1,ikap,ld%r(l1)
+     do ii=1,ld%ne
        write(iout,'(a,2i4,1p,3e24.16)') 'ld',l1-1,ikap, &
-&            epsh2-depsh*real(ii-1,dp),pshae(ii,l1,ikap),pshps(ii,l1,ikap)
+&            ld%e(ii),ld%ae(ii,l1,ikap),ld%ps(ii,l1,ikap)
      end do
    end do
  end do
@@ -365,12 +328,12 @@
  do l1=1,lmax+1
    mkap=kap_count(nkap,l1-1)
    do ikap=1,mkap
-     do jj=1,ngh(l1,ikap)
-       write(iout,'(a,3i4,1p,2e24.16)') 'ghost',l1-1,ikap,ghn(jj,l1,ikap), &
-&            fe(ghe(:,jj,l1,ikap))
+     do jj=1,gh%nrow(l1,ikap)
+       write(iout,'(a,3i4,1p,2e24.16)') 'ghost',l1-1,ikap,gh%n(jj,l1,ikap), &
+&            fe(gh%e(:,jj,l1,ikap))
      end do
-     if(ghp(2,l1,ikap)>0.0d0) then
-       write(iout,'(a,2i4,1p,2e24.16)') 'ghost_r',l1-1,ikap,ghp(:,l1,ikap)
+     if(gh%least(2,l1,ikap)>0.0d0) then
+       write(iout,'(a,2i4,1p,2e24.16)') 'ghost_r',l1-1,ikap,gh%least(:,l1,ikap)
      end if
    end do
  end do
@@ -407,15 +370,15 @@
  integer :: ii,jj
  write(iout,'(a)') '# test_config icfg de_ae(Ha) de_ps(Ha) err(Ha)'
  write(iout,'(a)') '# test_eig icfg n l ikap f eae(Ha) eps(Ha)'
- do jj=1,ncfg
-   if(ntcf(jj)<0) then
+ do jj=1,cfg%ncfg
+   if(cfg%nrow(jj)<0) then
      write(iout,'(a,i4)') 'test_config_failed',jj-1
      cycle
    end if
-   write(iout,'(a,i4,1p,3e24.16)') 'test_config',jj-1,fe(dtcf(:,jj))
-   do ii=1,ntcf(jj)
-     write(iout,'(a,4i4,1p,3e24.16)') 'test_eig',jj-1,itcf(:,ii,jj), &
-&          fe(etcf(:,ii,jj))
+   write(iout,'(a,i4,1p,3e24.16)') 'test_config',jj-1,fe(cfg%de(:,jj))
+   do ii=1,cfg%nrow(jj)
+     write(iout,'(a,4i4,1p,3e24.16)') 'test_eig',jj-1,cfg%state(:,ii,jj), &
+&          fe(cfg%e(:,ii,jj))
    end do
  end do
  end subroutine write_tests

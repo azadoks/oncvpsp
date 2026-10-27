@@ -285,7 +285,9 @@ following major sections:
     script scripts/run.sh.
 
     The routine *diagout* then writes the block "Begin DIAGNOSTICS" to
-    "End DIAGNOSTICS", for programs that read the output: the cutoffs at
+    "End DIAGNOSTICS", for programs that read the output, from the test
+    results that oncvpsp_run also returns in `psp`, one type per test
+    (test_results_m.f90): the cutoffs at
     which each projector's convergence curve reaches every error level
     (1e-2 Ha down by half decades to 1e-7, past the tables' 1e-5; a level
     the curve does not reach on its q grid has no line; the curve, here

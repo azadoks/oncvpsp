@@ -1,7 +1,7 @@
 ## A library and Python/Julia wrappers
 
-**Status: in progress. Phases 1 to 4 are done but for the test results
-as arrays (phase 3).**
+**Status: in progress. Phases 1 to 4 are done; phases 5 (the C
+interface) and 6 (the wrappers) are next.**
 
 The goal is to call ONCVPSP from Python and Julia: pass in an input, get
 back the pseudopotential and the test results as arrays, and never take the
@@ -116,8 +116,8 @@ A library has to be able to send the text output elsewhere, or nowhere.
 - [x] Unit 6 stays for the command line (`cli_m`, `parse_command_line`,
       `write_help`) and for the messages of the checks that stay
       `error stop` (phase 1): they are bugs, not output.
-- [ ] A caller that wants no output opens `/dev/null` (or `NUL`) and
-      passes its unit: with phase 3.
+- [x] A caller that wants no output opens `/dev/null` (or `NUL`) and
+      passes its unit, as `tests/unit/test_run.f90` does.
 
 ### Phase 3: a driver split in three
 
@@ -138,9 +138,17 @@ A library has to be able to send the text output elsewhere, or nowhere.
       driver after `oncvpsp_run`, from `psp`;
 - [x] `oncvpsp_main`, left as the command line, the readers,
       `oncvpsp_run` and the writers.
-- [ ] The test results (log derivatives, the diagnostics, the test
-      configurations, the convergence curves) in `psp` as arrays, not
-      only as text.
+- [x] The test results in `psp` as arrays, not only as text: one type
+      per test (`test_results_m`), `logder_t` (the log derivatives),
+      `ghosts_t`, `configs_t` (the test configurations),
+      `convergence_t` (the crossings of the error levels, the curves,
+      their tails and the optimization's diagnostics) and `vloc_cut_t`,
+      plus the B matrices' eigenvalues (`psp%bbeig`). `diagout` writes
+      the DIAGNOSTICS block from them. `tests/unit/test_run.f90` checks
+      them against that block, which prints them exactly (nr, sr, fr,
+      and the weighted cutoff). The tables of `run_diag` (the
+      eigenvalues and log derivatives at rc of each projector's energy)
+      and the plot data of `run_plot` stay text only.
 
 The results whose size is known only during the run (the number of
 projectors, the mesh) are allocatable components of `results_t`, so the
@@ -180,6 +188,8 @@ namespace (see [Coding standards](coding_standards.md)).
       the interface and compares with the reference output.
 - [ ] Check that two runs in one process give the same results (the
       `save` in `exc_libxc_m.f90` changes what is printed, not the numbers).
+      `tests/unit/test_run.f90` does so from Fortran, bit for bit, for one
+      input at a time; the C test repeats it through the interface.
 
 ### Phase 6: wrappers
 

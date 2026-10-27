@@ -23,6 +23,8 @@
 
  use constants_m, only: dp, mxl, mxlin, mxstate, mxkap, nrhomod
  use pieces_m, only: piecewise_t
+ use test_results_m, only: logder_t, ghosts_t, configs_t, convergence_t, &
+&                          vloc_cut_t
  implicit none
  private
  public :: oncvpsp_run, results_t
@@ -58,6 +60,14 @@
 !> the core radii and fcfact as read, the icmod=4 search grids and the
 !> log mesh as read, for the echoes
    real(dp) :: rc0(mxlin+1),fcfact0,fcgrid(3),rcgrid(3),log_mesh(3)
+!> the eigenvalues of the B matrices (run_vkb)
+   real(dp), allocatable :: bbeig(:,:,:)
+!> the tests (test_results_m)
+   type(logder_t) :: logder
+   type(ghosts_t) :: ghosts
+   type(configs_t) :: configs
+   type(convergence_t) :: convergence
+   type(vloc_cut_t) :: vloc_cut
  end type results_t
 
  contains
@@ -140,7 +150,7 @@
 
 
 !Local variables
- integer :: ii,ierr,ios,it
+ integer :: ii,ierr,ios,it,nq
  integer :: jj,ll,l1,inline
  integer :: mmax,nlim,nrl
  integer :: iprj,nkap,nnwell,npsh
@@ -488,6 +498,7 @@
 !
  cvgplt(:,:,:,:,:)=0.0d0
  ecurve(:,:,:,:,:)=0.0d0
+ ecutw=0.0d0
  ektail(:,:,:,:)=0.0d0
  optdg(:,:,:,:)=0.0d0
  wshare(:,:,:,:)=0.0d0
@@ -620,7 +631,6 @@
    if(ifail/=0) return
 
  else if(inp%icmod==6 .or. inp%icmod==7) then
-   ecutw=0.0d0
    if(inp%fcfact<=0.0d0) then
      call modcore_budget_table(ecurve,ncurve,mxprj*4*nkap,wcurve, &
 &                              inp%budget_cut==1,inp%budget_cut==2, &
@@ -740,6 +750,10 @@
 
 ! loop over reference plus test atom configurations
  rhot(:)=rho(:)
+ ntcf(:)=0
+ itcf(:,:,:)=0
+ etcf(:,:,:)=0.0d0
+ dtcf(:,:)=0.0d0
  do jj=1,inp%ncnf+1
 
    write(iout,'(/a,i2)') 'Test configuration',jj-1
@@ -808,14 +822,45 @@
 
  call vloc_cutoff(rr,mmax,rho,vpuns(1,inp%lloc+1),zion,cvloc,vlchk)
 
- call diagout(inp%lmax,inp%nproj,mxprj,nkap,cvgplt,npsh,inp%epsh2,inp%depsh, &
-&             rphs,pshae, &
-&             pshps,ngh,ghn,ghe,ghp,(inp%icmod==6 .or. inp%icmod==7) &
-&             .and. inp%fcfact<=0.0d0 .and. inp%budget_cut==1,inp%rcfact, &
-&             ecutw,wcurve, &
-&             ektail,inp%icmod,rr,mmax,rcmax,rhoc,corepw,inp%lloc,evkb,bbeig, &
-&             inp%ncnf+1,ntcf,itcf,etcf,dtcf,cvloc,vlchk,optdg,wshare,iout)
- deallocate(pshae,pshps)
+!the tests' results
+ psp%logder%ne=npsh
+ allocate(psp%logder%e(npsh))
+ do ii=1,npsh
+   psp%logder%e(ii)=inp%epsh2-inp%depsh*real(ii-1,dp)
+ end do
+ psp%logder%r(:)=rphs(:)
+ call move_alloc(pshae,psp%logder%ae)
+ call move_alloc(pshps,psp%logder%ps)
+ psp%ghosts%nrow(:,:)=ngh(:,:)
+ psp%ghosts%n(:,:,:)=ghn(:,:,:)
+ psp%ghosts%e(:,:,:,:)=ghe(:,:,:,:)
+ psp%ghosts%least(:,:,:)=ghp(:,:,:)
+ psp%configs%ncfg=inp%ncnf+1
+ psp%configs%nrow(:)=ntcf(:)
+ psp%configs%state(:,:,:)=itcf(:,:,:)
+ psp%configs%e(:,:,:)=etcf(:,:,:)
+ psp%configs%de(:,:)=dtcf(:,:)
+ call move_alloc(cvgplt,psp%convergence%cross)
+!the curves to the end of the longest
+ nq=0
+ do ii=1,ncurve
+   if(any(ecurve(1,ii,:,:,:)>0.0d0)) nq=ii
+ end do
+ psp%convergence%curve=ecurve(:,1:nq,:,:,:)
+ call move_alloc(ektail,psp%convergence%tail)
+ call move_alloc(optdg,psp%convergence%opt)
+ call move_alloc(wshare,psp%convergence%wshare)
+ psp%convergence%weighted=(inp%icmod==6 .or. inp%icmod==7) &
+&                         .and. inp%fcfact<=0.0d0 .and. inp%budget_cut==1
+ psp%convergence%errw=inp%rcfact
+ psp%convergence%ecutw=ecutw
+ call move_alloc(wcurve,psp%convergence%weight)
+ psp%vloc_cut%cut(:,:)=cvloc(:,:)
+ psp%vloc_cut%check=vlchk
+
+ call diagout(inp%lmax,inp%nproj,mxprj,nkap,psp%convergence,psp%logder, &
+&             psp%ghosts,psp%configs,psp%vloc_cut,inp%icmod,rr,mmax,rcmax, &
+&             rhoc,corepw,inp%lloc,evkb,bbeig,iout)
 
 ! Write info for PSML format
 !
@@ -870,6 +915,7 @@
  call move_alloc(rhoc,psp%rhoc)
  call move_alloc(rhomod,psp%rhomod)
  call move_alloc(uupsa,psp%uupsa)
+ call move_alloc(bbeig,psp%bbeig)
  return
  end subroutine oncvpsp_run
 

@@ -30,6 +30,21 @@ set_target_properties(test_run_phsft PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAK
 add_test(NAME unit_run_phsft COMMAND test_run_phsft WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 set_tests_properties(unit_run_phsft PROPERTIES LABELS unit)
 
+# Unit tests of oncvpsp_run called as from the library: its test results against the DIAGNOSTICS
+# block it writes, and a second run in the same process (test_run.f90); nr, sr, fr, and the weighted
+# cutoff of the model core's budget
+add_executable(test_run unit/test_run.f90)
+target_link_libraries(test_run PRIVATE oncvpsp::oncvpsp oncvpsp::compile_options)
+set_target_properties(test_run PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+foreach (run_test IN ITEMS "0:08_O" "1:14_Si" "2:14_Si" "1:14_Si_bcw")
+    string(REPLACE ":" ";" run_test "${run_test}")
+    list(GET run_test 0 irel)
+    list(GET run_test 1 name)
+    add_test(NAME unit_run_${irel}_${name}
+             COMMAND test_run ${irel} "${CMAKE_CURRENT_SOURCE_DIR}/data/${name}.dat")
+    set_tests_properties(unit_run_${irel}_${name} PROPERTIES LABELS unit)
+endforeach ()
+
 # Unit tests of the operations at any radius on the log mesh (logmesh_m), the closed-form Bessel
 # overlaps (sbf_overlap) and the derivatives at rc from the radial equation (ode_rc_der), phase 1 of
 # doc/smoothness_plan.md

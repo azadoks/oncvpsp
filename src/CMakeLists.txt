@@ -95,6 +95,7 @@ set(src_oncvpsp
     confine_wall_m.f90
     outwf_m.F90
     sratom_m.f90
+    test_results_m.f90
     tfapot_m.f90
     vkboutwf_m.f90
     wf_rc_der_m.f90
