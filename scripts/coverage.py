@@ -16,8 +16,8 @@ report: the lines and branches covered, in total and per file; with --compare, t
 covered and OUTDIR does not (lost) and the reverse; with --uncovered, the lines no test runs, as
 ranges per file; with --cover, the fewest inputs, then the cheapest tests on them, that keep the
 coverage of each kind of test (the tests of one kind assert the same thing: ref, toml, echo,
-split, ...), by greedy choice. The smooth label is its own measure and the nist tests check
-accuracy, not coverage: run them with -LE "smooth|nist".
+split, ...), by greedy choice. The scan label is its own measure and the nist tests check
+accuracy, not coverage: run them with -LE "scan|nist".
 """
 
 import argparse

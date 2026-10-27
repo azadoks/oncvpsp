@@ -160,13 +160,13 @@ The inputs and the tests on each are the fewest that keep the coverage of
 `src/` of each kind of test (doc/smoothness_plan.md, "Optimize the test
 suite"). The `nist` tests are not among them: they check the all-electron
 atom against reference data, and are needed only after changes to the
-all-electron or solver numerics, so `ctest -LE "smooth|nist"` is the dev
+all-electron or solver numerics, so `ctest -LE "scan|nist"` is the dev
 loop.
 
-The smoothness scans (label `smooth`, `scripts/smooth_scan.py`) run 21 to
+The smoothness scans (label `scan`, `scripts/smooth_scan.py`) run 21 to
 41 oncvpsp processes per row (by the degree of the fit),
 `ONCVPSP_SMOOTH_JOBS` of them at once (default 4), and each row reserves as many ctest processors, so `ctest -j <cores>
--L smooth` runs `<cores>/ONCVPSP_SMOOTH_JOBS` rows side by side. To run one
+-L scan` runs `<cores>/ONCVPSP_SMOOTH_JOBS` rows side by side. To run one
 row in the dev loop, configure with `-DONCVPSP_SMOOTH_JOBS=<cores>` (and
 run `ctest -j <cores>`).
 
@@ -179,14 +179,14 @@ change:
 
 ```bash
 cmake --preset coverage && cmake --build --preset coverage --parallel
-scripts/coverage.py run build-cov build-cov/cov -LE "smooth|nist"
+scripts/coverage.py run build-cov build-cov/cov -LE "scan|nist"
 scripts/coverage.py report build-cov/cov --compare build-cov/cov-before \
     --uncovered --cover
 ```
 
 `run` runs the selected tests (`-L`, `-LE`, `-R` as for ctest), the
 fixtures first, each with its own `GCOV_PREFIX`, and writes `cov.json` (2.5
-min on 28 cores without smooth and nist).
+min on 28 cores without scan and nist).
 `report` prints the coverage in total and per file; `--compare` the lines
 and branches a run of an earlier tree covered and this one does not (and the
 tests that covered them); `--uncovered` the lines no test runs; `--cover`

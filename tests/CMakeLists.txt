@@ -75,8 +75,7 @@ foreach (unit_test logmesh ode_rc_der solver_path piecewise matching ugrid quadb
     set_tests_properties(unit_${unit_test} PROPERTIES LABELS unit)
 endforeach ()
 
-# Unit tests of the pieces of the model core charges (modcore_m), phase 5 of doc/smoothness_plan.md:
-# written before the code, so labelled smooth until it is done
+# Unit tests of the pieces of the model core charges (modcore_m), phase 5 of doc/smoothness_plan.md
 # the jump of the basis wave vectors where ulgd passes l/rc (test_qroots.f90):
 # known, so the probe passes while it fails; drop WILL_FAIL once fixed
 add_test(NAME unit_qroots_lcross COMMAND test_qroots lcross)
@@ -86,7 +85,7 @@ add_executable(test_modcore unit/test_modcore.f90 unit/gg1cc.f90 unit/gp1cc.f90
 target_link_libraries(test_modcore PRIVATE oncvpsp::oncvpsp oncvpsp::compile_options)
 set_target_properties(test_modcore PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 add_test(NAME unit_modcore COMMAND test_modcore)
-set_tests_properties(unit_modcore PROPERTIES LABELS smooth)
+set_tests_properties(unit_modcore PROPERTIES LABELS unit)
 
 set(scripts "${PROJECT_SOURCE_DIR}/scripts")
 set(data "${CMAKE_CURRENT_SOURCE_DIR}/data")
@@ -153,8 +152,8 @@ endfunction()
 # Smooth dependence on the inputs (doc/smoothness_plan.md, T2): smooth_scan.py steps one input of a
 # TOML input through 21 to 41 values (by the fit's degree) and fits each feature of the UPF file on the log mesh (nonlocal
 # kernels, V_loc, model core) with a polynomial; the residuals must be within the plan's goals and
-# no step between neighbouring values a jump. Written before the code, so labelled smooth (failing
-# until its phase is done; ctest -LE smooth leaves them out). The harness checks itself (unit).
+# no step between neighbouring values a jump. Label scan (ctest -LE scan leaves them out). The
+# harness checks itself (unit).
 add_test(NAME smooth_scan_self_test COMMAND ${test_python} "${scripts}/smooth_scan.py" --self-test)
 set_tests_properties(smooth_scan_self_test PROPERTIES LABELS unit)
 oncvpsp_compares(smooth_scan_self_test)
@@ -190,7 +189,7 @@ function(smooth_scan_test name rel input key groups tol)
             "${data}/toml/${input}.toml" "${key}" ${ARGN} --groups ${groups} --tol ${tol}
             --max-jump 3 --jobs ${ONCVPSP_SMOOTH_JOBS}
             --workdir "${CMAKE_CURRENT_BINARY_DIR}/smooth_${name}")
-    set_tests_properties(smooth_${name} PROPERTIES LABELS smooth PROCESSORS ${ONCVPSP_SMOOTH_JOBS})
+    set_tests_properties(smooth_${name} PROPERTIES LABELS scan PROCESSORS ${ONCVPSP_SMOOTH_JOBS})
     oncvpsp_compares(smooth_${name})
     if (NOT ONCVPSP_WITH_Libxc AND input IN_LIST libxc_inputs)
         set_tests_properties(smooth_${name} PROPERTIES DISABLED TRUE)
@@ -318,7 +317,7 @@ foreach (projector_test IN ITEMS "sr:14_Si" "r:14_Si" "nr:08_O" "r:52_Te")
     add_test(NAME projector_output_${rel}_${test_name}
         COMMAND ${test_python} "${scripts}/projector_output_test.py" $<TARGET_FILE:oncvpsp${rel}>
             "${data}/toml/${test_name}.toml" "${CMAKE_CURRENT_BINARY_DIR}/projector_output_${rel}_${test_name}")
-    set_tests_properties(projector_output_${rel}_${test_name} PROPERTIES LABELS smooth)
+    set_tests_properties(projector_output_${rel}_${test_name} PROPERTIES LABELS "toml;${rel}")
     oncvpsp_compares(projector_output_${rel}_${test_name})
 endforeach ()
 

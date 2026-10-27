@@ -13,7 +13,7 @@ outputs.
 
 smooth_scan.py steps one input through a fine window and measures how
 smoothly the pseudopotential follows it (doc/smoothness_plan.md); ctest runs
-it with the label smooth.
+it with the label scan.
 
 coverage.py runs the tests of the coverage build (the coverage preset) each
 with its own gcov counters, and reports the coverage of src/, what a change

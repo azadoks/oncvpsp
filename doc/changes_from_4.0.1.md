@@ -43,7 +43,7 @@ path. In 4.0.1 many outputs were staircases or had kinks in the inputs.
 The causes were radii snapped to mesh points, bisections stopped at loose
 tolerances, discrete searches, and stencils across kinks. Most of the
 numerics entries below serve this goal. They are tested by the
-`smooth`-labelled scans (`scripts/smooth_scan.py`), which fit each output
+`scan`-labelled scans (`scripts/smooth_scan.py`), which fit each output
 over a narrow window of one input and require the residual to sit at
 round-off (about 1e-10 relative or below).
 
