@@ -43,7 +43,6 @@
 
  module logmesh_m
  use constants_m, only: dp
- use, intrinsic :: iso_fortran_env, only: qp => real128
  implicit none
  private
  public :: lm_blend, lm_interp, lm_derivs, lm_cumint, lm_integral, lm_root
@@ -66,13 +65,14 @@
 !> steps of x, falling smoothly to 0 at nwin2 steps
  real(dp), parameter :: nwin1=10.0d0, nwin2=20.0d0
 
-!> the weights of the stencils and of the cell rule, computed in quadruple
-!> precision once each (they are fixed numbers, and the integrals are
-!> taken many times per solver pass)
- real(dp), save :: stencil_table(0:2*nhalf,0:4,0:2*nhalf)
- logical, save :: stencil_have(0:2*nhalf)=.false.
- real(dp), save :: cell_table(ncell,0:ncell-2)
- logical, save :: cell_have(0:ncell-2)=.false.
+!> the weights of the 11-point stencils for d^k/dx^k, k=0..4, at each node
+!> of the window 0..2*nhalf (unit spacing), stencil_table(:,k,iz), by
+!> Fornberg's algorithm (Math. Comp. 51, 699 (1988)); and of the integral
+!> over the cell [0,1] of the degree-7 interpolant through the nodes
+!> -ishift..ncell-1-ishift, cell_table(:,ishift), the integrals of its
+!> Lagrange basis polynomials: rational numbers, rounded once to double
+!> precision by scripts/logmesh_weights.py
+ include 'logmesh_weights.inc'
 
  contains
 
@@ -126,9 +126,8 @@
 
 !Local variables
  real(dp), allocatable :: field(:)
- real(dp) :: cc(0:2*nhalf,0:4,0:2*nhalf),dx(0:4),hh,tt
+ real(dp) :: dx(0:4),hh,tt
  integer :: ii,jj,kk,inode,ishift,ilo,ihi,nreach
- integer :: have(0:2*nhalf)
 ! Stirling numbers of the first kind: r**k d^k/dr^k = sum_j s(k,j) d^j/dx^j
  real(dp), parameter :: stirling(4,4)=reshape([ &
 &   1.0d0, -1.0d0,  2.0d0, -6.0d0, &
@@ -147,16 +146,6 @@
  nreach=ceiling(nwin2)+lm_blend+1
  ilo=max(1,floor(tt)+1-nreach)
  ihi=min(mmax,floor(tt)+1+nreach)
-! stencil weights for the positions of the node in its 11-point window
-! that occur (only the centred one away from the ends of the mesh)
- have(:)=0
- do ii=ilo,ihi
-   ishift=max(0,nhalf+1-ii) - max(0,ii+nhalf-mmax)
-   if(have(nhalf-ishift)==0) then
-     call stencil_weights(nhalf-ishift,cc(:,:,nhalf-ishift))
-     have(nhalf-ishift)=1
-   end if
- end do
  allocate(field(mmax))
  field(:)=0.0d0
  do kk=1,nder
@@ -164,7 +153,8 @@
      ishift=max(0,nhalf+1-ii) - max(0,ii+nhalf-mmax)
      field(ii)=0.0d0
      do jj=0,2*nhalf
-       field(ii)=field(ii) + cc(jj,kk,nhalf-ishift)*ff(ii-nhalf+ishift+jj)
+       field(ii)=field(ii) &
+&                + stencil_table(jj,kk,nhalf-ishift)*ff(ii-nhalf+ishift+jj)
      end do
      field(ii)=field(ii)/hh**kk
    end do
@@ -227,13 +217,10 @@
  real(dp), intent(out) :: cum(nlim)
 
 !Local variables
- real(dp) :: ww(ncell,0:ncell-2),hh,cell,sum_hi,sum_lo,yy,tmp
+ real(dp) :: hh,cell,sum_hi,sum_lo,yy,tmp
  integer :: ii,jj,istart,ishift
 
  hh=mesh_step(rr,mmax)
- do ishift=0,ncell-2
-   call cell_weights(ishift,ww(:,ishift))
- end do
 
 ! each cell [x_i,x_i+1] integrates the degree-7 interpolant of ff*r (dr=r dx)
 ! on the 8 points i-3..i+4, shifted to fit at the ends; the running sum is
@@ -246,7 +233,7 @@
    ishift=ii-istart
    cell=0.0d0
    do jj=1,ncell
-     cell=cell + ww(jj,ishift)*ff(istart+jj-1)*rr(istart+jj-1)
+     cell=cell + cell_table(jj,ishift)*ff(istart+jj-1)*rr(istart+jj-1)
    end do
    yy=hh*cell - sum_lo
    tmp=sum_hi + yy
@@ -345,7 +332,7 @@
  real(dp), allocatable, intent(out) :: wts(:)
 
 !Local variables
- real(dp) :: ww(ncell,0:ncell-2),fw(2*lm_fh_reach()+2),hh,tt,tail,total
+ real(dp) :: fw(2*lm_fh_reach()+2),hh,tt,tail,total
  integer :: nlim,ilo,ihi,ii,jj,istart,ishift,inode
 
  if(rb<rr(1)) then
@@ -372,9 +359,6 @@
 ! cum(k) is the start rr(1) ff(1)/(mm+1) plus the cells below k, so cell c
 ! enters with the weights at k > c, the tail of fw beyond c
  hh=mesh_step(rr,mmax)
- do ishift=0,ncell-2
-   call cell_weights(ishift,ww(:,ishift))
- end do
  nw=min(mmax,ihi+ncell/2)
  allocate(wts(nw))
  wts(:)=0.0d0
@@ -387,7 +371,7 @@
    ishift=ii-istart
    do jj=1,ncell
      wts(istart+jj-1)=wts(istart+jj-1) &
-&                     + hh*tail*ww(jj,ishift)*rr(istart+jj-1)
+&                     + hh*tail*cell_table(jj,ishift)*rr(istart+jj-1)
    end do
  end do
  return
@@ -717,120 +701,9 @@
  return
  end function binomial
 
- subroutine stencil_weights(iz,cc)
-
-!! weights of the 11-point stencils for d^k/dx^k, k=0..4, at the node iz of
-!! the window of nodes 0..2*nhalf (unit spacing), by Fornberg's algorithm
-!! (Math. Comp. 51, 699 (1988)) in quadruple precision
-!!
-!! @param iz  the node the derivatives are at, 0..2*nhalf (nhalf: centred)
-!! @param cc  weight of node j for d^k in cc(j,k)
-
-!Input variables
- integer, intent(in) :: iz
-
-!Output variables
- real(dp), intent(out) :: cc(0:2*nhalf,0:4)
-
-!Local variables
- real(qp) :: wq(0:2*nhalf,0:4),xq(0:2*nhalf),zq,c1,c2,c3,c4,c5
- integer :: ii,jj,kk,mn
-
- if(stencil_have(iz)) then
-   cc(:,:)=stencil_table(:,:,iz)
-   return
- end if
- do ii=0,2*nhalf
-   xq(ii)=real(ii,qp)
- end do
- zq=real(iz,qp)
- wq(:,:)=0.0_qp
- c1=1.0_qp
- c4=xq(0)-zq
- wq(0,0)=1.0_qp
- do ii=1,2*nhalf
-   mn=min(ii,4)
-   c2=1.0_qp
-   c5=c4
-   c4=xq(ii)-zq
-   do jj=0,ii-1
-     c3=xq(ii)-xq(jj)
-     c2=c2*c3
-     if(jj==ii-1) then
-       do kk=mn,1,-1
-         wq(ii,kk)=c1*(real(kk,qp)*wq(ii-1,kk-1)-c5*wq(ii-1,kk))/c2
-       end do
-       wq(ii,0)=-c1*c5*wq(ii-1,0)/c2
-     end if
-     do kk=mn,1,-1
-       wq(jj,kk)=(c4*wq(jj,kk)-real(kk,qp)*wq(jj,kk-1))/c3
-     end do
-     wq(jj,0)=c4*wq(jj,0)/c3
-   end do
-   c1=c2
- end do
- cc(:,:)=real(wq,dp)
- stencil_table(:,:,iz)=cc(:,:)
- stencil_have(iz)=.true.
- return
- end subroutine stencil_weights
-
- subroutine cell_weights(ishift,ww)
-
-!! weights of the integral over the cell [0,1] of the degree-7 interpolant
-!! through the nodes -ishift..ncell-1-ishift (unit spacing): the integrals
-!! of the Lagrange basis polynomials, in quadruple precision
-!!
-!! @param ishift  how far the window starts left of the cell
-!! @param ww  the weights
-
-!Input variables
- integer, intent(in) :: ishift
-
-!Output variables
- real(dp), intent(out) :: ww(ncell)
-
-!Local variables
- real(qp) :: poly(0:ncell-1),xq(ncell),den,acc
- integer :: ii,jj,kk,ndeg
-
- if(cell_have(ishift)) then
-   ww(:)=cell_table(:,ishift)
-   return
- end if
- do ii=1,ncell
-   xq(ii)=real(ii-1-ishift,qp)
- end do
- do ii=1,ncell
-! coefficients of prod_{j/=i} (t-x_j), and its value at x_i
-   poly(:)=0.0_qp
-   poly(0)=1.0_qp
-   ndeg=0
-   den=1.0_qp
-   do jj=1,ncell
-     if(jj==ii) cycle
-     ndeg=ndeg+1
-     do kk=ndeg,1,-1
-       poly(kk)=poly(kk-1)-xq(jj)*poly(kk)
-     end do
-     poly(0)=-xq(jj)*poly(0)
-     den=den*(xq(ii)-xq(jj))
-   end do
-   acc=0.0_qp
-   do kk=0,ncell-1
-     acc=acc+poly(kk)/real(kk+1,qp)
-   end do
-   ww(ii)=real(acc/den,dp)
- end do
- cell_table(:,ishift)=ww(:)
- cell_have(ishift)=.true.
- return
- end subroutine cell_weights
-
-
  subroutine lm_cell_weights(ishift,ww)
 
-!! the weights of the cell rule (cell_weights), for the uniform grids of
+!! the weights of the cell rule (cell_table), for the uniform grids of
 !! ugrid_m
 
 !Input variables
@@ -839,7 +712,7 @@
 !Output variables
  real(dp), intent(out) :: ww(ncell)
 
- call cell_weights(ishift,ww)
+ ww(:)=cell_table(:,ishift)
  return
  end subroutine lm_cell_weights
 

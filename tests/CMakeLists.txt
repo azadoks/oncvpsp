@@ -139,6 +139,13 @@ endfunction()
 add_test(NAME smooth_scan_self_test COMMAND ${test_python} "${scripts}/smooth_scan.py" --self-test)
 set_tests_properties(smooth_scan_self_test PROPERTIES LABELS unit)
 oncvpsp_compares(smooth_scan_self_test)
+
+# The weights of logmesh_m's stencils (src/logmesh_weights.inc) are those scripts/logmesh_weights.py writes
+add_test(NAME unit_logmesh_weights
+         COMMAND ${Python3_EXECUTABLE} "${scripts}/logmesh_weights.py" --check
+                 "${PROJECT_SOURCE_DIR}/src/logmesh_weights.inc")
+set_tests_properties(unit_logmesh_weights PROPERTIES LABELS unit)
+
 # goals G1 (an input that was rounded or searched) and G2 (one that never was: the noise floor)
 set(smooth_g1 "kernel=1e-10,vloc=1e-10,core=1e-12,tests=1e-10")
 set(smooth_g2 "kernel=1e-12,vloc=1e-12,core=1e-12,tests=1e-10")

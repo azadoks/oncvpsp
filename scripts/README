@@ -23,3 +23,7 @@ lost or gained, and the fewest inputs and tests that keep it
 reindent.py re-indents the Fortran sources in the layout of
 doc/coding_standards.md; pre-commit runs it, and with --stdin an editor
 can run it as a formatter (doc/developer_setup.md).
+
+logmesh_weights.py writes src/logmesh_weights.inc, the weights of the
+stencils of logmesh_m (exact rational numbers rounded once); ctest checks
+that the file is current (unit_logmesh_weights).
