@@ -144,9 +144,6 @@
  call om_local_values(rr,vpuns(1,l1),mmax,vlocpw,rl,vpl(1,l1),nrl,iout,ifail)
  if(ifail/=0) return
 
-! the value at the origin that of the first point of the log mesh
- vpl(1,l1)=vpuns(1,l1)
-
  do l1=1,inp%lmax+1
    if(l1 /= inp%lloc+1) then
      do jj=1,inp%nproj(l1)

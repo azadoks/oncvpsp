@@ -591,6 +591,13 @@ precision.
   and the projectors are exactly 0 beyond rc. The model core's columns
   are taken from their pieces at the joint. Commits: 9796df1, 6f87629
   (M-14).
+- **The value at r = 0.** 4.0.1 took it from `dpnint` (V_loc from the
+  first log-mesh point), a polynomial through the output points 0.01 to
+  0.08 bohr, which missed the projectors' 0 by up to 3e-8 and the
+  all-electron core density's cusp. It is now the Floater-Hormann
+  interpolant in r through log-mesh points from rr(1) at r = 0
+  (`lm_origin`); only the first line of the psp8 data moves, and the
+  first value of each linear-mesh UPF array.
 - **Fully relativistic psp8 (O-2, D-2).** 4.0.1 dropped scalar and
   spin-orbit terms below 1e-3 of the first, so a term could drop out as
   an input moved. Every term is now written. Commit: 870835b.

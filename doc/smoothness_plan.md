@@ -153,8 +153,8 @@ the origin and from its breakpoints.
 #### Interpolation: Floater–Hormann in ln r
 
 For a value at an arbitrary radius the generator used `dpnint`, an
-8-point Lagrange interpolant (now left only for the value at the origin
-of the output files, see the follow-ups) whose stencil jumps as the
+8-point Lagrange interpolant (no longer used; the value at the origin
+of the output files is FH in r, see the follow-ups) whose stencil jumps as the
 point crosses a mesh node: its value is continuous there but its
 derivative is not.
 Splines are smooth but only C^(k−1) with a global solve, and their high
@@ -1049,7 +1049,8 @@ So the order is:
       `vkb`, `vsr`, `vso`; densities, model core and PP_CHI by FH, 0
       beyond a function's last nonzero node (a model core of compact
       support: FH left 1e-157 there, which `e21.13` cannot write).
-      The origin keeps `dpnint`'s limit (see the follow-ups). On the log
+      The origin keeps `dpnint`'s limit (replaced by FH in r 2026-10-27,
+      see the follow-ups). On the log
       mesh (`upf_mesh` > 0) the values are the node values, unchanged.
       R-15: `linout`'s format switch and `nrlproj` now only shorten zeros.
       T2 rows, kernel: 14_Si `rc[0]` psp8 / UPF 4.4e-12 / 4.4e-12, 08_O
@@ -1491,7 +1492,7 @@ from rc:
       UPF, PSML) write the three only when one is not its default, so a
       re-run reproduces the input (echo tests `*_14_Si_wt`); pyoncvpsp's
       `PseudoPotentialsInput` has the fields, in its dat and TOML forms
-- [ ] The value at the origin of the psp8 and linear-mesh UPF files:
+- [x] The value at the origin of the psp8 and linear-mesh UPF files:
       `outmesh_m` keeps `dpnint`'s limit, the polynomial of degree 7
       through the next 8 output points (0.01–0.08 bohr). Not yet trusted:
       check it against the functions' known behaviour at r = 0 (r β → 0,
@@ -1501,7 +1502,31 @@ from rc:
       `martins_derivatives`, `teter_core_derivs`): their columns could be
       evaluated at the output radii, r = 0 included, instead of
       interpolated from the nodes. Only the core charge beyond the joint
-      is tabulated and needs `lm_derivs`
+      is tabulated and needs `lm_derivs`;
+      done 2026-10-27: `lm_origin` (logmesh_m), the FH interpolant in r
+      (not ln r, where the origin is at infinity) of blending degree 6
+      through 10 log-mesh nodes a factor of about 2 apart from rr(1),
+      at r = 0, of the function or of the piece of its first segment;
+      each window's weight is about 2^-7 of the one before, so the
+      nearest dominates and there is no pole. `dpnint`'s limit and the
+      override of V_loc by vpuns(1) (sr) are gone. Against a degree-7
+      fit in r on the log-mesh UPF (nodes at ratio 2 from 1e-3 and 2e-3
+      bohr; spread of the two fits, relative to the function's maximum,
+      in parentheses), 9 inputs sr and fr: r β 3e-8 → 6e-10 (6e-10),
+      PP_CHI 2e-11 → 3e-13, the model core 2e-9 → 3e-11 (3e-11), its odd
+      derivatives at 0 now 1e-15 to 1e-12 (were up to 67, 14_Si_bc); the
+      all-electron core density at 0 follows the e^(-2Zr) cusp (14_Si
+      2.27e4 → 2.41e4). V_loc is not determined better than about 1e-8
+      Ha absolute (4e-10 relative): below about 1e-4 bohr the log-mesh
+      V_loc has its own structure (a slope at rr(1) in 29_Cu and 79_Au,
+      GGA noise of 1e-10 per node in 07_N_opt), and the fit's value
+      moves by that much with its first node; FH from rr(1) follows the
+      mesh's values (07_N_opt 1.7e-8 → 5e-9 relative, 29_Cu 3e-12 →
+      2e-10). In fr runs the all-electron densities diverge at r = 0
+      (r^(2γ-2)); their r = 0 value is the interpolant's, not a limit.
+      The model core's columns are still taken from the nodes, not
+      evaluated in closed form. References: the r = 0 line of the psp8
+      files only (23 files)
 - [x] Weighted wave cutoff for the icmod 6/7 budget (asked for by the
       oncvpsp-opt session; approved and done 2026-10-22, see
       doc/core_correction.md; T2 row sr_07_N_opt_rc1_wcut, Ecut_w smooth

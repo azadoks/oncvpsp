@@ -234,9 +234,6 @@
  call om_local_values(rr,vpuns(1,inp%lloc+1),mmax,vlocpw,rl,vpl(1, &
 &                     inp%lloc+1),nrl,iout,ifail)
  if(ifail/=0) return
-! the value at the origin that of the first point of the log mesh (in the
-! sr code only)
- if(nkap==1 .and. istr==0) vpl(1,inp%lloc+1)=vpuns(1,inp%lloc+1)
 
  do l1=1,inp%lmax+1
    if(l1==inp%lloc+1) cycle

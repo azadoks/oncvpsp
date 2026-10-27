@@ -20,19 +20,17 @@
 !> (lm_interp) of a smooth function, or of the piece of the radius's
 !> segment of a piecewise one, 0 beyond its last bound, so no interpolant
 !> spans a kink and a projector is exactly 0 beyond its rc. An output point
-!> at the origin, below the log mesh, takes the limit dpnint took: the
-!> polynomial of degree 7 through the next 8 output points.
+!> at the origin, below the log mesh, takes the value there of the
+!> interpolant in r of the log mesh's values (lm_origin), of the piece of
+!> the first segment for a piecewise function.
 
  module outmesh_m
  use constants_m, only: dp
- use logmesh_m, only: lm_interp
+ use logmesh_m, only: lm_interp, lm_origin
  use pieces_m, only: piecewise_t, pw_node_values, pw_segment
  implicit none
  private
  public :: om_values, om_piece_values, om_local_values
-
-!> degree of the extrapolation to the origin
- integer, parameter :: npoly=7
 
  contains
 
@@ -77,7 +75,7 @@
      call lm_interp(rr,ff,mmax,rl(ii),fl(ii))
    end if
  end do
- call origin(rr,mmax,rl,fl,nrl,iout,ifail)
+ call origin(rr,ff,mmax,rl,fl,nrl,iout,ifail)
  if(ifail/=0) return
  return
  end subroutine om_values
@@ -121,8 +119,13 @@
      fl(ii)=0.0d0
    end if
  end do
- call origin(rr,mmax,rl,fl,nrl,iout,ifail)
- if(ifail/=0) return
+ kk=pw_segment(pw,rr(1))
+ if(kk>0) then
+   call origin(rr,pw%vals(:,kk),mmax,rl,fl,nrl,iout,ifail)
+   if(ifail/=0) return
+ else if(rl(1)<rr(1)) then
+   fl(1)=0.0d0
+ end if
  return
  end subroutine om_piece_values
 
@@ -172,7 +175,8 @@
    end if
    call lm_interp(rr,vlocpw%vals(:,kk)+vs(:),mmax,rl(ii),fl(ii))
  end do
- call origin(rr,mmax,rl,fl,nrl,iout,ifail)
+ kk=pw_segment(vlocpw,rr(1))
+ call origin(rr,vlocpw%vals(:,kk)+vs(:),mmax,rl,fl,nrl,iout,ifail)
  if(ifail/=0) return
  deallocate(vs)
  return
@@ -207,14 +211,24 @@
  return
  end subroutine check_range
 
- subroutine origin(rr,mmax,rl,fl,nrl,iout,ifail)
+ subroutine origin(rr,ff,mmax,rl,fl,nrl,iout,ifail)
 
-!! a first output point below the log mesh (the origin): the polynomial
-!! of degree npoly through fl(2..npoly+2), at rl(1)
+!! a first output point below the log mesh (the origin): the value at
+!! r = 0 of the interpolant in r of the function on the log mesh
+!! (lm_origin)
+!!
+!! @param rr  log radial mesh
+!! @param ff  the function on the log mesh
+!! @param mmax  size of the log radial mesh
+!! @param rl  output mesh
+!! @param fl  the function on the output mesh, fl(1) set
+!! @param nrl  size of the output mesh
+!! @param iout  unit of the text output
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  integer, intent(in) :: mmax,nrl
- real(dp), intent(in) :: rr(mmax),rl(nrl)
+ real(dp), intent(in) :: rr(mmax),ff(mmax),rl(nrl)
 
 !Input/output variables
  real(dp), intent(inout) :: fl(nrl)
@@ -223,27 +237,13 @@
  integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
-!Local variables
- real(dp) :: term
- integer :: iy,ip
-
  ifail=0
  if(rl(1)>=rr(1)) return
- if(nrl<npoly+2) then
-   write(iout,'(a,i0)') &
-&       'outmesh: ERROR too few points to extrapolate to the origin, ',nrl
-   ifail=1
-   return
+ call lm_origin(rr,ff,mmax,fl(1),ifail)
+ if(ifail/=0) then
+   write(iout,'(a)') &
+&       'outmesh: ERROR log mesh too short for the value at the origin'
  end if
- fl(1)=0.0d0
- do iy=2,npoly+2
-   term=fl(iy)
-   do ip=2,npoly+2
-     if(ip==iy) cycle
-     term=term*(rl(1)-rl(ip))/(rl(iy)-rl(ip))
-   end do
-   fl(1)=fl(1)+term
- end do
  return
  end subroutine origin
 

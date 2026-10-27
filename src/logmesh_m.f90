@@ -46,7 +46,7 @@
  implicit none
  private
  public :: lm_blend, lm_interp, lm_derivs, lm_cumint, lm_integral, lm_root
- public :: lm_integral_weights, lm_head
+ public :: lm_integral_weights, lm_head, lm_origin
  public :: lm_ncell, lm_cell_weights, lm_fh_value, lm_fh_weights, lm_fh_reach
 
 !> blending degree d of the Floater-Hormann interpolant: it reproduces
@@ -60,6 +60,10 @@
 !> points of the cell-integration stencils: degree 7, 8th order
  integer, parameter :: lm_ncell=8
  integer, parameter :: ncell=lm_ncell
+
+!> nodes of the interpolant in r at the origin (lm_origin), a factor of
+!> about 2 apart
+ integer, parameter :: norig=10
 
 !> the window bump of the interpolant: 1 for a window centre within nwin1
 !> steps of x, falling smoothly to 0 at nwin2 steps
@@ -499,6 +503,68 @@
  end function value_at
 
  end subroutine lm_root
+
+ subroutine lm_origin(rr,ff,mmax,f0,ierr)
+
+!! value at r = 0 of a function smooth in r, given on the log mesh: the
+!! Floater-Hormann interpolant in r (not ln(r), in which the origin is at
+!! infinity) of blending degree lm_blend through norig nodes a factor of
+!! about 2 apart from rr(1), at r = 0. There each window's weight is
+!! about 2**-(lm_blend+1) of that of the window before, so the window
+!! nearest the origin dominates and the denominator cannot vanish; the
+!! error is that of a polynomial through nodes within rr(1)*2**lm_blend
+!! of the origin, below round-off for the functions of the programs
+!!
+!! @param rr  log radial mesh
+!! @param ff  function on the mesh
+!! @param mmax  size of the log radial mesh
+!! @param f0  value at r = 0
+!! @param ierr  0, or 1 if the mesh is too short for the nodes
+
+!Input variables
+ integer, intent(in) :: mmax
+ real(dp), intent(in) :: rr(mmax),ff(mmax)
+
+!Output variables
+ real(dp), intent(out) :: f0
+ integer, intent(out) :: ierr
+
+!Local variables
+ real(dp) :: xn(norig),ww,pp,num,den
+ integer :: mstep,ii,jj,kk
+
+ f0=0.0d0
+ ierr=0
+ mstep=max(1,nint(log(2.0d0)/mesh_step(rr,mmax)))
+ if(1+mstep*(norig-1)>mmax) then
+   ierr=1
+   return
+ end if
+! the nodes in units of rr(1)
+ do ii=1,norig
+   xn(ii)=rr(1+mstep*(ii-1))/rr(1)
+ end do
+! barycentric form, node i with the weight sum_k (-1)**k / prod_{j/=i}
+! (x_i-x_j) over the windows k..k+lm_blend that hold it
+ num=0.0d0
+ den=0.0d0
+ do ii=1,norig
+   ww=0.0d0
+   do kk=max(1,ii-lm_blend),min(ii,norig-lm_blend)
+     pp=1.0d0
+     do jj=kk,kk+lm_blend
+       if(jj/=ii) pp=pp/(xn(ii)-xn(jj))
+     end do
+     if(mod(kk,2)==0) pp=-pp
+     ww=ww+pp
+   end do
+   ww=-ww/xn(ii)
+   num=num+ww*ff(1+mstep*(ii-1))
+   den=den+ww
+ end do
+ f0=num/den
+ return
+ end subroutine lm_origin
 
  real(dp) function lm_head(f1,rho1,rho2,al,pw)
 
