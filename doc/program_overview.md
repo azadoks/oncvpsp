@@ -463,3 +463,135 @@ projector.
 *run_optimize* prints some additional diagnostic comparisons following
 several of the subroutine calls, and prints the plane-wave energy
 cutoffs corresponding to kinetic-energy-per-electron errors of 10^-2 to 10^-5 Ha.
+
+
+## NUMERICS: SMOOTH DEPENDENCE ON THE INPUTS
+
+The results are smooth functions of the continuous inputs: the core
+radii rc(l) and rc(5), ep, qcut, debl, dvloc0, fcfact, rcfact, slack,
+the icmod 4 search grid, rxpsh and the log-derivative energies. Every
+written quantity (the nonlocal kernel per l and j block, V_loc, the
+model core, the valence density) and every diagnostic an optimizer may
+use (test-configuration energies and eigenvalues, log derivatives, ghost
+margins, residual kinetic energies, the Ecut crossings) is C-infinity in
+each of them, to a noise floor of 1e-12 to 1e-10 relative, except at the
+discrete events listed below. The projectors themselves are not unique,
+so only the kernel is compared (scripts/kernel_diff.py). The integer
+inputs, and the mesh (amesh, rr1, rmax, drl, rlmax, upf_mesh), define
+the discrete problem: results converge as the mesh is refined, and are
+not meant to be smooth in it. doc/smoothness_plan.md is the record of
+how the code got here, item by item, with the measurements; this section
+describes the methods as they are.
+
+**The log mesh.** r_i = rr1 exp(al (i-1)), uniform in x = ln r with step
+al = ln amesh. Every operation works in x.
+
+**Interpolation (logmesh_m).** A value at a radius between nodes is the
+Floater-Hormann barycentric rational interpolant in x, of blending
+degree 6: C-infinity, without real poles, exact at the nodes and for
+polynomials of degree 6 (error O(al^7), round-off at the default mesh).
+Each local interpolant's weight is multiplied by a C-infinity bump of
+its distance, 1 within 10 steps and 0 beyond 20, so a node more than
+about 27 steps away has no influence; within reach, everything in the
+array counts, so the solvers leave no unset values past their last
+point. Only values are interpolated, never differentiated.
+
+**Derivatives.** Of a smooth function on the mesh (V, a core charge):
+fixed centred 8th-order stencils in x at every node, converted to d/dr
+exactly (Stirling numbers), then interpolated to the radius
+(`lm_derivs`; round-off about eps/al^k in the k-th). Of an all-electron
+wave function at rc: from the radial equation, y' = A(r) y with
+y = (u, q), every higher derivative from y and V, V', V'', V''' at rc
+(`ode_rc_der`), which brings the 4th derivative from about 1e-5 by
+stencils to the solver's own error.
+
+**Integrals.** To any limit: the cumulative 8th-order integral on the
+mesh (each cell exactly over the degree-7 interpolant on a fixed
+8-point stencil, the head below rr1 as a power law), interpolated at
+the limits (`lm_integral`), C-infinity in both. Of Bessel functions
+inside rc: Lommel's closed forms, with series where they cancel
+(`sbf_overlap`, in quad precision), which also give the Fourier-Bessel
+transform of the inside piece at any q. Every quadrature whose extent
+depends on an input keeps its node count and scales its nodes, or
+keeps its spacing and gains nodes only where the integrand is
+negligible (eresid's r grid at its end, its q grid at q = 0).
+
+**Pieces (pieces_m).** A function built from pieces (pseudo inside a
+radius, all-electron outside) is held as a piecewise_t: its segments'
+bounds, and for each segment its piece on the whole mesh, a smooth
+extension past the bounds, or a closed form (`pw_set_form`: the model
+core's polynomial, Teter function or fill). Values take the piece by
+side, derivatives are one-sided, integrals are split at the bounds, and
+each point of an output mesh comes from its own piece. No stencil,
+quadrature cell or interpolant spans a breakpoint, so no error depends
+on where a breakpoint falls on the mesh. The pseudo-atom (outwf_m)
+integrates each segment on its own grid, uniform in ln r from the
+segment's lower bound. The breakpoints and their continuity:
+
+| breakpoint | function | order |
+|---|---|---|
+| rc(l) | pseudo-wave function | C^(ncon-1) |
+| rc(l) | V_l, chi, beta | C^(ncon-3) |
+| rc(5) | V_loc, lpopt 1, 2 / 3, 4, 5 | C^2 / C^3 |
+| 0.95 rc(l) | the relativistic window of run_vkb | C^1 |
+| r* | model core, icmod 1 | C^4 |
+| r_s | model core, icmod 6, 7 | C^2 |
+| 3/b to 4/b | Teter taper, icmod 2-4 | C-infinity |
+| well onset | wellstate's well | C-infinity |
+| ra, rb | ionic-tail switch | C-infinity |
+| rmax/2 to rmax | switch of the potentials to -zion/r | C-infinity |
+| r_s = 1 | V_xc of PZ81 (iexc 3) | a jump of about 1e-5 Ha (the published coefficients) |
+
+A quantity read at a fixed radius is only as smooth in rc as the
+function is at rc, when rc passes that radius; that is the
+pseudopotential's, not the numerics'.
+
+**Roots and optima.** Bracketed on the mesh or a grid, which only picks
+the bracket, then solved to round-off on the interpolant by Brent's
+method (`lm_root`, `ug_brent`), Newton's or Illinois where a derivative
+is at hand: the crossover r*, r_s, the well width, the qroots wave
+vectors, the norm constraint of optimize, the icmod 4 minimum, the Ecut
+crossings, the Coulomb-tail radius. The result is as smooth as the
+function, except where the bracket itself changes (a new crossing, a
+new basin), which is a discrete event.
+
+**Iterations.** Every iteration ends with its last correction applied,
+so the result is at the round-off of the fixed point whatever the path
+or the iteration count: the eigen-solvers stop after two passes in a
+row below 1e-12 max(|E|, 0.2), the second at the corrected energy; a
+Newton polish stops within the round-off of its residual or a few ulps
+of its unknown, and evaluates once more there; the SCF loops test the
+eigenvalues and the screening residual at the target occupations; the
+ionic tail is iterated to 1e-13 Ha. An iteration that reaches its limit
+is an error, not a result. A bracket closed on a residual above its
+tolerance means a jump in the function, and stops the run.
+
+**Output.** psp8 and UPF on the linear mesh take each point from its
+piece; the model core's columns from its closed form; the value at
+r = 0 of every file (psp8, UPF, PSML) is the Floater-Hormann interpolant
+in r through log-mesh nodes a factor of 2 apart from rr1 (`lm_origin`).
+UPF writes 17 significant digits, and upf_mesh > 0 writes the log-mesh
+values themselves. The DIAGNOSTICS block gives the diagnostics at 17
+digits.
+
+**Discrete events (kept).** A bound state exists or not (the box state
+stands in, flagged); the bound or scattering branch of a diagnostic at
+zero energy; a ghost appears (its margins are printed); the multiple of
+pi aligning the pseudo phase to the all-electron one; a singular B or S
+in run_vkb (a pole of the kernel); the hard case of optimize; the
+model-core fill type (minimum tail, Martins, none), whose boundary is a
+root of p'; which basin a search lands in; a node of the
+pseudo-wave function inside rc (pspot stops); the eigenvalue index of a
+state, which changes only where an eigenvalue passes (the solvers with
+projectors count eigenvalues below E, outwf_index, not nodes); and the
+integer and mesh inputs.
+
+**Tests.** The unit tests check each primitive (logmesh, pieces,
+ode_rc_der, sbf, matching, outwf, ...). The scans (label `scan`,
+scripts/smooth_scan.py) step one input through 21 to 41 values across
+mesh nodes, fit each feature (kernel, V_loc, model core, test
+configurations, and the DIAGNOSTICS block's log derivatives, Ecut
+crossings and ghost margins) with a polynomial, and fail on a residual
+above the row's tolerance or a jump between neighbouring values;
+tests/CMakeLists.txt gives each row's tolerance and the reason for any
+above 1e-10.

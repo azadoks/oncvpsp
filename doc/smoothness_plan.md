@@ -519,10 +519,10 @@ numbers refer to [Phases](#phases).
 
 Written before the code they test. A test of a phase's code is written
 and committed (red) at the start of the phase, and the phase is done
-when it is green. All of these carry the ctest label `smooth` until the
-plan is complete, so `ctest -LE smooth` keeps the suite green on the
-branch in between; the default test preset (`ctest --preset default`)
-leaves them out until phase 7 drops the label.
+when it is green. All of these carried the ctest label `smooth` until the
+plan was complete, so `ctest -LE smooth` kept the suite green on the
+branch in between; phase 7 dropped it: the scans are labelled `scan`
+and part of the default preset.
 
 - **T1 Unit tests of the primitives** (`tests/unit/test_logmesh.f90`,
   written red against stubs of `src/logmesh_m.f90` and
@@ -1281,12 +1281,17 @@ So the order is:
 
 #### Phase 7: wrap-up
 
-- [ ] The numerics above moved into the permanent docs
-      (`program_overview.md`); this page kept as the record
+- [x] The numerics above moved into the permanent docs
+      (`program_overview.md`, "Numerics: smooth dependence on the
+      inputs", 2026-10-27); this page kept as the record
 - [x] Dead code removed (`lschpb`, `lschps`, `lschkb`, `vpinteg`: no
       caller left)
 - [x] The bugs below fixed where the phases did not already
-- [ ] `smooth` label dropped; T2 part of the default suite
+- [x] `smooth` label dropped; T2 part of the default suite
+      (2026-10-27): the scans carry the label `scan`, which the default
+      test preset no longer leaves out; `unit_modcore` is a unit test and
+      the projector-output tests are labelled as the other TOML tests.
+      The dev loop is `ctest -LE "scan|nist"`
 
 #### Phase 8: the kernels free of the well (follow-up)
 
