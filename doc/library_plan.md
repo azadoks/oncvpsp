@@ -60,7 +60,7 @@ with it set, so the failure reaches `oncvpsp_main`, which ends with
   `llin`, `vploc_fit`'s `lpopt`, the segments of `pw_alloc`,
   `pw_product_integral` and `outwf_setup`'s sources, `add_zero_r`'s sizes,
   the `ug_*` node counts, grid positions, brackets and `ug_fmin`'s
-  iterations, `diagout`'s and `modcore_budget_table`'s brackets,
+  iterations, `diagout`'s bracket,
   `eresid`'s q grid, `gauss_legendre`'s Newton iterations, and
   `dirac_outward`'s series at the origin, which converges at any energy
   of the solvers' brackets.
@@ -91,9 +91,11 @@ backtrace, and the exit status) unchanged:
       table, which covers the searched interval; `dhseqr` on the tail's
       companion matrix; `dgglse` on constraints of full rank by
       construction).
-- [ ] The tests and the writers: `run_diag`, `run_plot`, `run_ghosts`,
-      `run_phsft`, `phsft_m`, the confinement of `oncvpsp_confine`,
-      `outmesh_m`, `upfout`, `dpnint`.
+- [x] The tests and the writers: `run_diag`, `run_plot`, `run_ghosts`,
+      `run_phsft`, `phsft_m`, `outmesh_m`, `linout` and `upfout`. The
+      modules of `oncvpsp_confine` alone (`confine_ws_m`, `ws_basis_m`,
+      `confine_wall_m`) are the program's, and stop on an `ifail` of the
+      library: their phase searches call back into `phsft_m`.
 - [ ] `oncvpsp_main`'s own stops on the results (the command line and the
       input file stay): they move with phase 3.
 

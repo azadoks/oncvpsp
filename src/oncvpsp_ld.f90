@@ -135,7 +135,8 @@
      call phsft_pair(irel,ll,kap,nvkb,rr,vfull,zz,pf%vloc(:,ikap), &
 &                    pf%vlocpw,pf%vkbpw(1:nvkb,l1,ikap), &
 &                    pf%evkb(1:nvkb,l1,ikap),mmax,nq,rql,npsh,epsh2,depsh, &
-&                    pf%epa(l1,ikap),pshae,pshps)
+&                    pf%epa(l1,ikap),pshae,pshps,ifail)
+     if(ifail/=0) error stop 1
      do iq=1,nq
        write(6,'(a,2i4,1p,e24.16)') 'ld_r',ll,ikap,rql(iq)
        do ii=1,npsh

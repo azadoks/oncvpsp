@@ -27,7 +27,7 @@
 
  subroutine run_ghosts(lmax,la,ea,nc,nv,lloc,rc,qmsbf, &
 &                    vlocpw,vkbpw,evkb,nproj,rr,vp,mmax,mxprj, &
-&                    ngh,ghn,ghe,ghp)
+&                    ngh,ghn,ghe,ghp,ifail)
 
 !! Two tests for ghosts;  The local potential is terminated by a hard wall
 !! barrier at a radius of mbfact*rc, presently 3*rc.  A basis set is formed
@@ -83,6 +83,7 @@
 !! @param ghp  per l, the basis state of least <r>/rc above the reference,
 !!             <r>/rc divided by a weight rising from 0 at 0.025 Ha above
 !!             it to 1 at 0.05 Ha: (1) its energy, (2) that ratio; 0 if none
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, pi, mxstate, mxl, mxlin
  use pieces_m, only: piecewise_t, pw_integral, pw_value, pw_resample, &
@@ -105,6 +106,7 @@
 !Output variables
  integer, intent(out) :: ngh(mxl+1),ghn(mxstate,mxl+1)
  real(dp), intent(out) :: ghe(2,mxstate,mxl+1),ghp(2,mxl+1)
+ integer, intent(out) :: ifail
 
 !Local variables
  integer :: ll,l1,jj,ierr,mbar,npgh
@@ -121,6 +123,7 @@
 ! the largest kinetic energy of the sbf basis to 0 at ebfact times that
  real(dp), parameter :: mbfact=3.0d0,basfact=1.25d0,ebfact=1.5d0
 
+ ifail=0
  allocate(uu(mmax),up(mmax),rb(mmax),vb(mmax),vsw(mmax))
 
 ! the local potential is vp(:,lloc+1), the pieces vlocpw plus the switch
@@ -155,7 +158,8 @@
    write(6,'()')
    ll = l1 - 1
 
-   call barrier_mesh(l1)
+   call barrier_mesh(l1,ifail)
+   if(ifail/=0) return
 
 ! Basis cutoff energy is based on largest q in sbf optimization basis
    ebcut(l1)= basfact*0.5d0*qmsbf(l1)**2
@@ -189,9 +193,11 @@
    if(info /= 0) then
      write(6,'(a,i4)') 'run_ghosts: hamiltonian matrix eigenvalue ERROR, &
 &          info=',info
-     error stop 1
+     ifail=1
+     return
    end if
-   call bound_tests(l1)
+   call bound_tests(l1,ifail)
+   if(ifail/=0) return
 
    call localized_states(l1)
 
@@ -216,7 +222,7 @@
 
  contains
 
- subroutine barrier_mesh(l1)
+ subroutine barrier_mesh(l1,ifail)
 !! the basis of local-pseudopotential plus hard-wall barrier
 !! eigenfunctions of l1-1: the barrier at mbfact*rc, node mbar of the mesh
 !! rb = s*rr, the last node of rr at or inside it scaled up onto it; the
@@ -225,6 +231,8 @@
  integer, intent(in) :: l1
  integer :: ii,iprj
  real(dp) :: vs
+ integer, intent(out) :: ifail
+ ifail=0
  rbar=mbfact*rc(l1)
  mbar=1+int(log(rbar/rr(1))/al)
  if(mbar>1 .and. rr(min(mbar,mmax))>rbar) mbar=mbar-1
@@ -233,7 +241,8 @@
  if(mbar+5>mmax) then
    write(6,'(/2a,i0,a,i0)') 'run_ghosts: ERROR barrier radius beyond', &
 &          ' radial mesh, mbar=',mbar,', mmax=',mmax
-   error stop 1
+   ifail=1
+   return
  end if
  rb(:)=(rbar/rr(mbar))*rr(:)
  rb(mbar)=rbar
@@ -327,7 +336,7 @@
  end do
  end subroutine add_nonlocal
 
- subroutine bound_tests(l1)
+ subroutine bound_tests(l1,ifail)
 !! the bound-state test of l1-1: each valence state of l against the
 !! basis eigenvalues, a lower one a GHOST(-); without valence states, any
 !! nodeless bound state, or the vacuum level (0.0); ee the energy of the
@@ -335,8 +344,9 @@
  integer, intent(in) :: l1
  integer :: ii,jj,kk,nn,mch
  real(dp) :: et
- integer :: ifail
 !treat valence states for this l
+ integer, intent(out) :: ifail
+ ifail=0
  nn=ll
  jj=0
  do kk=1,nv
@@ -349,7 +359,7 @@
    call lschvkbb(nn,ll,nprj,ierr,ee,emin,emax, &
 &                  rr,vp(1,lloc+1),vlocpw,vkbpw(1:nprj,l1),evkb(1,l1), &
 &                  uu,up,mmax,mch,ifail)
-   if(ifail/=0) error stop 1
+   if(ifail/=0) return
    if(ierr/=0) then
      write(6,'(a,3i4,2f12.6)') 'run_ghosts: lschvkbb ERROR', &
 &            nn,ll,ierr,ea(nc+kk),ee
@@ -385,7 +395,7 @@
    call lschvkbb(ll+1,ll,nprj,ierr,ee,emin,emax, &
 &                  rr,vp(1,lloc+1),vlocpw,vkbpw(1:nprj,l1),evkb(1,l1), &
 &                  uu,up,mmax,mch,ifail)
-   if(ifail/=0) error stop 1
+   if(ifail/=0) return
    if(ierr/=0) ee=0.0d0
    do jj=1,10
      et=min(ee-eps,ee*(1.0d0+eps))

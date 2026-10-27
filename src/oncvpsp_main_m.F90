@@ -694,13 +694,15 @@
  call run_diag(inp%lmax,npa,epa,wellprj,inp%lloc,irc, &
 &               vlocpw,vkbpw,evkb,inp%nproj,rr,vfull,vp,inp%zz,mmax,mxprj, &
 &               irel,nkap, &
-&               0,vsrpw,esr,vsopw,eso)
+&               0,vsrpw,esr,vsopw,eso,ifail)
+ if(ifail/=0) error stop 1
 
  if(irel==2) then
    call run_diag(inp%lmax,npa,epa,wellprj,inp%lloc,irc, &
 &                 vlocpw,vkbpw,evkb,inp%nproj,rr,vfull,vp,inp%zz,mmax,mxprj, &
 &                 irel, &
-&                 nkap,1,vsrpw,esr,vsopw,eso)
+&                 nkap,1,vsrpw,esr,vsopw,eso,ifail)
+   if(ifail/=0) error stop 1
 
 ! save full info for psml
    allocate(vpsml(mmax,mxl+2,mxkap))
@@ -720,7 +722,8 @@
  ghp(:,:,:)=0.0d0
  call run_ghosts(inp%lmax,inp%la,ea(1,1),inp%nc,inp%nv,inp%lloc,inp%rc,qmsbf, &
 &                vlocpw,vkbpw(:,:,1),evkb(1,1,1),inp%nproj,rr,vp,mmax,mxprj, &
-&                ngh(:,1),ghn(:,:,1),ghe(:,:,:,1),ghp(:,:,1))
+&                ngh(:,1),ghn(:,:,1),ghe(:,:,:,1),ghp(:,:,1),ifail)
+ if(ifail/=0) error stop 1
 
  if(irel==2) then
    write(6,'(/a)') 'Ghost test for J = L - 1/2'
@@ -732,7 +735,8 @@
    call run_ghosts(inp%lmax,inp%la,ea(1,2),inp%nc,inp%nv,inp%lloc,inp%rc, &
 &                  qmsbf, &
 &                  vlocpw,vkbpw(:,:,2),evkb(1,1,2),inp%nproj,rr,vp,mmax,mxprj, &
-&                  ngh(:,2),ghn(:,:,2),ghe(:,:,:,2),ghp(:,:,2))
+&                  ngh(:,2),ghn(:,:,2),ghe(:,:,:,2),ghp(:,:,2),ifail)
+   if(ifail/=0) error stop 1
    vkb(:,:,1,2)=0.0d0
    evkb(:,1,2)=0.0d0
    do jj=1,inp%nproj(1)
@@ -781,7 +785,8 @@
 &               vkb,vlocpw,vkbpw,evkb,inp%nproj,rr,vfull,vp,vpuns,inp%zz, &
 &               mmax,mxprj, &
 &               inp%drl,nrl, &
-&               rho,rhoc,rhomod,irel,nkap,cvgplt)
+&               rho,rhoc,rhomod,irel,nkap,cvgplt,ifail)
+ if(ifail/=0) error stop 1
 
 
 
@@ -809,7 +814,8 @@
 &                 inp%rxpsh,vlocpw,vkbpw, &
 &                 evkb, &
 &                 rr,vfull,vp,inp%zz,mmax,mxprj,inp%rc,irel,nkap,rphs,pshae, &
-&                 pshps)
+&                 pshps,ifail)
+   if(ifail/=0) error stop 1
  end if
 
  call gnu_script(epa,evkb,inp%lmax,inp%lloc,mxprj,inp%nproj,nkap)
@@ -829,12 +835,14 @@
    soscale=1.0d0
    call linout(inp,vkbpw,evkb,vsrpw,esr,vsopw,eso,rr,vpuns,vlocpw,rho,corepw, &
 &              rhotae,rhoc,zion,mmax,mxprj,nrl,soscale,rc0,fcfact0,fcgrid, &
-&              rcgrid,log_mesh,nkap)
+&              rcgrid,log_mesh,nkap,ifail)
+   if(ifail/=0) error stop 1
  end if
 
  if(trim(inp%psfile)=='upf' .or. trim(inp%psfile)=='both') then
    call upfout(inp,vkbpw,evkb,rr,vpuns,vlocpw,rho,corepw,zion,mmax,mxprj,nrl, &
-&              epstot,rc0,fcfact0,fcgrid,rcgrid,uupsa,ea,log_mesh,nkap)
+&              epstot,rc0,fcfact0,fcgrid,rcgrid,uupsa,ea,log_mesh,nkap,ifail)
+   if(ifail/=0) error stop 1
  end if
 
 

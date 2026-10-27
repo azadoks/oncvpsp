@@ -74,6 +74,7 @@
  integer, intent(in) :: nexpected
 
 !Local variables
+ integer :: ifail
  character(len=256) :: line
  integer :: unit, ios, nwarn
 
@@ -81,11 +82,13 @@
  if(name == 'run_phsft') then
    call run_phsft(lmax, lloc, nproj, epa, npsh, epsh2, depsh, rxpsh, &
 &                 vlocpw, vkbpw, evkb, rr, vfull, vp, zz, mmax, mxprj, rc, &
-&                 0, 1, rphs, pshae, pshps)
+&                 0, 1, rphs, pshae, pshps, ifail)
+   if(ifail /= 0) error stop 1
  else
    call run_phsft(lmax, lloc, nproj, epa_r, npsh, epsh2, depsh, rxpsh, &
 &                 vlocpw, vkbpw_r, evkb_r, rr, vfull, vp_r, zz, mmax, mxprj, &
-&                 rc, 2, 2, rphs, pshae, pshps)
+&                 rc, 2, 2, rphs, pshae, pshps, ifail)
+   if(ifail /= 0) error stop 1
  end if
  close(6)
 

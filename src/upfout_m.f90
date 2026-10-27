@@ -32,7 +32,7 @@
 
  subroutine upfout(inp,vkbpw,evkb,rr,vpuns,vlocpw,rho,corepw,zion,mmax,mxprj, &
 &                  nrlin,epstot,rc0,fcfact,fcgrid,rcgrid,uupsa,ea,log_mesh, &
-&                  nkap)
+&                  nkap,ifail)
 
 
 !! @param inp  the input values (input_m)
@@ -64,6 +64,7 @@
 !!               j=l-1/2 when nkap=2
 !! @param ea  psuedo-orbital eigenvalues (Ha), second index as for uupsa
 !! @param nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, pi, mxstate, mxcnf, mxl, mxlin, nrhomod
  use kappa_m, only: kap_count, j_share
@@ -92,6 +93,9 @@
 
 !Output variables - printing only
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
  integer :: nrl,istr,ntotproj,nrlproj,nwfc
  real(dp) :: al
@@ -105,6 +109,7 @@
  character(len=2) :: pspd(3)
  character(len=19) :: version
 
+ ifail=0
  lnames = "SPDFG"
  if(nkap==1) then
    version='scalar-relativistic'
@@ -116,7 +121,8 @@
 
  call orbital_extent()
  call log_stride()
- call output_values()
+ call output_values(ifail)
+ if(ifail/=0) return
  call projector_order()
  call date_stamp(pspd)
 
@@ -125,7 +131,8 @@
  write(6,'(/a)') 'Begin PSP_UPF'
 
  call write_info()
- call write_header()
+ call write_header(ifail)
+ if(ifail/=0) return
  call write_mesh_local()
  call write_nonlocal()
  call write_pswfc()
@@ -197,10 +204,12 @@
  end if
  end subroutine log_stride
 
- subroutine output_values()
+ subroutine output_values(ifail)
 !! everything on the linear output mesh or the log mesh points, the
 !! projectors and the local potential from their pieces (outmesh_m)
  integer :: ii,jj,ll,l1,ikap,mkap
+ integer, intent(out) :: ifail
+ ifail=0
  allocate(rhol(nrl),rl(nrl),vkbl(nrl,mxprj,mxl+1,nkap),vpl(nrl,mxl+2), &
 &          rhomodl(nrl,nrhomod), &
 &          uual(nrl,nkap,inp%nv),rabl(nrl))
@@ -219,7 +228,8 @@
 !
  vpl(:,:)=0.0d0
  call om_local_values(rr,vpuns(1,inp%lloc+1),mmax,vlocpw,rl,vpl(1, &
-&                     inp%lloc+1),nrl)
+&                     inp%lloc+1),nrl,ifail)
+ if(ifail/=0) return
 ! the value at the origin that of the first point of the log mesh (in the
 ! sr code only)
  if(nkap==1 .and. istr==0) vpl(1,inp%lloc+1)=vpuns(1,inp%lloc+1)
@@ -233,16 +243,19 @@
      do jj=1,inp%nproj(l1)
 
        call om_piece_values(rr,mmax,vkbpw(jj,l1,ikap),rl, &
-&                           vkbl(1,jj,l1,ikap),nrl)
+&                           vkbl(1,jj,l1,ikap),nrl,ifail)
+       if(ifail/=0) return
 
      end do !jj
    end do !ikap
  end do !l1
 
- call om_values(rr,rho,mmax,rl,rhol,nrl)
+ call om_values(rr,rho,mmax,rl,rhol,nrl,ifail)
+ if(ifail/=0) return
 
  do jj=1,5
-   call om_piece_values(rr,mmax,corepw(jj),rl,rhomodl(1,jj),nrl)
+   call om_piece_values(rr,mmax,corepw(jj),rl,rhomodl(1,jj),nrl,ifail)
+   if(ifail/=0) return
  end do
 
  nwfc = 0
@@ -251,7 +264,8 @@
    mkap=kap_count(nkap,l1)
    nwfc = nwfc + mkap
    do ikap=1,mkap
-     call om_values(rr,uupsa(1,ikap,ii),mmax,rl,uual(1,ikap,ii),nrl)
+     call om_values(rr,uupsa(1,ikap,ii),mmax,rl,uual(1,ikap,ii),nrl,ifail)
+     if(ifail/=0) return
    end do
  end do
  end subroutine output_values
@@ -335,12 +349,15 @@
 &      '  <!--                               -->'
  end subroutine write_info
 
- subroutine write_header()
+ subroutine write_header(ifail)
 !! PP_HEADER, and nrlproj, the points of the projectors
  integer :: ii,l1
  real(dp) :: rcmx
  character(len=20) :: fname
- fname=upf_functional()
+ integer, intent(out) :: ifail
+ ifail=0
+ fname=upf_functional(ifail)
+ if(ifail/=0) return
  write(6,'(a)') &
 &      '    <PP_HEADER'
 
@@ -661,11 +678,13 @@
  end subroutine write_spin_orb
 
 
- function upf_functional() result(name)
+ function upf_functional(ifail) result(name)
 !! the functional attribute of the UPF header for iexc; an error for one
 !! UPF has no name for
  character(len=20) :: name
+ integer, intent(out) :: ifail
 
+ ifail=0
  select case(inp%iexc)
  case(2)
    name='SLA  HL   NOGX NOGC'
@@ -698,7 +717,8 @@
    write(6,'(t8,a,i0,a)') &
 &      'upfout: ERROR iexc = ',inp%iexc, &
 &      ' is presently unsupported for UPF output'
-   error stop 1
+   ifail=1
+   return
  end select
  end function upf_functional
 

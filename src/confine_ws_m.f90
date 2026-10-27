@@ -131,6 +131,7 @@
  real(dp), allocatable :: shae(:,:),shps(:,:),tanae(:,:),tanps(:,:)
  real(dp) :: ex
  integer :: l1,kap,nvkb,iq,ii,ierr,npsh
+ integer :: ifail
 
  l1=ll+1
  npsh=size(egrid)
@@ -139,10 +140,12 @@
  nvkb=pf%nvkb(l1,ikap)
 ! the solvers of the channel at every radius, and each sphere's
 ! quadrature and poles (refined to the roots of u(rs))
- call phsft_ae_init(irel,ll,kap,rr,vfull,zz,mmax,nq,rq(1:nq),sae)
+ call phsft_ae_init(irel,ll,kap,rr,vfull,zz,mmax,nq,rq(1:nq),sae,ifail)
+ if(ifail/=0) error stop 1
  call phsft_ps_init(ll,nvkb,rr,pf%vloc(:,ikap),pf%vlocpw, &
 &                   pf%vkbpw(1:nvkb,l1,ikap),pf%evkb(1:nvkb,l1,ikap), &
-&                   mmax,nq,rq(1:nq),sps)
+&                   mmax,nq,rq(1:nq),sps,ifail)
+ if(ifail/=0) error stop 1
  allocate(wsg(nq),polq(nq),tanae(nanch,nq),tanps(nanch,nq))
  allocate(shae(npsh,nq),shps(npsh,nq))
  do iq=1,nq
@@ -439,8 +442,11 @@
  real(dp), intent(in) :: ex
  real(dp), intent(out) :: thae(:),thps(:)
  integer :: jq
- call phsft_node_phases(sae,ex,thae)
- call phsft_node_phases(sps,ex,thps,nodes=.false.)
+ integer :: ifail
+ call phsft_node_phases(sae,ex,thae,ifail=ifail)
+ if(ifail/=0) error stop 1
+ call phsft_node_phases(sps,ex,thps,nodes=.false.,ifail=ifail)
+ if(ifail/=0) error stop 1
  do jq=1,size(polq)
    thps(jq)=thps(jq)-pi*dble(count(polq(jq)%e<ex))
  end do
@@ -456,11 +462,14 @@
 !! the phase of psol at ex: less pi per node inside rs, or with ph_poles
 !! per pole of r phi'/phi at rs below ex
  real(dp), intent(in) :: ex
+ integer :: ifail
  if(ph_poles) then
-   phase_of=phsft_node_phase(psol,ph_iq,ex,nodes=.false.) &
+   phase_of=phsft_node_phase(psol,ph_iq,ex,nodes=.false.,ifail=ifail) &
 &           -pi*dble(count(edir(1:ndir)<ex))
+   if(ifail/=0) error stop 1
  else
-   phase_of=phsft_node_phase(psol,ph_iq,ex)
+   phase_of=phsft_node_phase(psol,ph_iq,ex,ifail=ifail)
+   if(ifail/=0) error stop 1
  end if
  end function phase_of
 
@@ -512,7 +521,9 @@
 !! u of psol at rs and the energy ex
  real(dp), intent(in) :: ex
  real(dp) :: th
- th=phsft_node_phase(psol,ph_iq,ex,nodes=.false.,uq_out=u_rs)
+ integer :: ifail
+ th=phsft_node_phase(psol,ph_iq,ex,nodes=.false.,uq_out=u_rs,ifail=ifail)
+ if(ifail/=0) error stop 1
  end function u_rs
 
  integer function majority(iv)

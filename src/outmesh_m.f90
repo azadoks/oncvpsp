@@ -36,7 +36,7 @@
 
  contains
 
- subroutine om_values(rr,ff,mmax,rl,fl,nrl)
+ subroutine om_values(rr,ff,mmax,rl,fl,nrl,ifail)
 
 !! a smooth function on the output mesh, 0 beyond its last nonzero node
 !! (the end of a model core's support, phase 5)
@@ -47,6 +47,7 @@
 !! @param rl  output mesh, ascending, rl(1) 0 or on the log mesh
 !! @param fl  the function on the output mesh
 !! @param nrl  size of the output mesh
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  integer, intent(in) :: mmax,nrl
@@ -54,11 +55,14 @@
 
 !Output variables
  real(dp), intent(out) :: fl(nrl)
+ integer, intent(out) :: ifail
 
 !Local variables
  integer :: ii,nlast
 
- call check_range(rr,mmax,rl,nrl)
+ ifail=0
+ call check_range(rr,mmax,rl,nrl,ifail)
+ if(ifail/=0) return
  nlast=mmax
  do while(nlast>1 .and. ff(nlast)==0.0d0)
    nlast=nlast-1
@@ -71,11 +75,12 @@
      call lm_interp(rr,ff,mmax,rl(ii),fl(ii))
    end if
  end do
- call origin(rr,mmax,rl,fl,nrl)
+ call origin(rr,mmax,rl,fl,nrl,ifail)
+ if(ifail/=0) return
  return
  end subroutine om_values
 
- subroutine om_piece_values(rr,mmax,pw,rl,fl,nrl)
+ subroutine om_piece_values(rr,mmax,pw,rl,fl,nrl,ifail)
 
 !! a piecewise function on the output mesh: at each radius the interpolant
 !! of the piece of its segment, 0 beyond the last bound
@@ -86,6 +91,7 @@
 !! @param rl  output mesh, ascending, rl(1) 0 or on the log mesh
 !! @param fl  the function on the output mesh
 !! @param nrl  size of the output mesh
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  integer, intent(in) :: mmax,nrl
@@ -94,11 +100,14 @@
 
 !Output variables
  real(dp), intent(out) :: fl(nrl)
+ integer, intent(out) :: ifail
 
 !Local variables
  integer :: ii,kk
 
- call check_range(rr,mmax,rl,nrl)
+ ifail=0
+ call check_range(rr,mmax,rl,nrl,ifail)
+ if(ifail/=0) return
  do ii=1,nrl
    if(rl(ii)<rr(1)) cycle
    kk=pw_segment(pw,rl(ii))
@@ -108,11 +117,12 @@
      fl(ii)=0.0d0
    end if
  end do
- call origin(rr,mmax,rl,fl,nrl)
+ call origin(rr,mmax,rl,fl,nrl,ifail)
+ if(ifail/=0) return
  return
  end subroutine om_piece_values
 
- subroutine om_local_values(rr,vv,mmax,vlocpw,rl,fl,nrl)
+ subroutine om_local_values(rr,vv,mmax,vlocpw,rl,fl,nrl,ifail)
 
 !! a local potential on the output mesh: vv less the node values of the
 !! pieces vlocpw is smooth (the screening and the ionic tail), and is added
@@ -125,6 +135,7 @@
 !! @param rl  output mesh, ascending, rl(1) 0 or on the log mesh
 !! @param fl  the potential on the output mesh
 !! @param nrl  size of the output mesh
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  integer, intent(in) :: mmax,nrl
@@ -133,12 +144,15 @@
 
 !Output variables
  real(dp), intent(out) :: fl(nrl)
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp), allocatable :: vs(:)
  integer :: ii,kk
 
- call check_range(rr,mmax,rl,nrl)
+ ifail=0
+ call check_range(rr,mmax,rl,nrl,ifail)
+ if(ifail/=0) return
  allocate(vs(mmax))
  call pw_node_values(rr,mmax,vlocpw,vs)
  vs(:)=vv(:)-vs(:)
@@ -147,16 +161,18 @@
    kk=pw_segment(vlocpw,rl(ii))
    if(kk==0) then
      write(6,'(a)') 'om_local_values: ERROR the pieces end inside the mesh'
-     error stop 1
+     ifail=1
+     return
    end if
    call lm_interp(rr,vlocpw%vals(:,kk)+vs(:),mmax,rl(ii),fl(ii))
  end do
- call origin(rr,mmax,rl,fl,nrl)
+ call origin(rr,mmax,rl,fl,nrl,ifail)
+ if(ifail/=0) return
  deallocate(vs)
  return
  end subroutine om_local_values
 
- subroutine check_range(rr,mmax,rl,nrl)
+ subroutine check_range(rr,mmax,rl,nrl,ifail)
 
 !! the output mesh within the log mesh, but for a first point at the
 !! origin
@@ -164,23 +180,27 @@
 !Input variables
  integer, intent(in) :: mmax,nrl
  real(dp), intent(in) :: rr(mmax),rl(nrl)
+ integer, intent(out) :: ifail
 
+ ifail=0
  if(rl(nrl)>rr(mmax)) then
    write(6,'(a,f10.4,a,f10.4)') 'outmesh: ERROR output mesh to', &
 &       rl(nrl),' bohr, beyond the log mesh, ',rr(mmax)
-   error stop 1
+   ifail=1
+   return
  end if
  if(nrl>1) then
    if(rl(2)<rr(1)) then
      write(6,'(a)') &
 &         'outmesh: ERROR more than one output point below the log mesh'
-     error stop 1
+     ifail=1
+     return
    end if
  end if
  return
  end subroutine check_range
 
- subroutine origin(rr,mmax,rl,fl,nrl)
+ subroutine origin(rr,mmax,rl,fl,nrl,ifail)
 
 !! a first output point below the log mesh (the origin): the polynomial
 !! of degree npoly through fl(2..npoly+2), at rl(1)
@@ -192,15 +212,20 @@
 !Input/output variables
  real(dp), intent(inout) :: fl(nrl)
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
  real(dp) :: term
  integer :: iy,ip
 
+ ifail=0
  if(rl(1)>=rr(1)) return
  if(nrl<npoly+2) then
    write(6,'(a,i0)') &
 &       'outmesh: ERROR too few points to extrapolate to the origin, ',nrl
-   error stop 1
+   ifail=1
+   return
  end if
  fl(1)=0.0d0
  do iy=2,npoly+2

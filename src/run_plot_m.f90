@@ -27,7 +27,7 @@
 
  subroutine run_plot(lmax,npa,epa,wellprj,lloc,irc, &
 &                    vkb,vlocpw,vkbpw,evkb,nproj,rr,vfull,vp,vpuns,zz,mmax, &
-&                    mxprj,drl,nrl,rho,rhoc,rhomod,irel,nkap,cvgplt)
+&                    mxprj,drl,nrl,rho,rhoc,rhomod,irel,nkap,cvgplt,ifail)
 
 !! write output for plotting pseudopotentials, model core charge, and
 !! all-electron and pseudo wave functions
@@ -61,6 +61,7 @@
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param nkap  number of kappa per l: 1, or 2 for irel=2
 !! @param cvgplt  energy per electron error vs. cutoff (convergence profiles)
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, mxl, mxlin, nrhomod, nerrlv, nerrdg
  use kappa_m, only: kap_count, kap_of
@@ -85,6 +86,9 @@
  logical, intent(in) :: wellprj(mxprj,mxlin+1)
  real(dp), intent(in) :: cvgplt(2,nerrdg,mxprj,mxl+1,nkap)
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
  integer :: ll,l1,n1,n2,n3,n4,nn
  integer :: ikap,mkap
@@ -93,6 +97,7 @@
 !the points that are written of a plot, each beyond the last by dr
  logical, allocatable :: keep(:)
 
+ ifail=0
  allocate(u2(mmax),up(mmax),ur(mmax,2),urp(mmax,2),keep(mmax))
 
  al = 0.01d0 * log(rr(101)/rr(1))
@@ -121,7 +126,8 @@
    mkap=kap_count(nkap,ll)
 ! loop on J = ll +/- 1/2 when nkap=2
    do ikap=1,mkap
-     call write_waves(l1,ikap)
+     call write_waves(l1,ikap,ifail)
+     if(ifail/=0) return
      call write_projectors(l1,ikap)
    end do !ikap
  end do !l1
@@ -205,15 +211,16 @@
  end do
  end subroutine write_charges
 
- subroutine write_waves(l1,ikap)
+ subroutine write_waves(l1,ikap,ifail)
 !! the & lines of the all-electron and pseudo wave functions of each
 !! projector of l1-1 and ikap: bound states as such, the others
 !! scattering states at their energies, both of the sign of the
 !! all-electron one at n2
  integer, intent(in) :: l1,ikap
  integer :: ii,iprj,npr,ierr,mch,kap,iout
+ integer, intent(out) :: ifail
  real(dp) :: r0,dr,cnorm,emax,emin,etest,sgnae,sgnps
- integer :: ifail
+ ifail=0
  kap=kap_of(ll,ikap)
  npr=nproj(l1)
  if(l1==lloc+1) npr=0
@@ -236,21 +243,23 @@
      etest=epa(iprj,l1,ikap)
      call boundstate(irel,npa(iprj,l1),ll,kap,ierr,etest, &
 &                    rr,zz,vfull,ur,urp,mmax,mch,ifail)
-     if(ifail/=0) error stop 1
+     if(ifail/=0) return
      if(ierr /= 0 .and. irel==2) then
        write(6,'(a,i2,a,i2,a,i2,a,i4)') &
 &            'run_plot_r 409: ldiracfb convergence ERROR, n=',&
 &             npa(iprj,l1),'  l=',ll, 'kap-',kap,'  ierr=',ierr
-       error stop 1
+       ifail=1
+       return
      else if(ierr /= 0) then
        write(6,'(/a,3i4)') &
 &            'run_plot: lschfb convergence ERROR n,l,ierr=', &
 &            npa(iprj,l1),ll,ierr
-       error stop 1
+       ifail=1
+       return
      end if
      if(irel==2) then
        call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm,ifail)
-       if(ifail/=0) error stop 1
+       if(ifail/=0) return
      end if
 
      emax=0.9d0*etest
@@ -259,7 +268,7 @@
      call lschvkbb(ll+iprj,ll,npr,ierr,etest,emin,emax, &
 &                  rr,vp(1,lloc+1,ikap),vlocpw,vkbpw(1:npr,l1,ikap), &
 &                  evkb(1,l1,ikap),u2,up,mmax,mch,ifail)
-     if(ifail/=0) error stop 1
+     if(ifail/=0) return
      sgnae=1.0d0
      sgnps=1.0d0
    else
@@ -278,16 +287,17 @@
          write(6,'(/2a,i0,a,i0,a,i0)') &
 &              'run_plot_r: ERROR ldiracfs failed', &
 &              ', ll=',ll,', kap=',kap,', ierr=',ierr
-         error stop 1
+         ifail=1
+         return
        end if
        call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm,ifail)
-       if(ifail/=0) error stop 1
+       if(ifail/=0) return
      end if
 
      call lschvkbs(ll,npr,epa(iprj,l1,ikap),rr,vp(1,lloc+1,ikap), &
 &                  vlocpw,vkbpw(1:npr,l1,ikap),evkb(1,l1,ikap),u2,up, &
 &                  mmax,n2,ifail)
-     if(ifail/=0) error stop 1
+     if(ifail/=0) return
      sgnae=sign(1.0d0,ur(n2,1))
      sgnps=sign(1.0d0,u2(n2))
    end if

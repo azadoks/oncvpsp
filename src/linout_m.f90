@@ -31,7 +31,7 @@
 
  subroutine linout(inp,vkbpw,evkb,vsrpw,esr,vsopw,eso,rr,vpuns,vlocpw,rho, &
 &                  corepw,rhotae,rhoc,zion,mmax,mxprj,nrl,soscale,rc0,fcfact0, &
-&                  fcgrid,rcgrid,log_mesh,nkap)
+&                  fcgrid,rcgrid,log_mesh,nkap,ifail)
 
 
 !! @param inp  the input values (input_m)
@@ -66,6 +66,7 @@
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 !! @param log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets
 !!                  it (else 0)
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 
  use constants_m, only: dp, mxstate, mxcnf, mxl, mxlin, nrhomod
@@ -92,6 +93,9 @@
  real(dp), intent(in) :: rc0(mxlin+1)
  real(dp), intent(in) :: log_mesh(3)
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
  integer :: ii,jj,ll,l1,ixc_abinit
  integer :: npr_sr(mxl+1),npr_so(mxl+1)
@@ -103,6 +107,7 @@
  character(len=2) :: pspd(3)
  character(len=48) :: version
 
+ ifail=0
  allocate(rhol(nrl),rl(nrl),vpl(nrl,mxl+2),rhomodl(nrl,nrhomod))
  allocate(rhotael(nrl),rhocl(nrl))
  allocate(vkbl(nrl,mxprj,mxl+1))
@@ -132,7 +137,8 @@
 !
  vpl(:,:)=0.0d0
  l1=inp%lloc+1
- call om_local_values(rr,vpuns(1,l1),mmax,vlocpw,rl,vpl(1,l1),nrl)
+ call om_local_values(rr,vpuns(1,l1),mmax,vlocpw,rl,vpl(1,l1),nrl,ifail)
+ if(ifail/=0) return
 
 ! the value at the origin that of the first point of the log mesh
  vpl(1,l1)=vpuns(1,l1)
@@ -140,25 +146,34 @@
  do l1=1,inp%lmax+1
    if(l1 /= inp%lloc+1) then
      do jj=1,inp%nproj(l1)
-       if(nkap==1) call om_piece_values(rr,mmax,vkbpw(jj,l1,1),rl, &
-&                                       vkbl(1,jj,l1),nrl)
+       if(nkap==1) then
+         call om_piece_values(rr,mmax,vkbpw(jj,l1,1),rl,vkbl(1,jj,l1),nrl, &
+&                             ifail)
+         if(ifail/=0) return
+       end if
      end do
      do jj=1,npr_sr(l1)
-       call om_piece_values(rr,mmax,vsrpw(jj,l1),rl,vsrl(1,jj,l1),nrl)
+       call om_piece_values(rr,mmax,vsrpw(jj,l1),rl,vsrl(1,jj,l1),nrl,ifail)
+       if(ifail/=0) return
      end do
      do jj=1,npr_so(l1)
-       call om_piece_values(rr,mmax,vsopw(jj,l1),rl,vsol(1,jj,l1),nrl)
+       call om_piece_values(rr,mmax,vsopw(jj,l1),rl,vsol(1,jj,l1),nrl,ifail)
+       if(ifail/=0) return
      end do
    end if
  end do
 
 
- call om_values(rr,rho,mmax,rl,rhol,nrl)
- call om_values(rr,rhotae,mmax,rl,rhotael,nrl)
- call om_values(rr,rhoc,mmax,rl,rhocl,nrl)
+ call om_values(rr,rho,mmax,rl,rhol,nrl,ifail)
+ if(ifail/=0) return
+ call om_values(rr,rhotae,mmax,rl,rhotael,nrl,ifail)
+ if(ifail/=0) return
+ call om_values(rr,rhoc,mmax,rl,rhocl,nrl,ifail)
+ if(ifail/=0) return
 
  do jj=1,5
-   call om_piece_values(rr,mmax,corepw(jj),rl,rhomodl(1,jj),nrl)
+   call om_piece_values(rr,mmax,corepw(jj),rl,rhomodl(1,jj),nrl,ifail)
+   if(ifail/=0) return
  end do
 
 ! Output for Abinit input using pspcod=8

@@ -27,7 +27,7 @@
 
  subroutine run_diag(lmax,npa,epa,wellprj,lloc,irc, &
 &                    vlocpw,vkbpw,evkb,nproj,rr,vfull,vp,zz,mmax,mxprj,irel, &
-&                    nkap,iso,vsrpw,esr,vsopw,eso)
+&                    nkap,iso,vsrpw,esr,vsopw,eso,ifail)
 
 !! diagnostics for semi-local and Vanderbilt-Kleinman-bylander pseudopotentials
 !! checks bound-state energies, norms, and slopes, and pseudo-bound state
@@ -69,6 +69,7 @@
 !!               (iso=1)
 !! @param eso  energy coefficients of vso (multiplied by <L dot S> here;
 !!             iso=1)
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, mxl, mxlin
  use kappa_m, only: kap_count, kap_of
@@ -92,8 +93,10 @@
  real(dp), intent(in) :: esr(2*mxprj,mxl+1),eso(2*mxprj,mxl+1)
  type(piecewise_t), intent(in) :: vsrpw(2*mxprj,mxl+1),vsopw(2*mxprj,mxl+1)
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
- integer :: ifail
  integer :: ll,l1,ikap,kap,mkap,ierr,mch,mchf,nvkbt
  integer :: iprj,nnae,nnp,npr
  real(dp) :: al,emax,emin,etest,umch,upmch,uldf,gam,gpr,cnorm
@@ -103,6 +106,7 @@
  type(piecewise_t), allocatable :: vkbtpw(:)
  character(len=16) :: name
 
+ ifail=0
  allocate(uu(mmax),up(mmax),ur(mmax,2),urp(mmax,2))
  allocate(evkbt(4*mxprj),vkbtpw(4*mxprj))
 
@@ -154,17 +158,19 @@
        if(.not. wellprj(iprj,l1)) then
          call boundstate(irel,npa(iprj,l1),ll,kap,ierr,etest, &
 &                        rr,zz,vfull,ur,urp,mmax,mch,ifail)
-         if(ifail/=0) error stop 1
+         if(ifail/=0) return
          if(ierr /= 0 .and. irel==2) then
            write(6,'(/a,4i4)') 'run_diag_r: ldiracfb convergence ERROR &
 &         n,l,,kap,ierr=', &
 &          npa(iprj,l1),ll,kap,ierr
-           error stop 1
+           ifail=1
+           return
          else if(ierr /= 0) then
            write(6,'(/a,3i4)') &
 &                'run_diag: lschfb convergence ERROR n,l,ierr=', &
 &                npa(iprj,l1),ll,ierr
-           error stop 1
+           ifail=1
+           return
          end if
        else
          call scatterstate(irel,nnae,ll,kap,ierr,etest, &
@@ -173,7 +179,7 @@
        cnorm=1.0d0
        if(irel==2) then
          call renorm_r(ur,rr,ll,kap,zz,mmax,cnorm,ifail)
-         if(ifail/=0) error stop 1
+         if(ifail/=0) return
        end if
        umch=ur(mchf,1)
        upmch=cnorm*urp(mchf,1)
@@ -193,7 +199,7 @@
          call lschvkbb(ll+iprj,ll,nvkbt,ierr,etest,emin,emax, &
 &                      rr,vp(1,lloc+1,ikap),vlocpw,vkbtpw(1:nvkbt),evkbt, &
 &                      uu,up,mmax,mch,ifail)
-         if(ifail/=0) error stop 1
+         if(ifail/=0) return
          if(ierr/=0 .and. irel==2) then
            write(6,'(a,4i4,1p,2e16.8)') trim(name)//': lschvkbb ERROR', &
 &                iprj,ll,kap,ierr,epa(iprj,l1,ikap),etest
@@ -212,11 +218,11 @@
 
          nnp=ll+1+outwf_index_at(ll,rr,mmax,vp(1,lloc+1,ikap),vlocpw,nvkbt, &
 &            vkbtpw(1:nvkbt),evkbt(1:nvkbt),epa(iprj,l1,ikap),mchf,ifail)
-         if(ifail/=0) error stop 1
+         if(ifail/=0) return
          call lschvkbbe(nnp,ll,nvkbt,ierr,etest,uldf,emin,emax, &
 &                       rr,vp(1,lloc+1,ikap),vlocpw,vkbtpw(1:nvkbt),evkbt, &
 &                       uu,up,mmax,mchf,ifail)
-         if(ifail/=0) error stop 1
+         if(ifail/=0) return
 
          if(ierr/=0 .and. irel==2) then
            write(6,'(a,4i4,1p,2e16.8)') trim(name)//': lschvkbbe ERROR', &
