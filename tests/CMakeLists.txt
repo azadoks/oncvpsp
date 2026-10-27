@@ -45,6 +45,25 @@ foreach (run_test IN ITEMS "0:08_O" "1:14_Si" "2:14_Si" "1:14_Si_bcw")
     set_tests_properties(unit_run_${irel}_${name} PROPERTIES LABELS unit)
 endforeach ()
 
+# Unit test of oncvpsp_run in several threads at once (test_run_threads.f90): each case alone, then
+# all of them twice over concurrently, which must give the same results bit for bit, so the library
+# keeps no state between or across runs; the cases differ in irel and c_light. Only the test is
+# compiled with OpenMP, and it is left out without it
+find_package(OpenMP COMPONENTS Fortran)
+if (OpenMP_Fortran_FOUND)
+    add_executable(test_run_threads unit/test_run_threads.f90)
+    target_link_libraries(test_run_threads PRIVATE oncvpsp::oncvpsp oncvpsp::compile_options
+                          OpenMP::OpenMP_Fortran)
+    set_target_properties(test_run_threads PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+    add_test(NAME unit_run_threads
+             COMMAND test_run_threads "0:${CMAKE_CURRENT_SOURCE_DIR}/data/08_O.dat:0"
+                     "1:${CMAKE_CURRENT_SOURCE_DIR}/data/14_Si.dat:0"
+                     "1:${CMAKE_CURRENT_SOURCE_DIR}/data/14_Si.dat:137.0359991"
+                     "2:${CMAKE_CURRENT_SOURCE_DIR}/data/14_Si.dat:0"
+                     "2:${CMAKE_CURRENT_SOURCE_DIR}/data/14_Si.dat:100")
+    set_tests_properties(unit_run_threads PROPERTIES LABELS unit)
+endif ()
+
 # Unit tests of the operations at any radius on the log mesh (logmesh_m), the closed-form Bessel
 # overlaps (sbf_overlap) and the derivatives at rc from the radial equation (ode_rc_der), phase 1 of
 # doc/smoothness_plan.md

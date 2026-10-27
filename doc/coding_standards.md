@@ -118,7 +118,11 @@ looks like this:
   reference LAPACK does, libxc through its own Fortran module.
 - No global state, which is what is left of rule 3: a module holds
   parameters (`constants_m`), types and procedures, but no variables, so
-  everything that changes is passed as arguments.
+  everything that changes is passed as arguments, and runs can share a
+  process in threads. `tests/unit/test_run_threads.f90` checks it: runs
+  at once in OpenMP threads give the results of each alone, bit for bit.
+  The procedures are compiled recursive (`-frecursive`), so no local
+  array is static either.
 - Derived types are allowed for values that belong together and are
   passed together (`piecewise_t` in `pieces_m`, the integrator state in
   `outwf_m`, a configuration of the atom, `config_t` in `input_m`, the

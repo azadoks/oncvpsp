@@ -192,6 +192,22 @@ their functions' data (the solver, the radius, the target phase, the
 poles) from module variables; the functions are internal procedures of
 the routines that search, which pass the data down.
 
+So the library keeps no state between or across runs, and runs can share
+a process in threads. `tests/unit/test_run_threads.f90` (`unit_run_threads`)
+runs five cases, nr, sr and fr with two values of `c_light`, each alone
+and then all of them twice over in ten OpenMP threads at once, and
+compares bit for bit; before the speed of light was an argument, 85 of
+its checks failed. Only the test is compiled with OpenMP. The procedures
+are compiled recursive in every build type (`-frecursive`, and
+`-recursive`, `-Mrecursive`; `cmake/OncvpspCompilerOptions.cmake`):
+gfortran makes a local array over 64 kB static otherwise (there is none
+now), and its run-time check of recursion in the Debug build stops two
+threads in one procedure. One exception is imported code, which the
+rules keep as written: `functionals.F90` writes the Libxc description
+through a module variable (`message`), so two runs that write it at the
+same moment can mix its lines (`exc_libxc_info`, once per run); the
+numbers are not affected.
+
 The cache of all-electron atoms that the test configurations reuse is an
 `ae_cache_t` (`config_ae_m`) that `oncvpsp_run` owns and passes down, so
 a second run starts with an empty one; `tests/unit/test_run.f90` checks
