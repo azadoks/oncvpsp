@@ -168,9 +168,8 @@ A library has to be able to send the text output elsewhere, or nowhere.
 The results whose size is known only during the run (the number of
 projectors, the mesh) are allocatable components of the types, so the
 Fortran caller passes no sizes. The C interface (phase 5) cannot take a
-derived type: it either copies them into arrays of maximum sizes
-(`mxprj`, `mmax`) or holds them behind a handle with calls for the sizes
-and the arrays.
+derived type with allocatable components: it holds them behind a handle,
+with a struct of the sizes and calls for the arrays.
 
 The speed of light was a module variable (`relativity_m`'s `c_light`,
 set from the input by `set_relativity`), so two runs at once in threads
@@ -229,25 +228,66 @@ namespace (see [Coding standards](coding_standards.md)).
 
 ### Phase 5: the C interface
 
+A `bind(C)` derived type has C's layout, but its components can only be
+scalars of interoperable kinds, arrays of fixed size, `c_ptr`,
+`c_funptr` and other `bind(C)` types: no allocatable or pointer
+components, no `character(len>1)`, no `extends` or type-bound
+procedures. `results_t`, `input_t` and the test types are made of
+allocatable arrays, so they cannot cross as structs. On the other side,
+Julia's `ccall` (and Python's ctypes and cffi) map an `isbits` struct of
+`Cint`, `Cdouble`, `NTuple` and `Ptr` fields to a C struct one to one,
+but check nothing: a struct that differs from the Fortran type after a
+field is added reads garbage, with no error. The C descriptors of
+Fortran 2018 (`CFI_cdesc_t`) pass allocatable and assumed-shape arrays
+as arguments, not as components, and their layout is the compiler's
+(`ISO_Fortran_binding.h` differs between gfortran, ifx and nvfortran),
+so they stay out of the interface.
+
+So the interface is a hybrid:
+
+- the results stay Fortran's, behind an opaque handle: a `type(c_ptr)`
+  to a run object allocated by the library, which holds the `results_t`
+  and the completed `input_t`, and is freed by the caller;
+- one small `bind(C)` struct, `oncv_dims`, carries what a caller needs
+  to allocate: the sizes (mesh points, projectors per l, lmax, test
+  configurations, log-derivative energies, …) and an interface version,
+  so a wrapper refuses a layout it does not know rather than misread it;
+- getters copy each array into memory the caller allocates, with its
+  size checked against the dimensions, and return an `ierr`. No pointer
+  into the run object is handed out, so nothing outlives it.
+
 - [ ] A module `oncvpsp_c` of `bind(C, name="oncv_…")` routines over
       `oncvpsp_run`, using `iso_c_binding` kinds (`c_int`, `c_double`,
-      checked equal to `dp`), with character input as `c_char` arrays and
-      every result in caller-allocated arrays.
+      checked equal to `dp`; `c_bool` for logicals).
+- [ ] The input as the TOML text, a `c_char` array with its length,
+      read by `read_input_toml`: the wrappers take a dictionary in the
+      TOML layout (phase 6), and the parser already checks it. Setters
+      on an input handle only if a caller needs them.
+- [ ] `oncv_run(text, n, iout_path, h, ierr)`, `oncv_free(h)`,
+      `oncv_dims(h, dims)` and one `oncv_get_…(h, buf, n, ierr)` per
+      array (the potentials, projectors and energies, the charges, the
+      tests of `tests_t`), and `oncv_write_files` over
+      `write_psp_files`. The text output goes to a file the caller
+      names, `/dev/null` for none; the error messages to stderr.
 - [ ] A C header for it, and a shared library target (`liboncvpsp`) in
       CMake.
 - [ ] A C test in `tests/` that runs one of the reference inputs through
       the interface and compares with the reference output.
 - [ ] Check that two runs in one process give the same results.
-      `tests/unit/test_run.f90` does so from Fortran, bit for bit, for one
-      input at a time; the C test repeats it through the interface.
+      `tests/unit/test_run.f90` does so from Fortran, bit for bit, and
+      `tests/unit/test_run_threads.f90` for runs in threads; the C test
+      repeats it through the interface, two handles at once.
 
 ### Phase 6: wrappers
 
 - [ ] Python: ctypes or cffi over `liboncvpsp`, built with
       scikit-build-core, returning NumPy arrays; tests against the
       references.
-- [ ] Julia: `ccall` over the same library, later packaged as a JLL with
-      BinaryBuilder.
+- [ ] Julia: `ccall` over the same library, `oncv_dims` as an `isbits`
+      struct, the arrays allocated in Julia and filled by the getters;
+      later packaged as a JLL with BinaryBuilder.
+- [ ] Both check the interface version of `oncv_dims`, and free the
+      handle with a finalizer on the result object.
 - [ ] Both take the input as a dictionary or keyword arguments, in the
       layout of the TOML input.
 - [ ] A user page on the wrappers, in the `nav` of `mkdocs.yml`.
