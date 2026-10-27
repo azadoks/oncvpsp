@@ -83,7 +83,7 @@
  use constants_m, only: nlev, nerrdg, nerrlv
  use input_echo_m, only: write_atom, write_lmax, write_icmod, write_epsh, &
 &                        write_mesh, fx, vkb_head, vkb_line
- use relativity_m, only: set_relativity
+ use relativity_m, only: set_relativity, c_light
  use main_setup_m, only: main_names, &
 &                        make_log_mesh, write_reference_results, &
 &                        core_radius_points
@@ -749,16 +749,6 @@
 
 
 
-!the pseudopotential for oncvpsp_ld.x and oncvpsp_confine.x
- if(len_trim(ps_filename)/=0) then
-   call write_ps_file(trim(ps_filename),irel,nkap,inp%atsym,inp%zz,mmax,rr, &
-&                     inp%lmax, &
-&                     inp%lloc,inp%nproj,inp%rc,inp%epsh1,inp%epsh2, &
-&                     inp%depsh,inp%rxpsh,epa,vp,vlocpw, &
-&                     evkb,vkbpw,inp%iexc,rcmax,vpuns(:,inp%lloc+1),rho, &
-&                     rhomod(:,1),iout,ifail)
-   if(ifail/=0) return
- end if
 
 !the energies of the log derivatives, from epsh2 down by depsh; none with
 !--no-log-derivatives
@@ -849,7 +839,7 @@
  psp%pot%atsym=inp%atsym
  psp%pot%zz=inp%zz
  psp%pot%zion=zion
- psp%pot%c_light=inp%c_light
+ psp%pot%c_light=c_light
  psp%pot%irel=irel
  psp%pot%nkap=nkap
  psp%pot%iexc=inp%iexc
@@ -885,6 +875,13 @@
  psp%echo%fcgrid(:)=fcgrid(:)
  psp%echo%rcgrid(:)=rcgrid(:)
  psp%echo%log_mesh(:)=log_mesh(:)
+
+!the pseudopotential for oncvpsp_ld.x and oncvpsp_confine.x
+ if(len_trim(ps_filename)/=0) then
+   call write_ps_file(trim(ps_filename),psp%pot,inp%rc,inp%epsh1, &
+&                     inp%epsh2,inp%depsh,inp%rxpsh,epa,vp,iout,ifail)
+   if(ifail/=0) return
+ end if
  return
  end subroutine oncvpsp_run
 

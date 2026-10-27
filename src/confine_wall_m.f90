@@ -20,7 +20,7 @@
 !> pseudo-atom (psatom) of the reference configuration in a smooth wall
 !> beyond r0, for each strength from the free atom.
  module confine_wall_m
- use constants_m, only: dp, mxstate, mxprj, mxl, mxlin
+ use constants_m, only: dp, mxstate, mxprj, mxlin
  use ps_file_m, only: ps_file_t
  use confine_summary_m, only: confine_summary_t
  implicit none
@@ -50,18 +50,16 @@
  integer :: ik,ii,ierrae,ierrps,itae,itps,nkap
  real(dp) :: fa_ps(mxstate,2),etae(0:nk),etps(0:nk)
  real(dp) :: eaw(mxstate,2),rpk(mxstate,2),eterm(4),res,ea_ps(mxstate,2)
- real(dp), allocatable :: vext(:),rhoc(:),rhoa(:),vi(:),vpuns(:,:),rhops(:)
+ real(dp), allocatable :: vext(:),rhoc(:),rhoa(:),vi(:),rhops(:)
  real(dp), allocatable :: eigae(:,:,:),eigps(:,:,:)
  integer :: ifail
 
  kwall(0)=0.0d0
- nkap=pf%nkap
+ nkap=pf%pot%nkap
  allocate(vext(mmax),rhoc(mmax),rhoa(mmax),vi(mmax),rhops(mmax))
- allocate(vpuns(mmax,mxl+2),eigae(mxstate,2,0:nk),eigps(mxstate,2,0:nk))
+ allocate(eigae(mxstate,2,0:nk),eigps(mxstate,2,0:nk))
  eigae(:,:,:)=0.0d0
  eigps(:,:,:)=0.0d0
- vpuns(:,:)=0.0d0
- vpuns(:,pf%lloc+1)=pf%vpuns(:)
  nprj(:)=0
  do ii=1,4
    nprj(ii)=pf%nvkb(ii,1)
@@ -97,13 +95,14 @@
    if(ifail/=0) error stop 1
    eigae(:,:,ik)=eaw(:,:)
    if(ik==0 .or. ierrps/=0) then
-     rhops(:)=pf%rhov(:)
+     rhops(:)=pf%pot%rho(:)
      ea_ps(1:nv,:)=ea(nc+1:nc+nv,:)
    end if
    ierrps=0
-   call psatom(na_ps,la_ps,ea_ps(:,1:nkap),fa_ps,nv,itps,pf%rhomod,rhops, &
-&              rr,pf%rcmax,mmax,mxprj,iexc,etps(ik),nprj,vpuns,pf%lloc, &
-&              pf%vlocpw,pf%vkbpw(:,:,1:nkap),pf%evkb(:,:,1:nkap),ierrps, &
+   call psatom(na_ps,la_ps,ea_ps(:,1:nkap),fa_ps,nv,itps, &
+&              pf%pot%rhomod(:,1),rhops,rr,pf%pot%rcmax,mmax,mxprj,iexc, &
+&              etps(ik),nprj,pf%pot%vpuns,pf%pot%lloc,pf%pot%vlocpw, &
+&              pf%pot%vkbpw(:,:,1:nkap),pf%pot%evkb(:,:,1:nkap),ierrps, &
 &              nkap,vext,iout,ifail)
    if(ifail/=0) error stop 1
    eigps(1:nv,:,ik)=ea_ps(1:nv,:)
@@ -123,7 +122,7 @@
    call write_wall_eig(nc,nv,na,la,nkap,kwall(ik),eigae(:,:,ik), &
 &                      eigps(:,:,ik),iout)
  end do
- deallocate(vext,rhoc,rhoa,vi,rhops,vpuns,eigae,eigps)
+ deallocate(vext,rhoc,rhoa,vi,rhops,eigae,eigps)
  end subroutine confine_walls
 
  subroutine valence_states(nc,nv,la,fa,na_ps,la_ps,fa_ps)

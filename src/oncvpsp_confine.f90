@@ -216,8 +216,8 @@
 
 !the radii: beyond every core radius, where the two atoms' potentials are
 !the same and the phases comparable
- lc=pf%lloc+1
- rcmax=max(maxval(pf%rc(1:pf%lmax+1)),pf%rc(lc))
+ lc=pf%pot%lloc+1
+ rcmax=max(maxval(pf%rc(1:pf%pot%lmax+1)),pf%rc(lc))
  if(.not. given_radii) then
    nq=size(rsdef)
    rq(1:nq)=rsdef(:)*rcmax

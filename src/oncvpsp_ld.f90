@@ -121,21 +121,21 @@
      nq=1
      if(pf%rxpsh>=0.0d0) then
        rq(1)=pf%rxpsh
-     else if(ll<=pf%lmax) then
+     else if(ll<=pf%pot%lmax) then
        rq(1)=pf%rc(l1)*amesh**2
      else
-       lc=pf%lloc+1
+       lc=pf%pot%lloc+1
        rq(1)=pf%rc(lc)
      end if
    end if
    rql=rq(1:nq)
    allocate(pshae(npsh,nq),pshps(npsh,nq))
-   do ikap=1,merge(1,pf%nkap,l1==1)
+   do ikap=1,merge(1,pf%pot%nkap,l1==1)
      kap=kap_of(ll,ikap)
      nvkb=pf%nvkb(l1,ikap)
      call phsft_pair(irel,ll,kap,nvkb,rr,vfull,zz,pf%vloc(:,ikap), &
-&                    pf%vlocpw,pf%vkbpw(1:nvkb,l1,ikap), &
-&                    pf%evkb(1:nvkb,l1,ikap),mmax,nq,rql,npsh,epsh2,depsh, &
+&                    pf%pot%vlocpw,pf%pot%vkbpw(1:nvkb,l1,ikap), &
+&                    pf%pot%evkb(1:nvkb,l1,ikap),mmax,nq,rql,npsh,epsh2,depsh, &
 &                    pf%epa(l1,ikap),pshae,pshps,iout,ifail)
      if(ifail/=0) error stop 1
      do iq=1,nq

@@ -62,10 +62,10 @@
  if(ifail/=0) return
  call read_ps_file(ps_filename,pf,iout,ifail)
  if(ifail/=0) return
- bad=pf%irel/=irel .or. pf%atsym/=atsym .or. differ(pf%zz,zz) &
-&   .or. pf%mmax/=mmax .or. differ(pf%c_light,c_light_f)
+ bad=pf%pot%irel/=irel .or. pf%pot%atsym/=atsym .or. differ(pf%pot%zz,zz) &
+&   .or. pf%pot%mmax/=mmax .or. differ(pf%pot%c_light,c_light_f)
  if(present(iexc)) then
-   if(bad .or. pf%iexc/=iexc) then
+   if(bad .or. pf%pot%iexc/=iexc) then
      write(iout,'(3a)') prog,': ERROR the files differ in ', &
 &         'relativistic treatment, atom, mesh size, c_light or functional'
      ifail=1
@@ -77,7 +77,7 @@
    ifail=1
    return
  end if
- if(any(abs(pf%rr(:)-rr(:))>rtol*rr(:))) then
+ if(any(abs(pf%pot%rr(:)-rr(:))>rtol*rr(:))) then
    write(iout,'(2a)') prog,': ERROR the files'' radial meshes differ'
    ifail=1
    return

@@ -106,7 +106,7 @@
  sm%noff=0
  do l1=1,4
    if(.not. chan(l1-1)) cycle
-   do ikap=1,merge(1,pf%nkap,l1==1)
+   do ikap=1,merge(1,pf%pot%nkap,l1==1)
      call ws_channel(pf,irel,zz,mmax,rr,vfull,nc,na,la,l1-1,ikap,nq,rq, &
 &                    egrid,emin,emax,ecutmax,table,sm,iout)
    end do
@@ -145,17 +145,17 @@
 ! quadrature and poles (refined to the roots of u(rs))
  call phsft_ae_init(irel,ll,kap,rr,vfull,zz,mmax,nq,rq(1:nq),sae,iout,ifail)
  if(ifail/=0) error stop 1
- call phsft_ps_init(ll,nvkb,rr,pf%vloc(:,ikap),pf%vlocpw, &
-&                   pf%vkbpw(1:nvkb,l1,ikap),pf%evkb(1:nvkb,l1,ikap), &
+ call phsft_ps_init(ll,nvkb,rr,pf%vloc(:,ikap),pf%pot%vlocpw, &
+&                   pf%pot%vkbpw(1:nvkb,l1,ikap),pf%pot%evkb(1:nvkb,l1,ikap), &
 &                   mmax,nq,rq(1:nq),sps,iout,ifail)
  if(ifail/=0) error stop 1
  allocate(wsg(nq),polq(nq),tanae(nanch,nq),tanps(nanch,nq))
  allocate(shae(npsh,nq),shps(npsh,nq))
  do iq=1,nq
    call ws_grid_init(rq(iq),sqrt(2.0d0*ecutmax),rr,mmax, &
-&       pf%vloc(:,ikap),pf%vlocpw,nvkb,pf%vkbpw(1:nvkb,l1,ikap), &
+&       pf%vloc(:,ikap),pf%pot%vlocpw,nvkb,pf%pot%vkbpw(1:nvkb,l1,ikap), &
 &       wsg(iq))
-   call ws_eigenvalues(ll,3,wsg(iq),pf%evkb(1:nvkb,l1,ikap),ndir, &
+   call ws_eigenvalues(ll,3,wsg(iq),pf%pot%evkb(1:nvkb,l1,ikap),ndir, &
 &       edir,ierr)
    if(ierr/=0) ndir=0
    ph_iq=iq
@@ -300,7 +300,7 @@
    if(eae%e(ie)<0.0d0) sm%smax_de=max(sm%smax_de,abs(eps%e(je)-eae%e(ie)))
 
 ! the cutoff of the pseudopotential's state
-   call ws_convergence(ll,iedge,wsg,pf%evkb(1:nvkb,ll+1,ikap),eps%e(je), &
+   call ws_convergence(ll,iedge,wsg,pf%pot%evkb(1:nvkb,ll+1,ikap),eps%e(je), &
 &       nb,ecut,err,ierr)
    if(ierr/=0) then
      if(eae%e(ie)<0.0d0) sm%sinf(1:2)=.true.

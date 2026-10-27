@@ -51,9 +51,9 @@
 ! a piecewise function (pieces_m) as nseg, bound(0:nseg), vals(:,1:nseg)
 
  module ps_file_m
- use constants_m, only: dp, mxprj, mxl, mxlin
- use pieces_m, only: piecewise_t, pw_maxseg, pw_alloc, pw_free
- use relativity_m, only: c_light
+ use constants_m, only: dp, mxprj, mxl, mxlin, nrhomod
+ use pieces_m, only: piecewise_t, pw_maxseg, pw_alloc
+ use pseudo_m, only: pseudo_t
  use ae_file_m, only: byteswap
  implicit none
  private
@@ -64,42 +64,31 @@
 
 !> the contents of the file
  type ps_file_t
-   integer :: irel=0,nkap=0,mmax=0,lmax=0,lloc=0,iexc=0
-   integer :: nproj(4)=0
+!> the pseudopotential: of its potentials only the local one,
+!> vpuns(:,lloc+1), and of the model core only the charge, rhomod(:,1);
+!> neither vkb nor the fully-relativistic split nor corepw
+   type(pseudo_t) :: pot
 !> nvkb(l+1,ikap): the projectors of l and kappa in the file
    integer :: nvkb(4,2)=0
-   character(len=2) :: atsym='  '
-   real(dp) :: zz=0.0d0,c_light=0.0d0
+!> the core radii, and the energies (Ha) and radius of the log
+!> derivatives of the input
    real(dp) :: rc(mxlin+1)=0.0d0
-   real(dp) :: epsh1=0.0d0,epsh2=0.0d0,depsh=0.0d0,rxpsh=0.0d0,rcmax=0.0d0
+   real(dp) :: epsh1=0.0d0,epsh2=0.0d0,depsh=0.0d0,rxpsh=0.0d0
+!> the first projector's reference energy of each l and kappa
    real(dp) :: epa(4,2)=0.0d0
-   real(dp) :: evkb(mxprj,4,2)=0.0d0
-   real(dp), allocatable :: rr(:),vloc(:,:)
-!> the unscreened local potential, the valence pseudo-density and the model
-!> core charge
-   real(dp), allocatable :: vpuns(:),rhov(:),rhomod(:)
-   type(piecewise_t) :: vlocpw
-   type(piecewise_t) :: vkbpw(mxprj,4,2)
+!> the screened local potential of each kappa (mmax,nkap)
+   real(dp), allocatable :: vloc(:,:)
  end type ps_file_t
 
  contains
 
- subroutine write_ps_file(fname,irel,nkap,atsym,zz,mmax,rr,lmax,lloc, &
-&                         nproj,rc,epsh1,epsh2,depsh,rxpsh,epa,vp,vlocpw, &
-&                         evkb,vkbpw,iexc,rcmax,vpuns,rhov,rhomod,iout,ifail)
+ subroutine write_ps_file(fname,pot,rc,epsh1,epsh2,depsh,rxpsh,epa,vp, &
+&                         iout,ifail)
 
 !! writes the pseudopotential data file
 !!
 !! @param fname  file to write
-!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
-!! @param nkap  number of kappa per l: 1, or 2 for irel=2
-!! @param atsym  atomic symbol
-!! @param zz  atomic number
-!! @param mmax  size of the log radial mesh
-!! @param rr  log radial mesh
-!! @param lmax  maximum angular momentum of the projectors
-!! @param lloc  l of the local potential (4 for the polynomial)
-!! @param nproj  number of projectors of each l
+!! @param pot  the pseudopotential (pseudo_m)
 !! @param rc  core radii, rc(lloc+1) that of the local potential
 !! @param epsh1  low energy of the log derivatives (Ha)
 !! @param epsh2  high energy of the log derivatives (Ha)
@@ -107,28 +96,16 @@
 !! @param rxpsh  their radius, negative for the default of run_phsft
 !! @param epa  reference energies of the projectors
 !! @param vp  semi-local pseudopotentials, vp(:,lloc+1,:) the local one
-!! @param vlocpw  the local potential's pieces
-!! @param evkb  coefficients of the projectors
-!! @param vkbpw  the projectors' pieces
-!! @param iexc  exchange-correlation function
-!! @param rcmax  maximum core radius
-!! @param vpuns  unscreened local potential
-!! @param rhov  valence pseudo-density of the reference configuration
-!! @param rhomod  model core charge
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
  character(len=*), intent(in) :: fname
- integer, intent(in) :: irel,nkap,mmax,lmax,lloc,iexc
- character(len=2), intent(in) :: atsym
- integer, intent(in) :: nproj(mxlin+1)
- real(dp), intent(in) :: zz,rr(mmax),rc(mxlin+1)
- real(dp), intent(in) :: epsh1,epsh2,depsh,rxpsh,rcmax
- real(dp), intent(in) :: vpuns(mmax),rhov(mmax),rhomod(mmax)
- real(dp), intent(in) :: epa(mxprj,mxlin+1,nkap),vp(mmax,mxl+2,nkap)
- real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap)
- type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1,nkap)
+ type(pseudo_t), intent(in) :: pot
+ real(dp), intent(in) :: rc(mxlin+1)
+ real(dp), intent(in) :: epsh1,epsh2,depsh,rxpsh
+ real(dp), intent(in) :: epa(mxprj,mxlin+1,pot%nkap)
+ real(dp), intent(in) :: vp(pot%mmax,mxl+2,pot%nkap)
 
 !Output variables
  integer, intent(in) :: iout
@@ -146,28 +123,29 @@
    return
  end if
 
- write(unit) magic,version,irel
- write(unit) atsym,zz,nkap
- write(unit) mmax,rr(1:mmax)
- write(unit) c_light
- write(unit) lmax,lloc,nproj(1:4),rc(1:mxlin+1)
+ write(unit) magic,version,pot%irel
+ write(unit) pot%atsym,pot%zz,pot%nkap
+ write(unit) pot%mmax,pot%rr(1:pot%mmax)
+ write(unit) pot%c_light
+ write(unit) pot%lmax,pot%lloc,pot%nproj(1:4),rc(1:mxlin+1)
  write(unit) epsh1,epsh2,depsh,rxpsh
- write(unit) epa(1,1:4,1:nkap)
- write(unit) vp(1:mmax,lloc+1,1:nkap)
- call write_pw(unit,vlocpw)
+ write(unit) epa(1,1:4,1:pot%nkap)
+ write(unit) vp(1:pot%mmax,pot%lloc+1,1:pot%nkap)
+ call write_pw(unit,pot%vlocpw)
  do l1=1,4
-   do ikap=1,nkap_of(nkap,l1)
-     nvkb=nvkb_of(l1,lloc,nproj)
+   do ikap=1,nkap_of(pot%nkap,l1)
+     nvkb=nvkb_of(l1,pot%lloc,pot%nproj)
      write(unit) nvkb
      if(nvkb==0) cycle
-     write(unit) evkb(1:nvkb,l1,ikap)
+     write(unit) pot%evkb(1:nvkb,l1,ikap)
      do jj=1,nvkb
-       call write_pw(unit,vkbpw(jj,l1,ikap))
+       call write_pw(unit,pot%vkbpw(jj,l1,ikap))
      end do
    end do
  end do
- write(unit) iexc,rcmax
- write(unit) vpuns(1:mmax),rhov(1:mmax),rhomod(1:mmax)
+ write(unit) pot%iexc,pot%rcmax
+ write(unit) pot%vpuns(1:pot%mmax,pot%lloc+1),pot%rho(1:pot%mmax), &
+&            pot%rhomod(1:pot%mmax,1)
  close(unit)
  return
  end subroutine write_ps_file
@@ -191,7 +169,7 @@
 
 !Local variables
  character(len=8) :: magic_f
- integer :: unit,ios,version_f,l1,ikap,jj,nvkb
+ integer :: unit,ios,version_f,irel,l1,ikap,jj,nvkb
 
  ifail=0
  open(newunit=unit,file=fname,access='stream',form='unformatted', &
@@ -201,7 +179,7 @@
    ifail=1
    return
  end if
- read(unit,iostat=ios) magic_f,version_f,pf%irel
+ read(unit,iostat=ios) magic_f,version_f,irel
  if(ios/=0 .or. magic_f/=magic) then
    write(iout,'(2a)') 'read_ps_file: ERROR not a pseudopotential data file: ', &
 &        trim(fname)
@@ -224,38 +202,45 @@
    return
  end if
 
- read(unit) pf%atsym,pf%zz,pf%nkap
- read(unit) pf%mmax
- allocate(pf%rr(pf%mmax),pf%vloc(pf%mmax,pf%nkap))
- read(unit) pf%rr(:)
- read(unit) pf%c_light
- read(unit) pf%lmax,pf%lloc,pf%nproj(1:4),pf%rc(1:mxlin+1)
- read(unit) pf%epsh1,pf%epsh2,pf%depsh,pf%rxpsh
- read(unit) pf%epa(1:4,1:pf%nkap)
- read(unit) pf%vloc(:,:)
- call read_pw(unit,pf%mmax,pf%vlocpw,iout,ifail)
- if(ifail/=0) then
-   close(unit)
-   return
- end if
- do l1=1,4
-   do ikap=1,nkap_of(pf%nkap,l1)
-     read(unit) nvkb
-     pf%nvkb(l1,ikap)=nvkb
-     if(nvkb==0) cycle
-     read(unit) pf%evkb(1:nvkb,l1,ikap)
-     do jj=1,nvkb
-       call read_pw(unit,pf%mmax,pf%vkbpw(jj,l1,ikap),iout,ifail)
-       if(ifail/=0) then
-         close(unit)
-         return
-       end if
+ pf%pot%irel=irel
+ read(unit) pf%pot%atsym,pf%pot%zz,pf%pot%nkap
+ read(unit) pf%pot%mmax
+ associate(pot=>pf%pot,mmax=>pf%pot%mmax,nkap=>pf%pot%nkap)
+   allocate(pot%rr(mmax),pf%vloc(mmax,nkap))
+   read(unit) pot%rr(:)
+   read(unit) pot%c_light
+   read(unit) pot%lmax,pot%lloc,pot%nproj(1:4),pf%rc(1:mxlin+1)
+   read(unit) pf%epsh1,pf%epsh2,pf%depsh,pf%rxpsh
+   read(unit) pf%epa(1:4,1:nkap)
+   read(unit) pf%vloc(:,:)
+   call read_pw(unit,mmax,pot%vlocpw,iout,ifail)
+   if(ifail/=0) then
+     close(unit)
+     return
+   end if
+   allocate(pot%evkb(mxprj,mxl+1,nkap),pot%vkbpw(mxprj,mxl+1,nkap))
+   pot%evkb(:,:,:)=0.0d0
+   do l1=1,4
+     do ikap=1,nkap_of(nkap,l1)
+       read(unit) nvkb
+       pf%nvkb(l1,ikap)=nvkb
+       if(nvkb==0) cycle
+       read(unit) pot%evkb(1:nvkb,l1,ikap)
+       do jj=1,nvkb
+         call read_pw(unit,mmax,pot%vkbpw(jj,l1,ikap),iout,ifail)
+         if(ifail/=0) then
+           close(unit)
+           return
+         end if
+       end do
      end do
    end do
- end do
- read(unit) pf%iexc,pf%rcmax
- allocate(pf%vpuns(pf%mmax),pf%rhov(pf%mmax),pf%rhomod(pf%mmax))
- read(unit) pf%vpuns(:),pf%rhov(:),pf%rhomod(:)
+   read(unit) pot%iexc,pot%rcmax
+   allocate(pot%vpuns(mmax,mxl+2),pot%rho(mmax),pot%rhomod(mmax,nrhomod))
+   pot%vpuns(:,:)=0.0d0
+   pot%rhomod(:,:)=0.0d0
+   read(unit) pot%vpuns(:,pot%lloc+1),pot%rho(:),pot%rhomod(:,1)
+ end associate
  close(unit)
  return
  end subroutine read_ps_file
@@ -264,25 +249,11 @@
 
 !! releases the contents
 !!
-!! @param pf  the contents of a file
+!! @param pf  the contents of a file, deallocated on entry
 
-!Input/output variables
- type(ps_file_t), intent(inout) :: pf
+!Output variables
+ type(ps_file_t), intent(out) :: pf
 
-!Local variables
- integer :: l1,ikap,jj
-
- if(allocated(pf%rr)) deallocate(pf%rr)
- if(allocated(pf%vloc)) deallocate(pf%vloc)
- if(allocated(pf%vpuns)) deallocate(pf%vpuns,pf%rhov,pf%rhomod)
- call pw_free(pf%vlocpw)
- do ikap=1,2
-   do l1=1,4
-     do jj=1,mxprj
-       call pw_free(pf%vkbpw(jj,l1,ikap))
-     end do
-   end do
- end do
  return
  end subroutine ps_file_free
 
