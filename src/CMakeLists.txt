@@ -17,7 +17,6 @@ set(src_oncvpsp
     derivs_m.f90
     diagout_m.f90
     vloc_cutoff_m.f90
-    dpnint_m.f90
     eresid_m.f90
     free_tail_m.f90
     exc_off_pbe_m.f
