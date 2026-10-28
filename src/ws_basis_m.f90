@@ -131,6 +131,10 @@
    fb=gg(xb)
    if(sign(1.0d0,fa)/=sign(1.0d0,fb)) then
      call ug_brent(gg,xa,xb,xr,ierr)
+     if(ierr/=0) then
+       write(error_unit,'(/a,i0)') 'ws_roots: ERROR ug_brent failed, ierr=',ierr
+       error stop 1
+     end if
      if(xr<=xmax) then
        nq=nq+1
        work(nq)=xr

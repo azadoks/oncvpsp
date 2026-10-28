@@ -264,7 +264,7 @@
  do ie=1,eae%n
    if(eae%e(ie)<emin .or. eae%e(ie)>emax) cycle
    iedge=eae%ied(ie)
-   nn=n_of(irel,c_light,ll,kap,eae%e(ie),rr,zz,vfull,mmax,rs,iout)
+   nn=n_of(irel,c_light,ll,kap,eae%e(ie),rr,zz,vfull,mmax,rs)
    je=jpair(ie)
    if(je==0) then
 ! the band of a core state, which the pseudopotential leaves out
@@ -586,22 +586,20 @@
  end do
  end subroutine sort_edges
 
- integer function n_of(irel,c_light,ll,kap,ex,rr,zz,vfull,mmax,rs,iout)
+ integer function n_of(irel,c_light,ll,kap,ex,rr,zz,vfull,mmax,rs)
 !! the all-electron state's nodes inside rs, plus l+1
  use scatterstate_m, only: scatterstate
  integer, intent(in) :: irel,ll,kap,mmax
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: ex,rr(mmax),zz,vfull(mmax),rs
- integer, intent(in) :: iout
  real(dp), allocatable :: uu(:,:),up(:,:)
- integer :: mch,jj,nnode,nn2,ierr2
+ integer :: mch,jj,nnode,nn2
  mch=phsft_mch(rr,mmax,rs)
  allocate(uu(mmax,2),up(mmax,2))
  uu(:,:)=0.0d0
  up(:,:)=0.0d0
  nn2=0
- call scatterstate(irel,c_light,nn2,ll,kap,ierr2,ex,rr,zz,vfull,uu,up,mmax, &
-&                  mch,iout)
+ call scatterstate(irel,c_light,nn2,ll,kap,ex,rr,zz,vfull,uu,up,mmax,mch)
  nnode=0
  do jj=2,mmax
    if(rr(jj)>rs) exit

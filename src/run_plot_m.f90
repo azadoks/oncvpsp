@@ -285,16 +285,9 @@
        write(iout,'(//a,i2,a,i2,a,a/)') 'scattering, iprj=',iprj, &
 &           ',  l=',ll,', all-electron wave function', ', pseudo w-f'
      end if
-     call scatterstate(irel,c_light,nn,ll,kap,ierr,epa(iprj,l1,ikap), &
-&                   rr,zz,vfull,ur,urp,mmax,n2,iout)
+     call scatterstate(irel,c_light,nn,ll,kap,epa(iprj,l1,ikap), &
+&                   rr,zz,vfull,ur,urp,mmax,n2)
      if(irel==2) then
-       if(ierr/=0) then
-         write(iout,'(/2a,i0,a,i0,a,i0)') &
-&              'run_plot_r: ERROR ldiracfs failed', &
-&              ', ll=',ll,', kap=',kap,', ierr=',ierr
-         ifail=1
-         return
-       end if
        call renorm_r(ur,rr,ll,kap,c_light,zz,mmax,cnorm,iout,ifail)
        if(ifail/=0) return
      end if

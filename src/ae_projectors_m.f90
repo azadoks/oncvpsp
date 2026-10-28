@@ -291,7 +291,7 @@
  real(dp), intent(inout) :: uu(mmax,2),up(mmax,2)
  real(dp), intent(out) :: ua(mmax),pa(mmax)
  real(dp) :: cnorm
- integer :: mfree,ierr
+ integer :: mfree
  integer, intent(in) :: iout
  integer, intent(out) :: ifail
  ifail=0
@@ -308,15 +308,8 @@
  mfree=min(mmax,irc+pw_reach+16+lm_fh_reach()+2)
  uu(:,:)=0.0d0
  up(:,:)=0.0d0
- call scatterstate(irel,c_light,nnwell,ll,kap,ierr,ee,rr, &
-&                  zz,vfull,uu,up,mmax,mfree,iout)
- if(ierr/=0) then
-   write(iout,'(a,i2,a,f12.8)') &
-&        'oncvpsp: ERROR scattering state failed for l=',ll, &
-&        ' at energy',ee
-   ifail=1
-   return
- end if
+ call scatterstate(irel,c_light,nnwell,ll,kap,ee,rr, &
+&                  zz,vfull,uu,up,mmax,mfree)
  ua(:)=uu(:,1)
  pa(:)=up(:,1)
  call fpovlp(ua,ua,mmax,rc,ll, &

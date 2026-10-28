@@ -482,14 +482,14 @@
  real(dp), intent(out) :: uu(ps%mmax,2),up(ps%mmax,2)
  integer, intent(in) :: iout
  integer, intent(out) :: ifail
- integer :: nn,ierr
+ integer :: nn
  ifail=0
  uu(:,:)=0.0d0
  up(:,:)=0.0d0
  if(ps%kind==1) then
    nn=0
-   call scatterstate(ps%irel,ps%c_light,nn,ps%ll,ps%kap,ierr,ee,ps%rr,ps%zz, &
-&                    ps%vv,uu,up,ps%mmax,mch,iout)
+   call scatterstate(ps%irel,ps%c_light,nn,ps%ll,ps%kap,ee,ps%rr,ps%zz, &
+&                    ps%vv,uu,up,ps%mmax,mch)
  else
    call outwf_solve(ps%ow,ee,ps%evkb,mch,mch,uu(:,1),up(:,1), &
 &        iout=iout,ifail=ifail)
@@ -603,7 +603,7 @@
 !Local variables
  real(dp), allocatable :: uu(:,:),up(:,:)
  real(dp) :: uq,upq,xx,yy,hh
- integer :: nn,ierr,iq
+ integer :: nn,iq
 
  ifail=0
  allocate(uu(ps%mmax,2),up(ps%mmax,2))
@@ -611,8 +611,8 @@
  up(:,:)=0.0d0
  if(ps%kind==1) then
    nn=0
-   call scatterstate(ps%irel,ps%c_light,nn,ps%ll,ps%kap,ierr,ee,ps%rr,ps%zz, &
-&                    ps%vv,uu,up,ps%mmax,ps%mch,iout)
+   call scatterstate(ps%irel,ps%c_light,nn,ps%ll,ps%kap,ee,ps%rr,ps%zz, &
+&                    ps%vv,uu,up,ps%mmax,ps%mch)
  else
    call outwf_solve(ps%ow,ee,ps%evkb,ps%mch,ps%mch,uu(:,1),up(:,1), &
 &        iout=iout,ifail=ifail)

@@ -25,7 +25,7 @@
 
  contains
 
- subroutine lschfs(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,irel,c_light)
+ subroutine lschfs(nn,ll,ee,rr,vv,uu,up,zz,mmax,mch,irel,c_light)
 
 !! integrates radial Pauli-type scalar-relativistic equation
 !! on a logarithmic mesh
@@ -38,7 +38,6 @@
 !! @param nn  effective principal quantum number based on nodes inside mch
 !!            (output)
 !! @param ll  angular-momentum quantum number
-!! @param ierr  non-zero return if error
 !! @param ee  bound-state energy, input guess and output calculated value
 !! @param rr  log radial mesh
 !! @param vv  local atomic potential
@@ -66,7 +65,7 @@
 
 !Output variables
  real(dp), intent(out) :: uu(mmax),up(mmax)
- integer, intent(out) :: ierr,nn
+ integer, intent(out) :: nn
 
 
 !Local variables
@@ -84,7 +83,6 @@
  al = 0.01d0 * log(rr(101) / rr(1))
  amesh = exp(al)
 
- ierr = 0
 
 ! relativistic - non-relativistic switch
  if(irel/=0) then

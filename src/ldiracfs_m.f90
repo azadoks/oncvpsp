@@ -25,7 +25,7 @@
 
  contains
 
- subroutine ldiracfs(nn,ll,kap,c_light,ierr,ee,rr,zz,vv,uu,up,mmax,mch,iout)
+ subroutine ldiracfs(nn,ll,kap,c_light,ee,rr,zz,vv,uu,up,mmax,mch)
 
 !! Finds relativistic scattering states of an al-electron potential
 !!
@@ -34,7 +34,6 @@
 !! @param ll  angular-momentum quantum number
 !! @param kap  =l, -(l+1) for j=l -/+ 1/2
 !! @param c_light  speed of light (Hartree atomic units)
-!! @param ierr  non-zero return if error
 !! @param ee  bound-state energy, input guess and output calculated value
 !! @param rr  log radial mesh
 !! @param zz  atomic number
@@ -44,8 +43,8 @@
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param mmax  size of log grid
 !! @param mch  matching mesh point for inward-outward integrations
-!! @param iout  unit of the text output
 
+ use, intrinsic :: iso_fortran_env, only: error_unit
  use constants_m, only: dp
  use dirac_m, only: dirac_outward
  use quad_m, only: log_norm
@@ -62,10 +61,6 @@
 !Input/output variables
  real(dp), intent(inout) :: uu(mmax,2),up(mmax,2)
  integer, intent(inout) :: nn
- integer, intent(in) :: iout
-
-!Output variables
- integer, intent(out) :: ierr
 
 !Local variables
 
@@ -82,18 +77,14 @@
  al = 0.01d0 * log(rr(101) / rr(1))
  amesh = exp(al)
 
- ierr = 60
-
 ! check arguments
  if(kap/=ll .and. kap/=-(ll+1)) then
-   write(iout,'(/a,i4,a,i4)') 'ldiracfs: ERROR kap =',kap,' ll =',ll
-   ierr=2
-   return
+   write(error_unit,'(/a,i4,a,i4)') 'ldiracfs: ERROR kap =',kap,' ll =',ll
+   error stop 1
  end if
  if(zz<1.0d0) then
-   write(iout,'(/a,f12.8)') 'ldiracfs: ERROR zz =',zz
-   ierr=3
-   return
+   write(error_unit,'(/a,f12.8)') 'ldiracfs: ERROR zz =',zz
+   error stop 1
  end if
 
  allocate(gu(mmax),fu(mmax),gup(mmax),fup(mmax),cf(mmax))
@@ -102,7 +93,6 @@
  gu(:)=0.0d0; fu(:)=0.0d0; gup(:)=0.0d0; fup(:)=0.0d0; cf(:)=0.0d0
 
  node=0
- ierr=0
 
  gam=sqrt(kap**2-(zz*cci)**2)
 
