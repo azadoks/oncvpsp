@@ -57,14 +57,14 @@
 
  contains
 
- subroutine vploc_fit(rr,vv,mmax,rc,dvloc0,lpopt,cf)
+ subroutine vploc_fit(rr,vv,mmax,rcloc,dvloc0,lpopt,cf)
 
-!! the polynomial potential matched at rc
+!! the polynomial potential matched at rcloc
 !!
 !! @param rr  log radial mesh (bohr)
 !! @param vv  all-electron potential
 !! @param mmax  size of the log radial mesh
-!! @param rc  matching radius (bohr)
+!! @param rcloc  core radius of the local potential (bohr), where it joins vv
 !! @param dvloc0  amplitude at rr==0 of the smooth "null space" function added
 !! @param lpopt  1-5, the polynomial:
 !!               1) match 2 derivatives, r**0,2,4
@@ -78,7 +78,7 @@
 
 !Input variables
  integer, intent(in) :: mmax,lpopt
- real(dp), intent(in) :: rr(mmax),vv(mmax),rc,dvloc0
+ real(dp), intent(in) :: rr(mmax),vv(mmax),rcloc,dvloc0
 
 !Output variables
  type(vploc_t), intent(out) :: cf
@@ -86,7 +86,7 @@
 !Local variables
  real(dp) :: vd(4),v0,dvv,d2vv,d3vv
 
- call lm_derivs(rr,vv,mmax,rc,3,vd)
+ call lm_derivs(rr,vv,mmax,rcloc,3,vd)
  cf%vder(0:3)=vd(1:4)
  v0=cf%vder(0)
  dvv=cf%vder(1)
@@ -94,32 +94,32 @@
  d3vv=cf%vder(3)
 
  cf%lpopt=lpopt
- cf%rc=rc
+ cf%rc=rcloc
  cf%dvloc0=dvloc0
  cf%dco=0.0d0
  if(lpopt == 1) then
-   cf%bco=(3*dvv-d2vv*rc)/(4*rc)
-   cf%cco=( -dvv+d2vv*rc)/(8*rc**3)
-   cf%aco=v0-cf%bco*rc**2-cf%cco*rc**4
+   cf%bco=(3*dvv-d2vv*rcloc)/(4*rcloc)
+   cf%cco=( -dvv+d2vv*rcloc)/(8*rcloc**3)
+   cf%aco=v0-cf%bco*rcloc**2-cf%cco*rcloc**4
  else if(lpopt == 2) then
-   cf%bco=( 5*dvv-d2vv*rc)/(8*rc**3)
-   cf%cco=(-3*dvv+d2vv*rc)/(12*rc**5)
-   cf%aco=v0-cf%bco*rc**4-cf%cco*rc**6
+   cf%bco=( 5*dvv-d2vv*rcloc)/(8*rcloc**3)
+   cf%cco=(-3*dvv+d2vv*rcloc)/(12*rcloc**5)
+   cf%aco=v0-cf%bco*rcloc**4-cf%cco*rcloc**6
  else if(lpopt == 3) then
-   cf%bco=( 20*dvv-8*d2vv*rc+d3vv*rc**2)/(8*rc**3)
-   cf%cco=(-15*dvv+7*d2vv*rc-d3vv*rc**2)/(5*rc**4)
-   cf%dco=( 12*dvv-6*d2vv*rc+d3vv*rc**2)/(12*rc**5)
-   cf%aco=v0-cf%bco*rc**4-cf%cco*rc**5-cf%dco*rc**6
+   cf%bco=( 20*dvv-8*d2vv*rcloc+d3vv*rcloc**2)/(8*rcloc**3)
+   cf%cco=(-15*dvv+7*d2vv*rcloc-d3vv*rcloc**2)/(5*rcloc**4)
+   cf%dco=( 12*dvv-6*d2vv*rcloc+d3vv*rcloc**2)/(12*rcloc**5)
+   cf%aco=v0-cf%bco*rcloc**4-cf%cco*rcloc**5-cf%dco*rcloc**6
  else if(lpopt == 4) then
-   cf%bco=(35*dvv-11*d2vv*rc+d3vv*rc**2)/(32*rc**3)
-   cf%cco=(-21*dvv+9*d2vv*rc-d3vv*rc**2)/(24*rc**5)
-   cf%dco=(15*dvv-7*d2vv*rc+d3vv*rc**2)/(64*rc**7)
-   cf%aco=v0-cf%bco*rc**4-cf%cco*rc**6-cf%dco*rc**8
+   cf%bco=(35*dvv-11*d2vv*rcloc+d3vv*rcloc**2)/(32*rcloc**3)
+   cf%cco=(-21*dvv+9*d2vv*rcloc-d3vv*rcloc**2)/(24*rcloc**5)
+   cf%dco=(15*dvv-7*d2vv*rcloc+d3vv*rcloc**2)/(64*rcloc**7)
+   cf%aco=v0-cf%bco*rcloc**4-cf%cco*rcloc**6-cf%dco*rcloc**8
  else if(lpopt == 5) then
-   cf%bco=(15*dvv-7*d2vv*rc+d3vv*rc**2)/(16*rc)
-   cf%cco=(-5*dvv+5*d2vv*rc-d3vv*rc**2)/(16*rc**3)
-   cf%dco=( 3*dvv-3*d2vv*rc+d3vv*rc**2)/(48*rc**5)
-   cf%aco=v0-cf%bco*rc**2-cf%cco*rc**4-cf%dco*rc**6
+   cf%bco=(15*dvv-7*d2vv*rcloc+d3vv*rcloc**2)/(16*rcloc)
+   cf%cco=(-5*dvv+5*d2vv*rcloc-d3vv*rcloc**2)/(16*rcloc**3)
+   cf%dco=( 3*dvv-3*d2vv*rcloc+d3vv*rcloc**2)/(48*rcloc**5)
+   cf%aco=v0-cf%bco*rcloc**2-cf%cco*rcloc**4-cf%dco*rcloc**6
  else
    write(error_unit,'(/a,i0)') 'vploc_fit: ERROR lpopt ',lpopt
    error stop 1

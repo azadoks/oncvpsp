@@ -35,7 +35,7 @@
 !!
 !! @param ll  angular momentum l
 !! @param q1,q2  wave vectors (bohr^-1), >0
-!! @param rc  radius (bohr), >0
+!! @param rc  core radius (bohr), >0
 !! @param ss  the overlap
 
  use constants_m, only: dp

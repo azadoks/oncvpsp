@@ -127,7 +127,7 @@
 &          nbas=>inp%nbas, qcut=>inp%qcut, lloc=>inp%lloc, lpopt=>inp%lpopt, &
 &          dvloc0=>inp%dvloc0, nproj=>inp%nproj, debl=>inp%debl, &
 &          icmod=>inp%icmod, fcfact=>inp%fcfact, rcfact=>inp%rcfact, &
-&          slack=>inp%slack, budget_cut=>inp%budget_cut, &
+&          slack=>inp%slack, budget_cutoff=>inp%budget_cutoff, &
 &          fcfact_min=>inp%fcfact_min, fcfact_max=>inp%fcfact_max, &
 &          fcfact_step=>inp%fcfact_step, rcfact_min=>inp%rcfact_min, &
 &          rcfact_max=>inp%rcfact_max, rcfact_step=>inp%rcfact_step, &
@@ -137,15 +137,16 @@
 &          amesh=>inp%amesh, rr1=>inp%rr1, rmax=>inp%rmax, &
 &          c_light=>inp%c_light, ep_as_given=>inp%ep_as_given, &
 &          well_onset=>inp%well_onset, well_tail=>inp%well_tail, &
-&          wreg=>inp%wreg, well_n=>inp%well_n, well_norm=>inp%well_norm, &
-&          ecut_wt=>inp%ecut_wt)
+&          wave_regularization=>inp%wave_regularization, well_n=>inp%well_n, &
+&          well_norm=>inp%well_norm, &
+&          ecut_weight=>inp%ecut_weight)
 
 ! the defaults of read_input_text
    nproj(:) = 0
    fcfact = 0.0d0
    rcfact = 0.0d0
    slack = 1.0d0
-   budget_cut = 0
+   budget_cutoff = 0
    rc(:) = 0.0d0
    ep(:, :) = 0.0d0
    rxpsh = -1.0d0  ! negative value for auto setting of radius
@@ -272,10 +273,11 @@
      if(ifail /= 0) return
    end select
 
-   call get_real(child, 'pseudopotentials', 'wave_regularization', wreg, &
+   call get_real(child, 'pseudopotentials', 'wave_regularization', &
+&                wave_regularization, &
 &                0.0d0, iout=iout, ifail=ifail)
    if(ifail /= 0) return
-   if(.not. (wreg >= 0.0d0)) then
+   if(.not. (wave_regularization >= 0.0d0)) then
      call input_error('wave_regularization in [pseudopotentials] must be '// &
 &      'at least 0', iout, ifail)
      if(ifail /= 0) return
@@ -335,10 +337,10 @@
        if(ifail /= 0) return
      end if
    end if
-   ecut_wt(:) = -1.0d0
+   ecut_weight(:) = -1.0d0
    if(child%has_key('ecut_weight')) then
      call get_real_array(child, 'vkb_projectors', 'ecut_weight', lmax + 1, &
-&                        ecut_wt, iout, ifail)
+&                        ecut_weight, iout, ifail)
      if(ifail /= 0) return
    end if
 
@@ -401,11 +403,11 @@
      if(ifail /= 0) return
      select case(tmp_str)
      case('max')
-       budget_cut = 0
+       budget_cutoff = 0
      case('weighted')
-       budget_cut = 1
+       budget_cutoff = 1
      case('max_all')
-       budget_cut = 2
+       budget_cutoff = 2
      case default
        call input_error('budget_cutoff in [model_core_charge] must be '// &
 &        '"max", "weighted" or "max_all", got "'//tmp_str//'"', iout, ifail)

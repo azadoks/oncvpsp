@@ -25,7 +25,7 @@
 
  contains
 
- subroutine lschvkbs(ll,ivkb,ee,rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,mch, &
+ subroutine lschvkbs(ll,ivkb,ee,rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,mlast, &
 &      iout,ifail)
 
 !! Normalized scattering state for pseudopotential, fully non-local unless
@@ -42,18 +42,18 @@
 !! @param uu  output radial wave function (*rr)
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param mmax  size of the log radial mesh
-!! @param mch  index of radius to which uu is computed
+!! @param mlast  index of radius to which uu is computed
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
  use pieces_m, only: piecewise_t
- use quad_m, only: log_norm
+ use quad_m, only: quad_log_norm
  use vkboutwf_m, only: vkboutwf
  use logmesh_m, only: lm_step
 
 !Input variables
- integer, intent(in) :: mmax,mch
+ integer, intent(in) :: mmax,mlast
  integer, intent(in) :: ivkb,ll
  real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(ivkb)
  real(dp), intent(in) :: ee
@@ -80,22 +80,22 @@
  uu(:)=0.0d0
  up(:)=0.0d0
 
- call vkboutwf(ll,ivkb,ee,vkbpw,evkb,rr,vloc,vlocpw,uu,up,mmax,mch,iout,ifail)
+ call vkboutwf(ll,ivkb,ee,vkbpw,evkb,rr,vloc,vlocpw,uu,up,mmax,mlast,iout,ifail)
  if(ifail/=0) return
 
 !perform normalization sum
 
- sn=log_norm(rr,uu(1:mch)**2,mch,ll,dble(ll+1))
+ sn=quad_log_norm(rr,uu(1:mlast)**2,mlast,ll,dble(ll+1))
 
 !normalize u
 
  cn=1.0d0/sqrt(sn)
 
- do ii=1,mch
+ do ii=1,mlast
    up(ii)=cn*up(ii)
    uu(ii)=cn*uu(ii)
  end do
- do ii=mch+1,mmax
+ do ii=mlast+1,mmax
    uu(ii)=0.0d0
  end do
 

@@ -108,8 +108,8 @@
  inp%well_tail=0
  inp%well_n(:)=0
  inp%well_norm=0
- inp%ecut_wt(:)=-1.0d0
- inp%wreg=0.0d0
+ inp%ecut_weight(:)=-1.0d0
+ inp%wave_regularization=0.0d0
  select case(input_mode)
  case(INPUT_STDIN)
    unit=stdin

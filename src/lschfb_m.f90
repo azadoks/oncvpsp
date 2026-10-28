@@ -25,7 +25,7 @@
 
  contains
 
- subroutine lschfb(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,irel,c_light,iout, &
+ subroutine lschfb(irel,c_light,nn,ll,ierr,ee,rr,zz,vv,uu,up,mmax,mch,iout, &
 &                  ifail)
 
 !! Finds bound states of an all-electron atomic potential using
@@ -34,22 +34,22 @@
 !! The Koelling-Harmon equation is integrated in its first-order flux form
 !! (sr_flux_m)
 !!
+!! @param irel  0 non-relativistic, 1 scalar-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param nn  principal quantum number
 !! @param ll  angular momentum
 !! @param ierr  non-zero return if error, 10 if there is no bound state
 !!              and the box state (u=0 at rr(mmax)) is returned
 !! @param ee  bound-state energy, input guess and output calculated value
 !! @param rr  log radial mesh (bohr)
+!! @param zz  atomic number
 !! @param vv  local atomic potential
 !! @param uu  output radial wave function (*rr)
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
-!! @param zz  atomic number
 !! @param mmax  size of the log radial mesh
 !! @param mch  mesh point just beyond the classical turning point, where
 !!             the inward and outward integrations are matched (at the
 !!             continuous turning point, match_m)
-!! @param irel  0 non-relativistic, 1 scalar-relativistic
-!! @param c_light  speed of light (Hartree atomic units)
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
@@ -58,7 +58,7 @@
  use sr_flux_m, only: sr_gamma, sr_flux_coefs, sr_outward, sr_inward, &
 &                     sr_derivs
  use match_m, only: match_k, match_point, match_weights, match_blend
- use quad_m, only: log_norm
+ use quad_m, only: quad_log_norm
  use inward_start_m, only: inward_start
  use logmesh_m, only: lm_step
 
@@ -310,7 +310,7 @@
 
 ! perform normalization sum
 
- sn=log_norm(rr,uu(1:mlast)**2,mlast,ll,gamma)
+ sn=quad_log_norm(rr,uu(1:mlast)**2,mlast,ll,gamma)
 
  cn=1.0d0/sqrt(sn)
 

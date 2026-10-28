@@ -23,25 +23,25 @@
  module build_info_m
  implicit none
  private
- public :: build_commit, build_source, build_time, write_build_info
+ public :: write_build_info
 
  include 'build_info.inc'
 
  contains
 
- subroutine write_build_info(iunit,program,treatment)
+ subroutine write_build_info(iout,program,treatment)
 !! writes the one-line build description
 !!
-!! @param iunit  output unit
+!! @param iout  unit of the text output
 !! @param program  name of the executable
 !! @param treatment  relativistic treatment (non-, scalar- or
 !!                   fully-relativistic)
 
 !Input variables
- integer, intent(in) :: iunit
+ integer, intent(in) :: iout
  character(len=*), intent(in) :: program,treatment
 
- write(iunit,'(10a)') 'build: ',program,' (',treatment,'), commit ', &
+ write(iout,'(10a)') 'build: ',program,' (',treatment,'), commit ', &
 &      build_commit,', source ',build_source,', compiled ',build_time
  return
 

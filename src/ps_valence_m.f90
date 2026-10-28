@@ -78,7 +78,7 @@
  use boundstate_m, only: boundstate
  use lschvkbb_m, only: lschvkbb
  use constants_m, only: dp, mxprj, mxstate, mxl, mxlin, mxkap
- use kappa_m, only: kap_count, kap_of, j_share
+ use kappa_m, only: kap_count, kap_of, kap_j_share
  use pieces_m, only: piecewise_t
 
 !Input variables
@@ -121,7 +121,7 @@
    do ikap=1,mkap
      kap=kap_of(ll,ikap)
      fj=1.0d0
-     if(nkap==2) fj=j_share(ll,ikap,1.0d0)
+     if(nkap==2) fj=kap_j_share(ll,ikap,1.0d0)
 
      et=ea(nc+kk,ikap)
 

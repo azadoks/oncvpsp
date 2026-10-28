@@ -257,20 +257,20 @@
  write(iout,'(a,1p,e24.16)') 'vloc_check',fe(vlc%check)
  end subroutine write_vloc
 
- subroutine write_per_projector(tag,vv)
-!! a line tag l ikap iproj v of each projector's value vv
+ subroutine write_per_projector(tag,pval)
+!! a line tag l ikap iproj v of each projector's value pval
 !!
 !! @param tag  the line's name
-!! @param vv  the value of each projector, l and ikap
+!! @param pval  the value of each projector, l and ikap
  character(len=*), intent(in) :: tag
- real(dp), intent(in) :: vv(mxprj,mxl+1,nkap)
+ real(dp), intent(in) :: pval(mxprj,mxl+1,nkap)
  integer :: l1,ikap,mkap,iprj
  do l1=1,lmax+1
    mkap=kap_count(nkap,l1-1)
    do ikap=1,mkap
      do iprj=1,nproj(l1)
        write(iout,'(a,3i4,1p,e24.16)') tag,l1-1,ikap,iprj, &
-&            fe(vv(iprj,l1,ikap))
+&            fe(pval(iprj,l1,ikap))
      end do
    end do
  end do

@@ -69,22 +69,22 @@
  end select
  end function sbf_trig
 
- subroutine sbf_trig_rising(ll,nn,qq,rr,ss,cc,rjl)
+ subroutine sbf_trig_rising(ll,nn,qq,rlin,ss,cc,rjl)
 
-!! rr*j_l(qq*rr) by sbf_trig on nondecreasing radii, each form in a loop
+!! rlin*j_l(qq*rlin) by sbf_trig on nondecreasing radii, each form in a loop
 !! of its own (the closed forms vectorize): the points below xser(l) come
 !! first. The radial transforms' integrand, without a pass of its own
 !!
 !! @param ll  angular momentum l, 0..3
 !! @param nn  number of points
 !! @param qq  wave vector, >=0
-!! @param rr  radii, >=0, nondecreasing
-!! @param ss,cc  sin(qq*rr), cos(qq*rr)
-!! @param rjl  rr*j_l(qq*rr)
+!! @param rlin  radii of the linear mesh (bohr), >=0, nondecreasing
+!! @param ss,cc  sin(qq*rlin), cos(qq*rlin)
+!! @param rjl  rlin*j_l(qq*rlin)
 
 !Input variables
  integer, intent(in) :: ll,nn
- real(dp), intent(in) :: qq,rr(nn),ss(nn),cc(nn)
+ real(dp), intent(in) :: qq,rlin(nn),ss(nn),cc(nn)
 
 !Output variables
  real(dp), intent(out) :: rjl(nn)
@@ -95,34 +95,34 @@
 
  i0=nn+1
  do ii=1,nn
-   xx=qq*rr(ii)
+   xx=qq*rlin(ii)
    if(xx>=xser(ll)) then
      i0=ii
      exit
    end if
-   rjl(ii)=rr(ii)*sbf_series(ll,xx)
+   rjl(ii)=rlin(ii)*sbf_series(ll,xx)
  end do
 
  select case(ll)
  case(0)
    do ii=i0,nn
-     xx=qq*rr(ii)
-     rjl(ii)=rr(ii)*(ss(ii)/xx)
+     xx=qq*rlin(ii)
+     rjl(ii)=rlin(ii)*(ss(ii)/xx)
    end do
  case(1)
    do ii=i0,nn
-     xx=qq*rr(ii)
-     rjl(ii)=rr(ii)*((ss(ii)-xx*cc(ii))/xx**2)
+     xx=qq*rlin(ii)
+     rjl(ii)=rlin(ii)*((ss(ii)-xx*cc(ii))/xx**2)
    end do
  case(2)
    do ii=i0,nn
-     xx=qq*rr(ii)
-     rjl(ii)=rr(ii)*(((3.0d0-xx**2)*ss(ii) - 3.0d0*xx*cc(ii))/xx**3)
+     xx=qq*rlin(ii)
+     rjl(ii)=rlin(ii)*(((3.0d0-xx**2)*ss(ii) - 3.0d0*xx*cc(ii))/xx**3)
    end do
  case default
    do ii=i0,nn
-     xx=qq*rr(ii)
-     rjl(ii)=rr(ii)*(((15.0d0-6.0d0*xx**2)*ss(ii) &
+     xx=qq*rlin(ii)
+     rjl(ii)=rlin(ii)*(((15.0d0-6.0d0*xx**2)*ss(ii) &
 &           - (15.0d0-xx**2)*xx*cc(ii))/xx**4)
    end do
  end select

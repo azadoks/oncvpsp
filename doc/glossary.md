@@ -76,15 +76,15 @@ routine, with its unit when it is an energy, a potential or a length.
 | name | meanings |
 |---|---|
 | `ee` | an energy (Ha): a state's eigenvalue, a scattering energy, a trial energy |
-| `uu` | a radial wave function (times r); ln r_s in modcore_budget |
-| `vv` | a potential (Ha); eigenvectors or projector values in four routines |
+| `uu` | a radial wave function (times r) |
+| `vv` | a potential (Ha): all-electron, local or screened |
 | `ff` | a function on the mesh or on the nodes of a grid |
 | `xx` | the argument of a function |
 | `nn` | a number of nodes; a principal quantum number |
 | `ss` | an integral; an overlap; step weights |
-| `mch` | the matching point a bound solver returns; the last point integrated to |
+| `mch` | a matching point of the inward and outward integrations; the last point integrated to is `mlast` |
 | `rho` | a charge density: total, valence, or pseudo valence |
-| `pw` | a function as pieces (pieces_m); a real power in two places |
+| `pw` | a function as pieces (pieces_m) |
 | `vp` | the semi-local pseudopotentials, screened or not |
 | `ierr` | 0 on success; the non-zero values differ by routine |
 | `etot` | a total energy (Ha): all-electron or pseudo-atom |

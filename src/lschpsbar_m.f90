@@ -46,7 +46,7 @@
 
  use constants_m, only: dp, pi, eig_tol
  use boundsolve_m, only: bs_converged, bs_correct, bs_bisect
- use quad_m, only: log_norm
+ use quad_m, only: quad_log_norm
  use inward2_m, only: inward2
  use inward_start_m, only: inward_start
  use logmesh_m, only: lm_step
@@ -247,7 +247,7 @@
 
 ! perform normalization sum
 
-     sn=log_norm(rr,uu(1:nin)**2,nin,ll,dble(ll+1))
+     sn=quad_log_norm(rr,uu(1:nin)**2,nin,ll,dble(ll+1))
 
 ! normalize u
 

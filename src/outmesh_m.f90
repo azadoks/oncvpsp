@@ -147,7 +147,8 @@
 !! @param rr  log radial mesh (bohr)
 !! @param vv  the potential on the log mesh
 !! @param mmax  size of the log radial mesh
-!! @param vlocpw  the pieces, the last bound the mesh end
+!! @param vlocpw  the screened local potential as pieces, the last bound
+!!                the mesh end
 !! @param rl  output mesh (bohr), ascending, rl(1) 0 or on the log mesh
 !! @param fl  the potential on the output mesh
 !! @param nrl  size of the output mesh

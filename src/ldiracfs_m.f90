@@ -47,7 +47,7 @@
  use, intrinsic :: iso_fortran_env, only: error_unit
  use constants_m, only: dp
  use dirac_m, only: dirac_outward
- use quad_m, only: log_norm
+ use quad_m, only: quad_log_norm
  use logmesh_m, only: lm_step
 
 !Input variables
@@ -107,7 +107,7 @@
 
 ! perform normalization sum
 
- sn=log_norm(rr,gu(1:mch)**2+fu(1:mch)**2,mch,ll,gam)
+ sn=quad_log_norm(rr,gu(1:mch)**2+fu(1:mch)**2,mch,ll,gam)
 
 ! normalize u
 

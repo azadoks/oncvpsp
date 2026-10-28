@@ -580,31 +580,31 @@
  return
  end subroutine lm_origin
 
- real(dp) function lm_head(f1,rho1,rho2,al,pw)
+ real(dp) function lm_head(f1,rho1,rho2,al,pow)
 
 !! the integral over x = ln(r) below rr(1) of an integrand f = rho*g that
-!! goes as a power of r there, g as r**pw: f1/p, with p = pw + the power
+!! goes as a power of r there, g as r**pow: f1/p, with p = pow + the power
 !! of the density through its first two nodes, ln(rho2/rho1)/al. With
-!! the density taken as constant (p = pw) the head is wrong where the
+!! the density taken as constant (p = pow) the head is wrong where the
 !! density is relativistic: an s state goes as r**gamma, gamma =
 !! sqrt(1 - (Z/c)**2), and the density as r**(2 gamma - 2)
 !! (doc/numerics_audit.md, C-3). The density is used rather than f
 !! itself: a GGA potential is not smooth enough at the first nodes to
-!! give a power. Where rho1 or rho2 is not positive, p = pw
+!! give a power. Where rho1 or rho2 is not positive, p = pow
 !!
 !! @param f1  integrand at rr(1)
 !! @param rho1  density at rr(1)
 !! @param rho2  density at rr(2)
 !! @param al  log of the mesh ratio
-!! @param pw  power of g
+!! @param pow  power of g
 
 !Input variables
- real(dp), intent(in) :: f1,rho1,rho2,al,pw
+ real(dp), intent(in) :: f1,rho1,rho2,al,pow
 
  if(rho1>0.0d0 .and. rho2>0.0d0) then
-   lm_head=f1/(pw+log(rho2/rho1)/al)
+   lm_head=f1/(pow+log(rho2/rho1)/al)
  else
-   lm_head=f1/pw
+   lm_head=f1/pow
  end if
  return
  end function lm_head

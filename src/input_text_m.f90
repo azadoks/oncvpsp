@@ -75,7 +75,7 @@
 &          nbas=>inp%nbas, qcut=>inp%qcut, lloc=>inp%lloc, lpopt=>inp%lpopt, &
 &          dvloc0=>inp%dvloc0, nproj=>inp%nproj, debl=>inp%debl, &
 &          icmod=>inp%icmod, fcfact=>inp%fcfact, rcfact=>inp%rcfact, &
-&          slack=>inp%slack, budget_cut=>inp%budget_cut, &
+&          slack=>inp%slack, budget_cutoff=>inp%budget_cutoff, &
 &          fcfact_min=>inp%fcfact_min, fcfact_max=>inp%fcfact_max, &
 &          fcfact_step=>inp%fcfact_step, rcfact_min=>inp%rcfact_min, &
 &          rcfact_max=>inp%rcfact_max, rcfact_step=>inp%rcfact_step, &
@@ -85,14 +85,15 @@
 &          amesh=>inp%amesh, rr1=>inp%rr1, rmax=>inp%rmax, &
 &          c_light=>inp%c_light, ep_as_given=>inp%ep_as_given, &
 &          well_onset=>inp%well_onset, well_tail=>inp%well_tail, &
-&          wreg=>inp%wreg, well_n=>inp%well_n, well_norm=>inp%well_norm, &
-&          ecut_wt=>inp%ecut_wt)
+&          wave_regularization=>inp%wave_regularization, well_n=>inp%well_n, &
+&          well_norm=>inp%well_norm, &
+&          ecut_weight=>inp%ecut_weight)
 
    nproj(:) = 0
    fcfact = 0.0d0
    rcfact = 0.0d0
    slack = 1.0d0
-   budget_cut = 0
+   budget_cutoff = 0
    rc(:) = 0.0d0
    ep(:, :) = 0.0d0
    rxpsh = -1.0d0  ! negative value for auto setting of radius
@@ -145,15 +146,17 @@
    call next_line(unit, line, inline, iout=iout, ifail=ifail)
    if(ifail /= 0) return
    itail = 0
-   wreg = 0.0d0
+   wave_regularization = 0.0d0
    well_norm = 0
-   read(line, *, iostat=ios) lmax, igiven, well_onset, itail, wreg, well_norm
+   read(line, *, iostat=ios) lmax, igiven, well_onset, itail, &
+&          wave_regularization, well_norm
    if(ios < 0) then
      well_norm = 0
-     read(line, *, iostat=ios) lmax, igiven, well_onset, itail, wreg
+     read(line, *, iostat=ios) lmax, igiven, well_onset, itail, &
+&          wave_regularization
    end if
    if(ios < 0) then
-     wreg = 0.0d0
+     wave_regularization = 0.0d0
      read(line, *, iostat=ios) lmax, igiven, well_onset, itail
    end if
    if(ios < 0) then
@@ -171,11 +174,12 @@
    if(ios == 0) then
      if(lmax > mxlin .or. igiven < 0 .or. igiven > 1 .or. itail < 0 &
 &       .or. itail > 2 .or. (well_onset > 0.0d0 .and. well_onset < 1.0d0) &
-&       .or. .not. (wreg >= 0.0d0) .or. well_norm < 0 .or. well_norm > 2) then
+&       .or. .not. (wave_regularization >= 0.0d0) .or. well_norm < 0 &
+&       .or. well_norm > 2) then
        ios = 999
      end if
    end if
-   call check_finite(ios, [well_onset, wreg])
+   call check_finite(ios, [well_onset, wave_regularization])
    call read_error(ios, inline, iout, ifail)
    if(ifail /= 0) return
    ep_as_given = igiven == 1
@@ -206,13 +210,14 @@
 ! well_n (0 for the default, at least 0) and ecut_weight (negative for the
 ! default)
    well_n(:) = 0
-   ecut_wt(:) = -1.0d0
+   ecut_weight(:) = -1.0d0
    do l1 = 1, lmax + 1
      call next_line(unit, line, inline, iout=iout, ifail=ifail)
      if(ifail /= 0) return
-     read(line, *, iostat=ios) lt, nproj(l1), debl(l1), well_n(l1), ecut_wt(l1)
+     read(line, *, iostat=ios) lt, nproj(l1), debl(l1), well_n(l1), &
+&          ecut_weight(l1)
      if(ios < 0) then
-       ecut_wt(l1) = -1.0d0
+       ecut_weight(l1) = -1.0d0
        read(line, *, iostat=ios) lt, nproj(l1), debl(l1), well_n(l1)
      end if
      if(ios < 0) then
@@ -220,7 +225,7 @@
        read(line, *, iostat=ios) lt, nproj(l1), debl(l1)
      end if
      if(ios == 0 .and. (lt /= l1 - 1 .or. well_n(l1) < 0)) ios = 999
-     call check_finite(ios, [debl(l1), ecut_wt(l1)])
+     call check_finite(ios, [debl(l1), ecut_weight(l1)])
      call read_error(ios, inline, iout, ifail)
      if(ifail /= 0) return
    end do
@@ -256,7 +261,7 @@
        end if
      end if
      if(ios == 0 .and. (ibudget < 0 .or. ibudget > 2)) ios = 999
-     budget_cut = ibudget
+     budget_cutoff = ibudget
    end if
 ! icmod==4[explicit grid]: icmod, fcfact(ignored), rcfact(ignored),
 !   fcfact_min, fcfact_max, fcfact_step,

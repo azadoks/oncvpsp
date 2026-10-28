@@ -78,7 +78,7 @@
 !Local variables
  integer :: na_ps(mxstate),la_ps(mxstate),nprj(mxlin+1)
  integer :: ik,ii,ierrae,ierrps,itae,itps,nkap
- real(dp) :: fa_ps(mxstate,mxkap),etae(0:nk),etps(0:nk)
+ real(dp) :: fa_ps(mxstate,2),etae(0:nk),etps(0:nk)
  real(dp) :: eaw(mxstate,mxkap),rpk(mxstate,mxkap),eterm(4),res
  real(dp) :: ea_ps(mxstate,mxkap)
  real(dp), allocatable :: vext(:),rhoc(:),rhoa(:),vi(:),rhops(:)
@@ -174,7 +174,7 @@
 
 !Output variables
  integer, intent(out) :: na_ps(mxstate),la_ps(mxstate)
- real(dp), intent(out) :: fa_ps(mxstate,mxkap)
+ real(dp), intent(out) :: fa_ps(mxstate,2)
 
 !Local variables
  integer :: nav(4),kk,l1

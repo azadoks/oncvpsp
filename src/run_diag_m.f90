@@ -77,7 +77,7 @@
  use constants_m, only: dp, mxl, mxlin, diag_match, mxprj
  use logmesh_m, only: lm_interp
  use phsft_m, only: phsft_mch
- use quad_m, only: log_norm_to
+ use quad_m, only: quad_log_norm_to
  use sr_flux_m, only: sr_gamma
  use kappa_m, only: kap_count, kap_of
  use pieces_m, only: piecewise_t
@@ -202,7 +202,7 @@
          if(ifail/=0) return
        else if(wellprj(iprj,l1)) then
 !   a scattering state normalized to rm, as the pseudo-wave function
-         cnorm=1.0d0/sqrt(log_norm_to(rr,ur(1:mchf,1)**2,mchf,ll, &
+         cnorm=1.0d0/sqrt(quad_log_norm_to(rr,ur(1:mchf,1)**2,mchf,ll, &
 &              sr_gamma(ll,zz,fss),rm))
          ur(1:mchf,1)=cnorm*ur(1:mchf,1)
        end if

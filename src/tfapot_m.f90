@@ -26,11 +26,11 @@
  contains
 
 ! tfapot
- function tfapot(rr,zz)
+ function tfapot(rad,zz)
 
-!! generalized Thomas-Fermi atomic potential at rr (Ha)
+!! generalized Thomas-Fermi atomic potential at rad (Ha)
 !!
-!! @param rr  radius (bohr)
+!! @param rad  radius (bohr)
 !! @param zz  atomic number
 !!
 !! ...to an article of N. H. March ( "The Thomas-Fermi Approximation in
@@ -45,7 +45,7 @@
  use constants_m, only: dp
 
 !Input variables
- real(dp), intent(in) :: rr,zz
+ real(dp), intent(in) :: rad,zz
 
 !Output variables
  real(dp) :: tfapot
@@ -54,14 +54,14 @@
  real(dp) :: bb,tt,xx,xs
 
  bb=(0.69395656d0/zz)**0.33333333d0
- xx=rr/bb
+ xx=rad/bb
  xs=sqrt(xx)
 
  tt=zz/(1.0d0+xs*(0.02747d0 - xx*(0.1486d0 - 0.007298d0*xx)) &
 &   + xx*(1.243d0 + xx*(0.2302d0 + 0.006944d0*xx)))
 
  if(tt<1.0d0) tt=1.0d0
- tfapot=-tt/rr
+ tfapot=-tt/rad
 
  return
  end function tfapot

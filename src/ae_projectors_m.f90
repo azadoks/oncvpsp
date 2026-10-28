@@ -544,11 +544,11 @@
  end do
  end subroutine ae_overlap
 
- subroutine ecut_weights(ll,nc,nv,la,fa,fj,nproj,ecut_wt,wcurve,iout,ifail)
+ subroutine ecut_weights(ll,nc,nv,la,fa,fj,nproj,ecut_weight,wcurve,iout,ifail)
 !! the weights of the pseudo-waves of l in the cutoff of the pseudo-waves
 !! (the weighted mean, and which waves the largest is over): the
 !! occupation of each valence state (its share fj of J), or for the first
-!! wave of a channel with none occupied ecut_wt (ecut_weight), by default
+!! wave of a channel with none occupied ecut_weight, by default
 !! 2(2l+1), as if the channel were full; in a solid it holds about the
 !! charge that hybridization puts inside rc, an input as the atom cannot
 !! give it
@@ -558,11 +558,11 @@
 !! @param nv  number of valence states
 !! @param la  angular momenta
 !! @param fa  occupancies
-!! @param fj  the share of the occupation of l in this kappa (j_share), 1
+!! @param fj  the share of the occupation of l in this kappa (kap_j_share), 1
 !!            when nkap=1
 !! @param nproj  number of projectors for each l, here that of l
-!! @param ecut_wt  the input weight of the first wave of a channel with no
-!!                 occupied state, negative for the default 2(2l+1)
+!! @param ecut_weight  the input weight of the first wave of a channel with no
+!!                     occupied state, negative for the default 2(2l+1)
 !! @param wcurve  the weights of the waves; zero on entry
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
@@ -570,7 +570,7 @@
 
 !Input variables
  integer, intent(in) :: ll,nc,nv,la(mxstate),nproj
- real(dp), intent(in) :: fa(mxstate),fj,ecut_wt
+ real(dp), intent(in) :: fa(mxstate),fj,ecut_weight
  integer, intent(in) :: iout
 
 !Input/output variables
@@ -590,12 +590,12 @@
    end if
  end do
  if(.not. any(wcurve(:)>0.0d0)) then
-   if(ecut_wt>=0.0d0) then
-     wcurve(1)=fj*ecut_wt
+   if(ecut_weight>=0.0d0) then
+     wcurve(1)=fj*ecut_weight
    else
      wcurve(1)=fj*dble(2*(2*ll+1))
    end if
- else if(ecut_wt>=0.0d0) then
+ else if(ecut_weight>=0.0d0) then
    write(iout,'(/a,i0,a)') 'ecut_weights: ERROR ecut_weight for l=',ll, &
 &       ' is for a channel with no occupied state; this one has one'
    ifail=1

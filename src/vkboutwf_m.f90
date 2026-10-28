@@ -25,7 +25,7 @@
 
  contains
 
- subroutine vkboutwf(ll,nvkb,ep,vkbpw,evkb,rr,vloc,vlocpw,uu,up,mmax,mch, &
+ subroutine vkboutwf(ll,nvkb,ep,vkbpw,evkb,rr,vloc,vlocpw,uu,up,mmax,mlast, &
 &      iout,ifail)
 
 !! computes Vanderbilt / Kleinman-Bylander outward-integrated wave functions:
@@ -47,7 +47,7 @@
 !! @param uu  wave function
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param mmax  size of the log radial mesh
-!! @param mch  index of radius to which wave function is to be integrated
+!! @param mlast  index of radius to which wave function is to be integrated
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
@@ -56,7 +56,7 @@
  use outwf_m, only: outwf_t, outwf_setup, outwf_solve, outwf_free
 
 !Input variables
- integer, intent(in) :: nvkb,ll,mmax,mch
+ integer, intent(in) :: nvkb,ll,mmax,mlast
  real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nvkb)
  real(dp), intent(in) :: ep
  type(piecewise_t), intent(in) :: vkbpw(nvkb),vlocpw
@@ -72,7 +72,7 @@
  ifail=0
  call outwf_setup(ll,rr,mmax,vloc,vlocpw,nvkb,vkbpw,ow,iout,ifail)
  if(ifail/=0) return
- call outwf_solve(ow,ep,evkb,mch,mch,uu,up,iout=iout,ifail=ifail)
+ call outwf_solve(ow,ep,evkb,mlast,mlast,uu,up,iout=iout,ifail=ifail)
  if(ifail/=0) return
  call outwf_free(ow)
  return

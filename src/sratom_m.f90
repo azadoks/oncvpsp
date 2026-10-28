@@ -168,8 +168,8 @@
      end if
      et=ea(ii)
      ierr = 0
-     call lschfb(na(ii),la(ii),ierr,et, &
-&                rr,vext+vi,uu,up,zz,mmax,mch,irel,c_light,iout,ifail)
+     call lschfb(irel,c_light,na(ii),la(ii),ierr,et,rr,zz,vext+vi,uu,up,mmax, &
+&                mch,iout,ifail)
      if(ifail/=0) return
 ! a state with no bound solution in this potential gets its box state;
 ! the SCF goes on but cannot converge with it

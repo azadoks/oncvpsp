@@ -35,7 +35,7 @@
 !!
 !! @param al  log of the mesh ratio
 !! @param cf  coefficient of uu in upp
-!! @param mmax  size of the arrays
+!! @param mmax  size of the log radial mesh
 !! @param ifrom  first point, given
 !! @param ito  last point integrated
 !! @param uu  radial wave function (*rr)

@@ -182,7 +182,7 @@
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, mxstate, mxl, mxlin, mxkap, mxprj
- use kappa_m, only: kap_count, j_share
+ use kappa_m, only: kap_count, kap_j_share
  use pieces_m, only: piecewise_t
  use lschvkbb_m, only: lschvkbb
 
@@ -224,7 +224,7 @@
    mkap=kap_count(nkap,ll)
    do ikap=1,mkap
      fj=1.0d0
-     if(mkap==2) fj=j_share(ll,ikap,1.0d0)
+     if(mkap==2) fj=kap_j_share(ll,ikap,1.0d0)
      et=ea(nc+kk,ikap)
      emax=(1.0d0-de)*et
      emin=(1.0d0+de)*et
@@ -336,7 +336,7 @@
  integer, parameter :: maxiter=50
  real(dp), allocatable :: ww(:),vp0(:,:,:),vnew(:),vnext(:,:),vsw(:)
  real(dp) :: ra,rb,change,sn,sd
- integer :: ii,l1,ik,iter
+ integer :: ii,l1,ikap,iter
 
  ifail=0
  allocate(ww(mmax),vp0(mmax,mxl+2,nkap),vnew(mmax),vnext(mmax,nkap),vsw(mmax))
@@ -348,8 +348,8 @@
  end do
  vp0(:,:,:)=vp(:,:,:)
 
- do ik=1,nkap
-   vp(:,lloc+1,ik)=ww(:)*vp0(:,lloc+1,ik)+(1.0d0-ww(:))*(vion(:)+vo(:))
+ do ikap=1,nkap
+   vp(:,lloc+1,ikap)=ww(:)*vp0(:,lloc+1,ikap)+(1.0d0-ww(:))*(vion(:)+vo(:))
  end do
  do iter=1,maxiter
    call ionic_valence(nkap,nc,nv,la,fa,ea,lloc,nproj,rr,vp,vlocpw,vkbpw, &
@@ -362,11 +362,11 @@
 ! configuration starts at its own fixed point
    sn=0.0d0
    sd=0.0d0
-   do ik=1,nkap
-     vnew(:)=ww(:)*vp0(:,lloc+1,ik)+(1.0d0-ww(:))*(vion(:)+vo(:))
-     sn=sn+sum(rho(:)*rr(:)**3*(vnew(:)-vp(:,lloc+1,ik))**2)
+   do ikap=1,nkap
+     vnew(:)=ww(:)*vp0(:,lloc+1,ikap)+(1.0d0-ww(:))*(vion(:)+vo(:))
+     sn=sn+sum(rho(:)*rr(:)**3*(vnew(:)-vp(:,lloc+1,ikap))**2)
      sd=sd+sum(rho(:)*rr(:)**3)
-     vnext(:,ik)=vnew(:)
+     vnext(:,ikap)=vnew(:)
    end do
    change=sqrt(sn/sd)
    if(change<=tolfix) exit
@@ -382,11 +382,11 @@
 
 ! the semi-local potentials, switched with the screening their local
 ! potential was switched with
- do ik=1,nkap
-   vsw(:)=vp(:,lloc+1,ik)-ww(:)*vp0(:,lloc+1,ik)
+ do ikap=1,nkap
+   vsw(:)=vp(:,lloc+1,ikap)-ww(:)*vp0(:,lloc+1,ikap)
    do l1=1,max(lmax+1,lloc+1)
      if(l1==lloc+1) cycle
-     vp(:,l1,ik)=ww(:)*vp0(:,l1,ik)+vsw(:)
+     vp(:,l1,ikap)=ww(:)*vp0(:,l1,ikap)+vsw(:)
    end do
  end do
 

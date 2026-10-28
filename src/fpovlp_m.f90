@@ -27,9 +27,9 @@
 
 ! calculates all-electron wave function overlap intergrals
 
- subroutine fpovlp(gg,hh,mmax,rc,ll,kap,zz,ss,rr,irel,c_light)
+ subroutine fpovlp(uu1,uu2,mmax,rc,ll,kap,zz,ss,rr,irel,c_light)
 
-!! product of all-electron wave functions gg*hh goes like rr**(2*gamma) as
+!! product of all-electron wave functions uu1*uu2 goes like rr**(2*gamma) as
 !! rr -> 0, with the exponent of the equation that gave them: l+1, that of
 !! the Koelling-Harmon equation (sr_gamma) or, for the large components of
 !! the Dirac equation, sqrt(kap**2-(zz/c)**2), as in renorm_r
@@ -37,10 +37,10 @@
 !! cumulative integral of lm_integral from there, so smooth in rc
 !! (doc/smoothness_plan.md, R-5)
 !!
-!! @param gg  wave function one
-!! @param hh  wave function two
+!! @param uu1  radial wave function one (times r)
+!! @param uu2  radial wave function two (times r)
 !! @param mmax  size of the log radial mesh
-!! @param rc  outer integration limit (bohr)
+!! @param rc  core radius (bohr), the upper limit of the integral
 !! @param ll  angular momentum
 !! @param kap  Dirac kappa, l or -(l+1) for j = l -/+ 1/2 (irel=2 only)
 !! @param zz  atomic number
@@ -56,7 +56,7 @@
 !Input variables
  integer, intent(in) :: mmax,ll,kap
  real(dp), intent(in) :: zz,rc
- real(dp), intent(in) :: gg(mmax),hh(mmax),rr(mmax)
+ real(dp), intent(in) :: uu1(mmax),uu2(mmax),rr(mmax)
  integer, intent(in) :: irel
  real(dp), intent(in) :: c_light
 
@@ -80,8 +80,8 @@
 
 ! the piece below rr(1) from the power law, the rest by the cumulative
 ! integral (whose own start cancels between its two limits)
- ss=gg(1)*hh(1)*rr(1)/(2.0d0*gamma+1.0d0)
- call lm_integral(rr,gg*hh,mmax,2*ll+2,rr(1),rc,si)
+ ss=uu1(1)*uu2(1)*rr(1)/(2.0d0*gamma+1.0d0)
+ call lm_integral(rr,uu1*uu2,mmax,2*ll+2,rr(1),rc,si)
  ss=ss+si
 
  return

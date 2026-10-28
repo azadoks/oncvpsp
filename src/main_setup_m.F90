@@ -206,7 +206,7 @@
 &      'suggested that you cite D. R. Hamann, Phys. Rev. B 88, 085117 (2013)', &
 &      'in any publication utilizing these pseudopotentials.'
 
- call write_build_info(6,trim(exe),trim(treatment))
+ call write_build_info(iout,trim(exe),trim(treatment))
  write(iout,'(/)')
  end subroutine write_banner
 

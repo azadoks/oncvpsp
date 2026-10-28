@@ -35,9 +35,9 @@
 !! lm_derivs: no stencil on u, no division by u (vrel divided by u and
 !! needed a threshold at its nodes)
 !!
-!! @param irel  0 non-relativistic (Delta = 0), 1 scalar-relativistic
-!!              (the flux form of sr_flux_m), 2 fully-relativistic (Dirac,
-!!              uu the large component)
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2
+!!              fully-relativistic; Delta = 0 for 0, the flux form of
+!!              sr_flux_m for 1, Dirac with uu the large component for 2
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param ll  angular momentum
 !! @param kap  Dirac kappa, l or -(l+1) for j = l -/+ 1/2 (irel=2 only)

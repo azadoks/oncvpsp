@@ -95,7 +95,7 @@
 
  use constants_m, only: dp
  use logmesh_m, only: lm_head, lm_step
- use quad_m, only: gregory_sum
+ use quad_m, only: quad_gregory_sum
 
 !Input variables
  integer, intent(in) :: mmax
@@ -156,19 +156,19 @@
 
  contains
 
- function radint(ff,pw)
+ function radint(ff,pow)
 
 !! integral of ff/rr over rr on the log mesh, by vout's rule; the part
-!! below rr(1) is that of ff going as rr**pw times the density (lm_head)
+!! below rr(1) is that of ff going as rr**pow times the density (lm_head)
 
 !Input variables
  real(dp), intent(in) :: ff(mmax)
- real(dp), intent(in) :: pw
+ real(dp), intent(in) :: pow
 
 !Output variables
  real(dp) :: radint
 
- radint=al*gregory_sum(ff,mmax) + lm_head(ff(1),rho(1),rho(2),al,pw)
+ radint=al*quad_gregory_sum(ff,mmax) + lm_head(ff(1),rho(1),rho(2),al,pow)
 
  return
  end function radint
@@ -431,21 +431,21 @@
  return
  end subroutine ae_anderson1
 
- subroutine ae_outer_peak(up,rr,mch,rpk)
+ subroutine ae_outer_peak(up,rr,mlast,rpk)
 
-!! the radius of the outermost extremum of a bound state inside mch, where
+!! the radius of the outermost extremum of a bound state inside mlast, where
 !! its derivative up changes sign; rpk unchanged if there is none
 !!
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param rr  log radial mesh (bohr)
-!! @param mch  the last point
+!! @param mlast  the last point
 !! @param rpk  the radius (output)
 
  use constants_m, only: dp
 
 !Input variables
- integer, intent(in) :: mch
- real(dp), intent(in) :: up(mch),rr(mch)
+ integer, intent(in) :: mlast
+ real(dp), intent(in) :: up(mlast),rr(mlast)
 
 !Input/output variables
  real(dp), intent(inout) :: rpk
@@ -453,7 +453,7 @@
 !Local variables
  integer :: jj
 
- do jj=mch-1,1,-1
+ do jj=mlast-1,1,-1
    if(up(jj)*up(jj+1)<0.0d0) then
      rpk=rr(jj)
      exit

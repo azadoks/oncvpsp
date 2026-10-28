@@ -26,12 +26,12 @@
  contains
 
  subroutine lschvkbbe(nn,ll,nvkb,ierr,ee,uld,emin,emax, &
-&   rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,mch,rm,iout,ifail)
+&   rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,mlast,rm,iout,ifail)
 
 !! integrates radial schroedinger equation for pseudopotential with
 !! Vanderbilt-Kleinman-Bylander non-local projectors finding energy at
 !! which desired log derivative uld is matched at the radius rm, the root
-!! with nn-ll-1 eigenvalues below it on (0, rr(mch)] (outwf_index; a node
+!! with nn-ll-1 eigenvalues below it on (0, rr(mlast)] (outwf_index; a node
 !! count would also count nodes that enter at r = 0 with the energy). The
 !! function and its derivative at rm are those of their interpolants
 !! (lm_interp), and the norm is the integral to rm, so the energy and the
@@ -50,10 +50,10 @@
 !! @param vlocpw  the screened local potential as pieces
 !! @param vkbpw  the projectors as pieces
 !! @param evkb  coefficients of the projectors
-!! @param uu  output radial wave function (*rr) to mch, normalized to rm
+!! @param uu  output radial wave function (*rr) to mlast, normalized to rm
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param mmax  size of the log radial mesh
-!! @param mch  the last mesh point integrated to, far enough past rm for
+!! @param mlast  the last mesh point integrated to, far enough past rm for
 !!             the interpolant (phsft_mch)
 !! @param rm  matching radius (bohr)
 !! @param iout  unit of the text output
@@ -63,14 +63,14 @@
  use boundsolve_m, only: bs_converged, bs_correct, bs_bisect
  use pieces_m, only: piecewise_t
  use outwf_m, only: outwf_t, outwf_setup, outwf_solve, outwf_free
- use quad_m, only: log_norm_to
+ use quad_m, only: quad_log_norm_to
  use logmesh_m, only: lm_interp, lm_step
 
 !Input variables
  real(dp), intent(in) :: uld,rm
  integer, intent(in) :: nn,ll,nvkb,mmax
  real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nvkb)
- integer, intent(in) :: mch
+ integer, intent(in) :: mlast
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(nvkb)
  integer, intent(in) :: iout
 
@@ -123,14 +123,14 @@
 ! return point for bound state convergence
  do nint=1,60
 
-   nin=mch
+   nin=mlast
 
 ! outward integration
-   call outwf_solve(ow,ee,evkb,mch,mch,uu,up,neig,iout=iout,ifail=ifail)
+   call outwf_solve(ow,ee,evkb,mlast,mlast,uu,up,neig,iout=iout,ifail=ifail)
    if(ifail/=0) return
 
-   call lm_interp(rr(1:mch),uu(1:mch),mch,rm,uout)
-   call lm_interp(rr(1:mch),up(1:mch),mch,rm,upout)
+   call lm_interp(rr(1:mlast),uu(1:mlast),mlast,rm,uout)
+   call lm_interp(rr(1:mlast),up(1:mlast),mlast,rm,upout)
 
    if(neig-nn+ll+1==0) then
 
@@ -138,7 +138,7 @@
 
 ! perform normalization sum
 
-     sn=log_norm_to(rr,uu(1:nin)**2,nin,ll,dble(ll+1),rm)
+     sn=quad_log_norm_to(rr,uu(1:nin)**2,nin,ll,dble(ll+1),rm)
 
 ! normalize u
 

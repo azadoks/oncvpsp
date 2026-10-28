@@ -580,21 +580,21 @@
  logical, intent(out) :: match(5)
 
 !Local variables
- integer :: jj,nt,nvcnf_f
- integer :: nacnf_f(mxstate),lacnf_f(mxstate)
- real(dp) :: facnf_f(mxstate)
+ integer :: jj,nt,nv_f
+ integer :: na_f(mxstate),la_f(mxstate)
+ real(dp) :: fa_f(mxstate)
 
- read(unit) nvcnf_f
- nt=nc+nvcnf_f
- read(unit) nacnf_f(1:nt),lacnf_f(1:nt),facnf_f(1:nt)
+ read(unit) nv_f
+ nt=nc+nv_f
+ read(unit) na_f(1:nt),la_f(1:nt),fa_f(1:nt)
 
  match(:)=.false.
  do jj=1,ncnf+1
    if(found(jj)) cycle
-   if(nvcnf_f/=cnf(jj)%nv) cycle
-   if(any(nacnf_f(1:nt)/=cnf(jj)%na(1:nt))) cycle
-   if(any(lacnf_f(1:nt)/=cnf(jj)%la(1:nt))) cycle
-   if(any(differ(facnf_f(1:nt),cnf(jj)%fa(1:nt)))) cycle
+   if(nv_f/=cnf(jj)%nv) cycle
+   if(any(na_f(1:nt)/=cnf(jj)%na(1:nt))) cycle
+   if(any(la_f(1:nt)/=cnf(jj)%la(1:nt))) cycle
+   if(any(differ(fa_f(1:nt),cnf(jj)%fa(1:nt)))) cycle
    match(jj)=.true.
  end do
  return

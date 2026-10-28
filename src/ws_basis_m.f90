@@ -43,7 +43,7 @@
  use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
- public :: ws_edge_d, ws_roots, ws_convergence, ws_eigenvalues, ws_grid_init
+ public :: ws_edge_d, ws_convergence, ws_eigenvalues, ws_grid_init
  public :: ws_grid_t
 
 !> the quadrature of a channel in the sphere (ws_grid_init): its points,
@@ -200,7 +200,7 @@
 
  use logmesh_m, only: lm_interp
  use pieces_m, only: piecewise_t, pw_value, pw_node_values
- use quad_m, only: gauss_legendre
+ use quad_m, only: quad_gauss_legendre
 
 !Input variables
  integer, intent(in) :: mmax,nvkb
@@ -244,7 +244,7 @@
    do ip=1,np
      ra=bounds(ii)+(bounds(ii+1)-bounds(ii))*dble(ip-1)/dble(np)
      rb=bounds(ii)+(bounds(ii+1)-bounds(ii))*dble(ip)/dble(np)
-     call gauss_legendre(ra,rb,ngl,xg,wxg)
+     call quad_gauss_legendre(ra,rb,ngl,xg,wxg)
      grid%rg(ng+1:ng+ngl)=xg(:)
      grid%wg(ng+1:ng+ngl)=wxg(:)
      ng=ng+ngl

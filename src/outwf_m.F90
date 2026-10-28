@@ -45,8 +45,7 @@
  implicit none
  private
  public :: outwf_t, og_ext, outwf_setup, outwf_integrate, outwf_overlap
- public :: outwf_overlaps
- public :: outwf_combine, outwf_nodes, outwf_count, outwf_index
+ public :: outwf_nodes, outwf_count, outwf_index
  public :: outwf_index_at
  public :: outwf_solve, outwf_free
 
@@ -142,7 +141,8 @@
 !! @param vloc  the potential on the nodes; its difference from the node
 !!              values of vlocpw is a smooth function added to every piece
 !!              (the screening of the pseudo-atom's iteration)
-!! @param vlocpw  the potential's pieces, its last bound the mesh end
+!! @param vlocpw  the screened local potential as pieces, its last bound
+!!                the mesh end
 !! @param nsrc  number of sources
 !! @param srcpw  the sources' pieces, all with the same bounds
 !! @param ow  the setup
@@ -468,22 +468,22 @@
  return
  end subroutine outwf_free
 
- subroutine outwf_integrate(ow,ee,mch)
+ subroutine outwf_integrate(ow,ee,mlast)
 
 !! the homogeneous solution (1) and the inhomogeneous one of each source
-!! (1+j) at the energy ee, to the mesh point mch (and og_ext points past it
+!! (1+j) at the energy ee, to the mesh point mlast (and og_ext points past it
 !! on its segment's grid)
 !!
 !! @param ow  the setup
 !! @param ee  energy (Ha)
-!! @param mch  index of the radius to which the solutions are wanted
+!! @param mlast  index of the radius to which the solutions are wanted
 
  use logmesh_m, only: lm_integral_weights
  use ugrid_m, only: ug_interp
 
 !Input variables
  real(dp), intent(in) :: ee
- integer, intent(in) :: mch
+ integer, intent(in) :: mlast
 
 !Input/output variables
  type(outwf_t), intent(inout), target :: ow
@@ -497,7 +497,7 @@
  als=al**2
  ll=ow%ll
  nsol=ow%nsrc+1
- pm=dble(mch-1)
+ pm=dble(mlast-1)
  ow%plim=pm
 ! the first segment's overlaps end at its bound, or at the limit, so their
 ! weights change only with the limit, if at all
@@ -821,21 +821,21 @@
  return
  end subroutine outwf_combine
 
- subroutine outwf_nodes(ow,isol,mch,uu,up)
+ subroutine outwf_nodes(ow,isol,mlast,uu,up)
 
-!! a solution on the mesh nodes 1..mch (0 beyond), each node from the grid
+!! a solution on the mesh nodes 1..mlast (0 beyond), each node from the grid
 !! of its segment
 !!
 !! @param ow  the setup, integrated
 !! @param isol  the solution
-!! @param mch  the last node wanted
+!! @param mlast  the last node wanted
 !! @param uu  the solution
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr), its
 !!            derivative in the mesh index, al r du/dr
 
 !Input variables
  type(outwf_t), intent(in), target :: ow
- integer, intent(in) :: isol,mch
+ integer, intent(in) :: isol,mlast
 
 !Output variables
  real(dp), intent(out) :: uu(ow%mmax),up(ow%mmax)
@@ -863,7 +863,7 @@
    else
      i2=ow%mmax
    end if
-   i2=min(i2,mch)
+   i2=min(i2,mlast)
    if(kk==1) then
      do ii=i1,min(i2,sg%jmax+1)
        uu(ii)=sg%uu(ii-1,isol)
@@ -873,7 +873,7 @@
      call fh_offset(sg%uu(0:sg%jmax,isol),sg%jmax+1,dble(i1-1)-sg%t0,0, &
 &                   i2-i1,uu(i1:i2),sg%up(0:sg%jmax,isol),up(i1:i2))
    end if
-   if(i2>=mch) exit
+   if(i2>=mlast) exit
  end do
  return
  end subroutine outwf_nodes
@@ -1079,20 +1079,20 @@
  return
  end function outwf_index_at
 
- subroutine outwf_solve(ow,ep,evkb,mch,mnode,uu,up,neig,iout,ifail)
+ subroutine outwf_solve(ow,ep,evkb,mlast,mnode,uu,up,neig,iout,ifail)
 
 !! the outward solution with the sources as Vanderbilt-Kleinman-Bylander
 !! projectors of coefficients evkb: the homogeneous solution plus the
 !! inhomogeneous ones with the coefficients that make the projections
-!! self-consistent (vkboutwf), on the nodes to mch, and optionally its
+!! self-consistent (vkboutwf), on the nodes to mlast, and optionally its
 !! eigenvalue index. Its node count is no measure of the energy: a node can
 !! enter at r = 0 without an eigenvalue passing (outwf_index)
 !!
 !! @param ow  the setup
 !! @param ep  energy (Ha)
 !! @param evkb  coefficients of the projectors
-!! @param mch  index of the radius to which the solution is wanted
-!! @param mnode  the point R of the index, <= mch
+!! @param mlast  index of the radius to which the solution is wanted
+!! @param mnode  the point R of the index, <= mlast
 !! @param uu  the solution
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr), its
 !!            derivative in the mesh index
@@ -1108,7 +1108,7 @@
 
 !Input variables
  real(dp), intent(in) :: ep,evkb(ow%nsrc)
- integer, intent(in) :: mch,mnode
+ integer, intent(in) :: mlast,mnode
  integer, intent(in) :: iout
 
 !Output variables
@@ -1123,7 +1123,7 @@
 
  ifail=0
  nsrc=ow%nsrc
- call outwf_integrate(ow,ep,mch)
+ call outwf_integrate(ow,ep,mlast)
  if(nsrc>0) then
    allocate(gg(nsrc,nsrc),gg0(nsrc),ipiv(nsrc),ovl(nsrc+1,nsrc))
    call outwf_overlaps(ow,ovl)
@@ -1153,7 +1153,7 @@
    if(ifail/=0) return
    deallocate(ovl)
  end if
- call outwf_nodes(ow,1,mch,uu,up)
+ call outwf_nodes(ow,1,mlast,uu,up)
  return
  end subroutine outwf_solve
 

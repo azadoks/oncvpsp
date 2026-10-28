@@ -346,7 +346,7 @@
 !! @param al  log of the mesh ratio
 !! @param pm  coefficient of qq in d(uu)/dn
 !! @param qm  coefficient of uu in d(qq)/dn
-!! @param mmax  size of the arrays
+!! @param mmax  size of the log radial mesh
 !! @param ifrom  first point, given
 !! @param ito  last point integrated
 !! @param uu  radial wave function (*rr)
@@ -387,7 +387,7 @@
 !! @param al  log of the mesh ratio
 !! @param pm  coefficient of qq in d(uu)/dn
 !! @param qm  coefficient of uu in d(qq)/dn
-!! @param mmax  size of the arrays
+!! @param mmax  size of the log radial mesh
 !! @param uu  radial wave function (*rr)
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param qq  flux function

@@ -25,15 +25,15 @@
  use test_results_m, only: tests_t
  implicit none
  private
- public :: results_t, echo_t
+ public :: results_t
 
 !> the input values as read, before oncvpsp_run changes them, for the
 !> echoes of the input in the files
  type :: echo_t
 !> the core radii (bohr)
-   real(dp) :: rc0(mxlin+1)=0.0d0
+   real(dp) :: rc_in(mxlin+1)=0.0d0
 !> the model core's amplitude factor fcfact
-   real(dp) :: fcfact0=0.0d0
+   real(dp) :: fcfact_in=0.0d0
 !> the icmod=4 search grid of fcfact (min, max, step)
    real(dp) :: fcgrid(3)=0.0d0
 !> the icmod=4 search grid of rcfact (min, max, step)

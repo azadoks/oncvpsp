@@ -173,7 +173,7 @@
 &          nbas=>inp%nbas, qcut=>inp%qcut, lloc=>inp%lloc, lpopt=>inp%lpopt, &
 &          dvloc0=>inp%dvloc0, nproj=>inp%nproj, debl=>inp%debl, &
 &          icmod=>inp%icmod, fcfact=>inp%fcfact, rcfact=>inp%rcfact, &
-&          slack=>inp%slack, budget_cut=>inp%budget_cut, &
+&          slack=>inp%slack, budget_cutoff=>inp%budget_cutoff, &
 &          fcfact_min=>inp%fcfact_min, fcfact_max=>inp%fcfact_max, &
 &          fcfact_step=>inp%fcfact_step, rcfact_min=>inp%rcfact_min, &
 &          rcfact_max=>inp%rcfact_max, rcfact_step=>inp%rcfact_step, &
@@ -183,8 +183,9 @@
 &          amesh=>inp%amesh, rr1=>inp%rr1, rmax=>inp%rmax, &
 &          c_light=>inp%c_light, ep_as_given=>inp%ep_as_given, &
 &          well_onset=>inp%well_onset, well_tail=>inp%well_tail, &
-&          wreg=>inp%wreg, well_n=>inp%well_n, well_norm=>inp%well_norm, &
-&          ecut_wt=>inp%ecut_wt)
+&          wave_regularization=>inp%wave_regularization, well_n=>inp%well_n, &
+&          well_norm=>inp%well_norm, &
+&          ecut_weight=>inp%ecut_weight)
 
    call check('atom', &
 &             atsym == 'Si' .and. zz == 14 .and. nc == 3 .and. nv == 2 &
@@ -208,11 +209,11 @@
    if(with_mesh) then
      call check('model core charge, slack and budget_cutoff', &
 &               icmod == 6 .and. fcfact == 0 .and. rcfact == 1.0e-6_dp &
-&               .and. slack == 0.8_dp .and. budget_cut == 1)
+&               .and. slack == 0.8_dp .and. budget_cutoff == 1)
    else
      call check('model core charge', &
 &               icmod == 1 .and. fcfact == 0.25_dp .and. slack == 1 &
-&               .and. budget_cut == 0)
+&               .and. budget_cutoff == 0)
    end if
    call check('log derivative analysis', &
 &             epsh1 == -2 .and. epsh2 == 2 .and. depsh == 0.02_dp &
@@ -232,13 +233,13 @@
 &               c_light == 137.0359895_dp)
      call check('ep_as_given, well_onset, well_tail, wave_regularization', &
 &               ep_as_given .and. well_onset == 1.5_dp .and. well_tail == 2 &
-&               .and. wreg == 2.5e-9_dp)
+&               .and. wave_regularization == 2.5e-9_dp)
      call check('well_n', &
 &               all(well_n(1:3) == [0, 5, 0]))
      call check('well_norm', &
 &               well_norm == 2)
      call check('ecut_weight', &
-&               all(ecut_wt(1:3) == [-1.0_dp, -1.0_dp, 0.3_dp]))
+&               all(ecut_weight(1:3) == [-1.0_dp, -1.0_dp, 0.3_dp]))
      call check('line number of the last data line', &
 &               inline == 35)
    else
@@ -251,13 +252,13 @@
      call check('ep_as_given, well_onset, well_tail, wave_regularization '// &
 &               'defaults', &
 &               .not. ep_as_given .and. well_onset == 1.006_dp**5 &
-&               .and. well_tail == 0 .and. wreg == 0)
+&               .and. well_tail == 0 .and. wave_regularization == 0)
      call check('well_n default', &
 &               all(well_n(1:3) == 0))
      call check('well_norm default', &
 &               well_norm == 0)
      call check('ecut_weight default', &
-&               all(ecut_wt(1:3) < 0))
+&               all(ecut_weight(1:3) < 0))
      call check('line number of the last data line', &
 &               inline == 32)
    end if

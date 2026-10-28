@@ -56,7 +56,7 @@
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr), as the
 !!            solvers return it
 !! @param mmax  size of the log radial mesh
-!! @param rc  the radius (bohr)
+!! @param rc  core radius (bohr)
 !! @param uorder  d^k(uu/r)/dr^k at rc in uorder(k+1), k=0..4
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written

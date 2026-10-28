@@ -26,7 +26,7 @@
  contains
 
  subroutine upfout(inp,c_light,vkbpw,evkb,rr,vpuns,vlocpw,rho,corepw,zion, &
-&                  mmax,nrlin,epstot,rc0,fcfact,fcgrid,rcgrid,uupsa,ea, &
+&                  mmax,nrl_in,epstot,rc_in,fcfact_in,fcgrid,rcgrid,uupsa,ea, &
 &                  log_mesh,nkap,iout,ifail)
 
 !! the pseudopotential in the UPF file format of PWSCF, written to iout,
@@ -49,12 +49,12 @@
 !!                pieces split at its joint (modcore_m, core_pieces)
 !! @param zion  ion charge
 !! @param mmax  size of the log radial mesh
-!! @param nrlin  size of the linear output mesh (enlarged locally to fit
-!!               the orbitals)
+!! @param nrl_in  size of the linear output mesh (enlarged locally to fit the
+!!                orbitals)
 !! @param epstot  pseudoatom total energy (Ha)
-!! @param rc0  core radii as read from the input (bohr), rc0(5) for lloc=4
-!! @param fcfact  prefactor for model core charge amplitude, as read from the
-!!                input
+!! @param rc_in  core radii as read from the input (bohr), rc_in(5) for lloc=4
+!! @param fcfact_in  prefactor for model core charge amplitude, as read from the
+!!                   input
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 !! @param uupsa  pseudo-atomic orbitals, second index 1 for j=l+1/2, 2 for
@@ -68,7 +68,7 @@
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, pi, mxstate, mxcnf, mxl, mxlin, nrhomod, mxprj
- use kappa_m, only: kap_count, j_share
+ use kappa_m, only: kap_count, kap_j_share
  use input_echo_m, only: write_input_echo, fe, date_stamp
  use outmesh_m, only: om_values, om_piece_values, om_local_values
  use pieces_m, only: piecewise_t
@@ -79,8 +79,8 @@
 !Input variables
  type(input_t), intent(in) :: inp
  real(dp), intent(in) :: c_light
- integer, intent(in) :: mmax,nrlin,nkap
- real(dp), intent(in) :: fcfact,zion,epstot
+ integer, intent(in) :: mmax,nrl_in,nkap
+ real(dp), intent(in) :: fcfact_in,zion,epstot
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
  real(dp), intent(in) :: rr(mmax),vpuns(mmax,mxl+2),rho(mmax)
  type(piecewise_t), intent(in) :: vkbpw(mxprj,mxl+1,nkap),vlocpw
@@ -88,8 +88,8 @@
  real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap)
  real(dp), intent(in) :: uupsa(mmax,nkap,inp%nv)
 
-!the core radii as read (rc0), for the echo
- real(dp), intent(in) :: rc0(mxlin+1)
+!the core radii as read (rc_in), for the echo
+ real(dp), intent(in) :: rc_in(mxlin+1)
  real(dp), intent(in) :: ea(mxstate,nkap)
  real(dp), intent(in) :: log_mesh(3)
  integer, intent(in) :: iout
@@ -119,7 +119,7 @@
  else
    version='fully-relativistic'
  end if
- nrl = nrlin
+ nrl = nrl_in
  al=lm_step(rr,mmax)
 
  call orbital_extent()
@@ -332,13 +332,15 @@
 
  call write_input_echo(nkap,2,inp%atsym,inp%zz,inp%nc,inp%nv,inp%iexc,c_light, &
 &                      inp%psfile, &
-&                       inp%na,inp%la,inp%fa,inp%lmax,rc0,inp%ep(:,1), &
+&                       inp%na,inp%la,inp%fa,inp%lmax,rc_in,inp%ep(:,1), &
 &                       inp%ncon,inp%nbas,inp%qcut,inp%ep_as_given, &
-&                       inp%well_onset,inp%well_tail,inp%wreg,inp%lloc, &
+&                       inp%well_onset,inp%well_tail,inp%wave_regularization, &
+&                       inp%lloc, &
 &                       inp%lpopt,inp%dvloc0, &
 &                       inp%nproj,inp%debl,inp%well_n,inp%well_norm, &
-&                       inp%ecut_wt, &
-&                       inp%icmod,fcfact,inp%rcfact,inp%slack,inp%budget_cut, &
+&                       inp%ecut_weight, &
+&                       inp%icmod,fcfact_in,inp%rcfact,inp%slack, &
+&                       inp%budget_cutoff, &
 &                       fcgrid,rcgrid, &
 &                       inp%epsh1,inp%epsh2,inp%depsh,inp%rxpsh,inp%rlmax, &
 &                       inp%drl, &
@@ -580,7 +582,7 @@
    do ikap=1,mkap
      iwfc = iwfc + 1
      fj=inp%fa(inp%nc+ii)
-     if(nkap==2) fj=j_share(ll,ikap,inp%fa(inp%nc+ii))
+     if(nkap==2) fj=kap_j_share(ll,ikap,inp%fa(inp%nc+ii))
      write(iout,'(t4,a,i0)') &
 &          '<PP_CHI.',iwfc
      write(iout,'(t8,a)') &

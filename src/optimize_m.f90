@@ -32,7 +32,7 @@
 &                    eresid0,eresiddot,eresidmat,&
 &                    pswfnull_sb,pswfnull_or,uunorm,ps0norm,eresidmin,&
 &                    pswfopt_sb,pswfopt_or,ekin_anal,eresq,pswfopt_null, &
-&                    wreg,optdg,iout,ifail)
+&                    wave_regularization,optdg,iout,ifail)
 
 !! @param nnull  number of unconstrained basis vectors for residual minimization
 !! @param nbas  number of sbf basis functions
@@ -61,15 +61,19 @@
 !! @param pswfopt_null  null-space coefficients of the optimized pswf,
 !!                      pswfopt_sb = pswf0_sb
 !!                                   + sum_i pswfopt_null(i)*pswfnull_sb(:,i)
-!! @param wreg  the regularization: with wreg>0, wreg times E_resid at
-!!              qout(3) is added to the E_resid at qout(1) that is
-!!              minimized. Where qcut*rc is large, E_resid(qcut) is flat to
-!!              round-off in the null space (e1 ~ 1e-18 Ha) and the sign of
-!!              x_1, a pair of waves one of which has a node, is set by the
-!!              quadrature's rounding; E_resid at qcut/4 is not flat, so the
-!!              wave is determined and smooth in the inputs
+!! @param wave_regularization  the regularization: with wave_regularization>0,
+!!                             wave_regularization times E_resid at qout(3) is
+!!                             added to the E_resid at qout(1) that is
+!!                             minimized. Where qcut*rc is large, E_resid(qcut)
+!!                             is flat to round-off in the null space (e1 ~
+!!                             1e-18 Ha) and the sign of x_1, a pair of waves
+!!                             one of which has a node, is set by the
+!!                             quadrature's rounding; E_resid at qcut/4 is not
+!!                             flat, so the wave is determined and smooth in the
+!!                             inputs
 !! @param optdg  E_resid(qout(1)) at the optimum, the regularization's
-!!               term wreg E_resid(qout(3)) there, and the smallest
+!!               term wave_regularization E_resid(qout(3)) there, and the
+!!               smallest
 !!               eigenvalue e1 and |f1| of the problem at qout(1) alone
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
@@ -86,7 +90,7 @@
  real(dp), intent(in) :: qout(nqout)
  real(dp), intent(in) :: uunorm,ps0norm
  integer, intent(in) :: iout
- real(dp), intent(in) :: wreg
+ real(dp), intent(in) :: wave_regularization
 
 !Output variables
  real(dp), intent(out) :: eresq(nqout)
@@ -116,7 +120,9 @@
 !      SUBROUTINE DSYEV( JOBZ, UPLO, N, A, LDA, W, WORK, LWORK, INFO )
 
  wmat(:,:)=eresidmat(:,:,1)
- if(wreg>0.0d0) wmat(:,:)=wmat(:,:)+wreg*eresidmat(:,:,3)
+ if(wave_regularization>0.0d0) then
+   wmat(:,:)=wmat(:,:)+wave_regularization*eresidmat(:,:,3)
+ end if
 
  call dsyev( 'V', 'U', nnull, wmat, nnull, wev, work, 5*nnull, info )
  if(info /= 0) then
@@ -129,7 +135,9 @@
 !to the eigenvector representation
 
  wvec(:)=eresiddot(:,1)
- if(wreg>0.0d0) wvec(:)=wvec(:)+wreg*eresiddot(:,3)
+ if(wave_regularization>0.0d0) then
+   wvec(:)=wvec(:)+wave_regularization*eresiddot(:,3)
+ end if
  eresiddot_ev(:)=0.0d0
  do jj=1,nnull
    do kk=1,nnull
@@ -141,7 +149,7 @@
 !the regularization those of E_resid(qout(1)) by itself. Both at
 !round-off (1e-18 and 1e-16 Ha where it is flat, at least 9e-9 in the
 !reference inputs) leave the wave undetermined
- if(wreg>0.0d0) then
+ if(wave_regularization>0.0d0) then
    allocate(rmat(nnull,nnull),rev(nnull))
    rmat(:,:)=eresidmat(:,:,1)
    call dsyev( 'V', 'U', nnull, rmat, nnull, rev, work, 5*nnull, info )
@@ -243,9 +251,9 @@
 !with the regularization, the E_resid at qout(1) of the wave found, and
 !the regularization's term
  optdg(1)=eresq(1)
- if(wreg>0.0d0) then
+ if(wave_regularization>0.0d0) then
    eresidmin=eresq(1)
-   optdg(2)=wreg*eresq(3)
+   optdg(2)=wave_regularization*eresq(3)
  else
    optdg(2)=0.0d0
  end if

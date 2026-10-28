@@ -69,7 +69,7 @@
  use config_ae_m, only: config_ae_warning, ae_config_t
  use constants_m, only: dp, mxstate, mxl, mxlin, nrhomod, nlev, mxprj
  use pieces_m, only: piecewise_t
- use kappa_m, only: kap_count, kap_of, j_share
+ use kappa_m, only: kap_count, kap_of, kap_j_share
  use psatom_m, only: psatom
 
 !Input variables
@@ -269,7 +269,7 @@
 ! loop on J = ll +/- 1/2
    do ikap=1,mkap
      kap=kap_of(ll,ikap)
-     fj=j_share(ll,ikap,fat(ii,3))
+     fj=kap_j_share(ll,ikap,fat(ii,3))
      write(iout,'(3i4,f8.4,f14.8)') nat(ii),lat(ii),kap,fj,eat(ii,ikap,3)
    end do
  end do
@@ -280,7 +280,7 @@
 ! loop on J = ll +/- 1/2
    do ikap=1,mkap
      kap=kap_of(ll,ikap)
-     fj=j_share(ll,ikap,fat(ii+nc,3))
+     fj=kap_j_share(ll,ikap,fat(ii+nc,3))
      write(iout,'(3i4,f8.4,2f14.8,1p,e12.2)') nat(ii+nc),lat(ii+nc),kap,fj, &
 &     eat(ii+nc,ikap,3),eatp(ii,ikap),eatp(ii,ikap)-eat(ii+nc,ikap,3)
      ntc=ntc+1

@@ -3,7 +3,7 @@
 ###########################################################
 set(src_oncvpsp
     # Common files
-    ae_scf.f90
+    ae_scf_m.f90
     aeatom_m.f90
     boundstate_m.f90
     build_info_m.f90

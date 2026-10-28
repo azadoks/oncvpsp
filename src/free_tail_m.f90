@@ -16,7 +16,7 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 !> The all-electron tail beyond rc that eresid transforms, on its linear
-!> mesh rc + (i-1) hh (doc/smoothness_plan.md, phase 8). mesh_tail takes
+!> mesh rc + (i-1) hh (doc/smoothness_plan.md, phase 8). free_tail_mesh takes
 !> the wave function on the log mesh to its last nonzero point, as for a
 !> bound state. For a well state, the tail is the atom's free solution at
 !> its energy, with no well, under a window that takes it to zero far from
@@ -42,8 +42,8 @@
  use constants_m, only: dp, pi
  implicit none
  private
- public :: mesh_tail, free_tail, free_tail_log, free_tail_width
- public :: tail_kinetic, free_tail_k, free_tail_defined
+ public :: free_tail_mesh, free_tail, free_tail_log, free_tail_width
+ public :: free_tail_kinetic, free_tail_k, free_tail_defined
 
 !> the leakage bound: L solves (dq L)**2/4 - 9 kappa L = wbound
  real(dp), parameter :: wbound=30.0d0
@@ -62,7 +62,7 @@
 
  contains
 
- subroutine mesh_tail(rr,uu,mmax,rc,hh,nr,ulin,iout,ifail)
+ subroutine free_tail_mesh(rr,uu,mmax,rc,hh,nr,ulin,iout,ifail)
 
 !! uu on the linear mesh rc + (i-1) hh to its last nonzero point (the
 !! solvers zero it beyond their inward start; a node there is dropped or
@@ -108,7 +108,7 @@
  if(rend>rc) nr=int((rend-rc)/hh)+1
  if(nr<2*lm_ncell) then
    write(iout,'(/2a,f12.6,a,f12.6)') &
-&        'mesh_tail: ERROR wave function vanishes', &
+&        'free_tail_mesh: ERROR wave function vanishes', &
 &       ' too close to rc: rc=',rc,', last nonzero point',rend
    ifail=1
    return
@@ -118,7 +118,7 @@
    call lm_interp(rr,uu,mmax,rc+dble(ii-1)*hh,ulin(ii))
  end do
  return
- end subroutine mesh_tail
+ end subroutine free_tail_mesh
 
  subroutine free_tail_width(qcut,ee,wl,iout,ifail)
 
@@ -483,7 +483,7 @@
 
  end subroutine free_solve
 
- real(dp) function tail_kinetic(ll,rc,hh,nr,ulin,dlin)
+ real(dp) function free_tail_kinetic(ll,rc,hh,nr,ulin,dlin)
 
 !! the kinetic energy of the tail, int_rc^inf t (-t''/2 + l(l+1) t/(2 r**2))
 !! dr = t(rc) t'(rc)/2 + int_rc^inf (t'**2 + l(l+1) t**2/r**2)/2 dr (t
@@ -509,14 +509,14 @@
 
  allocate(wr(nr))
  call ug_weights(nr,hh,wr)
- tail_kinetic=0.5d0*ulin(1)*dlin(1)
+ free_tail_kinetic=0.5d0*ulin(1)*dlin(1)
  do ii=1,nr
    rad=rc+dble(ii-1)*hh
-   tail_kinetic=tail_kinetic+0.5d0*wr(ii) &
+   free_tail_kinetic=free_tail_kinetic+0.5d0*wr(ii) &
 &              *(dlin(ii)**2+dble(ll*(ll+1))*(ulin(ii)/rad)**2)
  end do
  deallocate(wr)
  return
- end function tail_kinetic
+ end function free_tail_kinetic
 
  end module free_tail_m

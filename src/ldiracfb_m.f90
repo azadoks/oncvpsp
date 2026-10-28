@@ -25,15 +25,15 @@
 
  contains
 
- subroutine ldiracfb(nn,ll,kap,c_light,ierr,ee,rr,zz,vv,uu,up,mmax,mch,iout, &
+ subroutine ldiracfb(c_light,nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch,iout, &
 &                    ifail)
 
 !! Finds relativistic bound states of an al-electron potential
 !!
+!! @param c_light  speed of light (Hartree atomic units)
 !! @param nn  principal quantum number
 !! @param ll  angular momentum
 !! @param kap  Dirac kappa, l or -(l+1) for j = l -/+ 1/2
-!! @param c_light  speed of light (Hartree atomic units)
 !! @param ierr  non-zero return if error, 10 if there is no bound state
 !!              and the box state (large component 0 at rr(mmax)) is
 !!              returned
@@ -41,8 +41,8 @@
 !! @param rr  log radial mesh (bohr)
 !! @param zz  atomic number
 !! @param vv  local psp
-!! @param uu(mmax,jj)  output radial wave functions (*rr) jj=1,2 for large,
-!!                     small
+!! @param uu  output radial wave functions (*rr), uu(:,1) the large and
+!!             uu(:,2) the small component
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param mmax  size of the log radial mesh
 !! @param mch  mesh point just beyond the classical turning point, where
@@ -55,7 +55,7 @@
  use boundsolve_m, only: bs_box_energy, bs_solve, bs_turning_point
  use match_m, only: match_k, match_point, match_weights, match_blend
  use dirac_m, only: dirac_outward
- use quad_m, only: log_norm
+ use quad_m, only: quad_log_norm
  use inward_start_m, only: inward_start
  use logmesh_m, only: lm_step
 
@@ -315,7 +315,7 @@
 
 ! perform normalization sum
 
- sn=log_norm(rr,gu(1:mlast)**2+fu(1:mlast)**2,mlast,ll,gam)
+ sn=quad_log_norm(rr,gu(1:mlast)**2+fu(1:mlast)**2,mlast,ll,gam)
 
  cn=1.0d0/sqrt(sn)
 

@@ -51,7 +51,7 @@
 
  use constants_m, only: dp
  use sr_flux_m, only: sr_gamma, sr_flux_coefs, sr_outward
- use quad_m, only: log_norm
+ use quad_m, only: quad_log_norm
  use logmesh_m, only: lm_step
 
 !Input variables
@@ -106,7 +106,7 @@
 
 !perform normalization sum
 
- sn=log_norm(rr,uu(1:mch)**2,mch,ll,gamma)
+ sn=quad_log_norm(rr,uu(1:mch)**2,mch,ll,gamma)
 
 !normalize u
 

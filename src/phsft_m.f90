@@ -42,7 +42,7 @@
  implicit none
  private
  public :: phsft_t, phsft_mch, phsft_ae_init, phsft_ps_init, phsft_free
- public :: phsft_scan, phsft_pair, phsft_node_phase, phsft_node_phases
+ public :: phsft_pair, phsft_node_phase, phsft_node_phases
 
 !> the deepest halving of an energy step: a phase that still turns by more
 !> than pi/2 within depsh/2**maxdepth is an error
@@ -515,13 +515,13 @@
  return
  end subroutine phsft_node_phases
 
- subroutine solve(ps,ee,mch,uu,up,iout,ifail)
-!! the solution at ee out to the point mch
+ subroutine solve(ps,ee,mlast,uu,up,iout,ifail)
+!! the solution at ee out to the point mlast
 !!
 !! @param ps  the solver
 !! @param ee  the scattering energy (Ha)
-!! @param mch  the last point integrated to
-!! @param uu  the radial wave function (times r), zero beyond mch; the
+!! @param mlast  the last point integrated to
+!! @param uu  the radial wave function (times r), zero beyond mlast; the
 !!            Dirac small component in uu(:,2) (kind 1)
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param iout  unit of the text output
@@ -530,7 +530,7 @@
 
 !Input variables
  real(dp), intent(in) :: ee
- integer, intent(in) :: mch
+ integer, intent(in) :: mlast
  integer, intent(in) :: iout
 
 !Input/output variables
@@ -548,20 +548,20 @@
  if(ps%kind==1) then
    nn=0
    call scatterstate(ps%irel,ps%c_light,nn,ps%ll,ps%kap,ee,ps%rr,ps%zz, &
-&                    ps%vv,uu,up,ps%mmax,mch)
+&                    ps%vv,uu,up,ps%mmax,mlast)
  else
-   call outwf_solve(ps%ow,ee,ps%evkb,mch,mch,uu(:,1),up(:,1), &
+   call outwf_solve(ps%ow,ee,ps%evkb,mlast,mlast,uu(:,1),up(:,1), &
 &        iout=iout,ifail=ifail)
    if(ifail/=0) return
  end if
  end subroutine solve
 
- real(dp) function angle_at(ps,iq,mch,uu,up,count_nodes,uq)
-!! the phase of radius iq of a solution out to the point mch, and u there
+ real(dp) function angle_at(ps,iq,mlast,uu,up,count_nodes,uq)
+!! the phase of radius iq of a solution out to the point mlast, and u there
 !!
 !! @param ps  the solver
 !! @param iq  the index of the radius in ps%rq
-!! @param mch  the last point of the solution
+!! @param mlast  the last point of the solution
 !! @param uu  the radial wave function (times r)
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param count_nodes  .true. to take pi off the phase for each node of
@@ -571,7 +571,7 @@
 
 !Input variables
  type(phsft_t), intent(in) :: ps
- integer, intent(in) :: iq,mch
+ integer, intent(in) :: iq,mlast
  real(dp), intent(in) :: uu(ps%mmax),up(ps%mmax)
  logical, intent(in) :: count_nodes
 
@@ -581,11 +581,11 @@
 !Local variables
  real(dp) :: upq
  integer :: jj,nnode,jlast
- call lm_interp(ps%rr(1:mch),uu(1:mch),mch,ps%rq(iq),uq)
- call lm_interp(ps%rr(1:mch),up(1:mch),mch,ps%rq(iq),upq)
+ call lm_interp(ps%rr(1:mlast),uu(1:mlast),mlast,ps%rq(iq),uq)
+ call lm_interp(ps%rr(1:mlast),up(1:mlast),mlast,ps%rq(iq),upq)
  nnode=0
  jlast=1
- do jj=2,mch
+ do jj=2,mlast
    if(ps%rr(jj)>=ps%rq(iq)) exit
    if(uu(jj)*uu(jj-1)<0.0d0) nnode=nnode+1
    jlast=jj

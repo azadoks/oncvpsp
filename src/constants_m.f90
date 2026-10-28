@@ -23,7 +23,7 @@
  implicit none
  private
  public :: dp, qp, pi, mxprj, mxstate, mxcnf, mxl, mxlin, mxkap
- public :: nrhomod, nlev, nerrlv, nerrdg, dqout, well_onset_default
+ public :: nrhomod, nlev, nerrlv, nerrdg, well_onset_default
  public :: diag_match
  public :: ae_tolres
  public :: eig_tol, eig_floor, rel_window, series_tol, ha_ev
@@ -75,11 +75,6 @@
 !> number of the levels of cvgplt, the nerrlv of the tables and those of
 !> the DIAGNOSTICS block only, down to 1e-7 Ha
  integer, parameter :: nerrdg=11
-
-!> spacing (bohr**-1) of the q mesh of the "Energy error per electron"
-!> tables, as their interpolation assumes it (eresid moves the mesh points
-!> onto its own q mesh, so the actual spacing differs slightly)
- real(dp), parameter :: dqout=0.5000001_dp
 
 !> default of well_onset, the onset of the well of the well states as a
 !> multiple of rc (wellstate): rc amesh**5 on the default mesh, where it was

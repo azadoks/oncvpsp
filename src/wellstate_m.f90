@@ -25,9 +25,9 @@
 
  contains
 
- subroutine wellstate(nnin,ll,kap,rc,ep,epgiven,onset,confwall,nowell,rr, &
+ subroutine wellstate(nnin,ll,kap,rc,ep,ep_as_given,onset,confwall,nowell,rr, &
 &                     vfull,vwell,uu,up,zz,mmax,mch,irel,c_light,confined, &
-&                     eptgt,wm,iout,ifail)
+&                     eptgt,wmesh,iout,ifail)
 
 !! creates quantum well to confine positive-energy state, and calculates
 !! the resulting all-electron wave function. The well rises from
@@ -41,7 +41,7 @@
 !! those of before (doc/smoothness_plan.md, R-12). A bound state of this n and
 !! l localized inside 0.75 rc replaces ep by its own energy, one inside
 !! 1.5 rc replaces it by 0.05, and a negative ep becomes 0.25 (the
-!! behaviour of before); with epgiven the input ep is always used instead
+!! behaviour of before); with ep_as_given the input ep is always used instead
 !! (D-1): a bound state at or above ep is an input error, and one below ep
 !! inside 1.5 rc is raised to ep by a wall as close as that takes.
 !! The state is solved on the log mesh continued beyond rr(mmax) until its
@@ -54,7 +54,7 @@
 !! @param kap  Dirac kappa, l or -(l+1) for j = l -/+ 1/2 (irel=2 only)
 !! @param rc  core radius (bohr)
 !! @param ep  target energy for well state; the well state's energy on return
-!! @param epgiven  use ep as given (D-1), instead of the replacements above
+!! @param ep_as_given  use ep as given (D-1), instead of the replacements above
 !! @param onset  onset of the well as a multiple of rc (well_onset, >= 1)
 !! @param confwall  the confined well (well_tail = "confined"): a wall
 !!                  x**3 exp(-0.01/x) Ha that rises without bound, and
@@ -84,11 +84,10 @@
 !!                  localized bound state (vwell is then vfull)
 !! @param eptgt  the energy the well's eigenvalue (ep on return) was found
 !!               for: the input ep or its replacement above
-!! @param wm  the confined state on the log mesh continued as far as it
-!!            needs (well_mesh_m), with the well's potential; mx = 0 when
-!!            uu is not confined. The state is solved on it, so it does
-!!            not depend on rmax; uu, up and vwell are its first mmax
-!!            points
+!! @param wmesh  the confined state on the log mesh continued as far as it needs
+!!               (well_mesh_m), with the well's potential; mx = 0 when uu is not
+!!               confined. The state is solved on it, so it does not depend on
+!!               rmax; uu, up and vwell are its first mmax points
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
@@ -102,7 +101,7 @@
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: rc
- logical, intent(in) :: epgiven
+ logical, intent(in) :: ep_as_given
  real(dp), intent(in) :: onset
  logical, intent(in) :: confwall
  logical, intent(in) :: nowell
@@ -117,7 +116,7 @@
  real(dp), intent(out) :: uu(mmax,2),up(mmax,2),vwell(mmax)
  logical, intent(out) :: confined
  real(dp), intent(out) :: eptgt
- type(well_mesh_t), intent(out) :: wm
+ type(well_mesh_t), intent(out) :: wmesh
  integer, intent(out) :: ifail
 
 !Local variables
@@ -307,11 +306,11 @@
  end if
 
 !the state and the well on the continued mesh, and their first mmax points
- wm%mx=mx
- wm%rr=rx
- wm%vv=vw
- wm%uu=ux
- wm%up=upx
+ wmesh%mx=mx
+ wmesh%rr=rx
+ wmesh%vv=vw
+ wmesh%uu=ux
+ wmesh%up=upx
  vwell(:)=vw(1:mmax)
  uu(:,:)=ux(1:mmax,:)
  up(:,:)=upx(1:mmax,:)
@@ -364,7 +363,7 @@
 
  subroutine target_energy(done,ifail)
 
-!! the energy the well is built for: the input ep (epgiven), or its
+!! the energy the well is built for: the input ep (ep_as_given), or its
 !! replacements above; done when the localized bound state replaces it,
 !! with no well (uu, up its own, vwell vfull)
 
@@ -374,7 +373,7 @@
 
  ifail=0
  done=.false.
- if(epgiven) then
+ if(ep_as_given) then
 !a bound state at or above ep cannot be raised to ep by the well: an input
 !error; one below ep and localized inside 1.5 rc only needs raising, by a
 !wall as close as that takes

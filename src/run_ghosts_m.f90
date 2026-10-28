@@ -89,7 +89,7 @@
  use pieces_m, only: piecewise_t, pw_integral, pw_value, pw_resample, &
 &                    pw_free, pw_node_values
  use logmesh_m, only: lm_interp, lm_step
- use quad_m, only: log_norm
+ use quad_m, only: quad_log_norm
  use cinf_taper_m, only: cinf_taper
  use lschpsbar_m, only: lschpsbar
  use lschvkbb_m, only: lschvkbb
@@ -428,8 +428,8 @@
    end do
 
 ! <r> on the barrier's mesh, by the integral that normalized the states
-! (log_norm), r u**2 going as r**(2l+3)
-   sn=log_norm(rb,rb(1:mbar)*uu(1:mbar)**2,mbar,ll,dble(ll)+1.5d0)
+! (quad_log_norm), r u**2 going as r**(2l+3)
+   sn=quad_log_norm(rb,rb(1:mbar)*uu(1:mbar)**2,mbar,ll,dble(ll)+1.5d0)
 
 ! the margin: the least <r>/rc over the states above the reference, each
 ! divided by a C-infinity weight in its energy, 1 from 0.05 Ha above the

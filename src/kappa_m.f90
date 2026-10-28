@@ -21,7 +21,7 @@
  module kappa_m
  implicit none
  private
- public :: kap_count, kap_of, j_share
+ public :: kap_count, kap_of, kap_j_share
 
  contains
 
@@ -53,7 +53,7 @@
  end if
  end function kap_of
 
- real(dp) function j_share(ll,ikap,ff)
+ real(dp) function kap_j_share(ll,ikap,ff)
 !! the share of the occupation ff of l in component ikap
 !!
 !! @param ll  angular momentum
@@ -65,10 +65,10 @@
  integer, intent(in) :: ll,ikap
  real(dp), intent(in) :: ff
  if(ikap==1) then
-   j_share=dble(ll+1)*ff/dble(2*ll+1)
+   kap_j_share=dble(ll+1)*ff/dble(2*ll+1)
  else
-   j_share=dble(ll)*ff/dble(2*ll+1)
+   kap_j_share=dble(ll)*ff/dble(2*ll+1)
  end if
- end function j_share
+ end function kap_j_share
 
  end module kappa_m

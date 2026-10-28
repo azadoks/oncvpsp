@@ -213,6 +213,60 @@ looks like this:
 - No one-letter names (rule 5). Scalars double the letter: `ii`, `jj`,
   `ll` (angular momentum), `rr` (radius), `zz` (atomic number); `l1` is
   `ll+1`, the angular-momentum index.
+- One quantity, one name. A quantity the [Glossary](glossary.md) names
+  has that name wherever it is passed (`vfull`, not `vae`; `iout`, not
+  `iunit`; `ikap` for the kappa index), and a name in its table of fixed
+  meanings holds nothing else. A routine-local index (`ii`, `jj`, `kk`)
+  has no fixed meaning. The last point an integration goes to is
+  `mlast`; `mch` is a matching point.
+- A value kept as it was read, beside the one the program uses, has a
+  suffix: `_in` for the input (`rc_in`, `fcfact_in`, `nrl_in`,
+  `amesh_in`), `_f` for a file checked against the input (`na_f` in
+  `ae_file_m`). The states of a configuration are `na`, `la`, `fa`
+  (`cnf(jj)%na`, ...); with a last index over the configurations they
+  are `nat`, `lat`, `fat`.
+- An `input_t` component is named as its TOML key, unabbreviated
+  (`wave_regularization`, `ecut_weight`, `budget_cutoff`), except the
+  names older than the TOML input (`zz` for `z`; `rlmax` and `drl` for
+  `[linear_mesh]`'s `rmax` and `a`) and the configurations' (`na`,
+  `la`, `fa`, `ncnf`, `cnf`).
+- Arguments in the order of `boundstate`: the switches (`irel`,
+  `c_light`), the state (`nn`, `ll`, `kap`), its outputs (`ierr`,
+  `ee`), the mesh and potential (`rr`, `zz`, `vv`), the solution (`uu`,
+  `up`), the sizes (`mmax`, `mch`), then `iout`, `ifail`. Pairs keep
+  their order (`irel,c_light`, `uu,up`, `rr,...,mmax`). `boundstate`,
+  `ldiracfb` and `lschfb` take the same arguments in the same order;
+  older routines are reordered when other work changes them.
+- A module of tools on one structure or method gives its public
+  procedures its prefix (the table); a module around one routine, or of
+  a stage of the program, names them after what they do. A public name
+  is one another module uses; the rest are private.
+
+<!-- prefixes: module | prefix -->
+
+| module | prefix |
+|---|---|
+| `ae_scf_m` | `ae_` |
+| `boundsolve_m` | `bs_` |
+| `cli_m` | `cli_` |
+| `czt_m` | `czt_` |
+| `free_tail_m` | `free_tail_` |
+| `kappa_m` | `kap_` |
+| `logmesh_m` | `lm_` |
+| `match_m` | `match_` |
+| `outmesh_m` | `om_` |
+| `outwf_m` | `outwf_` |
+| `phsft_m` | `phsft_` |
+| `pieces_m` | `pw_` |
+| `projbasis_m` | `pb_` |
+| `quad_m` | `quad_` |
+| `sbf_m` | `sbf_` |
+| `sbf_q_m` | `sbfq_` |
+| `sr_flux_m` | `sr_` |
+| `ugrid_m` | `ug_` |
+| `vploc_m` | `vploc_` |
+| `well_mesh_m` | `wm_` |
+| `ws_basis_m` | `ws_` |
 
 **Layout.** `scripts/reindent.py` sets the indentation; the rest is by
 hand.
@@ -284,8 +338,8 @@ the main programs, `linout` (`_r`), `upfout` (`_r`) and `echo_input` in
 `psmlout_m`, or into a section
 of `input_echo_m`, which they share. An optional value is echoed only when
 the input sets it, so that older inputs echo as before (rule 12 above).
-Echo the value as read, not one the program has changed since (see `rc0`
-and `fcfact0`).
+Echo the value as read, not one the program has changed since (see `rc_in`
+and `fcfact_in`).
 
 ## Error messages
 
@@ -408,8 +462,9 @@ messages, `scripts/messages_4.0.1.txt`, keep their text), the `@param`
 texts against the [Glossary](glossary.md), `stop` in module procedures, an `ierr` left
 unchecked, the `!>` documentation of module variables and type components,
 the license header, one-letter names, the mesh step re-derived, `_dp`
-literals and other real kinds outside `constants_m`, and `use` statements
-at module level that the module's own declarations do not need. Its
+literals and other real kinds outside `constants_m`, `use` statements
+at module level that the module's own declarations do not need, and the
+module and file names and the prefixes of the table above. Its
 docstring gives each rule. The findings in
 `scripts/conventions_baseline.txt`, the code written before the rules,
 are allowed, so the check fails only on new ones; after fixing old ones,

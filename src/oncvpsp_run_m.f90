@@ -41,7 +41,7 @@
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param istage  0 the whole calculation, 1 the all-electron stage only, 2 the
 !!                pseudopotential stage only
-!! @param inp  the input, as read
+!! @param inp  the input values (input_m), as read
 !! @param ae_filename  the all-electron data file of istage 1 and 2
 !! @param ps_filename  the pseudopotential file for oncvpsp_ld.x, or blank
 !! @param skip_ld  whether to leave out the log derivatives
@@ -72,7 +72,7 @@
  use run_phsft_m, only: run_phsft
  use run_plot_m, only: run_plot
  use run_vkb_m, only: run_vkb
- use kappa_m, only: kap_count, kap_of, j_share
+ use kappa_m, only: kap_count, kap_of, kap_j_share
  use modcore_m, only: core_pieces_smooth
  use well_mesh_m, only: well_mesh_t
  use ps_valence_m, only: valence_densities, unscreen_potentials, &
@@ -124,7 +124,7 @@
 
  real(dp) :: al,eeel
  real(dp) :: eeig,eexc
- real(dp) :: fcfact0,soscale
+ real(dp) :: fcfact_in,soscale
  real(dp) :: fcgrid(3),rcgrid(3)
  real(dp) :: rcmax
  real(dp) :: log_mesh(3)
@@ -136,7 +136,7 @@
  real(dp) :: fj,rcore
 !
  real(dp) :: ea(mxstate,mxkap)
- real(dp) :: qmsbf(mxlin+1),rc0(mxlin+1)
+ real(dp) :: qmsbf(mxlin+1),rc_in(mxlin+1)
  real(dp) :: rpk(mxstate,mxkap)
  real(dp) :: epstot
 
@@ -358,9 +358,9 @@
  end do
 
  inp%nproj(inp%lloc+1)=0
- rc0(:)=inp%rc(:)
+ rc_in(:)=inp%rc(:)
 !input value, for the echoes (modcore3 resets fcfact for icmod=4)
- fcfact0=inp%fcfact
+ fcfact_in=inp%fcfact
 
 ! output printing (echos input data, with all-electron eigenvalues added)
 
@@ -381,7 +381,7 @@
  end do
 
  call write_lmax(inp%lmax,inp%ep_as_given,inp%well_onset,inp%well_tail, &
-&                inp%wreg,inp%well_norm,iout)
+&                inp%wave_regularization,inp%well_norm,iout)
  write(iout,'(a/a)') '#','#   l,   rc,      ep,       ncon, nbas, qcut'
  do l1=1,inp%lmax+1
    write(iout,'(i5,2a,2i5,a)') l1-1,fx(inp%rc(l1),10,5),fx(inp%ep(l1,1),10,5), &
@@ -394,13 +394,13 @@
 &      fx(inp%dvloc0,10,5)
 
  write(iout,'(a/a/a)') '#','# VANDERBILT-KLEINMAN-BYLANDER PROJECTORs', &
-&      trim(vkb_head(inp%lmax,inp%well_n,inp%ecut_wt))
+&      trim(vkb_head(inp%lmax,inp%well_n,inp%ecut_weight))
  do l1=1,inp%lmax+1
    write(iout,'(a)') trim(vkb_line(inp%lmax,l1,inp%nproj,inp%debl,inp%well_n, &
-&        inp%ecut_wt))
+&        inp%ecut_weight))
  end do
 
- call write_icmod(inp%icmod,inp%fcfact,inp%rcfact,inp%slack,inp%budget_cut, &
+ call write_icmod(inp%icmod,inp%fcfact,inp%rcfact,inp%slack,inp%budget_cutoff, &
 &                 fcgrid,rcgrid,iout)
 
  call write_epsh(inp%epsh1,inp%epsh2,inp%depsh,inp%rxpsh,iout)
@@ -482,7 +482,7 @@
    do ikap=1,mkap
      kap=kap_of(ll,ikap)
      fj=1.0d0
-     if(nkap==2) fj=j_share(ll,ikap,1.0d0)
+     if(nkap==2) fj=kap_j_share(ll,ikap,1.0d0)
 
      uu(:,:)=0.0d0; qq(:,:)=0.0d0
      if(ikap==1) inwell(:)=.false.
@@ -517,13 +517,14 @@
 &                      vfull,cvgplt(1,1,1,l1,ikap),ncurve, &
 &                      ecurve(1,1,1,l1,ikap), &
 &                      pswfx(1,1,l1,ikap),chix(1,1,l1,ikap), &
-&                      ektail(1,1,l1,ikap),inp%wreg,optdg(1,1,l1,ikap), &
+&                      ektail(1,1,l1,ikap),inp%wave_regularization, &
+&                      optdg(1,1,l1,ikap), &
 &                      wshare(1,1,l1,ikap),iout,ifail)
      if(ifail/=0) return
 
 !the weights of its pseudo-waves in the cutoff of the pseudo-waves
      call ecut_weights(ll,inp%nc,inp%nv,inp%la,inp%fa,fj,inp%nproj(l1), &
-&                      inp%ecut_wt(l1), &
+&                      inp%ecut_weight(l1), &
 &                      wcurve(:,l1,ikap),iout,ifail)
      if(ifail/=0) return
 
@@ -588,7 +589,7 @@
  else if(inp%icmod==6 .or. inp%icmod==7) then
    if(inp%fcfact<=0.0d0) then
      call modcore_budget_table(ecurve,ncurve,mxprj*4*nkap,wcurve, &
-&                              inp%budget_cut==1,inp%budget_cut==2, &
+&                              inp%budget_cutoff==1,inp%budget_cutoff==2, &
 &                              inp%rcfact,ecutw,iout,ifail)
      if(ifail/=0) return
    end if
@@ -603,7 +604,7 @@
      if(ifail/=0) return
    end if
    call modcore_budget(inp%icmod,rho,rhoc,rhomod,corepw,inp%fcfact,ecutw, &
-&               inp%budget_cut==1,inp%rcfact, &
+&               inp%budget_cutoff==1,inp%rcfact, &
 &               inp%slack, &
 &               minval(inp%rc(1:inp%lmax+1)),mmax,rr,inp%iexc,c_light,zion, &
 &               probes(:,1:nprobe),lprobe(1:nprobe),nprobe,iout,ifail)
@@ -791,7 +792,7 @@
  call move_alloc(optdg,psp%tests%convergence%opt)
  call move_alloc(wshare,psp%tests%convergence%wshare)
  psp%tests%weighted_cut%used=(inp%icmod==6 .or. inp%icmod==7) &
-&                         .and. inp%fcfact<=0.0d0 .and. inp%budget_cut==1
+&                         .and. inp%fcfact<=0.0d0 .and. inp%budget_cutoff==1
  psp%tests%weighted_cut%errw=inp%rcfact
  psp%tests%weighted_cut%ecutw=ecutw
  call move_alloc(wcurve,psp%tests%weighted_cut%weight)
@@ -861,8 +862,8 @@
  psp%rcore=rcore
  call move_alloc(vpsml,psp%vpsml)
  call move_alloc(uupsa,psp%uupsa)
- psp%echo%rc0(:)=rc0(:)
- psp%echo%fcfact0=fcfact0
+ psp%echo%rc_in(:)=rc_in(:)
+ psp%echo%fcfact_in=fcfact_in
  psp%echo%fcgrid(:)=fcgrid(:)
  psp%echo%rcgrid(:)=rcgrid(:)
  psp%echo%log_mesh(:)=log_mesh(:)

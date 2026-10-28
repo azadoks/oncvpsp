@@ -2,7 +2,7 @@
 ! doc/smoothness_plan.md), for a free particle (V = 0, l = 0) from rc = 2:
 !   solution  the tail of sin(k r) at ep = k**2/2 = 0.5 is sin(k r) times
 !             the window to 1e-10 of its largest value (Runge-Kutta)
-!   kinetic   tail_kinetic, t t'/2 at rc + int t'**2/2, equals int
+!   kinetic   free_tail_kinetic, t t'/2 at rc + int t'**2/2, equals int
 !             t (-t''/2) of the tail of sin(k r) to 1e-9
 !   leakage   the window's share of E_resid above qcut = 5: the transforms
 !             of the tails with L and 2 L, F(q) = int t(r) sin(q r)/q dr,
@@ -19,7 +19,7 @@
  use constants_m, only: dp, pi
  use, intrinsic :: iso_fortran_env, only: stderr => error_unit
  use unit_check_m, only: check, check_done
- use free_tail_m, only: free_tail, free_tail_width, tail_kinetic
+ use free_tail_m, only: free_tail, free_tail_width, free_tail_kinetic
  use ugrid_m, only: ug_weights
  use relativity_m, only: c_light => c_light_default
  implicit none
@@ -63,7 +63,7 @@
 ! kinetic
  allocate(wr(nr))
  call ug_weights(nr, hh, wr)
- tk = tail_kinetic(0, rc, hh, nr, ulin, dlin)
+ tk = free_tail_kinetic(0, rc, hh, nr, ulin, dlin)
  tk2 = 0.0_dp
  do ii = 1, nr
    rad = rc + dble(ii - 1)*hh
@@ -75,7 +75,7 @@
 &        + sin(kk*rad)*2.0_dp*xx*exp(-xx**2)/(wl**2*sqrt(pi)))
  end do
  deallocate(wr)
- write(stderr, '(a,2es22.14)') 'kinetic: tail_kinetic, int t(-t''''/2)', &
+ write(stderr, '(a,2es22.14)') 'kinetic: free_tail_kinetic, int t(-t''''/2)', &
 &  tk, tk2
  call check('kinetic', abs(tk - tk2)/abs(tk2), 1.0e-9_dp)
 

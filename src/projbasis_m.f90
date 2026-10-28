@@ -182,15 +182,15 @@
  return
  end subroutine pb_sort_abs
 
- subroutine pb_sign_at_peak(rr,mmax,pw,vv)
+ subroutine pb_sign_at_peak(rr,mmax,pw,vkb)
 
-!! a projector on the mesh, vv, from its pieces pw, both with the sign
+!! a projector on the mesh, vkb, from its pieces pw, both with the sign
 !! (physically irrelevant) that makes it positive at its peak
 !!
 !! @param rr  log radial mesh (bohr)
-!! @param mmax  its size
+!! @param mmax  size of the log radial mesh
 !! @param pw  the projector's pieces
-!! @param vv  the projector on the mesh (output)
+!! @param vkb  the projector on the mesh (output)
 
  use constants_m, only: dp
  use pieces_m, only: piecewise_t, pw_node_values
@@ -203,23 +203,23 @@
  type(piecewise_t), intent(inout) :: pw
 
 !Output variables
- real(dp), intent(out) :: vv(mmax)
+ real(dp), intent(out) :: vkb(mmax)
 
 !Local variables
  real(dp) :: apk
  integer :: ii,ipk
 
- call pw_node_values(rr,mmax,pw,vv)
+ call pw_node_values(rr,mmax,pw,vkb)
  apk=0.0d0
  ipk=1
  do ii=1,mmax
-   if(abs(vv(ii))>apk) then
-     apk=abs(vv(ii))
+   if(abs(vkb(ii))>apk) then
+     apk=abs(vkb(ii))
      ipk=ii
    end if
  end do
- if(vv(ipk)<0.0d0) then
-   vv(:)=-vv(:)
+ if(vkb(ipk)<0.0d0) then
+   vkb(:)=-vkb(:)
    pw%vals(:,:)=-pw%vals(:,:)
  end if
  return

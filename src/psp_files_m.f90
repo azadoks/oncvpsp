@@ -31,7 +31,7 @@
 !! for ("psp8", "upf", "psml", "both" for all three, "none"), in the
 !! output on iout
 !!
-!! @param inp  the input, as oncvpsp_run completed it
+!! @param inp  the input values (input_m), as oncvpsp_run completed them
 !! @param psp  the results of oncvpsp_run
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
@@ -60,8 +60,8 @@
    call linout(inp,psp%pot%c_light,psp%pot%vkbpw,psp%pot%evkb,psp%pot%vsrpw, &
 &              psp%pot%esr,psp%pot%vsopw,psp%pot%eso,psp%pot%rr,psp%pot%vpuns, &
 &              psp%pot%vlocpw,psp%pot%rho,psp%pot%corepw,psp%rhotae,psp%rhoc, &
-&              psp%pot%zion,psp%pot%mmax,psp%nrl,soscale,psp%echo%rc0, &
-&              psp%echo%fcfact0,psp%echo%fcgrid,psp%echo%rcgrid, &
+&              psp%pot%zion,psp%pot%mmax,psp%nrl,soscale,psp%echo%rc_in, &
+&              psp%echo%fcfact_in,psp%echo%fcgrid,psp%echo%rcgrid, &
 &              psp%echo%log_mesh,psp%pot%nkap,iout,ifail)
    if(ifail/=0) return
  end if
@@ -70,7 +70,8 @@
    call upfout(inp,psp%pot%c_light,psp%pot%vkbpw,psp%pot%evkb,psp%pot%rr, &
 &              psp%pot%vpuns,psp%pot%vlocpw,psp%pot%rho,psp%pot%corepw, &
 &              psp%pot%zion,psp%pot%mmax,psp%nrl,psp%epstot, &
-&              psp%echo%rc0,psp%echo%fcfact0,psp%echo%fcgrid,psp%echo%rcgrid, &
+&              psp%echo%rc_in,psp%echo%fcfact_in,psp%echo%fcgrid, &
+&              psp%echo%rcgrid, &
 &              psp%uupsa,psp%ea,psp%echo%log_mesh,psp%pot%nkap,iout,ifail)
    if(ifail/=0) return
  end if
@@ -78,7 +79,8 @@
  if(trim(inp%psfile)=='psml' .or. trim(inp%psfile)=='both') then
    call psmlout(inp,psp%pot%vkb,psp%pot%evkb,psp%pot%rr,psp%vpsml, &
 &               psp%pot%rho,psp%pot%rhomod,psp%rcore,psp%pot%zion, &
-&               psp%pot%mmax,psp%nrl,psp%epstot,psp%echo%rc0,psp%echo%fcfact0, &
+&               psp%pot%mmax,psp%nrl,psp%epstot,psp%echo%rc_in, &
+&               psp%echo%fcfact_in, &
 &               psp%echo%fcgrid,psp%echo%rcgrid,psp%echo%log_mesh, &
 &               psp%pot%irel,psp%pot%c_light,psp%pot%nkap,iout)
  end if

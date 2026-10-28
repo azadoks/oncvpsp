@@ -44,7 +44,7 @@
 !!               nonzero point
 
  use constants_m, only: dp
- use quad_m, only: log_norm, log_norm_to
+ use quad_m, only: quad_log_norm, quad_log_norm_to
  use logmesh_m, only: lm_step
 
 !Input variables
@@ -92,9 +92,9 @@
  end if
 
  if(present(rnorm)) then
-   sn=log_norm_to(rr,uu(1:nin,1)**2,nin,ll,gam,rnorm)
+   sn=quad_log_norm_to(rr,uu(1:nin,1)**2,nin,ll,gam,rnorm)
  else
-   sn=log_norm(rr,uu(1:nin,1)**2,nin,ll,gam)
+   sn=quad_log_norm(rr,uu(1:nin,1)**2,nin,ll,gam)
  end if
 
 

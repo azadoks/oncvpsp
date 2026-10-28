@@ -67,7 +67,7 @@
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, mxstate, mxl, mxlin, mxprj
- use kappa_m, only: kap_count, kap_of, j_share
+ use kappa_m, only: kap_count, kap_of, kap_j_share
  use ae_scf_m, only: ae_residual, ae_converged, ae_anderson1
  use pieces_m, only: piecewise_t
  use vout_m, only: vout
@@ -80,7 +80,7 @@
  real(dp), intent(in) :: c_light
  integer, intent(in) :: na(nv),la(nv),nproj(mxlin+1)
  real(dp), intent(in) :: rcmax
- real(dp), intent(in) :: fat(mxstate,nkap),rr(mmax)
+ real(dp), intent(in) :: fat(mxstate,2),rr(mmax)
  real(dp), intent(in) :: vpuns(mmax,mxl+2)
  real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap)
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1,nkap)
@@ -213,7 +213,7 @@
          fj=fa(ii)
        else
          kap=kap_of(ll,ikap)
-         fj=j_share(ll,ikap,fa(ii))
+         fj=kap_j_share(ll,ikap,fa(ii))
        end if
        et=ea(ii,ikap)
 

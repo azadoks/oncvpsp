@@ -63,7 +63,7 @@
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp, mxstate, mxkap, ae_tolres
- use kappa_m, only: kap_count, kap_of, j_share
+ use kappa_m, only: kap_count, kap_of, kap_j_share
  use ae_scf_m, only: ae_energies, ae_residual, ae_converged, &
 &                    ae_mix, ae_outer_peak
  use tfapot_m, only: tfapot
@@ -168,12 +168,12 @@
 ! loop on J = ll +/- 1/2
      do ikap=1,mkap
        kap=kap_of(ll,ikap)
-       fj=j_share(ll,ikap,fa(ii))
+       fj=kap_j_share(ll,ikap,fa(ii))
        et=ea(ii,ikap)
        ierr = 0
 
-       call ldiracfb(na(ii),ll,kap,c_light,ierr,et, &
-&                  rr,zz,vext+vi,uu,up,mmax,mch,iout,ifail)
+       call ldiracfb(c_light,na(ii),ll,kap,ierr,et,rr,zz,vext+vi,uu,up,mmax, &
+&                    mch,iout,ifail)
        if(ifail/=0) return
 ! a state with no bound solution in this potential gets its box state;
 ! the SCF goes on but cannot converge with it

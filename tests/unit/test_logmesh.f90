@@ -473,7 +473,7 @@
  qpair(:, 4) = [0.2_dp, 9.7_dp]
  qpair(:, 5) = [12.3_dp, 15.9_dp]
  qpair(:, 6) = [0.05_dp, 0.07_dp]
- call gauss_legendre(ngl, xg, wg)
+ call quad_gauss_legendre(ngl, xg, wg)
  xg(:) = 0.5_dp*rc*(xg + 1.0_dp)
  wg(:) = 0.5_dp*rc*wg
  err = 0.0_dp
@@ -511,7 +511,7 @@
  end do
  end function gl_overlap
 
- subroutine gauss_legendre(nn, xx, ww)
+ subroutine quad_gauss_legendre(nn, xx, ww)
 
 !! nodes and weights of the nn-point Gauss-Legendre rule on [-1,1]
 !!
@@ -542,6 +542,6 @@
    xx(ii) = zz
    ww(ii) = 2.0_dp/((1.0_dp - zz**2)*dp1**2)
  end do
- end subroutine gauss_legendre
+ end subroutine quad_gauss_legendre
 
  end program test_logmesh

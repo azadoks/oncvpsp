@@ -147,7 +147,7 @@
 !!
 !! @param ll  angular momentum l
 !! @param q1,q2  wave vectors (bohr^-1), >0
-!! @param rc  radius (bohr), >0
+!! @param rc  core radius (bohr), >0
 !! @param ss  the overlap
 
 !Input variables
@@ -249,7 +249,7 @@
 !!
 !! @param ll  angular momentum l
 !! @param q1,q2  wave vectors (bohr^-1), >0
-!! @param rc  radius (bohr), >0
+!! @param rc  core radius (bohr), >0
 !! @param j1,jd1  j_l(q1 rc) and j_l'(q1 rc)
 !! @param j2,jd2  the same at q2 rc
 !! @param ss  the overlap

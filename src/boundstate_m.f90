@@ -72,10 +72,10 @@
 
  ifail=0
  if(irel==2) then
-   call ldiracfb(nn,ll,kap,c_light,ierr,ee,rr,zz,vv,uu,up,mmax,mch,iout,ifail)
+   call ldiracfb(c_light,nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch,iout,ifail)
    if(ifail/=0) return
  else
-   call lschfb(nn,ll,ierr,ee,rr,vv,uu,up,zz,mmax,mch,irel,c_light,iout,ifail)
+   call lschfb(irel,c_light,nn,ll,ierr,ee,rr,zz,vv,uu,up,mmax,mch,iout,ifail)
    if(ifail/=0) return
  end if
  return

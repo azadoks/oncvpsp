@@ -73,7 +73,7 @@
    integer :: well_tail
 !> The regularization of the pseudo-wave optimization (wave_regularization,
 !> optional on the lmax line after well_tail, 0 for none)
-   real(dp) :: wreg
+   real(dp) :: wave_regularization
 !> The normalization of the well states (optional on the lmax line, after
 !> wave_regularization): 0 that of well_tail (all space for "well", inside
 !> rc for "free" and "confined"), 1 all space, 2 inside rc
@@ -107,7 +107,7 @@
 !> Weight of the first pseudo-wave of each l with no occupied state in the
 !> cutoff of the pseudo-waves (optional on the projector line after well_n,
 !> negative for the default 2(2l+1))
-   real(dp) :: ecut_wt(mxlin+1)
+   real(dp) :: ecut_weight(mxlin+1)
 ! [Model core charge]
 !> Model core charge flag
    integer :: icmod
@@ -127,7 +127,7 @@
 !> "max", the largest over the ground-state waves (those of occupied
 !> states and each empty channel's first), 1 "weighted", their weighted
 !> mean, 2 "max_all", the largest over all waves
-   integer :: budget_cut
+   integer :: budget_cutoff
 !> Core charge width factor minimum for optimization
    real(dp) :: rcfact_min
 !> Core charge width factor maximum for optimization

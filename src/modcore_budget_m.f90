@@ -555,7 +555,7 @@
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use logmesh_m, only: lm_interp
- use quad_m, only: gauss_legendre
+ use quad_m, only: quad_gauss_legendre
 
 !Input variables
  integer, intent(in) :: iout
@@ -571,16 +571,16 @@
  real(dp) :: ca,sa,sb,tt
 
  ifail=0
- call gauss_legendre(0.0d0,1.0d0,ngk,bc%tk,bc%wk)
- call gauss_legendre(0.0d0,1.0d0,ngi,bc%tgi,bc%wgi)
- call gauss_legendre(0.0d0,1.0d0,nxg,bc%xg,bc%wxg)
+ call quad_gauss_legendre(0.0d0,1.0d0,ngk,bc%tk,bc%wk)
+ call quad_gauss_legendre(0.0d0,1.0d0,ngi,bc%tgi,bc%wgi)
+ call quad_gauss_legendre(0.0d0,1.0d0,nxg,bc%xg,bc%wxg)
 
 ! the window of the minimum tail: nwin Gauss-Legendre panels on
 ! [qlo, qhi], the weights times q**2
  bc%nqn=ngq*nwin
  allocate(bc%qn(bc%nqn),bc%wn(bc%nqn))
  do ii=1,nwin
-   call gauss_legendre(bc%qlo+(ii-1)*(bc%qhi-bc%qlo)/nwin, &
+   call quad_gauss_legendre(bc%qlo+(ii-1)*(bc%qhi-bc%qlo)/nwin, &
 &                      bc%qlo+ii*(bc%qhi-bc%qlo)/nwin, &
 &                      ngq,bc%qn((ii-1)*ngq+1:ii*ngq), &
 &                                bc%wn((ii-1)*ngq+1:ii*ngq))
@@ -1079,21 +1079,21 @@
  return
  end function radius_of
 
- real(dp) function excess_rs(bc,uu)
+ real(dp) function excess_rs(bc,lnrs)
 
 !! the largest error over the density cutoffs q_b..qend of the model of
-!! radius exp(uu), less errmax; errmax if the radius has no model
+!! radius exp(lnrs), less errmax; errmax if the radius has no model
 !!
 !! @param bc  the state of the search
-!! @param uu  ln r_s
+!! @param lnrs  ln r_s
 
 !Input variables
- real(dp), intent(in) :: uu
+ real(dp), intent(in) :: lnrs
 
 !Input/output variables
  type(budget_t), intent(inout) :: bc
  associate(errmax=>bc%errmax,ifill=>bc%fill%ifill,qb=>bc%qb,qend=>bc%qend)
-   call set_model(bc,exp(uu))
+   call set_model(bc,exp(lnrs))
    if(ifill==0) then
      excess_rs=errmax
      return
@@ -1121,18 +1121,18 @@
  return
  end function excess
 
- real(dp) function mismatch_at(bc,uu)
+ real(dp) function mismatch_at(bc,lnrs)
 
-!! the hardness mismatch of the model of radius exp(uu); huge if the
+!! the hardness mismatch of the model of radius exp(lnrs); huge if the
 !! radius has no model
 !!
 !! @param bc  the state of the search
-!! @param uu  ln r_s
+!! @param lnrs  ln r_s
 
  use der2exc_m, only: der2exc
 
 !Input variables
- real(dp), intent(in) :: uu
+ real(dp), intent(in) :: lnrs
 
 !Input/output variables
  type(budget_t), intent(inout) :: bc
@@ -1143,7 +1143,7 @@
 &          c_light=>bc%c_light,ifill=>bc%fill%ifill,lprobe=>bc%lprobe, &
 &          mmax=>bc%mmax,nprobe=>bc%nprobe,probes=>bc%probes, &
 &          rhotps=>bc%rhotps,rr=>bc%rr,zion=>bc%zion)
-   call set_model(bc,exp(uu))
+   call set_model(bc,exp(lnrs))
    mismatch_at=huge(1.0d0)
    if(ifill==0) return
    call der2exc(rhotps,core,probes,rr,d2mod,d2ae,mm, &
@@ -1153,20 +1153,20 @@
  return
  end function mismatch_at
 
- real(dp) function slope_at(bc,uu)
+ real(dp) function slope_at(bc,lnrs)
 
 !! the derivative of the hardness mismatch in ln r_s, by central
 !! differences of step hmis
 !!
 !! @param bc  the state of the search
-!! @param uu  ln r_s
+!! @param lnrs  ln r_s
 
 !Input variables
- real(dp), intent(in) :: uu
+ real(dp), intent(in) :: lnrs
 
 !Input/output variables
  type(budget_t), intent(inout) :: bc
- slope_at=(mismatch_at(bc,uu+hmis) - mismatch_at(bc,uu-hmis))/(2.0d0*hmis)
+ slope_at=(mismatch_at(bc,lnrs+hmis) - mismatch_at(bc,lnrs-hmis))/(2.0d0*hmis)
  return
  end function slope_at
 
@@ -1374,21 +1374,21 @@
  return
  end subroutine set_model
 
- real(dp) function fill_value(fl,rad)
+ real(dp) function fill_value(fill,rad)
 
 !! the fill at rad <= rs
 !!
-!! @param fl  the fill
+!! @param fill  the fill
 !! @param rad  radius (bohr)
 
 !Input variables
  real(dp), intent(in) :: rad
 
 !Input variables
- type(fill_t), intent(in) :: fl
- associate(aco=>fl%aco,bco=>fl%bco,cco=>fl%cco,ifill=>fl%ifill,rs=>fl%rs)
+ type(fill_t), intent(in) :: fill
+ associate(aco=>fill%aco,bco=>fill%bco,cco=>fill%cco,ifill=>fill%ifill,rs=>fill%rs)
    if(ifill==1) then
-     fill_value=poly(fl,(rad/rs)**2)
+     fill_value=poly(fill,(rad/rs)**2)
    else
      fill_value=exp(aco + bco*rad**2 + cco*rad**4)
    end if
@@ -1396,7 +1396,7 @@
  return
  end function fill_value
 
- logical function tail_monotone(fl)
+ logical function tail_monotone(fill)
 
 !! whether the minimum tail p, as a function of x = 2(r/rs)**2 - 1, does
 !! not rise on [-1, 1]: p' <= 0 at -1, at 1, and at the roots of p'' in
@@ -1404,21 +1404,21 @@
 !! Newton's method; a nearly real root counts by its real part, a point of
 !! [-1, 1] all the same); p' from the Legendre series
 !!
-!! @param fl  the fill
+!! @param fill  the fill
 
  use lapack_m, only: dhseqr
 
 !Input variables
- type(fill_t), intent(in) :: fl
+ type(fill_t), intent(in) :: fill
 
 !Local variables
  real(dp) :: cx(0:npow),d2(0:npow-2),hess(npow-2,npow-2)
  real(dp) :: wr(npow-2),wi(npow-2),zz(1,1),wkh(4*npow),tr,vv,vd
  integer :: kk,jj,nd,info,it
- associate(cleg=>fl%cleg)
+ associate(cleg=>fill%cleg)
    tail_monotone=.false.
-   if(leg_value(fl,-1.0d0,1)>0.0d0) return
-   if(leg_value(fl,1.0d0,1)>0.0d0) return
+   if(leg_value(fill,-1.0d0,1)>0.0d0) return
+   if(leg_value(fill,1.0d0,1)>0.0d0) return
    tail_monotone=.true.
    call legendre_powers(.false.,cleg,cx)
    do kk=2,npow
@@ -1453,7 +1453,7 @@
        tr=tr - vv/vd
      end do
      if(tr>-1.0d0 .and. tr<1.0d0) then
-       if(leg_value(fl,tr,1)>0.0d0) then
+       if(leg_value(fill,tr,1)>0.0d0) then
          tail_monotone=.false.
          return
        end if
@@ -1463,11 +1463,11 @@
  return
  end function tail_monotone
 
- real(dp) function leg_value(fl,xx,mm)
+ real(dp) function leg_value(fill,xx,mm)
 
 !! the mm-th derivative in x of the Legendre series cleg at xx
 !!
-!! @param fl  the fill
+!! @param fill  the fill
 !! @param xx  argument, 2(r/rs)**2 - 1
 !! @param mm  order of the derivative, 0..4
 
@@ -1476,11 +1476,11 @@
  integer, intent(in) :: mm
 
 !Input variables
- type(fill_t), intent(in) :: fl
+ type(fill_t), intent(in) :: fill
 
 !Local variables
  real(dp) :: pl(0:npow,0:4)
- associate(cleg=>fl%cleg)
+ associate(cleg=>fill%cleg)
    call legendre_derivs(xx,mm,pl(:,0:mm))
    leg_value=sum(cleg(:)*pl(:,mm))
  end associate
@@ -1556,19 +1556,19 @@
  return
  end subroutine legendre_powers
 
- real(dp) function poly(fl,tt)
+ real(dp) function poly(fill,tt)
 
 !! the minimum tail at (r/r_s)**2 = tt
 !!
-!! @param fl  the fill
+!! @param fill  the fill
 !! @param tt  (r/r_s)**2
 
 !Input variables
  real(dp), intent(in) :: tt
 
 !Input variables
- type(fill_t), intent(in) :: fl
- poly=leg_value(fl,2.0d0*tt-1.0d0,0)
+ type(fill_t), intent(in) :: fill
+ poly=leg_value(fill,2.0d0*tt-1.0d0,0)
  return
  end function poly
 
@@ -2032,14 +2032,14 @@
  return
  end function j0
 
- subroutine tail_derivatives(fl,rad,dd)
+ subroutine tail_derivatives(fill,rad,dd)
 
 !! the minimum tail and its first 4 derivatives at rad (beyond rs, its
 !! continuation, for the pieces of the model): those of the
 !! Legendre series in x = 2t - 1, t = (r/rs)**2, by the chain rule with
 !! t' = 2r/rs**2, t'' = 2/rs**2 (d/dt = 2 d/dx)
 !!
-!! @param fl  the fill
+!! @param fill  the fill
 !! @param rad  radius (bohr)
 !! @param dd  the model and its first 4 derivatives at rad
 
@@ -2047,7 +2047,7 @@
  real(dp), intent(in) :: rad
 
 !Input variables
- type(fill_t), intent(in) :: fl
+ type(fill_t), intent(in) :: fill
 
 !Output variables
  real(dp), intent(out) :: dd(5)
@@ -2055,7 +2055,7 @@
 !Local variables
  real(dp) :: pl(0:npow,0:4),pt(0:4),t1,t2
  integer :: mm
- associate(cleg=>fl%cleg,rs=>fl%rs)
+ associate(cleg=>fill%cleg,rs=>fill%rs)
    call legendre_derivs(2.0d0*(rad/rs)**2-1.0d0,4,pl)
    do mm=0,4
      pt(mm)=2.0d0**mm*sum(cleg(:)*pl(:,mm))
@@ -2071,23 +2071,23 @@
  return
  end subroutine tail_derivatives
 
- function fill_pack(fl) result(par)
+ function fill_pack(fill) result(par)
 
 !! the fill as the parameters of fill_form: ifill, r_s, the Legendre
 !! coefficients of the minimum tail and Martins' coefficients
 !!
-!! @param fl  the fill
+!! @param fill  the fill
 
 !Input variables
- type(fill_t), intent(in) :: fl
+ type(fill_t), intent(in) :: fill
 
 !Output variables
  real(dp) :: par(npow+6)
 
- par(1)=dble(fl%ifill)
- par(2)=fl%rs
- par(3:npow+3)=fl%cleg(0:npow)
- par(npow+4:npow+6)=[fl%aco,fl%bco,fl%cco]
+ par(1)=dble(fill%ifill)
+ par(2)=fill%rs
+ par(3:npow+3)=fill%cleg(0:npow)
+ par(npow+4:npow+6)=[fill%aco,fill%bco,fill%cco]
  return
  end function fill_pack
 
@@ -2107,23 +2107,23 @@
  real(dp), intent(out) :: dd(5)
 
 !Local variables
- type(fill_t) :: fl
+ type(fill_t) :: fill
 
- fl%ifill=nint(par(1))
- fl%rs=par(2)
- fl%cleg(0:npow)=par(3:npow+3)
- fl%aco=par(npow+4)
- fl%bco=par(npow+5)
- fl%cco=par(npow+6)
- call fill_derivatives(fl,rad,dd)
+ fill%ifill=nint(par(1))
+ fill%rs=par(2)
+ fill%cleg(0:npow)=par(3:npow+3)
+ fill%aco=par(npow+4)
+ fill%bco=par(npow+5)
+ fill%cco=par(npow+6)
+ call fill_derivatives(fill,rad,dd)
  return
  end subroutine fill_form
 
- subroutine fill_derivatives(fl,rad,dd)
+ subroutine fill_derivatives(fill,rad,dd)
 
 !! the fill of the model and its first 4 derivatives at rad
 !!
-!! @param fl  the fill
+!! @param fill  the fill
 !! @param rad  radius (bohr)
 !! @param dd  the fill and its first 4 derivatives at rad
 
@@ -2131,27 +2131,27 @@
  real(dp), intent(in) :: rad
 
 !Input variables
- type(fill_t), intent(in) :: fl
+ type(fill_t), intent(in) :: fill
 
 !Output variables
  real(dp), intent(out) :: dd(5)
- associate(ifill=>fl%ifill,rs=>fl%rs)
+ associate(ifill=>fill%ifill,rs=>fill%rs)
 
    if(ifill==1) then
-     call tail_derivatives(fl,rad,dd)
+     call tail_derivatives(fill,rad,dd)
    else
-     call martins_derivatives(fl,rad,dd)
+     call martins_derivatives(fill,rad,dd)
    end if
  end associate
  return
  end subroutine fill_derivatives
 
- subroutine martins_derivatives(fl,rad,dd)
+ subroutine martins_derivatives(fill,rad,dd)
 
 !! the model and its first 4 derivatives at rad, from n' = p' n with
 !! p = a + b r**2 + c r**4: n(k) = sum_j C(k-1,j) p(j+1) n(k-1-j)
 !!
-!! @param fl  the fill
+!! @param fill  the fill
 !! @param rad  radius (bohr)
 !! @param dd  the model and its first 4 derivatives at rad
 
@@ -2159,7 +2159,7 @@
  real(dp), intent(in) :: rad
 
 !Input variables
- type(fill_t), intent(in) :: fl
+ type(fill_t), intent(in) :: fill
 
 !Output variables
  real(dp), intent(out) :: dd(5)
@@ -2169,7 +2169,7 @@
  integer :: kk,jj
  integer, parameter :: binom(0:3,0:3)=reshape([1,1,1,1, 0,1,2,3, &
 &                                              0,0,1,3, 0,0,0,1],[4,4])
- associate(aco=>fl%aco,bco=>fl%bco,cco=>fl%cco)
+ associate(aco=>fill%aco,bco=>fill%bco,cco=>fill%cco)
    dp1=[2.0d0*bco*rad + 4.0d0*cco*rad**3, 2.0d0*bco + 12.0d0*cco*rad**2, &
 &       24.0d0*cco*rad, 24.0d0*cco]
    dd(1)=exp(aco + bco*rad**2 + cco*rad**4)

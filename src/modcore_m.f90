@@ -801,7 +801,7 @@
 !! @param la  angular momenta of the states
 !! @param rcut  radius of the Exc integrals
 !! @param mmax  size of the log radial mesh
-!! @param rhomod  the model core, zero on return
+!! @param rhomod  model core charge; zero on return
 !! @param d2excae  all-electron second derivatives
 !! @param d2excps  pseudo-atom second derivatives with no core correction
 !! @param d2mdiff  their rms difference

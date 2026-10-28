@@ -26,8 +26,8 @@
  contains
 
  subroutine linout(inp,c_light,vkbpw,evkb,vsrpw,esr,vsopw,eso,rr,vpuns,vlocpw, &
-&                  rho,corepw,rhotae,rhoc,zion,mmax,nrl,soscale,rc0, &
-&                  fcfact0,fcgrid,rcgrid,log_mesh,nkap,iout,ifail)
+&                  rho,corepw,rhotae,rhoc,zion,mmax,nrl,soscale,rc_in, &
+&                  fcfact_in,fcgrid,rcgrid,log_mesh,nkap,iout,ifail)
 
 !! the pseudopotential interpolated to the linear output mesh in the
 !! psp8 format of Abinit (pspcod=8), with the spin-orbit projectors when
@@ -57,8 +57,8 @@
 !! @param nrl  size of the output mesh
 !! @param soscale  possible factor to boost or cut spin-orbit strength, not in
 !!                 use yet
-!! @param rc0  input core radii
-!! @param fcfact0  input fcfact, for the echo
+!! @param rc_in  input core radii
+!! @param fcfact_in  input fcfact, for the echo
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 !! @param log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets
@@ -77,7 +77,7 @@
  type(input_t), intent(in) :: inp
  real(dp), intent(in) :: c_light
  integer, intent(in) :: mmax,nrl,nkap
- real(dp), intent(in) :: fcfact0,zion,soscale
+ real(dp), intent(in) :: fcfact_in,zion,soscale
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
  real(dp), intent(in) :: rr(mmax),vpuns(mmax,mxl+2),rho(mmax)
  real(dp), intent(in) :: rhotae(mmax),rhoc(mmax)
@@ -87,8 +87,8 @@
  type(piecewise_t), intent(in) :: vsrpw(2*mxprj,mxl+1),vsopw(2*mxprj,mxl+1)
  type(piecewise_t), intent(in) :: corepw(nrhomod)
 
-!the core radii as read (rc0), for the echo
- real(dp), intent(in) :: rc0(mxlin+1)
+!the core radii as read (rc_in), for the echo
+ real(dp), intent(in) :: rc_in(mxlin+1)
  real(dp), intent(in) :: log_mesh(3)
  integer, intent(in) :: iout
 
@@ -302,13 +302,15 @@
  if(nkap==2) write(iout,'(a)') '#Echo of input data for oncvpsp-4.0.1'
  call write_input_echo(nkap,1,inp%atsym,inp%zz,inp%nc,inp%nv,inp%iexc,c_light, &
 &                      inp%psfile, &
-&                       inp%na,inp%la,inp%fa,inp%lmax,rc0,inp%ep(:,1), &
+&                       inp%na,inp%la,inp%fa,inp%lmax,rc_in,inp%ep(:,1), &
 &                       inp%ncon,inp%nbas,inp%qcut,inp%ep_as_given, &
-&                       inp%well_onset,inp%well_tail,inp%wreg,inp%lloc, &
+&                       inp%well_onset,inp%well_tail,inp%wave_regularization, &
+&                       inp%lloc, &
 &                       inp%lpopt,inp%dvloc0, &
 &                       inp%nproj,inp%debl,inp%well_n,inp%well_norm, &
-&                       inp%ecut_wt, &
-&                       inp%icmod,fcfact0,inp%rcfact,inp%slack,inp%budget_cut, &
+&                       inp%ecut_weight, &
+&                       inp%icmod,fcfact_in,inp%rcfact,inp%slack, &
+&                       inp%budget_cutoff, &
 &                       fcgrid,rcgrid, &
 &                       inp%epsh1,inp%epsh2,inp%depsh,inp%rxpsh,inp%rlmax, &
 &                       inp%drl, &
@@ -326,8 +328,8 @@
 
  contains
 
- subroutine proj_block(ll,rcl,np,ee,vv,ldv,zero_tail)
-!! the block of the np projectors vv of l: l and their coefficients ee, then
+ subroutine proj_block(ll,rcl,np,ee,vkb,ldv,zero_tail)
+!! the block of the np projectors vkb of l: l and their coefficients ee, then
 !! each point of the linear mesh, their values out to rc+2 drl and beyond
 !! 0, or with zero_tail their values in the same short field
 !!
@@ -335,11 +337,11 @@
 !! @param rcl  core radius of l
 !! @param np  number of projectors
 !! @param ee  coefficients of the projectors (Ha)
-!! @param vv  projectors on the linear mesh
-!! @param ldv  second dimension of ee and vv
+!! @param vkb  projectors on the linear mesh
+!! @param ldv  second dimension of ee and vkb
 !! @param zero_tail  0 beyond rc+2 drl, else the values
  integer, intent(in) :: ll,np,ldv
- real(dp), intent(in) :: rcl,ee(ldv),vv(nrl,ldv)
+ real(dp), intent(in) :: rcl,ee(ldv),vkb(nrl,ldv)
  logical, intent(in) :: zero_tail
  real(dp) :: zero(20)
  integer :: ii,jj
@@ -348,11 +350,11 @@
  do ii = 1,nrl
    if(rl(ii)<=rcl+2.0d0*inp%drl) then
      write(iout,'(i6,1p,21e21.13)') ii,rl(ii), &
-&          (fe(vv(ii,jj)),jj=1,np)
+&          (fe(vkb(ii,jj)),jj=1,np)
    else if(zero_tail) then
      write(iout,'(i6,f6.2,20f4.0)') ii,rl(ii),(zero(jj),jj=1,np)
    else
-     write(iout,'(i6,f6.2,20f4.0)') ii,rl(ii),(vv(ii,jj),jj=1,np)
+     write(iout,'(i6,f6.2,20f4.0)') ii,rl(ii),(vkb(ii,jj),jj=1,np)
    end if
  end do
  end subroutine proj_block

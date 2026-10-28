@@ -27,7 +27,7 @@
 
  subroutine pspot(ipr,ll,rr,irc,rc,mmax,al,nbas,qroot,eig,uu,pswfopt_sb, &
 &                 psx,chix, &
-&           psopt,vae,vpsp,vkb,ekin_num,iout,ifail)
+&           psopt,vfull,vpsp,vkb,ekin_num,iout,ifail)
 
 !! calculates optimized pseudopotential from coefficients of optimized
 !! pseudo wave function and all-electron wave function
@@ -49,7 +49,7 @@
 !!             extension past rc (pieces_m)
 !! @param chix  (eig - T) psx on the same nodes: the projector's seed
 !! @param psopt  rr * pseudo wave function on log grid
-!! @param vae  all-electron potential
+!! @param vfull  all-electron potential (Ha)
 !! @param vpsp  pseudopotential
 !! @param vkb  (epsilon-T)*phi component of chi projector
 !! @param ekin_num  total radial kinetic energy: the Bessel sum's to rc and
@@ -66,7 +66,7 @@
 !Input variables
  integer, intent(in) :: ipr,ll,irc,mmax,nbas
  real(dp), intent(in) :: rr(mmax),qroot(nbas),uu(mmax),pswfopt_sb(nbas)
- real(dp), intent(in) :: vae(mmax)
+ real(dp), intent(in) :: vfull(mmax)
  real(dp), intent(in) :: al,eig,rc
  integer, intent(in) :: iout
 
@@ -160,8 +160,8 @@
  end do
 
  do ii=irc+1,mmax
-   vpsp(ii)=vae(ii)
-   vkb(ii)=vae(ii)*work(ii,1)
+   vpsp(ii)=vfull(ii)
+   vkb(ii)=vfull(ii)*work(ii,1)
  end do
 
 !radial kinetic energy, split at rc itself (a sum over the mesh that
@@ -170,7 +170,7 @@
 !chix), which goes as r**(2l+2) at the origin and is smooth past rc on
 !the nodes of psx; beyond, that of the all-electron function u, by parts,
 !u(rc) u'(rc)/2 + int_rc^inf (u'**2 + l(l+1) u**2/r**2)/2 dr, which needs
-!only its first derivative (as tail_kinetic does for the free tail). The
+!only its first derivative (as free_tail_kinetic does for the free tail). The
 !boundary term from psx, whose u'(rc) is the matched one of ode_rc_der,
 !as in the function E_resid transforms: that of the mesh differs from it
 !by the solver's error, O(h**4), 2e-8 Ha in 60_Nd

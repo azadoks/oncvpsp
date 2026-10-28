@@ -23,11 +23,12 @@
  use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
- public :: gauss_legendre, log_norm, log_norm_to, gregory_sum
+ public :: quad_gauss_legendre, quad_log_norm, quad_log_norm_to
+ public :: quad_gregory_sum
 
  contains
 
- subroutine gauss_legendre(xa,xb,nn,xx,ww)
+ subroutine quad_gauss_legendre(xa,xb,nn,xx,ww)
 
 !! the nn-point Gauss-Legendre nodes and weights on [xa, xb], the roots of
 !! P_nn by Newton's method
@@ -66,7 +67,8 @@
      if(abs(zz-z1)<1.0d-15) exit
      if(it==100) then
        write(error_unit,'(/a,i0,a,i0)') &
-&            'gauss_legendre: ERROR node not converged, nn=',nn,', node=',ii
+&            'quad_gauss_legendre: ERROR node not converged, nn=',nn, &
+&            ', node=',ii
        error stop 1
      end if
    end do
@@ -76,9 +78,9 @@
    ww(nn+1-ii)=ww(ii)
  end do
  return
- end subroutine gauss_legendre
+ end subroutine quad_gauss_legendre
 
- real(dp) function log_norm(rr,ff,nn,ll,gam)
+ real(dp) function quad_log_norm(rr,ff,nn,ll,gam)
 
 !! the integral of ff from 0 to rr(nn), ff going as r**(2 gam) at the
 !! origin: ff(1) rr(1)/(2 gam+1) below rr(1), the Floater-Hormann
@@ -103,12 +105,12 @@
  real(dp) :: si
 
  call lm_integral(rr,ff,nn,2*ll+2,rr(1),rr(nn),si)
- log_norm=ff(1)*rr(1)/(2.0d0*gam+1.0d0)+si
- end function log_norm
+ quad_log_norm=ff(1)*rr(1)/(2.0d0*gam+1.0d0)+si
+ end function quad_log_norm
 
- real(dp) function log_norm_to(rr,ff,nn,ll,gam,rq)
+ real(dp) function quad_log_norm_to(rr,ff,nn,ll,gam,rq)
 
-!! log_norm to the radius rq instead of rr(nn), a smooth function of rq
+!! quad_log_norm to the radius rq instead of rr(nn), a smooth function of rq
 !!
 !! @param rr  log radial mesh (bohr)
 !! @param ff  integrand: u**2, or g**2+f**2 of a Dirac solution
@@ -130,10 +132,10 @@
  real(dp) :: si
 
  call lm_integral(rr,ff,nn,2*ll+2,rr(1),rq,si)
- log_norm_to=ff(1)*rr(1)/(2.0d0*gam+1.0d0)+si
- end function log_norm_to
+ quad_log_norm_to=ff(1)*rr(1)/(2.0d0*gam+1.0d0)+si
+ end function quad_log_norm_to
 
- real(dp) function gregory_sum(ff,nn)
+ real(dp) function quad_gregory_sum(ff,nn)
 
 !! the sum of ff on the nodes of a uniform grid, the first three weighted
 !! (9,28,23)/24 (Gregory's start): the integral from the first node over
@@ -152,11 +154,11 @@
 !Local variables
  integer :: ii
 
- gregory_sum=(9.0d0*ff(1) + 28.0d0*ff(2) + 23.0d0*ff(3))/24.0d0
+ quad_gregory_sum=(9.0d0*ff(1) + 28.0d0*ff(2) + 23.0d0*ff(3))/24.0d0
  do ii=4,nn
-   gregory_sum=gregory_sum + ff(ii)
+   quad_gregory_sum=quad_gregory_sum + ff(ii)
  end do
  return
- end function gregory_sum
+ end function quad_gregory_sum
 
  end module quad_m

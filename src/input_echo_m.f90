@@ -28,7 +28,7 @@
 
  implicit none
  private
- public :: atom_lines, lmax_lines, icmod_lines, epsh_lines, mesh_lines
+ public :: lmax_lines
  public :: write_atom, write_lmax, write_icmod, write_epsh
  public :: write_mesh
  public :: write_input_echo, input_echo_lines
@@ -163,7 +163,8 @@
  return
  end subroutine atom_lines
 
- subroutine lmax_lines(lmax,ep_as_given,well_onset,well_tail,wreg,well_norm, &
+ subroutine lmax_lines(lmax,ep_as_given,well_onset,well_tail, &
+&                      wave_regularization,well_norm, &
 &                      text,ntext)
 
 !! the head of the PSEUDOPOTENTIAL AND OPTIMIZATION section, to the lmax
@@ -177,7 +178,8 @@
 !! @param ep_as_given  whether the well states take ep as given
 !! @param well_onset  onset of the well as a multiple of rc
 !! @param well_tail  the tail of the well states, 0, 1 or 2
-!! @param wreg  the regularization of the pseudo-wave optimization
+!! @param wave_regularization  the regularization of the pseudo-wave
+!!                             optimization
 !! @param well_norm  the normalization of the well states, 0, 1 or 2
 !! @param text  the lines of the section
 !! @param ntext  number of lines
@@ -187,7 +189,7 @@
 !Input variables
  integer, intent(in) :: lmax,well_tail,well_norm
  logical, intent(in) :: ep_as_given
- real(dp), intent(in) :: wreg
+ real(dp), intent(in) :: wave_regularization
  real(dp), intent(in) :: well_onset
 
 !Output variables
@@ -205,11 +207,11 @@
    text(3)='# lmax, ep_as_given, well_onset, well_tail, '// &
 &          'wave_regularization, well_norm'
    write(text(4),'(i5,i5,es24.16,i5,es24.16,i5)') lmax, &
-&        merge(1,0,ep_as_given),onset,well_tail,wreg,well_norm
- else if(wreg/=0.0d0) then
+&        merge(1,0,ep_as_given),onset,well_tail,wave_regularization,well_norm
+ else if(wave_regularization/=0.0d0) then
    text(3)='# lmax, ep_as_given, well_onset, well_tail, wave_regularization'
    write(text(4),'(i5,i5,es24.16,i5,es24.16)') lmax, &
-&        merge(1,0,ep_as_given),onset,well_tail,wreg
+&        merge(1,0,ep_as_given),onset,well_tail,wave_regularization
  else if(ep_as_given .or. well_tail/=0 .or. &
 &        well_onset/=well_onset_default) then
    text(3)='# lmax, ep_as_given, well_onset, well_tail'
@@ -224,7 +226,7 @@
  return
  end subroutine lmax_lines
 
- subroutine icmod_lines(icmod,fcfact,rcfact,slack,budget_cut,fcgrid, &
+ subroutine icmod_lines(icmod,fcfact,rcfact,slack,budget_cutoff,fcgrid, &
 &                       rcgrid,text,ntext)
 
 !! MODEL CORE CHARGE section
@@ -234,9 +236,9 @@
 !! @param fcfact  prefactor for model amplitude
 !! @param rcfact  prefactor for model scale
 !! @param slack  share of the cutoff the model core must fit (icmod=6, 7)
-!! @param budget_cut  the cutoff of the pseudo-waves (icmod=6, 7): 0 the
-!!                    largest of the ground-state waves, 1 their weighted
-!!                    mean, 2 the largest of all waves (budget_cutoff)
+!! @param budget_cutoff  the cutoff of the pseudo-waves (icmod=6, 7): 0 the
+!!                       largest of the ground-state waves, 1 their weighted
+!!                       mean, 2 the largest of all waves (budget_cutoff)
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 !! @param text  the lines of the section
@@ -248,7 +250,7 @@
  integer, intent(in) :: icmod
  real(dp), intent(in) :: fcfact,rcfact
  real(dp), intent(in) :: slack
- integer, intent(in) :: budget_cut
+ integer, intent(in) :: budget_cutoff
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
 
 !Output variables
@@ -271,11 +273,11 @@
    write(text(5),'(i5,8a)') icmod,fx(fcfact,10,5),fx(rcfact,10,5), &
 &        (fx(fcgrid(ii),10,5),ii=1,3),(fx(rcgrid(ii),10,5),ii=1,3)
    ntext=5
- else if((icmod==6 .or. icmod==7) .and. budget_cut/=0) then
+ else if((icmod==6 .or. icmod==7) .and. budget_cutoff/=0) then
 !icmod=6, 7 budget_cutoff is written if not "max" (0), with slack before it
    text(3)='# icmod, fcfact, rcfact, slack, budget_cutoff'
    write(text(4),'(i5,a,es12.4,a,i5)') icmod,fx(fcfact,10,5),rcfact, &
-&        fx(slack,10,5),budget_cut
+&        fx(slack,10,5),budget_cutoff
    ntext=4
  else if((icmod==6 .or. icmod==7) .and. slack/=1.0d0) then
 !icmod=6, 7 rcfact is an error tolerance, slack is written if not 1
@@ -397,7 +399,8 @@
  return
  end subroutine write_atom
 
- subroutine write_lmax(lmax,ep_as_given,well_onset,well_tail,wreg,well_norm, &
+ subroutine write_lmax(lmax,ep_as_given,well_onset,well_tail, &
+&                      wave_regularization,well_norm, &
 &      iout)
 
 !! writes the head of the PSEUDOPOTENTIAL AND OPTIMIZATION section, to the
@@ -407,7 +410,8 @@
 !! @param ep_as_given  whether the well states take ep as given
 !! @param well_onset  onset of the well as a multiple of rc
 !! @param well_tail  the tail of the well states, 0, 1 or 2
-!! @param wreg  the regularization of the pseudo-wave optimization
+!! @param wave_regularization  the regularization of the pseudo-wave
+!!                             optimization
 !! @param well_norm  the normalization of the well states, 0, 1 or 2
 !! @param iout  unit of the text output
 
@@ -416,7 +420,7 @@
 !Input variables
  integer, intent(in) :: lmax,well_tail,well_norm
  logical, intent(in) :: ep_as_given
- real(dp), intent(in) :: wreg
+ real(dp), intent(in) :: wave_regularization
  real(dp), intent(in) :: well_onset
  integer, intent(in) :: iout
 
@@ -424,29 +428,30 @@
  character(len=echo_len) :: text(echo_max)
  integer :: ii,ntext
 
- call lmax_lines(lmax,ep_as_given,well_onset,well_tail,wreg,well_norm,text, &
+ call lmax_lines(lmax,ep_as_given,well_onset,well_tail,wave_regularization, &
+&                well_norm,text, &
 &                ntext)
  write(iout,'(a)') (trim(text(ii)),ii=1,ntext)
 
  return
  end subroutine write_lmax
 
- character(len=echo_len) function vkb_head(lmax,well_n,ecut_wt)
+ character(len=echo_len) function vkb_head(lmax,well_n,ecut_weight)
 !! the column line of the VANDERBILT-KLEINMAN-BYLANDER PROJECTORs section:
 !! well_n is written only when the input sets it for some l, or sets
 !! ecut_weight, which follows it
 !!
 !! @param lmax  maximum angular momentum
 !! @param well_n  n of the first well state of each l (0 for the default)
-!! @param ecut_wt  cutoff weight of each l (negative for the default)
+!! @param ecut_weight  cutoff weight of each l (negative for the default)
 
  use constants_m, only: dp, mxlin
 
 !Input variables
  integer, intent(in) :: lmax,well_n(mxlin+1)
- real(dp), intent(in) :: ecut_wt(mxlin+1)
+ real(dp), intent(in) :: ecut_weight(mxlin+1)
 
- if(any(ecut_wt(1:lmax+1)>=0.0d0)) then
+ if(any(ecut_weight(1:lmax+1)>=0.0d0)) then
    vkb_head='# l, nproj, debl, well_n, ecut_weight'
  else if(any(well_n(1:lmax+1)>0)) then
    vkb_head='# l, nproj, debl, well_n'
@@ -456,7 +461,7 @@
  end function vkb_head
 
  character(len=echo_len) function vkb_line(lmax,l1,nproj,debl,well_n, &
-&                                           ecut_wt)
+&                                           ecut_weight)
 !! the line of l = l1-1 of that section
 !!
 !! @param lmax  maximum angular momentum
@@ -464,17 +469,17 @@
 !! @param nproj  number of projectors for each l
 !! @param debl  energy steps of each l
 !! @param well_n  n of the first well state of each l (0 for the default)
-!! @param ecut_wt  cutoff weight of each l (negative for the default)
+!! @param ecut_weight  cutoff weight of each l (negative for the default)
 
  use constants_m, only: dp, mxlin
 
 !Input variables
  integer, intent(in) :: lmax,l1,nproj(mxlin+1),well_n(mxlin+1)
- real(dp), intent(in) :: debl(mxlin+1),ecut_wt(mxlin+1)
+ real(dp), intent(in) :: debl(mxlin+1),ecut_weight(mxlin+1)
 
- if(any(ecut_wt(1:lmax+1)>=0.0d0)) then
+ if(any(ecut_weight(1:lmax+1)>=0.0d0)) then
    write(vkb_line,'(2i5,a,i5,a)') l1-1,nproj(l1),fx(debl(l1),10,5), &
-&        well_n(l1),fx(ecut_wt(l1),10,5)
+&        well_n(l1),fx(ecut_weight(l1),10,5)
  else if(any(well_n(1:lmax+1)>0)) then
    write(vkb_line,'(2i5,a,i5)') l1-1,nproj(l1),fx(debl(l1),10,5),well_n(l1)
  else
@@ -482,7 +487,8 @@
  end if
  end function vkb_line
 
- subroutine write_icmod(icmod,fcfact,rcfact,slack,budget_cut,fcgrid,rcgrid,iout)
+ subroutine write_icmod(icmod,fcfact,rcfact,slack,budget_cutoff,fcgrid,rcgrid, &
+&                       iout)
 
 !! writes the MODEL CORE CHARGE section to unit 6
 !!
@@ -490,9 +496,9 @@
 !! @param fcfact  prefactor for model amplitude
 !! @param rcfact  prefactor for model scale
 !! @param slack  share of the cutoff the model core must fit (icmod=6, 7)
-!! @param budget_cut  the cutoff of the pseudo-waves (icmod=6, 7): 0 the
-!!                    largest of the ground-state waves, 1 their weighted
-!!                    mean, 2 the largest of all waves (budget_cutoff)
+!! @param budget_cutoff  the cutoff of the pseudo-waves (icmod=6, 7): 0 the
+!!                       largest of the ground-state waves, 1 their weighted
+!!                       mean, 2 the largest of all waves (budget_cutoff)
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 !! @param iout  unit of the text output
@@ -503,7 +509,7 @@
  integer, intent(in) :: icmod
  real(dp), intent(in) :: fcfact,rcfact
  real(dp), intent(in) :: slack
- integer, intent(in) :: budget_cut
+ integer, intent(in) :: budget_cutoff
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
  integer, intent(in) :: iout
 
@@ -511,7 +517,7 @@
  character(len=echo_len) :: text(echo_max)
  integer :: ii,ntext
 
- call icmod_lines(icmod,fcfact,rcfact,slack,budget_cut,fcgrid,rcgrid, &
+ call icmod_lines(icmod,fcfact,rcfact,slack,budget_cutoff,fcgrid,rcgrid, &
 &                 text,ntext)
  write(iout,'(a)') (trim(text(ii)),ii=1,ntext)
 
@@ -569,10 +575,12 @@
  end subroutine write_mesh
 
  subroutine input_echo_lines(nkap,iformat,atsym,zz,nc,nv,iexc,c_light,psfile, &
-&                            na,la,fa,lmax,rc0,ep,ncon,nbas,qcut,ep_as_given, &
-&                            well_onset,well_tail,wreg,lloc,lpopt,dvloc0, &
-&                            nproj,debl,well_n,well_norm,ecut_wt, &
-&                            icmod,fcfact,rcfact,slack,budget_cut, &
+&                            na,la,fa,lmax,rc_in,ep,ncon,nbas,qcut, &
+&                            ep_as_given, &
+&                            well_onset,well_tail,wave_regularization,lloc, &
+&                            lpopt,dvloc0, &
+&                            nproj,debl,well_n,well_norm,ecut_weight, &
+&                            icmod,fcfact,rcfact,slack,budget_cutoff, &
 &                            fcgrid,rcgrid, &
 &                            epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
 &                            ncnf,cnf,log_mesh,upf_mesh, &
@@ -594,25 +602,26 @@
 !! @param la  angular momenta, of the reference configuration
 !! @param fa  occupancies, of the reference configuration
 !! @param lmax  maximum angular momentum
-!! @param rc0  the core radii of the input (bohr)
+!! @param rc_in  the core radii of the input (bohr)
 !! @param ep  the input energies ep of each l (Ha), of the first kappa
 !! @param ncon  number of matching constraints for each l
 !! @param nbas  number of basis functions for each l
 !! @param qcut  residual-energy cutoff wave vector of each l (bohr**-1)
-!! @param ep_as_given..wreg  the optional values of the lmax line, echoed
-!!                          when one is not its default
+!! @param ep_as_given..wave_regularization  the optional values of the lmax
+!!                                          line, echoed when one is not its
+!!                                          default
 !! @param lloc  l of the local potential, 4 for the polynomial
 !! @param lpopt  type of polynomial continuation for lloc=4
 !! @param dvloc0  r=0 shift of the lloc=4 local potential (Ha)
 !! @param nproj  number of projectors for each l
 !! @param debl  energy shifts for the second projectors for each l (Ha)
-!! @param well_n..ecut_wt  the optional values of the projector lines and
-!!                         of the lmax line, echoed when set
+!! @param well_n..ecut_weight  the optional values of the projector lines and of
+!!                             the lmax line, echoed when set
 !! @param icmod  model core charge option
 !! @param fcfact  prefactor for model core charge amplitude, the input value
 !! @param rcfact  prefactor for model core charge scale
 !! @param slack  share of the cutoff the model core must fit (icmod=6, 7)
-!! @param budget_cut  the cutoff of the pseudo-waves (icmod=6, 7)
+!! @param budget_cutoff  the cutoff of the pseudo-waves (icmod=6, 7)
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 !! @param epsh1  lower limit of the log derivative analysis energy range (Ha)
@@ -643,17 +652,17 @@
  type(config_t), intent(in) :: cnf(mxcnf)
  real(dp), intent(in) :: zz,dvloc0,fcfact,rcfact
  real(dp), intent(in) :: slack
- integer, intent(in) :: budget_cut
+ integer, intent(in) :: budget_cutoff
  real(dp), intent(in) :: epsh1,epsh2,depsh,rxpsh,rlmax,drl
- real(dp), intent(in) :: fa(mxstate),rc0(mxlin+1),ep(mxlin+1),qcut(mxlin+1)
+ real(dp), intent(in) :: fa(mxstate),rc_in(mxlin+1),ep(mxlin+1),qcut(mxlin+1)
  logical, intent(in) :: ep_as_given
  real(dp), intent(in) :: well_onset
  integer, intent(in) :: well_tail
- real(dp), intent(in) :: wreg
+ real(dp), intent(in) :: wave_regularization
  real(dp), intent(in) :: debl(mxlin+1)
  integer, intent(in) :: well_n(mxlin+1)
  integer, intent(in) :: well_norm
- real(dp), intent(in) :: ecut_wt(mxlin+1)
+ real(dp), intent(in) :: ecut_weight(mxlin+1)
  real(dp), intent(in) :: fcgrid(3),rcgrid(3),log_mesh(3)
  character(len=2), intent(in) :: atsym
  character(len=4), intent(in) :: psfile
@@ -683,7 +692,8 @@
    call put(line)
  end do
 
- call lmax_lines(lmax,ep_as_given,well_onset,well_tail,wreg,well_norm,part, &
+ call lmax_lines(lmax,ep_as_given,well_onset,well_tail,wave_regularization, &
+&                well_norm,part, &
 &                npart)
  call put_part()
  call put('#')
@@ -693,7 +703,7 @@
    call put('#   l,   rc,      ep,       ncon, nbas, qcut')
  end if
  do l1=1,lmax+1
-   write(line,'(i5,2a,2i5,a)') l1-1,fx(rc0(l1),10,5),fx(ep(l1),10,5), &
+   write(line,'(i5,2a,2i5,a)') l1-1,fx(rc_in(l1),10,5),fx(ep(l1),10,5), &
 &        ncon(l1),nbas(l1),fx(qcut(l1),10,5)
    call put(line)
  end do
@@ -701,17 +711,17 @@
  call put('#')
  call put('# LOCAL POTENTIAL')
  call put('# lloc, lpopt,  rc(5),   dvloc0')
- write(line,'(2i5,3a)') lloc,lpopt,fx(rc0(5),10,5),'   ',fx(dvloc0,10,5)
+ write(line,'(2i5,3a)') lloc,lpopt,fx(rc_in(5),10,5),'   ',fx(dvloc0,10,5)
  call put(line)
 
  call put('#')
  call put('# VANDERBILT-KLEINMAN-BYLANDER PROJECTORs')
- call put(vkb_head(lmax,well_n,ecut_wt))
+ call put(vkb_head(lmax,well_n,ecut_weight))
  do l1=1,lmax+1
-   call put(vkb_line(lmax,l1,nproj,debl,well_n,ecut_wt))
+   call put(vkb_line(lmax,l1,nproj,debl,well_n,ecut_weight))
  end do
 
- call icmod_lines(icmod,fcfact,rcfact,slack,budget_cut,fcgrid,rcgrid, &
+ call icmod_lines(icmod,fcfact,rcfact,slack,budget_cutoff,fcgrid,rcgrid, &
 &                 part,npart)
  call put_part()
 
@@ -776,10 +786,12 @@
  end subroutine input_echo_lines
 
  subroutine write_input_echo(nkap,iformat,atsym,zz,nc,nv,iexc,c_light,psfile, &
-&                            na,la,fa,lmax,rc0,ep,ncon,nbas,qcut,ep_as_given, &
-&                            well_onset,well_tail,wreg,lloc,lpopt,dvloc0, &
-&                            nproj,debl,well_n,well_norm,ecut_wt, &
-&                            icmod,fcfact,rcfact,slack,budget_cut, &
+&                            na,la,fa,lmax,rc_in,ep,ncon,nbas,qcut, &
+&                            ep_as_given, &
+&                            well_onset,well_tail,wave_regularization,lloc, &
+&                            lpopt,dvloc0, &
+&                            nproj,debl,well_n,well_norm,ecut_weight, &
+&                            icmod,fcfact,rcfact,slack,budget_cutoff, &
 &                            fcgrid,rcgrid, &
 &                            epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
 &                            ncnf,cnf,log_mesh,upf_mesh, &
@@ -799,25 +811,26 @@
 !! @param la  angular momenta, of the reference configuration
 !! @param fa  occupancies, of the reference configuration
 !! @param lmax  maximum angular momentum
-!! @param rc0  the core radii of the input (bohr)
+!! @param rc_in  the core radii of the input (bohr)
 !! @param ep  the input energies ep of each l (Ha), of the first kappa
 !! @param ncon  number of matching constraints for each l
 !! @param nbas  number of basis functions for each l
 !! @param qcut  residual-energy cutoff wave vector of each l (bohr**-1)
-!! @param ep_as_given..wreg  the optional values of the lmax line, echoed
-!!                          when one is not its default
+!! @param ep_as_given..wave_regularization  the optional values of the lmax
+!!                                          line, echoed when one is not its
+!!                                          default
 !! @param lloc  l of the local potential, 4 for the polynomial
 !! @param lpopt  type of polynomial continuation for lloc=4
 !! @param dvloc0  r=0 shift of the lloc=4 local potential (Ha)
 !! @param nproj  number of projectors for each l
 !! @param debl  energy shifts for the second projectors for each l (Ha)
-!! @param well_n..ecut_wt  the optional values of the projector lines and
-!!                         of the lmax line, echoed when set
+!! @param well_n..ecut_weight  the optional values of the projector lines and of
+!!                             the lmax line, echoed when set
 !! @param icmod  model core charge option
 !! @param fcfact  prefactor for model core charge amplitude, the input value
 !! @param rcfact  prefactor for model core charge scale
 !! @param slack  share of the cutoff the model core must fit (icmod=6, 7)
-!! @param budget_cut  the cutoff of the pseudo-waves (icmod=6, 7)
+!! @param budget_cutoff  the cutoff of the pseudo-waves (icmod=6, 7)
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 !! @param epsh1  lower limit of the log derivative analysis energy range (Ha)
@@ -847,17 +860,17 @@
  type(config_t), intent(in) :: cnf(mxcnf)
  real(dp), intent(in) :: zz,dvloc0,fcfact,rcfact
  real(dp), intent(in) :: slack
- integer, intent(in) :: budget_cut
+ integer, intent(in) :: budget_cutoff
  real(dp), intent(in) :: epsh1,epsh2,depsh,rxpsh,rlmax,drl
- real(dp), intent(in) :: fa(mxstate),rc0(mxlin+1),ep(mxlin+1),qcut(mxlin+1)
+ real(dp), intent(in) :: fa(mxstate),rc_in(mxlin+1),ep(mxlin+1),qcut(mxlin+1)
  logical, intent(in) :: ep_as_given
  real(dp), intent(in) :: well_onset
  integer, intent(in) :: well_tail
- real(dp), intent(in) :: wreg
+ real(dp), intent(in) :: wave_regularization
  real(dp), intent(in) :: debl(mxlin+1)
  integer, intent(in) :: well_n(mxlin+1)
  integer, intent(in) :: well_norm
- real(dp), intent(in) :: ecut_wt(mxlin+1)
+ real(dp), intent(in) :: ecut_weight(mxlin+1)
  real(dp), intent(in) :: fcgrid(3),rcgrid(3),log_mesh(3)
  character(len=2), intent(in) :: atsym
  character(len=4), intent(in) :: psfile
@@ -868,10 +881,11 @@
  integer :: ii,ntext
 
  call input_echo_lines(nkap,iformat,atsym,zz,nc,nv,iexc,c_light,psfile, &
-&                      na,la,fa,lmax,rc0,ep,ncon,nbas,qcut,ep_as_given, &
-&                      well_onset,well_tail,wreg,lloc,lpopt,dvloc0, &
-&                      nproj,debl,well_n,well_norm,ecut_wt, &
-&                      icmod,fcfact,rcfact,slack,budget_cut,fcgrid,rcgrid, &
+&                      na,la,fa,lmax,rc_in,ep,ncon,nbas,qcut,ep_as_given, &
+&                      well_onset,well_tail,wave_regularization,lloc,lpopt, &
+&                      dvloc0, &
+&                      nproj,debl,well_n,well_norm,ecut_weight, &
+&                      icmod,fcfact,rcfact,slack,budget_cutoff,fcgrid,rcgrid, &
 &                      epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
 &                      ncnf,cnf,log_mesh,upf_mesh, &
 &                      text,ntext)

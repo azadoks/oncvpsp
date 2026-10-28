@@ -32,7 +32,7 @@
  implicit none
  private
  public :: ug_weights, ug_cumint_down, ug_interp, ug_root, ug_cross_down
- public :: ug_brent, ug_fmin, ug_fn
+ public :: ug_brent, ug_fmin
 
 !> a function of one variable, for ug_brent
  abstract interface

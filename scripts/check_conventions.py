@@ -42,6 +42,8 @@ The rules (doc/coding_standards.md and doc/consistency_audit.md):
   format    no d edit descriptor (an exponent printed D): e or es
   kinds     no _dp literals (1.0d0) and no real64/real128 kinds outside
             constants_m
+  names     module x_m is in x_m.f90; the public procedures of a module in
+            the prefix table of doc/coding_standards.md start with its prefix
 """
 
 import argparse
@@ -79,6 +81,27 @@ def read_glossary(path):
 
 
 GLOSSARY = read_glossary(ROOT / "doc" / "glossary.md")
+
+
+def read_prefixes(path):
+    """{module: prefix} of the table after the <!-- prefixes --> marker."""
+    table, inside = {}, False
+    for line in path.read_text().splitlines():
+        if line.startswith("<!-- prefixes"):
+            inside = True
+            continue
+        if inside:
+            if not line.startswith("|"):
+                if table:
+                    break
+                continue
+            cells = [c.strip().strip("`") for c in line.strip("|").split("|")]
+            if cells[0] and cells[0] != "module" and not set(cells[0]) <= {"-"}:
+                table[cells[0]] = cells[1]
+    return table
+
+
+PREFIXES = read_prefixes(ROOT / "doc" / "coding_standards.md")
 # the numeric edit descriptors a message may use
 MESSAGE_NUMBERS = {"i0", "f12.6", "es12.4"}
 IMPORTED = {"exc_off_pbe_m.f", "functionals.F90", "m_libxc_list.F90"}
@@ -328,6 +351,22 @@ def check_file(path, rel):
             add("license", None, "no copyright and GPL notice at the top")
     modules = [u for u in units if u.kind == "module"]
     module = modules[0] if modules else None
+    # names
+    # a stub stands in for the module when its library is off
+    stem = path.stem.lower().replace("_stub_m", "_m")
+    if module and module.name != stem:
+        add("names", module, f"module {module.name} in {path.name}")
+    if module and module.name in PREFIXES:
+        prefix = PREFIXES[module.name]
+        for unit in units:
+            if (
+                unit.kind in ("subroutine", "function")
+                and unit.host == [module]
+                and unit.name in module.public
+                and not unit.name.startswith(prefix)
+                and unit.name != prefix.rstrip("_")
+            ):
+                add("names", unit, f"public {unit.name} without the prefix {prefix}")
     for unit in units:
         procedure = unit.kind in ("subroutine", "function")
         in_module = any(h.kind == "module" for h in unit.host)

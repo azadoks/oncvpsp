@@ -32,7 +32,8 @@
  contains
 
  subroutine psmlout(inp,vkb,evkb,rr,vpuns,rho,rhomod,rcore,zion,mmax, &
-&                   nrl,epstot,rc0,fcfact,fcgrid,rcgrid,log_mesh,irel,c_light, &
+&                   nrl,epstot,rc_in,fcfact_in,fcgrid,rcgrid,log_mesh,irel, &
+&                   c_light, &
 &                   nkap,iout)
 
 !! writes the pseudopotential to the output in PSML format, between
@@ -49,13 +50,13 @@
 !! @param rhomod  model core charge and its first four derivatives
 !! @param rcore  radius beyond which the model core charge is the core
 !!               charge: its joint (doc/smoothness_plan.md, M-14)
-!! @param zion  at this point, total valence charge (becomes pseudoion charge)
+!! @param zion  ion charge: the total valence charge, the pseudo-ion's
 !! @param mmax  size of the log radial mesh
 !! @param nrl  size of the output mesh (not used)
 !! @param epstot  pseudoatom total energy (not used)
-!! @param rc0  core radii as read from the input (bohr), rc0(5) for lloc=4
-!! @param fcfact  prefactor for model core charge amplitude, as read from the
-!!                input
+!! @param rc_in  core radii as read from the input (bohr), rc_in(5) for lloc=4
+!! @param fcfact_in  prefactor for model core charge amplitude, as read from the
+!!                   input
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 !! @param log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets
@@ -84,14 +85,14 @@
  type(input_t), intent(in) :: inp
  integer, intent(in) :: mmax,nrl,irel,nkap
  real(dp), intent(in) :: c_light
- real(dp), intent(in) :: fcfact,zion,epstot,rcore
+ real(dp), intent(in) :: fcfact_in,zion,epstot,rcore
  real(dp), target, intent(in) :: rr(mmax),vpuns(mmax,mxl+2,nkap),rho(mmax)
  real(dp), target, intent(in) :: vkb(mmax,mxprj,mxl+1,nkap)
  real(dp), target, intent(in) :: rhomod(mmax,nrhomod)
  real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap)
 
-!the core radii as read (rc0), for the echo
- real(dp), intent(in) :: rc0(mxlin+1)
+!the core radii as read (rc_in), for the echo
+ real(dp), intent(in) :: rc_in(mxlin+1)
  real(dp), intent(in) :: fcgrid(3),rcgrid(3),log_mesh(3)
  integer, intent(in) :: iout
 
@@ -187,13 +188,16 @@
  call my_add_attribute(xf,"name","oncvpsp-input")
 !
  call echo_input(xf,inp%atsym,inp%zz,inp%nc,inp%nv,inp%iexc,c_light, &
-&                inp%psfile,inp%na,inp%la,inp%fa,inp%lmax,rc0,inp%ep,inp%ncon, &
+&                inp%psfile,inp%na,inp%la,inp%fa,inp%lmax,rc_in,inp%ep, &
+&                inp%ncon, &
 &                inp%nbas,inp%qcut,inp%lloc,inp%lpopt,inp%dvloc0,inp%nproj, &
-&                inp%debl,inp%icmod,fcfact,inp%rcfact,inp%slack, &
-&                inp%budget_cut,fcgrid,rcgrid,inp%epsh1,inp%epsh2,inp%depsh, &
+&                inp%debl,inp%icmod,fcfact_in,inp%rcfact,inp%slack, &
+&                inp%budget_cutoff,fcgrid,rcgrid,inp%epsh1,inp%epsh2, &
+&                inp%depsh, &
 &                inp%rxpsh,inp%rlmax,inp%drl,inp%ncnf,inp%cnf,log_mesh, &
 &                inp%upf_mesh,inp%ep_as_given,inp%well_onset,inp%well_tail, &
-&                inp%wreg,inp%well_n,inp%well_norm,inp%ecut_wt)
+&                inp%wave_regularization,inp%well_n,inp%well_norm, &
+&                inp%ecut_weight)
 
  call xml_EndElement(xf,"input-file")
 !
@@ -572,11 +576,13 @@
  end subroutine psmlout
 
  subroutine echo_input(xf,atsym,zz,nc,nv,iexc,c_light,psfile,na,la,fa,lmax, &
-&                      rc0,ep,ncon,nbas,qcut,lloc,lpopt,dvloc0,nproj,debl, &
-&                      icmod,fcfact,rcfact,slack,budget_cut,fcgrid,rcgrid, &
+&                      rc_in,ep,ncon,nbas,qcut,lloc,lpopt,dvloc0,nproj,debl, &
+&                      icmod,fcfact_in,rcfact,slack,budget_cutoff,fcgrid, &
+&                      rcgrid, &
 &                      epsh1,epsh2,depsh,rxpsh,rlmax,drl,ncnf,cnf,log_mesh, &
-&                      upf_mesh,ep_as_given,well_onset,well_tail,wreg,well_n, &
-&                      well_norm,ecut_wt)
+&                      upf_mesh,ep_as_given,well_onset,well_tail, &
+&                      wave_regularization,well_n, &
+&                      well_norm,ecut_weight)
 
 !! echoes the input data into the input-file element of the provenance, a
 !! line at a time, in the form of the psp8 echo (linout), so that it can be
@@ -594,7 +600,7 @@
 !! @param la  angular momenta, of the reference configuration
 !! @param fa  occupancies, of the reference configuration
 !! @param lmax  maximum angular momentum
-!! @param rc0  core radii as read from the input (bohr), rc0(5) for lloc=4
+!! @param rc_in  core radii as read from the input (bohr), rc_in(5) for lloc=4
 !! @param ep  energies at which the pseudopotentials are generated (Ha)
 !! @param ncon  number of matching constraints for each l
 !! @param nbas  number of basis functions for each l
@@ -605,14 +611,14 @@
 !! @param nproj  number of projectors for each l
 !! @param debl  energy shifts for the second projectors for each l (Ha)
 !! @param icmod  model core charge option
-!! @param fcfact  prefactor for model core charge amplitude, as read from the
-!!                input
+!! @param fcfact_in  prefactor for model core charge amplitude, as read from the
+!!                   input
 !! @param rcfact  prefactor for model core charge scale (icmod=3), or error
 !!                tolerance (icmod=6)
 !! @param slack  share of the cutoff the model core must fit (icmod=6, 7)
-!! @param budget_cut  the cutoff of the pseudo-waves (icmod=6, 7): 0 the
-!!                    largest of the ground-state waves, 1 their weighted
-!!                    mean, 2 the largest of all waves (budget_cutoff)
+!! @param budget_cutoff  the cutoff of the pseudo-waves (icmod=6, 7): 0 the
+!!                       largest of the ground-state waves, 1 their weighted
+!!                       mean, 2 the largest of all waves (budget_cutoff)
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 !! @param epsh1  lower limit of the log derivative analysis energy range (Ha)
@@ -628,11 +634,11 @@
 !!                  it (else 0)
 !! @param upf_mesh  most points of the log mesh of the UPF file, 0 for the
 !!                  linear output mesh (echoed when not 0)
-!! @param ep_as_given..wreg  echoed on the lmax line when one is not its
-!!                          default (lmax_lines)
+!! @param ep_as_given..wave_regularization  echoed on the lmax line when one is
+!!                                          not its default (lmax_lines)
 !! @param well_n  echoed on the projector lines when set (vkb_line)
 !! @param well_norm  echoed on the lmax line when not 0 (lmax_lines)
-!! @param ecut_wt  echoed on the projector lines when set (vkb_line)
+!! @param ecut_weight  echoed on the projector lines when set (vkb_line)
 
  use xmlf90_wxml, only: xmlf_t, xml_AddPcData
  use input_echo_m, only: input_echo_lines, echo_len
@@ -647,16 +653,16 @@
  integer, intent(in) :: na(mxstate),la(mxstate),ncon(mxlin+1),nbas(mxlin+1)
  integer, intent(in) :: nproj(mxlin+1)
  type(config_t), intent(in) :: cnf(mxcnf)
- real(dp), intent(in) :: zz,fa(mxstate),rc0(mxlin+1),ep(mxlin+1),qcut(mxlin+1)
+ real(dp), intent(in) :: zz,fa(mxstate),rc_in(mxlin+1),ep(mxlin+1),qcut(mxlin+1)
  real(dp), intent(in) :: debl(mxlin+1)
- real(dp), intent(in) :: dvloc0,fcfact,epsh1,epsh2,depsh,rlmax,drl
+ real(dp), intent(in) :: dvloc0,fcfact_in,epsh1,epsh2,depsh,rlmax,drl
  real(dp), intent(in) :: rcfact,fcgrid(3),rcgrid(3),rxpsh,log_mesh(3)
  real(dp), intent(in) :: slack
- integer, intent(in) :: budget_cut
+ integer, intent(in) :: budget_cutoff
  logical, intent(in) :: ep_as_given
  integer, intent(in) :: well_tail,well_n(mxlin+1),well_norm
- real(dp), intent(in) :: ecut_wt(mxlin+1)
- real(dp), intent(in) :: wreg
+ real(dp), intent(in) :: ecut_weight(mxlin+1)
+ real(dp), intent(in) :: wave_regularization
  real(dp), intent(in) :: well_onset
 
 !Input/output variables
@@ -668,10 +674,12 @@
 
 ! the psp8 echo of the scalar-relativistic code
  call input_echo_lines(1,1,atsym,zz,nc,nv,iexc,c_light,psfile, &
-&                      na,la,fa,lmax,rc0,ep,ncon,nbas,qcut,ep_as_given, &
-&                      well_onset,well_tail,wreg,lloc,lpopt,dvloc0, &
-&                      nproj,debl,well_n,well_norm,ecut_wt, &
-&                      icmod,fcfact,rcfact,slack,budget_cut,fcgrid,rcgrid, &
+&                      na,la,fa,lmax,rc_in,ep,ncon,nbas,qcut,ep_as_given, &
+&                      well_onset,well_tail,wave_regularization,lloc,lpopt, &
+&                      dvloc0, &
+&                      nproj,debl,well_n,well_norm,ecut_weight, &
+&                      icmod,fcfact_in,rcfact,slack,budget_cutoff,fcgrid, &
+&                      rcgrid, &
 &                      epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
 &                      ncnf,cnf,log_mesh,upf_mesh, &
 &                      text,ntext)

@@ -26,9 +26,9 @@
  contains
 
  subroutine run_optimize(eig,ll,kap,irel,c_light,mmax,rr,uua,upa,qq,&
-&                      freetl,wm,rc,irc,qcut,qmsbf,ncon_in,nbas_in,npr, &
-&                      psopt,vpsp,vkb,vae,cvgplt,ncurve,ecurve,pswfx,chix, &
-&                      ektail,wreg,optdg,wshare,iout,ifail)
+&                      freetl,wmesh,rc,irc,qcut,qmsbf,ncon_in,nbas_in,npr, &
+&                      psopt,vpsp,vkb,vfull,cvgplt,ncurve,ecurve,pswfx,chix, &
+&                      ektail,wave_regularization,optdg,wshare,iout,ifail)
 
 !! calls routines to generate optimized pseudo wave function and semi-local
 !! pseudopotential and prints diagnostic information on process and
@@ -46,9 +46,9 @@
 !! @param qq  matrix of norms and overlaps of the uua inside rc
 !! @param freetl  for each projector, whether E_resid takes the free tail
 !!                of its well state (free_tail_m) instead of the uua
-!! @param wm  for each projector, a confined well state on its continued
-!!            mesh (well_mesh_m), whose tail E_resid takes beyond rr(mmax);
-!!            mx = 0 for the others
+!! @param wmesh  for each projector, a confined well state on its continued mesh
+!!               (well_mesh_m), whose tail E_resid takes beyond rr(mmax); mx = 0
+!!               for the others
 !! @param rc  core radius (bohr)
 !! @param irc  last mesh point at or inside rc
 !! @param qcut  q cutoff defining residual energy
@@ -61,9 +61,10 @@
 !! @param vpsp  corresponding pseudopotential
 !! @param vkb  Vanderbilt-Kleinman-Bylander projectors (without local v
 !!             correction)
-!! @param vae  all-electron potential; the well potentials of the scattering
-!!             states equal it out to rr(irc+5), so the derivatives of the uua
-!!             at rc are those of the radial equation in vae
+!! @param vfull  all-electron potential (Ha); the well potentials of the
+!!               scattering states equal it out to rr(irc+5), so the
+!!               derivatives of the uua at rc are those of the radial equation
+!!               in vfull
 !! @param cvgplt  energy error vs. cutoff energy for plotting
 !! @param ncurve  dimension of ecurve
 !! @param ecurve  cutoff energy and energy error per electron on the E_resid(q)
@@ -76,13 +77,14 @@
 !!                its r-space kinetic energy less the Fourier one to three
 !!                times q_infinity, the errors of the q grid's quadrature
 !!                and of the r-space integral
-!! @param wreg  the regularization of the optimization: wreg times E_resid
-!!              at qcut/4 is added to the E_resid at qcut it minimizes (0
-!!              for none)
+!! @param wave_regularization  the regularization of the optimization:
+!!                             wave_regularization times E_resid at qcut/4 is
+!!                             added to the E_resid at qcut it minimizes (0 for
+!!                             none)
 !! @param optdg  of each optimized wave: E_resid at qcut, the
 !!               regularization's term, and the smallest eigenvalue e1 and
 !!               |f1| of the minimization at qcut (optimize)
-!! @param wshare  of each optimized wave of a confined well state (wm), its
+!! @param wshare  of each optimized wave of a confined well state (wmesh), its
 !!                E_resid at qcut with the well's tail (1) and with the
 !!                free tail at its energy (2), the same wave inside rc, so
 !!                that their difference is the well's share; (3) 1 for
@@ -94,8 +96,8 @@
  use constants_m, only: dp, qp, nerrlv, nerrdg, pi, ha_ev, mxprj
  use logmesh_m, only: lm_ncell, lm_step
  use ugrid_m, only: ug_cross_down
- use free_tail_m, only: mesh_tail, free_tail, tail_kinetic, free_tail_k, &
-&                       free_tail_defined
+ use free_tail_m, only: free_tail_mesh, free_tail, free_tail_kinetic, &
+&                       free_tail_k, free_tail_defined
  use well_mesh_m, only: well_mesh_t
  use logmesh_m, only: lm_integral
  use const_basis_m, only: const_basis
@@ -110,11 +112,11 @@
  integer, intent(in) :: ll,kap,irel,mmax,ncon_in,nbas_in,npr,ncurve
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: rr(mmax)
- real(dp), intent(in) :: uua(mmax,mxprj),upa(mmax,mxprj),vae(mmax)
+ real(dp), intent(in) :: uua(mmax,mxprj),upa(mmax,mxprj),vfull(mmax)
  real(dp), intent(in) :: qq(mxprj,mxprj)
- real(dp), intent(in) :: eig(mxprj),qcut,rc,wreg
+ real(dp), intent(in) :: eig(mxprj),qcut,rc,wave_regularization
  logical, intent(in) :: freetl(mxprj)
- type(well_mesh_t), intent(in) :: wm(mxprj)
+ type(well_mesh_t), intent(in) :: wmesh(mxprj)
  integer, intent(in) :: iout
 
 !Input/output variables
@@ -175,7 +177,8 @@
 !calculate derivatives of all-electron wave function at r_c from the radial
 !equation for the first projector to set sbf wave vectors for all projectors
 
- call ode_rc_der(irel,c_light,ll,kap,eig(1),rr,vae,uua(1,1),upa(1,1),mmax,rc, &
+ call ode_rc_der(irel,c_light,ll,kap,eig(1),rr,vfull,uua(1,1),upa(1,1),mmax, &
+&                rc, &
 &      uord,iout,ifail)
  if(ifail/=0) return
  ulgd=uord(2)/uord(1)
@@ -219,8 +222,8 @@
 !equation to define basis set for current projector and derivative
 !constraints
 
-   call ode_rc_der(irel,c_light,ll,kap,eig(iprj),rr,vae,uua(1,iprj),upa(1, &
-&                  iprj),mmax,rc,uord,iout,ifail)
+   call ode_rc_der(irel,c_light,ll,kap,eig(iprj),rr,vfull,uua(1,iprj), &
+&                  upa(1,iprj),mmax,rc,uord,iout,ifail)
    if(ifail/=0) return
 
 !q considered infinity for E_resid calculation: twice the largest basis
@@ -235,7 +238,7 @@
 !E_resid is wanted at the exact qcut and at q=0 (the kinetic energy),
 !and with the regularization at qcut/4
    nqout=2
-   if(wreg>0.0d0) nqout=3
+   if(wave_regularization>0.0d0) nqout=3
 
    allocate(qout(nqout),eresq(nqout),eresid0(nqout))
    allocate(eresiddot(nnull,nqout),eresidmat(nnull,nnull,nqout))
@@ -283,17 +286,18 @@
 !state (doc/smoothness_plan.md, phase 8)
    hh=2.0d0*pi/(75.0d0*qmax)
    if(freetl(iprj)) then
-     call free_tail(irel,c_light,ll,kap,eig(iprj),rr,vae,uua(1,iprj),upa(1, &
-&                   iprj),mmax,rc,qcut,hh,nr,ulin,dlin,iout=iout,ifail=ifail)
+     call free_tail(irel,c_light,ll,kap,eig(iprj),rr,vfull,uua(1,iprj), &
+&                   upa(1,iprj),mmax,rc,qcut,hh,nr,ulin,dlin,iout=iout, &
+&                   ifail=ifail)
      if(ifail/=0) return
-     ekin_tail=tail_kinetic(ll,rc,hh,nr,ulin,dlin)
+     ekin_tail=free_tail_kinetic(ll,rc,hh,nr,ulin,dlin)
      deallocate(dlin)
-   else if(wm(iprj)%mx>0) then
-     call mesh_tail(wm(iprj)%rr,wm(iprj)%uu(:,1),wm(iprj)%mx,rc,hh,nr,ulin, &
-&          iout,ifail)
+   else if(wmesh(iprj)%mx>0) then
+     call free_tail_mesh(wmesh(iprj)%rr,wmesh(iprj)%uu(:,1),wmesh(iprj)%mx, &
+&                         rc,hh,nr,ulin,iout,ifail)
      if(ifail/=0) return
    else
-     call mesh_tail(rr,uua(1,iprj),mmax,rc,hh,nr,ulin,iout,ifail)
+     call free_tail_mesh(rr,uua(1,iprj),mmax,rc,hh,nr,ulin,iout,ifail)
      if(ifail/=0) return
    end if
 
@@ -316,7 +320,7 @@
 &                eresid0,eresiddot,eresidmat,&
 &                pswfnull_sb,pswfnull_or,qq(iprj,iprj),ps0norm,eresidmin, &
 &                pswfopt_sb,pswfopt_or,ekin_anal,eresq,pswfopt_nu, &
-&                wreg,optdg(1,iprj),iout,ifail)
+&                wave_regularization,optdg(1,iprj),iout,ifail)
    if(ifail/=0) return
 
    write(iout,'(a,1p,e10.2,a)') '    Residual kinetic energy error=', &
@@ -332,7 +336,7 @@
    psb(1:nbas,iprj)=pswfopt_sb(1:nbas)
 
 !the well's share of E_resid at qcut
-   if(wm(iprj)%mx>0 .and. .not. freetl(iprj)) then
+   if(wmesh(iprj)%mx>0 .and. .not. freetl(iprj)) then
      call well_share(iprj,ifail)
      if(ifail/=0) return
    end if
@@ -358,7 +362,7 @@
 ! find the Vanderbilt projectors and optimized wave functions
 
    call pspot(iprj,ll,rr,irc,rc,mmax,al,nbas,qroot,eig(iprj),uua(1,iprj), &
-&             pswfopt_sb,pswfx(1,iprj),chix(1,iprj),psopt(1,iprj),vae,work, &
+&             pswfopt_sb,pswfx(1,iprj),chix(1,iprj),psopt(1,iprj),vfull,work, &
 &             vkb(1,iprj),ekin_num,iout,ifail)
    if(ifail/=0) return
 
@@ -368,7 +372,7 @@
        vpsp(ii)=work(ii)
      end do
      do ii=irc+1,mmax
-       vpsp(ii)=vae(ii)
+       vpsp(ii)=vfull(ii)
      end do
    end if
 
@@ -401,7 +405,7 @@
    write(iout,'(a)') '    Potential consistency test at r_c'
    write(iout,'(a,f12.8,a,f12.8,a,1p,e10.2)') '    "vpsp"=',work(irc), &
 &        '  vae=', &
-&    vae(irc),'  difference=',vae(irc)-work(irc)
+&    vfull(irc),'  difference=',vfull(irc)-work(irc)
 
 !interpolate the convergence behavior of the optimized pseudo wave function
 
@@ -456,7 +460,7 @@
 &             +dot_product(pswfopt_nu,matmul(eresidmat(:,:,1),pswfopt_nu))
    nqs=min(nq,1+int((qmax-qcut)/dq)+lm_ncell)
    allocate(e0t(nqs),edt(nqs,0),emt(nqs,0,0))
-   call free_tail(irel,c_light,ll,kap,eig(iprj),rr,vae,uua(1,iprj), &
+   call free_tail(irel,c_light,ll,kap,eig(iprj),rr,vfull,uua(1,iprj), &
 &                   upa(1,iprj),mmax,rc,qcut,hh,nrw,ufree,dlin, &
 &                   iout=iout,ifail=ifail)
    if(ifail/=0) return

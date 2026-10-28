@@ -29,7 +29,7 @@
 
  contains
 
- subroutine qjacobi(nn,aa,ww,vv)
+ subroutine qjacobi(nn,aa,ww,evec)
 
 !! eigenvalues and eigenvectors of a symmetric matrix by cyclic Jacobi
 !! rotations, to the round-off of quad precision
@@ -37,7 +37,7 @@
 !! @param nn  order
 !! @param aa  the matrix (its upper triangle is read)
 !! @param ww  eigenvalues, ascending
-!! @param vv  eigenvectors in the columns, orthonormal
+!! @param evec  eigenvectors in the columns, orthonormal
 
  use constants_m, only: qp
 
@@ -46,7 +46,7 @@
  real(qp), intent(in) :: aa(nn,nn)
 
 !Output variables
- real(qp), intent(out) :: ww(nn),vv(nn,nn)
+ real(qp), intent(out) :: ww(nn),evec(nn,nn)
 
 !Local variables
  real(qp) :: bb(nn,nn),off,theta,tt,cc,ss,tau,gg,hh,apq,tmp
@@ -60,9 +60,9 @@
      bb(qq,pp)=aa(pp,qq)
    end do
  end do
- vv(:,:)=0.0_qp
+ evec(:,:)=0.0_qp
  do pp=1,nn
-   vv(pp,pp)=1.0_qp
+   evec(pp,pp)=1.0_qp
  end do
 
  do sweep=1,nsweep
@@ -104,10 +104,10 @@
          bb(qq,kk)=bb(kk,qq)
        end do
        do kk=1,nn
-         gg=vv(kk,pp)
-         hh=vv(kk,qq)
-         vv(kk,pp)=gg-ss*(hh+gg*tau)
-         vv(kk,qq)=hh+ss*(gg-hh*tau)
+         gg=evec(kk,pp)
+         hh=evec(kk,qq)
+         evec(kk,pp)=gg-ss*(hh+gg*tau)
+         evec(kk,qq)=hh+ss*(gg-hh*tau)
        end do
      end do
    end do
@@ -128,9 +128,9 @@
      ww(pp)=ww(isort)
      ww(isort)=tmp
      do kk=1,nn
-       tmp=vv(kk,pp)
-       vv(kk,pp)=vv(kk,isort)
-       vv(kk,isort)=tmp
+       tmp=evec(kk,pp)
+       evec(kk,pp)=evec(kk,isort)
+       evec(kk,isort)=tmp
      end do
    end if
  end do
