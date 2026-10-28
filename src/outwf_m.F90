@@ -149,7 +149,7 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use logmesh_m, only: lm_fh_weights, lm_fh_reach, lm_step
+ use logmesh_m, only: lm_fh_weights, lm_fh_reach, lm_step, lm_position
 
 !Input variables
  integer, intent(in) :: ll,mmax,nsrc
@@ -277,7 +277,7 @@
  ow%bound(1:nbrk)=brk(1:nbrk)
  ow%bound(nseg)=rr(mmax)
  ow%tlast=0.0d0
- if(nbrk>0) ow%tlast=1.0d0+log(brk(nbrk)/rr(1))/al
+ if(nbrk>0) ow%tlast=1.0d0+lm_position(rr,mmax,brk(nbrk))
  return
  end subroutine breakpoints
 
@@ -295,7 +295,7 @@
  ifail=0
  sg%t0=0.0d0
  if(nseg>1) then
-   sg%tend=log(ow%bound(1)/rr(1))/al
+   sg%tend=lm_position(rr,mmax,ow%bound(1))
    i1=floor(sg%tend)+1
    if(i1<4) then
      write(iout,'(/a,es12.4)') &
@@ -348,9 +348,9 @@
  integer :: jj
 
  ifail=0
- sg%t0=log(ow%bound(kk-1)/rr(1))/al
+ sg%t0=lm_position(rr,mmax,ow%bound(kk-1))
  if(kk<nseg) then
-   sg%tend=log(ow%bound(kk)/rr(1))/al-sg%t0
+   sg%tend=lm_position(rr,mmax,ow%bound(kk))-sg%t0
    npt=ceiling(sg%tend)+og_ext+1
  else
    sg%tend=plast-sg%t0
@@ -925,7 +925,7 @@
  return
  end function outwf_count
 
- integer function outwf_index(ow,evkb,ovl,mnode,iout,ifail)
+ subroutine outwf_index(ow,evkb,ovl,mnode,neig,iout,ifail)
 
 !! the number of eigenvalues below the energy of the last outwf_integrate
 !! of the radial equation with the projectors of coefficients evkb on
@@ -951,6 +951,7 @@
 !! @param evkb  coefficients of the projectors
 !! @param ovl  the overlaps of outwf_overlaps
 !! @param mnode  the last mesh point counted
+!! @param neig  the number of eigenvalues below the energy
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
@@ -963,6 +964,7 @@
  integer, intent(in) :: iout
 
 !Output variables
+ integer, intent(out) :: neig
  integer, intent(out) :: ifail
 
 !Local variables
@@ -1010,7 +1012,7 @@
  end if
 
  nact=count(evkb/=0.0d0)
- outwf_index=nloc
+ neig=nloc
  if(nact==0) return
  allocate(mm(nact,nact),ev(nact),fr(ow%nsrc+1),isrc(nact),work(3*nact+8))
  isrc=pack([(jj,jj=1,ow%nsrc)],evkb/=0.0d0)
@@ -1031,13 +1033,13 @@
    ifail=1
    return
  end if
- outwf_index=nloc+count(ev<0.0d0)-count(evkb(isrc)>0.0d0)
+ neig=nloc+count(ev<0.0d0)-count(evkb(isrc)>0.0d0)
  deallocate(mm,ev,fr,isrc,work)
  return
- end function outwf_index
+ end subroutine outwf_index
 
- integer function outwf_index_at(ll,rr,mmax,vloc,vlocpw,nsrc,srcpw,evkb, &
-&                                ee,mnode,iout,ifail)
+ subroutine outwf_index_at(ll,rr,mmax,vloc,vlocpw,nsrc,srcpw,evkb,ee, &
+&                          mnode,neig,iout,ifail)
 
 !! outwf_index of the solution at the energy ee, on its own setup
 !!
@@ -1051,6 +1053,7 @@
 !! @param evkb  coefficients of the projectors
 !! @param ee  energy (Ha)
 !! @param mnode  the last mesh point counted
+!! @param neig  the number of eigenvalues below ee
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
@@ -1061,6 +1064,7 @@
  integer, intent(in) :: iout
 
 !Output variables
+ integer, intent(out) :: neig
  integer, intent(out) :: ifail
 
 !Local variables
@@ -1071,13 +1075,13 @@
  allocate(uu(mmax),up(mmax))
  call outwf_setup(ll,rr,mmax,vloc,vlocpw,nsrc,srcpw,ow,iout,ifail)
  if(ifail/=0) return
- call outwf_solve(ow,ee,evkb,mnode,mnode,uu,up,outwf_index_at, &
+ call outwf_solve(ow,ee,evkb,mnode,mnode,uu,up,neig, &
 &      iout=iout,ifail=ifail)
  if(ifail/=0) return
  call outwf_free(ow)
  deallocate(uu,up)
  return
- end function outwf_index_at
+ end subroutine outwf_index_at
 
  subroutine outwf_solve(ow,ep,evkb,mlast,mnode,uu,up,neig,iout,ifail)
 
@@ -1128,7 +1132,7 @@
    allocate(gg(nsrc,nsrc),gg0(nsrc),ipiv(nsrc),ovl(nsrc+1,nsrc))
    call outwf_overlaps(ow,ovl)
    if(present(neig)) then
-     neig=outwf_index(ow,evkb,ovl,mnode,iout,ifail)
+     call outwf_index(ow,evkb,ovl,mnode,neig,iout,ifail)
      if(ifail/=0) return
    end if
    do jj=1,nsrc
@@ -1149,7 +1153,7 @@
  end if
  if(nsrc==0 .and. present(neig)) then
    allocate(ovl(1,0))
-   neig=outwf_index(ow,evkb,ovl,mnode,iout,ifail)
+   call outwf_index(ow,evkb,ovl,mnode,neig,iout,ifail)
    if(ifail/=0) return
    deallocate(ovl)
  end if

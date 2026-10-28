@@ -64,14 +64,6 @@
 !> names of the fills: none, minimum tail, Martins
  character(len=2), parameter :: fillname(0:2)=['- ','MT','M ']
 
- abstract interface
-   real(dp) function scalar_fn(xx)
-   import :: dp
-   implicit none
-   real(dp), intent(in) :: xx
-   end function scalar_fn
- end interface
-
 !> The fill of a model core inside its radius r_s
  type :: fill_t
 !> the model radius r_s (bohr)
@@ -95,13 +87,13 @@
 !> procedures of the model, its transform and its error share
  type :: budget_t
 !> size of the log radial mesh
-   integer :: mmax
+   integer :: mmax=0
 !> exchange-correlation functional
-   integer :: iexc
+   integer :: iexc=0
 !> number of probes (0 for icmod=6)
-   integer :: nprobe
+   integer :: nprobe=0
 !> speed of light (Hartree atomic units)
-   real(dp) :: c_light
+   real(dp) :: c_light=0.0d0
 !> angular momenta of the probes
    integer, allocatable :: lprobe(:)
 !> log radial mesh (bohr)
@@ -114,93 +106,93 @@
 !> (mmax,nprobe)
    real(dp), allocatable :: probes(:,:)
 !> exchange-correlation energy error (Ha) that defines the needed cutoff
-   real(dp) :: errmax
+   real(dp) :: errmax=0.0d0
 !> ion charge (for der2exc)
-   real(dp) :: zion
+   real(dp) :: zion=0.0d0
 !> the budget's plane-wave cutoff ecut (Ha)
-   real(dp) :: ecut
+   real(dp) :: ecut=0.0d0
 !> the share of ecut the model must fit, slack*ecut (Ha)
-   real(dp) :: budget
+   real(dp) :: budget=0.0d0
 !> the multiple of the pseudo-waves' cutoff ecutw that is ecut, when
 !> fcfact <= 0
-   real(dp) :: factor
+   real(dp) :: factor=0.0d0
 !> the lower end of the window of the minimum tail, 2*sqrt(2*ecut)
 !> (bohr**-1)
-   real(dp) :: qlo
+   real(dp) :: qlo=0.0d0
 !> the upper end of the window, min(3*qlo, qmax) (bohr**-1)
-   real(dp) :: qhi
+   real(dp) :: qhi=0.0d0
 !> q_b, the first density cutoff that decides whether the model fits
 !> budget, 2*sqrt(2*budget) (bohr**-1)
-   real(dp) :: qb
+   real(dp) :: qb=0.0d0
 !> the last density cutoff of the search (bohr**-1)
-   real(dp) :: qend
+   real(dp) :: qend=0.0d0
 !> the qend r_s of icmod 6 was found with, for the report (bohr**-1)
-   real(dp) :: qext
+   real(dp) :: qext=0.0d0
 !> the grid's density cutoff of the largest error of err_max (bohr**-1)
-   real(dp) :: qpk
+   real(dp) :: qpk=0.0d0
 !> the largest r_s, the smallest rc or the last radius with core charge
 !> (bohr)
-   real(dp) :: rtop
+   real(dp) :: rtop=0.0d0
 !> the smallest r_s, rtop/50 (bohr)
-   real(dp) :: rlo
+   real(dp) :: rlo=0.0d0
 !> r_s of icmod 6, the smallest radius that fits (bohr)
-   real(dp) :: rs6
+   real(dp) :: rs6=0.0d0
 !> the last mesh point with core charge
-   integer :: irtop
+   integer :: irtop=0
 !> log of the mesh ratio
-   real(dp) :: al
+   real(dp) :: al=0.0d0
 !> the width of the panels of the band-limited transform (bohr**-1)
-   real(dp) :: dq
+   real(dp) :: dq=0.0d0
 !> the number of density cutoffs of the grid, qmax/qstep
-   integer :: nq
+   integer :: nq=0
 !> the number of panels of the band-limited transform
-   integer :: npq
+   integer :: npq=0
 !> the number of nodes of the window of the minimum tail
-   integer :: nqn
+   integer :: nqn=0
 !> the first mesh interval of the nodes beyond r_s
-   integer :: i0
+   integer :: i0=0
 !> the mesh point after the last interval of the nodes beyond r_s
-   integer :: iend
+   integer :: iend=0
 !> the number of nodes beyond r_s, ngi per interval
-   integer :: nout
+   integer :: nout=0
 !> the last mesh point r_s can lie below on in the tables
-   integer :: irmx
+   integer :: irmx=0
 !> the last mesh point within the sphere of the error
-   integer :: nin
+   integer :: nin=0
 !> the size of the error's part of the log mesh, rr(1:nx)
-   integer :: nx
+   integer :: nx=0
 !> the index of r_s on the mesh ri
-   integer :: kin
+   integer :: kin=0
 !> the size of the mesh ri
-   integer :: ni
+   integer :: ni=0
 !> the size of xr, nx + ni
-   integer :: nt
+   integer :: nt=0
 !> the model being tried: its radius and fill
    type(fill_t) :: fill
 !> the row of the tables for the current r_s, the mesh point above it
-   integer :: irow
+   integer :: irow=0
 !> the first node beyond r_s of the whole intervals
-   integer :: js
+   integer :: js=0
 !> the number of panels of ntk done for the current model
-   integer :: npdone
+   integer :: npdone=0
 !> the last grid cutoff of rqs done for the current model
-   integer :: msnap
+   integer :: msnap=0
 !> Gauss-Legendre nodes on [0, 1] of the panels in q
-   real(dp) :: tk(ngk)
+   real(dp) :: tk(ngk)=0.0d0
 !> Gauss-Legendre weights of tk
-   real(dp) :: wk(ngk)
+   real(dp) :: wk(ngk)=0.0d0
 !> Gauss-Legendre nodes on [0, 1] of each mesh interval in ln r
-   real(dp) :: tgi(ngi)
+   real(dp) :: tgi(ngi)=0.0d0
 !> Gauss-Legendre weights of tgi
-   real(dp) :: wgi(ngi)
+   real(dp) :: wgi(ngi)=0.0d0
 !> Gauss-Legendre nodes on [0, 1] of the transform on [0, r_s]
-   real(dp) :: xg(nxg)
+   real(dp) :: xg(nxg)=0.0d0
 !> Gauss-Legendre weights of xg
-   real(dp) :: wxg(nxg)
+   real(dp) :: wxg(nxg)=0.0d0
 !> the nodes of the partial interval [r_s, the next mesh point] (bohr)
-   real(dp) :: pt(ngi)
+   real(dp) :: pt(ngi)=0.0d0
 !> their weights times r**2 rhoc
-   real(dp) :: pg(ngi)
+   real(dp) :: pg(ngi)=0.0d0
 !> the nodes of the window of the minimum tail (bohr**-1)
    real(dp), allocatable :: qn(:)
 !> their weights times q**2
@@ -282,13 +274,13 @@
 !> the band-limited model summed so far at xr; work space of the tables
    real(dp), allocatable :: rqp(:)
 !> exchange-correlation potential of the background alone (Ha)
-   real(dp) :: vbg
+   real(dp) :: vbg=0.0d0
 !> the needed density cutoff (bohr**-1)
-   real(dp) :: qneed
+   real(dp) :: qneed=0.0d0
 !> the needed plane-wave cutoff, qneed**2/8 (Ha)
-   real(dp) :: ecore
+   real(dp) :: ecore=0.0d0
 !> whether the search of icmod 6 was extended beyond q_b + quick
-   logical :: full
+   logical :: full=.false.
 !> icmod=7: the hardness at rhotps + rhoc (nprobe,nprobe)
    real(dp), allocatable :: d2ae(:,:)
 !> the hardness at rhotps + the model (nprobe,nprobe)
@@ -296,7 +288,7 @@
 !> zeros, the reference of the hardness at rhotps + rhoc (nprobe,nprobe)
    real(dp), allocatable :: d2zero(:,:)
 !> the hardness mismatch (Ha)
-   real(dp) :: mismatch
+   real(dp) :: mismatch=0.0d0
 !> the radii of the basin (bohr)
    real(dp), allocatable :: crad(:)
 !> their hardness mismatches (Ha)
@@ -304,7 +296,7 @@
 !> their fills, 0 for none
    integer, allocatable :: cfill(:)
 !> the number of radii of the basin
-   integer :: ncand
+   integer :: ncand=0
  end type budget_t
 
  contains
@@ -746,6 +738,9 @@
 !Output variables
  integer, intent(out) :: ifail
 
+!Local variables
+ real(dp) :: rsq
+
  ifail=0
 ! smallest r_s, first with the cutoffs to q_b + quick; if a larger one
 ! has a larger error at that r_s, again with those up to it + quick: each
@@ -754,8 +749,9 @@
  bc%full=.false.
  bc%qend=min(qmax,bc%qb+quick)
  do
-   bc%fill%rs=smallest_radius(bc,iout,ifail)
+   call smallest_radius(bc,rsq,iout,ifail)
    if(ifail/=0) return
+   bc%fill%rs=rsq
    call set_model(bc,bc%fill%rs)
    if(bc%qend>=qmax) exit
    if(err_max(bc,bc%qend,qmax,bc%errmax)<=bc%errmax) exit
@@ -792,7 +788,7 @@
 
 !Local variables
  integer :: ib,ii,kk
- real(dp) :: tt
+ real(dp) :: tt,rsq
 
  ifail=0
  kk=max(0,floor(log(bc%rtop/bc%rs6)/log(ratio)))
@@ -828,8 +824,9 @@
    call no_model(bc,iout,ifail)
    if(ifail/=0) return
  end if
- bc%fill%rs=minimum_radius(bc,ib,iout,ifail)
+ call minimum_radius(bc,ib,rsq,iout,ifail)
  if(ifail/=0) return
+ bc%fill%rs=rsq
  call set_model(bc,bc%fill%rs)
  bc%mismatch=mismatch_at(bc,log(bc%fill%rs))
 ! r_s6 is a root of this error less errmax, so at r_s = r_s6 the two are
@@ -863,7 +860,7 @@
 
 !Local variables
  integer :: kk
- real(dp) :: ee,tt
+ real(dp) :: ee,tt,qq
 
  ifail=0
  call set_model(bc,bc%fill%rs)
@@ -877,8 +874,9 @@
      exit
    end if
    if(err_grid(bc,kk)>bc%errmax) then
-     bc%qneed=zeroin(excess_of,kk*qstep,tt,iout,ifail)
+     call zeroin(excess_of,kk*qstep,tt,qq,iout,ifail)
      if(ifail/=0) return
+     bc%qneed=qq
      exit
    end if
    tt=kk*qstep
@@ -981,13 +979,14 @@
  return
  end subroutine budget_report
 
- real(dp) function smallest_radius(bc,iout,ifail)
+ subroutine smallest_radius(bc,rsq,iout,ifail)
 
 !! the smallest r_s in [r_lo, r_top] whose model fits, with the density
 !! cutoffs up to qend: bisection over the mesh points between them, then
 !! Brent's method on the largest error less errmax in ln r_s (excess_rs)
 !!
 !! @param bc  the state of the search
+!! @param rsq  the radius (bohr)
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
@@ -998,18 +997,19 @@
  type(budget_t), intent(inout) :: bc
 
 !Output variables
+ real(dp), intent(out) :: rsq
  integer, intent(out) :: ifail
 
 !Local variables
  integer :: ia,ib,imid,ilo,ihi
- real(dp) :: ga
+ real(dp) :: ga,xq
  ifail=0
  associate(rlo=>bc%rlo,rr=>bc%rr,rtop=>bc%rtop)
    if(excess_rs(bc,log(rtop))>0.0d0) then
      call no_model(bc,iout,ifail)
      if(ifail/=0) return
    end if
-   smallest_radius=rlo
+   rsq=rlo
    ga=excess_rs(bc,log(rlo))
    if(ga<=0.0d0) return
 ! the mesh points strictly between r_lo and r_top, ilo..ihi; ia fails,
@@ -1032,9 +1032,10 @@
        ib=imid
      end if
    end do
-   smallest_radius=exp(zeroin(excess_rs_of,log(radius_of(bc,ia)), &
-&                             log(radius_of(bc,ib)),iout,ifail))
+   call zeroin(excess_rs_of,log(radius_of(bc,ia)),log(radius_of(bc,ib)), &
+&              xq,iout,ifail)
    if(ifail/=0) return
+   rsq=exp(xq)
  end associate
  return
 
@@ -1053,7 +1054,7 @@
  return
  end function excess_rs_of
 
- end function smallest_radius
+ end subroutine smallest_radius
 
  real(dp) function radius_of(bc,ii)
 
@@ -1063,10 +1064,9 @@
 !! @param ii  index
 
 !Input variables
+ type(budget_t), intent(in) :: bc
  integer, intent(in) :: ii
 
-!Input/output variables
- type(budget_t), intent(inout) :: bc
  associate(rlo=>bc%rlo,rr=>bc%rr,rtop=>bc%rtop)
    if(rr(ii)<=rlo) then
      radius_of=rlo
@@ -1170,7 +1170,7 @@
  return
  end function slope_at
 
- real(dp) function minimum_radius(bc,ib,iout,ifail)
+ subroutine minimum_radius(bc,ib,rsq,iout,ifail)
 
 !! the radius of the least hardness mismatch in the basin of the radius
 !! crad(ib): the root of its slope between the neighbours of crad(ib),
@@ -1178,6 +1178,7 @@
 !!
 !! @param bc  the state of the search
 !! @param ib  index of the radius of the least mismatch of the list
+!! @param rsq  the radius (bohr)
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
@@ -1189,16 +1190,17 @@
  type(budget_t), intent(inout) :: bc
 
 !Output variables
+ real(dp), intent(out) :: rsq
  integer, intent(out) :: ifail
 
 !Local variables
- real(dp) :: ua,ub,sa,sb
+ real(dp) :: ua,ub,sa,sb,xq
  integer :: ia,ic
  ifail=0
  associate(crad=>bc%crad,mismatch=>bc%mismatch,ncand=>bc%ncand)
    ia=min(ncand,ib+1)
    ic=max(1,ib-1)
-   minimum_radius=crad(ib)
+   rsq=crad(ib)
    if(ia==ib) then
      if(slope_at(bc,log(crad(ib)))>=0.0d0) return
    end if
@@ -1214,8 +1216,9 @@
 &         'mismatch bracketed about',crad(ib)
      return
    end if
-   minimum_radius=exp(zeroin(slope_at_of,ua,ub,iout,ifail))
+   call zeroin(slope_at_of,ua,ub,xq,iout,ifail)
    if(ifail/=0) return
+   rsq=exp(xq)
  end associate
  return
 
@@ -1234,7 +1237,7 @@
  return
  end function slope_at_of
 
- end function minimum_radius
+ end subroutine minimum_radius
 
  subroutine no_model(bc,iout,ifail)
 !! reports that no model radius fits and stops
@@ -1244,10 +1247,8 @@
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input variables
+ type(budget_t), intent(in) :: bc
  integer, intent(in) :: iout
-
-!Input/output variables
- type(budget_t), intent(inout) :: bc
 
 !Output variables
  integer, intent(out) :: ifail
@@ -1273,7 +1274,7 @@
 !! @param bc  the state of the search
 !! @param rad  model radius r_s (bohr)
 
- use logmesh_m, only: lm_derivs, lm_interp
+ use logmesh_m, only: lm_derivs, lm_interp, lm_index
  use xc_dispatch_m, only: exc_dispatch
 
 !Input variables
@@ -1304,10 +1305,7 @@
 
 ! the nodes of the transform beyond rs: the mesh intervals from is+1 on,
 ! and Gauss-Legendre on the part [rs, rr(is+1)] of interval is
-   is=max(1,floor(log(rs/rr(1))/al)+1)
-   do while(rr(is+1)<=rs)
-     is=is+1
-   end do
+   is=lm_index(rr,mmax,rs)
    js=(is+1-i0)*ngi+1
    irow=is+1
    if(irow>irmx) then
@@ -1386,7 +1384,8 @@
 
 !Input variables
  type(fill_t), intent(in) :: fill
- associate(aco=>fill%aco,bco=>fill%bco,cco=>fill%cco,ifill=>fill%ifill,rs=>fill%rs)
+ associate(aco=>fill%aco,bco=>fill%bco,cco=>fill%cco,ifill=>fill%ifill, &
+&          rs=>fill%rs)
    if(ifill==1) then
      fill_value=poly(fill,(rad/rs)**2)
    else
@@ -1586,6 +1585,7 @@
 !! @param dm  the core charge and its first two derivatives at r_s
 
  use lapack_m, only: dgglse
+ use sbf_m, only: sbf_trig
 
 !Input variables
  real(dp), intent(in) :: dm(3)
@@ -1609,7 +1609,7 @@
        xx=rs*xg(jj)
        wx=rs*wxg(jj)
        qx=qn(ii)*xx
-       jx=wx*xx**2*j0(qx)
+       jx=wx*xx**2*sbf_trig(0,qx,sin(qx),cos(qx))
        do kk=0,npow
          amat(ii,kk)=amat(ii,kk) + jx*plg(jj,kk)
        end do
@@ -1651,10 +1651,8 @@
 !! @param kk  wave number (bohr**-1), > 0
 
 !Input variables
+ type(budget_t), intent(in) :: bc
  real(dp), intent(in) :: kk
-
-!Input/output variables
- type(budget_t), intent(inout) :: bc
 
 !Local variables
  real(dp) :: ss
@@ -1680,10 +1678,8 @@
 !! @param kk  wave number (bohr**-1), > 0
 
 !Input variables
+ type(budget_t), intent(in) :: bc
  real(dp), intent(in) :: kk
-
-!Input/output variables
- type(budget_t), intent(inout) :: bc
 
 !Local variables
  real(dp) :: ss
@@ -1841,7 +1837,7 @@
 !! @param qe  last density cutoff (bohr**-1)
 !! @param elim  error limit (Ha)
 
- use ugrid_m, only: ug_fmin
+ use root_m, only: root_fmin
 
 !Input variables
  real(dp), intent(in) :: qa,qe,elim
@@ -1877,7 +1873,8 @@
      deallocate(tq,eq)
      return
    end if
-   err_max=max(err_max,-ug_fmin(neg_err_of,tq(max(1,imx-1)),tq(min(nn,imx+1))))
+   err_max=max(err_max,-root_fmin(neg_err_of,tq(max(1,imx-1)), &
+&                                  tq(min(nn,imx+1))))
    do ii=1,nn
      if(ii==imx) cycle
      ilo=max(1,ii-1)
@@ -1886,7 +1883,7 @@
      if(nn>=3) then
        if(parabola_peak(tq,eq,nn,ii)<0.99d0*err_max) cycle
      end if
-     err_max=max(err_max,-ug_fmin(neg_err_of,tq(ilo),tq(ihi)))
+     err_max=max(err_max,-root_fmin(neg_err_of,tq(ilo),tq(ihi)))
    end do
    deallocate(tq,eq)
  end associate
@@ -1896,7 +1893,7 @@
 
  real(dp) function neg_err_of(xx)
 
-!! neg_err of this search, for ug_fmin
+!! neg_err of this search, for root_fmin
 !!
 !! @param xx  the argument
 
@@ -1961,10 +1958,10 @@
  return
  end function neg_err
 
- real(dp) function zeroin(fun,xa0,xb0,iout,ifail)
+ subroutine zeroin(fun,xa0,xb0,xq,iout,ifail)
 
 !! a root of fun between xa0 and xb0, where fun changes sign, by Brent's
-!! method with no tolerance of its own (ug_brent): it stops when the
+!! method with no tolerance of its own (root_brent): it stops when the
 !! bracket is a few rounding units wide (as lm_root). Where fun jumps
 !! across zero (the fill type changes, a discrete event of
 !! doc/smoothness_plan.md) that is the root, and the jump is reported; the
@@ -1972,17 +1969,19 @@
 !!
 !! @param fun  the function
 !! @param xa0,xb0  the bracket
+!! @param xq  the root
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use ugrid_m, only: ug_brent
+ use root_m, only: root_fn, root_brent
 
 !Input variables
- procedure(scalar_fn) :: fun
+ procedure(root_fn) :: fun
  real(dp), intent(in) :: xa0,xb0
  integer, intent(in) :: iout
 
 !Output variables
+ real(dp), intent(out) :: xq
  integer, intent(out) :: ifail
 
 !Local variables
@@ -1991,19 +1990,17 @@
  logical :: conv
 
  ifail=0
- call ug_brent(fun,xa0,xb0,zeroin,ierr,fq=fb,fo=fc,fends=fe,converged=conv)
+ call root_brent(fun,xa0,xb0,xq,ierr,fq=fb,fo=fc,fends=fe,converged=conv)
  if(ierr/=0) then
    write(iout,'(/a,2es12.4)') 'modcore_budget: ERROR no root between', &
 &       xa0,xb0
-!  a defined result, for the caller's expression before its test of ifail
-   zeroin=xa0
    ifail=1
    return
  end if
  if(.not. conv) then
    write(iout,'(/a,es12.4,a,es12.4)') &
 &        'modcore_budget: ERROR zeroin not converged in 200 steps, x=', &
-&        zeroin,', f=',fb
+&        xq,', f=',fb
    ifail=1
    return
  end if
@@ -2011,26 +2008,10 @@
  if(fb/=0.0d0 .and. min(abs(fb),abs(fc))>1.0d-6*max(abs(fe(1)),abs(fe(2)))) &
 & then
    write(iout,'(/2a,es12.4,a,es12.4,a,es12.4)') 'modcore_budget: WARNING', &
-&        ' root at a jump of the function, x=',zeroin,', f from ',fc,' to ',fb
+&        ' root at a jump of the function, x=',xq,', f from ',fc,' to ',fb
  end if
  return
- end function zeroin
-
- real(dp) function j0(xx)
-
-!! the spherical Bessel function j0, by its series near 0
-!!
-!! @param xx  argument
-
-!Input variables
- real(dp), intent(in) :: xx
- if(abs(xx)<1.0d-3) then
-   j0=1.0d0 - xx**2/6.0d0 + xx**4/120.0d0
- else
-   j0=sin(xx)/xx
- end if
- return
- end function j0
+ end subroutine zeroin
 
  subroutine tail_derivatives(fill,rad,dd)
 
@@ -2358,7 +2339,7 @@
 !! last value beyond, from where all of them start to where the last ends;
 !! the last crossing from
 !! above on a grid of the finest spacing of the curves, and the root of
-!! the log of the mean less log errmax in it by Brent's method (ug_brent).
+!! the log of the mean less log errmax in it by Brent's method (root_brent).
 !! Unlike the largest cutoff, the mean is smooth where two curves cross.
 !! ecurve(:,:,i) holds the cutoffs and errors of pseudo-wave i on a uniform
 !! grid in q from below its spacing (eresid), zero beyond its end (all zero
@@ -2379,8 +2360,8 @@
 
  use constants_m, only: dp
  use logmesh_m, only: lm_fh_value
- use ugrid_m, only: ug_cross_down, ug_brent
- use ugrid_m, only: ug_brent
+ use ugrid_m, only: ug_cross_down
+ use root_m, only: root_brent
 
 !Input variables
  integer, intent(in) :: ncurve,nprof
@@ -2493,7 +2474,7 @@
    xa=max(qa,qb-dble(kk)*hs)
    fa=excess_mean(xa)
    if(fa>0.0d0) then
-     call ug_brent(excess_mean,xa,xb,qerr,ierr)
+     call root_brent(excess_mean,xa,xb,qerr,ierr)
      if(ierr/=0) then
        write(iout,'(/a)') &
 &            'modcore_budget_table: ERROR the bracket lost its sign change'

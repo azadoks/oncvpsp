@@ -40,7 +40,8 @@
 
 !! j_l(xx) for l=0..nm-1: the power series below xx=1/4 (its terms fall
 !! by (xx**2/2)/(k(2l+2k+1)) a term), else the downward recurrence of
-!! sbf8 normalized by j_0=sin(xx)/xx
+!! sbf_values normalized by sum_l (2l+1) j_l**2 = 1, its sign that of
+!! (j_0, j_1)
 !!
 !! @param nm  number of orders wanted
 !! @param xx  argument, >=0
@@ -55,7 +56,7 @@
 
 !Local variables
  real(qp), allocatable :: tt(:)
- real(qp) :: xn,xs,term,sum_k,xi,scale
+ real(qp) :: xn,xs,term,sum_k,xi,scale,sn,j0,j1
  integer :: nn,kk,nlim
 
  if(xx==0.0_qp) then
@@ -82,10 +83,12 @@
    return
  end if
 
-! downward recurrence from an order where j_l is negligible, normalized
-! by j_0 (the recurrence is stable downward; the start's error decays
-! by about (xx/2n)**2 an order, so the margin of 50 orders is ample for
-! 1e-34)
+! downward recurrence from an order where j_l is negligible (the
+! recurrence is stable downward; the start's error decays by about
+! (xx/2n)**2 an order, so the margin of 50 orders is ample for 1e-34),
+! normalized by sum_l (2l+1) j_l**2 = 1: j_0 = sin(xx)/xx alone lost its
+! relative accuracy near its zeros (numerics audit C-13). The sign is
+! that of the projection on (j_0, j_1), which are never both small
  nlim=nm+int(1.4_qp*xx)+50
  allocate(tt(nlim+2))
  xi=1.0_qp/xx
@@ -97,7 +100,14 @@
      tt(nn:nlim+2)=tt(nn:nlim+2)*1.0e-300_qp
    end if
  end do
- scale=(sin(xx)*xi)/tt(1)
+ sn=0.0_qp
+ do nn=1,nlim+1
+   sn=sn + real(2*nn-1,qp)*tt(nn)**2
+ end do
+ scale=1.0_qp/sqrt(sn)
+ j0=sin(xx)*xi
+ j1=(j0-cos(xx))*xi
+ if(tt(1)*j0+tt(2)*j1<0.0_qp) scale=-scale
  do nn=1,nm
    sb(nn)=scale*tt(nn)
  end do

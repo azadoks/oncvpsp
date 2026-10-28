@@ -61,7 +61,6 @@
 #if (defined WITH_TOML)
  use input_toml_m, only: read_input_toml
 #endif
- use constants_m, only: well_onset_default
  use main_setup_m, only: main_names, parse_command_line, write_banner, &
 &                        INPUT_STDIN, INPUT_TEXT, INPUT_TOML
  use input_m, only: input_t
@@ -103,13 +102,6 @@
  end if
 
  ios = 0
- inp%ep_as_given=.false.
- inp%well_onset=well_onset_default
- inp%well_tail=0
- inp%well_n(:)=0
- inp%well_norm=0
- inp%ecut_weight(:)=-1.0d0
- inp%wave_regularization=0.0d0
  select case(input_mode)
  case(INPUT_STDIN)
    unit=stdin

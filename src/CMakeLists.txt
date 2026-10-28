@@ -60,6 +60,7 @@ set(src_oncvpsp
     relativity_m.f90
     renorm_r_m.f90
     results_m.f90
+    root_m.f90
     run_config_m.f90
     run_diag_m.f90
     run_ghosts_m.f90
@@ -68,8 +69,6 @@ set(src_oncvpsp
     run_plot_m.f90
     run_vkb_m.f90
     sbf_basis_con_m.f90
-    sbf_rc_der_m.f90
-    sbf8_m.f90
     sbf_m.f90
     sbf_overlap_m.f90
     scatterstate_m.f90

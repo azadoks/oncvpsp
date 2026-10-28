@@ -126,9 +126,12 @@ looks like this:
   passed together (`piecewise_t` in `pieces_m`, the integrator state in
   `outwf_m`, a configuration of the atom, `config_t` in `input_m`, the
   results of a run, `results_t` in `results_m`). A type is named `_t`,
-  documents each component with `!>`, gives it a default value where one
-  makes sense, and a procedure that needs only part of a larger type
-  takes that part (`fill_t` in `modcore_budget_m`). Older code keeps
+  documents each component with `!>`, gives every component that is not
+  allocatable or a pointer a default value (0 where no other makes
+  sense), so that an `intent(out)` dummy of the type starts defined
+  (`input_t` holds the value an input that leaves a key out gets, and a
+  reader sets only what it reads), and a procedure that needs only part
+  of a larger type takes that part (`fill_t` in `modcore_budget_m`). Older code keeps
   separate arrays with a common index, like the reference configuration's
   `na`, `la` and `fa`. Types that a library defines (toml-f's
   `toml_table`, xmlf90's `xmlf_t`) are used where its calls need them.
@@ -146,11 +149,13 @@ looks like this:
   solver. `_r` is left only on routines that exist for the
   fully-relativistic code alone (`sr_so_r`, `renorm_r`). See
   [Merging sr and fr](fr_merge_plan.md).
-- The entry points a C wrapper will call (see [Library
-  plan](library_plan.md)) take integer and `real(dp)` scalars and
-  explicit-shape arrays, with their sizes as arguments: no logical,
-  optional, assumed-shape, allocatable, pointer or derived-type dummies.
-  Routines inside the library may take derived types.
+- The entry points a C wrapper will call (the `bind(C)` routines of
+  phase 5 of the [Library plan](library_plan.md)) take integer and
+  `real(dp)` scalars and explicit-shape arrays, with their sizes as
+  arguments: no logical, optional, assumed-shape, allocatable, pointer or
+  derived-type dummies. Routines inside the library may take derived
+  types; `oncvpsp_run`, which takes the input and the results as types,
+  is one of them, and phase 5 wraps it behind a handle.
 
 **Header.**
 
@@ -204,9 +209,37 @@ looks like this:
   Fortran 2008, which the Debug build checks (`-std=f2008`).
 - Explicit-shape (`rr(mmax)`) or allocatable arrays; no assumed-size
   (`*`) dummies, except in `adams.inc` and the LAPACK interfaces of
-  `lapack_m`.
+  `lapack_m`. Assumed-shape dummies (`egrid(:)`) are allowed inside the
+  library, where a routine works on a section or a size its caller
+  holds; the entry points keep explicit shapes (above).
+- Local allocatables are freed when the routine returns, on every
+  return; an explicit `deallocate` frees an array early or before it is
+  allocated again, and one at the end, where a routine has it, names
+  every local allocatable (rule 7).
 - The array limits of `constants_m` (`mxprj`, `mxl`, `mxstate`, ...) are
   used from it, never passed as arguments.
+
+**Procedures.**
+
+- A function returns its value and nothing else: it changes none of its
+  arguments and cannot fail. A procedure that changes an argument, or
+  takes `ifail`, is a subroutine. The exception is the evaluations of
+  `modcore_budget_m`'s search, functions of one variable for
+  `root_brent` and `root_fmin` that update the work arrays of the
+  search's `budget_t`.
+- A function of one variable passed to `root_brent` that can fail sets
+  its host's `ifail` and returns 0, which ends the search at once; the
+  host tests `ifail` after the call (`confine_ws_m`).
+- A switch is a `logical` (`add_core` of `vout`); integer codes are for
+  choices of more than two (`irel`, `iexc`, `icmod`).
+- Optional arguments come before `iout,ifail`, which the calls then pass
+  by keyword (`renorm_r(...,cnorm,rnorm=rm,iout=iout,ifail=ifail)`).
+- Roots are found by Brent's method, `root_brent` (`root_m`), or
+  `lm_root` and `ug_root` on a mesh; a hand-written search or Newton
+  polish stops at `root_tol` (`root_m`), four rounding units of the root
+  (or of the function's scale) plus an absolute part for a root near 0.
+- The index of the mesh point at or below a radius is `lm_index`, its
+  position in units of the step `lm_position` (`logmesh_m`).
 
 **Names.**
 
@@ -260,6 +293,7 @@ looks like this:
 | `pieces_m` | `pw_` |
 | `projbasis_m` | `pb_` |
 | `quad_m` | `quad_` |
+| `root_m` | `root_` |
 | `sbf_m` | `sbf_` |
 | `sbf_q_m` | `sbfq_` |
 | `sr_flux_m` | `sr_` |
@@ -389,8 +423,9 @@ continuing inside a string, which would copy the indentation into the
 message.
 
 5) Fail with `ifail=1` and `return`, `ifail` being the routine's last
-argument (0 on success). Only the programs, the command line and
-`oncvpsp_main` stop, with `error stop 1`, not `stop`, so that the exit
+argument (0 on success), also when the failure is a callee's: a library
+routine passes `ifail` on and does not stop. Only the programs, the
+command line and `oncvpsp_main` stop, with `error stop 1`, not `stop`, so that the exit
 status is non-zero and scripts and CTest see the failure. A check of a
 condition the code has just established, or that `check_data` has already
 validated, is a bug if it fails: it stays `error stop 1`, with its message

@@ -141,28 +141,7 @@
 &          well_norm=>inp%well_norm, &
 &          ecut_weight=>inp%ecut_weight)
 
-! the defaults of read_input_text
-   nproj(:) = 0
-   fcfact = 0.0d0
-   rcfact = 0.0d0
-   slack = 1.0d0
-   budget_cutoff = 0
-   rc(:) = 0.0d0
-   ep(:, :) = 0.0d0
-   rxpsh = -1.0d0  ! negative value for auto setting of radius
-   fcfact_min = 1.5d0
-   fcfact_max = 6.0d0
-   fcfact_step = 0.5d0
-   rcfact_min = 1.0d0
-   rcfact_max = 1.9d0
-   rcfact_step = 0.1d0
-   ncnf = 0
-   amesh = -1.0d0  ! negative values for the built-in mesh
-   rr1 = -1.0d0
-   rmax = -1.0d0
-   atsym = ' '
-   psfile = ' '
-
+! the values not read keep the defaults of input_t
    call toml_load(table, unit, error=error)
    if(allocated(error)) then
      call input_error('cannot parse the input: '//error%message, iout, ifail)
@@ -326,7 +305,6 @@
    call get_real_array(child, 'vkb_projectors', 'debl', lmax + 1, debl, &
 &        iout, ifail)
    if(ifail /= 0) return
-   well_n(:) = 0
    if(child%has_key('well_n')) then
      call get_int_array(child, 'vkb_projectors', 'well_n', lmax + 1, well_n, &
 &          iout, ifail)
@@ -337,7 +315,6 @@
        if(ifail /= 0) return
      end if
    end if
-   ecut_weight(:) = -1.0d0
    if(child%has_key('ecut_weight')) then
      call get_real_array(child, 'vkb_projectors', 'ecut_weight', lmax + 1, &
 &                        ecut_weight, iout, ifail)

@@ -78,19 +78,19 @@
    dvxc(:,kk)=0.0d0
 
    rhot(:)=rhotot(:)-2.0d0*hh*rho(:,kk)
-   call vout(1,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,iexc,c_light)
+   call vout(.true.,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,iexc,c_light)
    dvxc(:,kk)=dvxc(:,kk)+( 2.0d0/(24.0d0*hh))*vxct(:)
 
    rhot(:)=rhotot(:)     -hh*rho(:,kk)
-   call vout(1,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,iexc,c_light)
+   call vout(.true.,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,iexc,c_light)
    dvxc(:,kk)=dvxc(:,kk)+(-16.0d0/(24.0d0*hh))*vxct(:)
 
    rhot(:)=rhotot(:)     +hh*rho(:,kk)
-   call vout(1,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,iexc,c_light)
+   call vout(.true.,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,iexc,c_light)
    dvxc(:,kk)=dvxc(:,kk)+( 16.0d0/(24.0d0*hh))*vxct(:)
 
    rhot(:)=rhotot(:)+2.0d0*hh*rho(:,kk)
-   call vout(1,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,iexc,c_light)
+   call vout(.true.,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,iexc,c_light)
    dvxc(:,kk)=dvxc(:,kk)+(-2.0d0/(24.0d0*hh))*vxct(:)
 
  end do !kk

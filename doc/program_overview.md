@@ -516,6 +516,29 @@ depends on an input keeps its node count and scales its nodes, or
 keeps its spacing and gains nodes only where the integrand is
 negligible (eresid's r grid at its end, its q grid at q = 0).
 
+**Fourier-Bessel transforms.** One convention throughout, q in
+bohr^-1: the transform of a radial function f of angular momentum l is
+F(q) = int_0^inf r^2 f(r) j_l(qr) dr, with no prefactor, and its inverse
+f(r) = (2/pi) int_0^inf q^2 F(q) j_l(qr) dq. eresid's ps(q) is that of
+the pseudo-wave function psi = u/r, written int (r psi)(r j_l) dr, and
+its residual kinetic energy above q is (1/pi) int_q q'^4 |ps(q')|^2 dq'
+(Ha, the q'^2/2 of a plane wave times the 2/pi of the inverse);
+modcore_budget's n(k) is that of the core density, and its band-limited
+density (2/pi) int_0^q k^2 n(k) j_0(kr) dk. vloc_cutoff's V(q) is the
+three-dimensional transform, 4 pi times this one with l = 0, so that
+the Coulomb tail is -4 pi zion/q^2. The j_l themselves come from
+`sbf_m` in double precision (`sbf_values`, `sbf_trig`,
+`sbf_trig_rising`, `sbf_rc_der`) and from `sbf_q_m` in quad
+(`sbfq_values`, normalized by sum (2l+1) j_l^2 = 1 like `sbf_values`).
+
+**Mesh ends and signs.** A solver integrates to its last point `mlast`
+and sets u and its derivative to zero beyond it; `mch` is the point
+where the outward and inward integrations meet. A bound state is
+positive at `mch` and in its tail beyond, a projector positive at its
+peak
+(`pb_sign_at_peak`); both signs are physically irrelevant, and only the
+kernel |beta> D <beta| and V_loc are compared between runs.
+
 **Pieces (pieces_m).** A function built from pieces (pseudo inside a
 radius, all-electron outside) is held as a piecewise_t: its segments'
 bounds, and for each segment its piece on the whole mesh, a smooth
@@ -548,8 +571,8 @@ pseudopotential's, not the numerics'.
 
 **Roots and optima.** Bracketed on the mesh or a grid, which only picks
 the bracket, then solved to round-off on the interpolant by Brent's
-method (`lm_root`, `ug_brent`), Newton's or Illinois where a derivative
-is at hand: the crossover r*, r_s, the well width, the qroots wave
+method (`lm_root`, `root_brent`), Newton's or Illinois where a derivative
+is at hand, each stopping at `root_tol` (`root_m`): the crossover r*, r_s, the well width, the qroots wave
 vectors, the norm constraint of optimize, the icmod 4 minimum, the Ecut
 crossings, the Coulomb-tail radius. The result is as smooth as the
 function, except where the bracket itself changes (a new crossing, a

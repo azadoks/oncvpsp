@@ -26,7 +26,7 @@
  contains
 
  subroutine run_diag(lmax,npa,epa,wellprj,lloc,rc,vlocpw,vkbpw,evkb,nproj,rr, &
-&                    vfull,vp,zz,mmax,irel,c_light,nkap,iso,vsrpw,esr, &
+&                    vfull,vp,zz,mmax,irel,c_light,nkap,so_split,vsrpw,esr, &
 &                    vsopw,eso,iout,ifail)
 
 !! diagnostics for semi-local and Vanderbilt-Kleinman-bylander pseudopotentials
@@ -37,7 +37,7 @@
 !! so every number is a smooth function of the radii.
 !! Should test as essentially exact for non-relativitic calculations
 !! Error for relativistic is B matrix Hermiticity error
-!! With iso=1 (fully relativistic) the projectors of each J are instead
+!! With so_split (fully relativistic) the projectors of each J are instead
 !! the scalar-relativistic ones and the spin-orbit ones times <L dot S>
 !! (sr_so_r)
 !!
@@ -63,14 +63,15 @@
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param nkap  number of kappas per l: 1, or 2 for irel=2
-!! @param iso  0 the projectors vkbpw, evkb; 1 those of vsrpw..eso
+!! @param so_split  whether the projectors are those of vsrpw..eso, not
+!!                  vkbpw, evkb
 !! @param vsrpw  normalized scalar-relativistic projectors, as functions of
-!!               pieces (iso=1)
-!! @param esr  energy coefficients of vsr (iso=1)
+!!               pieces (so_split)
+!! @param esr  energy coefficients of vsr (so_split)
 !! @param vsopw  normalized spin-orbit projectors, as functions of pieces
-!!               (iso=1)
+!!               (so_split)
 !! @param eso  energy coefficients of vso (multiplied by <L dot S> here;
-!!             iso=1)
+!!             so_split)
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
@@ -89,7 +90,8 @@
  use scatterstate_m, only: scatterstate
 
 !Input variables
- integer, intent(in) :: lmax,lloc,mmax,irel,nkap,iso
+ integer, intent(in) :: lmax,lloc,mmax,irel,nkap
+ logical, intent(in) :: so_split
  real(dp), intent(in) :: c_light
  integer, intent(in) :: npa(mxprj,mxlin+1),nproj(mxlin+1)
  real(dp), intent(in) :: zz,rc(mxlin+1)
@@ -106,7 +108,7 @@
 
 !Local variables
  integer :: ll,l1,ikap,kap,mkap,ierr,mch,mchf,nvkbt
- integer :: iprj,nnae,nnp,npr
+ integer :: iprj,nnae,nnp,npr,neig
  real(dp) :: emax,emin,etest,umch,upmch,uldf,gam,gpr,cnorm
  real(dp) :: rm,fss,uq,upq
  real(dp), allocatable :: uu(:),up(:),ur(:,:),urp(:,:)
@@ -124,7 +126,7 @@
 
 ! loop for diagnostic output using Vanderbilt Kleinman-Bylander projectors
 !
- if(iso==1) then
+ if(so_split) then
    name='run_diag_sr_so_r'
    write(iout,'(/a/a)') &
 & 'Diagnostic tests using Vanderbilt-Kleinman-Bylander pseudopotentials',&
@@ -195,10 +197,12 @@
        end if
        cnorm=1.0d0
        if(irel==2 .and. wellprj(iprj,l1)) then
-         call renorm_r(ur,rr,ll,kap,c_light,zz,mmax,cnorm,iout,ifail,rnorm=rm)
+         call renorm_r(ur,rr,ll,kap,c_light,zz,mmax,cnorm,rnorm=rm, &
+&                       iout=iout,ifail=ifail)
          if(ifail/=0) return
        else if(irel==2) then
-         call renorm_r(ur,rr,ll,kap,c_light,zz,mmax,cnorm,iout,ifail)
+         call renorm_r(ur,rr,ll,kap,c_light,zz,mmax,cnorm, &
+&                       iout=iout,ifail=ifail)
          if(ifail/=0) return
        else if(wellprj(iprj,l1)) then
 !   a scattering state normalized to rm, as the pseudo-wave function
@@ -242,9 +246,11 @@
 !     pseudo-wave function may have a node that entered at r = 0 without
 !     an eigenvalue passing (outwf_index)
 
-         nnp=ll+1+outwf_index_at(ll,rr,mmax,vp(1,lloc+1,ikap),vlocpw,nvkbt, &
-&            vkbtpw(1:nvkbt),evkbt(1:nvkbt),epa(iprj,l1,ikap),mchf,iout,ifail)
+         call outwf_index_at(ll,rr,mmax,vp(1,lloc+1,ikap),vlocpw,nvkbt, &
+&             vkbtpw(1:nvkbt),evkbt(1:nvkbt),epa(iprj,l1,ikap),mchf,neig, &
+&             iout,ifail)
          if(ifail/=0) return
+         nnp=ll+1+neig
          call lschvkbbe(nnp,ll,nvkbt,ierr,etest,uldf,emin,emax, &
 &                       rr,vp(1,lloc+1,ikap),vlocpw,vkbtpw(1:nvkbt),evkbt, &
 &                       uu,up,mmax,mchf,rm,iout,ifail)
@@ -283,7 +289,7 @@
 
  subroutine assemble_projectors(ll,l1,ikap,npr,nvkbt)
 !! the nvkbt projectors vkbtpw, evkbt of l and ikap: the npr of vkbpw,
-!! evkb, or with iso=1 the scalar-relativistic ones and the spin-orbit
+!! evkb, or with so_split the scalar-relativistic ones and the spin-orbit
 !! ones times <L dot S>
 !!
 !! @param ll  angular momentum
@@ -296,7 +302,7 @@
  real(dp) :: fso
  integer :: ii
  evkbt(:)=0.0d0
- if(iso==0) then
+ if(.not. so_split) then
    nvkbt=npr
    do ii=1,npr
      vkbtpw(ii)=vkbpw(ii,l1,ikap)

@@ -47,7 +47,7 @@
  implicit none
  private
  public :: lm_blend, lm_interp, lm_derivs, lm_cumint, lm_integral, lm_root
- public :: lm_step
+ public :: lm_step, lm_position, lm_index
  public :: lm_integral_weights, lm_head, lm_origin
  public :: lm_ncell, lm_cell_weights, lm_fh_value, lm_fh_weights, lm_fh_reach
 
@@ -106,7 +106,7 @@
 !Local variables
  real(dp) :: tt
 
- tt=mesh_position(rr,mmax,rq)
+ tt=lm_position(rr,mmax,rq)
  fq=fh_value(ff,mmax,tt,node_index(rr,mmax,rq,tt))
  return
  end subroutine lm_interp
@@ -145,7 +145,7 @@
 &   0.0d0,  0.0d0,  0.0d0,  1.0d0],[4,4])
 
  hh=lm_step(rr,mmax)
- tt=mesh_position(rr,mmax,rq)
+ tt=lm_position(rr,mmax,rq)
  inode=node_index(rr,mmax,rq,tt)
 
 ! d^k f/dx^k on the nodes the interpolant reaches (fh_value), interpolated
@@ -284,7 +284,7 @@
 ! mesh
  nlim=mmax
  if(max(ra,rb)>rr(1)) then
-   nlim=min(mmax,floor(mesh_position(rr,mmax,max(ra,rb))) + 2 &
+   nlim=min(mmax,floor(lm_position(rr,mmax,max(ra,rb))) + 2 &
 &       + lm_fh_reach() + lm_blend)
  end if
  allocate(cum(nlim))
@@ -313,7 +313,7 @@
  else if(rq<rr(1)) then
    cum_at=cum(1)*(rq/rr(1))**(mm+1)
  else
-   tt=mesh_position(rr,mmax,rq)
+   tt=lm_position(rr,mmax,rq)
    cum_at=fh_value(cum,nlim,tt,node_index(rr,mmax,rq,tt))
  end if
  return
@@ -357,7 +357,7 @@
 
 ! the interpolant's weights on the cumulative integral at rb, cut as in
 ! lm_integral
- tt=mesh_position(rr,mmax,rb)
+ tt=lm_position(rr,mmax,rb)
  nlim=min(mmax,floor(tt) + 2 + lm_fh_reach() + lm_blend)
  inode=node_index(rr,mmax,rb,tt)
  if(inode>0) then
@@ -393,6 +393,7 @@
 
 !! root, between ra and rb, of the interpolant (lm_interp) of a function
 !! given on the log mesh, converged to round-off by Brent's method in ln(r)
+!! (root_brent)
 !!
 !! @param rr  log radial mesh (bohr)
 !! @param ff  function on the mesh
@@ -403,6 +404,8 @@
 !! @param ierr  0, or 1 if the interpolant has the same sign at ra and rb
 !!              (the iteration limit is an error)
 
+ use root_m, only: root_brent
+
 !Input variables
  integer, intent(in) :: mmax
  real(dp), intent(in) :: rr(mmax),ff(mmax),ra,rb
@@ -412,88 +415,24 @@
  integer, intent(out) :: ierr
 
 !Local variables
- real(dp) :: xa,xb,xc,fa,fb,fc,de,dlast,tol1,xm,pp,qq,rs,ss
- integer :: iter
+ real(dp) :: xq,fq,fends(2)
+ logical :: converged
 
- xa=log(ra)
- xb=log(rb)
- fa=value_at(xa)
- fb=value_at(xb)
- ierr=0
- rq=ra
- if(fa==0.0d0) return
- rq=rb
- if(fb==0.0d0) return
- if(sign(1.0d0,fa)==sign(1.0d0,fb)) then
-   ierr=1
-   return
- end if
-
-! Brent (zeroin) with no tolerance of its own: it stops when the bracket
-! is a few rounding units of ln(r) wide
- xc=xa
- fc=fa
- de=xb-xa
- dlast=de
- do iter=1,200
-   if(sign(1.0d0,fb)==sign(1.0d0,fc)) then
-     xc=xa
-     fc=fa
-     de=xb-xa
-     dlast=de
-   end if
-   if(abs(fc)<abs(fb)) then
-     xa=xb
-     xb=xc
-     xc=xa
-     fa=fb
-     fb=fc
-     fc=fa
-   end if
-   tol1=epsilon(1.0d0)*(2.0d0*abs(xb)+1.0d-3)
-   xm=0.5d0*(xc-xb)
-   if(abs(xm)<=tol1 .or. fb==0.0d0) exit
-   if(abs(dlast)>=tol1 .and. abs(fa)>abs(fb)) then
-! inverse quadratic interpolation, or the secant
-     ss=fb/fa
-     if(xa==xc) then
-       pp=2.0d0*xm*ss
-       qq=1.0d0-ss
-     else
-       qq=fa/fc
-       rs=fb/fc
-       pp=ss*(2.0d0*xm*qq*(qq-rs)-(xb-xa)*(rs-1.0d0))
-       qq=(qq-1.0d0)*(rs-1.0d0)*(ss-1.0d0)
-     end if
-     if(pp>0.0d0) qq=-qq
-     pp=abs(pp)
-     if(2.0d0*pp<min(3.0d0*xm*qq-abs(tol1*qq),abs(dlast*qq))) then
-       dlast=de
-       de=pp/qq
-     else
-       de=xm
-       dlast=de
-     end if
-   else
-! bisection
-     de=xm
-     dlast=de
-   end if
-   xa=xb
-   fa=fb
-   if(abs(de)>tol1) then
-     xb=xb+de
-   else
-     xb=xb+sign(tol1,xm)
-   end if
-   fb=value_at(xb)
- end do
- if(iter>200) then
+ call root_brent(value_at,log(ra),log(rb),xq,ierr,fq=fq,fends=fends, &
+&                converged=converged)
+ if(.not. converged) then
    write(error_unit,'(/a,es12.4,a,es12.4)') &
-&       'lm_root: ERROR not converged in 200 steps, r=',exp(xb),', f=',fb
+&       'lm_root: ERROR not converged in 200 steps, r=',exp(xq),', f=',fq
    error stop 1
  end if
- rq=exp(xb)
+! a root at an end of the bracket is that end, not exp(log) of it
+ if(fends(1)==0.0d0) then
+   rq=ra
+ else if(fends(2)==0.0d0) then
+   rq=rb
+ else
+   rq=exp(xq)
+ end if
  return
 
  contains
@@ -511,7 +450,7 @@
  real(dp) :: rx,tt
 
  rx=exp(xx)
- tt=mesh_position(rr,mmax,rx)
+ tt=lm_position(rr,mmax,rx)
  value_at=fh_value(ff,mmax,tt,node_index(rr,mmax,rx,tt))
  return
  end function value_at
@@ -624,10 +563,10 @@
  return
  end function lm_step
 
- real(dp) function mesh_position(rr,mmax,rq)
+ real(dp) function lm_position(rr,mmax,rq)
 
 !! position of rq on the mesh in units of the step, 0 at rr(1):
-!! (ln(rq)-ln(rr(1)))/al
+!! (ln(rq)-ln(rr(1)))/al, al=lm_step
 !!
 !! @param rr  log radial mesh (bohr)
 !! @param mmax  size of the log radial mesh
@@ -637,9 +576,41 @@
  integer, intent(in) :: mmax
  real(dp), intent(in) :: rr(mmax),rq
 
- mesh_position=log(rq/rr(1))/lm_step(rr,mmax)
+ lm_position=log(rq/rr(1))/lm_step(rr,mmax)
  return
- end function mesh_position
+ end function lm_position
+
+ integer function lm_index(rr,mmax,rq)
+
+!! the index of the last mesh point at or below rq: rr(i)<=rq<rr(i+1),
+!! exactly (the closed form from lm_position, corrected by one where it
+!! rounds the wrong way at a node); 1 below rr(2), mmax from rr(mmax) on
+!!
+!! @param rr  log radial mesh (bohr)
+!! @param mmax  size of the log radial mesh
+!! @param rq  radius (bohr)
+
+!Input variables
+ integer, intent(in) :: mmax
+ real(dp), intent(in) :: rr(mmax),rq
+
+!Local variables
+ integer :: ii
+
+ if(rq<rr(2)) then
+   lm_index=1
+   return
+ end if
+ if(rq>=rr(mmax)) then
+   lm_index=mmax
+   return
+ end if
+ ii=min(max(int(lm_position(rr,mmax,rq))+1,2),mmax-1)
+ if(rr(ii+1)<=rq) ii=ii+1
+ if(rr(ii)>rq) ii=ii-1
+ lm_index=ii
+ return
+ end function lm_index
 
  integer function node_index(rr,mmax,rq,tt)
 
@@ -648,7 +619,7 @@
 !! @param rr  log radial mesh (bohr)
 !! @param mmax  size of the log radial mesh
 !! @param rq  radius (bohr)
-!! @param tt  its mesh position (mesh_position)
+!! @param tt  its mesh position (lm_position)
 
 !Input variables
  integer, intent(in) :: mmax

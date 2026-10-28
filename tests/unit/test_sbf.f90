@@ -1,5 +1,5 @@
 ! Unit tests of the double-precision spherical Bessel functions (sbf_m,
-! sbf8; Q-10 of doc/smoothness_plan.md), written before the code. Errors
+! sbf_values; Q-10 of doc/smoothness_plan.md), written before the code. Errors
 ! are against the quad-precision sbfq_values, relative to the envelope
 ! sqrt(j_l**2 + j_(l+1)**2) (no zero of j_l is a zero of j_(l+1), so it
 ! is |j_l| at small x and the amplitude 1/x at large x; at x=0, where
@@ -14,7 +14,7 @@
 !               depend on them
 !   rising      sbf_trig_rising, r*j_l(q*r) on the same points as radii
 !               with q=1, within 1e-15
-!   sbf8        every order sbf8 returns, for nm=1..8, within
+!   sbf_values        every order sbf_values returns, for nm=1..8, within
 !               eps*max(10, x), and none left unset (the array is filled
 !               with a NaN first): the downward recurrence of nm>=5 gains
 !               about 0.6 eps of round-off at each of the x oscillatory
@@ -26,9 +26,8 @@
  use unit_check_m, only: check, check_done
  use, intrinsic :: ieee_arithmetic, only: ieee_value, ieee_quiet_nan, &
 &  ieee_is_finite
- use sbf_m, only: sbf_trig, sbf_trig_rising
+ use sbf_m, only: sbf_trig, sbf_trig_rising, sbf_values
  use sbf_q_m, only: sbfq_values
- use sbf8_m, only: sbf8
  implicit none
 
 !Local variables
@@ -83,13 +82,13 @@
  end do
  call check('rising', err, 1.0e-15_dp)
 
-! sbf8
+! sbf_values
  err = 0.0_dp
  nunset = 0
  do nm = 1, lmax + 1
    do ii = 1, npt
      sb(:) = ieee_value(1.0_dp, ieee_quiet_nan)
-     call sbf8(nm, xs(ii), sb)
+     call sbf_values(nm, xs(ii), sb)
      do ll = 0, nm - 1
        if(.not. ieee_is_finite(sb(ll + 1))) then
          nunset = nunset + 1
@@ -100,8 +99,8 @@
      end do
    end do
  end do
- call check('sbf8', err, epsilon(1.0_dp))
- call check('sbf8 orders unset', dble(nunset), 0.0_dp)
+ call check('sbf_values', err, epsilon(1.0_dp))
+ call check('sbf_values orders unset', dble(nunset), 0.0_dp)
 
  call check_done('sbf')
 

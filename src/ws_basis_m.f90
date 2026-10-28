@@ -105,7 +105,7 @@
 !! @param qq  the roots (output)
 
  use sbf_m, only: sbf_trig
- use ugrid_m, only: ug_brent
+ use root_m, only: root_brent
 
 !Input variables
  integer, intent(in) :: ll,iedge
@@ -134,9 +134,10 @@
    xb=xa+dxroot
    fb=gg(xb)
    if(sign(1.0d0,fa)/=sign(1.0d0,fb)) then
-     call ug_brent(gg,xa,xb,xr,ierr)
+     call root_brent(gg,xa,xb,xr,ierr)
      if(ierr/=0) then
-       write(error_unit,'(/a,i0)') 'ws_roots: ERROR ug_brent failed, ierr=',ierr
+       write(error_unit,'(/a,i0)') &
+&           'ws_roots: ERROR root_brent failed, ierr=',ierr
        error stop 1
      end if
      if(xr<=xmax) then

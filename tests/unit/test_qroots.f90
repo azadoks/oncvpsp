@@ -29,7 +29,7 @@
  use, intrinsic :: iso_fortran_env, only: stderr => error_unit
  use unit_check_m, only: check, check_done
  use qroots_m, only: qroots
- use sbf_rc_der_m, only: sbf_rc_der
+ use sbf_m, only: sbf_rc_der
  implicit none
  integer, parameter :: iout=6
 

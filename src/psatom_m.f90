@@ -175,7 +175,7 @@
 ! which shouldn''t be a bad approximation for a starting screened
 ! potential
 
- call vout(1,rho,rhoc,vi,vxc,zval,eeel,eexc,rr,mmax,iexc,c_light)
+ call vout(.true.,rho,rhoc,vi,vxc,zval,eeel,eexc,rr,mmax,iexc,c_light)
 
 
 ! big self  self-consietency loop
@@ -264,7 +264,7 @@
    end do
 
 ! output potential
-   call vout(1,rho,rhoc,vo,vxc,zval,eeel,eexc,rr,mmax,iexc,c_light)
+   call vout(.true.,rho,rhoc,vo,vxc,zval,eeel,eexc,rr,mmax,iexc,c_light)
 
 ! converged when no eigenvalue has moved by more than tolscf and the
 ! screening potential is self-consistent to tolscf, or its residual has
@@ -309,7 +309,7 @@
 
 ! output potential for e-e interactions
 
- call vout(1,rho,rhoc,vo,vxc,zval,eeel,eexc, &
+ call vout(.true.,rho,rhoc,vo,vxc,zval,eeel,eexc, &
 &          rr,mmax,iexc,c_light)
 
  etot =  eeig + eexc - 0.5d0*eeel

@@ -246,15 +246,18 @@
    de=descan
  end if
 
- if(sphere) call confine_sphere(pf,irel,c_light,zz,mmax,rr,vfull,nc,na,la, &
-&                               chan,nq,rq(1:nq),emin,emax,de,ecutmax,table, &
-&                               sm,iout)
+ if(sphere) then
+   call confine_sphere(pf,irel,c_light,zz,mmax,rr,vfull,nc,na,la,chan,nq, &
+&                      rq(1:nq),emin,emax,de,ecutmax,table,sm,iout,ifail)
+   if(ifail/=0) error stop 1
+ end if
 
 !the atom in walls: k=0 the free atom
  if(nk>0) then
    if(.not. given_r0) r0=rcmax
    call confine_walls(pf,irel,c_light,zz,mmax,rr,vfull,nc,nv,iexc,na,la,fa,ea, &
-&                     nk,kwall(0:nk),r0,sm,iout)
+&                     nk,kwall(0:nk),r0,sm,iout,ifail)
+   if(ifail/=0) error stop 1
  end if
 
  call write_confine_summary(sm,iout)

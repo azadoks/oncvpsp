@@ -339,7 +339,7 @@ relative and near round-off: 1e-13 for eigenvalues; the SCF loops test
 both eigenvalues and the potential residual explicitly. An iteration
 that ends on its iteration limit is an error, not a result (C-6; the
 qroots skip is gone, see Q-5; the other limits of audit C-15 since
-2026-10-27: `lm_root`, `ug_brent` where the caller does not take
+2026-10-27: `lm_root`, `root_brent` (then `ug_brent`) where the caller does not take
 `converged`, the box state's bracket and bisection, the
 scalar-relativistic origin series, the phase shifts' halving depth and
 icmod 4's Nelder-Mead, which warned).

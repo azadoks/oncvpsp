@@ -25,7 +25,7 @@
 
  contains
 
- subroutine renorm_r(uu,rr,ll,kap,c_light,zz,mmax,cnorm,iout,ifail,rnorm)
+ subroutine renorm_r(uu,rr,ll,kap,c_light,zz,mmax,cnorm,rnorm,iout,ifail)
 
 !! renormalize Dirac wave function so that large component is normalized
 !!
@@ -37,11 +37,11 @@
 !! @param zz  atomic number
 !! @param mmax  size of the log radial mesh
 !! @param cnorm  renormalization coefficient
-!! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
 !! @param rnorm  the radius the large component is normalized to (a
 !!               scattering state's matching radius); absent, its last
 !!               nonzero point
+!! @param iout  unit of the text output
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
  use quad_m, only: quad_log_norm, quad_log_norm_to

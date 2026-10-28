@@ -88,12 +88,12 @@
 
 ! V_H[n_c], its charge fixed at the end of the mesh to zz-zion so that
 ! -Z/r + V_H[n_c] is -zion/r there
- call vout(0,rhoc,rhoc,vt,vxct,zz-zion,eeel,eexc,rr,mmax,iexc,c_light)
+ call vout(.false.,rhoc,rhoc,vt,vxct,zz-zion,eeel,eexc,rr,mmax,iexc,c_light)
  vion(:)=-zz/rr(:)+vt(:)-vxct(:)
 
- call vout(1,rhotae,rhoc,vt,vxct,zion,eeel,eexc,rr,mmax,iexc,c_light)
+ call vout(.true.,rhotae,rhoc,vt,vxct,zion,eeel,eexc,rr,mmax,iexc,c_light)
  vion(:)=vion(:)+vxct(:)
- call vout(1,rhotae,rhomod,vt,vxct,zion,eeel,eexc,rr,mmax,iexc,c_light)
+ call vout(.true.,rhotae,rhomod,vt,vxct,zion,eeel,eexc,rr,mmax,iexc,c_light)
  vion(:)=vion(:)-vxct(:)
 
  deallocate(vt,vxct)
@@ -355,7 +355,7 @@
    call ionic_valence(nkap,nc,nv,la,fa,ea,lloc,nproj,rr,vp,vlocpw,vkbpw, &
 &                     evkb,mmax,rho,rhops,uupsa,eeig,iout,ifail)
    if(ifail/=0) return
-   call vout(1,rho,rhomod,vo,vxc,zval,eeel,eexc,rr,mmax,iexc,c_light)
+   call vout(.true.,rho,rhomod,vo,vxc,zval,eeel,eexc,rr,mmax,iexc,c_light)
 ! change of the local potential where the valence electrons are; once it
 ! is below tolfix, vp is kept as the potential whose states rho, eeig and
 ! (through rho) vo are, so that the pseudo-atom SCF of the reference

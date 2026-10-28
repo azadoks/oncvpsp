@@ -60,18 +60,18 @@
 !> of these alone
  type :: ae_entry_t
 !> 0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
-   integer :: irel
-   integer :: nkap  !< number of kappas per l: 1, or 2 for irel=2
-   integer :: nc  !< number of core states
-   integer :: ncv  !< number of core and valence states
-   integer :: mmax  !< size of the log radial mesh
-   integer :: iexc  !< exchange-correlation functional
-   integer :: it  !< aeatom's iteration count
-   real(dp) :: zz  !< atomic number
-   real(dp) :: etot  !< total energy (Ha)
+   integer :: irel=0
+   integer :: nkap=0  !< number of kappas per l: 1, or 2 for irel=2
+   integer :: nc=0  !< number of core states
+   integer :: ncv=0  !< number of core and valence states
+   integer :: mmax=0  !< size of the log radial mesh
+   integer :: iexc=0  !< exchange-correlation functional
+   integer :: it=0  !< aeatom's iteration count
+   real(dp) :: zz=0.0d0  !< atomic number
+   real(dp) :: etot=0.0d0  !< total energy (Ha)
 !> kinetic, electron-nucleus, Hartree and exchange-correlation energies (Ha)
-   real(dp) :: eterm(4)
-   real(dp) :: res  !< residual of the screening potential (ae_residual)
+   real(dp) :: eterm(4)=0.0d0
+   real(dp) :: res=0.0d0  !< residual of the screening potential (ae_residual)
    integer, allocatable :: na(:)  !< principal quantum numbers (ncv)
    integer, allocatable :: la(:)  !< angular momenta (ncv)
    real(dp), allocatable :: fa(:)  !< occupancies (ncv)

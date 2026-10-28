@@ -32,7 +32,7 @@
  contains
 
  subroutine confine_walls(pf,irel,c_light,zz,mmax,rr,vfull,nc,nv,iexc,na,la, &
-&                         fa,ea,nk,kwall,r0,sm,iout)
+&                         fa,ea,nk,kwall,r0,sm,iout,ifail)
 !! the wall lines of the strengths kwall(1:nk) beyond r0, kwall(0)=0 the
 !! free atom, and the walls' part of the summary
 !!
@@ -57,6 +57,7 @@
 !! @param r0  onset radius of the walls (bohr)
 !! @param sm  the summary; nwfail and sdde set
 !! @param iout  unit of the text output
+!! @param ifail  0, or 1 after a failure, whose message is written
  use aeatom_m, only: aeatom
  use psatom_m, only: psatom
  use confine_summary_m, only: confine_summary_t
@@ -75,6 +76,9 @@
  real(dp), intent(inout) :: kwall(0:nk)
  type(confine_summary_t), intent(inout) :: sm
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
  integer :: na_ps(mxstate),la_ps(mxstate),nprj(mxlin+1)
  integer :: ik,ii,ierrae,ierrps,itae,itps,nkap
@@ -83,8 +87,8 @@
  real(dp) :: ea_ps(mxstate,mxkap)
  real(dp), allocatable :: vext(:),rhoc(:),rhoa(:),vi(:),rhops(:)
  real(dp), allocatable :: eigae(:,:,:),eigps(:,:,:)
- integer :: ifail
 
+ ifail=0
  kwall(0)=0.0d0
  nkap=pf%pot%nkap
  allocate(vext(mmax),rhoc(mmax),rhoa(mmax),vi(mmax),rhops(mmax))
@@ -123,7 +127,7 @@
    call aeatom(irel,c_light,nkap,na,la,eaw(:,1:nkap),fa,rpk(:,1:nkap),nc, &
 &              nc+nv,itae,rhoc,rhoa,rr,vi,zz,mmax,iexc,etae(ik),eterm,res, &
 &              ierrae,vext,.true.,iout,ifail)
-   if(ifail/=0) error stop 1
+   if(ifail/=0) return
    eigae(:,:,ik)=eaw(:,:)
    if(ik==0 .or. ierrps/=0) then
      rhops(:)=pf%pot%rho(:)
@@ -134,13 +138,14 @@
 &              rhops,rr,pf%pot%rcmax,mmax,iexc,c_light,etps(ik),nprj, &
 &              pf%pot%vpuns,pf%pot%lloc,pf%pot%vlocpw,pf%pot%vkbpw(:,:, &
 &              1:nkap),pf%pot%evkb(:,:,1:nkap),ierrps,nkap,vext,iout,ifail)
-   if(ifail/=0) error stop 1
+   if(ifail/=0) return
    eigps(1:nv,:,ik)=ea_ps(1:nv,:)
    if(ierrae/=0) write(iout,'(a,1p,e24.16,a)') 'wall_failed',kwall(ik),' ae'
    if(ierrps/=0) write(iout,'(a,1p,e24.16,a)') 'wall_failed',kwall(ik),' ps'
    if(ik==0 .and. (ierrae/=0 .or. ierrps/=0)) then
      write(iout,'(/a)') 'confine_walls: ERROR the free atom failed'
-     error stop 1
+     ifail=1
+     return
    end if
    if(ierrae/=0 .or. ierrps/=0) then
      sm%nwfail=sm%nwfail+1

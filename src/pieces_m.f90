@@ -143,7 +143,7 @@
  return
  end subroutine pw_set_form
 
- logical function pw_form_value(pw,kk,rq,fq)
+ subroutine pw_form_value(pw,kk,rq,fq,found)
 
 !! whether the piece of segment kk has a closed form, and if so its value
 !! at rq in fq
@@ -151,7 +151,8 @@
 !! @param pw  the piecewise function
 !! @param kk  the segment
 !! @param rq  radius, 0 or more (bohr)
-!! @param fq  the value, when the piece has a closed form
+!! @param fq  the value, when the piece has a closed form (0 otherwise)
+!! @param found  whether the piece has a closed form
 
 !Input variables
  type(piecewise_t), intent(in) :: pw
@@ -160,17 +161,18 @@
 
 !Output variables
  real(dp), intent(out) :: fq
+ logical, intent(out) :: found
 
 !Local variables
  real(dp) :: dd(5)
 
  fq=0.0d0
- pw_form_value=(kk>0 .and. kk==pw%iform)
- if(.not. pw_form_value) return
+ found=(kk>0 .and. kk==pw%iform)
+ if(.not. found) return
  call pw%form(pw%par,rq,dd)
  fq=dd(pw%icol)
  return
- end function pw_form_value
+ end subroutine pw_form_value
 
  subroutine pw_free(pw)
 
@@ -341,10 +343,12 @@
 
 !Local variables
  integer :: kk
+ logical :: found
 
  pw_value=0.0d0
  kk=pw_segment(pw,rq)
- if(pw_form_value(pw,kk,rq,pw_value)) return
+ call pw_form_value(pw,kk,rq,pw_value,found)
+ if(found) return
  if(kk>0) call lm_interp(rr,pw%vals(:,kk),mmax,rq,pw_value)
  return
  end function pw_value

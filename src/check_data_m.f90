@@ -351,8 +351,9 @@
    ierr=ierr+1
  else
    do jj=2,inp%ncnf+1
-     sf=0.0d0
-     do ii=1,inp%nc+inp%cnf(jj)%nv
+! the core states are the reference's, checked with it
+     sf=sum(inp%fa(1:inp%nc))
+     do ii=inp%nc+1,inp%nc+inp%cnf(jj)%nv
        sf=sf+inp%cnf(jj)%fa(ii)
        if(inp%cnf(jj)%la(ii)<0 .or. inp%cnf(jj)%la(ii)>3) then
          write(iout,'(a,a,i4,a,i4)') 'test_data: must have 0<= l <=3,', &

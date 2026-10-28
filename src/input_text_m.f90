@@ -89,29 +89,7 @@
 &          well_norm=>inp%well_norm, &
 &          ecut_weight=>inp%ecut_weight)
 
-   nproj(:) = 0
-   fcfact = 0.0d0
-   rcfact = 0.0d0
-   slack = 1.0d0
-   budget_cutoff = 0
-   rc(:) = 0.0d0
-   ep(:, :) = 0.0d0
-   rxpsh = -1.0d0  ! negative value for auto setting of radius
-! default values for icmod=4 optimization ranges
-! overridden by input values if given with icmod=4
-   fcfact_min = 1.5d0
-   fcfact_max = 6.0d0
-   fcfact_step = 0.5d0
-   rcfact_min = 1.0d0
-   rcfact_max = 1.9d0
-   rcfact_step = 0.1d0
-
-   amesh = -1.0d0  ! negative values for the built-in mesh
-   rr1 = -1.0d0
-   rmax = -1.0d0
-   c_light = -1.0d0  ! negative value for the default
-
-! read input data
+! the values not read keep the defaults of input_t
    inline = 0
 
 ! atom and reference configuration, and optionally the speed of light
@@ -209,8 +187,6 @@
 ! Vanderbilt-Kleinman-Bylander projectors: l, nproj, debl, and optionally
 ! well_n (0 for the default, at least 0) and ecut_weight (negative for the
 ! default)
-   well_n(:) = 0
-   ecut_weight(:) = -1.0d0
    do l1 = 1, lmax + 1
      call next_line(unit, line, inline, iout=iout, ifail=ifail)
      if(ifail /= 0) return

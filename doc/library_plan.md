@@ -27,7 +27,8 @@ modules.
   keep their command lines, messages and exit codes.
 - **No new `#if`.**
 - **Interfaces that C could call.** The dummies of the entry points (the
-  `bind(C)` routines and `oncvpsp_run`) are integer and `real(dp)`
+  `bind(C)` routines; `oncvpsp_run`, which takes derived types, is
+  wrapped behind a handle in phase 5) are integer and `real(dp)`
   scalars and explicit-shape arrays with their sizes passed in. This is
   what `bind(C)`, ctypes, cffi, f2py and Julia's `ccall` all handle without
   copies, so the internal routines are not switched to assumed shape (as
@@ -56,11 +57,11 @@ with it set, so the failure reaches `oncvpsp_main`, which ends with
 - Checks of conditions the code has just established, or that
   `check_data` has already validated, stay `error stop 1`: they are bugs,
   not failures, and returning from them would put `ifail` on every call of
-  the XC routines and of the uniform-grid quadratures. They are `vout`'s
-  `mode`, `exc_dispatch`'s `iexc`, `sbf_rc_der`'s and `sbfq_rc_der`'s
+  the XC routines and of the uniform-grid quadratures. They are
+  `exc_dispatch`'s `iexc`, `sbf_rc_der`'s and `sbfq_rc_der`'s
   `llin`, `vploc_fit`'s `lpopt`, the segments of `pw_alloc`,
   `pw_product_integral` and `outwf_setup`'s sources, `add_zero_r`'s sizes,
-  the `ug_*` node counts, grid positions, brackets and `ug_fmin`'s
+  the `ug_*` node counts, grid positions, brackets, `root_fmin`'s
   iterations, `diagout`'s bracket,
   `eresid`'s q grid, `gauss_legendre`'s Newton iterations, and
   `dirac_outward`'s series at the origin, which converges at any energy

@@ -111,6 +111,7 @@
 
 !Local variables
  integer :: ii,kk
+ logical :: found
 
  ifail=0
  call check_range(rr,mmax,rl,nrl,iout,ifail)
@@ -118,7 +119,8 @@
  do ii=1,nrl
    if(rl(ii)<rr(1)) cycle
    kk=pw_segment(pw,rl(ii))
-   if(pw_form_value(pw,kk,rl(ii),fl(ii))) cycle
+   call pw_form_value(pw,kk,rl(ii),fl(ii),found)
+   if(found) cycle
    if(kk>0) then
      call lm_interp(rr,pw%vals(:,kk),mmax,rl(ii),fl(ii))
    else
@@ -127,7 +129,8 @@
  end do
  kk=pw_segment(pw,rr(1))
  if(rl(1)<rr(1)) then
-   if(pw_form_value(pw,kk,0.0d0,fl(1))) return
+   call pw_form_value(pw,kk,0.0d0,fl(1),found)
+   if(found) return
  end if
  if(kk>0) then
    call origin(rr,pw%vals(:,kk),mmax,rl,fl,nrl,iout,ifail)

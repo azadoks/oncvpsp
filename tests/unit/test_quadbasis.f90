@@ -25,7 +25,7 @@
  use sbf_q_m, only: sbfq_values, sbfq_overlap, sbfq_rc_der
  use qlinalg_m, only: qjacobi
  use sbf_overlap_m, only: sbf_overlap
- use sbf_rc_der_m, only: sbf_rc_der
+ use sbf_m, only: sbf_rc_der
  implicit none
 
 !Local variables

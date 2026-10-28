@@ -45,7 +45,8 @@
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
- use sbf_rc_der_m, only: sbf_rc_der
+ use sbf_m, only: sbf_rc_der
+ use root_m, only: root_tol
 
 !Input variables
  integer, intent(in) :: ll,nroot
@@ -84,7 +85,7 @@
      glow=glast
      do jj=1,200
        qt=0.5d0*(qlow+qhi)
-       if(qhi-qlow<=4.0d0*spacing(qt)) exit
+       if(qhi-qlow<=root_tol(qt,0.0d0)) exit
        gt=gfun(qt)
        if(gt==0.0d0) exit
        if(gt*glow<0.0d0) then
@@ -158,8 +159,8 @@
    gg=ulgd*sbfd(1) - sbfd(2)
    dg=(ulgd*rc*sbfd(2) - sbfd(2) - rc*sbfd(3))/qp
    gscale=abs(ulgd*sbfd(1)) + abs(sbfd(2))
-   if(kk>1 .and. (abs(dq)*dgold<=8.0d0*epsilon(1.0d0)*gscale .or. &
-&                 abs(dq)<=4.0d0*spacing(qp))) return
+   if(kk>1 .and. (abs(dq)*dgold<=root_tol(gscale,0.0d0) .or. &
+&                 abs(dq)<=root_tol(qp,0.0d0))) return
    dq=-gg/dg
    dgold=abs(dg)
    qp=qp+dq

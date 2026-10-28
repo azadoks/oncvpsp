@@ -418,7 +418,8 @@
      sn=sn + rl*dr*rr(ii)**2
      sd=sd + dr*dr*rr(ii)**2
    end do
-   thl=sn/sd
+! residuals equal to the last bit (a converged step): no Anderson step
+   if(sd>0.0d0) thl=sn/sd
  end if
 
  do ii=1,mmax

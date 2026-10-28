@@ -319,22 +319,23 @@
  integer :: ii,kk,iq
 
  ifail=0
- psh(1,:)=0.5d0*doubled_angle(ps,epsh2,iout,ifail)
+ call doubled_angle(ps,epsh2,da,iout,ifail)
+ psh(1,:)=0.5d0*da(:)
  if(ifail/=0) return
  do ii=2,npsh
-   da(:)=doubled_angle(ps,energy(ii),iout,ifail)
+   call doubled_angle(ps,energy(ii),da,iout,ifail)
    if(ifail/=0) return
    do iq=1,ps%nq
-     psh(ii,iq)=follow(ps,iq,psh(ii-1,iq),energy(ii-1),energy(ii),da(iq),0, &
-&          iout,ifail)
+     call follow(ps,iq,psh(ii-1,iq),energy(ii-1),energy(ii),da(iq),0, &
+&                psh(ii,iq),iout,ifail)
      if(ifail/=0) return
    end do
  end do
  kk=min(npsh,max(1,nint((epsh2-eal)/depsh)+1))
- da(:)=doubled_angle(ps,eal,iout,ifail)
+ call doubled_angle(ps,eal,da,iout,ifail)
  if(ifail/=0) return
  do iq=1,ps%nq
-   pal(iq)=follow(ps,iq,psh(kk,iq),energy(kk),eal,da(iq),0,iout,ifail)
+   call follow(ps,iq,psh(kk,iq),energy(kk),eal,da(iq),0,pal(iq),iout,ifail)
    if(ifail/=0) return
  end do
  return
@@ -419,7 +420,7 @@
  return
  end subroutine phsft_pair
 
- real(dp) function phsft_node_phase(ps,iq,ee,nodes,uq_out,iout,ifail)
+ subroutine phsft_node_phase(ps,iq,ee,th,nodes,uq_out,iout,ifail)
 
 !! the phase of radius iq at the energy ee with no continuation:
 !! atan(r phi'/phi) - pi (the nodes of u inside the radius), the Pruefer
@@ -436,6 +437,7 @@
 !! @param ps  the solver
 !! @param iq  the radius
 !! @param ee  energy (Ha)
+!! @param th  the phase
 !! @param nodes  whether to subtract pi per node (default true)
 !! @param uq_out  u at the radius (output)
 !! @param iout  unit of the text output
@@ -451,6 +453,7 @@
  integer, intent(in) :: iout
 
 !Output variables
+ real(dp), intent(out) :: th
  real(dp), intent(out), optional :: uq_out
  integer, intent(out) :: ifail
 
@@ -460,17 +463,17 @@
  logical :: count_nodes
 
  ifail=0
+ th=0.0d0
  count_nodes=.true.
  if(present(nodes)) count_nodes=nodes
  allocate(uu(ps%mmax,2),up(ps%mmax,2))
  call solve(ps,ee,ps%mchq(iq),uu,up,iout,ifail)
  if(ifail/=0) return
- phsft_node_phase=angle_at(ps,iq,ps%mchq(iq),uu(:,1),up(:,1),count_nodes, &
-&                          uq)
+ call angle_at(ps,iq,ps%mchq(iq),uu(:,1),up(:,1),count_nodes,th,uq)
  if(present(uq_out)) uq_out=uq
  deallocate(uu,up)
  return
- end function phsft_node_phase
+ end subroutine phsft_node_phase
 
  subroutine phsft_node_phases(ps,ee,th,nodes,iout,ifail)
 
@@ -509,7 +512,7 @@
  call solve(ps,ee,ps%mch,uu,up,iout,ifail)
  if(ifail/=0) return
  do iq=1,ps%nq
-   th(iq)=angle_at(ps,iq,ps%mch,uu(:,1),up(:,1),count_nodes,uq)
+   call angle_at(ps,iq,ps%mch,uu(:,1),up(:,1),count_nodes,th(iq),uq)
  end do
  deallocate(uu,up)
  return
@@ -556,7 +559,7 @@
  end if
  end subroutine solve
 
- real(dp) function angle_at(ps,iq,mlast,uu,up,count_nodes,uq)
+ subroutine angle_at(ps,iq,mlast,uu,up,count_nodes,th,uq)
 !! the phase of radius iq of a solution out to the point mlast, and u there
 !!
 !! @param ps  the solver
@@ -566,6 +569,7 @@
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param count_nodes  .true. to take pi off the phase for each node of
 !!                     uu inside the radius
+!! @param th  the phase
 !! @param uq  uu interpolated to the radius
  use logmesh_m, only: lm_interp
 
@@ -576,7 +580,7 @@
  logical, intent(in) :: count_nodes
 
 !Output variables
- real(dp), intent(out) :: uq
+ real(dp), intent(out) :: th,uq
 
 !Local variables
  real(dp) :: upq
@@ -592,14 +596,14 @@
  end do
  if(uq*uu(jlast)<0.0d0) nnode=nnode+1
 ! r phi'/phi = r u'/u - 1, and al r u' is the solvers' derivative
- angle_at=atan2(upq/ps%al-uq,uq)
- if(angle_at>0.5d0*pi) angle_at=angle_at-pi
- if(angle_at<=-0.5d0*pi) angle_at=angle_at+pi
+ th=atan2(upq/ps%al-uq,uq)
+ if(th>0.5d0*pi) th=th-pi
+ if(th<=-0.5d0*pi) th=th+pi
  if(.not. count_nodes) nnode=0
- angle_at=angle_at-pi*dble(nnode)
- end function angle_at
+ th=th-pi*dble(nnode)
+ end subroutine angle_at
 
- recursive function follow(ps,iq,th0,e0,e1,da1,depth,iout,ifail) result(th1)
+ recursive subroutine follow(ps,iq,th0,e0,e1,da1,depth,th1,iout,ifail)
 
 !! the phase of radius iq at e1, continued from th0 at e0
 !!
@@ -610,6 +614,7 @@
 !! @param e1  the energy wanted
 !! @param da1  the doubled angle at e1
 !! @param depth  halvings so far
+!! @param th1  the phase at e1
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
@@ -622,7 +627,7 @@
  integer, intent(in) :: iout
 
 !Output variables
- real(dp) :: th1
+ real(dp), intent(out) :: th1
  integer, intent(out) :: ifail
 
 !Local variables
@@ -641,25 +646,26 @@
  end if
  if(abs(dd)>0.5d0*pi) then
    em=0.5d0*(e0+e1)
-   dam(:)=doubled_angle(ps,em,iout,ifail)
+   call doubled_angle(ps,em,dam,iout,ifail)
    if(ifail/=0) return
-   thm=follow(ps,iq,th0,e0,em,dam(iq),depth+1,iout,ifail)
+   call follow(ps,iq,th0,e0,em,dam(iq),depth+1,thm,iout,ifail)
    if(ifail/=0) return
-   th1=follow(ps,iq,thm,em,e1,da1,depth+1,iout,ifail)
+   call follow(ps,iq,thm,em,e1,da1,depth+1,th1,iout,ifail)
    if(ifail/=0) return
  else
    th1=th0+0.5d0*dd
  end if
  return
- end function follow
+ end subroutine follow
 
- function doubled_angle(ps,ee,iout,ifail) result(da)
+ subroutine doubled_angle(ps,ee,da,iout,ifail)
 
 !! twice the angle of (phi, r phi') at each radius, in (-pi, pi]: that of
 !! (u, u' - u/r) at the energy ee, the same for -u
 !!
 !! @param ps  the solver
 !! @param ee  energy (Ha)
+!! @param da  the doubled angle of each radius
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
@@ -674,7 +680,7 @@
  integer, intent(in) :: iout
 
 !Output variables
- real(dp) :: da(ps%nq)
+ real(dp), intent(out) :: da(ps%nq)
  integer, intent(out) :: ifail
 
 !Local variables
@@ -706,6 +712,6 @@
  end do
  deallocate(uu,up)
  return
- end function doubled_angle
+ end subroutine doubled_angle
 
  end module phsft_m

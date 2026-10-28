@@ -88,7 +88,7 @@
  use constants_m, only: dp, pi, mxstate, mxl, mxlin, mxprj
  use pieces_m, only: piecewise_t, pw_integral, pw_value, pw_resample, &
 &                    pw_free, pw_node_values
- use logmesh_m, only: lm_interp, lm_step
+ use logmesh_m, only: lm_interp, lm_step, lm_index
  use quad_m, only: quad_log_norm
  use cinf_taper_m, only: cinf_taper
  use lschpsbar_m, only: lschpsbar
@@ -234,9 +234,7 @@
  integer, intent(out) :: ifail
  ifail=0
  rbar=mbfact*rc(l1)
- mbar=1+int(log(rbar/rr(1))/al)
- if(mbar>1 .and. rr(min(mbar,mmax))>rbar) mbar=mbar-1
- if(mbar<mmax .and. rr(mbar+1)<=rbar) mbar=mbar+1
+ mbar=lm_index(rr,mmax,rbar)
 ! lschpsbar starts the solution at mbar:mbar+4, inside rr(mmax)
  if(mbar+5>mmax) then
    write(iout,'(/2a,i0,a,i0)') 'run_ghosts: ERROR barrier radius beyond', &

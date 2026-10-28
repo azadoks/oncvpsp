@@ -314,6 +314,7 @@
 &                  'correction',d2excps,nv,d2mdiff,iout)
 
  deallocate(d2excae,d2excps)
+ if(allocated(fta)) deallocate(fta)
 
  return
 

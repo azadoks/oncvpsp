@@ -149,7 +149,7 @@
 ! write termination signal
  write(iout,'(/a)') 'END_PSP'
 
- deallocate(rhol,rl,vkbl,vpl,rhomodl,rabl,l1p,jjp,ikp)
+ deallocate(rhol,rl,vkbl,vpl,rhomodl,uual,rabl,l1p,jjp,ikp)
 
  return
 
@@ -364,7 +364,7 @@
  character(len=20) :: fname
  integer, intent(out) :: ifail
  ifail=0
- fname=upf_functional(ifail)
+ call upf_functional(fname,ifail)
  if(ifail/=0) return
  write(iout,'(a)') &
 &      '    <PP_HEADER'
@@ -687,10 +687,10 @@
  end subroutine write_spin_orb
 
 
- function upf_functional(ifail) result(name)
+ subroutine upf_functional(name,ifail)
 !! the functional attribute of the UPF header for iexc; an error for one
 !! UPF has no name for
- character(len=20) :: name
+ character(len=20), intent(out) :: name
  integer, intent(out) :: ifail
 
  ifail=0
@@ -729,7 +729,7 @@
    ifail=1
    return
  end select
- end function upf_functional
+ end subroutine upf_functional
 
  end subroutine upfout
 

@@ -27,21 +27,10 @@
 !> the grids used.
 
  module ugrid_m
- use constants_m, only: dp
  use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
  public :: ug_weights, ug_cumint_down, ug_interp, ug_root, ug_cross_down
- public :: ug_brent, ug_fmin
-
-!> a function of one variable, for ug_brent
- abstract interface
-   real(dp) function ug_fn(xx)
-   import :: dp
-   implicit none
-   real(dp), intent(in) :: xx
-   end function ug_fn
- end interface
 
  contains
 
@@ -55,6 +44,7 @@
 !! @param hh  spacing
 !! @param ww  the weights
 
+ use constants_m, only: dp
  use logmesh_m, only: lm_ncell, lm_cell_weights
 
 !Input variables
@@ -98,6 +88,7 @@
 !! @param hh  spacing
 !! @param cum  int_{x_i}^{x_nn} ff dx in cum(i)
 
+ use constants_m, only: dp
  use logmesh_m, only: lm_ncell, lm_cell_weights
 
 !Input variables
@@ -152,6 +143,7 @@
 !!            0<=tt<=nn-1
 !! @param fq  value at tt
 
+ use constants_m, only: dp
  use logmesh_m, only: lm_fh_value
 
 !Input variables
@@ -174,7 +166,7 @@
  subroutine ug_root(ff,nn,ta,tb,tq,ierr)
 
 !! root, between the positions ta and tb, of the interpolant of ff, by
-!! Brent's method with no tolerance of its own (ug_brent)
+!! Brent's method with no tolerance of its own (root_brent)
 !!
 !! @param ff  values on the nodes
 !! @param nn  number of nodes
@@ -183,7 +175,9 @@
 !! @param tq  the root (position)
 !! @param ierr  0, or 1 if the interpolant has the same sign at ta and tb
 
+ use constants_m, only: dp
  use logmesh_m, only: lm_fh_value
+ use root_m, only: root_brent
 
 !Input variables
  integer, intent(in) :: nn
@@ -193,7 +187,7 @@
  real(dp), intent(out) :: tq
  integer, intent(out) :: ierr
 
- call ug_brent(interpolant,ta,tb,tq,ierr)
+ call root_brent(interpolant,ta,tb,tq,ierr)
  return
 
  contains
@@ -205,234 +199,6 @@
  end function interpolant
 
  end subroutine ug_root
-
- subroutine ug_brent(fun,ta,tb,tq,ierr,fq,fo,fends,converged)
-
-!! root of fun between ta and tb by Brent's method with no tolerance of
-!! its own: it stops when the bracket is a few rounding units wide; after
-!! 200 steps it reports through converged, or without it stops in error
-!!
-!! @param fun  the function
-!! @param ta,tb  bracket; fun must change sign between them
-!! @param tq  the root
-!! @param ierr  0, or 1 if fun has the same sign at ta and tb
-!! @param fq  fun at tq (optional output)
-!! @param fo  fun at the other end of the last bracket (optional output)
-!! @param fends  fun at ta and tb (optional output)
-!! @param converged  whether the bracket closed before the step limit
-!!                   (optional output)
-
-!Input variables
- procedure(ug_fn) :: fun
- real(dp), intent(in) :: ta,tb
-
-!Output variables
- real(dp), intent(out) :: tq
- integer, intent(out) :: ierr
- real(dp), intent(out), optional :: fq,fo,fends(2)
- logical, intent(out), optional :: converged
-
-!Local variables
- real(dp) :: xa,xb,xc,fa,fb,fc,de,dlast,tol1,xm,pp,qq,rs,ss
- integer :: iter
-
- xa=ta
- xb=tb
- fa=fun(xa)
- fb=fun(xb)
- if(present(fends)) fends(:)=[fa,fb]
- if(present(converged)) converged=.true.
- ierr=0
- tq=ta
- if(present(fq)) fq=fa
- if(present(fo)) fo=fa
- if(fa==0.0d0) return
- tq=tb
- if(present(fq)) fq=fb
- if(present(fo)) fo=fb
- if(fb==0.0d0) return
- if(sign(1.0d0,fa)==sign(1.0d0,fb)) then
-   ierr=1
-   return
- end if
-
- xc=xa
- fc=fa
- de=xb-xa
- dlast=de
- if(present(converged)) converged=.false.
- do iter=1,200
-   if(sign(1.0d0,fb)==sign(1.0d0,fc)) then
-     xc=xa
-     fc=fa
-     de=xb-xa
-     dlast=de
-   end if
-   if(abs(fc)<abs(fb)) then
-     xa=xb
-     xb=xc
-     xc=xa
-     fa=fb
-     fb=fc
-     fc=fa
-   end if
-   tol1=epsilon(1.0d0)*(2.0d0*abs(xb)+1.0d-3)
-   xm=0.5d0*(xc-xb)
-   if(abs(xm)<=tol1 .or. fb==0.0d0) then
-     if(present(converged)) converged=.true.
-     exit
-   end if
-   if(abs(dlast)>=tol1 .and. abs(fa)>abs(fb)) then
-! inverse quadratic interpolation, or the secant
-     ss=fb/fa
-     if(xa==xc) then
-       pp=2.0d0*xm*ss
-       qq=1.0d0-ss
-     else
-       qq=fa/fc
-       rs=fb/fc
-       pp=ss*(2.0d0*xm*qq*(qq-rs)-(xb-xa)*(rs-1.0d0))
-       qq=(qq-1.0d0)*(rs-1.0d0)*(ss-1.0d0)
-     end if
-     if(pp>0.0d0) qq=-qq
-     pp=abs(pp)
-     if(2.0d0*pp<min(3.0d0*xm*qq-abs(tol1*qq),abs(dlast*qq))) then
-       dlast=de
-       de=pp/qq
-     else
-       de=xm
-       dlast=de
-     end if
-   else
-! bisection
-     de=xm
-     dlast=de
-   end if
-   xa=xb
-   fa=fb
-   if(abs(de)>tol1) then
-     xb=xb+de
-   else
-     xb=xb+sign(tol1,xm)
-   end if
-   fb=fun(xb)
- end do
- if(iter>200 .and. .not. present(converged)) then
-   write(error_unit,'(/a,es12.4,a,es12.4)') &
-&       'ug_brent: ERROR not converged in 200 steps, t=',xb,', f=',fb
-   error stop 1
- end if
- tq=xb
- if(present(fq)) fq=fb
- if(present(fo)) fo=fc
- return
- end subroutine ug_brent
-
- real(dp) function ug_fmin(fun,ax,bx)
-
-!! the least value of fun on [ax, bx], by Brent's method (golden section
-!! and parabolic steps) to a relative step of 1e-8, and at the ends; the
-!! iteration limit is an error
-!!
-!! @param fun  the function
-!! @param ax,bx  the interval
-
-!Input variables
- procedure(ug_fn) :: fun
- real(dp), intent(in) :: ax,bx
-
-!Local variables
- real(dp), parameter :: cgold=0.3819660112501051d0, rtol=1.0d-8
- real(dp) :: aa,bb,vv,ww,xx,ee,dd,fvv,fww,fxx,xm,tol1,tol2,rr1,qq,pp,uu,fu
- integer :: iter
- aa=min(ax,bx)
- bb=max(ax,bx)
- xx=aa + cgold*(bb-aa)
- vv=xx
- ww=xx
- ee=0.0d0
- dd=0.0d0
- fxx=fun(xx)
- fvv=fxx
- fww=fxx
- do iter=1,100
-   xm=0.5d0*(aa+bb)
-   tol1=rtol*abs(xx) + 1.0d-12
-   tol2=2.0d0*tol1
-   if(abs(xx-xm)<=tol2-0.5d0*(bb-aa)) exit
-   if(iter==100) then
-     write(error_unit,'(/a,es12.4,a,es12.4)') &
-&          'ug_fmin: ERROR not converged in 100 steps, x=',xx, &
-&          ', bracket width=',bb-aa
-     error stop 1
-   end if
-   if(abs(ee)>tol1) then
-     rr1=(xx-ww)*(fxx-fvv)
-     qq=(xx-vv)*(fxx-fww)
-     pp=(xx-vv)*qq - (xx-ww)*rr1
-     qq=2.0d0*(qq-rr1)
-     if(qq>0.0d0) pp=-pp
-     qq=abs(qq)
-     if(abs(pp)>=abs(0.5d0*qq*ee) .or. pp<=qq*(aa-xx) &
-&       .or. pp>=qq*(bb-xx)) then
-       if(xx>=xm) then
-         ee=aa-xx
-       else
-         ee=bb-xx
-       end if
-       dd=cgold*ee
-     else
-       ee=dd
-       dd=pp/qq
-       uu=xx+dd
-       if(uu-aa<tol2 .or. bb-uu<tol2) dd=sign(tol1,xm-xx)
-     end if
-   else
-     if(xx>=xm) then
-       ee=aa-xx
-     else
-       ee=bb-xx
-     end if
-     dd=cgold*ee
-   end if
-   if(abs(dd)>=tol1) then
-     uu=xx+dd
-   else
-     uu=xx+sign(tol1,dd)
-   end if
-   fu=fun(uu)
-   if(fu<=fxx) then
-     if(uu>=xx) then
-       aa=xx
-     else
-       bb=xx
-     end if
-     vv=ww
-     fvv=fww
-     ww=xx
-     fww=fxx
-     xx=uu
-     fxx=fu
-   else
-     if(uu<xx) then
-       aa=uu
-     else
-       bb=uu
-     end if
-     if(fu<=fww .or. ww==xx) then
-       vv=ww
-       fvv=fww
-       ww=uu
-       fww=fu
-     else if(fu<=fvv .or. vv==xx .or. vv==ww) then
-       vv=uu
-       fvv=fu
-     end if
-   end if
- end do
- ug_fmin=min(fxx,fun(ax),fun(bx))
- return
- end function ug_fmin
 
  subroutine ug_cross_down(ff,nn,hh,x1,level,xq,found)
 
@@ -451,6 +217,7 @@
 !! @param xq  the crossing (coordinate)
 !! @param found  whether there is one
 
+ use constants_m, only: dp
 !Input variables
  integer, intent(in) :: nn
  real(dp), intent(in) :: ff(nn),hh,x1,level

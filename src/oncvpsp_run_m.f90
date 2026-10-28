@@ -88,7 +88,7 @@
 &                        core_radius_points
  use constants_m, only: mxprj, mxcnf
  use pieces_m, only: pw_free
- use input_m, only: input_t
+ use input_m, only: input_t, config_t
  use constants_m, only: dp, mxl, mxlin, mxstate, mxkap, nrhomod
  use pieces_m, only: piecewise_t
  use results_m, only: results_t
@@ -118,6 +118,8 @@
  integer,allocatable :: npa(:,:)
 !
  integer :: irc(mxlin+1)
+! the configurations, numbered as in the input: the reference first
+ type(config_t) :: cnf(mxcnf)
 ! the ghost tests' margins for the diagnostics block (run_ghosts), per kap
  integer :: ngh(mxl+1,mxkap),ghn(mxstate,mxl+1,mxkap)
  real(dp) :: ghe(2,mxstate,mxl+1,mxkap),ghp(2,mxl+1,mxkap)
@@ -234,19 +236,16 @@
    return
  end if
 
- inp%cnf(1)%nv=inp%nv
- do ii=1,inp%nc+inp%nv
-   inp%cnf(1)%na(ii)=inp%na(ii)
-   inp%cnf(1)%la(ii)=inp%la(ii)
-   inp%cnf(1)%fa(ii)=inp%fa(ii)
- end do
-
+!the configurations, the reference first, the core states in each
+ cnf(:)=inp%cnf(:)
+ cnf(1)%nv=inp%nv
+ cnf(1)%na(:)=inp%na(:)
+ cnf(1)%la(:)=inp%la(:)
+ cnf(1)%fa(:)=inp%fa(:)
  do jj=2,inp%ncnf+1
-   do ii=1,inp%nc
-     inp%cnf(jj)%na(ii)=inp%na(ii)
-     inp%cnf(jj)%la(ii)=inp%la(ii)
-     inp%cnf(jj)%fa(ii)=inp%fa(ii)
-   end do
+   cnf(jj)%na(1:inp%nc)=inp%na(1:inp%nc)
+   cnf(jj)%la(1:inp%nc)=inp%la(1:inp%nc)
+   cnf(jj)%fa(1:inp%nc)=inp%fa(1:inp%nc)
  end do
 
  if(inp%icmod==0) then
@@ -325,7 +324,7 @@
  if(istage==2) then
    call read_ae_file(ae_filename,irel,c_light,nkap,inp%atsym,inp%zz,inp%nc, &
 &                    inp%nv,inp%iexc,inp%na,inp%la,inp%fa,mmax,rr,inp%ncnf, &
-&                    inp%cnf,it,etot,eterm,res,ea,rhoc,rho,vfull,aec,iout, &
+&                    cnf,it,etot,eterm,res,ea,rhoc,rho,vfull,aec,iout, &
 &                    ifail)
    if(ifail/=0) return
  else
@@ -417,10 +416,10 @@
  write(iout,'(i5)') inp%ncnf
  write(iout,'(a/a)') '# nvcnf','#   n    l    f'
  do jj=2,inp%ncnf+1
-   write(iout,'(i5)') inp%cnf(jj)%nv
-   do ii=inp%nc+1,inp%nc+inp%cnf(jj)%nv
-     write(iout,'(2i5,f8.2)') inp%cnf(jj)%na(ii),inp%cnf(jj)%la(ii), &
-&                             inp%cnf(jj)%fa(ii)
+   write(iout,'(i5)') cnf(jj)%nv
+   do ii=inp%nc+1,inp%nc+cnf(jj)%nv
+     write(iout,'(2i5,f8.2)') cnf(jj)%na(ii),cnf(jj)%la(ii), &
+&                             cnf(jj)%fa(ii)
    end do
    write(iout,'(a)') '#'
  end do
@@ -433,7 +432,7 @@
 !all-electron halves of the test configurations; their pseudo-atom halves
 !and all output about them come from the matching _ps.x
    do jj=1,inp%ncnf+1
-     call run_config_ae(cache,jj,inp%cnf,inp%nc,rr, &
+     call run_config_ae(cache,jj,cnf,inp%nc,rr, &
 &                       inp%zz, &
 &                       mmax,inp%iexc,ea,irel,c_light,nkap,aec(jj),iout,ifail)
      if(ifail/=0) return
@@ -441,7 +440,7 @@
 
    call write_ae_file(ae_filename,irel,c_light,nkap,inp%atsym,inp%zz,inp%nc, &
 &                     inp%nv,inp%iexc,inp%na,inp%la,inp%fa,mmax,rr,it,etot, &
-&                     eterm,res,ea,rhoc,rho,vfull,inp%ncnf,inp%cnf,aec,iout, &
+&                     eterm,res,ea,rhoc,rho,vfull,inp%ncnf,cnf,aec,iout, &
 &                     ifail)
    if(ifail/=0) return
 
@@ -450,7 +449,9 @@
  end if
 
 !the last log mesh point at or inside each rc (R-2)
- call core_radius_points(inp%lmax,inp%lloc,inp%rc,rr,mmax,irc,rcmax)
+ call core_radius_points(inp%lmax,inp%lloc,inp%rc,rr,mmax,irc,rcmax,iout, &
+&                        ifail)
+ if(ifail/=0) return
 
 !
  cvgplt(:,:,:,:,:)=0.0d0
@@ -501,7 +502,7 @@
 &                            vwell,inwell,wmesh,iout,ifail)
      if(ifail/=0) return
      call ae_delta_window(irel,c_light,ll,kap,inp%nproj(l1),epa(:,l1,ikap),rr, &
-&                         vfull,uua(:,:,ikap),upa(:,:,ikap),mmax,al, &
+&                         vfull,uua(:,:,ikap),upa(:,:,ikap),mmax, &
 &                         inp%rc(l1),irc(l1),l1==inp%lloc+1,dlta(:,:,l1,ikap), &
 &                         vrloc(:,ikap),iout,ifail)
      if(ifail/=0) return
@@ -623,7 +624,8 @@
 
 ! screening potential for pseudocharge
 
- call vout(1,rho,rhomod(1,1),vo,vxc,zval,eeel,eexc,rr,mmax,inp%iexc,c_light)
+ call vout(.true.,rho,rhomod(1,1),vo,vxc,zval,eeel,eexc,rr,mmax,inp%iexc, &
+&          c_light)
 
 ! switch the screened potentials to the ionic tail beyond rcmax, iterating
 ! the pseudo valence states with it to a fixed point (after the model core,
@@ -645,14 +647,14 @@
  call run_diag(inp%lmax,npa,epa,wellprj,inp%lloc,inp%rc, &
 &               vlocpw,vkbpw,evkb,inp%nproj,rr,vfull,vp,inp%zz,mmax, &
 &               irel,c_light,nkap, &
-&               0,vsrpw,esr,vsopw,eso,iout,ifail)
+&               .false.,vsrpw,esr,vsopw,eso,iout,ifail)
  if(ifail/=0) return
 
  if(irel==2) then
    call run_diag(inp%lmax,npa,epa,wellprj,inp%lloc,inp%rc, &
 &                 vlocpw,vkbpw,evkb,inp%nproj,rr,vfull,vp,inp%zz,mmax, &
 &                 irel,c_light, &
-&                 nkap,1,vsrpw,esr,vsopw,eso,iout,ifail)
+&                 nkap,.true.,vsrpw,esr,vsopw,eso,iout,ifail)
    if(ifail/=0) return
 
 ! save full info for psml, switched to -zion/r far out as vpuns is
@@ -720,7 +722,7 @@
    rhot(:)=rho(:)
 
    if(istage/=2) then
-     call run_config_ae(cache,jj,inp%cnf,inp%nc,rr, &
+     call run_config_ae(cache,jj,cnf,inp%nc,rr, &
 &                       inp%zz, &
 &                       mmax,inp%iexc,ea,irel,c_light,nkap,aec(jj),iout,ifail)
      if(ifail/=0) return

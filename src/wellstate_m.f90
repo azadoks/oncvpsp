@@ -94,6 +94,7 @@
  use constants_m, only: dp, eig_floor
  use well_mesh_m, only: well_mesh_t, wm_build, wm_short
  use boundstate_m, only: boundstate
+ use root_m, only: root_tol
 
 !Input variables
  integer, intent(in) :: ll,kap,mmax,irel
@@ -181,7 +182,7 @@
    fwmin=0.0d0
    fwmax=0.0d0
    iside=0
-   tolw=4.0d0*epsilon(1.0d0)*max(abs(ep),eig_floor)
+   tolw=root_tol(ep,eig_floor)
 
    convg=.false.
 
@@ -227,7 +228,7 @@
          if(iside==-1) fwmin=0.5d0*fwmin
          iside=-1
        end if
-       if(rwmax-rwmin<=4.0d0*epsilon(1.0d0)*rwmax) then
+       if(rwmax-rwmin<=root_tol(rwmax,0.0d0)) then
          if(abs(fw)>eps) then
            write(iout,'(/a,i0,a,i0,a,es12.4)') &
 &                'wellstate: ERROR E(rwell) jumps across ep, n=',nn, &

@@ -21,7 +21,6 @@
 !> pseudopotential's states (ws_basis_m).
  module confine_ws_m
  use constants_m, only: dp, pi, mxstate
- use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
  public :: confine_sphere
@@ -56,7 +55,7 @@
  contains
 
  subroutine confine_sphere(pf,irel,c_light,zz,mmax,rr,vfull,nc,na,la,chan,nq, &
-&                          rq,emin,emax,de,ecutmax,table,sm,iout)
+&                          rq,emin,emax,de,ecutmax,table,sm,iout,ifail)
 !! the ws lines of every channel of chan at the radii rq, of the edges
 !! in [emin,emax] from a scan of step de, and the sphere's part of the
 !! summary
@@ -81,6 +80,7 @@
 !! @param table  whether to write the ws_conv lines
 !! @param sm  the summary; its sphere part set
 !! @param iout  unit of the text output
+!! @param ifail  0, or 1 after a failure, whose message is written
  use confine_summary_m, only: confine_summary_t
  use ps_file_m, only: ps_file_t
 
@@ -96,10 +96,14 @@
 !Input/output variables
  type(confine_summary_t), intent(inout) :: sm
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
  real(dp), allocatable :: egrid(:)
  integer :: npsh,ii,l1,ikap
 
+ ifail=0
  npsh=int(((emax-emin+2.0d0*emargin)/de)-0.5d0)+1
  allocate(egrid(npsh))
  do ii=1,npsh
@@ -122,14 +126,15 @@
    if(.not. chan(l1-1)) cycle
    do ikap=1,merge(1,pf%pot%nkap,l1==1)
      call ws_channel(pf,irel,c_light,zz,mmax,rr,vfull,nc,na,la,l1-1,ikap,nq, &
-&                    rq,egrid,emin,emax,ecutmax,table,sm,iout)
+&                    rq,egrid,emin,emax,ecutmax,table,sm,iout,ifail)
+     if(ifail/=0) return
    end do
  end do
  deallocate(egrid)
  end subroutine confine_sphere
 
  subroutine ws_channel(pf,irel,c_light,zz,mmax,rr,vfull,nc,na,la,ll,ikap,nq, &
-&                      rq,egrid,emin,emax,ecutmax,table,sm,iout)
+&                      rq,egrid,emin,emax,ecutmax,table,sm,iout,ifail)
 !! the ws lines of l and ikap at every radius, from one scan of the
 !! phases of both atoms on egrid
 !!
@@ -153,6 +158,7 @@
 !! @param table  whether to write the ws_conv lines
 !! @param sm  the summary; its sphere part updated
 !! @param iout  unit of the text output
+!! @param ifail  0, or 1 after a failure, whose message is written
  use confine_summary_m, only: confine_summary_t
  use kappa_m, only: kap_of
  use phsft_m, only: phsft_t, phsft_ae_init, phsft_ps_init, phsft_free
@@ -172,6 +178,9 @@
 !Input/output variables
  type(confine_summary_t), intent(inout) :: sm
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
  type(phsft_t) :: sae,sps
 !> the quadrature of the channel in each sphere, shared by its edges
@@ -183,7 +192,6 @@
 !> the poles of the pseudopotential's r phi'/phi at a radius (Ha)
  real(dp), allocatable :: edir(:)
  integer :: l1,kap,nvkb,iq,ii,ierr,npsh,ndir
- integer :: ifail
 
  l1=ll+1
  npsh=size(egrid)
@@ -194,11 +202,11 @@
 ! quadrature and poles (refined to the roots of u(rs))
  call phsft_ae_init(irel,c_light,ll,kap,rr,vfull,zz,mmax,nq,rq(1:nq),sae,iout, &
 &                   ifail)
- if(ifail/=0) error stop 1
+ if(ifail/=0) return
  call phsft_ps_init(ll,nvkb,rr,pf%vloc(:,ikap),pf%pot%vlocpw, &
 &                   pf%pot%vkbpw(1:nvkb,l1,ikap),pf%pot%evkb(1:nvkb,l1,ikap), &
 &                   mmax,nq,rq(1:nq),sps,iout,ifail)
- if(ifail/=0) error stop 1
+ if(ifail/=0) return
  allocate(wsg(nq),polq(nq),tanae(nanch,nq),tanps(nanch,nq))
  allocate(shae(npsh,nq),shps(npsh,nq))
  do iq=1,nq
@@ -208,7 +216,8 @@
    call ws_eigenvalues(ll,3,wsg(iq),pf%pot%evkb(1:nvkb,l1,ikap),ndir, &
 &       edir,ierr)
    if(ierr/=0) ndir=0
-   call refine_poles(sps,iq,egrid,edir(1:ndir),iout)
+   call refine_poles(sps,iq,egrid,edir(1:ndir),iout,ifail)
+   if(ifail/=0) return
    polq(iq)%ee=edir(1:ndir)
    deallocate(edir)
  end do
@@ -229,19 +238,24 @@
 ! one and paired each band with the next one down
 ! (all the radii from one solution at each energy)
  do ii=1,npsh
-   call scan_phases(sae,sps,polq,egrid(ii),shae(ii,:),shps(ii,:),iout)
+   call scan_phases(sae,sps,polq,egrid(ii),shae(ii,:),shps(ii,:),iout, &
+&                   ifail)
+   if(ifail/=0) return
  end do
  if(nvkb>0) then
    do ii=1,nanch
      ex=pf%epa(l1,ikap)+danch*dble(ii-(nanch+1)/2)
-     call scan_phases(sae,sps,polq,ex,tanae(ii,:),tanps(ii,:),iout)
+     call scan_phases(sae,sps,polq,ex,tanae(ii,:),tanps(ii,:),iout,ifail)
+     if(ifail/=0) return
    end do
  end if
 
  do iq=1,nq
    call ws_radius(pf,irel,c_light,zz,mmax,rr,vfull,nc,na,la,ll,kap,ikap,nvkb, &
 &                 rq(iq),iq,sae,sps,polq(iq),wsg(iq),egrid,shae(:,iq), &
-&                 shps(:,iq),tanae(:,iq),tanps(:,iq),emin,emax,table,sm,iout)
+&                 shps(:,iq),tanae(:,iq),tanps(:,iq),emin,emax,table,sm,iout, &
+&                 ifail)
+   if(ifail/=0) return
  end do
  call phsft_free(sae)
  call phsft_free(sps)
@@ -250,7 +264,7 @@
 
  subroutine ws_radius(pf,irel,c_light,zz,mmax,rr,vfull,nc,na,la,ll,kap,ikap, &
 &                     nvkb,rs,iq,sae,sps,pol,wsg,egrid,shae,shps,tanae,tanps, &
-&                     emin,emax,table,sm,iout)
+&                     emin,emax,table,sm,iout,ifail)
 !! the ws lines of l and ikap at the radius rs (the iq-th of the
 !! solvers), from the phases shae and shps of the scan and tanae and
 !! tanps of the anchors
@@ -285,6 +299,7 @@
 !! @param table  whether to write the ws_conv lines
 !! @param sm  the summary; its sphere part updated
 !! @param iout  unit of the text output
+!! @param ifail  0, or 1 after a failure, whose message is written
  use confine_summary_m, only: confine_summary_t
  use phsft_m, only: phsft_t
  use ps_file_m, only: ps_file_t
@@ -308,6 +323,9 @@
  type(phsft_t), intent(inout) :: sae,sps
  type(confine_summary_t), intent(inout) :: sm
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
  type(edges_t) :: eae,eps
  real(dp), allocatable :: ecut(:),err(:)
@@ -319,6 +337,7 @@
  logical :: used(mxedge)
  integer :: npsh,ii,ie,je,iedge,nn,nb,ierr
 
+ ifail=0
  npsh=size(egrid)
  write(iout,'(a,2i4,1p,e24.16)') 'ws_r',ll,ikap,rs
  do ii=1,npsh
@@ -334,8 +353,10 @@
  end if
  shps(:)=shps(:)+thal
 
- call edges(sae,iq,.false.,pol%ee,ll,egrid,shae,0.0d0,eae,iout)
- call edges(sps,iq,.true.,pol%ee,ll,egrid,shps,thal,eps,iout)
+ call edges(sae,iq,.false.,pol%ee,ll,egrid,shae,0.0d0,eae,iout,ifail)
+ if(ifail/=0) return
+ call edges(sps,iq,.true.,pol%ee,ll,egrid,shps,thal,eps,iout,ifail)
+ if(ifail/=0) return
 
 ! every all-electron edge, lowest first, and its partner: the nearest
 ! pseudopotential edge of the same phase, over the whole scan, so that an
@@ -485,7 +506,7 @@
 
  end subroutine ws_cutoffs
 
- subroutine edges(sol,iq,poles,edir,ll,egrid,sh,shift,ed,iout)
+ subroutine edges(sol,iq,poles,edir,ll,egrid,sh,shift,ed,iout,ifail)
 !! the edges of a scan at the iq-th radius of sol: the energies at which
 !! the phase (plus shift) crosses atan(D) + k pi for the D of each edge,
 !! each to round-off by Brent's method in the interval of the grid that
@@ -503,8 +524,9 @@
 !! @param shift  multiple of pi added to the phase of sol
 !! @param ed  the edges (output)
 !! @param iout  unit of the text output
+!! @param ifail  0, or 1 after a failure, whose message is written
  use phsft_m, only: phsft_t
- use ugrid_m, only: ug_brent
+ use root_m, only: root_brent
 
 !Input/output variables
  type(phsft_t), intent(inout) :: sol
@@ -518,10 +540,12 @@
 
 !Output variables
  type(edges_t), intent(out) :: ed
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp) :: thlo,thhi,er,e0,tgt
  integer :: jj,kk,jed,ierr2,npsh
+ ifail=0
  npsh=size(egrid)
  ed%ne=0
  do jj=1,npsh-1
@@ -534,38 +558,50 @@
        tgt=target(ll,jed)+pi*dble(kk)
 ! a crossing on the point below is the next interval's
        if(tgt==sh(jj+1) .and. jj<npsh-1) cycle
-       call ug_brent(phase,egrid(jj+1),e0,er,ierr2)
+       call root_brent(phase,egrid(jj+1),e0,er,ierr2)
+       if(ifail/=0) return
        if(ierr2/=0) cycle
 ! a jump (a pair of nodes inside the projectors), not a root
        if(abs(phase(er))>0.25d0*pi) cycle
-       call add_edge(ed,er,kk,jed)
+       if(ifail/=0) return
+       call add_edge(ed,er,kk,jed,iout,ifail)
+       if(ifail/=0) return
      end do
    end do
  end do
  if(poles) then
    do kk=1,size(edir)
      if(edir(kk)<egrid(npsh) .or. edir(kk)>egrid(1)) cycle
-     call add_edge(ed,edir(kk),nint(shift/pi)-(kk-1),3)
+     call add_edge(ed,edir(kk),nint(shift/pi)-(kk-1),3,iout,ifail)
+     if(ifail/=0) return
    end do
  end if
 
  contains
 
  real(dp) function phase(ex)
-!! the phase of sol at ex plus shift, less tgt
+!! the phase of sol at ex plus shift, less tgt; 0 after a failure (ifail
+!! of the host set), which stops root_brent at once
  real(dp), intent(in) :: ex
- phase=phase_of(sol,iq,poles,edir,ex,iout)+shift-tgt
+ real(dp) :: th
+ phase=0.0d0
+ if(ifail/=0) return
+ call phase_at(sol,iq,poles,edir,ex,th,iout,ifail)
+ if(ifail/=0) return
+ phase=th+shift-tgt
  end function phase
 
  end subroutine edges
 
- subroutine add_edge(ed,ee,kk,jed)
+ subroutine add_edge(ed,ee,kk,jed,iout,ifail)
 !! an edge more
 !!
 !! @param ed  the edges; ee, kk and jed added
 !! @param ee  energy of the edge (Ha)
 !! @param kk  multiple of pi of the edge
 !! @param jed  the edge: 1 bottom, 2 centre, 3 top
+!! @param iout  unit of the text output
+!! @param ifail  0, or 1 after a failure, whose message is written
 
 !Input/output variables
  type(edges_t), intent(inout) :: ed
@@ -573,10 +609,17 @@
 !Input variables
  real(dp), intent(in) :: ee
  integer, intent(in) :: kk,jed
+ integer, intent(in) :: iout
 
+!Output variables
+ integer, intent(out) :: ifail
+
+ ifail=0
  if(ed%ne==mxedge) then
-   write(error_unit,'(/a)') 'add_edge: ERROR too many edges in the scan'
-   error stop 1
+   write(iout,'(/a,i0)') 'add_edge: ERROR too many edges in the scan, ', &
+&        mxedge
+   ifail=1
+   return
  end if
  ed%ne=ed%ne+1
  ed%ee(ed%ne)=ee
@@ -584,7 +627,7 @@
  ed%ied(ed%ne)=jed
  end subroutine add_edge
 
- subroutine scan_phases(sae,sps,polq,ex,thae,thps,iout)
+ subroutine scan_phases(sae,sps,polq,ex,thae,thps,iout,ifail)
 !! the phases of every radius at ex from one solution of each atom: the
 !! all-electron one's, and the pseudopotential's less pi per pole of each
 !! sphere below ex (phase_of)
@@ -596,6 +639,7 @@
 !! @param thae  all-electron phase at each radius (output)
 !! @param thps  pseudopotential phase at each radius (output)
 !! @param iout  unit of the text output
+!! @param ifail  0, or 1 after a failure, whose message is written
  use phsft_m, only: phsft_t, phsft_node_phases
 
 !Input/output variables
@@ -608,20 +652,20 @@
 
 !Output variables
  real(dp), intent(out) :: thae(:),thps(:)
+ integer, intent(out) :: ifail
 
 !Local variables
  integer :: jq
- integer :: ifail
  call phsft_node_phases(sae,ex,thae,iout=iout,ifail=ifail)
- if(ifail/=0) error stop 1
+ if(ifail/=0) return
  call phsft_node_phases(sps,ex,thps,nodes=.false.,iout=iout,ifail=ifail)
- if(ifail/=0) error stop 1
+ if(ifail/=0) return
  do jq=1,size(polq)
    thps(jq)=thps(jq)-pi*dble(count(polq(jq)%ee<ex))
  end do
  end subroutine scan_phases
 
- real(dp) function phase_of(sol,iq,poles,edir,ex,iout)
+ subroutine phase_at(sol,iq,poles,edir,ex,th,iout,ifail)
 !! the phase of sol at ex at its iq-th radius: less pi per node inside rs,
 !! or with poles per pole of r phi'/phi at rs (edir) below ex
 !!
@@ -630,7 +674,9 @@
 !! @param poles  whether to count the poles edir, not the nodes
 !! @param edir  poles of r phi'/phi at the radius (Ha)
 !! @param ex  energy (Ha)
+!! @param th  the phase
 !! @param iout  unit of the text output
+!! @param ifail  0, or 1 after a failure, whose message is written
  use phsft_m, only: phsft_t, phsft_node_phase
 
 !Input/output variables
@@ -642,20 +688,19 @@
  real(dp), intent(in) :: edir(:),ex
  integer, intent(in) :: iout
 
-!Local variables
- integer :: ifail
- if(poles) then
-   phase_of=phsft_node_phase(sol,iq,ex,nodes=.false., &
-&        iout=iout,ifail=ifail) &
-&           -pi*dble(count(edir<ex))
-   if(ifail/=0) error stop 1
- else
-   phase_of=phsft_node_phase(sol,iq,ex,iout=iout,ifail=ifail)
-   if(ifail/=0) error stop 1
- end if
- end function phase_of
+!Output variables
+ real(dp), intent(out) :: th
+ integer, intent(out) :: ifail
 
- subroutine refine_poles(sol,iq,egrid,edir,iout)
+ if(poles) then
+   call phsft_node_phase(sol,iq,ex,th,nodes=.false.,iout=iout,ifail=ifail)
+   th=th-pi*dble(count(edir<ex))
+ else
+   call phsft_node_phase(sol,iq,ex,th,iout=iout,ifail=ifail)
+ end if
+ end subroutine phase_at
+
+ subroutine refine_poles(sol,iq,egrid,edir,iout,ifail)
 !! the poles edir of the iq-th radius of sol in the scan, each from its
 !! variational value to the root of u(rs) beside it, in a bracket that
 !! grows from 1e-6 Ha on both sides until u changes sign, up to halfway to
@@ -670,8 +715,9 @@
 !! @param edir  poles of r phi'/phi at the radius, ascending (Ha); those
 !!              in the scan refined on return
 !! @param iout  unit of the text output
+!! @param ifail  0, or 1 after a failure, whose message is written
  use phsft_m, only: phsft_t, phsft_node_phase
- use ugrid_m, only: ug_brent
+ use root_m, only: root_brent
 
 !Input/output variables
  type(phsft_t), intent(inout) :: sol
@@ -683,10 +729,14 @@
 !> unit of the text output
  integer, intent(in) :: iout
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
  real(dp) :: e0,u0,lo,hi,ww,er,elow,ehigh
  integer :: kk,ierr2,ndir
  logical :: found
+ ifail=0
  ndir=size(edir)
  do kk=1,ndir
    e0=edir(kk)
@@ -696,6 +746,7 @@
    ehigh=e0+1.0d0
    if(kk<ndir) ehigh=min(ehigh,0.5d0*(e0+edir(kk+1)))
    u0=u_rs(e0)
+   if(ifail/=0) return
    if(u0==0.0d0) cycle
    ww=1.0d-6*max(1.0d0,abs(e0))
    found=.false.
@@ -712,21 +763,25 @@
      if(found .or. (lo<=elow .and. hi>=ehigh)) exit
      ww=4.0d0*ww
    end do
+   if(ifail/=0) return
    if(.not. found) cycle
-   call ug_brent(u_rs,lo,hi,er,ierr2)
+   call root_brent(u_rs,lo,hi,er,ierr2)
+   if(ifail/=0) return
    if(ierr2==0) edir(kk)=er
  end do
 
  contains
 
  real(dp) function u_rs(ex)
-!! u of sol at rs and the energy ex
+!! u of sol at rs and the energy ex; 0 after a failure (ifail of the host
+!! set), which stops root_brent at once
  real(dp), intent(in) :: ex
  real(dp) :: th
- integer :: ifail
- th=phsft_node_phase(sol,iq,ex,nodes=.false.,uq_out=u_rs, &
+ u_rs=0.0d0
+ if(ifail/=0) return
+ call phsft_node_phase(sol,iq,ex,th,nodes=.false.,uq_out=u_rs, &
 &      iout=iout,ifail=ifail)
- if(ifail/=0) error stop 1
+ if(ifail/=0) u_rs=0.0d0
  end function u_rs
 
  end subroutine refine_poles

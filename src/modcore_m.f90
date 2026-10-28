@@ -564,6 +564,8 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use root_m, only: root_tol
+
 !Input variables
  real(dp), intent(in) :: ymatch
  integer, intent(in) :: iout
@@ -599,7 +601,7 @@
    if(nsmall>0) exit
    dx=-ff/fd
    if(.not. (xx+dx>xa .and. xx+dx<xb)) dx=0.5d0*(xa+xb)-xx
-   if(abs(dx)<=4.0d0*spacing(xx)) nsmall=1
+   if(abs(dx)<=root_tol(xx,0.0d0)) nsmall=1
    xx=xx+dx
  end do
  if(it>200) then

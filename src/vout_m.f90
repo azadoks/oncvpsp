@@ -19,7 +19,6 @@
 
  module vout_m
 
- use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
  public :: vout
@@ -29,10 +28,11 @@
 ! calculates Hartree and exchange-correlation potentials and total-energy
 ! term to add to eigenvalue sum
 
- subroutine vout(mode,rho,rhoc,vo,vxc,zion,eeel,eexc, &
+ subroutine vout(add_core,rho,rhoc,vo,vxc,zion,eeel,eexc, &
 &                rr,mmax,iexc,c_light)
 
-!! @param mode  1=> add rhoc to rho, 0 => don't
+!! @param add_core  whether the exchange-correlation is of rho+rhoc, or of
+!!                  rho alone
 !! @param rho  total charge density or valence/pseudovalence charge density
 !! @param rhoc  core charge density, full or model
 !! @param vo  output total potential
@@ -52,7 +52,8 @@
  use quad_m, only: quad_gregory_sum
 
 !Input variables
- integer, intent(in) :: iexc,mmax,mode
+ integer, intent(in) :: iexc,mmax
+ logical, intent(in) :: add_core
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: rho(mmax),rhoc(mmax),rr(mmax)
  real(dp), intent(in) :: zion
@@ -116,17 +117,14 @@
 
  eeel=al*quad_gregory_sum(foutv,mmax) + lm_head(foutv(1),rho(1),rho(2),al,3.0d0)
 
- if(mode == 0) then
-   do ii = 1, mmax
-     rhot(ii) = rho(ii)
-   end do
- else if(mode == 1) then
+ if(add_core) then
    do ii = 1, mmax
      rhot(ii) = rho(ii) + rhoc(ii)
    end do
  else
-   write(error_unit,'(/a,i4)') 'vout: ERROR bad input mode =',mode
-   error stop 1
+   do ii = 1, mmax
+     rhot(ii) = rho(ii)
+   end do
  end if
 
 ! exchange-correlation potential added
@@ -145,7 +143,7 @@
  end do
  eexc=quad_gregory_sum(foutx,mmax)
 
- if(mode == 1 .and. rhoc(1) /= 0.0d0) then
+ if(add_core .and. rhoc(1) /= 0.0d0) then
    call exc_dispatch(iexc,c_light,al,rhoc,vxcd,excca,rr,mmax,'vout')
 
    do ii=1,mmax
@@ -157,7 +155,7 @@
  eexc=al*eexc + lm_head(foutx(1),rho(1),rho(2),al,3.0d0)
 
 
- if(mode == 1) then
+ if(add_core) then
    eexc=eexc + lm_head(foutfc(1),rhoc(1),rhoc(2),al,3.0d0)
  end if
 

@@ -208,7 +208,7 @@
 
 ! output screening potential, and the energies of the orbitals of the
 ! input one
-   call vout(0,rho,rhoc,vso,vxc,sf,eeel,eexc, &
+   call vout(.false.,rho,rhoc,vso,vxc,sf,eeel,eexc, &
 &            rr,mmax,iexc,c_light)
    call ae_energies(rho,vsi,vxc,zz,eeig,eeel,eexc,rr,mmax,etot,eterm, &
 &                   vext)

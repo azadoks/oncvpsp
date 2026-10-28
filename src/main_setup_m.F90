@@ -309,7 +309,7 @@
  write(iout,'(a,f22.10)') '    exchange-correlation',eterm(4)
  end subroutine write_reference_results
 
- subroutine core_radius_points(lmax,lloc,rc,rr,mmax,irc,rcmax)
+ subroutine core_radius_points(lmax,lloc,rc,rr,mmax,irc,rcmax,iout,ifail)
 !! the last log mesh point at or inside each rc, for the bookkeeping of the
 !! routines that index the mesh (R-2); the radii themselves stay as given;
 !! and the largest
@@ -321,19 +321,23 @@
 !! @param mmax  size of the log radial mesh
 !! @param irc  last mesh point at or inside rc, of each l
 !! @param rcmax  largest core radius (bohr)
- use, intrinsic :: iso_fortran_env, only: error_unit
+!! @param iout  unit of the text output
+!! @param ifail  0, or 1 after a failure, whose message is written
  use constants_m, only: dp
 
 !Input variables
  integer, intent(in) :: lmax,lloc,mmax
  real(dp), intent(in) :: rc(:),rr(mmax)
+ integer, intent(in) :: iout
 
 !Output variables
  integer, intent(out) :: irc(:)
  real(dp), intent(out) :: rcmax
+ integer, intent(out) :: ifail
 
 !Local variables
  integer :: ii,l1
+ ifail=0
  rcmax=0.0d0
  irc(:)=0
  do l1=1,max(lmax+1,lloc+1)
@@ -342,10 +346,11 @@
      if(rr(ii)<=rc(l1)) irc(l1)=ii
    end do
    if(rc(l1)>0.0d0 .and. irc(l1)<2) then
-     write(error_unit,'(/a,i0,a,es12.4)') &
+     write(iout,'(/a,i0,a,f12.6)') &
 &         'core_radius_points: ERROR rc inside the mesh start for l=', &
 &         l1-1,': rc=',rc(l1)
-     error stop 1
+     ifail=1
+     return
    end if
    rcmax=max(rcmax,rc(l1))
  end do

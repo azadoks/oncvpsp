@@ -34,7 +34,7 @@
  use unit_check_m, only: check, check_done
  use logmesh_m, only: lm_blend, lm_interp, lm_derivs, lm_cumint, &
 &                     lm_integral, lm_integral_weights, lm_root
- use sbf8_m, only: sbf8
+ use sbf_m, only: sbf_values
  use sbf_overlap_m, only: sbf_overlap
  implicit none
 
@@ -505,8 +505,8 @@
 
  gl_overlap = 0.0_dp
  do ii = 1, ngl
-   call sbf8(8, q1*xg(ii), sb1)
-   call sbf8(8, q2*xg(ii), sb2)
+   call sbf_values(8, q1*xg(ii), sb1)
+   call sbf_values(8, q2*xg(ii), sb2)
    gl_overlap = gl_overlap + wg(ii)*xg(ii)**2*sb1(ll + 1)*sb2(ll + 1)
  end do
  end function gl_overlap

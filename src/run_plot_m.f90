@@ -76,7 +76,7 @@
  use lschvkbs_m, only: lschvkbs
  use renorm_r_m, only: renorm_r
  use scatterstate_m, only: scatterstate
- use logmesh_m, only: lm_step
+ use logmesh_m, only: lm_index
 
 !Input variables
  integer, intent(in) :: lmax,lloc,mmax,nrl,irel,nkap
@@ -99,7 +99,7 @@
 !Local variables
  integer :: ll,l1,n1,n2,n3,n4,nn
  integer :: ikap,mkap
- real(dp) :: al,dr,rcm
+ real(dp) :: dr,rcm
  real(dp), allocatable :: u2(:),up(:),ur(:,:),urp(:,:)
 !the points that are written of a plot, each beyond the last by dr
  logical, allocatable :: keep(:)
@@ -107,15 +107,13 @@
  ifail=0
  allocate(u2(mmax),up(mmax),ur(mmax,2),urp(mmax,2),keep(mmax))
 
- al=lm_step(rr,mmax)
-
  write(iout,'(/a)') 'DATA FOR PLOTTING'
 
- n1 = int(log(drl/rr(1))/al+1.0d0)
- n2 = int(log(real(nrl,dp)*drl/rr(1))/al+1.0d0)
+ n1=lm_index(rr,mmax,drl)
+ n2=lm_index(rr,mmax,real(nrl,dp)*drl)
  rcm=maxval(rc(1:lmax+1))
- n4=min(n2,int(log((rcm+1.0d0)/rr(1))/al))
- n3=int(log(1.1d0*rcm/rr(1))/al+1.0d0)
+ n4=min(n2,lm_index(rr,mmax,rcm+1.0d0)-1)
+ n3=lm_index(rr,mmax,1.1d0*rcm)
  dr=min(drl,rr(n2)/200.0d0)
 
  call write_potentials()
@@ -262,7 +260,7 @@
        return
      end if
      if(irel==2) then
-       call renorm_r(ur,rr,ll,kap,c_light,zz,mmax,cnorm,iout,ifail)
+       call renorm_r(ur,rr,ll,kap,c_light,zz,mmax,cnorm,iout=iout,ifail=ifail)
        if(ifail/=0) return
      end if
 
@@ -292,7 +290,7 @@
      call scatterstate(irel,c_light,nn,ll,kap,epa(iprj,l1,ikap), &
 &                   rr,zz,vfull,ur,urp,mmax,n2)
      if(irel==2) then
-       call renorm_r(ur,rr,ll,kap,c_light,zz,mmax,cnorm,iout,ifail)
+       call renorm_r(ur,rr,ll,kap,c_light,zz,mmax,cnorm,iout=iout,ifail=ifail)
        if(ifail/=0) return
      end if
 

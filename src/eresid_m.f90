@@ -97,9 +97,8 @@
  use logmesh_m, only: lm_ncell
  use ugrid_m, only: ug_weights, ug_cumint_down
  use sbf_q_m, only: sbfq_overlap_vs, sbfq_value_slope
- use sbf_m, only: sbf_trig_rising
+ use sbf_m, only: sbf_trig_rising, sbf_values
  use czt_m, only: czt_plan_t, czt_plan, czt_apply, czt_free
- use sbf8_m, only: sbf8
 
 !Input variables
  integer, intent(in) :: ll,nnull,nbas,nq,nqout,nr
@@ -505,7 +504,7 @@
 
 !! rlin * j_l(qq rlin) on the linear mesh from sin and cos of qq rlin, by
 !! sbf_trig_rising for l<=3 (the closed forms, the series where they
-!! cancel) and sbf8 beyond
+!! cancel) and sbf_values beyond
 
 !Input variables
  integer, intent(in) :: ll1,nr
@@ -519,7 +518,7 @@
 
  if(ll1>4) then
    do ii=1,nr
-     call sbf8(ll1,qq*rlin(ii),sb_out)
+     call sbf_values(ll1,qq*rlin(ii),sb_out)
      rsbf(ii)=rlin(ii)*sb_out(ll1)
    end do
    return

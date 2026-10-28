@@ -267,7 +267,7 @@
  end do
 
  pswfopt_null(:)=pswfopt_nu(:)
- deallocate(pswfopt,pswfopt_nu)
+ deallocate(pswfopt,pswfopt_nu,eresidevec_nu,eresideval,eresiddot_ev)
  return
 
  contains
@@ -285,6 +285,8 @@
 !! @param ps0norm  norm of the constrained wave alone
 !! @param pswfopt  the x_i
 !! @param ifail  0, or 1 after a failure, whose message is written
+
+ use root_m, only: root_tol
 
 !Input variables
  integer, intent(in) :: nnull
@@ -365,8 +367,8 @@
      tt=tt+pswfopt(ii)**2
      dt=dt+2.0d0*pswfopt(ii)**2*abs(eresiddot_ev(1))/(x1**2*den)
    end do
-   if(iter>1 .and. (abs(dx)*dtold<=8.0d0*epsilon(1.0d0)*yy**2 .or. &
-&                   abs(dx)<=4.0d0*spacing(x1))) then
+   if(iter>1 .and. (abs(dx)*dtold<=root_tol(yy**2,0.0d0) .or. &
+&                   abs(dx)<=root_tol(x1,0.0d0))) then
      converged=.true.
      exit
    end if

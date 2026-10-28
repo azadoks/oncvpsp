@@ -39,7 +39,7 @@
 !! @param ss  the overlap
 
  use constants_m, only: dp
- use sbf8_m, only: sbf8
+ use sbf_m, only: sbf_values
 
 !Input variables
  integer, intent(in) :: ll
@@ -136,7 +136,7 @@
  subroutine sbf_value_slope(lq,xx,jv,jd)
 
 !! j_l(x) and j_l'(x)=(l j_l-1 - (l+1) j_l+1)/(2l+1) (-j_1 for l=0), from
-!! sbf8's downward recurrence
+!! sbf_values's downward recurrence
 !!
 !! @param lq  angular momentum l
 !! @param xx  argument, >0
@@ -153,8 +153,8 @@
 !Local variables
  real(dp) :: sb(max(lq+2,5))
 
-! sbf8 is complete for every order only with 5 or more
- call sbf8(max(lq+2,5),xx,sb)
+! sbf_values is complete for every order only with 5 or more
+ call sbf_values(max(lq+2,5),xx,sb)
  jv=sb(lq+1)
  if(lq==0) then
    jd=-sb(2)

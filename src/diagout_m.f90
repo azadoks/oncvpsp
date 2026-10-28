@@ -145,7 +145,7 @@
  use kappa_m, only: kap_count
  use pieces_m, only: piecewise_t, pw_value, pw_node_values, pw_segment
  use logmesh_m, only: lm_interp, lm_root, lm_derivs
- use ugrid_m, only: ug_brent
+ use root_m, only: root_brent
  use input_echo_m, only: fe
  use test_results_m, only: tests_t, logder_t, ghosts_t, configs_t, &
 &                          convergence_t, weighted_cut_t, vloc_cut_t
@@ -481,7 +481,7 @@
      fq(kk)=mdrc
    else
      kseg=pw_segment(corepw(1),rr(iext))
-     call ug_brent(slope,rr(iext-1),min(rr(iext+1),rcmax),rq(kk),ierr)
+     call root_brent(slope,rr(iext-1),min(rr(iext+1),rcmax),rq(kk),ierr)
      if(ierr/=0) then
        rq(kk)=rr(iext)
        fq(kk)=fmd(iext)

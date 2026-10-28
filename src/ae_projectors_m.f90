@@ -121,7 +121,7 @@
        epa(iprj)=ea(kk,ikap)
        npa(iprj)=na(kk)
        if(irel==2) then
-         call renorm_r(uu,rr,ll,kap,c_light,zz,mmax,cnorm,iout,ifail)
+         call renorm_r(uu,rr,ll,kap,c_light,zz,mmax,cnorm,iout=iout,ifail=ifail)
          if(ifail/=0) return
        else
          cnorm=1.0d0
@@ -318,11 +318,11 @@
 
    if(irel==2 .and. wmesh(iprj)%mx>0) then
      call renorm_r(wmesh(iprj)%uu,wmesh(iprj)%rr,ll,kap,c_light,zz, &
-&                  wmesh(iprj)%mx,cnorm,iout,ifail)
+&                  wmesh(iprj)%mx,cnorm,iout=iout,ifail=ifail)
      if(ifail/=0) return
      uu(:,:)=wmesh(iprj)%uu(1:mmax,:)
    else if(irel==2) then
-     call renorm_r(uu,rr,ll,kap,c_light,zz,mmax,cnorm,iout,ifail)
+     call renorm_r(uu,rr,ll,kap,c_light,zz,mmax,cnorm,iout=iout,ifail=ifail)
      if(ifail/=0) return
    else
      cnorm=1.0d0
@@ -443,7 +443,7 @@
  end subroutine free_tail_state
 
  subroutine ae_delta_window(irel,c_light,ll,kap,nproj,epa,rr,vfull,uua,upa, &
-&                           mmax,al,rc,irc,local,dlta,vrloc,iout,ifail)
+&                           mmax,rc,irc,local,dlta,vrloc,iout,ifail)
 !! the relativistic term Delta of the all-electron wave about the taper
 !! window [0.95 rc, rc] (ae_delta, D-4), for the projectors; the local
 !! potential of lloc<4 (local) takes Delta/(2u) on the window (S-1)
@@ -459,7 +459,6 @@
 !! @param uua  the projectors' all-electron states (times r)
 !! @param upa  their derivatives in the mesh index (al*r*d(uua)/dr)
 !! @param mmax  size of the log radial mesh
-!! @param al  log of the mesh ratio
 !! @param rc  core radius (bohr)
 !! @param irc  last mesh point at or inside rc
 !! @param local  whether l is that of the local potential
@@ -469,13 +468,14 @@
 !! @param ifail  0, or 1 after a failure, whose message is written
  use ae_delta_m, only: ae_delta
  use constants_m, only: dp, mxprj, rel_window
+ use logmesh_m, only: lm_index
  use pieces_m, only: pw_reach
 
 !Input variables
  integer, intent(in) :: irel,ll,kap,nproj,mmax,irc
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: epa(mxprj),rr(mmax),vfull(mmax)
- real(dp), intent(in) :: uua(mmax,mxprj),upa(mmax,mxprj),al,rc
+ real(dp), intent(in) :: uua(mmax,mxprj),upa(mmax,mxprj),rc
  logical, intent(in) :: local
  integer, intent(in) :: iout
 
@@ -489,7 +489,7 @@
  integer :: iprj,ii,jj,kk
  ifail=0
  do iprj=1,nproj
-   ii=max(1,1+int(log(rel_window*rc/rr(1))/al)-pw_reach-8)
+   ii=max(1,lm_index(rr,mmax,rel_window*rc)-pw_reach-8)
    jj=min(mmax,irc+pw_reach+16)
    call ae_delta(irel,c_light,ll,kap,epa(iprj),rr,vfull,uua(1,iprj), &
 &                upa(1,iprj),mmax,ii,jj,dlta(1,iprj))

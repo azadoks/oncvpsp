@@ -77,36 +77,26 @@
 
  contains
 
- logical function bs_converged(de,deprev,ee,eps,polish)
+ logical function bs_converged(de,deprev,ee,eps)
 
 !! whether the energy ee has converged: its correction de is below
-!! eps*max(|ee|,0.2) and either at round-off (8 ulps) or no longer halving
-!! from the one before, deprev
+!! eps*max(|ee|,eig_floor) and either at round-off (root_tol) or no longer
+!! halving from the one before, deprev
 !!
 !! @param de  the energy correction
 !! @param deprev  the correction before
 !! @param ee  the energy
 !! @param eps  the relative convergence threshold
-!! @param polish  set .true. where de is below eps but not converged
-!!                (optional)
 
  use constants_m, only: eig_floor
+ use root_m, only: root_tol
 
 !Input variables
  real(dp), intent(in) :: de,deprev,ee,eps
 
-!Input/output variables
- logical, intent(inout), optional :: polish
-
- bs_converged=.false.
- if(abs(de)<max(abs(ee),eig_floor)*eps) then
-   if(abs(de)<=8.0d0*epsilon(1.0d0)*max(abs(ee),eig_floor) .or. &
-&     abs(de)>=0.5d0*abs(deprev)) then
-     bs_converged=.true.
-     return
-   end if
-   if(present(polish)) polish=.true.
- end if
+ bs_converged=abs(de)<max(abs(ee),eig_floor)*eps .and. &
+&             (abs(de)<=root_tol(ee,eig_floor) .or. &
+&              abs(de)>=0.5d0*abs(deprev))
  return
  end function bs_converged
 
@@ -396,10 +386,12 @@
      if(ifail/=0) return
 
 ! convergence test and possible exit
-     if(bs_converged(de,deprev,ee,eps,polish)) then
+     if(bs_converged(de,deprev,ee,eps)) then
        ierr=0
        exit
      end if
+! below eps but not converged: the energy is being polished
+     if(abs(de)<max(abs(ee),eig_floor)*eps) polish=.true.
      deprev=de
 
      call bs_correct(de,ee,emin,emax,.false.)
