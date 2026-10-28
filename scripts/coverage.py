@@ -33,12 +33,15 @@ import time
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 KINDS = (
+    "ref",
     "toml_input",
     "toml",
     "echo",
     "log_mesh",
     "upf_mesh",
     "split",
+    "ld",
+    "confine",
     "ae_file",
     "ae_scf",
     "ae_4f",
@@ -49,11 +52,14 @@ KINDS = (
     "psp8_core",
     "well_onset",
     "well_tail",
+    "well_rmax",
+    "well_norm",
     "unit",
+    "lint",
     "projector_output",
     "run_ae",
     "run",
-    "smooth",
+    "scan",
     "nist",
 )
 
@@ -111,7 +117,7 @@ def run_tests(args):
     setup = [t for t in tests if "FIXTURES_SETUP" in props(t)]
     rest = [t for t in tests if "FIXTURES_SETUP" not in props(t)]
     for phase in (setup, rest):
-        phase.sort(key=lambda t: not t["name"].startswith(("smooth_", "nist_")))
+        phase.sort(key=lambda t: not t["name"].startswith(("scan_", "nist_")))
         with ThreadPoolExecutor(max_workers=args.jobs) as ex:
             list(ex.map(run, phase))
     with open(f"{args.outdir}/times.json", "w") as f:
@@ -236,8 +242,6 @@ def ranges(numbers):
 
 
 def kind_of(name):
-    if name[0].isdigit():
-        return "ref"
     for k in KINDS:
         if name == k or name.startswith(k + "_"):
             return k

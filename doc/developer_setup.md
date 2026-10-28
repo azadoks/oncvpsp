@@ -144,14 +144,32 @@ the definition of the routine it calls.
 ## Tests
 
 `ctest --preset default` runs everything but the smoothness scans (below);
-`-L <label>` selects a part of it
-(`unit`, `run`, `sr`, `r`, `nr`, `split`, `mesh`, `toml`, `psml`, `pipe`,
-`errors`, `echo`, `psp8`, `nist`, `lint`) and `-R <regex>` a test by name. Each test
-leaves its outputs in its own directory under `build/tests`.
+`-L <label>` selects a part of it and `-R <regex>` a test by name. Each
+test leaves its outputs in its own directory under `build/tests`.
+
+Every test is registered by `oncvpsp_add_test` in `tests/CMakeLists.txt`,
+which applies the guards (no fr test without the fr executables, a Libxc
+input's tests disabled without Libxc) and makes the name and the labels:
+
+- the name is `<family>_<treatment>_<case>`: the family is what the test
+  does (`ref`, `toml`, `split`, `log_mesh`, `echo_psml`, `error`, ...),
+  the treatment `nr`, `sr` or `fr`, and the case the input, then what
+  varies (`log_mesh_sr_14_Si_upf`, `well_rmax_sr_14_Si_confined`). A test
+  of no one treatment is `<family>_<case>` (`unit_logmesh`,
+  `lint_conventions`);
+- the labels are the kind of test and the treatment. The kinds: `ref`
+  (the reference outputs), `run` (the shared runs, below), `unit`,
+  `split` (the split executables and the all-electron file), `mesh` (the
+  log and UPF meshes), `scf` (the all-electron and pseudo-atom SCF),
+  `toml` (the TOML input), `well` (the well states' invariances), `output`
+  (the projectors in the files), `psml`, `psp8`, `pipe`, `echo` (the
+  input echoed in each file, rerun), `errors`, `nist`, `scan` and `lint`.
+  `ctest -L fr` runs every fully-relativistic test, `ctest -L ref -L sr`
+  the scalar-relativistic references (`-L` twice: both labels).
 
 The tests that read the plain output of an input (reference, TOML, pipe,
 split) or its all-electron file (split, `ae_file_*`) share one run of it:
-the CTest fixtures `run_<rel>_<input>` and `run_ae_<rel>_<input>`
+the CTest fixtures `run_<treatment>_<input>` and `run_ae_<treatment>_<input>`
 (`scripts/run_test.sh`) run it once and pass the file to them in
 `$ONCVPSP_RUN` and `$ONCVPSP_AE_FILE`. CTest adds a fixture to any selection
 that needs it, so `-R` and `-L` still work alone; the scripts run the
