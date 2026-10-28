@@ -23,10 +23,9 @@ import subprocess
 import sys
 import tomllib
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from compare_output import psp8_part, upf_part  # noqa: E402
-from pyoncvpsp.io import OncvpspTextParser  # noqa: E402
-from smooth_scan import dump_toml  # noqa: E402
+from compare_output import psp8_part, upf_part
+from scripts_common import dump_toml
+from pyoncvpsp.io import OncvpspTextParser
 
 
 def beyond_rc(name, r, blocks, rc):

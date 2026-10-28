@@ -12,11 +12,10 @@
 # The python, with pyoncvpsp and upf-tools, is $ONCVPSP_PYTHON, or python3.
 # $ONCVPSP_RUN, if set, is the output of EXE for INPUT.dat (run_test.sh),
 # read in place of running it.
-set -euo pipefail
+# shellcheck source=scripts/test_lib.sh
+source "$(dirname "$0")/test_lib.sh"
 exe=$1; dat=$2; toml=$3; work=$4
 mkdir -p "$work"
-scripts=$(realpath "$(dirname "$0")")
-python=${ONCVPSP_PYTHON:-python3}
 cd "$work"
 
 if [ -n "${ONCVPSP_RUN:-}" ]; then
@@ -25,8 +24,5 @@ else
     "$exe" < "$dat" > dat.out
 fi
 "$exe" -t "$toml" > toml.out
-if ! "$python" "$scripts/compare_output.py" --identical dat.out toml.out > toml.diff; then
-    cat toml.diff
-    exit 1
-fi
+same dat.out toml.out
 echo "TOML output the same for $(basename "$toml")"

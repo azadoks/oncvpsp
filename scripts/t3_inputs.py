@@ -18,9 +18,8 @@ import math
 import pathlib
 import sys
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-import toml  # noqa: E402
-from input_text_to_toml import OncvpspInput  # noqa: E402
+from input_text_to_toml import OncvpspInput
+from scripts_common import dump_toml
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
@@ -75,7 +74,7 @@ def main():
         loc = data["local_potential"]
         if loc["lloc"] == 4:
             loc["rcloc"] = snapped(rr, truncated(loc["rcloc"]))
-        (outdir / f"{name}.toml").write_text(toml.dumps(data))
+        (outdir / f"{name}.toml").write_text(dump_toml(data))
     return 0
 
 

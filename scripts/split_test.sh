@@ -12,10 +12,9 @@
 # $ONCVPSP_RUN and $ONCVPSP_AE_FILE, if set, are the output of FULL_EXE and
 # the all-electron file of AE_EXE for INPUT.dat (run_test.sh), read in place
 # of running them.
-set -euo pipefail
+# shellcheck source=scripts/test_lib.sh
+source "$(dirname "$0")/test_lib.sh"
 full=$1; ae=$2; ps=$3; dat=$4; work=$5
-scripts=$(realpath "$(dirname "$0")")
-python=${ONCVPSP_PYTHON:-python3}
 mkdir -p "$work"
 cd "$work"
 
@@ -24,10 +23,7 @@ cd "$work"
 same_output() {
     grep -q "^build: $(basename "$2") (" "$1"
     grep -q "^build: $(basename "$4") (" "$3"
-    if ! "$python" "$scripts/compare_output.py" --identical "$1" "$3" > "${3%.out}.diff"; then
-        cat "${3%.out}.diff"
-        exit 1
-    fi
+    same "$1" "$3"
 }
 
 if [ -n "${ONCVPSP_AE_FILE:-}" ]; then

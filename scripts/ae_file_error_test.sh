@@ -12,10 +12,9 @@
 # $ONCVPSP_RUN and $ONCVPSP_AE_FILE, if set, are the output of FULL_EXE and
 # the all-electron file of AE_EXE for INPUT.dat (run_test.sh), read in place
 # of running them.
-set -euo pipefail
+# shellcheck source=scripts/test_lib.sh
+source "$(dirname "$0")/test_lib.sh"
 full=$1; ae=$2; ps=$3; dat=$4; case=$5; work=$6
-scripts=$(realpath "$(dirname "$0")")
-python=${ONCVPSP_PYTHON:-python3}
 mkdir -p "$work"
 cd "$work"
 
@@ -31,28 +30,7 @@ fi
 # na(nc+nv), la(nc+nv), fa(nc+nv), mmax, rr(mmax), c_light in native
 # byte order
 patch() {
-    python3 - atom.ae "$@" <<'PY'
-import struct
-import sys
-
-path, field = sys.argv[1:3]
-with open(path, "rb") as f:
-    buf = bytearray(f.read())
-zz = 8 + 4 + 4 + 2
-nc, nv = struct.unpack_from("=ii", buf, zz + 8)
-nt = nc + nv
-fa = zz + 8 + 12 + 8 * nt
-rr = fa + 8 * nt + 4
-(mmax,) = struct.unpack_from("=i", buf, rr - 4)
-at = {"zz": zz, "fa": fa + 8 * (nt - 1), "rr": rr + 8, "c_light": rr + 8 * mmax}
-if field == "version":
-    buf[8:12] = buf[8:12][::-1]
-else:
-    (x,) = struct.unpack_from("=d", buf, at[field])
-    struct.pack_into("=d", buf, at[field], x * float(sys.argv[3]))
-with open(path, "wb") as f:
-    f.write(buf)
-PY
+    "$python" "$scripts/ae_file_patch.py" atom.ae "$@"
 }
 
 expect=same
@@ -82,10 +60,7 @@ if [ "$expect" = same ]; then
     else
         "$full" < "$dat" > full.out
     fi
-    if ! "$python" "$scripts/compare_output.py" --identical full.out ps.out > ps.diff; then
-        cat ps.diff
-        exit 1
-    fi
+    same full.out ps.out
     echo "case $case: the same output as the single program"
 else
     if [ $status -eq 0 ]; then

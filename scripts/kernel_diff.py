@@ -32,9 +32,7 @@ import math
 import re
 import sys
 
-
-def fortran_float(text):
-    return float(text.replace("D", "E").replace("d", "e"))
+from scripts_common import fortran_float
 
 
 def find(lines, marker, start=0):
@@ -196,29 +194,41 @@ def blocks_of(path):
     return [b for b in psp8_blocks(lines) + upf_blocks(lines) if b[2] is not None]
 
 
-def compare(a, b, tol):
+def differences(a, b):
+    """[(name, kind, difference)] of the blocks of the files a and b, kind
+    "V_NL" for a kernel and "V_loc" for the local potential; None if the
+    files have different blocks."""
     blocks_a, blocks_b = blocks_of(a), blocks_of(b)
     names_a = [(x[0], len(x[2])) for x in blocks_a]
     names_b = [(x[0], len(x[2])) for x in blocks_b]
     if names_a != names_b:
         print(f"  the blocks differ: {names_a} and {names_b}")
-        return False
-    if not blocks_a:
-        print("  no psp8 or UPF file")
+        return None
     # the norms of the scalar-relativistic kernels, the scale of the spin-orbit ones
     scalar = {
         x[0]: kernel_dot(x[1], x[2], x[1], x[2]) for x in blocks_a if x[1] is not None
     }
-    ok = True
+    out = []
     for (name, da, pa, *_), (_, db, pb, *_) in zip(blocks_a, blocks_b):
         if da is None:
-            diff = local_diff(pa[0], pb[0])
-            label = f"{name:24s} max rel diff"
+            out.append((name, "V_loc", local_diff(pa[0], pb[0])))
         else:
-            diff = kernel_diff(
-                da, pa, db, pb, scalar.get(name.replace("spin-orbit ", ""))
-            )
-            label = f"{name:24s} V_NL rel diff"
+            scale = scalar.get(name.replace("spin-orbit ", ""))
+            out.append((name, "V_NL", kernel_diff(da, pa, db, pb, scale)))
+    return out
+
+
+def compare(a, b, tol):
+    diffs = differences(a, b)
+    if diffs is None:
+        return False
+    if not diffs:
+        print("  no psp8 or UPF file")
+    ok = True
+    for name, kind, diff in diffs:
+        label = f"{name:24s} " + (
+            "max rel diff" if kind == "V_loc" else "V_NL rel diff"
+        )
         bad = tol is not None and diff > tol
         ok = ok and not bad
         print(f"  {label} {diff:.1e}" + ("   > tolerance" if bad else ""))

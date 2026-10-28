@@ -8,10 +8,9 @@
 # The python, with pyoncvpsp and upf-tools, is $ONCVPSP_PYTHON, or python3.
 # $ONCVPSP_RUN, if set, is the output of EXE for INPUT.dat (run_test.sh),
 # read in place of running it.
-set -euo pipefail
+# shellcheck source=scripts/test_lib.sh
+source "$(dirname "$0")/test_lib.sh"
 exe=$(realpath "$1"); dat=$(realpath "$2"); work=$3
-scripts=$(realpath "$(dirname "$0")")
-python=${ONCVPSP_PYTHON:-python3}
 rm -rf "$work"
 mkdir -p "$work"
 cd "$work"
@@ -23,9 +22,6 @@ fi
 # the input must come through a pipe, not a file
 # shellcheck disable=SC2002
 cat "$dat" | "$exe" > pipe.out
-if ! "$python" "$scripts/compare_output.py" --identical file.out pipe.out > pipe.diff; then
-    cat pipe.diff
-    exit 1
-fi
+same file.out pipe.out
 grep -q '^# atsym.*psfile' pipe.out
 echo "$(basename "$exe") gives the same output for $(basename "$dat") from a pipe as from a file"

@@ -3,7 +3,8 @@
 # the line the reader stopped at, rather than a run-time error.
 #
 # usage: pipe_truncated_test.sh EXE INPUT.dat
-set -euo pipefail
+# shellcheck source=scripts/test_lib.sh
+source "$(dirname "$0")/test_lib.sh"
 exe=$1; dat=$2
 out=$(head -n 20 "$dat" | "$exe" 2>&1 || true)
 grep -q 'Read ERROR, input data file line  21' <<< "$out" || { echo "$out" | tail -5 >&2; exit 1; }

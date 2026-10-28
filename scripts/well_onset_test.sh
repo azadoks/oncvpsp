@@ -15,7 +15,8 @@
 #     default by more than 1e-3 (the input is used);
 #   - the echo of the input carries well_onset (on the lmax line) only
 #     when it is set.
-set -euo pipefail
+# shellcheck source=scripts/test_lib.sh
+source "$(dirname "$0")/test_lib.sh"
 exe=$1; base=$2; work=$3
 mkdir -p "$work"
 cd "$work"
@@ -60,23 +61,30 @@ run default_coarse "" 1.012
 run one 1.0 ""
 run one_coarse 1.0 1.012
 
-fail=0
-same_wells default.wells default_coarse.wells 5e-4 || fail=1
-same_wells one.wells one_coarse.wells 5e-4 || fail=1
-if same_wells default.wells one.wells 1e-3 > /dev/null; then
+# the half-point radii of the well states on two meshes (bohr): the onset at
+# a fixed radius, not a number of mesh points (with rc amesh**5 they differed
+# by 1e-2 and more)
+mesh_tol=5e-4
+# the least change of a radius from the default onset to 1 bohr
+onset_change=1e-3
+
+failed=0
+same_wells default.wells default_coarse.wells "$mesh_tol" || failed=1
+same_wells one.wells one_coarse.wells "$mesh_tol" || failed=1
+if same_wells default.wells one.wells "$onset_change" > /dev/null; then
     echo "well_onset = 1 gives the well states of the default" >&2
-    fail=1
+    failed=1
 fi
 if grep -q 'well_onset' default.out; then
     echo "the default echoes well_onset" >&2
-    fail=1
+    failed=1
 fi
 if ! grep -A1 '^# lmax, ep_as_given, well_onset, well_tail$' one.out |
         grep -Eq '^ +[0-9]+ +0 +1\.0+E\+00 +0$'; then
     echo "well_onset = 1 is not echoed on the lmax line" >&2
-    fail=1
+    failed=1
 fi
-if [ $fail -ne 0 ]; then
+if [ $failed -ne 0 ]; then
     exit 1
 fi
 echo "well_onset: the well states agree on both meshes, and the input sets the onset"

@@ -7,7 +7,8 @@
 #
 # usage: run_test.sh EXE INPUT.dat OUT [AE_FILE]
 #   AE_FILE  EXE is oncvpsp_ae.x, which writes the all-electron file AE_FILE
-set -euo pipefail
+# shellcheck source=scripts/test_lib.sh
+source "$(dirname "$0")/test_lib.sh"
 exe=$(realpath "$1"); dat=$(realpath "$2"); out=$3; ae_file=${4:-}
 mkdir -p "$(dirname "$out")"
 cd "$(dirname "$out")"

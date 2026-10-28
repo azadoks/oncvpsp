@@ -4,26 +4,15 @@ import argparse
 import logging
 import pathlib as pl
 import sys
+import tomllib
 import typing as ty
 from dataclasses import dataclass
 
-import toml
+from scripts_common import dump_toml, fortran_float
 
 logging.basicConfig(level=logging.ERROR)
 
 ATOL: float = 1e-12
-
-
-def fort_float(s: str) -> float:
-    """Convert a Fortran-style float string to a Python float.
-
-    Args:
-        s: String to convert.
-
-    Returns:
-        Converted float.
-    """
-    return float(s.lower().replace("d", "e"))
 
 
 @dataclass
@@ -68,7 +57,7 @@ class StateConfiguration:
             raise ValueError(f"Invalid state configuration: {s}")
         if len(parts) > 3:
             logging.warning("Ignoring extra parts in state configuration: %s", s)
-        n, l, f = int(parts[0]), int(parts[1]), fort_float(parts[2])
+        n, l, f = int(parts[0]), int(parts[1]), fortran_float(parts[2])
         return cls(n=n, l=l, f=f)
 
     @classmethod
@@ -152,11 +141,11 @@ class PseudopotentialConfiguration:
             raise ValueError(f"Invalid pseudopotential configuration: {s}")
         l, rc, ep, ncon, nbas, qcut = (
             int(parts[0]),
-            fort_float(parts[1]),
-            fort_float(parts[2]),
+            fortran_float(parts[1]),
+            fortran_float(parts[2]),
             int(parts[3]),
             int(parts[4]),
-            fort_float(parts[5]),
+            fortran_float(parts[5]),
         )
         return cls(l=l, rc=rc, ep=ep, ncon=ncon, nbas=nbas, qcut=qcut)
 
@@ -244,8 +233,8 @@ class LocalPotentialConfiguration:
         lloc, lpopt, rcloc, dvloc0 = (
             int(parts[0]),
             int(parts[1]),
-            fort_float(parts[2]),
-            fort_float(parts[3]),
+            fortran_float(parts[2]),
+            fortran_float(parts[3]),
         )
         return cls(lloc=lloc, lpopt=lpopt, rcloc=rcloc, dvloc0=dvloc0)
 
@@ -302,9 +291,9 @@ class KBProjectorConfiguration:
         parts = s.split()
         if len(parts) not in (3, 4, 5):
             raise ValueError(f"Invalid KB projector configuration: {s}")
-        l, nproj, debl = int(parts[0]), int(parts[1]), fort_float(parts[2])
+        l, nproj, debl = int(parts[0]), int(parts[1]), fortran_float(parts[2])
         well_n = int(parts[3]) if len(parts) > 3 else 0
-        ecut_weight = fort_float(parts[4]) if len(parts) > 4 else -1.0
+        ecut_weight = fortran_float(parts[4]) if len(parts) > 4 else -1.0
         return cls(l=l, nproj=nproj, debl=debl, well_n=well_n, ecut_weight=ecut_weight)
 
 
@@ -472,15 +461,17 @@ class ModelCoreChargeConfiguration:
         if icmod == 0:
             return cls(icmod=icmod)
         elif icmod == 1:
-            return cls(icmod=icmod, fcfact=fort_float(parts[1]))
+            return cls(icmod=icmod, fcfact=fortran_float(parts[1]))
         elif icmod == 2:
             return cls(
                 icmod=icmod,
-                fcfact=fort_float(parts[1]),
+                fcfact=fortran_float(parts[1]),
             )
         elif icmod == 3:
             return cls(
-                icmod=icmod, fcfact=fort_float(parts[1]), rcfact=fort_float(parts[2])
+                icmod=icmod,
+                fcfact=fortran_float(parts[1]),
+                rcfact=fortran_float(parts[2]),
             )
         elif icmod in (4, 5):
             if len(parts) < 9:
@@ -488,12 +479,12 @@ class ModelCoreChargeConfiguration:
             elif len(parts) == 9:
                 return cls(
                     icmod=icmod,
-                    fcfact_min=fort_float(parts[3]),
-                    fcfact_max=fort_float(parts[4]),
-                    fcfact_step=fort_float(parts[5]),
-                    rcfact_min=fort_float(parts[6]),
-                    rcfact_max=fort_float(parts[7]),
-                    rcfact_step=fort_float(parts[8]),
+                    fcfact_min=fortran_float(parts[3]),
+                    fcfact_max=fortran_float(parts[4]),
+                    fcfact_step=fortran_float(parts[5]),
+                    rcfact_min=fortran_float(parts[6]),
+                    rcfact_max=fortran_float(parts[7]),
+                    rcfact_step=fortran_float(parts[8]),
                 )
             else:
                 raise ValueError(f"Invalid model core charge configuration: {s}")
@@ -503,9 +494,9 @@ class ModelCoreChargeConfiguration:
             # budget_cutoff (0 "max", 1 "weighted", 2 "max_all"; default 0)
             return cls(
                 icmod=icmod,
-                fcfact=fort_float(parts[1]),
-                rcfact=fort_float(parts[2]) if len(parts) > 2 else None,
-                slack=fort_float(parts[3]) if len(parts) > 3 else None,
+                fcfact=fortran_float(parts[1]),
+                rcfact=fortran_float(parts[2]) if len(parts) > 2 else None,
+                slack=fortran_float(parts[3]) if len(parts) > 3 else None,
                 budget_cutoff=(
                     ("max", "weighted", "max_all")[int(parts[4])]
                     if len(parts) > 4
@@ -566,11 +557,11 @@ class LogDerivativeConfiguration:
         if len(parts) not in (3, 4):
             raise ValueError(f"Invalid log-derivative configuration: {s}")
         epsh1, epsh2, depsh = (
-            fort_float(parts[0]),
-            fort_float(parts[1]),
-            fort_float(parts[2]),
+            fortran_float(parts[0]),
+            fortran_float(parts[1]),
+            fortran_float(parts[2]),
         )
-        rxpsh = fort_float(parts[3]) if len(parts) == 4 else None
+        rxpsh = fortran_float(parts[3]) if len(parts) == 4 else None
         return cls(epsh1=epsh1, epsh2=epsh2, depsh=depsh, rxpsh=rxpsh)
 
 
@@ -614,7 +605,7 @@ class LinearMeshConfiguration:
         parts = s.split()
         if len(parts) not in (2, 3):
             raise ValueError(f"Invalid linear mesh configuration: {s}")
-        rlmax, drl = fort_float(parts[0]), fort_float(parts[1])
+        rlmax, drl = fortran_float(parts[0]), fortran_float(parts[1])
         upf_mesh = int(parts[2]) if len(parts) == 3 else 0
         return cls(drl=drl, rlmax=rlmax, upf_mesh=upf_mesh)
 
@@ -660,7 +651,7 @@ class LogMeshConfiguration:
         parts = s.split()
         if len(parts) != 3:
             raise ValueError(f"Invalid log mesh configuration: {s}")
-        return cls(*(fort_float(p) for p in parts))
+        return cls(*(fortran_float(p) for p in parts))
 
 
 @dataclass
@@ -878,12 +869,12 @@ class OncvpspInput:
         first_line = next(lines)
         words = first_line.split()
         atsym = words[0]
-        zz = fort_float(words[1])
+        zz = fortran_float(words[1])
         nc = int(words[2])
         nv = int(words[3])
         iexc = int(words[4])
         psfile = words[5]
-        c_light = fort_float(words[6]) if len(words) > 6 else None
+        c_light = fortran_float(words[6]) if len(words) > 6 else None
 
         reference_configuration = [
             StateConfiguration.from_str(next(lines)) for _ in range(nc + nv)
@@ -896,11 +887,11 @@ class OncvpspInput:
         words = next(lines).split()
         lmax = int(words[0])
         ep_as_given = len(words) > 1 and int(words[1]) == 1
-        well_onset = fort_float(words[2]) if len(words) > 2 else 0.0
+        well_onset = fortran_float(words[2]) if len(words) > 2 else 0.0
         well_tail = (
             ("well", "free", "confined")[int(words[3])] if len(words) > 3 else "well"
         )
-        wave_regularization = fort_float(words[4]) if len(words) > 4 else 0.0
+        wave_regularization = fortran_float(words[4]) if len(words) > 4 else 0.0
         well_norm = (None, "space", "rc")[int(words[5])] if len(words) > 5 else None
 
         pseudopotentials = [
@@ -1199,7 +1190,7 @@ def main() -> None:
 
     oncvpsp_input = OncvpspInput.from_text_file(input_path)
     toml_dict = oncvpsp_input.to_dict()
-    toml_str = toml.dumps(toml_dict)
+    toml_str = dump_toml(toml_dict)
 
     if args.output:
         output_path = pl.Path(args.output)
@@ -1209,7 +1200,7 @@ def main() -> None:
         print(toml_str)
 
     if args.check:
-        toml_dict_loaded = toml.loads(toml_str)
+        toml_dict_loaded = tomllib.loads(toml_str)
         oncvpsp_input_loaded = OncvpspInput.from_dict(toml_dict_loaded)
         if oncvpsp_input != oncvpsp_input_loaded:
             print("Error: Round-trip conversion check failed.", file=sys.stderr)

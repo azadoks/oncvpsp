@@ -12,10 +12,9 @@
 # (with REF the basename of the reference). The python, with pyoncvpsp and
 # upf-tools, is $ONCVPSP_PYTHON, or python3. $ONCVPSP_RUN, if set, is the
 # output of EXE for INPUT.dat (run_test.sh), read in place of running it.
-set -euo pipefail
+# shellcheck source=scripts/test_lib.sh
+source "$(dirname "$0")/test_lib.sh"
 exe=$(realpath "$1"); dat=$(realpath "$2"); ref=$(realpath "$3"); work=$4
-scripts=$(realpath "$(dirname "$0")")
-python=${ONCVPSP_PYTHON:-python3}
 mkdir -p "$work"
 cd "$work"
 name=$(basename "$ref" .out)

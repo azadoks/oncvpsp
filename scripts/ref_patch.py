@@ -33,6 +33,8 @@ import argparse
 import difflib
 import re
 
+from scripts_common import fortran_float
+
 TOL = 1.01e-5
 NUMBER = re.compile(r"[-+]?(?:\d+\.\d*|\.\d+|\d+)(?:[eEdD][-+]?\d+)?")
 ECHO = "# ATOM AND REFERENCE"
@@ -51,10 +53,6 @@ EXACT = [
 ]
 
 
-def value(text):
-    return float(text.replace("D", "E").replace("d", "e"))
-
-
 def shape(line):
     return " ".join(NUMBER.sub("#", line).split())
 
@@ -69,8 +67,8 @@ def close(a, b):
     if shape(a) != shape(b) or len(na) != len(nb):
         return False
     for x, y in zip(na, nb):
-        diff = abs(value(x) - value(y))
-        if diff > TOL and diff > TOL * (abs(value(x)) + abs(value(y))):
+        diff = abs(fortran_float(x) - fortran_float(y))
+        if diff > TOL and diff > TOL * (abs(fortran_float(x)) + abs(fortran_float(y))):
             return False
     return True
 

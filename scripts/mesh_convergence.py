@@ -24,9 +24,8 @@ import sys
 import tempfile
 import tomllib
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from compare_output import kernel_diff, kernel_norm2, load  # noqa: E402
-from smooth_scan import apply_sets, dump_toml  # noqa: E402
+from compare_output import kernel_diff, kernel_norm2, load
+from scripts_common import apply_sets, dump_toml
 
 
 def run(exe, data, amesh, workdir):

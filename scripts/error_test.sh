@@ -6,7 +6,10 @@
 # With INPUT.dat, EXE reads INPUT.dat changed by the sed expression
 # SED_EXPR on stdin; without it, EXE is given an input file that does not
 # exist.
-set -uo pipefail
+# shellcheck source=scripts/test_lib.sh
+source "$(dirname "$0")/test_lib.sh"
+# the exit status of the program is read, not stopped on
+set +e
 exe=$(realpath "$1"); message=$2; work=$3
 mkdir -p "$work"
 cd "$work" || exit 1

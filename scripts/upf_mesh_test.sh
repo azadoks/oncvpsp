@@ -20,10 +20,9 @@
 #
 # usage: upf_mesh_test.sh FULL_EXE INPUT.dat CASE WORKDIR [INPUT.toml]
 # The python, with pyoncvpsp and upf-tools, is $ONCVPSP_PYTHON, or python3.
-set -euo pipefail
+# shellcheck source=scripts/test_lib.sh
+source "$(dirname "$0")/test_lib.sh"
 full=$1; dat=$(realpath "$2"); case=$3; work=$4; toml=${5:+$(realpath "$5")}
-scripts=$(realpath "$(dirname "$0")")
-python=${ONCVPSP_PYTHON:-python3}
 mkdir -p "$work"
 cd "$work"
 
@@ -31,16 +30,6 @@ cd "$work"
 with_upf_mesh() {
     awk -v v="$1" 'done != 1 && prev ~ /^#.*rlmax/ {$0 = $0 "  " v; done = 1}
                    {print; prev = $0}'
-}
-
-# same A.out B.out [ARGS...]: B is the same output as A (compare_output.py
-# --identical, with ARGS)
-same() {
-    if ! "$python" "$scripts/compare_output.py" --identical "${@:3}" "$1" "$2" \
-            > "${2%.out}.diff"; then
-        cat "${2%.out}.diff"
-        exit 1
-    fi
 }
 
 # check_mesh OUT MAXPTS [--linear BASE.out]: the UPF file of OUT is on the

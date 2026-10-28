@@ -7,7 +7,8 @@
 # configuration").
 #
 # usage: occupation_ramp_test.sh EXE INPUT.dat WORKDIR
-set -euo pipefail
+# shellcheck source=scripts/test_lib.sh
+source "$(dirname "$0")/test_lib.sh"
 exe=$(realpath "$1"); dat=$(realpath "$2"); work=$3
 mkdir -p "$work"
 cd "$work"

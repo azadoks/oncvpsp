@@ -8,10 +8,9 @@
 #   SED  a sed script applied to the input first (e.g. to set an optional
 #        value)
 # The python, with pyoncvpsp and upf-tools, is $ONCVPSP_PYTHON, or python3.
-set -euo pipefail
+# shellcheck source=scripts/test_lib.sh
+source "$(dirname "$0")/test_lib.sh"
 exe=$1; dat=$2; format=$3; work=$4; edit=${5:-}
-scripts=$(realpath "$(dirname "$0")")
-python=${ONCVPSP_PYTHON:-python3}
 rm -rf "$work"
 mkdir -p "$work"
 cd "$work"
@@ -27,11 +26,7 @@ rerun() {
         echo "echo_rerun_test.sh: no input in $1.dat" >&2; exit 1
     fi
     "$exe" < "$1.dat" > "$1.out"
-    if ! "$python" "$scripts/compare_output.py" --identical in.out "$1.out" > "$1.diff"; then
-        echo "echo_rerun_test.sh: the $1 input gives a different output:" >&2
-        cat "$1.diff" >&2
-        exit 1
-    fi
+    same in.out "$1.out"
 }
 
 awk '/^# ATOM AND REFERENCE CONFIGURATION$/ {on=1}

@@ -4,7 +4,8 @@
 # as it does the psp8 and upf files, and leave no files behind.
 #
 # usage: psml_test.sh EXE INPUT.dat WORKDIR
-set -euo pipefail
+# shellcheck source=scripts/test_lib.sh
+source "$(dirname "$0")/test_lib.sh"
 exe=$1; dat=$2; work=$3
 rm -rf "$work"
 mkdir -p "$work/run"

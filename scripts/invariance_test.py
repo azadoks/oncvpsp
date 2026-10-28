@@ -26,10 +26,9 @@ import sys
 import tempfile
 import tomllib
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from smooth_scan import (  # noqa: E402
+from scripts_common import apply_sets
+from smooth_scan import (
     GROUPS,
-    apply_sets,
     features,
     file_mesh,
     group_scales,

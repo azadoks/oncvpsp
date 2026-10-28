@@ -59,6 +59,8 @@ repos:
     rev: v0.11.0.1
     hooks:
       - id: shellcheck
+        # follow the source of scripts/test_lib.sh
+        args: [-x]
         # the scripts that came with ONCVPSP 4.0.1
         exclude: ^scripts/(run|run_nr|run_r|multirun|multirun_r|extract|extract\.old|replot)\.sh$
 

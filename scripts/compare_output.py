@@ -77,6 +77,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 from pyoncvpsp.io import OncvpspTextParser, parse_psml, parse_psp8
+from scripts_common import fortran_float
 from upf_tools import UPFDict
 
 # (pattern, atol, rtol): the first pattern matching a quantity's path, its
@@ -339,10 +340,6 @@ def compare_lines(report, path_a, path_b, limit=10):
         if failed >= limit:
             report.fail("lines", f"stopped after {limit} differing lines")
             break
-
-
-def fortran_float(text):
-    return float(text.replace("D", "E").replace("d", "e"))
 
 
 # --- the pseudopotential files, with the projectors replaced by kernels ------

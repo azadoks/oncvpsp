@@ -200,6 +200,12 @@ oncvpsp_compares(smooth_scan_self_test)
 oncvpsp_add_test(unit unit - logmesh_weights logmesh_weights.py --check
     "${PROJECT_SOURCE_DIR}/src/logmesh_weights.inc")
 
+# kernel_diff.py and compare_output.py give the same kernel differences: 60_Nd_GHOST_r's reference
+# output against itself with its psp8 projectors changed (scripts/kernel_agreement_test.py)
+oncvpsp_add_test(unit unit - kernel_agreement kernel_agreement_test.py
+    "${CMAKE_CURRENT_SOURCE_DIR}/refs/60_Nd_GHOST_r.out" "@DIR@")
+oncvpsp_compares("${added_test}")
+
 # goals G1 (an input that was rounded or searched) and G2 (one that never was: the noise floor)
 set(smooth_g1 "kernel=1e-10,vloc=1e-10,core=1e-12,tests=1e-10")
 set(smooth_g2 "kernel=1e-12,vloc=1e-12,core=1e-12,tests=1e-10")

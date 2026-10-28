@@ -121,9 +121,9 @@ import sys
 import tempfile
 import tomllib
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from compare_output import psml_part, psp8_part, upf_part  # noqa: E402
-from pyoncvpsp.io import OncvpspTextParser  # noqa: E402
+from compare_output import psml_part, psp8_part, upf_part
+from scripts_common import apply_sets, dump_toml, get_value, parse_key, set_value
+from pyoncvpsp.io import OncvpspTextParser
 
 RADIUS_KEYS = {"rc", "rcloc", "rxpsh"}
 GROUPS = ("kernel", "vloc", "core", "tests", "ld", "ecut", "ghost")
@@ -169,76 +169,6 @@ def psfile_of(outputs):
     if len(outputs) == 1:
         return OUTPUTS[outputs[0]]
     return "both", UPF_MESH if "log" in outputs else 0
-
-
-# TOML input: read with tomllib, one value changed, written back
-
-
-def parse_key(key):
-    """('table', 'name', index, '*' or None) of KEY, e.g. pseudopotentials.rc[0]
-    or pseudopotentials.rc[*] (every element)."""
-    match = re.fullmatch(r"(\w+)\.(\w+)(?:\[(\d+|\*)\])?", key)
-    if not match:
-        raise ValueError(
-            f"KEY must be table.name, table.name[i] or table.name[*], not {key!r}"
-        )
-    table, name, index = match.groups()
-    return table, name, index if index in (None, "*") else int(index)
-
-
-def get_value(data, key):
-    table, name, index = parse_key(key)
-    value = data[table][name]
-    return value if index in (None, "*") else value[index]
-
-
-def set_value(data, key, value):
-    table, name, index = parse_key(key)
-    if index in (None, "*"):
-        # an optional table the input leaves out, e.g. [log_mesh]
-        data.setdefault(table, {})[name] = value
-    else:
-        data[table][name][index] = value
-
-
-def apply_sets(data, sets):
-    """data with each KEY=VALUE of sets applied, VALUE read as TOML."""
-    for item in sets or []:
-        key, _, text = item.partition("=")
-        set_value(data, key.strip(), tomllib.loads(f"v = {text}")["v"])
-    return data
-
-
-def toml_value(value):
-    if isinstance(value, bool):
-        return "true" if value else "false"
-    if isinstance(value, float):
-        return repr(value)
-    if isinstance(value, int):
-        return str(value)
-    if isinstance(value, str):
-        return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
-    if isinstance(value, list):
-        return "[ " + ", ".join(toml_value(v) for v in value) + ",]"
-    raise TypeError(f"no TOML form for {value!r}")
-
-
-def dump_toml(data):
-    """TOML text for the input tables (tables of scalars and arrays, and arrays
-    of such tables), with floats written so that they read back exactly."""
-    out = []
-    for name, value in data.items():
-        if isinstance(value, list) and value and isinstance(value[0], dict):
-            for entry in value:
-                out.append(f"[[{name}]]")
-                out += [f"{k} = {toml_value(v)}" for k, v in entry.items()]
-                out.append("")
-    for name, value in data.items():
-        if isinstance(value, dict):
-            out.append(f"[{name}]")
-            out += [f"{k} = {toml_value(v)}" for k, v in value.items()]
-            out.append("")
-    return "\n".join(out)
 
 
 # Features of one output

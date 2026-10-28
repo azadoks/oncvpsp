@@ -10,10 +10,9 @@
 # The same output is one that compare_output.py --identical accepts (every
 # number to 1e-10, the text exactly); the python, with pyoncvpsp and
 # upf-tools, is $ONCVPSP_PYTHON, or python3.
-set -euo pipefail
+# shellcheck source=scripts/test_lib.sh
+source "$(dirname "$0")/test_lib.sh"
 exe=$1; data=$2; case=$3; work=$4
-scripts=$(realpath "$(dirname "$0")")
-python=${ONCVPSP_PYTHON:-python3}
 mkdir -p "$work"
 cd "$work"
 
@@ -170,10 +169,7 @@ esac
 if [ "$expect" = same ]; then
     "$exe" -t "$base" > base.out
     "$exe" -t in.toml > in.out
-    if ! "$python" "$scripts/compare_output.py" --identical base.out in.out > in.diff; then
-        cat in.diff
-        exit 1
-    fi
+    same base.out in.out
     echo "$case: same output as $(basename "$base")"
 else
     status=0

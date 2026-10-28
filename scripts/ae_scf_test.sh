@@ -6,10 +6,13 @@
 # be that of the built-in mesh, to 1e-8 Ha, after more than one iteration.
 #
 # usage: ae_scf_test.sh AE_EXE INPUT.dat WORKDIR
-set -euo pipefail
+# shellcheck source=scripts/test_lib.sh
+source "$(dirname "$0")/test_lib.sh"
 ae=$(realpath "$1"); dat=$(realpath "$2"); work=$3
 mkdir -p "$work"
 cd "$work"
+# the total energy on the two meshes (Ha): both converged
+scf_tol=1e-8
 
 run() { "$ae" -a ae.bin > "$1.out"; }
 run def < "$dat"
@@ -19,8 +22,6 @@ energy() { awk '$1 == "total" {print $2}' "$1.out"; }
 iterations() { awk '$1 == "iterations" {print $2}' "$1.out"; }
 e_def=$(energy def); e_rr1=$(energy rr1); it_rr1=$(iterations rr1)
 echo "built-in mesh: $e_def Ha; rr1 = 1e-8: $e_rr1 Ha in $it_rr1 iterations"
-awk -v a="$e_def" -v b="$e_rr1" -v it="$it_rr1" \
-    'BEGIN {d = a - b; if (d < 0) d = -d; exit !(it > 1 && d < 1e-8)}' || {
-    echo "ae_scf_test: ERROR the SCF on the rr1 = 1e-8 mesh is not converged"
-    exit 1
-}
+awk -v a="$e_def" -v b="$e_rr1" -v it="$it_rr1" -v tol="$scf_tol" \
+    'BEGIN {d = a - b; if (d < 0) d = -d; exit !(it > 1 && d < tol)}' ||
+    fail "the SCF on the rr1 = 1e-8 mesh is not converged"

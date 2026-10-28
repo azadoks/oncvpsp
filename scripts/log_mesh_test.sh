@@ -23,20 +23,11 @@
 #
 # usage: log_mesh_test.sh FULL_EXE AE_EXE PS_EXE INPUT.dat CASE WORKDIR [INPUT.toml]
 # The python, with pyoncvpsp and upf-tools, is $ONCVPSP_PYTHON, or python3.
-set -euo pipefail
+# shellcheck source=scripts/test_lib.sh
+source "$(dirname "$0")/test_lib.sh"
 full=$1; ae=$2; ps=$3; dat=$4; case=$5; work=$6; toml=${7:-}
-scripts=$(realpath "$(dirname "$0")")
-python=${ONCVPSP_PYTHON:-python3}
 mkdir -p "$work"
 cd "$work"
-
-# same A.out B.out: B is the same output as A
-same() {
-    if ! "$python" "$scripts/compare_output.py" --identical "$1" "$2" > "${2%.out}.diff"; then
-        cat "${2%.out}.diff"
-        exit 1
-    fi
-}
 
 # another mesh: finer, and further out, than the built-in one
 mesh='1.004 -1 50.0'
