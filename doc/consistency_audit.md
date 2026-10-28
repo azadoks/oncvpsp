@@ -29,6 +29,21 @@ counts.
 **Status.** Open, all of it. Nothing has been fixed. The proposed
 standards are not in [Coding Standards](coding_standards.md) yet.
 
+**Note (2026-10-28).** The order of work (the last section) is done, steps
+1 to 5, in commits e5cd3db to 8ec3d7f; the summary table marks each item.
+The standards that were adopted are in [Coding
+Standards](coding_standards.md), and `scripts/check_conventions.py` checks
+them (pre-commit, and the ctest test `conventions`), allowing the 309
+findings of `scripts/conventions_baseline.txt`: the `@param` lists (E-4),
+the message form (E-3), the module and type docs, two license headers and
+two string stops. Open beyond those: N-2 (the glossary), M-4, E-5, S-3 to
+S-7, `lm_index`, and the Fourier-Bessel convention with C-13. Two things
+turned up on the way: 07_N_flat was missing from the Libxc inputs of the
+tests, and `compare_output.py` could not allow two units of the last
+digit of a number printed with few digits (73_Ta's `r_coulomb` with the
+reference LAPACK); both fixed in 8f4d1db. M-1 was fixed with `volatile`
+rather than a flag, at 1.5-2 % of the run time of the study build.
+
 **What holds already.**
 - Every call of a routine with `ifail` checks it afterwards (317 calls).
 - `iout,ifail` come last in 108 of 109 routines.
@@ -54,30 +69,30 @@ regenerated with `scripts/ref_patch.py`.
 
 | # | ID | finding | fix | output |
 |---|---|---|---|---|
-| 1 | E-1 | `scatterstate`'s `ierr` ignored at 4 call sites; `ug_brent`'s at 1 | check it, or `error stop` in `ldiracfs` | no |
-| 2 | S-1 | 2 fr tests registered without the FR guard; 9 Python tests without the pyoncvpsp guard | 5 lines in `tests/CMakeLists.txt` | no |
-| 3 | M-1 | `-ffast-math` (Release, `study`) removes the Kahan compensation | `-fno-associative-math` on 3 files, plus a unit test | round-off |
-| 4 | N-1 | 5 `@param` texts state the physics wrongly | 5 lines | no |
-| 5 | M-3 | C-12's wrong sign in `derivs` still there; dead code in pspot | 3 lines | no |
-| 6 | S-2 | ruff without an explicit `select`; dead shellcheck excludes; CI runs the scans | config | no |
-| 7 | I-1 | literals `1.d0` (193) and `_dp` (47) beside `1.0d0`; `qp` defined in 7 files; `dp` from `iso_fortran_env` in 2 readers | fortitude S291, C021 with `--fix` | no |
-| 8 | I-2 | 14 declarations use a bound before declaring it; `-std=f2008` rejects them | reorder; `-std=f2008` in Debug | no |
-| 9 | E-2 | `iout` under `!Output variables` (101) and 19 other label mismatches | scripted move | no |
-| 10 | M-2 | the mesh step re-derived 5 ways at 30 sites; index from radius at 8 | public `lm_step`, `lm_index` | round-off |
-| 11 | E-3 | error-message form: ~47 wrong prefixes, ~90 without `/`, 49 other formats | message checker, then fix | error text only |
-| 12 | M-4 | Brent twice (`lm_root` is a copy of `ug_brent`); 6 hand-written polish loops, 5 stopping rules | one Brent in a leaf module | no |
-| 13 | M-5 | tolerances and floors restated per routine (`eps=1.0d-12` in 5 solvers, the 0.2 floor ×6) | named constants | no |
-| 14 | N-2 | `@param` texts drift (310 lines against a 29-name glossary); units stated for a minority | glossary + checker | no |
-| 15 | I-3 | kappa extent `nkap`/`mxkap`/`2`; 4 idioms for the kappa count; `mxprj` both parameter and argument | one idiom | no |
-| 16 | E-4 | 64 module procedures without `@param`, 56 without section labels, 12 descriptions fortls cannot show | write them file by file | no |
-| 17 | N-3 | one-letter type components (`config_t%n`, `%l`, `%f`, ...) against rule 5 | rename (~70 sites) | no |
-| 18 | S-3 | test names in 6 patterns; labels mix test kind and treatment | one registration helper | no |
-| 19 | I-4 | `use` at module level in 53 modules; `implicit none` repeated in 101 module procedures | move; fortitude S201 | no |
-| 20 | M-6 | three Fourier–Bessel conventions; four j_l routines; sbfq still normalised by j_0 (C-13) | document; fix C-13 | DIAGNOSTICS |
-| 21 | E-5 | `confine_*` stops (`error stop 1`) on a callee's `ifail` instead of passing it on (9) | pass `ifail` on | no |
-| 22 | M-7 | relatom and psatom mix in one step; sratom uses Anderson-8 | `ae_mix` everywhere | fr refs ~1e-11 |
-| 23 | E-6 | sr/nr energies printed with D exponents, fr with E | with the next regeneration | every sr/nr ref |
-| 24 | M-8 | the all-electron energies still use order-4 Gregory sums, copied 4 times | merge now; retire later | retire: every ref |
+| 1 | E-1 | `scatterstate`'s `ierr` ignored at 4 call sites; `ug_brent`'s at 1 | check it, or `error stop` in `ldiracfs`; **done 2026-10-28** (e5cd3db) | no |
+| 2 | S-1 | 2 fr tests registered without the FR guard; 9 Python tests without the pyoncvpsp guard | 5 lines in `tests/CMakeLists.txt`; **done 2026-10-28** (12ae549) | no |
+| 3 | M-1 | `-ffast-math` (Release, `study`) removes the Kahan compensation | `-fno-associative-math` on 3 files, plus a unit test; **done 2026-10-28** (46261f1: `volatile` in logmesh_m and ugrid_m; outwf's sum left to the compiler) | round-off |
+| 4 | N-1 | 5 `@param` texts state the physics wrongly | 5 lines; **done 2026-10-28** (f8143a2) | no |
+| 5 | M-3 | C-12's wrong sign in `derivs` still there; dead code in pspot | 3 lines; **done 2026-10-28** (1483802) | no |
+| 6 | S-2 | ruff without an explicit `select`; dead shellcheck excludes; CI runs the scans | config; **done 2026-10-28** (8f4d1db) | no |
+| 7 | I-1 | literals `1.d0` (193) and `_dp` (47) beside `1.0d0`; `qp` defined in 7 files; `dp` from `iso_fortran_env` in 2 readers | fortitude S291, C021 with `--fix`; **done 2026-10-28** (8f4d1db, b225a84) | no |
+| 8 | I-2 | 14 declarations use a bound before declaring it; `-std=f2008` rejects them | reorder; `-std=f2008` in Debug; **done 2026-10-28** (8f4d1db) | no |
+| 9 | E-2 | `iout` under `!Output variables` (101) and 19 other label mismatches | scripted move; **done 2026-10-28** (b225a84) | no |
+| 10 | M-2 | the mesh step re-derived 5 ways at 30 sites; index from radius at 8 | public `lm_step`, `lm_index`; **mesh step done 2026-10-28** (b225a84, `lm_step`); `lm_index` open | round-off |
+| 11 | E-3 | error-message form: ~47 wrong prefixes, ~90 without `/`, 49 other formats | message checker, then fix; open (in the checker's baseline) | error text only |
+| 12 | M-4 | Brent twice (`lm_root` is a copy of `ug_brent`); 6 hand-written polish loops, 5 stopping rules | one Brent in a leaf module; open | no |
+| 13 | M-5 | tolerances and floors restated per routine (`eps=1.0d-12` in 5 solvers, the 0.2 floor ×6) | named constants; **done 2026-10-28** (b225a84) | no |
+| 14 | N-2 | `@param` texts drift (310 lines against a 29-name glossary); units stated for a minority | glossary + checker; open | no |
+| 15 | I-3 | kappa extent `nkap`/`mxkap`/`2`; 4 idioms for the kappa count; `mxprj` both parameter and argument | one idiom; **done 2026-10-28** (b225a84) | no |
+| 16 | E-4 | 64 module procedures without `@param`, 56 without section labels, 12 descriptions fortls cannot show | write them file by file; open (in the checker's baseline) | no |
+| 17 | N-3 | one-letter type components (`config_t%n`, `%l`, `%f`, ...) against rule 5 | rename (~70 sites); **done 2026-10-28** (b225a84) | no |
+| 18 | S-3 | test names in 6 patterns; labels mix test kind and treatment | one registration helper; open | no |
+| 19 | I-4 | `use` at module level in 53 modules; `implicit none` repeated in 101 module procedures | move; fortitude S201; **done 2026-10-28** (8f4d1db, b225a84) | no |
+| 20 | M-6 | three Fourier–Bessel conventions; four j_l routines; sbfq still normalised by j_0 (C-13) | document; fix C-13; **re-seeding done 2026-10-28** (8ec3d7f); the convention and C-13 open | DIAGNOSTICS |
+| 21 | E-5 | `confine_*` stops (`error stop 1`) on a callee's `ifail` instead of passing it on (9) | pass `ifail` on; open | no |
+| 22 | M-7 | relatom and psatom mix in one step; sratom uses Anderson-8 | `ae_mix` everywhere; **relatom done 2026-10-28** (8ec3d7f); psatom keeps its one-step mixing | fr refs ~1e-11 |
+| 23 | E-6 | sr/nr energies printed with D exponents, fr with E | with the next regeneration; **done 2026-10-28** (8ec3d7f) | every sr/nr ref |
+| 24 | M-8 | the all-electron energies still use order-4 Gregory sums, copied 4 times | merge now; retire later; **merge done 2026-10-28** (8ec3d7f); retiring stays deferred | retire: every ref |
 
 The sections below give the details by dimension. The last section
 collects the proposed standards and how each would be checked.
