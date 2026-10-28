@@ -52,14 +52,13 @@
  use constants_m, only: dp
  use logmesh_m, only: lm_integral
  use vout_m, only: vout
- implicit none
 
 !Input variables
+ integer, intent(in) :: iexc,nc,nv,mmax
  real(dp), intent(in) :: rhotot(mmax),rhoc(mmax),rho(mmax,nv),rr(mmax)
  real(dp), intent(in) :: d2ref(nv,nv)
  real(dp), intent(in) :: zion,rcut
  integer, intent(in) :: la(nv+nc)
- integer, intent(in) :: iexc,nc,nv,mmax
  real(dp), intent(in) :: c_light
 
 !Output variables
@@ -78,7 +77,7 @@
  do kk=1,nv
    dvxc(:,kk)=0.0d0
 
-   rhot(:)=rhotot(:)-2.d0*hh*rho(:,kk)
+   rhot(:)=rhotot(:)-2.0d0*hh*rho(:,kk)
    call vout(1,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,iexc,c_light)
    dvxc(:,kk)=dvxc(:,kk)+( 2.0d0/(24.0d0*hh))*vxct(:)
 
@@ -90,7 +89,7 @@
    call vout(1,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,iexc,c_light)
    dvxc(:,kk)=dvxc(:,kk)+( 16.0d0/(24.0d0*hh))*vxct(:)
 
-   rhot(:)=rhotot(:)+2.d0*hh*rho(:,kk)
+   rhot(:)=rhotot(:)+2.0d0*hh*rho(:,kk)
    call vout(1,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,iexc,c_light)
    dvxc(:,kk)=dvxc(:,kk)+(-2.0d0/(24.0d0*hh))*vxct(:)
 

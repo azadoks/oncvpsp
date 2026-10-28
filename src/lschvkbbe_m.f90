@@ -65,12 +65,11 @@
  use outwf_m, only: outwf_t, outwf_setup, outwf_solve, outwf_free
  use quad_m, only: log_norm_to
  use logmesh_m, only: lm_interp
- implicit none
 
 !Input variables
  real(dp), intent(in) :: uld,rm
- real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nvkb)
  integer, intent(in) :: nn,ll,nvkb,mmax
+ real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nvkb)
  integer, intent(in) :: mch
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(nvkb)
 

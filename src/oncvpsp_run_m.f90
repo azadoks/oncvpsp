@@ -92,7 +92,6 @@
  use constants_m, only: mxprj, mxcnf
  use pieces_m, only: pw_free
  use input_m, only: input_t
- implicit none
 
 !Input variables
  integer, intent(in) :: irel,istage

@@ -63,7 +63,6 @@
 
  use constants_m, only: dp
  use logmesh_m, only: lm_interp, lm_derivs
- implicit none
 
 !Input variables
  integer, intent(in) :: irel,ll,kap,mmax

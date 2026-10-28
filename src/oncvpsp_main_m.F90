@@ -68,7 +68,6 @@
  use oncvpsp_run_m, only: oncvpsp_run
  use results_m, only: results_t
  use psp_files_m, only: write_psp_files
- implicit none
  integer, parameter :: iout=6
 
  type(input_t) :: inp

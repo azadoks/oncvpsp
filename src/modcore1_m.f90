@@ -70,7 +70,6 @@
 &                     d2exc_baseline, d2exc_report
  use pieces_m, only: piecewise_t
  use der2exc_m, only: der2exc
- implicit none
 
 !Input variables
  integer, intent(in) :: icmod,nv,nc,iexc,mmax

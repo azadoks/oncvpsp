@@ -75,7 +75,6 @@
  use outmesh_m, only: om_values, om_piece_values, om_local_values
  use pieces_m, only: piecewise_t
  use input_m, only: input_t
- implicit none
 
 
 !Input variables
@@ -162,12 +161,12 @@
 !! which each one's norm is below 1e-6
  integer :: ii,jj,l1,ikap,mkap,jstart
  real(dp) :: nrmsum,uurcut
- uurcut = 0.d0
+ uurcut = 0.0d0
  do ii=1,inp%nv
    l1 = inp%la(inp%nc+ii)
    mkap=kap_count(nkap,l1)
    do ikap=1,mkap
-     nrmsum = 0.d0
+     nrmsum = 0.0d0
 !the search starts at mmax-1 in the sr code and at mmax in the fr code
      if(nkap==1) then
        jstart=mmax-1
@@ -176,7 +175,7 @@
      end if
      do jj=jstart,1,-1
        nrmsum = nrmsum + (uupsa(jj,ikap,ii)**2) * rr(jj)*al
-       if(nrmsum > 1.d-6) then
+       if(nrmsum > 1.0d-6) then
          exit  ! Cutoff radius such that uu norm accurate to 10^-6
        end if
      end do
@@ -550,7 +549,7 @@
    end if
 
    write(iout,'(1p,4e24.16)') (fe(vkbl(ii,jj,l1,ikap)),ii=1,nrlproj)
-   write(iout,'(1p,4f3.0)') (0.d0,ii=nrlproj+1,nrl)
+   write(iout,'(1p,4f3.0)') (0.0d0,ii=nrlproj+1,nrl)
 
    write(iout,'(t4,a,i0,a)') &
 &        '</PP_BETA.',iproj,'>'

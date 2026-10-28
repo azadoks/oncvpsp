@@ -66,7 +66,6 @@
  use constants_m, only: dp, mxstate
  use relatom_m, only: relatom
  use sratom_m, only: sratom
- implicit none
 
 !Input variables
  integer, intent(in) :: irel,nkap,mmax,iexc,nc,ncv

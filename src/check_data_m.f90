@@ -42,7 +42,6 @@
  use constants_m, only: dp, mxstate, mxcnf, mxl, mxlin
  use input_m, only: input_t
  use exc_libxc_m, only: have_libxc
- implicit none
 
 !Input variables
  type(input_t), intent(in) :: inp

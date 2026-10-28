@@ -57,12 +57,11 @@
  use dirac_m, only: dirac_outward
  use quad_m, only: log_norm
  use inward_start_m, only: inward_start
- implicit none
 
 !Input variables
+ integer, intent(in) :: nn,ll,kap,mmax
  real(dp), intent(in) :: rr(mmax),vv(mmax)
  real(dp), intent(in) :: zz
- integer, intent(in) :: nn,ll,kap,mmax
  real(dp), intent(in) :: c_light
 
 !Input/output variables

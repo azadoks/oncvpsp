@@ -37,7 +37,6 @@
 
  use constants_m, only: dp
  use sbf8_m, only: sbf8
- implicit none
 
 !Input variables
  integer, intent(in) :: llin

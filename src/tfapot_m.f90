@@ -44,7 +44,6 @@
 !!                                 Alexander Seidl, TU Munich
 
  use constants_m, only: dp
- implicit none
 
 !Input variables
  real(dp), intent(in) :: rr,zz
@@ -55,7 +54,7 @@
 !Local variables
  real(dp) :: bb,tt,xx,xs
 
- bb=(0.69395656d0/zz)**.33333333d0
+ bb=(0.69395656d0/zz)**0.33333333d0
  xx=rr/bb
  xs=sqrt(xx)
 

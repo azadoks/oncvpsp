@@ -80,7 +80,6 @@
 
  use constants_m, only: pi
  use input_m, only: input_t
- implicit none
 
 
 !Input variables
@@ -415,7 +414,7 @@
 &                     ff=f0)
      else
        do jj=1,2
-         jval = ll(ii) + (3-2*jj)*0.5  ! convert (1,2) to (1,-1)*1/2
+         jval = ll(ii) + (3-2*jj)*0.5d0  ! convert (1,2) to (1,-1)*1/2
          vps(:) = vpuns(:,l1,jj)
          call add_zero_r(vps(1:npts),rgrid,f0)
          call write_psml_item(xf, class="slps", &
@@ -536,7 +535,7 @@
 
 ! two j values
        do jk=1,2
-         jval = l1-1 + (3-2*jk)*0.5  ! convert (1,2) to (1,-1)*1/2
+         jval = l1-1 + (3-2*jk)*0.5d0  ! convert (1,2) to (1,-1)*1/2
          do jj=1,inp%nproj(l1)
            call add_zero_r(vkb(:,jj,l1,jk),rgrid,f0)
            call write_psml_item(xf, class="proj", &
@@ -641,7 +640,6 @@
 
  use xmlf90_wxml, only: xmlf_t, xml_AddPcData
  use input_echo_m, only: input_echo_lines, echo_len
- implicit none
 
 !Input variables
  character(len=2), intent(in) :: atsym

@@ -136,6 +136,11 @@ add_custom_target(oncvpsp_build_info
     VERBATIM
 )
 
+# The imported files keep their form (fixed form, REAL*8, single-precision literals): not held to
+# the Debug build's -std=f2008 and -Wconversion (cmake/OncvpspCompilerOptions.cmake)
+set_source_files_properties(exc_off_pbe_m.f functionals.F90 m_libxc_list.F90 PROPERTIES
+    COMPILE_OPTIONS "$<$<Fortran_COMPILER_ID:GNU>:-std=gnu;-Wno-conversion>")
+
 add_library(oncvpsp STATIC ${src_oncvpsp})
 add_library(oncvpsp::oncvpsp ALIAS oncvpsp)
 add_dependencies(oncvpsp oncvpsp_build_info)

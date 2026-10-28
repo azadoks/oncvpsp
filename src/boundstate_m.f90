@@ -53,7 +53,6 @@
  use constants_m, only: dp
  use ldiracfb_m, only: ldiracfb
  use lschfb_m, only: lschfb
- implicit none
 
 !Input variables
  integer, intent(in) :: irel,nn,ll,kap,mmax

@@ -48,12 +48,11 @@
  use constants_m, only: dp
  use dirac_m, only: dirac_outward
  use quad_m, only: log_norm
- implicit none
 
 !Input variables
+ integer, intent(in) :: ll,kap,mmax
  real(dp), intent(in) :: rr(mmax),vv(mmax)
  real(dp), intent(in) :: zz
- integer, intent(in) :: ll,kap,mmax
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: ee
  integer, intent(in) :: mch

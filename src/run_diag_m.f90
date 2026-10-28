@@ -88,7 +88,6 @@
  use lschvkbbe_m, only: lschvkbbe
  use renorm_r_m, only: renorm_r
  use scatterstate_m, only: scatterstate
- implicit none
 
 !Input variables
  integer, intent(in) :: lmax,lloc,mmax,mxprj,irel,nkap,iso

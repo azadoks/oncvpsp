@@ -62,7 +62,6 @@
  use, intrinsic :: iso_fortran_env, only: qp => real128
  use sbf_q_m, only: sbfq_overlap, sbfq_rc_der
  use qlinalg_m, only: qjacobi
- implicit none
 
 !Input variables
  integer, intent(in) :: ll,nbas,nbasmx,iprj,mxprj,ncon,ncon_in

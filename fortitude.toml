@@ -1,9 +1,15 @@
 # fortitude settings (https://fortitude.readthedocs.io), run by pre-commit.
 # See doc/coding_standards.md.
 [check]
+# the preview rules too, for the two below (S291 is a preview default)
+preview = true
+# also: literals with a kind (no-real-suffix), and implicit none on the module
+# only (superfluous-implicit-none)
+extend-select = ["C021", "S201"]
 # fortitude's default rules, except those that conflict with the coding
 # standards
 ignore = [
+    "S271",  # unsorted-uses: use statements are in the order the code needs them
     "S241",  # bad-quote-string: strings are quoted with '
     # implicit-external-procedures: implicit none (type, external) is Fortran
     # 2018; gfortran's -Werror=implicit-interface makes the same check

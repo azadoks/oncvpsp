@@ -49,7 +49,6 @@
  use constants_m, only: dp, pi
  use logmesh_m, only: lm_head
  use xc_dispatch_m, only: exc_dispatch
- implicit none
 
 !Input variables
  integer, intent(in) :: iexc,mmax,mode

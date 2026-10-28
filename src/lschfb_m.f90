@@ -60,13 +60,12 @@
  use match_m, only: match_k, match_point, match_weights, match_blend
  use quad_m, only: log_norm
  use inward_start_m, only: inward_start
- implicit none
 
 !Input variables
+ integer, intent(in) :: mmax
  real(dp), intent(in) :: rr(mmax),vv(mmax)
  real(dp), intent(in) :: zz
  integer, intent(in) :: nn,ll
- integer, intent(in) :: mmax
  integer, intent(in) :: irel
  real(dp), intent(in) :: c_light
 

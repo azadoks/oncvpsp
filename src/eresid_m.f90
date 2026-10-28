@@ -101,7 +101,6 @@
  use sbf_m, only: sbf_trig_rising
  use czt_m, only: czt_plan_t, czt_plan, czt_apply, czt_free
  use sbf8_m, only: sbf8
- implicit none
 
 !Input variables
  integer, intent(in) :: ll,nnull,nbas,nq,nqout,nr

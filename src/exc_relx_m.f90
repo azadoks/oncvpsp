@@ -44,7 +44,6 @@
 !! @param c_light  speed of light (Hartree atomic units)
 
  use constants_m, only: dp, pi
- implicit none
 
 !Input variables
  integer, intent(in) :: mmax

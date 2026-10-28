@@ -69,7 +69,6 @@
  use tfapot_m, only: tfapot
  use vout_m, only: vout
  use ldiracfb_m, only: ldiracfb
- implicit none
 
 !Input variables
 
@@ -115,10 +114,10 @@
  allocate(vsi(mmax),vso(mmax),vsi1(mmax),vso1(mmax),vxc(mmax))
 
 ! why all this is necessary is unclear, but it seems to be
- uu(:,:)=0.d0; up(:,:)=0.d0; vso(:)=0.d0; vsi1(:)=0.d0; vso1(:)=0.d0
- vxc(:)=0.d0
- eeel=0.d0; eexc=0.d0; et=0.d0
- sf=0.d0; eeig=0.d0; zion=0.d0
+ uu(:,:)=0.0d0; up(:,:)=0.0d0; vso(:)=0.0d0; vsi1(:)=0.0d0; vso1(:)=0.0d0
+ vxc(:)=0.0d0
+ eeel=0.0d0; eexc=0.0d0; et=0.0d0
+ sf=0.0d0; eeig=0.0d0; zion=0.0d0
  nin=0; mch=0
 
  al = 0.01d0 * log(rr(101) / rr(1))

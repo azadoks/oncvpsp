@@ -35,7 +35,6 @@
 
  use constants_m, only: dp
  use sbf_m, only: sbf_trig
- implicit none
 
 !Input variables
  integer, intent(in) :: nm

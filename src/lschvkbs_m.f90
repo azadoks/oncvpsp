@@ -50,13 +50,12 @@
  use pieces_m, only: piecewise_t
  use quad_m, only: log_norm
  use vkboutwf_m, only: vkboutwf
- implicit none
 
 !Input variables
  integer, intent(in) :: mmax,mch
+ integer, intent(in) :: ivkb,ll
  real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(ivkb)
  real(dp), intent(in) :: ee
- integer, intent(in) :: ivkb,ll
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(ivkb)
 
 !Output variables

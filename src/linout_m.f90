@@ -76,7 +76,6 @@
  use outmesh_m, only: om_values, om_piece_values, om_local_values
  use pieces_m, only: piecewise_t
  use input_m, only: input_t
- implicit none
 
 !Input variables
  type(input_t), intent(in) :: inp
@@ -215,7 +214,7 @@
 &  '    zatom,zion,pspd'
  write(iout,'(i6,i8,i4,3i6, a)') 8, ixc_abinit,inp%lmax,inp%lloc, &
 &  nrl, 0, '    pspcod,pspxc,lmax,lloc,mmax,r2well'
- write(iout,'(3f12.8, a)') rl(nrl),fchrg, 0.0,  &
+ write(iout,'(3f12.8, a)') rl(nrl),fchrg, 0.0d0,  &
 &  '    rchrg fchrg qchrg'
  if(nkap==1) then
    write(iout,'(5i6, a)') (inp%nproj(l1),l1=1,5),  &
@@ -228,7 +227,7 @@
 ! this is where abinit is informed that we have spin-orbit
    write(iout,'(2i6, a)') 3,1, &
 &    '           extension_switch'
-   if(soscale==1.d0) then
+   if(soscale==1.0d0) then
      write(iout,'(3i6, a)') npr_so(2:4),'    nprojso'
    else
      write(iout,'(3i6, a,f6.2)') npr_so(2:4),'    nprojso  X,soscale', soscale

@@ -285,8 +285,8 @@
 
 
 
- eat(:,:,2)=0.d0; rpk(:,:)=0.d0; rhoc(:)=0.d0; rho(:)=0.d0; vfull(:)=0.d0
- eaetst=0.d0
+ eat(:,:,2)=0.0d0; rpk(:,:)=0.0d0; rhoc(:)=0.0d0; rho(:)=0.0d0; vfull(:)=0.0d0
+ eaetst=0.0d0
 
 !all-electron atom solution for maximally-ionized state
 
@@ -334,8 +334,8 @@
    end if
  end do
 
- eat(:,:,3)=0.d0; rpk(:,:)=0.d0; rhoc(:)=0.d0; rho(:)=0.d0; vfull(:)=0.d0
- eaetst=0.d0
+ eat(:,:,3)=0.0d0; rpk(:,:)=0.0d0; rhoc(:)=0.0d0; rho(:)=0.0d0; vfull(:)=0.0d0
+ eaetst=0.0d0
 
 !all-electron atom solution for excited state
 

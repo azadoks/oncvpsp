@@ -82,6 +82,9 @@ add_test(NAME unit_qroots_lcross COMMAND test_qroots lcross)
 set_tests_properties(unit_qroots_lcross PROPERTIES LABELS unit WILL_FAIL TRUE)
 add_executable(test_modcore unit/test_modcore.f90 unit/gg1cc.f90 unit/gp1cc.f90
                unit/gpp1cc.f90)
+# imported, so not held to the Debug build's -std=f2008 and -Wconversion
+set_source_files_properties(unit/gg1cc.f90 unit/gp1cc.f90 unit/gpp1cc.f90 PROPERTIES
+    COMPILE_OPTIONS "$<$<Fortran_COMPILER_ID:GNU>:-std=gnu;-Wno-conversion>")
 target_link_libraries(test_modcore PRIVATE oncvpsp::oncvpsp oncvpsp::compile_options)
 set_target_properties(test_modcore PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 add_test(NAME unit_modcore COMMAND test_modcore)
@@ -91,7 +94,7 @@ set(scripts "${PROJECT_SOURCE_DIR}/scripts")
 set(data "${CMAKE_CURRENT_SOURCE_DIR}/data")
 
 # The inputs with Libxc functionals (iexc < 0), whose tests are disabled without Libxc
-set(libxc_inputs "07_N_opt" "38_Sr_lxc" "60_Nd_GHOST" "79_Au_lxc" "83_Bi")
+set(libxc_inputs "07_N_opt" "07_N_flat" "38_Sr_lxc" "60_Nd_GHOST" "79_Au_lxc" "83_Bi")
 
 # oncvpsp_test(NAME LABEL SCRIPT ARGS...): run SCRIPT with ARGS, labelled LABEL; not added when it
 # runs a fully-relativistic executable and those are not built (ONCVPSP_WITH_FR off)

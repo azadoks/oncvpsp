@@ -50,7 +50,6 @@
  use constants_m, only: dp
  use ldiracfs_m, only: ldiracfs
  use lschfs_m, only: lschfs
- implicit none
 
 !Input variables
  integer, intent(in) :: irel,ll,kap,mmax,mch

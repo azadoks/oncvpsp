@@ -45,7 +45,6 @@
 &                         xc_functl_end, XC_DERIV_NUMERICAL
  use constants_m, only: dp, pi
  use derivs_m, only: derivs
- implicit none
 
 !Input variables
  integer, intent(in) :: mmax, iexc
@@ -85,8 +84,8 @@
  irel = 0 !XC_NON_RELATIVISTIC
 !numerical derivatives (XC_DERIV_ANALYTICAL is the alternative)
  deriv_method = XC_DERIV_NUMERICAL
- call xc_functl_init_functl(functls(1),id(1),3,0.d0,nspin,deriv_method)
- call xc_functl_init_functl(functls(2),id(2),3,0.d0,nspin,deriv_method)
+ call xc_functl_init_functl(functls(1),id(1),3,0.0d0,nspin,deriv_method)
+ call xc_functl_init_functl(functls(2),id(2),3,0.0d0,nspin,deriv_method)
 
 ! no use of vtau kin en density optional argument
 ! ip is an ionization potential parameter for certain xc functionals, not
@@ -111,7 +110,7 @@
 ! outputs the energy per particle, yet dividing by rho once more here
 ! gives an LDA exc identical to that of the built-in routines.
  do ii=1,mmax
-   exc(ii) = exc(ii) / max(rho_loc(ii),1.d-20)
+   exc(ii) = exc(ii) / max(rho_loc(ii),1.0d-20)
  end do
 
 ! finish
@@ -137,7 +136,6 @@
  use functionals_m, only: xc_functl_t, xc_functl_init_functl, &
 &                         xc_functl_write_info, xc_functl_end, &
 &                         XC_DERIV_NUMERICAL
- implicit none
 
 !Input variables
  integer, intent(in) :: iexc,iout
@@ -148,8 +146,8 @@
 
  id(1) = abs(iexc)/1000
  id(2) = abs(iexc) - id(1)*1000
- call xc_functl_init_functl(functls(1),id(1),3,0.d0,1,XC_DERIV_NUMERICAL)
- call xc_functl_init_functl(functls(2),id(2),3,0.d0,1,XC_DERIV_NUMERICAL)
+ call xc_functl_init_functl(functls(1),id(1),3,0.0d0,1,XC_DERIV_NUMERICAL)
+ call xc_functl_init_functl(functls(2),id(2),3,0.0d0,1,XC_DERIV_NUMERICAL)
  call xc_functl_write_info(functls(1), iout)
  call xc_functl_write_info(functls(2), iout)
  write(iout,'(a)') ''

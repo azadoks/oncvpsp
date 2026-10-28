@@ -52,7 +52,6 @@
  use constants_m, only: dp
  use sr_flux_m, only: sr_gamma, sr_flux_coefs, sr_outward
  use quad_m, only: log_norm
- implicit none
 
 !Input variables
  integer, intent(in) :: mmax

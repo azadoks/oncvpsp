@@ -1,4 +1,6 @@
 # ruff settings (https://docs.astral.sh/ruff), run by pre-commit
 [lint]
+# ruff's default rules, named so that a new ruff does not change them
+select = ["E4", "E7", "E9", "F"]
 # l is the angular momentum, named as in the input file
 ignore = ["E741"]

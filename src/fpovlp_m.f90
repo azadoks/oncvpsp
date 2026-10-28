@@ -52,7 +52,6 @@
  use constants_m, only: dp
  use sr_flux_m, only: sr_gamma
  use logmesh_m, only: lm_integral
- implicit none
 
 !Input variables
  integer, intent(in) :: mmax,ll,kap
@@ -81,7 +80,7 @@
 
 ! the piece below rr(1) from the power law, the rest by the cumulative
 ! integral (whose own start cancels between its two limits)
- ss=gg(1)*hh(1)*rr(1)/(2.d0*gamma+1.0d0)
+ ss=gg(1)*hh(1)*rr(1)/(2.0d0*gamma+1.0d0)
  call lm_integral(rr,gg*hh,mmax,2*ll+2,rr(1),rc,si)
  ss=ss+si
 

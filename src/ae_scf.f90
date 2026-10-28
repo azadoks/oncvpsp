@@ -44,7 +44,6 @@
 !! @param res  residual (Ha)
 
  use constants_m, only: dp
- implicit none
 
 !Input variables
  integer, intent(in) :: mmax
@@ -95,7 +94,6 @@
 
  use constants_m, only: dp
  use logmesh_m, only: lm_head
- implicit none
 
 !Input variables
  integer, intent(in) :: mmax
@@ -206,7 +204,6 @@
 
  use constants_m, only: dp
  use lapack_m, only: dgesv
- implicit none
 
 !Input variables
  integer, intent(in) :: it,ndep,mmax,irel
@@ -333,7 +330,6 @@
 !! @param iout  unit of the text output
 
  use constants_m, only: dp
- implicit none
 
 !Input variables
  integer, intent(in) :: it
@@ -371,7 +367,6 @@
 !! @param iout  unit of the text output
 
  use constants_m, only: dp
- implicit none
 
 !Input variables
  real(dp), intent(in) :: res,tolres
@@ -399,7 +394,6 @@
 !! @param bl  the blend of the output potential
 
  use constants_m, only: dp
- implicit none
 
 !Input variables
  integer, intent(in) :: mmax
@@ -448,7 +442,6 @@
 !! @param rpk  the radius (output)
 
  use constants_m, only: dp
- implicit none
 
 !Input variables
  integer, intent(in) :: mch

@@ -266,7 +266,7 @@
 
  mch=0
  do ii=mmax,2,-1
-   if(cf(ii-1)<=0.d0 .and. cf(ii)>0.d0) then
+   if(cf(ii-1)<=0.0d0 .and. cf(ii)>0.0d0) then
      mch=ii
      exit
    end if

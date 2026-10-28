@@ -44,7 +44,6 @@
 !! @param mmax  dimension of log radial grid
 
  use constants_m, only: dp
- implicit none
 
 !Input variables
  integer, intent(in) :: mmax, iexc
@@ -69,7 +68,6 @@
 !! @param iexc  exchange-correlation function to be used
 !! @param iout  unit of the text output
 
- implicit none
 
 !Input variables
  integer, intent(in) :: iexc,iout

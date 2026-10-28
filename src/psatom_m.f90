@@ -73,7 +73,6 @@
  use pieces_m, only: piecewise_t
  use vout_m, only: vout
  use lschvkbb_m, only: lschvkbb_tol
- implicit none
 
 !Input variables
 
@@ -143,11 +142,11 @@
 
 ! this seems necessary in sratom, so I might as well do it  here too
 ! don't ask why!
- uu(:)=0.d0; up(:)=0.d0
- vo(:)=0.d0; vi1(:)=0.d0; vo1(:)=0.d0; vxc(:)=0.d0; vp(:)=0.d0
- vtot(:)=0.d0
- eeel=0.d0; eexc=0.d0; et=0.d0; emin=0.d0; emax=0.d0
- eeig=0.d0; zval=0.d0
+ uu(:)=0.0d0; up(:)=0.0d0
+ vo(:)=0.0d0; vi1(:)=0.0d0; vo1(:)=0.0d0; vxc(:)=0.0d0; vp(:)=0.0d0
+ vtot(:)=0.0d0
+ eeel=0.0d0; eexc=0.0d0; et=0.0d0; emin=0.0d0; emax=0.0d0
+ eeig=0.0d0; zval=0.0d0
  nin=0; mch=0
 
  al = 0.01d0 * log(rr(101) / rr(1))

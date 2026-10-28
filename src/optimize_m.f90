@@ -76,7 +76,6 @@
 
  use constants_m, only: dp
  use lapack_m, only: dsyev
- implicit none
 
 !Input variables
  integer, intent(in) :: nnull,nbas,nqout
@@ -178,8 +177,8 @@
 !these coefficients
 
  allocate(pswfopt(nnull),pswfopt_nu(nnull))
- pswfopt(:)=0.d0
- pswfopt_nu(:)=0.d0
+ pswfopt(:)=0.0d0
+ pswfopt_nu(:)=0.0d0
 
 ! Interval-halving search to minimize E*r
 
@@ -290,7 +289,7 @@
 
 !Local variables
  real(dp) :: yy,tt,rtsgn,x1,x1min,x1max,dt,dtold,dx,den
- real(dp), parameter :: eps=1.d-10
+ real(dp), parameter :: eps=1.0d-10
  integer :: ii,iter
  integer, parameter :: niter=100
  logical :: converged

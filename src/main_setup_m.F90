@@ -202,7 +202,7 @@
  else
    rmax=45.0d0
  end if
- mmax=log(rmax/rr1)/al
+ mmax=int(log(rmax/rr1)/al)
  log_mesh(:)=0.0d0
  if(amesh_in>0.0d0 .or. rr1_in>0.0d0 .or. rmax_in>0.0d0) then
    log_mesh(:)=[amesh,rr1,rmax]

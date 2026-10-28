@@ -46,7 +46,6 @@
 
  use constants_m, only: dp
  use sbf_rc_der_m, only: sbf_rc_der
- implicit none
 
 !Input variables
  integer, intent(in) :: ll,nroot

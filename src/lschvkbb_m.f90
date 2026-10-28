@@ -34,10 +34,9 @@
 
  use constants_m, only: dp
  use pieces_m, only: piecewise_t
- implicit none
 
- real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nvkb)
  integer, intent(in) :: nn,ll,nvkb,mmax
+ real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nvkb)
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(nvkb)
  real(dp), intent(inout) :: emin,emax,ee
  real(dp), intent(out) :: uu(mmax),up(mmax)
@@ -98,11 +97,10 @@
  use quad_m, only: log_norm
  use inward2_m, only: inward2
  use inward_start_m, only: inward_start
- implicit none
 
 !Input variables
- real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nvkb),etol
  integer, intent(in) :: nn,ll,nvkb,mmax
+ real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nvkb),etol
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(nvkb)
 
 !Input/output variables
@@ -179,7 +177,7 @@
 ! find classical turning point for matching
    mch=1
    do ii=mmax,2,-1
-     if(cf(ii-1)<=0.d0 .and. cf(ii)>0.d0) then
+     if(cf(ii-1)<=0.0d0 .and. cf(ii)>0.0d0) then
        mch=ii
        exit
      end if

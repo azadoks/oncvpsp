@@ -70,7 +70,6 @@
  use constants_m, only: dp, pi, nerrlv
  use logmesh_m, only: lm_interp, lm_integral
  use ugrid_m, only: ug_weights, ug_cumint_down, ug_cross_down
- implicit none
 
 !Input variables
  integer, intent(in) :: mmax

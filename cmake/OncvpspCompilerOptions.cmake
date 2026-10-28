@@ -1,6 +1,8 @@
 # Compiler options for the ONCVPSP targets (not the dependencies), on top of CMake's per-build-type
 # defaults (CMAKE_Fortran_FLAGS_<CONFIG>), which stay the user's to change:
-#   Debug    run-time checks, and traps on invalid operations, division by zero and overflow
+#   Debug    run-time checks, and traps on invalid operations, division by zero and overflow; with
+#            gfortran, standard Fortran 2008 (-std=f2008) and warnings of conversions that may
+#            change a value (-Wconversion), except in the imported files, which keep their form
 #   Release  fast math and unrolled loops
 # and, with gfortran in RelWithDebInfo (-O2), a higher inlining limit, so the Adams formulas of
 # src/adams.inc are inlined into the radial integrators (at -O2 they are calls, about 9 % of the run
@@ -24,7 +26,7 @@ set(relwithdebinfo "$<CONFIG:RelWithDebInfo>")
 target_compile_options(oncvpsp_compile_options INTERFACE
     # gfortran
     "$<$<Fortran_COMPILER_ID:GNU>:-Werror=implicit-interface;-frecursive>"
-    "$<$<AND:${debug},$<Fortran_COMPILER_ID:GNU>>:-O0;-Wall;-fcheck=all;-fbacktrace;-ffpe-trap=invalid,zero,overflow>"
+    "$<$<AND:${debug},$<Fortran_COMPILER_ID:GNU>>:-O0;-Wall;-fcheck=all;-fbacktrace;-ffpe-trap=invalid,zero,overflow;-std=f2008;-Wconversion>"
     "$<$<AND:${release},$<Fortran_COMPILER_ID:GNU>>:-ffast-math;-funroll-loops>"
     "$<$<AND:${relwithdebinfo},$<Fortran_COMPILER_ID:GNU>>:--param=max-inline-insns-auto=30>"
     # ifx and ifort

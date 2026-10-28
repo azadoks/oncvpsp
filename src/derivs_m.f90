@@ -39,7 +39,6 @@
 !! @param dlap  Laplacian of rho
 
  use constants_m, only: dp
- implicit none
 
 !Input variables
  integer, intent(in) :: mmax
@@ -71,15 +70,17 @@
 ! n derivatives of d
 !
  ii=1
- dpn(ii) = -25.d0/12.d0*rho(ii) +4.d0*rho(ii+1) -3.d0*rho(ii+2) &
-&         +4.d0/3.d0*rho(ii+3) -1.d0/4.d0*rho(ii+4)
- dppn(ii) = 15.d0/4.d0*rho(ii) -77.d0/6.d0*rho(ii+1) +107.d0/6.d0*rho(ii+2) &
-&         -13.d0*rho(ii+3) +61.d0/12.d0*rho(ii+4) -5.d0/6.d0*rho(ii+5)
+ dpn(ii) = -25.0d0/12.0d0*rho(ii) +4.0d0*rho(ii+1) -3.0d0*rho(ii+2) &
+&         +4.0d0/3.0d0*rho(ii+3) -1.0d0/4.0d0*rho(ii+4)
+ dppn(ii) = 15.0d0/4.0d0*rho(ii) -77.0d0/6.0d0*rho(ii+1) &
+&         +107.0d0/6.0d0*rho(ii+2) -13.0d0*rho(ii+3) +61.0d0/12.0d0*rho(ii+4) &
+&         -5.0d0/6.0d0*rho(ii+5)
  ii=2
- dpn(ii) = -25.d0/12.d0*rho(ii) +4.d0*rho(ii+1) -3.d0*rho(ii+2)  &
-&         +4.d0/3.d0*rho(ii+3) -1.d0/4.d0*rho(ii+4)
- dppn(ii) = 15.d0/4.d0*rho(ii) -77.d0/6.d0*rho(ii+1) +107.d0/6.d0*rho(ii+2) &
-&         -13.d0*rho(ii+3) +61.d0/12.d0*rho(ii+4) -5.d0/6.d0*rho(ii+5)
+ dpn(ii) = -25.0d0/12.0d0*rho(ii) +4.0d0*rho(ii+1) -3.0d0*rho(ii+2)  &
+&         +4.0d0/3.0d0*rho(ii+3) -1.0d0/4.0d0*rho(ii+4)
+ dppn(ii) = 15.0d0/4.0d0*rho(ii) -77.0d0/6.0d0*rho(ii+1) &
+&         +107.0d0/6.0d0*rho(ii+2) -13.0d0*rho(ii+3) +61.0d0/12.0d0*rho(ii+4) &
+&         -5.0d0/6.0d0*rho(ii+5)
 
  do ii = 3, mmax - 2
    dpn(ii) =  c11*rho(ii-2) + c12*rho(ii-1) + c14*rho(ii+1) + c15*rho(ii+2)
@@ -88,15 +89,17 @@
  end do
 
  ii=mmax-1
- dpn(ii) = +25.d0/12.d0*rho(ii) -4.d0*rho(ii-1) +3.d0*rho(ii-2) &
-&         -4.d0/3.d0*rho(ii-3) +1.d0/4.d0*rho(ii-4)
- dppn(ii) = 15.d0/4.d0*rho(ii) -77.d0/6.d0*rho(ii-1) +107.d0/6.d0*rho(ii-2) &
-&          -13.d0*rho(ii-3) +61.d0/12.d0*rho(ii-4) -5.d0/6.d0*rho(ii-5)
+ dpn(ii) = +25.0d0/12.0d0*rho(ii) -4.0d0*rho(ii-1) +3.0d0*rho(ii-2) &
+&         -4.0d0/3.0d0*rho(ii-3) +1.0d0/4.0d0*rho(ii-4)
+ dppn(ii) = 15.0d0/4.0d0*rho(ii) -77.0d0/6.0d0*rho(ii-1) &
+&          +107.0d0/6.0d0*rho(ii-2) -13.0d0*rho(ii-3) +61.0d0/12.0d0*rho(ii-4) &
+&          -5.0d0/6.0d0*rho(ii-5)
  ii=mmax
- dpn(ii) = +25.d0/12.d0*rho(ii) -4.d0*rho(ii-1) +3.d0*rho(ii-2) &
-&         -4.d0/3.d0*rho(ii-3) +1.d0/4.d0*rho(ii-4)
- dppn(ii) = 15.d0/4.d0*rho(ii) -77.d0/6.d0*rho(ii-1) +107.d0/6.d0*rho(ii-2) &
-&          -13.d0*rho(ii-3) +61.d0/12.d0*rho(ii-4) -5.d0/6.d0*rho(ii-5)
+ dpn(ii) = +25.0d0/12.0d0*rho(ii) -4.0d0*rho(ii-1) +3.0d0*rho(ii-2) &
+&         -4.0d0/3.0d0*rho(ii-3) +1.0d0/4.0d0*rho(ii-4)
+ dppn(ii) = 15.0d0/4.0d0*rho(ii) -77.0d0/6.0d0*rho(ii-1) &
+&          +107.0d0/6.0d0*rho(ii-2) -13.0d0*rho(ii-3) +61.0d0/12.0d0*rho(ii-4) &
+&          -5.0d0/6.0d0*rho(ii-5)
 
 !
 ! r derivatives of d

@@ -61,7 +61,6 @@
  use constants_m, only: dp
  use, intrinsic :: iso_fortran_env, only: qp => real128
  use qlinalg_m, only: qjacobi
- implicit none
 
 !Input variables
  integer, intent(in) :: ncon,nbas

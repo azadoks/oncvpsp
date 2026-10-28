@@ -55,12 +55,11 @@
  use constants_m, only: dp
  use pieces_m, only: piecewise_t
  use outwf_m, only: outwf_t, outwf_setup, outwf_solve, outwf_free
- implicit none
 
 !Input variables
+ integer, intent(in) :: nvkb,ll,mmax,mch
  real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nvkb)
  real(dp), intent(in) :: ep
- integer, intent(in) :: nvkb,ll,mmax,mch
  type(piecewise_t), intent(in) :: vkbpw(nvkb),vlocpw
 
 !Output variables

@@ -107,7 +107,6 @@
  use eresid_m, only: eresid
  use optimize_m, only: optimize
  use pspot_m, only: pspot
- implicit none
 
 !Input variables
  integer, intent(in) :: ll,kap,irel,mmax,mxprj,ncon_in,nbas_in,npr,ncurve

@@ -2065,7 +2065,6 @@
  use kappa_m, only: kap_count
  use pieces_m, only: piecewise_t
  use lschvkbb_m, only: lschvkbb
- implicit none
 
 !Input variables
  integer, intent(in) :: lmax,lloc,mmax,mxprj,nkap
@@ -2178,7 +2177,6 @@
  use constants_m, only: dp
  use logmesh_m, only: lm_fh_value
  use ugrid_m, only: ug_cross_down, ug_brent
- implicit none
 
 !Input variables
  integer, intent(in) :: ncurve,nprof

@@ -150,7 +150,6 @@
  use input_echo_m, only: fe
  use test_results_m, only: tests_t, logder_t, ghosts_t, configs_t, &
 &                          convergence_t, weighted_cut_t, vloc_cut_t
- implicit none
 
 !Input variables
  integer, intent(in) :: lmax,mxprj,nkap

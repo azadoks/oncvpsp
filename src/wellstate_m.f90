@@ -95,12 +95,11 @@
  use constants_m, only: dp
  use well_mesh_m, only: well_mesh_t, wm_build, wm_short
  use boundstate_m, only: boundstate
- implicit none
 
 !Input variables
+ integer, intent(in) :: ll,kap,mmax,irel
  real(dp), intent(in) :: rr(mmax),vfull(mmax)
  real(dp), intent(in) :: zz
- integer, intent(in) :: ll,kap,mmax,irel
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: rc
  logical, intent(in) :: epgiven

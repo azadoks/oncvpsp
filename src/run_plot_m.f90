@@ -77,7 +77,6 @@
  use lschvkbs_m, only: lschvkbs
  use renorm_r_m, only: renorm_r
  use scatterstate_m, only: scatterstate
- implicit none
 
 !Input variables
  integer, intent(in) :: lmax,lloc,mmax,mxprj,nrl,irel,nkap
@@ -345,7 +344,7 @@
    l1=1
    ll=l1-1
    do jj=1,nerrlv
-     if(cvgplt(1,jj,1,l1,1)/=0.d0) then
+     if(cvgplt(1,jj,1,l1,1)/=0.0d0) then
        write(iout,'(a,i6,3f12.6)') '!C',ll,cvgplt(1,jj,1,l1,1), &
 &            cvgplt(2,jj,1,l1,1)
      end if
@@ -353,7 +352,7 @@
    do l1=2,lmax+1
      ll=l1-1
      do jj=1,nerrlv
-       if(cvgplt(1,jj,1,l1,1)/=0.d0 .and. cvgplt(1,jj,1,l1,nkap)/=0.0d0) then
+       if(cvgplt(1,jj,1,l1,1)/=0.0d0 .and. cvgplt(1,jj,1,l1,nkap)/=0.0d0) then
          write(iout,'(a,i6,3f12.6)') '!C',ll,cvgplt(1,jj,1,l1,1), &
 &         0.5d0*(cvgplt(2,jj,1,l1,1)+cvgplt(2,jj,1,l1,nkap))
        end if
@@ -365,7 +364,7 @@
    do l1=1,lmax+1
      ll=l1-1
      do jj=1,nerrlv
-       if(cvgplt(1,jj,1,l1,1)/=0.d0) then
+       if(cvgplt(1,jj,1,l1,1)/=0.0d0) then
          write(iout,'(a,i6,3(f12.6,1x))') '!C',ll,cvgplt(1,jj,1,l1,1), &
 &              cvgplt(2,jj,1,l1,1)
        end if

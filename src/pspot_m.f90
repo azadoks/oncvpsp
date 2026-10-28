@@ -62,7 +62,6 @@
  use pieces_m, only: pw_reach
  use logmesh_m, only: lm_derivs, lm_integral
  use sbf_rc_der_m, only: sbf_rc_der
- implicit none
 
 !Input variables
  integer, intent(in) :: ipr,ll,irc,mmax,nbas
@@ -101,10 +100,10 @@
 !(of uu here, not uu/rr as for sbf matching), for its kinetic energy
 !beyond rc
  do ii=7,mmax-6
-   work(ii,2)=(-work(ii-3,1)+ 9.d0*work(ii-2,1)&
-&   -45.d0*work(ii-1,1)+45.d0*work(ii+1,1)&
-&   -9.d0*work(ii+2,1)+work(ii+3,1))&
-&   /(60.d0*al*rr(ii))
+   work(ii,2)=(-work(ii-3,1)+ 9.0d0*work(ii-2,1)&
+&   -45.0d0*work(ii-1,1)+45.0d0*work(ii+1,1)&
+&   -9.0d0*work(ii+2,1)+work(ii+3,1))&
+&   /(60.0d0*al*rr(ii))
  end do
 
 !the inside piece and its seed on the nodes past rc too, as smooth

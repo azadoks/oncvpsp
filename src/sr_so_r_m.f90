@@ -60,7 +60,6 @@
  use pieces_m, only: piecewise_t, pw_product_integral, pw_node_values, &
 &                    pw_free
  use lapack_m, only: dsyev
- implicit none
 
 !Input variables
  integer, intent(in) :: lmax,mmax,mxprj

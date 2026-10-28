@@ -67,7 +67,6 @@
  use tfapot_m, only: tfapot
  use vout_m, only: vout
  use lschfb_m, only: lschfb
- implicit none
 
 !Input variables
 
@@ -118,10 +117,10 @@
  allocate(hv(mmax,ndep),hr(mmax,ndep))
 
 ! why all this is necessary is unclear, but it seems to be
- uu(:)=0.d0; up(:)=0.d0; vso(:)=0.d0
- vxc(:)=0.d0; hv(:,:)=0.d0; hr(:,:)=0.d0
- eeel=0.d0; eexc=0.d0; et=0.d0
- sf=0.d0; eeig=0.d0; zion=0.d0
+ uu(:)=0.0d0; up(:)=0.0d0; vso(:)=0.0d0
+ vxc(:)=0.0d0; hv(:,:)=0.0d0; hr(:,:)=0.0d0
+ eeel=0.0d0; eexc=0.0d0; et=0.0d0
+ sf=0.0d0; eeig=0.0d0; zion=0.0d0
  nin=0; mch=0
 
  al = 0.01d0 * log(rr(101) / rr(1))

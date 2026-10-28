@@ -65,13 +65,13 @@
 &          ecut_wt=>inp%ecut_wt)
 
    nproj(:) = 0
-   fcfact = 0.d0
-   rcfact = 0.d0
-   slack = 1.d0
+   fcfact = 0.0d0
+   rcfact = 0.0d0
+   slack = 1.0d0
    budget_cut = 0
-   rc(:) = 0.d0
-   ep(:, :) = 0.d0
-   rxpsh = -1.d0  ! negative value for auto setting of radius
+   rc(:) = 0.0d0
+   ep(:, :) = 0.0d0
+   rxpsh = -1.0d0  ! negative value for auto setting of radius
 ! default values for icmod=4 optimization ranges
 ! overridden by input values if given with icmod=4
    fcfact_min = 1.5d0
@@ -81,10 +81,10 @@
    rcfact_max = 1.9d0
    rcfact_step = 0.1d0
 
-   amesh = -1.d0  ! negative values for the built-in mesh
-   rr1 = -1.d0
-   rmax = -1.d0
-   c_light = -1.d0  ! negative value for the default
+   amesh = -1.0d0  ! negative values for the built-in mesh
+   rr1 = -1.0d0
+   rmax = -1.0d0
+   c_light = -1.0d0  ! negative value for the default
 
 ! read input data
    inline = 0
@@ -95,7 +95,7 @@
    read(line, *, iostat=ios) atsym, zz, nc, nv, iexc, psfile, c_light
 ! a line of six values ends before c_light; a bad value is an error
    if(ios < 0) then
-     c_light = -1.d0
+     c_light = -1.0d0
      read(line, *, iostat=ios) atsym, zz, nc, nv, iexc, psfile
    end if
 ! counts beyond the array sizes would overrun before check_data runs
@@ -121,7 +121,7 @@
    call next_line(unit, line, inline, iout=iout, ifail=ifail)
    if(ifail /= 0) return
    itail = 0
-   wreg = 0.d0
+   wreg = 0.0d0
    well_norm = 0
    read(line, *, iostat=ios) lmax, igiven, well_onset, itail, wreg, well_norm
    if(ios < 0) then
@@ -129,7 +129,7 @@
      read(line, *, iostat=ios) lmax, igiven, well_onset, itail, wreg
    end if
    if(ios < 0) then
-     wreg = 0.d0
+     wreg = 0.0d0
      read(line, *, iostat=ios) lmax, igiven, well_onset, itail
    end if
    if(ios < 0) then
@@ -137,7 +137,7 @@
      read(line, *, iostat=ios) lmax, igiven, well_onset
    end if
    if(ios < 0) then
-     well_onset = 0.d0
+     well_onset = 0.0d0
      read(line, *, iostat=ios) lmax, igiven
    end if
    if(ios < 0) then
@@ -146,8 +146,8 @@
    end if
    if(ios == 0) then
      if(lmax > mxlin .or. igiven < 0 .or. igiven > 1 .or. itail < 0 &
-&       .or. itail > 2 .or. (well_onset > 0.d0 .and. well_onset < 1.d0) &
-&       .or. .not. (wreg >= 0.d0) .or. well_norm < 0 .or. well_norm > 2) then
+&       .or. itail > 2 .or. (well_onset > 0.0d0 .and. well_onset < 1.0d0) &
+&       .or. .not. (wreg >= 0.0d0) .or. well_norm < 0 .or. well_norm > 2) then
        ios = 999
      end if
    end if
@@ -156,7 +156,7 @@
    if(ifail /= 0) return
    ep_as_given = igiven == 1
    well_tail = itail
-   if(well_onset <= 0.d0) well_onset = well_onset_default
+   if(well_onset <= 0.0d0) well_onset = well_onset_default
 
    do l1 = 1, lmax + 1
      call next_line(unit, line, inline, iout=iout, ifail=ifail)
@@ -182,13 +182,13 @@
 ! well_n (0 for the default, at least 0) and ecut_weight (negative for the
 ! default)
    well_n(:) = 0
-   ecut_wt(:) = -1.d0
+   ecut_wt(:) = -1.0d0
    do l1 = 1, lmax + 1
      call next_line(unit, line, inline, iout=iout, ifail=ifail)
      if(ifail /= 0) return
      read(line, *, iostat=ios) lt, nproj(l1), debl(l1), well_n(l1), ecut_wt(l1)
      if(ios < 0) then
-       ecut_wt(l1) = -1.d0
+       ecut_wt(l1) = -1.0d0
        read(line, *, iostat=ios) lt, nproj(l1), debl(l1), well_n(l1)
      end if
      if(ios < 0) then
@@ -223,12 +223,12 @@
        ibudget = 0
        read(line, *, iostat=ios) icmod, fcfact, rcfact, slack
        if(ios /= 0) then
-         slack = 1.d0
+         slack = 1.0d0
          read(line, *, iostat=ios) icmod, fcfact, rcfact
        end if
        if(ios /= 0) then
          read(line, *, iostat=ios) icmod, fcfact
-         rcfact = 1.d-5
+         rcfact = 1.0d-5
        end if
      end if
      if(ios == 0 .and. (ibudget < 0 .or. ibudget > 2)) ios = 999
@@ -245,7 +245,7 @@
 !   defaults
      if(ios /= 0) then
        read(line, *, iostat=ios) icmod, fcfact
-       rcfact = 0.d0
+       rcfact = 0.0d0
        fcfact_min = 1.5d0
        fcfact_max = 6.0d0
        fcfact_step = 0.5d0
@@ -265,7 +265,7 @@
    read(line, *, iostat=ios) epsh1, epsh2, depsh, rxpsh
    if(ios /= 0) then
      read(line, *, iostat=ios) epsh1, epsh2, depsh
-     rxpsh = -1.d0  ! negative value for auto setting of radius
+     rxpsh = -1.0d0  ! negative value for auto setting of radius
    end if
    call check_finite(ios, [epsh1, epsh2, depsh, rxpsh])
    call read_error(ios, inline, iout, ifail)

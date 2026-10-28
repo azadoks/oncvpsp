@@ -47,7 +47,6 @@
 !! @param nin  start of the inward integration (output)
 
  use constants_m, only: dp
- implicit none
 
 !Input variables
  integer, intent(in) :: ll,mch,mmax

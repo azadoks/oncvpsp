@@ -41,7 +41,6 @@
 !! @return the switch at rad
 
  use constants_m, only: dp
- implicit none
 
 !Input variables
  real(dp), intent(in) :: rad,ra,rb

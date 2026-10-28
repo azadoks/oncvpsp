@@ -36,7 +36,6 @@
 !! @param mmax  dimension of log radial grid
 
  use constants_m, only: dp, pi
- implicit none
 
 !Input variables
  integer, intent(in) :: mmax
@@ -53,7 +52,7 @@
  real(dp) :: conrs,convx,conex
  real(dp) :: rs,ecp,aln,xx,rh
 
- conrs = (3.d0/(4.d0*pi))**thrd
+ conrs = (3.0d0/(4.0d0*pi))**thrd
  convx = (1.5d0/pi)**(2.0d0/3.0d0)
  conex = 0.75d0*convx
 

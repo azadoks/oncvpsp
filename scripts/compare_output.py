@@ -15,7 +15,9 @@ the same text and numbers that agree within the tolerance of that quantity
     the largest |a| + |b| of the whole array for radial functions; quantities
     without a rule take the base test alone,
 
-so a rule can only tighten the comparison.  The relative differences are
+so a rule can only tighten the comparison; only the few quantities printed
+with fewer digits than the base test resolves (LAST_DIGITS) may differ by
+two units of their last digit from a reference.  The relative differences are
 fldiff's, |a - b| / (|a| + |b|), about half the usual ones.  Text is compared
 with its numbers masked, and the numbers in it as numbers.  Integers are
 numbers too (fldiff compared them as text, and let them differ).
@@ -116,6 +118,14 @@ TOLERANCES = [
     ("d2exc_rmse", 5e-8, 0.0),
 ]
 
+# Quantities printed with fewer digits than the base test resolves: compared
+# with a reference (not with --identical), each passes the base test within
+# this (two units of its last digit), which a rule, that only tightens,
+# cannot allow.  The radius beyond which |V_loc + zion/r| < 1e-10 (bohr, 4
+# decimals) is where a tail of 1e-10 crosses, which the LAPACK linked moves
+# by a unit of the last digit (73_Ta: OpenBLAS and the reference LAPACK).
+LAST_DIGITS = {"coulomb_tail.r_coulomb": 2e-4}
+
 # The steps of the solvers, which depend on the way they converge (the
 # mixing of the SCF) more than on what they converge to: compared with a
 # reference (not with --identical) to within this many steps, which the base
@@ -212,6 +222,10 @@ def compare_numbers(report, path, a, b, scale=False):
         return
     bad = (diff > report.base) & (diff > report.base * pointwise)
     tolerance = f"{report.base:.3g} abs or rel"
+    digits = LAST_DIGITS.get(re.sub(r"\[\d+\]", "[]", path))
+    if report.steps and digits is not None:
+        bad &= diff > digits
+        tolerance += f" or {digits:.0e} abs (printed digits)"
     specific = rule(path)
     if specific is not None:
         atol, rtol = specific

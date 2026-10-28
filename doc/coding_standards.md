@@ -65,7 +65,6 @@ looks like this:
 !! @param iout  unit of the text output
 
  use constants_m, only: dp
- implicit none
 
 !Input variables
  integer, intent(in) :: mmax,iout
@@ -176,7 +175,9 @@ looks like this:
 
 **Declarations.**
 
-- `use` statements with an `only` list, then `implicit none`.
+- `use` statements with an `only` list. `implicit none` is the
+  module's, after its own `use` statements, and is not repeated in its
+  procedures (rule 4 holds through it); a main program has its own.
 - The four section labels, as full-line comments in this order, each
   followed by the declarations it covers (rule 6): `!Input variables`
   (`intent(in)`), `!Input/output variables` (`intent(inout)`), `!Output
@@ -188,7 +189,11 @@ looks like this:
 - Several names may share a declaration (`real(dp) :: de,emax,emin`).
 - Reals are `real(dp)` with `dp` from `constants_m` (see
   [Kinds and constants](#kinds-and-constants)); literals are written
-  `1.0d0`.
+  `1.0d0`, with a digit on each side of the point and the kind always
+  given.
+- Within each section, the integers that bound arrays are declared before
+  the arrays (`integer, intent(in) :: mmax` before `rr(mmax)`): standard
+  Fortran 2008, which the Debug build checks (`-std=f2008`).
 - Explicit-shape (`rr(mmax)`) or allocatable arrays; no assumed-size
   (`*`) dummies, except in `adams.inc` and the LAPACK interfaces of
   `lapack_m`.
@@ -243,11 +248,10 @@ hand.
 ## Kinds and constants
 
 Take the real kind and shared constants from `constants_m`
-(`src/constants_m.f90`), with an `only` list, before `implicit none`:
+(`src/constants_m.f90`), with an `only` list:
 
 ```fortran
  use constants_m, only: dp, pi
- implicit none
 ```
 
 Don't define `dp`, `pi` or the speed of light locally. Write rational
@@ -363,9 +367,12 @@ already conforming. Most editors honour it natively or with the
 Setup](developer_setup.md) has the installation of the tools and the VS Code
 setup that runs `reindent.py` as the formatter and fortitude in the editor.
 
-fortitude uses its default rules, without the two that conflict with the
-rules above: double-quoted strings (S241), and `implicit none (type,
-external)` (C003), which is Fortran 2018. The code keeps to Fortran 2008
+fortitude uses its default rules and its preview rules, without the three
+that conflict with the rules above: double-quoted strings (S241), sorted
+`use` statements (S271), and `implicit none (type, external)` (C003),
+which is Fortran 2018. It adds a literal's kind (C021) and `implicit none`
+only on the module (S201); with the preview default S291, a literal has a
+digit on each side of the point (`0.0d0`, not `0.d0`). The code keeps to Fortran 2008
 in that, and gets the check C003 asks for from gfortran instead:
 `-Werror=implicit-interface`, in every build type, makes a call of a
 procedure without an explicit interface a compile error. fortitude's
@@ -377,6 +384,12 @@ things fortitude wants `intent` on every argument, `only` on every `use`,
 `::` in every declaration, generic intrinsics (`log`, not `dlog`), no
 assumed-size (`*`) arrays, and lines of at most 80 columns (set in
 `fortitude.toml`). `fortitude check --fix` fixes some of these itself.
+
+gfortran adds two checks in the Debug build: `-std=f2008`, so the code is
+standard Fortran 2008 (a bound, for one, is declared before the array it
+bounds), and `-Wconversion`, a warning for a conversion that may change a
+value (write `int()` or `real(,dp)`). The imported files are compiled
+without them.
 
 The imported files (`exc_off_pbe_m.f`, `functionals.F90`,
 `gg1cc`/`gp1cc`/`gpp1cc` and `m_libxc_list.F90`) are excluded from the

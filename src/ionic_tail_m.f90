@@ -69,7 +69,6 @@
 
  use constants_m, only: dp
  use vout_m, only: vout
- implicit none
 
 !Input variables
  integer, intent(in) :: mmax,iexc
@@ -119,7 +118,6 @@
 
  use constants_m, only: dp
  use logmesh_m, only: lm_root
- implicit none
 
 !Input variables
  integer, intent(in) :: mmax
@@ -190,7 +188,6 @@
  use kappa_m, only: kap_count, j_share
  use pieces_m, only: piecewise_t
  use lschvkbb_m, only: lschvkbb
- implicit none
 
 !Input variables
  integer, intent(in) :: nkap,nc,nv,lloc,mmax,mxprj
@@ -314,7 +311,6 @@
  use pieces_m, only: piecewise_t
  use cinf_taper_m, only: cinf_taper
  use vout_m, only: vout
- implicit none
 
 !Input variables
  integer, intent(in) :: nkap,nc,nv,lmax,lloc,mmax,mxprj,iexc
@@ -431,7 +427,6 @@
 
  use constants_m, only: dp, pi
  use logmesh_m, only: lm_integral, lm_root
- implicit none
 
 !Input variables
  integer, intent(in) :: mmax

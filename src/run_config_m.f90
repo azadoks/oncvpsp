@@ -72,7 +72,6 @@
  use pieces_m, only: piecewise_t
  use kappa_m, only: kap_count, kap_of, j_share
  use psatom_m, only: psatom
- implicit none
 
 !Input variables
 

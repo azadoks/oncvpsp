@@ -78,7 +78,6 @@
  use kappa_m, only: kap_count, kap_of
  use pieces_m, only: piecewise_t
  use phsft_m, only: phsft_mch, phsft_pair
- implicit none
 
 !Input variables
  integer, intent(in) :: lmax,lloc,mmax,mxprj,irel,nkap,npsh

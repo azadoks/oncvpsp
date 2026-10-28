@@ -64,7 +64,6 @@
 !   [[test_configurations]]    n, l, f (valence states only; optional, up
 !                              to 4)
 
- implicit none
 !Input variables
 !> The Fortran unit number to read from
  integer, intent(in) :: unit

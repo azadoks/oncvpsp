@@ -70,7 +70,6 @@
 &                     core_pieces_smooth, teter_form
  use pieces_m, only: piecewise_t
  use der2exc_m, only: der2exc
- implicit none
 
 !Input variables
  integer, intent(in) :: icmod,nv,nc,iexc,mmax

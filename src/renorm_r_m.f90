@@ -45,12 +45,11 @@
 
  use constants_m, only: dp
  use quad_m, only: log_norm, log_norm_to
- implicit none
 
 !Input variables
+ integer, intent(in) :: ll,kap,mmax
  real(dp), intent(in) :: rr(mmax)
  real(dp), intent(in) :: zz
- integer, intent(in) :: ll,kap,mmax
  real(dp), intent(in) :: c_light
 
 !Input/output variables

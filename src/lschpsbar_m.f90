@@ -49,13 +49,12 @@
  use quad_m, only: log_norm
  use inward2_m, only: inward2
  use inward_start_m, only: inward_start
- implicit none
 
 
 !Input variables
+ integer, intent(in) :: nn,ll,mmax,mbar
  real(dp), intent(in) :: rr(mmax),vv(mmax)
  real(dp), intent(in) :: tht
- integer, intent(in) :: nn,ll,mmax,mbar
 
 !Input/output variables
  real(dp), intent(inout) :: emin,emax
@@ -137,7 +136,7 @@
    mch=mbar-1
    if(cf(mbar)>0.0d0) then
      do ii=mbar-1,imin,-1
-       if(cf(ii)<=0.d0) then
+       if(cf(ii)<=0.0d0) then
          mch=ii
          exit
        end if

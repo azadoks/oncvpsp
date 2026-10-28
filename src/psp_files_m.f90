@@ -41,7 +41,6 @@
  use linout_m, only: linout
  use upfout_m, only: upfout
  use psmlout_m, only: psmlout
- implicit none
 
 !Input variables
  type(input_t), intent(in) :: inp

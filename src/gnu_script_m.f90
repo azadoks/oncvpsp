@@ -43,7 +43,6 @@
 
  use constants_m, only: dp, mxl, mxlin
  use kappa_m, only: kap_count
- implicit none
 
 !Input variables
  integer, intent(in) :: lmax,lloc,mxprj,nkap
