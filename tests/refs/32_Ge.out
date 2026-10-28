@@ -363,7 +363,7 @@ Test configuration 0
 
     Total energies and differences
       AE_ref= -2.09589642D+03  AE_tst= -2.09589642D+03  dif=  0.00D+00
-      PS_ref= -7.78860800E+01  PS_tst= -7.78860800E+01  dif=  1.99E-13
+      PS_ref= -7.78860800E+01  PS_tst= -7.78860800E+01  dif=  1.41E-12
       PSP excitation error= -1.22D-12
 
 Test configuration 1
@@ -5531,7 +5531,7 @@ ghost_r   0   1  5.0772705915333454E+00  9.1002357717255034E-01
 ghost   1   1   2 -1.4892177637336543E-01 -1.4688197574396192E-01
 ghost_r   1   1  6.8692167665564776E+00  1.3654584772047753E+00
 ghost   2   1   3 -1.0860683183032160E+00 -1.0860402563712366E+00
-ghost_r   2   1  8.4656453732757427E+01  1.5134510883430965E+00
+ghost_r   2   1  8.4658368622070526E+01  1.5136266733953476E+00
 # vkb_b l ikap i b
 # vkb_cond l ikap cond(B)
 # vkb_e l ikap i e(Ha)
@@ -7778,7 +7778,7 @@ Begin PSP_UPF
        core_correction="F"
        functional="PZ"
        z_valence="   14.00"
-       total_psenergy=" -1.5577215991423265E+02"
+       total_psenergy=" -1.5577215991427880E+02"
        rho_cutoff="  1.5310000000000000E+01"
        l_max="2"
        l_local="-1"

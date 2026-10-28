@@ -422,7 +422,7 @@ precision.
   order. At order 4 the outputs move within the reference tolerances
   except the positive-energy ghost test's barrier states above 50 Ha
   (<r>/rc by up to 2.4e-4), which are within order 4's own error there.
-  Commits: ADAMS_COMMIT.
+  Commits: 35ad72d.
 - **Inward start at practical infinity.** 4.0.1 started the inward
   integration at 10 times the classical turning point and set u = 0
   beyond it. For shallow localized states (Tm 4f, Cu 3d) that truncated
