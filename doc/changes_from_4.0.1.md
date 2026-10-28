@@ -268,7 +268,7 @@ precision.
   the phase by pi (34_Se 3d, 79_Au 4f, 73_Ta 5s and 5p, 07_N 2s; the
   continuation alone stepped over them). `oncvpsp_ld.x`
   gives them at any radii and energies from a saved run. Commits:
-  ab51d65, e6b38ed, e0c94b0.
+  ab51d65, e6b38ed, e0c94b0, 241454a.
 - **The confined atom (new), `oncvpsp_confine.x`.** From the
   all-electron file and the `--ps-file` of a run, the band edges of a
   Wigner-Seitz sphere of radius rs, all-electron against pseudopotential
