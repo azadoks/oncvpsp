@@ -26,7 +26,7 @@
  public :: nrhomod, nlev, nerrlv, nerrdg, well_onset_default
  public :: diag_match
  public :: ae_tolres
- public :: eig_tol, eig_floor, rel_window, series_tol, ha_ev
+ public :: eig_tol, eig_floor, rel_window, series_tol, ha_ev, ovl_floor
 
 !> kind of all real variables
  integer, parameter :: dp=real64
@@ -103,6 +103,13 @@
 
 !> energy scale (Ha) below which the solvers' tolerances are absolute
  real(dp), parameter :: eig_floor=0.2_dp
+
+!> eigenvalues of a projectors' overlap matrix at or below ovl_floor times
+!> the largest are its round-off: sr_so_r drops those directions. The
+!> kernel does not depend on the overlap's condition above it (S^(-1/2)
+!> and S^(1/2) cancel), and dropping one costs at most sqrt(ovl_floor)
+!> of it relative (the test inputs' smallest ratio is 5e-11, the d of Cu)
+ real(dp), parameter :: ovl_floor=1.0e-14_dp
 
 !> the relativistic window of the projectors is [rel_window*rc, rc] (ae_delta,
 !> run_vkb)

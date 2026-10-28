@@ -28,10 +28,12 @@
 
  contains
 
- subroutine pb_half_powers(sv,sev,nn,ld,sphalf,smhalf)
+ subroutine pb_half_powers(sv,sev,nn,ld,sphalf,smhalf,rfloor,ndrop)
 
 !! S^(1/2) and S^(-1/2) in the eigenvectors sv of S, each column scaled by
-!! the square root of its eigenvalue sev, or divided by it
+!! the square root of its eigenvalue sev, or divided by it; with rfloor,
+!! the columns whose eigenvalue is at or below rfloor times the largest
+!! are zero in both (a pseudo-inverse: those directions are dropped)
 !!
 !! @param sv  the eigenvectors of S (dsyev)
 !! @param sev  its eigenvalues
@@ -39,21 +41,36 @@
 !! @param ld  the leading dimension
 !! @param sphalf  S^(1/2) (output)
 !! @param smhalf  S^(-1/2) (output)
+!! @param rfloor  relative floor of the eigenvalues (optional)
+!! @param ndrop  number of columns dropped (output, with rfloor)
 
  use constants_m, only: dp
 
 !Input variables
  integer, intent(in) :: nn,ld
  real(dp), intent(in) :: sv(ld,ld),sev(ld)
+ real(dp), intent(in), optional :: rfloor
 
 !Input/output variables
  real(dp), intent(inout) :: sphalf(ld,ld),smhalf(ld,ld)
 
+!Output variables
+ integer, intent(out), optional :: ndrop
+
 !Local variables
- real(dp) :: tt
+ real(dp) :: tt,smin
  integer :: ii,jj
 
+ smin=-huge(1.0d0)
+ if(present(rfloor)) smin=rfloor*maxval(sev(1:nn))
+ if(present(ndrop)) ndrop=0
  do jj=1,nn
+   if(sev(jj)<=smin) then
+     sphalf(1:nn,jj)=0.0d0
+     smhalf(1:nn,jj)=0.0d0
+     if(present(ndrop)) ndrop=ndrop+1
+     cycle
+   end if
    tt=sqrt(sev(jj))
    do ii=1,nn
      sphalf(ii,jj)=tt*sv(ii,jj)

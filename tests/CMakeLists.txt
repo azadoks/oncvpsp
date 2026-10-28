@@ -121,7 +121,7 @@ endif ()
 # Unit tests of the operations at any radius on the log mesh (logmesh_m), the closed-form Bessel
 # overlaps (sbf_overlap) and the derivatives at rc from the radial equation (ode_rc_der), phase 1 of
 # doc/smoothness_plan.md
-foreach (unit_test logmesh ode_rc_der solver_path piecewise matching ugrid quadbasis pieces vploc ae_delta outwf outwf_index sbf free_tail qroots)
+foreach (unit_test logmesh ode_rc_der solver_path piecewise matching ugrid quadbasis pieces vploc ae_delta outwf outwf_index sbf free_tail qroots sr_so_r)
     oncvpsp_unit_executable(${unit_test})
     oncvpsp_add_test(unit unit - ${unit_test} test_${unit_test})
 endforeach ()

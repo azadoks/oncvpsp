@@ -52,7 +52,7 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use constants_m, only: dp, mxl, mxlin, mxkap, mxprj
+ use constants_m, only: dp, mxl, mxlin, mxkap, mxprj, ovl_floor
  use projbasis_m, only: pb_half_powers, pb_congruence, pb_combine, &
 &                       pb_sort_abs, pb_sign_at_peak
  use pieces_m, only: piecewise_t, pw_product_integral, pw_node_values, &
@@ -77,7 +77,7 @@
  integer, intent(out) :: ifail
 
 !Local variables
- integer :: ii,jj,ik1,ik2,ip1,ip2,ll,l1,info,nn
+ integer :: ii,jj,ik1,ik2,ip1,ip2,ll,l1,info,nn,ndrop
  real(dp) :: sovl(2*mxprj,2*mxprj),sovlev(2*mxprj)
  real(dp) :: ascl(2*mxprj,2*mxprj),aso(2*mxprj,2*mxprj)
  real(dp) :: asclst(2*mxprj,2*mxprj),wsclst(2*mxprj)
@@ -148,9 +148,16 @@
      return
    end if
 
-! construct S^(-1/2) AND s^(1/2)
+! construct S^(-1/2) AND s^(1/2), without the directions of S at its
+! round-off: the j=l+1/2 and j=l-1/2 projectors can be nearly the same
+! (light atoms), and S then nearly singular (numerics audit C-14)
 
-   call pb_half_powers(sovl,sovlev,nn,2*mxprj,sphalf,smhalf)
+   call pb_half_powers(sovl,sovlev,nn,2*mxprj,sphalf,smhalf,ovl_floor,ndrop)
+   if(ndrop>0) then
+     write(iout,'(/a,i0,a,i0,a,i0,a)') 'sr_so_r: WARNING l=',ll,', ', &
+&         ndrop,' of ',nn, &
+&         ' directions of the projectors'' overlap at its round-off dropped'
+   end if
 
 ! take linear combinations to form orthonormal basis functions
 
