@@ -53,13 +53,14 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use constants_m, only: dp
+ use constants_m, only: dp, eig_tol
  use boundsolve_m, only: bs_box_energy, bs_solve, bs_turning_point
  use sr_flux_m, only: sr_gamma, sr_flux_coefs, sr_outward, sr_inward, &
 &                     sr_derivs
  use match_m, only: match_k, match_point, match_weights, match_blend
  use quad_m, only: log_norm
  use inward_start_m, only: inward_start
+ use logmesh_m, only: lm_step
 
 !Input variables
  integer, intent(in) :: mmax
@@ -68,6 +69,7 @@
  integer, intent(in) :: nn,ll
  integer, intent(in) :: irel
  real(dp), intent(in) :: c_light
+ integer, intent(in) :: iout
 
 !Input/output variables
  real(dp), intent(inout) :: uu(mmax),up(mmax)
@@ -76,7 +78,6 @@
 
 !Output variables
  integer, intent(out) :: ierr
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -92,7 +93,7 @@
  ifail=0
  allocate(qq(mmax),qp(mmax),cf(mmax),pm(mmax),qm(mmax),xm(mmax),r2(mmax))
 
- al = 0.01d0 * log(rr(101) / rr(1))
+ al=lm_step(rr,mmax)
  amesh = exp(al)
 
 ! convergence: once the energy correction de is below eps*max(|ee|,0.2),
@@ -107,7 +108,7 @@
 ! projectors at 1e-9. 1e-10 left 3.6e-7 Ha in the 1s of U, which the
 ! eigenvalue sum carries into the total energy, and which depended on the
 ! SCF history
- eps=1.0d-12
+ eps=eig_tol
  ierr = 60
 
 ! check arguments
@@ -347,13 +348,13 @@
  return
  end subroutine boxstate
 
- integer function box_nodes(e)
+ integer function box_nodes(ee)
 
-!! the node count of the outward solution over the whole mesh at e
+!! the node count of the outward solution over the whole mesh at ee
 
- real(dp), intent(in) :: e
+ real(dp), intent(in) :: ee
 
- call coefs(e)
+ call coefs(ee)
  call outward(mmax,box_nodes)
  return
  end function box_nodes

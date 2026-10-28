@@ -25,7 +25,7 @@
 
  contains
 
- subroutine run_config_ps(jj,aec,nc,rhov,rhomod,rr,rcmax,mmax,mxprj,iexc, &
+ subroutine run_config_ps(jj,aec,nc,rhov,rhomod,rr,rcmax,mmax,iexc, &
 &                         etot,epstot,nproj,vpuns,lloc,vlocpw,vkbpw,evkb, &
 &                         irel,c_light,nkap,ntc,itc,etc,dtc,iout,ifail)
 
@@ -40,7 +40,6 @@
 !! @param rr  log radial mesh
 !! @param rcmax  maximum core radius for psp
 !! @param mmax  size of log grid
-!! @param mxprj  dimension of number of projectors
 !! @param iexc  exchange-correlation function to be used
 !! @param etot  reference configuration total energy
 !! @param epstot  reference configuration pseudoatom total energy
@@ -68,7 +67,7 @@
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use config_ae_m, only: config_ae_warning, ae_config_t
- use constants_m, only: dp, mxstate, mxl, mxlin, nrhomod, nlev
+ use constants_m, only: dp, mxstate, mxl, mxlin, nrhomod, nlev, mxprj
  use pieces_m, only: piecewise_t
  use kappa_m, only: kap_count, kap_of, j_share
  use psatom_m, only: psatom
@@ -76,7 +75,7 @@
 !Input variables
 
  type(ae_config_t), intent(in) :: aec
- integer, intent(in) :: jj,mmax,mxprj,iexc,nc,lloc,irel,nkap
+ integer, intent(in) :: jj,mmax,iexc,nc,lloc,irel,nkap
  real(dp), intent(in) :: c_light
  integer, intent(in) :: nproj(mxlin+1)
  real(dp), intent(in) :: etot,epstot,rcmax
@@ -85,11 +84,11 @@
  real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap)
  real(dp), intent(in) :: rhomod(mmax,nrhomod)
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1,nkap)
+ integer, intent(in) :: iout
 
 !Output variables
  integer, intent(out) :: ntc,itc(3,2*mxstate)
  real(dp), intent(out) :: etc(3,2*mxstate),dtc(3)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -170,7 +169,7 @@
  rhocps(:)=rhomod(:,1)
 
  call psatom(natp,latp,eatp,fatp,nvt,it,rhocps,rho, &
-&           rr,rcmax,mmax,mxprj,iexc,c_light,etsttot,nproj,vpuns,lloc, &
+&           rr,rcmax,mmax,iexc,c_light,etsttot,nproj,vpuns,lloc, &
 &           vlocpw,vkbpw,evkb,ierr,nkap,vfree,iout,ifail)
  if(ifail/=0) return
 
@@ -198,7 +197,7 @@
  end do
 
  call psatom(natp,latp,eatp,fatp,nvt,it,rhocps,rho, &
-&           rr,rcmax,mmax,mxprj,iexc,c_light,etsttot,nproj,vpuns,lloc, &
+&           rr,rcmax,mmax,iexc,c_light,etsttot,nproj,vpuns,lloc, &
 &           vlocpw,vkbpw,evkb,ierr,nkap,vfree,iout,ifail)
  if(ifail/=0) return
 

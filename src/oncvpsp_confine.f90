@@ -86,7 +86,7 @@
 ! slope at rs (ws_basis_m); NaN and -1 for the parts left out.
 
  program oncvpsp_confine
- use constants_m, only: dp, mxstate
+ use constants_m, only: dp, mxstate, mxkap
  use ps_file_m, only: ps_file_t, ps_file_free
  use cli_m, only: cli_next_arg, cli_count_list, cli_radii, cli_channels, &
 &                 cli_energies
@@ -115,7 +115,7 @@
  integer :: iarg,irel,mmax,nq,iq,ios,lc,nk,nc,nv,iexc
  integer :: na(mxstate),la(mxstate)
  real(dp) :: zz,emin,emax,de,ecutmax,rcmax,ee(3),rq(mxq),r0,kwall(0:mxk)
- real(dp) :: fa(mxstate),ea(mxstate,2)
+ real(dp) :: fa(mxstate),ea(mxstate,mxkap)
 !> the speed of light of the files
  real(dp) :: c_light
  real(dp), allocatable :: rr(:),vfull(:)

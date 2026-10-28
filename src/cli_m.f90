@@ -20,7 +20,6 @@
 !> --channels, --energies), each an error on stdout with a nonzero exit
 !> status that names the program, prog.
  module cli_m
- use constants_m, only: dp
  implicit none
  private
  public :: cli_next_arg, cli_count_list, cli_radii, cli_channels, &
@@ -54,6 +53,8 @@
 
  subroutine cli_radii(prog,arg,mxq,nq,rq)
 !! --radii: nq (at most mxq) positive radii rq
+ use constants_m, only: dp
+
  character(len=*), intent(in) :: prog,arg
  integer, intent(in) :: mxq
  integer, intent(out) :: nq
@@ -94,6 +95,8 @@
 
  subroutine cli_energies(prog,arg,ee)
 !! --energies: emin, emax and the step de
+ use constants_m, only: dp
+
  character(len=*), intent(in) :: prog,arg
  real(dp), intent(out) :: ee(3)
  integer :: ios

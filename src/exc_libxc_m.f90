@@ -91,7 +91,7 @@
 ! ip is an ionization potential parameter for certain xc functionals, not
 ! supported here. Set to 0.5 Ha
  allocate(ip(nspin))
- ip = 0.5_dp
+ ip = 0.5d0
  tau_dummy = 0.0d0
  vtau_dummy = 0.0d0
  vxc(1:mmax) = 0.0d0

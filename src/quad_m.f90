@@ -20,8 +20,6 @@
 !> norm of a radial function on the log mesh of the bound and scattering
 !> solvers.
  module quad_m
- use constants_m, only: dp, pi
- use logmesh_m, only: lm_integral
  use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
@@ -39,6 +37,8 @@
 !! @param nn  number of nodes
 !! @param xx  nodes
 !! @param ww  weights
+
+ use constants_m, only: dp, pi
 
 !Input variables
  real(dp), intent(in) :: xa,xb
@@ -92,6 +92,9 @@
 !!            the limit rr(1) leaves out)
 !! @param gam  power of the solution at the origin, u ~ r**gam
 
+ use constants_m, only: dp
+ use logmesh_m, only: lm_integral
+
 !Input variables
  integer, intent(in) :: nn,ll
  real(dp), intent(in) :: rr(nn),ff(nn),gam
@@ -115,6 +118,9 @@
 !!            the limit rr(1) leaves out)
 !! @param gam  power of the solution at the origin, u ~ r**gam
 !! @param rq  the upper limit, rr(1)<=rq<=rr(nn) (bohr)
+
+ use constants_m, only: dp
+ use logmesh_m, only: lm_integral
 
 !Input variables
  integer, intent(in) :: nn,ll

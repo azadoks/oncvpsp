@@ -24,22 +24,12 @@
  module modcore_budget_m
 
  use constants_m, only: dp, pi, nrhomod
- use modcore_m, only: core_pieces
- use ugrid_m, only: ug_brent, ug_fmin
- use quad_m, only: gauss_legendre
- use xc_dispatch_m, only: exc_dispatch
- use pieces_m, only: piecewise_t
- use logmesh_m, only: lm_derivs, lm_interp, lm_integral, lm_fh_reach, &
-&                     lm_blend
- use cinf_taper_m, only: cinf_taper
- use der2exc_m, only: der2exc
- use lapack_m, only: dgglse, dhseqr
  use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
  public :: modcore_budget,modcore_probes,modcore_budget_table
 
- real(dp), parameter :: pi4=4.0_dp*pi !< 4 pi
+ real(dp), parameter :: pi4=4.0d0*pi !< 4 pi
 !> background density of the error (bohr**-3)
  real(dp), parameter :: background=5.0d-3
 !> radius of the sphere of the error (bohr)
@@ -243,6 +233,9 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use modcore_m, only: core_pieces
+ use pieces_m, only: piecewise_t
+
 !Input variables
  integer, intent(in) :: icmod,mmax,iexc,nprobe
  real(dp), intent(in) :: c_light
@@ -251,11 +244,11 @@
  real(dp), intent(in) :: probes(mmax,nprobe)
  real(dp), intent(in) :: fcfact,ecutw,errmax,slack,zion,rcmin
  logical, intent(in) :: weighted
+ integer, intent(in) :: iout
 
 !Output variables
  real(dp), intent(out) :: rhomod(mmax,nrhomod)
  type(piecewise_t), intent(out) :: corepw(nrhomod)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -307,12 +300,12 @@
  real(dp), intent(in) :: rhotps(mmax),rhoc(mmax),rr(mmax)
  real(dp), intent(in) :: probes(mmax,nprobe)
  real(dp), intent(in) :: fcfact,ecutw,errmax,slack,zion,rcmin
+ integer, intent(in) :: iout
 
 !Input/output variables
  type(budget_t), intent(inout) :: bc
 
 !Output variables
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -390,11 +383,16 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use logmesh_m, only: lm_interp
+ use quad_m, only: gauss_legendre
+
+!Input variables
+ integer, intent(in) :: iout
+
 !Input/output variables
  type(budget_t), intent(inout) :: bc
 
 !Output variables
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -498,6 +496,10 @@
 !!
 !! @param bc  the state of the search
 
+ use cinf_taper_m, only: cinf_taper
+ use logmesh_m, only: lm_fh_reach, lm_blend
+ use xc_dispatch_m, only: exc_dispatch
+
 !Input/output variables
  type(budget_t), intent(inout) :: bc
 
@@ -564,9 +566,13 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+!Input variables
+ integer, intent(in) :: iout
+
 !Input/output variables
  type(budget_t), intent(inout) :: bc
- integer, intent(in) :: iout
+
+!Output variables
  integer, intent(out) :: ifail
 
  ifail=0
@@ -602,11 +608,15 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use der2exc_m, only: der2exc
+
+!Input variables
+ integer, intent(in) :: iout
+
 !Input/output variables
  type(budget_t), intent(inout) :: bc
 
 !Output variables
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -671,11 +681,13 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+!Input variables
+ integer, intent(in) :: iout
+
 !Input/output variables
  type(budget_t), intent(inout) :: bc
 
 !Output variables
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -733,10 +745,10 @@
  integer, intent(in) :: icmod
  real(dp), intent(in) :: fcfact,ecutw,slack,rcmin
  logical, intent(in) :: weighted
+ integer, intent(in) :: iout
 
 !Input/output variables
  type(budget_t), intent(inout) :: bc
- integer, intent(in) :: iout
 
 !Local variables
  integer :: ii
@@ -808,11 +820,13 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+!Input variables
+ integer, intent(in) :: iout
+
 !Input/output variables
  type(budget_t), intent(inout) :: bc
 
 !Output variables
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -944,6 +958,8 @@
 !! @param bc  the state of the search
 !! @param uu  ln r_s
 
+ use der2exc_m, only: der2exc
+
 !Input variables
  real(dp), intent(in) :: uu
 
@@ -996,12 +1012,12 @@
 
 !Input variables
  integer, intent(in) :: ib
+ integer, intent(in) :: iout
 
 !Input/output variables
  type(budget_t), intent(inout) :: bc
 
 !Output variables
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -1056,9 +1072,13 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+!Input variables
+ integer, intent(in) :: iout
+
 !Input/output variables
  type(budget_t), intent(inout) :: bc
- integer, intent(in) :: iout
+
+!Output variables
  integer, intent(out) :: ifail
  ifail=0
  associate(budget=>bc%budget,errmax=>bc%errmax,rtop=>bc%rtop)
@@ -1081,6 +1101,9 @@
 !!
 !! @param bc  the state of the search
 !! @param rad  model radius r_s (bohr)
+
+ use logmesh_m, only: lm_derivs, lm_interp
+ use xc_dispatch_m, only: exc_dispatch
 
 !Input variables
  real(dp), value :: rad
@@ -1211,6 +1234,8 @@
 !! [-1, 1] all the same); p' from the Legendre series
 !!
 !! @param fl  the fill
+
+ use lapack_m, only: dhseqr
 
 !Input variables
  type(fill_t), intent(in) :: fl
@@ -1388,6 +1413,8 @@
 !!
 !! @param bc  the state of the search
 !! @param dm  the core charge and its first two derivatives at r_s
+
+ use lapack_m, only: dgglse
 
 !Input variables
  real(dp), intent(in) :: dm(3)
@@ -1643,6 +1670,8 @@
 !! @param qe  last density cutoff (bohr**-1)
 !! @param elim  error limit (Ha)
 
+ use ugrid_m, only: ug_fmin
+
 !Input variables
  real(dp), intent(in) :: qa,qe,elim
 
@@ -1775,12 +1804,14 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use ugrid_m, only: ug_brent
+
 !Input variables
  procedure(scalar_fn) :: fun
  real(dp), intent(in) :: xa0,xb0
+ integer, intent(in) :: iout
 
 !Output variables
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -1999,6 +2030,9 @@
 !! @param bq  band-limited model core charge at xr: rr(1:nx), then ri
 !!             (size nt)
 
+ use logmesh_m, only: lm_integral
+ use xc_dispatch_m, only: exc_dispatch
+
 !Input variables
  real(dp), intent(in) :: bq(:)
 
@@ -2029,7 +2063,7 @@
  end function xc_error
 
  subroutine modcore_probes(lmax,lloc,nproj,epa,wellprj,vp,vlocpw,vkbpw, &
-&                         evkb,rr,mmax,mxprj,nkap,probes,lprobe,nprobe, &
+&                         evkb,rr,mmax,nkap,probes,lprobe,nprobe, &
 &                         iout,ifail)
 
 !! the probe densities of the hardness of icmod=7: for every projector
@@ -2052,7 +2086,6 @@
 !! @param evkb  coefficients of the projectors
 !! @param rr  log radial grid
 !! @param mmax  dimension of log grid
-!! @param mxprj  dimension of number of projector
 !! @param nkap  1 for scalar-relativistic or non-relativistic, 2 for
 !!              relativistic
 !! @param probes  probe densities, (u/r)**2 normalized to one electron
@@ -2061,24 +2094,25 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use constants_m, only: dp, mxl, mxlin
+ use constants_m, only: dp, mxl, mxlin, mxprj
  use kappa_m, only: kap_count
  use pieces_m, only: piecewise_t
  use lschvkbb_m, only: lschvkbb
+ use pieces_m, only: piecewise_t
 
 !Input variables
- integer, intent(in) :: lmax,lloc,mmax,mxprj,nkap
+ integer, intent(in) :: lmax,lloc,mmax,nkap
  integer, intent(in) :: nproj(mxlin+1)
  real(dp), intent(in) :: rr(mmax),vp(mmax,mxl+2,nkap)
  real(dp), intent(in) :: epa(mxprj,mxlin+1,nkap),evkb(mxprj,mxl+1,nkap)
  logical, intent(in) :: wellprj(mxprj,mxlin+1)
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1,nkap)
+ integer, intent(in) :: iout
 
 !Output variables
  real(dp), intent(out) :: probes(mmax,mxprj*(lmax+1))
  integer, intent(out) :: lprobe(mxprj*(lmax+1))
  integer, intent(out) :: nprobe
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -2177,15 +2211,16 @@
  use constants_m, only: dp
  use logmesh_m, only: lm_fh_value
  use ugrid_m, only: ug_cross_down, ug_brent
+ use ugrid_m, only: ug_brent
 
 !Input variables
  integer, intent(in) :: ncurve,nprof
  real(dp), intent(in) :: ecurve(2,ncurve,nprof),wcurve(nprof),errmax
  logical, intent(in) :: weighted,allwaves
+ integer, intent(in) :: iout
 
 !Output variables
  real(dp), intent(out) :: ecut
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables

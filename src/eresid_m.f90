@@ -93,8 +93,7 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use constants_m, only: dp, pi
- use, intrinsic :: iso_fortran_env, only: qp => real128
+ use constants_m, only: dp, qp, pi
  use logmesh_m, only: lm_ncell
  use ugrid_m, only: ug_weights, ug_cumint_down
  use sbf_q_m, only: sbfq_overlap_vs, sbfq_value_slope
@@ -108,12 +107,12 @@
  real(dp), intent(in) :: ulin(nr),qout(nqout),dq
  real(qp), intent(in) :: pswf0_sb(nbas),pswfnull_sb(nbas,nnull)
  real(dp), intent(in) :: qroot(nbas)
+ integer, intent(in) :: iout
 
 !Output variables
  real(dp), intent(out) :: e0g(nq),edotg(nq,nnull),ematg(nq,nnull,nnull)
  real(dp), intent(out) :: eresid0(nqout),eresiddot(nnull,nqout)
  real(dp), intent(out) :: eresidmat(nnull,nnull,nqout)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables

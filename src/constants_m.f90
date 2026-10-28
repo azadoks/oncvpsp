@@ -19,16 +19,20 @@
 !> Kind and physical and numerical constants shared by all routines
 
  module constants_m
- use, intrinsic :: iso_fortran_env, only: real64
+ use, intrinsic :: iso_fortran_env, only: real64, real128
  implicit none
  private
- public :: dp, pi, mxprj, mxstate, mxcnf, mxl, mxlin, mxkap
+ public :: dp, qp, pi, mxprj, mxstate, mxcnf, mxl, mxlin, mxkap
  public :: nrhomod, nlev, nerrlv, nerrdg, dqout, well_onset_default
  public :: diag_match
  public :: ae_tolres
+ public :: eig_tol, eig_floor, rel_window, series_tol, ha_ev
 
 !> kind of all real variables
  integer, parameter :: dp=real64
+
+!> kind of the quadruple-precision work (overlaps and solves that cancel)
+ integer, parameter :: qp=real128
 
 !> pi
  real(dp), parameter :: pi=3.141592653589793238462643383279502884197_dp
@@ -97,5 +101,23 @@
 !> energy depended on that path to 3e-7 Ha (or at the residual's floor
 !> where a finer mesh puts it above this: ae_converged)
  real(dp), parameter :: ae_tolres=1.0e-11_dp
+
+!> relative tolerance of the eigenvalue solvers: a state is converged when the
+!> energy correction is below eig_tol*max(|e|,eig_floor), twice in a row
+ real(dp), parameter :: eig_tol=1.0e-12_dp
+
+!> energy scale (Ha) below which the solvers' tolerances are absolute
+ real(dp), parameter :: eig_floor=0.2_dp
+
+!> the relativistic window of the projectors is [rel_window*rc, rc] (ae_delta,
+!> run_vkb)
+ real(dp), parameter :: rel_window=0.95_dp
+
+!> relative size of the last term of the series at the origin (sr_flux_m,
+!> dirac_m)
+ real(dp), parameter :: series_tol=1.0e-17_dp
+
+!> 1 Hartree in eV
+ real(dp), parameter :: ha_ev=27.21138386_dp
 
  end module constants_m

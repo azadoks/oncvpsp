@@ -31,7 +31,6 @@
 
  module pieces_m
  use constants_m, only: dp
- use logmesh_m, only: lm_integral, lm_interp
  use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
@@ -194,6 +193,8 @@
 !! @param pw  the piecewise function
 !! @param ss  the integral
 
+ use logmesh_m, only: lm_integral
+
 !Input variables
  integer, intent(in) :: mmax,mm
  real(dp), intent(in) :: rr(mmax),ff(mmax)
@@ -226,6 +227,8 @@
 !! @param mm  power of r with which the product goes to 0 at the origin
 !! @param pwa,pwb  the functions
 !! @param ss  the integral
+
+ use logmesh_m, only: lm_integral
 
 !Input variables
  integer, intent(in) :: mmax,mm
@@ -322,6 +325,8 @@
 !! @param pw  the piecewise function
 !! @param rq  radius, rr(1) <= rq <= rr(mmax) (bohr)
 
+ use logmesh_m, only: lm_interp
+
 !Input variables
  integer, intent(in) :: mmax
  real(dp), intent(in) :: rr(mmax),rq
@@ -349,6 +354,8 @@
 !! @param rb  the other mesh
 !! @param nb  the nodes of rb at which the pieces are needed, rb(nb)<=rr(mmax)
 !! @param pwb  the function on rb
+
+ use logmesh_m, only: lm_interp
 
 !Input variables
  integer, intent(in) :: mmax,nb

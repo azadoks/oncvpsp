@@ -28,7 +28,6 @@
 
  module ugrid_m
  use constants_m, only: dp
- use logmesh_m, only: lm_ncell, lm_cell_weights, lm_fh_value
  use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
@@ -55,6 +54,8 @@
 !! @param nn  number of nodes, >=lm_ncell
 !! @param hh  spacing
 !! @param ww  the weights
+
+ use logmesh_m, only: lm_ncell, lm_cell_weights
 
 !Input variables
  integer, intent(in) :: nn
@@ -96,6 +97,8 @@
 !! @param nn  number of nodes, >=lm_ncell
 !! @param hh  spacing
 !! @param cum  int_{x_i}^{x_nn} ff dx in cum(i)
+
+ use logmesh_m, only: lm_ncell, lm_cell_weights
 
 !Input variables
  integer, intent(in) :: nn
@@ -149,6 +152,8 @@
 !!            0<=tt<=nn-1
 !! @param fq  value at tt
 
+ use logmesh_m, only: lm_fh_value
+
 !Input variables
  integer, intent(in) :: nn
  real(dp), intent(in) :: ff(nn),tt
@@ -177,6 +182,8 @@
 !!               between them
 !! @param tq  the root (position)
 !! @param ierr  0, or 1 if the interpolant has the same sign at ta and tb
+
+ use logmesh_m, only: lm_fh_value
 
 !Input variables
  integer, intent(in) :: nn

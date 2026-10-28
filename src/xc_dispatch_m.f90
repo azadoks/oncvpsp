@@ -19,7 +19,6 @@
 !> for the functional iexc: the built-in ones and libxc's (vout,
 !> modcore_budget).
  module xc_dispatch_m
- use constants_m, only: dp
  use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
@@ -42,7 +41,6 @@
 !! @param nn  its size
 !! @param who  the caller, for the error message
 
-!Input variables
  use exc_libxc_m, only: exc_libxc
  use exc_off_pbe_m, only: excggc
  use exc_relx_m, only: exc_relx
@@ -50,6 +48,9 @@
  use excpzca_m, only: excpzca
  use excvwn_m, only: excvwn
  use excwig_m, only: excwig
+ use constants_m, only: dp
+
+!Input variables
  integer, intent(in) :: iexc,nn
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: al,rho(nn),rr(nn)

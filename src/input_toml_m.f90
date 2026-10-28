@@ -1,11 +1,6 @@
  module input_toml_m
- use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
+ use, intrinsic :: iso_fortran_env, only: stderr => error_unit
 ! TOML Fortran library: documentation at toml-f.readthedocs.io
- use tomlf, only: toml_table, toml_array, toml_keyval, toml_error, toml_stat, &
-&                 toml_load, get_value, len
- use constants_m, only: mxstate, mxcnf, mxlin, mxkap, well_onset_default
- use input_m, only: input_t
- use input_text_m, only: finite
  implicit none
  private
  public :: read_input_toml
@@ -21,6 +16,11 @@
 !!
 !! scripts/input_text_to_toml.py converts a text input to this form.  The
 !! tables and their keys are listed below.
+
+ use constants_m, only: mxstate, mxcnf, mxlin, well_onset_default
+ use input_m, only: input_t
+ use tomlf, only: toml_table, toml_array, toml_error, toml_stat, toml_load, &
+&                  get_value, len
 
 !   [oncvpsp]                  atsym, z, nc, nv, iexc, c_light (optional, 0
 !                              or less for the default)
@@ -67,12 +67,12 @@
 !Input variables
 !> The Fortran unit number to read from
  integer, intent(in) :: unit
+!> unit of the text output
+ integer, intent(in) :: iout
 
 !Output variables
 !> The input values
  type(input_t), intent(out) :: inp
-!> unit of the text output
- integer, intent(in) :: iout
 !> 0, or 1 after a failure, whose message is written
  integer, intent(out) :: ifail
 
@@ -120,23 +120,23 @@
 
 ! the defaults of read_input_text
    nproj(:) = 0
-   fcfact = 0.0_dp
-   rcfact = 0.0_dp
-   slack = 1.0_dp
+   fcfact = 0.0d0
+   rcfact = 0.0d0
+   slack = 1.0d0
    budget_cut = 0
-   rc(:) = 0.0_dp
-   ep(:, :) = 0.0_dp
-   rxpsh = -1.0_dp  ! negative value for auto setting of radius
-   fcfact_min = 1.5_dp
-   fcfact_max = 6.0_dp
-   fcfact_step = 0.5_dp
-   rcfact_min = 1.0_dp
-   rcfact_max = 1.9_dp
-   rcfact_step = 0.1_dp
+   rc(:) = 0.0d0
+   ep(:, :) = 0.0d0
+   rxpsh = -1.0d0  ! negative value for auto setting of radius
+   fcfact_min = 1.5d0
+   fcfact_max = 6.0d0
+   fcfact_step = 0.5d0
+   rcfact_min = 1.0d0
+   rcfact_max = 1.9d0
+   rcfact_step = 0.1d0
    ncnf = 0
-   amesh = -1.0_dp  ! negative values for the built-in mesh
-   rr1 = -1.0_dp
-   rmax = -1.0_dp
+   amesh = -1.0d0  ! negative values for the built-in mesh
+   rr1 = -1.0d0
+   rmax = -1.0d0
    atsym = ' '
    psfile = ' '
 
@@ -167,7 +167,7 @@
    if(ifail /= 0) return
    call get_int(child, 'oncvpsp', 'nv', nv, iout=iout, ifail=ifail)
    if(ifail /= 0) return
-   call get_real(child, 'oncvpsp', 'c_light', c_light, -1.0_dp, &
+   call get_real(child, 'oncvpsp', 'c_light', c_light, -1.0d0, &
 &        iout=iout, ifail=ifail)
    if(ifail /= 0) return
    call get_int(child, 'oncvpsp', 'iexc', iexc, iout=iout, ifail=ifail)
@@ -229,7 +229,7 @@
    call get_real(child, 'pseudopotentials', 'well_onset', well_onset, &
 &                well_onset_default, iout=iout, ifail=ifail)
    if(ifail /= 0) return
-   if(.not. (well_onset >= 1.0_dp)) then
+   if(.not. (well_onset >= 1.0d0)) then
      call input_error('well_onset in [pseudopotentials] must be at least 1', &
 &          iout,ifail)
      if(ifail /= 0) return
@@ -251,9 +251,9 @@
    end select
 
    call get_real(child, 'pseudopotentials', 'wave_regularization', wreg, &
-&                0.0_dp, iout=iout, ifail=ifail)
+&                0.0d0, iout=iout, ifail=ifail)
    if(ifail /= 0) return
-   if(.not. (wreg >= 0.0_dp)) then
+   if(.not. (wreg >= 0.0d0)) then
      call input_error('wave_regularization in [pseudopotentials] must be '// &
 &      'at least 0', iout, ifail)
      if(ifail /= 0) return
@@ -313,7 +313,7 @@
        if(ifail /= 0) return
      end if
    end if
-   ecut_wt(:) = -1.0_dp
+   ecut_wt(:) = -1.0d0
    if(child%has_key('ecut_weight')) then
      call get_real_array(child, 'vkb_projectors', 'ecut_weight', lmax + 1, &
 &                        ecut_wt, iout, ifail)
@@ -339,14 +339,14 @@
 &          iout=iout, ifail=ifail)
      if(ifail /= 0) return
    case default
-     call get_real(child, 'model_core_charge', 'fcfact', fcfact, 0.0_dp, &
+     call get_real(child, 'model_core_charge', 'fcfact', fcfact, 0.0d0, &
 &          iout=iout, ifail=ifail)
      if(ifail /= 0) return
    end select
    select case(icmod)
    case(4, 5)
 ! fcfact and rcfact are ignored; the grid of the Teter parameters
-     call get_real(child, 'model_core_charge', 'rcfact', rcfact, 0.0_dp, &
+     call get_real(child, 'model_core_charge', 'rcfact', rcfact, 0.0d0, &
 &          iout=iout, ifail=ifail)
      if(ifail /= 0) return
      call get_real(child, 'model_core_charge', 'fcfact_min', fcfact_min, &
@@ -368,10 +368,10 @@
 &      rcfact_step, iout=iout, ifail=ifail)
      if(ifail /= 0) return
    case(6, 7)
-     call get_real(child, 'model_core_charge', 'rcfact', rcfact, 1.0e-5_dp, &
+     call get_real(child, 'model_core_charge', 'rcfact', rcfact, 1.0d-5, &
 &          iout=iout, ifail=ifail)
      if(ifail /= 0) return
-     call get_real(child, 'model_core_charge', 'slack', slack, 1.0_dp, &
+     call get_real(child, 'model_core_charge', 'slack', slack, 1.0d0, &
 &          iout=iout, ifail=ifail)
      if(ifail /= 0) return
      call get_string(child, 'model_core_charge', 'budget_cutoff', tmp_str, &
@@ -405,7 +405,7 @@
    call get_real(child, 'log_derivative_analysis', 'depsh', depsh, &
 &        iout=iout, ifail=ifail)
    if(ifail /= 0) return
-   call get_real(child, 'log_derivative_analysis', 'rxpsh', rxpsh, -1.0_dp, &
+   call get_real(child, 'log_derivative_analysis', 'rxpsh', rxpsh, -1.0d0, &
 &        iout=iout, ifail=ifail)
    if(ifail /= 0) return
 
@@ -420,13 +420,13 @@
 ! log mesh (optional)
    call get_value(table, 'log_mesh', child, requested=.false., stat=stat)
    if(associated(child)) then
-     call get_real(child, 'log_mesh', 'amesh', amesh, -1.0_dp, &
+     call get_real(child, 'log_mesh', 'amesh', amesh, -1.0d0, &
 &          iout=iout, ifail=ifail)
      if(ifail /= 0) return
-     call get_real(child, 'log_mesh', 'rr1', rr1, -1.0_dp, &
+     call get_real(child, 'log_mesh', 'rr1', rr1, -1.0d0, &
 &          iout=iout, ifail=ifail)
      if(ifail /= 0) return
-     call get_real(child, 'log_mesh', 'rmax', rmax, -1.0_dp, &
+     call get_real(child, 'log_mesh', 'rmax', rmax, -1.0d0, &
 &          iout=iout, ifail=ifail)
      if(ifail /= 0) return
    else if(stat /= toml_stat%success) then
@@ -489,13 +489,13 @@
          if(ifail /= 0) return
        end if
        call get_int_array(child, 'test_configurations', 'n', cnf(jj)%nv, &
-&        cnf(jj)%n(nc + 1:), iout, ifail)
+&        cnf(jj)%na(nc + 1:), iout, ifail)
        if(ifail /= 0) return
        call get_int_array(child, 'test_configurations', 'l', cnf(jj)%nv, &
-&        cnf(jj)%l(nc + 1:), iout, ifail)
+&        cnf(jj)%la(nc + 1:), iout, ifail)
        if(ifail /= 0) return
        call get_real_array(child, 'test_configurations', 'f', cnf(jj)%nv, &
-&        cnf(jj)%f(nc + 1:), iout, ifail)
+&        cnf(jj)%fa(nc + 1:), iout, ifail)
        if(ifail /= 0) return
      end do
    end if
@@ -511,9 +511,13 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use tomlf, only: len
+
 !Input variables
  character(len=*), intent(in) :: message
  integer, intent(in) :: iout
+
+!Output variables
  integer, intent(out) :: ifail
 
  write(iout,'(a)') 'TOML input ERROR: '//message
@@ -533,15 +537,17 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use tomlf, only: toml_table, toml_stat, get_value, len
+
 !Input variables
  character(len=*), intent(in) :: name
+ integer, intent(in) :: iout
 
 !Input/output variables
  type(toml_table), intent(inout) :: table
 
 !Output variables
  type(toml_table), pointer, intent(out) :: child
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -573,10 +579,14 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use tomlf, only: toml_stat, len
+
 !Input variables
  character(len=*), intent(in) :: section, key, what
  integer, intent(in) :: stat
  integer, intent(in) :: iout
+
+!Output variables
  integer, intent(out) :: ifail
 
  ifail = 0
@@ -603,16 +613,18 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use tomlf, only: toml_table, toml_keyval, toml_stat, get_value, len
+
 !Input variables
  character(len=*), intent(in) :: section, key
  logical, intent(in), optional :: default
+ integer, intent(in) :: iout
 
 !Input/output variables
  type(toml_table), intent(inout) :: table
 
 !Output variables
  logical, intent(out) :: val
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -648,16 +660,18 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use tomlf, only: toml_table, toml_keyval, toml_stat, get_value, len
+
 !Input variables
  character(len=*), intent(in) :: section, key
  integer, intent(in), optional :: default
+ integer, intent(in) :: iout
 
 !Input/output variables
  type(toml_table), intent(inout) :: table
 
 !Output variables
  integer, intent(out) :: val
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -694,16 +708,20 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use input_text_m, only: finite
+ use tomlf, only: toml_table, toml_keyval, toml_stat, get_value, len
+ use constants_m, only: dp
+
 !Input variables
  character(len=*), intent(in) :: section, key
  real(dp), intent(in), optional :: default
+ integer, intent(in) :: iout
 
 !Input/output variables
  type(toml_table), intent(inout) :: table
  real(dp), intent(inout) :: val
 
 !Output variables
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -745,16 +763,18 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use tomlf, only: toml_table, toml_keyval, toml_stat, get_value, len
+
 !Input variables
  character(len=*), intent(in) :: section, key
  character(len=*), intent(in), optional :: default
+ integer, intent(in) :: iout
 
 !Input/output variables
  type(toml_table), intent(inout) :: table
 
 !Output variables
  character(len=:), allocatable, intent(out) :: val
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -789,16 +809,18 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use tomlf, only: toml_table, toml_array, get_value, len
+
 !Input variables
  character(len=*), intent(in) :: section, key
  integer, intent(in) :: nn
+ integer, intent(in) :: iout
 
 !Input/output variables
  type(toml_table), intent(inout) :: table
 
 !Output variables
  type(toml_array), pointer, intent(out) :: arr
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -832,16 +854,18 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use tomlf, only: toml_table, toml_array, toml_stat, get_value, len
+
 !Input variables
  character(len=*), intent(in) :: section, key
  integer, intent(in) :: nn
+ integer, intent(in) :: iout
 
 !Input/output variables
  type(toml_table), intent(inout) :: table
  integer, intent(inout) :: vals(:)
 
 !Output variables
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -875,16 +899,20 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use input_text_m, only: finite
+ use tomlf, only: toml_table, toml_array, toml_stat, get_value, len
+ use constants_m, only: dp
+
 !Input variables
  character(len=*), intent(in) :: section, key
  integer, intent(in) :: nn
+ integer, intent(in) :: iout
 
 !Input/output variables
  type(toml_table), intent(inout) :: table
  real(dp), intent(inout) :: vals(:)
 
 !Output variables
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -919,12 +947,14 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use tomlf, only: len
+
 !Input variables
  integer, intent(in) :: lt(:), lmax
  character(len=*), intent(in) :: section
+ integer, intent(in) :: iout
 
 !Output variables
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables

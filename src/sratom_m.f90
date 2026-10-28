@@ -67,6 +67,7 @@
  use tfapot_m, only: tfapot
  use vout_m, only: vout
  use lschfb_m, only: lschfb
+ use logmesh_m, only: lm_step
 
 !Input variables
 
@@ -77,19 +78,19 @@
  integer, intent(in) :: irel
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: vext(mmax)
+ integer, intent(in) :: iout
+ logical, intent(in) :: warm
 
 !Input/output variables
  integer, intent(inout) :: ierr
  real(dp), intent(inout) :: rpk(ncv)
+ real(dp), intent(inout) :: vi(mmax)
+ real(dp), intent(inout) :: ea(ncv)
 
 !Output variables
  integer, intent(out) :: it
  real(dp), intent(out) :: etot,eterm(4),res
- real(dp), intent(inout) :: ea(ncv)
  real(dp), intent(out) :: rho(mmax),rhoc(mmax)
- real(dp), intent(inout) :: vi(mmax)
- logical, intent(in) :: warm
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -123,7 +124,7 @@
  sf=0.0d0; eeig=0.0d0; zion=0.0d0
  nin=0; mch=0
 
- al = 0.01d0 * log(rr(101) / rr(1))
+ al=lm_step(rr,mmax)
  amesh = exp(al)
 
  if(.not. warm) then

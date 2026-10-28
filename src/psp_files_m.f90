@@ -60,7 +60,7 @@
    call linout(inp,psp%pot%c_light,psp%pot%vkbpw,psp%pot%evkb,psp%pot%vsrpw, &
 &              psp%pot%esr,psp%pot%vsopw,psp%pot%eso,psp%pot%rr,psp%pot%vpuns, &
 &              psp%pot%vlocpw,psp%pot%rho,psp%pot%corepw,psp%rhotae,psp%rhoc, &
-&              psp%pot%zion,psp%pot%mmax,mxprj,psp%nrl,soscale,psp%echo%rc0, &
+&              psp%pot%zion,psp%pot%mmax,psp%nrl,soscale,psp%echo%rc0, &
 &              psp%echo%fcfact0,psp%echo%fcgrid,psp%echo%rcgrid, &
 &              psp%echo%log_mesh,psp%pot%nkap,iout,ifail)
    if(ifail/=0) return
@@ -69,14 +69,14 @@
  if(trim(inp%psfile)=='upf' .or. trim(inp%psfile)=='both') then
    call upfout(inp,psp%pot%c_light,psp%pot%vkbpw,psp%pot%evkb,psp%pot%rr, &
 &              psp%pot%vpuns,psp%pot%vlocpw,psp%pot%rho,psp%pot%corepw, &
-&              psp%pot%zion,psp%pot%mmax,mxprj,psp%nrl,psp%epstot, &
+&              psp%pot%zion,psp%pot%mmax,psp%nrl,psp%epstot, &
 &              psp%echo%rc0,psp%echo%fcfact0,psp%echo%fcgrid,psp%echo%rcgrid, &
 &              psp%uupsa,psp%ea,psp%echo%log_mesh,psp%pot%nkap,iout,ifail)
    if(ifail/=0) return
  end if
 
  if(trim(inp%psfile)=='psml' .or. trim(inp%psfile)=='both') then
-   call psmlout(inp,psp%pot%vkb,psp%pot%evkb,mxprj,psp%pot%rr,psp%vpsml, &
+   call psmlout(inp,psp%pot%vkb,psp%pot%evkb,psp%pot%rr,psp%vpsml, &
 &               psp%pot%rho,psp%pot%rhomod,psp%rcore,psp%pot%zion, &
 &               psp%pot%mmax,psp%nrl,psp%epstot,psp%echo%rc0,psp%echo%fcfact0, &
 &               psp%echo%fcgrid,psp%echo%rcgrid,psp%echo%log_mesh, &

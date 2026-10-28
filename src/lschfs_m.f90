@@ -52,6 +52,7 @@
  use constants_m, only: dp
  use sr_flux_m, only: sr_gamma, sr_flux_coefs, sr_outward
  use quad_m, only: log_norm
+ use logmesh_m, only: lm_step
 
 !Input variables
  integer, intent(in) :: mmax
@@ -79,7 +80,7 @@
  allocate(qq(mmax),qp(mmax),pm(mmax),qm(mmax),xm(mmax))
 
 
- al = 0.01d0 * log(rr(101) / rr(1))
+ al=lm_step(rr,mmax)
  amesh = exp(al)
 
 

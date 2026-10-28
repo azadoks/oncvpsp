@@ -60,7 +60,7 @@
  real(dp) :: budget,sk,xk,xk1,sls
  integer :: ii
 
- budget=-log(epsilon(1.0_dp))
+ budget=-log(epsilon(1.0d0))
  sls=ll*(ll+1)
 
  nin=mmax-4

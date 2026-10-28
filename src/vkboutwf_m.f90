@@ -61,10 +61,10 @@
  real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nvkb)
  real(dp), intent(in) :: ep
  type(piecewise_t), intent(in) :: vkbpw(nvkb),vlocpw
+ integer, intent(in) :: iout
 
 !Output variables
  real(dp), intent(out) :: uu(mmax),up(mmax)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables

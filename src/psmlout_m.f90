@@ -21,9 +21,6 @@
 ! Support for PSML file creation
 !
  module psmlout_m
- use constants_m, only: dp, mxstate, mxcnf, mxl, mxlin, nrhomod
- use input_m, only: config_t
- use logmesh_m, only: lm_origin
  implicit none
 
  public :: psmlout
@@ -33,7 +30,7 @@
 
  contains
 
- subroutine psmlout(inp,vkb,evkb,mxprj,rr,vpuns,rho,rhomod,rcore,zion,mmax, &
+ subroutine psmlout(inp,vkb,evkb,rr,vpuns,rho,rhomod,rcore,zion,mmax, &
 &                   nrl,epstot,rc0,fcfact,fcgrid,rcgrid,log_mesh,irel,c_light, &
 &                   nkap,iout)
 
@@ -44,7 +41,6 @@
 !! @param vkb  VKB projectors, last index 1 for j=l+1/2, 2 for j=l-1/2 when
 !!             nkap=2
 !! @param evkb  coefficients of VKB projectors, last index as for vkb
-!! @param mxprj  dimension of number of projectors
 !! @param rr  log radial grid
 !! @param vpuns  unscreened semi-local pseudopotentials (vp(:,5,1) is local
 !!               potential if linear combination is used), last index as for vkb
@@ -77,6 +73,7 @@
  use m_libxc_list, only: libxc_t, XC_NOT_IMPL, XC_LDA_X, XC_LDA_C_PZ, &
 &                        XC_LDA_C_WIGNER, XC_LDA_C_HL, XC_GGA_X_PBE, &
 &                        XC_GGA_C_PBE, XC_LDA_C_VWN, XC_LDA_X_REL
+ use constants_m, only: dp, mxl, mxlin, nrhomod, mxprj
 
  use constants_m, only: pi
  use input_m, only: input_t
@@ -86,7 +83,6 @@
  type(input_t), intent(in) :: inp
  integer, intent(in) :: mmax,nrl,irel,nkap
  real(dp), intent(in) :: c_light
- integer, intent(in) :: mxprj ! maximum number of projectors for any l
  real(dp), intent(in) :: fcfact,zion,epstot,rcore
  real(dp), target, intent(in) :: rr(mmax),vpuns(mmax,mxl+2,nkap),rho(mmax)
  real(dp), target, intent(in) :: vkb(mmax,mxprj,mxl+1,nkap)
@@ -213,7 +209,7 @@
  norbs = inp%nc + inp%nv
  allocate(nsh(norbs), lsh(norbs), fsh(norbs))
 
- total_valence_charge = 0.0_dp
+ total_valence_charge = 0.0d0
  ncp = inp%nc + 1
  do ii = 1, norbs
    nsh(ii) = inp%na(ii)
@@ -245,7 +241,7 @@
        if(lsh(jj) == ll(ii)) then
          nn(ii) = nn(ii) + 1
        end if
-       ff(ii) = 0.0_dp
+       ff(ii) = 0.0d0
      end do
    end if
  end do
@@ -356,7 +352,7 @@
  call xml_NewElement(xf,"valence-configuration")
  call my_add_attribute(xf,"total-valence-charge", str(total_valence_charge))
  do ii = ncp, norbs
-   if(fsh(ii) < 1.0e-10_dp) cycle
+   if(fsh(ii) < 1.0d-10) cycle
    call xml_NewElement(xf,"shell")
    call my_add_attribute(xf,"n",str(nsh(ii)))
    call my_add_attribute(xf,"l",lsymb(lsh(ii)))
@@ -371,7 +367,7 @@
 !! the grid element: the log mesh with r=0 before it (r0)
  allocate(r0(nr))
  call add_zero_r(rgrid,rgrid,r0)
- r0(1) = 0.0_dp
+ r0(1) = 0.0d0
 
  call xml_NewElement(xf,"grid")
  call my_add_attribute(xf,"npts",str(nr))
@@ -640,6 +636,8 @@
 
  use xmlf90_wxml, only: xmlf_t, xml_AddPcData
  use input_echo_m, only: input_echo_lines, echo_len
+ use constants_m, only: dp, mxstate, mxcnf, mxlin
+ use input_m, only: config_t
 
 !Input variables
  character(len=2), intent(in) :: atsym
@@ -729,6 +727,9 @@
 !! @param rr  log radial grid
 !! @param f0  ff with an extrapolated value at r=0 prepended
 
+ use constants_m, only: dp
+ use logmesh_m, only: lm_origin
+
 !Input variables
  real(dp), intent(in)  :: ff(:), rr(:)
 
@@ -777,6 +778,7 @@
  use xmlf90_wxml, only: xmlf_t, str, xml_NewElement, xml_EndElement, &
 &                       xml_AddArray
  use input_echo_m, only: fe
+ use constants_m, only: dp
 
 !Input variables
  character(len=*), intent(in)  :: class

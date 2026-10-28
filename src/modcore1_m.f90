@@ -78,11 +78,11 @@
  real(dp), intent(in) :: rhoae(mmax,nv),rhops(mmax,nv),rhotae(mmax)
  real(dp), intent(in) :: rhotps(mmax),rhoc(mmax),rr(mmax)
  real(dp), intent(in) :: zion,fcfact,rcfact,rcmax
+ integer, intent(in) :: iout
 
 !Output variables
  real(dp), intent(out) :: rhomod(mmax,nrhomod)
  type(piecewise_t), intent(out) :: corepw(nrhomod)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables

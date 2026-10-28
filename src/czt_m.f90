@@ -32,8 +32,7 @@
 !> direct sums.
 
  module czt_m
- use constants_m, only: dp, pi
- use, intrinsic :: iso_fortran_env, only: qp => real128
+ use constants_m, only: dp, qp, pi
  implicit none
  private
  public :: czt_plan_t, czt_plan, czt_apply, czt_free
@@ -82,8 +81,8 @@
  allocate(plan%wn(0:nn-1),plan%wm(0:mm-1),plan%hf(0:ll-1))
  allocate(plan%tw(0:max(ll/2,1)-1))
  do kk=0,ll/2-1
-   plan%tw(kk)=cmplx(cos(2.0_dp*pi*dble(kk)/dble(ll)), &
-&                    -sin(2.0_dp*pi*dble(kk)/dble(ll)),dp)
+   plan%tw(kk)=cmplx(cos(2.0d0*pi*dble(kk)/dble(ll)), &
+&                    -sin(2.0d0*pi*dble(kk)/dble(ll)),dp)
  end do
  do kk=0,nn-1
    plan%wn(kk)=chirp(theta,kk)
@@ -98,7 +97,7 @@
 
 !the kernel conj(w_k), k = -(N-1)..M-1, wrapped onto 0..L-1
  allocate(hh(0:ll-1))
- hh(:)=(0.0_dp,0.0_dp)
+ hh(:)=(0.0d0,0.0d0)
  do kk=0,mm-1
    hh(kk)=conjg(plan%wm(kk))
  end do
@@ -154,7 +153,7 @@
 
  ll=plan%ll
  allocate(aa(0:ll-1))
- aa(:)=(0.0_dp,0.0_dp)
+ aa(:)=(0.0d0,0.0d0)
  aa(0:plan%nn-1)=xx(:)*plan%wn(:)
  call fft(aa,ll,plan%tw,.false.)
  aa(:)=aa(:)*plan%hf(:)

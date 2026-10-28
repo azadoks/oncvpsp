@@ -21,9 +21,6 @@
 !> the results (results_m)
  module oncvpsp_run_m
 
- use constants_m, only: dp, mxl, mxlin, mxstate, mxkap, nrhomod
- use pieces_m, only: piecewise_t
- use results_m, only: results_t
  implicit none
  private
  public :: oncvpsp_run
@@ -92,6 +89,9 @@
  use constants_m, only: mxprj, mxcnf
  use pieces_m, only: pw_free
  use input_m, only: input_t
+ use constants_m, only: dp, mxl, mxlin, mxstate, mxkap, nrhomod
+ use pieces_m, only: piecewise_t
+ use results_m, only: results_t
 
 !Input variables
  integer, intent(in) :: irel,istage
@@ -235,16 +235,16 @@
 
  inp%cnf(1)%nv=inp%nv
  do ii=1,inp%nc+inp%nv
-   inp%cnf(1)%n(ii)=inp%na(ii)
-   inp%cnf(1)%l(ii)=inp%la(ii)
-   inp%cnf(1)%f(ii)=inp%fa(ii)
+   inp%cnf(1)%na(ii)=inp%na(ii)
+   inp%cnf(1)%la(ii)=inp%la(ii)
+   inp%cnf(1)%fa(ii)=inp%fa(ii)
  end do
 
  do jj=2,inp%ncnf+1
    do ii=1,inp%nc
-     inp%cnf(jj)%n(ii)=inp%na(ii)
-     inp%cnf(jj)%l(ii)=inp%la(ii)
-     inp%cnf(jj)%f(ii)=inp%fa(ii)
+     inp%cnf(jj)%na(ii)=inp%na(ii)
+     inp%cnf(jj)%la(ii)=inp%la(ii)
+     inp%cnf(jj)%fa(ii)=inp%fa(ii)
    end do
  end do
 
@@ -417,8 +417,8 @@
  do jj=2,inp%ncnf+1
    write(iout,'(i5)') inp%cnf(jj)%nv
    do ii=inp%nc+1,inp%nc+inp%cnf(jj)%nv
-     write(iout,'(2i5,f8.2)') inp%cnf(jj)%n(ii),inp%cnf(jj)%l(ii), &
-&                             inp%cnf(jj)%f(ii)
+     write(iout,'(2i5,f8.2)') inp%cnf(jj)%na(ii),inp%cnf(jj)%la(ii), &
+&                             inp%cnf(jj)%fa(ii)
    end do
    write(iout,'(a)') '#'
  end do
@@ -505,7 +505,7 @@
      if(ifail/=0) return
      call ae_overlap(irel,c_light,ll,kap,inp%nproj(l1),uua(:,:,ikap),rr, &
 &                    inp%zz,mmax,inp%rc(l1),qq)
-     call run_optimize(epa(1,l1,ikap),ll,kap,irel,c_light,mmax,mxprj,rr, &
+     call run_optimize(epa(1,l1,ikap),ll,kap,irel,c_light,mmax,rr, &
 &                      uua(1,1,ikap),upa(1,1,ikap),qq, &
 &                      well_tail_free .and. inwell(:),wmesh,inp%rc(l1), &
 &                      irc(l1), &
@@ -534,7 +534,7 @@
  write(iout,'(/a,a)') 'Construct Vanderbilt / Kleinmman-Bylander projectors'
 
  call run_vkb(inp%lmax,inp%lloc,inp%lpopt,inp%dvloc0,inp%rc,irc,inp%nproj,rr, &
-&             mmax,mxprj,pswf,pswfx, &
+&             mmax,pswf,pswfx, &
 &             chix,vfull,vp,evkb,vkb,nlim,dlta,vrloc,irel,nkap,vkbpw, &
 &             vlocpw,bbeig,iout,ifail)
  if(ifail/=0) return
@@ -559,7 +559,7 @@
  if(irel==2) then
 ! decomposition into scalar-relativistic and spin-orbit projectors
 
-   call sr_so_r(inp%lmax,inp%nproj,rr,mmax,mxprj,evkb,vkbpw, &
+   call sr_so_r(inp%lmax,inp%nproj,rr,mmax,evkb,vkbpw, &
 &               vsr,esr,vso,eso,vsrpw,vsopw,iout,ifail)
    if(ifail/=0) return
  end if
@@ -596,7 +596,7 @@
    if(inp%icmod==7) then
      call modcore_probes(inp%lmax,inp%lloc,inp%nproj,epa,wellprj,vp,vlocpw, &
 &                        vkbpw,evkb, &
-&                        rr,mmax,mxprj, &
+&                        rr,mmax, &
 &                        nkap,probes,lprobe,nprobe,iout,ifail)
      if(ifail/=0) return
    end if
@@ -628,7 +628,7 @@
 
  allocate(vion(mmax))
  call ionic_screening(nkap,inp%nc,inp%nv,inp%la,inp%fa,ea,inp%lmax,inp%lloc, &
-&                     inp%nproj,rr,vp,vlocpw,vkbpw,evkb,mmax,mxprj,inp%zz, &
+&                     inp%nproj,rr,vp,vlocpw,vkbpw,evkb,mmax,inp%zz, &
 &                     zion,zval,inp%iexc,c_light,rcmax,rhoc,rhotae,rhomod(1, &
 &                     1),rho,rhops,uupsa,eeig,vo,vxc,eeel,eexc,vion,iout, &
 &                     ifail)
@@ -640,14 +640,14 @@
  write(iout,'(/a,f12.6/)') 'Pseudoatom total energy', epstot
 
  call run_diag(inp%lmax,npa,epa,wellprj,inp%lloc,inp%rc, &
-&               vlocpw,vkbpw,evkb,inp%nproj,rr,vfull,vp,inp%zz,mmax,mxprj, &
+&               vlocpw,vkbpw,evkb,inp%nproj,rr,vfull,vp,inp%zz,mmax, &
 &               irel,c_light,nkap, &
 &               0,vsrpw,esr,vsopw,eso,iout,ifail)
  if(ifail/=0) return
 
  if(irel==2) then
    call run_diag(inp%lmax,npa,epa,wellprj,inp%lloc,inp%rc, &
-&                 vlocpw,vkbpw,evkb,inp%nproj,rr,vfull,vp,inp%zz,mmax,mxprj, &
+&                 vlocpw,vkbpw,evkb,inp%nproj,rr,vfull,vp,inp%zz,mmax, &
 &                 irel,c_light, &
 &                 nkap,1,vsrpw,esr,vsopw,eso,iout,ifail)
    if(ifail/=0) return
@@ -671,7 +671,7 @@
  ghe(:,:,:,:)=0.0d0
  ghp(:,:,:)=0.0d0
  call run_ghosts(inp%lmax,inp%la,ea(1,1),inp%nc,inp%nv,inp%lloc,inp%rc,qmsbf, &
-&                vlocpw,vkbpw(:,:,1),evkb(1,1,1),inp%nproj,rr,vp,mmax,mxprj, &
+&                vlocpw,vkbpw(:,:,1),evkb(1,1,1),inp%nproj,rr,vp,mmax, &
 &                ngh(:,1),ghn(:,:,1),ghe(:,:,:,1),ghp(:,:,1),iout,ifail)
  if(ifail/=0) return
 
@@ -684,7 +684,7 @@
    end do
    call run_ghosts(inp%lmax,inp%la,ea(1,2),inp%nc,inp%nv,inp%lloc,inp%rc, &
 &                  qmsbf, &
-&                  vlocpw,vkbpw(:,:,2),evkb(1,1,2),inp%nproj,rr,vp,mmax,mxprj, &
+&                  vlocpw,vkbpw(:,:,2),evkb(1,1,2),inp%nproj,rr,vp,mmax, &
 &                  ngh(:,2),ghn(:,:,2),ghe(:,:,:,2),ghp(:,:,2),iout,ifail)
    if(ifail/=0) return
    vkb(:,:,1,2)=0.0d0
@@ -724,7 +724,7 @@
    end if
 
    call run_config_ps(jj,aec(jj),inp%nc,rhot,rhomod,rr, &
-&                     rcmax,mmax,mxprj,inp%iexc,etot,epstot,inp%nproj,vpuns, &
+&                     rcmax,mmax,inp%iexc,etot,epstot,inp%nproj,vpuns, &
 &                     inp%lloc,vlocpw,vkbpw,evkb,irel,c_light,nkap,ntcf(jj), &
 &                     itcf(:,:,jj),etcf(:,:,jj),dtcf(:,jj),iout,ifail)
    if(ifail/=0) return
@@ -733,7 +733,7 @@
 
  call run_plot(inp%lmax,npa,epa,wellprj,inp%lloc,inp%rc, &
 &               vkb,vlocpw,vkbpw,evkb,inp%nproj,rr,vfull,vp,vpuns,inp%zz, &
-&               mmax,mxprj, &
+&               mmax, &
 &               inp%drl,nrl, &
 &               rho,rhoc,rhomod,irel,c_light,nkap,cvgplt,iout,ifail)
  if(ifail/=0) return
@@ -751,32 +751,32 @@
    npsh=int(((inp%epsh2-inp%epsh1)/inp%depsh)-0.5d0)+1
    allocate(pshae(npsh,4,nkap),pshps(npsh,4,nkap))
    call run_phsft(inp%lmax,inp%lloc,inp%nproj,epa,npsh,inp%epsh2,inp%depsh, &
-&                 inp%rxpsh,vlocpw,vkbpw,evkb,rr,vfull,vp,inp%zz,mmax,mxprj, &
+&                 inp%rxpsh,vlocpw,vkbpw,evkb,rr,vfull,vp,inp%zz,mmax, &
 &                 inp%rc,irel,c_light,nkap,rphs,pshae,pshps,iout,ifail)
    if(ifail/=0) return
  end if
 
- call gnu_script(epa,evkb,inp%lmax,inp%lloc,mxprj,inp%nproj,nkap,iout)
+ call gnu_script(epa,evkb,inp%lmax,inp%lloc,inp%nproj,nkap,iout)
 
  call vloc_cutoff(rr,mmax,rho,vpuns(1,inp%lloc+1),zion,cvloc,vlchk)
 
 !the tests' results
  psp%tests%logder%ne=npsh
- allocate(psp%tests%logder%e(npsh))
+ allocate(psp%tests%logder%ee(npsh))
  do ii=1,npsh
-   psp%tests%logder%e(ii)=inp%epsh2-inp%depsh*real(ii-1,dp)
+   psp%tests%logder%ee(ii)=inp%epsh2-inp%depsh*real(ii-1,dp)
  end do
- psp%tests%logder%r(:)=rphs(:)
+ psp%tests%logder%rl(:)=rphs(:)
  call move_alloc(pshae,psp%tests%logder%ae)
  call move_alloc(pshps,psp%tests%logder%ps)
  psp%tests%ghosts%nrow(:,:)=ngh(:,:)
- psp%tests%ghosts%n(:,:,:)=ghn(:,:,:)
- psp%tests%ghosts%e(:,:,:,:)=ghe(:,:,:,:)
+ psp%tests%ghosts%nn(:,:,:)=ghn(:,:,:)
+ psp%tests%ghosts%ee(:,:,:,:)=ghe(:,:,:,:)
  psp%tests%ghosts%least(:,:,:)=ghp(:,:,:)
  psp%tests%configs%ncfg=inp%ncnf+1
  psp%tests%configs%nrow(:)=ntcf(:)
  psp%tests%configs%state(:,:,:)=itcf(:,:,:)
- psp%tests%configs%e(:,:,:)=etcf(:,:,:)
+ psp%tests%configs%ee(:,:,:)=etcf(:,:,:)
  psp%tests%configs%de(:,:)=dtcf(:,:)
  call move_alloc(cvgplt,psp%tests%convergence%cross)
 !the curves to the end of the longest
@@ -798,7 +798,7 @@
 
  call move_alloc(bbeig,psp%tests%bbeig)
 
- call diagout(inp%lmax,inp%nproj,mxprj,nkap,psp%tests,inp%icmod,rr,mmax, &
+ call diagout(inp%lmax,inp%nproj,nkap,psp%tests,inp%icmod,rr,mmax, &
 &             rcmax,rhoc,corepw,inp%lloc,evkb,iout)
 
 ! Write info for PSML format

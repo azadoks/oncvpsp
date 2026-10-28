@@ -41,8 +41,6 @@
  module ae_file_m
  use, intrinsic :: iso_fortran_env, only: int8
  use constants_m, only: dp, mxstate, mxcnf, nlev
- use input_m, only: config_t
- use config_ae_m, only: ae_config_t
  implicit none
  private
  public :: write_ae_file, read_ae_file, read_ae_potential, byteswap, differ
@@ -92,6 +90,9 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use config_ae_m, only: ae_config_t
+ use input_m, only: config_t
+
 !Input variables
  character(len=*), intent(in) :: fname
  integer, intent(in) :: irel,nkap
@@ -104,9 +105,9 @@
  real(dp), intent(in) :: fa(mxstate),ea(mxstate,nkap)
  real(dp), intent(in) :: rr(mmax),rhoc(mmax),rho(mmax),vfull(mmax)
  type(ae_config_t), intent(in) :: aec(mxcnf)
+ integer, intent(in) :: iout
 
 !Output variables
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -171,6 +172,9 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use config_ae_m, only: ae_config_t
+ use input_m, only: config_t
+
 !Input variables
  character(len=*), intent(in) :: fname
  integer, intent(in) :: irel,nkap
@@ -181,13 +185,13 @@
  integer, intent(in) :: na(mxstate),la(mxstate)
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: fa(mxstate),rr(mmax)
+ integer, intent(in) :: iout
 
 !Output variables
  integer, intent(out) :: it
  real(dp), intent(out) :: etot,eterm(4),res
  real(dp), intent(out) :: ea(mxstate,nkap),rhoc(mmax),rho(mmax),vfull(mmax)
  type(ae_config_t), intent(out) :: aec(mxcnf)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -265,10 +269,10 @@
  integer, intent(in) :: na(mxstate),la(mxstate)
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: fa(mxstate),rr(mmax)
+ integer, intent(in) :: iout
 
 !Output variables
  integer, intent(out) :: unit
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -323,10 +327,10 @@
  integer, intent(in) :: na(mxstate),la(mxstate)
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: fa(mxstate),rr(mmax)
+ integer, intent(in) :: iout
 
 !Output variables
  integer, intent(out) :: unit
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -420,8 +424,11 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use constants_m, only: mxkap
+
 !Input variables
  character(len=*), intent(in) :: fname
+ integer, intent(in) :: iout
 
 !Output variables
  integer, intent(out) :: irel,mmax
@@ -429,14 +436,13 @@
  real(dp), intent(out) :: zz,c_light_f
  real(dp), allocatable, intent(out) :: rr(:),vfull(:)
  integer, intent(out), optional :: nc,nv,iexc,na(mxstate),la(mxstate)
- real(dp), intent(out), optional :: fa(mxstate),ea(mxstate,2),etot
- integer, intent(in) :: iout
+ real(dp), intent(out), optional :: fa(mxstate),ea(mxstate,mxkap),etot
  integer, intent(out) :: ifail
 
 !Local variables
  integer :: unit,nc_f,nv_f,iexc_f,nt,nkap,it
  integer :: na_f(mxstate),la_f(mxstate)
- real(dp) :: fa_f(mxstate),etot_f,eterm(4),res,ea_f(mxstate,2)
+ real(dp) :: fa_f(mxstate),etot_f,eterm(4),res,ea_f(mxstate,mxkap)
  real(dp), allocatable :: rhoc(:),rho(:)
 
  ifail=0
@@ -482,10 +488,10 @@
 
 !Input variables
  character(len=*), intent(in) :: fname
+ integer, intent(in) :: iout
 
 !Output variables
  integer, intent(out) :: unit,irel_f
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -536,6 +542,8 @@
 !! @param nc  number of core states
 !! @param cnf  the reference and test configurations (input_m)
 
+ use input_m, only: config_t
+
 !Input variables
  integer, intent(in) :: unit,jj,nc
  type(config_t), intent(in) :: cnf(mxcnf)
@@ -544,7 +552,7 @@
  integer :: nt
 
  nt=nc+cnf(jj)%nv
- write(unit) cnf(jj)%nv,cnf(jj)%n(1:nt),cnf(jj)%l(1:nt),cnf(jj)%f(1:nt)
+ write(unit) cnf(jj)%nv,cnf(jj)%na(1:nt),cnf(jj)%la(1:nt),cnf(jj)%fa(1:nt)
  return
  end subroutine write_config_key
 
@@ -558,6 +566,8 @@
 !! @param cnf  the reference and test configurations (input_m)
 !! @param found  .true. for the configurations already found in the file
 !! @param match  .true. for the configurations this key matches
+
+ use input_m, only: config_t
 
 !Input variables
  integer, intent(in) :: unit,nc,ncnf
@@ -580,9 +590,9 @@
  do jj=1,ncnf+1
    if(found(jj)) cycle
    if(nvcnf_f/=cnf(jj)%nv) cycle
-   if(any(nacnf_f(1:nt)/=cnf(jj)%n(1:nt))) cycle
-   if(any(lacnf_f(1:nt)/=cnf(jj)%l(1:nt))) cycle
-   if(any(differ(facnf_f(1:nt),cnf(jj)%f(1:nt)))) cycle
+   if(any(nacnf_f(1:nt)/=cnf(jj)%na(1:nt))) cycle
+   if(any(lacnf_f(1:nt)/=cnf(jj)%la(1:nt))) cycle
+   if(any(differ(facnf_f(1:nt),cnf(jj)%fa(1:nt)))) cycle
    match(jj)=.true.
  end do
  return
@@ -599,9 +609,9 @@
 !Input variables
  integer, intent(in) :: ncnf
  logical, intent(in) :: found(5)
+ integer, intent(in) :: iout
 
 !Output variables
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables

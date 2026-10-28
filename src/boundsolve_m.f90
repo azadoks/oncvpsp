@@ -90,6 +90,8 @@
 !! @param polish  set .true. where de is below eps but not converged
 !!                (optional)
 
+ use constants_m, only: eig_floor
+
 !Input variables
  real(dp), intent(in) :: de,deprev,ee,eps
 
@@ -97,8 +99,8 @@
  logical, intent(inout), optional :: polish
 
  bs_converged=.false.
- if(abs(de)<max(abs(ee),0.2d0)*eps) then
-   if(abs(de)<=8.0d0*epsilon(1.0d0)*max(abs(ee),0.2d0) .or. &
+ if(abs(de)<max(abs(ee),eig_floor)*eps) then
+   if(abs(de)<=8.0d0*epsilon(1.0d0)*max(abs(ee),eig_floor) .or. &
 &     abs(de)>=0.5d0*abs(deprev)) then
      bs_converged=.true.
      return
@@ -196,6 +198,8 @@
 !!               mesh at an energy
 !! @param ee  the box state's energy
 
+ use constants_m, only: eig_floor
+
 !Input variables
  real(dp), intent(in) :: elow,etop,eps
  integer, intent(in) :: nnode
@@ -229,7 +233,7 @@
    else
      eblo=ee
    end if
-   if(ebhi-eblo<max(abs(ee),0.2d0)*eps) exit
+   if(ebhi-eblo<max(abs(ee),eig_floor)*eps) exit
  end do
  if(kk>200) then
    write(error_unit,'(a,es12.4)') &
@@ -306,6 +310,7 @@
 
  use match_m, only: match_k
  use inward_start_m, only: inward_start
+ use constants_m, only: eig_floor
 
 !Input variables
  integer, intent(in) :: nn,ll,mmax
@@ -346,7 +351,7 @@
 ! potential; the box state stands in for it. Once a shift is below eps
 ! the passes polish a converging energy, whose alternating shifts close
 ! the bracket too
-   if(.not. polish .and. emax-emin<max(abs(ee),0.2d0)*eps) then
+   if(.not. polish .and. emax-emin<max(abs(ee),eig_floor)*eps) then
      call box(elow,etop,ee)
      mch=mmax
      ierr=10

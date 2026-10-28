@@ -47,6 +47,7 @@
  implicit none
  private
  public :: lm_blend, lm_interp, lm_derivs, lm_cumint, lm_integral, lm_root
+ public :: lm_step
  public :: lm_integral_weights, lm_head, lm_origin
  public :: lm_ncell, lm_cell_weights, lm_fh_value, lm_fh_weights, lm_fh_reach
 
@@ -140,7 +141,7 @@
 &   0.0d0,  0.0d0,  1.0d0, -6.0d0, &
 &   0.0d0,  0.0d0,  0.0d0,  1.0d0],[4,4])
 
- hh=mesh_step(rr,mmax)
+ hh=lm_step(rr,mmax)
  tt=mesh_position(rr,mmax,rq)
  inode=node_index(rr,mmax,rq,tt)
 
@@ -228,7 +229,7 @@
  real(dp), volatile :: tmp
  integer :: ii,jj,istart,ishift
 
- hh=mesh_step(rr,mmax)
+ hh=lm_step(rr,mmax)
 
 ! each cell [x_i,x_i+1] integrates the degree-7 interpolant of ff*r (dr=r dx)
 ! on the 8 points i-3..i+4, shifted to fit at the ends; the running sum is
@@ -366,7 +367,7 @@
 
 ! cum(k) is the start rr(1) ff(1)/(mm+1) plus the cells below k, so cell c
 ! enters with the weights at k > c, the tail of fw beyond c
- hh=mesh_step(rr,mmax)
+ hh=lm_step(rr,mmax)
  nw=min(mmax,ihi+ncell/2)
  allocate(wts(nw))
  wts(:)=0.0d0
@@ -545,7 +546,7 @@
 
  f0=0.0d0
  ierr=0
- mstep=max(1,nint(log(2.0d0)/mesh_step(rr,mmax)))
+ mstep=max(1,nint(log(2.0d0)/lm_step(rr,mmax)))
  if(1+mstep*(norig-1)>mmax) then
    ierr=1
    return
@@ -605,7 +606,7 @@
  return
  end function lm_head
 
- real(dp) function mesh_step(rr,mmax)
+ real(dp) function lm_step(rr,mmax)
 
 !! the step al of the log mesh in ln(r), from its ends
 !!
@@ -616,9 +617,9 @@
  integer, intent(in) :: mmax
  real(dp), intent(in) :: rr(mmax)
 
- mesh_step=log(rr(mmax)/rr(1))/dble(mmax-1)
+ lm_step=log(rr(mmax)/rr(1))/dble(mmax-1)
  return
- end function mesh_step
+ end function lm_step
 
  real(dp) function mesh_position(rr,mmax,rq)
 
@@ -633,7 +634,7 @@
  integer, intent(in) :: mmax
  real(dp), intent(in) :: rr(mmax),rq
 
- mesh_position=log(rq/rr(1))/mesh_step(rr,mmax)
+ mesh_position=log(rq/rr(1))/lm_step(rr,mmax)
  return
  end function mesh_position
 

@@ -50,10 +50,10 @@
 !Input variables
  integer, intent(in) :: ll,nroot
  real(dp), intent(in) :: rc,ulgd,dltq,qmax
+ integer, intent(in) :: iout
 
 !Output variables
  real(dp), intent(out) :: qroot(nroot)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables

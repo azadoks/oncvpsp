@@ -20,8 +20,6 @@
 !> executable, its command line and help, the banner, the log mesh, the
 !> reference atom's results and the mesh points of the core radii.
  module main_setup_m
- use constants_m, only: dp
- use build_info_m, only: write_build_info
  implicit none
  private
  public :: main_names, parse_command_line, write_banner, make_log_mesh
@@ -75,6 +73,8 @@
 &                              skip_ld)
 !! the options of the executable exe of stage istage: where the input is
 !! read from, the data files and whether to leave out the log derivatives
+ use build_info_m, only: write_build_info
+
  integer, intent(in) :: istage
  character(len=*), intent(in) :: treatment,pname,exe
  integer, intent(out) :: input_mode
@@ -147,6 +147,8 @@
 
  subroutine write_banner(irel,treatment,exe,iout)
 !! the version, the citation and the build
+ use build_info_m, only: write_build_info
+
  integer, intent(in) :: irel
  character(len=*), intent(in) :: treatment,exe
  integer, intent(in) :: iout
@@ -175,6 +177,8 @@
 !! built-in ones for those 0 or less; and the mesh for the echoes of the
 !! input, only when the input sets it (else 0), so that the output of an
 !! input without it is unchanged
+ use constants_m, only: dp
+
  integer, intent(in) :: irel
  real(dp), intent(in) :: zz,amesh_in,rr1_in,rmax_in
  real(dp), intent(out) :: al,log_mesh(3)
@@ -217,6 +221,8 @@
  subroutine write_reference_results(pname,it,etot,res,eterm,iout)
 !! the all-electron reference atom's iterations, total energy, residual
 !! and energy terms; an error if it did not converge
+ use constants_m, only: dp
+
  character(len=*), intent(in) :: pname
  integer, intent(in) :: it
  real(dp), intent(in) :: etot,res,eterm(4)
@@ -242,6 +248,8 @@
 !! the last log mesh point at or inside each rc, for the bookkeeping of the
 !! routines that index the mesh (R-2); the radii themselves stay as given;
 !! and the largest
+ use constants_m, only: dp
+
  integer, intent(in) :: lmax,lloc,mmax
  real(dp), intent(in) :: rc(:),rr(mmax)
  integer, intent(out) :: irc(:)

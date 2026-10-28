@@ -137,7 +137,11 @@ looks like this:
   scalar-, 2 fully-relativistic), tested at run time, rather than a
   logical or a preprocessor macro. Arrays indexed by l have a last index
   for kappa of size `nkap` (1, or 2 for `irel=2`): 1 for j=l+1/2, 2 for
-  j=l-1/2. Loops over it run to `mkap`, which is 1 when `nkap=1` or l=0.
+  j=l-1/2; a dummy argument declares it `nkap` when the routine has it,
+  storage and routines without `nkap` (the fully-relativistic ones among
+  them) `mxkap`, never a literal 2. Loops over it run to
+  `mkap=kap_count(nkap,ll)` (`kappa_m`, taking l), which is 1 when
+  `nkap=1` or l=0.
   `boundstate`, `scatterstate` and `aeatom` choose the Schroedinger or Dirac
   solver. `_r` is left only on routines that exist for the
   fully-relativistic code alone (`sr_so_r`, `renorm_r`). See
@@ -197,6 +201,8 @@ looks like this:
 - Explicit-shape (`rr(mmax)`) or allocatable arrays; no assumed-size
   (`*`) dummies, except in `adams.inc` and the LAPACK interfaces of
   `lapack_m`.
+- The array limits of `constants_m` (`mxprj`, `mxl`, `mxstate`, ...) are
+  used from it, never passed as arguments.
 
 **Names.**
 
@@ -254,8 +260,13 @@ Take the real kind and shared constants from `constants_m`
  use constants_m, only: dp, pi
 ```
 
-Don't define `dp`, `pi` or the speed of light locally. Write rational
-coefficients as quotients (`1.0d0/24.0d0`), not as truncated decimals.
+Don't define `dp`, `qp` (quadruple precision), `pi` or the speed of light
+locally. Write rational coefficients as quotients (`1.0d0/24.0d0`), not as
+truncated decimals. A tolerance, floor or factor that more than one routine
+uses is a named parameter of `constants_m` (`eig_tol` and `eig_floor` of the
+eigenvalue solvers, `rel_window`, `series_tol`, `ha_ev`), and the mesh step
+of the log mesh is `lm_step(rr,mmax)` (`logmesh_m`), not re-derived from
+`rr`.
 
 ## Input echo
 
@@ -384,6 +395,21 @@ things fortitude wants `intent` on every argument, `only` on every `use`,
 `::` in every declaration, generic intrinsics (`log`, not `dlog`), no
 assumed-size (`*`) arrays, and lines of at most 80 columns (set in
 `fortitude.toml`). `fortitude check --fix` fixes some of these itself.
+
+`scripts/check_conventions.py` checks the conventions that neither
+fortitude nor gfortran sees: section labels against intents, the `!!`
+description and `@param` list of each module procedure, the form and
+prefix of the error messages, `stop` in module procedures, an `ierr` left
+unchecked, the `!>` documentation of module variables and type components,
+the license header, one-letter names, the mesh step re-derived, `_dp`
+literals and other real kinds outside `constants_m`, and `use` statements
+at module level that the module's own declarations do not need. Its
+docstring gives each rule. The findings in
+`scripts/conventions_baseline.txt`, the code written before the rules,
+are allowed, so the check fails only on new ones; after fixing old ones,
+`scripts/check_conventions.py --update-baseline` shrinks the baseline. It
+runs on the changed files in pre-commit, and on all of `src/` as the
+ctest test `conventions` (label `lint`).
 
 gfortran adds two checks in the Debug build: `-std=f2008`, so the code is
 standard Fortran 2008 (a bound, for one, is declared before the array it

@@ -68,6 +68,7 @@
  real(dp), intent(in) :: rr(mmax),qroot(nbas),uu(mmax),pswfopt_sb(nbas)
  real(dp), intent(in) :: vae(mmax)
  real(dp), intent(in) :: al,eig,rc
+ integer, intent(in) :: iout
 
 !Input/output variables
  real(dp), intent(inout) :: vkb(mmax)
@@ -77,7 +78,6 @@
  real(dp), intent(out) :: vpsp(mmax)
  real(dp), intent(out) :: ekin_num
  real(dp), intent(out) :: psx(mmax),chix(mmax)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables

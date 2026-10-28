@@ -27,7 +27,7 @@
 
 ! self-consistent pseudoatom calculation
 
- subroutine psatom(na,la,ea,fat,nv,it,rhoc,rho,rr,rcmax,mmax,mxprj,iexc, &
+ subroutine psatom(na,la,ea,fat,nv,it,rhoc,rho,rr,rcmax,mmax,iexc, &
 &           c_light,etot,nproj,vpuns,lloc,vlocpw,vkbpw,evkb,ierr,nkap,vext, &
 &           iout,ifail)
 
@@ -44,7 +44,6 @@
 !! @param rr  log radial mesh
 !! @param rcmax  maximum core radius for psp
 !! @param mmax  size of log grid
-!! @param mxprj  dimension of number of projectors
 !! @param iexc  exchange-correlation function to be used
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param etot  pseudoatom total energy (output)
@@ -67,24 +66,26 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use constants_m, only: dp, mxstate, mxl, mxlin
+ use constants_m, only: dp, mxstate, mxl, mxlin, mxprj
  use kappa_m, only: kap_count, kap_of, j_share
  use ae_scf_m, only: ae_residual, ae_converged, ae_anderson1
  use pieces_m, only: piecewise_t
  use vout_m, only: vout
  use lschvkbb_m, only: lschvkbb_tol
+ use logmesh_m, only: lm_step
 
 !Input variables
 
- integer, intent(in) :: mmax,mxprj,iexc,nv,lloc,nkap
+ integer, intent(in) :: mmax,iexc,nv,lloc,nkap
  real(dp), intent(in) :: c_light
  integer, intent(in) :: na(nv),la(nv),nproj(mxlin+1)
  real(dp), intent(in) :: rcmax
- real(dp), intent(in) :: fat(mxstate,2),rr(mmax)
+ real(dp), intent(in) :: fat(mxstate,nkap),rr(mmax)
  real(dp), intent(in) :: vpuns(mmax,mxl+2)
  real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap)
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1,nkap)
  real(dp), intent(in) :: rhoc(mmax),vext(mmax)
+ integer, intent(in) :: iout
 
 !Input/output variables
  real(dp), intent(inout) :: ea(mxstate,nkap)
@@ -94,7 +95,6 @@
  integer, intent(out) :: ierr
  integer, intent(out) :: it
  real(dp), intent(out) :: etot
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -149,7 +149,7 @@
  eeig=0.0d0; zval=0.0d0
  nin=0; mch=0
 
- al = 0.01d0 * log(rr(101) / rr(1))
+ al=lm_step(rr,mmax)
  amesh = exp(al)
 
  nprj=0

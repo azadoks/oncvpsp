@@ -26,7 +26,6 @@
 !> by the bound states (lschfb) and the scattering states (lschfs).
 
  module sr_flux_m
- use constants_m, only: dp
  use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
@@ -42,6 +41,8 @@
 !! @param ll  angular-momentum quantum number
 !! @param zz  atomic number
 !! @param fss  1/c**2, or 0 for the non-relativistic equation
+
+ use constants_m, only: dp
 
 !Input variables
  integer, intent(in) :: ll
@@ -74,6 +75,8 @@
 !! @param xm  relativistic mass M
 !! @param pm  al*r*M
 !! @param qm  al*r*(l(l+1)/(M*r**2) + 2*(vv - ee))
+
+ use constants_m, only: dp
 
 !Input variables
  integer, intent(in) :: ll,mmax
@@ -120,6 +123,8 @@
 !! @param qq  flux function on 1..mlast
 !! @param qp  d(qq)/dn on 1..mlast
 !! @param nnode  number of nodes of uu inside rr(mlast)
+
+ use constants_m, only: dp
 
 !Input variables
  integer, intent(in) :: ll,mmax,mlast
@@ -275,6 +280,8 @@
 !! p_k*r**k, q_k*r**k, whose coefficients alone overflow. The relativistic
 !! series is used only inside an eighth of its radius a/b (origin_start)
 
+ use constants_m, only: series_tol
+
  real(dp), intent(in) :: rx
  real(dp), intent(out) :: px,qx
  real(dp) :: pk,qk,pk1,qk1,pk2,rk
@@ -288,7 +295,7 @@
      pk=(-2.0d0*zz*pk1*rx+2.0d0*ww*pk2*rx**2)/(kk*(2*ll+1+kk))
      px=px+pk
      qx=qx+(ll+kk)*pk
-     if(abs(pk)<1.0d-17*abs(px)) exit
+     if(abs(pk)<series_tol*abs(px)) exit
      pk2=pk1; pk1=pk
    end do
    if(kk>80) call series_error(rx)
@@ -308,7 +315,7 @@
 &    /(aa*kk*(2.0d0*gamma+kk))
    px=px+pk
    qx=qx+qk
-   if(abs(pk)<1.0d-17*abs(px) .and. abs(qk)<1.0d-17*abs(qx)) exit
+   if(abs(pk)<series_tol*abs(px) .and. abs(qk)<series_tol*abs(qx)) exit
    pk2=pk1; pk1=pk; qk1=qk
  end do
  if(kk>200) call series_error(rx)
@@ -345,6 +352,8 @@
 !! @param up  d(uu)/dn
 !! @param qq  flux function
 !! @param qp  d(qq)/dn
+
+ use constants_m, only: dp
 
 !Input variables
  integer, intent(in) :: mmax,ifrom,ito
@@ -383,6 +392,8 @@
 !! @param qq  flux function
 !! @param qp  d(qq)/dn
 !! @param jj  the point
+
+ use constants_m, only: dp
 
 !Input variables
  integer, intent(in) :: mmax,jj

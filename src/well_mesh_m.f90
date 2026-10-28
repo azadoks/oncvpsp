@@ -57,6 +57,8 @@
 !! @param rx  the continued mesh
 !! @param vx  vfull on it, vfull(mmax) rr(mmax)/r beyond rr(mmax)
 
+ use logmesh_m, only: lm_step
+
 !Input variables
  integer, intent(in) :: mmax,mx
  real(dp), intent(in) :: rr(mmax),vfull(mmax)
@@ -66,7 +68,7 @@
  real(dp) :: al
  integer :: ii
 
- al=log(rr(mmax)/rr(1))/dble(mmax-1)
+ al=lm_step(rr,mmax)
  allocate(rx(mx),vx(mx))
  rx(1:mmax)=rr(:)
  vx(1:mmax)=vfull(:)
@@ -96,16 +98,16 @@
  integer, intent(in) :: ll,mx
  real(dp), intent(in) :: ee
  real(dp), intent(in) :: rx(mx),vx(mx)
+ integer, intent(in) :: iout
 !Output variables
  integer, intent(out) :: mneed
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 !Local variables
  real(dp) :: budget,sk,xk,xk1,sls,al
  integer :: ii,itp
 
  ifail=0
- budget=-log(epsilon(1.0_dp))
+ budget=-log(epsilon(1.0d0))
  sls=ll*(ll+1)
 !the outer turning point: the last point classically allowed
  itp=1

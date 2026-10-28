@@ -19,7 +19,6 @@
 !> relativistic): how many there are, their kappa, and the share of an
 !> occupation each takes, 2j+1 of 2(2l+1).
  module kappa_m
- use constants_m, only: dp
  implicit none
  private
  public :: kap_count, kap_of, j_share
@@ -46,6 +45,8 @@
 
  real(dp) function j_share(ll,ikap,ff)
 !! the share of the occupation ff of l in component ikap
+ use constants_m, only: dp
+
  integer, intent(in) :: ll,ikap
  real(dp), intent(in) :: ff
  if(ikap==1) then

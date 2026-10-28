@@ -22,11 +22,6 @@
 !> npa; the relativistic term Delta about the taper window; their overlap
 !> inside rc; and the weights of their pseudo-waves in the cutoff.
  module ae_projectors_m
- use constants_m, only: dp, mxprj, mxstate, mxkap
- use pieces_m, only: pw_reach
- use free_tail_m, only: free_tail_log
- use well_mesh_m, only: well_mesh_t
- use logmesh_m, only: lm_fh_reach
  implicit none
  private
  public :: ae_bound_projectors, ae_well_projectors, ae_delta_window
@@ -41,6 +36,8 @@
 !! projectors' states; and npa(1), the n above the highest core state of l
  use boundstate_m, only: boundstate
  use renorm_r_m, only: renorm_r
+ use constants_m, only: dp, mxprj, mxstate, mxkap
+
  integer, intent(in) :: irel,ll,kap,ikap,nc,nv,na(mxstate),la(mxstate)
  real(dp), intent(in) :: c_light
  integer, intent(in) :: nproj,it,mmax
@@ -114,6 +111,9 @@
  use boundstate_m, only: boundstate
  use renorm_r_m, only: renorm_r
  use wellstate_m, only: wellstate
+ use constants_m, only: dp, mxprj
+ use well_mesh_m, only: well_mesh_t
+
  integer, intent(in) :: irel,ll,kap,ikap,nproj,well_n,well_tail,irc,mmax
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: ep,debl,well_onset,rc,qcut,rr(mmax),zz
@@ -284,6 +284,11 @@
 !! L ~ 1.5 (free_tail_m)
  use fpovlp_m, only: fpovlp
  use scatterstate_m, only: scatterstate
+ use constants_m, only: dp
+ use free_tail_m, only: free_tail_log
+ use logmesh_m, only: lm_fh_reach
+ use pieces_m, only: pw_reach
+
  integer, intent(in) :: irel,ll,kap,ikap,nn,irc,mmax
  real(dp), intent(in) :: c_light
  integer, intent(inout) :: nnwell
@@ -328,6 +333,9 @@
 !! window [0.95 rc, rc] (ae_delta, D-4), for the projectors; the local
 !! potential of lloc<4 (local) takes Delta/(2u) on the window (S-1)
  use ae_delta_m, only: ae_delta
+ use constants_m, only: dp, mxprj, rel_window
+ use pieces_m, only: pw_reach
+
  integer, intent(in) :: irel,ll,kap,nproj,mmax,irc
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: epa(mxprj),rr(mmax),vfull(mmax)
@@ -339,7 +347,7 @@
  integer, intent(out) :: ifail
  ifail=0
  do iprj=1,nproj
-   ii=max(1,1+int(log(0.95d0*rc/rr(1))/al)-pw_reach-8)
+   ii=max(1,1+int(log(rel_window*rc/rr(1))/al)-pw_reach-8)
    jj=min(mmax,irc+pw_reach+16)
    call ae_delta(irel,c_light,ll,kap,epa(iprj),rr,vfull,uua(1,iprj), &
 &                upa(1,iprj),mmax,ii,jj,dlta(1,iprj))
@@ -361,6 +369,8 @@
  subroutine ae_overlap(irel,c_light,ll,kap,nproj,uua,rr,zz,mmax,rc,qq)
 !! the overlap matrix of the projectors' all-electron states inside rc
  use fpovlp_m, only: fpovlp
+ use constants_m, only: dp, mxprj
+
  integer, intent(in) :: irel,ll,kap,nproj,mmax
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: uua(mmax,mxprj),rr(mmax),zz,rc
@@ -383,6 +393,8 @@
 !! 2(2l+1), as if the channel were full; in a solid it holds about the
 !! charge that hybridization puts inside rc, an input as the atom cannot
 !! give it
+ use constants_m, only: dp, mxprj, mxstate
+
  integer, intent(in) :: ll,nc,nv,la(mxstate),nproj
  real(dp), intent(in) :: fa(mxstate),fj,ecut_wt
  real(dp), intent(inout) :: wcurve(mxprj)

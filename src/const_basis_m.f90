@@ -58,20 +58,19 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use constants_m, only: dp
- use, intrinsic :: iso_fortran_env, only: qp => real128
+ use constants_m, only: dp, qp
  use qlinalg_m, only: qjacobi
 
 !Input variables
  integer, intent(in) :: ncon,nbas
  real(qp), intent(in) :: orbasis(nbas,nbas),orbasis_der(ncon,nbas)
  real(dp), intent(in) :: cons(ncon)
+ integer, intent(in) :: iout
 
 !Output variables
  real(dp), intent(out) :: pswf0_or(nbas),pswfnull_or(nbas,nbas-ncon)
  real(qp), intent(out) :: pswf0_sb(nbas),pswfnull_sb(nbas,nbas-ncon)
  real(dp), intent(out) :: ps0norm
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables

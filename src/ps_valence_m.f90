@@ -20,9 +20,6 @@
 !> pseudo valence states of the reference configuration, their densities
 !> and eigenvalue sum, and the unscreening of the semi-local potentials.
  module ps_valence_m
- use constants_m, only: dp, mxprj, mxstate, mxl, mxlin, mxkap
- use kappa_m, only: kap_count, kap_of, j_share
- use pieces_m, only: piecewise_t
  implicit none
  private
  public :: valence_densities, unscreen_potentials, coulomb_switch
@@ -41,10 +38,14 @@
 !! the sum of the pseudo eigenvalues eeig
  use boundstate_m, only: boundstate
  use lschvkbb_m, only: lschvkbb
+ use constants_m, only: dp, mxprj, mxstate, mxl, mxlin, mxkap
+ use kappa_m, only: kap_count, kap_of, j_share
+ use pieces_m, only: piecewise_t
+
  integer, intent(in) :: irel,nkap,nc,nv,na(mxstate),la(mxstate),it,lloc
  real(dp), intent(in) :: c_light
  integer, intent(in) :: nproj(mxlin+1),mmax
- real(dp), intent(in) :: fa(mxstate),ea(mxstate,mxkap),rr(mmax),zz
+ real(dp), intent(in) :: fa(mxstate),ea(mxstate,nkap),rr(mmax),zz
  real(dp), intent(in) :: vfull(mmax),vp(mmax,mxl+2,nkap)
  real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap)
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1,nkap)
@@ -148,6 +149,8 @@
 !! the scalar-relativistic average when fully relativistic; and -zion/r
 !! far out, where the all-electron charge outranges rho: switched over
 !! the outer half of the mesh (O-5), not cut where rho underflows to 0
+ use constants_m, only: dp, mxl
+
  integer, intent(in) :: irel,lmax,lloc,mmax,nkap
  real(dp), intent(in) :: vp(mmax,mxl+2,nkap),vo(mmax),zion,rr(mmax)
  real(dp), intent(inout) :: vpuns(mmax,mxl+2)
@@ -171,6 +174,8 @@
  subroutine coulomb_switch(rr,mmax,zion,vv)
 !! vv switched to -zion/r over the outer half of the mesh (O-5)
  use cinf_taper_m, only: cinf_taper
+ use constants_m, only: dp
+
  integer, intent(in) :: mmax
  real(dp), intent(in) :: rr(mmax),zion
  real(dp), intent(inout) :: vv(mmax)

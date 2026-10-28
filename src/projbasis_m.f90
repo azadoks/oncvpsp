@@ -21,8 +21,6 @@
 !> functions, the sort of the coefficients by magnitude, and the sign of a
 !> projector, positive at its peak.
  module projbasis_m
- use constants_m, only: dp
- use pieces_m, only: piecewise_t, pw_node_values
  implicit none
  private
  public :: pb_half_powers, pb_congruence, pb_combine, pb_sort_abs
@@ -42,11 +40,13 @@
 !! @param sphalf  S^(1/2) (output)
 !! @param smhalf  S^(-1/2) (output)
 
+ use constants_m, only: dp
+
 !Input variables
  integer, intent(in) :: nn,ld
  real(dp), intent(in) :: sv(ld,ld),sev(ld)
 
-!Output variables
+!Input/output variables
  real(dp), intent(inout) :: sphalf(ld,ld),smhalf(ld,ld)
 
 !Local variables
@@ -72,6 +72,8 @@
 !! @param nn  the order
 !! @param ld  the leading dimension
 !! @param ast  A* (output; zero beyond nn)
+
+ use constants_m, only: dp
 
 !Input variables
  integer, intent(in) :: nn,ld
@@ -114,6 +116,9 @@
 !! @param nn  how many
 !! @param pout  the combinations (pieces on input, values on output)
 
+ use constants_m, only: dp
+ use pieces_m, only: piecewise_t
+
 !Input variables
  integer, intent(in) :: ld,nn
  real(dp), intent(in) :: cc(ld,ld)
@@ -142,6 +147,9 @@
 !! @param ee  the coefficients
 !! @param pw  their functions
 !! @param nn  how many
+
+ use constants_m, only: dp
+ use pieces_m, only: piecewise_t
 
 !Input variables
  integer, intent(in) :: nn
@@ -183,6 +191,9 @@
 !! @param mmax  its size
 !! @param pw  the projector's pieces
 !! @param vv  the projector on the mesh (output)
+
+ use constants_m, only: dp
+ use pieces_m, only: piecewise_t, pw_node_values
 
 !Input variables
  integer, intent(in) :: mmax

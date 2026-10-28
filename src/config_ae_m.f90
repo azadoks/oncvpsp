@@ -25,9 +25,6 @@
 
  module config_ae_m
  use constants_m, only: dp, mxstate, mxcnf, nlev, ae_tolres
- use kappa_m, only: kap_count, kap_of
- use ae_scf_m, only: ae_floor_warning
- use input_m, only: config_t
  implicit none
  private
  public :: run_config_ae, config_ae_warning, aeatom_cached, ae_config_t, &
@@ -68,7 +65,7 @@
 !> the all-electron atoms of a run, the reference and two per test
 !> configuration (aeatom_cached), which a run owns and passes down
  type :: ae_cache_t
-   integer :: n=0
+   integer :: nentry=0
    type(ae_entry_t) :: entry(2*mxcnf+1)
  end type ae_cache_t
 
@@ -89,6 +86,7 @@
 !! are those of aeatom
 
  use aeatom_m, only: aeatom
+ use ae_scf_m, only: ae_floor_warning
 
 !Input variables
  integer, intent(in) :: irel,nkap,mmax,iexc,nc,ncv
@@ -96,6 +94,7 @@
  integer, intent(in) :: na(ncv),la(ncv)
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: fa(ncv),rr(mmax)
+ integer, intent(in) :: iout
 
 !Input/output variables
  type(ae_cache_t), intent(inout) :: cache
@@ -106,7 +105,6 @@
  integer, intent(out) :: it
  real(dp), intent(out) :: etot,eterm(4),res
  real(dp), intent(out) :: rho(mmax),rhoc(mmax),vi(mmax)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -114,7 +112,7 @@
  real(dp), allocatable :: vfree(:)
 
  ifail=0
- do ii=1,cache%n
+ do ii=1,cache%nentry
    associate(ce=>cache%entry(ii))
      if(ce%irel/=irel .or. ce%nkap/=nkap .or. ce%nc/=nc .or. &
 &       ce%ncv/=ncv .or. ce%mmax/=mmax .or. ce%iexc/=iexc .or. &
@@ -142,10 +140,10 @@
 &            rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vfree,.false.,iout,ifail)
  if(ifail/=0) return
  deallocate(vfree)
- if(ierr/=0 .or. cache%n==size(cache%entry)) return
+ if(ierr/=0 .or. cache%nentry==size(cache%entry)) return
 
- cache%n=cache%n+1
- associate(ce=>cache%entry(cache%n))
+ cache%nentry=cache%nentry+1
+ associate(ce=>cache%entry(cache%nentry))
    ce%irel=irel
    ce%nkap=nkap
    ce%nc=nc
@@ -196,20 +194,23 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
-!Input variables
  use boundstate_m, only: boundstate
+ use input_m, only: config_t
+ use kappa_m, only: kap_count, kap_of
+
+!Input variables
  integer, intent(in) :: jj,mmax,iexc,nc,irel,nkap
  real(dp), intent(in) :: c_light
  type(config_t), intent(in) :: cnf(mxcnf)
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: ea(mxstate,nkap),rr(mmax)
+ integer, intent(in) :: iout
 
 !Input/output variables
  type(ae_cache_t), intent(inout) :: cache
 
 !Output variables
  type(ae_config_t), intent(out) :: aec
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -243,8 +244,8 @@
  indxe(:)=0
  do ii=1,nc+cnf(1)%nv
    do kk=1,nc+cnf(jj)%nv
-     if(cnf(jj)%n(kk)==cnf(1)%n(ii) .and. &
-&       cnf(jj)%l(kk)==cnf(1)%l(ii)) then
+     if(cnf(jj)%na(kk)==cnf(1)%na(ii) .and. &
+&       cnf(jj)%la(kk)==cnf(1)%la(ii)) then
        indxr(ii)=kk
        indxe(kk)=ii
      end if
@@ -255,12 +256,12 @@
 ! levels not present in one confguration or the other get zero occupancy
  eat(:,:,:)=0.0d0
  do ii=1,nc+cnf(1)%nv
-   nat(ii)=cnf(1)%n(ii)
-   lat(ii)=cnf(1)%l(ii)
-   fat(ii,1)=cnf(1)%f(ii)
+   nat(ii)=cnf(1)%na(ii)
+   lat(ii)=cnf(1)%la(ii)
+   fat(ii,1)=cnf(1)%fa(ii)
    eat(ii,:,1)=ea(ii,:)
    if(indxr(ii)>0) then
-     fat(ii,2)=cnf(jj)%f(indxr(ii))
+     fat(ii,2)=cnf(jj)%fa(indxr(ii))
    else
      fat(ii,2)=0.0d0
    end if
@@ -271,10 +272,10 @@
  do kk=1,nc+cnf(jj)%nv
    if(indxe(kk)==0) then
      nvt=nvt+1
-     nat(nc+nvt)=cnf(jj)%n(kk)
-     lat(nc+nvt)=cnf(jj)%l(kk)
+     nat(nc+nvt)=cnf(jj)%na(kk)
+     lat(nc+nvt)=cnf(jj)%la(kk)
      fat(nc+nvt,1)=0.0d0
-     fat(nc+nvt,3)=cnf(jj)%f(kk)
+     fat(nc+nvt,3)=cnf(jj)%fa(kk)
    end if
  end do
 

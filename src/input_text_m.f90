@@ -1,7 +1,5 @@
  module input_text_m
- use, intrinsic :: iso_fortran_env, only: dp => real64, int64
- use constants_m, only: mxstate, mxcnf, mxlin, mxkap, well_onset_default
- use input_m, only: input_t
+ use, intrinsic :: iso_fortran_env, only: int64
  implicit none
  private
  public :: read_input_text, next_line, finite
@@ -12,17 +10,20 @@
 !! reads the text input file (see doc/32_Ge_annotated.dat), failing on a
 !! read error
 
+ use constants_m, only: mxstate, mxcnf, mxlin, well_onset_default
+ use input_m, only: input_t
+
 !Input variables
 !> File unit number for input
  integer, intent(in) :: unit
+!> unit of the text output
+ integer, intent(in) :: iout
 
 !Output variables
 !> Line number in the input file of the last line read
  integer, intent(out) :: inline
 !> The input values
  type(input_t), intent(out) :: inp
-!> unit of the text output
- integer, intent(in) :: iout
 !> 0, or 1 after a failure, whose message is written
  integer, intent(out) :: ifail
 
@@ -304,8 +305,8 @@
      do ii = nc + 1, nc + cnf(jj)%nv
        call next_line(unit, line, inline, iout=iout, ifail=ifail)
        if(ifail /= 0) return
-       read(line, *, iostat=ios) cnf(jj)%n(ii), cnf(jj)%l(ii), cnf(jj)%f(ii)
-       call check_finite(ios, [cnf(jj)%f(ii)])
+       read(line, *, iostat=ios) cnf(jj)%na(ii), cnf(jj)%la(ii), cnf(jj)%fa(ii)
+       call check_finite(ios, [cnf(jj)%fa(ii)])
        call read_error(ios, inline, iout, ifail)
        if(ifail /= 0) return
      end do
@@ -343,6 +344,7 @@
 
 !Input variables
  integer, intent(in) :: unit
+ integer, intent(in) :: iout
 
 !Input/output variables
  integer, intent(inout) :: inline
@@ -350,7 +352,6 @@
 !Output variables
  character(len=:), allocatable, intent(out) :: line
  logical, intent(out), optional :: eof
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -394,6 +395,8 @@
 !! @param ios  iostat of the read, set to 999 for a value not finite
 !! @param vals  the reals the read gave
 
+ use constants_m, only: dp
+
 !Input variables
  real(dp), intent(in) :: vals(:)
 
@@ -411,6 +414,8 @@
 !! and x /= x to be false
 !!
 !! @param xx  the value
+
+ use constants_m, only: dp
 
 !Input variables
  real(dp), intent(in) :: xx
@@ -433,10 +438,12 @@
 
 !Input variables
  integer, intent(in) :: ios
+ integer, intent(in) :: iout
 
 !Input/output variables
  integer, intent(inout) :: inline
- integer, intent(in) :: iout
+
+!Output variables
  integer, intent(out) :: ifail
 
  ifail = 0

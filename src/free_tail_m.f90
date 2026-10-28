@@ -40,8 +40,6 @@
 
  module free_tail_m
  use constants_m, only: dp, pi
- use logmesh_m, only: lm_interp, lm_ncell
- use ugrid_m, only: ug_weights
  implicit none
  private
  public :: mesh_tail, free_tail, free_tail_log, free_tail_width
@@ -80,14 +78,16 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use logmesh_m, only: lm_interp, lm_ncell
+
 !Input variables
  integer, intent(in) :: mmax
  real(dp), intent(in) :: rr(mmax),uu(mmax),rc,hh
+ integer, intent(in) :: iout
 
 !Output variables
  integer, intent(out) :: nr
  real(dp), allocatable, intent(out) :: ulin(:)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -143,10 +143,10 @@
 
 !Input variables
  real(dp), intent(in) :: qcut,ee
+ integer, intent(in) :: iout
 
 !Output variables
  real(dp), intent(out) :: wl
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -242,11 +242,11 @@
  real(dp), intent(in) :: ee,rc,qcut,hh
  real(dp), intent(in) :: rr(mmax),vv(mmax),uu(mmax),up(mmax)
  real(dp), intent(in), optional :: wscale
+ integer, intent(in) :: iout
 
 !Output variables
  integer, intent(out) :: nr
  real(dp), allocatable, intent(out) :: ulin(:),dlin(:)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -294,17 +294,19 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use logmesh_m, only: lm_step
+
 !Input variables
  integer, intent(in) :: irel,ll,kap,mmax,istart
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: ee,rc,qcut
  real(dp), intent(in) :: rr(mmax),vv(mmax)
+ integer, intent(in) :: iout
 
 !Input/output variables
  real(dp), intent(inout) :: uu(mmax),up(mmax)
 
 !Output variables
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -321,7 +323,7 @@
  allocate(ut(i0:i1),dt(i0:i1))
  call free_solve(irel,c_light,ll,kap,ee,rr,vv,uu,up,mmax,rc,rr(istart),wl, &
 &                i1-i0+1,rr(i0:i1),hlog,ut,dt)
- al=log(rr(mmax)/rr(1))/dble(mmax-1)
+ al=lm_step(rr,mmax)
  do ii=i0,i1
    uu(ii)=ut(ii)
    up(ii)=al*rr(ii)*dt(ii)
@@ -364,6 +366,8 @@
 !! at rs (lm_interp); vv interpolated by lm_interp, and taken as
 !! vv(mmax) rr(mmax)/r beyond the log mesh
 
+ use logmesh_m, only: lm_interp, lm_step
+
 !Input variables
  integer, intent(in) :: irel,ll,kap,mmax,nout
  real(dp), intent(in) :: c_light
@@ -380,7 +384,7 @@
  integer :: ii,jj,ns
 
  r0=rc+wcen*wl
- al=log(rr(mmax)/rr(1))/dble(mmax-1)
+ al=lm_step(rr,mmax)
  allocate(dudr(mmax))
  dudr(:)=up(:)/(al*rr(:))
  call lm_interp(rr,uu,mmax,rs,u0)
@@ -471,6 +475,8 @@
 !! @param nr  number of its nodes
 !! @param ulin  the tail on them
 !! @param dlin  its derivative
+
+ use ugrid_m, only: ug_weights
 
 !Input variables
  integer, intent(in) :: ll,nr

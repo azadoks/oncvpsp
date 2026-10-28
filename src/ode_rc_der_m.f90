@@ -62,17 +62,17 @@
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
- use logmesh_m, only: lm_interp, lm_derivs
+ use logmesh_m, only: lm_interp, lm_derivs, lm_step
 
 !Input variables
  integer, intent(in) :: irel,ll,kap,mmax
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: ee,rc
  real(dp), intent(in) :: rr(mmax),vv(mmax),uu(mmax),up(mmax)
+ integer, intent(in) :: iout
 
 !Output variables
  real(dp), intent(out) :: uorder(5)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -100,7 +100,7 @@
 
 ! uu and uu' at rc, uu' from the solver's d(uu)/dn, checked against the
 ! stencils on uu so that inconsistent arrays from a solver are not used
- al=log(rr(mmax)/rr(1))/dble(mmax-1)
+ al=lm_step(rr,mmax)
  allocate(dudr(mmax))
  dudr(:)=up(:)/(al*rr(:))
  call lm_interp(rr,uu,mmax,rc,ud(1))

@@ -25,7 +25,7 @@
 
  contains
 
- subroutine sr_so_r(lmax,nproj,rr,mmax,mxprj,evkb,vkbpw, &
+ subroutine sr_so_r(lmax,nproj,rr,mmax,evkb,vkbpw, &
 &                       vsr,esr,vso,eso,vsrpw,vsopw,iout,ifail)
 
 !! reformulates non-local potentials based on j = l +/- 1/2 to scalar-
@@ -41,7 +41,6 @@
 !! @param nproj  number of projectors for each l
 !! @param rr  log radial grid
 !! @param mmax  size of radial grid
-!! @param mxprj  dimension of number of projectors
 !! @param vkbpw  vkb projectors for each l and j=l+/-1/2, as functions of
 !!               pieces
 !! @param evkb  coefficients of VKB projectors for each l and j=l+/-1/2
@@ -54,7 +53,7 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use constants_m, only: dp, mxl, mxlin, mxkap
+ use constants_m, only: dp, mxl, mxlin, mxkap, mxprj
  use projbasis_m, only: pb_half_powers, pb_congruence, pb_combine, &
 &                       pb_sort_abs, pb_sign_at_peak
  use pieces_m, only: piecewise_t, pw_product_integral, pw_node_values, &
@@ -62,11 +61,12 @@
  use lapack_m, only: dsyev
 
 !Input variables
- integer, intent(in) :: lmax,mmax,mxprj
+ integer, intent(in) :: lmax,mmax
  integer, intent(in) :: nproj(mxlin+1)
  real(dp), intent(in) :: rr(mmax)
  real(dp), intent(in) :: evkb(mxprj,mxl+1,mxkap)
  type(piecewise_t), intent(in) :: vkbpw(mxprj,mxl+1,mxkap)
+ integer, intent(in) :: iout
 
 !Input/output variables
  real(dp), intent(inout) :: vsr(mmax,2*mxprj,mxl+1),esr(2*mxprj,mxl+1)
@@ -75,7 +75,6 @@
 !Output variables
  type(piecewise_t), intent(out) :: vsrpw(2*mxprj,mxl+1)
  type(piecewise_t), intent(out) :: vsopw(2*mxprj,mxl+1)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables

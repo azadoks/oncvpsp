@@ -31,7 +31,6 @@
 !> error of 1e-5 Ha from the same start.
 
  module dirac_m
- use constants_m, only: dp
  use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
@@ -61,6 +60,8 @@
 !! @param fup  d(fu)/dn on 1..mlast
 !! @param nnode  number of nodes of gu between the 5th point and mlast
 
+
+ use constants_m, only: dp
 
 !Input variables
  integer, intent(in) :: ll,kap,mmax,mlast
@@ -131,6 +132,8 @@
 !! whose determinant is k (2 gamma + k). The terms are summed as a_k r**k,
 !! b_k r**k
 
+ use constants_m, only: series_tol
+
  real(dp), intent(in) :: rx
  real(dp), intent(out) :: gx,fx
  real(dp) :: pk,qk,pk1,qk1,aa,bb,sk
@@ -148,7 +151,7 @@
    qk=((sk+kap)*bb - zz*cci*aa)/(kk*(2.0d0*gam+kk))
    gx=gx+pk
    fx=fx+qk
-   if(abs(pk)<=1.0d-17*abs(gx) .and. abs(qk)<=1.0d-17*abs(fx)) exit
+   if(abs(pk)<=series_tol*abs(gx) .and. abs(qk)<=series_tol*abs(fx)) exit
    if(kk==100) then
      write(error_unit,'(/a,i0,a,i0,a,es12.4,a,es12.4)') &
 &          'dirac_outward: ERROR origin series not converged, l=',ll, &

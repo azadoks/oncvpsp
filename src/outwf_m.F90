@@ -40,8 +40,6 @@
 
  module outwf_m
  use constants_m, only: dp
- use logmesh_m, only: lm_integral_weights, lm_fh_weights, lm_fh_reach
- use ugrid_m, only: ug_interp, ug_cumint_down
  use pieces_m, only: piecewise_t, pw_maxseg, pw_segment, pw_node_values
  use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
@@ -121,14 +119,16 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use logmesh_m, only: lm_fh_weights, lm_fh_reach, lm_step
+
 !Input variables
  integer, intent(in) :: ll,mmax,nsrc
  real(dp), intent(in) :: rr(mmax),vloc(mmax)
  type(piecewise_t), intent(in) :: vlocpw,srcpw(nsrc)
+ integer, intent(in) :: iout
 
 !Output variables
  type(outwf_t), intent(out), target :: ow
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -144,7 +144,7 @@
  ow%nsrc=nsrc
  allocate(ow%rr(mmax))
  ow%rr(:)=rr(:)
- al=0.01d0*log(rr(101)/rr(1))
+ al=lm_step(rr,mmax)
  als=al**2
  sls=dble(ll*(ll+1))
  ow%al=al
@@ -443,6 +443,9 @@
 !! @param ee  energy (Ha)
 !! @param mch  index of the radius to which the solutions are wanted
 
+ use logmesh_m, only: lm_integral_weights
+ use ugrid_m, only: ug_interp
+
 !Input variables
  real(dp), intent(in) :: ee
  integer, intent(in) :: mch
@@ -645,6 +648,8 @@
 !! @param skip1  if present and true, the first segment's part is left out
 !!               (outwf_overlaps with BLAS)
 
+ use ugrid_m, only: ug_interp, ug_cumint_down
+
 !Input variables
  type(outwf_t), intent(in), target :: ow
  integer, intent(in) :: isol,jsrc
@@ -715,8 +720,9 @@
 !! @param ow  the setup, integrated
 !! @param ovl  ovl(isol,jsrc), int phi_isol beta_jsrc dr
 
-!Input variables
  use lapack_m, only: dgemm
+
+!Input variables
  type(outwf_t), intent(in), target :: ow
 
 !Output variables
@@ -912,14 +918,15 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
-!Input variables
  use lapack_m, only: dsyev
+
+!Input variables
  type(outwf_t), intent(in), target :: ow
  real(dp), intent(in) :: evkb(ow%nsrc),ovl(ow%nsrc+1,ow%nsrc)
  integer, intent(in) :: mnode
+ integer, intent(in) :: iout
 
 !Output variables
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -1015,9 +1022,9 @@
  integer, intent(in) :: ll,mmax,nsrc,mnode
  real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nsrc),ee
  type(piecewise_t), intent(in) :: vlocpw,srcpw(nsrc)
+ integer, intent(in) :: iout
 
 !Output variables
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -1057,18 +1064,19 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
-!Input/output variables
  use lapack_m, only: dgesv
+
+!Input/output variables
  type(outwf_t), intent(inout), target :: ow
 
 !Input variables
  real(dp), intent(in) :: ep,evkb(ow%nsrc)
  integer, intent(in) :: mch,mnode
+ integer, intent(in) :: iout
 
 !Output variables
  real(dp), intent(out) :: uu(ow%mmax),up(ow%mmax)
  integer, intent(out), optional :: neig
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -1125,6 +1133,8 @@
 !! @param j1,j2  the positions wanted
 !! @param out  the values, out(1:j2-j1+1)
 !! @param ff2,out2  a second function on the same nodes, and its values
+
+ use logmesh_m, only: lm_fh_weights, lm_fh_reach
 
 !Input variables
  integer, intent(in) :: nn,j1,j2

@@ -25,7 +25,7 @@
 
  contains
 
- subroutine run_optimize(eig,ll,kap,irel,c_light,mmax,mxprj,rr,uua,upa,qq,&
+ subroutine run_optimize(eig,ll,kap,irel,c_light,mmax,rr,uua,upa,qq,&
 &                      freetl,wm,rc,irc,qcut,qmsbf,ncon_in,nbas_in,npr, &
 &                      psopt,vpsp,vkb,vae,cvgplt,ncurve,ecurve,pswfx,chix, &
 &                      ektail,wreg,optdg,wshare,iout,ifail)
@@ -40,7 +40,6 @@
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param mmax  dimension of log grid
-!! @param mxprj  dimension of number of projectors
 !! @param rr  log radial grid
 !! @param uua  all-electron wave functions (*rr) for the projectors
 !! @param upa  their derivatives in the mesh index, as the solvers return them
@@ -92,9 +91,8 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use constants_m, only: dp, nerrlv, nerrdg, pi
- use, intrinsic :: iso_fortran_env, only: qp => real128
- use logmesh_m, only: lm_ncell
+ use constants_m, only: dp, qp, nerrlv, nerrdg, pi, ha_ev, mxprj
+ use logmesh_m, only: lm_ncell, lm_step
  use ugrid_m, only: ug_cross_down
  use free_tail_m, only: mesh_tail, free_tail, tail_kinetic, free_tail_k, &
 &                       free_tail_defined
@@ -109,7 +107,7 @@
  use pspot_m, only: pspot
 
 !Input variables
- integer, intent(in) :: ll,kap,irel,mmax,mxprj,ncon_in,nbas_in,npr,ncurve
+ integer, intent(in) :: ll,kap,irel,mmax,ncon_in,nbas_in,npr,ncurve
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: rr(mmax)
  real(dp), intent(in) :: uua(mmax,mxprj),upa(mmax,mxprj),vae(mmax)
@@ -117,6 +115,7 @@
  real(dp), intent(in) :: eig(mxprj),qcut,rc,wreg
  logical, intent(in) :: freetl(mxprj)
  type(well_mesh_t), intent(in) :: wm(mxprj)
+ integer, intent(in) :: iout
 
 !Input/output variables
  integer, intent(inout) :: irc
@@ -130,7 +129,6 @@
  real(dp), intent(out) :: pswfx(mmax,mxprj),chix(mmax,mxprj)
  real(dp), intent(out) :: ektail(2,mxprj),optdg(4,mxprj)
  real(dp), intent(out) :: wshare(3,mxprj)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -161,7 +159,7 @@
  real(dp) :: edum(0,1),emdum(0,0,1)
 
  ifail=0
- al = 0.01d0 * log(rr(101) / rr(1))
+ al=lm_step(rr,mmax)
  l1=ll+1
 
  nconmx=ncon_in+npr-1
@@ -250,7 +248,7 @@
 
 !calculate orthogonal basis and constraint matrix
    call sbf_basis_con(ll,rc,nbas,qroot,psb,nbas_in+npr-1,orbasis, &
-&                     orbasis_der,iprj,mxprj,ncon,ncon_in,iout,ifail)
+&                     orbasis_der,iprj,ncon,ncon_in,iout,ifail)
    if(ifail/=0) return
 
 
@@ -550,7 +548,6 @@
 !!
 !! @param iprj  the projector
  integer, intent(in) :: iprj
- real(dp), parameter :: Ha_eV=27.21138386d0 ! 1 Hartree, in eV
  real(dp) :: err,qerr
  integer :: jj
  logical :: found_root
@@ -561,7 +558,7 @@
      cvgplt(1,jj,iprj)= 0.5d0*qerr**2
      cvgplt(2,jj,iprj)= err
      if(mod(jj,2)/=0 .and. jj<=nerrlv) then
-       write(iout,'(4x,2f12.5,f12.2)') err,err*Ha_eV,0.5d0*qerr**2
+       write(iout,'(4x,2f12.5,f12.2)') err,err*ha_ev,0.5d0*qerr**2
      end if
    end if
    err=sqrt(0.1d0)*err

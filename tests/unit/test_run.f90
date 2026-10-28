@@ -95,21 +95,21 @@
    select case(trim(tag))
    case('ld_r')
      read(line,*) tag,ll,ikap,xx(1)
-     call same(xx(1),tt%logder%r(ll+1),line)
+     call same(xx(1),tt%logder%rl(ll+1),line)
      ild=0
    case('ld')
      read(line,*) tag,ll,ikap,xx(1:3)
      ild=ild+1
-     call same(xx(1),tt%logder%e(ild),line)
+     call same(xx(1),tt%logder%ee(ild),line)
      call same(xx(2),tt%logder%ae(ild,ll+1,ikap),line)
      call same(xx(3),tt%logder%ps(ild,ll+1,ikap),line)
    case('ghost')
      read(line,*) tag,ll,ikap,nn,xx(1:2)
      ighost(ll+1,ikap)=ighost(ll+1,ikap)+1
      jj=ighost(ll+1,ikap)
-     if(nn/=tt%ghosts%n(jj,ll+1,ikap)) call fail(line)
-     call same(xx(1),fe(tt%ghosts%e(1,jj,ll+1,ikap)),line)
-     call same(xx(2),fe(tt%ghosts%e(2,jj,ll+1,ikap)),line)
+     if(nn/=tt%ghosts%nn(jj,ll+1,ikap)) call fail(line)
+     call same(xx(1),fe(tt%ghosts%ee(1,jj,ll+1,ikap)),line)
+     call same(xx(2),fe(tt%ghosts%ee(2,jj,ll+1,ikap)),line)
    case('ghost_r')
      read(line,*) tag,ll,ikap,xx(1:2)
      call same(xx(1),tt%ghosts%least(1,ll+1,ikap),line)
@@ -125,7 +125,7 @@
      irow=irow+1
      if(any([nn,ll,ikap]/=tt%configs%state(:,irow,icfg+1))) call fail(line)
      do jj=1,3
-       call same(xx(jj),fe(tt%configs%e(jj,irow,icfg+1)),line)
+       call same(xx(jj),fe(tt%configs%ee(jj,irow,icfg+1)),line)
      end do
    case('ecut_vloc')
      read(line,*) tag,xx(1:2)
@@ -192,8 +192,8 @@
  call differ(any(pa%pot%rhomod/=pb%pot%rhomod),'rhomod')
  call differ(any(pa%tests%logder%ae/=pb%tests%logder%ae),'log derivatives ae')
  call differ(any(pa%tests%logder%ps/=pb%tests%logder%ps),'log derivatives ps')
- call differ(any(pa%tests%ghosts%e/=pb%tests%ghosts%e),'ghosts')
- call differ(any(pa%tests%configs%e/=pb%tests%configs%e),'test eigenvalues')
+ call differ(any(pa%tests%ghosts%ee/=pb%tests%ghosts%ee),'ghosts')
+ call differ(any(pa%tests%configs%ee/=pb%tests%configs%ee),'test eigenvalues')
  call differ(any(pa%tests%configs%de/=pb%tests%configs%de),'test energies')
  call differ(any(pa%tests%convergence%curve/= &
 &                pb%tests%convergence%curve),'curves')

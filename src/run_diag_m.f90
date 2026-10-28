@@ -26,7 +26,7 @@
  contains
 
  subroutine run_diag(lmax,npa,epa,wellprj,lloc,rc,vlocpw,vkbpw,evkb,nproj,rr, &
-&                    vfull,vp,zz,mmax,mxprj,irel,c_light,nkap,iso,vsrpw,esr, &
+&                    vfull,vp,zz,mmax,irel,c_light,nkap,iso,vsrpw,esr, &
 &                    vsopw,eso,iout,ifail)
 
 !! diagnostics for semi-local and Vanderbilt-Kleinman-bylander pseudopotentials
@@ -60,7 +60,6 @@
 !!            comb.)
 !! @param zz  atomic number
 !! @param mmax  size of radial grid
-!! @param mxprj  dimension of number of projectors
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param nkap  number of kappa per l: 1, or 2 for irel=2
@@ -75,7 +74,7 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use constants_m, only: dp, mxl, mxlin, diag_match
+ use constants_m, only: dp, mxl, mxlin, diag_match, mxprj
  use logmesh_m, only: lm_interp
  use phsft_m, only: phsft_mch
  use quad_m, only: log_norm_to
@@ -90,7 +89,7 @@
  use scatterstate_m, only: scatterstate
 
 !Input variables
- integer, intent(in) :: lmax,lloc,mmax,mxprj,irel,nkap,iso
+ integer, intent(in) :: lmax,lloc,mmax,irel,nkap,iso
  real(dp), intent(in) :: c_light
  integer, intent(in) :: npa(mxprj,mxlin+1),nproj(mxlin+1)
  real(dp), intent(in) :: zz,rc(mxlin+1)
@@ -100,9 +99,9 @@
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1,nkap)
  real(dp), intent(in) :: esr(2*mxprj,mxl+1),eso(2*mxprj,mxl+1)
  type(piecewise_t), intent(in) :: vsrpw(2*mxprj,mxl+1),vsopw(2*mxprj,mxl+1)
+ integer, intent(in) :: iout
 
 !Output variables
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables

@@ -23,7 +23,6 @@
 !> eps times its condition number into the pseudo wave's derivatives.
 
  module qlinalg_m
- use, intrinsic :: iso_fortran_env, only: qp => real128
  implicit none
  private
  public :: qjacobi
@@ -39,6 +38,8 @@
 !! @param aa  the matrix (its upper triangle is read)
 !! @param ww  eigenvalues, ascending
 !! @param vv  eigenvectors in the columns, orthonormal
+
+ use constants_m, only: qp
 
 !Input variables
  integer, intent(in) :: nn

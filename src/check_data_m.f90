@@ -46,9 +46,9 @@
 !Input variables
  type(input_t), intent(in) :: inp
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
+ integer, intent(in) :: iout
 
 !Output variables
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -353,18 +353,18 @@
    do jj=2,inp%ncnf+1
      sf=0.0d0
      do ii=1,inp%nc+inp%cnf(jj)%nv
-       sf=sf+inp%cnf(jj)%f(ii)
-       if(inp%cnf(jj)%l(ii)<0 .or. inp%cnf(jj)%l(ii)>3) then
+       sf=sf+inp%cnf(jj)%fa(ii)
+       if(inp%cnf(jj)%la(ii)<0 .or. inp%cnf(jj)%la(ii)>3) then
          write(iout,'(a,a,i4,a,i4)') 'test_data: must have 0<= l <=3,', &
 &         ' test configuration',jj-1, ' line',ii-inp%nc
          ierr=ierr+1
        end if
-       if(inp%cnf(jj)%n(ii)<=inp%cnf(jj)%l(ii)) then
+       if(inp%cnf(jj)%na(ii)<=inp%cnf(jj)%la(ii)) then
          write(iout,'(a,a,i4,a,i4)') 'test_data: l > n,', &
 &         ' test configuration',jj-1, ' line',ii-inp%nc
          ierr=ierr+1
        end if
-       if(inp%cnf(jj)%f(ii)<0.0d0) then
+       if(inp%cnf(jj)%fa(ii)<0.0d0) then
          write(iout,'(a,a,i4,a,i4)') 'test_data: f < 0.0,', &
 &         ' test configuration',jj-1, ' line',ii-inp%nc
          ierr=ierr+1

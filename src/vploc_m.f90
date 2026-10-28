@@ -30,7 +30,6 @@
 
  module vploc_m
  use constants_m, only: dp
- use logmesh_m, only: lm_derivs
  use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
@@ -63,6 +62,8 @@
 !!               4) match 3 derivatives, r**0,4,6,8
 !!               5) match 3 derivatives, r**0,2,4,6
 !! @param cf  the potential's coefficients
+
+ use logmesh_m, only: lm_derivs
 
 !Input variables
  integer, intent(in) :: mmax,lpopt

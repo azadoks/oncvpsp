@@ -30,9 +30,9 @@
    integer :: nv=0
 !> Principal and angular-momentum quantum numbers and occupations of the
 !> states, the core states first (as many as the reference's nc)
-   integer :: n(mxstate)=0
-   integer :: l(mxstate)=0
-   real(dp) :: f(mxstate)=0.0d0
+   integer :: na(mxstate)=0
+   integer :: la(mxstate)=0
+   real(dp) :: fa(mxstate)=0.0d0
  end type config_t
 
 !> The values of the input file

@@ -27,7 +27,7 @@
 
 ! creates appropriate input file for GNUPLOT
 
- subroutine gnu_script(epa,evkb,lmax,lloc,mxprj,nproj,nkap,iout)
+ subroutine gnu_script(epa,evkb,lmax,lloc,nproj,nkap,iout)
 
 !! @param epa  wave function energies, last index 1 for j=l+1/2, 2 for j=l-1/2
 !!             when nkap=2
@@ -36,16 +36,15 @@
 !! @param lmax  maximum angular momentum
 !! @param lloc  angular momentum for local potential (lloc=4 for polynomial,
 !!              etc.)
-!! @param mxprj  maximum number of projectors
 !! @param nproj  number of projectors for each l
 !! @param nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
 !! @param iout  unit of the text output
 
- use constants_m, only: dp, mxl, mxlin
+ use constants_m, only: dp, mxl, mxlin, mxprj
  use kappa_m, only: kap_count
 
 !Input variables
- integer, intent(in) :: lmax,lloc,mxprj,nkap
+ integer, intent(in) :: lmax,lloc,nkap
  integer, intent(in) :: nproj(mxlin+1)
  real(dp), intent(in) :: epa(mxprj,mxlin+1,nkap),evkb(mxprj,mxl+1,nkap)
  integer, intent(in) :: iout

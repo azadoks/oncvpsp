@@ -47,7 +47,7 @@
 !! @param c_light  speed of light (Hartree atomic units)
 
  use constants_m, only: dp, pi
- use logmesh_m, only: lm_head
+ use logmesh_m, only: lm_head, lm_step
  use xc_dispatch_m, only: exc_dispatch
 
 !Input variables
@@ -64,7 +64,7 @@
  real(dp), intent(out) :: eeel,eexc
 
 !Local variables
- real(dp), parameter :: pi4=4.0_dp*pi
+ real(dp), parameter :: pi4=4.0d0*pi
  integer :: ii
  real(dp) :: al,tv
 
@@ -77,7 +77,7 @@
  allocate(foutv(mmax),foutx(mmax),foutfc(mmax))
 
 
- al = 0.01d0 * log(rr(101) / rr(1))
+ al=lm_step(rr,mmax)
 
  foutfc(:)=0.0d0
 

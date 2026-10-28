@@ -26,7 +26,7 @@
  contains
 
  subroutine run_ghosts(lmax,la,ea,nc,nv,lloc,rc,qmsbf, &
-&                    vlocpw,vkbpw,evkb,nproj,rr,vp,mmax,mxprj, &
+&                    vlocpw,vkbpw,evkb,nproj,rr,vp,mmax, &
 &                    ngh,ghn,ghe,ghp,iout,ifail)
 
 !! Two tests for ghosts;  The local potential is terminated by a hard wall
@@ -75,7 +75,6 @@
 !! @param vp  semi-local pseudopotentials (vp(:,5) is local potential if linear
 !!            comb.)
 !! @param mmax  size of radial grid
-!! @param mxprj  dimension of number of projectors
 !! @param ngh  rows of the bound-state test per l
 !! @param ghn  their principal quantum numbers
 !! @param ghe  their energies: (1) of the nonlocal Schroedinger equation
@@ -86,10 +85,10 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use constants_m, only: dp, pi, mxstate, mxl, mxlin
+ use constants_m, only: dp, pi, mxstate, mxl, mxlin, mxprj
  use pieces_m, only: piecewise_t, pw_integral, pw_value, pw_resample, &
 &                    pw_free, pw_node_values
- use logmesh_m, only: lm_interp
+ use logmesh_m, only: lm_interp, lm_step
  use quad_m, only: log_norm
  use cinf_taper_m, only: cinf_taper
  use lschpsbar_m, only: lschpsbar
@@ -97,16 +96,16 @@
  use lapack_m, only: dsyev
 
 !Input variables
- integer, intent(in) :: nc,nv,lmax,lloc,mmax,mxprj
+ integer, intent(in) :: nc,nv,lmax,lloc,mmax
  integer, intent(in) :: la(mxstate),nproj(mxlin+1)
  real(dp), intent(in) :: rr(mmax),vp(mmax,mxl+2),rc(mxlin+1)
  real(dp), intent(in) :: qmsbf(mxlin+1),ea(mxstate),evkb(mxprj,mxl+1)
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1)
+ integer, intent(in) :: iout
 
 !Output variables
  integer, intent(out) :: ngh(mxl+1),ghn(mxstate,mxl+1)
  real(dp), intent(out) :: ghe(2,mxstate,mxl+1),ghp(2,mxl+1)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -135,7 +134,7 @@
  call pw_node_values(rr,mmax,vlocpw,vsw)
  vsw(:)=vp(:,lloc+1)-vsw(:)
 
- al = 0.01d0 * log(rr(101)/rr(1))
+ al=lm_step(rr,mmax)
  amesh = exp(al)
  eps=1.0d-4 !threshold for negative-energy ghost report
  tht=0.0d0 !sets barrier boundary conditions to zero

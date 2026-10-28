@@ -237,9 +237,9 @@
 &             .and. rxpsh < 0, &
 &             'log derivative analysis')
    call check(rlmax == 6 .and. drl == 0.01_dp, 'output grid')
-   call check(ncnf == 1 .and. cnf(2)%nv == 2 .and. all(cnf(2)%n(4:5) == 3) &
-&             .and. all(cnf(2)%l(4:5) == [0, 1]) &
-&             .and. all(cnf(2)%f(4:5) == [2, 1]), &
+   call check(ncnf == 1 .and. cnf(2)%nv == 2 .and. all(cnf(2)%na(4:5) == 3) &
+&             .and. all(cnf(2)%la(4:5) == [0, 1]) &
+&             .and. all(cnf(2)%fa(4:5) == [2, 1]), &
 &             'test configurations')
    if(with_mesh) then
      call check(upf_mesh == 2000, 'UPF mesh size')

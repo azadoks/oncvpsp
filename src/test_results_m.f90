@@ -33,9 +33,9 @@
 !> the number of energies, 0 with --no-log-derivatives
    integer :: ne=0
 !> the energies (Ha), from epsh2 down by depsh
-   real(dp), allocatable :: e(:)
+   real(dp), allocatable :: ee(:)
 !> the radius of each l (bohr)
-   real(dp) :: r(4)=0.0d0
+   real(dp) :: rl(4)=0.0d0
 !> of the all-electron and the pseudo wave, per energy, l and ikap
    real(dp), allocatable :: ae(:,:,:),ps(:,:,:)
  end type logder_t
@@ -45,11 +45,11 @@
 !> the number of bound states of the nonlocal Schroedinger equation
    integer :: nrow(mxl+1,mxkap)=0
 !> their n
-   integer :: n(mxstate,mxl+1,mxkap)=0
+   integer :: nn(mxstate,mxl+1,mxkap)=0
 !> their energy and that of the barrier-basis eigenstate matched to it
 !> (Ha; e_ref 0 for the vacuum level when l has none); e_basis below
 !> e_ref is a GHOST(-)
-   real(dp) :: e(2,mxstate,mxl+1,mxkap)=0.0d0
+   real(dp) :: ee(2,mxstate,mxl+1,mxkap)=0.0d0
 !> of the basis eigenstates more than 0.05 Ha above the reference, the
 !> one of least <r>/rc: its energy (Ha) and <r>/rc, a GHOST(+) below 1;
 !> 0 if none
@@ -65,7 +65,7 @@
 !> n, l, ikap of each row
    integer :: state(3,2*mxstate,mxcnf)=0
 !> f, the all-electron and the pseudo eigenvalue (Ha) of each row
-   real(dp) :: e(3,2*mxstate,mxcnf)=0.0d0
+   real(dp) :: ee(3,2*mxstate,mxcnf)=0.0d0
 !> the all-electron and pseudo total-energy differences from the
 !> reference configuration and the excitation error de_ae - de_ps (Ha)
    real(dp) :: de(3,mxcnf)=0.0d0

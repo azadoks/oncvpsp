@@ -73,18 +73,18 @@
  integer, intent(in) :: na(ncv),la(ncv)
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: fa(ncv),rr(mmax),vext(mmax)
+ integer, intent(in) :: iout
+ logical, intent(in) :: warm
 
 !Input/output variables
  integer, intent(inout) :: ierr
  real(dp), intent(inout) :: ea(mxstate,nkap),rpk(mxstate,nkap)
+ real(dp), intent(inout) :: vi(mmax)
 
 !Output variables
  integer, intent(out) :: it
  real(dp), intent(out) :: etot,eterm(4),res
  real(dp), intent(out) :: rho(mmax),rhoc(mmax)
- real(dp), intent(inout) :: vi(mmax)
- logical, intent(in) :: warm
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
  ifail=0

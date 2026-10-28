@@ -48,6 +48,7 @@
  use constants_m, only: dp
  use dirac_m, only: dirac_outward
  use quad_m, only: log_norm
+ use logmesh_m, only: lm_step
 
 !Input variables
  integer, intent(in) :: ll,kap,mmax
@@ -73,7 +74,7 @@
  cc=c_light
  cci=1.0d0/cc
 
- al = 0.01d0 * log(rr(101) / rr(1))
+ al=lm_step(rr,mmax)
  amesh = exp(al)
 
 ! check arguments

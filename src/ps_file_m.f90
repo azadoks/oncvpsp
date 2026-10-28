@@ -52,9 +52,7 @@
 
  module ps_file_m
  use constants_m, only: dp, mxprj, mxl, mxlin, nrhomod
- use pieces_m, only: piecewise_t, pw_maxseg, pw_alloc
  use pseudo_m, only: pseudo_t
- use ae_file_m, only: byteswap
  implicit none
  private
  public :: ps_file_t, write_ps_file, read_ps_file, ps_file_free
@@ -99,6 +97,8 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use kappa_m, only: kap_count
+
 !Input variables
  character(len=*), intent(in) :: fname
  type(pseudo_t), intent(in) :: pot
@@ -106,9 +106,9 @@
  real(dp), intent(in) :: epsh1,epsh2,depsh,rxpsh
  real(dp), intent(in) :: epa(mxprj,mxlin+1,pot%nkap)
  real(dp), intent(in) :: vp(pot%mmax,mxl+2,pot%nkap)
+ integer, intent(in) :: iout
 
 !Output variables
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -133,7 +133,7 @@
  write(unit) vp(1:pot%mmax,pot%lloc+1,1:pot%nkap)
  call write_pw(unit,pot%vlocpw)
  do l1=1,4
-   do ikap=1,nkap_of(pot%nkap,l1)
+   do ikap=1,kap_count(pot%nkap,l1-1)
      nvkb=nvkb_of(l1,pot%lloc,pot%nproj)
      write(unit) nvkb
      if(nvkb==0) cycle
@@ -159,12 +159,15 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use ae_file_m, only: byteswap
+ use kappa_m, only: kap_count
+
 !Input variables
  character(len=*), intent(in) :: fname
+ integer, intent(in) :: iout
 
 !Output variables
  type(ps_file_t), intent(out) :: pf
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -221,7 +224,7 @@
    allocate(pot%evkb(mxprj,mxl+1,nkap),pot%vkbpw(mxprj,mxl+1,nkap))
    pot%evkb(:,:,:)=0.0d0
    do l1=1,4
-     do ikap=1,nkap_of(nkap,l1)
+     do ikap=1,kap_count(nkap,l1-1)
        read(unit) nvkb
        pf%nvkb(l1,ikap)=nvkb
        if(nvkb==0) cycle
@@ -257,12 +260,6 @@
  return
  end subroutine ps_file_free
 
- integer function nkap_of(nkap,l1)
-!! the kappas of l=l1-1: one for l=0
- integer, intent(in) :: nkap,l1
- nkap_of=nkap
- if(l1==1) nkap_of=1
- end function nkap_of
 
  integer function nvkb_of(l1,lloc,nproj)
 !! the projectors of l=l1-1: none for the local potential's l
@@ -273,6 +270,8 @@
 
  subroutine write_pw(unit,pw)
 !! writes a piecewise function
+ use pieces_m, only: piecewise_t
+
  integer, intent(in) :: unit
  type(piecewise_t), intent(in) :: pw
  write(unit) pw%nseg,pw%bound(0:pw%nseg)
@@ -281,6 +280,8 @@
 
  subroutine read_pw(unit,mmax,pw,iout,ifail)
 !! reads a piecewise function written by write_pw
+ use pieces_m, only: piecewise_t, pw_maxseg, pw_alloc
+
  integer, intent(in) :: unit,mmax
  type(piecewise_t), intent(out) :: pw
  integer :: nseg

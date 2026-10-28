@@ -88,7 +88,7 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use constants_m, only: dp
+ use constants_m, only: dp, eig_tol, eig_floor
  use boundsolve_m, only: bs_converged, bs_correct, bs_bisect
  use match_m, only: match_k, match_point, match_weights, match_blend, &
 &                    match_smax
@@ -97,11 +97,13 @@
  use quad_m, only: log_norm
  use inward2_m, only: inward2
  use inward_start_m, only: inward_start
+ use logmesh_m, only: lm_step
 
 !Input variables
  integer, intent(in) :: nn,ll,nvkb,mmax
  real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nvkb),etol
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(nvkb)
+ integer, intent(in) :: iout
 
 !Input/output variables
  real(dp), intent(inout) :: emin,emax
@@ -110,7 +112,6 @@
 !Output variables
  real(dp), intent(out) :: uu(mmax),up(mmax)
  integer, intent(out) :: ierr,mch
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 
@@ -131,7 +132,7 @@
  ifail=0
  allocate(upp(mmax),cf(mmax))
 
- al = 0.01d0 * log(rr(101) / rr(1))
+ al=lm_step(rr,mmax)
  amesh = exp(al)
  neig=0
  nin=mmax-4
@@ -143,7 +144,7 @@
 ! not applied, so they are the fixed point to round-off and do not depend
 ! on the start guess or the path (doc/smoothness_plan.md, S-2 to S-4, and
 ! lschfb)
- eps=1.0d-12
+ eps=eig_tol
  deprev=huge(1.0d0)
  ierr = 100
  toomany=.true.
@@ -291,7 +292,7 @@
 
 ! convergence test and possible exit
 
-     if(abs(de)<max(abs(ee),0.2d0)*etol) then
+     if(abs(de)<max(abs(ee),eig_floor)*etol) then
        ierr = 0
        exit
      end if

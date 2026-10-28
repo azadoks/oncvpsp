@@ -29,7 +29,7 @@
 ! output (an optimizer taking finite differences of them): the values that
 ! the tables above print to 6 or 2 decimals, to 17 significant digits.
 
- subroutine diagout(lmax,nproj,mxprj,nkap,tests,icmod,rr,mmax,rcmax,rhoc, &
+ subroutine diagout(lmax,nproj,nkap,tests,icmod,rr,mmax,rcmax,rhoc, &
 &                   corepw,lloc,evkb,iout)
 
 !! writes the block "Begin DIAGNOSTICS" ... "End DIAGNOSTICS", one value
@@ -129,7 +129,6 @@
 !!
 !! @param lmax  maximum angular momentum
 !! @param nproj  number of projectors for each l
-!! @param mxprj  dimension of the number of projectors
 !! @param nkap  number of kappa per l: 1, or 2 for irel=2
 !! @param tests  the results of the tests (test_results_m)
 !! @param icmod  the model core's kind, 0 for none
@@ -142,7 +141,7 @@
 !! @param evkb  the projector coefficients
 !! @param iout  unit of the text output
 
- use constants_m, only: dp, mxl, mxlin, nerrdg, nerrlv, nrhomod
+ use constants_m, only: dp, mxl, mxlin, nerrdg, nerrlv, nrhomod, mxprj
  use kappa_m, only: kap_count
  use pieces_m, only: piecewise_t, pw_value, pw_node_values, pw_segment
  use logmesh_m, only: lm_interp, lm_root, lm_derivs
@@ -152,7 +151,7 @@
 &                          convergence_t, weighted_cut_t, vloc_cut_t
 
 !Input variables
- integer, intent(in) :: lmax,mxprj,nkap
+ integer, intent(in) :: lmax,nkap
  integer, intent(in) :: nproj(mxlin+1)
  type(tests_t), intent(in) :: tests
  integer, intent(in) :: icmod,mmax
@@ -314,10 +313,10 @@
    if(ld%ne==0) exit
    mkap=kap_count(nkap,l1-1)
    do ikap=1,mkap
-     write(iout,'(a,2i4,1p,e24.16)') 'ld_r',l1-1,ikap,ld%r(l1)
+     write(iout,'(a,2i4,1p,e24.16)') 'ld_r',l1-1,ikap,ld%rl(l1)
      do ii=1,ld%ne
        write(iout,'(a,2i4,1p,3e24.16)') 'ld',l1-1,ikap, &
-&            ld%e(ii),ld%ae(ii,l1,ikap),ld%ps(ii,l1,ikap)
+&            ld%ee(ii),ld%ae(ii,l1,ikap),ld%ps(ii,l1,ikap)
      end do
    end do
  end do
@@ -335,8 +334,8 @@
    mkap=kap_count(nkap,l1-1)
    do ikap=1,mkap
      do jj=1,gh%nrow(l1,ikap)
-       write(iout,'(a,3i4,1p,2e24.16)') 'ghost',l1-1,ikap,gh%n(jj,l1,ikap), &
-&            fe(gh%e(:,jj,l1,ikap))
+       write(iout,'(a,3i4,1p,2e24.16)') 'ghost',l1-1,ikap,gh%nn(jj,l1,ikap), &
+&            fe(gh%ee(:,jj,l1,ikap))
      end do
      if(gh%least(2,l1,ikap)>0.0d0) then
        write(iout,'(a,2i4,1p,2e24.16)') 'ghost_r',l1-1,ikap,gh%least(:,l1,ikap)
@@ -390,7 +389,7 @@
    write(iout,'(a,i4,1p,3e24.16)') 'test_config',jj-1,fe(cfg%de(:,jj))
    do ii=1,cfg%nrow(jj)
      write(iout,'(a,4i4,1p,3e24.16)') 'test_eig',jj-1,cfg%state(:,ii,jj), &
-&          fe(cfg%e(:,ii,jj))
+&          fe(cfg%ee(:,ii,jj))
    end do
  end do
  end subroutine write_tests

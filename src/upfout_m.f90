@@ -31,7 +31,7 @@
 ! (upf_mesh > 0), as generated, with nothing interpolated
 
  subroutine upfout(inp,c_light,vkbpw,evkb,rr,vpuns,vlocpw,rho,corepw,zion, &
-&                  mmax,mxprj,nrlin,epstot,rc0,fcfact,fcgrid,rcgrid,uupsa,ea, &
+&                  mmax,nrlin,epstot,rc0,fcfact,fcgrid,rcgrid,uupsa,ea, &
 &                  log_mesh,nkap,iout,ifail)
 
 
@@ -50,7 +50,6 @@
 !!                pieces split at its joint (modcore_m, core_pieces)
 !! @param zion  at this point, total valence charge (becomes pseudoion charge)
 !! @param mmax  size of log radial grid
-!! @param mxprj  dimension of number of projectors
 !! @param nrlin  size of linear radial grid (enlarged locally to fit the
 !!               orbitals)
 !! @param epstot  pseudoatom total energy
@@ -69,18 +68,19 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use constants_m, only: dp, pi, mxstate, mxcnf, mxl, mxlin, nrhomod
+ use constants_m, only: dp, pi, mxstate, mxcnf, mxl, mxlin, nrhomod, mxprj
  use kappa_m, only: kap_count, j_share
  use input_echo_m, only: write_input_echo, fe, date_stamp
  use outmesh_m, only: om_values, om_piece_values, om_local_values
  use pieces_m, only: piecewise_t
  use input_m, only: input_t
+ use logmesh_m, only: lm_step
 
 
 !Input variables
  type(input_t), intent(in) :: inp
  real(dp), intent(in) :: c_light
- integer, intent(in) :: mmax,mxprj,nrlin,nkap
+ integer, intent(in) :: mmax,nrlin,nkap
  real(dp), intent(in) :: fcfact,zion,epstot
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
  real(dp), intent(in) :: rr(mmax),vpuns(mmax,mxl+2),rho(mmax)
@@ -93,11 +93,11 @@
  real(dp), intent(in) :: rc0(mxlin+1)
  real(dp), intent(in) :: ea(mxstate,nkap)
  real(dp), intent(in) :: log_mesh(3)
+ integer, intent(in) :: iout
 
 !Output variables - printing only
 
 !Output variables
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -121,7 +121,7 @@
    version='fully-relativistic'
  end if
  nrl = nrlin
- al = log(rr(2)/rr(1))
+ al=lm_step(rr,mmax)
 
  call orbital_extent()
  call log_stride()
@@ -159,12 +159,12 @@
  subroutine orbital_extent()
 !! nrl enlarged to accomodate the atomic orbitals: to the radius beyond
 !! which each one's norm is below 1e-6
- integer :: ii,jj,l1,ikap,mkap,jstart
+ integer :: ii,jj,ll,ikap,mkap,jstart
  real(dp) :: nrmsum,uurcut
  uurcut = 0.0d0
  do ii=1,inp%nv
-   l1 = inp%la(inp%nc+ii)
-   mkap=kap_count(nkap,l1)
+   ll = inp%la(inp%nc+ii)
+   mkap=kap_count(nkap,ll)
    do ikap=1,mkap
      nrmsum = 0.0d0
 !the search starts at mmax-1 in the sr code and at mmax in the fr code
@@ -267,8 +267,8 @@
 
  nwfc = 0
  do ii=1,inp%nv
-   l1 = inp%la(inp%nc+ii)
-   mkap=kap_count(nkap,l1)
+   ll = inp%la(inp%nc+ii)
+   mkap=kap_count(nkap,ll)
    nwfc = nwfc + mkap
    do ikap=1,mkap
      call om_values(rr,uupsa(1,ikap,ii),mmax,rl,uual(1,ikap,ii),nrl,iout,ifail)
@@ -570,18 +570,18 @@
 
  subroutine write_pswfc()
 !! PP_PSWFC: the pseudo-atomic orbitals, of each J when fully relativistic
- integer :: ii,jj,l1,ikap,mkap,iwfc
+ integer :: ii,jj,ll,ikap,mkap,iwfc
  real(dp) :: fj
  write(iout,'(t2,a)') &
 &      '<PP_PSWFC>'
  iwfc = 0
  do ii=1,inp%nv
-   l1 = inp%la(inp%nc+ii)
-   mkap=kap_count(nkap,l1)
+   ll = inp%la(inp%nc+ii)
+   mkap=kap_count(nkap,ll)
    do ikap=1,mkap
      iwfc = iwfc + 1
      fj=inp%fa(inp%nc+ii)
-     if(nkap==2) fj=j_share(l1,ikap,inp%fa(inp%nc+ii))
+     if(nkap==2) fj=j_share(ll,ikap,inp%fa(inp%nc+ii))
      write(iout,'(t4,a,i0)') &
 &          '<PP_CHI.',iwfc
      write(iout,'(t8,a)') &
@@ -597,9 +597,9 @@
      write(iout,'(t8,a,1p,e24.16,a)') &
 &          'pseudo_energy="',2*ea(inp%nc+ii,ikap),'"'
      write(iout,'(t8,a,i1,a,a)') &
-&          'label="',inp%na(inp%nc+ii),lnames(l1+1:l1+1),'"'
+&          'label="',inp%na(inp%nc+ii),lnames(ll+1:ll+1),'"'
      write(iout,'(t8,a,i1,a)') &
-&             'l="',l1,'" >'
+&             'l="',ll,'" >'
 
      write(iout,'(1p,4e24.16)') (fe(uual(jj,ikap,ii)),jj=1,nrl)
 
@@ -660,22 +660,22 @@
 
  iwfc = 0
  do ii=1,inp%nv
-   l1 = inp%la(inp%nc+ii)
-   mkap=kap_count(2,l1)
+   ll = inp%la(inp%nc+ii)
+   mkap=kap_count(2,ll)
    do ikap=1,mkap
      iwfc = iwfc + 1
      if(ikap==1) then
-       djjj=l1+0.5d0
+       djjj=ll+0.5d0
      else
-       djjj=l1-0.5d0
+       djjj=ll-0.5d0
      end if
      if(iwfc <= 9) then
        write(iout,'(t4,a,i1,a,i1,a,i1,a,f3.1,a,i1,a)') &
-&          '<PP_RELWFC.',iwfc,'  index="',iwfc,'"  lchi="',l1, &
+&          '<PP_RELWFC.',iwfc,'  index="',iwfc,'"  lchi="',ll, &
 &          '" jchi="',djjj,'" nn="',ii,'"/>'
      else
        write(iout,'(t4,a,i2,a,i2,a,i1,a,f3.1,a,i1,a)') &
-&          '<PP_RELWFC.',iwfc,'  index="',iwfc,'"  lchi="',l1, &
+&          '<PP_RELWFC.',iwfc,'  index="',iwfc,'"  lchi="',ll, &
 &          '" jchi="',djjj,'" nn="',ii,'"/>'
      end if
    end do

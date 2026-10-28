@@ -38,8 +38,6 @@
 !> carried to mch+match_k, the inward one to mch-1-match_k.
 
  module match_m
- use constants_m, only: dp
- use logmesh_m, only: lm_root
  implicit none
  private
  public :: match_k, match_point, match_weights, match_smax, match_blend
@@ -62,13 +60,16 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use constants_m, only: dp
+ use logmesh_m, only: lm_root, lm_step
+
 !Input variables
  integer, intent(in) :: mmax,mch
  real(dp), intent(in) :: rr(mmax),cf(mmax)
+ integer, intent(in) :: iout
 
 !Output variables
  real(dp), intent(out) :: xm
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -88,7 +89,7 @@
    ifail=1
    return
  end if
- al=log(rr(mch)/rr(mch-1))
+ al=lm_step(rr,mmax)
  xm=dble(mch-1) + log(rq/rr(mch-1))/al
  return
  end subroutine match_point
@@ -103,6 +104,8 @@
 !! @param lo,hi  the points, covering xm-match_k..xm+match_k
 !! @param ww  bump weights
 !! @param ss  step weights
+
+ use constants_m, only: dp
 
 !Input variables
  integer, intent(in) :: lo,hi
@@ -143,6 +146,8 @@
 !! @param fo  outward solution on the window
 !! @param ff  inward solution, the blend on the window on return
 
+ use constants_m, only: dp
+
 !Input variables
  integer, intent(in) :: lo,hi,mch
  real(dp), intent(in) :: ss(lo-mch:hi-mch),fo(lo-mch:hi-mch)
@@ -164,6 +169,8 @@
 !! a C-infinity maximum of two mesh indices, within half a step of the
 !! larger: (a + b + sqrt((a-b)**2 + 1))/2
 
+ use constants_m, only: dp
+
  real(dp), intent(in) :: aa,bb
 
  match_smax=0.5d0*(aa+bb+sqrt((aa-bb)**2+1.0d0))
@@ -172,6 +179,8 @@
  real(dp) function edge(xx)
 
 !! exp(-1/x) for x>0, 0 otherwise
+
+ use constants_m, only: dp
 
  real(dp), intent(in) :: xx
 

@@ -25,7 +25,7 @@
 
  contains
 
- subroutine run_vkb(lmax,lloc,lpopt,dvloc0,rc,irc,nproj,rr,mmax,mxprj,pswf, &
+ subroutine run_vkb(lmax,lloc,lpopt,dvloc0,rc,irc,nproj,rr,mmax,pswf, &
 &                   pswfx,chix,vfull,vp,evkb,vkb,nlim,dlta,vrloc,irel,nkap, &
 &                   vkbpw,vlocpw,bbeig,iout,ifail)
 
@@ -48,7 +48,6 @@
 !! @param nproj  number of projectors for each l
 !! @param rr  log radial grid
 !! @param mmax  size of radial grid
-!! @param mxprj  dimension of number of projectors
 !! @param pswf  pseudo wave functions
 !! @param pswfx  their inside pieces (the Bessel sums) on the nodes to past
 !!               rc (pspot)
@@ -77,7 +76,7 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use constants_m, only: dp, mxl, mxlin
+ use constants_m, only: dp, mxl, mxlin, rel_window, mxprj
  use kappa_m, only: kap_count, kap_of
  use projbasis_m, only: pb_half_powers, pb_congruence, pb_combine, &
 &                       pb_sort_abs, pb_sign_at_peak
@@ -87,13 +86,14 @@
  use lapack_m, only: dsyev
 
 !Input variables
- integer, intent(in) :: lmax,lloc,lpopt,mmax,mxprj,irel,nkap
+ integer, intent(in) :: lmax,lloc,lpopt,mmax,irel,nkap
  integer, intent(in) :: irc(mxlin+1),nproj(mxlin+1)
  real(dp), intent(in) :: rr(mmax),pswf(mmax,mxprj,mxl+1,nkap),vfull(mmax)
  real(dp), intent(in) :: pswfx(mmax,mxprj,mxl+1,nkap)
  real(dp), intent(in) :: chix(mmax,mxprj,mxl+1,nkap)
  real(dp), intent(in) :: dlta(mmax,mxprj,mxlin+1,nkap),vrloc(mmax,nkap)
  real(dp), intent(in) :: dvloc0,rc(mxlin+1)
+ integer, intent(in) :: iout
 
 !Input/output variables
  real(dp), intent(inout) :: vp(mmax,mxl+2,nkap)
@@ -104,7 +104,6 @@
  integer, intent(out) :: nlim
  type(piecewise_t), intent(out) :: vkbpw(mxprj,mxl+1,nkap),vlocpw
  real(dp), intent(out) :: bbeig(mxprj,mxl+1,nkap)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -172,7 +171,7 @@
    do ii=1,mmax
      if(ii>irc(l1)) then
        vloc(ii)=vfull(ii)
-     else if(rr(ii)<=0.95d0*rcloc) then
+     else if(rr(ii)<=rel_window*rcloc) then
        vloc(ii)=vlin0(ii)
      else
        vloc(ii)=vlin1(ii)
@@ -189,7 +188,7 @@
    vlocpw%vals(:,1)=vlin0(:)
    vlocpw%vals(:,2)=vfull(:)
  else
-   bnd(0:3)=[0.0d0,0.95d0*rcloc,rcloc,rr(mmax)]
+   bnd(0:3)=[0.0d0,rel_window*rcloc,rcloc,rr(mmax)]
    call pw_alloc(vlocpw,mmax,3,bnd(0:3))
    vlocpw%vals(:,1)=vlin0(:)
    vlocpw%vals(:,2)=vlin1(:)
@@ -209,14 +208,14 @@
 ! 0.95 rc (the taper), and at the local potential's rcloc and 0.95 rcloc
 ! (lloc<4) if they fall inside, in order, then rc
    nbrk=1
-   brk(1)=0.95d0*rc(l1)
+   brk(1)=rel_window*rc(l1)
    if(rcloc<rc(l1)) then
      nbrk=nbrk+1
      brk(nbrk)=rcloc
    end if
-   if(lloc<4 .and. 0.95d0*rcloc<rc(l1) .and. 0.95d0*rcloc/=brk(1)) then
+   if(lloc<4 .and. rel_window*rcloc<rc(l1) .and. rel_window*rcloc/=brk(1)) then
      nbrk=nbrk+1
-     brk(nbrk)=0.95d0*rcloc
+     brk(nbrk)=rel_window*rcloc
    end if
    do ii=1,nbrk-1
      do jj=ii+1,nbrk
@@ -246,13 +245,13 @@
          rm=0.5d0*(bnd(iseg-1)+bnd(iseg))
          if(rm>rcloc) then
            vpiece(:)=vfull(:)
-         else if(lloc<4 .and. rm>0.95d0*rcloc) then
+         else if(lloc<4 .and. rm>rel_window*rcloc) then
            vpiece(:)=vlin1(:)
          else
            vpiece(:)=vlin0(:)
          end if
          taper(:)=0.0d0
-         if(rm>0.95d0*rc(l1)) then
+         if(rm>rel_window*rc(l1)) then
            do ii=1,mmax
              xx=20.0d0*((rr(ii)/rc(l1))-1.0d0)
              taper(ii)=0.5d0*(1.0d0-xx**2)**2*dlta(ii,jj,l1,ikap)

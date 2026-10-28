@@ -50,6 +50,7 @@
  use pieces_m, only: piecewise_t
  use quad_m, only: log_norm
  use vkboutwf_m, only: vkboutwf
+ use logmesh_m, only: lm_step
 
 !Input variables
  integer, intent(in) :: mmax,mch
@@ -57,10 +58,10 @@
  real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(ivkb)
  real(dp), intent(in) :: ee
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(ivkb)
+ integer, intent(in) :: iout
 
 !Output variables
  real(dp), intent(out) :: uu(mmax),up(mmax)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 
@@ -71,7 +72,7 @@
 
 
  ifail=0
- al = 0.01d0 * log(rr(101) / rr(1))
+ al=lm_step(rr,mmax)
  amesh = exp(al)
 
 ! null arrays to remove leftover garbage

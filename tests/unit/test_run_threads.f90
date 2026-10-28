@@ -112,8 +112,8 @@
 &            'log derivatives ae')
  call differ(any(pa%tests%logder%ps/=pb%tests%logder%ps),what, &
 &            'log derivatives ps')
- call differ(any(pa%tests%ghosts%e/=pb%tests%ghosts%e),what,'ghosts')
- call differ(any(pa%tests%configs%e/=pb%tests%configs%e),what, &
+ call differ(any(pa%tests%ghosts%ee/=pb%tests%ghosts%ee),what,'ghosts')
+ call differ(any(pa%tests%configs%ee/=pb%tests%configs%ee),what, &
 &            'test eigenvalues')
  call differ(any(pa%tests%configs%de/=pb%tests%configs%de),what, &
 &            'test energies')

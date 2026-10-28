@@ -85,15 +85,15 @@
  real(dp), intent(in) :: eresidmat(nnull,nnull,nqout)
  real(dp), intent(in) :: qout(nqout)
  real(dp), intent(in) :: uunorm,ps0norm
+ integer, intent(in) :: iout
+ real(dp), intent(in) :: wreg
 
 !Output variables
  real(dp), intent(out) :: eresq(nqout)
  real(dp), intent(out) :: eresidmin,ekin_anal
  real(dp), intent(out) :: pswfopt_sb(nbas),pswfopt_or(nbas)
- real(dp), intent(in) :: wreg
  real(dp), intent(out) :: pswfopt_null(nnull)
  real(dp), intent(out) :: optdg(4)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -283,8 +283,10 @@
  real(dp), intent(in) :: eresideval(nnull),eresiddot_ev(nnull)
  real(dp), intent(in) :: uunorm,ps0norm
 
-!Output variables
+!Input/output variables
  real(dp), intent(inout) :: pswfopt(nnull)
+
+!Output variables
  integer, intent(out) :: ifail
 
 !Local variables

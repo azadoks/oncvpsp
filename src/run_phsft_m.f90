@@ -26,7 +26,7 @@
  contains
 
  subroutine run_phsft(lmax,lloc,nproj,epa,npsh,epsh2,depsh,rxpsh,vlocpw,vkbpw, &
-&                      evkb,rr,vfull,vp,zz,mmax,mxprj,rc,irel,c_light,nkap, &
+&                      evkb,rr,vfull,vp,zz,mmax,rc,irel,c_light,nkap, &
 &                      rphs,pshae,pshps,iout,ifail)
 
 !! computes log derivatives, actually atan(r * ((d psi(r)/dr)/psi(r)))
@@ -62,7 +62,6 @@
 !!            comb.)
 !! @param zz  atomic number
 !! @param mmax  size of radial grid
-!! @param mxprj  dimension of number of projectors
 !! @param rc  core radii
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param c_light  speed of light (Hartree atomic units)
@@ -74,13 +73,13 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use constants_m, only: dp, mxl, mxlin, pi
+ use constants_m, only: dp, mxl, mxlin, pi, mxprj
  use kappa_m, only: kap_count, kap_of
  use pieces_m, only: piecewise_t
  use phsft_m, only: phsft_mch, phsft_pair
 
 !Input variables
- integer, intent(in) :: lmax,lloc,mmax,mxprj,irel,nkap,npsh
+ integer, intent(in) :: lmax,lloc,mmax,irel,nkap,npsh
  real(dp), intent(in) :: c_light
  integer, intent(in) :: nproj(mxlin+1)
  real(dp), intent(in) :: epsh2,depsh,zz,rxpsh
@@ -88,10 +87,10 @@
  real(dp), intent(in) :: vfull(mmax),rc(mxlin+1)
  real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap)
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1,nkap)
+ integer, intent(in) :: iout
 
 !Output variables
  real(dp), intent(out) :: rphs(4),pshae(npsh,4,nkap),pshps(npsh,4,nkap)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables

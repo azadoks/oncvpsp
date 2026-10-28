@@ -45,21 +45,22 @@
 
  use constants_m, only: dp
  use quad_m, only: log_norm, log_norm_to
+ use logmesh_m, only: lm_step
 
 !Input variables
  integer, intent(in) :: ll,kap,mmax
  real(dp), intent(in) :: rr(mmax)
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: c_light
+ real(dp), intent(in), optional :: rnorm
+ integer, intent(in) :: iout
 
 !Input/output variables
  real(dp), intent(inout) :: uu(mmax,2)
 
 !Output variables
  real(dp), intent(out) :: cnorm
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
- real(dp), intent(in), optional :: rnorm
 
 !Local variables
  real(dp) :: sn
@@ -68,7 +69,7 @@
  integer :: ii,nin
 
  ifail=0
- al = 0.01d0 * log(rr(101)/rr(1))
+ al=lm_step(rr,mmax)
  amesh = exp(al)
 
  cc=c_light

@@ -21,9 +21,6 @@
 !> other, and the build written for their relativistic treatment.
  module ae_ps_pair_m
  use constants_m, only: dp, mxstate
- use ae_file_m, only: read_ae_potential, differ
- use ps_file_m, only: ps_file_t, read_ps_file
- use build_info_m, only: write_build_info
  implicit none
  private
  public :: load_pair
@@ -39,6 +36,11 @@
 !! the two files of program prog, which must be of the same relativistic
 !! treatment, atom, mesh and c_light (and functional, with iexc), and the
 !! all-electron atom's configuration if asked; writes the build line
+ use ae_file_m, only: read_ae_potential, differ
+ use build_info_m, only: write_build_info
+ use ps_file_m, only: ps_file_t, read_ps_file
+ use constants_m, only: mxkap
+
  character(len=*), intent(in) :: prog,ae_filename,ps_filename
  integer, intent(out) :: irel,mmax
  real(dp), intent(out) :: zz
@@ -47,7 +49,7 @@
  real(dp), allocatable, intent(out) :: rr(:),vfull(:)
  type(ps_file_t), intent(out) :: pf
  integer, intent(out), optional :: nc,nv,iexc,na(mxstate),la(mxstate)
- real(dp), intent(out), optional :: fa(mxstate),ea(mxstate,2)
+ real(dp), intent(out), optional :: fa(mxstate),ea(mxstate,mxkap)
  character(len=2) :: atsym
  character(len=19) :: treatment
  real(dp) :: c_light_f

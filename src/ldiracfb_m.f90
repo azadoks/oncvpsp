@@ -51,18 +51,20 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use constants_m, only: dp
+ use constants_m, only: dp, eig_tol
  use boundsolve_m, only: bs_box_energy, bs_solve, bs_turning_point
  use match_m, only: match_k, match_point, match_weights, match_blend
  use dirac_m, only: dirac_outward
  use quad_m, only: log_norm
  use inward_start_m, only: inward_start
+ use logmesh_m, only: lm_step
 
 !Input variables
  integer, intent(in) :: nn,ll,kap,mmax
  real(dp), intent(in) :: rr(mmax),vv(mmax)
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: c_light
+ integer, intent(in) :: iout
 
 !Input/output variables
  real(dp), intent(inout) :: uu(mmax,2),up(mmax,2)
@@ -71,7 +73,6 @@
 
 !Output variables
  integer, intent(out) :: ierr
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -89,7 +90,7 @@
  cc=c_light
  cci=1.0d0/cc
 
- al = 0.01d0 * log(rr(101) / rr(1))
+ al=lm_step(rr,mmax)
  amesh = exp(al)
 
 ! convergence: once the energy correction de is below eps*max(|ee|,0.2),
@@ -99,7 +100,7 @@
 ! not applied, so they are the fixed point to round-off and do not depend
 ! on the start guess or the path (doc/smoothness_plan.md, S-2 to S-4, and
 ! lschfb)
- eps=1.0d-12
+ eps=eig_tol
  ierr = 60
 
 ! check arguments
@@ -352,13 +353,13 @@
  return
  end subroutine boxstate
 
- integer function box_nodes(e)
+ integer function box_nodes(ee)
 
-!! the node count of the outward solution over the whole mesh at e
+!! the node count of the outward solution over the whole mesh at ee
 
- real(dp), intent(in) :: e
+ real(dp), intent(in) :: ee
 
- eecur=e
+ eecur=ee
  call outward(mmax,box_nodes)
  return
  end function box_nodes

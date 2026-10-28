@@ -26,9 +26,6 @@
 
  module input_echo_m
 
- use constants_m, only: dp, mxstate, mxcnf, mxlin, well_onset_default
- use relativity_m, only: c_light_default
- use input_m, only: config_t
  implicit none
  private
  public :: atom_lines, lmax_lines, icmod_lines, epsh_lines, mesh_lines
@@ -54,6 +51,8 @@
 !! @param xx  value
 !! @param ww  width of the field
 !! @param dd  digits after the decimal point
+
+ use constants_m, only: dp
 
 !Input variables
  real(dp), intent(in) :: xx
@@ -87,6 +86,8 @@
 !! of the E ("2.1869480064996404-119"), which many readers reject
 !!
 !! @param xx  value
+
+ use constants_m, only: dp
 
 !Input variables
  real(dp), intent(in) :: xx
@@ -133,6 +134,9 @@
 !! @param text  the lines of the section
 !! @param ntext  number of lines
 
+ use constants_m, only: dp
+ use relativity_m, only: c_light_default
+
 !Input variables
  character(len=2), intent(in) :: atsym
  character(len=4), intent(in) :: psfile
@@ -177,6 +181,8 @@
 !! @param well_norm  the normalization of the well states, 0, 1 or 2
 !! @param text  the lines of the section
 !! @param ntext  number of lines
+
+ use constants_m, only: dp, well_onset_default
 
 !Input variables
  integer, intent(in) :: lmax,well_tail,well_norm
@@ -235,6 +241,8 @@
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 !! @param text  the lines of the section
 !! @param ntext  number of lines
+
+ use constants_m, only: dp
 
 !Input variables
  integer, intent(in) :: icmod
@@ -300,6 +308,8 @@
 !! @param text  the lines of the section
 !! @param ntext  number of lines
 
+ use constants_m, only: dp
+
 !Input variables
  real(dp), intent(in) :: epsh1,epsh2,depsh,rxpsh
 
@@ -331,6 +341,8 @@
 !!                  sets it
 !! @param text  the lines of the sections
 !! @param ntext  number of lines
+
+ use constants_m, only: dp
 
 !Input variables
  real(dp), intent(in) :: log_mesh(3)
@@ -365,6 +377,8 @@
 !! @param psfile  format of the pseudopotential file
 !! @param iout  unit of the text output
 
+ use constants_m, only: dp
+
 !Input variables
  character(len=2), intent(in) :: atsym
  character(len=4), intent(in) :: psfile
@@ -397,6 +411,8 @@
 !! @param well_norm  the normalization of the well states, 0, 1 or 2
 !! @param iout  unit of the text output
 
+ use constants_m, only: dp
+
 !Input variables
  integer, intent(in) :: lmax,well_tail,well_norm
  logical, intent(in) :: ep_as_given
@@ -424,6 +440,8 @@
 !! @param well_n  n of the first well state of each l (0 for the default)
 !! @param ecut_wt  cutoff weight of each l (negative for the default)
 
+ use constants_m, only: dp, mxlin
+
 !Input variables
  integer, intent(in) :: lmax,well_n(mxlin+1)
  real(dp), intent(in) :: ecut_wt(mxlin+1)
@@ -447,6 +465,8 @@
 !! @param debl  energy steps of each l
 !! @param well_n  n of the first well state of each l (0 for the default)
 !! @param ecut_wt  cutoff weight of each l (negative for the default)
+
+ use constants_m, only: dp, mxlin
 
 !Input variables
  integer, intent(in) :: lmax,l1,nproj(mxlin+1),well_n(mxlin+1)
@@ -477,6 +497,8 @@
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 !! @param iout  unit of the text output
 
+ use constants_m, only: dp
+
 !Input variables
  integer, intent(in) :: icmod
  real(dp), intent(in) :: fcfact,rcfact
@@ -506,6 +528,8 @@
 !! @param rxpsh  radius of the analysis, negative for the default
 !! @param iout  unit of the text output
 
+ use constants_m, only: dp
+
 !Input variables
  real(dp), intent(in) :: epsh1,epsh2,depsh,rxpsh
  integer, intent(in) :: iout
@@ -527,6 +551,8 @@
 !! @param log_mesh  amesh, rr1, rmax of the log mesh, 0 unless the input
 !!                  sets it
 !! @param iout  unit of the text output
+
+ use constants_m, only: dp
 
 !Input variables
  real(dp), intent(in) :: log_mesh(3)
@@ -563,6 +589,9 @@
 !! (the other arguments are the input data, as read by the input readers;
 !! rc0 the input core radii, ep the energies for the first kappa and fcfact
 !! the input value)
+
+ use constants_m, only: dp, mxstate, mxcnf, mxlin
+ use input_m, only: config_t
 
 !Input variables
  integer, intent(in) :: nkap,iformat
@@ -670,7 +699,7 @@
    write(line,'(i5)') cnf(jj)%nv
    call put(line)
    do ii=nc+1,nc+cnf(jj)%nv
-     write(line,'(2i5,f8.2)') cnf(jj)%n(ii),cnf(jj)%l(ii),cnf(jj)%f(ii)
+     write(line,'(2i5,f8.2)') cnf(jj)%na(ii),cnf(jj)%la(ii),cnf(jj)%fa(ii)
      call put(line)
    end do
    call put('#')
@@ -721,6 +750,9 @@
 !! @param iout  unit of the text output
 !!
 !! (the other arguments are the input data, as read by the input readers)
+
+ use constants_m, only: dp, mxstate, mxcnf, mxlin
+ use input_m, only: config_t
 
 !Input variables
  integer, intent(in) :: nkap,iformat

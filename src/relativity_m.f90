@@ -30,7 +30,7 @@
 
 !> default speed of light in atomic units (Hartree), 1/alpha.  The 4.0.1
 !> value is kept, rather than CODATA 137.035999..., so results are unchanged
- real(dp), parameter :: c_light_default=137.036_dp
+ real(dp), parameter :: c_light_default=137.036d0
 
  contains
 
@@ -44,7 +44,7 @@
 !Input variables
  real(dp), intent(in) :: c_light_in
 
- if(c_light_in>0.0_dp) then
+ if(c_light_in>0.0d0) then
    c_light_of=c_light_in
  else
    c_light_of=c_light_default

@@ -69,6 +69,7 @@
  use tfapot_m, only: tfapot
  use vout_m, only: vout
  use ldiracfb_m, only: ldiracfb
+ use logmesh_m, only: lm_step
 
 !Input variables
 
@@ -77,18 +78,18 @@
  integer, intent(in) :: na(ncv),la(ncv)
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: fa(ncv),rr(mmax),vext(mmax)
+ integer, intent(in) :: iout
+ logical, intent(in) :: warm
 
 !Input/output variables
  integer, intent(inout) :: ierr
  real(dp), intent(inout) :: ea(mxstate,mxkap),rpk(mxstate,mxkap)
+ real(dp), intent(inout) :: vi(mmax)
 
 !Output variables
  integer, intent(out) :: it
  real(dp), intent(out) :: etot,eterm(4),res
  real(dp), intent(out) :: rho(mmax),rhoc(mmax)
- real(dp), intent(inout) :: vi(mmax)
- logical, intent(in) :: warm
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -120,7 +121,7 @@
  sf=0.0d0; eeig=0.0d0; zion=0.0d0
  nin=0; mch=0
 
- al = 0.01d0 * log(rr(101) / rr(1))
+ al=lm_step(rr,mmax)
  amesh = exp(al)
 
  if(.not. warm) then
@@ -141,7 +142,7 @@
    sf=sf+fa(ii)
    zion=zz+1.0d0-sf
    if(warm) cycle
-   do ikap=1,2
+   do ikap=1,mxkap
      ea(ii,ikap)=-0.5d0*(zion/na(ii))**2
      if(ea(ii,ikap)>vi(mmax)) ea(ii,ikap)=2.0d0*vi(mmax)
    end do

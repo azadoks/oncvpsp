@@ -30,7 +30,7 @@
 ! fully relativistic
 
  subroutine linout(inp,c_light,vkbpw,evkb,vsrpw,esr,vsopw,eso,rr,vpuns,vlocpw, &
-&                  rho,corepw,rhotae,rhoc,zion,mmax,mxprj,nrl,soscale,rc0, &
+&                  rho,corepw,rhotae,rhoc,zion,mmax,nrl,soscale,rc0, &
 &                  fcfact0,fcgrid,rcgrid,log_mesh,nkap,iout,ifail)
 
 
@@ -55,7 +55,6 @@
 !!                pieces split at its joint (modcore_m, core_pieces)
 !! @param zion  at this point, total valence charge (becomes pseudoion charge)
 !! @param mmax  size of log radial grid
-!! @param mxprj  dimension of number of projectors
 !! @param fcfact0  input fcfact, for the echo
 !! @param nrl  size of linear radial grid
 !! @param soscale  possible factor to boost or cut spin-orbit strength, not in
@@ -71,7 +70,7 @@
 !! @param ifail  0, or 1 after a failure, whose message is written
 
 
- use constants_m, only: dp, mxstate, mxcnf, mxl, mxlin, nrhomod
+ use constants_m, only: dp, mxstate, mxcnf, mxl, mxlin, nrhomod, mxprj
  use input_echo_m, only: write_input_echo, fe, date_stamp
  use outmesh_m, only: om_values, om_piece_values, om_local_values
  use pieces_m, only: piecewise_t
@@ -80,7 +79,7 @@
 !Input variables
  type(input_t), intent(in) :: inp
  real(dp), intent(in) :: c_light
- integer, intent(in) :: mmax,mxprj,nrl,nkap
+ integer, intent(in) :: mmax,nrl,nkap
  real(dp), intent(in) :: fcfact0,zion,soscale
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
  real(dp), intent(in) :: rr(mmax),vpuns(mmax,mxl+2),rho(mmax)
@@ -94,9 +93,9 @@
 !the core radii as read (rc0), for the echo
  real(dp), intent(in) :: rc0(mxlin+1)
  real(dp), intent(in) :: log_mesh(3)
+ integer, intent(in) :: iout
 
 !Output variables
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables

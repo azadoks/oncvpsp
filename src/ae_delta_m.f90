@@ -51,7 +51,7 @@
 !! @param delta  Delta at the points i1..i2, in delta(i1:i2)
 
  use constants_m, only: dp
- use logmesh_m, only: lm_derivs
+ use logmesh_m, only: lm_derivs, lm_step
 
 !Input variables
  integer, intent(in) :: irel,ll,kap,mmax,i1,i2
@@ -69,7 +69,7 @@
  delta(i1:i2)=0.0d0
  if(irel==0) return
 
- al=log(rr(mmax)/rr(1))/dble(mmax-1)
+ al=lm_step(rr,mmax)
  cc=c_light
  fss=1.0d0/cc**2
  sls=dble(ll*(ll+1))

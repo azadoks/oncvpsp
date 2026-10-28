@@ -50,8 +50,6 @@
 
  module modcore_m
  use constants_m, only: dp, pi, nrhomod
- use logmesh_m, only: lm_root, lm_derivs, lm_fh_reach
- use pieces_m, only: piecewise_t, pw_alloc, pw_form, pw_set_form
  implicit none
  private
  public :: teter_derivs, teter_core_derivs, core_crossover, poly_core_fit
@@ -365,6 +363,8 @@
 !! @param rstar  the crossover radius (bohr)
 !! @param ierr  0, or 1 if the core charge never exceeds fcfact rhotps
 
+ use logmesh_m, only: lm_root
+
 !Input variables
  integer, intent(in) :: mmax
  real(dp), intent(in) :: rr(mmax),rhoc(mmax),rhotps(mmax),fcfact
@@ -419,13 +419,14 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
-!Input variables
  use lapack_m, only: dgesv, dhseqr
+
+!Input variables
  real(dp), intent(in) :: rstar,fmatch(5)
+ integer, intent(in) :: iout
 
 !Output variables
  real(dp), intent(out) :: a0,aco(5)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -563,11 +564,11 @@
 
 !Input variables
  real(dp), intent(in) :: ymatch
+ integer, intent(in) :: iout
 
 !Output variables
  real(dp), intent(out) :: xx
  integer, intent(out) :: ierr
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -623,6 +624,9 @@
 !! @param par  the fill's parameters
 !! @param corepw  the pieces of each column
 !! @param rhomod  the model and its first 4 derivatives on the mesh
+
+ use logmesh_m, only: lm_derivs, lm_fh_reach
+ use pieces_m, only: piecewise_t, pw_alloc, pw_form, pw_set_form
 
 !Input variables
  integer, intent(in) :: mmax
@@ -681,6 +685,8 @@
 !! @param corepw  the pieces of each column
 !! @param form  the model and its first 4 derivatives at a radius
 !! @param par  its parameters
+
+ use pieces_m, only: piecewise_t, pw_alloc, pw_form, pw_set_form
 
 !Input variables
  integer, intent(in) :: mmax
@@ -799,8 +805,9 @@
 !! @param d2mdiff  their rms difference
 !! @param iout  unit of the text output
 
-!Input variables
  use der2exc_m, only: der2exc
+
+!Input variables
  integer, intent(in) :: iexc,nc,nv,mmax
  real(dp), intent(in) :: c_light
  integer, intent(in) :: la(nv+nc)
@@ -809,9 +816,11 @@
  real(dp), intent(in) :: zion,rcut
  integer, intent(in) :: iout
 
+!Input/output variables
+ real(dp), intent(inout) :: d2excae(nv,nv),d2excps(nv,nv)
+
 !Output variables
  real(dp), intent(out) :: rhomod(mmax,nrhomod)
- real(dp), intent(inout) :: d2excae(nv,nv),d2excps(nv,nv)
  real(dp), intent(out) :: d2mdiff
 
 !Local variables

@@ -44,6 +44,11 @@ repos:
         entry: scripts/reindent.py
         language: python
         files: \.(f90|F90|inc)$
+      - id: check-conventions
+        name: coding conventions (scripts/check_conventions.py)
+        entry: scripts/check_conventions.py
+        language: python
+        files: ^src/.*\.(f90|F90)$
 
   - repo: https://github.com/PlasmaFAIR/fortitude-pre-commit
     rev: v0.9.2

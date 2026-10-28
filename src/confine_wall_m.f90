@@ -21,8 +21,6 @@
 !> beyond r0, for each strength from the free atom.
  module confine_wall_m
  use constants_m, only: dp, mxstate, mxprj, mxlin
- use ps_file_m, only: ps_file_t
- use confine_summary_m, only: confine_summary_t
  implicit none
  private
  public :: confine_walls
@@ -39,18 +37,23 @@
 !! free atom, and the walls' part of the summary
  use aeatom_m, only: aeatom
  use psatom_m, only: psatom
+ use confine_summary_m, only: confine_summary_t
+ use ps_file_m, only: ps_file_t
+ use constants_m, only: mxkap
+
  type(ps_file_t), intent(in) :: pf
  integer, intent(in) :: irel,mmax,nc,nv,iexc,na(mxstate),la(mxstate),nk
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: zz,rr(mmax),vfull(mmax),fa(mxstate)
- real(dp), intent(in) :: ea(mxstate,2),r0
+ real(dp), intent(in) :: ea(mxstate,mxkap),r0
  integer, intent(in) :: iout
  real(dp), intent(inout) :: kwall(0:nk)
  type(confine_summary_t), intent(inout) :: sm
  integer :: na_ps(mxstate),la_ps(mxstate),nprj(mxlin+1)
  integer :: ik,ii,ierrae,ierrps,itae,itps,nkap
- real(dp) :: fa_ps(mxstate,2),etae(0:nk),etps(0:nk)
- real(dp) :: eaw(mxstate,2),rpk(mxstate,2),eterm(4),res,ea_ps(mxstate,2)
+ real(dp) :: fa_ps(mxstate,mxkap),etae(0:nk),etps(0:nk)
+ real(dp) :: eaw(mxstate,mxkap),rpk(mxstate,mxkap),eterm(4),res
+ real(dp) :: ea_ps(mxstate,mxkap)
  real(dp), allocatable :: vext(:),rhoc(:),rhoa(:),vi(:),rhops(:)
  real(dp), allocatable :: eigae(:,:,:),eigps(:,:,:)
  integer :: ifail
@@ -101,7 +104,7 @@
    end if
    ierrps=0
    call psatom(na_ps,la_ps,ea_ps(:,1:nkap),fa_ps,nv,itps,pf%pot%rhomod(:,1), &
-&              rhops,rr,pf%pot%rcmax,mmax,mxprj,iexc,c_light,etps(ik),nprj, &
+&              rhops,rr,pf%pot%rcmax,mmax,iexc,c_light,etps(ik),nprj, &
 &              pf%pot%vpuns,pf%pot%lloc,pf%pot%vlocpw,pf%pot%vkbpw(:,:, &
 &              1:nkap),pf%pot%evkb(:,:,1:nkap),ierrps,nkap,vext,iout,ifail)
    if(ifail/=0) error stop 1
@@ -127,10 +130,12 @@
 
  subroutine valence_states(nc,nv,la,fa,na_ps,la_ps,fa_ps)
 !! the valence states as run_config_ps numbers them, n from l+1
+ use constants_m, only: mxkap
+
  integer, intent(in) :: nc,nv,la(mxstate)
  real(dp), intent(in) :: fa(mxstate)
  integer, intent(out) :: na_ps(mxstate),la_ps(mxstate)
- real(dp), intent(out) :: fa_ps(mxstate,2)
+ real(dp), intent(out) :: fa_ps(mxstate,mxkap)
  integer :: nav(4),kk,l1
  do l1=1,4
    nav(l1)=l1-1
@@ -147,13 +152,15 @@
  subroutine write_wall_eig(nc,nv,na,la,nkap,kk,eigae,eigps,iout)
 !! the wall_eig lines of the strength kk: the all-electron valence
 !! eigenvalues eigae(nc+1:nc+nv) and the pseudo-atom's eigps(1:nv)
+ use kappa_m, only: kap_count
+
  integer, intent(in) :: nc,nv,na(mxstate),la(mxstate),nkap
- real(dp), intent(in) :: kk,eigae(mxstate,2),eigps(mxstate,2)
+ real(dp), intent(in) :: kk,eigae(mxstate,nkap),eigps(mxstate,nkap)
  integer, intent(in) :: iout
  integer :: jj,ll,ikap
  do jj=1,nv
    ll=la(nc+jj)
-   do ikap=1,merge(1,nkap,ll==0)
+   do ikap=1,kap_count(nkap,ll)
      write(iout,'(a,1p,e24.16,3i4,2e24.16)') 'wall_eig',kk,na(nc+jj),ll, &
 &         ikap,eigae(nc+jj,ikap),eigps(jj,ikap)
    end do

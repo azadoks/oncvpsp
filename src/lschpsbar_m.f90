@@ -44,11 +44,12 @@
 !! @param mbar  mesh point for infinite barrier
 !! @param tht  phast-shift angle for boundary condition, units of pi
 
- use constants_m, only: dp, pi
+ use constants_m, only: dp, pi, eig_tol
  use boundsolve_m, only: bs_converged, bs_correct, bs_bisect
  use quad_m, only: log_norm
  use inward2_m, only: inward2
  use inward_start_m, only: inward_start
+ use logmesh_m, only: lm_step
 
 
 !Input variables
@@ -75,7 +76,7 @@
  real(dp), allocatable :: upp(:),cf(:)
  allocate(upp(mmax),cf(mmax))
 
- al = 0.01d0 * log(rr(101) / rr(1))
+ al=lm_step(rr,mmax)
  amesh = exp(al)
  stht=sin(pi*tht)
  ctht=cos(pi*tht)
@@ -90,7 +91,7 @@
 ! not applied, so they are the fixed point to round-off and do not depend
 ! on the start guess or the path (doc/smoothness_plan.md, S-2 to S-4, and
 ! lschfb)
- eps=1.0d-12
+ eps=eig_tol
  deprev=huge(1.0d0)
 ! amplitude below which sign changes of uu are not counted as nodes
  epsnode=1.0d-8

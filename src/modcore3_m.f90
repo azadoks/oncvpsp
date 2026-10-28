@@ -82,6 +82,7 @@
  real(dp), intent(in) :: rhotps(mmax),rhoc(mmax),rr(mmax)
  real(dp), intent(in) :: zion,rcfact
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
+ integer, intent(in) :: iout
 
 !Input/output variables
  real(dp), intent(inout) :: fcfact
@@ -89,7 +90,6 @@
 !Output variables
  real(dp), intent(out) :: rhomod(mmax,nrhomod)
  type(piecewise_t), intent(out) :: corepw(nrhomod)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables

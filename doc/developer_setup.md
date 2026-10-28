@@ -145,8 +145,8 @@ the definition of the routine it calls.
 
 `ctest --preset default` runs everything but the smoothness scans (below);
 `-L <label>` selects a part of it
-(`unit`, `sr`, `r`, `nr`, `split`, `mesh`, `toml`, `psml`, `pipe`,
-`errors`, `echo`, `psp8`, `nist`) and `-R <regex>` a test by name. Each test
+(`unit`, `run`, `sr`, `r`, `nr`, `split`, `mesh`, `toml`, `psml`, `pipe`,
+`errors`, `echo`, `psp8`, `nist`, `lint`) and `-R <regex>` a test by name. Each test
 leaves its outputs in its own directory under `build/tests`.
 
 The tests that read the plain output of an input (reference, TOML, pipe,

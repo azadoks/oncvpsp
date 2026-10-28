@@ -154,7 +154,7 @@
  end subroutine ionic_window
 
  subroutine ionic_valence(nkap,nc,nv,la,fa,ea,lloc,nproj,rr,vp,vlocpw, &
-&                         vkbpw,evkb,mmax,mxprj,rho,rhops,uupsa,eeig,iout,ifail)
+&                         vkbpw,evkb,mmax,rho,rhops,uupsa,eeig,iout,ifail)
 
 !! the pseudo valence states of the local potential vp(:,lloc+1,:) and the
 !! VKB projectors, as oncvpsp_main solves them: rho, the state densities
@@ -176,7 +176,6 @@
 !!               pieces
 !! @param evkb  coefficients of the projectors
 !! @param mmax  dimension of log grid
-!! @param mxprj  dimension of number of projector
 !! @param rho  pseudo valence charge
 !! @param rhops  state-by-state pseudo valence charge (one electron)
 !! @param uupsa  pseudo valence wave functions
@@ -184,23 +183,23 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use constants_m, only: dp, mxstate, mxl, mxlin, mxkap
+ use constants_m, only: dp, mxstate, mxl, mxlin, mxkap, mxprj
  use kappa_m, only: kap_count, j_share
  use pieces_m, only: piecewise_t
  use lschvkbb_m, only: lschvkbb
 
 !Input variables
- integer, intent(in) :: nkap,nc,nv,lloc,mmax,mxprj
+ integer, intent(in) :: nkap,nc,nv,lloc,mmax
  integer, intent(in) :: la(mxstate),nproj(mxlin+1)
- real(dp), intent(in) :: fa(mxstate),ea(mxstate,mxkap)
+ real(dp), intent(in) :: fa(mxstate),ea(mxstate,nkap)
  real(dp), intent(in) :: rr(mmax),vp(mmax,mxl+2,nkap)
  real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap)
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1,nkap)
+ integer, intent(in) :: iout
 
 !Output variables
  real(dp), intent(out) :: rho(mmax),rhops(mmax,nv),uupsa(mmax,nkap,nv)
  real(dp), intent(out) :: eeig
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -258,7 +257,7 @@
  end subroutine ionic_valence
 
  subroutine ionic_screening(nkap,nc,nv,la,fa,ea,lmax,lloc,nproj,rr,vp,vlocpw, &
-&                           vkbpw,evkb,mmax,mxprj,zz,zion,zval,iexc,c_light, &
+&                           vkbpw,evkb,mmax,zz,zion,zval,iexc,c_light, &
 &                           rcmax,rhoc,rhotae,rhomod,rho,rhops,uupsa,eeig,vo, &
 &                           vxc,eeel,eexc,vion,iout,ifail)
 
@@ -285,7 +284,6 @@
 !!               pieces
 !! @param evkb  coefficients of the projectors
 !! @param mmax  dimension of log grid
-!! @param mxprj  dimension of number of projector
 !! @param zz  nuclear charge
 !! @param zion  ionic charge
 !! @param zval  valence charge
@@ -307,21 +305,22 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use constants_m, only: dp, mxstate, mxl, mxlin, mxkap
+ use constants_m, only: dp, mxstate, mxl, mxlin, mxkap, mxprj
  use pieces_m, only: piecewise_t
  use cinf_taper_m, only: cinf_taper
  use vout_m, only: vout
 
 !Input variables
- integer, intent(in) :: nkap,nc,nv,lmax,lloc,mmax,mxprj,iexc
+ integer, intent(in) :: nkap,nc,nv,lmax,lloc,mmax,iexc
  real(dp), intent(in) :: c_light
  integer, intent(in) :: la(mxstate),nproj(mxlin+1)
- real(dp), intent(in) :: fa(mxstate),ea(mxstate,mxkap)
+ real(dp), intent(in) :: fa(mxstate),ea(mxstate,nkap)
  real(dp), intent(in) :: rr(mmax)
  real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap)
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1,nkap)
  real(dp), intent(in) :: zz,zion,zval,rcmax
  real(dp), intent(in) :: rhoc(mmax),rhotae(mmax),rhomod(mmax)
+ integer, intent(in) :: iout
 
 !Input/output variables
  real(dp), intent(inout) :: vp(mmax,mxl+2,nkap)
@@ -330,7 +329,6 @@
 
 !Output variables
  real(dp), intent(out) :: vion(mmax)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -359,7 +357,7 @@
  end do
  do iter=1,maxiter
    call ionic_valence(nkap,nc,nv,la,fa,ea,lloc,nproj,rr,vp,vlocpw,vkbpw, &
-&                     evkb,mmax,mxprj,rho,rhops,uupsa,eeig,iout,ifail)
+&                     evkb,mmax,rho,rhops,uupsa,eeig,iout,ifail)
    if(ifail/=0) return
    call vout(1,rho,rhomod,vo,vxc,zval,eeel,eexc,rr,mmax,iexc,c_light)
 ! change of the local potential where the valence electrons are; once it

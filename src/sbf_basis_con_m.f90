@@ -26,7 +26,7 @@
  contains
 
  subroutine sbf_basis_con(ll,rc,nbas,qroot,psb,nbasmx,orbasis,orbasis_der, &
-&                         iprj,mxprj,ncon,ncon_in,iout,ifail)
+&                         iprj,ncon,ncon_in,iout,ifail)
 
 !! orthonormalize basis functions and derivatives at rc and form constraint
 !! matrix based on derivative to be matched and overlaps with prior
@@ -52,25 +52,23 @@
 !!                     and norm constraint vectors from already-computed psopt,
 !!                     quad precision
 !! @param iprj  index of the projector being optimized
-!! @param mxprj  second dimension of psb, maximum number of projectors
 !! @param ncon  total number of constraints, ncon_in+iprj-1
 !! @param ncon_in  number of value and derivative constraints at rc
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use constants_m, only: dp
- use, intrinsic :: iso_fortran_env, only: qp => real128
+ use constants_m, only: dp, qp, mxprj
  use sbf_q_m, only: sbfq_overlap, sbfq_rc_der
  use qlinalg_m, only: qjacobi
 
 !Input variables
- integer, intent(in) :: ll,nbas,nbasmx,iprj,mxprj,ncon,ncon_in
+ integer, intent(in) :: ll,nbas,nbasmx,iprj,ncon,ncon_in
  real(dp), intent(in) :: rc
  real(dp), intent(in) :: qroot(nbas),psb(nbasmx,mxprj)
+ integer, intent(in) :: iout
 
 !Output variables
  real(qp), intent(out) :: orbasis(nbas,nbas),orbasis_der(ncon,nbas)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables

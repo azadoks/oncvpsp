@@ -157,6 +157,11 @@ endfunction()
 # kernels, V_loc, model core) with a polynomial; the residuals must be within the plan's goals and
 # no step between neighbouring values a jump. Label scan (ctest -LE scan leaves them out). The
 # harness checks itself (unit).
+# The coding conventions that fortitude and gfortran do not check (scripts/check_conventions.py,
+# doc/coding_standards.md), on all of src/: no finding beyond scripts/conventions_baseline.txt
+add_test(NAME conventions COMMAND ${test_python} "${scripts}/check_conventions.py" --all)
+set_tests_properties(conventions PROPERTIES LABELS lint)
+
 add_test(NAME smooth_scan_self_test COMMAND ${test_python} "${scripts}/smooth_scan.py" --self-test)
 set_tests_properties(smooth_scan_self_test PROPERTIES LABELS unit)
 oncvpsp_compares(smooth_scan_self_test)

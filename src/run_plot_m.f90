@@ -26,7 +26,7 @@
  contains
 
  subroutine run_plot(lmax,npa,epa,wellprj,lloc,rc,vkb,vlocpw,vkbpw,evkb, &
-&                    nproj,rr,vfull,vp,vpuns,zz,mmax,mxprj,drl,nrl,rho,rhoc, &
+&                    nproj,rr,vfull,vp,vpuns,zz,mmax,drl,nrl,rho,rhoc, &
 &                    rhomod,irel,c_light,nkap,cvgplt,iout,ifail)
 
 !! write output for plotting pseudopotentials, model core charge, and
@@ -56,7 +56,6 @@
 !! @param vpuns  unscreened vp
 !! @param zz  atomic number
 !! @param mmax  size of radial grid
-!! @param mxprj  dimension of number of projectors
 !! @param drl  spacing of linear radial mesh
 !! @param nrl  number of points in linear radial mesh
 !! @param rho  valence pseudocharge
@@ -69,7 +68,7 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use constants_m, only: dp, mxl, mxlin, nrhomod, nerrlv, nerrdg
+ use constants_m, only: dp, mxl, mxlin, nrhomod, nerrlv, nerrdg, mxprj
  use kappa_m, only: kap_count, kap_of
  use pieces_m, only: piecewise_t
  use boundstate_m, only: boundstate
@@ -77,9 +76,10 @@
  use lschvkbs_m, only: lschvkbs
  use renorm_r_m, only: renorm_r
  use scatterstate_m, only: scatterstate
+ use logmesh_m, only: lm_step
 
 !Input variables
- integer, intent(in) :: lmax,lloc,mmax,mxprj,nrl,irel,nkap
+ integer, intent(in) :: lmax,lloc,mmax,nrl,irel,nkap
  real(dp), intent(in) :: c_light
  integer, intent(in) :: npa(mxprj,mxlin+1),nproj(mxlin+1)
  real(dp), intent(in) :: zz,drl,rc(mxlin+1)
@@ -91,9 +91,9 @@
  real(dp), intent(in) :: epa(mxprj,mxlin+1,nkap),evkb(mxprj,mxl+1,nkap)
  logical, intent(in) :: wellprj(mxprj,mxlin+1)
  real(dp), intent(in) :: cvgplt(2,nerrdg,mxprj,mxl+1,nkap)
+ integer, intent(in) :: iout
 
 !Output variables
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -107,7 +107,7 @@
  ifail=0
  allocate(u2(mmax),up(mmax),ur(mmax,2),urp(mmax,2),keep(mmax))
 
- al = 0.01d0 * log(rr(101)/rr(1))
+ al=lm_step(rr,mmax)
 
  write(iout,'(/a)') 'DATA FOR PLOTTING'
 
@@ -273,6 +273,11 @@
 &                  rr,vp(1,lloc+1,ikap),vlocpw,vkbpw(1:npr,l1,ikap), &
 &                  evkb(1,l1,ikap),u2,up,mmax,mch,iout,ifail)
      if(ifail/=0) return
+     if(ierr/=0) then
+       write(iout,'(/a,i0,a,i0,a,i0)') &
+&            'write_waves: WARNING lschvkbb did not converge, iprj=',iprj, &
+&            ', ll=',ll,', ierr=',ierr
+     end if
      sgnae=1.0d0
      sgnps=1.0d0
    else

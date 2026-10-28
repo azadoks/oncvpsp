@@ -38,9 +38,7 @@
 
  module phsft_m
  use constants_m, only: dp, pi
- use pieces_m, only: piecewise_t
  use outwf_m, only: outwf_t, outwf_setup, outwf_solve, outwf_free
- use logmesh_m, only: lm_interp, lm_fh_reach
  implicit none
  private
  public :: phsft_t, phsft_mch, phsft_ae_init, phsft_ps_init, phsft_free
@@ -77,6 +75,8 @@
 !! @param rr  log radial mesh
 !! @param mmax  size of the log radial mesh
 !! @param rq  radius (bohr)
+
+ use logmesh_m, only: lm_fh_reach
 
 !Input variables
  integer, intent(in) :: mmax
@@ -118,10 +118,10 @@
  integer, intent(in) :: irel,ll,kap,mmax,nq
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: rr(mmax),vv(mmax),zz,rq(nq)
+ integer, intent(in) :: iout
 
 !Output variables
  type(phsft_t), intent(out) :: ps
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
  ifail=0
@@ -157,15 +157,17 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use pieces_m, only: piecewise_t
+
 !Input variables
  integer, intent(in) :: ll,nvkb,mmax,nq
  real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nvkb),rq(nq)
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(nvkb)
+ integer, intent(in) :: iout
 
 !Output variables
  type(phsft_t), intent(out), target :: ps
 
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
  ifail=0
  ps%kind=2
@@ -190,15 +192,17 @@
 !! the mesh, the radii and the last point of the solutions, that of the
 !! outermost radius
 
+ use logmesh_m, only: lm_step
+
 !Input variables
  integer, intent(in) :: mmax,nq
  real(dp), intent(in) :: rr(mmax),rq(nq)
+ integer, intent(in) :: iout
 
 !Input/output variables
  type(phsft_t), intent(inout) :: ps
 
 !Output variables
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -209,7 +213,7 @@
  ps%nq=nq
  ps%rq=rq
  ps%rr=rr
- ps%al=0.01d0*log(rr(101)/rr(1))
+ ps%al=lm_step(rr,mmax)
  ps%mch=0
  allocate(ps%mchq(nq))
  do iq=1,nq
@@ -269,10 +273,10 @@
 !Input variables
  integer, intent(in) :: npsh
  real(dp), intent(in) :: epsh2,depsh,eal
+ integer, intent(in) :: iout
 
 !Output variables
  real(dp), intent(out) :: psh(npsh,ps%nq),pal(ps%nq)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -343,16 +347,18 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use pieces_m, only: piecewise_t
+
 !Input variables
  integer, intent(in) :: irel,ll,kap,nvkb,mmax,nq,npsh
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: rr(mmax),vfull(mmax),zz,vloc(mmax),evkb(nvkb)
  real(dp), intent(in) :: rq(nq),epsh2,depsh,eal
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(nvkb)
+ integer, intent(in) :: iout
 
 !Output variables
  real(dp), intent(out) :: pshae(npsh,nq),pshps(npsh,nq)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -406,10 +412,10 @@
  integer, intent(in) :: iq
  real(dp), intent(in) :: ee
  logical, intent(in), optional :: nodes
+ integer, intent(in) :: iout
 
 !Output variables
  real(dp), intent(out), optional :: uq_out
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -448,10 +454,10 @@
 !Input variables
  real(dp), intent(in) :: ee
  logical, intent(in), optional :: nodes
+ integer, intent(in) :: iout
 
 !Output variables
  real(dp), intent(out) :: th(ps%nq)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -499,6 +505,8 @@
 
  real(dp) function angle_at(ps,iq,mch,uu,up,count_nodes,uq)
 !! the phase of radius iq of a solution out to the point mch, and u there
+ use logmesh_m, only: lm_interp
+
  type(phsft_t), intent(in) :: ps
  integer, intent(in) :: iq,mch
  real(dp), intent(in) :: uu(ps%mmax),up(ps%mmax)
@@ -544,10 +552,10 @@
 !Input variables
  real(dp), intent(in) :: th0,e0,e1,da1
  integer, intent(in) :: iq,depth
+ integer, intent(in) :: iout
 
 !Output variables
  real(dp) :: th1
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -588,16 +596,18 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
-!Input/output variables
  use scatterstate_m, only: scatterstate
+ use logmesh_m, only: lm_interp
+
+!Input/output variables
  type(phsft_t), intent(inout), target :: ps
 
 !Input variables
  real(dp), intent(in) :: ee
+ integer, intent(in) :: iout
 
 !Output variables
  real(dp) :: da(ps%nq)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables

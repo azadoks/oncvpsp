@@ -59,6 +59,7 @@
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: rr(mmax),vv(mmax)
  real(dp), intent(in) :: zz
+ integer, intent(in) :: iout
 
 !Input/output variables
  real(dp), intent(inout) :: uu(mmax,2),up(mmax,2)
@@ -67,7 +68,6 @@
 
 !Output variables
  integer, intent(out) :: ierr
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
  ifail=0

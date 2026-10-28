@@ -59,12 +59,12 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use constants_m, only: dp
+ use constants_m, only: dp, eig_tol
  use boundsolve_m, only: bs_converged, bs_correct, bs_bisect
  use pieces_m, only: piecewise_t
  use outwf_m, only: outwf_t, outwf_setup, outwf_solve, outwf_free
  use quad_m, only: log_norm_to
- use logmesh_m, only: lm_interp
+ use logmesh_m, only: lm_interp, lm_step
 
 !Input variables
  real(dp), intent(in) :: uld,rm
@@ -72,6 +72,7 @@
  real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nvkb)
  integer, intent(in) :: mch
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(nvkb)
+ integer, intent(in) :: iout
 
 !Input/output variables
  real(dp), intent(inout) :: emin,emax
@@ -80,7 +81,6 @@
 !Output variables
  real(dp), intent(out) :: uu(mmax),up(mmax)
  integer, intent(out) :: ierr
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 
@@ -94,7 +94,7 @@
  type(outwf_t) :: ow
 
  ifail=0
- al = 0.01d0 * log(rr(101) / rr(1))
+ al=lm_step(rr,mmax)
  amesh = exp(al)
 
 ! convergence: once the energy correction de is below eps*max(|ee|,0.2),
@@ -104,7 +104,7 @@
 ! not applied, so they are the fixed point to round-off and do not depend
 ! on the start guess or the path (doc/smoothness_plan.md, S-2 to S-4, and
 ! lschfb)
- eps=1.0d-12
+ eps=eig_tol
  deprev=huge(1.0d0)
  ierr = 60
 

@@ -26,9 +26,6 @@
 !> the first segment for a piecewise function.
 
  module outmesh_m
- use constants_m, only: dp
- use logmesh_m, only: lm_interp, lm_origin
- use pieces_m, only: piecewise_t, pw_node_values, pw_segment, pw_form_value
  implicit none
  private
  public :: om_values, om_piece_values, om_local_values
@@ -49,13 +46,16 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use constants_m, only: dp
+ use logmesh_m, only: lm_interp
+
 !Input variables
  integer, intent(in) :: mmax,nrl
  real(dp), intent(in) :: rr(mmax),ff(mmax),rl(nrl)
+ integer, intent(in) :: iout
 
 !Output variables
  real(dp), intent(out) :: fl(nrl)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -95,14 +95,18 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use constants_m, only: dp
+ use logmesh_m, only: lm_interp
+ use pieces_m, only: piecewise_t, pw_segment, pw_form_value
+
 !Input variables
  integer, intent(in) :: mmax,nrl
  real(dp), intent(in) :: rr(mmax),rl(nrl)
  type(piecewise_t), intent(in) :: pw
+ integer, intent(in) :: iout
 
 !Output variables
  real(dp), intent(out) :: fl(nrl)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -150,14 +154,18 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use constants_m, only: dp
+ use logmesh_m, only: lm_interp
+ use pieces_m, only: piecewise_t, pw_node_values, pw_segment
+
 !Input variables
  integer, intent(in) :: mmax,nrl
  real(dp), intent(in) :: rr(mmax),vv(mmax),rl(nrl)
  type(piecewise_t), intent(in) :: vlocpw
+ integer, intent(in) :: iout
 
 !Output variables
  real(dp), intent(out) :: fl(nrl)
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -192,10 +200,14 @@
 !! the output mesh within the log mesh, but for a first point at the
 !! origin
 
+ use constants_m, only: dp
+
 !Input variables
  integer, intent(in) :: mmax,nrl
  real(dp), intent(in) :: rr(mmax),rl(nrl)
  integer, intent(in) :: iout
+
+!Output variables
  integer, intent(out) :: ifail
 
  ifail=0
@@ -231,15 +243,18 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
+ use constants_m, only: dp
+ use logmesh_m, only: lm_origin
+
 !Input variables
  integer, intent(in) :: mmax,nrl
  real(dp), intent(in) :: rr(mmax),ff(mmax),rl(nrl)
+ integer, intent(in) :: iout
 
 !Input/output variables
  real(dp), intent(inout) :: fl(nrl)
 
 !Output variables
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
  ifail=0

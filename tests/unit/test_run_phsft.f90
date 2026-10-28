@@ -83,12 +83,12 @@
  open(unit=6, file=name//'.out', status='replace', action='write')
  if(name == 'run_phsft') then
    call run_phsft(lmax, lloc, nproj, epa, npsh, epsh2, depsh, rxpsh, &
-&                 vlocpw, vkbpw, evkb, rr, vfull, vp, zz, mmax, mxprj, rc, &
+&                 vlocpw, vkbpw, evkb, rr, vfull, vp, zz, mmax, rc, &
 &                 0, c_light, 1, rphs, pshae, pshps, iout, ifail)
    if(ifail /= 0) error stop 1
  else
    call run_phsft(lmax, lloc, nproj, epa_r, npsh, epsh2, depsh, rxpsh, &
-&                 vlocpw, vkbpw_r, evkb_r, rr, vfull, vp_r, zz, mmax, mxprj, &
+&                 vlocpw, vkbpw_r, evkb_r, rr, vfull, vp_r, zz, mmax, &
 &                 rc, 2, c_light, 2, rphs, pshae, pshps, iout, ifail)
    if(ifail /= 0) error stop 1
  end if

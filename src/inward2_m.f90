@@ -21,7 +21,6 @@
 
  module inward2_m
 
- use constants_m, only: dp
  implicit none
  private
  public :: inward2
@@ -42,6 +41,8 @@
 !! @param uu  radial wave function (*rr)
 !! @param up  d(uu)/dn
 !! @param upp  d(up)/dn
+
+ use constants_m, only: dp
 
 !Input variables
  integer, intent(in) :: mmax,ifrom,ito

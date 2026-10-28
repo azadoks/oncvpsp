@@ -92,7 +92,7 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use constants_m, only: dp
+ use constants_m, only: dp, eig_floor
  use well_mesh_m, only: well_mesh_t, wm_build, wm_short
  use boundstate_m, only: boundstate
 
@@ -106,6 +106,7 @@
  real(dp), intent(in) :: onset
  logical, intent(in) :: confwall
  logical, intent(in) :: nowell
+ integer, intent(in) :: iout
 
 !Input/output variables
  real(dp), intent(inout) :: ep
@@ -117,7 +118,6 @@
  logical, intent(out) :: confined
  real(dp), intent(out) :: eptgt
  type(well_mesh_t), intent(out) :: wm
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
 !Local variables
@@ -182,7 +182,7 @@
    fwmin=0.0d0
    fwmax=0.0d0
    iside=0
-   tolw=4.0d0*epsilon(1.0d0)*max(abs(ep),0.2d0)
+   tolw=4.0d0*epsilon(1.0d0)*max(abs(ep),eig_floor)
 
    convg=.false.
 

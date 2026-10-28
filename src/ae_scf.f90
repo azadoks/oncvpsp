@@ -44,6 +44,7 @@
 !! @param res  residual (Ha)
 
  use constants_m, only: dp
+ use logmesh_m, only: lm_step
 
 !Input variables
  integer, intent(in) :: mmax
@@ -57,7 +58,7 @@
  real(dp) :: al,sn
  integer :: ii
 
- al = 0.01d0 * log(rr(101) / rr(1))
+ al=lm_step(rr,mmax)
 
  sn=0.0d0
  do ii=1,mmax
@@ -93,7 +94,7 @@
 !!              in etot but in no term
 
  use constants_m, only: dp
- use logmesh_m, only: lm_head
+ use logmesh_m, only: lm_head, lm_step
 
 !Input variables
  integer, intent(in) :: mmax
@@ -111,7 +112,7 @@
 
  allocate(ff(mmax))
 
- al = 0.01d0 * log(rr(101) / rr(1))
+ al=lm_step(rr,mmax)
 
 ! electron-nucleus energy; the integrand goes as rr**2 below rr(1)
  do ii=1,mmax
@@ -204,6 +205,7 @@
 
  use constants_m, only: dp
  use lapack_m, only: dgesv
+ use logmesh_m, only: lm_step
 
 !Input variables
  integer, intent(in) :: it,ndep,mmax,irel
@@ -227,7 +229,7 @@
 
  allocate(res(mmax),vb(mmax),ww(mmax))
 
- al = 0.01d0 * log(rr(101) / rr(1))
+ al=lm_step(rr,mmax)
 
  do jj=ndep,2,-1
    hv(:,jj)=hv(:,jj-1)
@@ -334,12 +336,12 @@
 !Input variables
  integer, intent(in) :: it
  real(dp), intent(in) :: res,tolres
+ integer, intent(in) :: iout
 
 !Input/output variables
  real(dp), intent(inout) :: resbest
  integer, intent(inout) :: nflat
  logical, intent(inout) :: convg
- integer, intent(in) :: iout
 
 !Local variables
  integer, parameter :: nstall=5

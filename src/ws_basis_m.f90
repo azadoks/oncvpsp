@@ -40,11 +40,6 @@
 
  module ws_basis_m
  use constants_m, only: dp, pi
- use pieces_m, only: piecewise_t, pw_value, pw_node_values
- use logmesh_m, only: lm_interp
- use sbf_m, only: sbf_trig
- use ugrid_m, only: ug_brent
- use quad_m, only: gauss_legendre
  use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
@@ -102,6 +97,9 @@
 !! @param qmax  the largest q (bohr**-1)
 !! @param nq  number of roots (output)
 !! @param qq  the roots (output)
+
+ use sbf_m, only: sbf_trig
+ use ugrid_m, only: ug_brent
 
 !Input variables
  integer, intent(in) :: ll,iedge
@@ -193,6 +191,10 @@
 !! @param nvkb  number of projectors
 !! @param vkbpw  the projectors' pieces
 !! @param grid  the quadrature and the potentials on it (output)
+
+ use logmesh_m, only: lm_interp
+ use pieces_m, only: piecewise_t, pw_value, pw_node_values
+ use quad_m, only: gauss_legendre
 
 !Input variables
  integer, intent(in) :: mmax,nvkb
@@ -296,8 +298,9 @@
 !!             the state's index
 !! @param ierr  0, or 1 if no basis function is below qmax (output)
 
-!Input variables
  use lapack_m, only: dsyev
+
+!Input variables
  integer, intent(in) :: ll,iedge
  type(ws_grid_t), intent(in) :: grid
  real(dp), intent(in) :: evkb(grid%nvkb),eex
@@ -348,8 +351,9 @@
 !! @param ev  the eigenvalues (Ha, output)
 !! @param ierr  0, or 1 if no basis function is below qmax (output)
 
-!Input variables
  use lapack_m, only: dsyev
+
+!Input variables
  integer, intent(in) :: ll,iedge
  type(ws_grid_t), intent(in) :: grid
  real(dp), intent(in) :: evkb(grid%nvkb)
@@ -381,6 +385,8 @@
 !! the pseudo-Hamiltonian in the nb basis functions of an edge's condition
 !! below qmax, and their cutoffs q_n**2/2 (the arguments as
 !! ws_convergence's)
+
+ use sbf_m, only: sbf_trig
 
 !Input variables
  integer, intent(in) :: ll,iedge

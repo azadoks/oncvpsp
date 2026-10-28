@@ -24,7 +24,7 @@
 !> double-precision versions, for the sums with no such cancellation.
 
  module sbf_q_m
- use, intrinsic :: iso_fortran_env, only: qp => real128
+ use constants_m, only: qp
  use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
