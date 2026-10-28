@@ -14,8 +14,8 @@
 !   segments  pw_segment at the bounds and beyond
 ! Stops with a non-zero code if any check failed.
  program test_pieces
- use, intrinsic :: iso_fortran_env, only: dp => real64, qp => real128, &
-&                                         stderr => error_unit
+ use constants_m, only: dp, qp
+ use unit_check_m, only: check, check_done
  use pieces_m, only: piecewise_t, pw_alloc, pw_free, pw_integral, &
 &                    pw_product_integral, pw_node_values, pw_segment
  implicit none
@@ -25,7 +25,7 @@
  real(dp), allocatable :: rr(:), r2(:), fnode(:)
  type(piecewise_t) :: pw
  real(dp) :: al, aa, bb, ss, exact, err, bound(0:2)
- integer :: nfail = 0, mmax, ii, io, kk
+ integer :: mmax, ii, io, kk
 
  al = log(amesh)
  mmax = int(log(rmax/rr1)/al)
@@ -81,11 +81,7 @@
  if(pw_segment(pw, pw%bound(2)*1.000001_dp) /= 0) kk = kk + 1
  call check('segments', dble(kk), 0.0_dp)
 
- if(nfail > 0) then
-   write(stderr, '(i0,a)') nfail, ' check(s) failed'
-   error stop 1
- end if
- write(stderr, '(a)') 'pieces: all checks passed'
+ call check_done('pieces')
 
  contains
 
@@ -136,19 +132,5 @@
  s = s + 2.0_qp*exp(-a)*(t3 + a*t2) + c**5/5.0_qp
  i_ff = real(s, dp)
  end function i_ff
-
- subroutine check(label, err, tol)
-
-!! err against tol, printed and counted
-
- character(len=*), intent(in) :: label
- real(dp), intent(in) :: err, tol
-
- write(stderr, '(a,a,es9.2)') label, ': error ', err
- if(.not. (err <= tol)) then
-   write(stderr, '(a,a,es10.3,a,es9.2)') 'FAILED: ', label, err, ' > ', tol
-   nfail = nfail + 1
- end if
- end subroutine check
 
  end program test_pieces

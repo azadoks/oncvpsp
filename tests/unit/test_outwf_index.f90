@@ -17,7 +17,9 @@
 !            an eigenvalue passing, the case the index is for
 ! Stops with a non-zero code if any check failed.
  program test_outwf_index
- use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
+ use constants_m, only: dp
+ use, intrinsic :: iso_fortran_env, only: stderr => error_unit
+ use unit_check_m, only: check_done, nfail
  use pieces_m, only: piecewise_t, pw_alloc, pw_free
  use outwf_m, only: outwf_t, outwf_setup, outwf_solve, outwf_count, &
 &                   outwf_free
@@ -37,7 +39,7 @@
  type(piecewise_t) :: vlocpw, vkbpw(1)
  type(outwf_t) :: ow
  real(dp) :: al, ee, evkb(1), rlast
- integer :: nfail = 0, mmax, ibox, icase, ll, ie, ne, neig, nall
+ integer :: mmax, ibox, icase, ll, ie, ne, neig, nall
  integer :: nfd_below, nbad, norigin, nskip
 
  al = log(amesh)
@@ -98,11 +100,7 @@
  end if
 
  call pw_free(vlocpw)
- if(nfail > 0) then
-   write(stderr, '(i0,a)') nfail, ' check(s) failed'
-   error stop 1
- end if
- write(stderr, '(a)') 'outwf_index: all checks passed'
+ call check_done('outwf_index')
 
  contains
 

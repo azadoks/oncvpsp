@@ -5,7 +5,9 @@
 ! atom is hydrogen-like (zz=1) with no projectors. Stops with a non-zero code
 ! at the first failure.
  program test_run_phsft
- use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
+ use constants_m, only: dp
+ use, intrinsic :: iso_fortran_env, only: stderr => error_unit
+ use unit_check_m, only: check_done, nfail
  use constants_m, only: mxl, mxlin, mxkap
  use pieces_m, only: piecewise_t, pw_alloc
  use run_phsft_m, only: run_phsft
@@ -25,7 +27,7 @@
  real(dp) :: evkb(mxprj, mxl+1), evkb_r(mxprj, mxl+1, mxkap)
  real(dp) :: rphs(4), pshae(npsh, 4, mxkap), pshps(npsh, 4, mxkap)
  type(piecewise_t) :: vlocpw, vkbpw(mxprj, mxl+1), vkbpw_r(mxprj, mxl+1, mxkap)
- integer :: nproj(mxlin+1), ii, nfail = 0
+ integer :: nproj(mxlin+1), ii
  real(dp) :: rc(mxlin+1)
 
  do ii = 1, mmax
@@ -53,11 +55,7 @@
  call check_case('run_phsft_r', rc(1), 0)
  call check_case('run_phsft_r', 3.0_dp, 0)
 
- if(nfail > 0) then
-   write(stderr, '(i0,a)') nfail, ' check(s) failed'
-   error stop 1
- end if
- write(stderr, '(a)') 'run_phsft: all checks passed'
+ call check_done('run_phsft')
 
  contains
 

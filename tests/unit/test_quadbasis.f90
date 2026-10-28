@@ -19,8 +19,9 @@
 !              4.8e-9 and positive, and V diag(w) V^T reproduces it to 1e-32
 ! Stops with a non-zero code if any check failed.
  program test_quadbasis
- use, intrinsic :: iso_fortran_env, only: dp => real64, qp => real128, &
-&                                         stderr => error_unit
+ use constants_m, only: dp, qp
+ use, intrinsic :: iso_fortran_env, only: stderr => error_unit
+ use unit_check_m, only: check, check_done, nfail
  use sbf_q_m, only: sbfq_values, sbfq_overlap, sbfq_rc_der
  use qlinalg_m, only: qjacobi
  use sbf_overlap_m, only: sbf_overlap
@@ -35,7 +36,7 @@
  real(qp), parameter :: qroot(8) = [0.6479769_qp, 1.295954_qp, 2.003985_qp, &
 &   2.712016_qp, 3.936362_qp, 5.129723_qp, 6.310968_qp, 7.486094_qp]
  real(dp) :: sd, derd(5), q1, q2, rc
- integer :: nfail = 0, ii, jj, ll, kk
+ integer :: ii, jj, ll, kk
 
 ! values
  do ii = 1, 3
@@ -138,27 +139,6 @@
  end do
  call check('basis reproduced', err, 1.0e-32_qp)
 
- if(nfail > 0) then
-   write(stderr, '(i0,a)') nfail, ' check(s) failed'
-   error stop 1
- end if
- write(stderr, '(a)') 'quadbasis: all checks passed'
-
- contains
-
- subroutine check(label, err, tol)
-
-!! err against tol, printed and counted
-
- character(len=*), intent(in) :: label
- real(qp), intent(in) :: err, tol
-
- write(stderr, '(a,a,es9.2)') label, ': error ', real(err, dp)
- if(.not. (err <= tol)) then
-   write(stderr, '(a,a,es10.3,a,es9.2)') 'FAILED: ', label, real(err, dp), &
-&    ' > ', real(tol, dp)
-   nfail = nfail + 1
- end if
- end subroutine check
+ call check_done('quadbasis')
 
  end program test_quadbasis

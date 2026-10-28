@@ -29,7 +29,8 @@
 !              slope to 1e-13; a slope out of range gives ierr=1
 ! Stops with a non-zero code if any check failed.
  program test_modcore
- use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
+ use constants_m, only: dp, pi
+ use unit_check_m, only: check, check_done
  use modcore_m, only: teter_derivs, core_crossover, poly_core_fit, &
 &                     teter_scale, teter_core_derivs
  use lapack_m, only: dgels, dgesv
@@ -62,13 +63,12 @@
 
 !Local variables
  integer :: ifail
- real(dp), parameter :: pi = 3.14159265358979323846_dp
  real(dp), parameter :: rr1 = 5.0e-5_dp, rmax = 45.0_dp, amesh = 1.006_dp
  real(dp), allocatable :: rr(:), rhoc(:), rhotps(:)
  real(dp) :: al, gd(0:4), gl, xx, err, rstar, ref, ts(41), ys(41)
  real(dp) :: resid(41), fmatch(5), a0, aco(5), a0ref
  real(dp) :: xs(5), x0s(5), gc(0:4), dmax(4)
- integer :: nfail = 0, mmax, ii, jj, kk, ierr
+ integer :: mmax, ii, jj, kk, ierr
 
  al = log(amesh)
  mmax = int(log(rmax/rr1)/al)
@@ -274,11 +274,7 @@
  if(ifail /= 0) error stop 1
  call check('scale out of range', real(abs(ierr - 1), dp), 0.0_dp)
 
- if(nfail > 0) then
-   write(stderr, '(i0,a)') nfail, ' check(s) failed'
-   error stop 1
- end if
- write(stderr, '(a)') 'modcore: all checks passed'
+ call check_done('modcore')
 
  contains
 
@@ -533,19 +529,5 @@
    end do
  end do
  end subroutine fit_residual
-
- subroutine check(label, errq, tol)
-
-!! errq against tol, printed and counted
-
- character(len=*), intent(in) :: label
- real(dp), intent(in) :: errq, tol
-
- write(stderr, '(a,a,es9.2)') label, ': error ', errq
- if(.not. (errq <= tol)) then
-   write(stderr, '(a,a,es10.3,a,es9.2)') 'FAILED: ', label, errq, ' > ', tol
-   nfail = nfail + 1
- end if
- end subroutine check
 
  end program test_modcore

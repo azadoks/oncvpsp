@@ -29,7 +29,8 @@
 !            the segments
 ! Stops with a non-zero code if any check failed.
  program test_outwf
- use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
+ use constants_m, only: dp
+ use unit_check_m, only: check, check_done
  use pieces_m, only: piecewise_t, pw_alloc, pw_free, pw_node_values
  use outwf_m, only: outwf_t, outwf_setup, outwf_integrate, outwf_overlap, &
 &                   outwf_nodes, outwf_count, outwf_free
@@ -44,7 +45,7 @@
  real(dp) :: bv = 1.9_dp, b1 = 1.3_dp, b2 = 2.0_dp
  real(dp) :: al, vals(3), ovl(3, 2), valf(3), ovlf(3, 2), err
  real(dp) :: ts(41), ys(41, 9), resid(41), base(9), scale
- integer :: nfail = 0, mmax, i3, ii, jj, kk, iscan, node
+ integer :: mmax, i3, ii, jj, kk, iscan, node
  character(len=2), parameter :: names(3) = ['b1', 'b2', 'bv']
 
  al = log(amesh)
@@ -105,11 +106,7 @@
  call count_nodes(amesh, mmax, node)
  call check('node count', abs(dble(node - 1)), 0.0_dp)
 
- if(nfail > 0) then
-   write(stderr, '(i0,a)') nfail, ' check(s) failed'
-   error stop 1
- end if
- write(stderr, '(a)') 'outwf: all checks passed'
+ call check_done('outwf')
 
  contains
 
@@ -233,19 +230,5 @@
    end do
  end do
  end subroutine fit_residual
-
- subroutine check(label, err, tol)
-
-!! err against tol, printed and counted
-
- character(len=*), intent(in) :: label
- real(dp), intent(in) :: err, tol
-
- write(stderr, '(a,a,es9.2)') label, ': error ', err
- if(.not. (err <= tol)) then
-   write(stderr, '(a,a,es10.3,a,es9.2)') 'FAILED: ', label, err, ' > ', tol
-   nfail = nfail + 1
- end if
- end subroutine check
 
  end program test_outwf

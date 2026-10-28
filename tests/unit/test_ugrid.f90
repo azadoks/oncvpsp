@@ -20,16 +20,17 @@
 !              not found
 ! Stops with a non-zero code if any check failed.
  program test_ugrid
- use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
+ use constants_m, only: dp, pi
+ use, intrinsic :: iso_fortran_env, only: stderr => error_unit
+ use unit_check_m, only: check, check_done, nfail
  use ugrid_m, only: ug_weights, ug_cumint_down, ug_interp, ug_root, &
 &                   ug_cross_down
  implicit none
 
 !Local variables
- real(dp), parameter :: pi = 3.14159265358979323846_dp
  real(dp), allocatable :: xx(:), ff(:), ww(:), cum(:)
  real(dp) :: hh, ss, err1, err2, fq, tq, xq
- integer :: nfail = 0, nn, ii, ierr
+ integer :: nn, ii, ierr
  logical :: found
 
 ! weights
@@ -105,11 +106,7 @@
    nfail = nfail + 1
  end if
 
- if(nfail > 0) then
-   write(stderr, '(i0,a)') nfail, ' check(s) failed'
-   error stop 1
- end if
- write(stderr, '(a)') 'ugrid: all checks passed'
+ call check_done('ugrid')
 
  contains
 
@@ -128,19 +125,5 @@
    xx(ii) = xa + dble(ii - 1)*hh
  end do
  end subroutine grid
-
- subroutine check(label, err, tol)
-
-!! err against tol, printed and counted
-
- character(len=*), intent(in) :: label
- real(dp), intent(in) :: err, tol
-
- write(stderr, '(a,a,es9.2)') label, ': error ', err
- if(.not. (err <= tol)) then
-   write(stderr, '(a,a,es10.3,a,es9.2)') 'FAILED: ', label, err, ' > ', tol
-   nfail = nfail + 1
- end if
- end subroutine check
 
  end program test_ugrid

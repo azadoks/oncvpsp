@@ -5,7 +5,9 @@
 ! bit for bit. Arguments: irel (0, 1 or 2) and the input file (text).
 ! Stops with a non-zero code at the end if any check failed.
  program test_run
- use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
+ use constants_m, only: dp
+ use, intrinsic :: iso_fortran_env, only: stderr => error_unit
+ use unit_check_m, only: check_done, nfail
  use input_m, only: input_t
  use input_text_m, only: read_input_text
  use input_echo_m, only: fe
@@ -17,10 +19,9 @@
 
 !Local variables
  type(results_t) :: psp1,psp2
- integer :: irel,iout,ifail,nfail,nline
+ integer :: irel,iout,ifail,nline
  character(len=1024) :: arg,input_filename
 
- nfail=0
  call get_command_argument(1,arg)
  read(arg,*) irel
  call get_command_argument(2,input_filename)
@@ -39,10 +40,7 @@
  close(iout)
  call check_same(psp1,psp2)
 
- if(nfail/=0) then
-   write(stderr,'(i0,a)') nfail,' checks failed'
-   error stop 1
- end if
+ call check_done('run')
  write(*,'(a,i0,a)') 'test_run: ',nline,' DIAGNOSTICS lines match'
 
  contains

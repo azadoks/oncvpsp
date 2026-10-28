@@ -13,7 +13,9 @@
 !   lschpsbar  the Gaussian well inside a barrier at 8 bohr: 1s, 2s
 ! Stops with a non-zero code if any check failed.
  program test_solver_path
- use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
+ use constants_m, only: dp
+ use, intrinsic :: iso_fortran_env, only: stderr => error_unit
+ use unit_check_m, only: check_done, nfail
  use pieces_m, only: piecewise_t, pw_alloc, pw_free
  use ldiracfb_m, only: ldiracfb
  use lschfb_m, only: lschfb
@@ -33,7 +35,7 @@
 &                         up(:, :), ud(:, :, :), udp(:, :, :)
  type(piecewise_t) :: vlocpw, vkbpw(1)
  real(dp) :: al, ee(2), evkb(1), emin, emax, uld, rcut, rm
- integer :: nfail = 0, mmax, ii, ip, ierr(2), mch(2), nn, ll, kap, mbar
+ integer :: mmax, ii, ip, ierr(2), mch(2), nn, ll, kap, mbar
  character(len=40) :: name
 
  al = log(amesh)
@@ -133,11 +135,7 @@
    call compare(name, uu)
  end do
 
- if(nfail > 0) then
-   write(stderr, '(i0,a)') nfail, ' check(s) failed'
-   error stop 1
- end if
- write(stderr, '(a)') 'solver_path: all checks passed'
+ call check_done('solver_path')
 
  contains
 

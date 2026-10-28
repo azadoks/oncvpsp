@@ -22,8 +22,8 @@
 !               top orders were off by 1e-9
 ! Stops with a non-zero code if any check failed.
  program test_sbf
- use, intrinsic :: iso_fortran_env, only: dp => real64, qp => real128, &
-&  stderr => error_unit
+ use constants_m, only: dp, qp
+ use unit_check_m, only: check, check_done
  use, intrinsic :: ieee_arithmetic, only: ieee_value, ieee_quiet_nan, &
 &  ieee_is_finite
  use sbf_m, only: sbf_trig, sbf_trig_rising
@@ -36,7 +36,7 @@
  real(dp) :: xs(npt), env(0:lmax, npt), jq(0:lmax, npt)
  real(dp) :: sb(lmax + 1), err, jl, rjl(npt)
  real(qp) :: sbq(lmax + 2)
- integer :: nfail = 0, ii, ll, nm, nunset
+ integer :: ii, ll, nm, nunset
 
  xs(1) = 0.0_dp
  do ii = 2, npt
@@ -103,26 +103,6 @@
  call check('sbf8', err, epsilon(1.0_dp))
  call check('sbf8 orders unset', dble(nunset), 0.0_dp)
 
- if(nfail > 0) then
-   write(stderr, '(i0,a)') nfail, ' check(s) failed'
-   error stop 1
- end if
- write(stderr, '(a)') 'sbf: all checks passed'
-
- contains
-
- subroutine check(label, err, tol)
-
-!! err against tol, printed and counted
-
- character(len=*), intent(in) :: label
- real(dp), intent(in) :: err, tol
-
- write(stderr, '(a,a,es9.2)') label, ': error ', err
- if(.not. (err <= tol)) then
-   write(stderr, '(a,a,es10.3,a,es9.2)') 'FAILED: ', label, err, ' > ', tol
-   nfail = nfail + 1
- end if
- end subroutine check
+ call check_done('sbf')
 
  end program test_sbf

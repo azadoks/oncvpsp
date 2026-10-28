@@ -14,7 +14,8 @@
 !                degree 6 to 1e-11
 ! Stops with a non-zero code if any check failed.
  program test_vploc
- use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
+ use constants_m, only: dp
+ use unit_check_m, only: check, check_done
  use vploc_m, only: vploc_t, vploc_fit, vploc_eval
  use lapack_m, only: dgels
  implicit none
@@ -26,7 +27,7 @@
  real(dp), allocatable :: rr(:), vv(:)
  type(vploc_t) :: cf
  real(dp) :: al, rc, ts(41), cs(41, 4), resid(41), scale
- integer :: nfail = 0, mmax, ii, kk, lpopt
+ integer :: mmax, ii, kk, lpopt
 
  al = log(amesh)
  mmax = int(log(rmax/rr1)/al)
@@ -72,11 +73,7 @@
 &             1.0e-11_dp)
  end do
 
- if(nfail > 0) then
-   write(stderr, '(i0,a)') nfail, ' check(s) failed'
-   error stop 1
- end if
- write(stderr, '(a)') 'vploc: all checks passed'
+ call check_done('vploc')
 
  contains
 
@@ -165,19 +162,5 @@
    end do
  end do
  end subroutine fit_residual
-
- subroutine check(label, err, tol)
-
-!! err against tol, printed and counted
-
- character(len=*), intent(in) :: label
- real(dp), intent(in) :: err, tol
-
- write(stderr, '(a,a,es9.2)') label, ': error ', err
- if(.not. (err <= tol)) then
-   write(stderr, '(a,a,es10.3,a,es9.2)') 'FAILED: ', label, err, ' > ', tol
-   nfail = nfail + 1
- end if
- end subroutine check
 
  end program test_vploc

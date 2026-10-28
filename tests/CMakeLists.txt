@@ -70,25 +70,31 @@ function(oncvpsp_add_test label family rel case command)
     set(added_test ${name} PARENT_SCOPE)
 endfunction()
 
+# The Fortran unit tests: test_NAME from unit/test_NAME.f90 and any more SOURCES, linked to the
+# library and to the assertions they share (unit/unit_check_m.f90)
+add_library(unit_check STATIC unit/unit_check_m.f90)
+target_link_libraries(unit_check PUBLIC oncvpsp::oncvpsp PRIVATE oncvpsp::compile_options)
+set_target_properties(unit_check PROPERTIES Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/unit_modules")
+target_include_directories(unit_check PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/unit_modules")
+function(oncvpsp_unit_executable name)
+    add_executable(test_${name} unit/test_${name}.f90 ${ARGN})
+    target_link_libraries(test_${name} PRIVATE unit_check oncvpsp::oncvpsp oncvpsp::compile_options)
+    set_target_properties(test_${name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+endfunction()
+
 # Unit tests of the input readers
-add_executable(test_input_text unit/test_input_text.f90)
-target_link_libraries(test_input_text PRIVATE oncvpsp::oncvpsp oncvpsp::compile_options)
-set_target_properties(test_input_text PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+oncvpsp_unit_executable(input_text)
 oncvpsp_add_test(unit unit - input_text test_input_text)
 
 # Unit tests of the rxpsh warning in run_phsft (nr and fr), called directly
-add_executable(test_run_phsft unit/test_run_phsft.f90)
-target_link_libraries(test_run_phsft PRIVATE oncvpsp::oncvpsp oncvpsp::compile_options)
-set_target_properties(test_run_phsft PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+oncvpsp_unit_executable(run_phsft)
 oncvpsp_add_test(unit unit - run_phsft test_run_phsft)
 set_tests_properties(${added_test} PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 
 # Unit tests of oncvpsp_run called as from the library: its test results against the DIAGNOSTICS
 # block it writes, and a second run in the same process (test_run.f90); nr, sr, fr, and the weighted
 # cutoff of the model core's budget
-add_executable(test_run unit/test_run.f90)
-target_link_libraries(test_run PRIVATE oncvpsp::oncvpsp oncvpsp::compile_options)
-set_target_properties(test_run PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+oncvpsp_unit_executable(run)
 foreach (run_test IN ITEMS "0:nr:08_O" "1:sr:14_Si" "2:r:14_Si" "1:sr:14_Si_bcw")
     string(REPLACE ":" ";" run_test "${run_test}")
     list(GET run_test 0 irel)
@@ -103,10 +109,8 @@ endforeach ()
 # compiled with OpenMP, and it is left out without it
 find_package(OpenMP COMPONENTS Fortran)
 if (OpenMP_Fortran_FOUND)
-    add_executable(test_run_threads unit/test_run_threads.f90)
-    target_link_libraries(test_run_threads PRIVATE oncvpsp::oncvpsp oncvpsp::compile_options
-                          OpenMP::OpenMP_Fortran)
-    set_target_properties(test_run_threads PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+    oncvpsp_unit_executable(run_threads)
+    target_link_libraries(test_run_threads PRIVATE OpenMP::OpenMP_Fortran)
     oncvpsp_add_test(unit unit - run_threads test_run_threads "0:${CMAKE_CURRENT_SOURCE_DIR}/data/08_O.dat:0"
                      "1:${CMAKE_CURRENT_SOURCE_DIR}/data/14_Si.dat:0"
                      "1:${CMAKE_CURRENT_SOURCE_DIR}/data/14_Si.dat:137.0359991"
@@ -118,9 +122,7 @@ endif ()
 # overlaps (sbf_overlap) and the derivatives at rc from the radial equation (ode_rc_der), phase 1 of
 # doc/smoothness_plan.md
 foreach (unit_test logmesh ode_rc_der solver_path piecewise matching ugrid quadbasis pieces vploc ae_delta outwf outwf_index sbf free_tail qroots)
-    add_executable(test_${unit_test} unit/test_${unit_test}.f90)
-    target_link_libraries(test_${unit_test} PRIVATE oncvpsp::oncvpsp oncvpsp::compile_options)
-    set_target_properties(test_${unit_test} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+    oncvpsp_unit_executable(${unit_test})
     oncvpsp_add_test(unit unit - ${unit_test} test_${unit_test})
 endforeach ()
 
@@ -129,13 +131,10 @@ endforeach ()
 # known, so the probe passes while it fails; drop WILL_FAIL once fixed
 oncvpsp_add_test(unit unit - qroots_lcross test_qroots lcross)
 set_tests_properties(${added_test} PROPERTIES WILL_FAIL TRUE)
-add_executable(test_modcore unit/test_modcore.f90 unit/gg1cc.f90 unit/gp1cc.f90
-               unit/gpp1cc.f90)
+oncvpsp_unit_executable(modcore unit/gg1cc.f90 unit/gp1cc.f90 unit/gpp1cc.f90)
 # imported, so not held to the Debug build's -std=f2008 and -Wconversion
 set_source_files_properties(unit/gg1cc.f90 unit/gp1cc.f90 unit/gpp1cc.f90 PROPERTIES
     COMPILE_OPTIONS "$<$<Fortran_COMPILER_ID:GNU>:-std=gnu;-Wno-conversion>")
-target_link_libraries(test_modcore PRIVATE oncvpsp::oncvpsp oncvpsp::compile_options)
-set_target_properties(test_modcore PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 oncvpsp_add_test(unit unit - modcore test_modcore)
 
 # oncvpsp_compares(NAME): the test NAME (if it was added) compares outputs with

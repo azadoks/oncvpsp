@@ -14,7 +14,9 @@
 !   lschvkbb   2s, 3p with no projectors
 ! Stops with a non-zero code if any check failed.
  program test_matching
- use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
+ use constants_m, only: dp
+ use, intrinsic :: iso_fortran_env, only: stderr => error_unit
+ use unit_check_m, only: check, check_done, nfail
  use pieces_m, only: piecewise_t, pw_alloc, pw_free
  use ldiracfb_m, only: ldiracfb
  use lschfb_m, only: lschfb
@@ -34,7 +36,7 @@
  type(piecewise_t) :: vpw, vkbpw(0)
  real(dp) :: al, zz, ee, emin, emax, evkb(1), es(npts), us(npts), zs(npts)
  real(dp) :: rq
- integer :: nfail = 0, mmax, ii, iz, ierr, mch, isolv, nn, ll, ist
+ integer :: mmax, ii, iz, ierr, mch, isolv, nn, ll, ist
  character(len=40) :: name
 
  al = log(amesh)
@@ -91,21 +93,17 @@
        us(iz) = uu(ii, 1)
      end do
      write(name, '(a,i0,a,i0,a,i0)') 'solver ', isolv, ' n=', nn, ' l=', ll
-     call check(trim(name)//' E/Z**2', es, max(maxval(abs(es)), 0.2_dp), &
+     call check_fit(trim(name)//' E/Z**2', es, max(maxval(abs(es)), 0.2_dp), &
 &               tol_e)
-     call check(trim(name)//' u', us, maxval(abs(us)), tol_u)
+     call check_fit(trim(name)//' u', us, maxval(abs(us)), tol_u)
    end do
  end do
 
- if(nfail > 0) then
-   write(stderr, '(i0,a)') nfail, ' check(s) failed'
-   error stop 1
- end if
- write(stderr, '(a)') 'matching: all checks passed'
+ call check_done('matching')
 
  contains
 
- subroutine check(label, ys, scale, tol)
+ subroutine check_fit(label, ys, scale, tol)
 
 !! the largest residual of the degree-ndeg least-squares fit of ys in zs,
 !! relative to scale, against tol
@@ -136,11 +134,7 @@
    end do
  end do
  tt = maxval(abs(ys - matmul(aa, bb(1:ndeg + 1))))/scale
- write(stderr, '(a,a,es9.2)') label, ': fit residual ', tt
- if(.not. (tt <= tol)) then
-   write(stderr, '(a,a,es10.3,a,es9.2)') 'FAILED: ', label, tt, ' > ', tol
-   nfail = nfail + 1
- end if
- end subroutine check
+ call check(label//': fit residual', tt, tol)
+ end subroutine check_fit
 
  end program test_matching

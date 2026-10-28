@@ -25,7 +25,9 @@
 !             (WILL_FAIL) until qroots follows the root through q=0
 ! Stops with a non-zero code if any check failed.
  program test_qroots
- use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
+ use constants_m, only: dp
+ use, intrinsic :: iso_fortran_env, only: stderr => error_unit
+ use unit_check_m, only: check, check_done
  use qroots_m, only: qroots
  use sbf_rc_der_m, only: sbf_rc_der
  implicit none
@@ -38,7 +40,7 @@
  real(dp), parameter :: rc = 1.7_dp, dltq = 0.02_dp, qmax = 200.0_dp
  real(dp) :: qroot(nroot), qa(nroot), qb(nroot), qlast(nroot), ulgds(5)
  real(dp) :: sbfd(5), err, ss, ulgd, jump, sjump, gg, dg, qq
- integer :: nfail = 0, ll, ii, kk
+ integer :: ll, ii, kk
  character(len=16) :: arg
  logical :: lcross
 
@@ -104,26 +106,6 @@
    end do
  end if
 
- if(nfail > 0) then
-   write(stderr, '(a,i0,a)') 'qroots: ', nfail, ' check(s) failed'
-   error stop 1
- end if
- write(stderr, '(a)') 'qroots: all checks passed'
-
- contains
-
- subroutine check(label, err, tol)
-
-!! err against tol, printed and counted
-
- character(len=*), intent(in) :: label
- real(dp), intent(in) :: err, tol
-
- write(stderr, '(a,a,es9.2)') label, ': error ', err
- if(.not. (err <= tol)) then
-   write(stderr, '(a,a,es10.3,a,es9.2)') 'FAILED: ', label, err, ' > ', tol
-   nfail = nfail + 1
- end if
- end subroutine check
+ call check_done('qroots')
 
  end program test_qroots

@@ -14,7 +14,9 @@
 !               ode_rc_der, to 1e-9 (the solver's error in u)
 ! Stops with a non-zero code if any check failed.
  program test_piecewise
- use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
+ use constants_m, only: dp
+ use, intrinsic :: iso_fortran_env, only: stderr => error_unit
+ use unit_check_m, only: check_done, nfail
  use logmesh_m, only: lm_integral
  use ode_rc_der_m, only: ode_rc_der
  use boundstate_m, only: boundstate
@@ -32,7 +34,7 @@
  real(dp), allocatable :: rr(:), vv(:), f1(:), f2(:), fk(:), uu(:, :, :), &
 &                         up(:, :, :)
  real(dp) :: al, rk, s1, s2, sk, exact, err, ee(2), ord1(5), ord2(5), wr, ss
- integer :: nfail = 0, mmax, ii, io, ierr, mch, ir
+ integer :: mmax, ii, io, ierr, mch, ir
 
  al = log(amesh)
  mmax = int(log(rmax/rr1)/al)
@@ -99,11 +101,7 @@
    end if
  end do
 
- if(nfail > 0) then
-   write(stderr, '(i0,a)') nfail, ' check(s) failed'
-   error stop 1
- end if
- write(stderr, '(a)') 'piecewise: all checks passed'
+ call check_done('piecewise')
 
  contains
 

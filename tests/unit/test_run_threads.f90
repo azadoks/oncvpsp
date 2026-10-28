@@ -7,7 +7,9 @@
 ! (c_light 0 for the input's own). Stops with a non-zero code at the end if
 ! any check failed.
  program test_run_threads
- use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
+ use constants_m, only: dp
+ use, intrinsic :: iso_fortran_env, only: stderr => error_unit
+ use unit_check_m, only: check_done, nfail
  use input_m, only: input_t
  use input_text_m, only: read_input_text
  use oncvpsp_run_m, only: oncvpsp_run
@@ -22,10 +24,9 @@
  integer, allocatable :: irel(:)
  real(dp), allocatable :: c_light(:)
  character(len=1024), allocatable :: input_filename(:)
- integer :: ncase,icase,itask,nfail,i1,i2
+ integer :: ncase,icase,itask,i1,i2
  character(len=1024) :: arg
 
- nfail=0
  ncase=command_argument_count()
  allocate(irel(ncase),c_light(ncase),input_filename(ncase))
  do icase=1,ncase
@@ -55,10 +56,7 @@
 &                  trim(arg_of(mod(itask-1,ncase)+1)))
  end do
 
- if(nfail/=0) then
-   write(stderr,'(i0,a)') nfail,' checks failed'
-   error stop 1
- end if
+ call check_done('run_threads')
  write(*,'(a,i0,a,i0,a)') 'test_run_threads: ',ncase*ncopy, &
 &     ' concurrent runs of ',ncase,' cases match the runs alone'
 

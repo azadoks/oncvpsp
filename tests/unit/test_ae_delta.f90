@@ -11,7 +11,9 @@
 !   fr      the same for the Dirac 2p3/2 large component
 ! Stops with a non-zero code if any check failed.
  program test_ae_delta
- use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
+ use constants_m, only: dp
+ use, intrinsic :: iso_fortran_env, only: stderr => error_unit
+ use unit_check_m, only: check, check_done, nfail
  use logmesh_m, only: lm_derivs
  use boundstate_m, only: boundstate
  use ae_delta_m, only: ae_delta
@@ -25,7 +27,7 @@
  real(dp), parameter :: zz = 50.0_dp
  real(dp), allocatable :: rr(:), vv(:), uu(:, :), up(:, :), delta(:)
  real(dp) :: al, ee, dd(3), u2, err, big, scale
- integer :: nfail = 0, mmax, ii, irel, ierr, mch, i1, i2, kap
+ integer :: mmax, ii, irel, ierr, mch, i1, i2, kap
  character(len=2), parameter :: names(0:2) = ['nr', 'sr', 'fr']
 
  al = log(amesh)
@@ -77,26 +79,6 @@
    end if
  end do
 
- if(nfail > 0) then
-   write(stderr, '(i0,a)') nfail, ' check(s) failed'
-   error stop 1
- end if
- write(stderr, '(a)') 'ae_delta: all checks passed'
-
- contains
-
- subroutine check(label, err, tol)
-
-!! err against tol, printed and counted
-
- character(len=*), intent(in) :: label
- real(dp), intent(in) :: err, tol
-
- write(stderr, '(a,a,es9.2)') label, ': error ', err
- if(.not. (err <= tol)) then
-   write(stderr, '(a,a,es10.3,a,es9.2)') 'FAILED: ', label, err, ' > ', tol
-   nfail = nfail + 1
- end if
- end subroutine check
+ call check_done('ae_delta')
 
  end program test_ae_delta

@@ -16,7 +16,9 @@
 !             h**2 is the same for h = 1e-4 and 2e-4 to 1e-2
 ! Stops with a non-zero code if any check failed.
  program test_free_tail
- use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
+ use constants_m, only: dp, pi
+ use, intrinsic :: iso_fortran_env, only: stderr => error_unit
+ use unit_check_m, only: check, check_done
  use free_tail_m, only: free_tail, free_tail_width, tail_kinetic
  use ugrid_m, only: ug_weights
  use relativity_m, only: c_light => c_light_default
@@ -25,14 +27,13 @@
 
 !Local variables
  integer :: ifail
- real(dp), parameter :: pi = 3.14159265358979323846_dp
  real(dp), parameter :: rc = 2.0_dp, qcut = 5.0_dp, qmax = 20.0_dp
  integer, parameter :: mmax = 2000
  real(dp), allocatable :: ulin(:), dlin(:), u2(:), d2(:), wr(:)
  real(dp) :: rr(mmax), vv(mmax), uu(mmax), up(mmax)
  real(dp) :: al, hh, kk, kp, ee, wl, r0, err, rad, xx
  real(dp) :: dm, dp_, tk, tk2
- integer :: nfail = 0, nr, n2, ii
+ integer :: nr, n2, ii
 
  al = log(1.006_dp)
  do ii = 1, mmax
@@ -103,11 +104,7 @@
  write(stderr, '(a,2es14.6)') 'width: d2L/dep2 at 0 with h, 2 h', dm, dp_
  call check('width smooth at ep = 0', abs(dm - dp_)/abs(dm), 1.0e-2_dp)
 
- if(nfail > 0) then
-   write(stderr, '(i0,a)') nfail, ' check(s) failed'
-   error stop 1
- end if
- write(stderr, '(a)') 'all free_tail checks passed'
+ call check_done('free_tail')
 
  contains
 
@@ -165,17 +162,5 @@
 &  above, total
  leak = above/total
  end function leak
-
- subroutine check(name, val, tol)
- character(len=*), intent(in) :: name
- real(dp), intent(in) :: val, tol
- if(.not. (val <= tol)) then
-   write(stderr, '(3a,es12.4,a,es12.4)') 'FAILED: ', name, ': ', val, &
-&    ' > ', tol
-   nfail = nfail + 1
- else
-   write(stderr, '(3a,es12.4)') 'ok: ', name, ': ', val
- end if
- end subroutine check
 
  end program test_free_tail

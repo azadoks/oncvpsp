@@ -186,6 +186,14 @@ The CMake targets are `oncvpspnr`, `oncvpspsr` and `oncvpspr`, because
   does (`run_plot_r`).
 - **DIAGNOSTICS keys.** There it means a radius (`ld_r`, `ghost_r`).
 
+The Fortran unit tests (`tests/unit/test_NAME.f90`) are built by
+`oncvpsp_unit_executable`:
+- They take `dp`, `qp` and `pi` from `constants_m`.
+- They report through `unit_check_m`. `check(label, err, tol)` fails when
+  err is above tol or NaN, and `check(label, ok)` fails when ok is false.
+  `check_done(name)` ends the test, with exit status 1 after any failed
+  check.
+
 The tests that read the plain output of an input (reference, TOML, pipe,
 split) or its all-electron file (split, `ae_file_*`) share one run of it:
 the CTest fixtures `run_<treatment>_<input>` and `run_ae_<treatment>_<input>`

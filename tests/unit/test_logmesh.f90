@@ -29,8 +29,9 @@
 !                    including q1=q2 and q1 within 1e-9 of q2
 ! Stops with a non-zero code after all checks if any failed.
  program test_logmesh
- use, intrinsic :: iso_fortran_env, only: dp => real64, i8 => int64, &
-&                                       stderr => error_unit
+ use constants_m, only: dp
+ use, intrinsic :: iso_fortran_env, only: i8 => int64
+ use unit_check_m, only: check, check_done
  use logmesh_m, only: lm_blend, lm_interp, lm_derivs, lm_cumint, &
 &                     lm_integral, lm_integral_weights, lm_root
  use sbf8_m, only: sbf8
@@ -39,7 +40,6 @@
 
 !Local variables
  real(dp), parameter :: rr1 = 5.0e-5_dp, rmax = 45.0_dp
- integer :: nfail = 0
  integer(i8) :: seed = 20261020_i8
 
  call check_interp_poly()
@@ -56,11 +56,7 @@
  call check_root()
  call check_sbf_overlap()
 
- if(nfail > 0) then
-   write(stderr, '(i0,a)') nfail, ' check(s) failed'
-   error stop 1
- end if
- write(stderr, '(a)') 'logmesh: all checks passed'
+ call check_done('logmesh')
 
  contains
 
@@ -94,24 +90,6 @@
  seed = modulo(16807_i8*seed, 2147483647_i8)
  uniform = 2.0_dp*real(seed, dp)/2147483647.0_dp - 1.0_dp
  end function uniform
-
- subroutine check(name, err, tol)
-
-!! counts a failure if err > tol, and reports it
-!!
-!! @param name  what was checked
-!! @param err  its error
-!! @param tol  the tolerance
-
- character(len=*), intent(in) :: name
- real(dp), intent(in) :: err, tol
-
- if(.not. (err <= tol)) then
-   write(stderr, '(3a,es10.3,a,es10.3)') 'FAILED: ', name, ': error ', err, &
-&    ' > ', tol
-   nfail = nfail + 1
- end if
- end subroutine check
 
  elemental real(dp) function texp(kk, rr)
 

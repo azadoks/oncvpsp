@@ -15,7 +15,9 @@
 ! The tolerance of the k-th derivative is tol(k) times the largest of the
 ! first five derivatives. Stops with a non-zero code if any check failed.
  program test_ode_rc_der
- use, intrinsic :: iso_fortran_env, only: dp => real64, stderr => error_unit
+ use constants_m, only: dp
+ use, intrinsic :: iso_fortran_env, only: stderr => error_unit
+ use unit_check_m, only: check_done, nfail
  use relativity_m, only: c_light => c_light_default
  use ode_rc_der_m, only: ode_rc_der
  use wf_rc_der_m, only: wf_rc_der
@@ -31,7 +33,7 @@
 &                                   1.0e-9_dp, 1.0e-8_dp]
  real(dp), allocatable :: rr(:), vv(:), uu(:, :), up(:, :)
  real(dp) :: al, uorder(5), exact(5), gam, ee, rc
- integer :: nfail = 0, mmax, ii, ierr, mch, irc
+ integer :: mmax, ii, ierr, mch, irc
 
  al = log(amesh)
  mmax = int(log(rmax/rr1)/al)
@@ -104,11 +106,7 @@
 &                   [1.0e-13_dp, 1.0e-9_dp, 1.0e-8_dp, 1.0e-7_dp, 1.0e-5_dp])
  end if
 
- if(nfail > 0) then
-   write(stderr, '(i0,a)') nfail, ' check(s) failed'
-   error stop 1
- end if
- write(stderr, '(a)') 'ode_rc_der: all checks passed'
+ call check_done('ode_rc_der')
 
  contains
 
