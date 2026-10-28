@@ -58,6 +58,16 @@ whose second index is the configuration, not kappa, so a bounds-checked
 nr run stopped there; fixed in the same commit. Still open: M-4, E-5,
 I-5, I-6, `lm_index`, and the Fourier-Bessel convention with C-13.
 
+**Note (2026-10-28, M, E and I items).** M-2's `lm_index`, M-4, M-6 with
+C-13, E-5, I-5 and I-6 are done in b6df71c, and M-9's table of the mesh
+ends and signs; each item says how. On the way: `ae_anderson1` divided
+by the change of the residual, 0 when two steps give residuals equal to
+the last bit, which a Debug run of the 14_Si well_onset scan hit on the
+FPE trap; it now takes no Anderson step then. Left as decided: psatom's
+one-step mixing (M-7) and retiring the Gregory sums (M-8); the rest of
+M-9 (`adams.inc`, the RK4 loops, the finite-difference steps, eresid's
+table, upfout's sr/fr difference) is still undocumented.
+
 **What holds already.**
 - Every call of a routine with `ifail` checks it afterwards (317 calls).
 - `iout,ifail` come last in 108 of 109 routines.
@@ -92,9 +102,9 @@ regenerated with `scripts/ref_patch.py`.
 | 7 | I-1 | literals `1.d0` (193) and `_dp` (47) beside `1.0d0`; `qp` defined in 7 files; `dp` from `iso_fortran_env` in 2 readers | fortitude S291, C021 with `--fix`; **done 2026-10-28** (8f4d1db, b225a84) | no |
 | 8 | I-2 | 14 declarations use a bound before declaring it; `-std=f2008` rejects them | reorder; `-std=f2008` in Debug; **done 2026-10-28** (8f4d1db) | no |
 | 9 | E-2 | `iout` under `!Output variables` (101) and 19 other label mismatches | scripted move; **done 2026-10-28** (b225a84) | no |
-| 10 | M-2 | the mesh step re-derived 5 ways at 30 sites; index from radius at 8 | public `lm_step`, `lm_index`; **mesh step done 2026-10-28** (b225a84, `lm_step`); `lm_index` open | round-off |
+| 10 | M-2 | the mesh step re-derived 5 ways at 30 sites; index from radius at 8 | public `lm_step`, `lm_index`; **done 2026-10-28** (b225a84, `lm_step`; b6df71c, `lm_index`) | round-off |
 | 11 | E-3 | error-message form: ~47 wrong prefixes, ~90 without `/`, 49 other formats | message checker, then fix; **done 2026-10-28** (8b47258; the 4.0.1 texts kept, in `scripts/messages_4.0.1.txt`) | error text only |
-| 12 | M-4 | Brent twice (`lm_root` is a copy of `ug_brent`); 6 hand-written polish loops, 5 stopping rules | one Brent in a leaf module; open | no |
+| 12 | M-4 | Brent twice (`lm_root` is a copy of `ug_brent`); 6 hand-written polish loops, 5 stopping rules | one Brent in a leaf module; **done 2026-10-28** (b6df71c) | no |
 | 13 | M-5 | tolerances and floors restated per routine (`eps=1.0d-12` in 5 solvers, the 0.2 floor ×6) | named constants; **done 2026-10-28** (b225a84) | no |
 | 14 | N-2 | `@param` texts drift (310 lines against a 29-name glossary); units stated for a minority | glossary + checker; **done 2026-10-28** (8b47258: `doc/glossary.md`, 46 names; 19 findings left in the baseline) | no |
 | 15 | I-3 | kappa extent `nkap`/`mxkap`/`2`; 4 idioms for the kappa count; `mxprj` both parameter and argument | one idiom; **done 2026-10-28** (b225a84) | no |
@@ -102,8 +112,8 @@ regenerated with `scripts/ref_patch.py`.
 | 17 | N-3 | one-letter type components (`config_t%n`, `%l`, `%f`, ...) against rule 5 | rename (~70 sites); **done 2026-10-28** (b225a84) | no |
 | 18 | S-3 | test names in 6 patterns; labels mix test kind and treatment | one registration helper; **done 2026-10-28** (b38ab3d) | no |
 | 19 | I-4 | `use` at module level in 53 modules; `implicit none` repeated in 101 module procedures | move; fortitude S201; **done 2026-10-28** (8f4d1db, b225a84) | no |
-| 20 | M-6 | three Fourier–Bessel conventions; four j_l routines; sbfq still normalised by j_0 (C-13) | document; fix C-13; **re-seeding done 2026-10-28** (8ec3d7f); the convention and C-13 open | DIAGNOSTICS |
-| 21 | E-5 | `confine_*` stops (`error stop 1`) on a callee's `ifail` instead of passing it on (9) | pass `ifail` on; open | no |
+| 20 | M-6 | three Fourier–Bessel conventions; four j_l routines; sbfq still normalised by j_0 (C-13) | document; fix C-13; **done 2026-10-28** (8ec3d7f, the re-seeding; b6df71c, the convention and C-13) | DIAGNOSTICS |
+| 21 | E-5 | `confine_*` stops (`error stop 1`) on a callee's `ifail` instead of passing it on (9) | pass `ifail` on; **done 2026-10-28** (b6df71c) | no |
 | 22 | M-7 | relatom and psatom mix in one step; sratom uses Anderson-8 | `ae_mix` everywhere; **relatom done 2026-10-28** (8ec3d7f); psatom keeps its one-step mixing | fr refs ~1e-11 |
 | 23 | E-6 | sr/nr energies printed with D exponents, fr with E | with the next regeneration; **done 2026-10-28** (8ec3d7f) | every sr/nr ref |
 | 24 | M-8 | the all-electron energies still use order-4 Gregory sums, copied 4 times | merge now; retire later; **merge done 2026-10-28** (8ec3d7f); retiring stays deferred | retire: every ref |
@@ -210,7 +220,10 @@ standards, checked by the checker's `names` rule.
   that fails when the compensation is lost (about 20 lines). The test
   catches it on any compiler.
 
-**M-2. The mesh step, and the index from a radius.**
+**M-2. The mesh step, and the index from a radius.** **Done 2026-10-28**
+(b225a84, b6df71c): `lm_step` for the step; `lm_index`, the last point at
+or below a radius, and `lm_position` are public and replace the closed
+forms (ae_delta_window and run_plot lose their `al`).
 - **The mesh step:** `al` is derived 5 ways at 30 sites. 22 of them are
   `0.01d0*log(rr(101)/rr(1))`, in `ae_scf.f90`, `lschfs_m.f90` and
   others. It is also passed as an argument to 15 procedures.
@@ -232,7 +245,10 @@ standards, checked by the checker's `names` rule.
 - pspot takes u′ from a 7-point stencil, where the convention elsewhere
   is the solver's `up`. Changing it moves the kinetic-energy test line.
 
-**M-4. Root finders.**
+**M-4. Root finders.** **Done 2026-10-28** (b6df71c): `root_m`, a leaf
+module, holds the one Brent (`root_brent`, `root_fmin`); `lm_root` and
+`ug_root` call it, `ug_brent` is gone. The polish loops and Brent's step
+test stop at `root_tol`, 4 eps (|x| + an absolute part).
 - `lm_root` is a line-for-line copy of `ug_brent`, because ugrid_m uses
   logmesh_m and neither can call the other. One Brent in a leaf module
   would remove about 70 lines and change no output.
@@ -253,7 +269,11 @@ standards, checked by the checker's `names` rule.
   `pi_qp` and `ha_ev`. `Ha_eV` is local to run_optimize now. `qp` is
   defined in 7 files.
 
-**M-6. Bessel functions and Fourier–Bessel transforms.**
+**M-6. Bessel functions and Fourier–Bessel transforms.** **Done
+2026-10-28** (8ec3d7f, b6df71c): sbf8 and sbf_rc_der in `sbf_m`, the
+private `j0` replaced by `sbf_trig`; `sbf_rc_der` no longer copies the
+unset order; `sbfq_values` normalised by sum (2l+1) j_l^2 (C-13); the
+convention in program_overview.md.
 - There are four routines for j_l values, plus a private `j0`.
 - `sbfq` is still normalised by j_0 (C-13 of the numerics audit).
 - `sbf_rc_der` copies an uninitialised value that is never used
@@ -278,7 +298,8 @@ standards, checked by the checker's `names` rule.
 - Retiring them in favour of `lm_cumint` moves every reference.
   Moving lschpsbar to outwf would too. Both were deferred earlier.
 
-**M-9. Differences that stay, to be documented only.**
+**M-9. Differences that stay, to be documented only.** **Mesh ends and
+signs done 2026-10-28** (b6df71c, program_overview.md); the rest open.
 - The `adams.inc` include: inlining it is worth about 9 % of run time.
 - The three RK4 loops. Two of them use a "2e-3" step, in different
   units.
@@ -346,7 +367,11 @@ standards, checked by the checker's `names` rule.
   14 declarations put one `!>` over several names, so about 75
   components show nothing on hover.
 
-**E-5. Stops in library routines.**
+**E-5. Stops in library routines.** **Done 2026-10-28** (b6df71c): the
+`confine_*` chain returns `ifail` (the functions given to `root_brent` set
+their host's); `oncvpsp_confine` stops on it. `core_radius_points` writes
+to `iout` and returns `ifail`. psmlout's stops became `error stop 1`
+in 8b47258.
 - 9 `error stop 1` in the `confine_*` modules stop on a callee's
   `ifail` instead of passing it on.
 - `psmlout_m.f90:744,749` use `error stop "<string>"`.
@@ -414,7 +439,10 @@ standards, checked by the checker's `names` rule.
   in every routine.
 - Proposed: module level only. fortitude S201 fixes it.
 
-**I-5. Derived types.**
+**I-5. Derived types.** **Done 2026-10-28** (b6df71c): every component
+of the three types has a default, and the readers' default blocks are
+gone; `input_t` holds the reference configuration once, oncvpsp_run
+builds the list; the read-only `budget_t` dummies are `intent(in)`.
 - `input_t` (51 components), `budget_t` (52) and `ae_entry_t` have no
   default values, while 20 other types are fully defaulted.
 - The input's defaults are set in each reader, and both readers declare
@@ -424,7 +452,12 @@ standards, checked by the checker's `names` rule.
   `oncvpsp_run_m.f90:237`.
 - `budget_t` dummies that are only read are `intent(inout)`.
 
-**I-6. Smaller items.**
+**I-6. Smaller items.** **Done 2026-10-28** (b6df71c): the functions
+that changed an argument or took `ifail` are subroutines, except the
+budget's evaluations of its search state, as the standards' new
+Procedures section says; `add_core` and `so_split` are logicals; the
+partial deallocates are complete; assumed shape allowed inside the
+library; the library plan and `renorm_r` fixed.
 - 33 assumed-shape dummies, which the Declarations rule doesn't allow.
   Proposed: allow them inside the library and keep explicit shapes at
   the entry points.
