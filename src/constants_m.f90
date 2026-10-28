@@ -97,8 +97,8 @@
 !> where a finer mesh puts it above this: ae_converged)
  real(dp), parameter :: ae_tolres=1.0e-11_dp
 
-!> relative tolerance of the eigenvalue solvers: a state is converged when the
-!> energy correction is below eig_tol*max(|e|,eig_floor), twice in a row
+!> relative tolerance of the eigenvalue solvers: once the energy correction
+!> is below eig_tol*max(|e|,eig_floor), they polish it to round-off
  real(dp), parameter :: eig_tol=1.0e-12_dp
 
 !> energy scale (Ha) below which the solvers' tolerances are absolute

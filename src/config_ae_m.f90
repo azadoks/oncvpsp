@@ -77,8 +77,6 @@
    real(dp), allocatable :: fa(:)  !< occupancies (ncv)
    real(dp), allocatable :: rr(:)  !< log radial mesh (bohr)
    real(dp), allocatable :: ea(:,:)  !< eigenvalues (ncv,nkap) (Ha)
-!> radius of the outermost peak of each wave function (ncv,nkap) (bohr)
-   real(dp), allocatable :: rpk(:,:)
    real(dp), allocatable :: rhoc(:)  !< core charge density
    real(dp), allocatable :: rho(:)  !< total charge density
    real(dp), allocatable :: vi(:)  !< all-electron potential (Ha)
@@ -93,7 +91,7 @@
 
  contains
 
- subroutine aeatom_cached(cache,irel,c_light,nkap,na,la,ea,fa,rpk,nc,ncv,it, &
+ subroutine aeatom_cached(cache,irel,c_light,nkap,na,la,ea,fa,nc,ncv,it, &
 &                         rhoc,rho,rr,vi,zz,mmax,iexc,etot,eterm,res,ierr, &
 &                         iout,ifail)
 
@@ -103,9 +101,8 @@
 !! takes charge away is its intermediate one; each was solved again, to
 !! the same bits. A failed solution is not kept, so that its warnings
 !! recur, and a reused one stopped on the residual's round-off floor
-!! repeats that warning. rpk comes back as that solution left it (rows
-!! 1..ncv). cache holds the solutions of the run; the other arguments
-!! are those of aeatom
+!! repeats that warning. cache holds the solutions of the run; the other
+!! arguments are those of aeatom
 !!
 !! @param cache  the all-electron atoms of the run; a new solution added
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
@@ -116,8 +113,6 @@
 !! @param ea  eigenvalues (Ha), the guess on input and the solution's on
 !!            output; ea(:,1) for j=l+1/2, ea(:,2) for j=l-1/2 when irel=2
 !! @param fa  occupancies
-!! @param rpk  radius of the outermost peak of each wave function (bohr),
-!!             indexed as ea
 !! @param nc  number of core states
 !! @param ncv  number of core and valence states
 !! @param it  number of iterations
@@ -150,7 +145,7 @@
 !Input/output variables
  type(ae_cache_t), intent(inout) :: cache
  integer, intent(inout) :: ierr
- real(dp), intent(inout) :: ea(mxstate,nkap),rpk(mxstate,nkap)
+ real(dp), intent(inout) :: ea(mxstate,nkap)
 
 !Output variables
  integer, intent(out) :: it
@@ -171,7 +166,6 @@
      if(any(ce%na/=na) .or. any(ce%la/=la) .or. any(ce%fa/=fa) .or. &
 &       any(ce%rr/=rr)) cycle
      ea(1:ncv,:)=ce%ea
-     rpk(1:ncv,:)=ce%rpk
      it=ce%it
      rhoc(:)=ce%rhoc
      rho(:)=ce%rho
@@ -187,7 +181,7 @@
 
  allocate(vfree(mmax))
  vfree(:)=0.0d0
- call aeatom(irel,c_light,nkap,na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
+ call aeatom(irel,c_light,nkap,na,la,ea,fa,nc,ncv,it,rhoc,rho, &
 &            rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vfree,.false.,iout,ifail)
  if(ifail/=0) return
  deallocate(vfree)
@@ -207,7 +201,6 @@
    ce%fa=fa
    ce%rr=rr
    ce%ea=ea(1:ncv,:)
-   ce%rpk=rpk(1:ncv,:)
    ce%it=it
    ce%rhoc=rhoc
    ce%rho=rho
@@ -270,7 +263,7 @@
  integer :: nat(mxstate),lat(mxstate)
  integer ::  indxr(mxstate),indxe(mxstate)
  real(dp) :: et,eaetst,eterm(4),res
- real(dp) :: eat(mxstate,nkap,nlev),fat(mxstate,nlev),rpk(mxstate,nkap)
+ real(dp) :: eat(mxstate,nkap,nlev),fat(mxstate,nlev)
 
  real(dp),allocatable :: rho(:),rhoc(:),vfull(:)
  real(dp),allocatable :: uu(:,:),up(:,:)
@@ -337,12 +330,12 @@
 
 
 
- eat(:,:,2)=0.0d0; rpk(:,:)=0.0d0; rhoc(:)=0.0d0; rho(:)=0.0d0; vfull(:)=0.0d0
+ eat(:,:,2)=0.0d0; rhoc(:)=0.0d0; rho(:)=0.0d0; vfull(:)=0.0d0
  eaetst=0.0d0
 
 !all-electron atom solution for maximally-ionized state
 
- call aeatom_cached(cache,irel,c_light,nkap,nat,lat,eat(1,1,2),fat(1,2),rpk, &
+ call aeatom_cached(cache,irel,c_light,nkap,nat,lat,eat(1,1,2),fat(1,2), &
 &                   nc,nc+nvt,it,rhoc,rho,rr,vfull,zz,mmax,iexc,eaetst,eterm, &
 &                   res,ierr,iout,ifail)
  if(ifail/=0) return
@@ -386,12 +379,12 @@
    end if
  end do
 
- eat(:,:,3)=0.0d0; rpk(:,:)=0.0d0; rhoc(:)=0.0d0; rho(:)=0.0d0; vfull(:)=0.0d0
+ eat(:,:,3)=0.0d0; rhoc(:)=0.0d0; rho(:)=0.0d0; vfull(:)=0.0d0
  eaetst=0.0d0
 
 !all-electron atom solution for excited state
 
- call aeatom_cached(cache,irel,c_light,nkap,nat,lat,eat(1,1,3),fat(1,3),rpk, &
+ call aeatom_cached(cache,irel,c_light,nkap,nat,lat,eat(1,1,3),fat(1,3), &
 &                   nc,nc+nvt,it,rhoc,rho,rr,vfull,zz,mmax,iexc,eaetst,eterm, &
 &                   res,ierr,iout,ifail)
  if(ifail/=0) return
@@ -450,15 +443,7 @@
      write(iout,'(a/a,i2)') 'run_config: WARNING  for AE atom,', &
 &          ' WARNING no output for configuration',jj
    end if
-   if(aec%ierr==-1 .and. irel==2) then
-     write(iout,'(a,i4)') &
-&          'run_config_r: WARNING no classical turning point ' // &
-&          'error, iteration', &
-&          aec%it
-   else if(aec%ierr==-1) then
-     write(iout,'(a,i4)') 'no classical turning point error, iteration', &
-&          aec%it
-   else if(irel==2) then
+   if(irel==2) then
      write(iout,'(a)') &
 &          'run_config_r: WARNING self-consistency failed to converge'
    else

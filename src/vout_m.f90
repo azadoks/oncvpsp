@@ -46,7 +46,7 @@
 !! @param iexc  exchange-correlation functional (1-4, 6, 7 built in, <0 libxc)
 !! @param c_light  speed of light (Hartree atomic units)
 
- use constants_m, only: dp, pi
+ use constants_m, only: dp
  use logmesh_m, only: lm_head, lm_step
  use xc_dispatch_m, only: exc_dispatch
  use quad_m, only: quad_gregory_sum
@@ -66,7 +66,6 @@
  real(dp), intent(out) :: eeel,eexc
 
 !Local variables
- real(dp), parameter :: pi4=4.0d0*pi
  integer :: ii
  real(dp) :: al,tv
 

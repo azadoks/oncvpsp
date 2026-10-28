@@ -110,8 +110,8 @@
 
 
 !Local variables
- integer :: ii,ierr,ios,it,nq
- integer :: jj,ll,l1,inline
+ integer :: ii,ierr,it,nq
+ integer :: jj,ll,l1
  integer :: mmax,nlim,nrl
  integer :: iprj,nkap,nnwell,npsh
  integer :: ikap,kap,mkap
@@ -126,7 +126,7 @@
 
  real(dp) :: al,eeel
  real(dp) :: eeig,eexc
- real(dp) :: fcfact_in,soscale
+ real(dp) :: fcfact_in
  real(dp) :: fcgrid(3),rcgrid(3)
  real(dp) :: rcmax
  real(dp) :: log_mesh(3)
@@ -139,7 +139,6 @@
 !
  real(dp) :: ea(mxstate,mxkap)
  real(dp) :: qmsbf(mxlin+1),rc_in(mxlin+1)
- real(dp) :: rpk(mxstate,mxkap)
  real(dp) :: epstot
 
  real(dp), allocatable :: evkb(:,:,:),cvgplt(:,:,:,:,:),qq(:,:)
@@ -329,7 +328,7 @@
    if(ifail/=0) return
  else
    ierr=0
-   call aeatom_cached(cache,irel,c_light,nkap,inp%na,inp%la,ea,inp%fa,rpk, &
+   call aeatom_cached(cache,irel,c_light,nkap,inp%na,inp%la,ea,inp%fa, &
 &                     inp%nc,inp%nc+inp%nv,it,rhoc,rho,rr,vfull,inp%zz,mmax, &
 &                     inp%iexc,etot,eterm,res,ierr,iout,ifail)
    if(ifail/=0) return

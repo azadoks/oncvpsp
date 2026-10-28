@@ -83,7 +83,7 @@
  integer :: na_ps(mxstate),la_ps(mxstate),nprj(mxlin+1)
  integer :: ik,ii,ierrae,ierrps,itae,itps,nkap
  real(dp) :: fa_ps(mxstate,2),etae(0:nk),etps(0:nk)
- real(dp) :: eaw(mxstate,mxkap),rpk(mxstate,mxkap),eterm(4),res
+ real(dp) :: eaw(mxstate,mxkap),eterm(4),res
  real(dp) :: ea_ps(mxstate,mxkap)
  real(dp), allocatable :: vext(:),rhoc(:),rhoa(:),vi(:),rhops(:)
  real(dp), allocatable :: eigae(:,:,:),eigps(:,:,:)
@@ -122,9 +122,8 @@
      eaw(:,:)=eigae(:,:,0)
      vi(:)=vfull(:)
    end if
-   rpk(:,:)=0.0d0
    ierrae=0
-   call aeatom(irel,c_light,nkap,na,la,eaw(:,1:nkap),fa,rpk(:,1:nkap),nc, &
+   call aeatom(irel,c_light,nkap,na,la,eaw(:,1:nkap),fa,nc, &
 &              nc+nv,itae,rhoc,rhoa,rr,vi,zz,mmax,iexc,etae(ik),eterm,res, &
 &              ierrae,vext,.true.,iout,ifail)
    if(ifail/=0) return
@@ -171,7 +170,6 @@
 !!               from l+1
 !! @param la_ps  angular momenta of the valence states
 !! @param fa_ps  occupancies of the valence states, the same for each kappa
- use constants_m, only: mxkap
 
 !Input variables
  integer, intent(in) :: nc,nv,la(mxstate)

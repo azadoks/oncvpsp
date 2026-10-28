@@ -67,7 +67,7 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use constants_m, only: dp, pi, mxstate, mxcnf, mxl, mxlin, nrhomod, mxprj
+ use constants_m, only: dp, pi, mxstate, mxl, mxlin, nrhomod, mxprj
  use kappa_m, only: kap_count, kap_j_share
  use input_echo_m, only: write_input_echo, fe, date_stamp
  use outmesh_m, only: om_values, om_piece_values, om_local_values
@@ -636,7 +636,7 @@
 
  subroutine write_spin_orb()
 !! PP_SPIN_ORB: l and j of each projector and each orbital
- integer :: ii,ll,l1,ikap,mkap,iproj,iwfc
+ integer :: ii,ll,ikap,mkap,iproj,iwfc
  real(dp) :: djjj
  write(iout,'(t2,a)') &
 &    '<PP_SPIN_ORB>'

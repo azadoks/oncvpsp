@@ -67,7 +67,7 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use constants_m, only: dp, mxstate, mxcnf, mxl, mxlin, nrhomod, mxprj
+ use constants_m, only: dp, mxl, mxlin, nrhomod, mxprj
  use input_echo_m, only: write_input_echo, fe, date_stamp
  use outmesh_m, only: om_values, om_piece_values, om_local_values
  use pieces_m, only: piecewise_t

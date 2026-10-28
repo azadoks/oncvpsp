@@ -46,7 +46,6 @@
 
 !Local variables
  real(dp), parameter :: pi4=4.0d0*pi
- real(dp), parameter :: pi4i=1.0d0/pi4
  real(dp), parameter :: thrd=1.0d0/3.0d0
  integer :: ii
  real(dp) :: rs,rh,sqrs,rsl,den

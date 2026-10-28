@@ -25,7 +25,7 @@
  implicit none
  private
  public :: ae_residual, ae_energies, ae_mix, ae_converged, ae_floor_warning
- public :: ae_anderson1, ae_outer_peak
+ public :: ae_anderson1
 
  contains
 
@@ -431,36 +431,5 @@
  end do
  return
  end subroutine ae_anderson1
-
- subroutine ae_outer_peak(up,rr,mlast,rpk)
-
-!! the radius of the outermost extremum of a bound state inside mlast, where
-!! its derivative up changes sign; rpk unchanged if there is none
-!!
-!! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
-!! @param rr  log radial mesh (bohr)
-!! @param mlast  the last point
-!! @param rpk  the radius (output)
-
- use constants_m, only: dp
-
-!Input variables
- integer, intent(in) :: mlast
- real(dp), intent(in) :: up(mlast),rr(mlast)
-
-!Input/output variables
- real(dp), intent(inout) :: rpk
-
-!Local variables
- integer :: jj
-
- do jj=mlast-1,1,-1
-   if(up(jj)*up(jj+1)<0.0d0) then
-     rpk=rr(jj)
-     exit
-   end if
- end do
- return
- end subroutine ae_outer_peak
 
  end module ae_scf_m

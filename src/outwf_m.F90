@@ -490,7 +490,7 @@
 
 !Local variables
  real(dp) :: al,als,pm,rb
- integer :: kk,jj,nsol,jmax,ll,m0
+ integer :: kk,nsol,jmax,ll
  type(og_seg_t), pointer :: sg
 
  al=ow%al

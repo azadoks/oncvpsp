@@ -25,7 +25,7 @@
 
  contains
 
- subroutine relatom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
+ subroutine relatom(na,la,ea,fa,nc,ncv,it,rhoc,rho, &
 &           rr,vi,zz,mmax,iexc,c_light,etot,eterm,res,ierr,vext,warm,iout,ifail)
 
 !! self-consistent fully-relativistic all-electron atom
@@ -37,7 +37,6 @@
 !! @param ea  eigenvalues (output; input with warm), ea(:,1) for j=l+1/2,
 !!            ea(:,2) for j=l-1/2
 !! @param fa  occupancies
-!! @param rpk  radius of outermost peak of wave function, indexed as ea
 !! @param nc  number of core states
 !! @param ncv  number of core+valence states
 !! @param it  number of iterations (output)
@@ -65,7 +64,7 @@
  use constants_m, only: dp, mxstate, mxkap, ae_tolres
  use kappa_m, only: kap_count, kap_of, kap_j_share
  use ae_scf_m, only: ae_energies, ae_residual, ae_converged, &
-&                    ae_mix, ae_outer_peak
+&                    ae_mix
  use tfapot_m, only: tfapot
  use vout_m, only: vout
  use ldiracfb_m, only: ldiracfb
@@ -83,7 +82,7 @@
 
 !Input/output variables
  integer, intent(inout) :: ierr
- real(dp), intent(inout) :: ea(mxstate,mxkap),rpk(mxstate,mxkap)
+ real(dp), intent(inout) :: ea(mxstate,mxkap)
  real(dp), intent(inout) :: vi(mmax)
 
 !Output variables
@@ -200,9 +199,6 @@
          rhoc(:)=rhoc(:) + fj*((uu(:,1)/rr(:))**2 + (uu(:,2)/rr(:))**2)
        end if
 
-
-! find outermost peak of wavefunction
-       call ae_outer_peak(up(:,1),rr,mch,rpk(ii,ikap))
      end do
    end do
 

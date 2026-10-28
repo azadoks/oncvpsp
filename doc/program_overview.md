@@ -32,7 +32,7 @@ following major sections:
    correlation) potential is mixed, and the SCF is converged when no
    eigenvalue moves and the root mean square change of the screening
    potential over the electrons (ae_residual, as in RadialAtomicSolvers.jl)
-   is below 1e-8 Ha.  The radial solvers (lschfb, ldiracfb) take two more
+   is below 1e-11 Ha.  The radial solvers (lschfb, ldiracfb) take two more
    steps from RadialAtomicSolvers.jl.  They start the inward integration
    where the WKB decay from the turning point reaches machine precision
    (inward_start); the start at 10 times the turning point used before cut
@@ -52,7 +52,7 @@ following major sections:
    equation for -Z/r plus a constant (with the exponent
    sqrt(l(l+1)+1-(Z/c)^2)), whose logarithmic derivative at rr1 removes
    what was a 1e-5 Ha error at the default rr1 for Na.  That series converges
-   only inside r = Z/(2c^2), for every l, so points beyond a quarter of that
+   only inside r = Z/(2c^2), for every l, so points beyond an eighth of that
    (rr1 of the default mesh for H) are reached from there by RK4 in ln r on
    the same model equation.  lschfb converges
    each eigenvalue to 1e-12 relative (1e-10 left 4e-7 Ha in the 1s of U).
@@ -580,8 +580,9 @@ new basin), which is a discrete event.
 
 **Iterations.** Every iteration ends with its last correction applied,
 so the result is at the round-off of the fixed point whatever the path
-or the iteration count: the eigen-solvers stop after two passes in a
-row below 1e-12 max(|E|, 0.2), the second at the corrected energy; a
+or the iteration count: once the eigen-solvers' correction is below
+1e-12 max(|E|, 0.2), they go on at the corrected energy until it is 8
+ulps of max(|E|, 0.2) or stops halving; a
 Newton polish stops within the round-off of its residual or a few ulps
 of its unknown, and evaluates once more there; the SCF loops test the
 eigenvalues and the screening residual at the target occupations; the

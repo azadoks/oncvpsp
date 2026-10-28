@@ -76,8 +76,6 @@
 &                        XC_LDA_C_WIGNER, XC_LDA_C_HL, XC_GGA_X_PBE, &
 &                        XC_GGA_C_PBE, XC_LDA_C_VWN, XC_LDA_X_REL
  use constants_m, only: dp, mxl, mxlin, nrhomod, mxprj
-
- use constants_m, only: pi
  use input_m, only: input_t
 
 

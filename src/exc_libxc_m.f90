@@ -55,7 +55,7 @@
  real(dp), intent(out) :: vxc(mmax),exc(mmax)
 
 !Local variables
- integer :: ii, unit
+ integer :: ii
  integer ::  id(2), ifunc
  type(xc_functl_t) :: functls(2)
  integer :: nspin, irel, deriv_method

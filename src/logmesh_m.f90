@@ -55,11 +55,15 @@
 !> polynomials of degree d in ln(r), and its error is O(al**(d+1))
  integer, parameter :: lm_blend=6
 
-!> half width of the derivative stencils: 11 points, of 8th order or better
-!> for the derivatives 1..4
+!> half width of the derivative stencils: 11 points, centred of order 10
+!> for the derivatives 1 and 2 and 8 for 3 and 4, one-sided at the mesh
+!> ends of order 11-k (7 for the 4th); lm_derivs interpolates them, which
+!> limits it to order lm_blend+1=7 between the nodes
  integer, parameter :: nhalf=5
 
-!> points of the cell-integration stencils: degree 7, 8th order
+!> points of the cell-integration stencils: degree 7, 8th order at the
+!> nodes; lm_integral interpolates the cumulative integral, which limits it
+!> to order lm_blend+1=7 at limits between the nodes
  integer, parameter :: lm_ncell=8
 !> lm_ncell, under the name the module's own code uses
  integer, parameter :: ncell=lm_ncell

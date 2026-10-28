@@ -73,7 +73,7 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use constants_m, only: dp, mxl, mxlin, pi, mxprj
+ use constants_m, only: dp, mxl, mxlin, mxprj
  use kappa_m, only: kap_count, kap_of
  use pieces_m, only: piecewise_t
  use phsft_m, only: phsft_mch, phsft_pair

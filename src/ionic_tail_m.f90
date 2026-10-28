@@ -181,7 +181,7 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use constants_m, only: dp, mxstate, mxl, mxlin, mxkap, mxprj
+ use constants_m, only: dp, mxstate, mxl, mxlin, mxprj
  use kappa_m, only: kap_count, kap_j_share
  use pieces_m, only: piecewise_t
  use lschvkbb_m, only: lschvkbb
@@ -301,7 +301,7 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use constants_m, only: dp, mxstate, mxl, mxlin, mxkap, mxprj
+ use constants_m, only: dp, mxstate, mxl, mxlin, mxprj
  use pieces_m, only: piecewise_t
  use cinf_taper_m, only: cinf_taper
  use vout_m, only: vout

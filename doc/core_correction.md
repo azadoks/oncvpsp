@@ -150,17 +150,20 @@ icmod==6:
     whose six free coefficients minimize the Fourier tail of the whole
     model, int_{qlo}^{qhi} q^2 |rhomod(q)|^2 dq, with qlo = 2*sqrt(2*ecut),
     the density cutoff of ecut, and qhi = min(3*qlo, 120 bohr^-1). Where
-    that polynomial rises somewhere on [0, r_s] (checked at 201 points),
+    that polynomial rises somewhere on [0, r_s] (p' > 0 at 0, at r_s or
+    at a root of p''),
     the fill is Martins' exp(a + b r^2 + c r^4) instead, if that does not
     rise (b <= 0 and b + 2c r_s^2 <= 0); where neither is monotone, the
     radius has no model. The out file says which fill was used, and gives
     its coefficients.
 
-    r_s is the smallest grid radius, no larger than the smallest rc (or
-    the last radius with core charge, if that is smaller), whose model
-    fits slack*ecut. A model fits a cutoff e if, for every density cutoff
-    q from 2*sqrt(2*e) on (steps of 0.1 bohr^-1 up to 120 bohr^-1, 1800
-    Ha), the core charge without its Fourier components beyond q changes
+    r_s is the smallest radius, no larger than the smallest rc (or the
+    last radius with core charge, if that is smaller), whose model fits
+    slack*ecut: bracketed on the mesh, then the root of the largest error
+    less rcfact by Brent's method, so r_s moves smoothly with the inputs.
+    A model fits a cutoff e if, for every density cutoff q from
+    2*sqrt(2*e) on (steps of 0.1 bohr^-1 up to 120 bohr^-1, 1800 Ha,
+    refined by Brent's method at the maxima of the error), the core charge without its Fourier components beyond q changes
     the exchange-correlation energy by less than rcfact:
     |Exc[n + rhomod_q] - Exc[n + rhomod] - Vxc[n_bg] int (rhomod_q -
     rhomod)| within r <= 10 bohr, with n the pseudo valence charge on a
@@ -253,18 +256,20 @@ icmod==7:
     The core of icmod=6 (the same fill, inputs and cutoff test) at the
     radius whose model acts on the valence most as the all-electron core
     does: the HardnessMatchedCore of PPG, and the one to use in plane
-    waves. The radii run from the largest r_s of icmod=6 down by factors of
-    1.025 to the r_s of icmod=6 over 1.25, that r_s included (each on the
-    nearest grid point). For each, the measure is the rms over i, j of
+    waves. The radii from the largest r_s of icmod=6 down by factors of
+    1.025, and the r_s of icmod=6, choose the basin; the radius is then
+    the root, in that basin, of the measure's derivative in ln r_s (by
+    central differences), so it moves smoothly with the inputs. The
+    measure is the rms over i, j of
 
         d2Exc/dn_i dn_j [rho_v + rhomod] - d2Exc/dn_i dn_j [rho_v + rhoc]
 
     (der2exc, as icmod=3 and 4, but with the pseudo valence charge rho_v
     in both), for the probe densities: the eigenstates of the screened
     pseudo-Hamiltonian with iprj-1 nodes for every projector iprj of every
-    l, at unit occupation, if bound. The models are tested against
-    slack*ecut in the order of this measure, and the first that fits is
-    taken; ties go to the larger radius.
+    l, at unit occupation, if bound. Every radius above the r_s of
+    icmod=6 fits slack*ecut, as the cutoff a model needs falls as it
+    softens.
 
     ```
         # MODEL CORE CHARGE
@@ -273,9 +278,9 @@ icmod==7:
     ```
 
     The out file adds the r_s of icmod=6, the measure of the chosen model,
-    and a table of the radii: r_s, the fill (MT for the minimum tail, M for
-    Martins, - for none), the measure, and whether it fits (T, F, or - if
-    it was not tested), ended by a blank line. tests/data/14_Si_hm.dat
+    and a table of the radii of the basin: r_s, the fill (MT for the
+    minimum tail, M for Martins, - for none) and the measure (- where there
+    is no model), ended by a blank line. tests/data/14_Si_hm.dat
     uses it. The search costs 1.4-3 times that of icmod=6.
 
 1) S. G. Louie, S. Froyen, and M. L. Cohen, Phys. Rev. B 43, 1993 (1991).

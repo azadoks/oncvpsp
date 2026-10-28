@@ -35,7 +35,7 @@
 !! @param psp  the results of oncvpsp_run
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
- use constants_m, only: dp, mxprj
+ use constants_m, only: dp
  use input_m, only: input_t
  use results_m, only: results_t
  use linout_m, only: linout

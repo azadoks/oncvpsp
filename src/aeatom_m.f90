@@ -25,7 +25,7 @@
 
  contains
 
- subroutine aeatom(irel,c_light,nkap,na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho, &
+ subroutine aeatom(irel,c_light,nkap,na,la,ea,fa,nc,ncv,it,rhoc,rho, &
 &                  rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vext,warm,iout,ifail)
 
 !! self-consistent all-electron atom: non-relativistic or scalar-relativistic
@@ -39,7 +39,6 @@
 !! @param ea  eigenvalues, input guess (irel=2 or warm) and output;
 !!            ea(:,1) for j=l+1/2, ea(:,2) for j=l-1/2 when irel=2
 !! @param fa  occupancies
-!! @param rpk  radius of outermost peak of wave function, indexed as ea
 !! @param nc  number of core states
 !! @param ncv  number of core+valence states
 !! @param it  number of iterations (output)
@@ -78,7 +77,7 @@
 
 !Input/output variables
  integer, intent(inout) :: ierr
- real(dp), intent(inout) :: ea(mxstate,nkap),rpk(mxstate,nkap)
+ real(dp), intent(inout) :: ea(mxstate,nkap)
  real(dp), intent(inout) :: vi(mmax)
 
 !Output variables
@@ -89,11 +88,11 @@
 
  ifail=0
  if(irel==2) then
-   call relatom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho,rr,vi,zz,mmax,iexc,c_light, &
+   call relatom(na,la,ea,fa,nc,ncv,it,rhoc,rho,rr,vi,zz,mmax,iexc,c_light, &
 &               etot,eterm,res,ierr,vext,warm,iout,ifail)
    if(ifail/=0) return
  else
-   call sratom(na,la,ea,fa,rpk,nc,ncv,it,rhoc,rho,rr,vi,zz,mmax,iexc,etot, &
+   call sratom(na,la,ea,fa,nc,ncv,it,rhoc,rho,rr,vi,zz,mmax,iexc,etot, &
 &              eterm,res,ierr,irel,c_light,vext,warm,iout,ifail)
    if(ifail/=0) return
  end if

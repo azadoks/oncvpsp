@@ -39,7 +39,7 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
- use constants_m, only: dp, mxstate, mxcnf, mxl, mxlin
+ use constants_m, only: dp, mxstate, mxcnf, mxl
  use input_m, only: input_t
  use exc_libxc_m, only: have_libxc
 

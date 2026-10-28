@@ -98,7 +98,6 @@
  integer, intent(out) :: ifail
 
 !Local variables
- integer :: okb
  real(dp) :: vi(mmax)
  integer :: nin,mch
  real(dp) :: amesh,al

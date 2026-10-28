@@ -54,7 +54,6 @@
  real(dp), intent(out) :: uorder(5)
 
 !Local variables
- integer :: nder
  integer :: ii,jj
  real(dp),allocatable :: work(:,:)
 

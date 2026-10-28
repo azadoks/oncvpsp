@@ -31,7 +31,7 @@
 !Local variables
  real(qp), parameter :: xs(3) = [0.3_qp, 2.5_qp, 17.0_qp]
  real(dp), parameter :: dqs(4) = [0.0_dp, 1.0e-7_dp, 0.2_dp, 3.0_dp]
- real(qp) :: sb(8), xq, sq, dq, der(5), hq, fp, fm, aq(6, 6), wq(6), &
+ real(qp) :: sb(8), xq, sq, der(5), hq, fp, fm, aq(6, 6), wq(6), &
 &            vq(6, 6), uu(6), ss(8, 8), ws(8), vs(8, 8), err
  real(qp), parameter :: qroot(8) = [0.6479769_qp, 1.295954_qp, 2.003985_qp, &
 &   2.712016_qp, 3.936362_qp, 5.129723_qp, 6.310968_qp, 7.486094_qp]

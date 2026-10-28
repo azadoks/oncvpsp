@@ -77,7 +77,7 @@
 !! @param ifail  0, or 1 after a failure, whose message is written
  use boundstate_m, only: boundstate
  use lschvkbb_m, only: lschvkbb
- use constants_m, only: dp, mxprj, mxstate, mxl, mxlin, mxkap
+ use constants_m, only: dp, mxprj, mxstate, mxl, mxlin
  use kappa_m, only: kap_count, kap_of, kap_j_share
  use pieces_m, only: piecewise_t
 
