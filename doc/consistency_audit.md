@@ -52,6 +52,12 @@ S-2 CI job with FR and Libxc off was already there (`minimal` in
 `.github/workflows/cmake_ctest.yaml`). Still open: M-4, E-5, N-4 to N-7,
 I-5, I-6, `lm_index`, and the Fourier-Bessel convention with C-13.
 
+**Note (2026-10-28, N items).** N-4 to N-7 are done in 0c2fdc6; each item
+says how. On the way: since b225a84 psatom declared `fat(mxstate,nkap)`,
+whose second index is the configuration, not kappa, so a bounds-checked
+nr run stopped there; fixed in the same commit. Still open: M-4, E-5,
+I-5, I-6, `lm_index`, and the Fourier-Bessel convention with C-13.
+
 **What holds already.**
 - Every call of a routine with `ifail` checks it afterwards (317 calls).
 - `iout,ifail` come last in 108 of 109 routines.
@@ -132,7 +138,9 @@ There are also about 15 typos (`psuedo` ×6).
 - The dummy `e` in two internal functions.
 - About 70 sites; the compiler catches every one.
 
-**N-4. One quantity, several names.**
+**N-4. One quantity, several names.** **Done 2026-10-28** (0c2fdc6): one
+name each; `_in` for a value as read from the input, `_f` from a file;
+`input_t` named as the TOML keys.
 - `epgiven` and `ep_as_given`.
 - `iunit` and `iout`; `main_setup_m.F90:168` passes a literal 6 where
   `iout` is in scope.
@@ -146,7 +154,10 @@ There are also about 15 typos (`psuedo` ×6).
 - Three `input_t` components are abbreviations, unlike the other 52:
   `wreg`, `ecut_wt` and `budget_cut`.
 
-**N-5. One name, several meanings.**
+**N-5. One name, several meanings.** **Done 2026-10-28** (0c2fdc6):
+`mlast` for the last point integrated to, `lnrs`, `evec`, `pow`, `fill`;
+the checker's baseline is empty. `kk` and `jj` stay routine-local
+indices.
 - `uu` is ln r_s at `modcore_budget_m.f90:903`.
 - `vv` holds eigenvectors or projector values in four routines.
 - `pw` is a real power in two places.
@@ -154,7 +165,9 @@ There are also about 15 typos (`psuedo` ×6).
 - `mch` is the matching point the bound solvers return, but the point
   integrated to that other routines are given.
 
-**N-6. Argument order.**
+**N-6. Argument order.** **Done 2026-10-28** (0c2fdc6): `ldiracfb` and
+`lschfb` take `boundstate`'s order; the rule for new code is in the
+standards.
 - Pairs (`irel,c_light`, `uu,up`) always come in the same order, but
   their place in the list varies.
 - `boundstate`, `ldiracfb` and `lschfb` take the same arguments in
@@ -163,7 +176,10 @@ There are also about 15 typos (`psuedo` ×6).
 - Proposed: a rule for new code now, and reordering only when other
   work touches these routines.
 
-**N-7. Module, file and procedure names.**
+**N-7. Module, file and procedure names.** **Done 2026-10-28** (0c2fdc6):
+`ae_scf_m.f90`; `free_tail_`, `kap_` and `quad_` prefixes; the 14
+unused publics private (`dqout` removed); the prefix table in the
+standards, checked by the checker's `names` rule.
 - Public procedures carry a prefix from their module (`lm_`, `ug_`,
   `bs_`, `pw_`, `sbf_`). Nothing writes that convention down, and 9 of
   the prefixes are abbreviations.
