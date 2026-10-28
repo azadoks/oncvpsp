@@ -23,6 +23,7 @@ nav:
     - Known Issues: known_issues.md
     - Fortran Best Practices: fortran_best_practices.md
     - Coding Standard Violations: coding_standard_violations.md
+    - Consistency Audit: consistency_audit.md
     - Merging sr and fr: fr_merge_plan.md
     - Library and wrappers: library_plan.md
     - Test suite speed: test_suite_speed.md
