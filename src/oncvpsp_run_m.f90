@@ -369,7 +369,7 @@
    if(irel/=2) then
      write(iout,'(2i5,f8.2,1pe18.7)') inp%na(ii),inp%la(ii),inp%fa(ii),ea(ii,1)
    else if(inp%la(ii)==0) then
-     write(iout,'(2i5,f8.2,1p,d18.7)') inp%na(ii),inp%la(ii),inp%fa(ii),ea(ii,1)
+     write(iout,'(2i5,f8.2,1p,e18.7)') inp%na(ii),inp%la(ii),inp%fa(ii),ea(ii,1)
      ea(ii,2)=ea(ii,1)
    else
      write(iout,'(2i5,f8.2,1p,2d18.7)') inp%na(ii),inp%la(ii),inp%fa(ii), &

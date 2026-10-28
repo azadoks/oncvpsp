@@ -34,6 +34,7 @@ The rules (doc/coding_standards.md and doc/consistency_audit.md):
             logmesh_m: lm_step)
   use       a module's use statements serve its own declarations (the
             procedures use what they call)
+  format    no d edit descriptor (an exponent printed D): e or es
   kinds     no _dp literals (1.0d0) and no real64/real128 kinds outside
             constants_m
 """
@@ -368,6 +369,10 @@ def check_file(path, rel):
                             f"{sm.group(1)} {sm.group(2).strip()}".strip(),
                             ln,
                         )
+            if re.match(r"(if\s*\(.*?\)\s*)?write\s*\(", low):
+                for fmt in re.findall(r"'(\([^']*\))'", st):
+                    if re.search(r"(?<=[,(p])d\d+\.\d+", fmt.lower()):
+                        add("format", unit, "d edit descriptor", ln)
             if re.match(r"(if\s*\(.*?\)\s*)?write\s*\(", low):
                 text = " ".join(a or b for a, b in STRING.findall(st))
                 mm = re.search(r"(\w+):\s*(ERROR|WARNING)\b", text)

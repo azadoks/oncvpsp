@@ -480,7 +480,10 @@ precision.
   changes, accepting a residual stalled at its round-off floor with a
   warning. A failed reference SCF stops the run. The method follows
   RadialAtomicSolvers.jl. Commits: 35f1150, 77c1355, e0ac9fe, a9e131c,
-  b3a7c7d, fa0b95e (C-2).
+  b3a7c7d, fa0b95e (C-2). The fully-relativistic atom (`relatom`) kept
+  4.0.1's one-step mixing until the consistency audit (M-7); it mixes
+  the same way now, with the filter inside r* of the Dirac equation, and
+  converges in fewer iterations (80_Hg 30 to 18, 20_Ca 24 to 16).
 - **All-electron energy.** The total energy is now computed as RAS and
   NIST compute it, with the kinetic energy as the eigenvalue sum less
   the potential energy in the input potential. The terms are printed.
@@ -584,6 +587,13 @@ precision.
 
 #### Output
 
+- **Exponents.** The scalar- and non-relativistic outputs printed some
+  numbers with a D exponent (`1.23D-02`): the test configurations'
+  eigenvalue tables and their `AE_ref`/`PS_ref` lines, the excitation
+  error, the reference eigenvalues of the input echo, the residual
+  kinetic energy and the all-electron total energy of the `ae` programs,
+  where the fully-relativistic output printed E. All print E now; the
+  values are the same (consistency audit, E-6).
 - **Output meshes from the pieces (O-1).** 4.0.1 put the log-mesh arrays
   on the linear mesh with `dpnint`, an 8-point Lagrange interpolant
   across rc. Projectors rang beyond rc (up to 9e-4) and the kernels were

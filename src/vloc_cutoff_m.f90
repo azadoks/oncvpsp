@@ -83,6 +83,8 @@
  real(dp), allocatable :: xx(:),wx(:),fn(:),fv(:),gg(:),tt(:),wq(:)
  real(dp), allocatable :: work(:),an(:),av(:)
  real(dp) :: hr,qq,sn,sv,sq,sp,sm,cs,nel,eloc_r,eloc_q,err,qerr,vq
+!the steps of the sine recurrence between direct evaluations
+ integer, parameter :: nqseed=32
  integer :: ii,kk,nr,nq
  logical :: found
 
@@ -117,15 +119,18 @@
  nq=int(qend/dq)+1
  allocate(gg(nq),tt(nq),wq(nq),an(nq),av(nq))
 !the sums of fn and fv times sin(q r) at every q: sin((k+1)dq r) from
-!the recurrence 2 cos(dq r) sin(k dq r) - sin((k-1) dq r), whose error
-!grows by ~eps a step (3e-13 at qend), in place of nq*nr sines
+!the recurrence 2 cos(dq r) sin(k dq r) - sin((k-1) dq r), in place of
+!nq*nr sines, its two seeds evaluated directly every nqseed steps (as in
+!eresid), so its error, ~eps a step, does not grow with q
  an(:)=0.0d0
  av(:)=0.0d0
  do ii=2,nr
    cs=2.0d0*cos(dq*xx(ii))
-   sp=0.0d0
-   sq=sin(dq*xx(ii))
    do kk=2,nq
+     if(mod(kk-2,nqseed)==0) then
+       sp=sin(dble(kk-2)*dq*xx(ii))
+       sq=sin(dble(kk-1)*dq*xx(ii))
+     end if
      an(kk)=an(kk)+fn(ii)*sq
      av(kk)=av(kk)+fv(ii)*sq
      sm=cs*sq-sp

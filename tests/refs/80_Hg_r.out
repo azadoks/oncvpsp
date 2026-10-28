@@ -83,7 +83,7 @@ in any publication utilizing these pseudopotentials.
 
 
 Reference configufation results
-  iterations    30
+  iterations    18
   all-electron total energy (Ha)   -1.96513689D+04
   residual of the screening potential (Ha)  7.20E-12
   energy terms (Ha)
@@ -753,7 +753,7 @@ Test configuration 0
 
     Total energies and differences
       AE_ref= -1.96513689E+04  AE_tst= -1.96513689E+04  dif=  0.00E+00
-      PS_ref= -4.04172761E+01  PS_tst= -4.04172761E+01  dif=  2.27E-13
+      PS_ref= -4.04172761E+01  PS_tst= -4.04172761E+01  dif=  2.42E-13
       PSP excitation error= -7.82E-14
 
 Test configuration 1
@@ -20269,7 +20269,7 @@ Begin PSP_UPF
        core_correction="F"
        functional="PZ"
        z_valence="   12.00"
-       total_psenergy=" -8.0834552198295313E+01"
+       total_psenergy=" -8.0834552198326264E+01"
        rho_cutoff="  1.2250000000000000E+01"
        l_max="3"
        l_local="-1"

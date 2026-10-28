@@ -130,7 +130,7 @@
  write(iout,'(/a)') '    Constraint consistency test'
  write(iout,'(a)') '      pswf0 val/der aewf val/der     diff'
  do ii=1,ncon
-   write(iout,'(4x,2f14.8,1p,d12.2)') real(con_tst(ii),dp),cons(ii), &
+   write(iout,'(4x,2f14.8,1p,e12.2)') real(con_tst(ii),dp),cons(ii), &
 &        real(con_tst(ii),dp)-cons(ii)
  end do
 

@@ -18,12 +18,12 @@
 !> Gauss-Legendre quadrature, for the integrals of the model core's budget
 !> (modcore_budget) and of the confined atom's basis (ws_basis_m); and the
 !> norm of a radial function on the log mesh of the bound and scattering
-!> solvers.
+!> solvers; and the order-4 sum of the all-electron energies.
  module quad_m
  use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
- public :: gauss_legendre, log_norm, log_norm_to
+ public :: gauss_legendre, log_norm, log_norm_to, gregory_sum
 
  contains
 
@@ -132,5 +132,31 @@
  call lm_integral(rr,ff,nn,2*ll+2,rr(1),rq,si)
  log_norm_to=ff(1)*rr(1)/(2.0d0*gam+1.0d0)+si
  end function log_norm_to
+
+ real(dp) function gregory_sum(ff,nn)
+
+!! the sum of ff on the nodes of a uniform grid, the first three weighted
+!! (9,28,23)/24 (Gregory's start): the integral from the first node over
+!! the step, to O(h**4). The all-electron energies (vout, ae_energies)
+!! still integrate by it (doc/numerics_audit.md, 6c item 2)
+!!
+!! @param ff  values on the nodes
+!! @param nn  number of nodes, at least 3
+
+ use constants_m, only: dp
+
+!Input variables
+ integer, intent(in) :: nn
+ real(dp), intent(in) :: ff(nn)
+
+!Local variables
+ integer :: ii
+
+ gregory_sum=(9.0d0*ff(1) + 28.0d0*ff(2) + 23.0d0*ff(3))/24.0d0
+ do ii=4,nn
+   gregory_sum=gregory_sum + ff(ii)
+ end do
+ return
+ end function gregory_sum
 
  end module quad_m

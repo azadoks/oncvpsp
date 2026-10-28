@@ -239,7 +239,7 @@
  end do
  do ii=1,nvt
    if(fat(ii+nc,3)==0.0d0) cycle
-   write(iout,'(2i4,f8.4,2f14.8,1p,d12.2)') nat(ii+nc),lat(ii+nc), &
+   write(iout,'(2i4,f8.4,2f14.8,1p,e12.2)') nat(ii+nc),lat(ii+nc), &
 &        fat(ii+nc,3), &
 &   eat(ii+nc,1,3),eatp(ii,1),eatp(ii,1)-eat(ii+nc,1,3)
    ntc=ntc+1
@@ -249,11 +249,11 @@
  dtc(:)=[eaetst-etot,etsttot-epstot,eaetst-etot-etsttot+epstot]
 
  write(iout,'(/a)') '    Total energies and differences'
- write(iout,'(a,1p,d16.8,a,d16.8,a,d10.2)') '      AE_ref=',etot, &
+ write(iout,'(a,1p,e16.8,a,e16.8,a,e10.2)') '      AE_ref=',etot, &
 & '  AE_tst=',eaetst,'  dif=',eaetst-etot
- write(iout,'(a,1p,d16.8,a,d16.8,a,d10.2)') '      PS_ref=',epstot, &
+ write(iout,'(a,1p,e16.8,a,e16.8,a,e10.2)') '      PS_ref=',epstot, &
 & '  PS_tst=',etsttot,'  dif=',etsttot-epstot
- write(iout,'(a,1p,d10.2)') '      PSP excitation error=', &
+ write(iout,'(a,1p,e10.2)') '      PSP excitation error=', &
 & eaetst-etot-etsttot+epstot
  return
  end subroutine write_results

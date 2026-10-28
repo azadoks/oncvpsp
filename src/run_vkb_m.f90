@@ -287,7 +287,7 @@
        do jj=2,np
          do ii=1,jj-1
            if(irel==2) then
-             write(iout,'(2i4,1p,d14.4)') ii,jj,bb(ii,jj)-bb(jj,ii)
+             write(iout,'(2i4,1p,e14.4)') ii,jj,bb(ii,jj)-bb(jj,ii)
            else
              write(iout,'(2i4,1p,e14.4)') ii,jj,bb(ii,jj)-bb(jj,ii)
            end if

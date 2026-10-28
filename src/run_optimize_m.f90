@@ -319,7 +319,7 @@
 &                wreg,optdg(1,iprj),iout,ifail)
    if(ifail/=0) return
 
-   write(iout,'(a,1p,d10.2,a)') '    Residual kinetic energy error=', &
+   write(iout,'(a,1p,e10.2,a)') '    Residual kinetic energy error=', &
 &        eresidmin,' Ha'
 !the optimized coefficients from the quad-precision basis vectors (those
 !of optimize, from the rounded ones, carry their 1e4 cancellation)
@@ -399,7 +399,7 @@
    write(iout,'(a,f12.8,a,f12.8,a,f12.8)') '      Fourier',ekin_anal, &
 &    '  r-space=',ekin_num,'  ratio=',ekin_anal/ekin_num
    write(iout,'(a)') '    Potential consistency test at r_c'
-   write(iout,'(a,f12.8,a,f12.8,a,1p,d10.2)') '    "vpsp"=',work(irc), &
+   write(iout,'(a,f12.8,a,f12.8,a,1p,e10.2)') '    "vpsp"=',work(irc), &
 &        '  vae=', &
 &    vae(irc),'  difference=',vae(irc)-work(irc)
 

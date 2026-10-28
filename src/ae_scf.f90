@@ -95,6 +95,7 @@
 
  use constants_m, only: dp
  use logmesh_m, only: lm_head, lm_step
+ use quad_m, only: gregory_sum
 
 !Input variables
  integer, intent(in) :: mmax
@@ -167,11 +168,7 @@
 !Output variables
  real(dp) :: radint
 
- radint=(9.0d0*ff(1) + 28.0d0*ff(2) + 23.0d0*ff(3))/24.0d0
- do ii=4,mmax
-   radint=radint + ff(ii)
- end do
- radint=al*radint + lm_head(ff(1),rho(1),rho(2),al,pw)
+ radint=al*gregory_sum(ff,mmax) + lm_head(ff(1),rho(1),rho(2),al,pw)
 
  return
  end function radint
@@ -182,7 +179,7 @@
 
 !! next input screening potential by Anderson mixing of the last ndep
 !! iterations, with the residual filtered in ln(r) near the nucleus for the
-!! scalar-relativistic equation (KerkerMixing of RadialAtomicSolvers.jl)
+!! relativistic equations (KerkerMixing of RadialAtomicSolvers.jl)
 !!
 !! Inside r* = (1-gamma)/zz ~ zz/(2c**2) the relativistic mass is set by
 !! the potential, which with a GGA closes a loop potential -> orbital
@@ -200,7 +197,8 @@
 !! @param zz  atomic number
 !! @param rr  log radial mesh
 !! @param mmax  dimension of log radial grid
-!! @param irel  0 non-relativistic, 1 scalar-relativistic
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully
+!!              relativistic
 !! @param c_light  speed of light (Hartree atomic units)
 
  use constants_m, only: dp

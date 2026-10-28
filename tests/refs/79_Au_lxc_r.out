@@ -93,7 +93,7 @@ LXC     Perdew & Zunger (LDA)
 
 
 Reference configufation results
-  iterations    28
+  iterations    19
   all-electron total energy (Ha)   -1.90375449D+04
   residual of the screening potential (Ha)  8.08E-12
   energy terms (Ha)
@@ -770,7 +770,7 @@ Test configuration 0
 
     Total energies and differences
       AE_ref= -1.90375449E+04  AE_tst= -1.90375449E+04  dif=  0.00E+00
-      PS_ref= -1.35765230E+02  PS_tst= -1.35765230E+02  dif=  3.69E-13
+      PS_ref= -1.35765230E+02  PS_tst= -1.35765230E+02  dif=  2.84E-14
       PSP excitation error=  1.14E-13
 
 Test configuration 1

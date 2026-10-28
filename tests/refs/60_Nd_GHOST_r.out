@@ -77,7 +77,7 @@ LXC     [1] J. P. Perdew, K. Burke, and M. Ernzerhof, Phys. Rev. Lett. 77, 3865 
 
 
 Reference configufation results
-  iterations    26
+  iterations    22
   all-electron total energy (Ha)   -9.62980932D+03
   residual of the screening potential (Ha)  9.75E-12
   energy terms (Ha)
@@ -764,7 +764,7 @@ Test configuration 0
 
     Total energies and differences
       AE_ref= -9.62980932E+03  AE_tst= -9.62980932E+03  dif=  0.00E+00
-      PS_ref= -3.42906366E+01  PS_tst= -3.42906366E+01  dif=  3.55E-14
+      PS_ref= -3.42906366E+01  PS_tst= -3.42906366E+01  dif=  7.11E-15
       PSP excitation error=  0.00E+00
 
 DATA FOR PLOTTING

@@ -49,6 +49,7 @@
  use constants_m, only: dp, pi
  use logmesh_m, only: lm_head, lm_step
  use xc_dispatch_m, only: exc_dispatch
+ use quad_m, only: gregory_sum
 
 !Input variables
  integer, intent(in) :: iexc,mmax,mode
@@ -113,12 +114,7 @@
    foutv(ii)=rho(ii)*vo(ii)*rr(ii)**3
  end do
 
- eeel=(9.0d0*foutv(1) + 28.0d0*foutv(2) &
-&   + 23.0d0*foutv(3))/24.0d0
- do ii=4,mmax
-   eeel=eeel + foutv(ii)
- end do
- eeel=al*eeel + lm_head(foutv(1),rho(1),rho(2),al,3.0d0)
+ eeel=al*gregory_sum(foutv,mmax) + lm_head(foutv(1),rho(1),rho(2),al,3.0d0)
 
  if(mode == 0) then
    do ii = 1, mmax
@@ -147,11 +143,7 @@
  do ii=1,mmax
    foutx(ii)=rho(ii)*difxc(ii)*rr(ii)**3
  end do
- eexc=(9.0d0*foutx(1) + 28.0d0*foutx(2) &
-&   + 23.0d0*foutx(3))/24.0d0
- do ii=4,mmax
-   eexc=eexc + foutx(ii)
- end do
+ eexc=gregory_sum(foutx,mmax)
 
  if(mode == 1 .and. rhoc(1) /= 0.0d0) then
    call exc_dispatch(iexc,c_light,al,rhoc,vxcd,excca,rr,mmax,'vout')
@@ -159,11 +151,7 @@
    do ii=1,mmax
      foutfc(ii)=rhoc(ii)*(exca(ii) - excca(ii))*rr(ii)**3
    end do
-   eexc=eexc + (9.0d0*foutfc(1) + 28.0d0*foutfc(2) &
-&     + 23.0d0*foutfc(3))/24.0d0
-   do ii=4,mmax
-     eexc=eexc + foutfc(ii)
-   end do
+   eexc=eexc + gregory_sum(foutfc,mmax)
  end if
 
  eexc=al*eexc + lm_head(foutx(1),rho(1),rho(2),al,3.0d0)

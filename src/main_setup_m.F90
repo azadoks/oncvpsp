@@ -234,7 +234,7 @@
 &        ': ERROR all-electron reference atom not converged'
    error stop 1
  end if
- write(iout,'(a,1p,d18.8)') '  all-electron total energy (Ha)',etot
+ write(iout,'(a,1p,e18.8)') '  all-electron total energy (Ha)',etot
  write(iout,'(a,1p,e10.2)') '  residual of the screening potential (Ha)',res
  write(iout,'(a)') '  energy terms (Ha)'
  write(iout,'(a,f22.10)') '    total               ',etot

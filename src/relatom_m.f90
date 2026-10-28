@@ -65,7 +65,7 @@
  use constants_m, only: dp, mxstate, mxkap, ae_tolres
  use kappa_m, only: kap_count, kap_of, j_share
  use ae_scf_m, only: ae_energies, ae_residual, ae_converged, &
-&                    ae_anderson1, ae_outer_peak
+&                    ae_mix, ae_outer_peak
  use tfapot_m, only: tfapot
  use vout_m, only: vout
  use ldiracfb_m, only: ldiracfb
@@ -103,19 +103,22 @@
  integer :: nflat
 
  real(dp), allocatable :: uu(:,:),up(:,:)
- real(dp), allocatable :: vsi(:),vso(:),vsi1(:),vso1(:),vxc(:)
+ real(dp), allocatable :: vsi(:),vso(:),vxc(:)
+ real(dp), allocatable :: hv(:,:),hr(:,:)
 
 ! blend parameter for Anderson iterative potential mixing
- real(dp), parameter ::  bl=0.5d0
+!the depth of the mixing's history (ae_mix)
+ integer, parameter :: ndep=8
 ! convergence threshold of the residual and the eigenvalues (constants_m)
  real(dp), parameter ::  tolres=ae_tolres
 
  ifail=0
  allocate(uu(mmax,2),up(mmax,2))
- allocate(vsi(mmax),vso(mmax),vsi1(mmax),vso1(mmax),vxc(mmax))
+ allocate(vsi(mmax),vso(mmax),vxc(mmax))
+ allocate(hv(mmax,ndep),hr(mmax,ndep))
 
 ! why all this is necessary is unclear, but it seems to be
- uu(:,:)=0.0d0; up(:,:)=0.0d0; vso(:)=0.0d0; vsi1(:)=0.0d0; vso1(:)=0.0d0
+ uu(:,:)=0.0d0; up(:,:)=0.0d0; vso(:)=0.0d0; hv(:,:)=0.0d0; hr(:,:)=0.0d0
  vxc(:)=0.0d0
  eeel=0.0d0; eexc=0.0d0; et=0.0d0
  sf=0.0d0; eeig=0.0d0; zion=0.0d0
@@ -224,9 +227,8 @@
    call ae_converged(it,res,tolres,resbest,nflat,convg,iout)
    if(convg) exit
 
-! generate next iteration using d. g. anderson''s
-! method
-   call ae_anderson1(it>1,vsi,vso,vsi1,vso1,rr,mmax,bl)
+! next input potential, by Anderson mixing of the last ndep iterations
+   call ae_mix(it,vsi,vso,hv,hr,ndep,zz,rr,mmax,2,c_light)
    do ii=1,mmax
      vi(ii)=vsi(ii) - zz/rr(ii)
    end do
@@ -242,7 +244,8 @@
  end if
 
  deallocate(uu,up)
- deallocate(vsi,vso,vsi1,vso1,vxc)
+ deallocate(vsi,vso,vxc)
+ deallocate(hv,hr)
  return
 
  end subroutine relatom
