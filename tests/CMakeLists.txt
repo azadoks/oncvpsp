@@ -569,6 +569,20 @@ if (ONCVPSP_WITH_TOML)
     endforeach ()
 endif ()
 
+# invariance_test(NAME REL INPUT ARGS...): scripts/invariance_test.py on oncvpsp<REL>.x and
+# tests/data/toml/INPUT.toml with ARGS, labelled toml and REL; not added without TOML or, for REL r,
+# without the fully-relativistic executables, and disabled without pyoncvpsp
+function(invariance_test name rel input)
+    if (NOT ONCVPSP_WITH_TOML OR (rel STREQUAL "r" AND NOT ONCVPSP_WITH_FR))
+        return()
+    endif ()
+    add_test(NAME ${name}
+        COMMAND ${test_python} "${scripts}/invariance_test.py" $<TARGET_FILE:oncvpsp${rel}>
+            "${data}/toml/${input}.toml" ${ARGN} --workdir "${CMAKE_CURRENT_BINARY_DIR}/${name}")
+    set_tests_properties(${name} PROPERTIES LABELS "toml;${rel}")
+    oncvpsp_compares(${name})
+endfunction()
+
 # The onset of the well of the well states (well_onset in [pseudopotentials]): the same well states on
 # two log meshes, and the input sets it (see scripts/well_onset_test.sh)
 if (ONCVPSP_WITH_TOML)
@@ -591,12 +605,9 @@ if (ONCVPSP_WITH_TOML)
         string(REPLACE ":" ";" tail_test "${tail_test}")
         list(GET tail_test 0 rel)
         list(GET tail_test 1 test_name)
-        add_test(NAME well_tail_${rel}_${test_name}
-            COMMAND ${test_python} "${scripts}/invariance_test.py" $<TARGET_FILE:oncvpsp${rel}>
-                "${data}/toml/${test_name}.toml" pseudopotentials.well_onset 1.0306 1.0 1.09 2.5
-                --set "pseudopotentials.well_tail=\"free\"" --groups kernel,vloc,ld,ecut,ghost
-                --tol 1e-12 --workdir "${CMAKE_CURRENT_BINARY_DIR}/well_tail_${rel}_${test_name}")
-        set_tests_properties(well_tail_${rel}_${test_name} PROPERTIES LABELS "toml;${rel}")
+        invariance_test(well_tail_${rel}_${test_name} ${rel} ${test_name}
+            pseudopotentials.well_onset 1.0306 1.0 1.09 2.5
+            --set "pseudopotentials.well_tail=\"free\"" --groups kernel,vloc,ld,ecut,ghost --tol 1e-12)
     endforeach ()
 endif ()
 
@@ -609,22 +620,16 @@ if (ONCVPSP_WITH_TOML)
         string(REPLACE ":" ";" rmax_test "${rmax_test}")
         list(GET rmax_test 0 rel)
         list(GET rmax_test 1 test_name)
-        add_test(NAME well_rmax_${rel}_${test_name}
-            COMMAND ${test_python} "${scripts}/invariance_test.py" $<TARGET_FILE:oncvpsp${rel}>
-                "${data}/toml/${test_name}.toml" log_mesh.rmax 45.0 60.0 80.0
-                --set "pseudopotentials.ep=[0.0,0.0,0.02]" --groups kernel,vloc,tests,ld,ecut,ghost
-                --tol 1e-7 --workdir "${CMAKE_CURRENT_BINARY_DIR}/well_rmax_${rel}_${test_name}")
-        set_tests_properties(well_rmax_${rel}_${test_name} PROPERTIES LABELS "toml;${rel}")
+        invariance_test(well_rmax_${rel}_${test_name} ${rel} ${test_name}
+            log_mesh.rmax 45.0 60.0 80.0
+            --set "pseudopotentials.ep=[0.0,0.0,0.02]" --groups kernel,vloc,tests,ld,ecut,ghost
+            --tol 1e-7)
     endforeach ()
     # the confined well (well_tail = "confined"), whose d state at 0.02 Ha is held by a wall 1 Ha
     # high at 39 bohr
-    add_test(NAME well_rmax_confined_sr_14_Si
-        COMMAND ${test_python} "${scripts}/invariance_test.py" $<TARGET_FILE:oncvpspsr>
-            "${data}/toml/14_Si.toml" log_mesh.rmax 45.0 60.0 80.0
-            --set "pseudopotentials.ep=[0.0,0.0,0.02]" --set "pseudopotentials.well_tail=\"confined\""
-            --groups kernel,vloc,tests,ld,ecut,ghost
-            --tol 1e-7 --workdir "${CMAKE_CURRENT_BINARY_DIR}/well_rmax_confined_sr_14_Si")
-    set_tests_properties(well_rmax_confined_sr_14_Si PROPERTIES LABELS "toml;sr")
+    invariance_test(well_rmax_confined_sr_14_Si sr 14_Si log_mesh.rmax 45.0 60.0 80.0
+        --set "pseudopotentials.ep=[0.0,0.0,0.02]" --set "pseudopotentials.well_tail=\"confined\""
+        --groups kernel,vloc,tests,ld,ecut,ghost --tol 1e-7)
 endif ()
 
 # The normalization of the well states (well_norm) scales each state, which the kernels do not see:
@@ -635,12 +640,10 @@ if (ONCVPSP_WITH_TOML)
         string(REPLACE ":" ";" norm_test "${norm_test}")
         list(GET norm_test 0 rel)
         list(GET norm_test 1 tail)
-        add_test(NAME well_norm_${rel}_${tail}_14_Si
-            COMMAND ${test_python} "${scripts}/invariance_test.py" $<TARGET_FILE:oncvpsp${rel}>
-                "${data}/toml/14_Si.toml" pseudopotentials.well_norm "\"space\"" "\"rc\""
-                --set "pseudopotentials.well_tail=\"${tail}\"" --groups kernel,vloc,core,tests,ld,ghost
-                --tol 1e-11 --workdir "${CMAKE_CURRENT_BINARY_DIR}/well_norm_${rel}_${tail}_14_Si")
-        set_tests_properties(well_norm_${rel}_${tail}_14_Si PROPERTIES LABELS "toml;${rel}")
+        invariance_test(well_norm_${rel}_${tail}_14_Si ${rel} 14_Si
+            pseudopotentials.well_norm "\"space\"" "\"rc\""
+            --set "pseudopotentials.well_tail=\"${tail}\"" --groups kernel,vloc,core,tests,ld,ghost
+            --tol 1e-11)
     endforeach ()
 endif ()
 
