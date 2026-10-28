@@ -44,6 +44,14 @@ digit of a number printed with few digits (73_Ta's `r_coulomb` with the
 reference LAPACK); both fixed in 8f4d1db. M-1 was fixed with `volatile`
 rather than a flag, at 1.5-2 % of the run time of the study build.
 
+**Note (2026-10-28, later).** E-3, E-4 and N-2 are done in 8b47258 and
+S-3 to S-7 in b38ab3d to 273be9a; the summary table and the S items mark
+each. The checker's baseline is down from 309 findings to 19, all of them
+glossary names that hold something else in their routine (N-4, N-5). The
+S-2 CI job with FR and Libxc off was already there (`minimal` in
+`.github/workflows/cmake_ctest.yaml`). Still open: M-4, E-5, N-4 to N-7,
+I-5, I-6, `lm_index`, and the Fourier-Bessel convention with C-13.
+
 **What holds already.**
 - Every call of a routine with `ifail` checks it afterwards (317 calls).
 - `iout,ifail` come last in 108 of 109 routines.
@@ -79,14 +87,14 @@ regenerated with `scripts/ref_patch.py`.
 | 8 | I-2 | 14 declarations use a bound before declaring it; `-std=f2008` rejects them | reorder; `-std=f2008` in Debug; **done 2026-10-28** (8f4d1db) | no |
 | 9 | E-2 | `iout` under `!Output variables` (101) and 19 other label mismatches | scripted move; **done 2026-10-28** (b225a84) | no |
 | 10 | M-2 | the mesh step re-derived 5 ways at 30 sites; index from radius at 8 | public `lm_step`, `lm_index`; **mesh step done 2026-10-28** (b225a84, `lm_step`); `lm_index` open | round-off |
-| 11 | E-3 | error-message form: ~47 wrong prefixes, ~90 without `/`, 49 other formats | message checker, then fix; open (in the checker's baseline) | error text only |
+| 11 | E-3 | error-message form: ~47 wrong prefixes, ~90 without `/`, 49 other formats | message checker, then fix; **done 2026-10-28** (8b47258; the 4.0.1 texts kept, in `scripts/messages_4.0.1.txt`) | error text only |
 | 12 | M-4 | Brent twice (`lm_root` is a copy of `ug_brent`); 6 hand-written polish loops, 5 stopping rules | one Brent in a leaf module; open | no |
 | 13 | M-5 | tolerances and floors restated per routine (`eps=1.0d-12` in 5 solvers, the 0.2 floor ×6) | named constants; **done 2026-10-28** (b225a84) | no |
-| 14 | N-2 | `@param` texts drift (310 lines against a 29-name glossary); units stated for a minority | glossary + checker; open | no |
+| 14 | N-2 | `@param` texts drift (310 lines against a 29-name glossary); units stated for a minority | glossary + checker; **done 2026-10-28** (8b47258: `doc/glossary.md`, 46 names; 19 findings left in the baseline) | no |
 | 15 | I-3 | kappa extent `nkap`/`mxkap`/`2`; 4 idioms for the kappa count; `mxprj` both parameter and argument | one idiom; **done 2026-10-28** (b225a84) | no |
-| 16 | E-4 | 64 module procedures without `@param`, 56 without section labels, 12 descriptions fortls cannot show | write them file by file; open (in the checker's baseline) | no |
+| 16 | E-4 | 64 module procedures without `@param`, 56 without section labels, 12 descriptions fortls cannot show | write them file by file; **done 2026-10-28** (8b47258) | no |
 | 17 | N-3 | one-letter type components (`config_t%n`, `%l`, `%f`, ...) against rule 5 | rename (~70 sites); **done 2026-10-28** (b225a84) | no |
-| 18 | S-3 | test names in 6 patterns; labels mix test kind and treatment | one registration helper; open | no |
+| 18 | S-3 | test names in 6 patterns; labels mix test kind and treatment | one registration helper; **done 2026-10-28** (b38ab3d) | no |
 | 19 | I-4 | `use` at module level in 53 modules; `implicit none` repeated in 101 module procedures | move; fortitude S201; **done 2026-10-28** (8f4d1db, b225a84) | no |
 | 20 | M-6 | three Fourier–Bessel conventions; four j_l routines; sbfq still normalised by j_0 (C-13) | document; fix C-13; **re-seeding done 2026-10-28** (8ec3d7f); the convention and C-13 open | DIAGNOSTICS |
 | 21 | E-5 | `confine_*` stops (`error stop 1`) on a callee's `ifail` instead of passing it on (9) | pass `ifail` on; open | no |
@@ -448,7 +456,10 @@ There are also about 15 typos (`psuedo` ×6).
 - Proposed: one registration helper that generates the name and a
   `kind;treatment` label pair.
 
-**S-4. Relativity names.**
+**S-4. Relativity names.** **Done 2026-10-28** (e4275cc): the program
+sources and names follow the executables, the messages start with the
+executable's name, and `developer_setup.md` states the two spellings. The
+executables, `run_r.sh` and the `_r.out` references keep their names.
 - Each treatment is spelled about four ways across the executables,
   targets, source files, program names, test names, labels, reference
   files and docs.
@@ -459,7 +470,10 @@ There are also about 15 typos (`psuedo` ×6).
 - In DIAGNOSTICS, `_r` means a radius (`ld_r`, `ghost_r`).
 - 11 error prefixes name no routine, among them `run_plot_r`.
 
-**S-5. Script code.**
+**S-5. Script code.** **Done 2026-10-28** (f4887ff): `scripts/test_lib.sh`,
+the heredocs in `.py` files, `scripts_common.py` (no third-party `toml`),
+no `sys.path` patches, named tolerances, and the ctest
+`unit_kernel_agreement`.
 - About 200 lines of Python sit in shell heredocs that no linter
   checks, 145 of them in `confine_test.sh`.
 - The shell boilerplate is written several ways.
@@ -472,12 +486,15 @@ There are also about 15 typos (`psuedo` ×6).
   comparison so that it needs only the standard library. Proposed: a
   test that checks the two agree.
 
-**S-6. Fortran unit tests.**
+**S-6. Fortran unit tests.** **Done 2026-10-28** (b414b92):
+`tests/unit/unit_check_m.f90` and `constants_m` in all 20 tests.
 - The same `check()` helper is copied into 8 files.
 - All 20 take `dp` from `iso_fortran_env`, and 3 define `pi` locally,
   against Kinds and constants.
 
-**S-7. Docs.**
+**S-7. Docs.** **Done 2026-10-28** (8b47258 for the stale names, the
+pinned `numerics_audit.md:189` left as it is; 273be9a for the ctest
+`lint_docrefs`).
 - Six live docs name things that no longer exist:
   - `core_correction.md:57` `modcore.f90`;
   - `program_overview.md:44` `SR_SHOOTING_VPRIME.md`;
