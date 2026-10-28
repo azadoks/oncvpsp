@@ -29,8 +29,8 @@ pwscf_exc.txt in this directory.
 
 The built-in exc*.f90 rouitines for iexc=1-4 have been tweaked, essentially
 adding more significant figures to constants, so that the output they
-generate and that using libxc look essentially identical to the compare.sh
-test.
+generate and that using libxc look essentially identical to the comparison
+of the test outputs (scripts/compare_output.py).
 
 iexc=6 (excvwn_m.f90, Slater exchange and VWN correlation) agrees with
 -001007 to the printed digits.  iexc=7 adds the relativistic exchange of

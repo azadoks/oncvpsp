@@ -44,15 +44,15 @@
 !! outward integration from the series at the origin to mlast at the
 !! energy ee, counting the nodes of the large component from the 5th point
 !!
-!! @param ll  angular-momentum quantum number
-!! @param kap  =l, -(l+1) for j=l -/+ 1/2
+!! @param ll  angular momentum
+!! @param kap  Dirac kappa, l or -(l+1) for j = l -/+ 1/2
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param ee  energy
 !! @param zz  atomic number
 !! @param al  log of the mesh ratio
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param vv  local atomic potential
-!! @param mmax  size of log grid
+!! @param mmax  size of the log radial mesh
 !! @param mlast  last point of the integration
 !! @param gu  large component (*rr) on 1..mlast
 !! @param fu  small component (*rr) on 1..mlast

@@ -29,40 +29,61 @@
 
 !> the pseudopotential
  type :: pseudo_t
-!> the atom: its symbol, atomic number and ion charge, the equation (irel
-!> 0 non-, 1 scalar-, 2 fully-relativistic), the number of kappas per l
-!> (2 when fully relativistic), the exchange-correlation functional and
-!> the speed of light of the run (relativity_m)
+!> atomic symbol
    character(len=2) :: atsym='  '
-   real(dp) :: zz=0.0d0,zion=0.0d0,c_light=0.0d0
-   integer :: irel=0,nkap=0,iexc=0
-!> the log radial mesh and its size
+!> atomic number
+   real(dp) :: zz=0.0d0
+!> ion charge
+   real(dp) :: zion=0.0d0
+!> speed of light (Hartree atomic units) of the run (relativity_m)
+   real(dp) :: c_light=0.0d0
+!> 0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+   integer :: irel=0
+!> number of kappas per l: 1, or 2 when fully relativistic
+   integer :: nkap=0
+!> exchange-correlation functional
+   integer :: iexc=0
+!> size of the log radial mesh
    integer :: mmax=0
+!> log radial mesh (bohr)
    real(dp), allocatable :: rr(:)
-!> the largest l of the projectors, l of the local potential (4 for the
-!> polynomial), the number of projectors of each l, and the largest core
-!> radius
-   integer :: lmax=0,lloc=0,nproj(mxlin+1)=0
+!> the largest l of the projectors
+   integer :: lmax=0
+!> l of the local potential, 4 for the polynomial
+   integer :: lloc=0
+!> number of projectors for each l
+   integer :: nproj(mxlin+1)=0
+!> largest core radius (bohr)
    real(dp) :: rcmax=0.0d0
-!> the projectors: their coefficients (mxprj,mxl+1,nkap), on the mesh
-!> (mmax,mxprj,mxl+1,nkap; not in the data file) and as pieces
-!> (mxprj,mxl+1,nkap)
-   real(dp), allocatable :: evkb(:,:,:),vkb(:,:,:,:)
+!> coefficients of the projectors (Ha) (mxprj,mxl+1,nkap)
+   real(dp), allocatable :: evkb(:,:,:)
+!> the projectors on the mesh (mmax,mxprj,mxl+1,nkap; not in the data
+!> file)
+   real(dp), allocatable :: vkb(:,:,:,:)
+!> the projectors as pieces (mxprj,mxl+1,nkap)
    type(piecewise_t), allocatable :: vkbpw(:,:,:)
 !> fully relativistic (made for any irel, written for nkap=2): the
-!> scalar-relativistic and spin-orbit projectors' coefficients and pieces
-!> (2*mxprj,mxl+1; not in the data file)
-   real(dp), allocatable :: esr(:,:),eso(:,:)
-   type(piecewise_t), allocatable :: vsrpw(:,:),vsopw(:,:)
-!> the screened local potential's pieces, and the unscreened semi-local
-!> potentials (mmax,mxl+2), vpuns(:,lloc+1) the local one (the only one
-!> in the data file)
+!> scalar-relativistic projectors' coefficients (2*mxprj,mxl+1; not in
+!> the data file)
+   real(dp), allocatable :: esr(:,:)
+!> the spin-orbit projectors' coefficients, as esr
+   real(dp), allocatable :: eso(:,:)
+!> the scalar-relativistic projectors as pieces (2*mxprj,mxl+1; not in
+!> the data file)
+   type(piecewise_t), allocatable :: vsrpw(:,:)
+!> the spin-orbit projectors as pieces, as vsrpw
+   type(piecewise_t), allocatable :: vsopw(:,:)
+!> the screened local potential's pieces
    type(piecewise_t) :: vlocpw
+!> the unscreened semi-local potentials (mmax,mxl+2), vpuns(:,lloc+1)
+!> the local one (the only one in the data file)
    real(dp), allocatable :: vpuns(:,:)
-!> the valence pseudo-density of the reference configuration, the model
-!> core charge and its first four derivatives (mmax,nrhomod; only the
-!> charge in the data file), and their pieces (not in the data file)
-   real(dp), allocatable :: rho(:),rhomod(:,:)
+!> the valence pseudo-density of the reference configuration
+   real(dp), allocatable :: rho(:)
+!> the model core charge and its first four derivatives (mmax,nrhomod;
+!> only the charge in the data file)
+   real(dp), allocatable :: rhomod(:,:)
+!> the pieces of rhomod (not in the data file)
    type(piecewise_t) :: corepw(nrhomod)
  end type pseudo_t
 

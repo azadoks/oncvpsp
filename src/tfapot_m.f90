@@ -28,11 +28,10 @@
 ! tfapot
  function tfapot(rr,zz)
 
-!! generalized Thomas-Fermi atomic potential
+!! generalized Thomas-Fermi atomic potential at rr (Ha)
 !!
 !! @param rr  radius (bohr)
 !! @param zz  atomic number
-!! @return returned potential at rr (Ha)
 !!
 !! ...to an article of N. H. March ( "The Thomas-Fermi Approximation in
 !! Quantum Mechanics", Adv. Phys. 6, 1 (1957)). He has the formula,

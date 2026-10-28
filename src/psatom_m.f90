@@ -31,32 +31,32 @@
 &           c_light,etot,nproj,vpuns,lloc,vlocpw,vkbpw,evkb,ierr,nkap,vext, &
 &           iout,ifail)
 
-!! @param na  principal quantum number array, dimension nv
-!! @param la  angular-momenta
+!! @param na  principal quantum numbers, dimension nv
+!! @param la  angular momenta
 !! @param ea  eigenvalues (input starting guess, output), ea(:,1) for j=l+1/2,
 !!            ea(:,2) for j=l-1/2 when nkap=2
 !! @param fat  occupancies, fat(:,1) reference and fat(:,2) new configuration
 !! @param nv  number of valence states
 !! @param it  number of iterations (output)
-!! @param rhoc  core charge (model core charge of the pseudopotential)
+!! @param rhoc  core charge density (model core charge of the pseudopotential)
 !! @param rho  valence charge, input all-electron starting guess, output
 !!             self-consistent pseudo valence charge
-!! @param rr  log radial mesh
-!! @param rcmax  maximum core radius for psp
-!! @param mmax  size of log grid
-!! @param iexc  exchange-correlation function to be used
+!! @param rr  log radial mesh (bohr)
+!! @param rcmax  largest core radius (bohr)
+!! @param mmax  size of the log radial mesh
+!! @param iexc  exchange-correlation functional
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param etot  pseudoatom total energy (output)
-!! @param nproj  number of VKB projectora to use for each l
+!! @param nproj  number of projectors for each l
 !! @param vpuns  unscreened semi-local pseudopotentials (plus differenv vloc if
 !!               lloc==4)
-!! @param lloc  index-1 of local potential
-!! @param vlocpw  the screened local potential's pieces
-!! @param vkbpw  Vanderbilt-Kleinman-Bylander projectors as functions of
-!!               pieces, last index 1 for j=l+1/2, 2 for j=l-1/2 when nkap=2
-!! @param evkb  VKB projector coefficients, last index as for vkbpw
+!! @param lloc  l of the local potential, 4 for the polynomial
+!! @param vlocpw  the screened local potential as pieces
+!! @param vkbpw  the projectors as pieces, last index 1 for j=l+1/2, 2 for
+!!               j=l-1/2 when nkap=2
+!! @param evkb  coefficients of the projectors, last index as for vkbpw
 !! @param ierr  non-zero return if error
-!! @param nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
+!! @param nkap  number of kappas per l: 1, or 2 for irel=2
 !! @param vext  external potential the orbitals also see (a confining wall,
 !!              oncvpsp_confine.x, smooth, so outwf_m takes it as part of
 !!              the screening), zero for the free atom; nonzero, it is

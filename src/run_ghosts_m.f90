@@ -60,21 +60,21 @@
 !! has a corresponding drop of pi  (arctan(log der), of course).
 !!
 !! @param lmax  maximum angular momentum
-!! @param la  angular momenta of all-electron states
+!! @param la  angular momenta
+!! @param ea  all-electron bound-state energies (Ha)
 !! @param nc  number of core states
 !! @param nv  number of valence states
-!! @param ea  all-electron bound-state energies
-!! @param lloc  l for local potential
-!! @param rc  core radii
-!! @param vlocpw  the screened local potential's pieces
-!! @param vkbpw  VKB projectors as functions of pieces
+!! @param lloc  l of the local potential, 4 for the polynomial
+!! @param rc  core radius (bohr) of each l
 !! @param qmsbf  maximum q in sbf basis for each l
-!! @param evkb  coefficients of VKB projectors
-!! @param nproj  number of vkb projectors for each l
-!! @param rr  log radial grid
+!! @param vlocpw  the screened local potential as pieces
+!! @param vkbpw  the projectors as pieces
+!! @param evkb  coefficients of the projectors (Ha)
+!! @param nproj  number of projectors for each l
+!! @param rr  log radial mesh (bohr)
 !! @param vp  semi-local pseudopotentials (vp(:,5) is local potential if linear
 !!            comb.)
-!! @param mmax  size of radial grid
+!! @param mmax  size of the log radial mesh
 !! @param ngh  rows of the bound-state test per l
 !! @param ghn  their principal quantum numbers
 !! @param ghe  their energies: (1) of the nonlocal Schroedinger equation
@@ -288,7 +288,7 @@
 ! a barrier state below the cutoff that does not converge, a high one on
 ! a coarse mesh whose wavelength at the barrier is a few mesh steps: the
 ! basis stops below it, and the ghost test covers energies up to there
-       write(iout,'(/a,i0,a,i0,a,f12.6,a/a,f10.2,a)') &
+       write(iout,'(/a,i0,a,i0,a,f12.6,a/a,f12.6,a)') &
 &              'run_ghosts: WARNING barrier state n=',nn,' l=',ll, &
 &              ' near ',ee,' Ha not converged;', &
 &              'run_ghosts: WARNING basis cut there, ghost test to ', &

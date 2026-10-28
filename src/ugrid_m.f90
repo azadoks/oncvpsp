@@ -69,7 +69,7 @@
  integer :: ii,jj,istart,ishift
 
  if(nn<lm_ncell) then
-   write(error_unit,'(a,i0)') &
+   write(error_unit,'(/a,i0)') &
 &       'ug_weights: ERROR fewer nodes than the rule, nn=',nn
    error stop 1
  end if
@@ -115,7 +115,7 @@
  integer :: ii,jj,istart,ishift
 
  if(nn<lm_ncell) then
-   write(error_unit,'(a,i0)') &
+   write(error_unit,'(/a,i0)') &
 &       'ug_cumint_down: ERROR fewer nodes than the rule, nn=', &
 &        nn
    error stop 1
@@ -162,7 +162,7 @@
  real(dp), intent(out) :: fq
 
  if(tt<0.0d0 .or. tt>dble(nn-1)) then
-   write(error_unit,'(a,es12.4,a,i0)') &
+   write(error_unit,'(/a,es12.4,a,i0)') &
 &       'ug_interp: ERROR position off the grid, tt=', &
 &        tt,' nn=',nn
    error stop 1
@@ -318,7 +318,7 @@
    fb=fun(xb)
  end do
  if(iter>200 .and. .not. present(converged)) then
-   write(error_unit,'(a,es12.4,a,es12.4)') &
+   write(error_unit,'(/a,es12.4,a,es12.4)') &
 &       'ug_brent: ERROR not converged in 200 steps, t=',xb,', f=',fb
    error stop 1
  end if
@@ -362,7 +362,7 @@
    if(abs(xx-xm)<=tol2-0.5d0*(bb-aa)) exit
    if(iter==100) then
      write(error_unit,'(/a,es12.4,a,es12.4)') &
-&          'ugrid_m: ERROR ug_fmin not converged in 100 steps, x=',xx, &
+&          'ug_fmin: ERROR not converged in 100 steps, x=',xx, &
 &          ', bracket width=',bb-aa
      error stop 1
    end if
@@ -478,7 +478,7 @@
    if(lf(ii-1)>0.0d0 .and. lf(ii)<=0.0d0) then
      call ug_root(lf(1:np),np,dble(ii-2),dble(ii-1),tq,ierr)
      if(ierr/=0) then
-       write(error_unit,'(a)') &
+       write(error_unit,'(/a)') &
 &           'ug_cross_down: ERROR the bracket lost its sign change'
        error stop 1
      end if

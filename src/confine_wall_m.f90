@@ -35,20 +35,47 @@
 &                         fa,ea,nk,kwall,r0,sm,iout)
 !! the wall lines of the strengths kwall(1:nk) beyond r0, kwall(0)=0 the
 !! free atom, and the walls' part of the summary
+!!
+!! @param pf  the pseudopotential data file
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
+!! @param zz  atomic number
+!! @param mmax  size of the log radial mesh
+!! @param rr  log radial mesh (bohr)
+!! @param vfull  all-electron potential (Ha), the start of the free atom
+!!               and of a wall after a failed all-electron atom
+!! @param nc  number of core states
+!! @param nv  number of valence states
+!! @param iexc  exchange-correlation functional
+!! @param na  principal quantum numbers
+!! @param la  angular momenta
+!! @param fa  occupancies
+!! @param ea  all-electron eigenvalues (Ha), the start of the free atom;
+!!            those of the valence states also of the pseudo-atom
+!! @param nk  number of wall strengths
+!! @param kwall  wall strengths (Ha/bohr**2); kwall(0) set to 0
+!! @param r0  onset radius of the walls (bohr)
+!! @param sm  the summary; nwfail and sdde set
+!! @param iout  unit of the text output
  use aeatom_m, only: aeatom
  use psatom_m, only: psatom
  use confine_summary_m, only: confine_summary_t
  use ps_file_m, only: ps_file_t
  use constants_m, only: mxkap
 
+!Input variables
  type(ps_file_t), intent(in) :: pf
  integer, intent(in) :: irel,mmax,nc,nv,iexc,na(mxstate),la(mxstate),nk
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: zz,rr(mmax),vfull(mmax),fa(mxstate)
  real(dp), intent(in) :: ea(mxstate,mxkap),r0
  integer, intent(in) :: iout
+
+!Input/output variables
  real(dp), intent(inout) :: kwall(0:nk)
  type(confine_summary_t), intent(inout) :: sm
+
+!Local variables
  integer :: na_ps(mxstate),la_ps(mxstate),nprj(mxlin+1)
  integer :: ik,ii,ierrae,ierrps,itae,itps,nkap
  real(dp) :: fa_ps(mxstate,mxkap),etae(0:nk),etps(0:nk)
@@ -112,7 +139,7 @@
    if(ierrae/=0) write(iout,'(a,1p,e24.16,a)') 'wall_failed',kwall(ik),' ae'
    if(ierrps/=0) write(iout,'(a,1p,e24.16,a)') 'wall_failed',kwall(ik),' ps'
    if(ik==0 .and. (ierrae/=0 .or. ierrps/=0)) then
-     write(iout,'(a)') 'oncvpsp_confine: ERROR the free atom failed'
+     write(iout,'(/a)') 'confine_walls: ERROR the free atom failed'
      error stop 1
    end if
    if(ierrae/=0 .or. ierrps/=0) then
@@ -130,12 +157,26 @@
 
  subroutine valence_states(nc,nv,la,fa,na_ps,la_ps,fa_ps)
 !! the valence states as run_config_ps numbers them, n from l+1
+!!
+!! @param nc  number of core states
+!! @param nv  number of valence states
+!! @param la  angular momenta
+!! @param fa  occupancies
+!! @param na_ps  principal quantum numbers of the valence states, counted
+!!               from l+1
+!! @param la_ps  angular momenta of the valence states
+!! @param fa_ps  occupancies of the valence states, the same for each kappa
  use constants_m, only: mxkap
 
+!Input variables
  integer, intent(in) :: nc,nv,la(mxstate)
  real(dp), intent(in) :: fa(mxstate)
+
+!Output variables
  integer, intent(out) :: na_ps(mxstate),la_ps(mxstate)
  real(dp), intent(out) :: fa_ps(mxstate,mxkap)
+
+!Local variables
  integer :: nav(4),kk,l1
  do l1=1,4
    nav(l1)=l1-1
@@ -152,11 +193,24 @@
  subroutine write_wall_eig(nc,nv,na,la,nkap,kk,eigae,eigps,iout)
 !! the wall_eig lines of the strength kk: the all-electron valence
 !! eigenvalues eigae(nc+1:nc+nv) and the pseudo-atom's eigps(1:nv)
+!!
+!! @param nc  number of core states
+!! @param nv  number of valence states
+!! @param na  principal quantum numbers
+!! @param la  angular momenta
+!! @param nkap  number of kappas per l: 1, or 2 for irel=2
+!! @param kk  wall strength (Ha/bohr**2)
+!! @param eigae  all-electron eigenvalues (Ha)
+!! @param eigps  pseudo-atom eigenvalues (Ha)
+!! @param iout  unit of the text output
  use kappa_m, only: kap_count
 
+!Input variables
  integer, intent(in) :: nc,nv,na(mxstate),la(mxstate),nkap
  real(dp), intent(in) :: kk,eigae(mxstate,nkap),eigps(mxstate,nkap)
  integer, intent(in) :: iout
+
+!Local variables
  integer :: jj,ll,ikap
  do jj=1,nv
    ll=la(nc+jj)
@@ -169,7 +223,13 @@
 
  real(dp) function wall(kk,xx)
 !! the wall, 1/2 kk xx**2 exp(-dwall/xx) for xx > 0, 0 inside
+!!
+!! @param kk  wall strength (Ha/bohr**2)
+!! @param xx  distance beyond the onset r0 (bohr)
+
+!Input variables
  real(dp), intent(in) :: kk,xx
+
  wall=0.0d0
  if(xx>0.0d0) wall=0.5d0*kk*xx**2*exp(-dwall/xx)
  end function wall

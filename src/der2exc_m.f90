@@ -33,21 +33,21 @@
 &                   zion,iexc,c_light,nc,nv,la,rcut,mmax)
 
 !! @param rhotot  total valence charge, all-electron of pseudo
-!! @param rhoc  core charge, all-electron or model
+!! @param rhoc  core charge density, all-electron or model
 !! @param rho  valence state-by-state charge (one-electron)
-!! @param rr  log radial grid
+!! @param rr  log radial mesh (bohr)
 !! @param d2exc  Exc 2nd-derivative matrix
 !! @param d2ref  reference matrix
 !! @param d2mdiff  root-mean-squared differrenc between d2exc and d2ref
 !! @param zion  ion charge
-!! @param iexc  exchange-correlation type
+!! @param iexc  exchange-correlation functional
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param nc  number of core states
 !! @param nv  number of valence states
-!! @param la  array of l values for all-electron atom
+!! @param la  angular momenta of the all-electron atom
 !! @param rcut  radius to which the matrix elements are integrated, at least
 !!              that beyond which all-electron and pseudo charges agree (bohr)
-!! @param mmax  dimensiion of log grid
+!! @param mmax  size of the log radial mesh
 
  use constants_m, only: dp
  use logmesh_m, only: lm_integral

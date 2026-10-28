@@ -187,7 +187,7 @@
 !! a projector on the mesh, vv, from its pieces pw, both with the sign
 !! (physically irrelevant) that makes it positive at its peak
 !!
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param mmax  its size
 !! @param pw  the projector's pieces
 !! @param vv  the projector on the mesh (output)

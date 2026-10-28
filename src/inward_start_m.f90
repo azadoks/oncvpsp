@@ -40,10 +40,10 @@
 !!
 !! @param ll  angular momentum
 !! @param ee  energy
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param vv  local atomic potential
 !! @param mch  classical turning point (matching point)
-!! @param mmax  size of log grid
+!! @param mmax  size of the log radial mesh
 !! @param nin  start of the inward integration (output)
 
  use constants_m, only: dp

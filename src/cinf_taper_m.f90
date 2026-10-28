@@ -34,11 +34,11 @@
 !! C-infinity switch from 1 (r <= ra) to 0 (r >= rb): f(1-x)/(f(1-x)+f(x)),
 !! f(t) = exp(-1/t), x = (r-ra)/(rb-ra); its transform decays faster than
 !! any power of q, so it adds no plane-wave tail of its own
+!! (the result is the switch at rad)
 !!
 !! @param rad  radius
 !! @param ra  start of the window
 !! @param rb  end of the window
-!! @return the switch at rad
 
  use constants_m, only: dp
 

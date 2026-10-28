@@ -37,10 +37,10 @@
 !! a smooth function on the output mesh, 0 beyond its last nonzero node
 !! (the end of a model core's support, phase 5)
 !!
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param ff  the function on the log mesh
 !! @param mmax  size of the log radial mesh
-!! @param rl  output mesh, ascending, rl(1) 0 or on the log mesh
+!! @param rl  output mesh (bohr), ascending, rl(1) 0 or on the log mesh
 !! @param fl  the function on the output mesh
 !! @param nrl  size of the output mesh
 !! @param iout  unit of the text output
@@ -86,10 +86,10 @@
 !! a piecewise function on the output mesh: at each radius the interpolant
 !! of the piece of its segment, 0 beyond the last bound
 !!
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param mmax  size of the log radial mesh
 !! @param pw  the function
-!! @param rl  output mesh, ascending, rl(1) 0 or on the log mesh
+!! @param rl  output mesh (bohr), ascending, rl(1) 0 or on the log mesh
 !! @param fl  the function on the output mesh
 !! @param nrl  size of the output mesh
 !! @param iout  unit of the text output
@@ -144,11 +144,11 @@
 !! pieces vlocpw is smooth (the screening and the ionic tail), and is added
 !! to the piece of each radius's segment (as in outwf_setup)
 !!
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param vv  the potential on the log mesh
 !! @param mmax  size of the log radial mesh
 !! @param vlocpw  the pieces, the last bound the mesh end
-!! @param rl  output mesh, ascending, rl(1) 0 or on the log mesh
+!! @param rl  output mesh (bohr), ascending, rl(1) 0 or on the log mesh
 !! @param fl  the potential on the output mesh
 !! @param nrl  size of the output mesh
 !! @param iout  unit of the text output
@@ -182,7 +182,7 @@
    if(rl(ii)<rr(1)) cycle
    kk=pw_segment(vlocpw,rl(ii))
    if(kk==0) then
-     write(iout,'(a)') 'om_local_values: ERROR the pieces end inside the mesh'
+     write(iout,'(/a)') 'om_local_values: ERROR the pieces end inside the mesh'
      ifail=1
      return
    end if
@@ -199,6 +199,13 @@
 
 !! the output mesh within the log mesh, but for a first point at the
 !! origin
+!!
+!! @param rr  log radial mesh (bohr)
+!! @param mmax  size of the log radial mesh
+!! @param rl  output mesh (bohr)
+!! @param nrl  size of the output mesh
+!! @param iout  unit of the text output
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
 
@@ -212,15 +219,15 @@
 
  ifail=0
  if(rl(nrl)>rr(mmax)) then
-   write(iout,'(a,f10.4,a,f10.4)') 'outmesh: ERROR output mesh to', &
+   write(iout,'(/a,f12.6,a,f12.6)') 'check_range: ERROR output mesh to', &
 &       rl(nrl),' bohr, beyond the log mesh, ',rr(mmax)
    ifail=1
    return
  end if
  if(nrl>1) then
    if(rl(2)<rr(1)) then
-     write(iout,'(a)') &
-&         'outmesh: ERROR more than one output point below the log mesh'
+     write(iout,'(/a)') &
+&         'check_range: ERROR more than one output point below the log mesh'
      ifail=1
      return
    end if
@@ -234,10 +241,10 @@
 !! r = 0 of the interpolant in r of the function on the log mesh
 !! (lm_origin)
 !!
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param ff  the function on the log mesh
 !! @param mmax  size of the log radial mesh
-!! @param rl  output mesh
+!! @param rl  output mesh (bohr)
 !! @param fl  the function on the output mesh, fl(1) set
 !! @param nrl  size of the output mesh
 !! @param iout  unit of the text output
@@ -261,8 +268,8 @@
  if(rl(1)>=rr(1)) return
  call lm_origin(rr,ff,mmax,fl(1),ifail)
  if(ifail/=0) then
-   write(iout,'(a)') &
-&       'outmesh: ERROR log mesh too short for the value at the origin'
+   write(iout,'(/a)') &
+&       'origin: ERROR log mesh too short for the value at the origin'
  end if
  return
  end subroutine origin

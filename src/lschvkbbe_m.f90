@@ -38,21 +38,21 @@
 !! function are smooth functions of rm
 !!
 !! @param nn  principal quantum number
-!! @param ll  angular-momentum quantum number
+!! @param ll  angular momentum
 !! @param nvkb  = number of VKB projectors to be used
 !! @param ierr  non-zero return if error
 !! @param ee  bound-state energy, input guess and output calculated value
 !! @param uld  log derivative up/uu to be matched at rm
 !! @param emin  externally generaated estimate of lower bound for ee
 !! @param emax  externally generaated estimate of upper bound for ee
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param vloc  local part of psp on the mesh
-!! @param vlocpw  the screened local potential's pieces
-!! @param vkbpw  VKB projectors as functions of pieces
-!! @param evkb  coefficients of VKB projectors
+!! @param vlocpw  the screened local potential as pieces
+!! @param vkbpw  the projectors as pieces
+!! @param evkb  coefficients of the projectors
 !! @param uu  output radial wave function (*rr) to mch, normalized to rm
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
-!! @param mmax  size of log grid
+!! @param mmax  size of the log radial mesh
 !! @param mch  the last mesh point integrated to, far enough past rm for
 !!             the interpolant (phsft_mch)
 !! @param rm  matching radius (bohr)

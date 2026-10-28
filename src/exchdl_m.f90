@@ -31,9 +31,9 @@
 !! density
 !!
 !! @param rho  charge density times 4 pi
-!! @param vxc  exchange-correlation potential
-!! @param exc  exchange-correlation energy density
-!! @param mmax  dimension of log radial grid
+!! @param vxc  exchange-correlation potential (Ha)
+!! @param exc  exchange-correlation energy per electron (Ha)
+!! @param mmax  size of the log radial mesh
 
  use constants_m, only: dp, pi
 

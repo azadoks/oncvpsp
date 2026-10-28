@@ -35,16 +35,16 @@
 !! (sr_flux_m)
 !!
 !! @param nn  principal quantum number
-!! @param ll  angular-momentum quantum number
+!! @param ll  angular momentum
 !! @param ierr  non-zero return if error, 10 if there is no bound state
 !!              and the box state (u=0 at rr(mmax)) is returned
 !! @param ee  bound-state energy, input guess and output calculated value
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param vv  local atomic potential
 !! @param uu  output radial wave function (*rr)
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param zz  atomic number
-!! @param mmax  size of log grid
+!! @param mmax  size of the log radial mesh
 !! @param mch  mesh point just beyond the classical turning point, where
 !!             the inward and outward integrations are matched (at the
 !!             continuous turning point, match_m)

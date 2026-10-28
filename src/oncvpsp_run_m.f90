@@ -221,14 +221,15 @@
 !the free tail has no finite norm over all space
  if(inp%well_tail==1 .and. inp%well_norm==1) then
    write(iout,'(/a)') &
-&        'oncvpsp: ERROR well_norm = "space" (1) is not defined '// &
+&        'oncvpsp_run: ERROR well_norm = "space" (1) is not defined '// &
 &       'for well_tail = "free": the free tail has no finite norm'
    ifail=1
    return
  end if
  well_norm_rc=inp%well_norm==2 .or. (inp%well_norm==0 .and. inp%well_tail/=0)
  if(inp%well_tail/=2 .and. any(inp%well_n(:)>0)) then
-   write(iout,'(/a)') 'oncvpsp: ERROR well_n is for well_tail = "confined" only'
+   write(iout,'(/a)') &
+&       'oncvpsp_run: ERROR well_n is for well_tail = "confined" only'
    ifail=1
    return
  end if
@@ -335,7 +336,8 @@
    if(ifail/=0) return
    if(ierr/=0) then
      write(iout,'(/a,i0,a,i0,a,es12.4)') &
-&          'oncvpsp: ERROR aeatom failed for the reference configuration'// &
+&          'oncvpsp_run: ERROR aeatom failed for the reference '// &
+&          'configuration'// &
 &          ', ierr=',ierr,', it=',it,', res=',res
      ifail=1
      return

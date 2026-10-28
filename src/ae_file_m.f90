@@ -64,26 +64,26 @@
 !! @param fname  file to write
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param c_light  speed of light (Hartree atomic units)
-!! @param nkap  number of kappa per level: 1, or 2 for irel=2
+!! @param nkap  number of kappas per l: 1, or 2 for irel=2
 !! @param atsym  atomic symbol
 !! @param zz  atomic number
 !! @param nc  number of core states
 !! @param nv  number of valence states
-!! @param iexc  exchange-correlation function to be used
+!! @param iexc  exchange-correlation functional
 !! @param na  principal quantum numbers, reference configuration
 !! @param la  angular momenta, reference configuration
 !! @param fa  occupancies, reference configuration
-!! @param mmax  size of log grid
-!! @param rr  log radial mesh
+!! @param mmax  size of the log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param it  aeatom iteration count
 !! @param etot  all-electron total energy (Ha)
 !! @param eterm  kinetic, electron-nucleus, Hartree and exchange-correlation
 !!               energies (Ha)
 !! @param res  aeatom residual of the screening potential (Ha)
 !! @param ea  all-electron eigenvalues (Ha), kap=-(l+1) and kap=l if irel=2
-!! @param rhoc  all-electron core charge density
+!! @param rhoc  core charge density
 !! @param rho  all-electron valence charge density
-!! @param vfull  all-electron potential
+!! @param vfull  all-electron potential (Ha)
 !! @param ncnf  number of test configurations (not counting the reference)
 !! @param cnf  the reference and test configurations (input_m)
 !! @param aec  the run_config_ae results, all configurations
@@ -146,17 +146,17 @@
 !! @param fname  file to read
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param c_light  speed of light (Hartree atomic units)
-!! @param nkap  number of kappa per level: 1, or 2 for irel=2
+!! @param nkap  number of kappas per l: 1, or 2 for irel=2
 !! @param atsym  atomic symbol
 !! @param zz  atomic number
 !! @param nc  number of core states
 !! @param nv  number of valence states
-!! @param iexc  exchange-correlation function to be used
+!! @param iexc  exchange-correlation functional
 !! @param na  principal quantum numbers, reference configuration
 !! @param la  angular momenta, reference configuration
 !! @param fa  occupancies, reference configuration
-!! @param mmax  size of log grid
-!! @param rr  log radial mesh
+!! @param mmax  size of the log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param ncnf  number of test configurations (not counting the reference)
 !! @param cnf  the reference and test configurations (input_m)
 !! @param it  aeatom iteration count
@@ -165,9 +165,9 @@
 !!               energies (Ha)
 !! @param res  aeatom residual of the screening potential (Ha)
 !! @param ea  all-electron eigenvalues (Ha), kap=-(l+1) and kap=l if irel=2
-!! @param rhoc  all-electron core charge density
+!! @param rhoc  core charge density
 !! @param rho  all-electron valence charge density
-!! @param vfull  all-electron potential
+!! @param vfull  all-electron potential (Ha)
 !! @param aec  the run_config_ae results, all configurations
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
@@ -245,18 +245,18 @@
 !!
 !! @param fname  file name
 !! @param unit  unit number of the opened file
-!! @param irel  0 non-, 1 scalar-, 2 fully-relativistic
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param atsym  atomic symbol
 !! @param zz  atomic number
 !! @param nc  number of core states
 !! @param nv  number of valence states
-!! @param iexc  exchange-correlation function to be used
+!! @param iexc  exchange-correlation functional
 !! @param na  principal quantum numbers, reference configuration
 !! @param la  angular momenta, reference configuration
 !! @param fa  occupancies, reference configuration
-!! @param mmax  size of log grid
-!! @param rr  log radial mesh
+!! @param mmax  size of the log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
@@ -282,7 +282,7 @@
  open(newunit=unit,file=fname,access='stream',form='unformatted', &
 &     status='replace',action='write',iostat=ios)
  if(ios/=0) then
-   write(iout,'(2a)') 'write_ae_file: ERROR cannot open ',trim(fname)
+   write(iout,'(/2a)') 'write_ae_file: ERROR cannot open ',trim(fname)
    ifail=1
    return
  end if
@@ -303,18 +303,19 @@
 !!
 !! @param fname  file name
 !! @param unit  unit number of the opened file
-!! @param irel  expected treatment: 0 non-, 1 scalar-, 2 fully-relativistic
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic:
+!!              the treatment expected
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param atsym  atomic symbol
 !! @param zz  atomic number
 !! @param nc  number of core states
 !! @param nv  number of valence states
-!! @param iexc  exchange-correlation function to be used
+!! @param iexc  exchange-correlation functional
 !! @param na  principal quantum numbers, reference configuration
 !! @param la  angular momenta, reference configuration
 !! @param fa  occupancies, reference configuration
-!! @param mmax  size of log grid
-!! @param rr  log radial mesh
+!! @param mmax  size of the log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
@@ -344,7 +345,8 @@
  call open_ae(fname,unit,irel_f,iout,ifail)
  if(ifail/=0) return
  if(irel_f/=irel) then
-   write(iout,'(2a)') 'read_ae_file: ERROR file was written with a different', &
+   write(iout,'(/2a)') &
+&        'read_ae_file: ERROR file was written with a different', &
 &        ' relativistic treatment'
    ifail=1
    close(unit)
@@ -354,7 +356,7 @@
  read(unit) atsym_f,zz_f,nc_f,nv_f,iexc_f
  if(atsym_f/=atsym .or. differ(zz_f,zz) .or. nc_f/=nc .or. nv_f/=nv &
 &   .or. iexc_f/=iexc) then
-   write(iout,'(2a)') 'read_ae_file: ERROR atsym, z, nc, nv or iexc differ', &
+   write(iout,'(/2a)') 'read_ae_file: ERROR atsym, z, nc, nv or iexc differ', &
 &        ' from the input'
    ifail=1
    close(unit)
@@ -363,7 +365,7 @@
  read(unit) na_f(1:nc+nv),la_f(1:nc+nv),fa_f(1:nc+nv)
  if(any(na_f(1:nc+nv)/=na(1:nc+nv)) .or. any(la_f(1:nc+nv)/=la(1:nc+nv)) &
 &   .or. any(differ(fa_f(1:nc+nv),fa(1:nc+nv)))) then
-   write(iout,'(2a)') 'read_ae_file: ERROR reference configuration differs', &
+   write(iout,'(/2a)') 'read_ae_file: ERROR reference configuration differs', &
 &        ' from the input'
    ifail=1
    close(unit)
@@ -372,7 +374,7 @@
 
  read(unit) mmax_f
  if(mmax_f/=mmax) then
-   write(iout,'(a,2i8)') 'read_ae_file: ERROR radial mesh size differs', &
+   write(iout,'(/a,2i0)') 'read_ae_file: ERROR radial mesh size differs', &
 &        mmax_f,mmax
    ifail=1
    close(unit)
@@ -381,7 +383,7 @@
  allocate(rr_f(mmax))
  read(unit) rr_f(1:mmax)
  if(any(abs(rr_f(1:mmax)-rr(1:mmax))>rtol*rr(1:mmax))) then
-   write(iout,'(2a)') 'read_ae_file: ERROR radial mesh differs from the', &
+   write(iout,'(/2a)') 'read_ae_file: ERROR radial mesh differs from the', &
 &        ' one this program builds'
    ifail=1
    close(unit)
@@ -389,7 +391,7 @@
  end if
  read(unit) c_light_f
  if(differ(c_light_f,c_light)) then
-   write(iout,'(2a)') 'read_ae_file: ERROR c_light differs from the input'
+   write(iout,'(/2a)') 'read_ae_file: ERROR c_light differs from the input'
    ifail=1
    close(unit)
    return
@@ -406,16 +408,16 @@
 !! eigenvalues and total energy (oncvpsp_confine.x)
 !!
 !! @param fname  file to read
-!! @param irel  0 non-, 1 scalar-, 2 fully-relativistic
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param atsym  atomic symbol
 !! @param zz  atomic number
 !! @param mmax  size of the log radial mesh
-!! @param rr  log radial mesh (allocated here)
+!! @param rr  log radial mesh (bohr) (allocated here)
 !! @param c_light_f  the speed of light of the file
-!! @param vfull  all-electron potential (allocated here)
+!! @param vfull  all-electron potential (Ha) (allocated here)
 !! @param nc  number of core states
 !! @param nv  number of valence states
-!! @param iexc  exchange-correlation function
+!! @param iexc  exchange-correlation functional
 !! @param na  principal quantum numbers, reference configuration
 !! @param la  angular momenta
 !! @param fa  occupancies
@@ -502,14 +504,14 @@
  open(newunit=unit,file=fname,access='stream',form='unformatted', &
 &     status='old',action='read',iostat=ios)
  if(ios/=0) then
-   write(iout,'(2a)') 'read_ae_file: ERROR cannot open ',trim(fname)
+   write(iout,'(/2a)') 'read_ae_file: ERROR cannot open ',trim(fname)
    ifail=1
    return
  end if
 
  read(unit,iostat=ios) magic_f,version_f,irel_f
  if(ios/=0 .or. magic_f/=magic) then
-   write(iout,'(2a)') 'read_ae_file: ERROR not an all-electron data file: ', &
+   write(iout,'(/2a)') 'read_ae_file: ERROR not an all-electron data file: ', &
 &        trim(fname)
    ifail=1
    close(unit)
@@ -518,15 +520,15 @@
 !the magic string reads the same in either byte order, so a file from a
 !machine of the other byte order shows up as a byte-swapped version
  if(version_f/=version .and. byteswap(version_f)==version) then
-   write(iout,'(2a)') 'read_ae_file: ERROR file was written on a machine', &
+   write(iout,'(/2a)') 'read_ae_file: ERROR file was written on a machine', &
 &        ' with the other byte order'
    ifail=1
    close(unit)
    return
  end if
  if(version_f/=version) then
-   write(iout,'(a,i4,a,i4)') 'read_ae_file: ERROR file format version', &
-&        version_f,' but this program reads version',version
+   write(iout,'(/a,i0,a,i0)') 'read_ae_file: ERROR file format version ', &
+&        version_f,' but this program reads version ',version
    ifail=1
    close(unit)
    return
@@ -620,7 +622,7 @@
  ifail=0
  do jj=1,ncnf+1
    if(.not. found(jj)) then
-     write(iout,'(a,i2,a)') 'read_ae_file: ERROR test configuration',jj-1, &
+     write(iout,'(/a,i0,a)') 'read_ae_file: ERROR test configuration ',jj-1, &
 &         ' is not in the all-electron data file'
      ifail=1
      return

@@ -37,13 +37,16 @@
 !> failed for an empty level (with j=l+1/2 when irel=2), 3 the same with
 !> j=l-1/2
    integer :: ist=0
-!> aeatom's error code when ist=1, boundstate's when ist>=2; aeatom's
-!> iteration count when ist/=0; the index in nat, lat of the level whose
-!> bound state failed when ist>=2
-   integer :: ierr=0,it=0,kerr=0
-!> the number of merged valence levels, and their n and l
+!> aeatom's error code when ist=1, boundstate's when ist>=2
+   integer :: ierr=0
+!> aeatom's iteration count when ist/=0
+   integer :: it=0
+!> the index in nat, lat of the level whose bound state failed when ist>=2
+   integer :: kerr=0
+!> the number of merged valence levels
    integer :: nvt=0
-   integer :: nat(mxstate)=0,lat(mxstate)=0
+   integer :: nat(mxstate)=0  !< their principal quantum numbers
+   integer :: lat(mxstate)=0  !< their angular momenta
 !> their occupancies (:,1:3): reference, maximally-ionized, excited
    real(dp) :: fat(mxstate,nlev)=0.0d0
 !> their all-electron eigenvalues (mxstate,nkap,nlev), the same
@@ -56,17 +59,36 @@
 !> and relatom overwrite the eigenvalues' guess, so the atom is a function
 !> of these alone
  type :: ae_entry_t
-   integer :: irel,nkap,nc,ncv,mmax,iexc,it
-   real(dp) :: zz,etot,eterm(4),res
-   integer, allocatable :: na(:),la(:)
-   real(dp), allocatable :: fa(:),rr(:),ea(:,:),rpk(:,:),rhoc(:),rho(:),vi(:)
+!> 0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+   integer :: irel
+   integer :: nkap  !< number of kappas per l: 1, or 2 for irel=2
+   integer :: nc  !< number of core states
+   integer :: ncv  !< number of core and valence states
+   integer :: mmax  !< size of the log radial mesh
+   integer :: iexc  !< exchange-correlation functional
+   integer :: it  !< aeatom's iteration count
+   real(dp) :: zz  !< atomic number
+   real(dp) :: etot  !< total energy (Ha)
+!> kinetic, electron-nucleus, Hartree and exchange-correlation energies (Ha)
+   real(dp) :: eterm(4)
+   real(dp) :: res  !< residual of the screening potential (ae_residual)
+   integer, allocatable :: na(:)  !< principal quantum numbers (ncv)
+   integer, allocatable :: la(:)  !< angular momenta (ncv)
+   real(dp), allocatable :: fa(:)  !< occupancies (ncv)
+   real(dp), allocatable :: rr(:)  !< log radial mesh (bohr)
+   real(dp), allocatable :: ea(:,:)  !< eigenvalues (ncv,nkap) (Ha)
+!> radius of the outermost peak of each wave function (ncv,nkap) (bohr)
+   real(dp), allocatable :: rpk(:,:)
+   real(dp), allocatable :: rhoc(:)  !< core charge density
+   real(dp), allocatable :: rho(:)  !< total charge density
+   real(dp), allocatable :: vi(:)  !< all-electron potential (Ha)
  end type ae_entry_t
 
 !> the all-electron atoms of a run, the reference and two per test
 !> configuration (aeatom_cached), which a run owns and passes down
  type :: ae_cache_t
-   integer :: nentry=0
-   type(ae_entry_t) :: entry(2*mxcnf+1)
+   integer :: nentry=0  !< number of entries in use
+   type(ae_entry_t) :: entry(2*mxcnf+1)  !< the solutions, first nentry
  end type ae_cache_t
 
  contains
@@ -84,6 +106,35 @@
 !! repeats that warning. rpk comes back as that solution left it (rows
 !! 1..ncv). cache holds the solutions of the run; the other arguments
 !! are those of aeatom
+!!
+!! @param cache  the all-electron atoms of the run; a new solution added
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
+!! @param nkap  number of kappas per l: 1, or 2 for irel=2
+!! @param na  principal quantum numbers
+!! @param la  angular momenta
+!! @param ea  eigenvalues (Ha), the guess on input and the solution's on
+!!            output; ea(:,1) for j=l+1/2, ea(:,2) for j=l-1/2 when irel=2
+!! @param fa  occupancies
+!! @param rpk  radius of the outermost peak of each wave function (bohr),
+!!             indexed as ea
+!! @param nc  number of core states
+!! @param ncv  number of core and valence states
+!! @param it  number of iterations
+!! @param rhoc  core charge density
+!! @param rho  total charge density
+!! @param rr  log radial mesh (bohr)
+!! @param vi  all-electron potential (Ha), output
+!! @param zz  atomic number
+!! @param mmax  size of the log radial mesh
+!! @param iexc  exchange-correlation functional
+!! @param etot  total energy (Ha)
+!! @param eterm  kinetic, electron-nucleus, Hartree and exchange-correlation
+!!               energies (Ha)
+!! @param res  residual of the screening potential (ae_residual)
+!! @param ierr  0, or non-zero after a failure
+!! @param iout  unit of the text output
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use aeatom_m, only: aeatom
  use ae_scf_m, only: ae_floor_warning
@@ -181,15 +232,15 @@
 !! @param jj  index of current configufation
 !! @param cnf  the reference and test configurations (input_m)
 !! @param nc  number of core states
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param zz  atomic number
-!! @param mmax  size of log grid
-!! @param iexc  exchange-correlation function to be used
+!! @param mmax  size of the log radial mesh
+!! @param iexc  exchange-correlation functional
 !! @param ea  reference configurattion eigenvalues, ea(:,1) for j=l+1/2 and
 !!            ea(:,2) for j=l-1/2 when irel=2
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param c_light  speed of light (Hartree atomic units)
-!! @param nkap  number of kappa per level: 1, or 2 for irel=2
+!! @param nkap  number of kappas per l: 1, or 2 for irel=2
 !! @param aec  the all-electron half of configuration jj
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written

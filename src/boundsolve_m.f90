@@ -220,7 +220,7 @@
    ebhi=etop+2.0d0*(ebhi-etop)
  end do
  if(kk>60) then
-   write(error_unit,'(a,i0,a,es12.4)') &
+   write(error_unit,'(/a,i0,a,es12.4)') &
 &       'bs_box_energy: ERROR no energy with more than ',nnode, &
 &       ' nodes up to ',ebhi
    error stop 1
@@ -236,7 +236,7 @@
    if(ebhi-eblo<max(abs(ee),eig_floor)*eps) exit
  end do
  if(kk>200) then
-   write(error_unit,'(a,es12.4)') &
+   write(error_unit,'(/a,es12.4)') &
 &       'bs_box_energy: ERROR bisection not converged in 200 steps, e=',ee
    error stop 1
  end if
@@ -255,7 +255,7 @@
 !! cf(mmax)>0 (forbidden everywhere, too low)
 !!
 !! @param cf  the coefficient, positive where classically forbidden
-!! @param mmax  size of the mesh
+!! @param mmax  size of the log radial mesh
 !! @param mch  the turning point, or 0 or -1
 
 !Input variables
@@ -293,9 +293,9 @@
 !!
 !! @param nn  principal quantum number
 !! @param ll  angular momentum
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param vv  potential (Ha)
-!! @param mmax  size of the mesh
+!! @param mmax  size of the log radial mesh
 !! @param eps  relative convergence threshold of the energy
 !! @param setup  the coefficients and turning point at an energy
 !! @param outward  the outward solution and its node count

@@ -51,7 +51,7 @@
 !! @param nnin  principal quantum number of well state (input); that of the well
 !!              state found, which may have more nodes (output)
 !! @param ll  angular momentum
-!! @param kap  l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
+!! @param kap  Dirac kappa, l or -(l+1) for j = l -/+ 1/2 (irel=2 only)
 !! @param rc  core radius (bohr)
 !! @param ep  target energy for well state; the well state's energy on return
 !! @param epgiven  use ep as given (D-1), instead of the replacements above
@@ -69,14 +69,14 @@
 !!                free_tail_m, for which main solves the state at eptgt), so
 !!                return after the replacements above, with uu, up zero and
 !!                vwell vfull; a bound state at or above ep is then no error
-!! @param rr  log radial mesh
-!! @param vfull  all-electron potential
+!! @param rr  log radial mesh (bohr)
+!! @param vfull  all-electron potential (Ha)
 !! @param vwell  potential with binding well, for the ikap=2 calculation when
 !!               irel=2
 !! @param uu  all-electron well-bound wave function
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param zz  atomic number
-!! @param mmax  size of log radial mesh
+!! @param mmax  size of the log radial mesh
 !! @param mch  matching mesh point for inward-outward integrations
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param c_light  speed of light (Hartree atomic units)
@@ -230,7 +230,7 @@
        end if
        if(rwmax-rwmin<=4.0d0*epsilon(1.0d0)*rwmax) then
          if(abs(fw)>eps) then
-           write(iout,'(a,i3,a,i3,a,1p,e10.2)') &
+           write(iout,'(/a,i0,a,i0,a,es12.4)') &
 &                'wellstate: ERROR E(rwell) jumps across ep, n=',nn, &
 &                ' l=',ll,' E-ep=',fw
            ifail=1
@@ -298,7 +298,7 @@
 &     ' to converge, n=',nn,' l=',ll,' ep=',ep
    end if
    if(confwall) then
-     write(iout,'(a)') &
+     write(iout,'(/a)') &
 &          'wellstate: ERROR with the confined well, ep must be '// &
 &         'above the atom''s own state of this n: raise ep or lower well_n'
    end if
@@ -379,7 +379,7 @@
 !error; one below ep and localized inside 1.5 rc only needs raising, by a
 !wall as close as that takes
    if(ierr==0 .and. et>=ep .and. .not. nowell) then
-     write(iout,'(/a,i2,a,i2,a,f12.8/a,f12.8)') &
+     write(iout,'(/a,i0,a,i0,a,f12.6/a,f12.6)') &
 &          'wellstate: ERROR a bound state exists for n=',nnin,' l=',ll, &
 &          ' at energy',et,'wellstate: ERROR above the requested ep=',ep
      ifail=1

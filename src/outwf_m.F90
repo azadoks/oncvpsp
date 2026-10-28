@@ -58,45 +58,75 @@
 !> interpolation at the bound (both lm_fh_reach=27), and the cell rule's
 !> stencil
  integer, parameter :: og_ext=32
-!> grid steps primed by Runge-Kutta at a restart, and the sub-steps of each
- integer, parameter :: nprime=3, nsub=4
+!> grid steps primed by Runge-Kutta at a restart
+ integer, parameter :: nprime=3
+!> Runge-Kutta sub-steps of each primed step
+ integer, parameter :: nsub=4
 
  type og_seg_t
-!> grid points (0..npt-1); the last one integrated (-1 for none)
-   integer :: npt=0,jmax=-1
-!> the piece of the potential, and of the sources (0 beyond their support)
-   integer :: ipv=0,ipb=0
-!> mesh position (units of the step, 0 at rr(1)) of grid point 0; the
-!> position of the segment's end on the grid
-   real(dp) :: t0=0.0d0,tend=0.0d0
-!> radius, al**2 (l(l+1) + 2 V r**2), 2 al**2 r**2 (the coefficient of
-!> -E), 2 al**2 beta r**2 and beta at the grid points
-   real(dp), allocatable :: rg(:),cv(:),r2(:),src(:,:),beta(:,:)
-!> the same at the sub-step points of the primed steps (from the first
-!> grid point)
-   real(dp), allocatable :: cvs(:),r2s(:),srcs(:,:)
-!> the solutions, their first and second derivatives in the position
-   real(dp), allocatable :: uu(:,:),up(:,:),upp(:,:)
+!> grid points (0..npt-1)
+   integer :: npt=0
+!> the last grid point integrated (-1 for none)
+   integer :: jmax=-1
+!> the piece of the potential
+   integer :: ipv=0
+!> the piece of the sources (0 beyond their support)
+   integer :: ipb=0
+!> mesh position (units of the step, 0 at rr(1)) of grid point 0
+   real(dp) :: t0=0.0d0
+!> the position of the segment's end on the grid
+   real(dp) :: tend=0.0d0
+!> radius at the grid points (bohr)
+   real(dp), allocatable :: rg(:)
+!> al**2 (l(l+1) + 2 V r**2) at the grid points
+   real(dp), allocatable :: cv(:)
+!> 2 al**2 r**2 at the grid points, the coefficient of -E
+   real(dp), allocatable :: r2(:)
+!> 2 al**2 beta r**2 at the grid points, one column per source
+   real(dp), allocatable :: src(:,:)
+!> beta at the grid points, one column per source
+   real(dp), allocatable :: beta(:,:)
+!> cv at the sub-step points of the primed steps (from the first grid
+!> point)
+   real(dp), allocatable :: cvs(:)
+!> r2 at the sub-step points of the primed steps
+   real(dp), allocatable :: r2s(:)
+!> src at the sub-step points of the primed steps
+   real(dp), allocatable :: srcs(:,:)
+!> the solutions at the grid points, homogeneous first, then one per source
+   real(dp), allocatable :: uu(:,:)
+!> their first derivatives in the position
+   real(dp), allocatable :: up(:,:)
+!> their second derivatives in the position
+   real(dp), allocatable :: upp(:,:)
  end type og_seg_t
 
  type outwf_t
-   integer :: ll=0,nsrc=0,nseg=0,mmax=0
-!> the mesh step in ln(r); the end of the sources' support; the position
-!> (as a mesh index) of the last breakpoint; the integration limit of the
-!> last outwf_integrate
-   real(dp) :: al=0.0d0,rsrc=0.0d0,tlast=0.0d0,plim=0.0d0
+   integer :: ll=0  !< angular momentum
+   integer :: nsrc=0  !< number of sources
+   integer :: nseg=0  !< number of segments
+   integer :: mmax=0  !< size of the log radial mesh
+!> the mesh step in ln(r)
+   real(dp) :: al=0.0d0
+!> the end of the sources' support (bohr)
+   real(dp) :: rsrc=0.0d0
+!> the position (as a mesh index) of the last breakpoint
+   real(dp) :: tlast=0.0d0
+!> the integration limit of the last outwf_integrate (mesh position)
+   real(dp) :: plim=0.0d0
 !> the merged bounds, bound(0)=0, bound(nseg)=rr(mmax)
    real(dp) :: bound(0:og_maxseg)=0.0d0
-   real(dp), allocatable :: rr(:)
-!> the weights of the first segment's overlaps (lm_integral_weights) and
-!> their upper limit, nw1 of them
+   real(dp), allocatable :: rr(:)  !< log radial mesh (bohr)
+!> the weights of the first segment's overlaps (lm_integral_weights), nw1
+!> of them
    real(dp), allocatable :: w1(:)
 !> the weights times the first segment's sources, wb1(i,j) = w1(i)
 !> beta_j(r_i) (outwf_overlaps with BLAS)
    real(dp), allocatable :: wb1(:,:)
+!> the upper limit of the weights w1 (bohr), -1 for none
    real(dp) :: rb1=-1.0d0
-   integer :: nw1=0
-   type(og_seg_t) :: seg(og_maxseg)
+   integer :: nw1=0  !< number of the weights w1
+   type(og_seg_t) :: seg(og_maxseg)  !< the segments, nseg of them
  end type outwf_t
 
  contains
@@ -107,7 +137,7 @@
 !! them: everything that does not depend on the energy
 !!
 !! @param ll  angular momentum
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param mmax  size of the log radial mesh
 !! @param vloc  the potential on the nodes; its difference from the node
 !!              values of vlocpw is a smooth function added to every piece
@@ -168,7 +198,7 @@
    end if
    sg%ipv=pw_segment(vlocpw,rm)
    if(sg%ipv==0) then
-     write(iout,'(a)') &
+     write(iout,'(/a)') &
 &          'outwf_setup: ERROR the potential''s pieces end inside the mesh'
      ifail=1
      return
@@ -217,7 +247,7 @@
      if(srcpw(jj)%nseg/=srcpw(1)%nseg .or. &
 &       any(srcpw(jj)%bound(0:srcpw(1)%nseg) &
 &           /=srcpw(1)%bound(0:srcpw(1)%nseg))) then
-       write(error_unit,'(a)') &
+       write(error_unit,'(/a)') &
 &           'outwf_setup: ERROR the sources'' segments differ'
        error stop 1
      end if
@@ -237,7 +267,7 @@
    end do
  end do
  if(nbrk>og_maxseg-1) then
-   write(iout,'(a,i0)') 'outwf_setup: ERROR too many breakpoints ',nbrk
+   write(iout,'(/a,i0)') 'outwf_setup: ERROR too many breakpoints ',nbrk
    ifail=1
    return
  end if
@@ -268,7 +298,7 @@
    sg%tend=log(ow%bound(1)/rr(1))/al
    i1=floor(sg%tend)+1
    if(i1<4) then
-     write(iout,'(a,es12.4)') &
+     write(iout,'(/a,es12.4)') &
 &              'outwf_setup: ERROR breakpoint below the 4th node, r=', &
 &              ow%bound(1)
      ifail=1
@@ -276,7 +306,7 @@
    end if
    npt=min(mmax,ceiling(sg%tend)+og_ext+1)
    if(npt-1<ceiling(sg%tend)+og_ext) then
-     write(iout,'(a,es12.4)') &
+     write(iout,'(/a,es12.4)') &
 &              'outwf_setup: ERROR breakpoint too close to the mesh end, r=', &
 &              ow%bound(1)
      ifail=1
@@ -328,14 +358,14 @@
  end if
  npt=min(npt,floor(plast-sg%t0)+1)
  if(kk<nseg .and. npt-1<ceiling(sg%tend)+og_ext) then
-   write(iout,'(a,es12.4)') &
+   write(iout,'(/a,es12.4)') &
 &            'outwf_setup: ERROR breakpoint too close to the mesh end, r=', &
 &            ow%bound(kk)
    ifail=1
    return
  end if
  if(sg%t0+nprime>plast) then
-   write(iout,'(a,es12.4)') &
+   write(iout,'(/a,es12.4)') &
 &            'outwf_setup: ERROR breakpoint too close to the mesh end, r=', &
 &            ow%bound(kk-1)
    ifail=1
@@ -410,8 +440,13 @@
  subroutine outwf_free(ow)
 
 !! releases the grids
+!!
+!! @param ow  the setup; its arrays deallocated
 
+!Input/output variables
  type(outwf_t), intent(inout), target :: ow
+
+!Local variables
  integer :: kk
 
  do kk=1,og_maxseg
@@ -795,7 +830,8 @@
 !! @param isol  the solution
 !! @param mch  the last node wanted
 !! @param uu  the solution
-!! @param up  its derivative in the mesh index, al r du/dr
+!! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr), its
+!!            derivative in the mesh index, al r du/dr
 
 !Input variables
  type(outwf_t), intent(in), target :: ow
@@ -912,7 +948,7 @@
 !! with evkb = 0 drop out. Called before outwf_combine
 !!
 !! @param ow  the setup, integrated
-!! @param evkb  the projectors' coefficients
+!! @param evkb  coefficients of the projectors
 !! @param ovl  the overlaps of outwf_overlaps
 !! @param mnode  the last mesh point counted
 !! @param iout  unit of the text output
@@ -967,7 +1003,7 @@
  if(ow%seg(kl)%uu(jl,1)==0.0d0 .and. jl>0) jl=jl-1
  rlast=ow%seg(kl)%rg(jl)
  if(rlast<ow%rsrc) then
-   write(iout,'(/a,1p,2e14.6)') 'outwf_index: ERROR R inside the sources,'// &
+   write(iout,'(/a,2es12.4)') 'outwf_index: ERROR R inside the sources,'// &
 &       ' R, rsrc=',rlast,ow%rsrc
    ifail=1
    return
@@ -1006,13 +1042,13 @@
 !! outwf_index of the solution at the energy ee, on its own setup
 !!
 !! @param ll  angular momentum
-!! @param rr  log radial mesh
-!! @param mmax  size of the mesh
+!! @param rr  log radial mesh (bohr)
+!! @param mmax  size of the log radial mesh
 !! @param vloc  the local potential on the mesh
-!! @param vlocpw  its pieces
+!! @param vlocpw  the screened local potential as pieces
 !! @param nsrc  number of sources
 !! @param srcpw  the sources' pieces
-!! @param evkb  the projectors' coefficients
+!! @param evkb  coefficients of the projectors
 !! @param ee  energy (Ha)
 !! @param mnode  the last mesh point counted
 !! @param iout  unit of the text output
@@ -1054,11 +1090,12 @@
 !!
 !! @param ow  the setup
 !! @param ep  energy (Ha)
-!! @param evkb  the projectors' coefficients
+!! @param evkb  coefficients of the projectors
 !! @param mch  index of the radius to which the solution is wanted
 !! @param mnode  the point R of the index, <= mch
 !! @param uu  the solution
-!! @param up  its derivative in the mesh index
+!! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr), its
+!!            derivative in the mesh index
 !! @param neig  optional, the number of eigenvalues below ep on
 !!              (0, r(mnode)] (outwf_index)
 !! @param iout  unit of the text output

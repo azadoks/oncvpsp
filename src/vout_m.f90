@@ -36,13 +36,13 @@
 !! @param rho  total charge density or valence/pseudovalence charge density
 !! @param rhoc  core charge density, full or model
 !! @param vo  output total potential
-!! @param vxc  output exchange-correlation potential
-!! @param zion  charge of screened ion
+!! @param vxc  exchange-correlation potential (Ha), output
+!! @param zion  ion charge
 !! @param eeel  electron-electron interaction energy
 !! @param eexc  exchange-correlation correction to eigenvalue sum for total
 !!              energy
-!! @param rr  log radial mesh
-!! @param mmax  dimension of log radial grid
+!! @param rr  log radial mesh (bohr)
+!! @param mmax  size of the log radial mesh
 !! @param iexc  exchange-correlation functional (1-4, 6, 7 built in, <0 libxc)
 !! @param c_light  speed of light (Hartree atomic units)
 

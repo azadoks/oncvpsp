@@ -34,27 +34,27 @@
 !!
 !! @param ipr  1 for first projector, 2 for second which usually has a node
 !! @param ll  angular momentum
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param irc  last mesh point at or inside rc
 !! @param rc  core radius (bohr)
-!! @param mmax  last point of rr
-!! @param al  log of mesh spacing factor
+!! @param mmax  size of the log radial mesh
+!! @param al  log of the mesh ratio
 !! @param nbas  number of sbfs
 !! @param qroot  q's for set of sbf
 !! @param eig  eigenvalue of all-electron wave function
 !! @param uu  rr*all-electron wave function
 !! @param pswfopt_sb  sbf coefficients for optimized pseudo wave function
-!! @param vae  all-electron potential
+!! @param psx  the Bessel sum rr * pseudo wave function on the nodes up to
+!!             pw_reach+16 past irc, 0 beyond: the inside piece's smooth
+!!             extension past rc (pieces_m)
+!! @param chix  (eig - T) psx on the same nodes: the projector's seed
 !! @param psopt  rr * pseudo wave function on log grid
+!! @param vae  all-electron potential
 !! @param vpsp  pseudopotential
 !! @param vkb  (epsilon-T)*phi component of chi projector
 !! @param ekin_num  total radial kinetic energy: the Bessel sum's to rc and
 !!                  the all-electron wave function's beyond, each by the
 !!                  rule of logmesh_m
-!! @param psx  the Bessel sum rr * pseudo wave function on the nodes up to
-!!             pw_reach+16 past irc, 0 beyond: the inside piece's smooth
-!!             extension past rc (pieces_m)
-!! @param chix  (eig - T) psx on the same nodes: the projector's seed
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 

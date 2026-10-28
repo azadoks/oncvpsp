@@ -37,23 +37,23 @@
 !! @param nc  number of core states
 !! @param rhov  valence pseudo-charge of reference configuration
 !! @param rhomod  model core charge
-!! @param rr  log radial mesh
-!! @param rcmax  maximum core radius for psp
-!! @param mmax  size of log grid
-!! @param iexc  exchange-correlation function to be used
+!! @param rr  log radial mesh (bohr)
+!! @param rcmax  largest core radius (bohr)
+!! @param mmax  size of the log radial mesh
+!! @param iexc  exchange-correlation functional
 !! @param etot  reference configuration total energy
 !! @param epstot  reference configuration pseudoatom total energy
-!! @param nproj  number of VKB projectors to use for each l
+!! @param nproj  number of projectors for each l
 !! @param vpuns  unscreened semi-local pseudopotentials (plus different vloc if
 !!               lloc==4)
-!! @param lloc  index-1 of local potential
-!! @param vlocpw  the screened local potential's pieces
-!! @param vkbpw  Vanderbilt-Kleinman-Bylander projectors as functions of
-!!               pieces, last index 1 for j=l+1/2, 2 for j=l-1/2 when irel=2
-!! @param evkb  VKB projector coefficients, last index as for vkbpw
+!! @param lloc  l of the local potential, 4 for the polynomial
+!! @param vlocpw  the screened local potential as pieces
+!! @param vkbpw  the projectors as pieces, last index 1 for j=l+1/2, 2 for
+!!               j=l-1/2 when irel=2
+!! @param evkb  coefficients of the projectors, last index as for vkbpw
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param c_light  speed of light (Hartree atomic units)
-!! @param nkap  number of kappa per l: 1, or 2 for irel=2
+!! @param nkap  number of kappas per l: 1, or 2 for irel=2
 !! @param ntc  rows of the table of eigenvalues, -1 if the configuration
 !!             failed (output)
 !! @param itc  n, l and ikap of each row, ikap 1 for j=l+1/2 (or an

@@ -31,25 +31,25 @@
 !! self-consistent scalar-relativistic all-electron atom
 !! calculation using log mesh (non-relativistic when irel=0)
 !!
-!! @param na  principal quantum number array, dimension ncv
-!! @param la  angular-momenta
+!! @param na  principal quantum numbers, dimension ncv
+!! @param la  angular momenta
 !! @param ea  eigenvalues (output; input with warm)
 !! @param fa  occupancies
 !! @param rpk  radius of outermost peak of wave function
 !! @param nc  number of core states
 !! @param ncv  number of core+valence states
 !! @param it  number of iterations (output)
-!! @param rhoc  core charge (output)
+!! @param rhoc  core charge density (output)
 !! @param rho  total core+valence charge (output)
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param vi  all-electron potential (output; input with warm), the one the
 !!            output orbitals are eigenstates of
 !! @param zz  atomic number
-!! @param mmax  size of log grid
-!! @param iexc  exchange-correlation function to be used
+!! @param mmax  size of the log radial mesh
+!! @param iexc  exchange-correlation functional
 !! @param etot  all-electron total energy (output)
 !! @param eterm  kinetic, electron-nucleus, Hartree and exchange-correlation
-!!               energies (output)
+!!               energies (Ha), output
 !! @param res  residual of the screening potential (output, ae_residual)
 !! @param ierr  error flag
 !! @param irel  0 non-relativistic, 1 scalar-relativistic

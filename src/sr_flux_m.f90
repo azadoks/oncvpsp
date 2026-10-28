@@ -38,7 +38,7 @@
 !! the indicial exponent of the radial equation, uu ~ r**gamma at the
 !! origin: that of the Koelling-Harmon equation, or l+1 for fss=0
 !!
-!! @param ll  angular-momentum quantum number
+!! @param ll  angular momentum
 !! @param zz  atomic number
 !! @param fss  1/c**2, or 0 for the non-relativistic equation
 
@@ -65,13 +65,13 @@
 !! the relativistic mass and the coefficients of the flux form on the
 !! mesh index, d(uu)/dn = al*uu + pm*qq, d(qq)/dn = qm*uu - al*qq
 !!
-!! @param ll  angular-momentum quantum number
+!! @param ll  angular momentum
 !! @param ee  energy
 !! @param fss  1/c**2, or 0 for the non-relativistic equation
 !! @param al  log of the mesh ratio
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param vv  local atomic potential
-!! @param mmax  size of log grid
+!! @param mmax  size of the log radial mesh
 !! @param xm  relativistic mass M
 !! @param pm  al*r*M
 !! @param qm  al*r*(l(l+1)/(M*r**2) + 2*(vv - ee))
@@ -107,19 +107,20 @@
 !! mlast, counting the nodes; the coefficients pm, qm are those of
 !! sr_flux_coefs at the energy ee
 !!
-!! @param ll  angular-momentum quantum number
+!! @param ll  angular momentum
 !! @param ee  energy
 !! @param zz  atomic number
 !! @param fss  1/c**2, or 0 for the non-relativistic equation
 !! @param al  log of the mesh ratio
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param vv  local atomic potential
 !! @param pm  coefficient of qq in d(uu)/dn
 !! @param qm  coefficient of uu in d(qq)/dn
-!! @param mmax  size of log grid
+!! @param mmax  size of the log radial mesh
 !! @param mlast  last point of the integration
 !! @param uu  radial wave function (*rr) on 1..mlast
-!! @param up  d(uu)/dn on 1..mlast
+!! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr) on
+!!            1..mlast
 !! @param qq  flux function on 1..mlast
 !! @param qp  d(qq)/dn on 1..mlast
 !! @param nnode  number of nodes of uu inside rr(mlast)
@@ -349,7 +350,7 @@
 !! @param ifrom  first point, given
 !! @param ito  last point integrated
 !! @param uu  radial wave function (*rr)
-!! @param up  d(uu)/dn
+!! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param qq  flux function
 !! @param qp  d(qq)/dn
 
@@ -388,7 +389,7 @@
 !! @param qm  coefficient of uu in d(qq)/dn
 !! @param mmax  size of the arrays
 !! @param uu  radial wave function (*rr)
-!! @param up  d(uu)/dn
+!! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param qq  flux function
 !! @param qp  d(qq)/dn
 !! @param jj  the point

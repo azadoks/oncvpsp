@@ -31,17 +31,17 @@
 !! Normalized scattering state for pseudopotential, fully non-local unless
 !! ivkb=0, which should only happen if ll=lloc
 !!
-!! @param ll  angular-momentum quantum number
+!! @param ll  angular momentum
 !! @param ivkb  = 0, 1 or 2 VKB proectors to be used
 !! @param ee  scattering state energy
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param vloc  local pseudopotential on the mesh
-!! @param vlocpw  its pieces
-!! @param vkbpw  VKB projectors as functions of pieces
-!! @param evkb  coefficients of VKB projectors
+!! @param vlocpw  the screened local potential as pieces
+!! @param vkbpw  the projectors as pieces
+!! @param evkb  coefficients of the projectors
 !! @param uu  output radial wave function (*rr)
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
-!! @param mmax  size of log grid
+!! @param mmax  size of the log radial mesh
 !! @param mch  index of radius to which uu is computed
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written

@@ -40,8 +40,8 @@
 !! A^T A, the null space its eigenvectors of eigenvalue zero and the
 !! solution sum_k v_k (v_k . A^T b)/lambda_k over the others
 !!
-!! @param ncon  number of constraints
 !! @param nbas  number of orthogonalized sbf basis functions
+!! @param ncon  number of constraints
 !! @param cons  constraints (value at rc and derivatives up to 4th)
 !! @param orbasis  coefficients of sbfs in orthogonal basis (quad)
 !! @param orbasis_der  values and derivatives of orthogonalized sbf basis
@@ -99,7 +99,7 @@
  end do
  call qjacobi(nbas,gmat,lam,vv)
  if(lam(nnull+1)<rankeps**2*lam(nbas)) then
-   write(iout,'(/a,1p,e10.2)') &
+   write(iout,'(/a,es12.4)') &
 &        'const_basis: ERROR the constraints are linearly dependent, ', &
 &        'singular value ratio', &
 &        real(sqrt(max(lam(nnull+1),0.0_qp)/lam(nbas)),dp)

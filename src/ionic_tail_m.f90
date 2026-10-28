@@ -56,14 +56,14 @@
 
 !! the frozen-core ionic potential V_ion of the all-electron atom
 !!
-!! @param zz  nuclear charge
-!! @param zion  ionic charge (zz minus the core occupation)
-!! @param rhoc  all-electron core charge
-!! @param rhotae  all-electron valence charge
+!! @param zz  atomic number
+!! @param zion  ion charge (zz minus the core occupation)
+!! @param rhoc  core charge density
+!! @param rhotae  all-electron valence charge density
 !! @param rhomod  model core charge
-!! @param rr  log radial grid
-!! @param mmax  dimension of log grid
-!! @param iexc  exchange-correlation function to be used
+!! @param rr  log radial mesh (bohr)
+!! @param mmax  size of the log radial mesh
+!! @param iexc  exchange-correlation functional
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param vion  V_ion
 
@@ -107,11 +107,11 @@
 !! -zion/r to tol, but at least 2*ra (a switch over less than ra would be
 !! harder than the pseudization)
 !!
-!! @param rr  log radial grid
-!! @param mmax  dimension of log grid
-!! @param zion  ionic charge
+!! @param rr  log radial mesh (bohr)
+!! @param mmax  size of the log radial mesh
+!! @param zion  ion charge
 !! @param vion  V_ion
-!! @param rcmax  largest core radius
+!! @param rcmax  largest core radius (bohr)
 !! @param tol  tolerance of V_ion + zion/r
 !! @param ra  start of the window
 !! @param rb  end of the window
@@ -160,22 +160,20 @@
 !! VKB projectors, as oncvpsp_main solves them: rho, the state densities
 !! rhops, the orbitals uupsa and the eigenvalue sum eeig
 !!
-!! @param nkap  1 for scalar-relativistic or non-relativistic, 2 for
-!!              relativistic (both kappa)
+!! @param nkap  number of kappas per l: 1, or 2 for irel=2 (both kappa)
 !! @param nc  number of core states
 !! @param nv  number of valence states
 !! @param la  angular momenta
 !! @param fa  occupancies
 !! @param ea  all-electron eigenvalues (the starting guesses)
-!! @param lloc  index of local potential
+!! @param lloc  l of the local potential, 4 for the polynomial
 !! @param nproj  number of projectors for each l
-!! @param rr  log radial grid
+!! @param rr  log radial mesh (bohr)
 !! @param vp  screened semi-local and local pseudopotentials
-!! @param vlocpw  the screened local potential's pieces
-!! @param vkbpw  Vanderbilt-Kleinman-Bylander projectors as functions of
-!!               pieces
+!! @param vlocpw  the screened local potential as pieces
+!! @param vkbpw  the projectors as pieces
 !! @param evkb  coefficients of the projectors
-!! @param mmax  dimension of log grid
+!! @param mmax  size of the log radial mesh
 !! @param rho  pseudo valence charge
 !! @param rhops  state-by-state pseudo valence charge (one electron)
 !! @param uupsa  pseudo valence wave functions
@@ -236,7 +234,7 @@
 &                  uu,up,mmax,mch,iout,ifail)
      if(ifail/=0) return
      if(ierr/=0) then
-       write(iout,'(/a,3i4)') 'ionic_valence: ERROR lschvkbb n,l,ierr=', &
+       write(iout,'(/a,3i0)') 'ionic_valence: ERROR lschvkbb n,l,ierr=', &
 &            ll+nodes(l1)+1,ll,ierr
        if(ierr==200) write(iout,'(a,i2,a,f12.6,a/a)') &
 &           'a state of l=',ll,' lies below',emin, &
@@ -267,38 +265,36 @@
 !! until the local potential, weighted by rho, changes by no more than
 !! 1e-13 Ha.  The last states are those of the final vp
 !!
-!! @param nkap  1 for scalar-relativistic or non-relativistic, 2 for
-!!              relativistic
+!! @param nkap  number of kappas per l: 1, or 2 for irel=2
 !! @param nc  number of core states
 !! @param nv  number of valence states
 !! @param la  angular momenta
 !! @param fa  occupancies
 !! @param ea  all-electron eigenvalues
 !! @param lmax  maximum angular momentum
-!! @param lloc  index of local potential
+!! @param lloc  l of the local potential, 4 for the polynomial
 !! @param nproj  number of projectors for each l
-!! @param rr  log radial grid
+!! @param rr  log radial mesh (bohr)
 !! @param vp  screened semi-local and local pseudopotentials
-!! @param vlocpw  the screened local potential's pieces
-!! @param vkbpw  Vanderbilt-Kleinman-Bylander projectors as functions of
-!!               pieces
+!! @param vlocpw  the screened local potential as pieces
+!! @param vkbpw  the projectors as pieces
 !! @param evkb  coefficients of the projectors
-!! @param mmax  dimension of log grid
-!! @param zz  nuclear charge
-!! @param zion  ionic charge
+!! @param mmax  size of the log radial mesh
+!! @param zz  atomic number
+!! @param zion  ion charge
 !! @param zval  valence charge
-!! @param iexc  exchange-correlation function to be used
+!! @param iexc  exchange-correlation functional
 !! @param c_light  speed of light (Hartree atomic units)
-!! @param rcmax  largest core radius
-!! @param rhoc  all-electron core charge
-!! @param rhotae  all-electron valence charge
+!! @param rcmax  largest core radius (bohr)
+!! @param rhoc  core charge density
+!! @param rhotae  all-electron valence charge density
 !! @param rhomod  model core charge
 !! @param rho  pseudo valence charge
 !! @param rhops  state-by-state pseudo valence charge
 !! @param uupsa  pseudo valence wave functions
 !! @param eeig  sum of the occupied eigenvalues
 !! @param vo  Hartree and exchange-correlation potential of rho + rhomod
-!! @param vxc  exchange-correlation potential of rho + rhomod
+!! @param vxc  exchange-correlation potential (Ha) of rho + rhomod
 !! @param eeel  electron-electron interaction energy
 !! @param eexc  exchange-correlation correction to the eigenvalue sum
 !! @param vion  V_ion
@@ -375,7 +371,7 @@
    change=sqrt(sn/sd)
    if(change<=tolfix) exit
    if(iter==maxiter) then
-     write(iout,'(/a,i4,a,1p,e10.2)') &
+     write(iout,'(/a,i0,a,es12.4)') &
 &          'ionic_screening: ERROR the ionic tail did not converge in', &
 &          maxiter,' steps, change =',change
      ifail=1
@@ -417,10 +413,10 @@
 !!
 !! @param vloc  unscreened local potential
 !! @param vion  V_ion
-!! @param rr  log radial grid
-!! @param mmax  dimension of log grid
-!! @param zion  ionic charge
-!! @param rcmax  largest core radius
+!! @param rr  log radial mesh (bohr)
+!! @param mmax  size of the log radial mesh
+!! @param zion  ion charge
+!! @param rcmax  largest core radius (bohr)
 !! @param iout  unit of the text output
 
  use constants_m, only: dp, pi

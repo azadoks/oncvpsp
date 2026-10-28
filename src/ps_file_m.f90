@@ -68,10 +68,17 @@
    type(pseudo_t) :: pot
 !> nvkb(l+1,ikap): the projectors of l and kappa in the file
    integer :: nvkb(4,2)=0
-!> the core radii, and the energies (Ha) and radius of the log
-!> derivatives of the input
+!> the core radii of the input (bohr)
    real(dp) :: rc(mxlin+1)=0.0d0
-   real(dp) :: epsh1=0.0d0,epsh2=0.0d0,depsh=0.0d0,rxpsh=0.0d0
+!> lower limit of the log derivative analysis energy range (Ha)
+   real(dp) :: epsh1=0.0d0
+!> upper limit of the log derivative analysis energy range (Ha)
+   real(dp) :: epsh2=0.0d0
+!> energy step of the log derivative analysis (Ha)
+   real(dp) :: depsh=0.0d0
+!> radius of the log derivatives of the input (bohr), negative for the
+!> default of run_phsft
+   real(dp) :: rxpsh=0.0d0
 !> the first projector's reference energy of each l and kappa
    real(dp) :: epa(4,2)=0.0d0
 !> the screened local potential of each kappa (mmax,nkap)
@@ -87,10 +94,10 @@
 !!
 !! @param fname  file to write
 !! @param pot  the pseudopotential (pseudo_m)
-!! @param rc  core radii, rc(lloc+1) that of the local potential
-!! @param epsh1  low energy of the log derivatives (Ha)
-!! @param epsh2  high energy of the log derivatives (Ha)
-!! @param depsh  their energy step
+!! @param rc  core radii (bohr), rc(lloc+1) that of the local potential
+!! @param epsh1  lower limit of the log derivative analysis energy range (Ha)
+!! @param epsh2  upper limit of the log derivative analysis energy range (Ha)
+!! @param depsh  energy step of the log derivative analysis (Ha)
 !! @param rxpsh  their radius, negative for the default of run_phsft
 !! @param epa  reference energies of the projectors
 !! @param vp  semi-local pseudopotentials, vp(:,lloc+1,:) the local one
@@ -118,7 +125,7 @@
  open(newunit=unit,file=fname,access='stream',form='unformatted', &
 &     status='replace',action='write',iostat=ios)
  if(ios/=0) then
-   write(iout,'(2a)') 'write_ps_file: ERROR cannot open ',trim(fname)
+   write(iout,'(/2a)') 'write_ps_file: ERROR cannot open ',trim(fname)
    ifail=1
    return
  end if
@@ -178,28 +185,29 @@
  open(newunit=unit,file=fname,access='stream',form='unformatted', &
 &     status='old',action='read',iostat=ios)
  if(ios/=0) then
-   write(iout,'(2a)') 'read_ps_file: ERROR cannot open ',trim(fname)
+   write(iout,'(/2a)') 'read_ps_file: ERROR cannot open ',trim(fname)
    ifail=1
    return
  end if
  read(unit,iostat=ios) magic_f,version_f,irel
  if(ios/=0 .or. magic_f/=magic) then
-   write(iout,'(2a)') 'read_ps_file: ERROR not a pseudopotential data file: ', &
+   write(iout,'(/2a)') &
+&        'read_ps_file: ERROR not a pseudopotential data file: ', &
 &        trim(fname)
    ifail=1
    close(unit)
    return
  end if
  if(version_f/=version .and. byteswap(version_f)==version) then
-   write(iout,'(2a)') 'read_ps_file: ERROR file was written on a machine', &
+   write(iout,'(/2a)') 'read_ps_file: ERROR file was written on a machine', &
 &        ' with the other byte order'
    ifail=1
    close(unit)
    return
  end if
  if(version_f/=version) then
-   write(iout,'(a,i4,a,i4)') 'read_ps_file: ERROR file format version', &
-&        version_f,' but this program reads version',version
+   write(iout,'(/a,i0,a,i0)') 'read_ps_file: ERROR file format version ', &
+&        version_f,' but this program reads version ',version
    ifail=1
    close(unit)
    return
@@ -263,6 +271,12 @@
 
  integer function nvkb_of(l1,lloc,nproj)
 !! the projectors of l=l1-1: none for the local potential's l
+!!
+!! @param l1  l+1
+!! @param lloc  l of the local potential, 4 for the polynomial
+!! @param nproj  number of projectors for each l
+
+!Input variables
  integer, intent(in) :: l1,lloc,nproj(mxlin+1)
  nvkb_of=nproj(l1)
  if(l1-1==lloc) nvkb_of=0
@@ -270,8 +284,12 @@
 
  subroutine write_pw(unit,pw)
 !! writes a piecewise function
+!!
+!! @param unit  the unit of the open file
+!! @param pw  the function as pieces (pieces_m)
  use pieces_m, only: piecewise_t
 
+!Input variables
  integer, intent(in) :: unit
  type(piecewise_t), intent(in) :: pw
  write(unit) pw%nseg,pw%bound(0:pw%nseg)
@@ -280,18 +298,29 @@
 
  subroutine read_pw(unit,mmax,pw,iout,ifail)
 !! reads a piecewise function written by write_pw
+!!
+!! @param unit  the unit of the open file
+!! @param mmax  size of the log radial mesh
+!! @param pw  the function as pieces (pieces_m), allocated here
+!! @param iout  unit of the text output
+!! @param ifail  0, or 1 after a failure, whose message is written
  use pieces_m, only: piecewise_t, pw_maxseg, pw_alloc
 
+!Input variables
  integer, intent(in) :: unit,mmax
+ integer, intent(in) :: iout
+
+!Output variables
  type(piecewise_t), intent(out) :: pw
+ integer, intent(out) :: ifail
+
+!Local variables
  integer :: nseg
  real(dp) :: bound(0:pw_maxseg)
- integer, intent(in) :: iout
- integer, intent(out) :: ifail
  ifail=0
  read(unit) nseg
  if(nseg<1 .or. nseg>pw_maxseg) then
-   write(iout,'(a,i0)') 'read_ps_file: ERROR number of segments ',nseg
+   write(iout,'(/a,i0)') 'read_ps_file: ERROR number of segments ',nseg
    ifail=1
    return
  end if

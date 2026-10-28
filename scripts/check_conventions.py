@@ -17,12 +17,17 @@ file of src/ (the ctest test).
 The rules (doc/coding_standards.md and doc/consistency_audit.md):
   sections  a dummy argument is declared under the label of its intent
             (!Input variables for intent(in), ...), a local under !Local
-            variables
+            variables; a module procedure with arguments has the labels
   header    a module procedure has a !! description and one @param per dummy
             argument, in order (a,b and a..b name several)
+  glossary  the @param text of a name in doc/glossary.md starts with the
+            glossary's text for it
   message   an ERROR or WARNING message names the routine that writes it,
-            its host, or a public procedure of its module, and its format
-            starts with a blank line ('(/...')
+            its host, or a public procedure of its module; its format
+            starts with a blank line ('(/...') and prints numbers only as
+            i0, f12.6 or es12.4; no string in it is continued across lines
+            (the continuation would copy the indentation into the text).
+            The messages of 4.0.1 (scripts/messages_4.0.1.txt) are exempt
   stop      a module procedure stops only with error stop 1 (rule 5)
   ierr      an ierr returned by a call is used after it (or passed up as
             the procedure's own)
@@ -47,6 +52,35 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 BASELINE = ROOT / "scripts" / "conventions_baseline.txt"
+MESSAGES_401 = [
+    line
+    for line in (ROOT / "scripts" / "messages_4.0.1.txt").read_text().splitlines()
+    if line and not line.startswith("#")
+]
+
+
+def read_glossary(path):
+    """{name: text} of the table after the <!-- glossary --> marker."""
+    terms, inside = {}, False
+    for line in path.read_text().splitlines():
+        if line.startswith("<!-- glossary"):
+            inside = True
+            continue
+        if inside:
+            if not line.startswith("|"):
+                if terms:
+                    break
+                continue
+            cells = [c.strip() for c in line.strip("|").split("|")]
+            name = cells[0].strip("`")
+            if name and name != "name" and not set(name) <= {"-"}:
+                terms[name] = cells[1].split(" / ")
+    return terms
+
+
+GLOSSARY = read_glossary(ROOT / "doc" / "glossary.md")
+# the numeric edit descriptors a message may use
+MESSAGE_NUMBERS = {"i0", "f12.6", "es12.4"}
 IMPORTED = {"exc_off_pbe_m.f", "functionals.F90", "m_libxc_list.F90"}
 # the procedures that may stop (rule 5): the command line and oncvpsp_main
 STOPS = {"parse_command_line", "oncvpsp_main"}
@@ -85,6 +119,20 @@ def strip_comment(line):
         elif ch == "!":
             return line[:ii]
     return line
+
+
+def open_string_at_end(line):
+    """Whether a line ends inside a string (a string continued with &)."""
+    quote = None
+    for ch in line:
+        if quote:
+            if ch == quote:
+                quote = None
+        elif ch in "'\"":
+            quote = ch
+        elif ch == "!":
+            return False
+    return quote is not None
 
 
 def statements(lines):
@@ -235,6 +283,22 @@ def param_names(header):
     return names
 
 
+def param_texts(header):
+    """(name, text) of each @param line naming one dummy, continuation joined."""
+    out = []
+    for ii, line in enumerate(header):
+        pm = re.match(r"!!\s*@param\s+(\w+)\s+(.*)$", line)
+        if not pm:
+            continue
+        text = pm.group(2).strip()
+        for nxt in header[ii + 1 :]:
+            if re.match(r"!!\s*@param\b", nxt) or not nxt.strip("! "):
+                break
+            text += " " + nxt.lstrip("!").strip()
+        out.append((pm.group(1).lower(), text))
+    return out
+
+
 def header_matches(params, args):
     """Whether the @param names cover args in order."""
     ii = 0
@@ -287,6 +351,18 @@ def check_file(path, rel):
                         f"{','.join(names)} ({intent or 'local'}) under !{label}",
                         ln,
                     )
+        if (
+            procedure
+            and unit.args
+            and any(h.kind == "module" for h in unit.host)
+            and not any(h.kind != "module" for h in unit.host)
+            and all(
+                label is None
+                for _, _, _, attrs, label, _ in unit.decls
+                if "parameter" not in attrs
+            )
+        ):
+            add("sections", unit, "no section labels", unit.line)
         if procedure:
             for ln, st in unit.body:
                 if re.match(r"use\b", st.lower()):
@@ -311,7 +387,11 @@ def check_file(path, rel):
             params = param_names(unit.header)
             if unit.args and not params:
                 add("header", unit, "no @param", unit.line)
-            elif unit.args and not header_matches(params, unit.args):
+            for name, text in param_texts(unit.header):
+                want = GLOSSARY.get(name)
+                if want and not text.startswith(tuple(want)):
+                    add("glossary", unit, f"@param {name}: {text[:40]}", unit.line)
+            if unit.args and params and not header_matches(params, unit.args):
                 add(
                     "header",
                     unit,
@@ -374,8 +454,11 @@ def check_file(path, rel):
                     if re.search(r"(?<=[,(p])d\d+\.\d+", fmt.lower()):
                         add("format", unit, "d edit descriptor", ln)
             if re.match(r"(if\s*\(.*?\)\s*)?write\s*\(", low):
-                text = " ".join(a or b for a, b in STRING.findall(st))
+                joined = re.sub(r"(['\"])\s*//\s*(['\"])", "", st)
+                text = " ".join(a or b for a, b in STRING.findall(joined))
                 mm = re.search(r"(\w+):\s*(ERROR|WARNING)\b", text)
+                if mm and any(m in text for m in MESSAGES_401):
+                    mm = None
                 if mm:
                     prefix = mm.group(1).lower()
                     if prefix not in allowed:
@@ -390,6 +473,19 @@ def check_file(path, rel):
                             f"no blank line before {prefix}: {mm.group(2)}",
                             ln,
                         )
+                    if fm:
+                        for desc in re.findall(
+                            r"(?<![a-z])(1p|[a-z]+\d+(?:\.\d+)?)", fm.group(1).lower()
+                        ):
+                            if desc != "a" and desc not in MESSAGE_NUMBERS:
+                                add("message", unit, f"edit descriptor {desc}", ln)
+                    jj = ln - 1
+                    while jj < len(lines) and strip_comment(
+                        lines[jj]
+                    ).rstrip().endswith("&"):
+                        if open_string_at_end(lines[jj].rstrip()[:-1]):
+                            add("message", unit, "string continued across lines", ln)
+                        jj += 1
             cm = re.match(r"(?:if\s*\(.*\)\s*)?call\s+(\w+)\s*\((.*)\)\s*$", st, re.I)
             if cm:
                 args = [a.strip().lower() for a in split_top(cm.group(2))]

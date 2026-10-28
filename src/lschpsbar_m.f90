@@ -30,17 +30,17 @@
 !! Finds bound states of a semi-local pseudopotential
 !!
 !! @param nn  principal quantum number
-!! @param ll  angular-momentum quantum number
+!! @param ll  angular momentum
 !! @param ierr  non-zero return if error
 !! @param ee  bound-state energy, input guess and output calculated value
 !!            (in/our)
 !! @param emin  lower bound, potential minimum if ==0.0
 !! @param emax  upper bound
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param vv  local psp
 !! @param uu  output radial wave function (*rr)
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
-!! @param mmax  size of log grid
+!! @param mmax  size of the log radial mesh
 !! @param mbar  mesh point for infinite barrier
 !! @param tht  phast-shift angle for boundary condition, units of pi
 

@@ -37,14 +37,14 @@
 !!
 !! @param nn  effective principal quantum number based on nodes inside mch
 !!            (output)
-!! @param ll  angular-momentum quantum number
+!! @param ll  angular momentum
 !! @param ee  bound-state energy, input guess and output calculated value
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param vv  local atomic potential
 !! @param uu  output radial wave function (*rr)
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param zz  atomic number
-!! @param mmax  size of log grid
+!! @param mmax  size of the log radial mesh
 !! @param mch  matching mesh point for inward-outward integrations
 !! @param irel  0 non-relativistic, 1 scalar-relativistic
 !! @param c_light  speed of light (Hartree atomic units)

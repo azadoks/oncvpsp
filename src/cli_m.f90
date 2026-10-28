@@ -29,8 +29,19 @@
 
  subroutine cli_next_arg(prog,iarg,val)
 !! the value of the option at iarg, which it passes
+!!
+!! @param prog  the program name, for the error message
+!! @param iarg  index of the option among the command arguments; on
+!!              return that of its value
+!! @param val  the value, the argument after the option
+
+!Input variables
  character(len=*), intent(in) :: prog
+
+!Input/output variables
  integer, intent(inout) :: iarg
+
+!Output variables
  character(len=1024), intent(out) :: val
  if(iarg+1>command_argument_count()) then
    call get_command_argument(iarg,val)
@@ -43,7 +54,13 @@
 
  integer function cli_count_list(str)
 !! the number of comma-separated items of str
+!!
+!! @param str  the comma-separated list
+
+!Input variables
  character(len=*), intent(in) :: str
+
+!Local variables
  integer :: kk
  cli_count_list=1
  do kk=1,len_trim(str)
@@ -53,12 +70,23 @@
 
  subroutine cli_radii(prog,arg,mxq,nq,rq)
 !! --radii: nq (at most mxq) positive radii rq
+!!
+!! @param prog  the program name, for the error messages
+!! @param arg  the value of --radii, radii separated by commas
+!! @param mxq  the largest number of radii
+!! @param nq  the number of radii read
+!! @param rq  the radii (bohr), in rq(1:nq)
  use constants_m, only: dp
 
+!Input variables
  character(len=*), intent(in) :: prog,arg
  integer, intent(in) :: mxq
+
+!Output variables
  integer, intent(out) :: nq
  real(dp), intent(out) :: rq(mxq)
+
+!Local variables
  integer :: ios
  nq=cli_count_list(arg)
  if(nq>mxq) then
@@ -75,8 +103,18 @@
 
  subroutine cli_channels(prog,arg,chan)
 !! --channels: the values of l from 0 to 3 of the output
+!!
+!! @param prog  the program name, for the error message
+!! @param arg  the value of --channels, values of l separated by commas
+!! @param chan  .true. for each l listed
+
+!Input variables
  character(len=*), intent(in) :: prog,arg
+
+!Output variables
  logical, intent(out) :: chan(0:3)
+
+!Local variables
  integer :: lsel(4),nl,ios
  nl=min(cli_count_list(arg),size(lsel)+1)
  lsel(:)=-1
@@ -95,10 +133,19 @@
 
  subroutine cli_energies(prog,arg,ee)
 !! --energies: emin, emax and the step de
+!!
+!! @param prog  the program name, for the error message
+!! @param arg  the value of --energies, emin,emax,de
+!! @param ee  emin, emax and de (Ha)
  use constants_m, only: dp
 
+!Input variables
  character(len=*), intent(in) :: prog,arg
+
+!Output variables
  real(dp), intent(out) :: ee(3)
+
+!Local variables
  integer :: ios
  read(arg,*,iostat=ios) ee(1:3)
  if(ios/=0 .or. cli_count_list(arg)/=3 .or. ee(3)<=0.0d0 &

@@ -52,7 +52,7 @@
 !! continuous mesh index xm in [mch-1,mch] of the root of the interpolant
 !! of cf, which changes sign from <=0 to >0 between rr(mch-1) and rr(mch)
 !!
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param cf  the coefficient whose sign change is the turning point
 !! @param mmax  size of the log radial mesh
 !! @param mch  the mesh point just beyond the sign change
@@ -78,14 +78,14 @@
 
  ifail=0
  if(mch-1-match_k<2 .or. mch+match_k>mmax) then
-   write(iout,'(a,i6,a,i6)') 'match_point: ERROR matching window at mch=', &
+   write(iout,'(/a,i0,a,i0)') 'match_point: ERROR matching window at mch=', &
 &        mch,' leaves the mesh, mmax=',mmax
    ifail=1
    return
  end if
  call lm_root(rr,cf,mmax,rr(mch-1),rr(mch),rq,ierr)
  if(ierr/=0) then
-   write(iout,'(a,i6)') 'match_point: ERROR no sign change below mch=',mch
+   write(iout,'(/a,i0)') 'match_point: ERROR no sign change below mch=',mch
    ifail=1
    return
  end if
@@ -168,9 +168,12 @@
 
 !! a C-infinity maximum of two mesh indices, within half a step of the
 !! larger: (a + b + sqrt((a-b)**2 + 1))/2
+!!
+!! @param aa,bb  the two mesh indices, as reals
 
  use constants_m, only: dp
 
+!Input variables
  real(dp), intent(in) :: aa,bb
 
  match_smax=0.5d0*(aa+bb+sqrt((aa-bb)**2+1.0d0))
@@ -179,9 +182,12 @@
  real(dp) function edge(xx)
 
 !! exp(-1/x) for x>0, 0 otherwise
+!!
+!! @param xx  the argument x
 
  use constants_m, only: dp
 
+!Input variables
  real(dp), intent(in) :: xx
 
  if(xx>0.0d0) then

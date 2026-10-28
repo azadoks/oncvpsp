@@ -36,8 +36,10 @@
    real(dp), allocatable :: ee(:)
 !> the radius of each l (bohr)
    real(dp) :: rl(4)=0.0d0
-!> of the all-electron and the pseudo wave, per energy, l and ikap
-   real(dp), allocatable :: ae(:,:,:),ps(:,:,:)
+!> of the all-electron wave, per energy, l and ikap
+   real(dp), allocatable :: ae(:,:,:)
+!> of the pseudo wave, per energy, l and ikap
+   real(dp), allocatable :: ps(:,:,:)
  end type logder_t
 
 !> the ghost tests (run_ghosts), per l and ikap
@@ -98,9 +100,12 @@
 !> the pseudo-waves' convergence curves (modcore_budget_table)
  type :: weighted_cut_t
 !> whether the budget took it (icmod 6, 7 with fcfact <= 0 and
-!> budget_cutoff "weighted"), its error per electron and the cutoff (Ha)
+!> budget_cutoff "weighted")
    logical :: used=.false.
-   real(dp) :: errw=0.0d0,ecutw=0.0d0
+!> its error per electron (Ha)
+   real(dp) :: errw=0.0d0
+!> the cutoff (Ha)
+   real(dp) :: ecutw=0.0d0
 !> the weight of each pseudo-wave in the mean (mxprj,mxl+1,nkap)
    real(dp), allocatable :: weight(:,:,:)
  end type weighted_cut_t
@@ -118,11 +123,17 @@
 
 !> the results of all the tests
  type :: tests_t
+!> the log derivatives
    type(logder_t) :: logder
+!> the ghost tests
    type(ghosts_t) :: ghosts
+!> the test configurations
    type(configs_t) :: configs
+!> the convergence of the optimized pseudo-waves with the cutoff
    type(convergence_t) :: convergence
+!> the weighted cutoff of the model core's budget
    type(weighted_cut_t) :: weighted_cut
+!> the convergence of the local energy
    type(vloc_cut_t) :: vloc_cut
 !> the eigenvalues of the projectors' symmetrized B matrices (run_vkb),
 !> their condition (mxprj,mxl+1,nkap)

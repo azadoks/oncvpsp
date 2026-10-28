@@ -25,8 +25,12 @@
  public :: main_names, parse_command_line, write_banner, make_log_mesh
  public :: write_reference_results, core_radius_points
 
-!> where the input is read from
- integer, parameter, public :: INPUT_STDIN=1, INPUT_TEXT=2, INPUT_TOML=3
+!> input_mode: the .dat text input from stdin
+ integer, parameter, public :: INPUT_STDIN=1
+!> input_mode: the .dat text input from the file of --input
+ integer, parameter, public :: INPUT_TEXT=2
+!> input_mode: the TOML input from the file of --toml-input
+ integer, parameter, public :: INPUT_TOML=3
 
  contains
 
@@ -35,7 +39,19 @@
 !! and 2 for j=l-1/2 when fully relativistic, only 1 otherwise), and the
 !! names in the messages: the equation solved, the program and the
 !! executable of irel and istage
+!!
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param istage  0 the whole program, 1 the all-electron stage, 2 the
+!!                pseudopotential stage
+!! @param nkap  number of kappas per l: 1, or 2 for irel=2
+!! @param treatment  the equation solved, as 'scalar-relativistic'
+!! @param pname  the program name of the messages
+!! @param exe  the name of the executable, as 'oncvpsp_ae.x'
+
+!Input variables
  integer, intent(in) :: irel,istage
+
+!Output variables
  integer, intent(out) :: nkap
  character(len=19), intent(out) :: treatment
  character(len=9), intent(out) :: pname
@@ -73,13 +89,30 @@
 &                              skip_ld)
 !! the options of the executable exe of stage istage: where the input is
 !! read from, the data files and whether to leave out the log derivatives
+!!
+!! @param istage  0 the whole program, 1 the all-electron stage, 2 the
+!!                pseudopotential stage
+!! @param treatment  the equation solved, for --help and --version
+!! @param pname  the program name, for the error messages
+!! @param exe  the name of the executable, for --help and --version
+!! @param input_mode  INPUT_STDIN, INPUT_TEXT or INPUT_TOML
+!! @param input_filename  the file of --input or --toml-input; unset for
+!!                        INPUT_STDIN
+!! @param ae_filename  the all-electron data file of --ae-file, or blank
+!! @param ps_filename  the file of --ps-file, or blank
+!! @param skip_ld  .true. for --no-log-derivatives, but not in stage 1
  use build_info_m, only: write_build_info
 
+!Input variables
  integer, intent(in) :: istage
  character(len=*), intent(in) :: treatment,pname,exe
+
+!Output variables
  integer, intent(out) :: input_mode
  character(len=1024), intent(out) :: input_filename,ae_filename,ps_filename
  logical, intent(out) :: skip_ld
+
+!Local variables
  integer :: iarg
  character(len=256) :: arg
  input_mode = INPUT_STDIN
@@ -147,8 +180,15 @@
 
  subroutine write_banner(irel,treatment,exe,iout)
 !! the version, the citation and the build
+!!
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param treatment  the equation solved, as 'scalar-relativistic'
+!! @param exe  the name of the executable, for the build information
+!! @param iout  unit of the text output; the build information goes to
+!!              unit 6
  use build_info_m, only: write_build_info
 
+!Input variables
  integer, intent(in) :: irel
  character(len=*), intent(in) :: treatment,exe
  integer, intent(in) :: iout
@@ -177,13 +217,30 @@
 !! built-in ones for those 0 or less; and the mesh for the echoes of the
 !! input, only when the input sets it (else 0), so that the output of an
 !! input without it is unchanged
+!!
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param zz  atomic number
+!! @param amesh_in  the input mesh ratio, or 0 or less for 1.006
+!! @param rr1_in  the input first mesh point (bohr), or 0 or less for
+!!                0.0005/zz (at most 0.00005 unless irel=2)
+!! @param rmax_in  the input mesh end (bohr), or 0 or less for 45
+!! @param al  log of the mesh ratio
+!! @param mmax  size of the log radial mesh
+!! @param rr  log radial mesh (bohr); allocated here
+!! @param log_mesh  the mesh ratio, first point and end used, or 0 when the
+!!                  input sets none of them
  use constants_m, only: dp
 
+!Input variables
  integer, intent(in) :: irel
  real(dp), intent(in) :: zz,amesh_in,rr1_in,rmax_in
+
+!Output variables
  real(dp), intent(out) :: al,log_mesh(3)
  integer, intent(out) :: mmax
  real(dp), allocatable, intent(out) :: rr(:)
+
+!Local variables
  real(dp) :: amesh,rr1,rmax
  integer :: ii
  if(amesh_in>0.0d0) then
@@ -221,8 +278,17 @@
  subroutine write_reference_results(pname,it,etot,res,eterm,iout)
 !! the all-electron reference atom's iterations, total energy, residual
 !! and energy terms; an error if it did not converge
+!!
+!! @param pname  the program name, for the error message
+!! @param it  the number of iterations; 100 or more is not converged
+!! @param etot  total energy (Ha)
+!! @param res  the residual of the screening potential (Ha)
+!! @param eterm  kinetic, electron-nucleus, Hartree and exchange-correlation
+!!               energies (Ha)
+!! @param iout  unit of the text output
  use constants_m, only: dp
 
+!Input variables
  character(len=*), intent(in) :: pname
  integer, intent(in) :: it
  real(dp), intent(in) :: etot,res,eterm(4)
@@ -248,12 +314,26 @@
 !! the last log mesh point at or inside each rc, for the bookkeeping of the
 !! routines that index the mesh (R-2); the radii themselves stay as given;
 !! and the largest
+!!
+!! @param lmax  maximum angular momentum
+!! @param lloc  l of the local potential, 4 for the polynomial
+!! @param rc  core radius (bohr), of each l up to max(lmax,lloc)
+!! @param rr  log radial mesh (bohr)
+!! @param mmax  size of the log radial mesh
+!! @param irc  last mesh point at or inside rc, of each l
+!! @param rcmax  largest core radius (bohr)
+ use, intrinsic :: iso_fortran_env, only: error_unit
  use constants_m, only: dp
 
+!Input variables
  integer, intent(in) :: lmax,lloc,mmax
  real(dp), intent(in) :: rc(:),rr(mmax)
+
+!Output variables
  integer, intent(out) :: irc(:)
  real(dp), intent(out) :: rcmax
+
+!Local variables
  integer :: ii,l1
  rcmax=0.0d0
  irc(:)=0
@@ -263,8 +343,9 @@
      if(rr(ii)<=rc(l1)) irc(l1)=ii
    end do
    if(rc(l1)>0.0d0 .and. irc(l1)<2) then
-     write(6,'(a,i2,a,es12.4)') &
-&         'oncvpsp: ERROR rc inside the mesh start for l=',l1-1,': rc=',rc(l1)
+     write(error_unit,'(/a,i0,a,es12.4)') &
+&         'core_radius_points: ERROR rc inside the mesh start for l=', &
+&         l1-1,': rc=',rc(l1)
      error stop 1
    end if
    rcmax=max(rcmax,rc(l1))
@@ -273,8 +354,17 @@
 
  subroutine write_help(istage,treatment,exe)
 !! the usage of this executable: what it does and its options
+!!
+!! @param istage  0 the whole program, 1 the all-electron stage, 2 the
+!!                pseudopotential stage
+!! @param treatment  the equation solved, as 'scalar-relativistic'
+!! @param exe  the name of the executable
+
+!Input variables
  integer, intent(in) :: istage
  character(len=*), intent(in) :: treatment,exe
+
+!Local variables
  character(len=16) :: full
 
  full=exe(1:index(exe,'_')-1)

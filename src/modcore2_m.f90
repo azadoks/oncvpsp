@@ -42,23 +42,23 @@
 
 !! @param icmod  (not used)
 !! @param rhops  state-by-state pseudocharge density
-!! @param rhotps  total pseudocharge density
-!! @param rhoc  core-charge density
+!! @param rhotps  pseudo valence charge density
+!! @param rhoc  core charge density
 !! @param rhoae  state-by-state all-electron valence charge density
-!! @param rhotae  total all-electron valence charge density
-!! @param rhomod  model core density and 4 derivatives
+!! @param rhotae  all-electron valence charge density
+!! @param rhomod  model core charge and its first 4 derivatives
 !! @param corepw  its pieces, one segment with the Teter function's closed
 !!                form (modcore_m, core_pieces_smooth)
 !! @param fcfact  the model is matched where rhoc equals fcfact times the total
 !!                pseudocharge
 !! @param rcfact  (not used)
-!! @param mmax  dimension of log grid
-!! @param rr  log radial grid
+!! @param mmax  size of the log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param nc  number of core states
 !! @param nv  number of valence states
-!! @param la  angular-momenta
+!! @param la  angular momenta
 !! @param zion  ion charge
-!! @param iexc  exchange-correlation function to be used
+!! @param iexc  exchange-correlation functional
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
@@ -130,7 +130,7 @@
  call teter_scale(ymatch,xx,ierr,iout,ifail)
  if(ifail/=0) return
  if(ierr/=0) then
-   write(iout,'(/a,1p,e12.4)') 'modcore2: ERROR no Teter scale for the slope', &
+   write(iout,'(/a,es12.4)') 'modcore2: ERROR no Teter scale for the slope', &
 &        ymatch
    ifail=1
    return

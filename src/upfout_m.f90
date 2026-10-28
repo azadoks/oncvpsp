@@ -25,46 +25,45 @@
 
  contains
 
-! interpolates various arrays onto linear radial mesh to create file
-! for PWSCF input using the UPF file format, with the spin-orbit data when
-! fully relativistic, or takes them at every istr-th point of the log mesh
-! (upf_mesh > 0), as generated, with nothing interpolated
-
  subroutine upfout(inp,c_light,vkbpw,evkb,rr,vpuns,vlocpw,rho,corepw,zion, &
 &                  mmax,nrlin,epstot,rc0,fcfact,fcgrid,rcgrid,uupsa,ea, &
 &                  log_mesh,nkap,iout,ifail)
 
-
+!! the pseudopotential in the UPF file format of PWSCF, written to iout,
+!! with the spin-orbit data when fully relativistic: interpolated to the
+!! linear output mesh, or taken at every istr-th point of the log mesh
+!! (upf_mesh > 0), as generated, with nothing interpolated
+!!
 !! @param inp  the input values (input_m)
 !! @param c_light  speed of light (Hartree atomic units)
-!! @param vkbpw  VKB projectors' pieces, last index 1 for j=l+1/2, 2 for
+!! @param vkbpw  the projectors as pieces, last index 1 for j=l+1/2, 2 for
 !!               j=l-1/2 when nkap=2
-!! @param evkb  coefficients of VKB projectors, last index as for vkbpw
-!! @param rr  log radial grid
+!! @param evkb  coefficients of the projectors (Ha), last index as for vkbpw
+!! @param rr  log radial mesh (bohr)
 !! @param vpuns  unscreened semi-local pseudopotentials (vp(:,5) is local
 !!               potential if linear combination is used)
-!! @param vlocpw  the screened local potential's pieces; vpuns(:,lloc+1)
+!! @param vlocpw  the screened local potential as pieces; vpuns(:,lloc+1)
 !!                less their node values is smooth
 !! @param rho  valence pseudocharge
 !! @param corepw  the model core charge and its first 4 derivatives, as
 !!                pieces split at its joint (modcore_m, core_pieces)
-!! @param zion  at this point, total valence charge (becomes pseudoion charge)
-!! @param mmax  size of log radial grid
-!! @param nrlin  size of linear radial grid (enlarged locally to fit the
-!!               orbitals)
-!! @param epstot  pseudoatom total energy
+!! @param zion  ion charge
+!! @param mmax  size of the log radial mesh
+!! @param nrlin  size of the linear output mesh (enlarged locally to fit
+!!               the orbitals)
+!! @param epstot  pseudoatom total energy (Ha)
 !! @param rc0  core radii as read from the input (bohr), rc0(5) for lloc=4
 !! @param fcfact  prefactor for model core charge amplitude, as read from the
 !!                input
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
-!! @param log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets
-!!                  it (else 0)
 !! @param uupsa  pseudo-atomic orbitals, second index 1 for j=l+1/2, 2 for
 !!               j=l-1/2 when nkap=2
 !! @param ea  all-electron eigenvalues (Ha) of the reference configuration,
 !!            the orbitals' pseudo_energy; second index as for uupsa
-!! @param nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
+!! @param log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets
+!!                  it (else 0)
+!! @param nkap  number of kappas per l: 1, or 2 for irel=2
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 

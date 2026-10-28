@@ -58,11 +58,11 @@
 !! would be the quadrature's (the reference outputs' 1e-7 levels moved by
 !! a factor of 3 with its points per period).
 !!
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param mmax  size of the log radial mesh
 !! @param rho  the pseudo valence density, 4 pi n (int rho r^2 dr = N)
 !! @param vloc  the local potential (Ha)
-!! @param zion  the ionic charge
+!! @param zion  ion charge
 !! @param cvl  (Ecut, err) per level, Ecut 0 for a level not reached
 !! @param echk  E_loc per electron from the q grid less that from r space
 !!              (Ha): the transforms' error and the part above qend

@@ -54,7 +54,7 @@ icmod==1:
     to be less than 1, eg. 0.25-0.5.  Exc 2nd derivatives are calculated
     with and without this charge, and the rms discripancies reported in the
     *.out file, but play no active role.  This option is executed by
-    modcore.f90.
+    modcore1_m.f90.
 
 icmod==2:
 
@@ -88,12 +88,12 @@ icmod==3:
     prefactor, scale prefactor."  Note that "fcfact" in this context
     has a DIFFERENT MEANING than in options 1 and 2.  The Teter function
     is tapered as in option 2 above.  Exc 2nd derivatives
-    are computed but not used.  This option is executed by modcore3.f90.
+    are computed but not used.  This option is executed by modcore3_m.f90.
 
 icmod==4:
 
     The Teter function parameters are optimized to reduce Exc
-    2nd-derivative discrepancies in modcore3.f90.  The optimization is
+    2nd-derivative discrepancies in modcore3_m.f90.  The optimization is
     initiated by finding the radius rmatch at which rhoc=pseudo-rho, and
     this charge value is stored as rhocmatch.  The core model is then
 

@@ -40,8 +40,8 @@ following major sections:
    in the mesh.  And an occupied state with no bound solution in an early
    SCF potential (the 4f of Yb) gets its box state, zero at the end of the
    mesh, and the SCF goes on; it cannot converge with one.  The scalar-
-   relativistic SCF with a GGA also follows RadialAtomicSolvers.jl (its note
-   SR_SHOOTING_VPRIME.md), and converges on meshes down to amesh 1.00075
+   relativistic SCF with a GGA also follows RadialAtomicSolvers.jl (the note
+   SR_SHOOTING_VPRIME.md in that repository), and converges on meshes down to amesh 1.00075
    and rr1 1e-8/Z, where it diverged for light atoms.  Inside
    r* ~ Z/(2c^2) the relativistic mass is set by the potential, and with a
    GGA that closes a loop potential -> orbital exponent -> density gradient

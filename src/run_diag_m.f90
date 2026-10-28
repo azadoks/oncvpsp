@@ -48,21 +48,21 @@
 !!             evkb and vp)
 !! @param wellprj  whether each projector is a well state (its energy then
 !!                 of either sign), else a bound state
-!! @param lloc  l for local potential
+!! @param lloc  l of the local potential, 4 for the polynomial
 !! @param rc  core radii (bohr)
-!! @param vlocpw  the screened local potential's pieces
-!! @param vkbpw  VKB projectors as functions of pieces
-!! @param evkb  coefficients of VKB projectors
-!! @param nproj  number of vkb projectors for each l
-!! @param rr  log radial grid
-!! @param vfull  all-electron potential
+!! @param vlocpw  the screened local potential as pieces
+!! @param vkbpw  the projectors as pieces
+!! @param evkb  coefficients of the projectors
+!! @param nproj  number of projectors for each l
+!! @param rr  log radial mesh (bohr)
+!! @param vfull  all-electron potential (Ha)
 !! @param vp  semi-local pseudopotentials (vp(:,5) is local potential if linear
 !!            comb.)
 !! @param zz  atomic number
-!! @param mmax  size of radial grid
+!! @param mmax  size of the log radial mesh
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param c_light  speed of light (Hartree atomic units)
-!! @param nkap  number of kappa per l: 1, or 2 for irel=2
+!! @param nkap  number of kappas per l: 1, or 2 for irel=2
 !! @param iso  0 the projectors vkbpw, evkb; 1 those of vsrpw..eso
 !! @param vsrpw  normalized scalar-relativistic projectors, as functions of
 !!               pieces (iso=1)

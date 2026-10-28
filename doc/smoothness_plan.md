@@ -1819,7 +1819,7 @@ from rc:
       computes. The user's aim for the smooth label: the fewest inputs
       that keep at least today's smoothness coverage (a map of what each
       row exercises first, then the smallest set that covers it all). Where the time
-      goes now (`ctest -LE smooth -j 16`, 310 tests, 186 s wall, about
+      goes now (`ctest -LE smooth -j 16`, the label now `scan`, 310 tests, 186 s wall, about
       2700 s·proc): toml 760, echo 556, mesh 490, nist 388, split 195,
       r 187, sr 182 s·proc; the smooth label about 100 s per row at 4
       jobs, before parsing the outputs in parallel (smooth_scan.py).

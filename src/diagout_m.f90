@@ -129,16 +129,16 @@
 !!
 !! @param lmax  maximum angular momentum
 !! @param nproj  number of projectors for each l
-!! @param nkap  number of kappa per l: 1, or 2 for irel=2
+!! @param nkap  number of kappas per l: 1, or 2 for irel=2
 !! @param tests  the results of the tests (test_results_m)
 !! @param icmod  the model core's kind, 0 for none
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param mmax  size of the log radial mesh
-!! @param rcmax  the largest core radius (bohr)
-!! @param rhoc  the all-electron core charge
+!! @param rcmax  largest core radius (bohr)
+!! @param rhoc  core charge density, all-electron
 !! @param corepw  the model core charge and its derivatives as pieces
 !! @param lloc  l of the local potential, 4 for the polynomial
-!! @param evkb  the projector coefficients
+!! @param evkb  coefficients of the projectors
 !! @param iout  unit of the text output
 
  use constants_m, only: dp, mxl, mxlin, nerrdg, nerrlv, nrhomod, mxprj
@@ -447,7 +447,7 @@
  ra=max(rcmax,rr(kk-1))
  call lm_root(rr,gg,mmax,ra,rr(kk),fall_to,ierr)
  if(ierr/=0) then
-   write(error_unit,'(a)') &
+   write(error_unit,'(/a)') &
 &       'diagout: ERROR the core charge''s bracket lost its sign'
    error stop 1
  end if

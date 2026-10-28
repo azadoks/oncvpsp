@@ -52,15 +52,40 @@
 !> 1 for the all-electron potential (scatterstate), 2 for the
 !> pseudopotential (outwf_m)
    integer :: kind=0
-   integer :: irel=0,ll=0,kap=0,mmax=0,mch=0,nvkb=0,nq=0
-   real(dp) :: zz=0.0d0,al=0.0d0
+!> 0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!> (kind 1)
+   integer :: irel=0
+!> angular momentum
+   integer :: ll=0
+!> Dirac kappa, l or -(l+1) for j = l -/+ 1/2 (kind 1)
+   integer :: kap=0
+!> size of the log radial mesh
+   integer :: mmax=0
+!> the last point of the solutions, the largest of mchq (and of the
+!> projectors' support, kind 2)
+   integer :: mch=0
+!> number of projectors (kind 2)
+   integer :: nvkb=0
+!> number of radii
+   integer :: nq=0
+!> atomic number (kind 1)
+   real(dp) :: zz=0.0d0
+!> log of the mesh ratio
+   real(dp) :: al=0.0d0
 !> the speed of light (irel>0)
    real(dp) :: c_light=0.0d0
-!> the radii of the phases, and the last point of the solution each needs
-!> alone (mch is the largest)
+!> the radii of the phases (bohr)
    real(dp), allocatable :: rq(:)
+!> the last point of the solution each radius needs alone (mch is the
+!> largest)
    integer, allocatable :: mchq(:)
-   real(dp), allocatable :: rr(:),vv(:),evkb(:)
+!> log radial mesh (bohr)
+   real(dp), allocatable :: rr(:)
+!> the all-electron potential (Ha) (kind 1)
+   real(dp), allocatable :: vv(:)
+!> coefficients of the projectors (Ha) (kind 2)
+   real(dp), allocatable :: evkb(:)
+!> the outward solver of the pseudopotential (kind 2)
    type(outwf_t) :: ow
  end type phsft_t
 
@@ -72,7 +97,7 @@
 !! the reach of the interpolant beyond the first point past rq; 0 if that
 !! is beyond the mesh
 !!
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param mmax  size of the log radial mesh
 !! @param rq  radius (bohr)
 
@@ -103,8 +128,8 @@
 !!              fully-relativistic
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param ll  angular momentum
-!! @param kap  =l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
-!! @param rr  log radial mesh
+!! @param kap  Dirac kappa, l or -(l+1) for j = l -/+ 1/2 (irel=2 only)
+!! @param rr  log radial mesh (bohr)
 !! @param vv  all-electron potential
 !! @param zz  atomic number
 !! @param mmax  size of the log radial mesh
@@ -145,11 +170,11 @@
 !!
 !! @param ll  angular momentum
 !! @param nvkb  number of projectors
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param vloc  local potential on the mesh
-!! @param vlocpw  its pieces
-!! @param vkbpw  the projectors' pieces
-!! @param evkb  their coefficients
+!! @param vlocpw  the screened local potential as pieces
+!! @param vkbpw  the projectors as pieces
+!! @param evkb  coefficients of the projectors
 !! @param mmax  size of the log radial mesh
 !! @param nq  number of radii
 !! @param rq  radii of the phases, each with phsft_mch(rr,mmax,rq)>0
@@ -191,6 +216,14 @@
 
 !! the mesh, the radii and the last point of the solutions, that of the
 !! outermost radius
+!!
+!! @param rr  log radial mesh (bohr)
+!! @param mmax  size of the log radial mesh
+!! @param nq  number of radii
+!! @param rq  radii of the phases (bohr)
+!! @param ps  the solver; its mesh, radii, al, mch and mchq set
+!! @param iout  unit of the text output
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use logmesh_m, only: lm_step
 
@@ -219,8 +252,9 @@
  do iq=1,nq
    mq=phsft_mch(rr,mmax,rq(iq))
    if(mq==0) then
-     write(iout,'(/a/a,1p,e12.4,a,e12.4)') &
-&          'phsft_m: ERROR the radius is too close to the end of the mesh', &
+     write(iout,'(/a/a,es12.4,a,es12.4)') &
+&          'common_init: ERROR the radius is too close to the end '// &
+&          'of the mesh', &
 &          ' rq=',rq(iq),' rr(mmax)=',rr(mmax)
      ifail=1
      return
@@ -258,8 +292,9 @@
 !! phases at the energy eal, followed from the nearest of them
 !!
 !! @param ps  the solver
-!! @param epsh2  the first (highest) energy (Ha)
-!! @param depsh  the energy step (downwards)
+!! @param epsh2  upper limit of the log derivative analysis energy range (Ha),
+!!               the first energy of the scan
+!! @param depsh  energy step of the log derivative analysis (Ha), downwards
 !! @param npsh  number of energies
 !! @param eal  the energy of pal
 !! @param psh  the phases, per energy and radius
@@ -323,24 +358,25 @@
 !! ones at the reference energy eal, where the two solutions agree beyond
 !! the core radius
 !!
-!! @param irel  0 non-, 1 scalar-, 2 fully-relativistic
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param ll  angular momentum
-!! @param kap  =l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
+!! @param kap  Dirac kappa, l or -(l+1) for j = l -/+ 1/2 (irel=2 only)
 !! @param nvkb  number of projectors
-!! @param rr  log radial mesh
-!! @param vfull  all-electron potential
+!! @param rr  log radial mesh (bohr)
+!! @param vfull  all-electron potential (Ha)
 !! @param zz  atomic number
 !! @param vloc  local potential on the mesh
-!! @param vlocpw  its pieces
-!! @param vkbpw  the projectors' pieces
-!! @param evkb  their coefficients
+!! @param vlocpw  the screened local potential as pieces
+!! @param vkbpw  the projectors as pieces
+!! @param evkb  coefficients of the projectors
 !! @param mmax  size of the log radial mesh
 !! @param nq  number of radii
 !! @param rq  radii of the phases
 !! @param npsh  number of energies
-!! @param epsh2  the first (highest) energy (Ha)
-!! @param depsh  the energy step (downwards)
+!! @param epsh2  upper limit of the log derivative analysis energy range (Ha),
+!!               the first energy of the scan
+!! @param depsh  energy step of the log derivative analysis (Ha), downwards
 !! @param eal  the reference energy of the alignment
 !! @param pshae  the all-electron phases, per energy and radius
 !! @param pshps  the pseudopotential phases, likewise
@@ -481,13 +517,30 @@
 
  subroutine solve(ps,ee,mch,uu,up,iout,ifail)
 !! the solution at ee out to the point mch
+!!
+!! @param ps  the solver
+!! @param ee  the scattering energy (Ha)
+!! @param mch  the last point integrated to
+!! @param uu  the radial wave function (times r), zero beyond mch; the
+!!            Dirac small component in uu(:,2) (kind 1)
+!! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
+!! @param iout  unit of the text output
+!! @param ifail  0, or 1 after a failure, whose message is written
  use scatterstate_m, only: scatterstate
- type(phsft_t), intent(inout), target :: ps
+
+!Input variables
  real(dp), intent(in) :: ee
  integer, intent(in) :: mch
- real(dp), intent(out) :: uu(ps%mmax,2),up(ps%mmax,2)
  integer, intent(in) :: iout
+
+!Input/output variables
+ type(phsft_t), intent(inout), target :: ps
+
+!Output variables
+ real(dp), intent(out) :: uu(ps%mmax,2),up(ps%mmax,2)
  integer, intent(out) :: ifail
+
+!Local variables
  integer :: nn
  ifail=0
  uu(:,:)=0.0d0
@@ -505,13 +558,27 @@
 
  real(dp) function angle_at(ps,iq,mch,uu,up,count_nodes,uq)
 !! the phase of radius iq of a solution out to the point mch, and u there
+!!
+!! @param ps  the solver
+!! @param iq  the index of the radius in ps%rq
+!! @param mch  the last point of the solution
+!! @param uu  the radial wave function (times r)
+!! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
+!! @param count_nodes  .true. to take pi off the phase for each node of
+!!                     uu inside the radius
+!! @param uq  uu interpolated to the radius
  use logmesh_m, only: lm_interp
 
+!Input variables
  type(phsft_t), intent(in) :: ps
  integer, intent(in) :: iq,mch
  real(dp), intent(in) :: uu(ps%mmax),up(ps%mmax)
  logical, intent(in) :: count_nodes
+
+!Output variables
  real(dp), intent(out) :: uq
+
+!Local variables
  real(dp) :: upq
  integer :: jj,nnode,jlast
  call lm_interp(ps%rr(1:mch),uu(1:mch),mch,ps%rq(iq),uq)
@@ -566,7 +633,7 @@
  dd=dd-2.0d0*pi*anint(dd/(2.0d0*pi))
  if(abs(dd)>0.5d0*pi .and. depth>=maxdepth) then
    write(iout,'(/a,es12.4,a,es12.4)') &
-&        'phsft: ERROR the phase turns by more than pi/2 between',e0, &
+&        'follow: ERROR the phase turns by more than pi/2 between',e0, &
 &        ' and',e1
    th1=th0
    ifail=1

@@ -39,8 +39,8 @@
 !! @param vsi  input screening potential
 !! @param vso  output screening potential
 !! @param sf  number of electrons
-!! @param rr  log radial mesh
-!! @param mmax  dimension of log radial grid
+!! @param rr  log radial mesh (bohr)
+!! @param mmax  size of the log radial mesh
 !! @param res  residual (Ha)
 
  use constants_m, only: dp
@@ -79,13 +79,13 @@
 !!
 !! @param rho  total charge density of the orbitals of vsi
 !! @param vsi  input screening potential
-!! @param vxc  exchange-correlation potential of rho (vout)
+!! @param vxc  exchange-correlation potential (Ha) of rho (vout)
 !! @param zz  atomic number
 !! @param eeig  sum of the occupied eigenvalues
 !! @param eeel  electron-electron interaction of rho (vout)
 !! @param eexc  exchange-correlation correction of rho (vout)
-!! @param rr  log radial mesh
-!! @param mmax  dimension of log radial grid
+!! @param rr  log radial mesh (bohr)
+!! @param mmax  size of the log radial mesh
 !! @param etot  total energy (Ha)
 !! @param eterm  kinetic, electron-nucleus, Hartree and exchange-correlation
 !!               energies (Ha)
@@ -195,8 +195,8 @@
 !! @param hr  history of residuals vso - vsi
 !! @param ndep  depth of the history
 !! @param zz  atomic number
-!! @param rr  log radial mesh
-!! @param mmax  dimension of log radial grid
+!! @param rr  log radial mesh (bohr)
+!! @param mmax  size of the log radial mesh
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully
 !!              relativistic
 !! @param c_light  speed of light (Hartree atomic units)
@@ -389,8 +389,8 @@
 !! @param vo  output potential
 !! @param vi1,vo1  the previous input and output potentials, this
 !!                 iteration's on output
-!! @param rr  log radial mesh
-!! @param mmax  size of the mesh
+!! @param rr  log radial mesh (bohr)
+!! @param mmax  size of the log radial mesh
 !! @param bl  the blend of the output potential
 
  use constants_m, only: dp
@@ -436,8 +436,8 @@
 !! the radius of the outermost extremum of a bound state inside mch, where
 !! its derivative up changes sign; rpk unchanged if there is none
 !!
-!! @param up  the derivative of the state on the mesh
-!! @param rr  log radial mesh
+!! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
+!! @param rr  log radial mesh (bohr)
 !! @param mch  the last point
 !! @param rpk  the radius (output)
 

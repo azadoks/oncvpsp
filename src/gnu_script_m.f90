@@ -31,13 +31,12 @@
 
 !! @param epa  wave function energies, last index 1 for j=l+1/2, 2 for j=l-1/2
 !!             when nkap=2
-!! @param evkb  projector coefficients, printed in the projector plot titles,
-!!              last index as for epa
+!! @param evkb  coefficients of the projectors, printed in the projector plot
+!!              titles, last index as for epa
 !! @param lmax  maximum angular momentum
-!! @param lloc  angular momentum for local potential (lloc=4 for polynomial,
-!!              etc.)
+!! @param lloc  l of the local potential, 4 for the polynomial
 !! @param nproj  number of projectors for each l
-!! @param nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
+!! @param nkap  number of kappas per l: 1, or 2 for irel=2
 !! @param iout  unit of the text output
 
  use constants_m, only: dp, mxl, mxlin, mxprj

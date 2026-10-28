@@ -32,7 +32,7 @@
 !!
 !! @param llin  angular momentum l
 !! @param qq  wave vector
-!! @param rc  core radius
+!! @param rc  core radius (bohr)
 !! @param sbfder  values and first 4 derivatives of j_l(qq*rc)
 
  use constants_m, only: dp

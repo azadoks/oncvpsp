@@ -34,22 +34,58 @@
 &                               upa,iout,ifail)
 !! the bound valence states of l (at most nproj), the first iprj
 !! projectors' states; and npa(1), the n above the highest core state of l
+!!
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
+!! @param ll  angular momentum
+!! @param kap  Dirac kappa, l or -(l+1) for j = l -/+ 1/2
+!! @param ikap  the component of l, 1 (j=l+1/2) or 2 (j=l-1/2)
+!! @param nc  number of core states
+!! @param nv  number of valence states
+!! @param na  principal quantum numbers
+!! @param la  angular momenta
+!! @param ea  the all-electron eigenvalues (Ha) of each state and kappa
+!! @param nproj  number of projectors for each l, here that of l
+!! @param it  the iterations of the reference atom, for the error message
+!! @param rr  log radial mesh (bohr)
+!! @param zz  atomic number
+!! @param vfull  all-electron potential (Ha)
+!! @param mmax  size of the log radial mesh
+!! @param uu  work space for the radial wave function (times r)
+!! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr);
+!!            work space as uu
+!! @param iprj  the number of bound states found
+!! @param epa  the energies of the projectors' states (Ha), set for 1..iprj
+!! @param npa  their principal quantum numbers; npa(1) also when iprj=0
+!! @param uua  the projectors' all-electron states (times r), the large
+!!             component for irel=2
+!! @param upa  their derivatives in the mesh index (al*r*d(uua)/dr),
+!!             renormalized with uua for irel=2
+!! @param iout  unit of the text output
+!! @param ifail  0, or 1 after a failure, whose message is written
  use boundstate_m, only: boundstate
  use renorm_r_m, only: renorm_r
  use constants_m, only: dp, mxprj, mxstate, mxkap
 
+!Input variables
  integer, intent(in) :: irel,ll,kap,ikap,nc,nv,na(mxstate),la(mxstate)
  real(dp), intent(in) :: c_light
  integer, intent(in) :: nproj,it,mmax
  real(dp), intent(in) :: ea(mxstate,mxkap),rr(mmax),zz,vfull(mmax)
+ integer, intent(in) :: iout
+
+!Input/output variables
  real(dp), intent(inout) :: uu(mmax,2),up(mmax,2)
- integer, intent(out) :: iprj
  real(dp), intent(inout) :: epa(mxprj),uua(mmax,mxprj),upa(mmax,mxprj)
  integer, intent(inout) :: npa(mxprj)
+
+!Output variables
+ integer, intent(out) :: iprj
+ integer, intent(out) :: ifail
+
+!Local variables
  real(dp) :: et,cnorm
  integer :: kk,ierr,mch
- integer, intent(in) :: iout
- integer, intent(out) :: ifail
 
  ifail=0
  iprj=0
@@ -107,6 +143,45 @@
 !! there are no bound ones, the next ones debl above; their wells are
 !! those of ikap=1, kept for ikap=2 (vwell, wmesh). nnwell is the n of the
 !! last well state of ikap=1 that was not fully relativistic
+!!
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
+!! @param ll  angular momentum
+!! @param kap  Dirac kappa, l or -(l+1) for j = l -/+ 1/2
+!! @param ikap  the component of l, 1 (j=l+1/2) or 2 (j=l-1/2)
+!! @param nproj  number of projectors for each l, here that of l
+!! @param ep  the input energy of the first well state (Ha)
+!! @param debl  the energy step between well states (Ha), > 0 for two or
+!!              more
+!! @param well_n  the n of the first well state with well_tail 2, or 0
+!! @param ep_as_given  take ep as given (wellstate, D-1)
+!! @param well_onset  onset of the well as a multiple of rc, 0 or less
+!!                    for the default
+!! @param well_tail  0 Hamann's well, 1 the free tail, 2 the confined well
+!! @param well_norm_rc  normalize a confined state inside rc
+!! @param rc  core radius (bohr)
+!! @param irc  last mesh point at or inside rc
+!! @param qcut  the cutoff wave vector (bohr**-1), for the free tail
+!! @param rr  log radial mesh (bohr)
+!! @param zz  atomic number
+!! @param vfull  all-electron potential (Ha)
+!! @param mmax  size of the log radial mesh
+!! @param uu  work space for the radial wave function (times r)
+!! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr);
+!!            work space as uu
+!! @param nnwell  the n of the last well state of ikap=1 that was not fully
+!!               relativistic; set for ikap=1
+!! @param iprj  the number of the projectors' states, nproj on return
+!! @param epa  the energies of the projectors' states (Ha)
+!! @param npa  their principal quantum numbers
+!! @param uua  the projectors' all-electron states (times r)
+!! @param upa  their derivatives in the mesh index (al*r*d(uua)/dr)
+!! @param vwell  the potential with the well of each well state (Ha), set
+!!               for ikap=1 and kept for ikap=2
+!! @param inwell  whether each well state is confined by its well
+!! @param wmesh  each confined state on its continued mesh (well_mesh_m)
+!! @param iout  unit of the text output
+!! @param ifail  0, or 1 after a failure, whose message is written
  use fpovlp_m, only: fpovlp
  use boundstate_m, only: boundstate
  use renorm_r_m, only: renorm_r
@@ -114,22 +189,29 @@
  use constants_m, only: dp, mxprj
  use well_mesh_m, only: well_mesh_t
 
+!Input variables
  integer, intent(in) :: irel,ll,kap,ikap,nproj,well_n,well_tail,irc,mmax
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: ep,debl,well_onset,rc,qcut,rr(mmax),zz
  real(dp), intent(in) :: vfull(mmax)
  logical, intent(in) :: ep_as_given,well_norm_rc
+ integer, intent(in) :: iout
+
+!Input/output variables
  real(dp), intent(inout) :: uu(mmax,2),up(mmax,2)
  integer, intent(inout) :: nnwell,iprj,npa(mxprj)
  real(dp), intent(inout) :: epa(mxprj),uua(mmax,mxprj),upa(mmax,mxprj)
  real(dp), intent(inout) :: vwell(mmax,mxprj)
  logical, intent(inout) :: inwell(mxprj)
  type(well_mesh_t), intent(inout) :: wmesh(mxprj)
+
+!Output variables
+ integer, intent(out) :: ifail
+
+!Local variables
  real(dp) :: et,cnorm,eptgt
  integer :: kk,ierr,mch,mchx
  logical :: well_tail_free
- integer, intent(in) :: iout
- integer, intent(out) :: ifail
 
  ifail=0
  well_tail_free=well_tail==1
@@ -169,7 +251,8 @@
 !input's well_n, if set; the next ones follow by one each
    if(well_tail==2 .and. kk==1 .and. ikap==1 .and. well_n>0) then
      if(well_n<npa(iprj)) then
-       write(iout,'(/a,i2,a,i3,a,i3)') 'oncvpsp: ERROR well_n for l=',ll, &
+       write(iout,'(/a,i0,a,i0,a,i0)') &
+&           'ae_well_projectors: ERROR well_n for l=',ll, &
 &           ' is',well_n,', below the first well state''s n,', &
 &           npa(iprj)
        ifail=1
@@ -282,6 +365,31 @@
 !! below 0 the tail grows, and the round-off of E_resid, computed from the
 !! transform of the windowed tail, grows with its peak squared, from kappa
 !! L ~ 1.5 (free_tail_m)
+!!
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
+!! @param ll  angular momentum
+!! @param kap  Dirac kappa, l or -(l+1) for j = l -/+ 1/2
+!! @param ikap  the component of l, 1 (j=l+1/2) or 2 (j=l-1/2)
+!! @param nnwell  the n of the last well state of ikap=1, the node count
+!!               scatterstate is given and sets
+!! @param nn  the n of the well state, for the error message
+!! @param ee  the energy of the state (Ha), >= 0 for ikap=1
+!! @param rc  core radius (bohr)
+!! @param irc  last mesh point at or inside rc
+!! @param qcut  the cutoff wave vector (bohr**-1)
+!! @param rr  log radial mesh (bohr)
+!! @param zz  atomic number
+!! @param vfull  all-electron potential (Ha)
+!! @param mmax  size of the log radial mesh
+!! @param uu  work space for the radial wave function (times r)
+!! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr);
+!!            work space as uu
+!! @param ua  the state (times r), normalized inside rc, with the free
+!!            tail
+!! @param pa  its derivative in the mesh index (al*r*d(ua)/dr)
+!! @param iout  unit of the text output
+!! @param ifail  0, or 1 after a failure, whose message is written
  use fpovlp_m, only: fpovlp
  use scatterstate_m, only: scatterstate
  use constants_m, only: dp
@@ -289,20 +397,27 @@
  use logmesh_m, only: lm_fh_reach
  use pieces_m, only: pw_reach
 
+!Input variables
  integer, intent(in) :: irel,ll,kap,ikap,nn,irc,mmax
  real(dp), intent(in) :: c_light
- integer, intent(inout) :: nnwell
  real(dp), intent(in) :: ee,rc,qcut,rr(mmax),zz,vfull(mmax)
+ integer, intent(in) :: iout
+
+!Input/output variables
+ integer, intent(inout) :: nnwell
  real(dp), intent(inout) :: uu(mmax,2),up(mmax,2)
+
+!Output variables
  real(dp), intent(out) :: ua(mmax),pa(mmax)
+ integer, intent(out) :: ifail
+
+!Local variables
  real(dp) :: cnorm
  integer :: mfree
- integer, intent(in) :: iout
- integer, intent(out) :: ifail
  ifail=0
  if(ikap==1 .and. ee<0.0d0) then
-   write(iout,'(/a/a,i2,a,i3,a,f12.6,a/a)') &
-&       'oncvpsp: ERROR well_tail = "free" needs ep >= 0:', &
+   write(iout,'(/a/a,i0,a,i0,a,f12.6,a/a)') &
+&       'free_tail_state: ERROR well_tail = "free" needs ep >= 0:', &
 &       'the well state of l=',ll,', n=',nn,' at ep=', &
 &       ee,' Ha has a growing tail;', &
 &       'raise its ep (debl), or use well_tail = "confined"'// &
@@ -332,19 +447,46 @@
 !! the relativistic term Delta of the all-electron wave about the taper
 !! window [0.95 rc, rc] (ae_delta, D-4), for the projectors; the local
 !! potential of lloc<4 (local) takes Delta/(2u) on the window (S-1)
+!!
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
+!! @param ll  angular momentum
+!! @param kap  Dirac kappa, l or -(l+1) for j = l -/+ 1/2
+!! @param nproj  number of projectors for each l, here that of l
+!! @param epa  the energies of the projectors' states (Ha)
+!! @param rr  log radial mesh (bohr)
+!! @param vfull  all-electron potential (Ha)
+!! @param uua  the projectors' all-electron states (times r)
+!! @param upa  their derivatives in the mesh index (al*r*d(uua)/dr)
+!! @param mmax  size of the log radial mesh
+!! @param al  log of the mesh ratio
+!! @param rc  core radius (bohr)
+!! @param irc  last mesh point at or inside rc
+!! @param local  whether l is that of the local potential
+!! @param dlta  Delta of each state (ae_delta), set about the window
+!! @param vrloc  Delta/(2u) of the first state about the window when local
+!! @param iout  unit of the text output
+!! @param ifail  0, or 1 after a failure, whose message is written
  use ae_delta_m, only: ae_delta
  use constants_m, only: dp, mxprj, rel_window
  use pieces_m, only: pw_reach
 
+!Input variables
  integer, intent(in) :: irel,ll,kap,nproj,mmax,irc
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: epa(mxprj),rr(mmax),vfull(mmax)
  real(dp), intent(in) :: uua(mmax,mxprj),upa(mmax,mxprj),al,rc
  logical, intent(in) :: local
- real(dp), intent(inout) :: dlta(mmax,mxprj),vrloc(mmax)
- integer :: iprj,ii,jj,kk
  integer, intent(in) :: iout
+
+!Input/output variables
+ real(dp), intent(inout) :: dlta(mmax,mxprj),vrloc(mmax)
+
+!Output variables
  integer, intent(out) :: ifail
+
+!Local variables
+ integer :: iprj,ii,jj,kk
  ifail=0
  do iprj=1,nproj
    ii=max(1,1+int(log(rel_window*rc/rr(1))/al)-pw_reach-8)
@@ -354,8 +496,8 @@
    if(local .and. iprj==1) then
      do kk=ii,jj
        if(uua(kk,1)==0.0d0) then
-         write(iout,'(a,i2,a,f10.6)') &
-&              'oncvpsp: ERROR node of the local channel l=',ll, &
+         write(iout,'(/a,i0,a,f12.6)') &
+&              'ae_delta_window: ERROR node of the local channel l=',ll, &
 &              ' all-electron wave near rc, at r=',rr(kk)
          ifail=1
          return
@@ -368,13 +510,30 @@
 
  subroutine ae_overlap(irel,c_light,ll,kap,nproj,uua,rr,zz,mmax,rc,qq)
 !! the overlap matrix of the projectors' all-electron states inside rc
+!!
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
+!! @param ll  angular momentum
+!! @param kap  Dirac kappa, l or -(l+1) for j = l -/+ 1/2
+!! @param nproj  number of projectors for each l, here that of l
+!! @param uua  the projectors' all-electron states (times r)
+!! @param rr  log radial mesh (bohr)
+!! @param zz  atomic number
+!! @param mmax  size of the log radial mesh
+!! @param rc  core radius (bohr)
+!! @param qq  the overlaps inside rc (fpovlp), set for 1..nproj
  use fpovlp_m, only: fpovlp
  use constants_m, only: dp, mxprj
 
+!Input variables
  integer, intent(in) :: irel,ll,kap,nproj,mmax
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: uua(mmax,mxprj),rr(mmax),zz,rc
+
+!Input/output variables
  real(dp), intent(inout) :: qq(mxprj,mxprj)
+
+!Local variables
  integer :: ii,jj
  do jj=1,nproj
    do ii=1,jj
@@ -393,14 +552,35 @@
 !! 2(2l+1), as if the channel were full; in a solid it holds about the
 !! charge that hybridization puts inside rc, an input as the atom cannot
 !! give it
+!!
+!! @param ll  angular momentum
+!! @param nc  number of core states
+!! @param nv  number of valence states
+!! @param la  angular momenta
+!! @param fa  occupancies
+!! @param fj  the share of the occupation of l in this kappa (j_share), 1
+!!            when nkap=1
+!! @param nproj  number of projectors for each l, here that of l
+!! @param ecut_wt  the input weight of the first wave of a channel with no
+!!                 occupied state, negative for the default 2(2l+1)
+!! @param wcurve  the weights of the waves; zero on entry
+!! @param iout  unit of the text output
+!! @param ifail  0, or 1 after a failure, whose message is written
  use constants_m, only: dp, mxprj, mxstate
 
+!Input variables
  integer, intent(in) :: ll,nc,nv,la(mxstate),nproj
  real(dp), intent(in) :: fa(mxstate),fj,ecut_wt
- real(dp), intent(inout) :: wcurve(mxprj)
- integer :: jj,kk
  integer, intent(in) :: iout
+
+!Input/output variables
+ real(dp), intent(inout) :: wcurve(mxprj)
+
+!Output variables
  integer, intent(out) :: ifail
+
+!Local variables
+ integer :: jj,kk
  ifail=0
  jj=0
  do kk=nc+1,nc+nv
@@ -416,7 +596,7 @@
      wcurve(1)=fj*dble(2*(2*ll+1))
    end if
  else if(ecut_wt>=0.0d0) then
-   write(iout,'(/a,i2,a)') 'oncvpsp: ERROR ecut_weight for l=',ll, &
+   write(iout,'(/a,i0,a)') 'ecut_weights: ERROR ecut_weight for l=',ll, &
 &       ' is for a channel with no occupied state; this one has one'
    ifail=1
    return

@@ -26,6 +26,7 @@
  public :: psmlout
  private
 
+!> the letter of each l, 0 to 4
  character(len=1), dimension(0:4), parameter :: lsymb = ['s','p','d','f','g']
 
  contains
@@ -40,8 +41,8 @@
 !! @param inp  the input values (input_m)
 !! @param vkb  VKB projectors, last index 1 for j=l+1/2, 2 for j=l-1/2 when
 !!             nkap=2
-!! @param evkb  coefficients of VKB projectors, last index as for vkb
-!! @param rr  log radial grid
+!! @param evkb  coefficients of the projectors, last index as for vkb
+!! @param rr  log radial mesh (bohr)
 !! @param vpuns  unscreened semi-local pseudopotentials (vp(:,5,1) is local
 !!               potential if linear combination is used), last index as for vkb
 !! @param rho  valence pseudocharge
@@ -49,8 +50,8 @@
 !! @param rcore  radius beyond which the model core charge is the core
 !!               charge: its joint (doc/smoothness_plan.md, M-14)
 !! @param zion  at this point, total valence charge (becomes pseudoion charge)
-!! @param mmax  size of log radial grid
-!! @param nrl  size of linear radial grid (not used)
+!! @param mmax  size of the log radial mesh
+!! @param nrl  size of the output mesh (not used)
 !! @param epstot  pseudoatom total energy (not used)
 !! @param rc0  core radii as read from the input (bohr), rc0(5) for lloc=4
 !! @param fcfact  prefactor for model core charge amplitude, as read from the
@@ -61,7 +62,7 @@
 !!                  it (else 0)
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param c_light  speed of light (Hartree atomic units)
-!! @param nkap  number of kappa per l: 1, or 2 for irel=2
+!! @param nkap  number of kappas per l: 1, or 2 for irel=2
 !! @param iout  unit of the text output
 !!
 !! Alberto Garcia, February 1, 2015
@@ -584,28 +585,26 @@
 !! @param xf  xml file handle
 !! @param atsym  atomic symbol
 !! @param zz  atomic number
-!! @param iexc  type of exchange-correlation
-!! @param c_light  speed of light (Hartree atomic units)
-!! @param lmax  maximum angular momentum
-!! @param lloc  l for local potential
-!! @param nproj  number of vkb projectors for each l
-!! @param icmod  model core charge option
-!! @param drl  spacing of linear radial grid
-!! @param na  principal quantum numbers of the reference configuration states
-!! @param la  angular momenta of the reference configuration states
-!! @param ncon  number of matching constraints for each l
-!! @param nbas  number of basis functions for each l
-!! @param cnf  the reference and test configurations (input_m)
 !! @param nc  number of core states
 !! @param nv  number of valence states
-!! @param lpopt  type of polynomial continuation for lloc=4
-!! @param ncnf  number of test configurations
-!! @param fa  occupations of the reference configuration states
+!! @param iexc  exchange-correlation functional
+!! @param c_light  speed of light (Hartree atomic units)
+!! @param psfile  pseudopotential file format as read from the input
+!! @param na  principal quantum numbers, of the reference configuration
+!! @param la  angular momenta, of the reference configuration
+!! @param fa  occupancies, of the reference configuration
+!! @param lmax  maximum angular momentum
 !! @param rc0  core radii as read from the input (bohr), rc0(5) for lloc=4
 !! @param ep  energies at which the pseudopotentials are generated (Ha)
+!! @param ncon  number of matching constraints for each l
+!! @param nbas  number of basis functions for each l
 !! @param qcut  residual-energy cutoff wave vectors for each l
-!! @param debl  energy shifts for the second projectors for each l (Ha)
+!! @param lloc  l of the local potential, 4 for the polynomial
+!! @param lpopt  type of polynomial continuation for lloc=4
 !! @param dvloc0  r=0 shift of the lloc=4 local potential (Ha)
+!! @param nproj  number of projectors for each l
+!! @param debl  energy shifts for the second projectors for each l (Ha)
+!! @param icmod  model core charge option
 !! @param fcfact  prefactor for model core charge amplitude, as read from the
 !!                input
 !! @param rcfact  prefactor for model core charge scale (icmod=3), or error
@@ -622,14 +621,15 @@
 !! @param rxpsh  radius of the log derivative analysis (bohr), negative for
 !!               default
 !! @param rlmax  maximum radius of the linear output mesh (bohr)
-!! @param psfile  pseudopotential file format as read from the input
+!! @param drl  spacing of linear radial grid
+!! @param ncnf  number of test configurations (not counting the reference)
+!! @param cnf  the reference and test configurations (input_m)
 !! @param log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets
 !!                  it (else 0)
 !! @param upf_mesh  most points of the log mesh of the UPF file, 0 for the
 !!                  linear output mesh (echoed when not 0)
-!! @param ep_as_given, well_onset, well_tail, wreg  echoed on the lmax
-!!        line
-!!                  when one is not its default (lmax_lines)
+!! @param ep_as_given..wreg  echoed on the lmax line when one is not its
+!!                          default (lmax_lines)
 !! @param well_n  echoed on the projector lines when set (vkb_line)
 !! @param well_norm  echoed on the lmax line when not 0 (lmax_lines)
 !! @param ecut_wt  echoed on the projector lines when set (vkb_line)
@@ -724,9 +724,10 @@
 !! the log-mesh values at r = 0 (lm_origin)
 !!
 !! @param ff  function on the log radial grid
-!! @param rr  log radial grid
+!! @param rr  log radial mesh (bohr)
 !! @param f0  ff with an extrapolated value at r=0 prepended
 
+ use, intrinsic :: iso_fortran_env, only: error_unit
  use constants_m, only: dp
  use logmesh_m, only: lm_origin
 
@@ -740,12 +741,18 @@
  integer :: ii, npts, ierr
 
  npts = size(ff)
- if(size(f0) /= npts +1) error stop "nr /= npts + 1 in add_zero_r"
+ if(size(f0) /= npts +1) then
+   write(error_unit,'(/a)') 'add_zero_r: ERROR f0 is not one longer than ff'
+   error stop 1
+ end if
  do ii = 1, npts
    f0(ii+1) = ff(ii)
  end do
  call lm_origin(rr(1:npts),ff,npts,f0(1),ierr)
- if(ierr /= 0) error stop "add_zero_r: log mesh too short for lm_origin"
+ if(ierr /= 0) then
+   write(error_unit,'(/a)') 'add_zero_r: ERROR log mesh too short for lm_origin'
+   error stop 1
+ end if
  return
 
  end subroutine add_zero_r
@@ -768,7 +775,7 @@
 !! @param jj  total angular momentum (optional)
 !! @param ss  spin, +0.5 or -0.5 (optional)
 !! @param seq  index of the projector for this l (optional)
-!! @param rc  core radius (bohr, optional)
+!! @param rc  core radius (bohr) (bohr, optional)
 !! @param ekb  projector energy coefficient (Ha, optional)
 !! @param flavor  generation method (optional)
 !! @param type  projector type (optional)

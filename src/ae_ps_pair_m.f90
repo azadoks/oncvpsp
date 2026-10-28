@@ -36,12 +36,38 @@
 !! the two files of program prog, which must be of the same relativistic
 !! treatment, atom, mesh and c_light (and functional, with iexc), and the
 !! all-electron atom's configuration if asked; writes the build line
+!!
+!! @param prog  the program name, for the messages
+!! @param ae_filename  the all-electron data file (ae_file_m)
+!! @param ps_filename  the pseudopotential data file (ps_file_m)
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units), that of the files
+!! @param zz  atomic number
+!! @param mmax  size of the log radial mesh
+!! @param rr  log radial mesh (bohr); allocated here
+!! @param vfull  all-electron potential (Ha); allocated here
+!! @param pf  the contents of the pseudopotential data file
+!! @param nc  number of core states (optional)
+!! @param nv  number of valence states (optional)
+!! @param iexc  exchange-correlation functional (optional); when present,
+!!              the two files must have the same
+!! @param na  principal quantum numbers (optional)
+!! @param la  angular momenta (optional)
+!! @param fa  occupancies (optional)
+!! @param ea  the all-electron eigenvalues (Ha) of each state and kappa
+!!            (optional)
+!! @param iout  unit of the text output
+!! @param ifail  0, or 1 after a failure, whose message is written
  use ae_file_m, only: read_ae_potential, differ
  use build_info_m, only: write_build_info
  use ps_file_m, only: ps_file_t, read_ps_file
  use constants_m, only: mxkap
 
+!Input variables
  character(len=*), intent(in) :: prog,ae_filename,ps_filename
+ integer, intent(in) :: iout
+
+!Output variables
  integer, intent(out) :: irel,mmax
  real(dp), intent(out) :: zz
 !> the speed of light of the files
@@ -50,12 +76,13 @@
  type(ps_file_t), intent(out) :: pf
  integer, intent(out), optional :: nc,nv,iexc,na(mxstate),la(mxstate)
  real(dp), intent(out), optional :: fa(mxstate),ea(mxstate,mxkap)
+ integer, intent(out) :: ifail
+
+!Local variables
  character(len=2) :: atsym
  character(len=19) :: treatment
  real(dp) :: c_light_f
  logical :: bad
- integer, intent(in) :: iout
- integer, intent(out) :: ifail
 
  ifail=0
  call read_ae_potential(ae_filename,irel,atsym,zz,mmax,rr,c_light_f, &

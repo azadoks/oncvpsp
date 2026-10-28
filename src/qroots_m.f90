@@ -34,7 +34,7 @@
 !! matching roots
 !!
 !! @param ll  angular momentum
-!! @param rc  core radius
+!! @param rc  core radius (bohr)
 !! @param ulgd  log derivaive of all-electron radial wave function at rc
 !! @param nroot  number of spherical Bessel functions matgching ulgd at rc (form
 !!               orthogonal basis)
@@ -164,7 +164,7 @@
    dgold=abs(dg)
    qp=qp+dq
  end do
- write(iout,'(/a,i0,a,es12.4,a,es10.2)') &
+ write(iout,'(/a,i0,a,es12.4,a,es12.4)') &
 &     'qroots: ERROR Newton polish not converged, ll=',ll,', q=',qp, &
 &     ', last step',dq
  ifail=1

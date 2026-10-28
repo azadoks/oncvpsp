@@ -31,17 +31,43 @@
 !! Finds bound states of a  pseudopotential with
 !! Vanderbilt-Kleinman-Bylander non-local projectors, to round-off
 !! (lschvkbb_tol with no tolerance; the arguments are its)
+!!
+!! @param nn  principal quantum number
+!! @param ll  angular momentum
+!! @param nvkb  number of projectors used
+!! @param ierr  0, or non-zero after a failure; 100 not converged, 200 a
+!!              state the node count does not expect (a ghost) below emin
+!! @param ee  the bound-state energy (Ha): the first guess, and the
+!!            eigenvalue on return
+!! @param emin  an estimate of a lower bound of ee (Ha)
+!! @param emax  an estimate of an upper bound of ee (Ha)
+!! @param rr  log radial mesh (bohr)
+!! @param vloc  the local potential on the mesh (Ha)
+!! @param vlocpw  the screened local potential as pieces
+!! @param vkbpw  the projectors as pieces
+!! @param evkb  coefficients of the projectors (Ha)
+!! @param uu  the radial wave function (times r)
+!! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
+!! @param mmax  size of the log radial mesh
+!! @param mch  the matching point (lschvkbb_tol)
+!! @param iout  unit of the text output
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
  use pieces_m, only: piecewise_t
 
+!Input variables
  integer, intent(in) :: nn,ll,nvkb,mmax
  real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nvkb)
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(nvkb)
+ integer, intent(in) :: iout
+
+!Input/output variables
  real(dp), intent(inout) :: emin,emax,ee
+
+!Output variables
  real(dp), intent(out) :: uu(mmax),up(mmax)
  integer, intent(out) :: ierr,mch
- integer, intent(in) :: iout
  integer, intent(out) :: ifail
 
  ifail=0
@@ -58,7 +84,7 @@
 !! Vanderbilt-Kleinman-Bylander non-local projectors
 !!
 !! @param nn  principal quantum number
-!! @param ll  angular-momentum quantum number
+!! @param ll  angular momentum
 !! @param nvkb  = number of VKB projectors to be used
 !! @param ierr  non-zero return if error: 100 not converged; 200 every
 !!              energy tried had more than nn-ll-1 states of l below it,
@@ -67,15 +93,15 @@
 !! @param ee  bound-state energy, input guess and output calculated value
 !! @param emin  externally generaated estimate of lower bound for ee
 !! @param emax  externally generaated estimate of upper bound for ee
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param vloc  local part of psp on the mesh (the screened local
 !!              potential, or that plus a smooth screening change)
-!! @param vlocpw  the screened local potential's pieces
-!! @param vkbpw  VKB projectors as functions of pieces
-!! @param evkb  coefficients of BKB projectors
+!! @param vlocpw  the screened local potential as pieces
+!! @param vkbpw  the projectors as pieces
+!! @param evkb  coefficients of the projectors
 !! @param uu  output radial wave function (*rr)
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
-!! @param mmax  size of log grid
+!! @param mmax  size of the log radial mesh
 !! @param mch  mesh point just beyond the matching point of the inward and
 !!             outward integrations: the continuous classical turning
 !!             point (match_m), or, if that is less, a point match_k+2

@@ -1,0 +1,51 @@
+# The ERROR and WARNING messages of ONCVPSP 4.0.1 (git grep of master's src/),
+# kept as they were: scripts/check_conventions.py does not apply its message
+# rule to a message that starts with one of these lines.
+exc_libxc_stub: ERROR iexc =
+functionals: ERROR bad nspin definition
+functionals: ERROR - no analytical derivatives coded
+ldiracfb: ERROR kap =
+ldiracfb: ERROR ll =
+ldiracfb: ERROR zz =
+ldiracfs: ERROR kap =
+ldiracfs: ERROR zz =
+lschfb: ERROR ll =
+lschpb: ERROR no classical turning point
+lschvkbb: ERROR l=
+lschvkbb: ERROR no classical turning point
+lschvkbb: ERROR nvkb=
+modcore2: ERROR ircc (core-valence charge crossover)
+modcore3: ERROR ircc (core-valence charge crossover)
+modcore:ERROR stop - dgesv input error
+modcore:ERROR stop - singular polym matrix
+oncvpsp: ERROR all-electron reference atom not converged
+oncvpsp: ERROR debl =
+oncvpsp: ERROR reading input file
+oncvpsp_r: ERROR all-electron reference atom not converged
+optimize: ERROR interval-halving search not converged
+optimize: ERROR ps0norm > uunorm, code will stop
+psatom_r: WARNING lschvkbb convergence error n,l,kap,iter=
+psatom_r: WARNING potential failed to converge
+psatom: WARNING lschvkbb convergence error n,l,iter=
+qroots: ERROR - failed to find nroot roots
+qroots: ERROR - failed to find root
+relatom: WARNING failed to converge
+rhomod: ERROR ircc (core-valence charge crossover)
+run_config_r: WARNING  for AE atom,
+run_config_r: WARNING for fully non-local PS atom,
+run_config_r: WARNING no classical turning point error, iteration
+run_config_r: WARNING self-consistency failed to converge
+run_config: WARNING  for AE atom,
+run_config: WARNING for fully non-local PS atom,
+runconfig: WARNING ldiracfb convergence ERROR n,l,kap,ierr=
+runconfig: WARNING ldiracfb convergence ERROR n,l,kap,iter=
+runconfig: WARNING lschfb convergence ERROR n,l,iter=
+run_config: WARNING self-consistency failed to converge
+sbfbasis: ERROR negative eigenvalue of overlap matrix
+sbf_basis: ERROR overlap matrix eigenvalue error, info=
+sratom: WARNING failed to converge
+upfout: ERROR iexc =
+vout: ERROR bad input iexc =
+vout: ERROR bad input mode =
+wellstate: ERROR lschfb convergence error, n=
+wellstate_r: ERROR ldiracfb no classical turning point,

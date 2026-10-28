@@ -303,7 +303,7 @@
 !!
 !! @param epsh1  lower limit of the log derivative analysis energy range (Ha)
 !! @param epsh2  upper limit of the log derivative analysis energy range (Ha)
-!! @param depsh  energy step (Ha)
+!! @param depsh  energy step of the log derivative analysis (Ha)
 !! @param rxpsh  radius of the analysis, negative for the default
 !! @param text  the lines of the section
 !! @param ntext  number of lines
@@ -461,7 +461,7 @@
 !!
 !! @param lmax  maximum angular momentum
 !! @param l1  l+1
-!! @param nproj  number of projectors of each l
+!! @param nproj  number of projectors for each l
 !! @param debl  energy steps of each l
 !! @param well_n  n of the first well state of each l (0 for the default)
 !! @param ecut_wt  cutoff weight of each l (negative for the default)
@@ -524,7 +524,7 @@
 !!
 !! @param epsh1  lower limit of the log derivative analysis energy range (Ha)
 !! @param epsh2  upper limit of the log derivative analysis energy range (Ha)
-!! @param depsh  energy step (Ha)
+!! @param depsh  energy step of the log derivative analysis (Ha)
 !! @param rxpsh  radius of the analysis, negative for the default
 !! @param iout  unit of the text output
 
@@ -580,15 +580,56 @@
 !! the echo of the input data, from the reference configuration to the log
 !! mesh, as the psp8, UPF and PSML files carry it, line by line
 !!
-!! @param nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
+!! @param nkap  number of kappas per l: 1, or 2 for irel=2
 !! @param iformat  1 for the psp8 file (and PSML, with nkap 1), 2 for the
 !!                 UPF file
+!! @param atsym  atomic symbol
+!! @param zz  atomic number
+!! @param nc  number of core states
+!! @param nv  number of valence states
+!! @param iexc  exchange-correlation functional
+!! @param c_light  speed of light (Hartree atomic units)
+!! @param psfile  the pseudopotential file format of the input
+!! @param na  principal quantum numbers, of the reference configuration
+!! @param la  angular momenta, of the reference configuration
+!! @param fa  occupancies, of the reference configuration
+!! @param lmax  maximum angular momentum
+!! @param rc0  the core radii of the input (bohr)
+!! @param ep  the input energies ep of each l (Ha), of the first kappa
+!! @param ncon  number of matching constraints for each l
+!! @param nbas  number of basis functions for each l
+!! @param qcut  residual-energy cutoff wave vector of each l (bohr**-1)
+!! @param ep_as_given..wreg  the optional values of the lmax line, echoed
+!!                          when one is not its default
+!! @param lloc  l of the local potential, 4 for the polynomial
+!! @param lpopt  type of polynomial continuation for lloc=4
+!! @param dvloc0  r=0 shift of the lloc=4 local potential (Ha)
+!! @param nproj  number of projectors for each l
+!! @param debl  energy shifts for the second projectors for each l (Ha)
+!! @param well_n..ecut_wt  the optional values of the projector lines and
+!!                         of the lmax line, echoed when set
+!! @param icmod  model core charge option
+!! @param fcfact  prefactor for model core charge amplitude, the input value
+!! @param rcfact  prefactor for model core charge scale
+!! @param slack  share of the cutoff the model core must fit (icmod=6, 7)
+!! @param budget_cut  the cutoff of the pseudo-waves (icmod=6, 7)
+!! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
+!! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
+!! @param epsh1  lower limit of the log derivative analysis energy range (Ha)
+!! @param epsh2  upper limit of the log derivative analysis energy range (Ha)
+!! @param depsh  energy step of the log derivative analysis (Ha)
+!! @param rxpsh  radius of the log derivative analysis (bohr), negative for
+!!               the default
+!! @param rlmax  maximum radius of the linear output mesh (bohr)
+!! @param drl  spacing of the linear output mesh (bohr)
+!! @param ncnf  number of test configurations (not counting the reference)
+!! @param cnf  the reference and test configurations (input_m)
+!! @param log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input
+!!                  sets it (else 0)
+!! @param upf_mesh  most points of the log mesh of the UPF file, 0 for the
+!!                  linear output mesh
 !! @param text  the lines (output)
 !! @param ntext  their number (output)
-!!
-!! (the other arguments are the input data, as read by the input readers;
-!! rc0 the input core radii, ep the energies for the first kappa and fcfact
-!! the input value)
 
  use constants_m, only: dp, mxstate, mxcnf, mxlin
  use input_m, only: config_t
@@ -743,13 +784,56 @@
 &                            epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
 &                            ncnf,cnf,log_mesh,upf_mesh, &
 &                            iout)
-!! writes the echo of the input data to unit 6 (input_echo_lines)
+!! writes the echo of the input data to iout (input_echo_lines)
 !!
-!! @param nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
+!! @param nkap  number of kappas per l: 1, or 2 for irel=2
 !! @param iformat  1 for the psp8 file, 2 for the UPF file
+!! @param atsym  atomic symbol
+!! @param zz  atomic number
+!! @param nc  number of core states
+!! @param nv  number of valence states
+!! @param iexc  exchange-correlation functional
+!! @param c_light  speed of light (Hartree atomic units)
+!! @param psfile  the pseudopotential file format of the input
+!! @param na  principal quantum numbers, of the reference configuration
+!! @param la  angular momenta, of the reference configuration
+!! @param fa  occupancies, of the reference configuration
+!! @param lmax  maximum angular momentum
+!! @param rc0  the core radii of the input (bohr)
+!! @param ep  the input energies ep of each l (Ha), of the first kappa
+!! @param ncon  number of matching constraints for each l
+!! @param nbas  number of basis functions for each l
+!! @param qcut  residual-energy cutoff wave vector of each l (bohr**-1)
+!! @param ep_as_given..wreg  the optional values of the lmax line, echoed
+!!                          when one is not its default
+!! @param lloc  l of the local potential, 4 for the polynomial
+!! @param lpopt  type of polynomial continuation for lloc=4
+!! @param dvloc0  r=0 shift of the lloc=4 local potential (Ha)
+!! @param nproj  number of projectors for each l
+!! @param debl  energy shifts for the second projectors for each l (Ha)
+!! @param well_n..ecut_wt  the optional values of the projector lines and
+!!                         of the lmax line, echoed when set
+!! @param icmod  model core charge option
+!! @param fcfact  prefactor for model core charge amplitude, the input value
+!! @param rcfact  prefactor for model core charge scale
+!! @param slack  share of the cutoff the model core must fit (icmod=6, 7)
+!! @param budget_cut  the cutoff of the pseudo-waves (icmod=6, 7)
+!! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
+!! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
+!! @param epsh1  lower limit of the log derivative analysis energy range (Ha)
+!! @param epsh2  upper limit of the log derivative analysis energy range (Ha)
+!! @param depsh  energy step of the log derivative analysis (Ha)
+!! @param rxpsh  radius of the log derivative analysis (bohr), negative for
+!!               the default
+!! @param rlmax  maximum radius of the linear output mesh (bohr)
+!! @param drl  spacing of the linear output mesh (bohr)
+!! @param ncnf  number of test configurations (not counting the reference)
+!! @param cnf  the reference and test configurations (input_m)
+!! @param log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input
+!!                  sets it (else 0)
+!! @param upf_mesh  most points of the log mesh of the UPF file, 0 for the
+!!                  linear output mesh
 !! @param iout  unit of the text output
-!!
-!! (the other arguments are the input data, as read by the input readers)
 
  use constants_m, only: dp, mxstate, mxcnf, mxlin
  use input_m, only: config_t

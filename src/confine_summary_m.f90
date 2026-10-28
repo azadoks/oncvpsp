@@ -31,17 +31,32 @@
 !> not reach it, and the largest |de_ps - de_ae| of the walls; -1 for a
 !> part left out
  type, public :: confine_summary_t
-   integer :: nmiss=-1,nextra=-1,noff=-1,nwfail=-1
-   real(dp) :: smax_de=-1.0d0,scut(4)=-1.0d0,sdde=-1.0d0
-   logical :: sinf(4)=.false.
+   integer :: nmiss=-1  !< number of ws_missing lines
+   integer :: nextra=-1  !< number of ws_extra lines
+   integer :: noff=-1  !< number of ws_paired_off lines
+   integer :: nwfail=-1  !< number of wall_failed lines
+!> the largest |e_ps - e_ae| of the edges below 0 (Ha)
+   real(dp) :: smax_de=-1.0d0
+!> the cutoffs 1e-4, 1e-5 Ha of all the edges, then of the top edges
+!> alone (Ha)
+   real(dp) :: scut(4)=-1.0d0
+!> the largest |de_ps - de_ae| of the walls (Ha)
+   real(dp) :: sdde=-1.0d0
+   logical :: sinf(4)=.false.  !< whether an edge never reaches the tolerance
  end type confine_summary_t
 
  contains
 
  subroutine write_confine_summary(sm,iout)
 !! the header and the line of the summary
+!!
+!! @param sm  the summary
+!! @param iout  unit of the text output
+
+!Input variables
  type(confine_summary_t), intent(in) :: sm
  integer, intent(in) :: iout
+
  write(iout,'(3a)') '# confine_summary max_de(Ha) ecut4(Ha) ecut5(Ha)', &
 &     ' n_missing n_extra n_paired_off n_wall_failed max_dde(Ha)', &
 &     ' ecut4_top(Ha) ecut5_top(Ha)'
@@ -54,8 +69,14 @@
 
  real(dp) function summ(xx,inf)
 !! a value of the summary: Infinity if inf, NaN if xx < 0 (none)
+!!
+!! @param xx  the value, -1 for none
+!! @param inf  whether the value is infinite
+
+!Input variables
  real(dp), intent(in) :: xx
  logical, intent(in) :: inf
+
  if(inf) then
    summ=ieee_value(1.0d0,ieee_positive_inf)
  else if(xx<0.0d0) then

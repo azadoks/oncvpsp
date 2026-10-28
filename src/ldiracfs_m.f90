@@ -31,17 +31,17 @@
 !!
 !! @param nn  effective principal quantum number based on nodes inside mch
 !!            (output)
-!! @param ll  angular-momentum quantum number
-!! @param kap  =l, -(l+1) for j=l -/+ 1/2
+!! @param ll  angular momentum
+!! @param kap  Dirac kappa, l or -(l+1) for j = l -/+ 1/2
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param ee  bound-state energy, input guess and output calculated value
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param zz  atomic number
 !! @param vv  local psp
 !! @param uu(mmax,jj)  output radial wave functions (*rr) jj=1,2 for large,
 !!                     small
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
-!! @param mmax  size of log grid
+!! @param mmax  size of the log radial mesh
 !! @param mch  matching mesh point for inward-outward integrations
 
  use, intrinsic :: iso_fortran_env, only: error_unit

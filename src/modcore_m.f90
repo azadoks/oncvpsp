@@ -61,8 +61,10 @@
  real(dp), parameter :: wsinc(-2:2)=[1.0d0/6.0d0, 2.0d0/3.0d0, 1.0d0, &
 &                                    2.0d0/3.0d0, 1.0d0/6.0d0]
 
-!> the taper of the model's Teter function: 1 up to xtap1, 0 from xtap2
- real(dp), parameter :: xtap1=3.0d0, xtap2=4.0d0
+!> the taper of the model's Teter function: 1 up to xtap1
+ real(dp), parameter :: xtap1=3.0d0
+!> the taper of the model's Teter function: 0 from xtap2
+ real(dp), parameter :: xtap2=4.0d0
 
  contains
 
@@ -355,9 +357,9 @@
 !! ln(rhoc) - ln(fcfact rhotps) on the log mesh, converged to round-off;
 !! the mesh interval of the outermost change of sign is the bracket
 !!
-!! @param rr  log radial mesh
-!! @param rhoc  core charge
-!! @param rhotps  pseudo valence charge
+!! @param rr  log radial mesh (bohr)
+!! @param rhoc  core charge density
+!! @param rhotps  pseudo valence charge density
 !! @param mmax  size of the log radial mesh
 !! @param fcfact  factor of the pseudo valence charge
 !! @param rstar  the crossover radius (bohr)
@@ -448,7 +450,7 @@
  acoa(:)=fmatch(:)
  call dgesv(5,1,amat,5,ipvt,acoa,5,info)
  if(info/=0) then
-   write(iout,'(/a,i4)') 'poly_core_fit: ERROR singular match, dgesv info =', &
+   write(iout,'(/a,i0)') 'poly_core_fit: ERROR singular match, dgesv info =', &
 &        info
    ifail=1
    return
@@ -486,7 +488,7 @@
    end do
    call dhseqr('E','N',ncub,1,ncub,hess,3,wr,wi,zz,1,work,size(work),info)
    if(info/=0) then
-     write(iout,'(/a,i4)') 'poly_core_fit: ERROR dhseqr info =',info
+     write(iout,'(/a,i0)') 'poly_core_fit: ERROR dhseqr info =',info
      ifail=1
      return
    end if
@@ -616,14 +618,14 @@
 !! reach) and 0 farther, where the fill may overflow; and the model on the
 !! mesh, the fill below rj
 !!
-!! @param rr  log radial mesh
-!! @param rhoc  core charge
+!! @param rr  log radial mesh (bohr)
+!! @param rhoc  core charge density
 !! @param mmax  size of the log radial mesh
 !! @param rj  the joint (bohr), inside the mesh
 !! @param fill  the fill and its first 4 derivatives at a radius
 !! @param par  the fill's parameters
 !! @param corepw  the pieces of each column
-!! @param rhomod  the model and its first 4 derivatives on the mesh
+!! @param rhomod  model core charge and its first 4 derivatives on the mesh
 
  use logmesh_m, only: lm_derivs, lm_fh_reach
  use pieces_m, only: piecewise_t, pw_alloc, pw_form, pw_set_form
@@ -679,8 +681,8 @@
 !! ending at its last nonzero node (the end of a tapered Teter function),
 !! with the model's closed form if it has one
 !!
-!! @param rr  log radial mesh
-!! @param rhomod  the model and its first 4 derivatives on the mesh
+!! @param rr  log radial mesh (bohr)
+!! @param rhomod  model core charge and its first 4 derivatives on the mesh
 !! @param mmax  size of the log radial mesh
 !! @param corepw  the pieces of each column
 !! @param form  the model and its first 4 derivatives at a radius
@@ -785,14 +787,14 @@
 !! the pseudo-atom with no core correction, written with their rms
 !! difference
 !!
-!! @param rhotae  total all-electron valence charge density
-!! @param rhoc  core charge
+!! @param rhotae  all-electron valence charge density
+!! @param rhoc  core charge density
 !! @param rhoae  all-electron valence charges
-!! @param rhotps  pseudo total valence charge
+!! @param rhotps  pseudo valence charge density
 !! @param rhops  pseudo valence charges
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param zion  ion charge
-!! @param iexc  exchange-correlation type
+!! @param iexc  exchange-correlation functional
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param nc  number of core states
 !! @param nv  number of valence states

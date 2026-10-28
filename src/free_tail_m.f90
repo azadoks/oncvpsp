@@ -68,7 +68,7 @@
 !! solvers zero it beyond their inward start; a node there is dropped or
 !! added at a value at machine precision), interpolated by lm_interp
 !!
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param uu  all-electron wave function (*rr)
 !! @param mmax  size of the log radial mesh
 !! @param rc  core radius (bohr)
@@ -107,7 +107,7 @@
  nr=0
  if(rend>rc) nr=int((rend-rc)/hh)+1
  if(nr<2*lm_ncell) then
-   write(iout,'(/2a,f10.6,a,f10.6)') &
+   write(iout,'(/2a,f12.6,a,f12.6)') &
 &        'mesh_tail: ERROR wave function vanishes', &
 &       ' too close to rc: rc=',rc,', last nonzero point',rend
    ifail=1
@@ -158,7 +158,7 @@
  kp=sqrt(ss-ee)
  dq=qcut-kk
  if(dq<=0.0d0) then
-   write(iout,'(/a,f10.6,a,f10.6/a)') &
+   write(iout,'(/a,f12.6,a,f12.6/a)') &
 &       'free_tail_width: ERROR qcut=',qcut,' is not above the wave vector', &
 &       kk,'of the well state: raise qcut or lower its energy'
    ifail=1
@@ -166,7 +166,7 @@
  end if
  wl=(9.0d0*kp+sqrt(81.0d0*kp**2+wbound*dq**2))/(0.5d0*dq**2)
  if(kp*wl>klmax) then
-   write(iout,'(/a,f10.6,a,f10.6/a,f8.2,a/a)') &
+   write(iout,'(/a,f12.6,a,f12.6/a,f12.6,a/a)') &
 &       'free_tail_width: ERROR the free tail of the well state at',ee, &
 &       ' Ha with qcut=',qcut,'grows too fast for its window (kappa L =', &
 &       kp*wl,' > 12): raise qcut or the state''s energy'
@@ -219,12 +219,12 @@
 !!              fully-relativistic
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param ll  angular momentum
-!! @param kap  =l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
+!! @param kap  Dirac kappa, l or -(l+1) for j = l -/+ 1/2 (irel=2 only)
 !! @param ee  the state's energy (Ha)
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param vv  all-electron potential
 !! @param uu  the well state (*rr; uu the large component for irel=2)
-!! @param up  its derivative in the mesh index (al*r*d(uu)/dr)
+!! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param mmax  size of the log radial mesh
 !! @param rc  core radius (bohr)
 !! @param qcut  the cutoff wave vector (bohr^-1)
@@ -281,12 +281,12 @@
 !!              fully-relativistic
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param ll  angular momentum
-!! @param kap  =l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
+!! @param kap  Dirac kappa, l or -(l+1) for j = l -/+ 1/2 (irel=2 only)
 !! @param ee  the state's energy (Ha)
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param vv  all-electron potential
 !! @param uu  the well state (*rr; uu the large component for irel=2)
-!! @param up  its derivative in the mesh index (al*r*d(uu)/dr)
+!! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param mmax  size of the log radial mesh
 !! @param rc  core radius (bohr)
 !! @param qcut  the cutoff wave vector (bohr^-1)
@@ -365,6 +365,26 @@
 !! of at most hmax between consecutive radii, from uu and uu' = up/(al r)
 !! at rs (lm_interp); vv interpolated by lm_interp, and taken as
 !! vv(mmax) rr(mmax)/r beyond the log mesh
+!!
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
+!! @param ll  angular momentum
+!! @param kap  Dirac kappa, l or -(l+1) for j = l -/+ 1/2
+!! @param ee  the state's energy (Ha)
+!! @param rr  log radial mesh (bohr)
+!! @param vv  the all-electron potential (Ha)
+!! @param uu  the state (times r; the large component for irel=2), from
+!!            which the solution starts at rs
+!! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
+!! @param mmax  size of the log radial mesh
+!! @param rc  core radius (bohr); the window is centred at rc + 6 wl
+!! @param rs  the radius the integration starts from (bohr)
+!! @param wl  the window's width L (bohr)
+!! @param nout  number of radii rout
+!! @param rout  the radii of the output (bohr), increasing, from rs
+!! @param hmax  the largest Runge-Kutta step (bohr)
+!! @param uout  the windowed solution at rout
+!! @param dout  its derivative in r at rout
 
  use logmesh_m, only: lm_interp, lm_step
 

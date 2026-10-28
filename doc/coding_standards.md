@@ -161,9 +161,13 @@ looks like this:
 - Then, after an empty `!!` line, one `!! @param name  description` line
   for each dummy argument (rule 9), name and description separated by
   two spaces, with units (bohr, Ha) where they apply; continuation lines
-  are indented under the description. A function result is
-  `!! @return description`. Arguments described together are named
-  `a,b` or `a..b` (a through b in argument order).
+  are indented under the description. A function's result is described
+  in the description (no `@return`). Arguments described together are
+  named `a,b` or `a..b` (a through b in argument order).
+- An argument named in the [Glossary](glossary.md) (`rr`, `mmax`, `zz`,
+  `irel`, ...) has its glossary text at the start of its `@param`
+  line, then whatever this routine adds; a name with several meanings
+  states what it holds here, with its unit.
 - The description and the arguments are one block of `!!` lines, with no
   blank or plain `!` line inside it, and nothing between it and the
   statement but blank lines. These are the doc comments that fortls,
@@ -186,8 +190,8 @@ looks like this:
   followed by the declarations it covers (rule 6): `!Input variables`
   (`intent(in)`), `!Input/output variables` (`intent(inout)`), `!Output
   variables` (`intent(out)`, and a function result) and `!Local
-  variables` (no intent, including parameters). A label with nothing
-  under it is left out; `!Output variables - printing only` marks a
+  variables` (no intent, including parameters). Every module procedure
+  with arguments has them. A label with nothing under it is left out; `!Output variables - printing only` marks a
   routine whose only output is printed.
 - Every dummy argument has an `intent`, and every declaration has `::`.
 - Several names may share a declaration (`real(dp) :: de,emax,emin`).
@@ -399,7 +403,9 @@ assumed-size (`*`) arrays, and lines of at most 80 columns (set in
 `scripts/check_conventions.py` checks the conventions that neither
 fortitude nor gfortran sees: section labels against intents, the `!!`
 description and `@param` list of each module procedure, the form and
-prefix of the error messages, `stop` in module procedures, an `ierr` left
+prefix, format and edit descriptors of the error messages (the 4.0.1
+messages, `scripts/messages_4.0.1.txt`, keep their text), the `@param`
+texts against the [Glossary](glossary.md), `stop` in module procedures, an `ierr` left
 unchecked, the `!>` documentation of module variables and type components,
 the license header, one-letter names, the mesh step re-derived, `_dp`
 literals and other real kinds outside `constants_m`, and `use` statements

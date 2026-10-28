@@ -31,14 +31,14 @@
  subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax)
 !!  interface to libxc library for potential and energy density calculation
 !!
-!! @param iexc  exchange-correlation function to be used: -(1000*id1+id2) for
-!!              the libxc functionals id1 and id2
+!! @param iexc  exchange-correlation functional: -(1000*id1+id2) for the libxc
+!!              functionals id1 and id2
 !! @param al  log of the mesh ratio amesh of the log radial mesh
 !! @param rho  charge density
-!! @param vxc  exchange-correlation potential
-!! @param exc  exchange-correlation energy density
-!! @param rr  log radial mesh
-!! @param mmax  dimension of log radial grid
+!! @param vxc  exchange-correlation potential (Ha)
+!! @param exc  exchange-correlation energy per electron (Ha)
+!! @param rr  log radial mesh (bohr)
+!! @param mmax  size of the log radial mesh
 
  use functionals_m, only: xc_functl_t, xc_functl_init_functl, &
 &                         xc_functl_get_vxc, &
@@ -129,8 +129,8 @@
 !!  the description of the libxc functionals of iexc, written once per run
 !!  (oncvpsp_run)
 !!
-!! @param iexc  exchange-correlation function to be used: -(1000*id1+id2) for
-!!              the libxc functionals id1 and id2
+!! @param iexc  exchange-correlation functional: -(1000*id1+id2) for the libxc
+!!              functionals id1 and id2
 !! @param iout  unit of the text output
 
  use functionals_m, only: xc_functl_t, xc_functl_init_functl, &

@@ -33,9 +33,9 @@
 !!
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param c_light  speed of light (Hartree atomic units)
-!! @param nkap  number of kappa per level: 1, or 2 for irel=2
-!! @param na  principal quantum number array, dimension ncv
-!! @param la  angular-momenta
+!! @param nkap  number of kappas per l: 1, or 2 for irel=2
+!! @param na  principal quantum numbers, dimension ncv
+!! @param la  angular momenta
 !! @param ea  eigenvalues, input guess (irel=2 or warm) and output;
 !!            ea(:,1) for j=l+1/2, ea(:,2) for j=l-1/2 when irel=2
 !! @param fa  occupancies
@@ -45,14 +45,14 @@
 !! @param it  number of iterations (output)
 !! @param rhoc  core charge density (output)
 !! @param rho  total charge density (output)
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param vi  all-electron potential (output; input with warm)
 !! @param zz  atomic number
-!! @param mmax  size of log grid
-!! @param iexc  exchange-correlation function to be used
+!! @param mmax  size of the log radial mesh
+!! @param iexc  exchange-correlation functional
 !! @param etot  all-electron total energy (output)
 !! @param eterm  kinetic, electron-nucleus, Hartree and exchange-correlation
-!!               energies (output)
+!!               energies (Ha), output
 !! @param res  residual of the screening potential (output, ae_residual)
 !! @param ierr  error flag
 !! @param vext  external potential the orbitals also see (a confining wall,

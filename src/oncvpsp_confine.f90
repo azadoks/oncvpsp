@@ -167,7 +167,7 @@
      call cli_next_arg('oncvpsp_confine',iarg,arg)
      read(arg,*,iostat=ios) ecutmax
      if(ios/=0 .or. ecutmax<=0.0d0) then
-       write(iout,'(a)') 'oncvpsp_confine: ERROR --ecut-max must be positive'
+       write(iout,'(/a)') 'oncvpsp_confine: ERROR --ecut-max must be positive'
        error stop 1
      end if
    case('-t','--table')
@@ -181,13 +181,13 @@
      else
        nk=cli_count_list(arg)
        if(nk>mxk) then
-         write(iout,'(a,i0,a)') 'oncvpsp_confine: ERROR more than ',mxk, &
+         write(iout,'(/a,i0,a)') 'oncvpsp_confine: ERROR more than ',mxk, &
 &             ' walls'
          error stop 1
        end if
        read(arg,*,iostat=ios) kwall(1:nk)
        if(ios/=0 .or. any(kwall(1:nk)<=0.0d0)) then
-         write(iout,'(2a)') &
+         write(iout,'(/2a)') &
 &              'oncvpsp_confine: ERROR --walls must be positive ', &
 &              'numbers separated by commas, or none'
          error stop 1
@@ -197,18 +197,19 @@
      call cli_next_arg('oncvpsp_confine',iarg,arg)
      read(arg,*,iostat=ios) r0
      if(ios/=0 .or. r0<=0.0d0) then
-       write(iout,'(a)') 'oncvpsp_confine: ERROR --wall-radius must be positive'
+       write(iout,'(/a)') &
+&           'oncvpsp_confine: ERROR --wall-radius must be positive'
        error stop 1
      end if
      given_r0=.true.
    case default
-     write(iout,'(2a)') 'oncvpsp_confine: ERROR unknown argument ',trim(arg)
+     write(iout,'(/2a)') 'oncvpsp_confine: ERROR unknown argument ',trim(arg)
      error stop 1
    end select
    iarg=iarg+1
  end do
  if(len_trim(ae_filename)==0 .or. len_trim(ps_filename)==0) then
-   write(iout,'(a)') 'oncvpsp_confine: ERROR requires --ae-file and --ps-file'
+   write(iout,'(/a)') 'oncvpsp_confine: ERROR requires --ae-file and --ps-file'
    error stop 1
  end if
 
@@ -228,7 +229,7 @@
  end if
  do iq=1,nq
    if(rq(iq)<=rcmax) then
-     write(iout,'(a,f10.5,a,f10.5,a)') 'oncvpsp_confine: ERROR the radius', &
+     write(iout,'(/a,f12.6,a,f12.6,a)') 'oncvpsp_confine: ERROR the radius', &
 &         rq(iq),' is not beyond the largest core radius',rcmax,' bohr'
      error stop 1
    end if

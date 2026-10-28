@@ -43,26 +43,32 @@
 &                   rcfact,fcgrid,rcgrid,mmax,rr,nc,nv,la,zion,iexc,c_light, &
 &                   iout,ifail)
 
+!! the Teter-function model core charge, its amplitude fcfact times the
+!! core charge and its scale rcfact times the radius at the core-valence
+!! crossover, the prefactors input (icmod=3) or optimized (icmod=4)
+!!
 !! @param icmod  3 for specified fcfact and rcfact, 4 for coefficient
 !!               optimization
 !! @param rhops  state-by-state pseudocharge density
-!! @param rhotps  total pseudocharge density
-!! @param rhoc  core-charge density
+!! @param rhotps  pseudo valence charge density
+!! @param rhoc  core charge density
 !! @param rhoae  state-by-state all-electron valence charge density
-!! @param rhotae  total all-electron valence charge density
-!! @param rhomod  model core density and 4 derivatives
+!! @param rhotae  all-electron valence charge density
+!! @param rhomod  model core charge density and its first 4 derivatives
+!! @param corepw  the model and its derivatives as pieces
+!!                (core_pieces_smooth)
 !! @param fcfact  prefactor for model amplitude (multiplies crossover value),
 !!                set to 1 for icmod=4
 !! @param rcfact  prefactor for model scale (multiplies crossover radius)
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
-!! @param mmax  dimension of log grid
-!! @param rr  log radial grid
+!! @param mmax  size of the log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param nc  number of core states
 !! @param nv  number of valence states
-!! @param la  angular-momenta
+!! @param la  angular momenta
 !! @param zion  ion charge
-!! @param iexc  exchange-correlation function to be used
+!! @param iexc  exchange-correlation functional
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
@@ -218,7 +224,7 @@
        write(iout,'(a,i4,a)') ' converged in',kk-1,' steps'
        exit
      else if(kk==101) then
-       write(iout,'(a)') &
+       write(iout,'(/a)') &
 &           'modcore3: ERROR Nelder-Mead not converged in 100 steps'
        ifail=1
        return

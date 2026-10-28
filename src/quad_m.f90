@@ -65,8 +65,8 @@
      zz=z1 - p1/pp
      if(abs(zz-z1)<1.0d-15) exit
      if(it==100) then
-       write(error_unit,'(/2a,i0,a,i0)') 'quad_m: ERROR gauss_legendre', &
-&            ' node not converged, nn=',nn,', node=',ii
+       write(error_unit,'(/a,i0,a,i0)') &
+&            'gauss_legendre: ERROR node not converged, nn=',nn,', node=',ii
        error stop 1
      end if
    end do
@@ -85,7 +85,7 @@
 !! integral of lm_integral above it, from the first nn points alone (no
 !! value beyond rr(nn) is read), as fpovlp's overlaps
 !!
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param ff  integrand: u**2, or g**2+f**2 of a Dirac solution
 !! @param nn  the last point
 !! @param ll  angular momentum (lm_integral's power at the origin, which
@@ -110,7 +110,7 @@
 
 !! log_norm to the radius rq instead of rr(nn), a smooth function of rq
 !!
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param ff  integrand: u**2, or g**2+f**2 of a Dirac solution
 !! @param nn  the last point read, far enough past rq for the interpolant
 !!            of lm_integral

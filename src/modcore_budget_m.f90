@@ -78,61 +78,232 @@
    real(dp) :: rs=0.0d0
 !> the fill's kind: 0 none, 1 the minimum tail, 2 Martins'
    integer :: ifill=0
-!> the minimum tail's Legendre coefficients in x = 2(r/r_s)**2 - 1, and its
-!> coefficients in powers of (r/r_s)**2 (for the report)
-   real(dp) :: cleg(0:npow)=0.0d0,cpoly(0:npow)=0.0d0
-!> Martins' fill, exp(a + b r**2 + c r**4)
-   real(dp) :: aco=0.0d0,bco=0.0d0,cco=0.0d0
+!> the minimum tail's Legendre coefficients in x = 2(r/r_s)**2 - 1
+   real(dp) :: cleg(0:npow)=0.0d0
+!> the minimum tail's coefficients in powers of (r/r_s)**2 (for the
+!> report)
+   real(dp) :: cpoly(0:npow)=0.0d0
+!> Martins' fill, exp(a + b r**2 + c r**4): a
+   real(dp) :: aco=0.0d0
+!> Martins' fill: b (bohr**-2)
+   real(dp) :: bco=0.0d0
+!> Martins' fill: c (bohr**-4)
+   real(dp) :: cco=0.0d0
  end type fill_t
 
 !> The state of the search of modcore_budget, which its phases and the
 !> procedures of the model, its transform and its error share
  type :: budget_t
-!> the inputs (modcore_budget)
-   integer :: mmax,iexc,nprobe
+!> size of the log radial mesh
+   integer :: mmax
+!> exchange-correlation functional
+   integer :: iexc
+!> number of probes (0 for icmod=6)
+   integer :: nprobe
+!> speed of light (Hartree atomic units)
    real(dp) :: c_light
+!> angular momenta of the probes
    integer, allocatable :: lprobe(:)
-   real(dp), allocatable :: rr(:),rhoc(:),rhotps(:),probes(:,:)
-   real(dp) :: errmax,zion
-!> the cutoffs: the budget's ecut and its share budget (Ha), the window
-!> qlo..qhi of the minimum tail, q_b, the end of the search qend, and
-!> where the error peaks qpk (bohr**-1)
-   real(dp) :: ecut,budget,factor,qlo,qhi,qb,qend,qext,qpk
-!> the radii: the largest and smallest r_s, that of icmod 6
-   real(dp) :: rtop,rlo,rs6
+!> log radial mesh (bohr)
+   real(dp), allocatable :: rr(:)
+!> core charge density
+   real(dp), allocatable :: rhoc(:)
+!> pseudo valence charge density
+   real(dp), allocatable :: rhotps(:)
+!> probe densities of the hardness (icmod=7), one electron each
+!> (mmax,nprobe)
+   real(dp), allocatable :: probes(:,:)
+!> exchange-correlation energy error (Ha) that defines the needed cutoff
+   real(dp) :: errmax
+!> ion charge (for der2exc)
+   real(dp) :: zion
+!> the budget's plane-wave cutoff ecut (Ha)
+   real(dp) :: ecut
+!> the share of ecut the model must fit, slack*ecut (Ha)
+   real(dp) :: budget
+!> the multiple of the pseudo-waves' cutoff ecutw that is ecut, when
+!> fcfact <= 0
+   real(dp) :: factor
+!> the lower end of the window of the minimum tail, 2*sqrt(2*ecut)
+!> (bohr**-1)
+   real(dp) :: qlo
+!> the upper end of the window, min(3*qlo, qmax) (bohr**-1)
+   real(dp) :: qhi
+!> q_b, the first density cutoff that decides whether the model fits
+!> budget, 2*sqrt(2*budget) (bohr**-1)
+   real(dp) :: qb
+!> the last density cutoff of the search (bohr**-1)
+   real(dp) :: qend
+!> the qend r_s of icmod 6 was found with, for the report (bohr**-1)
+   real(dp) :: qext
+!> the grid's density cutoff of the largest error of err_max (bohr**-1)
+   real(dp) :: qpk
+!> the largest r_s, the smallest rc or the last radius with core charge
+!> (bohr)
+   real(dp) :: rtop
+!> the smallest r_s, rtop/50 (bohr)
+   real(dp) :: rlo
+!> r_s of icmod 6, the smallest radius that fits (bohr)
+   real(dp) :: rs6
+!> the last mesh point with core charge
    integer :: irtop
-!> the log mesh's al, the step of the band-limited transform dq, and the
-!> sizes and offsets of the tables and meshes
-   real(dp) :: al,dq
-   integer :: nq,npq,nqn,i0,iend,nout,irmx,nin,nx,kin,ni,nt
+!> log of the mesh ratio
+   real(dp) :: al
+!> the width of the panels of the band-limited transform (bohr**-1)
+   real(dp) :: dq
+!> the number of density cutoffs of the grid, qmax/qstep
+   integer :: nq
+!> the number of panels of the band-limited transform
+   integer :: npq
+!> the number of nodes of the window of the minimum tail
+   integer :: nqn
+!> the first mesh interval of the nodes beyond r_s
+   integer :: i0
+!> the mesh point after the last interval of the nodes beyond r_s
+   integer :: iend
+!> the number of nodes beyond r_s, ngi per interval
+   integer :: nout
+!> the last mesh point r_s can lie below on in the tables
+   integer :: irmx
+!> the last mesh point within the sphere of the error
+   integer :: nin
+!> the size of the error's part of the log mesh, rr(1:nx)
+   integer :: nx
+!> the index of r_s on the mesh ri
+   integer :: kin
+!> the size of the mesh ri
+   integer :: ni
+!> the size of xr, nx + ni
+   integer :: nt
 !> the model being tried: its radius and fill
    type(fill_t) :: fill
-!> the state of the transform tables (spectrum, outer_transform)
-   integer :: irow,js,npdone,msnap
-!> Gauss-Legendre nodes and weights
-   real(dp) :: tk(ngk),wk(ngk),tgi(ngi),wgi(ngi),xg(nxg),wxg(nxg)
-   real(dp) :: pt(ngi),pg(ngi)
-!> the window of the minimum tail and the core charge's transform beyond
-!> r_s
-   real(dp), allocatable :: qn(:),wn(:),ot(:),og(:),sho(:),cho(:)
-   real(dp), allocatable :: so0(:,:),co0(:,:),tab(:,:,:),tabw(:,:)
-   real(dp), allocatable :: fx(:),fw(:),plg(:,:)
-!> the error's meshes and densities
-   real(dp), allocatable :: core(:),nval(:),work(:),eps(:),vxc(:),wf(:)
-   real(dp), allocatable :: wc(:),fext(:),af(:),ac(:),swin(:),xr(:),ri(:)
-   real(dp), allocatable :: nvi(:),wki(:),epi(:),vxi(:)
-   real(dp), allocatable :: shr(:),chr(:),sr0(:,:),cr0(:,:),sr(:,:)
-   real(dp), allocatable :: cr(:,:),ntk(:,:),rqs(:,:),rqp(:)
+!> the row of the tables for the current r_s, the mesh point above it
+   integer :: irow
+!> the first node beyond r_s of the whole intervals
+   integer :: js
+!> the number of panels of ntk done for the current model
+   integer :: npdone
+!> the last grid cutoff of rqs done for the current model
+   integer :: msnap
+!> Gauss-Legendre nodes on [0, 1] of the panels in q
+   real(dp) :: tk(ngk)
+!> Gauss-Legendre weights of tk
+   real(dp) :: wk(ngk)
+!> Gauss-Legendre nodes on [0, 1] of each mesh interval in ln r
+   real(dp) :: tgi(ngi)
+!> Gauss-Legendre weights of tgi
+   real(dp) :: wgi(ngi)
+!> Gauss-Legendre nodes on [0, 1] of the transform on [0, r_s]
+   real(dp) :: xg(nxg)
+!> Gauss-Legendre weights of xg
+   real(dp) :: wxg(nxg)
+!> the nodes of the partial interval [r_s, the next mesh point] (bohr)
+   real(dp) :: pt(ngi)
+!> their weights times r**2 rhoc
+   real(dp) :: pg(ngi)
+!> the nodes of the window of the minimum tail (bohr**-1)
+   real(dp), allocatable :: qn(:)
+!> their weights times q**2
+   real(dp), allocatable :: wn(:)
+!> the nodes of the core charge's transform beyond r_s (bohr)
+   real(dp), allocatable :: ot(:)
+!> their weights times r**2 rhoc
+   real(dp), allocatable :: og(:)
+!> sin(dq ot), the rotation from one panel to the next
+   real(dp), allocatable :: sho(:)
+!> cos(dq ot)
+   real(dp), allocatable :: cho(:)
+!> sin(tk dq ot), the sines of the first panel (nout,ngk)
+   real(dp), allocatable :: so0(:,:)
+!> cos(tk dq ot) (nout,ngk)
+   real(dp), allocatable :: co0(:,:)
+!> the sums of og sin(k ot) at the nodes of the band-limited transform
+!> over the intervals from each mesh point on (npq,ngk,i0:irmx)
+   real(dp), allocatable :: tab(:,:,:)
+!> the same at the nodes of the window (nqn,i0:irmx)
+   real(dp), allocatable :: tabw(:,:)
+!> the nodes of the fill's transform on [0, r_s] (bohr)
+   real(dp), allocatable :: fx(:)
+!> their weights times r times the fill
+   real(dp), allocatable :: fw(:)
+!> the Legendre polynomials of 2 xg**2 - 1 (nxg,0:npow)
+   real(dp), allocatable :: plg(:,:)
+!> the model inside r_s and the core charge beyond (mmax)
+   real(dp), allocatable :: core(:)
+!> the pseudo valence charge on the background, on rr(1:nx)
+   real(dp), allocatable :: nval(:)
+!> work space on rr(1:nx)
+   real(dp), allocatable :: work(:)
+!> the exchange-correlation energy per electron (Ha) on rr(1:nx)
+   real(dp), allocatable :: eps(:)
+!> exchange-correlation potential (Ha) on rr(1:nx)
+   real(dp), allocatable :: vxc(:)
+!> the xc energy density of the valence charge on the fill, on ri
+   real(dp), allocatable :: wf(:)
+!> the xc energy density of the valence charge on the core charge, on
+!> rr(1:nx)
+   real(dp), allocatable :: wc(:)
+!> the fill on ri, extended beyond r_s
+   real(dp), allocatable :: fext(:)
+!> the integrand of the error below r_s, on ri
+   real(dp), allocatable :: af(:)
+!> the integrand of the error from r_s, on rr(1:nx)
+   real(dp), allocatable :: ac(:)
+!> the taper of the sphere of the error on rr(1:nx)
+   real(dp), allocatable :: swin(:)
+!> the points of the band-limited models: rr(1:nx), then ri (bohr)
+   real(dp), allocatable :: xr(:)
+!> the mesh of the integral below r_s, r_s exp((k-kin) al) (bohr)
+   real(dp), allocatable :: ri(:)
+!> the pseudo valence charge on the background, on ri
+   real(dp), allocatable :: nvi(:)
+!> work space on ri
+   real(dp), allocatable :: wki(:)
+!> the exchange-correlation energy per electron (Ha) on ri
+   real(dp), allocatable :: epi(:)
+!> exchange-correlation potential (Ha) on ri
+   real(dp), allocatable :: vxi(:)
+!> sin(dq xr), the rotation from one panel to the next
+   real(dp), allocatable :: shr(:)
+!> cos(dq xr)
+   real(dp), allocatable :: chr(:)
+!> sin(tk dq xr), the sines of the first panel (nt,ngk)
+   real(dp), allocatable :: sr0(:,:)
+!> cos(tk dq xr) (nt,ngk)
+   real(dp), allocatable :: cr0(:,:)
+!> the sines of the current panel, rotated from sr0 (nt,ngk)
+   real(dp), allocatable :: sr(:,:)
+!> the cosines of the current panel, rotated from cr0 (nt,ngk)
+   real(dp), allocatable :: cr(:,:)
+!> the model's transform at the nodes of the panels (npq,ngk)
+   real(dp), allocatable :: ntk(:,:)
+!> the band-limited models at xr at the grid cutoffs m*qstep (nt,0:nq)
+   real(dp), allocatable :: rqs(:,:)
+!> the band-limited model summed so far at xr; work space of the tables
+   real(dp), allocatable :: rqp(:)
+!> exchange-correlation potential of the background alone (Ha)
    real(dp) :: vbg
-!> the needed cutoff (bohr**-1, Ha), and whether the search was extended
-   real(dp) :: qneed,ecore
+!> the needed density cutoff (bohr**-1)
+   real(dp) :: qneed
+!> the needed plane-wave cutoff, qneed**2/8 (Ha)
+   real(dp) :: ecore
+!> whether the search of icmod 6 was extended beyond q_b + quick
    logical :: full
-!> icmod=7: the hardness and its mismatch, the radii of the basin, their
-!> fills and mismatches
-   real(dp), allocatable :: d2ae(:,:),d2mod(:,:),d2zero(:,:)
+!> icmod=7: the hardness at rhotps + rhoc (nprobe,nprobe)
+   real(dp), allocatable :: d2ae(:,:)
+!> the hardness at rhotps + the model (nprobe,nprobe)
+   real(dp), allocatable :: d2mod(:,:)
+!> zeros, the reference of the hardness at rhotps + rhoc (nprobe,nprobe)
+   real(dp), allocatable :: d2zero(:,:)
+!> the hardness mismatch (Ha)
    real(dp) :: mismatch
-   real(dp), allocatable :: crad(:),cmis(:)
+!> the radii of the basin (bohr)
+   real(dp), allocatable :: crad(:)
+!> their hardness mismatches (Ha)
+   real(dp), allocatable :: cmis(:)
+!> their fills, 0 for none
    integer, allocatable :: cfill(:)
+!> the number of radii of the basin
    integer :: ncand
  end type budget_t
 
@@ -208,9 +379,9 @@
 &                          zion,probes,lprobe,nprobe,iout,ifail)
 
 !! @param icmod  6 for the smallest radius, 7 for the hardness-matched one
-!! @param rhotps  total pseudocharge density
-!! @param rhoc  core-charge density
-!! @param rhomod  model core density and 4 derivatives
+!! @param rhotps  pseudo valence charge density
+!! @param rhoc  core charge density
+!! @param rhomod  model core charge and its first 4 derivatives
 !! @param corepw  its pieces, split at r_s (modcore_m, core_pieces)
 !! @param fcfact  plane-wave cutoff (Ha) the model is made for, if > 0; else 0
 !!                for ecutw, or minus the multiple of ecutw
@@ -222,9 +393,9 @@
 !!                cutoff
 !! @param slack  share of the cutoff the model must fit, 0 < slack <= 1
 !! @param rcmin  the smallest rc, the largest r_s (bohr)
-!! @param mmax  dimension of log grid
-!! @param rr  log radial grid
-!! @param iexc  exchange-correlation function to be used
+!! @param mmax  size of the log radial mesh
+!! @param rr  log radial mesh (bohr)
+!! @param iexc  exchange-correlation functional
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param zion  ion charge (for der2exc)
 !! @param probes  probe densities of the hardness (icmod=7), one electron each
@@ -340,7 +511,7 @@
 
  bc%qlo=2.0d0*sqrt(2.0d0*bc%ecut)
  if(bc%qlo >= qmax) then
-   write(iout,'(/a,f10.2,a)') 'modcore_budget: ERROR stop - ecut beyond', &
+   write(iout,'(/a,f12.6,a)') 'modcore_budget: ERROR ecut beyond', &
 &        qmax**2/8.0d0,' Ha'
    ifail=1
    return
@@ -357,14 +528,14 @@
    bc%irtop=ii
  end do
  if(bc%irtop<4) then
-   write(iout,'(/a)') 'modcore_budget: ERROR stop - no core charge'
+   write(iout,'(/a)') 'modcore_budget: ERROR no core charge'
    ifail=1
    return
  end if
  bc%rtop=min(rcmin,bc%rr(bc%irtop))
  bc%rlo=bc%rtop/50.0d0
  if(qmax*bc%rtop > 2.0d0*(nxg-50)) then
-   write(iout,'(/a,f10.4,a)') 'modcore_budget: ERROR stop - r_s up to', &
+   write(iout,'(/a,f12.6,a)') 'modcore_budget: ERROR r_s up to', &
 &        bc%rtop,' bohr needs more nodes of the transform'
    ifail=1
    return
@@ -431,7 +602,7 @@
  end do
  bc%i0=max(1,floor(log(bc%rlo/(1.05d0*bc%rr(1)))/bc%al))
  if(bc%iend<=bc%i0+1) then
-   write(iout,'(/a)') 'modcore_budget: ERROR stop - no core charge'
+   write(iout,'(/a)') 'modcore_budget: ERROR no core charge'
    ifail=1
    return
  end if
@@ -1039,8 +1210,8 @@
    sa=slope_at(bc,ua)
    sb=slope_at(bc,ub)
    if(sa>0.0d0 .or. sb<0.0d0) then
-     write(iout,'(/a,f12.6)') 'modcore_budget: WARNING no minimum of the &
-&mismatch bracketed about',crad(ib)
+     write(iout,'(/a,f12.6)') 'modcore_budget: WARNING no minimum of the '// &
+&         'mismatch bracketed about',crad(ib)
      return
    end if
    minimum_radius=exp(zeroin(slope_at_of,ua,ub,iout,ifail))
@@ -1083,8 +1254,8 @@
  ifail=0
  associate(budget=>bc%budget,errmax=>bc%errmax,rtop=>bc%rtop)
 
-   write(iout,'(/a,f10.6,a,f10.4,a,1p,e10.2,a)') &
-&        'modcore_budget: ERROR stop - no model core inside rc =',rtop, &
+   write(iout,'(/a,f12.6,a,f12.6,a,es12.4,a)') &
+&        'modcore_budget: ERROR no model core inside rc =',rtop, &
 &        ' needs less than',budget,' Ha for an error of',errmax,' Ha'
    ifail=1
    return
@@ -1141,7 +1312,7 @@
    irow=is+1
    if(irow>irmx) then
      write(error_unit,'(/a)') &
-&         'modcore_budget: ERROR stop - r_s beyond the table'
+&         'modcore_budget: ERROR r_s beyond the table'
      error stop 1
    end if
    xs=log(rs)
@@ -1266,7 +1437,7 @@
    end do
    call dhseqr('E','N',nd,1,nd,hess,npow-2,wr,wi,zz,1,wkh,size(wkh),info)
    if(info/=0) then
-     write(error_unit,'(/a,i4)') 'modcore_budget: ERROR dhseqr info =',info
+     write(error_unit,'(/a,i0)') 'modcore_budget: ERROR dhseqr info =',info
      error stop 1
    end if
    do kk=1,nd
@@ -1323,7 +1494,7 @@
 !! P_(k+1)^(m) = P_(k-1)^(m) + (2k+1) P_k^(m-1)
 !!
 !! @param xx  argument
-!! @param nder  highest derivative
+!! @param nder  highest derivative wanted, 0<=nder<=4
 !! @param pl  pl(k,m) = P_k^(m)(xx)
 
 !Input variables
@@ -1463,8 +1634,8 @@
 
    call dgglse(nqn,npow+1,3,amat,nqn,bmat,3,cvec,dvec,cleg,wk,lwork,info)
    if(info/=0) then
-     write(error_unit,'(/a,i4)') &
-&         'modcore_budget: ERROR stop - dgglse info =',info
+     write(error_unit,'(/a,i0)') &
+&         'modcore_budget: ERROR dgglse info =',info
      error stop 1
    end if
    deallocate(amat,cvec,wk)
@@ -1822,8 +1993,8 @@
  ifail=0
  call ug_brent(fun,xa0,xb0,zeroin,ierr,fq=fb,fo=fc,fends=fe,converged=conv)
  if(ierr/=0) then
-   write(iout,'(/a,1p,2e14.6)') 'modcore_budget: ERROR stop - no root &
-&between',xa0,xb0
+   write(iout,'(/a,2es12.4)') 'modcore_budget: ERROR no root between', &
+&       xa0,xb0
 !  a defined result, for the caller's expression before its test of ifail
    zeroin=xa0
    ifail=1
@@ -2074,20 +2245,18 @@
 !! with one valence state still has a matrix to match
 !!
 !! @param lmax  maximum angular momentum
-!! @param lloc  index of local potential
+!! @param lloc  l of the local potential, 4 for the polynomial
 !! @param nproj  number of projectors for each l
 !! @param epa  reference energies of the projectors
 !! @param wellprj  whether each projector is a well state (its energy then
 !!                 of either sign), else a bound state
 !! @param vp  screened semi-local and local pseudopotentials
-!! @param vlocpw  the screened local potential's pieces
-!! @param vkbpw  Vanderbilt-Kleinman-Bylander projectors as functions of
-!!               pieces
+!! @param vlocpw  the screened local potential as pieces
+!! @param vkbpw  the projectors as pieces
 !! @param evkb  coefficients of the projectors
-!! @param rr  log radial grid
-!! @param mmax  dimension of log grid
-!! @param nkap  1 for scalar-relativistic or non-relativistic, 2 for
-!!              relativistic
+!! @param rr  log radial mesh (bohr)
+!! @param mmax  size of the log radial mesh
+!! @param nkap  number of kappas per l: 1, or 2 for irel=2
 !! @param probes  probe densities, (u/r)**2 normalized to one electron
 !! @param lprobe  angular momenta of the probes
 !! @param nprobe  number of probes
@@ -2275,8 +2444,8 @@
      end if
    end do
    if(.not. found) then
-     write(iout,'(/a,1p,e10.2,a)') &
-&          'modcore_budget_table: ERROR stop - no pseudo-wave reaches', &
+     write(iout,'(/a,es12.4,a)') &
+&          'modcore_budget_table: ERROR no pseudo-wave reaches', &
 &          errmax,' Ha per electron in its table'
      ifail=1
      return
@@ -2295,7 +2464,7 @@
    if(.not. (wcurve(ip)>0.0d0)) cycle
    if(nks(ip)<2) then
      write(iout,'(/a,i0,a)') &
-&          'modcore_budget_table: ERROR stop - pseudo-wave ', &
+&          'modcore_budget_table: ERROR pseudo-wave ', &
 &          ip,' has a weight and no convergence curve'
      ifail=1
      return
@@ -2305,14 +2474,14 @@
    hs=min(hs,dqs(ip))
  end do
  if(.not. (hs<huge(1.0d0)) .or. qa>=qb) then
-   write(iout,'(/a)') 'modcore_budget_table: ERROR stop - no weighted curves'
+   write(iout,'(/a)') 'modcore_budget_table: ERROR no weighted curves'
    ifail=1
    return
  end if
  fb=excess_mean(qb)
  if(fb>0.0d0) then
-   write(iout,'(/a,1p,e10.2,a)') &
-&        'modcore_budget_table: ERROR stop - the weighted mean does not'// &
+   write(iout,'(/a,es12.4,a)') &
+&        'modcore_budget_table: ERROR the weighted mean does not'// &
 &        ' reach',errmax,' Ha per electron'
    ifail=1
    return
@@ -2326,8 +2495,8 @@
    if(fa>0.0d0) then
      call ug_brent(excess_mean,xa,xb,qerr,ierr)
      if(ierr/=0) then
-       write(iout,'(a)') 'modcore_budget_table: ERROR the bracket lost its'// &
-&            ' sign change'
+       write(iout,'(/a)') &
+&            'modcore_budget_table: ERROR the bracket lost its sign change'
        ifail=1
        return
      end if
@@ -2336,8 +2505,8 @@
    end if
    xb=xa
  end do
- write(iout,'(/a,1p,e10.2,a)') &
-&      'modcore_budget_table: ERROR stop - the weighted mean is below', &
+ write(iout,'(/a,es12.4,a)') &
+&      'modcore_budget_table: ERROR the weighted mean is below', &
 &      errmax,' Ha per electron where the curves start'
  ifail=1
  return

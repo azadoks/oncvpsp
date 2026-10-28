@@ -49,9 +49,15 @@
 !> the quadrature of a channel in the sphere (ws_grid_init): its points,
 !> weights, and the local potential and the projectors on them
  type :: ws_grid_t
-   real(dp) :: rs=0.0d0,qmax=0.0d0
-   integer :: ng=0,nvkb=0
-   real(dp), allocatable :: rg(:),wg(:),vg(:),vkbg(:,:)
+   real(dp) :: rs=0.0d0  !< radius of the sphere (bohr)
+   real(dp) :: qmax=0.0d0  !< the largest q of the basis (bohr**-1)
+   integer :: ng=0  !< number of quadrature points
+   integer :: nvkb=0  !< number of projectors
+   real(dp), allocatable :: rg(:)  !< the quadrature points (bohr)
+   real(dp), allocatable :: wg(:)  !< their weights
+   real(dp), allocatable :: vg(:)  !< the local potential at them (Ha)
+!> the projectors at them, vkbg(nvkb,ng)
+   real(dp), allocatable :: vkbg(:,:)
  end type ws_grid_t
 
 !> Gauss-Legendre nodes per panel
@@ -184,12 +190,12 @@
 !! @param rs  radius of the sphere (bohr), beyond the projectors and the
 !!            local potential's core radius
 !! @param qmax  the largest q of the basis (bohr**-1)
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param mmax  size of the log radial mesh
 !! @param vloc  local potential on the mesh
-!! @param vlocpw  its pieces
+!! @param vlocpw  the screened local potential as pieces
 !! @param nvkb  number of projectors
-!! @param vkbpw  the projectors' pieces
+!! @param vkbpw  the projectors as pieces
 !! @param grid  the quadrature and the potentials on it (output)
 
  use logmesh_m, only: lm_interp
@@ -290,7 +296,7 @@
 !! @param ll  angular momentum, 0..3
 !! @param iedge  1 bottom, 2 centre, 3 top
 !! @param grid  the channel's quadrature in the sphere (ws_grid_init)
-!! @param evkb  the projectors' coefficients
+!! @param evkb  coefficients of the projectors
 !! @param eex  the state's energy (Ha)
 !! @param nb  number of basis functions (output)
 !! @param ecut  q_N**2/2 of each N (Ha, output)
@@ -327,7 +333,7 @@
    hh(1:np,1:np)=hmat(1:np,1:np)
    call dsyev('N','U',np,hh,nb,ev,work,lwork,info)
    if(info/=0) then
-     write(error_unit,'(a,i0)') 'ws_convergence: ERROR dsyev info ',info
+     write(error_unit,'(/a,i0)') 'ws_convergence: ERROR dsyev info ',info
      error stop 1
    end if
    if(np==nb) idx=minloc(abs(ev(1:nb)-eex),1)
@@ -346,7 +352,7 @@
 !! @param ll  angular momentum, 0..3
 !! @param iedge  1 bottom, 2 centre, 3 top
 !! @param grid  the channel's quadrature in the sphere (ws_grid_init)
-!! @param evkb  the projectors' coefficients
+!! @param evkb  coefficients of the projectors
 !! @param nb  number of basis functions and eigenvalues (output)
 !! @param ev  the eigenvalues (Ha, output)
 !! @param ierr  0, or 1 if no basis function is below qmax (output)
@@ -373,7 +379,7 @@
  allocate(work(lwork))
  call dsyev('N','U',nb,hmat,nb,ev,work,lwork,info)
  if(info/=0) then
-   write(error_unit,'(a,i0)') 'ws_eigenvalues: ERROR dsyev info ',info
+   write(error_unit,'(/a,i0)') 'ws_eigenvalues: ERROR dsyev info ',info
    error stop 1
  end if
  deallocate(ecut,hmat,work)
@@ -385,6 +391,16 @@
 !! the pseudo-Hamiltonian in the nb basis functions of an edge's condition
 !! below qmax, and their cutoffs q_n**2/2 (the arguments as
 !! ws_convergence's)
+!!
+!! @param ll  angular momentum, 0..3
+!! @param iedge  1 bottom, 2 centre, 3 top
+!! @param grid  the channel's quadrature in the sphere (ws_grid_init)
+!! @param evkb  coefficients of the projectors (Ha)
+!! @param nb  number of basis functions (output)
+!! @param ecut  q_n**2/2 of each basis function (Ha, output)
+!! @param hmat  the pseudo-Hamiltonian in the basis (Ha, output)
+!! @param ierr  0, or non-zero after a failure; 1 if no basis function is
+!!             below qmax (output)
 
  use sbf_m, only: sbf_trig
 
@@ -451,7 +467,13 @@
 
  subroutine sort(aa)
 !! ascending, by insertion (a few values)
+!!
+!! @param aa  the values, sorted on return
+
+!Input/output variables
  real(dp), intent(inout) :: aa(:)
+
+!Local variables
  real(dp) :: tt
  integer :: ii,jj
  do ii=2,size(aa)

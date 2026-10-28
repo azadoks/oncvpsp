@@ -39,11 +39,10 @@
 !!
 !! @param lmax  maximum angular momentum
 !! @param nproj  number of projectors for each l
-!! @param rr  log radial grid
-!! @param mmax  size of radial grid
-!! @param vkbpw  vkb projectors for each l and j=l+/-1/2, as functions of
-!!               pieces
-!! @param evkb  coefficients of VKB projectors for each l and j=l+/-1/2
+!! @param rr  log radial mesh (bohr)
+!! @param mmax  size of the log radial mesh
+!! @param evkb  coefficients of the projectors (Ha), for each l and j=l+/-1/2
+!! @param vkbpw  the projectors as pieces, for each l and j=l+/-1/2
 !! @param vsr  normalized scalar-relativistic projectors on the mesh
 !! @param esr  energy coefficients of vsr
 !! @param vso  normalized spin-orbit projectors on the mesh

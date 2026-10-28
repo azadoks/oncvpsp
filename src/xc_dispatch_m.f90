@@ -33,11 +33,11 @@
 !! @param iexc  exchange-correlation functional (1-4, 6, 7 built in, <0
 !!              libxc)
 !! @param c_light  speed of light (Hartree atomic units)
-!! @param al  log of the mesh's step
+!! @param al  log of the mesh ratio
 !! @param rho  charge density on rr
-!! @param vxc  exchange-correlation potential (output)
-!! @param exc  exchange-correlation energy per electron (output)
-!! @param rr  log radial mesh
+!! @param vxc  exchange-correlation potential (Ha) (output)
+!! @param exc  exchange-correlation energy per electron (Ha), output
+!! @param rr  log radial mesh (bohr)
 !! @param nn  its size
 !! @param who  the caller, for the error message
 

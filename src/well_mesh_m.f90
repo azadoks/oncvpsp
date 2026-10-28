@@ -37,8 +37,16 @@
 !> the state (the large and small components for irel=2) and its
 !> derivative in the mesh index; mx = 0 for a state on the log mesh
  type :: well_mesh_t
+!> the size of the mesh, 0 for a state on the log mesh
    integer :: mx=0
-   real(dp), allocatable :: rr(:),vv(:),uu(:,:),up(:,:)
+!> the mesh, the log mesh continued (bohr)
+   real(dp), allocatable :: rr(:)
+!> the well's potential on it (Ha)
+   real(dp), allocatable :: vv(:)
+!> the state times r, its large and small components for irel=2
+   real(dp), allocatable :: uu(:,:)
+!> d(uu)/dn, its derivative in the mesh index
+   real(dp), allocatable :: up(:,:)
  end type well_mesh_t
 
 !> the most the mesh is continued to (bohr)
@@ -50,9 +58,9 @@
 !! the log mesh continued to mx >= mmax points, and the all-electron
 !! potential on it
 !!
-!! @param rr  log radial mesh
-!! @param vfull  all-electron potential
-!! @param mmax  size of the log mesh
+!! @param rr  log radial mesh (bohr)
+!! @param vfull  all-electron potential (Ha)
+!! @param mmax  size of the log radial mesh
 !! @param mx  size of the continued mesh
 !! @param rx  the continued mesh
 !! @param vx  vfull on it, vfull(mmax) rr(mmax)/r beyond rr(mmax)
@@ -129,7 +137,7 @@
  al=log(rx(mx)/rx(1))/dble(mx-1)
  mneed=mx+max(10,ceiling(log(1.25d0)/al))
  if(rx(1)*exp(al*dble(mneed-1))>rlimit) then
-   write(iout,'(/a,f8.4,a,i2,a,f10.1,a)') &
+   write(iout,'(/a,f12.6,a,i0,a,f12.6,a)') &
 &       'wm_short: ERROR the well state at',ee,' Ha, l=',ll, &
 &       ' does not decay within',rlimit,' bohr'
    ifail=1

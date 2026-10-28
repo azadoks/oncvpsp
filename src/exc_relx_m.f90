@@ -38,9 +38,10 @@
 !! are as in excpzca
 !!
 !! @param rho  charge density
-!! @param vxc  exchange-correlation potential, corrected on output
-!! @param exc  exchange-correlation energy density, corrected on output
-!! @param mmax  dimension of log radial grid
+!! @param vxc  exchange-correlation potential (Ha), corrected on output
+!! @param exc  exchange-correlation energy per electron (Ha), corrected on
+!!              output
+!! @param mmax  size of the log radial mesh
 !! @param c_light  speed of light (Hartree atomic units)
 
  use constants_m, only: dp, pi

@@ -40,36 +40,36 @@
 !! piece, so the projectors and their coefficients are smooth in the radii
 !!
 !! @param lmax  maximum angular momentum
-!! @param lloc  l for local potential (lloc==4 => use linear combination)
+!! @param lloc  l of the local potential, 4 for the polynomial
 !! @param lpopt  choice of polynomial for lloc==4
 !! @param dvloc0  amplitude at rr==0 to be smoothely added for lloc==4
-!! @param rc  core radii (bohr)
-!! @param irc  last mesh points at or inside the core radii
+!! @param rc  core radius (bohr) of each l
+!! @param irc  last mesh point at or inside rc, of each l
 !! @param nproj  number of projectors for each l
-!! @param rr  log radial grid
-!! @param mmax  size of radial grid
+!! @param rr  log radial mesh (bohr)
+!! @param mmax  size of the log radial mesh
 !! @param pswf  pseudo wave functions
 !! @param pswfx  their inside pieces (the Bessel sums) on the nodes to past
 !!               rc (pspot)
 !! @param chix  (eig - T) pswfx, the projectors' seeds, the same
-!! @param vfull  all-electron potential
+!! @param vfull  all-electron potential (Ha)
 !! @param vp  semi-local pseudopotentials for first projectors
 !!            (vp(:,5) is local potential if lloc=4)
+!! @param evkb  coefficients of the projectors (Ha) (output)
 !! @param vkb  VKB projectors on the mesh (output)
-!! @param evkb  coefficients of VKB projectors (output)
 !! @param nlim  index of maximum rc including that of vlocal (output)
 !! @param dlta  the relativistic term Delta of each all-electron wave about
 !!              its taper window (ae_delta)
 !! @param vrloc  Delta/(2u) of the first wave of channel lloc about its
 !!               window, for the taper of the local potential (lloc<4)
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
-!! @param nkap  number of kappa per l: 1, or 2 for irel=2
+!! @param nkap  number of kappas per l: 1, or 2 for irel=2
 !!              (for pswf, vp, vkb, evkb and dlta the last index is 1 for
 !!              j=l+1/2, 2 for j=l-1/2 when nkap=2)
-!! @param vkbpw  the projectors as functions of pieces (output)
-!! @param vlocpw  the screened local potential as a function of pieces
-!!                (output): its inside pieces and the all-electron
-!!                potential beyond rcloc, the last bound the mesh end
+!! @param vkbpw  the projectors as pieces (output)
+!! @param vlocpw  the screened local potential as pieces (output): its
+!!                inside pieces and the all-electron potential beyond
+!!                rcloc, the last bound the mesh end
 !! @param bbeig  the eigenvalues of each channel's symmetrized B matrix,
 !!               ascending (B itself for one projector; 0 where there is
 !!               none) (output)
@@ -156,7 +156,7 @@
      end if
      do ii=1,nb
        if(pswfx(ii,1,l1,ikap)==0.0d0) then
-         write(iout,'(2a,i2,a,f10.6)') 'run_vkb: ERROR node of the local', &
+         write(iout,'(/2a,i0,a,f12.6)') 'run_vkb: ERROR node of the local', &
 &              ' channel''s pseudo wave within reach of rc, l=',lloc, &
 &              ' r=',rr(ii)
          ifail=1

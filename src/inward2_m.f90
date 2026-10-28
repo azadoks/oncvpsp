@@ -39,7 +39,7 @@
 !! @param ifrom  first point, given
 !! @param ito  last point integrated
 !! @param uu  radial wave function (*rr)
-!! @param up  d(uu)/dn
+!! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param upp  d(up)/dn
 
  use constants_m, only: dp

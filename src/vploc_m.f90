@@ -36,12 +36,23 @@
  public :: vploc_t, vploc_fit, vploc_eval, vploc_mesh
 
  type vploc_t
+!> 1-5, the polynomial (vploc_fit)
    integer :: lpopt=0
-   real(dp) :: rc=0.0d0,dvloc0=0.0d0
+!> matching radius (bohr)
+   real(dp) :: rc=0.0d0
+!> amplitude at rr==0 of the smooth "null space" function added
+   real(dp) :: dvloc0=0.0d0
 !> the all-electron potential and its first three derivatives at rc
    real(dp) :: vder(0:3)=0.0d0
-!> the polynomial's coefficients: aco + bco r**p1 + cco r**p2 + dco r**p3
-   real(dp) :: aco=0.0d0,bco=0.0d0,cco=0.0d0,dco=0.0d0
+!> the polynomial's coefficients: aco + bco r**p1 + cco r**p2 + dco r**p3;
+!> the constant
+   real(dp) :: aco=0.0d0
+!> the coefficient of r**p1
+   real(dp) :: bco=0.0d0
+!> the coefficient of r**p2
+   real(dp) :: cco=0.0d0
+!> the coefficient of r**p3
+   real(dp) :: dco=0.0d0
  end type vploc_t
 
  contains
@@ -50,7 +61,7 @@
 
 !! the polynomial potential matched at rc
 !!
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param vv  all-electron potential
 !! @param mmax  size of the log radial mesh
 !! @param rc  matching radius (bohr)
@@ -110,7 +121,7 @@
    cf%dco=( 3*dvv-3*d2vv*rc+d3vv*rc**2)/(48*rc**5)
    cf%aco=v0-cf%bco*rc**2-cf%cco*rc**4-cf%dco*rc**6
  else
-   write(error_unit,'(a,i0)') 'vploc_fit: ERROR lpopt ',lpopt
+   write(error_unit,'(/a,i0)') 'vploc_fit: ERROR lpopt ',lpopt
    error stop 1
  end if
  return
@@ -164,7 +175,7 @@
 !! the all-electron potential beyond
 !!
 !! @param cf  the coefficients
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param vv  all-electron potential
 !! @param mmax  size of the log radial mesh
 !! @param vp  the local potential

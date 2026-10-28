@@ -42,30 +42,30 @@
 !! energy epa
 !!
 !! @param lmax  maximum angular momentum
-!! @param lloc  l for local potential
-!! @param nproj  number of VKB projectors for each l
+!! @param lloc  l of the local potential, 4 for the polynomial
+!! @param nproj  number of projectors for each l
 !! @param epa  bound-state or scattering state reference energies for vkb
 !!             potentials (last index 1 for j=l+1/2, 2 for j=l-1/2, as in vkb,
 !!             evkb and vp)
 !! @param npsh  number of energies, from epsh2 down
-!! @param epsh2  high energy limit for "phase shift" calculation
-!! @param depsh  energy increment
+!! @param epsh2  upper limit of the log derivative analysis energy range (Ha)
+!! @param depsh  energy step of the log derivative analysis (Ha)
 !! @param rxpsh  radius (bohr) at which log derivatives are computed; if
 !!               negative, rc(l)*amesh**2 (the second mesh point beyond rc(l)
 !!               when that is a mesh point), and rc(lloc) for l>lmax
-!! @param vlocpw  the screened local potential's pieces
-!! @param vkbpw  VKB projectors as functions of pieces
-!! @param evkb  coefficients of VKB projectors
-!! @param rr  log radial grid
-!! @param vfull  all-electron potential
+!! @param vlocpw  the screened local potential as pieces
+!! @param vkbpw  the projectors as pieces
+!! @param evkb  coefficients of the projectors
+!! @param rr  log radial mesh (bohr)
+!! @param vfull  all-electron potential (Ha)
 !! @param vp  semi-local pseudopotentials (vp(:,5) is local potential if linear
 !!            comb.)
 !! @param zz  atomic number
-!! @param mmax  size of radial grid
-!! @param rc  core radii
+!! @param mmax  size of the log radial mesh
+!! @param rc  core radii (bohr)
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param c_light  speed of light (Hartree atomic units)
-!! @param nkap  number of kappa per l: 1, or 2 for irel=2
+!! @param nkap  number of kappas per l: 1, or 2 for irel=2
 !! @param rphs  the radius of the log derivatives of each l (output)
 !! @param pshae  the all-electron log derivatives, per energy, l and kappa
 !!               (output; zero for l=0, ikap=2)

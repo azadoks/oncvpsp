@@ -1,3 +1,20 @@
+!
+! Copyright (c) 2025-2026 by Austin Zadoks
+!
+!
+! This program is free software: you can redistribute it and/or modify
+! it under the terms of the GNU General Public License as published by
+! the Free Software Foundation, either version 3 of the License, or
+! (at your option) any later version.
+!
+! This program is distributed in the hope that it will be useful,
+! but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+! GNU General Public License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+!
  module input_toml_m
  use, intrinsic :: iso_fortran_env, only: stderr => error_unit
 ! TOML Fortran library: documentation at toml-f.readthedocs.io
@@ -16,6 +33,11 @@
 !!
 !! scripts/input_text_to_toml.py converts a text input to this form.  The
 !! tables and their keys are listed below.
+!!
+!! @param unit  the unit of the open TOML file
+!! @param inp  the input values (input_m)
+!! @param iout  unit of the text output
+!! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: mxstate, mxcnf, mxlin, well_onset_default
  use input_m, only: input_t

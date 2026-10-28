@@ -31,20 +31,20 @@
 !! Finds relativistic bound states of an al-electron potential
 !!
 !! @param nn  principal quantum number
-!! @param ll  angular-momentum quantum number
-!! @param kap  =l, -(l+1) for j=l -/+ 1/2
+!! @param ll  angular momentum
+!! @param kap  Dirac kappa, l or -(l+1) for j = l -/+ 1/2
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param ierr  non-zero return if error, 10 if there is no bound state
 !!              and the box state (large component 0 at rr(mmax)) is
 !!              returned
 !! @param ee  bound-state energy, input guess and output calculated value
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param zz  atomic number
 !! @param vv  local psp
 !! @param uu(mmax,jj)  output radial wave functions (*rr) jj=1,2 for large,
 !!                     small
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
-!! @param mmax  size of log grid
+!! @param mmax  size of the log radial mesh
 !! @param mch  mesh point just beyond the classical turning point, where
 !!             the inward and outward integrations are matched (at the
 !!             continuous turning point, match_m)

@@ -43,10 +43,20 @@
 
 !> a transform of N points to M, ready to apply to any x
  type :: czt_plan_t
-   integer :: nn=0,mm=0,ll=0
-!> the chirps w_n (n<N) and w_m (m<M), the FFT of the convolution's
-!> kernel, and the FFT's twiddles exp(-2 pi i k/L)
-   complex(dp), allocatable :: wn(:),wm(:),hf(:),tw(:)
+!> the number of input points N
+   integer :: nn=0
+!> the number of outputs M
+   integer :: mm=0
+!> the length L of the FFTs, the power of 2 at or above N + M - 1
+   integer :: ll=0
+!> the chirp w_n (n<N)
+   complex(dp), allocatable :: wn(:)
+!> the chirp w_m (m<M)
+   complex(dp), allocatable :: wm(:)
+!> the FFT of the convolution's kernel
+   complex(dp), allocatable :: hf(:)
+!> the FFT's twiddles exp(-2 pi i k/L)
+   complex(dp), allocatable :: tw(:)
  end type czt_plan_t
 
  contains

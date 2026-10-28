@@ -31,9 +31,9 @@
 !! and energy density J. P. Perdew and A. Zunger, Phys. Rev. B23, 5048 (1981)
 !!
 !! @param rho  charge density
-!! @param vxc  exchange-correlation potential
-!! @param exc  exchange-correlation energy density
-!! @param mmax  dimension of log radial grid
+!! @param vxc  exchange-correlation potential (Ha)
+!! @param exc  exchange-correlation energy per electron (Ha)
+!! @param mmax  size of the log radial mesh
 
  use constants_m, only: dp, pi
 

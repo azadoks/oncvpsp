@@ -30,11 +30,16 @@
 !> the input values as read, before oncvpsp_run changes them, for the
 !> echoes of the input in the files
  type :: echo_t
-!> the core radii and fcfact, the icmod=4 search grids of fcfact and
-!> rcfact (min, max, step), and the log mesh (amesh, rr1, rmax; 0 when
-!> the input does not set it)
-   real(dp) :: rc0(mxlin+1)=0.0d0,fcfact0=0.0d0
-   real(dp) :: fcgrid(3)=0.0d0,rcgrid(3)=0.0d0,log_mesh(3)=0.0d0
+!> the core radii (bohr)
+   real(dp) :: rc0(mxlin+1)=0.0d0
+!> the model core's amplitude factor fcfact
+   real(dp) :: fcfact0=0.0d0
+!> the icmod=4 search grid of fcfact (min, max, step)
+   real(dp) :: fcgrid(3)=0.0d0
+!> the icmod=4 search grid of rcfact (min, max, step)
+   real(dp) :: rcgrid(3)=0.0d0
+!> the log mesh (amesh, rr1, rmax; 0 when the input does not set it)
+   real(dp) :: log_mesh(3)=0.0d0
  end type echo_t
 
 !> the results of a run
@@ -43,15 +48,18 @@
    type(pseudo_t) :: pot
 !> the size of the linear mesh of the files
    integer :: nrl=0
-!> the pseudo-atom's total energy and the all-electron eigenvalues of the
-!> reference configuration (mxstate,mxkap), the UPF's orbital energies
+!> the pseudo-atom's total energy (Ha)
    real(dp) :: epstot=0.0d0
+!> the all-electron eigenvalues (Ha) of the reference configuration
+!> (mxstate,mxkap), the UPF's orbital energies
    real(dp) :: ea(mxstate,mxkap)=0.0d0
-!> the all-electron valence and core charges, those of the psp8 file
-   real(dp), allocatable :: rhotae(:),rhoc(:)
-!> the PSML file's: the radius beyond which the model core is the core,
-!> and the semi-local potentials (mmax,mxl+2,nkap)
+!> all-electron valence charge density
+   real(dp), allocatable :: rhotae(:)
+!> core charge density, that of the psp8 file
+   real(dp), allocatable :: rhoc(:)
+!> the PSML file's radius beyond which the model core is the core
    real(dp) :: rcore=0.0d0
+!> the PSML file's semi-local potentials (mmax,mxl+2,nkap)
    real(dp), allocatable :: vpsml(:,:,:)
 !> the pseudo-atomic orbitals (mmax,nkap,nv), the UPF's
    real(dp), allocatable :: uupsa(:,:,:)

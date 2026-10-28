@@ -35,17 +35,17 @@
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param nn  principal quantum number
-!! @param ll  angular-momentum quantum number
-!! @param kap  =l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
+!! @param ll  angular momentum
+!! @param kap  Dirac kappa, l or -(l+1) for j = l -/+ 1/2 (irel=2 only)
 !! @param ierr  non-zero return if error
 !! @param ee  bound-state energy, input guess and output calculated value
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param zz  atomic number
 !! @param vv  local atomic potential
 !! @param uu  output radial wave function (*rr): uu(:,1) the Schroedinger
 !!            function, or the Dirac large and small components
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
-!! @param mmax  size of log grid
+!! @param mmax  size of the log radial mesh
 !! @param mch  matching mesh point for inward-outward integrations
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written

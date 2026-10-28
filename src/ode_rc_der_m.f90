@@ -47,14 +47,14 @@
 !!              of sr_flux_m), 2 fully-relativistic (Dirac, uu the large
 !!              component)
 !! @param c_light  speed of light (Hartree atomic units)
-!! @param ll  angular-momentum quantum number
-!! @param kap  =l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
+!! @param ll  angular momentum
+!! @param kap  Dirac kappa, l or -(l+1) for j = l -/+ 1/2 (irel=2 only)
 !! @param ee  energy of uu (Ha)
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param vv  the potential uu solves the equation in (Ha)
 !! @param uu  the wave function (*rr)
-!! @param up  d(uu)/dn, its derivative in the mesh index, as the solvers
-!!            return it (al*r*d(uu)/dr)
+!! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr), as the
+!!            solvers return it
 !! @param mmax  size of the log radial mesh
 !! @param rc  the radius (bohr)
 !! @param uorder  d^k(uu/r)/dr^k at rc in uorder(k+1), k=0..4
@@ -110,7 +110,7 @@
  xk=sqrt(max(2.0d0*(ee-vk(0))-dble(ll*(ll+1))/rc**2,0.0d0))*rc
  if(abs(ud(2)-udst(2))>(1.0d-6+1.0d2*(al*max(1.0d0,xk))**4) &
 &                      *(abs(udst(2))+abs(udst(1))/rc)) then
-   write(iout,'(/a,i2,a,f10.6/a,1p,2e20.12)') &
+   write(iout,'(/a,i0,a,f12.6/a,2es12.4)') &
 &        'ode_rc_der: ERROR uu and up disagree for l=',ll,' at rc=',rc, &
 &        'uu'' from up and from stencils on uu:',ud(2),udst(2)
    ifail=1

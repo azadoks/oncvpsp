@@ -25,50 +25,47 @@
 
  contains
 
-! interpolates various arrays onto linear radial mesh to create file
-! for Abinit input using pspcod=8, with the spin-orbit projectors when
-! fully relativistic
-
  subroutine linout(inp,c_light,vkbpw,evkb,vsrpw,esr,vsopw,eso,rr,vpuns,vlocpw, &
 &                  rho,corepw,rhotae,rhoc,zion,mmax,nrl,soscale,rc0, &
 &                  fcfact0,fcgrid,rcgrid,log_mesh,nkap,iout,ifail)
 
-
+!! the pseudopotential interpolated to the linear output mesh in the
+!! psp8 format of Abinit (pspcod=8), with the spin-orbit projectors when
+!! fully relativistic, written to iout with the echo of the input
+!!
 !! @param inp  the input values (input_m)
 !! @param c_light  speed of light (Hartree atomic units)
-!! @param vkbpw  VKB projectors' pieces, written when nkap=1
-!! @param evkb  coefficients of VKB projectors
+!! @param vkbpw  the projectors as pieces, written when nkap=1
+!! @param evkb  coefficients of the projectors (Ha)
 !! @param vsrpw  normalized scalar-relativistic projectors' pieces, written
 !!               with vsopw when nkap=2
 !! @param esr  energy coefficients of vsrpw
 !! @param vsopw  normalized spin-orbit projectors' pieces
 !! @param eso  energy coefficients of vsopw
-!! @param rr  log radial grid
+!! @param rr  log radial mesh (bohr)
 !! @param vpuns  unscreened semi-local pseudopotentials (vpuns(:,5) is local
 !!               potential if linear combination is used)
-!! @param vlocpw  the screened local potential's pieces; vpuns(:,lloc+1)
+!! @param vlocpw  the screened local potential as pieces; vpuns(:,lloc+1)
 !!                less their node values is smooth
 !! @param rho  valence pseudocharge
-!! @param rhotae  all-electron valence charge
-!! @param rhoc  all-electron core charge
 !! @param corepw  the model core charge and its first 4 derivatives, as
 !!                pieces split at its joint (modcore_m, core_pieces)
-!! @param zion  at this point, total valence charge (becomes pseudoion charge)
-!! @param mmax  size of log radial grid
-!! @param fcfact0  input fcfact, for the echo
-!! @param nrl  size of linear radial grid
+!! @param rhotae  all-electron valence charge density
+!! @param rhoc  core charge density
+!! @param zion  ion charge
+!! @param mmax  size of the log radial mesh
+!! @param nrl  size of the output mesh
 !! @param soscale  possible factor to boost or cut spin-orbit strength, not in
 !!                 use yet
-!! @param nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
-!!
 !! @param rc0  input core radii
+!! @param fcfact0  input fcfact, for the echo
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 !! @param log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets
 !!                  it (else 0)
+!! @param nkap  number of kappas per l: 1, or 2 for irel=2
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
-
 
  use constants_m, only: dp, mxstate, mxcnf, mxl, mxlin, nrhomod, mxprj
  use input_echo_m, only: write_input_echo, fe, date_stamp

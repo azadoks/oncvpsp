@@ -28,10 +28,12 @@
  type :: config_t
 !> Number of valence states
    integer :: nv=0
-!> Principal and angular-momentum quantum numbers and occupations of the
-!> states, the core states first (as many as the reference's nc)
+!> principal quantum numbers of the states, the core states first (as
+!> many as the reference's nc)
    integer :: na(mxstate)=0
+!> angular momenta of the states, ordered as na
    integer :: la(mxstate)=0
+!> occupancies of the states, ordered as na
    real(dp) :: fa(mxstate)=0.0d0
  end type config_t
 

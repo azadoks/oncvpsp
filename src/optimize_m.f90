@@ -158,7 +158,7 @@
    optdg(3)=wev(1)
    optdg(4)=abs(eresiddot_ev(1))
    if(optdg(3)<1.0d-12 .and. optdg(4)<1.0d-12) then
-     write(iout,'(/a,1p,2e10.2/a)') 'optimize: WARNING E_resid flat to '// &
+     write(iout,'(/a,2es12.4/a)') 'optimize: WARNING E_resid flat to '// &
 &          'round-off at qcut, e1, |f1|=',optdg(3),optdg(4), &
 &          '  the wave is not determined (see wave_regularization)'
    end if
@@ -367,7 +367,7 @@
    x1=x1+dx
  end do
  if(converged .eqv. .false.) then
-   write(iout,'(/a,1p,e10.2)') &
+   write(iout,'(/a,es12.4)') &
 &        'optimize: ERROR Newton polish not converged, last step',dx
    ifail=1
    return

@@ -25,10 +25,11 @@
 
  contains
 
-! calculates spherical Bessel functions using recursion algorithm
-
  subroutine sbf8(nm,xx,sb_out)
 
+!! the spherical Bessel functions j_l(xx) for l=0,...,nm-1: a series at
+!! small xx, the closed forms for nm<=4, else downward recursion
+!!
 !! @param nm  maximum angular momentum wanted plus 1
 !! @param xx  argument of spherical bessel function
 !! @param sb_out  output of sbf_l(xx) for l=0,...,nm-1

@@ -29,13 +29,14 @@
 
 !! calculate derivatives of radial wave functin at core radius rc
 !!
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param uu  rr*radial wavefunction
-!! @param al  log of radial mesh factor
-!! @param mmax  last point used on radial mesh
-!! @param irc  index of radial mesh point used as rc
-!! @param rc  input core radius.  If irc = 0 on input, irc is calculated and rc
-!!            is exact mesh point value on output (next larger point)
+!! @param al  log of the mesh ratio
+!! @param rc  core radius (bohr); if irc = 0 on entry, moved onto the first
+!!            mesh point at or beyond it, else onto rr(irc)
+!! @param irc  last mesh point at or inside rc; if 0 on entry, set to the
+!!             first point at or beyond rc
+!! @param mmax  size of the log radial mesh
 !! @param uorder  value and four derivatives of uu/rr at final rc
 
  use constants_m, only: dp

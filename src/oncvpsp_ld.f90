@@ -86,13 +86,13 @@
      call cli_energies('oncvpsp_ld',arg,ee)
      given_energies=.true.
    case default
-     write(iout,'(2a)') 'oncvpsp_ld: ERROR unknown argument ',trim(arg)
+     write(iout,'(/2a)') 'oncvpsp_ld: ERROR unknown argument ',trim(arg)
      error stop 1
    end select
    iarg=iarg+1
  end do
  if(len_trim(ae_filename)==0 .or. len_trim(ps_filename)==0) then
-   write(iout,'(a)') 'oncvpsp_ld: ERROR requires --ae-file and --ps-file'
+   write(iout,'(/a)') 'oncvpsp_ld: ERROR requires --ae-file and --ps-file'
    error stop 1
  end if
 

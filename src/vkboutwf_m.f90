@@ -38,16 +38,15 @@
 !! @param ll  angular momentum
 !! @param nvkb  number of projectors (0 for the local potential alone)
 !! @param ep  energy at which wave function is to be calculated
-!! @param vkbpw  Vanderbilt-Kleinman-Bylander projectors for this l, as
-!!               functions of pieces
-!! @param evkb  projector coefficients
-!! @param rr  log radial mesh
+!! @param vkbpw  the projectors as pieces, for this l
+!! @param evkb  coefficients of the projectors
+!! @param rr  log radial mesh (bohr)
 !! @param vloc  local pseudopotential on the mesh (the screened local
 !!              potential, or that plus a smooth screening change)
-!! @param vlocpw  the screened local potential's pieces
+!! @param vlocpw  the screened local potential as pieces
 !! @param uu  wave function
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
-!! @param mmax  dimension of log mesh
+!! @param mmax  size of the log radial mesh
 !! @param mch  index of radius to which wave function is to be integrated
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written

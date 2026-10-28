@@ -33,22 +33,24 @@
 !> the scan of the pseudopotential's phases runs this far (Ha) beyond the
 !> energies of the all-electron edges, for their partners
  real(dp), parameter :: emargin=1.0d0
-!> the points and spacing (Ha) of the phases' alignment about the
-!> reference energy
+!> the number of points of the phases' alignment about the reference
+!> energy
  integer, parameter :: nanch=21
+!> the spacing of the points of the phases' alignment (Ha)
  real(dp), parameter :: danch=0.05d0
 
 !> the poles of each sphere (edir, ndir of the radius at hand)
  type :: poles_t
-   real(dp), allocatable :: ee(:)
+   real(dp), allocatable :: ee(:)  !< the poles, ascending (Ha)
  end type poles_t
 
 !> the edges of a scan: energy, multiple of pi and edge (1 bottom, 2
 !> centre, 3 top)
  type :: edges_t
-   integer :: ne=0
-   real(dp) :: ee(mxedge)
-   integer :: iband(mxedge),ied(mxedge)
+   integer :: ne=0  !< number of edges
+   real(dp) :: ee(mxedge)  !< energy of each edge (Ha)
+   integer :: iband(mxedge)  !< multiple of pi of each edge
+   integer :: ied(mxedge)  !< edge of each: 1 bottom, 2 centre, 3 top
  end type edges_t
 
  contains
@@ -58,9 +60,31 @@
 !! the ws lines of every channel of chan at the radii rq, of the edges
 !! in [emin,emax] from a scan of step de, and the sphere's part of the
 !! summary
+!!
+!! @param pf  the pseudopotential data file
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
+!! @param zz  atomic number
+!! @param mmax  size of the log radial mesh
+!! @param rr  log radial mesh (bohr)
+!! @param vfull  all-electron potential (Ha)
+!! @param nc  number of core states
+!! @param na  principal quantum numbers
+!! @param la  angular momenta
+!! @param chan  whether to treat each l, 0..3
+!! @param nq  number of sphere radii
+!! @param rq  sphere radii (bohr)
+!! @param emin,emax  energy window of the ws lines (Ha); the scan runs
+!!                   emargin beyond it
+!! @param de  energy step of the scan (Ha)
+!! @param ecutmax  largest cutoff of the basis (Ha)
+!! @param table  whether to write the ws_conv lines
+!! @param sm  the summary; its sphere part set
+!! @param iout  unit of the text output
  use confine_summary_m, only: confine_summary_t
  use ps_file_m, only: ps_file_t
 
+!Input variables
  type(ps_file_t), intent(in) :: pf
  integer, intent(in) :: irel,mmax,nc,na(mxstate),la(mxstate),nq
  real(dp), intent(in) :: c_light
@@ -68,7 +92,11 @@
  real(dp), intent(in) :: ecutmax
  logical, intent(in) :: chan(0:3),table
  integer, intent(in) :: iout
+
+!Input/output variables
  type(confine_summary_t), intent(inout) :: sm
+
+!Local variables
  real(dp), allocatable :: egrid(:)
  integer :: npsh,ii,l1,ikap
 
@@ -104,12 +132,34 @@
 &                      rq,egrid,emin,emax,ecutmax,table,sm,iout)
 !! the ws lines of l and ikap at every radius, from one scan of the
 !! phases of both atoms on egrid
+!!
+!! @param pf  the pseudopotential data file
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
+!! @param zz  atomic number
+!! @param mmax  size of the log radial mesh
+!! @param rr  log radial mesh (bohr)
+!! @param vfull  all-electron potential (Ha)
+!! @param nc  number of core states
+!! @param na  principal quantum numbers
+!! @param la  angular momenta
+!! @param ll  angular momentum
+!! @param ikap  index of the kappa of l, 1 or 2
+!! @param nq  number of sphere radii
+!! @param rq  sphere radii (bohr)
+!! @param egrid  energies of the scan, descending (Ha)
+!! @param emin,emax  energy window of the ws lines (Ha)
+!! @param ecutmax  largest cutoff of the basis (Ha)
+!! @param table  whether to write the ws_conv lines
+!! @param sm  the summary; its sphere part updated
+!! @param iout  unit of the text output
  use confine_summary_m, only: confine_summary_t
  use kappa_m, only: kap_of
  use phsft_m, only: phsft_t, phsft_ae_init, phsft_ps_init, phsft_free
  use ps_file_m, only: ps_file_t
  use ws_basis_m, only: ws_eigenvalues, ws_grid_init, ws_grid_t
 
+!Input variables
  type(ps_file_t), intent(in) :: pf
  integer, intent(in) :: irel,mmax,nc,na(mxstate),la(mxstate),ll,ikap,nq
  real(dp), intent(in) :: c_light
@@ -118,7 +168,11 @@
  logical, intent(in) :: table
 !> unit of the text output
  integer, intent(in) :: iout
+
+!Input/output variables
  type(confine_summary_t), intent(inout) :: sm
+
+!Local variables
  type(phsft_t) :: sae,sps
 !> the quadrature of the channel in each sphere, shared by its edges
  type(ws_grid_t), allocatable :: wsg(:)
@@ -200,25 +254,61 @@
 !! the ws lines of l and ikap at the radius rs (the iq-th of the
 !! solvers), from the phases shae and shps of the scan and tanae and
 !! tanps of the anchors
+!!
+!! @param pf  the pseudopotential data file
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
+!! @param zz  atomic number
+!! @param mmax  size of the log radial mesh
+!! @param rr  log radial mesh (bohr)
+!! @param vfull  all-electron potential (Ha)
+!! @param nc  number of core states
+!! @param na  principal quantum numbers
+!! @param la  angular momenta
+!! @param ll  angular momentum
+!! @param kap  Dirac kappa, l or -(l+1) for j = l -/+ 1/2; 0 unless irel=2
+!! @param ikap  index of the kappa of l, 1 or 2
+!! @param nvkb  number of projectors of the channel
+!! @param rs  radius of the sphere (bohr)
+!! @param iq  index of rs among the radii of the solvers
+!! @param sae  the all-electron phase solver
+!! @param sps  the pseudopotential's phase solver
+!! @param pol  the poles of the sphere (Ha)
+!! @param wsg  the quadrature of the channel in the sphere
+!! @param egrid  energies of the scan, descending (Ha)
+!! @param shae  all-electron phases on egrid
+!! @param shps  pseudopotential phases on egrid; the multiple of pi that
+!!              aligns them with shae added on return
+!! @param tanae,tanps  all-electron and pseudopotential phases at the
+!!                     nanch alignment energies
+!! @param emin,emax  energy window of the ws lines (Ha)
+!! @param table  whether to write the ws_conv lines
+!! @param sm  the summary; its sphere part updated
+!! @param iout  unit of the text output
  use confine_summary_m, only: confine_summary_t
  use phsft_m, only: phsft_t
  use ps_file_m, only: ps_file_t
  use ws_basis_m, only: ws_convergence, ws_grid_t
 
+!Input variables
  type(ps_file_t), intent(in) :: pf
  integer, intent(in) :: irel,mmax,nc,na(mxstate),la(mxstate),ll,kap,ikap
  real(dp), intent(in) :: c_light
  integer, intent(in) :: nvkb,iq
  real(dp), intent(in) :: zz,rr(mmax),vfull(mmax),rs,egrid(:),shae(:)
  real(dp), intent(in) :: tanae(nanch),tanps(nanch),emin,emax
- real(dp), intent(inout) :: shps(:)
- type(phsft_t), intent(inout) :: sae,sps
  type(poles_t), intent(in) :: pol
  type(ws_grid_t), intent(in) :: wsg
  logical, intent(in) :: table
 !> unit of the text output
  integer, intent(in) :: iout
+
+!Input/output variables
+ real(dp), intent(inout) :: shps(:)
+ type(phsft_t), intent(inout) :: sae,sps
  type(confine_summary_t), intent(inout) :: sm
+
+!Local variables
  type(edges_t) :: eae,eps
  real(dp), allocatable :: ecut(:),err(:)
  real(dp) :: thal
@@ -321,13 +411,31 @@
 !! the errors err of its state at the cutoffs ecut, and the summary's
 !! cutoffs, at 1e-4 and 1e-5 Ha, of all edges and of the top, of a bound
 !! one
+!!
+!! @param ll  angular momentum
+!! @param ikap  index of the kappa of l, 1 or 2
+!! @param iedge  the edge: 1 bottom, 2 centre, 3 top
+!! @param nn  all-electron state's nodes inside rs, plus l+1
+!! @param bound  whether the all-electron edge is below 0, so that its
+!!               cutoffs enter the summary
+!! @param nb  number of basis sizes
+!! @param ecut  cutoff of each basis size (Ha)
+!! @param err  energy error of the state at each basis size (Ha)
+!! @param table  whether to write the ws_conv lines
+!! @param sm  the summary; scut and sinf updated for a bound edge
+!! @param iout  unit of the text output
  use confine_summary_m, only: confine_summary_t
 
+!Input variables
  integer, intent(in) :: ll,ikap,iedge,nn,nb
  logical, intent(in) :: bound,table
  real(dp), intent(in) :: ecut(nb),err(nb)
  integer, intent(in) :: iout
+
+!Input/output variables
  type(confine_summary_t), intent(inout) :: sm
+
+!Local variables
  real(dp) :: ec
  integer :: itol,kk,ii
  do itol=1,size(tols)
@@ -384,16 +492,34 @@
 !! brackets it; poles for the phase that counts the poles edir rather than
 !! the nodes, whose top edges (phi(rs) = 0) are the poles themselves, where
 !! the count steps: the k-th at the phase -pi/2 - (k-1) pi just below it
+!!
+!! @param sol  the phase solver
+!! @param iq  index of the radius among those of sol
+!! @param poles  whether the phase counts the poles edir, not the nodes
+!! @param edir  poles of r phi'/phi at the radius, ascending (Ha)
+!! @param ll  angular momentum
+!! @param egrid  energies of the scan, descending (Ha)
+!! @param sh  phases on egrid, shift included
+!! @param shift  multiple of pi added to the phase of sol
+!! @param ed  the edges (output)
+!! @param iout  unit of the text output
  use phsft_m, only: phsft_t
  use ugrid_m, only: ug_brent
 
+!Input/output variables
  type(phsft_t), intent(inout) :: sol
+
+!Input variables
  integer, intent(in) :: iq,ll
  logical, intent(in) :: poles
  real(dp), intent(in) :: edir(:),egrid(:),sh(:),shift
- type(edges_t), intent(out) :: ed
 !> unit of the text output
  integer, intent(in) :: iout
+
+!Output variables
+ type(edges_t), intent(out) :: ed
+
+!Local variables
  real(dp) :: thlo,thhi,er,e0,tgt
  integer :: jj,kk,jed,ierr2,npsh
  npsh=size(egrid)
@@ -435,11 +561,21 @@
 
  subroutine add_edge(ed,ee,kk,jed)
 !! an edge more
+!!
+!! @param ed  the edges; ee, kk and jed added
+!! @param ee  energy of the edge (Ha)
+!! @param kk  multiple of pi of the edge
+!! @param jed  the edge: 1 bottom, 2 centre, 3 top
+
+!Input/output variables
  type(edges_t), intent(inout) :: ed
+
+!Input variables
  real(dp), intent(in) :: ee
  integer, intent(in) :: kk,jed
+
  if(ed%ne==mxedge) then
-   write(error_unit,'(a)') 'oncvpsp_confine: ERROR too many edges in the scan'
+   write(error_unit,'(/a)') 'add_edge: ERROR too many edges in the scan'
    error stop 1
  end if
  ed%ne=ed%ne+1
@@ -452,13 +588,28 @@
 !! the phases of every radius at ex from one solution of each atom: the
 !! all-electron one's, and the pseudopotential's less pi per pole of each
 !! sphere below ex (phase_of)
+!!
+!! @param sae  the all-electron phase solver
+!! @param sps  the pseudopotential's phase solver
+!! @param polq  the poles of each sphere (Ha)
+!! @param ex  energy (Ha)
+!! @param thae  all-electron phase at each radius (output)
+!! @param thps  pseudopotential phase at each radius (output)
+!! @param iout  unit of the text output
  use phsft_m, only: phsft_t, phsft_node_phases
 
+!Input/output variables
  type(phsft_t), intent(inout) :: sae,sps
+
+!Input variables
  type(poles_t), intent(in) :: polq(:)
  real(dp), intent(in) :: ex
  integer, intent(in) :: iout
+
+!Output variables
  real(dp), intent(out) :: thae(:),thps(:)
+
+!Local variables
  integer :: jq
  integer :: ifail
  call phsft_node_phases(sae,ex,thae,iout=iout,ifail=ifail)
@@ -473,13 +624,25 @@
  real(dp) function phase_of(sol,iq,poles,edir,ex,iout)
 !! the phase of sol at ex at its iq-th radius: less pi per node inside rs,
 !! or with poles per pole of r phi'/phi at rs (edir) below ex
+!!
+!! @param sol  the phase solver
+!! @param iq  index of the radius among those of sol
+!! @param poles  whether to count the poles edir, not the nodes
+!! @param edir  poles of r phi'/phi at the radius (Ha)
+!! @param ex  energy (Ha)
+!! @param iout  unit of the text output
  use phsft_m, only: phsft_t, phsft_node_phase
 
+!Input/output variables
  type(phsft_t), intent(inout) :: sol
+
+!Input variables
  integer, intent(in) :: iq
  logical, intent(in) :: poles
  real(dp), intent(in) :: edir(:),ex
  integer, intent(in) :: iout
+
+!Local variables
  integer :: ifail
  if(poles) then
    phase_of=phsft_node_phase(sol,iq,ex,nodes=.false., &
@@ -500,15 +663,27 @@
 !! of the same Hamiltonian, but the basis's quadrature of the pieces and
 !! the radial equation's differ, by 3e-8 Ha at 1.5 Ha in Si f, so the
 !! root can be on either side
+!!
+!! @param sol  the pseudopotential's phase solver
+!! @param iq  index of the radius among those of sol
+!! @param egrid  energies of the scan, descending (Ha)
+!! @param edir  poles of r phi'/phi at the radius, ascending (Ha); those
+!!              in the scan refined on return
+!! @param iout  unit of the text output
  use phsft_m, only: phsft_t, phsft_node_phase
  use ugrid_m, only: ug_brent
 
+!Input/output variables
  type(phsft_t), intent(inout) :: sol
+ real(dp), intent(inout) :: edir(:)
+
+!Input variables
  integer, intent(in) :: iq
  real(dp), intent(in) :: egrid(:)
- real(dp), intent(inout) :: edir(:)
 !> unit of the text output
  integer, intent(in) :: iout
+
+!Local variables
  real(dp) :: e0,u0,lo,hi,ww,er,elow,ehigh
  integer :: kk,ierr2,ndir
  logical :: found
@@ -558,7 +733,13 @@
 
  integer function majority(iv)
 !! the most frequent value, the smallest of a tie
+!!
+!! @param iv  the values
+
+!Input variables
  integer, intent(in) :: iv(:)
+
+!Local variables
  integer :: jj,nc,nbest
  nbest=0
  majority=iv(1)
@@ -573,9 +754,14 @@
 
  real(dp) function target(ll,jed)
 !! atan(D) of an edge of l: 0, atan(-l-1), -pi/2
+!!
+!! @param ll  angular momentum
+!! @param jed  the edge: 1 bottom, 2 centre, 3 top
  use ws_basis_m, only: ws_edge_d
 
+!Input variables
  integer, intent(in) :: ll,jed
+
  if(jed==3) then
    target=-0.5d0*pi
  else
@@ -585,7 +771,13 @@
 
  subroutine sort_edges(ed)
 !! ascending in energy, by insertion
+!!
+!! @param ed  the edges, sorted on return
+
+!Input/output variables
  type(edges_t), intent(inout) :: ed
+
+!Local variables
  real(dp) :: et
  integer :: jj,kk,kt,it
  do jj=2,ed%ne
@@ -608,12 +800,26 @@
 
  integer function n_of(irel,c_light,ll,kap,ex,rr,zz,vfull,mmax,rs)
 !! the all-electron state's nodes inside rs, plus l+1
+!!
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param c_light  speed of light (Hartree atomic units)
+!! @param ll  angular momentum
+!! @param kap  Dirac kappa, l or -(l+1) for j = l -/+ 1/2; 0 unless irel=2
+!! @param ex  energy of the state (Ha)
+!! @param rr  log radial mesh (bohr)
+!! @param zz  atomic number
+!! @param vfull  all-electron potential (Ha)
+!! @param mmax  size of the log radial mesh
+!! @param rs  radius of the sphere (bohr)
  use scatterstate_m, only: scatterstate
  use phsft_m, only: phsft_mch
 
+!Input variables
  integer, intent(in) :: irel,ll,kap,mmax
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: ex,rr(mmax),zz,vfull(mmax),rs
+
+!Local variables
  real(dp), allocatable :: uu(:,:),up(:,:)
  integer :: mch,jj,nnode,nn2
  mch=phsft_mch(rr,mmax,rs)

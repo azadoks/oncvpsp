@@ -27,6 +27,11 @@
 
  integer function kap_count(nkap,ll)
 !! the components of l: nkap, and one for l=0
+!!
+!! @param nkap  number of kappas per l: 1, or 2 for irel=2
+!! @param ll  angular momentum
+
+!Input variables
  integer, intent(in) :: nkap,ll
  kap_count=nkap
  if(ll==0) kap_count=1
@@ -35,6 +40,11 @@
  integer function kap_of(ll,ikap)
 !! kappa of component ikap of l: -(l+1) for j=l+1/2 (ikap 1), l for
 !! j=l-1/2 (ikap 2)
+!!
+!! @param ll  angular momentum
+!! @param ikap  the component, 1 or 2
+
+!Input variables
  integer, intent(in) :: ll,ikap
  if(ikap==1) then
    kap_of=-(ll+1)
@@ -45,8 +55,13 @@
 
  real(dp) function j_share(ll,ikap,ff)
 !! the share of the occupation ff of l in component ikap
+!!
+!! @param ll  angular momentum
+!! @param ikap  the component, 1 (j=l+1/2) or 2 (j=l-1/2)
+!! @param ff  the occupation of l
  use constants_m, only: dp
 
+!Input variables
  integer, intent(in) :: ll,ikap
  real(dp), intent(in) :: ff
  if(ikap==1) then

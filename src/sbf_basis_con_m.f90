@@ -39,7 +39,7 @@
 !! (sbfq_overlap), so the basis is exact to the round-off of quad precision
 !! and smooth in rc (doc/smoothness_plan.md, R-5)
 !!
-!! @param ll  angujlar momentum
+!! @param ll  angular momentum
 !! @param rc  core radius (bohr)
 !! @param nbas  number of basis functions
 !! @param qroot  q values for j_l(q*r)

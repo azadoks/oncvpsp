@@ -30,10 +30,10 @@
 !! mesh, by finite differences, for excggc, exc_libxc and functionals_m
 !! NB: presumes incoming rho is properly scaled without 4pi or r**2 factors.
 !!
-!! @param mmax  dimension of log radial grid
+!! @param mmax  size of the log radial mesh
 !! @param rho  charge density
 !! @param al  log of the mesh ratio amesh of the log radial mesh
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param dpr  first radial derivative of rho
 !! @param dppr  second radial derivative of rho
 !! @param dlap  Laplacian of rho

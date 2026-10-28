@@ -783,7 +783,7 @@ oncvpsp_test(error_iexc5_r2scan errors error_test.sh
 # well_n (the n of the first well state of an l) is for well_tail = "confined" only, and not below
 # that state's n; well_tail is 0, 1 or 2
 oncvpsp_test(error_well_n_not_confined errors error_test.sh
-    $<TARGET_FILE:oncvpspsr> "oncvpsp: ERROR well_n is for well_tail = \"confined\" only"
+    $<TARGET_FILE:oncvpspsr> "oncvpsp_run: ERROR well_n is for well_tail = \"confined\" only"
     "${CMAKE_CURRENT_BINARY_DIR}/error_well_n_not_confined"
     "${data}/14_Si.dat" "s/^    1    2    0\\.75$/    1    2    0.75    5/")
 oncvpsp_test(error_well_n_below errors error_test.sh
@@ -793,7 +793,7 @@ oncvpsp_test(error_well_n_below errors error_test.sh
 # well_norm (the normalization of the well states) is 0, 1 or 2, and "space" (1) is not defined for
 # the free tail
 oncvpsp_test(error_well_norm_free_space errors error_test.sh
-    $<TARGET_FILE:oncvpspsr> "oncvpsp: ERROR well_norm = \"space\" (1) is not defined for well_tail = \"free\""
+    $<TARGET_FILE:oncvpspsr> "oncvpsp_run: ERROR well_norm = \"space\" (1) is not defined for well_tail = \"free\""
     "${CMAKE_CURRENT_BINARY_DIR}/error_well_norm_free_space"
     "${data}/14_Si.dat" "14s/^    2$/    2    0    0.0    1    0.0    1/")
 oncvpsp_test(error_well_norm_value errors error_test.sh
@@ -802,7 +802,7 @@ oncvpsp_test(error_well_norm_value errors error_test.sh
     "${data}/14_Si.dat" "14s/^    2$/    2    0    0.0    0    0.0    3/")
 # ecut_weight is for a channel with no occupied state
 oncvpsp_test(error_ecut_weight_occupied errors error_test.sh
-    $<TARGET_FILE:oncvpspsr> "oncvpsp: ERROR ecut_weight for l= 1 is for a channel with no occupied state"
+    $<TARGET_FILE:oncvpspsr> "ecut_weights: ERROR ecut_weight for l=1 is for a channel with no occupied state"
     "${CMAKE_CURRENT_BINARY_DIR}/error_ecut_weight_occupied"
     "${data}/14_Si.dat" "s/^    1    2    0\\.75$/    1    2    0.75    0    1.0/")
 oncvpsp_test(error_well_tail_value errors error_test.sh

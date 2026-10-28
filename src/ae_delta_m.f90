@@ -39,10 +39,10 @@
 !!              (the flux form of sr_flux_m), 2 fully-relativistic (Dirac,
 !!              uu the large component)
 !! @param c_light  speed of light (Hartree atomic units)
-!! @param ll  angular-momentum quantum number
-!! @param kap  =l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
+!! @param ll  angular momentum
+!! @param kap  Dirac kappa, l or -(l+1) for j = l -/+ 1/2 (irel=2 only)
 !! @param ee  energy of uu (Ha)
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param vv  the potential uu solves the equation in (Ha)
 !! @param uu  the wave function (*rr)
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)

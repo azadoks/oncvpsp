@@ -378,7 +378,7 @@
 
  do ii=1,nqout
    if(qout(ii)<0.0d0 .or. qout(ii)>=qmax) then
-     write(error_unit,'(a,es12.4,a,es12.4)') &
+     write(error_unit,'(/a,es12.4,a,es12.4)') &
 &         'eresid: ERROR q off the grid, q=', &
 &        qout(ii),' qmax=',qmax
      error stop 1

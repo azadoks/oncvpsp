@@ -61,6 +61,7 @@
 
 !> points of the cell-integration stencils: degree 7, 8th order
  integer, parameter :: lm_ncell=8
+!> lm_ncell, under the name the module's own code uses
  integer, parameter :: ncell=lm_ncell
 
 !> nodes of the interpolant in r at the origin (lm_origin), a factor of
@@ -68,8 +69,10 @@
  integer, parameter :: norig=10
 
 !> the window bump of the interpolant: 1 for a window centre within nwin1
-!> steps of x, falling smoothly to 0 at nwin2 steps
- real(dp), parameter :: nwin1=10.0d0, nwin2=20.0d0
+!> steps of x
+ real(dp), parameter :: nwin1=10.0d0
+!> the steps from x at which the window bump has fallen smoothly to 0
+ real(dp), parameter :: nwin2=20.0d0
 
 !> the weights of the 11-point stencils for d^k/dx^k, k=0..4, at each node
 !> of the window 0..2*nhalf (unit spacing), stencil_table(:,k,iz), by
@@ -87,7 +90,7 @@
 !! value at the radius rq of the function given on the log mesh, from its
 !! Floater-Hormann interpolant in ln(r)
 !!
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param ff  function on the mesh
 !! @param mmax  size of the log radial mesh
 !! @param rq  radius, rr(1)<=rq<=rr(mmax) (bohr)
@@ -115,7 +118,7 @@
 !! mesh, made with fixed centred stencils, converted to d/dr and interpolated
 !! to rq, so that the result is smooth in rq
 !!
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param ff  function on the mesh
 !! @param mmax  size of the log radial mesh
 !! @param rq  radius, away from the ends of the mesh by the stencils' reach
@@ -185,7 +188,7 @@
 !! cumulative integral of a function given on the log mesh, from 0 to each
 !! mesh point, the part below rr(1) from its power law r**mm
 !!
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param ff  integrand on the mesh
 !! @param mmax  size of the log radial mesh
 !! @param mm  power of r with which ff goes to 0 at the origin
@@ -208,7 +211,7 @@
 !! mesh, since the running sum goes up from the origin and every cell keeps
 !! the stencil it has on the whole mesh
 !!
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param ff  integrand on the mesh
 !! @param mmax  size of the log radial mesh
 !! @param mm  power of r with which ff goes to 0 at the origin
@@ -258,7 +261,7 @@
 !! integral of a function given on the log mesh between any two radii: the
 !! interpolated cumulative integral at rb less that at ra, so smooth in both
 !!
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param ff  integrand on the mesh
 !! @param mmax  size of the log radial mesh
 !! @param mm  power of r with which ff goes to 0 at the origin
@@ -325,7 +328,7 @@
 !! (the two agree to round-off), so that many integrals to one radius cost
 !! a product each (outwf_m)
 !!
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param mmax  size of the log radial mesh
 !! @param mm  power of r with which the integrands go to 0 at the origin
 !! @param rb  upper limit, 0<=rb<=rr(mmax) (bohr)
@@ -391,7 +394,7 @@
 !! root, between ra and rb, of the interpolant (lm_interp) of a function
 !! given on the log mesh, converged to round-off by Brent's method in ln(r)
 !!
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param ff  function on the mesh
 !! @param mmax  size of the log radial mesh
 !! @param ra,rb  bracket (bohr); the interpolant must change sign between
@@ -486,7 +489,7 @@
    fb=value_at(xb)
  end do
  if(iter>200) then
-   write(error_unit,'(a,es12.4,a,es12.4)') &
+   write(error_unit,'(/a,es12.4,a,es12.4)') &
 &       'lm_root: ERROR not converged in 200 steps, r=',exp(xb),', f=',fb
    error stop 1
  end if
@@ -526,7 +529,7 @@
 !! error is that of a polynomial through nodes within rr(1)*2**lm_blend
 !! of the origin, below round-off for the functions of the programs
 !!
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param ff  function on the mesh
 !! @param mmax  size of the log radial mesh
 !! @param f0  value at r = 0
@@ -592,7 +595,7 @@
 !! @param f1  integrand at rr(1)
 !! @param rho1  density at rr(1)
 !! @param rho2  density at rr(2)
-!! @param al  step of the log mesh
+!! @param al  log of the mesh ratio
 !! @param pw  power of g
 
 !Input variables
@@ -610,7 +613,7 @@
 
 !! the step al of the log mesh in ln(r), from its ends
 !!
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param mmax  size of the log radial mesh
 
 !Input variables
@@ -626,7 +629,7 @@
 !! position of rq on the mesh in units of the step, 0 at rr(1):
 !! (ln(rq)-ln(rr(1)))/al
 !!
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param mmax  size of the log radial mesh
 !! @param rq  radius (bohr)
 
@@ -642,7 +645,7 @@
 
 !! the index of the mesh point that rq is on exactly, or 0
 !!
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param mmax  size of the log radial mesh
 !! @param rq  radius (bohr)
 !! @param tt  its mesh position (mesh_position)
@@ -782,6 +785,10 @@
 
 !! the weights of the cell rule (cell_table), for the uniform grids of
 !! ugrid_m
+!!
+!! @param ishift  the cell's offset in the stencil: the nodes are
+!!                -ishift..ncell-1-ishift, the cell [0,1]
+!! @param ww  the weights, one per node
 
 !Input variables
  integer, intent(in) :: ishift

@@ -30,12 +30,12 @@
 !! renormalize Dirac wave function so that large component is normalized
 !!
 !! @param uu  Dirac wave function
-!! @param rr  log radial grid
+!! @param rr  log radial mesh (bohr)
 !! @param ll  angular momentum
-!! @param kap  Dirac kappa
+!! @param kap  Dirac kappa, l or -(l+1) for j = l -/+ 1/2
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param zz  atomic number
-!! @param mmax  size of radial grid
+!! @param mmax  size of the log radial mesh
 !! @param cnorm  renormalization coefficient
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written

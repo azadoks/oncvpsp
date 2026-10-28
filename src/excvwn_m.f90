@@ -33,9 +33,9 @@
 !! Can. J. Phys. 58, 1200 (1980): the LDA of the NIST atomic reference data
 !!
 !! @param rho  charge density
-!! @param vxc  exchange-correlation potential
-!! @param exc  exchange-correlation energy density
-!! @param mmax  dimension of log radial grid
+!! @param vxc  exchange-correlation potential (Ha)
+!! @param exc  exchange-correlation energy per electron (Ha)
+!! @param mmax  size of the log radial mesh
 
  use constants_m, only: dp, pi
 

@@ -18,6 +18,7 @@ nav:
     - Program Overview: program_overview.md
     - Libxc Use: libxc_use.md
     - Coding Standards: coding_standards.md
+    - Glossary: glossary.md
     - Developer Setup: developer_setup.md
     - Pwscf Exc: pwscf_exc.md
     - Known Issues: known_issues.md

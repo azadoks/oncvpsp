@@ -44,7 +44,8 @@ Each of these was checked and turned out not to be a bug:
 - `fpovlp_m.f90` `rr(101)`: `irc` is always far above 101 on the log mesh.
 - `optimize_m.f90` `nnull==0`: `check_data` guarantees `nnull>=2`.
 - `linout_m.f90` `zero(20)`: `npr_sr` and `npr_so` are ≤10.
-- `vrel.f90` edge reads: the rc window keeps `ii` in the interior.
+- `vrel.f90` edge reads (vrel is now `ae_delta_m`): the rc window keeps
+  `ii` in the interior.
 - `run_ghosts_m.f90` `hmev` past `nbas`: `hmev` has size `nbmax` and is
   zeroed. `dsyev` with N=0 is a legal quick return.
 - `qroots_m.f90` `nroot>=4`: `check_data` guarantees it.
@@ -59,6 +60,7 @@ Each of these was checked and turned out not to be a bug:
   `ldiracfb` fails, and the outer convergence test catches a bad `et`.
   With `irel<2` it does stop on an `lschfb` error, but checking for
   `irel=2` could stop runs that now recover, so it is left as is.
-- Leaks in `vrel`, `run_diag`, `run_config` and `modcore`:
+- Leaks in `vrel` (now `ae_delta_m`), `run_diag`, `run_config` (now
+  `config_ae_m` and `run_config_m`) and `modcore`:
   these are local allocatables, which Fortran deallocates automatically on
   return.

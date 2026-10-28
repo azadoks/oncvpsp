@@ -34,14 +34,14 @@
 !!  build without this library; check_data has rejected the libxc
 !!  functionals (have_libxc), so this is not reached
 !!
-!! @param iexc  exchange-correlation function to be used: -(1000*id1+id2) for
-!!              the libxc functionals id1 and id2
+!! @param iexc  exchange-correlation functional: -(1000*id1+id2) for the libxc
+!!              functionals id1 and id2
 !! @param al  log of the mesh ratio amesh of the log radial mesh
 !! @param rho  charge density
-!! @param vxc  exchange-correlation potential
-!! @param exc  exchange-correlation energy density
-!! @param rr  log radial mesh
-!! @param mmax  dimension of log radial grid
+!! @param vxc  exchange-correlation potential (Ha)
+!! @param exc  exchange-correlation energy per electron (Ha)
+!! @param rr  log radial mesh (bohr)
+!! @param mmax  size of the log radial mesh
 
  use constants_m, only: dp
 
@@ -65,7 +65,7 @@
  subroutine exc_libxc_info(iexc,iout)
 !!  dummy substitute, not reached either (exc_libxc)
 !!
-!! @param iexc  exchange-correlation function to be used
+!! @param iexc  exchange-correlation functional
 !! @param iout  unit of the text output
 
 

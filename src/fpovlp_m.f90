@@ -42,11 +42,11 @@
 !! @param mmax  size of the log radial mesh
 !! @param rc  outer integration limit (bohr)
 !! @param ll  angular momentum
-!! @param kap  Dirac kappa (irel=2 only)
-!! @param zz  nuclear charge
+!! @param kap  Dirac kappa, l or -(l+1) for j = l -/+ 1/2 (irel=2 only)
+!! @param zz  atomic number
 !! @param ss  overlap output
-!! @param rr  log radial mesh
-!! @param irel  0 non-relativistic, 1 scalar-, 2 fully-relativistic
+!! @param rr  log radial mesh (bohr)
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param c_light  speed of light (Hartree atomic units)
 
  use constants_m, only: dp

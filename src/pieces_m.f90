@@ -59,15 +59,19 @@
  end interface
 
  type piecewise_t
-   integer :: nseg=0
+   integer :: nseg=0  !< number of segments
 !> bound(k-1) < r <= bound(k) is segment k; bound(0)=0
    real(dp) :: bound(0:pw_maxseg)=0.0d0
 !> vals(:,k) the k-th piece on the mesh
    real(dp), allocatable :: vals(:,:)
-!> the segment whose piece has a closed form (0 none), the element of
-!> the form's result it is, the form and its parameters (pw_set_form)
-   integer :: iform=0,icol=1
+!> the segment whose piece has a closed form (0 none) (pw_set_form)
+   integer :: iform=0
+!> the element of the form's result the piece is (1 the function, 2..5
+!> its derivatives)
+   integer :: icol=1
+!> the parameters of the form
    real(dp), allocatable :: par(:)
+!> the closed form of the piece of segment iform
    procedure(pw_form), pointer, nopass :: form=>null()
  end type piecewise_t
 
@@ -94,12 +98,12 @@
  integer :: kk
 
  if(nseg<1 .or. nseg>pw_maxseg) then
-   write(error_unit,'(a,i0)') 'pw_alloc: ERROR number of segments ',nseg
+   write(error_unit,'(/a,i0)') 'pw_alloc: ERROR number of segments ',nseg
    error stop 1
  end if
  do kk=1,nseg
    if(bound(kk)<bound(kk-1)) then
-     write(error_unit,'(a,i0)') &
+     write(error_unit,'(/a,i0)') &
 &         'pw_alloc: ERROR bounds out of order at segment ',kk
      error stop 1
    end if
@@ -171,7 +175,10 @@
  subroutine pw_free(pw)
 
 !! releases the pieces
+!!
+!! @param pw  the piecewise function; its arrays deallocated
 
+!Input/output variables
  type(piecewise_t), intent(inout) :: pw
 
  if(allocated(pw%vals)) deallocate(pw%vals)
@@ -186,7 +193,7 @@
 !! int_0^bound(nseg) ff(r) pw(r) dr for a smooth ff given on the mesh:
 !! the sum over the segments of lm_integral of ff times the piece
 !!
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param mmax  size of the log radial mesh
 !! @param mm  power of r with which ff*pw goes to 0 at the origin
 !! @param ff  smooth function on the mesh
@@ -222,7 +229,7 @@
 !! int_0^bound(nseg) pwa(r) pwb(r) dr for two piecewise functions with the
 !! same segments
 !!
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param mmax  size of the log radial mesh
 !! @param mm  power of r with which the product goes to 0 at the origin
 !! @param pwa,pwb  the functions
@@ -244,7 +251,7 @@
 
  if(pwa%nseg/=pwb%nseg .or. any(pwa%bound(0:pwa%nseg)/=pwb%bound(0:pwa%nseg))) &
 &  then
-   write(error_unit,'(a)') 'pw_product_integral: ERROR the segments differ'
+   write(error_unit,'(/a)') 'pw_product_integral: ERROR the segments differ'
    error stop 1
  end if
  ss=0.0d0
@@ -262,7 +269,7 @@
 !! the function on the mesh: at each node the piece of the segment the
 !! node is in, 0 beyond the last bound
 !!
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param mmax  size of the log radial mesh
 !! @param pw  the piecewise function
 !! @param ff  its values at the nodes
@@ -320,7 +327,7 @@
 !! (lm_interp) of the piece of the segment that holds it, 0 beyond the
 !! last bound
 !!
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param mmax  size of the log radial mesh
 !! @param pw  the piecewise function
 !! @param rq  radius, rr(1) <= rq <= rr(mmax) (bohr)
@@ -348,7 +355,7 @@
 !! s >= 1: the same bounds, each piece the interpolant (lm_interp) of the
 !! piece on rr at the nodes of rb up to rr(mmax), 0 beyond
 !!
-!! @param rr  log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param mmax  size of the log radial meshes
 !! @param pw  the piecewise function on rr
 !! @param rb  the other mesh

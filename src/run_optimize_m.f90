@@ -36,11 +36,11 @@
 !!
 !! @param eig  energy at which pseudo wave function is computed
 !! @param ll  angular momentum
-!! @param kap  =l, -(l+1) for j=l -/+ 1/2 (irel=2 only)
+!! @param kap  Dirac kappa, l or -(l+1) for j = l -/+ 1/2 (irel=2 only)
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param c_light  speed of light (Hartree atomic units)
-!! @param mmax  dimension of log grid
-!! @param rr  log radial grid
+!! @param mmax  size of the log radial mesh
+!! @param rr  log radial mesh (bohr)
 !! @param uua  all-electron wave functions (*rr) for the projectors
 !! @param upa  their derivatives in the mesh index, as the solvers return them
 !! @param qq  matrix of norms and overlaps of the uua inside rc
