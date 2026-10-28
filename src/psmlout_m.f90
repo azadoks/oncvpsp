@@ -52,7 +52,7 @@
 !! @param rhomod  model core charge and its first four derivatives
 !! @param rcore  radius beyond which the model core charge is the core
 !!               charge: its joint (doc/smoothness_plan.md, M-14)
-!! @param zion  at this point, total valence charge (becomes psuedoion charge)
+!! @param zion  at this point, total valence charge (becomes pseudoion charge)
 !! @param mmax  size of log radial grid
 !! @param nrl  size of linear radial grid (not used)
 !! @param epstot  pseudoatom total energy (not used)

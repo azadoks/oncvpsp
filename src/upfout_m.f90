@@ -48,7 +48,7 @@
 !! @param rho  valence pseudocharge
 !! @param corepw  the model core charge and its first 4 derivatives, as
 !!                pieces split at its joint (modcore_m, core_pieces)
-!! @param zion  at this point, total valence charge (becomes psuedoion charge)
+!! @param zion  at this point, total valence charge (becomes pseudoion charge)
 !! @param mmax  size of log radial grid
 !! @param mxprj  dimension of number of projectors
 !! @param nrlin  size of linear radial grid (enlarged locally to fit the
@@ -63,7 +63,8 @@
 !!                  it (else 0)
 !! @param uupsa  pseudo-atomic orbitals, second index 1 for j=l+1/2, 2 for
 !!               j=l-1/2 when nkap=2
-!! @param ea  psuedo-orbital eigenvalues (Ha), second index as for uupsa
+!! @param ea  all-electron eigenvalues (Ha) of the reference configuration,
+!!            the orbitals' pseudo_energy; second index as for uupsa
 !! @param nkap  number of kappa per l: 1, or 2 for the fully-relativistic code
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written

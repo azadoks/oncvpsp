@@ -53,7 +53,7 @@
 !! @param rhoc  all-electron core charge
 !! @param corepw  the model core charge and its first 4 derivatives, as
 !!                pieces split at its joint (modcore_m, core_pieces)
-!! @param zion  at this point, total valence charge (becomes psuedoion charge)
+!! @param zion  at this point, total valence charge (becomes pseudoion charge)
 !! @param mmax  size of log radial grid
 !! @param mxprj  dimension of number of projectors
 !! @param fcfact0  input fcfact, for the echo
@@ -332,14 +332,14 @@
  contains
 
  subroutine proj_block(ll,rcl,np,ee,vv,ldv,zero_tail)
-!! the block of the np projectors vv of l: l and their energies ee, then
+!! the block of the np projectors vv of l: l and their coefficients ee, then
 !! each point of the linear mesh, their values out to rc+2 drl and beyond
 !! 0, or with zero_tail their values in the same short field
 !!
 !! @param ll  angular momentum
 !! @param rcl  core radius of l
 !! @param np  number of projectors
-!! @param ee  energies of the projectors
+!! @param ee  coefficients of the projectors (Ha)
 !! @param vv  projectors on the linear mesh
 !! @param ldv  second dimension of ee and vv
 !! @param zero_tail  0 beyond rc+2 drl, else the values

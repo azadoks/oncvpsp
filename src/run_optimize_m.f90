@@ -54,7 +54,7 @@
 !! @param irc  last mesh point at or inside rc
 !! @param qcut  q cutoff defining residual energy
 !! @param qmsbf  maximum q in sbfs for this ll
-!! @param ncon_in  number of constraints for matching psuedo and AE wave
+!! @param ncon_in  number of constraints for matching pseudo and AE wave
 !!                 functions
 !! @param nbas_in  number of basis functions for pseudo wave function
 !! @param npr  number of projectors for this ll

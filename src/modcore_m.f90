@@ -779,7 +779,7 @@
 !! the pseudo-atom with no core correction, written with their rms
 !! difference
 !!
-!! @param rhotae  all-electron total charge
+!! @param rhotae  total all-electron valence charge density
 !! @param rhoc  core charge
 !! @param rhoae  all-electron valence charges
 !! @param rhotps  pseudo total valence charge

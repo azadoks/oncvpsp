@@ -124,7 +124,7 @@
 ! intermediate configuration.
 
 ! The second step is started with the local potential of this maximally-
-! ionized psuedo-atom, and eigenvalues from an all-electron
+! ionized pseudo-atom, and eigenvalues from an all-electron
 ! calculation of this configuration including unoccupied states that
 ! are to be adiabatically filled to produce the final configuration.
 ! The same 2% strategy is used filling pseudo-atom states in this step.

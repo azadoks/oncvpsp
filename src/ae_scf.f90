@@ -35,7 +35,7 @@
 !! potential from input to output, the size of the first-order change of
 !! the eigenvalues (the convergence measure of RadialAtomicSolvers.jl)
 !!
-!! @param rho  total charge density (4 pi r**2 rho integrates to sf)
+!! @param rho  total charge density (r**2 rho integrates to sf)
 !! @param vsi  input screening potential
 !! @param vso  output screening potential
 !! @param sf  number of electrons

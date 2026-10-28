@@ -39,7 +39,7 @@
 !! @param d2exc  Exc 2nd-derivative matrix
 !! @param d2ref  reference matrix
 !! @param d2mdiff  root-mean-squared differrenc between d2exc and d2ref
-!! @param zion  ion potential
+!! @param zion  ion charge
 !! @param iexc  exchange-correlation type
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param nc  number of core states
