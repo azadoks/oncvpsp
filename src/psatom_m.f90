@@ -27,7 +27,7 @@
 
 ! self-consistent pseudoatom calculation
 
- subroutine psatom(na,la,ea,fat,nv,it,rhoc,rho,rr,rcmax,mmax,iexc, &
+ subroutine psatom(na,la,ea,fat,nv,it,rhoc,rho,rr,rcmax,mmax,adams,iexc, &
 &           c_light,etot,nproj,vpuns,lloc,vlocpw,vkbpw,evkb,ierr,nkap,vext, &
 &           iout,ifail)
 
@@ -44,6 +44,7 @@
 !! @param rr  log radial mesh (bohr)
 !! @param rcmax  largest core radius (bohr)
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param iexc  exchange-correlation functional
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param etot  pseudoatom total energy (output)
@@ -73,10 +74,12 @@
  use vout_m, only: vout
  use lschvkbb_m, only: lschvkbb_tol
  use logmesh_m, only: lm_step
+ use adams_m, only: adams_t
 
 !Input variables
 
  integer, intent(in) :: mmax,iexc,nv,lloc,nkap
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: c_light
  integer, intent(in) :: na(nv),la(nv),nproj(mxlin+1)
  real(dp), intent(in) :: rcmax
@@ -174,7 +177,7 @@
 ! which shouldn''t be a bad approximation for a starting screened
 ! potential
 
- call vout(.true.,rho,rhoc,vi,vxc,zval,eeel,eexc,rr,mmax,iexc,c_light)
+ call vout(.true.,rho,rhoc,vi,vxc,zval,eeel,eexc,rr,mmax,adams,iexc,c_light)
 
 
 ! big self  self-consietency loop
@@ -224,7 +227,7 @@
        end if
        call lschvkbb_tol(na(ii),la(ii),nproj(l1),ierr,et,emin,emax, &
 &                       rr,vtot,vlocpw,vkbpw(1:nproj(l1),l1,ikap), &
-&                       evkb(1,l1,ikap),uu,up,mmax,mch,etol,iout,ifail)
+&                       evkb(1,l1,ikap),uu,up,mmax,adams,mch,etol,iout,ifail)
        if(ifail/=0) return
 
        if(ierr /= 0) then
@@ -263,7 +266,7 @@
    end do
 
 ! output potential
-   call vout(.true.,rho,rhoc,vo,vxc,zval,eeel,eexc,rr,mmax,iexc,c_light)
+   call vout(.true.,rho,rhoc,vo,vxc,zval,eeel,eexc,rr,mmax,adams,iexc,c_light)
 
 ! converged when no eigenvalue has moved by more than tolscf and the
 ! screening potential is self-consistent to tolscf, or its residual has
@@ -309,7 +312,7 @@
 ! output potential for e-e interactions
 
  call vout(.true.,rho,rhoc,vo,vxc,zval,eeel,eexc, &
-&          rr,mmax,iexc,c_light)
+&          rr,mmax,adams,iexc,c_light)
 
  etot =  eeig + eexc - 0.5d0*eeel
 

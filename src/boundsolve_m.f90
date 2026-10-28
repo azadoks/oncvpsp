@@ -269,7 +269,7 @@
  return
  end subroutine bs_turning_point
 
- subroutine bs_solve(nn,ll,rr,vv,mmax,eps,setup,outward,match,box, &
+ subroutine bs_solve(nn,ll,rr,vv,mmax,adams,eps,setup,outward,match,box, &
 &                    ee,emin,emax,mch,ierr,ifail)
 
 !! the energy iteration of the all-electron bound-state solvers: from ee
@@ -286,6 +286,7 @@
 !! @param rr  log radial mesh (bohr)
 !! @param vv  potential (Ha)
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param eps  relative convergence threshold of the energy
 !! @param setup  the coefficients and turning point at an energy
 !! @param outward  the outward solution and its node count
@@ -301,10 +302,12 @@
  use match_m, only: match_k
  use inward_start_m, only: inward_start
  use constants_m, only: eig_floor
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: nn,ll,mmax
  real(dp), intent(in) :: rr(mmax),vv(mmax),eps
+ type(adams_t), intent(in) :: adams
  procedure(bs_setup) :: setup
  procedure(bs_outward) :: outward
  procedure(bs_match) :: match
@@ -373,7 +376,7 @@
 
 ! start inward integration with simple exponential where the
 ! wave function has decayed to machine precision
-   call inward_start(ll,ee,rr,vv,mch,mmax,nin)
+   call inward_start(ll,ee,rr,vv,mch,mmax,adams,nin)
 
    if(node-nn+ll+1==0 .and. nin<=hi+4) then
 ! no room for the inward integration: too high

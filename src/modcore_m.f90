@@ -781,7 +781,8 @@
  end subroutine teter_form
 
  subroutine d2exc_baseline(rhotae,rhoc,rhoae,rhotps,rhops,rr,zion,iexc, &
-&                          c_light,nc,nv,la,rcut,mmax,rhomod,d2excae,d2excps, &
+&                          c_light,nc,nv,la,rcut,mmax,adams,rhomod,d2excae, &
+&                          d2excps, &
 &                          d2mdiff,iout)
 
 !! the start of the model core analysis the model cores share: the
@@ -803,6 +804,7 @@
 !! @param la  angular momenta of the states
 !! @param rcut  radius of the Exc integrals
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param rhomod  model core charge; zero on return
 !! @param d2excae  all-electron second derivatives
 !! @param d2excps  pseudo-atom second derivatives with no core correction
@@ -810,9 +812,11 @@
 !! @param iout  unit of the text output
 
  use der2exc_m, only: der2exc
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: iexc,nc,nv,mmax
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: c_light
  integer, intent(in) :: la(nv+nc)
  real(dp), intent(in) :: rhotae(mmax),rhoc(mmax),rhoae(mmax,nv)
@@ -836,7 +840,7 @@
 ! get derivatives of all-electron xc energy
 
  call der2exc(rhotae,rhoc,rhoae,rr,d2excae,d2excps,d2mdiff, &
-&                   zion,iexc,c_light,nc,nv,la,rcut,mmax)
+&                   zion,iexc,c_light,nc,nv,la,rcut,mmax,adams)
 
  write(iout,'(/a/)') 'd2excae - all-electron derivatives'
  do kk=1,nv
@@ -847,7 +851,7 @@
  rhomod(:,:)=0.0d0
 
  call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
-&                   zion,iexc,c_light,nc,nv,la,rcut,mmax)
+&                   zion,iexc,c_light,nc,nv,la,rcut,mmax,adams)
 
  call d2exc_report('d2excps - pseudofunction derivatives with no core '// &
 &                  'correction',d2excps,nv,d2mdiff,iout)

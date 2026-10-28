@@ -81,7 +81,8 @@
 !                              auto)
 !   [linear_mesh]              a (drl), rmax (rlmax)
 !   [log_mesh]                 amesh, rr1, rmax (optional table and keys, each
-!                              0 or less or missing for the built-in mesh)
+!                              0 or less or missing for the built-in mesh),
+!                              adams_order (optional, 4)
 !   [pp_output]                psfile, upf_mesh (optional, 0)
 !   [[test_configurations]]    n, l, f (valence states only; optional, up
 !                              to 4)
@@ -135,6 +136,7 @@
 &          rxpsh=>inp%rxpsh, rlmax=>inp%rlmax, drl=>inp%drl, &
 &          upf_mesh=>inp%upf_mesh, ncnf=>inp%ncnf, cnf=>inp%cnf, &
 &          amesh=>inp%amesh, rr1=>inp%rr1, rmax=>inp%rmax, &
+&          adams_order=>inp%adams_order, &
 &          c_light=>inp%c_light, ep_as_given=>inp%ep_as_given, &
 &          well_onset=>inp%well_onset, well_tail=>inp%well_tail, &
 &          wave_regularization=>inp%wave_regularization, well_n=>inp%well_n, &
@@ -428,6 +430,9 @@
 &          iout=iout, ifail=ifail)
      if(ifail /= 0) return
      call get_real(child, 'log_mesh', 'rmax', rmax, -1.0d0, &
+&          iout=iout, ifail=ifail)
+     if(ifail /= 0) return
+     call get_int(child, 'log_mesh', 'adams_order', adams_order, 4, &
 &          iout=iout, ifail=ifail)
      if(ifail /= 0) return
    else if(stat /= toml_stat%success) then

@@ -38,7 +38,7 @@
 ! Teter, Phys. Rev. B 48, 5031 (1993) , Appendix, as
 
  subroutine modcore(icmod,rhops,rhotps,rhoc,rhoae,rhotae,rhomod, &
-&                   corepw,fcfact,rcfact,rcmax,mmax,rr,nc,nv,la,zion, &
+&                   corepw,fcfact,rcfact,rcmax,mmax,adams,rr,nc,nv,la,zion, &
 &                   iexc,c_light,iout,ifail)
 
 !! @param icmod  (not used)
@@ -54,6 +54,7 @@
 !! @param rcfact  (not used)
 !! @param rcmax  largest core radius (bohr)
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param rr  log radial mesh (bohr)
 !! @param nc  number of core states
 !! @param nv  number of valence states
@@ -70,9 +71,11 @@
 &                     d2exc_baseline, d2exc_report
  use pieces_m, only: piecewise_t
  use der2exc_m, only: der2exc
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: icmod,nv,nc,iexc,mmax
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: c_light
  integer, intent(in) :: la(mxstate)
  real(dp), intent(in) :: rhoae(mmax,nv),rhops(mmax,nv),rhotae(mmax)
@@ -109,7 +112,7 @@
  rcut=max(rcmax,rstar)
 
  call d2exc_baseline(rhotae,rhoc,rhoae,rhotps,rhops,rr,zion,iexc,c_light,nc, &
-&                    nv,la,rcut,mmax,rhomod,d2excae,d2excps,d2mdiff,iout)
+&                    nv,la,rcut,mmax,adams,rhomod,d2excae,d2excps,d2mdiff,iout)
 
 ! core charge and its derivatives at r*, and the barely monotonic
 ! polynomial that matches them
@@ -125,7 +128,7 @@
 
 !test model
  call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
-&                   zion,iexc,c_light,nc,nv,la,rcut,mmax)
+&                   zion,iexc,c_light,nc,nv,la,rcut,mmax,adams)
 
  write(iout,'(/a/)') 'Polynomial model core charge'
  write(iout,'(a,f12.6)') '  model radius r*',rstar

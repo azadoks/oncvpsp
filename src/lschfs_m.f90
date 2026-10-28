@@ -25,7 +25,7 @@
 
  contains
 
- subroutine lschfs(nn,ll,ee,rr,vv,uu,up,zz,mmax,mch,irel,c_light)
+ subroutine lschfs(nn,ll,ee,rr,vv,uu,up,zz,mmax,adams,mch,irel,c_light)
 
 !! integrates radial Pauli-type scalar-relativistic equation
 !! on a logarithmic mesh
@@ -45,6 +45,7 @@
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param zz  atomic number
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param mch  matching mesh point for inward-outward integrations
 !! @param irel  0 non-relativistic, 1 scalar-relativistic
 !! @param c_light  speed of light (Hartree atomic units)
@@ -53,10 +54,12 @@
  use sr_flux_m, only: sr_gamma, sr_flux_coefs, sr_outward
  use quad_m, only: quad_log_norm
  use logmesh_m, only: lm_step
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: mmax
  real(dp), intent(in) :: rr(mmax),vv(mmax)
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: zz
  integer, intent(in) :: ll,mch
  integer, intent(in) :: irel
@@ -101,7 +104,7 @@
  qp(:)=0.0d0
 
  call sr_flux_coefs(ll,ee,fss,al,rr,vv,mmax,xm,pm,qm)
- call sr_outward(ll,ee,zz,fss,al,rr,vv,pm,qm,mmax,mch, &
+ call sr_outward(ll,ee,zz,fss,al,rr,vv,pm,qm,mmax,adams,mch, &
 &                uu,up,qq,qp,node)
 
 !perform normalization sum

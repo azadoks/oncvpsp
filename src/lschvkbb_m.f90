@@ -26,7 +26,7 @@
  contains
 
  subroutine lschvkbb(nn,ll,nvkb,ierr,ee,emin,emax, &
-&   rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,mch,iout,ifail)
+&   rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,adams,mch,iout,ifail)
 
 !! Finds bound states of a  pseudopotential with
 !! Vanderbilt-Kleinman-Bylander non-local projectors, to round-off
@@ -49,17 +49,20 @@
 !! @param uu  the radial wave function (times r)
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param mch  the matching point (lschvkbb_tol)
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
  use constants_m, only: dp
  use pieces_m, only: piecewise_t
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: nn,ll,nvkb,mmax
  real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nvkb)
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(nvkb)
+ type(adams_t), intent(in) :: adams
  integer, intent(in) :: iout
 
 !Input/output variables
@@ -72,13 +75,14 @@
 
  ifail=0
  call lschvkbb_tol(nn,ll,nvkb,ierr,ee,emin,emax, &
-&                  rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,mch,0.0d0,iout,ifail)
+&                  rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,adams,mch,0.0d0,iout, &
+&                  ifail)
  if(ifail/=0) return
  return
  end subroutine lschvkbb
 
  subroutine lschvkbb_tol(nn,ll,nvkb,ierr,ee,emin,emax, &
-&   rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,mch,etol,iout,ifail)
+&   rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,adams,mch,etol,iout,ifail)
 
 !! Finds bound states of a  pseudopotential with
 !! Vanderbilt-Kleinman-Bylander non-local projectors
@@ -102,6 +106,7 @@
 !! @param uu  output radial wave function (*rr)
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param mch  mesh point just beyond the matching point of the inward and
 !!             outward integrations: the continuous classical turning
 !!             point (match_m), or, if that is less, a point match_k+2
@@ -119,6 +124,7 @@
  use match_m, only: match_k, match_point, match_weights, match_blend, &
 &                    match_smax
  use pieces_m, only: piecewise_t
+ use adams_m, only: adams_t
  use outwf_m, only: outwf_t, outwf_setup, outwf_solve, outwf_free
  use quad_m, only: quad_log_norm
  use inward2_m, only: inward2
@@ -129,6 +135,7 @@
  integer, intent(in) :: nn,ll,nvkb,mmax
  real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nvkb),etol
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(nvkb)
+ type(adams_t), intent(in) :: adams
  integer, intent(in) :: iout
 
 !Input/output variables
@@ -161,7 +168,7 @@
  al=lm_step(rr,mmax)
  amesh = exp(al)
  neig=0
- nin=mmax-4
+ nin=mmax-adams%order
 
 ! convergence: once the energy correction de is below eps*max(|ee|,0.2),
 ! passes go on at the corrected energy until de is at round-off, 8 ulps of
@@ -190,7 +197,7 @@
  als=al**2
 
 ! the grids of the outward integration (outwf_m), once for this potential
- call outwf_setup(ll,rr,mmax,vloc,vlocpw,nvkb,vkbpw,ow,iout,ifail)
+ call outwf_setup(ll,rr,mmax,adams,vloc,vlocpw,nvkb,vkbpw,ow,iout,ifail)
  if(ifail/=0) return
 
 ! return point for bound state convergence
@@ -235,7 +242,7 @@
    mch=ceiling(xmch)
    lo=mch-1-match_k
    hi=mch+match_k
-   room=hi+4<=mmax-4
+   room=hi+4<=mmax-adams%order
 
 ! outward integration through the matching window, and the number of
 ! eigenvalues below ee on (0, rr(mch)] (outwf_index; mch is beyond the last
@@ -253,7 +260,7 @@
 ! wave function has decayed to machine precision
    if(neig-nn+ll+1<=0) toomany=.false.
    if(neig-nn+ll+1==0 .and. room) then
-     call inward_start(ll,ee,rr,vloc,mch,mmax,nin)
+     call inward_start(ll,ee,rr,vloc,mch,mmax,adams,nin)
    end if
 
    if(neig-nn+ll+1==0 .and. (.not. room .or. nin<=hi+4)) then
@@ -268,14 +275,14 @@
 
      xkap=sqrt(sls/rr(nin)**2 + 2.0d0*(vloc(nin)-ee))
 
-     do ii=nin,nin+4
+     do ii=nin,nin+adams%order
        uu(ii)=exp(-xkap*(rr(ii)-rr(nin)))
        up(ii)=-rr(ii)*al*xkap*uu(ii)
        upp(ii)=al*up(ii)+cf(ii)*uu(ii)
      end do
 
 ! integrate inward
-     call inward2(al,cf,mmax,nin,lo,uu,up,upp)
+     call inward2(al,cf,mmax,adams,nin,lo,uu,up,upp)
 
 ! perturbation theory for the energy shift at each point of the window,
 ! u_o (u'_o - u'_i u_o/u_i)/2 for the normalized function, averaged with

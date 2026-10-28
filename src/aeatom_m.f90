@@ -26,7 +26,8 @@
  contains
 
  subroutine aeatom(irel,c_light,nkap,na,la,ea,fa,nc,ncv,it,rhoc,rho, &
-&                  rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vext,warm,iout,ifail)
+&                  rr,vi,zz,mmax,adams,iexc,etot,eterm,res,ierr,vext,warm, &
+&                  iout,ifail)
 
 !! self-consistent all-electron atom: non-relativistic or scalar-relativistic
 !! (sratom) or fully-relativistic (relatom)
@@ -48,6 +49,7 @@
 !! @param vi  all-electron potential (output; input with warm)
 !! @param zz  atomic number
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param iexc  exchange-correlation functional
 !! @param etot  all-electron total energy (output)
 !! @param eterm  kinetic, electron-nucleus, Hartree and exchange-correlation
@@ -65,9 +67,11 @@
  use constants_m, only: dp, mxstate
  use relatom_m, only: relatom
  use sratom_m, only: sratom
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: irel,nkap,mmax,iexc,nc,ncv
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: c_light
  integer, intent(in) :: na(ncv),la(ncv)
  real(dp), intent(in) :: zz
@@ -88,11 +92,12 @@
 
  ifail=0
  if(irel==2) then
-   call relatom(na,la,ea,fa,nc,ncv,it,rhoc,rho,rr,vi,zz,mmax,iexc,c_light, &
+   call relatom(na,la,ea,fa,nc,ncv,it,rhoc,rho,rr,vi,zz,mmax,adams,iexc, &
+&               c_light, &
 &               etot,eterm,res,ierr,vext,warm,iout,ifail)
    if(ifail/=0) return
  else
-   call sratom(na,la,ea,fa,nc,ncv,it,rhoc,rho,rr,vi,zz,mmax,iexc,etot, &
+   call sratom(na,la,ea,fa,nc,ncv,it,rhoc,rho,rr,vi,zz,mmax,adams,iexc,etot, &
 &              eterm,res,ierr,irel,c_light,vext,warm,iout,ifail)
    if(ifail/=0) return
  end if

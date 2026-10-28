@@ -25,8 +25,8 @@
 
  contains
 
- subroutine ldiracfb(c_light,nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch,iout, &
-&                    ifail)
+ subroutine ldiracfb(c_light,nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,adams,mch, &
+&                    iout,ifail)
 
 !! Finds relativistic bound states of an al-electron potential
 !!
@@ -45,6 +45,7 @@
 !!             uu(:,2) the small component
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param mch  mesh point just beyond the classical turning point, where
 !!             the inward and outward integrations are matched (at the
 !!             continuous turning point, match_m)
@@ -58,10 +59,12 @@
  use quad_m, only: quad_log_norm
  use inward_start_m, only: inward_start
  use logmesh_m, only: lm_step
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: nn,ll,kap,mmax
  real(dp), intent(in) :: rr(mmax),vv(mmax)
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: c_light
  integer, intent(in) :: iout
@@ -143,7 +146,7 @@
  cof=(kap+gam)*(cc/zz)
 
 ! the energy iteration (boundsolve_m)
- call bs_solve(nn,ll,rr,vv,mmax,eps,setup,outward_nodes,match,boxstate, &
+ call bs_solve(nn,ll,rr,vv,mmax,adams,eps,setup,outward_nodes,match,boxstate, &
 &              ee,emin,emax,mch,ierr,ifail)
  if(ifail/=0) return
 
@@ -211,11 +214,11 @@
  integer, intent(in) :: mchs,nin,lo,hi
  real(dp), intent(out) :: de
 
- real(dp) :: sc,xkap,xmch
+ real(dp) :: sc,xkap,xmch,b1,b2
  real(dp) :: go(-match_k-1:match_k),fo(-match_k-1:match_k)
  real(dp) :: gpo(-match_k-1:match_k),fpo(-match_k-1:match_k)
  real(dp) :: ww(-match_k-1:match_k),ss(-match_k-1:match_k)
- integer :: jj,kk
+ integer :: jj
  integer, intent(out) :: ifail
 
  ifail=0
@@ -228,7 +231,7 @@
 
  xkap=sqrt(sls/rr(nin)**2 + 2.0d0*(vv(nin)-et))
 
- do jj=nin,nin+4
+ do jj=nin,nin+adams%order
    gu(jj)=exp(-xkap*(rr(jj)-rr(nin)))
    fu(jj)=0.5d0*cci*(-xkap+kap/rr(jj))*gu(jj)
 
@@ -238,22 +241,13 @@
 &           + cci*(2.0d0*cc**2 + et - vv(jj))*fu(jj))
  end do
 
-! integrate inward
+! integrate inward by the implicit Adams-Moulton steps
  do jj=nin,lo+1,-1
-
-   fu(jj-1)=fu(jj)+aei(fup,jj)
-   gu(jj-1)=gu(jj)+aei(gup,jj)
-
-   do kk=1,2
-     fup(jj-1)= al*rr(jj-1)*(kap*fu(jj-1)/rr(jj-1) &
-&             - cci*(et - vv(jj-1))*gu(jj-1))
-
-     gup(jj-1)= al*rr(jj-1)*(-kap*gu(jj-1)/rr(jj-1) &
-&             + cci*(2.0d0*cc**2 + et - vv(jj-1))*fu(jj-1))
-
-     fu(jj-1)=fu(jj)+aii(fup,jj)
-     gu(jj-1)=gu(jj)+aii(gup,jj)
-   end do
+   b1=fu(jj)+am_in(adams,fup,jj)
+   b2=gu(jj)+am_in(adams,gup,jj)
+   call am_solve(-adams%cm(0),al*kap,al*rr(jj-1)*cci*(vv(jj-1)-et), &
+&                al*rr(jj-1)*cci*(2.0d0*cc**2+et-vv(jj-1)),-al*kap,b1,b2, &
+&                fu(jj-1),gu(jj-1))
    fup(jj-1)= al*rr(jj-1)*(kap*fu(jj-1)/rr(jj-1) &
 &           - cci*(et - vv(jj-1))*gu(jj-1))
    gup(jj-1)= al*rr(jj-1)*(-kap*gu(jj-1)/rr(jj-1) &
@@ -301,8 +295,8 @@
  integer, intent(in) :: mlast
  integer, intent(out) :: nnode
 
- call dirac_outward(ll,kap,c_light,eecur,zz,al,rr,vv,mmax,mlast,gu,fu,gup,fup, &
-&                   nnode)
+ call dirac_outward(ll,kap,c_light,eecur,zz,al,rr,vv,mmax,adams,mlast,gu,fu, &
+&                   gup,fup,nnode)
 
  return
  end subroutine outward

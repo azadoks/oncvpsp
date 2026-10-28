@@ -83,6 +83,7 @@
 &          rxpsh=>inp%rxpsh, rlmax=>inp%rlmax, drl=>inp%drl, &
 &          upf_mesh=>inp%upf_mesh, ncnf=>inp%ncnf, cnf=>inp%cnf, &
 &          amesh=>inp%amesh, rr1=>inp%rr1, rmax=>inp%rmax, &
+&          adams_order=>inp%adams_order, &
 &          c_light=>inp%c_light, ep_as_given=>inp%ep_as_given, &
 &          well_onset=>inp%well_onset, well_tail=>inp%well_tail, &
 &          wave_regularization=>inp%wave_regularization, well_n=>inp%well_n, &
@@ -316,11 +317,17 @@
      end do
    end do
 
-! log mesh (optional, the last line): amesh, rr1, rmax
+! log mesh (optional, the last line): amesh, rr1, rmax, and optionally
+! the order of the Adams-Moulton steps
    call next_line(unit, line, inline, eof, iout=iout, ifail=ifail)
    if(ifail /= 0) return
    if(.not. eof) then
-     read(line, *, iostat=ios) amesh, rr1, rmax
+     read(line, *, iostat=ios) amesh, rr1, rmax, adams_order
+! three values: the line ends before the order
+     if(ios < 0) then
+       adams_order = 4
+       read(line, *, iostat=ios) amesh, rr1, rmax
+     end if
      call check_finite(ios, [amesh, rr1, rmax])
      call read_error(ios, inline, iout, ifail)
      if(ifail /= 0) return

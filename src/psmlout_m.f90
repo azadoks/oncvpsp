@@ -59,8 +59,8 @@
 !!                   input
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
-!! @param log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets
-!!                  it (else 0)
+!! @param log_mesh  amesh, rr1, rmax and the Adams order of the log mesh
+!!                  line, echoed when the input sets it (else 0)
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param nkap  number of kappas per l: 1, or 2 for irel=2
@@ -91,7 +91,7 @@
 
 !the core radii as read (rc_in), for the echo
  real(dp), intent(in) :: rc_in(mxlin+1)
- real(dp), intent(in) :: fcgrid(3),rcgrid(3),log_mesh(3)
+ real(dp), intent(in) :: fcgrid(3),rcgrid(3),log_mesh(4)
  integer, intent(in) :: iout
 
 !Local variables
@@ -628,8 +628,8 @@
 !! @param drl  spacing of linear radial grid
 !! @param ncnf  number of test configurations (not counting the reference)
 !! @param cnf  the reference and test configurations (input_m)
-!! @param log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets
-!!                  it (else 0)
+!! @param log_mesh  amesh, rr1, rmax and the Adams order of the log mesh
+!!                  line, echoed when the input sets it (else 0)
 !! @param upf_mesh  most points of the log mesh of the UPF file, 0 for the
 !!                  linear output mesh (echoed when not 0)
 !! @param ep_as_given..wave_regularization  echoed on the lmax line when one is
@@ -654,7 +654,7 @@
  real(dp), intent(in) :: zz,fa(mxstate),rc_in(mxlin+1),ep(mxlin+1),qcut(mxlin+1)
  real(dp), intent(in) :: debl(mxlin+1)
  real(dp), intent(in) :: dvloc0,fcfact_in,epsh1,epsh2,depsh,rlmax,drl
- real(dp), intent(in) :: rcfact,fcgrid(3),rcgrid(3),rxpsh,log_mesh(3)
+ real(dp), intent(in) :: rcfact,fcgrid(3),rcgrid(3),rxpsh,log_mesh(4)
  real(dp), intent(in) :: slack
  integer, intent(in) :: budget_cutoff
  logical, intent(in) :: ep_as_given

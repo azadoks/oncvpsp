@@ -1883,9 +1883,53 @@ from rc:
         Without nist (`ctest -LE "smooth|nist" -j 16`): 257 tests in
         150 s wall before, 172 in 88 s after. With nist the wall time is
         set by nist_RLDA_heavy (90 s).
-- [ ] Configurable Adams–Moulton order in the radial ODE solvers (the
+- [x] Configurable Adams–Moulton order in the radial ODE solvers (the
       user's idea, listed 2026-10-22 at their request through another
-      session; not approved for work yet). Today: AB4 predictor and two
+      session; done 2026-10-28, steps 1 to 3, with step 4 checked and
+      step 5 measured on 14_Si; the plan as written follows the note).
+      **Done.** `adams_m` holds the Adams–Moulton coefficients of order
+      k = 4 to 8 (exact rationals); `adams_order` is the optional fourth
+      value of the log-mesh line, or `[log_mesh] adams_order`, default
+      4, echoed only when it is not 4. A `type(adams_t)` is passed down
+      every call chain from oncvpsp_run (no module state; its default
+      initialization is order 4), and held by `outwf_t`, `phsft_t` and
+      modcore_budget's state. Each step's implicit equation is solved
+      exactly (`am_solve`, 2×2), so there is no predictor; every
+      integration starts from k points (the series at the origin, the
+      exponential at nin, nin at most mmax − k, Runge-Kutta priming of
+      k − 1 steps in outwf_m), and vout's Hartree potential is the
+      cumulative rule of order k. oncvpsp_ld and oncvpsp_confine use
+      order 4. Unit test `adams`: order 4 is the default, every order is
+      exact on polynomials of degree k, and the hydrogen-like 2p and 3d
+      errors fall from amesh 1.024 to 1.012 by 15, 32, 44 and 122 at
+      orders 4 to 7, order 8 reaching round-off at 1.012. At order 4 the
+      exact solve moves the references within their tolerances, except
+      the barrier states of the positive-energy ghost test above 50 Ha
+      (`ghost_localization`: <r>/rc by up to 2.4e-4, the energy by 3e-5
+      relative, in 15 references). At 58 to 222 Ha such a state turns
+      by 0.2 to 0.3 radians per mesh step, where order 4's own error is
+      larger: 40_Zr's l = 2 entry is another state (122 Ha) at orders 6
+      and 8, which differ from each other by 1.6e-3 in <r>/rc. The
+      07_N_opt rcloc scan's ld residual is 3.0e-10 (2.7e-10 at order 6,
+      1.9e-10 at 8; jump ratio 1.03), its tolerance raised to 4e-10.
+      **Measured (step 5, 14_Si all-electron eigenvalues, against amesh
+      1.003 at order 8; the same in nr):**
+
+      | amesh | order | 1s | 2p | 3s | 3p |
+      |---|---|---|---|---|---|
+      | 1.012 | 4 | 1.1e-7 | 5.9e-8 | 3.6e-9 | 2.9e-9 |
+      | 1.012 | 6, 8 | 4.7e-8 | 4.3e-8 | 5.0e-9 | −6.8e-11 |
+      | 1.006 | 4 | 1.8e-8 | 1.4e-8 | 1.4e-9 | 1.7e-10 |
+      | 1.006 | 6, 8 | 1.4e-8 | 1.3e-8 | 1.5e-9 | −2.0e-11 |
+      | 1.003 | 4 | 2.4e-10 | 6.4e-11 | −4.6e-12 | 1.2e-11 |
+
+      Orders 6 and 8 agree to 1e-11 at every mesh, so the ODE's error is
+      gone, but an error independent of the order remains, 4e-8 Ha at
+      1.012 and 1.3e-8 at 1.006 (about al^1.7). It is not the start at
+      the origin (rr1 = 1e-7 leaves it), nor relativistic. This is the
+      "about 1e-7 where the differences stop falling smoothly" of step 7.
+      Until it is found a coarser default mesh is not safe (open).
+      The plan as written: AB4 predictor and two
       fixed-point AM4 corrector passes per mesh step (`adams.inc`, in
       sr_flux_m, lschfb, lschpsbar, outwf_m, vout, dirac_m, ldiracfb,
       lschvkbb), global error O(al⁴), while the interpolation,

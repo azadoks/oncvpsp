@@ -241,6 +241,9 @@
 ###       in the fully-relativistic code)
 ### rmax  outer radius of the mesh (default 45)
 ### a value of 0 or less keeps the default; leaving the line out keeps all three
+### adams_order (optional fourth value, 4 to 8, default 4): the order of the
+###       Adams-Moulton steps of every radial integration, whose error goes
+###       as al**adams_order (al = ln amesh)
 ### the non-relativistic default is coarse near the nucleus of heavy atoms:
 ### against a converged solver (NIST LDA set, 2026-10-20) its all-electron
 ### total energy is off by 2.5e-3 Ha at the median and up to 1e-2 Ha for

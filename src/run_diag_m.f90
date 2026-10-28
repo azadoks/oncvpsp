@@ -26,7 +26,8 @@
  contains
 
  subroutine run_diag(lmax,npa,epa,wellprj,lloc,rc,vlocpw,vkbpw,evkb,nproj,rr, &
-&                    vfull,vp,zz,mmax,irel,c_light,nkap,so_split,vsrpw,esr, &
+&                    vfull,vp,zz,mmax,adams,irel,c_light,nkap,so_split,vsrpw, &
+&                    esr, &
 &                    vsopw,eso,iout,ifail)
 
 !! diagnostics for semi-local and Vanderbilt-Kleinman-bylander pseudopotentials
@@ -60,6 +61,7 @@
 !!            comb.)
 !! @param zz  atomic number
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param nkap  number of kappas per l: 1, or 2 for irel=2
@@ -88,9 +90,11 @@
  use lschvkbbe_m, only: lschvkbbe
  use renorm_r_m, only: renorm_r
  use scatterstate_m, only: scatterstate
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: lmax,lloc,mmax,irel,nkap
+ type(adams_t), intent(in) :: adams
  logical, intent(in) :: so_split
  real(dp), intent(in) :: c_light
  integer, intent(in) :: npa(mxprj,mxlin+1),nproj(mxlin+1)
@@ -176,7 +180,7 @@
        etest=epa(iprj,l1,ikap)
        if(.not. wellprj(iprj,l1)) then
          call boundstate(irel,c_light,npa(iprj,l1),ll,kap,ierr,etest, &
-&                        rr,zz,vfull,ur,urp,mmax,mch,iout,ifail)
+&                        rr,zz,vfull,ur,urp,mmax,adams,mch,iout,ifail)
          if(ifail/=0) return
          if(ierr /= 0 .and. irel==2) then
            write(iout,'(/a,4i4)') 'run_diag_r: ldiracfb convergence ERROR &
@@ -193,7 +197,7 @@
          end if
        else
          call scatterstate(irel,c_light,nnae,ll,kap,etest, &
-&                       rr,zz,vfull,ur,urp,mmax,mchf)
+&                       rr,zz,vfull,ur,urp,mmax,adams,mchf)
        end if
        cnorm=1.0d0
        if(irel==2 .and. wellprj(iprj,l1)) then
@@ -228,7 +232,7 @@
 
          call lschvkbb(ll+iprj,ll,nvkbt,ierr,etest,emin,emax, &
 &                      rr,vp(1,lloc+1,ikap),vlocpw,vkbtpw(1:nvkbt),evkbt, &
-&                      uu,up,mmax,mch,iout,ifail)
+&                      uu,up,mmax,adams,mch,iout,ifail)
          if(ifail/=0) return
          if(ierr/=0 .and. irel==2) then
            write(iout,'(a,4i4,1p,2e16.8)') trim(name)//': lschvkbb ERROR', &
@@ -246,14 +250,14 @@
 !     pseudo-wave function may have a node that entered at r = 0 without
 !     an eigenvalue passing (outwf_index)
 
-         call outwf_index_at(ll,rr,mmax,vp(1,lloc+1,ikap),vlocpw,nvkbt, &
+         call outwf_index_at(ll,rr,mmax,adams,vp(1,lloc+1,ikap),vlocpw,nvkbt, &
 &             vkbtpw(1:nvkbt),evkbt(1:nvkbt),epa(iprj,l1,ikap),mchf,neig, &
 &             iout,ifail)
          if(ifail/=0) return
          nnp=ll+1+neig
          call lschvkbbe(nnp,ll,nvkbt,ierr,etest,uldf,emin,emax, &
 &                       rr,vp(1,lloc+1,ikap),vlocpw,vkbtpw(1:nvkbt),evkbt, &
-&                       uu,up,mmax,mchf,rm,iout,ifail)
+&                       uu,up,mmax,adams,mchf,rm,iout,ifail)
          if(ifail/=0) return
 
          if(ierr/=0 .and. irel==2) then

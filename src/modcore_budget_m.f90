@@ -25,6 +25,7 @@
 
  use constants_m, only: dp, pi, nrhomod
  use, intrinsic :: iso_fortran_env, only: error_unit
+ use adams_m, only: adams_t
  implicit none
  private
  public :: modcore_budget,modcore_probes,modcore_budget_table
@@ -88,6 +89,8 @@
  type :: budget_t
 !> size of the log radial mesh
    integer :: mmax=0
+!> order and coefficients of the Adams-Moulton quadrature of der2exc
+   type(adams_t) :: adams
 !> exchange-correlation functional
    integer :: iexc=0
 !> number of probes (0 for icmod=6)
@@ -367,7 +370,8 @@
 ! fit, as the needed cutoff falls as the model softens.
 
  subroutine modcore_budget(icmod,rhotps,rhoc,rhomod,corepw,fcfact,ecutw, &
-&                          weighted,errmax,slack,rcmin,mmax,rr,iexc,c_light, &
+&                          weighted,errmax,slack,rcmin,mmax,adams,rr,iexc, &
+&                          c_light, &
 &                          zion,probes,lprobe,nprobe,iout,ifail)
 
 !! @param icmod  6 for the smallest radius, 7 for the hardness-matched one
@@ -386,6 +390,7 @@
 !! @param slack  share of the cutoff the model must fit, 0 < slack <= 1
 !! @param rcmin  the smallest rc, the largest r_s (bohr)
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param rr  log radial mesh (bohr)
 !! @param iexc  exchange-correlation functional
 !! @param c_light  speed of light (Hartree atomic units)
@@ -401,6 +406,7 @@
 
 !Input variables
  integer, intent(in) :: icmod,mmax,iexc,nprobe
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: c_light
  integer, intent(in) :: lprobe(nprobe)
  real(dp), intent(in) :: rhotps(mmax),rhoc(mmax),rr(mmax)
@@ -421,6 +427,7 @@
  call budget_init(bc,rhotps,rhoc,fcfact,ecutw,errmax,slack,rcmin,mmax,rr, &
 &                 iexc,c_light,zion,probes,lprobe,nprobe,iout,ifail)
  if(ifail/=0) return
+ bc%adams=adams
  call budget_tables(bc,iout,ifail)
  if(ifail/=0) return
  call budget_sphere(bc)
@@ -808,7 +815,7 @@
  bc%d2zero(:,:)=0.0d0
  call der2exc(bc%rhotps,bc%rhoc,bc%probes,bc%rr,bc%d2ae,bc%d2zero,bc%mismatch, &
 &               bc%zion,bc%iexc,bc%c_light,0,bc%nprobe,bc%lprobe, &
-&               bc%rr(bc%mmax),bc%mmax)
+&               bc%rr(bc%mmax),bc%mmax,bc%adams)
  ib=0
  do ii=1,bc%ncand
    bc%cmis(ii)=mismatch_at(bc,log(bc%crad(ii)))
@@ -1141,13 +1148,13 @@
  real(dp) :: mm
  associate(core=>bc%core,d2ae=>bc%d2ae,d2mod=>bc%d2mod,iexc=>bc%iexc, &
 &          c_light=>bc%c_light,ifill=>bc%fill%ifill,lprobe=>bc%lprobe, &
-&          mmax=>bc%mmax,nprobe=>bc%nprobe,probes=>bc%probes, &
+&          mmax=>bc%mmax,adams=>bc%adams,nprobe=>bc%nprobe,probes=>bc%probes, &
 &          rhotps=>bc%rhotps,rr=>bc%rr,zion=>bc%zion)
    call set_model(bc,exp(lnrs))
    mismatch_at=huge(1.0d0)
    if(ifill==0) return
    call der2exc(rhotps,core,probes,rr,d2mod,d2ae,mm, &
-&               zion,iexc,c_light,0,nprobe,lprobe,rr(mmax),mmax)
+&               zion,iexc,c_light,0,nprobe,lprobe,rr(mmax),mmax,adams)
    mismatch_at=mm
  end associate
  return
@@ -2215,7 +2222,7 @@
  end function xc_error
 
  subroutine modcore_probes(lmax,lloc,nproj,epa,wellprj,vp,vlocpw,vkbpw, &
-&                         evkb,rr,mmax,nkap,probes,lprobe,nprobe, &
+&                         evkb,rr,mmax,adams,nkap,probes,lprobe,nprobe, &
 &                         iout,ifail)
 
 !! the probe densities of the hardness of icmod=7: for every projector
@@ -2237,6 +2244,7 @@
 !! @param evkb  coefficients of the projectors
 !! @param rr  log radial mesh (bohr)
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param nkap  number of kappas per l: 1, or 2 for irel=2
 !! @param probes  probe densities, (u/r)**2 normalized to one electron
 !! @param lprobe  angular momenta of the probes
@@ -2252,6 +2260,7 @@
 
 !Input variables
  integer, intent(in) :: lmax,lloc,mmax,nkap
+ type(adams_t), intent(in) :: adams
  integer, intent(in) :: nproj(mxlin+1)
  real(dp), intent(in) :: rr(mmax),vp(mmax,mxl+2,nkap)
  real(dp), intent(in) :: epa(mxprj,mxlin+1,nkap),evkb(mxprj,mxl+1,nkap)
@@ -2298,7 +2307,7 @@
        end if
        call lschvkbb(ll+iprj,ll,npr,ierr,et,emin,emax, &
 &                    rr,vp(1,lloc+1,ikap),vlocpw,vkbpw(1:npr,l1,ikap), &
-&                    evkb(1,l1,ikap),uu,up,mmax,mch,iout,ifail)
+&                    evkb(1,l1,ikap),uu,up,mmax,adams,mch,iout,ifail)
        if(ifail/=0) return
        if(ierr/=0 .or. et>=0.0d0) then
          bound=.false.

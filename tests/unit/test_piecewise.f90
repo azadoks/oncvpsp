@@ -21,10 +21,13 @@
  use ode_rc_der_m, only: ode_rc_der
  use boundstate_m, only: boundstate
  use relativity_m, only: c_light => c_light_default
+ use adams_m, only: adams_t
  implicit none
  integer, parameter :: iout=6
 
 !Local variables
+!> the Adams-Moulton steps, of the default order
+ type(adams_t) :: adams
  integer :: ifail
  real(dp), parameter :: rr1 = 5.0e-5_dp, rmax = 45.0_dp, amesh = 1.006_dp
  real(dp), parameter :: rb = 6.0_dp
@@ -71,7 +74,7 @@
    ee(ii) = -0.5_dp/ii**2
    mch = 0
    call boundstate(0,c_light, ii, 0, -1, ierr, ee(ii), rr, 1.0_dp, vv, uu(:, &
-&                  :, ii),up(:, :, ii), mmax, mch, iout, ifail)
+&                  :, ii),up(:, :, ii), mmax, adams, mch, iout, ifail)
    if(ifail /= 0) error stop 1
    if(ierr /= 0) then
      write(stderr, '(a,i0,a,i0)') 'FAILED: wronskian: boundstate n ', ii, &

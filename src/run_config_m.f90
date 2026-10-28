@@ -25,7 +25,7 @@
 
  contains
 
- subroutine run_config_ps(jj,aec,nc,rhov,rhomod,rr,rcmax,mmax,iexc, &
+ subroutine run_config_ps(jj,aec,nc,rhov,rhomod,rr,rcmax,mmax,adams,iexc, &
 &                         etot,epstot,nproj,vpuns,lloc,vlocpw,vkbpw,evkb, &
 &                         irel,c_light,nkap,ntc,itc,etc,dtc,iout,ifail)
 
@@ -40,6 +40,7 @@
 !! @param rr  log radial mesh (bohr)
 !! @param rcmax  largest core radius (bohr)
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param iexc  exchange-correlation functional
 !! @param etot  reference configuration total energy
 !! @param epstot  reference configuration pseudoatom total energy
@@ -71,11 +72,13 @@
  use pieces_m, only: piecewise_t
  use kappa_m, only: kap_count, kap_of, kap_j_share
  use psatom_m, only: psatom
+ use adams_m, only: adams_t
 
 !Input variables
 
  type(ae_config_t), intent(in) :: aec
  integer, intent(in) :: jj,mmax,iexc,nc,lloc,irel,nkap
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: c_light
  integer, intent(in) :: nproj(mxlin+1)
  real(dp), intent(in) :: etot,epstot,rcmax
@@ -169,7 +172,7 @@
  rhocps(:)=rhomod(:,1)
 
  call psatom(natp,latp,eatp,fatp,nvt,it,rhocps,rho, &
-&           rr,rcmax,mmax,iexc,c_light,etsttot,nproj,vpuns,lloc, &
+&           rr,rcmax,mmax,adams,iexc,c_light,etsttot,nproj,vpuns,lloc, &
 &           vlocpw,vkbpw,evkb,ierr,nkap,vfree,iout,ifail)
  if(ifail/=0) return
 
@@ -197,7 +200,7 @@
  end do
 
  call psatom(natp,latp,eatp,fatp,nvt,it,rhocps,rho, &
-&           rr,rcmax,mmax,iexc,c_light,etsttot,nproj,vpuns,lloc, &
+&           rr,rcmax,mmax,adams,iexc,c_light,etsttot,nproj,vpuns,lloc, &
 &           vlocpw,vkbpw,evkb,ierr,nkap,vfree,iout,ifail)
  if(ifail/=0) return
 

@@ -210,8 +210,8 @@
  write(iout,'(/)')
  end subroutine write_banner
 
- subroutine make_log_mesh(irel,zz,amesh_in,rr1_in,rmax_in,al,mmax,rr, &
-&                         log_mesh)
+ subroutine make_log_mesh(irel,zz,amesh_in,rr1_in,rmax_in,adams_order,al, &
+&                         mmax,rr,log_mesh)
 !! the log mesh rr of mmax points, ratio exp(al): the input values, or the
 !! built-in ones for those 0 or less; and the mesh for the echoes of the
 !! input, only when the input sets it (else 0), so that the output of an
@@ -223,19 +223,21 @@
 !! @param rr1_in  the input first mesh point (bohr), or 0 or less for
 !!                0.0005/zz (at most 0.00005 unless irel=2)
 !! @param rmax_in  the input mesh end (bohr), or 0 or less for 45
+!! @param adams_order  the order of the Adams-Moulton steps
 !! @param al  log of the mesh ratio
 !! @param mmax  size of the log radial mesh
 !! @param rr  log radial mesh (bohr); allocated here
-!! @param log_mesh  the mesh ratio, first point and end used, or 0 when the
-!!                  input sets none of them
+!! @param log_mesh  the mesh ratio, first point and end used and the Adams
+!!                  order, or 0 when the input sets none of the three and
+!!                  the order is 4
  use constants_m, only: dp
 
 !Input variables
- integer, intent(in) :: irel
+ integer, intent(in) :: irel,adams_order
  real(dp), intent(in) :: zz,amesh_in,rr1_in,rmax_in
 
 !Output variables
- real(dp), intent(out) :: al,log_mesh(3)
+ real(dp), intent(out) :: al,log_mesh(4)
  integer, intent(out) :: mmax
  real(dp), allocatable, intent(out) :: rr(:)
 
@@ -264,8 +266,9 @@
  end if
  mmax=int(log(rmax/rr1)/al)
  log_mesh(:)=0.0d0
- if(amesh_in>0.0d0 .or. rr1_in>0.0d0 .or. rmax_in>0.0d0) then
-   log_mesh(:)=[amesh,rr1,rmax]
+ if(amesh_in>0.0d0 .or. rr1_in>0.0d0 .or. rmax_in>0.0d0 .or. &
+&   adams_order/=4) then
+   log_mesh(:)=[amesh,rr1,rmax,dble(adams_order)]
  end if
 
  allocate(rr(mmax))

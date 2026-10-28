@@ -42,6 +42,7 @@
  use constants_m, only: dp, mxstate, mxcnf, mxl
  use input_m, only: input_t
  use exc_libxc_m, only: have_libxc
+ use adams_m, only: adams_min, adams_max
 
 !Input variables
  type(input_t), intent(in) :: inp
@@ -320,6 +321,12 @@
 
  if(inp%amesh>0.0d0 .and. inp%amesh<=1.0d0) then
    write(iout,'(a)') 'test_data: must have amesh > 1.0'
+   ierr=ierr+1
+ end if
+
+ if(inp%adams_order<adams_min .or. inp%adams_order>adams_max) then
+   write(iout,'(a,i0,a,i0)') 'test_data: must have ',adams_min, &
+&       ' <= adams_order <= ',adams_max
    ierr=ierr+1
  end if
 

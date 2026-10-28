@@ -38,8 +38,9 @@
    real(dp) :: fcgrid(3)=0.0d0
 !> the icmod=4 search grid of rcfact (min, max, step)
    real(dp) :: rcgrid(3)=0.0d0
-!> the log mesh (amesh, rr1, rmax; 0 when the input does not set it)
-   real(dp) :: log_mesh(3)=0.0d0
+!> the log mesh line (amesh, rr1, rmax and the Adams order; 0 when the
+!> input does not set it)
+   real(dp) :: log_mesh(4)=0.0d0
  end type echo_t
 
 !> the results of a run

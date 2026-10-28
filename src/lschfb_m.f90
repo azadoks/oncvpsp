@@ -25,8 +25,8 @@
 
  contains
 
- subroutine lschfb(irel,c_light,nn,ll,ierr,ee,rr,zz,vv,uu,up,mmax,mch,iout, &
-&                  ifail)
+ subroutine lschfb(irel,c_light,nn,ll,ierr,ee,rr,zz,vv,uu,up,mmax,adams,mch, &
+&                  iout,ifail)
 
 !! Finds bound states of an all-electron atomic potential using
 !! Pauli-type  scalar-relativistic Schroedinger equation
@@ -47,6 +47,7 @@
 !! @param uu  output radial wave function (*rr)
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param mch  mesh point just beyond the classical turning point, where
 !!             the inward and outward integrations are matched (at the
 !!             continuous turning point, match_m)
@@ -61,10 +62,12 @@
  use quad_m, only: quad_log_norm
  use inward_start_m, only: inward_start
  use logmesh_m, only: lm_step
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: mmax
  real(dp), intent(in) :: rr(mmax),vv(mmax)
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: zz
  integer, intent(in) :: nn,ll
  integer, intent(in) :: irel
@@ -158,7 +161,7 @@
  end do
 
 ! the energy iteration (boundsolve_m)
- call bs_solve(nn,ll,rr,vv,mmax,eps,setup,outward_nodes,match,boxstate, &
+ call bs_solve(nn,ll,rr,vv,mmax,adams,eps,setup,outward_nodes,match,boxstate, &
 &              ee,emin,emax,mch,ierr,ifail)
  if(ifail/=0) return
 
@@ -248,14 +251,14 @@
 
  xkap=sqrt(sls/rr(nin)**2 + 2.0d0*(vv(nin)-et))
 
- do jj=nin,nin+4
+ do jj=nin,nin+adams%order
    uu(jj)=exp(-xkap*(rr(jj)-rr(nin)))
    qq(jj)=-(xkap+1.0d0/rr(jj))*uu(jj)/xm(jj)
    call sr_derivs(al,pm,qm,mmax,uu,up,qq,qp,jj)
  end do
 
 ! integrate inward
- call sr_inward(al,pm,qm,mmax,nin,lo,uu,up,qq,qp)
+ call sr_inward(al,pm,qm,mmax,adams,nin,lo,uu,up,qq,qp)
 
 ! perturbation theory for the energy shift at each point of the window,
 ! u_o (q_o - q_i u_o/u_i)/2 for the normalized function, averaged with
@@ -296,7 +299,7 @@
  integer, intent(in) :: mlast
  integer, intent(out) :: nnode
 
- call sr_outward(ll,eecur,zz,fss,al,rr,vv,pm,qm,mmax,mlast, &
+ call sr_outward(ll,eecur,zz,fss,al,rr,vv,pm,qm,mmax,adams,mlast, &
 &                uu,up,qq,qp,nnode)
 
  return

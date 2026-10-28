@@ -31,7 +31,8 @@
 
  contains
 
- subroutine confine_walls(pf,irel,c_light,zz,mmax,rr,vfull,nc,nv,iexc,na,la, &
+ subroutine confine_walls(pf,irel,c_light,zz,mmax,adams,rr,vfull,nc,nv,iexc, &
+&                         na,la, &
 &                         fa,ea,nk,kwall,r0,sm,iout,ifail)
 !! the wall lines of the strengths kwall(1:nk) beyond r0, kwall(0)=0 the
 !! free atom, and the walls' part of the summary
@@ -41,6 +42,7 @@
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param zz  atomic number
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param rr  log radial mesh (bohr)
 !! @param vfull  all-electron potential (Ha), the start of the free atom
 !!               and of a wall after a failed all-electron atom
@@ -63,10 +65,12 @@
  use confine_summary_m, only: confine_summary_t
  use ps_file_m, only: ps_file_t
  use constants_m, only: mxkap
+ use adams_m, only: adams_t
 
 !Input variables
  type(ps_file_t), intent(in) :: pf
  integer, intent(in) :: irel,mmax,nc,nv,iexc,na(mxstate),la(mxstate),nk
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: zz,rr(mmax),vfull(mmax),fa(mxstate)
  real(dp), intent(in) :: ea(mxstate,mxkap),r0
@@ -124,7 +128,8 @@
    end if
    ierrae=0
    call aeatom(irel,c_light,nkap,na,la,eaw(:,1:nkap),fa,nc, &
-&              nc+nv,itae,rhoc,rhoa,rr,vi,zz,mmax,iexc,etae(ik),eterm,res, &
+&              nc+nv,itae,rhoc,rhoa,rr,vi,zz,mmax,adams,iexc,etae(ik),eterm, &
+&              res, &
 &              ierrae,vext,.true.,iout,ifail)
    if(ifail/=0) return
    eigae(:,:,ik)=eaw(:,:)
@@ -134,7 +139,7 @@
    end if
    ierrps=0
    call psatom(na_ps,la_ps,ea_ps(:,1:nkap),fa_ps,nv,itps,pf%pot%rhomod(:,1), &
-&              rhops,rr,pf%pot%rcmax,mmax,iexc,c_light,etps(ik),nprj, &
+&              rhops,rr,pf%pot%rcmax,mmax,adams,iexc,c_light,etps(ik),nprj, &
 &              pf%pot%vpuns,pf%pot%lloc,pf%pot%vlocpw,pf%pot%vkbpw(:,:, &
 &              1:nkap),pf%pot%evkb(:,:,1:nkap),ierrps,nkap,vext,iout,ifail)
    if(ifail/=0) return

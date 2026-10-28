@@ -96,6 +96,7 @@
  use confine_summary_m, only: confine_summary_t, write_confine_summary
  use exc_libxc_m, only: exc_libxc_info
  use build_info_m, only: write_build_info
+ use adams_m, only: adams_t
  implicit none
  integer, parameter :: iout=6
 
@@ -110,6 +111,8 @@
  real(dp), parameter :: kdef(3)=[0.01d0,0.03d0,0.1d0]
 !> the most strengths of a run
  integer, parameter :: mxk=20
+!> the Adams-Moulton steps, of the default order
+ type(adams_t) :: adams
 
  character(len=1024) :: ae_filename,ps_filename,arg
  integer :: iarg,irel,mmax,nq,iq,ios,lc,nk,nc,nv,iexc
@@ -247,7 +250,8 @@
  end if
 
  if(sphere) then
-   call confine_sphere(pf,irel,c_light,zz,mmax,rr,vfull,nc,na,la,chan,nq, &
+   call confine_sphere(pf,irel,c_light,zz,mmax,adams,rr,vfull,nc,na,la,chan, &
+&                      nq, &
 &                      rq(1:nq),emin,emax,de,ecutmax,table,sm,iout,ifail)
    if(ifail/=0) error stop 1
  end if
@@ -255,7 +259,8 @@
 !the atom in walls: k=0 the free atom
  if(nk>0) then
    if(.not. given_r0) r0=rcmax
-   call confine_walls(pf,irel,c_light,zz,mmax,rr,vfull,nc,nv,iexc,na,la,fa,ea, &
+   call confine_walls(pf,irel,c_light,zz,mmax,adams,rr,vfull,nc,nv,iexc,na,la, &
+&                     fa,ea, &
 &                     nk,kwall(0:nk),r0,sm,iout,ifail)
    if(ifail/=0) error stop 1
  end if

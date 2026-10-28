@@ -18,10 +18,13 @@
  use boundstate_m, only: boundstate
  use ae_delta_m, only: ae_delta
  use relativity_m, only: c_light => c_light_default
+ use adams_m, only: adams_t
  implicit none
  integer, parameter :: iout=6
 
 !Local variables
+!> the Adams-Moulton steps, of the default order
+ type(adams_t) :: adams
  integer :: ifail
  real(dp), parameter :: rr1 = 5.0e-5_dp, rmax = 45.0_dp, amesh = 1.006_dp
  real(dp), parameter :: zz = 50.0_dp
@@ -47,7 +50,7 @@
    up(:, :) = 0.0_dp
    mch = 0
    call boundstate(irel,c_light, 2, 1, kap, ierr, ee, rr, zz, vv, uu, up, &
-&        mmax, mch,iout, ifail)
+&        mmax, adams, mch,iout, ifail)
    if(ifail /= 0) error stop 1
    if(ierr /= 0) then
      write(stderr, '(a,a,a,i0)') 'FAILED: ', names(irel), ' boundstate ierr ', &

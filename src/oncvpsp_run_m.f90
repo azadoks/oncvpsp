@@ -92,6 +92,7 @@
  use constants_m, only: dp, mxl, mxlin, mxstate, mxkap, nrhomod
  use pieces_m, only: piecewise_t
  use results_m, only: results_t
+ use adams_m, only: adams_t, adams_init
 
 !Input variables
  integer, intent(in) :: irel,istage
@@ -129,7 +130,8 @@
  real(dp) :: fcfact_in
  real(dp) :: fcgrid(3),rcgrid(3)
  real(dp) :: rcmax
- real(dp) :: log_mesh(3)
+ real(dp) :: log_mesh(4)
+ type(adams_t) :: adams
  real(dp) :: zion,zval,etot,res
 !> the speed of light of the run, from the input
  real(dp) :: c_light
@@ -259,7 +261,9 @@
  if(ifail/=0) return
  c_light=c_light_of(inp%c_light)
 
- call make_log_mesh(irel,inp%zz,inp%amesh,inp%rr1,inp%rmax,al,mmax,rr,log_mesh)
+ call make_log_mesh(irel,inp%zz,inp%amesh,inp%rr1,inp%rmax,inp%adams_order, &
+&                   al,mmax,rr,log_mesh)
+ adams=adams_init(inp%adams_order)
 
 !PWSCF wants an even number of mesh points (not made so when fully
 !relativistic, see doc/fr_merge_plan.md): one more, or one fewer where
@@ -330,6 +334,7 @@
    ierr=0
    call aeatom_cached(cache,irel,c_light,nkap,inp%na,inp%la,ea,inp%fa, &
 &                     inp%nc,inp%nc+inp%nv,it,rhoc,rho,rr,vfull,inp%zz,mmax, &
+&                     adams, &
 &                     inp%iexc,etot,eterm,res,ierr,iout,ifail)
    if(ifail/=0) return
    if(ierr/=0) then
@@ -433,7 +438,8 @@
    do jj=1,inp%ncnf+1
      call run_config_ae(cache,jj,cnf,inp%nc,rr, &
 &                       inp%zz, &
-&                       mmax,inp%iexc,ea,irel,c_light,nkap,aec(jj),iout,ifail)
+&                       mmax,adams,inp%iexc,ea,irel,c_light,nkap,aec(jj),iout, &
+&                       ifail)
      if(ifail/=0) return
    end do
 
@@ -489,6 +495,7 @@
 
      call ae_bound_projectors(irel,c_light,ll,kap,ikap,inp%nc,inp%nv,inp%na, &
 &                             inp%la,ea,inp%nproj(l1),it,rr,inp%zz,vfull,mmax, &
+&                             adams, &
 &                             uu,up,iprj,epa(:,l1,ikap),npa(:,l1),uua(:,:, &
 &                             ikap),upa(:,:,ikap),iout,ifail)
      if(ifail/=0) return
@@ -496,7 +503,8 @@
 &                            ikap),inp%debl(l1),inp%well_n(l1), &
 &                            inp%ep_as_given,inp%well_onset,inp%well_tail, &
 &                            well_norm_rc,inp%rc(l1),irc(l1),inp%qcut(l1),rr, &
-&                            inp%zz,vfull,mmax,uu,up,nnwell,iprj,epa(:,l1, &
+&                            inp%zz,vfull,mmax,adams,uu,up,nnwell,iprj,epa(:, &
+&                            l1, &
 &                            ikap),npa(:,l1),uua(:,:,ikap),upa(:,:,ikap), &
 &                            vwell,inwell,wmesh,iout,ifail)
      if(ifail/=0) return
@@ -555,7 +563,8 @@
 
  call valence_densities(irel,c_light,nkap,inp%nc,inp%nv,inp%na,inp%la,inp%fa, &
 &                       ea,it,inp%lloc,inp%nproj,rr,inp%zz,vfull,vp,vlocpw, &
-&                       vkbpw,evkb,mmax,uu,up,uupsa,eeig,zval,rho,rhops,rhoae, &
+&                       vkbpw,evkb,mmax,adams,uu,up,uupsa,eeig,zval,rho,rhops, &
+&                       rhoae, &
 &                       rhotae,iout,ifail)
  if(ifail/=0) return
 
@@ -576,13 +585,14 @@
 
  if(inp%icmod==1) then
    call modcore(inp%icmod,rhops,rho,rhoc,rhoae,rhotae,rhomod,corepw, &
-&               inp%fcfact,inp%rcfact,rcmax,mmax,rr,inp%nc,inp%nv,inp%la, &
+&               inp%fcfact,inp%rcfact,rcmax,mmax,adams,rr,inp%nc,inp%nv, &
+&               inp%la, &
 &               zion,inp%iexc,c_light,iout,ifail)
    if(ifail/=0) return
 
  else if(inp%icmod==2) then
    call modcore2(inp%icmod,rhops,rho,rhoc,rhoae,rhotae,rhomod,corepw, &
-&               inp%fcfact,inp%rcfact,mmax,rr,inp%nc,inp%nv,inp%la,zion, &
+&               inp%fcfact,inp%rcfact,mmax,adams,rr,inp%nc,inp%nv,inp%la,zion, &
 &               inp%iexc,c_light,iout,ifail)
    if(ifail/=0) return
 
@@ -599,21 +609,23 @@
    if(inp%icmod==7) then
      call modcore_probes(inp%lmax,inp%lloc,inp%nproj,epa,wellprj,vp,vlocpw, &
 &                        vkbpw,evkb, &
-&                        rr,mmax, &
+&                        rr,mmax,adams, &
 &                        nkap,probes,lprobe,nprobe,iout,ifail)
      if(ifail/=0) return
    end if
    call modcore_budget(inp%icmod,rho,rhoc,rhomod,corepw,inp%fcfact,ecutw, &
 &               inp%budget_cutoff==1,inp%rcfact, &
 &               inp%slack, &
-&               minval(inp%rc(1:inp%lmax+1)),mmax,rr,inp%iexc,c_light,zion, &
+&               minval(inp%rc(1:inp%lmax+1)),mmax,adams,rr,inp%iexc,c_light, &
+&               zion, &
 &               probes(:,1:nprobe),lprobe(1:nprobe),nprobe,iout,ifail)
    if(ifail/=0) return
    deallocate(probes,lprobe)
 
  else if(inp%icmod>=3) then
    call modcore3(inp%icmod,rhops,rho,rhoc,rhoae,rhotae,rhomod,corepw, &
-&               inp%fcfact,inp%rcfact,fcgrid,rcgrid,mmax,rr,inp%nc,inp%nv, &
+&               inp%fcfact,inp%rcfact,fcgrid,rcgrid,mmax,adams,rr,inp%nc, &
+&               inp%nv, &
 &               inp%la,zion,inp%iexc,c_light,iout,ifail)
    if(ifail/=0) return
 
@@ -623,7 +635,8 @@
 
 ! screening potential for pseudocharge
 
- call vout(.true.,rho,rhomod(1,1),vo,vxc,zval,eeel,eexc,rr,mmax,inp%iexc, &
+ call vout(.true.,rho,rhomod(1,1),vo,vxc,zval,eeel,eexc,rr,mmax,adams, &
+&          inp%iexc, &
 &          c_light)
 
 ! switch the screened potentials to the ionic tail beyond rcmax, iterating
@@ -632,7 +645,7 @@
 
  allocate(vion(mmax))
  call ionic_screening(nkap,inp%nc,inp%nv,inp%la,inp%fa,ea,inp%lmax,inp%lloc, &
-&                     inp%nproj,rr,vp,vlocpw,vkbpw,evkb,mmax,inp%zz, &
+&                     inp%nproj,rr,vp,vlocpw,vkbpw,evkb,mmax,adams,inp%zz, &
 &                     zion,zval,inp%iexc,c_light,rcmax,rhoc,rhotae,rhomod(1, &
 &                     1),rho,rhops,uupsa,eeig,vo,vxc,eeel,eexc,vion,iout, &
 &                     ifail)
@@ -644,14 +657,14 @@
  write(iout,'(/a,f12.6/)') 'Pseudoatom total energy', epstot
 
  call run_diag(inp%lmax,npa,epa,wellprj,inp%lloc,inp%rc, &
-&               vlocpw,vkbpw,evkb,inp%nproj,rr,vfull,vp,inp%zz,mmax, &
+&               vlocpw,vkbpw,evkb,inp%nproj,rr,vfull,vp,inp%zz,mmax,adams, &
 &               irel,c_light,nkap, &
 &               .false.,vsrpw,esr,vsopw,eso,iout,ifail)
  if(ifail/=0) return
 
  if(irel==2) then
    call run_diag(inp%lmax,npa,epa,wellprj,inp%lloc,inp%rc, &
-&                 vlocpw,vkbpw,evkb,inp%nproj,rr,vfull,vp,inp%zz,mmax, &
+&                 vlocpw,vkbpw,evkb,inp%nproj,rr,vfull,vp,inp%zz,mmax,adams, &
 &                 irel,c_light, &
 &                 nkap,.true.,vsrpw,esr,vsopw,eso,iout,ifail)
    if(ifail/=0) return
@@ -675,7 +688,7 @@
  ghe(:,:,:,:)=0.0d0
  ghp(:,:,:)=0.0d0
  call run_ghosts(inp%lmax,inp%la,ea(1,1),inp%nc,inp%nv,inp%lloc,inp%rc,qmsbf, &
-&                vlocpw,vkbpw(:,:,1),evkb(1,1,1),inp%nproj,rr,vp,mmax, &
+&                vlocpw,vkbpw(:,:,1),evkb(1,1,1),inp%nproj,rr,vp,mmax,adams, &
 &                ngh(:,1),ghn(:,:,1),ghe(:,:,:,1),ghp(:,:,1),iout,ifail)
  if(ifail/=0) return
 
@@ -688,7 +701,7 @@
    end do
    call run_ghosts(inp%lmax,inp%la,ea(1,2),inp%nc,inp%nv,inp%lloc,inp%rc, &
 &                  qmsbf, &
-&                  vlocpw,vkbpw(:,:,2),evkb(1,1,2),inp%nproj,rr,vp,mmax, &
+&                  vlocpw,vkbpw(:,:,2),evkb(1,1,2),inp%nproj,rr,vp,mmax,adams, &
 &                  ngh(:,2),ghn(:,:,2),ghe(:,:,:,2),ghp(:,:,2),iout,ifail)
    if(ifail/=0) return
    vkb(:,:,1,2)=0.0d0
@@ -723,12 +736,13 @@
    if(istage/=2) then
      call run_config_ae(cache,jj,cnf,inp%nc,rr, &
 &                       inp%zz, &
-&                       mmax,inp%iexc,ea,irel,c_light,nkap,aec(jj),iout,ifail)
+&                       mmax,adams,inp%iexc,ea,irel,c_light,nkap,aec(jj),iout, &
+&                       ifail)
      if(ifail/=0) return
    end if
 
    call run_config_ps(jj,aec(jj),inp%nc,rhot,rhomod,rr, &
-&                     rcmax,mmax,inp%iexc,etot,epstot,inp%nproj,vpuns, &
+&                     rcmax,mmax,adams,inp%iexc,etot,epstot,inp%nproj,vpuns, &
 &                     inp%lloc,vlocpw,vkbpw,evkb,irel,c_light,nkap,ntcf(jj), &
 &                     itcf(:,:,jj),etcf(:,:,jj),dtcf(:,jj),iout,ifail)
    if(ifail/=0) return
@@ -737,7 +751,7 @@
 
  call run_plot(inp%lmax,npa,epa,wellprj,inp%lloc,inp%rc, &
 &               vkb,vlocpw,vkbpw,evkb,inp%nproj,rr,vfull,vp,vpuns,inp%zz, &
-&               mmax, &
+&               mmax,adams, &
 &               inp%drl,nrl, &
 &               rho,rhoc,rhomod,irel,c_light,nkap,cvgplt,iout,ifail)
  if(ifail/=0) return
@@ -755,7 +769,7 @@
    npsh=int(((inp%epsh2-inp%epsh1)/inp%depsh)-0.5d0)+1
    allocate(pshae(npsh,4,nkap),pshps(npsh,4,nkap))
    call run_phsft(inp%lmax,inp%lloc,inp%nproj,epa,npsh,inp%epsh2,inp%depsh, &
-&                 inp%rxpsh,vlocpw,vkbpw,evkb,rr,vfull,vp,inp%zz,mmax, &
+&                 inp%rxpsh,vlocpw,vkbpw,evkb,rr,vfull,vp,inp%zz,mmax,adams, &
 &                 inp%rc,irel,c_light,nkap,rphs,pshae,pshps,iout,ifail)
    if(ifail/=0) return
  end if

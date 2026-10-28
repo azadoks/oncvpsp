@@ -52,7 +52,8 @@
 ! V_AE - V_Hxc[n_v + rhomod]: V_AE is the input potential of the last
 ! all-electron SCF step.
 
- subroutine ionic_tail(zz,zion,rhoc,rhotae,rhomod,rr,mmax,iexc,c_light,vion)
+ subroutine ionic_tail(zz,zion,rhoc,rhotae,rhomod,rr,mmax,adams,iexc,c_light, &
+&                      vion)
 
 !! the frozen-core ionic potential V_ion of the all-electron atom
 !!
@@ -63,15 +64,18 @@
 !! @param rhomod  model core charge
 !! @param rr  log radial mesh (bohr)
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param iexc  exchange-correlation functional
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param vion  V_ion
 
  use constants_m, only: dp
  use vout_m, only: vout
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: mmax,iexc
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: zz,zion
  real(dp), intent(in) :: rhoc(mmax),rhotae(mmax),rhomod(mmax),rr(mmax)
@@ -88,12 +92,14 @@
 
 ! V_H[n_c], its charge fixed at the end of the mesh to zz-zion so that
 ! -Z/r + V_H[n_c] is -zion/r there
- call vout(.false.,rhoc,rhoc,vt,vxct,zz-zion,eeel,eexc,rr,mmax,iexc,c_light)
+ call vout(.false.,rhoc,rhoc,vt,vxct,zz-zion,eeel,eexc,rr,mmax,adams,iexc, &
+&          c_light)
  vion(:)=-zz/rr(:)+vt(:)-vxct(:)
 
- call vout(.true.,rhotae,rhoc,vt,vxct,zion,eeel,eexc,rr,mmax,iexc,c_light)
+ call vout(.true.,rhotae,rhoc,vt,vxct,zion,eeel,eexc,rr,mmax,adams,iexc,c_light)
  vion(:)=vion(:)+vxct(:)
- call vout(.true.,rhotae,rhomod,vt,vxct,zion,eeel,eexc,rr,mmax,iexc,c_light)
+ call vout(.true.,rhotae,rhomod,vt,vxct,zion,eeel,eexc,rr,mmax,adams,iexc, &
+&          c_light)
  vion(:)=vion(:)-vxct(:)
 
  deallocate(vt,vxct)
@@ -154,7 +160,7 @@
  end subroutine ionic_window
 
  subroutine ionic_valence(nkap,nc,nv,la,fa,ea,lloc,nproj,rr,vp,vlocpw, &
-&                         vkbpw,evkb,mmax,rho,rhops,uupsa,eeig,iout,ifail)
+&                         vkbpw,evkb,mmax,adams,rho,rhops,uupsa,eeig,iout,ifail)
 
 !! the pseudo valence states of the local potential vp(:,lloc+1,:) and the
 !! VKB projectors, as oncvpsp_main solves them: rho, the state densities
@@ -174,6 +180,7 @@
 !! @param vkbpw  the projectors as pieces
 !! @param evkb  coefficients of the projectors
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param rho  pseudo valence charge
 !! @param rhops  state-by-state pseudo valence charge (one electron)
 !! @param uupsa  pseudo valence wave functions
@@ -185,9 +192,11 @@
  use kappa_m, only: kap_count, kap_j_share
  use pieces_m, only: piecewise_t
  use lschvkbb_m, only: lschvkbb
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: nkap,nc,nv,lloc,mmax
+ type(adams_t), intent(in) :: adams
  integer, intent(in) :: la(mxstate),nproj(mxlin+1)
  real(dp), intent(in) :: fa(mxstate),ea(mxstate,nkap)
  real(dp), intent(in) :: rr(mmax),vp(mmax,mxl+2,nkap)
@@ -231,7 +240,7 @@
      call lschvkbb(ll+nodes(l1)+1,ll,nproj(l1),ierr,et,emin,emax, &
 &                  rr,vp(1,lloc+1,ikap),vlocpw,vkbpw(1:nproj(l1),l1,ikap), &
 &                  evkb(1,l1,ikap), &
-&                  uu,up,mmax,mch,iout,ifail)
+&                  uu,up,mmax,adams,mch,iout,ifail)
      if(ifail/=0) return
      if(ierr/=0) then
        write(iout,'(/a,3i0)') 'ionic_valence: ERROR lschvkbb n,l,ierr=', &
@@ -255,7 +264,7 @@
  end subroutine ionic_valence
 
  subroutine ionic_screening(nkap,nc,nv,la,fa,ea,lmax,lloc,nproj,rr,vp,vlocpw, &
-&                           vkbpw,evkb,mmax,zz,zion,zval,iexc,c_light, &
+&                           vkbpw,evkb,mmax,adams,zz,zion,zval,iexc,c_light, &
 &                           rcmax,rhoc,rhotae,rhomod,rho,rhops,uupsa,eeig,vo, &
 &                           vxc,eeel,eexc,vion,iout,ifail)
 
@@ -280,6 +289,7 @@
 !! @param vkbpw  the projectors as pieces
 !! @param evkb  coefficients of the projectors
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param zz  atomic number
 !! @param zion  ion charge
 !! @param zval  valence charge
@@ -305,9 +315,11 @@
  use pieces_m, only: piecewise_t
  use cinf_taper_m, only: cinf_taper
  use vout_m, only: vout
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: nkap,nc,nv,lmax,lloc,mmax,iexc
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: c_light
  integer, intent(in) :: la(mxstate),nproj(mxlin+1)
  real(dp), intent(in) :: fa(mxstate),ea(mxstate,nkap)
@@ -341,7 +353,7 @@
  ifail=0
  allocate(ww(mmax),vp0(mmax,mxl+2,nkap),vnew(mmax),vnext(mmax,nkap),vsw(mmax))
 
- call ionic_tail(zz,zion,rhoc,rhotae,rhomod,rr,mmax,iexc,c_light,vion)
+ call ionic_tail(zz,zion,rhoc,rhotae,rhomod,rr,mmax,adams,iexc,c_light,vion)
  call ionic_window(rr,mmax,zion,vion,rcmax,tol,ra,rb)
  do ii=1,mmax
    ww(ii)=cinf_taper(rr(ii),ra,rb)
@@ -353,9 +365,9 @@
  end do
  do iter=1,maxiter
    call ionic_valence(nkap,nc,nv,la,fa,ea,lloc,nproj,rr,vp,vlocpw,vkbpw, &
-&                     evkb,mmax,rho,rhops,uupsa,eeig,iout,ifail)
+&                     evkb,mmax,adams,rho,rhops,uupsa,eeig,iout,ifail)
    if(ifail/=0) return
-   call vout(.true.,rho,rhomod,vo,vxc,zval,eeel,eexc,rr,mmax,iexc,c_light)
+   call vout(.true.,rho,rhomod,vo,vxc,zval,eeel,eexc,rr,mmax,adams,iexc,c_light)
 ! change of the local potential where the valence electrons are; once it
 ! is below tolfix, vp is kept as the potential whose states rho, eeig and
 ! (through rho) vo are, so that the pseudo-atom SCF of the reference

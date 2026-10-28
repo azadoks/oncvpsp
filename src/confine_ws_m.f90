@@ -54,7 +54,8 @@
 
  contains
 
- subroutine confine_sphere(pf,irel,c_light,zz,mmax,rr,vfull,nc,na,la,chan,nq, &
+ subroutine confine_sphere(pf,irel,c_light,zz,mmax,adams,rr,vfull,nc,na,la, &
+&                          chan,nq, &
 &                          rq,emin,emax,de,ecutmax,table,sm,iout,ifail)
 !! the ws lines of every channel of chan at the radii rq, of the edges
 !! in [emin,emax] from a scan of step de, and the sphere's part of the
@@ -65,6 +66,7 @@
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param zz  atomic number
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param rr  log radial mesh (bohr)
 !! @param vfull  all-electron potential (Ha)
 !! @param nc  number of core states
@@ -83,10 +85,12 @@
 !! @param ifail  0, or 1 after a failure, whose message is written
  use confine_summary_m, only: confine_summary_t
  use ps_file_m, only: ps_file_t
+ use adams_m, only: adams_t
 
 !Input variables
  type(ps_file_t), intent(in) :: pf
  integer, intent(in) :: irel,mmax,nc,na(mxstate),la(mxstate),nq
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: zz,rr(mmax),vfull(mmax),rq(nq),emin,emax,de
  real(dp), intent(in) :: ecutmax
@@ -125,7 +129,8 @@
  do l1=1,4
    if(.not. chan(l1-1)) cycle
    do ikap=1,merge(1,pf%pot%nkap,l1==1)
-     call ws_channel(pf,irel,c_light,zz,mmax,rr,vfull,nc,na,la,l1-1,ikap,nq, &
+     call ws_channel(pf,irel,c_light,zz,mmax,adams,rr,vfull,nc,na,la,l1-1, &
+&                    ikap,nq, &
 &                    rq,egrid,emin,emax,ecutmax,table,sm,iout,ifail)
      if(ifail/=0) return
    end do
@@ -133,7 +138,8 @@
  deallocate(egrid)
  end subroutine confine_sphere
 
- subroutine ws_channel(pf,irel,c_light,zz,mmax,rr,vfull,nc,na,la,ll,ikap,nq, &
+ subroutine ws_channel(pf,irel,c_light,zz,mmax,adams,rr,vfull,nc,na,la,ll, &
+&                      ikap,nq, &
 &                      rq,egrid,emin,emax,ecutmax,table,sm,iout,ifail)
 !! the ws lines of l and ikap at every radius, from one scan of the
 !! phases of both atoms on egrid
@@ -143,6 +149,7 @@
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param zz  atomic number
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param rr  log radial mesh (bohr)
 !! @param vfull  all-electron potential (Ha)
 !! @param nc  number of core states
@@ -164,10 +171,12 @@
  use phsft_m, only: phsft_t, phsft_ae_init, phsft_ps_init, phsft_free
  use ps_file_m, only: ps_file_t
  use ws_basis_m, only: ws_eigenvalues, ws_grid_init, ws_grid_t
+ use adams_m, only: adams_t
 
 !Input variables
  type(ps_file_t), intent(in) :: pf
  integer, intent(in) :: irel,mmax,nc,na(mxstate),la(mxstate),ll,ikap,nq
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: zz,rr(mmax),vfull(mmax),rq(nq),egrid(:),emin
  real(dp), intent(in) :: emax,ecutmax
@@ -200,12 +209,13 @@
  nvkb=pf%nvkb(l1,ikap)
 ! the solvers of the channel at every radius, and each sphere's
 ! quadrature and poles (refined to the roots of u(rs))
- call phsft_ae_init(irel,c_light,ll,kap,rr,vfull,zz,mmax,nq,rq(1:nq),sae,iout, &
+ call phsft_ae_init(irel,c_light,ll,kap,rr,vfull,zz,mmax,adams,nq,rq(1:nq), &
+&                   sae,iout, &
 &                   ifail)
  if(ifail/=0) return
  call phsft_ps_init(ll,nvkb,rr,pf%vloc(:,ikap),pf%pot%vlocpw, &
 &                   pf%pot%vkbpw(1:nvkb,l1,ikap),pf%pot%evkb(1:nvkb,l1,ikap), &
-&                   mmax,nq,rq(1:nq),sps,iout,ifail)
+&                   mmax,adams,nq,rq(1:nq),sps,iout,ifail)
  if(ifail/=0) return
  allocate(wsg(nq),polq(nq),tanae(nanch,nq),tanps(nanch,nq))
  allocate(shae(npsh,nq),shps(npsh,nq))
@@ -251,7 +261,8 @@
  end if
 
  do iq=1,nq
-   call ws_radius(pf,irel,c_light,zz,mmax,rr,vfull,nc,na,la,ll,kap,ikap,nvkb, &
+   call ws_radius(pf,irel,c_light,zz,mmax,adams,rr,vfull,nc,na,la,ll,kap,ikap, &
+&                 nvkb, &
 &                 rq(iq),iq,sae,sps,polq(iq),wsg(iq),egrid,shae(:,iq), &
 &                 shps(:,iq),tanae(:,iq),tanps(:,iq),emin,emax,table,sm,iout, &
 &                 ifail)
@@ -262,7 +273,8 @@
  deallocate(wsg,polq,tanae,tanps,shae,shps)
  end subroutine ws_channel
 
- subroutine ws_radius(pf,irel,c_light,zz,mmax,rr,vfull,nc,na,la,ll,kap,ikap, &
+ subroutine ws_radius(pf,irel,c_light,zz,mmax,adams,rr,vfull,nc,na,la,ll,kap, &
+&                     ikap, &
 &                     nvkb,rs,iq,sae,sps,pol,wsg,egrid,shae,shps,tanae,tanps, &
 &                     emin,emax,table,sm,iout,ifail)
 !! the ws lines of l and ikap at the radius rs (the iq-th of the
@@ -274,6 +286,7 @@
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param zz  atomic number
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param rr  log radial mesh (bohr)
 !! @param vfull  all-electron potential (Ha)
 !! @param nc  number of core states
@@ -304,10 +317,12 @@
  use phsft_m, only: phsft_t
  use ps_file_m, only: ps_file_t
  use ws_basis_m, only: ws_convergence, ws_grid_t
+ use adams_m, only: adams_t
 
 !Input variables
  type(ps_file_t), intent(in) :: pf
  integer, intent(in) :: irel,mmax,nc,na(mxstate),la(mxstate),ll,kap,ikap
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: c_light
  integer, intent(in) :: nvkb,iq
  real(dp), intent(in) :: zz,rr(mmax),vfull(mmax),rs,egrid(:),shae(:)
@@ -381,7 +396,7 @@
  do ie=1,eae%ne
    if(eae%ee(ie)<emin .or. eae%ee(ie)>emax) cycle
    iedge=eae%ied(ie)
-   nn=n_of(irel,c_light,ll,kap,eae%ee(ie),rr,zz,vfull,mmax,rs)
+   nn=n_of(irel,c_light,ll,kap,eae%ee(ie),rr,zz,vfull,mmax,adams,rs)
    je=jpair(ie)
    if(je==0) then
 ! the band of a core state, which the pseudopotential leaves out
@@ -853,7 +868,7 @@
  end do
  end subroutine sort_edges
 
- integer function n_of(irel,c_light,ll,kap,ex,rr,zz,vfull,mmax,rs)
+ integer function n_of(irel,c_light,ll,kap,ex,rr,zz,vfull,mmax,adams,rs)
 !! the all-electron state's nodes inside rs, plus l+1
 !!
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
@@ -865,12 +880,15 @@
 !! @param zz  atomic number
 !! @param vfull  all-electron potential (Ha)
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param rs  radius of the sphere (bohr)
  use scatterstate_m, only: scatterstate
  use phsft_m, only: phsft_mch
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: irel,ll,kap,mmax
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: ex,rr(mmax),zz,vfull(mmax),rs
 
@@ -882,7 +900,7 @@
  uu(:,:)=0.0d0
  up(:,:)=0.0d0
  nn2=0
- call scatterstate(irel,c_light,nn2,ll,kap,ex,rr,zz,vfull,uu,up,mmax,mch)
+ call scatterstate(irel,c_light,nn2,ll,kap,ex,rr,zz,vfull,uu,up,mmax,adams,mch)
  nnode=0
  do jj=2,mmax
    if(rr(jj)>rs) exit

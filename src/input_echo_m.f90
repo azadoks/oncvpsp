@@ -337,17 +337,18 @@
  subroutine mesh_lines(log_mesh,text,ntext)
 
 !! LOG MESH section, the optional last line of the input, written only
-!! when the input sets it
+!! when the input sets it; the Adams order, its optional fourth value,
+!! only when it is not 4
 !!
-!! @param log_mesh  amesh, rr1, rmax of the log mesh, 0 unless the input
-!!                  sets it
+!! @param log_mesh  amesh, rr1, rmax and the Adams order of the log mesh
+!!                  line, echoed when the input sets it (else 0)
 !! @param text  the lines of the sections
 !! @param ntext  number of lines
 
  use constants_m, only: dp
 
 !Input variables
- real(dp), intent(in) :: log_mesh(3)
+ real(dp), intent(in) :: log_mesh(4)
 
 !Output variables
  character(len=echo_len), intent(out) :: text(echo_max)
@@ -357,8 +358,13 @@
  if(log_mesh(1)>0.0d0) then
    text(1)='#'
    text(2)='# LOG MESH'
-   text(3)='# amesh, rr1, rmax'
-   write(text(4),'(3es24.16)') log_mesh
+   if(nint(log_mesh(4))==4) then
+     text(3)='# amesh, rr1, rmax'
+     write(text(4),'(3es24.16)') log_mesh(1:3)
+   else
+     text(3)='# amesh, rr1, rmax, adams_order'
+     write(text(4),'(3es24.16,i4)') log_mesh(1:3),nint(log_mesh(4))
+   end if
    ntext=4
  end if
 
@@ -554,14 +560,14 @@
 
 !! writes the LOG MESH section to unit 6 (see mesh_lines)
 !!
-!! @param log_mesh  amesh, rr1, rmax of the log mesh, 0 unless the input
-!!                  sets it
+!! @param log_mesh  amesh, rr1, rmax and the Adams order of the log mesh
+!!                  line, echoed when the input sets it (else 0)
 !! @param iout  unit of the text output
 
  use constants_m, only: dp
 
 !Input variables
- real(dp), intent(in) :: log_mesh(3)
+ real(dp), intent(in) :: log_mesh(4)
  integer, intent(in) :: iout
 
 !Local variables
@@ -633,8 +639,8 @@
 !! @param drl  spacing of the linear output mesh (bohr)
 !! @param ncnf  number of test configurations (not counting the reference)
 !! @param cnf  the reference and test configurations (input_m)
-!! @param log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input
-!!                  sets it (else 0)
+!! @param log_mesh  amesh, rr1, rmax and the Adams order of the log mesh
+!!                  line, echoed when the input sets it (else 0)
 !! @param upf_mesh  most points of the log mesh of the UPF file, 0 for the
 !!                  linear output mesh
 !! @param text  the lines (output)
@@ -663,7 +669,7 @@
  integer, intent(in) :: well_n(mxlin+1)
  integer, intent(in) :: well_norm
  real(dp), intent(in) :: ecut_weight(mxlin+1)
- real(dp), intent(in) :: fcgrid(3),rcgrid(3),log_mesh(3)
+ real(dp), intent(in) :: fcgrid(3),rcgrid(3),log_mesh(4)
  character(len=2), intent(in) :: atsym
  character(len=4), intent(in) :: psfile
 
@@ -842,8 +848,8 @@
 !! @param drl  spacing of the linear output mesh (bohr)
 !! @param ncnf  number of test configurations (not counting the reference)
 !! @param cnf  the reference and test configurations (input_m)
-!! @param log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input
-!!                  sets it (else 0)
+!! @param log_mesh  amesh, rr1, rmax and the Adams order of the log mesh
+!!                  line, echoed when the input sets it (else 0)
 !! @param upf_mesh  most points of the log mesh of the UPF file, 0 for the
 !!                  linear output mesh
 !! @param iout  unit of the text output
@@ -871,7 +877,7 @@
  integer, intent(in) :: well_n(mxlin+1)
  integer, intent(in) :: well_norm
  real(dp), intent(in) :: ecut_weight(mxlin+1)
- real(dp), intent(in) :: fcgrid(3),rcgrid(3),log_mesh(3)
+ real(dp), intent(in) :: fcgrid(3),rcgrid(3),log_mesh(4)
  character(len=2), intent(in) :: atsym
  character(len=4), intent(in) :: psfile
  integer, intent(in) :: iout

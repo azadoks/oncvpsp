@@ -92,7 +92,8 @@
  contains
 
  subroutine aeatom_cached(cache,irel,c_light,nkap,na,la,ea,fa,nc,ncv,it, &
-&                         rhoc,rho,rr,vi,zz,mmax,iexc,etot,eterm,res,ierr, &
+&                         rhoc,rho,rr,vi,zz,mmax,adams,iexc,etot,eterm,res, &
+&                         ierr, &
 &                         iout,ifail)
 
 !! aeatom, or the copy of its earlier solution with the same inputs. The
@@ -122,6 +123,7 @@
 !! @param vi  all-electron potential (Ha), output
 !! @param zz  atomic number
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param iexc  exchange-correlation functional
 !! @param etot  total energy (Ha)
 !! @param eterm  kinetic, electron-nucleus, Hartree and exchange-correlation
@@ -133,9 +135,11 @@
 
  use aeatom_m, only: aeatom
  use ae_scf_m, only: ae_floor_warning
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: irel,nkap,mmax,iexc,nc,ncv
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: c_light
  integer, intent(in) :: na(ncv),la(ncv)
  real(dp), intent(in) :: zz
@@ -182,7 +186,8 @@
  allocate(vfree(mmax))
  vfree(:)=0.0d0
  call aeatom(irel,c_light,nkap,na,la,ea,fa,nc,ncv,it,rhoc,rho, &
-&            rr,vi,zz,mmax,iexc,etot,eterm,res,ierr,vfree,.false.,iout,ifail)
+&            rr,vi,zz,mmax,adams,iexc,etot,eterm,res,ierr,vfree,.false.,iout, &
+&            ifail)
  if(ifail/=0) return
  deallocate(vfree)
  if(ierr/=0 .or. cache%nentry==size(cache%entry)) return
@@ -212,7 +217,8 @@
  return
  end subroutine aeatom_cached
 
- subroutine run_config_ae(cache,jj,cnf,nc,rr,zz,mmax,iexc,ea,irel,c_light, &
+ subroutine run_config_ae(cache,jj,cnf,nc,rr,zz,mmax,adams,iexc,ea,irel, &
+&                         c_light, &
 &                         nkap,aec,iout,ifail)
 
 !! solves the all-electron atom in the maximally-ionized and excited states
@@ -228,6 +234,7 @@
 !! @param rr  log radial mesh (bohr)
 !! @param zz  atomic number
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param iexc  exchange-correlation functional
 !! @param ea  reference configurattion eigenvalues, ea(:,1) for j=l+1/2 and
 !!            ea(:,2) for j=l-1/2 when irel=2
@@ -241,9 +248,11 @@
  use boundstate_m, only: boundstate
  use input_m, only: config_t
  use kappa_m, only: kap_count, kap_of
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: jj,mmax,iexc,nc,irel,nkap
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: c_light
  type(config_t), intent(in) :: cnf(mxcnf)
  real(dp), intent(in) :: zz
@@ -336,7 +345,8 @@
 !all-electron atom solution for maximally-ionized state
 
  call aeatom_cached(cache,irel,c_light,nkap,nat,lat,eat(1,1,2),fat(1,2), &
-&                   nc,nc+nvt,it,rhoc,rho,rr,vfull,zz,mmax,iexc,eaetst,eterm, &
+&                   nc,nc+nvt,it,rhoc,rho,rr,vfull,zz,mmax,adams,iexc,eaetst, &
+&                   eterm, &
 &                   res,ierr,iout,ifail)
  if(ifail/=0) return
  if(ierr/=0) then
@@ -360,7 +370,7 @@
      do ikap=1,mkap
        kap=kap_of(ll,ikap)
        call boundstate(irel,c_light,nat(kk),ll,kap,ierr,et, &
-&                      rr,zz,vfull,uu,up,mmax,mch,iout,ifail)
+&                      rr,zz,vfull,uu,up,mmax,adams,mch,iout,ifail)
        if(ifail/=0) return
 !a negative ierr (no classical turning point) is accepted for j=l-1/2
        if(ierr>0 .or. (ierr/=0 .and. ikap==1)) then
@@ -385,7 +395,8 @@
 !all-electron atom solution for excited state
 
  call aeatom_cached(cache,irel,c_light,nkap,nat,lat,eat(1,1,3),fat(1,3), &
-&                   nc,nc+nvt,it,rhoc,rho,rr,vfull,zz,mmax,iexc,eaetst,eterm, &
+&                   nc,nc+nvt,it,rhoc,rho,rr,vfull,zz,mmax,adams,iexc,eaetst, &
+&                   eterm, &
 &                   res,ierr,iout,ifail)
  if(ifail/=0) return
  if(ierr/=0) then

@@ -29,8 +29,8 @@
 !> extensions there): the first segment on the nodes themselves from the
 !> power series at the first node, each later one from (u, u') at its
 !> lower bound interpolated from the grid before, every one primed by
-!> Runge-Kutta sub-steps and continued by the Adams predictor-corrector of
-!> the other integrators (adams.inc), with V and the sources interpolated
+!> Runge-Kutta sub-steps and continued by the implicit Adams-Moulton steps
+!> of the other integrators (adams_m), with V and the sources interpolated
 !> onto the grid from their pieces. The overlaps
 !> with the sources are taken per segment on its grid by the 8th-order
 !> cumulative rule (ugrid_m) to the segment's bound, and the solution is
@@ -41,6 +41,7 @@
  module outwf_m
  use constants_m, only: dp
  use pieces_m, only: piecewise_t, pw_maxseg, pw_segment, pw_node_values
+ use adams_m, only: adams_t
  use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
@@ -57,8 +58,6 @@
 !> interpolation at the bound (both lm_fh_reach=27), and the cell rule's
 !> stencil
  integer, parameter :: og_ext=32
-!> grid steps primed by Runge-Kutta at a restart
- integer, parameter :: nprime=3
 !> Runge-Kutta sub-steps of each primed step
  integer, parameter :: nsub=4
 
@@ -105,6 +104,9 @@
    integer :: nsrc=0  !< number of sources
    integer :: nseg=0  !< number of segments
    integer :: mmax=0  !< size of the log radial mesh
+!> order and coefficients of the Adams-Moulton steps; a segment's first
+!> order-1 steps are primed by Runge-Kutta
+   type(adams_t) :: adams
 !> the mesh step in ln(r)
    real(dp) :: al=0.0d0
 !> the end of the sources' support (bohr)
@@ -130,7 +132,8 @@
 
  contains
 
- subroutine outwf_setup(ll,rr,mmax,vloc,vlocpw,nsrc,srcpw,ow,iout,ifail)
+ subroutine outwf_setup(ll,rr,mmax,adams,vloc,vlocpw,nsrc,srcpw,ow,iout, &
+&                       ifail)
 
 !! the segments and their grids, with the potential and the sources on
 !! them: everything that does not depend on the energy
@@ -138,6 +141,7 @@
 !! @param ll  angular momentum
 !! @param rr  log radial mesh (bohr)
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param vloc  the potential on the nodes; its difference from the node
 !!              values of vlocpw is a smooth function added to every piece
 !!              (the screening of the pseudo-atom's iteration)
@@ -155,6 +159,7 @@
  integer, intent(in) :: ll,mmax,nsrc
  real(dp), intent(in) :: rr(mmax),vloc(mmax)
  type(piecewise_t), intent(in) :: vlocpw,srcpw(nsrc)
+ type(adams_t), intent(in) :: adams
  integer, intent(in) :: iout
 
 !Output variables
@@ -164,13 +169,15 @@
 !Local variables
  real(dp), allocatable :: vs(:),vn(:),fpiece(:)
  real(dp) :: al,als,sls,brk(2*pw_maxseg+2),tt,rm,plast
- integer :: kk,nbrk,nseg,npt,nsol
+ integer :: kk,nbrk,nseg,npt,nsol,nprime
  type(og_seg_t), pointer :: sg
 
  ifail=0
  allocate(vs(mmax),vn(mmax),fpiece(mmax))
  ow%ll=ll
  ow%mmax=mmax
+ ow%adams=adams
+ nprime=adams%order-1
  ow%nsrc=nsrc
  allocate(ow%rr(mmax))
  ow%rr(:)=rr(:)
@@ -490,13 +497,14 @@
 
 !Local variables
  real(dp) :: al,als,pm,rb
- integer :: kk,nsol,jmax,ll
+ integer :: kk,nsol,jmax,ll,nprime
  type(og_seg_t), pointer :: sg
 
  al=ow%al
  als=al**2
  ll=ow%ll
  nsol=ow%nsrc+1
+ nprime=ow%adams%order-1
  pm=dble(mlast-1)
  ow%plim=pm
 ! the first segment's overlaps end at its bound, or at the limit, so their
@@ -539,8 +547,7 @@
 ! prime the first steps by classical Runge-Kutta in sub-steps
    call prime()
 
-! Adams predictor-corrector, two corrector passes, as the other
-! integrators
+! the implicit Adams-Moulton steps, as the other integrators
    call march()
  end do
  return
@@ -628,28 +635,23 @@
 
  subroutine march()
 
-!! the Adams predictor-corrector steps from nprime to jmax
+!! the implicit Adams-Moulton steps from nprime to jmax
 
 !Local variables
- real(dp) :: cf
- integer :: ii,it,isol
+ real(dp) :: cf,c0,b1,b2
+ integer :: ii,isol
 
+ c0=ow%adams%cm(0)
  do ii=nprime,jmax-1
-   do isol=1,nsol
-     sg%uu(ii+1,isol)=sg%uu(ii,isol)+aeo(sg%up(0,isol),ii+1)
-     sg%up(ii+1,isol)=sg%up(ii,isol)+aeo(sg%upp(0,isol),ii+1)
-   end do
    cf=sg%cv(ii+1)-ee*sg%r2(ii+1)
-   do it=1,2
-     sg%upp(ii+1,1)=al*sg%up(ii+1,1)+cf*sg%uu(ii+1,1)
-     do isol=2,nsol
-       sg%upp(ii+1,isol)=al*sg%up(ii+1,isol)+cf*sg%uu(ii+1,isol) &
-&                         +sg%src(ii+1,isol-1)
-     end do
-     do isol=1,nsol
-       sg%up(ii+1,isol)=sg%up(ii,isol)+aio(sg%upp(0,isol),ii+1)
-       sg%uu(ii+1,isol)=sg%uu(ii,isol)+aio(sg%up(0,isol),ii+1)
-     end do
+   do isol=1,nsol
+     b1=sg%uu(ii,isol)+am_out(ow%adams,sg%up(0,isol),ii+1)
+     b2=sg%up(ii,isol)+am_out(ow%adams,sg%upp(0,isol),ii+1)
+     if(isol>1) b2=b2+c0*sg%src(ii+1,isol-1)
+     call am_solve(c0,0.0d0,1.0d0,cf,al,b1,b2,sg%uu(ii+1,isol), &
+&                  sg%up(ii+1,isol))
+     sg%upp(ii+1,isol)=al*sg%up(ii+1,isol)+cf*sg%uu(ii+1,isol)
+     if(isol>1) sg%upp(ii+1,isol)=sg%upp(ii+1,isol)+sg%src(ii+1,isol-1)
    end do
  end do
  return
@@ -1038,7 +1040,7 @@
  return
  end subroutine outwf_index
 
- subroutine outwf_index_at(ll,rr,mmax,vloc,vlocpw,nsrc,srcpw,evkb,ee, &
+ subroutine outwf_index_at(ll,rr,mmax,adams,vloc,vlocpw,nsrc,srcpw,evkb,ee, &
 &                          mnode,neig,iout,ifail)
 
 !! outwf_index of the solution at the energy ee, on its own setup
@@ -1046,6 +1048,7 @@
 !! @param ll  angular momentum
 !! @param rr  log radial mesh (bohr)
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param vloc  the local potential on the mesh
 !! @param vlocpw  the screened local potential as pieces
 !! @param nsrc  number of sources
@@ -1059,6 +1062,7 @@
 
 !Input variables
  integer, intent(in) :: ll,mmax,nsrc,mnode
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nsrc),ee
  type(piecewise_t), intent(in) :: vlocpw,srcpw(nsrc)
  integer, intent(in) :: iout
@@ -1073,7 +1077,7 @@
 
  ifail=0
  allocate(uu(mmax),up(mmax))
- call outwf_setup(ll,rr,mmax,vloc,vlocpw,nsrc,srcpw,ow,iout,ifail)
+ call outwf_setup(ll,rr,mmax,adams,vloc,vlocpw,nsrc,srcpw,ow,iout,ifail)
  if(ifail/=0) return
  call outwf_solve(ow,ee,evkb,mnode,mnode,uu,up,neig, &
 &      iout=iout,ifail=ifail)

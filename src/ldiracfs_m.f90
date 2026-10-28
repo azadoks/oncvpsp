@@ -25,7 +25,7 @@
 
  contains
 
- subroutine ldiracfs(nn,ll,kap,c_light,ee,rr,zz,vv,uu,up,mmax,mch)
+ subroutine ldiracfs(nn,ll,kap,c_light,ee,rr,zz,vv,uu,up,mmax,adams,mch)
 
 !! Finds relativistic scattering states of an al-electron potential
 !!
@@ -42,6 +42,7 @@
 !!                     small
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param mch  matching mesh point for inward-outward integrations
 
  use, intrinsic :: iso_fortran_env, only: error_unit
@@ -49,10 +50,12 @@
  use dirac_m, only: dirac_outward
  use quad_m, only: quad_log_norm
  use logmesh_m, only: lm_step
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: ll,kap,mmax
  real(dp), intent(in) :: rr(mmax),vv(mmax)
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: ee
@@ -99,7 +102,8 @@
  cof=(kap+gam)*(cc/zz)
 
 ! outward from the series at the origin (dirac_m)
- call dirac_outward(ll,kap,c_light,ee,zz,al,rr,vv,mmax,mch,gu,fu,gup,fup,node)
+ call dirac_outward(ll,kap,c_light,ee,zz,al,rr,vv,mmax,adams,mch,gu,fu,gup, &
+&                   fup,node)
 
  uout=gu(mch)
  upout=gup(mch)

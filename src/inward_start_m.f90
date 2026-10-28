@@ -25,12 +25,13 @@
 
  contains
 
- subroutine inward_start(ll,ee,rr,vv,mch,mmax,nin)
+ subroutine inward_start(ll,ee,rr,vv,mch,mmax,adams,nin)
 
 !! start of the inward integration of a bound state: the first point
 !! beyond the classical turning point where the WKB decay
-!! exp(-int kappa dr) has reached machine precision, or mmax-4 if it
-!! does not on the mesh (the practical infinity of RadialAtomicSolvers.jl)
+!! exp(-int kappa dr) has reached machine precision, or mmax-k if it
+!! does not on the mesh (the practical infinity of RadialAtomicSolvers.jl;
+!! k the Adams order, and the start sets nin..nin+k)
 !!
 !! The wave function is set to zero beyond nin.  A state barely bound in
 !! a high-l channel, an open 4f shell, decays slowly beyond its turning
@@ -44,14 +45,17 @@
 !! @param vv  local atomic potential
 !! @param mch  classical turning point (matching point)
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param nin  start of the inward integration (output)
 
  use constants_m, only: dp
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: ll,mch,mmax
  real(dp), intent(in) :: ee
  real(dp), intent(in) :: rr(mmax),vv(mmax)
+ type(adams_t), intent(in) :: adams
 
 !Output variables
  integer, intent(out) :: nin
@@ -63,10 +67,10 @@
  budget=-log(epsilon(1.0d0))
  sls=ll*(ll+1)
 
- nin=mmax-4
+ nin=mmax-adams%order
  sk=0.0d0
  xk1=0.0d0
- do ii=mch+1,mmax-4
+ do ii=mch+1,mmax-adams%order
    xk=sqrt(max(sls/rr(ii)**2 + 2.0d0*(vv(ii)-ee),0.0d0))
    sk=sk + 0.5d0*(xk + xk1)*(rr(ii) - rr(ii-1))
    xk1=xk

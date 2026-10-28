@@ -25,7 +25,8 @@
 
  contains
 
- subroutine vkboutwf(ll,nvkb,ep,vkbpw,evkb,rr,vloc,vlocpw,uu,up,mmax,mlast, &
+ subroutine vkboutwf(ll,nvkb,ep,vkbpw,evkb,rr,vloc,vlocpw,uu,up,mmax,adams, &
+&      mlast, &
 &      iout,ifail)
 
 !! computes Vanderbilt / Kleinman-Bylander outward-integrated wave functions:
@@ -47,6 +48,7 @@
 !! @param uu  wave function
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param mlast  index of radius to which wave function is to be integrated
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
@@ -54,9 +56,11 @@
  use constants_m, only: dp
  use pieces_m, only: piecewise_t
  use outwf_m, only: outwf_t, outwf_setup, outwf_solve, outwf_free
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: nvkb,ll,mmax,mlast
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nvkb)
  real(dp), intent(in) :: ep
  type(piecewise_t), intent(in) :: vkbpw(nvkb),vlocpw
@@ -70,7 +74,7 @@
  type(outwf_t) :: ow
 
  ifail=0
- call outwf_setup(ll,rr,mmax,vloc,vlocpw,nvkb,vkbpw,ow,iout,ifail)
+ call outwf_setup(ll,rr,mmax,adams,vloc,vlocpw,nvkb,vkbpw,ow,iout,ifail)
  if(ifail/=0) return
  call outwf_solve(ow,ep,evkb,mlast,mlast,uu,up,iout=iout,ifail=ifail)
  if(ifail/=0) return

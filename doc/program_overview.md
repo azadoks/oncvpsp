@@ -516,6 +516,16 @@ depends on an input keeps its node count and scales its nodes, or
 keeps its spacing and gains nodes only where the integrand is
 negligible (eresid's r grid at its end, its q grid at q = 0).
 
+**Radial equations.** Every radial equation is linear in two
+components, y' = A y + s in the mesh index (u and the flux q of the
+Koelling-Harmon form, the Dirac components, or u and u'), and is
+integrated by the Adams-Moulton step of order k = `adams_order` (4 to 8,
+default 4; `adams_m`), each step's implicit equation solved exactly by
+a 2x2 linear solve. A solution starts from k points: the series at the
+origin, the exponential at the inward start, or Runge-Kutta sub-steps
+at a segment's start (`outwf_m`). The error is O(al^k); vout's Hartree
+potential is the cumulative rule of the same order.
+
 **Fourier-Bessel transforms.** One convention throughout, q in
 bohr^-1: the transform of a radial function f of angular momentum l is
 F(q) = int_0^inf r^2 f(r) j_l(qr) dr, with no prefactor, and its inverse

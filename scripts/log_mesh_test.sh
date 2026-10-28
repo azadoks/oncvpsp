@@ -1,6 +1,7 @@
 #!/bin/bash
-# Checks the optional log mesh input (amesh, rr1, rmax), the last line of the
-# text input or the [log_mesh] table of the TOML input, for one input:
+# Checks the optional log mesh input (amesh, rr1, rmax, and optionally
+# adams_order), the last line of the text input or the [log_mesh] table of the
+# TOML input, for one input:
 #
 #   defaults      0 or less for every value: the output of the input without it
 #   explicit      the built-in amesh and rmax given: the output of the input
@@ -13,10 +14,13 @@
 #   split         another mesh for oncvpsp_ae.x and oncvpsp_ps.x: the output of
 #                 the single program
 #   split_differ  another mesh for oncvpsp_ae.x only: oncvpsp_ps.x must stop
-#   toml          another mesh as [log_mesh] in INPUT.toml: the output of the
-#                 text input
-#   amesh, rr1, rmax, read  a bad value or line: the program must stop with a
-#                 message naming it
+#   toml          another mesh and Adams order as [log_mesh] in INPUT.toml:
+#                 the output of the text input
+#   order         another mesh with Adams order 6: an output that differs from
+#                 that mesh's at order 4, and whose echo of the input, and the
+#                 input in its psp8 file, run again, give the same output
+#   amesh, rr1, rmax, read, adams_order  a bad value or line: the program must
+#                 stop with a message naming it
 #
 # The same output is one that compare_output.py --identical accepts (every
 # number to 1e-10, the text exactly).
@@ -113,11 +117,38 @@ case $case in
         "$ps" -a atom.ae < "$dat" > ps.out || true
         expect_stop ps.out 'read_ae_file: ERROR radial mesh' ;;
     toml)
-        with_mesh "$mesh" < "$dat" > in.dat
-        { cat "$toml"; printf '\n[log_mesh]\namesh = 1.004\nrmax = 50\n'; } > in.toml
+        with_mesh "$mesh 6" < "$dat" > in.dat
+        { cat "$toml"; printf '\n[log_mesh]\namesh = 1.004\nrmax = 50\nadams_order = 6\n'; } > in.toml
         "$full" < in.dat > mesh.out
         "$full" -t in.toml > toml.out
         same mesh.out toml.out ;;
+    order)
+        with_mesh "$mesh" < "$dat" > in.dat
+        "$full" < in.dat > mesh4.out
+        with_mesh "$mesh 6" < "$dat" > in.dat
+        "$full" < in.dat > mesh.out
+        grep -q '^# amesh, rr1, rmax, adams_order$' mesh.out
+        drop_echo < mesh4.out > mesh4_no_echo.out
+        drop_echo < mesh.out > mesh_no_echo.out
+        status=0
+        "$python" "$scripts/compare_output.py" --identical mesh4_no_echo.out mesh_no_echo.out \
+            > mesh_no_echo.diff || status=$?
+        if [ $status -ne 1 ]; then
+            cat mesh_no_echo.diff
+            echo "the Adams order did not change the output"; exit 1
+        fi
+        awk '/^# ATOM AND REFERENCE CONFIGURATION$/ {on=1}
+             /^Reference configufation results/ {on=0}
+             on' mesh.out > echo.dat
+        "$full" < echo.dat > echo.out
+        same mesh.out echo.out
+        if grep -q '^<INPUT>$' mesh.out; then
+            rerun_block mesh.out '^<INPUT>$' '^</INPUT>$'
+        fi ;;
+    adams_order)
+        with_mesh '-1 -1 -1 3' < "$dat" > in.dat
+        "$full" < in.dat > mesh.out || true
+        expect_stop mesh.out 'must have 4 <= adams_order <= 8' ;;
     amesh)
         with_mesh '0.999 -1 -1' < "$dat" > in.dat
         "$full" < in.dat > mesh.out || true

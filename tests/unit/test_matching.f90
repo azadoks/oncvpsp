@@ -23,10 +23,13 @@
  use lschvkbb_m, only: lschvkbb
  use lapack_m, only: dgels
  use relativity_m, only: c_light => c_light_default
+ use adams_m, only: adams_t
  implicit none
  integer, parameter :: iout=6
 
 !Local variables
+!> the Adams-Moulton steps, of the default order
+ type(adams_t) :: adams
  integer :: ifail
  integer, parameter :: npts = 41, ndeg = 10
  real(dp), parameter :: rr1 = 5.0e-5_dp, rmax = 45.0_dp, amesh = 1.006_dp
@@ -62,11 +65,11 @@
        select case(isolv)
        case(1, 2)
          call lschfb(isolv - 1, c_light, nn, ll, ierr, ee, rr, zz, vv, &
-&                    uu(:, 1), up(:, 1), mmax, mch, iout, ifail)
+&                    uu(:, 1), up(:, 1), mmax, adams, mch, iout, ifail)
          if(ifail /= 0) error stop 1
        case(3)
          call ldiracfb(c_light, nn, ll, -(ll + 1), ierr, ee, rr, zz, vv, uu, &
-&                      up, mmax, mch, iout, ifail)
+&                      up, mmax, adams, mch, iout, ifail)
          if(ifail /= 0) error stop 1
        case(4)
          emin = -zz**2
@@ -74,7 +77,8 @@
          call pw_alloc(vpw, mmax, 1, [0.0_dp, rr(mmax)])
          vpw%vals(:, 1) = vv
          call lschvkbb(nn, ll, 0, ierr, ee, emin, emax, rr, vv, vpw, &
-&                      vkbpw, evkb, uu(:, 1), up(:, 1), mmax, mch, iout, ifail)
+&                      vkbpw, evkb, uu(:, 1), up(:, 1), mmax, adams, mch, &
+&                      iout, ifail)
          if(ifail /= 0) error stop 1
          call pw_free(vpw)
        case default

@@ -157,7 +157,7 @@ text input where they differ (see `32_Ge_annotated.dat`):
 | `[model_core_charge]` | `icmod`; `fcfact` (required for icmod 1, 2, 3, 6, 7); `rcfact` (required for icmod 3; optional for 4, 6, 7); for icmod 4 the optional grid `fcfact_min`, `fcfact_max`, `fcfact_step`, `rcfact_min`, `rcfact_max`, `rcfact_step`; for icmod 6 and 7 the optional `slack` and `budget_cutoff` (`"max"`, `"weighted"` or `"max_all"`) |
 | `[log_derivative_analysis]` | `epsh1`, `epsh2`, `depsh`; `rxpsh` optional |
 | `[linear_mesh]` | `a` (drl), `rmax` (rlmax) |
-| `[log_mesh]` | optional table: `amesh`, `rr1`, `rmax`, each optional |
+| `[log_mesh]` | optional table: `amesh`, `rr1`, `rmax`, `adams_order`, each optional |
 | `[pp_output]` | `psfile` (string); `upf_mesh` optional |
 | `[[test_configurations]]` | optional, one table per test configuration (at most 4): `n`, `l`, `f`, lists of its valence states only |
 

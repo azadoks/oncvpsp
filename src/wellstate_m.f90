@@ -26,7 +26,8 @@
  contains
 
  subroutine wellstate(nnin,ll,kap,rc,ep,ep_as_given,onset,confwall,nowell,rr, &
-&                     vfull,vwell,uu,up,zz,mmax,mch,irel,c_light,confined, &
+&                     vfull,vwell,uu,up,zz,mmax,adams,mch,irel,c_light, &
+&                     confined, &
 &                     eptgt,wmesh,iout,ifail)
 
 !! creates quantum well to confine positive-energy state, and calculates
@@ -77,6 +78,7 @@
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param zz  atomic number
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param mch  matching mesh point for inward-outward integrations
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param c_light  speed of light (Hartree atomic units)
@@ -95,9 +97,11 @@
  use well_mesh_m, only: well_mesh_t, wm_build, wm_short
  use boundstate_m, only: boundstate
  use root_m, only: root_tol
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: ll,kap,mmax,irel
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: rr(mmax),vfull(mmax)
  real(dp), intent(in) :: zz
  real(dp), intent(in) :: c_light
@@ -199,8 +203,8 @@
      ux(:,:)=0.0d0
      upx(:,:)=0.0d0
      et=ep
-     call boundstate(irel,c_light,nn,ll,kap,ierr,et,rx,zz,vw,ux,upx,mx,mchx, &
-&                    iout,ifail)
+     call boundstate(irel,c_light,nn,ll,kap,ierr,et,rx,zz,vw,ux,upx,mx,adams, &
+&                    mchx,iout,ifail)
      if(ifail/=0) return
 ! a trial well whose state did not converge (ierr/=0: a box state, ierr=10,
 ! can stand in for it) only steers the bracketing; the state taken must
@@ -340,7 +344,8 @@
  ifail=0
  uu(:,:)=0.0d0 ; up(:,:)=0.0d0
  et=-0.1d0
- call boundstate(irel,c_light,nnin,ll,kap,ierr,et,rr,zz,vfull,uu,up,mmax,mch, &
+ call boundstate(irel,c_light,nnin,ll,kap,ierr,et,rr,zz,vfull,uu,up,mmax, &
+&                adams,mch, &
 &                iout,ifail)
  if(ifail/=0) return
 

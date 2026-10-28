@@ -30,7 +30,8 @@
  contains
 
  subroutine ae_bound_projectors(irel,c_light,ll,kap,ikap,nc,nv,na,la,ea,nproj, &
-&                               it,rr,zz,vfull,mmax,uu,up,iprj,epa,npa,uua, &
+&                               it,rr,zz,vfull,mmax,adams,uu,up,iprj,epa,npa, &
+&                               uua, &
 &                               upa,iout,ifail)
 !! the bound valence states of l (at most nproj), the first iprj
 !! projectors' states; and npa(1), the n above the highest core state of l
@@ -51,6 +52,7 @@
 !! @param zz  atomic number
 !! @param vfull  all-electron potential (Ha)
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param uu  work space for the radial wave function (times r)
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr);
 !!            work space as uu
@@ -66,11 +68,13 @@
  use boundstate_m, only: boundstate
  use renorm_r_m, only: renorm_r
  use constants_m, only: dp, mxprj, mxstate, mxkap
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: irel,ll,kap,ikap,nc,nv,na(mxstate),la(mxstate)
  real(dp), intent(in) :: c_light
  integer, intent(in) :: nproj,it,mmax
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: ea(mxstate,mxkap),rr(mmax),zz,vfull(mmax)
  integer, intent(in) :: iout
 
@@ -102,7 +106,7 @@
        iprj=iprj+1
        et=ea(kk,ikap)
        call boundstate(irel,c_light,na(kk),ll,kap,ierr,et, &
-&                      rr,zz,vfull,uu,up,mmax,mch,iout,ifail)
+&                      rr,zz,vfull,uu,up,mmax,adams,mch,iout,ifail)
        if(ifail/=0) return
        if(ierr /= 0) then
          if(irel==2) then
@@ -137,6 +141,7 @@
  subroutine ae_well_projectors(irel,c_light,ll,kap,ikap,nproj,ep,debl,well_n, &
 &                              ep_as_given,well_onset,well_tail, &
 &                              well_norm_rc,rc,irc,qcut,rr,zz,vfull,mmax, &
+&                              adams, &
 &                              uu,up,nnwell,iprj,epa,npa,uua,upa,vwell, &
 &                              inwell,wmesh,iout,ifail)
 !! the well states of the projectors iprj+1 to nproj: the first at ep if
@@ -166,6 +171,7 @@
 !! @param zz  atomic number
 !! @param vfull  all-electron potential (Ha)
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param uu  work space for the radial wave function (times r)
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr);
 !!            work space as uu
@@ -188,9 +194,11 @@
  use wellstate_m, only: wellstate
  use constants_m, only: dp, mxprj
  use well_mesh_m, only: well_mesh_t
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: irel,ll,kap,ikap,nproj,well_n,well_tail,irc,mmax
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: ep,debl,well_onset,rc,qcut,rr(mmax),zz
  real(dp), intent(in) :: vfull(mmax)
@@ -270,14 +278,14 @@
      call wellstate(npa(iprj),ll,kap,rc,epa(iprj), &
 &                   ep_as_given,well_onset,well_tail==2,.false.,rr, &
 &                   vfull, &
-&                   vwell(1,iprj),uu,up,zz,mmax,mch,irel,c_light, &
+&                   vwell(1,iprj),uu,up,zz,mmax,adams,mch,irel,c_light, &
 &                   inwell(iprj),eptgt,wmesh(iprj),iout,ifail)
      if(ifail/=0) return
    else if(ikap==1) then
      nnwell=npa(iprj)
      call wellstate(nnwell,ll,kap,rc,epa(iprj),ep_as_given, &
 &                   well_onset,well_tail==2,well_tail_free,rr,vfull, &
-&                   vwell(1,iprj),uu,up,zz,mmax,mch,irel,c_light, &
+&                   vwell(1,iprj),uu,up,zz,mmax,adams,mch,irel,c_light, &
 &                   inwell(iprj),eptgt,wmesh(iprj),iout,ifail)
      if(ifail/=0) return
    else
@@ -289,14 +297,14 @@
        call boundstate(irel,c_light,npa(iprj),ll,kap,ierr, &
 &                      epa(iprj),wmesh(iprj)%rr,zz, &
 &                      wmesh(iprj)%vv,wmesh(iprj)%uu,wmesh(iprj)%up, &
-&                      wmesh(iprj)%mx,mchx,iout,ifail)
+&                      wmesh(iprj)%mx,adams,mchx,iout,ifail)
        if(ifail/=0) return
        uu(:,:)=wmesh(iprj)%uu(1:mmax,:)
        up(:,:)=wmesh(iprj)%up(1:mmax,:)
      else
        call boundstate(irel,c_light,npa(iprj),ll,kap,ierr, &
 &                      epa(iprj),rr,zz,vwell(1,iprj),uu,up, &
-&                      mmax,mch,iout,ifail)
+&                      mmax,adams,mch,iout,ifail)
        if(ifail/=0) return
      end if
 
@@ -346,7 +354,8 @@
    if(well_tail_free .and. inwell(iprj)) then
      if(ikap==1) epa(iprj)=eptgt
      call free_tail_state(irel,c_light,ll,kap,ikap,nnwell,npa(iprj),epa(iprj), &
-&                         rc,irc,qcut,rr,zz,vfull,mmax,uu,up,uua(:,iprj), &
+&                         rc,irc,qcut,rr,zz,vfull,mmax,adams,uu,up,uua(:, &
+&                         iprj), &
 &                         upa(:,iprj),iout,ifail)
      if(ifail/=0) return
    end if
@@ -354,7 +363,7 @@
  end subroutine ae_well_projectors
 
  subroutine free_tail_state(irel,c_light,ll,kap,ikap,nnwell,nn,ee,rc,irc,qcut, &
-&                           rr,zz,vfull,mmax,uu,up,ua,pa,iout,ifail)
+&                           rr,zz,vfull,mmax,adams,uu,up,ua,pa,iout,ifail)
 !! with the free tail, a well state is the atom's solution at exactly the
 !! energy asked for (the well's eigenvalue only for j = l - 1/2, D-7c),
 !! integrated outward past the reach of everything taken at or near rc
@@ -382,6 +391,7 @@
 !! @param zz  atomic number
 !! @param vfull  all-electron potential (Ha)
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param uu  work space for the radial wave function (times r)
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr);
 !!            work space as uu
@@ -396,9 +406,11 @@
  use free_tail_m, only: free_tail_log
  use logmesh_m, only: lm_fh_reach
  use pieces_m, only: pw_reach
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: irel,ll,kap,ikap,nn,irc,mmax
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: ee,rc,qcut,rr(mmax),zz,vfull(mmax)
  integer, intent(in) :: iout
@@ -429,7 +441,7 @@
  uu(:,:)=0.0d0
  up(:,:)=0.0d0
  call scatterstate(irel,c_light,nnwell,ll,kap,ee,rr, &
-&                  zz,vfull,uu,up,mmax,mfree)
+&                  zz,vfull,uu,up,mmax,adams,mfree)
  ua(:)=uu(:,1)
  pa(:)=up(:,1)
  call fpovlp(ua,ua,mmax,rc,ll, &

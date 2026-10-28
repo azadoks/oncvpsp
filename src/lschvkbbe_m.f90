@@ -26,7 +26,7 @@
  contains
 
  subroutine lschvkbbe(nn,ll,nvkb,ierr,ee,uld,emin,emax, &
-&   rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,mlast,rm,iout,ifail)
+&   rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,adams,mlast,rm,iout,ifail)
 
 !! integrates radial schroedinger equation for pseudopotential with
 !! Vanderbilt-Kleinman-Bylander non-local projectors finding energy at
@@ -53,6 +53,7 @@
 !! @param uu  output radial wave function (*rr) to mlast, normalized to rm
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param mlast  the last mesh point integrated to, far enough past rm for
 !!             the interpolant (phsft_mch)
 !! @param rm  matching radius (bohr)
@@ -65,10 +66,12 @@
  use outwf_m, only: outwf_t, outwf_setup, outwf_solve, outwf_free
  use quad_m, only: quad_log_norm_to
  use logmesh_m, only: lm_interp, lm_step
+ use adams_m, only: adams_t
 
 !Input variables
  real(dp), intent(in) :: uld,rm
  integer, intent(in) :: nn,ll,nvkb,mmax
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nvkb)
  integer, intent(in) :: mlast
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(nvkb)
@@ -117,7 +120,7 @@
  up(:)=0.0d0
 
 ! the grids of the outward integration (outwf_m), once for this potential
- call outwf_setup(ll,rr,mmax,vloc,vlocpw,nvkb,vkbpw,ow,iout,ifail)
+ call outwf_setup(ll,rr,mmax,adams,vloc,vlocpw,nvkb,vkbpw,ow,iout,ifail)
  if(ifail/=0) return
 
 ! return point for bound state convergence

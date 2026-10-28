@@ -27,15 +27,15 @@
 
  contains
 
- subroutine inward2(al,cf,mmax,ifrom,ito,uu,up,upp)
+ subroutine inward2(al,cf,mmax,adams,ifrom,ito,uu,up,upp)
 
-!! inward Adams integration from ifrom down to ito, two corrector passes;
-!! uu, up and upp are given on ifrom..ifrom+3. upp at ito is that of the
-!! corrector before the last
+!! inward Adams-Moulton integration from ifrom down to ito; uu, up and upp
+!! are given on ifrom..ifrom+k-2
 !!
 !! @param al  log of the mesh ratio
 !! @param cf  coefficient of uu in upp
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param ifrom  first point, given
 !! @param ito  last point integrated
 !! @param uu  radial wave function (*rr)
@@ -43,25 +43,26 @@
 !! @param upp  d(up)/dn
 
  use constants_m, only: dp
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: mmax,ifrom,ito
  real(dp), intent(in) :: al,cf(mmax)
+ type(adams_t), intent(in) :: adams
 
 !Input/output variables
  real(dp), intent(inout) :: uu(mmax),up(mmax),upp(mmax)
 
 !Local variables
- integer :: ii,it
+ real(dp) :: b1,b2
+ integer :: ii
 
  do ii=ifrom,ito+1,-1
-   uu(ii-1)=uu(ii)+aei(up,ii)
-   up(ii-1)=up(ii)+aei(upp,ii)
-   do it=1,2
-     upp(ii-1)=al*up(ii-1)+cf(ii-1)*uu(ii-1)
-     up(ii-1)=up(ii)+aii(upp,ii)
-     uu(ii-1)=uu(ii)+aii(up,ii)
-   end do
+   b1=uu(ii)+am_in(adams,up,ii)
+   b2=up(ii)+am_in(adams,upp,ii)
+   call am_solve(-adams%cm(0),0.0d0,1.0d0,cf(ii-1),al,b1,b2, &
+&                uu(ii-1),up(ii-1))
+   upp(ii-1)=al*up(ii-1)+cf(ii-1)*uu(ii-1)
  end do
 
  return

@@ -29,7 +29,7 @@
 ! term to add to eigenvalue sum
 
  subroutine vout(add_core,rho,rhoc,vo,vxc,zion,eeel,eexc, &
-&                rr,mmax,iexc,c_light)
+&                rr,mmax,adams,iexc,c_light)
 
 !! @param add_core  whether the exchange-correlation is of rho+rhoc, or of
 !!                  rho alone
@@ -43,6 +43,8 @@
 !!              energy
 !! @param rr  log radial mesh (bohr)
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton quadrature of
+!!               the Hartree potential
 !! @param iexc  exchange-correlation functional (1-4, 6, 7 built in, <0 libxc)
 !! @param c_light  speed of light (Hartree atomic units)
 
@@ -50,6 +52,7 @@
  use logmesh_m, only: lm_head, lm_step
  use xc_dispatch_m, only: exc_dispatch
  use quad_m, only: quad_gregory_sum
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: iexc,mmax
@@ -57,6 +60,7 @@
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: rho(mmax),rhoc(mmax),rr(mmax)
  real(dp), intent(in) :: zion
+ type(adams_t), intent(in) :: adams
 
 !Input/output variables
  real(dp), intent(inout) :: vxc(mmax)
@@ -66,7 +70,7 @@
  real(dp), intent(out) :: eeel,eexc
 
 !Local variables
- integer :: ii
+ integer :: ii,i0
  real(dp) :: al,tv
 
  real(dp), allocatable :: rvp(:),rv(:),excca(:),difxc(:)
@@ -87,12 +91,13 @@
    rvp(ii)=rho(ii)*al*rr(ii)**3
  end do
 
- rv(mmax)=zion
- rv(mmax-1)=zion
- rv(mmax-2)=zion
+! the cumulative Adams-Moulton rule of order k inward from the last k-1
+! points
+ i0=mmax-adams%order+2
+ rv(i0:mmax)=zion
 
- do ii=mmax-2,2,-1
-   rv(ii-1)=rv(ii)+aii(rvp,ii)
+ do ii=i0,2,-1
+   rv(ii-1)=rv(ii)+am_in(adams,rvp,ii)-adams%cm(0)*rvp(ii-1)
  end do
 
  do ii=1,mmax
@@ -100,8 +105,8 @@
  end do
 
  tv=0.0d0
- do ii=mmax-2,2,-1
-   tv=tv+aii(rvp,ii)
+ do ii=i0,2,-1
+   tv=tv+am_in(adams,rvp,ii)-adams%cm(0)*rvp(ii-1)
    rv(ii-1)=rv(ii-1)-rr(ii-1)*tv
  end do
 

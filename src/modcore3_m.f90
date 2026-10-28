@@ -40,7 +40,8 @@
 
  subroutine modcore3(icmod,rhops,rhotps,rhoc,rhoae,rhotae,rhomod,corepw, &
 &                   fcfact, &
-&                   rcfact,fcgrid,rcgrid,mmax,rr,nc,nv,la,zion,iexc,c_light, &
+&                   rcfact,fcgrid,rcgrid,mmax,adams,rr,nc,nv,la,zion,iexc, &
+&                   c_light, &
 &                   iout,ifail)
 
 !! the Teter-function model core charge, its amplitude fcfact times the
@@ -63,6 +64,7 @@
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param rr  log radial mesh (bohr)
 !! @param nc  number of core states
 !! @param nv  number of valence states
@@ -79,9 +81,11 @@
 &                     d2exc_report, core_pieces_smooth, teter_form
  use pieces_m, only: piecewise_t
  use der2exc_m, only: der2exc
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: icmod,nv,nc,iexc,mmax
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: c_light
  integer, intent(in) :: la(mxstate)
  real(dp), intent(in) :: rhoae(mmax,nv),rhops(mmax,nv),rhotae(mmax)
@@ -123,7 +127,8 @@
  d2excps(:,:)=0.0d0
 
  call d2exc_baseline(rhotae,rhoc,rhoae,rhotps,rhops,rr,zion,iexc,c_light,nc, &
-&                    nv,la,rr(mmax),mmax,rhomod,d2excae,d2excps,d2mdiff,iout)
+&                    nv,la,rr(mmax),mmax,adams,rhomod,d2excae,d2excps,d2mdiff, &
+&                    iout)
 
  d2ref=d2mdiff
 
@@ -308,7 +313,7 @@
  call core_pieces_smooth(rr,rhomod,mmax,corepw,teter_form,[xx(1,1),xx(2,1)])
 
  call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
-&                   zion,iexc,c_light,nc,nv,la,rr(mmax),mmax)
+&                   zion,iexc,c_light,nc,nv,la,rr(mmax),mmax,adams)
 
  call d2exc_report('d2excps - pseudofunction derivatives with core '// &
 &                  'correction',d2excps,nv,d2mdiff,iout)
@@ -341,7 +346,7 @@
    rhomod(im,1)=xm(1)*gd(0)
  end do
  call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,fm, &
-&             zion,iexc,c_light,nc,nv,la,rr(mmax),mmax)
+&             zion,iexc,c_light,nc,nv,la,rr(mmax),mmax,adams)
  end subroutine trial
 
  subroutine newton_refine(xm,ifail)

@@ -25,7 +25,8 @@
 
  contains
 
- subroutine lschpsbar(nn,ll,ierr,ee,emin,emax,rr,vv,uu,up,mmax,mbar,tht)
+ subroutine lschpsbar(nn,ll,ierr,ee,emin,emax,rr,vv,uu,up,mmax,adams,mbar, &
+&                     tht)
 
 !! Finds bound states of a semi-local pseudopotential
 !!
@@ -41,6 +42,7 @@
 !! @param uu  output radial wave function (*rr)
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param mbar  mesh point for infinite barrier
 !! @param tht  phast-shift angle for boundary condition, units of pi
 
@@ -50,11 +52,13 @@
  use inward2_m, only: inward2
  use inward_start_m, only: inward_start
  use logmesh_m, only: lm_step
+ use adams_m, only: adams_t
 
 
 !Input variables
  integer, intent(in) :: nn,ll,mmax,mbar
  real(dp), intent(in) :: rr(mmax),vv(mmax)
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: tht
 
 !Input/output variables
@@ -70,8 +74,8 @@
  real(dp) :: de,deprev,uumax
  real(dp) :: eps,epsnode,sc,stht,ctht
  real(dp) :: sls,sn,cn,uout,upin,upout,xkap,xkap2,xx
- real(dp) :: amesh,al,als
- integer :: ii,imin,it,mch,mchb,nint,node,nin
+ real(dp) :: amesh,al,als,b1,b2
+ integer :: ii,imin,kk,mch,mchb,nint,node,nin
 
  real(dp), allocatable :: upp(:),cf(:)
  allocate(upp(mmax),cf(mmax))
@@ -145,26 +149,24 @@
    end if
 
    de=0.0d0
-! start wavefunction with series
+! start wavefunction with series at the first k points
 
-   do ii=1,4
+   kk=adams%order
+   do ii=1,kk
      uu(ii)=rr(ii)**(ll+1)
      up(ii)=al*(ll+1)*rr(ii)**(ll+1)
      upp(ii)=al*up(ii)+cf(ii)*uu(ii)
    end do
 
-! outward integration using predictor once, corrector
-! twice
+! outward integration by the implicit Adams-Moulton steps
    node=0
    uumax=0.0d0
-   do ii=4,mch-1
-     uu(ii+1)=uu(ii)+aeo(up,ii)
-     up(ii+1)=up(ii)+aeo(upp,ii)
-     do it=1,2
-       upp(ii+1)=al*up(ii+1)+cf(ii+1)*uu(ii+1)
-       up(ii+1)=up(ii)+aio(upp,ii)
-       uu(ii+1)=uu(ii)+aio(up,ii)
-     end do
+   do ii=kk,mch-1
+     b1=uu(ii)+am_out(adams,up,ii)
+     b2=up(ii)+am_out(adams,upp,ii)
+     call am_solve(adams%cm(0),0.0d0,1.0d0,cf(ii+1),al,b1,b2, &
+&                  uu(ii+1),up(ii+1))
+     upp(ii+1)=al*up(ii+1)+cf(ii+1)*uu(ii+1)
      uumax=max(uumax,abs(uu(ii+1)))
    end do
 
@@ -185,11 +187,11 @@
 ! wave function has decayed to machine precision, if that is inside the
 ! barrier
 
-     call inward_start(ll,ee,rr,vv,mch,mmax,nin)
-     if(nin<mbar-4) then
+     call inward_start(ll,ee,rr,vv,mch,mmax,adams,nin)
+     if(nin<mbar-kk) then
        xkap=sqrt(sls/rr(nin)**2 + 2.0d0*(vv(nin)-ee))
 
-       do ii=nin,nin+4
+       do ii=nin,nin+kk
          uu(ii)=exp(-xkap*(rr(ii)-rr(nin)))
          up(ii)=-rr(ii)*al*xkap*uu(ii)
          upp(ii)=al*up(ii)+cf(ii)*uu(ii)
@@ -206,7 +208,7 @@
        xkap=sqrt(abs(xkap2))
 
 
-       do ii=mbar,mbar+4
+       do ii=mbar,mbar+kk
          xx=xkap*(rr(ii)-rr(mbar))
 
          if(xkap2>0) then
@@ -226,7 +228,7 @@
      end if !nin<mbar
 
 ! integrate inward
-     call inward2(al,cf,mmax,nin,mchb,uu,up,upp)
+     call inward2(al,cf,mmax,adams,nin,mchb,uu,up,upp)
 
      do ii=nin+1,mmax
        uu(ii)=0.0d0

@@ -16,9 +16,12 @@
  use phsft_m, only: phsft_t, phsft_pair, phsft_ae_init, phsft_node_phase, &
 &                   phsft_free
  use, intrinsic :: iso_fortran_env, only: output_unit
+ use adams_m, only: adams_t
  implicit none
 
 !Local variables
+!> the Adams-Moulton steps, of the default order
+ type(adams_t) :: adams
  integer, parameter :: mmax = 950, ll = 1, nq = 2, npsh = 7
  real(dp), parameter :: zz = 3.0_dp, rr1 = 0.0005_dp, amesh = 1.012_dp
  real(dp), parameter :: epsh2 = -0.5_dp, depsh = 0.2_dp, eal = -0.5_dp
@@ -39,11 +42,11 @@
  rq = [4.0_dp, 5.0_dp]
 
  call phsft_pair(0, 0.0_dp, ll, ll, 0, rr, vv, zz, vv, vlocpw, vkbpw, &
-&                evkb, mmax, nq, rq, npsh, epsh2, depsh, eal, pshae, &
+&                evkb, mmax, adams, nq, rq, npsh, epsh2, depsh, eal, pshae, &
 &                pshps, output_unit, ifail)
  call check('phsft_pair: ifail', real(ifail, dp), 0.0_dp)
 
- call phsft_ae_init(0, 0.0_dp, ll, ll, rr, vv, zz, mmax, nq, rq, ps, &
+ call phsft_ae_init(0, 0.0_dp, ll, ll, rr, vv, zz, mmax, adams, nq, rq, ps, &
 &                   output_unit, ifail)
  call check('phsft_ae_init: ifail', real(ifail, dp), 0.0_dp)
  do iq = 1, nq

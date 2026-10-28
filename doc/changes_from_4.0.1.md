@@ -411,6 +411,18 @@ precision.
   re-integration of the first points. 4.0.1 started from the leading
   term only, with starting derivatives of the wrong sign of the energy
   term. Commits: 0b1c655, 34befb5 (C-4).
+- **Adams-Moulton steps.** 4.0.1 took one Adams-Bashforth predictor
+  and two Adams-Moulton corrector passes of order 4 per mesh step. Each
+  step's implicit equation is now solved exactly (a 2x2 linear solve:
+  every radial equation is linear), with no predictor, and the order is
+  an input: `adams_order`, 4 to 8, the optional fourth value of the
+  log-mesh line or `[log_mesh] adams_order` (default 4, echoed only
+  when it is not 4). Every integration starts from as many points as
+  the order, and vout's Hartree potential uses the rule of the same
+  order. At order 4 the outputs move within the reference tolerances
+  except the positive-energy ghost test's barrier states above 50 Ha
+  (<r>/rc by up to 2.4e-4), which are within order 4's own error there.
+  Commits: ADAMS_COMMIT.
 - **Inward start at practical infinity.** 4.0.1 started the inward
   integration at 10 times the classical turning point and set u = 0
   beyond it. For shallow localized states (Tm 4f, Cu 3d) that truncated

@@ -35,10 +35,13 @@
  use outwf_m, only: outwf_t, outwf_setup, outwf_integrate, outwf_overlap, &
 &                   outwf_nodes, outwf_count, outwf_free
  use lapack_m, only: dgels
+ use adams_m, only: adams_t
  implicit none
  integer, parameter :: iout=6
 
 !Local variables
+!> the Adams-Moulton steps, of the default order
+ type(adams_t) :: adams
  real(dp), parameter :: rr1 = 5.0e-5_dp, rmax = 45.0_dp, amesh = 1.006_dp
  real(dp), parameter :: ee = -0.8_dp, r3 = 3.0_dp
  integer, parameter :: ll = 1, nfine = 8
@@ -153,7 +156,7 @@
    spw(2)%vals(:, 2) = spw(2)%vals(:, 2) - (rr - b1q)**2
  end if
 
- call outwf_setup(ll, rr, mm, vv, vpw, 2, spw, ow, iout, ifail)
+ call outwf_setup(ll, rr, mm, adams, vv, vpw, 2, spw, ow, iout, ifail)
  if(ifail /= 0) error stop 1
  call outwf_integrate(ow, ee, i3q)
  do isol = 1, 3
@@ -197,7 +200,7 @@
  vpw%vals(:, 1) = -2.0_dp/rr
  vpw%vals(:, 2) = -2.0_dp/rr
  call pw_node_values(rr, mm, vpw, vv)
- call outwf_setup(ll, rr, mm, vv, vpw, 0, spw, ow, iout, ifail)
+ call outwf_setup(ll, rr, mm, adams, vv, vpw, 0, spw, ow, iout, ifail)
  if(ifail /= 0) error stop 1
  call outwf_integrate(ow, -0.35_dp, i20)
  nodeq = outwf_count(ow, 1, 0.05_dp, i20)

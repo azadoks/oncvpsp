@@ -45,6 +45,7 @@
  module phsft_m
  use constants_m, only: dp, pi
  use outwf_m, only: outwf_t, outwf_setup, outwf_solve, outwf_free
+ use adams_m, only: adams_t
  implicit none
  private
  public :: phsft_t, phsft_mch, phsft_ae_init, phsft_ps_init, phsft_free
@@ -67,6 +68,9 @@
    integer :: kap=0
 !> size of the log radial mesh
    integer :: mmax=0
+!> order and coefficients of the Adams-Moulton steps (kind 1; the
+!> outward solver holds them for kind 2)
+   type(adams_t) :: adams
 !> the last point of the solutions, the largest of mchq (and of the
 !> projectors' support, kind 2)
    integer :: mch=0
@@ -126,7 +130,8 @@
  return
  end function phsft_mch
 
- subroutine phsft_ae_init(irel,c_light,ll,kap,rr,vv,zz,mmax,nq,rq,ps,iout,ifail)
+ subroutine phsft_ae_init(irel,c_light,ll,kap,rr,vv,zz,mmax,adams,nq,rq,ps, &
+&                         iout,ifail)
 
 !! the all-electron solver, at the radii rq
 !!
@@ -139,6 +144,7 @@
 !! @param vv  all-electron potential
 !! @param zz  atomic number
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param nq  number of radii
 !! @param rq  radii of the phases, each with phsft_mch(rr,mmax,rq)>0
 !! @param ps  the solver
@@ -147,6 +153,7 @@
 
 !Input variables
  integer, intent(in) :: irel,ll,kap,mmax,nq
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: rr(mmax),vv(mmax),zz,rq(nq)
  integer, intent(in) :: iout
@@ -162,13 +169,15 @@
  ps%ll=ll
  ps%kap=kap
  ps%zz=zz
+ ps%adams=adams
  call common_init(rr,mmax,nq,rq,ps,iout,ifail)
  if(ifail/=0) return
  ps%vv=vv
  return
  end subroutine phsft_ae_init
 
- subroutine phsft_ps_init(ll,nvkb,rr,vloc,vlocpw,vkbpw,evkb,mmax,nq,rq,ps, &
+ subroutine phsft_ps_init(ll,nvkb,rr,vloc,vlocpw,vkbpw,evkb,mmax,adams,nq,rq, &
+&      ps, &
 &      iout,ifail)
 
 !! the pseudopotential solver, local potential and nvkb projectors (none
@@ -182,6 +191,7 @@
 !! @param vkbpw  the projectors as pieces
 !! @param evkb  coefficients of the projectors
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param nq  number of radii
 !! @param rq  radii of the phases, each with phsft_mch(rr,mmax,rq)>0
 !! @param ps  the solver
@@ -192,6 +202,7 @@
 
 !Input variables
  integer, intent(in) :: ll,nvkb,mmax,nq
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(nvkb),rq(nq)
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(nvkb)
  integer, intent(in) :: iout
@@ -207,7 +218,7 @@
  call common_init(rr,mmax,nq,rq,ps,iout,ifail)
  if(ifail/=0) return
  ps%evkb=evkb
- call outwf_setup(ll,rr,mmax,vloc,vlocpw,nvkb,vkbpw,ps%ow,iout,ifail)
+ call outwf_setup(ll,rr,mmax,adams,vloc,vlocpw,nvkb,vkbpw,ps%ow,iout,ifail)
  if(ifail/=0) return
 !the projections need the solution over the projectors' support, also for
 !radii inside it
@@ -357,7 +368,7 @@
  end subroutine phsft_scan
 
  subroutine phsft_pair(irel,c_light,ll,kap,nvkb,rr,vfull,zz,vloc,vlocpw,vkbpw, &
-&                      evkb,mmax,nq,rq,npsh,epsh2,depsh,eal,pshae,pshps, &
+&                      evkb,mmax,adams,nq,rq,npsh,epsh2,depsh,eal,pshae,pshps, &
 &                      iout,ifail)
 
 !! the all-electron and the pseudopotential phases of one l and kappa at
@@ -379,6 +390,7 @@
 !! @param vkbpw  the projectors as pieces
 !! @param evkb  coefficients of the projectors
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param nq  number of radii
 !! @param rq  radii of the phases
 !! @param npsh  number of energies
@@ -395,6 +407,7 @@
 
 !Input variables
  integer, intent(in) :: irel,ll,kap,nvkb,mmax,nq,npsh
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: rr(mmax),vfull(mmax),zz,vloc(mmax),evkb(nvkb)
  real(dp), intent(in) :: rq(nq),epsh2,depsh,eal
@@ -411,12 +424,14 @@
  type(phsft_t), target :: ps
 
  ifail=0
- call phsft_ae_init(irel,c_light,ll,kap,rr,vfull,zz,mmax,nq,rq,ps,iout,ifail)
+ call phsft_ae_init(irel,c_light,ll,kap,rr,vfull,zz,mmax,adams,nq,rq,ps,iout, &
+&                   ifail)
  if(ifail/=0) return
  call phsft_scan(ps,epsh2,depsh,npsh,eal,pshae,palae,iout,ifail)
  if(ifail/=0) return
  call phsft_free(ps)
- call phsft_ps_init(ll,nvkb,rr,vloc,vlocpw,vkbpw,evkb,mmax,nq,rq,ps,iout,ifail)
+ call phsft_ps_init(ll,nvkb,rr,vloc,vlocpw,vkbpw,evkb,mmax,adams,nq,rq,ps, &
+&                   iout,ifail)
  if(ifail/=0) return
  call phsft_scan(ps,epsh2,depsh,npsh,eal,pshps,palps,iout,ifail)
  if(ifail/=0) return
@@ -558,7 +573,7 @@
  if(ps%kind==1) then
    nn=0
    call scatterstate(ps%irel,ps%c_light,nn,ps%ll,ps%kap,ee,ps%rr,ps%zz, &
-&                    ps%vv,uu,up,ps%mmax,mlast)
+&                    ps%vv,uu,up,ps%mmax,ps%adams,mlast)
  else
    call outwf_solve(ps%ow,ee,ps%evkb,mlast,mlast,uu(:,1),up(:,1), &
 &        iout=iout,ifail=ifail)
@@ -712,7 +727,7 @@
  if(ps%kind==1) then
    nn=0
    call scatterstate(ps%irel,ps%c_light,nn,ps%ll,ps%kap,ee,ps%rr,ps%zz, &
-&                    ps%vv,uu,up,ps%mmax,ps%mch)
+&                    ps%vv,uu,up,ps%mmax,ps%adams,ps%mch)
  else
    call outwf_solve(ps%ow,ee,ps%evkb,ps%mch,ps%mch,uu(:,1),up(:,1), &
 &        iout=iout,ifail=ifail)

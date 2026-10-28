@@ -24,10 +24,13 @@
  use outwf_m, only: outwf_t, outwf_setup, outwf_solve, outwf_count, &
 &                   outwf_free
  use lapack_m, only: dsyev
+ use adams_m, only: adams_t
  implicit none
  integer, parameter :: iout=6
 
 !Local variables
+!> the Adams-Moulton steps, of the default order
+ type(adams_t) :: adams
  integer :: ifail
  real(dp), parameter :: rr1 = 5.0e-5_dp, rmax = 45.0_dp, amesh = 1.006_dp
  real(dp), parameter :: rc = 3.0_dp, rbox = 4.0_dp, de = 0.05_dp
@@ -62,7 +65,8 @@
    call pw_alloc(vkbpw(1), mmax, 1, [0.0_dp, rc])
    vkbpw(1)%vals(:, 1) = rr**(ll + 1)*(1.0_dp - (rr/rc)**2)**4
    call fd_eigenvalues(ll, evkb(1), rlast, efd)
-   call outwf_setup(ll, rr, mmax, vloc, vlocpw, 1, vkbpw, ow, iout, ifail)
+   call outwf_setup(ll, rr, mmax, adams, vloc, vlocpw, 1, vkbpw, ow, iout, &
+&                   ifail)
    if(ifail /= 0) error stop 1
    nbad = 0
    nskip = 0

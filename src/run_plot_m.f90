@@ -26,7 +26,7 @@
  contains
 
  subroutine run_plot(lmax,npa,epa,wellprj,lloc,rc,vkb,vlocpw,vkbpw,evkb, &
-&                    nproj,rr,vfull,vp,vpuns,zz,mmax,drl,nrl,rho,rhoc, &
+&                    nproj,rr,vfull,vp,vpuns,zz,mmax,adams,drl,nrl,rho,rhoc, &
 &                    rhomod,irel,c_light,nkap,cvgplt,iout,ifail)
 
 !! write output for plotting pseudopotentials, model core charge, and
@@ -56,6 +56,7 @@
 !! @param vpuns  unscreened vp
 !! @param zz  atomic number
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param drl  spacing of linear radial mesh
 !! @param nrl  size of the output mesh
 !! @param rho  valence pseudocharge
@@ -77,9 +78,11 @@
  use renorm_r_m, only: renorm_r
  use scatterstate_m, only: scatterstate
  use logmesh_m, only: lm_index
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: lmax,lloc,mmax,nrl,irel,nkap
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: c_light
  integer, intent(in) :: npa(mxprj,mxlin+1),nproj(mxlin+1)
  real(dp), intent(in) :: zz,drl,rc(mxlin+1)
@@ -244,7 +247,7 @@
 
      etest=epa(iprj,l1,ikap)
      call boundstate(irel,c_light,npa(iprj,l1),ll,kap,ierr,etest, &
-&                    rr,zz,vfull,ur,urp,mmax,mch,iout,ifail)
+&                    rr,zz,vfull,ur,urp,mmax,adams,mch,iout,ifail)
      if(ifail/=0) return
      if(ierr /= 0 .and. irel==2) then
        write(iout,'(a,i2,a,i2,a,i2,a,i4)') &
@@ -269,7 +272,7 @@
 
      call lschvkbb(ll+iprj,ll,npr,ierr,etest,emin,emax, &
 &                  rr,vp(1,lloc+1,ikap),vlocpw,vkbpw(1:npr,l1,ikap), &
-&                  evkb(1,l1,ikap),u2,up,mmax,mch,iout,ifail)
+&                  evkb(1,l1,ikap),u2,up,mmax,adams,mch,iout,ifail)
      if(ifail/=0) return
      if(ierr/=0) then
        write(iout,'(/a,i0,a,i0,a,i0)') &
@@ -288,7 +291,7 @@
 &           ',  l=',ll,', all-electron wave function', ', pseudo w-f'
      end if
      call scatterstate(irel,c_light,nn,ll,kap,epa(iprj,l1,ikap), &
-&                   rr,zz,vfull,ur,urp,mmax,n2)
+&                   rr,zz,vfull,ur,urp,mmax,adams,n2)
      if(irel==2) then
        call renorm_r(ur,rr,ll,kap,c_light,zz,mmax,cnorm,iout=iout,ifail=ifail)
        if(ifail/=0) return
@@ -296,7 +299,7 @@
 
      call lschvkbs(ll,npr,epa(iprj,l1,ikap),rr,vp(1,lloc+1,ikap), &
 &                  vlocpw,vkbpw(1:npr,l1,ikap),evkb(1,l1,ikap),u2,up, &
-&                  mmax,n2,iout,ifail)
+&                  mmax,adams,n2,iout,ifail)
      if(ifail/=0) return
      sgnae=sign(1.0d0,ur(n2,1))
      sgnps=sign(1.0d0,u2(n2))

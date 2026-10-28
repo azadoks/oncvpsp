@@ -26,7 +26,7 @@
  contains
 
  subroutine run_ghosts(lmax,la,ea,nc,nv,lloc,rc,qmsbf, &
-&                    vlocpw,vkbpw,evkb,nproj,rr,vp,mmax, &
+&                    vlocpw,vkbpw,evkb,nproj,rr,vp,mmax,adams, &
 &                    ngh,ghn,ghe,ghp,iout,ifail)
 
 !! Two tests for ghosts;  The local potential is terminated by a hard wall
@@ -75,6 +75,7 @@
 !! @param vp  semi-local pseudopotentials (vp(:,5) is local potential if linear
 !!            comb.)
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param ngh  rows of the bound-state test per l
 !! @param ghn  their principal quantum numbers
 !! @param ghe  their energies: (1) of the nonlocal Schroedinger equation
@@ -94,9 +95,11 @@
  use lschpsbar_m, only: lschpsbar
  use lschvkbb_m, only: lschvkbb
  use lapack_m, only: dsyev
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: nc,nv,lmax,lloc,mmax
+ type(adams_t), intent(in) :: adams
  integer, intent(in) :: la(mxstate),nproj(mxlin+1)
  real(dp), intent(in) :: rr(mmax),vp(mmax,mxl+2),rc(mxlin+1)
  real(dp), intent(in) :: qmsbf(mxlin+1),ea(mxstate),evkb(mxprj,mxl+1)
@@ -279,7 +282,7 @@
    ee=0.0d0
 
    call lschpsbar(nn,ll,ierr,ee,emin,emax,rb,vb,uu,up, &
-&                   mmax,mbar,tht)
+&                   mmax,adams,mbar,tht)
 
    if(ierr/=0) then
      if(emax/=ebtop) then
@@ -356,7 +359,7 @@
    emin=1.1d0*ea(nc+kk)
    call lschvkbb(nn,ll,nprj,ierr,ee,emin,emax, &
 &                  rr,vp(1,lloc+1),vlocpw,vkbpw(1:nprj,l1),evkb(1,l1), &
-&                  uu,up,mmax,mch,iout,ifail)
+&                  uu,up,mmax,adams,mch,iout,ifail)
    if(ifail/=0) return
    if(ierr/=0) then
      write(iout,'(a,3i4,2f12.6)') 'run_ghosts: lschvkbb ERROR', &
@@ -392,7 +395,7 @@
    emin=2.0d0*ee
    call lschvkbb(ll+1,ll,nprj,ierr,ee,emin,emax, &
 &                  rr,vp(1,lloc+1),vlocpw,vkbpw(1:nprj,l1),evkb(1,l1), &
-&                  uu,up,mmax,mch,iout,ifail)
+&                  uu,up,mmax,adams,mch,iout,ifail)
    if(ifail/=0) return
    if(ierr/=0) ee=0.0d0
    do jj=1,10

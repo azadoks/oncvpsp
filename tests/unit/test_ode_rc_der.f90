@@ -22,10 +22,13 @@
  use ode_rc_der_m, only: ode_rc_der
  use wf_rc_der_m, only: wf_rc_der
  use boundstate_m, only: boundstate
+ use adams_m, only: adams_t
  implicit none
  integer, parameter :: iout=6
 
 !Local variables
+!> the Adams-Moulton steps, of the default order
+ type(adams_t) :: adams
  integer :: ifail
  real(dp), parameter :: rr1 = 5.0e-5_dp, rmax = 45.0_dp, amesh = 1.006_dp
  real(dp), parameter :: radii(3) = [0.7_dp, 1.2345_dp, 2.718281828459045_dp]
@@ -125,7 +128,7 @@
  up(:, :) = 0.0_dp
  mch = 0
  call boundstate(irel,c_light, 1, 0, -1, ierr, ee, rr, 1.0_dp, vv, uu, up, &
-&      mmax, mch,iout, ifail)
+&      mmax, adams, mch,iout, ifail)
  if(ifail /= 0) error stop 1
  if(ierr /= 0) then
    write(stderr, '(a,i0,a,i0)') 'FAILED: irel ', irel, &

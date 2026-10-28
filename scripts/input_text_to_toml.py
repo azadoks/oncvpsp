@@ -621,6 +621,8 @@ class LogMeshConfiguration:
     rr1: float
     "Outer radius of the mesh"
     rmax: float
+    "Order of the Adams-Moulton steps of the radial integrators (4 to 8)"
+    adams_order: int = 4
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, LogMeshConfiguration):
@@ -636,6 +638,11 @@ class LogMeshConfiguration:
                     getattr(other, name),
                 )
                 return False
+        if self.adams_order != other.adams_order:
+            logging.debug(
+                "adams_order differs: %d != %d", self.adams_order, other.adams_order
+            )
+            return False
         return True
 
     @classmethod
@@ -643,15 +650,18 @@ class LogMeshConfiguration:
         """Create a LogMeshConfiguration from a string.
 
         Args:
-            s: String in the format "amesh rr1 rmax"
+            s: String in the format "amesh rr1 rmax [adams_order]"
 
         Returns:
             LogMeshConfiguration instance.
         """
         parts = s.split()
-        if len(parts) != 3:
+        if len(parts) not in (3, 4):
             raise ValueError(f"Invalid log mesh configuration: {s}")
-        return cls(*(fortran_float(p) for p in parts))
+        mesh = cls(*(fortran_float(p) for p in parts[:3]))
+        if len(parts) == 4:
+            mesh.adams_order = int(parts[3])
+        return mesh
 
 
 @dataclass
@@ -1041,6 +1051,7 @@ class OncvpspInput:
                     amesh=d["log_mesh"].get("amesh", -1.0),
                     rr1=d["log_mesh"].get("rr1", -1.0),
                     rmax=d["log_mesh"].get("rmax", -1.0),
+                    adams_order=d["log_mesh"].get("adams_order", 4),
                 )
                 if "log_mesh" in d
                 else None
@@ -1154,6 +1165,8 @@ class OncvpspInput:
                 for name in ("amesh", "rr1", "rmax")
                 if (value := getattr(self.log_mesh, name)) > 0
             }
+            if self.log_mesh.adams_order != 4:
+                d["log_mesh"]["adams_order"] = self.log_mesh.adams_order
         return d
 
 

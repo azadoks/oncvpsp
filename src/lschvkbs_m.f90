@@ -25,7 +25,8 @@
 
  contains
 
- subroutine lschvkbs(ll,ivkb,ee,rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,mlast, &
+ subroutine lschvkbs(ll,ivkb,ee,rr,vloc,vlocpw,vkbpw,evkb,uu,up,mmax,adams, &
+&      mlast, &
 &      iout,ifail)
 
 !! Normalized scattering state for pseudopotential, fully non-local unless
@@ -42,6 +43,7 @@
 !! @param uu  output radial wave function (*rr)
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param mlast  index of radius to which uu is computed
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
@@ -51,9 +53,11 @@
  use quad_m, only: quad_log_norm
  use vkboutwf_m, only: vkboutwf
  use logmesh_m, only: lm_step
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: mmax,mlast
+ type(adams_t), intent(in) :: adams
  integer, intent(in) :: ivkb,ll
  real(dp), intent(in) :: rr(mmax),vloc(mmax),evkb(ivkb)
  real(dp), intent(in) :: ee
@@ -80,7 +84,8 @@
  uu(:)=0.0d0
  up(:)=0.0d0
 
- call vkboutwf(ll,ivkb,ee,vkbpw,evkb,rr,vloc,vlocpw,uu,up,mmax,mlast,iout,ifail)
+ call vkboutwf(ll,ivkb,ee,vkbpw,evkb,rr,vloc,vlocpw,uu,up,mmax,adams,mlast, &
+&              iout,ifail)
  if(ifail/=0) return
 
 !perform normalization sum

@@ -100,7 +100,7 @@
  return
  end subroutine sr_flux_coefs
 
- subroutine sr_outward(ll,ee,zz,fss,al,rr,vv,pm,qm,mmax,mlast, &
+ subroutine sr_outward(ll,ee,zz,fss,al,rr,vv,pm,qm,mmax,adams,mlast, &
 &                      uu,up,qq,qp,nnode)
 
 !! outward integration of the flux form from the series at the origin to
@@ -117,6 +117,7 @@
 !! @param pm  coefficient of qq in d(uu)/dn
 !! @param qm  coefficient of uu in d(qq)/dn
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param mlast  last point of the integration
 !! @param uu  radial wave function (*rr) on 1..mlast
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr) on
@@ -126,11 +127,13 @@
 !! @param nnode  number of nodes of uu inside rr(mlast)
 
  use constants_m, only: dp
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: ll,mmax,mlast
  real(dp), intent(in) :: ee,zz,fss,al
  real(dp), intent(in) :: rr(mmax),vv(mmax),pm(mmax),qm(mmax)
+ type(adams_t), intent(in) :: adams
 
 !Input/output variables
  real(dp), intent(inout) :: uu(mmax),up(mmax),qq(mmax),qp(mmax)
@@ -139,8 +142,8 @@
  integer, intent(out) :: nnode
 
 !Local variables
- real(dp) :: gamma,aa,bb,ww,sls
- integer :: ii,it
+ real(dp) :: gamma,aa,bb,ww,sls,b1,b2
+ integer :: ii,kk
 
  gamma=sr_gamma(ll,zz,fss)
 
@@ -151,25 +154,21 @@
  aa=0.5d0*fss*zz
  bb=1.0d0-0.5d0*fss*ww
 
-! start wavefunction with series
-
+! start wavefunction with series at the first k points
+ kk=adams%order
  call origin_start()
- do ii=1,4
+ do ii=1,kk
    call sr_derivs(al,pm,qm,mmax,uu,up,qq,qp,ii)
  end do
 
-! outward integration using predictor once, corrector
-! twice
+! outward integration by the implicit Adams-Moulton steps
  nnode=0
 
- do ii=4,mlast-1
-   uu(ii+1)=uu(ii)+aeo(up,ii)
-   qq(ii+1)=qq(ii)+aeo(qp,ii)
-   do it=1,2
-     call sr_derivs(al,pm,qm,mmax,uu,up,qq,qp,ii+1)
-     uu(ii+1)=uu(ii)+aio(up,ii)
-     qq(ii+1)=qq(ii)+aio(qp,ii)
-   end do
+ do ii=kk,mlast-1
+   b1=uu(ii)+am_out(adams,up,ii)
+   b2=qq(ii)+am_out(adams,qp,ii)
+   call am_solve(adams%cm(0),al,pm(ii+1),qm(ii+1),-al,b1,b2, &
+&                uu(ii+1),qq(ii+1))
    call sr_derivs(al,pm,qm,mmax,uu,up,qq,qp,ii+1)
    if(uu(ii+1)*uu(ii) <= 0.0d0) nnode=nnode+1
  end do
@@ -177,7 +176,7 @@
 ! the first points again, inward from the outward solution: the series of
 ! the start is that of a model potential, and the kink where it meets the
 ! integration is amplified by the derivatives of a GGA density
- if(mlast>=16) call sr_inward(al,pm,qm,mmax,12,1,uu,up,qq,qp)
+ if(mlast>=12+kk) call sr_inward(al,pm,qm,mmax,adams,12,1,uu,up,qq,qp)
 
  return
 
@@ -185,7 +184,7 @@
 
  subroutine origin_start()
 
-!! uu and qq at the first four points, from the series at the origin of
+!! uu and qq at the first k points, from the series at the origin of
 !! the flux form for the potential -zz/r + d (origin_series). With
 !! M = (a + b*r)/r the series converges only inside r = a/b ~ zz/(2c**2),
 !! for every l; points beyond an eighth of that (rr(1) of the default mesh
@@ -195,7 +194,7 @@
  integer :: jj
 
  if(fss==0.0d0) then
-   do jj=1,4
+   do jj=1,kk
      call origin_series(rr(jj),uu(jj),qq(jj))
    end do
    return
@@ -210,7 +209,7 @@
  rs=0.125d0*aa/max(1.0d0,abs(bb))
  r0=min(rs,rr(1))
  call origin_series(r0,px,qx)
- do jj=1,4
+ do jj=1,kk
    if(rr(jj)<=rs) then
      call origin_series(rr(jj),px,qx)
    else
@@ -337,16 +336,16 @@
 
  end subroutine sr_outward
 
- subroutine sr_inward(al,pm,qm,mmax,ifrom,ito,uu,up,qq,qp)
+ subroutine sr_inward(al,pm,qm,mmax,adams,ifrom,ito,uu,up,qq,qp)
 
-!! inward Adams integration of the flux form from ifrom down to ito, two
-!! corrector passes; uu, qq and their derivatives are given on
-!! ifrom..ifrom+3
+!! inward Adams-Moulton integration of the flux form from ifrom down to
+!! ito; uu, qq and their derivatives are given on ifrom..ifrom+k-2
 !!
 !! @param al  log of the mesh ratio
 !! @param pm  coefficient of qq in d(uu)/dn
 !! @param qm  coefficient of uu in d(qq)/dn
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param ifrom  first point, given
 !! @param ito  last point integrated
 !! @param uu  radial wave function (*rr)
@@ -355,25 +354,25 @@
 !! @param qp  d(qq)/dn
 
  use constants_m, only: dp
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: mmax,ifrom,ito
  real(dp), intent(in) :: al,pm(mmax),qm(mmax)
+ type(adams_t), intent(in) :: adams
 
 !Input/output variables
  real(dp), intent(inout) :: uu(mmax),up(mmax),qq(mmax),qp(mmax)
 
 !Local variables
- integer :: ii,it
+ real(dp) :: b1,b2
+ integer :: ii
 
  do ii=ifrom,ito+1,-1
-   uu(ii-1)=uu(ii)+aei(up,ii)
-   qq(ii-1)=qq(ii)+aei(qp,ii)
-   do it=1,2
-     call sr_derivs(al,pm,qm,mmax,uu,up,qq,qp,ii-1)
-     uu(ii-1)=uu(ii)+aii(up,ii)
-     qq(ii-1)=qq(ii)+aii(qp,ii)
-   end do
+   b1=uu(ii)+am_in(adams,up,ii)
+   b2=qq(ii)+am_in(adams,qp,ii)
+   call am_solve(-adams%cm(0),al,pm(ii-1),qm(ii-1),-al,b1,b2, &
+&                uu(ii-1),qq(ii-1))
    call sr_derivs(al,pm,qm,mmax,uu,up,qq,qp,ii-1)
  end do
 

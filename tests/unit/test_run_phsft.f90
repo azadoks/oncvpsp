@@ -12,10 +12,13 @@
  use pieces_m, only: piecewise_t, pw_alloc
  use run_phsft_m, only: run_phsft
  use relativity_m, only: c_light => c_light_default
+ use adams_m, only: adams_t
  implicit none
  integer, parameter :: iout=6
 
 !Local variables
+!> the Adams-Moulton steps, of the default order
+ type(adams_t) :: adams
  integer, parameter :: mmax = 950, mxprj = 5, lmax = 0, lloc = 0
  real(dp), parameter :: zz = 1.0_dp, rr1 = 0.0005_dp, amesh = 1.012_dp
  real(dp), parameter :: epsh2 = 0.5_dp, depsh = 0.1_dp
@@ -81,12 +84,12 @@
  open(unit=6, file=name//'.out', status='replace', action='write')
  if(name == 'run_phsft') then
    call run_phsft(lmax, lloc, nproj, epa, npsh, epsh2, depsh, rxpsh, &
-&                 vlocpw, vkbpw, evkb, rr, vfull, vp, zz, mmax, rc, &
+&                 vlocpw, vkbpw, evkb, rr, vfull, vp, zz, mmax, adams, rc, &
 &                 0, c_light, 1, rphs, pshae, pshps, iout, ifail)
    if(ifail /= 0) error stop 1
  else
    call run_phsft(lmax, lloc, nproj, epa_r, npsh, epsh2, depsh, rxpsh, &
-&                 vlocpw, vkbpw_r, evkb_r, rr, vfull, vp_r, zz, mmax, &
+&                 vlocpw, vkbpw_r, evkb_r, rr, vfull, vp_r, zz, mmax, adams, &
 &                 rc, 2, c_light, 2, rphs, pshae, pshps, iout, ifail)
    if(ifail /= 0) error stop 1
  end if

@@ -61,8 +61,8 @@
 !!               j=l-1/2 when nkap=2
 !! @param ea  all-electron eigenvalues (Ha) of the reference configuration,
 !!            the orbitals' pseudo_energy; second index as for uupsa
-!! @param log_mesh  amesh, rr1, rmax of the log mesh, echoed when the input sets
-!!                  it (else 0)
+!! @param log_mesh  amesh, rr1, rmax and the Adams order of the log mesh
+!!                  line, echoed when the input sets it (else 0)
 !! @param nkap  number of kappas per l: 1, or 2 for irel=2
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
@@ -91,7 +91,7 @@
 !the core radii as read (rc_in), for the echo
  real(dp), intent(in) :: rc_in(mxlin+1)
  real(dp), intent(in) :: ea(mxstate,nkap)
- real(dp), intent(in) :: log_mesh(3)
+ real(dp), intent(in) :: log_mesh(4)
  integer, intent(in) :: iout
 
 !Output variables - printing only

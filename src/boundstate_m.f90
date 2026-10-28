@@ -25,7 +25,8 @@
 
  contains
 
- subroutine boundstate(irel,c_light,nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch, &
+ subroutine boundstate(irel,c_light,nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax, &
+&      adams,mch, &
 &      iout,ifail)
 
 !! Finds a bound state of an all-electron atomic potential: with the
@@ -46,6 +47,7 @@
 !!            function, or the Dirac large and small components
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param mch  matching mesh point for inward-outward integrations
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
@@ -53,9 +55,11 @@
  use constants_m, only: dp
  use ldiracfb_m, only: ldiracfb
  use lschfb_m, only: lschfb
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: irel,nn,ll,kap,mmax
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: rr(mmax),vv(mmax)
  real(dp), intent(in) :: zz
@@ -72,10 +76,12 @@
 
  ifail=0
  if(irel==2) then
-   call ldiracfb(c_light,nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,mch,iout,ifail)
+   call ldiracfb(c_light,nn,ll,kap,ierr,ee,rr,zz,vv,uu,up,mmax,adams,mch,iout, &
+&                ifail)
    if(ifail/=0) return
  else
-   call lschfb(irel,c_light,nn,ll,ierr,ee,rr,zz,vv,uu,up,mmax,mch,iout,ifail)
+   call lschfb(irel,c_light,nn,ll,ierr,ee,rr,zz,vv,uu,up,mmax,adams,mch,iout, &
+&              ifail)
    if(ifail/=0) return
  end if
  return

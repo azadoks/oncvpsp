@@ -26,7 +26,8 @@
  contains
 
  subroutine relatom(na,la,ea,fa,nc,ncv,it,rhoc,rho, &
-&           rr,vi,zz,mmax,iexc,c_light,etot,eterm,res,ierr,vext,warm,iout,ifail)
+&           rr,vi,zz,mmax,adams,iexc,c_light,etot,eterm,res,ierr,vext,warm, &
+&           iout,ifail)
 
 !! self-consistent fully-relativistic all-electron atom
 !! calculation using log mesh
@@ -47,6 +48,7 @@
 !!            output orbitals are eigenstates of
 !! @param zz  atomic number
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param iexc  exchange-correlation functional
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param etot  all-electron total energy (output)
@@ -69,10 +71,12 @@
  use vout_m, only: vout
  use ldiracfb_m, only: ldiracfb
  use logmesh_m, only: lm_step
+ use adams_m, only: adams_t
 
 !Input variables
 
  integer, intent(in) :: mmax,iexc,nc,ncv
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: c_light
  integer, intent(in) :: na(ncv),la(ncv)
  real(dp), intent(in) :: zz
@@ -172,6 +176,7 @@
        ierr = 0
 
        call ldiracfb(c_light,na(ii),ll,kap,ierr,et,rr,zz,vext+vi,uu,up,mmax, &
+&                    adams, &
 &                    mch,iout,ifail)
        if(ifail/=0) return
 ! a state with no bound solution in this potential gets its box state;
@@ -210,7 +215,7 @@
 ! output screening potential, and the energies of the orbitals of the
 ! input one
    call vout(.false.,rho,rhoc,vso,vxc,sf,eeel,eexc, &
-&            rr,mmax,iexc,c_light)
+&            rr,mmax,adams,iexc,c_light)
    call ae_energies(rho,vsi,vxc,zz,eeig,eeel,eexc,rr,mmax,etot,eterm, &
 &                   vext)
 

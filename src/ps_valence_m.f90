@@ -27,7 +27,8 @@
  contains
 
  subroutine valence_densities(irel,c_light,nkap,nc,nv,na,la,fa,ea,it,lloc, &
-&                             nproj,rr,zz,vfull,vp,vlocpw,vkbpw,evkb,mmax,uu, &
+&                             nproj,rr,zz,vfull,vp,vlocpw,vkbpw,evkb,mmax, &
+&                             adams,uu, &
 &                             up,uupsa,eeig,zval,rho,rhops,rhoae,rhotae,iout, &
 &                             ifail)
 !! the valence states, all-electron (in vfull) and pseudo (with the VKB
@@ -59,6 +60,7 @@
 !! @param vkbpw  the projectors as pieces
 !! @param evkb  coefficients of the projectors (Ha)
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param uu  work space for the radial wave functions (times r); the last
 !!            pseudo wave function on return
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr);
@@ -80,11 +82,13 @@
  use constants_m, only: dp, mxprj, mxstate, mxl, mxlin
  use kappa_m, only: kap_count, kap_of, kap_j_share
  use pieces_m, only: piecewise_t
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: irel,nkap,nc,nv,na(mxstate),la(mxstate),it,lloc
  real(dp), intent(in) :: c_light
  integer, intent(in) :: nproj(mxlin+1),mmax
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: fa(mxstate),ea(mxstate,nkap),rr(mmax),zz
  real(dp), intent(in) :: vfull(mmax),vp(mmax,mxl+2,nkap)
  real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap)
@@ -126,7 +130,7 @@
      et=ea(nc+kk,ikap)
 
      call boundstate(irel,c_light,na(nc+kk),ll,kap,ierr,et, &
-&                    rr,zz,vfull,uu,up,mmax,mch,iout,ifail)
+&                    rr,zz,vfull,uu,up,mmax,adams,mch,iout,ifail)
      if(ifail/=0) return
      if(ierr /= 0) then
        if(irel==2) then
@@ -154,7 +158,7 @@
 
      call lschvkbb(ll+nodes(l1)+1,ll,nproj(l1),ierr,et,emin,emax, &
 &                  rr,vp(1,lloc+1,ikap),vlocpw,vkbpw(1:nproj(l1),l1,ikap), &
-&                  evkb(1,l1,ikap),uu,up,mmax,mch,iout,ifail)
+&                  evkb(1,l1,ikap),uu,up,mmax,adams,mch,iout,ifail)
      if(ifail/=0) return
      if(ierr /= 0) then
        if(irel==2) then

@@ -30,7 +30,7 @@
 ! differ from the all-electron wave functions
 !
  subroutine der2exc(rhotot,rhoc,rho,rr,d2exc,d2ref,d2mdiff, &
-&                   zion,iexc,c_light,nc,nv,la,rcut,mmax)
+&                   zion,iexc,c_light,nc,nv,la,rcut,mmax,adams)
 
 !! @param rhotot  total valence charge, all-electron of pseudo
 !! @param rhoc  core charge density, all-electron or model
@@ -48,13 +48,16 @@
 !! @param rcut  radius to which the matrix elements are integrated, at least
 !!              that beyond which all-electron and pseudo charges agree (bohr)
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 
  use constants_m, only: dp
  use logmesh_m, only: lm_integral
  use vout_m, only: vout
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: iexc,nc,nv,mmax
+ type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: rhotot(mmax),rhoc(mmax),rho(mmax,nv),rr(mmax)
  real(dp), intent(in) :: d2ref(nv,nv)
  real(dp), intent(in) :: zion,rcut
@@ -78,19 +81,19 @@
    dvxc(:,kk)=0.0d0
 
    rhot(:)=rhotot(:)-2.0d0*hh*rho(:,kk)
-   call vout(.true.,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,iexc,c_light)
+   call vout(.true.,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,adams,iexc,c_light)
    dvxc(:,kk)=dvxc(:,kk)+( 2.0d0/(24.0d0*hh))*vxct(:)
 
    rhot(:)=rhotot(:)     -hh*rho(:,kk)
-   call vout(.true.,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,iexc,c_light)
+   call vout(.true.,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,adams,iexc,c_light)
    dvxc(:,kk)=dvxc(:,kk)+(-16.0d0/(24.0d0*hh))*vxct(:)
 
    rhot(:)=rhotot(:)     +hh*rho(:,kk)
-   call vout(.true.,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,iexc,c_light)
+   call vout(.true.,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,adams,iexc,c_light)
    dvxc(:,kk)=dvxc(:,kk)+( 16.0d0/(24.0d0*hh))*vxct(:)
 
    rhot(:)=rhotot(:)+2.0d0*hh*rho(:,kk)
-   call vout(.true.,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,iexc,c_light)
+   call vout(.true.,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,adams,iexc,c_light)
    dvxc(:,kk)=dvxc(:,kk)+(-2.0d0/(24.0d0*hh))*vxct(:)
 
  end do !kk

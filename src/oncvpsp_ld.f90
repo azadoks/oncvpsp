@@ -36,6 +36,7 @@
  use cli_m, only: cli_next_arg, cli_radii, cli_channels, cli_energies
  use ae_ps_pair_m, only: load_pair
  use build_info_m, only: write_build_info
+ use adams_m, only: adams_t
  implicit none
  integer, parameter :: iout=6
 
@@ -47,6 +48,8 @@
  real(dp) :: zz,epsh1,epsh2,depsh,amesh,rq(mxq),ee(3)
 !> the speed of light of the files
  real(dp) :: c_light
+!> the Adams-Moulton steps, of the default order
+ type(adams_t) :: adams
  real(dp), allocatable :: rr(:),vfull(:),pshae(:,:),pshps(:,:),rql(:)
  logical :: given_radii,given_energies
 !> the angular momenta whose log derivatives are computed
@@ -137,7 +140,8 @@
      nvkb=pf%nvkb(l1,ikap)
      call phsft_pair(irel,c_light,ll,kap,nvkb,rr,vfull,zz,pf%vloc(:,ikap), &
 &                    pf%pot%vlocpw,pf%pot%vkbpw(1:nvkb,l1,ikap), &
-&                    pf%pot%evkb(1:nvkb,l1,ikap),mmax,nq,rql,npsh,epsh2,depsh, &
+&                    pf%pot%evkb(1:nvkb,l1,ikap),mmax,adams,nq,rql,npsh,epsh2, &
+&                    depsh, &
 &                    pf%epa(l1,ikap),pshae,pshps,iout,ifail)
      if(ifail/=0) error stop 1
      do iq=1,nq

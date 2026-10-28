@@ -22,8 +22,8 @@
 !> shared by the bound states (ldiracfb) and the scattering states
 !> (ldiracfs), as sr_flux_m is for the scalar-relativistic equation: the
 !> series at the origin for the potential -zz/r + d (d the screening at
-!> rr(1)) at the first four points, Adams predictor-corrector with the
-!> derivatives evaluated after each correction (PECECE), and the first
+!> rr(1)) at the first k points (k the Adams order), the implicit
+!> Adams-Moulton steps solved exactly (adams_m), and the first
 !> points integrated again inward from the outward solution
 !> (doc/numerics_audit.md, C-4). The leading term r**gamma alone at the
 !> first five points, as before, missed the solution's first-order terms
@@ -38,8 +38,8 @@
 
  contains
 
- subroutine dirac_outward(ll,kap,c_light,ee,zz,al,rr,vv,mmax,mlast,gu,fu,gup, &
-&                         fup,nnode)
+ subroutine dirac_outward(ll,kap,c_light,ee,zz,al,rr,vv,mmax,adams,mlast,gu, &
+&                         fu,gup,fup,nnode)
 
 !! outward integration from the series at the origin to mlast at the
 !! energy ee, counting the nodes of the large component from the 5th point
@@ -53,6 +53,7 @@
 !! @param rr  log radial mesh (bohr)
 !! @param vv  local atomic potential
 !! @param mmax  size of the log radial mesh
+!! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param mlast  last point of the integration
 !! @param gu  large component (*rr) on 1..mlast
 !! @param fu  small component (*rr) on 1..mlast
@@ -62,12 +63,14 @@
 
 
  use constants_m, only: dp
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: ll,kap,mmax,mlast
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: ee,zz,al
  real(dp), intent(in) :: rr(mmax),vv(mmax)
+ type(adams_t), intent(in) :: adams
 
 !Input/output variables
  real(dp), intent(inout) :: gu(mmax),fu(mmax),gup(mmax),fup(mmax)
@@ -76,8 +79,8 @@
  integer, intent(out) :: nnode
 
 !Local variables
- real(dp) :: cc,cci,gam,cof,dd
- integer :: ii,it
+ real(dp) :: cc,cci,gam,cof,dd,b1,b2
+ integer :: ii,kk
 
  cc=c_light
  cci=1.0d0/cc
@@ -85,36 +88,27 @@
  cof=(kap+gam)*(cc/zz)
  dd=vv(1)+zz/rr(1)
 
- do ii=1,4
+ kk=adams%order
+ do ii=1,kk
    call origin_series(rr(ii),gu(ii),fu(ii))
    call derivs_at(ii)
  end do
 
  nnode=0
- do ii=4,mlast-1
-   fu(ii+1)=fu(ii)+aeo(fup,ii)
-   gu(ii+1)=gu(ii)+aeo(gup,ii)
-   do it=1,2
-     call derivs_at(ii+1)
-     fu(ii+1)=fu(ii)+aio(fup,ii)
-     gu(ii+1)=gu(ii)+aio(gup,ii)
-   end do
-   call derivs_at(ii+1)
+ do ii=kk,mlast-1
+   b1=fu(ii)+am_out(adams,fup,ii)
+   b2=gu(ii)+am_out(adams,gup,ii)
+   call step(ii+1,adams%cm(0))
    if(ii>=5 .and. gu(ii+1)*gu(ii)<=0.0d0) nnode=nnode+1
  end do
 
 ! the first points again, inward from the outward solution: the series is
 ! that of a model potential (as in sr_flux_m)
- if(mlast>=16) then
+ if(mlast>=12+kk) then
    do ii=12,2,-1
-     fu(ii-1)=fu(ii)+aei(fup,ii)
-     gu(ii-1)=gu(ii)+aei(gup,ii)
-     do it=1,2
-       call derivs_at(ii-1)
-       fu(ii-1)=fu(ii)+aii(fup,ii)
-       gu(ii-1)=gu(ii)+aii(gup,ii)
-     end do
-     call derivs_at(ii-1)
+     b1=fu(ii)+am_in(adams,fup,ii)
+     b2=gu(ii)+am_in(adams,gup,ii)
+     call step(ii-1,-adams%cm(0))
    end do
  end if
 
@@ -166,6 +160,22 @@
 
  return
  end subroutine origin_series
+
+ subroutine step(jj,c0)
+
+!! the Adams-Moulton step to the point jj from the right-hand side b1, b2
+!! (am_solve), and the derivatives there
+
+ integer, intent(in) :: jj
+ real(dp), intent(in) :: c0
+
+ call am_solve(c0,al*kap,al*rr(jj)*cci*(vv(jj)-ee), &
+&              al*rr(jj)*cci*(2.0d0*cc**2+ee-vv(jj)),-al*kap,b1,b2, &
+&              fu(jj),gu(jj))
+ call derivs_at(jj)
+
+ return
+ end subroutine step
 
  subroutine derivs_at(jj)
 

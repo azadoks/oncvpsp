@@ -168,6 +168,8 @@
    real(dp) :: rr1=-1.0d0
 !> Outer radius of the log radial mesh (0 or less for the default)
    real(dp) :: rmax=-1.0d0
+!> Order of the Adams-Moulton steps of the radial integrators, 4 to 8
+   integer :: adams_order=4
 ! [Atom, optional]
 !> Speed of light (0 or less for the default)
    real(dp) :: c_light=-1.0d0
