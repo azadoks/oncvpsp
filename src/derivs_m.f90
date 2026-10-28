@@ -90,13 +90,13 @@
  ii=mmax-1
  dpn(ii) = +25.d0/12.d0*rho(ii) -4.d0*rho(ii-1) +3.d0*rho(ii-2) &
 &         -4.d0/3.d0*rho(ii-3) +1.d0/4.d0*rho(ii-4)
- dppn(ii) = -15.d0/4.d0*rho(ii) +77.d0/6.d0*rho(ii-1) -107.d0/6.d0*rho(ii-2) &
-&          +13.d0*rho(ii-3) -61.d0/12.d0*rho(ii-4) +5.d0/6.d0*rho(ii-5)
+ dppn(ii) = 15.d0/4.d0*rho(ii) -77.d0/6.d0*rho(ii-1) +107.d0/6.d0*rho(ii-2) &
+&          -13.d0*rho(ii-3) +61.d0/12.d0*rho(ii-4) -5.d0/6.d0*rho(ii-5)
  ii=mmax
  dpn(ii) = +25.d0/12.d0*rho(ii) -4.d0*rho(ii-1) +3.d0*rho(ii-2) &
 &         -4.d0/3.d0*rho(ii-3) +1.d0/4.d0*rho(ii-4)
- dppn(ii) = -15.d0/4.d0*rho(ii) +77.d0/6.d0*rho(ii-1) -107.d0/6.d0*rho(ii-2) &
-&          +13.d0*rho(ii-3) -61.d0/12.d0*rho(ii-4) +5.d0/6.d0*rho(ii-5)
+ dppn(ii) = 15.d0/4.d0*rho(ii) -77.d0/6.d0*rho(ii-1) +107.d0/6.d0*rho(ii-2) &
+&          -13.d0*rho(ii-3) +61.d0/12.d0*rho(ii-4) -5.d0/6.d0*rho(ii-5)
 
 !
 ! r derivatives of d

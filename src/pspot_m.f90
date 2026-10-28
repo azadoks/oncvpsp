@@ -97,17 +97,14 @@
    work(ii,1)=uu(ii)
  end do
 
-!numerical derivatives of all-electron wave function
-!note that we are taking derivatives of uu here, not uu/rr as for sbf matching
- do jj=2,3
-
-! 7-point numerical first derivatives applied successively
-   do ii=1+3*jj,mmax-3*jj
-     work(ii,jj)=(-work(ii-3,jj-1)+ 9.d0*work(ii-2,jj-1)&
-&     -45.d0*work(ii-1,jj-1)+45.d0*work(ii+1,jj-1)&
-&     -9.d0*work(ii+2,jj-1)+work(ii+3,jj-1))&
-&     /(60.d0*al*rr(ii))
-   end do
+!7-point numerical first derivative of the all-electron wave function
+!(of uu here, not uu/rr as for sbf matching), for its kinetic energy
+!beyond rc
+ do ii=7,mmax-6
+   work(ii,2)=(-work(ii-3,1)+ 9.d0*work(ii-2,1)&
+&   -45.d0*work(ii-1,1)+45.d0*work(ii+1,1)&
+&   -9.d0*work(ii+2,1)+work(ii+3,1))&
+&   /(60.d0*al*rr(ii))
  end do
 
 !the inside piece and its seed on the nodes past rc too, as smooth
@@ -142,11 +139,6 @@
    work(ii,1)=tt
    work(ii,4)=0.5d0*ddt
  end do
-!beyond rc, that of the all-electron function from its numerical u''
- do ii=irc+1,mmax
-   work(ii,4)=0.5d0*(ll*ll1*work(ii,1)/rr(ii)**2-work(ii,3))
- end do
-
  do ii=1,mmax
    psopt(ii)=work(ii,1)
  end do
