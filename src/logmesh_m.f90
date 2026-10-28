@@ -222,7 +222,10 @@
  real(dp), intent(out) :: cum(nlim)
 
 !Local variables
- real(dp) :: hh,cell,sum_hi,sum_lo,yy,tmp
+ real(dp) :: hh,cell,sum_hi,sum_lo,yy
+! volatile: the fast math of Release (-fassociative-math) would fold the
+! compensation (tmp-sum_hi)-yy to 0
+ real(dp), volatile :: tmp
  integer :: ii,jj,istart,ishift
 
  hh=mesh_step(rr,mmax)

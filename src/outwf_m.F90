@@ -668,7 +668,9 @@
    end if
    if(kk==1) then
 ! lm_integral to rb1 by its weights (outwf_integrate), the sum compensated
-! in four lanes (independent chains of additions, so four times faster)
+! in four lanes (independent chains of additions, so four times faster);
+! the fast math of Release folds the compensation away, which is kept
+! (5-7 % of the run time; the integrals of logmesh_m and ugrid_m keep it)
      nn=min(ow%nw1,sg%jmax+1)
      s4(:)=0.0d0
      c4(:)=0.0d0

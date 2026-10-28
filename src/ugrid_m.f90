@@ -105,7 +105,10 @@
  real(dp), intent(out) :: cum(nn)
 
 !Local variables
- real(dp) :: wc(lm_ncell,0:lm_ncell-2),cell,sum_hi,sum_lo,yy,tmp
+ real(dp) :: wc(lm_ncell,0:lm_ncell-2),cell,sum_hi,sum_lo,yy
+! volatile: the fast math of Release (-fassociative-math) would fold the
+! compensation (tmp-sum_hi)-yy to 0
+ real(dp), volatile :: tmp
  integer :: ii,jj,istart,ishift
 
  if(nn<lm_ncell) then

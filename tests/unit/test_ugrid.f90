@@ -7,6 +7,9 @@
 !   cumint     the cumulative integral from the top of exp(-x) on [0,4]
 !              (65 points) equals exp(-x_i)-exp(-4) to 5e-13 at every point
 !              (O(h**8); 1.4e-13 here, the shifted end stencils' error)
+!   compensated  a sum of about 1 to which 2000 cells of 1e-16 are added
+!              keeps them to 1e-2 (each would round away alone): the
+!              compensation survives the compiler's flags (fast math)
 !   interp     the interpolant of exp(-x) (81 points on [0,4]) at the
 !              midpoints and at 0.3 of a cell is within 1e-11 (its error is
 !              O(h**7), 6e-12 here), and at a node exact
@@ -58,6 +61,14 @@
    err1 = max(err1, abs(cum(ii) - (exp(-xx(ii)) - exp(-4.0_dp))))
  end do
  call check('cumint exp(-x)', err1, 5.0e-13_dp)
+
+! compensated: 1 in the last cells, then cells of 1e-16 each
+ call grid(2101, 0.0_dp, 1.0_dp)
+ ff(:) = 1.0e-16_dp/hh
+ ff(nn) = 1.0_dp/hh
+ call ug_cumint_down(ff, nn, hh, cum)
+ call check('cumint compensated', abs((cum(1) - cum(nn - 100)) &
+&           /(1.0e-16_dp*dble(nn - 101)) - 1.0_dp), 1.0e-2_dp)
 
 ! interp
  call grid(81, 0.0_dp, 4.0_dp)

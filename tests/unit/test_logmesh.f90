@@ -15,6 +15,9 @@
 !                    the mesh
 !   cumint           r**2 exp(-r) and r**4 exp(-r) integrated from 0 to each
 !                    mesh point
+!   cumint_compensated  a sum of about 1 to which cells of 1e-16 are added
+!                    keeps them to 1e-2 (each would round away alone): the
+!                    compensation survives the compiler's flags (fast math)
 !   integral         between radii off the mesh
 !   integral_c1      rough data: d/drb of the integral is continuous across
 !                    mesh points
@@ -46,6 +49,7 @@
  call check_interp_local()
  call check_derivs()
  call check_cumint()
+ call check_cumint_compensated()
  call check_integral()
  call check_integral_c1()
  call check_integral_weights()
@@ -331,6 +335,26 @@
  call check('cumint r**2 exp(-r)', err2, 1.0e-13_dp)
  call check('cumint r**4 exp(-r)', err4, 1.0e-13_dp)
  end subroutine check_cumint
+
+ subroutine check_cumint_compensated()
+
+!! 1 from below the first cells (ff r = 1 at the first point, mm=0), then
+!! cells h ff r = 1e-16 each: what cum gains past the first 100 points is
+!! their sum, which an uncompensated sum would round to 0
+
+ real(dp), allocatable :: rr(:), ff(:), cum(:)
+ real(dp) :: hh
+ integer :: mmax
+
+ call make_mesh(1.006_dp, rr, mmax)
+ allocate(ff(mmax), cum(mmax))
+ hh = log(1.006_dp)
+ ff(:) = 1.0e-16_dp/(hh*rr)
+ ff(1) = 1.0_dp/rr(1)
+ call lm_cumint(rr, ff, mmax, 0, cum)
+ call check('cumint compensated', abs((cum(mmax) - cum(100)) &
+&           /(1.0e-16_dp*dble(mmax - 100)) - 1.0_dp), 1.0e-2_dp)
+ end subroutine check_cumint_compensated
 
  subroutine check_integral()
 
