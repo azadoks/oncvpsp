@@ -212,7 +212,7 @@
 
 !names in the messages: the equation solved and the program
  character(len=19) :: treatment
- character(len=9) :: pname
+ character(len=16) :: pname
  character(len=16) :: exe
 
  ifail=0

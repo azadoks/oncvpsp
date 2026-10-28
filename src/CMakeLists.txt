@@ -175,9 +175,9 @@ endfunction()
 
 # Scalar-relativistic, non-relativistic and fully-relativistic drivers
 oncvpsp_executable(oncvpspsr oncvpsp.F90 oncvpsp.x)
-oncvpsp_executable(oncvpspnr oncvpsp_nr.F90 oncvpspnr.x)
+oncvpsp_executable(oncvpspnr oncvpspnr.F90 oncvpspnr.x)
 if (ONCVPSP_WITH_FR)
-    oncvpsp_executable(oncvpspr oncvpsp_r.F90 oncvpspr.x)
+    oncvpsp_executable(oncvpspr oncvpspr.F90 oncvpspr.x)
 endif ()
 
 # All-electron and pseudopotential stages of the three drivers, which pass the all-electron atom through a

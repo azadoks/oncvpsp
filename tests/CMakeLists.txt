@@ -756,10 +756,10 @@ oncvpsp_add_test(pipe pipe_truncated sr 14_Si pipe_truncated_test.sh $<TARGET_FI
 
 # Input errors: exit status 1 and the documented message (see scripts/error_test.sh)
 foreach (rel IN ITEMS "sr" "nr" "r")
-    if (rel STREQUAL "r")
-        set(program_name "oncvpsp_r")
-    else ()
+    if (rel STREQUAL "sr")
         set(program_name "oncvpsp")
+    else ()
+        set(program_name "oncvpsp${rel}")
     endif ()
     oncvpsp_add_test(errors error ${rel} missing_input error_test.sh
         $<TARGET_FILE:oncvpsp${rel}> "${program_name}: ERROR cannot open input file"

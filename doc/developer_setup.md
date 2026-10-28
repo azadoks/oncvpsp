@@ -167,6 +167,25 @@ input's tests disabled without Libxc) and makes the name and the labels:
   `ctest -L fr` runs every fully-relativistic test, `ctest -L ref -L sr`
   the scalar-relativistic references (`-L` twice: both labels).
 
+The treatment is spelled two ways:
+- **Words.** The tests, labels and docs say `nr`, `sr` and `fr`.
+- **File names.** These follow the executables, as in 4.0.1:
+  - the executables are `oncvpspnr.x`, `oncvpsp.x` and `oncvpspr.x`;
+  - their sources are `oncvpspnr.F90`, `oncvpsp.F90` and `oncvpspr.F90`,
+    and the stages follow the same pattern (`oncvpspr_ae.F90`);
+  - the scripts are `run_nr.sh` and `run_r.sh`;
+  - the references are `NAME_nr.out`, `NAME.out` and `NAME_r.out`.
+
+A program's messages start with its executable's name without the `.x`.
+The CMake targets are `oncvpspnr`, `oncvpspsr` and `oncvpspr`, because
+`oncvpsp` is the library, and the helper's REL is the target suffix: `nr`,
+`sr` or `r`.
+
+`_r` also appears in two other places:
+- **Fortran routines.** It marks the fully-relativistic routines, as 4.0.1
+  does (`run_plot_r`).
+- **DIAGNOSTICS keys.** There it means a radius (`ld_r`, `ghost_r`).
+
 The tests that read the plain output of an input (reference, TOML, pipe,
 split) or its all-electron file (split, `ae_file_*`) share one run of it:
 the CTest fixtures `run_<treatment>_<input>` and `run_ae_<treatment>_<input>`

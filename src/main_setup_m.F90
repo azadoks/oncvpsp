@@ -45,7 +45,8 @@
 !!                pseudopotential stage
 !! @param nkap  number of kappas per l: 1, or 2 for irel=2
 !! @param treatment  the equation solved, as 'scalar-relativistic'
-!! @param pname  the program name of the messages
+!! @param pname  the program name of the messages: the executable
+!!               without .x
 !! @param exe  the name of the executable, as 'oncvpsp_ae.x'
 
 !Input variables
@@ -54,12 +55,11 @@
 !Output variables
  integer, intent(out) :: nkap
  character(len=19), intent(out) :: treatment
- character(len=9), intent(out) :: pname
+ character(len=16), intent(out) :: pname
  character(len=16), intent(out) :: exe
  if(irel==2) then
    nkap=2
    treatment='fully-relativistic'
-   pname='oncvpsp_r'
  else
    nkap=1
    if(irel==0) then
@@ -67,21 +67,20 @@
    else
      treatment='scalar-relativistic'
    end if
-   pname='oncvpsp'
  end if
  if(irel==0) then
-   exe='oncvpspnr'
+   pname='oncvpspnr'
  else if(irel==1) then
-   exe='oncvpsp'
+   pname='oncvpsp'
  else
-   exe='oncvpspr'
+   pname='oncvpspr'
  end if
  if(istage==1) then
-   exe=trim(exe)//'_ae'
+   pname=trim(pname)//'_ae'
  else if(istage==2) then
-   exe=trim(exe)//'_ps'
+   pname=trim(pname)//'_ps'
  end if
- exe=trim(exe)//'.x'
+ exe=trim(pname)//'.x'
  end subroutine main_names
 
  subroutine parse_command_line(istage,treatment,pname,exe,input_mode, &

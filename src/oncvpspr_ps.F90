@@ -1,6 +1,6 @@
 !
 ! Fully-relativistic pseudopotential stage: reads the all-electron data
-! file written by oncvpspr_ae.x (see oncvpsp_main.F90 and ae_file_m)
+! file written by oncvpspr_ae.x (see oncvpsp_main_m.F90 and ae_file_m)
 !
  program oncvpspr_ps
  use oncvpsp_main_m, only: oncvpsp_main

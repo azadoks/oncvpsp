@@ -1,5 +1,5 @@
 !
-! Scalar-relativistic program, oncvpsp.x (see oncvpsp_main.F90)
+! Scalar-relativistic program, oncvpsp.x (see oncvpsp_main_m.F90)
 !
  program oncvpsp
  use oncvpsp_main_m, only: oncvpsp_main
