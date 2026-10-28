@@ -409,3 +409,7 @@ mkdocs serve
 ```
 
 New pages go in the `nav` of `mkdocs.yml`.
+
+A live doc names only files and modules that exist. The plans, audits and
+change records keep the names of their dates; `HISTORICAL` in
+`scripts/docrefs.py` lists them, and the ctest `lint_docrefs` runs it.

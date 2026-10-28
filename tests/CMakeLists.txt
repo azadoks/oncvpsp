@@ -206,6 +206,9 @@ oncvpsp_add_test(unit unit - kernel_agreement kernel_agreement_test.py
     "${CMAKE_CURRENT_SOURCE_DIR}/refs/60_Nd_GHOST_r.out" "@DIR@")
 oncvpsp_compares("${added_test}")
 
+# The live docs name only files and modules that exist (scripts/docrefs.py)
+oncvpsp_add_test(lint lint - docrefs docrefs.py "${PROJECT_SOURCE_DIR}")
+
 # goals G1 (an input that was rounded or searched) and G2 (one that never was: the noise floor)
 set(smooth_g1 "kernel=1e-10,vloc=1e-10,core=1e-12,tests=1e-10")
 set(smooth_g2 "kernel=1e-12,vloc=1e-12,core=1e-12,tests=1e-10")
