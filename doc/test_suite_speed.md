@@ -102,5 +102,7 @@ rerun when the all-electron or solver numerics change.
        same; a parse takes 0.034 s in place of 0.092 s (pyoncvpsp 5deacd6,
        whose parser became 4.7 times faster on 2026-10-22), about 1 % of
        the smooth label, whose time is the oncvpsp runs.
-9. [ ] Move `regen.sh`, which regenerates the references in parallel,
-       into `scripts/`; with fixtures it reuses the same runs.
+9. [x] Move `regen.sh`, which regenerates the references in parallel,
+       into `scripts/`; with fixtures it reuses the same runs. Dropped
+       (2026-10-28): `regen.sh` is not in the repository, and references
+       are now patched with `scripts/ref_patch.py`.

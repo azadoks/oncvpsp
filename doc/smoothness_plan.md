@@ -1619,7 +1619,8 @@ from rc:
       6. Model-core extent: where the model core and the AE core fall
          below 1e-2 and 1e-4 of their value at rc; optionally its
          minimum and the r of its maximum (a hollow core).
-      7. (Raised 2026-10-23, the user's request, larger; in progress) AE
+      7. (Raised 2026-10-23, the user's request, larger; done 2026-10-23,
+         the sphere and the compression below) AE
          against PS in a confined atom (harmonic or soft wall, a few
          strengths): eigenvalue and energy shifts, a stand-in for
          compression; and, in the same confinement, the cutoff that a

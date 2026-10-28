@@ -734,6 +734,23 @@ the tests compare.
 
 ## Recommended remediation order
 
+**Note (2026-10-28).** Later work has done most of this list, without
+marking it here:
+- Item 1: every executable runs `oncvpsp_main(irel, istage)`, so
+  `oncvpspnr.x` is non-relativistic; `oncvpsp_nr.F90`, `oncpsp_nr.f90`
+  and `src/Makefile` are gone.
+- Item 2: every procedure is a module procedure, so the compiler checks
+  every call's arguments.
+- Item 3: the ignored `ierr`s are checked, and the library routines pass
+  `ifail` on instead of stopping ([consistency audit](consistency_audit.md)
+  E-1 and E-5).
+- Item 5: the declaration order, with `-std=f2008` in the Debug flags
+  (consistency audit I-2).
+- Item 8: the `foo`/`foo_r` twins are merged ([Merging sr and
+  fr](fr_merge_plan.md)).
+
+Item 4 has not been checked again.
+
 1. **Fix the build.** Make `oncvpspnr.x` really non-relativistic (test
    `RELATIVISTIC`, or set `srel` from it), and remove `oncvpsp_nr.F90` and
    `oncpsp_nr.f90`. Fix the duplicated or missing CMake entries. Drop or
