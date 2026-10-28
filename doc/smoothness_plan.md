@@ -522,7 +522,7 @@ and committed (red) at the start of the phase, and the phase is done
 when it is green. All of these carried the ctest label `smooth` until the
 plan was complete, so `ctest -LE smooth` kept the suite green on the
 branch in between; phase 7 dropped it: the scans are labelled `scan`
-and part of the default preset.
+and run by their own test preset, `ctest --preset scan`.
 
 - **T1 Unit tests of the primitives** (`tests/unit/test_logmesh.f90`,
   written red against stubs of `src/logmesh_m.f90` and
@@ -1288,10 +1288,11 @@ So the order is:
       caller left)
 - [x] The bugs below fixed where the phases did not already
 - [x] `smooth` label dropped; T2 part of the default suite
-      (2026-10-27): the scans carry the label `scan`, which the default
-      test preset no longer leaves out; `unit_modcore` is a unit test and
-      the projector-output tests are labelled as the other TOML tests.
-      The dev loop is `ctest -LE "scan|nist"`
+      (2026-10-27): the scans carry the label `scan`; `unit_modcore` is a
+      unit test and the projector-output tests are labelled as the other
+      TOML tests. The dev loop is `ctest -LE "scan|nist"`. 2026-10-28:
+      the scans (about 4700 s·proc, three times the rest) have their own
+      test preset, `scan`, which the default one leaves out
 
 #### Phase 8: the kernels free of the well (follow-up)
 

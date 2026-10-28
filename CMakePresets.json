@@ -82,10 +82,21 @@
     ],
     "testPresets": [
         {
-            "name": "default",
+            "name": "base",
+            "hidden": true,
             "configurePreset": "default",
             "output": {"outputOnFailure": true},
             "execution": {"jobs": 8}
+        },
+        {
+            "name": "default",
+            "inherits": "base",
+            "filter": {"exclude": {"label": "scan"}}
+        },
+        {
+            "name": "scan",
+            "inherits": "base",
+            "filter": {"include": {"label": "scan"}}
         },
         {"name": "debug", "inherits": "default", "configurePreset": "debug"},
         {"name": "release", "inherits": "default", "configurePreset": "release"},

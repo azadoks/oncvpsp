@@ -143,7 +143,8 @@ the definition of the routine it calls.
 
 ## Tests
 
-`ctest --preset default` runs everything; `-L <label>` selects a part of it
+`ctest --preset default` runs everything but the smoothness scans (below);
+`-L <label>` selects a part of it
 (`unit`, `sr`, `r`, `nr`, `split`, `mesh`, `toml`, `psml`, `pipe`,
 `errors`, `echo`, `psp8`, `nist`) and `-R <regex>` a test by name. Each test
 leaves its outputs in its own directory under `build/tests`.
@@ -163,10 +164,12 @@ atom against reference data, and are needed only after changes to the
 all-electron or solver numerics, so `ctest -LE "scan|nist"` is the dev
 loop.
 
-The smoothness scans (label `scan`, `scripts/smooth_scan.py`) run 21 to
+The smoothness scans (label `scan`, `scripts/smooth_scan.py`) have their
+own test preset, `ctest --preset scan`: about 4700 s of processor time,
+three times the rest of the suite. They run 21 to
 41 oncvpsp processes per row (by the degree of the fit),
-`ONCVPSP_SMOOTH_JOBS` of them at once (default 4), and each row reserves as many ctest processors, so `ctest -j <cores>
--L scan` runs `<cores>/ONCVPSP_SMOOTH_JOBS` rows side by side. To run one
+`ONCVPSP_SMOOTH_JOBS` of them at once (default 4), and each row reserves as many ctest processors, so `ctest --preset scan -j <cores>`
+runs `<cores>/ONCVPSP_SMOOTH_JOBS` rows side by side. To run one
 row in the dev loop, configure with `-DONCVPSP_SMOOTH_JOBS=<cores>` (and
 run `ctest -j <cores>`).
 
