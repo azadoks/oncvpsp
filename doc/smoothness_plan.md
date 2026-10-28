@@ -1615,7 +1615,16 @@ from rc:
          where the doubled angle turns by 2 pi in one step (73_Ta's
          all-electron 4f near -0.95 Ha at 2.6 bohr: the phases below it
          are off by pi unless a halving happens to land in it, the
-         pseudopotential's too, through the alignment). Open.
+         pseudopotential's too, through the alignment). Fixed 2026-10-28:
+         each step is checked against the Pruefer angle (atan(r phi'/phi)
+         less pi per node of u inside the radius), which a node crossing
+         the radius carries across any resonance; a step whose change
+         differs from it by a multiple of pi takes the Pruefer angle's
+         for the all-electron potential (the same function up to a
+         constant there), and is halved, to the deepest halving, for the
+         pseudopotential, whose Pruefer angle also jumps by pi where a
+         node appears inside the projectors (73_Ta 4f at 0.05 Ha steps:
+         4.4315 below the level, 1.2899 before; tests/unit/test_phsft).
       6. Model-core extent: where the model core and the AE core fall
          below 1e-2 and 1e-4 of their value at rc; optionally its
          minimum and the r of its maximum (a hollow core).

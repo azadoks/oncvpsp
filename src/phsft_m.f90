@@ -30,11 +30,17 @@
 !> radius on its own (so a radius's phases are the same with any other
 !> radii), so the result is the same continuous function of the energy
 !> whatever steps were taken: no thresholds, no 2 pi or pi corrections, no
-!> search for spurious jumps. Except across a resonance narrower than the
-!> step, where the doubled angle turns by 2 pi within one step unseen, and
-!> the phase below it is off by pi unless a halving lands in it (73_Ta's 4f
-!> near -0.95 Ha at 2.6 bohr, both phases, the pseudopotential's through
-!> the alignment).
+!> search for spurious jumps. A resonance narrower than the step turns the
+!> doubled angle by 2 pi within it unseen (73_Ta's 4f at -0.92 Ha at 2.6
+!> bohr, 0.05 Ha steps); the Pruefer angle, atan(r phi'/phi) less pi per
+!> node of u inside the radius, sees it, as a node crosses the radius. It
+!> is the same function up to a constant multiple of pi for a local
+!> potential, so a step whose change differs from the Pruefer angle's by a
+!> multiple of pi takes the Pruefer angle's (the all-electron potential).
+!> With projectors a node can appear inside them, where the Pruefer angle
+!> jumps by pi and the phase does not (Pb p with debl 4.7), so such a step
+!> is halved instead, to maxdepth, which resolves a resonance and leaves
+!> the jump to the continuation.
 
  module phsft_m
  use constants_m, only: dp, pi
@@ -315,27 +321,28 @@
  integer, intent(out) :: ifail
 
 !Local variables
- real(dp) :: da(ps%nq)
+ real(dp) :: da(ps%nq),pr(ps%nq,npsh),pral(ps%nq)
  integer :: ii,kk,iq
 
  ifail=0
- call doubled_angle(ps,epsh2,da,iout,ifail)
+ call doubled_angle(ps,epsh2,da,pr(:,1),iout,ifail)
  psh(1,:)=0.5d0*da(:)
  if(ifail/=0) return
  do ii=2,npsh
-   call doubled_angle(ps,energy(ii),da,iout,ifail)
+   call doubled_angle(ps,energy(ii),da,pr(:,ii),iout,ifail)
    if(ifail/=0) return
    do iq=1,ps%nq
-     call follow(ps,iq,psh(ii-1,iq),energy(ii-1),energy(ii),da(iq),0, &
-&                psh(ii,iq),iout,ifail)
+     call follow(ps,iq,psh(ii-1,iq),pr(iq,ii-1),energy(ii-1),energy(ii), &
+&                da(iq),pr(iq,ii),0,psh(ii,iq),iout,ifail)
      if(ifail/=0) return
    end do
  end do
  kk=min(npsh,max(1,nint((epsh2-eal)/depsh)+1))
- call doubled_angle(ps,eal,da,iout,ifail)
+ call doubled_angle(ps,eal,da,pral,iout,ifail)
  if(ifail/=0) return
  do iq=1,ps%nq
-   call follow(ps,iq,psh(kk,iq),energy(kk),eal,da(iq),0,pal(iq),iout,ifail)
+   call follow(ps,iq,psh(kk,iq),pr(iq,kk),energy(kk),eal,da(iq),pral(iq), &
+&              0,pal(iq),iout,ifail)
    if(ifail/=0) return
  end do
  return
@@ -603,16 +610,19 @@
  th=th-pi*dble(nnode)
  end subroutine angle_at
 
- recursive subroutine follow(ps,iq,th0,e0,e1,da1,depth,th1,iout,ifail)
+ recursive subroutine follow(ps,iq,th0,pr0,e0,e1,da1,pr1,depth,th1,iout, &
+&                             ifail)
 
 !! the phase of radius iq at e1, continued from th0 at e0
 !!
 !! @param ps  the solver
 !! @param iq  the radius
 !! @param th0  the phase at e0
+!! @param pr0  the Pruefer angle at e0
 !! @param e0  the energy of th0
 !! @param e1  the energy wanted
 !! @param da1  the doubled angle at e1
+!! @param pr1  the Pruefer angle at e1
 !! @param depth  halvings so far
 !! @param th1  the phase at e1
 !! @param iout  unit of the text output
@@ -622,7 +632,7 @@
  type(phsft_t), intent(inout), target :: ps
 
 !Input variables
- real(dp), intent(in) :: th0,e0,e1,da1
+ real(dp), intent(in) :: th0,pr0,e0,e1,da1,pr1
  integer, intent(in) :: iq,depth
  integer, intent(in) :: iout
 
@@ -631,7 +641,8 @@
  integer, intent(out) :: ifail
 
 !Local variables
- real(dp) :: dd,em,thm,dam(ps%nq)
+ real(dp) :: dd,em,thm,dam(ps%nq),prm(ps%nq)
+ integer :: nturn
 
  ifail=0
  dd=da1-2.0d0*th0
@@ -644,13 +655,18 @@
    ifail=1
    return
  end if
- if(abs(dd)>0.5d0*pi) then
+! the turns by pi that the step leaves out, by the Pruefer angle
+ nturn=0
+ if(abs(dd)<=0.5d0*pi) nturn=nint((pr1-pr0-0.5d0*dd)/pi)
+ if(nturn/=0 .and. ps%kind==1) then
+   th1=th0+(pr1-pr0)
+ else if(abs(dd)>0.5d0*pi .or. (nturn/=0 .and. depth<maxdepth)) then
    em=0.5d0*(e0+e1)
-   call doubled_angle(ps,em,dam,iout,ifail)
+   call doubled_angle(ps,em,dam,prm,iout,ifail)
    if(ifail/=0) return
-   call follow(ps,iq,th0,e0,em,dam(iq),depth+1,thm,iout,ifail)
+   call follow(ps,iq,th0,pr0,e0,em,dam(iq),prm(iq),depth+1,thm,iout,ifail)
    if(ifail/=0) return
-   call follow(ps,iq,thm,em,e1,da1,depth+1,th1,iout,ifail)
+   call follow(ps,iq,thm,prm(iq),em,e1,da1,pr1,depth+1,th1,iout,ifail)
    if(ifail/=0) return
  else
    th1=th0+0.5d0*dd
@@ -658,14 +674,15 @@
  return
  end subroutine follow
 
- subroutine doubled_angle(ps,ee,da,iout,ifail)
+ subroutine doubled_angle(ps,ee,da,pr,iout,ifail)
 
 !! twice the angle of (phi, r phi') at each radius, in (-pi, pi]: that of
-!! (u, u' - u/r) at the energy ee, the same for -u
+!! (u, u' - u/r) at the energy ee, the same for -u; and the Pruefer angle
 !!
 !! @param ps  the solver
 !! @param ee  energy (Ha)
 !! @param da  the doubled angle of each radius
+!! @param pr  the Pruefer angle of each radius (phsft_node_phase)
 !! @param iout  unit of the text output
 !! @param ifail  0, or 1 after a failure, whose message is written
 
@@ -680,12 +697,12 @@
  integer, intent(in) :: iout
 
 !Output variables
- real(dp), intent(out) :: da(ps%nq)
+ real(dp), intent(out) :: da(ps%nq),pr(ps%nq)
  integer, intent(out) :: ifail
 
 !Local variables
  real(dp), allocatable :: uu(:,:),up(:,:)
- real(dp) :: uq,upq,xx,yy,hh
+ real(dp) :: uq,upq,xx,yy,hh,uq2
  integer :: nn,iq
 
  ifail=0
@@ -709,6 +726,7 @@
    xx=uq/hh
    yy=(upq/ps%al-uq)/hh
    da(iq)=atan2(2.0d0*xx*yy,(xx-yy)*(xx+yy))
+   call angle_at(ps,iq,ps%mch,uu(:,1),up(:,1),.true.,pr(iq),uq2)
  end do
  deallocate(uu,up)
  return
