@@ -45,7 +45,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_not_found
+ use failure_m, only: fail_not_found, failed, msg_qroots_not_found
  use constants_m, only: dp
  use sbf_m, only: sbf_rc_der
  use root_m, only: root_tol
@@ -117,7 +117,7 @@
  end do
  if(iroot<nroot) then
    write(iout,'(a)') 'qroots: ERROR - failed to find nroot roots'
-   ifail=fail_not_found
+   ifail=failed(fail_not_found,msg_qroots_not_found)
    return
  end if
 
@@ -152,7 +152,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_convergence
+ use failure_m, only: fail_convergence, failed, msg_qroots_newton
  real(dp), intent(inout) :: qp
  real(dp) :: gg,dg,dq,dgold,gscale
  integer :: kk
@@ -178,7 +178,7 @@
  write(iout,'(/a,i0,a,es12.4,a,es12.4)') &
 &     'qroots: ERROR Newton polish not converged, ll=',ll,', q=',qp, &
 &     ', last step',dq
- ifail=fail_convergence
+ ifail=failed(fail_convergence,msg_qroots_newton)
  return
  end subroutine polish
 

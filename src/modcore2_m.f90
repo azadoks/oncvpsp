@@ -66,7 +66,8 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_not_found
+ use failure_m, only: fail_not_found, failed, msg_modcore2_core_below, &
+&                    msg_modcore2_ircc, msg_modcore2_teter
  use constants_m, only: dp, mxstate, nrhomod
  use logmesh_m, only: lm_derivs
  use modcore_m, only: core_crossover, teter_derivs, teter_core_derivs, &
@@ -111,7 +112,7 @@
  if(ierr/=0) then
    write(iout,'(/2a)') 'modcore2: ERROR core charge never exceeds', &
 &        ' valence pseudocharge'
-   ifail=fail_not_found
+   ifail=failed(fail_not_found,msg_modcore2_core_below)
    return
  end if
  call lm_derivs(rr,rhoc,mmax,rmatch,0,fmatch)
@@ -123,7 +124,7 @@
  if(ierr/=0) then
    write(iout,'(/a)') 'modcore2: ERROR ircc (core-valence charge crossover) &
 &        not found'
-   ifail=fail_not_found
+   ifail=failed(fail_not_found,msg_modcore2_ircc)
    return
  end if
 
@@ -142,7 +143,7 @@
  if(ierr/=0) then
    write(iout,'(/a,es12.4)') 'modcore2: ERROR no Teter scale for the slope', &
 &        ymatch
-   ifail=fail_not_found
+   ifail=failed(fail_not_found,msg_modcore2_teter)
    return
  end if
  call teter_derivs(xx,0,gd)

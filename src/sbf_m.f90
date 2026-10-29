@@ -250,7 +250,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_internal
+ use failure_m, only: fail_internal, failed, msg_sbf_rc_der_llin
 
 !Input variables
  integer, intent(in) :: llin
@@ -270,7 +270,7 @@
    write(error_unit,'(a,i4,a)') 'sbf_rc_der: argument ERROR, llin = ',llin,&
 &   ' >5'
    sbfder(:)=0.0d0
-   ifail=fail_internal
+   ifail=failed(fail_internal,msg_sbf_rc_der_llin)
    return
  end if
 

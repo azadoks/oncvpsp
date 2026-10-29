@@ -178,7 +178,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_construction
+ use failure_m, only: fail_construction, failed, msg_vkb_local_node
  use constants_m, only: mxlin, rel_window, mxprj
  use kappa_m, only: kap_count
  use pieces_m, only: pw_reach, pw_maxseg, pw_alloc
@@ -238,7 +238,7 @@
          write(iout,'(/2a,i0,a,f12.6)') 'run_vkb: ERROR node of the local', &
 &              ' channel''s pseudo wave within reach of rc, l=',lloc, &
 &              ' r=',rr(ii)
-         ifail=fail_construction
+         ifail=failed(fail_construction,msg_vkb_local_node)
          return
        end if
        tt=chix(ii,1,ikap)/pswfx(ii,1,ikap)
@@ -309,7 +309,8 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_numerical
+ use failure_m, only: fail_numerical, failed, msg_vkb_b_dsyev, &
+&                    msg_vkb_binv_dsyev, msg_vkb_sovl_dsyev
  use constants_m, only: rel_window, mxprj
  use kappa_m, only: kap_count, kap_of
  use projbasis_m, only: pb_half_powers, pb_congruence, pb_combine, &
@@ -453,7 +454,7 @@
      call dsyev( 'V', 'U', nprj, bb, mxprj, bbev, work, lwork, info )
      if(info /= 0) then
        write(iout,'(a,i4)') 'run_vkb: B matrix eigenvalue ERROR, info=',info
-       ifail=fail_numerical
+       ifail=failed(fail_numerical,msg_vkb_b_dsyev)
        return
      end if
      bbeig(1:nprj,ikap)=bbev(1:nprj)
@@ -512,7 +513,7 @@
      if(info /= 0) then
        write(iout,'(a,i4)') 'run_vkb: sovl matrix eigenvalue ERROR, info=', &
 &              info
-       ifail=fail_numerical
+       ifail=failed(fail_numerical,msg_vkb_sovl_dsyev)
        return
      end if
 
@@ -530,7 +531,7 @@
      if(info /= 0) then
        write(iout,'(a,i4)') &
 &              'run_vkb: B^(-1)* matrix eigenvalue ERROR, info=',info
-       ifail=fail_numerical
+       ifail=failed(fail_numerical,msg_vkb_binv_dsyev)
        return
      end if
 

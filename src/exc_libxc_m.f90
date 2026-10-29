@@ -91,7 +91,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_input
+ use failure_m, only: fail_input, failed, msg_libxc_init
  use libxc_api_m, only: lxc_t, lxc_init, lxc_end
 
 !Input variables
@@ -114,7 +114,7 @@
 &         'exc_libxc_init: ERROR Libxc cannot evaluate functional ',id(ii)
 ! the first, if the second fails, is freed
      if(ii==2 .and. id(1)/=0) call lxc_end(fns(1))
-     ifail=fail_input
+     ifail=failed(fail_input,msg_libxc_init)
      return
    end if
  end do

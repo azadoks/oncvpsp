@@ -105,7 +105,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_io
+ use failure_m, only: fail_io, failed, msg_ps_file_open_write
  use kappa_m, only: kap_count
 
 !Input variables
@@ -128,7 +128,7 @@
 &     status='replace',action='write',iostat=ios)
  if(ios/=0) then
    write(iout,'(/2a)') 'write_ps_file: ERROR cannot open ',trim(fname)
-   ifail=fail_io
+   ifail=failed(fail_io,msg_ps_file_open_write)
    return
  end if
 
@@ -169,7 +169,9 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_io
+ use failure_m, only: fail_io, failed, msg_ps_file_byte_order, &
+&                    msg_ps_file_not_ps, msg_ps_file_open_read, &
+&                    msg_ps_file_version
  use ae_file_m, only: byteswap
  use kappa_m, only: kap_count
 
@@ -190,7 +192,7 @@
 &     status='old',action='read',iostat=ios)
  if(ios/=0) then
    write(iout,'(/2a)') 'read_ps_file: ERROR cannot open ',trim(fname)
-   ifail=fail_io
+   ifail=failed(fail_io,msg_ps_file_open_read)
    return
  end if
  read(unit,iostat=ios) magic_f,version_f,irel
@@ -198,21 +200,21 @@
    write(iout,'(/2a)') &
 &        'read_ps_file: ERROR not a pseudopotential data file: ', &
 &        trim(fname)
-   ifail=fail_io
+   ifail=failed(fail_io,msg_ps_file_not_ps)
    close(unit)
    return
  end if
  if(version_f/=version .and. byteswap(version_f)==version) then
    write(iout,'(/2a)') 'read_ps_file: ERROR file was written on a machine', &
 &        ' with the other byte order'
-   ifail=fail_io
+   ifail=failed(fail_io,msg_ps_file_byte_order)
    close(unit)
    return
  end if
  if(version_f/=version) then
    write(iout,'(/a,i0,a,i0)') 'read_ps_file: ERROR file format version ', &
 &        version_f,' but this program reads version ',version
-   ifail=fail_io
+   ifail=failed(fail_io,msg_ps_file_version)
    close(unit)
    return
  end if
@@ -309,7 +311,7 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
- use failure_m, only: fail_io
+ use failure_m, only: fail_io, failed, msg_ps_file_segments
  use pieces_m, only: piecewise_t, pw_maxseg, pw_alloc
 
 !Input variables
@@ -327,7 +329,7 @@
  read(unit) nseg
  if(nseg<1 .or. nseg>pw_maxseg) then
    write(iout,'(/a,i0)') 'read_ps_file: ERROR number of segments ',nseg
-   ifail=fail_io
+   ifail=failed(fail_io,msg_ps_file_segments)
    return
  end if
  read(unit) bound(0:nseg)

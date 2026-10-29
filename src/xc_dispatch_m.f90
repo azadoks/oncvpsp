@@ -44,7 +44,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_internal
+ use failure_m, only: fail_internal, failed, msg_xc_dispatch_iexc
  use exc_libxc_m, only: exc_libxc
  use exc_off_pbe_m, only: excggc
  use exc_relx_m, only: exc_relx
@@ -82,7 +82,7 @@
    call exc_libxc(iexc,al,rho,vxc,exc,rr,nn,ifail)
  else
    write(error_unit,'(/a,i4)') who//': ERROR bad input iexc =',iexc
-   ifail=fail_internal
+   ifail=failed(fail_internal,msg_xc_dispatch_iexc)
  end if
  return
  end subroutine exc_dispatch

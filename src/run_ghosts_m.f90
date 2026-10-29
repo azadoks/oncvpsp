@@ -87,7 +87,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_numerical
+ use failure_m, only: fail_numerical, failed, msg_ghosts_dsyev
  use constants_m, only: dp, pi, mxstate, mxl, mxlin, mxprj
  use pieces_m, only: piecewise_t, pw_integral, pw_value, pw_resample, &
 &                    pw_free, pw_node_values
@@ -198,7 +198,7 @@
    if(info /= 0) then
      write(iout,'(a,i4)') 'run_ghosts: hamiltonian matrix eigenvalue ERROR, &
 &          info=',info
-     ifail=fail_numerical
+     ifail=failed(fail_numerical,msg_ghosts_dsyev)
      return
    end if
    call bound_tests(l1,ifail)
@@ -233,7 +233,7 @@
 !! rb = s*rr, the last node of rr at or inside it scaled up onto it; the
 !! local potential vb on rb (vmin its least inside the barrier) and the
 !! projectors vkbb
- use failure_m, only: fail_input
+ use failure_m, only: fail_input, failed, msg_ghosts_barrier_mesh
  integer, intent(in) :: l1
  integer :: ii,iprj
  real(dp) :: vs
@@ -245,7 +245,7 @@
  if(mbar+5>mmax) then
    write(iout,'(/2a,i0,a,i0)') 'run_ghosts: ERROR barrier radius beyond', &
 &          ' radial mesh, mbar=',mbar,', mmax=',mmax
-   ifail=fail_input
+   ifail=failed(fail_input,msg_ghosts_barrier_mesh)
    return
  end if
  rb(:)=(rbar/rr(mbar))*rr(:)

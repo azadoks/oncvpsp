@@ -691,7 +691,7 @@
  subroutine upf_functional(name,ifail)
 !! the functional attribute of the UPF header for iexc; an error for one
 !! UPF has no name for
- use failure_m, only: fail_input
+ use failure_m, only: fail_input, failed, msg_upf_iexc
  character(len=20), intent(out) :: name
  integer, intent(out) :: ifail
 
@@ -728,7 +728,7 @@
    write(iout,'(t8,a,i0,a)') &
 &      'upfout: ERROR iexc = ',inp%iexc, &
 &      ' is presently unsupported for UPF output'
-   ifail=fail_input
+   ifail=failed(fail_input,msg_upf_iexc)
    return
  end select
  end subroutine upf_functional

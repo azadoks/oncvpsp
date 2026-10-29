@@ -475,7 +475,8 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_input
+ use failure_m, only: fail_input, failed, msg_budget_ecut, msg_budget_no_core, &
+&                    msg_budget_nodes
 
 !Input variables
  integer, intent(in) :: mmax,iexc,nprobe
@@ -526,7 +527,7 @@
  if(bc%qlo >= qmax) then
    write(iout,'(/a,f12.6,a)') 'modcore_budget: ERROR ecut beyond', &
 &        qmax**2/8.0d0,' Ha'
-   ifail=fail_input
+   ifail=failed(fail_input,msg_budget_ecut)
    return
  end if
  bc%qhi=min(3.0d0*bc%qlo,qmax)
@@ -542,7 +543,7 @@
  end do
  if(bc%irtop<4) then
    write(iout,'(/a)') 'modcore_budget: ERROR no core charge'
-   ifail=fail_input
+   ifail=failed(fail_input,msg_budget_no_core)
    return
  end if
  bc%rtop=min(rcmin,bc%rr(bc%irtop))
@@ -550,7 +551,7 @@
  if(qmax*bc%rtop > 2.0d0*(nxg-50)) then
    write(iout,'(/a,f12.6,a)') 'modcore_budget: ERROR r_s up to', &
 &        bc%rtop,' bohr needs more nodes of the transform'
-   ifail=fail_input
+   ifail=failed(fail_input,msg_budget_nodes)
    return
  end if
 
@@ -568,7 +569,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_input
+ use failure_m, only: fail_input, failed, msg_budget_tables_no_core
  use logmesh_m, only: lm_interp
  use quad_m, only: quad_gauss_legendre
 
@@ -622,7 +623,7 @@
  bc%i0=max(1,floor(log(bc%rlo/(1.05d0*bc%rr(1)))/bc%al))
  if(bc%iend<=bc%i0+1) then
    write(iout,'(/a)') 'modcore_budget: ERROR no core charge'
-   ifail=fail_input
+   ifail=failed(fail_input,msg_budget_tables_no_core)
    return
  end if
  bc%nout=ngi*(bc%iend-bc%i0)
@@ -1367,7 +1368,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_not_found
+ use failure_m, only: fail_not_found, failed, msg_budget_no_model
 
 !Input variables
  type(budget_t), intent(in) :: bc
@@ -1381,7 +1382,7 @@
    write(iout,'(/a,f12.6,a,f12.6,a,es12.4,a)') &
 &        'modcore_budget: ERROR no model core inside rc =',rtop, &
 &        ' needs less than',budget,' Ha for an error of',errmax,' Ha'
-   ifail=fail_not_found
+   ifail=failed(fail_not_found,msg_budget_no_model)
    return
  end associate
  end subroutine no_model
@@ -1397,7 +1398,7 @@
 !! @param bc  the state of the search
 !! @param rad  model radius r_s (bohr)
 
- use failure_m, only: fail_internal
+ use failure_m, only: fail_internal, failed, msg_budget_rs_table
  use logmesh_m, only: lm_derivs, lm_interp, lm_index
  use xc_dispatch_m, only: exc_dispatch
 
@@ -1437,7 +1438,7 @@
    if(irow>irmx) then
      write(error_unit,'(/a)') &
 &         'modcore_budget: ERROR r_s beyond the table'
-     bc%ifail=fail_internal
+     bc%ifail=failed(fail_internal,msg_budget_rs_table)
      return
    end if
    xs=log(rs)
@@ -1540,7 +1541,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_numerical
+ use failure_m, only: fail_numerical, failed, msg_budget_dhseqr
  use lapack_m, only: dhseqr
 
 !Input variables
@@ -1578,7 +1579,7 @@
    call dhseqr('E','N',nd,1,nd,hess,npow-2,wr,wi,zz,1,wkh,size(wkh),info)
    if(info/=0) then
      write(error_unit,'(/a,i0)') 'modcore_budget: ERROR dhseqr info =',info
-     ifail=fail_numerical
+     ifail=failed(fail_numerical,msg_budget_dhseqr)
      return
    end if
    do kk=1,nd
@@ -1727,7 +1728,7 @@
 !!            message is written
 !! @param dm  the core charge and its first two derivatives at r_s
 
- use failure_m, only: fail_numerical
+ use failure_m, only: fail_numerical, failed, msg_budget_dgglse
  use lapack_m, only: dgglse
  use sbf_m, only: sbf_trig
 
@@ -1780,7 +1781,7 @@
    if(info/=0) then
      write(error_unit,'(/a,i0)') &
 &         'modcore_budget: ERROR dgglse info =',info
-     bc%ifail=fail_numerical
+     bc%ifail=failed(fail_numerical,msg_budget_dgglse)
      return
    end if
    deallocate(amat,cvec,wk)
@@ -2138,7 +2139,8 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_convergence, fail_not_found
+ use failure_m, only: fail_convergence, fail_not_found, failed, &
+&                    msg_budget_no_root, msg_budget_zeroin_conv
  use root_m, only: root_fn, root_brent
 
 !Input variables
@@ -2161,14 +2163,14 @@
  if(ierr/=0) then
    write(iout,'(/a,2es12.4)') 'modcore_budget: ERROR no root between', &
 &       xa0,xb0
-   ifail=fail_not_found
+   ifail=failed(fail_not_found,msg_budget_no_root)
    return
  end if
  if(.not. conv) then
    write(iout,'(/a,es12.4,a,es12.4)') &
 &        'modcore_budget: ERROR zeroin not converged in 200 steps, x=', &
 &        xq,', f=',fb
-   ifail=fail_convergence
+   ifail=failed(fail_convergence,msg_budget_zeroin_conv)
    return
  end if
 ! a continuous function is at its round-off on a bracket a few ulps wide
@@ -2535,7 +2537,11 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_input, fail_internal, fail_not_found
+ use failure_m, only: fail_input, fail_internal, fail_not_found, failed, &
+&                    msg_budget_table_bracket, msg_budget_table_mean_below, &
+&                    msg_budget_table_mean_unreached, &
+&                    msg_budget_table_no_weights, msg_budget_table_unreached, &
+&                    msg_budget_table_weight_curve
  use constants_m, only: dp
  use logmesh_m, only: lm_fh_value
  use ugrid_m, only: ug_cross_down
@@ -2607,7 +2613,7 @@
      write(iout,'(/a,es12.4,a)') &
 &          'modcore_budget_table: ERROR no pseudo-wave reaches', &
 &          errmax,' Ha per electron in its table'
-     ifail=fail_not_found
+     ifail=failed(fail_not_found,msg_budget_table_unreached)
      return
    end if
    return
@@ -2626,7 +2632,7 @@
      write(iout,'(/a,i0,a)') &
 &          'modcore_budget_table: ERROR pseudo-wave ', &
 &          ip,' has a weight and no convergence curve'
-     ifail=fail_internal
+     ifail=failed(fail_internal,msg_budget_table_weight_curve)
      return
    end if
    qa=max(qa,q1s(ip))
@@ -2635,7 +2641,7 @@
  end do
  if(.not. (hs<huge(1.0d0)) .or. qa>=qb) then
    write(iout,'(/a)') 'modcore_budget_table: ERROR no weighted curves'
-   ifail=fail_input
+   ifail=failed(fail_input,msg_budget_table_no_weights)
    return
  end if
  fb=excess_mean(qb)
@@ -2643,7 +2649,7 @@
    write(iout,'(/a,es12.4,a)') &
 &        'modcore_budget_table: ERROR the weighted mean does not'// &
 &        ' reach',errmax,' Ha per electron'
-   ifail=fail_not_found
+   ifail=failed(fail_not_found,msg_budget_table_mean_unreached)
    return
  end if
 ! the last crossing from above, from qb down
@@ -2658,7 +2664,7 @@
      if(ierr/=0) then
        write(iout,'(/a)') &
 &            'modcore_budget_table: ERROR the bracket lost its sign change'
-       ifail=fail_internal
+       ifail=failed(fail_internal,msg_budget_table_bracket)
        return
      end if
      ecut=0.5d0*qerr**2
@@ -2669,7 +2675,7 @@
  write(iout,'(/a,es12.4,a)') &
 &      'modcore_budget_table: ERROR the weighted mean is below', &
 &      errmax,' Ha per electron where the curves start'
- ifail=fail_not_found
+ ifail=failed(fail_not_found,msg_budget_table_mean_below)
  return
 
  contains

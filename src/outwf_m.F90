@@ -154,7 +154,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_internal
+ use failure_m, only: fail_internal, failed, msg_outwf_setup_pieces
  use logmesh_m, only: lm_fh_weights, lm_fh_reach, lm_step, lm_position
 
 !Input variables
@@ -209,7 +209,7 @@
    if(sg%ipv==0) then
      write(iout,'(/a)') &
 &          'outwf_setup: ERROR the potential''s pieces end inside the mesh'
-     ifail=fail_internal
+     ifail=failed(fail_internal,msg_outwf_setup_pieces)
      return
    end if
    sg%ipb=0
@@ -239,7 +239,8 @@
 !! the bounds of the potential and of the sources inside the mesh, in
 !! order, each once (brk, nbrk), and the segments between them
 
- use failure_m, only: fail_input, fail_internal
+ use failure_m, only: fail_input, fail_internal, failed, &
+&                    msg_outwf_setup_breakpoints, msg_outwf_setup_segments
 
 !Output variables
  integer, intent(out) :: ifail
@@ -260,7 +261,7 @@
 &           /=srcpw(1)%bound(0:srcpw(1)%nseg))) then
        write(error_unit,'(/a)') &
 &           'outwf_setup: ERROR the sources'' segments differ'
-       ifail=fail_internal
+       ifail=failed(fail_internal,msg_outwf_setup_segments)
        return
      end if
    end do
@@ -280,7 +281,7 @@
  end do
  if(nbrk>og_maxseg-1) then
    write(iout,'(/a,i0)') 'outwf_setup: ERROR too many breakpoints ',nbrk
-   ifail=fail_input
+   ifail=failed(fail_input,msg_outwf_setup_breakpoints)
    return
  end if
  nseg=nbrk+1
@@ -298,7 +299,8 @@
 !! the first segment's grid: the nodes up to the first bound and og_ext
 !! beyond (all of them for one segment)
 
- use failure_m, only: fail_input
+ use failure_m, only: fail_input, failed, msg_outwf_setup_first_end, &
+&                    msg_outwf_setup_first_node
 
 !Output variables
  integer, intent(out) :: ifail
@@ -315,7 +317,7 @@
      write(iout,'(/a,es12.4)') &
 &              'outwf_setup: ERROR breakpoint below the 4th node, r=', &
 &              ow%bound(1)
-     ifail=fail_input
+     ifail=failed(fail_input,msg_outwf_setup_first_node)
      return
    end if
    npt=min(mmax,ceiling(sg%tend)+og_ext+1)
@@ -323,7 +325,7 @@
      write(iout,'(/a,es12.4)') &
 &              'outwf_setup: ERROR breakpoint too close to the mesh end, r=', &
 &              ow%bound(1)
-     ifail=fail_input
+     ifail=failed(fail_input,msg_outwf_setup_first_end)
      return
    end if
  else
@@ -352,7 +354,8 @@
 !! the grid of segment kk>1: from the bound, the mesh step, to og_ext past
 !! the next bound or to the mesh end
 
- use failure_m, only: fail_input
+ use failure_m, only: fail_input, failed, msg_outwf_setup_later_end, &
+&                    msg_outwf_setup_later_stencil
 
 !Input variables
  integer, intent(in) :: kk
@@ -377,14 +380,14 @@
    write(iout,'(/a,es12.4)') &
 &            'outwf_setup: ERROR breakpoint too close to the mesh end, r=', &
 &            ow%bound(kk)
-   ifail=fail_input
+   ifail=failed(fail_input,msg_outwf_setup_later_end)
    return
  end if
  if(sg%t0+nprime>plast) then
    write(iout,'(/a,es12.4)') &
 &            'outwf_setup: ERROR breakpoint too close to the mesh end, r=', &
 &            ow%bound(kk-1)
-   ifail=fail_input
+   ifail=failed(fail_input,msg_outwf_setup_later_stencil)
    return
  end if
  sg%npt=npt
@@ -996,7 +999,8 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_internal, fail_numerical
+ use failure_m, only: fail_internal, fail_numerical, failed, &
+&                    msg_outwf_index_dsyev, msg_outwf_index_sources
  use lapack_m, only: dsyev
 
 !Input variables
@@ -1049,7 +1053,7 @@
  if(rlast<ow%rsrc) then
    write(iout,'(/a,2es12.4)') 'outwf_index: ERROR R inside the sources,'// &
 &       ' R, rsrc=',rlast,ow%rsrc
-   ifail=fail_internal
+   ifail=failed(fail_internal,msg_outwf_index_sources)
    return
  end if
 
@@ -1072,7 +1076,7 @@
  call dsyev('N','U',nact,mm,nact,ev,work,size(work),info)
  if(info/=0) then
    write(iout,'(/a,i4)') 'outwf_index: dsyev ERROR, stopping info =',info
-   ifail=fail_numerical
+   ifail=failed(fail_numerical,msg_outwf_index_dsyev)
    return
  end if
  neig=nloc+count(ev<0.0d0)-count(evkb(isrc)>0.0d0)
@@ -1151,7 +1155,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_numerical
+ use failure_m, only: fail_numerical, failed, msg_outwf_solve_dgesv
  use lapack_m, only: dgesv
 
 !Input/output variables
@@ -1194,7 +1198,7 @@
    call dgesv(nsrc,1,gg,nsrc,ipiv,gg0,nsrc,info)
    if(info/=0) then
      write(iout,'(/a,i4)') 'outwf_solve: dgesv ERROR, stopping info =',info
-     ifail=fail_numerical
+     ifail=failed(fail_numerical,msg_outwf_solve_dgesv)
      return
    end if
    call outwf_combine(ow,gg0)

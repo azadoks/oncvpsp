@@ -222,7 +222,8 @@
 !! projector of l1-1 and ikap: bound states as such, the others
 !! scattering states at their energies, both of the sign of the
 !! all-electron one at n2
- use failure_m, only: fail_convergence
+ use failure_m, only: fail_convergence, failed, msg_plot_dirac_conv, &
+&                    msg_plot_lschfb_conv
  integer, intent(in) :: l1,ikap
  integer :: ii,iprj,npr,ierr,mch,kap,ilabel
  integer, intent(out) :: ifail
@@ -255,13 +256,13 @@
        write(iout,'(a,i2,a,i2,a,i2,a,i4)') &
 &            'run_plot_r 409: ldiracfb convergence ERROR, n=',&
 &             npa(iprj,l1),'  l=',ll, 'kap-',kap,'  ierr=',ierr
-       ifail=fail_convergence
+       ifail=failed(fail_convergence,msg_plot_dirac_conv,ierr)
        return
      else if(ierr /= 0) then
        write(iout,'(/a,3i4)') &
 &            'run_plot: lschfb convergence ERROR n,l,ierr=', &
 &            npa(iprj,l1),ll,ierr
-       ifail=fail_convergence
+       ifail=failed(fail_convergence,msg_plot_lschfb_conv,ierr)
        return
      end if
      if(irel==2) then

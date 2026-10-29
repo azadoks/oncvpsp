@@ -94,7 +94,9 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_convergence, fail_input, fail_not_found
+ use failure_m, only: fail_convergence, fail_input, fail_not_found, failed, &
+&                    msg_wellstate_confined_ep, msg_wellstate_conv, &
+&                    msg_wellstate_jump
  use constants_m, only: dp, eig_floor
  use well_mesh_m, only: well_mesh_t, wm_build, wm_short
  use boundstate_m, only: boundstate
@@ -239,7 +241,7 @@
            write(iout,'(/a,i0,a,i0,a,es12.4)') &
 &                'wellstate: ERROR E(rwell) jumps across ep, n=',nn, &
 &                ' l=',ll,' E-ep=',fw
-           ifail=fail_not_found
+           ifail=failed(fail_not_found,msg_wellstate_jump)
            return
          end if
          ep=et
@@ -286,7 +288,7 @@
      if(ierr/=0) then
        write(iout,'(a,i3,a,i3)') &
 &            'wellstate: ERROR lschfb convergence error, n=',nn,' l=',ll
-       ifail=fail_convergence
+       ifail=failed(fail_convergence,msg_wellstate_conv)
        return
      end if
      exit
@@ -308,7 +310,7 @@
 &          'wellstate: ERROR with the confined well, ep must be '// &
 &         'above the atom''s own state of this n: raise ep or lower well_n'
    end if
-   ifail=fail_input
+   ifail=failed(fail_input,msg_wellstate_confined_ep)
    return
  end if
 
@@ -375,7 +377,7 @@
 !! replacements above; done when the localized bound state replaces it,
 !! with no well (uu, up its own, vwell vfull)
 
- use failure_m, only: fail_construction
+ use failure_m, only: fail_construction, failed, msg_wellstate_bound_below
 
 !Output variables
  logical, intent(out) :: done
@@ -391,7 +393,7 @@
      write(iout,'(/a,i0,a,i0,a,f12.6/a,f12.6)') &
 &          'wellstate: ERROR a bound state exists for n=',nnin,' l=',ll, &
 &          ' at energy',et,'wellstate: ERROR above the requested ep=',ep
-     ifail=fail_construction
+     ifail=failed(fail_construction,msg_wellstate_bound_below)
      return
    end if
  else

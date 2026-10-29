@@ -78,7 +78,9 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_convergence, fail_input
+ use failure_m, only: fail_convergence, fail_input, failed, &
+&                    msg_diag_dirac_conv, msg_diag_lschfb_conv, &
+&                    msg_diag_match_radius
  use constants_m, only: dp, mxl, mxlin, diag_match, mxprj
  use logmesh_m, only: lm_interp
  use phsft_m, only: phsft_mch
@@ -173,7 +175,7 @@
        if(mchf==0) then
          write(iout,'(/a,f12.6)') trim(name)// &
 &              ': ERROR matching radius beyond the mesh, rm=',rm
-         ifail=fail_input
+         ifail=failed(fail_input,msg_diag_match_radius)
          return
        end if
 
@@ -188,13 +190,13 @@
            write(iout,'(/a,4i4)') 'run_diag_r: ldiracfb convergence ERROR &
 &         n,l,,kap,ierr=', &
 &          npa(iprj,l1),ll,kap,ierr
-           ifail=fail_convergence
+           ifail=failed(fail_convergence,msg_diag_dirac_conv,ierr)
            return
          else if(ierr /= 0) then
            write(iout,'(/a,3i4)') &
 &                'run_diag: lschfb convergence ERROR n,l,ierr=', &
 &                npa(iprj,l1),ll,ierr
-           ifail=fail_convergence
+           ifail=failed(fail_convergence,msg_diag_lschfb_conv,ierr)
            return
          end if
        else

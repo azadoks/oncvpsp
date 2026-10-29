@@ -94,7 +94,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_input
+ use failure_m, only: fail_input, failed, msg_run_optimize_q_grid
  use constants_m, only: dp, qp, nerrlv, nerrdg, pi, ha_ev, mxprj
  use logmesh_m, only: lm_ncell, lm_step
  use ugrid_m, only: ug_cross_down
@@ -358,7 +358,7 @@
      write(iout,'(/2a,i0,a,i0/a)') 'run_optimize: ERROR q grid longer than', &
 &          ' the buffer of the convergence curve, nq=',nq,', ncurve=',ncurve, &
 &          '  (ncurve in oncvpsp_main; the grid grows with qcut*rc)'
-     ifail=fail_input
+     ifail=failed(fail_input,msg_run_optimize_q_grid)
      return
    end if
 

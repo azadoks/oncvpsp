@@ -65,12 +65,14 @@
 &                        INPUT_STDIN, INPUT_TEXT, INPUT_TOML
  use input_m, only: input_t
  use oncvpsp_run_m, only: oncvpsp_run
+ use failure_m, only: failure_t
  use results_m, only: results_t
  use psp_files_m, only: write_psp_files
  integer, parameter :: iout=6
 
  type(input_t) :: inp
  type(results_t) :: psp
+ type(failure_t) :: at
 
 !Input variables
  integer, intent(in) :: irel,istage
@@ -131,7 +133,7 @@
  if(input_mode/=INPUT_STDIN) close(unit)
 
  call oncvpsp_run(irel,istage,inp,ae_filename,ps_filename,skip_ld,psp, &
-&                 iout,ifail)
+&                 at,iout,ifail)
  if(ifail/=0) error stop 1
  if(istage==1) stop
 

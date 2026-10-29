@@ -127,6 +127,11 @@ foreach (coupled_test IN ITEMS "1:sr:14_Si_bc" "1:sr:14_Si" "2:r:14_Si")
     oncvpsp_add_test(unit unit_coupled ${rel} ${name} test_coupled ${irel} "${data}/${name}.dat")
 endforeach ()
 
+# Unit test of the failure record (test_failure.f90): an ifail split into its kind, message and
+# status, and two runs that fail, at the input and in a channel, with the message and the stage
+oncvpsp_unit_executable(failure)
+oncvpsp_add_test(unit unit_failure nr 08_O test_failure "${data}/08_O.dat")
+
 # Unit test of oncvpsp_run in several threads at once (test_run_threads.f90): each case alone, then
 # all of them twice over concurrently, which must give the same results and text bit for bit, so the
 # library keeps no state between or across runs; the cases differ in irel, c_light and the

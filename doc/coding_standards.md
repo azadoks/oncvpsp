@@ -429,7 +429,13 @@ being the routine's last argument (0 on success). The kinds are the
 `fail_*` constants of `failure_m`: `fail_input`, `fail_convergence`,
 `fail_not_found`, `fail_construction`, `fail_numerical`, `fail_io` and
 `fail_internal`, whose comments say which is which; a binding raises a
-different exception for each. A caller returns the `ifail` it got,
+different exception for each. The site sets it with
+`ifail=failed(fail_input,msg_...)`, naming its message (`failure_m`'s
+`msg_*`, one per site, with a new value for a new site), and the solver
+status it stops on, if any (`failed(fail_convergence,msg_...,ierr)`), so
+that a binding tells the failures apart without their text (rule
+`failsite` of `scripts/check_conventions.py`). A caller returns the
+`ifail` it got,
 unchanged, and writes nothing more: a library routine passes `ifail` on
 and never stops. `scripts/check_conventions.py` (rule `propagate`) checks
 that an `if(ifail/=0)` does nothing but return, after at most closing a

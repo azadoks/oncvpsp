@@ -78,7 +78,9 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
- use failure_m, only: fail_construction, fail_convergence, ierr_ghost
+ use failure_m, only: fail_construction, fail_convergence, ierr_ghost, failed, &
+&                    msg_valence_bound_conv, msg_valence_vkb_construction, &
+&                    msg_valence_vkb_conv
  use boundstate_m, only: boundstate
  use lschvkbb_m, only: lschvkbb
  use constants_m, only: dp, mxprj, mxstate, mxl, mxlin
@@ -144,7 +146,7 @@
 &              'oncvpsp-461: lschfb convergence ERROR n,l,iter=', &
 &              na(nc+kk),la(nc+kk),it
        end if
-       ifail=fail_convergence
+       ifail=failed(fail_convergence,msg_valence_bound_conv)
        return
      end if
 
@@ -175,9 +177,9 @@
          flush(6)
        end if
        if(ierr==ierr_ghost) then
-         ifail=fail_construction
+         ifail=failed(fail_construction,msg_valence_vkb_construction,ierr)
        else
-         ifail=fail_convergence
+         ifail=failed(fail_convergence,msg_valence_vkb_conv,ierr)
        end if
        return
      end if

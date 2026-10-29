@@ -79,7 +79,8 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_numerical
+ use failure_m, only: fail_numerical, failed, msg_optimize_dsyev_regularized, &
+&                    msg_optimize_dsyev_residual
  use constants_m, only: dp
  use lapack_m, only: dsyev
 
@@ -129,7 +130,7 @@
  call dsyev( 'V', 'U', nnull, wmat, nnull, wev, work, 5*nnull, info )
  if(info /= 0) then
    write(iout,'(a,i4)') 'optimize: residual-energy eigenvalue ERROR, info=',info
-   ifail=fail_numerical
+   ifail=failed(fail_numerical,msg_optimize_dsyev_residual)
    return
  end if
 
@@ -158,7 +159,7 @@
    if(info /= 0) then
      write(iout,'(a,i4)') 'optimize: residual-energy eigenvalue ERROR, info=', &
 &          info
-     ifail=fail_numerical
+     ifail=failed(fail_numerical,msg_optimize_dsyev_regularized)
      return
    end if
    optdg(3)=rev(1)
@@ -289,7 +290,9 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_construction, fail_convergence
+ use failure_m, only: fail_construction, fail_convergence, failed, &
+&                    msg_norm_constraint_halving, msg_norm_constraint_newton, &
+&                    msg_norm_constraint_ps0norm
  use root_m, only: root_tol
 
 !Input variables
@@ -314,7 +317,7 @@
  rtsgn=-sign(1.0d0, eresiddot_ev(1))
  if(ps0norm>uunorm) then
    write(iout,'(/a)') 'optimize: ERROR ps0norm > uunorm, code will stop'
-   ifail=fail_construction
+   ifail=failed(fail_construction,msg_norm_constraint_ps0norm)
    return
  end if
  yy=sqrt((uunorm-ps0norm))
@@ -349,7 +352,7 @@
 
  if(converged .eqv. .false.) then
    write(iout,'(/a)') 'optimize: ERROR interval-halving search not converged'
-   ifail=fail_convergence
+   ifail=failed(fail_convergence,msg_norm_constraint_halving)
    return
  end if
 
@@ -383,7 +386,7 @@
  if(converged .eqv. .false.) then
    write(iout,'(/a,es12.4)') &
 &        'optimize: ERROR Newton polish not converged, last step',dx
-   ifail=fail_convergence
+   ifail=failed(fail_convergence,msg_norm_constraint_newton)
    return
  end if
  pswfopt(1)=rtsgn*x1

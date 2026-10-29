@@ -94,7 +94,8 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_construction, fail_internal
+ use failure_m, only: fail_construction, fail_internal, failed, &
+&                    msg_eresid_q_grid, msg_eresid_tail
  use constants_m, only: dp, qp, pi
  use logmesh_m, only: lm_ncell
  use ugrid_m, only: ug_weights, ug_cumint_down
@@ -152,7 +153,7 @@
    write(error_unit,'(/a,i0,a,es12.4,a,es12.4)') &
 &       'eresid: ERROR q grid below 0, nq=', &
 &        nq,', dq=',dq,', qmax=',qmax
-   ifail=fail_internal
+   ifail=failed(fail_internal,msg_eresid_q_grid)
    return
  end if
 
@@ -167,7 +168,7 @@
 !the linear mesh of the tail
  if(nr<2*lm_ncell) then
    write(iout,'(/a,i0)') 'eresid: ERROR tail too short, nr=',nr
-   ifail=fail_construction
+   ifail=failed(fail_construction,msg_eresid_tail)
    return
  end if
 
@@ -382,7 +383,7 @@
 !! Gauss-Legendre, with the transforms at its nodes; ifail of the host
 !! after a failure
 
- use failure_m, only: fail_internal
+ use failure_m, only: fail_internal, failed, msg_eresid_q_off_grid
 
 !Local variables
  real(dp) :: qq,qq4,ps0q,psnullq(nnull),qa,qb,wg
@@ -393,7 +394,7 @@
      write(error_unit,'(/a,es12.4,a,es12.4)') &
 &         'eresid: ERROR q off the grid, q=', &
 &        qout(ii),' qmax=',qmax
-     ifail=fail_internal
+     ifail=failed(fail_internal,msg_eresid_q_off_grid)
      return
    end if
 ! icell -1 for a qout below the first node

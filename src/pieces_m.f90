@@ -89,7 +89,8 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_internal
+ use failure_m, only: fail_internal, failed, msg_pw_alloc_order, &
+&                    msg_pw_alloc_segments
 
 !Input variables
  integer, intent(in) :: mmax,nseg
@@ -105,14 +106,14 @@
  ifail=0
  if(nseg<1 .or. nseg>pw_maxseg) then
    write(error_unit,'(/a,i0)') 'pw_alloc: ERROR number of segments ',nseg
-   ifail=fail_internal
+   ifail=failed(fail_internal,msg_pw_alloc_segments)
    return
  end if
  do kk=1,nseg
    if(bound(kk)<bound(kk-1)) then
      write(error_unit,'(/a,i0)') &
 &         'pw_alloc: ERROR bounds out of order at segment ',kk
-     ifail=fail_internal
+     ifail=failed(fail_internal,msg_pw_alloc_order)
      return
    end if
  end do
@@ -247,7 +248,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_internal
+ use failure_m, only: fail_internal, failed, msg_pw_product_segments
  use logmesh_m, only: lm_integral
 
 !Input variables
@@ -268,7 +269,7 @@
  if(pwa%nseg/=pwb%nseg .or. any(pwa%bound(0:pwa%nseg)/=pwb%bound(0:pwa%nseg))) &
 &  then
    write(error_unit,'(/a)') 'pw_product_integral: ERROR the segments differ'
-   ifail=fail_internal
+   ifail=failed(fail_internal,msg_pw_product_segments)
    return
  end if
  ss=0.0d0

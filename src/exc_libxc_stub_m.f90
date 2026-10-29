@@ -46,7 +46,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_input
+ use failure_m, only: fail_input, failed, msg_libxc_stub_exc
  use constants_m, only: dp
 
 !Input variables
@@ -66,7 +66,7 @@
 
  vxc(:)=0.0d0
  exc(:)=0.0d0
- ifail=fail_input
+ ifail=failed(fail_input,msg_libxc_stub_exc)
  end subroutine exc_libxc
 
  subroutine exc_libxc_check(iexc,ierr)
@@ -103,7 +103,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_input
+ use failure_m, only: fail_input, failed, msg_libxc_stub_fxc
  use constants_m, only: dp
 
 !Input variables
@@ -120,7 +120,7 @@
  have=.false.
  write(error_unit,'(/a,i0)') 'exc_libxc_fxc: ERROR without libxc, iexc = ', &
 &     iexc
- ifail=fail_input
+ ifail=failed(fail_input,msg_libxc_stub_fxc)
  end subroutine exc_libxc_fxc
 
  subroutine exc_libxc_info(iexc,iout,ifail)
@@ -131,7 +131,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_input
+ use failure_m, only: fail_input, failed, msg_libxc_stub_info
 
 !Input variables
  integer, intent(in) :: iexc,iout
@@ -141,7 +141,7 @@
 
  write(iout,'(a,i8,a)') 'exc_libxc_stub: ERROR iexc = ',iexc, &
 &     ' requires libxc'
- ifail=fail_input
+ ifail=failed(fail_input,msg_libxc_stub_info)
  end subroutine exc_libxc_info
 
  end module exc_libxc_m

@@ -111,7 +111,7 @@
 
  use sbf_m, only: sbf_trig
  use root_m, only: root_brent
- use failure_m, only: fail_internal
+ use failure_m, only: fail_internal, failed, msg_ws_roots_brent
 
 !Input variables
  integer, intent(in) :: ll,iedge
@@ -147,7 +147,7 @@
      if(ierr/=0) then
        write(error_unit,'(/a,i0)') &
 &           'ws_roots: ERROR root_brent failed, ierr=',ierr
-       ifail=fail_internal
+       ifail=failed(fail_internal,msg_ws_roots_brent,ierr)
        return
      end if
      if(xr<=xmax) then
@@ -324,7 +324,7 @@
 !!               written
 
  use lapack_m, only: dsyev
- use failure_m, only: fail_numerical
+ use failure_m, only: fail_numerical, failed, msg_ws_convergence_dsyev
 
 !Input variables
  integer, intent(in) :: ll,iedge
@@ -355,7 +355,7 @@
    call dsyev('N','U',np,hh,nb,ev,work,lwork,info)
    if(info/=0) then
      write(error_unit,'(/a,i0)') 'ws_convergence: ERROR dsyev info ',info
-     ifail=fail_numerical
+     ifail=failed(fail_numerical,msg_ws_convergence_dsyev)
      return
    end if
    if(np==nb) idx=minloc(abs(ev(1:nb)-eex),1)
@@ -383,7 +383,7 @@
 !!               written
 
  use lapack_m, only: dsyev
- use failure_m, only: fail_numerical
+ use failure_m, only: fail_numerical, failed, msg_ws_eigenvalues_dsyev
 
 !Input variables
  integer, intent(in) :: ll,iedge
@@ -407,7 +407,7 @@
  call dsyev('N','U',nb,hmat,nb,ev,work,lwork,info)
  if(info/=0) then
    write(error_unit,'(/a,i0)') 'ws_eigenvalues: ERROR dsyev info ',info
-   ifail=fail_numerical
+   ifail=failed(fail_numerical,msg_ws_eigenvalues_dsyev)
    return
  end if
  deallocate(ecut,hmat,work)

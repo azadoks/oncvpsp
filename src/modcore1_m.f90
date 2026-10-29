@@ -66,7 +66,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_not_found
+ use failure_m, only: fail_not_found, failed, msg_modcore_ircc
  use constants_m, only: dp, mxstate, nrhomod
  use logmesh_m, only: lm_derivs
  use modcore_m, only: core_crossover, poly_core_fit, core_pieces, poly_form, &
@@ -107,7 +107,7 @@
  if(ierr/=0) then
    write(iout,'(/a)') 'rhomod: ERROR ircc (core-valence charge crossover) &
 &        not found'
-   ifail=fail_not_found
+   ifail=failed(fail_not_found,msg_modcore_ircc)
    return
  end if
 

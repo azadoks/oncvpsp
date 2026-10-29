@@ -439,7 +439,7 @@
 !! falls to level: the root of its interpolant in the cell of the first
 !! node below it (of the model core's piece of that node, model=1); 0 if
 !! it never does, and after a failure, which sets ifail of the host
- use failure_m, only: fail_internal
+ use failure_m, only: fail_internal, failed, msg_diagout_bracket
  real(dp), intent(in) :: ff(mmax),level
  integer, intent(in) :: model
  real(dp), allocatable :: gg(:)
@@ -467,7 +467,7 @@
    write(error_unit,'(/a)') &
 &       'diagout: ERROR the core charge''s bracket lost its sign'
    fall_to=0.0d0
-   ifail=fail_internal
+   ifail=failed(fail_internal,msg_diagout_bracket)
    return
  end if
  deallocate(gg)

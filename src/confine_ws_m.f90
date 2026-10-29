@@ -628,7 +628,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_input
+ use failure_m, only: fail_input, failed, msg_confine_edges
 
 !Input/output variables
  type(edges_t), intent(inout) :: ed
@@ -645,7 +645,7 @@
  if(ed%ne==mxedge) then
    write(iout,'(/a,i0)') 'add_edge: ERROR too many edges in the scan, ', &
 &        mxedge
-   ifail=fail_input
+   ifail=failed(fail_input,msg_confine_edges)
    return
  end if
  ed%ne=ed%ne+1

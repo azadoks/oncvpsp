@@ -31,12 +31,14 @@
  use input_text_m, only: read_input_text
  use oncvpsp_run_m, only: oncvpsp_run, run_stages, run_coupled, stages_t
  use results_m, only: results_t
+ use failure_m, only: failure_t
  implicit none
 
  type(results_t) :: psp0,psp1,psp2,psp3,psp4
  type(input_t) :: inp,inp1,inp2
  type(config_t) :: cnf(mxcnf)
  type(stages_t) :: st
+ type(failure_t) :: at
  integer :: irel,iout,ifail
  character(len=1024) :: arg,input_filename
 
@@ -47,27 +49,27 @@
 
 ! whole runs, with the input's model core and with none
  call read_input(inp)
- call oncvpsp_run(irel,0,inp,'','',.false.,psp0,iout,ifail)
+ call oncvpsp_run(irel,0,inp,'','',.false.,psp0,at,iout,ifail)
  if(ifail/=0) error stop 'test_coupled: oncvpsp_run failed'
  call read_input(inp)
  inp%icmod=0
- call oncvpsp_run(irel,0,inp,'','',.false.,psp3,iout,ifail)
+ call oncvpsp_run(irel,0,inp,'','',.false.,psp3,at,iout,ifail)
  if(ifail/=0) error stop 'test_coupled: oncvpsp_run (icmod 0) failed'
 
 ! the stages once, and the model core and the tests from them three times
  call read_input(inp)
- call run_stages(irel,0,inp,'',cnf,st,iout,ifail)
+ call run_stages(irel,0,inp,'',cnf,st,at,iout,ifail)
  if(ifail/=0) error stop 'test_coupled: run_stages failed'
  inp1=inp
- call run_coupled(irel,0,inp1,cnf,st,'',.false.,psp1,iout,ifail)
+ call run_coupled(irel,0,inp1,cnf,st,'',.false.,psp1,at,iout,ifail)
  if(ifail/=0) error stop 'test_coupled: run_coupled failed'
  inp2=inp
  inp2%icmod=0
  inp2%fcfact=0.0d0
- call run_coupled(irel,0,inp2,cnf,st,'',.false.,psp2,iout,ifail)
+ call run_coupled(irel,0,inp2,cnf,st,'',.false.,psp2,at,iout,ifail)
  if(ifail/=0) error stop 'test_coupled: run_coupled (icmod 0) failed'
  inp1=inp
- call run_coupled(irel,0,inp1,cnf,st,'',.false.,psp4,iout,ifail)
+ call run_coupled(irel,0,inp1,cnf,st,'',.false.,psp4,at,iout,ifail)
  if(ifail/=0) error stop 'test_coupled: run_coupled (again) failed'
  close(iout)
 

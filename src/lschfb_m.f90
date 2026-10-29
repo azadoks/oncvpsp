@@ -57,7 +57,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_internal, ierr_iterations
+ use failure_m, only: fail_internal, ierr_iterations, failed, msg_lschfb_ll
  use constants_m, only: dp, eig_tol
  use boundsolve_m, only: bs_box_energy, bs_solve, bs_turning_point
  use sr_flux_m, only: sr_gamma, sr_flux_coefs, sr_outward, sr_inward, &
@@ -121,7 +121,7 @@
 ! check arguments
  if(ll>nn-1) then
    write(iout,'(/a,i4,a,i4)') 'lschfb: ERROR ll =',ll,' > nn =',nn
-   ifail=fail_internal
+   ifail=failed(fail_internal,msg_lschfb_ll)
    return
  end if
 

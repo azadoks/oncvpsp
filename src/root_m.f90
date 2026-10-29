@@ -74,7 +74,7 @@
 !! @param converged  whether the bracket closed before the step limit
 !!                   (optional output)
 
- use failure_m, only: fail_convergence
+ use failure_m, only: fail_convergence, failed, msg_root_brent_conv
 
 !Input variables
  procedure(root_fn) :: fun
@@ -175,7 +175,7 @@
  if(iter>200 .and. .not. present(converged)) then
    write(error_unit,'(/a,es12.4,a,es12.4)') &
 &       'root_brent: ERROR not converged in 200 steps, x=',xb,', f=',fb
-   ifail=fail_convergence
+   ifail=failed(fail_convergence,msg_root_brent_conv)
    return
  end if
  tq=xb
@@ -197,7 +197,7 @@
 !!               written
 !!               (fail_convergence after 100 steps)
 
- use failure_m, only: fail_convergence
+ use failure_m, only: fail_convergence, failed, msg_root_fmin_conv
 
 !Input variables
  procedure(root_fn) :: fun
@@ -231,7 +231,7 @@
      write(error_unit,'(/a,es12.4,a,es12.4)') &
 &          'root_fmin: ERROR not converged in 100 steps, x=',xx, &
 &          ', bracket width=',bb-aa
-     ifail=fail_convergence
+     ifail=failed(fail_convergence,msg_root_fmin_conv)
      return
    end if
    if(abs(ee)>tol1) then

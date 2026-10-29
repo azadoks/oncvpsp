@@ -49,6 +49,8 @@ The rules (doc/coding_standards.md and doc/consistency_audit.md):
             (ifail=jfail), zeroed outputs, close and deallocate: no message
             (the failure's site writes it), no call, no new kind; a block
             ends in return unless the procedure ends with it
+  failsite  a failure is set with failed(kind,msg_...), not a bare kind,
+            and every msg_* of failure_m has a site
 """
 
 import argparse
@@ -609,6 +611,8 @@ def check_file(path, rel):
                                 f"{arg} of {cm.group(1).lower()} unused",
                                 ln,
                             )
+            if re.match(r"(if\s*\(.*\)\s*)?[\w%]*fail\s*=\s*fail_\w+\s*$", low):
+                add("failsite", unit, f"{low.split('=')[-1]} without failed()", ln)
             if procedure and in_module:
                 for detail in propagation(stmts, kk):
                     add("propagate", unit, detail, ln)
@@ -622,6 +626,21 @@ def check_file(path, rel):
                 if re.search(r"\breal(64|128)\b", low):
                     add("kinds", unit, "real64/real128 outside constants_m", ln)
     return found
+
+
+def unused_messages():
+    """The msg_* of failure_m that no failure site uses (rule failsite)."""
+    table = (ROOT / "src" / "failure_m.f90").read_text()
+    names = re.findall(r"parameter, public :: (msg_\w+)=", table)
+    used = set()
+    for path in (ROOT / "src").glob("*.[fF]90"):
+        if path.name != "failure_m.f90":
+            used |= set(re.findall(r"\bmsg_\w+", path.read_text().lower()))
+    return [
+        (("failsite", "src/failure_m.f90", "failure_m", f"{n} has no site"), 0)
+        for n in names
+        if n not in used
+    ]
 
 
 def main():
@@ -649,6 +668,8 @@ def main():
     found = []
     for path in paths:
         found += check_file(path, path.relative_to(ROOT).as_posix())
+    if any(p.name == "failure_m.f90" for p in paths):
+        found += unused_messages()
     keys = ["\t".join(f) for f, _ in found]
     lines = {"\t".join(f): line for f, line in found}
 

@@ -54,7 +54,8 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_internal, ierr_iterations
+ use failure_m, only: fail_internal, ierr_iterations, failed, &
+&                    msg_ldiracfb_kap, msg_ldiracfb_ll, msg_ldiracfb_zz
  use constants_m, only: dp, eig_tol
  use boundsolve_m, only: bs_box_energy, bs_solve, bs_turning_point
  use match_m, only: match_k, match_point, match_weights, match_blend
@@ -112,17 +113,17 @@
 ! check arguments
  if(ll>nn-1) then
    write(iout,'(/a,i4,a,i4)') 'ldiracfb: ERROR ll =',ll,' > nn =',nn
-   ifail=fail_internal
+   ifail=failed(fail_internal,msg_ldiracfb_ll)
    return
  end if
  if(kap/=ll .and. kap/=-(ll+1)) then
    write(iout,'(/a,i4,a,i4)') 'ldiracfb: ERROR kap =',kap,' ll =',ll
-   ifail=fail_internal
+   ifail=failed(fail_internal,msg_ldiracfb_kap)
    return
  end if
  if(zz<1.0d0) then
    write(iout,'(/a,f12.8)') 'ldiracfb: ERROR zz =',zz
-   ifail=fail_internal
+   ifail=failed(fail_internal,msg_ldiracfb_zz)
    return
  end if
 

@@ -42,7 +42,7 @@
 !!               written
 
  use constants_m, only: dp, pi
- use failure_m, only: fail_convergence
+ use failure_m, only: fail_convergence, failed, msg_gauss_legendre_node
 
 !Input variables
  real(dp), intent(in) :: xa,xb
@@ -74,7 +74,7 @@
        write(error_unit,'(/a,i0,a,i0)') &
 &            'quad_gauss_legendre: ERROR node not converged, nn=',nn, &
 &            ', node=',ii
-       ifail=fail_convergence
+       ifail=failed(fail_convergence,msg_gauss_legendre_node)
        return
      end if
    end do

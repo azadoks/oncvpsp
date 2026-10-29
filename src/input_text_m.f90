@@ -450,7 +450,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_input
+ use failure_m, only: fail_input, failed, msg_input_text_read
 
 !Input variables
  integer, intent(in) :: ios
@@ -466,7 +466,7 @@
  if(ios /= 0) then
    write(iout, '(a,i4)') 'Read ERROR, input data file line', inline
    write(iout, '(a)') 'Program will stop'
-   ifail=fail_input
+   ifail=failed(fail_input,msg_input_text_read)
    return
  end if
 

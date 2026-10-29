@@ -61,7 +61,8 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_input, fail_not_found
+ use failure_m, only: fail_input, fail_not_found, failed, &
+&                    msg_match_point_sign, msg_match_point_window
  use constants_m, only: dp
  use logmesh_m, only: lm_root, lm_step
 
@@ -82,14 +83,14 @@
  if(mch-1-match_k<2 .or. mch+match_k>mmax) then
    write(iout,'(/a,i0,a,i0)') 'match_point: ERROR matching window at mch=', &
 &        mch,' leaves the mesh, mmax=',mmax
-   ifail=fail_input
+   ifail=failed(fail_input,msg_match_point_window)
    return
  end if
  call lm_root(rr,cf,mmax,rr(mch-1),rr(mch),rq,ierr,ifail)
  if(ifail/=0) return
  if(ierr/=0) then
    write(iout,'(/a,i0)') 'match_point: ERROR no sign change below mch=',mch
-   ifail=fail_not_found
+   ifail=failed(fail_not_found,msg_match_point_sign)
    return
  end if
  al=lm_step(rr,mmax)

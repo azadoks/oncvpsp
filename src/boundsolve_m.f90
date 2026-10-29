@@ -199,7 +199,8 @@
 !!               written
 
  use constants_m, only: eig_floor
- use failure_m, only: fail_convergence, fail_not_found
+ use failure_m, only: fail_convergence, fail_not_found, failed, &
+&                    msg_box_energy_bisection, msg_box_energy_nodes
 
 !Input variables
  real(dp), intent(in) :: elow,etop,eps
@@ -228,7 +229,7 @@
    write(error_unit,'(/a,i0,a,es12.4)') &
 &       'bs_box_energy: ERROR no energy with more than ',nnode, &
 &       ' nodes up to ',ebhi
-   ifail=fail_not_found
+   ifail=failed(fail_not_found,msg_box_energy_nodes)
    return
  end if
 
@@ -246,7 +247,7 @@
  if(kk>200) then
    write(error_unit,'(/a,es12.4)') &
 &       'bs_box_energy: ERROR bisection not converged in 200 steps, e=',ee
-   ifail=fail_convergence
+   ifail=failed(fail_convergence,msg_box_energy_bisection)
    return
  end if
 

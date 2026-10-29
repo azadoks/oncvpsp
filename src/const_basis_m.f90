@@ -59,7 +59,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_numerical
+ use failure_m, only: fail_numerical, failed, msg_const_basis_dependent
  use constants_m, only: dp, qp
  use qlinalg_m, only: qjacobi
 
@@ -105,7 +105,7 @@
 &        'const_basis: ERROR the constraints are linearly dependent, ', &
 &        'singular value ratio', &
 &        real(sqrt(max(lam(nnull+1),0.0_qp)/lam(nbas)),dp)
-   ifail=fail_numerical
+   ifail=failed(fail_numerical,msg_const_basis_dependent)
    return
  end if
 

@@ -62,7 +62,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_numerical
+ use failure_m, only: fail_numerical, failed, msg_ode_rc_der_disagree
  use constants_m, only: dp
  use logmesh_m, only: lm_interp, lm_derivs, lm_step
 
@@ -115,7 +115,7 @@
    write(iout,'(/a,i0,a,f12.6/a,2es12.4)') &
 &        'ode_rc_der: ERROR uu and up disagree for l=',ll,' at rc=',rc, &
 &        'uu'' from up and from stencils on uu:',ud(2),udst(2)
-   ifail=fail_numerical
+   ifail=failed(fail_numerical,msg_ode_rc_der_disagree)
    return
  end if
 

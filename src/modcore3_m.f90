@@ -76,7 +76,8 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_convergence, fail_not_found
+ use failure_m, only: fail_convergence, fail_not_found, failed, &
+&                    msg_modcore3_ircc, msg_modcore3_nelder_mead
  use constants_m, only: dp, mxstate, nrhomod
  use logmesh_m, only: lm_derivs
  use modcore_m, only: core_crossover, teter_core_derivs, d2exc_baseline, &
@@ -141,7 +142,7 @@
  if(ierr/=0) then
    write(iout,'(/a)') 'modcore3: ERROR ircc (core-valence charge crossover) &
 &        not found'
-   ifail=fail_not_found
+   ifail=failed(fail_not_found,msg_modcore3_ircc)
    return
  end if
  call lm_derivs(rr,rhoc,mmax,rmatch,0,dd)
@@ -235,7 +236,7 @@
      else if(kk==101) then
        write(iout,'(/a)') &
 &           'modcore3: ERROR Nelder-Mead not converged in 100 steps'
-       ifail=fail_convergence
+       ifail=failed(fail_convergence,msg_modcore3_nelder_mead)
        return
      end if
 
@@ -375,7 +376,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_convergence
+ use failure_m, only: fail_convergence, failed, msg_newton_refine_conv
 
 !Input/output variables
  real(dp), intent(inout) :: xm(2)
@@ -455,7 +456,7 @@
  end do
  write(iout,'(/a,es12.4)') &
 &      'newton_refine: ERROR not converged in 30 steps, last step=',dnrm
- ifail=fail_convergence
+ ifail=failed(fail_convergence,msg_newton_refine_conv)
  return
  end subroutine newton_refine
 

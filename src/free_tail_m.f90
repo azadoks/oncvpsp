@@ -79,7 +79,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_construction
+ use failure_m, only: fail_construction, failed, msg_free_tail_mesh
  use logmesh_m, only: lm_interp, lm_ncell
 
 !Input variables
@@ -112,7 +112,7 @@
    write(iout,'(/2a,f12.6,a,f12.6)') &
 &        'free_tail_mesh: ERROR wave function vanishes', &
 &       ' too close to rc: rc=',rc,', last nonzero point',rend
-   ifail=fail_construction
+   ifail=failed(fail_construction,msg_free_tail_mesh)
    return
  end if
  allocate(ulin(nr))
@@ -144,7 +144,8 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_construction
+ use failure_m, only: fail_construction, failed, msg_free_tail_growth, &
+&                    msg_free_tail_qcut
 
 !Input variables
  real(dp), intent(in) :: qcut,ee
@@ -166,7 +167,7 @@
    write(iout,'(/a,f12.6,a,f12.6/a)') &
 &       'free_tail_width: ERROR qcut=',qcut,' is not above the wave vector', &
 &       kk,'of the well state: raise qcut or lower its energy'
-   ifail=fail_construction
+   ifail=failed(fail_construction,msg_free_tail_qcut)
    return
  end if
  wl=(9.0d0*kp+sqrt(81.0d0*kp**2+wbound*dq**2))/(0.5d0*dq**2)
@@ -175,7 +176,7 @@
 &       'free_tail_width: ERROR the free tail of the well state at',ee, &
 &       ' Ha with qcut=',qcut,'grows too fast for its window (kappa L =', &
 &       kp*wl,' > 12): raise qcut or the state''s energy'
-   ifail=fail_construction
+   ifail=failed(fail_construction,msg_free_tail_growth)
    return
  end if
  return

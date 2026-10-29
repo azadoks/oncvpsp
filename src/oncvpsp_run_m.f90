@@ -106,7 +106,7 @@
  contains
 
  subroutine oncvpsp_run(irel,istage,inp,ae_filename,ps_filename,skip_ld, &
-&                       psp,iout,ifail)
+&                       psp,at,iout,ifail)
 !! the pseudopotential of the input inp, and its tests: the stages before
 !! the model core (run_stages), then the model core and the tests
 !! (run_coupled). The text output goes to iout, and the pseudopotential
@@ -114,7 +114,8 @@
 !! the writers echo it. With istage=1 only the all-electron atom, written
 !! to ae_filename; with istage=2 that file in place of it. A ps_filename,
 !! if not blank, receives the pseudopotential for oncvpsp_ld.x; skip_ld
-!! leaves out the log derivatives.
+!! leaves out the log derivatives. On a failure, at says where the run
+!! was (fail_context).
 !!
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param istage  0 the whole calculation, 1 the all-electron stage only, 2 the
@@ -124,12 +125,14 @@
 !! @param ps_filename  the pseudopotential file for oncvpsp_ld.x, or blank
 !! @param skip_ld  whether to leave out the log derivatives
 !! @param psp  the results (results_m)
+!! @param at  where the run was (failure_m): its stage, l and ikap
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
  use input_m, only: input_t, config_t
  use results_m, only: results_t
  use constants_m, only: mxcnf
+ use failure_m, only: failure_t
 
 !Input variables
  integer, intent(in) :: irel,istage
@@ -142,19 +145,21 @@
 
 !Output variables
  type(results_t), intent(out) :: psp
+ type(failure_t), intent(out) :: at
  integer, intent(out) :: ifail
 
 !Local variables
  type(config_t) :: cnf(mxcnf)
  type(stages_t) :: st
 
- call run_stages(irel,istage,inp,ae_filename,cnf,st,iout,ifail)
+ call run_stages(irel,istage,inp,ae_filename,cnf,st,at,iout,ifail)
  if(ifail/=0 .or. istage==1) return
- call run_coupled(irel,istage,inp,cnf,st,ps_filename,skip_ld,psp,iout,ifail)
+ call run_coupled(irel,istage,inp,cnf,st,ps_filename,skip_ld,psp,at,iout, &
+&                 ifail)
  return
  end subroutine oncvpsp_run
 
- subroutine run_stages(irel,istage,inp,ae_filename,cnf,st,iout,ifail)
+ subroutine run_stages(irel,istage,inp,ae_filename,cnf,st,at,iout,ifail)
 
 !! the stages of a run before the model core, from the input inp: the
 !! input completed (complete_input) and echoed, the all-electron atom
@@ -172,10 +177,14 @@
 !! @param ae_filename  the all-electron data file of istage 1 and 2
 !! @param cnf  the reference and test configurations (input_m)
 !! @param st  the stages' results
+!! @param at  where the run was (failure_m): its stage, l and ikap
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
- use failure_m, only: fail_convergence, fail_input
+ use failure_m, only: fail_convergence, fail_input, failed, msg_run_aeatom, &
+&                    msg_run_well_n_confined, msg_run_well_norm_free
+ use failure_m, only: failure_t, fail_none, stage_input, stage_ae, &
+&                    stage_channel, stage_vkb, stage_valence
  use config_ae_m, only: run_config_ae, ae_config_t
  use ae_file_m, only: write_ae_file
  use ae_state_m, only: ae_state_t, solve_ae
@@ -203,6 +212,7 @@
 !Output variables
  type(config_t), intent(out) :: cnf(mxcnf)
  type(stages_t), intent(out) :: st
+ type(failure_t), intent(out) :: at
  integer, intent(out) :: ifail
 
 !Local variables
@@ -268,19 +278,20 @@
  character(len=16) :: exe
 
  ifail=0
+ at=failure_t(fail_none,0,0,stage_input,-1,0,0)
  call main_names(irel,istage,nkap,treatment,pname,exe)
 !the free tail has no finite norm over all space
  if(inp%well_tail==1 .and. inp%well_norm==1) then
    write(iout,'(/a)') &
 &        'oncvpsp_run: ERROR well_norm = "space" (1) is not defined '// &
 &       'for well_tail = "free": the free tail has no finite norm'
-   ifail=fail_input
+   ifail=failed(fail_input,msg_run_well_norm_free)
    return
  end if
  if(inp%well_tail/=2 .and. any(inp%well_n(:)>0)) then
    write(iout,'(/a)') &
 &       'oncvpsp_run: ERROR well_n is for well_tail = "confined" only'
-   ifail=fail_input
+   ifail=failed(fail_input,msg_run_well_n_confined)
    return
  end if
 
@@ -293,6 +304,7 @@
 
 !the all-electron atom: its mesh, and the reference configuration solved
 !or read
+ at%stage=stage_ae
  call solve_ae(irel,nkap,istage,inp,cnf,ae_filename,ae,ierr,iout,ifail)
  if(ifail/=0) return
  if(ierr/=0) then
@@ -300,7 +312,7 @@
 &        'oncvpsp_run: ERROR aeatom failed for the reference '// &
 &        'configuration'// &
 &        ', ierr=',ierr,', it=',ae%it,', res=',ae%res
-   ifail=fail_convergence
+   ifail=failed(fail_convergence,msg_run_aeatom,ierr)
    return
  end if
  c_light=ae%c_light
@@ -466,6 +478,7 @@
  end if
 
 !the last log mesh point at or inside each rc (R-2)
+ at%stage=stage_channel
  call core_radius_points(inp%lmax,inp%lloc,inp%rc,rr,mmax,irc,rcmax,iout, &
 &                        ifail)
  if(ifail/=0) return
@@ -490,6 +503,7 @@
  npa(:,:)=0
  inp%nproj(inp%lloc+1)=1
  do l1=1,inp%lmax+1
+   at%ll=l1-1
    call optimize_channel(ae,inp,l1,inp%nproj(l1),irc(l1),chan,iout,ifail)
    if(ifail/=0) return
    irc(l1)=chan%irc
@@ -516,6 +530,8 @@
 
  write(iout,'(/a,a)') 'Construct Vanderbilt / Kleinmman-Bylander projectors'
 
+ at%stage=stage_vkb
+ at%ll=-1
  call run_vkb(inp%lmax,inp%lloc,inp%lpopt,inp%dvloc0,inp%rc,irc,inp%nproj,rr, &
 &             mmax,pswf,pswfx, &
 &             chix,vfull,vp,evkb,vkb,nlim,dlta,vrloc,irel,nkap,vkbpw, &
@@ -532,6 +548,7 @@
 ! get all-electron and pseudopotential valence-state by valence-state
 ! charge densities
 
+ at%stage=stage_valence
  call valence_densities(irel,c_light,nkap,inp%nc,inp%nv,inp%na,inp%la,inp%fa, &
 &                       ea,it,inp%lloc,inp%nproj,rr,inp%zz,vfull,vp,vlocpw, &
 &                       vkbpw,evkb,mmax,adams,uu,up,uupsa,eeig,zval,rho,rhops, &
@@ -588,8 +605,8 @@
  return
  end subroutine run_stages
 
- subroutine run_coupled(irel,istage,inp,cnf,st,ps_filename,skip_ld,psp,iout, &
-&                       ifail)
+ subroutine run_coupled(irel,istage,inp,cnf,st,ps_filename,skip_ld,psp,at, &
+&                       iout,ifail)
 
 !! the model core, the screening with the ionic tail, the diagnostics, the
 !! ghost tests, the test configurations, the log derivatives and the
@@ -606,10 +623,15 @@
 !! @param ps_filename  the pseudopotential file for oncvpsp_ld.x, or blank
 !! @param skip_ld  whether to leave out the log derivatives
 !! @param psp  the results (results_m)
+!! @param at  where the run was (failure_m): its stage, l and ikap
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
  use config_ae_m, only: run_config_ae, ae_config_t
+ use failure_m, only: failure_t, fail_none, stage_model_core, &
+&                    stage_screening, stage_diag, stage_ghosts, &
+&                    stage_unscreen, stage_configs, stage_plot, stage_phsft, &
+&                    stage_tests, stage_output
  use ps_file_m, only: write_ps_file
  use vout_m, only: vout
  use ionic_tail_m, only: coulomb_tail, ionic_screening
@@ -649,6 +671,7 @@
 
 !Output variables
  type(results_t), intent(out) :: psp
+ type(failure_t), intent(out) :: at
  integer, intent(out) :: ifail
 
 !Local variables
@@ -690,6 +713,7 @@
  real(dp) :: ghe(2,mxstate,mxl+1,mxkap),ghp(2,mxl+1,mxkap)
 
  ifail=0
+ at=failure_t(fail_none,0,0,stage_model_core,-1,0,0)
  ae=st%ae
  aec(:)=st%ae%aec(:)
  adams=ae%adams
@@ -803,6 +827,7 @@
 
 ! screening potential for pseudocharge
 
+ at%stage=stage_screening
  call vout(.true.,rho,rhomod(1,1),vo,vxc,zval,eeel,eexc,rr,mmax,adams, &
 &          inp%iexc, &
 &          c_light,ifail)
@@ -825,6 +850,8 @@
  epstot= eeig + eexc - 0.5d0*eeel
  write(iout,'(/a,f12.6/)') 'Pseudoatom total energy', epstot
 
+ at%stage=stage_diag
+ at%ikap=1
  call run_diag(inp%lmax,npa,epa,wellprj,inp%lloc,inp%rc, &
 &               vlocpw,vkbpw,evkb,inp%nproj,rr,vfull,vp,inp%zz,mmax,adams, &
 &               irel,c_light,nkap, &
@@ -832,6 +859,7 @@
  if(ifail/=0) return
 
  if(irel==2) then
+   at%ikap=2
    call run_diag(inp%lmax,npa,epa,wellprj,inp%lloc,inp%rc, &
 &                 vlocpw,vkbpw,evkb,inp%nproj,rr,vfull,vp,inp%zz,mmax,adams, &
 &                 irel,c_light, &
@@ -856,6 +884,8 @@
  ghn(:,:,:)=0
  ghe(:,:,:,:)=0.0d0
  ghp(:,:,:)=0.0d0
+ at%stage=stage_ghosts
+ at%ikap=1
  call run_ghosts(inp%lmax,inp%la,ea(1,1),inp%nc,inp%nv,inp%lloc,inp%rc,qmsbf, &
 &                vlocpw,vkbpw(:,:,1),evkb(1,1,1),inp%nproj,rr,vp,mmax,adams, &
 &                ngh(:,1),ghn(:,:,1),ghe(:,:,:,1),ghp(:,:,1),iout,ifail)
@@ -868,6 +898,7 @@
    do jj=1,inp%nproj(1)
      vkbpw(jj,1,2)=vkbpw(jj,1,1)
    end do
+   at%ikap=2
    call run_ghosts(inp%lmax,inp%la,ea(1,2),inp%nc,inp%nv,inp%lloc,inp%rc, &
 &                  qmsbf, &
 &                  vlocpw,vkbpw(:,:,2),evkb(1,1,2),inp%nproj,rr,vp,mmax,adams, &
@@ -885,6 +916,8 @@
  call unscreen_potentials(irel,inp%lmax,inp%lloc,vp,vo,zion,rr,mmax,nkap,vpuns)
 
 ! how closely the local potential is -zion/r beyond rcmax
+ at%stage=stage_unscreen
+ at%ikap=0
  call coulomb_tail(vpuns(1,inp%lloc+1),vion,rr,mmax,zion,rcmax,iout,ifail)
  if(ifail/=0) return
 
@@ -895,6 +928,7 @@
  itcf(:,:,:)=0
  etcf(:,:,:)=0.0d0
  dtcf(:,:)=0.0d0
+ at%stage=stage_configs
  do jj=1,inp%ncnf+1
 
    write(iout,'(/a,i2)') 'Test configuration',jj-1
@@ -919,6 +953,7 @@
 
  end do !jj
 
+ at%stage=stage_plot
  call run_plot(inp%lmax,npa,epa,wellprj,inp%lloc,inp%rc, &
 &               vkb,vlocpw,vkbpw,evkb,inp%nproj,rr,vfull,vp,vpuns,inp%zz, &
 &               mmax,adams, &
@@ -938,6 +973,7 @@
  else
    npsh=int(((inp%epsh2-inp%epsh1)/inp%depsh)-0.5d0)+1
    allocate(pshae(npsh,4,nkap),pshps(npsh,4,nkap))
+   at%stage=stage_phsft
    call run_phsft(inp%lmax,inp%lloc,inp%nproj,epa,npsh,inp%epsh2,inp%depsh, &
 &                 inp%rxpsh,vlocpw,vkbpw,evkb,rr,vfull,vp,inp%zz,mmax,adams, &
 &                 inp%rc,irel,c_light,nkap,rphs,pshae,pshps,iout,ifail)
@@ -946,6 +982,7 @@
 
  call gnu_script(epa,evkb,inp%lmax,inp%lloc,inp%nproj,nkap,iout)
 
+ at%stage=stage_tests
  call vloc_cutoff(rr,mmax,rho,vpuns(1,inp%lloc+1),zion,cvloc,vlchk,ifail)
  if(ifail/=0) return
 
@@ -1057,6 +1094,7 @@
 
 !the pseudopotential for oncvpsp_ld.x and oncvpsp_confine.x
  if(len_trim(ps_filename)/=0) then
+   at%stage=stage_output
    call write_ps_file(trim(ps_filename),psp%pot,inp%rc,inp%epsh1, &
 &                     inp%epsh2,inp%depsh,inp%rxpsh,epa,vp,iout,ifail)
    if(ifail/=0) return

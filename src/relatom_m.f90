@@ -66,7 +66,8 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_convergence, ierr_box_state, ierr_not_converged
+ use failure_m, only: fail_convergence, ierr_box_state, ierr_not_converged, &
+&                    failed, msg_relatom_conv
  use constants_m, only: dp, mxstate, mxkap, ae_tolres
  use kappa_m, only: kap_count, kap_of, kap_j_share
  use ae_scf_m, only: ae_energies, ae_residual, ae_converged, &
@@ -193,7 +194,7 @@
        if(ierr /= 0) then
          write(iout,'(/2a,5i4)') 'relatom: ldiracfb convergence ERROR', &
 &             ' n,l,kap,iter,ierr=',na(ii),ll,kap,it,ierr
-         ifail=fail_convergence
+         ifail=failed(fail_convergence,msg_relatom_conv,ierr)
          return
        end if
 

@@ -65,7 +65,8 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_convergence, ierr_box_state, ierr_not_converged
+ use failure_m, only: fail_convergence, ierr_box_state, ierr_not_converged, &
+&                    failed, msg_sratom_conv
  use constants_m, only: dp, ae_tolres
  use ae_scf_m, only: ae_energies, ae_residual, ae_converged, ae_mix
  use tfapot_m, only: tfapot
@@ -186,7 +187,7 @@
      if(ierr /= 0) then
        write(iout,'(/a,3i4)') 'sratom123: lschfb convergence ERROR n,l,iter=', &
 &       na(ii),la(ii),it
-       ifail=fail_convergence
+       ifail=failed(fail_convergence,msg_sratom_conv)
        return
      end if
 

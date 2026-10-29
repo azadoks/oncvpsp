@@ -756,7 +756,8 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_internal
+ use failure_m, only: fail_internal, failed, msg_add_zero_r_mesh, &
+&                    msg_add_zero_r_size
  use, intrinsic :: iso_fortran_env, only: error_unit
  use constants_m, only: dp
  use logmesh_m, only: lm_origin
@@ -775,7 +776,7 @@
  npts = size(ff)
  if(size(f0) /= npts +1) then
    write(error_unit,'(/a)') 'add_zero_r: ERROR f0 is not one longer than ff'
-   ifail = fail_internal
+   ifail=failed(fail_internal,msg_add_zero_r_size)
    return
  end if
  do ii = 1, npts
@@ -784,7 +785,7 @@
  call lm_origin(rr(1:npts),ff,npts,f0(1),ierr)
  if(ierr /= 0) then
    write(error_unit,'(/a)') 'add_zero_r: ERROR log mesh too short for lm_origin'
-   ifail = fail_internal
+   ifail=failed(fail_internal,msg_add_zero_r_mesh)
    return
  end if
  return

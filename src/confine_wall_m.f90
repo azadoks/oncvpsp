@@ -61,7 +61,7 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
- use failure_m, only: fail_not_found
+ use failure_m, only: fail_not_found, failed, msg_confine_free_atom
  use aeatom_m, only: aeatom
  use psatom_m, only: psatom
  use confine_summary_m, only: confine_summary_t
@@ -150,7 +150,7 @@
    if(ierrps/=0) write(iout,'(a,1p,e24.16,a)') 'wall_failed',kwall(ik),' ps'
    if(ik==0 .and. (ierrae/=0 .or. ierrps/=0)) then
      write(iout,'(/a)') 'confine_walls: ERROR the free atom failed'
-     ifail=fail_not_found
+     ifail=failed(fail_not_found,msg_confine_free_atom)
      return
    end if
    if(ierrae/=0 .or. ierrps/=0) then

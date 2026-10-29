@@ -17,6 +17,7 @@
  use input_m, only: input_t
  use input_text_m, only: read_input_text
  use oncvpsp_run_m, only: oncvpsp_run
+ use failure_m, only: failure_t
  use results_m, only: results_t
  implicit none
 
@@ -100,11 +101,12 @@
  type(results_t), intent(out) :: psp
  type(text_t), intent(out) :: text
  type(input_t) :: inp
+ type(failure_t) :: at
  integer :: iout,ifail,nline,ios
  character(len=2048) :: line
  inp=inps(icase)
  open(newunit=iout,status='scratch',action='readwrite')
- call oncvpsp_run(irel(icase),0,inp,'','',.false.,psp,iout,ifail)
+ call oncvpsp_run(irel(icase),0,inp,'','',.false.,psp,at,iout,ifail)
  if(ifail/=0) error stop 'test_run_threads: oncvpsp_run failed'
  rewind(iout)
  nline=0

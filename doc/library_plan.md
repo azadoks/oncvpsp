@@ -350,7 +350,7 @@ So the interface is a hybrid:
       during the switch-over without temporary files.
 - [ ] Later, `oncv_confine(ae, run, radii, walls, channels)` returning the
       fields of `confine_summary_t`, in place of a third process.
-- [ ] The failure's context, beside the integer `ifail`, which stays the
+- [x] The failure's context, beside the integer `ifail`, which stays the
       code the bindings read: a small `bind(C)`-compatible record
       {kind, msg_id, stage, l, ikap, iproj, ierr} and a fixed-length message,
       filled at the failure site and kept in the run object, with a
@@ -359,7 +359,15 @@ So the interface is a hybrid:
       apart without its text. The bindings raise from it exceptions that
       map onto pyoncvpsp's Stage, Scope and Attribution. Not a
       polymorphic `error_t`: the required `ifail` keeps the compiler
-      checking every call.
+      checking every call. Done as `failure_m`'s `failure_t`: the site
+      sets `ifail=failed(kind,msg,ierr)`, which keeps the kind in the last
+      two digits, the message (`msg_*`, 165 of them, one per site, their
+      values kept from now on) above them and the status above that, so
+      no signature changed; the stages record where the run was (`at`:
+      stage, l, ikap) before each call, and `fail_context(ifail,at)` makes
+      the record. `iproj` stays 0 (no stage knows it), and the message's
+      text comes with the text output (the buffer below) rather than a
+      second copy of the 165 messages.
 - [x] A rule in `scripts/check_conventions.py` (`propagate`) that flags
       any statement other than `return` right after `if(ifail/=0)`, to
       catch a caller that does not pass a failure on. It found outmesh's

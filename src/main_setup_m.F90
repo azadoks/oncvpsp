@@ -290,7 +290,7 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
- use failure_m, only: fail_convergence
+ use failure_m, only: fail_convergence, failed, msg_ae_reference_conv
  use constants_m, only: dp
 
 !Input variables
@@ -308,7 +308,7 @@
  if(it >= 100) then
    write(iout,'(2a)') trim(pname), &
 &        ': ERROR all-electron reference atom not converged'
-   ifail=fail_convergence
+   ifail=failed(fail_convergence,msg_ae_reference_conv)
    return
  end if
  write(iout,'(a,1p,e18.8)') '  all-electron total energy (Ha)',etot
@@ -336,7 +336,7 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
- use failure_m, only: fail_input
+ use failure_m, only: fail_input, failed, msg_core_radius_rc
  use constants_m, only: dp
 
 !Input variables
@@ -363,7 +363,7 @@
      write(iout,'(/a,i0,a,f12.6)') &
 &         'core_radius_points: ERROR rc inside the mesh start for l=', &
 &         l1-1,': rc=',rc(l1)
-     ifail=fail_input
+     ifail=failed(fail_input,msg_core_radius_rc)
      return
    end if
    rcmax=max(rcmax,rc(l1))

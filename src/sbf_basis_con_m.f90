@@ -58,7 +58,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_numerical
+ use failure_m, only: fail_numerical, failed, msg_sbf_basis_overlap
  use constants_m, only: dp, qp, mxprj
  use sbf_q_m, only: sbfq_overlap, sbfq_rc_der
  use qlinalg_m, only: qjacobi
@@ -105,7 +105,7 @@
      write(iout,'(a,es12.4)') &
 &          'sbfbasis: negative eigenvalue of overlap matrix', &
 &         real(sev(ibas),dp)
-     ifail=fail_numerical
+     ifail=failed(fail_numerical,msg_sbf_basis_overlap)
      return
    end if
    do jj=1,nbas

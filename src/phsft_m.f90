@@ -245,7 +245,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_input
+ use failure_m, only: fail_input, failed, msg_phsft_radius_end
  use logmesh_m, only: lm_step
 
 !Input variables
@@ -277,7 +277,7 @@
 &          'common_init: ERROR the radius is too close to the end '// &
 &          'of the mesh', &
 &          ' rq=',rq(iq),' rr(mmax)=',rr(mmax)
-     ifail=fail_input
+     ifail=failed(fail_input,msg_phsft_radius_end)
      return
    end if
    ps%mch=max(ps%mch,mq)
@@ -654,7 +654,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_numerical
+ use failure_m, only: fail_numerical, failed, msg_phsft_phase_turn
 
 !Input/output variables
  type(phsft_t), intent(inout), target :: ps
@@ -680,7 +680,7 @@
 &        'follow: ERROR the phase turns by more than pi/2 between',e0, &
 &        ' and',e1
    th1=th0
-   ifail=fail_numerical
+   ifail=failed(fail_numerical,msg_phsft_phase_turn)
    return
  end if
 ! the turns by pi that the step leaves out, by the Pruefer angle

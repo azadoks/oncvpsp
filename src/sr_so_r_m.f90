@@ -53,7 +53,8 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_numerical
+ use failure_m, only: fail_numerical, failed, msg_sr_so_s_dsyev, &
+&                    msg_sr_so_so_dsyev, msg_sr_so_sr_dsyev
  use constants_m, only: dp, mxl, mxlin, mxkap, mxprj, ovl_floor
  use projbasis_m, only: pb_half_powers, pb_congruence, pb_combine, &
 &                       pb_sort_abs, pb_sign_at_peak
@@ -147,7 +148,7 @@
 
    if(info /= 0) then
      write(iout,'(a,i4)') 'sr_so_r: S matrix eigenvalue ERROR, info=',info
-     ifail=fail_numerical
+     ifail=failed(fail_numerical,msg_sr_so_s_dsyev)
      return
    end if
 
@@ -182,7 +183,7 @@
 
    if(info /= 0) then
      write(iout,'(a,i4)') 'sr_so_r: A* matrix eigenvalue ERROR, info=',info
-     ifail=fail_numerical
+     ifail=failed(fail_numerical,msg_sr_so_sr_dsyev)
      return
    end if
 
@@ -191,7 +192,7 @@
 
    if(info /= 0) then
      write(iout,'(a,i4)') 'sr_so_r: A* matrix eigenvalue ERROR, info=',info
-     ifail=fail_numerical
+     ifail=failed(fail_numerical,msg_sr_so_so_dsyev)
      return
    end if
 

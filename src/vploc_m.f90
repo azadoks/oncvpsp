@@ -76,7 +76,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_internal
+ use failure_m, only: fail_internal, failed, msg_vploc_fit_lpopt
  use logmesh_m, only: lm_derivs
 
 !Input variables
@@ -127,7 +127,7 @@
    cf%aco=v0-cf%bco*rcloc**2-cf%cco*rcloc**4-cf%dco*rcloc**6
  else
    write(error_unit,'(/a,i0)') 'vploc_fit: ERROR lpopt ',lpopt
-   ifail=fail_internal
+   ifail=failed(fail_internal,msg_vploc_fit_lpopt)
    return
  end if
  return

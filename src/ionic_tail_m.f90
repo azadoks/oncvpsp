@@ -201,7 +201,8 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_construction, fail_convergence, ierr_ghost
+ use failure_m, only: fail_construction, fail_convergence, ierr_ghost, failed, &
+&                    msg_ionic_valence_construction, msg_ionic_valence_conv
  use constants_m, only: dp, mxstate, mxl, mxlin, mxprj
  use kappa_m, only: kap_count, kap_j_share
  use pieces_m, only: piecewise_t
@@ -264,9 +265,9 @@
 &           ' Ha that the node count does not expect:', &
 &           'a bound ghost of the projectors'
        if(ierr==ierr_ghost) then
-         ifail=fail_construction
+         ifail=failed(fail_construction,msg_ionic_valence_construction,ierr)
        else
-         ifail=fail_convergence
+         ifail=failed(fail_convergence,msg_ionic_valence_conv,ierr)
        end if
        return
      end if
@@ -330,7 +331,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_convergence
+ use failure_m, only: fail_convergence, failed, msg_ionic_screening_conv
  use constants_m, only: dp, mxstate, mxl, mxlin, mxprj
  use pieces_m, only: piecewise_t
  use cinf_taper_m, only: cinf_taper
@@ -411,7 +412,7 @@
      write(iout,'(/a,i0,a,es12.4)') &
 &          'ionic_screening: ERROR the ionic tail did not converge in', &
 &          maxiter,' steps, change =',change
-     ifail=fail_convergence
+     ifail=failed(fail_convergence,msg_ionic_screening_conv)
      return
    end if
    vp(:,lloc+1,:)=vnext(:,:)

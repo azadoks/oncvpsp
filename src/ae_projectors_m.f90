@@ -66,7 +66,7 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
- use failure_m, only: fail_convergence
+ use failure_m, only: fail_convergence, failed, msg_ae_proj_bound_conv
  use boundstate_m, only: boundstate
  use renorm_r_m, only: renorm_r
  use constants_m, only: dp, mxprj, mxstate, mxkap
@@ -120,7 +120,7 @@
 &                'oncvpsp-387: lschfb convergence ERROR n,l,iter=', &
 &                na(kk),la(kk),it
          end if
-         ifail=fail_convergence
+         ifail=failed(fail_convergence,msg_ae_proj_bound_conv)
          return
        end if
 
@@ -191,7 +191,9 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
- use failure_m, only: fail_construction, fail_convergence, fail_input
+ use failure_m, only: fail_construction, fail_convergence, fail_input, failed, &
+&                    msg_ae_proj_debl_scattering, msg_ae_proj_well_conv, &
+&                    msg_ae_proj_well_n
  use fpovlp_m, only: fpovlp
  use boundstate_m, only: boundstate
  use renorm_r_m, only: renorm_r
@@ -247,7 +249,7 @@
 &            ' ERROR not allowed with 2 or more scattering states', &
 &            'program will stop'
      end if
-     ifail=fail_construction
+     ifail=failed(fail_construction,msg_ae_proj_debl_scattering)
      return
    end if
 
@@ -267,7 +269,7 @@
 &           'ae_well_projectors: ERROR well_n for l=',ll, &
 &           ' is',well_n,', below the first well state''s n,', &
 &           npa(iprj)
-       ifail=fail_input
+       ifail=failed(fail_input,msg_ae_proj_well_n)
        return
      end if
      npa(iprj)=well_n
@@ -318,7 +320,7 @@
 &             npa(iprj),'  l=',ll, 'kap=',kap, ' epa=', &
 &             epa(iprj)
 
-       ifail=fail_convergence
+       ifail=failed(fail_convergence,msg_ae_proj_well_conv)
        return
      end if
 
@@ -405,7 +407,7 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
- use failure_m, only: fail_input
+ use failure_m, only: fail_input, failed, msg_free_tail_ep
  use fpovlp_m, only: fpovlp
  use scatterstate_m, only: scatterstate
  use constants_m, only: dp
@@ -440,7 +442,7 @@
 &       ee,' Ha has a growing tail;', &
 &       'raise its ep (debl), or use well_tail = "confined"'// &
 &       ' or "well"'
-   ifail=fail_input
+   ifail=failed(fail_input,msg_free_tail_ep)
    return
  end if
  mfree=min(mmax,irc+pw_reach+16+lm_fh_reach()+2)
@@ -486,7 +488,7 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
- use failure_m, only: fail_construction
+ use failure_m, only: fail_construction, failed, msg_delta_window_node
  use ae_delta_m, only: ae_delta
  use constants_m, only: dp, mxprj, rel_window
  use logmesh_m, only: lm_index
@@ -520,7 +522,7 @@
          write(iout,'(/a,i0,a,f12.6)') &
 &              'ae_delta_window: ERROR node of the local channel l=',ll, &
 &              ' all-electron wave near rc, at r=',rr(kk)
-         ifail=fail_construction
+         ifail=failed(fail_construction,msg_delta_window_node)
          return
        end if
        vrloc(kk)=0.5d0*dlta(kk,1)/uua(kk,1)
@@ -588,7 +590,7 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
- use failure_m, only: fail_input
+ use failure_m, only: fail_input, failed, msg_ecut_weight_unoccupied
  use constants_m, only: dp, mxprj, mxstate
 
 !Input variables
@@ -621,7 +623,7 @@
  else if(ecut_weight>=0.0d0) then
    write(iout,'(/a,i0,a)') 'ecut_weights: ERROR ecut_weight for l=',ll, &
 &       ' is for a channel with no occupied state; this one has one'
-   ifail=fail_input
+   ifail=failed(fail_input,msg_ecut_weight_unoccupied)
    return
  end if
  end subroutine ecut_weights

@@ -47,7 +47,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_internal
+ use failure_m, only: fail_internal, failed, msg_ldiracfs_kap, msg_ldiracfs_zz
  use, intrinsic :: iso_fortran_env, only: error_unit
  use constants_m, only: dp
  use dirac_m, only: dirac_outward
@@ -90,12 +90,12 @@
 ! check arguments
  if(kap/=ll .and. kap/=-(ll+1)) then
    write(error_unit,'(/a,i4,a,i4)') 'ldiracfs: ERROR kap =',kap,' ll =',ll
-   ifail=fail_internal
+   ifail=failed(fail_internal,msg_ldiracfs_kap)
    return
  end if
  if(zz<1.0d0) then
    write(error_unit,'(/a,f12.8)') 'ldiracfs: ERROR zz =',zz
-   ifail=fail_internal
+   ifail=failed(fail_internal,msg_ldiracfs_zz)
    return
  end if
 

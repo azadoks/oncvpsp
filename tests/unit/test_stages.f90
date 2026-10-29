@@ -30,6 +30,7 @@
  use input_m, only: input_t, config_t
  use input_text_m, only: read_input_text
  use oncvpsp_run_m, only: oncvpsp_run, complete_input
+ use failure_m, only: failure_t
  use ae_state_m, only: ae_state_t, solve_ae
  use channel_m, only: channel_t, optimize_channel
  use run_vkb_m, only: local_t, local_potential, channel_vkb
@@ -40,6 +41,7 @@
  implicit none
 
  type(results_t) :: psp
+ type(failure_t) :: at
  type(input_t) :: inp
  type(config_t) :: cnf(mxcnf)
  type(ae_state_t) :: ae
@@ -60,7 +62,7 @@
 
  open(newunit=iout,file='/dev/null',action='write')
  call read_input(inp)
- call oncvpsp_run(irel,0,inp,'','',.false.,psp,iout,ifail)
+ call oncvpsp_run(irel,0,inp,'','',.false.,psp,at,iout,ifail)
  if(ifail/=0) error stop 'test_stages: oncvpsp_run failed'
 
  call read_input(inp)

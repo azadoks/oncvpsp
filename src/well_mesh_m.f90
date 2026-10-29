@@ -103,7 +103,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_construction
+ use failure_m, only: fail_construction, failed, msg_well_decay
 
 !Input variables
  integer, intent(in) :: ll,mx
@@ -143,7 +143,7 @@
    write(iout,'(/a,f12.6,a,i0,a,f12.6,a)') &
 &       'wm_short: ERROR the well state at',ee,' Ha, l=',ll, &
 &       ' does not decay within',rlimit,' bohr'
-   ifail=fail_construction
+   ifail=failed(fail_construction,msg_well_decay)
    return
  end if
  return

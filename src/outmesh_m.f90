@@ -161,7 +161,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_internal
+ use failure_m, only: fail_internal, failed, msg_om_local_pieces
  use constants_m, only: dp
  use logmesh_m, only: lm_interp
  use pieces_m, only: piecewise_t, pw_node_values, pw_segment
@@ -191,7 +191,7 @@
    kk=pw_segment(vlocpw,rl(ii))
    if(kk==0) then
      write(iout,'(/a)') 'om_local_values: ERROR the pieces end inside the mesh'
-     ifail=fail_internal
+     ifail=failed(fail_internal,msg_om_local_pieces)
      return
    end if
    call lm_interp(rr,vlocpw%vals(:,kk)+vs(:),mmax,rl(ii),fl(ii))
@@ -216,7 +216,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_input
+ use failure_m, only: fail_input, failed, msg_outmesh_below, msg_outmesh_beyond
  use constants_m, only: dp
 
 !Input variables
@@ -231,14 +231,14 @@
  if(rl(nrl)>rr(mmax)) then
    write(iout,'(/a,f12.6,a,f12.6)') 'check_range: ERROR output mesh to', &
 &       rl(nrl),' bohr, beyond the log mesh, ',rr(mmax)
-   ifail=fail_input
+   ifail=failed(fail_input,msg_outmesh_beyond)
    return
  end if
  if(nrl>1) then
    if(rl(2)<rr(1)) then
      write(iout,'(/a)') &
 &         'check_range: ERROR more than one output point below the log mesh'
-     ifail=fail_input
+     ifail=failed(fail_input,msg_outmesh_below)
      return
    end if
  end if
@@ -263,7 +263,7 @@
 
  use constants_m, only: dp
  use logmesh_m, only: lm_origin
- use failure_m, only: fail_input
+ use failure_m, only: fail_input, failed, msg_outmesh_origin
 
 !Input variables
  integer, intent(in) :: mmax,nrl
@@ -285,7 +285,7 @@
  if(ierr/=0) then
    write(iout,'(/a)') &
 &       'origin: ERROR log mesh too short for the value at the origin'
-   ifail=fail_input
+   ifail=failed(fail_input,msg_outmesh_origin)
    return
  end if
  return

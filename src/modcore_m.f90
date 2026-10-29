@@ -425,7 +425,8 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_numerical
+ use failure_m, only: fail_numerical, failed, msg_poly_core_dgesv, &
+&                    msg_poly_core_dhseqr
  use lapack_m, only: dgesv, dhseqr
 
 !Input variables
@@ -457,7 +458,7 @@
  if(info/=0) then
    write(iout,'(/a,i0)') 'poly_core_fit: ERROR singular match, dgesv info =', &
 &        info
-   ifail=fail_numerical
+   ifail=failed(fail_numerical,msg_poly_core_dgesv)
    return
  end if
 
@@ -494,7 +495,7 @@
    call dhseqr('E','N',ncub,1,ncub,hess,3,wr,wi,zz,1,work,size(work),info)
    if(info/=0) then
      write(iout,'(/a,i0)') 'poly_core_fit: ERROR dhseqr info =',info
-     ifail=fail_numerical
+     ifail=failed(fail_numerical,msg_poly_core_dhseqr)
      return
    end if
 ! every point of [0, rstar) bounds a0 from below, so a nearly real root
@@ -570,7 +571,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_convergence
+ use failure_m, only: fail_convergence, failed, msg_teter_scale_conv
  use root_m, only: root_tol
 
 !Input variables
@@ -613,7 +614,7 @@
  end do
  if(it>200) then
    write(iout,'(/a)') 'teter_scale: ERROR not converged'
-   ifail=fail_convergence
+   ifail=failed(fail_convergence,msg_teter_scale_conv)
    return
  end if
  end subroutine teter_scale

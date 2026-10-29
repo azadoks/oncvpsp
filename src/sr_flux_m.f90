@@ -128,7 +128,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_convergence
+ use failure_m, only: fail_convergence, failed, msg_sr_origin_series
  use constants_m, only: dp
  use adams_m, only: adams_t
 
@@ -348,7 +348,7 @@
  write(error_unit,'(/a,i0,a,es12.4,a,es12.4)') &
 &     'sr_outward: ERROR origin series not converged, l=',ll, &
 &     ', ee=',ee,', r=',rx
- ifail=fail_convergence
+ ifail=failed(fail_convergence,msg_sr_origin_series)
  end subroutine series_error
 
  end subroutine sr_outward

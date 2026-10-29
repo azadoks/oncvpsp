@@ -409,7 +409,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_convergence
+ use failure_m, only: fail_convergence, failed, msg_lm_root_conv
  use root_m, only: root_brent
 
 !Input variables
@@ -429,7 +429,7 @@
  if(.not. converged) then
    write(error_unit,'(/a,es12.4,a,es12.4)') &
 &       'lm_root: ERROR not converged in 200 steps, r=',exp(xq),', f=',fq
-   ifail=fail_convergence
+   ifail=failed(fail_convergence,msg_lm_root_conv)
    return
  end if
 ! a root at an end of the bracket is that end, not exp(log) of it

@@ -41,7 +41,7 @@
 !!               written
 
  use failure_m, only: fail_input, ierr_lxc_family, ierr_lxc_no_vxc, &
-&                     ierr_lxc_unknown
+&                    ierr_lxc_unknown, failed, msg_check_data
  use constants_m, only: dp, mxstate, mxcnf, mxl
  use input_m, only: input_t
  use exc_libxc_m, only: have_libxc, exc_libxc_check
@@ -74,7 +74,7 @@
 
  if(ierr>0) then
    write(iout,'(a,i4,a)') 'ERROR: test_data found',ierr,' ERROR; stopping'
-   ifail=fail_input
+   ifail=failed(fail_input,msg_check_data)
    return
  end if
 

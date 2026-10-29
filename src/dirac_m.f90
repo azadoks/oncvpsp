@@ -64,7 +64,7 @@
 !!               written
 
 
- use failure_m, only: fail_convergence
+ use failure_m, only: fail_convergence, failed, msg_dirac_origin_series
  use constants_m, only: dp
  use adams_m, only: adams_t
 
@@ -156,7 +156,7 @@
      write(error_unit,'(/a,i0,a,i0,a,es12.4,a,es12.4)') &
 &          'dirac_outward: ERROR origin series not converged, l=',ll, &
 &          ', kap=',kap,', ee=',ee,', r=',rx
-     ifail=fail_convergence
+     ifail=failed(fail_convergence,msg_dirac_origin_series)
      return
    end if
    pk1=pk

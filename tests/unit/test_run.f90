@@ -13,6 +13,7 @@
  use input_echo_m, only: fe
  use kappa_m, only: kap_count
  use oncvpsp_run_m, only: oncvpsp_run
+ use failure_m, only: failure_t
  use results_m, only: results_t
  use test_results_m, only: tests_t
  implicit none
@@ -53,12 +54,13 @@
  type(results_t), intent(out) :: psp
  integer, intent(in) :: iout
  type(input_t) :: inp
+ type(failure_t) :: at
  integer :: unit,inline
  open(newunit=unit,file=trim(input_filename),status='old',action='read')
  call read_input_text(unit,inline,inp,iout,ifail)
  close(unit)
  if(ifail/=0) error stop 'test_run: read_input_text failed'
- call oncvpsp_run(irel,0,inp,'','',.false.,psp,iout,ifail)
+ call oncvpsp_run(irel,0,inp,'','',.false.,psp,at,iout,ifail)
  if(ifail/=0) error stop 'test_run: oncvpsp_run failed'
  end subroutine run
 

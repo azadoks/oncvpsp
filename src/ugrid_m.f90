@@ -46,7 +46,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_internal
+ use failure_m, only: fail_internal, failed, msg_ug_weights_nodes
  use constants_m, only: dp
  use logmesh_m, only: lm_ncell, lm_cell_weights
 
@@ -66,7 +66,7 @@
  if(nn<lm_ncell) then
    write(error_unit,'(/a,i0)') &
 &       'ug_weights: ERROR fewer nodes than the rule, nn=',nn
-   ifail=fail_internal
+   ifail=failed(fail_internal,msg_ug_weights_nodes)
    return
  end if
  do ishift=0,lm_ncell-2
@@ -96,7 +96,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_internal
+ use failure_m, only: fail_internal, failed, msg_ug_cumint_nodes
  use constants_m, only: dp
  use logmesh_m, only: lm_ncell, lm_cell_weights
 
@@ -120,7 +120,7 @@
    write(error_unit,'(/a,i0)') &
 &       'ug_cumint_down: ERROR fewer nodes than the rule, nn=', &
 &        nn
-   ifail=fail_internal
+   ifail=failed(fail_internal,msg_ug_cumint_nodes)
    return
  end if
  do ishift=0,lm_ncell-2
@@ -157,7 +157,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_internal
+ use failure_m, only: fail_internal, failed, msg_ug_interp_off_grid
  use constants_m, only: dp
  use logmesh_m, only: lm_fh_value
 
@@ -175,7 +175,7 @@
    write(error_unit,'(/a,es12.4,a,i0)') &
 &       'ug_interp: ERROR position off the grid, tt=', &
 &        tt,' nn=',nn
-   ifail=fail_internal
+   ifail=failed(fail_internal,msg_ug_interp_off_grid)
    return
  end if
  fq=lm_fh_value(ff,nn,tt)
@@ -240,7 +240,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_internal
+ use failure_m, only: fail_internal, failed, msg_ug_cross_bracket
  use constants_m, only: dp
 !Input variables
  integer, intent(in) :: nn
@@ -274,7 +274,7 @@
      if(ierr/=0) then
        write(error_unit,'(/a)') &
 &           'ug_cross_down: ERROR the bracket lost its sign change'
-       ifail=fail_internal
+       ifail=failed(fail_internal,msg_ug_cross_bracket)
        return
      end if
      xq=x1+hh*tq

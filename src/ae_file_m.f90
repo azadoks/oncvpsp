@@ -263,7 +263,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_io
+ use failure_m, only: fail_io, failed, msg_ae_file_open_write
 
 !Input variables
  character(len=*), intent(in) :: fname
@@ -288,7 +288,7 @@
 &     status='replace',action='write',iostat=ios)
  if(ios/=0) then
    write(iout,'(/2a)') 'write_ae_file: ERROR cannot open ',trim(fname)
-   ifail=fail_io
+   ifail=failed(fail_io,msg_ae_file_open_write)
    return
  end if
 
@@ -325,7 +325,9 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_io
+ use failure_m, only: fail_io, failed, msg_ae_file_atom, msg_ae_file_c_light, &
+&                    msg_ae_file_irel, msg_ae_file_mesh, msg_ae_file_mmax, &
+&                    msg_ae_file_reference
 
 !Input variables
  character(len=*), intent(in) :: fname
@@ -356,7 +358,7 @@
    write(iout,'(/2a)') &
 &        'read_ae_file: ERROR file was written with a different', &
 &        ' relativistic treatment'
-   ifail=fail_io
+   ifail=failed(fail_io,msg_ae_file_irel)
    close(unit)
    return
  end if
@@ -366,7 +368,7 @@
 &   .or. iexc_f/=iexc) then
    write(iout,'(/2a)') 'read_ae_file: ERROR atsym, z, nc, nv or iexc differ', &
 &        ' from the input'
-   ifail=fail_io
+   ifail=failed(fail_io,msg_ae_file_atom)
    close(unit)
    return
  end if
@@ -375,7 +377,7 @@
 &   .or. any(differ(fa_f(1:nc+nv),fa(1:nc+nv)))) then
    write(iout,'(/2a)') 'read_ae_file: ERROR reference configuration differs', &
 &        ' from the input'
-   ifail=fail_io
+   ifail=failed(fail_io,msg_ae_file_reference)
    close(unit)
    return
  end if
@@ -384,7 +386,7 @@
  if(mmax_f/=mmax) then
    write(iout,'(/a,2i0)') 'read_ae_file: ERROR radial mesh size differs', &
 &        mmax_f,mmax
-   ifail=fail_io
+   ifail=failed(fail_io,msg_ae_file_mmax)
    close(unit)
    return
  end if
@@ -393,14 +395,14 @@
  if(any(abs(rr_f(1:mmax)-rr(1:mmax))>rtol*rr(1:mmax))) then
    write(iout,'(/2a)') 'read_ae_file: ERROR radial mesh differs from the', &
 &        ' one this program builds'
-   ifail=fail_io
+   ifail=failed(fail_io,msg_ae_file_mesh)
    close(unit)
    return
  end if
  read(unit) c_light_f
  if(differ(c_light_f,c_light)) then
    write(iout,'(/2a)') 'read_ae_file: ERROR c_light differs from the input'
-   ifail=fail_io
+   ifail=failed(fail_io,msg_ae_file_c_light)
    close(unit)
    return
  end if
@@ -498,7 +500,9 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_io
+ use failure_m, only: fail_io, failed, msg_ae_file_byte_order, &
+&                    msg_ae_file_not_ae, msg_ae_file_open_read, &
+&                    msg_ae_file_version
 
 !Input variables
  character(len=*), intent(in) :: fname
@@ -517,7 +521,7 @@
 &     status='old',action='read',iostat=ios)
  if(ios/=0) then
    write(iout,'(/2a)') 'read_ae_file: ERROR cannot open ',trim(fname)
-   ifail=fail_io
+   ifail=failed(fail_io,msg_ae_file_open_read)
    return
  end if
 
@@ -525,7 +529,7 @@
  if(ios/=0 .or. magic_f/=magic) then
    write(iout,'(/2a)') 'read_ae_file: ERROR not an all-electron data file: ', &
 &        trim(fname)
-   ifail=fail_io
+   ifail=failed(fail_io,msg_ae_file_not_ae)
    close(unit)
    return
  end if
@@ -534,14 +538,14 @@
  if(version_f/=version .and. byteswap(version_f)==version) then
    write(iout,'(/2a)') 'read_ae_file: ERROR file was written on a machine', &
 &        ' with the other byte order'
-   ifail=fail_io
+   ifail=failed(fail_io,msg_ae_file_byte_order)
    close(unit)
    return
  end if
  if(version_f/=version) then
    write(iout,'(/a,i0,a,i0)') 'read_ae_file: ERROR file format version ', &
 &        version_f,' but this program reads version ',version
-   ifail=fail_io
+   ifail=failed(fail_io,msg_ae_file_version)
    close(unit)
    return
  end if
@@ -621,7 +625,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_io
+ use failure_m, only: fail_io, failed, msg_ae_file_test_config
 
 !Input variables
  integer, intent(in) :: ncnf
@@ -639,7 +643,7 @@
    if(.not. found(jj)) then
      write(iout,'(/a,i0,a)') 'read_ae_file: ERROR test configuration ',jj-1, &
 &         ' is not in the all-electron data file'
-     ifail=fail_io
+     ifail=failed(fail_io,msg_ae_file_test_config)
      return
    end if
  end do
