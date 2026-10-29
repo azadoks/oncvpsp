@@ -21,7 +21,7 @@
 
  implicit none
  private
- public :: exc_relx
+ public :: exc_relx, fxc_relx
 
  contains
 
@@ -81,5 +81,51 @@
 
  return
  end subroutine exc_relx
+
+ subroutine fxc_relx(rho,fxc,mmax,c_light)
+
+!! adds the derivative by rho of exc_relx's correction to the potential
+!!
+!! @param rho  charge density
+!! @param fxc  derivative of the exchange-correlation potential by rho
+!!             (Ha bohr^3)
+!! @param mmax  size of the log radial mesh
+!! @param c_light  speed of light (Hartree atomic units)
+
+ use constants_m, only: dp, pi
+
+!Input variables
+ integer, intent(in) :: mmax
+ real(dp), intent(in) :: c_light
+ real(dp), intent(in) :: rho(mmax)
+
+!Input/output variables
+ real(dp), intent(inout) :: fxc(mmax)
+
+!Local variables
+ real(dp), parameter :: pi4=4.0d0*pi
+ integer :: ii
+ real(dp) :: akf,bb,bmu,vx,ash,ff
+
+! the correction is vx F(b), vx and b both going as rho**(1/3), so its
+! derivative is vx (F + b F')/(3 rho)
+ do ii=1,mmax
+   if(rho(ii)>1.0d-20) then
+     akf=(3.0d0*pi**2*rho(ii)/pi4)**(1.0d0/3.0d0)
+     vx=-akf/pi
+     bb=akf/c_light
+     bmu=sqrt(1.0d0 + bb**2)
+     if(bb<1.0d-3) then
+       ff=bb**2*(-3.0d0 + 4.0d0*bb**2)
+     else
+       ash=asinh(bb)
+       ff=1.5d0*(ash/(bb*bmu) - 1.0d0) &
+&        + 1.5d0*(bb - ash*(1.0d0 + 2.0d0*bb**2)/bmu)/(bb*bmu**2)
+     end if
+     fxc(ii)=fxc(ii) + vx*ff/(3.0d0*rho(ii))
+   end if
+ end do
+ return
+ end subroutine fxc_relx
 
  end module exc_relx_m

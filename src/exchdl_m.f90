@@ -21,7 +21,7 @@
 
  implicit none
  private
- public :: exchdl
+ public :: exchdl, fxchdl
 
  contains
 
@@ -74,5 +74,46 @@
 
  return
  end subroutine exchdl
+
+ subroutine fxchdl(rho,fxc,mmax)
+
+!! the derivative by rho of exchdl's potential, zero where exchdl's is
+!!
+!! @param rho  charge density
+!! @param fxc  derivative of the exchange-correlation potential by rho
+!!             (Ha bohr^3)
+!! @param mmax  size of the log radial mesh
+
+ use constants_m, only: dp, pi
+
+!Input variables
+ integer, intent(in) :: mmax
+ real(dp), intent(in) :: rho(mmax)
+
+!Output variables
+ real(dp), intent(out) :: fxc(mmax)
+
+!Local variables
+ real(dp), parameter :: pi4i=1.0d0/(4.0d0*pi)
+ real(dp), parameter :: thrd=1.0d0/3.0d0
+ real(dp) :: rs,xx,conrs,convx,dvdrs
+ integer :: ii
+
+ conrs = (3.0d0/(4.0d0*pi))**thrd
+ convx = (1.5d0/pi)**(2.0d0/3.0d0)
+
+! dv/drs, and drs/drho = -rs/(3 rho)
+ do ii=1,mmax
+   if(rho(ii)>1.0d-20) then
+     rs=conrs/(rho(ii)*pi4i)**thrd
+     xx=rs/21.0d0
+     dvdrs=convx/rs**2 + 0.0225d0/(21.0d0*xx*(xx + 1.0d0))
+     fxc(ii)=-dvdrs*rs*thrd/rho(ii)
+   else
+     fxc(ii)=0.0d0
+   end if
+ end do
+ return
+ end subroutine fxchdl
 
  end module exchdl_m

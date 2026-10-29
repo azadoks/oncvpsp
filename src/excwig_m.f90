@@ -21,7 +21,7 @@
 
  implicit none
  private
- public :: excwig
+ public :: excwig, fxcwig
 
  contains
 
@@ -70,5 +70,45 @@
  end do
  return
  end subroutine excwig
+
+ subroutine fxcwig(rho,fxc,mmax)
+
+!! the derivative by rho of excwig's potential, zero where excwig's is
+!!
+!! @param rho  charge density
+!! @param fxc  derivative of the exchange-correlation potential by rho
+!!             (Ha bohr^3)
+!! @param mmax  size of the log radial mesh
+
+ use constants_m, only: dp, pi
+
+!Input variables
+ integer, intent(in) :: mmax
+ real(dp), intent(in) :: rho(mmax)
+
+!Output variables
+ real(dp), intent(out) :: fxc(mmax)
+
+!Local variables
+ real(dp), parameter :: pi4i=1.0d0/(4.0d0*pi)
+ real(dp), parameter :: thrd=1.0d0/3.0d0
+ real(dp) :: rs,conrs,convx,dvdrs
+ integer :: ii
+
+ conrs = (3.0d0/(4.0d0*pi))**thrd
+ convx = (1.5d0/pi)**(2.0d0/3.0d0)
+
+! dv/drs, and drs/drho = -rs/(3 rho)
+ do ii=1,mmax
+   if(rho(ii)>=1.0d-15) then
+     rs=conrs*(rho(ii)*pi4i)**(-thrd)
+     dvdrs=convx/rs**2 + 0.44d0*(4.0d0*thrd*rs + 5.2d0)/(rs + 7.8d0)**3
+     fxc(ii)=-dvdrs*rs*thrd/rho(ii)
+   else
+     fxc(ii)=0.0d0
+   end if
+ end do
+ return
+ end subroutine fxcwig
 
  end module excwig_m

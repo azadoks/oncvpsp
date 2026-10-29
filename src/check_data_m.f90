@@ -41,7 +41,7 @@
 
  use constants_m, only: dp, mxstate, mxcnf, mxl
  use input_m, only: input_t
- use exc_libxc_m, only: have_libxc
+ use exc_libxc_m, only: have_libxc, exc_libxc_check
  use adams_m, only: adams_min, adams_max
 
 !Input variables
@@ -82,7 +82,7 @@
  subroutine check_atom()
 !! the atom, the file format, the functional and the reference
 !! configuration
- integer :: ii
+ integer :: ii,ixc
  real(dp) :: sf
  if(trim(inp%atsym)=='') then
    write(iout,'(a)') 'test_data: must have non-blank atsym'
@@ -119,6 +119,21 @@
    write(iout,'(a,i0,a)') 'test_data: iexc = ',inp%iexc, &
 &        ' needs libxc, which this build lacks'
    ierr=ierr+1
+ else if(inp%iexc<0) then
+   call exc_libxc_check(inp%iexc,ixc)
+   if(ixc==1) then
+     write(iout,'(a,i0,a)') 'test_data: iexc = ',inp%iexc, &
+&          ' names a functional libxc does not know'
+     ierr=ierr+1
+   else if(ixc==2) then
+     write(iout,'(a,i0,a)') 'test_data: iexc = ',inp%iexc, &
+&          ' names a functional without a potential'
+     ierr=ierr+1
+   else if(ixc==3) then
+     write(iout,'(a,i0,a)') 'test_data: iexc = ',inp%iexc, &
+&          ' must name LDA or GGA functionals'
+     ierr=ierr+1
+   end if
  end if
 
  sf=0.0d0

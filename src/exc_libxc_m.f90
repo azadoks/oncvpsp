@@ -19,17 +19,104 @@
 
  module exc_libxc_m
 
+ use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
- public :: exc_libxc, exc_libxc_info, have_libxc
+ public :: exc_libxc, exc_libxc_fxc, exc_libxc_check, exc_libxc_info
+ public :: have_libxc
 
 !> whether this build has libxc, for check_data
  logical, parameter :: have_libxc=.true.
 
  contains
 
+ subroutine exc_libxc_check(iexc,ierr)
+!! whether Libxc can evaluate the functionals of iexc: ierr 0, or 1 for
+!! a number it does not know, 2 for one that gives no potential, 3 for a
+!! family other than LDA and GGA (check_data)
+!!
+!! @param iexc  exchange-correlation functional: -(1000*id1+id2) for the libxc
+!!              functionals id1 and id2
+!! @param ierr  0 on success; the non-zero values differ by routine:
+!!              the reasons above
+
+ use libxc_api_m, only: lxc_t, lxc_init, lxc_end
+
+!Input variables
+ integer, intent(in) :: iexc
+
+!Output variables
+ integer, intent(out) :: ierr
+
+!Local variables
+ type(lxc_t) :: fn
+ integer :: id(2),ii
+
+ call exc_libxc_ids(iexc,id)
+ ierr=0
+ do ii=1,2
+   if(id(ii)==0) cycle
+   call lxc_init(id(ii),fn,ierr)
+   if(ierr/=0) return
+   call lxc_end(fn)
+ end do
+ return
+ end subroutine exc_libxc_check
+
+ subroutine exc_libxc_ids(iexc,id)
+!! the two Libxc numbers of iexc, 0 for none
+!!
+!! @param iexc  exchange-correlation functional: -(1000*id1+id2) for the libxc
+!!              functionals id1 and id2
+!! @param id  id1 and id2 (output)
+
+!Input variables
+ integer, intent(in) :: iexc
+
+!Output variables
+ integer, intent(out) :: id(2)
+
+ id(1)=abs(iexc)/1000
+ id(2)=abs(iexc) - id(1)*1000
+ return
+ end subroutine exc_libxc_ids
+
+ subroutine exc_libxc_init(iexc,fns)
+!! the functionals of iexc; check_data has rejected those Libxc cannot
+!! evaluate (exc_libxc_check)
+!!
+!! @param iexc  exchange-correlation functional: -(1000*id1+id2) for the libxc
+!!              functionals id1 and id2
+!! @param fns  the functionals, family 0 for none (output)
+
+ use libxc_api_m, only: lxc_t, lxc_init
+
+!Input variables
+ integer, intent(in) :: iexc
+
+!Output variables
+ type(lxc_t), intent(out) :: fns(2)
+
+!Local variables
+ integer :: id(2),ii,ierr
+
+ call exc_libxc_ids(iexc,id)
+ do ii=1,2
+   if(id(ii)==0) cycle
+   call lxc_init(id(ii),fns(ii),ierr)
+   if(ierr/=0) then
+     write(error_unit,'(/a,i0)') &
+&         'exc_libxc_init: ERROR Libxc cannot evaluate functional ',id(ii)
+     error stop 1
+   end if
+ end do
+ return
+ end subroutine exc_libxc_init
+
  subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax)
-!!  interface to libxc library for potential and energy density calculation
+!! the exchange-correlation potential and energy per electron of the
+!! Libxc functionals of iexc. A GGA's potential is d e/d n less the
+!! divergence of d e/d grad(n), the radial derivatives by derivs
 !!
 !! @param iexc  exchange-correlation functional: -(1000*id1+id2) for the libxc
 !!              functionals id1 and id2
@@ -40,11 +127,9 @@
 !! @param rr  log radial mesh (bohr)
 !! @param mmax  size of the log radial mesh
 
- use functionals_m, only: xc_functl_t, xc_functl_init_functl, &
-&                         xc_functl_get_vxc, &
-&                         xc_functl_end, XC_DERIV_NUMERICAL
  use constants_m, only: dp, pi
  use derivs_m, only: derivs
+ use libxc_api_m, only: lxc_t, lxc_end, lxc_eval
 
 !Input variables
  integer, intent(in) :: mmax, iexc
@@ -55,104 +140,162 @@
  real(dp), intent(out) :: vxc(mmax),exc(mmax)
 
 !Local variables
+ type(lxc_t) :: fns(2)
  integer :: ii
- integer ::  id(2), ifunc
- type(xc_functl_t) :: functls(2)
- integer :: nspin, irel, deriv_method
- real(dp),allocatable :: ip(:)
+ real(dp), allocatable :: nn(:),dpr(:),dppr(:),dlap(:),sigma(:)
+ real(dp), allocatable :: zk(:),vrho(:),vsigma(:),gg(:),dgg(:)
 
- real(dp), allocatable :: vv(:), ee(:)
- real(dp), allocatable :: dpr(:), dppr(:), dlap(:)
- real(dp), allocatable :: tau_dummy(:), vtau_dummy(:)
- real(dp), allocatable :: rho_loc(:)
+ allocate(nn(mmax),dpr(mmax),dppr(mmax),dlap(mmax),sigma(mmax))
+ allocate(zk(mmax),vrho(mmax),vsigma(mmax),gg(mmax),dgg(mmax))
 
- allocate(vv(mmax), ee(mmax))
- allocate(dpr(mmax), dppr(mmax), dlap(mmax))
- allocate(tau_dummy(mmax), vtau_dummy(mmax))
- allocate(rho_loc(mmax))
+ call exc_libxc_init(iexc,fns)
 
- rho_loc = rho(1:mmax) /4.0d0 / pi
+! the electron density, without the 4 pi of rho, and its squared gradient
+ nn(:)=rho(:)/4.0d0/pi
+ call derivs(mmax,nn,al,rr,dpr,dppr,dlap)
+ sigma(:)=dpr(:)**2
 
- call derivs(mmax, rho_loc, al, rr, dpr, dppr, dlap)
-
-!
-! determine xc to be used from input code (negative by convention)
-
- id(1) = abs(iexc)/1000
- id(2) = abs(iexc) - id(1)*1000
- nspin = 1
- irel = 0 !XC_NON_RELATIVISTIC
-!numerical derivatives (XC_DERIV_ANALYTICAL is the alternative)
- deriv_method = XC_DERIV_NUMERICAL
- call xc_functl_init_functl(functls(1),id(1),3,0.0d0,nspin,deriv_method)
- call xc_functl_init_functl(functls(2),id(2),3,0.0d0,nspin,deriv_method)
-
-! no use of vtau kin en density optional argument
-! ip is an ionization potential parameter for certain xc functionals, not
-! supported here. Set to 0.5 Ha
- allocate(ip(nspin))
- ip = 0.5d0
- tau_dummy = 0.0d0
- vtau_dummy = 0.0d0
- vxc(1:mmax) = 0.0d0
- exc(1:mmax) = 0.0d0
- do ifunc = 1, 2
-   vv = 0.0d0
-   ee = 0.0d0
-   call xc_functl_get_vxc(functls(ifunc), mmax, al, rr, rho_loc, dpr, dlap, &
-&         tau_dummy, ip, vv, ee, vtau_dummy)
-   vxc(1:mmax) = vxc(1:mmax) + vv(1:mmax)
-   exc(1:mmax) = exc(1:mmax) + ee(1:mmax)
+ vxc(:)=0.0d0
+ exc(:)=0.0d0
+ do ii=1,2
+   if(fns(ii)%family==0) cycle
+   call lxc_eval(fns(ii),mmax,nn,sigma,zk,vrho,vsigma)
+   if(fns(ii)%family==2) then
+     gg(:)=2.0d0*vsigma(:)*dpr(:)
+     call derivs(mmax,gg,al,rr,dgg,dppr,dlap)
+     vrho(:)=vrho(:) - (2.0d0/rr(:)*gg(:) + dgg(:))
+   end if
+   vxc(:)=vxc(:) + vrho(:)
+   exc(:)=exc(:) + zk(:)
+   call lxc_end(fns(ii))
  end do
 
-! convert to the convention of D. R. Hamann's built-in routines (excwig
-! etc.).  Why this is needed is not understood: in principle libxc
-! outputs the energy per particle, yet dividing by rho once more here
-! gives an LDA exc identical to that of the built-in routines.
- do ii=1,mmax
-   exc(ii) = exc(ii) / max(rho_loc(ii),1.0d-20)
- end do
-
-! finish
- call xc_functl_end(functls(1))
- call xc_functl_end(functls(2))
- deallocate(ip)
- deallocate(vv, ee)
- deallocate(dpr, dppr, dlap)
- deallocate(tau_dummy, vtau_dummy)
- deallocate(rho_loc)
+ deallocate(nn,dpr,dppr,dlap,sigma)
+ deallocate(zk,vrho,vsigma,gg,dgg)
  return
-
  end subroutine exc_libxc
 
+ subroutine exc_libxc_fxc(iexc,al,rho,drho,dvxc,rr,mmax,have)
+!! the change of exc_libxc's potential at rho for the change drho of the
+!! density, from the functionals' second derivatives: the derivative of
+!! the potential on the mesh, derivs included, to which its differences
+!! converge. have is false, and dvxc zero, when a functional of iexc
+!! lacks them (or Libxc was built without them)
+!!
+!! @param iexc  exchange-correlation functional: -(1000*id1+id2) for the libxc
+!!              functionals id1 and id2
+!! @param al  log of the mesh ratio amesh of the log radial mesh
+!! @param rho  charge density
+!! @param drho  change of the charge density
+!! @param dvxc  change of the exchange-correlation potential (Ha)
+!! @param rr  log radial mesh (bohr)
+!! @param mmax  size of the log radial mesh
+!! @param have  whether dvxc was evaluated
+
+ use constants_m, only: dp, pi
+ use derivs_m, only: derivs
+ use libxc_api_m, only: lxc_t, lxc_end, lxc_eval, lxc_fxc
+
+!Input variables
+ integer, intent(in) :: mmax, iexc
+ real(dp), intent(in) :: al
+ real(dp), intent(in) :: rho(mmax),drho(mmax),rr(mmax)
+
+!Output variables
+ real(dp), intent(out) :: dvxc(mmax)
+ logical, intent(out) :: have
+
+!Local variables
+ type(lxc_t) :: fns(2)
+ integer :: ii
+ real(dp), allocatable :: nn(:),dn(:),dpr(:),ddpr(:),dppr(:),dlap(:)
+ real(dp), allocatable :: sigma(:),dsigma(:),zk(:),vrho(:),vsigma(:)
+ real(dp), allocatable :: v2rho2(:),v2rhosigma(:),v2sigma2(:)
+ real(dp), allocatable :: dg(:),ddg(:),dv(:)
+
+ dvxc(:)=0.0d0
+ call exc_libxc_init(iexc,fns)
+ have=all(fns(:)%family==0 .or. fns(:)%has_fxc)
+ if(.not. have) then
+   call lxc_end(fns(1))
+   call lxc_end(fns(2))
+   return
+ end if
+
+ allocate(nn(mmax),dn(mmax),dpr(mmax),ddpr(mmax),dppr(mmax),dlap(mmax))
+ allocate(sigma(mmax),dsigma(mmax),zk(mmax),vrho(mmax),vsigma(mmax))
+ allocate(v2rho2(mmax),v2rhosigma(mmax),v2sigma2(mmax))
+ allocate(dg(mmax),ddg(mmax),dv(mmax))
+
+ nn(:)=rho(:)/4.0d0/pi
+ dn(:)=drho(:)/4.0d0/pi
+ call derivs(mmax,nn,al,rr,dpr,dppr,dlap)
+ sigma(:)=dpr(:)**2
+ call derivs(mmax,dn,al,rr,ddpr,dppr,dlap)
+ dsigma(:)=2.0d0*dpr(:)*ddpr(:)
+
+ do ii=1,2
+   if(fns(ii)%family==0) cycle
+   call lxc_fxc(fns(ii),mmax,nn,sigma,v2rho2,v2rhosigma,v2sigma2)
+   if(fns(ii)%family==1) then
+     dv(:)=v2rho2(:)*dn(:)
+   else
+! the change of d e/d n, less the divergence of the change of
+! d e/d grad(n) = 2 vsigma n'
+     call lxc_eval(fns(ii),mmax,nn,sigma,zk,vrho,vsigma)
+     dv(:)=v2rho2(:)*dn(:) + v2rhosigma(:)*dsigma(:)
+     dg(:)=2.0d0*((v2rhosigma(:)*dn(:) + v2sigma2(:)*dsigma(:))*dpr(:) &
+&          + vsigma(:)*ddpr(:))
+     call derivs(mmax,dg,al,rr,ddg,dppr,dlap)
+     dv(:)=dv(:) - (2.0d0/rr(:)*dg(:) + ddg(:))
+   end if
+   dvxc(:)=dvxc(:) + dv(:)
+   call lxc_end(fns(ii))
+ end do
+
+ deallocate(nn,dn,dpr,ddpr,dppr,dlap)
+ deallocate(sigma,dsigma,zk,vrho,vsigma)
+ deallocate(v2rho2,v2rhosigma,v2sigma2)
+ deallocate(dg,ddg,dv)
+ return
+ end subroutine exc_libxc_fxc
+
  subroutine exc_libxc_info(iexc,iout)
-!!  the description of the libxc functionals of iexc, written once per run
-!!  (oncvpsp_run)
+!! the description of the libxc functionals of iexc, written once per run
+!! (oncvpsp_run)
 !!
 !! @param iexc  exchange-correlation functional: -(1000*id1+id2) for the libxc
 !!              functionals id1 and id2
 !! @param iout  unit of the text output
 
- use functionals_m, only: xc_functl_t, xc_functl_init_functl, &
-&                         xc_functl_write_info, xc_functl_end, &
-&                         XC_DERIV_NUMERICAL
+ use libxc_api_m, only: lxc_t, lxc_end, lxc_info
 
 !Input variables
  integer, intent(in) :: iexc,iout
 
 !Local variables
- type(xc_functl_t) :: functls(2)
- integer :: id(2)
+ type(lxc_t) :: fns(2)
+ integer :: ii,jj,nref
+ character(len=32) :: kind,family
+ character(len=1024) :: name
+ character(len=1024) :: refs(9)
 
- id(1) = abs(iexc)/1000
- id(2) = abs(iexc) - id(1)*1000
- call xc_functl_init_functl(functls(1),id(1),3,0.0d0,1,XC_DERIV_NUMERICAL)
- call xc_functl_init_functl(functls(2),id(2),3,0.0d0,1,XC_DERIV_NUMERICAL)
- call xc_functl_write_info(functls(1), iout)
- call xc_functl_write_info(functls(2), iout)
+ call exc_libxc_init(iexc,fns)
+ do ii=1,2
+   if(fns(ii)%family==0) cycle
+   call lxc_info(fns(ii),kind,name,family,nref,refs)
+   write(iout,'(a,2x,a)') 'LXC ',trim(kind)
+   write(iout,'(a,4x,4a)') 'LXC ',trim(name),' (',trim(family),')'
+   do jj=1,nref
+     write(iout,'(a,4x,a,i1,2a)') 'LXC ','[',jj,'] ',trim(refs(jj))
+   end do
+   if(.not. fns(ii)%has_exc) then
+     write(iout,'(a,4x,a)') 'LXC ', &
+&         'no energy per electron: its part of E_xc is left out'
+   end if
+   call lxc_end(fns(ii))
+ end do
  write(iout,'(a)') ''
- call xc_functl_end(functls(1))
- call xc_functl_end(functls(2))
  return
  end subroutine exc_libxc_info
 

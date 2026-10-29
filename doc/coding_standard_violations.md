@@ -14,8 +14,8 @@ None.
 
 ## Kept on purpose
 
-- The imported files (`exc_off_pbe_m.f`, `functionals.F90`,
-  `gg1cc`/`gp1cc`/`gpp1cc` and `m_libxc_list.F90`), which keep their
+- The imported files (`exc_off_pbe_m.f`, `gg1cc`/`gp1cc`/`gpp1cc` and
+  `m_libxc_list.F90`), which keep their
   upstream form so that they can be kept in sync with their sources.
 - Copyright and license text: the years in `linout_m.f90`, `ldiracf*_m.f90`
   and `exc_off_pbe_m.f`, and the missing headers of `input_text_m.f90` and

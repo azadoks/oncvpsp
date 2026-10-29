@@ -24,9 +24,6 @@ None.
 
 ## Kept on purpose
 
-- **`functionals.F90`**: in `functional_get_tau`, `n(1)`/`t(1)` are stale
-  for `nspin=2`. The routine is never called. Kept, because the file is
-  imported and is easier to keep in sync with upstream unchanged.
 - **Unused arguments**: `icmod` and `rcfact` in `modcore`/`modcore2`.
   Removing them would change the routines' calls for programs that use the
   library. Their comments say they are not used.

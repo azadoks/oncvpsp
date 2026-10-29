@@ -67,8 +67,9 @@ with it set, so the failure reaches `oncvpsp_main`, which ends with
   `dirac_outward`'s series at the origin, which converges at any energy
   of the solvers' brackets.
 - A build without libxc refuses a libxc functional in `check_data`
-  (`have_libxc`), so `exc_libxc`'s stub, which stops, is not reached.
-- The imported `functionals.F90` keeps its `stop`s.
+  (`have_libxc`), so `exc_libxc`'s stub, which stops, is not reached;
+  with libxc, `check_data` refuses a functional libxc cannot evaluate
+  (`exc_libxc_check`), so `exc_libxc_init`'s stop is not reached either.
 
 Steps, one commit each, every one with the outputs of the reference
 inputs and of a corpus of failing inputs (stdout, and stderr up to the
@@ -202,11 +203,7 @@ are compiled recursive in every build type (`-frecursive`, and
 `-recursive`, `-Mrecursive`; `cmake/OncvpspCompilerOptions.cmake`):
 gfortran makes a local array over 64 kB static otherwise (there is none
 now), and its run-time check of recursion in the Debug build stops two
-threads in one procedure. One exception is imported code, which the
-rules keep as written: `functionals.F90` writes the Libxc description
-through a module variable (`message`), so two runs that write it at the
-same moment can mix its lines (`exc_libxc_info`, once per run); the
-numbers are not affected.
+threads in one procedure.
 
 The cache of all-electron atoms that the test configurations reuse is an
 `ae_cache_t` (`config_ae_m`) that `oncvpsp_run` owns and passes down, so

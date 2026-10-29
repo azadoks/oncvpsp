@@ -104,7 +104,7 @@ def read_prefixes(path):
 PREFIXES = read_prefixes(ROOT / "doc" / "coding_standards.md")
 # the numeric edit descriptors a message may use
 MESSAGE_NUMBERS = {"i0", "f12.6", "es12.4"}
-IMPORTED = {"exc_off_pbe_m.f", "functionals.F90", "m_libxc_list.F90"}
+IMPORTED = {"exc_off_pbe_m.f", "m_libxc_list.F90"}
 # the procedures that may stop (rule 5): the command line and oncvpsp_main
 STOPS = {"parse_command_line", "oncvpsp_main"}
 

@@ -7,7 +7,7 @@
 # all of which search Libxc_ROOT first if it is set. It must be version 3 or later, but not 5.0.0, and
 # a program using its Fortran module must compile and link, which it does not if the module was
 # compiled by another compiler. With AUTO, Libxc 7.0.0 is built if none is found or works; with FETCH
-# it is always built.
+# it is always built. ONCVPSP_LIBXC_FXC is defined when its second derivatives (fxc) are compiled in.
 
 include(CheckFortranSourceCompiles)
 
@@ -43,6 +43,32 @@ program libxc_check
   integer :: vmajor, vminor, vmicro
   call xc_${f}_version(vmajor, vminor, vmicro)
 end program libxc_check
+" ${var} SRC_EXT F90)
+endfunction()
+
+# Whether the Libxc VERSION in ARGN has the second derivatives (fxc) compiled in, which a build
+# configured with DISABLE_FXC lacks; the result goes to the cache variable VAR
+function(_oncvpsp_libxc_has_fxc var version)
+    if (version VERSION_LESS 5)
+        set(use "use xc_f90_types_m\n  use xc_f90_lib_m")
+        set(decl "type(xc_f90_pointer_t) :: p\n  double precision :: rho, v2rho2")
+        set(call "call xc_f90_lda_fxc(p, 1, rho, v2rho2)")
+    else ()
+        set(use "use iso_c_binding, only: c_size_t\n  use xc_f03_lib_m")
+        set(decl "type(xc_f03_func_t) :: p\n  double precision :: rho(1), v2rho2(1)")
+        set(call "call xc_f03_lda_fxc(p, 1_c_size_t, rho, v2rho2)")
+    endif ()
+    unset(${var} CACHE)
+    set(CMAKE_REQUIRED_LIBRARIES ${ARGN})
+    set(CMAKE_REQUIRED_QUIET ON)
+    check_fortran_source_compiles("
+program libxc_fxc_check
+  ${use}
+  implicit none
+  ${decl}
+  rho = 1.0d0
+  if (sum([rho]) < 0.0d0) ${call}
+end program libxc_fxc_check
 " ${var} SRC_EXT F90)
 endfunction()
 
@@ -148,6 +174,9 @@ if (NOT ONCVPSP_Libxc_SOURCE STREQUAL "FETCH")
         else ()
             set(_libxc_libraries ${_candidate})
             set(ONCVPSP_Libxc_DESCRIPTION "Libxc ${_version} (${_where})")
+            string(MAKE_C_IDENTIFIER "ONCVPSP_Libxc_FXC_${_where}" _check)
+            _oncvpsp_libxc_has_fxc(${_check} "${_version}" ${_candidate})
+            set(_libxc_fxc ${${_check}})
             break ()
         endif ()
     endforeach ()
@@ -186,10 +215,20 @@ if (NOT _libxc_libraries)
     target_link_libraries(oncvpsp_libxc_built INTERFACE xcf03 xc)
     set(_libxc_libraries oncvpsp_libxc_built)
     set(ONCVPSP_Libxc_DESCRIPTION "Libxc ${_libxc_fetch_version} (built)")
+    # built with fxc (DISABLE_FXC is off)
+    set(_libxc_fxc ON)
 endif ()
 
 add_library(oncvpsp_libxc INTERFACE)
 add_library(oncvpsp::libxc ALIAS oncvpsp_libxc)
 target_link_libraries(oncvpsp_libxc INTERFACE ${_libxc_libraries})
+# the analytic second derivatives (der2exc), or differences without them
+if (_libxc_fxc)
+    target_compile_definitions(oncvpsp_libxc INTERFACE ONCVPSP_LIBXC_FXC)
+    string(APPEND ONCVPSP_Libxc_DESCRIPTION ", with fxc")
+else ()
+    string(APPEND ONCVPSP_Libxc_DESCRIPTION ", without fxc")
+endif ()
+unset(_libxc_fxc)
 unset(_libxc_libraries)
 unset(_libxc_candidates)

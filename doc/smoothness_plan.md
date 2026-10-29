@@ -2071,9 +2071,31 @@ changing it:
       moved (74_W_r V_loc by 6e-5) and 40_Zr's Newton refinement no
       longer converged, so icmod 4's objective, as modcore3 samples it,
       is not smooth at that scale.
-- [ ] icmod 4: why modcore3's optimum depends on der2exc's step at 1e-5
+- [x] icmod 4: why modcore3's optimum depends on der2exc's step at 1e-5
       (the clipped near-zero densities are the first suspect); then
-      analytic f_xc (libxc can give it) in place of the differences
+      analytic f_xc (libxc can give it) in place of the differences.
+      Found (2026-10-29): PZ's step at rs = 1 (see the 14_Si residual
+      above), not the clipped densities. A point whose density crosses
+      rs = 1 within the differences takes a spike of the step over h,
+      narrower but not smaller as h falls, which the mesh samples
+      unevenly. 40_Zr's prefactors (amplitude / scale) by the step h:
+      PZ 2.3788 / 1.5525 at 0.15, 2.3832 / 1.5514 at 0.05, Newton failing
+      from 0.01; PZ with its exact coefficients 2.3777 to 2.3802 from
+      0.15 to 0.001; PW92 (−001012) 2.3757 / 1.5528 from 0.003 to 0.15
+      (and Newton failing at 0.001, where the differences' round-off,
+      ε/h, passes its stopping test; 38_Sr_lxc's PBE from 0.01). The
+      AE matrix's asymmetry measures it: 1e-6 for PZ at 0.15, 5e-8 with
+      the exact coefficients, 1.5e-8 for PW92. Done: der2exc takes
+      dV_xc/dn_k = f_xc ρ_k from `fxc_dispatch` (analytic for the
+      built-in LDAs and Libxc's LDAs and GGAs, the GGA's response on the
+      mesh with derivs; differences at 0.15 for the built-in PBE or a
+      Libxc functional without fxc). 40_Zr: 2.3801 / 1.5522, PW92 and
+      38_Sr_lxc unchanged to the printed digits, the matrices symmetric.
+      Unit test `fxc`: each f_xc against 4th-order differences of the
+      potential, to 6e-11 of max |dV| (LDAs) and the matrix element to
+      3e-13 (all, the GGA included). PZ's exact coefficients were not
+      taken: they change the functional (19 references, total energies
+      by up to 7e-4 Ha), and QE's and libxc's PZ keep the rounded ones
 - [x] C-10, eresid's q spacing qmax/(nq − 1), nq an integer: confirmed.
       The grid is now q_i = qmax − (nq − i) dq with dq = 2π/(150 rc)
       exactly, from below dq up to qmax: the spacing is continuous and

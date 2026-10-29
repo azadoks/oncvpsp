@@ -275,7 +275,6 @@ def reindent(text, fname):
 # files; an editor formatting on save does, and gets them back unchanged.
 IMPORTED = (
     "src/exc_off_pbe_m.f",
-    "src/functionals.F90",
     "src/m_libxc_list.F90",
     "src/gg1cc.f90",
     "src/gp1cc.f90",

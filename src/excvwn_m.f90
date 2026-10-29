@@ -21,7 +21,7 @@
 
  implicit none
  private
- public :: excvwn
+ public :: excvwn, fxcvwn
 
  contains
 
@@ -87,5 +87,62 @@
 
  return
  end subroutine excvwn
+
+ subroutine fxcvwn(rho,fxc,mmax)
+
+!! the derivative by rho of excvwn's potential, zero where excvwn's is
+!!
+!! @param rho  charge density
+!! @param fxc  derivative of the exchange-correlation potential by rho
+!!             (Ha bohr^3)
+!! @param mmax  size of the log radial mesh
+
+ use constants_m, only: dp, pi
+
+!Input variables
+ integer, intent(in) :: mmax
+ real(dp), intent(in) :: rho(mmax)
+
+!Output variables
+ real(dp), intent(out) :: fxc(mmax)
+
+!Local variables
+ real(dp), parameter :: pi4=4.0d0*pi
+ real(dp), parameter :: thrd=1.0d0/3.0d0
+ real(dp), parameter :: conrs = (3.0d0/(4.0d0*pi))**thrd
+ real(dp), parameter :: convx = (1.5d0/pi)**(2.0d0/3.0d0)
+ real(dp), parameter :: aa=0.0310907d0
+ real(dp), parameter :: bb=3.72744d0
+ real(dp), parameter :: cc=12.9352d0
+ real(dp), parameter :: x0=-0.10498d0
+ integer :: ii
+ real(dp) :: qq,xx0,rs,xx,xxx,tq,tb,decdx,d2ecdx2,dvdrs
+
+ qq=sqrt(4.0d0*cc - bb**2)
+ xx0=x0**2 + bb*x0 + cc
+
+! the potential is ec - x ec'/6 in x = sqrt(rs), so its derivative by
+! x is 5 ec'/6 - x ec''/6; drs/drho = -rs/(3 rho)
+ do ii=1,mmax
+   if(rho(ii)>1.0d-20) then
+     rs=conrs*(rho(ii)/pi4)**(-thrd)
+     xx=sqrt(rs)
+     xxx=xx**2 + bb*xx + cc
+     tb=2.0d0*xx + bb
+     tq=tb**2 + qq**2
+     decdx=aa*(2.0d0/xx - tb/xxx - 4.0d0*bb/tq &
+&      - bb*x0/xx0*(2.0d0/(xx - x0) - tb/xxx - 4.0d0*(bb + 2.0d0*x0)/tq))
+     d2ecdx2=aa*(-2.0d0/xx**2 - (2.0d0*xxx - tb**2)/xxx**2 &
+&      + 16.0d0*bb*tb/tq**2 &
+&      - bb*x0/xx0*(-2.0d0/(xx - x0)**2 - (2.0d0*xxx - tb**2)/xxx**2 &
+&      + 16.0d0*(bb + 2.0d0*x0)*tb/tq**2))
+     dvdrs=convx/rs**2 + (5.0d0*decdx - xx*d2ecdx2)/(12.0d0*xx)
+     fxc(ii)=-dvdrs*rs*thrd/rho(ii)
+   else
+     fxc(ii)=0.0d0
+   end if
+ end do
+ return
+ end subroutine fxcvwn
 
  end module excvwn_m

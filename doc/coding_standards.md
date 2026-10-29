@@ -513,8 +513,7 @@ bounds), and `-Wconversion`, a warning for a conversion that may change a
 value (write `int()` or `real(,dp)`). The imported files are compiled
 without them.
 
-The imported files (`exc_off_pbe_m.f`, `functionals.F90`,
-`gg1cc`/`gp1cc`/`gpp1cc` and `m_libxc_list.F90`) are excluded from the
-hooks, so that they can be kept in sync with their sources, and so are the
-reference outputs in `tests/refs`, the patches in `cmake/patches` and
-`COPYING`.
+The imported files (`exc_off_pbe_m.f`, `gg1cc`/`gp1cc`/`gpp1cc` and
+`m_libxc_list.F90`) are excluded from the hooks, so that they can be kept
+in sync with their sources, and so are the reference outputs in
+`tests/refs`, the patches in `cmake/patches` and `COPYING`.

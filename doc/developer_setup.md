@@ -376,7 +376,7 @@ recommendations, so opening the folder is most of the setup.
 
     - Free-form Fortran (`.f90`, `.F90`, `.inc`) is formatted on save by
       reindent, which gets the file's path and leaves the imported files
-      (`functionals.F90`, `gg1cc.f90` etc., the list in `reindent.py`)
+      (`exc_off_pbe_m.f`, `gg1cc.f90` etc., the list in `reindent.py`)
       unchanged. The Format Document command runs it by hand.
     - The gfortran linter gets the include paths of the `default` build
       and the `WITH_TOML` definition, so it compiles each file as the build

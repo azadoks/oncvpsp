@@ -17,12 +17,13 @@
 !
 !> The exchange-correlation energy per electron and potential of a density
 !> for the functional iexc: the built-in ones and libxc's (vout,
-!> modcore_budget).
+!> modcore_budget), and the change of the potential for a change of the
+!> density (der2exc).
  module xc_dispatch_m
  use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
- public :: exc_dispatch
+ public :: exc_dispatch, fxc_dispatch
 
  contains
 
@@ -78,5 +79,69 @@
  end if
  return
  end subroutine exc_dispatch
+
+ subroutine fxc_dispatch(iexc,c_light,al,rho,drho,dvxc,rr,mmax,have)
+
+!! the change of exc_dispatch's potential at rho for the change drho of
+!! the density, from the functional's analytic second derivatives: for
+!! the built-in LDAs (iexc 1-3, 6, 7) and for libxc's LDAs and GGAs that
+!! have them. have is false, and dvxc zero, for the others (the built-in
+!! PBE, iexc 4), which der2exc differentiates numerically
+!!
+!! @param iexc  exchange-correlation functional (1-4, 6, 7 built in, <0
+!!              libxc)
+!! @param c_light  speed of light (Hartree atomic units)
+!! @param al  log of the mesh ratio
+!! @param rho  charge density on rr
+!! @param drho  change of the charge density
+!! @param dvxc  change of the exchange-correlation potential (Ha)
+!! @param rr  log radial mesh (bohr)
+!! @param mmax  size of the log radial mesh
+!! @param have  whether dvxc was evaluated
+
+ use exc_libxc_m, only: exc_libxc_fxc
+ use exc_relx_m, only: fxc_relx
+ use exchdl_m, only: fxchdl
+ use excpzca_m, only: fxcpzca
+ use excvwn_m, only: fxcvwn
+ use excwig_m, only: fxcwig
+ use constants_m, only: dp
+
+!Input variables
+ integer, intent(in) :: iexc,mmax
+ real(dp), intent(in) :: c_light
+ real(dp), intent(in) :: al,rho(mmax),drho(mmax),rr(mmax)
+
+!Output variables
+ real(dp), intent(out) :: dvxc(mmax)
+ logical, intent(out) :: have
+
+!Local variables
+ real(dp), allocatable :: fxc(:)
+
+ if(iexc<0) then
+   call exc_libxc_fxc(iexc,al,rho,drho,dvxc,rr,mmax,have)
+   return
+ end if
+
+ allocate(fxc(mmax))
+ have=.true.
+ if(iexc == 1) then
+   call fxcwig(rho,fxc,mmax)
+ else if(iexc == 2) then
+   call fxchdl(rho,fxc,mmax)
+ else if(iexc == 3) then
+   call fxcpzca(rho,fxc,mmax)
+ else if(iexc == 6 .or. iexc == 7) then
+   call fxcvwn(rho,fxc,mmax)
+   if(iexc == 7) call fxc_relx(rho,fxc,mmax,c_light)
+ else
+   fxc(:)=0.0d0
+   have=.false.
+ end if
+ dvxc(:)=fxc(:)*drho(:)
+ deallocate(fxc)
+ return
+ end subroutine fxc_dispatch
 
  end module xc_dispatch_m

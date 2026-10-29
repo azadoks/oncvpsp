@@ -40,7 +40,14 @@ psp8 and UPF files name the Libxc functional, -532007 or "RXC VWN".
 
 Meta-ggas and hybrid exc functions are not implemented in oncvpsp.  Metas
 may come is a subsequent release.  HF and hybrid functionals are incompatible
-with norm and generalized-norm conservation.
+with norm and generalized-norm conservation.  The input check refuses a
+number Libxc does not know, one without a potential, and one that is
+neither LDA nor GGA.
+
+The model-core analysis (d2Exc, icmod 1-4, 6, 7) takes the change of the
+potential from the functional's second derivatives (fxc) when Libxc has
+them compiled in, which the configuration's summary states ("with fxc"),
+and by differences otherwise.
 
 ### BIG LIST FROM LIBXC-4.2.3
 

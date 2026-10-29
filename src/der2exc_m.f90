@@ -51,9 +51,10 @@
 !! @param adams  order and coefficients of the Adams-Moulton steps
 
  use constants_m, only: dp
- use logmesh_m, only: lm_integral
+ use logmesh_m, only: lm_integral, lm_step
  use vout_m, only: vout
  use adams_m, only: adams_t
+ use xc_dispatch_m, only: fxc_dispatch
 
 !Input variables
  integer, intent(in) :: iexc,nc,nv,mmax
@@ -69,34 +70,57 @@
  real(dp), intent(out) :: d2mdiff
 
 !Local variables
- real(dp) :: hh,eeel,eexc,ss
+ real(dp) :: hh,eeel,eexc,ss,al
  real(dp), allocatable :: vo(:),vxct(:),rhot(:),dvxc(:,:)
  integer :: jj,kk,l1
+ logical :: have
 
  allocate(vo(mmax),vxct(mmax),rhot(mmax),dvxc(mmax,nv))
 
- hh=0.15d0
-
+! dV_xc/dn_k, the change of the xc potential of the valence and core
+! charge for a change of the occupation of state k: from the functional's
+! analytic second derivatives where it has them (fxc_dispatch), exact for
+! PZ's potential, which steps at rs = 1, on either side of the step
+ al=lm_step(rr,mmax)
+ rhot(:)=rhotot(:) + rhoc(:)
+ have=.false.
  do kk=1,nv
-   dvxc(:,kk)=0.0d0
+   call fxc_dispatch(iexc,c_light,al,rhot,rho(:,kk),dvxc(:,kk),rr,mmax, &
+&                    have)
+   if(.not. have) exit
+ end do
 
-   rhot(:)=rhotot(:)-2.0d0*hh*rho(:,kk)
-   call vout(.true.,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,adams,iexc,c_light)
-   dvxc(:,kk)=dvxc(:,kk)+( 2.0d0/(24.0d0*hh))*vxct(:)
+! otherwise by differences in the occupation, of 4th order, whose step
+! 0.15 keeps the round-off of the differences below their truncation
+! error (3.5e-6 of d2Exc in 14_Si) for a smooth functional
+ if(.not. have) then
+   hh=0.15d0
 
-   rhot(:)=rhotot(:)     -hh*rho(:,kk)
-   call vout(.true.,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,adams,iexc,c_light)
-   dvxc(:,kk)=dvxc(:,kk)+(-16.0d0/(24.0d0*hh))*vxct(:)
+   do kk=1,nv
+     dvxc(:,kk)=0.0d0
 
-   rhot(:)=rhotot(:)     +hh*rho(:,kk)
-   call vout(.true.,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,adams,iexc,c_light)
-   dvxc(:,kk)=dvxc(:,kk)+( 16.0d0/(24.0d0*hh))*vxct(:)
+     rhot(:)=rhotot(:)-2.0d0*hh*rho(:,kk)
+     call vout(.true.,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,adams, &
+&              iexc,c_light)
+     dvxc(:,kk)=dvxc(:,kk)+( 2.0d0/(24.0d0*hh))*vxct(:)
 
-   rhot(:)=rhotot(:)+2.0d0*hh*rho(:,kk)
-   call vout(.true.,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,adams,iexc,c_light)
-   dvxc(:,kk)=dvxc(:,kk)+(-2.0d0/(24.0d0*hh))*vxct(:)
+     rhot(:)=rhotot(:)     -hh*rho(:,kk)
+     call vout(.true.,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,adams, &
+&              iexc,c_light)
+     dvxc(:,kk)=dvxc(:,kk)+(-16.0d0/(24.0d0*hh))*vxct(:)
 
- end do !kk
+     rhot(:)=rhotot(:)     +hh*rho(:,kk)
+     call vout(.true.,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,adams, &
+&              iexc,c_light)
+     dvxc(:,kk)=dvxc(:,kk)+( 16.0d0/(24.0d0*hh))*vxct(:)
+
+     rhot(:)=rhotot(:)+2.0d0*hh*rho(:,kk)
+     call vout(.true.,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,adams, &
+&              iexc,c_light)
+     dvxc(:,kk)=dvxc(:,kk)+(-2.0d0/(24.0d0*hh))*vxct(:)
+
+   end do !kk
+ end if
 
 ! compute Exc 2nd-derivative wrt occupation numbers matrix, integrated to
 ! the radius rcut (smooth in it)

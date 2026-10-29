@@ -600,6 +600,22 @@ precision.
 - **d2Exc stencil.** 4.0.1's five-point stencil evaluated -2h twice,
   giving d2Exc 4/3 too large, second order only. Commits: 333c55e,
   a672619.
+- **d2Exc from f_xc.** 4.0.1 took dV_xc/dn_k, the change of the xc
+  potential for that of an occupation, by differences in the occupation
+  (step 0.15). It is now the functional's second derivative times the
+  state's density, where the functional has one: the built-in LDAs (iexc
+  1-3, 6, 7) and Libxc's LDAs and GGAs, when Libxc has its second
+  derivatives compiled in (for a GGA the derivative of the potential on
+  the mesh, its radial derivatives included). The built-in PBE (iexc 4),
+  and a Libxc functional without them, keep the differences. The
+  matrices are now symmetric (4.0.1's differed by up to 1e-6). For PZ
+  (iexc 3 and -001009), whose potential steps at rs = 1, the differences
+  took in a delta there that depended on the step: icmod 4's fit moved
+  with it (40_Zr's prefactors 2.3788 / 1.5525 at the step 0.15 to 2.3832
+  / 1.5514 at 0.05) and Newton failed below 0.05. It now takes the branch
+  each point is on: 40_Zr 2.3801 / 1.5522, its V_loc by 2.3e-4 Ha, the
+  icmod 1-3 d2Exc by up to 1e-6, 38_Sr_lxc_r's model core (PBE) by 2e-5
+  relative. Commits: FXC_COMMIT.
 
 #### Output
 
@@ -694,6 +710,14 @@ Bugs that moved outputs, beyond those above:
 - **One code for nr, sr and fr.** The `_r` copies were merged into one
   driver, `oncvpsp_main(irel, istage)`. The physics is unchanged.
   Commits: 0b301d7 to 3ca0b78.
+- **Libxc interface.** The imported `functionals.F90` (from APE, with
+  its spin-polarized, meta-GGA and asymptotic-correction code, none of
+  it reachable) is replaced by `exc_libxc_m` over a thin wrapper,
+  `libxc_api_m`, the only file with the version's `#if`s (xc_f90 before
+  Libxc 5, xc_f03 from it). The input check rejects a Libxc number that
+  Libxc does not know, gives no potential, or is neither LDA nor GGA;
+  4.0.1 went on to a zero potential (hybrids) or stopped later
+  (meta-GGAs). The `LXC` lines are unchanged. Commits: FXC_COMMIT.
 - **Build.** CMake only (the make build was dropped), with dependency
   fetching, presets and a `study` preset (-O3 -march=native
   -ffast-math). xmlf90 comes from its repository. PSML goes into the

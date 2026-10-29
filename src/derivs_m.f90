@@ -27,7 +27,7 @@
 
  subroutine derivs(mmax, rho, al, rr, dpr, dppr, dlap)
 !! first and second radial derivatives and Laplacian of rho on the log
-!! mesh, by finite differences, for excggc, exc_libxc and functionals_m
+!! mesh, by finite differences, for excggc and exc_libxc
 !! NB: presumes incoming rho is properly scaled without 4pi or r**2 factors.
 !!
 !! @param mmax  size of the log radial mesh

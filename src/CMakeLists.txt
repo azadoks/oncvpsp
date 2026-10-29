@@ -119,7 +119,7 @@ set(src_oncvpsp
     sr_so_r_m.f90
 )
 if (ONCVPSP_WITH_Libxc)
-    list(APPEND src_oncvpsp functionals.F90 exc_libxc_m.f90)
+    list(APPEND src_oncvpsp libxc_api_m.F90 exc_libxc_m.f90)
 else ()
     list(APPEND src_oncvpsp exc_libxc_stub_m.f90)
 endif ()
@@ -138,7 +138,7 @@ add_custom_target(oncvpsp_build_info
 
 # The imported files keep their form (fixed form, REAL*8, single-precision literals): not held to
 # the Debug build's -std=f2008 and -Wconversion (cmake/OncvpspCompilerOptions.cmake)
-set_source_files_properties(exc_off_pbe_m.f functionals.F90 m_libxc_list.F90 PROPERTIES
+set_source_files_properties(exc_off_pbe_m.f m_libxc_list.F90 PROPERTIES
     COMPILE_OPTIONS "$<$<Fortran_COMPILER_ID:GNU>:-std=gnu;-Wno-conversion>")
 
 add_library(oncvpsp STATIC ${src_oncvpsp})

@@ -15,7 +15,8 @@ Prints how many lines changed.
 
 The lines of the quantities whose tolerance in compare_output.py is close to
 their printed precision (the pseudo-atom energies, the eigenvalues of the test
-configurations, the UPF file's total energy, the rows of the d2Exc matrices)
+configurations, the UPF file's total energy, the rows of the d2Exc matrices
+and their rms errors)
 take the new line whenever its text differs.  Look at what changed before
 patching (compare_output.py REF.out NEW.out), and run the reference test
 after: another quantity with a tighter tolerance can still differ.
@@ -50,6 +51,8 @@ EXACT = [
     ),
     # a row of a d2Exc matrix
     re.compile(r"^(\s+-?\d\.\d{6}D[-+]\d\d)+$"),
+    # its rms error against the reference matrix (d2exc_rmse, 5e-8 abs)
+    re.compile(r"^rms 2nd derivative error"),
 ]
 
 

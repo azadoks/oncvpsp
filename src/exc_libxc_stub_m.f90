@@ -22,7 +22,8 @@
  use, intrinsic :: iso_fortran_env, only: error_unit
  implicit none
  private
- public :: exc_libxc, exc_libxc_info, have_libxc
+ public :: exc_libxc, exc_libxc_fxc, exc_libxc_check, exc_libxc_info
+ public :: have_libxc
 
 !> whether this build has libxc, for check_data
  logical, parameter :: have_libxc=.false.
@@ -61,6 +62,55 @@
 
  error stop 1
  end subroutine exc_libxc
+
+ subroutine exc_libxc_check(iexc,ierr)
+!!  dummy substitute, not reached (exc_libxc)
+!!
+!! @param iexc  exchange-correlation functional
+!! @param ierr  0 on success; the non-zero values differ by routine:
+!!              the reasons above
+
+!Input variables
+ integer, intent(in) :: iexc
+
+!Output variables
+ integer, intent(out) :: ierr
+
+ ierr=1
+ write(error_unit,'(/a,i0)') 'exc_libxc_check: ERROR without libxc, iexc = ', &
+&     iexc
+ error stop 1
+ end subroutine exc_libxc_check
+
+ subroutine exc_libxc_fxc(iexc,al,rho,drho,dvxc,rr,mmax,have)
+!!  dummy substitute, not reached either (exc_libxc)
+!!
+!! @param iexc  exchange-correlation functional
+!! @param al  log of the mesh ratio amesh of the log radial mesh
+!! @param rho  charge density
+!! @param drho  change of the charge density
+!! @param dvxc  change of the exchange-correlation potential (Ha)
+!! @param rr  log radial mesh (bohr)
+!! @param mmax  size of the log radial mesh
+!! @param have  whether dvxc was evaluated
+
+ use constants_m, only: dp
+
+!Input variables
+ integer, intent(in) :: mmax, iexc
+ real(dp), intent(in) :: al
+ real(dp), intent(in) :: rho(mmax),drho(mmax),rr(mmax)
+
+!Output variables
+ real(dp), intent(out) :: dvxc(mmax)
+ logical, intent(out) :: have
+
+ dvxc(:)=0.0d0
+ have=.false.
+ write(error_unit,'(/a,i0)') 'exc_libxc_fxc: ERROR without libxc, iexc = ', &
+&     iexc
+ error stop 1
+ end subroutine exc_libxc_fxc
 
  subroutine exc_libxc_info(iexc,iout)
 !!  dummy substitute, not reached either (exc_libxc)

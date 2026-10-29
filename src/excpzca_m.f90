@@ -21,7 +21,7 @@
 
  implicit none
  private
- public :: excpzca
+ public :: excpzca, fxcpzca
 
  contains
 
@@ -94,5 +94,62 @@
 
  return
  end subroutine excpzca
+
+ subroutine fxcpzca(rho,fxc,mmax)
+
+!! the derivative by rho of excpzca's potential, zero where excpzca's is,
+!! on the branch of rs that excpzca takes: the potential steps at rs = 1
+!! (its coefficients CC and DD are rounded), whose delta is left out
+!!
+!! @param rho  charge density
+!! @param fxc  derivative of the exchange-correlation potential by rho
+!!             (Ha bohr^3)
+!! @param mmax  size of the log radial mesh
+
+ use constants_m, only: dp, pi
+
+!Input variables
+ integer, intent(in) :: mmax
+ real(dp), intent(in) :: rho(mmax)
+
+!Output variables
+ real(dp), intent(out) :: fxc(mmax)
+
+!Local variables
+ real(dp), parameter :: pi4=4.0d0*pi
+ real(dp), parameter :: thrd=1.0d0/3.0d0
+ real(dp), parameter :: conrs = (3.0d0/(4.0d0*pi))**thrd
+ real(dp), parameter :: convx = (1.5d0/pi)**(2.0d0/3.0d0)
+ real(dp), parameter :: gam = -0.1423d0
+ real(dp), parameter :: bt1 =  1.0529d0
+ real(dp), parameter :: bt2 =  0.3334d0
+ real(dp), parameter :: AA =   0.0311d0
+ real(dp), parameter :: CC =   0.0020d0
+ real(dp), parameter :: DD =  -0.0116d0
+ real(dp) :: rs,sqrs,den,dden,num,dnum,dvdrs
+ integer :: ii
+
+! dv/drs, and drs/drho = -rs/(3 rho)
+ do ii=1,mmax
+   if(rho(ii)>1.0d-20) then
+     rs=conrs*(rho(ii)/pi4)**(-thrd)
+     if(rs > 1.0d0) then
+       sqrs=sqrt(rs)
+       den=1.0d0 + bt1*sqrs + bt2*rs
+       dden=0.5d0*bt1/sqrs + bt2
+       num=1.0d0 + (3.5d0*bt1*sqrs + 4.0d0*bt2*rs)*thrd
+       dnum=(1.75d0*bt1/sqrs + 4.0d0*bt2)*thrd
+       dvdrs=convx/rs**2 + gam*(dnum*den - 2.0d0*num*dden)/den**3
+     else
+       dvdrs=convx/rs**2 + AA/rs + 2.0d0*thrd*CC*(log(rs) + 1.0d0) &
+&            + thrd*(2.0d0*DD - CC)
+     end if
+     fxc(ii)=-dvdrs*rs*thrd/rho(ii)
+   else
+     fxc(ii)=0.0d0
+   end if
+ end do
+ return
+ end subroutine fxcpzca
 
  end module excpzca_m

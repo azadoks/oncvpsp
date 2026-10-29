@@ -23,7 +23,6 @@ line-length = 80
 # imported code, kept as written upstream
 extend-exclude = [
     "src/exc_off_pbe_m.f",
-    "src/functionals.F90",
     "src/m_libxc_list.F90",
     "tests/unit/gg1cc.f90",
     "tests/unit/gp1cc.f90",
