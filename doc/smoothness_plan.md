@@ -1928,7 +1928,31 @@ from rc:
       1.012 and 1.3e-8 at 1.006 (about al^1.7). It is not the start at
       the origin (rr1 = 1e-7 leaves it), nor relativistic. This is the
       "about 1e-7 where the differences stop falling smoothly" of step 7.
-      Until it is found a coarser default mesh is not safe (open).
+      **Found (2026-10-28): the functional, not the numerics.** 14_Si is
+      iexc 3, Perdew–Zunger, whose two branches meet at rs = 1 with
+      4-digit CC and DD (`excpzca`): ε_c jumps there by 3.2e-5 Ha and
+      v_c by 2.8e-5 Ha. The step sits at a fixed radius, so the error
+      depends on where the mesh falls, not on the step: moving rr1
+      through one cell at amesh 1.006 (order 8, nr) gives a sawtooth in
+      1s of ±4e-8 Ha (linear, with one jump per cell; rmax ±0.03 moves
+      nothing). libxc's PZ (−001009) gives the same sawtooth to 1e-10;
+      PZ_MOD (−001010, PZ's continuous coefficients) ±4e-9, from the
+      kink left; PW92 (−001012) 3e-12. With PW92, 14_Si against amesh
+      1.003 at order 8 (sr and nr alike, 1s the largest):
+
+      | amesh | order 4 | order 6 | order 8 |
+      |---|---|---|---|
+      | 1.048 | 1.4e-5 | 2.3e-7 | 1.5e-8 |
+      | 1.024 | 9.3e-7 | 3.2e-9 | 4.7e-11 |
+      | 1.016 | 1.9e-7 | 2.7e-10 | 1e-11 |
+      | 1.012 | 6.0e-8 | 5.8e-11 | 1.4e-11 |
+      | 1.006 | 3.8e-9 | 1.6e-11 | 1.5e-11 |
+
+      So order 8 at amesh 1.024 (a quarter of the default's points) is
+      within 5e-11 Ha, and order 6 at 1.016 within 3e-10, for a smooth
+      functional. For iexc 3 (and libxc PZ) the floor is PZ's own step,
+      about 4e-8 at 1.006 and 1.3e-7 at 1.024, whatever the order; the
+      coefficients are the xc implementation's, left as they are.
       The plan as written: AB4 predictor and two
       fixed-point AM4 corrector passes per mesh step (`adams.inc`, in
       sr_flux_m, lschfb, lschpsbar, outwf_m, vout, dirac_m, ldiracfb,
