@@ -615,7 +615,7 @@ precision.
   / 1.5514 at 0.05) and Newton failed below 0.05. It now takes the branch
   each point is on: 40_Zr 2.3801 / 1.5522, its V_loc by 2.3e-4 Ha, the
   icmod 1-3 d2Exc by up to 1e-6, 38_Sr_lxc_r's model core (PBE) by 2e-5
-  relative. Commits: FXC_COMMIT.
+  relative. Commits: c384229.
 
 #### Output
 
@@ -717,7 +717,7 @@ Bugs that moved outputs, beyond those above:
   Libxc 5, xc_f03 from it). The input check rejects a Libxc number that
   Libxc does not know, gives no potential, or is neither LDA nor GGA;
   4.0.1 went on to a zero potential (hybrids) or stopped later
-  (meta-GGAs). The `LXC` lines are unchanged. Commits: FXC_COMMIT.
+  (meta-GGAs). The `LXC` lines are unchanged. Commits: c384229.
 - **Build.** CMake only (the make build was dropped), with dependency
   fetching, presets and a `study` preset (-O3 -march=native
   -ffast-math). xmlf90 comes from its repository. PSML goes into the

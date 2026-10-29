@@ -13878,7 +13878,7 @@ Begin PSP_UPF
        core_correction="T"
        functional="PBE"
        z_valence="    5.00"
-       total_psenergy=" -1.9343996531379773E+01"
+       total_psenergy=" -1.9343996531369207E+01"
        rho_cutoff="  1.0648072178879213E+01"
        l_max="1"
        l_local="-1"

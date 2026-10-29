@@ -262,7 +262,7 @@ Coulomb tail of the local potential
   alpha_z = 4 pi int r**2 (V_loc + zion/r) dr  5.1624788351E+00 Ha bohr**3
   alpha_z change, table cut at r =  6.00: -2.4665E-12
   alpha_z change, table cut at r = 10.00: -1.3300E-11
-  |V_loc + zion/r| < 1e-10 beyond r =    2.5941
+  |V_loc + zion/r| < 1e-10 beyond r =    2.5942
   max |V_loc - V_ion| beyond rcmax  4.4662E-05
 
 Test configuration 0
@@ -278,7 +278,7 @@ ae_converged: WARNING scf stopped on the round-off floor of the residual, res=  
 
     Total energies and differences
       AE_ref= -5.44530405D+01  AE_tst= -5.44530405D+01  dif=  0.00D+00
-      PS_ref= -9.67088672E+00  PS_tst= -9.67088672E+00  dif=  2.31E-14
+      PS_ref= -9.67088672E+00  PS_tst= -9.67088672E+00  dif= -7.11E-15
       PSP excitation error=  5.33D-15
 
 DATA FOR PLOTTING
@@ -13878,7 +13878,7 @@ Begin PSP_UPF
        core_correction="T"
        functional="PBE"
        z_valence="    5.00"
-       total_psenergy=" -1.9341773434991698E+01"
+       total_psenergy=" -1.9341773434982258E+01"
        rho_cutoff="  1.0648072178879213E+01"
        l_max="1"
        l_local="-1"

@@ -324,15 +324,15 @@ Model core correction analysis
 
 d2excae - all-electron derivatives
 
-   -2.084562D-02   -1.692055D-02
-   -1.692086D-02   -1.691070D-02
+   -2.084575D-02   -1.692093D-02
+   -1.692093D-02   -1.691090D-02
 
 d2excps - pseudofunction derivatives with no core correction
 
-   -2.866991D-02   -2.074712D-02
-   -2.074711D-02   -1.915299D-02
+   -2.866993D-02   -2.074712D-02
+   -2.074712D-02   -1.915299D-02
 
-rms 2nd derivative error    4.886977E-03
+rms 2nd derivative error    4.886821E-03
 
 rmatch, rhocmatch    1.2538    1.4964
 
@@ -341,10 +341,10 @@ Teter function model core charge with specified parameters
 
 d2excps - pseudofunction derivatives with core correction
 
-   -2.101001D-02   -1.693981D-02
-   -1.693994D-02   -1.700159D-02
+   -2.101076D-02   -1.694036D-02
+   -1.694036D-02   -1.700190D-02
 
-rms 2nd derivative error    9.489655E-05
+rms 2nd derivative error    9.521614E-05
 
 Ionic tail switched over r =  3.1000 to  7.4249 a.u., converged in  5 steps
 
@@ -397,7 +397,7 @@ Test configuration 0
 
     Total energies and differences
       AE_ref= -2.42678721D+03  AE_tst= -2.42678721D+03  dif=  0.00D+00
-      PS_ref= -9.56827267E+00  PS_tst= -9.56827267E+00  dif= -8.88E-15
+      PS_ref= -9.56827267E+00  PS_tst= -9.56827267E+00  dif= -7.11E-15
       PSP excitation error= -8.88D-15
 
 Test configuration 1

@@ -317,15 +317,15 @@ Model core correction analysis
 
 d2excae - all-electron derivatives
 
-   -2.282690D-02   -1.575762D-02
-   -1.575761D-02   -1.150231D-02
+   -2.282691D-02   -1.575763D-02
+   -1.575763D-02   -1.150232D-02
 
 d2excps - pseudofunction derivatives with no core correction
 
-   -2.686381D-02   -1.795996D-02
-   -1.795994D-02   -1.270555D-02
+   -2.686386D-02   -1.795997D-02
+   -1.795997D-02   -1.270556D-02
 
-rms 2nd derivative error    2.619382E-03
+rms 2nd derivative error    2.619416E-03
 
 Polynomial model core charge
 
@@ -333,10 +333,10 @@ Polynomial model core charge
 
 d2excps - pseudofunction derivatives with core correction
 
-   -2.305657D-02   -1.602571D-02
-   -1.602566D-02   -1.171031D-02
+   -2.305665D-02   -1.602571D-02
+   -1.602571D-02   -1.171031D-02
 
-rms 2nd derivative error    2.438386E-04
+rms 2nd derivative error    2.448362E-04
 
 Ionic tail switched over r =  2.7000 to  5.4026 a.u., converged in  9 steps
 
@@ -386,7 +386,7 @@ Test configuration 0
 
     Total energies and differences
       AE_ref= -2.88819831D+02  AE_tst= -2.88819831D+02  dif=  0.00D+00
-      PS_ref= -3.79200065E+00  PS_tst= -3.79200065E+00  dif= -4.44E-16
+      PS_ref= -3.79200065E+00  PS_tst= -3.79200065E+00  dif= -4.44E-15
       PSP excitation error=  2.66D-15
 
 Test configuration 1
