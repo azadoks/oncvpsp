@@ -74,7 +74,7 @@
        case(4)
          emin = -zz**2
          emax = 0.0_dp
-         call pw_alloc(vpw, mmax, 1, [0.0_dp, rr(mmax)])
+         call pw_alloc(vpw, mmax, 1, [0.0_dp, rr(mmax)], ifail)
          vpw%vals(:, 1) = vv
          call lschvkbb(nn, ll, 0, ierr, ee, emin, emax, rr, vv, vpw, &
 &                      vkbpw, evkb, uu(:, 1), up(:, 1), mmax, adams, mch, &

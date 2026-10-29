@@ -325,7 +325,10 @@
 !
 ! full potential atom solution
 !
- if(inp%iexc<0) call exc_libxc_info(inp%iexc,iout)
+ if(inp%iexc<0) then
+   call exc_libxc_info(inp%iexc,iout,ifail)
+   if(ifail/=0) return
+ end if
  if(istage==2) then
    call read_ae_file(ae_filename,irel,c_light,nkap,inp%atsym,inp%zz,inp%nc, &
 &                    inp%nv,inp%iexc,inp%na,inp%la,inp%fa,mmax,rr,inp%ncnf, &
@@ -432,7 +435,8 @@
 
  call write_mesh(log_mesh,iout)
 
- call write_reference_results(pname,it,etot,res,eterm,iout)
+ call write_reference_results(pname,it,etot,res,eterm,iout,ifail)
+ if(ifail/=0) return
 
  if(istage==1) then
 !all-electron halves of the test configurations; their pseudo-atom halves
@@ -633,13 +637,17 @@
 
  end if
 ! the pieces of no model
- if(corepw(1)%nseg==0) call core_pieces_smooth(rr,rhomod,mmax,corepw)
+ if(corepw(1)%nseg==0) then
+   call core_pieces_smooth(rr,rhomod,mmax,corepw,ifail=ifail)
+   if(ifail/=0) return
+ end if
 
 ! screening potential for pseudocharge
 
  call vout(.true.,rho,rhomod(1,1),vo,vxc,zval,eeel,eexc,rr,mmax,adams, &
 &          inp%iexc, &
-&          c_light)
+&          c_light,ifail)
+ if(ifail/=0) return
 
 ! switch the screened potentials to the ionic tail beyond rcmax, iterating
 ! the pseudo valence states with it to a fixed point (after the model core,

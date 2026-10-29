@@ -117,7 +117,8 @@
    tt=0.0d0
    ddt=0.0d0
    do jj=1,nbas
-     call sbf_rc_der(ll,qroot(jj),rr(ii),sbfder)
+     call sbf_rc_der(ll,qroot(jj),rr(ii),sbfder,ifail)
+     if(ifail/=0) return
      tt=tt+pswfopt_sb(jj)*rr(ii)*sbfder(1)
      ddt=ddt+pswfopt_sb(jj)*qroot(jj)**2*rr(ii)*sbfder(1)
    end do
@@ -133,7 +134,8 @@
    tt=0.0d0
    ddt=0.0d0
    do jj=1,nbas
-     call sbf_rc_der(ll,qroot(jj),rr(ii),sbfder)
+     call sbf_rc_der(ll,qroot(jj),rr(ii),sbfder,ifail)
+     if(ifail/=0) return
      tt=tt+pswfopt_sb(jj)*rr(ii)*sbfder(1)
      ddt=ddt+pswfopt_sb(jj)*qroot(jj)**2*rr(ii)*sbfder(1)
    end do

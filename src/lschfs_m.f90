@@ -25,7 +25,8 @@
 
  contains
 
- subroutine lschfs(nn,ll,ee,rr,vv,uu,up,zz,mmax,adams,mch,irel,c_light)
+ subroutine lschfs(nn,ll,ee,rr,vv,uu,up,zz,mmax,adams,mch,irel,c_light, &
+&                  ifail)
 
 !! integrates radial Pauli-type scalar-relativistic equation
 !! on a logarithmic mesh
@@ -49,6 +50,8 @@
 !! @param mch  matching mesh point for inward-outward integrations
 !! @param irel  0 non-relativistic, 1 scalar-relativistic
 !! @param c_light  speed of light (Hartree atomic units)
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use constants_m, only: dp
  use sr_flux_m, only: sr_gamma, sr_flux_coefs, sr_outward
@@ -68,7 +71,7 @@
 
 !Output variables
  real(dp), intent(out) :: uu(mmax),up(mmax)
- integer, intent(out) :: nn
+ integer, intent(out) :: nn,ifail
 
 
 !Local variables
@@ -105,7 +108,8 @@
 
  call sr_flux_coefs(ll,ee,fss,al,rr,vv,mmax,xm,pm,qm)
  call sr_outward(ll,ee,zz,fss,al,rr,vv,pm,qm,mmax,adams,mch, &
-&                uu,up,qq,qp,node)
+&                uu,up,qq,qp,node,ifail)
+ if(ifail/=0) return
 
 !perform normalization sum
 

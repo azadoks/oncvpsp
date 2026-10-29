@@ -78,7 +78,7 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
- use failure_m, only: fail_construction, fail_convergence
+ use failure_m, only: fail_construction, fail_convergence, ierr_ghost
  use boundstate_m, only: boundstate
  use lschvkbb_m, only: lschvkbb
  use constants_m, only: dp, mxprj, mxstate, mxl, mxlin
@@ -168,13 +168,13 @@
 &         ll+1,'  l=',ll
        else
          write(iout,'(a,3i4)') 'oncvpsp: lschvkbb ERROR',ll+nodes(l1)+1,ll,ierr
-         if(ierr==200) write(iout,'(a,i2,a,f12.6,a/a)') &
+         if(ierr==ierr_ghost) write(iout,'(a,i2,a,f12.6,a/a)') &
 &             'a state of l=',ll,' lies below',emin, &
 &             ' Ha that the node count does not expect:', &
 &             'a bound ghost of the projectors'
          flush(6)
        end if
-       if(ierr==200) then
+       if(ierr==ierr_ghost) then
          ifail=fail_construction
        else
          ifail=fail_convergence

@@ -618,7 +618,7 @@
  end if
  end subroutine teter_scale
 
- subroutine core_pieces(rr,rhoc,mmax,rj,fill,par,corepw,rhomod)
+ subroutine core_pieces(rr,rhoc,mmax,rj,fill,par,corepw,rhomod,ifail)
 
 !! the model core with a joint at rj as two pieces, each column of the
 !! model and its first 4 derivatives a piecewise function: the fill on
@@ -635,6 +635,8 @@
 !! @param par  the fill's parameters
 !! @param corepw  the pieces of each column
 !! @param rhomod  model core charge and its first 4 derivatives on the mesh
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use logmesh_m, only: lm_derivs, lm_fh_reach
  use pieces_m, only: piecewise_t, pw_alloc, pw_form, pw_set_form
@@ -647,6 +649,7 @@
 !Output variables
  type(piecewise_t), intent(out) :: corepw(nrhomod)
  real(dp), intent(out) :: rhomod(mmax,nrhomod)
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp) :: dd(nrhomod)
@@ -655,7 +658,8 @@
  next=lm_fh_reach()+2
  jj=count(rr(:)<=rj)
  do kk=1,nrhomod
-   call pw_alloc(corepw(kk),mmax,2,[0.0d0,rj,rr(mmax)])
+   call pw_alloc(corepw(kk),mmax,2,[0.0d0,rj,rr(mmax)],ifail)
+   if(ifail/=0) return
  end do
  do ii=1,min(mmax,jj+next)
    call fill(par,rr(ii),dd)
@@ -684,7 +688,7 @@
  return
  end subroutine core_pieces
 
- subroutine core_pieces_smooth(rr,rhomod,mmax,corepw,form,par)
+ subroutine core_pieces_smooth(rr,rhomod,mmax,corepw,form,par,ifail)
 
 !! a model core with no joint as pieces of one segment each, a column
 !! ending at its last nonzero node (the end of a tapered Teter function),
@@ -696,6 +700,8 @@
 !! @param corepw  the pieces of each column
 !! @param form  the model and its first 4 derivatives at a radius
 !! @param par  its parameters
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use pieces_m, only: piecewise_t, pw_alloc, pw_form, pw_set_form
 
@@ -707,6 +713,7 @@
 
 !Output variables
  type(piecewise_t), intent(out) :: corepw(nrhomod)
+ integer, intent(out) :: ifail
 
 !Local variables
  integer :: kk,nlast
@@ -716,7 +723,8 @@
    do while(nlast>1 .and. rhomod(nlast,kk)==0.0d0)
      nlast=nlast-1
    end do
-   call pw_alloc(corepw(kk),mmax,1,[0.0d0,rr(nlast)])
+   call pw_alloc(corepw(kk),mmax,1,[0.0d0,rr(nlast)],ifail)
+   if(ifail/=0) return
    corepw(kk)%vals(:,1)=rhomod(:,kk)
    if(present(form)) call pw_set_form(corepw(kk),1,form,par,kk)
  end do
@@ -790,7 +798,7 @@
  subroutine d2exc_baseline(rhotae,rhoc,rhoae,rhotps,rhops,rr,zion,iexc, &
 &                          c_light,nc,nv,la,rcut,mmax,adams,rhomod,d2excae, &
 &                          d2excps, &
-&                          d2mdiff,iout)
+&                          d2mdiff,iout,ifail)
 
 !! the start of the model core analysis the model cores share: the
 !! all-electron second derivatives of Exc in the occupations, and those of
@@ -817,6 +825,8 @@
 !! @param d2excps  pseudo-atom second derivatives with no core correction
 !! @param d2mdiff  their rms difference
 !! @param iout  unit of the text output
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use der2exc_m, only: der2exc
  use adams_m, only: adams_t
@@ -837,6 +847,7 @@
 !Output variables
  real(dp), intent(out) :: rhomod(mmax,nrhomod)
  real(dp), intent(out) :: d2mdiff
+ integer, intent(out) :: ifail
 
 !Local variables
  integer :: jj,kk
@@ -847,7 +858,8 @@
 ! get derivatives of all-electron xc energy
 
  call der2exc(rhotae,rhoc,rhoae,rr,d2excae,d2excps,d2mdiff, &
-&                   zion,iexc,c_light,nc,nv,la,rcut,mmax,adams)
+&                   zion,iexc,c_light,nc,nv,la,rcut,mmax,adams,ifail)
+ if(ifail/=0) return
 
  write(iout,'(/a/)') 'd2excae - all-electron derivatives'
  do kk=1,nv
@@ -858,7 +870,8 @@
  rhomod(:,:)=0.0d0
 
  call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
-&                   zion,iexc,c_light,nc,nv,la,rcut,mmax,adams)
+&                   zion,iexc,c_light,nc,nv,la,rcut,mmax,adams,ifail)
+ if(ifail/=0) return
 
  call d2exc_report('d2excps - pseudofunction derivatives with no core '// &
 &                  'correction',d2excps,nv,d2mdiff,iout)

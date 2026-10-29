@@ -220,7 +220,10 @@
 &               c_light,zz,mmax,rr,vfull,pf,nc=nc,nv=nv,iexc=iexc,na=na,la=la, &
 &               fa=fa,ea=ea,iout=iout,ifail=ifail)
  if(ifail/=0) error stop 1
- if(iexc<0) call exc_libxc_info(iexc,iout)
+ if(iexc<0) then
+   call exc_libxc_info(iexc,iout,ifail)
+   if(ifail/=0) error stop 1
+ end if
 
 !the radii: beyond every core radius, where the two atoms' potentials are
 !the same and the phases comparable

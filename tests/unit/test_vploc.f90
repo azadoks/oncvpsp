@@ -27,7 +27,7 @@
  real(dp), allocatable :: rr(:), vv(:)
  type(vploc_t) :: cf
  real(dp) :: al, rc, ts(41), cs(41, 4), resid(41), scale
- integer :: mmax, ii, kk, lpopt
+ integer :: mmax, ii, kk, lpopt, ifail
 
  al = log(amesh)
  mmax = int(log(rmax/rr1)/al)
@@ -39,7 +39,7 @@
 
 ! derivatives
  rc = 1.7_dp
- call vploc_fit(rr, vv, mmax, rc, 0.0_dp, 5, cf)
+ call vploc_fit(rr, vv, mmax, rc, 0.0_dp, 5, cf, ifail)
  call check('derivative 0', abs(cf%vder(0) - vex(rc, 0)), tols(0))
  call check('derivative 1', abs(cf%vder(1) - vex(rc, 1)), tols(1))
  call check('derivative 2', abs(cf%vder(2) - vex(rc, 2)), tols(2))
@@ -47,13 +47,13 @@
 
 ! matching: the polynomial's derivatives at rc, analytically
  do lpopt = 1, 5
-   call vploc_fit(rr, vv, mmax, rc, 0.0_dp, lpopt, cf)
+   call vploc_fit(rr, vv, mmax, rc, 0.0_dp, lpopt, cf, ifail)
    do kk = 0, merge(3, 2, lpopt >= 3)
      scale = max(abs(cf%vder(kk)), 1.0_dp)
      call check('match derivative', abs(pder(cf, rc, kk) - cf%vder(kk))/scale, &
 &               1.0e-12_dp)
    end do
-   call vploc_fit(rr, vv, mmax, rc, 0.1_dp, lpopt, cf)
+   call vploc_fit(rr, vv, mmax, rc, 0.1_dp, lpopt, cf, ifail)
    call check('dvloc0 at 0', &
 &             abs(vploc_eval(cf, 0.0_dp) - vpoly0(cf) - 0.1_dp), &
 &             1.0e-12_dp)
@@ -64,7 +64,7 @@
  do ii = 1, 41
    ts(ii) = 2.0_dp*(ii - 1)/40.0_dp - 1.0_dp
    rc = 1.7_dp*amesh**(0.5_dp*(ts(ii) + 1.0_dp))
-   call vploc_fit(rr, vv, mmax, rc, 0.0_dp, 5, cf)
+   call vploc_fit(rr, vv, mmax, rc, 0.0_dp, 5, cf, ifail)
    cs(ii, :) = [cf%aco, cf%bco, cf%cco, cf%dco]
  end do
  do kk = 1, 4

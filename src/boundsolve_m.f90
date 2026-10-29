@@ -31,11 +31,15 @@
 &          bs_turning_point
 
  abstract interface
-   integer function node_count(ee)
+   subroutine node_count(ee,nnode,ifail)
+!! the node count nnode of the outward solution over the whole mesh at the
+!! energy ee; ifail, 0 or the kind of failure (failure_m), whose message is
+!! written
    import :: dp
    implicit none
    real(dp), intent(in) :: ee
-   end function node_count
+   integer, intent(out) :: nnode,ifail
+   end subroutine node_count
 
    subroutine bs_setup(ee,mch)
 !! the equation's coefficients at the energy ee, and the classical turning
@@ -46,17 +50,19 @@
    integer, intent(out) :: mch
    end subroutine bs_setup
 
-   integer function bs_outward(mch,mlast)
+   subroutine bs_outward(mch,mlast,nnode,ifail)
 !! the outward solution at the energy of the last bs_setup, up to mlast;
-!! its nodes inside the turning point mch
+!! nnode, its nodes inside the turning point mch; ifail, 0 or the kind of
+!! failure (failure_m), whose message is written
    implicit none
    integer, intent(in) :: mch,mlast
-   end function bs_outward
+   integer, intent(out) :: nnode,ifail
+   end subroutine bs_outward
 
    subroutine bs_match(ee,mch,nin,lo,hi,de,ifail)
 !! the inward solution from nin, matched to the outward one across the
 !! window lo..hi around mch and normalized; de, the energy correction;
-!! ifail, 0 or 1 after a failure, whose message is written
+!! ifail, 0 or the kind of failure (failure_m), whose message is written
    import :: dp
    implicit none
    real(dp), intent(in) :: ee
@@ -65,13 +71,15 @@
    integer, intent(out) :: ifail
    end subroutine bs_match
 
-   subroutine bs_box(elow,etop,ee)
+   subroutine bs_box(elow,etop,ee,ifail)
 !! the box state (bs_box_energy) above elow, widened above etop, and its
-!! energy ee
+!! energy ee; ifail, 0 or the kind of failure (failure_m), whose message
+!! is written
    import :: dp
    implicit none
    real(dp), intent(in) :: elow,etop
    real(dp), intent(out) :: ee
+   integer, intent(out) :: ifail
    end subroutine bs_box
  end interface
 
@@ -169,7 +177,7 @@
  return
  end subroutine bs_bisect
 
- subroutine bs_box_energy(elow,etop,nnode,eps,nodes,ee)
+ subroutine bs_box_energy(elow,etop,nnode,eps,nodes,ee,ifail)
 
 !! the energy of the box state (lschfb, ldiracfb): the state with nnode
 !! nodes and u=0 at the mesh end, above elow (the box state of
@@ -187,8 +195,11 @@
 !! @param nodes  the node count of the outward solution over the whole
 !!               mesh at an energy
 !! @param ee  the box state's energy
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use constants_m, only: eig_floor
+ use failure_m, only: fail_convergence, fail_not_found
 
 !Input variables
  real(dp), intent(in) :: elow,etop,eps
@@ -197,15 +208,19 @@
 
 !Output variables
  real(dp), intent(out) :: ee
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp) :: eblo,ebhi
- integer :: kk
+ integer :: kk,nb
 
+ ee=elow
  eblo=elow
  ebhi=etop+1.0d0
  do kk=1,60
-   if(nodes(ebhi)>nnode) exit
+   call nodes(ebhi,nb,ifail)
+   if(ifail/=0) return
+   if(nb>nnode) exit
    eblo=ebhi
    ebhi=etop+2.0d0*(ebhi-etop)
  end do
@@ -213,12 +228,15 @@
    write(error_unit,'(/a,i0,a,es12.4)') &
 &       'bs_box_energy: ERROR no energy with more than ',nnode, &
 &       ' nodes up to ',ebhi
-   error stop 1
+   ifail=fail_not_found
+   return
  end if
 
  do kk=1,200
    ee=0.5d0*(eblo+ebhi)
-   if(nodes(ee)>nnode) then
+   call nodes(ee,nb,ifail)
+   if(ifail/=0) return
+   if(nb>nnode) then
      ebhi=ee
    else
      eblo=ee
@@ -228,7 +246,8 @@
  if(kk>200) then
    write(error_unit,'(/a,es12.4)') &
 &       'bs_box_energy: ERROR bisection not converged in 200 steps, e=',ee
-   error stop 1
+   ifail=fail_convergence
+   return
  end if
 
  ee=eblo
@@ -296,10 +315,13 @@
 !! @param ee  the start energy on input, the energy on output (Ha)
 !! @param emin,emax  the bracket
 !! @param mch  the matching point, mmax for the box state
-!! @param ierr  0 converged, 10 box state, 60 not converged in 60 passes
+!! @param ierr  0 on success; the non-zero values differ by routine:
+!!              ierr_box_state (failure_m) for the box state,
+!!              ierr_iterations if not converged in 60 passes
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
+ use failure_m, only: ierr_box_state, ierr_iterations
  use match_m, only: match_k
  use inward_start_m, only: inward_start
  use constants_m, only: eig_floor
@@ -329,7 +351,7 @@
  ifail=0
  deprev=huge(1.0d0)
  polish=.false.
- ierr=60
+ ierr=ierr_iterations
  mch=0
 
 ! top of the bracket: no bound state lies above it on the mesh;
@@ -346,9 +368,10 @@
 ! the passes polish a converging energy, whose alternating shifts close
 ! the bracket too
    if(.not. polish .and. emax-emin<max(abs(ee),eig_floor)*eps) then
-     call box(elow,etop,ee)
+     call box(elow,etop,ee,ifail)
+     if(ifail/=0) return
      mch=mmax
-     ierr=10
+     ierr=ierr_box_state
      exit
    end if
 
@@ -373,7 +396,8 @@
 ! point
    lo=mch-1-match_k
    hi=mch+match_k
-   node=outward(mch,min(hi,mmax))
+   call outward(mch,min(hi,mmax),node,ifail)
+   if(ifail/=0) return
 
 ! start inward integration with simple exponential where the
 ! wave function has decayed to machine precision

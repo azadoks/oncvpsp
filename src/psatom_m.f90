@@ -56,7 +56,9 @@
 !! @param vkbpw  the projectors as pieces, last index 1 for j=l+1/2, 2 for
 !!               j=l-1/2 when nkap=2
 !! @param evkb  coefficients of the projectors, last index as for vkbpw
-!! @param ierr  non-zero return if error
+!! @param ierr  0 on success; the non-zero values differ by routine:
+!!              that of lschvkbb for a state that failed, or ierr_ps_scf
+!!              (failure_m) if the self-consistency did not converge
 !! @param nkap  number of kappas per l: 1, or 2 for irel=2
 !! @param vext  external potential the orbitals also see (a confining wall,
 !!              oncvpsp_confine.x, smooth, so outwf_m takes it as part of
@@ -68,6 +70,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
+ use failure_m, only: ierr_ps_scf
  use constants_m, only: dp, mxstate, mxl, mxlin, mxprj
  use kappa_m, only: kap_count, kap_of, kap_j_share
  use ae_scf_m, only: ae_residual, ae_converged, ae_anderson1
@@ -178,7 +181,9 @@
 ! which shouldn''t be a bad approximation for a starting screened
 ! potential
 
- call vout(.true.,rho,rhoc,vi,vxc,zval,eeel,eexc,rr,mmax,adams,iexc,c_light)
+ call vout(.true.,rho,rhoc,vi,vxc,zval,eeel,eexc,rr,mmax,adams,iexc,c_light, &
+&          ifail)
+ if(ifail/=0) return
 
 
 ! big self  self-consietency loop
@@ -267,7 +272,9 @@
    end do
 
 ! output potential
-   call vout(.true.,rho,rhoc,vo,vxc,zval,eeel,eexc,rr,mmax,adams,iexc,c_light)
+   call vout(.true.,rho,rhoc,vo,vxc,zval,eeel,eexc,rr,mmax,adams,iexc,c_light, &
+&            ifail)
+   if(ifail/=0) return
 
 ! converged when no eigenvalue has moved by more than tolscf and the
 ! screening potential is self-consistent to tolscf, or its residual has
@@ -288,7 +295,7 @@
      else
        write(iout,'(/a)') 'psatom: potential failed to converge'
      end if
-     ierr=101
+     ierr=ierr_ps_scf
    end if
 
 ! switch from reference to new configuration in 50 steps, exactly the
@@ -313,7 +320,8 @@
 ! output potential for e-e interactions
 
  call vout(.true.,rho,rhoc,vo,vxc,zval,eeel,eexc, &
-&          rr,mmax,adams,iexc,c_light)
+&          rr,mmax,adams,iexc,c_light,ifail)
+ if(ifail/=0) return
 
  etot =  eeig + eexc - 0.5d0*eeel
 

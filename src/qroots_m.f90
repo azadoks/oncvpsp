@@ -77,9 +77,11 @@
  qroot(:)=0.0d0
  iroot=2
  glast=gfun(dltq)
+ if(ifail/=0) return
  do ii=2,nq
    qq=dltq*ii
    gg=gfun(qq)
+   if(ifail/=0) return
    if(gg*glast<0.0d0 .or. gg==0.0d0) then
 ! bisection to a bracket of a few ulps (or g = 0), then the Newton polish
      qlow=qq-dltq
@@ -89,6 +91,7 @@
        qt=0.5d0*(qlow+qhi)
        if(qhi-qlow<=root_tol(qt,0.0d0)) exit
        gt=gfun(qt)
+       if(ifail/=0) return
        if(gt==0.0d0) exit
        if(gt*glow<0.0d0) then
          qhi=qt
@@ -106,6 +109,7 @@
 ! a root on the grid point itself is not counted again at the next one
      if(gg==0.0d0) then
        glast=gfun(qq+0.5d0*dltq)
+       if(ifail/=0) return
        cycle
      end if
    end if
@@ -128,9 +132,10 @@
  contains
 
  real(dp) function gfun(qp)
-!! g(q) = ulgd*j_l(q rc) - q j_l'(q rc), whose roots polish refines
+!! g(q) = ulgd*j_l(q rc) - q j_l'(q rc), whose roots polish refines; 0
+!! after a failure, which sets ifail of the host
  real(dp), intent(in) :: qp
- call sbf_rc_der(ll,qp,rc,sbfd)
+ call sbf_rc_der(ll,qp,rc,sbfd,ifail)
  gfun=ulgd*sbfd(1) - sbfd(2)
  end function gfun
 
@@ -157,7 +162,8 @@
  dq=0.0d0
  dgold=0.0d0
  do kk=1,6
-   call sbf_rc_der(ll,qp,rc,sbfd)
+   call sbf_rc_der(ll,qp,rc,sbfd,ifail)
+   if(ifail/=0) return
 ! sbfd(k+1) = d^k/dr^k j_l(q r) at rc, so d/dq of sbfd(k+1) is
 ! (k sbfd(k+1) + rc sbfd(k+2))/q
    gg=ulgd*sbfd(1) - sbfd(2)

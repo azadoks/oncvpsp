@@ -129,7 +129,8 @@
 !! @param eterm  kinetic, electron-nucleus, Hartree and exchange-correlation
 !!               energies (Ha)
 !! @param res  residual of the screening potential (ae_residual)
-!! @param ierr  0, or non-zero after a failure
+!! @param ierr  0 on success; the non-zero values differ by routine:
+!!              that of aeatom (failure_m)
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written

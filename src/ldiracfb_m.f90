@@ -34,9 +34,10 @@
 !! @param nn  principal quantum number
 !! @param ll  angular momentum
 !! @param kap  Dirac kappa, l or -(l+1) for j = l -/+ 1/2
-!! @param ierr  non-zero return if error, 10 if there is no bound state
+!! @param ierr  0 on success; the non-zero values differ by routine:
+!!              ierr_box_state (failure_m) if there is no bound state
 !!              and the box state (large component 0 at rr(mmax)) is
-!!              returned
+!!              returned, ierr_iterations if the energy did not converge
 !! @param ee  bound-state energy, input guess and output calculated value
 !! @param rr  log radial mesh (bohr)
 !! @param zz  atomic number
@@ -53,6 +54,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
+ use failure_m, only: fail_internal, ierr_iterations
  use constants_m, only: dp, eig_tol
  use boundsolve_m, only: bs_box_energy, bs_solve, bs_turning_point
  use match_m, only: match_k, match_point, match_weights, match_blend
@@ -105,22 +107,22 @@
 ! on the start guess or the path (doc/smoothness_plan.md, S-2 to S-4, and
 ! lschfb)
  eps=eig_tol
- ierr = 60
+ ierr = ierr_iterations
 
 ! check arguments
  if(ll>nn-1) then
    write(iout,'(/a,i4,a,i4)') 'ldiracfb: ERROR ll =',ll,' > nn =',nn
-   ierr=1
+   ifail=fail_internal
    return
  end if
  if(kap/=ll .and. kap/=-(ll+1)) then
    write(iout,'(/a,i4,a,i4)') 'ldiracfb: ERROR kap =',kap,' ll =',ll
-   ierr=2
+   ifail=fail_internal
    return
  end if
  if(zz<1.0d0) then
    write(iout,'(/a,f12.8)') 'ldiracfb: ERROR zz =',zz
-   ierr=3
+   ifail=fail_internal
    return
  end if
 
@@ -187,24 +189,24 @@
  return
  end subroutine setup
 
- integer function outward_nodes(mchs,mlast)
+ subroutine outward_nodes(mchs,mlast,node,ifail)
 
 !! the outward solution up to mlast and the nodes of its large component
 !! inside mchs
 
  integer, intent(in) :: mchs,mlast
+ integer, intent(out) :: node,ifail
 
- integer :: jj,node
+ integer :: jj
 
- call outward(mlast,node)
+ call outward(mlast,node,ifail)
+ if(ifail/=0) return
  node=0
  do jj=5,mchs-1
    if(gu(jj+1)*gu(jj)<=0.0d0) node=node+1
  end do
- outward_nodes=node
-
  return
- end function outward_nodes
+ end subroutine outward_nodes
 
  subroutine match(et,mchs,nin,lo,hi,de,ifail)
 
@@ -288,16 +290,16 @@
  return
  end subroutine match
 
- subroutine outward(mlast,nnode)
+ subroutine outward(mlast,nnode,ifail)
 
 !! outward integration from the series at the origin to mlast, at the
 !! energy ee, counting the nodes of the large component (dirac_m)
 
  integer, intent(in) :: mlast
- integer, intent(out) :: nnode
+ integer, intent(out) :: nnode,ifail
 
  call dirac_outward(ll,kap,c_light,eecur,zz,al,rr,vv,mmax,adams,mlast,gu,fu, &
-&                   gup,fup,nnode)
+&                   gup,fup,nnode,ifail)
 
  return
  end subroutine outward
@@ -330,34 +332,38 @@
  return
  end subroutine normalize
 
- subroutine boxstate(elow,etop,eb)
+ subroutine boxstate(elow,etop,eb,ifail)
 
 !! the box state above elow, widened above etop (bs_box_energy), and its
 !! energy eb
 
  real(dp), intent(in) :: elow,etop
  real(dp), intent(out) :: eb
+ integer, intent(out) :: ifail
 
  integer :: nb
 
- call bs_box_energy(elow,etop,nn-ll-1,eps,box_nodes,eb)
+ call bs_box_energy(elow,etop,nn-ll-1,eps,box_nodes,eb,ifail)
+ if(ifail/=0) return
  eecur=eb
- call outward(mmax,nb)
+ call outward(mmax,nb,ifail)
+ if(ifail/=0) return
  call normalize(mmax)
 
  return
  end subroutine boxstate
 
- integer function box_nodes(ee)
+ subroutine box_nodes(ee,nnode,ifail)
 
 !! the node count of the outward solution over the whole mesh at ee
 
  real(dp), intent(in) :: ee
+ integer, intent(out) :: nnode,ifail
 
  eecur=ee
- call outward(mmax,box_nodes)
+ call outward(mmax,nnode,ifail)
  return
- end function box_nodes
+ end subroutine box_nodes
 
  include 'adams.inc'
 

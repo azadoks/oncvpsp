@@ -36,7 +36,7 @@
    rr(ii) = rr1*amesh**(ii - 1)
  end do
  vv(:) = -zz/rr(:)
- call pw_alloc(vlocpw, mmax, 1, [0.0_dp, rr(mmax)])
+ call pw_alloc(vlocpw, mmax, 1, [0.0_dp, rr(mmax)], ifail)
  vlocpw%vals(:, 1) = vv
  evkb(:) = 0.0_dp
  rq = [4.0_dp, 5.0_dp]

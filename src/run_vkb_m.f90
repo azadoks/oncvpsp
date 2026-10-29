@@ -131,7 +131,8 @@
 ! (vloc, and vp of the channel)
  if(lloc==4) then
    rcloc=rc(5)
-   call vploc_fit(rr,vfull,mmax,rcloc,dvloc0,lpopt,cfloc)
+   call vploc_fit(rr,vfull,mmax,rcloc,dvloc0,lpopt,cfloc,ifail)
+   if(ifail/=0) return
    call vploc_mesh(cfloc,rr,vfull,mmax,vp(:,5,1))
    if(nkap==2) vp(:,5,2)=vp(:,5,1)
    vloc(:)=vp(:,5,1)
@@ -186,12 +187,14 @@
 ! the local potential's pieces, with the node values of vloc
  if(lloc==4) then
    bnd(0:2)=[0.0d0,rcloc,rr(mmax)]
-   call pw_alloc(vlocpw,mmax,2,bnd(0:2))
+   call pw_alloc(vlocpw,mmax,2,bnd(0:2),ifail)
+   if(ifail/=0) return
    vlocpw%vals(:,1)=vlin0(:)
    vlocpw%vals(:,2)=vfull(:)
  else
    bnd(0:3)=[0.0d0,rel_window*rcloc,rcloc,rr(mmax)]
-   call pw_alloc(vlocpw,mmax,3,bnd(0:3))
+   call pw_alloc(vlocpw,mmax,3,bnd(0:3),ifail)
+   if(ifail/=0) return
    vlocpw%vals(:,1)=vlin0(:)
    vlocpw%vals(:,2)=vlin1(:)
    vlocpw%vals(:,3)=vfull(:)
@@ -242,7 +245,8 @@
 ! the taper f Delta/2 on the window, with V_loc's piece of the segment
 ! and every term as its smooth extension
      do jj=1,np
-       call pw_alloc(pw(jj),mmax,nseg,bnd(0:nseg))
+       call pw_alloc(pw(jj),mmax,nseg,bnd(0:nseg),ifail)
+       if(ifail/=0) return
        do iseg=1,nseg
          rm=0.5d0*(bnd(iseg-1)+bnd(iseg))
          if(rm>rcloc) then
@@ -329,7 +333,8 @@
 
 ! normalize projectors
      do jj=1,np
-       call pw_product_integral(rr,mmax,2*l1,pw(jj),pw(jj),sn)
+       call pw_product_integral(rr,mmax,2*l1,pw(jj),pw(jj),sn,ifail)
+       if(ifail/=0) return
        call pw_node_values(rr,mmax,pw(jj),vkb(:,jj,l1,ikap))
        if(vkb(irc(l1)-10,jj,l1,ikap)>=0.0d0) then
          pw(jj)%vals(:,:)=pw(jj)%vals(:,:)/sqrt(sn)
@@ -349,7 +354,8 @@
          sovl(jj,jj)=1.0d0
          bbi(jj,jj)=evkb(jj,l1,ikap)
          do ii=jj+1,np
-           call pw_product_integral(rr,mmax,2*l1,pw(ii),pw(jj),sn)
+           call pw_product_integral(rr,mmax,2*l1,pw(ii),pw(jj),sn,ifail)
+           if(ifail/=0) return
            sovl(ii,jj)=sn
            sovl(jj,ii)=sn
          end do

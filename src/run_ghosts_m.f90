@@ -263,7 +263,8 @@
    if(ii<=mbar) vmin=min(vmin,vb(ii))
  end do
  do iprj=1,nprj
-   call pw_resample(rr,mmax,vkbpw(iprj,l1),rb,mbar+4,vkbb(iprj))
+   call pw_resample(rr,mmax,vkbpw(iprj,l1),rb,mbar+4,vkbb(iprj),ifail)
+   if(ifail/=0) return
  end do
  end subroutine barrier_mesh
 

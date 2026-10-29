@@ -53,7 +53,7 @@
 ! all-electron SCF step.
 
  subroutine ionic_tail(zz,zion,rhoc,rhotae,rhomod,rr,mmax,adams,iexc,c_light, &
-&                      vion)
+&                      vion,ifail)
 
 !! the frozen-core ionic potential V_ion of the all-electron atom
 !!
@@ -68,6 +68,8 @@
 !! @param iexc  exchange-correlation functional
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param vion  V_ion
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use constants_m, only: dp
  use vout_m, only: vout
@@ -82,6 +84,7 @@
 
 !Output variables
  real(dp), intent(out) :: vion(mmax)
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp) :: eeel,eexc
@@ -93,13 +96,17 @@
 ! V_H[n_c], its charge fixed at the end of the mesh to zz-zion so that
 ! -Z/r + V_H[n_c] is -zion/r there
  call vout(.false.,rhoc,rhoc,vt,vxct,zz-zion,eeel,eexc,rr,mmax,adams,iexc, &
-&          c_light)
+&          c_light,ifail)
+ if(ifail/=0) return
  vion(:)=-zz/rr(:)+vt(:)-vxct(:)
 
- call vout(.true.,rhotae,rhoc,vt,vxct,zion,eeel,eexc,rr,mmax,adams,iexc,c_light)
+ call vout(.true.,rhotae,rhoc,vt,vxct,zion,eeel,eexc,rr,mmax,adams,iexc, &
+&          c_light,ifail)
+ if(ifail/=0) return
  vion(:)=vion(:)+vxct(:)
  call vout(.true.,rhotae,rhomod,vt,vxct,zion,eeel,eexc,rr,mmax,adams,iexc, &
-&          c_light)
+&          c_light,ifail)
+ if(ifail/=0) return
  vion(:)=vion(:)-vxct(:)
 
  deallocate(vt,vxct)
@@ -194,7 +201,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_construction, fail_convergence
+ use failure_m, only: fail_construction, fail_convergence, ierr_ghost
  use constants_m, only: dp, mxstate, mxl, mxlin, mxprj
  use kappa_m, only: kap_count, kap_j_share
  use pieces_m, only: piecewise_t
@@ -252,11 +259,11 @@
      if(ierr/=0) then
        write(iout,'(/a,3i0)') 'ionic_valence: ERROR lschvkbb n,l,ierr=', &
 &            ll+nodes(l1)+1,ll,ierr
-       if(ierr==200) write(iout,'(a,i2,a,f12.6,a/a)') &
+       if(ierr==ierr_ghost) write(iout,'(a,i2,a,f12.6,a/a)') &
 &           'a state of l=',ll,' lies below',emin, &
 &           ' Ha that the node count does not expect:', &
 &           'a bound ghost of the projectors'
-       if(ierr==200) then
+       if(ierr==ierr_ghost) then
          ifail=fail_construction
        else
          ifail=fail_convergence
@@ -366,7 +373,9 @@
  ifail=0
  allocate(ww(mmax),vp0(mmax,mxl+2,nkap),vnew(mmax),vnext(mmax,nkap),vsw(mmax))
 
- call ionic_tail(zz,zion,rhoc,rhotae,rhomod,rr,mmax,adams,iexc,c_light,vion)
+ call ionic_tail(zz,zion,rhoc,rhotae,rhomod,rr,mmax,adams,iexc,c_light,vion, &
+&                ifail)
+ if(ifail/=0) return
  call ionic_window(rr,mmax,zion,vion,rcmax,tol,ra,rb,ifail)
  if(ifail/=0) return
  do ii=1,mmax
@@ -381,7 +390,9 @@
    call ionic_valence(nkap,nc,nv,la,fa,ea,lloc,nproj,rr,vp,vlocpw,vkbpw, &
 &                     evkb,mmax,adams,rho,rhops,uupsa,eeig,iout,ifail)
    if(ifail/=0) return
-   call vout(.true.,rho,rhomod,vo,vxc,zval,eeel,eexc,rr,mmax,adams,iexc,c_light)
+   call vout(.true.,rho,rhomod,vo,vxc,zval,eeel,eexc,rr,mmax,adams,iexc, &
+&            c_light,ifail)
+   if(ifail/=0) return
 ! change of the local potential where the valence electrons are; once it
 ! is below tolfix, vp is kept as the potential whose states rho, eeig and
 ! (through rho) vo are, so that the pseudo-atom SCF of the reference

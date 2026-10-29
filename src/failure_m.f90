@@ -22,9 +22,11 @@
 !> from another language reads the kind from ifail; the message says which
 !> failure of that kind it was.
 !>
-!> ierr, where a routine has one, is a status of its own that its caller
-!> interprets (no root in a bracket, too few nodes, ...), documented with
-!> the routine; it is not a failure until the caller makes it one.
+!> ierr, where a routine has one, is a status that its caller interprets
+!> (no root in a bracket, a box state, ...), documented with the routine;
+!> it is not a failure until the caller makes it one. The statuses that
+!> pass between modules, those of the radial solvers and the
+!> self-consistent atoms, are named here (ierr_*).
 
  module failure_m
  implicit none
@@ -32,6 +34,9 @@
  public :: fail_none, fail_input, fail_convergence, fail_not_found, &
 &          fail_construction, fail_numerical, fail_io, fail_internal, &
 &          fail_name
+ public :: ierr_box_state, ierr_iterations, ierr_not_converged, &
+&          ierr_ps_scf, ierr_ghost
+ public :: ierr_lxc_unknown, ierr_lxc_no_vxc, ierr_lxc_family
 
 !> no failure
  integer, parameter :: fail_none=0
@@ -55,6 +60,35 @@
  integer, parameter :: fail_io=6
 !> arguments that the calling code should never pass: a bug, not the input
  integer, parameter :: fail_internal=7
+
+! The statuses (ierr) of the radial solvers and of the self-consistent
+! atoms, which their callers interpret; the values are those of 4.0.1,
+! which some messages print. 0 is success.
+
+!> no bound state: the box state stands in for it (bs_solve, lschfb,
+!> ldiracfb); the self-consistent atoms accept it during their iteration
+ integer, parameter :: ierr_box_state=10
+!> the energy iteration of a bound-state solver did not converge (bs_solve,
+!> lschfb, ldiracfb, lschvkbbe, lschpsbar)
+ integer, parameter :: ierr_iterations=60
+!> lschvkbb's energy iteration, or sratom's and relatom's self-consistency,
+!> did not converge
+ integer, parameter :: ierr_not_converged=100
+!> psatom's self-consistency did not converge
+ integer, parameter :: ierr_ps_scf=101
+!> lschvkbb: every energy tried had more states of l below it than the
+!> node count expects, so a state it does not expect (a bound ghost of the
+!> projectors) lies below emin
+ integer, parameter :: ierr_ghost=200
+
+! The statuses of lxc_init and exc_libxc_check, which check_data reports
+
+!> Libxc does not know the functional
+ integer, parameter :: ierr_lxc_unknown=1
+!> the functional gives no potential
+ integer, parameter :: ierr_lxc_no_vxc=2
+!> the functional is neither an LDA nor a GGA (meta-GGA, hybrid, ...)
+ integer, parameter :: ierr_lxc_family=3
 
  contains
 

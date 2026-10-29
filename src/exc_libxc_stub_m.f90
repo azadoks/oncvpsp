@@ -30,7 +30,7 @@
 
  contains
 
- subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax)
+ subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax,ifail)
 !!  dummy substitute for interface to libxc library to allow successful
 !!  build without this library; check_data has rejected the libxc
 !!  functionals (have_libxc), so this is not reached
@@ -43,7 +43,10 @@
 !! @param exc  exchange-correlation energy per electron (Ha)
 !! @param rr  log radial mesh (bohr)
 !! @param mmax  size of the log radial mesh
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_input
  use constants_m, only: dp
 
 !Input variables
@@ -53,6 +56,7 @@
 
 !Output variables
  real(dp), intent(out) :: vxc(mmax),exc(mmax)
+ integer, intent(out) :: ifail
 
  write(error_unit,'(a,i8,a)') 'exc_libxc_stub: ERROR iexc = ',iexc, &
 &     ' requires libxc'
@@ -60,7 +64,9 @@
 &     'The present oncvpsp executable was built without libxc.'
  write(error_unit,'(a)') 'Program will stop.'
 
- error stop 1
+ vxc(:)=0.0d0
+ exc(:)=0.0d0
+ ifail=fail_input
  end subroutine exc_libxc
 
  subroutine exc_libxc_check(iexc,ierr)
@@ -70,19 +76,20 @@
 !! @param ierr  0 on success; the non-zero values differ by routine:
 !!              the reasons above
 
+ use failure_m, only: ierr_lxc_unknown
+
 !Input variables
  integer, intent(in) :: iexc
 
 !Output variables
  integer, intent(out) :: ierr
 
- ierr=1
+ ierr=ierr_lxc_unknown
  write(error_unit,'(/a,i0)') 'exc_libxc_check: ERROR without libxc, iexc = ', &
 &     iexc
- error stop 1
  end subroutine exc_libxc_check
 
- subroutine exc_libxc_fxc(iexc,al,rho,drho,dvxc,rr,mmax,have)
+ subroutine exc_libxc_fxc(iexc,al,rho,drho,dvxc,rr,mmax,have,ifail)
 !!  dummy substitute, not reached either (exc_libxc)
 !!
 !! @param iexc  exchange-correlation functional
@@ -93,7 +100,10 @@
 !! @param rr  log radial mesh (bohr)
 !! @param mmax  size of the log radial mesh
 !! @param have  whether dvxc was evaluated
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_input
  use constants_m, only: dp
 
 !Input variables
@@ -104,27 +114,34 @@
 !Output variables
  real(dp), intent(out) :: dvxc(mmax)
  logical, intent(out) :: have
+ integer, intent(out) :: ifail
 
  dvxc(:)=0.0d0
  have=.false.
  write(error_unit,'(/a,i0)') 'exc_libxc_fxc: ERROR without libxc, iexc = ', &
 &     iexc
- error stop 1
+ ifail=fail_input
  end subroutine exc_libxc_fxc
 
- subroutine exc_libxc_info(iexc,iout)
+ subroutine exc_libxc_info(iexc,iout,ifail)
 !!  dummy substitute, not reached either (exc_libxc)
 !!
 !! @param iexc  exchange-correlation functional
 !! @param iout  unit of the text output
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_input
 
 !Input variables
  integer, intent(in) :: iexc,iout
 
+!Output variables
+ integer, intent(out) :: ifail
+
  write(iout,'(a,i8,a)') 'exc_libxc_stub: ERROR iexc = ',iexc, &
 &     ' requires libxc'
- error stop 1
+ ifail=fail_input
  end subroutine exc_libxc_info
 
  end module exc_libxc_m

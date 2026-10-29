@@ -57,7 +57,7 @@
 
  contains
 
- subroutine vploc_fit(rr,vv,mmax,rcloc,dvloc0,lpopt,cf)
+ subroutine vploc_fit(rr,vv,mmax,rcloc,dvloc0,lpopt,cf,ifail)
 
 !! the polynomial potential matched at rcloc
 !!
@@ -73,7 +73,10 @@
 !!               4) match 3 derivatives, r**0,4,6,8
 !!               5) match 3 derivatives, r**0,2,4,6
 !! @param cf  the potential's coefficients
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_internal
  use logmesh_m, only: lm_derivs
 
 !Input variables
@@ -82,6 +85,7 @@
 
 !Output variables
  type(vploc_t), intent(out) :: cf
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp) :: vd(4),v0,dvv,d2vv,d3vv
@@ -97,6 +101,7 @@
  cf%rc=rcloc
  cf%dvloc0=dvloc0
  cf%dco=0.0d0
+ ifail=0
  if(lpopt == 1) then
    cf%bco=(3*dvv-d2vv*rcloc)/(4*rcloc)
    cf%cco=( -dvv+d2vv*rcloc)/(8*rcloc**3)
@@ -122,7 +127,8 @@
    cf%aco=v0-cf%bco*rcloc**2-cf%cco*rcloc**4-cf%dco*rcloc**6
  else
    write(error_unit,'(/a,i0)') 'vploc_fit: ERROR lpopt ',lpopt
-   error stop 1
+   ifail=fail_internal
+   return
  end if
  return
  end subroutine vploc_fit

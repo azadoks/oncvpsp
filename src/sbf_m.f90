@@ -239,7 +239,7 @@
  return
  end subroutine sbf_values
 
- subroutine sbf_rc_der(llin,qq,rc,sbfder)
+ subroutine sbf_rc_der(llin,qq,rc,sbfder,ifail)
 
 !! calculate spherical Bessel function values and first four derivatives
 !!
@@ -247,6 +247,10 @@
 !! @param qq  wave vector
 !! @param rc  core radius (bohr)
 !! @param sbfder  values and first 4 derivatives of j_l(qq*rc)
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use failure_m, only: fail_internal
 
 !Input variables
  integer, intent(in) :: llin
@@ -254,16 +258,20 @@
 
 !Output variables
  real(dp), intent(out) :: sbfder(5)
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp) :: xx
  real(dp) :: sb_out(10),sbfad(5,10)
  integer :: ii,ll
 
+ ifail=0
  if(llin>4) then
    write(error_unit,'(a,i4,a)') 'sbf_rc_der: argument ERROR, llin = ',llin,&
 &   ' >5'
-   error stop 1
+   sbfder(:)=0.0d0
+   ifail=fail_internal
+   return
  end if
 
 ! calculate sbf for needed l values

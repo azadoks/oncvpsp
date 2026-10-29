@@ -293,7 +293,8 @@
 &           ',  l=',ll,', all-electron wave function', ', pseudo w-f'
      end if
      call scatterstate(irel,c_light,nn,ll,kap,epa(iprj,l1,ikap), &
-&                   rr,zz,vfull,ur,urp,mmax,adams,n2)
+&                   rr,zz,vfull,ur,urp,mmax,adams,n2,ifail)
+     if(ifail/=0) return
      if(irel==2) then
        call renorm_r(ur,rr,ll,kap,c_light,zz,mmax,cnorm,iout=iout,ifail=ifail)
        if(ifail/=0) return

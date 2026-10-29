@@ -512,6 +512,9 @@
 !Local variables
  real(dp) :: al,als,pm,rb
  integer :: kk,nsol,jmax,ll,nprime
+#if defined WITH_BLAS_DOT
+ integer :: m0,jj
+#endif
  type(og_seg_t), pointer :: sg
 
  ifail=0

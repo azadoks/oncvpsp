@@ -30,7 +30,7 @@
 ! differ from the all-electron wave functions
 !
  subroutine der2exc(rhotot,rhoc,rho,rr,d2exc,d2ref,d2mdiff, &
-&                   zion,iexc,c_light,nc,nv,la,rcut,mmax,adams)
+&                   zion,iexc,c_light,nc,nv,la,rcut,mmax,adams,ifail)
 
 !! @param rhotot  total valence charge, all-electron of pseudo
 !! @param rhoc  core charge density, all-electron or model
@@ -49,6 +49,8 @@
 !!              that beyond which all-electron and pseudo charges agree (bohr)
 !! @param mmax  size of the log radial mesh
 !! @param adams  order and coefficients of the Adams-Moulton steps
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use constants_m, only: dp
  use logmesh_m, only: lm_integral, lm_step
@@ -68,6 +70,7 @@
 !Output variables
  real(dp), intent(out) :: d2exc(nv,nv)
  real(dp), intent(out) :: d2mdiff
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp) :: hh,eeel,eexc,ss,al
@@ -81,12 +84,14 @@
 ! charge for a change of the occupation of state k: from the functional's
 ! analytic second derivatives where it has them (fxc_dispatch), exact for
 ! PZ's potential, which steps at rs = 1, on either side of the step
+ ifail=0
  al=lm_step(rr,mmax)
  rhot(:)=rhotot(:) + rhoc(:)
  have=.false.
  do kk=1,nv
    call fxc_dispatch(iexc,c_light,al,rhot,rho(:,kk),dvxc(:,kk),rr,mmax, &
-&                    have)
+&                    have,ifail)
+   if(ifail/=0) return
    if(.not. have) exit
  end do
 
@@ -101,22 +106,26 @@
 
      rhot(:)=rhotot(:)-2.0d0*hh*rho(:,kk)
      call vout(.true.,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,adams, &
-&              iexc,c_light)
+&              iexc,c_light,ifail)
+     if(ifail/=0) return
      dvxc(:,kk)=dvxc(:,kk)+( 2.0d0/(24.0d0*hh))*vxct(:)
 
      rhot(:)=rhotot(:)     -hh*rho(:,kk)
      call vout(.true.,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,adams, &
-&              iexc,c_light)
+&              iexc,c_light,ifail)
+     if(ifail/=0) return
      dvxc(:,kk)=dvxc(:,kk)+(-16.0d0/(24.0d0*hh))*vxct(:)
 
      rhot(:)=rhotot(:)     +hh*rho(:,kk)
      call vout(.true.,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,adams, &
-&              iexc,c_light)
+&              iexc,c_light,ifail)
+     if(ifail/=0) return
      dvxc(:,kk)=dvxc(:,kk)+( 16.0d0/(24.0d0*hh))*vxct(:)
 
      rhot(:)=rhotot(:)+2.0d0*hh*rho(:,kk)
      call vout(.true.,rhot,rhoc,vo,vxct,zion,eeel,eexc,rr,mmax,adams, &
-&              iexc,c_light)
+&              iexc,c_light,ifail)
+     if(ifail/=0) return
      dvxc(:,kk)=dvxc(:,kk)+(-2.0d0/(24.0d0*hh))*vxct(:)
 
    end do !kk

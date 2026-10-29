@@ -26,7 +26,7 @@
  contains
 
  subroutine scatterstate(irel,c_light,nn,ll,kap,ee,rr,zz,vv,uu,up,mmax,adams, &
-&                        mch)
+&                        mch,ifail)
 
 !! Integrates a scattering state of an all-electron atomic potential out to
 !! mch: with the non-relativistic or scalar-relativistic Schroedinger equation
@@ -48,6 +48,8 @@
 !! @param mmax  size of the log radial mesh
 !! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param mch  matching mesh point for inward-outward integrations
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use constants_m, only: dp
  use ldiracfs_m, only: ldiracfs
@@ -65,10 +67,13 @@
  real(dp), intent(inout) :: uu(mmax,2),up(mmax,2)
  integer, intent(inout) :: nn
 
+!Output variables
+ integer, intent(out) :: ifail
+
  if(irel==2) then
-   call ldiracfs(nn,ll,kap,c_light,ee,rr,zz,vv,uu,up,mmax,adams,mch)
+   call ldiracfs(nn,ll,kap,c_light,ee,rr,zz,vv,uu,up,mmax,adams,mch,ifail)
  else
-   call lschfs(nn,ll,ee,rr,vv,uu,up,zz,mmax,adams,mch,irel,c_light)
+   call lschfs(nn,ll,ee,rr,vv,uu,up,zz,mmax,adams,mch,irel,c_light,ifail)
  end if
  return
  end subroutine scatterstate

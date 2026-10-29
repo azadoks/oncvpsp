@@ -32,7 +32,9 @@
 !!
 !! @param nn  principal quantum number
 !! @param ll  angular momentum
-!! @param ierr  non-zero return if error
+!! @param ierr  0 on success; the non-zero values differ by routine:
+!!              ierr_iterations (failure_m) if the energy did not
+!!              converge
 !! @param ee  bound-state energy, input guess and output calculated value
 !!            (in/our)
 !! @param emin  lower bound, potential minimum if ==0.0
@@ -46,6 +48,7 @@
 !! @param mbar  mesh point for infinite barrier
 !! @param tht  phast-shift angle for boundary condition, units of pi
 
+ use failure_m, only: ierr_iterations
  use constants_m, only: dp, pi, eig_tol
  use boundsolve_m, only: bs_converged, bs_correct, bs_bisect
  use quad_m, only: quad_log_norm
@@ -99,7 +102,7 @@
  deprev=huge(1.0d0)
 ! amplitude below which sign changes of uu are not counted as nodes
  epsnode=1.0d-8
- ierr = 60
+ ierr = ierr_iterations
 
  sls=ll*(ll+1)
 

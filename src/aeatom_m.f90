@@ -55,7 +55,8 @@
 !! @param eterm  kinetic, electron-nucleus, Hartree and exchange-correlation
 !!               energies (Ha), output
 !! @param res  residual of the screening potential (output, ae_residual)
-!! @param ierr  error flag
+!! @param ierr  0 on success; the non-zero values differ by routine:
+!!              those of sratom and relatom (failure_m)
 !! @param vext  external potential the orbitals also see (a confining wall,
 !!              oncvpsp_confine.x), zero for the free atom; vi is without it
 !! @param warm  start from vi and ea (the solution of a nearby potential,

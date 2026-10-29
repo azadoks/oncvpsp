@@ -61,7 +61,7 @@
        end do
        do ii = 1, size(imatch)
          qq = qroot(imatch(ii))
-         call sbf_rc_der(ll, qq, rc, sbfd)
+         call sbf_rc_der(ll, qq, rc, sbfd, ifail)
          gg = ulgds(kk)*sbfd(1) - sbfd(2)
          dg = (ulgds(kk)*rc*sbfd(2) - sbfd(2) - rc*sbfd(3))/qq
          err = max(err, abs(gg/dg)/qq)

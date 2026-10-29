@@ -27,7 +27,7 @@
 
  contains
 
- subroutine exc_dispatch(iexc,c_light,al,rho,vxc,exc,rr,nn,who)
+ subroutine exc_dispatch(iexc,c_light,al,rho,vxc,exc,rr,nn,who,ifail)
 
 !! the xc potential and energy per electron of rho on the log mesh rr
 !!
@@ -41,7 +41,10 @@
 !! @param rr  log radial mesh (bohr)
 !! @param nn  its size
 !! @param who  the caller, for the error message
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_internal
  use exc_libxc_m, only: exc_libxc
  use exc_off_pbe_m, only: excggc
  use exc_relx_m, only: exc_relx
@@ -60,6 +63,10 @@
 !Input/output variables (exc_relx adds to the local ones)
  real(dp), intent(inout) :: vxc(nn),exc(nn)
 
+!Output variables
+ integer, intent(out) :: ifail
+
+ ifail=0
  if(iexc == 1) then
    call excwig(rho,vxc,exc,nn)
  else if(iexc == 2) then
@@ -72,15 +79,15 @@
    call excvwn(rho,vxc,exc,nn)
    if(iexc == 7) call exc_relx(rho,vxc,exc,nn,c_light)
  else if(iexc < 0) then
-   call exc_libxc(iexc,al,rho,vxc,exc,rr,nn)
+   call exc_libxc(iexc,al,rho,vxc,exc,rr,nn,ifail)
  else
    write(error_unit,'(/a,i4)') who//': ERROR bad input iexc =',iexc
-   error stop 1
+   ifail=fail_internal
  end if
  return
  end subroutine exc_dispatch
 
- subroutine fxc_dispatch(iexc,c_light,al,rho,drho,dvxc,rr,mmax,have)
+ subroutine fxc_dispatch(iexc,c_light,al,rho,drho,dvxc,rr,mmax,have,ifail)
 
 !! the change of exc_dispatch's potential at rho for the change drho of
 !! the density, from the functional's analytic second derivatives: for
@@ -98,6 +105,8 @@
 !! @param rr  log radial mesh (bohr)
 !! @param mmax  size of the log radial mesh
 !! @param have  whether dvxc was evaluated
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use exc_libxc_m, only: exc_libxc_fxc
  use exc_relx_m, only: fxc_relx
@@ -115,12 +124,14 @@
 !Output variables
  real(dp), intent(out) :: dvxc(mmax)
  logical, intent(out) :: have
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp), allocatable :: fxc(:)
 
+ ifail=0
  if(iexc<0) then
-   call exc_libxc_fxc(iexc,al,rho,drho,dvxc,rr,mmax,have)
+   call exc_libxc_fxc(iexc,al,rho,drho,dvxc,rr,mmax,have,ifail)
    return
  end if
 

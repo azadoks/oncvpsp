@@ -40,7 +40,9 @@
 !! @param nn  principal quantum number
 !! @param ll  angular momentum
 !! @param nvkb  = number of VKB projectors to be used
-!! @param ierr  non-zero return if error
+!! @param ierr  0 on success; the non-zero values differ by routine:
+!!              ierr_iterations (failure_m) if the energy did not
+!!              converge
 !! @param ee  bound-state energy, input guess and output calculated value
 !! @param uld  log derivative up/uu to be matched at rm
 !! @param emin  externally generaated estimate of lower bound for ee
@@ -61,6 +63,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
+ use failure_m, only: ierr_iterations
  use constants_m, only: dp, eig_tol
  use boundsolve_m, only: bs_converged, bs_correct, bs_bisect
  use pieces_m, only: piecewise_t
@@ -110,7 +113,7 @@
 ! lschfb)
  eps=eig_tol
  deprev=huge(1.0d0)
- ierr = 60
+ ierr = ierr_iterations
 
  if(ee>emax) ee=1.25d0*emax
  if(ee<emin) ee=0.75d0*emin

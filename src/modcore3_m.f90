@@ -130,7 +130,8 @@
 
  call d2exc_baseline(rhotae,rhoc,rhoae,rhotps,rhops,rr,zion,iexc,c_light,nc, &
 &                    nv,la,rr(mmax),mmax,adams,rhomod,d2excae,d2excps,d2mdiff, &
-&                    iout)
+&                    iout,ifail)
+ if(ifail/=0) return
 
  d2ref=d2mdiff
 
@@ -313,10 +314,13 @@
      rhomod(ii,kk+1)=xx(1,1)*gd(kk)/xx(2,1)**kk
    end do
  end do
- call core_pieces_smooth(rr,rhomod,mmax,corepw,teter_form,[xx(1,1),xx(2,1)])
+ call core_pieces_smooth(rr,rhomod,mmax,corepw,teter_form,[xx(1,1),xx(2,1)], &
+&                        ifail=ifail)
+ if(ifail/=0) return
 
  call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
-&                   zion,iexc,c_light,nc,nv,la,rr(mmax),mmax,adams)
+&                   zion,iexc,c_light,nc,nv,la,rr(mmax),mmax,adams,ifail)
+ if(ifail/=0) return
 
  call d2exc_report('d2excps - pseudofunction derivatives with core '// &
 &                  'correction',d2excps,nv,d2mdiff,iout)
@@ -349,7 +353,8 @@
    rhomod(im,1)=xm(1)*gd(0)
  end do
  call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,fm, &
-&             zion,iexc,c_light,nc,nv,la,rr(mmax),mmax,adams)
+&             zion,iexc,c_light,nc,nv,la,rr(mmax),mmax,adams,ifail)
+ if(ifail/=0) return
  end subroutine trial
 
  subroutine newton_refine(xm,ifail)

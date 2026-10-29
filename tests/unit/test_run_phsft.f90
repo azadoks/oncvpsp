@@ -30,7 +30,7 @@
  real(dp) :: evkb(mxprj, mxl+1), evkb_r(mxprj, mxl+1, mxkap)
  real(dp) :: rphs(4), pshae(npsh, 4, mxkap), pshps(npsh, 4, mxkap)
  type(piecewise_t) :: vlocpw, vkbpw(mxprj, mxl+1), vkbpw_r(mxprj, mxl+1, mxkap)
- integer :: nproj(mxlin+1), ii
+ integer :: nproj(mxlin+1), ii, ifail
  real(dp) :: rc(mxlin+1)
 
  do ii = 1, mmax
@@ -44,7 +44,7 @@
  evkb = 0.0_dp; evkb_r = 0.0_dp
  nproj(:) = 0
 ! the local potential is one piece over the whole mesh
- call pw_alloc(vlocpw, mmax, 1, [0.0_dp, rr(mmax)])
+ call pw_alloc(vlocpw, mmax, 1, [0.0_dp, rr(mmax)], ifail)
  vlocpw%vals(:, 1) = vfull
 ! every core radius at 2 bohr
  rc(:) = 2.0_dp

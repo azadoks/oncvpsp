@@ -331,7 +331,8 @@
    return
  end if
  read(unit) bound(0:nseg)
- call pw_alloc(pw,mmax,nseg,bound(0:nseg))
+ call pw_alloc(pw,mmax,nseg,bound(0:nseg),ifail)
+ if(ifail/=0) return
  read(unit) pw%vals(:,:)
  end subroutine read_pw
 

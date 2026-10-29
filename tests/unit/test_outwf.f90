@@ -138,15 +138,15 @@
  end do
 
  bnd = [0.0_dp, bvq, rr(mm)]
- call pw_alloc(vpw, mm, 2, bnd)
+ call pw_alloc(vpw, mm, 2, bnd, ifail)
  vpw%vals(:, 1) = -2.0_dp/rr
  vpw%vals(:, 2) = -2.0_dp/rr
  if(kinks) vpw%vals(:, 2) = vpw%vals(:, 2) + 0.3_dp*(rr - bvq)**2
  call pw_node_values(rr, mm, vpw, vv)
 
  bnd = [0.0_dp, b1q, b2q]
- call pw_alloc(spw(1), mm, 2, bnd)
- call pw_alloc(spw(2), mm, 2, bnd)
+ call pw_alloc(spw(1), mm, 2, bnd, ifail)
+ call pw_alloc(spw(2), mm, 2, bnd, ifail)
  spw(1)%vals(:, 1) = rr**2*exp(-rr)
  spw(1)%vals(:, 2) = spw(1)%vals(:, 1)
  spw(2)%vals(:, 1) = rr**2*(1.0_dp + rr)*exp(-2.0_dp*rr)
@@ -196,7 +196,7 @@
  end do
  i20 = 1 + nint(log(20.0_dp/rr1)/alq)
  bnd = [0.0_dp, bv, rr(mm)]
- call pw_alloc(vpw, mm, 2, bnd)
+ call pw_alloc(vpw, mm, 2, bnd, ifail)
  vpw%vals(:, 1) = -2.0_dp/rr
  vpw%vals(:, 2) = -2.0_dp/rr
  call pw_node_values(rr, mm, vpw, vv)

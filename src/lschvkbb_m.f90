@@ -35,7 +35,8 @@
 !! @param nn  principal quantum number
 !! @param ll  angular momentum
 !! @param nvkb  number of projectors used
-!! @param ierr  0, or non-zero after a failure; 100 not converged, 200 a
+!! @param ierr  0 on success; the non-zero values differ by routine:
+!!              ierr_not_converged (failure_m), or ierr_ghost for a
 !!              state the node count does not expect (a ghost) below emin
 !! @param ee  the bound-state energy (Ha): the first guess, and the
 !!            eigenvalue on return
@@ -91,7 +92,8 @@
 !! @param nn  principal quantum number
 !! @param ll  angular momentum
 !! @param nvkb  = number of VKB projectors to be used
-!! @param ierr  non-zero return if error: 100 not converged; 200 every
+!! @param ierr  0 on success; the non-zero values differ by routine:
+!!              ierr_not_converged (failure_m); ierr_ghost if every
 !!              energy tried had more than nn-ll-1 states of l below it,
 !!              so a state the count does not expect (a ghost) lies below
 !!              emin
@@ -121,6 +123,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
+ use failure_m, only: ierr_ghost, ierr_not_converged
  use constants_m, only: dp, eig_tol, eig_floor
  use boundsolve_m, only: bs_converged, bs_correct, bs_bisect
  use match_m, only: match_k, match_point, match_weights, match_blend, &
@@ -181,7 +184,7 @@
 ! lschfb)
  eps=eig_tol
  deprev=huge(1.0d0)
- ierr = 100
+ ierr = ierr_not_converged
  toomany=.true.
 
  sls=ll*(ll+1)
@@ -349,7 +352,7 @@
    end if
 
  end do
- if(ierr/=0 .and. toomany) ierr=200
+ if(ierr/=0 .and. toomany) ierr=ierr_ghost
 !fix sign to be positive at rr->oo
  if(uu(mch)<0.0d0) then
    uu(:)=-uu(:)

@@ -54,7 +54,7 @@
  ibox = 1 + nint(log(rbox/rr1)/al)
  rlast = rc*amesh**floor(log(rr(ibox)/rc)/al)
  vloc(:) = -3.0_dp*exp(-0.5_dp*rr**2)
- call pw_alloc(vlocpw, mmax, 1, [0.0_dp, rr(mmax)])
+ call pw_alloc(vlocpw, mmax, 1, [0.0_dp, rr(mmax)], ifail)
  vlocpw%vals(:, 1) = vloc
  ne = 1 + nint((emax - emin)/de)
 
@@ -62,7 +62,7 @@
  do icase = 1, ncase
    ll = lcase(icase)
    evkb(1) = ecase(icase)
-   call pw_alloc(vkbpw(1), mmax, 1, [0.0_dp, rc])
+   call pw_alloc(vkbpw(1), mmax, 1, [0.0_dp, rc], ifail)
    vkbpw(1)%vals(:, 1) = rr**(ll + 1)*(1.0_dp - (rr/rc)**2)**4
    call fd_eigenvalues(ll, evkb(1), rlast, efd)
    call outwf_setup(ll, rr, mmax, adams, vloc, vlocpw, 1, vkbpw, ow, iout, &

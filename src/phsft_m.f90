@@ -582,7 +582,8 @@
  if(ps%kind==1) then
    nn=0
    call scatterstate(ps%irel,ps%c_light,nn,ps%ll,ps%kap,ee,ps%rr,ps%zz, &
-&                    ps%vv,uu,up,ps%mmax,ps%adams,mlast)
+&                    ps%vv,uu,up,ps%mmax,ps%adams,mlast,ifail)
+   if(ifail/=0) return
  else
    call outwf_solve(ps%ow,ee,ps%evkb,mlast,mlast,uu(:,1),up(:,1), &
 &        iout=iout,ifail=ifail)
@@ -740,7 +741,8 @@
  if(ps%kind==1) then
    nn=0
    call scatterstate(ps%irel,ps%c_light,nn,ps%ll,ps%kap,ee,ps%rr,ps%zz, &
-&                    ps%vv,uu,up,ps%mmax,ps%adams,ps%mch)
+&                    ps%vv,uu,up,ps%mmax,ps%adams,ps%mch,ifail)
+   if(ifail/=0) return
  else
    call outwf_solve(ps%ow,ee,ps%evkb,ps%mch,ps%mch,uu(:,1),up(:,1), &
 &        iout=iout,ifail=ifail)

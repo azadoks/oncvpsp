@@ -401,7 +401,8 @@
  do ie=1,eae%ne
    if(eae%ee(ie)<emin .or. eae%ee(ie)>emax) cycle
    iedge=eae%ied(ie)
-   nn=n_of(irel,c_light,ll,kap,eae%ee(ie),rr,zz,vfull,mmax,adams,rs)
+   call n_of(irel,c_light,ll,kap,eae%ee(ie),rr,zz,vfull,mmax,adams,rs,nn,ifail)
+   if(ifail/=0) return
    je=jpair(ie)
    if(je==0) then
 ! the band of a core state, which the pseudopotential leaves out
@@ -883,7 +884,7 @@
  end do
  end subroutine sort_edges
 
- integer function n_of(irel,c_light,ll,kap,ex,rr,zz,vfull,mmax,adams,rs)
+ subroutine n_of(irel,c_light,ll,kap,ex,rr,zz,vfull,mmax,adams,rs,nn,ifail)
 !! the all-electron state's nodes inside rs, plus l+1
 !!
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
@@ -897,6 +898,9 @@
 !! @param mmax  size of the log radial mesh
 !! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param rs  radius of the sphere (bohr)
+!! @param nn  the nodes inside rs, plus l+1
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
  use scatterstate_m, only: scatterstate
  use phsft_m, only: phsft_mch
  use adams_m, only: adams_t
@@ -907,6 +911,9 @@
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: ex,rr(mmax),zz,vfull(mmax),rs
 
+!Output variables
+ integer, intent(out) :: nn,ifail
+
 !Local variables
  real(dp), allocatable :: uu(:,:),up(:,:)
  integer :: mch,jj,nnode,nn2
@@ -915,14 +922,17 @@
  uu(:,:)=0.0d0
  up(:,:)=0.0d0
  nn2=0
- call scatterstate(irel,c_light,nn2,ll,kap,ex,rr,zz,vfull,uu,up,mmax,adams,mch)
+ nn=0
+ call scatterstate(irel,c_light,nn2,ll,kap,ex,rr,zz,vfull,uu,up,mmax,adams, &
+&                  mch,ifail)
+ if(ifail/=0) return
  nnode=0
  do jj=2,mmax
    if(rr(jj)>rs) exit
    if(uu(jj,1)*uu(jj-1,1)<0.0d0) nnode=nnode+1
  end do
- n_of=nnode+ll+1
+ nn=nnode+ll+1
  deallocate(uu,up)
- end function n_of
+ end subroutine n_of
 
  end module confine_ws_m

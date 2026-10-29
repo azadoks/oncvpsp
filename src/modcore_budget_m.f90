@@ -437,6 +437,10 @@
  call budget_tables(bc,iout,ifail)
  if(ifail/=0) return
  call budget_sphere(bc)
+ if(bc%ifail/=0) then
+   ifail=bc%ifail
+   return
+ end if
  call budget_search6(bc,iout,ifail)
  if(ifail/=0) return
  if(icmod==7) then
@@ -448,7 +452,8 @@
 
 ! fill in model and derivatives, all-electron beyond r_s
  call core_pieces(rr,rhoc,mmax,bc%fill%rs,fill_form,fill_pack(bc%fill), &
-&                  corepw,rhomod)
+&                  corepw,rhomod,ifail)
+ if(ifail/=0) return
 
  call budget_report(bc,icmod,fcfact,weighted,ecutw,slack,rcmin,iout)
 
@@ -731,13 +736,15 @@
 ! the xc energy density of the valence charge on the core charge
  bc%work(:)=bc%nval(:) + bc%rhoc(1:bc%nx)
  call exc_dispatch(bc%iexc,bc%c_light,bc%al,bc%work,bc%vxc,bc%eps,bc%rr,bc%nx, &
-&                  'modcore_budget')
+&                  'modcore_budget',bc%ifail)
+ if(bc%ifail/=0) return
  bc%wc(:)=bc%work(:)*bc%eps(:)
 
 ! xc potential of the background alone
  bc%work(:)=pi4*background
  call exc_dispatch(bc%iexc,bc%c_light,bc%al,bc%work,bc%vxc,bc%eps,bc%rr,bc%nx, &
-&                  'modcore_budget')
+&                  'modcore_budget',bc%ifail)
+ if(bc%ifail/=0) return
  bc%vbg=bc%vxc(bc%nx/2)
 
  return
@@ -841,7 +848,8 @@
  bc%d2zero(:,:)=0.0d0
  call der2exc(bc%rhotps,bc%rhoc,bc%probes,bc%rr,bc%d2ae,bc%d2zero,bc%mismatch, &
 &               bc%zion,bc%iexc,bc%c_light,0,bc%nprobe,bc%lprobe, &
-&               bc%rr(bc%mmax),bc%mmax,bc%adams)
+&               bc%rr(bc%mmax),bc%mmax,bc%adams,ifail)
+ if(ifail/=0) return
  ib=0
  do ii=1,bc%ncand
    bc%cmis(ii)=mismatch_at(bc,log(bc%crad(ii)))
@@ -907,7 +915,7 @@
 
 !Local variables
  integer :: kk
- real(dp) :: ee,tt,qq
+ real(dp) :: ee,tt,qq,eg
 
  ifail=0
  call set_model(bc,bc%fill%rs)
@@ -919,13 +927,26 @@
  bc%qneed=0.0d0
  tt=bc%qb
  ee=err_at(bc,bc%qb)-bc%errmax
+ if(bc%ifail/=0) then
+   ifail=bc%ifail
+   return
+ end if
  do kk=ceiling(bc%qb/qstep)-1,1,-1
    if(ee>=0.0d0) then
      bc%qneed=tt
      exit
    end if
-   if(err_grid(bc,kk)>bc%errmax) then
+   eg=err_grid(bc,kk)
+   if(bc%ifail/=0) then
+     ifail=bc%ifail
+     return
+   end if
+   if(eg>bc%errmax) then
      call zeroin(excess_of,kk*qstep,tt,qq,iout,ifail)
+     if(bc%ifail/=0) then
+       ifail=bc%ifail
+       return
+     end if
      if(ifail/=0) return
      bc%qneed=qq
      exit
@@ -1193,6 +1214,7 @@
  type(budget_t), intent(inout) :: bc
  associate(errmax=>bc%errmax)
    excess=err_at(bc,qq) - errmax
+   if(bc%ifail/=0) excess=0.0d0
  end associate
  return
  end function excess
@@ -1225,7 +1247,8 @@
    mismatch_at=huge(1.0d0)
    if(ifill==0) return
    call der2exc(rhotps,core,probes,rr,d2mod,d2ae,mm, &
-&               zion,iexc,c_light,0,nprobe,lprobe,rr(mmax),mmax,adams)
+&               zion,iexc,c_light,0,nprobe,lprobe,rr(mmax),mmax,adams,bc%ifail)
+   if(bc%ifail/=0) return
    mismatch_at=mm
  end associate
  return
@@ -1473,7 +1496,9 @@
      cr0(nx+1:nt,kk)=cos(tk(kk)*dq*ri(:))
    end do
    wki(:)=nvi(:) + fext(:)
-   call exc_dispatch(iexc,c_light,al,wki,vxi,epi,ri,ni,'modcore_budget')
+   call exc_dispatch(iexc,c_light,al,wki,vxi,epi,ri,ni,'modcore_budget', &
+&                    bc%ifail)
+   if(bc%ifail/=0) return
    wf(:)=wki(:)*epi(:)
  end associate
  return
@@ -1897,6 +1922,8 @@
 !Local variables
  real(dp) :: bq(bc%nt),kq,tt,qa,ww
  integer :: m0,ip,ig,pf
+ err_at=0.0d0
+ if(bc%ifail/=0) return
  associate(dq=>bc%dq,msnap=>bc%msnap,nt=>bc%nt,ntk=>bc%ntk,rqs=>bc%rqs, &
 &          tk=>bc%tk,wk=>bc%wk,xr=>bc%xr)
    call spectrum(bc,qq)
@@ -1936,6 +1963,8 @@
 
 !Input/output variables
  type(budget_t), intent(inout) :: bc
+ err_grid=0.0d0
+ if(bc%ifail/=0) return
  associate(rqs=>bc%rqs)
    call spectrum(bc,mm*qstep)
    err_grid=xc_error(bc,rqs(:,mm))
@@ -1986,6 +2015,10 @@
      nn=nn+1
      tq(nn)=qe
      eq(nn)=err_at(bc,qe)
+   end if
+   if(bc%ifail/=0) then
+     err_max=0.0d0
+     return
    end if
    imx=maxloc(eq(1:nn),1)
    qpk=tq(imx)
@@ -2327,6 +2360,8 @@
 
 !Local variables
  real(dp) :: si,so1
+ xc_error=0.0d0
+ if(bc%ifail/=0) return
  associate(ac=>bc%ac,af=>bc%af,al=>bc%al,epi=>bc%epi,eps=>bc%eps, &
 &          fext=>bc%fext,iexc=>bc%iexc,c_light=>bc%c_light,ni=>bc%ni, &
 &          nt=>bc%nt,nval=>bc%nval,nvi=>bc%nvi,nx=>bc%nx,rhoc=>bc%rhoc, &
@@ -2334,11 +2369,15 @@
 &          vxc=>bc%vxc,vxi=>bc%vxi,wc=>bc%wc,wf=>bc%wf,wki=>bc%wki, &
 &          work=>bc%work)
    work(:)=nval(:) + bq(1:nx)
-   call exc_dispatch(iexc,c_light,al,work,vxc,eps,rr,nx,'modcore_budget')
+   call exc_dispatch(iexc,c_light,al,work,vxc,eps,rr,nx,'modcore_budget', &
+&                    bc%ifail)
+   if(bc%ifail/=0) return
    work(:)=work(:)*eps(:)
    ac(:)=swin(:)*rr(1:nx)**2*(work(:) - wc(:) - vbg*(bq(1:nx) - rhoc(1:nx)))
    wki(:)=nvi(:) + bq(nx+1:nt)
-   call exc_dispatch(iexc,c_light,al,wki,vxi,epi,ri,ni,'modcore_budget')
+   call exc_dispatch(iexc,c_light,al,wki,vxi,epi,ri,ni,'modcore_budget', &
+&                    bc%ifail)
+   if(bc%ifail/=0) return
    wki(:)=wki(:)*epi(:)
    af(:)=ri(:)**2*(wki(:) - wf(:) - vbg*(bq(nx+1:nt) - fext(:)))
    call lm_integral(ri,af,ni,2,0.0d0,rs,si)

@@ -52,7 +52,9 @@
 !! @param eterm  kinetic, electron-nucleus, Hartree and exchange-correlation
 !!               energies (Ha), output
 !! @param res  residual of the screening potential (output, ae_residual)
-!! @param ierr  error flag
+!! @param ierr  0 on success; the non-zero values differ by routine:
+!!              ierr_not_converged (failure_m) if the self-consistency
+!!              did not converge
 !! @param irel  0 non-relativistic, 1 scalar-relativistic
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param vext  external potential the orbitals also see (aeatom)
@@ -63,7 +65,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_convergence
+ use failure_m, only: fail_convergence, ierr_box_state, ierr_not_converged
  use constants_m, only: dp, ae_tolres
  use ae_scf_m, only: ae_energies, ae_residual, ae_converged, ae_mix
  use tfapot_m, only: tfapot
@@ -177,7 +179,7 @@
      if(ifail/=0) return
 ! a state with no bound solution in this potential gets its box state;
 ! the SCF goes on but cannot converge with it
-     if(ierr == 10) then
+     if(ierr == ierr_box_state) then
        convg=.false.
        ierr=0
      end if
@@ -209,7 +211,8 @@
 ! output screening potential, and the energies of the orbitals of the
 ! input one
    call vout(.false.,rho,rhoc,vso,vxc,sf,eeel,eexc, &
-&            rr,mmax,adams,iexc,c_light)
+&            rr,mmax,adams,iexc,c_light,ifail)
+   if(ifail/=0) return
    call ae_energies(rho,vsi,vxc,zz,eeig,eeel,eexc,rr,mmax,etot,eterm, &
 &                   vext)
 
@@ -236,7 +239,7 @@
  end do !it
 
  if(.not. convg .and. ierr==0) then
-   ierr=100
+   ierr=ierr_not_converged
  end if
 
  deallocate(uu,up)

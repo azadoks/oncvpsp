@@ -34,7 +34,7 @@
  subroutine psmlout(inp,vkb,evkb,rr,vpuns,rho,rhomod,rcore,zion,mmax, &
 &                   nrl,epstot,rc_in,fcfact_in,fcgrid,rcgrid,log_mesh,irel, &
 &                   c_light, &
-&                   nkap,iout)
+&                   nkap,iout,ifail)
 
 !! writes the pseudopotential to the output in PSML format, between
 !! 'Begin PSML' and 'END_PSP' markers
@@ -65,6 +65,8 @@
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param nkap  number of kappas per l: 1, or 2 for irel=2
 !! @param iout  unit of the text output
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 !!
 !! Alberto Garcia, February 1, 2015
 
@@ -94,6 +96,9 @@
  real(dp), intent(in) :: fcgrid(3),rcgrid(3),log_mesh(4)
  integer, intent(in) :: iout
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
  type(xmlf_t) :: xf
 
@@ -114,6 +119,7 @@
 
 ! the document goes to the output, between markers, as do the psp8 and
 ! upf files
+ ifail=0
  write(iout,'(/a)') 'Begin PSML'
  call xml_OpenUnit(6,xf, indent=.false.)
 
@@ -141,10 +147,13 @@
  rgrid => rr(:)
  nr = npts + 1
  call write_grid()
+ if(ifail/=0) return
 
  allocate(f0(nr))
  call write_semilocal()
+ if(ifail/=0) return
  call write_charges()
+ if(ifail/=0) return
 
  call xml_NewElement(xf,"pseudopotential-operator")
  call my_add_attribute(xf,"version","0.1")
@@ -156,7 +165,9 @@
  call xml_EndElement(xf,"provenance")
 
  call write_local()
+ if(ifail/=0) return
  call write_projectors()
+ if(ifail/=0) return
 
  call xml_EndElement(xf,"pseudopotential-operator")
 
@@ -369,7 +380,8 @@
  subroutine write_grid()
 !! the grid element: the log mesh with r=0 before it (r0)
  allocate(r0(nr))
- call add_zero_r(rgrid,rgrid,r0)
+ call add_zero_r(rgrid,rgrid,r0,ifail)
+ if(ifail/=0) return
  r0(1) = 0.0d0
 
  call xml_NewElement(xf,"grid")
@@ -406,7 +418,8 @@
      if(ii == 1) then
        jval = 0.0
        vps(:) = vpuns(:,l1,1)
-       call add_zero_r(vps(1:npts),rgrid,f0)
+       call add_zero_r(vps(1:npts),rgrid,f0,ifail)
+       if(ifail/=0) return
        call write_psml_item(xf, class="slps", &
 &                     nn=nn(ii), ll=ll(ii), jj=jval, &
 &                     rc=inp%rc(ii),flavor=psflavor,&
@@ -415,7 +428,8 @@
        do jj=1,2
          jval = ll(ii) + (3-2*jj)*0.5d0  ! convert (1,2) to (1,-1)*1/2
          vps(:) = vpuns(:,l1,jj)
-         call add_zero_r(vps(1:npts),rgrid,f0)
+         call add_zero_r(vps(1:npts),rgrid,f0,ifail)
+         if(ifail/=0) return
          call write_psml_item(xf, class="slps", &
 &                    nn=nn(ii), ll=ll(ii), jj=jval, &
 &                    rc=inp%rc(ii),flavor=psflavor,&
@@ -433,7 +447,8 @@
    end if
    vpsd: do ii = 1, npots
      vps(:) = vpuns(:,ii,1)
-     call add_zero_r(vps(1:npts),rgrid,f0)
+     call add_zero_r(vps(1:npts),rgrid,f0,ifail)
+     if(ifail/=0) return
      call write_psml_item(xf, class="slps", &
 &                         nn=nn(ii), ll=ll(ii), &
 &                         rc=inp%rc(ii),flavor=psflavor,&
@@ -453,7 +468,8 @@
  call xml_NewElement(xf,"radfunc")
 
  call xml_NewElement(xf,"data")
- call add_zero_r(rho(1:npts),rgrid,f0)
+ call add_zero_r(rho(1:npts),rgrid,f0,ifail)
+ if(ifail/=0) return
  call xml_AddArray(xf,fe(f0(1:nr)))
  call xml_EndElement(xf,"data")
  call xml_EndElement(xf,"radfunc")
@@ -481,7 +497,8 @@
    call xml_NewElement(xf,"radfunc")
 
    call xml_NewElement(xf,"data")
-   call add_zero_r(rhomod(1:npts,1),rgrid,f0)
+   call add_zero_r(rhomod(1:npts,1),rgrid,f0,ifail)
+   if(ifail/=0) return
    call xml_AddArray(xf,fe(f0(1:nr)))
    call xml_EndElement(xf,"data")
    call xml_EndElement(xf,"radfunc")
@@ -499,7 +516,8 @@
  end if
  call xml_NewElement(xf,"radfunc")
  call xml_NewElement(xf,"data")
- call add_zero_r(vpuns(1:npts,inp%lloc+1,1),rgrid,f0)
+ call add_zero_r(vpuns(1:npts,inp%lloc+1,1),rgrid,f0,ifail)
+ if(ifail/=0) return
  call xml_AddArray(xf,fe(f0(1:nr)))
  call xml_EndElement(xf,"data")
  call xml_EndElement(xf,"radfunc")
@@ -523,7 +541,8 @@
        jval = 0.0
 
        do jj=1,inp%nproj(l1)
-         call add_zero_r(vkb(:,jj,l1,1),rgrid,f0)
+         call add_zero_r(vkb(:,jj,l1,1),rgrid,f0,ifail)
+         if(ifail/=0) return
          call write_psml_item(xf, class="proj", &
 &                          seq=jj, ll=l1-1, jj=jval, &
 &                          ekb=evkb(jj,l1,1), &
@@ -536,7 +555,8 @@
        do jk=1,2
          jval = l1-1 + (3-2*jk)*0.5d0  ! convert (1,2) to (1,-1)*1/2
          do jj=1,inp%nproj(l1)
-           call add_zero_r(vkb(:,jj,l1,jk),rgrid,f0)
+           call add_zero_r(vkb(:,jj,l1,jk),rgrid,f0,ifail)
+           if(ifail/=0) return
            call write_psml_item(xf, class="proj", &
 &                          seq=jj, ll=l1-1, jj=jval, &
 &                          ekb=evkb(jj,l1,jk), &
@@ -559,7 +579,8 @@
    do l1=1,inp%lmax+1
      if(l1==inp%lloc+1) cycle
      do jj=1,inp%nproj(l1)
-       call add_zero_r(vkb(:,jj,l1,1),rgrid,f0)
+       call add_zero_r(vkb(:,jj,l1,1),rgrid,f0,ifail)
+       if(ifail/=0) return
        call write_psml_item(xf, class="proj", &
 &                           seq=jj, ll=l1-1, &
 &                           ekb=evkb(jj,l1,1), &
@@ -724,7 +745,7 @@
  return
  end subroutine my_add_attribute
 
- subroutine add_zero_r(ff,rr,f0)
+ subroutine add_zero_r(ff,rr,f0,ifail)
 
 !! Adds an r=0 element to a grid function f0: the interpolant in r of
 !! the log-mesh values at r = 0 (lm_origin)
@@ -732,7 +753,10 @@
 !! @param ff  function on the log radial grid
 !! @param rr  log radial mesh (bohr)
 !! @param f0  ff with an extrapolated value at r=0 prepended
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_internal
  use, intrinsic :: iso_fortran_env, only: error_unit
  use constants_m, only: dp
  use logmesh_m, only: lm_origin
@@ -742,14 +766,17 @@
 
 !Output variables
  real(dp), intent(out) :: f0(:)
+ integer, intent(out) :: ifail
 
 !Local variables
  integer :: ii, npts, ierr
 
+ ifail = 0
  npts = size(ff)
  if(size(f0) /= npts +1) then
    write(error_unit,'(/a)') 'add_zero_r: ERROR f0 is not one longer than ff'
-   error stop 1
+   ifail = fail_internal
+   return
  end if
  do ii = 1, npts
    f0(ii+1) = ff(ii)
@@ -757,7 +784,8 @@
  call lm_origin(rr(1:npts),ff,npts,f0(1),ierr)
  if(ierr /= 0) then
    write(error_unit,'(/a)') 'add_zero_r: ERROR log mesh too short for lm_origin'
-   error stop 1
+   ifail = fail_internal
+   return
  end if
  return
 

@@ -116,7 +116,8 @@
 !find rc derivatives of basis funtction
  orbasis_der(:,:)=0.0_qp
  do jj=1,nbas !sbf loop
-   call sbfq_rc_der(ll,real(qroot(jj),qp),rcq,sbfder)
+   call sbfq_rc_der(ll,real(qroot(jj),qp),rcq,sbfder,ifail)
+   if(ifail/=0) return
    do ibas=1,nbas !orbasis loop
      do ii=1,ncon_in
        orbasis_der(ii,ibas)=orbasis_der(ii,ibas)+orbasis(jj,ibas)*sbfder(ii)

@@ -29,7 +29,7 @@
 ! term to add to eigenvalue sum
 
  subroutine vout(add_core,rho,rhoc,vo,vxc,zion,eeel,eexc, &
-&                rr,mmax,adams,iexc,c_light)
+&                rr,mmax,adams,iexc,c_light,ifail)
 
 !! @param add_core  whether the exchange-correlation is of rho+rhoc, or of
 !!                  rho alone
@@ -47,6 +47,8 @@
 !!               the Hartree potential
 !! @param iexc  exchange-correlation functional (1-4, 6, 7 built in, <0 libxc)
 !! @param c_light  speed of light (Hartree atomic units)
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use constants_m, only: dp
  use logmesh_m, only: lm_head, lm_step
@@ -68,6 +70,7 @@
 !Output variables
  real(dp), intent(out) :: vo(mmax)
  real(dp), intent(out) :: eeel,eexc
+ integer, intent(out) :: ifail
 
 !Local variables
  integer :: ii,i0
@@ -133,7 +136,8 @@
 
 ! exchange-correlation potential added
 
- call exc_dispatch(iexc,c_light,al,rhot,vxc,exca,rr,mmax,'vout')
+ call exc_dispatch(iexc,c_light,al,rhot,vxc,exca,rr,mmax,'vout',ifail)
+ if(ifail/=0) return
 
  do ii = 1, mmax
    difxc(ii)=exca(ii) - vxc(ii)
@@ -148,7 +152,8 @@
  eexc=quad_gregory_sum(foutx,mmax)
 
  if(add_core .and. rhoc(1) /= 0.0d0) then
-   call exc_dispatch(iexc,c_light,al,rhoc,vxcd,excca,rr,mmax,'vout')
+   call exc_dispatch(iexc,c_light,al,rhoc,vxcd,excca,rr,mmax,'vout',ifail)
+   if(ifail/=0) return
 
    do ii=1,mmax
      foutfc(ii)=rhoc(ii)*(exca(ii) - excca(ii))*rr(ii)**3

@@ -36,7 +36,7 @@
  real(qp), parameter :: qroot(8) = [0.6479769_qp, 1.295954_qp, 2.003985_qp, &
 &   2.712016_qp, 3.936362_qp, 5.129723_qp, 6.310968_qp, 7.486094_qp]
  real(dp) :: sd, derd(5), q1, q2, rc
- integer :: ii, jj, ll, kk
+ integer :: ii, jj, ll, kk, ifail
 
 ! values
  do ii = 1, 3
@@ -72,8 +72,8 @@
 ! rc_der
  do ll = 0, 3
    q1 = 2.1_dp + 0.7_dp*ll
-   call sbf_rc_der(ll, q1, 2.7_dp, derd)
-   call sbfq_rc_der(ll, real(q1, qp), 2.7_qp, der)
+   call sbf_rc_der(ll, q1, 2.7_dp, derd, ifail)
+   call sbfq_rc_der(ll, real(q1, qp), 2.7_qp, der, ifail)
    do kk = 1, 5
      call check('rc_der vs double', real(abs(real(der(kk), dp) - derd(kk)) &
 &               /maxval(abs(derd)), qp), 1.0e-13_qp)

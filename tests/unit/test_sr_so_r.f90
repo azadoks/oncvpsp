@@ -82,7 +82,7 @@
  bound(1) = rc
  do ik = 1, mxkap
    do ip = 1, np
-     call pw_alloc(vkbpw(ip, l1, ik), mmax, 1, bound)
+     call pw_alloc(vkbpw(ip, l1, ik), mmax, 1, bound, ifail)
      vkbpw(ip, l1, ik)%vals(:, 1) = beta(:, ip, ik)
    end do
  end do

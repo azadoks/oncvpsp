@@ -229,7 +229,9 @@ looks like this:
   search's `budget_t`.
 - A function of one variable passed to `root_brent` that can fail sets
   its host's `ifail` and returns 0, which ends the search at once; the
-  host tests `ifail` after the call (`confine_ws_m`).
+  host tests `ifail` after the call (`confine_ws_m`). The functions of
+  `modcore_budget_m`'s search set `budget_t%ifail` instead, and every
+  routine with an `ifail` tests it after calling them.
 - A switch is a `logical` (`add_core` of `vout`); integer codes are for
   choices of more than two (`irel`, `iexc`, `icmod`).
 - Optional arguments come before `iout,ifail`, which the calls then pass
@@ -333,8 +335,8 @@ hand.
   procedures use their host's. The programs, `oncvpsp_main` and the unit
   tests pass 6 (`integer, parameter :: iout=6`). Only the command line
   (`cli_m`, `parse_command_line`) writes to unit 6 itself, and the checks
-  that stay `error stop` (rule 5 of [Error messages](#error-messages)) to
-  `error_unit`.
+  of conditions the code has established (rule 5 of
+  [Error messages](#error-messages)) to `error_unit`.
 - Errors and warnings as in [Error messages](#error-messages).
 
 **Comments and dead code.**
@@ -389,7 +391,7 @@ A routine reports a failure it cannot recover from like this, and returns
  if(irphs==0) then
    write(iout,'(/2a,f12.6,a,f12.6)') 'run_phsft: ERROR rxpsh beyond radial mesh', &
 &        ', rxpsh=',rxpsh,', rr(mmax)=',rr(mmax)
-   ifail=1
+   ifail=fail_input
    return
  end if
 ```
@@ -422,14 +424,20 @@ end one string and start another (`'...', &` / `&  '...'`) rather than
 continuing inside a string, which would copy the indentation into the
 message.
 
-5) Fail with `ifail=1` and `return`, `ifail` being the routine's last
-argument (0 on success), also when the failure is a callee's: a library
-routine passes `ifail` on and does not stop. Only the programs, the
-command line and `oncvpsp_main` stop, with `error stop 1`, not `stop`, so that the exit
-status is non-zero and scripts and CTest see the failure. A check of a
-condition the code has just established, or that `check_data` has already
-validated, is a bug if it fails: it stays `error stop 1`, with its message
-on `error_unit` (`use, intrinsic :: iso_fortran_env, only: error_unit`).
+5) Fail with `ifail` set to the kind of the failure and `return`, `ifail`
+being the routine's last argument (0 on success). The kinds are the
+`fail_*` constants of `failure_m`: `fail_input`, `fail_convergence`,
+`fail_not_found`, `fail_construction`, `fail_numerical`, `fail_io` and
+`fail_internal`, whose comments say which is which; a binding raises a
+different exception for each. A caller returns the `ifail` it got,
+unchanged, and writes nothing more: a library routine passes `ifail` on
+and never stops. Only the programs, the command line and `oncvpsp_main`
+stop, with `error stop 1`, not `stop`, on any kind, so that the exit status
+is non-zero and scripts and CTest see the failure. A check of a condition
+the code has just established, or that `check_data` has already
+validated, is a bug if it fails: it returns `fail_internal`, with its
+message on `error_unit` (`use, intrinsic :: iso_fortran_env, only:
+error_unit`).
 
 6) If a called routine reports a failure through `ierr`, the caller that
 decides to stop prints the message. It names the called routine and
@@ -437,7 +445,11 @@ includes `ierr`, e.g. `oncvpsp: ERROR sratom failed, ierr=100`.
 
 7) A routine that already has an `ierr` argument should set `ierr` and
 return when its callers can recover from the failure; `ifail` is for the
-failures they cannot. The two are separate arguments.
+failures they cannot. The two are separate arguments. Its `@param ierr`
+names every value it can return; a value that passes between modules (the
+radial solvers' and the self-consistent atoms', Libxc's) is an `ierr_*`
+constant of `failure_m`, not a literal. A wrong argument is not an `ierr`
+but `fail_internal`.
 
 8) A warning has the same form with `WARNING` in place of `ERROR`, and the
 program continues.

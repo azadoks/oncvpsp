@@ -59,14 +59,17 @@
  contains
 
  subroutine lxc_init(id,fn,ierr)
-!! the functional number id, unpolarized; ierr 1 for a number Libxc
-!! does not know, 2 for one that gives no potential, 3 for a family
-!! other than LDA and GGA (meta-GGA, hybrid, ...)
+!! the functional number id, unpolarized; ierr ierr_lxc_unknown for a
+!! number Libxc does not know, ierr_lxc_no_vxc for one that gives no
+!! potential, ierr_lxc_family for a family other than LDA and GGA
+!! (meta-GGA, hybrid, ...) (failure_m)
 !!
 !! @param id  the Libxc number of the functional
 !! @param fn  the functional (output)
 !! @param ierr  0 on success; the non-zero values differ by routine:
 !!              the reasons above
+
+ use failure_m, only: ierr_lxc_family, ierr_lxc_no_vxc, ierr_lxc_unknown
 
 #if XC_MAJOR_VERSION<=4
  use xc_f90_lib_m, only: xc_f90_family_from_id, xc_f90_func_init, &
@@ -108,10 +111,10 @@
  else if(family==XC_FAMILY_GGA) then
    fn%family=2
  else if(family<=0) then
-   ierr=1
+   ierr=ierr_lxc_unknown
    return
  else
-   ierr=3
+   ierr=ierr_lxc_family
    return
  end if
 
@@ -131,7 +134,7 @@
 #endif
  if(iand(flags,XC_FLAGS_HAVE_VXC)==0) then
    call lxc_end(fn)
-   ierr=2
+   ierr=ierr_lxc_no_vxc
  end if
  return
  end subroutine lxc_init

@@ -115,7 +115,9 @@
  rcut=max(rcmax,rstar)
 
  call d2exc_baseline(rhotae,rhoc,rhoae,rhotps,rhops,rr,zion,iexc,c_light,nc, &
-&                    nv,la,rcut,mmax,adams,rhomod,d2excae,d2excps,d2mdiff,iout)
+&                    nv,la,rcut,mmax,adams,rhomod,d2excae,d2excps,d2mdiff, &
+&                    iout,ifail)
+ if(ifail/=0) return
 
 ! core charge and its derivatives at r*, and the barely monotonic
 ! polynomial that matches them
@@ -126,12 +128,14 @@
 
 ! fill in model and derivatives: the polynomial inside r*, the core charge
 ! outside
- call core_pieces(rr,rhoc,mmax,rstar,poly_form,[a0,aco],corepw,rhomod)
+ call core_pieces(rr,rhoc,mmax,rstar,poly_form,[a0,aco],corepw,rhomod,ifail)
+ if(ifail/=0) return
 
 
 !test model
  call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
-&                   zion,iexc,c_light,nc,nv,la,rcut,mmax,adams)
+&                   zion,iexc,c_light,nc,nv,la,rcut,mmax,adams,ifail)
+ if(ifail/=0) return
 
  write(iout,'(/a/)') 'Polynomial model core charge'
  write(iout,'(a,f12.6)') '  model radius r*',rstar

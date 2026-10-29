@@ -83,7 +83,8 @@
 &               psp%pot%mmax,psp%nrl,psp%epstot,psp%echo%rc_in, &
 &               psp%echo%fcfact_in, &
 &               psp%echo%fcgrid,psp%echo%rcgrid,psp%echo%log_mesh, &
-&               psp%pot%irel,psp%pot%c_light,psp%pot%nkap,iout)
+&               psp%pot%irel,psp%pot%c_light,psp%pot%nkap,iout,ifail)
+   if(ifail/=0) return
  end if
 
  return

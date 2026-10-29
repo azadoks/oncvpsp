@@ -129,7 +129,8 @@
 
  call d2exc_baseline(rhotae,rhoc,rhoae,rhotps,rhops,rr,zion,iexc,c_light,nc, &
 &                    nv,la,rr(mmax),mmax,adams,rhomod,d2excae,d2excps,d2mdiff, &
-&                    iout)
+&                    iout,ifail)
+ if(ifail/=0) return
 
 ! Fit Teter function to value and slope at r*
 
@@ -159,11 +160,14 @@
      rhomod(ii,kk+1)=a0*gd(kk)*b0**kk
    end do
  end do
- call core_pieces_smooth(rr,rhomod,mmax,corepw,teter_form,[a0,1.0d0/b0])
+ call core_pieces_smooth(rr,rhomod,mmax,corepw,teter_form,[a0,1.0d0/b0], &
+&                        ifail=ifail)
+ if(ifail/=0) return
 
 ! test model
  call der2exc(rhotps,rhomod(1,1),rhops,rr,d2excps,d2excae,d2mdiff, &
-&                   zion,iexc,c_light,nc,nv,la,rr(mmax),mmax,adams)
+&                   zion,iexc,c_light,nc,nv,la,rr(mmax),mmax,adams,ifail)
+ if(ifail/=0) return
 
  call d2exc_report('d2excps - pseudofunction derivatives with core '// &
 &                  'correction',d2excps,nv,d2mdiff,iout)

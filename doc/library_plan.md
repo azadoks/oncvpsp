@@ -40,10 +40,14 @@ modules.
 ### Phase 1: errors returned, not stopped
 
 A routine that can fail returns, instead of stopping, with a last argument
-`ifail`: 0 on success, 1 after a failure whose message it has written
-(unit 6, as before). Every caller tests it right after the call and returns
-with it set, so the failure reaches `oncvpsp_main`, which ends with
-`error stop 1` as before: the output and the exit status do not change.
+`ifail`: 0 on success, or the kind of the failure, whose message it has
+written (unit 6, as before, or `error_unit` for a check the code should
+never fail). The kinds are the `fail_*` constants of `failure_m` (input,
+convergence, not_found, construction, numerical, io, internal), one
+exception class each in the wrappers. Every caller tests `ifail` right
+after the call and returns with it unchanged, so the failure reaches
+`oncvpsp_main`, which ends with `error stop 1` as before: the output and
+the exit status do not change.
 
 - `ifail` is a new argument, not the existing `ierr`. The solvers'
   `ierr` (`lschfb`, `ldiracfb`, `lschvkbb`, `scatterstate`, ...) carries
@@ -54,22 +58,32 @@ with it set, so the failure reaches `oncvpsp_main`, which ends with
 - A procedure with optional arguments gets `ifail` last, passed by
   keyword (`ifail=ifail`), so that it cannot land in an optional slot.
 - A reader that fails after opening its file closes it first.
-- Checks of conditions the code has just established, or that
-  `check_data` has already validated, stay `error stop 1`: they are bugs,
-  not failures, and returning from them would put `ifail` on every call of
-  the XC routines and of the uniform-grid quadratures. They are
-  `exc_dispatch`'s `iexc`, `sbf_rc_der`'s and `sbfq_rc_der`'s
-  `llin`, `vploc_fit`'s `lpopt`, the segments of `pw_alloc`,
-  `pw_product_integral` and `outwf_setup`'s sources, `add_zero_r`'s sizes,
-  the `ug_*` node counts, grid positions, brackets, `root_fmin`'s
-  iterations, `diagout`'s bracket,
-  `eresid`'s q grid, `gauss_legendre`'s Newton iterations, and
-  `dirac_outward`'s series at the origin, which converges at any energy
-  of the solvers' brackets.
+- No library routine stops, not even on a check of a condition the code
+  has just established, or that `check_data` has already validated: a bug
+  must not take a wrapper's interpreter down either. Those checks return
+  `fail_internal`; they are `exc_dispatch`'s `iexc`, `sbf_rc_der`'s and
+  `sbfq_rc_der`'s `llin`, `vploc_fit`'s `lpopt`, the segments of
+  `pw_alloc`, `pw_product_integral` and `outwf_setup`'s sources,
+  `add_zero_r`'s sizes, the `ug_*` node counts, grid positions and
+  brackets, `diagout`'s bracket, `eresid`'s q grid, `ldiracfs`'s and the
+  bound-state solvers' arguments, and `set_model`'s radius. The
+  iteration limits (`root_brent`, `root_fmin`, `lm_root`,
+  `quad_gauss_legendre`, `bs_box_energy`, the origin series of
+  `sr_outward` and `dirac_outward`) return `fail_convergence`, the LAPACK
+  failures (`set_model`'s `dhseqr` and `dgglse`, `ws_basis_m`'s `dsyev`)
+  `fail_numerical`. So the XC routines, the uniform-grid quadratures and
+  the radial integrators take `ifail` too, and the callbacks of
+  `bs_solve` and `bs_box_energy` are subroutines with `ifail`.
 - A build without libxc refuses a libxc functional in `check_data`
-  (`have_libxc`), so `exc_libxc`'s stub, which stops, is not reached;
-  with libxc, `check_data` refuses a functional libxc cannot evaluate
-  (`exc_libxc_check`), so `exc_libxc_init`'s stop is not reached either.
+  (`have_libxc`), so `exc_libxc`'s stub, which returns `fail_input`, is
+  not reached; with libxc, `check_data` refuses a functional libxc cannot
+  evaluate (`exc_libxc_check`), so `exc_libxc_init`'s `fail_input` is not
+  reached either.
+- The statuses that pass between modules, of the radial solvers
+  (`ierr_box_state`, `ierr_iterations`, `ierr_not_converged`,
+  `ierr_ghost`), of `psatom` (`ierr_ps_scf`) and of Libxc
+  (`ierr_lxc_*`), are named in `failure_m`, with the values of 4.0.1
+  that some messages print.
 
 Steps, one commit each, every one with the outputs of the reference
 inputs and of a corpus of failing inputs (stdout, and stderr up to the
@@ -89,18 +103,23 @@ backtrace, and the exit status) unchanged:
 - [x] The model cores: `modcore`, `modcore2`, `modcore3`,
       `poly_core_fit`, `teter_scale`, `modcore_budget` (its steps,
       `no_model`, and `zeroin` and its callers) and
-      `modcore_budget_table`. Nothing the searches call back can fail:
-      `set_model`'s three checks stay error stops (a radius beyond the
+      `modcore_budget_table`. What the searches call back reports through
+      `budget_t%ifail`: `set_model`'s three checks (a radius beyond the
       table, which covers the searched interval; `dhseqr` on the tail's
       companion matrix; `dgglse` on constraints of full rank by
-      construction).
+      construction), its XC and `der2exc`, after which the search's
+      functions return 0 so that the searches end at once.
 - [x] The tests and the writers: `run_diag`, `run_plot`, `run_ghosts`,
       `run_phsft`, `phsft_m`, `outmesh_m`, `linout` and `upfout`. The
       modules of `oncvpsp_confine` alone (`confine_ws_m`, `ws_basis_m`,
-      `confine_wall_m`) are the program's, and stop on an `ifail` of the
-      library: their phase searches call back into `phsft_m`.
+      `confine_wall_m`) return `ifail` as the library does, and the
+      program stops on it: their phase searches call back into `phsft_m`.
 - [x] `oncvpsp_main`'s own stops on the results (the command line and the
       input file stay): they moved with phase 3 into `oncvpsp_run`.
+- [x] The kinds of failure (`failure_m`), every `ifail=1` made the kind of
+      its failure, and the checks that stayed `error stop` returned
+      (above), with `write_reference_results`' check of the reference
+      atom's iterations.
 
 ### Phase 2: output to a chosen unit
 
@@ -274,6 +293,17 @@ So the interface is a hybrid:
       tests of `tests_t`), and `oncv_write_files` over
       `write_psp_files`. The text output goes to a file the caller
       names, `/dev/null` for none; the error messages to stderr.
+- [ ] The failure's context, beside the integer `ifail`, which stays the
+      code the bindings read: a small `bind(C)`-compatible record
+      {kind, msg_id, stage, l, ikap, iproj} and a fixed-length message,
+      filled at the failure site and kept in the run object, with a
+      getter on the handle. The bindings raise from it exceptions that
+      map onto pyoncvpsp's Stage, Scope and Attribution. Not a
+      polymorphic `error_t`: the required `ifail` keeps the compiler
+      checking every call.
+- [ ] A rule in `scripts/check_conventions.py` that flags any statement
+      other than `return` right after `if(ifail/=0)`, to catch a caller
+      that does not pass a failure on.
 - [ ] A C header for it, and a shared library target (`liboncvpsp`) in
       CMake.
 - [ ] A C test in `tests/` that runs one of the reference inputs through

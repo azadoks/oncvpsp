@@ -101,7 +101,7 @@
  end subroutine sr_flux_coefs
 
  subroutine sr_outward(ll,ee,zz,fss,al,rr,vv,pm,qm,mmax,adams,mlast, &
-&                      uu,up,qq,qp,nnode)
+&                      uu,up,qq,qp,nnode,ifail)
 
 !! outward integration of the flux form from the series at the origin to
 !! mlast, counting the nodes; the coefficients pm, qm are those of
@@ -125,7 +125,10 @@
 !! @param qq  flux function on 1..mlast
 !! @param qp  d(qq)/dn on 1..mlast
 !! @param nnode  number of nodes of uu inside rr(mlast)
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_convergence
  use constants_m, only: dp
  use adams_m, only: adams_t
 
@@ -139,12 +142,14 @@
  real(dp), intent(inout) :: uu(mmax),up(mmax),qq(mmax),qp(mmax)
 
 !Output variables
- integer, intent(out) :: nnode
+ integer, intent(out) :: nnode,ifail
 
 !Local variables
  real(dp) :: gamma,aa,bb,ww,sls,b1,b2
  integer :: ii,kk
 
+ ifail=0
+ nnode=0
  gamma=sr_gamma(ll,zz,fss)
 
 ! the model potential -zz/r + d of the start, d the screening at rr(1):
@@ -157,6 +162,7 @@
 ! start wavefunction with series at the first k points
  kk=adams%order
  call origin_start()
+ if(ifail/=0) return
  do ii=1,kk
    call sr_derivs(al,pm,qm,mmax,uu,up,qq,qp,ii)
  end do
@@ -188,7 +194,8 @@
 !! the flux form for the potential -zz/r + d (origin_series). With
 !! M = (a + b*r)/r the series converges only inside r = a/b ~ zz/(2c**2),
 !! for every l; points beyond an eighth of that (rr(1) of the default mesh
-!! for H) are reached from there by RK4 in ln r on the same model equation
+!! for H) are reached from there by RK4 in ln r on the same model equation;
+!! ifail of the host after a failure
 
  real(dp) :: rs,r0,px,qx
  integer :: jj
@@ -196,6 +203,7 @@
  if(fss==0.0d0) then
    do jj=1,kk
      call origin_series(rr(jj),uu(jj),qq(jj))
+     if(ifail/=0) return
    end do
    return
  end if
@@ -209,9 +217,11 @@
  rs=0.125d0*aa/max(1.0d0,abs(bb))
  r0=min(rs,rr(1))
  call origin_series(r0,px,qx)
+ if(ifail/=0) return
  do jj=1,kk
    if(rr(jj)<=rs) then
      call origin_series(rr(jj),px,qx)
+     if(ifail/=0) return
    else
      call model_rk4(r0,rr(jj),px,qx)
    end if
@@ -278,7 +288,8 @@
 !! default mesh for light atoms; its error in the logarithmic derivative
 !! acts as a contact potential (1e-5 Ha for Na). The terms are summed as
 !! p_k*r**k, q_k*r**k, whose coefficients alone overflow. The relativistic
-!! series is used only inside an eighth of its radius a/b (origin_start)
+!! series is used only inside an eighth of its radius a/b (origin_start);
+!! ifail of the host if it does not converge
 
  use constants_m, only: series_tol
 
@@ -298,7 +309,10 @@
      if(abs(pk)<series_tol*abs(px)) exit
      pk2=pk1; pk1=pk
    end do
-   if(kk>80) call series_error(rx)
+   if(kk>80) then
+     call series_error(rx)
+     return
+   end if
    px=px*rx**(ll+1)
    qx=qx*rx**ll
    return
@@ -318,7 +332,10 @@
    if(abs(pk)<series_tol*abs(px) .and. abs(qk)<series_tol*abs(qx)) exit
    pk2=pk1; pk1=pk; qk1=qk
  end do
- if(kk>200) call series_error(rx)
+ if(kk>200) then
+   call series_error(rx)
+   return
+ end if
  px=px*rx**gamma
  qx=qx*rx**gamma
 
@@ -326,12 +343,12 @@
  end subroutine origin_series
 
  subroutine series_error(rx)
-!! the origin series at rx not converged: an error
+!! the origin series at rx not converged: a failure, in ifail of the host
  real(dp), intent(in) :: rx
  write(error_unit,'(/a,i0,a,es12.4,a,es12.4)') &
 &     'sr_outward: ERROR origin series not converged, l=',ll, &
 &     ', ee=',ee,', r=',rx
- error stop 1
+ ifail=fail_convergence
  end subroutine series_error
 
  end subroutine sr_outward

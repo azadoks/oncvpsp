@@ -447,7 +447,8 @@
  uu(:,:)=0.0d0
  up(:,:)=0.0d0
  call scatterstate(irel,c_light,nnwell,ll,kap,ee,rr, &
-&                  zz,vfull,uu,up,mmax,adams,mfree)
+&                  zz,vfull,uu,up,mmax,adams,mfree,ifail)
+ if(ifail/=0) return
  ua(:)=uu(:,1)
  pa(:)=up(:,1)
  call fpovlp(ua,ua,mmax,rc,ll, &

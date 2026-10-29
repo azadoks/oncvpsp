@@ -77,7 +77,7 @@
 
  contains
 
- subroutine pw_alloc(pw,mmax,nseg,bound)
+ subroutine pw_alloc(pw,mmax,nseg,bound,ifail)
 
 !! a piecewise function of nseg segments with the bounds given, its pieces
 !! zero
@@ -86,6 +86,10 @@
 !! @param mmax  size of the log radial mesh
 !! @param nseg  number of segments, 1..pw_maxseg
 !! @param bound  bound(0..nseg), nondecreasing, bound(0)=0
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use failure_m, only: fail_internal
 
 !Input variables
  integer, intent(in) :: mmax,nseg
@@ -93,19 +97,23 @@
 
 !Output variables
  type(piecewise_t), intent(out) :: pw
+ integer, intent(out) :: ifail
 
 !Local variables
  integer :: kk
 
+ ifail=0
  if(nseg<1 .or. nseg>pw_maxseg) then
    write(error_unit,'(/a,i0)') 'pw_alloc: ERROR number of segments ',nseg
-   error stop 1
+   ifail=fail_internal
+   return
  end if
  do kk=1,nseg
    if(bound(kk)<bound(kk-1)) then
      write(error_unit,'(/a,i0)') &
 &         'pw_alloc: ERROR bounds out of order at segment ',kk
-     error stop 1
+     ifail=fail_internal
+     return
    end if
  end do
  pw%nseg=nseg
@@ -226,7 +234,7 @@
  return
  end subroutine pw_integral
 
- subroutine pw_product_integral(rr,mmax,mm,pwa,pwb,ss)
+ subroutine pw_product_integral(rr,mmax,mm,pwa,pwb,ss,ifail)
 
 !! int_0^bound(nseg) pwa(r) pwb(r) dr for two piecewise functions with the
 !! same segments
@@ -236,7 +244,10 @@
 !! @param mm  power of r with which the product goes to 0 at the origin
 !! @param pwa,pwb  the functions
 !! @param ss  the integral
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_internal
  use logmesh_m, only: lm_integral
 
 !Input variables
@@ -246,15 +257,19 @@
 
 !Output variables
  real(dp), intent(out) :: ss
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp) :: sk
  integer :: kk
 
+ ifail=0
+ ss=0.0d0
  if(pwa%nseg/=pwb%nseg .or. any(pwa%bound(0:pwa%nseg)/=pwb%bound(0:pwa%nseg))) &
 &  then
    write(error_unit,'(/a)') 'pw_product_integral: ERROR the segments differ'
-   error stop 1
+   ifail=fail_internal
+   return
  end if
  ss=0.0d0
  do kk=1,pwa%nseg
@@ -353,7 +368,7 @@
  return
  end function pw_value
 
- subroutine pw_resample(rr,mmax,pw,rb,nb,pwb)
+ subroutine pw_resample(rr,mmax,pw,rb,nb,pwb,ifail)
 
 !! the function on another log mesh of the same step, rb(i) = s rr(i),
 !! s >= 1: the same bounds, each piece the interpolant (lm_interp) of the
@@ -365,6 +380,8 @@
 !! @param rb  the other mesh
 !! @param nb  the nodes of rb at which the pieces are needed, rb(nb)<=rr(mmax)
 !! @param pwb  the function on rb
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use logmesh_m, only: lm_interp
 
@@ -375,11 +392,13 @@
 
 !Output variables
  type(piecewise_t), intent(out) :: pwb
+ integer, intent(out) :: ifail
 
 !Local variables
  integer :: ii,kk
 
- call pw_alloc(pwb,mmax,pw%nseg,pw%bound(0:pw%nseg))
+ call pw_alloc(pwb,mmax,pw%nseg,pw%bound(0:pw%nseg),ifail)
+ if(ifail/=0) return
  do kk=1,pw%nseg
    do ii=1,nb
      call lm_interp(rr,pw%vals(:,kk),mmax,rb(ii),pwb%vals(ii,kk))

@@ -38,8 +38,10 @@
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param nn  principal quantum number
 !! @param ll  angular momentum
-!! @param ierr  non-zero return if error, 10 if there is no bound state
-!!              and the box state (u=0 at rr(mmax)) is returned
+!! @param ierr  0 on success; the non-zero values differ by routine:
+!!              ierr_box_state (failure_m) if there is no bound state
+!!              and the box state (u=0 at rr(mmax)) is returned,
+!!              ierr_iterations if the energy did not converge
 !! @param ee  bound-state energy, input guess and output calculated value
 !! @param rr  log radial mesh (bohr)
 !! @param zz  atomic number
@@ -55,6 +57,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
+ use failure_m, only: fail_internal, ierr_iterations
  use constants_m, only: dp, eig_tol
  use boundsolve_m, only: bs_box_energy, bs_solve, bs_turning_point
  use sr_flux_m, only: sr_gamma, sr_flux_coefs, sr_outward, sr_inward, &
@@ -113,12 +116,12 @@
 ! eigenvalue sum carries into the total energy, and which depended on the
 ! SCF history
  eps=eig_tol
- ierr = 60
+ ierr = ierr_iterations
 
 ! check arguments
  if(ll>nn-1) then
    write(iout,'(/a,i4,a,i4)') 'lschfb: ERROR ll =',ll,' > nn =',nn
-   ierr=1
+   ifail=fail_internal
    return
  end if
 
@@ -208,23 +211,23 @@
  return
  end subroutine setup
 
- integer function outward_nodes(mchs,mlast)
+ subroutine outward_nodes(mchs,mlast,node,ifail)
 
 !! the outward solution up to mlast and its nodes inside mchs
 
  integer, intent(in) :: mchs,mlast
+ integer, intent(out) :: node,ifail
 
- integer :: jj,node
+ integer :: jj
 
- call outward(mlast,node)
+ call outward(mlast,node,ifail)
+ if(ifail/=0) return
  node=0
  do jj=4,mchs-1
    if(uu(jj+1)*uu(jj)<=0.0d0) node=node+1
  end do
- outward_nodes=node
-
  return
- end function outward_nodes
+ end subroutine outward_nodes
 
  subroutine match(et,mchs,nin,lo,hi,de,ifail)
 
@@ -292,16 +295,16 @@
  return
  end subroutine match
 
- subroutine outward(mlast,nnode)
+ subroutine outward(mlast,nnode,ifail)
 
 !! outward integration from the series at the origin to mlast, at the
 !! energy of the last coefs, counting the nodes
 
  integer, intent(in) :: mlast
- integer, intent(out) :: nnode
+ integer, intent(out) :: nnode,ifail
 
  call sr_outward(ll,eecur,zz,fss,al,rr,vv,pm,qm,mmax,adams,mlast, &
-&                uu,up,qq,qp,nnode)
+&                uu,up,qq,qp,nnode,ifail)
 
  return
  end subroutine outward
@@ -334,34 +337,38 @@
  return
  end subroutine normalize
 
- subroutine boxstate(elow,etop,eb)
+ subroutine boxstate(elow,etop,eb,ifail)
 
 !! the box state above elow, widened above etop (bs_box_energy), and its
 !! energy eb
 
  real(dp), intent(in) :: elow,etop
  real(dp), intent(out) :: eb
+ integer, intent(out) :: ifail
 
  integer :: nb
 
- call bs_box_energy(elow,etop,nn-ll-1,eps,box_nodes,eb)
+ call bs_box_energy(elow,etop,nn-ll-1,eps,box_nodes,eb,ifail)
+ if(ifail/=0) return
  call coefs(eb)
- call outward(mmax,nb)
+ call outward(mmax,nb,ifail)
+ if(ifail/=0) return
  call normalize(mmax)
 
  return
  end subroutine boxstate
 
- integer function box_nodes(ee)
+ subroutine box_nodes(ee,nnode,ifail)
 
 !! the node count of the outward solution over the whole mesh at ee
 
  real(dp), intent(in) :: ee
+ integer, intent(out) :: nnode,ifail
 
  call coefs(ee)
- call outward(mmax,box_nodes)
+ call outward(mmax,nnode,ifail)
  return
- end function box_nodes
+ end subroutine box_nodes
 
  end subroutine lschfb
 

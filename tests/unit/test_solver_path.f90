@@ -52,7 +52,7 @@
  vloc(:) = -3.0_dp*exp(-0.5_dp*rr**2)
  evkb(1) = -1.0_dp
  rcut = 3.0_dp
- call pw_alloc(vlocpw, mmax, 1, [0.0_dp, rr(mmax)])
+ call pw_alloc(vlocpw, mmax, 1, [0.0_dp, rr(mmax)], ifail)
  vlocpw%vals(:, 1) = vloc
 
 ! lschfb: hydrogen, E = -1/(2n**2)
@@ -93,7 +93,7 @@
 ! ending at rcut
  do ll = 0, 1
    nn = ll + 1
-   call pw_alloc(vkbpw(1), mmax, 1, [0.0_dp, rcut])
+   call pw_alloc(vkbpw(1), mmax, 1, [0.0_dp, rcut], ifail)
    vkbpw(1)%vals(:, 1) = rr**(ll + 1)*(1.0_dp - (rr/rcut)**2)**4
    do ii = 1, 2
      ee(ii) = guess(merge(-1.3194_dp, -0.3914_dp, ll == 0), ii)

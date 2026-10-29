@@ -277,7 +277,7 @@
  end do
  end subroutine make_log_mesh
 
- subroutine write_reference_results(pname,it,etot,res,eterm,iout)
+ subroutine write_reference_results(pname,it,etot,res,eterm,iout,ifail)
 !! the all-electron reference atom's iterations, total energy, residual
 !! and energy terms; an error if it did not converge
 !!
@@ -288,6 +288,9 @@
 !! @param eterm  kinetic, electron-nucleus, Hartree and exchange-correlation
 !!               energies (Ha)
 !! @param iout  unit of the text output
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+ use failure_m, only: fail_convergence
  use constants_m, only: dp
 
 !Input variables
@@ -295,12 +298,18 @@
  integer, intent(in) :: it
  real(dp), intent(in) :: etot,res,eterm(4)
  integer, intent(in) :: iout
+
+!Output variables
+ integer, intent(out) :: ifail
+
+ ifail=0
  write(iout,'(//a)') 'Reference configufation results'
  write(iout,'(a,i6)') '  iterations',it
  if(it >= 100) then
    write(iout,'(2a)') trim(pname), &
 &        ': ERROR all-electron reference atom not converged'
-   error stop 1
+   ifail=fail_convergence
+   return
  end if
  write(iout,'(a,1p,e18.8)') '  all-electron total energy (Ha)',etot
  write(iout,'(a,1p,e10.2)') '  residual of the screening potential (Ha)',res

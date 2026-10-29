@@ -40,7 +40,8 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_input
+ use failure_m, only: fail_input, ierr_lxc_family, ierr_lxc_no_vxc, &
+&                     ierr_lxc_unknown
  use constants_m, only: dp, mxstate, mxcnf, mxl
  use input_m, only: input_t
  use exc_libxc_m, only: have_libxc, exc_libxc_check
@@ -123,15 +124,15 @@
    ierr=ierr+1
  else if(inp%iexc<0) then
    call exc_libxc_check(inp%iexc,ixc)
-   if(ixc==1) then
+   if(ixc==ierr_lxc_unknown) then
      write(iout,'(a,i0,a)') 'test_data: iexc = ',inp%iexc, &
 &          ' names a functional libxc does not know'
      ierr=ierr+1
-   else if(ixc==2) then
+   else if(ixc==ierr_lxc_no_vxc) then
      write(iout,'(a,i0,a)') 'test_data: iexc = ',inp%iexc, &
 &          ' names a functional without a potential'
      ierr=ierr+1
-   else if(ixc==3) then
+   else if(ixc==ierr_lxc_family) then
      write(iout,'(a,i0,a)') 'test_data: iexc = ',inp%iexc, &
 &          ' must name LDA or GGA functionals'
      ierr=ierr+1

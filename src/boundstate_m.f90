@@ -38,7 +38,8 @@
 !! @param nn  principal quantum number
 !! @param ll  angular momentum
 !! @param kap  Dirac kappa, l or -(l+1) for j = l -/+ 1/2 (irel=2 only)
-!! @param ierr  non-zero return if error
+!! @param ierr  0 on success; the non-zero values differ by routine:
+!!              those of lschfb and ldiracfb (failure_m)
 !! @param ee  bound-state energy, input guess and output calculated value
 !! @param rr  log radial mesh (bohr)
 !! @param zz  atomic number

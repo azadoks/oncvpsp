@@ -29,7 +29,7 @@
  real(dp) :: al,rr(mmax),rho(mmax),drho(mmax),dv(mmax),dfd(mmax)
  real(dp) :: vp1(mmax),vm1(mmax),vp2(mmax),vm2(mmax),exc(mmax),rs(mmax)
  logical :: have,mask(mmax)
- integer :: ii,kk
+ integer :: ii,kk,ifail
  integer, parameter :: nlda=5, iexcs(nlda)=[1, 2, 3, 6, 7]
  integer, parameter :: ilxc(2)=[-1012, -101130]
 
@@ -59,7 +59,7 @@
  end if
 
 ! none
- call fxc_dispatch(4,c_light,al,rho,drho,dv,rr,mmax,have)
+ call fxc_dispatch(4,c_light,al,rho,drho,dv,rr,mmax,have,ifail)
  call check('iexc 4 has no analytic fxc', .not. have)
 
  call check_done('test_fxc')
@@ -88,18 +88,18 @@
  integer, intent(in) :: iexc
  real(dp) :: err,scale,d2an,d2fd
 
- call fxc_dispatch(iexc,c_light,al,rho,drho,dv,rr,mmax,have)
+ call fxc_dispatch(iexc,c_light,al,rho,drho,dv,rr,mmax,have,ifail)
  if(iexc<0 .and. .not. have) then
    write(iout,'(a,i0,a)') 'iexc ',iexc,': Libxc without fxc, skipped'
    return
  end if
  call check('iexc has an analytic fxc', have)
- call exc_dispatch(iexc,c_light,al,rho + tt*drho,vp1,exc,rr,mmax,'test')
- call exc_dispatch(iexc,c_light,al,rho - tt*drho,vm1,exc,rr,mmax,'test')
+ call exc_dispatch(iexc,c_light,al,rho + tt*drho,vp1,exc,rr,mmax,'test',ifail)
+ call exc_dispatch(iexc,c_light,al,rho - tt*drho,vm1,exc,rr,mmax,'test',ifail)
  call exc_dispatch(iexc,c_light,al,rho + 2.0_dp*tt*drho,vp2,exc,rr,mmax, &
-&                  'test')
+&                  'test',ifail)
  call exc_dispatch(iexc,c_light,al,rho - 2.0_dp*tt*drho,vm2,exc,rr,mmax, &
-&                  'test')
+&                  'test',ifail)
  dfd(:)=(8.0_dp*(vp1(:) - vm1(:)) - (vp2(:) - vm2(:)))/(12.0_dp*tt)
  scale=maxval(abs(dv), mask=mask)
  err=maxval(abs(dv - dfd), mask=mask)/scale

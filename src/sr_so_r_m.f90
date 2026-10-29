@@ -135,7 +135,8 @@
            jj=ip2+(ik2-1)*nproj(l1)
 
            call pw_product_integral(rr,mmax,2*l1,vkbpw(ip1,l1,ik1), &
-&                                   vkbpw(ip2,l1,ik2),sovl(ii,jj))
+&                                   vkbpw(ip2,l1,ik2),sovl(ii,jj),ifail)
+           if(ifail/=0) return
 
          end do
        end do

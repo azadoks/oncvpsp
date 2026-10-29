@@ -39,7 +39,7 @@
  contains
 
  subroutine dirac_outward(ll,kap,c_light,ee,zz,al,rr,vv,mmax,adams,mlast,gu, &
-&                         fu,gup,fup,nnode)
+&                         fu,gup,fup,nnode,ifail)
 
 !! outward integration from the series at the origin to mlast at the
 !! energy ee, counting the nodes of the large component from the 5th point
@@ -60,8 +60,11 @@
 !! @param gup  d(gu)/dn on 1..mlast
 !! @param fup  d(fu)/dn on 1..mlast
 !! @param nnode  number of nodes of gu between the 5th point and mlast
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
 
+ use failure_m, only: fail_convergence
  use constants_m, only: dp
  use adams_m, only: adams_t
 
@@ -76,12 +79,14 @@
  real(dp), intent(inout) :: gu(mmax),fu(mmax),gup(mmax),fup(mmax)
 
 !Output variables
- integer, intent(out) :: nnode
+ integer, intent(out) :: nnode,ifail
 
 !Local variables
  real(dp) :: cc,cci,gam,cof,dd,b1,b2
  integer :: ii,kk
 
+ ifail=0
+ nnode=0
  cc=c_light
  cci=1.0d0/cc
  gam=sqrt(kap**2-(zz*cci)**2)
@@ -91,6 +96,7 @@
  kk=adams%order
  do ii=1,kk
    call origin_series(rr(ii),gu(ii),fu(ii))
+   if(ifail/=0) return
    call derivs_at(ii)
  end do
 
@@ -150,7 +156,8 @@
      write(error_unit,'(/a,i0,a,i0,a,es12.4,a,es12.4)') &
 &          'dirac_outward: ERROR origin series not converged, l=',ll, &
 &          ', kap=',kap,', ee=',ee,', r=',rx
-     error stop 1
+     ifail=fail_convergence
+     return
    end if
    pk1=pk
    qk1=qk

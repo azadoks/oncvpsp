@@ -199,7 +199,8 @@
          end if
        else
          call scatterstate(irel,c_light,nnae,ll,kap,etest, &
-&                       rr,zz,vfull,ur,urp,mmax,adams,mchf)
+&                       rr,zz,vfull,ur,urp,mmax,adams,mchf,ifail)
+         if(ifail/=0) return
        end if
        cnorm=1.0d0
        if(irel==2 .and. wellprj(iprj,l1)) then

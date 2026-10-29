@@ -25,7 +25,7 @@
  real(dp), allocatable :: rr(:), r2(:), fnode(:)
  type(piecewise_t) :: pw
  real(dp) :: al, aa, bb, ss, exact, err, bound(0:2)
- integer :: mmax, ii, io, kk
+ integer :: mmax, ii, io, kk, ifail
 
  al = log(amesh)
  mmax = int(log(rmax/rr1)/al)
@@ -42,7 +42,7 @@
  call pw_integral(rr, mmax, 3, r2, pw, ss)
  exact = i_r2(aa, bb)
  call check('kink: int r**2 f', abs(ss - exact)/abs(exact), 1.0e-13_dp)
- call pw_product_integral(rr, mmax, 2, pw, pw, ss)
+ call pw_product_integral(rr, mmax, 2, pw, pw, ss, ifail)
  exact = i_ff(aa, bb)
  call check('kink: int f**2', abs(ss - exact)/abs(exact), 1.0e-13_dp)
  call pw_node_values(rr, mmax, pw, fnode)
@@ -66,7 +66,7 @@
    call pw_integral(rr, mmax, 3, r2, pw, ss)
    exact = i_r2(pw%bound(1), pw%bound(2))
    err = max(err, abs(ss - exact)/abs(exact))
-   call pw_product_integral(rr, mmax, 2, pw, pw, ss)
+   call pw_product_integral(rr, mmax, 2, pw, pw, ss, ifail)
    exact = i_ff(pw%bound(1), pw%bound(2))
    err = max(err, abs(ss - exact)/abs(exact))
  end do
@@ -94,7 +94,7 @@
  bound(0) = 0.0_dp
  bound(1) = a1
  bound(2) = b1
- call pw_alloc(pw, mmax, 2, bound)
+ call pw_alloc(pw, mmax, 2, bound, ifail)
  pw%vals(:, 1) = rr*exp(-rr)
  pw%vals(:, 2) = rr*exp(-rr) + (rr - a1)**2
  end subroutine build

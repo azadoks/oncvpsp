@@ -25,7 +25,7 @@
 
  contains
 
- subroutine ldiracfs(nn,ll,kap,c_light,ee,rr,zz,vv,uu,up,mmax,adams,mch)
+ subroutine ldiracfs(nn,ll,kap,c_light,ee,rr,zz,vv,uu,up,mmax,adams,mch,ifail)
 
 !! Finds relativistic scattering states of an al-electron potential
 !!
@@ -44,7 +44,10 @@
 !! @param mmax  size of the log radial mesh
 !! @param adams  order and coefficients of the Adams-Moulton steps
 !! @param mch  matching mesh point for inward-outward integrations
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_internal
  use, intrinsic :: iso_fortran_env, only: error_unit
  use constants_m, only: dp
  use dirac_m, only: dirac_outward
@@ -65,6 +68,9 @@
  real(dp), intent(inout) :: uu(mmax,2),up(mmax,2)
  integer, intent(inout) :: nn
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
 
  real(dp), allocatable :: gu(:),fu(:),gup(:),fup(:),cf(:)
@@ -74,6 +80,7 @@
  real(dp) :: amesh,al
  integer :: ii,node
 
+ ifail=0
  cc=c_light
  cci=1.0d0/cc
 
@@ -83,11 +90,13 @@
 ! check arguments
  if(kap/=ll .and. kap/=-(ll+1)) then
    write(error_unit,'(/a,i4,a,i4)') 'ldiracfs: ERROR kap =',kap,' ll =',ll
-   error stop 1
+   ifail=fail_internal
+   return
  end if
  if(zz<1.0d0) then
    write(error_unit,'(/a,f12.8)') 'ldiracfs: ERROR zz =',zz
-   error stop 1
+   ifail=fail_internal
+   return
  end if
 
  allocate(gu(mmax),fu(mmax),gup(mmax),fup(mmax),cf(mmax))
@@ -103,7 +112,8 @@
 
 ! outward from the series at the origin (dirac_m)
  call dirac_outward(ll,kap,c_light,ee,zz,al,rr,vv,mmax,adams,mch,gu,fu,gup, &
-&                   fup,node)
+&                   fup,node,ifail)
+ if(ifail/=0) return
 
  uout=gu(mch)
  upout=gup(mch)

@@ -31,9 +31,9 @@
  contains
 
  subroutine exc_libxc_check(iexc,ierr)
-!! whether Libxc can evaluate the functionals of iexc: ierr 0, or 1 for
-!! a number it does not know, 2 for one that gives no potential, 3 for a
-!! family other than LDA and GGA (check_data)
+!! whether Libxc can evaluate the functionals of iexc: ierr 0, or that
+!! of lxc_init, ierr_lxc_unknown, ierr_lxc_no_vxc or ierr_lxc_family
+!! (failure_m), for the first it cannot (check_data)
 !!
 !! @param iexc  exchange-correlation functional: -(1000*id1+id2) for the libxc
 !!              functionals id1 and id2
@@ -81,25 +81,30 @@
  return
  end subroutine exc_libxc_ids
 
- subroutine exc_libxc_init(iexc,fns)
+ subroutine exc_libxc_init(iexc,fns,ifail)
 !! the functionals of iexc; check_data has rejected those Libxc cannot
 !! evaluate (exc_libxc_check)
 !!
 !! @param iexc  exchange-correlation functional: -(1000*id1+id2) for the libxc
 !!              functionals id1 and id2
 !! @param fns  the functionals, family 0 for none (output)
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
- use libxc_api_m, only: lxc_t, lxc_init
+ use failure_m, only: fail_input
+ use libxc_api_m, only: lxc_t, lxc_init, lxc_end
 
 !Input variables
  integer, intent(in) :: iexc
 
 !Output variables
  type(lxc_t), intent(out) :: fns(2)
+ integer, intent(out) :: ifail
 
 !Local variables
  integer :: id(2),ii,ierr
 
+ ifail=0
  call exc_libxc_ids(iexc,id)
  do ii=1,2
    if(id(ii)==0) cycle
@@ -107,13 +112,16 @@
    if(ierr/=0) then
      write(error_unit,'(/a,i0)') &
 &         'exc_libxc_init: ERROR Libxc cannot evaluate functional ',id(ii)
-     error stop 1
+! the first, if the second fails, is freed
+     if(ii==2 .and. id(1)/=0) call lxc_end(fns(1))
+     ifail=fail_input
+     return
    end if
  end do
  return
  end subroutine exc_libxc_init
 
- subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax)
+ subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax,ifail)
 !! the exchange-correlation potential and energy per electron of the
 !! Libxc functionals of iexc. A GGA's potential is d e/d n less the
 !! divergence of d e/d grad(n), the radial derivatives by derivs
@@ -126,6 +134,8 @@
 !! @param exc  exchange-correlation energy per electron (Ha)
 !! @param rr  log radial mesh (bohr)
 !! @param mmax  size of the log radial mesh
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use constants_m, only: dp, pi
  use derivs_m, only: derivs
@@ -138,6 +148,7 @@
 
 !Output variables
  real(dp), intent(out) :: vxc(mmax),exc(mmax)
+ integer, intent(out) :: ifail
 
 !Local variables
  type(lxc_t) :: fns(2)
@@ -148,7 +159,8 @@
  allocate(nn(mmax),dpr(mmax),dppr(mmax),dlap(mmax),sigma(mmax))
  allocate(zk(mmax),vrho(mmax),vsigma(mmax),gg(mmax),dgg(mmax))
 
- call exc_libxc_init(iexc,fns)
+ call exc_libxc_init(iexc,fns,ifail)
+ if(ifail/=0) return
 
 ! the electron density, without the 4 pi of rho, and its squared gradient
  nn(:)=rho(:)/4.0d0/pi
@@ -175,7 +187,7 @@
  return
  end subroutine exc_libxc
 
- subroutine exc_libxc_fxc(iexc,al,rho,drho,dvxc,rr,mmax,have)
+ subroutine exc_libxc_fxc(iexc,al,rho,drho,dvxc,rr,mmax,have,ifail)
 !! the change of exc_libxc's potential at rho for the change drho of the
 !! density, from the functionals' second derivatives: the derivative of
 !! the potential on the mesh, derivs included, to which its differences
@@ -191,6 +203,8 @@
 !! @param rr  log radial mesh (bohr)
 !! @param mmax  size of the log radial mesh
 !! @param have  whether dvxc was evaluated
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use constants_m, only: dp, pi
  use derivs_m, only: derivs
@@ -204,6 +218,7 @@
 !Output variables
  real(dp), intent(out) :: dvxc(mmax)
  logical, intent(out) :: have
+ integer, intent(out) :: ifail
 
 !Local variables
  type(lxc_t) :: fns(2)
@@ -214,7 +229,9 @@
  real(dp), allocatable :: dg(:),ddg(:),dv(:)
 
  dvxc(:)=0.0d0
- call exc_libxc_init(iexc,fns)
+ have=.false.
+ call exc_libxc_init(iexc,fns,ifail)
+ if(ifail/=0) return
  have=all(fns(:)%family==0 .or. fns(:)%has_fxc)
  if(.not. have) then
    call lxc_end(fns(1))
@@ -260,18 +277,23 @@
  return
  end subroutine exc_libxc_fxc
 
- subroutine exc_libxc_info(iexc,iout)
+ subroutine exc_libxc_info(iexc,iout,ifail)
 !! the description of the libxc functionals of iexc, written once per run
 !! (oncvpsp_run)
 !!
 !! @param iexc  exchange-correlation functional: -(1000*id1+id2) for the libxc
 !!              functionals id1 and id2
 !! @param iout  unit of the text output
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use libxc_api_m, only: lxc_t, lxc_end, lxc_info
 
 !Input variables
  integer, intent(in) :: iexc,iout
+
+!Output variables
+ integer, intent(out) :: ifail
 
 !Local variables
  type(lxc_t) :: fns(2)
@@ -280,7 +302,8 @@
  character(len=1024) :: name
  character(len=1024) :: refs(9)
 
- call exc_libxc_init(iexc,fns)
+ call exc_libxc_init(iexc,fns,ifail)
+ if(ifail/=0) return
  do ii=1,2
    if(fns(ii)%family==0) cycle
    call lxc_info(fns(ii),kind,name,family,nref,refs)
