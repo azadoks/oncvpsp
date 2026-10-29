@@ -26,6 +26,7 @@
 
  module channel_m
  use constants_m, only: dp, mxprj, mxkap, nerrdg
+ use failure_m, only: warnings_t
  implicit none
  private
  public :: channel_t, optimize_channel, ncurve
@@ -84,6 +85,8 @@
    real(dp), allocatable :: wshare(:,:,:)
 !> the weights of the pseudo-waves in the weighted cutoff (ecut_weights)
    real(dp), allocatable :: wcurve(:,:)
+!> the warnings of optimize_channel
+   type(warnings_t) :: warn
  end type channel_t
 
  contains
@@ -112,6 +115,7 @@
  use well_mesh_m, only: well_mesh_t
  use ae_projectors_m, only: ae_bound_projectors, ae_well_projectors, &
 &                           ae_delta_window, ae_overlap, ecut_weights
+ use failure_m, only: stage_channel
  use run_optimize_m, only: run_optimize
 
 !Input variables
@@ -139,6 +143,8 @@
  well_norm_rc=inp%well_norm==2 .or. (inp%well_norm==0 .and. inp%well_tail/=0)
 
  ch%l1=l1
+ ch%warn%stage=stage_channel
+ ch%warn%ll=ll
  ch%mkap=kap_count(nkap,ll)
  ch%nproj=nprj
  ch%irc=irc
@@ -173,6 +179,7 @@
 ! loop on J = ll +/- 1/2 when nkap=2; fj is the weight of each J
  do ikap=1,ch%mkap
    kap=kap_of(ll,ikap)
+   ch%warn%ikap=ikap
    fj=1.0d0
    if(nkap==2) fj=kap_j_share(ll,ikap,1.0d0)
 
@@ -191,7 +198,8 @@
 &                          well_norm_rc,inp%rc(l1),ch%irc,inp%qcut(l1),ae%rr, &
 &                          inp%zz,ae%vfull,mmax,ae%adams,uu,up,nnwell,iprj, &
 &                          ch%epa(:,ikap),ch%npa,ch%uua(:,:,ikap), &
-&                          ch%upa(:,:,ikap),vwell,inwell,wmesh,iout,ifail)
+&                          ch%upa(:,:,ikap),vwell,inwell,wmesh,ch%warn,iout, &
+&                          ifail)
    if(ifail/=0) return
    call ae_delta_window(ae%irel,ae%c_light,ll,kap,nprj,ch%epa(:,ikap), &
 &                       ae%rr,ae%vfull,ch%uua(:,:,ikap),ch%upa(:,:,ikap), &
@@ -212,7 +220,7 @@
 &                    ch%pswfx(1,1,ikap),ch%chix(1,1,ikap), &
 &                    ch%ektail(1,1,ikap),inp%wave_regularization, &
 &                    ch%optdg(1,1,ikap), &
-&                    ch%wshare(1,1,ikap),iout,ifail)
+&                    ch%wshare(1,1,ikap),ch%warn,iout,ifail)
    if(ifail/=0) return
 
 !the weights of its pseudo-waves in the cutoff of the pseudo-waves

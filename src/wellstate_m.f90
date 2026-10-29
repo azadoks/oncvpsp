@@ -28,7 +28,7 @@
  subroutine wellstate(nnin,ll,kap,rc,ep,ep_as_given,onset,confwall,nowell,rr, &
 &                     vfull,vwell,uu,up,zz,mmax,adams,mch,irel,c_light, &
 &                     confined, &
-&                     eptgt,wmesh,iout,ifail)
+&                     eptgt,wmesh,warns,iout,ifail)
 
 !! creates quantum well to confine positive-energy state, and calculates
 !! the resulting all-electron wave function. The well rises from
@@ -90,13 +90,15 @@
 !!               (well_mesh_m), with the well's potential; mx = 0 when uu is not
 !!               confined. The state is solved on it, so it does not depend on
 !!               rmax; uu, up and vwell are its first mmax points
+!! @param warns  the warnings, to which it adds its own (failure_m)
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
  use failure_m, only: fail_convergence, fail_input, fail_not_found, failed, &
 &                    msg_wellstate_confined_ep, msg_wellstate_conv, &
-&                    msg_wellstate_jump
+&                    msg_wellstate_jump, warnings_t, warn, wrn_well_localized, &
+&                   wrn_well_moderate, wrn_well_negative
  use constants_m, only: dp, eig_floor
  use well_mesh_m, only: well_mesh_t, wm_build, wm_short
  use boundstate_m, only: boundstate
@@ -117,6 +119,7 @@
  integer, intent(in) :: iout
 
 !Input/output variables
+ type(warnings_t), intent(inout) :: warns
  real(dp), intent(inout) :: ep
  integer, intent(inout) :: nnin !(nnin is actually in/out)
  integer, intent(inout) :: mch
@@ -406,6 +409,7 @@
 &            'WARNING wellstate: localized bound state found for n=', &
 &             nnin,' l=', ll,'WARNING this state with energy',ep, &
 &            'WARNING will be used for the first projector'
+       call warn(warns,wrn_well_localized,ll,idx=nnin)
 
 !make sure vwell exists for ikap=2 calculation in this case
        vwell(:)=vfull(:)
@@ -424,6 +428,7 @@
 &            ' for n=', &
 &            nnin,' l= ',ll,'WARNING scattering state with energy',ep, &
 &            'WARNING will be used for the first projector'
+       call warn(warns,wrn_well_moderate,ll,idx=nnin)
      end if
    end if
 
@@ -435,6 +440,7 @@
 &           nnin,' l= ',ll, &
 &           'WARNING scattering state with energy',ep, &
 &           'WARNING will be used for the first projector'
+     call warn(warns,wrn_well_negative,ll,idx=nnin)
    end if
  end if
 

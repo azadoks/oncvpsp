@@ -32,7 +32,7 @@
 &                    eresid0,eresiddot,eresidmat,&
 &                    pswfnull_sb,pswfnull_or,uunorm,ps0norm,eresidmin,&
 &                    pswfopt_sb,pswfopt_or,ekin_anal,eresq,pswfopt_null, &
-&                    wave_regularization,optdg,iout,ifail)
+&                    wave_regularization,optdg,warns,iout,ifail)
 
 !! @param nnull  number of unconstrained basis vectors for residual minimization
 !! @param nbas  number of sbf basis functions
@@ -75,12 +75,14 @@
 !!               term wave_regularization E_resid(qout(3)) there, and the
 !!               smallest
 !!               eigenvalue e1 and |f1| of the problem at qout(1) alone
+!! @param warns  the warnings, to which it adds its own (failure_m)
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
  use failure_m, only: fail_numerical, failed, msg_optimize_dsyev_regularized, &
-&                    msg_optimize_dsyev_residual
+&                    msg_optimize_dsyev_residual, warnings_t, warn, &
+&                   wrn_optimize_flat
  use constants_m, only: dp
  use lapack_m, only: dsyev
 
@@ -94,6 +96,9 @@
  real(dp), intent(in) :: uunorm,ps0norm
  integer, intent(in) :: iout
  real(dp), intent(in) :: wave_regularization
+
+!Input/output variables
+ type(warnings_t), intent(inout) :: warns
 
 !Output variables
  real(dp), intent(out) :: eresq(nqout)
@@ -172,6 +177,7 @@
      write(iout,'(/a,2es12.4/a)') 'optimize: WARNING E_resid flat to '// &
 &          'round-off at qcut, e1, |f1|=',optdg(3),optdg(4), &
 &          '  the wave is not determined (see wave_regularization)'
+     call warn(warns,wrn_optimize_flat)
    end if
  end if
 

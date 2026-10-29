@@ -23,6 +23,7 @@
  use constants_m, only: dp, mxlin
  use ae_state_m, only: ae_state_t
  use pieces_m, only: piecewise_t
+ use failure_m, only: warnings_t
  implicit none
  private
  public :: oncvpsp_run, complete_input, run_stages, run_coupled, stages_t
@@ -101,6 +102,8 @@
    type(piecewise_t), allocatable :: vsrpw(:,:)
 !> fully relativistic: the spin-orbit projectors as pieces
    type(piecewise_t), allocatable :: vsopw(:,:)
+!> the warnings of the stages
+   type(warnings_t) :: warn
  end type stages_t
 
  contains
@@ -184,7 +187,8 @@
  use failure_m, only: fail_convergence, fail_input, failed, msg_run_aeatom, &
 &                    msg_run_well_n_confined, msg_run_well_norm_free
  use failure_m, only: failure_t, fail_none, stage_input, stage_ae, &
-&                    stage_channel, stage_vkb, stage_valence
+&                    stage_channel, stage_vkb, stage_valence, stage_configs, &
+&                    warn_merge
  use config_ae_m, only: run_config_ae, ae_config_t
  use ae_file_m, only: write_ae_file
  use ae_state_m, only: ae_state_t, solve_ae
@@ -216,6 +220,8 @@
  integer, intent(out) :: ifail
 
 !Local variables
+!the warnings, those of solve_ae and each channel's and their own
+ type(warnings_t) :: warns
  integer :: ii,ierr,it
  integer :: jj,l1
  integer :: mmax,nlim,nrl
@@ -315,6 +321,7 @@
    ifail=failed(fail_convergence,msg_run_aeatom,ierr)
    return
  end if
+ warns=ae%warn
  c_light=ae%c_light
  al=ae%al
  mmax=ae%mmax
@@ -462,10 +469,12 @@
  if(istage==1) then
 !all-electron halves of the test configurations; their pseudo-atom halves
 !and all output about them come from the matching _ps.x
+   warns%stage=stage_configs
    do jj=1,inp%ncnf+1
      call run_config_ae(ae%cache,jj,cnf,inp%nc,rr, &
 &                       inp%zz, &
-&                       mmax,adams,inp%iexc,ea,irel,c_light,nkap,aec(jj),iout, &
+&                       mmax,adams,inp%iexc,ea,irel,c_light,nkap,aec(jj), &
+&                       warns,iout, &
 &                       ifail)
      if(ifail/=0) return
    end do
@@ -509,6 +518,7 @@
    at%ll=l1-1
    call optimize_channel(ae,inp,l1,inp%nproj(l1),irc(l1),chan,iout,ifail)
    if(ifail/=0) return
+   call warn_merge(warns,chan%warn)
    irc(l1)=chan%irc
    qmsbf(l1)=chan%qmsbf
    npa(:,l1)=chan%npa(:)
@@ -552,6 +562,7 @@
 ! charge densities
 
  at%stage=stage_valence
+ warns%stage=stage_valence
  call valence_densities(irel,c_light,nkap,inp%nc,inp%nv,inp%na,inp%la,inp%fa, &
 &                       ea,it,inp%lloc,inp%nproj,rr,inp%zz,vfull,vp,vlocpw, &
 &                       vkbpw,evkb,mmax,adams,uu,up,uupsa,eeig,zval,rho,rhops, &
@@ -563,7 +574,7 @@
 ! decomposition into scalar-relativistic and spin-orbit projectors
 
    call sr_so_r(inp%lmax,inp%nproj,rr,mmax,evkb,vkbpw, &
-&               vsr,esr,vso,eso,vsrpw,vsopw,iout,ifail)
+&               vsr,esr,vso,eso,vsrpw,vsopw,warns,iout,ifail)
    if(ifail/=0) return
  end if
 
@@ -604,6 +615,7 @@
  st%eso=eso
  st%vsrpw=vsrpw
  st%vsopw=vsopw
+ st%warn=warns
 
  return
  end subroutine run_stages
@@ -678,6 +690,8 @@
  integer, intent(out) :: ifail
 
 !Local variables
+!the warnings, the stages' and their own
+ type(warnings_t) :: warns
 !the earlier stages' results, copied, as the steps below change some
  type(ae_state_t) :: ae
  type(ae_config_t) :: aec(mxcnf)
@@ -714,6 +728,8 @@
 
  ifail=0
  at=failure_t(fail_none,0,0,stage_model_core,-1,0,0)
+ warns=st%warn
+ warns%stage=stage_model_core
  ae=st%ae
  aec(:)=st%ae%aec(:)
  adams=ae%adams
@@ -808,7 +824,7 @@
 &               minval(inp%rc(1:inp%lmax+1)),mmax,adams,rr,inp%iexc,c_light, &
 &               zion, &
 &               probes(:,1:nprobe),lprobe(1:nprobe),nprobe,psp%core%budget, &
-&               iout,ifail)
+&               warns,iout,ifail)
    if(ifail/=0) return
    deallocate(probes,lprobe)
 
@@ -829,6 +845,7 @@
 ! screening potential for pseudocharge
 
  at%stage=stage_screening
+ warns%stage=stage_screening
  call vout(.true.,rho,rhomod(1,1),vo,vxc,zval,eeel,eexc,rr,mmax,adams, &
 &          inp%iexc, &
 &          c_light,ifail)
@@ -852,11 +869,12 @@
  write(iout,'(/a,f12.6/)') 'Pseudoatom total energy', epstot
 
  at%stage=stage_diag
+ warns%stage=stage_diag
  at%ikap=1
  call run_diag(inp%lmax,npa,epa,wellprj,inp%lloc,inp%rc, &
 &               vlocpw,vkbpw,evkb,inp%nproj,rr,vfull,vp,inp%zz,mmax,adams, &
 &               irel,c_light,nkap, &
-&               .false.,vsrpw,esr,vsopw,eso,iout,ifail)
+&               .false.,vsrpw,esr,vsopw,eso,warns,iout,ifail)
  if(ifail/=0) return
 
  if(irel==2) then
@@ -864,7 +882,7 @@
    call run_diag(inp%lmax,npa,epa,wellprj,inp%lloc,inp%rc, &
 &                 vlocpw,vkbpw,evkb,inp%nproj,rr,vfull,vp,inp%zz,mmax,adams, &
 &                 irel,c_light, &
-&                 nkap,.true.,vsrpw,esr,vsopw,eso,iout,ifail)
+&                 nkap,.true.,vsrpw,esr,vsopw,eso,warns,iout,ifail)
    if(ifail/=0) return
 
 ! save full info for psml, switched to -zion/r far out as vpuns is
@@ -882,10 +900,11 @@
  end if
 
  at%stage=stage_ghosts
+ warns%stage=stage_ghosts
  at%ikap=1
  call run_ghosts(inp%lmax,inp%la,ea(1,1),inp%nc,inp%nv,inp%lloc,inp%rc,qmsbf, &
 &                vlocpw,vkbpw(:,:,1),evkb(1,1,1),inp%nproj,rr,vp,mmax,adams, &
-&                1,psp%tests%ghosts,iout,ifail)
+&                1,psp%tests%ghosts,warns,iout,ifail)
  if(ifail/=0) return
 
  if(irel==2) then
@@ -899,7 +918,7 @@
    call run_ghosts(inp%lmax,inp%la,ea(1,2),inp%nc,inp%nv,inp%lloc,inp%rc, &
 &                  qmsbf, &
 &                  vlocpw,vkbpw(:,:,2),evkb(1,1,2),inp%nproj,rr,vp,mmax,adams, &
-&                  2,psp%tests%ghosts,iout,ifail)
+&                  2,psp%tests%ghosts,warns,iout,ifail)
    if(ifail/=0) return
    vkb(:,:,1,2)=0.0d0
    evkb(:,1,2)=0.0d0
@@ -914,6 +933,7 @@
 
 ! how closely the local potential is -zion/r beyond rcmax
  at%stage=stage_unscreen
+ warns%stage=stage_unscreen
  at%ikap=0
  call coulomb_tail(vpuns(1,inp%lloc+1),vion,rr,mmax,zion,rcmax,iout,ifail)
  if(ifail/=0) return
@@ -926,6 +946,7 @@
  etcf(:,:,:)=0.0d0
  dtcf(:,:)=0.0d0
  at%stage=stage_configs
+ warns%stage=stage_configs
  do jj=1,inp%ncnf+1
 
    write(iout,'(/a,i2)') 'Test configuration',jj-1
@@ -937,7 +958,8 @@
    if(istage/=2) then
      call run_config_ae(ae%cache,jj,cnf,inp%nc,rr, &
 &                       inp%zz, &
-&                       mmax,adams,inp%iexc,ea,irel,c_light,nkap,aec(jj),iout, &
+&                       mmax,adams,inp%iexc,ea,irel,c_light,nkap,aec(jj), &
+&                       warns,iout, &
 &                       ifail)
      if(ifail/=0) return
    end if
@@ -945,17 +967,18 @@
    call run_config_ps(jj,aec(jj),inp%nc,rhot,rhomod,rr, &
 &                     rcmax,mmax,adams,inp%iexc,etot,epstot,inp%nproj,vpuns, &
 &                     inp%lloc,vlocpw,vkbpw,evkb,irel,c_light,nkap,ntcf(jj), &
-&                     itcf(:,:,jj),etcf(:,:,jj),dtcf(:,jj),iout,ifail)
+&                     itcf(:,:,jj),etcf(:,:,jj),dtcf(:,jj),warns,iout,ifail)
    if(ifail/=0) return
 
  end do !jj
 
  at%stage=stage_plot
+ warns%stage=stage_plot
  call run_plot(inp%lmax,npa,epa,wellprj,inp%lloc,inp%rc, &
 &               vkb,vlocpw,vkbpw,evkb,inp%nproj,rr,vfull,vp,vpuns,inp%zz, &
 &               mmax,adams, &
 &               inp%drl,nrl, &
-&               rho,rhoc,rhomod,irel,c_light,nkap,cvgplt,iout,ifail)
+&               rho,rhoc,rhomod,irel,c_light,nkap,cvgplt,warns,iout,ifail)
  if(ifail/=0) return
 
 
@@ -971,6 +994,7 @@
    npsh=int(((inp%epsh2-inp%epsh1)/inp%depsh)-0.5d0)+1
    allocate(pshae(npsh,4,nkap),pshps(npsh,4,nkap))
    at%stage=stage_phsft
+   warns%stage=stage_phsft
    call run_phsft(inp%lmax,inp%lloc,inp%nproj,epa,npsh,inp%epsh2,inp%depsh, &
 &                 inp%rxpsh,vlocpw,vkbpw,evkb,rr,vfull,vp,inp%zz,mmax,adams, &
 &                 inp%rc,irel,c_light,nkap,rphs,pshae,pshps,iout,ifail)
@@ -980,6 +1004,7 @@
  call gnu_script(epa,evkb,inp%lmax,inp%lloc,inp%nproj,nkap,iout)
 
  at%stage=stage_tests
+ warns%stage=stage_tests
  call vloc_cutoff(rr,mmax,rho,vpuns(1,inp%lloc+1),zion,cvloc,vlchk,ifail)
  if(ifail/=0) return
 
@@ -1084,10 +1109,12 @@
  psp%echo%fcgrid(:)=fcgrid(:)
  psp%echo%rcgrid(:)=rcgrid(:)
  psp%echo%log_mesh(:)=log_mesh(:)
+ psp%warnings=warns
 
 !the pseudopotential for oncvpsp_ld.x and oncvpsp_confine.x
  if(len_trim(ps_filename)/=0) then
    at%stage=stage_output
+   warns%stage=stage_output
    call write_ps_file(trim(ps_filename),psp%pot,inp%rc,inp%epsh1, &
 &                     inp%epsh2,inp%depsh,inp%rxpsh,epa,vp,iout,ifail)
    if(ifail/=0) return

@@ -26,6 +26,7 @@
  use constants_m, only: dp, pi, nrhomod
  use, intrinsic :: iso_fortran_env, only: error_unit
  use adams_m, only: adams_t
+ use failure_m, only: warnings_t
  implicit none
  private
  public :: modcore_budget,modcore_probes,modcore_budget_table
@@ -298,6 +299,8 @@
    real(dp), allocatable :: cmis(:)
 !> their fills, 0 for none
    integer, allocatable :: cfill(:)
+!> the warnings of the search, which modcore_budget adds to its own
+   type(warnings_t) :: warn
 !> the number of radii of the basin
    integer :: ncand=0
 !> 0, or the kind of failure (failure_m) of a model (set_model) or a search
@@ -377,7 +380,7 @@
  subroutine modcore_budget(icmod,rhotps,rhoc,rhomod,corepw,fcfact,ecutw, &
 &                          weighted,errmax,slack,rcmin,mmax,adams,rr,iexc, &
 &                          c_light, &
-&                          zion,probes,lprobe,nprobe,res,iout,ifail)
+&                          zion,probes,lprobe,nprobe,res,warns,iout,ifail)
 
 !! @param icmod  6 for the smallest radius, 7 for the hardness-matched one
 !! @param rhotps  pseudo valence charge density
@@ -404,10 +407,12 @@
 !! @param lprobe  angular momenta of the probes
 !! @param nprobe  number of probes (0 for icmod=6)
 !! @param res  the model core's parameters, as its report (results_m)
+!! @param warns  the warnings, to which it adds its own (failure_m)
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
+ use failure_m, only: warnings_t, warn_merge
  use modcore_m, only: core_pieces
  use pieces_m, only: piecewise_t
  use results_m, only: core_budget_t
@@ -422,6 +427,9 @@
  real(dp), intent(in) :: fcfact,ecutw,errmax,slack,zion,rcmin
  logical, intent(in) :: weighted
  integer, intent(in) :: iout
+
+!Input/output variables
+ type(warnings_t), intent(inout) :: warns
 
 !Output variables
  real(dp), intent(out) :: rhomod(mmax,nrhomod)
@@ -459,6 +467,7 @@
  if(ifail/=0) return
 
  call budget_report(bc,icmod,fcfact,weighted,ecutw,slack,rcmin,res,iout)
+ call warn_merge(warns,bc%warn)
 
  return
 
@@ -821,6 +830,8 @@
 
  use der2exc_m, only: der2exc
 
+ use failure_m, only: warn, wrn_budget_misfit
+
 !Input variables
  integer, intent(in) :: iout
 
@@ -893,6 +904,7 @@
  if(emax>bc%errmax*(1.0d0+1.0d-7)) then
    write(iout,'(/a,f12.6,a)') 'modcore_budget: WARNING the radius',bc%fill%rs, &
 &          ' of the least mismatch does not fit the budget'
+   call warn(bc%warn,wrn_budget_misfit)
  end if
 
  return
@@ -946,7 +958,7 @@
      return
    end if
    if(eg>bc%errmax) then
-     call zeroin(excess_of,kk*qstep,tt,qq,iout,ifail)
+     call zeroin(excess_of,kk*qstep,tt,qq,bc%warn,iout,ifail)
      if(bc%ifail/=0) then
        ifail=bc%ifail
        return
@@ -1153,7 +1165,7 @@
      end if
    end do
    call zeroin(excess_rs_of,log(radius_of(bc,ia)),log(radius_of(bc,ib)), &
-&              xq,iout,ifail)
+&              xq,bc%warn,iout,ifail)
    if(bc%ifail/=0) then
      ifail=bc%ifail
      return
@@ -1317,6 +1329,8 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
+ use failure_m, only: warn, wrn_budget_no_bracket
+
 !Input variables
  integer, intent(in) :: ib
  integer, intent(in) :: iout
@@ -1363,9 +1377,10 @@
    if(sa>0.0d0 .or. sb<0.0d0) then
      write(iout,'(/a,f12.6)') 'modcore_budget: WARNING no minimum of the '// &
 &         'mismatch bracketed about',crad(ib)
+     call warn(bc%warn,wrn_budget_no_bracket)
      return
    end if
-   call zeroin(slope_at_of,ua,ub,xq,iout,ifail)
+   call zeroin(slope_at_of,ua,ub,xq,bc%warn,iout,ifail)
    if(bc%ifail/=0) then
      ifail=bc%ifail
      return
@@ -2155,7 +2170,7 @@
  return
  end function neg_err
 
- subroutine zeroin(fun,xa0,xb0,xq,iout,ifail)
+ subroutine zeroin(fun,xa0,xb0,xq,warns,iout,ifail)
 
 !! a root of fun between xa0 and xb0, where fun changes sign, by Brent's
 !! method with no tolerance of its own (root_brent): it stops when the
@@ -2167,18 +2182,23 @@
 !! @param fun  the function
 !! @param xa0,xb0  the bracket
 !! @param xq  the root
+!! @param warns  the warnings, to which it adds its own (failure_m)
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
  use failure_m, only: fail_convergence, fail_not_found, failed, &
-&                    msg_budget_no_root, msg_budget_zeroin_conv
+&                    msg_budget_no_root, msg_budget_zeroin_conv, warnings_t, &
+&                   warn, wrn_budget_jump
  use root_m, only: root_fn, root_brent
 
 !Input variables
  procedure(root_fn) :: fun
  real(dp), intent(in) :: xa0,xb0
  integer, intent(in) :: iout
+
+!Input/output variables
+ type(warnings_t), intent(inout) :: warns
 
 !Output variables
  real(dp), intent(out) :: xq
@@ -2210,6 +2230,7 @@
 & then
    write(iout,'(/2a,es12.4,a,es12.4,a,es12.4)') 'modcore_budget: WARNING', &
 &        ' root at a jump of the function, x=',xq,', f from ',fc,' to ',fb
+   call warn(warns,wrn_budget_jump)
  end if
  return
  end subroutine zeroin

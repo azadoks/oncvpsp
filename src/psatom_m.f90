@@ -29,7 +29,7 @@
 
  subroutine psatom(na,la,ea,fat,nv,it,rhoc,rho,rr,rcmax,mmax,adams,iexc, &
 &           c_light,etot,nproj,vpuns,lloc,vlocpw,vkbpw,evkb,ierr,nkap,vext, &
-&           iout,ifail)
+&           warns,iout,ifail)
 
 !! @param na  principal quantum numbers, dimension nv
 !! @param la  angular momenta
@@ -66,11 +66,13 @@
 !!              ramped in with the occupations, and the eigenvalues, which
 !!              it can raise above 0, are bracketed around their last
 !!              values in place of 10 % of them
+!! @param warns  the warnings, to which it adds its own (failure_m)
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: ierr_ps_scf
+ use failure_m, only: ierr_ps_scf, warnings_t, warn, wrn_psatom_state, &
+&                   wrn_psatom_scf
  use constants_m, only: dp, mxstate, mxl, mxlin, mxprj
  use kappa_m, only: kap_count, kap_of, kap_j_share
  use ae_scf_m, only: ae_residual, ae_converged, ae_anderson1
@@ -95,6 +97,7 @@
  integer, intent(in) :: iout
 
 !Input/output variables
+ type(warnings_t), intent(inout) :: warns
  real(dp), intent(inout) :: ea(mxstate,nkap)
  real(dp), intent(inout) :: rho(mmax)
 
@@ -248,6 +251,7 @@
          end if
          write(iout,'(a,1p,4e14.6)') 'ea(ii),et,emin,emax',ea(ii,ikap),et, &
 &              emin,emax
+         call warn(warns,wrn_psatom_state,la(ii),ikap,na(ii))
          exit
        end if
 
@@ -281,7 +285,7 @@
 ! stopped falling at its round-off floor (ae_converged): 1.4-3e-12 for
 ! Li with a near-bound s ghost, where 1e-12 was never reached
    call ae_residual(rho,vi,vo,zval,rr,mmax,res)
-   call ae_converged(it,res,tolscf,resbest,nflat,convg,iout)
+   call ae_converged(it,res,tolscf,resbest,nflat,convg,warns,iout)
 
 ! generate next iteration using d. g. anderson''s
 ! method, once the previous iteration was at the target occupations too
@@ -295,6 +299,7 @@
      else
        write(iout,'(/a)') 'psatom: potential failed to converge'
      end if
+     call warn(warns,wrn_psatom_scf)
      ierr=ierr_ps_scf
    end if
 

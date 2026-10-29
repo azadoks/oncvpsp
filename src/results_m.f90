@@ -23,6 +23,7 @@
  use constants_m, only: dp, mxlin, mxstate, mxkap
  use pseudo_m, only: pseudo_t
  use test_results_m, only: tests_t
+ use failure_m, only: warnings_t
  implicit none
  private
  public :: results_t, model_core_t, core_budget_t
@@ -122,6 +123,8 @@
    type(echo_t) :: echo
 !> the tests
    type(tests_t) :: tests
+!> the warnings of the run, in the order written
+   type(warnings_t) :: warnings
  end type results_t
 
  end module results_m

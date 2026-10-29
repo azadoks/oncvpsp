@@ -311,7 +311,7 @@
 
  end subroutine ae_mix
 
- subroutine ae_converged(it,res,tolres,resbest,nflat,convg,iout)
+ subroutine ae_converged(it,res,tolres,resbest,nflat,convg,warns,iout)
 
 !! whether the SCF is converged: convg on entry says each eigenvalue has
 !! settled; the residual must also be below tolres, or have stopped falling
@@ -327,8 +327,10 @@
 !! @param resbest  smallest residual so far by halvings (kept between calls)
 !! @param nflat  iterations since it last halved (kept between calls)
 !! @param convg  in: eigenvalues settled; out: converged
+!! @param warns  the warnings, to which it adds its own (failure_m)
 !! @param iout  unit of the text output
 
+ use failure_m, only: warnings_t
  use constants_m, only: dp
 
 !Input variables
@@ -337,6 +339,7 @@
  integer, intent(in) :: iout
 
 !Input/output variables
+ type(warnings_t), intent(inout) :: warns
  real(dp), intent(inout) :: resbest
  integer, intent(inout) :: nflat
  logical, intent(inout) :: convg
@@ -353,27 +356,33 @@
  end if
  if(it<2) convg=.false.
  if(res>tolres .and. (res>resfloor .or. nflat<nstall)) convg=.false.
- if(convg .and. res>tolres) call ae_floor_warning(res,tolres,iout)
+ if(convg .and. res>tolres) call ae_floor_warning(res,tolres,warns,iout)
  return
  end subroutine ae_converged
 
- subroutine ae_floor_warning(res,tolres,iout)
+ subroutine ae_floor_warning(res,tolres,warns,iout)
 
 !! the warning of an SCF stopped on the round-off floor of its residual
 !! (ae_converged; aeatom_cached repeats it for a solution it reuses)
 !!
 !! @param res  the residual at the stop
 !! @param tolres  its threshold
+!! @param warns  the warnings, to which it adds its own (failure_m)
 !! @param iout  unit of the text output
 
+ use failure_m, only: warnings_t, warn, wrn_ae_floor
  use constants_m, only: dp
 
 !Input variables
  real(dp), intent(in) :: res,tolres
  integer, intent(in) :: iout
 
+!Input/output variables
+ type(warnings_t), intent(inout) :: warns
+
  write(iout,'(/2a,es12.4,a,es12.4)') 'ae_converged: WARNING scf stopped ', &
 &      'on the round-off floor of the residual, res=',res,', tolres=',tolres
+ call warn(warns,wrn_ae_floor)
  return
  end subroutine ae_floor_warning
 

@@ -27,7 +27,7 @@
 
  subroutine relatom(na,la,ea,fa,nc,ncv,it,rhoc,rho, &
 &           rr,vi,zz,mmax,adams,iexc,c_light,etot,eterm,res,ierr,vext,warm, &
-&           iout,ifail)
+&           warns,iout,ifail)
 
 !! self-consistent fully-relativistic all-electron atom
 !! calculation using log mesh
@@ -62,12 +62,14 @@
 !! @param warm  start from vi and ea (the solution of a nearby potential,
 !!              oncvpsp_confine.x) instead of the Thomas-Fermi potential
 !!              and hydrogenic energies
+!! @param warns  the warnings, to which it adds its own (failure_m)
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
  use failure_m, only: fail_convergence, ierr_box_state, ierr_not_converged, &
-&                    failed, msg_relatom_conv
+&                    failed, msg_relatom_conv, warnings_t, warn, &
+&                   wrn_relatom_conv
  use constants_m, only: dp, mxstate, mxkap, ae_tolres
  use kappa_m, only: kap_count, kap_of, kap_j_share
  use ae_scf_m, only: ae_energies, ae_residual, ae_converged, &
@@ -90,6 +92,7 @@
  logical, intent(in) :: warm
 
 !Input/output variables
+ type(warnings_t), intent(inout) :: warns
  integer, intent(inout) :: ierr
  real(dp), intent(inout) :: ea(mxstate,mxkap)
  real(dp), intent(inout) :: vi(mmax)
@@ -231,7 +234,7 @@
 ! energy of its last pass, never the guess unchanged, so unchanged
 ! eigenvalues cannot be asked for (as in sratom)
    call ae_residual(rho,vsi,vso,sf,rr,mmax,res)
-   call ae_converged(it,res,tolres,resbest,nflat,convg,iout)
+   call ae_converged(it,res,tolres,resbest,nflat,convg,warns,iout)
    if(convg) exit
 
 ! next input potential, by Anderson mixing of the last ndep iterations
@@ -242,6 +245,7 @@
 
    if(it==100 .and. .not. convg) then
      write(iout,'(/a)') 'relatom: WARNING failed to converge'
+     call warn(warns,wrn_relatom_conv)
    end if
 
  end do !it

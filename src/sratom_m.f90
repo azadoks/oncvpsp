@@ -27,7 +27,7 @@
 
  subroutine sratom(na,la,ea,fa,nc,ncv,it,rhoc,rho,rr,vi,zz,mmax,adams,iexc, &
 &           etot, &
-&           eterm,res,ierr,irel,c_light,vext,warm,iout,ifail)
+&           eterm,res,ierr,irel,c_light,vext,warm,warns,iout,ifail)
 
 !! self-consistent scalar-relativistic all-electron atom
 !! calculation using log mesh (non-relativistic when irel=0)
@@ -61,12 +61,13 @@
 !! @param warm  start from vi and ea (the solution of a nearby potential,
 !!              oncvpsp_confine.x) instead of the Thomas-Fermi potential
 !!              and hydrogenic energies
+!! @param warns  the warnings, to which it adds its own (failure_m)
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
  use failure_m, only: fail_convergence, ierr_box_state, ierr_not_converged, &
-&                    failed, msg_sratom_conv
+&                    failed, msg_sratom_conv, warnings_t, warn, wrn_sratom_conv
  use constants_m, only: dp, ae_tolres
  use ae_scf_m, only: ae_energies, ae_residual, ae_converged, ae_mix
  use tfapot_m, only: tfapot
@@ -89,6 +90,7 @@
  logical, intent(in) :: warm
 
 !Input/output variables
+ type(warnings_t), intent(inout) :: warns
  integer, intent(inout) :: ierr
  real(dp), intent(inout) :: vi(mmax)
  real(dp), intent(inout) :: ea(ncv)
@@ -224,7 +226,7 @@
 ! potential at the nucleus can deny for ever (1e-9 Ha jitter with E_tot
 ! converged to 1e-14 Ha, H at rr1 1e-5)
    call ae_residual(rho,vsi,vso,sf,rr,mmax,res)
-   call ae_converged(it,res,tolres,resbest,nflat,convg,iout)
+   call ae_converged(it,res,tolres,resbest,nflat,convg,warns,iout)
    if(convg) exit
 
 ! next input potential, by Anderson mixing of the last ndep iterations
@@ -235,6 +237,7 @@
 
    if(it==100 .and. .not. convg) then
      write(iout,'(/a)') 'sratom: WARNING failed to converge'
+     call warn(warns,wrn_sratom_conv)
    end if
 
  end do !it

@@ -4,8 +4,8 @@
 ! the same process, writing to /dev/null, whose results must be the same
 ! bit for bit. The ghost lists, the ghost test's basis and the model
 ! core's parameters against the lines of the text that print them, to
-! their printed digits. Arguments: irel (0, 1 or 2) and the input file
-! (text).
+! their printed digits; and the warnings, as many of each as the text
+! writes. Arguments: irel (0, 1 or 2) and the input file (text).
 ! Stops with a non-zero code at the end if any check failed.
  program test_run
  use constants_m, only: dp
@@ -16,7 +16,7 @@
  use input_echo_m, only: fe
  use kappa_m, only: kap_count
  use oncvpsp_run_m, only: oncvpsp_run
- use failure_m, only: failure_t
+ use failure_m, only: failure_t, warnings_t, mxwarn
  use results_m, only: results_t
  use test_results_m, only: tests_t
  implicit none
@@ -37,6 +37,8 @@
  call check_diagnostics(psp1%tests,psp1%pot%nkap,iout)
  rewind(iout)
  call check_text(psp1,iout)
+ rewind(iout)
+ call check_warnings(psp1%warnings,iout)
  close(iout)
  if(nline==0) call fail('no DIAGNOSTICS lines checked')
 
@@ -272,6 +274,64 @@
    if(any(nbasis/=gh%basis(:,1:2))) call fail('ghost basis')
  end associate
  end subroutine check_text
+
+ subroutine check_warnings(warns,iu)
+!! the warnings of the run against the text: of each wrn_*, as many
+!! records as lines of the text with its message, every one with a stage
+!!
+!! @param warns  the warnings
+!! @param iu  unit of the text output, rewound
+ type(warnings_t), intent(in) :: warns
+ integer, intent(in) :: iu
+!the line of each warning (wrn_* in order) that the text writes once
+ character(len=40), parameter :: pat(28)=[character(len=40) :: &
+&  'ae_converged: WARNING scf stopped', 'sratom: WARNING failed to converge', &
+&  'relatom: WARNING failed to converge', &
+&  'WARNING self-consistency failed to', 'runconfig: WARNING lschfb', &
+&  'runconfig: WARNING ldiracfb', 'WARNING for fully non-local PS atom', &
+&  'WARNING lschvkbb convergence error', 'potential failed to converge', &
+&  'optimize: WARNING E_resid flat', 'WARNING the well''s tail changes it by', &
+&  'WARNING qcut is not above', 'WARNING this well state''s free tail', &
+&  'WARNING wellstate: localized bound', &
+&  'WARNING wellstate: moderately localized', &
+&  'WARNING wellstate: negative energy', 'lschvkbb ERROR', &
+&  'lschvkbbe ERROR', 'run_ghosts: lschvkbb ERROR', 'WARNING - GHOST(-)', &
+&  'WARNING - GHOST(+)', 'WARNING basis cut there', 'WARNING basis full', &
+&  'write_waves: WARNING lschvkbb', 'sr_so_r: WARNING', &
+&  'does not fit the budget', 'no minimum of the mismatch', &
+&  'root at a jump']
+ character(len=512) :: line
+ integer :: ios,id,ntext(28),nrec(28),ii
+ character(len=8) :: tag
+ ntext(:)=0
+ do
+   read(iu,'(a)',iostat=ios) line
+   if(ios/=0) exit
+   do id=1,size(pat)
+     if(index(line,trim(pat(id)))==0) cycle
+!run_diag's lschvkbb ERROR, not run_ghosts'
+     if(id==17 .and. index(line,'run_ghosts')>0) cycle
+     ntext(id)=ntext(id)+1
+   end do
+ end do
+ if(warns%nwarn>mxwarn) return
+ nrec(:)=0
+ do ii=1,warns%nwarn
+   id=warns%rec(1,ii)
+   if(id<1 .or. id>size(pat) .or. warns%rec(2,ii)==0) then
+     call fail('a warning record without its warning or stage')
+     cycle
+   end if
+   nrec(id)=nrec(id)+1
+ end do
+ do id=1,size(pat)
+   if(nrec(id)/=ntext(id)) then
+     write(tag,'(i0)') id
+     call fail('warning '//trim(tag)//': '//trim(pat(id)))
+   end if
+   nline=nline+ntext(id)
+ end do
+ end subroutine check_warnings
 
  function num_after(line,key) result(xx)
 !! the number after key in line

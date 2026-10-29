@@ -145,7 +145,7 @@
 &                              well_norm_rc,rc,irc,qcut,rr,zz,vfull,mmax, &
 &                              adams, &
 &                              uu,up,nnwell,iprj,epa,npa,uua,upa,vwell, &
-&                              inwell,wmesh,iout,ifail)
+&                              inwell,wmesh,warns,iout,ifail)
 !! the well states of the projectors iprj+1 to nproj: the first at ep if
 !! there are no bound ones, the next ones debl above; their wells are
 !! those of ikap=1, kept for ikap=2 (vwell, wmesh). nnwell is the n of the
@@ -188,12 +188,13 @@
 !!               for ikap=1 and kept for ikap=2
 !! @param inwell  whether each well state is confined by its well
 !! @param wmesh  each confined state on its continued mesh (well_mesh_m)
+!! @param warns  the warnings, to which it adds its own (failure_m)
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
  use failure_m, only: fail_construction, fail_convergence, fail_input, failed, &
 &                    msg_ae_proj_debl_scattering, msg_ae_proj_well_conv, &
-&                    msg_ae_proj_well_n
+&                    msg_ae_proj_well_n, warnings_t
  use fpovlp_m, only: fpovlp
  use boundstate_m, only: boundstate
  use renorm_r_m, only: renorm_r
@@ -212,6 +213,7 @@
  integer, intent(in) :: iout
 
 !Input/output variables
+ type(warnings_t), intent(inout) :: warns
  real(dp), intent(inout) :: uu(mmax,2),up(mmax,2)
  integer, intent(inout) :: nnwell,iprj,npa(mxprj)
  real(dp), intent(inout) :: epa(mxprj),uua(mmax,mxprj),upa(mmax,mxprj)
@@ -285,14 +287,14 @@
 &                   ep_as_given,well_onset,well_tail==2,.false.,rr, &
 &                   vfull, &
 &                   vwell(1,iprj),uu,up,zz,mmax,adams,mch,irel,c_light, &
-&                   inwell(iprj),eptgt,wmesh(iprj),iout,ifail)
+&                   inwell(iprj),eptgt,wmesh(iprj),warns,iout,ifail)
      if(ifail/=0) return
    else if(ikap==1) then
      nnwell=npa(iprj)
      call wellstate(nnwell,ll,kap,rc,epa(iprj),ep_as_given, &
 &                   well_onset,well_tail==2,well_tail_free,rr,vfull, &
 &                   vwell(1,iprj),uu,up,zz,mmax,adams,mch,irel,c_light, &
-&                   inwell(iprj),eptgt,wmesh(iprj),iout,ifail)
+&                   inwell(iprj),eptgt,wmesh(iprj),warns,iout,ifail)
      if(ifail/=0) return
    else
      et=epa(iprj)

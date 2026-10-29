@@ -382,7 +382,15 @@ So the interface is a hybrid:
       mesh and densities and the psp8 for oncvpsp_confine.x come with
       `oncv_write_files`, the files the checks read now. The input echo is
       the input the caller passed; the failure is `oncv_failure` and the
-      text. Still to come: the warnings as a list.
+      text. The warnings are a list too, `results_t%warnings`
+      (`warnings_t`, fields `warnings.nwarn` and `warnings.rec`): each
+      site of a warning that does not stop the run (28 of them, `wrn_*`
+      in `failure_m`, the values kept as those of `msg_*`) adds {the
+      warning, the stage, l, ikap, the configuration, n or projector} to
+      the `warnings_t` passed down to it (`warn`); the stages keep theirs
+      in their results (`ae_state_t`, `channel_t`, `stages_t`), and
+      test_run counts each against its line of the text. The warnings
+      of oncvpsp_confine.x's walled atoms stay in its text.
 - [ ] The text output optionally into a buffer the caller reads, beside
       a file or `/dev/null`, so the text parser can check the arrays
       during the switch-over without temporary files.

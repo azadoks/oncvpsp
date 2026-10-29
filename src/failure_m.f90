@@ -31,6 +31,10 @@
 !> record before each call. The values of msg_* are kept: a new site takes
 !> the next value, and a removed one's value is not reused.
 !>
+!> A warning does not stop the run: its site writes its message and adds
+!> a record to the warnings_t passed down to it (warn), which wrn_* names
+!> as msg_* names the failures, with the same rule for their values.
+!>
 !> ierr, where a routine has one, is a status that its caller interprets
 !> (no root in a bracket, a box state, ...), documented with the routine;
 !> it is not a failure until the caller makes it one. The statuses that
@@ -52,6 +56,7 @@
  public :: ierr_box_state, ierr_iterations, ierr_not_converged, &
 &          ierr_ps_scf, ierr_ghost
  public :: ierr_lxc_unknown, ierr_lxc_no_vxc, ierr_lxc_family
+ public :: warnings_t, warn, warn_merge, mxwarn
 
 !> no failure
  integer, parameter :: fail_none=0
@@ -166,6 +171,26 @@
 !> the projector, 0 if none
    integer(c_int) :: iproj
  end type failure_t
+
+!> the warnings records kept
+ integer, parameter :: mxwarn=64
+
+!> the warnings of a calculation, in the order written (warn)
+ type :: warnings_t
+!> their number, all of them
+   integer :: nwarn=0
+!> the first mxwarn: the warning (wrn_*), the stage (stage_*), l (-1 if
+!> none), ikap (0 if none), and the configuration or the state's n that
+!> it is of, as its wrn_* says (0 if none)
+   integer :: rec(5,mxwarn)=0
+!> the stage of the next ones, which the stages set
+   integer :: stage=0
+!> their l where the site does not give it, which the stages set (-1 for
+!> none)
+   integer :: ll=-1
+!> their ikap where the site does not give it (0 for none)
+   integer :: ikap=0
+ end type warnings_t
 
 ! The messages of the failure sites (failed's msg), each with its routine,
 ! file and message
@@ -623,6 +648,85 @@
 !> write_psp_file (psp_files_m.f90): write_psp_file: ERROR no file format
  integer, parameter, public :: msg_psp_file_kind=174
 
+! The warnings (warn's id), each with its routine, file and message, and
+! what the record's index is
+
+!> ae_floor_warning (ae_scf_m.f90): ae_converged: WARNING scf stopped on
+!> the round-off floor of the residual
+ integer, parameter, public :: wrn_ae_floor=1
+!> sratom (sratom_m.f90): sratom: WARNING failed to converge
+ integer, parameter, public :: wrn_sratom_conv=2
+!> relatom (relatom_m.f90): relatom: WARNING failed to converge
+ integer, parameter, public :: wrn_relatom_conv=3
+!> config_ae_warning (config_ae_m.f90): run_config: WARNING for AE atom,
+!> no output for configuration, self-consistency failed to converge; the
+!> configuration
+ integer, parameter, public :: wrn_config_ae_scf=4
+!> config_ae_warning (config_ae_m.f90): runconfig: WARNING lschfb
+!> convergence ERROR; the configuration
+ integer, parameter, public :: wrn_config_ae_lschfb=5
+!> config_ae_warning (config_ae_m.f90): runconfig: WARNING ldiracfb
+!> convergence ERROR; the configuration
+ integer, parameter, public :: wrn_config_ae_ldiracfb=6
+!> run_config_ps (run_config_m.f90): run_config: WARNING for fully
+!> non-local PS atom, no output for configuration; the configuration
+ integer, parameter, public :: wrn_config_ps=7
+!> psatom (psatom_m.f90): psatom: WARNING lschvkbb convergence error; n
+ integer, parameter, public :: wrn_psatom_state=8
+!> psatom (psatom_m.f90): psatom: potential failed to converge
+ integer, parameter, public :: wrn_psatom_scf=9
+!> optimize (optimize_m.f90): optimize: WARNING E_resid flat to round-off
+!> at qcut
+ integer, parameter, public :: wrn_optimize_flat=10
+!> well_share (run_optimize_m.f90): WARNING the well's tail changes it
+!> by; the projector
+ integer, parameter, public :: wrn_well_tail=11
+!> well_share (run_optimize_m.f90): WARNING qcut is not above this well
+!> state's wave vector; the projector
+ integer, parameter, public :: wrn_well_qcut=12
+!> well_share (run_optimize_m.f90): WARNING this well state's free tail
+!> grows too fast; the projector
+ integer, parameter, public :: wrn_well_free_tail=13
+!> target_energy (wellstate_m.f90): WARNING wellstate: localized bound
+!> state found; n
+ integer, parameter, public :: wrn_well_localized=14
+!> target_energy (wellstate_m.f90): WARNING wellstate: moderately
+!> localized bound state found; n
+ integer, parameter, public :: wrn_well_moderate=15
+!> target_energy (wellstate_m.f90): WARNING wellstate: negative energy
+!> specified; n
+ integer, parameter, public :: wrn_well_negative=16
+!> run_diag (run_diag_m.f90): run_diag: lschvkbb ERROR; the projector
+ integer, parameter, public :: wrn_diag_lschvkbb=17
+!> run_diag (run_diag_m.f90): run_diag: lschvkbbe ERROR; the projector
+ integer, parameter, public :: wrn_diag_lschvkbbe=18
+!> bound_tests (run_ghosts_m.f90): run_ghosts: lschvkbb ERROR; n
+ integer, parameter, public :: wrn_ghost_lschvkbb=19
+!> bound_tests (run_ghosts_m.f90): WARNING - GHOST(-)
+ integer, parameter, public :: wrn_ghost_minus=20
+!> run_ghosts (run_ghosts_m.f90): WARNING - GHOST(+)
+ integer, parameter, public :: wrn_ghost_plus=21
+!> barrier_basis (run_ghosts_m.f90): run_ghosts: WARNING basis cut there
+ integer, parameter, public :: wrn_ghost_basis_cut=22
+!> barrier_basis (run_ghosts_m.f90): run_ghosts: WARNING basis full below
+!> the cutoff
+ integer, parameter, public :: wrn_ghost_basis_full=23
+!> write_waves (run_plot_m.f90): write_waves: WARNING lschvkbb did not
+!> converge; the projector
+ integer, parameter, public :: wrn_plot_lschvkbb=24
+!> sr_so_r (sr_so_r_m.f90): sr_so_r: WARNING directions of the
+!> projectors' overlap at its round-off dropped
+ integer, parameter, public :: wrn_sr_so_drop=25
+!> budget_hardness7 (modcore_budget_m.f90): modcore_budget: WARNING the
+!> radius of the least mismatch does not fit the budget
+ integer, parameter, public :: wrn_budget_misfit=26
+!> minimum_radius (modcore_budget_m.f90): modcore_budget: WARNING no
+!> minimum of the mismatch bracketed
+ integer, parameter, public :: wrn_budget_no_bracket=27
+!> zeroin (modcore_budget_m.f90): modcore_budget: WARNING root at a jump
+!> of the function
+ integer, parameter, public :: wrn_budget_jump=28
+
  contains
 
  pure function failed(kfail,msg,ierr) result(ifail)
@@ -721,6 +825,57 @@
  failure%ierr=fail_ierr(ifail)
  return
  end function fail_context
+
+ pure subroutine warn(warns,id,ll,ikap,idx)
+
+!! adds a warning to warns, with warns's stage, and its l and ikap as
+!! given or else warns's
+!!
+!! @param warns  the warnings, to which it adds its own (failure_m)
+!! @param id  the warning (wrn_*)
+!! @param ll  angular momentum, if not warns's
+!! @param ikap  its spin-orbit index, if not warns's
+!! @param idx  the configuration, n or projector it is of (wrn_*), if any
+
+!Input variables
+ integer, intent(in) :: id
+ integer, intent(in), optional :: ll,ikap,idx
+
+!Input/output variables
+ type(warnings_t), intent(inout) :: warns
+
+ warns%nwarn=warns%nwarn+1
+ if(warns%nwarn>mxwarn) return
+ warns%rec(:,warns%nwarn)=[id,warns%stage,warns%ll,warns%ikap,0]
+ if(present(ll)) warns%rec(3,warns%nwarn)=ll
+ if(present(ikap)) warns%rec(4,warns%nwarn)=ikap
+ if(present(idx)) warns%rec(5,warns%nwarn)=idx
+ return
+ end subroutine warn
+
+ pure subroutine warn_merge(warns,more)
+
+!! adds the warnings more to warns, after its own
+!!
+!! @param warns  the warnings, to which it adds its own (failure_m)
+!! @param more  those to add
+
+!Input variables
+ type(warnings_t), intent(in) :: more
+
+!Input/output variables
+ type(warnings_t), intent(inout) :: warns
+
+!Local variables
+ integer :: ii
+
+ do ii=1,min(more%nwarn,mxwarn)
+   warns%nwarn=warns%nwarn+1
+   if(warns%nwarn<=mxwarn) warns%rec(:,warns%nwarn)=more%rec(:,ii)
+ end do
+ warns%nwarn=warns%nwarn+max(more%nwarn-mxwarn,0)
+ return
+ end subroutine warn_merge
 
  pure function fail_name(kfail) result(name)
 

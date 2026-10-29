@@ -28,7 +28,7 @@
  subroutine run_optimize(eig,ll,kap,irel,c_light,mmax,rr,uua,upa,qq,&
 &                      freetl,wmesh,rc,irc,qcut,qmsbf,ncon_in,nbas_in,npr, &
 &                      psopt,vpsp,vkb,vfull,cvgplt,ncurve,ecurve,pswfx,chix, &
-&                      ektail,wave_regularization,optdg,wshare,iout,ifail)
+&                      ektail,wave_regularization,optdg,wshare,warns,iout,ifail)
 
 !! calls routines to generate optimized pseudo wave function and semi-local
 !! pseudopotential and prints diagnostic information on process and
@@ -90,11 +90,13 @@
 !!                that their difference is the well's share; (3) 1 for
 !!                these, -1 where the free tail is undefined (qcut not
 !!                above the state's wave vector), 0 for the other waves
+!! @param warns  the warnings, to which it adds its own (failure_m)
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_input, failed, msg_run_optimize_q_grid
+ use failure_m, only: fail_input, failed, msg_run_optimize_q_grid, warnings_t, &
+&                   warn, wrn_well_tail, wrn_well_qcut, wrn_well_free_tail
  use constants_m, only: dp, qp, nerrlv, nerrdg, pi, ha_ev, mxprj
  use logmesh_m, only: lm_ncell, lm_step
  use ugrid_m, only: ug_cross_down
@@ -122,6 +124,7 @@
  integer, intent(in) :: iout
 
 !Input/output variables
+ type(warnings_t), intent(inout) :: warns
  integer, intent(inout) :: irc
  real(dp), intent(inout) :: vpsp(mmax),vkb(mmax,mxprj)
  real(dp), intent(inout) :: cvgplt(2,nerrdg,mxprj)
@@ -323,7 +326,7 @@
 &                eresid0,eresiddot,eresidmat,&
 &                pswfnull_sb,pswfnull_or,qq(iprj,iprj),ps0norm,eresidmin, &
 &                pswfopt_sb,pswfopt_or,ekin_anal,eresq,pswfopt_nu, &
-&                wave_regularization,optdg(1,iprj),iout,ifail)
+&                wave_regularization,optdg(1,iprj),warns,iout,ifail)
    if(ifail/=0) return
 
    write(iout,'(a,1p,e10.2,a)') '    Residual kinetic energy error=', &
@@ -482,6 +485,7 @@
      write(iout,'(a,f8.1,a/a)') '    WARNING the well''s tail changes it by', &
 &           100.0d0*share/efree(1),' %:', &
 &           '    WARNING the cutoffs of this wave carry the well'
+     call warn(warns,wrn_well_tail,idx=iprj)
    end if
  else
    wshare(3,iprj)=-1.0d0
@@ -490,10 +494,12 @@
 &           '    WARNING qcut is not above this well state''s wave vector', &
 &           free_tail_k(eig(iprj)), &
 &           '    WARNING it oscillates faster: its cutoffs are not meaningful'
+     call warn(warns,wrn_well_qcut,idx=iprj)
    else
      write(iout,'(a/a)') &
 &           '    WARNING this well state''s free tail grows too fast for', &
 &           '    WARNING its window at qcut (kappa L > 12): no share'
+     call warn(warns,wrn_well_free_tail,idx=iprj)
    end if
  end if
  end subroutine well_share

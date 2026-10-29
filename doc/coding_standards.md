@@ -446,7 +446,11 @@ is non-zero and scripts and CTest see the failure. A check of a condition
 the code has just established, or that `check_data` has already
 validated, is a bug if it fails: it returns `fail_internal`, with its
 message on `error_unit` (`use, intrinsic :: iso_fortran_env, only:
-error_unit`).
+error_unit`). A warning, which does not stop the run, writes its message
+and adds a record to the `warnings_t` passed down to it,
+`call warn(warns,wrn_...,ll,ikap,idx)`, its `wrn_*` named in `failure_m` as
+`msg_*` names the failures; a stage's warnings travel in its result
+(`ae_state_t`, `channel_t`, `stages_t`) up to `results_t%warnings`.
 
 6) If a called routine reports a failure through `ierr`, the caller that
 decides to stop prints the message. It names the called routine and

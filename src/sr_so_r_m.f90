@@ -26,7 +26,7 @@
  contains
 
  subroutine sr_so_r(lmax,nproj,rr,mmax,evkb,vkbpw, &
-&                       vsr,esr,vso,eso,vsrpw,vsopw,iout,ifail)
+&                       vsr,esr,vso,eso,vsrpw,vsopw,warns,iout,ifail)
 
 !! reformulates non-local potentials based on j = l +/- 1/2 to scalar-
 !! relativistic and L dot S projectors
@@ -49,12 +49,14 @@
 !! @param eso  energy coefficients of vso, to be multiplied by <L dot S>
 !! @param vsrpw  vsr as functions of pieces
 !! @param vsopw  vso as functions of pieces
+!! @param warns  the warnings, to which it adds its own (failure_m)
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
  use failure_m, only: fail_numerical, failed, msg_sr_so_s_dsyev, &
-&                    msg_sr_so_so_dsyev, msg_sr_so_sr_dsyev
+&                    msg_sr_so_so_dsyev, msg_sr_so_sr_dsyev, warnings_t, warn, &
+&                   wrn_sr_so_drop
  use constants_m, only: dp, mxl, mxlin, mxkap, mxprj, ovl_floor
  use projbasis_m, only: pb_half_powers, pb_congruence, pb_combine, &
 &                       pb_sort_abs, pb_sign_at_peak
@@ -71,6 +73,7 @@
  integer, intent(in) :: iout
 
 !Input/output variables
+ type(warnings_t), intent(inout) :: warns
  real(dp), intent(inout) :: vsr(mmax,2*mxprj,mxl+1),esr(2*mxprj,mxl+1)
  real(dp), intent(inout) :: vso(mmax,2*mxprj,mxl+1),eso(2*mxprj,mxl+1)
 
@@ -161,6 +164,7 @@
      write(iout,'(/a,i0,a,i0,a,i0,a)') 'sr_so_r: WARNING l=',ll,', ', &
 &         ndrop,' of ',nn, &
 &         ' directions of the projectors'' overlap at its round-off dropped'
+     call warn(warns,wrn_sr_so_drop,ll)
    end if
 
 ! take linear combinations to form orthonormal basis functions

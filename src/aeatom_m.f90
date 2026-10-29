@@ -27,7 +27,7 @@
 
  subroutine aeatom(irel,c_light,nkap,na,la,ea,fa,nc,ncv,it,rhoc,rho, &
 &                  rr,vi,zz,mmax,adams,iexc,etot,eterm,res,ierr,vext,warm, &
-&                  iout,ifail)
+&                  warns,iout,ifail)
 
 !! self-consistent all-electron atom: non-relativistic or scalar-relativistic
 !! (sratom) or fully-relativistic (relatom)
@@ -62,10 +62,12 @@
 !! @param warm  start from vi and ea (the solution of a nearby potential,
 !!              oncvpsp_confine.x) instead of the Thomas-Fermi potential
 !!              and hydrogenic energies
+!! @param warns  the warnings, to which it adds its own (failure_m)
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
+ use failure_m, only: warnings_t
  use constants_m, only: dp, mxstate
  use relatom_m, only: relatom
  use sratom_m, only: sratom
@@ -82,6 +84,7 @@
  logical, intent(in) :: warm
 
 !Input/output variables
+ type(warnings_t), intent(inout) :: warns
  integer, intent(inout) :: ierr
  real(dp), intent(inout) :: ea(mxstate,nkap)
  real(dp), intent(inout) :: vi(mmax)
@@ -96,11 +99,11 @@
  if(irel==2) then
    call relatom(na,la,ea,fa,nc,ncv,it,rhoc,rho,rr,vi,zz,mmax,adams,iexc, &
 &               c_light, &
-&               etot,eterm,res,ierr,vext,warm,iout,ifail)
+&               etot,eterm,res,ierr,vext,warm,warns,iout,ifail)
    if(ifail/=0) return
  else
    call sratom(na,la,ea,fa,nc,ncv,it,rhoc,rho,rr,vi,zz,mmax,adams,iexc,etot, &
-&              eterm,res,ierr,irel,c_light,vext,warm,iout,ifail)
+&              eterm,res,ierr,irel,c_light,vext,warm,warns,iout,ifail)
    if(ifail/=0) return
  end if
  return

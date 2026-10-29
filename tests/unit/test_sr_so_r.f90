@@ -20,6 +20,7 @@
  use unit_check_m, only: check, check_done
  use pieces_m, only: piecewise_t, pw_alloc
  use sr_so_r_m, only: sr_so_r
+ use failure_m, only: warnings_t
  use, intrinsic :: iso_fortran_env, only: output_unit
  implicit none
 
@@ -34,6 +35,7 @@
  real(dp) :: fscl(mxkap), fso(mxkap)
  type(piecewise_t) :: vkbpw(mxprj, mxl + 1, mxkap)
  type(piecewise_t) :: vsrpw(2*mxprj, mxl + 1), vsopw(2*mxprj, mxl + 1)
+ type(warnings_t) :: warns
  integer :: nproj(mxlin + 1), mmax, ii, ik, ifail
  real(dp) :: al
 
@@ -91,7 +93,7 @@
  esr(:, :) = 0.0_dp
  eso(:, :) = 0.0_dp
  call sr_so_r(lmax, nproj, rr, mmax, evkb, vkbpw, vsr, esr, vso, eso, &
-&             vsrpw, vsopw, output_unit, ifail)
+&             vsrpw, vsopw, warns, output_unit, ifail)
  call check(label//': ifail', real(ifail, dp), 0.0_dp)
 
  nrc = count(rr < rc)

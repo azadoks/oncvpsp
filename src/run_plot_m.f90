@@ -27,7 +27,7 @@
 
  subroutine run_plot(lmax,npa,epa,wellprj,lloc,rc,vkb,vlocpw,vkbpw,evkb, &
 &                    nproj,rr,vfull,vp,vpuns,zz,mmax,adams,drl,nrl,rho,rhoc, &
-&                    rhomod,irel,c_light,nkap,cvgplt,iout,ifail)
+&                    rhomod,irel,c_light,nkap,cvgplt,warns,iout,ifail)
 
 !! write output for plotting pseudopotentials, model core charge, and
 !! all-electron and pseudo wave functions. The points are the mesh points
@@ -66,6 +66,7 @@
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param nkap  number of kappas per l: 1, or 2 for irel=2
 !! @param cvgplt  energy per electron error vs. cutoff (convergence profiles)
+!! @param warns  the warnings, to which it adds its own (failure_m)
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
@@ -80,6 +81,8 @@
  use scatterstate_m, only: scatterstate
  use logmesh_m, only: lm_index
  use adams_m, only: adams_t
+
+ use failure_m, only: warnings_t
 
 !Input variables
  integer, intent(in) :: lmax,lloc,mmax,nrl,irel,nkap
@@ -96,6 +99,9 @@
  logical, intent(in) :: wellprj(mxprj,mxlin+1)
  real(dp), intent(in) :: cvgplt(2,nerrdg,mxprj,mxl+1,nkap)
  integer, intent(in) :: iout
+
+!Input/output variables
+ type(warnings_t), intent(inout) :: warns
 
 !Output variables
  integer, intent(out) :: ifail
@@ -223,7 +229,7 @@
 !! scattering states at their energies, both of the sign of the
 !! all-electron one at n2
  use failure_m, only: fail_convergence, failed, msg_plot_dirac_conv, &
-&                    msg_plot_lschfb_conv
+&                    msg_plot_lschfb_conv, warn, wrn_plot_lschvkbb
  integer, intent(in) :: l1,ikap
  integer :: ii,iprj,npr,ierr,mch,kap,ilabel
  integer, intent(out) :: ifail
@@ -281,6 +287,7 @@
        write(iout,'(/a,i0,a,i0,a,i0)') &
 &            'write_waves: WARNING lschvkbb did not converge, iprj=',iprj, &
 &            ', ll=',ll,', ierr=',ierr
+       call warn(warns,wrn_plot_lschvkbb,ll,ikap,iprj)
      end if
      sgnae=1.0d0
      sgnps=1.0d0

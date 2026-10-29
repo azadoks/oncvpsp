@@ -23,6 +23,7 @@ electrons.
 | `iout` | unit of the text output |
 | `ifail` | 0, or the kind of failure (failure_m), whose message is written |
 | `at` | where the run was (failure_m): its stage, l and ikap |
+| `warns` | the warnings, to which it adds its own (failure_m) |
 | `c_light` | speed of light (Hartree atomic units) |
 | `rr` | log radial mesh (bohr) |
 | `mmax` | size of the log radial mesh |

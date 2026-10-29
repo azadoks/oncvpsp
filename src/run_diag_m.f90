@@ -28,7 +28,7 @@
  subroutine run_diag(lmax,npa,epa,wellprj,lloc,rc,vlocpw,vkbpw,evkb,nproj,rr, &
 &                    vfull,vp,zz,mmax,adams,irel,c_light,nkap,so_split,vsrpw, &
 &                    esr, &
-&                    vsopw,eso,iout,ifail)
+&                    vsopw,eso,warns,iout,ifail)
 
 !! diagnostics for semi-local and Vanderbilt-Kleinman-bylander pseudopotentials
 !! checks bound-state energies, norms, and slopes, and pseudo-bound state
@@ -74,13 +74,15 @@
 !!               (so_split)
 !! @param eso  energy coefficients of vso (multiplied by <L dot S> here;
 !!             so_split)
+!! @param warns  the warnings, to which it adds its own (failure_m)
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
  use failure_m, only: fail_convergence, fail_input, failed, &
 &                    msg_diag_dirac_conv, msg_diag_lschfb_conv, &
-&                    msg_diag_match_radius
+&                    msg_diag_match_radius, warnings_t, warn, &
+&                   wrn_diag_lschvkbb, wrn_diag_lschvkbbe
  use constants_m, only: dp, mxl, mxlin, diag_match, mxprj
  use logmesh_m, only: lm_interp
  use phsft_m, only: phsft_mch
@@ -110,6 +112,9 @@
  real(dp), intent(in) :: esr(2*mxprj,mxl+1),eso(2*mxprj,mxl+1)
  type(piecewise_t), intent(in) :: vsrpw(2*mxprj,mxl+1),vsopw(2*mxprj,mxl+1)
  integer, intent(in) :: iout
+
+!Input/output variables
+ type(warnings_t), intent(inout) :: warns
 
 !Output variables
  integer, intent(out) :: ifail
@@ -246,6 +251,7 @@
            write(iout,'(a,3i4,1p,2e16.8)') 'run_diag: lschvkbb ERROR', &
 &                iprj,ll,ierr,epa(iprj,l1,ikap),etest
          end if
+         if(ierr/=0) call warn(warns,wrn_diag_lschvkbb,ll,ikap,iprj)
 
          nnp=nnp+1
        else
@@ -272,6 +278,7 @@
            write(iout,'(a,4i4,1p,2e16.8)') 'run_diag: lschvkbbe ERROR', &
 &                iprj,nnp,ll,ierr,epa(iprj,l1,ikap),etest
          end if
+         if(ierr/=0) call warn(warns,wrn_diag_lschvkbbe,ll,ikap,iprj)
        end if !epa<0 (bound or not)
 
        call lm_interp(rr(1:mchf),uu(1:mchf),mchf,rm,uq)

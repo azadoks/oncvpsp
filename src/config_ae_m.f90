@@ -94,7 +94,7 @@
  subroutine aeatom_cached(cache,irel,c_light,nkap,na,la,ea,fa,nc,ncv,it, &
 &                         rhoc,rho,rr,vi,zz,mmax,adams,iexc,etot,eterm,res, &
 &                         ierr, &
-&                         iout,ifail)
+&                         warns,iout,ifail)
 
 !! aeatom, or the copy of its earlier solution with the same inputs. The
 !! reference configuration recurs as test configuration 0, at both levels
@@ -131,10 +131,12 @@
 !! @param res  residual of the screening potential (ae_residual)
 !! @param ierr  0 on success; the non-zero values differ by routine:
 !!              that of aeatom (failure_m)
+!! @param warns  the warnings, to which it adds its own (failure_m)
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
+ use failure_m, only: warnings_t
  use aeatom_m, only: aeatom
  use ae_scf_m, only: ae_floor_warning
  use adams_m, only: adams_t
@@ -149,6 +151,7 @@
  integer, intent(in) :: iout
 
 !Input/output variables
+ type(warnings_t), intent(inout) :: warns
  type(ae_cache_t), intent(inout) :: cache
  integer, intent(inout) :: ierr
  real(dp), intent(inout) :: ea(mxstate,nkap)
@@ -180,7 +183,7 @@
      eterm(:)=ce%eterm
      res=ce%res
      ierr=0
-     if(res>ae_tolres) call ae_floor_warning(res,ae_tolres,iout)
+     if(res>ae_tolres) call ae_floor_warning(res,ae_tolres,warns,iout)
      return
    end associate
  end do
@@ -188,7 +191,8 @@
  allocate(vfree(mmax))
  vfree(:)=0.0d0
  call aeatom(irel,c_light,nkap,na,la,ea,fa,nc,ncv,it,rhoc,rho, &
-&            rr,vi,zz,mmax,adams,iexc,etot,eterm,res,ierr,vfree,.false.,iout, &
+&            rr,vi,zz,mmax,adams,iexc,etot,eterm,res,ierr,vfree,.false.,warns, &
+&            iout, &
 &            ifail)
  if(ifail/=0) return
  deallocate(vfree)
@@ -221,7 +225,7 @@
 
  subroutine run_config_ae(cache,jj,cnf,nc,rr,zz,mmax,adams,iexc,ea,irel, &
 &                         c_light, &
-&                         nkap,aec,iout,ifail)
+&                         nkap,aec,warns,iout,ifail)
 
 !! solves the all-electron atom in the maximally-ionized and excited states
 !! of test configuration jj, the all-electron half of the test-configuration
@@ -244,10 +248,12 @@
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param nkap  number of kappas per l: 1, or 2 for irel=2
 !! @param aec  the all-electron half of configuration jj
+!! @param warns  the warnings, to which it adds its own (failure_m)
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
+ use failure_m, only: warnings_t
  use boundstate_m, only: boundstate
  use input_m, only: config_t
  use kappa_m, only: kap_count, kap_of
@@ -263,6 +269,7 @@
  integer, intent(in) :: iout
 
 !Input/output variables
+ type(warnings_t), intent(inout) :: warns
  type(ae_cache_t), intent(inout) :: cache
 
 !Output variables
@@ -350,7 +357,7 @@
  call aeatom_cached(cache,irel,c_light,nkap,nat,lat,eat(1,1,2),fat(1,2), &
 &                   nc,nc+nvt,it,rhoc,rho,rr,vfull,zz,mmax,adams,iexc,eaetst, &
 &                   eterm, &
-&                   res,ierr,iout,ifail)
+&                   res,ierr,warns,iout,ifail)
  if(ifail/=0) return
  if(ierr/=0) then
    call store_results
@@ -400,7 +407,7 @@
  call aeatom_cached(cache,irel,c_light,nkap,nat,lat,eat(1,1,3),fat(1,3), &
 &                   nc,nc+nvt,it,rhoc,rho,rr,vfull,zz,mmax,adams,iexc,eaetst, &
 &                   eterm, &
-&                   res,ierr,iout,ifail)
+&                   res,ierr,warns,iout,ifail)
  if(ifail/=0) return
  if(ierr/=0) then
    call store_results
@@ -432,19 +439,25 @@
 
  end subroutine run_config_ae
 
- subroutine config_ae_warning(jj,irel,aec,iout)
+ subroutine config_ae_warning(jj,irel,aec,warns,iout)
 !! prints the warning run_config_ps gives when the all-electron atom for test
 !! configuration jj failed
 !!
 !! @param jj  index of the configuration (1 for the reference)
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param aec  its all-electron half (run_config_ae)
+!! @param warns  the warnings, to which it adds its own (failure_m)
 !! @param iout  unit of the text output
 
+ use failure_m, only: warnings_t, warn, wrn_config_ae_scf, &
+&                   wrn_config_ae_lschfb, wrn_config_ae_ldiracfb
 !Input variables
  integer, intent(in) :: jj,irel
  type(ae_config_t), intent(in) :: aec
  integer, intent(in) :: iout
+
+!Input/output variables
+ type(warnings_t), intent(inout) :: warns
 
 !Local variables
  integer :: ll
@@ -463,20 +476,24 @@
    else
      write(iout,'(a)') 'run_config: WARNING self-consistency failed to converge'
    end if
+   call warn(warns,wrn_config_ae_scf,idx=jj)
  else if(aec%ist>=2) then
    ll=aec%lat(aec%kerr)
    if(irel/=2) then
      write(iout,'(/a,3i4)') &
 &         'runconfig: WARNING lschfb convergence ERROR n,l,iter=', &
 &         aec%nat(aec%kerr),ll,aec%it
+     call warn(warns,wrn_config_ae_lschfb,ll,idx=jj)
    else if(aec%ist==2) then
      write(iout,'(/a,4i4)') &
 &         'runconfig: WARNING ldiracfb convergence ERROR n,l,kap,ierr=', &
 &         aec%nat(aec%kerr),ll,-(ll+1),aec%ierr
+     call warn(warns,wrn_config_ae_ldiracfb,ll,1,jj)
    else
      write(iout,'(/a,4i4)') &
 &         'runconfig: WARNING ldiracfb convergence ERROR n,l,kap,iter=', &
 &         aec%nat(aec%kerr),ll,ll,aec%it
+     call warn(warns,wrn_config_ae_ldiracfb,ll,2,jj)
    end if
  end if
  return

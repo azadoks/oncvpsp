@@ -72,7 +72,7 @@
 &  'i core.budget.fill', 'r core.budget.cpoly', 'r core.budget.martins', &
 &  'r core.budget.ecut_needed', 'r core.budget.r_s6', &
 &  'r core.budget.mismatch', 'r core.budget.crad', 'i core.budget.cfill', &
-&  'r core.budget.cmis']
+&  'r core.budget.cmis', 'i warnings.nwarn', 'i warnings.rec']
 
 !> a field copied out of the results: its values, flat, and its shape
  type :: field_t
@@ -646,6 +646,7 @@
 
  use failure_m, only: fail_input, failed, msg_c_field, msg_c_no_results
  use, intrinsic :: iso_fortran_env, only: error_unit
+ use failure_m, only: mxwarn
 
 !Input variables
  type(handle_t), intent(in) :: hh
@@ -897,6 +898,10 @@
      else
        call put(ff,[integer ::])
      end if
+   case('warnings.nwarn')
+     call put(ff,hh%psp%warnings%nwarn)
+   case('warnings.rec')
+     call put(ff,hh%psp%warnings%rec(:,1:min(hh%psp%warnings%nwarn,mxwarn)))
    case('core.budget.cmis')
      if(allocated(bb%cmis)) then
        call put(ff,bb%cmis)

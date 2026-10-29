@@ -27,6 +27,7 @@
  use constants_m, only: dp, mxstate, mxkap, mxcnf
  use adams_m, only: adams_t
  use config_ae_m, only: ae_config_t, ae_cache_t
+ use failure_m, only: warnings_t
  implicit none
  private
  public :: ae_state_t, solve_ae
@@ -71,6 +72,8 @@
    type(ae_config_t) :: aec(mxcnf)
 !> the all-electron atoms solved for the configurations
    type(ae_cache_t) :: cache
+!> the warnings of solve_ae
+   type(warnings_t) :: warn
  end type ae_state_t
 
  contains
@@ -104,6 +107,7 @@
  use exc_libxc_m, only: exc_libxc_info
  use ae_file_m, only: read_ae_file
  use config_ae_m, only: aeatom_cached
+ use failure_m, only: stage_ae
 
 !Input variables
  integer, intent(in) :: irel,nkap,istage
@@ -123,6 +127,7 @@
 
  ierr=0
  ifail=0
+ ae%warn%stage=stage_ae
  ae%irel=irel
  ae%nkap=nkap
  ae%c_light=c_light_of(inp%c_light)
@@ -145,7 +150,7 @@
    call aeatom_cached(ae%cache,irel,ae%c_light,nkap,inp%na,inp%la,ae%ea, &
 &                     inp%fa,inp%nc,inp%nc+inp%nv,ae%it,ae%rhoc,ae%rho,ae%rr, &
 &                     ae%vfull,inp%zz,ae%mmax,ae%adams,inp%iexc,ae%etot, &
-&                     ae%eterm,ae%res,ierr,iout,ifail)
+&                     ae%eterm,ae%res,ierr,ae%warn,iout,ifail)
    if(ifail/=0) return
    if(ierr/=0) return
  end if

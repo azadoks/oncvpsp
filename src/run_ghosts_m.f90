@@ -27,7 +27,7 @@
 
  subroutine run_ghosts(lmax,la,ea,nc,nv,lloc,rc,qmsbf, &
 &                    vlocpw,vkbpw,evkb,nproj,rr,vp,mmax,adams, &
-&                    ikap,gh,iout,ifail)
+&                    ikap,gh,warns,iout,ifail)
 
 !! Two tests for ghosts;  The local potential is terminated by a hard wall
 !! barrier at a radius of mbfact*rc, presently 3*rc.  A basis set is formed
@@ -82,11 +82,14 @@
 !!            GHOST(+) states, the basis of least <r>/rc above the
 !!            reference (<r>/rc divided by a weight rising from 0 at 0.025
 !!            Ha above it to 1 at 0.05 Ha), and each l's basis
+!! @param warns  the warnings, to which it adds its own (failure_m)
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: fail_numerical, failed, msg_ghosts_dsyev
+ use failure_m, only: fail_numerical, failed, msg_ghosts_dsyev, warnings_t, &
+&                   warn, wrn_ghost_lschvkbb, wrn_ghost_minus, wrn_ghost_plus, &
+&                   wrn_ghost_basis_cut, wrn_ghost_basis_full
  use constants_m, only: dp, pi, mxstate, mxl, mxlin, mxprj
  use pieces_m, only: piecewise_t, pw_integral, pw_value, pw_resample, &
 &                    pw_free, pw_node_values
@@ -109,6 +112,7 @@
  integer, intent(in) :: ikap,iout
 
 !Input/output variables
+ type(warnings_t), intent(inout) :: warns
  type(ghosts_t), intent(inout) :: gh
 
 !Output variables
@@ -226,6 +230,7 @@
    do jj=1,npgh
      write(iout,'(/4x,i4,2f16.6,f10.2,a)') lpgh(jj),rpgh(jj), &
 &          epgh(jj),cpgh(jj),'  WARNING - GHOST(+)'
+     call warn(warns,wrn_ghost_plus,lpgh(jj),ikap)
    end do
  end if
 
@@ -307,6 +312,7 @@
 &              emin,' Ha'
        ecut=emin
        gh%basis(l1,ikap)=1
+       call warn(warns,wrn_ghost_basis_cut,ll,ikap)
      end if
      nbas=jj-1
      exit
@@ -330,6 +336,7 @@
    write(iout,'(/2a,i0,a,i0)') 'run_ghosts: WARNING basis full below the', &
 &          ' cutoff, l=',ll,', nbmax=',nbmax
    gh%basis(l1,ikap)=2
+   call warn(warns,wrn_ghost_basis_full,ll,ikap)
  end if
  gh%ecut(l1,ikap)=ecut
  do iprj=1,nprj
@@ -378,6 +385,7 @@
    if(ierr/=0) then
      write(iout,'(a,3i4,2f12.6)') 'run_ghosts: lschvkbb ERROR', &
 &            nn,ll,ierr,ea(nc+kk),ee
+     call warn(warns,wrn_ghost_lschvkbb,ll,ikap,nn)
    end if
 
    do ii=1,10
@@ -483,6 +491,7 @@
  kk=gh%nminus(l1,ikap)+1
  gh%nminus(l1,ikap)=kk
  if(kk<=mxghost) gh%minus(kk,l1,ikap)=eg
+ call warn(warns,wrn_ghost_minus,l1-1,ikap)
  end subroutine add_minus
 
  end subroutine run_ghosts

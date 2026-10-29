@@ -61,7 +61,8 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
- use failure_m, only: fail_not_found, failed, msg_confine_free_atom
+ use failure_m, only: fail_not_found, failed, msg_confine_free_atom, &
+&                    warnings_t
  use aeatom_m, only: aeatom
  use psatom_m, only: psatom
  use confine_summary_m, only: confine_summary_t
@@ -86,6 +87,8 @@
  integer, intent(out) :: ifail
 
 !Local variables
+!the warnings of the atoms, which the text output reports
+ type(warnings_t) :: warns
  integer :: na_ps(mxstate),la_ps(mxstate),nprj(mxlin+1)
  integer :: ik,ii,ierrae,ierrps,itae,itps,nkap
  real(dp) :: fa_ps(mxstate,2),etae(0:nk),etps(0:nk)
@@ -132,7 +135,7 @@
    call aeatom(irel,c_light,nkap,na,la,eaw(:,1:nkap),fa,nc, &
 &              nc+nv,itae,rhoc,rhoa,rr,vi,zz,mmax,adams,iexc,etae(ik),eterm, &
 &              res, &
-&              ierrae,vext,.true.,iout,ifail)
+&              ierrae,vext,.true.,warns,iout,ifail)
    if(ifail/=0) return
    eigae(:,:,ik)=eaw(:,:)
    if(ik==0 .or. ierrps/=0) then
@@ -143,7 +146,8 @@
    call psatom(na_ps,la_ps,ea_ps(:,1:nkap),fa_ps,nv,itps,pf%pot%rhomod(:,1), &
 &              rhops,rr,pf%pot%rcmax,mmax,adams,iexc,c_light,etps(ik),nprj, &
 &              pf%pot%vpuns,pf%pot%lloc,pf%pot%vlocpw,pf%pot%vkbpw(:,:, &
-&              1:nkap),pf%pot%evkb(:,:,1:nkap),ierrps,nkap,vext,iout,ifail)
+&              1:nkap),pf%pot%evkb(:,:,1:nkap),ierrps,nkap,vext,warns,iout, &
+&              ifail)
    if(ifail/=0) return
    eigps(1:nv,:,ik)=ea_ps(1:nv,:)
    if(ierrae/=0) write(iout,'(a,1p,e24.16,a)') 'wall_failed',kwall(ik),' ae'

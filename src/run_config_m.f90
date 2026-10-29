@@ -27,7 +27,7 @@
 
  subroutine run_config_ps(jj,aec,nc,rhov,rhomod,rr,rcmax,mmax,adams,iexc, &
 &                         etot,epstot,nproj,vpuns,lloc,vlocpw,vkbpw,evkb, &
-&                         irel,c_light,nkap,ntc,itc,etc,dtc,iout,ifail)
+&                         irel,c_light,nkap,ntc,itc,etc,dtc,warns,iout,ifail)
 
 !! self-consistent pseudoatom calculation for test configuration jj, compared
 !! with the all-electron results for the reference and test configurations
@@ -64,10 +64,12 @@
 !! @param dtc  the all-electron and pseudo total-energy differences from
 !!             the reference configuration and their difference, the
 !!             excitation error (Ha) (output)
+!! @param warns  the warnings, to which it adds its own (failure_m)
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
+ use failure_m, only: warnings_t, warn, wrn_config_ps
  use config_ae_m, only: config_ae_warning, ae_config_t
  use constants_m, only: dp, mxstate, mxl, mxlin, nrhomod, nlev, mxprj
  use pieces_m, only: piecewise_t
@@ -89,6 +91,9 @@
  real(dp), intent(in) :: rhomod(mmax,nrhomod)
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1,nkap)
  integer, intent(in) :: iout
+
+!Input/output variables
+ type(warnings_t), intent(inout) :: warns
 
 !Output variables
  integer, intent(out) :: ntc,itc(3,2*mxstate)
@@ -139,7 +144,7 @@
  etc(:,:)=0.0d0
  dtc(:)=0.0d0
  if(aec%ist/=0) then
-   call config_ae_warning(jj,irel,aec,iout)
+   call config_ae_warning(jj,irel,aec,warns,iout)
    return
  end if
 
@@ -174,7 +179,7 @@
 
  call psatom(natp,latp,eatp,fatp,nvt,it,rhocps,rho, &
 &           rr,rcmax,mmax,adams,iexc,c_light,etsttot,nproj,vpuns,lloc, &
-&           vlocpw,vkbpw,evkb,ierr,nkap,vfree,iout,ifail)
+&           vlocpw,vkbpw,evkb,ierr,nkap,vfree,warns,iout,ifail)
  if(ifail/=0) return
 
  if(ierr/=0) then
@@ -188,6 +193,7 @@
 &          ' stg. 1', &
 &          ' WARNING no output for configuration',jj
    end if
+   call warn(warns,wrn_config_ps,idx=jj)
    deallocate(rho,rhocps,vfree)
    return
  end if
@@ -202,7 +208,7 @@
 
  call psatom(natp,latp,eatp,fatp,nvt,it,rhocps,rho, &
 &           rr,rcmax,mmax,adams,iexc,c_light,etsttot,nproj,vpuns,lloc, &
-&           vlocpw,vkbpw,evkb,ierr,nkap,vfree,iout,ifail)
+&           vlocpw,vkbpw,evkb,ierr,nkap,vfree,warns,iout,ifail)
  if(ifail/=0) return
 
  if(ierr/=0) then
@@ -216,6 +222,7 @@
 &          ' stg. 2', &
 &          ' WARNING no output for configuration',jj
    end if
+   call warn(warns,wrn_config_ps,idx=jj)
    deallocate(rho,rhocps,vfree)
    return
  end if

@@ -136,7 +136,9 @@ int oncv_dims(void *handle, oncv_dims_t *dims);
 /* The results are copied out by field, named after the components of the
  * Fortran results (src/results_m.f90; pot.* src/pseudo_m.f90, tests.*
  * src/test_results_m.f90; core.* the model core's parameters,
- * src/results_m.f90), in Fortran order: the first index fastest, so
+ * src/results_m.f90; warnings.rec the warnings in the order written, 5
+ * by nwarn (at most 64): the warning, its stage, l, ikap and index, as
+ * failure_m's wrn_* lists them), in Fortran order: the first index fastest, so
  * a C caller indexes shp[0] innermost, and numpy reshapes with order='F'.
  * The sizes in the Fortran comments use oncv_dims and constants_m
  * (mxprj=5, mxl=3, mxstate=30, mxcnf=5, nrhomod=5, nerrlv=7, mxkap=2,
