@@ -431,7 +431,10 @@ being the routine's last argument (0 on success). The kinds are the
 `fail_internal`, whose comments say which is which; a binding raises a
 different exception for each. A caller returns the `ifail` it got,
 unchanged, and writes nothing more: a library routine passes `ifail` on
-and never stops. Only the programs, the command line and `oncvpsp_main`
+and never stops. `scripts/check_conventions.py` (rule `propagate`) checks
+that an `if(ifail/=0)` does nothing but return, after at most closing a
+file, deallocating, zeroing an output or folding a callback's failure in
+(`if(jfail/=0) ifail=jfail`). Only the programs, the command line and `oncvpsp_main`
 stop, with `error stop 1`, not `stop`, on any kind, so that the exit status
 is non-zero and scripts and CTest see the failure. A check of a condition
 the code has just established, or that `check_data` has already

@@ -263,6 +263,7 @@
 
  use constants_m, only: dp
  use logmesh_m, only: lm_origin
+ use failure_m, only: fail_input
 
 !Input variables
  integer, intent(in) :: mmax,nrl
@@ -275,12 +276,17 @@
 !Output variables
  integer, intent(out) :: ifail
 
+!Local variables
+ integer :: ierr
+
  ifail=0
  if(rl(1)>=rr(1)) return
- call lm_origin(rr,ff,mmax,fl(1),ifail)
- if(ifail/=0) then
+ call lm_origin(rr,ff,mmax,fl(1),ierr)
+ if(ierr/=0) then
    write(iout,'(/a)') &
 &       'origin: ERROR log mesh too short for the value at the origin'
+   ifail=fail_input
+   return
  end if
  return
  end subroutine origin

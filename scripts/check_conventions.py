@@ -44,6 +44,11 @@ The rules (doc/coding_standards.md and doc/consistency_audit.md):
             constants_m
   names     module x_m is in x_m.f90; the public procedures of a module in
             the prefix table of doc/coding_standards.md start with its prefix
+  propagate an if(ifail/=0) (any name ending in fail) is followed by
+            return, after at most the folding of another failure
+            (ifail=jfail), zeroed outputs, close and deallocate: no message
+            (the failure's site writes it), no call, no new kind; a block
+            ends in return unless the procedure ends with it
 """
 
 import argparse
@@ -338,6 +343,72 @@ def header_matches(params, args):
     return ii == len(args)
 
 
+RE_FAILED = re.compile(r"if\s*\(\s*([\w%]*fail)\s*/=\s*0\s*\)\s*(.*)$", re.I)
+
+
+def propagation(stmts, kk):
+    """The faults of the handling of a failure at statement kk, if it tests
+    one (rule propagate): what it does other than pass the failure up."""
+    mm = RE_FAILED.match(stmts[kk][1])
+    if not mm:
+        return []
+    name, action = mm.group(1).lower(), mm.group(2).strip().lower()
+
+    def allowed(st):
+        if st in ("return", "error stop 1"):
+            return True
+        if re.match(r"(close|deallocate)\s*\(", st):
+            return True
+        am = re.match(r"([\w%]+)\s*=\s*(.*)$", st)
+        if not am:
+            return False
+        lhs, rhs = am.group(1), am.group(2).strip()
+        if lhs.endswith("fail"):
+            # folding another failure in, not a new kind
+            return rhs.endswith("fail") and rhs != lhs
+        return re.fullmatch(r"0(\.0*)?(d0)?|\.false\.", rhs) is not None
+
+    def ends_procedure(jj):
+        rest = [s.lower() for _, s in stmts[jj + 1 :]]
+        return all(re.fullmatch(r"return|end\s*associate", s) for s in rest)
+
+    def returns_next(jj, lhs):
+        nxt = stmts[jj + 1][1].lower() if jj + 1 < len(stmts) else ""
+        return re.fullmatch(
+            r"if\s*\(\s*%s\s*/=\s*0\s*\)\s*return" % re.escape(lhs), nxt
+        )
+
+    if action != "then":
+        if allowed(action):
+            if action == "return" or action == "error stop 1":
+                return []
+            fm = re.match(r"([\w%]+fail)\s*=", action)
+            if fm and returns_next(kk, fm.group(1)):
+                return []
+            if not ends_procedure(kk):
+                return [f"if({name}/=0) {action[:30]} goes on"]
+            return []
+        return [f"if({name}/=0) {action[:30]}"]
+    faults, depth, last = [], 0, None
+    for jj in range(kk + 1, len(stmts)):
+        st = stmts[jj][1].lower()
+        if re.match(r"if\s*\(.*\)\s*then$", st):
+            depth += 1
+        if re.match(r"end\s*if\b", st):
+            if depth == 0:
+                if last not in ("return", "error stop 1") and not ends_procedure(jj):
+                    faults.append(f"if({name}/=0) block goes on")
+                return faults
+            depth -= 1
+        if depth == 0 and re.match(r"else\b", st):
+            faults.append(f"if({name}/=0) with else")
+            return faults
+        if not allowed(st):
+            faults.append(f"if({name}/=0) then {st[:30]}")
+        last = st
+    return faults
+
+
 def check_file(path, rel):
     """The findings of one file: (rule, file, procedure, detail)."""
     found = []
@@ -538,6 +609,9 @@ def check_file(path, rel):
                                 f"{arg} of {cm.group(1).lower()} unused",
                                 ln,
                             )
+            if procedure and in_module:
+                for detail in propagation(stmts, kk):
+                    add("propagate", unit, detail, ln)
             if path.name != "logmesh_m.f90" and re.search(
                 r"\blog\s*\(\s*rr\s*\([^()]*\)\s*/\s*rr\s*\(", low
             ):

@@ -360,9 +360,10 @@ So the interface is a hybrid:
       map onto pyoncvpsp's Stage, Scope and Attribution. Not a
       polymorphic `error_t`: the required `ifail` keeps the compiler
       checking every call.
-- [ ] A rule in `scripts/check_conventions.py` that flags any statement
-      other than `return` right after `if(ifail/=0)`, to catch a caller
-      that does not pass a failure on.
+- [x] A rule in `scripts/check_conventions.py` (`propagate`) that flags
+      any statement other than `return` right after `if(ifail/=0)`, to
+      catch a caller that does not pass a failure on. It found outmesh's
+      `origin` passing `lm_origin`'s `ierr` on as its `ifail`.
 - [ ] A C header for it, and a shared library target (`liboncvpsp`) in
       CMake.
 - [ ] A C test in `tests/` that runs one of the reference inputs through
