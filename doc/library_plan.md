@@ -250,6 +250,33 @@ namespace (see [Coding standards](coding_standards.md)).
 - [x] `scripts/check_interfaces.sh` removed; fortitude's rules against
       external procedures (C091, C092) are on.
 
+### Phase 4b: the stages of the run
+
+`oncvpsp_run` is split into stages that a caller can run on their own
+and repeat, each from the results of the ones before, which it does not
+change; `oncvpsp_run` calls them in order, with the same text output. The
+order follows what the optimizer would reuse first.
+
+- [x] `complete_input(inp,cnf,iout,ifail)` (`oncvpsp_run_m`): the input as
+      the stages take it, the configurations, `check_data`, and the
+      default core radii.
+- [x] `solve_ae` (`ae_state_m`): the all-electron atom, solved or read
+      (istage 2), in an `ae_state_t` that holds what the all-electron
+      data file holds, and the cache of the test configurations' atoms.
+- [x] `optimize_channel` (`channel_m`): one l's channel (both kappas)
+      from the `ae_state_t` and the channel's inputs alone, in a
+      `channel_t`: the projectors' states, the optimized pseudo-waves,
+      the semi-local potentials and the convergence curves.
+      `tests/unit/test_stages.f90` solves the atom once, runs every
+      channel twice from it, and checks them against each other and the
+      whole run bit for bit (nr, sr, fr, and a local channel).
+- [ ] `run_vkb` split into the local potential and each channel's
+      projectors, so that a channel changed alone changes only its own
+      projectors (with `lloc=4`).
+- [ ] The coupled block, from the valence densities and the model core to
+      the tests, re-runnable on the earlier stages with another model
+      core (icmod, fcfact, rcfact).
+
 ### Phase 5: the C interface
 
 A `bind(C)` derived type has C's layout, but its components can only be

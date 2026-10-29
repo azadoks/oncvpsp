@@ -103,6 +103,18 @@ foreach (run_test IN ITEMS "0:nr:08_O" "1:sr:14_Si" "2:r:14_Si" "1:sr:14_Si_bcw"
     oncvpsp_add_test(unit unit_run ${rel} ${name} test_run ${irel} "${data}/${name}.dat")
 endforeach ()
 
+# Unit test of the stages of oncvpsp_run on their own (test_stages.f90): the all-electron atom once,
+# every channel twice from it, bit for bit the same and the same as the whole run's; nr, sr, fr,
+# and a local channel (lloc 2, 07_N_dl)
+oncvpsp_unit_executable(stages)
+foreach (stage_test IN ITEMS "0:nr:08_O" "1:sr:14_Si" "2:r:14_Si" "0:nr:07_N_dl")
+    string(REPLACE ":" ";" stage_test "${stage_test}")
+    list(GET stage_test 0 irel)
+    list(GET stage_test 1 rel)
+    list(GET stage_test 2 name)
+    oncvpsp_add_test(unit unit_stages ${rel} ${name} test_stages ${irel} "${data}/${name}.dat")
+endforeach ()
+
 # Unit test of oncvpsp_run in several threads at once (test_run_threads.f90): each case alone, then
 # all of them twice over concurrently, which must give the same results and text bit for bit, so the
 # library keeps no state between or across runs; the cases differ in irel, c_light and the

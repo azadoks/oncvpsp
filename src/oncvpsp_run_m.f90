@@ -23,7 +23,7 @@
 
  implicit none
  private
- public :: oncvpsp_run
+ public :: oncvpsp_run, complete_input
 
 
  contains
@@ -50,11 +50,11 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
  use failure_m, only: fail_convergence, fail_input
- use config_ae_m, only: run_config_ae, aeatom_cached, ae_config_t, &
-&                       ae_cache_t
- use ae_file_m, only: write_ae_file, read_ae_file
+ use config_ae_m, only: run_config_ae, ae_config_t
+ use ae_file_m, only: write_ae_file
+ use ae_state_m, only: ae_state_t, solve_ae
+ use channel_m, only: channel_t, optimize_channel, ncurve
  use ps_file_m, only: write_ps_file
- use exc_libxc_m, only: exc_libxc_info
  use vout_m, only: vout
  use sr_so_r_m, only: sr_so_r
  use ionic_tail_m, only: coulomb_tail, ionic_screening
@@ -63,9 +63,7 @@
  use modcore3_m, only: modcore3
  use modcore_budget_m, only: modcore_budget, modcore_budget_table, &
 &                            modcore_probes
- use run_optimize_m, only: run_optimize
  use vloc_cutoff_m, only: vloc_cutoff
- use check_data_m, only: check_data
  use diagout_m, only: diagout
  use gnu_script_m, only: gnu_script
  use run_config_m, only: run_config_ps
@@ -74,19 +72,13 @@
  use run_phsft_m, only: run_phsft
  use run_plot_m, only: run_plot
  use run_vkb_m, only: run_vkb
- use kappa_m, only: kap_count, kap_of, kap_j_share
  use modcore_m, only: core_pieces_smooth
- use well_mesh_m, only: well_mesh_t
  use ps_valence_m, only: valence_densities, unscreen_potentials, &
 &                       coulomb_switch
- use ae_projectors_m, only: ae_bound_projectors, ae_well_projectors, &
-&                           ae_delta_window, ae_overlap, ecut_weights
  use constants_m, only: nerrdg, nerrlv
  use input_echo_m, only: write_atom, write_lmax, write_icmod, write_epsh, &
 &                        write_mesh, fx, vkb_head, vkb_line
- use relativity_m, only: c_light_of
- use main_setup_m, only: main_names, &
-&                        make_log_mesh, write_reference_results, &
+ use main_setup_m, only: main_names, write_reference_results, &
 &                        core_radius_points
  use constants_m, only: mxprj, mxcnf
  use pieces_m, only: pw_free
@@ -94,7 +86,7 @@
  use constants_m, only: dp, mxl, mxlin, mxstate, mxkap, nrhomod
  use pieces_m, only: piecewise_t
  use results_m, only: results_t
- use adams_m, only: adams_t, adams_init
+ use adams_m, only: adams_t
 
 !Input variables
  integer, intent(in) :: irel,istage
@@ -114,10 +106,9 @@
 
 !Local variables
  integer :: ii,ierr,it,nq
- integer :: jj,ll,l1
+ integer :: jj,l1
  integer :: mmax,nlim,nrl
- integer :: iprj,nkap,nnwell,npsh
- integer :: ikap,kap,mkap
+ integer :: nkap,npsh
  integer,allocatable :: npa(:,:)
 !
  integer :: irc(mxlin+1)
@@ -139,13 +130,13 @@
  real(dp) :: c_light
  real(dp) :: cvloc(2,nerrlv),vlchk
  real(dp) :: eterm(4),rphs(4)
- real(dp) :: fj,rcore
+ real(dp) :: rcore
 !
  real(dp) :: ea(mxstate,mxkap)
  real(dp) :: qmsbf(mxlin+1),rc_in(mxlin+1)
  real(dp) :: epstot
 
- real(dp), allocatable :: evkb(:,:,:),cvgplt(:,:,:,:,:),qq(:,:)
+ real(dp), allocatable :: evkb(:,:,:),cvgplt(:,:,:,:,:)
  real(dp), allocatable :: ecurve(:,:,:,:,:)
 !the r-space less the Fourier kinetic energy of each pseudo-wave
 !(run_optimize)
@@ -160,19 +151,9 @@
  real(dp) :: ecutw
 !weights of the pseudo-waves' curves in the weighted cutoff (budget_cutoff)
  real(dp), allocatable :: wcurve(:,:,:)
-! the points of a convergence curve: run_optimize's q grid,
-! 1 + 24 rc max(2 q of the last basis function, 2 qcut, 20), ~2400 for
-! nbas=14 and less than 3000 for qcut up to 15 at rc up to 4; a buffer,
-! with room for qcut rc up to 160
- integer, parameter :: ncurve=8000
  real(dp), allocatable :: rr(:)
  real(dp), allocatable :: rho(:),rhoc(:),rhot(:)
- real(dp), allocatable :: uu(:,:),up(:,:),vwell(:,:)
-!> whether each projector of an l is a well state, confined by its well,
-!> and of each l
- logical :: inwell(mxprj)
-!> each projector's confined well state on its continued mesh (well_mesh_m)
- type(well_mesh_t) :: wmesh(mxprj)
+ real(dp), allocatable :: uu(:,:),up(:,:)
  logical, allocatable :: wellprj(:,:)
  real(dp), allocatable :: vp(:,:,:),vfull(:),vkb(:,:,:,:),pswf(:,:,:,:)
  real(dp), allocatable :: vpuns(:,:)
@@ -186,22 +167,10 @@
  integer, allocatable :: lprobe(:)
  integer :: nprobe
  real(dp), allocatable :: epa(:,:,:)
- real(dp), allocatable :: uua(:,:,:),upa(:,:,:)
  real(dp), allocatable :: dlta(:,:,:,:),vrloc(:,:),pswfx(:,:,:,:)
  type(piecewise_t), allocatable :: vkbpw(:,:,:)
  type(piecewise_t) :: vlocpw
  type(piecewise_t) :: corepw(nrhomod)
- logical :: well_tail_free
-!> the cutoff of the pseudo-waves for icmod 6, 7 (budget_cutoff): 0 the
-!> largest of the ground-state waves, 1 their weighted mean, 2 the largest
-!> of all
-!> the tail of the well states (0 "well", 1 "free", 2 "confined"), and the
-!> n of each l's first well state with "confined" (0 for the default)
-!> the normalization of the well states: 0 that of well_tail, 1 all
-!> space, 2 inside rc; and whether they are normalized inside rc
- logical :: well_norm_rc
-!> the weight of the first pseudo-wave of each l with no occupied state in
-!> the cutoff of the pseudo-waves (ecut_weight; negative for 2(2l+1))
  real(dp), allocatable :: chix(:,:,:,:)
 !fully-relativistic only: scalar-relativistic and spin-orbit projectors, and
 !the semi-local potentials for psmlout_r
@@ -211,8 +180,9 @@
 
 !all-electron results for the test configurations (see run_config_ae)
  type(ae_config_t) :: aec(mxcnf)
-!the all-electron atoms of this run, for the test configurations
- type(ae_cache_t) :: cache
+!the all-electron atom (ae_state_m) and a channel (channel_m)
+ type(ae_state_t) :: ae
+ type(channel_t) :: chan
 
 
 !names in the messages: the equation solved and the program
@@ -222,7 +192,6 @@
 
  ifail=0
  call main_names(irel,istage,nkap,treatment,pname,exe)
- well_tail_free=inp%well_tail==1
 !the free tail has no finite norm over all space
  if(inp%well_tail==1 .and. inp%well_norm==1) then
    write(iout,'(/a)') &
@@ -231,7 +200,6 @@
    ifail=fail_input
    return
  end if
- well_norm_rc=inp%well_norm==2 .or. (inp%well_norm==0 .and. inp%well_tail/=0)
  if(inp%well_tail/=2 .and. any(inp%well_n(:)>0)) then
    write(iout,'(/a)') &
 &       'oncvpsp_run: ERROR well_n is for well_tail = "confined" only'
@@ -239,33 +207,31 @@
    return
  end if
 
-!the configurations, the reference first, the core states in each
- cnf(:)=inp%cnf(:)
- cnf(1)%nv=inp%nv
- cnf(1)%na(:)=inp%na(:)
- cnf(1)%la(:)=inp%la(:)
- cnf(1)%fa(:)=inp%fa(:)
- do jj=2,inp%ncnf+1
-   cnf(jj)%na(1:inp%nc)=inp%na(1:inp%nc)
-   cnf(jj)%la(1:inp%nc)=inp%la(1:inp%nc)
-   cnf(jj)%fa(1:inp%nc)=inp%fa(1:inp%nc)
- end do
-
- if(inp%icmod==0) then
-   inp%fcfact=0.0d0
- end if
+ call complete_input(inp,cnf,iout,ifail)
+ if(ifail/=0) return
 
 !icmod=4 coarse-search grids: min, max, step
  fcgrid=[inp%fcfact_min,inp%fcfact_max,inp%fcfact_step]
  rcgrid=[inp%rcfact_min,inp%rcfact_max,inp%rcfact_step]
 
- call check_data(inp,fcgrid,rcgrid,iout,ifail)
+!the all-electron atom: its mesh, and the reference configuration solved
+!or read
+ call solve_ae(irel,nkap,istage,inp,cnf,ae_filename,ae,ierr,iout,ifail)
  if(ifail/=0) return
- c_light=c_light_of(inp%c_light)
-
- call make_log_mesh(irel,inp%zz,inp%amesh,inp%rr1,inp%rmax,inp%adams_order, &
-&                   al,mmax,rr,log_mesh)
- adams=adams_init(inp%adams_order)
+ if(ierr/=0) then
+   write(iout,'(/a,i0,a,i0,a,es12.4)') &
+&        'oncvpsp_run: ERROR aeatom failed for the reference '// &
+&        'configuration'// &
+&        ', ierr=',ierr,', it=',ae%it,', res=',ae%res
+   ifail=fail_convergence
+   return
+ end if
+ c_light=ae%c_light
+ al=ae%al
+ mmax=ae%mmax
+ rr=ae%rr
+ log_mesh(:)=ae%log_mesh(:)
+ adams=ae%adams
 
 !PWSCF wants an even number of mesh points (not made so when fully
 !relativistic, see doc/fr_merge_plan.md): one more, or one fewer where
@@ -288,8 +254,7 @@
 
  allocate(rho(mmax),rhoc(mmax),rhot(mmax))
  allocate(uu(mmax,2),up(mmax,2),uupsa(mmax,nkap,inp%nv))
- allocate(vwell(mmax,mxprj))
- allocate(evkb(mxprj,mxl+1,nkap),qq(mxprj,mxprj))
+ allocate(evkb(mxprj,mxl+1,nkap))
 !the projectors beyond nproj and of lloc stay 0
  evkb(:,:,:)=0.0d0
  allocate(cvgplt(2,nerrdg,mxprj,mxl+1,nkap))
@@ -306,7 +271,6 @@
  allocate(wellprj(mxprj,mxlin+1))
  wellprj(:,:)=.false.
  allocate(epa(mxprj,mxlin+1,nkap))
- allocate(uua(mmax,mxprj,nkap),upa(mmax,mxprj,nkap))
  allocate(vsr(mmax,2*mxprj,mxl+1),vso(mmax,2*mxprj,mxl+1))
  allocate(esr(2*mxprj,mxl+1),eso(2*mxprj,mxl+1))
  allocate(dlta(mmax,mxprj,mxlin+1,nkap),vrloc(mmax,nkap))
@@ -322,50 +286,18 @@
  vkb(:,:,:,:)=0.0d0
  epa(:,:,:)=0.0d0
 
-!
-! full potential atom solution
-!
- if(inp%iexc<0) then
-   call exc_libxc_info(inp%iexc,iout,ifail)
-   if(ifail/=0) return
- end if
- if(istage==2) then
-   call read_ae_file(ae_filename,irel,c_light,nkap,inp%atsym,inp%zz,inp%nc, &
-&                    inp%nv,inp%iexc,inp%na,inp%la,inp%fa,mmax,rr,inp%ncnf, &
-&                    cnf,it,etot,eterm,res,ea,rhoc,rho,vfull,aec,iout, &
-&                    ifail)
-   if(ifail/=0) return
- else
-   ierr=0
-   call aeatom_cached(cache,irel,c_light,nkap,inp%na,inp%la,ea,inp%fa, &
-&                     inp%nc,inp%nc+inp%nv,it,rhoc,rho,rr,vfull,inp%zz,mmax, &
-&                     adams, &
-&                     inp%iexc,etot,eterm,res,ierr,iout,ifail)
-   if(ifail/=0) return
-   if(ierr/=0) then
-     write(iout,'(/a,i0,a,i0,a,es12.4)') &
-&          'oncvpsp_run: ERROR aeatom failed for the reference '// &
-&          'configuration'// &
-&          ', ierr=',ierr,', it=',it,', res=',res
-     ifail=fail_convergence
-     return
-   end if
- end if
+ rhoc(:)=ae%rhoc(:)
+ rho(:)=ae%rho(:)
+ vfull(:)=ae%vfull(:)
+ ea(:,:)=ae%ea(:,:)
+ it=ae%it
+ etot=ae%etot
+ eterm(:)=ae%eterm(:)
+ res=ae%res
+ aec(:)=ae%aec(:)
 !
 !
 
-! the core radii are used as given (doc/smoothness_plan.md, R-1)
- rcmax=0.0d0
- do l1=1,inp%lmax+1
-   rcmax=max(rcmax,inp%rc(l1))
- end do
- do l1=1,inp%lmax+1
-   if(inp%rc(l1)==0.0d0) then
-     inp%rc(l1)=rcmax
-   end if
- end do
-
- inp%nproj(inp%lloc+1)=0
  rc_in(:)=inp%rc(:)
 !input value, for the echoes (modcore3 resets fcfact for icmod=4)
  fcfact_in=inp%fcfact
@@ -380,7 +312,6 @@
      write(iout,'(2i5,f8.2,1pe18.7)') inp%na(ii),inp%la(ii),inp%fa(ii),ea(ii,1)
    else if(inp%la(ii)==0) then
      write(iout,'(2i5,f8.2,1p,e18.7)') inp%na(ii),inp%la(ii),inp%fa(ii),ea(ii,1)
-     ea(ii,2)=ea(ii,1)
    else
      write(iout,'(2i5,f8.2,1p,2d18.7)') inp%na(ii),inp%la(ii),inp%fa(ii), &
 &          ea(ii, &
@@ -442,7 +373,7 @@
 !all-electron halves of the test configurations; their pseudo-atom halves
 !and all output about them come from the matching _ps.x
    do jj=1,inp%ncnf+1
-     call run_config_ae(cache,jj,cnf,inp%nc,rr, &
+     call run_config_ae(ae%cache,jj,cnf,inp%nc,rr, &
 &                       inp%zz, &
 &                       mmax,adams,inp%iexc,ea,irel,c_light,nkap,aec(jj),iout, &
 &                       ifail)
@@ -484,66 +415,26 @@
  npa(:,:)=0
  inp%nproj(inp%lloc+1)=1
  do l1=1,inp%lmax+1
-   vwell(:,:)=0.0d0
-   do jj=1,mxprj
-     wmesh(jj)%mx=0
-   end do
-   ll=l1-1
-   mkap=kap_count(nkap,ll)
-! loop on J = ll +/- 1/2 when nkap=2; fj is the weight of each J
-   do ikap=1,mkap
-     kap=kap_of(ll,ikap)
-     fj=1.0d0
-     if(nkap==2) fj=kap_j_share(ll,ikap,1.0d0)
-
-     uu(:,:)=0.0d0; qq(:,:)=0.0d0
-     if(ikap==1) inwell(:)=.false.
-
-     call ae_bound_projectors(irel,c_light,ll,kap,ikap,inp%nc,inp%nv,inp%na, &
-&                             inp%la,ea,inp%nproj(l1),it,rr,inp%zz,vfull,mmax, &
-&                             adams, &
-&                             uu,up,iprj,epa(:,l1,ikap),npa(:,l1),uua(:,:, &
-&                             ikap),upa(:,:,ikap),iout,ifail)
-     if(ifail/=0) return
-     call ae_well_projectors(irel,c_light,ll,kap,ikap,inp%nproj(l1),inp%ep(l1, &
-&                            ikap),inp%debl(l1),inp%well_n(l1), &
-&                            inp%ep_as_given,inp%well_onset,inp%well_tail, &
-&                            well_norm_rc,inp%rc(l1),irc(l1),inp%qcut(l1),rr, &
-&                            inp%zz,vfull,mmax,adams,uu,up,nnwell,iprj,epa(:, &
-&                            l1, &
-&                            ikap),npa(:,l1),uua(:,:,ikap),upa(:,:,ikap), &
-&                            vwell,inwell,wmesh,iout,ifail)
-     if(ifail/=0) return
-     call ae_delta_window(irel,c_light,ll,kap,inp%nproj(l1),epa(:,l1,ikap),rr, &
-&                         vfull,uua(:,:,ikap),upa(:,:,ikap),mmax, &
-&                         inp%rc(l1),irc(l1),l1==inp%lloc+1,dlta(:,:,l1,ikap), &
-&                         vrloc(:,ikap),iout,ifail)
-     if(ifail/=0) return
-     call ae_overlap(irel,c_light,ll,kap,inp%nproj(l1),uua(:,:,ikap),rr, &
-&                    inp%zz,mmax,inp%rc(l1),qq)
-     call run_optimize(epa(1,l1,ikap),ll,kap,irel,c_light,mmax,rr, &
-&                      uua(1,1,ikap),upa(1,1,ikap),qq, &
-&                      well_tail_free .and. inwell(:),wmesh,inp%rc(l1), &
-&                      irc(l1), &
-&                      inp%qcut(l1),qmsbf(l1),inp%ncon(l1),inp%nbas(l1), &
-&                      inp%nproj(l1), &
-&                      pswf(1,1,l1,ikap),vp(1,l1,ikap),vkb(1,1,l1,ikap), &
-&                      vfull,cvgplt(1,1,1,l1,ikap),ncurve, &
-&                      ecurve(1,1,1,l1,ikap), &
-&                      pswfx(1,1,l1,ikap),chix(1,1,l1,ikap), &
-&                      ektail(1,1,l1,ikap),inp%wave_regularization, &
-&                      optdg(1,1,l1,ikap), &
-&                      wshare(1,1,l1,ikap),iout,ifail)
-     if(ifail/=0) return
-
-!the weights of its pseudo-waves in the cutoff of the pseudo-waves
-     call ecut_weights(ll,inp%nc,inp%nv,inp%la,inp%fa,fj,inp%nproj(l1), &
-&                      inp%ecut_weight(l1), &
-&                      wcurve(:,l1,ikap),iout,ifail)
-     if(ifail/=0) return
-
-   end do !ikap
-   wellprj(:,l1)=inwell(:)
+   call optimize_channel(ae,inp,l1,inp%nproj(l1),irc(l1),chan,iout,ifail)
+   if(ifail/=0) return
+   irc(l1)=chan%irc
+   qmsbf(l1)=chan%qmsbf
+   npa(:,l1)=chan%npa(:)
+   wellprj(:,l1)=chan%wellprj(:)
+   epa(:,l1,1:nkap)=chan%epa(:,1:nkap)
+   dlta(:,:,l1,:)=chan%dlta(:,:,:)
+   if(l1==inp%lloc+1) vrloc(:,:)=chan%vrloc(:,:)
+   pswf(:,:,l1,:)=chan%pswf(:,:,:)
+   pswfx(:,:,l1,:)=chan%pswfx(:,:,:)
+   chix(:,:,l1,:)=chan%chix(:,:,:)
+   vp(:,l1,:)=chan%vp(:,:)
+   vkb(:,:,l1,:)=chan%vkb(:,:,:)
+   cvgplt(:,:,:,l1,:)=chan%cvgplt(:,:,:,:)
+   ecurve(:,:,:,l1,:)=chan%ecurve(:,:,:,:)
+   ektail(:,:,l1,:)=chan%ektail(:,:,:)
+   optdg(:,:,l1,:)=chan%optdg(:,:,:)
+   wshare(:,:,l1,:)=chan%wshare(:,:,:)
+   wcurve(:,l1,:)=chan%wcurve(:,:)
  end do !l1
 
 ! construct Vanderbilt / Kleinman-Bylander projectors
@@ -559,7 +450,6 @@
 !restore this to its proper value
  inp%nproj(inp%lloc+1)=0
 
- deallocate(uua,upa)
 
 ! accumulate charge and eigenvalues
 ! pseudo wave functions are calculated with VKB projectors for
@@ -745,7 +635,7 @@
    rhot(:)=rho(:)
 
    if(istage/=2) then
-     call run_config_ae(cache,jj,cnf,inp%nc,rr, &
+     call run_config_ae(ae%cache,jj,cnf,inp%nc,rr, &
 &                       inp%zz, &
 &                       mmax,adams,inp%iexc,ea,irel,c_light,nkap,aec(jj),iout, &
 &                       ifail)
@@ -904,5 +794,74 @@
  end if
  return
  end subroutine oncvpsp_run
+
+ subroutine complete_input(inp,cnf,iout,ifail)
+
+!! the input as the stages take it: the configurations, the reference
+!! first and the core states in each; fcfact 0 without a model core; the
+!! values checked (check_data); a core radius of 0 the largest of the
+!! others (doc/smoothness_plan.md, R-1); and no projectors for lloc
+!!
+!! @param inp  the input values (input_m), as read on input
+!! @param cnf  the reference and test configurations (input_m)
+!! @param iout  unit of the text output
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use input_m, only: input_t, config_t
+ use constants_m, only: dp, mxcnf
+ use check_data_m, only: check_data
+
+!Input variables
+ integer, intent(in) :: iout
+
+!Input/output variables
+ type(input_t), intent(inout) :: inp
+
+!Output variables
+ type(config_t), intent(out) :: cnf(mxcnf)
+ integer, intent(out) :: ifail
+
+!Local variables
+ real(dp) :: fcgrid(3),rcgrid(3),rcmax
+ integer :: jj,l1
+
+!the configurations, the reference first, the core states in each
+ cnf(:)=inp%cnf(:)
+ cnf(1)%nv=inp%nv
+ cnf(1)%na(:)=inp%na(:)
+ cnf(1)%la(:)=inp%la(:)
+ cnf(1)%fa(:)=inp%fa(:)
+ do jj=2,inp%ncnf+1
+   cnf(jj)%na(1:inp%nc)=inp%na(1:inp%nc)
+   cnf(jj)%la(1:inp%nc)=inp%la(1:inp%nc)
+   cnf(jj)%fa(1:inp%nc)=inp%fa(1:inp%nc)
+ end do
+
+ if(inp%icmod==0) then
+   inp%fcfact=0.0d0
+ end if
+
+!icmod=4 coarse-search grids: min, max, step
+ fcgrid=[inp%fcfact_min,inp%fcfact_max,inp%fcfact_step]
+ rcgrid=[inp%rcfact_min,inp%rcfact_max,inp%rcfact_step]
+
+ call check_data(inp,fcgrid,rcgrid,iout,ifail)
+ if(ifail/=0) return
+
+! the core radii are used as given (doc/smoothness_plan.md, R-1)
+ rcmax=0.0d0
+ do l1=1,inp%lmax+1
+   rcmax=max(rcmax,inp%rc(l1))
+ end do
+ do l1=1,inp%lmax+1
+   if(inp%rc(l1)==0.0d0) then
+     inp%rc(l1)=rcmax
+   end if
+ end do
+
+ inp%nproj(inp%lloc+1)=0
+ return
+ end subroutine complete_input
 
  end module oncvpsp_run_m
