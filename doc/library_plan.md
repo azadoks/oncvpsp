@@ -293,11 +293,32 @@ So the interface is a hybrid:
       tests of `tests_t`), and `oncv_write_files` over
       `write_psp_files`. The text output goes to a file the caller
       names, `/dev/null` for none; the error messages to stderr.
+- [ ] Stage entry points beside `oncv_run`, as handles on the same
+      pattern (dims and getters), over the stage splits of `oncvpsp_run`:
+      `oncv_ae(text)`, an all-electron handle that `oncv_run` takes in
+      place of `ae_filename`; `oncv_optimize_channel(ae, ..., l)`, with
+      the pseudo-waves, the convergence curves (ecurve, wcurve) and the
+      node check; the per-channel projectors; and the coupled block (model
+      core to the tests) again on a run handle's earlier stages with
+      another model core.
+- [ ] Every number the optimizer's metrics read (oncvpsp-opt's
+      `diagnostics.py`, `cutoffs.py`, `log_derivative.py`, the ghosts,
+      configurations, `weighted_cut_t`, `vloc_cut_t`) from `tests_t` and
+      `psp%pot`, with no text; check that the model-core checks
+      (`core_truncation.py`, `model_core.py`) need only the charges and
+      potentials. `run_diag`'s tables may stay text only.
+- [ ] The text output optionally into a buffer the caller reads, beside
+      a file or `/dev/null`, so the text parser can check the arrays
+      during the switch-over without temporary files.
+- [ ] Later, `oncv_confine(ae, run, radii, walls, channels)` returning the
+      fields of `confine_summary_t`, in place of a third process.
 - [ ] The failure's context, beside the integer `ifail`, which stays the
       code the bindings read: a small `bind(C)`-compatible record
-      {kind, msg_id, stage, l, ikap, iproj} and a fixed-length message,
+      {kind, msg_id, stage, l, ikap, iproj, ierr} and a fixed-length message,
       filled at the failure site and kept in the run object, with a
-      getter on the handle. The bindings raise from it exceptions that
+      getter on the handle; ierr is the solver's status (`ierr_ghost`,
+      `ierr_not_converged`, ...), so that failures of one message stay
+      apart without its text. The bindings raise from it exceptions that
       map onto pyoncvpsp's Stage, Scope and Attribution. Not a
       polymorphic `error_t`: the required `ifail` keeps the compiler
       checking every call.
