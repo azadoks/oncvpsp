@@ -30,6 +30,15 @@
  * with where the run was. The messages (msg) are the msg_* of
  * src/failure_m.f90, whose values are kept from one version to the next.
  * The message itself is in the run's text output (oncv_set_output).
+ *
+ * Beside a whole run (oncv_run_toml), a handle may hold a stage of one,
+ * from which others start: the all-electron atom alone (oncv_ae_toml),
+ * from which runs (oncv_run_ae_toml) and single channels
+ * (oncv_channel_toml) start without solving it again; and a run's stages
+ * before the model core, which every run keeps, from which oncv_coupled
+ * makes the model core and the tests again with another model core. Each
+ * call replaces what the handle held; the handle it starts from is read
+ * only, and may be the handle itself.
  */
 
 #ifndef ONCVPSP_H
@@ -42,7 +51,7 @@ extern "C" {
 #endif
 
 /* The version of this header; oncv_api_version() is the library's */
-#define ONCV_API_VERSION 1
+#define ONCV_API_VERSION 2
 
 /* The kinds of failure (failure_m's fail_*) */
 #define ONCV_FAIL_NONE 0
@@ -118,6 +127,36 @@ int oncv_set_output(void *handle, const char *path, size_t npath);
 int oncv_run_toml(void *handle, int irel, const char *text, size_t ntext,
                   int skip_ld);
 
+/* The all-electron atom alone of the TOML input text, with the
+ * relativistic treatment irel, into the handle: the fields ae.* */
+int oncv_ae_toml(void *handle, int irel, const char *text, size_t ntext);
+
+/* As oncv_run_toml, from the all-electron atom of ae_handle (oncv_ae_toml,
+ * or any run's) rather than solving it; the input must be of that atom:
+ * its irel, reference configuration, functional, mesh and speed of light
+ * (else an input failure at the all-electron stage). The test
+ * configurations may differ. The results are those of oncv_run_toml bit
+ * for bit */
+int oncv_run_ae_toml(void *handle, void *ae_handle, const char *text,
+                     size_t ntext, int skip_ld);
+
+/* The channel of angular momentum ll alone of the TOML input text, from
+ * the all-electron atom of ae_handle (as oncv_run_ae_toml), into the
+ * handle: the fields channel.*, the pseudo-waves, semi-local potential
+ * and convergence curves as the whole run makes them. A first pseudo-wave
+ * with a node is pspot's failure: ONCV_FAIL_CONSTRUCTION, msg 122
+ * (msg_pspot_node) */
+int oncv_channel_toml(void *handle, void *ae_handle, const char *text,
+                      size_t ntext, int ll);
+
+/* The model core, the screening and the tests made again from the stages
+ * of base's run (which a run keeps even if its model core failed), with
+ * the model core icmod, fcfact and rcfact in place of the input's (fcfact
+ * 0 for icmod 0), into the handle, which then holds those stages and the
+ * results oncv_run_toml gives for the input with that model core */
+int oncv_coupled(void *handle, void *base, int icmod, double fcfact,
+                 double rcfact, int skip_ld);
+
 /* Writes the pseudopotential of the handle's run as the file format
  * ("psp8", "upf" or "psml", nformat bytes) to path (npath bytes) */
 int oncv_write_files(void *handle, const char *format, size_t nformat,
@@ -126,8 +165,9 @@ int oncv_write_files(void *handle, const char *format, size_t nformat,
 /* The failure of the handle's last run; kind 0 if it did not fail */
 int oncv_failure(void *handle, oncv_failure_t *failure);
 
-/* The sizes of the handle's results; all 0 but version without a
- * finished run */
+/* The sizes of the handle's results; without a finished run, irel, nkap,
+ * iexc and mmax of its all-electron atom if it holds one, and all 0 but
+ * version else */
 int oncv_dims(void *handle, oncv_dims_t *dims);
 
 /* The largest rank of a field */
@@ -138,13 +178,19 @@ int oncv_dims(void *handle, oncv_dims_t *dims);
  * src/test_results_m.f90; core.* the model core's parameters,
  * src/results_m.f90; warnings.rec the warnings in the order written, 5
  * by nwarn (at most 64): the warning, its stage, l, ikap and index, as
- * failure_m's wrn_* lists them), in Fortran order: the first index fastest, so
+ * failure_m's wrn_* lists them; ae.* the all-electron atom,
+ * src/ae_state_m.f90, of an all-electron handle or a run's; channel.* a
+ * channel, src/channel_m.f90, its arrays per projector and kappa (mxprj,
+ * nkap) and the convergence curves to the end of the longest), in Fortran
+ * order: the first index fastest, so
  * a C caller indexes shp[0] innermost, and numpy reshapes with order='F'.
  * The sizes in the Fortran comments use oncv_dims and constants_m
  * (mxprj=5, mxl=3, mxstate=30, mxcnf=5, nrhomod=5, nerrlv=7, mxkap=2,
  * mxghost=20).
  * A field the run did not compute (esr without irel 2, the log
- * derivatives with skip_ld) has the size 0. */
+ * derivatives with skip_ld) has the size 0; a field of a stage the handle
+ * does not hold (channel.* of a run, pot.* of an all-electron atom) is an
+ * input failure. */
 
 /* Field ifield (1, 2, ...): its kind, 'r' real or 'i' integer (a logical
  * as 0 or 1), a blank and its name, into name (at most nname bytes, not

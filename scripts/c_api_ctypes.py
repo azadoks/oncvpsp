@@ -3,7 +3,9 @@ Python binding will call it: the structs' layouts against the getters (the
 sizes of oncv_dims against the fields' shapes), every field copied out and
 the same after a second run in the same handle, bit for bit, the UPF file
 written with its mesh and densities (what a check of the model core reads),
-and a broken input's failure record.
+a broken input's failure record, and the stage handles: the all-electron
+atom, each channel from it with its fields' shapes, and the model core made
+again on the run's stages with the input's, the same as the run.
 
 usage: c_api_ctypes.py LIBONCVPSP IREL INPUT.toml
 """
@@ -18,6 +20,8 @@ MXRANK = 5
 MXLIN = 5
 FAIL_INPUT = 1
 STAGE_INPUT = 1
+STAGE_AE = 2
+MSG_AE_GIVEN_ATOM = 176
 
 
 class Failure(C.Structure):
@@ -59,6 +63,9 @@ def library(path):
     lib.oncv_get_double.argtypes = [vp, cp, sz, C.POINTER(C.c_double), sz]
     lib.oncv_get_int.argtypes = [vp, cp, sz, C.POINTER(C.c_int), sz]
     lib.oncv_write_files.argtypes = [vp, cp, sz, cp, sz]
+    lib.oncv_ae_toml.argtypes = [vp, C.c_int, cp, sz]
+    lib.oncv_channel_toml.argtypes = [vp, vp, cp, sz, C.c_int]
+    lib.oncv_coupled.argtypes = [vp, vp, C.c_int, C.c_double, C.c_double, C.c_int]
     return lib
 
 
@@ -92,6 +99,59 @@ def get(lib, handle, kind, name):
     return shape, list(buf[:size])
 
 
+def stages(lib, handle, irel, text, dims, first, check):
+    """the stage handles of the input text, against the run of handle: the
+    all-electron atom, each channel from it, and the model core again with
+    the input's (core.teter and the run's model core in first)"""
+    ae, chan, again = (C.c_void_p(lib.oncv_new()) for _ in range(3))
+    check("ae", lib.oncv_ae_toml(ae, irel, text, len(text)) == 0)
+    for kind, name in (kn for kn in fields(lib) if kn[1].startswith("ae.")):
+        check(f"{name} of the ae handle", get(lib, ae, kind, name) == first[name])
+    nkap = 2 if irel == 2 else 1
+    for ll in range(dims.lmax + 1):
+        check(
+            f"channel {ll}", lib.oncv_channel_toml(chan, ae, text, len(text), ll) == 0
+        )
+        shape, curve = get(lib, chan, "r", "channel.ecurve")
+        check(
+            "channel.ecurve's shape",
+            len(shape) == 4 and shape[0] == 2 and shape[3] == nkap,
+        )
+        check("a curve", max(curve) > 0)
+        check(
+            "channel.pswf's shape",
+            get(lib, chan, "r", "channel.pswf")[0][0] == dims.mmax,
+        )
+    # another functional is another atom (check_ae)
+    other = re.sub(
+        rb"iexc = (\d+)", lambda m: b"iexc = %d" % (7 - int(m.group(1))), text
+    )
+    ifail = lib.oncv_channel_toml(chan, ae, other, len(other), 0)
+    failure = Failure()
+    lib.oncv_failure(chan, C.byref(failure))
+    check("another atom", ifail % 100 == FAIL_INPUT and failure.stage == STAGE_AE)
+    check("its message", failure.msg == MSG_AE_GIVEN_ATOM)
+    # the input's model core, whatever it is, from the run's stages
+    lines = text.decode().split("[model_core_charge]")[-1].split("\n[")[0].splitlines()
+    core = dict(line.replace(" ", "").split("=", 1) for line in lines if "=" in line)
+    check(
+        "coupled",
+        lib.oncv_coupled(
+            again,
+            handle,
+            int(core.get("icmod", 0)),
+            float(core.get("fcfact", 0)),
+            float(core.get("rcfact", 0)),
+            0,
+        )
+        == 0,
+    )
+    for name in ("pot.vkb", "pot.rhomod", "tests.convergence.cross", "core.teter"):
+        check(f"{name} of coupled", get(lib, again, "r", name) == first[name])
+    for hh in (ae, chan, again):
+        lib.oncv_free(hh)
+
+
 def main():
     lib = library(sys.argv[1])
     irel = int(sys.argv[2])
@@ -104,13 +164,15 @@ def main():
             print("FAILED:", label, file=sys.stderr)
             nfail += 1
 
-    check("api version", lib.oncv_api_version() == 1)
+    check("api version", lib.oncv_api_version() == 2)
     handle = C.c_void_p(lib.oncv_new())
     check("run", lib.oncv_run_toml(handle, irel, text, len(text), 0) == 0)
     dims = Dims()
     lib.oncv_dims(handle, C.byref(dims))
-    check("dims", dims.version == 1 and dims.irel == irel and dims.mmax > 0)
-    names = fields(lib)
+    check("dims", dims.version == 2 and dims.irel == irel and dims.mmax > 0)
+    names = [
+        (kind, name) for kind, name in fields(lib) if not name.startswith("channel.")
+    ]
     first = {name: get(lib, handle, kind, name) for kind, name in names}
     check("rr against dims", first["pot.rr"][0] == (dims.mmax,))
     check("nproj against dims", first["pot.nproj"][1] == list(dims.nproj))
@@ -133,6 +195,8 @@ def main():
         "UPF sizes",
         len({int(m.group(1)) for m in sizes.values() if m}) == 1,
     )
+
+    stages(lib, handle, irel, text, dims, first, check)
 
     broken = b"[oncvpsp]\natsym = 'O'\n"
     ifail = lib.oncv_run_toml(handle, irel, broken, len(broken), 0)

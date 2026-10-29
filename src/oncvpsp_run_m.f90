@@ -26,7 +26,8 @@
  use failure_m, only: warnings_t
  implicit none
  private
- public :: oncvpsp_run, complete_input, run_stages, run_coupled, stages_t
+ public :: oncvpsp_run, complete_input, run_stages, run_coupled, stages_t, &
+&          run_ae, run_channel
 
 !> the results of the stages before the model core (oncvpsp_run), from
 !> which run_coupled makes the model core, the screening and the tests;
@@ -162,7 +163,8 @@
  return
  end subroutine oncvpsp_run
 
- subroutine run_stages(irel,istage,inp,ae_filename,cnf,st,at,iout,ifail)
+ subroutine run_stages(irel,istage,inp,ae_filename,cnf,st,at,iout,ifail, &
+&                      ae_in)
 
 !! the stages of a run before the model core, from the input inp: the
 !! input completed (complete_input) and echoed, the all-electron atom
@@ -170,7 +172,7 @@
 !! the projectors (run_vkb), and the valence densities, in st for
 !! run_coupled. With istage=1 only the all-electron atom, written to
 !! ae_filename, and st is left incomplete; with istage=2 that file in place
-!! of it
+!! of it; with ae_in (istage 0), that atom in place of it (given_ae)
 !!
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param istage  0 the whole calculation, 1 the all-electron stage only, 2 the
@@ -184,14 +186,13 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
- use failure_m, only: fail_convergence, fail_input, failed, msg_run_aeatom, &
-&                    msg_run_well_n_confined, msg_run_well_norm_free
- use failure_m, only: failure_t, fail_none, stage_input, stage_ae, &
+!! @param ae_in  the all-electron atom solved before, if given (solve_ae)
+ use failure_m, only: failure_t, fail_none, stage_input, &
 &                    stage_channel, stage_vkb, stage_valence, stage_configs, &
 &                    warn_merge
  use config_ae_m, only: run_config_ae, ae_config_t
  use ae_file_m, only: write_ae_file
- use ae_state_m, only: ae_state_t, solve_ae
+ use ae_state_m, only: ae_state_t
  use channel_m, only: channel_t, optimize_channel, ncurve
  use sr_so_r_m, only: sr_so_r
  use run_vkb_m, only: run_vkb
@@ -209,6 +210,7 @@
  integer, intent(in) :: irel,istage
  character(len=*), intent(in) :: ae_filename
  integer, intent(in) :: iout
+ type(ae_state_t), intent(in), optional :: ae_in
 
 !Input/output variables
  type(input_t), intent(inout) :: inp
@@ -286,41 +288,12 @@
  ifail=0
  at=failure_t(fail_none,0,0,stage_input,-1,0,0)
  call main_names(irel,istage,nkap,treatment,pname,exe)
-!the free tail has no finite norm over all space
- if(inp%well_tail==1 .and. inp%well_norm==1) then
-   write(iout,'(/a)') &
-&        'oncvpsp_run: ERROR well_norm = "space" (1) is not defined '// &
-&       'for well_tail = "free": the free tail has no finite norm'
-   ifail=failed(fail_input,msg_run_well_norm_free)
-   return
- end if
- if(inp%well_tail/=2 .and. any(inp%well_n(:)>0)) then
-   write(iout,'(/a)') &
-&       'oncvpsp_run: ERROR well_n is for well_tail = "confined" only'
-   ifail=failed(fail_input,msg_run_well_n_confined)
-   return
- end if
-
- call complete_input(inp,cnf,iout,ifail)
+ call run_ae(irel,istage,inp,ae_filename,cnf,ae,at,iout,ifail,ae_in)
  if(ifail/=0) return
 
 !icmod=4 coarse-search grids: min, max, step
  fcgrid=[inp%fcfact_min,inp%fcfact_max,inp%fcfact_step]
  rcgrid=[inp%rcfact_min,inp%rcfact_max,inp%rcfact_step]
-
-!the all-electron atom: its mesh, and the reference configuration solved
-!or read
- at%stage=stage_ae
- call solve_ae(irel,nkap,istage,inp,cnf,ae_filename,ae,ierr,iout,ifail)
- if(ifail/=0) return
- if(ierr/=0) then
-   write(iout,'(/a,i0,a,i0,a,es12.4)') &
-&        'oncvpsp_run: ERROR aeatom failed for the reference '// &
-&        'configuration'// &
-&        ', ierr=',ierr,', it=',ae%it,', res=',ae%res
-   ifail=failed(fail_convergence,msg_run_aeatom,ierr)
-   return
- end if
  warns=ae%warn
  c_light=ae%c_light
  al=ae%al
@@ -1122,12 +1095,153 @@
  return
  end subroutine run_coupled
 
+ subroutine run_ae(irel,istage,inp,ae_filename,cnf,ae,at,iout,ifail,ae_in)
+
+!! the input inp completed (complete_input) and its all-electron atom
+!! (solve_ae), or ae_in in its place (given_ae); an aeatom that does not
+!! converge is a failure
+!!
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param istage  0 the whole calculation, 1 the all-electron stage only, 2 the
+!!                pseudopotential stage only
+!! @param inp  the input values (input_m), as read on input, completed on
+!!             output
+!! @param ae_filename  the all-electron data file of istage 1 and 2
+!! @param cnf  the reference and test configurations (input_m)
+!! @param ae  the all-electron atom (ae_state_m)
+!! @param at  where the run was (failure_m): its stage, l and ikap
+!! @param iout  unit of the text output
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+!! @param ae_in  the all-electron atom solved before, if given (solve_ae)
+
+ use ae_state_m, only: ae_state_t, solve_ae, given_ae
+ use input_m, only: input_t, config_t
+ use constants_m, only: mxcnf
+ use failure_m, only: failure_t, fail_none, fail_convergence, failed, &
+&                    msg_run_aeatom, stage_input, stage_ae
+
+!Input variables
+ integer, intent(in) :: irel,istage
+ character(len=*), intent(in) :: ae_filename
+ integer, intent(in) :: iout
+ type(ae_state_t), intent(in), optional :: ae_in
+
+!Input/output variables
+ type(input_t), intent(inout) :: inp
+
+!Output variables
+ type(config_t), intent(out) :: cnf(mxcnf)
+ type(ae_state_t), intent(out) :: ae
+ type(failure_t), intent(out) :: at
+ integer, intent(out) :: ifail
+
+!Local variables
+ integer :: ierr,nkap
+
+ at=failure_t(fail_none,0,0,stage_input,-1,0,0)
+ call complete_input(inp,cnf,iout,ifail)
+ if(ifail/=0) return
+
+!the all-electron atom: its mesh, and the reference configuration solved
+!or read
+ at%stage=stage_ae
+ nkap=1
+ if(irel==2) nkap=2
+ ierr=0
+ if(present(ae_in)) then
+   call given_ae(ae_in,irel,inp,ae,iout,ifail)
+ else
+   call solve_ae(irel,nkap,istage,inp,cnf,ae_filename,ae,ierr,iout,ifail)
+ end if
+ if(ifail/=0) return
+ if(ierr/=0) then
+   write(iout,'(/a,i0,a,i0,a,es12.4)') &
+&        'oncvpsp_run: ERROR aeatom failed for the reference '// &
+&        'configuration'// &
+&        ', ierr=',ierr,', it=',ae%it,', res=',ae%res
+   ifail=failed(fail_convergence,msg_run_aeatom,ierr)
+   return
+ end if
+ return
+ end subroutine run_ae
+
+ subroutine run_channel(ae,inp,ll,ch,at,iout,ifail)
+
+!! the channel of angular momentum ll alone from the input inp and the
+!! all-electron atom ae, solved before (solve_ae) and checked against it
+!! (check_ae): the input completed (complete_input), the core radii's mesh
+!! points, and the channel (optimize_channel) with the input's projectors,
+!! or one for the local channel. A first pseudo-wave with a node is
+!! pspot's failure
+!!
+!! @param ae  the all-electron atom (ae_state_m)
+!! @param inp  the input values (input_m), as read on input, completed on
+!!             output
+!! @param ll  angular momentum
+!! @param ch  the channel (channel_m)
+!! @param at  where the run was (failure_m): its stage, l and ikap
+!! @param iout  unit of the text output
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use ae_state_m, only: ae_state_t, check_ae
+ use channel_m, only: channel_t, optimize_channel
+ use main_setup_m, only: core_radius_points
+ use input_m, only: input_t, config_t
+ use constants_m, only: dp, mxcnf, mxlin
+ use failure_m, only: failure_t, fail_none, fail_input, failed, &
+&                    msg_run_channel_l, stage_input, stage_ae, stage_channel
+
+!Input variables
+ type(ae_state_t), intent(in) :: ae
+ integer, intent(in) :: ll
+ integer, intent(in) :: iout
+
+!Input/output variables
+ type(input_t), intent(inout) :: inp
+
+!Output variables
+ type(channel_t), intent(out) :: ch
+ type(failure_t), intent(out) :: at
+ integer, intent(out) :: ifail
+
+!Local variables
+ type(config_t) :: cnf(mxcnf)
+ integer :: irc(mxlin+1)
+ integer :: nprj
+ real(dp) :: rcmax
+
+ at=failure_t(fail_none,0,0,stage_input,-1,0,0)
+ call complete_input(inp,cnf,iout,ifail)
+ if(ifail/=0) return
+ if(ll<0 .or. ll>inp%lmax) then
+   write(iout,'(/a,i0,a,i0)') 'run_channel: ERROR no channel l=',ll, &
+&       ', lmax=',inp%lmax
+   ifail=failed(fail_input,msg_run_channel_l)
+   return
+ end if
+ at%stage=stage_ae
+ call check_ae(ae,ae%irel,inp,iout,ifail)
+ if(ifail/=0) return
+ at%stage=stage_channel
+ call core_radius_points(inp%lmax,inp%lloc,inp%rc,ae%rr,ae%mmax,irc,rcmax, &
+&                        iout,ifail)
+ if(ifail/=0) return
+ nprj=inp%nproj(ll+1)
+ if(ll==inp%lloc) nprj=1
+ at%ll=ll
+ call optimize_channel(ae,inp,ll+1,nprj,irc(ll+1),ch,iout,ifail)
+ return
+ end subroutine run_channel
+
  subroutine complete_input(inp,cnf,iout,ifail)
 
-!! the input as the stages take it: the configurations, the reference
-!! first and the core states in each; fcfact 0 without a model core; the
-!! values checked (check_data); a core radius of 0 the largest of the
-!! others (doc/smoothness_plan.md, R-1); and no projectors for lloc
+!! the input as the stages take it: the well's options checked; the
+!! configurations, the reference first and the core states in each;
+!! fcfact 0 without a model core; the values checked (check_data); a core
+!! radius of 0 the largest of the others (doc/smoothness_plan.md, R-1); and
+!! no projectors for lloc
 !!
 !! @param inp  the input values (input_m), as read on input
 !! @param cnf  the reference and test configurations (input_m)
@@ -1138,6 +1252,8 @@
  use input_m, only: input_t, config_t
  use constants_m, only: dp, mxcnf
  use check_data_m, only: check_data
+ use failure_m, only: fail_input, failed, msg_run_well_n_confined, &
+&                    msg_run_well_norm_free
 
 !Input variables
  integer, intent(in) :: iout
@@ -1152,6 +1268,22 @@
 !Local variables
  real(dp) :: fcgrid(3),rcgrid(3),rcmax
  integer :: jj,l1
+
+ ifail=0
+!the free tail has no finite norm over all space
+ if(inp%well_tail==1 .and. inp%well_norm==1) then
+   write(iout,'(/a)') &
+&        'oncvpsp_run: ERROR well_norm = "space" (1) is not defined '// &
+&       'for well_tail = "free": the free tail has no finite norm'
+   ifail=failed(fail_input,msg_run_well_norm_free)
+   return
+ end if
+ if(inp%well_tail/=2 .and. any(inp%well_n(:)>0)) then
+   write(iout,'(/a)') &
+&       'oncvpsp_run: ERROR well_n is for well_tail = "confined" only'
+   ifail=failed(fail_input,msg_run_well_n_confined)
+   return
+ end if
 
 !the configurations, the reference first, the core states in each
  cnf(:)=inp%cnf(:)

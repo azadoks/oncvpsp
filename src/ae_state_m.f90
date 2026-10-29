@@ -30,7 +30,7 @@
  use failure_m, only: warnings_t
  implicit none
  private
- public :: ae_state_t, solve_ae
+ public :: ae_state_t, solve_ae, given_ae, check_ae
 
 !> the all-electron atom of a run
  type :: ae_state_t
@@ -40,6 +40,20 @@
    integer :: nkap=0
 !> speed of light (Hartree atomic units)
    real(dp) :: c_light=0.0d0
+!> atomic number
+   real(dp) :: zz=0.0d0
+!> number of core states
+   integer :: nc=0
+!> number of valence states
+   integer :: nv=0
+!> the functional (iexc)
+   integer :: iexc=0
+!> principal quantum number of each state of the reference configuration
+   integer :: na(mxstate)=0
+!> angular momentum of each state
+   integer :: la(mxstate)=0
+!> occupation of each state
+   real(dp) :: fa(mxstate)=0.0d0
 !> size of the log radial mesh
    integer :: mmax=0
 !> log of the mesh ratio
@@ -131,6 +145,13 @@
  ae%irel=irel
  ae%nkap=nkap
  ae%c_light=c_light_of(inp%c_light)
+ ae%zz=inp%zz
+ ae%nc=inp%nc
+ ae%nv=inp%nv
+ ae%iexc=inp%iexc
+ ae%na(:)=inp%na(:)
+ ae%la(:)=inp%la(:)
+ ae%fa(:)=inp%fa(:)
  call make_log_mesh(irel,inp%zz,inp%amesh,inp%rr1,inp%rmax,inp%adams_order, &
 &                   ae%al,ae%mmax,ae%rr,ae%log_mesh)
  ae%adams=adams_init(inp%adams_order)
@@ -163,5 +184,115 @@
  end if
  return
  end subroutine solve_ae
+
+ subroutine given_ae(ae_in,irel,inp,ae,iout,ifail)
+
+!! the all-electron atom ae_in, solved before (solve_ae), in place of
+!! solve_ae for the input inp: checked against it (check_ae), and the
+!! description of a Libxc functional to iout as solve_ae writes it
+!!
+!! @param ae_in  the all-electron atom given
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param inp  the input values (input_m), checked (check_data)
+!! @param ae  the all-electron atom
+!! @param iout  unit of the text output
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use input_m, only: input_t
+ use exc_libxc_m, only: exc_libxc_info
+
+!Input variables
+ type(ae_state_t), intent(in) :: ae_in
+ integer, intent(in) :: irel
+ type(input_t), intent(in) :: inp
+ integer, intent(in) :: iout
+
+!Output variables
+ type(ae_state_t), intent(out) :: ae
+ integer, intent(out) :: ifail
+
+ ifail=0
+ if(inp%iexc<0) then
+   call exc_libxc_info(inp%iexc,iout,ifail)
+   if(ifail/=0) return
+ end if
+ call check_ae(ae_in,irel,inp,iout,ifail)
+ if(ifail/=0) return
+ ae=ae_in
+ return
+ end subroutine given_ae
+
+ subroutine check_ae(ae,irel,inp,iout,ifail)
+
+!! whether the all-electron atom ae is the one solve_ae makes of the input
+!! inp: its irel, atom, reference configuration, functional, mesh and
+!! speed of light (the test configurations are solved as they are wanted)
+!!
+!! @param ae  the all-electron atom
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param inp  the input values (input_m), checked (check_data)
+!! @param iout  unit of the text output
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use input_m, only: input_t
+ use relativity_m, only: c_light_of
+ use main_setup_m, only: make_log_mesh
+ use failure_m, only: fail_input, failed, msg_ae_given_irel, &
+&                    msg_ae_given_atom, msg_ae_given_mesh, msg_ae_given_c_light
+
+!Input variables
+ type(ae_state_t), intent(in) :: ae
+ integer, intent(in) :: irel
+ type(input_t), intent(in) :: inp
+ integer, intent(in) :: iout
+
+!Output variables
+ integer, intent(out) :: ifail
+
+!Local variables
+ real(dp), allocatable :: rr(:)
+ real(dp) :: al,log_mesh(4)
+ integer :: mmax,ncv
+ logical :: same
+
+ ifail=0
+ if(ae%irel/=irel) then
+   write(iout,'(/a,i0,a,i0)') &
+&       'check_ae: ERROR the all-electron atom is of irel=',ae%irel, &
+&       ', the run of irel=',irel
+   ifail=failed(fail_input,msg_ae_given_irel)
+   return
+ end if
+ ncv=inp%nc+inp%nv
+ if(ae%zz/=inp%zz .or. ae%nc/=inp%nc .or. ae%nv/=inp%nv .or. &
+&   ae%iexc/=inp%iexc .or. any(ae%na(1:ncv)/=inp%na(1:ncv)) .or. &
+&   any(ae%la(1:ncv)/=inp%la(1:ncv)) .or. &
+&   any(ae%fa(1:ncv)/=inp%fa(1:ncv))) then
+   write(iout,'(/a)') &
+&       'check_ae: ERROR the all-electron atom is of another atom, '// &
+&       'reference configuration or functional'
+   ifail=failed(fail_input,msg_ae_given_atom)
+   return
+ end if
+ call make_log_mesh(irel,inp%zz,inp%amesh,inp%rr1,inp%rmax,inp%adams_order, &
+&                   al,mmax,rr,log_mesh)
+ same=mmax==ae%mmax .and. al==ae%al .and. ae%adams%order==inp%adams_order
+ if(same) same=all(rr(1:mmax)==ae%rr(1:mmax))
+ if(.not. same) then
+   write(iout,'(/a)') 'check_ae: ERROR the all-electron atom is on '// &
+&       'another mesh'
+   ifail=failed(fail_input,msg_ae_given_mesh)
+   return
+ end if
+ if(c_light_of(inp%c_light)/=ae%c_light) then
+   write(iout,'(/a)') 'check_ae: ERROR the all-electron atom has '// &
+&       'another speed of light'
+   ifail=failed(fail_input,msg_ae_given_c_light)
+   return
+ end if
+ return
+ end subroutine check_ae
 
  end module ae_state_m

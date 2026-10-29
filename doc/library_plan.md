@@ -351,7 +351,7 @@ So the interface is a hybrid:
       `write_psp_files`), byte for byte; psmlout now writes its XML to
       the output's unit rather than unit 6, so a library caller's stdout
       stays clean.
-- [ ] Stage entry points beside `oncv_run`, as handles on the same
+- [x] Stage entry points beside `oncv_run`, as handles on the same
       pattern (dims and getters), over the stage splits of `oncvpsp_run`:
       `oncv_ae(text)`, an all-electron handle that `oncv_run` takes in
       place of `ae_filename`; `oncv_optimize_channel(ae, ..., l)`, with
@@ -359,6 +359,28 @@ So the interface is a hybrid:
       node check; the per-channel projectors; and the coupled block (model
       core to the tests) again on a run handle's earlier stages with
       another model core.
+      Done as one handle that holds a run or a stage of one, its fields by
+      prefix: `oncv_ae_toml(h, irel, text)` the all-electron atom
+      (`run_ae`: `complete_input` and `solve_ae`; fields `ae.*`);
+      `oncv_run_ae_toml(h, ae, text)` a run from it (`run_stages`'s
+      optional `ae_in`, checked against the input by `check_ae`: irel, the
+      atom, reference configuration, functional, mesh and speed of light,
+      for which `ae_state_t` now keeps zz, nc, nv, iexc, na, la, fa), bit
+      for bit the whole run; `oncv_channel_toml(h, ae, text, l)` one
+      channel (`run_channel`; fields `channel.*`: npa, wellprj, epa, pswf,
+      vp, cvgplt, ecurve, ektail, optdg, wshare, wcurve, its warnings), the
+      node check being pspot's failure `msg_pspot_node`; and
+      `oncv_coupled(h, base, icmod, fcfact, rcfact)`, the model core and
+      the tests again on the stages every run handle keeps (`run_stages`
+      then `run_coupled` in place of `oncvpsp_run`), its model core checked
+      by `check_data`. The handle started from is read only and may be the
+      handle itself. Not done: the per-channel projectors; a channel
+      handle stops before the local potential and `channel_vkb`, which no
+      metric of the optimizer has needed alone yet. `api_version` 2.
+      `test_c_api.c` checks the atom's fields, the run from it, every
+      channel against the run's convergence tables and curves, and the model
+      core without and back (nr, sr, fr); `c_api_ctypes.py` the same through
+      ctypes, and another atom refused.
 - [ ] Every number the optimizer's metrics read (oncvpsp-opt's
       `diagnostics.py`, `cutoffs.py`, `log_derivative.py`, the ghosts,
       configurations, `weighted_cut_t`, `vloc_cut_t`) from `tests_t` and

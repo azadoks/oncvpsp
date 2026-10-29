@@ -414,13 +414,14 @@
 !> ode_rc_der (ode_rc_der_m.f90): ode_rc_der: ERROR uu and up disagree for l=
 !> at rc= uu' from up and from stencils on uu:
  integer, parameter, public :: msg_ode_rc_der_disagree=83
-!> run_stages (oncvpsp_run_m.f90): oncvpsp_run: ERROR well_norm = "space" (1)
-!> is not defined for well_tail = "free": the free tail has no finite norm
+!> complete_input (oncvpsp_run_m.f90): oncvpsp_run: ERROR well_norm =
+!> "space" (1) is not defined for well_tail = "free": the free tail has no
+!> finite norm
  integer, parameter, public :: msg_run_well_norm_free=84
-!> run_stages (oncvpsp_run_m.f90): oncvpsp_run: ERROR well_n is for well_tail =
-!> "confined" only
+!> complete_input (oncvpsp_run_m.f90): oncvpsp_run: ERROR well_n is for
+!> well_tail = "confined" only
  integer, parameter, public :: msg_run_well_n_confined=85
-!> run_stages (oncvpsp_run_m.f90): oncvpsp_run: ERROR aeatom failed for the
+!> run_ae (oncvpsp_run_m.f90): oncvpsp_run: ERROR aeatom failed for the
 !> reference configuration, ierr= , it= , res=
  integer, parameter, public :: msg_run_aeatom=86
 !> optimize (optimize_m.f90): optimize: residual-energy eigenvalue ERROR, info=
@@ -624,13 +625,14 @@
  integer, parameter, public :: msg_ws_eigenvalues_dsyev=164
 !> exc_dispatch (xc_dispatch_m.f90): : ERROR bad input iexc =
  integer, parameter, public :: msg_xc_dispatch_iexc=165
-!> oncv_run_toml (oncvpsp_c_m.F90): oncv_run_toml: ERROR cannot open the
-!> text output
+!> open_output (oncvpsp_c_m.F90): open_output: ERROR cannot open the text
+!> output
  integer, parameter, public :: msg_c_output=166
-!> oncv_run_toml (oncvpsp_c_m.F90): oncv_run_toml: ERROR TOML input needs
-!> a build with TOML
+!> read_toml (oncvpsp_c_m.F90): read_toml: ERROR TOML input needs a build
+!> with TOML
  integer, parameter, public :: msg_c_no_toml=167
-!> lookup (oncvpsp_c_m.F90): lookup: ERROR the handle has no results
+!> lookup (oncvpsp_c_m.F90): lookup: ERROR the handle has no results of the
+!> field
  integer, parameter, public :: msg_c_no_results=168
 !> lookup (oncvpsp_c_m.F90): lookup: ERROR no field
  integer, parameter, public :: msg_c_field=169
@@ -647,6 +649,26 @@
  integer, parameter, public :: msg_c_file=173
 !> write_psp_file (psp_files_m.f90): write_psp_file: ERROR no file format
  integer, parameter, public :: msg_psp_file_kind=174
+!> check_ae (ae_state_m.f90): check_ae: ERROR the all-electron atom is of
+!> another irel
+ integer, parameter, public :: msg_ae_given_irel=175
+!> check_ae (ae_state_m.f90): check_ae: ERROR the all-electron atom is of
+!> another atom, reference configuration or functional
+ integer, parameter, public :: msg_ae_given_atom=176
+!> check_ae (ae_state_m.f90): check_ae: ERROR the all-electron atom is on
+!> another mesh
+ integer, parameter, public :: msg_ae_given_mesh=177
+!> check_ae (ae_state_m.f90): check_ae: ERROR the all-electron atom has
+!> another speed of light
+ integer, parameter, public :: msg_ae_given_c_light=178
+!> run_channel (oncvpsp_run_m.f90): run_channel: ERROR no channel l=
+ integer, parameter, public :: msg_run_channel_l=179
+!> source (oncvpsp_c_m.F90): source: ERROR the handle holds no
+!> all-electron atom
+ integer, parameter, public :: msg_c_no_ae=180
+!> oncv_coupled (oncvpsp_c_m.F90): oncv_coupled: ERROR the handle holds no
+!> stages
+ integer, parameter, public :: msg_c_no_stages=181
 
 ! The warnings (warn's id), each with its routine, file and message, and
 ! what the record's index is

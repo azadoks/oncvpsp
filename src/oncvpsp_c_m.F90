@@ -20,24 +20,31 @@
 !> failure. The handle is the only state: two handles are two independent
 !> calculations, in one thread or in several. Every function returns 0 or
 !> the ifail of the failure (failure_m); a binding raises from the kind and
-!> the message of the record (oncv_failure).
+!> the message of the record (oncv_failure). Beside whole runs, a handle
+!> holds a stage of one (oncvpsp_run_m): the all-electron atom, from which
+!> runs and channels start; one channel; or a run's stages, from which the
+!> model core and the tests are made again with another model core.
 
  module oncvpsp_c_m
  use, intrinsic :: iso_c_binding, only: c_int, c_ptr, c_char, c_size_t, &
 &                 c_double, c_associated, c_loc, c_f_pointer
- use input_m, only: input_t
+ use input_m, only: input_t, config_t
  use results_m, only: results_t
  use failure_m, only: failure_t
- use constants_m, only: dp, mxlin
+ use ae_state_m, only: ae_state_t
+ use channel_m, only: channel_t
+ use oncvpsp_run_m, only: stages_t
+ use constants_m, only: dp, mxlin, mxcnf
  implicit none
  private
  public :: oncv_api_version, oncv_new, oncv_free, oncv_set_output, &
 &          oncv_run_toml, oncv_failure, oncv_dims, dims_t, oncv_field_name, &
-&          oncv_shape, oncv_get_double, oncv_get_int
+&          oncv_shape, oncv_get_double, oncv_get_int, oncv_ae_toml, &
+&          oncv_run_ae_toml, oncv_channel_toml, oncv_coupled
 
 !> the version of the interface: a change to a function or a struct
 !> raises it
- integer(c_int), parameter :: api_version=1
+ integer(c_int), parameter :: api_version=2
 
 !> 1 if c_double is the kind of the reals, else a division by zero that
 !> stops the compilation
@@ -48,7 +55,9 @@
 
 !> the fields of the results that oncv_shape and oncv_get_* copy out, each
 !> its kind (r real, i integer, a logical as 0 or 1) and its name, the
-!> component of results_t (pot.*, tests.*: pseudo_m, test_results_m)
+!> component of results_t (pot.*, tests.*: pseudo_m, test_results_m), of
+!> the all-electron atom (ae.*: ae_state_t) or of a channel (channel.*:
+!> channel_t)
  character(len=32), parameter :: fields(*)=[character(len=32) :: &
 &  'r pot.zz', 'r pot.zion', 'r pot.c_light', 'r pot.rcmax', 'r pot.rr', &
 &  'i pot.nproj', 'r pot.evkb', 'r pot.vkb', 'r pot.esr', 'r pot.eso', &
@@ -72,7 +81,17 @@
 &  'i core.budget.fill', 'r core.budget.cpoly', 'r core.budget.martins', &
 &  'r core.budget.ecut_needed', 'r core.budget.r_s6', &
 &  'r core.budget.mismatch', 'r core.budget.crad', 'i core.budget.cfill', &
-&  'r core.budget.cmis', 'i warnings.nwarn', 'i warnings.rec']
+&  'r core.budget.cmis', 'i warnings.nwarn', 'i warnings.rec', &
+&  'i ae.irel', 'i ae.nkap', 'r ae.zz', 'i ae.nc', 'i ae.nv', 'i ae.iexc', &
+&  'i ae.na', 'i ae.la', 'r ae.fa', 'r ae.c_light', 'i ae.mmax', 'r ae.al', &
+&  'r ae.rr', 'i ae.it', 'r ae.etot', 'r ae.eterm', 'r ae.res', 'r ae.ea', &
+&  'r ae.rhoc', 'r ae.rho', 'r ae.vfull', 'i ae.warnings.nwarn', &
+&  'i ae.warnings.rec', 'i channel.l', 'i channel.mkap', 'i channel.nproj', &
+&  'i channel.irc', 'i channel.npa', 'i channel.wellprj', &
+&  'r channel.qmsbf', 'r channel.epa', 'r channel.pswf', 'r channel.vp', &
+&  'r channel.cvgplt', 'r channel.ecurve', 'r channel.ektail', &
+&  'r channel.optdg', 'r channel.wshare', 'r channel.wcurve', &
+&  'i channel.warnings.nwarn', 'i channel.warnings.rec']
 
 !> a field copied out of the results: its values, flat, and its shape
  type :: field_t
@@ -112,7 +131,8 @@
    integer(c_int) :: nrl
  end type dims_t
 
-!> a calculation: its settings, input, results and failure
+!> a calculation: its settings, input, results and failure, or a stage of
+!> one
  type :: handle_t
 !> the file of the text output
    character(len=:), allocatable :: out_path
@@ -120,6 +140,16 @@
    type(input_t) :: inp
 !> the results
    type(results_t) :: psp
+!> the reference and test configurations (complete_input)
+   type(config_t) :: cnf(mxcnf)
+!> the input as the stages left it, from which oncv_coupled starts
+   type(input_t) :: inp_stages
+!> the all-electron atom of oncv_ae_toml
+   type(ae_state_t) :: ae
+!> the stages of a run before the model core (run_stages)
+   type(stages_t) :: st
+!> the channel of oncv_channel_toml
+   type(channel_t) :: chan
 !> where the run was when it failed
    type(failure_t) :: at=failure_t(0,0,0,0,-1,0,0)
 !> the run's ifail, 0 before a run
@@ -128,12 +158,18 @@
    integer :: irel=0
 !> whether a run finished, so that the results are there
    logical :: done=.false.
+!> whether it holds an all-electron atom (oncv_ae_toml)
+   logical :: has_ae=.false.
+!> whether it holds a run's stages (st, inp_stages and cnf)
+   logical :: has_stages=.false.
+!> whether it holds a channel (oncv_channel_toml)
+   logical :: has_chan=.false.
  end type handle_t
 
 !> a field's values and shape from an array or scalar of the results
  interface put
    module procedure put_r0, put_r1, put_r2, put_r3, put_r4, put_r5, &
-&                   put_i0, put_i1, put_i2, put_i3, put_l0
+&                   put_i0, put_i1, put_i2, put_i3, put_l0, put_l1
  end interface put
 
  contains
@@ -224,14 +260,6 @@
 !! @param ntext  its length
 !! @param skip_ld  non-zero to leave out the log derivatives
 
- use oncvpsp_run_m, only: oncvpsp_run
-#ifdef WITH_TOML
- use input_toml_m, only: read_input_toml_string
-#endif
- use failure_m, only: fail_input, fail_io, failed, msg_c_output, &
-&                    msg_c_no_toml, stage_input
- use, intrinsic :: iso_fortran_env, only: error_unit
-
 !Input variables
  type(c_ptr), value :: handle
  integer(c_int), value :: irel,skip_ld
@@ -243,36 +271,404 @@
 
 !Local variables
  type(handle_t), pointer :: hh
- integer :: iout,ios,jfail
+ integer :: iout,jfail
 
  call c_f_pointer(handle,hh)
+ call reset(hh,irel)
+ call open_output(hh,iout,ifail)
+ if(ifail/=0) return
+ call read_toml(hh,text,ntext,iout,jfail)
+ if(jfail==0) call run_all(hh,skip_ld/=0,iout,jfail)
+ close(iout)
+ hh%ifail=jfail
+ ifail=jfail
+ return
+ end function oncv_run_toml
+
+ function oncv_ae_toml(handle,irel,text,ntext) result(ifail) &
+&         bind(c,name='oncv_ae_toml')
+
+!! the all-electron atom of the TOML input text, with the relativistic
+!! treatment irel, into the handle, whose earlier contents it replaces
+!! (run_ae): the stage that oncv_run_ae_toml and oncv_channel_toml start
+!! from, its fields ae.*
+!!
+!! @param handle  the run handle
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param text  the TOML input, ntext characters, not terminated
+!! @param ntext  its length
+
+ use oncvpsp_run_m, only: run_ae
+
+!Input variables
+ type(c_ptr), value :: handle
+ integer(c_int), value :: irel
+ character(kind=c_char), intent(in) :: text(ntext)
+ integer(c_size_t), value :: ntext
+
+!Output variables
+ integer(c_int) :: ifail
+
+!Local variables
+ type(handle_t), pointer :: hh
+ integer :: iout,jfail
+
+ call c_f_pointer(handle,hh)
+ call reset(hh,irel)
+ call open_output(hh,iout,ifail)
+ if(ifail/=0) return
+ call read_toml(hh,text,ntext,iout,jfail)
+ if(jfail==0) then
+   call run_ae(irel,0,hh%inp,'',hh%cnf,hh%ae,hh%at,iout,jfail)
+ end if
+ close(iout)
+ hh%has_ae=jfail==0
+ hh%ifail=jfail
+ ifail=jfail
+ return
+ end function oncv_ae_toml
+
+ function oncv_run_ae_toml(handle,ae_handle,text,ntext,skip_ld) &
+&         result(ifail) bind(c,name='oncv_run_ae_toml')
+
+!! the pseudopotential and its tests of the TOML input text into the
+!! handle, as oncv_run_toml, from the all-electron atom of ae_handle
+!! (oncv_ae_toml, or a run's) in place of solving it: the input must be of
+!! that atom, its irel, reference configuration, functional and mesh
+!! (check_ae). The handle may be ae_handle
+!!
+!! @param handle  the run handle
+!! @param ae_handle  the handle of the all-electron atom
+!! @param text  the TOML input, ntext characters, not terminated
+!! @param ntext  its length
+!! @param skip_ld  non-zero to leave out the log derivatives
+
+!Input variables
+ type(c_ptr), value :: handle,ae_handle
+ integer(c_int), value :: skip_ld
+ character(kind=c_char), intent(in) :: text(ntext)
+ integer(c_size_t), value :: ntext
+
+!Output variables
+ integer(c_int) :: ifail
+
+!Local variables
+ type(handle_t), pointer :: hh,src
+ type(ae_state_t) :: ae
+ integer :: iout,jfail
+
+ call c_f_pointer(handle,hh)
+ call c_f_pointer(ae_handle,src)
+ call source(src,ae,jfail)
+ call reset(hh,ae%irel)
+ if(jfail/=0) then
+   hh%ifail=jfail
+   ifail=jfail
+   return
+ end if
+ call open_output(hh,iout,ifail)
+ if(ifail/=0) return
+ call read_toml(hh,text,ntext,iout,jfail)
+ if(jfail==0) call run_all(hh,skip_ld/=0,iout,jfail,ae)
+ close(iout)
+ hh%ifail=jfail
+ ifail=jfail
+ return
+ end function oncv_run_ae_toml
+
+ function oncv_channel_toml(handle,ae_handle,text,ntext,ll) result(ifail) &
+&         bind(c,name='oncv_channel_toml')
+
+!! the channel of angular momentum ll alone of the TOML input text into
+!! the handle, whose earlier contents it replaces, from the all-electron
+!! atom of ae_handle (run_channel): its fields channel.*. The input must be
+!! of that atom (check_ae). A first pseudo-wave with a node is the failure
+!! of pspot (oncv_failure); the handle may be ae_handle
+!!
+!! @param handle  the run handle
+!! @param ae_handle  the handle of the all-electron atom
+!! @param text  the TOML input, ntext characters, not terminated
+!! @param ntext  its length
+!! @param ll  angular momentum
+
+ use oncvpsp_run_m, only: run_channel
+
+!Input variables
+ type(c_ptr), value :: handle,ae_handle
+ integer(c_int), value :: ll
+ character(kind=c_char), intent(in) :: text(ntext)
+ integer(c_size_t), value :: ntext
+
+!Output variables
+ integer(c_int) :: ifail
+
+!Local variables
+ type(handle_t), pointer :: hh,src
+ type(ae_state_t) :: ae
+ integer :: iout,jfail
+
+ call c_f_pointer(handle,hh)
+ call c_f_pointer(ae_handle,src)
+ call source(src,ae,jfail)
+ call reset(hh,ae%irel)
+ if(jfail/=0) then
+   hh%ifail=jfail
+   ifail=jfail
+   return
+ end if
+ call open_output(hh,iout,ifail)
+ if(ifail/=0) return
+ call read_toml(hh,text,ntext,iout,jfail)
+ if(jfail==0) then
+   call run_channel(ae,hh%inp,ll,hh%chan,hh%at,iout,jfail)
+ end if
+ close(iout)
+ hh%has_chan=jfail==0
+ hh%ifail=jfail
+ ifail=jfail
+ return
+ end function oncv_channel_toml
+
+ function oncv_coupled(handle,base,icmod,fcfact,rcfact,skip_ld) &
+&         result(ifail) bind(c,name='oncv_coupled')
+
+!! the model core, the screening and the tests again into the handle
+!! (run_coupled), from the stages of the run of base (oncv_run_toml,
+!! oncv_run_ae_toml or oncv_coupled, whose model core may have failed)
+!! with the model core icmod, fcfact and rcfact in place of the input's:
+!! the handle then holds those stages and a run's results, as oncv_run_toml
+!! with that model core gives them. The handle may be base
+!!
+!! @param handle  the run handle
+!! @param base  the handle of the run whose stages it starts from
+!! @param icmod  the model core's kind (fcfact 0 for icmod 0)
+!! @param fcfact  its amplitude factor
+!! @param rcfact  its radius factor
+!! @param skip_ld  non-zero to leave out the log derivatives
+
+ use oncvpsp_run_m, only: run_coupled
+ use check_data_m, only: check_data
+ use failure_m, only: fail_input, failed, msg_c_no_stages
+ use, intrinsic :: iso_fortran_env, only: error_unit
+
+!Input variables
+ type(c_ptr), value :: handle,base
+ integer(c_int), value :: icmod,skip_ld
+ real(c_double), value :: fcfact,rcfact
+
+!Output variables
+ integer(c_int) :: ifail
+
+!Local variables
+ type(handle_t), pointer :: hh,bb
+ type(input_t) :: inp
+ real(dp) :: fcgrid(3),rcgrid(3)
+ integer :: iout,irel,jfail
+
+ call c_f_pointer(handle,hh)
+ call c_f_pointer(base,bb)
+ if(.not. bb%has_stages) then
+   write(error_unit,'(/a)') 'oncv_coupled: ERROR the handle holds no stages'
+   call reset(hh,0)
+   hh%ifail=failed(fail_input,msg_c_no_stages)
+   ifail=hh%ifail
+   return
+ end if
+ irel=bb%irel
+ if(.not. c_associated(handle,base)) then
+   hh%st=bb%st
+   hh%cnf(:)=bb%cnf(:)
+   hh%inp_stages=bb%inp_stages
+ end if
+ call reset(hh,irel)
+ hh%has_stages=.true.
+ call open_output(hh,iout,ifail)
+ if(ifail/=0) return
+ inp=hh%inp_stages
+ inp%icmod=icmod
+ inp%fcfact=fcfact
+ inp%rcfact=rcfact
+ if(icmod==0) inp%fcfact=0.0d0
+ fcgrid=[inp%fcfact_min,inp%fcfact_max,inp%fcfact_step]
+ rcgrid=[inp%rcfact_min,inp%rcfact_max,inp%rcfact_step]
+ call check_data(inp,fcgrid,rcgrid,iout,jfail)
+ if(jfail==0) then
+   call run_coupled(irel,0,inp,hh%cnf,hh%st,'',skip_ld/=0,hh%psp,hh%at, &
+&                   iout,jfail)
+ end if
+ close(iout)
+ hh%inp=inp
+ hh%done=jfail==0
+ hh%ifail=jfail
+ ifail=jfail
+ return
+ end function oncv_coupled
+
+ subroutine reset(hh,irel)
+
+!! the handle emptied for a new run or stage of the relativistic treatment
+!! irel: no results, stages, atom or channel, and no failure
+!!
+!! @param hh  the handle
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+
+ use failure_m, only: stage_input
+
+!Input variables
+ integer, intent(in) :: irel
+
+!Input/output variables
+ type(handle_t), intent(inout) :: hh
+
  hh%done=.false.
+ hh%has_ae=.false.
+ hh%has_stages=.false.
+ hh%has_chan=.false.
+ hh%ifail=0
  hh%irel=irel
  hh%at=failure_t(0,0,0,stage_input,-1,0,0)
+ return
+ end subroutine reset
+
+ subroutine open_output(hh,iout,ifail)
+
+!! the handle's text output opened, replaced (oncv_set_output)
+!!
+!! @param hh  the handle
+!! @param iout  unit of the text output
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written, also the handle's
+
+ use failure_m, only: fail_io, failed, msg_c_output
+ use, intrinsic :: iso_fortran_env, only: error_unit
+
+!Input/output variables
+ type(handle_t), intent(inout) :: hh
+
+!Output variables
+ integer, intent(out) :: iout,ifail
+
+!Local variables
+ integer :: ios
+
+ ifail=0
  open(newunit=iout,file=hh%out_path,action='write',status='replace', &
 &     iostat=ios)
  if(ios/=0) then
    write(error_unit,'(/2a)') &
-&       'oncv_run_toml: ERROR cannot open the text output ',hh%out_path
-   hh%ifail=failed(fail_io,msg_c_output)
-   ifail=hh%ifail
+&       'open_output: ERROR cannot open the text output ',hh%out_path
+   ifail=failed(fail_io,msg_c_output)
+   hh%ifail=ifail
    return
  end if
-#ifdef WITH_TOML
- call read_input_toml_string(from_c(text,ntext),hh%inp,iout,jfail)
- if(jfail==0) then
-   call oncvpsp_run(irel,0,hh%inp,'','',skip_ld/=0,hh%psp,hh%at,iout,jfail)
- end if
-#else
- write(iout,'(/a)') 'oncv_run_toml: ERROR TOML input needs a build with TOML'
- jfail=failed(fail_input,msg_c_no_toml)
-#endif
- close(iout)
- hh%ifail=jfail
- hh%done=jfail==0
- ifail=jfail
  return
- end function oncv_run_toml
+ end subroutine open_output
+
+ subroutine read_toml(hh,text,ntext,iout,ifail)
+
+!! the TOML input text into the handle's input
+!!
+!! @param hh  the handle
+!! @param text  the TOML input, ntext characters, not terminated
+!! @param ntext  its length
+!! @param iout  unit of the text output
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+#ifdef WITH_TOML
+ use input_toml_m, only: read_input_toml_string
+#else
+ use failure_m, only: fail_input, failed, msg_c_no_toml
+#endif
+
+!Input variables
+ character(kind=c_char), intent(in) :: text(ntext)
+ integer(c_size_t), intent(in) :: ntext
+ integer, intent(in) :: iout
+
+!Input/output variables
+ type(handle_t), intent(inout) :: hh
+
+!Output variables
+ integer, intent(out) :: ifail
+
+#ifdef WITH_TOML
+ call read_input_toml_string(from_c(text,ntext),hh%inp,iout,ifail)
+#else
+ write(iout,'(/a)') 'read_toml: ERROR TOML input needs a build with TOML'
+ ifail=failed(fail_input,msg_c_no_toml)
+#endif
+ return
+ end subroutine read_toml
+
+ subroutine run_all(hh,skip_ld,iout,ifail,ae_in)
+
+!! the stages of the handle's input (run_stages), kept for oncv_coupled,
+!! then the model core and the tests (run_coupled): oncvpsp_run, with the
+!! all-electron atom ae_in if given
+!!
+!! @param hh  the handle
+!! @param skip_ld  whether to leave out the log derivatives
+!! @param iout  unit of the text output
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+!! @param ae_in  the all-electron atom solved before, if given
+
+ use oncvpsp_run_m, only: run_stages, run_coupled
+
+!Input variables
+ logical, intent(in) :: skip_ld
+ integer, intent(in) :: iout
+ type(ae_state_t), intent(in), optional :: ae_in
+
+!Input/output variables
+ type(handle_t), intent(inout) :: hh
+
+!Output variables
+ integer, intent(out) :: ifail
+
+ call run_stages(hh%irel,0,hh%inp,'',hh%cnf,hh%st,hh%at,iout,ifail,ae_in)
+ if(ifail/=0) return
+ hh%has_stages=.true.
+ hh%inp_stages=hh%inp
+ call run_coupled(hh%irel,0,hh%inp,hh%cnf,hh%st,'',skip_ld,hh%psp,hh%at, &
+&                 iout,ifail)
+ hh%done=ifail==0
+ return
+ end subroutine run_all
+
+ subroutine source(src,ae,ifail)
+
+!! a copy of the all-electron atom that the handle src holds, its own
+!! (oncv_ae_toml) or its run's
+!!
+!! @param src  the handle
+!! @param ae  the all-electron atom
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use failure_m, only: fail_input, failed, msg_c_no_ae
+ use, intrinsic :: iso_fortran_env, only: error_unit
+
+!Input variables
+ type(handle_t), intent(in) :: src
+
+!Output variables
+ type(ae_state_t), intent(out) :: ae
+ integer, intent(out) :: ifail
+
+ ifail=0
+ if(src%has_stages) then
+   ae=src%st%ae
+ else if(src%has_ae) then
+   ae=src%ae
+ else
+   write(error_unit,'(/a)') &
+&       'source: ERROR the handle holds no all-electron atom'
+   ifail=failed(fail_input,msg_c_no_ae)
+ end if
+ return
+ end subroutine source
 
  function oncv_write_files(handle,format,nformat,path,npath) result(ifail) &
 &         bind(c,name='oncv_write_files')
@@ -413,8 +809,9 @@
 
  function oncv_dims(handle,dims) result(ifail) bind(c,name='oncv_dims')
 
-!! the sizes of the handle's results, for the caller's arrays; all 0 but
-!! the version without a finished run
+!! the sizes of the handle's results, for the caller's arrays; without a
+!! finished run, those of its all-electron atom (irel, nkap, iexc, mmax)
+!! if it holds one, all 0 but the version else
 !!
 !! @param handle  the run handle
 !! @param dims  the sizes
@@ -432,7 +829,14 @@
  call c_f_pointer(handle,hh)
  dims=dims_t(api_version,0,0,0,0,0,0,0,0)
  ifail=0
- if(.not. hh%done) return
+ if(.not. hh%done) then
+   if(hh%has_stages) then
+     call ae_dims(hh%st%ae,dims)
+   else if(hh%has_ae) then
+     call ae_dims(hh%ae,dims)
+   end if
+   return
+ end if
  associate(pot=>hh%psp%pot)
    dims%irel=pot%irel
    dims%nkap=pot%nkap
@@ -445,6 +849,26 @@
  dims%nrl=hh%psp%nrl
  return
  end function oncv_dims
+
+ subroutine ae_dims(ae,dims)
+
+!! the sizes of an all-electron atom
+!!
+!! @param ae  the all-electron atom
+!! @param dims  the sizes, irel, nkap, iexc and mmax set
+
+!Input variables
+ type(ae_state_t), intent(in) :: ae
+
+!Input/output variables
+ type(dims_t), intent(inout) :: dims
+
+ dims%irel=ae%irel
+ dims%nkap=ae%nkap
+ dims%iexc=ae%iexc
+ dims%mmax=ae%mmax
+ return
+ end subroutine ae_dims
 
  function oncv_field_name(ifield,name,nname) result(nout) &
 &         bind(c,name='oncv_field_name')
@@ -636,7 +1060,9 @@
 
  subroutine lookup(hh,name,ff,ifail)
 
-!! the field name of the handle's results, copied (fields)
+!! the field name of the handle's results, copied (fields): of its
+!! all-electron atom (ae.*: its own or its run's), its channel (channel.*)
+!! or its run (the others)
 !!
 !! @param hh  the handle
 !! @param name  the field's name
@@ -646,7 +1072,6 @@
 
  use failure_m, only: fail_input, failed, msg_c_field, msg_c_no_results
  use, intrinsic :: iso_fortran_env, only: error_unit
- use failure_m, only: mxwarn
 
 !Input variables
  type(handle_t), intent(in) :: hh
@@ -657,11 +1082,48 @@
  integer, intent(out) :: ifail
 
  ifail=0
- if(.not. hh%done) then
-   write(error_unit,'(/a)') 'lookup: ERROR the handle has no results'
-   ifail=failed(fail_input,msg_c_no_results)
-   return
+ if(index(name,'ae.')==1) then
+   if(hh%has_stages) then
+     call lookup_ae(hh%st%ae,name,ff)
+   else if(hh%has_ae) then
+     call lookup_ae(hh%ae,name,ff)
+   end if
+ else if(index(name,'channel.')==1) then
+   if(hh%has_chan) call lookup_channel(hh%chan,name,ff)
+ else if(hh%done) then
+   call lookup_run(hh,name,ff)
  end if
+ if(ff%found) return
+ if(any(fields(:)(3:)==name)) then
+   write(error_unit,'(/2a)') 'lookup: ERROR the handle has no results '// &
+&       'of the field ',name
+   ifail=failed(fail_input,msg_c_no_results)
+ else
+   write(error_unit,'(/3a)') 'lookup: ERROR no field ',name, &
+&       ' (oncv_field_name)'
+   ifail=failed(fail_input,msg_c_field)
+ end if
+ return
+ end subroutine lookup
+
+ subroutine lookup_run(hh,name,ff)
+
+!! the field name of the results of the handle's run, copied, not found if
+!! it is none of theirs
+!!
+!! @param hh  the handle
+!! @param name  the field's name
+!! @param ff  the field
+
+ use failure_m, only: mxwarn
+
+!Input variables
+ type(handle_t), intent(in) :: hh
+ character(len=*), intent(in) :: name
+
+!Output variables
+ type(field_t), intent(out) :: ff
+
  associate(pot=>hh%psp%pot,tt=>hh%psp%tests,bb=>hh%psp%core%budget)
    select case(name)
    case('pot.zz')
@@ -909,14 +1371,155 @@
        call put_none(ff,1)
      end if
    case default
-     write(error_unit,'(/3a)') 'lookup: ERROR no field ',name, &
-&         ' (oncv_field_name)'
-     ifail=failed(fail_input,msg_c_field)
-     return
+     continue
    end select
  end associate
  return
- end subroutine lookup
+ end subroutine lookup_run
+
+ subroutine lookup_ae(ae,name,ff)
+
+!! the field name of an all-electron atom (ae.*), copied, not found if it
+!! is none of its
+!!
+!! @param ae  the all-electron atom
+!! @param name  the field's name
+!! @param ff  the field
+
+ use failure_m, only: mxwarn
+
+!Input variables
+ type(ae_state_t), intent(in) :: ae
+ character(len=*), intent(in) :: name
+
+!Output variables
+ type(field_t), intent(out) :: ff
+
+!Local variables
+ integer :: ncv
+
+ ncv=ae%nc+ae%nv
+ select case(name)
+ case('ae.irel')
+   call put(ff,ae%irel)
+ case('ae.nkap')
+   call put(ff,ae%nkap)
+ case('ae.zz')
+   call put(ff,ae%zz)
+ case('ae.nc')
+   call put(ff,ae%nc)
+ case('ae.nv')
+   call put(ff,ae%nv)
+ case('ae.iexc')
+   call put(ff,ae%iexc)
+ case('ae.na')
+   call put(ff,ae%na(1:ncv))
+ case('ae.la')
+   call put(ff,ae%la(1:ncv))
+ case('ae.fa')
+   call put(ff,ae%fa(1:ncv))
+ case('ae.c_light')
+   call put(ff,ae%c_light)
+ case('ae.mmax')
+   call put(ff,ae%mmax)
+ case('ae.al')
+   call put(ff,ae%al)
+ case('ae.rr')
+   call put(ff,ae%rr)
+ case('ae.it')
+   call put(ff,ae%it)
+ case('ae.etot')
+   call put(ff,ae%etot)
+ case('ae.eterm')
+   call put(ff,ae%eterm)
+ case('ae.res')
+   call put(ff,ae%res)
+ case('ae.ea')
+   call put(ff,ae%ea(1:ncv,1:ae%nkap))
+ case('ae.rhoc')
+   call put(ff,ae%rhoc)
+ case('ae.rho')
+   call put(ff,ae%rho)
+ case('ae.vfull')
+   call put(ff,ae%vfull)
+ case('ae.warnings.nwarn')
+   call put(ff,ae%warn%nwarn)
+ case('ae.warnings.rec')
+   call put(ff,ae%warn%rec(:,1:min(ae%warn%nwarn,mxwarn)))
+ case default
+   continue
+ end select
+ return
+ end subroutine lookup_ae
+
+ subroutine lookup_channel(ch,name,ff)
+
+!! the field name of a channel (channel.*), copied, not found if it is none
+!! of its; the arrays per projector and kappa as the run's (mxprj, nkap),
+!! and the convergence curves to the end of the longest
+!!
+!! @param ch  the channel
+!! @param name  the field's name
+!! @param ff  the field
+
+ use failure_m, only: mxwarn
+
+!Input variables
+ type(channel_t), intent(in) :: ch
+ character(len=*), intent(in) :: name
+
+!Output variables
+ type(field_t), intent(out) :: ff
+
+!Local variables
+ integer :: ii,nq
+
+ select case(name)
+ case('channel.l')
+   call put(ff,ch%l1-1)
+ case('channel.mkap')
+   call put(ff,ch%mkap)
+ case('channel.nproj')
+   call put(ff,ch%nproj)
+ case('channel.irc')
+   call put(ff,ch%irc)
+ case('channel.npa')
+   call put(ff,ch%npa)
+ case('channel.wellprj')
+   call put(ff,ch%wellprj)
+ case('channel.qmsbf')
+   call put(ff,ch%qmsbf)
+ case('channel.epa')
+   call put(ff,ch%epa(:,1:size(ch%vp,2)))
+ case('channel.pswf')
+   call put(ff,ch%pswf)
+ case('channel.vp')
+   call put(ff,ch%vp)
+ case('channel.cvgplt')
+   call put(ff,ch%cvgplt)
+ case('channel.ecurve')
+   nq=0
+   do ii=1,size(ch%ecurve,2)
+     if(any(ch%ecurve(1,ii,:,:)>0.0d0)) nq=ii
+   end do
+   call put(ff,ch%ecurve(:,1:nq,:,:))
+ case('channel.ektail')
+   call put(ff,ch%ektail)
+ case('channel.optdg')
+   call put(ff,ch%optdg)
+ case('channel.wshare')
+   call put(ff,ch%wshare)
+ case('channel.wcurve')
+   call put(ff,ch%wcurve)
+ case('channel.warnings.nwarn')
+   call put(ff,ch%warn%nwarn)
+ case('channel.warnings.rec')
+   call put(ff,ch%warn%rec(:,1:min(ch%warn%nwarn,mxwarn)))
+ case default
+   continue
+ end select
+ return
+ end subroutine lookup_channel
 
  subroutine put_none(ff,rank)
 
@@ -1157,6 +1760,27 @@
  ff%iv=[merge(1,0,xx)]
  return
  end subroutine put_l0
+
+ subroutine put_l1(ff,xx)
+
+!! a logical field of rank 1, as the integers 0 or 1
+!!
+!! @param ff  the field
+!! @param xx  its values
+
+!Input variables
+ logical, intent(in) :: xx(:)
+
+!Output variables
+ type(field_t), intent(out) :: ff
+
+ ff%found=.true.
+ ff%isint=.true.
+ ff%rank=1
+ ff%shp(1)=size(xx)
+ ff%iv=merge(1,0,xx)
+ return
+ end subroutine put_l1
 
  function from_c(chars,nchars) result(string)
 
