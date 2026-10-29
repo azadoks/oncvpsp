@@ -164,6 +164,20 @@ target_link_libraries(oncvpsp
         oncvpsp::compile_options
 )
 
+# The C interface (oncvpsp_c_m.F90, include/oncvpsp.h): the shared library liboncvpsp, of the static
+# library's objects that the interface reaches
+if (ONCVPSP_WITH_C_API)
+    add_library(oncvpsp_c SHARED oncvpsp_c_m.F90)
+    add_library(oncvpsp::c ALIAS oncvpsp_c)
+    set_target_properties(oncvpsp_c PROPERTIES
+        OUTPUT_NAME oncvpsp
+        VERSION 1.0.0
+        SOVERSION 1
+        Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/modules_c")
+    target_include_directories(oncvpsp_c PUBLIC "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>")
+    target_link_libraries(oncvpsp_c PRIVATE oncvpsp::oncvpsp oncvpsp::compile_options)
+endif ()
+
 ###########################################################
 # Executables
 ###########################################################

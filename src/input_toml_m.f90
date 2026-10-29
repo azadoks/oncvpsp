@@ -20,10 +20,71 @@
 ! TOML Fortran library: documentation at toml-f.readthedocs.io
  implicit none
  private
- public :: read_input_toml
+ public :: read_input_toml, read_input_toml_string
  contains
 
  subroutine read_input_toml(unit, inp, iout, ifail)
+
+!! Reads the TOML input of a file (read_table)
+!!
+!! @param unit  the unit of the open TOML file
+!! @param inp  the input values (input_m)
+!! @param iout  unit of the text output
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use input_m, only: input_t
+ use tomlf, only: toml_table, toml_error, toml_load
+
+!Input variables
+ integer, intent(in) :: unit
+ integer, intent(in) :: iout
+
+!Output variables
+ type(input_t), intent(out) :: inp
+ integer, intent(out) :: ifail
+
+!Local variables
+ type(toml_table), allocatable :: table
+ type(toml_error), allocatable :: error
+
+ call toml_load(table, unit, error=error)
+ call read_table(table, error, inp, iout, ifail)
+ return
+ end subroutine read_input_toml
+
+ subroutine read_input_toml_string(text, inp, iout, ifail)
+
+!! Reads the TOML input of a string, the whole document (read_table), as a
+!! binding passes it
+!!
+!! @param text  the TOML document
+!! @param inp  the input values (input_m)
+!! @param iout  unit of the text output
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use input_m, only: input_t
+ use tomlf, only: toml_table, toml_error, toml_loads
+
+!Input variables
+ character(len=*), intent(in) :: text
+ integer, intent(in) :: iout
+
+!Output variables
+ type(input_t), intent(out) :: inp
+ integer, intent(out) :: ifail
+
+!Local variables
+ type(toml_table), allocatable :: table
+ type(toml_error), allocatable :: error
+
+ call toml_loads(table, text, error=error)
+ call read_table(table, error, inp, iout, ifail)
+ return
+ end subroutine read_input_toml_string
+
+ subroutine read_table(table, error, inp, iout, ifail)
 
 !! Reads the TOML input: the same data as read_input_text, with the same
 !! defaults and the same checks against the array sizes (check_data
@@ -34,7 +95,8 @@
 !! scripts/input_text_to_toml.py converts a text input to this form.  The
 !! tables and their keys are listed below.
 !!
-!! @param unit  the unit of the open TOML file
+!! @param table  the TOML document, as parsed
+!! @param error  the parser's error, if it failed
 !! @param inp  the input values (input_m)
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
@@ -42,7 +104,7 @@
 
  use constants_m, only: mxstate, mxcnf, mxlin, well_onset_default
  use input_m, only: input_t
- use tomlf, only: toml_table, toml_array, toml_error, toml_stat, toml_load, &
+ use tomlf, only: toml_table, toml_array, toml_error, toml_stat, &
 &                  get_value, len
 
 !   [oncvpsp]                  atsym, z, nc, nv, iexc, c_light (optional, 0
@@ -89,10 +151,14 @@
 !                              to 4)
 
 !Input variables
-!> The Fortran unit number to read from
- integer, intent(in) :: unit
+!> The parser's error, if it failed
+ type(toml_error), allocatable, intent(in) :: error
 !> unit of the text output
  integer, intent(in) :: iout
+
+!Input/output variables
+!> The TOML document, as parsed (its lookups may change it)
+ type(toml_table), allocatable, intent(inout) :: table
 
 !Output variables
 !> The input values
@@ -101,10 +167,6 @@
  integer, intent(out) :: ifail
 
 !Local variables
-!> The TOML document
- type(toml_table), allocatable :: table
-!> Parser error
- type(toml_error), allocatable :: error
 !> A section of the document
  type(toml_table), pointer :: child
 !> The array of test configurations
@@ -145,7 +207,6 @@
 &          ecut_weight=>inp%ecut_weight)
 
 ! the values not read keep the defaults of input_t
-   call toml_load(table, unit, error=error)
    if(allocated(error)) then
      call input_error('cannot parse the input: '//error%message, iout, ifail)
      if(ifail /= 0) return
@@ -508,7 +569,7 @@
    end if
  end associate
  return
- end subroutine read_input_toml
+ end subroutine read_table
 
  subroutine input_error(message, iout, ifail)
 

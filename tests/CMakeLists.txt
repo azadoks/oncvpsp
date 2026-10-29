@@ -132,6 +132,22 @@ endforeach ()
 oncvpsp_unit_executable(failure)
 oncvpsp_add_test(unit unit_failure nr 08_O test_failure "${data}/08_O.dat")
 
+# Test of the C interface (c/test_c_api.c, liboncvpsp): two handles at once running one TOML input,
+# with the same sizes and no failure, and a broken input failing at the input stage
+if (ONCVPSP_WITH_C_API AND ONCVPSP_WITH_TOML)
+    add_executable(test_c_api c/test_c_api.c)
+    target_link_libraries(test_c_api PRIVATE oncvpsp::c)
+    set_target_properties(test_c_api PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+    foreach (c_test IN ITEMS "0:nr:08_O" "1:sr:14_Si" "2:r:14_Si")
+        string(REPLACE ":" ";" c_test "${c_test}")
+        list(GET c_test 0 irel)
+        list(GET c_test 1 rel)
+        list(GET c_test 2 name)
+        oncvpsp_add_test(unit c_api ${rel} ${name} test_c_api ${irel} "${data}/toml/${name}.toml"
+            "${CMAKE_CURRENT_BINARY_DIR}/c_api_${rel}_${name}.out")
+    endforeach ()
+endif ()
+
 # Unit test of oncvpsp_run in several threads at once (test_run_threads.f90): each case alone, then
 # all of them twice over concurrently, which must give the same results and text bit for bit, so the
 # library keeps no state between or across runs; the cases differ in irel, c_light and the

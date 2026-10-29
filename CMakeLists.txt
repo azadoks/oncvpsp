@@ -22,6 +22,13 @@ option(ONCVPSP_WITH_Libxc "Enable Libxc support" ON)
 option(ONCVPSP_WITH_TOML "Enable TOML input support" ON)
 option(ONCVPSP_WITH_FR "Build the fully-relativistic executables (oncvpspr*.x)" ON)
 option(ONCVPSP_BLAS_DOT "Pseudo-atom overlaps by the linked BLAS (faster; results depend on it at round-off)" OFF)
+option(ONCVPSP_WITH_C_API "Build the shared library liboncvpsp with the C interface (include/oncvpsp.h)" ON)
+
+# The shared library links the static one, and the dependencies built here, which must then be
+# position-independent
+if (ONCVPSP_WITH_C_API)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif ()
 
 # Where each dependency comes from: AUTO uses the system's if it is found and works and otherwise
 # downloads and builds it (with CPM), SYSTEM requires the system's and FETCH always builds it
@@ -54,6 +61,7 @@ if (PROJECT_IS_TOP_LEVEL)
     include(CTest)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 endif ()
 
 ###########################################################
@@ -115,8 +123,12 @@ if (PROJECT_IS_TOP_LEVEL AND BUILD_TESTING)
     add_subdirectory(tests)
 endif ()
 
-# Only the executables are installed: the library is internal to them
+# The executables, and the shared library with its header; the static library is internal
 install(TARGETS ${ONCVPSP_EXECUTABLES} RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+if (ONCVPSP_WITH_C_API)
+    install(TARGETS oncvpsp_c LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}")
+    install(FILES include/oncvpsp.h DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+endif ()
 
 message(STATUS "")
 message(STATUS "ONCVPSP ${PROJECT_VERSION}")

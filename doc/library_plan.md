@@ -318,11 +318,17 @@ So the interface is a hybrid:
   size checked against the dimensions, and return an `ierr`. No pointer
   into the run object is handed out, so nothing outlives it.
 
-- [ ] A module `oncvpsp_c` of `bind(C, name="oncv_…")` routines over
+- [x] A module `oncvpsp_c` of `bind(C, name="oncv_…")` routines over
       `oncvpsp_run`, using `iso_c_binding` kinds (`c_int`, `c_double`,
-      checked equal to `dp`; `c_bool` for logicals).
-- [ ] The input as the TOML text, a `c_char` array with its length,
-      read by `read_input_toml`: the wrappers take a dictionary in the
+      checked equal to `dp`; `c_bool` for logicals). It is
+      `src/oncvpsp_c_m.F90`, built only into the shared library: a
+      handle (`oncv_new`, `oncv_free`) holding the completed input, the
+      results, the ifail and where the run was; `oncv_api_version`,
+      `oncv_set_output`, `oncv_run_toml`, `oncv_failure` (the record) and
+      `oncv_dims`. Every function returns 0 or the ifail.
+- [x] The input as the TOML text, a `c_char` array with its length,
+      read by `read_input_toml_string` (toml-f's `toml_loads`, then the
+      same `read_table` as the file): the wrappers take a dictionary in the
       TOML layout (phase 6), and the parser already checks it. Setters
       on an input handle only if a caller needs them.
 - [ ] `oncv_run(text, n, iout_path, h, ierr)`, `oncv_free(h)`,
@@ -331,6 +337,8 @@ So the interface is a hybrid:
       tests of `tests_t`), and `oncv_write_files` over
       `write_psp_files`. The text output goes to a file the caller
       names, `/dev/null` for none; the error messages to stderr.
+      `oncv_run_toml` (whole runs, istage 0), `oncv_free` and
+      `oncv_dims` are done; the getters and `oncv_write_files` are next.
 - [ ] Stage entry points beside `oncv_run`, as handles on the same
       pattern (dims and getters), over the stage splits of `oncvpsp_run`:
       `oncv_ae(text)`, an all-electron handle that `oncv_run` takes in
@@ -372,10 +380,18 @@ So the interface is a hybrid:
       any statement other than `return` right after `if(ifail/=0)`, to
       catch a caller that does not pass a failure on. It found outmesh's
       `origin` passing `lm_origin`'s `ierr` on as its `ifail`.
-- [ ] A C header for it, and a shared library target (`liboncvpsp`) in
-      CMake.
+- [x] A C header for it, and a shared library target (`liboncvpsp`) in
+      CMake. `include/oncvpsp.h`, and the target `oncvpsp_c`
+      (`liboncvpsp.so.1`, `ONCVPSP_WITH_C_API`, on by default), which
+      builds the static library and the dependencies built here
+      position-independent (the outputs stay bit for bit the same).
 - [ ] A C test in `tests/` that runs one of the reference inputs through
       the interface and compares with the reference output.
+      `tests/c/test_c_api.c` runs the TOML form of a reference input in
+      two handles at once and a broken input (nr, sr, fr); its text
+      output is the executable's but for the banner and the files. The
+      comparison of the arrays with the reference output waits for the
+      getters.
 - [ ] Check that two runs in one process give the same results.
       `tests/unit/test_run.f90` does so from Fortran, bit for bit, and
       `tests/unit/test_run_threads.f90` for runs in threads; the C test

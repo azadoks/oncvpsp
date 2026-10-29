@@ -599,6 +599,12 @@
  integer, parameter, public :: msg_ws_eigenvalues_dsyev=164
 !> exc_dispatch (xc_dispatch_m.f90): : ERROR bad input iexc =
  integer, parameter, public :: msg_xc_dispatch_iexc=165
+!> oncv_run_toml (oncvpsp_c_m.F90): oncv_run_toml: ERROR cannot open the
+!> text output
+ integer, parameter, public :: msg_c_output=166
+!> oncv_run_toml (oncvpsp_c_m.F90): oncv_run_toml: ERROR TOML input needs
+!> a build with TOML
+ integer, parameter, public :: msg_c_no_toml=167
 
  contains
 
