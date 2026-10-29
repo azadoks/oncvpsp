@@ -276,9 +276,17 @@ order follows what the optimizer would reuse first.
       arrays and the `local_t`: with `lloc=4` a channel changed alone
       changes only its own projectors. `run_vkb` calls them;
       `test_stages` checks them against the whole run.
-- [ ] The coupled block, from the valence densities and the model core to
-      the tests, re-runnable on the earlier stages with another model
-      core (icmod, fcfact, rcfact).
+- [x] The coupled block: `oncvpsp_run` is `run_stages`, the stages
+      before the model core (the input completed and echoed, the atom,
+      the channels, the projectors, the valence densities) into a
+      `stages_t`, then `run_coupled`, the model core, the screening with
+      the ionic tail, the diagnostics, ghosts, test configurations, log
+      derivatives and the results. `run_coupled` copies what it changes
+      (the all-electron cache too), so it can be called again on one
+      `stages_t` with another icmod, fcfact or rcfact (the budget's probe
+      and its run). `tests/unit/test_coupled.f90` checks it against whole
+      runs with the input's model core, none, and the input's again, bit
+      for bit (icmod 6 and 1, sr and fr).
 
 ### Phase 5: the C interface
 

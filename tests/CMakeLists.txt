@@ -115,6 +115,18 @@ foreach (stage_test IN ITEMS "0:nr:08_O" "1:sr:14_Si" "2:r:14_Si" "0:nr:07_N_dl"
     oncvpsp_add_test(unit unit_stages ${rel} ${name} test_stages ${irel} "${data}/${name}.dat")
 endforeach ()
 
+# Unit test of run_coupled called again on one run's stages (test_coupled.f90): with the input's
+# model core, with none, and with the input's again, each the same as a whole run, bit for bit;
+# the budget (icmod 6) and the polynomial (icmod 1), sr and fr
+oncvpsp_unit_executable(coupled)
+foreach (coupled_test IN ITEMS "1:sr:14_Si_bc" "1:sr:14_Si" "2:r:14_Si")
+    string(REPLACE ":" ";" coupled_test "${coupled_test}")
+    list(GET coupled_test 0 irel)
+    list(GET coupled_test 1 rel)
+    list(GET coupled_test 2 name)
+    oncvpsp_add_test(unit unit_coupled ${rel} ${name} test_coupled ${irel} "${data}/${name}.dat")
+endforeach ()
+
 # Unit test of oncvpsp_run in several threads at once (test_run_threads.f90): each case alone, then
 # all of them twice over concurrently, which must give the same results and text bit for bit, so the
 # library keeps no state between or across runs; the cases differ in irel, c_light and the

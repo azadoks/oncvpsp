@@ -20,23 +20,101 @@
 !> The calculation of a pseudopotential, from its input to its tests and
 !> the results (results_m)
  module oncvpsp_run_m
-
+ use constants_m, only: dp, mxlin
+ use ae_state_m, only: ae_state_t
+ use pieces_m, only: piecewise_t
  implicit none
  private
- public :: oncvpsp_run, complete_input
+ public :: oncvpsp_run, complete_input, run_stages, run_coupled, stages_t
 
+!> the results of the stages before the model core (oncvpsp_run), from
+!> which run_coupled makes the model core, the screening and the tests;
+!> run_coupled does not change them, so it can be called again with
+!> another model core
+ type :: stages_t
+!> the all-electron atom, with the test configurations' all-electron
+!> halves read with its file
+   type(ae_state_t) :: ae
+!> number of kappas per l: 1, or 2 for irel=2
+   integer :: nkap=0
+!> ion charge
+   real(dp) :: zion=0.0d0
+!> largest core radius (bohr)
+   real(dp) :: rcmax=0.0d0
+!> points of the output mesh
+   integer :: nrl=0
+!> the q of each channel's last basis function
+   real(dp) :: qmsbf(mxlin+1)=0.0d0
+!> the core radii as the echoes give them
+   real(dp) :: rc_in(mxlin+1)=0.0d0
+!> fcfact as the echoes give it
+   real(dp) :: fcfact_in=0.0d0
+!> the principal quantum number of each projector's state
+   integer, allocatable :: npa(:,:)
+!> the projectors' energies (Ha)
+   real(dp), allocatable :: epa(:,:,:)
+!> whether each projector is a well state
+   logical, allocatable :: wellprj(:,:)
+!> the screened semi-local and local potentials (Ha)
+   real(dp), allocatable :: vp(:,:,:)
+!> the projectors on the mesh
+   real(dp), allocatable :: vkb(:,:,:,:)
+!> their coefficients (Ha)
+   real(dp), allocatable :: evkb(:,:,:)
+!> the projectors as pieces
+   type(piecewise_t), allocatable :: vkbpw(:,:,:)
+!> the screened local potential as pieces
+   type(piecewise_t) :: vlocpw
+!> the cutoffs of the error levels (run_optimize)
+   real(dp), allocatable :: cvgplt(:,:,:,:,:)
+!> the convergence curves (run_optimize)
+   real(dp), allocatable :: ecurve(:,:,:,:,:)
+!> the curves' tails and checks (run_optimize)
+   real(dp), allocatable :: ektail(:,:,:,:)
+!> the optimization's diagnostics (run_optimize)
+   real(dp), allocatable :: optdg(:,:,:,:)
+!> the waves' shares (run_optimize)
+   real(dp), allocatable :: wshare(:,:,:,:)
+!> the weights of the pseudo-waves in the weighted cutoff
+   real(dp), allocatable :: wcurve(:,:,:)
+!> the eigenvalues of the B matrices (run_vkb)
+   real(dp), allocatable :: bbeig(:,:,:)
+!> the pseudo valence charge density (valence_densities)
+   real(dp), allocatable :: rho(:)
+!> the all-electron valence charges, state by state
+   real(dp), allocatable :: rhoae(:,:)
+!> the pseudo valence charges, state by state
+   real(dp), allocatable :: rhops(:,:)
+!> the all-electron valence charge density
+   real(dp), allocatable :: rhotae(:)
+!> the pseudo-atomic orbitals
+   real(dp), allocatable :: uupsa(:,:,:)
+!> the pseudo valence eigenvalue sum (Ha)
+   real(dp) :: eeig=0.0d0
+!> valence charge
+   real(dp) :: zval=0.0d0
+!> fully relativistic: the scalar-relativistic projectors' coefficients
+   real(dp), allocatable :: esr(:,:)
+!> fully relativistic: the spin-orbit projectors' coefficients
+   real(dp), allocatable :: eso(:,:)
+!> fully relativistic: the scalar-relativistic projectors as pieces
+   type(piecewise_t), allocatable :: vsrpw(:,:)
+!> fully relativistic: the spin-orbit projectors as pieces
+   type(piecewise_t), allocatable :: vsopw(:,:)
+ end type stages_t
 
  contains
 
  subroutine oncvpsp_run(irel,istage,inp,ae_filename,ps_filename,skip_ld, &
 &                       psp,iout,ifail)
-!! the pseudopotential of the input inp, and its tests: the text output
-!! to iout, and the pseudopotential and the tests in psp. inp is completed
-!! (configurations, core radii) as the writers echo it. With istage=1
-!! only the all-electron atom, written to ae_filename; with istage=2 that
-!! file in place of it. A ps_filename, if not blank, receives the
-!! pseudopotential for oncvpsp_ld.x; skip_ld leaves out the log
-!! derivatives.
+!! the pseudopotential of the input inp, and its tests: the stages before
+!! the model core (run_stages), then the model core and the tests
+!! (run_coupled). The text output goes to iout, and the pseudopotential
+!! and the tests to psp. inp is completed (configurations, core radii) as
+!! the writers echo it. With istage=1 only the all-electron atom, written
+!! to ae_filename; with istage=2 that file in place of it. A ps_filename,
+!! if not blank, receives the pseudopotential for oncvpsp_ld.x; skip_ld
+!! leaves out the log derivatives.
 !!
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param istage  0 the whole calculation, 1 the all-electron stage only, 2 the
@@ -49,44 +127,9 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
- use failure_m, only: fail_convergence, fail_input
- use config_ae_m, only: run_config_ae, ae_config_t
- use ae_file_m, only: write_ae_file
- use ae_state_m, only: ae_state_t, solve_ae
- use channel_m, only: channel_t, optimize_channel, ncurve
- use ps_file_m, only: write_ps_file
- use vout_m, only: vout
- use sr_so_r_m, only: sr_so_r
- use ionic_tail_m, only: coulomb_tail, ionic_screening
- use modcore1_m, only: modcore
- use modcore2_m, only: modcore2
- use modcore3_m, only: modcore3
- use modcore_budget_m, only: modcore_budget, modcore_budget_table, &
-&                            modcore_probes
- use vloc_cutoff_m, only: vloc_cutoff
- use diagout_m, only: diagout
- use gnu_script_m, only: gnu_script
- use run_config_m, only: run_config_ps
- use run_diag_m, only: run_diag
- use run_ghosts_m, only: run_ghosts
- use run_phsft_m, only: run_phsft
- use run_plot_m, only: run_plot
- use run_vkb_m, only: run_vkb
- use modcore_m, only: core_pieces_smooth
- use ps_valence_m, only: valence_densities, unscreen_potentials, &
-&                       coulomb_switch
- use constants_m, only: nerrdg, nerrlv
- use input_echo_m, only: write_atom, write_lmax, write_icmod, write_epsh, &
-&                        write_mesh, fx, vkb_head, vkb_line
- use main_setup_m, only: main_names, write_reference_results, &
-&                        core_radius_points
- use constants_m, only: mxprj, mxcnf
- use pieces_m, only: pw_free
  use input_m, only: input_t, config_t
- use constants_m, only: dp, mxl, mxlin, mxstate, mxkap, nrhomod
- use pieces_m, only: piecewise_t
  use results_m, only: results_t
- use adams_m, only: adams_t
+ use constants_m, only: mxcnf
 
 !Input variables
  integer, intent(in) :: irel,istage
@@ -101,25 +144,78 @@
  type(results_t), intent(out) :: psp
  integer, intent(out) :: ifail
 
+!Local variables
+ type(config_t) :: cnf(mxcnf)
+ type(stages_t) :: st
 
+ call run_stages(irel,istage,inp,ae_filename,cnf,st,iout,ifail)
+ if(ifail/=0 .or. istage==1) return
+ call run_coupled(irel,istage,inp,cnf,st,ps_filename,skip_ld,psp,iout,ifail)
+ return
+ end subroutine oncvpsp_run
 
+ subroutine run_stages(irel,istage,inp,ae_filename,cnf,st,iout,ifail)
+
+!! the stages of a run before the model core, from the input inp: the
+!! input completed (complete_input) and echoed, the all-electron atom
+!! (solve_ae), the channels (optimize_channel), the local potential and
+!! the projectors (run_vkb), and the valence densities, in st for
+!! run_coupled. With istage=1 only the all-electron atom, written to
+!! ae_filename, and st is left incomplete; with istage=2 that file in place
+!! of it
+!!
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param istage  0 the whole calculation, 1 the all-electron stage only, 2 the
+!!                pseudopotential stage only
+!! @param inp  the input values (input_m), as read on input, completed on
+!!             output
+!! @param ae_filename  the all-electron data file of istage 1 and 2
+!! @param cnf  the reference and test configurations (input_m)
+!! @param st  the stages' results
+!! @param iout  unit of the text output
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+ use failure_m, only: fail_convergence, fail_input
+ use config_ae_m, only: run_config_ae, ae_config_t
+ use ae_file_m, only: write_ae_file
+ use ae_state_m, only: ae_state_t, solve_ae
+ use channel_m, only: channel_t, optimize_channel, ncurve
+ use sr_so_r_m, only: sr_so_r
+ use run_vkb_m, only: run_vkb
+ use ps_valence_m, only: valence_densities
+ use constants_m, only: nerrdg
+ use input_echo_m, only: write_atom, write_lmax, write_icmod, write_epsh, &
+&                        write_mesh, fx, vkb_head, vkb_line
+ use main_setup_m, only: main_names, write_reference_results, core_radius_points
+ use constants_m, only: mxprj, mxcnf
+ use input_m, only: input_t, config_t
+ use constants_m, only: dp, mxl, mxlin, mxstate, mxkap
+ use pieces_m, only: piecewise_t
+ use adams_m, only: adams_t
+!Input variables
+ integer, intent(in) :: irel,istage
+ character(len=*), intent(in) :: ae_filename
+ integer, intent(in) :: iout
+
+!Input/output variables
+ type(input_t), intent(inout) :: inp
+
+!Output variables
+ type(config_t), intent(out) :: cnf(mxcnf)
+ type(stages_t), intent(out) :: st
+ integer, intent(out) :: ifail
 
 !Local variables
- integer :: ii,ierr,it,nq
+ integer :: ii,ierr,it
  integer :: jj,l1
  integer :: mmax,nlim,nrl
- integer :: nkap,npsh
+ integer :: nkap
  integer,allocatable :: npa(:,:)
 !
  integer :: irc(mxlin+1)
-! the configurations, numbered as in the input: the reference first
- type(config_t) :: cnf(mxcnf)
-! the ghost tests' margins for the diagnostics block (run_ghosts), per kap
- integer :: ngh(mxl+1,mxkap),ghn(mxstate,mxl+1,mxkap)
- real(dp) :: ghe(2,mxstate,mxl+1,mxkap),ghp(2,mxl+1,mxkap)
 
- real(dp) :: al,eeel
- real(dp) :: eeig,eexc
+ real(dp) :: al
+ real(dp) :: eeig
  real(dp) :: fcfact_in
  real(dp) :: fcgrid(3),rcgrid(3)
  real(dp) :: rcmax
@@ -128,13 +224,10 @@
  real(dp) :: zion,zval,etot,res
 !> the speed of light of the run, from the input
  real(dp) :: c_light
- real(dp) :: cvloc(2,nerrlv),vlchk
- real(dp) :: eterm(4),rphs(4)
- real(dp) :: rcore
+ real(dp) :: eterm(4)
 !
  real(dp) :: ea(mxstate,mxkap)
  real(dp) :: qmsbf(mxlin+1),rc_in(mxlin+1)
- real(dp) :: epstot
 
  real(dp), allocatable :: evkb(:,:,:),cvgplt(:,:,:,:,:)
  real(dp), allocatable :: ecurve(:,:,:,:,:)
@@ -143,47 +236,31 @@
  real(dp), allocatable :: ektail(:,:,:,:),optdg(:,:,:,:),wshare(:,:,:,:)
 !the eigenvalues of the B matrices (run_vkb)
  real(dp), allocatable :: bbeig(:,:,:)
-!the test configurations (run_config_ps): rows of eigenvalues (-1 if one
-!failed), their n, l, ikap and f, eae, eps, and the energy differences
- integer :: ntcf(mxcnf),itcf(3,2*mxstate,mxcnf)
- real(dp) :: etcf(3,2*mxstate,mxcnf),dtcf(3,mxcnf)
- real(dp), allocatable :: pshae(:,:,:),pshps(:,:,:)
  real(dp) :: ecutw
 !weights of the pseudo-waves' curves in the weighted cutoff (budget_cutoff)
  real(dp), allocatable :: wcurve(:,:,:)
  real(dp), allocatable :: rr(:)
- real(dp), allocatable :: rho(:),rhoc(:),rhot(:)
+ real(dp), allocatable :: rho(:),rhoc(:)
  real(dp), allocatable :: uu(:,:),up(:,:)
  logical, allocatable :: wellprj(:,:)
  real(dp), allocatable :: vp(:,:,:),vfull(:),vkb(:,:,:,:),pswf(:,:,:,:)
- real(dp), allocatable :: vpuns(:,:)
-!frozen-core ionic potential of the tail of the local potential
- real(dp), allocatable :: vion(:)
- real(dp), allocatable :: vo(:),vxc(:)
- real(dp), allocatable :: rhomod(:,:),rhoae(:,:),rhops(:,:),rhotae(:)
+!the valence charges, state by state, and the all-electron density
+ real(dp), allocatable :: rhoae(:,:),rhops(:,:),rhotae(:)
  real(dp), allocatable :: uupsa(:,:,:) !pseudo-atomic orbitals array
-!probe densities and their l for the hardness of icmod=7
- real(dp), allocatable :: probes(:,:)
- integer, allocatable :: lprobe(:)
- integer :: nprobe
  real(dp), allocatable :: epa(:,:,:)
  real(dp), allocatable :: dlta(:,:,:,:),vrloc(:,:),pswfx(:,:,:,:)
  type(piecewise_t), allocatable :: vkbpw(:,:,:)
  type(piecewise_t) :: vlocpw
- type(piecewise_t) :: corepw(nrhomod)
  real(dp), allocatable :: chix(:,:,:,:)
-!fully-relativistic only: scalar-relativistic and spin-orbit projectors, and
-!the semi-local potentials for psmlout_r
+!fully-relativistic only: scalar-relativistic and spin-orbit projectors
  real(dp), allocatable :: vsr(:,:,:),vso(:,:,:),esr(:,:),eso(:,:)
  type(piecewise_t), allocatable :: vsrpw(:,:),vsopw(:,:)
- real(dp), allocatable :: vpsml(:,:,:)
 
 !all-electron results for the test configurations (see run_config_ae)
  type(ae_config_t) :: aec(mxcnf)
 !the all-electron atom (ae_state_m) and a channel (channel_m)
  type(ae_state_t) :: ae
  type(channel_t) :: chan
-
 
 !names in the messages: the equation solved and the program
  character(len=19) :: treatment
@@ -252,7 +329,7 @@
  end do
 
 
- allocate(rho(mmax),rhoc(mmax),rhot(mmax))
+ allocate(rho(mmax),rhoc(mmax))
  allocate(uu(mmax,2),up(mmax,2),uupsa(mmax,nkap,inp%nv))
  allocate(evkb(mxprj,mxl+1,nkap))
 !the projectors beyond nproj and of lloc stay 0
@@ -264,8 +341,6 @@
  allocate(wcurve(mxprj,mxl+1,nkap))
  allocate(vp(mmax,mxl+2,nkap),vfull(mmax),vkb(mmax,mxprj,mxl+1,nkap))
  allocate(pswf(mmax,mxprj,mxl+1,nkap))
- allocate(vpuns(mmax,mxl+2))
- allocate(vo(mmax),vxc(mmax))
  allocate(rhoae(mmax,inp%nv),rhops(mmax,inp%nv),rhotae(mmax))
  allocate(npa(mxprj,mxlin+1))
  allocate(wellprj(mxprj,mxlin+1))
@@ -471,6 +546,200 @@
 &               vsr,esr,vso,eso,vsrpw,vsopw,iout,ifail)
    if(ifail/=0) return
  end if
+
+!the earlier stages' results, from which the model core and the tests
+!follow (run_coupled)
+ st%ae=ae
+ st%ae%aec(:)=aec(:)
+ st%nkap=nkap
+ st%zion=zion
+ st%rcmax=rcmax
+ st%nrl=nrl
+ st%qmsbf(:)=qmsbf(:)
+ st%npa=npa
+ st%epa=epa
+ st%wellprj=wellprj
+ st%vp=vp
+ st%vkb=vkb
+ st%evkb=evkb
+ st%vkbpw=vkbpw
+ st%vlocpw=vlocpw
+ st%cvgplt=cvgplt
+ st%ecurve=ecurve
+ st%ektail=ektail
+ st%optdg=optdg
+ st%wshare=wshare
+ st%wcurve=wcurve
+ st%bbeig=bbeig
+ st%rc_in(:)=rc_in(:)
+ st%fcfact_in=fcfact_in
+ st%rho=rho
+ st%rhoae=rhoae
+ st%rhops=rhops
+ st%rhotae=rhotae
+ st%uupsa=uupsa
+ st%eeig=eeig
+ st%zval=zval
+ st%esr=esr
+ st%eso=eso
+ st%vsrpw=vsrpw
+ st%vsopw=vsopw
+
+ return
+ end subroutine run_stages
+
+ subroutine run_coupled(irel,istage,inp,cnf,st,ps_filename,skip_ld,psp,iout, &
+&                       ifail)
+
+!! the model core, the screening with the ionic tail, the diagnostics, the
+!! ghost tests, the test configurations, the log derivatives and the
+!! results psp, from the earlier stages' results st, which it does not
+!! change: called again with another icmod, fcfact or rcfact in inp, it
+!! gives what a whole run with them gives
+!!
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param istage  0 the whole calculation, 1 the all-electron stage only, 2 the
+!!                pseudopotential stage only
+!! @param inp  the input values (input_m), completed (complete_input)
+!! @param cnf  the reference and test configurations (input_m)
+!! @param st  the earlier stages' results
+!! @param ps_filename  the pseudopotential file for oncvpsp_ld.x, or blank
+!! @param skip_ld  whether to leave out the log derivatives
+!! @param psp  the results (results_m)
+!! @param iout  unit of the text output
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+ use config_ae_m, only: run_config_ae, ae_config_t
+ use ps_file_m, only: write_ps_file
+ use vout_m, only: vout
+ use ionic_tail_m, only: coulomb_tail, ionic_screening
+ use modcore1_m, only: modcore
+ use modcore2_m, only: modcore2
+ use modcore3_m, only: modcore3
+ use modcore_budget_m, only: modcore_budget, modcore_budget_table, &
+&                            modcore_probes
+ use modcore_m, only: core_pieces_smooth
+ use vloc_cutoff_m, only: vloc_cutoff
+ use diagout_m, only: diagout
+ use gnu_script_m, only: gnu_script
+ use run_config_m, only: run_config_ps
+ use run_diag_m, only: run_diag
+ use run_ghosts_m, only: run_ghosts
+ use run_phsft_m, only: run_phsft
+ use run_plot_m, only: run_plot
+ use ps_valence_m, only: unscreen_potentials, coulomb_switch
+ use channel_m, only: ncurve
+ use pieces_m, only: pw_free
+ use input_m, only: input_t, config_t
+ use results_m, only: results_t
+ use adams_m, only: adams_t
+ use constants_m, only: mxl, mxlin, mxstate, mxkap, mxcnf, nerrlv, mxprj, &
+&                       nrhomod
+
+!Input variables
+ integer, intent(in) :: irel,istage
+ type(config_t), intent(in) :: cnf(mxcnf)
+ type(stages_t), intent(in) :: st
+ character(len=*), intent(in) :: ps_filename
+ logical, intent(in) :: skip_ld
+ integer, intent(in) :: iout
+
+!Input/output variables
+ type(input_t), intent(inout) :: inp
+
+!Output variables
+ type(results_t), intent(out) :: psp
+ integer, intent(out) :: ifail
+
+!Local variables
+!the earlier stages' results, copied, as the steps below change some
+ type(ae_state_t) :: ae
+ type(ae_config_t) :: aec(mxcnf)
+ type(adams_t) :: adams
+ integer :: mmax,nkap,nrl
+ real(dp) :: c_light,zion,rcmax,etot,eeig,zval,fcfact_in,ecutw
+ real(dp) :: fcgrid(3),rcgrid(3),log_mesh(4),rc_in(mxlin+1),qmsbf(mxlin+1)
+ real(dp) :: ea(mxstate,mxkap)
+ integer, allocatable :: npa(:,:)
+ logical, allocatable :: wellprj(:,:)
+ real(dp), allocatable :: rr(:),rhoc(:),vfull(:),rho(:),rhot(:),vo(:),vxc(:)
+ real(dp), allocatable :: vpuns(:,:),vion(:),vpsml(:,:,:)
+ real(dp), allocatable :: epa(:,:,:),vp(:,:,:),vkb(:,:,:,:),evkb(:,:,:)
+ real(dp), allocatable :: cvgplt(:,:,:,:,:),ecurve(:,:,:,:,:)
+ real(dp), allocatable :: ektail(:,:,:,:),optdg(:,:,:,:),wshare(:,:,:,:)
+ real(dp), allocatable :: wcurve(:,:,:),bbeig(:,:,:)
+ real(dp), allocatable :: rhomod(:,:),rhoae(:,:),rhops(:,:),rhotae(:)
+ real(dp), allocatable :: uupsa(:,:,:),esr(:,:),eso(:,:)
+!probe densities and their l for the hardness of icmod=7
+ real(dp), allocatable :: probes(:,:)
+ integer, allocatable :: lprobe(:)
+ integer :: nprobe
+ type(piecewise_t), allocatable :: vkbpw(:,:,:),vsrpw(:,:),vsopw(:,:)
+ type(piecewise_t) :: vlocpw
+ type(piecewise_t) :: corepw(nrhomod)
+ integer :: ii,jj,l1,npsh,nq
+ real(dp) :: eeel,eexc,epstot,rcore,vlchk
+ real(dp) :: cvloc(2,nerrlv),rphs(4)
+!the test configurations (run_config_ps): rows of eigenvalues (-1 if one
+!failed), their n, l, ikap and f, eae, eps, and the energy differences
+ integer :: ntcf(mxcnf),itcf(3,2*mxstate,mxcnf)
+ real(dp) :: etcf(3,2*mxstate,mxcnf),dtcf(3,mxcnf)
+ real(dp), allocatable :: pshae(:,:,:),pshps(:,:,:)
+! the ghost tests' margins for the diagnostics block (run_ghosts), per kap
+ integer :: ngh(mxl+1,mxkap),ghn(mxstate,mxl+1,mxkap)
+ real(dp) :: ghe(2,mxstate,mxl+1,mxkap),ghp(2,mxl+1,mxkap)
+
+ ifail=0
+ ae=st%ae
+ aec(:)=st%ae%aec(:)
+ adams=ae%adams
+ mmax=ae%mmax
+ c_light=ae%c_light
+ rr=ae%rr
+ rhoc=ae%rhoc
+ vfull=ae%vfull
+ ea(:,:)=ae%ea(:,:)
+ etot=ae%etot
+ log_mesh(:)=ae%log_mesh(:)
+ nkap=st%nkap
+ zion=st%zion
+ rcmax=st%rcmax
+ nrl=st%nrl
+ qmsbf(:)=st%qmsbf(:)
+ rc_in(:)=st%rc_in(:)
+ fcfact_in=st%fcfact_in
+ npa=st%npa
+ epa=st%epa
+ wellprj=st%wellprj
+ vp=st%vp
+ vkb=st%vkb
+ evkb=st%evkb
+ vkbpw=st%vkbpw
+ vlocpw=st%vlocpw
+ cvgplt=st%cvgplt
+ ecurve=st%ecurve
+ ektail=st%ektail
+ optdg=st%optdg
+ wshare=st%wshare
+ wcurve=st%wcurve
+ bbeig=st%bbeig
+ rho=st%rho
+ rhoae=st%rhoae
+ rhops=st%rhops
+ rhotae=st%rhotae
+ uupsa=st%uupsa
+ eeig=st%eeig
+ zval=st%zval
+ esr=st%esr
+ eso=st%eso
+ vsrpw=st%vsrpw
+ vsopw=st%vsopw
+ ecutw=0.0d0
+ allocate(rhot(mmax),vo(mmax),vxc(mmax),vpuns(mmax,mxl+2))
+
+!icmod=4 coarse-search grids: min, max, step
+ fcgrid=[inp%fcfact_min,inp%fcfact_max,inp%fcfact_step]
+ rcgrid=[inp%rcfact_min,inp%rcfact_max,inp%rcfact_step]
 
  allocate(rhomod(mmax,nrhomod))
 
@@ -793,7 +1062,7 @@
    if(ifail/=0) return
  end if
  return
- end subroutine oncvpsp_run
+ end subroutine run_coupled
 
  subroutine complete_input(inp,cnf,iout,ifail)
 
