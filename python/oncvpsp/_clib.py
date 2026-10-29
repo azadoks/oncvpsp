@@ -6,7 +6,7 @@ import ctypes.util
 import glob
 import os
 
-API_VERSION = 3
+API_VERSION = 4
 MXLIN = 5
 MXRANK = 5
 
@@ -70,6 +70,7 @@ def load():
     pd, pi = C.POINTER(C.c_double), C.POINTER(C.c_int)
     signatures = {
         "oncv_api_version": ([], ci),
+        "oncv_build_info": ([cp, sz, C.POINTER(sz)], ci),
         "oncv_new": ([], vp),
         "oncv_free": ([vp], None),
         "oncv_set_output": ([vp, cp, sz], ci),

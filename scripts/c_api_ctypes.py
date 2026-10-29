@@ -70,6 +70,7 @@ def library(path):
     lib.oncv_channel_toml.argtypes = [vp, vp, cp, sz, C.c_int, C.c_int]
     lib.oncv_coupled.argtypes = [vp, vp, C.c_int, C.c_double, C.c_double, C.c_int]
     lib.oncv_set_output_buffer.argtypes = [vp, C.c_int]
+    lib.oncv_build_info.argtypes = [cp, sz, C.POINTER(sz)]
     lib.oncv_output_text.argtypes = [vp, cp, sz, C.POINTER(sz)]
     pd, pi = C.POINTER(C.c_double), C.POINTER(C.c_int)
     lib.oncv_confine.argtypes = [
@@ -222,12 +223,18 @@ def main():
             print("FAILED:", label, file=sys.stderr)
             nfail += 1
 
-    check("api version", lib.oncv_api_version() == 3)
+    check("api version", lib.oncv_api_version() == 4)
+    nout = C.c_size_t()
+    lib.oncv_build_info(None, 0, C.byref(nout))
+    buf = C.create_string_buffer(nout.value)
+    lib.oncv_build_info(buf, nout.value, C.byref(nout))
+    keys = [line.split(" ", 1)[0] for line in buf.raw.decode().splitlines()]
+    check("build info", keys == ["commit", "source", "compiled"])
     handle = C.c_void_p(lib.oncv_new())
     check("run", lib.oncv_run_toml(handle, irel, text, len(text), 0) == 0)
     dims = Dims()
     lib.oncv_dims(handle, C.byref(dims))
-    check("dims", dims.version == 3 and dims.irel == irel and dims.mmax > 0)
+    check("dims", dims.version == 4 and dims.irel == irel and dims.mmax > 0)
     names = [
         (kind, name)
         for kind, name in fields(lib)

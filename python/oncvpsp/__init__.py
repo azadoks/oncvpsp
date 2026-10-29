@@ -2,8 +2,8 @@
 
 The input is a dictionary in the layout of the TOML input, the TOML text,
 or the path of a TOML file; keyword arguments are tables merged over it,
-key by key. Each function returns a Handle, whose fields are NumPy arrays
-in Fortran order; a failure raises OncvpspError, or with check=False is
+key by key, and None values are left out (TOML has no null). Each function
+returns a Handle, whose fields are NumPy arrays in Fortran order; a failure raises OncvpspError, or with check=False is
 left in the handle (handle.ifail, handle.failure). text=True keeps the text
 output (handle.text), False discards it, a path writes it there.
 
@@ -29,6 +29,7 @@ __all__ = [
     "Handle",
     "OncvpspError",
     "all_electron",
+    "build_info",
     "channel",
     "confine",
     "coupled",
@@ -40,6 +41,16 @@ __all__ = [
 
 _RELS = {"nr": 0, "sr": 1, "fr": 2, "r": 2}
 _MODES = {"channel": 0, "projectors": 1, "node": 2}
+
+
+def build_info():
+    """the library's build: {"commit", "source", "compiled"}, its git
+    commit, the state of the source against it and the build time"""
+    nout = C.c_size_t()
+    lib.oncv_build_info(None, 0, C.byref(nout))
+    buf = C.create_string_buffer(nout.value)
+    lib.oncv_build_info(buf, nout.value, C.byref(nout))
+    return dict(line.split(" ", 1) for line in buf.raw.decode().splitlines())
 
 
 def _irel(irel):

@@ -3,11 +3,11 @@ ONCVPSP's runs and stages in Julia, over liboncvpsp (include/oncvpsp.h).
 
 The input is a dictionary in the layout of the TOML input, the TOML text,
 or the path of a TOML file; keyword arguments are tables merged over it,
-key by key. Each function returns a `Handle`, whose fields are arrays in
-the Fortran shapes (Julia's order is Fortran's); a failure throws an
-`OncvpspError`, or with `check=false` is left in the handle. `text=true`
-keeps the text output (`h.text`), `false` discards it, a path writes it
-there. The library is `ENV["ONCVPSP_LIBRARY"]`, or liboncvpsp on the
+key by key, and nothing values are left out (TOML has no null). Each
+function returns a `Handle`, whose fields are arrays in the Fortran shapes
+(Julia's order is Fortran's); a failure throws an `OncvpspError`, or with
+`check=false` is left in the handle. `text=true` keeps the text output
+(`h.text`), `false` discards it, a path writes it there. The library is `ENV["ONCVPSP_LIBRARY"]`, or liboncvpsp on the
 system's search path.
 
     using ONCVPSP
@@ -20,9 +20,9 @@ module ONCVPSP
 using Libdl
 using TOML
 
-export Handle, OncvpspError, all_electron, channel, confine, coupled, has_node
+export Handle, OncvpspError, all_electron, build_info, channel, confine, coupled, has_node
 
-const API_VERSION = 3
+const API_VERSION = 4
 const MXLIN = 5
 const MXRANK = 5
 const MSG_PSPOT_NODE = 122
@@ -84,6 +84,20 @@ function __init__()
         kind, name = split(String(buf[1:nn]))
         fields[name] = kind[1]
     end
+end
+
+"""
+the library's build: a Dict of "commit", "source" and "compiled", its git
+commit, the state of the source against it and the build time
+"""
+function build_info()
+    nout = Ref{Csize_t}(0)
+    ccall(sym(:oncv_build_info), Cint, (Ptr{UInt8}, Csize_t, Ref{Csize_t}), C_NULL, 0, nout)
+    buf = Vector{UInt8}(undef, nout[])
+    ccall(sym(:oncv_build_info), Cint, (Ptr{UInt8}, Csize_t, Ref{Csize_t}),
+          buf, length(buf), nout)
+    lines = filter(!isempty, split(String(buf), '\n'))
+    Dict(String(kk) => String(vv) for (kk, vv) in (split(ll, ' '; limit=2) for ll in lines))
 end
 
 """
@@ -276,8 +290,14 @@ function input_text(inp, tables)
             data[key] = vv
         end
     end
-    sprint(TOML.print, data)
+    sprint(TOML.print, dropnothing(data))
 end
+
+"the input with its nothing values left out (TOML has no null)"
+dropnothing(dd::AbstractDict) =
+    Dict{String,Any}(String(kk) => dropnothing(vv) for (kk, vv) in dd if vv !== nothing)
+dropnothing(vv::AbstractVector) = [dropnothing(xx) for xx in vv]
+dropnothing(vv) = vv
 
 irel_of(irel::Integer) = irel in 0:2 ? Cint(irel) : throw(ArgumentError("irel is 0, 1 or 2"))
 irel_of(irel::Union{Symbol,AbstractString}) =

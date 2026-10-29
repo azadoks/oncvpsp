@@ -31,6 +31,9 @@ exe = read("exe.out", String)
     @test startswith(after, psp8)
     @test all(ll -> isempty(ll) || startswith(ll, "l1-1,npr_sr,npr_so"), split(between, '\n'))
 
+    # the library's build, the executable's (one build)
+    @test all(occursin("$kk $vv", replace(exe, "," => "")) for (kk, vv) in build_info())
+
     dims = run.dims
     @test dims.version == ONCVPSP.API_VERSION && dims.irel == irel
     @test size(run["pot.rr"]) == (dims.mmax,)
@@ -44,6 +47,9 @@ exe = read("exe.out", String)
 
     data = ONCVPSP.TOML.parsefile(toml)
     @test same(ONCVPSP.run(data; irel=irel))
+    nones = Dict(kk => (vv isa AbstractDict ? merge(vv, Dict("nothing" => nothing)) : vv)
+                 for (kk, vv) in data)
+    @test same(ONCVPSP.run(nones; irel=irel))
     @test same(ONCVPSP.run(Dict(); irel=irel, (Symbol(kk) => vv for (kk, vv) in data)...))
 
     ae = all_electron(data; irel=irel)

@@ -23,7 +23,7 @@
  module build_info_m
  implicit none
  private
- public :: write_build_info
+ public :: write_build_info, build_info_text
 
  include 'build_info.inc'
 
@@ -46,5 +46,18 @@
  return
 
  end subroutine write_build_info
+
+ function build_info_text() result(text)
+!! the build's commit, the state of the source and the build time, a line
+!! each: 'commit ', 'source ', 'compiled ' and the value
+
+!Output variables
+ character(len=:), allocatable :: text
+
+ text='commit '//build_commit//new_line('a')//'source '//build_source// &
+&     new_line('a')//'compiled '//build_time//new_line('a')
+ return
+
+ end function build_info_text
 
  end module build_info_m

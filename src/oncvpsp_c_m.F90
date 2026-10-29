@@ -47,7 +47,7 @@
 
 !> the version of the interface: a change to a function or a struct
 !> raises it
- integer(c_int), parameter :: api_version=3
+ integer(c_int), parameter :: api_version=4
 
 !> 1 if c_double is the kind of the reals, else a division by zero that
 !> stops the compilation
@@ -206,6 +206,41 @@
  version=api_version
  return
  end function oncv_api_version
+
+ function oncv_build_info(text,ntext,nout) result(ifail) &
+&         bind(c,name='oncv_build_info')
+
+!! the library's build (build_info_m): its commit, the state of the source
+!! and the build time, a line each ('commit ', 'source ', 'compiled ' and
+!! the value); its first ntext bytes into text, not terminated, and its
+!! whole length in nout, so that a call with ntext 0 gives the size
+!!
+!! @param text  the caller's buffer, ntext characters
+!! @param ntext  its length
+!! @param nout  the length of the build's text
+
+ use build_info_m, only: build_info_text
+
+!Input variables
+ integer(c_size_t), value :: ntext
+
+!Output variables
+ character(kind=c_char), intent(out) :: text(ntext)
+ integer(c_size_t), intent(out) :: nout
+ integer(c_int) :: ifail
+
+!Local variables
+ character(len=:), allocatable :: info
+ integer(c_size_t) :: ii
+
+ ifail=0
+ info=build_info_text()
+ nout=len(info,kind=c_size_t)
+ do ii=1,min(ntext,nout)
+   text(ii)=info(ii:ii)
+ end do
+ return
+ end function oncv_build_info
 
  function oncv_new() result(handle) bind(c,name='oncv_new')
 

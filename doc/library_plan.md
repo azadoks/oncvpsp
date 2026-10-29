@@ -531,6 +531,13 @@ So the interface is a hybrid:
       (`_toml.py`, as `tomllib` only reads), Julia with `TOML.print`.
 - [x] A user page on the wrappers, in the `nav` of `mkdocs.yml`:
       `doc/wrappers.md`.
+- [x] The build in the interface (`api_version` 4), for oncvpsp-opt's
+      cache of node onsets, keyed until then on the library file's hash:
+      `oncv_build_info` gives `build_info_m`'s commit, source state and
+      build time, a line each, the wrappers' `build_info()` a dictionary;
+      the tests check it against the executable's `build:` line. The
+      wrappers leave out None (`nothing`) values of the input, which
+      pyoncvpsp's dumps carry and TOML cannot.
 - [x] Valgrind on the C test (nr, sr, fr, lloc 2): no errors; 2 kB lost
       per PSML file written, xmlf90's element stack, which
       `xml_Close` now frees (`cmake/patches/xmlf90-1.6.3.patch`, whose

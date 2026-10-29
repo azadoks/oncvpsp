@@ -52,7 +52,7 @@ extern "C" {
 #endif
 
 /* The version of this header; oncv_api_version() is the library's */
-#define ONCV_API_VERSION 3
+#define ONCV_API_VERSION 4
 
 /* The kinds of failure (failure_m's fail_*) */
 #define ONCV_FAIL_NONE 0
@@ -112,6 +112,12 @@ typedef struct {
 
 /* The version of the library's interface */
 int oncv_api_version(void);
+
+/* The library's build: its git commit, the state of the source against it
+ * and the build time, a line each ("commit ", "source ", "compiled " and
+ * the value), the first ntext bytes into text, not terminated, and its
+ * whole length in *nout; ntext 0 gives the size to allocate */
+int oncv_build_info(char *text, size_t ntext, size_t *nout);
 
 /* A new run handle, its text output going to /dev/null */
 void *oncv_new(void);

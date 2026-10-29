@@ -46,7 +46,8 @@ def _is_tables(value):
 
 def _table(name, table, header, lines):
     """the table under its header ([name], [[name]] or none), its values
-    then its subtables and arrays of tables"""
+    then its subtables and arrays of tables; None values left out"""
+    table = {kk: vv for kk, vv in table.items() if vv is not None}
     nested = [
         (kk, vv)
         for kk, vv in table.items()
@@ -69,7 +70,8 @@ def _table(name, table, header, lines):
 
 
 def dumps(data):
-    """the TOML text of a dictionary of tables"""
+    """the TOML text of a dictionary of tables, its None values left out
+    (TOML has no null), as if not given"""
     lines = []
     _table("", data, None, lines)
     return "\n".join(lines) + "\n"

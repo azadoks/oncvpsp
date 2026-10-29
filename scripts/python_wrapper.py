@@ -2,7 +2,7 @@
 run's text output and psp8 file the executable's byte for byte (its output
 but for the banner); the input as the TOML file, its dictionary and tables
 given as keyword arguments, the same; the arrays in Fortran order against
-the dimensions; the stages (the all-electron atom, a run from it, each
+the dimensions; the library's build the executable's; the stages (the all-electron atom, a run from it, each
 channel with its projectors, the node test, a confined atom) against the
 run; and a failure raised, or left in the handle, and a handle closed.
 
@@ -57,6 +57,13 @@ def main():
         ),
     )
 
+    # the library's build, the executable's (one build)
+    info = oncvpsp.build_info()
+    check(
+        "the build, the executable's",
+        all(f"{kk} {vv}" in exe.replace(",", "") for kk, vv in info.items()),
+    )
+
     dims = run.dims
     check("dims", dims["version"] == oncvpsp.API_VERSION and dims["irel"] == irel)
     vkb = run["pot.vkb"]
@@ -78,6 +85,11 @@ def main():
     # the input as a dictionary, and as tables in keyword arguments
     data = oncvpsp.read_toml(toml)
     check("the dictionary", same(oncvpsp.run(data, irel), fields))
+    nones = {
+        kk: dict(vv, nothing=None) if isinstance(vv, dict) else vv
+        for kk, vv in data.items()
+    }
+    check("None values left out", same(oncvpsp.run(nones, irel), fields))
     check(
         "the tables as keyword arguments", same(oncvpsp.run({}, irel, **data), fields)
     )

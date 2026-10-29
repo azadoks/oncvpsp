@@ -29,7 +29,8 @@ julia --project=julia/ONCVPSP                     # Julia
 The input is the TOML input of the executables (`--toml-input`, the
 [Users Guide](users_guide.md)): the path of a TOML file, its text, or a
 dictionary in its layout. Keyword arguments are tables merged over it, key
-by key, so that one input serves a scan:
+by key, so that one input serves a scan. `None` (`nothing`) values are
+left out, as if not given, TOML having no null:
 
 ```python
 import oncvpsp
@@ -80,6 +81,11 @@ run = oncvpsp.run("Si.toml")
 rr, vkb = run["pot.rr"], run["pot.vkb"]   # vkb[:, iproj, l, ikap]
 print(run["tests.convergence.cross"][..., 0])
 ```
+
+`oncvpsp.build_info()` (`build_info()`) gives the library's build: its
+git commit, the state of the source against it and the build time, the
+executables' `build:` line, by which results kept can be tied to the
+ONCVPSP that made them.
 
 `text=True`, the default, keeps the text output (`handle.text`), `False`
 discards it, and a path writes it to that file.

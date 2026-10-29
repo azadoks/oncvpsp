@@ -477,6 +477,14 @@ int main(int argc, char **argv)
         return 2;
     }
     check("api version", oncv_api_version() == ONCV_API_VERSION);
+    {
+        size_t nout = 0;
+        char info[512];
+        oncv_build_info(NULL, 0, &nout);
+        check("build info", nout > 0 && nout < sizeof info);
+        oncv_build_info(info, nout, &nout);
+        check("its lines", strncmp(info, "commit ", 7) == 0 && memchr(info, '\n', nout));
+    }
 
     h1 = oncv_new();
     h2 = oncv_new();
