@@ -104,12 +104,15 @@ endif ()
 
 # xmlf90, whose wxml writes the PSML output. It is always built, with a patch that adds xml_OpenUnit:
 # it writes a document to a unit that is already open (the standard output, where the PSML file goes
-# like the psp8 and upf files) and leaves it open at xml_Close
+# like the psp8 and upf files) and leaves it open at xml_Close, which frees the document's element
+# stack. The patch's hash is in the patch command, so that a changed patch is applied again
+set(xmlf90_patch "${PROJECT_SOURCE_DIR}/cmake/patches/xmlf90-1.6.3.patch")
+file(SHA256 "${xmlf90_patch}" xmlf90_patch_sha256)
 CPMAddPackage(
     NAME xmlf90
     GIT_REPOSITORY "https://gitlab.com/siesta-project/libraries/xmlf90.git"
     GIT_TAG 1.6.3
-    PATCH_COMMAND "${CMAKE_COMMAND}" "-DPATCH=${PROJECT_SOURCE_DIR}/cmake/patches/xmlf90-1.6.3.patch"
+    PATCH_COMMAND "${CMAKE_COMMAND}" "-DPATCH=${xmlf90_patch}" "-DPATCH_SHA256=${xmlf90_patch_sha256}"
                   -P "${PROJECT_SOURCE_DIR}/cmake/ApplyPatch.cmake"
     EXCLUDE_FROM_ALL YES
     SYSTEM YES

@@ -3,7 +3,9 @@
 # has changed.
 #
 # Run in script mode, as the PATCH_COMMAND of CPMAddPackage:
-#   cmake -DPATCH=<file.patch> -P ApplyPatch.cmake
+#   cmake -DPATCH=<file.patch> [-DPATCH_SHA256=<its hash>] -P ApplyPatch.cmake
+# The hash is unused here; in the patch command, it makes the command change with the patch, which
+# runs the download and patch steps again
 
 if (NOT PATCH)
     message(FATAL_ERROR "ApplyPatch.cmake: PATCH must be defined")

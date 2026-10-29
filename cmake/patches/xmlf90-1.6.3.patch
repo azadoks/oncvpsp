@@ -1,6 +1,8 @@
 Changes to xmlf90 1.6.3 for ONCVPSP:
 - wxml: xml_OpenUnit writes a document to a unit that is already open and
   leaves it open at xml_Close
+- wxml: xml_Close frees the element stack (destroy_elstack), which each
+  document allocated and none freed, a leak in a library writing many
 - the SAX example tests are added only when xmlf90 is the top-level project
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -20,7 +22,7 @@ index 6d56820..f9bb6b2 100644
 +  add_subdirectory("doc/Examples/sax/features")
 +endif()
 diff --git a/src/wxml/m_wxml_core.f90 b/src/wxml/m_wxml_core.f90
-index 4181ada..60c85a4 100644
+index 4181ada..6fb26c1 100644
 --- a/src/wxml/m_wxml_core.f90
 +++ b/src/wxml/m_wxml_core.f90
 @@ -27,9 +27,10 @@ type, public :: xmlf_t
@@ -83,7 +85,7 @@ index 4181ada..60c85a4 100644
  !-------------------------------------------------------------------
  subroutine xml_AddXMLDeclaration(xf,encoding)
  type(xmlf_t), intent(inout)   :: xf
-@@ -330,7 +365,7 @@ do
+@@ -330,9 +365,10 @@ do
  enddo
  
  write(unit=xf%lun,fmt="(a)") char(xf%buffer)
@@ -91,4 +93,36 @@ index 4181ada..60c85a4 100644
 +if (xf%close_unit) close(unit=xf%lun)
  
  deallocate(xf%filename)
++call destroy_elstack(xf%stack)
  
+ end subroutine xml_Close
+ 
+diff --git a/src/wxml/m_wxml_elstack.f90 b/src/wxml/m_wxml_elstack.f90
+index 791fd8f..e34bfad 100644
+--- a/src/wxml/m_wxml_elstack.f90
++++ b/src/wxml/m_wxml_elstack.f90
+@@ -25,6 +25,7 @@ private
+ end type elstack_t
+ 
+ public  :: push_elstack, pop_elstack, init_elstack, reset_elstack, print_elstack
++public  :: destroy_elstack
+ public  :: get_top_elstack, is_empty, get_elstack_signature
+ public  :: len
+ 
+@@ -58,6 +59,16 @@ subroutine reset_elstack(elstack)
+ 
+ end subroutine reset_elstack
+ 
++!-----------------------------------------------------------------
++subroutine destroy_elstack(elstack)
++  type(elstack_t), intent(inout)  :: elstack
++
++  if (associated(elstack%stack)) deallocate(elstack%stack)
++  nullify(elstack%stack)
++  elstack%n_items = 0
++
++end subroutine destroy_elstack
++
+ !-----------------------------------------------------------------
+ subroutine resize_elstack(elstack)
+   type(elstack_t), intent(inout)  :: elstack
