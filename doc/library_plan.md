@@ -338,7 +338,14 @@ So the interface is a hybrid:
       `write_psp_files`. The text output goes to a file the caller
       names, `/dev/null` for none; the error messages to stderr.
       `oncv_run_toml` (whole runs, istage 0), `oncv_free` and
-      `oncv_dims` are done; the getters and `oncv_write_files` are next.
+      `oncv_dims` are done, and the getters, by name rather than one
+      function per array: `oncv_field_name(i)` lists the fields (46, the
+      components of `results_t`, `pseudo_t` and `tests_t` by their
+      Fortran names, `pot.vkb`, `tests.convergence.curve`, ...),
+      `oncv_shape` gives a field's rank and shape (Fortran order) and
+      `oncv_get_double` / `oncv_get_int` copy it, its size checked, so a
+      wrapper builds its arrays from the list and a new field needs no
+      new function. `oncv_write_files` is next.
 - [ ] Stage entry points beside `oncv_run`, as handles on the same
       pattern (dims and getters), over the stage splits of `oncvpsp_run`:
       `oncv_ae(text)`, an all-electron handle that `oncv_run` takes in
@@ -353,6 +360,19 @@ So the interface is a hybrid:
       `psp%pot`, with no text; check that the model-core checks
       (`core_truncation.py`, `model_core.py`) need only the charges and
       potentials. `run_diag`'s tables may stay text only.
+      Checked against oncvpsp-opt (pinned pyoncvpsp adcac2e): the
+      cutoffs, `opt`, `vkb_cond` (bbeig), the projector signs (evkb),
+      `ecut_vloc`, the test configurations, the ghost margins and
+      localization, `ecut_w`, the log derivatives, the reference
+      eigenvalues and the charges are in the fields. Not yet: every
+      GHOST(+) state and their count per l (ghosts_t keeps the least
+      localized one), run_ghosts' "basis cut" and "basis full" notes, the
+      warnings as a list, the Teter fit's fcfact, rcfact, rmatch and
+      rhocmatch (icmod 4), the budget's results (icmod 6, 7: ecut, error,
+      slack, ecut_needed, r_s, rc_min, fill, hardness mismatch), the UPF
+      file's core and atomic charges on its mesh, and the psp8 file for
+      oncvpsp_confine.x (`oncv_write_files`). The input echo is the input
+      the caller passed; the failure is `oncv_failure` and the text.
 - [ ] The text output optionally into a buffer the caller reads, beside
       a file or `/dev/null`, so the text parser can check the arrays
       during the switch-over without temporary files.
@@ -393,6 +413,11 @@ So the interface is a hybrid:
       comparison of the arrays with the reference output waits for the
       getters.
 - [ ] Check that two runs in one process give the same results.
+      `test_c_api.c` checks every field of two handles bit for bit (it
+      found `esr` and `eso` left unset below irel 2), and
+      `scripts/c_api_ctypes.py` every field after a second run in one
+      handle, through ctypes, with the structs checked against the
+      fields' shapes.
       `tests/unit/test_run.f90` does so from Fortran, bit for bit, and
       `tests/unit/test_run_threads.f90` for runs in threads; the C test
       repeats it through the interface, two handles at once.

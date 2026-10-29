@@ -17,8 +17,11 @@
 
 /*
  * Test of the C interface (include/oncvpsp.h): two handles open at once
- * running one TOML input, with the same sizes and no failure, and a run
- * of a broken input failing as an input failure at the input stage.
+ * running one TOML input, with the same sizes and no failure; every field
+ * copied out, the same from both handles bit for bit, the test
+ * configurations' energies the same as the text output's; the getters'
+ * checks; and a run of a broken input failing as an input failure at the
+ * input stage.
  *
  * usage: test_c_api IREL INPUT.toml OUTPUT
  */
@@ -37,6 +40,66 @@ static void check(const char *label, int ok)
         fprintf(stderr, "FAILED: %s\n", label);
         nfail++;
     }
+}
+
+#define NAME(s) (s), strlen(s)
+
+/* Every field of the two handles: the shapes and values the same */
+static void same_fields(void *h1, void *h2)
+{
+    char field[64];
+    int ifield, nn, rank1, rank2, shp1[ONCV_MXRANK], shp2[ONCV_MXRANK];
+    size_t size, kk;
+    for (ifield = 1; (nn = oncv_field_name(ifield, field, sizeof field - 1)) > 0;
+         ifield++) {
+        const char *name = field + 2;
+        field[nn] = '\0';
+        check("shape", oncv_shape(h1, NAME(name), &rank1, shp1) == 0);
+        oncv_shape(h2, NAME(name), &rank2, shp2);
+        check("shapes of two handles", rank1 == rank2 &&
+              memcmp(shp1, shp2, sizeof(int) * (size_t)rank1) == 0);
+        for (size = 1, kk = 0; kk < (size_t)rank1; kk++) size *= (size_t)shp1[kk];
+        if (field[0] == 'r') {
+            double *v1 = calloc(size + 1, sizeof *v1), *v2 = calloc(size + 1, sizeof *v2);
+            check(name, oncv_get_double(h1, NAME(name), v1, size) == 0);
+            oncv_get_double(h2, NAME(name), v2, size);
+            check(name, memcmp(v1, v2, size * sizeof *v1) == 0);
+            free(v1);
+            free(v2);
+        } else {
+            int *v1 = calloc(size + 1, sizeof *v1), *v2 = calloc(size + 1, sizeof *v2);
+            check(name, oncv_get_int(h1, NAME(name), v1, size) == 0);
+            oncv_get_int(h2, NAME(name), v2, size);
+            check(name, memcmp(v1, v2, size * sizeof *v1) == 0);
+            free(v1);
+            free(v2);
+        }
+    }
+    check("fields", ifield > 40);
+}
+
+/* The test configurations' energies against the text output's test_config
+ * lines (diagout, e24.16: 17 digits, which give the double back) */
+static void same_as_text(void *handle, const char *path)
+{
+    double de[3 * 5], aa[3];
+    char line[512];
+    int ncfg, icfg, nseen = 0;
+    FILE *fp = fopen(path, "r");
+    check("text output", fp != NULL);
+    if (!fp) return;
+    oncv_get_int(handle, NAME("tests.configs.ncfg"), &ncfg, 1);
+    check("configs.de", oncv_get_double(handle, NAME("tests.configs.de"), de, 15) == 0);
+    while (fgets(line, sizeof line, fp)) {
+        if (sscanf(line, "test_config %d %lf %lf %lf", &icfg, aa, aa + 1, aa + 2) != 4)
+            continue;
+        check("config in range", icfg >= 0 && icfg < 5);
+        check("test_config as the text", aa[0] == de[3 * icfg] &&
+              aa[1] == de[3 * icfg + 1] && aa[2] == de[3 * icfg + 2]);
+        nseen++;
+    }
+    fclose(fp);
+    check("test_config lines", nseen == ncfg && ncfg > 0);
 }
 
 static char *read_file(const char *path, size_t *len)
@@ -100,6 +163,21 @@ int main(int argc, char **argv)
     check("dims of two handles", memcmp(&d1, &d2, sizeof d1) == 0);
     for (l1 = 0; l1 <= d1.lmax; l1++)
         check("projectors", d1.lloc == l1 || d1.nproj[l1] > 0);
+    same_fields(h1, h2);
+    same_as_text(h1, argv[3]);
+    {
+        int rank, shp[ONCV_MXRANK], ival;
+        double xx[2];
+        check("rr's shape", oncv_shape(h1, NAME("pot.rr"), &rank, shp) == 0 &&
+              rank == 1 && shp[0] == d1.mmax);
+        check("a scalar", oncv_shape(h1, NAME("pot.zion"), &rank, shp) == 0 && rank == 0);
+        check("no such field", oncv_shape(h1, NAME("pot.nothing"), &rank, shp) % 100 ==
+              ONCV_FAIL_INPUT);
+        check("wrong size", oncv_get_double(h1, NAME("pot.zion"), xx, 2) % 100 ==
+              ONCV_FAIL_INPUT);
+        check("wrong kind", oncv_get_int(h1, NAME("pot.zion"), &ival, 1) % 100 ==
+              ONCV_FAIL_INPUT);
+    }
 
     ifail = oncv_run_toml(h2, irel, broken, strlen(broken), 0);
     oncv_failure(h2, &fl);

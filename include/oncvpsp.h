@@ -125,6 +125,35 @@ int oncv_failure(void *handle, oncv_failure_t *failure);
  * finished run */
 int oncv_dims(void *handle, oncv_dims_t *dims);
 
+/* The largest rank of a field */
+#define ONCV_MXRANK 5
+
+/* The results are copied out by field, named after the components of the
+ * Fortran results (src/results_m.f90; pot.* src/pseudo_m.f90, tests.*
+ * src/test_results_m.f90), in Fortran order: the first index fastest, so
+ * a C caller indexes shp[0] innermost, and numpy reshapes with order='F'.
+ * The sizes in the Fortran comments use oncv_dims and constants_m
+ * (mxprj=5, mxl=3, mxstate=30, mxcnf=5, nrhomod=5, nerrlv=7, mxkap=2).
+ * A field the run did not compute (esr without irel 2, the log
+ * derivatives with skip_ld) has the size 0. */
+
+/* Field ifield (1, 2, ...): its kind, 'r' real or 'i' integer (a logical
+ * as 0 or 1), a blank and its name, into name (at most nname bytes, not
+ * terminated); returns the bytes written, 0 past the last field */
+int oncv_field_name(int ifield, char *name, size_t nname);
+
+/* The rank of a field and its shape, shp[0..rank-1] */
+int oncv_shape(void *handle, const char *name, size_t nname, int *rank,
+               int shp[ONCV_MXRANK]);
+
+/* The values of a real field, nvalues of them (its size, oncv_shape) */
+int oncv_get_double(void *handle, const char *name, size_t nname,
+                    double *values, size_t nvalues);
+
+/* The values of an integer field, nvalues of them */
+int oncv_get_int(void *handle, const char *name, size_t nname, int *values,
+                 size_t nvalues);
+
 #ifdef __cplusplus
 }
 #endif

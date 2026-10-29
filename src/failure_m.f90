@@ -605,6 +605,16 @@
 !> oncv_run_toml (oncvpsp_c_m.F90): oncv_run_toml: ERROR TOML input needs
 !> a build with TOML
  integer, parameter, public :: msg_c_no_toml=167
+!> lookup (oncvpsp_c_m.F90): lookup: ERROR the handle has no results
+ integer, parameter, public :: msg_c_no_results=168
+!> lookup (oncvpsp_c_m.F90): lookup: ERROR no field
+ integer, parameter, public :: msg_c_field=169
+!> check_size (oncvpsp_c_m.F90): check_size: ERROR the field is of the other
+!> kind
+ integer, parameter, public :: msg_c_kind=170
+!> check_size (oncvpsp_c_m.F90): check_size: ERROR the field has values, the
+!> buffer
+ integer, parameter, public :: msg_c_size=171
 
  contains
 

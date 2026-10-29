@@ -23,20 +23,63 @@
 !> the message of the record (oncv_failure).
 
  module oncvpsp_c_m
- use, intrinsic :: iso_c_binding, only: c_int, c_ptr, c_null_ptr, c_char, &
-&                 c_size_t, c_associated, c_loc, c_f_pointer
+ use, intrinsic :: iso_c_binding, only: c_int, c_ptr, c_char, c_size_t, &
+&                 c_double, c_associated, c_loc, c_f_pointer
  use input_m, only: input_t
  use results_m, only: results_t
  use failure_m, only: failure_t
- use constants_m, only: mxlin
+ use constants_m, only: dp, mxlin
  implicit none
  private
  public :: oncv_api_version, oncv_new, oncv_free, oncv_set_output, &
-&          oncv_run_toml, oncv_failure, oncv_dims, dims_t
+&          oncv_run_toml, oncv_failure, oncv_dims, dims_t, oncv_field_name, &
+&          oncv_shape, oncv_get_double, oncv_get_int
 
 !> the version of the interface: a change to a function or a struct
 !> raises it
  integer(c_int), parameter :: api_version=1
+
+!> 1 if c_double is the kind of the reals, else a division by zero that
+!> stops the compilation
+ integer, parameter :: same_double=1/merge(1,0,c_double==dp)
+
+!> the largest rank of a field
+ integer, parameter :: mxrank=5
+
+!> the fields of the results that oncv_shape and oncv_get_* copy out, each
+!> its kind (r real, i integer, a logical as 0 or 1) and its name, the
+!> component of results_t (pot.*, tests.*: pseudo_m, test_results_m)
+ character(len=32), parameter :: fields(*)=[character(len=32) :: &
+&  'r pot.zz', 'r pot.zion', 'r pot.c_light', 'r pot.rcmax', 'r pot.rr', &
+&  'i pot.nproj', 'r pot.evkb', 'r pot.vkb', 'r pot.esr', 'r pot.eso', &
+&  'r pot.vpuns', 'r pot.rho', 'r pot.rhomod', 'r epstot', 'r ea', 'r rhotae', &
+&  'r rhoc', 'r rcore', 'r vpsml', 'r uupsa', 'i tests.logder.ne', &
+&  'r tests.logder.ee', 'r tests.logder.rl', 'r tests.logder.ae', &
+&  'r tests.logder.ps', 'i tests.ghosts.nrow', 'i tests.ghosts.nn', &
+&  'r tests.ghosts.ee', 'r tests.ghosts.least', 'i tests.configs.ncfg', &
+&  'i tests.configs.nrow', 'i tests.configs.state', 'r tests.configs.ee', &
+&  'r tests.configs.de', 'r tests.convergence.cross', &
+&  'r tests.convergence.curve', 'r tests.convergence.tail', &
+&  'r tests.convergence.opt', 'r tests.convergence.wshare', &
+&  'i tests.weighted_cut.used', 'r tests.weighted_cut.errw', &
+&  'r tests.weighted_cut.ecutw', 'r tests.weighted_cut.weight', &
+&  'r tests.vloc_cut.cut', 'r tests.vloc_cut.check', 'r tests.bbeig']
+
+!> a field copied out of the results: its values, flat, and its shape
+ type :: field_t
+!> whether the name is a field
+   logical :: found=.false.
+!> whether its values are integers (iv), else reals (rv)
+   logical :: isint=.false.
+!> its rank, 0 for a scalar
+   integer :: rank=0
+!> its shape, shp(1:rank)
+   integer :: shp(mxrank)=0
+!> its real values, in Fortran order
+   real(dp), allocatable :: rv(:)
+!> its integer values, in Fortran order
+   integer, allocatable :: iv(:)
+ end type field_t
 
 !> the sizes of a run's results (oncv_dims), for the caller's arrays
  type, bind(c) :: dims_t
@@ -77,6 +120,12 @@
 !> whether a run finished, so that the results are there
    logical :: done=.false.
  end type handle_t
+
+!> a field's values and shape from an array or scalar of the results
+ interface put
+   module procedure put_r0, put_r1, put_r2, put_r3, put_r4, put_r5, &
+&                   put_i0, put_i1, put_i2, put_i3, put_l0
+ end interface put
 
  contains
 
@@ -277,6 +326,653 @@
  dims%nrl=hh%psp%nrl
  return
  end function oncv_dims
+
+ function oncv_field_name(ifield,name,nname) result(nout) &
+&         bind(c,name='oncv_field_name')
+
+!! the field ifield (1, 2, ...) of the results that oncv_shape and
+!! oncv_get_* copy out: its kind (r real, i integer), a blank and its name,
+!! into name, nname bytes at most, not terminated; the number of bytes
+!! written, 0 past the last field
+!!
+!! @param ifield  the field
+!! @param name  its kind and name
+!! @param nname  the size of name
+
+!Input variables
+ integer(c_int), value :: ifield
+ integer(c_size_t), value :: nname
+
+!Input/output variables
+ character(kind=c_char), intent(inout) :: name(nname)
+
+!Output variables
+ integer(c_int) :: nout
+
+!Local variables
+ integer :: ii
+
+ nout=0
+ if(ifield<1 .or. ifield>size(fields)) return
+ nout=int(min(int(len_trim(fields(ifield)),c_size_t),nname),c_int)
+ do ii=1,nout
+   name(ii)=fields(ifield)(ii:ii)
+ end do
+ return
+ end function oncv_field_name
+
+ function oncv_shape(handle,name,nname,rank,shp) result(ifail) &
+&         bind(c,name='oncv_shape')
+
+!! the rank and shape of a field of the handle's results (oncv_field_name),
+!! in Fortran order (the first index fastest); a field the run did not
+!! compute has the size 0
+!!
+!! @param handle  the run handle
+!! @param name  the field's name, nname characters, not terminated
+!! @param nname  its length
+!! @param rank  its rank, 0 for a scalar
+!! @param shp  its shape, shp(1:rank)
+
+!Input variables
+ type(c_ptr), value :: handle
+ integer(c_size_t), value :: nname
+ character(kind=c_char), intent(in) :: name(nname)
+
+!Output variables
+ integer(c_int), intent(out) :: rank
+ integer(c_int), intent(out) :: shp(mxrank)
+ integer(c_int) :: ifail
+
+!Local variables
+ type(handle_t), pointer :: hh
+ type(field_t) :: ff
+
+ rank=0
+ shp(:)=0
+ call c_f_pointer(handle,hh)
+ call lookup(hh,from_c(name,nname),ff,ifail)
+ if(ifail/=0) return
+ rank=ff%rank
+ shp(:)=ff%shp(:)
+ return
+ end function oncv_shape
+
+ function oncv_get_double(handle,name,nname,values,nvalues) result(ifail) &
+&         bind(c,name='oncv_get_double')
+
+!! the values of a real field of the handle's results, in Fortran order,
+!! into values, whose size nvalues must be the field's (oncv_shape)
+!!
+!! @param handle  the run handle
+!! @param name  the field's name, nname characters, not terminated
+!! @param nname  its length
+!! @param values  the values
+!! @param nvalues  their number
+
+!Input variables
+ type(c_ptr), value :: handle
+ integer(c_size_t), value :: nname,nvalues
+ character(kind=c_char), intent(in) :: name(nname)
+
+!Input/output variables
+ real(c_double), intent(inout) :: values(nvalues)
+
+!Output variables
+ integer(c_int) :: ifail
+
+!Local variables
+ type(handle_t), pointer :: hh
+ type(field_t) :: ff
+
+ call c_f_pointer(handle,hh)
+ call lookup(hh,from_c(name,nname),ff,ifail)
+ if(ifail/=0) return
+ call check_size(from_c(name,nname),ff,.false.,nvalues,ifail)
+ if(ifail/=0) return
+ values(:)=ff%rv(:)
+ return
+ end function oncv_get_double
+
+ function oncv_get_int(handle,name,nname,values,nvalues) result(ifail) &
+&         bind(c,name='oncv_get_int')
+
+!! the values of an integer field of the handle's results (a logical as 0
+!! or 1), in Fortran order, into values, whose size nvalues must be the
+!! field's (oncv_shape)
+!!
+!! @param handle  the run handle
+!! @param name  the field's name, nname characters, not terminated
+!! @param nname  its length
+!! @param values  the values
+!! @param nvalues  their number
+
+!Input variables
+ type(c_ptr), value :: handle
+ integer(c_size_t), value :: nname,nvalues
+ character(kind=c_char), intent(in) :: name(nname)
+
+!Input/output variables
+ integer(c_int), intent(inout) :: values(nvalues)
+
+!Output variables
+ integer(c_int) :: ifail
+
+!Local variables
+ type(handle_t), pointer :: hh
+ type(field_t) :: ff
+
+ call c_f_pointer(handle,hh)
+ call lookup(hh,from_c(name,nname),ff,ifail)
+ if(ifail/=0) return
+ call check_size(from_c(name,nname),ff,.true.,nvalues,ifail)
+ if(ifail/=0) return
+ values(:)=ff%iv(:)
+ return
+ end function oncv_get_int
+
+ subroutine check_size(name,ff,isint,nvalues,ifail)
+
+!! whether a caller's buffer of nvalues values of the kind isint fits the
+!! field ff
+!!
+!! @param name  the field's name
+!! @param ff  the field
+!! @param isint  whether the buffer holds integers
+!! @param nvalues  its size
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use failure_m, only: fail_input, failed, msg_c_kind, msg_c_size
+ use, intrinsic :: iso_fortran_env, only: error_unit
+
+!Input variables
+ character(len=*), intent(in) :: name
+ type(field_t), intent(in) :: ff
+ logical, intent(in) :: isint
+ integer(c_size_t), intent(in) :: nvalues
+
+!Output variables
+ integer, intent(out) :: ifail
+
+!Local variables
+ integer :: nff
+
+ ifail=0
+ if(ff%isint.neqv.isint) then
+   write(error_unit,'(/3a)') 'check_size: ERROR the field ',trim(name), &
+&       ' is of the other kind (oncv_get_double, oncv_get_int)'
+   ifail=failed(fail_input,msg_c_kind)
+   return
+ end if
+ nff=product(ff%shp(1:ff%rank))
+ if(nvalues/=int(nff,c_size_t)) then
+   write(error_unit,'(/3a,i0,a,i0)') 'check_size: ERROR the field ', &
+&       trim(name),' has ',nff,' values, the buffer ',nvalues
+   ifail=failed(fail_input,msg_c_size)
+   return
+ end if
+ return
+ end subroutine check_size
+
+ subroutine lookup(hh,name,ff,ifail)
+
+!! the field name of the handle's results, copied (fields)
+!!
+!! @param hh  the handle
+!! @param name  the field's name
+!! @param ff  the field
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use failure_m, only: fail_input, failed, msg_c_field, msg_c_no_results
+ use, intrinsic :: iso_fortran_env, only: error_unit
+
+!Input variables
+ type(handle_t), intent(in) :: hh
+ character(len=*), intent(in) :: name
+
+!Output variables
+ type(field_t), intent(out) :: ff
+ integer, intent(out) :: ifail
+
+ ifail=0
+ if(.not. hh%done) then
+   write(error_unit,'(/a)') 'lookup: ERROR the handle has no results'
+   ifail=failed(fail_input,msg_c_no_results)
+   return
+ end if
+ associate(pot=>hh%psp%pot,tt=>hh%psp%tests)
+   select case(name)
+   case('pot.zz')
+     call put(ff,pot%zz)
+   case('pot.zion')
+     call put(ff,pot%zion)
+   case('pot.c_light')
+     call put(ff,pot%c_light)
+   case('pot.rcmax')
+     call put(ff,pot%rcmax)
+   case('pot.rr')
+     if(allocated(pot%rr)) then
+       call put(ff,pot%rr)
+     else
+       call put_none(ff,1)
+     end if
+   case('pot.nproj')
+     call put(ff,pot%nproj)
+   case('pot.evkb')
+     if(allocated(pot%evkb)) then
+       call put(ff,pot%evkb)
+     else
+       call put_none(ff,3)
+     end if
+   case('pot.vkb')
+     if(allocated(pot%vkb)) then
+       call put(ff,pot%vkb)
+     else
+       call put_none(ff,4)
+     end if
+   case('pot.esr')
+     if(allocated(pot%esr)) then
+       call put(ff,pot%esr)
+     else
+       call put_none(ff,2)
+     end if
+   case('pot.eso')
+     if(allocated(pot%eso)) then
+       call put(ff,pot%eso)
+     else
+       call put_none(ff,2)
+     end if
+   case('pot.vpuns')
+     if(allocated(pot%vpuns)) then
+       call put(ff,pot%vpuns)
+     else
+       call put_none(ff,2)
+     end if
+   case('pot.rho')
+     if(allocated(pot%rho)) then
+       call put(ff,pot%rho)
+     else
+       call put_none(ff,1)
+     end if
+   case('pot.rhomod')
+     if(allocated(pot%rhomod)) then
+       call put(ff,pot%rhomod)
+     else
+       call put_none(ff,2)
+     end if
+   case('epstot')
+     call put(ff,hh%psp%epstot)
+   case('ea')
+     call put(ff,hh%psp%ea)
+   case('rhotae')
+     if(allocated(hh%psp%rhotae)) then
+       call put(ff,hh%psp%rhotae)
+     else
+       call put_none(ff,1)
+     end if
+   case('rhoc')
+     if(allocated(hh%psp%rhoc)) then
+       call put(ff,hh%psp%rhoc)
+     else
+       call put_none(ff,1)
+     end if
+   case('rcore')
+     call put(ff,hh%psp%rcore)
+   case('vpsml')
+     if(allocated(hh%psp%vpsml)) then
+       call put(ff,hh%psp%vpsml)
+     else
+       call put_none(ff,3)
+     end if
+   case('uupsa')
+     if(allocated(hh%psp%uupsa)) then
+       call put(ff,hh%psp%uupsa)
+     else
+       call put_none(ff,3)
+     end if
+   case('tests.logder.ne')
+     call put(ff,tt%logder%ne)
+   case('tests.logder.ee')
+     if(allocated(tt%logder%ee)) then
+       call put(ff,tt%logder%ee)
+     else
+       call put_none(ff,1)
+     end if
+   case('tests.logder.rl')
+     call put(ff,tt%logder%rl)
+   case('tests.logder.ae')
+     if(allocated(tt%logder%ae)) then
+       call put(ff,tt%logder%ae)
+     else
+       call put_none(ff,3)
+     end if
+   case('tests.logder.ps')
+     if(allocated(tt%logder%ps)) then
+       call put(ff,tt%logder%ps)
+     else
+       call put_none(ff,3)
+     end if
+   case('tests.ghosts.nrow')
+     call put(ff,tt%ghosts%nrow)
+   case('tests.ghosts.nn')
+     call put(ff,tt%ghosts%nn)
+   case('tests.ghosts.ee')
+     call put(ff,tt%ghosts%ee)
+   case('tests.ghosts.least')
+     call put(ff,tt%ghosts%least)
+   case('tests.configs.ncfg')
+     call put(ff,tt%configs%ncfg)
+   case('tests.configs.nrow')
+     call put(ff,tt%configs%nrow)
+   case('tests.configs.state')
+     call put(ff,tt%configs%state)
+   case('tests.configs.ee')
+     call put(ff,tt%configs%ee)
+   case('tests.configs.de')
+     call put(ff,tt%configs%de)
+   case('tests.convergence.cross')
+     if(allocated(tt%convergence%cross)) then
+       call put(ff,tt%convergence%cross)
+     else
+       call put_none(ff,5)
+     end if
+   case('tests.convergence.curve')
+     if(allocated(tt%convergence%curve)) then
+       call put(ff,tt%convergence%curve)
+     else
+       call put_none(ff,5)
+     end if
+   case('tests.convergence.tail')
+     if(allocated(tt%convergence%tail)) then
+       call put(ff,tt%convergence%tail)
+     else
+       call put_none(ff,4)
+     end if
+   case('tests.convergence.opt')
+     if(allocated(tt%convergence%opt)) then
+       call put(ff,tt%convergence%opt)
+     else
+       call put_none(ff,4)
+     end if
+   case('tests.convergence.wshare')
+     if(allocated(tt%convergence%wshare)) then
+       call put(ff,tt%convergence%wshare)
+     else
+       call put_none(ff,4)
+     end if
+   case('tests.weighted_cut.used')
+     call put(ff,tt%weighted_cut%used)
+   case('tests.weighted_cut.errw')
+     call put(ff,tt%weighted_cut%errw)
+   case('tests.weighted_cut.ecutw')
+     call put(ff,tt%weighted_cut%ecutw)
+   case('tests.weighted_cut.weight')
+     if(allocated(tt%weighted_cut%weight)) then
+       call put(ff,tt%weighted_cut%weight)
+     else
+       call put_none(ff,3)
+     end if
+   case('tests.vloc_cut.cut')
+     call put(ff,tt%vloc_cut%cut)
+   case('tests.vloc_cut.check')
+     call put(ff,tt%vloc_cut%check)
+   case('tests.bbeig')
+     if(allocated(tt%bbeig)) then
+       call put(ff,tt%bbeig)
+     else
+       call put_none(ff,3)
+     end if
+   case default
+     write(error_unit,'(/3a)') 'lookup: ERROR no field ',name, &
+&         ' (oncv_field_name)'
+     ifail=failed(fail_input,msg_c_field)
+     return
+   end select
+ end associate
+ return
+ end subroutine lookup
+
+ subroutine put_none(ff,rank)
+
+!! a field the run did not compute: rank rank, size 0
+!!
+!! @param ff  the field
+!! @param rank  its rank
+
+!Input variables
+ integer, intent(in) :: rank
+
+!Output variables
+ type(field_t), intent(out) :: ff
+
+ ff%found=.true.
+ ff%rank=rank
+ allocate(ff%rv(0))
+ return
+ end subroutine put_none
+
+ subroutine put_r0(ff,xx)
+
+!! a real field of rank 0
+!!
+!! @param ff  the field
+!! @param xx  its values
+
+!Input variables
+ real(dp), intent(in) :: xx
+
+!Output variables
+ type(field_t), intent(out) :: ff
+
+ ff%found=.true.
+ ff%rank=0
+ ff%rv=[xx]
+ return
+ end subroutine put_r0
+
+ subroutine put_r1(ff,xx)
+
+!! a real field of rank 1
+!!
+!! @param ff  the field
+!! @param xx  its values
+
+!Input variables
+ real(dp), intent(in) :: xx(:)
+
+!Output variables
+ type(field_t), intent(out) :: ff
+
+ ff%found=.true.
+ ff%rank=1
+ ff%shp(1:1)=shape(xx)
+ ff%rv=reshape(xx,[size(xx)])
+ return
+ end subroutine put_r1
+
+ subroutine put_r2(ff,xx)
+
+!! a real field of rank 2
+!!
+!! @param ff  the field
+!! @param xx  its values
+
+!Input variables
+ real(dp), intent(in) :: xx(:,:)
+
+!Output variables
+ type(field_t), intent(out) :: ff
+
+ ff%found=.true.
+ ff%rank=2
+ ff%shp(1:2)=shape(xx)
+ ff%rv=reshape(xx,[size(xx)])
+ return
+ end subroutine put_r2
+
+ subroutine put_r3(ff,xx)
+
+!! a real field of rank 3
+!!
+!! @param ff  the field
+!! @param xx  its values
+
+!Input variables
+ real(dp), intent(in) :: xx(:,:,:)
+
+!Output variables
+ type(field_t), intent(out) :: ff
+
+ ff%found=.true.
+ ff%rank=3
+ ff%shp(1:3)=shape(xx)
+ ff%rv=reshape(xx,[size(xx)])
+ return
+ end subroutine put_r3
+
+ subroutine put_r4(ff,xx)
+
+!! a real field of rank 4
+!!
+!! @param ff  the field
+!! @param xx  its values
+
+!Input variables
+ real(dp), intent(in) :: xx(:,:,:,:)
+
+!Output variables
+ type(field_t), intent(out) :: ff
+
+ ff%found=.true.
+ ff%rank=4
+ ff%shp(1:4)=shape(xx)
+ ff%rv=reshape(xx,[size(xx)])
+ return
+ end subroutine put_r4
+
+ subroutine put_r5(ff,xx)
+
+!! a real field of rank 5
+!!
+!! @param ff  the field
+!! @param xx  its values
+
+!Input variables
+ real(dp), intent(in) :: xx(:,:,:,:,:)
+
+!Output variables
+ type(field_t), intent(out) :: ff
+
+ ff%found=.true.
+ ff%rank=5
+ ff%shp(1:5)=shape(xx)
+ ff%rv=reshape(xx,[size(xx)])
+ return
+ end subroutine put_r5
+
+ subroutine put_i0(ff,xx)
+
+!! an integer field of rank 0
+!!
+!! @param ff  the field
+!! @param xx  its values
+
+!Input variables
+ integer, intent(in) :: xx
+
+!Output variables
+ type(field_t), intent(out) :: ff
+
+ ff%found=.true.
+ ff%isint=.true.
+ ff%rank=0
+ ff%iv=[xx]
+ return
+ end subroutine put_i0
+
+ subroutine put_i1(ff,xx)
+
+!! an integer field of rank 1
+!!
+!! @param ff  the field
+!! @param xx  its values
+
+!Input variables
+ integer, intent(in) :: xx(:)
+
+!Output variables
+ type(field_t), intent(out) :: ff
+
+ ff%found=.true.
+ ff%isint=.true.
+ ff%rank=1
+ ff%shp(1:1)=shape(xx)
+ ff%iv=reshape(xx,[size(xx)])
+ return
+ end subroutine put_i1
+
+ subroutine put_i2(ff,xx)
+
+!! an integer field of rank 2
+!!
+!! @param ff  the field
+!! @param xx  its values
+
+!Input variables
+ integer, intent(in) :: xx(:,:)
+
+!Output variables
+ type(field_t), intent(out) :: ff
+
+ ff%found=.true.
+ ff%isint=.true.
+ ff%rank=2
+ ff%shp(1:2)=shape(xx)
+ ff%iv=reshape(xx,[size(xx)])
+ return
+ end subroutine put_i2
+
+ subroutine put_i3(ff,xx)
+
+!! an integer field of rank 3
+!!
+!! @param ff  the field
+!! @param xx  its values
+
+!Input variables
+ integer, intent(in) :: xx(:,:,:)
+
+!Output variables
+ type(field_t), intent(out) :: ff
+
+ ff%found=.true.
+ ff%isint=.true.
+ ff%rank=3
+ ff%shp(1:3)=shape(xx)
+ ff%iv=reshape(xx,[size(xx)])
+ return
+ end subroutine put_i3
+
+ subroutine put_l0(ff,xx)
+
+!! a logical field, as the integer 0 or 1
+!!
+!! @param ff  the field
+!! @param xx  its value
+
+!Input variables
+ logical, intent(in) :: xx
+
+!Output variables
+ type(field_t), intent(out) :: ff
+
+ ff%found=.true.
+ ff%isint=.true.
+ ff%iv=[merge(1,0,xx)]
+ return
+ end subroutine put_l0
 
  function from_c(chars,nchars) result(string)
 

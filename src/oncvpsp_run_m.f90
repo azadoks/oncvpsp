@@ -360,6 +360,9 @@
  allocate(epa(mxprj,mxlin+1,nkap))
  allocate(vsr(mmax,2*mxprj,mxl+1),vso(mmax,2*mxprj,mxl+1))
  allocate(esr(2*mxprj,mxl+1),eso(2*mxprj,mxl+1))
+!the results hold them for every irel (sr_so_r sets them for irel=2)
+ esr(:,:)=0.0d0
+ eso(:,:)=0.0d0
  allocate(dlta(mmax,mxprj,mxlin+1,nkap),vrloc(mmax,nkap))
  allocate(vkbpw(mxprj,mxl+1,nkap))
  allocate(vsrpw(2*mxprj,mxl+1),vsopw(2*mxprj,mxl+1))

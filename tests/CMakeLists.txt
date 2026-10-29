@@ -145,6 +145,10 @@ if (ONCVPSP_WITH_C_API AND ONCVPSP_WITH_TOML)
         list(GET c_test 2 name)
         oncvpsp_add_test(unit c_api ${rel} ${name} test_c_api ${irel} "${data}/toml/${name}.toml"
             "${CMAKE_CURRENT_BINARY_DIR}/c_api_${rel}_${name}.out")
+        # the same through ctypes, as a Python binding calls it (scripts/c_api_ctypes.py): the structs
+        # against the fields' shapes, every field the same after a rerun, a broken input's failure
+        oncvpsp_add_test(unit c_api_ctypes ${rel} ${name} c_api_ctypes.py $<TARGET_FILE:oncvpsp_c> ${irel}
+            "${data}/toml/${name}.toml")
     endforeach ()
 endif ()
 
