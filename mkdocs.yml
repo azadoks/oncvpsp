@@ -12,6 +12,7 @@ edit_uri: edit/master/doc/
 
 nav:
     - Users Guide: users_guide.md
+    - Python and Julia: wrappers.md
     - Ghosts: ghosts.md
     - Core correction: core_correction.md
     - Relativistic : relativistic.md

@@ -208,6 +208,28 @@ if (ONCVPSP_WITH_C_API AND ONCVPSP_WITH_TOML)
     else ()
         message(STATUS "The test Python has no NumPy; the tests of the Python package are disabled")
     endif ()
+    # the Julia package (julia/ONCVPSP, its test/runtests.jl) the same, with a julia on the path
+    find_program(ONCVPSP_JULIA julia)
+    if (ONCVPSP_JULIA)
+        set(julia_package "${PROJECT_SOURCE_DIR}/julia/ONCVPSP")
+        foreach (c_test IN ITEMS "1:sr:14_Si" "2:r:03_Li" "0:nr:08_O")
+            string(REPLACE ":" ";" c_test "${c_test}")
+            list(GET c_test 0 irel)
+            list(GET c_test 1 rel)
+            list(GET c_test 2 name)
+            oncvpsp_add_test(unit julia_wrapper ${rel} ${name} ${ONCVPSP_JULIA}
+                "--project=${julia_package}" "${julia_package}/test/runtests.jl"
+                $<TARGET_FILE:oncvpsp${rel}> ${irel} "${data}/toml/${name}.toml" "@DIR@")
+            if (added_test)
+                set_property(TEST ${added_test} APPEND PROPERTY ENVIRONMENT
+                    "ONCVPSP_LIBRARY=$<TARGET_FILE:oncvpsp_c>")
+                if (EXISTS "${quadmath}")
+                    set_property(TEST ${added_test} APPEND PROPERTY ENVIRONMENT
+                        "LD_PRELOAD=${quadmath}")
+                endif ()
+            endif ()
+        endforeach ()
+    endif ()
 endif ()
 
 # Unit test of oncvpsp_run in several threads at once (test_run_threads.f90): each case alone, then

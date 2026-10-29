@@ -494,14 +494,45 @@ So the interface is a hybrid:
 
 ### Phase 6: wrappers
 
-- [ ] Python: ctypes or cffi over `liboncvpsp`, built with
+- [x] Python: ctypes or cffi over `liboncvpsp`, built with
       scikit-build-core, returning NumPy arrays; tests against the
       references.
-- [ ] Julia: `ccall` over the same library, `oncv_dims` as an `isbits`
+      `python/oncvpsp` (ctypes; `pyproject.toml` builds the library into
+      the package, `pip wheel .` gives a `py3-none` wheel): `run`,
+      `all_electron`, `channel` (its three modes), `has_node`, `coupled`,
+      `confine`, each a `Handle` whose fields are NumPy arrays in Fortran
+      order (`np.empty(shape, order="F")` filled by the getters), its
+      fields asked only of the kinds it can hold (the library writes an
+      error for each one asked of a handle that holds none).
+      `scripts/python_wrapper.py` (ctest `python_wrapper_*`, nr, sr, fr,
+      with a test Python that has NumPy): the run's text output and psp8
+      file the executable's byte for byte, the input as a file, a
+      dictionary and keyword arguments the same, the stages against the
+      run, the node test against the channel's failure, the failures, a
+      closed handle.
+- [x] Julia: `ccall` over the same library, `oncv_dims` as an `isbits`
       struct, the arrays allocated in Julia and filled by the getters;
       later packaged as a JLL with BinaryBuilder.
-- [ ] Both check the interface version of `oncv_dims`, and free the
+      `julia/ONCVPSP`, the same functions, the library's functions called
+      by address (`dlsym`, as a `ccall` library cannot be a run-time
+      value); `test/runtests.jl` (ctest `julia_wrapper_*`, with a julia
+      on the path) the same checks as the Python's. The JLL waits for a
+      release.
+- [x] Both check the interface version of `oncv_dims`, and free the
       handle with a finalizer on the result object.
-- [ ] Both take the input as a dictionary or keyword arguments, in the
+      Both check `oncv_api_version` at loading and `dims.version`, and
+      load the library global (MKL's dispatch libraries, linked as
+      separate libraries, need its symbols; RTLD_LOCAL aborts the process
+      at the first LAPACK call).
+- [x] Both take the input as a dictionary or keyword arguments, in the
       layout of the TOML input.
-- [ ] A user page on the wrappers, in the `nav` of `mkdocs.yml`.
+      A dictionary, the TOML text or a file, with keyword arguments merged
+      over it table by table; Python writes the TOML itself
+      (`_toml.py`, as `tomllib` only reads), Julia with `TOML.print`.
+- [x] A user page on the wrappers, in the `nav` of `mkdocs.yml`:
+      `doc/wrappers.md`.
+- [x] Valgrind on the C test (nr, sr, fr, lloc 2): no errors; 2 kB lost
+      per PSML file written, xmlf90's element stack, which
+      `xml_Close` now frees (`cmake/patches/xmlf90-1.6.3.patch`, whose
+      hash is in the patch command so that a changed patch is applied
+      again).
