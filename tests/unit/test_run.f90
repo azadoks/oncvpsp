@@ -2,7 +2,10 @@
 ! returns (test_results_m) against the lines of the DIAGNOSTICS block it
 ! writes, which print them to 17 digits, so exactly; and a second run in
 ! the same process, writing to /dev/null, whose results must be the same
-! bit for bit. Arguments: irel (0, 1 or 2) and the input file (text).
+! bit for bit. The ghost lists, the ghost test's basis and the model
+! core's parameters against the lines of the text that print them, to
+! their printed digits. Arguments: irel (0, 1 or 2) and the input file
+! (text).
 ! Stops with a non-zero code at the end if any check failed.
  program test_run
  use constants_m, only: dp
@@ -32,6 +35,8 @@
  call run(psp1,iout)
  rewind(iout)
  call check_diagnostics(psp1%tests,psp1%pot%nkap,iout)
+ rewind(iout)
+ call check_text(psp1,iout)
  close(iout)
  if(nline==0) call fail('no DIAGNOSTICS lines checked')
 
@@ -181,6 +186,120 @@
  if(size(tt%convergence%curve,2)==0) call fail('no convergence curve')
  end subroutine check_diagnostics
 
+ subroutine check_text(psp,iu)
+!! the lines of the text outside the DIAGNOSTICS block that print the
+!! GHOST(-) and GHOST(+) states, the ghost test's basis notes and the
+!! model core's parameters, against the results to the printed digits
+!!
+!! @param psp  the results
+!! @param iu  unit of the text output, rewound
+ type(results_t), intent(in) :: psp
+ integer, intent(in) :: iu
+ character(len=512) :: line
+ integer :: ios,ll,lbar,ikap,jj,nminus(4,2),nplus(4,2),nbasis(4,2)
+ real(dp) :: xx(3)
+ ikap=1
+ lbar=0
+ nminus(:,:)=0
+ nplus(:,:)=0
+ nbasis(:,:)=0
+ associate(gh=>psp%tests%ghosts,bb=>psp%core%budget,tt=>psp%core%teter)
+   do
+     read(iu,'(a)',iostat=ios) line
+     if(ios/=0) exit
+     if(index(line,'Ghost test for J = L - 1/2')>0) ikap=2
+     if(index(line,'WARNING - GHOST(-)')>0) then
+       read(line,*) ll,xx(1:2)
+       nminus(ll+1,ikap)=nminus(ll+1,ikap)+1
+       jj=nminus(ll+1,ikap)
+       call near(xx(1),gh%minus(jj,ll+1,ikap),1.0d-6,line)
+       call near(xx(2),gh%ecut(ll+1,ikap),1.0d-2,line)
+     else if(index(line,'WARNING - GHOST(+)')>0) then
+       read(line,*) ll,xx(1:3)
+       nplus(ll+1,ikap)=nplus(ll+1,ikap)+1
+       jj=nplus(ll+1,ikap)
+       call near(xx(1),gh%plus(2,jj,ll+1,ikap),1.0d-6,line)
+       call near(xx(2),gh%plus(1,jj,ll+1,ikap),1.0d-6,line)
+       call near(xx(3),gh%ecut(ll+1,ikap),1.0d-2,line)
+     else if(index(line,'run_ghosts: WARNING barrier state')>0) then
+       lbar=nint(num_after(line,' l='))
+     else if(index(line,'run_ghosts: WARNING basis cut there')>0) then
+       nbasis(lbar+1,ikap)=1
+       call near(num_after(line,'ghost test to'),gh%ecut(lbar+1,ikap), &
+&                1.0d-6,line)
+     else if(index(line,'run_ghosts: WARNING basis full')>0) then
+       nbasis(nint(num_after(line,' l='))+1,ikap)=2
+     else if(index(line,'rmatch, rhocmatch')==1) then
+       read(line(18:),*) xx(1:2)
+       call near(xx(1),tt(3),1.0d-4,line)
+       call near(xx(2),tt(4),1.0d-4,line)
+     else if(line=='amplitude prefactor, scale prefactor') then
+       read(iu,'(a)') line
+       read(line,*) xx(1:2)
+       call near(xx(1),tt(1),1.0d-4,line)
+       call near(xx(2),tt(2),1.0d-4,line)
+     else if(index(line,'  cutoff budget')==1) then
+       call near(num_after(line,'budget'),bb%ecut,1.0d-4,line)
+       call near(num_after(line,'error of'),bb%error,1.0d-2*bb%error,line)
+     else if(index(line,'  slack')==1) then
+       call near(num_after(line,'slack'),bb%slack,1.0d-4,line)
+     else if(index(line,'  model radius r_s')==1) then
+       call near(num_after(line,'r_s'),bb%r_s,1.0d-6,line)
+       call near(num_after(line,'smallest rc'),bb%rc_min,1.0d-6,line)
+     else if(index(line,'  last radius with core charge')==1) then
+       call near(num_after(line,'charge'),bb%r_core,1.0d-6,line)
+     else if(line=='  fill minimum tail') then
+       if(bb%fill/=1) call fail(line)
+     else if(line=='  fill Martins') then
+       if(bb%fill/=2) call fail(line)
+     else if(index(line,'  cutoff the model core needs')==1) then
+       call near(num_after(line,'needs'),bb%ecut_needed,1.0d-4,line)
+     else if(index(line,'  smallest fitting radius')==1) then
+       call near(num_after(line,'(icmod 6)'),bb%r_s6,1.0d-6,line)
+     else if(index(line,'  hardness mismatch')==1) then
+       call near(num_after(line,'mismatch'),bb%mismatch, &
+&                1.0d-4*bb%mismatch,line)
+     else
+       cycle
+     end if
+     nline=nline+1
+   end do
+!every state of the lists printed (the GHOST(+) lines stop at 20 in all)
+   if(any(nminus/=gh%nminus(:,1:2))) call fail('GHOST(-) count')
+   if(sum(gh%nplus)<20 .and. any(nplus/=gh%nplus(:,1:2))) then
+     call fail('GHOST(+) count')
+   end if
+   if(any(nbasis/=gh%basis(:,1:2))) call fail('ghost basis')
+ end associate
+ end subroutine check_text
+
+ function num_after(line,key) result(xx)
+!! the number after key in line
+!!
+!! @param line  the line
+!! @param key  the text before it
+ character(len=*), intent(in) :: line,key
+ real(dp) :: xx
+ integer :: ii,ios
+ xx=huge(1.0d0)
+ ii=index(line,key)
+ if(ii==0) return
+ read(line(ii+len(key):),*,iostat=ios) xx
+ if(ios/=0) xx=huge(1.0d0)
+ end function num_after
+
+ subroutine near(xx,yy,dd,line)
+!! fails unless the value read is the result to the printed digits
+!!
+!! @param xx  the value read
+!! @param yy  the result
+!! @param dd  the last printed digit's unit
+!! @param line  the line, for the message
+ real(dp), intent(in) :: xx,yy,dd
+ character(len=*), intent(in) :: line
+ if(abs(xx-yy)>0.5000001d0*dd) call fail(line)
+ end subroutine near
+
  subroutine check_same(pa,pb)
 !! the results of two runs, bit for bit
 !!
@@ -198,6 +317,10 @@
  call differ(any(pa%tests%convergence%curve/= &
 &                pb%tests%convergence%curve),'curves')
  call differ(any(pa%tests%vloc_cut%cut/=pb%tests%vloc_cut%cut),'vloc cutoffs')
+ call differ(any(pa%tests%ghosts%minus/=pb%tests%ghosts%minus),'GHOST(-)')
+ call differ(any(pa%tests%ghosts%plus/=pb%tests%ghosts%plus),'GHOST(+)')
+ call differ(any(pa%core%teter/=pb%core%teter),'Teter parameters')
+ call differ(pa%core%budget%r_s/=pb%core%budget%r_s,'budget r_s')
  end subroutine check_same
 
  subroutine differ(dd,what)

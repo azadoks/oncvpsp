@@ -711,9 +711,6 @@
  integer :: ntcf(mxcnf),itcf(3,2*mxstate,mxcnf)
  real(dp) :: etcf(3,2*mxstate,mxcnf),dtcf(3,mxcnf)
  real(dp), allocatable :: pshae(:,:,:),pshps(:,:,:)
-! the ghost tests' margins for the diagnostics block (run_ghosts), per kap
- integer :: ngh(mxl+1,mxkap),ghn(mxstate,mxl+1,mxkap)
- real(dp) :: ghe(2,mxstate,mxl+1,mxkap),ghp(2,mxl+1,mxkap)
 
  ifail=0
  at=failure_t(fail_none,0,0,stage_model_core,-1,0,0)
@@ -810,7 +807,8 @@
 &               inp%slack, &
 &               minval(inp%rc(1:inp%lmax+1)),mmax,adams,rr,inp%iexc,c_light, &
 &               zion, &
-&               probes(:,1:nprobe),lprobe(1:nprobe),nprobe,iout,ifail)
+&               probes(:,1:nprobe),lprobe(1:nprobe),nprobe,psp%core%budget, &
+&               iout,ifail)
    if(ifail/=0) return
    deallocate(probes,lprobe)
 
@@ -818,7 +816,7 @@
    call modcore3(inp%icmod,rhops,rho,rhoc,rhoae,rhotae,rhomod,corepw, &
 &               inp%fcfact,inp%rcfact,fcgrid,rcgrid,mmax,adams,rr,inp%nc, &
 &               inp%nv, &
-&               inp%la,zion,inp%iexc,c_light,iout,ifail)
+&               inp%la,zion,inp%iexc,c_light,psp%core%teter,iout,ifail)
    if(ifail/=0) return
 
  end if
@@ -883,15 +881,11 @@
    write(iout,'(/a)') 'Ghost test for J = L + 1/2'
  end if
 
- ngh(:,:)=0
- ghn(:,:,:)=0
- ghe(:,:,:,:)=0.0d0
- ghp(:,:,:)=0.0d0
  at%stage=stage_ghosts
  at%ikap=1
  call run_ghosts(inp%lmax,inp%la,ea(1,1),inp%nc,inp%nv,inp%lloc,inp%rc,qmsbf, &
 &                vlocpw,vkbpw(:,:,1),evkb(1,1,1),inp%nproj,rr,vp,mmax,adams, &
-&                ngh(:,1),ghn(:,:,1),ghe(:,:,:,1),ghp(:,:,1),iout,ifail)
+&                1,psp%tests%ghosts,iout,ifail)
  if(ifail/=0) return
 
  if(irel==2) then
@@ -905,7 +899,7 @@
    call run_ghosts(inp%lmax,inp%la,ea(1,2),inp%nc,inp%nv,inp%lloc,inp%rc, &
 &                  qmsbf, &
 &                  vlocpw,vkbpw(:,:,2),evkb(1,1,2),inp%nproj,rr,vp,mmax,adams, &
-&                  ngh(:,2),ghn(:,:,2),ghe(:,:,:,2),ghp(:,:,2),iout,ifail)
+&                  2,psp%tests%ghosts,iout,ifail)
    if(ifail/=0) return
    vkb(:,:,1,2)=0.0d0
    evkb(:,1,2)=0.0d0
@@ -998,10 +992,6 @@
  psp%tests%logder%rl(:)=rphs(:)
  call move_alloc(pshae,psp%tests%logder%ae)
  call move_alloc(pshps,psp%tests%logder%ps)
- psp%tests%ghosts%nrow(:,:)=ngh(:,:)
- psp%tests%ghosts%nn(:,:,:)=ghn(:,:,:)
- psp%tests%ghosts%ee(:,:,:,:)=ghe(:,:,:,:)
- psp%tests%ghosts%least(:,:,:)=ghp(:,:,:)
  psp%tests%configs%ncfg=inp%ncnf+1
  psp%tests%configs%nrow(:)=ntcf(:)
  psp%tests%configs%state(:,:,:)=itcf(:,:,:)

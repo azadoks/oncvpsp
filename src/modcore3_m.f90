@@ -42,7 +42,7 @@
 &                   fcfact, &
 &                   rcfact,fcgrid,rcgrid,mmax,adams,rr,nc,nv,la,zion,iexc, &
 &                   c_light, &
-&                   iout,ifail)
+&                   teter,iout,ifail)
 
 !! the Teter-function model core charge, its amplitude fcfact times the
 !! core charge and its scale rcfact times the radius at the core-valence
@@ -72,6 +72,8 @@
 !! @param zion  ion charge
 !! @param iexc  exchange-correlation functional
 !! @param c_light  speed of light (Hartree atomic units)
+!! @param teter  fcfact and rcfact (those given, or optimized), rmatch
+!!               (bohr) and rhocmatch
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
@@ -103,6 +105,7 @@
 !Output variables
  real(dp), intent(out) :: rhomod(mmax,nrhomod)
  type(piecewise_t), intent(out) :: corepw(nrhomod)
+ real(dp), intent(out) :: teter(4)
  integer, intent(out) :: ifail
 
 !Local variables
@@ -124,6 +127,7 @@
 
 
  ifail=0
+ teter(:)=0.0d0
  allocate(d2excae(nv,nv),d2excps(nv,nv))
 
  d2excae(:,:)=0.0d0
@@ -295,6 +299,7 @@
    if(ifail/=0) return
    write(iout,'(a)') 'amplitude prefactor, scale prefactor'
    write(iout,'(2f10.4)') xx(1,1)/rhocmatch,xx(2,1)/rmatch
+   teter(:)=[xx(1,1)/rhocmatch,xx(2,1)/rmatch,rmatch,rhocmatch]
 
    write(iout,'(/a)') 'Optimized Teter model core charge'
 
@@ -302,6 +307,7 @@
  else if(icmod==3) then
    xx(1,1)=fcfact*rhocmatch
    xx(2,1)=rcfact*rmatch
+   teter(:)=[fcfact,rcfact,rmatch,rhocmatch]
 
    write(iout,'(/a/)') &
 &        'Teter function model core charge with specified parameters'

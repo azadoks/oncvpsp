@@ -121,7 +121,7 @@
 ! upf files
  ifail=0
  write(iout,'(/a)') 'Begin PSML'
- call xml_OpenUnit(6,xf, indent=.false.)
+ call xml_OpenUnit(iout,xf, indent=.false.)
 
  call xml_AddXMLDeclaration(xf,"UTF-8")
 

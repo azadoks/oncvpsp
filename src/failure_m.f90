@@ -615,6 +615,13 @@
 !> check_size (oncvpsp_c_m.F90): check_size: ERROR the field has values, the
 !> buffer
  integer, parameter, public :: msg_c_size=171
+!> oncv_write_files (oncvpsp_c_m.F90): oncv_write_files: ERROR the format
+!> is psp8, upf or psml, not
+ integer, parameter, public :: msg_c_format=172
+!> oncv_write_files (oncvpsp_c_m.F90): oncv_write_files: ERROR cannot open
+ integer, parameter, public :: msg_c_file=173
+!> write_psp_file (psp_files_m.f90): write_psp_file: ERROR no file format
+ integer, parameter, public :: msg_psp_file_kind=174
 
  contains
 

@@ -92,10 +92,12 @@ oncvpsp_add_test(unit unit - run_phsft test_run_phsft)
 set_tests_properties(${added_test} PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 
 # Unit tests of oncvpsp_run called as from the library: its test results against the DIAGNOSTICS
-# block it writes, and a second run in the same process (test_run.f90); nr, sr, fr, and the weighted
-# cutoff of the model core's budget
+# block it writes, and a second run in the same process (test_run.f90); nr, sr, fr, the weighted
+# cutoff of the model core's budget, and the ghost lists and model core parameters against the text:
+# a GHOST(-) and the optimized Teter core (74_W), GHOST(+) states (60_Nd_GHOST), icmod 7 (14_Si_hm)
 oncvpsp_unit_executable(run)
-foreach (run_test IN ITEMS "0:nr:08_O" "1:sr:14_Si" "2:r:14_Si" "1:sr:14_Si_bcw")
+foreach (run_test IN ITEMS "0:nr:08_O" "1:sr:14_Si" "2:r:14_Si" "1:sr:14_Si_bcw" "0:nr:74_W"
+                           "0:nr:60_Nd_GHOST" "1:sr:14_Si_hm")
     string(REPLACE ":" ";" run_test "${run_test}")
     list(GET run_test 0 irel)
     list(GET run_test 1 rel)

@@ -1,14 +1,18 @@
 """The C interface of liboncvpsp (include/oncvpsp.h) through ctypes, as a
 Python binding will call it: the structs' layouts against the getters (the
 sizes of oncv_dims against the fields' shapes), every field copied out and
-the same after a second run in the same handle, bit for bit, and a broken
-input's failure record.
+the same after a second run in the same handle, bit for bit, the UPF file
+written with its mesh and densities (what a check of the model core reads),
+and a broken input's failure record.
 
 usage: c_api_ctypes.py LIBONCVPSP IREL INPUT.toml
 """
 
 import ctypes as C
+import os
+import re
 import sys
+import tempfile
 
 MXRANK = 5
 MXLIN = 5
@@ -54,6 +58,7 @@ def library(path):
     lib.oncv_shape.argtypes = [vp, cp, sz, C.POINTER(C.c_int), C.c_int * MXRANK]
     lib.oncv_get_double.argtypes = [vp, cp, sz, C.POINTER(C.c_double), sz]
     lib.oncv_get_int.argtypes = [vp, cp, sz, C.POINTER(C.c_int), sz]
+    lib.oncv_write_files.argtypes = [vp, cp, sz, cp, sz]
     return lib
 
 
@@ -114,6 +119,20 @@ def main():
     check("rerun", lib.oncv_run_toml(handle, irel, text, len(text), 0) == 0)
     for kind, name in names:
         check(f"{name} after a rerun", get(lib, handle, kind, name) == first[name])
+
+    with tempfile.TemporaryDirectory() as tmp:
+        path = os.path.join(tmp, "psp.upf").encode()
+        check("UPF", lib.oncv_write_files(handle, b"upf", 3, path, len(path)) == 0)
+        upf = open(path).read()
+    sizes = {
+        tag: re.search(rf'<{tag} type="real"\s+size="\s*(\d+)"', upf)
+        for tag in ("PP_R", "PP_RAB", "PP_RHOATOM")
+    }
+    check("UPF mesh and densities", all(sizes.values()))
+    check(
+        "UPF sizes",
+        len({int(m.group(1)) for m in sizes.values() if m}) == 1,
+    )
 
     broken = b"[oncvpsp]\natsym = 'O'\n"
     ifail = lib.oncv_run_toml(handle, irel, broken, len(broken), 0)

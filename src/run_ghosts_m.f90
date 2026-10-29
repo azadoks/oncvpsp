@@ -27,7 +27,7 @@
 
  subroutine run_ghosts(lmax,la,ea,nc,nv,lloc,rc,qmsbf, &
 &                    vlocpw,vkbpw,evkb,nproj,rr,vp,mmax,adams, &
-&                    ngh,ghn,ghe,ghp,iout,ifail)
+&                    ikap,gh,iout,ifail)
 
 !! Two tests for ghosts;  The local potential is terminated by a hard wall
 !! barrier at a radius of mbfact*rc, presently 3*rc.  A basis set is formed
@@ -76,13 +76,12 @@
 !!            comb.)
 !! @param mmax  size of the log radial mesh
 !! @param adams  order and coefficients of the Adams-Moulton steps
-!! @param ngh  rows of the bound-state test per l
-!! @param ghn  their principal quantum numbers
-!! @param ghe  their energies: (1) of the nonlocal Schroedinger equation
-!!             (0 for the vacuum level), (2) of the basis diagonalization
-!! @param ghp  per l, the basis state of least <r>/rc above the reference,
-!!             <r>/rc divided by a weight rising from 0 at 0.025 Ha above
-!!             it to 1 at 0.05 Ha: (1) its energy, (2) that ratio; 0 if none
+!! @param ikap  1 for j=l+1/2 (and nkap=1), 2 for j=l-1/2
+!! @param gh  the results of the tests (test_results_m), those of ikap
+!!            set: the rows of the bound-state test, the GHOST(-) and
+!!            GHOST(+) states, the basis of least <r>/rc above the
+!!            reference (<r>/rc divided by a weight rising from 0 at 0.025
+!!            Ha above it to 1 at 0.05 Ha), and each l's basis
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
@@ -98,6 +97,7 @@
  use lschvkbb_m, only: lschvkbb
  use lapack_m, only: dsyev
  use adams_m, only: adams_t
+ use test_results_m, only: ghosts_t, mxghost
 
 !Input variables
  integer, intent(in) :: nc,nv,lmax,lloc,mmax
@@ -106,11 +106,12 @@
  real(dp), intent(in) :: rr(mmax),vp(mmax,mxl+2),rc(mxlin+1)
  real(dp), intent(in) :: qmsbf(mxlin+1),ea(mxstate),evkb(mxprj,mxl+1)
  type(piecewise_t), intent(in) :: vlocpw,vkbpw(mxprj,mxl+1)
- integer, intent(in) :: iout
+ integer, intent(in) :: ikap,iout
+
+!Input/output variables
+ type(ghosts_t), intent(inout) :: gh
 
 !Output variables
- integer, intent(out) :: ngh(mxl+1),ghn(mxstate,mxl+1)
- real(dp), intent(out) :: ghe(2,mxstate,mxl+1),ghp(2,mxl+1)
  integer, intent(out) :: ifail
 
 !Local variables
@@ -152,10 +153,16 @@
 
  nodes(:)=0
  npgh=0
- ngh(:)=0
- ghn(:,:)=0
- ghe(:,:,:)=0.0d0
- ghp(:,:)=0.0d0
+ gh%nrow(:,ikap)=0
+ gh%nn(:,:,ikap)=0
+ gh%ee(:,:,:,ikap)=0.0d0
+ gh%least(:,:,ikap)=0.0d0
+ gh%nminus(:,ikap)=0
+ gh%minus(:,:,ikap)=0.0d0
+ gh%nplus(:,ikap)=0
+ gh%plus(:,:,:,ikap)=0.0d0
+ gh%ecut(:,ikap)=0.0d0
+ gh%basis(:,ikap)=0
  do l1 = 1, lmax + 1
    nprj=nproj(l1)
    if(nprj==0) cycle
@@ -299,6 +306,7 @@
 &              'run_ghosts: WARNING basis cut there, ghost test to ', &
 &              emin,' Ha'
        ecut=emin
+       gh%basis(l1,ikap)=1
      end if
      nbas=jj-1
      exit
@@ -321,7 +329,9 @@
  if(nbas==nbmax) then
    write(iout,'(/2a,i0,a,i0)') 'run_ghosts: WARNING basis full below the', &
 &          ' cutoff, l=',ll,', nbmax=',nbmax
+   gh%basis(l1,ikap)=2
  end if
+ gh%ecut(l1,ikap)=ecut
  do iprj=1,nprj
    call pw_free(vkbb(iprj))
  end do
@@ -375,6 +385,7 @@
      if(hmev(jj)<et) then
        write(iout,'(4x,i4,16x,f16.6,f10.2,a)') ll,hmev(jj),ecut, &
 &              '  WARNING - GHOST(-)'
+       call add_minus(l1,hmev(jj))
        jj=jj+1
      else
        exit
@@ -382,9 +393,9 @@
    end do !ii
 
    write(iout,'(2i4,2f16.6,f10.2)') nn,ll,ee,hmev(jj),ecut
-   ngh(l1)=ngh(l1)+1
-   ghn(ngh(l1),l1)=nn
-   ghe(:,ngh(l1),l1)=[ee,hmev(jj)]
+   gh%nrow(l1,ikap)=gh%nrow(l1,ikap)+1
+   gh%nn(gh%nrow(l1,ikap),l1,ikap)=nn
+   gh%ee(:,gh%nrow(l1,ikap),l1,ikap)=[ee,hmev(jj)]
  end do !kk
 
 !if there were no valence states, look for any nodeless bound state
@@ -407,13 +418,14 @@
      if(hmev(jj)<et) then
        write(iout,'(4x,i4,16x,f16.6,f10.2,a)') ll,hmev(jj),ecut, &
 &              '  WARNING - GHOST(-)'
+       call add_minus(l1,hmev(jj))
      else
        if(ee<0.0d0) then
          write(iout,'(2i4,2f16.6,f10.2)') ll+1,ll,ee,hmev(jj),ecut
        end if
-       ngh(l1)=1
-       ghn(1,l1)=ll+1
-       ghe(:,1,l1)=[ee,hmev(jj)]
+       gh%nrow(l1,ikap)=1
+       gh%nn(1,l1,ikap)=ll+1
+       gh%ee(:,1,l1,ikap)=[ee,hmev(jj)]
        exit
      end if
    end do
@@ -424,7 +436,7 @@
 !! the mean radius of each eigenstate of l1-1, to look for highly
 !! localized states, which indicate positive-energy ghosts
  integer, intent(in) :: l1
- integer :: ii,jj
+ integer :: ii,jj,kk
  real(dp) :: sn,ww
  do jj=1,nbas
    uu(:)=0.0d0
@@ -443,8 +455,14 @@
 ! whose ratio is below 1, the margin below 1 (doc/numerics_audit.md, C-8)
    ww=1.0d0-cinf_taper(hmev(jj),ee+0.025d0,ee+0.05d0)
    if(ww>0.0d0) then
-     if(ghp(2,l1)==0.0d0 .or. sn/(rc(l1)*ww)<ghp(2,l1)) then
-       ghp(:,l1)=[hmev(jj),sn/(rc(l1)*ww)]
+     if(gh%least(2,l1,ikap)==0.0d0 .or. &
+&       sn/(rc(l1)*ww)<gh%least(2,l1,ikap)) then
+       gh%least(:,l1,ikap)=[hmev(jj),sn/(rc(l1)*ww)]
+     end if
+     if(sn<rc(l1)*ww) then
+       kk=gh%nplus(l1,ikap)+1
+       gh%nplus(l1,ikap)=kk
+       if(kk<=mxghost) gh%plus(:,kk,l1,ikap)=[hmev(jj),sn/(rc(l1)*ww)]
      end if
      if(sn<rc(l1)*ww .and. npgh<20) then
        npgh=npgh+1
@@ -456,6 +474,16 @@
    end if
  end do
  end subroutine localized_states
+
+ subroutine add_minus(l1,eg)
+!! a GHOST(-) of l1-1 at the energy eg (Ha)
+ integer, intent(in) :: l1
+ real(dp), intent(in) :: eg
+ integer :: kk
+ kk=gh%nminus(l1,ikap)+1
+ gh%nminus(l1,ikap)=kk
+ if(kk<=mxghost) gh%minus(kk,l1,ikap)=eg
+ end subroutine add_minus
 
  end subroutine run_ghosts
 

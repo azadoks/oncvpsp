@@ -25,7 +25,7 @@
  use test_results_m, only: tests_t
  implicit none
  private
- public :: results_t
+ public :: results_t, model_core_t, core_budget_t
 
 !> the input values as read, before oncvpsp_run changes them, for the
 !> echoes of the input in the files
@@ -42,6 +42,58 @@
 !> input does not set it)
    real(dp) :: log_mesh(4)=0.0d0
  end type echo_t
+
+!> the budgeted model core (modcore_budget, icmod 6 and 7), as its report
+ type :: core_budget_t
+!> the cutoff budget (Ha)
+   real(dp) :: ecut=0.0d0
+!> the exchange-correlation energy error (Ha) that defines the needed
+!> cutoff
+   real(dp) :: error=0.0d0
+!> the share of the budget the model must fit
+   real(dp) :: slack=0.0d0
+!> the pseudo-waves' cutoff (Ha) the budget is factor times, when the
+!> input's fcfact <= 0; else 0
+   real(dp) :: ecutw=0.0d0
+!> that multiple, 0 when the input's fcfact > 0
+   real(dp) :: factor=0.0d0
+!> the model radius r_s (bohr)
+   real(dp) :: r_s=0.0d0
+!> the smallest rc (bohr)
+   real(dp) :: rc_min=0.0d0
+!> the last radius with core charge (bohr) when it is below rc_min and so
+!> bounds r_s; else 0
+   real(dp) :: r_core=0.0d0
+!> the fill inside r_s: 1 the minimum tail, 2 Martins'
+   integer :: fill=0
+!> the minimum tail's coefficients c0..c8 of (r/r_s)**(2k)
+   real(dp) :: cpoly(0:8)=0.0d0
+!> Martins' fill exp(a + b r**2 + c r**4): a, b, c
+   real(dp) :: martins(3)=0.0d0
+!> the cutoff the model core needs (Ha)
+   real(dp) :: ecut_needed=0.0d0
+!> icmod 7: the radius of icmod 6, the smallest that fits (bohr)
+   real(dp) :: r_s6=0.0d0
+!> icmod 7: the rms hardness mismatch of the model (Ha)
+   real(dp) :: mismatch=0.0d0
+!> icmod 7: the radii of the basin (bohr)
+   real(dp), allocatable :: crad(:)
+!> their fills, 0 for none
+   integer, allocatable :: cfill(:)
+!> their hardness mismatches (Ha)
+   real(dp), allocatable :: cmis(:)
+ end type core_budget_t
+
+!> the model core's parameters
+ type :: model_core_t
+!> icmod 3, 4 (modcore3): the Teter function's amplitude prefactor fcfact
+!> and scale prefactor rcfact (those of the input, or optimized), the
+!> core-valence crossover radius rmatch (bohr) and the core charge there
+!> rhocmatch
+   real(dp) :: teter(4)=0.0d0
+!> icmod 6, 7: the budgeted core
+   type(core_budget_t) :: budget
+ end type model_core_t
 
 !> the results of a run
  type :: results_t
@@ -64,6 +116,8 @@
    real(dp), allocatable :: vpsml(:,:,:)
 !> the pseudo-atomic orbitals (mmax,nkap,nv), the UPF's
    real(dp), allocatable :: uupsa(:,:,:)
+!> the model core's parameters
+   type(model_core_t) :: core
 !> the input as read
    type(echo_t) :: echo
 !> the tests

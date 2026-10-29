@@ -63,7 +63,16 @@
 &  'r tests.convergence.opt', 'r tests.convergence.wshare', &
 &  'i tests.weighted_cut.used', 'r tests.weighted_cut.errw', &
 &  'r tests.weighted_cut.ecutw', 'r tests.weighted_cut.weight', &
-&  'r tests.vloc_cut.cut', 'r tests.vloc_cut.check', 'r tests.bbeig']
+&  'r tests.vloc_cut.cut', 'r tests.vloc_cut.check', 'r tests.bbeig', &
+&  'i tests.ghosts.nminus', 'r tests.ghosts.minus', 'i tests.ghosts.nplus', &
+&  'r tests.ghosts.plus', 'r tests.ghosts.ecut', 'i tests.ghosts.basis', &
+&  'r core.teter', 'r core.budget.ecut', 'r core.budget.error', &
+&  'r core.budget.slack', 'r core.budget.ecutw', 'r core.budget.factor', &
+&  'r core.budget.r_s', 'r core.budget.rc_min', 'r core.budget.r_core', &
+&  'i core.budget.fill', 'r core.budget.cpoly', 'r core.budget.martins', &
+&  'r core.budget.ecut_needed', 'r core.budget.r_s6', &
+&  'r core.budget.mismatch', 'r core.budget.crad', 'i core.budget.cfill', &
+&  'r core.budget.cmis']
 
 !> a field copied out of the results: its values, flat, and its shape
  type :: field_t
@@ -264,6 +273,116 @@
  ifail=jfail
  return
  end function oncv_run_toml
+
+ function oncv_write_files(handle,format,nformat,path,npath) result(ifail) &
+&         bind(c,name='oncv_write_files')
+
+!! writes the pseudopotential of the handle's run as the file format
+!! ("psp8", "upf" or "psml") to path: the lines the executables append to
+!! the text output between its Begin line and END_PSP (write_psp_file),
+!! without the blank line before END_PSP
+!!
+!! @param handle  the run handle
+!! @param format  the format, nformat characters, not terminated
+!! @param nformat  its length
+!! @param path  the file name, npath characters, not terminated
+!! @param npath  its length
+
+ use psp_files_m, only: write_psp_file
+ use failure_m, only: fail_input, fail_io, failed, msg_c_no_results, &
+&                    msg_c_format, msg_c_file
+ use, intrinsic :: iso_fortran_env, only: error_unit
+
+!Input variables
+ type(c_ptr), value :: handle
+ character(kind=c_char), intent(in) :: format(nformat),path(npath)
+ integer(c_size_t), value :: nformat,npath
+
+!Output variables
+ integer(c_int) :: ifail
+
+!Local variables
+ type(handle_t), pointer :: hh
+ character(len=:), allocatable :: kind,file,line,held
+ integer :: iunit,iscr,ios,jfail
+ logical :: inside,hold
+
+ call c_f_pointer(handle,hh)
+ if(.not. hh%done) then
+   write(error_unit,'(/a)') 'oncv_write_files: ERROR the handle has no results'
+   ifail=failed(fail_input,msg_c_no_results)
+   return
+ end if
+ kind=from_c(format,nformat)
+ if(kind/='psp8' .and. kind/='upf' .and. kind/='psml') then
+   write(error_unit,'(/2a)') &
+&       'oncv_write_files: ERROR the format is psp8, upf or psml, not ',kind
+   ifail=failed(fail_input,msg_c_format)
+   return
+ end if
+ file=from_c(path,npath)
+ open(newunit=iunit,file=file,action='write',status='replace',iostat=ios)
+ if(ios/=0) then
+   write(error_unit,'(/2a)') 'oncv_write_files: ERROR cannot open ',file
+   ifail=failed(fail_io,msg_c_file)
+   return
+ end if
+ open(newunit=iscr,status='scratch',action='readwrite')
+ call write_psp_file(kind,hh%inp,hh%psp,iscr,jfail)
+ if(jfail==0) then
+   rewind(iscr)
+   inside=.false.
+   hold=.false.
+   do
+     call read_line(iscr,line,ios)
+     if(ios/=0) exit
+     if(.not. inside) then
+       inside=index(line,'Begin ')==1
+       cycle
+     end if
+     if(line=='END_PSP') exit
+     if(hold) write(iunit,'(a)') held
+     held=line
+     hold=.true.
+   end do
+   if(hold .and. len(held)>0) write(iunit,'(a)') held
+ end if
+ close(iscr)
+ close(iunit)
+ ifail=jfail
+ return
+ end function oncv_write_files
+
+ subroutine read_line(iunit,line,ios)
+
+!! the next line of iunit, whole, its trailing blanks kept
+!!
+!! @param iunit  the unit
+!! @param line  the line
+!! @param ios  0, or the iostat at the end of the file
+
+!Input variables
+ integer, intent(in) :: iunit
+
+!Output variables
+ character(len=:), allocatable, intent(out) :: line
+ integer, intent(out) :: ios
+
+!Local variables
+ character(len=256) :: buf
+ integer :: nread
+
+ line=''
+ do
+   read(iunit,'(a)',advance='no',size=nread,iostat=ios) buf
+   line=line//buf(1:nread)
+   if(is_iostat_eor(ios)) then
+     ios=0
+     return
+   end if
+   if(ios/=0) return
+ end do
+ end subroutine read_line
 
  function oncv_failure(handle,failure) result(ifail) &
 &         bind(c,name='oncv_failure')
@@ -542,7 +661,7 @@
    ifail=failed(fail_input,msg_c_no_results)
    return
  end if
- associate(pot=>hh%psp%pot,tt=>hh%psp%tests)
+ associate(pot=>hh%psp%pot,tt=>hh%psp%tests,bb=>hh%psp%core%budget)
    select case(name)
    case('pot.zz')
      call put(ff,pot%zz)
@@ -723,6 +842,66 @@
        call put(ff,tt%bbeig)
      else
        call put_none(ff,3)
+     end if
+   case('tests.ghosts.nminus')
+     call put(ff,tt%ghosts%nminus)
+   case('tests.ghosts.minus')
+     call put(ff,tt%ghosts%minus)
+   case('tests.ghosts.nplus')
+     call put(ff,tt%ghosts%nplus)
+   case('tests.ghosts.plus')
+     call put(ff,tt%ghosts%plus)
+   case('tests.ghosts.ecut')
+     call put(ff,tt%ghosts%ecut)
+   case('tests.ghosts.basis')
+     call put(ff,tt%ghosts%basis)
+   case('core.teter')
+     call put(ff,hh%psp%core%teter)
+   case('core.budget.ecut')
+     call put(ff,bb%ecut)
+   case('core.budget.error')
+     call put(ff,bb%error)
+   case('core.budget.slack')
+     call put(ff,bb%slack)
+   case('core.budget.ecutw')
+     call put(ff,bb%ecutw)
+   case('core.budget.factor')
+     call put(ff,bb%factor)
+   case('core.budget.r_s')
+     call put(ff,bb%r_s)
+   case('core.budget.rc_min')
+     call put(ff,bb%rc_min)
+   case('core.budget.r_core')
+     call put(ff,bb%r_core)
+   case('core.budget.fill')
+     call put(ff,bb%fill)
+   case('core.budget.cpoly')
+     call put(ff,bb%cpoly)
+   case('core.budget.martins')
+     call put(ff,bb%martins)
+   case('core.budget.ecut_needed')
+     call put(ff,bb%ecut_needed)
+   case('core.budget.r_s6')
+     call put(ff,bb%r_s6)
+   case('core.budget.mismatch')
+     call put(ff,bb%mismatch)
+   case('core.budget.crad')
+     if(allocated(bb%crad)) then
+       call put(ff,bb%crad)
+     else
+       call put_none(ff,1)
+     end if
+   case('core.budget.cfill')
+     if(allocated(bb%cfill)) then
+       call put(ff,bb%cfill)
+     else
+       call put(ff,[integer ::])
+     end if
+   case('core.budget.cmis')
+     if(allocated(bb%cmis)) then
+       call put(ff,bb%cmis)
+     else
+       call put_none(ff,1)
      end if
    case default
      write(error_unit,'(/3a)') 'lookup: ERROR no field ',name, &

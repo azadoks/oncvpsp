@@ -26,7 +26,10 @@
  implicit none
  private
  public :: tests_t, logder_t, ghosts_t, configs_t, convergence_t, &
-&           weighted_cut_t, vloc_cut_t
+&           weighted_cut_t, vloc_cut_t, mxghost
+
+!> the GHOST(-) and GHOST(+) states kept per l and ikap
+ integer, parameter :: mxghost=20
 
 !> the log derivatives, atan(r u'/u) (run_phsft)
  type :: logder_t
@@ -56,6 +59,24 @@
 !> one of least <r>/rc: its energy (Ha) and <r>/rc, a GHOST(+) below 1;
 !> 0 if none
    real(dp) :: least(2,mxl+1,mxkap)=0.0d0
+!> the number of GHOST(-) states, basis eigenvalues below a bound state
+!> of the nonlocal Schroedinger equation (or the vacuum level)
+   integer :: nminus(mxl+1,mxkap)=0
+!> their energies (Ha), the first mxghost
+   real(dp) :: minus(mxghost,mxl+1,mxkap)=0.0d0
+!> the number of GHOST(+) states, basis states above the reference whose
+!> weighted <r>/rc (as least) is below 1
+   integer :: nplus(mxl+1,mxkap)=0
+!> their energy (Ha) and weighted <r>/rc, the first mxghost
+   real(dp) :: plus(2,mxghost,mxl+1,mxkap)=0.0d0
+!> the energy (Ha) the basis goes to, the cutoff of the test's lines:
+!> 1.25 times the largest kinetic energy of the sbf basis, or lower where
+!> the basis was cut
+   real(dp) :: ecut(mxl+1,mxkap)=0.0d0
+!> the basis: 0 complete to its cutoff, 1 cut at a barrier state below the
+!> cutoff that did not converge (the test goes to ecut), 2 full below the
+!> cutoff (its largest size reached)
+   integer :: basis(mxl+1,mxkap)=0
  end type ghosts_t
 
 !> the test configurations, the reference first (run_config_ps)

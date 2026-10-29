@@ -118,6 +118,11 @@ int oncv_set_output(void *handle, const char *path, size_t npath);
 int oncv_run_toml(void *handle, int irel, const char *text, size_t ntext,
                   int skip_ld);
 
+/* Writes the pseudopotential of the handle's run as the file format
+ * ("psp8", "upf" or "psml", nformat bytes) to path (npath bytes) */
+int oncv_write_files(void *handle, const char *format, size_t nformat,
+                     const char *path, size_t npath);
+
 /* The failure of the handle's last run; kind 0 if it did not fail */
 int oncv_failure(void *handle, oncv_failure_t *failure);
 
@@ -130,10 +135,12 @@ int oncv_dims(void *handle, oncv_dims_t *dims);
 
 /* The results are copied out by field, named after the components of the
  * Fortran results (src/results_m.f90; pot.* src/pseudo_m.f90, tests.*
- * src/test_results_m.f90), in Fortran order: the first index fastest, so
+ * src/test_results_m.f90; core.* the model core's parameters,
+ * src/results_m.f90), in Fortran order: the first index fastest, so
  * a C caller indexes shp[0] innermost, and numpy reshapes with order='F'.
  * The sizes in the Fortran comments use oncv_dims and constants_m
- * (mxprj=5, mxl=3, mxstate=30, mxcnf=5, nrhomod=5, nerrlv=7, mxkap=2).
+ * (mxprj=5, mxl=3, mxstate=30, mxcnf=5, nrhomod=5, nerrlv=7, mxkap=2,
+ * mxghost=20).
  * A field the run did not compute (esr without irel 2, the log
  * derivatives with skip_ld) has the size 0. */
 

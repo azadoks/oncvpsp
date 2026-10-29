@@ -377,7 +377,7 @@
  subroutine modcore_budget(icmod,rhotps,rhoc,rhomod,corepw,fcfact,ecutw, &
 &                          weighted,errmax,slack,rcmin,mmax,adams,rr,iexc, &
 &                          c_light, &
-&                          zion,probes,lprobe,nprobe,iout,ifail)
+&                          zion,probes,lprobe,nprobe,res,iout,ifail)
 
 !! @param icmod  6 for the smallest radius, 7 for the hardness-matched one
 !! @param rhotps  pseudo valence charge density
@@ -403,12 +403,14 @@
 !! @param probes  probe densities of the hardness (icmod=7), one electron each
 !! @param lprobe  angular momenta of the probes
 !! @param nprobe  number of probes (0 for icmod=6)
+!! @param res  the model core's parameters, as its report (results_m)
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
  use modcore_m, only: core_pieces
  use pieces_m, only: piecewise_t
+ use results_m, only: core_budget_t
 
 !Input variables
  integer, intent(in) :: icmod,mmax,iexc,nprobe
@@ -424,6 +426,7 @@
 !Output variables
  real(dp), intent(out) :: rhomod(mmax,nrhomod)
  type(piecewise_t), intent(out) :: corepw(nrhomod)
+ type(core_budget_t), intent(out) :: res
  integer, intent(out) :: ifail
 
 !Local variables
@@ -455,7 +458,7 @@
 &                  corepw,rhomod,ifail)
  if(ifail/=0) return
 
- call budget_report(bc,icmod,fcfact,weighted,ecutw,slack,rcmin,iout)
+ call budget_report(bc,icmod,fcfact,weighted,ecutw,slack,rcmin,res,iout)
 
  return
 
@@ -975,13 +978,17 @@
 
  end subroutine budget_needed_cut
 
- subroutine budget_report(bc,icmod,fcfact,weighted,ecutw,slack,rcmin,iout)
+ subroutine budget_report(bc,icmod,fcfact,weighted,ecutw,slack,rcmin,res, &
+&                         iout)
 
-!! the report of the model core
+!! the report of the model core, written and returned
 !!
 !! @param bc  the state of the search
 !! @param icmod..rcmin  as in modcore_budget
+!! @param res  the model core's parameters (results_m)
 !! @param iout  unit of the text output
+
+ use results_m, only: core_budget_t
 
 !Input variables
  integer, intent(in) :: icmod
@@ -992,8 +999,32 @@
 !Input/output variables
  type(budget_t), intent(inout) :: bc
 
+!Output variables
+ type(core_budget_t), intent(out) :: res
+
 !Local variables
  integer :: ii
+
+ res%ecut=bc%ecut
+ res%error=bc%errmax
+ res%slack=slack
+ if(fcfact<=0.0d0) then
+   res%ecutw=ecutw
+   res%factor=bc%factor
+ end if
+ res%r_s=bc%fill%rs
+ res%rc_min=rcmin
+ if(bc%rr(bc%irtop)<rcmin) res%r_core=bc%rr(bc%irtop)
+ res%fill=bc%fill%ifill
+ res%martins(:)=[bc%fill%aco,bc%fill%bco,bc%fill%cco]
+ res%ecut_needed=bc%ecore
+ if(icmod==7) then
+   res%r_s6=bc%rs6
+   res%mismatch=bc%mismatch
+   res%crad=bc%crad(1:bc%ncand)
+   res%cfill=bc%cfill(1:bc%ncand)
+   res%cmis=bc%cmis(1:bc%ncand)
+ end if
 
  if(icmod==7) then
    write(iout,'(/a)') 'Model core correction: hardness-matched core (icmod 7)'
@@ -1027,6 +1058,7 @@
    write(iout,'(a)') '  fill minimum tail'
    call legendre_powers(.true.,bc%fill%cleg,bc%fill%cpoly)
    write(iout,'(a,1p,9e16.8)') '  coefficients c0..c8',bc%fill%cpoly(:)
+   res%cpoly(:)=bc%fill%cpoly(:)
  else
    write(iout,'(a)') '  fill Martins'
    write(iout,'(a,1p,3e16.8)') '  a, b, c',bc%fill%aco,bc%fill%bco,bc%fill%cco

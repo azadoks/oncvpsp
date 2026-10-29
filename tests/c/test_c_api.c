@@ -20,7 +20,8 @@
  * running one TOML input, with the same sizes and no failure; every field
  * copied out, the same from both handles bit for bit, the test
  * configurations' energies the same as the text output's; the getters'
- * checks; and a run of a broken input failing as an input failure at the
+ * checks; the psp8, UPF and PSML files of both handles, the same byte for
+ * byte; and a run of a broken input failing as an input failure at the
  * input stage.
  *
  * usage: test_c_api IREL INPUT.toml OUTPUT
@@ -102,6 +103,37 @@ static void same_as_text(void *handle, const char *path)
     check("test_config lines", nseen == ncfg && ncfg > 0);
 }
 
+static char *read_file(const char *path, size_t *len);
+
+/* the files of the two handles' runs (OUTPUT.psp8.1, ...), the same byte
+ * for byte, each beginning as its format does */
+static void same_files(void *h1, void *h2, const char *out)
+{
+    const char *formats[3] = {"psp8", "upf", "psml"};
+    const char *starts[3] = {"", "<UPF version", "<?xml"};
+    char path1[4096], path2[4096];
+    char *f1, *f2;
+    size_t n1, n2;
+    int ii;
+    for (ii = 0; ii < 3; ii++) {
+        snprintf(path1, sizeof path1, "%s.%s.1", out, formats[ii]);
+        snprintf(path2, sizeof path2, "%s.%s.2", out, formats[ii]);
+        check(formats[ii], oncv_write_files(h1, formats[ii], strlen(formats[ii]),
+                                            path1, strlen(path1)) == 0 &&
+                           oncv_write_files(h2, formats[ii], strlen(formats[ii]),
+                                            path2, strlen(path2)) == 0);
+        f1 = read_file(path1, &n1);
+        f2 = read_file(path2, &n2);
+        check("the files of two handles",
+              f1 && f2 && n1 > 0 && n1 == n2 && memcmp(f1, f2, n1) == 0);
+        check("the file's start", f1 && strncmp(f1, starts[ii], strlen(starts[ii])) == 0);
+        free(f1);
+        free(f2);
+    }
+    check("no such format", oncv_write_files(h1, "cpi", 3, path1, strlen(path1)) % 100 ==
+          ONCV_FAIL_INPUT);
+}
+
 static char *read_file(const char *path, size_t *len)
 {
     FILE *fp = fopen(path, "rb");
@@ -165,6 +197,7 @@ int main(int argc, char **argv)
         check("projectors", d1.lloc == l1 || d1.nproj[l1] > 0);
     same_fields(h1, h2);
     same_as_text(h1, argv[3]);
+    same_files(h1, h2, argv[3]);
     {
         int rank, shp[ONCV_MXRANK], ival;
         double xx[2];

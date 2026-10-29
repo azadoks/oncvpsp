@@ -345,7 +345,12 @@ So the interface is a hybrid:
       `oncv_shape` gives a field's rank and shape (Fortran order) and
       `oncv_get_double` / `oncv_get_int` copy it, its size checked, so a
       wrapper builds its arrays from the list and a new field needs no
-      new function. `oncv_write_files` is next.
+      new function. `oncv_write_files(h, format, path)` writes the psp8,
+      UPF or PSML file, the lines the executables append between their
+      Begin line and END_PSP (`write_psp_file`, one format of
+      `write_psp_files`), byte for byte; psmlout now writes its XML to
+      the output's unit rather than unit 6, so a library caller's stdout
+      stays clean.
 - [ ] Stage entry points beside `oncv_run`, as handles on the same
       pattern (dims and getters), over the stage splits of `oncvpsp_run`:
       `oncv_ae(text)`, an all-electron handle that `oncv_run` takes in
@@ -364,15 +369,20 @@ So the interface is a hybrid:
       cutoffs, `opt`, `vkb_cond` (bbeig), the projector signs (evkb),
       `ecut_vloc`, the test configurations, the ghost margins and
       localization, `ecut_w`, the log derivatives, the reference
-      eigenvalues and the charges are in the fields. Not yet: every
-      GHOST(+) state and their count per l (ghosts_t keeps the least
-      localized one), run_ghosts' "basis cut" and "basis full" notes, the
-      warnings as a list, the Teter fit's fcfact, rcfact, rmatch and
-      rhocmatch (icmod 4), the budget's results (icmod 6, 7: ecut, error,
-      slack, ecut_needed, r_s, rc_min, fill, hardness mismatch), the UPF
-      file's core and atomic charges on its mesh, and the psp8 file for
-      oncvpsp_confine.x (`oncv_write_files`). The input echo is the input
-      the caller passed; the failure is `oncv_failure` and the text.
+      eigenvalues and the charges are in the fields. Added since: the
+      GHOST(-) and GHOST(+) states and their counts per l and ikap, the
+      basis's cutoff and whether it was cut or full (`ghosts_t`; run_ghosts
+      fills it directly), the Teter function's fcfact, rcfact, rmatch and
+      rhocmatch (icmod 3, 4) and the budgeted core's report (icmod 6, 7:
+      ecut, error, slack, the pseudo-waves' cutoff and factor, r_s, rc_min,
+      the last radius with core charge, the fill and its coefficients,
+      ecut_needed, and for icmod 7 the radius of icmod 6, the hardness
+      mismatch and the basin's radii) as `results_t%core` (`model_core_t`),
+      each checked against its line of the text (test_run); the UPF's
+      mesh and densities and the psp8 for oncvpsp_confine.x come with
+      `oncv_write_files`, the files the checks read now. The input echo is
+      the input the caller passed; the failure is `oncv_failure` and the
+      text. Still to come: the warnings as a list.
 - [ ] The text output optionally into a buffer the caller reads, beside
       a file or `/dev/null`, so the text parser can check the arrays
       during the switch-over without temporary files.
