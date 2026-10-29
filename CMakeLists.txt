@@ -132,6 +132,10 @@ if (ONCVPSP_WITH_C_API)
     install(TARGETS oncvpsp_c LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}")
     install(FILES include/oncvpsp.h DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 endif ()
+# The Python package's (pyproject.toml, scikit-build-core): the shared library beside its modules
+if (SKBUILD AND ONCVPSP_WITH_C_API)
+    install(TARGETS oncvpsp_c LIBRARY DESTINATION oncvpsp NAMELINK_SKIP COMPONENT python)
+endif ()
 
 message(STATUS "")
 message(STATUS "ONCVPSP ${PROJECT_VERSION}")

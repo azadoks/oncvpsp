@@ -183,6 +183,31 @@ if (ONCVPSP_WITH_C_API AND ONCVPSP_WITH_TOML)
             set_property(TEST ${added_test} APPEND PROPERTY ENVIRONMENT "LD_PRELOAD=${quadmath}")
         endif ()
     endforeach ()
+    # the Python package (python/oncvpsp, scripts/python_wrapper.py) on the library built here: the
+    # run's text output and psp8 file the executable's, the input's forms, the arrays, the stages
+    # and the failures; with a test Python that has NumPy
+    execute_process(COMMAND ${test_python} -c "import numpy" RESULT_VARIABLE no_numpy
+        OUTPUT_QUIET ERROR_QUIET)
+    if (no_numpy EQUAL 0)
+        foreach (c_test IN ITEMS "1:sr:14_Si" "2:r:03_Li" "0:nr:08_O")
+            string(REPLACE ":" ";" c_test "${c_test}")
+            list(GET c_test 0 irel)
+            list(GET c_test 1 rel)
+            list(GET c_test 2 name)
+            oncvpsp_add_test(unit python_wrapper ${rel} ${name} python_wrapper.py
+                $<TARGET_FILE:oncvpsp${rel}> ${irel} "${data}/toml/${name}.toml" "@DIR@")
+            if (added_test)
+                set_property(TEST ${added_test} APPEND PROPERTY ENVIRONMENT
+                    "ONCVPSP_LIBRARY=$<TARGET_FILE:oncvpsp_c>" "PYTHONPATH=${PROJECT_SOURCE_DIR}/python")
+                if (EXISTS "${quadmath}")
+                    set_property(TEST ${added_test} APPEND PROPERTY ENVIRONMENT
+                        "LD_PRELOAD=${quadmath}")
+                endif ()
+            endif ()
+        endforeach ()
+    else ()
+        message(STATUS "The test Python has no NumPy; the tests of the Python package are disabled")
+    endif ()
 endif ()
 
 # Unit test of oncvpsp_run in several threads at once (test_run_threads.f90): each case alone, then

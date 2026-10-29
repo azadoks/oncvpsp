@@ -1,0 +1,29 @@
+# The Python package oncvpsp (python/oncvpsp): ctypes over liboncvpsp, the
+# shared library built by CMake and installed beside the modules
+[build-system]
+requires = ["scikit-build-core>=0.10"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "oncvpsp"
+dynamic = ["version"]
+description = "Optimized norm-conserving Vanderbilt pseudopotentials, as a library"
+readme = "README.md"
+license = { file = "COPYING" }
+requires-python = ">=3.11"
+dependencies = ["numpy"]
+
+[tool.scikit-build]
+cmake.version = ">=3.22"
+cmake.build-type = "Release"
+cmake.define = { ONCVPSP_WITH_C_API = "ON", BUILD_TESTING = "OFF" }
+build.targets = ["oncvpsp_c"]
+install.components = ["python"]
+wheel.packages = ["python/oncvpsp"]
+# the library is called through ctypes, not as an extension module
+wheel.py-api = "py3"
+
+[tool.scikit-build.metadata.version]
+provider = "scikit_build_core.metadata.regex"
+input = "CMakeLists.txt"
+regex = 'project\(\s*oncvpsp\s+VERSION\s+(?P<value>[0-9.]+)'
