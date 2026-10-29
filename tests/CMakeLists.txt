@@ -104,18 +104,24 @@ foreach (run_test IN ITEMS "0:nr:08_O" "1:sr:14_Si" "2:r:14_Si" "1:sr:14_Si_bcw"
 endforeach ()
 
 # Unit test of oncvpsp_run in several threads at once (test_run_threads.f90): each case alone, then
-# all of them twice over concurrently, which must give the same results bit for bit, so the library
-# keeps no state between or across runs; the cases differ in irel and c_light. Only the test is
-# compiled with OpenMP, and it is left out without it
+# all of them twice over concurrently, which must give the same results and text bit for bit, so the
+# library keeps no state between or across runs; the cases differ in irel, c_light and the
+# functional (with Libxc, its GGA in icmod 4 and in icmod 6, whose budget calls LAPACK). A threaded
+# BLAS runs on all its threads outside the parallel region and on one inside, whose sums differ in
+# their last bits (07_N_opt with MKL), so it is held to one thread. Only the test is compiled with
+# OpenMP, and it is left out without it
 find_package(OpenMP COMPONENTS Fortran)
 if (OpenMP_Fortran_FOUND)
     oncvpsp_unit_executable(run_threads)
     target_link_libraries(test_run_threads PRIVATE OpenMP::OpenMP_Fortran)
-    oncvpsp_add_test(unit unit - run_threads test_run_threads "0:${CMAKE_CURRENT_SOURCE_DIR}/data/08_O.dat:0"
-                     "1:${CMAKE_CURRENT_SOURCE_DIR}/data/14_Si.dat:0"
-                     "1:${CMAKE_CURRENT_SOURCE_DIR}/data/14_Si.dat:137.0359991"
-                     "2:${CMAKE_CURRENT_SOURCE_DIR}/data/14_Si.dat:0"
-                     "2:${CMAKE_CURRENT_SOURCE_DIR}/data/14_Si.dat:100")
+    set(thread_cases "0:${data}/08_O.dat:0" "1:${data}/14_Si.dat:0" "1:${data}/14_Si.dat:137.0359991"
+                     "2:${data}/14_Si.dat:0" "2:${data}/14_Si.dat:100")
+    if (ONCVPSP_WITH_Libxc)
+        list(APPEND thread_cases "1:${data}/38_Sr_lxc.dat:0" "1:${data}/07_N_opt.dat:0")
+    endif ()
+    oncvpsp_add_test(unit unit - run_threads test_run_threads ${thread_cases})
+    set_property(TEST unit_run_threads APPEND PROPERTY ENVIRONMENT
+                 "OPENBLAS_NUM_THREADS=1" "MKL_NUM_THREADS=1" "BLIS_NUM_THREADS=1")
 endif ()
 
 # Unit tests of the operations at any radius on the log mesh (logmesh_m), the closed-form Bessel

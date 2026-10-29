@@ -195,10 +195,17 @@ the routines that search, which pass the data down.
 
 So the library keeps no state between or across runs, and runs can share
 a process in threads. `tests/unit/test_run_threads.f90` (`unit_run_threads`)
-runs five cases, nr, sr and fr with two values of `c_light`, each alone
-and then all of them twice over in ten OpenMP threads at once, and
-compares bit for bit; before the speed of light was an argument, 85 of
-its checks failed. Only the test is compiled with OpenMP. The procedures
+runs five cases, nr, sr and fr with two values of `c_light` (and, with
+Libxc, its PBE in icmod 4 and 6), each alone and then all of them twice
+over in OpenMP threads at once, and compares the results and the text
+output bit for bit; before the speed of light was an argument, 85 of its
+checks failed. The test reads the inputs before the threads start and
+gives each run a scratch file: gfortran does not open one file, even
+`/dev/null`, on two units at once, which failed the Debug build at
+random. A threaded BLAS (MKL, OpenBLAS) uses all its threads outside the
+parallel region and one inside it, and its sums then differ in their last
+bits (07_N_opt's budget, through LAPACK), so the test holds it to one
+thread. Only the test is compiled with OpenMP. The procedures
 are compiled recursive in every build type (`-frecursive`, and
 `-recursive`, `-Mrecursive`; `cmake/OncvpspCompilerOptions.cmake`):
 gfortran makes a local array over 64 kB static otherwise (there is none
