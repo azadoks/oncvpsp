@@ -18,7 +18,9 @@
 !> Unit test of the stages of oncvpsp_run called on their own: the
 !> all-electron atom solved once (solve_ae), and every channel optimized
 !> twice from it (optimize_channel), each time bit for bit the same, and
-!> the same as the convergence data of the whole run.
+!> the same as the convergence data of the whole run; then the local
+!> potential (local_potential) and every channel's projectors
+!> (channel_vkb) from those channels alone, the same as the whole run's.
 !>
 !> usage: test_stages IREL INPUT.dat
 
@@ -30,17 +32,22 @@
  use oncvpsp_run_m, only: oncvpsp_run, complete_input
  use ae_state_m, only: ae_state_t, solve_ae
  use channel_m, only: channel_t, optimize_channel
+ use run_vkb_m, only: local_t, local_potential, channel_vkb
+ use pieces_m, only: piecewise_t
  use main_setup_m, only: core_radius_points
  use results_m, only: results_t
- use constants_m, only: mxcnf, mxlin
+ use constants_m, only: mxcnf, mxlin, mxl, mxprj
  implicit none
 
  type(results_t) :: psp
  type(input_t) :: inp
  type(config_t) :: cnf(mxcnf)
  type(ae_state_t) :: ae
- type(channel_t) :: ch1,ch2
- integer :: irel,nkap,iout,ifail,ierr,l1,nprj,nq,ncheck
+ type(channel_t) :: ch1,ch2,chs(mxlin+1)
+ type(local_t) :: lp
+ type(piecewise_t), allocatable :: vkbpw(:,:)
+ real(dp), allocatable :: evkb(:,:),vkb(:,:,:),bbeig(:,:)
+ integer :: irel,nkap,iout,ifail,ierr,l1,lc,nprj,nq,ncheck
  integer :: irc(mxlin+1)
  real(dp) :: rcmax
  character(len=1024) :: arg,input_filename
@@ -87,7 +94,34 @@
    call same('tail',[ch1%ektail],[psp%tests%convergence%tail(:,:,l1,:)])
    call same('opt',[ch1%optdg],[psp%tests%convergence%opt(:,:,l1,:)])
    call same('wshare',[ch1%wshare],[psp%tests%convergence%wshare(:,:,l1,:)])
+   chs(l1)=ch1
    ncheck=ncheck+1
+ end do
+
+! the local potential, from the local channel for lloc<4, and the
+! projectors of the others
+ lc=min(inp%lloc+1,inp%lmax+1)
+ call local_potential(inp%lloc,inp%lpopt,inp%dvloc0,inp%rc,irc,ae%rr, &
+&                     ae%mmax,ae%vfull,nkap,chs(lc)%pswfx,chs(lc)%chix, &
+&                     chs(lc)%vrloc,lp,iout,ifail)
+ if(ifail/=0) error stop 'test_stages: local_potential failed'
+ if(any(lp%vlocpw%vals/=psp%pot%vlocpw%vals)) then
+   l1=0
+   call fail('vlocpw')
+ end if
+ allocate(evkb(mxprj,nkap),vkb(ae%mmax,mxprj,nkap),bbeig(mxprj,nkap))
+ allocate(vkbpw(mxprj,nkap))
+ do l1=1,inp%lmax+1
+   if(l1==inp%lloc+1 .or. l1>mxl+1) cycle
+   evkb(:,:)=0.0d0
+   vkb(:,:,:)=0.0d0
+   call channel_vkb(l1,inp%lloc,lp,inp%rc(l1),chs(l1)%irc,inp%nproj(l1), &
+&                   ae%rr,ae%mmax,ae%vfull,chs(l1)%pswfx,chs(l1)%chix, &
+&                   chs(l1)%dlta,irel,nkap,evkb,vkb,vkbpw,bbeig,iout,ifail)
+   if(ifail/=0) error stop 'test_stages: channel_vkb failed'
+   call same('evkb',[evkb],[psp%pot%evkb(:,l1,:)])
+   call same('vkb',[vkb],[psp%pot%vkb(:,:,l1,:)])
+   call same('bbeig',[bbeig],[psp%tests%bbeig(:,l1,:)])
  end do
  close(iout)
 

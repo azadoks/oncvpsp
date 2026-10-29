@@ -270,9 +270,12 @@ order follows what the optimizer would reuse first.
       `tests/unit/test_stages.f90` solves the atom once, runs every
       channel twice from it, and checks them against each other and the
       whole run bit for bit (nr, sr, fr, and a local channel).
-- [ ] `run_vkb` split into the local potential and each channel's
-      projectors, so that a channel changed alone changes only its own
-      projectors (with `lloc=4`).
+- [x] `run_vkb` (`run_vkb_m`) split into `local_potential`, in a
+      `local_t` (its inside pieces, on the mesh and as pieces), and
+      `channel_vkb`, one channel's projectors from its `channel_t`
+      arrays and the `local_t`: with `lloc=4` a channel changed alone
+      changes only its own projectors. `run_vkb` calls them;
+      `test_stages` checks them against the whole run.
 - [ ] The coupled block, from the valence densities and the model core to
       the tests, re-runnable on the earlier stages with another model
       core (icmod, fcfact, rcfact).
