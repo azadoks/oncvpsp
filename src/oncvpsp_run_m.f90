@@ -749,6 +749,8 @@
  vsopw=st%vsopw
  ecutw=0.0d0
  allocate(rhot(mmax),vo(mmax),vxc(mmax),vpuns(mmax,mxl+2))
+!the columns past max(lmax,lloc)+1 stay 0
+ vpuns(:,:)=0.0d0
 
 !icmod=4 coarse-search grids: min, max, step
  fcgrid=[inp%fcfact_min,inp%fcfact_max,inp%fcfact_step]
@@ -860,6 +862,7 @@
 
 ! save full info for psml, switched to -zion/r far out as vpuns is
    allocate(vpsml(mmax,mxl+2,mxkap))
+   vpsml(:,:,:)=0.0d0
    do l1=1,max(inp%lmax+1,inp%lloc+1)
      vpsml(:,l1,1) = vp(:,l1,1) - vo(:)
      vpsml(:,l1,2) = vp(:,l1,2) - vo(:)
@@ -1064,6 +1067,7 @@
  call move_alloc(vsrpw,psp%pot%vsrpw)
  call move_alloc(vsopw,psp%pot%vsopw)
  psp%pot%vlocpw=vlocpw
+ psp%pot%vloc=vp(:,inp%lloc+1,1:nkap)
  call move_alloc(vpuns,psp%pot%vpuns)
  call move_alloc(rho,psp%pot%rho)
  call move_alloc(rhomod,psp%pot%rhomod)
@@ -1166,20 +1170,29 @@
  return
  end subroutine run_ae
 
- subroutine run_channel(ae,inp,ll,ch,at,iout,ifail)
+ subroutine run_channel(ae,inp,ll,mode,ch,lp,prj,at,iout,ifail)
 
 !! the channel of angular momentum ll alone from the input inp and the
 !! all-electron atom ae, solved before (solve_ae) and checked against it
 !! (check_ae): the input completed (complete_input), the core radii's mesh
 !! points, and the channel (optimize_channel) with the input's projectors,
 !! or one for the local channel. A first pseudo-wave with a node is
-!! pspot's failure
+!! pspot's failure. With mode 1, also the local potential
+!! (local_potential, for lloc<4 from the local channel, optimized for it
+!! when ll is another) and the channel's projectors (channel_vkb, none for
+!! the local channel), the same as the whole run's; with mode 2, the
+!! channel only up to the node test of each kappa's first projector, its
+!! results unset
 !!
 !! @param ae  the all-electron atom (ae_state_m)
 !! @param inp  the input values (input_m), as read on input, completed on
 !!             output
 !! @param ll  angular momentum
+!! @param mode  0 the channel, 1 also the local potential and projectors,
+!!              2 the node test of its first projector only
 !! @param ch  the channel (channel_m)
+!! @param lp  the local potential (run_vkb_m), with mode 1
+!! @param prj  the channel's projectors (run_vkb_m), with mode 1
 !! @param at  where the run was (failure_m): its stage, l and ikap
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
@@ -1187,15 +1200,17 @@
 
  use ae_state_m, only: ae_state_t, check_ae
  use channel_m, only: channel_t, optimize_channel
+ use run_vkb_m, only: local_t, projectors_t, local_potential, channel_vkb
  use main_setup_m, only: core_radius_points
  use input_m, only: input_t, config_t
- use constants_m, only: dp, mxcnf, mxlin
+ use constants_m, only: dp, mxcnf, mxlin, mxprj
  use failure_m, only: failure_t, fail_none, fail_input, failed, &
-&                    msg_run_channel_l, stage_input, stage_ae, stage_channel
+&                    msg_run_channel_l, msg_run_channel_mode, stage_input, &
+&                    stage_ae, stage_channel, stage_vkb
 
 !Input variables
  type(ae_state_t), intent(in) :: ae
- integer, intent(in) :: ll
+ integer, intent(in) :: ll,mode
  integer, intent(in) :: iout
 
 !Input/output variables
@@ -1203,13 +1218,16 @@
 
 !Output variables
  type(channel_t), intent(out) :: ch
+ type(local_t), intent(out) :: lp
+ type(projectors_t), intent(out) :: prj
  type(failure_t), intent(out) :: at
  integer, intent(out) :: ifail
 
 !Local variables
  type(config_t) :: cnf(mxcnf)
+ type(channel_t) :: chl
  integer :: irc(mxlin+1)
- integer :: nprj
+ integer :: nprj,nkap
  real(dp) :: rcmax
 
  at=failure_t(fail_none,0,0,stage_input,-1,0,0)
@@ -1219,6 +1237,11 @@
    write(iout,'(/a,i0,a,i0)') 'run_channel: ERROR no channel l=',ll, &
 &       ', lmax=',inp%lmax
    ifail=failed(fail_input,msg_run_channel_l)
+   return
+ end if
+ if(mode<0 .or. mode>2) then
+   write(iout,'(/a,i0)') 'run_channel: ERROR the mode is 0, 1 or 2, not ',mode
+   ifail=failed(fail_input,msg_run_channel_mode)
    return
  end if
  at%stage=stage_ae
@@ -1231,7 +1254,36 @@
  nprj=inp%nproj(ll+1)
  if(ll==inp%lloc) nprj=1
  at%ll=ll
- call optimize_channel(ae,inp,ll+1,nprj,irc(ll+1),ch,iout,ifail)
+ call optimize_channel(ae,inp,ll+1,nprj,irc(ll+1),ch,iout,ifail,mode==2)
+ if(ifail/=0 .or. mode/=1) return
+
+! the local potential, from the local channel's first wave for lloc<4
+ nkap=size(ch%vp,2)
+ if(inp%lloc<4 .and. ll/=inp%lloc) then
+   at%ll=inp%lloc
+   call optimize_channel(ae,inp,inp%lloc+1,1,irc(inp%lloc+1),chl,iout,ifail)
+   if(ifail/=0) return
+ else
+   chl=ch
+ end if
+ if(inp%lloc<4) irc(inp%lloc+1)=chl%irc
+ irc(ll+1)=ch%irc
+ at%stage=stage_vkb
+ at%ll=-1
+ call local_potential(inp%lloc,inp%lpopt,inp%dvloc0,inp%rc,irc,ae%rr, &
+&                     ae%mmax,ae%vfull,nkap,chl%pswfx,chl%chix,chl%vrloc,lp, &
+&                     iout,ifail)
+ if(ifail/=0) return
+
+! the channel's projectors
+ allocate(prj%vkb(ae%mmax,mxprj,nkap))
+ prj%vkb(:,:,:)=ch%vkb(:,:,:)
+ if(ll==inp%lloc) return
+ at%ll=ll
+ call channel_vkb(ll+1,inp%lloc,lp,inp%rc(ll+1),irc(ll+1),inp%nproj(ll+1), &
+&                 ae%rr,ae%mmax,ae%vfull,ch%pswfx,ch%chix,ch%dlta,ae%irel, &
+&                 nkap,prj%evkb(:,1:nkap),prj%vkb,prj%vkbpw(:,1:nkap), &
+&                 prj%bbeig(:,1:nkap),iout,ifail)
  return
  end subroutine run_channel
 

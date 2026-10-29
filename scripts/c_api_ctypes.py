@@ -22,6 +22,7 @@ FAIL_INPUT = 1
 STAGE_INPUT = 1
 STAGE_AE = 2
 MSG_AE_GIVEN_ATOM = 176
+MSG_PSPOT_NODE = 122
 
 
 class Failure(C.Structure):
@@ -50,8 +51,10 @@ class Dims(C.Structure):
 
 
 def library(path):
-    """the library, with the functions' signatures"""
-    lib = C.CDLL(path)
+    """the library, with the functions' signatures; loaded global, as MKL's
+    dispatch libraries need its symbols (RTLD_LOCAL aborts the process at
+    the first LAPACK call)"""
+    lib = C.CDLL(path, mode=C.RTLD_GLOBAL)
     vp, sz, cp = C.c_void_p, C.c_size_t, C.c_char_p
     lib.oncv_new.restype = vp
     lib.oncv_free.argtypes = [vp]
@@ -64,9 +67,34 @@ def library(path):
     lib.oncv_get_int.argtypes = [vp, cp, sz, C.POINTER(C.c_int), sz]
     lib.oncv_write_files.argtypes = [vp, cp, sz, cp, sz]
     lib.oncv_ae_toml.argtypes = [vp, C.c_int, cp, sz]
-    lib.oncv_channel_toml.argtypes = [vp, vp, cp, sz, C.c_int]
+    lib.oncv_channel_toml.argtypes = [vp, vp, cp, sz, C.c_int, C.c_int]
     lib.oncv_coupled.argtypes = [vp, vp, C.c_int, C.c_double, C.c_double, C.c_int]
+    lib.oncv_set_output_buffer.argtypes = [vp, C.c_int]
+    lib.oncv_output_text.argtypes = [vp, cp, sz, C.POINTER(sz)]
+    pd, pi = C.POINTER(C.c_double), C.POINTER(C.c_int)
+    lib.oncv_confine.argtypes = [
+        vp,
+        vp,
+        pd,
+        C.c_int,
+        pi,
+        C.c_int,
+        pd,
+        pd,
+        C.c_int,
+        C.c_double,
+        C.c_double,
+    ]
     return lib
+
+
+def output_text(lib, handle):
+    """the buffered text output of the handle, as a string"""
+    nout = C.c_size_t()
+    lib.oncv_output_text(handle, None, 0, C.byref(nout))
+    buf = C.create_string_buffer(nout.value)
+    lib.oncv_output_text(handle, buf, nout.value, C.byref(nout))
+    return buf.raw[: nout.value].decode()
 
 
 def fields(lib):
@@ -99,6 +127,16 @@ def get(lib, handle, kind, name):
     return shape, list(buf[:size])
 
 
+def slice_l(field, lpos, ll):
+    """the values of a field (shape, flat values in Fortran order) at
+    index ll of its axis lpos, in Fortran order"""
+    shape, values = field
+    inner = 1
+    for nn in shape[:lpos]:
+        inner *= nn
+    return [vv for ii, vv in enumerate(values) if ii // inner % shape[lpos] == ll]
+
+
 def stages(lib, handle, irel, text, dims, first, check):
     """the stage handles of the input text, against the run of handle: the
     all-electron atom, each channel from it, and the model core again with
@@ -110,7 +148,8 @@ def stages(lib, handle, irel, text, dims, first, check):
     nkap = 2 if irel == 2 else 1
     for ll in range(dims.lmax + 1):
         check(
-            f"channel {ll}", lib.oncv_channel_toml(chan, ae, text, len(text), ll) == 0
+            f"channel {ll}",
+            lib.oncv_channel_toml(chan, ae, text, len(text), ll, 1) == 0,
         )
         shape, curve = get(lib, chan, "r", "channel.ecurve")
         check(
@@ -122,11 +161,30 @@ def stages(lib, handle, irel, text, dims, first, check):
             "channel.pswf's shape",
             get(lib, chan, "r", "channel.pswf")[0][0] == dims.mmax,
         )
+        check("channel.vloc", get(lib, chan, "r", "channel.vloc")[0] == (dims.mmax,))
+        if ll != dims.lloc:
+            check(
+                "channel.evkb against the run's",
+                get(lib, chan, "r", "channel.evkb")[1]
+                == slice_l(get(lib, handle, "r", "pot.evkb"), 1, ll),
+            )
+    # mode 2, the node test alone, fails as the channel does at a node
+    # and at the steps before it, over qcuts of channel 0 that reach one
+    qcut = re.search(rb"qcut = \[ *([0-9.]+),", text)
+    for factor in (1.0, 2.0, 2.5, 3.0):
+        qq = b"%r" % (float(qcut.group(1)) * factor)
+        other = text[: qcut.start(1)] + qq + text[qcut.end(1) :]
+        full = lib.oncv_channel_toml(chan, ae, other, len(other), 0, 0)
+        node = lib.oncv_channel_toml(chan, ae, other, len(other), 0, 2)
+        at_node = full // 100 % 1000 == MSG_PSPOT_NODE
+        check(
+            f"mode 2 at qcut {qq.decode()}", node == full or node == 0 and not at_node
+        )
     # another functional is another atom (check_ae)
     other = re.sub(
         rb"iexc = (\d+)", lambda m: b"iexc = %d" % (7 - int(m.group(1))), text
     )
-    ifail = lib.oncv_channel_toml(chan, ae, other, len(other), 0)
+    ifail = lib.oncv_channel_toml(chan, ae, other, len(other), 0, 0)
     failure = Failure()
     lib.oncv_failure(chan, C.byref(failure))
     check("another atom", ifail % 100 == FAIL_INPUT and failure.stage == STAGE_AE)
@@ -164,21 +222,27 @@ def main():
             print("FAILED:", label, file=sys.stderr)
             nfail += 1
 
-    check("api version", lib.oncv_api_version() == 2)
+    check("api version", lib.oncv_api_version() == 3)
     handle = C.c_void_p(lib.oncv_new())
     check("run", lib.oncv_run_toml(handle, irel, text, len(text), 0) == 0)
     dims = Dims()
     lib.oncv_dims(handle, C.byref(dims))
-    check("dims", dims.version == 2 and dims.irel == irel and dims.mmax > 0)
+    check("dims", dims.version == 3 and dims.irel == irel and dims.mmax > 0)
     names = [
-        (kind, name) for kind, name in fields(lib) if not name.startswith("channel.")
+        (kind, name)
+        for kind, name in fields(lib)
+        if not name.startswith(("channel.", "confine."))
     ]
     first = {name: get(lib, handle, kind, name) for kind, name in names}
     check("rr against dims", first["pot.rr"][0] == (dims.mmax,))
     check("nproj against dims", first["pot.nproj"][1] == list(dims.nproj))
     check("vkb against dims", first["pot.vkb"][0][0] == dims.mmax)
 
+    lib.oncv_set_output_buffer(handle, 1)
     check("rerun", lib.oncv_run_toml(handle, irel, text, len(text), 0) == 0)
+    out = output_text(lib, handle)
+    check("the text output in the buffer", "DIAGNOSTICS" in out)
+    lib.oncv_set_output_buffer(handle, 0)
     for kind, name in names:
         check(f"{name} after a rerun", get(lib, handle, kind, name) == first[name])
 

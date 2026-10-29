@@ -29,7 +29,8 @@
  * above them, and the solver status above that; oncv_failure splits it,
  * with where the run was. The messages (msg) are the msg_* of
  * src/failure_m.f90, whose values are kept from one version to the next.
- * The message itself is in the run's text output (oncv_set_output).
+ * The message itself is in the run's text output (oncv_set_output,
+ * oncv_set_output_buffer).
  *
  * Beside a whole run (oncv_run_toml), a handle may hold a stage of one,
  * from which others start: the all-electron atom alone (oncv_ae_toml),
@@ -51,7 +52,7 @@ extern "C" {
 #endif
 
 /* The version of this header; oncv_api_version() is the library's */
-#define ONCV_API_VERSION 2
+#define ONCV_API_VERSION 3
 
 /* The kinds of failure (failure_m's fail_*) */
 #define ONCV_FAIL_NONE 0
@@ -80,6 +81,7 @@ extern "C" {
 #define ONCV_STAGE_PHSFT 13
 #define ONCV_STAGE_TESTS 14
 #define ONCV_STAGE_OUTPUT 15
+#define ONCV_STAGE_CONFINE 16
 
 /* The largest l of the input's channels, l = 0..ONCV_MXLIN */
 #define ONCV_MXLIN 5
@@ -121,6 +123,16 @@ void oncv_free(void *handle);
  * replaced at each run */
 int oncv_set_output(void *handle, const char *path, size_t npath);
 
+/* With on non-zero, the handle's runs write their text output to a buffer
+ * the handle keeps, replaced at each run or stage, rather than to the file
+ * of oncv_set_output; with on 0, to that file again */
+int oncv_set_output_buffer(void *handle, int on);
+
+/* The text output of the handle's last run or stage from its buffer: its
+ * first ntext bytes into text, not terminated, and its whole length in
+ * *nout (0 without a buffer); ntext 0 gives the size to allocate */
+int oncv_output_text(void *handle, char *text, size_t ntext, size_t *nout);
+
 /* The pseudopotential and its tests of the TOML input text (ntext bytes),
  * with the relativistic treatment irel, into the handle; skip_ld non-zero
  * leaves out the log derivatives */
@@ -145,9 +157,19 @@ int oncv_run_ae_toml(void *handle, void *ae_handle, const char *text,
  * handle: the fields channel.*, the pseudo-waves, semi-local potential
  * and convergence curves as the whole run makes them. A first pseudo-wave
  * with a node is pspot's failure: ONCV_FAIL_CONSTRUCTION, msg 122
- * (msg_pspot_node) */
+ * (msg_pspot_node). The mode is
+ *   0  the channel;
+ *   1  also the local potential (channel.vloc; for lloc < 4 from the
+ *      local channel, optimized for it when ll is another) and the
+ *      channel's projectors (channel.evkb, vkb, bbeig; none for the local
+ *      channel), the same as the whole run's, whose failures are at
+ *      ONCV_STAGE_VKB;
+ *   2  the node test alone: the channel up to the node test of each
+ *      kappa's first projector, which fails as above, as do the steps
+ *      before it; the handle then holds no fields channel.*.
+ * Another mode is ONCV_FAIL_INPUT, msg 185 (msg_run_channel_mode) */
 int oncv_channel_toml(void *handle, void *ae_handle, const char *text,
-                      size_t ntext, int ll);
+                      size_t ntext, int ll, int mode);
 
 /* The model core, the screening and the tests made again from the stages
  * of base's run (which a run keeps even if its model core failed), with
@@ -156,6 +178,22 @@ int oncv_channel_toml(void *handle, void *ae_handle, const char *text,
  * results oncv_run_toml gives for the input with that model core */
 int oncv_coupled(void *handle, void *base, int icmod, double fcfact,
                  double rcfact, int skip_ld);
+
+/* The confined atom of the run of the handle run (oncv_run_toml,
+ * oncv_run_ae_toml or oncv_coupled) into the handle, as oncvpsp_confine.x
+ * makes it of the run's all-electron and pseudopotential data files: its
+ * lines in the text output (oncv_set_output_buffer) and its summary, the
+ * fields confine.*. The radii of the sphere (bohr), nradii of them, 0 for
+ * the default (1.25, 1.5 and 2 times the largest core radius), less than
+ * 0 for no sphere; the channels' l, nchannels of them, 0 for all four;
+ * energies emin, emax and the scan's step (Ha), NULL for the input's
+ * window of the log derivatives and 0.1; the walls' strengths (Ha/bohr**2),
+ * nwalls of them, less than 0 for the default (0.01, 0.03 and 0.1), 0 for
+ * none; r0 the wall's onset (bohr) and ecutmax the basis's largest cutoff
+ * (Ha), 0 for the largest core radius and 200. The handle may be run */
+int oncv_confine(void *handle, void *run, const double *radii, int nradii,
+                 const int *channels, int nchannels, const double *energies,
+                 const double *walls, int nwalls, double r0, double ecutmax);
 
 /* Writes the pseudopotential of the handle's run as the file format
  * ("psp8", "upf" or "psml", nformat bytes) to path (npath bytes) */
@@ -179,9 +217,13 @@ int oncv_dims(void *handle, oncv_dims_t *dims);
  * src/results_m.f90; warnings.rec the warnings in the order written, 5
  * by nwarn (at most 64): the warning, its stage, l, ikap and index, as
  * failure_m's wrn_* lists them; ae.* the all-electron atom,
- * src/ae_state_m.f90, of an all-electron handle or a run's; channel.* a
+ * src/ae_state_m.f90, of an all-electron handle or a run's; confine.* the
+ * confined atom's summary, src/confine_summary_m.f90, -1 for a part left
+ * out, cut the cutoffs at 1e-4 and 1e-5 Ha of all the edges then of the
+ * top edges, inf whether each is never reached; channel.* a
  * channel, src/channel_m.f90, its arrays per projector and kappa (mxprj,
- * nkap) and the convergence curves to the end of the longest), in Fortran
+ * nkap) and the convergence curves to the end of the longest; vloc, evkb,
+ * vkb and bbeig of size 0 without mode 1), in Fortran
  * order: the first index fastest, so
  * a C caller indexes shp[0] innermost, and numpy reshapes with order='F'.
  * The sizes in the Fortran comments use oncv_dims and constants_m

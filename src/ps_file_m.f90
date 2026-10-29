@@ -55,7 +55,7 @@
  use pseudo_m, only: pseudo_t
  implicit none
  private
- public :: ps_file_t, write_ps_file, read_ps_file, ps_file_free
+ public :: ps_file_t, write_ps_file, read_ps_file, ps_file_of, ps_file_free
 
  character(len=8), parameter :: magic='ONCVPS  ' !< first record of the file
  integer, parameter :: version=2 !< format version
@@ -261,6 +261,100 @@
  close(unit)
  return
  end subroutine read_ps_file
+
+ subroutine ps_file_of(pot,rc,epsh1,epsh2,depsh,rxpsh,epa,pf)
+
+!! the contents of the file write_ps_file writes of the same arguments, as
+!! read_ps_file reads them, without the file (oncv_confine): the pieces on
+!! the mesh alone, without a piece's closed form, which the file has not,
+!! and the screened local potential of the run's end (pot%vloc), the vp
+!! it passes write_ps_file
+!!
+!! @param pot  the pseudopotential (pseudo_m)
+!! @param rc  core radii (bohr), rc(lloc+1) that of the local potential
+!! @param epsh1  lower limit of the log derivative analysis energy range (Ha)
+!! @param epsh2  upper limit of the log derivative analysis energy range (Ha)
+!! @param depsh  energy step of the log derivative analysis (Ha)
+!! @param rxpsh  their radius, negative for the default of run_phsft
+!! @param epa  reference energies of the projectors
+!! @param pf  the contents
+
+ use kappa_m, only: kap_count
+
+!Input variables
+ type(pseudo_t), intent(in) :: pot
+ real(dp), intent(in) :: rc(mxlin+1)
+ real(dp), intent(in) :: epsh1,epsh2,depsh,rxpsh
+ real(dp), intent(in) :: epa(mxprj,mxlin+1,pot%nkap)
+
+!Output variables
+ type(ps_file_t), intent(out) :: pf
+
+!Local variables
+ integer :: l1,ikap,jj,nvkb
+
+ pf%pot%irel=pot%irel
+ pf%pot%atsym=pot%atsym
+ pf%pot%zz=pot%zz
+ pf%pot%nkap=pot%nkap
+ pf%pot%mmax=pot%mmax
+ associate(mmax=>pot%mmax,nkap=>pot%nkap)
+   pf%pot%rr=pot%rr(1:mmax)
+   pf%pot%c_light=pot%c_light
+   pf%pot%lmax=pot%lmax
+   pf%pot%lloc=pot%lloc
+   pf%pot%nproj(1:4)=pot%nproj(1:4)
+   pf%rc(:)=rc(:)
+   pf%epsh1=epsh1
+   pf%epsh2=epsh2
+   pf%depsh=depsh
+   pf%rxpsh=rxpsh
+   pf%epa(1:4,1:nkap)=epa(1,1:4,1:nkap)
+   pf%vloc=pot%vloc(1:mmax,1:nkap)
+   call file_pw(pot%vlocpw,pf%pot%vlocpw)
+   allocate(pf%pot%evkb(mxprj,mxl+1,nkap),pf%pot%vkbpw(mxprj,mxl+1,nkap))
+   pf%pot%evkb(:,:,:)=0.0d0
+   do l1=1,4
+     do ikap=1,kap_count(nkap,l1-1)
+       nvkb=nvkb_of(l1,pot%lloc,pot%nproj)
+       pf%nvkb(l1,ikap)=nvkb
+       if(nvkb==0) cycle
+       pf%pot%evkb(1:nvkb,l1,ikap)=pot%evkb(1:nvkb,l1,ikap)
+       do jj=1,nvkb
+         call file_pw(pot%vkbpw(jj,l1,ikap),pf%pot%vkbpw(jj,l1,ikap))
+       end do
+     end do
+   end do
+   pf%pot%iexc=pot%iexc
+   pf%pot%rcmax=pot%rcmax
+   allocate(pf%pot%vpuns(mmax,mxl+2),pf%pot%rho(mmax), &
+&           pf%pot%rhomod(mmax,nrhomod))
+   pf%pot%vpuns(:,:)=0.0d0
+   pf%pot%rhomod(:,:)=0.0d0
+   pf%pot%vpuns(:,pot%lloc+1)=pot%vpuns(1:mmax,pot%lloc+1)
+   pf%pot%rho(:)=pot%rho(1:mmax)
+   pf%pot%rhomod(:,1)=pot%rhomod(1:mmax,1)
+ end associate
+ return
+ end subroutine ps_file_of
+
+ subroutine file_pw(pw,fpw)
+!! a piecewise function as write_pw and read_pw pass it: its bounds and
+!! pieces on the mesh
+!!
+!! @param pw  the function (pieces_m)
+!! @param fpw  the same without its closed form
+ use pieces_m, only: piecewise_t
+
+!Input variables
+ type(piecewise_t), intent(in) :: pw
+
+!Output variables
+ type(piecewise_t), intent(out) :: fpw
+ fpw%nseg=pw%nseg
+ fpw%bound(0:pw%nseg)=pw%bound(0:pw%nseg)
+ fpw%vals=pw%vals(:,1:pw%nseg)
+ end subroutine file_pw
 
  subroutine ps_file_free(pf)
 

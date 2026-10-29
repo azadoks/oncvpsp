@@ -91,7 +91,7 @@
 
  contains
 
- subroutine optimize_channel(ae,inp,l1,nprj,irc,ch,iout,ifail)
+ subroutine optimize_channel(ae,inp,l1,nprj,irc,ch,iout,ifail,node_only)
 
 !! the channel of l = l1-1 with nprj projectors (1 for the local
 !! channel, whose pseudo-wave the local potential needs): for each kappa,
@@ -108,6 +108,9 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
+!! @param node_only  to stop each kappa after the node test of its first
+!!                   projector (pspot), the channel's results unset
+!!                   (default false)
 
  use ae_state_m, only: ae_state_t
  use input_m, only: input_t
@@ -123,6 +126,7 @@
  type(input_t), intent(in) :: inp
  integer, intent(in) :: l1,nprj,irc
  integer, intent(in) :: iout
+ logical, intent(in), optional :: node_only
 
 !Output variables
  type(channel_t), intent(out) :: ch
@@ -220,7 +224,7 @@
 &                    ch%pswfx(1,1,ikap),ch%chix(1,1,ikap), &
 &                    ch%ektail(1,1,ikap),inp%wave_regularization, &
 &                    ch%optdg(1,1,ikap), &
-&                    ch%wshare(1,1,ikap),ch%warn,iout,ifail)
+&                    ch%wshare(1,1,ikap),ch%warn,iout,ifail,node_only)
    if(ifail/=0) return
 
 !the weights of its pseudo-waves in the cutoff of the pseudo-waves

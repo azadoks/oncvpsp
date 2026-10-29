@@ -75,6 +75,9 @@
    type(piecewise_t), allocatable :: vsopw(:,:)
 !> the screened local potential's pieces
    type(piecewise_t) :: vlocpw
+!> the screened local potential on the mesh of each kappa (mmax,nkap),
+!> after the ionic screening (the pseudopotential data file's)
+   real(dp), allocatable :: vloc(:,:)
 !> the unscreened semi-local potentials (mmax,mxl+2), vpuns(:,lloc+1)
 !> the local one (the only one in the data file)
    real(dp), allocatable :: vpuns(:,:)

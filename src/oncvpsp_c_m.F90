@@ -33,6 +33,8 @@
  use failure_m, only: failure_t
  use ae_state_m, only: ae_state_t
  use channel_m, only: channel_t
+ use run_vkb_m, only: local_t, projectors_t
+ use confine_summary_m, only: confine_summary_t
  use oncvpsp_run_m, only: stages_t
  use constants_m, only: dp, mxlin, mxcnf
  implicit none
@@ -40,11 +42,12 @@
  public :: oncv_api_version, oncv_new, oncv_free, oncv_set_output, &
 &          oncv_run_toml, oncv_failure, oncv_dims, dims_t, oncv_field_name, &
 &          oncv_shape, oncv_get_double, oncv_get_int, oncv_ae_toml, &
-&          oncv_run_ae_toml, oncv_channel_toml, oncv_coupled
+&          oncv_run_ae_toml, oncv_channel_toml, oncv_coupled, &
+&          oncv_set_output_buffer, oncv_output_text, oncv_confine
 
 !> the version of the interface: a change to a function or a struct
 !> raises it
- integer(c_int), parameter :: api_version=2
+ integer(c_int), parameter :: api_version=3
 
 !> 1 if c_double is the kind of the reals, else a division by zero that
 !> stops the compilation
@@ -56,8 +59,9 @@
 !> the fields of the results that oncv_shape and oncv_get_* copy out, each
 !> its kind (r real, i integer, a logical as 0 or 1) and its name, the
 !> component of results_t (pot.*, tests.*: pseudo_m, test_results_m), of
-!> the all-electron atom (ae.*: ae_state_t) or of a channel (channel.*:
-!> channel_t)
+!> the all-electron atom (ae.*: ae_state_t), of a channel (channel.*:
+!> channel_t) or of the confined atom's summary (confine.*:
+!> confine_summary_t)
  character(len=32), parameter :: fields(*)=[character(len=32) :: &
 &  'r pot.zz', 'r pot.zion', 'r pot.c_light', 'r pot.rcmax', 'r pot.rr', &
 &  'i pot.nproj', 'r pot.evkb', 'r pot.vkb', 'r pot.esr', 'r pot.eso', &
@@ -91,7 +95,11 @@
 &  'r channel.qmsbf', 'r channel.epa', 'r channel.pswf', 'r channel.vp', &
 &  'r channel.cvgplt', 'r channel.ecurve', 'r channel.ektail', &
 &  'r channel.optdg', 'r channel.wshare', 'r channel.wcurve', &
-&  'i channel.warnings.nwarn', 'i channel.warnings.rec']
+&  'i channel.warnings.nwarn', 'i channel.warnings.rec', 'r channel.vloc', &
+&  'r channel.evkb', 'r channel.vkb', 'r channel.bbeig', &
+&  'i confine.nmiss', 'i confine.nextra', 'i confine.noff', &
+&  'i confine.nwfail', 'r confine.max_de', 'r confine.cut', 'r confine.dde', &
+&  'i confine.inf']
 
 !> a field copied out of the results: its values, flat, and its shape
  type :: field_t
@@ -136,6 +144,10 @@
  type :: handle_t
 !> the file of the text output
    character(len=:), allocatable :: out_path
+!> whether the text output goes to text rather than to out_path
+   logical :: buffered=.false.
+!> the text output of the last run, with buffered
+   character(len=:), allocatable :: text
 !> the input values, completed by the run
    type(input_t) :: inp
 !> the results
@@ -150,6 +162,10 @@
    type(stages_t) :: st
 !> the channel of oncv_channel_toml
    type(channel_t) :: chan
+!> its local potential, with its projectors
+   type(local_t) :: lp
+!> its projectors (oncv_channel_toml with mode 1)
+   type(projectors_t) :: prj
 !> where the run was when it failed
    type(failure_t) :: at=failure_t(0,0,0,0,-1,0,0)
 !> the run's ifail, 0 before a run
@@ -164,6 +180,12 @@
    logical :: has_stages=.false.
 !> whether it holds a channel (oncv_channel_toml)
    logical :: has_chan=.false.
+!> whether the channel has its local potential and projectors
+   logical :: has_vkb=.false.
+!> the summary of oncv_confine
+   type(confine_summary_t) :: sm
+!> whether it holds the summary of a confined atom (oncv_confine)
+   logical :: has_confine=.false.
  end type handle_t
 
 !> a field's values and shape from an array or scalar of the results
@@ -247,6 +269,70 @@
  return
  end function oncv_set_output
 
+ function oncv_set_output_buffer(handle,on) result(ifail) &
+&         bind(c,name='oncv_set_output_buffer')
+
+!! with on non-zero, the runs of the handle write their text output to a
+!! buffer the handle keeps, replaced at each run and read with
+!! oncv_output_text, rather than to the file of oncv_set_output; with on
+!! 0, to that file again
+!!
+!! @param handle  the run handle
+!! @param on  non-zero for the buffer
+
+!Input variables
+ type(c_ptr), value :: handle
+ integer(c_int), value :: on
+
+!Output variables
+ integer(c_int) :: ifail
+
+!Local variables
+ type(handle_t), pointer :: hh
+
+ ifail=0
+ call c_f_pointer(handle,hh)
+ hh%buffered=on/=0
+ return
+ end function oncv_set_output_buffer
+
+ function oncv_output_text(handle,text,ntext,nout) result(ifail) &
+&         bind(c,name='oncv_output_text')
+
+!! the text output of the handle's last run, or stage, from its buffer
+!! (oncv_set_output_buffer): its first ntext bytes into text, not
+!! terminated, and its whole length in nout (0 without a buffer), so that a
+!! call with ntext 0 gives the size to allocate
+!!
+!! @param handle  the run handle
+!! @param text  the caller's buffer, ntext characters
+!! @param ntext  its length
+!! @param nout  the length of the text output
+
+!Input variables
+ type(c_ptr), value :: handle
+ integer(c_size_t), value :: ntext
+
+!Output variables
+ character(kind=c_char), intent(out) :: text(ntext)
+ integer(c_size_t), intent(out) :: nout
+ integer(c_int) :: ifail
+
+!Local variables
+ type(handle_t), pointer :: hh
+ integer(c_size_t) :: ii
+
+ ifail=0
+ call c_f_pointer(handle,hh)
+ nout=0
+ if(.not. allocated(hh%text)) return
+ nout=len(hh%text,kind=c_size_t)
+ do ii=1,min(ntext,nout)
+   text(ii)=hh%text(ii:ii)
+ end do
+ return
+ end function oncv_output_text
+
  function oncv_run_toml(handle,irel,text,ntext,skip_ld) result(ifail) &
 &         bind(c,name='oncv_run_toml')
 
@@ -279,7 +365,7 @@
  if(ifail/=0) return
  call read_toml(hh,text,ntext,iout,jfail)
  if(jfail==0) call run_all(hh,skip_ld/=0,iout,jfail)
- close(iout)
+ call close_output(hh,iout)
  hh%ifail=jfail
  ifail=jfail
  return
@@ -321,7 +407,7 @@
  if(jfail==0) then
    call run_ae(irel,0,hh%inp,'',hh%cnf,hh%ae,hh%at,iout,jfail)
  end if
- close(iout)
+ call close_output(hh,iout)
  hh%has_ae=jfail==0
  hh%ifail=jfail
  ifail=jfail
@@ -370,32 +456,38 @@
  if(ifail/=0) return
  call read_toml(hh,text,ntext,iout,jfail)
  if(jfail==0) call run_all(hh,skip_ld/=0,iout,jfail,ae)
- close(iout)
+ call close_output(hh,iout)
  hh%ifail=jfail
  ifail=jfail
  return
  end function oncv_run_ae_toml
 
- function oncv_channel_toml(handle,ae_handle,text,ntext,ll) result(ifail) &
-&         bind(c,name='oncv_channel_toml')
+ function oncv_channel_toml(handle,ae_handle,text,ntext,ll,mode) &
+&         result(ifail) bind(c,name='oncv_channel_toml')
 
 !! the channel of angular momentum ll alone of the TOML input text into
 !! the handle, whose earlier contents it replaces, from the all-electron
 !! atom of ae_handle (run_channel): its fields channel.*. The input must be
 !! of that atom (check_ae). A first pseudo-wave with a node is the failure
-!! of pspot (oncv_failure); the handle may be ae_handle
+!! of pspot (oncv_failure); the handle may be ae_handle. With mode 1, also
+!! the local potential and the channel's projectors (channel.vloc, evkb,
+!! vkb, bbeig), whose failures are at the stage of the projectors; with
+!! mode 2, only the failures up to the node test of each kappa's first
+!! projector (pspot), the handle then holding no fields channel.*
 !!
 !! @param handle  the run handle
 !! @param ae_handle  the handle of the all-electron atom
 !! @param text  the TOML input, ntext characters, not terminated
 !! @param ntext  its length
 !! @param ll  angular momentum
+!! @param mode  0 the channel, 1 also the local potential and projectors,
+!!              2 the node test of its first projector only
 
  use oncvpsp_run_m, only: run_channel
 
 !Input variables
  type(c_ptr), value :: handle,ae_handle
- integer(c_int), value :: ll
+ integer(c_int), value :: ll,mode
  character(kind=c_char), intent(in) :: text(ntext)
  integer(c_size_t), value :: ntext
 
@@ -420,10 +512,12 @@
  if(ifail/=0) return
  call read_toml(hh,text,ntext,iout,jfail)
  if(jfail==0) then
-   call run_channel(ae,hh%inp,ll,hh%chan,hh%at,iout,jfail)
+   call run_channel(ae,hh%inp,ll,int(mode),hh%chan,hh%lp,hh%prj,hh%at, &
+&                   iout,jfail)
  end if
- close(iout)
- hh%has_chan=jfail==0
+ call close_output(hh,iout)
+ hh%has_chan=jfail==0 .and. mode/=2
+ hh%has_vkb=jfail==0 .and. mode==1
  hh%ifail=jfail
  ifail=jfail
  return
@@ -496,13 +590,154 @@
    call run_coupled(irel,0,inp,hh%cnf,hh%st,'',skip_ld/=0,hh%psp,hh%at, &
 &                   iout,jfail)
  end if
- close(iout)
+ call close_output(hh,iout)
  hh%inp=inp
  hh%done=jfail==0
  hh%ifail=jfail
  ifail=jfail
  return
  end function oncv_coupled
+
+ function oncv_confine(handle,run,radii,nradii,channels,nchannels,energies, &
+&         walls,nwalls,r0,ecutmax) result(ifail) bind(c,name='oncv_confine')
+
+!! the confined atom of the run of the handle run (oncv_run_toml,
+!! oncv_run_ae_toml or oncv_coupled) into the handle, whose earlier
+!! contents it replaces, as oncvpsp_confine.x makes it of the run's
+!! all-electron and pseudopotential data files (confine_atom): its lines
+!! in the text output and its summary, the fields confine.*. The handle
+!! may be run
+!!
+!! @param handle  the handle
+!! @param run  the handle of the run
+!! @param radii  the radii of the sphere (bohr), nradii of them
+!! @param nradii  their number: 0 for the default, less for no sphere
+!! @param channels  the l of the sphere, nchannels of them
+!! @param nchannels  their number, 0 or less for all four
+!! @param energies  emin, emax and the step of the scan (Ha), or null for
+!!                  the input's window of the log derivatives
+!! @param walls  the strengths of the wall (Ha/bohr**2), nwalls of them
+!! @param nwalls  their number: less than 0 for the default, 0 for none
+!! @param r0  the onset of the wall (bohr), 0 or less for the largest
+!!            core radius
+!! @param ecutmax  the largest cutoff of the basis (Ha), 0 or less for 200
+
+ use confine_atom_m, only: confine_atom, kdef
+ use ps_file_m, only: ps_file_t, ps_file_of
+ use failure_m, only: fail_input, failed, msg_c_no_run, msg_c_confine_args, &
+&                    stage_confine
+ use constants_m, only: mxstate, mxkap
+ use, intrinsic :: iso_fortran_env, only: error_unit
+
+!Input variables
+ type(c_ptr), value :: handle,run,radii,channels,energies,walls
+ integer(c_int), value :: nradii,nchannels,nwalls
+ real(c_double), value :: r0,ecutmax
+
+!Output variables
+ integer(c_int) :: ifail
+
+!Local variables
+ type(handle_t), pointer :: hh,rh
+ type(ps_file_t) :: pf
+ type(confine_summary_t) :: sm
+ real(c_double), pointer :: rq(:),ee(:),kw(:)
+ integer(c_int), pointer :: ll(:)
+ real(dp), allocatable :: rr(:),vfull(:),rs(:),kwall(:)
+ real(dp) :: c_light,zz,ew(3),ecut
+ real(dp) :: fa(mxstate),ea(mxstate,mxkap)
+ integer :: na(mxstate),la(mxstate)
+ integer :: irel,mmax,nc,nv,iexc,ii,iout,jfail
+ logical :: chan(0:3),bad
+
+ call c_f_pointer(handle,hh)
+ call c_f_pointer(run,rh)
+ if(.not. (rh%done .and. rh%has_stages)) then
+   write(error_unit,'(/a)') 'oncv_confine: ERROR the handle holds no run'
+   call reset(hh,0)
+   hh%ifail=failed(fail_input,msg_c_no_run)
+   ifail=hh%ifail
+   return
+ end if
+
+!the options, the defaults those of oncvpsp_confine.x
+ bad=.false.
+ allocate(rs(max(nradii,0)))
+ if(nradii>0) then
+   call c_f_pointer(radii,rq,[nradii])
+   rs(:)=rq(:)
+ end if
+ chan(:)=nchannels<=0
+ if(nchannels>0) then
+   call c_f_pointer(channels,ll,[nchannels])
+   do ii=1,nchannels
+     if(ll(ii)<0 .or. ll(ii)>3) then
+       bad=.true.
+     else
+       chan(ll(ii))=.true.
+     end if
+   end do
+ end if
+ ew(:)=0.0d0
+ if(c_associated(energies)) then
+   call c_f_pointer(energies,ee,[3])
+   ew(:)=ee(:)
+   bad=bad .or. ew(1)>=ew(2) .or. ew(3)<=0.0d0
+ end if
+ if(nwalls<0) then
+   kwall=kdef
+ else
+   allocate(kwall(nwalls))
+   if(nwalls>0) then
+     call c_f_pointer(walls,kw,[nwalls])
+     kwall(:)=kw(:)
+     bad=bad .or. any(kwall<=0.0d0)
+   end if
+ end if
+ if(bad) then
+   write(error_unit,'(/a)') 'oncv_confine: ERROR the channels are 0 to 3, '// &
+&       'the walls positive and the window emin < emax with de > 0'
+   call reset(hh,0)
+   hh%ifail=failed(fail_input,msg_c_confine_args)
+   ifail=hh%ifail
+   return
+ end if
+ ecut=200.0d0
+ if(ecutmax>0.0d0) ecut=ecutmax
+
+!what oncvpsp_confine.x reads of the run's two files
+ call ps_file_of(rh%psp%pot,rh%inp%rc,rh%inp%epsh1,rh%inp%epsh2, &
+&                rh%inp%depsh,rh%inp%rxpsh,rh%st%epa,pf)
+ irel=rh%irel
+ associate(ae=>rh%st%ae)
+   c_light=ae%c_light
+   zz=ae%zz
+   mmax=ae%mmax
+   rr=ae%rr(1:mmax)
+   vfull=ae%vfull(1:mmax)
+   nc=ae%nc
+   nv=ae%nv
+   iexc=ae%iexc
+   na(:)=ae%na(:)
+   la(:)=ae%la(:)
+   fa(:)=ae%fa(:)
+   ea(:,:)=ae%ea(:,:)
+ end associate
+
+ call reset(hh,irel)
+ call open_output(hh,iout,ifail)
+ if(ifail/=0) return
+ call confine_atom(pf,irel,c_light,zz,mmax,rr,vfull,nc,nv,iexc,na,la,fa,ea, &
+&                  chan,nradii>=0,size(rs),rs,ew,ecut,.false.,size(kwall), &
+&                  kwall,r0,sm,iout,jfail)
+ call close_output(hh,iout)
+ hh%sm=sm
+ hh%has_confine=jfail==0
+ if(.not. hh%has_confine) hh%at%stage=stage_confine
+ hh%ifail=jfail
+ ifail=jfail
+ return
+ end function oncv_confine
 
  subroutine reset(hh,irel)
 
@@ -524,6 +759,9 @@
  hh%has_ae=.false.
  hh%has_stages=.false.
  hh%has_chan=.false.
+ hh%has_vkb=.false.
+ hh%has_confine=.false.
+ hh%text=''
  hh%ifail=0
  hh%irel=irel
  hh%at=failure_t(0,0,0,stage_input,-1,0,0)
@@ -532,7 +770,8 @@
 
  subroutine open_output(hh,iout,ifail)
 
-!! the handle's text output opened, replaced (oncv_set_output)
+!! the handle's text output opened, replaced: its file (oncv_set_output),
+!! or a scratch file for its buffer (oncv_set_output_buffer)
 !!
 !! @param hh  the handle
 !! @param iout  unit of the text output
@@ -552,8 +791,12 @@
  integer :: ios
 
  ifail=0
- open(newunit=iout,file=hh%out_path,action='write',status='replace', &
-&     iostat=ios)
+ if(hh%buffered) then
+   open(newunit=iout,status='scratch',action='readwrite',iostat=ios)
+ else
+   open(newunit=iout,file=hh%out_path,action='write',status='replace', &
+&       iostat=ios)
+ end if
  if(ios/=0) then
    write(error_unit,'(/2a)') &
 &       'open_output: ERROR cannot open the text output ',hh%out_path
@@ -563,6 +806,44 @@
  end if
  return
  end subroutine open_output
+
+ subroutine close_output(hh,iout)
+
+!! the handle's text output closed, its scratch file read into its buffer
+!! first when it has one
+!!
+!! @param hh  the handle
+!! @param iout  unit of the text output
+
+!Input variables
+ integer, intent(in) :: iout
+
+!Input/output variables
+ type(handle_t), intent(inout) :: hh
+
+!Local variables
+ character(len=:), allocatable :: line,text
+ integer :: ios,nn,nt
+
+ if(hh%buffered) then
+   rewind(iout)
+   allocate(character(len=65536) :: text)
+   nt=0
+   do
+     call read_line(iout,line,ios)
+     if(ios/=0) exit
+     nn=len(line)+1
+     do while(nt+nn>len(text))
+       text=text//repeat(' ',len(text))
+     end do
+     text(nt+1:nt+nn)=line//new_line('a')
+     nt=nt+nn
+   end do
+   hh%text=text(1:nt)
+ end if
+ close(iout)
+ return
+ end subroutine close_output
 
  subroutine read_toml(hh,text,ntext,iout,ifail)
 
@@ -1061,8 +1342,8 @@
  subroutine lookup(hh,name,ff,ifail)
 
 !! the field name of the handle's results, copied (fields): of its
-!! all-electron atom (ae.*: its own or its run's), its channel (channel.*)
-!! or its run (the others)
+!! all-electron atom (ae.*: its own or its run's), its channel (channel.*),
+!! its confined atom (confine.*) or its run (the others)
 !!
 !! @param hh  the handle
 !! @param name  the field's name
@@ -1089,7 +1370,9 @@
      call lookup_ae(hh%ae,name,ff)
    end if
  else if(index(name,'channel.')==1) then
-   if(hh%has_chan) call lookup_channel(hh%chan,name,ff)
+   if(hh%has_chan) call lookup_channel(hh,name,ff)
+ else if(index(name,'confine.')==1) then
+   if(hh%has_confine) call lookup_confine(hh%sm,name,ff)
  else if(hh%done) then
    call lookup_run(hh,name,ff)
  end if
@@ -1452,28 +1735,35 @@
  return
  end subroutine lookup_ae
 
- subroutine lookup_channel(ch,name,ff)
+ subroutine lookup_channel(hh,name,ff)
 
 !! the field name of a channel (channel.*), copied, not found if it is none
 !! of its; the arrays per projector and kappa as the run's (mxprj, nkap),
-!! and the convergence curves to the end of the longest
+!! and the convergence curves to the end of the longest; the local
+!! potential and projectors of size 0 without them, and the projectors of
+!! the local channel too
 !!
-!! @param ch  the channel
+!! @param hh  the handle, which holds a channel
 !! @param name  the field's name
 !! @param ff  the field
 
  use failure_m, only: mxwarn
 
 !Input variables
- type(channel_t), intent(in) :: ch
+ type(handle_t), target, intent(in) :: hh
  character(len=*), intent(in) :: name
 
 !Output variables
  type(field_t), intent(out) :: ff
 
 !Local variables
- integer :: ii,nq
+ type(channel_t), pointer :: ch
+ integer :: ii,nkap
+ logical :: has_prj
 
+ ch=>hh%chan
+ nkap=size(ch%vp,2)
+ has_prj=hh%has_vkb .and. ch%l1/=hh%inp%lloc+1
  select case(name)
  case('channel.l')
    call put(ff,ch%l1-1)
@@ -1498,11 +1788,11 @@
  case('channel.cvgplt')
    call put(ff,ch%cvgplt)
  case('channel.ecurve')
-   nq=0
+   nkap=0
    do ii=1,size(ch%ecurve,2)
-     if(any(ch%ecurve(1,ii,:,:)>0.0d0)) nq=ii
+     if(any(ch%ecurve(1,ii,:,:)>0.0d0)) nkap=ii
    end do
-   call put(ff,ch%ecurve(:,1:nq,:,:))
+   call put(ff,ch%ecurve(:,1:nkap,:,:))
  case('channel.ektail')
    call put(ff,ch%ektail)
  case('channel.optdg')
@@ -1515,11 +1805,74 @@
    call put(ff,ch%warn%nwarn)
  case('channel.warnings.rec')
    call put(ff,ch%warn%rec(:,1:min(ch%warn%nwarn,mxwarn)))
+ case('channel.vloc')
+   if(hh%has_vkb) then
+     call put(ff,hh%lp%vloc)
+   else
+     call put_none(ff,1)
+   end if
+ case('channel.evkb')
+   if(has_prj) then
+     call put(ff,hh%prj%evkb(:,1:nkap))
+   else
+     call put_none(ff,2)
+   end if
+ case('channel.vkb')
+   if(has_prj) then
+     call put(ff,hh%prj%vkb)
+   else
+     call put_none(ff,3)
+   end if
+ case('channel.bbeig')
+   if(has_prj) then
+     call put(ff,hh%prj%bbeig(:,1:nkap))
+   else
+     call put_none(ff,2)
+   end if
  case default
    continue
  end select
  return
  end subroutine lookup_channel
+
+ subroutine lookup_confine(sm,name,ff)
+
+!! the field name of the summary of a confined atom (confine.*), copied,
+!! not found if it is none of its; -1 for a part left out
+!!
+!! @param sm  the summary
+!! @param name  the field's name
+!! @param ff  the field
+
+!Input variables
+ type(confine_summary_t), intent(in) :: sm
+ character(len=*), intent(in) :: name
+
+!Output variables
+ type(field_t), intent(out) :: ff
+
+ select case(name)
+ case('confine.nmiss')
+   call put(ff,sm%nmiss)
+ case('confine.nextra')
+   call put(ff,sm%nextra)
+ case('confine.noff')
+   call put(ff,sm%noff)
+ case('confine.nwfail')
+   call put(ff,sm%nwfail)
+ case('confine.max_de')
+   call put(ff,sm%smax_de)
+ case('confine.cut')
+   call put(ff,sm%scut)
+ case('confine.dde')
+   call put(ff,sm%sdde)
+ case('confine.inf')
+   call put(ff,sm%sinf)
+ case default
+   continue
+ end select
+ return
+ end subroutine lookup_confine
 
  subroutine put_none(ff,rank)
 

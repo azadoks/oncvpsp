@@ -91,38 +91,26 @@
  use cli_m, only: cli_next_arg, cli_count_list, cli_radii, cli_channels, &
 &                 cli_energies
  use ae_ps_pair_m, only: load_pair
- use confine_ws_m, only: confine_sphere
- use confine_wall_m, only: confine_walls
- use confine_summary_m, only: confine_summary_t, write_confine_summary
- use exc_libxc_m, only: exc_libxc_info
+ use confine_atom_m, only: confine_atom, kdef
+ use confine_summary_m, only: confine_summary_t
  use build_info_m, only: write_build_info
- use adams_m, only: adams_t
  implicit none
  integer, parameter :: iout=6
 
 !> the most radii of a run
  integer, parameter :: mxq=100
-!> the default radii, in units of the largest core radius
- real(dp), parameter :: rsdef(3)=[1.25d0,1.5d0,2.0d0]
-!> the default step of the scan (Ha): it only brackets the roots of
-!> monotonic phases, which no step can miss
- real(dp), parameter :: descan=0.1d0
-!> the default strengths of the wall (Ha/bohr**2)
- real(dp), parameter :: kdef(3)=[0.01d0,0.03d0,0.1d0]
 !> the most strengths of a run
  integer, parameter :: mxk=20
-!> the Adams-Moulton steps, of the default order
- type(adams_t) :: adams
 
  character(len=1024) :: ae_filename,ps_filename,arg
- integer :: iarg,irel,mmax,nq,iq,ios,lc,nk,nc,nv,iexc
+ integer :: iarg,irel,mmax,nq,ios,nk,nc,nv,iexc
  integer :: na(mxstate),la(mxstate)
- real(dp) :: zz,emin,emax,de,ecutmax,rcmax,ee(3),rq(mxq),r0,kwall(0:mxk)
+ real(dp) :: zz,ecutmax,ee(3),rq(mxq),r0,kwall(mxk)
  real(dp) :: fa(mxstate),ea(mxstate,mxkap)
 !> the speed of light of the files
  real(dp) :: c_light
  real(dp), allocatable :: rr(:),vfull(:)
- logical :: given_radii,given_energies,table,sphere,given_r0
+ logical :: table,sphere
 !> the angular momenta of the output
  logical :: chan(0:3)
  type(ps_file_t) :: pf
@@ -131,11 +119,10 @@
 
  ae_filename=''
  ps_filename=''
- given_radii=.false.
- given_energies=.false.
+ ee(:)=0.0d0
+ r0=0.0d0
  table=.false.
  sphere=.true.
- given_r0=.false.
  nk=size(kdef)
  kwall(1:nk)=kdef(:)
  ecutmax=200.0d0
@@ -158,14 +145,12 @@
    case('-r','--radii')
      call cli_next_arg('oncvpsp_confine',iarg,arg)
      call cli_radii('oncvpsp_confine',arg,mxq,nq,rq)
-     given_radii=.true.
    case('-l','--channels')
      call cli_next_arg('oncvpsp_confine',iarg,arg)
      call cli_channels('oncvpsp_confine',arg,chan)
    case('-e','--energies')
      call cli_next_arg('oncvpsp_confine',iarg,arg)
      call cli_energies('oncvpsp_confine',arg,ee)
-     given_energies=.true.
    case('-c','--ecut-max')
      call cli_next_arg('oncvpsp_confine',iarg,arg)
      read(arg,*,iostat=ios) ecutmax
@@ -204,7 +189,6 @@
 &           'oncvpsp_confine: ERROR --wall-radius must be positive'
        error stop 1
      end if
-     given_r0=.true.
    case default
      write(iout,'(/2a)') 'oncvpsp_confine: ERROR unknown argument ',trim(arg)
      error stop 1
@@ -220,55 +204,10 @@
 &               c_light,zz,mmax,rr,vfull,pf,nc=nc,nv=nv,iexc=iexc,na=na,la=la, &
 &               fa=fa,ea=ea,iout=iout,ifail=ifail)
  if(ifail/=0) error stop 1
- if(iexc<0) then
-   call exc_libxc_info(iexc,iout,ifail)
-   if(ifail/=0) error stop 1
- end if
-
-!the radii: beyond every core radius, where the two atoms' potentials are
-!the same and the phases comparable
- lc=pf%pot%lloc+1
- rcmax=max(maxval(pf%rc(1:pf%pot%lmax+1)),pf%rc(lc))
- if(.not. given_radii) then
-   nq=size(rsdef)
-   rq(1:nq)=rsdef(:)*rcmax
- end if
- do iq=1,nq
-   if(rq(iq)<=rcmax) then
-     write(iout,'(/a,f12.6,a,f12.6,a)') 'oncvpsp_confine: ERROR the radius', &
-&         rq(iq),' is not beyond the largest core radius',rcmax,' bohr'
-     error stop 1
-   end if
- end do
-
-!the window of the edges, that of the log derivatives
- if(given_energies) then
-   emin=ee(1)
-   emax=ee(2)
-   de=ee(3)
- else
-   emin=pf%epsh1
-   emax=pf%epsh2
-   de=descan
- end if
-
- if(sphere) then
-   call confine_sphere(pf,irel,c_light,zz,mmax,adams,rr,vfull,nc,na,la,chan, &
-&                      nq, &
-&                      rq(1:nq),emin,emax,de,ecutmax,table,sm,iout,ifail)
-   if(ifail/=0) error stop 1
- end if
-
-!the atom in walls: k=0 the free atom
- if(nk>0) then
-   if(.not. given_r0) r0=rcmax
-   call confine_walls(pf,irel,c_light,zz,mmax,adams,rr,vfull,nc,nv,iexc,na,la, &
-&                     fa,ea, &
-&                     nk,kwall(0:nk),r0,sm,iout,ifail)
-   if(ifail/=0) error stop 1
- end if
-
- call write_confine_summary(sm,iout)
+ call confine_atom(pf,irel,c_light,zz,mmax,rr,vfull,nc,nv,iexc,na,la,fa,ea, &
+&                  chan,sphere,nq,rq(1:nq),ee,ecutmax,table,nk,kwall(1:nk), &
+&                  r0,sm,iout,ifail)
+ if(ifail/=0) error stop 1
 
  call ps_file_free(pf)
  deallocate(rr,vfull)

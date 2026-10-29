@@ -374,13 +374,25 @@ So the interface is a hybrid:
       the tests again on the stages every run handle keeps (`run_stages`
       then `run_coupled` in place of `oncvpsp_run`), its model core checked
       by `check_data`. The handle started from is read only and may be the
-      handle itself. Not done: the per-channel projectors; a channel
-      handle stops before the local potential and `channel_vkb`, which no
-      metric of the optimizer has needed alone yet. `api_version` 2.
-      `test_c_api.c` checks the atom's fields, the run from it, every
-      channel against the run's convergence tables and curves, and the model
-      core without and back (nr, sr, fr); `c_api_ctypes.py` the same through
-      ctypes, and another atom refused.
+      handle itself. The per-channel projectors: `oncv_channel_toml`'s
+      `mode` 1 makes the local potential (`local_potential`, for lloc<4
+      from the local channel, optimized for it when l is another) and the
+      channel's projectors (`channel_vkb`; fields `channel.vloc`, `evkb`,
+      `vkb`, `bbeig`, none for the local channel), `run_channel`'s
+      `projectors_t`; mode 0 stops after the optimization, and mode 2 at
+      the node test of each kappa's first projector (`run_optimize`'s
+      `node_only`, after the same steps, so its failures are the full
+      channel's up to there), for oncvpsp-opt's scan of the node's onset
+      in qcut: half the time of mode 0 on O and Li, the failures of mode 0
+      in a qcut sweep of every channel the same. `api_version` 3. `test_c_api.c` checks the atom's fields, the run
+      from it, every channel against the run's convergence tables, curves
+      and projectors, one local potential from every channel, another mesh
+      and speed of light refused, and the model core without and back (nr,
+      sr, fr, and lloc 2, 07_N_dl, which found `vpuns` and `vpsml` left
+      unset past max(lmax, lloc)+1); `c_api_ctypes.py` the same through
+      ctypes, and another atom refused. `tests/unit/test_check_ae.f90`
+      checks each of `check_ae`'s refusals, irel too, which a C caller
+      cannot reach (a run from an atom takes its irel).
 - [ ] Every number the optimizer's metrics read (oncvpsp-opt's
       `diagnostics.py`, `cutoffs.py`, `log_derivative.py`, the ghosts,
       configurations, `weighted_cut_t`, `vloc_cut_t`) from `tests_t` and
@@ -413,11 +425,29 @@ So the interface is a hybrid:
       in their results (`ae_state_t`, `channel_t`, `stages_t`), and
       test_run counts each against its line of the text. The warnings
       of oncvpsp_confine.x's walled atoms stay in its text.
-- [ ] The text output optionally into a buffer the caller reads, beside
+- [x] The text output optionally into a buffer the caller reads, beside
       a file or `/dev/null`, so the text parser can check the arrays
       during the switch-over without temporary files.
-- [ ] Later, `oncv_confine(ae, run, radii, walls, channels)` returning the
+      `oncv_set_output_buffer(h, on)`: the runs and stages of the handle
+      write to a scratch file, read into the handle when they end
+      (`close_output`), and `oncv_output_text(h, text, ntext, &nout)`
+      copies it out (ntext 0 for its size). `test_c_api.c` checks the
+      buffer against the file of the same run byte for byte, and a failed
+      run's message in it.
+- [x] Later, `oncv_confine(ae, run, radii, walls, channels)` returning the
       fields of `confine_summary_t`, in place of a third process.
+      Done as `oncv_confine(h, run, radii, nradii, channels, nchannels,
+      energies, walls, nwalls, r0, ecutmax)` on a run handle, which holds
+      the atom too (its stages' `ae`): what `oncvpsp_confine.x` reads of
+      the two data files is `ps_file_of` (the contents `read_ps_file`
+      gives of what `write_ps_file` writes) and the stages' atom, and both
+      call `confine_atom` (`confine_atom_m`, the program's work after the
+      files, the radius check now `msg_confine_radius`); its lines go to
+      the text output and its summary to the fields `confine.*`, failures
+      at `stage_confine`. `scripts/c_api_confine.py` checks it against
+      `oncvpsp_confine.x` on the executables' files, the text byte for
+      byte and the fields against the summary line, with the defaults and
+      with every option (sr, nr, fr).
 - [x] The failure's context, beside the integer `ifail`, which stays the
       code the bindings read: a small `bind(C)`-compatible record
       {kind, msg_id, stage, l, ikap, iproj, ierr} and a fixed-length message,

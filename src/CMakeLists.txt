@@ -99,6 +99,7 @@ set(src_oncvpsp
     confine_summary_m.f90
     confine_ws_m.f90
     confine_wall_m.f90
+    confine_atom_m.f90
     outwf_m.F90
     sratom_m.f90
     test_results_m.f90

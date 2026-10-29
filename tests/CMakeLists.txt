@@ -118,6 +118,17 @@ foreach (stage_test IN ITEMS "0:nr:08_O" "1:sr:14_Si" "2:r:14_Si" "0:nr:07_N_dl"
     oncvpsp_add_test(unit unit_stages ${rel} ${name} test_stages ${irel} "${data}/${name}.dat")
 endforeach ()
 
+# Unit test of check_ae (test_check_ae.f90): the all-electron atom is the input's, and another irel,
+# atom, configuration, functional, mesh or speed of light is refused with its message; nr and fr
+oncvpsp_unit_executable(check_ae)
+foreach (check_ae_test IN ITEMS "0:nr:08_O" "2:r:14_Si")
+    string(REPLACE ":" ";" check_ae_test "${check_ae_test}")
+    list(GET check_ae_test 0 irel)
+    list(GET check_ae_test 1 rel)
+    list(GET check_ae_test 2 name)
+    oncvpsp_add_test(unit unit_check_ae ${rel} ${name} test_check_ae ${irel} "${data}/${name}.dat")
+endforeach ()
+
 # Unit test of run_coupled called again on one run's stages (test_coupled.f90): with the input's
 # model core, with none, and with the input's again, each the same as a whole run, bit for bit;
 # the budget (icmod 6) and the polynomial (icmod 1), sr and fr
@@ -141,7 +152,7 @@ if (ONCVPSP_WITH_C_API AND ONCVPSP_WITH_TOML)
     add_executable(test_c_api c/test_c_api.c)
     target_link_libraries(test_c_api PRIVATE oncvpsp::c)
     set_target_properties(test_c_api PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
-    foreach (c_test IN ITEMS "0:nr:08_O" "1:sr:14_Si" "2:r:14_Si")
+    foreach (c_test IN ITEMS "0:nr:08_O" "1:sr:14_Si" "2:r:14_Si" "0:nr:07_N_dl")
         string(REPLACE ":" ";" c_test "${c_test}")
         list(GET c_test 0 irel)
         list(GET c_test 1 rel)
@@ -152,6 +163,25 @@ if (ONCVPSP_WITH_C_API AND ONCVPSP_WITH_TOML)
         # against the fields' shapes, every field the same after a rerun, a broken input's failure
         oncvpsp_add_test(unit c_api_ctypes ${rel} ${name} c_api_ctypes.py $<TARGET_FILE:oncvpsp_c> ${irel}
             "${data}/toml/${name}.toml")
+    endforeach ()
+    # the confined atom of a run (oncv_confine) against oncvpsp_confine.x on the executables' files
+    # (scripts/c_api_confine.py): the text output byte for byte and the summary's fields, with the
+    # default options and with each option given. A Python of its own toolchain (conda's) may load
+    # its own libquadmath, whose quad precision rounds otherwise (1e-9 in the cutoffs), so the test
+    # preloads the compiler's, which the executables load
+    execute_process(COMMAND ${CMAKE_Fortran_COMPILER} -print-file-name=libquadmath.so.0
+        OUTPUT_VARIABLE quadmath OUTPUT_STRIP_TRAILING_WHITESPACE)
+    foreach (c_test IN ITEMS "1:sr:14_Si" "0:nr:14_Si" "2:r:03_Li")
+        string(REPLACE ":" ";" c_test "${c_test}")
+        list(GET c_test 0 irel)
+        list(GET c_test 1 rel)
+        list(GET c_test 2 name)
+        oncvpsp_add_test(unit c_api_confine ${rel} ${name} c_api_confine.py $<TARGET_FILE:oncvpsp_c>
+            $<TARGET_FILE:oncvpsp${rel}> $<TARGET_FILE:oncvpsp${rel}_ae> $<TARGET_FILE:oncvpsp_confine>
+            ${irel} "${data}/toml/${name}.toml" "@DIR@")
+        if (EXISTS "${quadmath}")
+            set_property(TEST ${added_test} APPEND PROPERTY ENVIRONMENT "LD_PRELOAD=${quadmath}")
+        endif ()
     endforeach ()
 endif ()
 

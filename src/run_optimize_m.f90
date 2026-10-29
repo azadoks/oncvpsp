@@ -28,7 +28,8 @@
  subroutine run_optimize(eig,ll,kap,irel,c_light,mmax,rr,uua,upa,qq,&
 &                      freetl,wmesh,rc,irc,qcut,qmsbf,ncon_in,nbas_in,npr, &
 &                      psopt,vpsp,vkb,vfull,cvgplt,ncurve,ecurve,pswfx,chix, &
-&                      ektail,wave_regularization,optdg,wshare,warns,iout,ifail)
+&                      ektail,wave_regularization,optdg,wshare,warns,iout, &
+&                      ifail,node_only)
 
 !! calls routines to generate optimized pseudo wave function and semi-local
 !! pseudopotential and prints diagnostic information on process and
@@ -94,6 +95,8 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
+!! @param node_only  to stop after the node test of the first projector
+!!                   (pspot), the rest of the outputs unset (default false)
 
  use failure_m, only: fail_input, failed, msg_run_optimize_q_grid, warnings_t, &
 &                   warn, wrn_well_tail, wrn_well_qcut, wrn_well_free_tail
@@ -122,6 +125,7 @@
  logical, intent(in) :: freetl(mxprj)
  type(well_mesh_t), intent(in) :: wmesh(mxprj)
  integer, intent(in) :: iout
+ logical, intent(in), optional :: node_only
 
 !Input/output variables
  type(warnings_t), intent(inout) :: warns
@@ -371,6 +375,9 @@
 &             pswfopt_sb,pswfx(1,iprj),chix(1,iprj),psopt(1,iprj),vfull,work, &
 &             vkb(1,iprj),ekin_num,iout,ifail)
    if(ifail/=0) return
+   if(present(node_only)) then
+     if(node_only) return
+   end if
 
 !semi-local potential
    if(iprj==1) then

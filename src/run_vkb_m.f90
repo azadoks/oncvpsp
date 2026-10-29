@@ -18,11 +18,11 @@
 !
 
  module run_vkb_m
- use constants_m, only: dp
+ use constants_m, only: dp, mxprj, mxkap
  use pieces_m, only: piecewise_t
  implicit none
  private
- public :: run_vkb, local_potential, channel_vkb, local_t
+ public :: run_vkb, local_potential, channel_vkb, local_t, projectors_t
 
 !> the local potential (local_potential): its pieces inside its radius
 !> and on the mesh, for the projectors of every channel (channel_vkb)
@@ -39,6 +39,18 @@
 !> rcloc, the last bound the mesh end
    type(piecewise_t) :: vlocpw
  end type local_t
+
+!> one channel's projectors (channel_vkb), per projector and kappa
+ type :: projectors_t
+!> their coefficients (Ha)
+   real(dp) :: evkb(mxprj,mxkap)=0.0d0
+!> the eigenvalues of the symmetrized B matrix, ascending
+   real(dp) :: bbeig(mxprj,mxkap)=0.0d0
+!> the projectors on the mesh
+   real(dp), allocatable :: vkb(:,:,:)
+!> the projectors as pieces
+   type(piecewise_t) :: vkbpw(mxprj,mxkap)
+ end type projectors_t
 
  contains
  subroutine run_vkb(lmax,lloc,lpopt,dvloc0,rc,irc,nproj,rr,mmax,pswf, &
@@ -94,7 +106,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use constants_m, only: mxl, mxlin, mxprj
+ use constants_m, only: mxl, mxlin
 
 !Input variables
  integer, intent(in) :: lmax,lloc,lpopt,mmax,irel,nkap
@@ -179,7 +191,7 @@
 !!               written
 
  use failure_m, only: fail_construction, failed, msg_vkb_local_node
- use constants_m, only: mxlin, rel_window, mxprj
+ use constants_m, only: mxlin, rel_window
  use kappa_m, only: kap_count
  use pieces_m, only: pw_reach, pw_maxseg, pw_alloc
  use vploc_m, only: vploc_t, vploc_fit, vploc_mesh, vploc_eval
@@ -311,7 +323,7 @@
 
  use failure_m, only: fail_numerical, failed, msg_vkb_b_dsyev, &
 &                    msg_vkb_binv_dsyev, msg_vkb_sovl_dsyev
- use constants_m, only: rel_window, mxprj
+ use constants_m, only: rel_window
  use kappa_m, only: kap_count, kap_of
  use projbasis_m, only: pb_half_powers, pb_congruence, pb_combine, &
 &                       pb_sort_abs, pb_sign_at_peak

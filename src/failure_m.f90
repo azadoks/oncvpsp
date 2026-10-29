@@ -52,7 +52,7 @@
  public :: stage_none, stage_input, stage_ae, stage_channel, stage_vkb, &
 &          stage_valence, stage_model_core, stage_screening, stage_diag, &
 &          stage_ghosts, stage_unscreen, stage_configs, stage_plot, &
-&          stage_phsft, stage_tests, stage_output
+&          stage_phsft, stage_tests, stage_output, stage_confine
  public :: ierr_box_state, ierr_iterations, ierr_not_converged, &
 &          ierr_ps_scf, ierr_ghost
  public :: ierr_lxc_unknown, ierr_lxc_no_vxc, ierr_lxc_family
@@ -152,6 +152,8 @@
  integer, parameter :: stage_tests=14
 !> the pseudopotential data file (write_ps_file)
  integer, parameter :: stage_output=15
+!> the confined atom of a run (confine_atom)
+ integer, parameter :: stage_confine=16
 
 !> a failure, for a binding: what (kind, msg, ierr) and where (stage, l,
 !> ikap, iproj); 0 where it does not apply, l -1
@@ -669,6 +671,18 @@
 !> oncv_coupled (oncvpsp_c_m.F90): oncv_coupled: ERROR the handle holds no
 !> stages
  integer, parameter, public :: msg_c_no_stages=181
+!> confine_atom (confine_atom_m.f90): confine_atom: ERROR the radius
+!> ... is not beyond the largest core radius
+ integer, parameter, public :: msg_confine_radius=182
+!> oncv_confine (oncvpsp_c_m.F90): oncv_confine: ERROR the handle holds no
+!> run
+ integer, parameter, public :: msg_c_no_run=183
+!> oncv_confine (oncvpsp_c_m.F90): oncv_confine: ERROR the channels are 0
+!> to 3, the walls positive and the window emin < emax with de > 0
+ integer, parameter, public :: msg_c_confine_args=184
+!> run_channel (oncvpsp_run_m.f90): run_channel: ERROR the mode is 0, 1
+!> or 2
+ integer, parameter, public :: msg_run_channel_mode=185
 
 ! The warnings (warn's id), each with its routine, file and message, and
 ! what the record's index is
