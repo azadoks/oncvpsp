@@ -65,7 +65,8 @@
 !!              it can raise above 0, are bracketed around their last
 !!              values in place of 10 % of them
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use constants_m, only: dp, mxstate, mxl, mxlin, mxprj
  use kappa_m, only: kap_count, kap_of, kap_j_share

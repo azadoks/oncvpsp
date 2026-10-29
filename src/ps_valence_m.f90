@@ -76,7 +76,9 @@
 !! @param rhoae  the all-electron density of each valence state, as rhops
 !! @param rhotae  all-electron valence charge density
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+ use failure_m, only: fail_construction, fail_convergence
  use boundstate_m, only: boundstate
  use lschvkbb_m, only: lschvkbb
  use constants_m, only: dp, mxprj, mxstate, mxl, mxlin
@@ -142,7 +144,7 @@
 &              'oncvpsp-461: lschfb convergence ERROR n,l,iter=', &
 &              na(nc+kk),la(nc+kk),it
        end if
-       ifail=1
+       ifail=fail_convergence
        return
      end if
 
@@ -172,7 +174,11 @@
 &             'a bound ghost of the projectors'
          flush(6)
        end if
-       ifail=1
+       if(ierr==200) then
+         ifail=fail_construction
+       else
+         ifail=fail_convergence
+       end if
        return
      end if
 

@@ -58,8 +58,10 @@
 !! @param mch  the mesh point just beyond the sign change
 !! @param xm  the continuous index of the root (1 at rr(1))
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_input, fail_not_found
  use constants_m, only: dp
  use logmesh_m, only: lm_root, lm_step
 
@@ -80,13 +82,14 @@
  if(mch-1-match_k<2 .or. mch+match_k>mmax) then
    write(iout,'(/a,i0,a,i0)') 'match_point: ERROR matching window at mch=', &
 &        mch,' leaves the mesh, mmax=',mmax
-   ifail=1
+   ifail=fail_input
    return
  end if
- call lm_root(rr,cf,mmax,rr(mch-1),rr(mch),rq,ierr)
+ call lm_root(rr,cf,mmax,rr(mch-1),rr(mch),rq,ierr,ifail)
+ if(ifail/=0) return
  if(ierr/=0) then
    write(iout,'(/a,i0)') 'match_point: ERROR no sign change below mch=',mch
-   ifail=1
+   ifail=fail_not_found
    return
  end if
  al=lm_step(rr,mmax)

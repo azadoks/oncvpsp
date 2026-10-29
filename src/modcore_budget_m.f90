@@ -300,6 +300,11 @@
    integer, allocatable :: cfill(:)
 !> the number of radii of the basin
    integer :: ncand=0
+!> 0, or the kind of failure (failure_m) of a model (set_model) or a search
+!> in the functions of the search, which then return 0 so that the
+!> searches about them end at once, and the routines with an ifail return
+!> it
+   integer :: ifail=0
  end type budget_t
 
  contains
@@ -399,7 +404,8 @@
 !! @param lprobe  angular momenta of the probes
 !! @param nprobe  number of probes (0 for icmod=6)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use modcore_m, only: core_pieces
  use pieces_m, only: piecewise_t
@@ -461,7 +467,10 @@
 !! @param bc  the state of the search
 !! @param rhotps..nprobe  as in modcore_budget
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use failure_m, only: fail_input
 
 !Input variables
  integer, intent(in) :: mmax,iexc,nprobe
@@ -512,7 +521,7 @@
  if(bc%qlo >= qmax) then
    write(iout,'(/a,f12.6,a)') 'modcore_budget: ERROR ecut beyond', &
 &        qmax**2/8.0d0,' Ha'
-   ifail=1
+   ifail=fail_input
    return
  end if
  bc%qhi=min(3.0d0*bc%qlo,qmax)
@@ -528,7 +537,7 @@
  end do
  if(bc%irtop<4) then
    write(iout,'(/a)') 'modcore_budget: ERROR no core charge'
-   ifail=1
+   ifail=fail_input
    return
  end if
  bc%rtop=min(rcmin,bc%rr(bc%irtop))
@@ -536,7 +545,7 @@
  if(qmax*bc%rtop > 2.0d0*(nxg-50)) then
    write(iout,'(/a,f12.6,a)') 'modcore_budget: ERROR r_s up to', &
 &        bc%rtop,' bohr needs more nodes of the transform'
-   ifail=1
+   ifail=fail_input
    return
  end if
 
@@ -551,8 +560,10 @@
 !!
 !! @param bc  the state of the search
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_input
  use logmesh_m, only: lm_interp
  use quad_m, only: quad_gauss_legendre
 
@@ -570,9 +581,12 @@
  real(dp) :: ca,sa,sb,tt
 
  ifail=0
- call quad_gauss_legendre(0.0d0,1.0d0,ngk,bc%tk,bc%wk)
- call quad_gauss_legendre(0.0d0,1.0d0,ngi,bc%tgi,bc%wgi)
- call quad_gauss_legendre(0.0d0,1.0d0,nxg,bc%xg,bc%wxg)
+ call quad_gauss_legendre(0.0d0,1.0d0,ngk,bc%tk,bc%wk,ifail)
+ if(ifail/=0) return
+ call quad_gauss_legendre(0.0d0,1.0d0,ngi,bc%tgi,bc%wgi,ifail)
+ if(ifail/=0) return
+ call quad_gauss_legendre(0.0d0,1.0d0,nxg,bc%xg,bc%wxg,ifail)
+ if(ifail/=0) return
 
 ! the window of the minimum tail: nwin Gauss-Legendre panels on
 ! [qlo, qhi], the weights times q**2
@@ -582,7 +596,8 @@
    call quad_gauss_legendre(bc%qlo+(ii-1)*(bc%qhi-bc%qlo)/nwin, &
 &                      bc%qlo+ii*(bc%qhi-bc%qlo)/nwin, &
 &                      ngq,bc%qn((ii-1)*ngq+1:ii*ngq), &
-&                                bc%wn((ii-1)*ngq+1:ii*ngq))
+&                                bc%wn((ii-1)*ngq+1:ii*ngq),ifail)
+   if(ifail/=0) return
  end do
  bc%wn(:)=bc%wn(:)*bc%qn(:)**2
 
@@ -602,7 +617,7 @@
  bc%i0=max(1,floor(log(bc%rlo/(1.05d0*bc%rr(1)))/bc%al))
  if(bc%iend<=bc%i0+1) then
    write(iout,'(/a)') 'modcore_budget: ERROR no core charge'
-   ifail=1
+   ifail=fail_input
    return
  end if
  bc%nout=ngi*(bc%iend-bc%i0)
@@ -734,7 +749,8 @@
 !!
 !! @param bc  the state of the search
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
 !Input variables
  integer, intent(in) :: iout
@@ -746,7 +762,7 @@
  integer, intent(out) :: ifail
 
 !Local variables
- real(dp) :: rsq
+ real(dp) :: rsq,emax
 
  ifail=0
 ! smallest r_s, first with the cutoffs to q_b + quick; if a larger one
@@ -760,8 +776,17 @@
    if(ifail/=0) return
    bc%fill%rs=rsq
    call set_model(bc,bc%fill%rs)
+   if(bc%ifail/=0) then
+     ifail=bc%ifail
+     return
+   end if
    if(bc%qend>=qmax) exit
-   if(err_max(bc,bc%qend,qmax,bc%errmax)<=bc%errmax) exit
+   emax=err_max(bc,bc%qend,qmax,bc%errmax)
+   if(bc%ifail/=0) then
+     ifail=bc%ifail
+     return
+   end if
+   if(emax<=bc%errmax) exit
    bc%full=.true.
    bc%qend=min(qmax,bc%qpk+quick)
  end do
@@ -780,7 +805,8 @@
 !!
 !! @param bc  the state of the search
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use der2exc_m, only: der2exc
 
@@ -795,7 +821,7 @@
 
 !Local variables
  integer :: ib,ii,kk
- real(dp) :: tt,rsq
+ real(dp) :: tt,rsq,emax
 
  ifail=0
  kk=max(0,floor(log(bc%rtop/bc%rs6)/log(ratio)))
@@ -819,6 +845,10 @@
  ib=0
  do ii=1,bc%ncand
    bc%cmis(ii)=mismatch_at(bc,log(bc%crad(ii)))
+   if(bc%ifail/=0) then
+     ifail=bc%ifail
+     return
+   end if
    bc%cfill(ii)=bc%fill%ifill
    if(bc%fill%ifill==0) cycle
    if(ib==0) then
@@ -836,10 +866,19 @@
  bc%fill%rs=rsq
  call set_model(bc,bc%fill%rs)
  bc%mismatch=mismatch_at(bc,log(bc%fill%rs))
+ if(bc%ifail/=0) then
+   ifail=bc%ifail
+   return
+ end if
 ! r_s6 is a root of this error less errmax, so at r_s = r_s6 the two are
 ! equal to round-off; the margin is above that, far below a radius that
 ! does not fit
- if(err_max(bc,bc%qb,qmax,bc%errmax)>bc%errmax*(1.0d0+1.0d-7)) then
+ emax=err_max(bc,bc%qb,qmax,bc%errmax)
+ if(bc%ifail/=0) then
+   ifail=bc%ifail
+   return
+ end if
+ if(emax>bc%errmax*(1.0d0+1.0d-7)) then
    write(iout,'(/a,f12.6,a)') 'modcore_budget: WARNING the radius',bc%fill%rs, &
 &          ' of the least mismatch does not fit the budget'
  end if
@@ -854,7 +893,8 @@
 !!
 !! @param bc  the state of the search
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
 !Input variables
  integer, intent(in) :: iout
@@ -871,6 +911,10 @@
 
  ifail=0
  call set_model(bc,bc%fill%rs)
+ if(bc%ifail/=0) then
+   ifail=bc%ifail
+   return
+ end if
  call spectrum(bc,bc%qb)
  bc%qneed=0.0d0
  tt=bc%qb
@@ -995,7 +1039,8 @@
 !! @param bc  the state of the search
 !! @param rsq  the radius (bohr)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
 !Input variables
  integer, intent(in) :: iout
@@ -1012,12 +1057,21 @@
  real(dp) :: ga,xq
  ifail=0
  associate(rlo=>bc%rlo,rr=>bc%rr,rtop=>bc%rtop)
-   if(excess_rs(bc,log(rtop))>0.0d0) then
+   ga=excess_rs(bc,log(rtop))
+   if(bc%ifail/=0) then
+     ifail=bc%ifail
+     return
+   end if
+   if(ga>0.0d0) then
      call no_model(bc,iout,ifail)
      if(ifail/=0) return
    end if
    rsq=rlo
    ga=excess_rs(bc,log(rlo))
+   if(bc%ifail/=0) then
+     ifail=bc%ifail
+     return
+   end if
    if(ga<=0.0d0) return
 ! the mesh points strictly between r_lo and r_top, ilo..ihi; ia fails,
 ! ib fits, ilo-1 standing for r_lo and ihi+1 for r_top
@@ -1033,7 +1087,12 @@
    ib=ihi+1
    do while(ib-ia>1)
      imid=(ia+ib)/2
-     if(excess_rs(bc,log(rr(imid)))>0.0d0) then
+     ga=excess_rs(bc,log(rr(imid)))
+     if(bc%ifail/=0) then
+       ifail=bc%ifail
+       return
+     end if
+     if(ga>0.0d0) then
        ia=imid
      else
        ib=imid
@@ -1041,6 +1100,10 @@
    end do
    call zeroin(excess_rs_of,log(radius_of(bc,ia)),log(radius_of(bc,ib)), &
 &              xq,iout,ifail)
+   if(bc%ifail/=0) then
+     ifail=bc%ifail
+     return
+   end if
    if(ifail/=0) return
    rsq=exp(xq)
  end associate
@@ -1089,7 +1152,8 @@
  real(dp) function excess_rs(bc,lnrs)
 
 !! the largest error over the density cutoffs q_b..qend of the model of
-!! radius exp(lnrs), less errmax; errmax if the radius has no model
+!! radius exp(lnrs), less errmax; errmax if the radius has no model; 0
+!! after a failure (bc%ifail)
 !!
 !! @param bc  the state of the search
 !! @param lnrs  ln r_s
@@ -1101,11 +1165,16 @@
  type(budget_t), intent(inout) :: bc
  associate(errmax=>bc%errmax,ifill=>bc%fill%ifill,qb=>bc%qb,qend=>bc%qend)
    call set_model(bc,exp(lnrs))
+   if(bc%ifail/=0) then
+     excess_rs=0.0d0
+     return
+   end if
    if(ifill==0) then
      excess_rs=errmax
      return
    end if
    excess_rs=err_max(bc,qb,qend,errmax) - errmax
+   if(bc%ifail/=0) excess_rs=0.0d0
  end associate
  return
  end function excess_rs
@@ -1131,7 +1200,7 @@
  real(dp) function mismatch_at(bc,lnrs)
 
 !! the hardness mismatch of the model of radius exp(lnrs); huge if the
-!! radius has no model
+!! radius has no model; 0 after a failure (bc%ifail)
 !!
 !! @param bc  the state of the search
 !! @param lnrs  ln r_s
@@ -1151,6 +1220,8 @@
 &          mmax=>bc%mmax,adams=>bc%adams,nprobe=>bc%nprobe,probes=>bc%probes, &
 &          rhotps=>bc%rhotps,rr=>bc%rr,zion=>bc%zion)
    call set_model(bc,exp(lnrs))
+   mismatch_at=0.0d0
+   if(bc%ifail/=0) return
    mismatch_at=huge(1.0d0)
    if(ifill==0) return
    call der2exc(rhotps,core,probes,rr,d2mod,d2ae,mm, &
@@ -1187,7 +1258,8 @@
 !! @param ib  index of the radius of the least mismatch of the list
 !! @param rsq  the radius (bohr)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
 !Input variables
  integer, intent(in) :: ib
@@ -1209,21 +1281,39 @@
    ic=max(1,ib-1)
    rsq=crad(ib)
    if(ia==ib) then
-     if(slope_at(bc,log(crad(ib)))>=0.0d0) return
+     sa=slope_at(bc,log(crad(ib)))
+     if(bc%ifail/=0) then
+       ifail=bc%ifail
+       return
+     end if
+     if(sa>=0.0d0) return
    end if
    if(ic==ib) then
-     if(slope_at(bc,log(crad(ib)))<=0.0d0) return
+     sb=slope_at(bc,log(crad(ib)))
+     if(bc%ifail/=0) then
+       ifail=bc%ifail
+       return
+     end if
+     if(sb<=0.0d0) return
    end if
    ua=log(crad(ia))
    ub=log(crad(ic))
    sa=slope_at(bc,ua)
    sb=slope_at(bc,ub)
+   if(bc%ifail/=0) then
+     ifail=bc%ifail
+     return
+   end if
    if(sa>0.0d0 .or. sb<0.0d0) then
      write(iout,'(/a,f12.6)') 'modcore_budget: WARNING no minimum of the '// &
 &         'mismatch bracketed about',crad(ib)
      return
    end if
    call zeroin(slope_at_of,ua,ub,xq,iout,ifail)
+   if(bc%ifail/=0) then
+     ifail=bc%ifail
+     return
+   end if
    if(ifail/=0) return
    rsq=exp(xq)
  end associate
@@ -1251,7 +1341,10 @@
 !!
 !! @param bc  the state of the search
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use failure_m, only: fail_not_found
 
 !Input variables
  type(budget_t), intent(in) :: bc
@@ -1265,7 +1358,7 @@
    write(iout,'(/a,f12.6,a,f12.6,a,es12.4,a)') &
 &        'modcore_budget: ERROR no model core inside rc =',rtop, &
 &        ' needs less than',budget,' Ha for an error of',errmax,' Ha'
-   ifail=1
+   ifail=fail_not_found
    return
  end associate
  end subroutine no_model
@@ -1276,11 +1369,12 @@
 !! 2 for Martins' in aco, bco, cco, 0 for none), in core the model inside
 !! rad and the core charge beyond, the nodes of its transform, the mesh
 !! ri of the integral below rad, and the xc energy density of the valence
-!! charge on the fill there
+!! charge on the fill there; nothing after a failure, which sets bc%ifail
 !!
 !! @param bc  the state of the search
 !! @param rad  model radius r_s (bohr)
 
+ use failure_m, only: fail_internal
  use logmesh_m, only: lm_derivs, lm_interp, lm_index
  use xc_dispatch_m, only: exc_dispatch
 
@@ -1293,6 +1387,7 @@
 !Local variables
  real(dp) :: dm(3),l1,l2,xs,xe
  integer :: kk,is
+ logical :: mono
  associate(aco=>bc%fill%aco,al=>bc%al,bco=>bc%fill%bco,cco=>bc%fill%cco, &
 &          chr=>bc%chr,core=>bc%core,cr0=>bc%cr0,dq=>bc%dq,epi=>bc%epi, &
 &          fext=>bc%fext,fw=>bc%fw,fx=>bc%fx,i0=>bc%i0,iexc=>bc%iexc, &
@@ -1304,6 +1399,7 @@
 &          tk=>bc%tk,vxi=>bc%vxi,wf=>bc%wf,wgi=>bc%wgi,wki=>bc%wki, &
 &          wxg=>bc%wxg,xg=>bc%xg,xr=>bc%xr)
 
+   if(bc%ifail/=0) return
    rs=rad
    npdone=0
    msnap=0
@@ -1318,7 +1414,8 @@
    if(irow>irmx) then
      write(error_unit,'(/a)') &
 &         'modcore_budget: ERROR r_s beyond the table'
-     error stop 1
+     bc%ifail=fail_internal
+     return
    end if
    xs=log(rs)
    xe=log(rr(is+1))
@@ -1329,8 +1426,11 @@
    end do
 
    call min_tail(bc,dm)
+   if(bc%ifail/=0) return
    ifill=0
-   if(tail_monotone(bc%fill)) then
+   call tail_monotone(bc%fill,mono,bc%ifail)
+   if(bc%ifail/=0) return
+   if(mono) then
      ifill=1
      do kk=1,mmax
        if(rr(kk)>=rs) exit
@@ -1402,7 +1502,7 @@
  return
  end function fill_value
 
- logical function tail_monotone(fill)
+ subroutine tail_monotone(fill,mono,ifail)
 
 !! whether the minimum tail p, as a function of x = 2(r/rs)**2 - 1, does
 !! not rise on [-1, 1]: p' <= 0 at -1, at 1, and at the roots of p'' in
@@ -1411,21 +1511,30 @@
 !! [-1, 1] all the same); p' from the Legendre series
 !!
 !! @param fill  the fill
+!! @param mono  whether it does not rise
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_numerical
  use lapack_m, only: dhseqr
 
 !Input variables
  type(fill_t), intent(in) :: fill
+
+!Output variables
+ logical, intent(out) :: mono
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp) :: cx(0:npow),d2(0:npow-2),hess(npow-2,npow-2)
  real(dp) :: wr(npow-2),wi(npow-2),zz(1,1),wkh(4*npow),tr,vv,vd
  integer :: kk,jj,nd,info,it
  associate(cleg=>fill%cleg)
-   tail_monotone=.false.
+   ifail=0
+   mono=.false.
    if(leg_value(fill,-1.0d0,1)>0.0d0) return
    if(leg_value(fill,1.0d0,1)>0.0d0) return
-   tail_monotone=.true.
+   mono=.true.
    call legendre_powers(.false.,cleg,cx)
    do kk=2,npow
      d2(kk-2)=kk*(kk-1)*cx(kk)
@@ -1444,7 +1553,8 @@
    call dhseqr('E','N',nd,1,nd,hess,npow-2,wr,wi,zz,1,wkh,size(wkh),info)
    if(info/=0) then
      write(error_unit,'(/a,i0)') 'modcore_budget: ERROR dhseqr info =',info
-     error stop 1
+     ifail=fail_numerical
+     return
    end if
    do kk=1,nd
      tr=wr(kk)
@@ -1460,14 +1570,14 @@
      end do
      if(tr>-1.0d0 .and. tr<1.0d0) then
        if(leg_value(fill,tr,1)>0.0d0) then
-         tail_monotone=.false.
+         mono=.false.
          return
        end if
      end if
    end do
  end associate
  return
- end function tail_monotone
+ end subroutine tail_monotone
 
  real(dp) function leg_value(fill,xx,mm)
 
@@ -1588,9 +1698,11 @@
 !! the square root of the weights, and C c = d the match of the core
 !! charge and its first two derivatives at r_s
 !!
-!! @param bc  the state of the search
+!! @param bc  the state of the search; bc%ifail after a failure, whose
+!!            message is written
 !! @param dm  the core charge and its first two derivatives at r_s
 
+ use failure_m, only: fail_numerical
  use lapack_m, only: dgglse
  use sbf_m, only: sbf_trig
 
@@ -1643,7 +1755,8 @@
    if(info/=0) then
      write(error_unit,'(/a,i0)') &
 &         'modcore_budget: ERROR dgglse info =',info
-     error stop 1
+     bc%ifail=fail_numerical
+     return
    end if
    deallocate(amat,cvec,wk)
  end associate
@@ -1854,6 +1967,7 @@
 
 !Local variables
  real(dp), allocatable :: tq(:),eq(:)
+ real(dp) :: fmin
  integer :: nn,mm,ii,ilo,ihi,imx
  associate(nq=>bc%nq,qpk=>bc%qpk)
    call spectrum(bc,qe)
@@ -1880,8 +1994,13 @@
      deallocate(tq,eq)
      return
    end if
-   err_max=max(err_max,-root_fmin(neg_err_of,tq(max(1,imx-1)), &
-&                                  tq(min(nn,imx+1))))
+   call root_fmin(neg_err_of,tq(max(1,imx-1)),tq(min(nn,imx+1)),fmin, &
+&                 bc%ifail)
+   if(bc%ifail/=0) then
+     err_max=0.0d0
+     return
+   end if
+   err_max=max(err_max,-fmin)
    do ii=1,nn
      if(ii==imx) cycle
      ilo=max(1,ii-1)
@@ -1890,7 +2009,12 @@
      if(nn>=3) then
        if(parabola_peak(tq,eq,nn,ii)<0.99d0*err_max) cycle
      end if
-     err_max=max(err_max,-root_fmin(neg_err_of,tq(ilo),tq(ihi)))
+     call root_fmin(neg_err_of,tq(ilo),tq(ihi),fmin,bc%ifail)
+     if(bc%ifail/=0) then
+       err_max=0.0d0
+       return
+     end if
+     err_max=max(err_max,-fmin)
    end do
    deallocate(tq,eq)
  end associate
@@ -1978,8 +2102,10 @@
 !! @param xa0,xb0  the bracket
 !! @param xq  the root
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_convergence, fail_not_found
  use root_m, only: root_fn, root_brent
 
 !Input variables
@@ -1997,18 +2123,19 @@
  logical :: conv
 
  ifail=0
- call root_brent(fun,xa0,xb0,xq,ierr,fq=fb,fo=fc,fends=fe,converged=conv)
+ call root_brent(fun,xa0,xb0,xq,ierr,ifail,fq=fb,fo=fc,fends=fe, &
+&                converged=conv)
  if(ierr/=0) then
    write(iout,'(/a,2es12.4)') 'modcore_budget: ERROR no root between', &
 &       xa0,xb0
-   ifail=1
+   ifail=fail_not_found
    return
  end if
  if(.not. conv) then
    write(iout,'(/a,es12.4,a,es12.4)') &
 &        'modcore_budget: ERROR zeroin not converged in 200 steps, x=', &
 &        xq,', f=',fb
-   ifail=1
+   ifail=fail_convergence
    return
  end if
 ! a continuous function is at its round-off on a bracket a few ulps wide
@@ -2250,7 +2377,8 @@
 !! @param lprobe  angular momenta of the probes
 !! @param nprobe  number of probes
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use constants_m, only: dp, mxl, mxlin, mxprj
  use kappa_m, only: kap_count
@@ -2365,8 +2493,10 @@
 !! @param errmax  error per electron (Ha) that defines the cutoff
 !! @param ecut  cutoff (Ha) of the pseudo-waves at errmax
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_input, fail_internal, fail_not_found
  use constants_m, only: dp
  use logmesh_m, only: lm_fh_value
  use ugrid_m, only: ug_cross_down
@@ -2425,7 +2555,8 @@
      ecut1=-1.0d0
      if(nks(ip)>=2) then
        call ug_cross_down(ecurve(2,1:nks(ip),ip),nks(ip),dqs(ip),q1s(ip), &
-&                         errmax,qerr,found1)
+&                         errmax,qerr,found1,ifail)
+       if(ifail/=0) return
        if(found1) ecut1=0.5d0*qerr**2
      end if
      if(ecut1>=0.0d0) then
@@ -2437,7 +2568,7 @@
      write(iout,'(/a,es12.4,a)') &
 &          'modcore_budget_table: ERROR no pseudo-wave reaches', &
 &          errmax,' Ha per electron in its table'
-     ifail=1
+     ifail=fail_not_found
      return
    end if
    return
@@ -2456,7 +2587,7 @@
      write(iout,'(/a,i0,a)') &
 &          'modcore_budget_table: ERROR pseudo-wave ', &
 &          ip,' has a weight and no convergence curve'
-     ifail=1
+     ifail=fail_internal
      return
    end if
    qa=max(qa,q1s(ip))
@@ -2465,7 +2596,7 @@
  end do
  if(.not. (hs<huge(1.0d0)) .or. qa>=qb) then
    write(iout,'(/a)') 'modcore_budget_table: ERROR no weighted curves'
-   ifail=1
+   ifail=fail_input
    return
  end if
  fb=excess_mean(qb)
@@ -2473,7 +2604,7 @@
    write(iout,'(/a,es12.4,a)') &
 &        'modcore_budget_table: ERROR the weighted mean does not'// &
 &        ' reach',errmax,' Ha per electron'
-   ifail=1
+   ifail=fail_not_found
    return
  end if
 ! the last crossing from above, from qb down
@@ -2483,11 +2614,12 @@
    xa=max(qa,qb-dble(kk)*hs)
    fa=excess_mean(xa)
    if(fa>0.0d0) then
-     call root_brent(excess_mean,xa,xb,qerr,ierr)
+     call root_brent(excess_mean,xa,xb,qerr,ierr,ifail)
+     if(ifail/=0) return
      if(ierr/=0) then
        write(iout,'(/a)') &
 &            'modcore_budget_table: ERROR the bracket lost its sign change'
-       ifail=1
+       ifail=fail_internal
        return
      end if
      ecut=0.5d0*qerr**2
@@ -2498,7 +2630,7 @@
  write(iout,'(/a,es12.4,a)') &
 &      'modcore_budget_table: ERROR the weighted mean is below', &
 &      errmax,' Ha per electron where the curves start'
- ifail=1
+ ifail=fail_not_found
  return
 
  contains

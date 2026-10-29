@@ -45,6 +45,7 @@
  private
  public :: ws_edge_d, ws_convergence, ws_eigenvalues, ws_grid_init
  public :: ws_grid_t
+ public :: ws_no_basis
 
 !> the quadrature of a channel in the sphere (ws_grid_init): its points,
 !> weights, and the local potential and the projectors on them
@@ -60,6 +61,8 @@
    real(dp), allocatable :: vkbg(:,:)
  end type ws_grid_t
 
+!> ierr of ws_convergence, ws_eigenvalues: no basis function below qmax
+ integer, parameter :: ws_no_basis=1
 !> Gauss-Legendre nodes per panel
  integer, parameter :: ngl=16
 !> the step of the search for the roots of the basis's condition (in q rs)
@@ -89,7 +92,7 @@
  return
  end function ws_edge_d
 
- subroutine ws_roots(ll,iedge,rs,qmax,nq,qq)
+ subroutine ws_roots(ll,iedge,rs,qmax,nq,qq,ifail)
 
 !! the q of the basis functions r j_l(q r) of an edge's condition at rs,
 !! from 0 to qmax: x j_l'(x) = 0 (bottom), j_(l-1)(x) = 0 (centre, cos x
@@ -103,9 +106,12 @@
 !! @param qmax  the largest q (bohr**-1)
 !! @param nq  number of roots (output)
 !! @param qq  the roots (output)
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use sbf_m, only: sbf_trig
  use root_m, only: root_brent
+ use failure_m, only: fail_internal
 
 !Input variables
  integer, intent(in) :: ll,iedge
@@ -114,12 +120,14 @@
 !Output variables
  integer, intent(out) :: nq
  real(dp), allocatable, intent(out) :: qq(:)
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp) :: xmax,xa,xb,fa,fb,xr
  real(dp), allocatable :: work(:)
  integer :: ii,nx,ierr
 
+ ifail=0
  xmax=qmax*rs
  nx=int(xmax/dxroot)+1
  allocate(work(nx+1))
@@ -134,11 +142,13 @@
    xb=xa+dxroot
    fb=gg(xb)
    if(sign(1.0d0,fa)/=sign(1.0d0,fb)) then
-     call root_brent(gg,xa,xb,xr,ierr)
+     call root_brent(gg,xa,xb,xr,ierr,ifail)
+     if(ifail/=0) return
      if(ierr/=0) then
        write(error_unit,'(/a,i0)') &
 &           'ws_roots: ERROR root_brent failed, ierr=',ierr
-       error stop 1
+       ifail=fail_internal
+       return
      end if
      if(xr<=xmax) then
        nq=nq+1
@@ -181,7 +191,7 @@
 
  end subroutine ws_roots
 
- subroutine ws_grid_init(rs,qmax,rr,mmax,vloc,vlocpw,nvkb,vkbpw,grid)
+ subroutine ws_grid_init(rs,qmax,rr,mmax,vloc,vlocpw,nvkb,vkbpw,grid,ifail)
 
 !! the quadrature of a channel in the sphere and the pseudopotential on it,
 !! shared by the Hamiltonians of every edge's condition at rs: Gauss-
@@ -198,6 +208,8 @@
 !! @param nvkb  number of projectors
 !! @param vkbpw  the projectors as pieces
 !! @param grid  the quadrature and the potentials on it (output)
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use logmesh_m, only: lm_interp
  use pieces_m, only: piecewise_t, pw_value, pw_node_values
@@ -210,6 +222,7 @@
 
 !Output variables
  type(ws_grid_t), intent(out) :: grid
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp), allocatable :: dv(:),bounds(:)
@@ -221,6 +234,7 @@
  grid%nvkb=nvkb
 
  allocate(bounds(2+vlocpw%nseg+sum(vkbpw(:)%nseg)))
+ ifail=0
  nbound=1
  bounds(1)=rr(1)
  call add_bounds(vlocpw)
@@ -245,7 +259,8 @@
    do ip=1,np
      ra=bounds(ii)+(bounds(ii+1)-bounds(ii))*dble(ip-1)/dble(np)
      rb=bounds(ii)+(bounds(ii+1)-bounds(ii))*dble(ip)/dble(np)
-     call quad_gauss_legendre(ra,rb,ngl,xg,wxg)
+     call quad_gauss_legendre(ra,rb,ngl,xg,wxg,ifail)
+     if(ifail/=0) return
      grid%rg(ng+1:ng+ngl)=xg(:)
      grid%wg(ng+1:ng+ngl)=wxg(:)
      ng=ng+ngl
@@ -287,7 +302,7 @@
 
  end subroutine ws_grid_init
 
- subroutine ws_convergence(ll,iedge,grid,evkb,eex,nb,ecut,err,ierr)
+ subroutine ws_convergence(ll,iedge,grid,evkb,eex,nb,ecut,err,ierr,ifail)
 
 !! the energy error of the pseudopotential state of an edge in the first N
 !! basis functions, N = 1..nb, against its energy eex from the radial
@@ -303,9 +318,13 @@
 !! @param ecut  q_N**2/2 of each N (Ha, output)
 !! @param err  the energy error of each N (Ha, output), 0 where N is below
 !!             the state's index
-!! @param ierr  0, or 1 if no basis function is below qmax (output)
+!! @param ierr  0, or ws_no_basis if no basis function is below qmax
+!!              (output)
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use lapack_m, only: dsyev
+ use failure_m, only: fail_numerical
 
 !Input variables
  integer, intent(in) :: ll,iedge
@@ -313,14 +332,15 @@
  real(dp), intent(in) :: evkb(grid%nvkb),eex
 
 !Output variables
- integer, intent(out) :: nb,ierr
+ integer, intent(out) :: nb,ierr,ifail
  real(dp), allocatable, intent(out) :: ecut(:),err(:)
 
 !Local variables
  real(dp), allocatable :: hmat(:,:),hh(:,:),ev(:),work(:)
  integer :: np,idx,lwork,info
 
- call ws_hamiltonian(ll,iedge,grid,evkb,nb,ecut,hmat,ierr)
+ call ws_hamiltonian(ll,iedge,grid,evkb,nb,ecut,hmat,ierr,ifail)
+ if(ifail/=0) return
  allocate(err(nb))
  err(:)=0.0d0
  if(ierr/=0) return
@@ -335,7 +355,8 @@
    call dsyev('N','U',np,hh,nb,ev,work,lwork,info)
    if(info/=0) then
      write(error_unit,'(/a,i0)') 'ws_convergence: ERROR dsyev info ',info
-     error stop 1
+     ifail=fail_numerical
+     return
    end if
    if(np==nb) idx=minloc(abs(ev(1:nb)-eex),1)
    if(np>=idx) err(np)=ev(idx)-eex
@@ -344,7 +365,7 @@
  return
  end subroutine ws_convergence
 
- subroutine ws_eigenvalues(ll,iedge,grid,evkb,nb,ev,ierr)
+ subroutine ws_eigenvalues(ll,iedge,grid,evkb,nb,ev,ierr,ifail)
 
 !! the eigenvalues of the pseudo-Hamiltonian in all the basis functions of
 !! an edge's condition below qmax, lowest first: variational bounds on the
@@ -356,9 +377,13 @@
 !! @param evkb  coefficients of the projectors
 !! @param nb  number of basis functions and eigenvalues (output)
 !! @param ev  the eigenvalues (Ha, output)
-!! @param ierr  0, or 1 if no basis function is below qmax (output)
+!! @param ierr  0, or ws_no_basis if no basis function is below qmax
+!!              (output)
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use lapack_m, only: dsyev
+ use failure_m, only: fail_numerical
 
 !Input variables
  integer, intent(in) :: ll,iedge
@@ -366,14 +391,15 @@
  real(dp), intent(in) :: evkb(grid%nvkb)
 
 !Output variables
- integer, intent(out) :: nb,ierr
+ integer, intent(out) :: nb,ierr,ifail
  real(dp), allocatable, intent(out) :: ev(:)
 
 !Local variables
  real(dp), allocatable :: ecut(:),hmat(:,:),work(:)
  integer :: lwork,info
 
- call ws_hamiltonian(ll,iedge,grid,evkb,nb,ecut,hmat,ierr)
+ call ws_hamiltonian(ll,iedge,grid,evkb,nb,ecut,hmat,ierr,ifail)
+ if(ifail/=0) return
  allocate(ev(nb))
  if(ierr/=0) return
  lwork=max(1,3*nb)
@@ -381,13 +407,14 @@
  call dsyev('N','U',nb,hmat,nb,ev,work,lwork,info)
  if(info/=0) then
    write(error_unit,'(/a,i0)') 'ws_eigenvalues: ERROR dsyev info ',info
-   error stop 1
+   ifail=fail_numerical
+   return
  end if
  deallocate(ecut,hmat,work)
  return
  end subroutine ws_eigenvalues
 
- subroutine ws_hamiltonian(ll,iedge,grid,evkb,nb,ecut,hmat,ierr)
+ subroutine ws_hamiltonian(ll,iedge,grid,evkb,nb,ecut,hmat,ierr,ifail)
 
 !! the pseudo-Hamiltonian in the nb basis functions of an edge's condition
 !! below qmax, and their cutoffs q_n**2/2 (the arguments as
@@ -400,8 +427,10 @@
 !! @param nb  number of basis functions (output)
 !! @param ecut  q_n**2/2 of each basis function (Ha, output)
 !! @param hmat  the pseudo-Hamiltonian in the basis (Ha, output)
-!! @param ierr  0, or non-zero after a failure; 1 if no basis function is
-!!             below qmax (output)
+!! @param ierr  0, or ws_no_basis if no basis function is below qmax
+!!              (output)
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use sbf_m, only: sbf_trig
 
@@ -411,7 +440,7 @@
  real(dp), intent(in) :: evkb(grid%nvkb)
 
 !Output variables
- integer, intent(out) :: nb,ierr
+ integer, intent(out) :: nb,ierr,ifail
  real(dp), allocatable, intent(out) :: ecut(:),hmat(:,:)
 
 !Local variables
@@ -420,9 +449,10 @@
  integer :: ii,jj,kk
 
  ierr=0
- call ws_roots(ll,iedge,grid%rs,grid%qmax,nb,qq)
+ call ws_roots(ll,iedge,grid%rs,grid%qmax,nb,qq,ifail)
+ if(ifail/=0) return
  if(nb==0) then
-   ierr=1
+   ierr=ws_no_basis
    allocate(ecut(0),hmat(0,0))
    return
  end if

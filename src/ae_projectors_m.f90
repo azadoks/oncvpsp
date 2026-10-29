@@ -64,7 +64,9 @@
 !! @param upa  their derivatives in the mesh index (al*r*d(uua)/dr),
 !!             renormalized with uua for irel=2
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+ use failure_m, only: fail_convergence
  use boundstate_m, only: boundstate
  use renorm_r_m, only: renorm_r
  use constants_m, only: dp, mxprj, mxstate, mxkap
@@ -118,7 +120,7 @@
 &                'oncvpsp-387: lschfb convergence ERROR n,l,iter=', &
 &                na(kk),la(kk),it
          end if
-         ifail=1
+         ifail=fail_convergence
          return
        end if
 
@@ -187,7 +189,9 @@
 !! @param inwell  whether each well state is confined by its well
 !! @param wmesh  each confined state on its continued mesh (well_mesh_m)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+ use failure_m, only: fail_construction, fail_convergence, fail_input
  use fpovlp_m, only: fpovlp
  use boundstate_m, only: boundstate
  use renorm_r_m, only: renorm_r
@@ -243,7 +247,7 @@
 &            ' ERROR not allowed with 2 or more scattering states', &
 &            'program will stop'
      end if
-     ifail=1
+     ifail=fail_construction
      return
    end if
 
@@ -263,7 +267,7 @@
 &           'ae_well_projectors: ERROR well_n for l=',ll, &
 &           ' is',well_n,', below the first well state''s n,', &
 &           npa(iprj)
-       ifail=1
+       ifail=fail_input
        return
      end if
      npa(iprj)=well_n
@@ -314,7 +318,7 @@
 &             npa(iprj),'  l=',ll, 'kap=',kap, ' epa=', &
 &             epa(iprj)
 
-       ifail=1
+       ifail=fail_convergence
        return
      end if
 
@@ -399,7 +403,9 @@
 !!            tail
 !! @param pa  its derivative in the mesh index (al*r*d(ua)/dr)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+ use failure_m, only: fail_input
  use fpovlp_m, only: fpovlp
  use scatterstate_m, only: scatterstate
  use constants_m, only: dp
@@ -434,7 +440,7 @@
 &       ee,' Ha has a growing tail;', &
 &       'raise its ep (debl), or use well_tail = "confined"'// &
 &       ' or "well"'
-   ifail=1
+   ifail=fail_input
    return
  end if
  mfree=min(mmax,irc+pw_reach+16+lm_fh_reach()+2)
@@ -477,7 +483,9 @@
 !! @param dlta  Delta of each state (ae_delta), set about the window
 !! @param vrloc  Delta/(2u) of the first state about the window when local
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+ use failure_m, only: fail_construction
  use ae_delta_m, only: ae_delta
  use constants_m, only: dp, mxprj, rel_window
  use logmesh_m, only: lm_index
@@ -511,7 +519,7 @@
          write(iout,'(/a,i0,a,f12.6)') &
 &              'ae_delta_window: ERROR node of the local channel l=',ll, &
 &              ' all-electron wave near rc, at r=',rr(kk)
-         ifail=1
+         ifail=fail_construction
          return
        end if
        vrloc(kk)=0.5d0*dlta(kk,1)/uua(kk,1)
@@ -577,7 +585,9 @@
 !!                     occupied state, negative for the default 2(2l+1)
 !! @param wcurve  the weights of the waves; zero on entry
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+ use failure_m, only: fail_input
  use constants_m, only: dp, mxprj, mxstate
 
 !Input variables
@@ -610,7 +620,7 @@
  else if(ecut_weight>=0.0d0) then
    write(iout,'(/a,i0,a)') 'ecut_weights: ERROR ecut_weight for l=',ll, &
 &       ' is for a channel with no occupied state; this one has one'
-   ifail=1
+   ifail=fail_input
    return
  end if
  end subroutine ecut_weights

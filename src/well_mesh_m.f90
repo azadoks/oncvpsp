@@ -100,7 +100,10 @@
 !! @param mx  its size
 !! @param mneed  0, or the size to continue the mesh to
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use failure_m, only: fail_construction
 
 !Input variables
  integer, intent(in) :: ll,mx
@@ -140,7 +143,7 @@
    write(iout,'(/a,f12.6,a,i0,a,f12.6,a)') &
 &       'wm_short: ERROR the well state at',ee,' Ha, l=',ll, &
 &       ' does not decay within',rlimit,' bohr'
-   ifail=1
+   ifail=fail_construction
    return
  end if
  return

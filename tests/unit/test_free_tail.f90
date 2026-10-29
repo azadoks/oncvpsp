@@ -62,8 +62,8 @@
 
 ! kinetic
  allocate(wr(nr))
- call ug_weights(nr, hh, wr)
- tk = free_tail_kinetic(0, rc, hh, nr, ulin, dlin)
+ call ug_weights(nr, hh, wr, ifail)
+ call free_tail_kinetic(0, rc, hh, nr, ulin, dlin, tk, ifail)
  tk2 = 0.0_dp
  do ii = 1, nr
    rad = rc + dble(ii - 1)*hh
@@ -135,10 +135,10 @@
  real(dp) :: wq(nq), wa(nr), wb(n2), qq, dq, fa, fb, above, total
  integer :: iq, jj
 
- call ug_weights(nr, hh, wa)
- call ug_weights(n2, hh, wb)
+ call ug_weights(nr, hh, wa, ifail)
+ call ug_weights(n2, hh, wb, ifail)
  dq = qmax/dble(nq - 1)
- call ug_weights(nq, dq, wq)
+ call ug_weights(nq, dq, wq, ifail)
  above = 0.0_dp
  total = 0.0_dp
  do iq = 2, nq

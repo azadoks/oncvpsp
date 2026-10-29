@@ -37,8 +37,10 @@
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_input
  use constants_m, only: dp, mxstate, mxcnf, mxl
  use input_m, only: input_t
  use exc_libxc_m, only: have_libxc, exc_libxc_check
@@ -71,7 +73,7 @@
 
  if(ierr>0) then
    write(iout,'(a,i4,a)') 'ERROR: test_data found',ierr,' ERROR; stopping'
-   ifail=1
+   ifail=fail_input
    return
  end if
 

@@ -50,8 +50,10 @@
 !! @param vsrpw  vsr as functions of pieces
 !! @param vsopw  vso as functions of pieces
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_numerical
  use constants_m, only: dp, mxl, mxlin, mxkap, mxprj, ovl_floor
  use projbasis_m, only: pb_half_powers, pb_congruence, pb_combine, &
 &                       pb_sort_abs, pb_sign_at_peak
@@ -144,7 +146,7 @@
 
    if(info /= 0) then
      write(iout,'(a,i4)') 'sr_so_r: S matrix eigenvalue ERROR, info=',info
-     ifail=1
+     ifail=fail_numerical
      return
    end if
 
@@ -179,7 +181,7 @@
 
    if(info /= 0) then
      write(iout,'(a,i4)') 'sr_so_r: A* matrix eigenvalue ERROR, info=',info
-     ifail=1
+     ifail=fail_numerical
      return
    end if
 
@@ -188,7 +190,7 @@
 
    if(info /= 0) then
      write(iout,'(a,i4)') 'sr_so_r: A* matrix eigenvalue ERROR, info=',info
-     ifail=1
+     ifail=fail_numerical
      return
    end if
 

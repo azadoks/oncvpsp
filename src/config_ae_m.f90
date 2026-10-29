@@ -131,7 +131,8 @@
 !! @param res  residual of the screening potential (ae_residual)
 !! @param ierr  0, or non-zero after a failure
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use aeatom_m, only: aeatom
  use ae_scf_m, only: ae_floor_warning
@@ -243,7 +244,8 @@
 !! @param nkap  number of kappas per l: 1, or 2 for irel=2
 !! @param aec  the all-electron half of configuration jj
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use boundstate_m, only: boundstate
  use input_m, only: config_t

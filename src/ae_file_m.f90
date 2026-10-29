@@ -88,7 +88,8 @@
 !! @param cnf  the reference and test configurations (input_m)
 !! @param aec  the run_config_ae results, all configurations
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use config_ae_m, only: ae_config_t
  use input_m, only: config_t
@@ -170,7 +171,8 @@
 !! @param vfull  all-electron potential (Ha)
 !! @param aec  the run_config_ae results, all configurations
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use config_ae_m, only: ae_config_t
  use input_m, only: config_t
@@ -258,7 +260,10 @@
 !! @param mmax  size of the log radial mesh
 !! @param rr  log radial mesh (bohr)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use failure_m, only: fail_io
 
 !Input variables
  character(len=*), intent(in) :: fname
@@ -283,7 +288,7 @@
 &     status='replace',action='write',iostat=ios)
  if(ios/=0) then
    write(iout,'(/2a)') 'write_ae_file: ERROR cannot open ',trim(fname)
-   ifail=1
+   ifail=fail_io
    return
  end if
 
@@ -317,7 +322,10 @@
 !! @param mmax  size of the log radial mesh
 !! @param rr  log radial mesh (bohr)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use failure_m, only: fail_io
 
 !Input variables
  character(len=*), intent(in) :: fname
@@ -348,7 +356,7 @@
    write(iout,'(/2a)') &
 &        'read_ae_file: ERROR file was written with a different', &
 &        ' relativistic treatment'
-   ifail=1
+   ifail=fail_io
    close(unit)
    return
  end if
@@ -358,7 +366,7 @@
 &   .or. iexc_f/=iexc) then
    write(iout,'(/2a)') 'read_ae_file: ERROR atsym, z, nc, nv or iexc differ', &
 &        ' from the input'
-   ifail=1
+   ifail=fail_io
    close(unit)
    return
  end if
@@ -367,7 +375,7 @@
 &   .or. any(differ(fa_f(1:nc+nv),fa(1:nc+nv)))) then
    write(iout,'(/2a)') 'read_ae_file: ERROR reference configuration differs', &
 &        ' from the input'
-   ifail=1
+   ifail=fail_io
    close(unit)
    return
  end if
@@ -376,7 +384,7 @@
  if(mmax_f/=mmax) then
    write(iout,'(/a,2i0)') 'read_ae_file: ERROR radial mesh size differs', &
 &        mmax_f,mmax
-   ifail=1
+   ifail=fail_io
    close(unit)
    return
  end if
@@ -385,14 +393,14 @@
  if(any(abs(rr_f(1:mmax)-rr(1:mmax))>rtol*rr(1:mmax))) then
    write(iout,'(/2a)') 'read_ae_file: ERROR radial mesh differs from the', &
 &        ' one this program builds'
-   ifail=1
+   ifail=fail_io
    close(unit)
    return
  end if
  read(unit) c_light_f
  if(differ(c_light_f,c_light)) then
    write(iout,'(/2a)') 'read_ae_file: ERROR c_light differs from the input'
-   ifail=1
+   ifail=fail_io
    close(unit)
    return
  end if
@@ -424,7 +432,8 @@
 !! @param ea  eigenvalues, ea(:,2) those of j=l-1/2 if irel=2
 !! @param etot  total energy (Ha)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use constants_m, only: mxkap
 
@@ -486,7 +495,10 @@
 !! @param unit  unit number of the opened file
 !! @param irel_f  the relativistic treatment of the file
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use failure_m, only: fail_io
 
 !Input variables
  character(len=*), intent(in) :: fname
@@ -505,7 +517,7 @@
 &     status='old',action='read',iostat=ios)
  if(ios/=0) then
    write(iout,'(/2a)') 'read_ae_file: ERROR cannot open ',trim(fname)
-   ifail=1
+   ifail=fail_io
    return
  end if
 
@@ -513,7 +525,7 @@
  if(ios/=0 .or. magic_f/=magic) then
    write(iout,'(/2a)') 'read_ae_file: ERROR not an all-electron data file: ', &
 &        trim(fname)
-   ifail=1
+   ifail=fail_io
    close(unit)
    return
  end if
@@ -522,14 +534,14 @@
  if(version_f/=version .and. byteswap(version_f)==version) then
    write(iout,'(/2a)') 'read_ae_file: ERROR file was written on a machine', &
 &        ' with the other byte order'
-   ifail=1
+   ifail=fail_io
    close(unit)
    return
  end if
  if(version_f/=version) then
    write(iout,'(/a,i0,a,i0)') 'read_ae_file: ERROR file format version ', &
 &        version_f,' but this program reads version ',version
-   ifail=1
+   ifail=fail_io
    close(unit)
    return
  end if
@@ -606,7 +618,10 @@
 !! @param ncnf  number of test configurations (not counting the reference)
 !! @param found  .true. for the configurations found in the file
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use failure_m, only: fail_io
 
 !Input variables
  integer, intent(in) :: ncnf
@@ -624,7 +639,7 @@
    if(.not. found(jj)) then
      write(iout,'(/a,i0,a)') 'read_ae_file: ERROR test configuration ',jj-1, &
 &         ' is not in the all-electron data file'
-     ifail=1
+     ifail=fail_io
      return
    end if
  end do

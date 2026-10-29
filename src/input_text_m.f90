@@ -31,7 +31,8 @@
 !! @param inline  the line number in the file of the last line read
 !! @param inp  the input values (input_m)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use constants_m, only: mxstate, mxcnf, mxlin, well_onset_default
  use input_m, only: input_t
@@ -351,7 +352,8 @@
 !! @param inline  line number of the last line read, updated on return
 !! @param eof  optional, .true. if the input ended before another data line
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
 !Input variables
  integer, intent(in) :: unit
@@ -445,7 +447,10 @@
 !! @param ios  iostat of the read, non-zero for an error
 !! @param inline  line number of the input file line being read
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use failure_m, only: fail_input
 
 !Input variables
  integer, intent(in) :: ios
@@ -461,7 +466,7 @@
  if(ios /= 0) then
    write(iout, '(a,i4)') 'Read ERROR, input data file line', inline
    write(iout, '(a)') 'Program will stop'
-   ifail = 1
+   ifail=fail_input
    return
  end if
 

@@ -44,7 +44,8 @@
 !! @param fl  the function on the output mesh
 !! @param nrl  size of the output mesh
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use constants_m, only: dp
  use logmesh_m, only: lm_interp
@@ -93,7 +94,8 @@
 !! @param fl  the function on the output mesh
 !! @param nrl  size of the output mesh
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use constants_m, only: dp
  use logmesh_m, only: lm_interp
@@ -156,8 +158,10 @@
 !! @param fl  the potential on the output mesh
 !! @param nrl  size of the output mesh
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_internal
  use constants_m, only: dp
  use logmesh_m, only: lm_interp
  use pieces_m, only: piecewise_t, pw_node_values, pw_segment
@@ -187,7 +191,7 @@
    kk=pw_segment(vlocpw,rl(ii))
    if(kk==0) then
      write(iout,'(/a)') 'om_local_values: ERROR the pieces end inside the mesh'
-     ifail=1
+     ifail=fail_internal
      return
    end if
    call lm_interp(rr,vlocpw%vals(:,kk)+vs(:),mmax,rl(ii),fl(ii))
@@ -209,8 +213,10 @@
 !! @param rl  output mesh (bohr)
 !! @param nrl  size of the output mesh
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_input
  use constants_m, only: dp
 
 !Input variables
@@ -225,14 +231,14 @@
  if(rl(nrl)>rr(mmax)) then
    write(iout,'(/a,f12.6,a,f12.6)') 'check_range: ERROR output mesh to', &
 &       rl(nrl),' bohr, beyond the log mesh, ',rr(mmax)
-   ifail=1
+   ifail=fail_input
    return
  end if
  if(nrl>1) then
    if(rl(2)<rr(1)) then
      write(iout,'(/a)') &
 &         'check_range: ERROR more than one output point below the log mesh'
-     ifail=1
+     ifail=fail_input
      return
    end if
  end if
@@ -252,7 +258,8 @@
 !! @param fl  the function on the output mesh, fl(1) set
 !! @param nrl  size of the output mesh
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use constants_m, only: dp
  use logmesh_m, only: lm_origin

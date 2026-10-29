@@ -47,7 +47,9 @@
 !! @param skip_ld  whether to leave out the log derivatives
 !! @param psp  the results (results_m)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+ use failure_m, only: fail_convergence, fail_input
  use config_ae_m, only: run_config_ae, aeatom_cached, ae_config_t, &
 &                       ae_cache_t
  use ae_file_m, only: write_ae_file, read_ae_file
@@ -226,14 +228,14 @@
    write(iout,'(/a)') &
 &        'oncvpsp_run: ERROR well_norm = "space" (1) is not defined '// &
 &       'for well_tail = "free": the free tail has no finite norm'
-   ifail=1
+   ifail=fail_input
    return
  end if
  well_norm_rc=inp%well_norm==2 .or. (inp%well_norm==0 .and. inp%well_tail/=0)
  if(inp%well_tail/=2 .and. any(inp%well_n(:)>0)) then
    write(iout,'(/a)') &
 &       'oncvpsp_run: ERROR well_n is for well_tail = "confined" only'
-   ifail=1
+   ifail=fail_input
    return
  end if
 
@@ -342,7 +344,7 @@
 &          'oncvpsp_run: ERROR aeatom failed for the reference '// &
 &          'configuration'// &
 &          ', ierr=',ierr,', it=',it,', res=',res
-     ifail=1
+     ifail=fail_convergence
      return
    end if
  end if
@@ -716,7 +718,8 @@
  call unscreen_potentials(irel,inp%lmax,inp%lloc,vp,vo,zion,rr,mmax,nkap,vpuns)
 
 ! how closely the local potential is -zion/r beyond rcmax
- call coulomb_tail(vpuns(1,inp%lloc+1),vion,rr,mmax,zion,rcmax,iout)
+ call coulomb_tail(vpuns(1,inp%lloc+1),vion,rr,mmax,zion,rcmax,iout,ifail)
+ if(ifail/=0) return
 
 
 ! loop over reference plus test atom configurations
@@ -776,7 +779,8 @@
 
  call gnu_script(epa,evkb,inp%lmax,inp%lloc,inp%nproj,nkap,iout)
 
- call vloc_cutoff(rr,mmax,rho,vpuns(1,inp%lloc+1),zion,cvloc,vlchk)
+ call vloc_cutoff(rr,mmax,rho,vpuns(1,inp%lloc+1),zion,cvloc,vlchk,ifail)
+ if(ifail/=0) return
 
 !the tests' results
  psp%tests%logder%ne=npsh
@@ -817,7 +821,8 @@
  call move_alloc(bbeig,psp%tests%bbeig)
 
  call diagout(inp%lmax,inp%nproj,nkap,psp%tests,inp%icmod,rr,mmax, &
-&             rcmax,rhoc,corepw,inp%lloc,evkb,iout)
+&             rcmax,rhoc,corepw,inp%lloc,evkb,iout,ifail)
+ if(ifail/=0) return
 
 ! Write info for PSML format
 !

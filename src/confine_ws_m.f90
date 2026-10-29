@@ -82,7 +82,8 @@
 !! @param table  whether to write the ws_conv lines
 !! @param sm  the summary; its sphere part set
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
  use confine_summary_m, only: confine_summary_t
  use ps_file_m, only: ps_file_t
  use adams_m, only: adams_t
@@ -165,7 +166,8 @@
 !! @param table  whether to write the ws_conv lines
 !! @param sm  the summary; its sphere part updated
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
  use confine_summary_m, only: confine_summary_t
  use kappa_m, only: kap_of
  use phsft_m, only: phsft_t, phsft_ae_init, phsft_ps_init, phsft_free
@@ -222,9 +224,11 @@
  do iq=1,nq
    call ws_grid_init(rq(iq),sqrt(2.0d0*ecutmax),rr,mmax, &
 &       pf%vloc(:,ikap),pf%pot%vlocpw,nvkb,pf%pot%vkbpw(1:nvkb,l1,ikap), &
-&       wsg(iq))
+&       wsg(iq),ifail)
+   if(ifail/=0) return
    call ws_eigenvalues(ll,3,wsg(iq),pf%pot%evkb(1:nvkb,l1,ikap),ndir, &
-&       edir,ierr)
+&       edir,ierr,ifail)
+   if(ifail/=0) return
    if(ierr/=0) ndir=0
    call refine_poles(sps,iq,egrid,edir(1:ndir),iout,ifail)
    if(ifail/=0) return
@@ -312,7 +316,8 @@
 !! @param table  whether to write the ws_conv lines
 !! @param sm  the summary; its sphere part updated
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
  use confine_summary_m, only: confine_summary_t
  use phsft_m, only: phsft_t
  use ps_file_m, only: ps_file_t
@@ -424,7 +429,8 @@
 
 ! the cutoff of the pseudopotential's state
    call ws_convergence(ll,iedge,wsg,pf%pot%evkb(1:nvkb,ll+1,ikap),eps%ee(je), &
-&       nb,ecut,err,ierr)
+&       nb,ecut,err,ierr,ifail)
+   if(ifail/=0) return
    if(ierr/=0) then
      if(eae%ee(ie)<0.0d0) sm%sinf(1:2)=.true.
      if(eae%ee(ie)<0.0d0 .and. iedge==3) sm%sinf(3:4)=.true.
@@ -539,7 +545,8 @@
 !! @param shift  multiple of pi added to the phase of sol
 !! @param ed  the edges (output)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
  use phsft_m, only: phsft_t
  use root_m, only: root_brent
 
@@ -559,7 +566,7 @@
 
 !Local variables
  real(dp) :: thlo,thhi,er,e0,tgt
- integer :: jj,kk,jed,ierr2,npsh
+ integer :: jj,kk,jed,ierr2,jfail,npsh
  ifail=0
  npsh=size(egrid)
  ed%ne=0
@@ -573,7 +580,8 @@
        tgt=target(ll,jed)+pi*dble(kk)
 ! a crossing on the point below is the next interval's
        if(tgt==sh(jj+1) .and. jj<npsh-1) cycle
-       call root_brent(phase,egrid(jj+1),e0,er,ierr2)
+       call root_brent(phase,egrid(jj+1),e0,er,ierr2,jfail)
+       if(jfail/=0) ifail=jfail
        if(ifail/=0) return
        if(ierr2/=0) cycle
 ! a jump (a pair of nodes inside the projectors), not a root
@@ -616,7 +624,10 @@
 !! @param kk  multiple of pi of the edge
 !! @param jed  the edge: 1 bottom, 2 centre, 3 top
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use failure_m, only: fail_input
 
 !Input/output variables
  type(edges_t), intent(inout) :: ed
@@ -633,7 +644,7 @@
  if(ed%ne==mxedge) then
    write(iout,'(/a,i0)') 'add_edge: ERROR too many edges in the scan, ', &
 &        mxedge
-   ifail=1
+   ifail=fail_input
    return
  end if
  ed%ne=ed%ne+1
@@ -654,7 +665,8 @@
 !! @param thae  all-electron phase at each radius (output)
 !! @param thps  pseudopotential phase at each radius (output)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
  use phsft_m, only: phsft_t, phsft_node_phases
 
 !Input/output variables
@@ -691,7 +703,8 @@
 !! @param ex  energy (Ha)
 !! @param th  the phase
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
  use phsft_m, only: phsft_t, phsft_node_phase
 
 !Input/output variables
@@ -730,7 +743,8 @@
 !! @param edir  poles of r phi'/phi at the radius, ascending (Ha); those
 !!              in the scan refined on return
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
  use phsft_m, only: phsft_t, phsft_node_phase
  use root_m, only: root_brent
 
@@ -749,7 +763,7 @@
 
 !Local variables
  real(dp) :: e0,u0,lo,hi,ww,er,elow,ehigh
- integer :: kk,ierr2,ndir
+ integer :: kk,ierr2,jfail,ndir
  logical :: found
  ifail=0
  ndir=size(edir)
@@ -780,7 +794,8 @@
    end do
    if(ifail/=0) return
    if(.not. found) cycle
-   call root_brent(u_rs,lo,hi,er,ierr2)
+   call root_brent(u_rs,lo,hi,er,ierr2,jfail)
+   if(jfail/=0) ifail=jfail
    if(ifail/=0) return
    if(ierr2==0) edir(kk)=er
  end do

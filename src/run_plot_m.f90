@@ -67,7 +67,8 @@
 !! @param nkap  number of kappas per l: 1, or 2 for irel=2
 !! @param cvgplt  energy per electron error vs. cutoff (convergence profiles)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use constants_m, only: dp, mxl, mxlin, nrhomod, nerrlv, nerrdg, mxprj
  use kappa_m, only: kap_count, kap_of
@@ -221,6 +222,7 @@
 !! projector of l1-1 and ikap: bound states as such, the others
 !! scattering states at their energies, both of the sign of the
 !! all-electron one at n2
+ use failure_m, only: fail_convergence
  integer, intent(in) :: l1,ikap
  integer :: ii,iprj,npr,ierr,mch,kap,ilabel
  integer, intent(out) :: ifail
@@ -253,13 +255,13 @@
        write(iout,'(a,i2,a,i2,a,i2,a,i4)') &
 &            'run_plot_r 409: ldiracfb convergence ERROR, n=',&
 &             npa(iprj,l1),'  l=',ll, 'kap-',kap,'  ierr=',ierr
-       ifail=1
+       ifail=fail_convergence
        return
      else if(ierr /= 0) then
        write(iout,'(/a,3i4)') &
 &            'run_plot: lschfb convergence ERROR n,l,ierr=', &
 &            npa(iprj,l1),ll,ierr
-       ifail=1
+       ifail=fail_convergence
        return
      end if
      if(irel==2) then

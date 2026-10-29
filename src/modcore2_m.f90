@@ -63,8 +63,10 @@
 !! @param iexc  exchange-correlation functional
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_not_found
  use constants_m, only: dp, mxstate, nrhomod
  use logmesh_m, only: lm_derivs
  use modcore_m, only: core_crossover, teter_derivs, teter_core_derivs, &
@@ -104,22 +106,24 @@
 
 ! find valence pseudocharge - core charge crossover
 ! this is needed for compatability with icmod=3 option
- call core_crossover(rr,rhoc,rhotps,mmax,1.0d0,rmatch,ierr)
+ call core_crossover(rr,rhoc,rhotps,mmax,1.0d0,rmatch,ierr,ifail)
+ if(ifail/=0) return
  if(ierr/=0) then
    write(iout,'(/2a)') 'modcore2: ERROR core charge never exceeds', &
 &        ' valence pseudocharge'
-   ifail=1
+   ifail=fail_not_found
    return
  end if
  call lm_derivs(rr,rhoc,mmax,rmatch,0,fmatch)
  rhocmatch=fmatch(1)
 
 ! find scaled valence pseudocharge - core charge crossover
- call core_crossover(rr,rhoc,rhotps,mmax,fcfact,rstar,ierr)
+ call core_crossover(rr,rhoc,rhotps,mmax,fcfact,rstar,ierr,ifail)
+ if(ifail/=0) return
  if(ierr/=0) then
    write(iout,'(/a)') 'modcore2: ERROR ircc (core-valence charge crossover) &
 &        not found'
-   ifail=1
+   ifail=fail_not_found
    return
  end if
 
@@ -137,7 +141,7 @@
  if(ierr/=0) then
    write(iout,'(/a,es12.4)') 'modcore2: ERROR no Teter scale for the slope', &
 &        ymatch
-   ifail=1
+   ifail=fail_not_found
    return
  end if
  call teter_derivs(xx,0,gd)

@@ -61,8 +61,10 @@
 !!              oncvpsp_confine.x) instead of the Thomas-Fermi potential
 !!              and hydrogenic energies
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_convergence
  use constants_m, only: dp, mxstate, mxkap, ae_tolres
  use kappa_m, only: kap_count, kap_of, kap_j_share
  use ae_scf_m, only: ae_energies, ae_residual, ae_converged, &
@@ -189,7 +191,7 @@
        if(ierr /= 0) then
          write(iout,'(/2a,5i4)') 'relatom: ldiracfb convergence ERROR', &
 &             ' n,l,kap,iter,ierr=',na(ii),ll,kap,it,ierr
-         ifail=1
+         ifail=fail_convergence
          return
        end if
 

@@ -74,8 +74,10 @@
 !!               ascending (B itself for one projector; 0 where there is
 !!               none) (output)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_construction, fail_numerical
  use constants_m, only: dp, mxl, mxlin, rel_window, mxprj
  use kappa_m, only: kap_count, kap_of
  use projbasis_m, only: pb_half_powers, pb_congruence, pb_combine, &
@@ -159,7 +161,7 @@
          write(iout,'(/2a,i0,a,f12.6)') 'run_vkb: ERROR node of the local', &
 &              ' channel''s pseudo wave within reach of rc, l=',lloc, &
 &              ' r=',rr(ii)
-         ifail=1
+         ifail=fail_construction
          return
        end if
        tt=chix(ii,1,l1,ikap)/pswfx(ii,1,l1,ikap)
@@ -304,7 +306,7 @@
        call dsyev( 'V', 'U', np, bb, mxprj, bbev, work, lwork, info )
        if(info /= 0) then
          write(iout,'(a,i4)') 'run_vkb: B matrix eigenvalue ERROR, info=',info
-         ifail=1
+         ifail=fail_numerical
          return
        end if
        bbeig(1:np,l1,ikap)=bbev(1:np)
@@ -361,7 +363,7 @@
        if(info /= 0) then
          write(iout,'(a,i4)') 'run_vkb: sovl matrix eigenvalue ERROR, info=', &
 &              info
-         ifail=1
+         ifail=fail_numerical
          return
        end if
 
@@ -379,7 +381,7 @@
        if(info /= 0) then
          write(iout,'(a,i4)') &
 &              'run_vkb: B^(-1)* matrix eigenvalue ERROR, info=',info
-         ifail=1
+         ifail=fail_numerical
          return
        end if
 

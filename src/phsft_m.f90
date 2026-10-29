@@ -149,7 +149,8 @@
 !! @param rq  radii of the phases, each with phsft_mch(rr,mmax,rq)>0
 !! @param ps  the solver
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
 !Input variables
  integer, intent(in) :: irel,ll,kap,mmax,nq
@@ -196,7 +197,8 @@
 !! @param rq  radii of the phases, each with phsft_mch(rr,mmax,rq)>0
 !! @param ps  the solver
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use pieces_m, only: piecewise_t
 
@@ -240,8 +242,10 @@
 !! @param rq  radii of the phases (bohr)
 !! @param ps  the solver; its mesh, radii, al, mch and mchq set
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_input
  use logmesh_m, only: lm_step
 
 !Input variables
@@ -273,7 +277,7 @@
 &          'common_init: ERROR the radius is too close to the end '// &
 &          'of the mesh', &
 &          ' rq=',rq(iq),' rr(mmax)=',rr(mmax)
-     ifail=1
+     ifail=fail_input
      return
    end if
    ps%mch=max(ps%mch,mq)
@@ -317,7 +321,8 @@
 !! @param psh  the phases, per energy and radius
 !! @param pal  the phases at eal, per radius
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
 !Input/output variables
  type(phsft_t), intent(inout), target :: ps
@@ -401,7 +406,8 @@
 !! @param pshae  the all-electron phases, per energy and radius
 !! @param pshps  the pseudopotential phases, likewise
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use pieces_m, only: piecewise_t
 
@@ -463,7 +469,8 @@
 !! @param nodes  whether to subtract pi per node (default true)
 !! @param uq_out  u at the radius (output)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
 !Input/output variables
  type(phsft_t), intent(inout), target :: ps
@@ -507,7 +514,8 @@
 !! @param th  the phase of each radius (output)
 !! @param nodes  whether to subtract pi per node (default true)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
 !Input/output variables
  type(phsft_t), intent(inout), target :: ps
@@ -550,7 +558,8 @@
 !!            Dirac small component in uu(:,2) (kind 1)
 !! @param up  d(uu)/dn, its derivative in the mesh index (al*r*d(uu)/dr)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
  use scatterstate_m, only: scatterstate
 
 !Input variables
@@ -641,7 +650,10 @@
 !! @param depth  halvings so far
 !! @param th1  the phase at e1
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use failure_m, only: fail_numerical
 
 !Input/output variables
  type(phsft_t), intent(inout), target :: ps
@@ -667,7 +679,7 @@
 &        'follow: ERROR the phase turns by more than pi/2 between',e0, &
 &        ' and',e1
    th1=th0
-   ifail=1
+   ifail=fail_numerical
    return
  end if
 ! the turns by pi that the step leaves out, by the Pruefer angle
@@ -699,7 +711,8 @@
 !! @param da  the doubled angle of each radius
 !! @param pr  the Pruefer angle of each radius (phsft_node_phase)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use scatterstate_m, only: scatterstate
  use logmesh_m, only: lm_interp

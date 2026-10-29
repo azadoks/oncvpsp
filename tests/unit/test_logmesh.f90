@@ -433,12 +433,12 @@
 
  real(dp), allocatable :: rr(:), ff(:)
  real(dp) :: rq, exact, err
- integer :: mmax, ierr, ii
+ integer :: mmax, ierr, ii, ifail
 
  call make_mesh(1.006_dp, rr, mmax)
  allocate(ff(mmax))
  ff(:) = log(rr/1.2345678_dp)
- call lm_root(rr, ff, mmax, 1.0_dp, 2.0_dp, rq, ierr)
+ call lm_root(rr, ff, mmax, 1.0_dp, 2.0_dp, rq, ierr, ifail)
  err = abs(rq/1.2345678_dp - 1.0_dp)
  if(ierr /= 0) err = huge(err)
  call check('root ln(r/r0)', err, 1.0e-14_dp)
@@ -448,12 +448,12 @@
  do ii = 1, 50
    exact = exact - (texp(0, exact) - 0.3_dp)/texp(1, exact)
  end do
- call lm_root(rr, ff, mmax, 0.5_dp, 1.5_dp, rq, ierr)
+ call lm_root(rr, ff, mmax, 0.5_dp, 1.5_dp, rq, ierr, ifail)
  err = abs(rq - exact)
  if(ierr /= 0) err = huge(err)
  call check('root r**2 exp(-r) - 0.3', err, 1.0e-12_dp)
 
- call lm_root(rr, ff, mmax, 1.5_dp, 2.5_dp, rq, ierr)
+ call lm_root(rr, ff, mmax, 1.5_dp, 2.5_dp, rq, ierr, ifail)
  call check('root without a bracket', real(abs(ierr - 1), dp), 0.0_dp)
  end subroutine check_root
 

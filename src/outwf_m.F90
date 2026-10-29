@@ -151,8 +151,10 @@
 !! @param srcpw  the sources' pieces, all with the same bounds
 !! @param ow  the setup
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_internal
  use logmesh_m, only: lm_fh_weights, lm_fh_reach, lm_step, lm_position
 
 !Input variables
@@ -207,7 +209,7 @@
    if(sg%ipv==0) then
      write(iout,'(/a)') &
 &          'outwf_setup: ERROR the potential''s pieces end inside the mesh'
-     ifail=1
+     ifail=fail_internal
      return
    end if
    sg%ipb=0
@@ -237,6 +239,8 @@
 !! the bounds of the potential and of the sources inside the mesh, in
 !! order, each once (brk, nbrk), and the segments between them
 
+ use failure_m, only: fail_input, fail_internal
+
 !Output variables
  integer, intent(out) :: ifail
 
@@ -256,7 +260,8 @@
 &           /=srcpw(1)%bound(0:srcpw(1)%nseg))) then
        write(error_unit,'(/a)') &
 &           'outwf_setup: ERROR the sources'' segments differ'
-       error stop 1
+       ifail=fail_internal
+       return
      end if
    end do
    do kk=1,srcpw(1)%nseg
@@ -275,7 +280,7 @@
  end do
  if(nbrk>og_maxseg-1) then
    write(iout,'(/a,i0)') 'outwf_setup: ERROR too many breakpoints ',nbrk
-   ifail=1
+   ifail=fail_input
    return
  end if
  nseg=nbrk+1
@@ -293,6 +298,8 @@
 !! the first segment's grid: the nodes up to the first bound and og_ext
 !! beyond (all of them for one segment)
 
+ use failure_m, only: fail_input
+
 !Output variables
  integer, intent(out) :: ifail
 
@@ -308,7 +315,7 @@
      write(iout,'(/a,es12.4)') &
 &              'outwf_setup: ERROR breakpoint below the 4th node, r=', &
 &              ow%bound(1)
-     ifail=1
+     ifail=fail_input
      return
    end if
    npt=min(mmax,ceiling(sg%tend)+og_ext+1)
@@ -316,7 +323,7 @@
      write(iout,'(/a,es12.4)') &
 &              'outwf_setup: ERROR breakpoint too close to the mesh end, r=', &
 &              ow%bound(1)
-     ifail=1
+     ifail=fail_input
      return
    end if
  else
@@ -345,6 +352,8 @@
 !! the grid of segment kk>1: from the bound, the mesh step, to og_ext past
 !! the next bound or to the mesh end
 
+ use failure_m, only: fail_input
+
 !Input variables
  integer, intent(in) :: kk
 
@@ -368,14 +377,14 @@
    write(iout,'(/a,es12.4)') &
 &            'outwf_setup: ERROR breakpoint too close to the mesh end, r=', &
 &            ow%bound(kk)
-   ifail=1
+   ifail=fail_input
    return
  end if
  if(sg%t0+nprime>plast) then
    write(iout,'(/a,es12.4)') &
 &            'outwf_setup: ERROR breakpoint too close to the mesh end, r=', &
 &            ow%bound(kk-1)
-   ifail=1
+   ifail=fail_input
    return
  end if
  sg%npt=npt
@@ -475,7 +484,7 @@
  return
  end subroutine outwf_free
 
- subroutine outwf_integrate(ow,ee,mlast)
+ subroutine outwf_integrate(ow,ee,mlast,ifail)
 
 !! the homogeneous solution (1) and the inhomogeneous one of each source
 !! (1+j) at the energy ee, to the mesh point mlast (and og_ext points past it
@@ -484,6 +493,8 @@
 !! @param ow  the setup
 !! @param ee  energy (Ha)
 !! @param mlast  index of the radius to which the solutions are wanted
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use logmesh_m, only: lm_integral_weights
  use ugrid_m, only: ug_interp
@@ -495,11 +506,15 @@
 !Input/output variables
  type(outwf_t), intent(inout), target :: ow
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
  real(dp) :: al,als,pm,rb
  integer :: kk,nsol,jmax,ll,nprime
  type(og_seg_t), pointer :: sg
 
+ ifail=0
  al=ow%al
  als=al**2
  ll=ow%ll
@@ -541,7 +556,8 @@
    if(kk==1) then
      call series_start()
    else
-     call restart(kk)
+     call restart(kk,ifail)
+     if(ifail/=0) return
    end if
 
 ! prime the first steps by classical Runge-Kutta in sub-steps
@@ -574,12 +590,15 @@
  return
  end subroutine series_start
 
- subroutine restart(kk)
+ subroutine restart(kk,ifail)
 
 !! segment kk>1 restarts from the grid before, at its lower bound
 
 !Input variables
  integer, intent(in) :: kk
+
+!Output variables
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp) :: y1,y2
@@ -588,8 +607,10 @@
 
  prev=>ow%seg(kk-1)
  do isol=1,nsol
-   call ug_interp(prev%uu(0:prev%jmax,isol),prev%jmax+1,prev%tend,y1)
-   call ug_interp(prev%up(0:prev%jmax,isol),prev%jmax+1,prev%tend,y2)
+   call ug_interp(prev%uu(0:prev%jmax,isol),prev%jmax+1,prev%tend,y1,ifail)
+   if(ifail/=0) return
+   call ug_interp(prev%up(0:prev%jmax,isol),prev%jmax+1,prev%tend,y2,ifail)
+   if(ifail/=0) return
    sg%uu(0,isol)=y1
    sg%up(0,isol)=y2
  end do
@@ -673,7 +694,7 @@
 
  end subroutine outwf_integrate
 
- subroutine outwf_overlap(ow,isol,jsrc,ss,skip1)
+ subroutine outwf_overlap(ow,isol,jsrc,ss,ifail,skip1)
 
 !! int_0^rsrc phi_isol beta_jsrc dr, per segment on its grid, cut at the
 !! integration limit if that is inside the sources' support
@@ -682,6 +703,8 @@
 !! @param isol  the solution, 1 the homogeneous one, 1+j that of source j
 !! @param jsrc  the source
 !! @param ss  the integral
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 !! @param skip1  if present and true, the first segment's part is left out
 !!               (outwf_overlaps with BLAS)
 
@@ -694,6 +717,7 @@
 
 !Output variables
  real(dp), intent(out) :: ss
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp), allocatable :: ff(:),cum(:)
@@ -701,6 +725,7 @@
  integer :: kk,nn,jj
  type(og_seg_t), pointer :: sg
 
+ ifail=0
  ss=0.0d0
  do kk=1,ow%nseg
    sg=>ow%seg(kk)
@@ -736,9 +761,11 @@
      do jj=0,sg%jmax
        ff(jj+1)=ow%al*sg%rg(jj)*sg%uu(jj,isol)*sg%beta(jj,jsrc)
      end do
-     call ug_cumint_down(ff,nn,1.0d0,cum)
+     call ug_cumint_down(ff,nn,1.0d0,cum,ifail)
+     if(ifail/=0) return
      tq=min(sg%tend,ow%plim-sg%t0)
-     call ug_interp(cum,nn,tq,cq)
+     call ug_interp(cum,nn,tq,cq,ifail)
+     if(ifail/=0) return
      sk=cum(1)-cq
      deallocate(ff,cum)
    end if
@@ -747,7 +774,7 @@
  return
  end subroutine outwf_overlap
 
- subroutine outwf_overlaps(ow,ovl)
+ subroutine outwf_overlaps(ow,ovl,ifail)
 
 !! every overlap of outwf_overlap at once. Built with WITH_BLAS_DOT (the
 !! CMake option ONCVPSP_BLAS_DOT), the first segment's, most of the work, by
@@ -756,6 +783,8 @@
 !!
 !! @param ow  the setup, integrated
 !! @param ovl  ovl(isol,jsrc), int phi_isol beta_jsrc dr
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use lapack_m, only: dgemm
 
@@ -764,6 +793,7 @@
 
 !Output variables
  real(dp), intent(out) :: ovl(ow%nsrc+1,ow%nsrc)
+ integer, intent(out) :: ifail
 
 !Local variables
  integer :: isol,jsrc
@@ -771,7 +801,10 @@
  real(dp) :: ss
  integer :: nn
  type(og_seg_t), pointer :: sg
+#endif
 
+ ifail=0
+#if defined WITH_BLAS_DOT
  ovl(:,:)=0.0d0
  sg=>ow%seg(1)
  if(ow%nsrc>0 .and. sg%ipb/=0 .and. sg%jmax>=0) then
@@ -781,14 +814,16 @@
  end if
  do jsrc=1,ow%nsrc
    do isol=1,ow%nsrc+1
-     call outwf_overlap(ow,isol,jsrc,ss,.true.)
+     call outwf_overlap(ow,isol,jsrc,ss,ifail,.true.)
+     if(ifail/=0) return
      ovl(isol,jsrc)=ovl(isol,jsrc)+ss
    end do
  end do
 #else
  do jsrc=1,ow%nsrc
    do isol=1,ow%nsrc+1
-     call outwf_overlap(ow,isol,jsrc,ovl(isol,jsrc))
+     call outwf_overlap(ow,isol,jsrc,ovl(isol,jsrc),ifail)
+     if(ifail/=0) return
    end do
  end do
 #endif
@@ -955,8 +990,10 @@
 !! @param mnode  the last mesh point counted
 !! @param neig  the number of eigenvalues below the energy
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_internal, fail_numerical
  use lapack_m, only: dsyev
 
 !Input variables
@@ -1009,7 +1046,7 @@
  if(rlast<ow%rsrc) then
    write(iout,'(/a,2es12.4)') 'outwf_index: ERROR R inside the sources,'// &
 &       ' R, rsrc=',rlast,ow%rsrc
-   ifail=1
+   ifail=fail_internal
    return
  end if
 
@@ -1032,7 +1069,7 @@
  call dsyev('N','U',nact,mm,nact,ev,work,size(work),info)
  if(info/=0) then
    write(iout,'(/a,i4)') 'outwf_index: dsyev ERROR, stopping info =',info
-   ifail=1
+   ifail=fail_numerical
    return
  end if
  neig=nloc+count(ev<0.0d0)-count(evkb(isrc)>0.0d0)
@@ -1058,7 +1095,8 @@
 !! @param mnode  the last mesh point counted
 !! @param neig  the number of eigenvalues below ee
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
 !Input variables
  integer, intent(in) :: ll,mmax,nsrc,mnode
@@ -1107,8 +1145,10 @@
 !! @param neig  optional, the number of eigenvalues below ep on
 !!              (0, r(mnode)] (outwf_index)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_numerical
  use lapack_m, only: dgesv
 
 !Input/output variables
@@ -1131,10 +1171,12 @@
 
  ifail=0
  nsrc=ow%nsrc
- call outwf_integrate(ow,ep,mlast)
+ call outwf_integrate(ow,ep,mlast,ifail)
+ if(ifail/=0) return
  if(nsrc>0) then
    allocate(gg(nsrc,nsrc),gg0(nsrc),ipiv(nsrc),ovl(nsrc+1,nsrc))
-   call outwf_overlaps(ow,ovl)
+   call outwf_overlaps(ow,ovl,ifail)
+   if(ifail/=0) return
    if(present(neig)) then
      call outwf_index(ow,evkb,ovl,mnode,neig,iout,ifail)
      if(ifail/=0) return
@@ -1149,7 +1191,7 @@
    call dgesv(nsrc,1,gg,nsrc,ipiv,gg0,nsrc,info)
    if(info/=0) then
      write(iout,'(/a,i4)') 'outwf_solve: dgesv ERROR, stopping info =',info
-     ifail=1
+     ifail=fail_numerical
      return
    end if
    call outwf_combine(ow,gg0)

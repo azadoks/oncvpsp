@@ -73,8 +73,10 @@
 !! @param iexc  exchange-correlation functional
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_convergence, fail_not_found
  use constants_m, only: dp, mxstate, nrhomod
  use logmesh_m, only: lm_derivs
  use modcore_m, only: core_crossover, teter_core_derivs, d2exc_baseline, &
@@ -133,11 +135,12 @@
  d2ref=d2mdiff
 
 ! find valence pseudocharge - core charge crossover
- call core_crossover(rr,rhoc,rhotps,mmax,1.0d0,rmatch,ierr)
+ call core_crossover(rr,rhoc,rhotps,mmax,1.0d0,rmatch,ierr,ifail)
+ if(ifail/=0) return
  if(ierr/=0) then
    write(iout,'(/a)') 'modcore3: ERROR ircc (core-valence charge crossover) &
 &        not found'
-   ifail=1
+   ifail=fail_not_found
    return
  end if
  call lm_derivs(rr,rhoc,mmax,rmatch,0,dd)
@@ -231,7 +234,7 @@
      else if(kk==101) then
        write(iout,'(/a)') &
 &           'modcore3: ERROR Nelder-Mead not converged in 100 steps'
-       ifail=1
+       ifail=fail_convergence
        return
      end if
 
@@ -364,7 +367,10 @@
 !! smooth function of the inputs.
 !!
 !! @param xm  amplitude and scale (bohr), in: start, out: stationary point
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use failure_m, only: fail_convergence
 
 !Input/output variables
  real(dp), intent(inout) :: xm(2)
@@ -444,7 +450,7 @@
  end do
  write(iout,'(/a,es12.4)') &
 &      'newton_refine: ERROR not converged in 30 steps, last step=',dnrm
- ifail=1
+ ifail=fail_convergence
  return
  end subroutine newton_refine
 

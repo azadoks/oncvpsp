@@ -37,7 +37,8 @@
 !! @param unit  the unit of the open TOML file
 !! @param inp  the input values (input_m)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use constants_m, only: mxstate, mxcnf, mxlin, well_onset_default
  use input_m, only: input_t
@@ -515,8 +516,10 @@
 !!
 !! @param message  description of the error
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_input
  use tomlf, only: len
 
 !Input variables
@@ -529,7 +532,7 @@
  write(iout,'(a)') 'TOML input ERROR: '//message
  write(iout,'(a)') 'Program will stop'
  write(stderr,'(a)') 'Error: '//message
- ifail = 1
+ ifail=fail_input
  return
  end subroutine input_error
 
@@ -541,7 +544,8 @@
 !! @param name  name of the table
 !! @param child  the table [name]; a failure if it is missing or not a table
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use tomlf, only: toml_table, toml_stat, get_value, len
 
@@ -583,7 +587,8 @@
 !! @param stat  status of the lookup
 !! @param what  the expected type, for the message (e.g. 'an integer')
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use tomlf, only: toml_stat, len
 
@@ -617,7 +622,8 @@
 !! @param default  optional, the value for a missing key, which is then not
 !!                 required
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use tomlf, only: toml_table, toml_keyval, toml_stat, get_value, len
 
@@ -664,7 +670,8 @@
 !! @param default  optional, the value for a missing key, which is then not
 !!                 required
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use tomlf, only: toml_table, toml_keyval, toml_stat, get_value, len
 
@@ -712,7 +719,8 @@
 !! @param default  optional, the value for a missing key, which is then not
 !!                 required
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use input_text_m, only: finite
  use tomlf, only: toml_table, toml_keyval, toml_stat, get_value, len
@@ -767,7 +775,8 @@
 !! @param default  optional, the value for a missing key, which is then not
 !!                 required
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use tomlf, only: toml_table, toml_keyval, toml_stat, get_value, len
 
@@ -813,7 +822,8 @@
 !! @param nn  required number of elements
 !! @param arr  the array of the key
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use tomlf, only: toml_table, toml_array, get_value, len
 
@@ -858,7 +868,8 @@
 !! @param nn  required number of elements
 !! @param vals  the values, in vals(1:nn); the rest is unchanged
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use tomlf, only: toml_table, toml_array, toml_stat, get_value, len
 
@@ -903,7 +914,8 @@
 !! @param nn  required number of elements
 !! @param vals  the values, in vals(1:nn); the rest is unchanged
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use input_text_m, only: finite
  use tomlf, only: toml_table, toml_array, toml_stat, get_value, len
@@ -951,7 +963,8 @@
 !! @param lmax  maximum angular momentum
 !! @param section  name of the table, for messages
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use tomlf, only: len
 

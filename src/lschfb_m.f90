@@ -52,7 +52,8 @@
 !!             the inward and outward integrations are matched (at the
 !!             continuous turning point, match_m)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use constants_m, only: dp, eig_tol
  use boundsolve_m, only: bs_box_energy, bs_solve, bs_turning_point

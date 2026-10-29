@@ -42,8 +42,10 @@
 !! @param qmax  maximum q for search
 !! @param qroot  set of q's satisfying dj_l(q*r)/dr / jl(q*r) = ulgd
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_not_found
  use constants_m, only: dp
  use sbf_m, only: sbf_rc_der
  use root_m, only: root_tol
@@ -111,7 +113,7 @@
  end do
  if(iroot<nroot) then
    write(iout,'(a)') 'qroots: ERROR - failed to find nroot roots'
-   ifail=1
+   ifail=fail_not_found
    return
  end if
 
@@ -142,8 +144,10 @@
 !! g then at the moved q
 !!
 !! @param qp  the root (in/out)
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_convergence
  real(dp), intent(inout) :: qp
  real(dp) :: gg,dg,dq,dgold,gscale
  integer :: kk
@@ -168,7 +172,7 @@
  write(iout,'(/a,i0,a,es12.4,a,es12.4)') &
 &     'qroots: ERROR Newton polish not converged, ll=',ll,', q=',qp, &
 &     ', last step',dq
- ifail=1
+ ifail=fail_convergence
  return
  end subroutine polish
 

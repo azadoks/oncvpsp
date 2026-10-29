@@ -57,7 +57,9 @@
 !! @param ea  the all-electron eigenvalues (Ha) of each state and kappa
 !!            (optional)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+ use failure_m, only: fail_io
  use ae_file_m, only: read_ae_potential, differ
  use build_info_m, only: write_build_info
  use ps_file_m, only: ps_file_t, read_ps_file
@@ -97,18 +99,18 @@
    if(bad .or. pf%pot%iexc/=iexc) then
      write(iout,'(3a)') prog,': ERROR the files differ in ', &
 &         'relativistic treatment, atom, mesh size, c_light or functional'
-     ifail=1
+     ifail=fail_io
      return
    end if
  else if(bad) then
    write(iout,'(3a)') prog,': ERROR the files differ in relativistic ', &
 &       'treatment, atom, mesh size or c_light'
-   ifail=1
+   ifail=fail_io
    return
  end if
  if(any(abs(pf%pot%rr(:)-rr(:))>rtol*rr(:))) then
    write(iout,'(2a)') prog,': ERROR the files'' radial meshes differ'
-   ifail=1
+   ifail=fail_io
    return
  end if
  c_light=c_light_f

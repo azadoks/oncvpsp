@@ -54,22 +54,27 @@
  return
  end function root_tol
 
- subroutine root_brent(fun,ta,tb,tq,ierr,fq,fo,fends,converged)
+ subroutine root_brent(fun,ta,tb,tq,ierr,ifail,fq,fo,fends,converged)
 
 !! root of fun between ta and tb by Brent's method with no tolerance of
 !! its own: it stops when the bracket is a few rounding units wide
 !! (root_tol, with an absolute part of 5e-4 for a root near 0); after
-!! 200 steps it reports through converged, or without it stops in error
+!! 200 steps it reports through converged, or without it fails
 !!
 !! @param fun  the function
 !! @param ta,tb  bracket; fun must change sign between them
 !! @param tq  the root
 !! @param ierr  0, or 1 if fun has the same sign at ta and tb
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+!!               (fail_convergence after 200 steps without converged)
 !! @param fq  fun at tq (optional output)
 !! @param fo  fun at the other end of the last bracket (optional output)
 !! @param fends  fun at ta and tb (optional output)
 !! @param converged  whether the bracket closed before the step limit
 !!                   (optional output)
+
+ use failure_m, only: fail_convergence
 
 !Input variables
  procedure(root_fn) :: fun
@@ -77,7 +82,7 @@
 
 !Output variables
  real(dp), intent(out) :: tq
- integer, intent(out) :: ierr
+ integer, intent(out) :: ierr,ifail
  real(dp), intent(out), optional :: fq,fo,fends(2)
  logical, intent(out), optional :: converged
 
@@ -92,6 +97,7 @@
  if(present(fends)) fends(:)=[fa,fb]
  if(present(converged)) converged=.true.
  ierr=0
+ ifail=0
  tq=ta
  if(present(fq)) fq=fa
  if(present(fo)) fo=fa
@@ -169,7 +175,8 @@
  if(iter>200 .and. .not. present(converged)) then
    write(error_unit,'(/a,es12.4,a,es12.4)') &
 &       'root_brent: ERROR not converged in 200 steps, x=',xb,', f=',fb
-   error stop 1
+   ifail=fail_convergence
+   return
  end if
  tq=xb
  if(present(fq)) fq=fb
@@ -177,23 +184,34 @@
  return
  end subroutine root_brent
 
- real(dp) function root_fmin(fun,ax,bx)
+ subroutine root_fmin(fun,ax,bx,fmin,ifail)
 
 !! the least value of fun on [ax, bx], by Brent's method (golden section
 !! and parabolic steps) to a relative step of 1e-8, and at the ends; the
-!! iteration limit is an error
+!! iteration limit is a failure
 !!
 !! @param fun  the function
 !! @param ax,bx  the interval
+!! @param fmin  the least value
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+!!               (fail_convergence after 100 steps)
+
+ use failure_m, only: fail_convergence
 
 !Input variables
  procedure(root_fn) :: fun
  real(dp), intent(in) :: ax,bx
 
+!Output variables
+ real(dp), intent(out) :: fmin
+ integer, intent(out) :: ifail
+
 !Local variables
  real(dp), parameter :: cgold=0.3819660112501051d0, rtol=1.0d-8
  real(dp) :: aa,bb,vv,ww,xx,ee,dd,fvv,fww,fxx,xm,tol1,tol2,rr1,qq,pp,uu,fu
  integer :: iter
+ ifail=0
  aa=min(ax,bx)
  bb=max(ax,bx)
  xx=aa + cgold*(bb-aa)
@@ -213,7 +231,8 @@
      write(error_unit,'(/a,es12.4,a,es12.4)') &
 &          'root_fmin: ERROR not converged in 100 steps, x=',xx, &
 &          ', bracket width=',bb-aa
-     error stop 1
+     ifail=fail_convergence
+     return
    end if
    if(abs(ee)>tol1) then
      rr1=(xx-ww)*(fxx-fvv)
@@ -279,8 +298,8 @@
      end if
    end if
  end do
- root_fmin=min(fxx,fun(ax),fun(bx))
+ fmin=min(fxx,fun(ax),fun(bx))
  return
- end function root_fmin
+ end subroutine root_fmin
 
  end module root_m

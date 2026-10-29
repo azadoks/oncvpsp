@@ -34,7 +34,8 @@
 !! @param inp  the input values (input_m), as oncvpsp_run completed them
 !! @param psp  the results of oncvpsp_run
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
  use constants_m, only: dp
  use input_m, only: input_t
  use results_m, only: results_t

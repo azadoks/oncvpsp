@@ -200,13 +200,13 @@
 ! crossover: rhoc = 40 exp(-4r), rhotps = 2 r**2 exp(-r), one crossing
  rhoc(:) = 40.0_dp*exp(-4.0_dp*rr)
  rhotps(:) = 2.0_dp*rr**2*exp(-rr)
- call core_crossover(rr, rhoc, rhotps, mmax, 0.25_dp, rstar, ierr)
+ call core_crossover(rr, rhoc, rhotps, mmax, 0.25_dp, rstar, ierr, ifail)
  ref = outer_root(0.25_dp, 0.0_dp)
  call check('crossover one', abs(rstar - ref) + ierr, 1.0e-12_dp)
  do ii = 1, 41
    ts(ii) = 2.0_dp*(ii - 1)/40.0_dp - 1.0_dp
    call core_crossover(rr, rhoc, rhotps, mmax, 0.25_dp + 0.01_dp*ts(ii), &
-&                      ys(ii), ierr)
+&                      ys(ii), ierr, ifail)
  end do
  call fit_residual(ts, ys, 6, resid)
  call check('crossover smooth', maxval(abs(resid))/maxval(abs(ys)), &
@@ -214,13 +214,13 @@
 
 ! crossover: a shell of core charge at 2 bohr, three crossings
  rhoc(:) = rhoc(:) + exp(-(rr - 2.0_dp)**2/0.08_dp)
- call core_crossover(rr, rhoc, rhotps, mmax, 0.25_dp, rstar, ierr)
+ call core_crossover(rr, rhoc, rhotps, mmax, 0.25_dp, rstar, ierr, ifail)
  ref = outer_root(0.25_dp, 1.0_dp)
  call check('crossover outermost', abs(rstar - ref) + ierr, 1.0e-12_dp)
  if(ref < 1.9_dp) call check('crossover reference', 1.0_dp, 0.0_dp)
 
 ! crossover: none
- call core_crossover(rr, 0.0_dp*rhoc, rhotps, mmax, 0.25_dp, rstar, ierr)
+ call core_crossover(rr, 0.0_dp*rhoc, rhotps, mmax, 0.25_dp, rstar, ierr, ifail)
  call check('crossover none', real(abs(ierr - 1), dp), 0.0_dp)
 
 ! poly: the core 40 exp(-4r) matched at 1.1 bohr, and 3/(1+r**4) at 0.8

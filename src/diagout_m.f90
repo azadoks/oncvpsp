@@ -30,7 +30,7 @@
 ! the tables above print to 6 or 2 decimals, to 17 significant digits.
 
  subroutine diagout(lmax,nproj,nkap,tests,icmod,rr,mmax,rcmax,rhoc, &
-&                   corepw,lloc,evkb,iout)
+&                   corepw,lloc,evkb,iout,ifail)
 
 !! writes the block "Begin DIAGNOSTICS" ... "End DIAGNOSTICS", one value
 !! per line, each line tagged with its quantity:
@@ -140,6 +140,8 @@
 !! @param lloc  l of the local potential, 4 for the polynomial
 !! @param evkb  coefficients of the projectors
 !! @param iout  unit of the text output
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use constants_m, only: dp, mxl, mxlin, nerrdg, nerrlv, nrhomod, mxprj
  use kappa_m, only: kap_count
@@ -161,12 +163,16 @@
  real(dp), intent(in) :: evkb(mxprj,mxl+1,nkap)
  integer, intent(in) :: iout
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
 !the model core on the mesh, its value at rcmax and the piece of slope
  integer :: kseg
  real(dp) :: mdrc
  real(dp), allocatable :: fmd(:)
 
+ ifail=0
  write(iout,'(/a)') 'Begin DIAGNOSTICS'
  call write_cutoffs(tests%convergence)
 
@@ -186,7 +192,10 @@
 
  call write_tests(tests%configs)
 
- if(icmod>0) call write_core()
+ if(icmod>0) then
+   call write_core()
+   if(ifail/=0) return
+ end if
  write(iout,'(a)') 'End DIAGNOSTICS'
 
  return
@@ -396,7 +405,7 @@
 
  subroutine write_core()
 !! the core_rc, core_extent, core_model_max and core_model_min lines of
-!! the model core
+!! the model core; ifail of the host after a failure
  integer :: jj
  real(dp) :: aerc,frac,rae,rmd,rext(2),fext(2)
  allocate(fmd(mmax))
@@ -409,11 +418,14 @@
  frac=1.0d-2
  do jj=1,2
    rae=fall_to(rhoc,frac*aerc,0)
+   if(ifail/=0) return
    rmd=fall_to(fmd,frac*mdrc,1)
+   if(ifail/=0) return
    write(iout,'(a,1p,3e24.16)') 'core_extent',frac,rae,rmd
    frac=1.0d-2*frac
  end do
  call model_extrema(rext,fext)
+ if(ifail/=0) return
  write(iout,'(a)') '# core_model_max r(bohr) rho'
  write(iout,'(a,1p,2e24.16)') 'core_model_max',rext(1),fe(fext(1))
  write(iout,'(a)') '# core_model_min r(bohr) rho'
@@ -426,7 +438,8 @@
 !! the radius beyond rcmax at which the core charge ff on the mesh first
 !! falls to level: the root of its interpolant in the cell of the first
 !! node below it (of the model core's piece of that node, model=1); 0 if
-!! it never does
+!! it never does, and after a failure, which sets ifail of the host
+ use failure_m, only: fail_internal
  real(dp), intent(in) :: ff(mmax),level
  integer, intent(in) :: model
  real(dp), allocatable :: gg(:)
@@ -445,11 +458,17 @@
    gg(:)=ff(:)-level
  end if
  ra=max(rcmax,rr(kk-1))
- call lm_root(rr,gg,mmax,ra,rr(kk),fall_to,ierr)
+ call lm_root(rr,gg,mmax,ra,rr(kk),fall_to,ierr,ifail)
+ if(ifail/=0) then
+   fall_to=0.0d0
+   return
+ end if
  if(ierr/=0) then
    write(error_unit,'(/a)') &
 &       'diagout: ERROR the core charge''s bracket lost its sign'
-   error stop 1
+   fall_to=0.0d0
+   ifail=fail_internal
+   return
  end if
  deallocate(gg)
  end function fall_to
@@ -459,7 +478,7 @@
 !! the largest (rq(1), fq(1)) and smallest (rq(2), fq(2)) value of the
 !! model core on (0, rcmax]: from its nodes, at an end of the interval
 !! (rr(1) for the origin) or at the root of its derivative between the
-!! neighbours of the extreme node
+!! neighbours of the extreme node; ifail of the host after a failure
  real(dp), intent(out) :: rq(2),fq(2)
  integer :: kk,nrc,iext,ierr
  real(dp) :: sg
@@ -481,7 +500,9 @@
      fq(kk)=mdrc
    else
      kseg=pw_segment(corepw(1),rr(iext))
-     call root_brent(slope,rr(iext-1),min(rr(iext+1),rcmax),rq(kk),ierr)
+     call root_brent(slope,rr(iext-1),min(rr(iext+1),rcmax),rq(kk),ierr, &
+&                    ifail)
+     if(ifail/=0) return
      if(ierr/=0) then
        rq(kk)=rr(iext)
        fq(kk)=fmd(iext)

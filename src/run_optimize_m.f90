@@ -91,8 +91,10 @@
 !!                these, -1 where the free tail is undefined (qcut not
 !!                above the state's wave vector), 0 for the other waves
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_input
  use constants_m, only: dp, qp, nerrlv, nerrdg, pi, ha_ev, mxprj
  use logmesh_m, only: lm_ncell, lm_step
  use ugrid_m, only: ug_cross_down
@@ -290,7 +292,8 @@
 &                   upa(1,iprj),mmax,rc,qcut,hh,nr,ulin,dlin,iout=iout, &
 &                   ifail=ifail)
      if(ifail/=0) return
-     ekin_tail=free_tail_kinetic(ll,rc,hh,nr,ulin,dlin)
+     call free_tail_kinetic(ll,rc,hh,nr,ulin,dlin,ekin_tail,ifail)
+     if(ifail/=0) return
      deallocate(dlin)
    else if(wmesh(iprj)%mx>0) then
      call free_tail_mesh(wmesh(iprj)%rr,wmesh(iprj)%uu(:,1),wmesh(iprj)%mx, &
@@ -355,7 +358,7 @@
      write(iout,'(/2a,i0,a,i0/a)') 'run_optimize: ERROR q grid longer than', &
 &          ' the buffer of the convergence curve, nq=',nq,', ncurve=',ncurve, &
 &          '  (ncurve in oncvpsp_main; the grid grows with qcut*rc)'
-     ifail=1
+     ifail=fail_input
      return
    end if
 
@@ -412,6 +415,7 @@
    write(iout,'(/a)') '    Energy error per electron        Cutoff'
    write(iout,'(a)') '         Ha          eV             Ha'
    call curve_cutoffs(iprj)
+   if(ifail/=0) return
 
    deallocate(sbasis)
    deallocate(orbasis)
@@ -445,7 +449,8 @@
 !! makes them meaningful
 !!
 !! @param iprj  the projector
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
  integer, intent(in) :: iprj
  integer, intent(out) :: ifail
  real(dp) :: ewell(1),efree(1),share
@@ -510,7 +515,8 @@
 !! it
 !!
 !! @param iprj  the projector
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
  integer, intent(in) :: iprj
  real(dp) :: qmax2,dq2,qout2(1),etail(1)
  real(dp), allocatable :: e0t(:),edt(:,:),emt(:,:,:)
@@ -548,7 +554,8 @@
 !! the cutoffs of projector iprj at which the curve falls to each error
 !! level (cvgplt), by root-finding on it; the table shows the first
 !! nerrlv, the DIAGNOSTICS block all of them; a level that the curve,
-!! with its tail, does not reach on the grid has no cutoff
+!! with its tail, does not reach on the grid has no cutoff; ifail of the
+!! host after a failure
 !!
 !! @param iprj  the projector
  integer, intent(in) :: iprj
@@ -557,7 +564,8 @@
  logical :: found_root
  err=0.01d0
  do jj=1,nerrdg
-   call ug_cross_down(eresg,nq,dq,q0,err,qerr,found_root)
+   call ug_cross_down(eresg,nq,dq,q0,err,qerr,found_root,ifail)
+   if(ifail/=0) return
    if(found_root) then
      cvgplt(1,jj,iprj)= 0.5d0*qerr**2
      cvgplt(2,jj,iprj)= err

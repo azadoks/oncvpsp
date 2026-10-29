@@ -297,7 +297,8 @@
 !! @param emin,emax  the bracket
 !! @param mch  the matching point, mmax for the box state
 !! @param ierr  0 converged, 10 box state, 60 not converged in 60 passes
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use match_m, only: match_k
  use inward_start_m, only: inward_start

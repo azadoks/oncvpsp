@@ -11,6 +11,7 @@ set(src_oncvpsp
     config_ae_m.f90
     const_basis_m.f90
     constants_m.f90
+    failure_m.f90
     lapack_m.f90
     input_m.f90
     der2exc_m.f90

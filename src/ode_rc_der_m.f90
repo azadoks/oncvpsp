@@ -59,8 +59,10 @@
 !! @param rc  core radius (bohr)
 !! @param uorder  d^k(uu/r)/dr^k at rc in uorder(k+1), k=0..4
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_numerical
  use constants_m, only: dp
  use logmesh_m, only: lm_interp, lm_derivs, lm_step
 
@@ -113,7 +115,7 @@
    write(iout,'(/a,i0,a,f12.6/a,2es12.4)') &
 &        'ode_rc_der: ERROR uu and up disagree for l=',ll,' at rc=',rc, &
 &        'uu'' from up and from stencils on uu:',ud(2),udst(2)
-   ifail=1
+   ifail=fail_numerical
    return
  end if
 

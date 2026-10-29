@@ -72,8 +72,10 @@
 !!               (output; zero for l=0, ikap=2)
 !! @param pshps  the pseudopotential log derivatives, likewise (output)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_input
  use constants_m, only: dp, mxl, mxlin, mxprj
  use kappa_m, only: kap_count, kap_of
  use pieces_m, only: piecewise_t
@@ -139,7 +141,7 @@
      write(iout, '(/2a,f12.6,a,f12.6)') &
 &       trim(rname)//': ERROR rxpsh beyond radial mesh', &
 &       ', rxpsh=', rq, ', rr(mmax)=', rr(mmax)
-     ifail = 1
+     ifail=fail_input
      return
    end if
 ! check_data keeps rxpsh beyond every rc, so only a direct call gets here

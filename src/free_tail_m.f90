@@ -76,8 +76,10 @@
 !! @param nr  number of its nodes
 !! @param ulin  uu on them
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_construction
  use logmesh_m, only: lm_interp, lm_ncell
 
 !Input variables
@@ -110,7 +112,7 @@
    write(iout,'(/2a,f12.6,a,f12.6)') &
 &        'free_tail_mesh: ERROR wave function vanishes', &
 &       ' too close to rc: rc=',rc,', last nonzero point',rend
-   ifail=1
+   ifail=fail_construction
    return
  end if
  allocate(ulin(nr))
@@ -139,7 +141,10 @@
 !! @param ee  the state's energy ep (Ha)
 !! @param wl  the width L (bohr)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use failure_m, only: fail_construction
 
 !Input variables
  real(dp), intent(in) :: qcut,ee
@@ -161,7 +166,7 @@
    write(iout,'(/a,f12.6,a,f12.6/a)') &
 &       'free_tail_width: ERROR qcut=',qcut,' is not above the wave vector', &
 &       kk,'of the well state: raise qcut or lower its energy'
-   ifail=1
+   ifail=fail_construction
    return
  end if
  wl=(9.0d0*kp+sqrt(81.0d0*kp**2+wbound*dq**2))/(0.5d0*dq**2)
@@ -170,7 +175,7 @@
 &       'free_tail_width: ERROR the free tail of the well state at',ee, &
 &       ' Ha with qcut=',qcut,'grows too fast for its window (kappa L =', &
 &       kp*wl,' > 12): raise qcut or the state''s energy'
-   ifail=1
+   ifail=fail_construction
    return
  end if
  return
@@ -234,7 +239,8 @@
 !! @param dlin  its derivative
 !! @param wscale  optional, a factor on L, for the tests (default 1)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
 !Input variables
  integer, intent(in) :: irel,ll,kap,mmax
@@ -292,7 +298,8 @@
 !! @param qcut  the cutoff wave vector (bohr^-1)
 !! @param istart  the last node of the solver's values, beyond rc
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use logmesh_m, only: lm_step
 
@@ -483,7 +490,7 @@
 
  end subroutine free_solve
 
- real(dp) function free_tail_kinetic(ll,rc,hh,nr,ulin,dlin)
+ subroutine free_tail_kinetic(ll,rc,hh,nr,ulin,dlin,ekin,ifail)
 
 !! the kinetic energy of the tail, int_rc^inf t (-t''/2 + l(l+1) t/(2 r**2))
 !! dr = t(rc) t'(rc)/2 + int_rc^inf (t'**2 + l(l+1) t**2/r**2)/2 dr (t
@@ -495,6 +502,9 @@
 !! @param nr  number of its nodes
 !! @param ulin  the tail on them
 !! @param dlin  its derivative
+!! @param ekin  the kinetic energy (Ha)
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use ugrid_m, only: ug_weights
 
@@ -502,21 +512,27 @@
  integer, intent(in) :: ll,nr
  real(dp), intent(in) :: rc,hh,ulin(nr),dlin(nr)
 
+!Output variables
+ real(dp), intent(out) :: ekin
+ integer, intent(out) :: ifail
+
 !Local variables
  real(dp), allocatable :: wr(:)
  real(dp) :: rad
  integer :: ii
 
+ ekin=0.0d0
  allocate(wr(nr))
- call ug_weights(nr,hh,wr)
- free_tail_kinetic=0.5d0*ulin(1)*dlin(1)
+ call ug_weights(nr,hh,wr,ifail)
+ if(ifail/=0) return
+ ekin=0.5d0*ulin(1)*dlin(1)
  do ii=1,nr
    rad=rc+dble(ii-1)*hh
-   free_tail_kinetic=free_tail_kinetic+0.5d0*wr(ii) &
+   ekin=ekin+0.5d0*wr(ii) &
 &              *(dlin(ii)**2+dble(ll*(ll+1))*(ulin(ii)/rad)**2)
  end do
  deallocate(wr)
  return
- end function free_tail_kinetic
+ end subroutine free_tail_kinetic
 
  end module free_tail_m

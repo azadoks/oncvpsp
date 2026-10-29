@@ -30,22 +30,22 @@
 !Local variables
  real(dp), allocatable :: xx(:), ff(:), ww(:), cum(:)
  real(dp) :: hh, ss, err1, err2, fq, tq, xq
- integer :: nn, ii, ierr
+ integer :: nn, ii, ierr, ifail
  logical :: found
 
 ! weights
  call grid(20, 0.0_dp, 1.0_dp)
  ff(:) = xx**7
- call ug_weights(nn, hh, ww)
+ call ug_weights(nn, hh, ww, ifail)
  ss = sum(ww*ff)
  call check('weights x**7', abs(ss - 0.125_dp), 1.0e-15_dp)
  call grid(33, 0.0_dp, 4.0_dp)
  ff(:) = exp(-xx)
- call ug_weights(nn, hh, ww)
+ call ug_weights(nn, hh, ww, ifail)
  err1 = abs(sum(ww*ff) - (1.0_dp - exp(-4.0_dp)))
  call grid(65, 0.0_dp, 4.0_dp)
  ff(:) = exp(-xx)
- call ug_weights(nn, hh, ww)
+ call ug_weights(nn, hh, ww, ifail)
  err2 = abs(sum(ww*ff) - (1.0_dp - exp(-4.0_dp)))
  write(stderr, '(a,2es10.2,a,f6.1)') 'weights exp(-x): errors', err1, err2, &
 &  ' ratio', err1/max(err2, tiny(1.0_dp))
@@ -56,7 +56,7 @@
  end if
 
 ! cumint
- call ug_cumint_down(ff, nn, hh, cum)
+ call ug_cumint_down(ff, nn, hh, cum, ifail)
  err1 = 0.0_dp
  do ii = 1, nn
    err1 = max(err1, abs(cum(ii) - (exp(-xx(ii)) - exp(-4.0_dp))))
@@ -67,7 +67,7 @@
  call grid(2101, 0.0_dp, 1.0_dp)
  ff(:) = 1.0e-16_dp/hh
  ff(nn) = 1.0_dp/hh
- call ug_cumint_down(ff, nn, hh, cum)
+ call ug_cumint_down(ff, nn, hh, cum, ifail)
  call check('cumint compensated', abs((cum(1) - cum(nn - 100)) &
 &           /(1.0e-16_dp*dble(nn - 101)) - 1.0_dp), 1.0e-2_dp)
 
@@ -76,31 +76,31 @@
  ff(:) = exp(-xx)
  err1 = 0.0_dp
  do ii = 1, nn - 1
-   call ug_interp(ff, nn, dble(ii - 1) + 0.5_dp, fq)
+   call ug_interp(ff, nn, dble(ii - 1) + 0.5_dp, fq, ifail)
    err1 = max(err1, abs(fq - exp(-(xx(ii) + 0.5_dp*hh))))
-   call ug_interp(ff, nn, dble(ii - 1) + 0.3_dp, fq)
+   call ug_interp(ff, nn, dble(ii - 1) + 0.3_dp, fq, ifail)
    err1 = max(err1, abs(fq - exp(-(xx(ii) + 0.3_dp*hh))))
  end do
  call check('interp exp(-x) between nodes', err1, 1.0e-11_dp)
- call ug_interp(ff, nn, 17.0_dp, fq)
+ call ug_interp(ff, nn, 17.0_dp, fq, ifail)
  call check('interp at a node', abs(fq - ff(18)), 0.0_dp)
 
 ! root
  ff(:) = cos(xx)
- call ug_root(ff, nn, 20.0_dp, 40.0_dp, tq, ierr)
+ call ug_root(ff, nn, 20.0_dp, 40.0_dp, tq, ierr, ifail)
  call check('root of cos: ierr', dble(ierr), 0.0_dp)
  call check('root of cos', abs(tq*hh - 0.5_dp*pi), 1.0e-11_dp)
 
 ! cross
  ff(:) = exp(-xx)
- call ug_cross_down(ff, nn, hh, 0.0_dp, 0.1_dp, xq, found)
+ call ug_cross_down(ff, nn, hh, 0.0_dp, 0.1_dp, xq, found, ifail)
  if(.not. found) then
    write(stderr, '(a)') 'FAILED: cross: not found'
    nfail = nfail + 1
  else
    call check('cross of exp(-x) at 0.1', abs(xq + log(0.1_dp)), 1.0e-11_dp)
  end if
- call ug_cross_down(ff, nn, hh, 0.0_dp, 1.0e-3_dp, xq, found)
+ call ug_cross_down(ff, nn, hh, 0.0_dp, 1.0e-3_dp, xq, found, ifail)
  if(found) then
    write(stderr, '(a)') 'FAILED: cross: a level below the curve was found'
    nfail = nfail + 1

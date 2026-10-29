@@ -350,7 +350,7 @@
  end do
  end function binom
 
- subroutine core_crossover(rr,rhoc,rhotps,mmax,fcfact,rstar,ierr)
+ subroutine core_crossover(rr,rhoc,rhotps,mmax,fcfact,rstar,ierr,ifail)
 
 !! the crossover radius: the outermost radius where the core charge equals
 !! fcfact times the pseudo valence charge, the root of
@@ -364,6 +364,8 @@
 !! @param fcfact  factor of the pseudo valence charge
 !! @param rstar  the crossover radius (bohr)
 !! @param ierr  0, or 1 if the core charge never exceeds fcfact rhotps
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use logmesh_m, only: lm_root
 
@@ -373,7 +375,7 @@
 
 !Output variables
  real(dp), intent(out) :: rstar
- integer, intent(out) :: ierr
+ integer, intent(out) :: ierr,ifail
 
 !Local variables
  real(dp), allocatable :: lf(:)
@@ -381,6 +383,7 @@
 
  rstar=0.0d0
  ierr=1
+ ifail=0
  ircc=0
  do ii=mmax,1,-1
    if(rhoc(ii)>fcfact*rhotps(ii)) then
@@ -397,7 +400,7 @@
    lf(ii)=log(max(rhoc(ii),tiny(1.0d0))) &
 &        - log(max(fcfact*rhotps(ii),tiny(1.0d0)))
  end do
- call lm_root(rr,lf,mmax,rr(ircc),rr(ircc+1),rstar,ierr)
+ call lm_root(rr,lf,mmax,rr(ircc),rr(ircc+1),rstar,ierr,ifail)
  deallocate(lf)
  end subroutine core_crossover
 
@@ -419,8 +422,10 @@
 !! @param a0  constant term
 !! @param aco  coefficients of r**3..r**7
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_numerical
  use lapack_m, only: dgesv, dhseqr
 
 !Input variables
@@ -452,7 +457,7 @@
  if(info/=0) then
    write(iout,'(/a,i0)') 'poly_core_fit: ERROR singular match, dgesv info =', &
 &        info
-   ifail=1
+   ifail=fail_numerical
    return
  end if
 
@@ -489,7 +494,7 @@
    call dhseqr('E','N',ncub,1,ncub,hess,3,wr,wi,zz,1,work,size(work),info)
    if(info/=0) then
      write(iout,'(/a,i0)') 'poly_core_fit: ERROR dhseqr info =',info
-     ifail=1
+     ifail=fail_numerical
      return
    end if
 ! every point of [0, rstar) bounds a0 from below, so a nearly real root
@@ -562,8 +567,10 @@
 !! @param xx  the argument
 !! @param ierr  0, or 1 if ymatch is not in the range of x g'/g on (0, 1.5)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_convergence
  use root_m, only: root_tol
 
 !Input variables
@@ -606,7 +613,7 @@
  end do
  if(it>200) then
    write(iout,'(/a)') 'teter_scale: ERROR not converged'
-   ifail=1
+   ifail=fail_convergence
    return
  end if
  end subroutine teter_scale

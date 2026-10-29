@@ -28,7 +28,7 @@
 
  contains
 
- subroutine quad_gauss_legendre(xa,xb,nn,xx,ww)
+ subroutine quad_gauss_legendre(xa,xb,nn,xx,ww,ifail)
 
 !! the nn-point Gauss-Legendre nodes and weights on [xa, xb], the roots of
 !! P_nn by Newton's method
@@ -38,8 +38,11 @@
 !! @param nn  number of nodes
 !! @param xx  nodes
 !! @param ww  weights
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use constants_m, only: dp, pi
+ use failure_m, only: fail_convergence
 
 !Input variables
  real(dp), intent(in) :: xa,xb
@@ -47,10 +50,12 @@
 
 !Output variables
  real(dp), intent(out) :: xx(nn),ww(nn)
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp) :: zz,z1,p1,p2,p3,pp
  integer :: ii,jj,it
+ ifail=0
  do ii=1,(nn+1)/2
    zz=cos(pi*(ii-0.25d0)/(nn+0.5d0))
    do it=1,100
@@ -69,7 +74,8 @@
        write(error_unit,'(/a,i0,a,i0)') &
 &            'quad_gauss_legendre: ERROR node not converged, nn=',nn, &
 &            ', node=',ii
-       error stop 1
+       ifail=fail_convergence
+       return
      end if
    end do
    xx(ii)=0.5d0*(xa+xb) - 0.5d0*(xb-xa)*zz

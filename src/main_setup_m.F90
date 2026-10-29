@@ -325,7 +325,9 @@
 !! @param irc  last mesh point at or inside rc, of each l
 !! @param rcmax  largest core radius (bohr)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+ use failure_m, only: fail_input
  use constants_m, only: dp
 
 !Input variables
@@ -352,7 +354,7 @@
      write(iout,'(/a,i0,a,f12.6)') &
 &         'core_radius_points: ERROR rc inside the mesh start for l=', &
 &         l1-1,': rc=',rc(l1)
-     ifail=1
+     ifail=fail_input
      return
    end if
    rcmax=max(rcmax,rc(l1))

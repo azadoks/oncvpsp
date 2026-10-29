@@ -59,7 +59,9 @@
 !! @param r0  onset radius of the walls (bohr)
 !! @param sm  the summary; nwfail and sdde set
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+ use failure_m, only: fail_not_found
  use aeatom_m, only: aeatom
  use psatom_m, only: psatom
  use confine_summary_m, only: confine_summary_t
@@ -148,7 +150,7 @@
    if(ierrps/=0) write(iout,'(a,1p,e24.16,a)') 'wall_failed',kwall(ik),' ps'
    if(ik==0 .and. (ierrae/=0 .or. ierrps/=0)) then
      write(iout,'(/a)') 'confine_walls: ERROR the free atom failed'
-     ifail=1
+     ifail=fail_not_found
      return
    end if
    if(ierrae/=0 .or. ierrps/=0) then

@@ -41,8 +41,10 @@
 !!               scattering state's matching radius); absent, its last
 !!               nonzero point
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_numerical
  use constants_m, only: dp
  use quad_m, only: quad_log_norm, quad_log_norm_to
  use logmesh_m, only: lm_step
@@ -87,7 +89,7 @@
  if(nin<4) then
    write(iout,'(/a,i0,a,i0)') 'renorm_r: ERROR wave function is zero, ll=',ll, &
 &        ', kap=',kap
-   ifail=1
+   ifail=fail_numerical
    return
  end if
 

@@ -393,7 +393,7 @@
  return
  end subroutine lm_integral_weights
 
- subroutine lm_root(rr,ff,mmax,ra,rb,rq,ierr)
+ subroutine lm_root(rr,ff,mmax,ra,rb,rq,ierr,ifail)
 
 !! root, between ra and rb, of the interpolant (lm_interp) of a function
 !! given on the log mesh, converged to round-off by Brent's method in ln(r)
@@ -406,8 +406,10 @@
 !!               them
 !! @param rq  the root (bohr)
 !! @param ierr  0, or 1 if the interpolant has the same sign at ra and rb
-!!              (the iteration limit is an error)
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_convergence
  use root_m, only: root_brent
 
 !Input variables
@@ -416,18 +418,19 @@
 
 !Output variables
  real(dp), intent(out) :: rq
- integer, intent(out) :: ierr
+ integer, intent(out) :: ierr,ifail
 
 !Local variables
  real(dp) :: xq,fq,fends(2)
  logical :: converged
 
- call root_brent(value_at,log(ra),log(rb),xq,ierr,fq=fq,fends=fends, &
+ call root_brent(value_at,log(ra),log(rb),xq,ierr,ifail,fq=fq,fends=fends, &
 &                converged=converged)
  if(.not. converged) then
    write(error_unit,'(/a,es12.4,a,es12.4)') &
 &       'lm_root: ERROR not converged in 200 steps, r=',exp(xq),', f=',fq
-   error stop 1
+   ifail=fail_convergence
+   return
  end if
 ! a root at an end of the bracket is that end, not exp(log) of it
  if(fends(1)==0.0d0) then

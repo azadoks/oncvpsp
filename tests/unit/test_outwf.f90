@@ -158,12 +158,12 @@
 
  call outwf_setup(ll, rr, mm, adams, vv, vpw, 2, spw, ow, iout, ifail)
  if(ifail /= 0) error stop 1
- call outwf_integrate(ow, ee, i3q)
+ call outwf_integrate(ow, ee, i3q, ifail)
  do isol = 1, 3
    call outwf_nodes(ow, isol, i3q, uu, up)
    uval(isol) = up(i3q)/(alq*uu(i3q))
    do jsrc = 1, 2
-     call outwf_overlap(ow, isol, jsrc, ovq(isol, jsrc))
+     call outwf_overlap(ow, isol, jsrc, ovq(isol, jsrc), ifail)
      ovq(isol, jsrc) = ovq(isol, jsrc)/uu(i3q)
    end do
  end do
@@ -202,7 +202,7 @@
  call pw_node_values(rr, mm, vpw, vv)
  call outwf_setup(ll, rr, mm, adams, vv, vpw, 0, spw, ow, iout, ifail)
  if(ifail /= 0) error stop 1
- call outwf_integrate(ow, -0.35_dp, i20)
+ call outwf_integrate(ow, -0.35_dp, i20, ifail)
  nodeq = outwf_count(ow, 1, 0.05_dp, i20)
  call outwf_free(ow)
  call pw_free(vpw)

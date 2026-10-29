@@ -65,7 +65,8 @@
 !!                  line, echoed when the input sets it (else 0)
 !! @param nkap  number of kappas per l: 1, or 2 for irel=2
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use constants_m, only: dp, pi, mxstate, mxl, mxlin, nrhomod, mxprj
  use kappa_m, only: kap_count, kap_j_share
@@ -690,6 +691,7 @@
  subroutine upf_functional(name,ifail)
 !! the functional attribute of the UPF header for iexc; an error for one
 !! UPF has no name for
+ use failure_m, only: fail_input
  character(len=20), intent(out) :: name
  integer, intent(out) :: ifail
 
@@ -726,7 +728,7 @@
    write(iout,'(t8,a,i0,a)') &
 &      'upfout: ERROR iexc = ',inp%iexc, &
 &      ' is presently unsupported for UPF output'
-   ifail=1
+   ifail=fail_input
    return
  end select
  end subroutine upf_functional

@@ -60,8 +60,10 @@
 !!              oncvpsp_confine.x) instead of the Thomas-Fermi potential
 !!              and hydrogenic energies
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_convergence
  use constants_m, only: dp, ae_tolres
  use ae_scf_m, only: ae_energies, ae_residual, ae_converged, ae_mix
  use tfapot_m, only: tfapot
@@ -182,7 +184,7 @@
      if(ierr /= 0) then
        write(iout,'(/a,3i4)') 'sratom123: lschfb convergence ERROR n,l,iter=', &
 &       na(ii),la(ii),it
-       ifail=1
+       ifail=fail_convergence
        return
      end if
 

@@ -75,8 +75,10 @@
 !! @param eso  energy coefficients of vso (multiplied by <L dot S> here;
 !!             so_split)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_convergence, fail_input
  use constants_m, only: dp, mxl, mxlin, diag_match, mxprj
  use logmesh_m, only: lm_interp
  use phsft_m, only: phsft_mch
@@ -171,7 +173,7 @@
        if(mchf==0) then
          write(iout,'(/a,f12.6)') trim(name)// &
 &              ': ERROR matching radius beyond the mesh, rm=',rm
-         ifail=1
+         ifail=fail_input
          return
        end if
 
@@ -186,13 +188,13 @@
            write(iout,'(/a,4i4)') 'run_diag_r: ldiracfb convergence ERROR &
 &         n,l,,kap,ierr=', &
 &          npa(iprj,l1),ll,kap,ierr
-           ifail=1
+           ifail=fail_convergence
            return
          else if(ierr /= 0) then
            write(iout,'(/a,3i4)') &
 &                'run_diag: lschfb convergence ERROR n,l,ierr=', &
 &                npa(iprj,l1),ll,ierr
-           ifail=1
+           ifail=fail_convergence
            return
          end if
        else

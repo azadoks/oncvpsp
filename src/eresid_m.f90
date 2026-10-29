@@ -91,8 +91,10 @@
 !! @param eresiddot  <psnull| E_resid |ps0> at each qout
 !! @param eresidmat  <psnull| E_resid |psnull'> at each qout
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_construction, fail_internal
  use constants_m, only: dp, qp, pi
  use logmesh_m, only: lm_ncell
  use ugrid_m, only: ug_weights, ug_cumint_down
@@ -150,7 +152,8 @@
    write(error_unit,'(/a,i0,a,es12.4,a,es12.4)') &
 &       'eresid: ERROR q grid below 0, nq=', &
 &        nq,', dq=',dq,', qmax=',qmax
-   error stop 1
+   ifail=fail_internal
+   return
  end if
 
 !the basis functions' values and slopes at rc, for their overlaps with
@@ -164,7 +167,7 @@
 !the linear mesh of the tail
  if(nr<2*lm_ncell) then
    write(iout,'(/a,i0)') 'eresid: ERROR tail too short, nr=',nr
-   ifail=1
+   ifail=fail_construction
    return
  end if
 
@@ -175,7 +178,8 @@
  do ii=1,nr
    rlin(ii)=rc+dble(ii-1)*hh
  end do
- call ug_weights(nr,hh,wr)
+ call ug_weights(nr,hh,wr,ifail)
+ if(ifail/=0) return
 
 !the tail's transforms at the nodes (above): the weighted tail, and the
 !nodes below the first where the terms of the closed forms stop cancelling
@@ -193,7 +197,9 @@
 !the integrands at each node of the q grid, their integrals from each node
 !to qmax, and the values at each qout
  call node_integrals()
+ if(ifail/=0) return
  call at_qout()
+ if(ifail/=0) return
 
  deallocate(rlin,wr,sbf)
  deallocate(sqr,cqr,sdqr,cdqr)
@@ -322,7 +328,8 @@
  subroutine node_integrals()
 
 !! the integrands at each node of the q grid and their integrals from
-!! each node to qmax: e0g, edotg, ematg
+!! each node to qmax: e0g, edotg, ematg; ifail of the host after a
+!! failure
 
 !Local variables
  real(dp) :: qq,qq4,ps0q,psnullq(nnull)
@@ -353,13 +360,16 @@
 
 !integrals from each node to qmax
 !1/pi factor from implicit sbf*sbf integral
- call ug_cumint_down(g0,nq,dq,e0g)
+ call ug_cumint_down(g0,nq,dq,e0g,ifail)
+ if(ifail/=0) return
  e0g(:)=e0g(:)/pi
  do jj=1,nnull
-   call ug_cumint_down(gdot(:,jj),nq,dq,work)
+   call ug_cumint_down(gdot(:,jj),nq,dq,work,ifail)
+   if(ifail/=0) return
    edotg(:,jj)=work(:)/pi
    do kk=1,nnull
-     call ug_cumint_down(gmat(:,kk,jj),nq,dq,work)
+     call ug_cumint_down(gmat(:,kk,jj),nq,dq,work,ifail)
+     if(ifail/=0) return
      ematg(:,kk,jj)=work(:)/pi
    end do
  end do
@@ -369,7 +379,10 @@
  subroutine at_qout()
 
 !! E at each qout: the value at the next node plus the partial cell by
-!! Gauss-Legendre, with the transforms at its nodes
+!! Gauss-Legendre, with the transforms at its nodes; ifail of the host
+!! after a failure
+
+ use failure_m, only: fail_internal
 
 !Local variables
  real(dp) :: qq,qq4,ps0q,psnullq(nnull),qa,qb,wg
@@ -380,7 +393,8 @@
      write(error_unit,'(/a,es12.4,a,es12.4)') &
 &         'eresid: ERROR q off the grid, q=', &
 &        qout(ii),' qmax=',qmax
-     error stop 1
+     ifail=fail_internal
+     return
    end if
 ! icell -1 for a qout below the first node
    icell=floor((qout(ii)-q0)/dq)

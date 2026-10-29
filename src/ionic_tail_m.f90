@@ -106,7 +106,7 @@
  return
  end subroutine ionic_tail
 
- subroutine ionic_window(rr,mmax,zion,vion,rcmax,tol,ra,rb)
+ subroutine ionic_window(rr,mmax,zion,vion,rcmax,tol,ra,rb,ifail)
 
 !! the window (ra,rb) of the switch: ra is the largest core radius, beyond
 !! which the screened potentials are V_AE, and rb is where V_ion has become
@@ -121,6 +121,8 @@
 !! @param tol  tolerance of V_ion + zion/r
 !! @param ra  start of the window
 !! @param rb  end of the window
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use constants_m, only: dp
  use logmesh_m, only: lm_root
@@ -132,6 +134,7 @@
 
 !Output variables
  real(dp), intent(out) :: ra,rb
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp), allocatable :: gg(:)
@@ -140,6 +143,7 @@
 
 ! rcore: the outermost radius where (V_ion + zion/r)**2 = tol**2, the root
 ! of the interpolant between the mesh points where it crosses (R-13)
+ ifail=0
  allocate(gg(mmax))
  do ii=1,mmax
    gg(ii)=(vion(ii)+zion/rr(ii))**2-tol**2
@@ -147,7 +151,8 @@
  rcore=0.0d0
  do ii=mmax-1,1,-1
    if(gg(ii)>=0.0d0) then
-     call lm_root(rr,gg,mmax,rr(ii),rr(ii+1),rcore,ierr)
+     call lm_root(rr,gg,mmax,rr(ii),rr(ii+1),rcore,ierr,ifail)
+     if(ifail/=0) return
      if(ierr/=0) rcore=rr(ii+1)
      exit
    end if
@@ -186,8 +191,10 @@
 !! @param uupsa  pseudo valence wave functions
 !! @param eeig  sum of the occupied eigenvalues
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_construction, fail_convergence
  use constants_m, only: dp, mxstate, mxl, mxlin, mxprj
  use kappa_m, only: kap_count, kap_j_share
  use pieces_m, only: piecewise_t
@@ -249,7 +256,11 @@
 &           'a state of l=',ll,' lies below',emin, &
 &           ' Ha that the node count does not expect:', &
 &           'a bound ghost of the projectors'
-       ifail=1
+       if(ierr==200) then
+         ifail=fail_construction
+       else
+         ifail=fail_convergence
+       end if
        return
      end if
      uupsa(:,ikap,kk)=uu(:)
@@ -309,8 +320,10 @@
 !! @param eexc  exchange-correlation correction to the eigenvalue sum
 !! @param vion  V_ion
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_convergence
  use constants_m, only: dp, mxstate, mxl, mxlin, mxprj
  use pieces_m, only: piecewise_t
  use cinf_taper_m, only: cinf_taper
@@ -354,7 +367,8 @@
  allocate(ww(mmax),vp0(mmax,mxl+2,nkap),vnew(mmax),vnext(mmax,nkap),vsw(mmax))
 
  call ionic_tail(zz,zion,rhoc,rhotae,rhomod,rr,mmax,adams,iexc,c_light,vion)
- call ionic_window(rr,mmax,zion,vion,rcmax,tol,ra,rb)
+ call ionic_window(rr,mmax,zion,vion,rcmax,tol,ra,rb,ifail)
+ if(ifail/=0) return
  do ii=1,mmax
    ww(ii)=cinf_taper(rr(ii),ra,rb)
  end do
@@ -386,7 +400,7 @@
      write(iout,'(/a,i0,a,es12.4)') &
 &          'ionic_screening: ERROR the ionic tail did not converge in', &
 &          maxiter,' steps, change =',change
-     ifail=1
+     ifail=fail_convergence
      return
    end if
    vp(:,lloc+1,:)=vnext(:,:)
@@ -409,7 +423,7 @@
  return
  end subroutine ionic_screening
 
- subroutine coulomb_tail(vloc,vion,rr,mmax,zion,rcmax,iout)
+ subroutine coulomb_tail(vloc,vion,rr,mmax,zion,rcmax,iout,ifail)
 
 !! reports how closely the unscreened local potential vloc is -zion/r
 !! beyond rcmax, as plane-wave codes see it (coulomb_tail of
@@ -430,6 +444,8 @@
 !! @param zion  ion charge
 !! @param rcmax  largest core radius (bohr)
 !! @param iout  unit of the text output
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use constants_m, only: dp, pi
  use logmesh_m, only: lm_integral, lm_root
@@ -440,6 +456,9 @@
  real(dp), intent(in) :: zion,rcmax
  integer, intent(in) :: iout
 
+!Output variables
+ integer, intent(out) :: ifail
+
 !Local variables
  real(dp), parameter :: tol=1.0d-10
  real(dp), parameter :: radii(2)=[6.0d0,10.0d0]
@@ -447,6 +466,7 @@
  real(dp), allocatable :: ff(:)
  integer :: ii,jj,ierr
 
+ ifail=0
 ! r**2 (vloc + zion/r), which goes as r at the origin
  allocate(ff(mmax))
  ff(:)=rr(:)**2*vloc(:)+zion*rr(:)
@@ -459,7 +479,8 @@
      rcoul=rr(min(ii+1,mmax))
      if(ii<mmax) then
        ff(:)=(vloc(:)+zion/rr(:))**2-tol**2
-       call lm_root(rr,ff,mmax,rr(ii),rr(ii+1),rcoul,ierr)
+       call lm_root(rr,ff,mmax,rr(ii),rr(ii+1),rcoul,ierr,ifail)
+       if(ifail/=0) return
        if(ierr/=0) rcoul=rr(ii+1)
      end if
      exit

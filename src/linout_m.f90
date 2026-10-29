@@ -65,7 +65,8 @@
 !!                  line, echoed when the input sets it (else 0)
 !! @param nkap  number of kappas per l: 1, or 2 for irel=2
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use constants_m, only: dp, mxl, mxlin, nrhomod, mxprj
  use input_echo_m, only: write_input_echo, fe, date_stamp

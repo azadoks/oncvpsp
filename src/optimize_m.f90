@@ -76,8 +76,10 @@
 !!               smallest
 !!               eigenvalue e1 and |f1| of the problem at qout(1) alone
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_numerical
  use constants_m, only: dp
  use lapack_m, only: dsyev
 
@@ -127,7 +129,7 @@
  call dsyev( 'V', 'U', nnull, wmat, nnull, wev, work, 5*nnull, info )
  if(info /= 0) then
    write(iout,'(a,i4)') 'optimize: residual-energy eigenvalue ERROR, info=',info
-   ifail=1
+   ifail=fail_numerical
    return
  end if
 
@@ -156,7 +158,7 @@
    if(info /= 0) then
      write(iout,'(a,i4)') 'optimize: residual-energy eigenvalue ERROR, info=', &
 &          info
-     ifail=1
+     ifail=fail_numerical
      return
    end if
    optdg(3)=rev(1)
@@ -284,8 +286,10 @@
 !! @param uunorm  all-electron norm inside rc
 !! @param ps0norm  norm of the constrained wave alone
 !! @param pswfopt  the x_i
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_construction, fail_convergence
  use root_m, only: root_tol
 
 !Input variables
@@ -310,7 +314,7 @@
  rtsgn=-sign(1.0d0, eresiddot_ev(1))
  if(ps0norm>uunorm) then
    write(iout,'(/a)') 'optimize: ERROR ps0norm > uunorm, code will stop'
-   ifail=1
+   ifail=fail_construction
    return
  end if
  yy=sqrt((uunorm-ps0norm))
@@ -345,7 +349,7 @@
 
  if(converged .eqv. .false.) then
    write(iout,'(/a)') 'optimize: ERROR interval-halving search not converged'
-   ifail=1
+   ifail=fail_convergence
    return
  end if
 
@@ -379,7 +383,7 @@
  if(converged .eqv. .false.) then
    write(iout,'(/a,es12.4)') &
 &        'optimize: ERROR Newton polish not converged, last step',dx
-   ifail=1
+   ifail=fail_convergence
    return
  end if
  pswfopt(1)=rtsgn*x1

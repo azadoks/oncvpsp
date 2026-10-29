@@ -55,8 +55,10 @@
 !! @param ncon  total number of constraints, ncon_in+iprj-1
 !! @param ncon_in  number of value and derivative constraints at rc
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_numerical
  use constants_m, only: dp, qp, mxprj
  use sbf_q_m, only: sbfq_overlap, sbfq_rc_der
  use qlinalg_m, only: qjacobi
@@ -103,7 +105,7 @@
      write(iout,'(a,es12.4)') &
 &          'sbfbasis: negative eigenvalue of overlap matrix', &
 &         real(sev(ibas),dp)
-     ifail=1
+     ifail=fail_numerical
      return
    end if
    do jj=1,nbas

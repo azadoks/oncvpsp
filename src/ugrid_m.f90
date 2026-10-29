@@ -34,7 +34,7 @@
 
  contains
 
- subroutine ug_weights(nn,hh,ww)
+ subroutine ug_weights(nn,hh,ww,ifail)
 
 !! weights of the integral from the first node to the last: the sum over
 !! the cells of the cell rule's weights, hh inside and corrected over the
@@ -43,7 +43,10 @@
 !! @param nn  number of nodes, >=lm_ncell
 !! @param hh  spacing
 !! @param ww  the weights
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_internal
  use constants_m, only: dp
  use logmesh_m, only: lm_ncell, lm_cell_weights
 
@@ -53,15 +56,18 @@
 
 !Output variables
  real(dp), intent(out) :: ww(nn)
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp) :: wc(lm_ncell,0:lm_ncell-2)
  integer :: ii,jj,istart,ishift
 
+ ifail=0
  if(nn<lm_ncell) then
    write(error_unit,'(/a,i0)') &
 &       'ug_weights: ERROR fewer nodes than the rule, nn=',nn
-   error stop 1
+   ifail=fail_internal
+   return
  end if
  do ishift=0,lm_ncell-2
    call lm_cell_weights(ishift,wc(:,ishift))
@@ -77,7 +83,7 @@
  return
  end subroutine ug_weights
 
- subroutine ug_cumint_down(ff,nn,hh,cum)
+ subroutine ug_cumint_down(ff,nn,hh,cum,ifail)
 
 !! cumulative integral from each node to the last, accumulated from the
 !! last node (so that a small value far from it is not a difference of
@@ -87,7 +93,10 @@
 !! @param nn  number of nodes, >=lm_ncell
 !! @param hh  spacing
 !! @param cum  int_{x_i}^{x_nn} ff dx in cum(i)
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_internal
  use constants_m, only: dp
  use logmesh_m, only: lm_ncell, lm_cell_weights
 
@@ -97,6 +106,7 @@
 
 !Output variables
  real(dp), intent(out) :: cum(nn)
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp) :: wc(lm_ncell,0:lm_ncell-2),cell,sum_hi,sum_lo,yy
@@ -105,11 +115,13 @@
  real(dp), volatile :: tmp
  integer :: ii,jj,istart,ishift
 
+ ifail=0
  if(nn<lm_ncell) then
    write(error_unit,'(/a,i0)') &
 &       'ug_cumint_down: ERROR fewer nodes than the rule, nn=', &
 &        nn
-   error stop 1
+   ifail=fail_internal
+   return
  end if
  do ishift=0,lm_ncell-2
    call lm_cell_weights(ishift,wc(:,ishift))
@@ -133,7 +145,7 @@
  return
  end subroutine ug_cumint_down
 
- subroutine ug_interp(ff,nn,tt,fq)
+ subroutine ug_interp(ff,nn,tt,fq,ifail)
 
 !! the interpolant of ff at the position tt
 !!
@@ -142,7 +154,10 @@
 !! @param tt  position in units of the spacing, 0 at the first node,
 !!            0<=tt<=nn-1
 !! @param fq  value at tt
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_internal
  use constants_m, only: dp
  use logmesh_m, only: lm_fh_value
 
@@ -152,18 +167,22 @@
 
 !Output variables
  real(dp), intent(out) :: fq
+ integer, intent(out) :: ifail
 
+ ifail=0
+ fq=0.0d0
  if(tt<0.0d0 .or. tt>dble(nn-1)) then
    write(error_unit,'(/a,es12.4,a,i0)') &
 &       'ug_interp: ERROR position off the grid, tt=', &
 &        tt,' nn=',nn
-   error stop 1
+   ifail=fail_internal
+   return
  end if
  fq=lm_fh_value(ff,nn,tt)
  return
  end subroutine ug_interp
 
- subroutine ug_root(ff,nn,ta,tb,tq,ierr)
+ subroutine ug_root(ff,nn,ta,tb,tq,ierr,ifail)
 
 !! root, between the positions ta and tb, of the interpolant of ff, by
 !! Brent's method with no tolerance of its own (root_brent)
@@ -174,6 +193,8 @@
 !!               between them
 !! @param tq  the root (position)
 !! @param ierr  0, or 1 if the interpolant has the same sign at ta and tb
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use constants_m, only: dp
  use logmesh_m, only: lm_fh_value
@@ -185,9 +206,9 @@
 
 !Output variables
  real(dp), intent(out) :: tq
- integer, intent(out) :: ierr
+ integer, intent(out) :: ierr,ifail
 
- call root_brent(interpolant,ta,tb,tq,ierr)
+ call root_brent(interpolant,ta,tb,tq,ierr,ifail)
  return
 
  contains
@@ -200,7 +221,7 @@
 
  end subroutine ug_root
 
- subroutine ug_cross_down(ff,nn,hh,x1,level,xq,found)
+ subroutine ug_cross_down(ff,nn,hh,x1,level,xq,found,ifail)
 
 !! the largest x at which a positive, decreasing curve given on the grid
 !! falls to level: the last cell (from the top) in which ff crosses level
@@ -216,7 +237,10 @@
 !! @param level  the level, >0
 !! @param xq  the crossing (coordinate)
 !! @param found  whether there is one
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_internal
  use constants_m, only: dp
 !Input variables
  integer, intent(in) :: nn
@@ -225,11 +249,13 @@
 !Output variables
  real(dp), intent(out) :: xq
  logical, intent(out) :: found
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp) :: lf(nn),tq
  integer :: ii,np,ierr
 
+ ifail=0
  found=.false.
  xq=0.0d0
  np=nn
@@ -243,11 +269,13 @@
  lf(1:np)=log(ff(1:np))-log(level)
  do ii=np,2,-1
    if(lf(ii-1)>0.0d0 .and. lf(ii)<=0.0d0) then
-     call ug_root(lf(1:np),np,dble(ii-2),dble(ii-1),tq,ierr)
+     call ug_root(lf(1:np),np,dble(ii-2),dble(ii-1),tq,ierr,ifail)
+     if(ifail/=0) return
      if(ierr/=0) then
        write(error_unit,'(/a)') &
 &           'ug_cross_down: ERROR the bracket lost its sign change'
-       error stop 1
+       ifail=fail_internal
+       return
      end if
      xq=x1+hh*tq
      found=.true.

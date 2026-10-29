@@ -84,8 +84,10 @@
 !!             <r>/rc divided by a weight rising from 0 at 0.025 Ha above
 !!             it to 1 at 0.05 Ha: (1) its energy, (2) that ratio; 0 if none
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_numerical
  use constants_m, only: dp, pi, mxstate, mxl, mxlin, mxprj
  use pieces_m, only: piecewise_t, pw_integral, pw_value, pw_resample, &
 &                    pw_free, pw_node_values
@@ -196,7 +198,7 @@
    if(info /= 0) then
      write(iout,'(a,i4)') 'run_ghosts: hamiltonian matrix eigenvalue ERROR, &
 &          info=',info
-     ifail=1
+     ifail=fail_numerical
      return
    end if
    call bound_tests(l1,ifail)
@@ -231,6 +233,7 @@
 !! rb = s*rr, the last node of rr at or inside it scaled up onto it; the
 !! local potential vb on rb (vmin its least inside the barrier) and the
 !! projectors vkbb
+ use failure_m, only: fail_input
  integer, intent(in) :: l1
  integer :: ii,iprj
  real(dp) :: vs
@@ -242,7 +245,7 @@
  if(mbar+5>mmax) then
    write(iout,'(/2a,i0,a,i0)') 'run_ghosts: ERROR barrier radius beyond', &
 &          ' radial mesh, mbar=',mbar,', mmax=',mmax
-   ifail=1
+   ifail=fail_input
    return
  end if
  rb(:)=(rbar/rr(mbar))*rr(:)

@@ -56,8 +56,10 @@
 !!                  the all-electron wave function's beyond, each by the
 !!                  rule of logmesh_m
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_construction
  use constants_m, only: dp
  use pieces_m, only: pw_reach
  use logmesh_m, only: lm_derivs, lm_integral
@@ -149,7 +151,7 @@
        write(iout,'(a)') ' ERROR pspot:  first pseudo wave function has node, &
 &         program will stop'
        write(iout,'(a)') ' ERROR pspot: try changing psp parameters for this l'
-       ifail=1
+       ifail=fail_construction
        return
      end if
      vpsp(ii)=-work(ii,4)/work(ii,1) + eig

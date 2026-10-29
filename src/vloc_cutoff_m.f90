@@ -29,7 +29,7 @@
 ! pseudo valence density is converged to the levels of the projectors'
 ! tables
 
- subroutine vloc_cutoff(rr,mmax,rho,vloc,zion,cvl,echk)
+ subroutine vloc_cutoff(rr,mmax,rho,vloc,zion,cvl,echk,ifail)
 
 !! The local energy E_loc = int n V_loc d^3r of the reference
 !! configuration's pseudo valence density n is, in q space,
@@ -66,6 +66,8 @@
 !! @param cvl  (Ecut, err) per level, Ecut 0 for a level not reached
 !! @param echk  E_loc per electron from the q grid less that from r space
 !!              (Ha): the transforms' error and the part above qend
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
  use constants_m, only: dp, pi, nerrlv
  use logmesh_m, only: lm_interp, lm_integral
@@ -77,6 +79,7 @@
 
 !Output variables
  real(dp), intent(out) :: cvl(2,nerrlv),echk
+ integer, intent(out) :: ifail
 
 !Local variables
  real(dp), parameter :: qend=60.0d0,dq=0.02d0,npp=16.0d0
@@ -88,6 +91,9 @@
  integer :: ii,kk,nr,nq
  logical :: found
 
+ ifail=0
+ cvl(:,:)=0.0d0
+ echk=0.0d0
  allocate(work(mmax))
  work(:)=rho(:)*rr(:)**2
  call lm_integral(rr,work,mmax,2,0.0d0,rr(mmax),nel)
@@ -100,7 +106,8 @@
  hr=2.0d0*pi/(npp*qend)
  nr=int(rr(mmax)/hr)+1
  allocate(xx(nr),wx(nr),fn(nr),fv(nr))
- call ug_weights(nr,hr,wx)
+ call ug_weights(nr,hr,wx,ifail)
+ if(ifail/=0) return
  do ii=1,nr
    xx(ii)=hr*dble(ii-1)
    if(xx(ii)<rr(1)) then
@@ -150,19 +157,23 @@
  end do
 
 !E_loc from the q grid
- call ug_weights(nq,dq,wq)
+ call ug_weights(nq,dq,wq,ifail)
+ if(ifail/=0) return
  eloc_q=sum(wq(:)*gg(:))/(2.0d0*pi**2)
  echk=(eloc_q-eloc_r)/nel
 
 !the bound from dq (int q^2 V^2 diverges at 0)
- call ug_cumint_down(an(2:nq),nq-1,dq,tt(2:nq))
- call ug_cumint_down(av(2:nq),nq-1,dq,gg(2:nq))
+ call ug_cumint_down(an(2:nq),nq-1,dq,tt(2:nq),ifail)
+ if(ifail/=0) return
+ call ug_cumint_down(av(2:nq),nq-1,dq,gg(2:nq),ifail)
+ if(ifail/=0) return
  tt(2:nq)=sqrt(tt(2:nq)*gg(2:nq))/(2.0d0*pi**2*nel)
 
  err=0.01d0
  cvl(:,:)=0.0d0
  do ii=1,nerrlv
-   call ug_cross_down(tt(2:nq),nq-1,dq,dq,err,qerr,found)
+   call ug_cross_down(tt(2:nq),nq-1,dq,dq,err,qerr,found,ifail)
+   if(ifail/=0) return
    if(found) then
      cvl(1,ii)=0.125d0*qerr**2
      cvl(2,ii)=err

@@ -63,8 +63,10 @@
 !! @param iexc  exchange-correlation functional
 !! @param c_light  speed of light (Hartree atomic units)
 !! @param iout  unit of the text output
-!! @param ifail  0, or 1 after a failure, whose message is written
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
 
+ use failure_m, only: fail_not_found
  use constants_m, only: dp, mxstate, nrhomod
  use logmesh_m, only: lm_derivs
  use modcore_m, only: core_crossover, poly_core_fit, core_pieces, poly_form, &
@@ -100,11 +102,12 @@
  d2excae(:,:)=0.0d0
  d2excps(:,:)=0.0d0
 
- call core_crossover(rr,rhoc,rhotps,mmax,fcfact,rstar,ierr)
+ call core_crossover(rr,rhoc,rhotps,mmax,fcfact,rstar,ierr,ifail)
+ if(ifail/=0) return
  if(ierr/=0) then
    write(iout,'(/a)') 'rhomod: ERROR ircc (core-valence charge crossover) &
 &        not found'
-   ifail=1
+   ifail=fail_not_found
    return
  end if
 
