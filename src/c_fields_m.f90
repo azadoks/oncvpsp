@@ -359,7 +359,8 @@
 &  field_info_t('i confine.inf','[all4,all5,top4,top5]','', &
 &    '1 where an edge never reaches the tolerance of confine.cut')]
 
-!> the local potential alone and a channel's tests (api 6)
+!> those added since: the local potential alone and a channel's tests
+!> (api 6), the passes of the budget's search (api 7)
  type(field_info_t), parameter :: fields_tiles(*)=[ &
 &  field_info_t('i local.lloc','','', &
 &    'l of the local potential, 4 for the polynomial'), &
@@ -408,7 +409,12 @@
 &  field_info_t('r channel.ghosts.ecut','ikap','Ha', &
 &    'the channel''s tests.ghosts.ecut'), &
 &  field_info_t('i channel.ghosts.basis','ikap','', &
-&    'the channel''s tests.ghosts.basis')]
+&    'the channel''s tests.ghosts.basis'), &
+&  field_info_t('i core.budget.passes','','', &
+&    'icmod 6, 7: the passes of the search, more than 1 when the '// &
+&    'error peaks beyond the first cutoffs'), &
+&  field_info_t('r core.budget.qext','','bohr^-1', &
+&    'the last density cutoff the radius was found with')]
 
 !> the fields, in the order oncv_field_name numbers them (a new group
 !> last, so that the numbers of the others stay)

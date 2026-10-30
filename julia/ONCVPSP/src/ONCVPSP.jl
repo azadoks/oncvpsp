@@ -29,7 +29,7 @@ export AllElectron, Confinement, Handle, Local, OncvpspError, Run, all_electron,
        kernel, local_potential, mesh, model_core, oncvpsp, projectors, semilocal,
        valence_density
 
-const API_VERSION = 6
+const API_VERSION = 7
 const MXLIN = 5
 const MXRANK = 5
 const MSG_PSPOT_NODE = 122
@@ -480,12 +480,14 @@ irel_of(irel::Union{Symbol,AbstractString}) =
 """
 the whole run of the input (oncv_run_toml), or from the all-electron atom
 of `ae` (all_electron, or a run), bit for bit the same (oncv_run_ae_toml);
-`skip_ld` leaves out the log derivatives
+`skip_ld` leaves out the log derivatives. `rs_guess` (bohr), a parent run's
+core.budget.r_s, is where the icmod 6 search for the model radius starts
+(oncv_set_budget_guess)
 """
-function oncvpsp(inp=nothing; irel=1, ae=nothing, skip_ld=false, check=true, text=true,
-                 tables...)
+function oncvpsp(inp=nothing; irel=1, ae=nothing, skip_ld=false, rs_guess=nothing,
+                 check=true, text=true, tables...)
     data = input_text(inp, tables)
-    hh = Run(text)
+    hh = guessing(Run(text), rs_guess)
     ifail = if ae === nothing
         ccall(sym(:oncv_run_toml), Cint, (Ptr{Cvoid}, Cint, Ptr{UInt8}, Csize_t, Cint),
               ptr(hh), irel_of(irel), data, sizeof(data), skip_ld)
@@ -495,6 +497,13 @@ function oncvpsp(inp=nothing; irel=1, ae=nothing, skip_ld=false, check=true, tex
               ptr(hh), ptr(ae), data, sizeof(data), skip_ld)
     end
     done!(hh, ifail, check)
+end
+
+"the handle, its icmod 6 search to start from `rs_guess` if given"
+function guessing(hh::Run, rs_guess)
+    rs_guess === nothing ||
+        ccall(sym(:oncv_set_budget_guess), Cint, (Ptr{Cvoid}, Cdouble), ptr(hh), rs_guess)
+    hh
 end
 
 "`oncvpsp`, by the name of the C function and the Python package's"
@@ -583,11 +592,11 @@ is of l = lloc. Each must be of this input and atom; the run is then
 `oncvpsp(inp; ae)`'s bit for bit, its text output without the channels'
 lines
 """
-function assemble(inp, ae::Handle, channels; loc=nothing, skip_ld=false, check=true,
-                  text=true, tables...)
+function assemble(inp, ae::Handle, channels; loc=nothing, skip_ld=false, rs_guess=nothing,
+                  check=true, text=true, tables...)
     data = input_text(inp, tables)
     ptrs = Ptr{Cvoid}[ptr(ch) for ch in channels]
-    hh = Run(text)
+    hh = guessing(Run(text), rs_guess)
     ifail = GC.@preserve channels ccall(sym(:oncv_assemble_toml), Cint,
         (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Ptr{Cvoid}}, Cint, Ptr{UInt8}, Csize_t,
          Cint),
@@ -610,11 +619,12 @@ end
 
 """
 the model core, screening and tests again on the stages of `base`'s run
-with the model core icmod, fcfact, rcfact (oncv_coupled): a run
+with the model core icmod, fcfact, rcfact (oncv_coupled): a run; `rs_guess`
+as `oncvpsp`'s
 """
 function coupled(base::Run, icmod::Integer; fcfact=0.0, rcfact=0.0, skip_ld=false,
-                 check=true, text=true)
-    hh = Run(text)
+                 rs_guess=nothing, check=true, text=true)
+    hh = guessing(Run(text), rs_guess)
     ifail = ccall(sym(:oncv_coupled), Cint,
                   (Ptr{Cvoid}, Ptr{Cvoid}, Cint, Cdouble, Cdouble, Cint),
                   ptr(hh), ptr(base), icmod, fcfact, rcfact, skip_ld)

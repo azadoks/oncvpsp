@@ -124,15 +124,18 @@ def run(
     *,
     ae: "AllElectron | Run | None" = None,
     skip_ld: bool = False,
+    rs_guess: float | None = None,
     check: bool = True,
     text: Text = True,
     **tables: Any,
 ) -> Run:
     """the whole run of the input (oncv_run_toml), or from the all-electron
     atom of ae (all_electron, or a run), bit for bit the same
-    (oncv_run_ae_toml); skip_ld leaves out the log derivatives"""
+    (oncv_run_ae_toml); skip_ld leaves out the log derivatives. rs_guess
+    (bohr), a parent run's core.budget.r_s, is where the icmod 6 search
+    for the model radius starts (oncv_set_budget_guess)"""
     data = input_text(inp, tables)
-    hh = Run(text)
+    hh = _guessing(Run(text), rs_guess)
     if ae is None:
         ifail = lib.oncv_run_toml(hh.ptr, _irel(irel), data, len(data), int(skip_ld))
     else:
@@ -225,6 +228,7 @@ def assemble(
     *,
     local: Local | None = None,
     skip_ld: bool = False,
+    rs_guess: float | None = None,
     check: bool = True,
     text: Text = True,
     **tables: Any,
@@ -235,10 +239,10 @@ def assemble(
     from 0 to lmax, the local channel (lloc < 4) local's unless one of the
     channels is of l = lloc. Each must be of this input and atom; the run
     is then run(inp, ae=ae)'s bit for bit, its text output without the
-    channels' lines"""
+    channels' lines; rs_guess as run's"""
     data = input_text(inp, tables)
     ptrs = (C.c_void_p * max(len(channels), 1))(*[ch.ptr for ch in channels])
-    hh = Run(text)
+    hh = _guessing(Run(text), rs_guess)
     ifail = lib.oncv_assemble_toml(
         hh.ptr,
         ae.ptr,
@@ -278,14 +282,23 @@ def coupled(
     fcfact: float = 0.0,
     rcfact: float = 0.0,
     skip_ld: bool = False,
+    rs_guess: float | None = None,
     check: bool = True,
     text: Text = True,
 ) -> Run:
     """the model core, screening and tests again on the stages of base's
-    run with the model core icmod, fcfact, rcfact (oncv_coupled): a run"""
-    hh = Run(text)
+    run with the model core icmod, fcfact, rcfact (oncv_coupled): a run;
+    rs_guess as run's"""
+    hh = _guessing(Run(text), rs_guess)
     ifail = lib.oncv_coupled(hh.ptr, base.ptr, icmod, fcfact, rcfact, int(skip_ld))
     return hh._done(ifail, check)
+
+
+def _guessing(hh, rs_guess):
+    """the handle, its icmod 6 search to start from rs_guess if given"""
+    if rs_guess is not None:
+        lib.oncv_set_budget_guess(hh.ptr, float(rs_guess))
+    return hh
 
 
 def _array(values, ctype):

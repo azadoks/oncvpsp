@@ -573,6 +573,15 @@ So the interface is a hybrid:
       was made from (`channel_key`), which the assembly checks against
       its input. The test inputs give ghost counts equal to the run's and
       energies within 1e-6 Ha.
+- [x] The model core's search faster (`api_version` 7), for oncvpsp-opt,
+      where it is half a run: its Libxc calls ask for the energy alone,
+      its bisection stops at the first cutoff over the limit (only the
+      sign is wanted there), its second pass starts from the first's
+      radius, and `oncv_set_budget_guess` starts it from a guess. The
+      outputs are the same byte for byte; `core.budget.passes` and
+      `qext` report the passes, and `core.budget.martins` is now 0 for
+      the minimum tail (it held the last Martins model tried, which
+      depended on the search's path).
 - [x] Valgrind on the C test (nr, sr, fr, lloc 2): no errors; 2 kB lost
       per PSML file written, xmlf90's element stack, which
       `xml_Close` now frees (`cmake/patches/xmlf90-1.6.3.patch`, whose

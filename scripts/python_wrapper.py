@@ -213,6 +213,24 @@ def main():
     except oncvpsp.InputError as err:
         check("a channel of another input", err.msg in (186, 187))
 
+    # the icmod 6 search from a guess of its radius: the same results
+    six = oncvpsp.coupled(run, 6, fcfact=-1.0, rcfact=1e-4, check=False, text=False)
+    if six.ifail == 0:
+        check("the search's passes", six["core.budget.passes"] >= 1)
+        for factor in (0.5, 1.05, 1.5):
+            guessed = oncvpsp.coupled(
+                run,
+                6,
+                fcfact=-1.0,
+                rcfact=1e-4,
+                text=False,
+                rs_guess=float(six["core.budget.r_s"]) * factor,
+            )
+            check(
+                f"the search from {factor} r_s",
+                all(np.array_equal(guessed[nn], six[nn]) for nn in six),
+            )
+
     with oncvpsp.coupled(run, 0, text=False) as again:
         check("the model core again", np.array_equal(again["pot.vkb"], vkb))
     check("closed at the end of the with block", repr(again).endswith("closed>"))

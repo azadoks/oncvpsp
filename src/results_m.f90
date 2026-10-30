@@ -69,7 +69,8 @@
    integer :: fill=0
 !> the minimum tail's coefficients c0..c8 of (r/r_s)**(2k)
    real(dp) :: cpoly(0:8)=0.0d0
-!> Martins' fill exp(a + b r**2 + c r**4): a, b, c
+!> Martins' fill exp(a + b r**2 + c r**4): a, b, c (0 for the minimum
+!> tail)
    real(dp) :: martins(3)=0.0d0
 !> the cutoff the model core needs (Ha)
    real(dp) :: ecut_needed=0.0d0
@@ -83,6 +84,11 @@
    integer, allocatable :: cfill(:)
 !> their hardness mismatches (Ha)
    real(dp), allocatable :: cmis(:)
+!> the passes of the icmod 6 search, more than one when the error peaks
+!> beyond the first cutoffs
+   integer :: npass=0
+!> the last density cutoff the radius was found with (bohr**-1)
+   real(dp) :: qext=0.0d0
  end type core_budget_t
 
 !> the model core's parameters

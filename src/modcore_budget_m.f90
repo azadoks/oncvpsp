@@ -132,6 +132,10 @@
    real(dp) :: qend=0.0d0
 !> the qend r_s of icmod 6 was found with, for the report (bohr**-1)
    real(dp) :: qext=0.0d0
+!> the passes of the icmod 6 search
+   integer :: npass=0
+!> a guess of r_s that the search starts from, 0 for none (bohr)
+   real(dp) :: rguess=0.0d0
 !> the grid's density cutoff of the largest error of err_max (bohr**-1)
    real(dp) :: qpk=0.0d0
 !> the largest r_s, the smallest rc or the last radius with core charge
@@ -380,7 +384,8 @@
  subroutine modcore_budget(icmod,rhotps,rhoc,rhomod,corepw,fcfact,ecutw, &
 &                          weighted,errmax,slack,rcmin,mmax,adams,rr,iexc, &
 &                          c_light, &
-&                          zion,probes,lprobe,nprobe,res,warns,iout,ifail)
+&                          zion,probes,lprobe,nprobe,res,warns,iout,ifail, &
+&                          rs_guess)
 
 !! @param icmod  6 for the smallest radius, 7 for the hardness-matched one
 !! @param rhotps  pseudo valence charge density
@@ -411,6 +416,8 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
+!! @param rs_guess  a guess of the icmod 6 radius (bohr) the search starts
+!!                  from, 0 for none (smallest_radius)
 
  use failure_m, only: warnings_t, warn_merge
  use modcore_m, only: core_pieces
@@ -426,6 +433,7 @@
  real(dp), intent(in) :: probes(mmax,nprobe)
  real(dp), intent(in) :: fcfact,ecutw,errmax,slack,zion,rcmin
  logical, intent(in) :: weighted
+ real(dp), intent(in), optional :: rs_guess
  integer, intent(in) :: iout
 
 !Input/output variables
@@ -445,6 +453,7 @@
 &                 iexc,c_light,zion,probes,lprobe,nprobe,iout,ifail)
  if(ifail/=0) return
  bc%adams=adams
+ if(present(rs_guess)) bc%rguess=rs_guess
  call budget_tables(bc,iout,ifail)
  if(ifail/=0) return
  call budget_sphere(bc)
@@ -782,18 +791,23 @@
  integer, intent(out) :: ifail
 
 !Local variables
- real(dp) :: rsq,emax
+ real(dp) :: rsq,emax,rg
 
  ifail=0
 ! smallest r_s, first with the cutoffs to q_b + quick; if a larger one
 ! has a larger error at that r_s, again with those up to it + quick: each
 ! r_s found is a root of the largest error over all cutoffs less errmax
-! once it is confirmed, whatever the range it was found with
+! once it is confirmed, whatever the range it was found with. The first
+! pass starts from the guess if given, each later one from the r_s before
  bc%full=.false.
  bc%qend=min(qmax,bc%qb+quick)
+ bc%npass=0
+ rg=bc%rguess
  do
-   call smallest_radius(bc,rsq,iout,ifail)
+   bc%npass=bc%npass+1
+   call smallest_radius(bc,rsq,iout,ifail,rg)
    if(ifail/=0) return
+   rg=rsq
    bc%fill%rs=rsq
    call set_model(bc,bc%fill%rs)
    if(bc%ifail/=0) then
@@ -1025,10 +1039,14 @@
    res%factor=bc%factor
  end if
  res%r_s=bc%fill%rs
+ res%npass=bc%npass
+ res%qext=bc%qext
  res%rc_min=rcmin
  if(bc%rr(bc%irtop)<rcmin) res%r_core=bc%rr(bc%irtop)
  res%fill=bc%fill%ifill
- res%martins(:)=[bc%fill%aco,bc%fill%bco,bc%fill%cco]
+! Martins' coefficients of that fill alone: of another, they are those of
+! the last model tried with it, which depend on the search's path
+ if(bc%fill%ifill==2) res%martins(:)=[bc%fill%aco,bc%fill%bco,bc%fill%cco]
  res%ecut_needed=bc%ecore
  if(icmod==7) then
    res%r_s6=bc%rs6
@@ -1096,20 +1114,26 @@
  return
  end subroutine budget_report
 
- subroutine smallest_radius(bc,rsq,iout,ifail)
+ subroutine smallest_radius(bc,rsq,iout,ifail,rguess)
 
 !! the smallest r_s in [r_lo, r_top] whose model fits, with the density
 !! cutoffs up to qend: bisection over the mesh points between them, then
-!! Brent's method on the largest error less errmax in ln r_s (excess_rs)
+!! Brent's method on the largest error less errmax in ln r_s (excess_rs).
+!! With rguess > 0, the bracket of two neighbouring mesh points is found
+!! from the mesh point nearest it, by steps doubling away from it, before
+!! the bisection; the same bracket, so the same r_s, where the excess
+!! changes sign once over the mesh, which the bisection takes too
 !!
 !! @param bc  the state of the search
 !! @param rsq  the radius (bohr)
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
+!! @param rguess  a guess of the radius (bohr), 0 for none
 
 !Input variables
  integer, intent(in) :: iout
+ real(dp), intent(in) :: rguess
 
 !Input/output variables
  type(budget_t), intent(inout) :: bc
@@ -1119,26 +1143,10 @@
  integer, intent(out) :: ifail
 
 !Local variables
- integer :: ia,ib,imid,ilo,ihi
+ integer :: ia,ib,imid,ilo,ihi,ig,jj,istep
  real(dp) :: ga,xq
  ifail=0
  associate(rlo=>bc%rlo,rr=>bc%rr,rtop=>bc%rtop)
-   ga=excess_rs(bc,log(rtop),.true.)
-   if(bc%ifail/=0) then
-     ifail=bc%ifail
-     return
-   end if
-   if(ga>0.0d0) then
-     call no_model(bc,iout,ifail)
-     if(ifail/=0) return
-   end if
-   rsq=rlo
-   ga=excess_rs(bc,log(rlo),.true.)
-   if(bc%ifail/=0) then
-     ifail=bc%ifail
-     return
-   end if
-   if(ga<=0.0d0) return
 ! the mesh points strictly between r_lo and r_top, ilo..ihi; ia fails,
 ! ib fits, ilo-1 standing for r_lo and ihi+1 for r_top
    ilo=1
@@ -1149,8 +1157,75 @@
    do while(rr(ihi+1)<rtop)
      ihi=ihi+1
    end do
-   ia=ilo-1
-   ib=ihi+1
+   if(rguess>0.0d0 .and. ihi>=ilo) then
+! from the guess: up while the model fails, down while it fits
+     ig=ilo
+     do jj=ilo+1,ihi
+       if(abs(log(rr(jj)/rguess))<abs(log(rr(ig)/rguess))) ig=jj
+     end do
+     ga=excess_rs(bc,log(rr(ig)),.true.)
+     if(bc%ifail/=0) then
+       ifail=bc%ifail
+       return
+     end if
+     istep=1
+     if(ga>0.0d0) then
+       ia=ig
+       do
+         jj=min(ia+istep,ihi+1)
+         ga=excess_rs(bc,log(radius_of(bc,jj)),.true.)
+         if(bc%ifail/=0) then
+           ifail=bc%ifail
+           return
+         end if
+         if(ga<=0.0d0) exit
+         if(jj==ihi+1) then
+           call no_model(bc,iout,ifail)
+           return
+         end if
+         ia=jj
+         istep=2*istep
+       end do
+       ib=jj
+     else
+       ib=ig
+       do
+         jj=max(ib-istep,ilo-1)
+         ga=excess_rs(bc,log(radius_of(bc,jj)),.true.)
+         if(bc%ifail/=0) then
+           ifail=bc%ifail
+           return
+         end if
+         if(ga>0.0d0) exit
+         if(jj==ilo-1) then
+           rsq=rlo
+           return
+         end if
+         ib=jj
+         istep=2*istep
+       end do
+       ia=jj
+     end if
+   else
+     ga=excess_rs(bc,log(rtop),.true.)
+     if(bc%ifail/=0) then
+       ifail=bc%ifail
+       return
+     end if
+     if(ga>0.0d0) then
+       call no_model(bc,iout,ifail)
+       if(ifail/=0) return
+     end if
+     rsq=rlo
+     ga=excess_rs(bc,log(rlo),.true.)
+     if(bc%ifail/=0) then
+       ifail=bc%ifail
+       return
+     end if
+     if(ga<=0.0d0) return
+     ia=ilo-1
+     ib=ihi+1
+   end if
    do while(ib-ia>1)
      imid=(ia+ib)/2
      ga=excess_rs(bc,log(rr(imid)),.true.)

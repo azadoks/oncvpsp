@@ -113,6 +113,13 @@ exe = read("exe.out", String)
         ee
     end
     @test err isa OncvpspError && err.kind === :input && err.msg == 190
+    six = coupled(run, 6; fcfact=-1.0, rcfact=1e-4, check=false, text=false)
+    if six.ifail == 0
+        @test six["core.budget.passes"] >= 1
+        guessed = coupled(run, 6; fcfact=-1.0, rcfact=1e-4, text=false,
+                          rs_guess=1.5 * six["core.budget.r_s"])
+        @test all(guessed[k] == v for (k, v) in six)
+    end
     @test coupled(run, 0; text=false)["pot.vkb"] == vkb
     @test confine(run; radii=(), walls=())["confine.nmiss"] == -1
     conf = confine(run; walls=())

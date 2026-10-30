@@ -104,6 +104,20 @@ explorations of N), whose tail the channel does not see. Its ghost tests
 reach beyond rcmax always: in both, their counts are the run's, and their
 energies within 1e-6 Ha in the test inputs.
 
+### The model core's search from a guess
+
+The model core of icmod 6 and 7 searches for its radius r_s, about half a
+run. `rs_guess=` (bohr), on `run`, `assemble` and `coupled` (Julia the
+same; C `oncv_set_budget_guess`), starts the search from a guess, as a
+parent run's `core.budget.r_s` in a search that changes one channel at a
+time: the bracket is found near it rather than by bisection from the
+ends. The radius, and every result, is then the same as without it
+wherever the search's error changes sign once over the mesh, which the
+bisection takes too; it saves about 15 % of the search. The search's
+second pass, when the error peaks beyond its first cutoffs
+(`core.budget.passes` 2, `core.budget.qext` the cutoffs it ended with),
+starts from the first pass's radius in any case.
+
 ## Results
 
 Each function returns a handle, a mapping (Python's `Mapping`, Julia's
