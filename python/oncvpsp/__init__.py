@@ -3,47 +3,98 @@
 The input is a dictionary in the layout of the TOML input, the TOML text,
 or the path of a TOML file; keyword arguments are tables merged over it,
 key by key, and None values are left out (TOML has no null). Each function
-returns a Handle, whose fields are NumPy arrays in Fortran order; a failure raises OncvpspError, or with check=False is
-left in the handle (handle.ifail, handle.failure). text=True keeps the text
-output (handle.text), False discards it, a path writes it there.
+returns a handle (Run, AllElectron, Channel, Confinement), a Mapping of
+its fields to NumPy arrays in Fortran order, which field_info describes; a
+failure raises an OncvpspError of its kind, or with check=False is left in
+the handle (handle.ifail, handle.failure). text=True keeps the text output
+(handle.text), False discards it, a path writes it there.
 
     import oncvpsp
-    run = oncvpsp.run("tests/data/toml/14_Si.toml", irel=1)
-    run["pot.vkb"].shape   # (mmax, mxprj, lmax+1, nkap)
-    run.write("Si.upf")
+    with oncvpsp.run("tests/data/toml/14_Si.toml", irel="sr") as run:
+        run["pot.vkb"].shape   # (mmax, mxprj, mxl+1, nkap)
+        run.kernel(0)          # the nonlocal operator of l=0, (mmax, mmax)
+        run.write("Si.upf")
 """
 
 import ctypes as C
 import os
+from typing import Any
 
 import numpy as np
 
 from ._clib import API_VERSION, lib
-from ._handle import FIELDS, MSG_PSPOT_NODE, Handle, OncvpspError
+from ._handle import (
+    FIELDS,
+    MSG_PSPOT_NODE,
+    AllElectron,
+    Channel,
+    Confinement,
+    ConstructionError,
+    ConvergenceError,
+    Dims,
+    Failure,
+    FailureKind,
+    FieldInfo,
+    FileIOError,
+    Handle,
+    InputError,
+    InternalError,
+    Irel,
+    NodeError,
+    NotFoundError,
+    NumericalError,
+    OncvpspError,
+    Projectors,
+    Run,
+    Stage,
+    field_info,
+)
 from ._toml import dumps as toml_dumps
 from ._toml import input_text
 
 __all__ = [
     "API_VERSION",
     "FIELDS",
+    "AllElectron",
+    "Channel",
+    "Confinement",
+    "ConstructionError",
+    "ConvergenceError",
+    "Dims",
+    "Failure",
+    "FailureKind",
+    "FieldInfo",
+    "FileIOError",
     "Handle",
+    "InputError",
+    "InternalError",
+    "Irel",
+    "NodeError",
+    "NotFoundError",
+    "NumericalError",
     "OncvpspError",
+    "Projectors",
+    "Run",
+    "Stage",
     "all_electron",
     "build_info",
     "channel",
     "confine",
     "coupled",
+    "field_info",
     "has_node",
     "read_toml",
     "run",
     "toml_dumps",
 ]
 
-_RELS = {"nr": 0, "sr": 1, "fr": 2, "r": 2}
+_RELS = {"nr": Irel.NR, "sr": Irel.SR, "fr": Irel.FR, "r": Irel.FR}
 _MODES = {"channel": 0, "projectors": 1, "node": 2}
+Input = dict[str, Any] | str | os.PathLike | None
+Text = bool | str | os.PathLike
 
 
-def build_info():
+def build_info() -> dict[str, str]:
     """the library's build: {"commit", "source", "compiled"}, its git
     commit, the state of the source against it and the build time"""
     nout = C.c_size_t()
@@ -54,20 +105,30 @@ def build_info():
 
 
 def _irel(irel):
-    """0 non-, 1 scalar- and 2 fully-relativistic, or 'nr', 'sr', 'fr'"""
+    """0 non-, 1 scalar- and 2 fully-relativistic (Irel), or 'nr', 'sr',
+    'fr'"""
     if isinstance(irel, str):
-        return _RELS[irel]
+        return int(_RELS[irel.lower()])
     if irel not in (0, 1, 2):
         raise ValueError(f"irel is 0, 1 or 2, not {irel}")
-    return irel
+    return int(irel)
 
 
-def run(inp=None, irel=1, *, ae=None, skip_ld=False, check=True, text=True, **tables):
+def run(
+    inp: Input = None,
+    irel: int | str = 1,
+    *,
+    ae: "AllElectron | Run | None" = None,
+    skip_ld: bool = False,
+    check: bool = True,
+    text: Text = True,
+    **tables: Any,
+) -> Run:
     """the whole run of the input (oncv_run_toml), or from the all-electron
     atom of ae (all_electron, or a run), bit for bit the same
     (oncv_run_ae_toml); skip_ld leaves out the log derivatives"""
     data = input_text(inp, tables)
-    hh = Handle("run", text)
+    hh = Run(text)
     if ae is None:
         ifail = lib.oncv_run_toml(hh.ptr, _irel(irel), data, len(data), int(skip_ld))
     else:
@@ -75,26 +136,51 @@ def run(inp=None, irel=1, *, ae=None, skip_ld=False, check=True, text=True, **ta
     return hh._done(ifail, check)
 
 
-def all_electron(inp=None, irel=1, *, check=True, text=True, **tables):
+def all_electron(
+    inp: Input = None,
+    irel: int | str = 1,
+    *,
+    check: bool = True,
+    text: Text = True,
+    **tables: Any,
+) -> AllElectron:
     """the all-electron atom of the input (oncv_ae_toml): fields ae.*"""
     data = input_text(inp, tables)
-    hh = Handle("ae", text)
+    hh = AllElectron(text)
     return hh._done(lib.oncv_ae_toml(hh.ptr, _irel(irel), data, len(data)), check)
 
 
-def channel(inp, ae, l, mode="channel", *, check=True, text=True, **tables):
+def channel(
+    inp: Input,
+    ae: "AllElectron | Run",
+    l: int,  # noqa: E741
+    mode: str = "channel",
+    *,
+    check: bool = True,
+    text: Text = True,
+    **tables: Any,
+) -> Channel:
     """the channel of angular momentum l of the input, from the
     all-electron atom of ae (oncv_channel_toml): fields channel.*. mode
     'projectors' also makes the local potential and the channel's
     projectors; 'node' stops at the node test of the first projector
     (has_node)"""
     data = input_text(inp, tables)
-    hh = Handle("channel" if mode != "node" else "none", text)
+    hh = Channel(text)
+    if mode == "node":
+        hh._holds = ()
     ifail = lib.oncv_channel_toml(hh.ptr, ae.ptr, data, len(data), l, _MODES[mode])
     return hh._done(ifail, check)
 
 
-def has_node(inp, ae, l, *, text=False, **tables):
+def has_node(
+    inp: Input,
+    ae: "AllElectron | Run",
+    l: int,  # noqa: E741
+    *,
+    text: Text = False,
+    **tables: Any,
+) -> bool:
     """whether the first pseudo-wave of channel l has a node (pspot's
     test), from the all-electron atom of ae; a failure before the test
     raises OncvpspError"""
@@ -107,11 +193,18 @@ def has_node(inp, ae, l, *, text=False, **tables):
 
 
 def coupled(
-    base, icmod, fcfact=0.0, rcfact=0.0, *, skip_ld=False, check=True, text=True
-):
+    base: Run,
+    icmod: int,
+    *,
+    fcfact: float = 0.0,
+    rcfact: float = 0.0,
+    skip_ld: bool = False,
+    check: bool = True,
+    text: Text = True,
+) -> Run:
     """the model core, screening and tests again on the stages of base's
     run with the model core icmod, fcfact, rcfact (oncv_coupled): a run"""
-    hh = Handle("run", text)
+    hh = Run(text)
     ifail = lib.oncv_coupled(hh.ptr, base.ptr, icmod, fcfact, rcfact, int(skip_ld))
     return hh._done(ifail, check)
 
@@ -122,17 +215,17 @@ def _array(values, ctype):
 
 
 def confine(
-    base,
-    radii=None,
-    channels=None,
-    energies=None,
-    walls=None,
-    r0=0.0,
-    ecutmax=0.0,
+    base: Run,
+    radii: Any = None,
+    channels: Any = None,
+    energies: Any = None,
+    walls: Any = None,
+    r0: float = 0.0,
+    ecutmax: float = 0.0,
     *,
-    check=True,
-    text=True,
-):
+    check: bool = True,
+    text: Text = True,
+) -> Confinement:
     """the confined atom of base's run, as oncvpsp_confine.x (oncv_confine):
     fields confine.*. radii of the sphere (bohr), None for the default
     (1.25, 1.5, 2 times the largest core radius), () for no sphere;
@@ -151,7 +244,7 @@ def confine(
     ww = None if walls is None else np.atleast_1d(np.asarray(walls, float))
     nwalls = -1 if ww is None else len(ww)
     pw, kw = _array([] if ww is None else ww.tolist(), C.c_double)
-    hh = Handle("confine", text)
+    hh = Confinement(text)
     ifail = lib.oncv_confine(
         hh.ptr, base.ptr, pr, nradii, pc, len(chans), pe, pw, nwalls, r0, ecutmax
     )
@@ -159,7 +252,7 @@ def confine(
     return hh._done(ifail, check)
 
 
-def read_toml(path):
+def read_toml(path: str | os.PathLike) -> dict[str, Any]:
     """the dictionary of a TOML input file"""
     import tomllib
 

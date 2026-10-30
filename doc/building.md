@@ -301,8 +301,8 @@ The steps below make one script, run from the top of the source tree (it
 reads `tests/data/toml/14_Si.toml`).
 
 The library's build, and a whole run from a TOML file. `irel` is 0, 1 or 2,
-or `"nr"`, `"sr"`, `"fr"`; the fields are NumPy arrays in the Fortran
-shapes, listed in `oncvpsp.FIELDS`:
+or `"nr"`, `"sr"`, `"fr"`. The run is a `Mapping` of its fields to NumPy
+arrays in the Fortran shapes, and `field_info` says what each one is:
 
 ```python
 import numpy as np
@@ -313,12 +313,25 @@ print(oncvpsp.build_info())  # {'commit': ..., 'source': ..., 'compiled': ...}
 
 run = oncvpsp.run("tests/data/toml/14_Si.toml", irel="sr")
 dims = run.dims  # mmax, lmax, lloc, nproj, nkap, ...
-rr = run["pot.rr"]  # the radial mesh, (mmax,)
-vkb = run["pot.vkb"]  # projectors, (mmax, mxprj, mxl+1, nkap)
-evkb = run["pot.evkb"]  # their energies, (mxprj, mxl+1, nkap)
-vloc = run["pot.vpuns"][:, dims["lloc"]]  # the local potential (lloc 4)
-print(dims["mmax"], dims["lmax"], dims["nproj"][: dims["lmax"] + 1])
-print(sorted(run.keys())[:5], len(run.keys()))
+print(dims.mmax, dims.lmax, dims.nproj[: dims.lmax + 1])
+print(len(run), "fields:", list(run)[:3])
+print(oncvpsp.field_info("pot.vkb"))  # its axes, units and what it is
+vkb = run["pot.vkb"]  # (r, iproj, l, ikap): (mmax, mxprj, mxl+1, nkap)
+```
+
+The physics, without the indices: the mesh, the local and semi-local
+potentials, each channel's projectors (only the `nproj` it has) and its
+nonlocal operator, the densities in e/bohr³ (the fields are 4π times
+them), and a pseudo-wave's convergence with the cutoff:
+
+```python
+rr = run.mesh  # bohr
+vloc = run.local_potential  # Ha
+energies, beta = run.projectors(0)  # l=0: (nproj,), (mmax, nproj)
+kk = run.kernel(0)  # sum_i beta_i(r) e_i beta_i(r'), (mmax, mmax)
+rho = run.valence_density
+print("valence charge:", np.trapezoid(4 * np.pi * rr**2 * rho, rr))
+print(run.convergence(0))  # rows (Ecut, err), l=0's first pseudo-wave
 ```
 
 The tests, `tests.*`, and the all-electron atom, `ae.*`:
@@ -344,15 +357,15 @@ run.write("Si.psp8")
 run.write("Si.upf")
 ```
 
-The input as a dictionary, with tables merged over it, here for a scan of
-`qcut`. `check=False` leaves a failure in the handle instead of raising it,
-and `text=False` discards the text output (`text="run.out"` would write it
-to that file):
+The input as a dictionary, with tables merged over it key by key, here for
+a scan of `qcut` (the table's other keys stay `base`'s). `check=False`
+leaves a failure in the handle instead of raising it, and `text=False`
+discards the text output (`text="run.out"` would write it to that file):
 
 ```python
 base = oncvpsp.read_toml("tests/data/toml/14_Si.toml")
 for qcut in (5.0, 6.0, 7.0):
-    pp = dict(base["pseudopotentials"], qcut=[qcut, 5.0, 5.0])
+    pp = {"qcut": [qcut, 5.0, 5.0]}
     scan = oncvpsp.run(
         base, irel=1, pseudopotentials=pp, check=False, text=False
     )
@@ -371,10 +384,10 @@ ae = oncvpsp.all_electron(base, irel=1)
 print("ae total energy:", ae["ae.etot"])
 same = oncvpsp.run(base, ae=ae, text=False)
 assert np.array_equal(same["pot.vkb"], vkb)
-for ll in range(dims["lmax"] + 1):
+for ll in range(dims.lmax + 1):
     ch = oncvpsp.channel(base, ae, ll, mode="projectors", text=False)
-    print(ll, ch["channel.pswf"].shape, ch["channel.evkb"][:, 0])
-pp = dict(base["pseudopotentials"], qcut=[7.0, 5.0, 5.0])
+    print(ll, ch["channel.pswf"].shape, ch.projectors().energies)
+pp = {"qcut": [7.0, 5.0, 5.0]}
 print("node at qcut 7:", oncvpsp.has_node(base, ae, 0, pseudopotentials=pp))
 ```
 
@@ -388,19 +401,23 @@ conf = oncvpsp.confine(run, radii=[3.0, 3.5], walls=())
 print("confine:", conf["confine.nmiss"], conf["confine.max_de"])
 ```
 
-Failures: an `OncvpspError`, or with `check=False` the handle's `ifail`
-and `failure`. The library's own message (`Error: missing key z in
-[oncvpsp]`) goes to stderr. A handle is freed when it is no longer
-referenced, or by `close()`:
+Failures: an `OncvpspError` of the class of its kind (`InputError`,
+`ConvergenceError`, `ConstructionError` and its `NodeError`, ...), or with
+`check=False` the handle's `ifail` and `failure`. The library's own message
+(`Error: missing key z in [oncvpsp]`) goes to stderr. A handle is freed
+when it is no longer referenced, at the end of a `with` block, or by
+`close()`:
 
 ```python
 try:
     oncvpsp.run({"oncvpsp": {"atsym": "O"}}, irel=1)
-except oncvpsp.OncvpspError as err:
-    print(err.kind_name, err.stage_name, err.msg)
+except oncvpsp.InputError as err:
+    print(err.kind.name, err.stage.name, err.msg)  # INPUT INPUT 42
 bad = oncvpsp.run({"oncvpsp": {"atsym": "O"}}, irel=1, check=False)
 print(bad.ifail, bad.failure.stage)
 
+with oncvpsp.run(base, irel=1, text=False) as again:
+    print(again.kernel(1).shape)
 run.close()
 ```
 
@@ -441,9 +458,10 @@ As in Python, it checks the library's interface version, and the
 [libquadmath note](#conda-libquadmath) applies to a Julia of its own
 toolchain too.
 
-`run`, `write`, `error_of`, `kind_name` and `stage_name` aren't exported
-(Julia's `Base` has a `run` and a `write`); call them as `ONCVPSP.run` and
-so on. The package's tests run under ctest
+A whole run is `oncvpsp(...)`; `ONCVPSP.run` is the same function, not
+exported because `Base` has a `run`. For the same reason the channel's
+handle type is `ONCVPSP.Channel`. A run's file is written with Base's
+`write("Si.upf", run)`. The package's tests run under ctest
 (`ctest --test-dir build -R julia_wrapper`).
 
 ### Example
@@ -453,21 +471,32 @@ the source tree. Julia's indices start at 1, so `l` is at index `l+1`, the
 first level at 1, and so on: `cross[1, 3, 1, 1, 1]` below is Python's
 `cross[0, 2, 0, 0, 0]`, with the same value.
 
-The library's build, and a whole run:
+The library's build, and a whole run, an `AbstractDict` of its fields:
 
 ```julia
 using ONCVPSP
 
 println(build_info())  # Dict("commit" => ..., "source" => ..., ...)
 
-run = ONCVPSP.run("tests/data/toml/14_Si.toml"; irel="sr")
+run = oncvpsp("tests/data/toml/14_Si.toml"; irel=:sr)
 dims = run.dims                     # mmax, lmax, lloc, nproj, nkap, ...
-rr = run["pot.rr"]                  # the radial mesh, (mmax,)
-vkb = run["pot.vkb"]                # projectors, (mmax, mxprj, mxl+1, nkap)
-evkb = run["pot.evkb"]              # their energies, (mxprj, mxl+1, nkap)
-vloc = run["pot.vpuns"][:, dims.lloc+1]  # the local potential (lloc 4)
 println(dims.mmax, " ", dims.lmax, " ", dims.nproj[1:dims.lmax+1])
-println(length(keys(run)), " fields: ", first(sort(collect(keys(run))), 3))
+println(length(run), " fields: ", first(keys(run), 3))
+display(fieldinfo("pot.vkb"))       # its axes, units and what it is
+vkb = run["pot.vkb"]                # (mmax, mxprj, mxl+1, nkap)
+```
+
+The physics, without the indices (`l` is the angular momentum here, not
+an index):
+
+```julia
+rr = mesh(run)                      # bohr
+vloc = local_potential(run)         # Ha
+energies, beta = projectors(run, 0) # l=0: (nproj,), (mmax, nproj)
+kk = kernel(run, 0)                 # sum_i beta_i(r) e_i beta_i(r')
+rho = 4π .* rr .^ 2 .* valence_density(run)
+println("valence charge: ", sum(diff(rr) .* (rho[1:end-1] .+ rho[2:end]) ./ 2))
+println(convergence(run, 0))        # rows (Ecut, err)
 ```
 
 The tests and the all-electron atom:
@@ -484,8 +513,8 @@ The text output and the pseudopotential files:
 
 ```julia
 @assert occursin("Begin DIAGNOSTICS", run.text)
-ONCVPSP.write(run, "Si.psp8")
-ONCVPSP.write(run, "Si.upf")
+write("Si.psp8", run)
+write("Si.upf", run)
 ```
 
 A scan of `qcut`, with tables merged over a dictionary:
@@ -493,9 +522,8 @@ A scan of `qcut`, with tables merged over a dictionary:
 ```julia
 base = ONCVPSP.TOML.parsefile("tests/data/toml/14_Si.toml")
 for qcut in (5.0, 6.0, 7.0)
-    pp = merge(base["pseudopotentials"], Dict("qcut" => [qcut, 5.0, 5.0]))
-    scan = ONCVPSP.run(base; irel=1, pseudopotentials=pp, check=false,
-                       text=false)
+    pp = Dict("qcut" => [qcut, 5.0, 5.0])  # merged over base's table
+    scan = oncvpsp(base; irel=1, pseudopotentials=pp, check=false, text=false)
     if scan.ifail != 0  # at 7.0 the s pseudo-wave has a node
         println(qcut, " failed: ", sprint(showerror, ONCVPSP.error_of(scan)))
     else
@@ -509,38 +537,40 @@ The all-electron atom once, then the stages from it:
 ```julia
 ae = all_electron(base; irel=1)
 println("ae total energy: ", ae["ae.etot"])
-same = ONCVPSP.run(base; ae=ae, text=false)
+same = oncvpsp(base; ae=ae, text=false)
 @assert same["pot.vkb"] == vkb
 for ll in 0:dims.lmax
     ch = channel(base, ae, ll; mode=:projectors, text=false)
-    println(ll, " ", size(ch["channel.pswf"]), " ", ch["channel.evkb"][:, 1])
+    println(ll, " ", size(ch["channel.pswf"]), " ", projectors(ch).energies)
 end
-pp = merge(base["pseudopotentials"], Dict("qcut" => [7.0, 5.0, 5.0]))
+pp = Dict("qcut" => [7.0, 5.0, 5.0])
 println("node at qcut 7: ", has_node(base, ae, 0; pseudopotentials=pp))
 ```
 
 The model core again, and the confined atom:
 
 ```julia
-teter = coupled(run, 3, 1.5, 1.2; text=false)
+teter = coupled(run, 3; fcfact=1.5, rcfact=1.2, text=false)
 println("pseudo-atom energy, icmod 3: ", teter["epstot"])
 conf = confine(run; radii=[3.0, 3.5], walls=())
 println("confine: ", conf["confine.nmiss"], " ", conf["confine.max_de"])
 ```
 
-Failures, and freeing a handle (otherwise the garbage collector does):
+Failures, whose kind and stage are Symbols, and freeing a handle at the
+end of a `do` block or by `close` (otherwise the garbage collector does):
 
 ```julia
 try
-    ONCVPSP.run(Dict("oncvpsp" => Dict("atsym" => "O")); irel=1)
+    oncvpsp(Dict("oncvpsp" => Dict("atsym" => "O")); irel=1)
 catch err
     err isa OncvpspError || rethrow()
-    println(ONCVPSP.kind_name(err), " ", ONCVPSP.stage_name(err), " ",
-            err.failure.msg)
+    println(err.kind, " ", err.stage, " ", err.msg)  # input input 42
 end
-bad = ONCVPSP.run(Dict("oncvpsp" => Dict("atsym" => "O")); irel=1,
-                  check=false)
+bad = oncvpsp(Dict("oncvpsp" => Dict("atsym" => "O")); irel=1, check=false)
 println(bad.ifail, " ", bad.failure.stage)
 
+oncvpsp(base; irel=1, text=false) do again
+    println(size(kernel(again, 1)))
+end
 close(run)
 ```

@@ -6,7 +6,7 @@ import ctypes.util
 import glob
 import os
 
-API_VERSION = 4
+API_VERSION = 5
 MXLIN = 5
 MXRANK = 5
 
@@ -86,6 +86,7 @@ def load():
         "oncv_failure": ([vp, C.POINTER(Failure)], ci),
         "oncv_dims": ([vp, C.POINTER(Dims)], ci),
         "oncv_field_name": ([ci, cp, sz], ci),
+        "oncv_field_info": ([ci, ci, cp, sz, C.POINTER(sz)], ci),
         "oncv_shape": ([vp, cp, sz, pi, C.c_int * MXRANK], ci),
         "oncv_get_double": ([vp, cp, sz, pd, sz], ci),
         "oncv_get_int": ([vp, cp, sz, pi, sz], ci),

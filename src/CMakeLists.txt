@@ -165,10 +165,10 @@ target_link_libraries(oncvpsp
         oncvpsp::compile_options
 )
 
-# The C interface (oncvpsp_c_m.F90, include/oncvpsp.h): the shared library liboncvpsp, of the static
-# library's objects that the interface reaches
+# The C interface (oncvpsp_c_m.F90, its field table c_fields_m.f90, include/oncvpsp.h): the shared
+# library liboncvpsp, of the static library's objects that the interface reaches
 if (ONCVPSP_WITH_C_API)
-    add_library(oncvpsp_c SHARED oncvpsp_c_m.F90)
+    add_library(oncvpsp_c SHARED oncvpsp_c_m.F90 c_fields_m.f90)
     add_library(oncvpsp::c ALIAS oncvpsp_c)
     set_target_properties(oncvpsp_c PROPERTIES
         OUTPUT_NAME oncvpsp

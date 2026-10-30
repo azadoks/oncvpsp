@@ -64,6 +64,23 @@ static int in_group(const char *name, const char *group)
     return strncmp(name, group, strlen(group)) == 0 && name[strlen(group)] == '.';
 }
 
+/* The number of axes oncv_field_info gives field ifield, -1 without a
+ * sentence on it */
+static int info_rank(int ifield)
+{
+    char text[256];
+    size_t nout = 0, kk;
+    int rank = 0;
+    if (oncv_field_info(ifield, ONCV_INFO_DOC, NULL, 0, &nout) != 0 || nout == 0)
+        return -1;
+    oncv_field_info(ifield, ONCV_INFO_AXES, NULL, 0, &nout);
+    if (nout >= sizeof text) return -1;
+    oncv_field_info(ifield, ONCV_INFO_AXES, text, nout, &nout);
+    for (kk = 0; kk < nout; kk++)
+        if (text[kk] != ' ' && (kk == 0 || text[kk - 1] == ' ')) rank++;
+    return rank;
+}
+
 /* Every field of the group of the two handles: the shapes and values the
  * same */
 static void same_fields(void *h1, void *h2, const char *group)
@@ -81,6 +98,7 @@ static void same_fields(void *h1, void *h2, const char *group)
         oncv_shape(h2, NAME(name), &rank2, shp2);
         check("shapes of two handles", rank1 == rank2 &&
               memcmp(shp1, shp2, sizeof(int) * (size_t)rank1) == 0);
+        check(name, info_rank(ifield) == rank1);
         for (size = 1, kk = 0; kk < (size_t)rank1; kk++) size *= (size_t)shp1[kk];
         if (field[0] == 'r') {
             double *v1 = calloc(size + 1, sizeof *v1), *v2 = calloc(size + 1, sizeof *v2);
@@ -484,6 +502,13 @@ int main(int argc, char **argv)
         check("build info", nout > 0 && nout < sizeof info);
         oncv_build_info(info, nout, &nout);
         check("its lines", strncmp(info, "commit ", 7) == 0 && memchr(info, '\n', nout));
+    }
+
+    {
+        size_t nout = 0;
+        check("field info past the last field",
+              oncv_field_info(100000, ONCV_INFO_DOC, NULL, 0, &nout) != 0 && nout == 0);
+        check("field info of no such kind", oncv_field_info(1, 4, NULL, 0, &nout) != 0);
     }
 
     h1 = oncv_new();

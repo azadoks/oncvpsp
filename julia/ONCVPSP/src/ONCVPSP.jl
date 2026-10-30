@@ -4,33 +4,39 @@ ONCVPSP's runs and stages in Julia, over liboncvpsp (include/oncvpsp.h).
 The input is a dictionary in the layout of the TOML input, the TOML text,
 or the path of a TOML file; keyword arguments are tables merged over it,
 key by key, and nothing values are left out (TOML has no null). Each
-function returns a `Handle`, whose fields are arrays in the Fortran shapes
-(Julia's order is Fortran's); a failure throws an `OncvpspError`, or with
-`check=false` is left in the handle. `text=true` keeps the text output
-(`h.text`), `false` discards it, a path writes it there. The library is `ENV["ONCVPSP_LIBRARY"]`, or liboncvpsp on the
-system's search path.
+function returns a handle (`Run`, `AllElectron`, `ONCVPSP.Channel`,
+`Confinement`), an `AbstractDict` of its fields to arrays in the Fortran
+shapes (Julia's order is Fortran's), which `fieldinfo` describes; a
+failure throws an `OncvpspError`, or with `check=false` is left in the
+handle. `text=true` keeps the text output (`h.text`), `false` discards
+it, a path writes it there. The library is `ENV["ONCVPSP_LIBRARY"]`, or
+liboncvpsp on the system's search path.
 
     using ONCVPSP
-    run = ONCVPSP.run("tests/data/toml/14_Si.toml"; irel=1)
-    size(run["pot.vkb"])   # (mmax, mxprj, lmax+1, nkap)
-    ONCVPSP.write(run, "Si.upf")
+    oncvpsp("tests/data/toml/14_Si.toml"; irel=:sr) do run
+        size(run["pot.vkb"])   # (mmax, mxprj, mxl+1, nkap)
+        kernel(run, 0)         # the nonlocal operator of l=0, (mmax, mmax)
+        write("Si.upf", run)
+    end
 """
 module ONCVPSP
 
 using Libdl
 using TOML
 
-export Handle, OncvpspError, all_electron, build_info, channel, confine, coupled, has_node
+export AllElectron, Confinement, Handle, OncvpspError, Run, all_electron, build_info,
+       channel, confine, convergence, core_density, coupled, fieldinfo, has_node, kernel,
+       local_potential, mesh, model_core, oncvpsp, projectors, semilocal, valence_density
 
-const API_VERSION = 4
+const API_VERSION = 5
 const MXLIN = 5
 const MXRANK = 5
 const MSG_PSPOT_NODE = 122
-const FAILURES = ("none", "input", "convergence", "not_found", "construction",
-                  "numerical", "io", "internal")
-const STAGES = ("none", "input", "ae", "channel", "vkb", "valence", "model_core",
-                "screening", "diag", "ghosts", "unscreen", "configs", "plot",
-                "phsft", "tests", "output", "confine")
+const FAILURES = (:none, :input, :convergence, :not_found, :construction, :numerical,
+                  :io, :internal)
+const STAGES = (:none, :input, :ae, :channel, :vkb, :valence, :model_core, :screening,
+                :diag, :ghosts, :unscreen, :configs, :plot, :phsft, :tests, :output,
+                :confine)
 
 "oncv_failure_t"
 struct Failure
@@ -58,7 +64,42 @@ end
 
 const libhandle = Ref{Ptr{Cvoid}}(C_NULL)
 const symbols = Dict{Symbol,Ptr{Cvoid}}()
-const fields = Dict{String,Char}()
+
+"""
+A field of the results (oncv_field_info): its name, kind ('r' real, 'i'
+integer), axes, the first index first (an axis of different quantities as
+their names in brackets, "[ecut,err]"), units ("" for none) and what it is
+"""
+struct FieldInfo
+    name::String
+    kind::Char
+    axes::Vector{String}
+    units::String
+    doc::String
+end
+
+function Base.show(io::IO, ::MIME"text/plain", ff::FieldInfo)
+    axes = isempty(ff.axes) ? "scalar" : join(ff.axes, ", ")
+    print(io, ff.name, " (", axes, ")", isempty(ff.units) ? "" : " [$(ff.units)]", ": ",
+          ff.doc)
+end
+
+const fields = Dict{String,FieldInfo}()
+const fieldorder = String[]
+
+"what the field `name` is: its axes, units and a sentence (a `FieldInfo`)"
+fieldinfo(name::AbstractString) =
+    get(() -> throw(KeyError(name)), fields, name)
+
+function info_text(ifield, what)
+    nout = Ref{Csize_t}(0)
+    ccall(sym(:oncv_field_info), Cint, (Cint, Cint, Ptr{UInt8}, Csize_t, Ref{Csize_t}),
+          ifield, what, C_NULL, 0, nout)
+    buf = Vector{UInt8}(undef, nout[])
+    ccall(sym(:oncv_field_info), Cint, (Cint, Cint, Ptr{UInt8}, Csize_t, Ref{Csize_t}),
+          ifield, what, buf, length(buf), nout)
+    String(buf)
+end
 
 "the address of the library's function name"
 sym(name::Symbol) = get!(() -> Libdl.dlsym(libhandle[], name), symbols, name)
@@ -77,12 +118,16 @@ function __init__()
         error("liboncvpsp $path has interface version $version, this package $API_VERSION")
     buf = Vector{UInt8}(undef, 64)
     empty!(fields)
+    empty!(fieldorder)
     while true
+        ifield = length(fieldorder) + 1
         nn = ccall(sym(:oncv_field_name), Cint, (Cint, Ptr{UInt8}, Csize_t),
-                   length(fields) + 1, buf, length(buf))
+                   ifield, buf, length(buf))
         nn == 0 && break
-        kind, name = split(String(buf[1:nn]))
-        fields[name] = kind[1]
+        kind, name = String.(split(String(buf[1:nn])))
+        fields[name] = FieldInfo(name, kind[1], String.(split(info_text(ifield, 1))),
+                                 info_text(ifield, 2), info_text(ifield, 3))
+        push!(fieldorder, name)
     end
 end
 
@@ -101,8 +146,11 @@ function build_info()
 end
 
 """
-A failed run or stage: ifail and its parts (oncv_failure_t), the names of
-its kind and stage, and the text output (the message is there) if kept
+A failed run or stage: ifail, its record (oncv_failure_t) and the text
+output (the message is there) if kept. `err.kind` and `err.stage` are
+Symbols (`:input`, `:convergence`, ...; `:ae`, `:channel`, ...), and
+`err.msg`, `err.ll`, `err.ikap`, `err.iproj` the record's; `isnode(err)`
+whether it is a node in a channel's first pseudo-wave (has_node)
 """
 struct OncvpspError <: Exception
     ifail::Int
@@ -110,13 +158,24 @@ struct OncvpspError <: Exception
     text::Union{String,Nothing}
 end
 
-kind_name(err::OncvpspError) = get(FAILURES, err.failure.kind + 1, "?")
-stage_name(err::OncvpspError) = get(STAGES, err.failure.stage + 1, "?")
+function Base.getproperty(err::OncvpspError, name::Symbol)
+    ff = getfield(err, :failure)
+    name === :kind && return get(FAILURES, ff.kind + 1, :unknown)
+    name === :stage && return get(STAGES, ff.stage + 1, :unknown)
+    name in (:msg, :ierr, :ll, :ikap, :iproj) && return getfield(ff, name)
+    getfield(err, name)
+end
+
+Base.propertynames(::OncvpspError) =
+    (:ifail, :failure, :text, :kind, :stage, :msg, :ierr, :ll, :ikap, :iproj)
+
+isnode(err::OncvpspError) = err.msg == MSG_PSPOT_NODE
+kind_name(err::OncvpspError) = String(err.kind)
+stage_name(err::OncvpspError) = String(err.stage)
 
 function Base.showerror(io::IO, err::OncvpspError)
-    ff = err.failure
-    print(io, "$(kind_name(err)) failure (ifail $(err.ifail), msg $(ff.msg)) at stage ",
-          stage_name(err), ff.ll >= 0 ? ", l=$(ff.ll)" : "")
+    print(io, "$(err.kind) failure (ifail $(err.ifail), msg $(err.msg)) at stage ",
+          err.stage, err.ll >= 0 ? ", l=$(err.ll)" : "")
     errors = filter(ll -> occursin("ERROR", ll), split(something(err.text, ""), '\n'))
     isempty(errors) || print(io, ": ", strip(errors[end]))
 end
@@ -124,8 +183,8 @@ end
 # the fields of each kind of handle, by prefix ("" for the run's); the
 # library writes an error for each field asked of a handle that holds none
 const STAGE_PREFIXES = ("ae.", "channel.", "confine.")
-const HOLDS = Dict(:run => ("", "ae."), :ae => ("ae.",), :channel => ("channel.",),
-                   :confine => ("confine.",), :none => ())
+holds_of(K) = Dict(:run => ("", "ae."), :ae => ("ae.",), :channel => ("channel.",),
+                   :confine => ("confine.",))[K]
 
 function prefix(name)
     ii = findfirst(pp -> startswith(name, pp), STAGE_PREFIXES)
@@ -133,20 +192,21 @@ function prefix(name)
 end
 
 """
-One calculation of liboncvpsp, of a kind (:run, :ae, :channel, :confine):
-`h[name]` is a field, `keys(h)` those it holds. The handle is freed by a
-finalizer, or by `close(h)`
+One calculation of liboncvpsp, of a kind K: `Run` (`Handle{:run}`),
+`AllElectron`, `ONCVPSP.Channel` or `Confinement`. An `AbstractDict` of
+the fields it holds: `h[name]` is a field, `keys(h)` those it holds;
+`h.text`, `h.dims`, `h.failure` and `h.ifail` its run's. The handle is
+freed by a finalizer, or by `close(h)`
 """
-mutable struct Handle
+mutable struct Handle{K} <: AbstractDict{String,Any}
     ptr::Ptr{Cvoid}
-    kind::Symbol
     holds::Tuple
     keep_text::Bool
     ifail::Int
-    function Handle(kind::Symbol, text=true)
+    function Handle{K}(text=true) where {K}
         ptr = ccall(sym(:oncv_new), Ptr{Cvoid}, ())
         ptr == C_NULL && throw(OutOfMemoryError())
-        hh = new(ptr, kind, HOLDS[kind], text === true, 0)
+        hh = new{K}(ptr, holds_of(K), text === true, 0)
         finalizer(close, hh)
         if text === true
             ccall(sym(:oncv_set_output_buffer), Cint, (Ptr{Cvoid}, Cint), ptr, 1)
@@ -158,6 +218,15 @@ mutable struct Handle
         hh
     end
 end
+
+"a whole run: pot.*, tests.*, core.*, warnings.* and its all-electron atom ae.*"
+const Run = Handle{:run}
+"the all-electron atom alone: ae.*"
+const AllElectron = Handle{:ae}
+"one channel: channel.* (not exported: Base has a Channel)"
+const Channel = Handle{:channel}
+"the confined atom of a run: confine.*"
+const Confinement = Handle{:confine}
 
 "frees the handle now"
 function Base.close(hh::Handle)
@@ -217,6 +286,8 @@ function Base.getproperty(hh::Handle, name::Symbol)
     getfield(hh, name)
 end
 
+Base.propertynames(::Handle) = (:text, :dims, :failure, :ifail)
+
 "the shape of a field (Fortran order), nothing if the handle holds none"
 function shape(hh::Handle, name::AbstractString)
     (haskey(fields, name) && prefix(name) in hh.holds) || return nothing
@@ -230,7 +301,7 @@ end
 function Base.getindex(hh::Handle, name::AbstractString)
     shp = shape(hh, name)
     shp === nothing && throw(KeyError(name))
-    if fields[name] == 'r'
+    if fields[name].kind == 'r'
         out = Array{Float64}(undef, shp...)
         ifail = ccall(sym(:oncv_get_double), Cint,
                       (Ptr{Cvoid}, Ptr{UInt8}, Csize_t, Ptr{Float64}, Csize_t),
@@ -246,13 +317,22 @@ function Base.getindex(hh::Handle, name::AbstractString)
 end
 
 Base.haskey(hh::Handle, name::AbstractString) = shape(hh, name) !== nothing
-Base.keys(hh::Handle) = sort!([nn for nn in keys(fields) if haskey(hh, nn)])
+Base.keys(hh::Handle) = [nn for nn in fieldorder if haskey(hh, nn)]
+Base.length(hh::Handle) = count(nn -> haskey(hh, nn), fieldorder)
+Base.get(hh::Handle, name::AbstractString, default) = haskey(hh, name) ? hh[name] : default
+function Base.iterate(hh::Handle, state=(keys(hh), 1))
+    names, ii = state
+    ii > length(names) ? nothing : (names[ii] => hh[names[ii]], (names, ii + 1))
+end
+# one calculation: equal only to itself (not AbstractDict's equal fields)
+Base.:(==)(aa::Handle, bb::Handle) = aa === bb
+Base.hash(hh::Handle, hh0::UInt) = hash(objectid(hh), hh0)
 
 """
 writes the pseudopotential file of a run: psp8, upf or psml, by default
 from path's extension
 """
-function write(hh::Handle, path::AbstractString; format=lstrip(splitext(path)[2], '.'))
+function Base.write(path::AbstractString, hh::Run; format=lstrip(splitext(path)[2], '.'))
     fmt = String(format)
     ifail = ccall(sym(:oncv_write_files), Cint,
                   (Ptr{Cvoid}, Ptr{UInt8}, Csize_t, Ptr{UInt8}, Csize_t),
@@ -261,9 +341,92 @@ function write(hh::Handle, path::AbstractString; format=lstrip(splitext(path)[2]
     nothing
 end
 
-Base.show(io::IO, hh::Handle) =
-    print(io, "ONCVPSP.Handle(:$(hh.kind), ",
-          hh.ptr == C_NULL ? "closed" : "ifail=$(hh.ifail)", ")")
+function Base.show(io::IO, hh::Handle{K}) where {K}
+    name = Dict(:run => "Run", :ae => "AllElectron", :channel => "ONCVPSP.Channel",
+                :confine => "Confinement")[K]
+    state = hh.ptr == C_NULL ? "closed" :
+            hh.ifail != 0 ? "ifail=$(hh.ifail)" : "$(length(hh)) fields"
+    print(io, name, "(", state, ")")
+end
+Base.show(io::IO, ::MIME"text/plain", hh::Handle) = show(io, hh)
+
+# the physics of the fields
+
+function kap(ikap, nkap)
+    1 <= ikap <= nkap || throw(ArgumentError("ikap is 1 to $nkap, not $ikap"))
+    ikap
+end
+
+function lcheck(l, lmax)
+    0 <= l <= lmax || throw(ArgumentError("l is 0 to $lmax, not $l"))
+    l
+end
+
+"the log radial mesh (bohr)"
+mesh(run::Run) = run["pot.rr"]
+mesh(ae::AllElectron) = ae["ae.rr"]
+
+"the local potential (Ha) on the mesh"
+local_potential(run::Run) = run["pot.vpuns"][:, run.dims.lloc+1]
+
+"the unscreened semi-local potential of `l` (Ha) on the mesh"
+semilocal(run::Run, l::Integer) = run["pot.vpuns"][:, lcheck(l, run.dims.lmax)+1]
+
+"""
+the projectors of `l` (`ikap` 2 for j=l-1/2 when fully relativistic),
+nproj of them: `(energies, vkb)`, their coefficients (Ha) and the
+projectors r*beta on the mesh (mmax, nproj), normalized. Only their
+kernel is independent of their basis
+"""
+function projectors(run::Run, l::Integer; ikap::Integer=1)
+    dd = run.dims
+    kk, nn = kap(ikap, dd.nkap), dd.nproj[lcheck(l, dd.lmax)+1]
+    (energies=run["pot.evkb"][1:nn, l+1, kk], vkb=run["pot.vkb"][:, 1:nn, l+1, kk])
+end
+
+"with mode :projectors, the channel's projectors, as those of a run"
+function projectors(ch::Channel; ikap::Integer=1)
+    kk = kap(ikap, ch["channel.mkap"])
+    evkb = ch["channel.evkb"]
+    isempty(evkb) &&
+        throw(ArgumentError("the channel has no projectors without mode :projectors"))
+    nn = ch["channel.nproj"]
+    (energies=evkb[1:nn, kk], vkb=ch["channel.vkb"][:, 1:nn, kk])
+end
+
+"""
+the nonlocal operator of `l` on the mesh, sum_i vkb_i(r) e_i vkb_i(r')
+(Ha/bohr), (mmax, mmax): of the projectors, what does not depend on their
+basis
+"""
+kernel(run::Run, l::Integer; ikap::Integer=1) = kernel_of(projectors(run, l; ikap=ikap))
+kernel(ch::Channel; ikap::Integer=1) = kernel_of(projectors(ch; ikap=ikap))
+kernel_of(pp) = pp.vkb * (pp.energies .* transpose(pp.vkb))
+
+"""
+the pseudo valence density (e/bohr^3) of the reference configuration:
+∫ 4π r² ρ dr is the valence charge (the field pot.rho is 4π times it)
+"""
+valence_density(run::Run) = run["pot.rho"] ./ 4π
+
+"the model core density (e/bohr^3), as `valence_density`"
+model_core(run::Run) = run["pot.rhomod"][:, 1] ./ 4π
+
+"the all-electron core density (e/bohr^3), as `valence_density`"
+core_density(run::Run) = run["rhoc"] ./ 4π
+
+"""
+the convergence of the pseudo-wave `iproj` of `l` with the cutoff: rows
+(Ecut, err) (Ha) of the levels it reaches, err from 1e-2 down by half
+decades
+"""
+function convergence(run::Run, l::Integer; ikap::Integer=1, iproj::Integer=1)
+    dd = run.dims
+    kk, np = kap(ikap, dd.nkap), dd.nproj[lcheck(l, dd.lmax)+1]
+    1 <= iproj <= np || throw(ArgumentError("iproj is 1 to $np, not $iproj"))
+    table = permutedims(run["tests.convergence.cross"][:, :, iproj, l+1, kk])
+    table[table[:, 1] .> 0, :]
+end
 
 # the input
 
@@ -308,10 +471,10 @@ the whole run of the input (oncv_run_toml), or from the all-electron atom
 of `ae` (all_electron, or a run), bit for bit the same (oncv_run_ae_toml);
 `skip_ld` leaves out the log derivatives
 """
-function run(inp=nothing; irel=1, ae=nothing, skip_ld=false, check=true, text=true,
-             tables...)
+function oncvpsp(inp=nothing; irel=1, ae=nothing, skip_ld=false, check=true, text=true,
+                 tables...)
     data = input_text(inp, tables)
-    hh = Handle(:run, text)
+    hh = Run(text)
     ifail = if ae === nothing
         ccall(sym(:oncv_run_toml), Cint, (Ptr{Cvoid}, Cint, Ptr{UInt8}, Csize_t, Cint),
               ptr(hh), irel_of(irel), data, sizeof(data), skip_ld)
@@ -323,10 +486,30 @@ function run(inp=nothing; irel=1, ae=nothing, skip_ld=false, check=true, text=tr
     done!(hh, ifail, check)
 end
 
+"`oncvpsp`, by the name of the C function and the Python package's"
+const run = oncvpsp
+
+"""
+the handle of `make(args...; kwargs...)` given to `f`, closed after it
+returns or throws: `oncvpsp(inp; irel=1) do run ... end`
+"""
+function with_handle(f, make, args...; kwargs...)
+    hh = make(args...; kwargs...)
+    try
+        f(hh)
+    finally
+        close(hh)
+    end
+end
+
+oncvpsp(f::Function, inp=nothing; kwargs...) = with_handle(f, oncvpsp, inp; kwargs...)
+all_electron(f::Function, inp=nothing; kwargs...) =
+    with_handle(f, all_electron, inp; kwargs...)
+
 "the all-electron atom of the input (oncv_ae_toml): fields ae.*"
 function all_electron(inp=nothing; irel=1, check=true, text=true, tables...)
     data = input_text(inp, tables)
-    hh = Handle(:ae, text)
+    hh = AllElectron(text)
     ifail = ccall(sym(:oncv_ae_toml), Cint, (Ptr{Cvoid}, Cint, Ptr{UInt8}, Csize_t),
                   ptr(hh), irel_of(irel), data, sizeof(data))
     done!(hh, ifail, check)
@@ -343,7 +526,8 @@ at the node test of the first projector (has_node)
 function channel(inp, ae::Handle, l::Integer; mode=:channel, check=true, text=true,
                  tables...)
     data = input_text(inp, tables)
-    hh = Handle(mode === :node ? :none : :channel, text)
+    hh = Channel(text)
+    mode === :node && (hh.holds = ())
     ifail = ccall(sym(:oncv_channel_toml), Cint,
                   (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{UInt8}, Csize_t, Cint, Cint),
                   ptr(hh), ptr(ae), data, sizeof(data), l, MODES[mode])
@@ -357,17 +541,18 @@ from the all-electron atom of `ae`; a failure before the test throws
 function has_node(inp, ae::Handle, l::Integer; text=false, tables...)
     hh = channel(inp, ae, l; mode=:node, check=false, text=text, tables...)
     hh.ifail == 0 && return false
-    failure(hh).msg == MSG_PSPOT_NODE && return true
-    throw(error_of(hh))
+    err = error_of(hh)
+    isnode(err) && return true
+    throw(err)
 end
 
 """
 the model core, screening and tests again on the stages of `base`'s run
 with the model core icmod, fcfact, rcfact (oncv_coupled): a run
 """
-function coupled(base::Handle, icmod::Integer, fcfact=0.0, rcfact=0.0; skip_ld=false,
+function coupled(base::Run, icmod::Integer; fcfact=0.0, rcfact=0.0, skip_ld=false,
                  check=true, text=true)
-    hh = Handle(:run, text)
+    hh = Run(text)
     ifail = ccall(sym(:oncv_coupled), Cint,
                   (Ptr{Cvoid}, Ptr{Cvoid}, Cint, Cdouble, Cdouble, Cint),
                   ptr(hh), ptr(base), icmod, fcfact, rcfact, skip_ld)
@@ -383,7 +568,7 @@ for the input's window and 0.1; `walls` (Ha/bohr**2), nothing for the
 default, () for none; `r0` the walls' onset, `ecutmax` the basis's largest
 cutoff (Ha), 0 for their defaults
 """
-function confine(base::Handle; radii=nothing, channels=nothing, energies=nothing,
+function confine(base::Run; radii=nothing, channels=nothing, energies=nothing,
                  walls=nothing, r0=0.0, ecutmax=0.0, check=true, text=true)
     rr = radii === nothing ? Float64[] : Float64[radii...]
     nradii = radii === nothing ? 0 : (isempty(rr) ? -1 : length(rr))
@@ -393,7 +578,7 @@ function confine(base::Handle; radii=nothing, channels=nothing, energies=nothing
     ee = energies === nothing ? C_NULL : Float64[energies...]
     ww = walls === nothing ? Float64[] : Float64[walls...]
     nwalls = walls === nothing ? -1 : length(ww)
-    hh = Handle(:confine, text)
+    hh = Confinement(text)
     ifail = GC.@preserve rr cc ee ww ccall(sym(:oncv_confine), Cint,
         (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Float64}, Cint, Ptr{Cint}, Cint, Ptr{Float64},
          Ptr{Float64}, Cint, Cdouble, Cdouble),

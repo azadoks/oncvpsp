@@ -223,7 +223,7 @@ def main():
             print("FAILED:", label, file=sys.stderr)
             nfail += 1
 
-    check("api version", lib.oncv_api_version() == 4)
+    check("api version", lib.oncv_api_version() == 5)
     nout = C.c_size_t()
     lib.oncv_build_info(None, 0, C.byref(nout))
     buf = C.create_string_buffer(nout.value)
@@ -234,7 +234,7 @@ def main():
     check("run", lib.oncv_run_toml(handle, irel, text, len(text), 0) == 0)
     dims = Dims()
     lib.oncv_dims(handle, C.byref(dims))
-    check("dims", dims.version == 4 and dims.irel == irel and dims.mmax > 0)
+    check("dims", dims.version == 5 and dims.irel == irel and dims.mmax > 0)
     names = [
         (kind, name)
         for kind, name in fields(lib)

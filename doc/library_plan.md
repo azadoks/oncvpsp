@@ -547,6 +547,20 @@ So the interface is a hybrid:
       the tests check it against the executable's `build:` line. The
       wrappers leave out None (`nothing`) values of the input, which
       pyoncvpsp's dumps carry and TOML cannot.
+- [x] The fields described in the interface, and the wrappers made
+      idiomatic (`api_version` 5). `oncv_field_info` gives each field's
+      axes, units and a sentence, from the table `src/c_fields_m.f90`
+      that replaced `oncvpsp_c_m`'s list of names; the C test checks that
+      each field has as many axes as its rank. The wrappers return a type
+      per result (`Run`, `AllElectron`, `Channel`, `Confinement`), a
+      `Mapping` (`AbstractDict`) of its fields; a run's accessors give
+      the mesh, the local and semi-local potentials, the projectors
+      trimmed to `nproj`, their kernel, the densities in e/bohr³ and a
+      pseudo-wave's convergence. Python's failures are `IntEnum`s and an
+      exception class per kind (`NodeError` for msg 122), Julia's
+      Symbols; `coupled` takes `fcfact`, `rcfact` as keywords. Julia's
+      run is `oncvpsp` (`ONCVPSP.run` kept), its file `Base.write(path,
+      run)`, and runs and atoms take a `do` block.
 - [x] Valgrind on the C test (nr, sr, fr, lloc 2): no errors; 2 kB lost
       per PSML file written, xmlf90's element stack, which
       `xml_Close` now frees (`cmake/patches/xmlf90-1.6.3.patch`, whose

@@ -43,11 +43,12 @@
 &          oncv_run_toml, oncv_failure, oncv_dims, dims_t, oncv_field_name, &
 &          oncv_shape, oncv_get_double, oncv_get_int, oncv_ae_toml, &
 &          oncv_run_ae_toml, oncv_channel_toml, oncv_coupled, &
-&          oncv_set_output_buffer, oncv_output_text, oncv_confine
+&          oncv_set_output_buffer, oncv_output_text, oncv_confine, &
+&          oncv_field_info
 
 !> the version of the interface: a change to a function or a struct
 !> raises it
- integer(c_int), parameter :: api_version=4
+ integer(c_int), parameter :: api_version=5
 
 !> 1 if c_double is the kind of the reals, else a division by zero that
 !> stops the compilation
@@ -55,51 +56,6 @@
 
 !> the largest rank of a field
  integer, parameter :: mxrank=5
-
-!> the fields of the results that oncv_shape and oncv_get_* copy out, each
-!> its kind (r real, i integer, a logical as 0 or 1) and its name, the
-!> component of results_t (pot.*, tests.*: pseudo_m, test_results_m), of
-!> the all-electron atom (ae.*: ae_state_t), of a channel (channel.*:
-!> channel_t) or of the confined atom's summary (confine.*:
-!> confine_summary_t)
- character(len=32), parameter :: fields(*)=[character(len=32) :: &
-&  'r pot.zz', 'r pot.zion', 'r pot.c_light', 'r pot.rcmax', 'r pot.rr', &
-&  'i pot.nproj', 'r pot.evkb', 'r pot.vkb', 'r pot.esr', 'r pot.eso', &
-&  'r pot.vpuns', 'r pot.rho', 'r pot.rhomod', 'r epstot', 'r ea', 'r rhotae', &
-&  'r rhoc', 'r rcore', 'r vpsml', 'r uupsa', 'i tests.logder.ne', &
-&  'r tests.logder.ee', 'r tests.logder.rl', 'r tests.logder.ae', &
-&  'r tests.logder.ps', 'i tests.ghosts.nrow', 'i tests.ghosts.nn', &
-&  'r tests.ghosts.ee', 'r tests.ghosts.least', 'i tests.configs.ncfg', &
-&  'i tests.configs.nrow', 'i tests.configs.state', 'r tests.configs.ee', &
-&  'r tests.configs.de', 'r tests.convergence.cross', &
-&  'r tests.convergence.curve', 'r tests.convergence.tail', &
-&  'r tests.convergence.opt', 'r tests.convergence.wshare', &
-&  'i tests.weighted_cut.used', 'r tests.weighted_cut.errw', &
-&  'r tests.weighted_cut.ecutw', 'r tests.weighted_cut.weight', &
-&  'r tests.vloc_cut.cut', 'r tests.vloc_cut.check', 'r tests.bbeig', &
-&  'i tests.ghosts.nminus', 'r tests.ghosts.minus', 'i tests.ghosts.nplus', &
-&  'r tests.ghosts.plus', 'r tests.ghosts.ecut', 'i tests.ghosts.basis', &
-&  'r core.teter', 'r core.budget.ecut', 'r core.budget.error', &
-&  'r core.budget.slack', 'r core.budget.ecutw', 'r core.budget.factor', &
-&  'r core.budget.r_s', 'r core.budget.rc_min', 'r core.budget.r_core', &
-&  'i core.budget.fill', 'r core.budget.cpoly', 'r core.budget.martins', &
-&  'r core.budget.ecut_needed', 'r core.budget.r_s6', &
-&  'r core.budget.mismatch', 'r core.budget.crad', 'i core.budget.cfill', &
-&  'r core.budget.cmis', 'i warnings.nwarn', 'i warnings.rec', &
-&  'i ae.irel', 'i ae.nkap', 'r ae.zz', 'i ae.nc', 'i ae.nv', 'i ae.iexc', &
-&  'i ae.na', 'i ae.la', 'r ae.fa', 'r ae.c_light', 'i ae.mmax', 'r ae.al', &
-&  'r ae.rr', 'i ae.it', 'r ae.etot', 'r ae.eterm', 'r ae.res', 'r ae.ea', &
-&  'r ae.rhoc', 'r ae.rho', 'r ae.vfull', 'i ae.warnings.nwarn', &
-&  'i ae.warnings.rec', 'i channel.l', 'i channel.mkap', 'i channel.nproj', &
-&  'i channel.irc', 'i channel.npa', 'i channel.wellprj', &
-&  'r channel.qmsbf', 'r channel.epa', 'r channel.pswf', 'r channel.vp', &
-&  'r channel.cvgplt', 'r channel.ecurve', 'r channel.ektail', &
-&  'r channel.optdg', 'r channel.wshare', 'r channel.wcurve', &
-&  'i channel.warnings.nwarn', 'i channel.warnings.rec', 'r channel.vloc', &
-&  'r channel.evkb', 'r channel.vkb', 'r channel.bbeig', &
-&  'i confine.nmiss', 'i confine.nextra', 'i confine.noff', &
-&  'i confine.nwfail', 'r confine.max_de', 'r confine.cut', 'r confine.dde', &
-&  'i confine.inf']
 
 !> a field copied out of the results: its values, flat, and its shape
  type :: field_t
@@ -1198,6 +1154,8 @@
 !! @param name  its kind and name
 !! @param nname  the size of name
 
+ use c_fields_m, only: fields
+
 !Input variables
  integer(c_int), value :: ifield
  integer(c_size_t), value :: nname
@@ -1213,12 +1171,68 @@
 
  nout=0
  if(ifield<1 .or. ifield>size(fields)) return
- nout=int(min(int(len_trim(fields(ifield)),c_size_t),nname),c_int)
+ nout=int(min(int(len_trim(fields(ifield)%name),c_size_t),nname),c_int)
  do ii=1,nout
-   name(ii)=fields(ifield)(ii:ii)
+   name(ii)=fields(ifield)%name(ii:ii)
  end do
  return
  end function oncv_field_name
+
+ function oncv_field_info(ifield,what,text,ntext,nout) result(ifail) &
+&         bind(c,name='oncv_field_info')
+
+!! what the field ifield (oncv_field_name) is (c_fields_m): with what 1
+!! the names of its axes, blank-separated, the first index first, an axis
+!! of different quantities as their names in brackets ([ecut,err]); 2 its
+!! units, blank for none; 3 one sentence; its first ntext bytes into text,
+!! not terminated, and its whole length in nout, so that a call with ntext
+!! 0 gives the size
+!!
+!! @param ifield  the field
+!! @param what  1 its axes, 2 its units, 3 what it is
+!! @param text  the caller's buffer, ntext characters
+!! @param ntext  its length
+!! @param nout  the length of the text
+
+ use c_fields_m, only: fields
+ use failure_m, only: fail_input, failed, msg_c_field
+ use, intrinsic :: iso_fortran_env, only: error_unit
+
+!Input variables
+ integer(c_int), value :: ifield,what
+ integer(c_size_t), value :: ntext
+
+!Output variables
+ character(kind=c_char), intent(out) :: text(ntext)
+ integer(c_size_t), intent(out) :: nout
+ integer(c_int) :: ifail
+
+!Local variables
+ character(len=:), allocatable :: info
+ integer(c_size_t) :: ii
+
+ ifail=0
+ nout=0
+ if(ifield<1 .or. ifield>size(fields) .or. what<1 .or. what>3) then
+   write(error_unit,'(/a,i0,a,i0)') 'oncv_field_info: ERROR no field '// &
+&       'or no such information, ifield ',ifield,' what ',what
+   ifail=failed(fail_input,msg_c_field)
+   return
+ end if
+ select case(what)
+ case(1)
+   info=trim(fields(ifield)%axes)
+ case(2)
+   info=trim(fields(ifield)%units)
+ case default
+   info=trim(fields(ifield)%doc)
+ end select
+ nout=len(info,kind=c_size_t)
+ do ii=1,min(ntext,nout)
+   text(ii)=info(ii:ii)
+ end do
+ return
+ end function oncv_field_info
 
  function oncv_shape(handle,name,nname,rank,shp) result(ifail) &
 &         bind(c,name='oncv_shape')
@@ -1386,6 +1400,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
+ use c_fields_m, only: fields
  use failure_m, only: fail_input, failed, msg_c_field, msg_c_no_results
  use, intrinsic :: iso_fortran_env, only: error_unit
 
@@ -1412,7 +1427,7 @@
    call lookup_run(hh,name,ff)
  end if
  if(ff%found) return
- if(any(fields(:)(3:)==name)) then
+ if(any(fields(:)%name(3:)==name)) then
    write(error_unit,'(/2a)') 'lookup: ERROR the handle has no results '// &
 &       'of the field ',name
    ifail=failed(fail_input,msg_c_no_results)

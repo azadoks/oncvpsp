@@ -2,9 +2,12 @@
 run's text output and psp8 file the executable's byte for byte (its output
 but for the banner); the input as the TOML file, its dictionary and tables
 given as keyword arguments, the same; the arrays in Fortran order against
-the dimensions; the library's build the executable's; the stages (the all-electron atom, a run from it, each
-channel with its projectors, the node test, a confined atom) against the
-run; and a failure raised, or left in the handle, and a handle closed.
+the dimensions and each field's axes; the library's build the
+executable's; the accessors (projectors, kernel, densities, convergence)
+against the fields; the stages (the all-electron atom, a run from it, each
+channel with its projectors, the node test, the model core again, a
+confined atom) against the run; and a failure raised as its class, or left
+in the handle, and a handle closed.
 
 usage: python_wrapper.py FULL_EXE IREL INPUT.toml WORKDIR
 (ONCVPSP_LIBRARY the library, the package on PYTHONPATH)
@@ -65,19 +68,56 @@ def main():
     )
 
     dims = run.dims
-    check("dims", dims["version"] == oncvpsp.API_VERSION and dims["irel"] == irel)
+    check("dims", dims.version == oncvpsp.API_VERSION and dims.irel == irel)
+    check("a run", isinstance(run, oncvpsp.Run) and isinstance(dims.irel, oncvpsp.Irel))
     vkb = run["pot.vkb"]
-    check("pot.rr", run["pot.rr"].shape == (dims["mmax"],))
+    check("pot.rr", run["pot.rr"].shape == (dims.mmax,))
     check(
         "pot.vkb in Fortran order",
-        vkb.shape[0] == dims["mmax"]
-        and vkb.shape[3] == dims["nkap"]
+        vkb.shape[0] == dims.mmax
+        and vkb.shape[3] == dims.nkap
         and vkb.flags["F_CONTIGUOUS"],
     )
     check("a scalar", np.ndim(run["pot.zion"]) == 0)
     check("no channel in a run", "channel.pswf" not in run)
-    fields = {name: run[name] for name in run.keys()}
-    check("every field of a run", len(fields) > 50)
+    fields = dict(run)
+    check("every field of a run", len(fields) > 50 and len(run) == len(fields))
+
+    def axes_ranks(handle):
+        """each field's axes (field_info), as many as its rank"""
+        return all(
+            len(oncvpsp.field_info(nn).axes) == np.ndim(handle[nn])
+            and oncvpsp.field_info(nn).doc
+            for nn in handle
+        )
+
+    check("the run's axes", axes_ranks(run))
+
+    # the accessors against the fields
+    check("mesh", np.array_equal(run.mesh, fields["pot.rr"]))
+    check(
+        "local potential",
+        np.array_equal(run.local_potential, fields["pot.vpuns"][:, dims.lloc]),
+    )
+    for ll in range(dims.lmax + 1):
+        for ikap in range(1, dims.nkap + 1):
+            ee, beta = run.projectors(ll, ikap)
+            nn = dims.nproj[ll]
+            kk = (
+                sum(ee[ii] * np.outer(beta[:, ii], beta[:, ii]) for ii in range(nn))
+                if nn
+                else np.zeros((dims.mmax, dims.mmax))
+            )
+            check(f"l={ll} ikap={ikap}'s kernel", np.allclose(run.kernel(ll, ikap), kk))
+            if nn:
+                table = run.convergence(ll, ikap)
+                check(
+                    f"l={ll} ikap={ikap}'s convergence",
+                    table.shape[1] == 2 and np.all(np.diff(table[:, 1]) < 0),
+                )
+    rr = run.mesh
+    charge = np.trapezoid(4 * np.pi * rr**2 * run.valence_density, rr)
+    check("the valence charge", abs(charge - fields["pot.zion"]) < 1e-3)
 
     def same(handle, names):
         return all(np.array_equal(handle[nn], fields[nn]) for nn in names)
@@ -96,14 +136,18 @@ def main():
 
     # the stages against the run
     ae = oncvpsp.all_electron(data, irel)
-    check("ae's fields", all(nn.startswith("ae.") for nn in ae.keys()))
+    check("ae's fields", all(nn.startswith("ae.") for nn in ae) and axes_ranks(ae))
     check("a run from ae", same(oncvpsp.run(data, ae=ae), fields))
-    for ll in range(dims["lmax"] + 1):
+    for ll in range(dims.lmax + 1):
         ch = oncvpsp.channel(data, ae, ll, "projectors")
-        if ll != dims["lloc"]:
+        check(
+            f"channel {ll}'s axes", isinstance(ch, oncvpsp.Channel) and axes_ranks(ch)
+        )
+        if ll != dims.lloc:
             check(
                 f"channel {ll}'s projectors",
-                np.array_equal(ch["channel.evkb"][:, 0], fields["pot.evkb"][:, ll, 0]),
+                np.array_equal(ch["channel.evkb"][:, 0], fields["pot.evkb"][:, ll, 0])
+                and np.allclose(ch.kernel(), run.kernel(ll)),
             )
         check(f"no node in channel {ll}", not oncvpsp.has_node(data, ae, ll))
     # the node test, over qcuts of channel 0 that reach a node
@@ -116,20 +160,34 @@ def main():
             oncvpsp.has_node(data, ae, 0, pseudopotentials=pp)
             == (ch.ifail != 0 and ch.failure.msg == 122),
         )
+        check(
+            "a node raised as NodeError",
+            ch.ifail == 0
+            or isinstance(ch.error(), oncvpsp.NodeError) == (ch.failure.msg == 122),
+        )
+    with oncvpsp.coupled(run, 0, text=False) as again:
+        check("the model core again", np.array_equal(again["pot.vkb"], vkb))
+    check("closed at the end of the with block", repr(again).endswith("closed>"))
     conf = oncvpsp.confine(run, radii=(), walls=())
     check("a confined atom of nothing", conf["confine.nmiss"] == -1)
     conf = oncvpsp.confine(run, walls=())
     check("the sphere", conf["confine.nmiss"] >= 0 and "\nws_r " in conf.text)
+    check("the confined atom's axes", axes_ranks(conf))
 
     # failures
     try:
         oncvpsp.run({"oncvpsp": {"atsym": "O"}}, irel)
         check("a broken input raises", False)
-    except oncvpsp.OncvpspError as err:
+    except oncvpsp.InputError as err:
         check("its kind and stage", err.kind_name == "input" == err.stage_name)
+        check(
+            "as names",
+            err.kind is oncvpsp.FailureKind.INPUT and err.stage is oncvpsp.Stage.INPUT,
+        )
         check("its ifail", err.ifail % 100 == err.kind and err.msg > 0)
     broken = oncvpsp.run({"oncvpsp": {"atsym": "O"}}, irel, check=False)
-    check("or is left in the handle", broken.ifail != 0 and broken.keys() == [])
+    check("or is left in the handle", broken.ifail != 0 and len(broken) == 0)
+    check("as its class", isinstance(broken.error(), oncvpsp.InputError))
     try:
         oncvpsp.confine(run, radii=0.1)
         check("a radius inside rc raises", False)

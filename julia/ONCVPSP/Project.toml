@@ -1,6 +1,6 @@
 name = "ONCVPSP"
 uuid = "5f0e6c2a-9b1d-4c7e-8a3f-2d6b1e4c9a70"
-version = "4.0.1"
+version = "5.0.0"
 
 [deps]
 Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"

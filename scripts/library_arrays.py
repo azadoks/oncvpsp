@@ -111,10 +111,10 @@ def main():
     dims = run.dims
     chk = Checks()
     recs = records(text)
-    lmax, lloc, nproj = dims["lmax"], dims["lloc"], dims["nproj"]
+    lmax, lloc, nproj = dims.lmax, dims.lloc, dims.nproj
     # the entries diagout prints: l to lmax, ikap 1 for l = 0, the
     # projectors of nproj (none for the local potential's l)
-    nkap = dims["nkap"]
+    nkap = dims.nkap
     kaps = np.zeros((6, 2), bool)
     kaps[: lmax + 1, :nkap] = True
     kaps[0, 1] = False

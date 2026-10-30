@@ -2,8 +2,9 @@
 # the Python one: the run's text output and psp8 file the executable's byte for
 # byte (its output but for the banner); the input as the TOML file, its
 # dictionary and tables given as keyword arguments, the same; the arrays against
-# the dimensions; the stages against the run; failures thrown or left in the
-# handle, and a handle closed.
+# the dimensions and each field's axes; the accessors against the fields; the
+# stages against the run; failures thrown or left in the handle, and a handle
+# closed.
 #
 # usage: julia --project=julia/ONCVPSP runtests.jl FULL_EXE IREL INPUT.toml WORKDIR
 # (ONCVPSP_LIBRARY the library)
@@ -19,9 +20,10 @@ Base.write("exe.out", read(`$full --toml-input $toml`))
 exe = read("exe.out", String)
 
 @testset "ONCVPSP $(basename(toml)) irel $irel" begin
-    run = ONCVPSP.run(toml; irel=irel)
+    run = oncvpsp(toml; irel=irel)
+    @test run isa Run && ONCVPSP.run === oncvpsp
     text = run.text
-    ONCVPSP.write(run, "lib.psp8")
+    write("lib.psp8", run)
     psp8 = read("lib.psp8", String)
     at = findfirst(text, exe)
     @test at !== nothing && occursin("build: ", exe[1:first(at)-1])
@@ -41,9 +43,30 @@ exe = read("exe.out", String)
     @test size(vkb, 1) == dims.mmax && size(vkb, 4) == dims.nkap
     @test run["pot.zion"] isa Float64
     @test !haskey(run, "channel.pswf")
-    fields = Dict(nn => run[nn] for nn in keys(run))
-    @test length(fields) > 50
+    fields = Dict(run)
+    @test length(fields) > 50 && length(run) == length(fields)
     same(hh) = all(hh[nn] == vv for (nn, vv) in fields)
+    axes_ranks(hh) = all(length(fieldinfo(nn).axes) == ndims(vv) && !isempty(fieldinfo(nn).doc)
+                         for (nn, vv) in hh)
+    @test axes_ranks(run)
+
+    # the accessors against the fields
+    @test mesh(run) == fields["pot.rr"]
+    @test local_potential(run) == fields["pot.vpuns"][:, dims.lloc+1]
+    for ll in 0:dims.lmax, ikap in 1:dims.nkap
+        ee, beta = projectors(run, ll; ikap=ikap)
+        @test length(ee) == dims.nproj[ll+1]
+        kk = sum((ee[ii] * beta[:, ii] * beta[:, ii]' for ii in eachindex(ee));
+                 init=zeros(dims.mmax, dims.mmax))
+        @test kernel(run, ll; ikap=ikap) ≈ kk
+        if !isempty(ee)
+            table = convergence(run, ll; ikap=ikap)
+            @test size(table, 2) == 2 && all(diff(table[:, 2]) .< 0)
+        end
+    end
+    rr = mesh(run)
+    rho = 4π .* rr .^ 2 .* valence_density(run)
+    @test abs(sum(diff(rr) .* (rho[1:end-1] .+ rho[2:end]) ./ 2) - fields["pot.zion"]) < 1e-3
 
     data = ONCVPSP.TOML.parsefile(toml)
     @test same(ONCVPSP.run(data; irel=irel))
@@ -53,11 +76,15 @@ exe = read("exe.out", String)
     @test same(ONCVPSP.run(Dict(); irel=irel, (Symbol(kk) => vv for (kk, vv) in data)...))
 
     ae = all_electron(data; irel=irel)
-    @test all(startswith("ae."), keys(ae))
+    @test ae isa AllElectron && all(startswith("ae."), keys(ae)) && axes_ranks(ae)
     @test same(ONCVPSP.run(data; ae=ae))
     for ll in 0:dims.lmax
         ch = channel(data, ae, ll; mode=:projectors)
-        ll == dims.lloc || @test ch["channel.evkb"][:, 1] == fields["pot.evkb"][:, ll+1, 1]
+        @test ch isa ONCVPSP.Channel && axes_ranks(ch)
+        if ll != dims.lloc
+            @test ch["channel.evkb"][:, 1] == fields["pot.evkb"][:, ll+1, 1]
+            @test kernel(ch) ≈ kernel(run, ll)
+        end
         @test !has_node(data, ae, ll)
     end
     qcut = data["pseudopotentials"]["qcut"]
@@ -67,16 +94,20 @@ exe = read("exe.out", String)
         @test has_node(data, ae, 0; pseudopotentials=pp) ==
               (ch.ifail != 0 && ch.failure.msg == ONCVPSP.MSG_PSPOT_NODE)
     end
+    @test coupled(run, 0; text=false)["pot.vkb"] == vkb
     @test confine(run; radii=(), walls=())["confine.nmiss"] == -1
     conf = confine(run; walls=())
-    @test conf["confine.nmiss"] >= 0 && occursin("\nws_r ", conf.text)
+    @test conf["confine.nmiss"] >= 0 && occursin("\nws_r ", conf.text) && axes_ranks(conf)
+    @test oncvpsp(data; irel=irel, text=false) do hh
+        hh["pot.vkb"] == vkb
+    end
 
     err = try
         ONCVPSP.run(Dict("oncvpsp" => Dict("atsym" => "O")); irel=irel)
     catch ee
         ee
     end
-    @test err isa OncvpspError && ONCVPSP.kind_name(err) == "input" == ONCVPSP.stage_name(err)
+    @test err isa OncvpspError && err.kind === :input === err.stage && err.msg > 0
     broken = ONCVPSP.run(Dict("oncvpsp" => Dict("atsym" => "O")); irel=irel, check=false)
     @test broken.ifail != 0 && isempty(keys(broken))
     err = try
@@ -84,7 +115,7 @@ exe = read("exe.out", String)
     catch ee
         ee
     end
-    @test err isa OncvpspError && ONCVPSP.stage_name(err) == "confine"
+    @test err isa OncvpspError && err.stage === :confine
     @test occursin("confine_atom: ERROR", sprint(showerror, err))
 
     close(run)

@@ -52,7 +52,7 @@ extern "C" {
 #endif
 
 /* The version of this header; oncv_api_version() is the library's */
-#define ONCV_API_VERSION 4
+#define ONCV_API_VERSION 5
 
 /* The kinds of failure (failure_m's fail_*) */
 #define ONCV_FAIL_NONE 0
@@ -244,6 +244,25 @@ int oncv_dims(void *handle, oncv_dims_t *dims);
  * as 0 or 1), a blank and its name, into name (at most nname bytes, not
  * terminated); returns the bytes written, 0 past the last field */
 int oncv_field_name(int ifield, char *name, size_t nname);
+
+/* What oncv_field_info gives of a field */
+#define ONCV_INFO_AXES 1  /* its axes' names, blank-separated, first index
+                           * first; an axis of different quantities as
+                           * their names in brackets, "[ecut,err]" */
+#define ONCV_INFO_UNITS 2 /* its units, empty for none; an axis of
+                           * quantities' units in brackets, "[Ha,1]" */
+#define ONCV_INFO_DOC 3   /* what it is, one sentence */
+
+/* What field ifield is (what, ONCV_INFO_*): its first ntext bytes into
+ * text, not terminated, and its whole length in *nout; ntext 0 gives the
+ * size to allocate. The axes are r the radial mesh, iproj the projector,
+ * l, ikap, istate the state, level the error level, iq the q grid, ie the
+ * energy, icfg the test configuration, irow its row, ighost, deriv the
+ * derivative, iv the valence state, iwarn the warning, icrad the basin
+ * radius and ipow the power. An ifield past the last field or another
+ * what is an input failure. */
+int oncv_field_info(int ifield, int what, char *text, size_t ntext,
+                    size_t *nout);
 
 /* The rank of a field and its shape, shp[0..rank-1] */
 int oncv_shape(void *handle, const char *name, size_t nname, int *rank,
