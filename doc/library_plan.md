@@ -576,9 +576,12 @@ So the interface is a hybrid:
 - [x] The model core's search faster (`api_version` 7), for oncvpsp-opt,
       where it is half a run: its Libxc calls ask for the energy alone,
       its bisection stops at the first cutoff over the limit (only the
-      sign is wanted there), its second pass starts from the first's
-      radius, and `oncv_set_budget_guess` starts it from a guess. The
-      outputs are the same byte for byte; `core.budget.passes` and
+      sign is wanted there), and `oncv_set_budget_guess` starts it from a
+      guess. The outputs without a guess are the same byte for byte. With
+      one they are the same only where the search's error changes sign
+      once over the mesh: oncvpsp-opt found several roots on 5 of 36 Cs
+      samples, where the guess finds another, and the bisection's root is
+      not the smallest either (open: which root is the model's); `core.budget.passes` and
       `qext` report the passes, and `core.budget.martins` is now 0 for
       the minimum tail (it held the last Martins model tried, which
       depended on the search's path).

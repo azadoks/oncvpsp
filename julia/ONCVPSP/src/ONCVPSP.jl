@@ -482,7 +482,8 @@ the whole run of the input (oncv_run_toml), or from the all-electron atom
 of `ae` (all_electron, or a run), bit for bit the same (oncv_run_ae_toml);
 `skip_ld` leaves out the log derivatives. `rs_guess` (bohr), a parent run's
 core.budget.r_s, is where the icmod 6 search for the model radius starts
-(oncv_set_budget_guess)
+(oncv_set_budget_guess): possibly another radius where the search's error has
+several roots
 """
 function oncvpsp(inp=nothing; irel=1, ae=nothing, skip_ld=false, rs_guess=nothing,
                  check=true, text=true, tables...)

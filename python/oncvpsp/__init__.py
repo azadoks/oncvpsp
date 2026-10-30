@@ -133,7 +133,8 @@ def run(
     atom of ae (all_electron, or a run), bit for bit the same
     (oncv_run_ae_toml); skip_ld leaves out the log derivatives. rs_guess
     (bohr), a parent run's core.budget.r_s, is where the icmod 6 search
-    for the model radius starts (oncv_set_budget_guess)"""
+    for the model radius starts (oncv_set_budget_guess): possibly another
+    radius where the search's error has several roots"""
     data = input_text(inp, tables)
     hh = _guessing(Run(text), rs_guess)
     if ae is None:

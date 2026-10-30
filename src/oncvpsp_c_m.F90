@@ -306,7 +306,8 @@
 !! assembled runs and oncv_coupled, which their searches start from (a
 !! parent's core.budget.r_s): the bracket found near it rather than by
 !! bisection from the ends, the same radius where the excess changes sign
-!! once; rs <= 0 for none, as a new handle
+!! once, possibly another root where it changes sign more than once;
+!! rs <= 0 for none, as a new handle
 !!
 !! @param handle  the run handle
 !! @param rs  the guess (bohr)

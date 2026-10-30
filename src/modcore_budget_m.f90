@@ -791,23 +791,22 @@
  integer, intent(out) :: ifail
 
 !Local variables
- real(dp) :: rsq,emax,rg
+ real(dp) :: rsq,emax
 
  ifail=0
 ! smallest r_s, first with the cutoffs to q_b + quick; if a larger one
 ! has a larger error at that r_s, again with those up to it + quick: each
 ! r_s found is a root of the largest error over all cutoffs less errmax
-! once it is confirmed, whatever the range it was found with. The first
-! pass starts from the guess if given, each later one from the r_s before
+! once it is confirmed, whatever the range it was found with. Each pass
+! starts from the guess if given: not from the r_s before, as the excess
+! may change sign more than once and the bracket then depends on it
  bc%full=.false.
  bc%qend=min(qmax,bc%qb+quick)
  bc%npass=0
- rg=bc%rguess
  do
    bc%npass=bc%npass+1
-   call smallest_radius(bc,rsq,iout,ifail,rg)
+   call smallest_radius(bc,rsq,iout,ifail,bc%rguess)
    if(ifail/=0) return
-   rg=rsq
    bc%fill%rs=rsq
    call set_model(bc,bc%fill%rs)
    if(bc%ifail/=0) then
@@ -1122,7 +1121,9 @@
 !! With rguess > 0, the bracket of two neighbouring mesh points is found
 !! from the mesh point nearest it, by steps doubling away from it, before
 !! the bisection; the same bracket, so the same r_s, where the excess
-!! changes sign once over the mesh, which the bisection takes too
+!! changes sign once over the mesh. It may change sign more than once,
+!! and then the guess may find another root (neither need be the
+!! smallest)
 !!
 !! @param bc  the state of the search
 !! @param rsq  the radius (bohr)

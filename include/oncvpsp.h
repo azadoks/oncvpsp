@@ -138,8 +138,9 @@ int oncv_set_output_buffer(void *handle, int on);
  * (oncv_run_toml, oncv_run_ae_toml, oncv_assemble_toml) and oncv_coupled,
  * which their searches start from, a parent's core.budget.r_s: the
  * radius is found from a bracket near it rather than by bisection from
- * the ends, the same radius where the error changes sign once, as the
- * bisection takes; rs <= 0 for none, as a new handle */
+ * the ends: the same radius where the error changes sign once over the
+ * mesh, but where it changes sign more than once, which happens, possibly
+ * another root; rs <= 0 for none, as a new handle */
 int oncv_set_budget_guess(void *handle, double rs);
 
 /* The text output of the handle's last run or stage from its buffer: its

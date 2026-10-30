@@ -108,15 +108,17 @@ energies within 1e-6 Ha in the test inputs.
 
 The model core of icmod 6 and 7 searches for its radius r_s, about half a
 run. `rs_guess=` (bohr), on `run`, `assemble` and `coupled` (Julia the
-same; C `oncv_set_budget_guess`), starts the search from a guess, as a
-parent run's `core.budget.r_s` in a search that changes one channel at a
-time: the bracket is found near it rather than by bisection from the
-ends. The radius, and every result, is then the same as without it
-wherever the search's error changes sign once over the mesh, which the
-bisection takes too; it saves about 15 % of the search. The search's
-second pass, when the error peaks beyond its first cutoffs
-(`core.budget.passes` 2, `core.budget.qext` the cutoffs it ended with),
-starts from the first pass's radius in any case.
+same; C `oncv_set_budget_guess`), starts the search from a guess: the
+bracket of two mesh points is found near it rather than by bisection from
+the ends. Where the search's error changes sign once over the mesh, the
+radius and every result are those without the guess; but it may change
+sign more than once (oncvpsp-opt's explorations of Cs: 5 of 36 samples),
+and the guess then finds another root, 10 to 20 % off. Without the guess
+the root is the one the bisection reaches, not the smallest. Use it only
+where a result that depends on the guess is acceptable.
+`core.budget.passes` (2 when the error peaks beyond the search's first
+cutoffs) and `core.budget.qext` (the cutoffs it ended with) report the
+search's passes.
 
 ## Results
 
