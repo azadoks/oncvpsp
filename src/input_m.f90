@@ -19,7 +19,8 @@
 !> the values of the input file, or their defaults
  module input_m
 
- use constants_m, only: dp, mxstate, mxcnf, mxlin, mxkap, well_onset_default
+ use constants_m, only: dp, mxstate, mxcnf, mxlin, mxkap, mxshare, &
+&                       well_onset_default
  implicit none
  private
  public :: input_t, config_t
@@ -123,8 +124,17 @@
    real(dp) :: fcfact_step=0.5d0
 !> Core charge width factor
    real(dp) :: rcfact=0.0d0
-!> Share of the cutoff the model core must fit (icmod 6, 7)
+!> Share of the cutoff the model core must fit (icmod 6, 7), or where the
+!> window of the minimum tail and of the reported errors starts (8, 9)
    real(dp) :: slack=1.0d0
+!> The model radius r_s (bohr) of icmod 8 and 9
+   real(dp) :: r_s=0.0d0
+!> Number of the shares of the cutoff budget at which the signed errors of
+!> the model core are reported (icmod 6 to 9), 0 for the default: slack, 1,
+!> 1.5, 2
+   integer :: nshare=0
+!> Those shares
+   real(dp) :: err_share(mxshare)=0.0d0
 !> The cutoff of the pseudo-waves (icmod 6, 7; optional after slack): 0
 !> "max", the largest over the ground-state waves (those of occupied
 !> states and each empty channel's first), 1 "weighted", their weighted

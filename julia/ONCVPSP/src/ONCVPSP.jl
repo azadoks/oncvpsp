@@ -29,7 +29,7 @@ export AllElectron, Confinement, Handle, Local, OncvpspError, Run, all_electron,
        kernel, local_potential, mesh, model_core, oncvpsp, projectors, semilocal,
        valence_density
 
-const API_VERSION = 8
+const API_VERSION = 9
 const MXLIN = 5
 const MXRANK = 5
 const MSG_PSPOT_NODE = 122
@@ -610,14 +610,15 @@ end
 
 """
 the model core, screening and tests again on the stages of `base`'s run
-with the model core icmod, fcfact, rcfact (oncv_coupled): a run
+with the model core icmod, fcfact, rcfact and r_s (icmod 8, 9; 0 for the
+input's) (oncv_coupled): a run
 """
-function coupled(base::Run, icmod::Integer; fcfact=0.0, rcfact=0.0, skip_ld=false,
-                 check=true, text=true)
+function coupled(base::Run, icmod::Integer; fcfact=0.0, rcfact=0.0, r_s=0.0,
+                 skip_ld=false, check=true, text=true)
     hh = Run(text)
     ifail = ccall(sym(:oncv_coupled), Cint,
-                  (Ptr{Cvoid}, Ptr{Cvoid}, Cint, Cdouble, Cdouble, Cint),
-                  ptr(hh), ptr(base), icmod, fcfact, rcfact, skip_ld)
+                  (Ptr{Cvoid}, Ptr{Cvoid}, Cint, Cdouble, Cdouble, Cdouble, Cint),
+                  ptr(hh), ptr(base), icmod, fcfact, rcfact, r_s, skip_ld)
     done!(hh, ifail, check)
 end
 

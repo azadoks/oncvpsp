@@ -52,7 +52,8 @@ can be copied and re-used as an input file (the eigenvalues will be ignored).
 The psp8, UPF and PSML files carry the same echo, without the eigenvalues,
 and each of these echoes runs again to the same output. Optional inputs
 (`c_light`, the optional values of the lmax line, `rxpsh`, the `icmod=4`
-search grid, `slack` and `budget_cutoff` of `icmod` 6 and 7, the log mesh
+search grid, `slack` and `budget_cutoff` of `icmod` 6 and 7 (all of
+`icmod` 8 and 9's line, `r_s` to 17 digits; not `error_shares`), the log mesh
 and `upf_mesh`) are echoed only when the input sets them, so older inputs
 echo as they always have.
 The code then loops over angular momenta and reports some information and
@@ -154,7 +155,7 @@ text input where they differ (see `32_Ge_annotated.dat`):
 | `[pseudopotentials]` | `lmax`, and the lists `l`, `rc`, `ep`, `ncon`, `nbas`, `qcut`; optional `ep_as_given` (true or false), `well_onset`, `well_tail` (`"well"`, `"free"` or `"confined"`), `wave_regularization`, `well_norm` (`"space"` or `"rc"`; by default that of `well_tail`) |
 | `[local_potential]` | `lloc`, `lpopt`, `rcloc` (the text input's rc(5)), `dvloc0` |
 | `[vkb_projectors]` | the lists `l`, `nproj`, `debl`; `well_n` optional, with `well_tail = "confined"` only; `ecut_weight` optional (negative for the default), for channels with no occupied state only |
-| `[model_core_charge]` | `icmod`; `fcfact` (required for icmod 1, 2, 3, 6, 7); `rcfact` (required for icmod 3; optional for 4, 6, 7); for icmod 4 the optional grid `fcfact_min`, `fcfact_max`, `fcfact_step`, `rcfact_min`, `rcfact_max`, `rcfact_step`; for icmod 6 and 7 the optional `slack` and `budget_cutoff` (`"max"`, `"weighted"` or `"max_all"`) |
+| `[model_core_charge]` | `icmod`; `fcfact` (required for icmod 1, 2, 3, 6 to 9); `rcfact` (required for icmod 3; optional for 4, 6 to 9); for icmod 4 the optional grid `fcfact_min`, `fcfact_max`, `fcfact_step`, `rcfact_min`, `rcfact_max`, `rcfact_step`; for icmod 6 to 9 the optional `slack`, `budget_cutoff` (`"max"`, `"weighted"` or `"max_all"`) and `error_shares` (up to 8 shares of the cutoff budget for the signed errors); for icmod 8 and 9 the required `r_s` (bohr) |
 | `[log_derivative_analysis]` | `epsh1`, `epsh2`, `depsh`; `rxpsh` optional |
 | `[linear_mesh]` | `a` (drl), `rmax` (rlmax) |
 | `[log_mesh]` | optional table: `amesh`, `rr1`, `rmax`, `adams_order`, each optional |

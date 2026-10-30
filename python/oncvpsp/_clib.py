@@ -6,7 +6,7 @@ import ctypes.util
 import glob
 import os
 
-API_VERSION = 8
+API_VERSION = 9
 MXLIN = 5
 MXRANK = 5
 
@@ -83,7 +83,7 @@ def load():
         "oncv_local_toml": ([vp, vp, cp, sz], ci),
         "oncv_channel_local_toml": ([vp, vp, vp, cp, sz, ci, ci, ci, pd], ci),
         "oncv_assemble_toml": ([vp, vp, vp, C.POINTER(vp), ci, cp, sz, ci], ci),
-        "oncv_coupled": ([vp, vp, ci, cd, cd, ci], ci),
+        "oncv_coupled": ([vp, vp, ci, cd, cd, cd, ci], ci),
         "oncv_confine": ([vp, vp, pd, ci, pi, ci, pd, pd, ci, cd, cd], ci),
         "oncv_write_files": ([vp, cp, sz, cp, sz], ci),
         "oncv_failure": ([vp, C.POINTER(Failure)], ci),

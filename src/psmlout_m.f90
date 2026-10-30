@@ -200,7 +200,7 @@
 &                inp%psfile,inp%na,inp%la,inp%fa,inp%lmax,rc_in,inp%ep, &
 &                inp%ncon, &
 &                inp%nbas,inp%qcut,inp%lloc,inp%lpopt,inp%dvloc0,inp%nproj, &
-&                inp%debl,inp%icmod,fcfact_in,inp%rcfact,inp%slack, &
+&                inp%debl,inp%icmod,fcfact_in,inp%rcfact,inp%slack,inp%r_s, &
 &                inp%budget_cutoff,fcgrid,rcgrid,inp%epsh1,inp%epsh2, &
 &                inp%depsh, &
 &                inp%rxpsh,inp%rlmax,inp%drl,inp%ncnf,inp%cnf,log_mesh, &
@@ -479,8 +479,8 @@
  if(inp%icmod >= 1) then
    call xml_NewElement(xf,"pseudocore-charge")
    call my_add_attribute(xf,"matching-radius",str(rcore))
-! icmod 6 and 7 match the core charge to C2 at r_s
-   if(inp%icmod==6 .or. inp%icmod==7) then
+! icmod 6 to 9 match the core charge to C2 at r_s
+   if(inp%icmod>=6) then
      call my_add_attribute(xf,"number-of-continuous-derivatives",str(2))
    else
      call my_add_attribute(xf,"number-of-continuous-derivatives",str(4))
@@ -488,7 +488,7 @@
    if(inp%icmod==1) then
      call my_add_attribute(xf,"annotation",  &
 &                 "Monotonic 8th-order polynomial with no linear term")
-   else if(inp%icmod==6 .or. inp%icmod==7) then
+   else if(inp%icmod>=6) then
      call my_add_attribute(xf,"annotation",  &
 &                 "Budgeted fill inside the matching radius")
    else
@@ -596,7 +596,7 @@
 
  subroutine echo_input(xf,atsym,zz,nc,nv,iexc,c_light,psfile,na,la,fa,lmax, &
 &                      rc_in,ep,ncon,nbas,qcut,lloc,lpopt,dvloc0,nproj,debl, &
-&                      icmod,fcfact_in,rcfact,slack,budget_cutoff,fcgrid, &
+&                      icmod,fcfact_in,rcfact,slack,r_s,budget_cutoff,fcgrid, &
 &                      rcgrid, &
 &                      epsh1,epsh2,depsh,rxpsh,rlmax,drl,ncnf,cnf,log_mesh, &
 &                      upf_mesh,ep_as_given,well_onset,well_tail, &
@@ -635,6 +635,7 @@
 !! @param rcfact  prefactor for model core charge scale (icmod=3), or error
 !!                tolerance (icmod=6)
 !! @param slack  share of the cutoff the model core must fit (icmod=6, 7)
+!! @param r_s  the model radius (bohr) of icmod=8, 9
 !! @param budget_cutoff  the cutoff of the pseudo-waves (icmod=6, 7): 0 the
 !!                       largest of the ground-state waves, 1 their weighted
 !!                       mean, 2 the largest of all waves (budget_cutoff)
@@ -676,7 +677,7 @@
  real(dp), intent(in) :: debl(mxlin+1)
  real(dp), intent(in) :: dvloc0,fcfact_in,epsh1,epsh2,depsh,rlmax,drl
  real(dp), intent(in) :: rcfact,fcgrid(3),rcgrid(3),rxpsh,log_mesh(4)
- real(dp), intent(in) :: slack
+ real(dp), intent(in) :: slack,r_s
  integer, intent(in) :: budget_cutoff
  logical, intent(in) :: ep_as_given
  integer, intent(in) :: well_tail,well_n(mxlin+1),well_norm
@@ -697,7 +698,7 @@
 &                      well_onset,well_tail,wave_regularization,lloc,lpopt, &
 &                      dvloc0, &
 &                      nproj,debl,well_n,well_norm,ecut_weight, &
-&                      icmod,fcfact_in,rcfact,slack,budget_cutoff,fcgrid, &
+&                      icmod,fcfact_in,rcfact,slack,r_s,budget_cutoff,fcgrid, &
 &                      rcgrid, &
 &                      epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
 &                      ncnf,cnf,log_mesh,upf_mesh, &

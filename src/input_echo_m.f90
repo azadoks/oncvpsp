@@ -226,7 +226,7 @@
  return
  end subroutine lmax_lines
 
- subroutine icmod_lines(icmod,fcfact,rcfact,slack,budget_cutoff,fcgrid, &
+ subroutine icmod_lines(icmod,fcfact,rcfact,slack,r_s,budget_cutoff,fcgrid, &
 &                       rcgrid,text,ntext)
 
 !! MODEL CORE CHARGE section
@@ -235,8 +235,9 @@
 !! @param icmod  model core charge option
 !! @param fcfact  prefactor for model amplitude
 !! @param rcfact  prefactor for model scale
-!! @param slack  share of the cutoff the model core must fit (icmod=6, 7)
-!! @param budget_cutoff  the cutoff of the pseudo-waves (icmod=6, 7): 0 the
+!! @param slack  share of the cutoff the model core must fit (icmod=6 to 9)
+!! @param r_s  the model radius (bohr) of icmod=8, 9
+!! @param budget_cutoff  the cutoff of the pseudo-waves (icmod=6 to 9): 0 the
 !!                       largest of the ground-state waves, 1 their weighted
 !!                       mean, 2 the largest of all waves (budget_cutoff)
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
@@ -249,7 +250,7 @@
 !Input variables
  integer, intent(in) :: icmod
  real(dp), intent(in) :: fcfact,rcfact
- real(dp), intent(in) :: slack
+ real(dp), intent(in) :: slack,r_s
  integer, intent(in) :: budget_cutoff
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
 
@@ -273,6 +274,12 @@
    write(text(5),'(i5,8a)') icmod,fx(fcfact,10,5),fx(rcfact,10,5), &
 &        (fx(fcgrid(ii),10,5),ii=1,3),(fx(rcgrid(ii),10,5),ii=1,3)
    ntext=5
+ else if(icmod==8 .or. icmod==9) then
+!icmod=8, 9 every value, r_s to the last digit
+   text(3)='# icmod, fcfact, rcfact, r_s, slack, budget_cutoff'
+   write(text(4),'(i5,a,es12.4,es24.16,a,i5)') icmod,fx(fcfact,10,5), &
+&        rcfact,r_s,fx(slack,10,5),budget_cutoff
+   ntext=4
  else if((icmod==6 .or. icmod==7) .and. budget_cutoff/=0) then
 !icmod=6, 7 budget_cutoff is written if not "max" (0), with slack before it
    text(3)='# icmod, fcfact, rcfact, slack, budget_cutoff'
@@ -493,16 +500,17 @@
  end if
  end function vkb_line
 
- subroutine write_icmod(icmod,fcfact,rcfact,slack,budget_cutoff,fcgrid,rcgrid, &
-&                       iout)
+ subroutine write_icmod(icmod,fcfact,rcfact,slack,r_s,budget_cutoff,fcgrid, &
+&                       rcgrid,iout)
 
 !! writes the MODEL CORE CHARGE section to unit 6
 !!
 !! @param icmod  model core charge option
 !! @param fcfact  prefactor for model amplitude
 !! @param rcfact  prefactor for model scale
-!! @param slack  share of the cutoff the model core must fit (icmod=6, 7)
-!! @param budget_cutoff  the cutoff of the pseudo-waves (icmod=6, 7): 0 the
+!! @param slack  share of the cutoff the model core must fit (icmod=6 to 9)
+!! @param r_s  the model radius (bohr) of icmod=8, 9
+!! @param budget_cutoff  the cutoff of the pseudo-waves (icmod=6 to 9): 0 the
 !!                       largest of the ground-state waves, 1 their weighted
 !!                       mean, 2 the largest of all waves (budget_cutoff)
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
@@ -514,7 +522,7 @@
 !Input variables
  integer, intent(in) :: icmod
  real(dp), intent(in) :: fcfact,rcfact
- real(dp), intent(in) :: slack
+ real(dp), intent(in) :: slack,r_s
  integer, intent(in) :: budget_cutoff
  real(dp), intent(in) :: fcgrid(3),rcgrid(3)
  integer, intent(in) :: iout
@@ -523,7 +531,7 @@
  character(len=echo_len) :: text(echo_max)
  integer :: ii,ntext
 
- call icmod_lines(icmod,fcfact,rcfact,slack,budget_cutoff,fcgrid,rcgrid, &
+ call icmod_lines(icmod,fcfact,rcfact,slack,r_s,budget_cutoff,fcgrid,rcgrid, &
 &                 text,ntext)
  write(iout,'(a)') (trim(text(ii)),ii=1,ntext)
 
@@ -586,7 +594,7 @@
 &                            well_onset,well_tail,wave_regularization,lloc, &
 &                            lpopt,dvloc0, &
 &                            nproj,debl,well_n,well_norm,ecut_weight, &
-&                            icmod,fcfact,rcfact,slack,budget_cutoff, &
+&                            icmod,fcfact,rcfact,slack,r_s,budget_cutoff, &
 &                            fcgrid,rcgrid, &
 &                            epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
 &                            ncnf,cnf,log_mesh,upf_mesh, &
@@ -626,7 +634,8 @@
 !! @param icmod  model core charge option
 !! @param fcfact  prefactor for model core charge amplitude, the input value
 !! @param rcfact  prefactor for model core charge scale
-!! @param slack  share of the cutoff the model core must fit (icmod=6, 7)
+!! @param slack  share of the cutoff the model core must fit (icmod=6 to 9)
+!! @param r_s  the model radius (bohr) of icmod=8, 9
 !! @param budget_cutoff  the cutoff of the pseudo-waves (icmod=6, 7)
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
@@ -657,7 +666,7 @@
  integer, intent(in) :: nproj(mxlin+1)
  type(config_t), intent(in) :: cnf(mxcnf)
  real(dp), intent(in) :: zz,dvloc0,fcfact,rcfact
- real(dp), intent(in) :: slack
+ real(dp), intent(in) :: slack,r_s
  integer, intent(in) :: budget_cutoff
  real(dp), intent(in) :: epsh1,epsh2,depsh,rxpsh,rlmax,drl
  real(dp), intent(in) :: fa(mxstate),rc_in(mxlin+1),ep(mxlin+1),qcut(mxlin+1)
@@ -727,7 +736,7 @@
    call put(vkb_line(lmax,l1,nproj,debl,well_n,ecut_weight))
  end do
 
- call icmod_lines(icmod,fcfact,rcfact,slack,budget_cutoff,fcgrid,rcgrid, &
+ call icmod_lines(icmod,fcfact,rcfact,slack,r_s,budget_cutoff,fcgrid,rcgrid, &
 &                 part,npart)
  call put_part()
 
@@ -797,7 +806,7 @@
 &                            well_onset,well_tail,wave_regularization,lloc, &
 &                            lpopt,dvloc0, &
 &                            nproj,debl,well_n,well_norm,ecut_weight, &
-&                            icmod,fcfact,rcfact,slack,budget_cutoff, &
+&                            icmod,fcfact,rcfact,slack,r_s,budget_cutoff, &
 &                            fcgrid,rcgrid, &
 &                            epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
 &                            ncnf,cnf,log_mesh,upf_mesh, &
@@ -835,7 +844,8 @@
 !! @param icmod  model core charge option
 !! @param fcfact  prefactor for model core charge amplitude, the input value
 !! @param rcfact  prefactor for model core charge scale
-!! @param slack  share of the cutoff the model core must fit (icmod=6, 7)
+!! @param slack  share of the cutoff the model core must fit (icmod=6 to 9)
+!! @param r_s  the model radius (bohr) of icmod=8, 9
 !! @param budget_cutoff  the cutoff of the pseudo-waves (icmod=6, 7)
 !! @param fcgrid  min, max and step of the fcfact coarse-search grid (icmod=4)
 !! @param rcgrid  min, max and step of the rcfact coarse-search grid (icmod=4)
@@ -865,7 +875,7 @@
  integer, intent(in) :: nproj(mxlin+1)
  type(config_t), intent(in) :: cnf(mxcnf)
  real(dp), intent(in) :: zz,dvloc0,fcfact,rcfact
- real(dp), intent(in) :: slack
+ real(dp), intent(in) :: slack,r_s
  integer, intent(in) :: budget_cutoff
  real(dp), intent(in) :: epsh1,epsh2,depsh,rxpsh,rlmax,drl
  real(dp), intent(in) :: fa(mxstate),rc_in(mxlin+1),ep(mxlin+1),qcut(mxlin+1)
@@ -891,8 +901,8 @@
 &                      well_onset,well_tail,wave_regularization,lloc,lpopt, &
 &                      dvloc0, &
 &                      nproj,debl,well_n,well_norm,ecut_weight, &
-&                      icmod,fcfact,rcfact,slack,budget_cutoff,fcgrid,rcgrid, &
-&                      epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
+&                      icmod,fcfact,rcfact,slack,r_s,budget_cutoff,fcgrid, &
+&                      rcgrid,epsh1,epsh2,depsh,rxpsh,rlmax,drl, &
 &                      ncnf,cnf,log_mesh,upf_mesh, &
 &                      text,ntext)
  do ii=1,ntext

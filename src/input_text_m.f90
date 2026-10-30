@@ -241,6 +241,23 @@
      if(ios == 0 .and. (ibudget < 0 .or. ibudget > 2)) ios = 999
      budget_cutoff = ibudget
    end if
+! icmod==8, 9 : icmod, fcfact, rcfact, r_s (the model radius, bohr), then
+!   slack and budget_cutoff as for 6, 7 (optional); the shares of the
+!   signed errors are the default (error_shares of the TOML input)
+   if(ios == 0 .and. (icmod == 8 .or. icmod == 9)) then
+     ibudget = 0
+     read(line, *, iostat=ios) icmod, fcfact, rcfact, inp%r_s, slack, ibudget
+     if(ios < 0) then
+       ibudget = 0
+       read(line, *, iostat=ios) icmod, fcfact, rcfact, inp%r_s, slack
+       if(ios /= 0) then
+         slack = 1.0d0
+         read(line, *, iostat=ios) icmod, fcfact, rcfact, inp%r_s
+       end if
+     end if
+     if(ios == 0 .and. (ibudget < 0 .or. ibudget > 2)) ios = 999
+     budget_cutoff = ibudget
+   end if
 ! icmod==4[explicit grid]: icmod, fcfact(ignored), rcfact(ignored),
 !   fcfact_min, fcfact_max, fcfact_step,
 !   rcfact_min, rcfact_max, rcfact_step
@@ -261,8 +278,8 @@
        rcfact_step = 0.1d0
      end if
    end if
-   call check_finite(ios, [fcfact, rcfact, slack, fcfact_min, fcfact_max, &
-&    fcfact_step, rcfact_min, rcfact_max, rcfact_step])
+   call check_finite(ios, [fcfact, rcfact, slack, inp%r_s, fcfact_min, &
+&    fcfact_max, fcfact_step, rcfact_min, rcfact_max, rcfact_step])
    call read_error(ios, inline, iout, ifail)
    if(ifail /= 0) return
 

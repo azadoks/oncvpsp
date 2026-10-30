@@ -698,6 +698,15 @@
 !> oncv_assemble_toml (oncvpsp_c_m.F90): oncv_assemble_toml: ERROR a
 !> handle holds no channel, two have one l, or an l has none
  integer, parameter, public :: msg_c_assemble=190
+!> modcore_budget (modcore_budget_m.f90): modcore_budget: ERROR r_s= bohr
+!> outside [r_lo, r_top] = [ , ]
+ integer, parameter, public :: msg_budget_rs_range=191
+!> modcore_budget (modcore_budget_m.f90): modcore_budget: ERROR the fill is
+!> not monotone at r_s= bohr
+ integer, parameter, public :: msg_budget_fill_monotone=192
+!> budget_measures (modcore_budget_m.f90): modcore_budget: ERROR the error
+!> share s= has its cutoff beyond Ha
+ integer, parameter, public :: msg_budget_share_range=193
 
 ! The warnings (warn's id), each with its routine, file and message, and
 ! what the record's index is
@@ -777,6 +786,9 @@
 !> zeroin (modcore_budget_m.f90): modcore_budget: WARNING root at a jump
 !> of the function
  integer, parameter, public :: wrn_budget_jump=28
+!> modcore_budget (modcore_budget_m.f90): modcore_budget: WARNING icmod 6
+!> and 7 are deprecated: icmod 8 and 9 take r_s
+ integer, parameter, public :: wrn_budget_deprecated=29
 
  contains
 

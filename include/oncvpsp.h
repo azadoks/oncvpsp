@@ -52,7 +52,7 @@ extern "C" {
 #endif
 
 /* The version of this header; oncv_api_version() is the library's */
-#define ONCV_API_VERSION 8
+#define ONCV_API_VERSION 9
 
 /* The kinds of failure (failure_m's fail_*) */
 #define ONCV_FAIL_NONE 0
@@ -215,11 +215,13 @@ int oncv_assemble_toml(void *handle, void *ae_handle, void *local_handle,
 
 /* The model core, the screening and the tests made again from the stages
  * of base's run (which a run keeps even if its model core failed), with
- * the model core icmod, fcfact and rcfact in place of the input's (fcfact
- * 0 for icmod 0), into the handle, which then holds those stages and the
- * results oncv_run_toml gives for the input with that model core */
+ * the model core icmod, fcfact, rcfact and r_s (bohr, icmod 8 and 9; <= 0
+ * for the input's) in place of the input's (fcfact 0 for icmod 0; slack,
+ * budget_cutoff and error_shares the input's), into the handle, which then
+ * holds those stages and the results oncv_run_toml gives for the input
+ * with that model core */
 int oncv_coupled(void *handle, void *base, int icmod, double fcfact,
-                 double rcfact, int skip_ld);
+                 double rcfact, double r_s, int skip_ld);
 
 /* The confined atom of the run of the handle run (oncv_run_toml,
  * oncv_run_ae_toml or oncv_coupled) into the handle, as oncvpsp_confine.x

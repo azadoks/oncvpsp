@@ -49,7 +49,7 @@
 
 !> the version of the interface: a change to a function or a struct
 !> raises it
- integer(c_int), parameter :: api_version=8
+ integer(c_int), parameter :: api_version=9
 
 !> 1 if c_double is the kind of the reals, else a division by zero that
 !> stops the compilation
@@ -849,13 +849,14 @@
  return
  end function oncv_assemble_toml
 
- function oncv_coupled(handle,base,icmod,fcfact,rcfact,skip_ld) &
+ function oncv_coupled(handle,base,icmod,fcfact,rcfact,r_s,skip_ld) &
 &         result(ifail) bind(c,name='oncv_coupled')
 
 !! the model core, the screening and the tests again into the handle
 !! (run_coupled), from the stages of the run of base (oncv_run_toml,
 !! oncv_run_ae_toml or oncv_coupled, whose model core may have failed)
-!! with the model core icmod, fcfact and rcfact in place of the input's:
+!! with the model core icmod, fcfact, rcfact and r_s in place of the
+!! input's (its slack, budget_cutoff and error_shares kept):
 !! the handle then holds those stages and a run's results, as oncv_run_toml
 !! with that model core gives them. The handle may be base
 !!
@@ -864,6 +865,7 @@
 !! @param icmod  the model core's kind (fcfact 0 for icmod 0)
 !! @param fcfact  its amplitude factor
 !! @param rcfact  its radius factor
+!! @param r_s  the model radius of icmod 8, 9 (bohr), or <= 0 for the input's
 !! @param skip_ld  non-zero to leave out the log derivatives
 
  use oncvpsp_run_m, only: run_coupled
@@ -874,7 +876,7 @@
 !Input variables
  type(c_ptr), value :: handle,base
  integer(c_int), value :: icmod,skip_ld
- real(c_double), value :: fcfact,rcfact
+ real(c_double), value :: fcfact,rcfact,r_s
 
 !Output variables
  integer(c_int) :: ifail
@@ -908,6 +910,7 @@
  inp%icmod=icmod
  inp%fcfact=fcfact
  inp%rcfact=rcfact
+ if(r_s>0.0d0) inp%r_s=r_s
  if(icmod==0) inp%fcfact=0.0d0
  fcgrid=[inp%fcfact_min,inp%fcfact_max,inp%fcfact_step]
  rcgrid=[inp%rcfact_min,inp%rcfact_max,inp%rcfact_step]
@@ -2040,6 +2043,20 @@
      call put(ff,bb%npass)
    case('core.budget.qext')
      call put(ff,bb%qext)
+   case('core.budget.pnorm')
+     call put(ff,bb%pnorm)
+   case('core.budget.emax')
+     call put(ff,bb%emax)
+   case('core.budget.qwin')
+     call put(ff,bb%qwin)
+   case('core.budget.share')
+     call put(ff,bb%share(1:bb%nshare))
+   case('core.budget.err_q')
+     call put(ff,bb%err_q(1:bb%nshare))
+   case('core.budget.err_signed')
+     call put(ff,bb%err_signed(1:bb%nshare))
+   case('core.budget.margin')
+     call put(ff,bb%margin)
    case('core.budget.cmis')
      if(allocated(bb%cmis)) then
        call put(ff,bb%cmis)

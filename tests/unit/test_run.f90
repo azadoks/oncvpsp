@@ -284,7 +284,7 @@
  type(warnings_t), intent(in) :: warns
  integer, intent(in) :: iu
 !the line of each warning (wrn_* in order) that the text writes once
- character(len=40), parameter :: pat(28)=[character(len=40) :: &
+ character(len=40), parameter :: pat(29)=[character(len=40) :: &
 &  'ae_converged: WARNING scf stopped', 'sratom: WARNING failed to converge', &
 &  'relatom: WARNING failed to converge', &
 &  'WARNING self-consistency failed to', 'runconfig: WARNING lschfb', &
@@ -299,9 +299,9 @@
 &  'WARNING - GHOST(+)', 'WARNING basis cut there', 'WARNING basis full', &
 &  'write_waves: WARNING lschvkbb', 'sr_so_r: WARNING', &
 &  'does not fit the budget', 'no minimum of the mismatch', &
-&  'root at a jump']
+&  'root at a jump', 'WARNING icmod 6 and 7 are deprecated']
  character(len=512) :: line
- integer :: ios,id,ntext(28),nrec(28),ii
+ integer :: ios,id,ntext(29),nrec(29),ii
  character(len=8) :: tag
  ntext(:)=0
  do

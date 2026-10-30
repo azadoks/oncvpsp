@@ -382,14 +382,15 @@ static void stages(void *hrun, int irel, const char *text, size_t len)
         check("run without the model core",
               oncv_run_toml(hc, irel, text0, strlen(text0), 0) == 0);
         check("coupled without the model core",
-              oncv_coupled(hh, hrun, 0, 0.0, 0.0, 0) == 0);
+              oncv_coupled(hh, hrun, 0, 0.0, 0.0, 0.0, 0) == 0);
         same_fields(hh, hc, "run");
         check("coupled again on its own stages",
               oncv_coupled(hh, hh, (int)core_value(text, "icmod"),
-                           core_value(text, "fcfact"), core_value(text, "rcfact"), 0) == 0);
+                           core_value(text, "fcfact"), core_value(text, "rcfact"),
+                           0.0, 0) == 0);
         same_fields(hh, hrun, "run");
     }
-    check("no stages in an ae handle", oncv_coupled(hh, ha, 0, 0.0, 0.0, 0) % 100 ==
+    check("no stages in an ae handle", oncv_coupled(hh, ha, 0, 0.0, 0.0, 0.0, 0) % 100 ==
           ONCV_FAIL_INPUT);
     check("run from its own ae", oncv_run_ae_toml(ha, ha, text, len, 0) == 0);
     same_fields(ha, hrun, "run");

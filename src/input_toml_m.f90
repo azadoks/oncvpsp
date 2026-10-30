@@ -102,7 +102,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use constants_m, only: mxstate, mxcnf, mxlin, well_onset_default
+ use constants_m, only: mxstate, mxcnf, mxlin, mxshare, well_onset_default
  use input_m, only: input_t
  use tomlf, only: toml_table, toml_array, toml_error, toml_stat, &
 &                  get_value, len
@@ -133,11 +133,15 @@
 !                              the weight of the first wave of each l with
 !                              no occupied state in the pseudo-waves'
 !                              cutoff, negative for the default 2(2l+1))
-!   [model_core_charge]        icmod, fcfact (icmod 1, 2, 3, 6, 7; else 0),
-!                              rcfact (icmod 3; 1e-5 for icmod 6, 7; else
-!                              0), slack (icmod 6, 7; 1), budget_cutoff
-!                              (icmod 6, 7; "max", "weighted" or
-!                              "max_all", "max"),
+!   [model_core_charge]        icmod, fcfact (icmod 1, 2, 3, 6 to 9; else
+!                              0), rcfact (icmod 3; 1e-5 for icmod 6 to 9;
+!                              else 0), slack (icmod 6 to 9; 1),
+!                              budget_cutoff (icmod 6 to 9; "max",
+!                              "weighted" or "max_all", "max"), r_s (icmod
+!                              8, 9, bohr), error_shares (icmod 6 to 9,
+!                              optional: up to 8 shares of the cutoff
+!                              budget at which the signed errors are
+!                              reported; slack, 1, 1.5, 2),
 !                              fcfact_min, fcfact_max, fcfact_step, rcfact_min,
 !                              rcfact_max, rcfact_step (optional, icmod 4 grid)
 !   [log_derivative_analysis]  epsh1, epsh2, depsh, rxpsh (optional, -1 for
@@ -392,7 +396,7 @@
 &        iout=iout, ifail=ifail)
    if(ifail /= 0) return
    select case(icmod)
-   case(1, 2, 6, 7)
+   case(1, 2, 6, 7, 8, 9)
      call get_real(child, 'model_core_charge', 'fcfact', fcfact, &
 &          iout=iout, ifail=ifail)
      if(ifail /= 0) return
@@ -432,7 +436,26 @@
      call get_real(child, 'model_core_charge', 'rcfact_step', rcfact_step, &
 &      rcfact_step, iout=iout, ifail=ifail)
      if(ifail /= 0) return
-   case(6, 7)
+   case(6, 7, 8, 9)
+     if(icmod >= 8) then
+       call get_real(child, 'model_core_charge', 'r_s', inp%r_s, &
+&            iout=iout, ifail=ifail)
+       if(ifail /= 0) return
+     end if
+     if(child%has_key('error_shares')) then
+       call get_value(child, 'error_shares', arr, requested=.false., &
+&                     stat=stat)
+       inp%nshare = 0
+       if(associated(arr)) inp%nshare = len(arr)
+       if(inp%nshare < 1 .or. inp%nshare > mxshare) then
+         call input_error('error_shares in [model_core_charge] must be '// &
+&          'an array of 1 to 8 numbers', iout, ifail)
+         if(ifail /= 0) return
+       end if
+       call get_real_array(child, 'model_core_charge', 'error_shares', &
+&                          inp%nshare, inp%err_share, iout, ifail)
+       if(ifail /= 0) return
+     end if
      call get_real(child, 'model_core_charge', 'rcfact', rcfact, 1.0d-5, &
 &          iout=iout, ifail=ifail)
      if(ifail /= 0) return

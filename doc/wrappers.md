@@ -114,6 +114,17 @@ no starting point to give: api 7's `rs_guess=` (C
 `oncv_set_budget_guess`) is gone in api 8, as a guess found another root
 wherever the error had several.
 
+icmod 6 and 7 are deprecated in api 9 for icmod 8 and 9, which take r_s
+(TOML `model_core_charge.r_s`; `coupled(base, 9; r_s=...)`, C
+`oncv_coupled`'s `r_s`, 0 for the input's) and make the model there with no
+search, smooth in r_s (doc/core_correction.md). For every icmod 6 to 9 the
+fields `core.budget.pnorm` (the error's 16-mean over `core.budget.qwin`,
+smooth), `core.budget.emax` (its largest, only continuous),
+`core.budget.share`, `err_q` and `err_signed` (the signed errors at the
+shares of the budget, TOML `error_shares`) and `core.budget.margin` (the
+fill's monotonicity margin) report the model. icmod 9 at icmod 6's r_s is
+icmod 6's model bit for bit.
+
 ## Results
 
 Each function returns a handle, a mapping (Python's `Mapping`, Julia's

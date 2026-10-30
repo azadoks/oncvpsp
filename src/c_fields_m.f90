@@ -198,7 +198,7 @@
 &    'prefactors, the core-valence crossover radius and the core '// &
 &    'charge there'), &
 &  field_info_t('r core.budget.ecut','','Ha', &
-&    'icmod 6, 7: the cutoff budget'), &
+&    'icmod 6 to 9: the cutoff budget'), &
 &  field_info_t('r core.budget.error','','Ha', &
 &    'the exchange-correlation energy error that defines the needed '// &
 &    'cutoff'), &
@@ -412,9 +412,26 @@
 &    'the channel''s tests.ghosts.basis'), &
 &  field_info_t('i core.budget.passes','','', &
 &    'icmod 6, 7: the passes of the search, more than 1 when the '// &
-&    'error peaks beyond the first cutoffs'), &
+&    'error peaks beyond the first cutoffs (0 for icmod 8, 9)'), &
 &  field_info_t('r core.budget.qext','','bohr^-1', &
-&    'the last density cutoff the radius was found with')]
+&    'the last density cutoff the radius was found with'), &
+&  field_info_t('r core.budget.pnorm','','Ha', &
+&    'icmod 6 to 9: the 16-mean of the xc energy error over the '// &
+&    'density cutoffs qwin, ((1/(q_hi-q_b)) int |e|**16 dq)**(1/16), '// &
+&    'smooth in the inputs'), &
+&  field_info_t('r core.budget.emax','','Ha', &
+&    'the largest xc energy error over qwin, C0 in the inputs'), &
+&  field_info_t('r core.budget.qwin','[q_b,q_hi]','bohr^-1', &
+&    'the window of pnorm and emax'), &
+&  field_info_t('r core.budget.share','ishare','', &
+&    'the shares s of the cutoff budget of the signed errors'), &
+&  field_info_t('r core.budget.err_q','ishare','bohr^-1', &
+&    'their density cutoffs, 2 sqrt(2 s ecut)'), &
+&  field_info_t('r core.budget.err_signed','ishare','Ha', &
+&    'the signed xc energy errors there'), &
+&  field_info_t('r core.budget.margin','','', &
+&    'the fill''s monotonicity margin, the least of '// &
+&    '-(d rho/du)/rho(r_s) over u = (r/r_s)**2 in [0, 1]')]
 
 !> the fields, in the order oncv_field_name numbers them (a new group
 !> last, so that the numbers of the others stay)

@@ -127,7 +127,7 @@ icmod==4:
 
     (the keys of the same names of [model_core_charge] in the TOML input).
 
-icmod==6:
+icmod==6 (deprecated: a warning; use icmod 9):
 
     The all-electron core charge wherever the plane-wave cutoff affords
     it. Inside the radius r_s the model is a fill that matches rhoc and its
@@ -262,7 +262,7 @@ icmod==6:
             6   0   1.0e-4   1.0   1
     ```
 
-icmod==7:
+icmod==7 (deprecated: a warning; use icmod 9):
 
     The core of icmod=6 (the same fill, inputs and cutoff test) at the
     radius whose model acts on the valence most as the all-electron core
@@ -293,6 +293,59 @@ icmod==7:
     minimum tail, M for Martins, - for none) and the measure (- where there
     is no model), ended by a blank line. tests/data/14_Si_hm.dat
     uses it. The search costs 1.4-3 times that of icmod=6.
+
+    icmod 6 and 7 are deprecated because their r_s is the root of the
+    largest error over the cutoffs, which need not fall as r_s grows: r_s
+    is only continuous in the inputs, with kinks where the cutoff of the
+    largest error hops between the crests of a ripple, and it jumps where
+    a lobe of the error drops below errmax (doc/smoothness_plan.md, M-9).
+
+icmod==8, 9:
+
+    The fill of icmod=6 at the radius r_s of the input, with no search:
+    icmod=9 the minimum tail, icmod=8 Martins' exp(a + b r**2 + c r**4).
+    The model is smooth in r_s and in the other inputs, and whether it fits
+    a budget is the caller's to decide from the measures below (an
+    optimizer adds r_s to its parameters). fcfact, rcfact, slack and
+    budget_cutoff keep their meanings: the minimum tail's window starts at
+    q_b = 2 sqrt(2 slack ecut), and errmax defines the needed cutoff. r_s
+    (bohr) must be in (0, min(rc)] (check_data) and within [r_top/50,
+    r_top], r_top the smaller of min(rc) and the last radius with core
+    charge (else ONCV_FAIL_INPUT, msg 191). A fill that rises somewhere on
+    [0, r_s] is a failure (fail_construction, msg 192): no other fill
+    stands in.
+
+    ```
+        # MODEL CORE CHARGE
+        # icmod, fcfact, rcfact, r_s, slack, budget_cutoff
+            9   25.0   1.0e-4   0.43   0.88   0
+    ```
+
+    In TOML, `r_s` is a key of [model_core_charge]. slack and
+    budget_cutoff are optional on the .dat line, as for icmod 6.
+
+For icmod 6 to 9 the out file reports the error's measures at the model:
+
+    error over the density cutoffs   13.2665   42.4264 bohr**-1
+      16-mean  6.1736498059584196E-05 Ha
+      largest  9.8148998082709087E-05 Ha
+    signed errors: share, cutoff (bohr**-1), error (Ha)
+        0.880000   13.266499 -9.8148998082709087E-05
+        ...
+    fill monotonicity margin  1.0902790470683512E+00
+
+    The window is [q_b, q_hi], the minimum tail's (q_hi = 3 times the cutoff
+    of ecut). The 16-mean ((1/(q_hi - q_b)) int |e|**16 dq)**(1/16), by
+    Gauss-Legendre on 150 panels whose nodes move with the window, is
+    smooth in the inputs; the largest error is only continuous. The signed
+    errors are at the density cutoffs 2 sqrt(2 s ecut) of the shares s
+    (TOML `error_shares`, up to 8; by default slack, 1, 1.5 and 2; the .dat
+    input has the default only, and its echo leaves custom shares out),
+    smooth wherever the functional is (PZ81's branch at r_ws = 1 makes them
+    step where a density crosses it at a mesh point). The margin is the
+    least of -(d rho/du)/rho(r_s) over u = (r/r_s)**2 in [0, 1]: negative
+    exactly where the fill rises, continuous but with kinks where its least
+    point hops.
 
 1) S. G. Louie, S. Froyen, and M. L. Cohen, Phys. Rev. B 43, 1993 (1991).
 

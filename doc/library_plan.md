@@ -593,6 +593,13 @@ So the interface is a hybrid:
       found by steps of 3 % down from r_top; `oncv_set_budget_guess` and
       the wrappers' `rs_guess` are gone. The icmod 6 and 7 outputs
       change.
+- [x] r_s as an input (`api_version` 9): icmod 8 (Martins' fill) and 9
+      (the minimum tail) at the input's r_s, no search; icmod 6 and 7
+      deprecated (a warning, `wrn_budget_deprecated`). `oncv_coupled` takes
+      `r_s`; the fields `core.budget.pnorm`, `emax`, `qwin`, `share`,
+      `err_q`, `err_signed` and `margin`; TOML `r_s` and `error_shares`.
+      Failures: r_s outside [r_top/50, r_top] (msg 191), a rising fill
+      (msg 192), a share beyond 1800 Ha (msg 193).
 - [x] Valgrind on the C test (nr, sr, fr, lloc 2): no errors; 2 kB lost
       per PSML file written, xmlf90's element stack, which
       `xml_Close` now frees (`cmake/patches/xmlf90-1.6.3.patch`, whose

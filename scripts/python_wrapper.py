@@ -217,6 +217,21 @@ def main():
     six = oncvpsp.coupled(run, 6, fcfact=-1.0, rcfact=1e-4, check=False, text=False)
     if six.ifail == 0:
         check("the search's passes", six["core.budget.passes"] >= 1)
+        # icmod 9 at icmod 6's radius: the same model, with no search
+        rs6 = float(six["core.budget.r_s"])
+        nine = oncvpsp.coupled(
+            run, 9, fcfact=-1.0, rcfact=1e-4, r_s=rs6, check=False, text=False
+        )
+        if six["core.budget.fill"] == 1:
+            check(
+                "icmod 9 at icmod 6's r_s",
+                nine.ifail == 0
+                and nine["core.budget.passes"] == 0
+                and all(
+                    np.array_equal(nine[f"core.budget.{k}"], six[f"core.budget.{k}"])
+                    for k in ("r_s", "cpoly", "pnorm", "err_signed", "margin")
+                ),
+            )
 
     with oncvpsp.coupled(run, 0, text=False) as again:
         check("the model core again", np.array_equal(again["pot.vkb"], vkb))

@@ -340,7 +340,7 @@
 &                       inp%lpopt,inp%dvloc0, &
 &                       inp%nproj,inp%debl,inp%well_n,inp%well_norm, &
 &                       inp%ecut_weight, &
-&                       inp%icmod,fcfact_in,inp%rcfact,inp%slack, &
+&                       inp%icmod,fcfact_in,inp%rcfact,inp%slack,inp%r_s, &
 &                       inp%budget_cutoff, &
 &                       fcgrid,rcgrid, &
 &                       inp%epsh1,inp%epsh2,inp%depsh,inp%rxpsh,inp%rlmax, &

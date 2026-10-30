@@ -456,8 +456,8 @@
 &        inp%ecut_weight))
  end do
 
- call write_icmod(inp%icmod,inp%fcfact,inp%rcfact,inp%slack,inp%budget_cutoff, &
-&                 fcgrid,rcgrid,iout)
+ call write_icmod(inp%icmod,inp%fcfact,inp%rcfact,inp%slack,inp%r_s, &
+&                 inp%budget_cutoff,fcgrid,rcgrid,iout)
 
  call write_epsh(inp%epsh1,inp%epsh2,inp%depsh,inp%rxpsh,iout)
 
@@ -833,7 +833,7 @@
 &               inp%iexc,c_light,iout,ifail)
    if(ifail/=0) return
 
- else if(inp%icmod==6 .or. inp%icmod==7) then
+ else if(inp%icmod>=6) then
    if(inp%fcfact<=0.0d0) then
      call modcore_budget_table(ecurve,ncurve,mxprj*4*nkap,wcurve, &
 &                              inp%budget_cutoff==1,inp%budget_cutoff==2, &
@@ -852,7 +852,7 @@
    end if
    call modcore_budget(inp%icmod,rho,rhoc,rhomod,corepw,inp%fcfact,ecutw, &
 &               inp%budget_cutoff==1,inp%rcfact, &
-&               inp%slack, &
+&               inp%slack,inp%r_s,inp%err_share(1:inp%nshare),inp%nshare, &
 &               minval(inp%rc(1:inp%lmax+1)),mmax,adams,rr,inp%iexc,c_light, &
 &               zion, &
 &               probes(:,1:nprobe),lprobe(1:nprobe),nprobe,psp%core%budget, &
@@ -1065,7 +1065,7 @@
  call move_alloc(ektail,psp%tests%convergence%tail)
  call move_alloc(optdg,psp%tests%convergence%opt)
  call move_alloc(wshare,psp%tests%convergence%wshare)
- psp%tests%weighted_cut%used=(inp%icmod==6 .or. inp%icmod==7) &
+ psp%tests%weighted_cut%used=(inp%icmod>=6) &
 &                         .and. inp%fcfact<=0.0d0 .and. inp%budget_cutoff==1
  psp%tests%weighted_cut%errw=inp%rcfact
  psp%tests%weighted_cut%ecutw=ecutw

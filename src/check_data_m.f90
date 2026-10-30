@@ -246,20 +246,33 @@
 
  subroutine check_model_core()
 !! icmod and the parameters of its model core
- if((inp%icmod<0 .or. inp%icmod>4) .and. inp%icmod/=6 .and. inp%icmod/=7) then
-   write(iout,'(a)') 'test_data: must have 0<= icmod <=4 or icmod=6 or 7'
+ if((inp%icmod<0 .or. inp%icmod>4) .and. (inp%icmod<6 .or. inp%icmod>9)) then
+   write(iout,'(a)') 'test_data: must have 0<= icmod <=4 or 6<= icmod <=9'
    ierr=ierr+1
  end if
 
- if((inp%icmod==6 .or. inp%icmod==7) .and. inp%rcfact<=0.0d0) then
-   write(iout,'(a)') 'test_data: must have rcfact>0.0 for icmod= 6 or 7'
+ if((inp%icmod>=6 .and. inp%icmod<=9) .and. inp%rcfact<=0.0d0) then
+   write(iout,'(a)') 'test_data: must have rcfact>0.0 for icmod= 6 to 9'
    ierr=ierr+1
  end if
 
- if((inp%icmod==6 .or. inp%icmod==7) .and. &
+ if((inp%icmod>=6 .and. inp%icmod<=9) .and. &
 &   (inp%slack<=0.0d0 .or. inp%slack>1.0d0)) then
-   write(iout,'(a)') 'test_data: must have 0.0<slack<=1.0 for icmod= 6 or 7'
+   write(iout,'(a)') 'test_data: must have 0.0<slack<=1.0 for icmod= 6 to 9'
    ierr=ierr+1
+ end if
+
+ if((inp%icmod==8 .or. inp%icmod==9) .and. &
+&   (inp%r_s<=0.0d0 .or. inp%r_s>minval(inp%rc(1:inp%lmax+1)))) then
+   write(iout,'(a)') 'test_data: must have 0.0<r_s<=min(rc) for icmod= 8 or 9'
+   ierr=ierr+1
+ end if
+
+ if(inp%nshare>0) then
+   if(any(inp%err_share(1:inp%nshare)<=0.0d0)) then
+     write(iout,'(a)') 'test_data: must have error_shares>0.0'
+     ierr=ierr+1
+   end if
  end if
 
  if((inp%icmod==1 .or. inp%icmod==3) .and. inp%fcfact<=0.0d0) then

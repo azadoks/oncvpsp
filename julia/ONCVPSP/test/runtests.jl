@@ -115,6 +115,14 @@ exe = read("exe.out", String)
     @test err isa OncvpspError && err.kind === :input && err.msg == 190
     six = coupled(run, 6; fcfact=-1.0, rcfact=1e-4, check=false, text=false)
     six.ifail == 0 && @test six["core.budget.passes"] >= 1
+    if six.ifail == 0 && six["core.budget.fill"] == 1
+        # icmod 9 at icmod 6's radius: the same model, with no search
+        nine = coupled(run, 9; fcfact=-1.0, rcfact=1e-4, r_s=six["core.budget.r_s"],
+                       check=false, text=false)
+        @test nine.ifail == 0 && nine["core.budget.passes"] == 0 &&
+              all(nine["core.budget.$k"] == six["core.budget.$k"]
+                  for k in ("r_s", "cpoly", "pnorm", "err_signed", "margin"))
+    end
     @test coupled(run, 0; text=false)["pot.vkb"] == vkb
     @test confine(run; radii=(), walls=())["confine.nmiss"] == -1
     conf = confine(run; walls=())

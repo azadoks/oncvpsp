@@ -63,6 +63,11 @@ kernel_diff.py):
           the basis's, and <r>/rc of the basis state the positive-energy
           test comes closest to flagging (from the DIAGNOSTICS block; without
           one, the energies of the table printed to 6 decimals)
+  budget  the budgeted model core's smooth measures (icmod 6 to 9): the
+          16-mean of the xc error and the signed errors at the shares
+          (relative to the largest of them), read from the out file's lines
+          (17 digits); not the fill's monotonicity margin, a least value
+          over u that is C0 where its argmin hops
 
 The last three are what the optimizer reads (doc/smoothness_plan.md, order
 of the remaining work); from an output without the DIAGNOSTICS block only a
@@ -126,7 +131,7 @@ from scripts_common import apply_sets, dump_toml, get_value, parse_key, set_valu
 from pyoncvpsp.io import OncvpspTextParser
 
 RADIUS_KEYS = {"rc", "rcloc", "rxpsh"}
-GROUPS = ("kernel", "vloc", "core", "tests", "ld", "ecut", "ghost")
+GROUPS = ("kernel", "vloc", "core", "tests", "ld", "ecut", "ghost", "budget")
 # NPTS by the fit's highest degree: (degree, npts), the first that covers it,
 # else the last npts (self_test checks each pair)
 NPTS = ((6, 21), (14, 31), (24, 41))
@@ -232,6 +237,8 @@ def features(path, samples, groups=GROUPS):
                 block = f"core.{output}" if d == 0 else f"core.{output}:d{d}"
                 for k in points:
                     out[f"{block}:r{k}"] = float(row[k])
+    if "budget" in groups:
+        out.update(budget_part(path))
     if not groups & {"tests", "ld", "ecut", "ghost"}:
         return out
     diagnostics = parser.diagnostics
@@ -302,6 +309,28 @@ def features(path, samples, groups=GROUPS):
         for test in diagnostics.get("ghost_localization") or []:
             tag = f"l{test['l']}" + ("" if test["j"] is None else f"j{test['j']}")
             out[f"ghost:{tag}:r_over_rc"] = test["r_over_rc"]
+    return out
+
+
+def budget_part(path):
+    """{name: value} of the budgeted model core's smooth measures, from the
+    lines of the out file at path (modcore_budget_m budget_report)."""
+    out = {}
+    lines = pathlib.Path(path).read_text().splitlines()
+    for i, line in enumerate(lines):
+        words = line.split()
+        if line.startswith("    16-mean"):
+            out["budget:pnorm:x"] = float(words[1])
+        elif line.startswith("  signed errors: share"):
+            for row in lines[i + 1 :]:
+                cols = row.split()
+                if len(cols) != 3 or not row.startswith("  "):
+                    break
+                try:
+                    share, err = float(cols[0]), float(cols[2])
+                except ValueError:
+                    break
+                out[f"budget:signed:s{share:g}"] = err
     return out
 
 

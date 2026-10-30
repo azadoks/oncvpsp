@@ -20,7 +20,7 @@
 !> psp8, UPF and PSML files take besides, and the results of the tests
  module results_m
 
- use constants_m, only: dp, mxlin, mxstate, mxkap
+ use constants_m, only: dp, mxlin, mxstate, mxkap, mxshare
  use pseudo_m, only: pseudo_t
  use test_results_m, only: tests_t
  use failure_m, only: warnings_t
@@ -44,7 +44,7 @@
    real(dp) :: log_mesh(4)=0.0d0
  end type echo_t
 
-!> the budgeted model core (modcore_budget, icmod 6 and 7), as its report
+!> the budgeted model core (modcore_budget, icmod 6 to 9), as its report
  type :: core_budget_t
 !> the cutoff budget (Ha)
    real(dp) :: ecut=0.0d0
@@ -89,6 +89,25 @@
    integer :: npass=0
 !> the last density cutoff the radius was found with (bohr**-1)
    real(dp) :: qext=0.0d0
+!> the p-mean of the xc energy error over the density cutoffs q_b..q_hi,
+!> ((1/(q_hi-q_b)) int |e|**16 dq)**(1/16) (Ha): smooth in the inputs, unlike
+!> the largest error
+   real(dp) :: pnorm=0.0d0
+!> the largest xc energy error over q_b..q_hi (Ha)
+   real(dp) :: emax=0.0d0
+!> the window q_b, q_hi of pnorm and emax (bohr**-1)
+   real(dp) :: qwin(2)=0.0d0
+!> number of the shares of the signed errors
+   integer :: nshare=0
+!> the shares s of the cutoff budget of the signed errors
+   real(dp) :: share(mxshare)=0.0d0
+!> their density cutoffs, 2 sqrt(2 s ecut) (bohr**-1)
+   real(dp) :: err_q(mxshare)=0.0d0
+!> the signed xc energy errors there (Ha)
+   real(dp) :: err_signed(mxshare)=0.0d0
+!> the fill's monotonicity margin: the least of -(d rho/du)/rho(r_s) over
+!> u = (r/r_s)**2 in [0, 1], negative where the fill rises
+   real(dp) :: margin=0.0d0
  end type core_budget_t
 
 !> the model core's parameters

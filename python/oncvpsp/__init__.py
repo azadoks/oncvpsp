@@ -277,14 +277,16 @@ def coupled(
     *,
     fcfact: float = 0.0,
     rcfact: float = 0.0,
+    r_s: float = 0.0,
     skip_ld: bool = False,
     check: bool = True,
     text: Text = True,
 ) -> Run:
     """the model core, screening and tests again on the stages of base's
-    run with the model core icmod, fcfact, rcfact (oncv_coupled): a run"""
+    run with the model core icmod, fcfact, rcfact and r_s (icmod 8, 9; 0 for
+    the input's) (oncv_coupled): a run"""
     hh = Run(text)
-    ifail = lib.oncv_coupled(hh.ptr, base.ptr, icmod, fcfact, rcfact, int(skip_ld))
+    ifail = lib.oncv_coupled(hh.ptr, base.ptr, icmod, fcfact, rcfact, r_s, int(skip_ld))
     return hh._done(ifail, check)
 
 

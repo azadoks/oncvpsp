@@ -17,13 +17,13 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !
 
-!> The model cores of icmod 6 and 7 (modcore_budget), the probes of the
+!> The model cores of icmod 6 to 9 (modcore_budget), the probes of the
 !> hardness of icmod 7 (modcore_probes), and the table of the pseudo-wave
 !> cutoffs the budget starts from (modcore_budget_table).  The search of
 !> modcore_budget runs in phases over its state, a budget_t.
  module modcore_budget_m
 
- use constants_m, only: dp, pi, nrhomod
+ use constants_m, only: dp, pi, nrhomod, mxshare
  use, intrinsic :: iso_fortran_env, only: error_unit
  use adams_m, only: adams_t
  use failure_m, only: warnings_t
@@ -135,6 +135,25 @@
    real(dp) :: qext=0.0d0
 !> the passes of the icmod 6 search
    integer :: npass=0
+!> the fills set_model may make: 0 the minimum tail or else Martins'
+!> (icmod 6, 7), 1 the minimum tail only (9), 2 Martins' only (8)
+   integer :: fill_mode=0
+!> the signed error of the last xc_error (Ha)
+   real(dp) :: esigned=0.0d0
+!> the 16-mean of the error over q_b..qhi (Ha)
+   real(dp) :: pnorm=0.0d0
+!> the largest error over q_b..qhi (Ha)
+   real(dp) :: emax=0.0d0
+!> the number of the shares of the cutoff of the signed errors
+   integer :: nshare=0
+!> the shares
+   real(dp) :: share(mxshare)=0.0d0
+!> their density cutoffs (bohr**-1)
+   real(dp) :: err_q(mxshare)=0.0d0
+!> the signed errors there (Ha)
+   real(dp) :: err_signed(mxshare)=0.0d0
+!> the fill's monotonicity margin
+   real(dp) :: margin=0.0d0
 !> the grid's density cutoff of the largest error of err_max (bohr**-1)
    real(dp) :: qpk=0.0d0
 !> the largest r_s, the smallest rc or the last radius with core charge
@@ -389,13 +408,32 @@
 ! basin; the minimum is the root of the mismatch's derivative in ln r_s,
 ! by central differences, in it (M-10).  The radii above r_s of icmod 6
 ! fit, as the needed cutoff falls as the model softens.
+!
+! icmod 6 and 7 are deprecated (a warning): r_s is the root of a largest
+! error that need not fall as r_s grows, so that it is only C0 in the
+! inputs and can jump (M-9).  icmod=9 is the minimum tail at the radius r_s
+! of the input, icmod=8 Martins' fill there, with no search: the model is
+! smooth in r_s and the inputs, and the budget is the caller's.  The fill
+! must not rise (else a failure: no other fill stands in), and r_s must
+! lie in [r_top/50, r_top].
+!
+! For every icmod the report has the error's smooth measures at the model
+! (budget_measures): the 16-mean of the error over q_b..qhi,
+! ((1/(qhi-q_b)) int |e|**16 dq)**(1/16) (trapezoids on the grid of 0.1
+! bohr**-1), the signed errors at the density cutoffs 2*sqrt(2*s*ecut) of
+! the shares s (error_shares; slack, 1, 1.5, 2 by default), and the fill's
+! monotonicity margin, the least over u = (r/r_s)**2 in [0, 1] of
+! -(d rho/du)/rho(r_s).  The largest error is C0 in the inputs (its
+! argmax hops between the crests of a ripple), and so is its absolute
+! value where it changes sign.
 
  subroutine modcore_budget(icmod,rhotps,rhoc,rhomod,corepw,fcfact,ecutw, &
-&                          weighted,errmax,slack,rcmin,mmax,adams,rr,iexc, &
-&                          c_light, &
+&                          weighted,errmax,slack,rs_in,shares,nshare,rcmin, &
+&                          mmax,adams,rr,iexc,c_light, &
 &                          zion,probes,lprobe,nprobe,res,warns,iout,ifail)
 
-!! @param icmod  6 for the smallest radius, 7 for the hardness-matched one
+!! @param icmod  6 for the smallest radius, 7 for the hardness-matched one,
+!!               8 Martins' fill at rs_in, 9 the minimum tail at rs_in
 !! @param rhotps  pseudo valence charge density
 !! @param rhoc  core charge density
 !! @param rhomod  model core charge and its first 4 derivatives
@@ -409,6 +447,9 @@
 !! @param errmax  exchange-correlation energy error (Ha) that defines the needed
 !!                cutoff
 !! @param slack  share of the cutoff the model must fit, 0 < slack <= 1
+!! @param rs_in  the model radius r_s of icmod 8, 9 (bohr)
+!! @param shares  the shares of the cutoff of the signed errors
+!! @param nshare  their number, 0 for slack, 1, 1.5, 2
 !! @param rcmin  the smallest rc, the largest r_s (bohr)
 !! @param mmax  size of the log radial mesh
 !! @param adams  order and coefficients of the Adams-Moulton steps
@@ -425,19 +466,22 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 
- use failure_m, only: warnings_t, warn_merge
+ use failure_m, only: warnings_t, warn_merge, warn, wrn_budget_deprecated, &
+&                    fail_input, fail_construction, failed, &
+&                    msg_budget_rs_range, msg_budget_fill_monotone
  use modcore_m, only: core_pieces
  use pieces_m, only: piecewise_t
  use results_m, only: core_budget_t
 
 !Input variables
- integer, intent(in) :: icmod,mmax,iexc,nprobe
+ integer, intent(in) :: icmod,mmax,iexc,nprobe,nshare
  type(adams_t), intent(in) :: adams
  real(dp), intent(in) :: c_light
  integer, intent(in) :: lprobe(nprobe)
  real(dp), intent(in) :: rhotps(mmax),rhoc(mmax),rr(mmax)
  real(dp), intent(in) :: probes(mmax,nprobe)
- real(dp), intent(in) :: fcfact,ecutw,errmax,slack,zion,rcmin
+ real(dp), intent(in) :: fcfact,ecutw,errmax,slack,zion,rcmin,rs_in
+ real(dp), intent(in) :: shares(nshare)
  logical, intent(in) :: weighted
  integer, intent(in) :: iout
 
@@ -454,6 +498,8 @@
  type(budget_t) :: bc
 
  ifail=0
+! the search's warnings are of the caller's stage
+ bc%warn%stage=warns%stage
  call budget_init(bc,rhotps,rhoc,fcfact,ecutw,errmax,slack,rcmin,mmax,rr, &
 &                 iexc,c_light,zion,probes,lprobe,nprobe,iout,ifail)
  if(ifail/=0) return
@@ -465,13 +511,42 @@
    ifail=bc%ifail
    return
  end if
- call budget_search6(bc,iout,ifail)
- if(ifail/=0) return
- if(icmod==7) then
-   call budget_hardness7(bc,iout,ifail)
+ if(icmod>=8) then
+! the model at the radius of the input, of the one fill
+   if(rs_in<bc%rlo .or. rs_in>bc%rtop) then
+     write(iout,'(/a,f12.6,a,f12.6,a,f12.6,a)') 'modcore_budget: ERROR r_s=', &
+&          rs_in,' bohr outside [r_lo, r_top] = [',bc%rlo,',',bc%rtop,']'
+     ifail=failed(fail_input,msg_budget_rs_range)
+     return
+   end if
+   bc%fill_mode=2
+   if(icmod==9) bc%fill_mode=1
+   call set_model(bc,rs_in)
+   if(bc%ifail/=0) then
+     ifail=bc%ifail
+     return
+   end if
+   if(bc%fill%ifill==0) then
+     write(iout,'(/a,f12.6,a)') &
+&         'modcore_budget: ERROR the fill is not monotone at r_s=',rs_in, &
+&         ' bohr'
+     ifail=failed(fail_construction,msg_budget_fill_monotone)
+     return
+   end if
+ else
+   write(iout,'(/a)') 'modcore_budget: WARNING icmod 6 and 7 are '// &
+&        'deprecated: icmod 8 and 9 take r_s'
+   call warn(bc%warn,wrn_budget_deprecated)
+   call budget_search6(bc,iout,ifail)
    if(ifail/=0) return
+   if(icmod==7) then
+     call budget_hardness7(bc,iout,ifail)
+     if(ifail/=0) return
+   end if
  end if
  call budget_needed_cut(bc,iout,ifail)
+ if(ifail/=0) return
+ call budget_measures(bc,slack,shares,nshare,iout,ifail)
  if(ifail/=0) return
 
 ! fill in model and derivatives, all-electron beyond r_s
@@ -1055,6 +1130,14 @@
 ! the last model tried with it, which depend on the search's path
  if(bc%fill%ifill==2) res%martins(:)=[bc%fill%aco,bc%fill%bco,bc%fill%cco]
  res%ecut_needed=bc%ecore
+ res%pnorm=bc%pnorm
+ res%emax=bc%emax
+ res%qwin=[bc%qb,bc%qhi]
+ res%nshare=bc%nshare
+ res%share=bc%share
+ res%err_q=bc%err_q
+ res%err_signed=bc%err_signed
+ res%margin=bc%margin
  if(icmod==7) then
    res%r_s6=bc%rs6
    res%mismatch=bc%mismatch
@@ -1063,11 +1146,16 @@
    res%cmis=bc%cmis(1:bc%ncand)
  end if
 
- if(icmod==7) then
+ select case(icmod)
+ case(7)
    write(iout,'(/a)') 'Model core correction: hardness-matched core (icmod 7)'
- else
+ case(8)
+   write(iout,'(/a)') 'Model core correction: Martins'' fill at r_s (icmod 8)'
+ case(9)
+   write(iout,'(/a)') 'Model core correction: minimum tail at r_s (icmod 9)'
+ case default
    write(iout,'(/a)') 'Model core correction: budgeted core (icmod 6)'
- end if
+ end select
  if(fcfact<=0.0d0 .and. weighted) then
    write(iout,'(a,1p,e10.2,a,0p,f12.4,a,f8.4)') &
 &        '  pseudo-wave cutoff, weighted mean Ecut of the tables at', &
@@ -1101,6 +1189,16 @@
    write(iout,'(a,1p,3e16.8)') '  a, b, c',bc%fill%aco,bc%fill%bco,bc%fill%cco
  end if
  write(iout,'(a,f12.4,a)') '  cutoff the model core needs',bc%ecore,' Ha'
+ write(iout,'(a,2f10.4,a)') '  error over the density cutoffs',bc%qb,bc%qhi, &
+&      ' bohr**-1'
+ write(iout,'(a,1p,e24.16,a)') '    16-mean',bc%pnorm,' Ha'
+ write(iout,'(a,1p,e24.16,a)') '    largest',bc%emax,' Ha'
+ write(iout,'(a)') '  signed errors: share, cutoff (bohr**-1), error (Ha)'
+ do ii=1,bc%nshare
+   write(iout,'(f12.6,f12.6,1p,e24.16)') bc%share(ii),bc%err_q(ii), &
+&        bc%err_signed(ii)
+ end do
+ write(iout,'(a,1p,e24.16)') '  fill monotonicity margin',bc%margin
  if(icmod==7) then
    write(iout,'(a,f12.6)') '  smallest fitting radius (icmod 6)',bc%rs6
    write(iout,'(a,1p,e12.4,a)') '  hardness mismatch',bc%mismatch,' Ha'
@@ -1488,11 +1586,15 @@
      pg(kk)=(xe-xs)*wgi(kk)*pt(kk)**2*l1
    end do
 
-   call min_tail(bc,dm)
-   if(bc%ifail/=0) return
    ifill=0
-   call tail_monotone(bc%fill,mono,bc%ifail)
-   if(bc%ifail/=0) return
+   mono=.false.
+   if(bc%fill_mode/=2) then
+     call min_tail(bc,dm)
+     if(bc%ifail/=0) return
+     call tail_monotone(bc%fill,mono,bc%ifail)
+     if(bc%ifail/=0) return
+     if(.not. mono .and. bc%fill_mode==1) return
+   end if
    if(mono) then
      ifill=1
      do kk=1,mmax
@@ -1543,6 +1645,176 @@
  end associate
  return
  end subroutine set_model
+
+ subroutine budget_measures(bc,slack,shares,nshare,iout,ifail)
+
+!! the smooth measures of the error of the model of bc%fill%rs: the
+!! 16-mean of the error over q_b..qhi, ((1/(qhi-q_b)) int |e|**16 dq)**(1/16)
+!! by Gauss-Legendre on npmean equal panels of [q_b, qhi], whose nodes move
+!! with q_b and qhi (on the fixed grid the nodes changed as q_b crossed
+!! one, and the mean had kinks of 4e-3 in slack), terms below 1e-15 of the
+!! largest left out; the largest error there (err_max, C0 in the inputs);
+!! the signed errors at the density cutoffs 2*sqrt(2*s*ecut) of the shares
+!! s; and the fill's monotonicity margin (fill_margin, C0 where its least
+!! point hops)
+!!
+!! @param bc  the state of the search
+!! @param slack  share of the cutoff the model must fit
+!! @param shares  the shares s
+!! @param nshare  their number, 0 for slack, 1, 1.5, 2
+!! @param iout  unit of the text output
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use failure_m, only: fail_input, failed, msg_budget_share_range
+
+!Input variables
+ integer, intent(in) :: nshare,iout
+ real(dp), intent(in) :: slack
+ real(dp), intent(in) :: shares(nshare)
+
+!Input/output variables
+ type(budget_t), intent(inout) :: bc
+
+!Output variables
+ integer, intent(out) :: ifail
+
+!Local variables
+ integer, parameter :: npmean=150
+ real(dp) :: eq(ngk,npmean)
+ real(dp) :: ss,emx,hh
+ integer :: ip,ig,kk
+ ifail=0
+ associate(qb=>bc%qb,qhi=>bc%qhi,tk=>bc%tk,wk=>bc%wk)
+   if(nshare==0) then
+     bc%nshare=4
+     bc%share(1:4)=[slack,1.0d0,1.5d0,2.0d0]
+   else
+     bc%nshare=nshare
+     bc%share(1:nshare)=shares(:)
+   end if
+   do kk=1,bc%nshare
+     bc%err_q(kk)=2.0d0*sqrt(2.0d0*bc%share(kk)*bc%ecut)
+     if(bc%err_q(kk)>qmax) then
+       write(iout,'(/a,f12.6,a,f12.6,a)') 'modcore_budget: ERROR the '// &
+&            'error share s=',bc%share(kk),' has its cutoff beyond', &
+&            qmax**2/8.0d0,' Ha'
+       ifail=failed(fail_input,msg_budget_share_range)
+       return
+     end if
+   end do
+   call spectrum(bc,max(qhi,maxval(bc%err_q(1:bc%nshare))))
+   hh=(qhi-qb)/npmean
+   do ip=1,npmean
+     do ig=1,ngk
+       eq(ig,ip)=err_at(bc,qb + (ip-1+tk(ig))*hh)
+     end do
+   end do
+   do kk=1,bc%nshare
+     bc%err_signed(kk)=err_at(bc,bc%err_q(kk))
+     bc%err_signed(kk)=bc%esigned
+   end do
+   if(bc%ifail/=0) then
+     ifail=bc%ifail
+     return
+   end if
+   emx=maxval(eq)
+   ss=0.0d0
+   if(emx>0.0d0) then
+     eq(:,:)=eq(:,:)/emx
+     where(eq<1.0d-15) eq=0.0d0
+     do ip=1,npmean
+       ss=ss + hh*sum(wk(:)*eq(:,ip)**16)
+     end do
+   end if
+   bc%pnorm=emx*(ss/(qhi-qb))**(1.0d0/16.0d0)
+   bc%emax=err_max(bc,qb,qhi,huge(1.0d0))
+   if(bc%ifail/=0) then
+     ifail=bc%ifail
+     return
+   end if
+   call fill_margin(bc%fill,bc%margin,ifail)
+ end associate
+ return
+ end subroutine budget_measures
+
+ subroutine fill_margin(fill,margin,ifail)
+
+!! the fill's monotonicity margin: the least over u = (r/r_s)**2 in
+!! [0, 1] of -(d rho/du)/rho(r_s) (fill_slope), on 200 intervals and by
+!! Brent's method about the grid's least; negative where the fill rises
+!!
+!! @param fill  the fill
+!! @param margin  the margin
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use root_m, only: root_fmin
+
+!Input variables
+ type(fill_t), intent(in) :: fill
+
+!Output variables
+ real(dp), intent(out) :: margin
+ integer, intent(out) :: ifail
+
+!Local variables
+ integer, parameter :: nu=200
+ real(dp) :: gu(0:nu)
+ integer :: kk,kmin
+ ifail=0
+ do kk=0,nu
+   gu(kk)=fill_slope(fill,dble(kk)/nu)
+ end do
+ kmin=minloc(gu,1)-1
+ call root_fmin(fill_slope_of,dble(max(0,kmin-1))/nu, &
+&               dble(min(nu,kmin+1))/nu,margin,ifail)
+ if(ifail/=0) return
+ margin=min(margin,gu(kmin))
+ return
+
+ contains
+
+ real(dp) function fill_slope_of(xx)
+
+!! fill_slope of this fill, for root_fmin
+!!
+!! @param xx  the argument
+
+!Input variables
+ real(dp), intent(in) :: xx
+
+ fill_slope_of=fill_slope(fill,xx)
+ return
+ end function fill_slope_of
+
+ end subroutine fill_margin
+
+ real(dp) function fill_slope(fill,uu)
+
+!! -(d rho/du)/rho(r_s) of the fill at u = (r/r_s)**2
+!!
+!! @param fill  the fill
+!! @param uu  u
+
+!Input variables
+ real(dp), intent(in) :: uu
+ type(fill_t), intent(in) :: fill
+
+!Local variables
+ real(dp) :: r2
+ associate(aco=>fill%aco,bco=>fill%bco,cco=>fill%cco,rs=>fill%rs)
+   if(fill%ifill==1) then
+     fill_slope=-2.0d0*leg_value(fill,2.0d0*uu-1.0d0,1)/ &
+&               leg_value(fill,1.0d0,0)
+   else
+     r2=rs**2
+     fill_slope=-exp(bco*r2*(uu-1.0d0) + cco*r2**2*(uu**2-1.0d0))* &
+&               (bco*r2 + 2.0d0*cco*r2**2*uu)
+   end if
+ end associate
+ return
+ end function fill_slope
 
  real(dp) function fill_value(fill,rad)
 
@@ -2446,6 +2718,7 @@
    af(:)=ri(:)**2*(wki(:) - wf(:) - vbg*(bq(nx+1:nt) - fext(:)))
    call lm_integral(ri,af,ni,2,0.0d0,rs,si)
    call lm_integral(rr,ac,nx,2,rs,radius,so1)
+   bc%esigned=si + so1
    xc_error=abs(si + so1)
  end associate
  return

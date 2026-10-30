@@ -23,7 +23,7 @@
  implicit none
  private
  public :: dp, qp, pi, mxprj, mxstate, mxcnf, mxl, mxlin, mxkap
- public :: nrhomod, nlev, nerrlv, nerrdg, well_onset_default
+ public :: nrhomod, mxshare, nlev, nerrlv, nerrdg, well_onset_default
  public :: diag_match
  public :: ae_tolres
  public :: eig_tol, eig_floor, rel_window, series_tol, ha_ev, ovl_floor
@@ -63,6 +63,10 @@
 !> number of columns of the model core charge rhomod: the charge and its
 !> first nrhomod-1 radial derivatives
  integer, parameter :: nrhomod=5
+
+!> largest number of the shares of the cutoff budget at which the budgeted
+!> model core's signed errors are reported (icmod 6 to 9)
+ integer, parameter :: mxshare=8
 
 !> number of levels of each configuration: reference, maximally ionized and
 !> excited

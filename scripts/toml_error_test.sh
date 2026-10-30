@@ -6,7 +6,7 @@
 #
 # usage: toml_error_test.sh EXE DATA_DIR CASE WORKDIR
 # DATA_DIR is tests/data; the inputs are DATA_DIR/toml/14_Si.toml and, for
-# icmod 6, DATA_DIR/toml/14_Si_bca.toml
+# icmod 6, DATA_DIR/toml/14_Si_bca.toml (icmod 9, DATA_DIR/toml/14_Si_bc9.toml)
 # The same output is one that compare_output.py --identical accepts (every
 # number to 1e-10, the text exactly); the python, with pyoncvpsp and
 # upf-tools, is $ONCVPSP_PYTHON, or python3.
@@ -146,6 +146,20 @@ case $case in
         # budget_cutoff defaults to "max"
         base=$data/toml/14_Si_bca.toml
         set_key model_core_charge rcfact 'rcfact = 1.0e-4\nbudget_cutoff = "max"' \
+            < "$base" > in.toml ;;
+    icmod9_missing_r_s)
+        base=$data/toml/14_Si_bc9.toml
+        set_key model_core_charge r_s '' < "$base" > in.toml
+        expect='missing key r_s in [model_core_charge]' ;;
+    error_shares_length)
+        base=$data/toml/14_Si_bc9.toml
+        set_key model_core_charge r_s 'r_s = 0.43\nerror_shares = []' \
+            < "$base" > in.toml
+        expect='error_shares in [model_core_charge] must be an array of 1 to 8 numbers' ;;
+    error_shares_custom)
+        # the default shares, given
+        base=$data/toml/14_Si_bc9.toml
+        set_key model_core_charge r_s 'r_s = 0.43\nerror_shares = [ 0.88, 1, 1.5, 2.0,]' \
             < "$base" > in.toml ;;
     wave_regularization_value)
         set_key pseudopotentials qcut 'qcut = [ 5.0, 5.0, 5.0,]\nwave_regularization = -1e-8' \

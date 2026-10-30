@@ -460,6 +460,20 @@ smooth_scan_test(14_Si_hm_slack sr 14_Si_hm "model_core_charge.slack" kernel,vlo
     --set "model_core_charge.budget_cutoff=\"max_all\"")
 smooth_scan_test(14_Si_bc_slack sr 14_Si_bc "model_core_charge.slack" kernel,vloc,core,tests
     "kernel=1e-10,vloc=3e-12,core=1e-11,tests=1e-10" --center 0.85 --span 0.02 --degree 10)
+# icmod 8, 9 (M-9): the model at the input's r_s, no search: smooth in r_s and in slack (which moves
+# the minimum tail's window), and so are the error's 16-mean and signed errors (budget); not the
+# largest error or the fill's margin, least or largest values whose argmax hops. PBE where the
+# errors are read: PZ81's branch at r_ws = 1 steps them (~6e-7 Ha) where a density crosses it at a
+# mesh point (none in 14_Si_bc's window at r_s 0.43; at 0.375 one does)
+smooth_scan_test(14_Si_bc9_rs sr 14_Si_bc9 "model_core_charge.r_s" kernel,vloc,core,tests,budget
+    "kernel=1e-10,vloc=1e-10,core=1e-11,tests=1e-10,budget=3e-10" --span 0.01 --degree 10)
+smooth_scan_test(14_Si_bc9_slack sr 14_Si_bc9 "model_core_charge.slack" kernel,vloc,core,tests,budget
+    "kernel=1e-10,vloc=1e-10,core=1e-11,tests=1e-10,budget=3e-10" --span 0.02 --degree 10
+    --set "oncvpsp.iexc=4")
+smooth_scan_test(14_Si_bc8_rs sr 14_Si_bc9 "model_core_charge.r_s" kernel,vloc,core,tests,budget
+    "kernel=1e-10,vloc=1e-10,core=1e-11,tests=1e-10,budget=3e-10" --center 0.9 --span 0.01
+    --degree 10 --set "model_core_charge.icmod=8" --set "model_core_charge.r_s=0.9"
+    --set "oncvpsp.iexc=4")
 # the optimizer's setup (07_N_opt: PBE, icmod 6 at fcfact 65, lpopt 5): the inputs it varies and
 # the outputs it reads. ld and ecut from the DIAGNOSTICS block (O-6, 17 digits; up to 1.2e-10 and
 # 3.7e-10 measured; ld 3.0e-10 in rcloc since the exact Adams-Moulton step, a smooth feature, jump
@@ -541,6 +555,7 @@ set(oncvpspsr_tests
     "40_Zr_grid"    # icmod=4 with an explicit search grid (modcore3)
     "14_Si_hm"      # icmod=7 with slack (modcore_budget, modcore_probes)
     "14_Si_bcw"     # icmod=6 with the weighted cutoff of the waves (modcore_budget_table)
+    "14_Si_bc9"     # icmod=9, the minimum tail at the input's r_s, with slack
     "07_N_opt"      # the optimizer's setup (oncvpsp-opt): PBE (Libxc), icmod 6, rxpsh, its own
                     # log mesh, where the AE SCF stops on its residual's floor (ae_converged)
     "07_N_flat"     # the same at qcut[0] = 22, where E_resid(qcut) is flat to round-off and the
@@ -729,7 +744,7 @@ endforeach ()
 if (ONCVPSP_WITH_TOML)
     set(toml_tests
         "sr:03_Li" "sr:07_N_dl" "sr:07_N_opt" "sr:08_O" "sr:08_O_wigner" "sr:14_Si_bc" "sr:14_Si_bca"
-        "sr:14_Si_bcw" "sr:20_Ca" "sr:32_Ge" "sr:34_Se" "sr:38_Sr_lxc" "sr:40_Zr" "sr:40_Zr_grid"
+        "sr:14_Si_bcw" "sr:14_Si_bc9" "sr:20_Ca" "sr:32_Ge" "sr:34_Se" "sr:38_Sr_lxc" "sr:40_Zr" "sr:40_Zr_grid"
         "sr:60_Nd_GHOST" "sr:79_Au_lxc" "sr:07_N_flat"
         "r:07_N_dl" "r:14_Si_bc" "r:14_Si_hm" "r:20_Ca" "r:40_Zr_grid" "r:60_Nd_GHOST" "r:79_Au_lxc"
         "nr:14_Si")
@@ -753,11 +768,12 @@ if (ONCVPSP_WITH_TOML)
             "icmod6_default_slack" "well_onset_range" "well_onset_default"
             "well_tail_value" "well_tail_default" "well_n_negative" "well_norm_value"
             "budget_cutoff_value"
-            "budget_cutoff_default" "wave_regularization_value"
+            "budget_cutoff_default" "icmod9_missing_r_s" "error_shares_length"
+            "error_shares_custom" "wave_regularization_value"
             "wave_regularization_default" "nan_real" "inf_array")
         oncvpsp_add_test(toml toml_input sr ${case} toml_error_test.sh
             $<TARGET_FILE:oncvpspsr> "${data}" ${case} "@DIR@")
-        if (case MATCHES "^(integer_for_real|extra_keys|icmod6_default_rcfact|icmod6_default_slack|well_onset_default|well_tail_default|budget_cutoff_default|wave_regularization_default)$")
+        if (case MATCHES "^(integer_for_real|extra_keys|icmod6_default_rcfact|icmod6_default_slack|well_onset_default|well_tail_default|budget_cutoff_default|error_shares_custom|wave_regularization_default)$")
             oncvpsp_compares("${added_test}")
         endif ()
     endforeach ()
@@ -949,9 +965,21 @@ foreach (case IN ITEMS "inside:2.0" "at_rc:2.70")
         "${data}/14_Si_lder.dat" "s/^   -0\\.3  2\\.0  0\\.02  3\\.5$/   -0.3  2.0  0.02  ${radius}/")
 endforeach ()
 oncvpsp_add_test(errors error sr icmod7_slack_range error_test.sh
-    $<TARGET_FILE:oncvpspsr> "test_data: must have 0.0<slack<=1.0 for icmod= 6 or 7"
+    $<TARGET_FILE:oncvpspsr> "test_data: must have 0.0<slack<=1.0 for icmod= 6 to 9"
     "@DIR@"
     "${data}/14_Si_hm.dat" "s/^   7   0   1\\.0e-5   0\\.7$/   7   0   1.0e-5   1.5/")
+oncvpsp_add_test(errors error sr icmod9_rs_beyond_rc error_test.sh
+    $<TARGET_FILE:oncvpspsr> "test_data: must have 0.0<r_s<=min(rc) for icmod= 8 or 9"
+    "@DIR@"
+    "${data}/14_Si_bc9.dat" "s/^   9   25\\.0   1\\.0e-4   0\\.43   0\\.88$/   9   25.0   1.0e-4   3.0   0.88/")
+oncvpsp_add_test(errors error sr icmod9_rs_range error_test.sh
+    $<TARGET_FILE:oncvpspsr> "modcore_budget: ERROR r_s=    0.010000 bohr outside"
+    "@DIR@"
+    "${data}/14_Si_bc9.dat" "s/^   9   25\\.0   1\\.0e-4   0\\.43   0\\.88$/   9   25.0   1.0e-4   0.01   0.88/")
+oncvpsp_add_test(errors error sr icmod9_fill_monotone error_test.sh
+    $<TARGET_FILE:oncvpspsr> "modcore_budget: ERROR the fill is not monotone at r_s="
+    "@DIR@"
+    "${data}/14_Si_bc9.dat" "s/^   9   25\\.0   1\\.0e-4   0\\.43   0\\.88$/   9   25.0   1.0e-4   0.30   0.88/")
 oncvpsp_add_test(errors error sr budget_cutoff_value error_test.sh
     $<TARGET_FILE:oncvpspsr> "Read ERROR, input data file line  34"
     "@DIR@"
