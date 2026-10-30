@@ -104,21 +104,15 @@ explorations of N), whose tail the channel does not see. Its ghost tests
 reach beyond rcmax always: in both, their counts are the run's, and their
 energies within 1e-6 Ha in the test inputs.
 
-### The model core's search from a guess
+### The model core's search
 
 The model core of icmod 6 and 7 searches for its radius r_s, about half a
-run. `rs_guess=` (bohr), on `run`, `assemble` and `coupled` (Julia the
-same; C `oncv_set_budget_guess`), starts the search from a guess: the
-bracket of two mesh points is found near it rather than by bisection from
-the ends. Where the search's error changes sign once over the mesh, the
-radius and every result are those without the guess; but it may change
-sign more than once (oncvpsp-opt's explorations of Cs: 5 of 36 samples),
-and the guess then finds another root, 10 to 20 % off. Without the guess
-the root is the one the bisection reaches, not the smallest. Use it only
-where a result that depends on the guess is acceptable.
-`core.budget.passes` (2 when the error peaks beyond the search's first
+run. `core.budget.passes` (2 when the error peaks beyond the search's first
 cutoffs) and `core.budget.qext` (the cutoffs it ended with) report the
-search's passes.
+search's passes. The search steps down from the largest radius, so it has
+no starting point to give: api 7's `rs_guess=` (C
+`oncv_set_budget_guess`) is gone in api 8, as a guess found another root
+wherever the error had several.
 
 ## Results
 

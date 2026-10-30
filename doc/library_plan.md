@@ -585,6 +585,14 @@ So the interface is a hybrid:
       `qext` report the passes, and `core.budget.martins` is now 0 for
       the minimum tail (it held the last Martins model tried, which
       depended on the search's path).
+- [x] One root of the model core's search (`api_version` 8): the window
+      of the minimum tail starts at q_b, where the fit is decided, so
+      that the error at q_b no longer goes up and down with r_s (several
+      roots on 13 of 36 Cs samples before, none after); r_s is the
+      largest root, the smallest radius above which every model fits,
+      found by steps of 3 % down from r_top; `oncv_set_budget_guess` and
+      the wrappers' `rs_guess` are gone. The icmod 6 and 7 outputs
+      change.
 - [x] Valgrind on the C test (nr, sr, fr, lloc 2): no errors; 2 kB lost
       per PSML file written, xmlf90's element stack, which
       `xml_Close` now frees (`cmake/patches/xmlf90-1.6.3.patch`, whose

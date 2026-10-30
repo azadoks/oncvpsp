@@ -651,7 +651,7 @@
  end subroutine run_stages
 
  subroutine run_coupled(irel,istage,inp,cnf,st,ps_filename,skip_ld,psp,at, &
-&                       iout,ifail,rs_guess)
+&                       iout,ifail)
 
 !! the model core, the screening with the ionic tail, the diagnostics, the
 !! ghost tests, the test configurations, the log derivatives and the
@@ -672,8 +672,6 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
-!! @param rs_guess  a guess of the icmod 6 radius (bohr), 0 for none
-!!                  (modcore_budget)
  use config_ae_m, only: run_config_ae, ae_config_t
  use failure_m, only: failure_t, fail_none, stage_model_core, &
 &                    stage_screening, stage_diag, stage_ghosts, &
@@ -712,7 +710,6 @@
  character(len=*), intent(in) :: ps_filename
  logical, intent(in) :: skip_ld
  integer, intent(in) :: iout
- real(dp), intent(in), optional :: rs_guess
 
 !Input/output variables
  type(input_t), intent(inout) :: inp
@@ -859,7 +856,7 @@
 &               minval(inp%rc(1:inp%lmax+1)),mmax,adams,rr,inp%iexc,c_light, &
 &               zion, &
 &               probes(:,1:nprobe),lprobe(1:nprobe),nprobe,psp%core%budget, &
-&               warns,iout,ifail,rs_guess)
+&               warns,iout,ifail)
    if(ifail/=0) return
    deallocate(probes,lprobe)
 

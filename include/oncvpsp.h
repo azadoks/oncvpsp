@@ -52,7 +52,7 @@ extern "C" {
 #endif
 
 /* The version of this header; oncv_api_version() is the library's */
-#define ONCV_API_VERSION 7
+#define ONCV_API_VERSION 8
 
 /* The kinds of failure (failure_m's fail_*) */
 #define ONCV_FAIL_NONE 0
@@ -133,15 +133,6 @@ int oncv_set_output(void *handle, const char *path, size_t npath);
  * the handle keeps, replaced at each run or stage, rather than to the file
  * of oncv_set_output; with on 0, to that file again */
 int oncv_set_output_buffer(void *handle, int on);
-
-/* A guess rs (bohr) of the icmod 6 model radius for the handle's runs
- * (oncv_run_toml, oncv_run_ae_toml, oncv_assemble_toml) and oncv_coupled,
- * which their searches start from, a parent's core.budget.r_s: the
- * radius is found from a bracket near it rather than by bisection from
- * the ends: the same radius where the error changes sign once over the
- * mesh, but where it changes sign more than once, which happens, possibly
- * another root; rs <= 0 for none, as a new handle */
-int oncv_set_budget_guess(void *handle, double rs);
 
 /* The text output of the handle's last run or stage from its buffer: its
  * first ntext bytes into text, not terminated, and its whole length in

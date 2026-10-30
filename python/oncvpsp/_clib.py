@@ -6,7 +6,7 @@ import ctypes.util
 import glob
 import os
 
-API_VERSION = 7
+API_VERSION = 8
 MXLIN = 5
 MXRANK = 5
 
@@ -75,7 +75,6 @@ def load():
         "oncv_free": ([vp], None),
         "oncv_set_output": ([vp, cp, sz], ci),
         "oncv_set_output_buffer": ([vp, ci], ci),
-        "oncv_set_budget_guess": ([vp, cd], ci),
         "oncv_output_text": ([vp, cp, sz, C.POINTER(sz)], ci),
         "oncv_run_toml": ([vp, ci, cp, sz, ci], ci),
         "oncv_ae_toml": ([vp, ci, cp, sz], ci),

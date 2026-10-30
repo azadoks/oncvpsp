@@ -44,6 +44,8 @@
  real(dp), parameter :: qstep=0.1d0
 !> the cutoffs past q_b of the first search (bohr**-1)
  real(dp), parameter :: quick=1.0d0
+!> ratio of the radii of the search's steps down from r_top
+ real(dp), parameter :: march=1.03d0
 !> panels of the band-limited transform per step
  integer, parameter :: npanel=1
 !> Gauss-Legendre nodes of each panel of the band-limited transform
@@ -120,10 +122,9 @@
 !> the multiple of the pseudo-waves' cutoff ecutw that is ecut, when
 !> fcfact <= 0
    real(dp) :: factor=0.0d0
-!> the lower end of the window of the minimum tail, 2*sqrt(2*ecut)
-!> (bohr**-1)
+!> the lower end of the window of the minimum tail, q_b (bohr**-1)
    real(dp) :: qlo=0.0d0
-!> the upper end of the window, min(3*qlo, qmax) (bohr**-1)
+!> the upper end of the window, min(6*sqrt(2*ecut), qmax) (bohr**-1)
    real(dp) :: qhi=0.0d0
 !> q_b, the first density cutoff that decides whether the model fits
 !> budget, 2*sqrt(2*budget) (bohr**-1)
@@ -134,8 +135,6 @@
    real(dp) :: qext=0.0d0
 !> the passes of the icmod 6 search
    integer :: npass=0
-!> a guess of r_s that the search starts from, 0 for none (bohr)
-   real(dp) :: rguess=0.0d0
 !> the grid's density cutoff of the largest error of err_max (bohr**-1)
    real(dp) :: qpk=0.0d0
 !> the largest r_s, the smallest rc or the last radius with core charge
@@ -329,8 +328,13 @@
 ! 2(r/r_s)**2 - 1: in powers, its coefficients reach 1e5 and alternate,
 ! and carry 1e-11 of noise into the model) whose six free coefficients
 ! minimize the Fourier tail of the whole model,
-! int_{qlo}^{qhi} q**2 |n(q)|**2 dq, with qlo = 2*sqrt(2*ecut) and
-! qhi = min(3*qlo, qmax).  Where that polynomial rises somewhere on
+! int_{q_b}^{qhi} q**2 |n(q)|**2 dq, from the first density cutoff q_b
+! that decides whether it fits (below) to qhi = min(6*sqrt(2*ecut), qmax).
+! (From 2*sqrt(2*ecut) instead, the window began above q_b with slack < 1,
+! so that the tail was not least where the error is tested, and the error
+! at q_b went up and down with r_s, crossing errmax several times on 13 of
+! 36 Cs inputs of oncvpsp-opt; from q_b, once on each.)  Where that
+! polynomial rises somewhere on
 ! [0, r_s] (p' > 0 at 0, at r_s or at a root of p''), the fill is Martins'
 ! exp(a + b r**2 + c r**4) instead, if that does not rise (b <= 0 and
 ! b + 2c r_s**2 <= 0); where neither is monotone, the radius has no model.
@@ -341,8 +345,7 @@
 ! tables, or with budget_cutoff = "weighted" that of their mean weighted by
 ! the occupations), times -fcfact if fcfact < 0: a calculation runs at that
 ! cutoff anyway.
-! The model must fit slack*ecut (0 < slack <= 1), and is still made for
-! the qlo of ecut.
+! The model must fit slack*ecut (0 < slack <= 1).
 !
 ! The error of a density cutoff q (a plane-wave cutoff q**2/8) is that of
 ! the core charge without its Fourier components beyond q, in a solid:
@@ -365,8 +368,14 @@
 !
 ! icmod=6 (BudgetedCore of PseudoPotentialGenerators.jl): r_s is the
 ! smallest radius, no larger than the smallest rc (or the last radius with
-! core charge), whose model fits slack*ecut: bracketed on the mesh, then
-! the root of the largest error less errmax by Brent's method (M-9).  The
+! core charge), above which every model fits slack*ecut: found by steps of
+! 3 % down from the largest radius to the first that does not fit, then
+! the root of the largest error less errmax by Brent's method between
+! the two (M-9).  The error need not fall as r_s grows, and may cross
+! errmax more than once; this root is the largest, so that the model is
+! as soft as the budget lets it be and every larger radius fits too (a
+! smaller root may sit in a dip of the error, and the next input's model
+! be much harder).  A dip narrower than a step is passed over.  The
 ! error almost always peaks at the first of the cutoffs, so r_s is found
 ! with those up to q_b + 1 bohr**-1 only, and then confirmed with all of
 ! them (and found again with all of them if that fails).
@@ -384,8 +393,7 @@
  subroutine modcore_budget(icmod,rhotps,rhoc,rhomod,corepw,fcfact,ecutw, &
 &                          weighted,errmax,slack,rcmin,mmax,adams,rr,iexc, &
 &                          c_light, &
-&                          zion,probes,lprobe,nprobe,res,warns,iout,ifail, &
-&                          rs_guess)
+&                          zion,probes,lprobe,nprobe,res,warns,iout,ifail)
 
 !! @param icmod  6 for the smallest radius, 7 for the hardness-matched one
 !! @param rhotps  pseudo valence charge density
@@ -416,8 +424,6 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
-!! @param rs_guess  a guess of the icmod 6 radius (bohr) the search starts
-!!                  from, 0 for none (smallest_radius)
 
  use failure_m, only: warnings_t, warn_merge
  use modcore_m, only: core_pieces
@@ -433,7 +439,6 @@
  real(dp), intent(in) :: probes(mmax,nprobe)
  real(dp), intent(in) :: fcfact,ecutw,errmax,slack,zion,rcmin
  logical, intent(in) :: weighted
- real(dp), intent(in), optional :: rs_guess
  integer, intent(in) :: iout
 
 !Input/output variables
@@ -453,7 +458,6 @@
 &                 iexc,c_light,zion,probes,lprobe,nprobe,iout,ifail)
  if(ifail/=0) return
  bc%adams=adams
- if(present(rs_guess)) bc%rguess=rs_guess
  call budget_tables(bc,iout,ifail)
  if(ifail/=0) return
  call budget_sphere(bc)
@@ -516,6 +520,7 @@
 
 !Local variables
  integer :: ii
+ real(dp) :: qcut
 
  ifail=0
  bc%mmax=mmax
@@ -544,16 +549,18 @@
  bc%nq = nint(qmax/qstep)
  bc%npq = bc%nq*npanel
 
- bc%qlo=2.0d0*sqrt(2.0d0*bc%ecut)
- if(bc%qlo >= qmax) then
+ qcut=2.0d0*sqrt(2.0d0*bc%ecut)
+ if(qcut >= qmax) then
    write(iout,'(/a,f12.6,a)') 'modcore_budget: ERROR ecut beyond', &
 &        qmax**2/8.0d0,' Ha'
    ifail=failed(fail_input,msg_budget_ecut)
    return
  end if
- bc%qhi=min(3.0d0*bc%qlo,qmax)
-! the first density cutoff that decides whether the model fits budget
+ bc%qhi=min(3.0d0*qcut,qmax)
+! the first density cutoff that decides whether the model fits budget,
+! where the window of the minimum tail starts
  bc%qb=2.0d0*sqrt(2.0d0*bc%budget)
+ bc%qlo=bc%qb
 
 ! the largest r_s: the smallest rc, or the last radius at which the core
 ! charge and the derivatives matched there are not zero
@@ -774,7 +781,8 @@
 
  subroutine budget_search6(bc,iout,ifail)
 
-!! the smallest radius r_s whose model fits the budget (icmod 6)
+!! the smallest radius r_s above which every model fits the budget
+!! (icmod 6)
 !!
 !! @param bc  the state of the search
 !! @param iout  unit of the text output
@@ -794,18 +802,18 @@
  real(dp) :: rsq,emax
 
  ifail=0
-! smallest r_s, first with the cutoffs to q_b + quick; if a larger one
-! has a larger error at that r_s, again with those up to it + quick: each
-! r_s found is a root of the largest error over all cutoffs less errmax
-! once it is confirmed, whatever the range it was found with. Each pass
-! starts from the guess if given: not from the r_s before, as the excess
-! may change sign more than once and the bracket then depends on it
+! r_s, first with the cutoffs to q_b + quick; if a larger one has a
+! larger error at that r_s, again with those up to it + quick: each r_s
+! found is a root of the largest error over all cutoffs less errmax once
+! it is confirmed, whatever the range it was found with (the radii above
+! it are tested with that range only). Each pass steps down from r_top
+! again
  bc%full=.false.
  bc%qend=min(qmax,bc%qb+quick)
  bc%npass=0
  do
    bc%npass=bc%npass+1
-   call smallest_radius(bc,rsq,iout,ifail,bc%rguess)
+   call smallest_radius(bc,rsq,iout,ifail)
    if(ifail/=0) return
    bc%fill%rs=rsq
    call set_model(bc,bc%fill%rs)
@@ -1113,28 +1121,24 @@
  return
  end subroutine budget_report
 
- subroutine smallest_radius(bc,rsq,iout,ifail,rguess)
+ subroutine smallest_radius(bc,rsq,iout,ifail)
 
-!! the smallest r_s in [r_lo, r_top] whose model fits, with the density
-!! cutoffs up to qend: bisection over the mesh points between them, then
-!! Brent's method on the largest error less errmax in ln r_s (excess_rs).
-!! With rguess > 0, the bracket of two neighbouring mesh points is found
-!! from the mesh point nearest it, by steps doubling away from it, before
-!! the bisection; the same bracket, so the same r_s, where the excess
-!! changes sign once over the mesh. It may change sign more than once,
-!! and then the guess may find another root (neither need be the
-!! smallest)
+!! the smallest r_s in [r_lo, r_top] above which every model fits, with
+!! the density cutoffs up to qend: steps down from r_top by factors of
+!! march to the first radius whose model does not fit, then Brent's
+!! method on the largest error less errmax in ln r_s (excess_rs) between
+!! it and the step before. The excess may change sign more than once, and
+!! this is its largest root (but a dip of the excess narrower than a step
+!! is passed over); r_lo if every step fits
 !!
 !! @param bc  the state of the search
 !! @param rsq  the radius (bohr)
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
-!! @param rguess  a guess of the radius (bohr), 0 for none
 
 !Input variables
  integer, intent(in) :: iout
- real(dp), intent(in) :: rguess
 
 !Input/output variables
  type(budget_t), intent(inout) :: bc
@@ -1144,104 +1148,36 @@
  integer, intent(out) :: ifail
 
 !Local variables
- integer :: ia,ib,imid,ilo,ihi,ig,jj,istep
- real(dp) :: ga,xq
+ real(dp) :: ga,xa,xb,xlo,xq
  ifail=0
- associate(rlo=>bc%rlo,rr=>bc%rr,rtop=>bc%rtop)
-! the mesh points strictly between r_lo and r_top, ilo..ihi; ia fails,
-! ib fits, ilo-1 standing for r_lo and ihi+1 for r_top
-   ilo=1
-   do while(rr(ilo)<=rlo)
-     ilo=ilo+1
-   end do
-   ihi=ilo-1
-   do while(rr(ihi+1)<rtop)
-     ihi=ihi+1
-   end do
-   if(rguess>0.0d0 .and. ihi>=ilo) then
-! from the guess: up while the model fails, down while it fits
-     ig=ilo
-     do jj=ilo+1,ihi
-       if(abs(log(rr(jj)/rguess))<abs(log(rr(ig)/rguess))) ig=jj
-     end do
-     ga=excess_rs(bc,log(rr(ig)),.true.)
-     if(bc%ifail/=0) then
-       ifail=bc%ifail
-       return
-     end if
-     istep=1
-     if(ga>0.0d0) then
-       ia=ig
-       do
-         jj=min(ia+istep,ihi+1)
-         ga=excess_rs(bc,log(radius_of(bc,jj)),.true.)
-         if(bc%ifail/=0) then
-           ifail=bc%ifail
-           return
-         end if
-         if(ga<=0.0d0) exit
-         if(jj==ihi+1) then
-           call no_model(bc,iout,ifail)
-           return
-         end if
-         ia=jj
-         istep=2*istep
-       end do
-       ib=jj
-     else
-       ib=ig
-       do
-         jj=max(ib-istep,ilo-1)
-         ga=excess_rs(bc,log(radius_of(bc,jj)),.true.)
-         if(bc%ifail/=0) then
-           ifail=bc%ifail
-           return
-         end if
-         if(ga>0.0d0) exit
-         if(jj==ilo-1) then
-           rsq=rlo
-           return
-         end if
-         ib=jj
-         istep=2*istep
-       end do
-       ia=jj
-     end if
-   else
-     ga=excess_rs(bc,log(rtop),.true.)
-     if(bc%ifail/=0) then
-       ifail=bc%ifail
-       return
-     end if
-     if(ga>0.0d0) then
-       call no_model(bc,iout,ifail)
-       if(ifail/=0) return
-     end if
-     rsq=rlo
-     ga=excess_rs(bc,log(rlo),.true.)
-     if(bc%ifail/=0) then
-       ifail=bc%ifail
-       return
-     end if
-     if(ga<=0.0d0) return
-     ia=ilo-1
-     ib=ihi+1
+ associate(rlo=>bc%rlo,rtop=>bc%rtop)
+   xb=log(rtop)
+   xlo=log(rlo)
+   ga=excess_rs(bc,xb,.true.)
+   if(bc%ifail/=0) then
+     ifail=bc%ifail
+     return
    end if
-   do while(ib-ia>1)
-     imid=(ia+ib)/2
-     ga=excess_rs(bc,log(rr(imid)),.true.)
+   if(ga>0.0d0) then
+     call no_model(bc,iout,ifail)
+     return
+   end if
+! down while the model fits: xb fits, xa the next step
+   do
+     xa=max(xb-log(march),xlo)
+     ga=excess_rs(bc,xa,.true.)
      if(bc%ifail/=0) then
        ifail=bc%ifail
        return
      end if
-     if(ga>0.0d0) then
-       ia=imid
-     else
-       ib=imid
+     if(ga>0.0d0) exit
+     if(xa<=xlo) then
+       rsq=rlo
+       return
      end if
+     xb=xa
    end do
-   call zeroin(excess_rs_of,log(radius_of(bc,ia)),log(radius_of(bc,ib)), &
-&              xq,bc%warn,iout,ifail)
+   call zeroin(excess_rs_of,xa,xb,xq,bc%warn,iout,ifail)
    if(bc%ifail/=0) then
      ifail=bc%ifail
      return
@@ -1267,29 +1203,6 @@
  end function excess_rs_of
 
  end subroutine smallest_radius
-
- real(dp) function radius_of(bc,ii)
-
-!! rr(ii), r_lo below the points of the bisection and r_top above them
-!!
-!! @param bc  the state of the search
-!! @param ii  index
-
-!Input variables
- type(budget_t), intent(in) :: bc
- integer, intent(in) :: ii
-
- associate(rlo=>bc%rlo,rr=>bc%rr,rtop=>bc%rtop)
-   if(rr(ii)<=rlo) then
-     radius_of=rlo
-   else if(rr(ii)>=rtop) then
-     radius_of=rtop
-   else
-     radius_of=rr(ii)
-   end if
- end associate
- return
- end function radius_of
 
  real(dp) function excess_rs(bc,lnrs,sign_only)
 

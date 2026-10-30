@@ -148,8 +148,9 @@ icmod==6:
         sum_{k=0..8} c_k (r/r_s)^(2k)
 
     whose six free coefficients minimize the Fourier tail of the whole
-    model, int_{qlo}^{qhi} q^2 |rhomod(q)|^2 dq, with qlo = 2*sqrt(2*ecut),
-    the density cutoff of ecut, and qhi = min(3*qlo, 120 bohr^-1). Where
+    model, int_{q_b}^{qhi} q^2 |rhomod(q)|^2 dq, from q_b =
+    2*sqrt(2*slack*ecut), the first density cutoff that decides whether
+    the model fits (below), to qhi = min(6*sqrt(2*ecut), 120 bohr^-1). Where
     that polynomial rises somewhere on [0, r_s] (p' > 0 at 0, at r_s or
     at a root of p''),
     the fill is Martins' exp(a + b r^2 + c r^4) instead, if that does not
@@ -158,9 +159,14 @@ icmod==6:
     its coefficients.
 
     r_s is the smallest radius, no larger than the smallest rc (or the
-    last radius with core charge, if that is smaller), whose model fits
-    slack*ecut: bracketed on the mesh, then the root of the largest error
-    less rcfact by Brent's method, so r_s moves smoothly with the inputs.
+    last radius with core charge, if that is smaller), above which every
+    model fits slack*ecut: found by steps of 3 % down from the largest
+    radius to the first that does not fit, then the root of the largest
+    error less rcfact by Brent's method, so r_s moves smoothly with the
+    inputs. The error need not fall as r_s grows and may cross rcfact
+    more than once; this is the largest root, so the model is as soft as
+    the budget allows and every larger radius fits too (a dip of the
+    error narrower than a step is passed over).
     A model fits a cutoff e if, for every density cutoff q from
     2*sqrt(2*e) on (steps of 0.1 bohr^-1 up to 120 bohr^-1, 1800 Ha,
     refined by Brent's method at the maxima of the error), the core charge without its Fourier components beyond q changes
@@ -171,13 +177,18 @@ icmod==6:
     electrons of the neighbours. The run stops if even the largest r_s
     does not fit. The out file gives r_s and the cutoff the model needs.
 
-    With slack < 1 the model is still made for the qlo of ecut, but must
-    fit slack*ecut: a core made for its own, lower cutoff converges worse
-    in plane waves. This is the BudgetedCore of PseudoPotentialGenerators.jl
-    (PPG), executed by modcore_budget_m.f90; tests/data/14_Si_bc.dat uses it.
-    On the same core and valence charges it gives PPG's r_s within the grid
-    spacing, and the same fill and core cutoff (Si, Li, Na, K, Zn, Ga, N,
-    I, Pb, Cs; TM, PBE).
+    With slack < 1 the model must fit slack*ecut, and its tail is least
+    from that cutoff's q_b up to the window of ecut. (The window used to
+    start at the density cutoff of ecut, above q_b, and the error at q_b,
+    where the fit is decided, went up and down with r_s: it crossed
+    rcfact 3 or 5 times on 13 of 36 Cs inputs of oncvpsp-opt, and once
+    on each with the window from q_b.) This is the BudgetedCore of
+    PseudoPotentialGenerators.jl (PPG), executed by modcore_budget_m.f90;
+    tests/data/14_Si_bc.dat uses it. With PPG's window, from the density
+    cutoff of ecut, and the smallest root, it gave PPG's r_s within the
+    grid spacing on the same core and valence charges, and the same fill
+    and core cutoff (Si, Li, Na, K, Zn, Ga, N, I, Pb, Cs; TM, PBE); with
+    slack = 1 the windows are the same.
 
     With fcfact <= 0, ecut is instead the cutoff the pseudo-waves need for
     the same error rcfact per electron, times -fcfact (times 1 for

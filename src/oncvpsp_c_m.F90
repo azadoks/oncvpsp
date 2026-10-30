@@ -45,11 +45,11 @@
 &          oncv_run_ae_toml, oncv_channel_toml, oncv_coupled, &
 &          oncv_set_output_buffer, oncv_output_text, oncv_confine, &
 &          oncv_field_info, oncv_local_toml, oncv_channel_local_toml, &
-&          oncv_assemble_toml, oncv_set_budget_guess
+&          oncv_assemble_toml
 
 !> the version of the interface: a change to a function or a struct
 !> raises it
- integer(c_int), parameter :: api_version=7
+ integer(c_int), parameter :: api_version=8
 
 !> 1 if c_double is the kind of the reals, else a division by zero that
 !> stops the compilation
@@ -103,9 +103,6 @@
    character(len=:), allocatable :: out_path
 !> whether the text output goes to text rather than to out_path
    logical :: buffered=.false.
-!> the guess of the icmod 6 radius (bohr) the runs' searches start from,
-!> 0 for none (oncv_set_budget_guess)
-   real(dp) :: rs_guess=0.0d0
 !> the text output of the last run, with buffered
    character(len=:), allocatable :: text
 !> the input values, completed by the run
@@ -298,35 +295,6 @@
  hh%buffered=on/=0
  return
  end function oncv_set_output_buffer
-
- function oncv_set_budget_guess(handle,rs) result(ifail) &
-&         bind(c,name='oncv_set_budget_guess')
-
-!! a guess rs (bohr) of the icmod 6 model radius for the handle's runs,
-!! assembled runs and oncv_coupled, which their searches start from (a
-!! parent's core.budget.r_s): the bracket found near it rather than by
-!! bisection from the ends, the same radius where the excess changes sign
-!! once, possibly another root where it changes sign more than once;
-!! rs <= 0 for none, as a new handle
-!!
-!! @param handle  the run handle
-!! @param rs  the guess (bohr)
-
-!Input variables
- type(c_ptr), value :: handle
- real(c_double), value :: rs
-
-!Output variables
- integer(c_int) :: ifail
-
-!Local variables
- type(handle_t), pointer :: hh
-
- ifail=0
- call c_f_pointer(handle,hh)
- hh%rs_guess=max(rs,0.0d0)
- return
- end function oncv_set_budget_guess
 
  function oncv_output_text(handle,text,ntext,nout) result(ifail) &
 &         bind(c,name='oncv_output_text')
@@ -872,7 +840,7 @@
    hh%has_stages=.true.
    hh%inp_stages=hh%inp
    call run_coupled(hh%irel,0,hh%inp,hh%cnf,hh%st,'',skip_ld/=0,hh%psp, &
-&                   hh%at,iout,jfail,rs_guess=hh%rs_guess)
+&                   hh%at,iout,jfail)
    hh%done=jfail==0
  end if
  call close_output(hh,iout)
@@ -946,7 +914,7 @@
  call check_data(inp,fcgrid,rcgrid,iout,jfail)
  if(jfail==0) then
    call run_coupled(irel,0,inp,hh%cnf,hh%st,'',skip_ld/=0,hh%psp,hh%at, &
-&                   iout,jfail,rs_guess=hh%rs_guess)
+&                   iout,jfail)
  end if
  call close_output(hh,iout)
  hh%inp=inp
@@ -1273,7 +1241,7 @@
  hh%has_stages=.true.
  hh%inp_stages=hh%inp
  call run_coupled(hh%irel,0,hh%inp,hh%cnf,hh%st,'',skip_ld,hh%psp,hh%at, &
-&                 iout,ifail,rs_guess=hh%rs_guess)
+&                 iout,ifail)
  hh%done=ifail==0
  return
  end subroutine run_all
