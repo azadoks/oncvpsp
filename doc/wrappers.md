@@ -98,9 +98,11 @@ the pseudo-atom's own density, which depends on every channel and the
 model core; a channel alone has the potential before that switch. Its log
 derivatives are therefore the run's bit for bit when they read the
 potential no further than rcmax (Python `ch.exact`, Julia `ONCVPSP.isexact(ch)`, the field
-`channel.logder.exact`), and otherwise differ from them at round-off in
-the test inputs. Its ghost tests reach beyond rcmax always: in the test
-inputs their counts are the run's and their energies within 1e-6 Ha.
+`channel.logder.exact`), and otherwise near them: at round-off in the
+test inputs, up to 2e-5 rad with an icmod 6 model core (oncvpsp-opt's
+explorations of N), whose tail the channel does not see. Its ghost tests
+reach beyond rcmax always: in both, their counts are the run's, and their
+energies within 1e-6 Ha in the test inputs.
 
 ## Results
 
