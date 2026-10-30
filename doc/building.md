@@ -33,28 +33,48 @@ The executables are then in `build/bin` (`oncvpsp.x`, `oncvpspnr.x`,
 `oncvpsp_confine.x` tools), and the library in `build/lib`
 (`liboncvpsp.so`, with its header `include/oncvpsp.h`).
 
-The same with a preset: `cmake --preset default`,
-`cmake --build --preset default --parallel`, `ctest --preset default`.
+The same with a preset:
+
+```bash
+cmake --preset default
+cmake --build --preset default --parallel
+ctest --preset default
+```
 
 ## Build types and compiler flags
 
 The build type (`CMAKE_BUILD_TYPE`) picks the optimization. Each type
-starts from CMake's flags for it, `CMAKE_Fortran_FLAGS_<TYPE>` (with
-gfortran `-O2 -g -DNDEBUG` for RelWithDebInfo, `-O3 -DNDEBUG` for Release,
-`-g` for Debug), which stay yours to change. ONCVPSP adds its own flags on
-top (`cmake/OncvpspCompilerOptions.cmake`), to its own targets only, not to
-the dependencies:
+starts from CMake's flags for it, `CMAKE_Fortran_FLAGS_<TYPE>`, which stay
+yours to change; with gfortran these are `-O2 -g -DNDEBUG` for
+RelWithDebInfo, `-O3 -DNDEBUG` for Release and `-g` for Debug. ONCVPSP adds
+its own flags on top (`cmake/OncvpspCompilerOptions.cmake`), to its own
+targets only, not to the dependencies:
 
-| Build type | Added for gfortran | Added for ifx / ifort | Added for nvfortran | Use |
-|---|---|---|---|---|
-| `RelWithDebInfo` (the default) | `--param=max-inline-insns-auto=30` | none | none | the build the test references are checked against |
-| `Debug` | `-O0 -Wall -fcheck=all -fbacktrace -ffpe-trap=invalid,zero,overflow -std=f2008 -Wconversion` | `-O0 -warn all -check all -traceback -fpe0` | `-O0 -Mbounds -traceback -Ktrap=inv,divz,ovf` | run-time checks and floating-point traps, for when something goes wrong |
-| `Release` | `-ffast-math -funroll-loops` | `-fp-model=fast` | `-fast` | faster; the results move at round-off (about 1e-8 in the nonlocal kernels) |
+`RelWithDebInfo` (the default)
+:   The build the test references are checked against.
 
-The inlining limit of RelWithDebInfo makes gfortran inline the radial
-integrators' Adams formulas, as it does at `-O3`; the output is unchanged.
-With `-march=native` as well (the `study` preset), Release is about 35 %
-faster than RelWithDebInfo.
+    - gfortran: `--param=max-inline-insns-auto=30`, so that the radial
+      integrators' Adams formulas are inlined as they are at `-O3` (the
+      output is unchanged)
+    - ifx, ifort, nvfortran: nothing
+
+`Debug`
+:   Run-time checks and floating-point traps, for when something goes
+    wrong.
+
+    - gfortran: `-O0 -Wall -fcheck=all -fbacktrace
+      -ffpe-trap=invalid,zero,overflow -std=f2008 -Wconversion`
+    - ifx, ifort: `-O0 -warn all -check all -traceback -fpe0`
+    - nvfortran: `-O0 -Mbounds -traceback -Ktrap=inv,divz,ovf`
+
+`Release`
+:   Fast math: faster, and the results move at round-off (about 1e-8 in
+    the nonlocal kernels). With `-march=native` as well (the `study`
+    preset), about 35 % faster than RelWithDebInfo.
+
+    - gfortran: `-ffast-math -funroll-loops`
+    - ifx, ifort: `-fp-model=fast`
+    - nvfortran: `-fast`
 
 In every build type:
 
@@ -66,36 +86,58 @@ In every build type:
   share a process, in threads. Don't remove this flag if you set your own
   flags.
 
-The compiler is chosen as usual, with `-DCMAKE_Fortran_COMPILER=ifx` and
-`-DCMAKE_C_COMPILER=icx` or the `FC` and `CC` environment variables, on a
-fresh build directory.
+The compiler is chosen as usual, on a fresh build directory:
 
-The presets in `CMakePresets.json` each build in their own directory:
+```bash
+cmake -S . -B build-intel \
+    -DCMAKE_Fortran_COMPILER=ifx -DCMAKE_C_COMPILER=icx
+FC=ifx CC=icx cmake -S . -B build-intel    # the same
+```
 
-| Preset | Directory | Build |
-|---|---|---|
-| `default` | `build/` | RelWithDebInfo |
-| `debug` | `build-debug/` | Debug |
-| `release` | `build-release/` | Release |
-| `study` | `build-study/` | Release with `-O3 -march=native` (runs only on CPUs like the one that built it) |
-| `trap` | `build-trap/` | `-O3 -march=native -funroll-loops` with floating-point traps and no fast math |
-| `fetch` | `build-fetch/` | RelWithDebInfo, downloading and building LAPACK, Libxc and toml-f |
-| `profile` | `build-profile/` | RelWithDebInfo with frame pointers, for `perf` |
-| `coverage` | `build-cov/` | `-O0 --coverage`, for `scripts/coverage.py` |
+### Presets
+
+The presets in `CMakePresets.json` each build in their own directory,
+`build-<preset>/`, except `default` (in `build/`) and `coverage` (in
+`build-cov/`):
+
+| Preset | Build |
+|---|---|
+| `default` | RelWithDebInfo |
+| `debug` | Debug |
+| `release` | Release |
+| `study` | Release with `-O3 -march=native`; runs only on CPUs like the one that built it |
+| `trap` | `-O3 -march=native -funroll-loops` with floating-point traps and no fast math |
+| `fetch` | RelWithDebInfo, downloading and building LAPACK, Libxc and toml-f |
+| `profile` | RelWithDebInfo with frame pointers, for `perf` |
+| `coverage` | `-O0 --coverage`, for `scripts/coverage.py` |
 
 Personal presets (compiler paths, `Libxc_ROOT`) go in
 `CMakeUserPresets.json`, which git ignores.
 
 ## ONCVPSP's options
 
-| Option | Default | Effect |
-|---|---|---|
-| `ONCVPSP_WITH_Libxc` | `ON` | the Libxc functionals (`iexc < 0`); off, only the built-in ones |
-| `ONCVPSP_WITH_TOML` | `ON` | the TOML input (`--toml-input`), which the C interface and the Python and Julia packages need |
-| `ONCVPSP_WITH_FR` | `ON` | the fully-relativistic executables (`oncvpspr*.x`) and their tests |
-| `ONCVPSP_WITH_C_API` | `ON` | the shared library `liboncvpsp` with the C interface; also makes everything position-independent (`-fPIC`), which leaves the results unchanged |
-| `ONCVPSP_BLAS_DOT` | `OFF` | computes the pseudo-atom's overlaps with the linked BLAS (`dgemm`): faster with an optimized BLAS, but the results then depend on the BLAS at round-off |
-| `BUILD_TESTING` | `ON` | the tests (`tests/`) |
+`ONCVPSP_WITH_Libxc` (`ON`)
+:   The Libxc functionals (`iexc < 0`). Off, only the built-in ones.
+
+`ONCVPSP_WITH_TOML` (`ON`)
+:   The TOML input (`--toml-input`), which the C interface and the Python
+    and Julia packages need.
+
+`ONCVPSP_WITH_FR` (`ON`)
+:   The fully-relativistic executables (`oncvpspr*.x`) and their tests.
+
+`ONCVPSP_WITH_C_API` (`ON`)
+:   The shared library `liboncvpsp` with the C interface. It also makes
+    everything position-independent (`-fPIC`), which leaves the results
+    unchanged.
+
+`ONCVPSP_BLAS_DOT` (`OFF`)
+:   Computes the pseudo-atom's overlaps with the linked BLAS (`dgemm`):
+    faster with an optimized BLAS, but the results then depend on the BLAS
+    at round-off.
+
+`BUILD_TESTING` (`ON`)
+:   The tests (`tests/`).
 
 ## Dependencies
 
@@ -112,26 +154,32 @@ say:
 `CPM_SOURCE_CACHE` (e.g. `~/.cache/CPM`) keeps the downloads between build
 directories. The configuration ends with a summary of what was found.
 
-**LAPACK and BLAS.** The configuration tries these, in order:
+### LAPACK and BLAS
+
+The configuration tries these, in order:
 
 1. `ONCVPSP_LAPACK_LIBRARIES`, if given.
 2. CMake's FindLAPACK, which follows `BLA_VENDOR`, `BLA_STATIC`,
-   `LAPACK_ROOT` and `BLAS_ROOT`.
+   `LAPACK_ROOT` and `BLAS_ROOT`. Without `BLA_VENDOR` it takes the first
+   BLAS it finds, which on a machine with several can be MKL.
 3. pkg-config.
 
 ```bash
 cmake -S . -B build -DBLA_VENDOR=OpenBLAS
 cmake -S . -B build -DBLA_VENDOR=FlexiBLAS
-cmake -S . -B build -DBLA_VENDOR=Intel10_64_dyn          # MKL through mkl_rt
-cmake -S . -B build -DBLA_VENDOR=Intel10_64lp_seq        # MKL, sequential
-cmake -S . -B build -DBLA_VENDOR=Apple                   # Accelerate
-cmake -S . -B build -DONCVPSP_LAPACK_LIBRARIES="-L/opt/lapack/lib;-llapack;-lblas"
+cmake -S . -B build -DBLA_VENDOR=Intel10_64_dyn     # MKL through mkl_rt
+cmake -S . -B build -DBLA_VENDOR=Intel10_64lp_seq   # MKL, sequential
+cmake -S . -B build -DBLA_VENDOR=Apple              # Accelerate
+cmake -S . -B build \
+    -DONCVPSP_LAPACK_LIBRARIES="-L/opt/lapack/lib;-llapack;-lblas"
 ```
 
 A threaded BLAS changes the last digits of the results with its number of
 threads. ONCVPSP's matrices are small, so the threads gain little; set
 `OPENBLAS_NUM_THREADS=1` (or `MKL_NUM_THREADS=1`) when several runs share
 the machine, and for results that repeat bit for bit.
+
+### Libxc and toml-f
 
 **Libxc.** The configuration looks for a CMake package, then pkg-config,
 then the library's files, under `Libxc_ROOT` first if it is set. It needs
@@ -186,24 +234,30 @@ package, from the source tree:
 pip install .
 ```
 
-pip builds through scikit-build-core (`pyproject.toml`). By default this is
-a `Release` build, with fast math, and without the tests. CMake options go
-through `-C` (`--config-settings`):
+pip builds through scikit-build-core (`pyproject.toml`), without the tests.
+CMake options go through `-C` (`--config-settings`):
 
 ```bash
 # the reference build type
 pip install . -C cmake.build-type=RelWithDebInfo
-# a BLAS, a Libxc, a compiler
-pip install . -C cmake.define.BLA_VENDOR=OpenBLAS -C cmake.define.Libxc_ROOT=/opt/libxc
+# a BLAS and a Libxc
+pip install . -C cmake.define.BLA_VENDOR=OpenBLAS \
+    -C cmake.define.Libxc_ROOT=/opt/libxc
+# a compiler
 FC=ifx CC=icx pip install .
 ```
 
-For results identical to the executables', bit for bit, the package needs
-the executables' build type and the same BLAS. pip configures from
-scratch, and FindLAPACK takes the first BLAS it finds. On a machine with
-both MKL and OpenBLAS, that can be a different one from your CMake build:
-give the same `BLA_VENDOR` to both. `ldd` on the library shows which BLAS
-it links.
+!!! note "pip builds Release by default"
+    Without `-C cmake.build-type=...`, pip makes a `Release` build, with
+    fast math, whose results differ from the RelWithDebInfo executables'
+    at round-off.
+
+!!! tip "Results identical to the executables'"
+    For results identical to the executables', bit for bit, the package
+    needs the executables' build type and the same BLAS. pip configures
+    from scratch, and FindLAPACK takes the first BLAS it finds, which can
+    be a different one from your CMake build's: give the same `BLA_VENDOR`
+    to both. `ldd` on the library shows which BLAS it links.
 
 The wheel (`pip wheel .`) is `py3-none-<platform>`: the library is called
 through ctypes, so the wheel doesn't depend on the Python version. It links
@@ -235,6 +289,7 @@ package.
 compiler's. Its quad precision rounds differently, and the results then
 differ from the executables' at about 1e-9. Preloading the compiler's
 library restores them:
+{: #conda-libquadmath }
 
 ```bash
 export LD_PRELOAD=$(gfortran -print-file-name=libquadmath.so.0)
@@ -242,7 +297,12 @@ export LD_PRELOAD=$(gfortran -print-file-name=libquadmath.so.0)
 
 ### Example
 
-Run from the top of the source tree (it reads `tests/data/toml/14_Si.toml`):
+The steps below make one script, run from the top of the source tree (it
+reads `tests/data/toml/14_Si.toml`).
+
+The library's build, and a whole run from a TOML file. `irel` is 0, 1 or 2,
+or `"nr"`, `"sr"`, `"fr"`; the fields are NumPy arrays in the Fortran
+shapes, listed in `oncvpsp.FIELDS`:
 
 ```python
 import numpy as np
@@ -251,58 +311,89 @@ import oncvpsp
 
 print(oncvpsp.build_info())  # {'commit': ..., 'source': ..., 'compiled': ...}
 
-# A whole run, from a TOML file; irel 0/1/2 or "nr"/"sr"/"fr"
 run = oncvpsp.run("tests/data/toml/14_Si.toml", irel="sr")
 dims = run.dims  # mmax, lmax, lloc, nproj, nkap, ...
 rr = run["pot.rr"]  # the radial mesh, (mmax,)
-vkb = run["pot.vkb"]  # projectors, (mmax, mxprj, mxl+1, nkap), Fortran order
+vkb = run["pot.vkb"]  # projectors, (mmax, mxprj, mxl+1, nkap)
 evkb = run["pot.evkb"]  # their energies, (mxprj, mxl+1, nkap)
 vloc = run["pot.vpuns"][:, dims["lloc"]]  # the local potential (lloc 4)
 print(dims["mmax"], dims["lmax"], dims["nproj"][: dims["lmax"] + 1])
 print(sorted(run.keys())[:5], len(run.keys()))
+```
 
-# The tests (tests.*)
-cross = run["tests.convergence.cross"]  # (Ecut, err) per level, projector, l, ikap
+The tests, `tests.*`, and the all-electron atom, `ae.*`:
+
+```python
+# (Ecut, err) per level, projector, l, ikap
+cross = run["tests.convergence.cross"]
 print("Ecut at 1e-3 Ha, l=0, first projector:", cross[0, 2, 0, 0, 0])
-configs = run["tests.configs.de"]  # per test configuration: dE_ae, dE_ps, error
+# per test configuration: dE_ae, dE_ps, error
+configs = run["tests.configs.de"]
 print("excitation errors:", configs[2, : run["tests.configs.ncfg"]])
 ee, ae_ld, ps_ld = (run[f"tests.logder.{k}"] for k in ("ee", "ae", "ps"))
 print("ghost bound states per l:", run["tests.ghosts.nrow"][:, 0])
 print("all-electron eigenvalues:", run["ae.ea"][:, 0])
+```
 
-# The text output and the pseudopotential files
+The text output, and the pseudopotential files (psp8, UPF or PSML, by the
+extension):
+
+```python
 assert "Begin DIAGNOSTICS" in run.text
 run.write("Si.psp8")
 run.write("Si.upf")
+```
 
-# The input as a dictionary, with tables merged over it: a scan of qcut
+The input as a dictionary, with tables merged over it, here for a scan of
+`qcut`. `check=False` leaves a failure in the handle instead of raising it,
+and `text=False` discards the text output (`text="run.out"` would write it
+to that file):
+
+```python
 base = oncvpsp.read_toml("tests/data/toml/14_Si.toml")
 for qcut in (5.0, 6.0, 7.0):
     pp = dict(base["pseudopotentials"], qcut=[qcut, 5.0, 5.0])
-    scan = oncvpsp.run(base, irel=1, pseudopotentials=pp, check=False, text=False)
+    scan = oncvpsp.run(
+        base, irel=1, pseudopotentials=pp, check=False, text=False
+    )
     if scan.ifail:  # at 7.0 the s pseudo-wave has a node
         print(qcut, "failed:", scan.error())
     else:
         print(qcut, scan["tests.convergence.opt"][0, 0, 0, 0])
+```
 
-# The all-electron atom once, then the stages from it
+The all-electron atom once, then the stages from it: a run from the atom,
+bit for bit the whole run's; each channel, with its projectors; and the
+node test, the cheapest way to scan for a node:
+
+```python
 ae = oncvpsp.all_electron(base, irel=1)
 print("ae total energy:", ae["ae.etot"])
-same = oncvpsp.run(base, ae=ae, text=False)  # bit for bit the run's
+same = oncvpsp.run(base, ae=ae, text=False)
 assert np.array_equal(same["pot.vkb"], vkb)
 for ll in range(dims["lmax"] + 1):
     ch = oncvpsp.channel(base, ae, ll, mode="projectors", text=False)
     print(ll, ch["channel.pswf"].shape, ch["channel.evkb"][:, 0])
 pp = dict(base["pseudopotentials"], qcut=[7.0, 5.0, 5.0])
 print("node at qcut 7:", oncvpsp.has_node(base, ae, 0, pseudopotentials=pp))
+```
 
-# The model core again on the run's stages, and the confined atom
+The model core again on the run's stages, and the confined atom (as
+`oncvpsp_confine.x`):
+
+```python
 teter = oncvpsp.coupled(run, icmod=3, fcfact=1.5, rcfact=1.2, text=False)
 print("pseudo-atom energy, icmod 3:", teter["epstot"])
 conf = oncvpsp.confine(run, radii=[3.0, 3.5], walls=())
 print("confine:", conf["confine.nmiss"], conf["confine.max_de"])
+```
 
-# Failures
+Failures: an `OncvpspError`, or with `check=False` the handle's `ifail`
+and `failure`. The library's own message (`Error: missing key z in
+[oncvpsp]`) goes to stderr. A handle is freed when it is no longer
+referenced, or by `close()`:
+
+```python
 try:
     oncvpsp.run({"oncvpsp": {"atsym": "O"}}, irel=1)
 except oncvpsp.OncvpspError as err:
@@ -310,17 +401,8 @@ except oncvpsp.OncvpspError as err:
 bad = oncvpsp.run({"oncvpsp": {"atsym": "O"}}, irel=1, check=False)
 print(bad.ifail, bad.failure.stage)
 
-run.close()  # or let it go out of scope
+run.close()
 ```
-
-Some points the example relies on:
-
-- `text=False` discards the text output, which a scan doesn't need.
-  `text="run.out"` writes it to that file instead.
-- The library's own error messages (`Error: missing key z in [oncvpsp]`)
-  go to stderr. The failure itself comes back as the exception, or in
-  `handle.ifail` and `handle.failure`.
-- `oncvpsp.FIELDS` lists every field by name.
 
 ## Julia
 
@@ -355,24 +437,29 @@ The package opens the library when it is loaded (`using ONCVPSP`):
 - Otherwise it looks for `liboncvpsp` on the system's library search path
   (`LD_LIBRARY_PATH`, or an installation prefix the linker searches).
 
-As in Python, it checks the library's interface version. The
-[libquadmath note](#python) applies to a Julia of its own toolchain too.
+As in Python, it checks the library's interface version, and the
+[libquadmath note](#conda-libquadmath) applies to a Julia of its own
+toolchain too.
 
-`run`, `write` and `error_of` aren't exported, since Julia's `Base` has a
-`run` and a `write`; call them as `ONCVPSP.run`, `ONCVPSP.write` and
-`ONCVPSP.error_of`. The package's tests run under ctest
+`run`, `write`, `error_of`, `kind_name` and `stage_name` aren't exported
+(Julia's `Base` has a `run` and a `write`); call them as `ONCVPSP.run` and
+so on. The package's tests run under ctest
 (`ctest --test-dir build -R julia_wrapper`).
 
 ### Example
 
-Run from the top of the source tree:
+The same steps as the Python example, as one script run from the top of
+the source tree. Julia's indices start at 1, so `l` is at index `l+1`, the
+first level at 1, and so on: `cross[1, 3, 1, 1, 1]` below is Python's
+`cross[0, 2, 0, 0, 0]`, with the same value.
+
+The library's build, and a whole run:
 
 ```julia
 using ONCVPSP
 
-println(build_info())  # Dict("commit" => ..., "source" => ..., "compiled" => ...)
+println(build_info())  # Dict("commit" => ..., "source" => ..., ...)
 
-# A whole run, from a TOML file; irel 0/1/2 or "nr"/"sr"/"fr"
 run = ONCVPSP.run("tests/data/toml/14_Si.toml"; irel="sr")
 dims = run.dims                     # mmax, lmax, lloc, nproj, nkap, ...
 rr = run["pot.rr"]                  # the radial mesh, (mmax,)
@@ -380,36 +467,49 @@ vkb = run["pot.vkb"]                # projectors, (mmax, mxprj, mxl+1, nkap)
 evkb = run["pot.evkb"]              # their energies, (mxprj, mxl+1, nkap)
 vloc = run["pot.vpuns"][:, dims.lloc+1]  # the local potential (lloc 4)
 println(dims.mmax, " ", dims.lmax, " ", dims.nproj[1:dims.lmax+1])
-println(length(keys(run)), " fields, e.g. ", first(sort(collect(keys(run))), 3))
+println(length(keys(run)), " fields: ", first(sort(collect(keys(run))), 3))
+```
 
-# The tests (tests.*)
-cross = run["tests.convergence.cross"]  # (Ecut, err) per level, projector, l, ikap
+The tests and the all-electron atom:
+
+```julia
+cross = run["tests.convergence.cross"]  # (Ecut, err), level, iproj, l, ikap
 println("Ecut at 1e-3 Ha, l=0, first projector: ", cross[1, 3, 1, 1, 1])
-de = run["tests.configs.de"]            # per test configuration: dE_ae, dE_ps, error
+de = run["tests.configs.de"]            # dE_ae, dE_ps, error per config.
 println("excitation errors: ", de[3, 1:run["tests.configs.ncfg"]])
 println("all-electron eigenvalues: ", run["ae.ea"][:, 1])
+```
 
-# The text output and the pseudopotential files
+The text output and the pseudopotential files:
+
+```julia
 @assert occursin("Begin DIAGNOSTICS", run.text)
 ONCVPSP.write(run, "Si.psp8")
 ONCVPSP.write(run, "Si.upf")
+```
 
-# The input as a dictionary, with tables merged over it: a scan of qcut
+A scan of `qcut`, with tables merged over a dictionary:
+
+```julia
 base = ONCVPSP.TOML.parsefile("tests/data/toml/14_Si.toml")
 for qcut in (5.0, 6.0, 7.0)
     pp = merge(base["pseudopotentials"], Dict("qcut" => [qcut, 5.0, 5.0]))
-    scan = ONCVPSP.run(base; irel=1, pseudopotentials=pp, check=false, text=false)
+    scan = ONCVPSP.run(base; irel=1, pseudopotentials=pp, check=false,
+                       text=false)
     if scan.ifail != 0  # at 7.0 the s pseudo-wave has a node
         println(qcut, " failed: ", sprint(showerror, ONCVPSP.error_of(scan)))
     else
         println(qcut, " ", scan["tests.convergence.opt"][1, 1, 1, 1])
     end
 end
+```
 
-# The all-electron atom once, then the stages from it
+The all-electron atom once, then the stages from it:
+
+```julia
 ae = all_electron(base; irel=1)
 println("ae total energy: ", ae["ae.etot"])
-same = ONCVPSP.run(base; ae=ae, text=false)  # bit for bit the run's
+same = ONCVPSP.run(base; ae=ae, text=false)
 @assert same["pot.vkb"] == vkb
 for ll in 0:dims.lmax
     ch = channel(base, ae, ll; mode=:projectors, text=false)
@@ -417,26 +517,30 @@ for ll in 0:dims.lmax
 end
 pp = merge(base["pseudopotentials"], Dict("qcut" => [7.0, 5.0, 5.0]))
 println("node at qcut 7: ", has_node(base, ae, 0; pseudopotentials=pp))
+```
 
-# The model core again on the run's stages, and the confined atom
+The model core again, and the confined atom:
+
+```julia
 teter = coupled(run, 3, 1.5, 1.2; text=false)
 println("pseudo-atom energy, icmod 3: ", teter["epstot"])
 conf = confine(run; radii=[3.0, 3.5], walls=())
 println("confine: ", conf["confine.nmiss"], " ", conf["confine.max_de"])
+```
 
-# Failures
+Failures, and freeing a handle (otherwise the garbage collector does):
+
+```julia
 try
     ONCVPSP.run(Dict("oncvpsp" => Dict("atsym" => "O")); irel=1)
 catch err
     err isa OncvpspError || rethrow()
-    println(ONCVPSP.kind_name(err), " ", ONCVPSP.stage_name(err), " ", err.failure.msg)
+    println(ONCVPSP.kind_name(err), " ", ONCVPSP.stage_name(err), " ",
+            err.failure.msg)
 end
-bad = ONCVPSP.run(Dict("oncvpsp" => Dict("atsym" => "O")); irel=1, check=false)
+bad = ONCVPSP.run(Dict("oncvpsp" => Dict("atsym" => "O")); irel=1,
+                  check=false)
 println(bad.ifail, " ", bad.failure.stage)
 
-close(run)  # or leave it to the garbage collector
+close(run)
 ```
-
-Julia's indices start at 1, so `l` is at index `l+1`, the first level at
-1, and so on. The values are the same as Python's: in the example above,
-`cross[1, 3, 1, 1, 1]` in Julia is `cross[0, 2, 0, 0, 0]` in Python.
