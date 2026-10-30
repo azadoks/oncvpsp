@@ -205,6 +205,27 @@ if (ONCVPSP_WITH_C_API AND ONCVPSP_WITH_TOML)
                 endif ()
             endif ()
         endforeach ()
+        # the arrays of a run against the numbers of a reference output (scripts/library_arrays.py):
+        # the tests of the DIAGNOSTICS block, the all-electron atom and the radial functions plotted,
+        # within the tolerances of compare_output.py
+        foreach (c_test IN ITEMS "1:sr:14_Si:14_Si" "0:nr:07_N_dl:07_N_dl_nr" "2:r:07_N_dl:07_N_dl_r"
+                "1:sr:60_Nd_GHOST:60_Nd_GHOST" "2:r:60_Nd_GHOST:60_Nd_GHOST_r" "1:sr:73_Ta:73_Ta")
+            string(REPLACE ":" ";" c_test "${c_test}")
+            list(GET c_test 0 irel)
+            list(GET c_test 1 rel)
+            list(GET c_test 2 name)
+            list(GET c_test 3 ref)
+            oncvpsp_add_test(unit library_arrays ${rel} ${name} library_arrays.py ${irel}
+                "${data}/toml/${name}.toml" "${CMAKE_CURRENT_SOURCE_DIR}/refs/${ref}.out")
+            if (added_test)
+                set_property(TEST ${added_test} APPEND PROPERTY ENVIRONMENT
+                    "ONCVPSP_LIBRARY=$<TARGET_FILE:oncvpsp_c>" "PYTHONPATH=${PROJECT_SOURCE_DIR}/python")
+                if (EXISTS "${quadmath}")
+                    set_property(TEST ${added_test} APPEND PROPERTY ENVIRONMENT
+                        "LD_PRELOAD=${quadmath}")
+                endif ()
+            endif ()
+        endforeach ()
     else ()
         message(STATUS "The test Python has no NumPy; the tests of the Python package are disabled")
     endif ()

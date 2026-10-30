@@ -331,7 +331,7 @@ So the interface is a hybrid:
       same `read_table` as the file): the wrappers take a dictionary in the
       TOML layout (phase 6), and the parser already checks it. Setters
       on an input handle only if a caller needs them.
-- [ ] `oncv_run(text, n, iout_path, h, ierr)`, `oncv_free(h)`,
+- [x] `oncv_run(text, n, iout_path, h, ierr)`, `oncv_free(h)`,
       `oncv_dims(h, dims)` and one `oncv_get_…(h, buf, n, ierr)` per
       array (the potentials, projectors and energies, the charges, the
       tests of `tests_t`), and `oncv_write_files` over
@@ -393,7 +393,7 @@ So the interface is a hybrid:
       ctypes, and another atom refused. `tests/unit/test_check_ae.f90`
       checks each of `check_ae`'s refusals, irel too, which a C caller
       cannot reach (a run from an atom takes its irel).
-- [ ] Every number the optimizer's metrics read (oncvpsp-opt's
+- [x] Every number the optimizer's metrics read (oncvpsp-opt's
       `diagnostics.py`, `cutoffs.py`, `log_derivative.py`, the ghosts,
       configurations, `weighted_cut_t`, `vloc_cut_t`) from `tests_t` and
       `psp%pot`, with no text; check that the model-core checks
@@ -475,14 +475,23 @@ So the interface is a hybrid:
       (`liboncvpsp.so.1`, `ONCVPSP_WITH_C_API`, on by default), which
       builds the static library and the dependencies built here
       position-independent (the outputs stay bit for bit the same).
-- [ ] A C test in `tests/` that runs one of the reference inputs through
+- [x] A C test in `tests/` that runs one of the reference inputs through
       the interface and compares with the reference output.
       `tests/c/test_c_api.c` runs the TOML form of a reference input in
       two handles at once and a broken input (nr, sr, fr); its text
-      output is the executable's but for the banner and the files. The
-      comparison of the arrays with the reference output waits for the
-      getters.
-- [ ] Check that two runs in one process give the same results.
+      output is the executable's but for the banner and the files.
+      `scripts/library_arrays.py` (ctest `library_arrays_*`, nr, sr, fr,
+      the ghosts) compares the arrays themselves with the numbers of the
+      reference output, within the tolerances of `compare_output.py`:
+      every test of the DIAGNOSTICS block (the convergence curves'
+      crossings, `opt`, the wells' share, the tails, the local energy's
+      cutoffs, the log derivatives, the ghosts, the B matrices'
+      eigenvalues, the test configurations), the all-electron atom's
+      eigenvalues, energy terms and iterations, the pseudo-atom's energy,
+      and the radial functions plotted (the valence charge, the semi-local
+      and local potentials, the core and model core charges) on the
+      points plotted. Not the projectors, which are not unique.
+- [x] Check that two runs in one process give the same results.
       `test_c_api.c` checks every field of two handles bit for bit (it
       found `esr` and `eso` left unset below irel 2), and
       `scripts/c_api_ctypes.py` every field after a second run in one
