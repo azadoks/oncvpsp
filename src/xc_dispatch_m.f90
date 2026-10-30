@@ -27,9 +27,12 @@
 
  contains
 
- subroutine exc_dispatch(iexc,c_light,al,rho,vxc,exc,rr,nn,who,ifail)
+ subroutine exc_dispatch(iexc,c_light,al,rho,vxc,exc,rr,nn,who,ifail, &
+&                        energy_only)
 
-!! the xc potential and energy per electron of rho on the log mesh rr
+!! the xc potential and energy per electron of rho on the log mesh rr;
+!! with energy_only, a Libxc functional's energy alone (the same values)
+!! and vxc zero, the built-in ones both
 !!
 !! @param iexc  exchange-correlation functional (1-4, 6, 7 built in, <0
 !!              libxc)
@@ -43,6 +46,7 @@
 !! @param who  the caller, for the error message
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
+!! @param energy_only  whether only the energy is wanted
 
  use failure_m, only: fail_internal, failed, msg_xc_dispatch_iexc
  use exc_libxc_m, only: exc_libxc
@@ -59,6 +63,7 @@
  real(dp), intent(in) :: c_light
  real(dp), intent(in) :: al,rho(nn),rr(nn)
  character(len=*), intent(in) :: who
+ logical, intent(in), optional :: energy_only
 
 !Input/output variables (exc_relx adds to the local ones)
  real(dp), intent(inout) :: vxc(nn),exc(nn)
@@ -79,7 +84,7 @@
    call excvwn(rho,vxc,exc,nn)
    if(iexc == 7) call exc_relx(rho,vxc,exc,nn,c_light)
  else if(iexc < 0) then
-   call exc_libxc(iexc,al,rho,vxc,exc,rr,nn,ifail)
+   call exc_libxc(iexc,al,rho,vxc,exc,rr,nn,ifail,energy_only)
  else
    write(error_unit,'(/a,i4)') who//': ERROR bad input iexc =',iexc
    ifail=failed(fail_internal,msg_xc_dispatch_iexc)

@@ -121,10 +121,11 @@
  return
  end subroutine exc_libxc_init
 
- subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax,ifail)
+ subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax,ifail,energy_only)
 !! the exchange-correlation potential and energy per electron of the
 !! Libxc functionals of iexc. A GGA's potential is d e/d n less the
-!! divergence of d e/d grad(n), the radial derivatives by derivs
+!! divergence of d e/d grad(n), the radial derivatives by derivs. With
+!! energy_only, the energy alone (the same values) and vxc zero
 !!
 !! @param iexc  exchange-correlation functional: -(1000*id1+id2) for the libxc
 !!              functionals id1 and id2
@@ -136,6 +137,7 @@
 !! @param mmax  size of the log radial mesh
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
+!! @param energy_only  whether only the energy is wanted
 
  use constants_m, only: dp, pi
  use derivs_m, only: derivs
@@ -145,6 +147,7 @@
  integer, intent(in) :: mmax, iexc
  real(dp), intent(in) :: al
  real(dp), intent(in) :: rho(mmax),rr(mmax)
+ logical, intent(in), optional :: energy_only
 
 !Output variables
  real(dp), intent(out) :: vxc(mmax),exc(mmax)
@@ -153,6 +156,7 @@
 !Local variables
  type(lxc_t) :: fns(2)
  integer :: ii
+ logical :: eonly
  real(dp), allocatable :: nn(:),dpr(:),dppr(:),dlap(:),sigma(:)
  real(dp), allocatable :: zk(:),vrho(:),vsigma(:),gg(:),dgg(:)
 
@@ -169,10 +173,12 @@
 
  vxc(:)=0.0d0
  exc(:)=0.0d0
+ eonly=.false.
+ if(present(energy_only)) eonly=energy_only
  do ii=1,2
    if(fns(ii)%family==0) cycle
-   call lxc_eval(fns(ii),mmax,nn,sigma,zk,vrho,vsigma)
-   if(fns(ii)%family==2) then
+   call lxc_eval(fns(ii),mmax,nn,sigma,zk,vrho,vsigma,eonly)
+   if(fns(ii)%family==2 .and. .not. eonly) then
      gg(:)=2.0d0*vsigma(:)*dpr(:)
      call derivs(mmax,gg,al,rr,dgg,dppr,dlap)
      vrho(:)=vrho(:) - (2.0d0/rr(:)*gg(:) + dgg(:))

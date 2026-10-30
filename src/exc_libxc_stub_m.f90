@@ -30,7 +30,7 @@
 
  contains
 
- subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax,ifail)
+ subroutine exc_libxc(iexc,al,rho,vxc,exc,rr,mmax,ifail,energy_only)
 !!  dummy substitute for interface to libxc library to allow successful
 !!  build without this library; check_data has rejected the libxc
 !!  functionals (have_libxc), so this is not reached
@@ -45,6 +45,7 @@
 !! @param mmax  size of the log radial mesh
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
+!! @param energy_only  whether only the energy is wanted
 
  use failure_m, only: fail_input, failed, msg_libxc_stub_exc
  use constants_m, only: dp
@@ -53,6 +54,7 @@
  integer, intent(in) :: mmax, iexc
  real(dp), intent(in) :: al
  real(dp), intent(in) :: rho(mmax),rr(mmax)
+ logical, intent(in), optional :: energy_only
 
 !Output variables
  real(dp), intent(out) :: vxc(mmax),exc(mmax)

@@ -163,10 +163,11 @@
  return
  end subroutine lxc_end
 
- subroutine lxc_eval(fn,mmax,nn,sigma,zk,vrho,vsigma)
+ subroutine lxc_eval(fn,mmax,nn,sigma,zk,vrho,vsigma,energy_only)
 !! the energy per electron and the first derivatives of the energy
 !! density at mmax points; zk is zero for a functional without the
-!! energy, and sigma and vsigma are for a GGA only
+!! energy, and sigma and vsigma are for a GGA only. With energy_only, the
+!! energy alone, the same values, and vrho and vsigma zero
 !!
 !! @param fn  the functional
 !! @param mmax  size of the log radial mesh
@@ -175,14 +176,17 @@
 !! @param zk  energy per electron (Ha)
 !! @param vrho  derivative of the energy density by nn
 !! @param vsigma  derivative of the energy density by sigma
+!! @param energy_only  whether only the energy is wanted
 
 #if XC_MAJOR_VERSION<=4
  use xc_f90_lib_m, only: xc_f90_lda_exc_vxc, xc_f90_lda_vxc, &
-&                        xc_f90_gga_exc_vxc, xc_f90_gga_vxc
+&                        xc_f90_gga_exc_vxc, xc_f90_gga_vxc, xc_f90_lda_exc, &
+&                        xc_f90_gga_exc
 #else
  use, intrinsic :: iso_c_binding, only: c_size_t
  use xc_f03_lib_m, only: xc_f03_lda_exc_vxc, xc_f03_lda_vxc, &
-&                        xc_f03_gga_exc_vxc, xc_f03_gga_vxc
+&                        xc_f03_gga_exc_vxc, xc_f03_gga_vxc, xc_f03_lda_exc, &
+&                        xc_f03_gga_exc
 #endif
  use constants_m, only: dp
 
@@ -190,6 +194,7 @@
  type(lxc_t), intent(in) :: fn
  integer, intent(in) :: mmax
  real(dp), intent(in) :: nn(mmax),sigma(mmax)
+ logical, intent(in), optional :: energy_only
 
 !Output variables
  real(dp), intent(out) :: zk(mmax),vrho(mmax),vsigma(mmax)
@@ -202,6 +207,28 @@
 #endif
 
  zk(:)=0.0d0; vrho(:)=0.0d0; vsigma(:)=0.0d0
+ if(present(energy_only)) then
+   if(energy_only) then
+     if(.not. fn%has_exc) return
+#if XC_MAJOR_VERSION<=4
+     do ii=1,mmax
+       if(fn%family==1) then
+         call xc_f90_lda_exc(fn%conf,1,nn(ii),zk(ii))
+       else
+         call xc_f90_gga_exc(fn%conf,1,nn(ii),sigma(ii),zk(ii))
+       end if
+     end do
+#else
+     np=int(mmax,c_size_t)
+     if(fn%family==1) then
+       call xc_f03_lda_exc(fn%conf,np,nn,zk)
+     else
+       call xc_f03_gga_exc(fn%conf,np,nn,sigma,zk)
+     end if
+#endif
+     return
+   end if
+ end if
 #if XC_MAJOR_VERSION<=4
 ! one point a call: the xc_f90 interfaces take scalars
  do ii=1,mmax

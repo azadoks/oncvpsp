@@ -1123,7 +1123,7 @@
  real(dp) :: ga,xq
  ifail=0
  associate(rlo=>bc%rlo,rr=>bc%rr,rtop=>bc%rtop)
-   ga=excess_rs(bc,log(rtop))
+   ga=excess_rs(bc,log(rtop),.true.)
    if(bc%ifail/=0) then
      ifail=bc%ifail
      return
@@ -1133,7 +1133,7 @@
      if(ifail/=0) return
    end if
    rsq=rlo
-   ga=excess_rs(bc,log(rlo))
+   ga=excess_rs(bc,log(rlo),.true.)
    if(bc%ifail/=0) then
      ifail=bc%ifail
      return
@@ -1153,7 +1153,7 @@
    ib=ihi+1
    do while(ib-ia>1)
      imid=(ia+ib)/2
-     ga=excess_rs(bc,log(rr(imid)))
+     ga=excess_rs(bc,log(rr(imid)),.true.)
      if(bc%ifail/=0) then
        ifail=bc%ifail
        return
@@ -1215,17 +1215,20 @@
  return
  end function radius_of
 
- real(dp) function excess_rs(bc,lnrs)
+ real(dp) function excess_rs(bc,lnrs,sign_only)
 
 !! the largest error over the density cutoffs q_b..qend of the model of
 !! radius exp(lnrs), less errmax; errmax if the radius has no model; 0
-!! after a failure (bc%ifail)
+!! after a failure (bc%ifail). With sign_only, only its sign is the
+!! same: a positive one may be the first error found above errmax
 !!
 !! @param bc  the state of the search
 !! @param lnrs  ln r_s
+!! @param sign_only  whether only the sign is wanted
 
 !Input variables
  real(dp), intent(in) :: lnrs
+ logical, intent(in), optional :: sign_only
 
 !Input/output variables
  type(budget_t), intent(inout) :: bc
@@ -1239,7 +1242,7 @@
      excess_rs=errmax
      return
    end if
-   excess_rs=err_max(bc,qb,qend,errmax) - errmax
+   excess_rs=err_max(bc,qb,qend,errmax,sign_only) - errmax
    if(bc%ifail/=0) excess_rs=0.0d0
  end associate
  return
@@ -1545,7 +1548,7 @@
    end do
    wki(:)=nvi(:) + fext(:)
    call exc_dispatch(iexc,c_light,al,wki,vxi,epi,ri,ni,'modcore_budget', &
-&                    bc%ifail)
+&                    bc%ifail,energy_only=.true.)
    if(bc%ifail/=0) return
    wf(:)=wki(:)*epi(:)
  end associate
@@ -2020,24 +2023,29 @@
  return
  end function err_grid
 
- real(dp) function err_max(bc,qa,qe,elim)
+ real(dp) function err_max(bc,qa,qe,elim,first_over)
 
 !! the largest error over the density cutoffs qa..qe: on the grid qa,
 !! m*qstep, qe; if that is above elim, the grid's largest (only whether
 !! the error exceeds elim is wanted); otherwise refined by Brent's method
 !! between the neighbours of the grid's largest, and of each other local
 !! maximum of the grid whose parabola peaks within 1% of the result.
-!! qpk the grid point of the largest
+!! qpk the grid point of the largest. With first_over, the first error
+!! above elim as soon as one is found (the spectrum then made only as far
+!! as needed, the same values), so that only whether the largest exceeds
+!! elim is the same, and qpk is unset
 !!
 !! @param bc  the state of the search
 !! @param qa  first density cutoff (bohr**-1)
 !! @param qe  last density cutoff (bohr**-1)
 !! @param elim  error limit (Ha)
+!! @param first_over  whether to stop at the first error above elim
 
  use root_m, only: root_fmin
 
 !Input variables
  real(dp), intent(in) :: qa,qe,elim
+ logical, intent(in), optional :: first_over
 
 !Input/output variables
  type(budget_t), intent(inout) :: bc
@@ -2046,18 +2054,29 @@
  real(dp), allocatable :: tq(:),eq(:)
  real(dp) :: fmin
  integer :: nn,mm,ii,ilo,ihi,imx
+ logical :: first
+ first=.false.
+ if(present(first_over)) first=first_over
  associate(nq=>bc%nq,qpk=>bc%qpk)
-   call spectrum(bc,qe)
+   if(.not. first) call spectrum(bc,qe)
    allocate(tq(nint((qe-qa)/qstep)+3),eq(nint((qe-qa)/qstep)+3))
    nn=1
    tq(1)=qa
    eq(1)=err_at(bc,qa)
+   if(first .and. eq(1)>elim) then
+     err_max=eq(1)
+     return
+   end if
    do mm=floor(qa/qstep)+1,nq
      if(mm*qstep>=qe) exit
      if(mm*qstep<=qa) cycle
      nn=nn+1
      tq(nn)=mm*qstep
      eq(nn)=err_grid(bc,mm)
+     if(first .and. eq(nn)>elim) then
+       err_max=eq(nn)
+       return
+     end if
    end do
    if(qe>qa) then
      nn=nn+1
@@ -2083,6 +2102,7 @@
    end if
    err_max=max(err_max,-fmin)
    do ii=1,nn
+     if(first .and. err_max>elim) exit
      if(ii==imx) cycle
      ilo=max(1,ii-1)
      ihi=min(nn,ii+1)
@@ -2425,13 +2445,13 @@
 &          work=>bc%work)
    work(:)=nval(:) + bq(1:nx)
    call exc_dispatch(iexc,c_light,al,work,vxc,eps,rr,nx,'modcore_budget', &
-&                    bc%ifail)
+&                    bc%ifail,energy_only=.true.)
    if(bc%ifail/=0) return
    work(:)=work(:)*eps(:)
    ac(:)=swin(:)*rr(1:nx)**2*(work(:) - wc(:) - vbg*(bq(1:nx) - rhoc(1:nx)))
    wki(:)=nvi(:) + bq(nx+1:nt)
    call exc_dispatch(iexc,c_light,al,wki,vxi,epi,ri,ni,'modcore_budget', &
-&                    bc%ifail)
+&                    bc%ifail,energy_only=.true.)
    if(bc%ifail/=0) return
    wki(:)=wki(:)*epi(:)
    af(:)=ri(:)**2*(wki(:) - wf(:) - vbg*(bq(nx+1:nt) - fext(:)))
