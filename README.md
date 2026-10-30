@@ -28,7 +28,9 @@ and `fetch`), `cmake --preset default`, `cmake --build --preset default` and
 `ctest --preset default`. Without a build type, the build is
 `RelWithDebInfo` (`-O2 -g` with gfortran), the one the test references are
 checked against; `Debug` adds run-time checks and floating-point traps, and
-`Release` fast math.
+`Release` fast math. [Building and Installing](doc/building.md) describes
+every option and compiler flag, and the installation of the Python and
+Julia packages.
 
 The dependencies are LAPACK and BLAS, Libxc (unless `-DONCVPSP_WITH_Libxc=OFF`),
 toml-f for the TOML input (unless `-DONCVPSP_WITH_TOML=OFF`) and xmlf90 for

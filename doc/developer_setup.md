@@ -52,7 +52,8 @@ how an editor uses it (below).
 ## Builds
 
 CMake is the build for day-to-day work, with the presets in
-`CMakePresets.json`:
+`CMakePresets.json` (every option and flag is in
+[Building and Installing](building.md)):
 
 ```bash
 cmake --preset default            # RelWithDebInfo in build/, the reference build

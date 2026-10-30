@@ -10,8 +10,7 @@ the text output, if kept, is theirs but for the banner.
 ## Building
 
 The library is built with the executables (`ONCVPSP_WITH_C_API`, on by
-default; see [Developer Setup](developer_setup.md)), as
-`build/lib/liboncvpsp.so`. Each package finds it through
+default), as `build/lib/liboncvpsp.so`. Each package finds it through
 `ONCVPSP_LIBRARY`, else beside its modules (a wheel's), else on the
 system's library path:
 
@@ -23,6 +22,8 @@ julia --project=julia/ONCVPSP                     # Julia
 
 `pip install .` builds the library and the Python package together
 (scikit-build-core, `pyproject.toml`), the library inside the package.
+[Building and Installing](building.md) has the build options, the
+installation of each package and an example of each.
 
 ## The input
 
