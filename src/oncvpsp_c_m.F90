@@ -856,15 +856,16 @@
 !! (run_coupled), from the stages of the run of base (oncv_run_toml,
 !! oncv_run_ae_toml or oncv_coupled, whose model core may have failed)
 !! with the model core icmod, fcfact, rcfact and r_s in place of the
-!! input's (its slack, budget_cutoff and error_shares kept):
+!! input's (fcfact or rcfact NaN, r_s <= 0 for the input's; its slack,
+!! budget_cutoff and error_shares kept):
 !! the handle then holds those stages and a run's results, as oncv_run_toml
 !! with that model core gives them. The handle may be base
 !!
 !! @param handle  the run handle
 !! @param base  the handle of the run whose stages it starts from
 !! @param icmod  the model core's kind (fcfact 0 for icmod 0)
-!! @param fcfact  its amplitude factor
-!! @param rcfact  its radius factor
+!! @param fcfact  its amplitude factor, NaN for the input's
+!! @param rcfact  its radius factor, NaN for the input's
 !! @param r_s  the model radius of icmod 8, 9 (bohr), or <= 0 for the input's
 !! @param skip_ld  non-zero to leave out the log derivatives
 
@@ -872,6 +873,7 @@
  use check_data_m, only: check_data
  use failure_m, only: fail_input, failed, msg_c_no_stages
  use, intrinsic :: iso_fortran_env, only: error_unit
+ use, intrinsic :: ieee_arithmetic, only: ieee_is_nan
 
 !Input variables
  type(c_ptr), value :: handle,base
@@ -908,8 +910,8 @@
  if(ifail/=0) return
  inp=hh%inp_stages
  inp%icmod=icmod
- inp%fcfact=fcfact
- inp%rcfact=rcfact
+ if(.not. ieee_is_nan(fcfact)) inp%fcfact=fcfact
+ if(.not. ieee_is_nan(rcfact)) inp%rcfact=rcfact
  if(r_s>0.0d0) inp%r_s=r_s
  if(icmod==0) inp%fcfact=0.0d0
  fcgrid=[inp%fcfact_min,inp%fcfact_max,inp%fcfact_step]

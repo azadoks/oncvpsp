@@ -17,6 +17,7 @@ the handle (handle.ifail, handle.failure). text=True keeps the text output
 """
 
 import ctypes as C
+import math
 import os
 from typing import Any
 
@@ -275,18 +276,20 @@ def coupled(
     base: Run,
     icmod: int,
     *,
-    fcfact: float = 0.0,
-    rcfact: float = 0.0,
+    fcfact: float | None = None,
+    rcfact: float | None = None,
     r_s: float = 0.0,
     skip_ld: bool = False,
     check: bool = True,
     text: Text = True,
 ) -> Run:
     """the model core, screening and tests again on the stages of base's
-    run with the model core icmod, fcfact, rcfact and r_s (icmod 8, 9; 0 for
-    the input's) (oncv_coupled): a run"""
+    run with the model core icmod, fcfact, rcfact (None for the input's) and
+    r_s (icmod 8, 9; 0 for the input's) (oncv_coupled): a run"""
     hh = Run(text)
-    ifail = lib.oncv_coupled(hh.ptr, base.ptr, icmod, fcfact, rcfact, r_s, int(skip_ld))
+    fc = math.nan if fcfact is None else fcfact
+    rc = math.nan if rcfact is None else rcfact
+    ifail = lib.oncv_coupled(hh.ptr, base.ptr, icmod, fc, rc, r_s, int(skip_ld))
     return hh._done(ifail, check)
 
 

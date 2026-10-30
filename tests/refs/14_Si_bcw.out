@@ -313,6 +313,8 @@ B matrix Hermiticity error, ll=   2
 
   Orthonormal projector coefficients -1.8797E+00 -3.7716E-01
 
+modcore_budget: WARNING icmod 6 and 7 are deprecated: icmod 8 and 9 take r_s
+
 Model core correction: budgeted core (icmod 6)
   pseudo-wave cutoff, weighted mean Ecut of the tables at  1.00E-04 Ha/electron      9.3091 Ha, times  1.0000
   cutoff budget      9.3091 Ha for an xc energy error of  1.00E-04 Ha
@@ -321,6 +323,15 @@ Model core correction: budgeted core (icmod 6)
   fill minimum tail
   coefficients c0..c8  6.93018136E+01 -1.64223684E+02  3.74197253E+02 -1.56284291E+03  5.06648933E+03 -9.61961321E+03  1.03309606E+04 -5.83165491E+03  1.34427593E+03
   cutoff the model core needs      9.3091 Ha
+  error over the density cutoffs    8.6298   25.8893 bohr**-1
+    16-mean  6.4177558222578600E-05 Ha
+    largest  1.0000000000134814E-04 Ha
+  signed errors: share, cutoff (bohr**-1), error (Ha)
+    1.000000    8.629753 -1.0000000000134814E-04
+    1.000000    8.629753 -1.0000000000134814E-04
+    1.500000   10.569246  1.4964802319977506E-05
+    2.000000   12.204314  8.3814659227055954E-06
+  fill monotonicity margin  2.6239657755240446E+00
 
 Ionic tail switched over r =  2.7000 to  5.4026 a.u., converged in  9 steps
 
@@ -370,7 +381,7 @@ Test configuration 0
 
     Total energies and differences
       AE_ref= -2.88819831D+02  AE_tst= -2.88819831D+02  dif=  0.00D+00
-      PS_ref= -3.79312352E+00  PS_tst= -3.79312352E+00  dif= -8.88E-16
+      PS_ref= -3.79312352E+00  PS_tst= -3.79312352E+00  dif=  1.33E-15
       PSP excitation error=  8.88D-16
 
 Test configuration 1

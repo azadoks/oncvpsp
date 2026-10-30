@@ -215,8 +215,9 @@ int oncv_assemble_toml(void *handle, void *ae_handle, void *local_handle,
 
 /* The model core, the screening and the tests made again from the stages
  * of base's run (which a run keeps even if its model core failed), with
- * the model core icmod, fcfact, rcfact and r_s (bohr, icmod 8 and 9; <= 0
- * for the input's) in place of the input's (fcfact 0 for icmod 0; slack,
+ * the model core icmod, fcfact, rcfact (NAN for the input's) and r_s
+ * (bohr, icmod 8 and 9; <= 0 for the input's) in place of the input's
+ * (fcfact 0 for icmod 0; slack,
  * budget_cutoff and error_shares the input's), into the handle, which then
  * holds those stages and the results oncv_run_toml gives for the input
  * with that model core */

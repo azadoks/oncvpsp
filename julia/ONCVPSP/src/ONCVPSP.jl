@@ -610,10 +610,10 @@ end
 
 """
 the model core, screening and tests again on the stages of `base`'s run
-with the model core icmod, fcfact, rcfact and r_s (icmod 8, 9; 0 for the
-input's) (oncv_coupled): a run
+with the model core icmod, fcfact, rcfact (NaN for the input's) and r_s
+(icmod 8, 9; 0 for the input's) (oncv_coupled): a run
 """
-function coupled(base::Run, icmod::Integer; fcfact=0.0, rcfact=0.0, r_s=0.0,
+function coupled(base::Run, icmod::Integer; fcfact=NaN, rcfact=NaN, r_s=0.0,
                  skip_ld=false, check=true, text=true)
     hh = Run(text)
     ifail = ccall(sym(:oncv_coupled), Cint,

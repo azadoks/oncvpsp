@@ -224,6 +224,8 @@ B matrix Hermiticity error, ll=   1
 
   Orthonormal projector coefficients -4.2466E+00 -9.6431E-01
 
+modcore_budget: WARNING icmod 6 and 7 are deprecated: icmod 8 and 9 take r_s
+
 Model core correction: budgeted core (icmod 6)
   cutoff budget     65.0000 Ha for an xc energy error of  1.00E-05 Ha
   slack  0.7000, the model core must fit     45.5000 Ha
@@ -231,6 +233,15 @@ Model core correction: budgeted core (icmod 6)
   fill minimum tail
   coefficients c0..c8  9.20072852E+01 -2.72617420E+02  4.09257882E+02 -5.28292447E+02  8.76367590E+02 -1.39018527E+03  1.44357537E+03 -8.15724047E+02  1.89978692E+02
   cutoff the model core needs     45.5000 Ha
+  error over the density cutoffs   19.0788   68.4105 bohr**-1
+    16-mean  6.3780723696729533E-06 Ha
+    largest  1.0000000000433097E-05 Ha
+  signed errors: share, cutoff (bohr**-1), error (Ha)
+    0.700000   19.078784 -1.0000000000433097E-05
+    1.000000   22.803509  4.9994358568847746E-06
+    1.500000   27.928480  5.6255171138013248E-06
+    2.000000   32.249031  5.0971983928561616E-06
+  fill monotonicity margin  3.0271638672294694E+00
 
 Ionic tail switched over r =  1.3500 to  2.7044 a.u., converged in  9 steps
 

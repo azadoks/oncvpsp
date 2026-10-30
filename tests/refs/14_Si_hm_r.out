@@ -470,6 +470,8 @@ B matrix Hermiticity error, ll=  2  kap=  2
  Orthonormal spin-orbit projector coefficients, l =  2
   4.8207E-04  9.0562E-05 -1.2492E-06 -4.5741E-07
 
+modcore_budget: WARNING icmod 6 and 7 are deprecated: icmod 8 and 9 take r_s
+
 Model core correction: hardness-matched core (icmod 7)
   pseudo-wave cutoff, largest Ecut of the tables at  1.00E-05 Ha/electron     11.5100 Ha, times  1.0000
   cutoff budget     11.5100 Ha for an xc energy error of  1.00E-05 Ha
@@ -478,6 +480,15 @@ Model core correction: hardness-matched core (icmod 7)
   fill minimum tail
   coefficients c0..c8  3.64675801E+01 -1.02834387E+02  1.62000829E+02 -3.14865172E+02  7.82887382E+02 -1.41807527E+03  1.51765158E+03 -8.61823400E+02  2.00391470E+02
   cutoff the model core needs      8.0570 Ha
+  error over the density cutoffs    8.0285   28.7875 bohr**-1
+    16-mean  6.4095689192767028E-06 Ha
+    largest  1.0000000001337064E-05 Ha
+  signed errors: share, cutoff (bohr**-1), error (Ha)
+    0.700000    8.028463 -1.0000000001337064E-05
+    1.000000    9.595849  4.7459052895567613E-06
+    1.500000   11.752466  3.4329044421046962E-06
+    2.000000   13.570579  2.0165970336392990E-06
+  fill monotonicity margin  3.3197722909337650E+00
   smallest fitting radius (icmod 6)    1.045263
   hardness mismatch  1.2668E-05 Ha
   radii of the basin: r_s, fill, hardness mismatch (Ha)

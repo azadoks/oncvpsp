@@ -470,6 +470,8 @@ B matrix Hermiticity error, ll=  2  kap=  2
  Orthonormal spin-orbit projector coefficients, l =  2
   4.8207E-04  9.0562E-05 -1.2490E-06 -4.5739E-07
 
+modcore_budget: WARNING icmod 6 and 7 are deprecated: icmod 8 and 9 take r_s
+
 Model core correction: budgeted core (icmod 6)
   cutoff budget     25.0000 Ha for an xc energy error of  1.00E-04 Ha
   slack  1.0000, the model core must fit     25.0000 Ha
@@ -478,6 +480,15 @@ Model core correction: budgeted core (icmod 6)
   fill minimum tail
   coefficients c0..c8  2.47789721E+02 -8.15812353E+02  8.33834111E+03 -4.90065519E+04  1.52458946E+05 -2.67093318E+05  2.65185553E+05 -1.39299581E+05  3.00860703E+04
   cutoff the model core needs     23.4343 Ha
+  error over the density cutoffs   14.1421   42.4264 bohr**-1
+    16-mean  6.9913320121662718E-05 Ha
+    largest  7.1081059270725663E-05 Ha
+  signed errors: share, cutoff (bohr**-1), error (Ha)
+    1.000000   14.142136  2.2688459043009208E-05
+    1.000000   14.142136  2.2688459043009208E-05
+    1.500000   17.320508  6.8255556772136780E-05
+    2.000000   20.000000  6.9508733230737221E-05
+  fill monotonicity margin  7.0392927432841201E-01
 
 Ionic tail switched over r =  2.7000 to  5.4026 a.u., converged in  8 steps
 
@@ -566,7 +577,7 @@ Test configuration 0
 
     Total energies and differences
       AE_ref= -2.88820206E+02  AE_tst= -2.88820206E+02  dif=  0.00E+00
-      PS_ref= -3.79298343E+00  PS_tst= -3.79298343E+00  dif= -5.77E-15
+      PS_ref= -3.79298343E+00  PS_tst= -3.79298343E+00  dif=  0.00E+00
       PSP excitation error=  3.55E-15
 
 Test configuration 1
