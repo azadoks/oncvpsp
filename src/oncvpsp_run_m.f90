@@ -24,10 +24,13 @@
  use ae_state_m, only: ae_state_t
  use pieces_m, only: piecewise_t
  use failure_m, only: warnings_t
+ use channel_m, only: channel_t, nkey
+ use run_vkb_m, only: local_t
+ use test_results_m, only: ghosts_t
  implicit none
  private
  public :: oncvpsp_run, complete_input, run_stages, run_coupled, stages_t, &
-&          run_ae, run_channel
+&          run_ae, run_channel, run_local, local_stage_t, channel_tests_t
 
 !> the results of the stages before the model core (oncvpsp_run), from
 !> which run_coupled makes the model core, the screening and the tests;
@@ -107,6 +110,44 @@
    type(warnings_t) :: warn
  end type stages_t
 
+!> the local potential alone (run_local), from which channels make their
+!> projectors (run_channel) without making it again
+ type :: local_stage_t
+!> what it was made from (local_key)
+   real(dp) :: key(nkey+3)=0.0d0
+!> the local potential
+   type(local_t) :: lp
+!> for lloc<4, the local channel it was made from, one projector, which
+!> a run assembled from channels (run_stages) takes
+   type(channel_t) :: lc
+!> whether it holds the local channel (lloc<4)
+   logical :: has_lc=.false.
+ end type local_stage_t
+
+!> one channel's tests (run_channel), on the local potential before the
+!> ionic tail that a whole run switches to beyond rcmax (ionic_screening)
+ type :: channel_tests_t
+!> the number of energies of the log derivatives
+   integer :: ne=0
+!> their energies (Ha), from the window's top down
+   real(dp), allocatable :: ee(:)
+!> their radius (bohr), as the run's (run_phsft)
+   real(dp) :: rl=0.0d0
+!> of the all-electron wave, per energy and kappa
+   real(dp), allocatable :: ae(:,:)
+!> of the pseudo wave, likewise
+   real(dp), allocatable :: ps(:,:)
+!> the largest radius of the local potential they read (bohr)
+   real(dp) :: rmax=0.0d0
+!> the input's largest core radius (bohr), where the ionic tail starts
+   real(dp) :: rcmax=0.0d0
+!> whether they are those of the input's whole run, bit for bit (rmax at
+!> or inside rcmax)
+   logical :: exact=.false.
+!> the ghost tests of the channel (run_ghosts), at its l and kappas
+   type(ghosts_t) :: gh
+ end type channel_tests_t
+
  contains
 
  subroutine oncvpsp_run(irel,istage,inp,ae_filename,ps_filename,skip_ld, &
@@ -164,7 +205,7 @@
  end subroutine oncvpsp_run
 
  subroutine run_stages(irel,istage,inp,ae_filename,cnf,st,at,iout,ifail, &
-&                      ae_in)
+&                      ae_in,chans)
 
 !! the stages of a run before the model core, from the input inp: the
 !! input completed (complete_input) and echoed, the all-electron atom
@@ -172,7 +213,11 @@
 !! the projectors (run_vkb), and the valence densities, in st for
 !! run_coupled. With istage=1 only the all-electron atom, written to
 !! ae_filename, and st is left incomplete; with istage=2 that file in place
-!! of it; with ae_in (istage 0), that atom in place of it (given_ae)
+!! of it; with ae_in (istage 0), that atom in place of it (given_ae); with
+!! chans as well, the channels made before (run_channel, run_local) in
+!! place of optimizing them, each of this input (channel_key), the local
+!! channel the one-projector one: the results are the same, bit for bit,
+!! but the text output has none of the channels' lines
 !!
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
 !! @param istage  0 the whole calculation, 1 the all-electron stage only, 2 the
@@ -187,13 +232,14 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 !! @param ae_in  the all-electron atom solved before, if given (solve_ae)
+!! @param chans  the channels made before, of l 0 to lmax, if given
  use failure_m, only: failure_t, fail_none, stage_input, &
 &                    stage_channel, stage_vkb, stage_valence, stage_configs, &
-&                    warn_merge
+&                    warn_merge, fail_input, failed, msg_run_stages_channel
  use config_ae_m, only: run_config_ae, ae_config_t
  use ae_file_m, only: write_ae_file
  use ae_state_m, only: ae_state_t
- use channel_m, only: channel_t, optimize_channel, ncurve
+ use channel_m, only: optimize_channel, ncurve, channel_key
  use sr_so_r_m, only: sr_so_r
  use run_vkb_m, only: run_vkb
  use ps_valence_m, only: valence_densities
@@ -211,6 +257,7 @@
  character(len=*), intent(in) :: ae_filename
  integer, intent(in) :: iout
  type(ae_state_t), intent(in), optional :: ae_in
+ type(channel_t), intent(in), optional :: chans(:)
 
 !Input/output variables
  type(input_t), intent(inout) :: inp
@@ -489,8 +536,18 @@
  inp%nproj(inp%lloc+1)=1
  do l1=1,inp%lmax+1
    at%ll=l1-1
-   call optimize_channel(ae,inp,l1,inp%nproj(l1),irc(l1),chan,iout,ifail)
-   if(ifail/=0) return
+   if(present(chans)) then
+     chan=chans(l1)
+     if(any(chan%key(:)/=channel_key(ae,inp,l1,inp%nproj(l1)))) then
+       write(iout,'(/a,i0,a)') 'run_stages: ERROR the channel l=',l1-1, &
+&           ' is not of this input or atom'
+       ifail=failed(fail_input,msg_run_stages_channel)
+       return
+     end if
+   else
+     call optimize_channel(ae,inp,l1,inp%nproj(l1),irc(l1),chan,iout,ifail)
+     if(ifail/=0) return
+   end if
    call warn_merge(warns,chan%warn)
    irc(l1)=chan%irc
    qmsbf(l1)=chan%qmsbf
@@ -1170,7 +1227,8 @@
  return
  end subroutine run_ae
 
- subroutine run_channel(ae,inp,ll,mode,ch,lp,prj,at,iout,ifail)
+ subroutine run_channel(ae,inp,ll,mode,ch,lp,prj,at,iout,ifail,ls_in,tt, &
+&                       energies)
 
 !! the channel of angular momentum ll alone from the input inp and the
 !! all-electron atom ae, solved before (solve_ae) and checked against it
@@ -1179,10 +1237,14 @@
 !! or one for the local channel. A first pseudo-wave with a node is
 !! pspot's failure. With mode 1, also the local potential
 !! (local_potential, for lloc<4 from the local channel, optimized for it
-!! when ll is another) and the channel's projectors (channel_vkb, none for
-!! the local channel), the same as the whole run's; with mode 2, the
-!! channel only up to the node test of each kappa's first projector, its
-!! results unset
+!! when ll is another; or ls_in's, of this input) and the channel's
+!! projectors (channel_vkb, none for the local channel), the same as the
+!! whole run's; with mode 2, the channel only up to the node test of each
+!! kappa's first projector, its results unset. With tt, mode 1 only, also
+!! the channel's log derivatives (on the input's window or energies) and
+!! its ghost tests, on the local potential before the ionic tail of a
+!! whole run beyond rcmax: the run's for log derivatives whose solution
+!! stays inside rcmax (tt%exact), near them otherwise
 !!
 !! @param ae  the all-electron atom (ae_state_m)
 !! @param inp  the input values (input_m), as read on input, completed on
@@ -1197,21 +1259,28 @@
 !! @param iout  unit of the text output
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
+!! @param ls_in  the local potential made before (run_local), if given
+!! @param tt  the channel's tests, if asked for
+!! @param energies  the window of the log derivatives (emin, emax, de;
+!!                  Ha), if not the input's
 
  use ae_state_m, only: ae_state_t, check_ae
- use channel_m, only: channel_t, optimize_channel
- use run_vkb_m, only: local_t, projectors_t, local_potential, channel_vkb
+ use channel_m, only: optimize_channel
+ use run_vkb_m, only: projectors_t, local_potential, channel_vkb
  use main_setup_m, only: core_radius_points
  use input_m, only: input_t, config_t
  use constants_m, only: dp, mxcnf, mxlin, mxprj
  use failure_m, only: failure_t, fail_none, fail_input, failed, &
 &                    msg_run_channel_l, msg_run_channel_mode, stage_input, &
-&                    stage_ae, stage_channel, stage_vkb
+&                    stage_ae, stage_channel, stage_vkb, &
+&                    msg_run_channel_local, msg_run_channel_tests
 
 !Input variables
  type(ae_state_t), intent(in) :: ae
  integer, intent(in) :: ll,mode
  integer, intent(in) :: iout
+ type(local_stage_t), intent(in), optional :: ls_in
+ real(dp), intent(in), optional :: energies(3)
 
 !Input/output variables
  type(input_t), intent(inout) :: inp
@@ -1222,6 +1291,7 @@
  type(projectors_t), intent(out) :: prj
  type(failure_t), intent(out) :: at
  integer, intent(out) :: ifail
+ type(channel_tests_t), intent(out), optional :: tt
 
 !Local variables
  type(config_t) :: cnf(mxcnf)
@@ -1244,6 +1314,18 @@
    ifail=failed(fail_input,msg_run_channel_mode)
    return
  end if
+ if(present(tt) .and. mode/=1) then
+   write(iout,'(/a)') 'run_channel: ERROR the tests need mode 1'
+   ifail=failed(fail_input,msg_run_channel_tests)
+   return
+ end if
+ if(present(energies)) then
+   if(.not. (energies(1)<energies(2) .and. energies(3)>0.0d0)) then
+     write(iout,'(/a)') 'run_channel: ERROR the window is emin < emax, de > 0'
+     ifail=failed(fail_input,msg_run_channel_tests)
+     return
+   end if
+ end if
  at%stage=stage_ae
  call check_ae(ae,ae%irel,inp,iout,ifail)
  if(ifail/=0) return
@@ -1257,35 +1339,282 @@
  call optimize_channel(ae,inp,ll+1,nprj,irc(ll+1),ch,iout,ifail,mode==2)
  if(ifail/=0 .or. mode/=1) return
 
-! the local potential, from the local channel's first wave for lloc<4
+! the local potential, from the local channel's first wave for lloc<4, or
+! that made before
  nkap=size(ch%vp,2)
- if(inp%lloc<4 .and. ll/=inp%lloc) then
-   at%ll=inp%lloc
-   call optimize_channel(ae,inp,inp%lloc+1,1,irc(inp%lloc+1),chl,iout,ifail)
-   if(ifail/=0) return
+ if(present(ls_in)) then
+   if(any(ls_in%key(:)/=local_key(ae,inp))) then
+     write(iout,'(/a)') 'run_channel: ERROR the local potential is not '// &
+&         'of this input or atom'
+     ifail=failed(fail_input,msg_run_channel_local)
+     return
+   end if
+   lp=ls_in%lp
  else
-   chl=ch
+   if(inp%lloc<4 .and. ll/=inp%lloc) then
+     at%ll=inp%lloc
+     call optimize_channel(ae,inp,inp%lloc+1,1,irc(inp%lloc+1),chl,iout, &
+&                          ifail)
+     if(ifail/=0) return
+   else
+     chl=ch
+   end if
+   if(inp%lloc<4) irc(inp%lloc+1)=chl%irc
+   irc(ll+1)=ch%irc
+   at%stage=stage_vkb
+   at%ll=-1
+   call local_potential(inp%lloc,inp%lpopt,inp%dvloc0,inp%rc,irc,ae%rr, &
+&                       ae%mmax,ae%vfull,nkap,chl%pswfx,chl%chix,chl%vrloc, &
+&                       lp,iout,ifail)
+   if(ifail/=0) return
  end if
- if(inp%lloc<4) irc(inp%lloc+1)=chl%irc
- irc(ll+1)=ch%irc
- at%stage=stage_vkb
- at%ll=-1
- call local_potential(inp%lloc,inp%lpopt,inp%dvloc0,inp%rc,irc,ae%rr, &
-&                     ae%mmax,ae%vfull,nkap,chl%pswfx,chl%chix,chl%vrloc,lp, &
-&                     iout,ifail)
- if(ifail/=0) return
 
 ! the channel's projectors
  allocate(prj%vkb(ae%mmax,mxprj,nkap))
  prj%vkb(:,:,:)=ch%vkb(:,:,:)
- if(ll==inp%lloc) return
- at%ll=ll
- call channel_vkb(ll+1,inp%lloc,lp,inp%rc(ll+1),irc(ll+1),inp%nproj(ll+1), &
-&                 ae%rr,ae%mmax,ae%vfull,ch%pswfx,ch%chix,ch%dlta,ae%irel, &
-&                 nkap,prj%evkb(:,1:nkap),prj%vkb,prj%vkbpw(:,1:nkap), &
-&                 prj%bbeig(:,1:nkap),iout,ifail)
+ if(ll/=inp%lloc) then
+   irc(ll+1)=ch%irc
+   at%stage=stage_vkb
+   at%ll=ll
+   call channel_vkb(ll+1,inp%lloc,lp,inp%rc(ll+1),irc(ll+1),inp%nproj(ll+1), &
+&                   ae%rr,ae%mmax,ae%vfull,ch%pswfx,ch%chix,ch%dlta,ae%irel, &
+&                   nkap,prj%evkb(:,1:nkap),prj%vkb,prj%vkbpw(:,1:nkap), &
+&                   prj%bbeig(:,1:nkap),iout,ifail)
+   if(ifail/=0) return
+ end if
+ if(present(tt)) call channel_tests(ae,inp,ch,lp,prj,rcmax,tt,at,iout, &
+&                                   ifail,energies)
  return
  end subroutine run_channel
+
+ subroutine run_local(ae,inp,ls,at,iout,ifail)
+
+!! the local potential alone from the input inp and the all-electron atom
+!! ae, as the whole run's (local_potential): for lloc<4 from its local
+!! channel, optimized with one projector, which it keeps; with its key
+!! (local_key), so that channels take it only for their own input
+!!
+!! @param ae  the all-electron atom (ae_state_m)
+!! @param inp  the input values (input_m), as read on input, completed on
+!!             output
+!! @param ls  the local potential
+!! @param at  where the run was (failure_m): its stage, l and ikap
+!! @param iout  unit of the text output
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use ae_state_m, only: ae_state_t, check_ae
+ use channel_m, only: optimize_channel
+ use run_vkb_m, only: local_potential
+ use main_setup_m, only: core_radius_points
+ use input_m, only: input_t, config_t
+ use constants_m, only: mxcnf, mxprj
+ use failure_m, only: failure_t, fail_none, stage_input, stage_ae, &
+&                    stage_channel, stage_vkb
+
+!Input variables
+ type(ae_state_t), intent(in) :: ae
+ integer, intent(in) :: iout
+
+!Input/output variables
+ type(input_t), intent(inout) :: inp
+
+!Output variables
+ type(local_stage_t), intent(out) :: ls
+ type(failure_t), intent(out) :: at
+ integer, intent(out) :: ifail
+
+!Local variables
+ type(config_t) :: cnf(mxcnf)
+ type(channel_t) :: chl
+ integer :: irc(mxlin+1)
+ real(dp) :: rcmax
+
+ at=failure_t(fail_none,0,0,stage_input,-1,0,0)
+ call complete_input(inp,cnf,iout,ifail)
+ if(ifail/=0) return
+ at%stage=stage_ae
+ call check_ae(ae,ae%irel,inp,iout,ifail)
+ if(ifail/=0) return
+ at%stage=stage_channel
+ call core_radius_points(inp%lmax,inp%lloc,inp%rc,ae%rr,ae%mmax,irc,rcmax, &
+&                        iout,ifail)
+ if(ifail/=0) return
+ if(inp%lloc<4) then
+   at%ll=inp%lloc
+   call optimize_channel(ae,inp,inp%lloc+1,1,irc(inp%lloc+1),chl,iout,ifail)
+   if(ifail/=0) return
+   irc(inp%lloc+1)=chl%irc
+ else
+! the polynomial takes none of a channel's waves
+   allocate(chl%pswfx(ae%mmax,mxprj,ae%nkap),chl%chix(ae%mmax,mxprj,ae%nkap))
+   allocate(chl%vrloc(ae%mmax,ae%nkap))
+   chl%pswfx(:,:,:)=0.0d0
+   chl%chix(:,:,:)=0.0d0
+   chl%vrloc(:,:)=0.0d0
+ end if
+ at%stage=stage_vkb
+ at%ll=-1
+ call local_potential(inp%lloc,inp%lpopt,inp%dvloc0,inp%rc,irc,ae%rr, &
+&                     ae%mmax,ae%vfull,ae%nkap,chl%pswfx,chl%chix,chl%vrloc, &
+&                     ls%lp,iout,ifail)
+ if(ifail/=0) return
+ ls%key(:)=local_key(ae,inp)
+ ls%has_lc=inp%lloc<4
+ if(ls%has_lc) ls%lc=chl
+ return
+ end subroutine run_local
+
+ function local_key(ae,inp) result(key)
+
+!! what the local potential depends on (local_potential): lloc, lpopt,
+!! dvloc0 and the key of the local channel, its one-projector channel
+!! (channel_key, whose rc is the local radius; for lloc=4 that of the
+!! radius rc(5) and the atom)
+!!
+!! @param ae  the all-electron atom (ae_state_m)
+!! @param inp  the input values (input_m)
+
+ use channel_m, only: channel_key
+ use input_m, only: input_t
+
+!Input variables
+ type(ae_state_t), intent(in) :: ae
+ type(input_t), intent(in) :: inp
+
+!Output variables
+ real(dp) :: key(nkey+3)
+
+ key(:)=[real(inp%lloc,dp),real(inp%lpopt,dp),inp%dvloc0, &
+&        channel_key(ae,inp,inp%lloc+1,1)]
+ return
+ end function local_key
+
+ subroutine channel_tests(ae,inp,ch,lp,prj,rcmax,tt,at,iout,ifail,energies)
+
+!! the log derivatives (phsft_pair, as run_phsft) and the ghost tests
+!! (run_ghosts) of one channel with its projectors, on the local potential
+!! lp before the ionic tail of a whole run (ionic_screening); the log
+!! derivatives are the run's, bit for bit, when their solution and its
+!! stencil stay at or inside rcmax (tt%exact)
+!!
+!! @param ae  the all-electron atom (ae_state_m)
+!! @param inp  the input values (input_m), completed
+!! @param ch  the channel (channel_m)
+!! @param lp  the local potential (run_vkb_m)
+!! @param prj  the channel's projectors (run_vkb_m)
+!! @param rcmax  largest core radius (bohr)
+!! @param tt  the tests
+!! @param at  where the run was (failure_m): its stage, l and ikap
+!! @param iout  unit of the text output
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+!! @param energies  the window of the log derivatives (emin, emax, de;
+!!                  Ha), if not the input's
+
+ use run_vkb_m, only: projectors_t
+ use input_m, only: input_t
+ use constants_m, only: mxl, mxprj
+ use failure_m, only: failure_t, fail_input, failed, msg_phsft_rxpsh, &
+&                    stage_phsft, stage_ghosts
+ use phsft_m, only: phsft_pair, phsft_mch
+ use logmesh_m, only: lm_fh_reach
+ use kappa_m, only: kap_of
+ use run_ghosts_m, only: run_ghosts
+
+!Input variables
+ type(ae_state_t), intent(in) :: ae
+ type(input_t), intent(in) :: inp
+ type(channel_t), intent(in) :: ch
+ type(local_t), intent(in) :: lp
+ type(projectors_t), intent(in) :: prj
+ real(dp), intent(in) :: rcmax
+ integer, intent(in) :: iout
+ real(dp), intent(in), optional :: energies(3)
+
+!Input/output variables
+ type(failure_t), intent(inout) :: at
+
+!Output variables
+ type(channel_tests_t), intent(out) :: tt
+ integer, intent(out) :: ifail
+
+!Local variables
+ type(warnings_t) :: warns
+ type(piecewise_t) :: vkbpw(mxprj,mxl+1)
+ real(dp) :: evkb(mxprj,mxl+1),qmsbf(mxlin+1),vpl(ae%mmax,mxl+2)
+ real(dp) :: epsh1,epsh2,depsh,amesh
+ integer :: nproj(mxlin+1),ll,l1,ikap,nvkb,mch,ii
+
+ ifail=0
+ ll=ch%l1-1
+ l1=ch%l1
+ tt%rcmax=rcmax
+
+! the log derivatives, on the input's window or energies
+ if(present(energies)) then
+   epsh1=energies(1)
+   epsh2=energies(2)
+   depsh=energies(3)
+ else
+   epsh1=inp%epsh1
+   epsh2=inp%epsh2
+   depsh=inp%depsh
+ end if
+ tt%ne=int(((epsh2-epsh1)/depsh)-0.5d0)+1
+ allocate(tt%ee(tt%ne),tt%ae(tt%ne,ch%mkap),tt%ps(tt%ne,ch%mkap))
+ do ii=1,tt%ne
+   tt%ee(ii)=epsh2-depsh*real(ii-1,dp)
+ end do
+ amesh=ae%rr(2)/ae%rr(1)
+ if(inp%rxpsh<0.0d0) then
+   tt%rl=inp%rc(l1)*amesh**2
+ else
+   tt%rl=inp%rxpsh
+ end if
+ mch=phsft_mch(ae%rr,ae%mmax,tt%rl)
+ if(mch==0) then
+   write(iout,'(/a,f12.6)') 'channel_tests: ERROR rxpsh beyond radial '// &
+&       'mesh, rxpsh=',tt%rl
+   ifail=failed(fail_input,msg_phsft_rxpsh)
+   return
+ end if
+ tt%rmax=ae%rr(min(ae%mmax,mch+lm_fh_reach()))
+ tt%exact=tt%rmax<=rcmax
+ nvkb=ch%nproj
+ if(ll==inp%lloc) nvkb=0
+ at%stage=stage_phsft
+ do ikap=1,ch%mkap
+   at%ikap=ikap
+   call phsft_pair(ae%irel,ae%c_light,ll,kap_of(ll,ikap),nvkb,ae%rr, &
+&                  ae%vfull,ae%zz,lp%vloc,lp%vlocpw,prj%vkbpw(1:nvkb,ikap), &
+&                  prj%evkb(1:nvkb,ikap),ae%mmax,ae%adams,1,[tt%rl],tt%ne, &
+&                  epsh2,depsh,ch%epa(1,ikap),tt%ae(:,ikap),tt%ps(:,ikap), &
+&                  iout,ifail)
+   if(ifail/=0) return
+ end do
+
+! the ghost tests, of this l alone (the local channel has none)
+ if(nvkb==0) return
+ nproj(:)=0
+ nproj(l1)=nvkb
+ qmsbf(:)=0.0d0
+ qmsbf(l1)=ch%qmsbf
+ vpl(:,:)=0.0d0
+ vpl(:,min(inp%lloc+1,mxl+2))=lp%vloc(:)
+ evkb(:,:)=0.0d0
+ at%stage=stage_ghosts
+ do ikap=1,ch%mkap
+   at%ikap=ikap
+   evkb(:,l1)=prj%evkb(:,ikap)
+   vkbpw(:,l1)=prj%vkbpw(:,ikap)
+   call run_ghosts(inp%lmax,ae%la,ae%ea(1,ikap),ae%nc,ae%nv,inp%lloc,inp%rc, &
+&                  qmsbf,lp%vlocpw,vkbpw,evkb,nproj,ae%rr,vpl,ae%mmax, &
+&                  ae%adams,ikap,tt%gh,warns,iout,ifail)
+   if(ifail/=0) return
+ end do
+ return
+ end subroutine channel_tests
 
  subroutine complete_input(inp,cnf,iout,ifail)
 

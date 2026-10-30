@@ -52,7 +52,7 @@ extern "C" {
 #endif
 
 /* The version of this header; oncv_api_version() is the library's */
-#define ONCV_API_VERSION 5
+#define ONCV_API_VERSION 6
 
 /* The kinds of failure (failure_m's fail_*) */
 #define ONCV_FAIL_NONE 0
@@ -177,6 +177,42 @@ int oncv_run_ae_toml(void *handle, void *ae_handle, const char *text,
 int oncv_channel_toml(void *handle, void *ae_handle, const char *text,
                       size_t ntext, int ll, int mode);
 
+/* The local potential alone of the TOML input text, from the all-electron
+ * atom of ae_handle, into the handle: the fields local.* and, for
+ * lloc < 4, its local channel (optimized with one projector), the same as
+ * the whole run's; for oncv_channel_local_toml and oncv_assemble_toml */
+int oncv_local_toml(void *handle, void *ae_handle, const char *text,
+                    size_t ntext);
+
+/* The channel ll as oncv_channel_toml, with the local potential of
+ * local_handle (oncv_local_toml) in place of making it, if not NULL; it
+ * must be of this input and atom (else ONCV_FAIL_INPUT, msg 187). With
+ * tests non-zero (mode 1 only), also the channel's log derivatives, on
+ * the window energies (emin, emax, de; Ha), NULL for the input's, and its
+ * ghost tests (channel.logder.*, channel.ghosts.*). They are made on the
+ * local potential before the ionic tail a whole run switches it to beyond
+ * the largest core radius rcmax, which depends on every channel and the
+ * model core: the log derivatives are the run's bit for bit when they read
+ * the potential no further than rcmax (channel.logder.exact), near them
+ * otherwise; the ghost tests reach beyond it, and are near the run's */
+int oncv_channel_local_toml(void *handle, void *ae_handle,
+                            void *local_handle, const char *text,
+                            size_t ntext, int ll, int mode, int tests,
+                            const double *energies);
+
+/* The run of the TOML input text as oncv_run_ae_toml from the all-electron
+ * atom of ae_handle, with the channels of the handles channels
+ * (oncv_channel_toml or oncv_channel_local_toml, mode 0 or 1; nchannels
+ * of them, in any order) in place of optimizing them: one of each l from
+ * 0 to lmax, the local channel (lloc < 4) that of local_handle unless one
+ * of the channels is of l = lloc. Each must be of this input and atom
+ * (else ONCV_FAIL_INPUT, msg 186; a missing or doubled l msg 190). The
+ * results are those of oncv_run_ae_toml bit for bit; the text output has
+ * none of the channels' lines */
+int oncv_assemble_toml(void *handle, void *ae_handle, void *local_handle,
+                       void *const *channels, int nchannels, const char *text,
+                       size_t ntext, int skip_ld);
+
 /* The model core, the screening and the tests made again from the stages
  * of base's run (which a run keeps even if its model core failed), with
  * the model core icmod, fcfact and rcfact in place of the input's (fcfact
@@ -223,7 +259,8 @@ int oncv_dims(void *handle, oncv_dims_t *dims);
  * src/results_m.f90; warnings.rec the warnings in the order written, 5
  * by nwarn (at most 64): the warning, its stage, l, ikap and index, as
  * failure_m's wrn_* lists them; ae.* the all-electron atom,
- * src/ae_state_m.f90, of an all-electron handle or a run's; confine.* the
+ * src/ae_state_m.f90, of an all-electron handle or a run's; local.* the
+ * local potential of oncv_local_toml; confine.* the
  * confined atom's summary, src/confine_summary_m.f90, -1 for a part left
  * out, cut the cutoffs at 1e-4 and 1e-5 Ha of all the edges then of the
  * top edges, inf whether each is never reached; channel.* a

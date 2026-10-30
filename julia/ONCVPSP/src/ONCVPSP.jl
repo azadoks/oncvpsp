@@ -24,11 +24,12 @@ module ONCVPSP
 using Libdl
 using TOML
 
-export AllElectron, Confinement, Handle, OncvpspError, Run, all_electron, build_info,
-       channel, confine, convergence, core_density, coupled, fieldinfo, has_node, kernel,
-       local_potential, mesh, model_core, oncvpsp, projectors, semilocal, valence_density
+export AllElectron, Confinement, Handle, Local, OncvpspError, Run, all_electron, assemble,
+       build_info, channel, confine, convergence, core_density, coupled, fieldinfo, has_node,
+       kernel, local_potential, mesh, model_core, oncvpsp, projectors, semilocal,
+       valence_density
 
-const API_VERSION = 5
+const API_VERSION = 6
 const MXLIN = 5
 const MXRANK = 5
 const MSG_PSPOT_NODE = 122
@@ -182,9 +183,9 @@ end
 
 # the fields of each kind of handle, by prefix ("" for the run's); the
 # library writes an error for each field asked of a handle that holds none
-const STAGE_PREFIXES = ("ae.", "channel.", "confine.")
+const STAGE_PREFIXES = ("ae.", "channel.", "confine.", "local.")
 holds_of(K) = Dict(:run => ("", "ae."), :ae => ("ae.",), :channel => ("channel.",),
-                   :confine => ("confine.",))[K]
+                   :confine => ("confine.",), :local => ("local.",))[K]
 
 function prefix(name)
     ii = findfirst(pp -> startswith(name, pp), STAGE_PREFIXES)
@@ -227,6 +228,8 @@ const AllElectron = Handle{:ae}
 const Channel = Handle{:channel}
 "the confined atom of a run: confine.*"
 const Confinement = Handle{:confine}
+"the local potential alone: local.*, from which channels and runs are assembled"
+const Local = Handle{:local}
 
 "frees the handle now"
 function Base.close(hh::Handle)
@@ -343,7 +346,7 @@ end
 
 function Base.show(io::IO, hh::Handle{K}) where {K}
     name = Dict(:run => "Run", :ae => "AllElectron", :channel => "ONCVPSP.Channel",
-                :confine => "Confinement")[K]
+                :confine => "Confinement", :local => "Local")[K]
     state = hh.ptr == C_NULL ? "closed" :
             hh.ifail != 0 ? "ifail=$(hh.ifail)" : "$(length(hh)) fields"
     print(io, name, "(", state, ")")
@@ -366,8 +369,9 @@ end
 mesh(run::Run) = run["pot.rr"]
 mesh(ae::AllElectron) = ae["ae.rr"]
 
-"the local potential (Ha) on the mesh"
+"the local potential (Ha) on the mesh; of a `Local`, before a run's ionic tail"
 local_potential(run::Run) = run["pot.vpuns"][:, run.dims.lloc+1]
+local_potential(loc::Local) = loc["local.vloc"]
 
 "the unscreened semi-local potential of `l` (Ha) on the mesh"
 semilocal(run::Run, l::Integer) = run["pot.vpuns"][:, lcheck(l, run.dims.lmax)+1]
@@ -383,6 +387,13 @@ function projectors(run::Run, l::Integer; ikap::Integer=1)
     kk, nn = kap(ikap, dd.nkap), dd.nproj[lcheck(l, dd.lmax)+1]
     (energies=run["pot.evkb"][1:nn, l+1, kk], vkb=run["pot.vkb"][:, 1:nn, l+1, kk])
 end
+
+"""
+with tests, whether the channel's log derivatives are its input's whole run's
+bit for bit (they read the local potential no further than rcmax, where the
+run's ionic tail starts); the ghost tests always reach beyond it
+"""
+isexact(ch::Channel) = ch["channel.logder.exact"] != 0
 
 "with mode :projectors, the channel's projectors, as those of a run"
 function projectors(ch::Channel; ikap::Integer=1)
@@ -520,17 +531,68 @@ const MODES = Dict(:channel => 0, :projectors => 1, :node => 2)
 """
 the channel of angular momentum `l` of the input, from the all-electron
 atom of `ae` (oncv_channel_toml): fields channel.*. `mode` :projectors
-also makes the local potential and the channel's projectors; :node stops
-at the node test of the first projector (has_node)
+also makes the local potential (or takes `loc`'s, `local_potential`)
+and the channel's projectors; :node stops at the node test of the first
+projector (has_node). `tests=true`, with mode :projectors, also makes its
+log derivatives (channel.logder.*, on `energies` (emin, emax, de) in Ha,
+nothing for the input's window) and its ghost tests (channel.ghosts.*),
+on the local potential before a whole run's ionic tail beyond rcmax:
+`ONCVPSP.isexact(ch)` whether the log derivatives are the run's bit for bit
 """
-function channel(inp, ae::Handle, l::Integer; mode=:channel, check=true, text=true,
-                 tables...)
+function channel(inp, ae::Handle, l::Integer; mode=:channel, loc=nothing, tests=false,
+                 energies=nothing, check=true, text=true, tables...)
     data = input_text(inp, tables)
     hh = Channel(text)
     mode === :node && (hh.holds = ())
-    ifail = ccall(sym(:oncv_channel_toml), Cint,
-                  (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{UInt8}, Csize_t, Cint, Cint),
-                  ptr(hh), ptr(ae), data, sizeof(data), l, MODES[mode])
+    ifail = if loc === nothing && !tests
+        ccall(sym(:oncv_channel_toml), Cint,
+              (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{UInt8}, Csize_t, Cint, Cint),
+              ptr(hh), ptr(ae), data, sizeof(data), l, MODES[mode])
+    else
+        energies === nothing || length(energies) == 3 ||
+            throw(ArgumentError("energies is (emin, emax, de)"))
+        ee = energies === nothing ? C_NULL : Float64[energies...]
+        GC.@preserve ee ccall(sym(:oncv_channel_local_toml), Cint,
+              (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{UInt8}, Csize_t, Cint, Cint, Cint,
+               Ptr{Float64}),
+              ptr(hh), ptr(ae), loc === nothing ? C_NULL : ptr(loc), data,
+              sizeof(data), l, MODES[mode], tests, ee)
+    end
+    done!(hh, ifail, check)
+end
+
+"""
+the local potential alone of the input, from the all-electron atom of `ae`
+(oncv_local_toml): fields local.*, for `channel(...; loc)` and `assemble`
+(`local` is Julia's keyword, so the argument is `loc`)
+"""
+function local_potential(inp, ae::Handle; check=true, text=true, tables...)
+    data = input_text(inp, tables)
+    hh = Local(text)
+    ifail = ccall(sym(:oncv_local_toml), Cint, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{UInt8}, Csize_t),
+                  ptr(hh), ptr(ae), data, sizeof(data))
+    done!(hh, ifail, check)
+end
+
+"""
+the run of the input from the all-electron atom of `ae` with the channels
+made before (`channel`, modes :channel or :projectors, in any order) in
+place of optimizing them (oncv_assemble_toml): one of each l from 0 to
+lmax, the local channel (lloc < 4) `loc`'s unless one of the channels
+is of l = lloc. Each must be of this input and atom; the run is then
+`oncvpsp(inp; ae)`'s bit for bit, its text output without the channels'
+lines
+"""
+function assemble(inp, ae::Handle, channels; loc=nothing, skip_ld=false, check=true,
+                  text=true, tables...)
+    data = input_text(inp, tables)
+    ptrs = Ptr{Cvoid}[ptr(ch) for ch in channels]
+    hh = Run(text)
+    ifail = GC.@preserve channels ccall(sym(:oncv_assemble_toml), Cint,
+        (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Ptr{Cvoid}}, Cint, Ptr{UInt8}, Csize_t,
+         Cint),
+        ptr(hh), ptr(ae), loc === nothing ? C_NULL : ptr(loc), ptrs, length(ptrs),
+        data, sizeof(data), skip_ld)
     done!(hh, ifail, check)
 end
 

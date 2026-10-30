@@ -116,7 +116,7 @@ FIELDS: dict[str, FieldInfo] = _field_infos()
 # the fields of each kind of handle, by prefix ("" for the run's, every
 # one not of another kind); the library writes an error for each field
 # asked of a handle that holds none, so only these are asked
-STAGE_PREFIXES = ("ae.", "channel.", "confine.")
+STAGE_PREFIXES = ("ae.", "channel.", "confine.", "local.")
 
 
 def field_info(name: str) -> FieldInfo:
@@ -525,6 +525,28 @@ class Channel(Handle):
     def kernel(self, ikap: int = 1) -> np.ndarray:
         """its nonlocal operator, as Run.kernel, with mode 'projectors'"""
         return _kernel(self.projectors(ikap))
+
+    @property
+    def exact(self) -> bool:
+        """with tests, whether its log derivatives are those of the
+        input's whole run bit for bit (they read the local potential no
+        further than rcmax, where the run's ionic tail starts); the ghost
+        tests always reach beyond it"""
+        return bool(self["channel.logder.exact"])
+
+
+class Local(Handle):
+    """the local potential alone (local_potential): fields local.*, from
+    which channels make their projectors without making it again, and
+    for lloc < 4 the local channel a run assembled from channels takes"""
+
+    _HOLDS = ("local.",)
+
+    @property
+    def vloc(self) -> np.ndarray:
+        """the screened local potential (Ha) on the mesh, before a whole
+        run's ionic tail beyond rcmax"""
+        return self["local.vloc"]
 
 
 class Confinement(Handle):

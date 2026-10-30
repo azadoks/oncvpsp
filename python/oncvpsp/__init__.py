@@ -40,6 +40,7 @@ from ._handle import (
     InputError,
     InternalError,
     Irel,
+    Local,
     NodeError,
     NotFoundError,
     NumericalError,
@@ -69,6 +70,7 @@ __all__ = [
     "InputError",
     "InternalError",
     "Irel",
+    "Local",
     "NodeError",
     "NotFoundError",
     "NumericalError",
@@ -77,12 +79,14 @@ __all__ = [
     "Run",
     "Stage",
     "all_electron",
+    "assemble",
     "build_info",
     "channel",
     "confine",
     "coupled",
     "field_info",
     "has_node",
+    "local_potential",
     "read_toml",
     "run",
     "toml_dumps",
@@ -156,20 +160,95 @@ def channel(
     l: int,  # noqa: E741
     mode: str = "channel",
     *,
+    local: Local | None = None,
+    tests: bool = False,
+    energies: Any = None,
     check: bool = True,
     text: Text = True,
     **tables: Any,
 ) -> Channel:
     """the channel of angular momentum l of the input, from the
     all-electron atom of ae (oncv_channel_toml): fields channel.*. mode
-    'projectors' also makes the local potential and the channel's
-    projectors; 'node' stops at the node test of the first projector
-    (has_node)"""
+    'projectors' also makes the local potential (or takes local's,
+    local_potential) and the channel's projectors; 'node' stops at the
+    node test of the first projector (has_node). tests=True, with mode
+    'projectors', also makes its log derivatives (channel.logder.*, on
+    energies (emin, emax, de) in Ha, None for the input's window) and its
+    ghost tests (channel.ghosts.*), on the local potential before a whole
+    run's ionic tail beyond rcmax: Channel.exact says whether the log
+    derivatives are the run's bit for bit"""
     data = input_text(inp, tables)
     hh = Channel(text)
     if mode == "node":
         hh._holds = ()
-    ifail = lib.oncv_channel_toml(hh.ptr, ae.ptr, data, len(data), l, _MODES[mode])
+    if local is None and not tests:
+        ifail = lib.oncv_channel_toml(hh.ptr, ae.ptr, data, len(data), l, _MODES[mode])
+        return hh._done(ifail, check)
+    if energies is not None and len(energies) != 3:
+        raise ValueError("energies is (emin, emax, de)")
+    pe, ke = (None, None) if energies is None else _array(list(energies), C.c_double)
+    ifail = lib.oncv_channel_local_toml(
+        hh.ptr,
+        ae.ptr,
+        None if local is None else local.ptr,
+        data,
+        len(data),
+        l,
+        _MODES[mode],
+        int(tests),
+        pe,
+    )
+    del ke
+    return hh._done(ifail, check)
+
+
+def local_potential(
+    inp: Input,
+    ae: "AllElectron | Run",
+    *,
+    check: bool = True,
+    text: Text = True,
+    **tables: Any,
+) -> Local:
+    """the local potential alone of the input, from the all-electron atom
+    of ae (oncv_local_toml): fields local.*, for channel(..., local=) and
+    assemble"""
+    data = input_text(inp, tables)
+    hh = Local(text)
+    return hh._done(lib.oncv_local_toml(hh.ptr, ae.ptr, data, len(data)), check)
+
+
+def assemble(
+    inp: Input,
+    ae: "AllElectron | Run",
+    channels: "list[Channel]",
+    *,
+    local: Local | None = None,
+    skip_ld: bool = False,
+    check: bool = True,
+    text: Text = True,
+    **tables: Any,
+) -> Run:
+    """the run of the input from the all-electron atom of ae with the
+    channels made before (channel, modes 'channel' or 'projectors', in any
+    order) in place of optimizing them (oncv_assemble_toml): one of each l
+    from 0 to lmax, the local channel (lloc < 4) local's unless one of the
+    channels is of l = lloc. Each must be of this input and atom; the run
+    is then run(inp, ae=ae)'s bit for bit, its text output without the
+    channels' lines"""
+    data = input_text(inp, tables)
+    ptrs = (C.c_void_p * max(len(channels), 1))(*[ch.ptr for ch in channels])
+    hh = Run(text)
+    ifail = lib.oncv_assemble_toml(
+        hh.ptr,
+        ae.ptr,
+        None if local is None else local.ptr,
+        C.cast(ptrs, C.POINTER(C.c_void_p)),
+        len(channels),
+        data,
+        len(data),
+        int(skip_ld),
+    )
     return hh._done(ifail, check)
 
 

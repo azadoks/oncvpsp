@@ -29,13 +29,16 @@
  use failure_m, only: warnings_t
  implicit none
  private
- public :: channel_t, optimize_channel, ncurve
+ public :: channel_t, optimize_channel, channel_key, ncurve, nkey
 
 !> the points of a convergence curve: run_optimize's q grid,
 !> 1 + 24 rc max(2 q of the last basis function, 2 qcut, 20), ~2400 for
 !> nbas=14 and less than 3000 for qcut up to 15 at rc up to 4; a buffer,
 !> with room for qcut rc up to 160
  integer, parameter :: ncurve=8000
+
+!> the size of a channel's key (channel_key)
+ integer, parameter :: nkey=28
 
 !> one channel's results; the arrays are per projector and kappa
  type :: channel_t
@@ -87,6 +90,9 @@
    real(dp), allocatable :: wcurve(:,:)
 !> the warnings of optimize_channel
    type(warnings_t) :: warn
+!> what it was made from (channel_key), so that a run assembled from
+!> channels made before takes only those of its own input
+   real(dp) :: key(nkey)=0.0d0
  end type channel_t
 
  contains
@@ -152,6 +158,7 @@
  ch%mkap=kap_count(nkap,ll)
  ch%nproj=nprj
  ch%irc=irc
+ ch%key(:)=channel_key(ae,inp,l1,nprj)
  allocate(ch%uua(mmax,mxprj,nkap),ch%upa(mmax,mxprj,nkap))
  allocate(ch%dlta(mmax,mxprj,nkap),ch%vrloc(mmax,nkap))
  allocate(ch%pswf(mmax,mxprj,nkap),ch%pswfx(mmax,mxprj,nkap))
@@ -237,5 +244,39 @@
  ch%wellprj(:)=inwell(:)
  return
  end subroutine optimize_channel
+
+ function channel_key(ae,inp,l1,nprj) result(key)
+
+!! what the channel l1 with nprj projectors depends on: the inputs of
+!! optimize_channel (its l's and the well's and regularization's) and the
+!! all-electron atom, by its numbers that tell one atom from another;
+!! two channels of the same key are the same channel
+!!
+!! @param ae  the all-electron atom (ae_state_m)
+!! @param inp  the input values (input_m)
+!! @param l1  l+1
+!! @param nprj  number of projectors
+
+ use ae_state_m, only: ae_state_t
+ use input_m, only: input_t
+
+!Input variables
+ type(ae_state_t), intent(in) :: ae
+ type(input_t), intent(in) :: inp
+ integer, intent(in) :: l1,nprj
+
+!Output variables
+ real(dp) :: key(nkey)
+
+ key(:)=[real(l1,dp),real(nprj,dp),inp%rc(l1),inp%qcut(l1), &
+&        real(inp%ncon(l1),dp),real(inp%nbas(l1),dp),inp%ep(l1,1), &
+&        inp%ep(l1,mxkap),inp%debl(l1),real(inp%well_n(l1),dp), &
+&        inp%ecut_weight(l1),merge(1.0d0,0.0d0,inp%ep_as_given), &
+&        inp%well_onset,real(inp%well_tail,dp),real(inp%well_norm,dp), &
+&        inp%wave_regularization,real(inp%lloc,dp),ae%zz, &
+&        real(ae%irel,dp),real(ae%iexc,dp),real(ae%nc,dp),real(ae%nv,dp), &
+&        real(ae%mmax,dp),ae%al,ae%rr(1),ae%c_light,ae%etot,ae%res]
+ return
+ end function channel_key
 
  end module channel_m

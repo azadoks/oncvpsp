@@ -35,7 +35,7 @@
  use channel_m, only: channel_t
  use run_vkb_m, only: local_t, projectors_t
  use confine_summary_m, only: confine_summary_t
- use oncvpsp_run_m, only: stages_t
+ use oncvpsp_run_m, only: stages_t, local_stage_t, channel_tests_t
  use constants_m, only: dp, mxlin, mxcnf
  implicit none
  private
@@ -44,11 +44,12 @@
 &          oncv_shape, oncv_get_double, oncv_get_int, oncv_ae_toml, &
 &          oncv_run_ae_toml, oncv_channel_toml, oncv_coupled, &
 &          oncv_set_output_buffer, oncv_output_text, oncv_confine, &
-&          oncv_field_info
+&          oncv_field_info, oncv_local_toml, oncv_channel_local_toml, &
+&          oncv_assemble_toml
 
 !> the version of the interface: a change to a function or a struct
 !> raises it
- integer(c_int), parameter :: api_version=5
+ integer(c_int), parameter :: api_version=6
 
 !> 1 if c_double is the kind of the reals, else a division by zero that
 !> stops the compilation
@@ -138,6 +139,14 @@
    logical :: has_chan=.false.
 !> whether the channel has its local potential and projectors
    logical :: has_vkb=.false.
+!> the channel's tests (oncv_channel_local_toml)
+   type(channel_tests_t) :: ct
+!> whether the channel has its tests
+   logical :: has_ctests=.false.
+!> the local potential of oncv_local_toml
+   type(local_stage_t) :: ls
+!> whether it holds a local potential
+   logical :: has_local=.false.
 !> the summary of oncv_confine
    type(confine_summary_t) :: sm
 !> whether it holds the summary of a confined atom (oncv_confine)
@@ -514,6 +523,332 @@
  return
  end function oncv_channel_toml
 
+ function oncv_local_toml(handle,ae_handle,text,ntext) result(ifail) &
+&         bind(c,name='oncv_local_toml')
+
+!! the local potential alone of the TOML input text into the handle, whose
+!! earlier contents it replaces, from the all-electron atom of ae_handle
+!! (run_local): its fields local.*, and for lloc<4 its local channel, for
+!! oncv_channel_local_toml and oncv_assemble_toml. The input must be of
+!! that atom (check_ae); the handle may be ae_handle
+!!
+!! @param handle  the run handle
+!! @param ae_handle  the handle of the all-electron atom
+!! @param text  the TOML input, ntext characters, not terminated
+!! @param ntext  its length
+
+ use oncvpsp_run_m, only: run_local
+
+!Input variables
+ type(c_ptr), value :: handle,ae_handle
+ character(kind=c_char), intent(in) :: text(ntext)
+ integer(c_size_t), value :: ntext
+
+!Output variables
+ integer(c_int) :: ifail
+
+!Local variables
+ type(handle_t), pointer :: hh,src
+ type(ae_state_t) :: ae
+ integer :: iout,jfail
+
+ call c_f_pointer(handle,hh)
+ call c_f_pointer(ae_handle,src)
+ call source(src,ae,jfail)
+ call reset(hh,ae%irel)
+ if(jfail/=0) then
+   hh%ifail=jfail
+   ifail=jfail
+   return
+ end if
+ call open_output(hh,iout,ifail)
+ if(ifail/=0) return
+ call read_toml(hh,text,ntext,iout,jfail)
+ if(jfail==0) call run_local(ae,hh%inp,hh%ls,hh%at,iout,jfail)
+ call close_output(hh,iout)
+ hh%has_local=jfail==0
+ hh%ifail=jfail
+ ifail=jfail
+ return
+ end function oncv_local_toml
+
+ function oncv_channel_local_toml(handle,ae_handle,local_handle,text,ntext, &
+&         ll,mode,tests,energies) result(ifail) &
+&         bind(c,name='oncv_channel_local_toml')
+
+!! the channel of angular momentum ll, as oncv_channel_toml, with the
+!! local potential of local_handle (oncv_local_toml, of this input) in
+!! place of making it, if not C_NULL; with tests non-zero (mode 1), also
+!! its log derivatives, on the window energies (emin, emax, de; Ha) or the
+!! input's if C_NULL, and its ghost tests, on the local potential before a
+!! whole run's ionic tail beyond rcmax (channel.logder.*, channel.ghosts.*;
+!! channel.logder.exact whether the log derivatives are the run's bit for
+!! bit)
+!!
+!! @param handle  the run handle
+!! @param ae_handle  the handle of the all-electron atom
+!! @param local_handle  the handle of the local potential, or C_NULL
+!! @param text  the TOML input, ntext characters, not terminated
+!! @param ntext  its length
+!! @param ll  angular momentum
+!! @param mode  0 the channel, 1 also the local potential and projectors,
+!!              2 the node test of its first projector only
+!! @param tests  non-zero for the channel's tests
+!! @param energies  the window of the log derivatives, or C_NULL
+
+ use oncvpsp_run_m, only: run_channel
+
+!Input variables
+ type(c_ptr), value :: handle,ae_handle,local_handle,energies
+ integer(c_int), value :: ll,mode,tests
+ character(kind=c_char), intent(in) :: text(ntext)
+ integer(c_size_t), value :: ntext
+
+!Output variables
+ integer(c_int) :: ifail
+
+!Local variables
+ type(handle_t), pointer :: hh,src,loc
+ type(local_stage_t) :: ls
+ type(ae_state_t) :: ae
+ real(c_double), pointer :: window(:)
+ integer :: iout,jfail
+ logical :: with_local
+
+ call c_f_pointer(handle,hh)
+ call c_f_pointer(ae_handle,src)
+ call source(src,ae,jfail)
+ with_local=c_associated(local_handle)
+ if(jfail==0 .and. with_local) then
+   call c_f_pointer(local_handle,loc)
+   call local_of(loc,ls,jfail)
+ end if
+ call reset(hh,ae%irel)
+ if(jfail/=0) then
+   hh%ifail=jfail
+   ifail=jfail
+   return
+ end if
+ call open_output(hh,iout,ifail)
+ if(ifail/=0) return
+ call read_toml(hh,text,ntext,iout,jfail)
+ if(jfail==0) then
+   if(c_associated(energies)) then
+     call c_f_pointer(energies,window,[3])
+   else
+     window=>null()
+   end if
+   call channel_with(hh,ae,int(ll),int(mode),tests/=0,with_local,ls, &
+&                    window,iout,jfail)
+ end if
+ call close_output(hh,iout)
+ hh%has_chan=jfail==0 .and. mode/=2
+ hh%has_vkb=jfail==0 .and. mode==1
+ hh%has_ctests=jfail==0 .and. tests/=0
+ hh%ifail=jfail
+ ifail=jfail
+ return
+ end function oncv_channel_local_toml
+
+ subroutine channel_with(hh,ae,ll,mode,tests,with_local,ls,window,iout,ifail)
+
+!! run_channel into the handle, with the local potential ls if with_local,
+!! the tests if asked for, on the window if associated
+!!
+!! @param hh  the handle
+!! @param ae  the all-electron atom
+!! @param ll  angular momentum
+!! @param mode  0, 1 or 2 (run_channel)
+!! @param tests  whether to make the channel's tests
+!! @param with_local  whether ls is given
+!! @param ls  the local potential
+!! @param window  the window of the log derivatives, or null
+!! @param iout  unit of the text output
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use oncvpsp_run_m, only: run_channel
+
+!Input variables
+ type(ae_state_t), intent(in) :: ae
+ integer, intent(in) :: ll,mode,iout
+ logical, intent(in) :: tests,with_local
+ type(local_stage_t), intent(in) :: ls
+ real(c_double), pointer, intent(in) :: window(:)
+
+!Input/output variables
+ type(handle_t), intent(inout) :: hh
+
+!Output variables
+ integer, intent(out) :: ifail
+
+ if(with_local .and. tests .and. associated(window)) then
+   call run_channel(ae,hh%inp,ll,mode,hh%chan,hh%lp,hh%prj,hh%at,iout, &
+&                   ifail,ls_in=ls,tt=hh%ct,energies=window)
+ else if(with_local .and. tests) then
+   call run_channel(ae,hh%inp,ll,mode,hh%chan,hh%lp,hh%prj,hh%at,iout, &
+&                   ifail,ls_in=ls,tt=hh%ct)
+ else if(with_local) then
+   call run_channel(ae,hh%inp,ll,mode,hh%chan,hh%lp,hh%prj,hh%at,iout, &
+&                   ifail,ls_in=ls)
+ else if(tests .and. associated(window)) then
+   call run_channel(ae,hh%inp,ll,mode,hh%chan,hh%lp,hh%prj,hh%at,iout, &
+&                   ifail,tt=hh%ct,energies=window)
+ else if(tests) then
+   call run_channel(ae,hh%inp,ll,mode,hh%chan,hh%lp,hh%prj,hh%at,iout, &
+&                   ifail,tt=hh%ct)
+ else
+   call run_channel(ae,hh%inp,ll,mode,hh%chan,hh%lp,hh%prj,hh%at,iout, &
+&                   ifail)
+ end if
+ return
+ end subroutine channel_with
+
+ subroutine local_of(src,ls,ifail)
+
+!! a copy of the local potential that the handle src holds
+!! (oncv_local_toml)
+!!
+!! @param src  the handle
+!! @param ls  the local potential
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use failure_m, only: fail_input, failed, msg_c_no_local
+ use, intrinsic :: iso_fortran_env, only: error_unit
+
+!Input variables
+ type(handle_t), intent(in) :: src
+
+!Output variables
+ type(local_stage_t), intent(out) :: ls
+ integer, intent(out) :: ifail
+
+ ifail=0
+ if(src%has_local) then
+   ls=src%ls
+ else
+   write(error_unit,'(/a)') &
+&       'local_of: ERROR the handle holds no local potential'
+   ifail=failed(fail_input,msg_c_no_local)
+ end if
+ return
+ end subroutine local_of
+
+ function oncv_assemble_toml(handle,ae_handle,local_handle,channels, &
+&         nchannels,text,ntext,skip_ld) result(ifail) &
+&         bind(c,name='oncv_assemble_toml')
+
+!! the pseudopotential and its tests of the TOML input text into the
+!! handle, as oncv_run_ae_toml from the all-electron atom of ae_handle,
+!! with the channels of the handles channels (oncv_channel_toml or
+!! oncv_channel_local_toml, modes 0 or 1, in any order) in place of
+!! optimizing them: one of each l from 0 to lmax, the local channel's
+!! (lloc<4) that of local_handle (oncv_local_toml) unless one of the
+!! channels is of l=lloc. Each must be of this input and atom; the results
+!! are then those of oncv_run_ae_toml bit for bit, but the text output has
+!! none of the channels' lines
+!!
+!! @param handle  the run handle
+!! @param ae_handle  the handle of the all-electron atom
+!! @param local_handle  the handle of the local potential, or C_NULL
+!! @param channels  the handles of the channels, nchannels of them
+!! @param nchannels  their number
+!! @param text  the TOML input, ntext characters, not terminated
+!! @param ntext  its length
+!! @param skip_ld  non-zero to leave out the log derivatives
+
+ use oncvpsp_run_m, only: run_stages, run_coupled
+ use constants_m, only: mxl
+ use failure_m, only: fail_input, failed, msg_c_assemble
+ use, intrinsic :: iso_fortran_env, only: error_unit
+
+!Input variables
+ type(c_ptr), value :: handle,ae_handle,local_handle
+ integer(c_int), value :: nchannels,skip_ld
+ type(c_ptr), intent(in) :: channels(nchannels)
+ character(kind=c_char), intent(in) :: text(ntext)
+ integer(c_size_t), value :: ntext
+
+!Output variables
+ integer(c_int) :: ifail
+
+!Local variables
+ type(handle_t), pointer :: hh,src,ch
+ type(ae_state_t) :: ae
+ type(channel_t) :: chans(mxl+1)
+ logical :: have(mxl+1)
+ integer :: iout,jfail,ii,l1
+
+ call c_f_pointer(handle,hh)
+ call c_f_pointer(ae_handle,src)
+ call source(src,ae,jfail)
+ have(:)=.false.
+ do ii=1,merge(int(nchannels),0,jfail==0)
+   call c_f_pointer(channels(ii),ch)
+   l1=0
+   if(ch%has_chan) l1=ch%chan%l1
+   if(l1<1 .or. l1>mxl+1) then
+     jfail=1
+   else if(have(l1)) then
+     jfail=1
+   else
+     chans(l1)=ch%chan
+     have(l1)=.true.
+   end if
+ end do
+ if(jfail==0 .and. c_associated(local_handle)) then
+   call c_f_pointer(local_handle,ch)
+   if(ch%has_local) then
+     if(ch%ls%has_lc) then
+       l1=ch%ls%lc%l1
+       if(.not. have(l1)) then
+         chans(l1)=ch%ls%lc
+         have(l1)=.true.
+       end if
+     end if
+   else
+     jfail=1
+   end if
+ end if
+ if(jfail==1) then
+   write(error_unit,'(/a)') 'oncv_assemble_toml: ERROR a handle holds '// &
+&       'no channel, two have one l, or an l has none'
+   jfail=failed(fail_input,msg_c_assemble)
+ end if
+ call reset(hh,ae%irel)
+ if(jfail/=0) then
+   hh%ifail=jfail
+   ifail=jfail
+   return
+ end if
+ call open_output(hh,iout,ifail)
+ if(ifail/=0) return
+ call read_toml(hh,text,ntext,iout,jfail)
+ if(jfail==0) then
+   if(.not. all(have(1:min(hh%inp%lmax,mxl)+1))) then
+     write(iout,'(/a)') 'oncv_assemble_toml: ERROR a handle holds '// &
+&         'no channel, two have one l, or an l has none'
+     jfail=failed(fail_input,msg_c_assemble)
+   end if
+ end if
+ if(jfail==0) then
+   call run_stages(hh%irel,0,hh%inp,'',hh%cnf,hh%st,hh%at,iout,jfail,ae, &
+&                  chans(1:hh%inp%lmax+1))
+ end if
+ if(jfail==0) then
+   hh%has_stages=.true.
+   hh%inp_stages=hh%inp
+   call run_coupled(hh%irel,0,hh%inp,hh%cnf,hh%st,'',skip_ld/=0,hh%psp, &
+&                   hh%at,iout,jfail)
+   hh%done=jfail==0
+ end if
+ call close_output(hh,iout)
+ hh%ifail=jfail
+ ifail=jfail
+ return
+ end function oncv_assemble_toml
+
  function oncv_coupled(handle,base,icmod,fcfact,rcfact,skip_ld) &
 &         result(ifail) bind(c,name='oncv_coupled')
 
@@ -751,6 +1086,8 @@
  hh%has_stages=.false.
  hh%has_chan=.false.
  hh%has_vkb=.false.
+ hh%has_ctests=.false.
+ hh%has_local=.false.
  hh%has_confine=.false.
  hh%text=''
  hh%ifail=0
@@ -1423,6 +1760,8 @@
    if(hh%has_chan) call lookup_channel(hh,name,ff)
  else if(index(name,'confine.')==1) then
    if(hh%has_confine) call lookup_confine(hh%sm,name,ff)
+ else if(index(name,'local.')==1) then
+   if(hh%has_local) call lookup_local(hh%ls,name,ff)
  else if(hh%done) then
    call lookup_run(hh,name,ff)
  end if
@@ -1880,10 +2219,121 @@
      call put_none(ff,2)
    end if
  case default
-   continue
+   if(index(name,'channel.logder.')==1 .or. &
+&     index(name,'channel.ghosts.')==1) call lookup_tests(hh,name,ff)
  end select
  return
  end subroutine lookup_channel
+
+ subroutine lookup_tests(hh,name,ff)
+
+!! the field name of a channel's tests (channel.logder.*,
+!! channel.ghosts.*), copied, per kappa of the channel; its arrays of size
+!! 0 without them
+!!
+!! @param hh  the handle, which holds a channel
+!! @param name  the field's name
+!! @param ff  the field
+
+!Input variables
+ type(handle_t), target, intent(in) :: hh
+ character(len=*), intent(in) :: name
+
+!Output variables
+ type(field_t), intent(out) :: ff
+
+!Local variables
+ integer :: l1,mk
+ logical :: has
+
+ has=hh%has_ctests
+ l1=hh%chan%l1
+ mk=hh%chan%mkap
+ associate(tt=>hh%ct,gh=>hh%ct%gh)
+   select case(name)
+   case('channel.logder.ne')
+     call put(ff,tt%ne)
+   case('channel.logder.rl')
+     call put(ff,tt%rl)
+   case('channel.logder.rmax')
+     call put(ff,tt%rmax)
+   case('channel.logder.rcmax')
+     call put(ff,tt%rcmax)
+   case('channel.logder.exact')
+     call put(ff,tt%exact)
+   case('channel.logder.ee')
+     if(has) then
+       call put(ff,tt%ee)
+     else
+       call put_none(ff,1)
+     end if
+   case('channel.logder.ae')
+     if(has) then
+       call put(ff,tt%ae)
+     else
+       call put_none(ff,2)
+     end if
+   case('channel.logder.ps')
+     if(has) then
+       call put(ff,tt%ps)
+     else
+       call put_none(ff,2)
+     end if
+   case('channel.ghosts.nrow')
+     call put(ff,gh%nrow(l1,1:merge(mk,0,has)))
+   case('channel.ghosts.nn')
+     call put(ff,gh%nn(:,l1,1:merge(mk,0,has)))
+   case('channel.ghosts.ee')
+     call put(ff,gh%ee(:,:,l1,1:merge(mk,0,has)))
+   case('channel.ghosts.least')
+     call put(ff,gh%least(:,l1,1:merge(mk,0,has)))
+   case('channel.ghosts.nminus')
+     call put(ff,gh%nminus(l1,1:merge(mk,0,has)))
+   case('channel.ghosts.minus')
+     call put(ff,gh%minus(:,l1,1:merge(mk,0,has)))
+   case('channel.ghosts.nplus')
+     call put(ff,gh%nplus(l1,1:merge(mk,0,has)))
+   case('channel.ghosts.plus')
+     call put(ff,gh%plus(:,:,l1,1:merge(mk,0,has)))
+   case('channel.ghosts.ecut')
+     call put(ff,gh%ecut(l1,1:merge(mk,0,has)))
+   case('channel.ghosts.basis')
+     call put(ff,gh%basis(l1,1:merge(mk,0,has)))
+   case default
+     continue
+   end select
+ end associate
+ return
+ end subroutine lookup_tests
+
+ subroutine lookup_local(ls,name,ff)
+
+!! the field name of a local potential (local.*), copied, not found if it
+!! is none of its
+!!
+!! @param ls  the local potential
+!! @param name  the field's name
+!! @param ff  the field
+
+!Input variables
+ type(local_stage_t), intent(in) :: ls
+ character(len=*), intent(in) :: name
+
+!Output variables
+ type(field_t), intent(out) :: ff
+
+ select case(name)
+ case('local.lloc')
+   call put(ff,nint(ls%key(1)))
+ case('local.rcloc')
+   call put(ff,ls%lp%rcloc)
+ case('local.vloc')
+   call put(ff,ls%lp%vloc)
+ case default
+   continue
+ end select
+ return
+ end subroutine lookup_local
 
  subroutine lookup_confine(sm,name,ff)
 

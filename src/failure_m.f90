@@ -683,6 +683,21 @@
 !> run_channel (oncvpsp_run_m.f90): run_channel: ERROR the mode is 0, 1
 !> or 2
  integer, parameter, public :: msg_run_channel_mode=185
+!> run_stages (oncvpsp_run_m.f90): run_stages: ERROR the channel l= is
+!> not of this input or atom
+ integer, parameter, public :: msg_run_stages_channel=186
+!> run_channel (oncvpsp_run_m.f90): run_channel: ERROR the local potential
+!> is not of this input or atom
+ integer, parameter, public :: msg_run_channel_local=187
+!> run_channel (oncvpsp_run_m.f90): run_channel: ERROR the tests need mode
+!> 1; the window is emin < emax, de > 0
+ integer, parameter, public :: msg_run_channel_tests=188
+!> oncv_channel_local_toml (oncvpsp_c_m.F90): local_of: ERROR the handle
+!> holds no local potential
+ integer, parameter, public :: msg_c_no_local=189
+!> oncv_assemble_toml (oncvpsp_c_m.F90): oncv_assemble_toml: ERROR a
+!> handle holds no channel, two have one l, or an l has none
+ integer, parameter, public :: msg_c_assemble=190
 
 ! The warnings (warn's id), each with its routine, file and message, and
 ! what the record's index is

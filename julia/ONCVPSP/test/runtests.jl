@@ -94,6 +94,25 @@ exe = read("exe.out", String)
         @test has_node(data, ae, 0; pseudopotentials=pp) ==
               (ch.ifail != 0 && ch.failure.msg == ONCVPSP.MSG_PSPOT_NODE)
     end
+    # the run assembled from channels made on the local potential alone
+    loc = local_potential(data, ae; text=false)
+    @test loc isa Local && axes_ranks(loc)
+    tiles = ONCVPSP.Channel[]
+    for ll in 0:dims.lmax
+        ch = channel(data, ae, ll; mode=:projectors, loc=loc, tests=true, text=false)
+        mk = size(ch["channel.logder.ae"], 2)
+        @test ch["channel.logder.ae"] == fields["tests.logder.ae"][:, ll+1, 1:mk]
+        ONCVPSP.isexact(ch) &&
+            @test ch["channel.logder.ps"] == fields["tests.logder.ps"][:, ll+1, 1:mk]
+        ll == dims.lloc || push!(tiles, ch)
+    end
+    @test same(assemble(data, ae, tiles; loc=loc, text=false))
+    err = try
+        assemble(data, ae, tiles[2:end]; text=false)
+    catch ee
+        ee
+    end
+    @test err isa OncvpspError && err.kind === :input && err.msg == 190
     @test coupled(run, 0; text=false)["pot.vkb"] == vkb
     @test confine(run; radii=(), walls=())["confine.nmiss"] == -1
     conf = confine(run; walls=())

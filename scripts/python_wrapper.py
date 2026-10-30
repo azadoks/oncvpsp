@@ -165,6 +165,54 @@ def main():
             ch.ifail == 0
             or isinstance(ch.error(), oncvpsp.NodeError) == (ch.failure.msg == 122),
         )
+    # the run assembled from channels made on the local potential alone
+    loc = oncvpsp.local_potential(data, ae, text=False)
+    check("the local potential", isinstance(loc, oncvpsp.Local) and axes_ranks(loc))
+    tiles = []
+    for ll in range(dims.lmax + 1):
+        ch = oncvpsp.channel(
+            data, ae, ll, "projectors", local=loc, tests=True, text=False
+        )
+        check(f"channel {ll}'s tests' axes", axes_ranks(ch))
+        mk = ch["channel.logder.ae"].shape[1]
+        check(
+            f"channel {ll}'s log derivatives",
+            np.array_equal(
+                ch["channel.logder.ae"], fields["tests.logder.ae"][:, ll, :mk]
+            )
+            and (
+                not ch.exact
+                or np.array_equal(
+                    ch["channel.logder.ps"], fields["tests.logder.ps"][:, ll, :mk]
+                )
+            ),
+        )
+        check(
+            f"channel {ll}'s ghosts near the run's",
+            np.allclose(
+                ch["channel.ghosts.ee"],
+                fields["tests.ghosts.ee"][:, :, ll, :mk],
+                atol=1e-5,
+            ),
+        )
+        if ll != dims.lloc:
+            tiles.append(ch)
+    check(
+        "the assembled run, the run's",
+        same(oncvpsp.assemble(data, ae, tiles, local=loc, text=False), fields),
+    )
+    try:
+        oncvpsp.assemble(data, ae, tiles[1:], text=False)
+        check("an l missing raises", False)
+    except oncvpsp.InputError as err:
+        check("an l missing", err.msg == 190)
+    pp = dict(data["pseudopotentials"], qcut=[qq * 1.01 for qq in qcut])
+    try:
+        oncvpsp.assemble(data, ae, tiles, local=loc, text=False, pseudopotentials=pp)
+        check("a channel of another input raises", False)
+    except oncvpsp.InputError as err:
+        check("a channel of another input", err.msg in (186, 187))
+
     with oncvpsp.coupled(run, 0, text=False) as again:
         check("the model core again", np.array_equal(again["pot.vkb"], vkb))
     check("closed at the end of the with block", repr(again).endswith("closed>"))

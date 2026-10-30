@@ -561,6 +561,18 @@ So the interface is a hybrid:
       Symbols; `coupled` takes `fcfact`, `rcfact` as keywords. Julia's
       run is `oncvpsp` (`ONCVPSP.run` kept), its file `Base.write(path,
       run)`, and runs and atoms take a `do` block.
+- [x] Runs assembled from channels (`api_version` 6), for oncvpsp-opt's
+      search by channels: `oncv_local_toml` makes the local potential
+      alone (`run_local`, with the local channel for lloc < 4);
+      `oncv_channel_local_toml` a channel on it, with its log derivatives
+      and ghost tests (`channel_tests`) on the potential before the
+      run's ionic tail, `channel.logder.exact` when they read it no
+      further than rcmax and so are the run's bit for bit; and
+      `oncv_assemble_toml` the run from such channels (`run_stages`'
+      `chans`), the whole run's bit for bit. Each channel carries what it
+      was made from (`channel_key`), which the assembly checks against
+      its input. The test inputs give ghost counts equal to the run's and
+      energies within 1e-6 Ha.
 - [x] Valgrind on the C test (nr, sr, fr, lloc 2): no errors; 2 kB lost
       per PSML file written, xmlf90's element stack, which
       `xml_Close` now frees (`cmake/patches/xmlf90-1.6.3.patch`, whose

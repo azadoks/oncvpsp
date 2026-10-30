@@ -70,6 +70,38 @@ first projector, the cheapest way to scan for a node. The input of a
 channel or a run from an atom must be of that atom: the same nucleus,
 configuration, functional, mesh and speed of light.
 
+### Runs assembled from channels
+
+A channel depends on its own inputs and the all-electron atom alone, so a
+search that changes one channel at a time can keep channels and assemble
+runs from them:
+
+| Python | Julia | What |
+|---|---|---|
+| `local_potential(inp, ae)` | `local_potential(inp, ae)` | the local potential alone, a `Local` (fields `local.*`) |
+| `channel(inp, ae, l, "projectors", local=loc, tests=True)` | `channel(inp, ae, l; mode=:projectors, loc, tests=true)` | a channel on that local potential, with its own tests |
+| `assemble(inp, ae, channels, local=loc)` | `assemble(inp, ae, channels; loc)` | the run from those channels |
+
+`assemble` takes one channel of each l from 0 to lmax, in any order, and
+for lloc < 4 the local channel from the `Local` (or a channel of l =
+lloc). Each channel, and the local potential, must be of the input and the
+atom given, checked by what each was made from; a run assembled from them
+is then the whole run's bit for bit (its text output has none of the
+channels' lines). In Julia the keyword is `loc`, `local` being a keyword
+of the language.
+
+A channel's tests are its log derivatives (`channel.logder.*`, on the
+input's window or `energies=(emin, emax, de)`) and its ghost tests
+(`channel.ghosts.*`). A whole run makes them on the local potential after
+switching it, beyond the largest core radius rcmax, to the ionic tail of
+the pseudo-atom's own density, which depends on every channel and the
+model core; a channel alone has the potential before that switch. Its log
+derivatives are therefore the run's bit for bit when they read the
+potential no further than rcmax (Python `ch.exact`, Julia `ONCVPSP.isexact(ch)`, the field
+`channel.logder.exact`), and otherwise differ from them at round-off in
+the test inputs. Its ghost tests reach beyond rcmax always: in the test
+inputs their counts are the run's and their energies within 1e-6 Ha.
+
 ## Results
 
 Each function returns a handle, a mapping (Python's `Mapping`, Julia's

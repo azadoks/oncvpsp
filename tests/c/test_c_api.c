@@ -60,7 +60,8 @@ static void check(const char *label, int ok)
 static int in_group(const char *name, const char *group)
 {
     if (strcmp(group, "run") == 0)
-        return strncmp(name, "channel.", 8) != 0 && strncmp(name, "confine.", 8) != 0;
+        return strncmp(name, "channel.", 8) != 0 && strncmp(name, "confine.", 8) != 0 &&
+               strncmp(name, "local.", 6) != 0;
     return strncmp(name, group, strlen(group)) == 0 && name[strlen(group)] == '.';
 }
 
@@ -251,6 +252,50 @@ static double core_value(const char *text, const char *key)
     return value;
 }
 
+/* The run assembled from channels made on the local potential alone, its
+ * fields the whole run's bit for bit; each channel's log derivatives the
+ * run's when exact */
+static void assembled(void *hrun, void *ha, int irel, const char *text, size_t len)
+{
+    void *hl = oncv_new(), *hh = oncv_new(), *chans[ONCV_MXLIN + 1];
+    oncv_dims_t dr;
+    int ll, nn, nchan = 0, exact, rank, shp[ONCV_MXRANK];
+    (void)irel;
+    oncv_dims(hrun, &dr);
+    check("local potential", oncv_local_toml(hl, ha, text, len) == 0);
+    oncv_get_int(hl, NAME("local.lloc"), &nn, 1);
+    check("local.lloc", nn == dr.lloc);
+    for (ll = 0; ll <= dr.lmax; ll++) {
+        void *hc = oncv_new();
+        check("channel on the local potential",
+              oncv_channel_local_toml(hc, ha, hl, text, len, ll, 1, 1, NULL) == 0);
+        oncv_get_int(hc, NAME("channel.logder.exact"), &exact, 1);
+        /* the kappas of the channel, 1 for l=0 of a fully relativistic run */
+        same_slice(hc, "channel.logder.ae", hrun, "tests.logder.ae", 1, ll, 1);
+        if (exact) same_slice(hc, "channel.logder.ps", hrun, "tests.logder.ps", 1, ll, 1);
+        check("the tests need mode 1",
+              oncv_channel_local_toml(hh, ha, hl, text, len, ll, 0, 1, NULL) % 100 ==
+              ONCV_FAIL_INPUT);
+        if (ll == dr.lloc) {
+            oncv_free(hc);
+            continue;
+        }
+        chans[nchan++] = hc;
+    }
+    check("assembled", oncv_assemble_toml(hh, ha, hl, chans, nchan, text, len, 0) == 0);
+    same_fields(hh, hrun, "run");
+    if (nchan > 0) {
+        check("an l missing",
+              oncv_assemble_toml(hh, ha, NULL, chans, nchan - (dr.lloc == 4), text, len, 0) %
+              100 == ONCV_FAIL_INPUT);
+    }
+    check("no local potential", oncv_shape(hh, NAME("local.vloc"), &rank, shp) % 100 ==
+          ONCV_FAIL_INPUT);
+    while (nchan > 0) oncv_free(chans[--nchan]);
+    oncv_free(hl);
+    oncv_free(hh);
+}
+
 /* The stage handles of the input text, against the whole run hrun */
 static void stages(void *hrun, int irel, const char *text, size_t len)
 {
@@ -310,6 +355,7 @@ static void stages(void *hrun, int irel, const char *text, size_t len)
         check("channel.l", nn == ll);
     }
     free(vloc0);
+    assembled(hrun, ha, irel, text, len);
     for (ll = 0; ll <= dr.lmax; ll++) {
         check("the node test", oncv_channel_toml(hh, ha, text, len, ll, 2) == 0);
         check("no channel after the node test",

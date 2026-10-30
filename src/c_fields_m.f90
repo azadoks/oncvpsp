@@ -359,8 +359,60 @@
 &  field_info_t('i confine.inf','[all4,all5,top4,top5]','', &
 &    '1 where an edge never reaches the tolerance of confine.cut')]
 
-!> the fields, in the order oncv_field_name numbers them
+!> the local potential alone and a channel's tests (api 6)
+ type(field_info_t), parameter :: fields_tiles(*)=[ &
+&  field_info_t('i local.lloc','','', &
+&    'l of the local potential, 4 for the polynomial'), &
+&  field_info_t('r local.rcloc','','bohr', &
+&    'its matching radius'), &
+&  field_info_t('r local.vloc','r','Ha', &
+&    'the screened local potential on the mesh, before a whole run''s'// &
+&    ' ionic tail beyond rcmax'), &
+&  field_info_t('i channel.logder.ne','','', &
+&    'number of energies of the channel''s log derivatives, 0 without'// &
+&    ' its tests'), &
+&  field_info_t('r channel.logder.ee','ie','Ha', &
+&    'their energies, from the window''s top down'), &
+&  field_info_t('r channel.logder.rl','','bohr', &
+&    'their radius, as the run''s'), &
+&  field_info_t('r channel.logder.ae','ie ikap','rad', &
+&    'the all-electron log derivative at rl, atan(r psi''/psi)'), &
+&  field_info_t('r channel.logder.ps','ie ikap','rad', &
+&    'the pseudo log derivative at rl, on the local potential before'// &
+&    ' the ionic tail'), &
+&  field_info_t('r channel.logder.rmax','','bohr', &
+&    'the largest radius of the local potential they read'), &
+&  field_info_t('r channel.logder.rcmax','','bohr', &
+&    'the input''s largest core radius, where a whole run''s ionic '// &
+&    'tail starts'), &
+&  field_info_t('i channel.logder.exact','','', &
+&    '1 if they are the input''s whole run''s bit for bit (rmax at or '// &
+&    'inside rcmax)'), &
+&  field_info_t('i channel.ghosts.nrow','ikap','', &
+&    'the channel''s tests.ghosts.nrow, on the local potential before'// &
+&    ' the ionic tail'), &
+&  field_info_t('i channel.ghosts.nn','istate ikap','', &
+&    'the channel''s tests.ghosts.nn'), &
+&  field_info_t('r channel.ghosts.ee','[e_bound,e_basis] istate ikap','Ha', &
+&    'the channel''s tests.ghosts.ee'), &
+&  field_info_t('r channel.ghosts.least','[energy,r_rc] ikap','[Ha,1]', &
+&    'the channel''s tests.ghosts.least'), &
+&  field_info_t('i channel.ghosts.nminus','ikap','', &
+&    'the channel''s tests.ghosts.nminus'), &
+&  field_info_t('r channel.ghosts.minus','ighost ikap','Ha', &
+&    'the channel''s tests.ghosts.minus'), &
+&  field_info_t('i channel.ghosts.nplus','ikap','', &
+&    'the channel''s tests.ghosts.nplus'), &
+&  field_info_t('r channel.ghosts.plus','[energy,r_rc] ighost ikap','[Ha,1]', &
+&    'the channel''s tests.ghosts.plus'), &
+&  field_info_t('r channel.ghosts.ecut','ikap','Ha', &
+&    'the channel''s tests.ghosts.ecut'), &
+&  field_info_t('i channel.ghosts.basis','ikap','', &
+&    'the channel''s tests.ghosts.basis')]
+
+!> the fields, in the order oncv_field_name numbers them (a new group
+!> last, so that the numbers of the others stay)
  type(field_info_t), parameter :: fields(*)=[fields_run,fields_tests, &
-&  fields_core,fields_ae,fields_stage]
+&  fields_core,fields_ae,fields_stage,fields_tiles]
 
  end module c_fields_m
