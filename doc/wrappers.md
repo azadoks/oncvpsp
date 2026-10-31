@@ -121,8 +121,9 @@ search, smooth in r_s (doc/core_correction.md). For every icmod 6 to 9 the
 fields `core.budget.pnorm` (the error's 16-mean over `core.budget.qwin`,
 smooth), `core.budget.emax` (its largest, only continuous),
 `core.budget.share`, `err_q` and `err_signed` (the signed errors at the
-shares of the budget, TOML `error_shares`) and `core.budget.margin` (the
-fill's monotonicity margin) report the model. icmod 9 at icmod 6's r_s is
+shares of the budget, TOML `error_shares`), `core.budget.margin` (the
+fill's monotonicity margin), `core.budget.slope0` (its central slope,
+smooth) and `core.budget.crater` (its crater's depth) report the model. icmod 9 at icmod 6's r_s is
 icmod 6's model bit for bit.
 
 ## Results

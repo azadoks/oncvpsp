@@ -154,6 +154,10 @@
    real(dp) :: err_signed(mxshare)=0.0d0
 !> the fill's monotonicity margin
    real(dp) :: margin=0.0d0
+!> the fill's central slope, -(d rho/du)/rho(r_s) at u = 0
+   real(dp) :: slope0=0.0d0
+!> the depth of the fill's crater, (max rho - rho(0))/rho(0) over [0, r_s]
+   real(dp) :: crater=0.0d0
 !> the grid's density cutoff of the largest error of err_max (bohr**-1)
    real(dp) :: qpk=0.0d0
 !> the largest r_s, the smallest rc or the last radius with core charge
@@ -414,17 +418,21 @@
 ! inputs and can jump (M-9).  icmod=9 is the minimum tail at the radius r_s
 ! of the input, icmod=8 Martins' fill there, with no search: the model is
 ! smooth in r_s and the inputs, and the budget is the caller's.  The fill
-! must not rise (else a failure: no other fill stands in), and r_s must
-! lie in [r_top/50, r_top].
+! may rise, as long as it stays positive (else a failure: no other fill
+! stands in): the minimum tail, fitted to q >= q_b only, can take a crater
+! at the centre, which lives far below q_b (on 53_I, up to 18 % of rho(0)
+! for r_s 0.69..0.88; refusing it left a hole in the feasible r_s at the
+! budget's boundary).  r_s must lie in [r_top/50, r_top].
 !
 ! For every icmod the report has the error's smooth measures at the model
 ! (budget_measures): the 16-mean of the error over q_b..qhi,
-! ((1/(qhi-q_b)) int |e|**16 dq)**(1/16) (trapezoids on the grid of 0.1
-! bohr**-1), the signed errors at the density cutoffs 2*sqrt(2*s*ecut) of
-! the shares s (error_shares; slack, 1, 1.5, 2 by default), and the fill's
-! monotonicity margin, the least over u = (r/r_s)**2 in [0, 1] of
-! -(d rho/du)/rho(r_s).  The largest error is C0 in the inputs (its
-! argmax hops between the crests of a ripple), and so is its absolute
+! ((1/(qhi-q_b)) int |e|**16 dq)**(1/16), the signed errors at the density
+! cutoffs 2*sqrt(2*s*ecut) of the shares s (error_shares; slack, 1, 1.5, 2
+! by default), and the fill's shape: its monotonicity margin, the least
+! over u = (r/r_s)**2 in [0, 1] of -(d rho/du)/rho(r_s) (C0 where its least
+! point hops), its central slope, that at u = 0 (smooth), and its crater's
+! depth, (max rho - rho(0))/rho(0).  The largest error is C0 in the inputs
+! (its argmax hops between the crests of a ripple), and so is its absolute
 ! value where it changes sign.
 
  subroutine modcore_budget(icmod,rhotps,rhoc,rhomod,corepw,fcfact,ecutw, &
@@ -468,7 +476,7 @@
 
  use failure_m, only: warnings_t, warn_merge, warn, wrn_budget_deprecated, &
 &                    fail_input, fail_construction, failed, &
-&                    msg_budget_rs_range, msg_budget_fill_monotone
+&                    msg_budget_rs_range, msg_budget_fill_positive
  use modcore_m, only: core_pieces
  use pieces_m, only: piecewise_t
  use results_m, only: core_budget_t
@@ -528,9 +536,9 @@
    end if
    if(bc%fill%ifill==0) then
      write(iout,'(/a,f12.6,a)') &
-&         'modcore_budget: ERROR the fill is not monotone at r_s=',rs_in, &
+&         'modcore_budget: ERROR the fill is not positive at r_s=',rs_in, &
 &         ' bohr'
-     ifail=failed(fail_construction,msg_budget_fill_monotone)
+     ifail=failed(fail_construction,msg_budget_fill_positive)
      return
    end if
  else
@@ -1138,6 +1146,8 @@
  res%err_q=bc%err_q
  res%err_signed=bc%err_signed
  res%margin=bc%margin
+ res%slope0=bc%slope0
+ res%crater=bc%crater
  if(icmod==7) then
    res%r_s6=bc%rs6
    res%mismatch=bc%mismatch
@@ -1199,6 +1209,8 @@
 &        bc%err_signed(ii)
  end do
  write(iout,'(a,1p,e24.16)') '  fill monotonicity margin',bc%margin
+ write(iout,'(a,1p,e24.16)') '  fill central slope',bc%slope0
+ write(iout,'(a,1p,e24.16)') '  fill crater depth',bc%crater
  if(icmod==7) then
    write(iout,'(a,f12.6)') '  smallest fitting radius (icmod 6)',bc%rs6
    write(iout,'(a,1p,e12.4,a)') '  hardness mismatch',bc%mismatch,' Ha'
@@ -1593,7 +1605,15 @@
      if(bc%ifail/=0) return
      call tail_monotone(bc%fill,mono,bc%ifail)
      if(bc%ifail/=0) return
-     if(.not. mono .and. bc%fill_mode==1) return
+! icmod 9: a tail that rises (a crater at the centre, below q_b where the
+! fit does not look) is kept if it stays positive
+     if(.not. mono .and. bc%fill_mode==1) then
+       bc%fill%ifill=1
+       mono=fill_least(bc%fill,bc%ifail)>0.0d0
+       bc%fill%ifill=0
+       if(bc%ifail/=0) return
+       if(.not. mono) return
+     end if
    end if
    if(mono) then
      ifill=1
@@ -1607,7 +1627,10 @@
      cco=(rs*l2 - l1)/(8.0d0*rs**3)
      bco=(l1 - 4.0d0*cco*rs**3)/(2.0d0*rs)
      aco=log(dm(1)) - bco*rs**2 - cco*rs**4
-     if(bco>0.0d0 .or. bco + 2.0d0*cco*rs**2>0.0d0) return
+! Martins' fill rises if b > 0 or b + 2c r_s**2 > 0; icmod 8 keeps it, as
+! it is positive
+     if(bc%fill_mode/=2 .and. &
+&       (bco>0.0d0 .or. bco + 2.0d0*cco*rs**2>0.0d0)) return
      ifill=2
      do kk=1,mmax
        if(rr(kk)>=rs) exit
@@ -1734,6 +1757,9 @@
      return
    end if
    call fill_margin(bc%fill,bc%margin,ifail)
+   if(ifail/=0) return
+   bc%slope0=fill_slope(bc%fill,0.0d0)
+   bc%crater=fill_crater(bc%fill,ifail)
  end associate
  return
  end subroutine budget_measures
@@ -1789,6 +1815,130 @@
  end function fill_slope_of
 
  end subroutine fill_margin
+
+ real(dp) function fill_least(fill,ifail)
+
+!! the least of rho(u)/rho(r_s) of the fill over u = (r/r_s)**2 in [0, 1],
+!! on 400 intervals and by Brent's method about the grid's least
+!!
+!! @param fill  the fill
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use root_m, only: root_fmin
+
+!Input variables
+ type(fill_t), intent(in) :: fill
+
+!Output variables
+ integer, intent(out) :: ifail
+
+!Local variables
+ integer, parameter :: nu=400
+ real(dp) :: gu(0:nu),fmin
+ integer :: kk,kmin
+ ifail=0
+ do kk=0,nu
+   gu(kk)=fill_ratio(fill,dble(kk)/nu)
+ end do
+ kmin=minloc(gu,1)-1
+ call root_fmin(fill_ratio_of,dble(max(0,kmin-1))/nu, &
+&               dble(min(nu,kmin+1))/nu,fmin,ifail)
+ fill_least=min(fmin,gu(kmin))
+ return
+
+ contains
+
+ real(dp) function fill_ratio_of(xx)
+
+!! fill_ratio of this fill, for root_fmin
+!!
+!! @param xx  the argument
+
+!Input variables
+ real(dp), intent(in) :: xx
+
+ fill_ratio_of=fill_ratio(fill,xx)
+ return
+ end function fill_ratio_of
+
+ end function fill_least
+
+ real(dp) function fill_crater(fill,ifail)
+
+!! the depth of the fill's crater at the centre: (max rho - rho(0))/rho(0)
+!! over u = (r/r_s)**2 in [0, 1], 0 if the fill falls from the centre; the
+!! largest on 400 intervals and by Brent's method about it
+!!
+!! @param fill  the fill
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use root_m, only: root_fmin
+
+!Input variables
+ type(fill_t), intent(in) :: fill
+
+!Output variables
+ integer, intent(out) :: ifail
+
+!Local variables
+ integer, parameter :: nu=400
+ real(dp) :: gu(0:nu),fmin
+ integer :: kk,kmax
+ ifail=0
+ fill_crater=0.0d0
+ do kk=0,nu
+   gu(kk)=fill_ratio(fill,dble(kk)/nu)
+ end do
+ kmax=maxloc(gu,1)-1
+ if(kmax==0) return
+ call root_fmin(neg_ratio_of,dble(max(0,kmax-1))/nu, &
+&               dble(min(nu,kmax+1))/nu,fmin,ifail)
+ if(ifail/=0) return
+ fill_crater=max(-fmin,gu(kmax))/gu(0) - 1.0d0
+ return
+
+ contains
+
+ real(dp) function neg_ratio_of(xx)
+
+!! minus fill_ratio of this fill, for root_fmin
+!!
+!! @param xx  the argument
+
+!Input variables
+ real(dp), intent(in) :: xx
+
+ neg_ratio_of=-fill_ratio(fill,xx)
+ return
+ end function neg_ratio_of
+
+ end function fill_crater
+
+ real(dp) function fill_ratio(fill,uu)
+
+!! rho(u)/rho(r_s) of the fill at u = (r/r_s)**2
+!!
+!! @param fill  the fill
+!! @param uu  u
+
+!Input variables
+ real(dp), intent(in) :: uu
+ type(fill_t), intent(in) :: fill
+
+!Local variables
+ real(dp) :: r2
+ associate(bco=>fill%bco,cco=>fill%cco,rs=>fill%rs)
+   if(fill%ifill==1) then
+     fill_ratio=leg_value(fill,2.0d0*uu-1.0d0,0)/leg_value(fill,1.0d0,0)
+   else
+     r2=rs**2
+     fill_ratio=exp(bco*r2*(uu-1.0d0) + cco*r2**2*(uu**2-1.0d0))
+   end if
+ end associate
+ return
+ end function fill_ratio
 
  real(dp) function fill_slope(fill,uu)
 

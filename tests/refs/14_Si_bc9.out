@@ -329,6 +329,8 @@ Model core correction: minimum tail at r_s (icmod 9)
     1.500000   17.320508  1.0851644984149025E-05
     2.000000   20.000000  5.7702709594568513E-06
   fill monotonicity margin  1.0902790470683512E+00
+  fill central slope  4.7469175200972495E+00
+  fill crater depth  0.0000000000000000E+00
 
 Ionic tail switched over r =  2.7000 to  5.4026 a.u., converged in  9 steps
 

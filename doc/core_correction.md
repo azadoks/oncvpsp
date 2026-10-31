@@ -311,9 +311,14 @@ icmod==8, 9:
     q_b = 2 sqrt(2 slack ecut), and errmax defines the needed cutoff. r_s
     (bohr) must be in (0, min(rc)] (check_data) and within [r_top/50,
     r_top], r_top the smaller of min(rc) and the last radius with core
-    charge (else ONCV_FAIL_INPUT, msg 191). A fill that rises somewhere on
-    [0, r_s] is a failure (fail_construction, msg 192): no other fill
-    stands in.
+    charge (else ONCV_FAIL_INPUT, msg 191). The fill may rise, but a fill
+    that is not positive on [0, r_s] is a failure (fail_construction, msg
+    192): no other fill stands in. The minimum tail is fitted to the
+    cutoffs from q_b only, so structure far below q_b costs it nothing, and
+    in a band of r_s it takes a crater at the centre (53_I, PseudoDojo I-d
+    at fcfact -1, slack 0.7: r_s 0.69 to 0.88 bohr, up to 18 % above
+    rho(0)); refusing a rising fill left a hole in the feasible r_s, at the
+    budget's boundary.
 
     ```
         # MODEL CORE CHARGE
@@ -333,6 +338,8 @@ For icmod 6 to 9 the out file reports the error's measures at the model:
         0.880000   13.266499 -9.8148998082709087E-05
         ...
     fill monotonicity margin  1.0902790470683512E+00
+    fill central slope  1.0902790470683512E+00
+    fill crater depth  0.0000000000000000E+00
 
     The window is [q_b, q_hi], the minimum tail's (q_hi = 3 times the cutoff
     of ecut). The 16-mean ((1/(q_hi - q_b)) int |e|**16 dq)**(1/16), by
@@ -345,7 +352,10 @@ For icmod 6 to 9 the out file reports the error's measures at the model:
     step where a density crosses it at a mesh point). The margin is the
     least of -(d rho/du)/rho(r_s) over u = (r/r_s)**2 in [0, 1]: negative
     exactly where the fill rises, continuous but with kinks where its least
-    point hops.
+    point hops. The central slope is that at u = 0, smooth, and on 53_I it
+    falls through 0 well before the crater forms (4.7 at r_s 0.64, 0.6 at
+    0.68, 0 at 0.687); the crater's depth is (max rho - rho(0))/rho(0), 0
+    when the fill falls from the centre.
 
 1) S. G. Louie, S. Froyen, and M. L. Cohen, Phys. Rev. B 43, 1993 (1991).
 

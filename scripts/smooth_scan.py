@@ -64,10 +64,11 @@ kernel_diff.py):
           test comes closest to flagging (from the DIAGNOSTICS block; without
           one, the energies of the table printed to 6 decimals)
   budget  the budgeted model core's smooth measures (icmod 6 to 9): the
-          16-mean of the xc error and the signed errors at the shares
-          (relative to the largest of them), read from the out file's lines
-          (17 digits); not the fill's monotonicity margin, a least value
-          over u that is C0 where its argmin hops
+          16-mean of the xc error, the signed errors at the shares
+          (relative to the largest of them) and the fill's central slope,
+          read from the out file's lines (17 digits); not the fill's
+          monotonicity margin, a least value over u that is C0 where its
+          argmin hops, nor its crater's depth, C1 where it leaves 0
 
 The last three are what the optimizer reads (doc/smoothness_plan.md, order
 of the remaining work); from an output without the DIAGNOSTICS block only a
@@ -321,6 +322,8 @@ def budget_part(path):
         words = line.split()
         if line.startswith("    16-mean"):
             out["budget:pnorm:x"] = float(words[1])
+        elif line.startswith("  fill central slope"):
+            out["budget:slope0:x"] = float(words[-1])
         elif line.startswith("  signed errors: share"):
             for row in lines[i + 1 :]:
                 cols = row.split()

@@ -976,10 +976,10 @@ oncvpsp_add_test(errors error sr icmod9_rs_range error_test.sh
     $<TARGET_FILE:oncvpspsr> "modcore_budget: ERROR r_s=    0.010000 bohr outside"
     "@DIR@"
     "${data}/14_Si_bc9.dat" "s/^   9   25\\.0   1\\.0e-4   0\\.43   0\\.88$/   9   25.0   1.0e-4   0.01   0.88/")
-oncvpsp_add_test(errors error sr icmod9_fill_monotone error_test.sh
-    $<TARGET_FILE:oncvpspsr> "modcore_budget: ERROR the fill is not monotone at r_s="
+oncvpsp_add_test(errors error sr icmod9_fill_positive error_test.sh
+    $<TARGET_FILE:oncvpspsr> "modcore_budget: ERROR the fill is not positive at r_s="
     "@DIR@"
-    "${data}/14_Si_bc9.dat" "s/^   9   25\\.0   1\\.0e-4   0\\.43   0\\.88$/   9   25.0   1.0e-4   0.30   0.88/")
+    "${data}/14_Si_bc9.dat" "s/^   9   25\\.0   1\\.0e-4   0\\.43   0\\.88$/   9   25.0   1.0e-4   0.20   0.88/")
 oncvpsp_add_test(errors error sr budget_cutoff_value error_test.sh
     $<TARGET_FILE:oncvpspsr> "Read ERROR, input data file line  34"
     "@DIR@"

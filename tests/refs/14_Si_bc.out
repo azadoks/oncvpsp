@@ -331,6 +331,8 @@ Model core correction: budgeted core (icmod 6)
     1.500000   17.320508  6.8221400268593264E-05
     2.000000   20.000000  6.9474971141297946E-05
   fill monotonicity margin  7.0400792345340946E-01
+  fill central slope  8.0409938945628827E+00
+  fill crater depth  0.0000000000000000E+00
 
 Ionic tail switched over r =  2.7000 to  5.4026 a.u., converged in  9 steps
 

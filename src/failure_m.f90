@@ -702,8 +702,8 @@
 !> outside [r_lo, r_top] = [ , ]
  integer, parameter, public :: msg_budget_rs_range=191
 !> modcore_budget (modcore_budget_m.f90): modcore_budget: ERROR the fill is
-!> not monotone at r_s= bohr
- integer, parameter, public :: msg_budget_fill_monotone=192
+!> not positive at r_s= bohr
+ integer, parameter, public :: msg_budget_fill_positive=192
 !> budget_measures (modcore_budget_m.f90): modcore_budget: ERROR the error
 !> share s= has its cutoff beyond Ha
  integer, parameter, public :: msg_budget_share_range=193

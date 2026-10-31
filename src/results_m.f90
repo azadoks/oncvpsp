@@ -108,6 +108,12 @@
 !> the fill's monotonicity margin: the least of -(d rho/du)/rho(r_s) over
 !> u = (r/r_s)**2 in [0, 1], negative where the fill rises
    real(dp) :: margin=0.0d0
+!> the fill's central slope, -(d rho/du)/rho(r_s) at u = 0, smooth in the
+!> inputs
+   real(dp) :: slope0=0.0d0
+!> the depth of the fill's crater, (max rho - rho(0))/rho(0) over [0, r_s],
+!> 0 if it falls from the centre
+   real(dp) :: crater=0.0d0
  end type core_budget_t
 
 !> the model core's parameters

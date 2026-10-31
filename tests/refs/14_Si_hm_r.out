@@ -489,6 +489,8 @@ Model core correction: hardness-matched core (icmod 7)
     1.500000   11.752466  3.4329044421046962E-06
     2.000000   13.570579  2.0165970336392990E-06
   fill monotonicity margin  3.3197722909337650E+00
+  fill central slope  5.7110760575289106E+01
+  fill crater depth  0.0000000000000000E+00
   smallest fitting radius (icmod 6)    1.045263
   hardness mismatch  1.2668E-05 Ha
   radii of the basin: r_s, fill, hardness mismatch (Ha)

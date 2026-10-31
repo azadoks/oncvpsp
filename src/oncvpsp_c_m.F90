@@ -2059,6 +2059,10 @@
      call put(ff,bb%err_signed(1:bb%nshare))
    case('core.budget.margin')
      call put(ff,bb%margin)
+   case('core.budget.slope0')
+     call put(ff,bb%slope0)
+   case('core.budget.crater')
+     call put(ff,bb%crater)
    case('core.budget.cmis')
      if(allocated(bb%cmis)) then
        call put(ff,bb%cmis)
