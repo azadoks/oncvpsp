@@ -19,7 +19,7 @@
       module exc_off_pbe_m
 
       private
-      public :: excggc
+      public :: excggc, pbe_x, pbe_c
 
       contains
 
@@ -48,36 +48,22 @@ c
       real*8, intent(in) :: rho(*),r(*)
       real*8, intent(out) :: vxc(*),exc(*)
       real*8 al
-      real*8 fk,sk,ec,h
+      real*8 ec,h
       integer i
       integer, intent(in) :: mmax
 c
       real(dp), allocatable :: d(:),dpr(:),dppr(:),dlap(:)
       real(dp), allocatable :: dfdn(:),hfl(:)
       real(dp) :: pi,pi4,pi4i
-      real(dp) :: thrd
-      real(dp) :: conf,conrs
-      real(dp) :: s,ex,vx,exunif,p0,fx,fs
-      real(dp) :: rs,vcup,vcdn,dvcup,dvcdn,t,t2,ecrs
-      real(dp) :: b,q4,q5,q8,q9,hb,bec,hrs,ht,dfds
-      real(dp), parameter :: ax=-0.738558766382022405884230032680836d0
-      real(dp), parameter :: um=0.2195149727645171d0,uk=0.8040d0
-      real(dp), parameter :: ul=um/uk
-      real(dp), parameter :: gamma=0.03109069086965489503494086371273d0
-      real(dp), parameter :: bet=0.06672455060314922d0
-      real(dp), parameter :: delt=bet/gamma
+      real(dp) :: ex,dfds
 c
       al = 0.01d0 * dlog(r(101) / r(1))
 c
-      thrd = 1.0d0 / 3.0d0
       pi=4.0d0*datan(1.0d0)
       pi4=4.0d0 * pi
 
       allocate(d(mmax),dpr(mmax),dppr(mmax),dlap(mmax))
       allocate(dfdn(mmax),hfl(mmax))
-c
-      conf = (3.d0*pi**2)**thrd
-      conrs = (3.d0/(4.d0*pi))**thrd
 c
 c d is properly scaled charge density
 c
@@ -92,43 +78,10 @@ c energy per electron, df/dn and the flux h at each point
 c
       do i = 1, mmax
         if(d(i) .gt. 1.0d-18) then
-c
-c PBE exchange (EXCHPBE): f = n*exunif*Fx(s), Fs = (1/s) dFx/ds
-c
-          fk = conf * d(i) ** thrd
-          s = dabs(dpr(i)) / (2.0d0 * fk * d(i))
-          exunif = ax * d(i) ** thrd
-          p0 = 1.0d0 + ul * s * s
-          fx = 1.0d0 + uk - uk / p0
-          fs = 2.0d0 * uk * ul / (p0 * p0)
-          ex = exunif * fx
-          vx = 4.0d0 * thrd * exunif * (fx - s * s * fs)
-          dfds = exunif * fs / (8.0d0 * fk * fk * d(i))
-c
-c PBE correlation (CORPBE, zet = 0, g = 1): f = n*(ec + H(rs,t)),
-c with dH/drs and dH/dt from appendix E of [b] of CORPBE
-c
-          rs = conrs / d(i)**thrd
-          sk = dsqrt(4.0d0 * fk / pi)
-          t = dabs(dpr(i)) / (d(i) * 2.0d0 * sk)
-          call CORPBE(rs,0.0d0,t,0.0d0,0.0d0,0.0d0,1,0,ec,vcup,vcdn,
-     &                h,dvcup,dvcdn)
-          ecrs = 3.0d0 * (ec - vcup) / rs
-          t2 = t * t
-          b = delt / (dexp(-ec / gamma) - 1.0d0)
-          q4 = 1.0d0 + b * t2
-          q5 = 1.0d0 + b * t2 + b * b * t2 * t2
-          q8 = q5 * q5 + delt * q4 * q5 * t2
-          q9 = 1.0d0 + 2.0d0 * b * t2
-          hb = -bet * b * t2**3 * (2.0d0 + b * t2) / q8
-          bec = b * b * (delt / b + 1.0d0) / bet
-          hrs = -rs * thrd * hb * bec * ecrs
-          ht = 2.0d0 * bet * q9 / q8
-c
+          call pbe_x(d(i), dpr(i), ex, dfdn(i), dfds)
+          call pbe_c(d(i), dpr(i), ec, h, dfdn(i), dfds)
           exc(i) = ex + ec + h
-          dfdn(i) = vx + vcup + h + hrs - 7.0d0 * t2 * ht / 6.0d0
-          hfl(i) = 2.0d0 * (dfds + ht / (8.0d0 * sk * sk * d(i)))
-     &           * dpr(i)
+          hfl(i) = 2.0d0 * dfds * dpr(i)
         else
           exc(i) = 0.0d0
           dfdn(i) = 0.0d0
@@ -148,6 +101,103 @@ c
 c
       return
       end subroutine excggc
+c
+      subroutine pbe_x(d,g,ex,vx,dfds)
+c
+c PBE exchange (EXCHPBE) at one point: f = n*exunif*Fx(s),
+c Fx = 1 + uk - uk/(1 + ul*s**2), s = |dn/dr|/(2 kF n)
+c
+c d     density n (bohr^-3)
+c g     its gradient dn/dr
+c ex    exchange energy per electron (Ha), f/n
+c vx    df/dn at fixed sigma = (dn/dr)**2
+c dfds  df/dsigma at fixed n
+c
+      use constants_m, only: dp
+      implicit none
+c
+      real(dp), intent(in) :: d,g
+      real(dp), intent(out) :: ex,vx,dfds
+c
+      real(dp), parameter :: ax=-0.738558766382022405884230032680836d0
+      real(dp), parameter :: um=0.2195149727645171d0,uk=0.8040d0
+      real(dp), parameter :: ul=um/uk
+      real(dp) :: pi,thrd,conf,fk,s,exunif,p0,fx,fs
+c
+      thrd = 1.0d0 / 3.0d0
+      pi=4.0d0*datan(1.0d0)
+      conf = (3.d0*pi**2)**thrd
+c
+c Fs = (1/s) dFx/ds
+c
+      fk = conf * d ** thrd
+      s = dabs(g) / (2.0d0 * fk * d)
+      exunif = ax * d ** thrd
+      p0 = 1.0d0 + ul * s * s
+      fx = 1.0d0 + uk - uk / p0
+      fs = 2.0d0 * uk * ul / (p0 * p0)
+      ex = exunif * fx
+      vx = 4.0d0 * thrd * exunif * (fx - s * s * fs)
+      dfds = exunif * fs / (8.0d0 * fk * fk * d)
+      return
+      end subroutine pbe_x
+c
+      subroutine pbe_c(d,g,ec,h,vc,dfds)
+c
+c PBE correlation (CORPBE, zet = 0, g = 1) at one point:
+c f = n*(ec + H(rs,t)), t = |dn/dr|/(2 ks n), with dH/drs and dH/dt
+c from appendix E of [b] of CORPBE. Its derivatives are added to vc and
+c dfds, those of the exchange in excggc, in the order of the sums before
+c the two were apart (the output is unchanged to the bit)
+c
+c d     density n (bohr^-3)
+c g     its gradient dn/dr
+c ec    the uniform gas' correlation energy per electron (PW92, Ha)
+c h     the gradient correction H, so that f/n = ec + h
+c vc    plus df/dn at fixed sigma = (dn/dr)**2
+c dfds  plus df/dsigma at fixed n
+c
+      use constants_m, only: dp
+      implicit none
+c
+      real(dp), intent(in) :: d,g
+      real(dp), intent(out) :: ec,h
+      real(dp), intent(inout) :: vc,dfds
+c
+      real(dp), parameter :: gamma=0.03109069086965489503494086371273d0
+      real(dp), parameter :: bet=0.06672455060314922d0
+      real(dp), parameter :: delt=bet/gamma
+      real(dp) :: pi,thrd,conf,conrs,fk,sk,rs,t,t2,ecrs
+      real(dp) :: vcup,vcdn,dvcup,dvcdn
+      real(dp) :: b,q4,q5,q8,q9,hb,bec,hrs,ht
+c
+      thrd = 1.0d0 / 3.0d0
+      pi=4.0d0*datan(1.0d0)
+      conf = (3.d0*pi**2)**thrd
+      conrs = (3.d0/(4.d0*pi))**thrd
+c
+      fk = conf * d ** thrd
+      rs = conrs / d**thrd
+      sk = dsqrt(4.0d0 * fk / pi)
+      t = dabs(g) / (d * 2.0d0 * sk)
+      call CORPBE(rs,0.0d0,t,0.0d0,0.0d0,0.0d0,1,0,ec,vcup,vcdn,
+     &            h,dvcup,dvcdn)
+      ecrs = 3.0d0 * (ec - vcup) / rs
+      t2 = t * t
+      b = delt / (dexp(-ec / gamma) - 1.0d0)
+      q4 = 1.0d0 + b * t2
+      q5 = 1.0d0 + b * t2 + b * b * t2 * t2
+      q8 = q5 * q5 + delt * q4 * q5 * t2
+      q9 = 1.0d0 + 2.0d0 * b * t2
+      hb = -bet * b * t2**3 * (2.0d0 + b * t2) / q8
+      bec = b * b * (delt / b + 1.0d0) / bet
+      hrs = -rs * thrd * hb * bec * ecrs
+      ht = 2.0d0 * bet * q9 / q8
+c
+      vc = vc + vcup + h + hrs - 7.0d0 * t2 * ht / 6.0d0
+      dfds = dfds + ht / (8.0d0 * sk * sk * d)
+      return
+      end subroutine pbe_c
 c
 c----------------------------------------------------------------------
 c######################################################################
