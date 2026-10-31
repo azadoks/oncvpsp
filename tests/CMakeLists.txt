@@ -141,6 +141,12 @@ foreach (coupled_test IN ITEMS "1:sr:14_Si_bc" "1:sr:14_Si" "2:r:14_Si")
     oncvpsp_add_test(unit unit_coupled ${rel} ${name} test_coupled ${irel} "${data}/${name}.dat")
 endforeach ()
 
+# Unit test of the physics of the all-electron atom (test_ae_physics.f90): charge, Gauss's law,
+# the virial, Janak's and Hellmann-Feynman's theorems, the non-relativistic limit and the
+# spin-orbit order, over light and heavy atoms and ions, nr, sr and fr, LDA and GGA
+oncvpsp_unit_executable(ae_physics)
+oncvpsp_add_test(unit unit - ae_physics test_ae_physics)
+
 # Unit test of the failure record (test_failure.f90): an ifail split into its kind, message and
 # status, and two runs that fail, at the input and in a channel, with the message and the stage
 oncvpsp_unit_executable(failure)
