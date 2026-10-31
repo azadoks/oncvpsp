@@ -176,7 +176,10 @@ def main():
         rows = np.array(recs["ld"])
         for ll, ikap in sorted({(int(a), int(b)) for a, b in rows[:, :2]}):
             sel = rows[(rows[:, 0] == ll) & (rows[:, 1] == ikap)]
-            chk.same("tests.logder.ee", ee, sel[:, 2])
+            # the grid epsh2 - depsh*(i - 1) rounds differently where the
+            # compiler fuses it (-march=native: -6.2e-17 for 0, a few ulps
+            # near it), so to round-off of its largest energy
+            chk.close("tests.logder.ee", ee, sel[:, 2], rtol=1e-15, scale=True)
             chk.close("tests.logder.ae", ae[:, ll, ikap - 1], sel[:, 3])
             chk.close("tests.logder.ps", ps[:, ll, ikap - 1], sel[:, 4])
     else:
