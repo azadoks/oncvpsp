@@ -232,6 +232,9 @@ is freed when it is no longer referenced, by `close`, at the end of a
   the results then differ from the executables' at 1e-9. Preloading the
   compiler's (`LD_PRELOAD=$(gfortran -print-file-name=libquadmath.so.0)`)
   restores them bit for bit, as the tests do.
+- With a threaded OpenBLAS the results depend on its thread count at
+  ~1e-13 (doc/developer_setup.md): set `OPENBLAS_NUM_THREADS=1` in the
+  process, or build with `ONCVPSP_LAPACK_SOURCE=FETCH`.
 - The library is loaded global (`RTLD_GLOBAL`), as MKL needs when it is
   linked as its separate libraries; with `mkl_rt` (CMake's
   `BLA_VENDOR=Intel10_64_dyn`) it does not.

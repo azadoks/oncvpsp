@@ -125,6 +125,16 @@ build directory, since the cache keeps them.
 
 - OpenBLAS is given by path because the system has only the versioned
   `libopenblas.so.0`, which `find_package(LAPACK)` does not find.
+- A threaded OpenBLAS (0.3.20, pthread build) splits even a 3×3 `dsymv`
+  over its threads, so every `dsyev` (the channels' optimization onward)
+  rounds differently with `OPENBLAS_NUM_THREADS`, or `OMP_NUM_THREADS`
+  when that is unset: ~1e-13 relative, in every output (14_Si: 1464 lines
+  of the out file at 4 threads against 1). Run with one thread, or build
+  with `-DONCVPSP_LAPACK_SOURCE=FETCH` (Reference-LAPACK and its BLAS,
+  single-threaded): the results are then the same at any thread count, as
+  fast (ONCVPSP's matrices are small: 14_Si_bc9 2.58 s against 2.57 s).
+  For a frozen build whose numbers must not depend on the environment,
+  FETCH.
 - The Libxc install is static and has the Fortran interface (`libxcf03.a`),
   built with the same toolchain. Without `Libxc_ROOT` the build downloads and
   builds Libxc 7.0.0 itself, which works but takes a few minutes per build
