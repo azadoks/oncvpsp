@@ -73,24 +73,30 @@ and PBE (iexc 4).
 
 ### Step 2: the bound-state solvers on model potentials (`test_bound_physics`)
 
-`lschfb`, `ldiracfb` and `boundstate` on potentials whose spectra are
-known, which `test_solver_path` uses only for hydrogen's 1s, 2p and 3d.
+`lschfb` and `ldiracfb` on potentials whose spectra are known, which
+`test_solver_path` uses only for hydrogen's 1s, 2p and 3d. Each quantity
+is computed on the program's mesh scaled by `1/Z` and on the mesh of half
+its step; the difference from the exact value falls by `2**4`, so the
+Richardson value checks the physics well below the mesh's error.
 
 1. **Hydrogen-like spectra.** `E = -Z**2/(2 n**2)` (nr) for `Z` 1, 6, 26,
    79 and `n` to 5, every `l < n`; the Dirac energies
    `E = c**2 ((1 + (Z a/(n - |k| + sqrt(k**2 - Z**2 a**2)))**2)**(-1/2) - 1)`
    for every `kappa` (point nucleus).
-2. **Scaling.** `E(Z) = Z**2 E(1)` (nr) on the same mesh, which
-   `make_log_mesh` scales with `Z`.
-3. **Expectation values.** For hydrogen-like states,
+2. **sr is Dirac without spin-orbit.** For `l > 0` the sr energy is the
+   `(2j+1)`-weighted average of the two Dirac levels to `O((Z/c)**4)`; for
+   s states the sr equation is Dirac's for the large component of
+   `kappa = -1`, so the energies are equal.
+3. **Scaling.** `E(Z) = Z**2 E(1)` (nr) on meshes scaled by `1/Z`.
+4. **Expectation values.** For hydrogen-like states,
    `<r> = (3 n**2 - l (l+1))/(2 Z)` and `<1/r> = Z/n**2` from the returned
    function.
-4. **Nodes and orthogonality.** A state has `n - l - 1` nodes, and two
-   states of one `l` are orthogonal.
-5. **A non-Coulomb potential.** The isotropic harmonic oscillator,
+5. **Nodes and orthogonality.** A state has `n - l - 1` nodes, and two
+   states of one `l` (one `kappa`) are orthogonal.
+6. **A non-Coulomb potential.** The isotropic harmonic oscillator,
    `E = omega (2 n_r + l + 3/2)`.
-6. **Hellmann-Feynman for one state.** `dE/dlambda = <u|W|u>` for
-   `V + lambda W`.
+7. **Hellmann-Feynman for one state.** `dE/dlambda = <u|W|u>` for
+   `V + lambda W`, nr and fr.
 
 ### Step 3: the exchange-correlation functionals (`test_xc_physics`)
 
@@ -173,7 +179,20 @@ inputs of `test_stages` and more (08_O nr, 14_Si sr and fr, 07_N_dl,
     far from the output (most for sr and fr, whose mixing filters the
     residual near the nucleus).
   The test takes 38 s (Au fr dominates).
-- [ ] Step 2
+- [x] Step 2 (2026-10-31, `tests/unit/test_bound_physics.f90`). All seven
+  invariants hold, 860 checks in 0.7 s. No routine needed splitting: the
+  solvers return the energies and functions the invariants are about.
+  - On the program's mesh (amesh 1.006) the energies are off by up to
+    1.5e-8 relative (hydrogen 5s) and the oscillator's by 5e-8 (`n_r` 2,
+    `l` 3): the whole difference is the 4th-order mesh error (it falls by
+    15.9 when the step halves). The Richardson values give the exact
+    energies to 5e-12, the moments to 8e-11.
+  - The sr s states are the Dirac `kappa = -1` states exactly (to 4e-12);
+    for `l > 0` the sr energy differs from the Dirac j-average by
+    `C (Z/c)**4 Z**2/n**3` with `C` the same for every `Z` (0.06 for p,
+    0.003 for d, 0.0006 for f), the order the derivation gives.
+  - Scaling with `Z` holds to round-off (2e-15), orthogonality to 6e-10,
+    Hellmann-Feynman to 3e-10 (nr) and 3e-9 (fr, Au 2p1/2).
 - [ ] Step 3
 - [ ] Step 4
 - [ ] Step 5
