@@ -114,6 +114,20 @@ rather than hidden.
   budget, the one where the model core best reproduces the all-electron
   d2Exc/dn_i dn_j of the bound pseudo states. This is the
   HardnessMatchedCore of PseudoPotentialGenerators.jl. Commit: 9b90162.
+- **icmod 8 and 9, fixed-radius cores (new, api 9); icmod 6 and 7
+  deprecated.** r_s(slack) of icmod 6 has kinks (the largest error hops
+  between the crests of its ripple) and jumps (a lobe of the error drops
+  below the limit), so it cannot be searched smoothly. icmod 8 (Martins'
+  fill) and 9 (the minimum tail) take `r_s` (bohr, 0 < r_s <= min rc) as an input
+  and do no search (a fill that is not positive at r_s is an error,
+  msg 192); the model and the error's measures are smooth in
+  r_s and slack. icmod 9 keeps a rising minimum tail that stays positive
+  (a central crater below the budget's q). For icmod 6 to 9 the out file
+  reports the error's 16-mean and largest value over the density
+  cutoffs, signed errors at `error_shares`, and the fill's monotonicity
+  margin, central slope and crater depth. icmod 9 at icmod 6's r_s is
+  icmod 6's model bit for bit. icmod 6 and 7 print a deprecation
+  warning. Commits: 6980298, 6f95dd4.
 - **Teter cores (icmod 2-4).** The Teter function is now evaluated
   analytically everywhere, and is tapered to 0 over x = 3 to 4 with a
   C-infinity switch. The bare function's x^-10 tail is much wider than a

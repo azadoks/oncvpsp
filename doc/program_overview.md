@@ -568,7 +568,7 @@ segment's lower bound. The breakpoints and their continuity:
 | rc(5) | V_loc, lpopt 1, 2 / 3, 4, 5 | C^2 / C^3 |
 | 0.95 rc(l) | the relativistic window of run_vkb | C^1 |
 | r* | model core, icmod 1 | C^4 |
-| r_s | model core, icmod 6, 7 | C^2 |
+| r_s | model core, icmod 6 to 9 (an input for 8, 9) | C^2 |
 | 3/b to 4/b | Teter taper, icmod 2-4 | C-infinity |
 | well onset | wellstate's well | C-infinity |
 | ra, rb | ionic-tail switch | C-infinity |

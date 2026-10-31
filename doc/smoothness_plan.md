@@ -101,11 +101,11 @@ The table is kept as the baseline. Every row in it, and every row added
 since, has been brought to G1 or G2 or to the noise floor recorded with it
 under [Phases](#phases); what remains is in
 [Order of the remaining work](#order-of-the-remaining-work-2026-10-21-after-m-12).
-In progress, raised on 2026-10-23 at the user's request: the confined atom
-(item 7 of the diagnostics asked for by the oncvpsp-opt session), a
-post-processing executable, `oncvpsp_confine.x`. Its Wigner-Seitz sphere
-(band edges and cutoffs, which replace the removed cutoffs at the valence
-energies) and its self-consistent atom in a soft wall are done.
+Of that list only D-5 (deferred) and steps 4 and 5 of the test-suite
+item are left (status 2026-10-31). The confined atom (item 7 of the
+diagnostics asked for by the oncvpsp-opt session, `oncvpsp_confine.x`)
+is done. Since api 9 the optimizer moves from icmod 6 to icmod 9 with
+r_s among its search parameters (M-9).
 
 ### Goals
 
@@ -603,9 +603,10 @@ later phases can see 1e-10.
 Reordered by what the optimizer (oncvpsp-opt, the GA/BO search and the
 planned Gauss–Newton on the log-derivative residuals) actually varies and
 reads. It varies rc, qcut and debl (or ep) per l, and rcloc. It always
-runs Libxc PBE (iexc −101130), icmod 6 (budget at the EOS ecutrho),
-lpopt 5, scalar-relativistic, with UPF on the log mesh; rxpsh is fixed
-at a mesh point just past the rc bound. It reads the Ecut convergence
+runs Libxc PBE (iexc −101130), icmod 6 (budget at the EOS ecutrho;
+icmod 9 with r_s searched since api 9, 2026-10-31), lpopt 5,
+scalar-relativistic, with UPF on the log mesh; rxpsh is fixed at a mesh
+point just past the rc bound. It reads the Ecut convergence
 tables (log-interpolated at 1e-2…1e-5), the arctan log-derivative
 phases at rxpsh, the ghost test's eigenvalues (a hard reject),
 rho_core from the UPF, and the projector signs, all from stdout and the
@@ -1570,11 +1571,11 @@ from rc:
       block; budget slack·Ecut_w (times −fcfact if fcfact < 0), qlo from
       Ecut_w. pyoncvpsp's `ModelCoreChargeInput` gets the field and its
       dat and TOML writers
-- [ ] Diagnostics asked for by the oncvpsp-opt session (2026-10-22), as
+- [x] Diagnostics asked for by the oncvpsp-opt session (2026-10-22), as
       transferability proxies for the optimizer's guardrails; opt-in or
       additive DIAGNOSTICS output, approved 2026-10-22, in its order
-      (1, 2, 3, 4 and 6 done 2026-10-22, see doc/program_overview.md,
-      step 10; 2 as the cutoffs at which a Cauchy-Schwarz bound on the
+      (all seven done: 1, 2, 3, 4 and 6 on 2026-10-22, 5 and 7 below;
+      see doc/program_overview.md, step 10; 2 as the cutoffs at which a Cauchy-Schwarz bound on the
       truncation of the local energy of the pseudo valence density falls
       to 1e-2..1e-5 Ha per electron, `ecut_vloc`, smooth to 1.0e-12 to
       2.4e-12 in the 07_N_opt rows rc, qcut, debl and rcloc (1.6e-11 in
@@ -1824,7 +1825,9 @@ from rc:
       keep E_resid to q∞. `ekin_check` is T_r less the Fourier energy to
       3q∞: (b) and T_r's error, −5.0e-9 to 8.4e-9 Ha in the references.
 - [ ] Optimize the test suite (the user's request, 2026-10-22; approved
-      2026-10-22, next after the Parseval item): more coverage for less
+      2026-10-22, next after the Parseval item; steps 1 to 3 done, 4 and
+      5 open as of 2026-10-31: the scan preset has grown with the icmod
+      8/9 rows, so step 4 is the one that pays): more coverage for less
       wall time, by better choices of test cases and of what each
       computes. The user's aim for the smooth label: the fewest inputs
       that keep at least today's smoothness coverage (a map of what each

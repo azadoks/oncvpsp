@@ -581,7 +581,8 @@ So the interface is a hybrid:
       one they are the same only where the search's error changes sign
       once over the mesh: oncvpsp-opt found several roots on 5 of 36 Cs
       samples, where the guess finds another, and the bisection's root is
-      not the smallest either (open: which root is the model's); `core.budget.passes` and
+      not the smallest either (settled by api 8 below: the largest root;
+      icmod 8/9 of api 9 take r_s as input); `core.budget.passes` and
       `qext` report the passes, and `core.budget.martins` is now 0 for
       the minimum tail (it held the last Martins model tried, which
       depended on the search's path).
