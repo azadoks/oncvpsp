@@ -5,7 +5,9 @@ ONCVPSP runs as a library, `liboncvpsp`, with a C interface
 the Julia package `ONCVPSP` (`julia/ONCVPSP`) call it: a run, or one stage
 of a run, in the calling process, its results as arrays, with no files
 written or parsed. The results are those of the executables bit for bit;
-the text output, if kept, is theirs but for the banner.
+the text output, if kept, is theirs but for the banner and the
+pseudopotential file at its end, or with `exe_text=True` theirs byte for
+byte.
 
 ## Building
 
@@ -53,6 +55,7 @@ as the executables `oncvpspnr.x`, `oncvpsp.x` and `oncvpspr.x`.
 | `run(inp, irel)` | `oncvpsp(inp; irel)` | `Run` | the whole run |
 | `all_electron(inp, irel)` | `all_electron(inp; irel)` | `AllElectron` | the all-electron atom (fields `ae.*`) |
 | `run(inp, ae=ae)` | `oncvpsp(inp; ae)` | `Run` | a run from that atom, the same as the whole run |
+| `run(inp, irel, ae_file=path)` | `oncvpsp(inp; irel, ae_file)` | `Run` | a run from `oncvpsp_ae.x`'s all-electron data file, as `oncvpsp_ps.x` |
 | `channel(inp, ae, l, mode)` | `channel(inp, ae, l; mode)` | `Channel` | one channel (fields `channel.*`) |
 | `has_node(inp, ae, l)` | `has_node(inp, ae, l)` | a Boolean | whether its first pseudo-wave has a node |
 | `coupled(run, icmod, fcfact=, rcfact=)` | `coupled(run, icmod; fcfact, rcfact)` | `Run` | the model core and the tests again with another model core |
@@ -183,7 +186,16 @@ executables' `build:` line, by which results kept can be tied to the
 ONCVPSP that made them.
 
 `text=True`, the default, keeps the text output (`handle.text`), `False`
-discards it, and a path writes it to that file.
+discards it, and a path writes it to that file. With `exe_text=True` (C
+`oncv_set_output_exe`), the text of `run` and `coupled` is the
+executable's byte for byte: the banner and the build line first and the
+pseudopotential file of the input's `psfile` last, as `oncvpsp.x` prints
+them, and as `oncvpsp_ps.x` for a run from `ae_file` (C
+`oncv_run_ps_toml`), whose results are also `oncvpsp_ps.x`'s bit for bit:
+its test configurations' all-electron energies come from the file, as the
+executable's do, rather than solved again (which differs at ~1e-8). The
+tests `c_api_exe_text` compare them; parsers of the executables' output
+(pyoncvpsp) then read the library's unchanged.
 
 ## Failures
 

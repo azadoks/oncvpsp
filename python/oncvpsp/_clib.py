@@ -77,6 +77,8 @@ def load():
         "oncv_set_output_buffer": ([vp, ci], ci),
         "oncv_output_text": ([vp, cp, sz, C.POINTER(sz)], ci),
         "oncv_run_toml": ([vp, ci, cp, sz, ci], ci),
+        "oncv_run_ps_toml": ([vp, ci, cp, sz, cp, sz, ci], ci),
+        "oncv_set_output_exe": ([vp, ci], ci),
         "oncv_ae_toml": ([vp, ci, cp, sz], ci),
         "oncv_run_ae_toml": ([vp, vp, cp, sz, ci], ci),
         "oncv_channel_toml": ([vp, vp, cp, sz, ci, ci], ci),

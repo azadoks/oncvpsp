@@ -134,6 +134,13 @@ int oncv_set_output(void *handle, const char *path, size_t npath);
  * of oncv_set_output; with on 0, to that file again */
 int oncv_set_output_buffer(void *handle, int on);
 
+/* With on non-zero, the text output of the handle's whole runs
+ * (oncv_run_toml, oncv_run_ps_toml, oncv_run_ae_toml, oncv_coupled) is
+ * the executable's: the banner and the build line first and, when the run
+ * finishes, the pseudopotential file of the input's psfile last, as
+ * oncvpsp.x (oncvpsp_ps.x for oncv_run_ps_toml) prints them */
+int oncv_set_output_exe(void *handle, int on);
+
 /* The text output of the handle's last run or stage from its buffer: its
  * first ntext bytes into text, not terminated, and its whole length in
  * *nout (0 without a buffer); ntext 0 gives the size to allocate */
@@ -144,6 +151,15 @@ int oncv_output_text(void *handle, char *text, size_t ntext, size_t *nout);
  * leaves out the log derivatives */
 int oncv_run_toml(void *handle, int irel, const char *text, size_t ntext,
                   int skip_ld);
+
+/* As oncvpsp_ps.x: the pseudopotential and its tests of the TOML input
+ * text from the all-electron data file ae_path (npath bytes) that
+ * oncvpsp_ae.x wrote of the same input, its atom and the test
+ * configurations' all-electron energies, in place of solving them. The
+ * results are oncvpsp_ps.x's bit for bit, and with oncv_set_output_exe
+ * the text too */
+int oncv_run_ps_toml(void *handle, int irel, const char *text, size_t ntext,
+                     const char *ae_path, size_t npath, int skip_ld);
 
 /* The all-electron atom alone of the TOML input text, with the
  * relativistic treatment irel, into the handle: the fields ae.* */

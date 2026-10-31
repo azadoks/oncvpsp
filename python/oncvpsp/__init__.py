@@ -124,6 +124,8 @@ def run(
     irel: int | str = 1,
     *,
     ae: "AllElectron | Run | None" = None,
+    ae_file: str | os.PathLike | None = None,
+    exe_text: bool = False,
     skip_ld: bool = False,
     check: bool = True,
     text: Text = True,
@@ -131,10 +133,22 @@ def run(
 ) -> Run:
     """the whole run of the input (oncv_run_toml), or from the all-electron
     atom of ae (all_electron, or a run), bit for bit the same
-    (oncv_run_ae_toml); skip_ld leaves out the log derivatives"""
+    (oncv_run_ae_toml), or from oncvpsp_ae.x's all-electron data file
+    ae_file, as oncvpsp_ps.x (oncv_run_ps_toml); skip_ld leaves out the log
+    derivatives; exe_text makes the text the executable's, with its banner
+    and the pseudopotential file (oncv_set_output_exe)"""
     data = input_text(inp, tables)
     hh = Run(text)
-    if ae is None:
+    if exe_text:
+        lib.oncv_set_output_exe(hh.ptr, 1)
+    if ae is not None and ae_file is not None:
+        raise ValueError("ae and ae_file exclude each other")
+    if ae_file is not None:
+        path = os.fsencode(ae_file)
+        ifail = lib.oncv_run_ps_toml(
+            hh.ptr, _irel(irel), data, len(data), path, len(path), int(skip_ld)
+        )
+    elif ae is None:
         ifail = lib.oncv_run_toml(hh.ptr, _irel(irel), data, len(data), int(skip_ld))
     else:
         ifail = lib.oncv_run_ae_toml(hh.ptr, ae.ptr, data, len(data), int(skip_ld))
@@ -279,6 +293,7 @@ def coupled(
     fcfact: float | None = None,
     rcfact: float | None = None,
     r_s: float = 0.0,
+    exe_text: bool = False,
     skip_ld: bool = False,
     check: bool = True,
     text: Text = True,
@@ -287,6 +302,8 @@ def coupled(
     run with the model core icmod, fcfact, rcfact (None for the input's) and
     r_s (icmod 8, 9; 0 for the input's) (oncv_coupled): a run"""
     hh = Run(text)
+    if exe_text:
+        lib.oncv_set_output_exe(hh.ptr, 1)
     fc = math.nan if fcfact is None else fcfact
     rc = math.nan if rcfact is None else rcfact
     ifail = lib.oncv_coupled(hh.ptr, base.ptr, icmod, fc, rc, r_s, int(skip_ld))

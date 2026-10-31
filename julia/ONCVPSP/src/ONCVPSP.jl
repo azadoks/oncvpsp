@@ -479,14 +479,25 @@ irel_of(irel::Union{Symbol,AbstractString}) =
 
 """
 the whole run of the input (oncv_run_toml), or from the all-electron atom
-of `ae` (all_electron, or a run), bit for bit the same (oncv_run_ae_toml);
-`skip_ld` leaves out the log derivatives
+of `ae` (all_electron, or a run), bit for bit the same (oncv_run_ae_toml),
+or from oncvpsp_ae.x's all-electron data file `ae_file`, as oncvpsp_ps.x
+(oncv_run_ps_toml); `skip_ld` leaves out the log derivatives; `exe_text`
+makes the text the executable's, with its banner and the pseudopotential
+file (oncv_set_output_exe)
 """
-function oncvpsp(inp=nothing; irel=1, ae=nothing, skip_ld=false, check=true, text=true,
-                 tables...)
+function oncvpsp(inp=nothing; irel=1, ae=nothing, ae_file=nothing, exe_text=false,
+                 skip_ld=false, check=true, text=true, tables...)
     data = input_text(inp, tables)
     hh = Run(text)
-    ifail = if ae === nothing
+    exe_text && ccall(sym(:oncv_set_output_exe), Cint, (Ptr{Cvoid}, Cint), ptr(hh), 1)
+    ae === nothing || ae_file === nothing ||
+        throw(ArgumentError("ae and ae_file exclude each other"))
+    ifail = if ae_file !== nothing
+        path = String(ae_file)
+        ccall(sym(:oncv_run_ps_toml), Cint,
+              (Ptr{Cvoid}, Cint, Ptr{UInt8}, Csize_t, Ptr{UInt8}, Csize_t, Cint),
+              ptr(hh), irel_of(irel), data, sizeof(data), path, sizeof(path), skip_ld)
+    elseif ae === nothing
         ccall(sym(:oncv_run_toml), Cint, (Ptr{Cvoid}, Cint, Ptr{UInt8}, Csize_t, Cint),
               ptr(hh), irel_of(irel), data, sizeof(data), skip_ld)
     else
@@ -614,8 +625,9 @@ with the model core icmod, fcfact, rcfact (NaN for the input's) and r_s
 (icmod 8, 9; 0 for the input's) (oncv_coupled): a run
 """
 function coupled(base::Run, icmod::Integer; fcfact=NaN, rcfact=NaN, r_s=0.0,
-                 skip_ld=false, check=true, text=true)
+                 exe_text=false, skip_ld=false, check=true, text=true)
     hh = Run(text)
+    exe_text && ccall(sym(:oncv_set_output_exe), Cint, (Ptr{Cvoid}, Cint), ptr(hh), 1)
     ifail = ccall(sym(:oncv_coupled), Cint,
                   (Ptr{Cvoid}, Ptr{Cvoid}, Cint, Cdouble, Cdouble, Cdouble, Cint),
                   ptr(hh), ptr(base), icmod, fcfact, rcfact, r_s, skip_ld)

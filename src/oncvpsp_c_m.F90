@@ -45,7 +45,7 @@
 &          oncv_run_ae_toml, oncv_channel_toml, oncv_coupled, &
 &          oncv_set_output_buffer, oncv_output_text, oncv_confine, &
 &          oncv_field_info, oncv_local_toml, oncv_channel_local_toml, &
-&          oncv_assemble_toml
+&          oncv_assemble_toml, oncv_set_output_exe, oncv_run_ps_toml
 
 !> the version of the interface: a change to a function or a struct
 !> raises it
@@ -103,6 +103,9 @@
    character(len=:), allocatable :: out_path
 !> whether the text output goes to text rather than to out_path
    logical :: buffered=.false.
+!> whether the text output of a whole run is the executable's: its banner
+!> and build first, the pseudopotential file last (oncv_set_output_exe)
+   logical :: exe_text=.false.
 !> the text output of the last run, with buffered
    character(len=:), allocatable :: text
 !> the input values, completed by the run
@@ -296,6 +299,35 @@
  return
  end function oncv_set_output_buffer
 
+ function oncv_set_output_exe(handle,on) result(ifail) &
+&         bind(c,name='oncv_set_output_exe')
+
+!! with on non-zero, the text output of the handle's whole runs
+!! (oncv_run_toml, oncv_run_ps_toml, oncv_run_ae_toml, oncv_coupled) is
+!! that of the executable: the banner and the build line first and, if
+!! the run finishes, the pseudopotential file (psfile of the input) last,
+!! as oncvpsp.x (oncvpsp_ps.x for oncv_run_ps_toml) prints them; with on
+!! 0, without them
+!!
+!! @param handle  the run handle
+!! @param on  non-zero for the executable's text
+
+!Input variables
+ type(c_ptr), value :: handle
+ integer(c_int), value :: on
+
+!Output variables
+ integer(c_int) :: ifail
+
+!Local variables
+ type(handle_t), pointer :: hh
+
+ ifail=0
+ call c_f_pointer(handle,hh)
+ hh%exe_text=on/=0
+ return
+ end function oncv_set_output_exe
+
  function oncv_output_text(handle,text,ntext,nout) result(ifail) &
 &         bind(c,name='oncv_output_text')
 
@@ -363,13 +395,64 @@
  call reset(hh,irel)
  call open_output(hh,iout,ifail)
  if(ifail/=0) return
+ call exe_banner(hh,0,iout)
  call read_toml(hh,text,ntext,iout,jfail)
  if(jfail==0) call run_all(hh,skip_ld/=0,iout,jfail)
+ if(jfail==0) call exe_files(hh,iout,jfail)
  call close_output(hh,iout)
  hh%ifail=jfail
  ifail=jfail
  return
  end function oncv_run_toml
+
+ function oncv_run_ps_toml(handle,irel,text,ntext,ae_path,npath,skip_ld) &
+&         result(ifail) bind(c,name='oncv_run_ps_toml')
+
+!! the pseudopotential and its tests of the TOML input text into the
+!! handle, as oncvpsp_ps.x makes them: from the all-electron data file
+!! ae_path that oncvpsp_ae.x wrote of the same input (its atom and its
+!! test configurations' all-electron energies), in place of solving them.
+!! The results are oncvpsp_ps.x's bit for bit, and with
+!! oncv_set_output_exe so is the text
+!!
+!! @param handle  the run handle
+!! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
+!! @param text  the TOML input, ntext characters, not terminated
+!! @param ntext  its length
+!! @param ae_path  the all-electron data file, npath characters
+!! @param npath  its length
+!! @param skip_ld  non-zero to leave out the log derivatives
+
+!Input variables
+ type(c_ptr), value :: handle
+ integer(c_int), value :: irel,skip_ld
+ character(kind=c_char), intent(in) :: text(ntext),ae_path(npath)
+ integer(c_size_t), value :: ntext,npath
+
+!Output variables
+ integer(c_int) :: ifail
+
+!Local variables
+ type(handle_t), pointer :: hh
+ character(len=npath) :: path
+ integer :: iout,jfail,ii
+
+ call c_f_pointer(handle,hh)
+ call reset(hh,irel)
+ do ii=1,int(npath)
+   path(ii:ii)=ae_path(ii)
+ end do
+ call open_output(hh,iout,ifail)
+ if(ifail/=0) return
+ call exe_banner(hh,2,iout)
+ call read_toml(hh,text,ntext,iout,jfail)
+ if(jfail==0) call run_all(hh,skip_ld/=0,iout,jfail,ae_file=path)
+ if(jfail==0) call exe_files(hh,iout,jfail)
+ call close_output(hh,iout)
+ hh%ifail=jfail
+ ifail=jfail
+ return
+ end function oncv_run_ps_toml
 
  function oncv_ae_toml(handle,irel,text,ntext) result(ifail) &
 &         bind(c,name='oncv_ae_toml')
@@ -454,8 +537,10 @@
  end if
  call open_output(hh,iout,ifail)
  if(ifail/=0) return
+ call exe_banner(hh,0,iout)
  call read_toml(hh,text,ntext,iout,jfail)
  if(jfail==0) call run_all(hh,skip_ld/=0,iout,jfail,ae)
+ if(jfail==0) call exe_files(hh,iout,jfail)
  call close_output(hh,iout)
  hh%ifail=jfail
  ifail=jfail
@@ -908,6 +993,7 @@
  hh%has_stages=.true.
  call open_output(hh,iout,ifail)
  if(ifail/=0) return
+ call exe_banner(hh,0,iout)
  inp=hh%inp_stages
  inp%icmod=icmod
  if(.not. ieee_is_nan(fcfact)) inp%fcfact=fcfact
@@ -921,8 +1007,9 @@
    call run_coupled(irel,0,inp,hh%cnf,hh%st,'',skip_ld/=0,hh%psp,hh%at, &
 &                   iout,jfail)
  end if
- call close_output(hh,iout)
  hh%inp=inp
+ if(jfail==0) call exe_files(hh,iout,jfail)
+ call close_output(hh,iout)
  hh%done=jfail==0
  hh%ifail=jfail
  ifail=jfail
@@ -1215,11 +1302,12 @@
  return
  end subroutine read_toml
 
- subroutine run_all(hh,skip_ld,iout,ifail,ae_in)
+ subroutine run_all(hh,skip_ld,iout,ifail,ae_in,ae_file)
 
 !! the stages of the handle's input (run_stages), kept for oncv_coupled,
 !! then the model core and the tests (run_coupled): oncvpsp_run, with the
-!! all-electron atom ae_in if given
+!! all-electron atom ae_in if given, or from oncvpsp_ae.x's file ae_file
+!! (istage 2, as oncvpsp_ps.x)
 !!
 !! @param hh  the handle
 !! @param skip_ld  whether to leave out the log derivatives
@@ -1227,6 +1315,7 @@
 !! @param ifail  0, or the kind of failure (failure_m), whose message is
 !!               written
 !! @param ae_in  the all-electron atom solved before, if given
+!! @param ae_file  the all-electron data file, if given
 
  use oncvpsp_run_m, only: run_stages, run_coupled
 
@@ -1234,6 +1323,7 @@
  logical, intent(in) :: skip_ld
  integer, intent(in) :: iout
  type(ae_state_t), intent(in), optional :: ae_in
+ character(len=*), intent(in), optional :: ae_file
 
 !Input/output variables
  type(handle_t), intent(inout) :: hh
@@ -1241,15 +1331,79 @@
 !Output variables
  integer, intent(out) :: ifail
 
- call run_stages(hh%irel,0,hh%inp,'',hh%cnf,hh%st,hh%at,iout,ifail,ae_in)
+!Local variables
+ integer :: istage
+
+ if(present(ae_file)) then
+   istage=2
+   call run_stages(hh%irel,istage,hh%inp,ae_file,hh%cnf,hh%st,hh%at,iout, &
+&                  ifail)
+ else
+   istage=0
+   call run_stages(hh%irel,istage,hh%inp,'',hh%cnf,hh%st,hh%at,iout, &
+&                  ifail,ae_in)
+ end if
  if(ifail/=0) return
  hh%has_stages=.true.
  hh%inp_stages=hh%inp
- call run_coupled(hh%irel,0,hh%inp,hh%cnf,hh%st,'',skip_ld,hh%psp,hh%at, &
-&                 iout,ifail)
+ call run_coupled(hh%irel,istage,hh%inp,hh%cnf,hh%st,'',skip_ld,hh%psp, &
+&                 hh%at,iout,ifail)
  hh%done=ifail==0
  return
  end subroutine run_all
+
+ subroutine exe_banner(hh,istage,iout)
+
+!! with the handle's exe_text, the banner and the build line of the
+!! executable of the stage istage (0 oncvpsp.x, 2 oncvpsp_ps.x), as it
+!! prints them before reading its input (write_banner)
+!!
+!! @param hh  the handle
+!! @param istage  0 the whole calculation, 2 from the all-electron file
+!! @param iout  unit of the text output
+
+ use main_setup_m, only: main_names, write_banner
+
+!Input variables
+ type(handle_t), intent(in) :: hh
+ integer, intent(in) :: istage,iout
+
+!Local variables
+ character(len=19) :: treatment
+ character(len=16) :: pname,exe
+ integer :: nkap
+
+ if(.not. hh%exe_text) return
+ call main_names(hh%irel,istage,nkap,treatment,pname,exe)
+ call write_banner(hh%irel,treatment,exe,iout)
+ return
+ end subroutine exe_banner
+
+ subroutine exe_files(hh,iout,ifail)
+
+!! with the handle's exe_text, the pseudopotential file of the finished
+!! run (psfile of the input), as the executable prints it last
+!! (write_psp_files)
+!!
+!! @param hh  the handle
+!! @param iout  unit of the text output
+!! @param ifail  0, or the kind of failure (failure_m), whose message is
+!!               written
+
+ use psp_files_m, only: write_psp_files
+
+!Input variables
+ type(handle_t), intent(in) :: hh
+ integer, intent(in) :: iout
+
+!Output variables
+ integer, intent(out) :: ifail
+
+ ifail=0
+ if(.not. hh%exe_text) return
+ call write_psp_files(hh%inp,hh%psp,iout,ifail)
+ return
+ end subroutine exe_files
 
  subroutine source(src,ae,ifail)
 

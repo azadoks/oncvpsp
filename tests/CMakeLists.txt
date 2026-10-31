@@ -183,6 +183,22 @@ if (ONCVPSP_WITH_C_API AND ONCVPSP_WITH_TOML)
             set_property(TEST ${added_test} APPEND PROPERTY ENVIRONMENT "LD_PRELOAD=${quadmath}")
         endif ()
     endforeach ()
+    # the library's text with the executable's (oncv_set_output_exe) against oncvpsp.x and, from
+    # oncvpsp_ae.x's all-electron file (oncv_run_ps_toml), oncvpsp_ps.x: byte for byte, banner, build
+    # line and pseudopotential file included (scripts/c_api_exe_text.py); the psp8 files of 14_Si
+    # and 03_Li (fr) and the UPF of 07_N_opt (icmod 6 at fcfact -1)
+    foreach (c_test IN ITEMS "1:sr:14_Si" "2:r:03_Li" "1:sr:07_N_opt")
+        string(REPLACE ":" ";" c_test "${c_test}")
+        list(GET c_test 0 irel)
+        list(GET c_test 1 rel)
+        list(GET c_test 2 name)
+        oncvpsp_add_test(unit c_api_exe_text ${rel} ${name} c_api_exe_text.py $<TARGET_FILE:oncvpsp_c>
+            $<TARGET_FILE:oncvpsp${rel}> $<TARGET_FILE:oncvpsp${rel}_ae> $<TARGET_FILE:oncvpsp${rel}_ps>
+            ${irel} "${data}/toml/${name}.toml" "@DIR@")
+        if (EXISTS "${quadmath}")
+            set_property(TEST ${added_test} APPEND PROPERTY ENVIRONMENT "LD_PRELOAD=${quadmath}")
+        endif ()
+    endforeach ()
     # the Python package (python/oncvpsp, scripts/python_wrapper.py) on the library built here: the
     # run's text output and psp8 file the executable's, the input's forms, the arrays, the stages
     # and the failures; with a test Python that has NumPy

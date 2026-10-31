@@ -602,6 +602,12 @@ So the interface is a hybrid:
       not positive (msg 192; a rising one is kept, with its central slope
       and crater depth, `core.budget.slope0` and `crater`), a share
       beyond 1800 Ha (msg 193).
+- [x] The executable's text (2026-10-31, for oncvpsp-opt's in-process
+      runs): `oncv_set_output_exe` puts the banner, the build line and
+      the pseudopotential file in a whole run's text, byte for byte
+      `oncvpsp.x`'s; `oncv_run_ps_toml` runs from `oncvpsp_ae.x`'s
+      all-electron file, `oncvpsp_ps.x` bit for bit (Python and Julia
+      `exe_text=`, `ae_file=`). The ABI only grows: `api_version` 9.
 - [x] Valgrind on the C test (nr, sr, fr, lloc 2): no errors; 2 kB lost
       per PSML file written, xmlf90's element stack, which
       `xml_Close` now frees (`cmake/patches/xmlf90-1.6.3.patch`, whose
