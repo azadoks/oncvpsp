@@ -257,8 +257,8 @@
 
 !Input variables
  type(c_ptr), value :: handle
- character(kind=c_char), intent(in) :: path(npath)
  integer(c_size_t), value :: npath
+ character(kind=c_char), intent(in) :: path(npath)
 
 !Output variables
  integer(c_int) :: ifail
@@ -381,8 +381,8 @@
 !Input variables
  type(c_ptr), value :: handle
  integer(c_int), value :: irel,skip_ld
- character(kind=c_char), intent(in) :: text(ntext)
  integer(c_size_t), value :: ntext
+ character(kind=c_char), intent(in) :: text(ntext)
 
 !Output variables
  integer(c_int) :: ifail
@@ -426,8 +426,8 @@
 !Input variables
  type(c_ptr), value :: handle
  integer(c_int), value :: irel,skip_ld
- character(kind=c_char), intent(in) :: text(ntext),ae_path(npath)
  integer(c_size_t), value :: ntext,npath
+ character(kind=c_char), intent(in) :: text(ntext),ae_path(npath)
 
 !Output variables
  integer(c_int) :: ifail
@@ -472,8 +472,8 @@
 !Input variables
  type(c_ptr), value :: handle
  integer(c_int), value :: irel
- character(kind=c_char), intent(in) :: text(ntext)
  integer(c_size_t), value :: ntext
+ character(kind=c_char), intent(in) :: text(ntext)
 
 !Output variables
  integer(c_int) :: ifail
@@ -515,8 +515,8 @@
 !Input variables
  type(c_ptr), value :: handle,ae_handle
  integer(c_int), value :: skip_ld
- character(kind=c_char), intent(in) :: text(ntext)
  integer(c_size_t), value :: ntext
+ character(kind=c_char), intent(in) :: text(ntext)
 
 !Output variables
  integer(c_int) :: ifail
@@ -573,8 +573,8 @@
 !Input variables
  type(c_ptr), value :: handle,ae_handle
  integer(c_int), value :: ll,mode
- character(kind=c_char), intent(in) :: text(ntext)
  integer(c_size_t), value :: ntext
+ character(kind=c_char), intent(in) :: text(ntext)
 
 !Output variables
  integer(c_int) :: ifail
@@ -626,8 +626,8 @@
 
 !Input variables
  type(c_ptr), value :: handle,ae_handle
- character(kind=c_char), intent(in) :: text(ntext)
  integer(c_size_t), value :: ntext
+ character(kind=c_char), intent(in) :: text(ntext)
 
 !Output variables
  integer(c_int) :: ifail
@@ -686,8 +686,8 @@
 !Input variables
  type(c_ptr), value :: handle,ae_handle,local_handle,energies
  integer(c_int), value :: ll,mode,tests
- character(kind=c_char), intent(in) :: text(ntext)
  integer(c_size_t), value :: ntext
+ character(kind=c_char), intent(in) :: text(ntext)
 
 !Output variables
  integer(c_int) :: ifail
@@ -852,8 +852,8 @@
  type(c_ptr), value :: handle,ae_handle,local_handle
  integer(c_int), value :: nchannels,skip_ld
  type(c_ptr), intent(in) :: channels(nchannels)
- character(kind=c_char), intent(in) :: text(ntext)
  integer(c_size_t), value :: ntext
+ character(kind=c_char), intent(in) :: text(ntext)
 
 !Output variables
  integer(c_int) :: ifail
@@ -1283,8 +1283,8 @@
 #endif
 
 !Input variables
- character(kind=c_char), intent(in) :: text(ntext)
  integer(c_size_t), intent(in) :: ntext
+ character(kind=c_char), intent(in) :: text(ntext)
  integer, intent(in) :: iout
 
 !Input/output variables
@@ -1459,8 +1459,8 @@
 
 !Input variables
  type(c_ptr), value :: handle
- character(kind=c_char), intent(in) :: format(nformat),path(npath)
  integer(c_size_t), value :: nformat,npath
+ character(kind=c_char), intent(in) :: format(nformat),path(npath)
 
 !Output variables
  integer(c_int) :: ifail
@@ -2824,8 +2824,8 @@
 !! @param nchars  their number
 
 !Input variables
- character(kind=c_char), intent(in) :: chars(nchars)
  integer(c_size_t), intent(in) :: nchars
+ character(kind=c_char), intent(in) :: chars(nchars)
 
 !Output variables
  character(len=:), allocatable :: string
