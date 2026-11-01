@@ -100,21 +100,28 @@ Richardson value checks the physics well below the mesh's error.
 
 ### Step 3: the exchange-correlation functionals (`test_xc_physics`)
 
-`exc_dispatch` on uniform densities and on the model atom of `test_fxc`.
+`exc_dispatch` on uniform densities and on model atoms, and PBE's exchange
+and correlation alone (`pbe_x`, `pbe_c`, split out of `excggc` for this).
+The LDAs' exchange is Slater's, so their correlation is `eps_xc - eps_x`.
 
-1. **LDA exchange** is `eps_x = -(3/4)(3/pi)**(1/3) n**(1/3)` and
-   `v_x = (4/3) eps_x`, the exchange part of each built-in LDA.
+1. **High-density limit.** `eps_c -> A ln r_s + B` with Gell-Mann and
+   Brueckner's `A = (1 - ln 2)/pi**2` (PZ, VWN, PBE's PW92).
 2. **The potential is the derivative of the energy.**
-   `v_xc = d(n eps_xc)/dn` by central differences over `r_s` from 0.1 to
-   20, for every built-in functional (and PBE at zero gradient).
-3. **Signs and bounds.** `eps_c <= 0`, and the Lieb-Oxford bound
-   `E_xc >= -1.679 int n**(4/3)` on the model atom.
-4. **Uniform scaling of exchange.** `E_x[g**3 n(g r)] = g E_x[n]`, for the
-   exchange of the GGA as well as the LDA.
-5. **PBE's uniform limit.** At zero gradient PBE is its LDA (PW92).
-
-Step 3 may need the exchange and the correlation of a functional apart; if
-`exc_dispatch` gives only their sum, that is the split to make first.
+   `v_xc = d(n eps_xc)/dn` over `r_s` from 0.1 to 20 for the LDAs, and
+   `dE_xc/dt = int v_xc drho` on a model atom for every built-in
+   functional, PBE included.
+3. **Correlation.** `eps_c <= 0`, rising with `r_s`, and `r_s eps_c`
+   falling (Levy and Perdew's scaling inequality for a uniform density);
+   PZ's two fits join at `r_s = 1` only to their coefficients' rounding.
+4. **Lieb-Oxford.** `E_xc >= -1.679 int n**(4/3)` on model atoms, and PBE's
+   `1 <= F_x(s) <= 1.804`, rising.
+5. **Uniform scaling of exchange.** `eps_x(g**3 n, g**4 n') = g eps_x`
+   (PBE).
+6. **PBE's uniform limit and linear response.** At zero gradient PBE is
+   Slater plus PW92; its second-order gradient terms cancel
+   (`mu = beta pi**2/3`), leaving the next order.
+7. **Relativistic exchange** (iexc 7) is weaker than Slater's, by
+   `O((k_F/c)**2)`.
 
 ### Step 4: the pseudopotential (`test_ps_physics`)
 
@@ -193,6 +200,21 @@ inputs of `test_stages` and more (08_O nr, 14_Si sr and fr, 07_N_dl,
     0.003 for d, 0.0006 for f), the order the derivation gives.
   - Scaling with `Z` holds to round-off (2e-15), orthogonality to 6e-10,
     Hellmann-Feynman to 3e-10 (nr) and 3e-9 (fr, Au 2p1/2).
-- [ ] Step 3
+- [x] Step 3 (2026-10-31, `tests/unit/test_xc_physics.f90`; the split
+  `pbe_x`/`pbe_c` of `excggc`, its output unchanged to the bit). All hold,
+  in 0.02 s:
+  - The LDAs' potentials are their energies' derivatives to 4e-13; on a
+    model atom the functional derivative holds to 8e-11 for the LDAs and
+    5e-10 for PBE, whose divergence form leaves the mesh's error (8e-9 at
+    amesh 1.012, 17 times less at 1.006).
+  - PZ's Gell-Mann-Brueckner slope is off by 2.6e-4 (its `A` is rounded
+    to 0.0311), and its fits step at `r_s = 1` by 3.2e-5 Ha in `eps_xc`
+    and 2.8e-5 Ha in `v_xc`: the step of step 1's finding, measured.
+  - PBE's linear-response residual is `C s**2` with the `C` the next order
+    of `H` and `F_x` gives (15.9 at `r_s` 0.1), to 0.2% at `s` 1e-2 (at
+    1e-3 the round-off, up to 0.8%).
+  - The model atoms reach at most 0.93 of the Lieb-Oxford bound (PBE);
+    Wigner (1) and Hedin-Lundqvist (2) do not have the Gell-Mann-Brueckner
+    limit and are not checked for it.
 - [ ] Step 4
 - [ ] Step 5

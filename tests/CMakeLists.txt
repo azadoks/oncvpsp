@@ -153,6 +153,13 @@ oncvpsp_add_test(unit unit - ae_physics test_ae_physics)
 oncvpsp_unit_executable(bound_physics)
 oncvpsp_add_test(unit unit - bound_physics test_bound_physics)
 
+# Unit test of the physics of the exchange-correlation functionals (test_xc_physics.f90): the
+# high-density limit, the potential as the derivative of the energy, the signs and scaling of the
+# correlation, Lieb-Oxford, PBE's uniform scaling, uniform limit and linear response, and the
+# relativistic exchange
+oncvpsp_unit_executable(xc_physics)
+oncvpsp_add_test(unit unit - xc_physics test_xc_physics)
+
 # Unit test of the failure record (test_failure.f90): an ifail split into its kind, message and
 # status, and two runs that fail, at the input and in a channel, with the message and the stage
 oncvpsp_unit_executable(failure)
