@@ -175,6 +175,27 @@ foreach (ps_test IN ITEMS "0:nr:08_O" "0:nr:07_N_dl" "0:nr:03_Li" "0:nr:29_Cu" "
     oncvpsp_add_test(unit unit_ps_physics ${rel} ${name} test_ps_physics ${irel} "${data}/${name}.dat")
 endforeach ()
 
+# Unit test of the transferability of the pseudopotential (test_transfer_physics.f90): the excitation
+# energies follow the all-electron ones to second order in the occupations, for an ionization and a
+# transfer; with VWN or PBE, as PZ's energy steps at r_s = 1; nr and fr (the sr energy is not
+# variational)
+oncvpsp_unit_executable(transfer_physics)
+foreach (transfer_test IN ITEMS "0:nr:08_O:6" "0:nr:29_Cu:6" "0:nr:74_W:6" "0:nr:60_Nd_GHOST:6"
+                                "0:nr:07_N_dl:4" "0:nr:14_Si:4" "2:r:14_Si:6" "2:r:03_Li:6" "2:r:74_W:4")
+    string(REPLACE ":" ";" transfer_test "${transfer_test}")
+    list(GET transfer_test 0 irel)
+    list(GET transfer_test 1 rel)
+    list(GET transfer_test 2 name)
+    list(GET transfer_test 3 iexc)
+    oncvpsp_add_test(unit unit_transfer_physics ${rel} ${name}_iexc${iexc} test_transfer_physics
+                     ${irel} "${data}/${name}.dat" ${iexc})
+endforeach ()
+
+# Unit test of the mesh convergence of the all-electron atom (test_mesh_physics.f90): the total
+# energy and eigenvalues converge at the Adams order; O, Si, Cu, Au, nr, sr and fr, VWN and PBE
+oncvpsp_unit_executable(mesh_physics)
+oncvpsp_add_test(unit unit - mesh_physics test_mesh_physics)
+
 # Unit test of the failure record (test_failure.f90): an ifail split into its kind, message and
 # status, and two runs that fail, at the input and in a channel, with the message and the stage
 oncvpsp_unit_executable(failure)

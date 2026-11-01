@@ -157,12 +157,18 @@ icmod 0, 1, 3 and 6.
 
 ### Step 5: transferability and consistency
 
-1. **Excitation energies.** The pseudo-atom's total energy differences
-   between the test configurations follow the all-electron ones to the
-   size of the reference eigenvalue errors.
-2. **Mesh convergence of physical results.** The all-electron total energy
-   and eigenvalues converge as `amesh -> 1` at the Adams order (extending
-   `test_adams` from single states to the self-consistent atom).
+1. **Excitation energies to second order** (`test_transfer_physics`). By
+   Janak's theorem the first order of an excitation energy is
+   `sum_i eps_i df_i` for both atoms, so the excitation error less
+   `sum_i (eps_ae,i - eps_ps,i) df_i` (the reference eigenvalues) is second
+   order: `R(d) = 4 R(d/2)`, for an ionization of the highest valence state
+   and a transfer to it from another `l`, the test configurations set in
+   the test. nr and fr (the sr all-electron energy is not variational,
+   step 1); VWN or PBE in place of the inputs' PZ.
+2. **Mesh convergence of the all-electron atom** (`test_mesh_physics`).
+   The total energy and eigenvalues converge at the Adams order as
+   `amesh -> 1` (extending `test_adams` from single states to the
+   self-consistent atom).
 
 ### Status
 
@@ -252,4 +258,28 @@ icmod 0, 1, 3 and 6.
   - A finite difference of 1e-2 Ha was too coarse for the energy
     derivative of a deep state (W 5s, where the phase turns fast); the
     test uses 1e-4.
-- [ ] Step 5
+- [x] Step 5 (2026-11-01, `tests/unit/test_transfer_physics.f90`,
+  `tests/unit/test_mesh_physics.f90`). Both hold: 9 transfer cases in 12 s
+  on 10 threads, the mesh test (226 checks) in 6 s.
+  - Excitation errors less their first order fall by 4 when `d` halves,
+    to 0.04 relative at `d = 1/64` (the cubic term), for O to W nr and Si,
+    Li and W fr; for sr the remainder is linear in `d` (Si: `R/d` about
+    -8e-6 Ha), the first-order term of step 1's non-variational sr energy.
+  - **PZ's step at `r_s = 1` puts a staircase in the total energies.** The
+    mesh quadrature of `eps_xc` jumps by about one cell's weight times the
+    step whenever the radius of `r_s = 1` crosses a node: O's pseudo-atom
+    excitation energy jumps by 8.9e-7 Ha at `d = 0.0107` (amesh 1.006;
+    at 0.009 for 1.003, half the size; at 0.065 for 1.0055), and the
+    all-electron total energies on meshes 1.012, 1.006 and 1.003 have no
+    order at all (differences of 1e-7 to 5e-7 Ha in both signs). Every
+    input of the tests uses PZ. VWN is smooth: its remainders follow `d**2`
+    from 0.004 to 0.14, and its total energies converge at order 4. The
+    tests use VWN and PBE; PZ is unchanged (libxc's `PZ_MOD` has the
+    coefficients of exact continuity, `CC = 0.0020191519406228`,
+    `DD = -0.0116320663789130`).
+  - The all-electron total energy converges with ratio 15.5-16.2 (15.80
+    for order 4 on these meshes); the eigenvalues to 0.36 in the order
+    (the smallest mesh errors, ~1e-10 Ha, nearly cancel between terms).
+  - `check_data` refuses a charge-conserving transfer of 0.02 in neutral
+    Cu as a negative ion: the occupations' sum exceeds `Z` by round-off.
+    The test moves `d = 1/64`, which sums exactly.
