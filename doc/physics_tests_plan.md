@@ -125,27 +125,35 @@ The LDAs' exchange is Slater's, so their correlation is `eps_xc - eps_x`.
 
 ### Step 4: the pseudopotential (`test_ps_physics`)
 
-A whole run (`oncvpsp_run`) and its stages (`optimize_channel`), over the
-inputs of `test_stages` and more (08_O nr, 14_Si sr and fr, 07_N_dl,
-74_W, 60_Nd_GHOST, 03_Li fr).
+A whole run (`oncvpsp_run`) and its channels (`optimize_channel`), over
+08_O, 07_N_dl (a local channel), 03_Li (1s in the valence), 29_Cu,
+60_Nd_GHOST and 74_W nr, 14_Si, 14_Si_bc and 74_W sr, 14_Si and 03_Li fr;
+icmod 0, 1, 3 and 6.
 
-1. **Norm conservation.** `int_0^rc phi**2 = int_0^rc u**2` for every
-   projector's pseudo-wave and its all-electron state.
+1. **Norm conservation.** `int_0^rc phi_i phi_j = int_0^rc u_i u_j` for
+   the pseudo-waves and all-electron states of each channel's projectors
+   (the large components for fr, as `fpovlp`).
 2. **Matching.** `phi = u` beyond `rc`.
-3. **Reference eigenvalues.** The pseudo-atom's reference states have the
-   all-electron eigenvalues (the first configuration of the configuration
-   tests).
-4. **Log derivatives at the projector energies.** The pseudo and
-   all-electron log derivatives agree at each projector's energy.
-5. **Valence charge.** `int r**2 rho_ps dr = zion`, and `rho_ps` is the
-   all-electron valence density beyond `rcmax`.
-6. **The ionic tail.** `r vloc(r) -> -zion` where the core has died off.
-7. **Projectors are local.** `vkb(r) = 0` beyond each channel's `rc`.
-8. **The model core is the core beyond `r_core`**, and is positive.
-9. **Missing kinetic energy falls with the cutoff.** Each convergence
+3. **Valence charge.** `int r**2 rho_ps dr = zion`.
+4. **The ionic tail.** `r vloc(r) + zion` lies in `[-Q_c(r) - d, d]`
+   beyond `2 rcmax` and the model core's `r_core`: the unscreened local
+   potential is `-Z/r + V_H[n_c]`, whose Hartree term is at most
+   `(Z - zion)/r` and at least that less the core charge outside `r`
+   (`d` the core density's own charge error on the mesh).
+5. **Projectors are local.** `vkb(r) = 0` beyond each channel's `rc`,
+   on the mesh and as pieces.
+6. **The model core is the core beyond `r_core`**, and is positive.
+7. **Missing kinetic energy falls with the cutoff.** Each convergence
    curve is non-increasing in `q` (its integrand is `q**4 |phi(q)|**2 >= 0`).
-10. **fr's two projector sets.** The scalar-relativistic and spin-orbit
-    projectors recombine to the two `j` sets.
+8. **fr's two projector sets.** The scalar-relativistic and spin-orbit
+   projectors give back the kernels of the two `j` (`test_sr_so_r`'s
+   check on real runs).
+9. **nr: the pseudo-atom is the all-electron atom to the mesh's error.**
+   On the input's mesh and on the mesh of half its log step: the reference
+   states' eigenvalues, the log derivatives at each projector's energy,
+   and their energy derivatives (equal by norm conservation), with the
+   residual on the finer mesh within its estimated mesh error; and the
+   pseudo valence density is the all-electron one beyond `rcmax`.
 
 ### Step 5: transferability and consistency
 
@@ -216,5 +224,32 @@ inputs of `test_stages` and more (08_O nr, 14_Si sr and fr, 07_N_dl,
   - The model atoms reach at most 0.93 of the Lieb-Oxford bound (PBE);
     Wigner (1) and Hedin-Lundqvist (2) do not have the Gell-Mann-Brueckner
     limit and are not checked for it.
-- [ ] Step 4
+- [x] Step 4 (2026-11-01, `tests/unit/test_ps_physics.f90`). All hold, in
+  17 s on 11 threads (nr W's two meshes dominate). No routine needed
+  splitting: the run's results and the channels have every quantity.
+  - Norm conservation holds to 3e-11 on the program's mesh (the
+    quadrature's error, falling 32 times with the step halved); the
+    matching, the projectors' range and the model core beyond `r_core`
+    hold exactly; the charge to 1e-15; the fr kernels to 4e-15.
+  - nr: the reference eigenvalues, log derivatives and their energy
+    derivatives are off by up to 1.5e-8 Ha, 2e-7 and 1.4e-6 (relative) on
+    the program's mesh for Nd and W, all of it mesh error: at amesh 1.003
+    they fall 15 times or more (more for the heavy atoms, not yet
+    asymptotic at 1.006), and what is left over the estimated mesh error
+    is at most 4e-10.
+  - **sr and fr reproduce the all-electron atom only to `O(1/c**2)`.**
+    The pseudo-atom solves the non-relativistic equation, so beyond `rc`
+    its states miss the relativistic terms of the all-electron ones: the
+    reference eigenvalues are off by 5e-7 Ha (Si) to 1e-5 Ha (W), the
+    log derivatives at the projectors' energies by up to 2e-4 (Nd), their
+    energy derivatives by up to 7e-4 relative (W); for Si all fall 4 times
+    as `c` doubles, and at 100 `c` W is at its nr values. `ionic_tail_m`
+    already says so (the pseudo valence density differs from the
+    all-electron one beyond `rcmax`) and switches the local potential to
+    the ionic one over a window beyond `rcmax`, which is why `vloc` is not
+    `vfull` there (by ~1e-9 even for nr) and the tail check for sr and fr
+    starts beyond that window. These checks run for nr only.
+  - A finite difference of 1e-2 Ha was too coarse for the energy
+    derivative of a deep state (W 5s, where the phase turns fast); the
+    test uses 1e-4.
 - [ ] Step 5

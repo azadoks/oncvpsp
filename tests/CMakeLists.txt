@@ -160,6 +160,21 @@ oncvpsp_add_test(unit unit - bound_physics test_bound_physics)
 oncvpsp_unit_executable(xc_physics)
 oncvpsp_add_test(unit unit - xc_physics test_xc_physics)
 
+# Unit test of the physics of the pseudopotential (test_ps_physics.f90): norm conservation, the
+# waves beyond rc, the valence charge, the ionic tail, the projectors' range, the model core, the
+# convergence curves and the spin-orbit kernels; for nr, on two meshes, the reference eigenvalues
+# and the log derivatives and their energy derivatives at the projectors' energies to the meshes'
+# error; light and heavy atoms, a local channel (07_N_dl), a GHOST case, icmod 0, 1, 3 and 6
+oncvpsp_unit_executable(ps_physics)
+foreach (ps_test IN ITEMS "0:nr:08_O" "0:nr:07_N_dl" "0:nr:03_Li" "0:nr:29_Cu" "0:nr:60_Nd_GHOST"
+                          "0:nr:74_W" "1:sr:14_Si" "1:sr:14_Si_bc" "1:sr:74_W" "2:r:14_Si" "2:r:03_Li")
+    string(REPLACE ":" ";" ps_test "${ps_test}")
+    list(GET ps_test 0 irel)
+    list(GET ps_test 1 rel)
+    list(GET ps_test 2 name)
+    oncvpsp_add_test(unit unit_ps_physics ${rel} ${name} test_ps_physics ${irel} "${data}/${name}.dat")
+endforeach ()
+
 # Unit test of the failure record (test_failure.f90): an ifail split into its kind, message and
 # status, and two runs that fail, at the input and in a channel, with the message and the stage
 oncvpsp_unit_executable(failure)
