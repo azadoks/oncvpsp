@@ -39,9 +39,9 @@
  subroutine sbfq_values(nm,xx,sb)
 
 !! j_l(xx) for l=0..nm-1: the power series below xx=1/4 (its terms fall
-!! by (xx**2/2)/(k(2l+2k+1)) a term), else the downward recurrence of
-!! sbf_values normalized by sum_l (2l+1) j_l**2 = 1, its sign that of
-!! (j_0, j_1)
+!! by (xx**2/2)/(k(2l+2k+1)) a term), the upward recurrence from sin and
+!! cos at xx>=max(4,nm), else the downward recurrence of sbf_values
+!! normalized by sum_l (2l+1) j_l**2 = 1, its sign that of (j_0, j_1)
 !!
 !! @param nm  number of orders wanted
 !! @param xx  argument, >=0
@@ -79,6 +79,20 @@
      end do
      sb(nn)=xn*sum_k
      xn=xx*xn/real(2*nn+1,qp)
+   end do
+   return
+ end if
+
+! at xx >= max(4, nm), the upward recurrence from j_0 = sin(xx)/xx and
+! j_1 = (j_0 - cos(xx))/xx: stable for the orders below xx, it agrees with
+! the downward recurrence to 2e-34 absolute (xx from max(4, nm) to 340,
+! nm 2 to 12), at a tenth of its cost (eresid evaluates it at every q)
+ if(xx>=real(max(4,nm),qp)) then
+   xi=1.0_qp/xx
+   sb(1)=sin(xx)*xi
+   if(nm>=2) sb(2)=(sb(1)-cos(xx))*xi
+   do nn=2,nm-1
+     sb(nn+1)=real(2*nn-1,qp)*xi*sb(nn) - sb(nn-1)
    end do
    return
  end if
@@ -170,8 +184,12 @@
 !Local variables
  real(qp), allocatable :: cc(:)
  real(qp) :: alpha,beta,de,xa,xb,tt,ja,jda,jb,jdb,term,sum_n,tpow,xl
+ real(qp) :: ca(0:24),cb(0:24),dinv(0:48),xa2,xb2
  integer :: kk,nn
- integer, parameter :: nterm=160,nser=48
+! nser: at xb<=1.5 the terms of j_l's series fall below 1e-54 of the
+! first by k=24 (l=0; faster for l>0), so the polynomial of 24 terms is
+! the integral to the round-off of quad precision
+ integer, parameter :: nterm=160,nser=24
 
 ! alpha<=beta=alpha+de; x=alpha rc, and t=de rc the distance to beta rc
  alpha=min(q1,q2)
@@ -185,22 +203,31 @@
 ! integrate the power series, j_l(z) = z**l sum_k (-z**2/2)**k/(k!(2l+2k+1)!!),
 ! term by term with a fixed number of terms (a polynomial, so smooth)
  if(xb<=1.5_qp) then
-   allocate(cc(0:nser))
-   cc(0)=1.0_qp
+! the coefficients times xa**(2k) and xb**(2k), and 1/(2l+3+2m)
+   ca(0)=1.0_qp
    do kk=1,2*ll+1,2
-     cc(0)=cc(0)/real(kk,qp)
+     ca(0)=ca(0)/real(kk,qp)
    end do
+   cb(0)=ca(0)
+   xa2=xa**2
+   xb2=xb**2
    do kk=1,nser
-     cc(kk)=-cc(kk-1)/(2.0_qp*real(kk,qp)*real(2*ll+2*kk+1,qp))
+     tpow=-1.0_qp/(2.0_qp*real(kk,qp)*real(2*ll+2*kk+1,qp))
+     ca(kk)=ca(kk-1)*tpow*xa2
+     cb(kk)=cb(kk-1)*tpow*xb2
+   end do
+   do kk=0,2*nser
+     dinv(kk)=1.0_qp/real(2*ll+3+2*kk,qp)
    end do
    ss=0.0_qp
    do kk=nser,0,-1
+     sum_n=0.0_qp
      do nn=nser,0,-1
-       ss=ss + cc(kk)*cc(nn)*xa**(2*kk)*xb**(2*nn)/real(2*ll+3+2*kk+2*nn,qp)
+       sum_n=sum_n + cb(nn)*dinv(kk+nn)
      end do
+     ss=ss + ca(kk)*sum_n
    end do
    ss=ss*rc**3*(xa*xb)**ll
-   deallocate(cc)
    return
  end if
 

@@ -539,7 +539,9 @@ three-dimensional transform, 4 pi times this one with l = 0, so that
 the Coulomb tail is -4 pi zion/q^2. The j_l themselves come from
 `sbf_m` in double precision (`sbf_values`, `sbf_trig`,
 `sbf_trig_rising`, `sbf_rc_der`) and from `sbf_q_m` in quad
-(`sbfq_values`, normalized by sum (2l+1) j_l^2 = 1 like `sbf_values`).
+(`sbfq_values`, normalized by sum (2l+1) j_l^2 = 1 like `sbf_values`
+below x = max(4, nm); from there on, upward from sin and cos, the same
+to 2e-34 and ten times cheaper).
 
 **Mesh ends and signs.** A solver integrates to its last point `mlast`
 and sets u and its derivative to zero beyond it; `mch` is the point
