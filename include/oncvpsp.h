@@ -162,7 +162,11 @@ int oncv_run_ps_toml(void *handle, int irel, const char *text, size_t ntext,
                      const char *ae_path, size_t npath, int skip_ld);
 
 /* The all-electron atom alone of the TOML input text, with the
- * relativistic treatment irel, into the handle: the fields ae.* */
+ * relativistic treatment irel, into the handle: the fields ae.*. It also
+ * solves the test configurations' all-electron atoms, once, which the
+ * runs from it (oncv_run_ae_toml, oncv_assemble_toml) then reuse rather
+ * than solve again, to the same bits; their text and warnings come with
+ * those runs */
 int oncv_ae_toml(void *handle, int irel, const char *text, size_t ntext);
 
 /* As oncv_run_toml, from the all-electron atom of ae_handle (oncv_ae_toml,

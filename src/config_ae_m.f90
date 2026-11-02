@@ -72,6 +72,9 @@
 !> kinetic, electron-nucleus, Hartree and exchange-correlation energies (Ha)
    real(dp) :: eterm(4)=0.0d0
    real(dp) :: res=0.0d0  !< residual of the screening potential (ae_residual)
+!> whether the run's text and warnings have its stop on the residual's
+!> round-off floor, if it stopped there (solve_configs_ae clears it)
+   logical :: warned=.false.
    integer, allocatable :: na(:)  !< principal quantum numbers (ncv)
    integer, allocatable :: la(:)  !< angular momenta (ncv)
    real(dp), allocatable :: fa(:)  !< occupancies (ncv)
@@ -101,8 +104,9 @@
 !! of run_config_ae, and the excited level of a configuration that only
 !! takes charge away is its intermediate one; each was solved again, to
 !! the same bits. A failed solution is not kept, so that its warnings
-!! recur, and a reused one stopped on the residual's round-off floor
-!! repeats that warning. cache holds the solutions of the run; the other
+!! recur; a reused one stopped on the residual's round-off floor gives
+!! that warning only if the run has not had it (ae_entry_t%warned), once
+!! for each solution. cache holds the solutions of the run; the other
 !! arguments are those of aeatom
 !!
 !! @param cache  the all-electron atoms of the run; a new solution added
@@ -183,7 +187,10 @@
      eterm(:)=ce%eterm
      res=ce%res
      ierr=0
-     if(res>ae_tolres) call ae_floor_warning(res,ae_tolres,warns,iout)
+     if(res>ae_tolres .and. .not. ce%warned) then
+       call ae_floor_warning(res,ae_tolres,warns,iout)
+     end if
+     ce%warned=.true.
      return
    end associate
  end do
@@ -219,6 +226,7 @@
    ce%etot=etot
    ce%eterm=eterm
    ce%res=res
+   ce%warned=.true.
  end associate
  return
  end subroutine aeatom_cached

@@ -539,9 +539,10 @@ precision.
   only on its states and occupations. Test configuration 0 repeats the
   reference at both levels, and a configuration that only removes
   charge repeats its intermediate level at its excited one. 4.0.1 solved
-  each again; a run now reuses the earlier solution, to the same bits,
-  with its warning of a stop on the residual's round-off floor. This
-  saves 2 to 5 of the 9 SCFs of the test inputs. Commit: 410344c.
+  each again; a run now reuses the earlier solution, to the same bits.
+  This saves 2 to 5 of the 9 SCFs of the test inputs. Commit: 410344c.
+  A stop on the residual's round-off floor is warned once per solution,
+  not again at each reuse (4.0.1 warned at each repeated SCF).
 - **Ionic-tail fixed point** to 1e-13 Ha. Commit: 25de811 (S-6).
 - Tested against the NIST atomic reference data (LDA, ScRLDA, RLDA,
   H to U and cations) at NIST's stated accuracy (`ctest -L nist`;

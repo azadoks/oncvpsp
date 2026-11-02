@@ -163,7 +163,9 @@ def all_electron(
     text: Text = True,
     **tables: Any,
 ) -> AllElectron:
-    """the all-electron atom of the input (oncv_ae_toml): fields ae.*"""
+    """the all-electron atom of the input (oncv_ae_toml): fields ae.*,
+    with the test configurations' all-electron atoms solved for the runs
+    from it to reuse"""
     data = input_text(inp, tables)
     hh = AllElectron(text)
     return hh._done(lib.oncv_ae_toml(hh.ptr, _irel(irel), data, len(data)), check)

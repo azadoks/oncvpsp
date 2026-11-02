@@ -363,7 +363,8 @@
  subroutine ae_floor_warning(res,tolres,warns,iout)
 
 !! the warning of an SCF stopped on the round-off floor of its residual
-!! (ae_converged; aeatom_cached repeats it for a solution it reuses)
+!! (ae_converged; aeatom_cached gives it for a solution it reuses that
+!! the run has not had)
 !!
 !! @param res  the residual at the stop
 !! @param tolres  its threshold

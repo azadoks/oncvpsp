@@ -234,7 +234,13 @@ threads in one procedure.
 The cache of all-electron atoms that the test configurations reuse is an
 `ae_cache_t` (`config_ae_m`) that `oncvpsp_run` owns and passes down, so
 a second run starts with an empty one; `tests/unit/test_run.f90` checks
-that run bit for bit.
+that run bit for bit. The all-electron handle (`oncv_ae_toml`) keeps one
+with the test configurations' atoms solved (`solve_configs_ae`), which
+each run from it copies and reuses: a Pb run from cached channels then
+skips its test configurations' all-electron SCFs. A reused solution
+stopped on the residual's round-off floor warns only if its run has not
+had that warning (`ae_entry_t%warned`), so the warning comes once per
+solution, where a whole run gives it.
 
 ### Phase 4: routines into modules
 

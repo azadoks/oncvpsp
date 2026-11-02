@@ -280,10 +280,6 @@ Coulomb tail of the local potential
 
 Test configuration 0
 
-ae_converged: WARNING scf stopped on the round-off floor of the residual, res=  1.9779E-11, tolres=  1.0000E-11
-
-ae_converged: WARNING scf stopped on the round-off floor of the residual, res=  1.9779E-11, tolres=  1.0000E-11
-
    n   l     f        eae           eps        diff
    1   0  2.0000  -14.13822391
    2   0  2.0000   -0.68290684   -0.68291305   -6.21E-06

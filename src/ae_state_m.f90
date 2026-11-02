@@ -21,7 +21,8 @@
 !> the test configurations, solved as they are wanted (run_config_ae)
 !> or read. Everything the later stages take from the all-electron atom
 !> is in ae_state_t, and they do not change it, so that one state serves
-!> any number of pseudopotentials of the same atom and mesh.
+!> any number of pseudopotentials of the same atom and mesh; the library's
+!> holds the test configurations' atoms solved too (solve_configs_ae).
 
  module ae_state_m
  use constants_m, only: dp, mxstate, mxkap, mxcnf
@@ -30,7 +31,7 @@
  use failure_m, only: warnings_t
  implicit none
  private
- public :: ae_state_t, solve_ae, given_ae, check_ae
+ public :: ae_state_t, solve_ae, solve_configs_ae, given_ae, check_ae
 
 !> the all-electron atom of a run
  type :: ae_state_t
@@ -184,6 +185,53 @@
  end if
  return
  end subroutine solve_ae
+
+ subroutine solve_configs_ae(ae,inp,cnf)
+
+!! the all-electron atoms of the test configurations of the input inp
+!! (run_config_ae) solved into the cache of ae, solved before (solve_ae),
+!! so that the runs from ae reuse them (aeatom_cached) rather than
+!! solving them again, to the same bits. Their text is discarded and their
+!! warnings come with the runs that reuse them: each new solution is
+!! marked as not yet warned. A failure leaves its solution out, for the
+!! runs to meet again; the cache stops growing when full
+!!
+!! @param ae  the all-electron atom, its cache grown
+!! @param inp  the input values (input_m), completed (complete_input)
+!! @param cnf  the reference and test configurations (input_m)
+
+ use input_m, only: input_t, config_t
+ use config_ae_m, only: run_config_ae
+ use failure_m, only: warnings_t
+
+!Input variables
+ type(input_t), intent(in) :: inp
+ type(config_t), intent(in) :: cnf(mxcnf)
+
+!Input/output variables
+ type(ae_state_t), intent(inout) :: ae
+
+!Local variables
+ type(ae_config_t) :: aec
+ type(warnings_t) :: warns
+ integer :: jj,nold,iscr,ios,jfail
+
+ open(newunit=iscr,status='scratch',action='readwrite',iostat=ios)
+ if(ios/=0) return
+ do jj=1,inp%ncnf+1
+   nold=ae%cache%nentry
+   call run_config_ae(ae%cache,jj,cnf,inp%nc,ae%rr,inp%zz,ae%mmax,ae%adams, &
+&                     inp%iexc,ae%ea,ae%irel,ae%c_light,ae%nkap,aec,warns, &
+&                     iscr,jfail)
+   ae%cache%entry(nold+1:ae%cache%nentry)%warned=.false.
+   if(jfail/=0) then
+     close(iscr)
+     return
+   end if
+ end do
+ close(iscr)
+ return
+ end subroutine solve_configs_ae
 
  subroutine given_ae(ae_in,irel,inp,ae,iout,ifail)
 

@@ -323,8 +323,9 @@ The reference outputs are in `tests/refs`, compared with
 `compare_output.py`; changes that move the numbers beyond the tolerances
 need new references. Before updating them, check what changed:
 
-- `scripts/compare_output.py tests/refs/NAME.out build/tests/NAME/NAME.out`
-  (the reference tests leave this report in `build/tests/NAME/NAME.diff`).
+- `scripts/compare_output.py tests/refs/NAME.out build/tests/run_sr_NAME/NAME.out`
+  (the reference tests leave this report in
+  `build/tests/ref_sr_NAME/NAME.diff`).
 - `scripts/kernel_diff.py OLD NEW`, which needs only the standard library,
   compares the pseudopotentials of two outputs, or psp8 or UPF files, by
   what a calculation uses, the nonlocal kernel of each block and the local

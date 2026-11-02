@@ -460,7 +460,8 @@
 !! the all-electron atom of the TOML input text, with the relativistic
 !! treatment irel, into the handle, whose earlier contents it replaces
 !! (run_ae): the stage that oncv_run_ae_toml and oncv_channel_toml start
-!! from, its fields ae.*
+!! from, its fields ae.*. The test configurations' all-electron atoms are
+!! solved too (solve_configs_ae), once, for the runs from it to reuse
 !!
 !! @param handle  the run handle
 !! @param irel  0 non-relativistic, 1 scalar-relativistic, 2 fully-relativistic
@@ -468,6 +469,7 @@
 !! @param ntext  its length
 
  use oncvpsp_run_m, only: run_ae
+ use ae_state_m, only: solve_configs_ae
 
 !Input variables
  type(c_ptr), value :: handle
@@ -490,6 +492,7 @@
  if(jfail==0) then
    call run_ae(irel,0,hh%inp,'',hh%cnf,hh%ae,hh%at,iout,jfail)
  end if
+ if(jfail==0) call solve_configs_ae(hh%ae,hh%inp,hh%cnf)
  call close_output(hh,iout)
  hh%has_ae=jfail==0
  hh%ifail=jfail
