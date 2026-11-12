@@ -631,6 +631,7 @@ set(oncvpspsr_tests
                     # log mesh, where the AE SCF stops on its residual's floor (ae_converged)
     "07_N_flat"     # the same at qcut[0] = 22, where E_resid(qcut) is flat to round-off and the
                     # wave had a node: wave_regularization 1e-8 (optimize)
+    "08_O_np0"      # a channel without projectors (nproj 0, lloc 4), psfile both
 )
 foreach (input IN LISTS oncvpspsr_tests)
     oncvpsp_add_test(ref ref sr ${input} ref_test.sh
@@ -647,6 +648,7 @@ set(oncvpspr_tests
     "14_Si_hm"      # icmod=7 with slack
     "20_Ca"         # lpopt=1
     "38_Sr_lxc"     # a single projector for one l
+    "08_O_np0"      # a channel without projectors (nproj 0, lloc 4)
     "60_Nd_GHOST"   # ghosts
     "79_Au_lxc"     # icmod=2
 )

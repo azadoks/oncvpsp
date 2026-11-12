@@ -710,6 +710,18 @@ Bugs that moved outputs, beyond those above:
   and `modcore3`'s unset start. Commit: 5e3d9e0.
 - Inputs that overran arrays, `depsh` = 0, NaN and Inf reals, and inputs
   read from a pipe. Commits: f7c2e11, 17f5b9b, 0dfa6cf.
+- A channel without projectors (`nproj` 0, allowed with `lloc` 4). 4.0.1
+  optimized its pseudo-waves at the unset energy of a first projector,
+  built a projector from its empty B matrix, and tested a bound state it
+  does not have, none of which the pseudopotential used. This code
+  stopped there (`qroots` found no roots from the log derivative 0/0, a
+  SIGFPE with FPE trapping): the guard of 3dfb268 in `run_vkb` was lost
+  when the channels were split out. `optimize_channel`, `run_vkb` and
+  `run_diag` now skip the channel, whose results stay zero and which has
+  no diagnostic-test row. The pseudopotential does not depend on its
+  `rc`, `ep`, `qcut`, `ncon` or `nbas` while its `rc` is at most the
+  largest of the others and `rcloc` (the start of the ionic tail). Test
+  `08_O_np0` (sr and fr).
 
 #### Tools
 

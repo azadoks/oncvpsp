@@ -166,6 +166,9 @@
    write(iout,'(a)') ''
    ll = l1 - 1
    nnp=l1
+! a channel without projectors (nproj 0 for l /= lloc, lloc=4) has no
+! projector state to test; the local channel's own state is tested once
+   if(nproj(l1)==0 .and. l1/=lloc+1) cycle
    do iprj=1,max(1,nproj(l1))
      mkap=kap_count(nkap,l1-1)
 !  loop on J = ll +/- 1/2 when nkap=2

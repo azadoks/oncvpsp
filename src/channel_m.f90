@@ -182,6 +182,16 @@
  ch%wshare(:,:,:)=0.0d0
  ch%wcurve(:,:)=0.0d0
 
+!a channel without projectors (nproj 0, allowed with lloc=4) scatters on
+!the local potential alone: it has no projector states to find and no
+!pseudo-waves to optimize, and its results stay zero. 4.0.1 ran
+!run_optimize on it all the same, at the unset energy of a first
+!projector, whose results nothing used.
+ if(nprj==0) then
+   ch%wellprj(:)=.false.
+   return
+ end if
+
  allocate(uu(mmax,2),up(mmax,2),vwell(mmax,mxprj))
  up(:,:)=0.0d0
  vwell(:,:)=0.0d0

@@ -153,6 +153,14 @@
  do l1=1,lmax+1
    if(l1==lloc+1) cycle
    nlim=max(nlim,irc(l1))
+! a channel without projectors (nproj 0, lloc=4) has none to construct:
+! its coefficients and projectors stay zero (4.0.1 divided by its empty B
+! matrix, a result nothing used)
+   if(nproj(l1)==0) then
+     evkb(:,l1,:)=0.0d0
+     vkb(:,:,l1,:)=0.0d0
+     cycle
+   end if
    call channel_vkb(l1,lloc,lp,rc(l1),irc(l1),nproj(l1),rr,mmax,vfull, &
 &                   pswfx(:,:,l1,:),chix(:,:,l1,:),dlta(:,:,l1,:),irel,nkap, &
 &                   evkb(:,l1,:),vkb(:,:,l1,:),vkbpw(:,l1,:),bbeig(:,l1,:), &
